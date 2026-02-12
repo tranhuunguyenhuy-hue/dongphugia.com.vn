@@ -1,0 +1,142 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model AdminUser {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  role         String   @default("ADMIN")
+  createdAt    DateTime @default(now())
+}
+
+model Category {
+  id          String    @id @default(cuid())
+  name        String
+  slug        String    @unique
+  description String?
+  image       String?   // Thumbnail image for the category
+  isFeatured  Boolean   @default(false) // Show on homepage?
+  parentId    String?
+  parent      Category? @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children    Category[]    @relation("CategoryHierarchy")
+  productTypes ProductType[]
+  products    Product[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Brand {
+  id        String    @id @default(cuid())
+  name      String
+  slug      String    @unique
+  logo      String?
+  products  Product[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model ProductType {
+  id         String    @id @default(cuid())
+  name       String
+  slug       String    @unique
+  categoryId String
+  category   Category  @relation(fields: [categoryId], references: [id]) // Not strictly required but good for organization
+  products   Product[]
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+}
+
+model Product {
+  id            String       @id @default(cuid())
+  name          String
+  slug          String       @unique
+  sku           String?      @unique
+  description   String?      // HTML content
+  price         Decimal?     // Current selling price
+  originalPrice Decimal?     // Original price (for strikethrough)
+  images        String // JSON string for SQLite
+  isPublished   Boolean      @default(true)
+  isFeatured    Boolean      @default(false)
+  
+  categoryId    String
+  category      Category     @relation(fields: [categoryId], references: [id])
+  
+  brandId       String?
+  brand         Brand?       @relation(fields: [brandId], references: [id])
+  
+  productTypeId String?
+  productType   ProductType? @relation(fields: [productTypeId], references: [id])
+  
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  quoteItems    QuoteItem[]
+}
+
+model Banner {
+  id          String   @id @default(cuid())
+  title       String
+  image       String
+  link        String?
+  order       Int      @default(0)
+  isPublished Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Post {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  content     String   // HTML content
+  thumbnail   String?
+  isPublished Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Partner {
+  id         String   @id @default(cuid())
+  name       String
+  logo       String
+  websiteUrl String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Project {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  images      String // JSON string for SQLite
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model QuoteRequest {
+  id            String      @id @default(cuid())
+  customerName  String
+  customerPhone String
+  message       String?
+  status    String   @default("PENDING") // QuoteStatus: PENDING, CONTACTED, DONE
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  items         QuoteItem[]
+}
+
+model QuoteItem {
+  id             String       @id @default(cuid())
+  quoteRequestId String
+  quoteRequest   QuoteRequest @relation(fields: [quoteRequestId], references: [id])
+  productId      String
+  product        Product      @relation(fields: [productId], references: [id])
+  quantity       Int
+}
+
+

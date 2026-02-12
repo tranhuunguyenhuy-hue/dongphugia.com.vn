@@ -1,36 +1,66 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Đông Phú Gia - Website Vật liệu Xây dựng
+
+Website thương mại điện tử chuyên về vật liệu xây dựng: gạch ốp lát, thiết bị vệ sinh, thiết bị bếp, sàn gỗ.
+
+## Tech Stack
+
+- **Framework**: Next.js 15 (App Router)
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS + Shadcn UI
+- **Database**: SQLite (dev) / PostgreSQL (prod) via Prisma ORM
+- **Auth**: NextAuth.js
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
+# 1. Install dependencies
+npm install
+
+# 2. Setup environment
+cp .env.example .env
+
+# 3. Generate Prisma client & run migrations
+npx prisma generate
+npx prisma migrate dev
+
+# 4. Seed database
+npx prisma db seed
+
+# 5. Run dev server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Project Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+src/
+├── app/
+│   ├── admin/              # Admin panel
+│   │   ├── login/          # Admin login
+│   │   ├── products/       # Product CRUD
+│   │   ├── layout.tsx      # Admin sidebar layout
+│   │   └── page.tsx        # Admin dashboard
+│   ├── api/auth/           # NextAuth API
+│   ├── layout.tsx          # Root layout
+│   └── page.tsx            # Homepage
+├── components/ui/          # Shadcn UI components
+├── lib/
+│   ├── actions.ts          # Server actions
+│   ├── prisma.ts           # Prisma client
+│   └── utils.ts            # Utilities
+├── auth.ts                 # NextAuth config
+├── auth.config.ts          # Auth callbacks
+└── middleware.ts            # Route protection
+prisma/
+├── schema.prisma           # Database schema
+├── seed.ts                 # Seed data
+└── migrations/             # Migration history
+```
 
-## Learn More
+## Admin Access
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- URL: `/admin`
+- Email: `admin@dongphugia.com`
+- Password: `adminpassword123`
