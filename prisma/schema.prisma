@@ -1,6 +1,7 @@
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 generator client {
@@ -42,14 +43,28 @@ model Brand {
 }
 
 model ProductType {
-  id         String    @id @default(cuid())
-  name       String
-  slug       String    @unique
-  categoryId String
-  category   Category  @relation(fields: [categoryId], references: [id]) // Not strictly required but good for organization
-  products   Product[]
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+  id          String       @id @default(cuid())
+  name        String
+  slug        String       @unique
+  image       String?      // Thumbnail image for sub-category
+  categoryId  String
+  category    Category     @relation(fields: [categoryId], references: [id])
+  products    Product[]
+  collections Collection[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Collection {
+  id            String      @id @default(cuid())
+  name          String      // "INSIDE ART", "MOSAIC"
+  slug          String      @unique
+  image         String?     // Thumbnail for carousel
+  productTypeId String
+  productType   ProductType @relation(fields: [productTypeId], references: [id])
+  products      Product[]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
 }
 
 model Product {
@@ -60,7 +75,16 @@ model Product {
   description   String?      // HTML content
   price         Decimal?     // Current selling price
   originalPrice Decimal?     // Original price (for strikethrough)
-  images        String // JSON string for SQLite
+  showPrice     Boolean      @default(true) // false = "Liên hệ báo giá"
+  thumbnail     String?      // Single thumbnail URL for cards/listings
+  images        String       // JSON array of gallery image URLs for detail page
+  specs         String?      // JSON specs per category, e.g. {surface, dimensions, origin...}
+  // Tab: Thông tin sản phẩm
+  material        String?    // Chất liệu (Porcelain, Ceramic, Granite...)
+  thickness       String?    // Độ dày (9mm, 12mm...)
+  waterAbsorption String?    // Độ hút nước (< 0.5%, ≤ 0.1%...)
+  usage           String?    // Ứng dụng (Lát nền, Ốp tường, Mặt bàn...)
+  colorHex        String?    // Mã màu hex cho color selector (#3b82f6)
   isPublished   Boolean      @default(true)
   isFeatured    Boolean      @default(false)
   
@@ -73,8 +97,21 @@ model Product {
   productTypeId String?
   productType   ProductType? @relation(fields: [productTypeId], references: [id])
   
+  collectionId  String?
+  collection    Collection?  @relation(fields: [collectionId], references: [id])
+  
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
+  
+  // Optimized Fields (for Gạch ốp lát)
+  dimensions    String?
+  simDimensions String?
+  surface       String?
+  origin        String?
+  antiSlip      String?
+  patternCount  Int?
+  colorName     String?
+  
   quoteItems    QuoteItem[]
 }
 
@@ -123,6 +160,7 @@ model QuoteRequest {
   id            String      @id @default(cuid())
   customerName  String
   customerPhone String
+  customerEmail String?
   message       String?
   status    String   @default("PENDING") // QuoteStatus: PENDING, CONTACTED, DONE
   createdAt     DateTime    @default(now())

@@ -5,10 +5,10 @@ async function main() {
     console.log('🌱 Seeding database...')
 
     // ========== 1. Admin User ==========
-    const hashedPassword = await bcrypt.hash('adminpassword123', 10)
+    const hashedPassword = await bcrypt.hash('admin123', 10)
     const admin = await prisma.adminUser.upsert({
         where: { email: 'admin@dongphugia.com' },
-        update: {},
+        update: { passwordHash: hashedPassword },
         create: {
             email: 'admin@dongphugia.com',
             passwordHash: hashedPassword,
@@ -48,24 +48,7 @@ async function main() {
         create: { name: 'Sàn gỗ, sàn nhựa', slug: 'san-go-san-nhua', isFeatured: true },
     })
 
-    // Sub-categories for Gạch ốp lát
-    const gachGranite = await prisma.category.upsert({
-        where: { slug: 'gach-granite' },
-        update: {},
-        create: { name: 'Gạch Granite', slug: 'gach-granite', parentId: gachOplatParent.id },
-    })
-    const gachCeramic = await prisma.category.upsert({
-        where: { slug: 'gach-ceramic' },
-        update: {},
-        create: { name: 'Gạch Ceramic', slug: 'gach-ceramic', parentId: gachOplatParent.id },
-    })
-    const gachMen = await prisma.category.upsert({
-        where: { slug: 'gach-men' },
-        update: {},
-        create: { name: 'Gạch men', slug: 'gach-men', parentId: gachOplatParent.id },
-    })
-
-    console.log('✅ Categories created: 5 parents + 3 sub-categories')
+    console.log('✅ Categories created: 5 parents')
 
     // ========== 3. Brands ==========
     const brandData = [
@@ -89,8 +72,14 @@ async function main() {
     }
     console.log(`✅ Brands created: ${brandData.length}`)
 
-    // ========== 4. Product Types ==========
+    // ========== 4. Product Types (Sub-categories) ==========
+    // --- Gạch ốp lát sub-cats (updated per Figma) ---
     const typeData = [
+        { name: 'Gạch Vân đá Marble', slug: 'gach-van-da-marble', categoryId: gachOplatParent.id },
+        { name: 'Gạch Vân đá tự nhiên', slug: 'gach-van-da-tu-nhien', categoryId: gachOplatParent.id },
+        { name: 'Gạch Vân gỗ', slug: 'gach-van-go', categoryId: gachOplatParent.id },
+        { name: 'Gạch Thiết kế xi măng', slug: 'gach-thiet-ke-xi-mang', categoryId: gachOplatParent.id },
+        { name: 'Gạch Trang trí', slug: 'gach-trang-tri', categoryId: gachOplatParent.id },
         // Thiết bị vệ sinh
         { name: 'Bồn cầu', slug: 'bon-cau', categoryId: tbVeSinhParent.id },
         { name: 'Lavabo', slug: 'lavabo', categoryId: tbVeSinhParent.id },
@@ -122,8 +111,186 @@ async function main() {
     }
     console.log(`✅ Product types created: ${typeData.length}`)
 
-    // ========== 5. Products (15 sản phẩm mẫu) ==========
+    // ========== 5. Collections (for Gạch ốp lát) ==========
+    const collectionData = [
+        // Vân đá Marble collections
+        { name: 'INSIDE ART', slug: 'inside-art', productTypeId: types['gach-van-da-marble'].id },
+        { name: 'DANCING FLOWER', slug: 'dancing-flower', productTypeId: types['gach-van-da-marble'].id },
+        { name: 'MARVEL TRAVERTINE', slug: 'marvel-travertine', productTypeId: types['gach-van-da-marble'].id },
+        { name: 'MARMI CLASSICI', slug: 'marmi-classici', productTypeId: types['gach-van-da-marble'].id },
+        // Vân đá tự nhiên collections
+        { name: 'MYSTIC', slug: 'mystic', productTypeId: types['gach-van-da-tu-nhien'].id },
+        { name: 'MOSAIC', slug: 'mosaic', productTypeId: types['gach-van-da-tu-nhien'].id },
+        // Vân gỗ
+        { name: 'MARMI CLASSICI WOOD', slug: 'marmi-classici-wood', productTypeId: types['gach-van-go'].id },
+        { name: 'CHIC', slug: 'chic', productTypeId: types['gach-van-go'].id },
+    ]
+
+    const collections: Record<string, any> = {}
+    for (const c of collectionData) {
+        collections[c.slug] = await prisma.collection.upsert({
+            where: { slug: c.slug },
+            update: {},
+            create: { name: c.name, slug: c.slug, productTypeId: c.productTypeId },
+        })
+    }
+    console.log(`✅ Collections created: ${collectionData.length}`)
+
+    // ========== 6. Products ==========
     const productsData = [
+        // --- Gạch ốp lát: INSIDE ART collection (3 SP cùng collection) ---
+        {
+            name: 'Gạch 120278EN7Z',
+            slug: 'gach-120278en7z',
+            sku: '120278EN7Z',
+            showPrice: false,
+            description: '<p>Tele di Marmo Lumia là hành trình khám phá vẻ đẹp của đá quý dưới ánh sáng, lấy cảm hứng từ những mẫu đá quý tự nhiên độc đáo. Mã 120278EN7Z với tông màu xanh dương chủ đạo.</p>',
+            images: '[]',
+            specs: JSON.stringify({ surface: 'Bóng', dimensions: '120x278cm', simDimensions: '120x278cm', origin: 'Ý', antiSlip: 'Không', patternCount: 6, color: 'Xanh' }),
+            dimensions: '120x278cm',
+            simDimensions: '120x278cm',
+            surface: 'Bóng',
+            origin: 'Ý',
+            antiSlip: 'Không',
+            patternCount: 6,
+            colorName: 'Xanh',
+            categoryId: gachOplatParent.id,
+            productTypeId: types['gach-van-da-marble'].id,
+            collectionId: collections['inside-art'].id,
+            isFeatured: true,
+        },
+        {
+            name: 'Gạch 120278EN7Y',
+            slug: 'gach-120278en7y',
+            sku: '120278EN7Y',
+            showPrice: false,
+            description: '<p>Tele di Marmo Lumia - Mã 120278EN7Y với tông hồng pastel nhẹ nhàng, vân đá marble tinh tế.</p>',
+            images: '[]',
+            specs: JSON.stringify({ surface: 'Bóng', dimensions: '120x278cm', simDimensions: '120x278cm', origin: 'Ý', antiSlip: 'Không', patternCount: 6, color: 'Hồng' }),
+            dimensions: '120x278cm',
+            simDimensions: '120x278cm',
+            surface: 'Bóng',
+            origin: 'Ý',
+            antiSlip: 'Không',
+            patternCount: 6,
+            colorName: 'Hồng',
+            categoryId: gachOplatParent.id,
+            productTypeId: types['gach-van-da-marble'].id,
+            collectionId: collections['inside-art'].id,
+        },
+        {
+            name: 'Gạch 120278EN7E',
+            slug: 'gach-120278en7e',
+            sku: '120278EN7E',
+            showPrice: false,
+            description: '<p>Tele di Marmo Lumia - Mã 120278EN7E với tông kem nhã nhặn, phù hợp không gian sang trọng.</p>',
+            images: '[]',
+            specs: JSON.stringify({ surface: 'Bóng', dimensions: '120x278cm', simDimensions: '120x278cm', origin: 'Ý', antiSlip: 'Không', patternCount: 6, color: 'Kem' }),
+            dimensions: '120x278cm',
+            simDimensions: '120x278cm',
+            surface: 'Bóng',
+            origin: 'Ý',
+            antiSlip: 'Không',
+            patternCount: 6,
+            colorName: 'Kem',
+            categoryId: gachOplatParent.id,
+            productTypeId: types['gach-van-da-marble'].id,
+            collectionId: collections['inside-art'].id,
+        },
+        // --- MARVEL TRAVERTINE collection ---
+        {
+            name: 'Gạch 612MTWHCRMT',
+            slug: 'gach-612mtwhcrmt',
+            sku: '612MTWHCRMT',
+            showPrice: false,
+            images: '[]',
+            specs: JSON.stringify({ surface: 'Mờ', dimensions: '60x120cm', simDimensions: '60x120cm', origin: 'Ý', antiSlip: 'R9', patternCount: 4, color: 'Trắng' }),
+            dimensions: '60x120cm',
+            simDimensions: '60x120cm',
+            surface: 'Mờ',
+            origin: 'Ý',
+            antiSlip: 'R9',
+            patternCount: 4,
+            colorName: 'Trắng',
+            categoryId: gachOplatParent.id,
+            productTypeId: types['gach-van-da-marble'].id,
+            collectionId: collections['marvel-travertine'].id,
+        },
+        {
+            name: 'Gạch 612MTSACRMT',
+            slug: 'gach-612mtsacrmt',
+            sku: '612MTSACRMT',
+            showPrice: false,
+            images: '[]',
+            specs: JSON.stringify({ surface: 'Mờ', dimensions: '60x120cm', simDimensions: '60x120cm', origin: 'Ý', antiSlip: 'R9', patternCount: 4, color: 'Nâu' }),
+            dimensions: '60x120cm',
+            simDimensions: '60x120cm',
+            surface: 'Mờ',
+            origin: 'Ý',
+            antiSlip: 'R9',
+            patternCount: 4,
+            colorName: 'Nâu',
+            categoryId: gachOplatParent.id,
+            productTypeId: types['gach-van-da-marble'].id,
+            collectionId: collections['marvel-travertine'].id,
+        },
+        // --- MARMI CLASSICI collection ---
+        {
+            name: 'Gạch 612PK612547',
+            slug: 'gach-612pk612547',
+            sku: '612PK612547',
+            showPrice: false,
+            images: '[]',
+            specs: JSON.stringify({ surface: 'Mờ', dimensions: '60x120cm', simDimensions: '60x120cm', origin: 'Ý', antiSlip: 'Không', patternCount: 3, color: 'Đen' }),
+            dimensions: '60x120cm',
+            simDimensions: '60x120cm',
+            surface: 'Mờ',
+            origin: 'Ý',
+            antiSlip: 'Không',
+            patternCount: 3,
+            colorName: 'Đen',
+            categoryId: gachOplatParent.id,
+            productTypeId: types['gach-van-da-marble'].id,
+            collectionId: collections['marmi-classici'].id,
+        },
+        // --- MYSTIC collection ---
+        {
+            name: 'Gạch 918MYIVKRY',
+            slug: 'gach-918myivkry',
+            sku: '918MYIVKRY',
+            showPrice: false,
+            images: '[]',
+            specs: JSON.stringify({ surface: 'Bóng', dimensions: '90x180cm', simDimensions: '90x180cm', origin: 'Ý', antiSlip: 'Không', patternCount: 5, color: 'Kem' }),
+            dimensions: '90x180cm',
+            simDimensions: '90x180cm',
+            surface: 'Bóng',
+            origin: 'Ý',
+            antiSlip: 'Không',
+            patternCount: 5,
+            colorName: 'Kem',
+            categoryId: gachOplatParent.id,
+            productTypeId: types['gach-van-da-tu-nhien'].id,
+            collectionId: collections['mystic'].id,
+        },
+        {
+            name: 'Gạch 918MYBKKRY',
+            slug: 'gach-918mybkkry',
+            sku: '918MYBKKRY',
+            showPrice: false,
+            images: '[]',
+            specs: JSON.stringify({ surface: 'Bóng', dimensions: '90x180cm', simDimensions: '90x180cm', origin: 'Ý', antiSlip: 'Không', patternCount: 5, color: 'Đen' }),
+            dimensions: '90x180cm',
+            simDimensions: '90x180cm',
+            surface: 'Bóng',
+            origin: 'Ý',
+            antiSlip: 'Không',
+            patternCount: 5,
+            colorName: 'Đen',
+            categoryId: gachOplatParent.id,
+            productTypeId: types['gach-van-da-tu-nhien'].id,
+            collectionId: collections['mystic'].id,
+        },
+
         // --- Thiết bị vệ sinh ---
         {
             name: 'Bồn cầu 1 khối TOTO MS887W',
@@ -131,7 +298,7 @@ async function main() {
             sku: 'TOTO-MS887W',
             price: 8500000,
             originalPrice: 9200000,
-            description: '<p>Bồn cầu 1 khối TOTO MS887W với công nghệ xả xoáy Tornado, nắp đóng êm. Thiết kế hiện đại, tiết kiệm nước.</p>',
+            description: '<p>Bồn cầu 1 khối TOTO MS887W với công nghệ xả xoáy Tornado, nắp đóng êm.</p>',
             images: '[]',
             categoryId: tbVeSinhParent.id,
             brandId: brands['toto'].id,
@@ -143,7 +310,7 @@ async function main() {
             slug: 'bon-cau-inax-ac700van',
             sku: 'INAX-AC700VAN',
             price: 4200000,
-            description: '<p>Bồn cầu 2 khối Inax AC-700VAN, kiểu dáng thanh lịch, xả nhấn kép tiết kiệm nước.</p>',
+            description: '<p>Bồn cầu 2 khối Inax AC-700VAN, xả nhấn kép tiết kiệm nước.</p>',
             images: '[]',
             categoryId: tbVeSinhParent.id,
             brandId: brands['inax'].id,
@@ -151,71 +318,19 @@ async function main() {
             isFeatured: true,
         },
         {
-            name: 'Lavabo đặt bàn TOTO LW991A',
-            slug: 'lavabo-toto-lw991a',
-            sku: 'TOTO-LW991A',
-            price: 3800000,
-            description: '<p>Lavabo đặt bàn TOTO LW991A, men sứ CEFIONTECT chống bám bẩn. Kích thước 500x450mm.</p>',
-            images: '[]',
-            categoryId: tbVeSinhParent.id,
-            brandId: brands['toto'].id,
-            productTypeId: types['lavabo'].id,
-        },
-        {
             name: 'Sen cây nóng lạnh Grohe Euphoria 26128000',
             slug: 'sen-cay-grohe-euphoria-26128',
             sku: 'GROHE-26128',
             price: 12500000,
             originalPrice: 14000000,
-            description: '<p>Sen cây nóng lạnh Grohe Euphoria với 3 chế độ phun, công nghệ DreamSpray cho luồng nước đều.</p>',
+            description: '<p>Sen cây nóng lạnh Grohe Euphoria với 3 chế độ phun, công nghệ DreamSpray.</p>',
             images: '[]',
             categoryId: tbVeSinhParent.id,
             brandId: brands['grohe'].id,
             productTypeId: types['sen-voi'].id,
             isFeatured: true,
         },
-        {
-            name: 'Bồn tắm ngâm American Standard 70270',
-            slug: 'bon-tam-american-standard-70270',
-            sku: 'AS-70270',
-            price: 6800000,
-            description: '<p>Bồn tắm ngâm American Standard, chất liệu Acrylic cao cấp, kích thước 1500x750mm.</p>',
-            images: '[]',
-            categoryId: tbVeSinhParent.id,
-            brandId: brands['american-standard'].id,
-            productTypeId: types['bon-tam'].id,
-        },
-        // --- Gạch ốp lát ---
-        {
-            name: 'Gạch Granite Viglacera TS1-615',
-            slug: 'gach-granite-viglacera-ts1-615',
-            sku: 'VIG-TS1-615',
-            price: 185000,
-            description: '<p>Gạch Granite Viglacera TS1-615, kích thước 600x600mm, bề mặt nhám chống trơn, phù hợp lát sàn.</p>',
-            images: '[]',
-            categoryId: gachGranite.id,
-            brandId: brands['viglacera'].id,
-        },
-        {
-            name: 'Gạch men ốp tường Taicera G63938',
-            slug: 'gach-men-taicera-g63938',
-            sku: 'TAI-G63938',
-            price: 210000,
-            description: '<p>Gạch men ốp tường Taicera G63938, kích thước 300x600mm, vân đá marble sang trọng.</p>',
-            images: '[]',
-            categoryId: gachMen.id,
-            brandId: brands['taicera'].id,
-        },
-        {
-            name: 'Gạch Ceramic lát nền Viglacera KT-3673',
-            slug: 'gach-ceramic-viglacera-kt3673',
-            sku: 'VIG-KT3673',
-            price: 145000,
-            description: '<p>Gạch Ceramic lát nền Viglacera KT-3673, kích thước 300x300mm, chống trơn cho nhà tắm.</p>',
-            images: '[]',
-            categoryId: gachCeramic.id,
-            brandId: brands['viglacera'].id,
-        },
+
         // --- Thiết bị nhà bếp ---
         {
             name: 'Bếp từ đôi Hafele HC-I772A',
@@ -223,7 +338,7 @@ async function main() {
             sku: 'HAF-HCI772A',
             price: 15900000,
             originalPrice: 17500000,
-            description: '<p>Bếp từ đôi Hafele HC-I772A, mặt kính Schott Ceran, 9 mức công suất, chức năng hẹn giờ.</p>',
+            description: '<p>Bếp từ đôi Hafele HC-I772A, mặt kính Schott Ceran, 9 mức công suất.</p>',
             images: '[]',
             categoryId: tbBepParent.id,
             brandId: brands['hafele'].id,
@@ -235,65 +350,34 @@ async function main() {
             slug: 'may-hut-mui-malloca-mc9039t',
             sku: 'MAL-MC9039T',
             price: 5600000,
-            description: '<p>Máy hút mùi Malloca MC-9039T, công suất hút 850m³/h, lọc than hoạt tính, kính cường lực.</p>',
+            description: '<p>Máy hút mùi Malloca MC-9039T, công suất hút 850m³/h, kính cường lực.</p>',
             images: '[]',
             categoryId: tbBepParent.id,
             brandId: brands['malloca'].id,
             productTypeId: types['may-hut-mui'].id,
         },
-        {
-            name: 'Chậu rửa bát Hafele HS-SSD8248',
-            slug: 'chau-rua-bat-hafele-hs-ssd8248',
-            sku: 'HAF-SSD8248',
-            price: 4200000,
-            description: '<p>Chậu rửa bát Hafele HS-SSD8248 đôi, inox SUS304 dày 1.2mm, có kệ để đồ.</p>',
-            images: '[]',
-            categoryId: tbBepParent.id,
-            brandId: brands['hafele'].id,
-            productTypeId: types['chau-rua-bat'].id,
-        },
+
         // --- Sàn gỗ ---
         {
             name: 'Sàn gỗ công nghiệp Kronoswiss D2025',
             slug: 'san-go-kronoswiss-d2025',
             sku: 'KRO-D2025',
             price: 450000,
-            description: '<p>Sàn gỗ công nghiệp Kronoswiss D2025 xuất xứ Thụy Sĩ, độ dày 8mm, chống ẩm AC4.</p>',
+            description: '<p>Sàn gỗ công nghiệp Kronoswiss D2025 xuất xứ Thụy Sĩ, độ dày 8mm, AC4.</p>',
             images: '[]',
             categoryId: sanGoParent.id,
             productTypeId: types['san-go-cong-nghiep'].id,
         },
         {
-            name: 'Sàn nhựa SPC hèm khóa Galaxy Plus MSC5026',
+            name: 'Sàn nhựa SPC Galaxy Plus MSC5026',
             slug: 'san-nhua-spc-galaxy-msc5026',
             sku: 'GAL-MSC5026',
             price: 280000,
-            description: '<p>Sàn nhựa SPC Galaxy Plus MSC5026, chống nước 100%, vân gỗ sồi tự nhiên, dày 4mm.</p>',
+            description: '<p>Sàn nhựa SPC Galaxy Plus MSC5026, chống nước 100%, vân gỗ sồi, dày 4mm.</p>',
             images: '[]',
             categoryId: sanGoParent.id,
             productTypeId: types['san-nhua-spc'].id,
             isFeatured: true,
-        },
-        // --- Thiết bị ngành nước ---
-        {
-            name: 'Máy bơm tăng áp Grundfos CM Booster',
-            slug: 'may-bom-tang-ap-grundfos-cm',
-            sku: 'GRU-CMB',
-            price: 7800000,
-            description: '<p>Máy bơm tăng áp Grundfos CM Booster, lưu lượng 45 lít/phút, hoạt động êm ái.</p>',
-            images: '[]',
-            categoryId: tbNuocParent.id,
-            productTypeId: types['may-bom'].id,
-        },
-        {
-            name: 'Van khóa đồng Đài Loan phi 21',
-            slug: 'van-khoa-dong-dai-loan-phi-21',
-            sku: 'VKD-21',
-            price: 85000,
-            description: '<p>Van khóa đồng Đài Loan phi 21, thân đồng nguyên chất, chịu áp lực 16 bar.</p>',
-            images: '[]',
-            categoryId: tbNuocParent.id,
-            productTypeId: types['van-khoa'].id,
         },
     ]
 
@@ -305,20 +389,30 @@ async function main() {
                 name: product.name,
                 slug: product.slug,
                 sku: product.sku,
-                price: product.price,
+                price: product.price || null,
                 originalPrice: product.originalPrice || null,
-                description: product.description,
+                showPrice: product.showPrice ?? true,
+                description: product.description || null,
                 images: product.images,
+                specs: product.specs || null,
                 categoryId: product.categoryId,
                 brandId: product.brandId || null,
                 productTypeId: product.productTypeId || null,
+                collectionId: product.collectionId || null,
                 isFeatured: product.isFeatured || false,
+                dimensions: (product as any).dimensions || null,
+                simDimensions: (product as any).simDimensions || null,
+                surface: (product as any).surface || null,
+                origin: (product as any).origin || null,
+                antiSlip: (product as any).antiSlip || null,
+                patternCount: (product as any).patternCount || null,
+                colorName: (product as any).colorName || null,
             },
         })
     }
     console.log(`✅ Products created: ${productsData.length}`)
 
-    // ========== 6. Banners ==========
+    // ========== 7. Banners ==========
     const bannersData = [
         {
             title: 'Khuyến mãi Thiết bị vệ sinh TOTO - Giảm đến 30%',
@@ -327,8 +421,8 @@ async function main() {
             order: 1,
         },
         {
-            title: 'Gạch ốp lát Viglacera - Bền đẹp theo thời gian',
-            image: '/banners/banner-viglacera.jpg',
+            title: 'Gạch ốp lát cao cấp - Đa dạng bộ sưu tập',
+            image: '/banners/banner-gach.jpg',
             link: '/products?category=gach-op-lat',
             order: 2,
         },
@@ -340,52 +434,47 @@ async function main() {
         },
     ]
 
+    // clear existing banners
+    await prisma.banner.deleteMany()
     for (const banner of bannersData) {
         await prisma.banner.create({ data: banner })
     }
     console.log(`✅ Banners created: ${bannersData.length}`)
 
-    // ========== 7. Posts ==========
+    // ========== 8. Posts ==========
     const postsData = [
         {
             title: 'Cách chọn thiết bị vệ sinh phù hợp cho gia đình',
             slug: 'cach-chon-thiet-bi-ve-sinh-phu-hop',
-            content: `<h2>1. Xác định ngân sách</h2>
-<p>Trước khi mua thiết bị vệ sinh, bạn cần xác định ngân sách phù hợp. Các thương hiệu cao cấp như TOTO, Grohe thường có giá từ 5-20 triệu cho một bộ sản phẩm.</p>
-<h2>2. Chọn thương hiệu uy tín</h2>
-<p>Nên chọn các thương hiệu có bảo hành chính hãng tại Việt Nam như TOTO, Inax, American Standard, Grohe.</p>
-<h2>3. Đo đạc không gian</h2>
-<p>Đo kích thước phòng tắm trước khi chọn mua để đảm bảo sản phẩm phù hợp với không gian.</p>`,
+            content: '<h2>1. Xác định ngân sách</h2><p>Trước khi mua thiết bị vệ sinh, bạn cần xác định ngân sách phù hợp.</p><h2>2. Chọn thương hiệu uy tín</h2><p>Nên chọn các thương hiệu có bảo hành chính hãng tại Việt Nam.</p>',
             thumbnail: '/blog/thiet-bi-ve-sinh.jpg',
         },
         {
             title: 'Xu hướng thiết kế nhà bếp hiện đại 2024',
             slug: 'xu-huong-thiet-ke-nha-bep-hien-dai-2024',
-            content: `<h2>Phong cách tối giản</h2>
-<p>Xu hướng nhà bếp 2024 thiên về phong cách tối giản với tông màu trắng, xám và gỗ tự nhiên.</p>
-<h2>Bếp từ thay thế bếp gas</h2>
-<p>Ngày càng nhiều gia đình chuyển sang sử dụng bếp từ vì tính an toàn và thẩm mỹ cao.</p>
-<h2>Chậu rửa bát đa năng</h2>
-<p>Chậu rửa bát kết hợp kệ để đồ, máy rửa bát giúp tối ưu không gian bếp.</p>`,
+            content: '<h2>Phong cách tối giản</h2><p>Xu hướng nhà bếp 2024 thiên về phong cách tối giản với tông màu trắng, xám.</p>',
             thumbnail: '/blog/nha-bep-hien-dai.jpg',
         },
         {
-            title: 'Hướng dẫn chọn sàn gỗ cho ngôi nhà của bạn',
-            slug: 'huong-dan-chon-san-go-cho-ngoi-nha',
-            content: `<h2>Sàn gỗ công nghiệp vs Sàn gỗ tự nhiên</h2>
-<p>Sàn gỗ công nghiệp có giá thành rẻ hơn, đa dạng mẫu mã. Sàn gỗ tự nhiên sang trọng hơn nhưng đắt và cần bảo dưỡng nhiều.</p>
-<h2>Sàn nhựa SPC - Lựa chọn mới</h2>
-<p>Sàn nhựa SPC chống nước 100%, phù hợp cho phòng tắm, bếp. Giá thành hợp lý từ 200-400k/m².</p>`,
-            thumbnail: '/blog/san-go.jpg',
+            title: 'Hướng dẫn chọn gạch ốp lát cho ngôi nhà hiện đại',
+            slug: 'huong-dan-chon-gach-op-lat',
+            content: '<h2>Các loại gạch phổ biến</h2><p>Gạch vân đá Marble, vân đá tự nhiên, vân gỗ — mỗi loại phù hợp cho không gian khác nhau.</p>',
+            thumbnail: '/blog/gach-op-lat.jpg',
         },
     ]
 
     for (const post of postsData) {
-        await prisma.post.create({ data: post })
+        await prisma.post.upsert({
+            where: { slug: post.slug },
+            update: {},
+            create: post
+        })
     }
     console.log(`✅ Posts created: ${postsData.length}`)
 
-    // ========== 8. Partners ==========
+    // ========== 9. Partners ==========
+    // clear existing partners to avoid duplicates (no unique slug)
+    await prisma.partner.deleteMany()
     const partnersData = [
         { name: 'TOTO Vietnam', logo: '/partners/toto.png', websiteUrl: 'https://www.toto.com.vn' },
         { name: 'Inax Vietnam', logo: '/partners/inax.png', websiteUrl: 'https://www.inax.com.vn' },
@@ -399,24 +488,28 @@ async function main() {
     }
     console.log(`✅ Partners created: ${partnersData.length}`)
 
-    // ========== 9. Projects ==========
+    // ========== 10. Projects ==========
     const projectsData = [
         {
             name: 'Dự án chung cư Vinhomes Ocean Park',
             slug: 'du-an-vinhomes-ocean-park',
-            description: 'Cung cấp toàn bộ thiết bị vệ sinh TOTO và gạch ốp lát Viglacera cho 500 căn hộ.',
+            description: 'Cung cấp toàn bộ thiết bị vệ sinh TOTO và gạch ốp lát cho 500 căn hộ.',
             images: '[]',
         },
         {
             name: 'Khách sạn Mường Thanh Luxury',
             slug: 'khach-san-muong-thanh-luxury',
-            description: 'Lắp đặt hệ thống sen vòi Grohe và thiết bị bếp Hafele cho toàn bộ 200 phòng.',
+            description: 'Lắp đặt hệ thống sen vòi Grohe và thiết bị bếp Hafele cho 200 phòng.',
             images: '[]',
         },
     ]
 
     for (const project of projectsData) {
-        await prisma.project.create({ data: project })
+        await prisma.project.upsert({
+            where: { slug: project.slug },
+            update: {},
+            create: project
+        })
     }
     console.log(`✅ Projects created: ${projectsData.length}`)
 

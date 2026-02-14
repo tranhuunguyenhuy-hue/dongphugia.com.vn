@@ -14,9 +14,9 @@ export default function LoginForm() {
     return (
         <Card className="mx-auto max-w-sm">
             <CardHeader>
-                <CardTitle className="text-2xl">Login</CardTitle>
+                <CardTitle className="text-2xl">Đăng nhập</CardTitle>
                 <CardDescription>
-                    Enter your email below to login to admin account
+                    Nhập email và mật khẩu để truy cập trang quản trị
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -27,14 +27,12 @@ export default function LoginForm() {
                             id="email"
                             type="email"
                             name="email"
-                            placeholder="m@example.com"
+                            placeholder="admin@dongphugia.com"
                             required
                         />
                     </div>
                     <div className="grid gap-2">
-                        <div className="flex items-center">
-                            <Label htmlFor="password">Password</Label>
-                        </div>
+                        <Label htmlFor="password">Mật khẩu</Label>
                         <Input id="password" type="password" name="password" required />
                     </div>
                     <LoginButton />
@@ -53,7 +51,7 @@ function LoginButton() {
     const { pending } = useFormStatus()
     return (
         <Button className="w-full" aria-disabled={pending}>
-            {pending ? "Logging in..." : "Login"}
+            {pending ? "Đang đăng nhập..." : "Đăng nhập"}
         </Button>
     )
 }
