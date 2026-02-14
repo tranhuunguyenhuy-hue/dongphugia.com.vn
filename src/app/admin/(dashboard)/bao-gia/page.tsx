@@ -12,23 +12,28 @@ import { FileText, Clock, CheckCircle2, MessageSquare } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default async function QuotesPage() {
-    const quotes = await prisma.quoteRequest.findMany({
-        orderBy: { createdAt: "desc" },
-        include: {
-            items: {
-                include: {
-                    product: {
-                        select: { name: true, sku: true, slug: true },
+    const [quotes, totalQuotes, pendingCount, contactedCount, doneCount] = await Promise.all([
+        prisma.quoteRequest.findMany({
+            orderBy: { createdAt: "desc" },
+            take: 20,
+            include: {
+                items: {
+                    include: {
+                        product: {
+                            select: { name: true, sku: true, slug: true },
+                        },
                     },
                 },
             },
-        },
-    });
+        }),
+        prisma.quoteRequest.count(),
+        prisma.quoteRequest.count({ where: { status: "PENDING" } }),
+        prisma.quoteRequest.count({ where: { status: "CONTACTED" } }),
+        prisma.quoteRequest.count({ where: { status: "DONE" } }),
+    ]) as [any[], number, number, number, number];
 
-    const totalQuotes = quotes.length;
-    const pendingCount = quotes.filter((q) => q.status === "PENDING").length;
-    const contactedCount = quotes.filter((q) => q.status === "CONTACTED").length;
-    const doneCount = quotes.filter((q) => q.status === "DONE").length;
+    // Stats are now fetched directly from DB
+
 
     return (
         <div className="space-y-6 fade-in">

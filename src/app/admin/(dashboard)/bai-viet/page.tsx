@@ -10,12 +10,22 @@ import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
 
 export default async function PostsPage() {
-    const posts = await prisma.post.findMany({
-        orderBy: { createdAt: 'desc' }
-    })
-
-    const totalPosts = posts.length
-    const publishedPosts = posts.filter(p => p.isPublished).length
+    const [posts, totalPosts, publishedPosts] = await Promise.all([
+        prisma.post.findMany({
+            orderBy: { createdAt: 'desc' },
+            take: 20,
+            select: {
+                id: true,
+                title: true,
+                slug: true,
+                thumbnail: true,
+                isPublished: true,
+                createdAt: true,
+            }
+        }),
+        prisma.post.count(),
+        prisma.post.count({ where: { isPublished: true } })
+    ]) as [any[], number, number];
 
     return (
         <div className="space-y-6 fade-in">

@@ -9,12 +9,22 @@ import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
 
 export default async function BannersPage() {
-    const banners = await prisma.banner.findMany({
-        orderBy: { order: 'asc' }
-    })
-
-    const totalBanners = banners.length
-    const activeBanners = banners.filter(b => b.isPublished).length
+    const [banners, totalBanners, activeBanners] = await Promise.all([
+        prisma.banner.findMany({
+            orderBy: { order: 'asc' },
+            take: 20,
+            select: {
+                id: true,
+                title: true,
+                image: true,
+                link: true,
+                isPublished: true,
+                order: true,
+            }
+        }),
+        prisma.banner.count(),
+        prisma.banner.count({ where: { isPublished: true } })
+    ]) as [any[], number, number];
 
     return (
         <div className="space-y-6 fade-in">
