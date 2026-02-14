@@ -55,16 +55,21 @@ async function getFeaturedProducts() {
 }
 
 export default async function HomePage() {
-    const [banners, categories, featuredProducts] = await Promise.all([
+    const [
+        banners,
+        categories,
+        featuredProducts,
+        tileProducts,
+        sanitaryProducts,
+        kitchenProducts
+    ] = await Promise.all([
         getBanners(),
         getFeaturedCategories(),
         getFeaturedProducts(),
+        getProductsByCategory('gach-op-lat'),
+        getProductsByCategory('thiet-bi-ve-sinh'),
+        getProductsByCategory('thiet-bi-bep'),
     ])
-
-    // Placeholder for category-specific sections (ideally these slugs match DB)
-    const tileProducts = await getProductsByCategory('gach-op-lat');
-    const sanitaryProducts = await getProductsByCategory('thiet-bi-ve-sinh');
-    const kitchenProducts = await getProductsByCategory('thiet-bi-bep');
 
     return (
         <div className="bg-white">
