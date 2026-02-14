@@ -42,6 +42,8 @@ next-env.d.ts
 
 # Prisma
 /src/generated/prisma
+prisma/dev.db
+prisma/dev.db-journal
 
 # SQLite database (local dev only)
 *.db
@@ -53,3 +55,14 @@ next-env.d.ts
 
 # OS files
 .DS_Store
+Thumbs.db
+
+# Uploaded content (dynamic, not version-controlled)
+/public/uploads/
+
+# Old/Temp folders
+/building-materials-web/
+cleanup.js
+
+# Agent config (Antigravity IDE)
+.agent/

@@ -51,6 +51,14 @@ const productSchema = z.object({
     waterAbsorption: z.string().optional(),
     usage: z.string().optional(),
     colorHex: z.string().optional(),
+    // Tile-specific spec fields
+    dimensions: z.string().optional(),
+    simDimensions: z.string().optional(),
+    surface: z.string().optional(),
+    origin: z.string().optional(),
+    antiSlip: z.string().optional(),
+    patternCount: z.coerce.number().optional(),
+    colorName: z.string().optional(),
 })
 
 export async function createProduct(data: any) {
@@ -93,6 +101,13 @@ export async function createProduct(data: any) {
                 waterAbsorption: d.waterAbsorption || null,
                 usage: d.usage || null,
                 colorHex: d.colorHex || null,
+                dimensions: d.dimensions || null,
+                simDimensions: d.simDimensions || null,
+                surface: d.surface || null,
+                origin: d.origin || null,
+                antiSlip: d.antiSlip || null,
+                patternCount: d.patternCount || null,
+                colorName: d.colorName || null,
             }
         })
     } catch (error) {
@@ -145,6 +160,13 @@ export async function updateProduct(id: string, data: any) {
                 waterAbsorption: d.waterAbsorption || null,
                 usage: d.usage || null,
                 colorHex: d.colorHex || null,
+                dimensions: d.dimensions || null,
+                simDimensions: d.simDimensions || null,
+                surface: d.surface || null,
+                origin: d.origin || null,
+                antiSlip: d.antiSlip || null,
+                patternCount: d.patternCount || null,
+                colorName: d.colorName || null,
             }
         })
     } catch (error) {
@@ -223,17 +245,39 @@ export async function updateCollection(id: string, data: any) {
 
     revalidatePath('/admin/gach-op-lat')
     revalidatePath('/admin/collections')
-    redirect('/admin/collections')
+    // Don't redirect — caller handles navigation
 }
 
 export async function deleteCollection(id: string) {
     try {
+        // Unlink products from this collection first
+        await prisma.product.updateMany({
+            where: { collectionId: id },
+            data: { collectionId: null },
+        })
         await prisma.collection.delete({ where: { id } })
         revalidatePath('/admin/gach-op-lat')
         revalidatePath('/admin/collections')
         return { message: 'Đã xóa bộ sưu tập.' }
     } catch (error) {
         return { message: 'Lỗi database khi xóa bộ sưu tập.' }
+    }
+}
+
+// --- Spec Suggestions (for dropdown fields) ---
+export async function getSpecSuggestions(field: 'surface' | 'dimensions' | 'simDimensions' | 'origin' | 'antiSlip' | 'colorName') {
+    try {
+        const products = await prisma.product.findMany({
+            where: {
+                [field]: { not: null },
+            },
+            select: { [field]: true },
+            distinct: [field],
+            orderBy: { [field]: 'asc' },
+        })
+        return products.map((p: any) => p[field] as string).filter(Boolean)
+    } catch {
+        return []
     }
 }
 
@@ -304,5 +348,92 @@ export async function deleteBanner(id: string) {
         return { message: 'Đã xóa banner.' }
     } catch (error) {
         return { message: 'Lỗi database khi xóa banner.' }
+    }
+}
+
+// --- Product Types (Sub-categories) ---
+const productTypeSchema = z.object({
+    name: z.string().min(1, "Tên loại sản phẩm là bắt buộc"),
+    slug: z.string().min(1, "Slug là bắt buộc"),
+    image: z.string().optional(),
+    categoryId: z.string().min(1, "Danh mục bắt buộc"),
+})
+
+export async function createProductType(data: any) {
+    const validated = productTypeSchema.safeParse(data)
+    if (!validated.success) {
+        return { errors: validated.error.flatten().fieldErrors }
+    }
+
+    try {
+        await prisma.productType.create({
+            data: {
+                name: validated.data.name,
+                slug: validated.data.slug,
+                image: validated.data.image || null,
+                categoryId: validated.data.categoryId,
+            },
+        })
+    } catch (error: any) {
+        console.error("Database Error:", error)
+        if (error?.code === 'P2002') {
+            return { message: 'Slug đã tồn tại. Vui lòng chọn slug khác.' }
+        }
+        return { message: 'Lỗi database khi tạo loại sản phẩm.' }
+    }
+
+    revalidatePath('/admin/gach-op-lat')
+    return { success: true }
+}
+
+export async function updateProductType(id: string, data: any) {
+    const validated = productTypeSchema.safeParse(data)
+    if (!validated.success) {
+        return { errors: validated.error.flatten().fieldErrors }
+    }
+
+    try {
+        await prisma.productType.update({
+            where: { id },
+            data: {
+                name: validated.data.name,
+                slug: validated.data.slug,
+                image: validated.data.image || null,
+            },
+        })
+    } catch (error: any) {
+        console.error("Database Error:", error)
+        if (error?.code === 'P2002') {
+            return { message: 'Slug đã tồn tại.' }
+        }
+        return { message: 'Lỗi database khi cập nhật loại sản phẩm.' }
+    }
+
+    revalidatePath('/admin/gach-op-lat')
+    return { success: true }
+}
+
+export async function deleteProductType(id: string) {
+    try {
+        // Check if any products still assigned
+        const productCount = await prisma.product.count({
+            where: { productTypeId: id },
+        })
+
+        if (productCount > 0) {
+            return {
+                message: `Không thể xóa: còn ${productCount} sản phẩm thuộc loại này. Hãy chuyển hoặc xóa sản phẩm trước.`,
+            }
+        }
+
+        // Also delete related collections
+        await prisma.collection.deleteMany({ where: { productTypeId: id } })
+        await prisma.productType.delete({ where: { id } })
+
+        revalidatePath('/admin/gach-op-lat')
+        return { success: true, message: 'Đã xóa loại sản phẩm.' }
+    } catch (error) {
+        console.error("Database Error:", error)
+        return { message: 'Lỗi database khi xóa loại sản phẩm.' }
     }
 }

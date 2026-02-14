@@ -51,7 +51,7 @@ export default function TileProductActions({ productId }: TileProductActionsProp
                 <DropdownMenuContent align="end">
                     <DropdownMenuLabel>Thao tác</DropdownMenuLabel>
                     <DropdownMenuItem asChild>
-                        <Link href={`/admin/gach-op-lat/${productId}/edit`}>
+                        <Link href={`/admin/gach-op-lat/edit/${productId}`}>
                             <FileEdit className="mr-2 h-4 w-4" /> Sửa
                         </Link>
                     </DropdownMenuItem>

@@ -7,8 +7,9 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { QuoteStatusSelect, QuoteDeleteButton, StatusBadge } from "./quote-components";
-import { FileText } from "lucide-react";
+import { QuoteDetailRow } from "./quote-components";
+import { FileText, Clock, CheckCircle2, MessageSquare } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default async function QuotesPage() {
     const quotes = await prisma.quoteRequest.findMany({
@@ -24,29 +25,70 @@ export default async function QuotesPage() {
         },
     });
 
+    const totalQuotes = quotes.length;
     const pendingCount = quotes.filter((q) => q.status === "PENDING").length;
+    const contactedCount = quotes.filter((q) => q.status === "CONTACTED").length;
+    const doneCount = quotes.filter((q) => q.status === "DONE").length;
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 fade-in">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Quản lý Báo giá</h1>
-                    <p className="text-muted-foreground">
-                        {pendingCount > 0
-                            ? `${pendingCount} yêu cầu chờ xử lý`
-                            : "Không có yêu cầu mới"}
+                    <h2 className="text-3xl font-bold tracking-tight">Quản lý Báo giá</h2>
+                    <p className="text-sm text-muted-foreground">
+                        Yêu cầu báo giá từ khách hàng
                     </p>
                 </div>
             </div>
 
-            <div className="rounded-md border bg-white">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Tổng yêu cầu</CardTitle>
+                        <FileText className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{totalQuotes}</div>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Chờ xử lý</CardTitle>
+                        <Clock className="h-4 w-4 text-yellow-600" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold text-yellow-600">{pendingCount}</div>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Đã liên hệ</CardTitle>
+                        <MessageSquare className="h-4 w-4 text-blue-600" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold text-blue-600">{contactedCount}</div>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Hoàn tất</CardTitle>
+                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold text-green-600">{doneCount}</div>
+                    </CardContent>
+                </Card>
+            </div>
+
+            <div className="rounded-md border bg-white shadow-sm">
                 <Table>
                     <TableHeader>
-                        <TableRow>
-                            <TableHead>Khách hàng</TableHead>
-                            <TableHead>Liên hệ</TableHead>
-                            <TableHead>Sản phẩm</TableHead>
-                            <TableHead>Ngày gửi</TableHead>
+                        <TableRow className="bg-muted/50">
+                            <TableHead className="w-[50px]"></TableHead>
+                            <TableHead className="w-[200px]">Khách hàng</TableHead>
+                            <TableHead className="w-[250px]">Liên hệ</TableHead>
+                            <TableHead className="w-[150px]">Sản phẩm</TableHead>
+                            <TableHead className="w-[180px]">Thời gian</TableHead>
                             <TableHead>Trạng thái</TableHead>
                             <TableHead className="w-[60px]"></TableHead>
                         </TableRow>
@@ -55,58 +97,21 @@ export default async function QuotesPage() {
                         {quotes.length === 0 ? (
                             <TableRow>
                                 <TableCell
-                                    colSpan={6}
-                                    className="text-center h-32 text-muted-foreground"
+                                    colSpan={7}
+                                    className="text-center h-[300px]"
                                 >
-                                    <div className="flex flex-col items-center gap-2">
-                                        <FileText className="h-8 w-8 text-gray-300" />
-                                        Chưa có yêu cầu báo giá nào.
+                                    <div className="flex flex-col items-center justify-center space-y-2">
+                                        <div className="p-4 rounded-full bg-muted">
+                                            <FileText className="h-8 w-8 text-muted-foreground" />
+                                        </div>
+                                        <p className="font-medium text-lg">Chưa có yêu cầu nào</p>
+                                        <p className="text-sm text-muted-foreground">Yêu cầu báo giá từ khách hàng sẽ xuất hiện ở đây</p>
                                     </div>
                                 </TableCell>
                             </TableRow>
                         ) : (
                             quotes.map((quote) => (
-                                <TableRow key={quote.id}>
-                                    <TableCell>
-                                        <p className="font-medium">{quote.customerName}</p>
-                                    </TableCell>
-                                    <TableCell>
-                                        <p className="text-sm">{quote.customerPhone}</p>
-                                        {quote.customerEmail && (
-                                            <p className="text-xs text-muted-foreground">
-                                                {quote.customerEmail}
-                                            </p>
-                                        )}
-                                    </TableCell>
-                                    <TableCell>
-                                        {quote.items.map((item) => (
-                                            <div key={item.id} className="text-sm">
-                                                <span className="font-medium">{item.product.sku || "—"}</span>
-                                                <span className="text-muted-foreground ml-1">
-                                                    {item.product.name}
-                                                </span>
-                                            </div>
-                                        ))}
-                                    </TableCell>
-                                    <TableCell className="text-sm text-muted-foreground">
-                                        {new Date(quote.createdAt).toLocaleDateString("vi-VN", {
-                                            day: "2-digit",
-                                            month: "2-digit",
-                                            year: "numeric",
-                                            hour: "2-digit",
-                                            minute: "2-digit",
-                                        })}
-                                    </TableCell>
-                                    <TableCell>
-                                        <QuoteStatusSelect
-                                            id={quote.id}
-                                            currentStatus={quote.status}
-                                        />
-                                    </TableCell>
-                                    <TableCell>
-                                        <QuoteDeleteButton id={quote.id} />
-                                    </TableCell>
-                                </TableRow>
+                                <QuoteDetailRow key={quote.id} quote={quote} />
                             ))
                         )}
                     </TableBody>

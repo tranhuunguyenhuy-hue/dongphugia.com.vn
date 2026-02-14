@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useState } from "react"
 import { cn } from "@/lib/utils"
 import {
     LayoutDashboard,
@@ -13,8 +14,13 @@ import {
     FileText,
     LogOut,
     Package2,
+    Image,
+    FolderOpen,
+    Users,
+    ChevronLeft,
+    ChevronRight,
+    ClipboardList,
 } from "lucide-react"
-import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import {
     Tooltip,
@@ -39,245 +45,259 @@ interface SidebarNavProps {
 
 const productCategories = [
     { label: "Gạch ốp lát", href: "/admin/gach-op-lat", icon: BrickWall, countKey: "tiles" as const, enabled: true },
-    { label: "TB vệ sinh", href: "/admin/thiet-bi-ve-sinh", icon: ShowerHead, countKey: "sanitary" as const, enabled: false },
-    { label: "TB nhà bếp", href: "/admin/thiet-bi-nha-bep", icon: CookingPot, countKey: "kitchen" as const, enabled: false },
-    { label: "TB ngành nước", href: "/admin/thiet-bi-nghanh-nuoc", icon: Droplets, countKey: "water" as const, enabled: false },
-    { label: "Sàn gỗ/nhựa", href: "/admin/san-go-san-nhua", icon: TreePine, countKey: "flooring" as const, enabled: false },
+    { label: "TB vệ sinh", href: "/admin/thiet-bi-ve-sinh", icon: ShowerHead, countKey: "sanitary" as const, enabled: true },
+    { label: "TB nhà bếp", href: "/admin/thiet-bi-nha-bep", icon: CookingPot, countKey: "kitchen" as const, enabled: true },
+    { label: "TB ngành nước", href: "/admin/thiet-bi-nghanh-nuoc", icon: Droplets, countKey: "water" as const, enabled: true },
+    { label: "Sàn gỗ/nhựa", href: "/admin/san-go-san-nhua", icon: TreePine, countKey: "flooring" as const, enabled: true },
 ]
+
+const contentLinks = [
+    { label: "Banner", href: "/admin/banners", icon: Image },
+    { label: "Bài viết", href: "/admin/bai-viet", icon: FileText },
+    { label: "Dự án", href: "/admin/du-an", icon: FolderOpen },
+    { label: "Đối tác", href: "/admin/doi-tac", icon: Users },
+]
+
+function NavItem({
+    href,
+    icon: Icon,
+    label,
+    isActive,
+    badge,
+    badgeVariant = "secondary",
+    collapsed,
+    disabled = false,
+    disabledTooltip = "Sắp có",
+}: {
+    href: string
+    icon: any
+    label: string
+    isActive: boolean
+    badge?: number
+    badgeVariant?: "secondary" | "destructive"
+    collapsed: boolean
+    disabled?: boolean
+    disabledTooltip?: string
+}) {
+    const content = (
+        <div
+            className={cn(
+                "group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                collapsed && "justify-center px-2",
+                disabled
+                    ? "text-muted-foreground/40 cursor-not-allowed"
+                    : isActive
+                        ? "bg-primary/10 text-primary active-indicator"
+                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+            )}
+        >
+            <Icon className={cn(
+                "shrink-0 transition-colors duration-200",
+                collapsed ? "h-5 w-5" : "h-4 w-4",
+                isActive && !disabled && "text-primary",
+            )} />
+            {!collapsed && (
+                <>
+                    <span className="flex-1 truncate">{label}</span>
+                    {badge !== undefined && badge > 0 && (
+                        <Badge
+                            variant={badgeVariant}
+                            className={cn(
+                                "h-5 min-w-[20px] px-1.5 text-[10px] font-semibold tabular-nums",
+                                badgeVariant === "destructive" && "badge-pulse"
+                            )}
+                        >
+                            {badge}
+                        </Badge>
+                    )}
+                </>
+            )}
+            {collapsed && badge !== undefined && badge > 0 && (
+                <span className={cn(
+                    "absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-bold text-white",
+                    badgeVariant === "destructive" ? "bg-destructive badge-pulse" : "bg-primary"
+                )}>
+                    {badge > 9 ? "9+" : badge}
+                </span>
+            )}
+        </div>
+    )
+
+    if (disabled) {
+        return (
+            <Tooltip>
+                <TooltipTrigger asChild>{content}</TooltipTrigger>
+                <TooltipContent side="right" sideOffset={collapsed ? 12 : 8}>
+                    <p>{disabledTooltip}</p>
+                </TooltipContent>
+            </Tooltip>
+        )
+    }
+
+    if (collapsed) {
+        return (
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Link href={href}>{content}</Link>
+                </TooltipTrigger>
+                <TooltipContent side="right" sideOffset={12}>
+                    <p>{label}</p>
+                </TooltipContent>
+            </Tooltip>
+        )
+    }
+
+    return <Link href={href}>{content}</Link>
+}
+
+function SectionLabel({ label, collapsed }: { label: string; collapsed: boolean }) {
+    if (collapsed) {
+        return <div className="mx-auto my-2 h-px w-6 bg-border" />
+    }
+    return (
+        <p className="mb-1.5 px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+            {label}
+        </p>
+    )
+}
 
 export default function SidebarNav({ counts, userEmail }: SidebarNavProps) {
     const pathname = usePathname()
+    const [collapsed, setCollapsed] = useState(false)
 
     return (
         <TooltipProvider delayDuration={0}>
-            <aside className="fixed inset-y-0 left-0 z-10 hidden w-56 flex-col border-r bg-background sm:flex">
-                {/* Logo */}
-                <div className="flex h-14 items-center border-b px-4">
-                    <Link href="/admin" className="flex items-center gap-2">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <aside
+                className={cn(
+                    "fixed inset-y-0 left-0 z-10 hidden flex-col border-r bg-white sm:flex sidebar-transition",
+                    collapsed ? "w-[68px]" : "w-60"
+                )}
+            >
+                {/* Logo + Collapse Toggle */}
+                <div className={cn(
+                    "flex h-16 items-center border-b px-4",
+                    collapsed && "justify-center px-2"
+                )}>
+                    <Link href="/admin" className="flex items-center gap-2.5 min-w-0">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-green-500 to-green-700 text-white shadow-sm">
                             <Package2 className="h-4 w-4" />
                         </div>
-                        <span className="font-semibold text-sm">Đông Phú Gia</span>
+                        {!collapsed && (
+                            <div className="min-w-0">
+                                <p className="text-sm font-bold text-foreground truncate">Đông Phú Gia</p>
+                                <p className="text-[10px] text-muted-foreground -mt-0.5">Admin Panel</p>
+                            </div>
+                        )}
                     </Link>
                 </div>
 
                 {/* Navigation */}
-                <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
-                    {/* Tổng quan */}
-                    <div>
-                        <p className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                            Tổng quan
-                        </p>
-                        <Link
+                <nav className="flex-1 overflow-y-auto px-2 py-4 space-y-5">
+                    {/* Dashboard */}
+                    <div className="space-y-1">
+                        <SectionLabel label="Tổng quan" collapsed={collapsed} />
+                        <NavItem
                             href="/admin"
-                            className={cn(
-                                "flex items-center gap-3 rounded-lg px-2 py-2 text-sm transition-colors",
-                                pathname === "/admin"
-                                    ? "bg-accent text-accent-foreground font-medium"
-                                    : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
-                            )}
-                        >
-                            <LayoutDashboard className="h-4 w-4" />
-                            Dashboard
-                        </Link>
+                            icon={LayoutDashboard}
+                            label="Dashboard"
+                            isActive={pathname === "/admin"}
+                            collapsed={collapsed}
+                        />
                     </div>
 
-                    <Separator />
-
-                    {/* Sản phẩm */}
-                    <div>
-                        <p className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                            Sản phẩm
-                        </p>
-                        <div className="space-y-1">
-                            {productCategories.map((item) => {
-                                const isActive = pathname.startsWith(item.href)
-                                const Icon = item.icon
-                                const count = counts[item.countKey]
-
-                                if (!item.enabled) {
-                                    return (
-                                        <Tooltip key={item.href}>
-                                            <TooltipTrigger asChild>
-                                                <div className="flex items-center gap-3 rounded-lg px-2 py-2 text-sm text-muted-foreground/40 cursor-not-allowed">
-                                                    <Icon className="h-4 w-4" />
-                                                    <span className="flex-1">{item.label}</span>
-                                                    <span className="text-xs">—</span>
-                                                </div>
-                                            </TooltipTrigger>
-                                            <TooltipContent side="right">
-                                                <p>Sắp có</p>
-                                            </TooltipContent>
-                                        </Tooltip>
-                                    )
-                                }
-
-                                return (
-                                    <Link
-                                        key={item.href}
-                                        href={item.href}
-                                        className={cn(
-                                            "flex items-center gap-3 rounded-lg px-2 py-2 text-sm transition-colors",
-                                            isActive
-                                                ? "bg-accent text-accent-foreground font-medium"
-                                                : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
-                                        )}
-                                    >
-                                        <Icon className="h-4 w-4" />
-                                        <span className="flex-1">{item.label}</span>
-                                        {count > 0 && (
-                                            <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
-                                                {count}
-                                            </Badge>
-                                        )}
-                                    </Link>
-                                )
-                            })}
-                        </div>
+                    {/* Product Categories */}
+                    <div className="space-y-1">
+                        <SectionLabel label="Sản phẩm" collapsed={collapsed} />
+                        {productCategories.map((item) => (
+                            <NavItem
+                                key={item.href}
+                                href={item.href}
+                                icon={item.icon}
+                                label={item.label}
+                                isActive={pathname.startsWith(item.href)}
+                                badge={counts[item.countKey]}
+                                collapsed={collapsed}
+                                disabled={!item.enabled}
+                            />
+                        ))}
                     </div>
 
-                    <Separator />
-
-                    {/* Quản lý nội dung */}
-                    <div>
-                        <p className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                            Quản lý nội dung
-                        </p>
-                        <div className="space-y-1">
-                            <Link
-                                href="/admin/banners"
-                                className={cn(
-                                    "flex items-center gap-3 rounded-lg px-2 py-2 text-sm transition-colors",
-                                    pathname.startsWith("/admin/banners")
-                                        ? "bg-accent text-accent-foreground font-medium"
-                                        : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
-                                )}
-                            >
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    className="h-4 w-4"
-                                >
-                                    <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
-                                    <circle cx="9" cy="9" r="2" />
-                                    <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
-                                </svg>
-                                Banner
-                            </Link>
-
-                            <Link
-                                href="/admin/bai-viet"
-                                className={cn(
-                                    "flex items-center gap-3 rounded-lg px-2 py-2 text-sm transition-colors",
-                                    pathname.startsWith("/admin/bai-viet")
-                                        ? "bg-accent text-accent-foreground font-medium"
-                                        : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
-                                )}
-                            >
-                                <FileText className="h-4 w-4" />
-                                Bài viết
-                            </Link>
-
-                            <Link
-                                href="/admin/du-an"
-                                className={cn(
-                                    "flex items-center gap-3 rounded-lg px-2 py-2 text-sm transition-colors",
-                                    pathname.startsWith("/admin/du-an")
-                                        ? "bg-accent text-accent-foreground font-medium"
-                                        : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
-                                )}
-                            >
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    className="h-4 w-4"
-                                >
-                                    <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z" />
-                                </svg>
-                                Dự án
-                            </Link>
-                            <Link
-                                href="/admin/doi-tac"
-                                className={cn(
-                                    "flex items-center gap-3 rounded-lg px-2 py-2 text-sm transition-colors",
-                                    pathname.startsWith("/admin/doi-tac")
-                                        ? "bg-accent text-accent-foreground font-medium"
-                                        : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
-                                )}
-                            >
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    className="h-4 w-4"
-                                >
-                                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                                    <circle cx="9" cy="7" r="4" />
-                                    <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-                                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                                </svg>
-                                Đối tác
-                            </Link>
-                        </div>
+                    {/* Content Management */}
+                    <div className="space-y-1">
+                        <SectionLabel label="Nội dung" collapsed={collapsed} />
+                        {contentLinks.map((item) => (
+                            <NavItem
+                                key={item.href}
+                                href={item.href}
+                                icon={item.icon}
+                                label={item.label}
+                                isActive={pathname.startsWith(item.href)}
+                                collapsed={collapsed}
+                            />
+                        ))}
                     </div>
 
-                    <Separator />
-                    <div>
-                        <p className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                            Hệ thống
-                        </p>
-                        <Link
+                    {/* System */}
+                    <div className="space-y-1">
+                        <SectionLabel label="Hệ thống" collapsed={collapsed} />
+                        <NavItem
                             href="/admin/bao-gia"
-                            className={cn(
-                                "flex items-center gap-3 rounded-lg px-2 py-2 text-sm transition-colors",
-                                pathname.startsWith("/admin/bao-gia")
-                                    ? "bg-accent text-accent-foreground font-medium"
-                                    : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
-                            )}
-                        >
-                            <FileText className="h-4 w-4" />
-                            <span className="flex-1">Báo giá</span>
-                            {counts.quotes > 0 && (
-                                <Badge variant="destructive" className="h-5 px-1.5 text-[10px]">
-                                    {counts.quotes}
-                                </Badge>
-                            )}
-                        </Link>
+                            icon={ClipboardList}
+                            label="Báo giá"
+                            isActive={pathname.startsWith("/admin/bao-gia")}
+                            badge={counts.quotes}
+                            badgeVariant="destructive"
+                            collapsed={collapsed}
+                        />
                     </div>
                 </nav>
 
-                {/* User section */}
-                <div className="border-t p-3">
-                    <div className="flex items-center gap-2">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-xs font-medium">
+                {/* User section + Collapse toggle */}
+                <div className="border-t">
+                    {/* User */}
+                    <div className={cn(
+                        "flex items-center gap-2.5 p-3",
+                        collapsed && "justify-center p-2"
+                    )}>
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-green-100 to-green-200 text-sm font-semibold text-green-700">
                             {userEmail.charAt(0).toUpperCase()}
                         </div>
-                        <div className="flex-1 min-w-0">
-                            <p className="text-xs font-medium truncate">{userEmail}</p>
-                        </div>
-                        <form action="/api/auth/signout" method="POST">
-                            <button
-                                type="submit"
-                                className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-                                title="Đăng xuất"
-                            >
-                                <LogOut className="h-4 w-4" />
-                            </button>
-                        </form>
+                        {!collapsed && (
+                            <div className="flex-1 min-w-0">
+                                <p className="text-xs font-semibold truncate text-foreground">{userEmail}</p>
+                                <p className="text-[10px] text-muted-foreground">Administrator</p>
+                            </div>
+                        )}
+                        {!collapsed && (
+                            <form action="/api/auth/signout" method="POST">
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <button
+                                            type="submit"
+                                            className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-red-50 hover:text-red-600 transition-colors press-effect"
+                                            title="Đăng xuất"
+                                        >
+                                            <LogOut className="h-4 w-4" />
+                                        </button>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top">Đăng xuất</TooltipContent>
+                                </Tooltip>
+                            </form>
+                        )}
+                    </div>
+
+                    {/* Collapse Toggle */}
+                    <div className={cn(
+                        "flex border-t p-2",
+                        collapsed ? "justify-center" : "justify-end px-3"
+                    )}>
+                        <button
+                            onClick={() => setCollapsed(!collapsed)}
+                            className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-all duration-200 press-effect"
+                            title={collapsed ? "Mở rộng" : "Thu gọn"}
+                        >
+                            {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+                        </button>
                     </div>
                 </div>
             </aside>

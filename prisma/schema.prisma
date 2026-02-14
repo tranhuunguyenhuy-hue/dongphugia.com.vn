@@ -27,19 +27,23 @@ model Category {
   parent      Category? @relation("CategoryHierarchy", fields: [parentId], references: [id])
   children    Category[]    @relation("CategoryHierarchy")
   productTypes ProductType[]
+  brands      Brand[]
   products    Product[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 }
 
 model Brand {
-  id        String    @id @default(cuid())
-  name      String
-  slug      String    @unique
-  logo      String?
-  products  Product[]
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id         String    @id @default(cuid())
+  name       String
+  slug       String    @unique
+  logo       String?
+  // Optional: Brand belongs to specific category (for TBVS, Kitchen, etc.)
+  categoryId String?   
+  category   Category? @relation(fields: [categoryId], references: [id])
+  products   Product[]
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 }
 
 model ProductType {
@@ -49,8 +53,9 @@ model ProductType {
   image       String?      // Thumbnail image for sub-category
   categoryId  String
   category    Category     @relation(fields: [categoryId], references: [id])
-  products    Product[]
-  collections Collection[]
+  products      Product[]
+  collections   Collection[]
+  productGroups ProductGroup[]
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 }
@@ -60,6 +65,16 @@ model Collection {
   name          String      // "INSIDE ART", "MOSAIC"
   slug          String      @unique
   image         String?     // Thumbnail for carousel
+  productTypeId String
+  productType   ProductType @relation(fields: [productTypeId], references: [id])
+  products      Product[]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+model ProductGroup {
+  id            String      @id @default(cuid())
+  name          String      // "Bồn cầu 1 khối", "Bồn cầu treo"...
+  slug          String      @unique
   productTypeId String
   productType   ProductType @relation(fields: [productTypeId], references: [id])
   products      Product[]
@@ -112,6 +127,10 @@ model Product {
   patternCount  Int?
   colorName     String?
   
+  shortDescription String? // "Vòi chậu rửa 3 lỗ"
+  productGroupId   String?
+  productGroup     ProductGroup? @relation(fields: [productGroupId], references: [id])
+
   quoteItems    QuoteItem[]
 }
 

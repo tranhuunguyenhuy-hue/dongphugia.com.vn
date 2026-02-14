@@ -1,56 +1,160 @@
-@import "tailwindcss";
+@import "tailwindcss" source(none);
+@source "..";
 
 @theme {
   /* Fonts */
   --font-sans: var(--font-inter);
 
-  /* Colors - Based on Figma */
+  /* ============================================
+   * DESIGN TOKENS — Đông Phú Gia Admin Pro Max
+   * Green Brand + Professional Neutral Palette
+   * ============================================ */
+
+  /* Background & Foreground */
   --color-background: #ffffff;
-  --color-foreground: #111827;
-  /* Gray 900 */
+  --color-foreground: #0f172a;
+  /* Slate 900 — sharper contrast */
 
+  /* Cards */
   --color-card: #ffffff;
-  --color-card-foreground: #111827;
+  --color-card-foreground: #0f172a;
 
+  /* Popover */
   --color-popover: #ffffff;
-  --color-popover-foreground: #111827;
+  --color-popover-foreground: #0f172a;
 
-  --color-primary: #15803d;
-  /* Green 700 - Brand */
+  /* Primary — Green Brand (vibrant but professional) */
+  --color-primary: #16a34a;
+  /* Green 600 — slightly brighter */
   --color-primary-foreground: #ffffff;
 
+  /* Secondary */
   --color-secondary: #f0fdf4;
   /* Green 50 */
   --color-secondary-foreground: #14532d;
   /* Green 900 */
 
-  --color-muted: #f9fafb;
-  /* Gray 50 */
-  --color-muted-foreground: #6b7280;
-  /* Gray 500 */
+  /* Muted */
+  --color-muted: #f8fafc;
+  /* Slate 50 — warmer neutral */
+  --color-muted-foreground: #64748b;
+  /* Slate 500 */
 
+  /* Accent */
   --color-accent: #f0fdf4;
-  /* Green 50 for hover */
+  /* Green 50 */
   --color-accent-foreground: #15803d;
 
+  /* Destructive */
   --color-destructive: #ef4444;
   --color-destructive-foreground: #ffffff;
 
-  --color-border: #e5e7eb;
-  /* Gray 200 */
-  --color-input: #e5e7eb;
-  --color-ring: #15803d;
-  /* Focus ring uses brand color */
+  /* Borders & Input */
+  --color-border: #e2e8f0;
+  /* Slate 200 */
+  --color-input: #e2e8f0;
+  --color-ring: #16a34a;
+
+  /* Sidebar-specific tokens */
+  --color-sidebar: #ffffff;
+  --color-sidebar-foreground: #334155;
+  /* Slate 700 */
+  --color-sidebar-border: #f1f5f9;
+  /* Slate 100 */
+  --color-sidebar-hover: #f0fdf4;
+  /* Green 50 */
+  --color-sidebar-active: #dcfce7;
+  /* Green 100 */
+  --color-sidebar-active-foreground: #15803d;
+  /* Green 700 */
+
+  /* Stat Card Gradients (unique per card) */
+  --color-stat-blue: #3b82f6;
+  --color-stat-orange: #f97316;
+  --color-stat-emerald: #10b981;
+  --color-stat-purple: #8b5cf6;
+  --color-stat-rose: #f43f5e;
+  --color-stat-cyan: #06b6d4;
+  --color-stat-amber: #f59e0b;
 
   /* Radius */
   --radius: 0.5rem;
-  /* 8px default, can be overriden */
   --radius-lg: 0.75rem;
-  /* 12px - radius-3 from Figma */
-  --radius-md: 0.5rem;
-  --radius-sm: 0.25rem;
+  --radius-md: calc(0.75rem - 2px);
+  --radius-sm: calc(0.75rem - 4px);
+
+  /* Animations */
+  --animate-fade-in: fade-in 0.3s ease-out;
+  --animate-slide-in: slide-in 0.3s ease-out;
+  --animate-scale-in: scale-in 0.2s ease-out;
+  --animate-shimmer: shimmer 2s infinite;
+  --animate-pulse-soft: pulse-soft 2s infinite;
 }
 
+/* ============================================
+ * KEYFRAMES — Micro-interactions
+ * ============================================ */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes pulse-soft {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* ============================================
+ * BASE STYLES
+ * ============================================ */
 @layer base {
   * {
     border-color: var(--color-border);
@@ -59,5 +163,105 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* ============================================
+ * UTILITY CLASSES — Pro Max Interactions
+ * ============================================ */
+@layer utilities {
+
+  /* Page entrance */
+  .animate-page-enter {
+    animation: var(--animate-fade-in);
+  }
+
+  /* Card lift on hover */
+  .card-hover {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px -5px rgb(0 0 0 / 0.08), 0 4px 10px -6px rgb(0 0 0 / 0.04);
+  }
+
+  /* Active press effect for buttons */
+  .press-effect:active {
+    transform: scale(0.97);
+  }
+
+  /* Gradient stat cards */
+  .stat-gradient-blue {
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  }
+
+  .stat-gradient-orange {
+    background: linear-gradient(135deg, #fff7ed 0%, #fed7aa 100%);
+  }
+
+  .stat-gradient-emerald {
+    background: linear-gradient(135deg, #ecfdf5 0%, #a7f3d0 100%);
+  }
+
+  .stat-gradient-purple {
+    background: linear-gradient(135deg, #f5f3ff 0%, #ddd6fe 100%);
+  }
+
+  .stat-gradient-rose {
+    background: linear-gradient(135deg, #fff1f2 0%, #fecdd3 100%);
+  }
+
+  .stat-gradient-cyan {
+    background: linear-gradient(135deg, #ecfeff 0%, #a5f3fc 100%);
+  }
+
+  .stat-gradient-amber {
+    background: linear-gradient(135deg, #fffbeb 0%, #fde68a 100%);
+  }
+
+  /* Sidebar transition */
+  .sidebar-transition {
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), padding 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Table row highlight */
+  .table-row-hover {
+    transition: background-color 0.15s ease;
+  }
+
+  .table-row-hover:hover {
+    background-color: var(--color-muted);
+  }
+
+  /* Shimmer skeleton */
+  .skeleton-shimmer {
+    background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+    background-size: 200% 100%;
+    animation: var(--animate-shimmer);
+  }
+
+  /* Badge pulse for pending items */
+  .badge-pulse {
+    animation: var(--animate-pulse-soft);
+  }
+
+  /* Active left indicator */
+  .active-indicator {
+    position: relative;
+  }
+
+  .active-indicator::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 4px;
+    bottom: 4px;
+    width: 3px;
+    border-radius: 0 4px 4px 0;
+    background-color: var(--color-primary);
   }
 }

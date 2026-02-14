@@ -2,6 +2,7 @@ import { auth } from "@/auth"
 import { redirect } from "next/navigation"
 import prisma from "@/lib/prisma"
 import SidebarNav from "./sidebar-nav"
+import AdminHeader from "./admin-header"
 
 export default async function AdminLayout({
     children,
@@ -33,13 +34,15 @@ export default async function AdminLayout({
     ])
 
     return (
-        <div className="flex min-h-screen w-full bg-muted/40">
+        <div className="flex min-h-screen w-full bg-slate-50/50">
             <SidebarNav
                 counts={{ tiles, sanitary, kitchen, water, flooring, quotes }}
                 userEmail={session.user.email || "admin"}
             />
-            <div className="flex flex-1 flex-col sm:pl-56">
-                <main className="flex-1 p-4 sm:p-6">
+            {/* Main content — uses sm:pl-60 for expanded sidebar, transitions handled by JS */}
+            <div className="flex flex-1 flex-col sm:pl-60 sidebar-transition">
+                <AdminHeader />
+                <main className="flex-1 p-4 sm:p-6 animate-page-enter">
                     {children}
                 </main>
             </div>
