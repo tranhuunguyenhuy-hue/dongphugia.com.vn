@@ -6,6 +6,8 @@ import { Upload, X, Loader2, ImageIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
+// Import Supabase client
+import { supabase } from "@/lib/supabase"
 
 interface ImageUploaderProps {
     value: string | string[]
@@ -14,6 +16,7 @@ interface ImageUploaderProps {
     maxFiles?: number
     label?: string
     className?: string
+    folder?: string // Optional folder path in bucket
 }
 
 export function ImageUploader({
@@ -23,6 +26,7 @@ export function ImageUploader({
     maxFiles = 10,
     label = "Upload ảnh",
     className,
+    folder = "products",
 }: ImageUploaderProps) {
     const [uploading, setUploading] = useState(false)
     const [dragOver, setDragOver] = useState(false)
@@ -36,27 +40,42 @@ export function ImageUploader({
             : []
 
     const uploadFile = useCallback(async (file: File): Promise<string | null> => {
-        const formData = new FormData()
-        formData.append("file", file)
-
         try {
-            const res = await fetch("/api/upload", {
-                method: "POST",
-                body: formData,
-            })
-
-            if (!res.ok) {
-                const data = await res.json()
-                throw new Error(data.error || "Upload failed")
+            // Validate file size (e.g. 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                toast.error(`File ${file.name} quá lớn (Max 5MB)`)
+                return null
             }
 
-            const data = await res.json()
-            return data.url
+            // Generate unique path
+            const fileExt = file.name.split('.').pop()
+            const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
+            const filePath = `${folder}/${fileName}`
+
+            // Upload to Supabase
+            const { error: uploadError } = await supabase.storage
+                .from('images') // Bucket name
+                .upload(filePath, file, {
+                    cacheControl: '3600',
+                    upsert: false
+                })
+
+            if (uploadError) {
+                throw uploadError
+            }
+
+            // Get Public URL
+            const { data } = supabase.storage
+                .from('images')
+                .getPublicUrl(filePath)
+
+            return data.publicUrl
         } catch (err: any) {
-            toast.error(err.message || "Upload failed")
+            console.error("Supabase Upload Error:", err)
+            toast.error(`Lỗi upload ${file.name}: ${err.message}`)
             return null
         }
-    }, [])
+    }, [folder])
 
     const handleFiles = useCallback(
         async (files: FileList | File[]) => {
@@ -70,6 +89,7 @@ export function ImageUploader({
 
             setUploading(true)
 
+            // Upload all files in parallel
             const uploadPromises = fileArray.map((file) => uploadFile(file))
             const urls = await Promise.all(uploadPromises)
             const successUrls = urls.filter((url): url is string => url !== null)
@@ -78,10 +98,11 @@ export function ImageUploader({
                 if (multiple) {
                     onChange([...images, ...successUrls])
                 } else {
+                    // Start replacing
                     onChange(successUrls[0])
                 }
                 toast.success(
-                    `Đã upload ${successUrls.length} ảnh`
+                    `Đã upload ${successUrls.length} ảnh lên Supabase`
                 )
             }
 
@@ -180,7 +201,7 @@ export function ImageUploader({
                     {uploading ? (
                         <div className="flex flex-col items-center gap-2 text-muted-foreground">
                             <Loader2 className="h-8 w-8 animate-spin" />
-                            <p className="text-sm">Đang upload...</p>
+                            <p className="text-sm">Đang upload lên Supabase...</p>
                         </div>
                     ) : (
                         <div className="flex flex-col items-center gap-2 text-muted-foreground">

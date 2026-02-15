@@ -11,6 +11,7 @@ import { toast } from "sonner"
 import Image from "next/image"
 import Link from "next/link"
 import { ChevronLeft } from "lucide-react"
+import { ImageUploader } from "@/components/ui/image-uploader"
 
 export default function PartnerForm({ partner }: { partner?: any }) {
     const [errors, setErrors] = useState<Record<string, string[]>>({})
@@ -65,21 +66,14 @@ export default function PartnerForm({ partner }: { partner?: any }) {
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="logo">Logo URL</Label>
-                        <Input
-                            id="logo"
-                            name="logo"
-                            defaultValue={partner?.logo}
-                            placeholder="https://..."
-                            required
-                            onChange={(e) => setLogoUrl(e.target.value)}
+                        <Label htmlFor="logo">Logo</Label>
+                        <ImageUploader
+                            value={logoUrl}
+                            onChange={(url) => setLogoUrl(url as string)}
+                            folder="partners"
                         />
+                        <input type="hidden" name="logo" value={logoUrl} />
                         {errors.logo && <p className="text-sm text-red-500">{errors.logo[0]}</p>}
-                        {logoUrl && (
-                            <div className="relative h-20 w-40 mt-2 rounded-lg overflow-hidden border bg-muted">
-                                <Image src={logoUrl} alt="Preview" fill className="object-contain" />
-                            </div>
-                        )}
                     </div>
                 </CardContent>
             </Card>

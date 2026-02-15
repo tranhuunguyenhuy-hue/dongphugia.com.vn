@@ -12,6 +12,7 @@ import { toast } from "sonner"
 import Image from "next/image"
 import Link from "next/link"
 import { ChevronLeft } from "lucide-react"
+import { ImageUploader } from "@/components/ui/image-uploader"
 
 export default function BannerForm({ banner }: { banner?: any }) {
     const [errors, setErrors] = useState<Record<string, string[]>>({})
@@ -65,20 +66,14 @@ export default function BannerForm({ banner }: { banner?: any }) {
 
                     <div className="space-y-2">
                         <Label htmlFor="image">URL Hình ảnh</Label>
-                        <Input
-                            id="image"
-                            name="image"
-                            defaultValue={banner?.image}
-                            placeholder="https://..."
-                            required
-                            onChange={(e) => setImageUrl(e.target.value)}
+                        <Label htmlFor="image">Hình ảnh</Label>
+                        <ImageUploader
+                            value={imageUrl}
+                            onChange={(url) => setImageUrl(url as string)}
+                            folder="banners"
                         />
+                        <input type="hidden" name="image" value={imageUrl} />
                         {errors.image && <p className="text-sm text-red-500">{errors.image[0]}</p>}
-                        {imageUrl && (
-                            <div className="relative aspect-video w-full mt-2 rounded-lg overflow-hidden border">
-                                <Image src={imageUrl} alt="Preview" fill className="object-cover" />
-                            </div>
-                        )}
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">

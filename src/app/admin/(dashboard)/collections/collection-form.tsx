@@ -14,6 +14,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { createCollection, updateCollection } from "@/lib/actions"
 import { ProductType, Collection } from "@prisma/client"
+import { ImageUploader } from "@/components/ui/image-uploader"
 
 const collectionSchema = z.object({
     name: z.string().min(2, "Tên phải có ít nhất 2 ký tự"),
@@ -126,7 +127,11 @@ export default function CollectionForm({ productTypes, initialData }: Collection
                                 <FormItem>
                                     <FormLabel>Ảnh đại diện (URL)</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="https://example.com/image.jpg" {...field} />
+                                        <ImageUploader
+                                            value={field.value || ""}
+                                            onChange={field.onChange}
+                                            folder="collections"
+                                        />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>

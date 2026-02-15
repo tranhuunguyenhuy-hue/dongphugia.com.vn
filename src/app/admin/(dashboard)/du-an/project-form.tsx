@@ -13,6 +13,7 @@ import Link from "next/link"
 import { ChevronLeft, X } from "lucide-react"
 import { Textarea } from "@/components/ui/textarea"
 import { slugify } from "@/lib/utils"
+import { ImageUploader } from "@/components/ui/image-uploader"
 
 export default function ProjectForm({ project }: { project?: any }) {
     const [errors, setErrors] = useState<Record<string, string[]>>({})
@@ -126,35 +127,13 @@ export default function ProjectForm({ project }: { project?: any }) {
                             <CardTitle>Hình ảnh ({images.length})</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div className="flex gap-2">
-                                <Input
-                                    placeholder="https://..."
-                                    value={imageUrl}
-                                    onChange={(e) => setImageUrl(e.target.value)}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter') {
-                                            e.preventDefault()
-                                            addImage()
-                                        }
-                                    }}
-                                />
-                                <Button type="button" onClick={addImage}>Thêm</Button>
-                            </div>
-
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                                {images.map((img, i) => (
-                                    <div key={i} className="relative aspect-video rounded-lg overflow-hidden border group">
-                                        <Image src={img} alt={`Image ${i}`} fill className="object-cover" />
-                                        <button
-                                            type="button"
-                                            onClick={() => removeImage(i)}
-                                            className="absolute top-2 right-2 bg-red-600 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                                        >
-                                            <X className="h-3 w-3" />
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
+                            <ImageUploader
+                                value={images}
+                                onChange={(urls) => setImages(Array.isArray(urls) ? urls : [urls])}
+                                multiple
+                                maxFiles={10}
+                                folder="projects"
+                            />
                         </CardContent>
                     </Card>
                 </div>

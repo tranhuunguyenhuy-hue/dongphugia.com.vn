@@ -14,6 +14,7 @@ import Link from "next/link"
 import { ChevronLeft } from "lucide-react"
 import { Textarea } from "@/components/ui/textarea"
 import { slugify } from "@/lib/utils"
+import { ImageUploader } from "@/components/ui/image-uploader"
 
 export default function PostForm({ post }: { post?: any }) {
     const [errors, setErrors] = useState<Record<string, string[]>>({})
@@ -118,19 +119,13 @@ export default function PostForm({ post }: { post?: any }) {
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="space-y-2">
-                                <Label htmlFor="thumbnail">Ảnh đại diện (URL)</Label>
-                                <Input
-                                    id="thumbnail"
-                                    name="thumbnail"
-                                    defaultValue={thumbnailUrl}
-                                    placeholder="https://..."
-                                    onChange={(e) => setThumbnailUrl(e.target.value)}
+                                <Label htmlFor="thumbnail">Ảnh đại diện</Label>
+                                <ImageUploader
+                                    value={thumbnailUrl}
+                                    onChange={(url) => setThumbnailUrl(url as string)}
+                                    folder="posts"
                                 />
-                                {thumbnailUrl && (
-                                    <div className="relative aspect-video w-full mt-2 rounded-lg overflow-hidden border">
-                                        <Image src={thumbnailUrl} alt="Preview" fill className="object-cover" />
-                                    </div>
-                                )}
+                                <input type="hidden" name="thumbnail" value={thumbnailUrl} />
                             </div>
 
                             <div className="flex items-center space-x-2 pt-2">
