@@ -16,22 +16,26 @@ export default async function AdminLayout({
     }
 
     // Fetch counts for sidebar badges
-    const [tileCategory, sanitaryCategory, kitchenCategory, waterCategory, flooringCategory] = await Promise.all([
-        prisma.category.findUnique({ where: { slug: "gach-op-lat" }, select: { id: true } }),
-        prisma.category.findUnique({ where: { slug: "thiet-bi-ve-sinh" }, select: { id: true } }),
-        prisma.category.findUnique({ where: { slug: "thiet-bi-nha-bep" }, select: { id: true } }),
-        prisma.category.findUnique({ where: { slug: "thiet-bi-nghanh-nuoc" }, select: { id: true } }),
-        prisma.category.findUnique({ where: { slug: "san-go-san-nhua" }, select: { id: true } }),
-    ])
+    // OPTIMIZATION: Temporarily disabled real-time counts to prevent connection timeout on Vercel
+    // const [tileCategory, sanitaryCategory, kitchenCategory, waterCategory, flooringCategory] = await Promise.all([
+    //     prisma.category.findUnique({ where: { slug: "gach-op-lat" }, select: { id: true } }),
+    //     prisma.category.findUnique({ where: { slug: "thiet-bi-ve-sinh" }, select: { id: true } }),
+    //     prisma.category.findUnique({ where: { slug: "thiet-bi-nha-bep" }, select: { id: true } }),
+    //     prisma.category.findUnique({ where: { slug: "thiet-bi-nghanh-nuoc" }, select: { id: true } }),
+    //     prisma.category.findUnique({ where: { slug: "san-go-san-nhua" }, select: { id: true } }),
+    // ])
 
-    const [tiles, sanitary, kitchen, water, flooring, quotes] = await Promise.all([
-        tileCategory ? prisma.product.count({ where: { categoryId: tileCategory.id } }) : 0,
-        sanitaryCategory ? prisma.product.count({ where: { categoryId: sanitaryCategory.id } }) : 0,
-        kitchenCategory ? prisma.product.count({ where: { categoryId: kitchenCategory.id } }) : 0,
-        waterCategory ? prisma.product.count({ where: { categoryId: waterCategory.id } }) : 0,
-        flooringCategory ? prisma.product.count({ where: { categoryId: flooringCategory.id } }) : 0,
-        prisma.quoteRequest.count({ where: { status: "PENDING" } }),
-    ])
+    // const [tiles, sanitary, kitchen, water, flooring, quotes] = await Promise.all([
+    //     tileCategory ? prisma.product.count({ where: { categoryId: tileCategory.id } }) : 0,
+    //     sanitaryCategory ? prisma.product.count({ where: { categoryId: sanitaryCategory.id } }) : 0,
+    //     kitchenCategory ? prisma.product.count({ where: { categoryId: kitchenCategory.id } }) : 0,
+    //     waterCategory ? prisma.product.count({ where: { categoryId: waterCategory.id } }) : 0,
+    //     flooringCategory ? prisma.product.count({ where: { categoryId: flooringCategory.id } }) : 0,
+    //     prisma.quoteRequest.count({ where: { status: "PENDING" } }),
+    // ])
+
+    // Fast fallback
+    const [tiles, sanitary, kitchen, water, flooring, quotes] = [0, 0, 0, 0, 0, 0];
 
     return (
         <div className="flex min-h-screen w-full bg-slate-50/50">

@@ -150,6 +150,8 @@ export const getFilterValues = cache(async (categoryId: string) => {
             specs: { not: null },
         },
         select: { specs: true },
+        take: 100, // OPTIMIZATION: Scan only latest 100 items to prevent timeouts
+        orderBy: { createdAt: 'desc' },
     });
 
     const colors = new Set<string>();
