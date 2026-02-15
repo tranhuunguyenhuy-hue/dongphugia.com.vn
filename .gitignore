@@ -66,3 +66,8 @@ cleanup.js
 
 # Agent config (Antigravity IDE)
 .agent/
+
+# Local cache directories (DO NOT UPLOAD)
+.mnt-cache/
+.npm-cache/
+dongphugia-web/

@@ -1,0 +1,6 @@
+.mnt-cache
+.npm-cache
+dongphugia-web
+node_modules
+.next
+.git

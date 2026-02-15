@@ -31,6 +31,9 @@ model Category {
   products    Product[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+
+  @@index([slug])
+  @@index([parentId])
 }
 
 model Brand {
@@ -44,6 +47,9 @@ model Brand {
   products   Product[]
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
+
+  @@index([slug])
+  @@index([categoryId])
 }
 
 model ProductType {
@@ -58,6 +64,9 @@ model ProductType {
   productGroups ProductGroup[]
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
+
+  @@index([slug])
+  @@index([categoryId])
 }
 
 model Collection {
@@ -80,6 +89,9 @@ model ProductGroup {
   products      Product[]
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
+
+  @@index([slug])
+  @@index([productTypeId])
 }
 
 model Product {
@@ -132,6 +144,14 @@ model Product {
   productGroup     ProductGroup? @relation(fields: [productGroupId], references: [id])
 
   quoteItems    QuoteItem[]
+
+  @@index([categoryId])
+  @@index([brandId])
+  @@index([productTypeId])
+  @@index([collectionId])
+  @@index([isPublished])
+  @@index([isFeatured])
+  @@index([slug])
 }
 
 model Banner {

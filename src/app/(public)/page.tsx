@@ -10,7 +10,7 @@ import { ValuesSection } from "@/components/home/values-section"
 import { ProductSection } from "@/components/home/product-section"
 import { ChevronRight } from "lucide-react"
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 60
 
 async function getBanners() {
     return await prisma.banner.findMany({
