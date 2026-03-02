@@ -1,0 +1,2 @@
+INSERT INTO "Banner" ("id", "title", "image", "link", "order", "isPublished", "createdAt", "updatedAt") VALUES
+('cmllxw3r8002s1321rpzqumi8', 'Khuyến mãi Thiết bị vệ sinh TOTO - Giảm đến 30%', 'https://tygjmrhandbffjllxveu.supabase.co/storage/v1/object/public/images/banners/1771145345934-w5m8vu.jpg', '/products?category=thiet-bi-ve-sinh&brand=toto', 1, TRUE, '2026-02-14T06:32:34.052Z', '2026-02-15T08:49:49.409Z');

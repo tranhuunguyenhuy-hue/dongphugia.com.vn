@@ -1,0 +1,58 @@
+{
+  "backedUpAt": "2026-02-28T20:02:53.615Z",
+  "tables": [
+    {
+      "table": "AdminUser",
+      "count": 1
+    },
+    {
+      "table": "Category",
+      "count": 5
+    },
+    {
+      "table": "Brand",
+      "count": 19
+    },
+    {
+      "table": "ProductType",
+      "count": 38
+    },
+    {
+      "table": "Collection",
+      "count": 10
+    },
+    {
+      "table": "ProductGroup",
+      "count": 68
+    },
+    {
+      "table": "Product",
+      "count": 18
+    },
+    {
+      "table": "Banner",
+      "count": 1
+    },
+    {
+      "table": "Post",
+      "count": 3
+    },
+    {
+      "table": "Partner",
+      "count": 5
+    },
+    {
+      "table": "Project",
+      "count": 2
+    },
+    {
+      "table": "QuoteRequest",
+      "count": 0
+    },
+    {
+      "table": "QuoteItem",
+      "count": 0
+    }
+  ],
+  "totalRecords": 170
+}

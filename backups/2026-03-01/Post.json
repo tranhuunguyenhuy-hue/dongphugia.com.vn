@@ -1,0 +1,32 @@
+[
+  {
+    "id": "cmllwbpyw002xgwdt8in2nwbl",
+    "title": "Hướng dẫn chọn gạch ốp lát cho ngôi nhà hiện đại",
+    "slug": "huong-dan-chon-gach-op-lat",
+    "content": "<h2>Các loại gạch phổ biến</h2><p>Gạch vân đá Marble, vân đá tự nhiên, vân gỗ — mỗi loại phù hợp cho không gian khác nhau.</p>",
+    "thumbnail": "https://tygjmrhandbffjllxveu.supabase.co/storage/v1/object/public/images/posts/1771145180782-wg39oi.jpg",
+    "isPublished": true,
+    "createdAt": "2026-02-14T05:48:43.448Z",
+    "updatedAt": "2026-02-15T08:46:24.069Z"
+  },
+  {
+    "id": "cmllwbpqv002wgwdtw5ibot2y",
+    "title": "Xu hướng thiết kế nhà bếp hiện đại 2024",
+    "slug": "xu-huong-thiet-ke-nha-bep-hien-dai-2024",
+    "content": "<h2>Phong cách tối giản</h2><p>Xu hướng nhà bếp 2024 thiên về phong cách tối giản với tông màu trắng, xám.</p>",
+    "thumbnail": "https://tygjmrhandbffjllxveu.supabase.co/storage/v1/object/public/images/posts/1771145197187-tsv41w.jpg",
+    "isPublished": true,
+    "createdAt": "2026-02-14T05:48:43.160Z",
+    "updatedAt": "2026-02-15T08:46:39.923Z"
+  },
+  {
+    "id": "cmllwbpj4002vgwdtvot37ikn",
+    "title": "Cách chọn thiết bị vệ sinh phù hợp cho gia đình",
+    "slug": "cach-chon-thiet-bi-ve-sinh-phu-hop",
+    "content": "<h2>1. Xác định ngân sách</h2><p>Trước khi mua thiết bị vệ sinh, bạn cần xác định ngân sách phù hợp.</p><h2>2. Chọn thương hiệu uy tín</h2><p>Nên chọn các thương hiệu có bảo hành chính hãng tại Việt Nam.</p>",
+    "thumbnail": "https://tygjmrhandbffjllxveu.supabase.co/storage/v1/object/public/images/posts/1771145213635-flmk4.jpg",
+    "isPublished": true,
+    "createdAt": "2026-02-14T05:48:42.881Z",
+    "updatedAt": "2026-02-15T08:46:56.261Z"
+  }
+]

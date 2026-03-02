@@ -1,0 +1,3 @@
+INSERT INTO "Project" ("id", "name", "slug", "description", "images", "createdAt", "updatedAt") VALUES
+('cmllwbriv0034gwdtvajfudrm', 'Khách sạn Mường Thanh Luxury', 'khach-san-muong-thanh-luxury', 'Lắp đặt hệ thống sen vòi Grohe và thiết bị bếp Hafele cho 200 phòng.', '["https://tygjmrhandbffjllxveu.supabase.co/storage/v1/object/public/images/projects/1771145236110-siwfs.jpg"]', '2026-02-14T05:48:45.464Z', '2026-02-15T08:47:19.950Z'),
+('cmllwbrb20033gwdtmbhl1d1q', 'Dự án chung cư Vinhomes Ocean Park', 'du-an-vinhomes-ocean-park', 'Cung cấp toàn bộ thiết bị vệ sinh TOTO và gạch ốp lát cho 500 căn hộ.', '["https://tygjmrhandbffjllxveu.supabase.co/storage/v1/object/public/images/projects/1771145253268-6omclj.jpg"]', '2026-02-14T05:48:45.182Z', '2026-02-15T08:47:35.323Z');

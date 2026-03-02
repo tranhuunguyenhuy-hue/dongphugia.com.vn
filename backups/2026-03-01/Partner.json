@@ -1,0 +1,42 @@
+[
+  {
+    "id": "cmllxw5bm002y132176kes15b",
+    "name": "TOTO Vietnam",
+    "logo": "/partners/toto.png",
+    "websiteUrl": "https://www.toto.com.vn",
+    "createdAt": "2026-02-14T06:32:36.082Z",
+    "updatedAt": "2026-02-14T06:32:36.082Z"
+  },
+  {
+    "id": "cmllxw5ho002z13213a1y6xz1",
+    "name": "Inax Vietnam",
+    "logo": "/partners/inax.png",
+    "websiteUrl": "https://www.inax.com.vn",
+    "createdAt": "2026-02-14T06:32:36.300Z",
+    "updatedAt": "2026-02-14T06:32:36.300Z"
+  },
+  {
+    "id": "cmllxw5nm00301321qaw6sxbo",
+    "name": "Viglacera",
+    "logo": "/partners/viglacera.png",
+    "websiteUrl": "https://www.viglacera.com.vn",
+    "createdAt": "2026-02-14T06:32:36.514Z",
+    "updatedAt": "2026-02-14T06:32:36.514Z"
+  },
+  {
+    "id": "cmllxw5tp00311321p8ne8y0w",
+    "name": "Hafele",
+    "logo": "/partners/hafele.png",
+    "websiteUrl": "https://www.hafele.com.vn",
+    "createdAt": "2026-02-14T06:32:36.733Z",
+    "updatedAt": "2026-02-14T06:32:36.733Z"
+  },
+  {
+    "id": "cmllxw5zo00321321jhy07z3t",
+    "name": "Grohe",
+    "logo": "/partners/grohe.png",
+    "websiteUrl": "https://www.grohe.com.vn",
+    "createdAt": "2026-02-14T06:32:36.948Z",
+    "updatedAt": "2026-02-14T06:32:36.948Z"
+  }
+]

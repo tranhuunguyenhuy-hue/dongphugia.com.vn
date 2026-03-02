@@ -1,0 +1,57 @@
+[
+  {
+    "id": "cmllwb2z80001gwdtry13686z",
+    "name": "Gạch ốp lát",
+    "slug": "gach-op-lat",
+    "description": null,
+    "image": null,
+    "isFeatured": true,
+    "parentId": null,
+    "createdAt": "2026-02-14T05:48:13.652Z",
+    "updatedAt": "2026-02-14T05:48:13.652Z"
+  },
+  {
+    "id": "cmllwb3dh0002gwdtcxmjyu0i",
+    "name": "Thiết bị vệ sinh",
+    "slug": "thiet-bi-ve-sinh",
+    "description": null,
+    "image": null,
+    "isFeatured": true,
+    "parentId": null,
+    "createdAt": "2026-02-14T05:48:14.165Z",
+    "updatedAt": "2026-02-14T05:48:14.165Z"
+  },
+  {
+    "id": "cmllwb3ri0003gwdtypx6mif4",
+    "name": "Thiết bị nhà bếp",
+    "slug": "thiet-bi-nha-bep",
+    "description": null,
+    "image": null,
+    "isFeatured": true,
+    "parentId": null,
+    "createdAt": "2026-02-14T05:48:14.670Z",
+    "updatedAt": "2026-02-14T05:48:14.670Z"
+  },
+  {
+    "id": "cmllwb45g0004gwdtcr3asuz4",
+    "name": "Thiết bị ngành nước",
+    "slug": "thiet-bi-nghanh-nuoc",
+    "description": null,
+    "image": null,
+    "isFeatured": true,
+    "parentId": null,
+    "createdAt": "2026-02-14T05:48:15.172Z",
+    "updatedAt": "2026-02-14T05:48:15.172Z"
+  },
+  {
+    "id": "cmllwb4jd0005gwdtcrxvwcyz",
+    "name": "Sàn gỗ, sàn nhựa",
+    "slug": "san-go-san-nhua",
+    "description": null,
+    "image": null,
+    "isFeatured": true,
+    "parentId": null,
+    "createdAt": "2026-02-14T05:48:15.673Z",
+    "updatedAt": "2026-02-14T05:48:15.673Z"
+  }
+]

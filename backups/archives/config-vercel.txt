@@ -1,0 +1,63 @@
+============================================================
+VERCEL ENVIRONMENT VARIABLES — Đông Phú Gia
+============================================================
+Thêm tất cả biến này vào: Vercel Dashboard → Project → Settings → Environment Variables
+Chọn môi trường: Production (và Preview nếu cần)
+
+------------------------------------------------------------
+DATABASE (Supabase)
+------------------------------------------------------------
+
+DATABASE_URL
+  Giá trị: Supabase pooler connection string
+  Ví dụ:   postgresql://postgres.xxxx:[PASSWORD]@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true
+  Lưu ý:   PHẢI có ?pgbouncer=true ở cuối — dùng cho Prisma runtime (pooler port 6543)
+
+DIRECT_URL
+  Giá trị: Supabase direct connection string
+  Ví dụ:   postgresql://postgres:[PASSWORD]@db.xxxx.supabase.co:5432/postgres
+  Lưu ý:   KHÔNG có pgbouncer — dùng cho prisma db pull/push/migrate (direct port 5432)
+
+------------------------------------------------------------
+AUTH (Admin Panel)
+------------------------------------------------------------
+
+AUTH_SECRET
+  Giá trị: Random string 32+ ký tự
+  Generate: openssl rand -base64 32
+  Lưu ý:   Dùng để ký HMAC cookie session cho admin — PHẢI set, nếu không admin không thể login
+
+ADMIN_PASSWORD
+  Giá trị: Mật khẩu admin tự đặt (ít nhất 12 ký tự, có chữ hoa + số + ký tự đặc biệt)
+  Ví dụ:   DongPhuGia@2026!
+  Lưu ý:   Đây là mật khẩu duy nhất để vào /admin — giữ bí mật
+
+------------------------------------------------------------
+SITE URL (tuỳ chọn — dùng trong sitemap.ts)
+------------------------------------------------------------
+
+NEXT_PUBLIC_SITE_URL
+  Giá trị: https://dongphugia.vn  (hoặc URL Vercel tạm nếu chưa có domain)
+  Ví dụ:   https://dongphugia-web.vercel.app
+  Lưu ý:   Nếu không set, sitemap.ts fallback về https://dongphugia.vn
+
+------------------------------------------------------------
+CHECKLIST TRƯỚC KHI DEPLOY
+------------------------------------------------------------
+
+[ ] DATABASE_URL đã add (có ?pgbouncer=true)
+[ ] DIRECT_URL đã add
+[ ] AUTH_SECRET đã generate và add
+[ ] ADMIN_PASSWORD đã set (ghi nhớ hoặc lưu vào password manager)
+[ ] NEXT_PUBLIC_SITE_URL đã set đúng URL deploy
+
+------------------------------------------------------------
+GHI CHÚ
+------------------------------------------------------------
+
+- Prisma trên Vercel cần DATABASE_URL với pgbouncer — nếu không sẽ lỗi connection pool
+- AUTH_SECRET thay đổi → tất cả admin sessions hiện tại bị invalidate (phải login lại)
+- ADMIN_PASSWORD thay đổi → cookie cũ không còn valid (phải login lại)
+- Không commit file .env lên git (đã có trong .gitignore)
+
+============================================================

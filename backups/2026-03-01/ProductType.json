@@ -1,0 +1,344 @@
+[
+  {
+    "id": "cmllwb9zx000pgwdt5jlsfr9o",
+    "name": "Bồn cầu",
+    "slug": "bon-cau",
+    "image": null,
+    "categoryId": "cmllwb3dh0002gwdtcxmjyu0i",
+    "createdAt": "2026-02-14T05:48:22.749Z",
+    "updatedAt": "2026-02-14T05:48:22.749Z"
+  },
+  {
+    "id": "cmllwbadu000rgwdtx43lhxb2",
+    "name": "Lavabo",
+    "slug": "lavabo",
+    "image": null,
+    "categoryId": "cmllwb3dh0002gwdtcxmjyu0i",
+    "createdAt": "2026-02-14T05:48:23.250Z",
+    "updatedAt": "2026-02-14T05:48:23.250Z"
+  },
+  {
+    "id": "cmllwbart000tgwdt495iz0xb",
+    "name": "Sen vòi",
+    "slug": "sen-voi",
+    "image": null,
+    "categoryId": "cmllwb3dh0002gwdtcxmjyu0i",
+    "createdAt": "2026-02-14T05:48:23.753Z",
+    "updatedAt": "2026-02-14T05:48:23.753Z"
+  },
+  {
+    "id": "cmllwbb5r000vgwdtzs4hckep",
+    "name": "Bồn tắm",
+    "slug": "bon-tam",
+    "image": null,
+    "categoryId": "cmllwb3dh0002gwdtcxmjyu0i",
+    "createdAt": "2026-02-14T05:48:24.255Z",
+    "updatedAt": "2026-02-14T05:48:24.255Z"
+  },
+  {
+    "id": "cmllwbbjp000xgwdtjcddwp95",
+    "name": "Phụ kiện phòng tắm",
+    "slug": "phu-kien-phong-tam",
+    "image": null,
+    "categoryId": "cmllwb3dh0002gwdtcxmjyu0i",
+    "createdAt": "2026-02-14T05:48:24.757Z",
+    "updatedAt": "2026-02-14T05:48:24.757Z"
+  },
+  {
+    "id": "cmllwbbxp000zgwdtrz2qsx9w",
+    "name": "Bếp gas",
+    "slug": "bep-gas",
+    "image": null,
+    "categoryId": "cmllwb3ri0003gwdtypx6mif4",
+    "createdAt": "2026-02-14T05:48:25.261Z",
+    "updatedAt": "2026-02-14T05:48:25.261Z"
+  },
+  {
+    "id": "cmllwbcbn0011gwdt2n8tp239",
+    "name": "Bếp từ",
+    "slug": "bep-tu",
+    "image": null,
+    "categoryId": "cmllwb3ri0003gwdtypx6mif4",
+    "createdAt": "2026-02-14T05:48:25.764Z",
+    "updatedAt": "2026-02-14T05:48:25.764Z"
+  },
+  {
+    "id": "cmllwbcpo0013gwdt1gq9n96s",
+    "name": "Máy hút mùi",
+    "slug": "may-hut-mui",
+    "image": null,
+    "categoryId": "cmllwb3ri0003gwdtypx6mif4",
+    "createdAt": "2026-02-14T05:48:26.268Z",
+    "updatedAt": "2026-02-14T05:48:26.268Z"
+  },
+  {
+    "id": "cmllwbd5y0015gwdtmy8ckcyv",
+    "name": "Chậu rửa bát",
+    "slug": "chau-rua-bat",
+    "image": null,
+    "categoryId": "cmllwb3ri0003gwdtypx6mif4",
+    "createdAt": "2026-02-14T05:48:26.854Z",
+    "updatedAt": "2026-02-14T05:48:26.854Z"
+  },
+  {
+    "id": "cmllwbdkh0017gwdtwnr6x48n",
+    "name": "Ống nước",
+    "slug": "ong-nuoc",
+    "image": null,
+    "categoryId": "cmllwb45g0004gwdtcr3asuz4",
+    "createdAt": "2026-02-14T05:48:27.377Z",
+    "updatedAt": "2026-02-14T05:48:27.377Z"
+  },
+  {
+    "id": "cmllwbdyi0019gwdt0vrb4f5k",
+    "name": "Van khóa",
+    "slug": "van-khoa",
+    "image": null,
+    "categoryId": "cmllwb45g0004gwdtcr3asuz4",
+    "createdAt": "2026-02-14T05:48:27.883Z",
+    "updatedAt": "2026-02-14T05:48:27.883Z"
+  },
+  {
+    "id": "cmllwbeed001bgwdt230mzynw",
+    "name": "Máy bơm",
+    "slug": "may-bom",
+    "image": null,
+    "categoryId": "cmllwb45g0004gwdtcr3asuz4",
+    "createdAt": "2026-02-14T05:48:28.390Z",
+    "updatedAt": "2026-02-14T05:48:28.390Z"
+  },
+  {
+    "id": "cmllwbes8001dgwdta0jr38hq",
+    "name": "Sàn gỗ công nghiệp",
+    "slug": "san-go-cong-nghiep",
+    "image": null,
+    "categoryId": "cmllwb4jd0005gwdtcrxvwcyz",
+    "createdAt": "2026-02-14T05:48:28.952Z",
+    "updatedAt": "2026-02-14T05:48:28.952Z"
+  },
+  {
+    "id": "cmllwbf66001fgwdtxnjo4ddp",
+    "name": "Sàn nhựa SPC",
+    "slug": "san-nhua-spc",
+    "image": null,
+    "categoryId": "cmllwb4jd0005gwdtcrxvwcyz",
+    "createdAt": "2026-02-14T05:48:29.454Z",
+    "updatedAt": "2026-02-14T05:48:29.454Z"
+  },
+  {
+    "id": "cmllwbfk3001hgwdtup5lg6ut",
+    "name": "Sàn gỗ tự nhiên",
+    "slug": "san-go-tu-nhien",
+    "image": null,
+    "categoryId": "cmllwb4jd0005gwdtcrxvwcyz",
+    "createdAt": "2026-02-14T05:48:29.956Z",
+    "updatedAt": "2026-02-14T05:48:29.956Z"
+  },
+  {
+    "id": "cmlmu8jng000kdboznw2nf6ua",
+    "name": "Chậu rửa mặt (Lavabo)",
+    "slug": "chau-rua-mat-lavabo",
+    "image": null,
+    "categoryId": "cmllwb3dh0002gwdtcxmjyu0i",
+    "createdAt": "2026-02-14T21:38:02.237Z",
+    "updatedAt": "2026-02-14T21:38:02.237Z"
+  },
+  {
+    "id": "cmlmu8lyr000wdboztghwonsb",
+    "name": "Vòi sen tắm",
+    "slug": "voi-sen-tam",
+    "image": null,
+    "categoryId": "cmllwb3dh0002gwdtcxmjyu0i",
+    "createdAt": "2026-02-14T21:38:05.236Z",
+    "updatedAt": "2026-02-14T21:38:05.236Z"
+  },
+  {
+    "id": "cmlmu8rsm001qdboz2tiingln",
+    "name": "Bồn tiểu",
+    "slug": "bon-tieu",
+    "image": null,
+    "categoryId": "cmllwb3dh0002gwdtcxmjyu0i",
+    "createdAt": "2026-02-14T21:38:12.790Z",
+    "updatedAt": "2026-02-14T21:38:12.790Z"
+  },
+  {
+    "id": "cmlmu8x63002idbozc4ov6qjt",
+    "name": "Nắp bồn cầu",
+    "slug": "nap-bon-cau",
+    "image": null,
+    "categoryId": "cmllwb3dh0002gwdtcxmjyu0i",
+    "createdAt": "2026-02-14T21:38:19.755Z",
+    "updatedAt": "2026-02-14T21:38:19.755Z"
+  },
+  {
+    "id": "cmlmu8yjy002odbozvqkqdq7d",
+    "name": "Bếp điện - Bếp từ",
+    "slug": "bep-ien-bep-tu",
+    "image": null,
+    "categoryId": "cmllwb3ri0003gwdtypx6mif4",
+    "createdAt": "2026-02-14T21:38:21.550Z",
+    "updatedAt": "2026-02-14T21:38:21.550Z"
+  },
+  {
+    "id": "cmlmu9379003cdboz33kpl25j",
+    "name": "Máy rửa chén",
+    "slug": "may-rua-chen",
+    "image": null,
+    "categoryId": "cmllwb3ri0003gwdtypx6mif4",
+    "createdAt": "2026-02-14T21:38:27.573Z",
+    "updatedAt": "2026-02-14T21:38:27.573Z"
+  },
+  {
+    "id": "cmlmu94qo003kdbozwms547c2",
+    "name": "Vòi rửa chén",
+    "slug": "voi-rua-chen",
+    "image": null,
+    "categoryId": "cmllwb3ri0003gwdtypx6mif4",
+    "createdAt": "2026-02-14T21:38:29.568Z",
+    "updatedAt": "2026-02-14T21:38:29.568Z"
+  },
+  {
+    "id": "cmlmu969u003sdbozotr3tpgj",
+    "name": "Chậu rửa chén",
+    "slug": "chau-rua-chen",
+    "image": null,
+    "categoryId": "cmllwb3ri0003gwdtypx6mif4",
+    "createdAt": "2026-02-14T21:38:31.554Z",
+    "updatedAt": "2026-02-14T21:38:31.554Z"
+  },
+  {
+    "id": "cmlmu97ez003ydbozrp9lvo17",
+    "name": "Lò vi sóng",
+    "slug": "lo-vi-song",
+    "image": null,
+    "categoryId": "cmllwb3ri0003gwdtypx6mif4",
+    "createdAt": "2026-02-14T21:38:33.035Z",
+    "updatedAt": "2026-02-14T21:38:33.035Z"
+  },
+  {
+    "id": "cmlmu97sp0040dbozcll9dge2",
+    "name": "Lò nướng đa năng",
+    "slug": "lo-nuong-a-nang",
+    "image": null,
+    "categoryId": "cmllwb3ri0003gwdtypx6mif4",
+    "createdAt": "2026-02-14T21:38:33.530Z",
+    "updatedAt": "2026-02-14T21:38:33.530Z"
+  },
+  {
+    "id": "cmlmu986n0042dbozjxytvqv9",
+    "name": "Phụ kiện bếp",
+    "slug": "phu-kien-bep",
+    "image": null,
+    "categoryId": "cmllwb3ri0003gwdtypx6mif4",
+    "createdAt": "2026-02-14T21:38:34.031Z",
+    "updatedAt": "2026-02-14T21:38:34.031Z"
+  },
+  {
+    "id": "cmlmu98kc0044dbozliq2qc7o",
+    "name": "Tủ lạnh",
+    "slug": "tu-lanh",
+    "image": null,
+    "categoryId": "cmllwb3ri0003gwdtypx6mif4",
+    "createdAt": "2026-02-14T21:38:34.524Z",
+    "updatedAt": "2026-02-14T21:38:34.524Z"
+  },
+  {
+    "id": "cmlmu995o0046dbozogbcy1of",
+    "name": "Bồn nước",
+    "slug": "bon-nuoc",
+    "image": null,
+    "categoryId": "cmllwb45g0004gwdtcr3asuz4",
+    "createdAt": "2026-02-14T21:38:35.292Z",
+    "updatedAt": "2026-02-14T21:38:35.292Z"
+  },
+  {
+    "id": "cmlmu9bgb004idbozy7iban57",
+    "name": "Máy nước nóng",
+    "slug": "may-nuoc-nong",
+    "image": null,
+    "categoryId": "cmllwb45g0004gwdtcr3asuz4",
+    "createdAt": "2026-02-14T21:38:38.267Z",
+    "updatedAt": "2026-02-14T21:38:38.267Z"
+  },
+  {
+    "id": "cmlmu9clm004odbozebj9emom",
+    "name": "Năng lượng mặt trời",
+    "slug": "nang-luong-mat-troi",
+    "image": null,
+    "categoryId": "cmllwb45g0004gwdtcr3asuz4",
+    "createdAt": "2026-02-14T21:38:39.754Z",
+    "updatedAt": "2026-02-14T21:38:39.754Z"
+  },
+  {
+    "id": "cmlmu9ejy004ydbozgs2cbq9y",
+    "name": "Bơm nhiệt",
+    "slug": "bom-nhiet",
+    "image": null,
+    "categoryId": "cmllwb45g0004gwdtcr3asuz4",
+    "createdAt": "2026-02-14T21:38:42.286Z",
+    "updatedAt": "2026-02-14T21:38:42.286Z"
+  },
+  {
+    "id": "cmlmu9fp30054dboz0hawlz2h",
+    "name": "Máy nước cây nóng lạnh",
+    "slug": "may-nuoc-cay-nong-lanh",
+    "image": null,
+    "categoryId": "cmllwb45g0004gwdtcr3asuz4",
+    "createdAt": "2026-02-14T21:38:43.768Z",
+    "updatedAt": "2026-02-14T21:38:43.768Z"
+  },
+  {
+    "id": "cmlmu9go50058dbozwwmc0kbg",
+    "name": "Phụ kiện sàn gỗ",
+    "slug": "phu-kien-san-go",
+    "image": null,
+    "categoryId": "cmllwb4jd0005gwdtcrxvwcyz",
+    "createdAt": "2026-02-14T21:38:45.029Z",
+    "updatedAt": "2026-02-14T21:38:45.029Z"
+  },
+  {
+    "id": "cmllwb9kg000ngwdtalcbnrjt",
+    "name": "Gạch Trang Trí",
+    "slug": "gach - trang - tri",
+    "image": "https://tygjmrhandbffjllxveu.supabase.co/storage/v1/object/public/images/products/1771145719930-5zerkk.png",
+    "categoryId": "cmllwb2z80001gwdtry13686z",
+    "createdAt": "2026-02-14T05:48:22.192Z",
+    "updatedAt": "2026-02-15T08:55:24.580Z"
+  },
+  {
+    "id": "cmllwb96l000lgwdtitwq7kym",
+    "name": "Gạch Thiết kế xi măng",
+    "slug": "gach-thiet-ke-xi-mang",
+    "image": "https://tygjmrhandbffjllxveu.supabase.co/storage/v1/object/public/images/products/1771145769757-8vi05b.png",
+    "categoryId": "cmllwb2z80001gwdtry13686z",
+    "createdAt": "2026-02-14T05:48:21.693Z",
+    "updatedAt": "2026-02-15T08:56:12.626Z"
+  },
+  {
+    "id": "cmllwb80o000fgwdt9ho63avo",
+    "name": "Gạch vân đá Marble",
+    "slug": "gach-van-da-marble",
+    "image": "https://tygjmrhandbffjllxveu.supabase.co/storage/v1/object/public/images/products/1771145794482-2gzfbs.png",
+    "categoryId": "cmllwb2z80001gwdtry13686z",
+    "createdAt": "2026-02-14T05:48:20.185Z",
+    "updatedAt": "2026-02-15T08:56:37.309Z"
+  },
+  {
+    "id": "cmllwb8em000hgwdtxc9f9kvq",
+    "name": "Gạch vân đá tự nhiên",
+    "slug": "gach-van-da-tu-nhien",
+    "image": "https://tygjmrhandbffjllxveu.supabase.co/storage/v1/object/public/images/products/1771145824679-cou7ff.png",
+    "categoryId": "cmllwb2z80001gwdtry13686z",
+    "createdAt": "2026-02-14T05:48:20.686Z",
+    "updatedAt": "2026-02-15T08:57:07.405Z"
+  },
+  {
+    "id": "cmllwb8sp000jgwdtda7gd3oo",
+    "name": "Gạch vân Gỗ",
+    "slug": "gach-van-go",
+    "image": "https://tygjmrhandbffjllxveu.supabase.co/storage/v1/object/public/images/products/1771145843204-pfb66f.png",
+    "categoryId": "cmllwb2z80001gwdtry13686z",
+    "createdAt": "2026-02-14T05:48:21.193Z",
+    "updatedAt": "2026-02-15T08:57:25.706Z"
+  }
+]

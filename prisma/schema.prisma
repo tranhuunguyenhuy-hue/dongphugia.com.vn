@@ -46,7 +46,9 @@ model colors {
   slug           String           @unique @db.VarChar(50)
   hex_code       String?          @db.VarChar(7)
   bep_products   bep_products[]
+  nuoc_products  nuoc_products[]
   product_colors product_colors[]
+  sango_products sango_products[]
   tbvs_products  tbvs_products[]
 }
 
@@ -60,12 +62,14 @@ model locations {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model origins {
-  id            Int             @id @default(autoincrement())
-  name          String          @db.VarChar(100)
-  slug          String          @unique @db.VarChar(50)
-  bep_products  bep_products[]
-  products      products[]
-  tbvs_products tbvs_products[]
+  id             Int              @id @default(autoincrement())
+  name           String           @db.VarChar(100)
+  slug           String           @unique @db.VarChar(50)
+  bep_products   bep_products[]
+  nuoc_products  nuoc_products[]
+  products       products[]
+  sango_products sango_products[]
+  tbvs_products  tbvs_products[]
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -92,20 +96,22 @@ model pattern_types {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model product_categories {
-  id                 Int                  @id @default(autoincrement())
-  name               String               @db.VarChar(100)
-  slug               String               @unique @db.VarChar(100)
-  description        String?
-  thumbnail_url      String?              @db.VarChar(500)
-  is_active          Boolean?             @default(true)
-  sort_order         Int?                 @default(0)
-  seo_title          String?              @db.VarChar(200)
-  seo_description    String?              @db.VarChar(500)
-  created_at         DateTime?            @default(now()) @db.Timestamp(6)
-  updated_at         DateTime?            @default(now()) @db.Timestamp(6)
-  bep_product_types  bep_product_types[]
-  pattern_types      pattern_types[]
-  tbvs_product_types tbvs_product_types[]
+  id                  Int                   @id @default(autoincrement())
+  name                String                @db.VarChar(100)
+  slug                String                @unique @db.VarChar(100)
+  description         String?
+  thumbnail_url       String?               @db.VarChar(500)
+  is_active           Boolean?              @default(true)
+  sort_order          Int?                  @default(0)
+  seo_title           String?               @db.VarChar(200)
+  seo_description     String?               @db.VarChar(500)
+  created_at          DateTime?             @default(now()) @db.Timestamp(6)
+  updated_at          DateTime?             @default(now()) @db.Timestamp(6)
+  bep_product_types   bep_product_types[]
+  nuoc_product_types  nuoc_product_types[]
+  pattern_types       pattern_types[]
+  sango_product_types sango_product_types[]
+  tbvs_product_types  tbvs_product_types[]
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -482,4 +488,279 @@ model bep_subtypes {
   bep_product_types bep_product_types @relation(fields: [product_type_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([product_type_id], map: "idx_bep_subtypes_type")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model nuoc_brands {
+  id             Int             @id @default(autoincrement())
+  name           String          @db.VarChar(100)
+  slug           String          @unique @db.VarChar(100)
+  logo_url       String?         @db.VarChar(500)
+  description    String?
+  origin_country String?         @db.VarChar(100)
+  website_url    String?         @db.VarChar(500)
+  is_active      Boolean?        @default(true)
+  is_featured    Boolean?        @default(false)
+  sort_order     Int?            @default(0)
+  created_at     DateTime?       @default(now()) @db.Timestamp(6)
+  updated_at     DateTime?       @default(now()) @db.Timestamp(6)
+  nuoc_products  nuoc_products[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model nuoc_materials {
+  id            Int             @id @default(autoincrement())
+  name          String          @db.VarChar(100)
+  slug          String          @unique @db.VarChar(50)
+  description   String?
+  sort_order    Int?            @default(0)
+  nuoc_products nuoc_products[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model nuoc_product_images {
+  id            Int           @id @default(autoincrement())
+  product_id    Int
+  image_url     String        @db.VarChar(500)
+  alt_text      String?       @db.VarChar(200)
+  sort_order    Int?          @default(0)
+  created_at    DateTime?     @default(now()) @db.Timestamp(6)
+  nuoc_products nuoc_products @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model nuoc_product_types {
+  id                 Int                @id @default(autoincrement())
+  category_id        Int                @default(5)
+  name               String             @db.VarChar(100)
+  slug               String             @unique @db.VarChar(100)
+  description        String?
+  thumbnail_url      String?            @db.VarChar(500)
+  hero_image_url     String?            @db.VarChar(500)
+  icon_name          String?            @db.VarChar(50)
+  is_active          Boolean?           @default(true)
+  sort_order         Int?               @default(0)
+  seo_title          String?            @db.VarChar(200)
+  seo_description    String?            @db.VarChar(500)
+  created_at         DateTime?          @default(now()) @db.Timestamp(6)
+  updated_at         DateTime?          @default(now()) @db.Timestamp(6)
+  product_categories product_categories @relation(fields: [category_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  nuoc_products      nuoc_products[]
+  nuoc_subtypes      nuoc_subtypes[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model nuoc_products {
+  id                  Int                   @id @default(autoincrement())
+  sku                 String                @unique @db.VarChar(50)
+  name                String                @db.VarChar(200)
+  slug                String                @unique @db.VarChar(200)
+  product_type_id     Int
+  subtype_id          Int?
+  brand_id            Int?
+  material_id         Int?
+  color_id            Int?
+  origin_id           Int?
+  capacity_liters     Int?
+  power_watts         Int?
+  description         String?
+  features            String?
+  specifications      Json?
+  warranty_months     Int?                  @default(24)
+  price               Decimal?              @db.Decimal(15, 0)
+  price_display       String?               @default("Liên hệ báo giá") @db.VarChar(50)
+  image_main_url      String?               @db.VarChar(500)
+  image_hover_url     String?               @db.VarChar(500)
+  is_active           Boolean?              @default(true)
+  is_featured         Boolean?              @default(false)
+  is_new              Boolean?              @default(false)
+  is_bestseller       Boolean?              @default(false)
+  stock_status        String?               @default("in_stock") @db.VarChar(20)
+  sort_order          Int?                  @default(0)
+  seo_title           String?               @db.VarChar(200)
+  seo_description     String?               @db.VarChar(500)
+  created_at          DateTime?             @default(now()) @db.Timestamp(6)
+  updated_at          DateTime?             @default(now()) @db.Timestamp(6)
+  nuoc_product_images nuoc_product_images[]
+  nuoc_brands         nuoc_brands?          @relation(fields: [brand_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  colors              colors?               @relation(fields: [color_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  nuoc_materials      nuoc_materials?       @relation(fields: [material_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  origins             origins?              @relation(fields: [origin_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  nuoc_product_types  nuoc_product_types    @relation(fields: [product_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  nuoc_subtypes       nuoc_subtypes?        @relation(fields: [subtype_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([is_active], map: "idx_nuoc_products_active")
+  @@index([brand_id], map: "idx_nuoc_products_brand")
+  @@index([capacity_liters], map: "idx_nuoc_products_capacity")
+  @@index([is_featured], map: "idx_nuoc_products_featured")
+  @@index([material_id], map: "idx_nuoc_products_material")
+  @@index([subtype_id], map: "idx_nuoc_products_subtype")
+  @@index([product_type_id], map: "idx_nuoc_products_type")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model nuoc_subtypes {
+  id                 Int                @id @default(autoincrement())
+  product_type_id    Int
+  name               String             @db.VarChar(100)
+  slug               String             @unique @db.VarChar(100)
+  description        String?
+  thumbnail_url      String?            @db.VarChar(500)
+  is_active          Boolean?           @default(true)
+  sort_order         Int?               @default(0)
+  created_at         DateTime?          @default(now()) @db.Timestamp(6)
+  updated_at         DateTime?          @default(now()) @db.Timestamp(6)
+  nuoc_products      nuoc_products[]
+  nuoc_product_types nuoc_product_types @relation(fields: [product_type_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([product_type_id], map: "idx_nuoc_subtypes_type")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model sango_product_images {
+  id             Int            @id @default(autoincrement())
+  product_id     Int
+  image_url      String         @db.VarChar(500)
+  alt_text       String?        @db.VarChar(200)
+  sort_order     Int?           @default(0)
+  created_at     DateTime?      @default(now()) @db.Timestamp(6)
+  sango_products sango_products @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model sango_product_types {
+  id                 Int                @id @default(autoincrement())
+  category_id        Int                @default(4)
+  name               String             @db.VarChar(100)
+  slug               String             @unique @db.VarChar(100)
+  description        String?
+  thumbnail_url      String?            @db.VarChar(500)
+  hero_image_url     String?            @db.VarChar(500)
+  icon_name          String?            @db.VarChar(50)
+  is_active          Boolean?           @default(true)
+  sort_order         Int?               @default(0)
+  seo_title          String?            @db.VarChar(200)
+  seo_description    String?            @db.VarChar(500)
+  created_at         DateTime?          @default(now()) @db.Timestamp(6)
+  updated_at         DateTime?          @default(now()) @db.Timestamp(6)
+  product_categories product_categories @relation(fields: [category_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  sango_products     sango_products[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model sango_products {
+  id                   Int                    @id @default(autoincrement())
+  sku                  String                 @unique @db.VarChar(50)
+  name                 String                 @db.VarChar(200)
+  slug                 String                 @unique @db.VarChar(200)
+  product_type_id      Int
+  color_id             Int?
+  origin_id            Int?
+  thickness_mm         Int?
+  width_mm             Int?
+  length_mm            Int?
+  ac_rating            String?                @db.VarChar(10)
+  warranty_years       Int?
+  description          String?
+  features             String?
+  specifications       Json?
+  price                Decimal?               @db.Decimal(15, 0)
+  price_display        String?                @default("Liên hệ báo giá") @db.VarChar(50)
+  price_unit           String?                @default("m²") @db.VarChar(20)
+  image_main_url       String?                @db.VarChar(500)
+  image_hover_url      String?                @db.VarChar(500)
+  is_active            Boolean?               @default(true)
+  is_featured          Boolean?               @default(false)
+  is_new               Boolean?               @default(false)
+  is_bestseller        Boolean?               @default(false)
+  stock_status         String?                @default("in_stock") @db.VarChar(20)
+  sort_order           Int?                   @default(0)
+  seo_title            String?                @db.VarChar(200)
+  seo_description      String?                @db.VarChar(500)
+  created_at           DateTime?              @default(now()) @db.Timestamp(6)
+  updated_at           DateTime?              @default(now()) @db.Timestamp(6)
+  sango_product_images sango_product_images[]
+  colors               colors?                @relation(fields: [color_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  origins              origins?               @relation(fields: [origin_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  sango_product_types  sango_product_types    @relation(fields: [product_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([is_active], map: "idx_sango_products_active")
+  @@index([is_featured], map: "idx_sango_products_featured")
+  @@index([thickness_mm], map: "idx_sango_products_thickness")
+  @@index([product_type_id], map: "idx_sango_products_type")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model blog_categories {
+  id              Int          @id @default(autoincrement())
+  name            String       @db.VarChar(100)
+  slug            String       @unique @db.VarChar(100)
+  description     String?
+  thumbnail_url   String?
+  is_active       Boolean      @default(true)
+  sort_order      Int          @default(0)
+  seo_title       String?      @db.VarChar(200)
+  seo_description String?      @db.VarChar(500)
+  created_at      DateTime     @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime     @default(now()) @db.Timestamptz(6)
+  blog_posts      blog_posts[]
+
+  @@index([slug], map: "idx_blog_categories_slug")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model blog_post_tags {
+  post_id    Int
+  tag_id     Int
+  blog_posts blog_posts @relation(fields: [post_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  blog_tags  blog_tags  @relation(fields: [tag_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([post_id, tag_id])
+  @@index([post_id], map: "idx_blog_post_tags_post")
+  @@index([tag_id], map: "idx_blog_post_tags_tag")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model blog_posts {
+  id              Int              @id @default(autoincrement())
+  title           String           @db.VarChar(300)
+  slug            String           @unique @db.VarChar(300)
+  excerpt         String?
+  content         String           @default("")
+  category_id     Int
+  thumbnail_url   String?
+  cover_image_url String?
+  seo_title       String?          @db.VarChar(200)
+  seo_description String?          @db.VarChar(500)
+  seo_keywords    String?          @db.VarChar(500)
+  reading_time    Int?
+  view_count      Int              @default(0)
+  status          String           @default("draft") @db.VarChar(20)
+  published_at    DateTime?        @db.Timestamptz(6)
+  author_name     String           @default("Đông Phú Gia") @db.VarChar(100)
+  author_avatar   String?
+  is_featured     Boolean          @default(false)
+  is_pinned       Boolean          @default(false)
+  created_at      DateTime         @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime         @default(now()) @db.Timestamptz(6)
+  blog_post_tags  blog_post_tags[]
+  blog_categories blog_categories  @relation(fields: [category_id], references: [id], onUpdate: NoAction)
+
+  @@index([category_id], map: "idx_blog_posts_category")
+  @@index([is_featured], map: "idx_blog_posts_featured")
+  @@index([published_at], map: "idx_blog_posts_published")
+  @@index([slug], map: "idx_blog_posts_slug")
+  @@index([status], map: "idx_blog_posts_status")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model blog_tags {
+  id             Int              @id @default(autoincrement())
+  name           String           @db.VarChar(50)
+  slug           String           @unique @db.VarChar(50)
+  description    String?
+  post_count     Int              @default(0)
+  created_at     DateTime         @default(now()) @db.Timestamptz(6)
+  blog_post_tags blog_post_tags[]
 }

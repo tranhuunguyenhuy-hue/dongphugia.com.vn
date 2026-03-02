@@ -1,0 +1,20 @@
+[
+  {
+    "id": "cmllwbriv0034gwdtvajfudrm",
+    "name": "Khách sạn Mường Thanh Luxury",
+    "slug": "khach-san-muong-thanh-luxury",
+    "description": "Lắp đặt hệ thống sen vòi Grohe và thiết bị bếp Hafele cho 200 phòng.",
+    "images": "[\"https://tygjmrhandbffjllxveu.supabase.co/storage/v1/object/public/images/projects/1771145236110-siwfs.jpg\"]",
+    "createdAt": "2026-02-14T05:48:45.464Z",
+    "updatedAt": "2026-02-15T08:47:19.950Z"
+  },
+  {
+    "id": "cmllwbrb20033gwdtmbhl1d1q",
+    "name": "Dự án chung cư Vinhomes Ocean Park",
+    "slug": "du-an-vinhomes-ocean-park",
+    "description": "Cung cấp toàn bộ thiết bị vệ sinh TOTO và gạch ốp lát cho 500 căn hộ.",
+    "images": "[\"https://tygjmrhandbffjllxveu.supabase.co/storage/v1/object/public/images/projects/1771145253268-6omclj.jpg\"]",
+    "createdAt": "2026-02-14T05:48:45.182Z",
+    "updatedAt": "2026-02-15T08:47:35.323Z"
+  }
+]

@@ -1,0 +1,92 @@
+[
+  {
+    "id": "cmllwbfy2001jgwdtron4xa9t",
+    "name": "INSIDE ART",
+    "slug": "inside-art",
+    "image": null,
+    "productTypeId": "cmllwb80o000fgwdt9ho63avo",
+    "createdAt": "2026-02-14T05:48:30.458Z",
+    "updatedAt": "2026-02-14T05:48:30.458Z"
+  },
+  {
+    "id": "cmllwbgc1001lgwdtcogf2lu6",
+    "name": "DANCING FLOWER",
+    "slug": "dancing-flower",
+    "image": null,
+    "productTypeId": "cmllwb80o000fgwdt9ho63avo",
+    "createdAt": "2026-02-14T05:48:30.961Z",
+    "updatedAt": "2026-02-14T05:48:30.961Z"
+  },
+  {
+    "id": "cmllwbgq1001ngwdt1i4z4wnh",
+    "name": "MARVEL TRAVERTINE",
+    "slug": "marvel-travertine",
+    "image": null,
+    "productTypeId": "cmllwb80o000fgwdt9ho63avo",
+    "createdAt": "2026-02-14T05:48:31.466Z",
+    "updatedAt": "2026-02-14T05:48:31.466Z"
+  },
+  {
+    "id": "cmllwbh44001pgwdtq8ruidah",
+    "name": "MARMI CLASSICI",
+    "slug": "marmi-classici",
+    "image": null,
+    "productTypeId": "cmllwb80o000fgwdt9ho63avo",
+    "createdAt": "2026-02-14T05:48:31.972Z",
+    "updatedAt": "2026-02-14T05:48:31.972Z"
+  },
+  {
+    "id": "cmllwbhi0001rgwdtz3o3whfj",
+    "name": "MYSTIC",
+    "slug": "mystic",
+    "image": null,
+    "productTypeId": "cmllwb8em000hgwdtxc9f9kvq",
+    "createdAt": "2026-02-14T05:48:32.472Z",
+    "updatedAt": "2026-02-14T05:48:32.472Z"
+  },
+  {
+    "id": "cmllwbhvz001tgwdtx1l5md6d",
+    "name": "MOSAIC",
+    "slug": "mosaic",
+    "image": null,
+    "productTypeId": "cmllwb8em000hgwdtxc9f9kvq",
+    "createdAt": "2026-02-14T05:48:32.975Z",
+    "updatedAt": "2026-02-14T05:48:32.975Z"
+  },
+  {
+    "id": "cmllwbi9x001vgwdta8042h3y",
+    "name": "MARMI CLASSICI WOOD",
+    "slug": "marmi-classici-wood",
+    "image": null,
+    "productTypeId": "cmllwb8sp000jgwdtda7gd3oo",
+    "createdAt": "2026-02-14T05:48:33.477Z",
+    "updatedAt": "2026-02-14T05:48:33.477Z"
+  },
+  {
+    "id": "cmllwbinx001xgwdtv0w0cglq",
+    "name": "CHIC",
+    "slug": "chic",
+    "image": null,
+    "productTypeId": "cmllwb8sp000jgwdtda7gd3oo",
+    "createdAt": "2026-02-14T05:48:33.982Z",
+    "updatedAt": "2026-02-14T05:48:33.982Z"
+  },
+  {
+    "id": "cmlmowkuo0001yg9t9jccxzvr",
+    "name": "Test collection 01",
+    "slug": "test-collection-01",
+    "image": "/uploads/1771096125764-612PK612547-4-original.jpg",
+    "productTypeId": "cmllwb96l000lgwdtitwq7kym",
+    "createdAt": "2026-02-14T19:08:45.796Z",
+    "updatedAt": "2026-02-14T19:08:45.796Z"
+  },
+  {
+    "id": "cmlnibqwv000249wyjl784njo",
+    "name": "Collection test",
+    "slug": "collection-test",
+    "image": null,
+    "productTypeId": "cmllwb9kg000ngwdtalcbnrjt",
+    "createdAt": "2026-02-15T08:52:22.181Z",
+    "updatedAt": "2026-02-15T08:52:22.181Z"
+  }
+]
