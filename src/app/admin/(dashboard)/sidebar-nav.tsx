@@ -7,20 +7,16 @@ import { cn } from "@/lib/utils"
 import {
     LayoutDashboard,
     BrickWall,
-    ShowerHead,
-    CookingPot,
-    Droplets,
-    TreePine,
-    FileText,
-    LogOut,
-    Package2,
-    Image,
-    FolderOpen,
-    Users,
+    ClipboardList,
     ChevronLeft,
     ChevronRight,
-    ClipboardList,
+    Package2,
+    LogOut,
+    Image,
+    ShowerHead,
+    ChefHat,
 } from "lucide-react"
+import { logoutAction } from "@/app/admin/login/actions"
 import { Badge } from "@/components/ui/badge"
 import {
     Tooltip,
@@ -29,33 +25,17 @@ import {
     TooltipProvider,
 } from "@/components/ui/tooltip"
 
-interface NavCounts {
-    tiles: number
-    sanitary: number
-    kitchen: number
-    water: number
-    flooring: number
-    quotes: number
-}
-
 interface SidebarNavProps {
-    counts: NavCounts
-    userEmail: string
+    pendingQuotes: number
 }
 
-const productCategories = [
-    { label: "Gạch ốp lát", href: "/admin/gach-op-lat", icon: BrickWall, countKey: "tiles" as const, enabled: true },
-    { label: "TB vệ sinh", href: "/admin/thiet-bi-ve-sinh", icon: ShowerHead, countKey: "sanitary" as const, enabled: true },
-    { label: "TB nhà bếp", href: "/admin/thiet-bi-nha-bep", icon: CookingPot, countKey: "kitchen" as const, enabled: true },
-    { label: "TB ngành nước", href: "/admin/thiet-bi-nghanh-nuoc", icon: Droplets, countKey: "water" as const, enabled: true },
-    { label: "Sàn gỗ/nhựa", href: "/admin/san-go-san-nhua", icon: TreePine, countKey: "flooring" as const, enabled: true },
-]
-
-const contentLinks = [
-    { label: "Banner", href: "/admin/banners", icon: Image },
-    { label: "Bài viết", href: "/admin/bai-viet", icon: FileText },
-    { label: "Dự án", href: "/admin/du-an", icon: FolderOpen },
-    { label: "Đối tác", href: "/admin/doi-tac", icon: Users },
+const navLinks = [
+    { label: "Dashboard", href: "/admin", icon: LayoutDashboard, exact: true },
+    { label: "Gạch ốp lát", href: "/admin/products", icon: BrickWall, exact: false },
+    { label: "TB Vệ sinh", href: "/admin/tbvs/products", icon: ShowerHead, exact: false },
+    { label: "TB Bếp", href: "/admin/bep/products", icon: ChefHat, exact: false },
+    { label: "Banners", href: "/admin/banners", icon: Image, exact: false },
+    { label: "Báo giá", href: "/admin/quote-requests", icon: ClipboardList, exact: false, quoteBadge: true },
 ]
 
 function NavItem({
@@ -64,48 +44,37 @@ function NavItem({
     label,
     isActive,
     badge,
-    badgeVariant = "secondary",
     collapsed,
-    disabled = false,
-    disabledTooltip = "Sắp có",
 }: {
     href: string
     icon: any
     label: string
     isActive: boolean
     badge?: number
-    badgeVariant?: "secondary" | "destructive"
     collapsed: boolean
-    disabled?: boolean
-    disabledTooltip?: string
 }) {
     const content = (
         <div
             className={cn(
                 "group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
                 collapsed && "justify-center px-2",
-                disabled
-                    ? "text-muted-foreground/40 cursor-not-allowed"
-                    : isActive
-                        ? "bg-primary/10 text-primary active-indicator"
-                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                isActive
+                    ? "bg-primary/10 text-primary active-indicator"
+                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
             )}
         >
             <Icon className={cn(
                 "shrink-0 transition-colors duration-200",
                 collapsed ? "h-5 w-5" : "h-4 w-4",
-                isActive && !disabled && "text-primary",
+                isActive && "text-primary",
             )} />
             {!collapsed && (
                 <>
                     <span className="flex-1 truncate">{label}</span>
                     {badge !== undefined && badge > 0 && (
                         <Badge
-                            variant={badgeVariant}
-                            className={cn(
-                                "h-5 min-w-[20px] px-1.5 text-[10px] font-semibold tabular-nums",
-                                badgeVariant === "destructive" && "badge-pulse"
-                            )}
+                            variant="destructive"
+                            className="h-5 min-w-[20px] px-1.5 text-[10px] font-semibold tabular-nums badge-pulse"
                         >
                             {badge}
                         </Badge>
@@ -113,26 +82,12 @@ function NavItem({
                 </>
             )}
             {collapsed && badge !== undefined && badge > 0 && (
-                <span className={cn(
-                    "absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-bold text-white",
-                    badgeVariant === "destructive" ? "bg-destructive badge-pulse" : "bg-primary"
-                )}>
+                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-bold text-white bg-destructive badge-pulse">
                     {badge > 9 ? "9+" : badge}
                 </span>
             )}
         </div>
     )
-
-    if (disabled) {
-        return (
-            <Tooltip>
-                <TooltipTrigger asChild>{content}</TooltipTrigger>
-                <TooltipContent side="right" sideOffset={collapsed ? 12 : 8}>
-                    <p>{disabledTooltip}</p>
-                </TooltipContent>
-            </Tooltip>
-        )
-    }
 
     if (collapsed) {
         return (
@@ -150,18 +105,7 @@ function NavItem({
     return <Link href={href}>{content}</Link>
 }
 
-function SectionLabel({ label, collapsed }: { label: string; collapsed: boolean }) {
-    if (collapsed) {
-        return <div className="mx-auto my-2 h-px w-6 bg-border" />
-    }
-    return (
-        <p className="mb-1.5 px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
-            {label}
-        </p>
-    )
-}
-
-export default function SidebarNav({ counts, userEmail }: SidebarNavProps) {
+export default function SidebarNav({ pendingQuotes }: SidebarNavProps) {
     const pathname = usePathname()
     const [collapsed, setCollapsed] = useState(false)
 
@@ -173,7 +117,7 @@ export default function SidebarNav({ counts, userEmail }: SidebarNavProps) {
                     collapsed ? "w-[68px]" : "w-60"
                 )}
             >
-                {/* Logo + Collapse Toggle */}
+                {/* Logo */}
                 <div className={cn(
                     "flex h-16 items-center border-b px-4",
                     collapsed && "justify-center px-2"
@@ -192,105 +136,59 @@ export default function SidebarNav({ counts, userEmail }: SidebarNavProps) {
                 </div>
 
                 {/* Navigation */}
-                <nav className="flex-1 overflow-y-auto px-2 py-4 space-y-5">
-                    {/* Dashboard */}
-                    <div className="space-y-1">
-                        <SectionLabel label="Tổng quan" collapsed={collapsed} />
-                        <NavItem
-                            href="/admin"
-                            icon={LayoutDashboard}
-                            label="Dashboard"
-                            isActive={pathname === "/admin"}
-                            collapsed={collapsed}
-                        />
-                    </div>
-
-                    {/* Product Categories */}
-                    <div className="space-y-1">
-                        <SectionLabel label="Sản phẩm" collapsed={collapsed} />
-                        {productCategories.map((item) => (
+                <nav className="flex-1 overflow-y-auto px-2 py-4 space-y-1">
+                    {navLinks.map((item) => {
+                        const isActive = item.exact
+                            ? pathname === item.href
+                            : pathname.startsWith(item.href)
+                        return (
                             <NavItem
                                 key={item.href}
                                 href={item.href}
                                 icon={item.icon}
                                 label={item.label}
-                                isActive={pathname.startsWith(item.href)}
-                                badge={counts[item.countKey]}
-                                collapsed={collapsed}
-                                disabled={!item.enabled}
-                            />
-                        ))}
-                    </div>
-
-                    {/* Content Management */}
-                    <div className="space-y-1">
-                        <SectionLabel label="Nội dung" collapsed={collapsed} />
-                        {contentLinks.map((item) => (
-                            <NavItem
-                                key={item.href}
-                                href={item.href}
-                                icon={item.icon}
-                                label={item.label}
-                                isActive={pathname.startsWith(item.href)}
+                                isActive={isActive}
+                                badge={item.quoteBadge ? pendingQuotes : undefined}
                                 collapsed={collapsed}
                             />
-                        ))}
-                    </div>
-
-                    {/* System */}
-                    <div className="space-y-1">
-                        <SectionLabel label="Hệ thống" collapsed={collapsed} />
-                        <NavItem
-                            href="/admin/bao-gia"
-                            icon={ClipboardList}
-                            label="Báo giá"
-                            isActive={pathname.startsWith("/admin/bao-gia")}
-                            badge={counts.quotes}
-                            badgeVariant="destructive"
-                            collapsed={collapsed}
-                        />
-                    </div>
+                        )
+                    })}
                 </nav>
 
-                {/* User section + Collapse toggle */}
+                {/* User + Collapse toggle */}
                 <div className="border-t">
-                    {/* User */}
                     <div className={cn(
                         "flex items-center gap-2.5 p-3",
                         collapsed && "justify-center p-2"
                     )}>
                         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-green-100 to-green-200 text-sm font-semibold text-green-700">
-                            {userEmail.charAt(0).toUpperCase()}
+                            A
                         </div>
                         {!collapsed && (
                             <div className="flex-1 min-w-0">
-                                <p className="text-xs font-semibold truncate text-foreground">{userEmail}</p>
-                                <p className="text-[10px] text-muted-foreground">Administrator</p>
+                                <p className="text-xs font-semibold truncate text-foreground">Administrator</p>
+                                <p className="text-[10px] text-muted-foreground">Đông Phú Gia</p>
                             </div>
-                        )}
-                        {!collapsed && (
-                            <form action="/api/auth/signout" method="POST">
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <button
-                                            type="submit"
-                                            className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-red-50 hover:text-red-600 transition-colors press-effect"
-                                            title="Đăng xuất"
-                                        >
-                                            <LogOut className="h-4 w-4" />
-                                        </button>
-                                    </TooltipTrigger>
-                                    <TooltipContent side="top">Đăng xuất</TooltipContent>
-                                </Tooltip>
-                            </form>
                         )}
                     </div>
 
-                    {/* Collapse Toggle */}
                     <div className={cn(
-                        "flex border-t p-2",
-                        collapsed ? "justify-center" : "justify-end px-3"
+                        "flex border-t p-2 gap-1",
+                        collapsed ? "flex-col items-center" : "justify-between px-3"
                     )}>
+                        {/* Logout */}
+                        <form action={logoutAction}>
+                            <button
+                                type="submit"
+                                className="flex h-8 items-center gap-2 rounded-lg px-2 text-xs text-muted-foreground hover:bg-accent hover:text-foreground transition-all duration-200 press-effect"
+                                title="Đăng xuất"
+                            >
+                                <LogOut className="h-3.5 w-3.5 shrink-0" />
+                                {!collapsed && <span>Đăng xuất</span>}
+                            </button>
+                        </form>
+
+                        {/* Collapse toggle */}
                         <button
                             onClick={() => setCollapsed(!collapsed)}
                             className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-all duration-200 press-effect"

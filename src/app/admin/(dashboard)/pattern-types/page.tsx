@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
 
-export default function CollectionsPage() {
+export default function PatternTypesPage() {
     redirect('/admin/products')
 }
