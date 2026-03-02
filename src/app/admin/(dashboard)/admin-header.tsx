@@ -7,18 +7,11 @@ import { ChevronRight, Home } from "lucide-react"
 // Map of URL segments to Vietnamese labels
 const segmentLabels: Record<string, string> = {
     admin: "Quản trị",
-    "gach-op-lat": "Gạch ốp lát",
-    "thiet-bi-ve-sinh": "TB vệ sinh",
-    "thiet-bi-nha-bep": "TB nhà bếp",
-    "thiet-bi-nghanh-nuoc": "TB ngành nước",
-    "san-go-san-nhua": "Sàn gỗ/nhựa",
-    banners: "Banner",
-    "bai-viet": "Bài viết",
-    "du-an": "Dự án",
-    "doi-tac": "Đối tác",
-    "bao-gia": "Báo giá",
-    type: "Loại sản phẩm",
-    create: "Tạo mới",
+    products: "Sản phẩm",
+    collections: "Bộ sưu tập",
+    "pattern-types": "Kiểu vân",
+    "quote-requests": "Báo giá",
+    new: "Thêm mới",
     edit: "Chỉnh sửa",
 }
 

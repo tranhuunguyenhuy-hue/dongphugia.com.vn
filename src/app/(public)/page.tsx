@@ -1,209 +1,190 @@
-
+import type { Metadata } from "next"
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import prisma from "@/lib/prisma"
-import { formatPrice } from "@/lib/utils"
-// Import Refactored Components
-import { CategoryMegaMenu } from "@/components/home/category-mega-menu"
-import { ValuesSection } from "@/components/home/values-section"
-import { ProductSection } from "@/components/home/product-section"
 import { ChevronRight } from "lucide-react"
+import { getFeaturedProducts, getPatternTypesByCategorySlug, getBanners } from "@/lib/public-api"
+import { ProductCard } from "@/components/ui/product-card"
+import { HeroBanner } from "@/components/home/hero-banner"
+import { CategorySidebar } from "@/components/home/category-sidebar"
+import { StatsBar } from "@/components/home/stats-bar"
+import { ValuesSection } from "@/components/home/values-section"
+import { CategoryListing } from "@/components/home/category-listing"
 
-export const revalidate = 60
+export const revalidate = 3600
 
-async function getBanners() {
-    return await prisma.banner.findMany({
-        where: { isPublished: true },
-        orderBy: { order: 'asc' }
-    })
-}
-
-async function getFeaturedCategories() {
-    return await prisma.category.findMany({
-        where: { isFeatured: true, parentId: null },
-        include: {
-            children: true,
-            productTypes: {
-                take: 12, // Enough for the grid
-                select: { id: true, name: true, slug: true, image: true }
-            }
-        },
-        take: 5
-    })
-}
-
-// Fetch products for specific homepage sections
-async function getProductsByCategory(categorySlug: string) {
-    return await prisma.product.findMany({
-        where: {
-            category: { slug: categorySlug },
-            isPublished: true
-        },
-        take: 10,
-        orderBy: { createdAt: 'desc' }
-    })
-}
-
-// Fetch general featured products if specific categories are empty
-async function getFeaturedProducts() {
-    return await prisma.product.findMany({
-        where: { isFeatured: true, isPublished: true },
-        take: 10,
-        orderBy: { createdAt: 'desc' }
-    })
+export const metadata: Metadata = {
+    title: "Vật liệu xây dựng cao cấp tại Đà Lạt",
+    description: "Đông Phú Gia - Nhà phân phối gạch ốp lát, thiết bị vệ sinh cao cấp tại Đà Lạt. Hơn 1.500 mẫu sản phẩm chính hãng từ TOTO, Inax, Kohler, Marble và nhiều thương hiệu uy tín.",
+    keywords: ["gạch ốp lát", "thiết bị vệ sinh", "vật liệu xây dựng", "Đà Lạt", "Đông Phú Gia"],
+    openGraph: {
+        title: "Đông Phú Gia - Vật liệu xây dựng cao cấp tại Đà Lạt",
+        description: "Hơn 1.500 mẫu gạch ốp lát, thiết bị vệ sinh chính hãng. Tư vấn miễn phí, giao hàng Đà Lạt và các tỉnh lân cận.",
+        url: "/",
+        images: [
+            {
+                url: "/images/hero-banner.jpg",
+                width: 1200,
+                height: 630,
+                alt: "Đông Phú Gia - Vật liệu xây dựng cao cấp",
+            },
+        ],
+    },
 }
 
 export default async function HomePage() {
-    const [
-        banners,
-        categories,
-        featuredProducts,
-        tileProducts,
-        sanitaryProducts,
-        kitchenProducts
-    ] = await Promise.all([
-        getBanners(),
-        getFeaturedCategories(),
-        getFeaturedProducts(),
-        getProductsByCategory('gach-op-lat'),
-        getProductsByCategory('thiet-bi-ve-sinh'),
-        getProductsByCategory('thiet-bi-bep'),
+    const [patternTypes, featuredProducts, banners] = await Promise.all([
+        getPatternTypesByCategorySlug('gach-op-lat'),
+        getFeaturedProducts(8),
+        getBanners(5),
     ])
 
     return (
         <div className="bg-white">
-
-            {/* 1. Hero Section (Sidebar + Banner) - Node 89:1475 */}
-            <section className="bg-gradient-to-b from-[#dcfce7] to-white pt-8 pb-16">
-                <div className="container mx-auto px-4 flex gap-6 items-start">
-
-                    {/* Sidebar - Category Mega Menu */}
-                    <div className="hidden lg:block relative z-20">
-                        <CategoryMegaMenu categories={categories} />
-                    </div>
-
-                    {/* Hero Banner - Node 89:1476 */}
-                    <div className="flex-1 aspect-[2/1] relative rounded-3xl overflow-hidden shadow-sm border border-gray-200 z-10">
-                        {banners.length > 0 ? (
-                            <Image
-                                src={banners[0].image}
-                                alt={banners[0].title}
-                                fill
-                                className="object-cover"
-                                priority
-                            />
-                        ) : (
-                            <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400">
-                                BANNER PLACEHOLDER
+            {/* Hero section with green gradient background */}
+            <div className="bg-gradient-to-b from-[#dcfce7] to-white">
+                <section className="max-w-[1280px] mx-auto px-5 py-10">
+                    <div className="flex flex-col gap-6">
+                        {/* Category sidebar + Hero banner */}
+                        <div className="flex gap-6 items-start">
+                            {/* Category sidebar — hidden on mobile */}
+                            <div className="hidden lg:block">
+                                <CategorySidebar />
                             </div>
-                        )}
-
-                        {/* Pagination Dots (Visual Only) */}
-                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-                            <div className="h-1.5 w-12 bg-[#22c55e] rounded-full opacity-30"></div>
-                            <div className="h-1.5 w-12 bg-[#22c55e] rounded-full"></div> {/* Active */}
-                            <div className="h-1.5 w-12 bg-[#22c55e] rounded-full opacity-30"></div>
+                            {/* Hero banner */}
+                            <HeroBanner banners={banners} />
                         </div>
-                    </div>
 
-                </div>
-            </section>
-
-            {/* 2. Stats Section - Node 122:2710 */}
-            <section className="container mx-auto px-4 py-8 border-b">
-                <div className="flex flex-wrap justify-between items-center gap-8 text-center divide-x divide-gray-200">
-                    {/* Partner Stat */}
-                    <div className="flex-1 px-4">
-                        <p className="text-[#15803d] font-bold text-4xl mb-2">70+</p>
-                        <p className="text-gray-600 font-medium">Đối tác và thương hiệu nổi tiếng, uy tín nhất thị trường.</p>
-                    </div>
-                    {/* Exclusive Project Stat */}
-                    <div className="flex-1 px-4 border-l border-gray-200"> {/* Added manual border class as divide-x might fail on wrap */}
-                        <p className="text-[#15803d] font-bold text-4xl mb-2">10+</p>
-                        <p className="text-gray-600 font-medium">Dự án hợp tác phân phối độc quyền</p>
-                    </div>
-                    {/* Products Stat */}
-                    <div className="flex-1 px-4 border-l border-gray-200">
-                        <p className="text-[#15803d] font-bold text-4xl mb-2">1,5 K+</p>
-                        <p className="text-gray-600 font-medium">Cập nhật đầy đủ mẫu mã sản phẩm có mặt tại thị trường.</p>
-                    </div>
-                    {/* Satisfaction Stat */}
-                    <div className="flex-1 px-4 border-l border-gray-200">
-                        <p className="text-[#15803d] font-bold text-4xl mb-2">88%</p>
-                        <p className="text-gray-600 font-medium">Khách hàng hài lòng và quay trở lại với Đông Phú Gia</p>
-                    </div>
-                </div>
-            </section>
-
-            <div className="flex flex-col gap-20 py-20">
-
-                {/* 3. Values Section - Node 134:2763 */}
-                <div className="container mx-auto px-4">
-                    <ValuesSection />
-                </div>
-
-                {/* 4. Featured Category Bento Grid - Node 158:798 */}
-                <section className="container mx-auto px-4">
-                    <h2 className="text-center text-[32px] text-[#14532d] font-semibold mb-10">
-                        Danh mục sản phẩm tại <span className="font-bold text-gray-900">Đông Phú Gia</span>
-                    </h2>
-
-                    <div className="flex flex-col lg:flex-row gap-5 h-auto lg:h-[507px]">
-                        {/* Large Item (Left) */}
-                        <Link href="/danh-muc/gach-op-lat" className="flex-1 bg-gray-50 border border-gray-200 rounded-[24px] p-6 flex flex-col justify-between relative overflow-hidden group hover:shadow-lg transition-shadow">
-                            <div className="relative z-10">
-                                <h3 className="text-3xl font-semibold text-gray-900 mb-2">Gạch ốp lát</h3>
-                                <div className="flex items-center gap-1 text-primary cursor-pointer hover:underline">
-                                    Xem tất cả <ChevronRight className="h-4 w-4" />
-                                </div>
-                            </div>
-                            {/* Placeholder for large image */}
-                            <div className="absolute right-0 bottom-0 w-3/4 h-3/4 bg-gray-200 rounded-tl-3xl opacity-50 group-hover:scale-105 transition-transform" />
-                        </Link>
-
-                        {/* Grid Items (Right) - 2x2 */}
-                        <div className="flex-[2] grid grid-cols-1 md:grid-cols-2 gap-5">
-                            {['Thiết bị vệ sinh', 'Vật liệu nước', 'Thiết bị bếp', 'Sàn gỗ'].map((name, idx) => (
-                                <Link key={idx} href="#" className="bg-gray-50 border border-gray-200 rounded-[24px] p-6 flex flex-col h-[240px] relative overflow-hidden group hover:shadow-lg transition-shadow">
-                                    <div className="relative z-10">
-                                        <h3 className="text-2xl font-semibold text-gray-900 mb-2">{name}</h3>
-                                        <div className="flex items-center gap-1 text-primary cursor-pointer hover:underline">
-                                            Xem tất cả <ChevronRight className="h-4 w-4" />
+                        {/* Brand logos */}
+                        {/* Mobile + Tablet: auto-scroll marquee */}
+                        <div className="lg:hidden overflow-hidden py-2">
+                            <div className="inline-flex animate-marquee">
+                                {[...Array(4)].map((_, rep) =>
+                                    ["BOSCH", "HAFELE", "JOMOO", "CAESAR", "TOTO", "COTTO"].map((brand) => (
+                                        <div
+                                            key={`${rep}-${brand}`}
+                                            className="shrink-0 h-[72px] w-[130px] mx-3 flex items-center justify-center opacity-[0.38] hover:opacity-100 transition-opacity duration-300"
+                                        >
+                                            <span className="text-[16px] font-bold text-[#374151] tracking-widest">{brand}</span>
                                         </div>
-                                    </div>
-                                    <div className="absolute right-0 bottom-0 w-2/3 h-2/3 bg-gray-200 rounded-tl-3xl opacity-50 group-hover:scale-105 transition-transform" />
-                                </Link>
+                                    ))
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Desktop only: static centered */}
+                        <div className="hidden lg:flex gap-[31px] items-center justify-center py-2">
+                            {["BOSCH", "HAFELE", "JOMOO", "CAESAR", "TOTO", "COTTO"].map((brand) => (
+                                <div
+                                    key={brand}
+                                    className="shrink-0 h-[100px] w-[177px] flex items-center justify-center opacity-[0.38] hover:opacity-100 transition-opacity duration-300 cursor-pointer"
+                                >
+                                    <span className="text-[20px] font-bold text-[#374151] tracking-widest">{brand}</span>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Stats bar — desktop */}
+                        <div className="hidden md:block">
+                            <StatsBar />
+                        </div>
+
+                        {/* Stats — mobile */}
+                        <div className="md:hidden grid grid-cols-2 gap-4 py-4">
+                            {[
+                                { value: "70+", label: "Thương hiệu uy tín" },
+                                { value: "10+", label: "Dự án độc quyền" },
+                                { value: "1.5K+", label: "Mẫu sản phẩm" },
+                                { value: "88%", label: "Khách hàng hài lòng" },
+                            ].map((s) => (
+                                <div key={s.label} className="text-center">
+                                    <p className="text-[#15803d] font-bold text-3xl">{s.value}</p>
+                                    <p className="text-[#4b5563] text-sm mt-1">{s.label}</p>
+                                </div>
                             ))}
                         </div>
                     </div>
                 </section>
-
-                {/* 5. Product Sections by Category */}
-                <div className="container mx-auto px-4 space-y-20">
-                    {/* Gach Op Lat Section */}
-                    <ProductSection
-                        title="Gạch ốp lát"
-                        products={tileProducts.length > 0 ? tileProducts : featuredProducts}
-                        categorySlug="gach-op-lat"
-                    />
-
-                    {/* Thiet Bi Ve Sinh Section */}
-                    <ProductSection
-                        title="Thiết bị vệ sinh"
-                        products={sanitaryProducts.length > 0 ? sanitaryProducts : featuredProducts}
-                        categorySlug="thiet-bi-ve-sinh"
-                    />
-
-                    {/* Thiet Bi Bep Section */}
-                    <ProductSection
-                        title="Thiết bị bếp"
-                        products={kitchenProducts.length > 0 ? kitchenProducts : featuredProducts}
-                        categorySlug="thiet-bi-bep"
-                    />
-                </div>
-
             </div>
+            <ValuesSection />
+            <CategoryListing />
+
+            {/* Hidden H1 for SEO - Since Hero Banner might not have an H1 text, we provide one for the whole page */}
+            <h1 className="sr-only">Đông Phú Gia - Đại lý Gạch ốp lát và Thiết bị vệ sinh cao cấp tại Đà Lạt</h1>
+
+            {/* Pattern Types Grid */}
+            {patternTypes.length > 0 && (
+                <section className="container mx-auto px-4 py-10">
+                    <div className="flex items-end justify-between mb-8">
+                        <div>
+                            <h2 className="text-3xl font-bold text-[#0f172a]">Gạch ốp lát</h2>
+                            <p className="text-[#64748b] mt-1">Khám phá các dòng gạch cao cấp đa dạng mẫu mã</p>
+                        </div>
+                        <Link href="/gach-op-lat" className="hidden md:flex items-center gap-1 text-[#15803d] font-medium hover:underline" aria-label="Xem tất cả Gạch ốp lát">
+                            Xem tất cả <ChevronRight className="h-4 w-4" aria-hidden="true" />
+                        </Link>
+                    </div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                        {patternTypes.map((pt) => (
+                            <Link
+                                key={pt.id}
+                                href={`/gach-op-lat?pattern=${pt.slug}`}
+                                className="group flex flex-col gap-3 rounded-2xl overflow-hidden border border-[#e2e8f0] hover:shadow-lg transition-shadow"
+                                aria-label={`Xem danh sách sản phẩm ${pt.name}`}
+                            >
+                                <div className="aspect-square overflow-hidden bg-gray-100">
+                                    {pt.thumbnail_url ? (
+                                        <Image
+                                            src={pt.thumbnail_url}
+                                            alt={`Mẫu vân ${pt.name}`}
+                                            width={300}
+                                            height={300}
+                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                        />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
+                                            {pt.name}
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="px-4 pb-4">
+                                    <h3 className="font-semibold text-[#0f172a] group-hover:text-[#15803d] transition-colors">
+                                        {pt.name}
+                                    </h3>
+                                    <p className="text-sm text-[#64748b] mt-0.5">
+                                        {(pt._count as any)?.products || 0} sản phẩm
+                                    </p>
+                                </div>
+                            </Link>
+                        ))}
+                    </div>
+
+                    <div className="flex md:hidden justify-center mt-6">
+                        <Button asChild variant="outline" className="rounded-xl border-[#15803d] text-[#15803d]">
+                            <Link href="/gach-op-lat">Xem tất cả <ChevronRight className="h-4 w-4 ml-1" aria-hidden="true" /></Link>
+                        </Button>
+                    </div>
+                </section>
+            )}
+
+            {/* Featured Products */}
+            {featuredProducts.length > 0 && (
+                <section className="container mx-auto px-4 py-10 pb-20">
+                    <div className="flex items-end justify-between mb-8">
+                        <div>
+                            <h2 className="text-3xl font-bold text-[#0f172a]">Sản phẩm nổi bật</h2>
+                            <p className="text-[#64748b] mt-1">Những mẫu gạch được yêu thích nhất</p>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                        {featuredProducts.map((product) => (
+                            <ProductCard key={product.id} product={product} />
+                        ))}
+                    </div>
+                </section>
+            )}
         </div>
-    );
+    )
 }

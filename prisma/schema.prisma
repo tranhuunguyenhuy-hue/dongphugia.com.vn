@@ -1,219 +1,485 @@
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
-}
-
 generator client {
   provider = "prisma-client-js"
 }
 
-model AdminUser {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  passwordHash String
-  role         String   @default("ADMIN")
-  createdAt    DateTime @default(now())
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
-model Category {
-  id          String    @id @default(cuid())
-  name        String
-  slug        String    @unique
-  description String?
-  image       String?   // Thumbnail image for the category
-  isFeatured  Boolean   @default(false) // Show on homepage?
-  parentId    String?
-  parent      Category? @relation("CategoryHierarchy", fields: [parentId], references: [id])
-  children    Category[]    @relation("CategoryHierarchy")
-  productTypes ProductType[]
-  brands      Brand[]
-  products    Product[]
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  @@index([slug])
-  @@index([parentId])
+model banners {
+  id         Int       @id @default(autoincrement())
+  title      String?   @db.VarChar(200)
+  image_url  String    @db.VarChar(500)
+  link_url   String?   @db.VarChar(500)
+  is_active  Boolean   @default(true)
+  sort_order Int       @default(0)
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+  updated_at DateTime? @default(now()) @db.Timestamp(6)
 }
 
-model Brand {
-  id         String    @id @default(cuid())
-  name       String
-  slug       String    @unique
-  logo       String?
-  // Optional: Brand belongs to specific category (for TBVS, Kitchen, etc.)
-  categoryId String?   
-  category   Category? @relation(fields: [categoryId], references: [id])
-  products   Product[]
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model collections {
+  id              Int           @id @default(autoincrement())
+  pattern_type_id Int
+  name            String        @db.VarChar(100)
+  slug            String        @unique @db.VarChar(100)
+  tagline         String?       @db.VarChar(200)
+  description     String?
+  thumbnail_url   String?       @db.VarChar(500)
+  is_active       Boolean?      @default(true)
+  is_featured     Boolean?      @default(false)
+  sort_order      Int?          @default(0)
+  created_at      DateTime?     @default(now()) @db.Timestamp(6)
+  updated_at      DateTime?     @default(now()) @db.Timestamp(6)
+  pattern_types   pattern_types @relation(fields: [pattern_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  products        products[]
 
-  @@index([slug])
-  @@index([categoryId])
+  @@index([pattern_type_id], map: "idx_collections_pattern_type")
 }
 
-model ProductType {
-  id          String       @id @default(cuid())
-  name        String
-  slug        String       @unique
-  image       String?      // Thumbnail image for sub-category
-  categoryId  String
-  category    Category     @relation(fields: [categoryId], references: [id])
-  products      Product[]
-  collections   Collection[]
-  productGroups ProductGroup[]
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-
-  @@index([slug])
-  @@index([categoryId])
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model colors {
+  id             Int              @id @default(autoincrement())
+  name           String           @db.VarChar(50)
+  slug           String           @unique @db.VarChar(50)
+  hex_code       String?          @db.VarChar(7)
+  bep_products   bep_products[]
+  product_colors product_colors[]
+  tbvs_products  tbvs_products[]
 }
 
-model Collection {
-  id            String      @id @default(cuid())
-  name          String      // "INSIDE ART", "MOSAIC"
-  slug          String      @unique
-  image         String?     // Thumbnail for carousel
-  productTypeId String
-  productType   ProductType @relation(fields: [productTypeId], references: [id])
-  products      Product[]
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-}
-model ProductGroup {
-  id            String      @id @default(cuid())
-  name          String      // "Bồn cầu 1 khối", "Bồn cầu treo"...
-  slug          String      @unique
-  productTypeId String
-  productType   ProductType @relation(fields: [productTypeId], references: [id])
-  products      Product[]
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-
-  @@index([slug])
-  @@index([productTypeId])
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model locations {
+  id                Int                 @id @default(autoincrement())
+  name              String              @db.VarChar(50)
+  slug              String              @unique @db.VarChar(50)
+  product_locations product_locations[]
 }
 
-model Product {
-  id            String       @id @default(cuid())
-  name          String
-  slug          String       @unique
-  sku           String?      @unique
-  description   String?      // HTML content
-  price         Decimal?     // Current selling price
-  originalPrice Decimal?     // Original price (for strikethrough)
-  showPrice     Boolean      @default(true) // false = "Liên hệ báo giá"
-  thumbnail     String?      // Single thumbnail URL for cards/listings
-  images        String       // JSON array of gallery image URLs for detail page
-  specs         String?      // JSON specs per category, e.g. {surface, dimensions, origin...}
-  // Tab: Thông tin sản phẩm
-  material        String?    // Chất liệu (Porcelain, Ceramic, Granite...)
-  thickness       String?    // Độ dày (9mm, 12mm...)
-  waterAbsorption String?    // Độ hút nước (< 0.5%, ≤ 0.1%...)
-  usage           String?    // Ứng dụng (Lát nền, Ốp tường, Mặt bàn...)
-  colorHex        String?    // Mã màu hex cho color selector (#3b82f6)
-  isPublished   Boolean      @default(true)
-  isFeatured    Boolean      @default(false)
-  
-  categoryId    String
-  category      Category     @relation(fields: [categoryId], references: [id])
-  
-  brandId       String?
-  brand         Brand?       @relation(fields: [brandId], references: [id])
-  
-  productTypeId String?
-  productType   ProductType? @relation(fields: [productTypeId], references: [id])
-  
-  collectionId  String?
-  collection    Collection?  @relation(fields: [collectionId], references: [id])
-  
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-  
-  // Optimized Fields (for Gạch ốp lát)
-  dimensions    String?
-  simDimensions String?
-  surface       String?
-  origin        String?
-  antiSlip      String?
-  patternCount  Int?
-  colorName     String?
-  
-  shortDescription String? // "Vòi chậu rửa 3 lỗ"
-  productGroupId   String?
-  productGroup     ProductGroup? @relation(fields: [productGroupId], references: [id])
-
-  quoteItems    QuoteItem[]
-
-  @@index([categoryId])
-  @@index([brandId])
-  @@index([productTypeId])
-  @@index([collectionId])
-  @@index([isPublished])
-  @@index([isFeatured])
-  @@index([slug])
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model origins {
+  id            Int             @id @default(autoincrement())
+  name          String          @db.VarChar(100)
+  slug          String          @unique @db.VarChar(50)
+  bep_products  bep_products[]
+  products      products[]
+  tbvs_products tbvs_products[]
 }
 
-model Banner {
-  id          String   @id @default(cuid())
-  title       String
-  image       String
-  link        String?
-  order       Int      @default(0)
-  isPublished Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model pattern_types {
+  id                 Int                @id @default(autoincrement())
+  category_id        Int
+  name               String             @db.VarChar(100)
+  slug               String             @unique @db.VarChar(100)
+  description        String?
+  thumbnail_url      String?            @db.VarChar(500)
+  hero_image_url     String?            @db.VarChar(500)
+  is_active          Boolean?           @default(true)
+  sort_order         Int?               @default(0)
+  seo_title          String?            @db.VarChar(200)
+  seo_description    String?            @db.VarChar(500)
+  created_at         DateTime?          @default(now()) @db.Timestamp(6)
+  updated_at         DateTime?          @default(now()) @db.Timestamp(6)
+  collections        collections[]
+  product_categories product_categories @relation(fields: [category_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  products           products[]
+
+  @@index([category_id], map: "idx_pattern_types_category")
 }
 
-model Post {
-  id          String   @id @default(cuid())
-  title       String
-  slug        String   @unique
-  content     String   // HTML content
-  thumbnail   String?
-  isPublished Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model product_categories {
+  id                 Int                  @id @default(autoincrement())
+  name               String               @db.VarChar(100)
+  slug               String               @unique @db.VarChar(100)
+  description        String?
+  thumbnail_url      String?              @db.VarChar(500)
+  is_active          Boolean?             @default(true)
+  sort_order         Int?                 @default(0)
+  seo_title          String?              @db.VarChar(200)
+  seo_description    String?              @db.VarChar(500)
+  created_at         DateTime?            @default(now()) @db.Timestamp(6)
+  updated_at         DateTime?            @default(now()) @db.Timestamp(6)
+  bep_product_types  bep_product_types[]
+  pattern_types      pattern_types[]
+  tbvs_product_types tbvs_product_types[]
 }
 
-model Partner {
-  id         String   @id @default(cuid())
-  name       String
-  logo       String
-  websiteUrl String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model product_colors {
+  product_id Int
+  color_id   Int
+  colors     colors   @relation(fields: [color_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  products   products @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([product_id, color_id])
 }
 
-model Project {
-  id          String   @id @default(cuid())
-  name        String
-  slug        String   @unique
-  description String?
-  images      String // JSON string for SQLite
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model product_images {
+  id         Int      @id @default(autoincrement())
+  product_id Int
+  image_url  String   @db.VarChar(500)
+  alt_text   String?  @db.VarChar(200)
+  sort_order Int?     @default(0)
+  products   products @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
-model QuoteRequest {
-  id            String      @id @default(cuid())
-  customerName  String
-  customerPhone String
-  customerEmail String?
-  message       String?
-  status    String   @default("PENDING") // QuoteStatus: PENDING, CONTACTED, DONE
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  items         QuoteItem[]
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model product_locations {
+  product_id  Int
+  location_id Int
+  locations   locations @relation(fields: [location_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  products    products  @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([product_id, location_id])
 }
 
-model QuoteItem {
-  id             String       @id @default(cuid())
-  quoteRequestId String
-  quoteRequest   QuoteRequest @relation(fields: [quoteRequestId], references: [id])
-  productId      String
-  product        Product      @relation(fields: [productId], references: [id])
-  quantity       Int
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model products {
+  id                Int                 @id @default(autoincrement())
+  sku               String              @unique @db.VarChar(50)
+  name              String              @db.VarChar(200)
+  slug              String              @unique @db.VarChar(200)
+  pattern_type_id   Int
+  collection_id     Int?
+  surface_id        Int?
+  size_id           Int?
+  origin_id         Int?
+  description       String?
+  price_display     String?             @default("Liên hệ báo giá") @db.VarChar(50)
+  image_main_url    String?             @db.VarChar(500)
+  image_hover_url   String?             @db.VarChar(500)
+  is_active         Boolean?            @default(true)
+  is_featured       Boolean?            @default(false)
+  sort_order        Int?                @default(0)
+  seo_title         String?             @db.VarChar(200)
+  seo_description   String?             @db.VarChar(500)
+  created_at        DateTime?           @default(now()) @db.Timestamp(6)
+  updated_at        DateTime?           @default(now()) @db.Timestamp(6)
+  product_colors    product_colors[]
+  product_images    product_images[]
+  product_locations product_locations[]
+  collections       collections?        @relation(fields: [collection_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  origins           origins?            @relation(fields: [origin_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  pattern_types     pattern_types       @relation(fields: [pattern_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  sizes             sizes?              @relation(fields: [size_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  surfaces          surfaces?           @relation(fields: [surface_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  quote_requests    quote_requests[]
+
+  @@index([is_active], map: "idx_products_active")
+  @@index([collection_id], map: "idx_products_collection")
+  @@index([origin_id], map: "idx_products_origin")
+  @@index([pattern_type_id], map: "idx_products_pattern_type")
+  @@index([size_id], map: "idx_products_size")
+  @@index([surface_id], map: "idx_products_surface")
 }
 
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model redirects {
+  id          Int       @id @default(autoincrement())
+  old_url     String    @unique @db.VarChar(500)
+  new_url     String    @db.VarChar(500)
+  status_code Int?      @default(301)
+  is_active   Boolean?  @default(true)
+  created_at  DateTime? @default(now()) @db.Timestamp(6)
+}
 
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model sizes {
+  id         Int        @id @default(autoincrement())
+  label      String     @db.VarChar(30)
+  slug       String     @unique @db.VarChar(30)
+  width_mm   Int
+  height_mm  Int
+  sort_order Int?       @default(0)
+  products   products[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model surfaces {
+  id       Int        @id @default(autoincrement())
+  name     String     @db.VarChar(50)
+  slug     String     @unique @db.VarChar(50)
+  products products[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model quote_requests {
+  id         Int       @id @default(autoincrement())
+  name       String    @db.VarChar(100)
+  phone      String    @db.VarChar(20)
+  email      String?   @db.VarChar(100)
+  message    String?
+  product_id Int?
+  status     String    @default("pending") @db.VarChar(20)
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+  updated_at DateTime? @default(now()) @db.Timestamp(6)
+  products   products? @relation(fields: [product_id], references: [id], onUpdate: NoAction)
+
+  @@index([created_at(sort: Desc)], map: "idx_quote_requests_created")
+  @@index([status], map: "idx_quote_requests_status")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model tbvs_brands {
+  id                Int                 @id @default(autoincrement())
+  name              String              @db.VarChar(100)
+  slug              String              @unique @db.VarChar(100)
+  logo_url          String?             @db.VarChar(500)
+  description       String?
+  origin_country    String?             @db.VarChar(100)
+  website_url       String?             @db.VarChar(500)
+  is_active         Boolean?            @default(true)
+  is_featured       Boolean?            @default(false)
+  sort_order        Int?                @default(0)
+  created_at        DateTime?           @default(now()) @db.Timestamp(6)
+  updated_at        DateTime?           @default(now()) @db.Timestamp(6)
+  tbvs_products     tbvs_products[]
+  tbvs_technologies tbvs_technologies[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model tbvs_materials {
+  id            Int             @id @default(autoincrement())
+  name          String          @db.VarChar(100)
+  slug          String          @unique @db.VarChar(50)
+  description   String?
+  sort_order    Int?            @default(0)
+  tbvs_products tbvs_products[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model tbvs_product_images {
+  id            Int           @id @default(autoincrement())
+  product_id    Int
+  image_url     String        @db.VarChar(500)
+  alt_text      String?       @db.VarChar(200)
+  sort_order    Int?          @default(0)
+  created_at    DateTime?     @default(now()) @db.Timestamp(6)
+  tbvs_products tbvs_products @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model tbvs_product_technologies {
+  product_id        Int
+  technology_id     Int
+  tbvs_products     tbvs_products     @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  tbvs_technologies tbvs_technologies @relation(fields: [technology_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([product_id, technology_id])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model tbvs_product_types {
+  id                 Int                @id @default(autoincrement())
+  category_id        Int                @default(2)
+  name               String             @db.VarChar(100)
+  slug               String             @unique @db.VarChar(100)
+  description        String?
+  thumbnail_url      String?            @db.VarChar(500)
+  hero_image_url     String?            @db.VarChar(500)
+  icon_name          String?            @db.VarChar(50)
+  is_active          Boolean?           @default(true)
+  sort_order         Int?               @default(0)
+  seo_title          String?            @db.VarChar(200)
+  seo_description    String?            @db.VarChar(500)
+  created_at         DateTime?          @default(now()) @db.Timestamp(6)
+  updated_at         DateTime?          @default(now()) @db.Timestamp(6)
+  product_categories product_categories @relation(fields: [category_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  tbvs_products      tbvs_products[]
+  tbvs_subtypes      tbvs_subtypes[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model tbvs_products {
+  id                        Int                         @id @default(autoincrement())
+  sku                       String                      @unique @db.VarChar(50)
+  name                      String                      @db.VarChar(200)
+  slug                      String                      @unique @db.VarChar(200)
+  product_type_id           Int
+  subtype_id                Int?
+  brand_id                  Int?
+  material_id               Int?
+  color_id                  Int?
+  origin_id                 Int?
+  description               String?
+  features                  String?
+  specifications            Json?
+  warranty_months           Int?                        @default(12)
+  price                     Decimal?                    @db.Decimal(15, 0)
+  price_display             String?                     @default("Liên hệ báo giá") @db.VarChar(50)
+  image_main_url            String?                     @db.VarChar(500)
+  image_hover_url           String?                     @db.VarChar(500)
+  is_active                 Boolean?                    @default(true)
+  is_featured               Boolean?                    @default(false)
+  is_new                    Boolean?                    @default(false)
+  is_bestseller             Boolean?                    @default(false)
+  stock_status              String?                     @default("in_stock") @db.VarChar(20)
+  sort_order                Int?                        @default(0)
+  seo_title                 String?                     @db.VarChar(200)
+  seo_description           String?                     @db.VarChar(500)
+  created_at                DateTime?                   @default(now()) @db.Timestamp(6)
+  updated_at                DateTime?                   @default(now()) @db.Timestamp(6)
+  tbvs_product_images       tbvs_product_images[]
+  tbvs_product_technologies tbvs_product_technologies[]
+  tbvs_brands               tbvs_brands?                @relation(fields: [brand_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  colors                    colors?                     @relation(fields: [color_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  tbvs_materials            tbvs_materials?             @relation(fields: [material_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  origins                   origins?                    @relation(fields: [origin_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  tbvs_product_types        tbvs_product_types          @relation(fields: [product_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  tbvs_subtypes             tbvs_subtypes?              @relation(fields: [subtype_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([is_active], map: "idx_tbvs_products_active")
+  @@index([brand_id], map: "idx_tbvs_products_brand")
+  @@index([color_id], map: "idx_tbvs_products_color")
+  @@index([is_featured], map: "idx_tbvs_products_featured")
+  @@index([material_id], map: "idx_tbvs_products_material")
+  @@index([subtype_id], map: "idx_tbvs_products_subtype")
+  @@index([product_type_id], map: "idx_tbvs_products_type")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model tbvs_subtypes {
+  id                 Int                @id @default(autoincrement())
+  product_type_id    Int
+  name               String             @db.VarChar(100)
+  slug               String             @unique @db.VarChar(100)
+  description        String?
+  thumbnail_url      String?            @db.VarChar(500)
+  is_active          Boolean?           @default(true)
+  sort_order         Int?               @default(0)
+  created_at         DateTime?          @default(now()) @db.Timestamp(6)
+  updated_at         DateTime?          @default(now()) @db.Timestamp(6)
+  tbvs_products      tbvs_products[]
+  tbvs_product_types tbvs_product_types @relation(fields: [product_type_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([product_type_id], map: "idx_tbvs_subtypes_type")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model tbvs_technologies {
+  id                        Int                         @id @default(autoincrement())
+  name                      String                      @db.VarChar(100)
+  slug                      String                      @unique @db.VarChar(50)
+  brand_id                  Int?
+  description               String?
+  sort_order                Int?                        @default(0)
+  tbvs_product_technologies tbvs_product_technologies[]
+  tbvs_brands               tbvs_brands?                @relation(fields: [brand_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([brand_id], map: "idx_tbvs_technologies_brand")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model bep_brands {
+  id             Int            @id @default(autoincrement())
+  name           String         @db.VarChar(100)
+  slug           String         @unique @db.VarChar(100)
+  logo_url       String?        @db.VarChar(500)
+  description    String?
+  origin_country String?        @db.VarChar(100)
+  website_url    String?        @db.VarChar(500)
+  is_active      Boolean?       @default(true)
+  is_featured    Boolean?       @default(false)
+  sort_order     Int?           @default(0)
+  created_at     DateTime?      @default(now()) @db.Timestamp(6)
+  updated_at     DateTime?      @default(now()) @db.Timestamp(6)
+  bep_products   bep_products[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model bep_product_images {
+  id           Int          @id @default(autoincrement())
+  product_id   Int
+  image_url    String       @db.VarChar(500)
+  alt_text     String?      @db.VarChar(200)
+  sort_order   Int?         @default(0)
+  created_at   DateTime?    @default(now()) @db.Timestamp(6)
+  bep_products bep_products @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model bep_product_types {
+  id                 Int                @id @default(autoincrement())
+  category_id        Int                @default(3)
+  name               String             @db.VarChar(100)
+  slug               String             @unique @db.VarChar(100)
+  description        String?
+  thumbnail_url      String?            @db.VarChar(500)
+  hero_image_url     String?            @db.VarChar(500)
+  icon_name          String?            @db.VarChar(50)
+  is_active          Boolean?           @default(true)
+  sort_order         Int?               @default(0)
+  seo_title          String?            @db.VarChar(200)
+  seo_description    String?            @db.VarChar(500)
+  created_at         DateTime?          @default(now()) @db.Timestamp(6)
+  updated_at         DateTime?          @default(now()) @db.Timestamp(6)
+  product_categories product_categories @relation(fields: [category_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  bep_products       bep_products[]
+  bep_subtypes       bep_subtypes[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model bep_products {
+  id                 Int                  @id @default(autoincrement())
+  sku                String               @unique @db.VarChar(50)
+  name               String               @db.VarChar(200)
+  slug               String               @unique @db.VarChar(200)
+  product_type_id    Int
+  subtype_id         Int?
+  brand_id           Int?
+  color_id           Int?
+  origin_id          Int?
+  description        String?
+  features           String?
+  specifications     Json?
+  warranty_months    Int?                 @default(24)
+  price              Decimal?             @db.Decimal(15, 0)
+  price_display      String?              @default("Liên hệ báo giá") @db.VarChar(50)
+  image_main_url     String?              @db.VarChar(500)
+  image_hover_url    String?              @db.VarChar(500)
+  is_active          Boolean?             @default(true)
+  is_featured        Boolean?             @default(false)
+  is_new             Boolean?             @default(false)
+  is_bestseller      Boolean?             @default(false)
+  stock_status       String?              @default("in_stock") @db.VarChar(20)
+  sort_order         Int?                 @default(0)
+  seo_title          String?              @db.VarChar(200)
+  seo_description    String?              @db.VarChar(500)
+  created_at         DateTime?            @default(now()) @db.Timestamp(6)
+  updated_at         DateTime?            @default(now()) @db.Timestamp(6)
+  bep_product_images bep_product_images[]
+  bep_brands         bep_brands?          @relation(fields: [brand_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  colors             colors?              @relation(fields: [color_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  origins            origins?             @relation(fields: [origin_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  bep_product_types  bep_product_types    @relation(fields: [product_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  bep_subtypes       bep_subtypes?        @relation(fields: [subtype_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([is_active], map: "idx_bep_products_active")
+  @@index([brand_id], map: "idx_bep_products_brand")
+  @@index([is_featured], map: "idx_bep_products_featured")
+  @@index([subtype_id], map: "idx_bep_products_subtype")
+  @@index([product_type_id], map: "idx_bep_products_type")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model bep_subtypes {
+  id                Int               @id @default(autoincrement())
+  product_type_id   Int
+  name              String            @db.VarChar(100)
+  slug              String            @unique @db.VarChar(100)
+  description       String?
+  thumbnail_url     String?           @db.VarChar(500)
+  is_active         Boolean?          @default(true)
+  sort_order        Int?              @default(0)
+  created_at        DateTime?         @default(now()) @db.Timestamp(6)
+  updated_at        DateTime?         @default(now()) @db.Timestamp(6)
+  bep_products      bep_products[]
+  bep_product_types bep_product_types @relation(fields: [product_type_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([product_type_id], map: "idx_bep_subtypes_type")
+}

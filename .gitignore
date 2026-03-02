@@ -64,8 +64,11 @@ Thumbs.db
 /building-materials-web/
 cleanup.js
 
-# Agent config (Antigravity IDE)
+# Agent config (Antigravity IDE) — large workspace, not version-controlled
 .agent/
+
+# .ai/ folder is intentionally tracked — shared docs for Claude Code & Antigravity
+# .ai/
 
 # Local cache directories (DO NOT UPLOAD)
 .mnt-cache/

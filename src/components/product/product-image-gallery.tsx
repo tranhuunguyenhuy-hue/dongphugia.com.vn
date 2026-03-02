@@ -3,14 +3,31 @@
 import Image from 'next/image';
 import { useState } from 'react';
 
+interface GalleryImage {
+    image_url: string;
+    alt_text?: string | null;
+}
+
 interface ProductImageGalleryProps {
-    images: string[];
+    mainImageUrl?: string | null;
+    hoverImageUrl?: string | null;
+    additionalImages?: GalleryImage[];
     productName: string;
 }
 
-export function ProductImageGallery({ images, productName }: ProductImageGalleryProps) {
+export function ProductImageGallery({
+    mainImageUrl,
+    hoverImageUrl,
+    additionalImages = [],
+    productName,
+}: ProductImageGalleryProps) {
+    // Build full image list: main + additional
+    const allImages: string[] = [];
+    if (mainImageUrl) allImages.push(mainImageUrl);
+    additionalImages.forEach((img) => allImages.push(img.image_url));
+
     const [activeIndex, setActiveIndex] = useState(0);
-    const activeImage = images[activeIndex] || null;
+    const activeImage = allImages[activeIndex] || null;
 
     return (
         <div className="flex flex-col gap-3 w-full lg:max-w-[628px]">
@@ -32,9 +49,9 @@ export function ProductImageGallery({ images, productName }: ProductImageGallery
             </div>
 
             {/* Thumbnail Strip */}
-            {images.length > 1 && (
+            {allImages.length > 1 && (
                 <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-1">
-                    {images.slice(0, 5).map((img, idx) => (
+                    {allImages.slice(0, 6).map((img, idx) => (
                         <button
                             key={idx}
                             onClick={() => setActiveIndex(idx)}
@@ -51,6 +68,7 @@ export function ProductImageGallery({ images, productName }: ProductImageGallery
                                 src={img}
                                 alt={`${productName} - ${idx + 1}`}
                                 fill
+                                sizes="(max-width: 640px) 80px, (max-width: 1024px) 120px, 174px"
                                 className="object-cover"
                             />
                         </button>

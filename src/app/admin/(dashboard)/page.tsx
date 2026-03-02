@@ -7,124 +7,86 @@ import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table"
 import {
-    Package, FolderTree, FileText, ArrowRight, Plus,
-    TrendingUp, ClipboardList, BrickWall, ShowerHead,
-    CookingPot, Droplets, TreePine,
+    Package, FolderOpen, Layers, ClipboardList, ArrowRight, Plus, TrendingUp,
 } from "lucide-react"
-import Image from "next/image"
-
-// Stat card configurations with unique styles
-const statStyles = [
-    { gradient: "stat-gradient-blue", iconColor: "text-blue-600", iconBg: "bg-blue-100", icon: Package },
-    { gradient: "stat-gradient-orange", iconColor: "text-orange-600", iconBg: "bg-orange-100", icon: ClipboardList },
-    { gradient: "stat-gradient-emerald", iconColor: "text-emerald-600", iconBg: "bg-emerald-100", icon: BrickWall },
-    { gradient: "stat-gradient-cyan", iconColor: "text-cyan-600", iconBg: "bg-cyan-100", icon: TreePine },
-    { gradient: "stat-gradient-purple", iconColor: "text-purple-600", iconBg: "bg-purple-100", icon: Droplets },
-    { gradient: "stat-gradient-rose", iconColor: "text-rose-600", iconBg: "bg-rose-100", icon: CookingPot },
-    { gradient: "stat-gradient-amber", iconColor: "text-amber-600", iconBg: "bg-amber-100", icon: ShowerHead },
-]
+import { QuoteStatusButton } from "./quote-requests/quote-status-button"
 
 export default async function AdminDashboard() {
-    // Fetch Data
-    const [productCount, pendingQuotes, categories, recentProducts] = await Promise.all([
-        prisma.product.count(),
-        prisma.quoteRequest.count({ where: { status: "PENDING" } }),
-        prisma.category.findMany({
-            where: { parentId: null },
-            take: 5,
-            orderBy: { name: 'asc' },
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    const [
+        totalProducts,
+        totalPatternTypes,
+        pendingQuotes,
+        todayQuotes,
+        recentProducts,
+        recentPendingQuotes,
+    ] = await Promise.all([
+        prisma.products.count({ where: { is_active: true } }),
+        prisma.pattern_types.count({ where: { is_active: true } }),
+        prisma.quote_requests.count({ where: { status: 'pending' } }),
+        prisma.quote_requests.count({ where: { created_at: { gte: today } } }),
+        prisma.products.findMany({
+            take: 10,
+            orderBy: { created_at: 'desc' },
             include: {
-                _count: { select: { products: true } },
-                children: {
-                    include: {
-                        _count: { select: { products: true } }
-                    }
-                }
-            }
+                pattern_types: { select: { name: true } },
+                collections: { select: { name: true } },
+                sizes: { select: { label: true } },
+                surfaces: { select: { name: true } },
+            },
         }),
-        prisma.product.findMany({
-            take: 8,
-            orderBy: { updatedAt: "desc" },
+        prisma.quote_requests.findMany({
+            where: { status: 'pending' },
+            take: 5,
+            orderBy: { created_at: 'desc' },
             include: {
-                category: { select: { name: true } },
-                productType: { select: { name: true } },
-                collection: { select: { name: true } },
+                products: { select: { id: true, name: true, slug: true } },
             },
         }),
     ])
 
-    // Construct Stats
-    const stats: { label: string; value: number; href: string; subtitle: string }[] = [
-        {
-            label: "Tổng sản phẩm",
-            value: productCount,
-            href: "/admin/gach-op-lat",
-            subtitle: "Sản phẩm hiện có"
-        },
-        {
-            label: "Yêu cầu báo giá",
-            value: pendingQuotes,
-            href: "/admin/bao-gia",
-            subtitle: "Đang chờ xử lý"
-        },
+    const stats = [
+        { label: "Sản phẩm đang bán", value: totalProducts, href: "/admin/products", icon: Package, gradient: "stat-gradient-blue", iconColor: "text-blue-600", iconBg: "bg-blue-100" },
+        { label: "Kiểu vân hoạt động", value: totalPatternTypes, href: "/admin/pattern-types", icon: Layers, gradient: "stat-gradient-emerald", iconColor: "text-emerald-600", iconBg: "bg-emerald-100" },
+        { label: "Báo giá chờ xử lý", value: pendingQuotes, href: "/admin/quote-requests", icon: ClipboardList, gradient: "stat-gradient-rose", iconColor: "text-rose-600", iconBg: "bg-rose-100" },
+        { label: "Báo giá hôm nay", value: todayQuotes, href: "/admin/quote-requests", icon: FolderOpen, gradient: "stat-gradient-amber", iconColor: "text-amber-600", iconBg: "bg-amber-100" },
     ]
-
-    categories.forEach(cat => {
-        const childCount = cat.children.reduce((acc, child) => acc + child._count.products, 0)
-        const total = cat._count.products + childCount
-        stats.push({
-            label: cat.name,
-            value: total,
-            href: `/admin/${cat.slug}`,
-            subtitle: "Sản phẩm"
-        })
-    })
 
     return (
         <div className="space-y-8">
-            {/* Page header */}
+            {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight text-foreground">Dashboard</h1>
-                    <p className="text-sm text-muted-foreground mt-1">
-                        Tổng quan hệ thống quản lý Đông Phú Gia
-                    </p>
+                    <p className="text-sm text-muted-foreground mt-1">Tổng quan hệ thống quản lý Đông Phú Gia</p>
                 </div>
-                <div className="flex gap-2">
-                    <Button size="sm" className="press-effect" asChild>
-                        <Link href="/admin/gach-op-lat">
-                            <Plus className="mr-1.5 h-4 w-4" />
-                            Thêm sản phẩm
-                        </Link>
-                    </Button>
-                </div>
+                <Button size="sm" className="press-effect" asChild>
+                    <Link href="/admin/products/new">
+                        <Plus className="mr-1.5 h-4 w-4" /> Thêm sản phẩm
+                    </Link>
+                </Button>
             </div>
 
-            {/* Stats Grid — Gradient Cards */}
+            {/* Stat Cards */}
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                {stats.map((stat, index) => {
-                    const style = statStyles[index % statStyles.length]
-                    const Icon = style.icon
+                {stats.map((stat) => {
+                    const Icon = stat.icon
                     return (
-                        <Link key={index} href={stat.href} className="block">
-                            <Card className={`${style.gradient} border-0 card-hover cursor-pointer h-full overflow-hidden relative`}>
+                        <Link key={stat.label} href={stat.href} className="block">
+                            <Card className={`${stat.gradient} border-0 card-hover cursor-pointer h-full`}>
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium text-slate-600 truncate" title={stat.label}>
-                                        {stat.label}
-                                    </CardTitle>
-                                    <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${style.iconBg}`}>
-                                        <Icon className={`h-4 w-4 ${style.iconColor}`} />
+                                    <CardTitle className="text-sm font-medium text-slate-600">{stat.label}</CardTitle>
+                                    <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${stat.iconBg}`}>
+                                        <Icon className={`h-4 w-4 ${stat.iconColor}`} />
                                     </div>
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="text-3xl font-bold text-slate-800 tabular-nums">
-                                        {stat.value}
-                                    </div>
-                                    <div className="flex items-center gap-1.5 mt-2">
+                                    <div className="text-3xl font-bold text-slate-800 tabular-nums">{stat.value}</div>
+                                    <div className="flex items-center gap-1 mt-2">
                                         <TrendingUp className="h-3 w-3 text-emerald-600" />
-                                        <p className="text-xs text-slate-500">
-                                            {stat.subtitle}
-                                        </p>
+                                        <p className="text-xs text-slate-500">Hiện tại</p>
                                     </div>
                                 </CardContent>
                             </Card>
@@ -133,128 +95,55 @@ export default async function AdminDashboard() {
                 })}
             </div>
 
-            {/* Quick Actions */}
-            <div className="grid gap-4 sm:grid-cols-3">
-                <Link href="/admin/gach-op-lat" className="block">
-                    <Card className="card-hover cursor-pointer border-dashed border-2 hover:border-primary/40 transition-colors">
-                        <CardContent className="flex items-center gap-4 p-4">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-100 text-green-700">
-                                <Package className="h-5 w-5" />
-                            </div>
-                            <div>
-                                <p className="text-sm font-semibold">Quản lý sản phẩm</p>
-                                <p className="text-xs text-muted-foreground">Thêm, sửa, xoá sản phẩm</p>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </Link>
-                <Link href="/admin/banners" className="block">
-                    <Card className="card-hover cursor-pointer border-dashed border-2 hover:border-primary/40 transition-colors">
-                        <CardContent className="flex items-center gap-4 p-4">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 text-blue-700">
-                                <FolderTree className="h-5 w-5" />
-                            </div>
-                            <div>
-                                <p className="text-sm font-semibold">Quản lý Banner</p>
-                                <p className="text-xs text-muted-foreground">Cập nhật hình ảnh trang chủ</p>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </Link>
-                <Link href="/admin/bao-gia" className="block">
-                    <Card className="card-hover cursor-pointer border-dashed border-2 hover:border-primary/40 transition-colors">
-                        <CardContent className="flex items-center gap-4 p-4">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-100 text-orange-700">
-                                <FileText className="h-5 w-5" />
-                            </div>
-                            <div>
-                                <p className="text-sm font-semibold">Yêu cầu báo giá</p>
-                                <p className="text-xs text-muted-foreground">Xem và phản hồi báo giá</p>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </Link>
-            </div>
-
-            {/* Recent products — Enhanced Table */}
+            {/* Recent Products */}
             <Card className="overflow-hidden">
                 <CardHeader className="flex flex-row items-center justify-between bg-slate-50/50 border-b">
                     <div>
-                        <CardTitle className="text-base">Cập nhật gần đây</CardTitle>
-                        <p className="text-sm text-muted-foreground mt-0.5">
-                            {recentProducts.length} sản phẩm được cập nhật mới nhất
-                        </p>
+                        <CardTitle className="text-base">Sản phẩm mới thêm</CardTitle>
+                        <p className="text-sm text-muted-foreground mt-0.5">10 sản phẩm gần nhất</p>
                     </div>
                     <Button variant="outline" size="sm" className="press-effect" asChild>
-                        <Link href="/admin/gach-op-lat">
-                            Xem tất cả <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
-                        </Link>
+                        <Link href="/admin/products">Xem tất cả <ArrowRight className="ml-1.5 h-3.5 w-3.5" /></Link>
                     </Button>
                 </CardHeader>
                 <CardContent className="p-0">
                     <Table>
                         <TableHeader>
                             <TableRow className="bg-slate-50/30 hover:bg-slate-50/30">
-                                <TableHead className="w-[320px]">Sản phẩm</TableHead>
-                                <TableHead>Danh mục</TableHead>
-                                <TableHead>Phân loại</TableHead>
-                                <TableHead>BST</TableHead>
+                                <TableHead>SKU</TableHead>
+                                <TableHead>Tên sản phẩm</TableHead>
+                                <TableHead>Kiểu vân</TableHead>
+                                <TableHead>Bộ sưu tập</TableHead>
                                 <TableHead>Trạng thái</TableHead>
-                                <TableHead className="text-right">Ngày</TableHead>
+                                <TableHead className="text-right">Ngày thêm</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {recentProducts.map((product) => (
-                                <TableRow key={product.id} className="table-row-hover group">
+                                <TableRow key={product.id} className="table-row-hover">
+                                    <TableCell className="font-mono text-xs text-muted-foreground">{product.sku}</TableCell>
                                     <TableCell>
-                                        <div className="flex items-center gap-3">
-                                            <div className="h-10 w-10 rounded-lg bg-slate-100 flex items-center justify-center overflow-hidden shrink-0">
-                                                {product.thumbnail ? (
-                                                    <Image
-                                                        src={product.thumbnail}
-                                                        alt={product.name}
-                                                        width={40}
-                                                        height={40}
-                                                        className="h-full w-full object-cover"
-                                                    />
-                                                ) : (
-                                                    <Package className="h-4 w-4 text-muted-foreground" />
-                                                )}
-                                            </div>
-                                            <div className="min-w-0">
-                                                <p className="font-medium text-sm truncate group-hover:text-primary transition-colors">
-                                                    {product.name}
-                                                </p>
-                                                {product.sku && (
-                                                    <p className="text-xs text-muted-foreground font-mono">{product.sku}</p>
-                                                )}
-                                            </div>
-                                        </div>
+                                        <Link href={`/admin/products/${product.id}`} className="font-medium hover:text-primary transition-colors">
+                                            {product.name}
+                                        </Link>
                                     </TableCell>
-                                    <TableCell className="text-sm text-muted-foreground">{product.category.name}</TableCell>
-                                    <TableCell className="text-sm text-muted-foreground">{product.productType?.name || "—"}</TableCell>
-                                    <TableCell className="text-sm text-muted-foreground">{product.collection?.name || "—"}</TableCell>
+                                    <TableCell className="text-sm text-muted-foreground">{product.pattern_types?.name || '—'}</TableCell>
+                                    <TableCell className="text-sm text-muted-foreground">{product.collections?.name || '—'}</TableCell>
                                     <TableCell>
-                                        <Badge
-                                            variant={product.isPublished ? "default" : "secondary"}
-                                            className={product.isPublished
-                                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100"
-                                                : "bg-slate-100 text-slate-500"
-                                            }
-                                        >
-                                            {product.isPublished ? "Hiển thị" : "Nháp"}
+                                        <Badge variant={product.is_active ? "default" : "secondary"}
+                                            className={product.is_active ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : ""}>
+                                            {product.is_active ? "Hiển thị" : "Ẩn"}
                                         </Badge>
                                     </TableCell>
                                     <TableCell className="text-right text-sm text-muted-foreground tabular-nums">
-                                        {product.updatedAt.toLocaleDateString("vi-VN")}
+                                        {product.created_at?.toLocaleDateString('vi-VN') || '—'}
                                     </TableCell>
                                 </TableRow>
                             ))}
                             {recentProducts.length === 0 && (
                                 <TableRow>
-                                    <TableCell colSpan={6} className="text-center text-muted-foreground py-12">
-                                        <Package className="h-8 w-8 mx-auto mb-2 opacity-30" />
-                                        <p>Chưa có sản phẩm nào</p>
+                                    <TableCell colSpan={6} className="text-center text-muted-foreground py-10">
+                                        Chưa có sản phẩm nào
                                     </TableCell>
                                 </TableRow>
                             )}
@@ -262,6 +151,60 @@ export default async function AdminDashboard() {
                     </Table>
                 </CardContent>
             </Card>
+
+            {/* Pending Quotes */}
+            {recentPendingQuotes.length > 0 && (
+                <Card className="overflow-hidden">
+                    <CardHeader className="flex flex-row items-center justify-between bg-slate-50/50 border-b">
+                        <div>
+                            <CardTitle className="text-base flex items-center gap-2">
+                                Báo giá chờ xử lý
+                                {pendingQuotes > 0 && (
+                                    <Badge variant="destructive" className="badge-pulse">{pendingQuotes}</Badge>
+                                )}
+                            </CardTitle>
+                            <p className="text-sm text-muted-foreground mt-0.5">5 yêu cầu mới nhất</p>
+                        </div>
+                        <Button variant="outline" size="sm" className="press-effect" asChild>
+                            <Link href="/admin/quote-requests">Xem tất cả <ArrowRight className="ml-1.5 h-3.5 w-3.5" /></Link>
+                        </Button>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                        <Table>
+                            <TableHeader>
+                                <TableRow className="bg-slate-50/30 hover:bg-slate-50/30">
+                                    <TableHead>Khách hàng</TableHead>
+                                    <TableHead>SĐT</TableHead>
+                                    <TableHead>Sản phẩm</TableHead>
+                                    <TableHead>Thời gian</TableHead>
+                                    <TableHead className="text-right">Thao tác</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {recentPendingQuotes.map((q) => (
+                                    <TableRow key={q.id} className="table-row-hover">
+                                        <TableCell className="font-medium">{q.name}</TableCell>
+                                        <TableCell className="text-sm text-muted-foreground">{q.phone}</TableCell>
+                                        <TableCell className="text-sm text-muted-foreground">
+                                            {q.products ? (
+                                                <Link href={`/admin/products/${q.products.id}`} className="hover:text-primary transition-colors">
+                                                    {q.products.name}
+                                                </Link>
+                                            ) : '—'}
+                                        </TableCell>
+                                        <TableCell className="text-sm text-muted-foreground">
+                                            {q.created_at?.toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' }) || '—'}
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <QuoteStatusButton id={q.id} currentStatus="pending" />
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
+            )}
         </div>
     )
 }

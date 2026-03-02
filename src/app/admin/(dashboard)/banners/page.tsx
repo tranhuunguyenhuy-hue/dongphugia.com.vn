@@ -1,137 +1,110 @@
 import prisma from "@/lib/prisma"
-import { Button } from "@/components/ui/button"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from "next/link"
-import { Plus, ImageIcon, Layers } from "lucide-react"
-import { BannerActions } from "./banner-actions"
 import Image from "next/image"
+import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Card, CardContent } from "@/components/ui/card"
+import {
+    Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from "@/components/ui/table"
+import { Plus, Pencil, ImageIcon } from "lucide-react"
+import { BannerDeleteButton } from "./banner-delete-button"
 
 export default async function BannersPage() {
-    const [banners, totalBanners, activeBanners] = await Promise.all([
-        prisma.banner.findMany({
-            orderBy: { order: 'asc' },
-            take: 20,
-            select: {
-                id: true,
-                title: true,
-                image: true,
-                link: true,
-                isPublished: true,
-                order: true,
-            }
-        }),
-        prisma.banner.count(),
-        prisma.banner.count({ where: { isPublished: true } })
-    ]) as [any[], number, number];
+    const banners = await prisma.banners.findMany({
+        orderBy: { sort_order: 'asc' },
+    })
 
     return (
-        <div className="space-y-6 fade-in">
+        <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight">Quản lý Banner</h2>
-                    <p className="text-sm text-muted-foreground">Quản lý hình ảnh quảng cáo trên trang chủ</p>
+                    <h1 className="text-2xl font-bold tracking-tight">Banners</h1>
+                    <p className="text-sm text-muted-foreground mt-1">{banners.length} banner</p>
                 </div>
-                <Button asChild className="press-effect shadow-md">
-                    <Link href="/admin/banners/new">
-                        <Plus className="mr-2 h-4 w-4" /> Thêm Banner
-                    </Link>
+                <Button asChild className="press-effect">
+                    <Link href="/admin/banners/new"><Plus className="mr-1.5 h-4 w-4" /> Thêm mới</Link>
                 </Button>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Tổng số Banner</CardTitle>
-                        <ImageIcon className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{totalBanners}</div>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Đang hiển thị</CardTitle>
-                        <Layers className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-green-600">{activeBanners}</div>
-                    </CardContent>
-                </Card>
-            </div>
-
-            <div className="rounded-md border bg-white shadow-sm">
-                <Table>
-                    <TableHeader>
-                        <TableRow className="bg-muted/50">
-                            <TableHead className="w-[80px] text-center">Thứ tự</TableHead>
-                            <TableHead className="w-[200px]">Hình ảnh</TableHead>
-                            <TableHead>Tiêu đề</TableHead>
-                            <TableHead>Link liên kết</TableHead>
-                            <TableHead className="w-[120px]">Trạng thái</TableHead>
-                            <TableHead className="w-[80px]"></TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {banners.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={6} className="h-[300px] text-center">
-                                    <div className="flex flex-col items-center justify-center space-y-2">
-                                        <div className="p-4 rounded-full bg-muted">
-                                            <ImageIcon className="h-8 w-8 text-muted-foreground" />
-                                        </div>
-                                        <p className="font-medium text-lg">Chưa có banner nào</p>
-                                        <p className="text-sm text-muted-foreground">Tạo banner đầu tiên để hiển thị trên trang chủ</p>
-                                    </div>
-                                </TableCell>
+            <Card className="overflow-hidden">
+                <CardContent className="p-0">
+                    <Table>
+                        <TableHeader>
+                            <TableRow className="bg-slate-50/30 hover:bg-slate-50/30">
+                                <TableHead className="w-[80px]">Ảnh</TableHead>
+                                <TableHead>Tiêu đề</TableHead>
+                                <TableHead>URL liên kết</TableHead>
+                                <TableHead>Thứ tự</TableHead>
+                                <TableHead>Trạng thái</TableHead>
+                                <TableHead className="text-right w-[80px]">Thao tác</TableHead>
                             </TableRow>
-                        ) : (
-                            banners.map((banner) => (
-                                <TableRow key={banner.id} className="group hover:bg-muted/30 transition-colors table-row-hover">
-                                    <TableCell className="font-medium text-center text-muted-foreground">
-                                        {banner.order}
+                        </TableHeader>
+                        <TableBody>
+                            {banners.map((b) => (
+                                <TableRow key={b.id} className="table-row-hover">
+                                    <TableCell>
+                                        {b.image_url ? (
+                                            <div className="h-12 w-20 relative rounded overflow-hidden border border-[#e2e8f0] bg-slate-50">
+                                                <Image
+                                                    src={b.image_url}
+                                                    alt={b.title || 'Banner'}
+                                                    fill
+                                                    className="object-cover"
+                                                    sizes="80px"
+                                                />
+                                            </div>
+                                        ) : (
+                                            <div className="h-12 w-20 rounded border border-[#e2e8f0] bg-slate-50 flex items-center justify-center">
+                                                <ImageIcon className="h-4 w-4 text-muted-foreground/40" />
+                                            </div>
+                                        )}
                                     </TableCell>
                                     <TableCell>
-                                        <div className="relative h-12 w-24 rounded-md overflow-hidden border bg-muted shadow-sm group-hover:shadow transition-shadow">
-                                            <Image
-                                                src={banner.image}
-                                                alt={banner.title}
-                                                fill
-                                                className="object-cover transition-transform group-hover:scale-105"
-                                            />
-                                        </div>
+                                        <span className="font-medium text-sm">{b.title || <span className="text-muted-foreground italic">Không có tiêu đề</span>}</span>
                                     </TableCell>
-                                    <TableCell className="font-medium text-foreground">{banner.title}</TableCell>
-                                    <TableCell className="text-muted-foreground text-sm max-w-[200px] truncate">
-                                        {banner.link ? (
-                                            <a href={banner.link} target="_blank" rel="noreferrer" className="hover:text-primary hover:underline">
-                                                {banner.link}
+                                    <TableCell className="text-sm text-muted-foreground max-w-[200px] truncate">
+                                        {b.link_url ? (
+                                            <a href={b.link_url} target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">
+                                                {b.link_url}
                                             </a>
-                                        ) : (
-                                            <span className="opacity-50">—</span>
-                                        )}
+                                        ) : '—'}
                                     </TableCell>
+                                    <TableCell className="text-sm text-muted-foreground tabular-nums">{b.sort_order}</TableCell>
                                     <TableCell>
-                                        {banner.isPublished ? (
-                                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 badge-pulse">
-                                                Hiển thị
-                                            </Badge>
-                                        ) : (
-                                            <Badge variant="outline" className="bg-slate-50 text-slate-500 border-slate-200">
-                                                Đang ẩn
-                                            </Badge>
-                                        )}
+                                        <Badge
+                                            variant={b.is_active ? "default" : "secondary"}
+                                            className={b.is_active ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : ""}
+                                        >
+                                            {b.is_active ? "Hiển thị" : "Ẩn"}
+                                        </Badge>
                                     </TableCell>
-                                    <TableCell>
-                                        <BannerActions bannerId={banner.id} />
+                                    <TableCell className="text-right">
+                                        <div className="flex items-center gap-1 justify-end">
+                                            <Link
+                                                href={`/admin/banners/${b.id}`}
+                                                className="h-8 w-8 rounded-lg border border-[#e2e8f0] flex items-center justify-center text-muted-foreground hover:bg-muted transition-colors"
+                                                title="Chỉnh sửa"
+                                            >
+                                                <Pencil className="h-3.5 w-3.5" />
+                                            </Link>
+                                            <BannerDeleteButton id={b.id} />
+                                        </div>
                                     </TableCell>
                                 </TableRow>
-                            ))
-                        )}
-                    </TableBody>
-                </Table>
-            </div>
+                            ))}
+                            {banners.length === 0 && (
+                                <TableRow>
+                                    <TableCell colSpan={6} className="text-center text-muted-foreground py-16">
+                                        <ImageIcon className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                                        <p>Chưa có banner nào</p>
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
         </div>
     )
 }

@@ -8,10 +8,11 @@ export function cn(...inputs: ClassValue[]) {
 export function slugify(str: string) {
   if (!str) return ''
   return String(str)
-    .normalize('NFKD') // split accented characters into their base characters and diacritical marks
-    .replace(/[\u0300-\u036f]/g, '') // remove all the accents, which happen to be all in the \u03xx range
-    .trim() // trim leading or trailing whitespace
-    .toLowerCase() // convert to lowercase
+    .replace(/[đĐ]/g, 'd') // đ/Đ doesn't decompose with NFKD — map explicitly
+    .normalize('NFKD') // split accented characters into base + diacritical marks
+    .replace(/[\u0300-\u036f]/g, '') // remove combining diacritical marks
+    .trim()
+    .toLowerCase()
     .replace(/[^a-z0-9 -]/g, '') // remove non-alphanumeric characters
     .replace(/\s+/g, '-') // replace spaces with hyphens
     .replace(/-+/g, '-'); // remove consecutive hyphens

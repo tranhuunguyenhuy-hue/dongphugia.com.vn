@@ -9,8 +9,27 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Đông Phú Gia - Quản trị",
-  description: "Hệ thống quản trị nội dung Đông Phú Gia",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://dongphugia.vn"),
+  title: {
+    default: "Đông Phú Gia - Vật liệu xây dựng cao cấp tại Đà Lạt",
+    template: "%s | Đông Phú Gia",
+  },
+  description: "Đông Phú Gia - Nhà phân phối vật liệu xây dựng cao cấp tại Đà Lạt: gạch ốp lát, thiết bị vệ sinh chính hãng từ các thương hiệu uy tín.",
+  openGraph: {
+    type: "website",
+    locale: "vi_VN",
+    siteName: "Đông Phú Gia",
+    url: process.env.NEXT_PUBLIC_SITE_URL || "https://dongphugia.vn",
+  },
+  twitter: {
+    card: "summary_large_image",
+    site: "@dongphugia",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true },
+  },
 };
 
 export default function RootLayout({

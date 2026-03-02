@@ -1,149 +1,129 @@
-"use client"
+'use client'
 
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import { z } from "zod"
-import { Button } from "@/components/ui/button"
-import {
-    Form, FormControl, FormField, FormItem, FormLabel, FormMessage,
-} from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import {
-    Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { createCollection, updateCollection } from "@/lib/actions"
-import { ProductType, Collection } from "@prisma/client"
-import { ImageUploader } from "@/components/ui/image-uploader"
+import { useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
+import { createCollection, updateCollection } from '@/lib/actions'
+import { slugify } from '@/lib/utils'
+import { toast } from 'sonner'
+import { Loader2, Save } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
-const collectionSchema = z.object({
-    name: z.string().min(2, "Tên phải có ít nhất 2 ký tự"),
-    slug: z.string().min(2, "Slug phải có ít nhất 2 ký tự"),
-    image: z.string().optional(),
-    productTypeId: z.string().min(1, "Vui lòng chọn phân loại"),
-})
-
-type CollectionFormValues = z.infer<typeof collectionSchema>
+interface PatternType { id: number; name: string }
 
 interface CollectionFormProps {
-    productTypes: ProductType[]
-    initialData?: Collection | null
+    collection?: any
+    patternTypes: PatternType[]
 }
 
-export default function CollectionForm({ productTypes, initialData }: CollectionFormProps) {
-    const form = useForm<CollectionFormValues>({
-        resolver: zodResolver(collectionSchema) as any,
-        defaultValues: initialData ? {
-            name: initialData.name,
-            slug: initialData.slug,
-            image: initialData.image || "",
-            productTypeId: initialData.productTypeId,
-        } : {
-            name: "",
-            slug: "",
-            image: "",
-            productTypeId: "",
-        },
+export function CollectionForm({ collection, patternTypes }: CollectionFormProps) {
+    const router = useRouter()
+    const [isPending, startTransition] = useTransition()
+    const isEdit = !!collection
+
+    const [form, setForm] = useState({
+        name: collection?.name || '',
+        slug: collection?.slug || '',
+        pattern_type_id: collection?.pattern_type_id?.toString() || '',
+        tagline: collection?.tagline || '',
+        description: collection?.description || '',
+        thumbnail_url: collection?.thumbnail_url || '',
+        is_active: collection?.is_active ?? true,
+        is_featured: collection?.is_featured ?? false,
+        sort_order: collection?.sort_order?.toString() || '0',
     })
 
-    async function onSubmit(data: CollectionFormValues) {
-        let result;
-        if (initialData) {
-            result = await updateCollection(initialData.id, data)
-        } else {
-            result = await createCollection(data)
-        }
+    const set = (key: string, value: any) => setForm((prev) => ({ ...prev, [key]: value }))
 
-        if (result?.errors) {
-            console.error(result.errors)
-            alert("Lỗi khi lưu bộ sưu tập")
-        } else if (result?.message) {
-            alert(result.message)
-        }
+    const onSubmit = (e: React.FormEvent) => {
+        e.preventDefault()
+        startTransition(async () => {
+            const payload = {
+                ...form,
+                pattern_type_id: parseInt(form.pattern_type_id) || 0,
+                sort_order: parseInt(form.sort_order) || 0,
+            }
+            const result = isEdit
+                ? await updateCollection(collection.id, payload)
+                : await createCollection(payload)
+
+            if (result?.errors || result?.message) {
+                toast.error(result.message || 'Vui lòng kiểm tra lại dữ liệu')
+            } else {
+                toast.success(isEdit ? 'Đã cập nhật bộ sưu tập' : 'Đã thêm bộ sưu tập')
+                router.push('/admin/collections')
+            }
+        })
     }
 
-    return (
-        <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Thông tin bộ sưu tập</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <FormField
-                            control={form.control}
-                            name="name"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Tên BST</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="VD: INSIDE ART" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="slug"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Slug</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="inside-art" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="productTypeId"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Phân loại</FormLabel>
-                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <FormControl>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Chọn phân loại" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            {productTypes.map((type) => (
-                                                <SelectItem key={type.id} value={type.id}>
-                                                    {type.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="image"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Ảnh đại diện (URL)</FormLabel>
-                                    <FormControl>
-                                        <ImageUploader
-                                            value={field.value || ""}
-                                            onChange={field.onChange}
-                                            folder="collections"
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                    </CardContent>
-                </Card>
+    const inputCls = "w-full h-10 px-3 rounded-lg border border-[#e2e8f0] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors bg-white"
+    const labelCls = "block text-sm font-medium text-[#374151] mb-1.5"
 
-                <Button type="submit">
-                    {initialData ? "Cập nhật" : "Tạo BST"}
+    return (
+        <form onSubmit={onSubmit} className="space-y-6 max-w-2xl">
+            <div className="bg-white rounded-2xl border border-[#e2e8f0] p-6 space-y-5">
+                <div>
+                    <label className={labelCls}>Tên bộ sưu tập <span className="text-red-500">*</span></label>
+                    <input
+                        className={inputCls}
+                        value={form.name}
+                        onChange={(e) => {
+                            set('name', e.target.value)
+                            if (!isEdit) set('slug', slugify(e.target.value))
+                        }}
+                        required placeholder="Tên bộ sưu tập"
+                    />
+                </div>
+                <div>
+                    <label className={labelCls}>Slug <span className="text-red-500">*</span></label>
+                    <input className={inputCls} value={form.slug} onChange={(e) => set('slug', e.target.value)} required placeholder="ten-bo-suu-tap" />
+                </div>
+                <div>
+                    <label className={labelCls}>Kiểu vân <span className="text-red-500">*</span></label>
+                    <select className={inputCls} value={form.pattern_type_id} onChange={(e) => set('pattern_type_id', e.target.value)} required>
+                        <option value="">-- Chọn kiểu vân --</option>
+                        {patternTypes.map((pt) => <option key={pt.id} value={pt.id}>{pt.name}</option>)}
+                    </select>
+                </div>
+                <div>
+                    <label className={labelCls}>Tagline</label>
+                    <input className={inputCls} value={form.tagline} onChange={(e) => set('tagline', e.target.value)} placeholder="Slogan ngắn..." />
+                </div>
+                <div>
+                    <label className={labelCls}>Mô tả</label>
+                    <textarea
+                        className="w-full px-3 py-2 rounded-lg border border-[#e2e8f0] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors resize-y min-h-[80px]"
+                        value={form.description}
+                        onChange={(e) => set('description', e.target.value)}
+                        placeholder="Mô tả bộ sưu tập..."
+                    />
+                </div>
+                <div>
+                    <label className={labelCls}>Ảnh thumbnail (URL)</label>
+                    <input className={inputCls} value={form.thumbnail_url} onChange={(e) => set('thumbnail_url', e.target.value)} placeholder="https://..." />
+                </div>
+                <div>
+                    <label className={labelCls}>Thứ tự hiển thị</label>
+                    <input type="number" className={inputCls} value={form.sort_order} onChange={(e) => set('sort_order', e.target.value)} min={0} />
+                </div>
+                <div className="flex flex-col gap-3">
+                    <label className="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" checked={form.is_active} onChange={(e) => set('is_active', e.target.checked)} className="h-4 w-4 rounded border-gray-300 text-primary" />
+                        <span className="text-sm font-medium text-[#374151]">Hiển thị</span>
+                    </label>
+                    <label className="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" checked={form.is_featured} onChange={(e) => set('is_featured', e.target.checked)} className="h-4 w-4 rounded border-gray-300 text-primary" />
+                        <span className="text-sm font-medium text-[#374151]">Nổi bật</span>
+                    </label>
+                </div>
+            </div>
+
+            <div className="flex items-center gap-3 justify-end">
+                <Button type="button" variant="outline" onClick={() => router.back()}>Huỷ</Button>
+                <Button type="submit" disabled={isPending} className="gap-2">
+                    {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                    {isEdit ? 'Cập nhật' : 'Thêm bộ sưu tập'}
                 </Button>
-            </form>
-        </Form>
+            </div>
+        </form>
     )
 }

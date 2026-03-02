@@ -4,32 +4,58 @@ import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { ChevronUp, ChevronDown, Check } from 'lucide-react';
 import { useState, useCallback } from 'react';
 
+interface FilterItem {
+    slug: string;
+    name: string;
+}
+
 interface SmartFilterProps {
-    colors: string[];
-    surfaces: string[];
-    dimensions: string[];
+    colors: FilterItem[];
+    surfaces: FilterItem[];
+    sizes: FilterItem[];
+    origins: FilterItem[];
+    locations: FilterItem[];
 }
 
 function FilterSection({
     title,
     items,
-    selectedItems,
-    onToggle,
+    paramKey,
     defaultOpen = false,
 }: {
     title: string;
-    items: string[];
-    selectedItems: string[];
-    onToggle: (item: string) => void;
+    items: FilterItem[];
+    paramKey: string;
     defaultOpen?: boolean;
 }) {
     const [isOpen, setIsOpen] = useState(defaultOpen);
+    const router = useRouter();
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
+
+    const activeValues = searchParams.get(paramKey)?.split(',').filter(Boolean) || [];
+
+    const toggleItem = useCallback(
+        (slug: string) => {
+            const params = new URLSearchParams(searchParams.toString());
+            const current = params.get(paramKey)?.split(',').filter(Boolean) || [];
+            const updated = current.includes(slug)
+                ? current.filter((v) => v !== slug)
+                : [...current, slug];
+            if (updated.length > 0) {
+                params.set(paramKey, updated.join(','));
+            } else {
+                params.delete(paramKey);
+            }
+            router.push(`${pathname}?${params.toString()}`, { scroll: false });
+        },
+        [router, pathname, searchParams, paramKey]
+    );
 
     if (items.length === 0) return null;
 
     return (
         <div className="flex flex-col gap-2">
-            {/* Header */}
             <div className="flex flex-col gap-2">
                 <button
                     onClick={() => setIsOpen(!isOpen)}
@@ -45,30 +71,28 @@ function FilterSection({
                 <div className="h-px bg-gray-200 w-full" />
             </div>
 
-            {/* Items */}
             {isOpen && (
                 <div className="flex flex-col">
                     {items.map((item) => {
-                        const isSelected = selectedItems.includes(item);
+                        const isSelected = activeValues.includes(item.slug);
                         return (
                             <button
-                                key={item}
-                                onClick={() => onToggle(item)}
-                                className="flex items-center justify-between pr-5 py-2 w-full text-left group"
+                                key={item.slug}
+                                onClick={() => toggleItem(item.slug)}
+                                className="flex items-center justify-between h-[44px] w-full text-left group"
                             >
                                 <span
-                                    className={`font-medium text-base ${isSelected ? 'text-[#15803d]' : 'text-[#4b5563] group-hover:text-[#374151]'
-                                        }`}
+                                    className={`font-medium text-[16px] leading-[24px] ${isSelected ? 'text-[#15803d]' : 'text-[#4b5563] group-hover:text-[#374151]'}`}
                                 >
-                                    {item}
+                                    {item.name}
                                 </span>
                                 <div
-                                    className={`w-[18px] h-[18px] rounded flex items-center justify-center border-[1.5px] transition-colors ${isSelected
-                                            ? 'bg-[#15803d] border-[#15803d]'
-                                            : 'bg-white border-gray-300 group-hover:border-gray-400'
+                                    className={`w-[18px] h-[18px] rounded-full flex items-center justify-center border-[1.5px] shrink-0 transition-colors ${isSelected
+                                        ? 'bg-[#15803d] border-[#15803d]'
+                                        : 'bg-white border-[#d1d5db] group-hover:border-[#9ca3af]'
                                         }`}
                                 >
-                                    {isSelected && <Check className="h-3 w-3 text-white" strokeWidth={3} />}
+                                    {isSelected && <Check className="h-2.5 w-2.5 text-white" strokeWidth={3} />}
                                 </div>
                             </button>
                         );
@@ -79,70 +103,27 @@ function FilterSection({
     );
 }
 
-export function SmartFilter({ colors, surfaces, dimensions }: SmartFilterProps) {
-    const router = useRouter();
-    const pathname = usePathname();
-    const searchParams = useSearchParams();
-
-    const activeColors = searchParams.get('color')?.split(',').filter(Boolean) || [];
-    const activeSurfaces = searchParams.get('surface')?.split(',').filter(Boolean) || [];
-    const activeDimensions = searchParams.get('dimensions')?.split(',').filter(Boolean) || [];
-
-    const hasAnyFilter = colors.length > 0 || surfaces.length > 0 || dimensions.length > 0;
+export function SmartFilter({ colors, surfaces, sizes, origins, locations }: SmartFilterProps) {
+    const hasAnyFilter = colors.length > 0 || surfaces.length > 0 || sizes.length > 0 || origins.length > 0 || locations.length > 0;
     if (!hasAnyFilter) return null;
 
-    const updateFilter = useCallback(
-        (key: string, values: string[]) => {
-            const params = new URLSearchParams(searchParams.toString());
-            if (values.length > 0) {
-                params.set(key, values.join(','));
-            } else {
-                params.delete(key);
-            }
-            router.push(`${pathname}?${params.toString()}`, { scroll: false });
-        },
-        [router, pathname, searchParams]
-    );
-
-    const toggleItem = (key: string, item: string, current: string[]) => {
-        const updated = current.includes(item)
-            ? current.filter((v) => v !== item)
-            : [...current, item];
-        updateFilter(key, updated);
-    };
-
     return (
-        <div className="flex flex-col gap-7 px-5">
+        <div className="flex flex-col gap-[27px]">
             {/* Heading */}
-            <div className="flex flex-col gap-2">
-                <h3 className="text-2xl font-semibold text-[#111827] tracking-tight">
+            <div className="flex flex-col gap-[8px]">
+                <h3 className="text-[24px] font-semibold text-[#111827] tracking-[-0.48px] leading-[32px]">
                     Bộ lọc thông minh
                 </h3>
                 <div className="h-[3px] w-[71px] bg-[#15803d] rounded-full" />
             </div>
 
-            {/* Filter sections */}
-            <div className="flex flex-col gap-6">
-                <FilterSection
-                    title="Màu sắc"
-                    items={colors}
-                    selectedItems={activeColors}
-                    onToggle={(item) => toggleItem('color', item, activeColors)}
-                    defaultOpen={true}
-                />
-                <FilterSection
-                    title="Bề mặt"
-                    items={surfaces}
-                    selectedItems={activeSurfaces}
-                    onToggle={(item) => toggleItem('surface', item, activeSurfaces)}
-                    defaultOpen={true}
-                />
-                <FilterSection
-                    title="Kích thước"
-                    items={dimensions}
-                    selectedItems={activeDimensions}
-                    onToggle={(item) => toggleItem('dimensions', item, activeDimensions)}
-                />
+            {/* Filter sections — No background wrapper, raw sections */}
+            <div className="flex flex-col gap-[24px]">
+                <FilterSection title="Màu sắc" items={colors} paramKey="color" defaultOpen={true} />
+                <FilterSection title="Bề mặt" items={surfaces} paramKey="surface" defaultOpen={true} />
+                <FilterSection title="Kích thước" items={sizes.map(s => ({ slug: s.slug, name: s.name }))} paramKey="size" />
+                <FilterSection title="Xuất xứ" items={origins} paramKey="origin" />
+                <FilterSection title="Vị trí ốp lát" items={locations} paramKey="location" />
             </div>
         </div>
     );

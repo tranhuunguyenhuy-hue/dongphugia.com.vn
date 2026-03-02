@@ -1,703 +1,336 @@
-"use client"
+'use client'
 
-import { Star } from "lucide-react"
+import { useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
+import { createProduct, updateProduct } from '@/lib/actions'
+import { slugify } from '@/lib/utils'
+import { toast } from 'sonner'
+import { Loader2, Save, X } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { ImageUploader } from '@/components/ui/image-uploader'
 
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm, useWatch } from "react-hook-form"
-import { useState, useEffect } from "react"
-import { z } from "zod"
-import { Button } from "@/components/ui/button"
-import {
-    Form,
-    FormControl,
-    FormDescription,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
-} from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { createProduct, updateProduct } from "@/lib/actions"
-import { Category, Brand, ProductType, Product, Collection } from "@prisma/client"
-
-const productSchema = z.object({
-    name: z.string().min(2, "Tên phải có ít nhất 2 ký tự"),
-    slug: z.string().min(2, "Slug phải có ít nhất 2 ký tự"),
-    sku: z.string().optional(),
-    price: z.coerce.number().min(0, "Giá phải >= 0"),
-    originalPrice: z.coerce.number().optional(),
-    showPrice: z.boolean().default(false),
-    categoryId: z.string().min(1, "Vui lòng chọn danh mục"),
-    brandId: z.string().optional(),
-    productTypeId: z.string().optional(),
-    collectionId: z.string().optional(),
-    description: z.string().optional(),
-    images: z.string().optional(),
-    thumbnail: z.string().optional(),
-    isPublished: z.boolean().default(true),
-    // Tile specs
-    specSurface: z.string().optional(),
-    specDimensions: z.string().optional(),
-    specSimDimensions: z.string().optional(),
-    specOrigin: z.string().optional(),
-    specAntiSlip: z.string().optional(),
-    specPatternCount: z.string().optional(),
-    specColor: z.string().optional(),
-})
-
-type ProductFormValues = z.infer<typeof productSchema>
+interface LookupItem { id: number; name?: string; label?: string; slug: string }
+interface PatternType { id: number; name: string; slug: string }
+interface Collection { id: number; name: string; slug: string; pattern_type_id: number }
+interface Color { id: number; name: string; slug: string }
+interface Location { id: number; name: string; slug: string }
 
 interface ProductFormProps {
-    categories: Category[]
-    brands: Brand[]
-    productTypes: ProductType[]
-    collections: Collection[]
-    initialData?: Product | null
-    tileCategoryId?: string
+    product?: any
+    patternTypes: PatternType[]
+    allCollections: Collection[]
+    surfaces: LookupItem[]
+    sizes: LookupItem[]
+    origins: LookupItem[]
+    colors: Color[]
+    locations: Location[]
 }
 
-function parseSpecs(specs: string | null): Record<string, string> {
-    if (!specs) return {}
-    try {
-        return JSON.parse(specs)
-    } catch {
-        return {}
-    }
-}
+export function ProductForm({
+    product,
+    patternTypes,
+    allCollections,
+    surfaces,
+    sizes,
+    origins,
+    colors,
+    locations,
+}: ProductFormProps) {
+    const router = useRouter()
+    const [isPending, startTransition] = useTransition()
+    const isEdit = !!product
 
-export default function ProductForm({ categories, brands, productTypes, collections, initialData, tileCategoryId }: ProductFormProps) {
-    const existingSpecs = parseSpecs(initialData?.specs || null)
-
-    const form = useForm<ProductFormValues>({
-        resolver: zodResolver(productSchema) as any,
-        defaultValues: initialData ? {
-            name: initialData.name,
-            slug: initialData.slug,
-            sku: initialData.sku || "",
-            price: Number(initialData.price) || 0,
-            originalPrice: Number(initialData.originalPrice) || 0,
-            showPrice: initialData.showPrice,
-            description: initialData.description || "",
-            images: initialData.images || "",
-            isPublished: initialData.isPublished,
-            categoryId: initialData.categoryId,
-            brandId: initialData.brandId || "",
-            productTypeId: initialData.productTypeId || "",
-            collectionId: initialData.collectionId || "",
-            specSurface: existingSpecs.surface || "",
-            specDimensions: existingSpecs.dimensions || "",
-            specSimDimensions: existingSpecs.simDimensions || "",
-            specOrigin: existingSpecs.origin || "",
-            specAntiSlip: existingSpecs.antiSlip || "",
-            specPatternCount: existingSpecs.patternCount || "",
-            specColor: existingSpecs.color || "",
-        } : {
-            name: "",
-            slug: "",
-            sku: "",
-            price: 0,
-            originalPrice: 0,
-            showPrice: false,
-            description: "",
-            images: "",
-            isPublished: true,
-            categoryId: "",
-            brandId: "",
-            productTypeId: "",
-            collectionId: "",
-            specSurface: "",
-            specDimensions: "",
-            specSimDimensions: "",
-            specOrigin: "",
-            specAntiSlip: "",
-            specPatternCount: "",
-            specColor: "",
-        },
+    const [form, setForm] = useState({
+        sku: product?.sku || '',
+        name: product?.name || '',
+        slug: product?.slug || '',
+        pattern_type_id: product?.pattern_type_id?.toString() || '',
+        collection_id: product?.collection_id?.toString() || '',
+        surface_id: product?.surface_id?.toString() || '',
+        size_id: product?.size_id?.toString() || '',
+        origin_id: product?.origin_id?.toString() || '',
+        description: product?.description || '',
+        price_display: product?.price_display || 'Liên hệ báo giá',
+        image_main_url: product?.image_main_url || '',
+        image_hover_url: product?.image_hover_url || '',
+        is_active: product?.is_active ?? true,
+        is_featured: product?.is_featured ?? false,
+        sort_order: product?.sort_order?.toString() || '0',
+        color_ids: (product?.product_colors?.map((c: any) => c.color_id) || []) as number[],
+        location_ids: (product?.product_locations?.map((l: any) => l.location_id) || []) as number[],
     })
 
-    const selectedCategoryId = useWatch({ control: form.control, name: "categoryId" })
-    const isTileCategory = tileCategoryId && selectedCategoryId === tileCategoryId
-
-    // Filter productTypes and collections by selected category context
-    const filteredProductTypes = productTypes
-    const filteredCollections = collections
-
-    // --- Image Upload State ---
-    const [uploadedImages, setUploadedImages] = useState<string[]>([])
-    const [selectedThumbnail, setSelectedThumbnail] = useState<string | null>(null)
-    const [isUploading, setIsUploading] = useState(false)
-
-    // Parse initial images if editing
-    useEffect(() => {
-        if (initialData?.images) {
-            try {
-                const parsed = JSON.parse(initialData.images)
-                if (Array.isArray(parsed)) {
-                    setUploadedImages(parsed)
-                }
-            } catch (e) {
-                // if not json, maybe comma separated?
-                if (initialData.images.includes(',')) {
-                    setUploadedImages(initialData.images.split(',').map(s => s.trim()))
-                } else if (initialData.images.trim()) {
-                    setUploadedImages([initialData.images])
-                }
-            }
+    // Manage all uploaded images in one list
+    const [uploadedImages, setUploadedImages] = useState<string[]>(() => {
+        const list: string[] = []
+        if (product?.image_main_url) list.push(product.image_main_url)
+        if (product?.product_images) {
+            product.product_images.forEach((img: any) => {
+                if (img.image_url !== product.image_main_url) list.push(img.image_url)
+            })
         }
-        if (initialData?.thumbnail) {
-            setSelectedThumbnail(initialData.thumbnail)
-        }
-    }, [initialData])
+        return list
+    })
+    const [mainImage, setMainImage] = useState<string>(product?.image_main_url || '')
 
-    // Sync state to form field
-    useEffect(() => {
-        form.setValue("images", JSON.stringify(uploadedImages))
-    }, [uploadedImages, form])
+    const filteredCollections = form.pattern_type_id
+        ? allCollections.filter((c) => c.pattern_type_id === parseInt(form.pattern_type_id))
+        : []
 
-    async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
-        const files = e.target.files
-        if (!files || files.length === 0) return
+    const set = (key: string, value: any) => setForm((prev) => ({ ...prev, [key]: value }))
 
-        setIsUploading(true)
-        const newUrls: string[] = []
-
-        try {
-            for (let i = 0; i < files.length; i++) {
-                const formData = new FormData()
-                formData.append("file", files[i])
-
-                const res = await fetch("/api/upload", {
-                    method: "POST",
-                    body: formData,
-                })
-
-                if (res.ok) {
-                    const data = await res.json()
-                    newUrls.push(data.url)
-                } else {
-                    console.error("Upload failed for file", files[i].name)
-                    alert(`Upload thất bại: ${files[i].name}`)
-                }
-            }
-            setUploadedImages(prev => [...prev, ...newUrls])
-        } catch (error) {
-            console.error("Upload error", error)
-            alert("Đã xảy ra lỗi khi upload ảnh")
-        } finally {
-            setIsUploading(false)
-            // Reset input
-            e.target.value = ""
-        }
-    }
-
-    function removeImage(index: number) {
-        setUploadedImages(prev => {
-            const newImages = prev.filter((_: string, i: number) => i !== index)
-            // If removed image was thumbnail, reset thumbnail
-            if (prev[index] === selectedThumbnail) {
-                setSelectedThumbnail(null)
-            }
-            return newImages
+    const toggleId = (key: 'color_ids' | 'location_ids', id: number) => {
+        setForm((prev) => {
+            const arr = prev[key]
+            return { ...prev, [key]: arr.includes(id) ? arr.filter((v) => v !== id) : [...arr, id] }
         })
     }
 
-    async function onSubmit(data: ProductFormValues) {
-        // Build specs JSON from individual fields
-        const specs: Record<string, string> = {}
-        if (data.specSurface) specs.surface = data.specSurface
-        if (data.specDimensions) specs.dimensions = data.specDimensions
-        if (data.specSimDimensions) specs.simDimensions = data.specSimDimensions
-        if (data.specOrigin) specs.origin = data.specOrigin
-        if (data.specAntiSlip) specs.antiSlip = data.specAntiSlip
-        if (data.specPatternCount) specs.patternCount = data.specPatternCount
-        if (data.specColor) specs.color = data.specColor
+    const onSubmit = (e: React.FormEvent) => {
+        e.preventDefault()
+        startTransition(async () => {
+            const payload = {
+                ...form,
+                pattern_type_id: parseInt(form.pattern_type_id) || 0,
+                collection_id: form.collection_id ? parseInt(form.collection_id) : null,
+                surface_id: form.surface_id ? parseInt(form.surface_id) : null,
+                size_id: form.size_id ? parseInt(form.size_id) : null,
+                origin_id: form.origin_id ? parseInt(form.origin_id) : null,
+                sort_order: parseInt(form.sort_order) || 0,
+                image_main_url: mainImage || uploadedImages[0] || '',
+                additional_image_urls: uploadedImages.filter(url => url !== (mainImage || uploadedImages[0] || '')),
+            }
+            const result = isEdit
+                ? await updateProduct(product.id, payload)
+                : await createProduct(payload)
 
-        const submitData = {
-            name: data.name,
-            slug: data.slug,
-            sku: data.sku,
-            price: data.price,
-            originalPrice: data.originalPrice,
-            showPrice: data.showPrice,
-            categoryId: data.categoryId,
-            brandId: data.brandId,
-            productTypeId: data.productTypeId,
-            collectionId: data.collectionId,
-            description: data.description,
-            images: data.images,
-            thumbnail: selectedThumbnail,
-            isPublished: data.isPublished,
-            specs: Object.keys(specs).length > 0 ? JSON.stringify(specs) : undefined,
-        }
-
-        let result;
-        if (initialData) {
-            result = await updateProduct(initialData.id, submitData)
-        } else {
-            result = await createProduct(submitData)
-        }
-
-        if (result?.errors) {
-            console.error(result.errors)
-            alert("Lỗi khi lưu sản phẩm")
-        } else if (result?.message) {
-            alert(result.message)
-        }
+            if (result?.errors || result?.message) {
+                toast.error(result.message || 'Vui lòng kiểm tra lại dữ liệu')
+            } else {
+                toast.success(isEdit ? 'Đã cập nhật sản phẩm' : 'Đã thêm sản phẩm')
+                router.push('/admin/products')
+            }
+        })
     }
 
+    const inputCls = "w-full h-10 px-3 rounded-lg border border-[#e2e8f0] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors bg-white"
+    const selectCls = "w-full h-10 px-3 rounded-lg border border-[#e2e8f0] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors bg-white"
+    const labelCls = "block text-sm font-medium text-[#374151] mb-1.5"
+
     return (
-        <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                {/* Basic info */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Thông tin cơ bản</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <FormField
-                            control={form.control}
-                            name="name"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Tên sản phẩm</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="VD: Gạch Viglacera MDK 362009" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <div className="grid grid-cols-2 gap-4">
-                            <FormField
-                                control={form.control}
-                                name="slug"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Slug</FormLabel>
-                                        <FormControl>
-                                            <Input placeholder="gach-viglacera-mdk-362009" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="sku"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>SKU</FormLabel>
-                                        <FormControl>
-                                            <Input placeholder="MDK-362009" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
+        <form onSubmit={onSubmit} className="space-y-8">
+            {/* Basic Info */}
+            <div className="bg-white rounded-2xl border border-[#e2e8f0] p-6 space-y-5">
+                <h2 className="text-base font-semibold text-foreground">Thông tin cơ bản</h2>
 
-                        <FormField
-                            control={form.control}
-                            name="description"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Mô tả</FormLabel>
-                                    <FormControl>
-                                        <Textarea placeholder="Mô tả sản phẩm..." {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        {/* Image Upload Section */}
-                        <div className="space-y-3">
-                            <FormLabel>Anh sản phẩm (Carousel)</FormLabel>
-
-                            {/* Hidden Input for Form Submission */}
-                            <FormField
-                                control={form.control}
-                                name="images"
-                                render={({ field }) => (
-                                    <FormItem className="hidden">
-                                        <FormControl>
-                                            <Input {...field} />
-                                        </FormControl>
-                                    </FormItem>
-                                )}
-                            />
-
-                            {/* File Upload Button */}
-                            <div className="flex items-center gap-4">
-                                <label
-                                    htmlFor="image-upload"
-                                    className="cursor-pointer inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2"
-                                >
-                                    Tải ảnh lên (Máy tính)
-                                </label>
-                                <input
-                                    id="image-upload"
-                                    type="file"
-                                    multiple
-                                    accept="image/*"
-                                    className="hidden"
-                                    onChange={handleImageUpload}
-                                />
-                                <span className="text-sm text-gray-500">
-                                    {isUploading ? "Đang tải lên..." : "Chọn nhiều ảnh"}
-                                </span>
-                            </div>
-
-                            {/* Image Preview Grid */}
-                            {uploadedImages.length > 0 && (
-                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4">
-                                    {uploadedImages.map((url, idx) => (
-                                        <div key={idx} className={`relative group aspect-square rounded-lg border overflow-hidden ${selectedThumbnail === url ? 'ring-2 ring-primary' : 'bg-gray-50'}`}>
-                                            <img
-                                                src={url}
-                                                alt={`Uploaded ${idx}`}
-                                                className="w-full h-full object-cover"
-                                            />
-                                            {/* Thumbnail Selection */}
-                                            <button
-                                                type="button"
-                                                onClick={() => setSelectedThumbnail(url)}
-                                                className={`absolute top-1 left-1 p-1 rounded-full transition-all ${selectedThumbnail === url ? 'bg-primary text-white' : 'bg-black/50 text-white opacity-0 group-hover:opacity-100 hover:bg-primary'}`}
-                                                title="Đặt làm ảnh đại diện"
-                                            >
-                                                <Star size={14} fill={selectedThumbnail === url ? "currentColor" : "none"} />
-                                            </button>
-
-                                            {/* Remove Button */}
-                                            <button
-                                                type="button"
-                                                onClick={() => removeImage(idx)}
-                                                className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
-                                            >
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
-                                            </button>
-
-                                            {selectedThumbnail === url && (
-                                                <div className="absolute bottom-0 inset-x-0 bg-primary/80 text-white text-[10px] text-center py-1 font-medium">
-                                                    Ảnh đại diện
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    </CardContent>
-                </Card>
-
-                {/* Pricing */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Giá</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                            <FormField
-                                control={form.control}
-                                name="price"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Giá bán (VNĐ)</FormLabel>
-                                        <FormControl>
-                                            <Input type="number" placeholder="0" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="originalPrice"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Giá gốc (VNĐ)</FormLabel>
-                                        <FormControl>
-                                            <Input type="number" placeholder="0" {...field} />
-                                        </FormControl>
-                                        <FormDescription>Để trống nếu không có khuyến mãi</FormDescription>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
-                        <FormField
-                            control={form.control}
-                            name="showPrice"
-                            render={({ field }) => (
-                                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                                    <FormControl>
-                                        <Checkbox
-                                            checked={field.value}
-                                            onCheckedChange={field.onChange}
-                                        />
-                                    </FormControl>
-                                    <div className="space-y-1 leading-none">
-                                        <FormLabel>Hiển thị giá</FormLabel>
-                                        <FormDescription>
-                                            Bỏ tick sẽ hiển thị &ldquo;Liên hệ&rdquo; thay vì giá
-                                        </FormDescription>
-                                    </div>
-                                </FormItem>
-                            )}
-                        />
-                    </CardContent>
-                </Card>
-
-                {/* Classification */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Phân loại</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                            <FormField
-                                control={form.control}
-                                name="categoryId"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Danh mục</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                            <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Chọn danh mục" />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                {categories.map((category) => (
-                                                    <SelectItem key={category.id} value={category.id}>
-                                                        {category.name}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="brandId"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Thương hiệu</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                            <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Chọn thương hiệu" />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                {brands.map((brand) => (
-                                                    <SelectItem key={brand.id} value={brand.id}>
-                                                        {brand.name}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <FormField
-                                control={form.control}
-                                name="productTypeId"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Phân loại con</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                            <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Chọn phân loại" />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                {filteredProductTypes.map((type) => (
-                                                    <SelectItem key={type.id} value={type.id}>
-                                                        {type.name}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="collectionId"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Bộ sưu tập</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                            <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Chọn BST" />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                {filteredCollections.map((col) => (
-                                                    <SelectItem key={col.id} value={col.id}>
-                                                        {col.name}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
-                    </CardContent>
-                </Card>
-
-                {/* Tile Specs — only show when category is Gạch ốp lát */}
-                {isTileCategory && (
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Thông số kỹ thuật (Gạch)</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                                <FormField
-                                    control={form.control}
-                                    name="specSurface"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Bề mặt</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="VD: Men bóng" {...field} />
-                                            </FormControl>
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="specDimensions"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Kích thước</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="VD: 600x1200 mm" {...field} />
-                                            </FormControl>
-                                        </FormItem>
-                                    )}
-                                />
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <FormField
-                                    control={form.control}
-                                    name="specSimDimensions"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Kích thước giả (hiển thị)</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="VD: 60x120 cm" {...field} />
-                                            </FormControl>
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="specOrigin"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Xuất xứ</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="VD: Việt Nam" {...field} />
-                                            </FormControl>
-                                        </FormItem>
-                                    )}
-                                />
-                            </div>
-                            <div className="grid grid-cols-3 gap-4">
-                                <FormField
-                                    control={form.control}
-                                    name="specAntiSlip"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Chống trượt</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="VD: R9" {...field} />
-                                            </FormControl>
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="specPatternCount"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Số mẫu</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="VD: 4" {...field} />
-                                            </FormControl>
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="specColor"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Màu sắc</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="VD: Xám đậm" {...field} />
-                                            </FormControl>
-                                        </FormItem>
-                                    )}
-                                />
-                            </div>
-                        </CardContent>
-                    </Card>
-                )}
-
-                {/* Publish */}
-                <Card>
-                    <CardContent className="pt-6">
-                        <FormField
-                            control={form.control}
-                            name="isPublished"
-                            render={({ field }) => (
-                                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                                    <FormControl>
-                                        <Checkbox
-                                            checked={field.value}
-                                            onCheckedChange={field.onChange}
-                                        />
-                                    </FormControl>
-                                    <div className="space-y-1 leading-none">
-                                        <FormLabel>Xuất bản</FormLabel>
-                                        <FormDescription>Hiển thị sản phẩm trên trang công khai</FormDescription>
-                                    </div>
-                                </FormItem>
-                            )}
-                        />
-                    </CardContent>
-                </Card>
-
-                <div className="flex gap-4">
-                    <Button type="submit">
-                        {initialData ? "Cập nhật" : "Tạo sản phẩm"}
-                    </Button>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div>
+                        <label className={labelCls}>SKU <span className="text-red-500">*</span></label>
+                        <input className={inputCls} value={form.sku} onChange={(e) => set('sku', e.target.value)} required placeholder="VD: MBL-001" />
+                    </div>
+                    <div>
+                        <label className={labelCls}>Giá hiển thị</label>
+                        <input className={inputCls} value={form.price_display} onChange={(e) => set('price_display', e.target.value)} placeholder="Liên hệ báo giá" />
+                    </div>
                 </div>
-            </form>
-        </Form>
+
+                <div>
+                    <label className={labelCls}>Tên sản phẩm <span className="text-red-500">*</span></label>
+                    <input
+                        className={inputCls}
+                        value={form.name}
+                        onChange={(e) => {
+                            set('name', e.target.value)
+                            if (!isEdit) set('slug', slugify(e.target.value))
+                        }}
+                        required
+                        placeholder="Tên sản phẩm đầy đủ"
+                    />
+                </div>
+
+                <div>
+                    <label className={labelCls}>Slug <span className="text-red-500">*</span></label>
+                    <input className={inputCls} value={form.slug} onChange={(e) => set('slug', slugify(e.target.value))} required placeholder="ten-san-pham" />
+                    <p className="mt-1 text-xs text-muted-foreground">URL: /gach-op-lat/[kiểu-vân]/<span className="font-mono text-primary">{form.slug || 'slug'}</span></p>
+                </div>
+            </div>
+
+            {/* Classification */}
+            <div className="bg-white rounded-2xl border border-[#e2e8f0] p-6 space-y-5">
+                <h2 className="text-base font-semibold text-foreground">Phân loại</h2>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div>
+                        <label className={labelCls}>Kiểu vân <span className="text-red-500">*</span></label>
+                        <select className={selectCls} value={form.pattern_type_id} onChange={(e) => { set('pattern_type_id', e.target.value); set('collection_id', '') }} required>
+                            <option value="">-- Chọn kiểu vân --</option>
+                            {patternTypes.map((pt) => <option key={pt.id} value={pt.id}>{pt.name}</option>)}
+                        </select>
+                    </div>
+                    <div>
+                        <label className={labelCls}>Bộ sưu tập</label>
+                        <select className={selectCls} value={form.collection_id} onChange={(e) => set('collection_id', e.target.value)} disabled={!form.pattern_type_id}>
+                            <option value="">-- Không có --</option>
+                            {filteredCollections.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                        </select>
+                    </div>
+                    <div>
+                        <label className={labelCls}>Kích thước</label>
+                        <select className={selectCls} value={form.size_id} onChange={(e) => set('size_id', e.target.value)}>
+                            <option value="">-- Không có --</option>
+                            {sizes.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
+                        </select>
+                    </div>
+                    <div>
+                        <label className={labelCls}>Bề mặt</label>
+                        <select className={selectCls} value={form.surface_id} onChange={(e) => set('surface_id', e.target.value)}>
+                            <option value="">-- Không có --</option>
+                            {surfaces.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                        </select>
+                    </div>
+                    <div>
+                        <label className={labelCls}>Xuất xứ</label>
+                        <select className={selectCls} value={form.origin_id} onChange={(e) => set('origin_id', e.target.value)}>
+                            <option value="">-- Không có --</option>
+                            {origins.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
+                        </select>
+                    </div>
+                    <div>
+                        <label className={labelCls}>Thứ tự hiển thị</label>
+                        <input type="number" className={inputCls} value={form.sort_order} onChange={(e) => set('sort_order', e.target.value)} min={0} />
+                    </div>
+                </div>
+
+                {/* Colors */}
+                <div>
+                    <label className={labelCls}>Màu sắc</label>
+                    <div className="flex flex-wrap gap-2">
+                        {colors.map((c) => {
+                            const selected = form.color_ids.includes(c.id)
+                            return (
+                                <button key={c.id} type="button" onClick={() => toggleId('color_ids', c.id)}
+                                    className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${selected ? 'bg-primary text-white border-primary' : 'bg-white text-[#374151] border-[#e2e8f0] hover:border-primary/50'}`}>
+                                    {c.name}
+                                </button>
+                            )
+                        })}
+                    </div>
+                </div>
+
+                {/* Locations */}
+                <div>
+                    <label className={labelCls}>Vị trí ốp lát</label>
+                    <div className="flex flex-wrap gap-2">
+                        {locations.map((l) => {
+                            const selected = form.location_ids.includes(l.id)
+                            return (
+                                <button key={l.id} type="button" onClick={() => toggleId('location_ids', l.id)}
+                                    className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${selected ? 'bg-primary text-white border-primary' : 'bg-white text-[#374151] border-[#e2e8f0] hover:border-primary/50'}`}>
+                                    {l.name}
+                                </button>
+                            )
+                        })}
+                    </div>
+                </div>
+            </div>
+
+            {/* Images */}
+            <div className="bg-white rounded-2xl border border-[#e2e8f0] p-6 space-y-6">
+                <h2 className="text-base font-semibold text-foreground">Hình ảnh sản phẩm</h2>
+
+                <div className="space-y-4">
+                    <label className={labelCls}>Thư viện ảnh (Main & Additional)</label>
+                    <ImageUploader
+                        value={uploadedImages}
+                        onChange={val => {
+                            const newImages = Array.isArray(val) ? val : [val].filter(Boolean)
+                            setUploadedImages(newImages)
+                            if (mainImage && !newImages.includes(mainImage)) {
+                                setMainImage(newImages[0] || '')
+                            } else if (!mainImage && newImages.length > 0) {
+                                setMainImage(newImages[0])
+                            }
+                        }}
+                        multiple
+                        maxFiles={12}
+                        folder="products"
+                    />
+
+                    {uploadedImages.length > 0 && (
+                        <div className="bg-[#f8fafc] p-4 rounded-xl border border-[#e2e8f0] mt-4">
+                            <label className="block text-sm font-medium text-[#15803d] mb-3">Chọn 1 ảnh làm ảnh đại diện (Thumbnail)</label>
+                            <div className="flex flex-wrap gap-4">
+                                {uploadedImages.map((url, idx) => (
+                                    <div
+                                        key={idx}
+                                        className={`relative cursor-pointer rounded-xl border-2 overflow-hidden transition-all ${mainImage === url ? 'border-[#15803d] shadow-md scale-105' : 'border-transparent hover:border-gray-300'
+                                            }`}
+                                        onClick={() => setMainImage(url)}
+                                    >
+                                        <div className="w-24 h-24 relative bg-white">
+                                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                                            <img src={url} alt={`img-${idx}`} className="w-full h-full object-cover" />
+                                        </div>
+                                        {mainImage === url && (
+                                            <div className="absolute top-1.5 right-1.5 bg-[#15803d] text-white rounded-full p-1 shadow-sm">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                <div className="pt-6 border-t border-[#e2e8f0]">
+                    <label className={labelCls}>Ảnh khi di chuột (Hover Image)</label>
+                    <ImageUploader
+                        value={form.image_hover_url}
+                        onChange={val => set('image_hover_url', Array.isArray(val) ? val[0] : val)}
+                        multiple={false}
+                        folder="products"
+                    />
+                </div>
+            </div>
+
+            {/* Description */}
+            <div className="bg-white rounded-2xl border border-[#e2e8f0] p-6 space-y-5">
+                <h2 className="text-base font-semibold text-foreground">Mô tả</h2>
+                <textarea
+                    className="w-full px-3 py-2 rounded-lg border border-[#e2e8f0] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors resize-y min-h-[120px]"
+                    value={form.description}
+                    onChange={(e) => set('description', e.target.value)}
+                    placeholder="Mô tả sản phẩm..."
+                />
+            </div>
+
+            {/* Settings */}
+            <div className="bg-white rounded-2xl border border-[#e2e8f0] p-6">
+                <h2 className="text-base font-semibold text-foreground mb-5">Cài đặt</h2>
+                <div className="flex flex-col gap-3">
+                    <label className="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" checked={form.is_active} onChange={(e) => set('is_active', e.target.checked)}
+                            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary/30" />
+                        <span className="text-sm font-medium text-[#374151]">Hiển thị (is_active)</span>
+                    </label>
+                    <label className="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" checked={form.is_featured} onChange={(e) => set('is_featured', e.target.checked)}
+                            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary/30" />
+                        <span className="text-sm font-medium text-[#374151]">Sản phẩm nổi bật (is_featured)</span>
+                    </label>
+                </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center gap-3 justify-end">
+                <Button type="button" variant="outline" onClick={() => router.back()}>Huỷ</Button>
+                <Button type="submit" disabled={isPending} className="gap-2">
+                    {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                    {isEdit ? 'Cập nhật' : 'Thêm sản phẩm'}
+                </Button>
+            </div>
+        </form>
     )
 }

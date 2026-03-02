@@ -2,111 +2,172 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRef } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface CollectionItem {
-    id: string;
+    id: number;
     name: string;
     slug: string;
-    image: string | null;
-    productTypeId?: string;
+    thumbnail_url?: string | null;
+    is_featured?: boolean | null;
+    _count?: { products: number };
 }
 
 interface CollectionCarouselProps {
-    categoryName: string;
+    patternName: string;
+    patternSlug: string;
     collections: CollectionItem[];
-    activeId?: string;
-    categorySlug?: string; // Add categorySlug to build filter URL
+    activeSlug?: string;
+    categoryMode?: boolean;
 }
 
-export function CollectionCarousel({ categoryName, collections, activeId, categorySlug }: CollectionCarouselProps) {
+export function CollectionCarousel({ patternName, patternSlug, collections, activeSlug, categoryMode }: CollectionCarouselProps) {
     const scrollRef = useRef<HTMLDivElement>(null);
+    const searchParams = useSearchParams();
+    const [canLeft, setCanLeft] = useState(false);
+    const [canRight, setCanRight] = useState(true);
 
     if (collections.length === 0) return null;
 
+    const updateArrows = useCallback(() => {
+        const el = scrollRef.current;
+        if (!el) return;
+        setCanLeft(el.scrollLeft > 8);
+        setCanRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 8);
+    }, []);
+
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useEffect(() => {
+        const el = scrollRef.current;
+        if (!el) return;
+        updateArrows();
+        el.addEventListener('scroll', updateArrows, { passive: true });
+        // Re-check when content loads
+        const ro = new ResizeObserver(updateArrows);
+        ro.observe(el);
+        return () => { el.removeEventListener('scroll', updateArrows); ro.disconnect(); };
+    }, [updateArrows]);
+
     const scroll = (dir: 'left' | 'right') => {
-        if (!scrollRef.current) return;
-        const amount = 200;
-        scrollRef.current.scrollBy({
-            left: dir === 'left' ? -amount : amount,
-            behavior: 'smooth',
-        });
+        scrollRef.current?.scrollBy({ left: dir === 'left' ? -200 : 200, behavior: 'smooth' });
+    };
+
+    const buildHref = (col: CollectionItem) => {
+        const isActive = col.slug === activeSlug;
+        if (categoryMode) {
+            const params = new URLSearchParams(searchParams.toString());
+            isActive ? params.delete('collection') : params.set('collection', col.slug);
+            const qs = params.toString();
+            return qs ? `/gach-op-lat?${qs}` : '/gach-op-lat';
+        }
+        return isActive
+            ? `/gach-op-lat/${patternSlug}`
+            : `/gach-op-lat/${patternSlug}?collection=${col.slug}`;
     };
 
     return (
-        <div className="flex flex-col gap-6">
-            <h2 className="text-2xl font-semibold text-[#111827] tracking-tight">
+        <div className="flex flex-col gap-4">
+            {/* Heading */}
+            <h2 className="text-[20px] lg:text-[22px] font-semibold text-[#111827] tracking-[-0.48px] leading-[28px]">
                 Tất cả{' '}
                 <span className="font-bold text-[#15803d]">bộ sưu tập</span>
-                {' '}{categoryName}
+                {' '}{patternName}
             </h2>
 
+            {/* Carousel */}
             <div className="relative group/carousel">
-                {/* Left arrow */}
+                {/* Left Arrow */}
                 <button
                     onClick={() => scroll('left')}
-                    className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-black/30 hover:bg-black/50 text-white rounded-r-lg w-[50px] h-[50px] flex items-center justify-center opacity-0 group-hover/carousel:opacity-100 transition-opacity"
-                    aria-label="Scroll left"
+                    aria-label="Xem bộ sưu tập trước"
+                    className={`absolute left-0 top-[40px] -translate-y-1/2 -translate-x-1 z-20
+                        w-8 h-8 lg:w-9 lg:h-9 rounded-full
+                        bg-white border border-[#e5e7eb] shadow-md
+                        flex items-center justify-center
+                        hover:bg-[#f0fdf4] hover:border-[#22c55e] hover:shadow-lg
+                        active:scale-95 transition-all duration-200
+                        ${canLeft ? "opacity-100" : "opacity-0 pointer-events-none"}`}
                 >
-                    <ChevronLeft className="h-6 w-6" />
+                    <ChevronLeft className="h-4 w-4 text-[#374151]" />
                 </button>
 
                 {/* Scroll container */}
                 <div
                     ref={scrollRef}
-                    className="flex gap-6 overflow-x-auto scrollbar-hide snap-x snap-mandatory py-4 px-1"
-                    style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                    className="flex gap-3 lg:gap-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory py-2 px-0.5"
+                    style={{ scrollbarWidth: 'none' }}
                 >
                     {collections.map((col) => {
-                        const isActive = col.id === activeId;
-                        // If categorySlug is provided, we filter. Otherwise default to collection detail.
-                        // Actually, to support breadcrumb flow "Home > Category > Collection", we likely want filtering.
-                        // But if we want to support "Gạch vân đá marble" -> "Collection", it might be complex.
-                        // Let's assume if categorySlug is present, we filter.
-                        const href = categorySlug
-                            ? (isActive
-                                ? `/danh-muc/${categorySlug}` // Deselect: go to category root (or could go to productType if we want)
-                                : `/danh-muc/${categorySlug}?collection=${col.id}${col.productTypeId ? `&productType=${col.productTypeId}` : ''}`)
-                            : `/bo-suu-tap/${col.slug}`;
+                        const isActive = col.slug === activeSlug;
+                        const href = buildHref(col);
 
                         return (
                             <Link
                                 key={col.id}
                                 href={href}
-                                className="group flex flex-col gap-3 shrink-0 w-[160px] snap-start"
+                                className="group flex flex-col shrink-0 w-[130px] lg:w-[150px] snap-start"
                             >
-                                <div className={`w-full aspect-square rounded-2xl overflow-hidden shadow-[0px_2px_6px_0px_rgba(16,24,40,0.06)] transition-all duration-300 ${isActive ? 'ring-2 ring-[#15803d] ring-offset-2' : ''}`}>
-                                    {col.image ? (
+                                {/* Thumbnail fallback box (Rectangle) */}
+                                <div className={`w-full h-[72px] lg:h-[84px] rounded-[12px] overflow-hidden flex flex-col items-center justify-center relative
+                                    border transition-all duration-300
+                                    ${isActive
+                                        ? "border-[#22c55e] shadow-[0_4px_16px_rgba(21,128,61,0.15)] bg-[#f0fdf4]"
+                                        : "bg-[#f9fafb] border-[#f3f4f6] shadow-[0_2px_6px_rgba(16,24,40,0.04)] group-hover:bg-white group-hover:border-[#86efac] group-hover:shadow-[0_4px_12px_rgba(21,128,61,0.08)]"
+                                    }`}
+                                >
+                                    {col.thumbnail_url ? (
                                         <Image
-                                            src={col.image}
+                                            src={col.thumbnail_url}
                                             alt={col.name}
-                                            width={160}
-                                            height={160}
-                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                            fill
+                                            sizes="(max-width: 1024px) 130px, 150px"
+                                            className={`object-cover mix-blend-multiply opacity-50 transition-transform duration-500 ${isActive ? "scale-105" : "group-hover:scale-105"}`}
                                         />
-                                    ) : (
-                                        <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400 text-xs text-center p-2">
+                                    ) : null}
+
+                                    {/* Text Overlay inside the box */}
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center px-2 z-10 pointer-events-none">
+                                        <span className={`font-semibold text-center truncate w-full transition-colors duration-200 ${isActive ? "text-[#15803d] text-[14px]" : "text-[#4b5563] text-[13px] group-hover:text-[#15803d]"}`}>
                                             {col.name}
-                                        </div>
+                                        </span>
+                                        {/* Product count */}
+                                        {col._count?.products !== undefined && (
+                                            <span className={`text-[11px] mt-0.5 ${isActive ? "text-[#166534]" : "text-[#9ca3af] group-hover:text-[#22c55e]"}`}>
+                                                {col._count.products} SP
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    {/* Active badge overlay */}
+                                    {isActive && (
+                                        <div className="absolute inset-0 border border-[#15803d]/20 rounded-[12px] z-20 pointer-events-none" />
                                     )}
                                 </div>
-                                <p className={`font-semibold text-lg transition-colors truncate ${isActive ? 'text-[#15803d]' : 'text-[#4b5563] group-hover:text-[#15803d]'}`}>
-                                    {col.name}
-                                </p>
                             </Link>
-                        );
+                        )
                     })}
                 </div>
 
-                {/* Right arrow */}
+                {/* Right Arrow */}
                 <button
                     onClick={() => scroll('right')}
-                    className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-black/30 hover:bg-black/50 text-white rounded-l-lg w-[50px] h-[50px] flex items-center justify-center opacity-0 group-hover/carousel:opacity-100 transition-opacity"
-                    aria-label="Scroll right"
+                    aria-label="Xem bộ sưu tập tiếp theo"
+                    className={`absolute right-0 top-[40px] -translate-y-1/2 translate-x-1 z-20
+                        w-8 h-8 lg:w-9 lg:h-9 rounded-full
+                        bg-white border border-[#e5e7eb] shadow-md
+                        flex items-center justify-center
+                        hover:bg-[#f0fdf4] hover:border-[#22c55e] hover:shadow-lg
+                        active:scale-95 transition-all duration-200
+                        ${canRight ? "opacity-100" : "opacity-0 pointer-events-none"}`}
                 >
-                    <ChevronRight className="h-6 w-6" />
+                    <ChevronRight className="h-4 w-4 text-[#374151]" />
                 </button>
+
+                {/* Edge fade gradients */}
+                {canLeft && <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-white/80 to-transparent z-10" />}
+                {canRight && <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white/80 to-transparent z-10" />}
             </div>
         </div>
     );
