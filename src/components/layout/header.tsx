@@ -13,7 +13,7 @@ const PRODUCT_CATEGORIES = [
     { label: "Thiết bị vệ sinh", href: "/thiet-bi-ve-sinh", active: true },
     { label: "Thiết bị bếp", href: "/thiet-bi-bep", active: true },
     { label: "Vật liệu nước", href: "/vat-lieu-nuoc", active: true },
-    { label: "Sàn gỗ", href: "/san-go", active: false },
+    { label: "Sàn gỗ", href: "/san-go", active: true },
 ]
 
 const NAV_LINKS = [
