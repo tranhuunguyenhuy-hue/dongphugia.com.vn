@@ -28,9 +28,9 @@
 - [x] **2.1. Frontend Thiết bị Bếp** *(Hoàn thành)*
   - Xây dựng route `src/app/(public)/thiet-bi-bep/page.tsx` (Tích hợp SmartFilter & Layout 4 cột) ✅
   - Xây dựng route Chi tiết `src/app/(public)/thiet-bi-bep/[typeSlug]/[productSlug]/page.tsx` (Gallery + Tabs thông số + Quote Form) ✅
-- [ ] **2.2. Frontend Ngành Nước & Sàn Gỗ**
+- [x] **2.2. Frontend Ngành Nước & Sàn Gỗ** *(Hoàn thành 02/03/2026)*
   - [x] Vật liệu ngành nước (Hoàn thành Layout + Filter + Detail + Báo giá) ✅
-  - [ ] Sàn gỗ / Sàn nhựa (Đang chờ triển khai UI hiển thị và chi tiết sản phẩm).
+  - [x] Sàn gỗ / Sàn nhựa (Đã lên trang list, bộ lọc, chi tiết sản phẩm, tabs thông số riêng & form Báo giá) ✅
 - [ ] **2.3. Hoàn thiện Báo Giá Client-side**
   - Gắn form Báo giá động vào từng sản phẩm (Gạch, Vệ sinh, Bếp, Nước, Sàn gỗ).
   - Hiệu ứng feedback (Toast success) khi khách tải xong yêu cầu.
@@ -69,5 +69,5 @@
 ---
 
 ### Phân công tức thì (Next Actions — cập nhật 02/03/2026)
-- **Claude Code:** Backend 5/5 danh mục đã xong. Tiến hành **Giai đoạn 1.3** (Reply Báo giá tại Admin CMS).
-- **Tninie:** Tiến hành **Frontend Sàn Gỗ** (Hoàn thiện Giai đoạn 2.2).
+- **Claude Code:** Backend 5/5 danh mục đã xong. Tiến hành **Giai đoạn 1.3** (Logic quản lý & gửi Reply Báo giá tại Admin CMS).
+- **Tninie:** Sẵn sàng chờ lệnh (có thể tiến hành **Giai đoạn 2.3/2.4** hoặc **Giai đoạn 3 SEO**).

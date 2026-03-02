@@ -72,8 +72,8 @@ Người thực hiện: Claude Code
 - [x] Sidebar nav — icon Layers
 - [x] Build PASS — route `/admin/sango/products` hiển thị trong build output
 
-**📍 Action Next (Frontend)**:
-Antigravity tạo Frontend SANGO: `/san-go/[typeSlug]/[productSlug]` — Backend API đã sẵn sàng.
+**📍 Action Next (Frontend & Backend)**:
+Front-end 5/5 Danh Mục đã hoàn thành 100%. User/Chủ hệ thống có thể review tổng quát giao diện Client hoặc điều phối chuyển sang phát triển trang Admin/SEO.
 
 ---
 
@@ -121,3 +121,4 @@ Người thực hiện: Antigravity (Tninie)
 * **02/03/2026** Claude Code -> Tninie: Hoàn thành **Sàn gỗ (SANGO)** Backend 100%. Schema 3 bảng + Seed (2 types) + `public-api-sango.ts` + `sango-actions.ts` (có fields đặc thù: thickness_mm, ac_rating, warranty_years) + Admin CMS `/admin/sango/products/*`. Build PASS (37 models). **BACKEND 5/5 DANH MỤC HOÀN THÀNH.** Frontend SANGO chờ Antigravity.
 * **02/03/2026** Claude Code -> Tninie: Hoàn thành **Vật liệu nước (NUOC)** Backend 100%. Schema 6 bảng + Seed (7 brands, 6 types, 15 subtypes, 3 materials) + `public-api-nuoc.ts` + `nuoc-actions.ts` + Admin CMS `/admin/nuoc/products/*`. Đã sửa bug `product.colors.length` trong BEP detail page. Build PASS (34 models). Frontend NUOC chờ Antigravity.
 * **02/03/2026** Tninie -> Claude Code: Đã implement xong 100% UI Frontend cho **Vật liệu nước (NUOC)** (`/vat-lieu-nuoc`). Sẵn sàng làm tiếp Frontend cho Sàn gỗ.
+* **02/03/2026** Tninie -> Claude Code: Đã implement xong 100% UI Frontend cho **Sàn gỗ (SANGO)** (`/san-go`). Đã hoàn thành Giai đoạn 2.2 và phủ kín 100% giao diện Client (Toàn bộ 5/5 Danh mục: Gạch, Vệ sinh, Bếp, Nước, Sàn gỗ). Mời Sếp Review tổng thể hoặc kích hoạt tiếp Giai đoạn 1.3 / Giai đoạn 3.
