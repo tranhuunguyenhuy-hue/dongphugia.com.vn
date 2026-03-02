@@ -1,5 +1,6 @@
 import prisma from '@/lib/prisma';
 import { cache } from 'react';
+import { unstable_cache } from 'next/cache';
 
 /**
  * Fetch all active product categories.
@@ -15,16 +16,22 @@ export const getActiveCategories = cache(async () => {
  * Fetch pattern_types by category slug, with product count.
  */
 export const getPatternTypesByCategorySlug = cache(async (categorySlug: string) => {
-    return await prisma.pattern_types.findMany({
-        where: {
-            product_categories: { slug: categorySlug },
-            is_active: true,
+    return await unstable_cache(
+        async () => {
+            return await prisma.pattern_types.findMany({
+                where: {
+                    product_categories: { slug: categorySlug },
+                    is_active: true,
+                },
+                include: {
+                    _count: { select: { products: true } },
+                },
+                orderBy: { sort_order: 'asc' },
+            });
         },
-        include: {
-            _count: { select: { products: true } },
-        },
-        orderBy: { sort_order: 'asc' },
-    });
+        [`pattern-types-by-category-${categorySlug}`],
+        { revalidate: 3600, tags: ['pattern_types', categorySlug] }
+    )();
 });
 
 /**
@@ -308,57 +315,63 @@ export const getProductsByCategorySlug = cache(
  */
 export const getFilterDataByCategorySlug = cache(
     async (categorySlug: string, patternSlug?: string) => {
-        // Build base condition
-        const productWhere: any = {
-            is_active: true,
-            pattern_types: {
-                product_categories: { slug: categorySlug },
-                is_active: true,
-            },
-        };
-        if (patternSlug) {
-            productWhere.pattern_types = {
-                ...productWhere.pattern_types,
-                slug: patternSlug,
-            };
-        }
-
-        const [colors, surfaces, sizes, origins, collections, locations] = await Promise.all([
-            prisma.colors.findMany({
-                where: { product_colors: { some: { products: productWhere } } },
-                orderBy: { name: 'asc' },
-            }),
-            prisma.surfaces.findMany({
-                where: { products: { some: productWhere } },
-                orderBy: { name: 'asc' },
-            }),
-            prisma.sizes.findMany({
-                where: { products: { some: productWhere } },
-                orderBy: { sort_order: 'asc' },
-            }),
-            prisma.origins.findMany({
-                where: { products: { some: productWhere } },
-                orderBy: { name: 'asc' },
-            }),
-            prisma.collections.findMany({
-                where: {
+        return await unstable_cache(
+            async () => {
+                // Build base condition
+                const productWhere: any = {
                     is_active: true,
                     pattern_types: {
                         product_categories: { slug: categorySlug },
                         is_active: true,
-                        ...(patternSlug ? { slug: patternSlug } : {}),
                     },
-                },
-                orderBy: { sort_order: 'asc' },
-                include: { _count: { select: { products: true } } },
-            }),
-            prisma.locations.findMany({
-                where: { product_locations: { some: { products: productWhere } } },
-                orderBy: { name: 'asc' },
-            }),
-        ]);
+                };
+                if (patternSlug) {
+                    productWhere.pattern_types = {
+                        ...productWhere.pattern_types,
+                        slug: patternSlug,
+                    };
+                }
 
-        return { colors, surfaces, sizes, origins, collections, locations };
+                const [colors, surfaces, sizes, origins, collections, locations] = await Promise.all([
+                    prisma.colors.findMany({
+                        where: { product_colors: { some: { products: productWhere } } },
+                        orderBy: { name: 'asc' },
+                    }),
+                    prisma.surfaces.findMany({
+                        where: { products: { some: productWhere } },
+                        orderBy: { name: 'asc' },
+                    }),
+                    prisma.sizes.findMany({
+                        where: { products: { some: productWhere } },
+                        orderBy: { sort_order: 'asc' },
+                    }),
+                    prisma.origins.findMany({
+                        where: { products: { some: productWhere } },
+                        orderBy: { name: 'asc' },
+                    }),
+                    prisma.collections.findMany({
+                        where: {
+                            is_active: true,
+                            pattern_types: {
+                                product_categories: { slug: categorySlug },
+                                is_active: true,
+                                ...(patternSlug ? { slug: patternSlug } : {}),
+                            },
+                        },
+                        orderBy: { sort_order: 'asc' },
+                        include: { _count: { select: { products: true } } },
+                    }),
+                    prisma.locations.findMany({
+                        where: { product_locations: { some: { products: productWhere } } },
+                        orderBy: { name: 'asc' },
+                    }),
+                ]);
+
+                return { colors, surfaces, sizes, origins, collections, locations };
+            },
+            [`filter-data-category-${categorySlug}-${patternSlug || 'all'}`],
+            { revalidate: 3600, tags: ['filters', categorySlug] }
+        )();
     }
 );
 

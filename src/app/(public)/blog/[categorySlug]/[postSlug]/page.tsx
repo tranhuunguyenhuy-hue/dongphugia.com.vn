@@ -7,6 +7,8 @@ import { PostCard, BlogPost } from '@/components/blog/post-card'
 
 import { getBlogPostBySlug, getRelatedBlogPosts } from '@/lib/public-api-blog'
 
+export const revalidate = 3600
+
 export async function generateMetadata({ params }: { params: Promise<{ postSlug: string }> }) {
     const { postSlug } = await params
     const post = await getBlogPostBySlug(postSlug)

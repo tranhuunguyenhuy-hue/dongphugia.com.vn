@@ -4,6 +4,8 @@ import { PostCard, BlogPost } from '@/components/blog/post-card'
 
 import { getBlogPosts, getBlogCategories } from '@/lib/public-api-blog'
 
+export const revalidate = 3600
+
 export async function generateMetadata({ params }: { params: Promise<{ categorySlug: string }> }) {
     const { categorySlug } = await params
     const categories = await getBlogCategories()
