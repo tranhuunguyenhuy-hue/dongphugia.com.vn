@@ -5,53 +5,11 @@ import { ChevronRight, Calendar, User, Eye, Share2 } from 'lucide-react'
 import { TableOfContents } from '@/components/blog/toc'
 import { PostCard, BlogPost } from '@/components/blog/post-card'
 
-// --- MOCK DATA ---
-const MOCK_HTML_CONTENT = `
-  <h2 id="gioi-thieu">Giới thiệu về xu hướng năm 2026</h2>
-  <p>Thế giới vật liệu nội thất đang chứng kiến một cuộc cách mạng mạnh mẽ. Hãy cùng tìm hiểu những gì đang chờ đón chúng ta...</p>
-  <img src="/images/logo.png" alt="Phòng tắm hiện đại" />
-  <p>Sự kết hợp giữa yếu tố tự nhiên và công nghệ thông minh mang đến không gian tiện nghi nhưng vô cùng ấm cúng. Gạch vân đá khổ lớn vẫn tiếp tục làm mưa làm gió.</p>
-  
-  <h2 id="vat-lieu-than-thien">1. Vật liệu thân thiện môi trường</h2>
-  <p>Người dùng ngày càng có ý thức cao về sức khỏe. Việc sử dụng gạch ốp lát đạt chuẩn kháng khuẩn đang là lựa chọn ưu tiên.</p>
-  <h3 id="gach-khang-khuan">1.1. Gạch ốp lát kháng khuẩn ION âm</h3>
-  <p>Đông Phú Gia tự hào là đơn vị phân phối dòng sản phẩm công nghệ xanh...</p>
-  
-  <h2 id="toi-gian-hoa">2. Tối giản hóa chi tiết</h2>
-  <p>Phong cách Minimalism chưa bao giờ hạ nhiệt. Sự kết tinh của đường nét thiết bị vệ sinh tinh xảo mang lại vẻ sang trọng.</p>
-  <blockquote>"Cái đẹp thực sự nằm ở sự đơn giản tối thượng." - KTS. Nguyễn Văn A.</blockquote>
-  
-  <h2 id="tong-ket">Tổng kết</h2>
-  <p>Hãy liên hệ với chúng tôi để được tư vấn thiết kế miễn phí!</p>
-`
-
-const MOCK_POSTS: BlogPost[] = [
-    {
-        id: 1,
-        title: 'Xu hướng thiết kế nội thất phòng tắm hiện đại năm 2026',
-        slug: 'xu-huong-thiet-ke-noi-that-phong-tam-hien-dai-nam-2026',
-        excerpt: 'Khám phá những xu hướng thiết kế!',
-        cover_image_url: null,
-        published_at: new Date('2026-03-01T08:00:00Z'),
-        view_count: 1250,
-        blog_categories: { name: 'Xu hướng', slug: 'xu-huong' },
-    },
-    {
-        id: 2,
-        title: 'Cách chọn gạch ốp lát cho không gian hẹp giúp nới rộng diện tích',
-        slug: 'cach-chon-gach-op-lat-cho-khong-gian-hep',
-        excerpt: 'Diện tích nhỏ không còn là rào cản.',
-        cover_image_url: null,
-        published_at: new Date('2026-02-28T10:30:00Z'),
-        view_count: 840,
-        blog_categories: { name: 'Hướng dẫn chọn', slug: 'huong-dan-chon' },
-    }
-]
-// --- END MOCK DATA ---
+import { getBlogPostBySlug, getRelatedBlogPosts } from '@/lib/public-api-blog'
 
 export async function generateMetadata({ params }: { params: Promise<{ postSlug: string }> }) {
     const { postSlug } = await params
-    const post = MOCK_POSTS.find(p => p.slug === postSlug)
+    const post = await getBlogPostBySlug(postSlug)
 
     if (!post) return { title: 'Bài viết không tồn tại' }
 
@@ -70,13 +28,14 @@ export async function generateMetadata({ params }: { params: Promise<{ postSlug:
 export default async function BlogPostPage({ params }: { params: Promise<{ categorySlug: string; postSlug: string }> }) {
     const { categorySlug, postSlug } = await params
 
-    const post = MOCK_POSTS.find(p => p.slug === postSlug)
-    if (!post || post.blog_categories.slug !== categorySlug) {
+    const post = await getBlogPostBySlug(postSlug)
+    if (!post || post.blog_categories?.slug !== categorySlug) {
         notFound()
     }
 
     // Related posts from same category (excluding current)
-    const relatedPosts = MOCK_POSTS.filter(p => p.blog_categories.slug === categorySlug && p.id !== post.id).slice(0, 3)
+    const relatedPostsRaw = await getRelatedBlogPosts(post.id, post.category_id, 3)
+    const relatedPosts = relatedPostsRaw as unknown as BlogPost[]
 
     return (
         <div className="bg-[#f8fafc] min-h-screen pb-20">
@@ -91,7 +50,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ categ
                     <Link href="/blog" className="text-[#64748b] hover:text-[#15803d] transition-colors font-medium">Blog</Link>
                     <ChevronRight className="h-4 w-4 text-[#cbd5e1]" strokeWidth={2} />
                     <Link href={`/blog/${categorySlug}`} className="text-[#64748b] hover:text-[#15803d] transition-colors font-medium">
-                        {post.blog_categories.name}
+                        {post.blog_categories?.name}
                     </Link>
                 </nav>
 
@@ -106,10 +65,10 @@ export default async function BlogPostPage({ params }: { params: Promise<{ categ
                             <div className="flex flex-col gap-6 mb-8 border-b border-[#f1f5f9] pb-8">
                                 <div className="flex items-center gap-3">
                                     <Link
-                                        href={`/blog/${post.blog_categories.slug}`}
+                                        href={`/blog/${post.blog_categories?.slug}`}
                                         className="bg-[#dcfce7] text-[#15803d] px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider hover:bg-[#bbf7d0] transition-colors"
                                     >
-                                        {post.blog_categories.name}
+                                        {post.blog_categories?.name}
                                     </Link>
                                 </div>
 
@@ -158,7 +117,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ categ
                             {/* HTML TipTap Render Content */}
                             <div
                                 className="prose prose-lg max-w-none prose-slate"
-                                dangerouslySetInnerHTML={{ __html: MOCK_HTML_CONTENT }}
+                                dangerouslySetInnerHTML={{ __html: post.content || '' }}
                             />
 
                             {/* Article Footer & Share */}
@@ -197,7 +156,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ categ
                         {/* Sticky TOC Widget */}
                         <div className="sticky top-24">
                             {/* Client Component bóc tách H2/H3 nội dung */}
-                            <TableOfContents htmlContent={MOCK_HTML_CONTENT} />
+                            <TableOfContents htmlContent={post.content || ''} />
 
                             {/* Banner quảng cáo dọc nếu có */}
                             <div className="mt-6 rounded-2xl overflow-hidden relative h-[400px] border border-[#e2e8f0] bg-slate-100 group cursor-pointer shadow-sm hidden lg:block">

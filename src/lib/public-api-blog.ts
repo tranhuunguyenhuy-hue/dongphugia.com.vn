@@ -115,3 +115,16 @@ export const getPopularTags = cache(async (limit = 10) => {
         take: limit,
     })
 })
+
+export async function incrementViewCount(slug: string) {
+    try {
+        await prisma.blog_posts.update({
+            where: { slug },
+            data: {
+                view_count: { increment: 1 }
+            }
+        })
+    } catch (error) {
+        console.error('Failed to increment view count:', error)
+    }
+}

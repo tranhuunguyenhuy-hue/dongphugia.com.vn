@@ -2,64 +2,25 @@ import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
 import { PostCard, BlogPost } from '@/components/blog/post-card'
 
-// --- MOCK DATA ---
-const MOCK_CATEGORIES = [
-    { name: 'Tin tức', slug: 'tin-tuc', desc: 'Bản tin nóng hổi về thị trường vật liệu xây dựng và hoạt động của Đông Phú Gia.' },
-    { name: 'Kiến thức', slug: 'kien-thuc', desc: 'Tổng hợp kiến thức chuyên sâu về thiết kế nội thất và thi công xây dựng.' },
-    { name: 'Hướng dẫn chọn', slug: 'huong-dan-chon', desc: 'Bí quyết lựa chọn vật liệu hoàn hảo cho từng không gian sống.' },
-    { name: 'Dự án', slug: 'du-an', desc: 'Chiêm ngưỡng các công trình thực tế sử dụng sản phẩm từ Đông Phú Gia.' },
-    { name: 'Xu hướng', slug: 'xu-huong', desc: 'Cập nhật phong cách thiết kế thời thượng nhất trong nước và quốc tế.' },
-]
-
-const MOCK_POSTS: BlogPost[] = [
-    {
-        id: 1,
-        title: 'Xu hướng thiết kế nội thất phòng tắm hiện đại năm 2026',
-        slug: 'xu-huong-thiet-ke-noi-that-phong-tam-hien-dai-nam-2026',
-        excerpt: 'Khám phá những xu hướng thiết kế phòng tắm mới nhất, tập trung vào sự tối giản, công năng và vật liệu thân thiện môi trường để tạo ra không gian thư giãn hoàn hảo tại nhà.',
-        cover_image_url: null,
-        published_at: new Date('2026-03-01T08:00:00Z'),
-        view_count: 1250,
-        blog_categories: { name: 'Xu hướng', slug: 'xu-huong' },
-    },
-    {
-        id: 2,
-        title: 'Cách chọn gạch ốp lát cho không gian hẹp giúp nới rộng diện tích',
-        slug: 'cach-chon-gach-op-lat-cho-khong-gian-hep',
-        excerpt: 'Diện tích nhỏ không còn là rào cản nếu bạn biết cách phối hợp màu sắc và kích thước gạch ốp lát. Bài viết chia sẻ bí quyết từ chuyên gia Đông Phú Gia.',
-        cover_image_url: null,
-        published_at: new Date('2026-02-28T10:30:00Z'),
-        view_count: 840,
-        blog_categories: { name: 'Hướng dẫn chọn', slug: 'huong-dan-chon' },
-    },
-    {
-        id: 3,
-        title: 'Màu sơn dẫn đầu xu hướng năm nay bạn không thể bỏ lỡ',
-        slug: 'mau-son-dan-dau-xu-huong',
-        excerpt: 'Lựa chọn màu sơn phù hợp sẽ thay đổi hoàn toàn diện mạo ngôi nhà của bạn.',
-        cover_image_url: null,
-        published_at: new Date('2026-02-27T10:30:00Z'),
-        view_count: 500,
-        blog_categories: { name: 'Xu hướng', slug: 'xu-huong' },
-    },
-]
-// --- END MOCK DATA ---
+import { getBlogPosts, getBlogCategories } from '@/lib/public-api-blog'
 
 export async function generateMetadata({ params }: { params: Promise<{ categorySlug: string }> }) {
     const { categorySlug } = await params
-    const category = MOCK_CATEGORIES.find(c => c.slug === categorySlug)
+    const categories = await getBlogCategories()
+    const category = categories.find((c: any) => c.slug === categorySlug)
 
     if (!category) return { title: 'Không tìm thấy chuyên mục' }
 
     return {
         title: `${category.name} | Blog Đông Phú Gia`,
-        description: category.desc
+        description: category.description || `Các bài viết mới nhất thuộc chuyên mục ${category.name}`
     }
 }
 
 export default async function BlogCategoryPage({ params }: { params: Promise<{ categorySlug: string }> }) {
     const { categorySlug } = await params
-    const category = MOCK_CATEGORIES.find(c => c.slug === categorySlug)
+    const categories = await getBlogCategories()
+    const category = categories.find((c: any) => c.slug === categorySlug)
 
     if (!category) {
         return (
@@ -70,8 +31,9 @@ export default async function BlogCategoryPage({ params }: { params: Promise<{ c
         )
     }
 
-    // Filter mock posts by category
-    const categoryPosts = MOCK_POSTS.filter(p => p.blog_categories.slug === categorySlug)
+    // Filter posts from DB
+    const { posts, totalPages } = await getBlogPosts({ categorySlug, limit: 12 })
+    const categoryPosts = posts as unknown as BlogPost[]
 
     return (
         <div className="bg-white min-h-screen">
@@ -91,7 +53,7 @@ export default async function BlogCategoryPage({ params }: { params: Promise<{ c
                         {category.name}
                     </h1>
                     <p className="text-[#64748b] text-base lg:text-lg max-w-3xl">
-                        {category.desc}
+                        {category.description || `Các bài viết mới nhất thuộc chuyên mục ${category.name}`}
                     </p>
                 </div>
             </div>
@@ -110,20 +72,19 @@ export default async function BlogCategoryPage({ params }: { params: Promise<{ c
                     </div>
                 )}
 
-                {/* Pagination Dummy */}
-                {categoryPosts.length > 3 && (
+                {/* Pagination (Client-side would handle dynamic page params) */}
+                {totalPages > 1 && (
                     <div className="flex justify-center mt-12">
                         <nav className="flex items-center gap-2">
-                            <button className="w-10 h-10 rounded-xl border border-[#e2e8f0] flex items-center justify-center text-[#64748b] hover:bg-[#f8fafc] hover:text-[#15803d] transition-colors disabled:opacity-50">
+                            <button className="w-10 h-10 rounded-xl bg-[#15803d] text-white flex items-center justify-center font-medium">
                                 1
                             </button>
-                            <button className="w-10 h-10 rounded-xl bg-[#15803d] text-white flex items-center justify-center font-medium">
-                                2
-                            </button>
-                            <span className="text-[#94a3b8]">...</span>
-                            <button className="w-10 h-10 rounded-xl border border-[#e2e8f0] flex items-center justify-center text-[#64748b] hover:bg-[#f8fafc] hover:text-[#15803d] transition-colors">
-                                5
-                            </button>
+                            {totalPages > 2 && <span className="text-[#94a3b8]">...</span>}
+                            {totalPages > 1 && (
+                                <button className="w-10 h-10 rounded-xl border border-[#e2e8f0] flex items-center justify-center text-[#64748b] hover:bg-[#f8fafc] hover:text-[#15803d] transition-colors">
+                                    {totalPages}
+                                </button>
+                            )}
                         </nav>
                     </div>
                 )}
