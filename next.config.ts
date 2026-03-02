@@ -16,6 +16,22 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ['lucide-react', 'date-fns', 'lodash'],
   },
+  async rewrites() {
+    return [
+      {
+        source: '/tin-tuc',
+        destination: '/blog',
+      },
+      {
+        source: '/tin-tuc/:path*',
+        destination: '/blog/:path*',
+      },
+      {
+        source: '/admin/tin-tuc/:path*',
+        destination: '/admin/blog/:path*',
+      },
+    ]
+  },
 };
 
 export default nextConfig;
