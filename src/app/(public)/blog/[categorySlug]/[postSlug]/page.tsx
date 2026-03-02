@@ -20,7 +20,7 @@ export async function generateMetadata({ params }: { params: Promise<{ postSlug:
             title: post.title,
             description: post.excerpt || '',
             type: 'article',
-            publishedTime: new Date(post.published_at).toISOString(),
+            publishedTime: post.published_at ? new Date(post.published_at).toISOString() : undefined,
         }
     }
 }
@@ -83,10 +83,10 @@ export default async function BlogPostPage({ params }: { params: Promise<{ categ
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <Calendar className="w-4 h-4 text-[#cbd5e1]" />
-                                        <time dateTime={new Date(post.published_at).toISOString()}>
-                                            {new Date(post.published_at).toLocaleDateString('vi-VN', {
+                                        <time dateTime={post.published_at ? new Date(post.published_at).toISOString() : undefined}>
+                                            {post.published_at ? new Date(post.published_at).toLocaleDateString('vi-VN', {
                                                 day: '2-digit', month: '2-digit', year: 'numeric'
-                                            })}
+                                            }) : ''}
                                         </time>
                                     </div>
                                     <div className="flex items-center gap-2">
