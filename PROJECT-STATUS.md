@@ -72,8 +72,8 @@ Người thực hiện: Claude Code
 - [x] Sidebar nav — icon Layers
 - [x] Build PASS — route `/admin/sango/products` hiển thị trong build output
 
-**📍 Action Next (Frontend & Backend)**:
-Front-end 5/5 Danh Mục đã hoàn thành 100%. User/Chủ hệ thống có thể review tổng quát giao diện Client hoặc điều phối chuyển sang phát triển trang Admin/SEO.
+**📍 Action Next (QA & E2E Testing)**:
+Tiến hành Test luồng End-to-End toàn bộ 5 danh mục (Tạo SP từ Admin -> Hiển thị & Submit Báo giá ở Client). Quá trình này sẽ nghiệm thu chéo chất lượng Backend của Claude Code và Frontend của Tninie.
 
 ---
 
@@ -111,6 +111,29 @@ Người thực hiện: Antigravity (Tninie)
 
 ---
 
+### Giai đoạn: QA & E2E Testing (Bug Fixes)
+Ngày cập nhật: 02/03/2026
+Người thực hiện: Antigravity (Tninie)
+
+- [x] Mở rộng Fallback URL Slug cho đa danh mục trên `<ProductCard>` (Fix Bug Bếp/Nước chỏ nhầm link).
+- [x] Tăng `maxAge` của Admin Session Cookie lên 30 ngày (Fix Bug Timeout).
+- [x] Tạo script chèn dữ liệu bằng raw SQL `sango-fake-products.sql` (Fix Bug Sàn gỗ rỗng do thiếu Seed).
+- [x] Đánh giá an toàn cho UI `<Select>` tại Admin (Sử dụng chuẩn HTML5, lỗi do Subagent tương tác - bỏ qua).
+
+---
+
+## 2.5. Cập nhật Image Upload (Claude Code)
+Ngày cập nhật: 02/03/2026
+
+- [x] `banners/banner-form.tsx` — thay URL text input → `ImageUploader` (Supabase Storage, folder: `banners`)
+- [x] `pattern-types/pattern-type-form.tsx` — thay 2 URL inputs (thumbnail + hero) → `ImageUploader` (folder: `pattern-types`)
+- [x] Fix runtime error `prisma.sango_products.findMany` (restart dev server sau `prisma generate`)
+- [x] Build PASS
+
+> Lưu ý: Tất cả 7 form admin giờ đều dùng `ImageUploader` → upload thẳng Supabase Storage. KHÔNG dùng local filesystem (`public/uploads/`) — sẽ bị broken trên Vercel.
+
+---
+
 ## 3. Nhật Ký Bàn Giao (Hand-off Log)
 *Format: [Date] Agent 1 -> Agent 2: Task Description*
 
@@ -122,3 +145,6 @@ Người thực hiện: Antigravity (Tninie)
 * **02/03/2026** Claude Code -> Tninie: Hoàn thành **Vật liệu nước (NUOC)** Backend 100%. Schema 6 bảng + Seed (7 brands, 6 types, 15 subtypes, 3 materials) + `public-api-nuoc.ts` + `nuoc-actions.ts` + Admin CMS `/admin/nuoc/products/*`. Đã sửa bug `product.colors.length` trong BEP detail page. Build PASS (34 models). Frontend NUOC chờ Antigravity.
 * **02/03/2026** Tninie -> Claude Code: Đã implement xong 100% UI Frontend cho **Vật liệu nước (NUOC)** (`/vat-lieu-nuoc`). Sẵn sàng làm tiếp Frontend cho Sàn gỗ.
 * **02/03/2026** Tninie -> Claude Code: Đã implement xong 100% UI Frontend cho **Sàn gỗ (SANGO)** (`/san-go`). Đã hoàn thành Giai đoạn 2.2 và phủ kín 100% giao diện Client (Toàn bộ 5/5 Danh mục: Gạch, Vệ sinh, Bếp, Nước, Sàn gỗ). Mời Sếp Review tổng thể hoặc kích hoạt tiếp Giai đoạn 1.3 / Giai đoạn 3.
+* **02/03/2026** Tninie -> Sếp & Claude Code: Bắt đầu phase QA & E2E Testing. Kịch bản test luồng tạo sản phẩm từ Admin đến Client đã được lập tại `docs/E2E-TEST-PLAN.md` để nghiệm thu chất lượng cho cả Claude (Backend) và Tninie (Frontend).
+* **02/03/2026** Claude Code -> Tninie: Hoàn thành **Skills Integration + CLAUDE.md fix**. Chi tiết: (1) Cài 15 skills từ skills.sh vào `.agents/skills/` — symlinked cho cả Claude Code, Antigravity và Gemini CLI. (2) Fix CLAUDE.md: symlink cũ bị broken do `.ai/` đã xóa — đã thay bằng file thực tại root với nội dung đầy đủ + thêm section Skills Integration. (3) Tạo `docs/PLAN-blog.md` — kế hoạch triển khai hệ thống Blog (Phase 1–3, phân công rõ Claude/Antigravity). Commit: `2513085`.
+* **02/03/2026** Tninie -> Claude Code: Hoàn tất **Debug E2E Bugs**. Đã xử lý 4 biến cố E2E (Sửa Slug URL, xử lý trang Sàn gỗ rỗng với script SQL, tăng Session maxAge). Giai đoạn 1 & Giai đoạn 2 đã kết thúc tốt đẹp. Xin mời Claude Code tiếp quản và bắt đầu Phase 3 (Hệ thống Blog) theo đúng kiến trúc từ `docs/PLAN-blog.md`.
