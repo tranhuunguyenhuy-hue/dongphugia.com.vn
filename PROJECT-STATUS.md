@@ -38,6 +38,45 @@ Antigravity tạo Frontend BEP: `/thiet-bi-bep/[typeSlug]/[productSlug]` — Bac
 
 ---
 
+### Danh mục: Vật liệu nước (Water Products)
+Ngày cập nhật: 02/03/2026
+Người thực hiện: Claude Code
+
+- [x] Schema SQL → DB (6 bảng `nuoc_` + 8 indexes)
+- [x] Prisma db pull + generate (34 models)
+- [x] Seed data: 7 brands, 6 product_types, 15 subtypes, 3 materials
+- [x] Verify counts (Đúng số liệu, category_id=5 is_active=true)
+- [x] Public API (`src/lib/public-api-nuoc.ts`) — 5 hàm cache()
+- [x] Server Actions CRUD (`src/lib/nuoc-actions.ts`)
+- [x] Admin CMS Pages (`/admin/nuoc/products/*`) — list + new + edit + delete
+- [x] Sidebar nav — icon Droplets
+- [x] Bug fix: `product.colors.length` trong BEP detail page (colors là single FK, không phải array)
+- [x] Build PASS — route `/admin/nuoc/products` hiển thị trong build output
+
+**📍 Action Next (Backend)**:
+Claude Code hãy proceed sang code **Danh mục 5: Sàn gỗ / Sàn nhựa**. Frontend Vật liệu nước đã xong và live trên UI.
+
+---
+
+### Danh mục: Sàn gỗ (Flooring)
+Ngày cập nhật: 02/03/2026
+Người thực hiện: Claude Code
+
+- [x] Schema SQL → DB (3 bảng `sango_` + 4 indexes) — đơn giản nhất, không có brands/subtypes
+- [x] Prisma db pull + generate (37 models)
+- [x] Seed data: 2 product_types (Sàn gỗ công nghiệp, Vật liệu sàn gỗ)
+- [x] Verify counts ✅
+- [x] Public API (`src/lib/public-api-sango.ts`) — 4 hàm cache(), filter theo thickness_mm
+- [x] Server Actions CRUD (`src/lib/sango-actions.ts`) — Zod + fields đặc thù: thickness_mm, width_mm, length_mm, ac_rating, warranty_years
+- [x] Admin CMS Pages (`/admin/sango/products/*`) — list + new + edit + delete
+- [x] Sidebar nav — icon Layers
+- [x] Build PASS — route `/admin/sango/products` hiển thị trong build output
+
+**📍 Action Next (Frontend)**:
+Antigravity tạo Frontend SANGO: `/san-go/[typeSlug]/[productSlug]` — Backend API đã sẵn sàng.
+
+---
+
 ## 2. Trạng thái Frontend & UI (Antigravity Ownership)
 
 ### Danh mục: Thiết bị bếp (Kitchen Appliances)
@@ -45,6 +84,15 @@ Người thực hiện: Antigravity (Tninie)
 
 - [x] Route `src/app/(public)/thiet-bi-bep/page.tsx` (Hoàn thiện Layout 4 cột, SmartFilter)
 - [x] Route Product Detail `src/app/(public)/thiet-bi-bep/[typeSlug]/[productSlug]/page.tsx` (Hoàn thiện Gallery + Tabs thông số + QuoteForm)
+
+---
+
+### Danh mục: Vật liệu nước (Water Products)
+Người thực hiện: Antigravity (Tninie)
+
+- [x] Các Component Filter `/category/*nuoc.tsx` (SmartFilter, Carousel, Drawer)
+- [x] Route `src/app/(public)/vat-lieu-nuoc/page.tsx` (Hoàn thiện Layout Grid)
+- [x] Route Product Detail `src/app/(public)/vat-lieu-nuoc/[typeSlug]/[productSlug]/page.tsx` (Hoàn thiện Gallery + Tabs chức năng + QuoteForm)
 
 ---
 
@@ -70,3 +118,6 @@ Người thực hiện: Antigravity (Tninie)
 * **02/03/2026** Claude Code -> Tninie: Hoàn thành refactor Admin CMS Gạch ốp lát sang dạng accordion nhóm theo BST tại `/admin/products`. Xóa các trang tạo/sửa BST và Kiểu vân riêng lẻ, gộp chung vào modal. Đã sửa type error `_count.bep_products` trong `src/app/(public)/thiet-bi-bep/page.tsx`.
 * **02/03/2026** Claude Code -> Tninie: Xác nhận BEP Backend 100% hoàn thành. `public-api-bep.ts` + `bep-actions.ts` + Admin CMS `/admin/bep/products/*` đã có đủ. Build PASS. Frontend BEP (`/thiet-bi-bep/[typeSlug]/[productSlug]`) chờ Antigravity implement.
 * **02/03/2026** Tninie -> Claude Code: Hoàn tất Giai đoạn 2.1 (Frontend Thiết bị bếp). Route Category `thiet-bi-bep` và Product Detail `thiet-bi-bep/[typeSlug]/[productSlug]` đã live với QuoteForm và Tabs. Tninie chờ Claude làm Giai đoạn 1.2 (Backend TB Ngành Nước & Sàn Gỗ).
+* **02/03/2026** Claude Code -> Tninie: Hoàn thành **Sàn gỗ (SANGO)** Backend 100%. Schema 3 bảng + Seed (2 types) + `public-api-sango.ts` + `sango-actions.ts` (có fields đặc thù: thickness_mm, ac_rating, warranty_years) + Admin CMS `/admin/sango/products/*`. Build PASS (37 models). **BACKEND 5/5 DANH MỤC HOÀN THÀNH.** Frontend SANGO chờ Antigravity.
+* **02/03/2026** Claude Code -> Tninie: Hoàn thành **Vật liệu nước (NUOC)** Backend 100%. Schema 6 bảng + Seed (7 brands, 6 types, 15 subtypes, 3 materials) + `public-api-nuoc.ts` + `nuoc-actions.ts` + Admin CMS `/admin/nuoc/products/*`. Đã sửa bug `product.colors.length` trong BEP detail page. Build PASS (34 models). Frontend NUOC chờ Antigravity.
+* **02/03/2026** Tninie -> Claude Code: Đã implement xong 100% UI Frontend cho **Vật liệu nước (NUOC)** (`/vat-lieu-nuoc`). Sẵn sàng làm tiếp Frontend cho Sàn gỗ.

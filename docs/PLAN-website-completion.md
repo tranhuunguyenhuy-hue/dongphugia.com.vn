@@ -12,10 +12,10 @@
   - `src/lib/bep-actions.ts` ✅ (createBepProduct, updateBepProduct, deleteBepProduct)
   - Admin CMS `/admin/bep/products/*` ✅ (list + new + [id] + delete button)
   - Build PASS ✅
-- [ ] **1.2. Mở khóa 2 Danh mục cuối cùng**
-  - Xây dựng Schema, Seed data cho **Thiết bị ngành nước** (`thiet-bi-nghanh-nuoc`) và **Sàn gỗ / Sàn nhựa** (`san-go-san-nhua`).
-  - Tạo CRUD Server Actions và Public API tương ứng.
-  - Tạo Admin CMS pages cho 2 danh mục này tại `/admin/products` hoặc route riêng biệt.
+- [x] **1.2. Mở khóa 2 Danh mục cuối cùng** *(Hoàn thành 02/03/2026)*
+  - **Vật liệu nước**: 6 bảng `nuoc_`, 7 brands, 6 types, 15 subtypes, 3 materials. API + Actions + Admin `/admin/nuoc/products/*` ✅
+  - **Sàn gỗ**: 3 bảng `sango_`, 2 types, fields đặc thù (thickness_mm, ac_rating...). API + Actions + Admin `/admin/sango/products/*` ✅
+  - Build PASS 37 models ✅
 - [ ] **1.3. Tính năng Báo Giá nâng cao**
   - Viết logic gửi Reply (Email) cho chức năng Báo giá tại Admin.
   - Hoàn thiện UI Dashboard Báo giá: View chi tiết yêu cầu, Cập nhật trạng thái (Pending -> Replied -> Closed).
@@ -29,7 +29,8 @@
   - Xây dựng route `src/app/(public)/thiet-bi-bep/page.tsx` (Tích hợp SmartFilter & Layout 4 cột) ✅
   - Xây dựng route Chi tiết `src/app/(public)/thiet-bi-bep/[typeSlug]/[productSlug]/page.tsx` (Gallery + Tabs thông số + Quote Form) ✅
 - [ ] **2.2. Frontend Ngành Nước & Sàn Gỗ**
-  - (Chờ API) Dựng UI danh sách hiển thị và chi tiết sản phẩm tương tự form mẫu đã có.
+  - [x] Vật liệu ngành nước (Hoàn thành Layout + Filter + Detail + Báo giá) ✅
+  - [ ] Sàn gỗ / Sàn nhựa (Đang chờ triển khai UI hiển thị và chi tiết sản phẩm).
 - [ ] **2.3. Hoàn thiện Báo Giá Client-side**
   - Gắn form Báo giá động vào từng sản phẩm (Gạch, Vệ sinh, Bếp, Nước, Sàn gỗ).
   - Hiệu ứng feedback (Toast success) khi khách tải xong yêu cầu.
@@ -68,5 +69,5 @@
 ---
 
 ### Phân công tức thì (Next Actions — cập nhật 02/03/2026)
-- **Claude Code:** Tiến hành **Giai đoạn 1.2** — Schema + Seed + API + Admin cho **Thiết bị ngành nước** và **Sàn gỗ / Sàn nhựa**. Hoặc làm **Giai đoạn 1.3** (Reply Báo giá).
-- **Tninie:** Sẵn sàng chờ API từ Claude Code cho các Giai đoạn tiếp theo. Hoặc có thể tiến hành **Giai đoạn 2.4** (Audit Admin Pro Max) nếu sếp duyệt.
+- **Claude Code:** Backend 5/5 danh mục đã xong. Tiến hành **Giai đoạn 1.3** (Reply Báo giá tại Admin CMS).
+- **Tninie:** Tiến hành **Frontend Sàn Gỗ** (Hoàn thiện Giai đoạn 2.2).
