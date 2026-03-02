@@ -1,8 +1,9 @@
 'use client'
 
-import { useActionState } from 'react'
+import { useActionState, useEffect } from 'react'
 import { submitQuoteRequest } from '@/lib/actions'
 import { CheckCircle2, Loader2, Phone } from 'lucide-react'
+import { toast } from 'sonner'
 
 interface QuoteFormProps {
     productId: number
@@ -22,6 +23,14 @@ export function QuoteForm({ productId, productName }: QuoteFormProps) {
         submitQuoteRequest as any,
         initialState
     )
+
+    useEffect(() => {
+        if (state.success) {
+            toast.success(state.message || 'Gửi yêu cầu thành công!');
+        } else if (state.message) {
+            toast.error(state.message);
+        }
+    }, [state]);
 
     if (state.success) {
         return (

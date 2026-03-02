@@ -160,18 +160,15 @@ export default async function ProductDetailPage({ params }: PageProps) {
                                     <span className="font-medium text-gray-900">{product.warranty_months} tháng</span>
                                 </div>
                             )}
-                            {product.colors && product.colors.length > 0 && (
+                            {product.colors && (
                                 <div className="flex flex-col col-span-2 sm:col-span-1">
                                     <span className="text-gray-500 text-[13px] mb-0.5">Màu sắc</span>
                                     <div className="flex items-center gap-2 mt-1">
-                                        {product.colors.map((c: any) => (
-                                            <div
-                                                key={c.id}
-                                                className="w-5 h-5 rounded-full border border-gray-300"
-                                                style={{ backgroundColor: c.hex_value || '#ccc' }}
-                                                title={c.name}
-                                            />
-                                        ))}
+                                        <div
+                                            className="w-5 h-5 rounded-full border border-gray-300"
+                                            style={{ backgroundColor: product.colors.hex_code || '#ccc' }}
+                                            title={product.colors.name}
+                                        />
                                     </div>
                                 </div>
                             )}

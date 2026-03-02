@@ -6,6 +6,7 @@ import { createBanner, updateBanner } from '@/lib/actions'
 import { toast } from 'sonner'
 import { Loader2, Save } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { ImageUploader } from '@/components/ui/image-uploader'
 
 interface BannerFormProps {
     banner?: any
@@ -62,22 +63,12 @@ export function BannerForm({ banner }: BannerFormProps) {
                     />
                 </div>
                 <div>
-                    <label className={labelCls}>URL ảnh <span className="text-red-500">*</span></label>
-                    <input
-                        className={inputCls}
+                    <ImageUploader
+                        label="Ảnh banner *"
                         value={form.image_url}
-                        onChange={(e) => set('image_url', e.target.value)}
-                        required
-                        placeholder="https://..."
+                        onChange={(v) => set('image_url', v as string)}
+                        folder="banners"
                     />
-                    {form.image_url && (
-                        <img
-                            src={form.image_url}
-                            alt="Preview"
-                            className="mt-2 h-24 w-auto rounded-lg object-cover border border-[#e2e8f0]"
-                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-                        />
-                    )}
                 </div>
                 <div>
                     <label className={labelCls}>URL liên kết (tuỳ chọn)</label>

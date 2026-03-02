@@ -15,6 +15,9 @@ import {
     Image,
     ShowerHead,
     ChefHat,
+    Droplets,
+    Layers,
+    BookOpen,
 } from "lucide-react"
 import { logoutAction } from "@/app/admin/login/actions"
 import { Badge } from "@/components/ui/badge"
@@ -34,6 +37,9 @@ const navLinks = [
     { label: "Gạch ốp lát", href: "/admin/products", icon: BrickWall, exact: false },
     { label: "TB Vệ sinh", href: "/admin/tbvs/products", icon: ShowerHead, exact: false },
     { label: "TB Bếp", href: "/admin/bep/products", icon: ChefHat, exact: false },
+    { label: "Vật liệu nước", href: "/admin/nuoc/products", icon: Droplets, exact: false },
+    { label: "Sàn gỗ", href: "/admin/sango/products", icon: Layers, exact: false },
+    { label: "Blog", href: "/admin/blog/posts", icon: BookOpen, exact: false },
     { label: "Banners", href: "/admin/banners", icon: Image, exact: false },
     { label: "Báo giá", href: "/admin/quote-requests", icon: ClipboardList, exact: false, quoteBadge: true },
 ]

@@ -11,7 +11,23 @@ export interface ProductCardProps {
 
 export function ProductCard({ product, showPrice = true, patternSlug, basePath = '/gach-op-lat' }: ProductCardProps) {
     const isTBVS = basePath.includes('/thiet-bi-ve-sinh');
-    const slug = patternSlug || (isTBVS ? product.tbvs_product_types?.slug : product.pattern_types?.slug) || (isTBVS ? 'all' : 'gach-op-lat');
+    const isBep = basePath.includes('/thiet-bi-bep');
+    const isNuoc = basePath.includes('/vat-lieu-nuoc');
+    const isSango = basePath.includes('/san-go');
+
+    let slug = patternSlug;
+    if (!slug) {
+        if (isTBVS) slug = product.tbvs_product_types?.slug;
+        else if (isBep) slug = product.bep_product_types?.slug;
+        else if (isNuoc) slug = product.nuoc_product_types?.slug;
+        else if (isSango) slug = product.sango_product_types?.slug;
+        else slug = product.pattern_types?.slug;
+    }
+    if (!slug) {
+        if (basePath === '/gach-op-lat') slug = 'gach-op-lat';
+        else slug = 'all';
+    }
+
     const href = `${basePath}/${slug}/${product.slug}`;
 
     let images: string[] = [];
@@ -26,10 +42,31 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
         if (product.specs) specs = JSON.parse(product.specs as string);
     } catch { /* ignore */ }
 
-    // Use specific properties based on TBVS or Gach
-    const collectionName = isTBVS ? product.tbvs_brands?.name : (product.collection?.name || product.collections?.name);
-    const dimensionText = isTBVS ? product.tbvs_subtypes?.name : (product.dimensions || specs.dimensions || specs.simDimensions || product.sizes?.label);
-    const surfaceText = isTBVS ? product.tbvs_materials?.name : (product.surface || specs.surface || product.surfaces?.name);
+    // Use specific properties based on Category
+    let collectionName = '';
+    let dimensionText = '';
+    let surfaceText = '';
+
+    if (isTBVS) {
+        collectionName = product.tbvs_brands?.name;
+        dimensionText = product.tbvs_subtypes?.name;
+        surfaceText = product.tbvs_materials?.name;
+    } else if (isBep) {
+        collectionName = product.bep_brands?.name;
+        dimensionText = product.bep_subtypes?.name;
+    } else if (isNuoc) {
+        collectionName = product.nuoc_brands?.name;
+        dimensionText = product.nuoc_subtypes?.name;
+        surfaceText = product.nuoc_materials?.name;
+    } else if (isSango) {
+        collectionName = product.origins?.name;
+        dimensionText = product.thickness_mm ? `${product.thickness_mm}mm` : (product.width_mm && product.length_mm ? `${product.width_mm}x${product.length_mm}` : '');
+        surfaceText = product.ac_rating;
+    } else {
+        collectionName = product.collection?.name || product.collections?.name;
+        dimensionText = product.dimensions || specs.dimensions || specs.simDimensions || product.sizes?.label;
+        surfaceText = product.surface || specs.surface || product.surfaces?.name;
+    }
 
     return (
         <Link href={href} className="group flex flex-col gap-6 w-full">
