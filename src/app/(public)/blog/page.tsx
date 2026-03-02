@@ -2,85 +2,23 @@ import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
 import { PostCard, BlogPost } from '@/components/blog/post-card'
 
-// --- MOCK DATA ---
-const MOCK_CATEGORIES = [
-    { name: 'Tin tức', slug: 'tin-tuc' },
-    { name: 'Kiến thức', slug: 'kien-thuc' },
-    { name: 'Hướng dẫn chọn', slug: 'huong-dan-chon' },
-    { name: 'Dự án', slug: 'du-an' },
-    { name: 'Xu hướng', slug: 'xu-huong' },
-]
-
-const MOCK_TAGS = [
-    { name: 'Gạch ốp lát', slug: 'gach-op-lat' },
-    { name: 'Thiết kế nội thất', slug: 'thiet-ke-noi-that' },
-    { name: 'Sàn gỗ công nghiệp', slug: 'san-go-cong-nghiep' },
-    { name: 'Phong thủy', slug: 'phong-thuy' },
-    { name: 'Nhà cấp 4', slug: 'nha-cap-4' },
-]
-
-const MOCK_POSTS: BlogPost[] = [
-    {
-        id: 1,
-        title: 'Xu hướng thiết kế nội thất phòng tắm hiện đại năm 2026',
-        slug: 'xu-huong-thiet-ke-noi-that-phong-tam-hien-dai-nam-2026',
-        excerpt: 'Khám phá những xu hướng thiết kế phòng tắm mới nhất, tập trung vào sự tối giản, công năng và vật liệu thân thiện môi trường để tạo ra không gian thư giãn hoàn hảo tại nhà.',
-        cover_image_url: null, // Sẽ fallback text
-        published_at: new Date('2026-03-01T08:00:00Z'),
-        view_count: 1250,
-        blog_categories: { name: 'Xu hướng', slug: 'xu-huong' },
-    },
-    {
-        id: 2,
-        title: 'Cách chọn gạch ốp lát cho không gian hẹp giúp nới rộng diện tích',
-        slug: 'cach-chon-gach-op-lat-cho-khong-gian-hep',
-        excerpt: 'Diện tích nhỏ không còn là rào cản nếu bạn biết cách phối hợp màu sắc và kích thước gạch ốp lát. Bài viết chia sẻ bí quyết từ chuyên gia Đông Phú Gia.',
-        cover_image_url: null,
-        published_at: new Date('2026-02-28T10:30:00Z'),
-        view_count: 840,
-        blog_categories: { name: 'Hướng dẫn chọn', slug: 'huong-dan-chon' },
-    },
-    {
-        id: 3,
-        title: 'Phân biệt Sàn gỗ tự nhiên và Sàn gỗ công nghiệp: Đâu là lựa chọn tối ưu?',
-        slug: 'phan-biet-san-go-tu-nhien-va-san-go-cong-nghiep',
-        excerpt: 'Cùng phân tích ưu nhược điểm chi tiết của hai loại sàn gỗ phổ biến nhất hiện nay để đưa ra quyết định đầu tư đúng đắn cho tổ ấm của bạn.',
-        cover_image_url: null,
-        published_at: new Date('2026-02-25T14:15:00Z'),
-        view_count: 2100,
-        blog_categories: { name: 'Kiến thức', slug: 'kien-thuc' },
-    },
-    {
-        id: 4,
-        title: 'Top 5 thương hiệu thiết bị vệ sinh cao cấp đáng mua nhất',
-        slug: 'top-5-thuong-hieu-thiet-bi-ve-sinh-cao-cap',
-        excerpt: 'Tổng hợp đánh giá khách quan về 5 thương hiệu thiết bị vệ sinh hàng đầu thế giới đang được phân phối chính hãng tại hệ thống Đông Phú Gia.',
-        cover_image_url: null,
-        published_at: new Date('2026-02-20T09:00:00Z'),
-        view_count: 560,
-        blog_categories: { name: 'Tin tức', slug: 'tin-tuc' },
-    },
-    {
-        id: 5,
-        title: 'Nghiệm thu dự án Villa Đà Lạt: Vẻ đẹp đương đại từ Gạch Eurotile',
-        slug: 'nghiem-thu-du-an-villa-da-lat-gach-eurotile',
-        excerpt: 'Hình ảnh thực tế công trình biệt thự cao cấp tại Đà Lạt sử dụng toàn bộ hệ sinh thái sản phẩm từ Đông Phú Gia, điểm nhấn là bộ sưu tập Eurotile.',
-        cover_image_url: null,
-        published_at: new Date('2026-02-15T16:45:00Z'),
-        view_count: 3200,
-        blog_categories: { name: 'Dự án', slug: 'du-an' },
-    }
-]
-// --- END MOCK DATA ---
+import { getBlogPosts, getBlogCategories, getPopularTags } from '@/lib/public-api-blog'
 
 export const metadata = {
     title: 'Blog & Tin tức | Đông Phú Gia',
     description: 'Cập nhật kiến thức, xu hướng thiết kế nội thất, hướng dẫn chọn vật liệu xây dựng và thông tin dự án mới nhất từ Đông Phú Gia Đà Lạt.',
 }
 
-export default function BlogHomePage() {
-    const featuredPost = MOCK_POSTS[0]
-    const recentPosts = MOCK_POSTS.slice(1)
+export default async function BlogPage() {
+    const [{ posts }, categories, tags] = await Promise.all([
+        getBlogPosts({ limit: 9 }),
+        getBlogCategories(),
+        getPopularTags(10)
+    ])
+
+    // Validate the array contains proper type (will be cast dynamically from DB)
+    const featuredPost = posts[0] as unknown as BlogPost | undefined
+    const recentPosts = posts.slice(1) as unknown as BlogPost[]
 
     return (
         <div className="bg-white min-h-screen">
@@ -137,7 +75,7 @@ export default function BlogHomePage() {
                             Chuyên mục
                         </h3>
                         <ul className="flex flex-col gap-3">
-                            {MOCK_CATEGORIES.map(cat => (
+                            {categories.map(cat => (
                                 <li key={cat.slug}>
                                     <Link
                                         href={`/blog/${cat.slug}`}
@@ -161,7 +99,7 @@ export default function BlogHomePage() {
                             Từ khóa phổ biến
                         </h3>
                         <div className="flex flex-wrap gap-2">
-                            {MOCK_TAGS.map(tag => (
+                            {tags.map(tag => (
                                 <Link
                                     key={tag.slug}
                                     href={`/blog/tag/${tag.slug}`}
@@ -199,5 +137,6 @@ export default function BlogHomePage() {
 
             </div>
         </div>
-    )
+    </div>
+)
 }
