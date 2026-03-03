@@ -44,13 +44,21 @@ export function SubCategoryGrid({ categoryName, productTypes, categorySlug, titl
                         >
                             <div className={`w-full aspect-square rounded-2xl overflow-hidden shadow-[0px_2px_6px_0px_rgba(16,24,40,0.06)] bg-white transition-all duration-300 ${isActive ? 'ring-2 ring-[#15803d] ring-offset-2' : ''}`}>
                                 {pt.image ? (
-                                    <Image
-                                        src={pt.image}
-                                        alt={pt.name}
-                                        width={200}
-                                        height={200}
-                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                    />
+                                    pt.image.includes('vietceramics.com') ? (
+                                        <img
+                                            src={pt.image}
+                                            alt={pt.name}
+                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                        />
+                                    ) : (
+                                        <Image
+                                            src={pt.image}
+                                            alt={pt.name}
+                                            width={200}
+                                            height={200}
+                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                        />
+                                    )
                                 ) : (
                                     <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400 text-xs text-center p-2">
                                         {pt.name}

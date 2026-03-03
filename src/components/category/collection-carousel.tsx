@@ -118,13 +118,21 @@ export function CollectionCarousel({ patternName, patternSlug, collections, acti
                                     }`}
                                 >
                                     {col.thumbnail_url ? (
-                                        <Image
-                                            src={col.thumbnail_url}
-                                            alt={col.name}
-                                            fill
-                                            sizes="(max-width: 1024px) 130px, 150px"
-                                            className={`object-cover mix-blend-multiply opacity-50 transition-transform duration-500 ${isActive ? "scale-105" : "group-hover:scale-105"}`}
-                                        />
+                                        col.thumbnail_url.includes('vietceramics.com') ? (
+                                            <img
+                                                src={col.thumbnail_url}
+                                                alt={col.name}
+                                                className={`absolute inset-0 w-full h-full object-cover mix-blend-multiply opacity-50 transition-transform duration-500 ${isActive ? "scale-105" : "group-hover:scale-105"}`}
+                                            />
+                                        ) : (
+                                            <Image
+                                                src={col.thumbnail_url}
+                                                alt={col.name}
+                                                fill
+                                                sizes="(max-width: 1024px) 130px, 150px"
+                                                className={`object-cover mix-blend-multiply opacity-50 transition-transform duration-500 ${isActive ? "scale-105" : "group-hover:scale-105"}`}
+                                            />
+                                        )
                                     ) : null}
 
                                     {/* Text Overlay inside the box */}

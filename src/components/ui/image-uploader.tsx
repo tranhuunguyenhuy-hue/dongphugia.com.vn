@@ -155,6 +155,7 @@ export function ImageUploader({
                                 fill
                                 className="object-cover"
                                 sizes="120px"
+                                unoptimized={url.includes('vietceramics.com')}
                             />
                             <button
                                 type="button"

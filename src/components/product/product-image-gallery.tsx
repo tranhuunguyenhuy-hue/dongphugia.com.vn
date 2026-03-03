@@ -34,13 +34,22 @@ export function ProductImageGallery({
             {/* Main Image */}
             <div className="relative w-full aspect-[628/590] rounded-[16px] sm:rounded-[20px] overflow-hidden bg-gray-100">
                 {activeImage ? (
-                    <Image
-                        src={activeImage}
-                        alt={productName}
-                        fill
-                        className="object-cover"
-                        priority
-                    />
+                    activeImage.includes('vietceramics.com') ? (
+                        <img
+                            src={activeImage}
+                            alt={productName}
+                            className="absolute inset-0 w-full h-full object-cover"
+                        />
+                    ) : (
+                        <Image
+                            src={activeImage}
+                            alt={productName}
+                            fill
+                            className="object-cover"
+                            priority
+                            unoptimized={activeImage.includes('vietceramics.com')}
+                        />
+                    )
                 ) : (
                     <div className="w-full h-full flex items-center justify-center text-gray-400 text-lg">
                         No Image
@@ -64,13 +73,22 @@ export function ProductImageGallery({
                                 }
                             `}
                         >
-                            <Image
-                                src={img}
-                                alt={`${productName} - ${idx + 1}`}
-                                fill
-                                sizes="(max-width: 640px) 80px, (max-width: 1024px) 120px, 174px"
-                                className="object-cover"
-                            />
+                            {img.includes('vietceramics.com') ? (
+                                <img
+                                    src={img}
+                                    alt={`${productName} - ${idx + 1}`}
+                                    className="absolute inset-0 w-full h-full object-cover"
+                                />
+                            ) : (
+                                <Image
+                                    src={img}
+                                    alt={`${productName} - ${idx + 1}`}
+                                    fill
+                                    sizes="(max-width: 640px) 80px, (max-width: 1024px) 120px, 174px"
+                                    className="object-cover"
+                                    unoptimized={img.includes('vietceramics.com')}
+                                />
+                            )}
                         </button>
                     ))}
                 </div>
