@@ -74,13 +74,22 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
             <div className="w-full aspect-square rounded-2xl overflow-hidden shadow-[0px_2px_6px_0px_rgba(16,24,40,0.06)] bg-white group-hover:shadow-lg transition-shadow">
                 <div className="relative w-full h-full bg-gray-50 flex items-center justify-center">
                     {firstImage ? (
-                        <Image
-                            src={firstImage}
-                            alt={product.name}
-                            fill
-                            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                            className="object-cover transition-transform duration-500 group-hover:scale-105 mix-blend-multiply"
-                        />
+                        firstImage.includes('vietceramics.com') ? (
+                            <img
+                                src={firstImage}
+                                alt={product.name}
+                                className="absolute inset-0 w-full h-full object-cover mix-blend-multiply transition-transform duration-500 group-hover:scale-105"
+                            />
+                        ) : (
+                            <Image
+                                src={firstImage}
+                                alt={product.name}
+                                fill
+                                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                                className="object-cover transition-transform duration-500 group-hover:scale-105 mix-blend-multiply"
+                                unoptimized={firstImage.includes('vietceramics.com')}
+                            />
+                        )
                     ) : (
                         <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 gap-2">
                             <span className="text-2xl">📦</span>

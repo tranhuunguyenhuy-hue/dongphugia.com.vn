@@ -18,6 +18,7 @@ import {
     Droplets,
     Layers,
     BookOpen,
+    DownloadCloud,
 } from "lucide-react"
 import { logoutAction } from "@/app/admin/login/actions"
 import { Badge } from "@/components/ui/badge"
@@ -42,6 +43,7 @@ const navLinks = [
     { label: "Blog", href: "/admin/blog/posts", icon: BookOpen, exact: false },
     { label: "Banners", href: "/admin/banners", icon: Image, exact: false },
     { label: "Báo giá", href: "/admin/quote-requests", icon: ClipboardList, exact: false, quoteBadge: true },
+    { label: "Crawler Data", href: "/admin/crawler", icon: DownloadCloud, exact: false },
 ]
 
 function NavItem({
