@@ -13,6 +13,7 @@ import { CategoryListing } from "@/components/home/category-listing"
 import { FeaturedCategories } from "@/components/home/featured-categories"
 import { BlogSection } from "@/components/home/blog-section"
 import { ProjectSection } from "@/components/home/project-section"
+import { getFeaturedProjects } from "@/lib/public-api-projects"
 
 export const revalidate = 3600
 
@@ -36,16 +37,17 @@ export const metadata: Metadata = {
 }
 
 export default async function HomePage() {
-    const [patternTypes, featuredProducts, banners] = await Promise.all([
+    const [patternTypes, featuredProducts, banners, featuredProjects] = await Promise.all([
         getPatternTypesByCategorySlug('gach-op-lat'),
         getFeaturedProducts(8),
         getBanners(5),
+        getFeaturedProjects(),
     ])
 
     return (
         <div className="bg-white">
-            {/* Hero section with green gradient background */}
-            <div className="bg-gradient-to-b from-[#dcfce7] to-white">
+            {/* Hero section — full bleed from top, sits behind fixed header */}
+            <div className="bg-gradient-to-b from-[#dcfce7] to-white -mt-[126px] pt-[126px]">
                 <section className="max-w-[1280px] mx-auto px-5 py-10">
                     <div className="flex flex-col gap-6">
                         {/* Category sidebar + Hero banner */}
@@ -116,7 +118,7 @@ export default async function HomePage() {
             <h1 className="sr-only">Đông Phú Gia - Đại lý Gạch ốp lát và Thiết bị vệ sinh cao cấp tại Đà Lạt</h1>
 
             <FeaturedCategories />
-            <ProjectSection />
+            <ProjectSection projects={featuredProjects} />
             <BlogSection />
         </div>
     )

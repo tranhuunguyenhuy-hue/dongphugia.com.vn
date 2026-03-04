@@ -1,7 +1,9 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { ShieldCheck, Award, Star, CheckCircle, ArrowRight } from "lucide-react"
+import Image from "next/image"
+import { ShieldCheck, Award, Star, CheckCircle, ArrowRight, Globe } from "lucide-react"
+import type { PartnerItem } from "@/lib/public-api-partners"
 
 // --- Custom Hook for Scroll Reveal ---
 function useScrollReveal(threshold = 0.1) {
@@ -50,45 +52,23 @@ const BRANDS = [
     "Bạch Mã", "Casar", "Cotto", "American Standard", "Caesar", "Hafele", "Malloca"
 ]
 
-const PARTNERS = [
-    {
-        tier: "Kim Cương",
-        name: "Inax VN",
-        desc: "Đại lý phân phối cấp 1 thiết bị vệ sinh Inax toàn khu vực Lâm Đồng.",
-        color: "from-blue-500 to-cyan-400",
-        span: "col-span-12 md:col-span-8 row-span-2"
-    },
-    {
-        tier: "Chiến Lược",
-        name: "Đồng Tâm",
-        desc: "Đối tác chiến lược cung cấp gạch ốp lát.",
-        color: "from-red-500 to-rose-400",
-        span: "col-span-12 md:col-span-4 row-span-1"
-    },
-    {
-        tier: "Vàng",
-        name: "Viglacera",
-        desc: "Đại lý uỷ quyền chính hãng Viglacera.",
-        color: "from-amber-500 to-orange-400",
-        span: "col-span-12 md:col-span-4 row-span-1"
-    },
-    {
-        tier: "Chiến Lược",
-        name: "Toto",
-        desc: "Phân phối thiết bị vệ sinh Toto cao cấp.",
-        color: "from-emerald-500 to-teal-400",
-        span: "col-span-12 md:col-span-4 row-span-1"
-    },
-    {
-        tier: "Vàng",
-        name: "Hafele",
-        desc: "Giải pháp thiết bị nhà bếp Hafele tiêu chuẩn Đức.",
-        color: "from-purple-500 to-fuchsia-400",
-        span: "col-span-12 md:col-span-8 row-span-1"
-    }
+const BENTO_SPANS = [
+    "col-span-12 md:col-span-8 row-span-2",
+    "col-span-12 md:col-span-4 row-span-1",
+    "col-span-12 md:col-span-4 row-span-1",
+    "col-span-12 md:col-span-4 row-span-1",
+    "col-span-12 md:col-span-8 row-span-1",
 ]
 
-export function PartnersClient() {
+const GRADIENT_FALLBACKS = [
+    "from-blue-500 to-cyan-400",
+    "from-red-500 to-rose-400",
+    "from-amber-500 to-orange-400",
+    "from-emerald-500 to-teal-400",
+    "from-purple-500 to-fuchsia-400",
+]
+
+export function PartnersClient({ partners }: { partners: PartnerItem[] }) {
     return (
         <main className="bg-[#f8fafc] overflow-hidden selection:bg-[#15803d] selection:text-white pb-24">
             {/* Inline Styles for Infite Marquee & Grid */}
@@ -163,33 +143,51 @@ export function PartnersClient() {
                 </Reveal>
 
                 <div className="grid grid-cols-12 auto-rows-[240px] gap-4 md:gap-6">
-                    {PARTNERS.map((partner, index) => (
-                        <div key={index} className={`relative rounded-3xl overflow-hidden group ${partner.span}`}>
+                    {(partners.length > 0 ? partners : []).map((partner, index) => (
+                        <div key={partner.id}
+                            className={`relative rounded-3xl overflow-hidden group ${BENTO_SPANS[index % BENTO_SPANS.length]}`}
+                        >
                             {/* Animated Background */}
-                            <div className={`absolute inset-0 bg-gradient-to-br ${partner.color} opacity-90 group-hover:scale-105 transition-transform duration-700 ease-in-out`} />
+                            {partner.logo_url ? (
+                                <Image src={partner.logo_url} alt={partner.name} fill
+                                    className="object-contain p-8 group-hover:scale-105 transition-transform duration-700 bg-white" />
+                            ) : (
+                                <div className={`absolute inset-0 bg-gradient-to-br ${partner.gradient_class || GRADIENT_FALLBACKS[index % GRADIENT_FALLBACKS.length]} opacity-90 group-hover:scale-105 transition-transform duration-700 ease-in-out`} />
+                            )}
 
                             <div className="absolute inset-0 bg-[url('/images/pattern-bg.png')] opacity-20 mix-blend-overlay" />
-                            <div className="absolute inset-0 p-8 flex flex-col justify-between text-white">
+                            <div className={`absolute inset-0 p-8 flex flex-col justify-between ${partner.logo_url ? 'bg-gradient-to-t from-black/70 to-transparent' : ''} text-white`}>
                                 <Reveal delay={100 * (index + 1)}>
                                     <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-sm font-semibold border border-white/30">
                                         <Star className="w-4 h-4" />
-                                        {partner.tier}
+                                        {partner.tier || 'Vàng'}
                                     </div>
                                 </Reveal>
                                 <Reveal delay={200 * (index + 1)}>
                                     <div>
                                         <h3 className="text-4xl md:text-5xl font-black mb-3 tracking-tighter">{partner.name}</h3>
-                                        <p className="text-white/90 text-lg font-medium leading-snug max-w-sm">{partner.desc}</p>
+                                        {partner.description && (
+                                            <p className="text-white/90 text-lg font-medium leading-snug max-w-sm">{partner.description}</p>
+                                        )}
                                     </div>
-                                    <div className="mt-8 hidden md:block">
-                                        <div className="w-12 h-12 rounded-full border border-white/40 flex items-center justify-center opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
-                                            <ArrowRight className="text-white w-6 h-6" />
-                                        </div>
+                                    <div className="mt-4 flex items-center gap-3">
+                                        {partner.link_url && (
+                                            <a href={partner.link_url} target="_blank" rel="noopener noreferrer"
+                                                className="flex items-center gap-1.5 text-white/80 hover:text-white text-sm transition-colors">
+                                                <Globe className="w-4 h-4" />
+                                                <span>Website</span>
+                                            </a>
+                                        )}
                                     </div>
                                 </Reveal>
                             </div>
                         </div>
                     ))}
+                    {partners.length === 0 && (
+                        <div className="col-span-12 text-center py-20 text-gray-400">
+                            Chưa có đối tác nào được thêm vào hệ thống.
+                        </div>
+                    )}
                 </div>
             </section>
 

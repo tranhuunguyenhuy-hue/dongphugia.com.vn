@@ -19,6 +19,8 @@ import {
     Layers,
     BookOpen,
     DownloadCloud,
+    FolderKanban,
+    Handshake,
 } from "lucide-react"
 import { logoutAction } from "@/app/admin/login/actions"
 import { Badge } from "@/components/ui/badge"
@@ -41,6 +43,8 @@ const navLinks = [
     { label: "Vật liệu nước", href: "/admin/nuoc/products", icon: Droplets, exact: false },
     { label: "Sàn gỗ", href: "/admin/sango/products", icon: Layers, exact: false },
     { label: "Blog", href: "/admin/blog/posts", icon: BookOpen, exact: false },
+    { label: "Dự án", href: "/admin/du-an", icon: FolderKanban, exact: false },
+    { label: "Đối tác", href: "/admin/doi-tac", icon: Handshake, exact: false },
     { label: "Banners", href: "/admin/banners", icon: Image, exact: false },
     { label: "Báo giá", href: "/admin/quote-requests", icon: ClipboardList, exact: false, quoteBadge: true },
     { label: "Crawler Data", href: "/admin/crawler", icon: DownloadCloud, exact: false },

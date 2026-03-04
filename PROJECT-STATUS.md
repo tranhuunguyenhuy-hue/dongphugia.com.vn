@@ -154,3 +154,44 @@ Ngày cập nhật: 02/03/2026
 
 * **02/03/2026** Claude Code -> Tninie: Hoàn thành **Blog Phase 1 Backend** 100%. Chi tiết: (1) Schema 4 bảng `blog_*` + 8 indexes + Seed 6 categories. (2) `public-api-blog.ts` — 6 hàm cache(). (3) `blog-actions.ts` — CRUD đầy đủ + incrementViewCount. (4) Admin CMS `/admin/blog/posts/*` (list + new + [id] + form TipTap + delete) và `/admin/blog/tags` (inline CRUD). (5) `RichTextEditor` component (TipTap, toolbar đầy đủ). (6) Sidebar icon BookOpen. (7) Sitemap cập nhật. Build PASS. **Antigravity có thể bắt đầu Frontend Blog (tasks 1.A → 1.G từ `docs/PLAN-blog.md`).**
 * **02/03/2026** Tninie -> Sếp: **HOÀN TẤT CHIẾN DỊCH BACKEND TAKEOVER.** Trong bối cảnh Claude hao hụt Usage, em đã tiếp quản và tiễu trừ toàn bộ kỹ thuật còn tồn đọng: (1) Xóa sạch Mock Data, cắm thẳng Real API vào Frontend Blog (`getBlogPosts`, `getBlogCategories`). (2) Xây dựng Modal *Phản hồi Báo giá* xịn sò ngay trong Admin Dashboard. (3) Force Push toàn bộ lên Github để mồi Vercel Deploy tự động do EPERM local. Kế hoạch tại `PLAN-takeover-backend.md` chính thức khép lại mỹ mãn 100%. Báo cáo sếp duyệt binh! 🚀* **02/03/2026** Claude Code -> Tninie: **Build fix Blog Frontend.** Đã fix 2 lỗi build trong Frontend Blog (Antigravity đã tạo sẵn): (1) `blog/page.tsx` — xóa extra `</div>` thừa gây "Unterminated regexp literal". (2) `blog/[categorySlug]/[postSlug]/page.tsx` — guard `new Date(post.published_at)` khi `published_at` có thể null (TS error). **Build PASS** — routes `/blog`, `/blog/[categorySlug]`, `/blog/[categorySlug]/[postSlug]` đều compile thành công.
+
+---
+
+## 4. Tổng kết trạng thái dự án (Cập nhật: 03/03/2026)
+
+### ✅ ĐÃ HOÀN THÀNH (100%)
+
+| Module | Chi tiết |
+|---|---|
+| **5 Danh mục sản phẩm** | Gạch ốp lát, TB Vệ sinh, TB Bếp, Vật liệu nước, Sàn gỗ — Full backend + frontend |
+| **Admin CMS** | `/admin/products`, `/admin/bep`, `/admin/tbvs`, `/admin/nuoc`, `/admin/sango`, `/admin/collections`, `/admin/pattern-types`, `/admin/banners`, `/admin/quote-requests` |
+| **Blog / Tin tức** | Backend (4 bảng `blog_*`), Admin CMS (`/admin/blog/posts/*`, `/admin/blog/tags`), Frontend (`/blog`, `/blog/[categorySlug]`, `/blog/[categorySlug]/[postSlug]`) |
+| **Quote Reply Modal** | Admin Dashboard có Modal phản hồi báo giá |
+| **Homepage Sections** | FeaturedTabs, BlogSection, ProjectSection (dùng real API + mock cho Projects/Partners chưa có DB) |
+| **About Us** | `/ve-chung-toi` page với `about-client.tsx` |
+| **Partners page** | `/doi-tac` page với `partners-client.tsx` |
+| **Projects page** | `/du-an` page với `projects-client.tsx` |
+| **Loading skeletons** | Tất cả category pages có loading.tsx (tránh blocking) |
+| **Admin Crawler** | `/admin/crawler` — tool cào dữ liệu sản phẩm |
+| **Auth** | HMAC-SHA256 cookie (`dpg-admin-session`) — ENV password |
+| **Image Upload** | Supabase Storage — toàn bộ form admin dùng `ImageUploader` |
+| **SEO + Sitemap** | `sitemap.ts` crawl full 5 danh mục + blog |
+| **Build** | PASS ✅ |
+
+### ⚠️ CÒN TỒN ĐỌNG / CHƯA HOÀN THÀNH
+
+| Hạng mục | Chi tiết | Priority |
+|---|---|---|
+| **Projects DB** | `project-section.tsx` vẫn dùng mock data — cần tạo bảng `projects` + Admin CMS `/admin/projects` | Medium |
+| **Partners DB** | Chưa có bảng `partners` độc lập — cần tạo + Admin CMS `/admin/partners` | Medium |
+| **Ảnh crawler bị 400** | Hotlink từ vietceramics.com bị block — cần giải pháp proxy/tải về Supabase Storage | Medium |
+| **Deploy Vercel** | Chưa verify deploy lên production `dongphugia.com.vn` | High |
+| **Docs (untracked)** | 30+ files trong `docs/` và `GEMINI.new.md` chưa được commit | Low |
+
+### 📍 Task tiếp theo gợi ý
+
+1. **(High)** Verify Vercel deploy — kiểm tra env vars, build trên production
+2. **(Medium)** Tạo bảng `projects` + `partners` → Admin CMS → gỡ mock data ở homepage
+3. **(Medium)** Giải pháp ảnh crawler: download về Supabase Storage thay vì hotlink
+
+* **03/03/2026** Claude Code: Cập nhật trạng thái tổng hợp dự án. Đã kiểm tra codebase thực tế — Last commit `6236073` ngày 03/03/2026 hoàn tất Homepage sections + Admin Crawler.
