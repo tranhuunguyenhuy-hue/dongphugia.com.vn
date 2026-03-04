@@ -7,6 +7,9 @@ import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet"
 import { useState, useRef, useEffect } from "react"
 import { cn } from "@/lib/utils"
+import { getMegaMenuData } from '@/app/actions/mega-menu-actions'
+import type { Category, MenuData } from '@/components/home/mega-menu'
+import { MegaMenuHeader } from '@/components/home/mega-menu'
 
 const PRODUCT_CATEGORIES = [
     { label: "Gạch ốp lát", href: "/gach-op-lat", active: true },
@@ -24,71 +27,27 @@ const NAV_LINKS = [
 ]
 
 function ProductsDropdown() {
-    const [open, setOpen] = useState(false)
-    const ref = useRef<HTMLDivElement>(null)
+    const [data, setData] = useState<{ categories: Category[], menuData: Record<string, MenuData> } | null>(null)
 
     useEffect(() => {
-        function handleClickOutside(event: MouseEvent) {
-            if (ref.current && !ref.current.contains(event.target as Node)) {
-                setOpen(false)
-            }
-        }
-        document.addEventListener("mousedown", handleClickOutside)
-        return () => document.removeEventListener("mousedown", handleClickOutside)
+        getMegaMenuData().then(setData).catch(console.error)
     }, [])
 
-    return (
-        <div ref={ref} className="relative">
-            <button
-                onClick={() => setOpen(!open)}
-                className={cn(
-                    "flex items-center gap-1 font-medium text-[16px] leading-[18px] transition-colors",
-                    open ? "text-[#15803d]" : "text-[#111827] hover:text-[#15803d]"
-                )}
-            >
-                Sản phẩm
-                <ChevronDown
-                    className={cn("h-4 w-4 transition-transform duration-200", open && "rotate-180")}
-                />
-            </button>
+    if (!data) return (
+        <button className="flex items-center gap-1 font-medium text-[15px] leading-[18px] text-[#111827] hover:text-[#15803d] focus:outline-none py-3">
+            Sản phẩm
+            <ChevronDown className="h-4 w-4 transition-transform duration-300" />
+        </button>
+    );
 
-            {open && (
-                <div className="absolute left-0 top-full mt-2 w-[220px] rounded-2xl border border-[#e5e7eb] bg-white shadow-[0px_6px_15px_0px_rgba(16,24,40,0.08)] z-50 overflow-hidden">
-                    <div className="py-2">
-                        {PRODUCT_CATEGORIES.map((cat) =>
-                            cat.active ? (
-                                <Link
-                                    key={cat.href}
-                                    href={cat.href}
-                                    onClick={() => setOpen(false)}
-                                    className="flex items-center justify-between px-5 py-3 text-sm font-semibold text-[#111827] hover:bg-[#f0fdf4] hover:text-[#15803d] transition-colors"
-                                >
-                                    {cat.label}
-                                    <ChevronRight className="h-4 w-4 text-[#9ca3af]" />
-                                </Link>
-                            ) : (
-                                <div
-                                    key={cat.href}
-                                    className="flex items-center justify-between px-5 py-3 text-sm font-semibold text-[#9ca3af] cursor-not-allowed"
-                                    title="Sắp có"
-                                >
-                                    {cat.label}
-                                    <ChevronRight className="h-4 w-4 text-[#d1d5db]" />
-                                </div>
-                            )
-                        )}
-                    </div>
-                </div>
-            )}
-        </div>
-    )
+    return <MegaMenuHeader categories={data.categories} menuData={data.menuData} />
 }
 
 const TOPBAR_TEXT = "Gọi điện nhận tư vấn ngay để nhận được giá ưu đãi nhất. • Liên hệ: 0263 3520 316 • "
 
 export function Header() {
     return (
-        <header className="relative w-full z-50 sticky top-0 transition-all duration-300 bg-[#e6f9ed]">
+        <header className="fixed w-full z-50 top-0 left-0 right-0 transition-all duration-300">
             {/* Original Topbar - Full Width, Fixed at the top visually */}
             <div className="bg-[#15803d] py-3 w-full relative z-10">
                 {/* Desktop: centered static */}
@@ -120,7 +79,7 @@ export function Header() {
             </div>
 
             {/* Floating Menu Card Container */}
-            <div className="relative z-10 w-full px-4 sm:px-6 lg:px-8 py-3 lg:py-6">
+            <div className="relative z-10 w-full px-4 sm:px-6 lg:px-8 py-2 lg:py-3">
                 <div className="max-w-[1280px] mx-auto bg-white/40 backdrop-blur-3xl rounded-[32px] sm:rounded-[40px] shadow-[0_8px_40px_-12px_rgba(21,128,61,0.15)] border border-white/60">
                     <div className="px-6 lg:px-10 h-[64px] lg:h-[72px] flex items-center justify-between">
                         {/* Logo */}
@@ -136,7 +95,7 @@ export function Header() {
                         </Link>
 
                         {/* Desktop Nav */}
-                        <nav className="hidden lg:flex items-center gap-8" aria-label="Menu chính">
+                        <nav className="hidden lg:flex relative items-center gap-8" aria-label="Menu chính">
                             {/* Sản phẩm dropdown — first item */}
                             <ProductsDropdown />
 
@@ -144,7 +103,7 @@ export function Header() {
                                 <Link
                                     key={link.href}
                                     href={link.href}
-                                    className="text-[15px] font-medium leading-[18px] text-[#111827] hover:text-[#15803d] transition-colors"
+                                    className="text-[15px] font-medium text-[#374151] hover:text-[#15803d] transition-colors"
                                 >
                                     {link.label}
                                 </Link>

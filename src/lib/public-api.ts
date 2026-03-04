@@ -392,6 +392,30 @@ export const getBanners = cache(async (limit = 5) => {
 });
 
 /**
+ * Fetch active projects for homepage/du-an page.
+ */
+export const getProjects = cache(async (opts?: { featuredOnly?: boolean; limit?: number }) => {
+    const where: any = { is_active: true }
+    if (opts?.featuredOnly) where.is_featured = true
+    return await prisma.projects.findMany({
+        where,
+        orderBy: [{ sort_order: 'asc' }, { created_at: 'desc' }],
+        take: opts?.limit,
+    })
+})
+
+/**
+ * Fetch active partners for homepage/doi-tac page.
+ */
+export const getPartners = cache(async (limit?: number) => {
+    return await prisma.partners.findMany({
+        where: { is_active: true },
+        orderBy: [{ sort_order: 'asc' }, { created_at: 'desc' }],
+        take: limit,
+    })
+})
+
+/**
  * Fetch related products (same pattern_type, excluding current).
  */
 export const getRelatedProducts = cache(

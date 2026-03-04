@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useMemo } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { ArrowRight, MapPin } from "lucide-react"
+import type { ProjectItem } from "@/lib/public-api-projects"
 
 // --- Custom Hook for Scroll Reveal ---
 function useScrollReveal(threshold = 0.1) {
@@ -46,69 +47,16 @@ function Reveal({ children, delay = 0, direction = "up" }: { children: React.Rea
     )
 }
 
-// --- Mock Project Data ---
-const TABS = ["Tất cả", "Biệt thự", "Khách sạn", "Resort", "Nhà ở"]
+const ASPECT_RATIOS = ["aspect-[4/3]", "aspect-[3/4]", "aspect-[1/1]", "aspect-[4/5]", "aspect-[4/3]", "aspect-[3/4]"]
 
-const PROJECTS = [
-    {
-        id: 1,
-        title: "Dalat Palace Heritage Hotel",
-        category: "Khách sạn",
-        location: "Đường Trần Phú, Đà Lạt",
-        img: "/images/hero-banner.jpg",
-        aspectRatio: "aspect-[4/3]"
-    },
-    {
-        id: 2,
-        title: "Ana Mandara Villas",
-        category: "Resort",
-        location: "Đường Lê Lai, Đà Lạt",
-        img: "/images/tiles-hero.jpg",
-        aspectRatio: "aspect-[3/4]"
-    },
-    {
-        id: 3,
-        title: "Biệt thự Đồi Robin",
-        category: "Biệt thự",
-        location: "Đồi Robin, Đà Lạt",
-        img: "/images/hero-banner.jpg",
-        aspectRatio: "aspect-[1/1]"
-    },
-    {
-        id: 4,
-        title: "Swiss-Belresort Tuyền Lâm",
-        category: "Resort",
-        location: "Hồ Tuyền Lâm, Đà Lạt",
-        img: "/images/tiles-hero.jpg",
-        aspectRatio: "aspect-[4/5]"
-    },
-    {
-        id: 5,
-        title: "Nhà Vườn Thái Phiên",
-        category: "Nhà ở",
-        location: "Làng Hoa Thái Phiên, Đà Lạt",
-        img: "/images/hero-banner.jpg",
-        aspectRatio: "aspect-[3/4]"
-    },
-    {
-        id: 6,
-        title: "Colline Hotel Center",
-        category: "Khách sạn",
-        location: "Phan Bội Châu, Đà Lạt",
-        img: "/images/tiles-hero.jpg",
-        aspectRatio: "aspect-[4/3]"
-    },
-]
-
-export function ProjectsClient() {
+export function ProjectsClient({ projects }: { projects: ProjectItem[] }) {
+    // Build dynamic tabs from real data categories
+    const tabs = useMemo(() => {
+        const cats = Array.from(new Set(projects.map(p => p.category).filter(Boolean) as string[]))
+        return ["Tất cả", ...cats]
+    }, [projects])
     const [activeTab, setActiveTab] = useState("Tất cả")
     const [isAnimating, setIsAnimating] = useState(false)
-
-    // Lọc dự án & tạo hiệu ứng chớp tắt khi đổi tab
-    const filteredProjects = useMemo(() => {
-        if (activeTab === "Tất cả") return PROJECTS;
-        return PROJECTS.filter(p => p.category === activeTab);
-    }, [activeTab]);
 
     const handleTabChange = (tab: string) => {
         if (tab === activeTab) return;
@@ -116,8 +64,13 @@ export function ProjectsClient() {
         setTimeout(() => {
             setActiveTab(tab);
             setIsAnimating(false);
-        }, 300); // Wait for fade out
+        }, 300);
     }
+
+    const filteredProjects = useMemo(() => {
+        if (activeTab === "Tất cả") return projects
+        return projects.filter(p => p.category === activeTab)
+    }, [activeTab, projects])
 
     return (
         <main className="bg-white overflow-hidden selection:bg-[#15803d] selection:text-white pb-24 min-h-screen">
@@ -140,13 +93,13 @@ export function ProjectsClient() {
             <section className="max-w-[1280px] mx-auto px-5 mb-16">
                 <Reveal delay={400}>
                     <div className="flex flex-wrap items-center justify-center gap-2 md:gap-4">
-                        {TABS.map((tab) => (
+                        {tabs.map((tab) => (
                             <button
                                 key={tab}
                                 onClick={() => handleTabChange(tab)}
                                 className={`px-6 py-2.5 rounded-full text-base font-semibold transition-all duration-300 border ${activeTab === tab
-                                        ? "bg-[#111827] text-white border-[#111827] shadow-lg shadow-black/10 scale-105"
-                                        : "bg-white text-gray-500 border-gray-200 hover:border-gray-300 hover:text-gray-900"
+                                    ? "bg-[#111827] text-white border-[#111827] shadow-lg shadow-black/10 scale-105"
+                                    : "bg-white text-gray-500 border-gray-200 hover:border-gray-300 hover:text-gray-900"
                                     }`}
                             >
                                 {tab}
@@ -162,10 +115,9 @@ export function ProjectsClient() {
                     <div className="columns-1 sm:columns-2 lg:columns-3 gap-6 md:gap-8 space-y-6 md:space-y-8">
                         {filteredProjects.map((project, index) => (
                             <div key={project.id} className="break-inside-avoid relative rounded-3xl overflow-hidden group cursor-pointer shadow-sm hover:shadow-2xl transition-all duration-500">
-                                {/* The Masonry item keeps varied heights through aspect ratios (simulated by inner div padding/height or tailwind classes if the images aren't intrinsic) */}
-                                <div className={`relative w-full ${project.aspectRatio} overflow-hidden bg-gray-100`}>
+                                <div className={`relative w-full ${ASPECT_RATIOS[index % ASPECT_RATIOS.length]} overflow-hidden bg-gray-100`}>
                                     <Image
-                                        src={project.img}
+                                        src={project.thumbnail_url || '/images/hero-banner.jpg'}
                                         alt={project.title}
                                         fill
                                         className="object-cover group-hover:scale-110 transition-transform duration-[1.5s] ease-out will-change-transform"
