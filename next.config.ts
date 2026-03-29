@@ -21,6 +21,31 @@ const nextConfig: NextConfig = {
         hostname: 'images.unsplash.com',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'www.tdm.vn',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'tdm.vn',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'tuandat.vn',
+        pathname: '/**',
+      },
+      {
+        protocol: 'http',
+        hostname: 'www.tdm.vn',
+        pathname: '/**',
+      },
+      {
+        protocol: 'http',
+        hostname: 'tdm.vn',
+        pathname: '/**',
+      },
     ],
   },
   experimental: {

@@ -61,13 +61,13 @@ function ProductTable({ products, searchTerm }: { products: ProductRow[]; search
     return (
         <table className="w-full text-sm">
             <thead>
-                <tr className="border-b border-[#e2e8f0] bg-[#f8fafc]">
-                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-[#374151] w-[130px]">SKU</th>
-                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-[#374151]">Tên sản phẩm</th>
-                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-[#374151] hidden sm:table-cell w-[110px]">Kích thước</th>
-                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-[#374151] hidden md:table-cell w-[80px]">Bề mặt</th>
-                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-[#374151] w-[80px]">Trạng thái</th>
-                    <th className="px-4 py-2.5 text-right text-xs font-semibold text-[#374151] w-[80px]">Thao tác</th>
+                <tr className="border-b border-[#E4EEF2] bg-[#F5F9FB]">
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-[#3C4E56] w-[130px]">SKU</th>
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-[#3C4E56]">Tên sản phẩm</th>
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-[#3C4E56] hidden sm:table-cell w-[110px]">Kích thước</th>
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-[#3C4E56] hidden md:table-cell w-[80px]">Bề mặt</th>
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-[#3C4E56] w-[80px]">Trạng thái</th>
+                    <th className="px-4 py-2.5 text-right text-xs font-semibold text-[#3C4E56] w-[80px]">Thao tác</th>
                 </tr>
             </thead>
             <tbody>
@@ -105,11 +105,11 @@ function ProductRowItem({ product, searchTerm }: { product: ProductRow; searchTe
     }
 
     return (
-        <tr className="border-b border-[#e2e8f0] last:border-0 hover:bg-[#f8fafc] transition-colors">
+        <tr className="border-b border-[#E4EEF2] last:border-0 hover:bg-[#F5F9FB] transition-colors">
             <td className="px-4 py-2.5 font-mono text-xs text-muted-foreground">
                 {highlight(product.sku)}
             </td>
-            <td className="px-4 py-2.5 font-medium text-[#111827] text-sm">
+            <td className="px-4 py-2.5 font-medium text-[#192125] text-sm">
                 {highlight(product.name)}
             </td>
             <td className="px-4 py-2.5 text-muted-foreground text-sm hidden sm:table-cell">
@@ -127,7 +127,7 @@ function ProductRowItem({ product, searchTerm }: { product: ProductRow; searchTe
                 <div className="flex items-center justify-end gap-1">
                     <Link
                         href={`/admin/products/${product.id}`}
-                        className="h-7 w-7 rounded-lg border border-[#e2e8f0] flex items-center justify-center text-muted-foreground hover:bg-muted transition-colors"
+                        className="h-7 w-7 rounded-lg border border-[#E4EEF2] flex items-center justify-center text-muted-foreground hover:bg-muted transition-colors"
                         title="Sửa sản phẩm"
                     >
                         <Pencil className="h-3 w-3" />
@@ -135,7 +135,7 @@ function ProductRowItem({ product, searchTerm }: { product: ProductRow; searchTe
                     <button
                         onClick={handleDelete}
                         disabled={isDeleting}
-                        className="h-7 w-7 rounded-lg border border-[#e2e8f0] flex items-center justify-center text-muted-foreground hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors disabled:opacity-50"
+                        className="h-7 w-7 rounded-lg border border-[#E4EEF2] flex items-center justify-center text-muted-foreground hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors disabled:opacity-50"
                         title="Xóa sản phẩm"
                     >
                         <Trash2 className="h-3 w-3" />
@@ -172,10 +172,10 @@ function CollectionAccordionItem({
     }
 
     return (
-        <div className="bg-white rounded-2xl border border-[#e2e8f0] overflow-hidden">
+        <div className="bg-white rounded-2xl border border-[#E4EEF2] overflow-hidden">
             {/* Header */}
             <div
-                className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-[#f8fafc] transition-colors select-none"
+                className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-[#F5F9FB] transition-colors select-none"
                 onClick={onToggle}
             >
                 <div className="shrink-0 text-muted-foreground">
@@ -189,16 +189,16 @@ function CollectionAccordionItem({
                     <img
                         src={collection.thumbnail_url}
                         alt={collection.name}
-                        className="h-10 w-10 rounded-lg object-cover shrink-0 border border-[#e2e8f0]"
+                        className="h-10 w-10 rounded-lg object-cover shrink-0 border border-[#E4EEF2]"
                     />
                 ) : (
-                    <div className="h-10 w-10 rounded-lg bg-[#f0fdf4] flex items-center justify-center shrink-0 border border-[#e2e8f0]">
+                    <div className="h-10 w-10 rounded-lg bg-[#EAF6FB] flex items-center justify-center shrink-0 border border-[#E4EEF2]">
                         <Package className="h-4 w-4 text-primary/60" />
                     </div>
                 )}
 
                 <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm text-[#111827] truncate">{collection.name}</p>
+                    <p className="font-semibold text-sm text-[#192125] truncate">{collection.name}</p>
                     {collection.tagline && (
                         <p className="text-xs text-muted-foreground truncate">{collection.tagline}</p>
                     )}
@@ -212,7 +212,7 @@ function CollectionAccordionItem({
                 <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
                     <button
                         onClick={onEdit}
-                        className="h-7 w-7 rounded-lg border border-[#e2e8f0] flex items-center justify-center text-muted-foreground hover:bg-muted transition-colors"
+                        className="h-7 w-7 rounded-lg border border-[#E4EEF2] flex items-center justify-center text-muted-foreground hover:bg-muted transition-colors"
                         title="Sửa bộ sưu tập"
                     >
                         <Pencil className="h-3 w-3" />
@@ -220,7 +220,7 @@ function CollectionAccordionItem({
                     <button
                         onClick={handleDelete}
                         disabled={isDeleting}
-                        className="h-7 w-7 rounded-lg border border-[#e2e8f0] flex items-center justify-center text-muted-foreground hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors disabled:opacity-50"
+                        className="h-7 w-7 rounded-lg border border-[#E4EEF2] flex items-center justify-center text-muted-foreground hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors disabled:opacity-50"
                         title="Xóa bộ sưu tập"
                     >
                         <Trash2 className="h-3 w-3" />
@@ -230,9 +230,9 @@ function CollectionAccordionItem({
 
             {/* Expanded content */}
             {isExpanded && (
-                <div className="border-t border-[#e2e8f0]">
+                <div className="border-t border-[#E4EEF2]">
                     <ProductTable products={collection.products} searchTerm={searchTerm} />
-                    <div className="px-4 py-2.5 border-t border-[#e2e8f0] flex justify-end">
+                    <div className="px-4 py-2.5 border-t border-[#E4EEF2] flex justify-end">
                         <Button asChild variant="ghost" size="sm" className="text-primary hover:text-primary gap-1.5 h-8 text-xs">
                             <Link href={`/admin/products/new`}>
                                 <Plus className="h-3.5 w-3.5" />
@@ -259,9 +259,9 @@ function UnassignedAccordionItem({
     searchTerm: string
 }) {
     return (
-        <div className="bg-white rounded-2xl border border-dashed border-[#e2e8f0] overflow-hidden">
+        <div className="bg-white rounded-2xl border border-dashed border-[#E4EEF2] overflow-hidden">
             <div
-                className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-[#f8fafc] transition-colors select-none"
+                className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-[#F5F9FB] transition-colors select-none"
                 onClick={onToggle}
             >
                 <div className="shrink-0 text-muted-foreground">
@@ -269,7 +269,7 @@ function UnassignedAccordionItem({
                         ? <ChevronDown className="h-4 w-4" />
                         : <ChevronRight className="h-4 w-4" />}
                 </div>
-                <div className="h-10 w-10 rounded-lg bg-[#f8fafc] flex items-center justify-center shrink-0 border border-[#e2e8f0]">
+                <div className="h-10 w-10 rounded-lg bg-[#F5F9FB] flex items-center justify-center shrink-0 border border-[#E4EEF2]">
                     <FolderOpen className="h-4 w-4 text-muted-foreground" />
                 </div>
                 <p className="flex-1 font-medium text-sm text-muted-foreground">
@@ -281,7 +281,7 @@ function UnassignedAccordionItem({
             </div>
 
             {isExpanded && (
-                <div className="border-t border-[#e2e8f0]">
+                <div className="border-t border-[#E4EEF2]">
                     <ProductTable products={products} searchTerm={searchTerm} />
                 </div>
             )}
@@ -357,7 +357,7 @@ export function ProductsAccordion({ collections, unassignedProducts, patternType
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                     <input
                         type="text"
-                        className="w-full h-10 pl-9 pr-4 rounded-lg border border-[#e2e8f0] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors bg-white"
+                        className="w-full h-10 pl-9 pr-4 rounded-lg border border-[#E4EEF2] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors bg-white"
                         placeholder="Tìm kiếm theo mã SP hoặc tên..."
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
@@ -396,7 +396,7 @@ export function ProductsAccordion({ collections, unassignedProducts, patternType
                 )}
 
                 {isEmpty && (
-                    <div className="text-center py-16 text-muted-foreground bg-white rounded-2xl border border-[#e2e8f0]">
+                    <div className="text-center py-16 text-muted-foreground bg-white rounded-2xl border border-[#E4EEF2]">
                         {searchTerm
                             ? `Không tìm thấy sản phẩm với từ khoá "${search}"`
                             : 'Chưa có bộ sưu tập hay sản phẩm nào'}

@@ -65,10 +65,10 @@ export function ValuesSection() {
                         transition: "opacity 0.6s ease, transform 0.6s ease",
                     }}
                 >
-                    <p className="text-[32px] sm:text-[36px] font-semibold text-[#15803d] leading-[40px] sm:leading-[44px] tracking-[-0.72px]">
+                    <p className="text-[32px] sm:text-[36px] font-semibold text-[#2E7A96] leading-[40px] sm:leading-[44px] tracking-[-0.72px]">
                         Đông Phú Gia
                     </p>
-                    <p className="text-[24px] sm:text-[28px] font-semibold text-[#14532d] leading-[32px] sm:leading-[36px] tracking-[-0.56px]">
+                    <p className="text-[24px] sm:text-[28px] font-semibold text-[#0F2E3A] leading-[32px] sm:leading-[36px] tracking-[-0.56px]">
                         Đồng Hành - Phát Triển
                     </p>
                 </div>
@@ -78,7 +78,7 @@ export function ValuesSection() {
                     {VALUES.map(({ icon, alt, title, desc }, i) => (
                         <div
                             key={title}
-                            className="group flex flex-col gap-6 items-start p-5 rounded-[16px] cursor-default transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_8px_24px_rgba(21,128,61,0.14)] hover:bg-white/60"
+                            className="group flex flex-col gap-6 items-start p-5 rounded-[16px] cursor-default transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_8px_24px_rgba(46,122,150,0.14)] hover:bg-white/60"
                             style={{
                                 opacity: visible ? 1 : 0,
                                 transform: visible ? "translateY(0)" : "translateY(24px)",
@@ -99,10 +99,10 @@ export function ValuesSection() {
 
                             {/* Text */}
                             <div className="flex flex-col gap-2 items-start w-full">
-                                <p className="text-[20px] sm:text-[24px] font-bold text-[#14532d] leading-[28px] sm:leading-[32px] tracking-[-0.48px]">
+                                <p className="text-[20px] sm:text-[24px] font-bold text-[#0F2E3A] leading-[28px] sm:leading-[32px] tracking-[-0.48px]">
                                     {title}
                                 </p>
-                                <p className="text-[15px] sm:text-[16px] font-normal text-[#15803d] leading-[24px]">
+                                <p className="text-[15px] sm:text-[16px] font-normal text-[#2E7A96] leading-[24px]">
                                     {desc}
                                 </p>
                             </div>

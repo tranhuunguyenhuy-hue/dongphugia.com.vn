@@ -41,11 +41,11 @@ function StatItem({ stat, index, started }: { stat: typeof STATS[0]; index: numb
                 transition: `opacity 0.6s ease ${index * 0.12}s, transform 0.6s ease ${index * 0.12}s`
             }}
         >
-            <p className="text-[#15803d] font-bold tracking-[-0.8px] leading-none whitespace-nowrap inline-flex items-start">
+            <p className="text-[#2E7A96] font-bold tracking-[-0.8px] leading-none whitespace-nowrap inline-flex items-start">
                 <span className="text-[32px] md:text-[40px] leading-[1.2]">{displayValue}</span>
                 <span className="text-[20px] md:text-[25px] leading-none mt-1">{stat.suffix}</span>
             </p>
-            <p className="text-[14px] md:text-[16px] font-medium leading-[22px] md:leading-[24px] text-[#4b5563]">
+            <p className="text-[14px] md:text-[16px] font-medium leading-[22px] md:leading-[24px] text-[#516A74]">
                 {stat.label}
             </p>
         </div>
@@ -73,7 +73,7 @@ export function StatsBar() {
                 <div key={stat.label} className="flex items-center flex-1 min-w-0">
                     <StatItem stat={stat} index={index} started={started} />
                     {index < STATS.length - 1 && (
-                        <div className="shrink-0 w-px h-[100px] md:h-[136px] bg-gradient-to-b from-transparent via-[#d1d5db] to-transparent" />
+                        <div className="shrink-0 w-px h-[100px] md:h-[136px] bg-gradient-to-b from-transparent via-[#C8D9E0] to-transparent" />
                     )}
                 </div>
             ))}

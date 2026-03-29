@@ -67,6 +67,12 @@ cleanup.js
 # Agent config (Antigravity IDE) — large workspace, not version-controlled
 .agent/
 
+# Claude Code worktrees & plans (local only)
+.claude/
+
+# Manager sub-project (separate repo)
+manager/
+
 # .ai/ folder is intentionally tracked — shared docs for Claude Code & Antigravity
 # .ai/
 
@@ -74,3 +80,10 @@ cleanup.js
 .mnt-cache/
 .npm-cache/
 dongphugia-web/
+
+# Temporary scripts output
+scripts/brands/*.txt
+scripts/brands/*.json
+
+# Backups (local only)
+backups/

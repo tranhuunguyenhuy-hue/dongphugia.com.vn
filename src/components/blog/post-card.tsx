@@ -37,7 +37,7 @@ export function PostCard({ post, featured = false }: PostCardProps) {
 
     if (featured) {
         return (
-            <div className="group relative rounded-2xl overflow-hidden bg-white shadow-sm border border-[#e2e8f0] card-hover flex flex-col md:flex-row">
+            <div className="group relative rounded-2xl overflow-hidden bg-white shadow-sm border border-[#E4EEF2] card-hover flex flex-col md:flex-row">
                 <div className="relative w-full md:w-[60%] h-[300px] md:h-[400px] overflow-hidden bg-slate-100">
                     {post.cover_image_url ? (
                         <Image
@@ -57,7 +57,7 @@ export function PostCard({ post, featured = false }: PostCardProps) {
                     <div className="flex items-center gap-3 mb-4">
                         <Link
                             href={`/blog/${post.blog_categories.slug}`}
-                            className="bg-[#dcfce7] text-[#15803d] px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider hover:bg-[#bbf7d0] transition-colors"
+                            className="bg-[#C5E8F5] text-[#2E7A96] px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider hover:bg-[#C5E8F5] transition-colors"
                         >
                             {post.blog_categories.name}
                         </Link>
@@ -67,8 +67,8 @@ export function PostCard({ post, featured = false }: PostCardProps) {
                         </span>
                     </div>
 
-                    <Link href={postUrl} className="block group-hover:text-[#15803d] transition-colors">
-                        <h3 className="text-2xl md:text-3xl font-bold text-[#0f172a] mb-4 leading-tight line-clamp-3">
+                    <Link href={postUrl} className="block group-hover:text-[#2E7A96] transition-colors">
+                        <h3 className="text-2xl md:text-3xl font-bold text-[#192125] mb-4 leading-tight line-clamp-3">
                             {post.title}
                         </h3>
                     </Link>
@@ -79,7 +79,7 @@ export function PostCard({ post, featured = false }: PostCardProps) {
                         </p>
                     )}
 
-                    <Link href={postUrl} className="inline-flex items-center gap-2 text-[#15803d] font-semibold text-sm mt-auto w-fit hover:gap-3 transition-all">
+                    <Link href={postUrl} className="inline-flex items-center gap-2 text-[#2E7A96] font-semibold text-sm mt-auto w-fit hover:gap-3 transition-all">
                         Xem chi tiết <ArrowRight className="w-4 h-4" />
                     </Link>
                 </div>
@@ -88,7 +88,7 @@ export function PostCard({ post, featured = false }: PostCardProps) {
     }
 
     return (
-        <div className="group flex flex-col bg-white rounded-2xl overflow-hidden border border-[#e2e8f0] card-hover shadow-sm h-full">
+        <div className="group flex flex-col bg-white rounded-2xl overflow-hidden border border-[#E4EEF2] card-hover shadow-sm h-full">
             <Link href={postUrl} className="relative w-full h-[220px] overflow-hidden bg-slate-100 block">
                 {post.cover_image_url ? (
                     <Image
@@ -109,7 +109,7 @@ export function PostCard({ post, featured = false }: PostCardProps) {
                 <div className="flex items-center justify-between gap-3 mb-3">
                     <Link
                         href={`/blog/${post.blog_categories.slug}`}
-                        className="text-[#15803d] text-xs font-semibold uppercase tracking-wider hover:underline"
+                        className="text-[#2E7A96] text-xs font-semibold uppercase tracking-wider hover:underline"
                     >
                         {post.blog_categories.name}
                     </Link>
@@ -120,7 +120,7 @@ export function PostCard({ post, featured = false }: PostCardProps) {
                 </div>
 
                 <Link href={postUrl} className="block mb-3">
-                    <h3 className="text-[18px] font-bold text-[#0f172a] leading-tight line-clamp-2 group-hover:text-[#15803d] transition-colors">
+                    <h3 className="text-[18px] font-bold text-[#192125] leading-tight line-clamp-2 group-hover:text-[#2E7A96] transition-colors">
                         {post.title}
                     </h3>
                 </Link>
@@ -131,8 +131,8 @@ export function PostCard({ post, featured = false }: PostCardProps) {
                     </p>
                 )}
 
-                <div className="mt-auto pt-4 border-t border-[#f1f5f9] flex items-center justify-between">
-                    <Link href={postUrl} className="text-[#15803d] font-medium text-sm hover:underline">
+                <div className="mt-auto pt-4 border-t border-[#F5F9FB] flex items-center justify-between">
+                    <Link href={postUrl} className="text-[#2E7A96] font-medium text-sm hover:underline">
                         Đọc tiếp
                     </Link>
                     {post.view_count > 0 && (

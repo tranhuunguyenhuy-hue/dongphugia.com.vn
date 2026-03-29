@@ -3,9 +3,10 @@ import Link from "next/link"
 import { ChevronRight } from "lucide-react"
 import { Suspense } from "react"
 import { getSangoTypes, getSangoProducts } from "@/lib/public-api-sango"
-import { SmartFilterSango } from "@/components/category/smart-filter-sango"
+import { SmartFilter } from "@/components/category/smart-filter"
 import { ProductCard } from "@/components/ui/product-card"
-import { FilterDrawerSango } from "@/components/category/filter-drawer-sango"
+import { FilterDrawer } from "@/components/category/filter-drawer"
+import { ProductPagination } from "@/components/ui/product-pagination"
 import prisma from "@/lib/prisma"
 
 export const revalidate = 3600
@@ -88,45 +89,56 @@ export default async function SanGoPage({ searchParams }: PageProps) {
         id: o.id
     }))
 
+    const thicknessOptions = [
+        { name: 'Dưới 8mm', slug: 'duoi-8' },
+        { name: '8mm', slug: '8mm' },
+        { name: '10mm', slug: '10mm' },
+        { name: '12mm', slug: '12mm' },
+        { name: 'Trên 12mm', slug: 'tren-12' },
+    ]
+
+    const filterSections = [
+        { key: 'color', label: 'Màu Sắc', options: mappedColors, mode: 'single' as const, defaultOpen: true },
+        { key: 'origin', label: 'Xuất Xứ', options: mappedOrigins, mode: 'single' as const, defaultOpen: true },
+        { key: 'thickness', label: 'Độ Dày', options: thicknessOptions, mode: 'single' as const, defaultOpen: true },
+    ]
+
     return (
         <div className="relative min-h-screen bg-white">
-            <div className="absolute left-0 right-0 top-0 h-[700px] bg-gradient-to-b from-[#dcfce7] to-white pointer-events-none" />
 
-            <div className="max-w-[1280px] mx-auto px-5 relative z-10 py-10">
-                <div className="flex flex-col lg:flex-row gap-[51px]">
+
+            <div className="max-w-[1280px] mx-auto px-5 lg:px-8 relative z-10 py-10">
+                <div className="flex flex-col lg:flex-row gap-10 lg:gap-[64px]">
 
                     {/* ── Left Sidebar (desktop only) ── */}
-                    <aside className="hidden lg:flex lg:w-[302px] shrink-0 flex-col gap-[24px] self-start lg:sticky lg:top-24 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto lg:overscroll-contain scrollbar-thin scrollbar-thumb-[#d1fae5] scrollbar-track-transparent">
-                        <Suspense fallback={<div className="h-64 animate-pulse bg-gray-100 rounded-lg" />}>
-                            <SmartFilterSango
-                                colors={mappedColors}
-                                origins={mappedOrigins}
-                            />
+                    <aside className="hidden lg:flex lg:w-[260px] shrink-0 flex-col gap-[24px] self-start lg:sticky lg:top-24 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto lg:overscroll-contain scrollbar-hide">
+                        <Suspense fallback={<div className="h-64 animate-pulse bg-neutral-100 rounded-sm" />}>
+                            <SmartFilter sections={filterSections} />
                         </Suspense>
                     </aside>
 
                     {/* ── Main Content ── */}
-                    <div className="flex-1 flex flex-col gap-[40px] min-w-0">
+                    <div className="flex-1 flex flex-col gap-[32px] min-w-0">
 
                         {/* Breadcrumb */}
-                        <div className="flex items-center gap-2 text-[14px]">
-                            <Link href="/" className="text-[#4b5563] hover:text-[#15803d] transition-colors font-medium">
+                        <div className="flex items-center gap-2 text-[13px]">
+                            <Link href="/" className="text-neutral-500 hover:text-neutral-900 transition-colors font-medium">
                                 Trang chủ
                             </Link>
-                            <ChevronRight className="h-4 w-4 text-[#9ca3af]" strokeWidth={1.5} />
-                            <span className="text-[#15803d] font-semibold">Sàn gỗ - Sàn nhựa</span>
+                            <ChevronRight className="h-3.5 w-3.5 text-neutral-400" strokeWidth={2} />
+                            <span className="text-neutral-900 font-medium">Sàn gỗ - Sàn nhựa</span>
                         </div>
 
                         {/* Category Selector (Tabs) */}
-                        <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-                            <Link href="/san-go" className={`px-4 py-2 rounded-full border whitespace-nowrap text-sm font-medium transition-colors ${!activeTypeSlug ? "bg-[#15803d] text-white border-[#15803d]" : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"}`}>
+                        <div className="flex gap-2.5 overflow-x-auto pb-2 scrollbar-hide pt-2">
+                            <Link href="/san-go" className={`px-4 py-1.5 rounded-full border whitespace-nowrap text-[13.5px] font-medium transition-colors ${!activeTypeSlug ? "bg-neutral-900 text-white border-neutral-900" : "bg-white text-neutral-600 border-neutral-200 hover:border-neutral-300 hover:text-neutral-900"}`}>
                                 Tất cả
                             </Link>
                             {typesData.map((type: any) => (
                                 <Link
                                     key={type.id}
                                     href={`/san-go?type=${type.slug}`}
-                                    className={`px-4 py-2 rounded-full border whitespace-nowrap text-sm font-medium transition-colors ${activeTypeSlug === type.slug ? "bg-[#15803d] text-white border-[#15803d]" : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"}`}
+                                    className={`px-4 py-1.5 rounded-full border whitespace-nowrap text-[13.5px] font-medium transition-colors ${activeTypeSlug === type.slug ? "bg-neutral-900 text-white border-neutral-900" : "bg-white text-neutral-600 border-neutral-200 hover:border-neutral-300 hover:text-neutral-900"}`}
                                 >
                                     {type.name}
                                 </Link>
@@ -134,14 +146,12 @@ export default async function SanGoPage({ searchParams }: PageProps) {
                         </div>
 
                         {/* Products Section */}
-                        <div className="flex flex-col gap-6">
-                            <div className="flex items-center justify-between">
-                                <h2 className="text-[24px] font-semibold text-[#111827] tracking-[-0.48px] leading-[32px]">
-                                    Danh sách{" "}
-                                    <span className="text-[#15803d] font-bold">sản phẩm</span>{" "}
-                                    {activeType ? activeType.name.toLowerCase() : "sàn gỗ, sàn nhựa"}
-                                </h2>
-                                <span className="text-[14px] text-[#6b7280]">
+                        <div className="flex flex-col gap-6 mt-2">
+                            <div className="flex items-end justify-between border-b border-neutral-100 pb-4">
+                                <h1 className="text-[28px] font-semibold text-neutral-900 tracking-tight leading-none">
+                                    {activeType ? activeType.name : "Sàn gỗ - Sàn nhựa"}
+                                </h1>
+                                <span className="text-neutral-500 text-[14px]">
                                     {productsData.total} sản phẩm
                                 </span>
                             </div>
@@ -149,40 +159,48 @@ export default async function SanGoPage({ searchParams }: PageProps) {
                             {/* Mobile/tablet: Filter trigger */}
                             <div className="lg:hidden">
                                 <Suspense fallback={null}>
-                                    <FilterDrawerSango
-                                        colors={mappedColors}
-                                        origins={mappedOrigins}
+                                    <FilterDrawer
+                                        title="Bộ Lọc"
+                                        filterKeys={['color', 'origin', 'thickness']}
                                         productCount={productsData.total}
-                                    />
+                                    >
+                                        <SmartFilter sections={filterSections} />
+                                    </FilterDrawer>
                                 </Suspense>
                             </div>
 
                             {productsData.products.length > 0 ? (
-                                <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 xl:gap-8">
-                                    {productsData.products.map((product: any) => (
-                                        <ProductCard
-                                            key={product.id}
-                                            product={product}
-                                            basePath="/san-go"
-                                        />
-                                    ))}
+                                <div className="space-y-12">
+                                    <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 xl:gap-8">
+                                        {productsData.products.map((product: any) => (
+                                            <ProductCard
+                                                key={product.id}
+                                                product={product}
+                                                basePath="/san-go"
+                                            />
+                                        ))}
+                                    </div>
+                                    <ProductPagination 
+                                        currentPage={productsData.page} 
+                                        totalPages={productsData.totalPages} 
+                                    />
                                 </div>
                             ) : (
                                 <div className="flex flex-col items-center justify-center py-24 text-center">
-                                    <div className="w-20 h-20 rounded-full bg-[#f0fdf4] flex items-center justify-center mb-4">
-                                        <span className="text-3xl">🔍</span>
+                                    <div className="w-16 h-16 rounded-full bg-neutral-100 flex items-center justify-center mb-4">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><circle cx="11" cy="11" r="8" /><path strokeLinecap="round" d="m21 21-4.35-4.35" /></svg>
                                     </div>
-                                    <h3 className="text-lg font-semibold text-[#111827] mb-2">
+                                    <h3 className="text-lg font-medium text-neutral-900 mb-2">
                                         Không tìm thấy sản phẩm
                                     </h3>
-                                    <p className="text-[#6b7280] mb-6">
+                                    <p className="text-neutral-500 mb-6 text-sm">
                                         Hãy thử thay đổi bộ lọc hoặc chọn danh mục khác.
                                     </p>
                                     <Link
                                         href="/san-go"
-                                        className="text-[#15803d] font-medium hover:underline"
+                                        className="text-neutral-900 font-medium hover:underline text-sm"
                                     >
-                                        Xem tất cả sản phẩm
+                                        Xóa tất cả bộ lọc
                                     </Link>
                                 </div>
                             )}

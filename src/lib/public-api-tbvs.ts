@@ -123,3 +123,29 @@ export const getRelatedTBVSProducts = cache(
         });
     }
 );
+
+/**
+ * Fetch filter lookup data for a specific TBVS type slug.
+ */
+export const getTBVSFilterData = cache(async (typeSlug?: string) => {
+    // Build base condition
+    const productWhere: any = {
+        is_active: true,
+    };
+    if (typeSlug) {
+        productWhere.tbvs_product_types = { slug: typeSlug };
+    }
+
+    const [brands, subtypes] = await Promise.all([
+        prisma.tbvs_brands.findMany({
+            where: { is_active: true, tbvs_products: { some: productWhere } },
+            orderBy: [{ sort_order: "asc" }],
+        }),
+        prisma.tbvs_subtypes.findMany({
+            where: { is_active: true, tbvs_products: { some: productWhere } },
+            orderBy: [{ sort_order: "asc" }],
+        }),
+    ]);
+
+    return { brands, subtypes };
+});

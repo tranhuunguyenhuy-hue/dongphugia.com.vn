@@ -14,7 +14,7 @@ Tệp này kiểm soát hành vi của AI Agent.
 ## 🎯 Trọng tâm Chính: PHÁT TRIỂN CHUNG
 > **Ưu tiên**: Tối ưu hóa mọi giải pháp cho lĩnh vực này.
 
-## Quy tắc hành vi: PRO
+## Quy tắc hành vi: ULTRA
 
 **Tự động chạy lệnh**: true for safe read operations
 **Mức độ xác nhận**: Hỏi trước các tác vụ quan trọng

@@ -70,7 +70,7 @@ const GRADIENT_FALLBACKS = [
 
 export function PartnersClient({ partners }: { partners: PartnerItem[] }) {
     return (
-        <main className="bg-[#f8fafc] overflow-hidden selection:bg-[#15803d] selection:text-white pb-24">
+        <main className="bg-[#F5F9FB] overflow-hidden selection:bg-[#2E7A96] selection:text-white pb-24">
             {/* Inline Styles for Infite Marquee & Grid */}
             <style dangerouslySetInnerHTML={{
                 __html: `
@@ -89,18 +89,18 @@ export function PartnersClient({ partners }: { partners: PartnerItem[] }) {
             {/* ── 1. Hero Section ── */}
             <section className="relative pt-32 pb-16 px-5 max-w-[1280px] mx-auto text-center">
                 <Reveal delay={100}>
-                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-100 text-[#15803d] font-bold text-sm mb-8 border border-green-200">
+                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-100 text-[#2E7A96] font-bold text-sm mb-8 border border-green-200">
                         <Award className="w-4 h-4" />
                         ĐỐI TÁC TIN CẬY
                     </div>
                 </Reveal>
                 <Reveal delay={200}>
-                    <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-[#111827] tracking-tight leading-[1.1] mb-8 max-w-4xl mx-auto">
-                        Đồng hành cùng những thương hiệu <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#15803d] to-[#22c55e]">Hàng Đầu</span>
+                    <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-[#192125] tracking-tight leading-[1.1] mb-8 max-w-4xl mx-auto">
+                        Đồng hành cùng những thương hiệu <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#2E7A96] to-[#44A0BA]">Hàng Đầu</span>
                     </h1>
                 </Reveal>
                 <Reveal delay={300}>
-                    <p className="text-lg md:text-xl text-[#64748b] max-w-2xl mx-auto mb-16">
+                    <p className="text-lg md:text-xl text-[#6A8A97] max-w-2xl mx-auto mb-16">
                         Chúng tôi tự hào là cầu nối tin cậy, phân phối trực tiếp các sản phẩm vật liệu xây dựng
                         chất lượng cao từ hơn 50 thương hiệu uy tín trong nước và quốc tế.
                     </p>
@@ -132,7 +132,7 @@ export function PartnersClient({ partners }: { partners: PartnerItem[] }) {
                 <Reveal>
                     <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
                         <div>
-                            <h2 className="text-3xl md:text-5xl font-bold text-[#111827] tracking-tight mb-4">
+                            <h2 className="text-3xl md:text-5xl font-bold text-[#192125] tracking-tight mb-4">
                                 Đối Tác Chiến Lược
                             </h2>
                             <p className="text-gray-500 text-lg max-w-xl">
@@ -199,9 +199,9 @@ export function PartnersClient({ partners }: { partners: PartnerItem[] }) {
                         <div className="grid md:grid-cols-2 gap-12 items-center relative z-10">
                             <div>
                                 <div className="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center mb-6">
-                                    <ShieldCheck className="w-8 h-8 text-[#15803d]" />
+                                    <ShieldCheck className="w-8 h-8 text-[#2E7A96]" />
                                 </div>
-                                <h2 className="text-3xl md:text-4xl font-bold text-[#111827] mb-6 tracking-tight">Cam kết 100% Chính Hãng</h2>
+                                <h2 className="text-3xl md:text-4xl font-bold text-[#192125] mb-6 tracking-tight">Cam kết 100% Chính Hãng</h2>
                                 <p className="text-lg text-gray-600 leading-relaxed">
                                     Mọi sản phẩm vật liệu xây dựng, gạch ốp lát và thiết bị cung cấp bởi hệ thống phân phối Đông Phú Gia đều
                                     có đầy đủ giấy tờ chứng nhận xuất xứ (CO) và chứng nhận chất lượng (CQ) từ nhà sản xuất.
@@ -215,7 +215,7 @@ export function PartnersClient({ partners }: { partners: PartnerItem[] }) {
                                     "Kiểm định chất lượng 3 vòng trước khi giao"
                                 ].map((item, i) => (
                                     <div key={i} className="flex items-center gap-4 bg-gray-50 p-4 rounded-xl border border-gray-100">
-                                        <CheckCircle className="w-6 h-6 text-[#15803d] shrink-0" />
+                                        <CheckCircle className="w-6 h-6 text-[#2E7A96] shrink-0" />
                                         <span className="text-gray-800 font-medium">{item}</span>
                                     </div>
                                 ))}

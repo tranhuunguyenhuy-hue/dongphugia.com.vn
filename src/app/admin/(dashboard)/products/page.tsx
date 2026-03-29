@@ -70,7 +70,7 @@ export default async function ProductsPage({ searchParams }: PageProps) {
                     href="/admin/products"
                     className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${!patternFilter
                         ? 'bg-primary text-white border-primary'
-                        : 'bg-white text-muted-foreground border-[#e2e8f0] hover:bg-muted'
+                        : 'bg-white text-muted-foreground border-[#E4EEF2] hover:bg-muted'
                         }`}
                 >
                     Tất cả
@@ -81,7 +81,7 @@ export default async function ProductsPage({ searchParams }: PageProps) {
                         href={`/admin/products?pattern=${pt.id}`}
                         className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${patternFilter === pt.id
                             ? 'bg-primary text-white border-primary'
-                            : 'bg-white text-muted-foreground border-[#e2e8f0] hover:bg-muted'
+                            : 'bg-white text-muted-foreground border-[#E4EEF2] hover:bg-muted'
                             }`}
                     >
                         {pt.name}

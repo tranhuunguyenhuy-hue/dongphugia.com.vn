@@ -20,7 +20,7 @@ export default async function EditBannerPage({ params }: PageProps) {
             <div className="flex items-center gap-3">
                 <Link
                     href="/admin/banners"
-                    className="h-9 w-9 flex items-center justify-center rounded-lg border border-[#e2e8f0] text-muted-foreground hover:bg-muted transition-colors"
+                    className="h-9 w-9 flex items-center justify-center rounded-lg border border-[#E4EEF2] text-muted-foreground hover:bg-muted transition-colors"
                 >
                     <ChevronLeft className="h-4 w-4" />
                 </Link>

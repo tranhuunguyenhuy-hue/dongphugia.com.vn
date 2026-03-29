@@ -59,34 +59,28 @@ export function PatternTypeSelector({ patternTypes }: PatternTypeSelectorProps) 
     }, [router, pathname, searchParams])
 
     return (
-        <div className="flex flex-col gap-5">
-            {/* Heading */}
-            <h2 className="text-[22px] lg:text-[24px] font-semibold text-[#111827] tracking-[-0.48px] leading-[32px]">
-                Vui lòng chọn{" "}
-                <span className="text-[#15803d] font-bold">loại gạch</span>{" "}
-                cần thiết
-            </h2>
+        <div className="flex flex-col gap-6 mt-4">
 
             {/* Carousel wrapper */}
             <div className="relative">
-                {/* Left button — visible on mobile when can scroll, fade-in/out */}
+                {/* Left button */}
                 <button
                     onClick={() => scroll("left")}
                     aria-label="Xem loại gạch trước"
-                    className={`lg:hidden absolute left-0 top-[52px] -translate-y-1/2 -translate-x-1 z-20
-                        w-9 h-9 rounded-full bg-white border border-[#e5e7eb] shadow-md
-                        flex items-center justify-center
-                        hover:bg-[#f0fdf4] hover:border-[#22c55e] hover:shadow-lg
+                    className={`lg:hidden absolute left-0 top-[50px] -translate-y-1/2 -translate-x-2 z-20
+                        w-9 h-9 rounded-full bg-white border border-neutral-200 shadow-sm
+                        flex items-center justify-center text-neutral-600
+                        hover:bg-neutral-50 hover:text-neutral-900 hover:border-neutral-300
                         active:scale-95 transition-all duration-200
                         ${canLeft ? "opacity-100" : "opacity-0 pointer-events-none"}`}
                 >
-                    <ChevronLeft className="h-4 w-4 text-[#374151]" />
+                    <ChevronLeft className="h-4 w-4" />
                 </button>
 
                 {/* Scroll container */}
                 <div
                     ref={scrollRef}
-                    className="flex gap-4 lg:gap-[19px] overflow-x-auto scrollbar-hide snap-x snap-mandatory py-2 px-0.5"
+                    className="flex gap-4 lg:gap-6 overflow-x-auto scrollbar-hide snap-x snap-mandatory py-2 px-1"
                     style={{ scrollbarWidth: "none" }}
                 >
                     {patternTypes.map((pt) => {
@@ -96,14 +90,14 @@ export function PatternTypeSelector({ patternTypes }: PatternTypeSelectorProps) 
                             <button
                                 key={pt.id}
                                 onClick={() => handleClick(pt.slug)}
-                                className="flex flex-col items-start gap-3 group text-left w-[108px] lg:w-[120px] shrink-0 snap-start"
+                                className="flex flex-col items-center gap-3 group text-center w-[90px] lg:w-[100px] shrink-0 snap-start"
                             >
                                 {/* Image card */}
-                                <div className={`w-full aspect-square rounded-[16px] overflow-hidden relative
-                                    border transition-all duration-300
+                                <div className={`w-full aspect-square rounded-full overflow-hidden relative
+                                    transition-all duration-300
                                     ${isActive
-                                        ? "bg-[#f0fdf4] border-[#22c55e] shadow-[0_4px_16px_rgba(21,128,61,0.20)]"
-                                        : "bg-white border-[#f3f4f6] shadow-[0_2px_6px_rgba(16,24,40,0.06)] group-hover:bg-[#f0fdf4] group-hover:border-[#86efac] group-hover:shadow-[0_4px_12px_rgba(21,128,61,0.12)]"
+                                        ? "ring-2 ring-neutral-900 ring-offset-2"
+                                        : "ring-1 ring-neutral-200 hover:ring-neutral-400 group-hover:ring-offset-2"
                                     }`}
                                 >
                                     <Image
@@ -111,17 +105,13 @@ export function PatternTypeSelector({ patternTypes }: PatternTypeSelectorProps) 
                                         alt={pt.name}
                                         fill
                                         sizes="120px"
-                                        className={`object-cover transition-transform duration-500 ${isActive ? "scale-105" : "group-hover:scale-105"}`}
+                                        className={`object-cover transition-transform duration-500 max-w-full ${isActive ? "scale-105" : "group-hover:scale-105"}`}
                                     />
-                                    {/* Active overlay shimmer */}
-                                    {isActive && (
-                                        <div className="absolute inset-0 bg-[#15803d]/8 rounded-[14px]" />
-                                    )}
                                 </div>
 
                                 {/* Label */}
-                                <span className={`font-semibold text-[14px] lg:text-[16px] leading-[22px] transition-colors duration-200
-                                    ${isActive ? "text-[#15803d]" : "text-[#4b5563] group-hover:text-[#15803d]"}`}
+                                <span className={`font-medium text-[13px] leading-snug transition-colors duration-200
+                                    ${isActive ? "text-neutral-900" : "text-neutral-500 group-hover:text-neutral-900"}`}
                                 >
                                     {asset?.label ?? pt.name}
                                 </span>
@@ -134,19 +124,19 @@ export function PatternTypeSelector({ patternTypes }: PatternTypeSelectorProps) 
                 <button
                     onClick={() => scroll("right")}
                     aria-label="Xem loại gạch tiếp theo"
-                    className={`lg:hidden absolute right-0 top-[52px] -translate-y-1/2 translate-x-1 z-20
-                        w-9 h-9 rounded-full bg-white border border-[#e5e7eb] shadow-md
-                        flex items-center justify-center
-                        hover:bg-[#f0fdf4] hover:border-[#22c55e] hover:shadow-lg
+                    className={`lg:hidden absolute right-0 top-[50px] -translate-y-1/2 translate-x-2 z-20
+                        w-9 h-9 rounded-full bg-white border border-neutral-200 shadow-sm
+                        flex items-center justify-center text-neutral-600
+                        hover:bg-neutral-50 hover:text-neutral-900 hover:border-neutral-300
                         active:scale-95 transition-all duration-200
                         ${canRight ? "opacity-100" : "opacity-0 pointer-events-none"}`}
                 >
-                    <ChevronRight className="h-4 w-4 text-[#374151]" />
+                    <ChevronRight className="h-4 w-4" />
                 </button>
 
                 {/* Edge fade gradients (mobile only) */}
-                {canLeft && <div className="lg:hidden pointer-events-none absolute left-0 top-0 bottom-0 w-10 bg-gradient-to-r from-white/70 to-transparent z-10" />}
-                {canRight && <div className="lg:hidden pointer-events-none absolute right-0 top-0 bottom-0 w-10 bg-gradient-to-l from-white/70 to-transparent z-10" />}
+                {canLeft && <div className="lg:hidden pointer-events-none absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-white to-transparent z-10" />}
+                {canRight && <div className="lg:hidden pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white to-transparent z-10" />}
             </div>
         </div>
     )

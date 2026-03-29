@@ -74,8 +74,8 @@ export function BlogPostForm({ post, categories, tags }: BlogPostFormProps) {
         })
     }
 
-    const inputCls = 'w-full h-10 px-3 rounded-lg border border-[#e2e8f0] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors bg-white'
-    const labelCls = 'block text-sm font-medium text-[#374151] mb-1.5'
+    const inputCls = 'w-full h-10 px-3 rounded-lg border border-[#E4EEF2] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors bg-white'
+    const labelCls = 'block text-sm font-medium text-[#3C4E56] mb-1.5'
 
     return (
         <form onSubmit={onSubmit} className="space-y-6">
@@ -84,7 +84,7 @@ export function BlogPostForm({ post, categories, tags }: BlogPostFormProps) {
                 <div className="lg:col-span-2 space-y-6">
 
                     {/* Basic info */}
-                    <div className="bg-white rounded-2xl border border-[#e2e8f0] p-6 space-y-5">
+                    <div className="bg-white rounded-2xl border border-[#E4EEF2] p-6 space-y-5">
                         <h2 className="text-base font-semibold">Nội dung bài viết</h2>
 
                         <div>
@@ -115,7 +115,7 @@ export function BlogPostForm({ post, categories, tags }: BlogPostFormProps) {
                         <div>
                             <label className={labelCls}>Tóm tắt</label>
                             <textarea
-                                className="w-full px-3 py-2 rounded-lg border border-[#e2e8f0] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors resize-y min-h-[80px]"
+                                className="w-full px-3 py-2 rounded-lg border border-[#E4EEF2] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors resize-y min-h-[80px]"
                                 value={form.excerpt}
                                 onChange={(e) => set('excerpt', e.target.value)}
                                 placeholder="Tóm tắt ngắn hiển thị trên listing..."
@@ -133,7 +133,7 @@ export function BlogPostForm({ post, categories, tags }: BlogPostFormProps) {
                     </div>
 
                     {/* SEO */}
-                    <div className="bg-white rounded-2xl border border-[#e2e8f0] p-6 space-y-5">
+                    <div className="bg-white rounded-2xl border border-[#E4EEF2] p-6 space-y-5">
                         <h2 className="text-base font-semibold">SEO</h2>
                         <div>
                             <label className={labelCls}>SEO Title</label>
@@ -142,7 +142,7 @@ export function BlogPostForm({ post, categories, tags }: BlogPostFormProps) {
                         <div>
                             <label className={labelCls}>SEO Description</label>
                             <textarea
-                                className="w-full px-3 py-2 rounded-lg border border-[#e2e8f0] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors resize-y min-h-[80px]"
+                                className="w-full px-3 py-2 rounded-lg border border-[#E4EEF2] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors resize-y min-h-[80px]"
                                 value={form.seo_description}
                                 onChange={(e) => set('seo_description', e.target.value)}
                                 placeholder="Mô tả SEO (max 500 ký tự)"
@@ -160,7 +160,7 @@ export function BlogPostForm({ post, categories, tags }: BlogPostFormProps) {
                 <div className="space-y-6">
 
                     {/* Publish settings */}
-                    <div className="bg-white rounded-2xl border border-[#e2e8f0] p-5 space-y-4">
+                    <div className="bg-white rounded-2xl border border-[#E4EEF2] p-5 space-y-4">
                         <h2 className="text-base font-semibold">Xuất bản</h2>
                         <div>
                             <label className={labelCls}>Trạng thái</label>
@@ -197,7 +197,7 @@ export function BlogPostForm({ post, categories, tags }: BlogPostFormProps) {
                                         onChange={(e) => set(key, e.target.checked)}
                                         className="h-4 w-4 rounded border-gray-300 text-primary"
                                     />
-                                    <span className="text-sm text-[#374151]">{label}</span>
+                                    <span className="text-sm text-[#3C4E56]">{label}</span>
                                 </label>
                             ))}
                         </div>
@@ -205,7 +205,7 @@ export function BlogPostForm({ post, categories, tags }: BlogPostFormProps) {
 
                     {/* Tags */}
                     {tags.length > 0 && (
-                        <div className="bg-white rounded-2xl border border-[#e2e8f0] p-5 space-y-3">
+                        <div className="bg-white rounded-2xl border border-[#E4EEF2] p-5 space-y-3">
                             <div className="flex items-center justify-between">
                                 <h2 className="text-base font-semibold">Tags</h2>
                                 <a href="/admin/blog/tags" className="text-xs text-primary hover:underline" target="_blank">Quản lý tags</a>
@@ -230,7 +230,7 @@ export function BlogPostForm({ post, categories, tags }: BlogPostFormProps) {
                     )}
 
                     {/* Images */}
-                    <div className="bg-white rounded-2xl border border-[#e2e8f0] p-5 space-y-4">
+                    <div className="bg-white rounded-2xl border border-[#E4EEF2] p-5 space-y-4">
                         <h2 className="text-base font-semibold">Hình ảnh</h2>
                         <ImageUploader
                             label="Ảnh thumbnail (listing)"

@@ -53,12 +53,12 @@ export function TagsClient({ initialTags }: { initialTags: TagItem[] }) {
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl">
             {/* Create form */}
-            <div className="bg-white rounded-2xl border border-[#e2e8f0] p-6 space-y-4">
+            <div className="bg-white rounded-2xl border border-[#E4EEF2] p-6 space-y-4">
                 <h2 className="text-base font-semibold">Thêm tag mới</h2>
                 <div>
-                    <label className="block text-sm font-medium text-[#374151] mb-1.5">Tên tag</label>
+                    <label className="block text-sm font-medium text-[#3C4E56] mb-1.5">Tên tag</label>
                     <input
-                        className="w-full h-10 px-3 rounded-lg border border-[#e2e8f0] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary bg-white"
+                        className="w-full h-10 px-3 rounded-lg border border-[#E4EEF2] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary bg-white"
                         value={name}
                         onChange={(e) => {
                             setName(e.target.value)
@@ -69,9 +69,9 @@ export function TagsClient({ initialTags }: { initialTags: TagItem[] }) {
                     />
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-[#374151] mb-1.5">Slug</label>
+                    <label className="block text-sm font-medium text-[#3C4E56] mb-1.5">Slug</label>
                     <input
-                        className="w-full h-10 px-3 rounded-lg border border-[#e2e8f0] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary bg-white"
+                        className="w-full h-10 px-3 rounded-lg border border-[#E4EEF2] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary bg-white"
                         value={slug}
                         onChange={(e) => setSlug(e.target.value)}
                         placeholder="ten-tag"
@@ -84,7 +84,7 @@ export function TagsClient({ initialTags }: { initialTags: TagItem[] }) {
             </div>
 
             {/* Tags list */}
-            <div className="bg-white rounded-2xl border border-[#e2e8f0] p-6">
+            <div className="bg-white rounded-2xl border border-[#E4EEF2] p-6">
                 <h2 className="text-base font-semibold mb-4">Danh sách tags ({tags.length})</h2>
                 {tags.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-8 text-muted-foreground gap-2">
@@ -94,7 +94,7 @@ export function TagsClient({ initialTags }: { initialTags: TagItem[] }) {
                 ) : (
                     <ul className="space-y-2">
                         {tags.map((tag) => (
-                            <li key={tag.id} className="flex items-center justify-between py-2 border-b border-[#e2e8f0] last:border-0">
+                            <li key={tag.id} className="flex items-center justify-between py-2 border-b border-[#E4EEF2] last:border-0">
                                 <div>
                                     <span className="text-sm font-medium">{tag.name}</span>
                                     <span className="text-xs text-muted-foreground ml-2">#{tag.slug}</span>

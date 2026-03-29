@@ -46,15 +46,16 @@ export async function FeaturedCategories() {
     ]
 
     return (
-        <section className="py-16 bg-white overflow-hidden">
+        <section className="py-20 lg:py-28 bg-neutral-50 overflow-hidden">
             <div className="max-w-[1280px] mx-auto px-5">
                 <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
                     <div>
-                        <h2 className="text-3xl lg:text-[40px] leading-tight font-bold text-[#111827] tracking-tight">
+                        <div className="h-1 w-8 bg-[#2E7A96] mb-4" />
+                        <h2 className="text-[13px] font-medium tracking-[0.15em] uppercase text-neutral-500 mb-2">
                             Sản phẩm nổi bật
                         </h2>
-                        <p className="text-[#4b5563] mt-3 text-lg">
-                            Khám phá những sản phẩm cao cấp được khách hàng yêu thích nhất
+                        <p className="text-3xl lg:text-[36px] leading-tight font-medium text-neutral-900">
+                            Khám phá những sản phẩm cao cấp
                         </p>
                     </div>
                 </div>

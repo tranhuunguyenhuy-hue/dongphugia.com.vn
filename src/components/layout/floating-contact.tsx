@@ -59,8 +59,8 @@ const buttons: ContactButton[] = [
         id: "phone",
         label: "Gọi ngay",
         href: PHONE_NUMBER,
-        bg: "bg-[#16a34a]",
-        hoverBg: "hover:bg-[#15803d]",
+        bg: "bg-[#2E7A96]",
+        hoverBg: "hover:bg-[#2E7A96]",
         shadow: "shadow-[0_4px_16px_rgba(22,163,74,0.5)]",
         icon: <Phone className="w-6 h-6 fill-white stroke-none" />,
         pulse: true,
@@ -69,12 +69,16 @@ const buttons: ContactButton[] = [
 
 export function FloatingContact() {
     const [visible, setVisible] = useState(false)
+    const [isMounted, setIsMounted] = useState(false)
 
     // Fade in after 1s
     useEffect(() => {
+        setIsMounted(true)
         const t = setTimeout(() => setVisible(true), 1000)
         return () => clearTimeout(t)
     }, [])
+
+    if (!isMounted) return null
 
     return (
         <div
@@ -118,8 +122,8 @@ export function FloatingContact() {
                         {/* Pulse ring for phone */}
                         {btn.pulse && (
                             <>
-                                <span className="absolute inset-0 rounded-full bg-[#16a34a] animate-ping opacity-30" />
-                                <span className="absolute inset-[-4px] rounded-full bg-[#16a34a]/20 animate-pulse" />
+                                <span className="absolute inset-0 rounded-full bg-[#2E7A96] animate-ping opacity-30" />
+                                <span className="absolute inset-[-4px] rounded-full bg-[#2E7A96]/20 animate-pulse" />
                             </>
                         )}
                         {btn.icon}

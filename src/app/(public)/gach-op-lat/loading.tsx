@@ -4,7 +4,7 @@ export default function Loading() {
     return (
         <div className="relative min-h-screen bg-white">
             {/* Background gradient */}
-            <div className="absolute left-0 right-0 top-0 h-[700px] bg-gradient-to-b from-[#dcfce7] to-white pointer-events-none" />
+            <div className="absolute left-0 right-0 top-0 h-[700px] bg-gradient-to-b from-[#C5E8F5] to-white pointer-events-none" />
 
             <div className="max-w-[1280px] mx-auto px-5 relative z-10 py-10">
                 <div className="flex flex-col lg:flex-row gap-[51px]">
@@ -19,7 +19,7 @@ export default function Loading() {
                         {/* Breadcrumb Skeleton */}
                         <div className="flex items-center gap-2">
                             <div className="h-4 w-16 bg-gray-200 rounded animate-pulse" />
-                            <ChevronRight className="h-4 w-4 text-[#9ca3af]" />
+                            <ChevronRight className="h-4 w-4 text-[#88A3AE]" />
                             <div className="h-4 w-24 bg-gray-200 rounded animate-pulse" />
                         </div>
 

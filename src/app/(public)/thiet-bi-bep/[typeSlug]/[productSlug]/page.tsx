@@ -4,7 +4,7 @@ import { ChevronRight, Phone } from "lucide-react"
 import { notFound } from "next/navigation"
 import { getBepProductBySlug, getRelatedBepProducts } from "@/lib/public-api-bep"
 import { ProductImageGallery } from "@/components/product/product-image-gallery"
-import { ProductDetailTabsBep } from "@/components/product/product-detail-tabs-bep"
+import { ProductDetailTabs } from "@/components/product/product-detail-tabs"
 import { ProductCard } from "@/components/ui/product-card"
 import { QuoteForm } from "./quote-form"
 
@@ -89,11 +89,11 @@ export default async function ProductDetailPage({ params }: PageProps) {
             {/* Breadcrumbs */}
             <div className="border-b border-gray-100 bg-[#fafafa]">
                 <div className="max-w-[1280px] mx-auto px-5 py-3 flex items-center gap-2 text-[14px] text-gray-500 overflow-x-auto whitespace-nowrap scrollbar-hide">
-                    <Link href="/" className="hover:text-[#15803d]">Trang chủ</Link>
+                    <Link href="/" className="hover:text-[#2E7A96]">Trang chủ</Link>
                     <ChevronRight className="w-4 h-4 text-gray-400 shrink-0" />
-                    <Link href="/thiet-bi-bep" className="hover:text-[#15803d]">Thiết bị bếp</Link>
+                    <Link href="/thiet-bi-bep" className="hover:text-[#2E7A96]">Thiết bị bếp</Link>
                     <ChevronRight className="w-4 h-4 text-gray-400 shrink-0" />
-                    <Link href={`/thiet-bi-bep?type=${product.bep_product_types?.slug || typeSlug}`} className="hover:text-[#15803d]">
+                    <Link href={`/thiet-bi-bep?type=${product.bep_product_types?.slug || typeSlug}`} className="hover:text-[#2E7A96]">
                         {product.bep_product_types?.name}
                     </Link>
                     <ChevronRight className="w-4 h-4 text-gray-400 shrink-0" />
@@ -141,7 +141,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
                         </div>
 
                         {/* Summary Props */}
-                        <div className="grid grid-cols-2 gap-x-4 gap-y-3 p-5 bg-[#f8fafc] rounded-xl mb-6 text-[15px]">
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-3 p-5 bg-[#F5F9FB] rounded-xl mb-6 text-[15px]">
                             {product.bep_subtypes && (
                                 <div className="flex flex-col">
                                     <span className="text-gray-500 text-[13px] mb-0.5">Kiểu dáng</span>
@@ -177,14 +177,14 @@ export default async function ProductDetailPage({ params }: PageProps) {
                         {/* Price & Contact Box */}
                         <div className="p-5 lg:p-6 border border-gray-200 rounded-2xl bg-white shadow-sm mb-6">
                             <div className="flex items-baseline gap-3 mb-4">
-                                <span className="text-[28px] font-bold text-[#111827]">
+                                <span className="text-[28px] font-bold text-[#192125]">
                                     {product.price_display}
                                 </span>
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
                                 <a
                                     href="tel:0913963283"
-                                    className="flex items-center justify-center gap-2 h-12 bg-[#15803d] text-white rounded-xl font-medium hover:bg-[#166534] transition-colors"
+                                    className="flex items-center justify-center gap-2 h-12 bg-[#2E7A96] text-white rounded-xl font-medium hover:bg-[#216077] transition-colors"
                                 >
                                     <Phone className="w-5 h-5" />
                                     <span>Gọi 0913 963 283</span>
@@ -211,7 +211,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
                 {/* Lower Section: Tabs & Related */}
                 <div className="mt-16 lg:mt-20 flex flex-col lg:flex-row gap-10 xl:gap-16">
                     <div className="flex-1 min-w-0">
-                        <ProductDetailTabsBep
+                        <ProductDetailTabs
                             description={product.description}
                             features={product.features}
                             specifications={product.specifications}

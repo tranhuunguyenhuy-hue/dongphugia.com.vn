@@ -1,99 +1,95 @@
 'use client';
 
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { ChevronUp, ChevronDown, Check } from 'lucide-react';
-import { useState, useCallback } from 'react';
+import { Plus, Minus, Check, X } from 'lucide-react';
+import { useState, useCallback, useMemo } from 'react';
 
-interface FilterItem {
+// ────────── Types ──────────
+
+interface FilterOption {
     slug: string;
     name: string;
 }
 
-interface SmartFilterProps {
-    colors: FilterItem[];
-    surfaces: FilterItem[];
-    sizes: FilterItem[];
-    origins: FilterItem[];
-    locations: FilterItem[];
+export interface FilterSectionConfig {
+    /** Search param key, e.g. "brand", "color", "thickness" */
+    key: string;
+    /** Display label, e.g. "Thương hiệu", "Màu sắc" */
+    label: string;
+    /** Available options */
+    options: FilterOption[];
+    /** single = radio-toggle, multi = checkbox (comma-separated) */
+    mode: 'single' | 'multi';
+    /** Open by default? */
+    defaultOpen?: boolean;
 }
 
+export interface SmartFilterProps {
+    /** Config array describing each filter section */
+    sections: FilterSectionConfig[];
+    /** Optional heading, default: "Filters" */
+    heading?: string;
+    /** Layout variant: 'sidebar' shows badge count + clear button, 'inline' shows accent bar */
+    variant?: 'sidebar' | 'inline';
+}
+
+// ────────── FilterSection (internal) ──────────
+
 function FilterSection({
-    title,
-    items,
-    paramKey,
-    defaultOpen = false,
+    config,
+    onFilterChange,
 }: {
-    title: string;
-    items: FilterItem[];
-    paramKey: string;
-    defaultOpen?: boolean;
+    config: FilterSectionConfig;
+    onFilterChange: (key: string, value: string, mode: 'single' | 'multi') => void;
 }) {
-    const [isOpen, setIsOpen] = useState(defaultOpen);
-    const router = useRouter();
-    const pathname = usePathname();
+    const [isOpen, setIsOpen] = useState(config.defaultOpen ?? true);
     const searchParams = useSearchParams();
 
-    const activeValues = searchParams.get(paramKey)?.split(',').filter(Boolean) || [];
+    // Get active values
+    const raw = searchParams.get(config.key) || '';
+    const activeValues = config.mode === 'multi'
+        ? raw.split(',').filter(Boolean)
+        : [raw].filter(Boolean);
 
-    const toggleItem = useCallback(
-        (slug: string) => {
-            const params = new URLSearchParams(searchParams.toString());
-            const current = params.get(paramKey)?.split(',').filter(Boolean) || [];
-            const updated = current.includes(slug)
-                ? current.filter((v) => v !== slug)
-                : [...current, slug];
-            if (updated.length > 0) {
-                params.set(paramKey, updated.join(','));
-            } else {
-                params.delete(paramKey);
-            }
-            router.push(`${pathname}?${params.toString()}`, { scroll: false });
-        },
-        [router, pathname, searchParams, paramKey]
-    );
-
-    if (items.length === 0) return null;
+    if (!config.options || config.options.length === 0) return null;
 
     return (
-        <div className="flex flex-col gap-2">
-            <div className="flex flex-col gap-2">
-                <button
-                    onClick={() => setIsOpen(!isOpen)}
-                    className="flex items-center justify-between pr-5 w-full text-left"
-                >
-                    <span className="font-semibold text-lg text-[#1f2937]">{title}</span>
-                    {isOpen ? (
-                        <ChevronUp className="h-5 w-5 text-gray-400" />
-                    ) : (
-                        <ChevronDown className="h-5 w-5 text-gray-400" />
-                    )}
-                </button>
-                <div className="h-px bg-gray-200 w-full" />
-            </div>
+        <div className="flex flex-col gap-1.5 pt-4">
+            <button
+                onClick={() => setIsOpen(!isOpen)}
+                className="flex items-center justify-between w-full text-left py-1 group"
+            >
+                <span className="font-medium text-[14px] text-neutral-900 group-hover:text-black">{config.label}</span>
+                {isOpen ? (
+                    <Minus className="h-4 w-4 text-neutral-400 group-hover:text-neutral-900 transition-colors" strokeWidth={1.5} />
+                ) : (
+                    <Plus className="h-4 w-4 text-neutral-400 group-hover:text-neutral-900 transition-colors" strokeWidth={1.5} />
+                )}
+            </button>
 
             {isOpen && (
-                <div className="flex flex-col">
-                    {items.map((item) => {
+                <div className="flex flex-col gap-0.5 mt-1 ml-1">
+                    {config.options.map((item) => {
                         const isSelected = activeValues.includes(item.slug);
                         return (
                             <button
                                 key={item.slug}
-                                onClick={() => toggleItem(item.slug)}
-                                className="flex items-center justify-between h-[44px] w-full text-left group"
+                                onClick={() => onFilterChange(config.key, item.slug, config.mode)}
+                                className="flex items-center gap-3 h-[32px] w-full text-left group"
                             >
+                                <div
+                                    className={`w-[16px] h-[16px] rounded-[4px] flex items-center justify-center border shrink-0 transition-colors duration-200 ${isSelected
+                                        ? 'bg-neutral-900 border-neutral-900'
+                                        : 'bg-white border-neutral-300 group-hover:border-neutral-400'
+                                        }`}
+                                >
+                                    {isSelected && <Check className="h-3 w-3 text-white" strokeWidth={2.5} />}
+                                </div>
                                 <span
-                                    className={`font-medium text-[16px] leading-[24px] ${isSelected ? 'text-[#15803d]' : 'text-[#4b5563] group-hover:text-[#374151]'}`}
+                                    className={`truncate text-[13.5px] leading-none ${isSelected ? 'text-neutral-900 font-medium' : 'text-neutral-600 group-hover:text-neutral-900'}`}
                                 >
                                     {item.name}
                                 </span>
-                                <div
-                                    className={`w-[18px] h-[18px] rounded-full flex items-center justify-center border-[1.5px] shrink-0 transition-colors ${isSelected
-                                        ? 'bg-[#15803d] border-[#15803d]'
-                                        : 'bg-white border-[#d1d5db] group-hover:border-[#9ca3af]'
-                                        }`}
-                                >
-                                    {isSelected && <Check className="h-2.5 w-2.5 text-white" strokeWidth={3} />}
-                                </div>
                             </button>
                         );
                     })}
@@ -103,27 +99,111 @@ function FilterSection({
     );
 }
 
-export function SmartFilter({ colors, surfaces, sizes, origins, locations }: SmartFilterProps) {
-    const hasAnyFilter = colors.length > 0 || surfaces.length > 0 || sizes.length > 0 || origins.length > 0 || locations.length > 0;
+// ────────── SmartFilter (unified) ──────────
+
+export function SmartFilter({ sections, heading = 'Filters', variant = 'sidebar' }: SmartFilterProps) {
+    const router = useRouter();
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
+
+    // Count active filters across all sections
+    const activeFilterCount = useMemo(() => {
+        return sections.reduce((count, section) => {
+            const val = searchParams.get(section.key);
+            if (!val) return count;
+            if (section.mode === 'multi') {
+                return count + val.split(',').filter(Boolean).length;
+            }
+            return count + 1;
+        }, 0);
+    }, [sections, searchParams]);
+
+    // Unified filter change handler
+    const handleFilterChange = useCallback(
+        (key: string, value: string, mode: 'single' | 'multi') => {
+            const params = new URLSearchParams(searchParams.toString());
+
+            if (mode === 'single') {
+                // Toggle: if same value, deselect
+                if (params.get(key) === value) {
+                    params.delete(key);
+                } else {
+                    params.set(key, value);
+                }
+            } else {
+                // Multi: comma-separated toggle
+                const current = params.get(key)?.split(',').filter(Boolean) || [];
+                const updated = current.includes(value)
+                    ? current.filter((v) => v !== value)
+                    : [...current, value];
+                if (updated.length > 0) {
+                    params.set(key, updated.join(','));
+                } else {
+                    params.delete(key);
+                }
+            }
+
+            // Reset page when filters change
+            params.delete('page');
+
+            const qs = params.toString();
+            router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+        },
+        [router, pathname, searchParams]
+    );
+
+    // Clear all filter keys managed by this component
+    const clearFilters = useCallback(() => {
+        const params = new URLSearchParams(searchParams.toString());
+        sections.forEach((section) => params.delete(section.key));
+        params.delete('page');
+        const qs = params.toString();
+        router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    }, [router, pathname, searchParams, sections]);
+
+    // Check if any section has options
+    const hasAnyFilter = sections.some((s) => s.options.length > 0);
     if (!hasAnyFilter) return null;
 
     return (
-        <div className="flex flex-col gap-[27px]">
-            {/* Heading */}
-            <div className="flex flex-col gap-[8px]">
-                <h3 className="text-[24px] font-semibold text-[#111827] tracking-[-0.48px] leading-[32px]">
-                    Bộ lọc thông minh
-                </h3>
-                <div className="h-[3px] w-[71px] bg-[#15803d] rounded-full" />
-            </div>
+        <div className="flex flex-col w-full">
+            {/* Header */}
+            {variant === 'sidebar' ? (
+                <div className="flex items-center justify-between pb-4 border-b border-neutral-100">
+                    <div className="flex items-center gap-2">
+                        <h2 className="text-[15px] font-semibold text-neutral-900">{heading}</h2>
+                        {activeFilterCount > 0 && (
+                            <span className="flex items-center justify-center bg-neutral-900 text-white text-[10px] font-bold w-4 h-4 rounded-full leading-none">
+                                {activeFilterCount}
+                            </span>
+                        )}
+                    </div>
+                    {activeFilterCount > 0 && (
+                        <button
+                            onClick={clearFilters}
+                            className="flex items-center gap-1 text-[13px] font-medium text-neutral-500 hover:text-neutral-900 transition-colors"
+                        >
+                            <span>Clear</span>
+                        </button>
+                    )}
+                </div>
+            ) : (
+                <div className="flex flex-col gap-[8px] pb-4 border-b border-neutral-100">
+                    <h3 className="text-[18px] font-semibold text-neutral-900 tracking-tight">
+                        {heading}
+                    </h3>
+                </div>
+            )}
 
-            {/* Filter sections — No background wrapper, raw sections */}
-            <div className="flex flex-col gap-[24px]">
-                <FilterSection title="Màu sắc" items={colors} paramKey="color" defaultOpen={true} />
-                <FilterSection title="Bề mặt" items={surfaces} paramKey="surface" defaultOpen={true} />
-                <FilterSection title="Kích thước" items={sizes.map(s => ({ slug: s.slug, name: s.name }))} paramKey="size" />
-                <FilterSection title="Xuất xứ" items={origins} paramKey="origin" />
-                <FilterSection title="Vị trí ốp lát" items={locations} paramKey="location" />
+            {/* Filter Sections */}
+            <div className={`flex flex-col divide-y divide-neutral-100`}>
+                {sections.map((section) => (
+                    <FilterSection
+                        key={section.key}
+                        config={section}
+                        onFilterChange={handleFilterChange}
+                    />
+                ))}
             </div>
         </div>
     );
