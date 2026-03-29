@@ -57,12 +57,12 @@ export function PatternTypeForm({ patternType, categories }: PatternTypeFormProp
         })
     }
 
-    const inputCls = "w-full h-10 px-3 rounded-lg border border-[#e2e8f0] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors bg-white"
-    const labelCls = "block text-sm font-medium text-[#374151] mb-1.5"
+    const inputCls = "w-full h-10 px-3 rounded-lg border border-[#E4EEF2] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors bg-white"
+    const labelCls = "block text-sm font-medium text-[#3C4E56] mb-1.5"
 
     return (
         <form onSubmit={onSubmit} className="space-y-6 max-w-2xl">
-            <div className="bg-white rounded-2xl border border-[#e2e8f0] p-6 space-y-5">
+            <div className="bg-white rounded-2xl border border-[#E4EEF2] p-6 space-y-5">
                 <h2 className="text-base font-semibold">Thông tin cơ bản</h2>
 
                 <div>
@@ -91,7 +91,7 @@ export function PatternTypeForm({ patternType, categories }: PatternTypeFormProp
                 <div>
                     <label className={labelCls}>Mô tả</label>
                     <textarea
-                        className="w-full px-3 py-2 rounded-lg border border-[#e2e8f0] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors resize-y min-h-[80px]"
+                        className="w-full px-3 py-2 rounded-lg border border-[#E4EEF2] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors resize-y min-h-[80px]"
                         value={form.description}
                         onChange={(e) => set('description', e.target.value)}
                         placeholder="Mô tả kiểu vân..."
@@ -117,11 +117,11 @@ export function PatternTypeForm({ patternType, categories }: PatternTypeFormProp
                 </div>
                 <label className="flex items-center gap-3 cursor-pointer">
                     <input type="checkbox" checked={form.is_active} onChange={(e) => set('is_active', e.target.checked)} className="h-4 w-4 rounded border-gray-300 text-primary" />
-                    <span className="text-sm font-medium text-[#374151]">Hiển thị</span>
+                    <span className="text-sm font-medium text-[#3C4E56]">Hiển thị</span>
                 </label>
             </div>
 
-            <div className="bg-white rounded-2xl border border-[#e2e8f0] p-6 space-y-5">
+            <div className="bg-white rounded-2xl border border-[#E4EEF2] p-6 space-y-5">
                 <h2 className="text-base font-semibold">SEO</h2>
                 <div>
                     <label className={labelCls}>SEO Title</label>
@@ -130,7 +130,7 @@ export function PatternTypeForm({ patternType, categories }: PatternTypeFormProp
                 <div>
                     <label className={labelCls}>SEO Description</label>
                     <textarea
-                        className="w-full px-3 py-2 rounded-lg border border-[#e2e8f0] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors resize-y min-h-[80px]"
+                        className="w-full px-3 py-2 rounded-lg border border-[#E4EEF2] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors resize-y min-h-[80px]"
                         value={form.seo_description}
                         onChange={(e) => set('seo_description', e.target.value)}
                         placeholder="Mô tả SEO (max 500 ký tự)"

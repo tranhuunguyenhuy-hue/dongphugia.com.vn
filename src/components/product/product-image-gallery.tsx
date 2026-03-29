@@ -32,7 +32,7 @@ export function ProductImageGallery({
     return (
         <div className="flex flex-col gap-3 w-full lg:max-w-[628px]">
             {/* Main Image */}
-            <div className="relative w-full aspect-[628/590] rounded-[16px] sm:rounded-[20px] overflow-hidden bg-gray-100">
+            <div className="relative w-full aspect-[628/590] rounded-[var(--radius-lg)] overflow-hidden bg-neutral-50 shadow-[0_2px_12px_rgba(16,24,40,0.06)]">
                 {activeImage ? (
                     activeImage.includes('vietceramics.com') ? (
                         <img
@@ -51,7 +51,7 @@ export function ProductImageGallery({
                         />
                     )
                 ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-400 text-lg">
+                    <div className="w-full h-full flex items-center justify-center text-neutral-400 text-lg">
                         No Image
                     </div>
                 )}
@@ -66,10 +66,10 @@ export function ProductImageGallery({
                             onClick={() => setActiveIndex(idx)}
                             className={`
                                 relative shrink-0 w-[80px] h-[80px] sm:w-[120px] sm:h-[120px] lg:w-[174px] lg:h-[174px]
-                                rounded-[8px] sm:rounded-[12px] overflow-hidden transition-all duration-200
+                                rounded-[var(--radius-md)] overflow-hidden transition-all duration-200
                                 ${idx === activeIndex
-                                    ? 'border-2 border-[#16a34a] shadow-[0px_20px_40px_-8px_rgba(16,24,40,0.05),0px_20px_40px_-8px_rgba(16,24,40,0.1)]'
-                                    : 'border border-transparent hover:border-gray-300'
+                                    ? 'border-2 border-blue-600 ring-2 ring-blue-100'
+                                    : 'border border-neutral-200 hover:border-blue-400'
                                 }
                             `}
                         >

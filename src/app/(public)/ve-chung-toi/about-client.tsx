@@ -82,18 +82,18 @@ export function AboutClient() {
             <section className="pt-28 pb-16 px-5 max-w-[1280px] mx-auto">
                 <div className="max-w-3xl">
                     <Reveal delay={0}>
-                        <p className="text-[#16a34a] text-xs font-bold tracking-[0.2em] uppercase mb-5">
+                        <p className="text-[#2E7A96] text-xs font-bold tracking-[0.2em] uppercase mb-5">
                             Về Chúng Tôi
                         </p>
                     </Reveal>
                     <Reveal delay={100}>
-                        <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-[#0f172a] leading-[1.08] tracking-tight mb-6">
+                        <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-[#192125] leading-[1.08] tracking-tight mb-6">
                             Hiểu bạn cần gì.<br />
-                            <span className="text-[#16a34a]">Kiến tạo</span> điều đó.
+                            <span className="text-[#2E7A96]">Kiến tạo</span> điều đó.
                         </h1>
                     </Reveal>
                     <Reveal delay={200}>
-                        <p className="text-[#64748b] text-lg leading-relaxed max-w-xl">
+                        <p className="text-[#6A8A97] text-lg leading-relaxed max-w-xl">
                             Hơn một thập kỷ đồng hành cùng hàng nghìn công trình tại Đà Lạt và Tây Nguyên —
                             Đông Phú Gia không chỉ là nơi mua vật liệu, mà là người bạn đồng hành trong từng quyết định thiết kế.
                         </p>
@@ -170,7 +170,7 @@ export function AboutClient() {
                                 className="object-cover"
                             />
                             {/* Green accent overlay */}
-                            <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-[#14532d]/60 to-transparent" />
+                            <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-[#0F2E3A]/60 to-transparent" />
                             <div className="absolute bottom-6 left-6 text-white">
                                 <p className="text-xs font-bold tracking-widest uppercase opacity-80 mb-1">Thành lập</p>
                                 <p className="text-3xl font-bold">2010</p>
@@ -181,10 +181,10 @@ export function AboutClient() {
                     {/* Right: Values List */}
                     <div className="flex flex-col gap-2 pt-4">
                         <Reveal delay={0}>
-                            <p className="text-[#16a34a] text-xs font-bold tracking-[0.2em] uppercase mb-4">
+                            <p className="text-[#2E7A96] text-xs font-bold tracking-[0.2em] uppercase mb-4">
                                 Giá trị cốt lõi
                             </p>
-                            <h2 className="text-3xl md:text-4xl font-bold text-[#0f172a] mb-10 leading-tight tracking-tight">
+                            <h2 className="text-3xl md:text-4xl font-bold text-[#192125] mb-10 leading-tight tracking-tight">
                                 Những nguyên tắc<br />dẫn đường chúng tôi
                             </h2>
                         </Reveal>
@@ -212,15 +212,15 @@ export function AboutClient() {
                             },
                         ].map((item, i) => (
                             <Reveal key={item.num} delay={i * 80}>
-                                <div className="group flex gap-5 py-6 border-b border-[#e2e8f0] last:border-0 hover:bg-[#f0fdf4]/50 -mx-4 px-4 rounded-xl transition-colors duration-200 cursor-default">
-                                    <span className="text-[#16a34a]/40 font-bold text-sm mt-1 w-6 shrink-0 group-hover:text-[#16a34a] transition-colors">
+                                <div className="group flex gap-5 py-6 border-b border-[#E4EEF2] last:border-0 hover:bg-[#EAF6FB]/50 -mx-4 px-4 rounded-xl transition-colors duration-200 cursor-default">
+                                    <span className="text-[#2E7A96]/40 font-bold text-sm mt-1 w-6 shrink-0 group-hover:text-[#2E7A96] transition-colors">
                                         {item.num}
                                     </span>
                                     <div>
-                                        <h4 className="font-bold text-[#0f172a] mb-1.5 text-base md:text-lg group-hover:text-[#16a34a] transition-colors">
+                                        <h4 className="font-bold text-[#192125] mb-1.5 text-base md:text-lg group-hover:text-[#2E7A96] transition-colors">
                                             {item.title}
                                         </h4>
-                                        <p className="text-[#64748b] leading-relaxed text-sm md:text-base">
+                                        <p className="text-[#6A8A97] leading-relaxed text-sm md:text-base">
                                             {item.desc}
                                         </p>
                                     </div>
@@ -234,7 +234,7 @@ export function AboutClient() {
             {/* ════════════════════════════════════════════
                 SECTION 4 — NUMBERS (Stats Bar)
             ════════════════════════════════════════════ */}
-            <section className="py-20 bg-[#0f172a]">
+            <section className="py-20 bg-[#192125]">
                 <div className="max-w-[1280px] mx-auto px-5">
                     <Reveal>
                         <div className="grid grid-cols-2 md:grid-cols-4">
@@ -254,7 +254,7 @@ export function AboutClient() {
                                     <span className="text-5xl md:text-6xl font-bold text-[#4ade80] mb-3 tracking-tight">
                                         <Counter end={stat.end} suffix={stat.suffix} />
                                     </span>
-                                    <span className="text-[#94a3b8] text-xs font-semibold uppercase tracking-widest">
+                                    <span className="text-[#88A3AE] text-xs font-semibold uppercase tracking-widest">
                                         {stat.label}
                                     </span>
                                 </div>
@@ -267,13 +267,13 @@ export function AboutClient() {
             {/* ════════════════════════════════════════════
                 SECTION 5 — TIMELINE
             ════════════════════════════════════════════ */}
-            <section className="py-24 px-5 bg-[#f0fdf4]">
+            <section className="py-24 px-5 bg-[#EAF6FB]">
                 <div className="max-w-[1280px] mx-auto">
                     <Reveal>
-                        <p className="text-[#16a34a] text-xs font-bold tracking-[0.2em] uppercase text-center mb-3">
+                        <p className="text-[#2E7A96] text-xs font-bold tracking-[0.2em] uppercase text-center mb-3">
                             Hành trình
                         </p>
-                        <h2 className="text-3xl md:text-5xl font-bold text-[#0f172a] text-center mb-16 tracking-tight">
+                        <h2 className="text-3xl md:text-5xl font-bold text-[#192125] text-center mb-16 tracking-tight">
                             Hơn một thập kỷ phát triển
                         </h2>
                     </Reveal>
@@ -281,7 +281,7 @@ export function AboutClient() {
                     {/* Horizontal timeline */}
                     <div className="relative">
                         {/* Line */}
-                        <div className="hidden md:block absolute top-[28px] left-0 right-0 h-px bg-[#16a34a]/20" />
+                        <div className="hidden md:block absolute top-[28px] left-0 right-0 h-px bg-[#2E7A96]/20" />
 
                         <div className="grid md:grid-cols-4 gap-8 md:gap-6">
                             {[
@@ -314,16 +314,16 @@ export function AboutClient() {
                                     <div className="flex flex-col md:items-start gap-4">
                                         {/* Dot */}
                                         <div className={`w-4 h-4 rounded-full border-2 shrink-0 md:mb-2 ${item.active
-                                            ? "bg-[#16a34a] border-[#16a34a] shadow-[0_0_12px_rgba(22,163,74,0.4)]"
-                                            : "bg-white border-[#16a34a]/40"
+                                            ? "bg-[#2E7A96] border-[#2E7A96] shadow-[0_0_12px_rgba(22,163,74,0.4)]"
+                                            : "bg-white border-[#2E7A96]/40"
                                             }`}
                                         />
                                         <div>
-                                            <span className={`text-sm font-bold block mb-1 ${item.active ? "text-[#16a34a]" : "text-[#64748b]"}`}>
+                                            <span className={`text-sm font-bold block mb-1 ${item.active ? "text-[#2E7A96]" : "text-[#6A8A97]"}`}>
                                                 {item.year}
                                             </span>
-                                            <h4 className="font-bold text-[#0f172a] mb-2 text-base">{item.title}</h4>
-                                            <p className="text-[#64748b] text-sm leading-relaxed">{item.desc}</p>
+                                            <h4 className="font-bold text-[#192125] mb-2 text-base">{item.title}</h4>
+                                            <p className="text-[#6A8A97] text-sm leading-relaxed">{item.desc}</p>
                                         </div>
                                     </div>
                                 </Reveal>
@@ -336,17 +336,17 @@ export function AboutClient() {
             {/* ════════════════════════════════════════════
                 SECTION 6 — CTA
             ════════════════════════════════════════════ */}
-            <section className="py-24 px-5 bg-white border-t border-[#e2e8f0]">
+            <section className="py-24 px-5 bg-white border-t border-[#E4EEF2]">
                 <div className="max-w-[1280px] mx-auto">
-                    <div className="bg-[#16a34a] rounded-3xl px-8 md:px-16 py-16 md:py-20 flex flex-col md:flex-row items-start md:items-center justify-between gap-10">
+                    <div className="bg-[#2E7A96] rounded-3xl px-8 md:px-16 py-16 md:py-20 flex flex-col md:flex-row items-start md:items-center justify-between gap-10">
                         <Reveal direction="left" className="max-w-xl">
-                            <p className="text-[#bbf7d0] text-xs font-bold tracking-[0.2em] uppercase mb-4">
+                            <p className="text-[#C5E8F5] text-xs font-bold tracking-[0.2em] uppercase mb-4">
                                 Bắt đầu ngay hôm nay
                             </p>
                             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4 leading-tight tracking-tight">
                                 Sẵn sàng kiến tạo<br />không gian hoàn hảo?
                             </h2>
-                            <p className="text-[#bbf7d0] text-base leading-relaxed">
+                            <p className="text-[#C5E8F5] text-base leading-relaxed">
                                 Liên hệ với đội ngũ chuyên gia để nhận bảng báo giá chi tiết và giải pháp thi công tối ưu.
                             </p>
                         </Reveal>
@@ -354,7 +354,7 @@ export function AboutClient() {
                         <Reveal direction="right" delay={150} className="flex flex-col sm:flex-row gap-3 shrink-0">
                             <a
                                 href="tel:02633520316"
-                                className="inline-flex items-center justify-center gap-2 px-7 py-4 text-[#16a34a] bg-white font-bold rounded-xl hover:bg-[#f0fdf4] transition-colors text-sm shadow-lg shadow-black/10 group"
+                                className="inline-flex items-center justify-center gap-2 px-7 py-4 text-[#2E7A96] bg-white font-bold rounded-xl hover:bg-[#EAF6FB] transition-colors text-sm shadow-lg shadow-black/10 group"
                             >
                                 <Phone className="w-4 h-4" />
                                 Gọi tư vấn ngay

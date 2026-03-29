@@ -70,7 +70,7 @@ export default async function BlogPostsPage({ searchParams }: PageProps) {
                         className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                             (status ?? '') === tab.value
                                 ? 'bg-primary text-white'
-                                : 'bg-white border border-[#e2e8f0] text-muted-foreground hover:text-foreground'
+                                : 'bg-white border border-[#E4EEF2] text-muted-foreground hover:text-foreground'
                         }`}
                     >
                         {tab.label}
@@ -82,7 +82,7 @@ export default async function BlogPostsPage({ searchParams }: PageProps) {
             </div>
 
             {/* Posts table */}
-            <div className="bg-white rounded-2xl border border-[#e2e8f0] overflow-hidden">
+            <div className="bg-white rounded-2xl border border-[#E4EEF2] overflow-hidden">
                 {posts.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-16 text-muted-foreground gap-3">
                         <FileText className="h-10 w-10 opacity-30" />
@@ -94,7 +94,7 @@ export default async function BlogPostsPage({ searchParams }: PageProps) {
                 ) : (
                     <table className="w-full text-sm">
                         <thead>
-                            <tr className="border-b border-[#e2e8f0] bg-muted/40">
+                            <tr className="border-b border-[#E4EEF2] bg-muted/40">
                                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Tiêu đề</th>
                                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Chuyên mục</th>
                                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Trạng thái</th>
@@ -105,7 +105,7 @@ export default async function BlogPostsPage({ searchParams }: PageProps) {
                         </thead>
                         <tbody>
                             {posts.map((post) => (
-                                <tr key={post.id} className="border-b border-[#e2e8f0] last:border-0 table-row-hover">
+                                <tr key={post.id} className="border-b border-[#E4EEF2] last:border-0 table-row-hover">
                                     <td className="px-4 py-3">
                                         <div className="flex items-center gap-2">
                                             {post.is_featured && <Star className="h-3.5 w-3.5 text-amber-400 shrink-0" />}

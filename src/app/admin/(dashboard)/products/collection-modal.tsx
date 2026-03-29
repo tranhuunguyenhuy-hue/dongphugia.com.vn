@@ -71,8 +71,8 @@ export function CollectionModal({
         })
     }
 
-    const inputCls = "w-full h-10 px-3 rounded-lg border border-[#e2e8f0] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors bg-white"
-    const labelCls = "block text-sm font-medium text-[#374151] mb-1.5"
+    const inputCls = "w-full h-10 px-3 rounded-lg border border-[#E4EEF2] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors bg-white"
+    const labelCls = "block text-sm font-medium text-[#3C4E56] mb-1.5"
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -161,7 +161,7 @@ export function CollectionModal({
                                 onChange={(e) => set('is_active', e.target.checked)}
                                 className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary/30"
                             />
-                            <span className="text-sm font-medium text-[#374151]">Hiển thị</span>
+                            <span className="text-sm font-medium text-[#3C4E56]">Hiển thị</span>
                         </label>
                         <label className="flex items-center gap-2 cursor-pointer">
                             <input
@@ -170,11 +170,11 @@ export function CollectionModal({
                                 onChange={(e) => set('is_featured', e.target.checked)}
                                 className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary/30"
                             />
-                            <span className="text-sm font-medium text-[#374151]">Nổi bật</span>
+                            <span className="text-sm font-medium text-[#3C4E56]">Nổi bật</span>
                         </label>
                     </div>
 
-                    <div className="flex items-center gap-3 justify-end pt-2 border-t border-[#e2e8f0]">
+                    <div className="flex items-center gap-3 justify-end pt-2 border-t border-[#E4EEF2]">
                         <Button type="button" variant="outline" onClick={onClose} disabled={isPending}>
                             Huỷ
                         </Button>

@@ -24,23 +24,24 @@ export function ProjectSection({ projects }: ProjectSectionProps) {
     if (projects.length === 0) return null
 
     return (
-        <section className="py-20 bg-white overflow-hidden">
+        <section className="py-20 lg:py-28 bg-white overflow-hidden">
             <div className="max-w-[1280px] mx-auto px-5">
                 {/* Header */}
                 <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
                     <div>
-                        <h2 className="text-3xl lg:text-[40px] leading-tight font-bold text-[#111827] tracking-tight">
+                        <div className="h-1 w-8 bg-[#2E7A96] mb-4" />
+                        <h2 className="text-[13px] font-medium tracking-[0.15em] uppercase text-neutral-500 mb-2">
                             Dự án tiêu biểu
                         </h2>
-                        <p className="text-[#4b5563] mt-3 text-lg">
-                            Những công trình đẳng cấp sử dụng vật liệu từ Đông Phú Gia
+                        <p className="text-3xl lg:text-[36px] leading-tight font-medium text-neutral-900">
+                            Những công trình đẳng cấp
                         </p>
                     </div>
                     <div className="hidden md:flex gap-3">
                         <Button
                             variant="outline"
                             size="icon"
-                            className="rounded-full w-12 h-12 border-gray-300 text-gray-600 hover:text-[#15803d] hover:border-[#15803d]"
+                            className="rounded-sm w-12 h-12 border-neutral-300 text-neutral-600 hover:text-[#2E7A96] hover:border-[#2E7A96]"
                             onClick={() => scroll('left')}
                         >
                             <ArrowLeft className="w-5 h-5" />
@@ -48,7 +49,7 @@ export function ProjectSection({ projects }: ProjectSectionProps) {
                         <Button
                             variant="outline"
                             size="icon"
-                            className="rounded-full w-12 h-12 border-gray-300 text-gray-600 hover:text-[#15803d] hover:border-[#15803d]"
+                            className="rounded-sm w-12 h-12 border-neutral-300 text-neutral-600 hover:text-[#2E7A96] hover:border-[#2E7A96]"
                             onClick={() => scroll('right')}
                         >
                             <ArrowRight className="w-5 h-5" />
@@ -64,7 +65,7 @@ export function ProjectSection({ projects }: ProjectSectionProps) {
                 >
                     {projects.map((project) => (
                         <div key={project.id} className="snap-start shrink-0 w-[85vw] sm:w-[60vw] md:w-[calc(40%-16px)]">
-                            <div className="group relative aspect-[4/5] rounded-[32px] overflow-hidden bg-gray-200 cursor-pointer">
+                            <div className="group relative aspect-[4/5] rounded-sm overflow-hidden bg-neutral-200 cursor-pointer">
                                 {/* Image */}
                                 <Image
                                     src={project.thumbnail_url || '/images/hero-banner.jpg'}
@@ -80,7 +81,7 @@ export function ProjectSection({ projects }: ProjectSectionProps) {
                                 {project.tags && project.tags.length > 0 && (
                                     <div className="absolute top-6 left-6 flex flex-wrap gap-2">
                                         {project.tags.slice(0, 2).map((tag, idx) => (
-                                            <span key={idx} className="bg-white/20 backdrop-blur-md border border-white/30 text-white px-3 py-1 rounded-full text-xs font-medium">
+                                            <span key={idx} className="bg-white/20 backdrop-blur-sm border border-white/30 text-white px-3 py-1 text-xs font-medium">
                                                 {tag}
                                             </span>
                                         ))}

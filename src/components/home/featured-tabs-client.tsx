@@ -31,8 +31,8 @@ export function FeaturedTabsClient({ categories }: { categories: CategoryData[] 
                             className={cn(
                                 "shrink-0 snap-start px-6 py-3 rounded-full text-[15px] font-semibold transition-all duration-300",
                                 isActive
-                                    ? "bg-[#15803d] text-white shadow-[0_4px_12px_rgba(21,128,61,0.2)]"
-                                    : "bg-gray-100 text-[#4b5563] hover:bg-gray-200 hover:text-[#111827]"
+                                    ? "bg-[#2E7A96] text-white shadow-[0_4px_12px_rgba(46,122,150,0.2)]"
+                                    : "bg-gray-100 text-[#516A74] hover:bg-gray-200 hover:text-[#192125]"
                             )}
                         >
                             {cat.label}
@@ -58,11 +58,11 @@ export function FeaturedTabsClient({ categories }: { categories: CategoryData[] 
                         <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-sm mb-4">
                             <PackageOpen className="w-8 h-8 text-gray-400" />
                         </div>
-                        <h3 className="text-xl font-semibold text-[#111827] mb-2">Chưa có sản phẩm nổi bật</h3>
-                        <p className="text-[#6b7280] text-center max-w-md mb-6">
+                        <h3 className="text-xl font-semibold text-[#192125] mb-2">Chưa có sản phẩm nổi bật</h3>
+                        <p className="text-[#6A8A97] text-center max-w-md mb-6">
                             Danh mục {activeCategory.label.toLowerCase()} hiện chưa có sản phẩm nào được đánh dấu nổi bật. Vui lòng quay lại sau!
                         </p>
-                        <Button asChild variant="outline" className="rounded-full border-[#15803d] text-[#15803d] hover:bg-[#15803d] hover:text-white transition-colors">
+                        <Button asChild variant="outline" className="rounded-full border-[#2E7A96] text-[#2E7A96] hover:bg-[#2E7A96] hover:text-white transition-colors">
                             <Link href={activeCategory.basePath}>
                                 Xem tất cả {activeCategory.label.toLowerCase()}
                             </Link>
@@ -74,7 +74,7 @@ export function FeaturedTabsClient({ categories }: { categories: CategoryData[] 
             {/* View All Button (Only show if there are products) */}
             {activeCategory.products.length > 0 && (
                 <div className="flex justify-center mt-4">
-                    <Button asChild variant="outline" className="rounded-full px-8 h-12 text-[15px] font-medium border-gray-200 text-[#111827] hover:border-[#15803d] hover:text-[#15803d] transition-colors group">
+                    <Button asChild variant="outline" className="rounded-full px-8 h-12 text-[15px] font-medium border-gray-200 text-[#192125] hover:border-[#2E7A96] hover:text-[#2E7A96] transition-colors group">
                         <Link href={activeCategory.basePath}>
                             Xem tất cả {activeCategory.label.toLowerCase()}
                             <ChevronRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />

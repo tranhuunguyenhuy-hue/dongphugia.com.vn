@@ -65,7 +65,7 @@ function CategoryCard({ cat, className = "", visible, delay = 0, isBig = false }
   return (
     <Wrapper
       {...(wrapperProps as any)}
-      className={`group relative overflow-hidden rounded-[20px] flex flex-col p-6 sm:p-8 border border-[#e2e8f0] bg-[#f8fafc] shadow-sm transition-all duration-300 ease-out hover:border-[#22c55e] hover:bg-[#f0fdf4] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:-translate-y-1 ${cat.available ? "cursor-pointer" : "cursor-default"} ${className}`}
+      className={`group relative overflow-hidden rounded-sm flex flex-col p-6 sm:p-8 border border-neutral-200 bg-neutral-50 transition-all duration-300 ease-out hover:border-[#2E7A96] hover:bg-white ${cat.available ? "cursor-pointer" : "cursor-default"} ${className}`}
       style={{
         opacity: visible ? 1 : 0,
         transform: visible ? "translateY(0)" : "translateY(24px)",
@@ -74,13 +74,13 @@ function CategoryCard({ cat, className = "", visible, delay = 0, isBig = false }
     >
       {/* Text Content overlay */}
       <div className="relative z-10 flex flex-col gap-2.5 items-start mt-auto sm:mt-0">
-        <p className={`font-semibold tracking-[-0.64px] text-[#0f172a] group-hover:text-[#14532d] transition-colors duration-200
+        <p className={`font-medium tracking-tight text-neutral-900 group-hover:text-[#0F2E3A] transition-colors duration-200
                     ${isBig ? "text-[28px] sm:text-[32px] leading-[36px] sm:leading-[40px]" : "text-[20px] sm:text-[24px] leading-[28px] sm:leading-[32px]"}`}
         >
           {cat.title}
         </p>
 
-        <div className="flex items-center gap-1.5 text-[15px] font-medium text-[#475569] group-hover:text-[#16a34a] transition-colors duration-200">
+        <div className="flex items-center gap-1.5 text-[15px] font-medium text-neutral-500 group-hover:text-[#2E7A96] transition-colors duration-200">
           <span>{cat.cta}</span>
           <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
         </div>
@@ -118,19 +118,24 @@ export function CategoryListing() {
   const [gach, veSinh, vatLieu, bep, sanGo] = CATEGORIES
 
   return (
-    <section ref={ref} className="max-w-[1280px] mx-auto px-5 py-12 lg:py-20">
+    <section ref={ref} className="max-w-[1280px] mx-auto px-5 py-16 lg:py-24">
       {/* Heading */}
-      <h2
-        className="text-[28px] sm:text-[32px] font-semibold text-center text-[#111827] leading-[1.3] tracking-[-0.64px] mb-8 lg:mb-10"
+      <div
+        className="flex flex-col items-center mb-10 lg:mb-14"
         style={{
           opacity: visible ? 1 : 0,
           transform: visible ? "translateY(0)" : "translateY(16px)",
           transition: "opacity 0.5s ease, transform 0.5s ease",
         }}
       >
-        Danh mục sản phẩm tại{" "}
-        <span className="font-bold text-[#14532d]">Đông Phú Gia</span>
-      </h2>
+        <div className="h-1 w-8 bg-[#2E7A96] mb-4" />
+        <h2 className="text-[13px] font-medium tracking-[0.15em] uppercase text-neutral-500 mb-2">
+          Danh mục sản phẩm
+        </h2>
+        <p className="text-[28px] sm:text-[32px] font-medium text-neutral-900 leading-tight">
+          Tại <span className="font-bold text-[#0F2E3A]">Đông Phú Gia</span>
+        </p>
+      </div>
 
       {/* Bento grid */}
       <div className="grid gap-5" style={{ gridTemplateColumns: "repeat(1, 1fr)" }}>

@@ -91,7 +91,7 @@ export function QuoteStatusButton({ id, currentStatus }: QuoteStatusButtonProps)
                         <button
                             onClick={markResolved}
                             disabled={isPending || !replyMesssage.trim()}
-                            className="px-4 py-2 text-sm font-medium bg-[#15803d] text-white rounded-md flex items-center gap-2 hover:bg-[#16a34a] disabled:opacity-50"
+                            className="px-4 py-2 text-sm font-medium bg-[#2E7A96] text-white rounded-md flex items-center gap-2 hover:bg-[#2E7A96] disabled:opacity-50"
                         >
                             {isPending ? 'Đang gửi...' : <><Check className="w-4 h-4" /> Gửi & Đóng Yêu Cầu</>}
                         </button>

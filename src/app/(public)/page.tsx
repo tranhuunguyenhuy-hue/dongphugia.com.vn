@@ -1,19 +1,12 @@
 import type { Metadata } from "next"
-import Link from "next/link"
-import Image from "next/image"
-import { Button } from "@/components/ui/button"
-import { ChevronRight } from "lucide-react"
 import { getFeaturedProducts, getPatternTypesByCategorySlug, getBanners } from "@/lib/public-api"
-import { ProductCard } from "@/components/ui/product-card"
 import { HeroBanner } from "@/components/home/hero-banner"
-import { CategorySidebar } from "@/components/home/category-sidebar"
-import { StatsBar } from "@/components/home/stats-bar"
-import { ValuesSection } from "@/components/home/values-section"
-import { CategoryListing } from "@/components/home/category-listing"
-import { FeaturedCategories } from "@/components/home/featured-categories"
+import { BrandSlider } from "@/components/home/brand-slider"
 import { BlogSection } from "@/components/home/blog-section"
 import { ProjectSection } from "@/components/home/project-section"
+import { HomeCategorySection } from "@/components/home/home-category-section"
 import { getFeaturedProjects } from "@/lib/public-api-projects"
+import prisma from "@/lib/prisma"
 
 export const revalidate = 3600
 
@@ -37,87 +30,114 @@ export const metadata: Metadata = {
 }
 
 export default async function HomePage() {
-    const [patternTypes, featuredProducts, banners, featuredProjects] = await Promise.all([
+    const [
+        patternTypes, 
+        banners, 
+        featuredProjects,
+        gach,
+        tbvs,
+        bep,
+        sango,
+        nuoc
+    ] = await Promise.all([
         getPatternTypesByCategorySlug('gach-op-lat'),
-        getFeaturedProducts(8),
         getBanners(5),
         getFeaturedProjects(),
+        prisma.products.findMany({
+            where: { is_featured: true, is_active: true },
+            include: { collections: true, sizes: true, surfaces: true, pattern_types: true },
+            take: 12,
+            orderBy: [{ sort_order: 'asc' }, { created_at: 'desc' }]
+        }),
+        prisma.tbvs_products.findMany({
+            where: { is_featured: true, is_active: true },
+            include: { tbvs_product_types: true, tbvs_brands: true, tbvs_subtypes: true, tbvs_materials: true },
+            take: 12,
+            orderBy: [{ sort_order: 'asc' }, { created_at: 'desc' }]
+        }),
+        prisma.bep_products.findMany({
+            where: { is_featured: true, is_active: true },
+            include: { bep_product_types: true, bep_brands: true, bep_subtypes: true },
+            take: 12,
+            orderBy: [{ sort_order: 'asc' }, { created_at: 'desc' }]
+        }),
+        prisma.sango_products.findMany({
+            where: { is_featured: true, is_active: true },
+            include: { sango_product_types: true, origins: true },
+            take: 12,
+            orderBy: [{ sort_order: 'asc' }, { created_at: 'desc' }]
+        }),
+        prisma.nuoc_products.findMany({
+            where: { is_featured: true, is_active: true },
+            include: { nuoc_product_types: true, nuoc_brands: true, nuoc_subtypes: true, nuoc_materials: true },
+            take: 12,
+            orderBy: [{ sort_order: 'asc' }, { created_at: 'desc' }]
+        })
     ])
 
     return (
         <div className="bg-white">
-            {/* Hero section — full bleed from top, sits behind fixed header */}
-            <div className="bg-gradient-to-b from-[#dcfce7] to-white -mt-[126px] pt-[126px]">
-                <section className="max-w-[1280px] mx-auto px-5 py-10">
-                    <div className="flex flex-col gap-6">
-                        {/* Category sidebar + Hero banner */}
-                        <div className="flex gap-6 items-start">
-                            {/* Category sidebar — hidden on mobile */}
-                            <div className="hidden lg:block">
-                                <CategorySidebar />
-                            </div>
-                            {/* Hero banner */}
-                            <HeroBanner banners={banners} />
-                        </div>
-
-                        {/* Brand logos */}
-                        {/* Mobile + Tablet: auto-scroll marquee */}
-                        <div className="lg:hidden overflow-hidden py-2">
-                            <div className="inline-flex animate-marquee">
-                                {[...Array(4)].map((_, rep) =>
-                                    ["BOSCH", "HAFELE", "JOMOO", "CAESAR", "TOTO", "COTTO"].map((brand) => (
-                                        <div
-                                            key={`${rep}-${brand}`}
-                                            className="shrink-0 h-[72px] w-[130px] mx-3 flex items-center justify-center opacity-[0.38] hover:opacity-100 transition-opacity duration-300"
-                                        >
-                                            <span className="text-[16px] font-bold text-[#374151] tracking-widest">{brand}</span>
-                                        </div>
-                                    ))
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Desktop only: static centered */}
-                        <div className="hidden lg:flex gap-[31px] items-center justify-center py-2">
-                            {["BOSCH", "HAFELE", "JOMOO", "CAESAR", "TOTO", "COTTO"].map((brand) => (
-                                <div
-                                    key={brand}
-                                    className="shrink-0 h-[100px] w-[177px] flex items-center justify-center opacity-[0.38] hover:opacity-100 transition-opacity duration-300 cursor-pointer"
-                                >
-                                    <span className="text-[20px] font-bold text-[#374151] tracking-widest">{brand}</span>
-                                </div>
-                            ))}
-                        </div>
-
-                        {/* Stats bar — desktop */}
-                        <div className="hidden md:block">
-                            <StatsBar />
-                        </div>
-
-                        {/* Stats — mobile */}
-                        <div className="md:hidden grid grid-cols-2 gap-4 py-4">
-                            {[
-                                { value: "70+", label: "Thương hiệu uy tín" },
-                                { value: "10+", label: "Dự án độc quyền" },
-                                { value: "1.5K+", label: "Mẫu sản phẩm" },
-                                { value: "88%", label: "Khách hàng hài lòng" },
-                            ].map((s) => (
-                                <div key={s.label} className="text-center">
-                                    <p className="text-[#15803d] font-bold text-3xl">{s.value}</p>
-                                    <p className="text-[#4b5563] text-sm mt-1">{s.label}</p>
-                                </div>
-                            ))}
-                        </div>
+            {/* Hero section — full bleed, clean white */}
+            <div className="-mt-[126px] pt-[126px]">
+                <section className="max-w-[1280px] mx-auto px-5 pt-8 pb-4 lg:pt-10 lg:pb-6">
+                    {/* Hero banner — full width */}
+                    <div className="w-full">
+                        <HeroBanner banners={banners} />
                     </div>
                 </section>
             </div>
-            <ValuesSection />
-            <CategoryListing />
 
-            {/* Hidden H1 for SEO - Since Hero Banner might not have an H1 text, we provide one for the whole page */}
+            {/* Brand slider (replaces old StatsBar) */}
+            <div className="max-w-[1280px] mx-auto px-5">
+                <BrandSlider />
+            </div>
+
+            {/* SEO H1 — visually hidden */}
             <h1 className="sr-only">Đông Phú Gia - Đại lý Gạch ốp lát và Thiết bị vệ sinh cao cấp tại Đà Lạt</h1>
 
-            <FeaturedCategories />
+            {/* Main content sections */}
+            <div className="bg-white">
+                <HomeCategorySection 
+                    title="Gạch ốp lát"
+                    subtitle="Bán chạy nhất"
+                    products={gach}
+                    basePath="/gach-op-lat"
+                    viewAllHref="/gach-op-lat"
+                />
+                
+                <HomeCategorySection 
+                    title="Thiết bị vệ sinh"
+                    subtitle="Chính Hãng Cao Cấp"
+                    products={tbvs}
+                    basePath="/thiet-bi-ve-sinh"
+                    viewAllHref="/thiet-bi-ve-sinh"
+                />
+
+                <HomeCategorySection 
+                    title="Thiết bị bếp"
+                    subtitle="Hiện Đại & Tiện Nghi"
+                    products={bep}
+                    basePath="/thiet-bi-bep"
+                    viewAllHref="/thiet-bi-bep"
+                />
+
+                <HomeCategorySection 
+                    title="Sàn gỗ"
+                    subtitle="Sang Trọng & Bền Bỉ"
+                    products={sango}
+                    basePath="/san-go"
+                    viewAllHref="/san-go"
+                />
+
+                <HomeCategorySection 
+                    title="Vật liệu ngành nước"
+                    subtitle="Chất lượng Hàng đầu"
+                    products={nuoc}
+                    basePath="/vat-lieu-nuoc"
+                    viewAllHref="/vat-lieu-nuoc"
+                />
+            </div>
+
             <ProjectSection projects={featuredProjects} />
             <BlogSection />
         </div>

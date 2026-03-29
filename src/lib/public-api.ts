@@ -256,8 +256,14 @@ export const getProductsByCategorySlug = cache(
             sizeSlug?: string;
             originSlug?: string;
             locationSlug?: string;
+            page?: number;
+            limit?: number;
         }
     ) => {
+        const page = filters?.page ?? 1;
+        const limit = filters?.limit ?? 24;
+        const skip = (page - 1) * limit;
+
         const where: any = {
             is_active: true,
             pattern_types: {
@@ -295,17 +301,30 @@ export const getProductsByCategorySlug = cache(
             };
         }
 
-        return await prisma.products.findMany({
-            where,
-            include: {
-                collections: true,
-                sizes: true,
-                surfaces: true,
-                origins: true,
-                pattern_types: true,
-            },
-            orderBy: [{ is_featured: 'desc' }, { sort_order: 'asc' }, { created_at: 'desc' }],
-        });
+        const [products, total] = await Promise.all([
+            prisma.products.findMany({
+                where,
+                include: {
+                    collections: true,
+                    sizes: true,
+                    surfaces: true,
+                    origins: true,
+                    pattern_types: true,
+                },
+                orderBy: [{ is_featured: 'desc' }, { sort_order: 'asc' }, { created_at: 'desc' }],
+                skip,
+                take: limit,
+            }),
+            prisma.products.count({ where }),
+        ]);
+
+        return {
+            products,
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit),
+        };
     }
 );
 

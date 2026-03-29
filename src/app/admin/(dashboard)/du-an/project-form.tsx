@@ -60,12 +60,12 @@ export function ProjectForm({ project }: ProjectFormProps) {
         })
     }
 
-    const inputCls = "w-full h-10 px-3 rounded-lg border border-[#e2e8f0] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors bg-white"
-    const labelCls = "block text-sm font-medium text-[#374151] mb-1.5"
+    const inputCls = "w-full h-10 px-3 rounded-lg border border-[#E4EEF2] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors bg-white"
+    const labelCls = "block text-sm font-medium text-[#3C4E56] mb-1.5"
 
     return (
         <form onSubmit={onSubmit} className="space-y-6 max-w-2xl">
-            <div className="bg-white rounded-2xl border border-[#e2e8f0] p-6 space-y-5">
+            <div className="bg-white rounded-2xl border border-[#E4EEF2] p-6 space-y-5">
                 <div>
                     <label className={labelCls}>Tên dự án *</label>
                     <input required className={inputCls} value={form.title}
@@ -128,13 +128,13 @@ export function ProjectForm({ project }: ProjectFormProps) {
                         <input type="checkbox" checked={form.is_featured}
                             onChange={e => set('is_featured', e.target.checked)}
                             className="h-4 w-4 rounded border-gray-300 text-primary" />
-                        <span className="text-sm font-medium text-[#374151]">Nổi bật (hiển thị homepage)</span>
+                        <span className="text-sm font-medium text-[#3C4E56]">Nổi bật (hiển thị homepage)</span>
                     </label>
                     <label className="flex items-center gap-3 cursor-pointer">
                         <input type="checkbox" checked={form.is_active}
                             onChange={e => set('is_active', e.target.checked)}
                             className="h-4 w-4 rounded border-gray-300 text-primary" />
-                        <span className="text-sm font-medium text-[#374151]">Hiển thị</span>
+                        <span className="text-sm font-medium text-[#3C4E56]">Hiển thị</span>
                     </label>
                 </div>
             </div>

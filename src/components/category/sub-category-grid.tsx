@@ -23,13 +23,13 @@ export function SubCategoryGrid({ categoryName, productTypes, categorySlug, titl
     return (
         <div className="flex flex-col gap-6">
             {title ? (
-                <div className="text-2xl font-semibold text-[#111827] tracking-tight">
+                <div className="text-2xl font-semibold text-[#192125] tracking-tight">
                     {title}
                 </div>
             ) : (
-                <h2 className="text-2xl font-semibold text-[#111827] tracking-tight">
+                <h2 className="text-2xl font-semibold text-[#192125] tracking-tight">
                     Vui lòng chọn{' '}
-                    <span className="font-bold text-[#15803d]">loại gạch</span>
+                    <span className="font-bold text-[#2E7A96]">loại gạch</span>
                     {' '}cần thiết
                 </h2>
             )}
@@ -42,7 +42,7 @@ export function SubCategoryGrid({ categoryName, productTypes, categorySlug, titl
                             href={isActive ? `/danh-muc/${categorySlug}` : `/danh-muc/${categorySlug}?productType=${pt.id}`}
                             className="group flex flex-col gap-3 items-start"
                         >
-                            <div className={`w-full aspect-square rounded-2xl overflow-hidden shadow-[0px_2px_6px_0px_rgba(16,24,40,0.06)] bg-white transition-all duration-300 ${isActive ? 'ring-2 ring-[#15803d] ring-offset-2' : ''}`}>
+                            <div className={`w-full aspect-square rounded-2xl overflow-hidden shadow-[0px_2px_6px_0px_rgba(16,24,40,0.06)] bg-white transition-all duration-300 ${isActive ? 'ring-2 ring-[#2E7A96] ring-offset-2' : ''}`}>
                                 {pt.image ? (
                                     pt.image.includes('vietceramics.com') ? (
                                         <img
@@ -65,7 +65,7 @@ export function SubCategoryGrid({ categoryName, productTypes, categorySlug, titl
                                     </div>
                                 )}
                             </div>
-                            <p className={`font-semibold text-lg leading-7 transition-colors ${isActive ? 'text-[#15803d]' : 'text-[#4b5563] group-hover:text-[#15803d]'}`}>
+                            <p className={`font-semibold text-lg leading-7 transition-colors ${isActive ? 'text-[#2E7A96]' : 'text-[#516A74] group-hover:text-[#2E7A96]'}`}>
                                 {pt.name}
                             </p>
                         </Link>

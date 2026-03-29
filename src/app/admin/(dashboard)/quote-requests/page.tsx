@@ -56,7 +56,7 @@ export default async function QuoteRequestsPage({ searchParams }: PageProps) {
                         <Link
                             key={s}
                             href={`/admin/quote-requests?status=${s}`}
-                            className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-colors ${isActive ? 'bg-primary text-white shadow-sm' : 'bg-white border border-[#e2e8f0] text-muted-foreground hover:bg-muted'}`}
+                            className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-colors ${isActive ? 'bg-primary text-white shadow-sm' : 'bg-white border border-[#E4EEF2] text-muted-foreground hover:bg-muted'}`}
                         >
                             {STATUS_LABELS[s]}
                             <span className={`text-xs px-1.5 py-0.5 rounded-full ${isActive ? 'bg-white/20 text-white' : 'bg-muted text-muted-foreground'}`}>
@@ -94,7 +94,7 @@ export default async function QuoteRequestsPage({ searchParams }: PageProps) {
                                 <TableRow key={q.id} className="table-row-hover">
                                     <TableCell className="font-medium">{q.name}</TableCell>
                                     <TableCell>
-                                        <a href={`tel:${q.phone}`} className="text-sm text-[#15803d] hover:underline font-medium">
+                                        <a href={`tel:${q.phone}`} className="text-sm text-[#2E7A96] hover:underline font-medium">
                                             {q.phone}
                                         </a>
                                     </TableCell>

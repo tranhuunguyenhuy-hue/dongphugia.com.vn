@@ -140,14 +140,14 @@ export function NuocProductForm({
         })
     }
 
-    const inputCls = "w-full h-10 px-3 rounded-lg border border-[#e2e8f0] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors bg-white"
-    const selectCls = "w-full h-10 px-3 rounded-lg border border-[#e2e8f0] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors bg-white"
-    const labelCls = "block text-sm font-medium text-[#374151] mb-1.5"
+    const inputCls = "w-full h-10 px-3 rounded-lg border border-[#E4EEF2] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors bg-white"
+    const selectCls = "w-full h-10 px-3 rounded-lg border border-[#E4EEF2] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors bg-white"
+    const labelCls = "block text-sm font-medium text-[#3C4E56] mb-1.5"
 
     return (
         <form onSubmit={onSubmit} className="space-y-8">
             {/* Basic Info */}
-            <div className="bg-white rounded-2xl border border-[#e2e8f0] p-6 space-y-5">
+            <div className="bg-white rounded-2xl border border-[#E4EEF2] p-6 space-y-5">
                 <h2 className="text-base font-semibold text-foreground">Thông tin cơ bản</h2>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -202,7 +202,7 @@ export function NuocProductForm({
             </div>
 
             {/* Classification */}
-            <div className="bg-white rounded-2xl border border-[#e2e8f0] p-6 space-y-5">
+            <div className="bg-white rounded-2xl border border-[#E4EEF2] p-6 space-y-5">
                 <h2 className="text-base font-semibold text-foreground">Phân loại</h2>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -294,8 +294,8 @@ export function NuocProductForm({
                 </div>
 
                 {/* Thông số đặc thù Vật liệu nước */}
-                <div className="pt-4 border-t border-[#e2e8f0]">
-                    <h3 className="text-sm font-semibold text-[#374151] mb-4">Thông số đặc thù</h3>
+                <div className="pt-4 border-t border-[#E4EEF2]">
+                    <h3 className="text-sm font-semibold text-[#3C4E56] mb-4">Thông số đặc thù</h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                         <div>
                             <label className={labelCls}>Dung tích (lít)</label>
@@ -346,7 +346,7 @@ export function NuocProductForm({
             </div>
 
             {/* Images */}
-            <div className="bg-white rounded-2xl border border-[#e2e8f0] p-6 space-y-6">
+            <div className="bg-white rounded-2xl border border-[#E4EEF2] p-6 space-y-6">
                 <h2 className="text-base font-semibold text-foreground">Hình ảnh sản phẩm</h2>
 
                 <div className="space-y-4">
@@ -368,8 +368,8 @@ export function NuocProductForm({
                     />
 
                     {uploadedImages.length > 0 && (
-                        <div className="bg-[#f8fafc] p-4 rounded-xl border border-[#e2e8f0] mt-4">
-                            <label className="block text-sm font-medium text-[#15803d] mb-3">
+                        <div className="bg-[#F5F9FB] p-4 rounded-xl border border-[#E4EEF2] mt-4">
+                            <label className="block text-sm font-medium text-[#2E7A96] mb-3">
                                 Chọn 1 ảnh làm ảnh đại diện (Thumbnail)
                             </label>
                             <div className="flex flex-wrap gap-4">
@@ -377,7 +377,7 @@ export function NuocProductForm({
                                     <div
                                         key={idx}
                                         className={`relative cursor-pointer rounded-xl border-2 overflow-hidden transition-all ${mainImage === url
-                                            ? 'border-[#15803d] shadow-md scale-105'
+                                            ? 'border-[#2E7A96] shadow-md scale-105'
                                             : 'border-transparent hover:border-gray-300'
                                             }`}
                                         onClick={() => setMainImage(url)}
@@ -387,7 +387,7 @@ export function NuocProductForm({
                                             <img src={url} alt={`img-${idx}`} className="w-full h-full object-cover" />
                                         </div>
                                         {mainImage === url && (
-                                            <div className="absolute top-1.5 right-1.5 bg-[#15803d] text-white rounded-full p-1 shadow-sm">
+                                            <div className="absolute top-1.5 right-1.5 bg-[#2E7A96] text-white rounded-full p-1 shadow-sm">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                                             </div>
                                         )}
@@ -398,7 +398,7 @@ export function NuocProductForm({
                     )}
                 </div>
 
-                <div className="pt-6 border-t border-[#e2e8f0]">
+                <div className="pt-6 border-t border-[#E4EEF2]">
                     <label className={labelCls}>Ảnh khi di chuột (Hover Image)</label>
                     <ImageUploader
                         value={form.image_hover_url}
@@ -410,7 +410,7 @@ export function NuocProductForm({
             </div>
 
             {/* Specifications */}
-            <div className="bg-white rounded-2xl border border-[#e2e8f0] p-6 space-y-4">
+            <div className="bg-white rounded-2xl border border-[#E4EEF2] p-6 space-y-4">
                 <div className="flex items-center justify-between">
                     <h2 className="text-base font-semibold text-foreground">Thông số kỹ thuật</h2>
                     <Button type="button" variant="outline" size="sm" onClick={addSpecRow}>
@@ -442,7 +442,7 @@ export function NuocProductForm({
                                 <button
                                     type="button"
                                     onClick={() => removeSpecRow(idx)}
-                                    className="shrink-0 h-10 w-10 flex items-center justify-center rounded-lg border border-[#e2e8f0] text-muted-foreground hover:border-red-300 hover:text-red-500 transition-colors"
+                                    className="shrink-0 h-10 w-10 flex items-center justify-center rounded-lg border border-[#E4EEF2] text-muted-foreground hover:border-red-300 hover:text-red-500 transition-colors"
                                 >
                                     <Trash2 className="h-4 w-4" />
                                 </button>
@@ -453,12 +453,12 @@ export function NuocProductForm({
             </div>
 
             {/* Description & Features */}
-            <div className="bg-white rounded-2xl border border-[#e2e8f0] p-6 space-y-5">
+            <div className="bg-white rounded-2xl border border-[#E4EEF2] p-6 space-y-5">
                 <h2 className="text-base font-semibold text-foreground">Mô tả & Tính năng</h2>
                 <div>
                     <label className={labelCls}>Mô tả sản phẩm</label>
                     <textarea
-                        className="w-full px-3 py-2 rounded-lg border border-[#e2e8f0] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors resize-y min-h-[100px]"
+                        className="w-full px-3 py-2 rounded-lg border border-[#E4EEF2] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors resize-y min-h-[100px]"
                         value={form.description}
                         onChange={(e) => set('description', e.target.value)}
                         placeholder="Mô tả ngắn về sản phẩm..."
@@ -467,7 +467,7 @@ export function NuocProductForm({
                 <div>
                     <label className={labelCls}>Tính năng nổi bật</label>
                     <textarea
-                        className="w-full px-3 py-2 rounded-lg border border-[#e2e8f0] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors resize-y min-h-[100px]"
+                        className="w-full px-3 py-2 rounded-lg border border-[#E4EEF2] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors resize-y min-h-[100px]"
                         value={form.features}
                         onChange={(e) => set('features', e.target.value)}
                         placeholder="Các tính năng nổi bật của sản phẩm..."
@@ -476,7 +476,7 @@ export function NuocProductForm({
             </div>
 
             {/* Settings */}
-            <div className="bg-white rounded-2xl border border-[#e2e8f0] p-6">
+            <div className="bg-white rounded-2xl border border-[#E4EEF2] p-6">
                 <h2 className="text-base font-semibold text-foreground mb-5">Cài đặt</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {[
@@ -492,7 +492,7 @@ export function NuocProductForm({
                                 onChange={(e) => set(key, e.target.checked)}
                                 className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary/30"
                             />
-                            <span className="text-sm font-medium text-[#374151]">{label}</span>
+                            <span className="text-sm font-medium text-[#3C4E56]">{label}</span>
                         </label>
                     ))}
                 </div>

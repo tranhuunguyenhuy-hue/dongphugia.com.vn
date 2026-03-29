@@ -56,7 +56,7 @@ export default async function TBVSProductsPage({
                     href="/admin/tbvs/products"
                     className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${!type
                         ? 'bg-primary text-white border-primary'
-                        : 'bg-white text-[#374151] border-[#e2e8f0] hover:border-primary/50'
+                        : 'bg-white text-[#3C4E56] border-[#E4EEF2] hover:border-primary/50'
                         }`}
                 >
                     Tất cả
@@ -67,7 +67,7 @@ export default async function TBVSProductsPage({
                         href={`/admin/tbvs/products?type=${pt.slug}`}
                         className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${type === pt.slug
                             ? 'bg-primary text-white border-primary'
-                            : 'bg-white text-[#374151] border-[#e2e8f0] hover:border-primary/50'
+                            : 'bg-white text-[#3C4E56] border-[#E4EEF2] hover:border-primary/50'
                             }`}
                     >
                         {pt.name}
@@ -76,23 +76,23 @@ export default async function TBVSProductsPage({
             </div>
 
             {/* Table */}
-            <div className="bg-white rounded-2xl border border-[#e2e8f0] overflow-hidden">
+            <div className="bg-white rounded-2xl border border-[#E4EEF2] overflow-hidden">
                 <table className="w-full text-sm">
                     <thead>
-                        <tr className="border-b border-[#e2e8f0] bg-[#f8fafc]">
-                            <th className="px-4 py-3 text-left font-semibold text-[#374151]">SKU</th>
-                            <th className="px-4 py-3 text-left font-semibold text-[#374151]">Tên sản phẩm</th>
-                            <th className="px-4 py-3 text-left font-semibold text-[#374151] hidden md:table-cell">Loại</th>
-                            <th className="px-4 py-3 text-left font-semibold text-[#374151] hidden lg:table-cell">Hãng</th>
-                            <th className="px-4 py-3 text-left font-semibold text-[#374151]">Trạng thái</th>
-                            <th className="px-4 py-3 text-right font-semibold text-[#374151]">Hành động</th>
+                        <tr className="border-b border-[#E4EEF2] bg-[#F5F9FB]">
+                            <th className="px-4 py-3 text-left font-semibold text-[#3C4E56]">SKU</th>
+                            <th className="px-4 py-3 text-left font-semibold text-[#3C4E56]">Tên sản phẩm</th>
+                            <th className="px-4 py-3 text-left font-semibold text-[#3C4E56] hidden md:table-cell">Loại</th>
+                            <th className="px-4 py-3 text-left font-semibold text-[#3C4E56] hidden lg:table-cell">Hãng</th>
+                            <th className="px-4 py-3 text-left font-semibold text-[#3C4E56]">Trạng thái</th>
+                            <th className="px-4 py-3 text-right font-semibold text-[#3C4E56]">Hành động</th>
                         </tr>
                     </thead>
                     <tbody>
                         {products.map((p) => (
-                            <tr key={p.id} className="border-b border-[#e2e8f0] last:border-0 table-row-hover">
+                            <tr key={p.id} className="border-b border-[#E4EEF2] last:border-0 table-row-hover">
                                 <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{p.sku}</td>
-                                <td className="px-4 py-3 font-medium text-[#111827]">{p.name}</td>
+                                <td className="px-4 py-3 font-medium text-[#192125]">{p.name}</td>
                                 <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">
                                     {p.tbvs_product_types?.name}
                                 </td>

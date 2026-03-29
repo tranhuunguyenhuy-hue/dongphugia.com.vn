@@ -114,14 +114,14 @@ export function ProductForm({
         })
     }
 
-    const inputCls = "w-full h-10 px-3 rounded-lg border border-[#e2e8f0] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors bg-white"
-    const selectCls = "w-full h-10 px-3 rounded-lg border border-[#e2e8f0] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors bg-white"
-    const labelCls = "block text-sm font-medium text-[#374151] mb-1.5"
+    const inputCls = "w-full h-10 px-3 rounded-lg border border-[#E4EEF2] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors bg-white"
+    const selectCls = "w-full h-10 px-3 rounded-lg border border-[#E4EEF2] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors bg-white"
+    const labelCls = "block text-sm font-medium text-[#3C4E56] mb-1.5"
 
     return (
         <form onSubmit={onSubmit} className="space-y-8">
             {/* Basic Info */}
-            <div className="bg-white rounded-2xl border border-[#e2e8f0] p-6 space-y-5">
+            <div className="bg-white rounded-2xl border border-[#E4EEF2] p-6 space-y-5">
                 <h2 className="text-base font-semibold text-foreground">Thông tin cơ bản</h2>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -157,7 +157,7 @@ export function ProductForm({
             </div>
 
             {/* Classification */}
-            <div className="bg-white rounded-2xl border border-[#e2e8f0] p-6 space-y-5">
+            <div className="bg-white rounded-2xl border border-[#E4EEF2] p-6 space-y-5">
                 <h2 className="text-base font-semibold text-foreground">Phân loại</h2>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -210,7 +210,7 @@ export function ProductForm({
                             const selected = form.color_ids.includes(c.id)
                             return (
                                 <button key={c.id} type="button" onClick={() => toggleId('color_ids', c.id)}
-                                    className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${selected ? 'bg-primary text-white border-primary' : 'bg-white text-[#374151] border-[#e2e8f0] hover:border-primary/50'}`}>
+                                    className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${selected ? 'bg-primary text-white border-primary' : 'bg-white text-[#3C4E56] border-[#E4EEF2] hover:border-primary/50'}`}>
                                     {c.name}
                                 </button>
                             )
@@ -226,7 +226,7 @@ export function ProductForm({
                             const selected = form.location_ids.includes(l.id)
                             return (
                                 <button key={l.id} type="button" onClick={() => toggleId('location_ids', l.id)}
-                                    className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${selected ? 'bg-primary text-white border-primary' : 'bg-white text-[#374151] border-[#e2e8f0] hover:border-primary/50'}`}>
+                                    className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${selected ? 'bg-primary text-white border-primary' : 'bg-white text-[#3C4E56] border-[#E4EEF2] hover:border-primary/50'}`}>
                                     {l.name}
                                 </button>
                             )
@@ -236,7 +236,7 @@ export function ProductForm({
             </div>
 
             {/* Images */}
-            <div className="bg-white rounded-2xl border border-[#e2e8f0] p-6 space-y-6">
+            <div className="bg-white rounded-2xl border border-[#E4EEF2] p-6 space-y-6">
                 <h2 className="text-base font-semibold text-foreground">Hình ảnh sản phẩm</h2>
 
                 <div className="space-y-4">
@@ -258,13 +258,13 @@ export function ProductForm({
                     />
 
                     {uploadedImages.length > 0 && (
-                        <div className="bg-[#f8fafc] p-4 rounded-xl border border-[#e2e8f0] mt-4">
-                            <label className="block text-sm font-medium text-[#15803d] mb-3">Chọn 1 ảnh làm ảnh đại diện (Thumbnail)</label>
+                        <div className="bg-[#F5F9FB] p-4 rounded-xl border border-[#E4EEF2] mt-4">
+                            <label className="block text-sm font-medium text-[#2E7A96] mb-3">Chọn 1 ảnh làm ảnh đại diện (Thumbnail)</label>
                             <div className="flex flex-wrap gap-4">
                                 {uploadedImages.map((url, idx) => (
                                     <div
                                         key={idx}
-                                        className={`relative cursor-pointer rounded-xl border-2 overflow-hidden transition-all ${mainImage === url ? 'border-[#15803d] shadow-md scale-105' : 'border-transparent hover:border-gray-300'
+                                        className={`relative cursor-pointer rounded-xl border-2 overflow-hidden transition-all ${mainImage === url ? 'border-[#2E7A96] shadow-md scale-105' : 'border-transparent hover:border-gray-300'
                                             }`}
                                         onClick={() => setMainImage(url)}
                                     >
@@ -273,7 +273,7 @@ export function ProductForm({
                                             <img src={url} alt={`img-${idx}`} className="w-full h-full object-cover" />
                                         </div>
                                         {mainImage === url && (
-                                            <div className="absolute top-1.5 right-1.5 bg-[#15803d] text-white rounded-full p-1 shadow-sm">
+                                            <div className="absolute top-1.5 right-1.5 bg-[#2E7A96] text-white rounded-full p-1 shadow-sm">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                                             </div>
                                         )}
@@ -284,7 +284,7 @@ export function ProductForm({
                     )}
                 </div>
 
-                <div className="pt-6 border-t border-[#e2e8f0]">
+                <div className="pt-6 border-t border-[#E4EEF2]">
                     <label className={labelCls}>Ảnh khi di chuột (Hover Image)</label>
                     <ImageUploader
                         value={form.image_hover_url}
@@ -296,10 +296,10 @@ export function ProductForm({
             </div>
 
             {/* Description */}
-            <div className="bg-white rounded-2xl border border-[#e2e8f0] p-6 space-y-5">
+            <div className="bg-white rounded-2xl border border-[#E4EEF2] p-6 space-y-5">
                 <h2 className="text-base font-semibold text-foreground">Mô tả</h2>
                 <textarea
-                    className="w-full px-3 py-2 rounded-lg border border-[#e2e8f0] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors resize-y min-h-[120px]"
+                    className="w-full px-3 py-2 rounded-lg border border-[#E4EEF2] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors resize-y min-h-[120px]"
                     value={form.description}
                     onChange={(e) => set('description', e.target.value)}
                     placeholder="Mô tả sản phẩm..."
@@ -307,18 +307,18 @@ export function ProductForm({
             </div>
 
             {/* Settings */}
-            <div className="bg-white rounded-2xl border border-[#e2e8f0] p-6">
+            <div className="bg-white rounded-2xl border border-[#E4EEF2] p-6">
                 <h2 className="text-base font-semibold text-foreground mb-5">Cài đặt</h2>
                 <div className="flex flex-col gap-3">
                     <label className="flex items-center gap-3 cursor-pointer">
                         <input type="checkbox" checked={form.is_active} onChange={(e) => set('is_active', e.target.checked)}
                             className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary/30" />
-                        <span className="text-sm font-medium text-[#374151]">Hiển thị (is_active)</span>
+                        <span className="text-sm font-medium text-[#3C4E56]">Hiển thị (is_active)</span>
                     </label>
                     <label className="flex items-center gap-3 cursor-pointer">
                         <input type="checkbox" checked={form.is_featured} onChange={(e) => set('is_featured', e.target.checked)}
                             className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary/30" />
-                        <span className="text-sm font-medium text-[#374151]">Sản phẩm nổi bật (is_featured)</span>
+                        <span className="text-sm font-medium text-[#3C4E56]">Sản phẩm nổi bật (is_featured)</span>
                     </label>
                 </div>
             </div>

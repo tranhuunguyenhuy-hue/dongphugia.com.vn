@@ -2,7 +2,48 @@
 
 Tất cả thay đổi quan trọng của dự án Đông Phú Gia sẽ được ghi lại tại đây.
 
+## [Unreleased] - Project Cleanup & Docs Consolidation (2026-03-27)
+
+### Changed
+- **Project Cleanup**: Dọn dẹp root directory (xóa 10+ file rác), tổ chức `scripts/` thành 4 subfolders
+- **Docs Consolidation**: Gộp 42 file trong `docs/` thành `DOCS.md` duy nhất
+- **README.md**: Viết lại hoàn toàn — README của dự án Đông Phú Gia (thay README Antigravity IDE)
+- **CLAUDE.md**: Cập nhật cấu trúc project, model count (53), thêm blog/partners/projects APIs
+
+### Removed
+- **`docs/` directory**: 42 file Antigravity IDE documentation (không liên quan dự án)
+- **Root files rác**: `query-db.cjs`, `test_prisma.ts`, `GEMINI.new.md`, `skills-lock.json`, etc.
+
+---
+
+## [0.3.0] - Partners, Projects & Polish Sprint (2026-03-23)
+
+### Added
+- **Partners DB + CMS**: Bảng `partners` + Admin CMS `/admin/doi-tac` + Frontend `/doi-tac` real data
+- **Projects DB + CMS**: Bảng `projects` + Admin CMS `/admin/du-an` + Frontend `/du-an` real data
+- **Floating Contact Widget**: Zalo, Messenger, Phone buttons nổi trên mọi trang public
+- **Hero Banners AI**: 3 banner hero tạo bằng AI + seed script
+- **About Page Redesign**: Editorial layout + ảnh AI-generated cho `/ve-chung-toi`
+- **Prisma Schema**: Mở rộng lên 53 models (thêm `partners`, `projects`, `dien_*` × 4, `khoa_*` × 4)
+- **Performance**: `unstable_cache` cho Prisma queries — fix cold-start delays
+- **TipTap SSR fix**: `immediatelyRender: false` — fix hydration mismatch
+
+---
+
+## [0.2.0] - Blog & Final Completion (2026-03-03)
+
+### Added
+- **Blog Backend**: 4 bảng `blog_*` + `public-api-blog.ts` + `blog-actions.ts` + Admin CMS
+- **Blog Frontend**: `/blog`, `/blog/[categorySlug]`, `/blog/[categorySlug]/[postSlug]`
+- **RichTextEditor**: TipTap editor cho blog posts
+- **Quote Reply Modal**: Admin Dashboard phản hồi báo giá
+- **SEO + Sitemap**: `sitemap.ts` crawl full 5 danh mục + blog
+- **Admin Crawler**: `/admin/crawler` — tool cào dữ liệu sản phẩm
+
+---
+
 ## [Unreleased] - Admin UI Pro Max (2026-02-15)
+
 
 ### Added
 - **Admin UI Pro Max** — 8 User Stories hoàn thành:

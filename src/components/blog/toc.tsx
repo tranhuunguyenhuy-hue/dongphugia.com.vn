@@ -55,8 +55,8 @@ export function TableOfContents({ htmlContent }: { htmlContent: string }) {
     if (headings.length === 0) return null
 
     return (
-        <div className="bg-slate-50 rounded-2xl p-6 border border-[#e2e8f0] sticky top-24">
-            <h3 className="text-lg font-bold text-[#0f172a] mb-4 pb-4 border-b border-[#cbd5e1] flex items-center gap-2">
+        <div className="bg-slate-50 rounded-2xl p-6 border border-[#E4EEF2] sticky top-24">
+            <h3 className="text-lg font-bold text-[#192125] mb-4 pb-4 border-b border-[#C8D9E0] flex items-center gap-2">
                 Nội dung chính
             </h3>
             <nav className="flex flex-col gap-3 text-[14px]">
@@ -66,8 +66,8 @@ export function TableOfContents({ htmlContent }: { htmlContent: string }) {
                         href={`#${h.id}`}
                         className={`flex items-start transition-colors ${h.level === 3 ? 'ml-4' : ''
                             } ${activeId === h.id
-                                ? 'text-[#15803d] font-semibold'
-                                : 'text-[#64748b] hover:text-[#15803d]'
+                                ? 'text-[#2E7A96] font-semibold'
+                                : 'text-[#6A8A97] hover:text-[#2E7A96]'
                             }`}
                         onClick={(e) => {
                             e.preventDefault()

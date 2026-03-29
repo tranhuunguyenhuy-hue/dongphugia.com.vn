@@ -89,9 +89,9 @@ export function RichTextEditor({ value, onChange, placeholder = 'Bắt đầu vi
     )
 
     return (
-        <div className={cn('border border-[#e2e8f0] rounded-xl overflow-hidden bg-white', className)}>
+        <div className={cn('border border-[#E4EEF2] rounded-xl overflow-hidden bg-white', className)}>
             {/* Toolbar */}
-            <div className="flex flex-wrap items-center gap-0.5 border-b border-[#e2e8f0] px-2 py-1.5 bg-muted/30">
+            <div className="flex flex-wrap items-center gap-0.5 border-b border-[#E4EEF2] px-2 py-1.5 bg-muted/30">
                 <ToolbarBtn onClick={() => editor.chain().focus().undo().run()} title="Hoàn tác">
                     <Undo className="h-3.5 w-3.5" />
                 </ToolbarBtn>

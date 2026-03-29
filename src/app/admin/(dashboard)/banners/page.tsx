@@ -45,7 +45,7 @@ export default async function BannersPage() {
                                 <TableRow key={b.id} className="table-row-hover">
                                     <TableCell>
                                         {b.image_url ? (
-                                            <div className="h-12 w-20 relative rounded overflow-hidden border border-[#e2e8f0] bg-slate-50">
+                                            <div className="h-12 w-20 relative rounded overflow-hidden border border-[#E4EEF2] bg-slate-50">
                                                 <Image
                                                     src={b.image_url}
                                                     alt={b.title || 'Banner'}
@@ -55,7 +55,7 @@ export default async function BannersPage() {
                                                 />
                                             </div>
                                         ) : (
-                                            <div className="h-12 w-20 rounded border border-[#e2e8f0] bg-slate-50 flex items-center justify-center">
+                                            <div className="h-12 w-20 rounded border border-[#E4EEF2] bg-slate-50 flex items-center justify-center">
                                                 <ImageIcon className="h-4 w-4 text-muted-foreground/40" />
                                             </div>
                                         )}
@@ -83,7 +83,7 @@ export default async function BannersPage() {
                                         <div className="flex items-center gap-1 justify-end">
                                             <Link
                                                 href={`/admin/banners/${b.id}`}
-                                                className="h-8 w-8 rounded-lg border border-[#e2e8f0] flex items-center justify-center text-muted-foreground hover:bg-muted transition-colors"
+                                                className="h-8 w-8 rounded-lg border border-[#E4EEF2] flex items-center justify-center text-muted-foreground hover:bg-muted transition-colors"
                                                 title="Chỉnh sửa"
                                             >
                                                 <Pencil className="h-3.5 w-3.5" />
