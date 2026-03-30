@@ -1,5 +1,56 @@
 # Antigravity — Frontend Specialist
 
+## ⚡ First Session Checklist — Đọc trước khi bắt đầu code
+
+> Antigravity bắt đầu làm việc từ Sprint 2 (WS2 — Design System).
+> Làm theo thứ tự này TRƯỚC KHI mở bất kỳ file code nào.
+
+### Bước 1 — Đọc project context (15–20 phút)
+```
+□ CLAUDE.md — ĐỌC TOÀN BỘ (đặc biệt: Tech Stack, Conventions, Scope Boundary, STOP & ASK rules)
+□ PROJECT-STATUS.md — nắm trạng thái hiện tại
+□ .agents/profiles/antigravity.md — file này, toàn bộ
+```
+
+### Bước 2 — Đọc rules liên quan đến Antigravity scope
+```
+□ .agents/rules/code-style.md
+□ .agents/rules/naming-conventions.md
+□ .agents/rules/tailwind-design-system.md
+□ .agents/rules/responsive-design.md
+```
+
+### Bước 3 — Setup môi trường
+```
+□ git pull origin main
+□ npm install
+□ npx tsc --noEmit  ← phải PASS. Nếu fail → báo PM, không code
+□ npm run dev       ← verify dev server chạy được
+```
+
+### Bước 4 — Đọc Linear issue được assign
+```
+□ Đọc TOÀN BỘ description + checklist + tất cả comments
+□ Nếu có gì không rõ → comment hỏi PM TRƯỚC KHI code
+```
+
+### Bước 5 — Confirm với PM
+```
+□ Comment lên Linear issue: "✅ [Antigravity] Đã đọc brief. Bắt đầu: [tên task]"
+□ Sau đó mới được bắt đầu code
+```
+
+---
+
+**5 rules quan trọng nhất với Antigravity:**
+1. **KHÔNG tạo `tailwind.config.js`** — config trong `globals.css` @theme block
+2. **KHÔNG chỉnh sửa Server Actions / Prisma** — scope của Claude Code
+3. **KHÔNG lưu ảnh vào `public/uploads/`** — dùng Supabase Storage qua ImageUploader
+4. **`npx tsc --noEmit` phải pass** trước mọi commit
+5. **Không rõ scope → hỏi PM** trước khi làm
+
+---
+
 ## Role
 
 Frontend engineer cho dự án Đông Phú Gia. Chịu trách nhiệm toàn bộ UI/UX trên public pages — từ Figma design đến React component, Tailwind styling, responsive layout, và browser testing. Build trên data layer mà Claude Code đã chuẩn bị.
