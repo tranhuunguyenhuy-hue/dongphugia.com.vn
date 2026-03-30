@@ -46,8 +46,6 @@ model colors {
   slug           String           @unique @db.VarChar(50)
   hex_code       String?          @db.VarChar(7)
   bep_products   bep_products[]
-  dien_products  dien_products[]
-  khoa_products  khoa_products[]
   nuoc_products  nuoc_products[]
   product_colors product_colors[]
   sango_products sango_products[]
@@ -68,8 +66,6 @@ model origins {
   name           String           @db.VarChar(100)
   slug           String           @unique @db.VarChar(50)
   bep_products   bep_products[]
-  dien_products  dien_products[]
-  khoa_products  khoa_products[]
   nuoc_products  nuoc_products[]
   products       products[]
   sango_products sango_products[]
@@ -116,8 +112,6 @@ model product_categories {
   pattern_types       pattern_types[]
   sango_product_types sango_product_types[]
   tbvs_product_types  tbvs_product_types[]
-  dien_product_types  dien_product_types[]
-  khoa_product_types  khoa_product_types[]
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -807,225 +801,5 @@ model projects {
 
   @@index([is_active], map: "idx_projects_active")
   @@index([is_featured], map: "idx_projects_featured")
-}
-
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model dien_brands {
-  id             Int            @id @default(autoincrement())
-  name           String         @db.VarChar(100)
-  slug           String         @unique @db.VarChar(100)
-  logo_url       String?        @db.VarChar(500)
-  description    String?
-  origin_country String?        @db.VarChar(100)
-  website_url    String?        @db.VarChar(500)
-  is_active      Boolean?       @default(true)
-  is_featured    Boolean?       @default(false)
-  sort_order     Int?           @default(0)
-  created_at     DateTime?      @default(now()) @db.Timestamp(6)
-  updated_at     DateTime?      @default(now()) @db.Timestamp(6)
-  dien_products   dien_products[]
-}
-
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model dien_product_images {
-  id           Int          @id @default(autoincrement())
-  product_id   Int
-  image_url    String       @db.VarChar(500)
-  alt_text     String?      @db.VarChar(200)
-  sort_order   Int?         @default(0)
-  created_at   DateTime?    @default(now()) @db.Timestamp(6)
-  dien_products dien_products @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-}
-
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model dien_product_types {
-  id                 Int                @id @default(autoincrement())
-  category_id        Int                @default(3)
-  name               String             @db.VarChar(100)
-  slug               String             @unique @db.VarChar(100)
-  description        String?
-  thumbnail_url      String?            @db.VarChar(500)
-  hero_image_url     String?            @db.VarChar(500)
-  icon_name          String?            @db.VarChar(50)
-  is_active          Boolean?           @default(true)
-  sort_order         Int?               @default(0)
-  seo_title          String?            @db.VarChar(200)
-  seo_description    String?            @db.VarChar(500)
-  created_at         DateTime?          @default(now()) @db.Timestamp(6)
-  updated_at         DateTime?          @default(now()) @db.Timestamp(6)
-  product_categories product_categories @relation(fields: [category_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  dien_products       dien_products[]
-  dien_subtypes       dien_subtypes[]
-}
-
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model dien_products {
-  id                 Int                  @id @default(autoincrement())
-  sku                String               @unique @db.VarChar(50)
-  name               String               @db.VarChar(200)
-  slug               String               @unique @db.VarChar(200)
-  product_type_id    Int
-  subtype_id         Int?
-  brand_id           Int?
-  color_id           Int?
-  origin_id          Int?
-  description        String?
-  features           String?
-  specifications     Json?
-  warranty_months    Int?                 @default(24)
-  price              Decimal?             @db.Decimal(15, 0)
-  price_display      String?              @default("Liên hệ báo giá") @db.VarChar(50)
-  image_main_url     String?              @db.VarChar(500)
-  image_hover_url    String?              @db.VarChar(500)
-  is_active          Boolean?             @default(true)
-  is_featured        Boolean?             @default(false)
-  is_new             Boolean?             @default(false)
-  is_bestseller      Boolean?             @default(false)
-  stock_status       String?              @default("in_stock") @db.VarChar(20)
-  sort_order         Int?                 @default(0)
-  seo_title          String?              @db.VarChar(200)
-  seo_description    String?              @db.VarChar(500)
-  created_at         DateTime?            @default(now()) @db.Timestamp(6)
-  updated_at         DateTime?            @default(now()) @db.Timestamp(6)
-  dien_product_images dien_product_images[]
-  dien_brands         dien_brands?          @relation(fields: [brand_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  colors             colors?              @relation(fields: [color_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  origins            origins?             @relation(fields: [origin_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  dien_product_types  dien_product_types    @relation(fields: [product_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  dien_subtypes       dien_subtypes?        @relation(fields: [subtype_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-
-  @@index([is_active], map: "idx_dien_products_active")
-  @@index([brand_id], map: "idx_dien_products_brand")
-  @@index([is_featured], map: "idx_dien_products_featured")
-  @@index([subtype_id], map: "idx_dien_products_subtype")
-  @@index([product_type_id], map: "idx_dien_products_type")
-}
-
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model dien_subtypes {
-  id                Int               @id @default(autoincrement())
-  product_type_id   Int
-  name              String            @db.VarChar(100)
-  slug              String            @unique @db.VarChar(100)
-  description       String?
-  thumbnail_url     String?           @db.VarChar(500)
-  is_active         Boolean?          @default(true)
-  sort_order        Int?              @default(0)
-  created_at        DateTime?         @default(now()) @db.Timestamp(6)
-  updated_at        DateTime?         @default(now()) @db.Timestamp(6)
-  dien_products      dien_products[]
-  dien_product_types dien_product_types @relation(fields: [product_type_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-
-  @@index([product_type_id], map: "idx_dien_subtypes_type")
-}
-
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model khoa_brands {
-  id             Int            @id @default(autoincrement())
-  name           String         @db.VarChar(100)
-  slug           String         @unique @db.VarChar(100)
-  logo_url       String?        @db.VarChar(500)
-  description    String?
-  origin_country String?        @db.VarChar(100)
-  website_url    String?        @db.VarChar(500)
-  is_active      Boolean?       @default(true)
-  is_featured    Boolean?       @default(false)
-  sort_order     Int?           @default(0)
-  created_at     DateTime?      @default(now()) @db.Timestamp(6)
-  updated_at     DateTime?      @default(now()) @db.Timestamp(6)
-  khoa_products   khoa_products[]
-}
-
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model khoa_product_images {
-  id           Int          @id @default(autoincrement())
-  product_id   Int
-  image_url    String       @db.VarChar(500)
-  alt_text     String?      @db.VarChar(200)
-  sort_order   Int?         @default(0)
-  created_at   DateTime?    @default(now()) @db.Timestamp(6)
-  khoa_products khoa_products @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-}
-
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model khoa_product_types {
-  id                 Int                @id @default(autoincrement())
-  category_id        Int                @default(3)
-  name               String             @db.VarChar(100)
-  slug               String             @unique @db.VarChar(100)
-  description        String?
-  thumbnail_url      String?            @db.VarChar(500)
-  hero_image_url     String?            @db.VarChar(500)
-  icon_name          String?            @db.VarChar(50)
-  is_active          Boolean?           @default(true)
-  sort_order         Int?               @default(0)
-  seo_title          String?            @db.VarChar(200)
-  seo_description    String?            @db.VarChar(500)
-  created_at         DateTime?          @default(now()) @db.Timestamp(6)
-  updated_at         DateTime?          @default(now()) @db.Timestamp(6)
-  product_categories product_categories @relation(fields: [category_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  khoa_products       khoa_products[]
-  khoa_subtypes       khoa_subtypes[]
-}
-
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model khoa_products {
-  id                 Int                  @id @default(autoincrement())
-  sku                String               @unique @db.VarChar(50)
-  name               String               @db.VarChar(200)
-  slug               String               @unique @db.VarChar(200)
-  product_type_id    Int
-  subtype_id         Int?
-  brand_id           Int?
-  color_id           Int?
-  origin_id          Int?
-  description        String?
-  features           String?
-  specifications     Json?
-  warranty_months    Int?                 @default(24)
-  price              Decimal?             @db.Decimal(15, 0)
-  price_display      String?              @default("Liên hệ báo giá") @db.VarChar(50)
-  image_main_url     String?              @db.VarChar(500)
-  image_hover_url    String?              @db.VarChar(500)
-  is_active          Boolean?             @default(true)
-  is_featured        Boolean?             @default(false)
-  is_new             Boolean?             @default(false)
-  is_bestseller      Boolean?             @default(false)
-  stock_status       String?              @default("in_stock") @db.VarChar(20)
-  sort_order         Int?                 @default(0)
-  seo_title          String?              @db.VarChar(200)
-  seo_description    String?              @db.VarChar(500)
-  created_at         DateTime?            @default(now()) @db.Timestamp(6)
-  updated_at         DateTime?            @default(now()) @db.Timestamp(6)
-  khoa_product_images khoa_product_images[]
-  khoa_brands         khoa_brands?          @relation(fields: [brand_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  colors             colors?              @relation(fields: [color_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  origins            origins?             @relation(fields: [origin_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  khoa_product_types  khoa_product_types    @relation(fields: [product_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  khoa_subtypes       khoa_subtypes?        @relation(fields: [subtype_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-
-  @@index([is_active], map: "idx_khoa_products_active")
-  @@index([brand_id], map: "idx_khoa_products_brand")
-  @@index([is_featured], map: "idx_khoa_products_featured")
-  @@index([subtype_id], map: "idx_khoa_products_subtype")
-  @@index([product_type_id], map: "idx_khoa_products_type")
-}
-
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model khoa_subtypes {
-  id                Int               @id @default(autoincrement())
-  product_type_id   Int
-  name              String            @db.VarChar(100)
-  slug              String            @unique @db.VarChar(100)
-  description       String?
-  thumbnail_url     String?           @db.VarChar(500)
-  is_active         Boolean?          @default(true)
-  sort_order        Int?              @default(0)
-  created_at        DateTime?         @default(now()) @db.Timestamp(6)
-  updated_at        DateTime?         @default(now()) @db.Timestamp(6)
-  khoa_products      khoa_products[]
-  khoa_product_types khoa_product_types @relation(fields: [product_type_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-
-  @@index([product_type_id], map: "idx_khoa_subtypes_type")
 }
 

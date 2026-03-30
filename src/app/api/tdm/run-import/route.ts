@@ -8,23 +8,12 @@ const prisma = new PrismaClient();
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const type = searchParams.get('type');
-  if (!type || !['bep', 'nuoc', 'khoacua', 'dien'].includes(type)) {
-    return NextResponse.json({ error: 'Missing or invalid type (bep, nuoc, khoacua, dien)' }, { status: 400 });
+  if (!type || !['bep', 'nuoc'].includes(type)) {
+    return NextResponse.json({ error: 'Missing or invalid type (bep, nuoc)' }, { status: 400 });
   }
 
-  // Find or create category
-  let categoryId = type === 'bep' ? 3 : (type === 'nuoc' ? 5 : null);
-  if (!categoryId) {
-    const categoryName = type === 'khoacua' ? 'Khóa Cửa Thông Minh' : 'Thiết Bị Điện';
-    const categorySlug = type === 'khoacua' ? 'khoa-cua-thong-minh' : 'thiet-bi-dien';
-    // @ts-ignore
-    let cat = await prisma.product_categories.findUnique({ where: { slug: categorySlug } });
-    if (!cat) {
-      // @ts-ignore
-      cat = await prisma.product_categories.create({ data: { name: categoryName, slug: categorySlug, sort_order: type === 'khoacua' ? 6 : 7 } });
-    }
-    categoryId = cat.id;
-  }
+  // Category IDs: bep=3, nuoc=5
+  const categoryId = type === 'bep' ? 3 : 5;
 
   const inputPath = `scripts/tdm-import/${type}.json`;
   
@@ -46,18 +35,6 @@ export async function GET(request: Request) {
       case 'nuoc':
         productModel = prisma.nuoc_products; brandModel = prisma.nuoc_brands; typeModel = prisma.nuoc_product_types;
         subtypeModel = prisma.nuoc_subtypes; imageModel = prisma.nuoc_product_images;
-        break;
-      case 'khoacua':
-        // @ts-ignore
-        productModel = prisma.khoa_products; brandModel = prisma.khoa_brands; typeModel = prisma.khoa_product_types;
-        // @ts-ignore
-        subtypeModel = prisma.khoa_subtypes; imageModel = prisma.khoa_product_images;
-        break;
-      case 'dien':
-        // @ts-ignore
-        productModel = prisma.dien_products; brandModel = prisma.dien_brands; typeModel = prisma.dien_product_types;
-        // @ts-ignore
-        subtypeModel = prisma.dien_subtypes; imageModel = prisma.dien_product_images;
         break;
     }
 
