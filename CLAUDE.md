@@ -185,6 +185,7 @@ admin/{entity}/
 □ 6. Nếu issue không rõ → comment hỏi PM, đợi reply trước khi code
 □ 7. Xác định loại task → đọc Workflow tương ứng (Mục 7)
 □ 8. Đọc skill liên quan (Mục 8) trước khi bắt đầu code
+□ 9. Đọc rule files liên quan (Mục 8 — Rules) trong `.agents/rules/`
 ```
 
 ---
@@ -465,6 +466,21 @@ Step 6 — Commit
 | Code review, PR feedback | `code-review-excellence` |
 | Testing UI trong browser | `webapp-testing` |
 | Web design, accessibility | `web-design-guidelines` |
+
+### Rules — `.agents/rules/`
+
+> **Đọc rule file liên quan trước khi bắt đầu code.** Mỗi file ≤ 200 dòng, format: Purpose → Rules → Examples → Anti-patterns.
+
+| Rule file | Khi nào đọc |
+|-----------|------------|
+| `code-style.md` | Mọi task viết TypeScript/React |
+| `naming-conventions.md` | Tạo file, route, component, slug mới |
+| `git-workflow.md` | Trước khi commit hoặc tạo branch |
+| `database.md` | Thay đổi DB schema, Prisma models |
+| `api-conventions.md` | Viết Server Actions hoặc Public API |
+| `security.md` | Liên quan đến auth, env vars, secrets |
+| `error-handling.md` | Viết form submit, server actions, error UI |
+| `testing.md` | Trước khi commit — pre-commit checklist |
 
 ---
 
