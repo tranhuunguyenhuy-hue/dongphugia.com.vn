@@ -622,10 +622,23 @@ npx tsc --noEmit && git status && git diff --staged
 
 ## 13. Team & Phân công
 
-| Agent | Scope |
-|-------|-------|
-| **Claude Code** | Backend, Prisma, Server Actions, Public API, Admin CMS, Build fix |
-| **Antigravity (Tninie)** | Frontend, UI/UX, Components, Public pages |
-| **PM (Huy)** | Strategy, review, deploy, quản lý Linear |
+> Chi tiết xem `.agents/profiles/` — mỗi agent có profile riêng với scope, constraints, tools, và handoff protocol.
+
+| Agent | Scope tóm tắt | Profile |
+|-------|--------------|---------|
+| **Claude Code** | Prisma, Server Actions, Public API, Admin CMS, Build fix, DB scripts | `.agents/profiles/claude-code.md` |
+| **Antigravity (Tninie)** | React components, public pages, Tailwind styling, responsive UI | `.agents/profiles/antigravity.md` |
+| **PM Assistant** | Linear management, sprint planning, docs, cross-agent coordination | `.agents/profiles/pm-assistant.md` |
+| **PM (Huy)** | Strategy, final approval, deploy trigger, conflict resolution | — |
+
+### Scope Boundary Quick Reference
+
+| Nếu task liên quan đến... | Assign cho |
+|--------------------------|------------|
+| DB, Prisma, Server Actions, Admin CMS | **Claude Code** |
+| Public pages, React UI, Tailwind, Figma | **Antigravity** |
+| Linear, sprint planning, docs | **PM Assistant** |
+| Deploy Vercel, merge PR, arch decisions | **PM (Huy) — human only** |
+| **Không rõ scope** | → Hỏi PM trước khi làm |
 
 **Không overlap scope mà không xác nhận với PM.**
