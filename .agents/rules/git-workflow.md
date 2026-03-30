@@ -1,34 +1,30 @@
 # Git Workflow Rules — Đông Phú Gia
 
 ## Purpose
-Chuẩn hóa git workflow: branch naming, commit format, PR rules. Áp dụng cho Claude Code + Antigravity.
+Chuẩn hóa git workflow: commit format, branching strategy. Áp dụng cho Claude Code + Antigravity.
 
 ---
 
-## Rules
+## Workflow
 
-### 1. Branch Naming
-```
-feat/LEO-{number}-{short-desc}     # Feature mới
-fix/LEO-{number}-{short-desc}      # Bug fix
-chore/LEO-{number}-{short-desc}    # Cleanup, config, deps
-docs/LEO-{number}-{short-desc}     # Documentation only
-```
+**Dự án Đông Phú Gia dùng trunk-based development:**
+- Commit thẳng lên `main` — không cần feature branch
+- PM là sole reviewer — không cần PR
+- Vercel CI tự deploy từ GitHub main (safety net)
 
-**Ví dụ:**
-```
-feat/LEO-309-rules-layer
-fix/LEO-279-crawler-hotlink
-chore/LEO-307-cleanup-unused-files
-```
+---
 
-**Rules:**
-- Dùng kebab-case cho description
-- Luôn có Linear issue number
-- Không dùng Vietnamese characters trong branch name
+## Quy tắc commit
 
-### 2. Conventional Commits
-Format: `{type}({scope}): {description} ({issue})`
+- `npx tsc --noEmit` phải PASS trước khi commit
+- Commit message format: `type: mô tả ngắn (LEO-XXX)`
+- Types: `feat` | `fix` | `docs` | `chore` | `refactor`
+- KHÔNG push lên remote khi build broken
+
+---
+
+## Conventional Commits
+Format: `{type}: {description} ({issue})`
 
 | Type | Khi nào dùng |
 |------|-------------|
@@ -45,7 +41,7 @@ Format: `{type}({scope}): {description} ({issue})`
 git commit -m "feat: add quote request admin CMS (LEO-288)"
 git commit -m "fix: resolve redirect() error in server actions (LEO-295)"
 git commit -m "chore: remove unused dien_* models (LEO-291)"
-git commit -m "docs: update CLAUDE.md session checklist (LEO-309)"
+git commit -m "docs: update CLAUDE.md session checklist (LEO-318)"
 ```
 
 **Rules:**
@@ -54,17 +50,9 @@ git commit -m "docs: update CLAUDE.md session checklist (LEO-309)"
 - Không viết hoa chữ đầu sau type
 - Không dấu chấm cuối dòng
 
-### 3. Không push trực tiếp lên `main`
-- `main` là production branch — chỉ PM mới merge/push trực tiếp
-- Tất cả changes phải qua branch riêng
-- Sau khi xong → báo PM để review + merge
+---
 
-### 4. Commit nhỏ, atomic
-- 1 commit = 1 logical change
-- Không batch nhiều unrelated changes vào 1 commit
-- `npx tsc --noEmit` PASS trước khi commit (xem testing.md)
-
-### 5. Staged changes
+## Staged changes
 ```bash
 # Thêm files cụ thể — KHÔNG dùng git add -A hoặc git add .
 git add src/lib/product-actions.ts src/app/admin/products/page.tsx
@@ -77,7 +65,7 @@ npx tsc --noEmit
 git commit -m "feat: add product server actions (LEO-XXX)"
 ```
 
-### 6. Commit message với heredoc (khi message dài)
+## Commit message với heredoc (khi message dài)
 ```bash
 git commit -m "$(cat <<'EOF'
 feat: add rules layer for code standards (LEO-309)
@@ -95,22 +83,17 @@ EOF
 
 ### ✅ Đúng
 ```bash
-# Branch
-git checkout -b feat/LEO-309-rules-layer
-
-# Atomic commits
+# Commit thẳng lên main (trunk-based)
 git add .agents/rules/code-style.md
 git commit -m "feat: add code-style rules (LEO-309)"
 
+# Atomic commits
 git add .agents/rules/database.md
 git commit -m "feat: add database rules (LEO-309)"
 ```
 
 ### ❌ Sai
 ```bash
-# Commit lên main trực tiếp
-git checkout main && git commit -m "changes"
-
 # Commit không có issue reference
 git commit -m "fix some stuff"
 
