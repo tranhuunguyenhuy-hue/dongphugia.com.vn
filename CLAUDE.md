@@ -616,7 +616,15 @@ npm run lint
 
 # Verify trước khi commit
 npx tsc --noEmit && git status && git diff --staged
+
+# Clean cache (khi Turbopack bị stale)
+rm -rf .next && npm run dev
+rm -rf .turbo
 ```
+
+> **Claude Code Permissions:** Đã config trong `.claude/settings.json` (shared) — define allowed tools và blocked commands.
+> Personal overrides: `.claude/settings.local.json` (gitignored, không commit).
+> Xem LEO-312 để biết danh sách đầy đủ.
 
 ---
 
