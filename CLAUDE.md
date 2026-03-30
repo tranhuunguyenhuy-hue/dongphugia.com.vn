@@ -196,6 +196,8 @@ admin/{entity}/
 
 **Trigger:** Tạo entity mới, thêm bảng mới vào hệ thống.
 
+**Command:** `/new-entity` → `.agents/commands/new-entity.md`
+
 **Skills cần đọc:** `postgresql-table-design`, `sql-optimization-patterns`
 
 ```
@@ -242,6 +244,8 @@ Step 8 — Commit + Linear
 ### 7.2 Bug Fix
 
 **Trigger:** Có lỗi runtime, UI broken, data sai, form không submit được.
+
+**Command:** `/fix-issue` → `.agents/commands/fix-issue.md`
 
 **Skills cần đọc:** `debugging-strategies`
 
@@ -357,6 +361,8 @@ Step 4 — Verify
 
 **Trigger:** Thêm column, index mới, thay đổi constraint.
 
+**Command:** `/db-change` → `.agents/commands/db-change.md`
+
 **⚠️ KHÔNG xóa column/bảng mà không hỏi PM trước.**
 
 **Skills cần đọc:** `postgresql-table-design`, `sql-optimization-patterns`
@@ -387,7 +393,9 @@ Step 5 — Verify + Commit
 
 ### 7.7 Deploy lên Vercel
 
-**Trigger:** PM yêu cầu deploy. ⚠️ KHÔNG tự ý deploy.**
+**Trigger:** PM yêu cầu deploy. ⚠️ KHÔNG tự ý deploy.
+
+**Command:** `/deploy` → `.agents/commands/deploy.md`
 
 ```
 Step 1 — Verify local
@@ -466,6 +474,21 @@ Step 6 — Commit
 | Code review, PR feedback | `code-review-excellence` |
 | Testing UI trong browser | `webapp-testing` |
 | Web design, accessibility | `web-design-guidelines` |
+
+### Commands — `.agents/commands/`
+
+> **Gọi command file khi bắt đầu task tương ứng.** Mỗi file có format: Trigger → Preconditions → Steps → Verify → Output Template.
+
+| Command | Khi nào dùng |
+|---------|-------------|
+| `/deploy.md` | Deploy lên Vercel production (phải có PM approval) |
+| `/fix-issue.md` | Bug fix — Linear issue label Bug hoặc runtime error |
+| `/review.md` | Code review trước khi Done, hoặc review code của người khác |
+| `/new-entity.md` | Tạo Prisma model mới + full CRUD scaffold |
+| `/handoff.md` | Bàn giao giữa Claude Code ↔ Antigravity, hoặc end-of-session |
+| `/db-change.md` | Thay đổi DB schema: thêm column, index, constraint |
+
+---
 
 ### Rules — `.agents/rules/`
 
