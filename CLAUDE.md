@@ -180,6 +180,9 @@ admin/{entity}/
 □ 1. Đọc CLAUDE.md (file này) — section liên quan đến task
 □ 2. Đọc PROJECT-STATUS.md — nắm trạng thái hiện tại
 □ 3. git pull origin main — đảm bảo code mới nhất
+□ 3.5. npm install         # Đảm bảo node_modules up-to-date (bắt buộc đầu mỗi session)
+□ 3.6. npx tsc --noEmit   # Verify baseline build PASS trước khi bắt đầu code
+         → Nếu FAIL: DỪNG ngay, báo PM. Không code thêm khi build đã broken.
 □ 4. git status — không có conflict hay uncommitted changes
 □ 5. Đọc Linear issue được assign: TOÀN BỘ description + checklist
 □ 6. Nếu issue không rõ → comment hỏi PM, đợi reply trước khi code
