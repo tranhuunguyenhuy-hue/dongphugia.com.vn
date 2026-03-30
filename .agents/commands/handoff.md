@@ -123,6 +123,29 @@ Query params: ?collection=&color=&size=&origin=
 
 ---
 
+### Bước tiếp theo sau khi post Template A comment
+
+Sau khi comment handoff lên Linear, Claude Code phải:
+
+1. Re-assign Linear issue sang Antigravity:
+   ```
+   # Dùng Linear MCP tool: save_issue
+   id: [LEO-XXX]
+   assignee: "[ANTIGRAVITY_USER]"  # Placeholder — confirm với PM khi Antigravity join
+   ```
+
+2. Update TASK-QUEUE.md trong `.ai/shared/`:
+   ```markdown
+   | LEO-XXX | Claude Code | Antigravity | [mô tả ngắn] | Pending |
+   ```
+
+3. Report lên PM: "Backend LEO-XXX ready, đã re-assign sang Antigravity."
+
+> ⚠️ `[ANTIGRAVITY_USER]` = placeholder cho đến khi Antigravity có Linear account.
+> Khi có account: PM update placeholder này thành username/email thật.
+
+---
+
 ### B. Antigravity → Claude Code (Cần backend support)
 
 ```
