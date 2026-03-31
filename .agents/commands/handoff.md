@@ -19,24 +19,43 @@
 
 ---
 
+## Scope — HANDOFF.md vs Linear comments
+
+> **Hai nơi này có vai trò khác nhau — không duplicate:**
+
+| | `.ai/shared/HANDOFF.md` | Linear comment |
+|---|---|---|
+| **Dùng khi** | Session bị interrupt, có WIP chưa xong | Agent handoff hoặc cần báo cáo |
+| **Nội dung** | Trạng thái WIP + context để tiếp tục | Template A/B/C (xem Output Template) |
+| **Ai đọc** | Agent session sau (để resume) | Agent nhận handoff + PM |
+| **Update khi nào** | Chỉ khi có WIP chưa hoàn thành | Mọi loại handoff |
+
+**Rule quan trọng:** Nếu session kết thúc mà tất cả tasks đã Done → **KHÔNG cần update HANDOFF.md**.
+
+---
+
 ## Steps
 
 ### Step 1 — Xác định loại handoff
 ```
 A. Claude Code → Antigravity: Backend xong, cần frontend
 B. Antigravity → Claude Code: Cần thêm backend support
-C. End-of-session: Ghi lại trạng thái để session sau tiếp tục
+C. End-of-session với WIP: Session bị interrupt, task chưa xong → cần session sau tiếp tục
+   (Nếu session kết thúc không có WIP → dùng Template C nhẹ, KHÔNG update HANDOFF.md)
 ```
 
 ### Step 2 — Tạo handoff comment trên Linear
 
 Xem template tương ứng ở mục **Output Template** bên dưới.
 
-### Step 3 — Update HANDOFF.md
+### Step 3 — Update HANDOFF.md (chỉ khi có WIP)
+
+> ⚠️ **Bỏ qua step này nếu session kết thúc không có WIP.**
+> HANDOFF.md = WIP state only. Không dùng làm session log.
 
 ```bash
 # File: .ai/shared/HANDOFF.md
-# Cập nhật với trạng thái hiện tại
+# Chỉ update khi có task đang dở dang cần session sau tiếp tục
 ```
 
 Format entry trong HANDOFF.md:
@@ -64,7 +83,7 @@ Format entry trong HANDOFF.md:
 - src/app/admin/(dashboard)/{entity}/page.tsx
 ```
 
-### Step 4 — Commit HANDOFF.md update
+### Step 4 — Commit HANDOFF.md update (nếu có thay đổi)
 ```bash
 git add .ai/shared/HANDOFF.md
 git commit -m "docs: update handoff notes for LEO-XXX"

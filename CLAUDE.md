@@ -550,6 +550,19 @@ Cần thêm:
 Context: [mô tả tại sao cần]
 ```
 
+### `.ai/shared/HANDOFF.md` — khi nào update
+
+> Chi tiết xem `/handoff.md` command — tóm tắt:
+
+| Tình huống | HANDOFF.md | Linear comment |
+|-----------|-----------|---------------|
+| Backend xong → Antigravity pickup | ❌ Không update | ✅ Post Template A |
+| Antigravity cần backend support | ❌ Không update | ✅ Post Template B |
+| Session kết thúc, tất cả tasks Done | ❌ Không update | ✅ Post Template C (nhẹ) |
+| Session bị interrupt, có WIP chưa xong | ✅ Update HANDOFF.md | ✅ Post Template C |
+
+**Rule:** HANDOFF.md = WIP state only. Không dùng làm session log hay agent notification.
+
 ### Sau khi hoàn thành task — update Linear
 
 1. Comment kết quả (theo template trên nếu có handoff)
