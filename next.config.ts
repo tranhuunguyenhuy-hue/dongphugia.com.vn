@@ -23,32 +23,7 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'www.tdm.vn',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'tdm.vn',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'tuandat.vn',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
         hostname: 'cdn.hita.com.vn',
-        pathname: '/**',
-      },
-      {
-        protocol: 'http',
-        hostname: 'www.tdm.vn',
-        pathname: '/**',
-      },
-      {
-        protocol: 'http',
-        hostname: 'tdm.vn',
         pathname: '/**',
       },
     ],
