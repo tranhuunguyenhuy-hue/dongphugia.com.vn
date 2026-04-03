@@ -51,7 +51,7 @@ function Reveal({
 
 // ─── Animated Counter ─────────────────────────────────────────────────
 function Counter({ end, suffix = "", duration = 2000 }: { end: number; suffix?: string; duration?: number }) {
-    const { ref, isVisible } = useScrollReveal(0.5)
+    const { ref, isVisible } = useScrollReveal(0.2)
     const [count, setCount] = useState(0)
     useEffect(() => {
         if (!isVisible) return
@@ -239,10 +239,10 @@ export function AboutClient() {
                     <Reveal>
                         <div className="grid grid-cols-2 md:grid-cols-4">
                             {[
-                                { end: 10, suffix: "+", label: "Năm kinh nghiệm" },
-                                { end: 50, suffix: "+", label: "Thương hiệu đối tác" },
-                                { end: 1000, suffix: "+", label: "Dự án hoàn thành" },
-                                { end: 100, suffix: "%", label: "Hàng chính hãng" },
+                                { end: 15, suffix: "+", label: "Năm kinh nghiệm" },
+                                { end: 30, suffix: "+", label: "Thương hiệu đối tác" },
+                                { end: 5000, suffix: "+", label: "Sản phẩm chính hãng" },
+                                { end: 100, suffix: "%", label: "Cam kết hàng thật" },
                             ].map((stat, i) => (
                                 <div
                                     key={i}
