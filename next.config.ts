@@ -37,6 +37,11 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       },
       {
+        protocol: 'https',
+        hostname: 'cdn.hita.com.vn',
+        pathname: '/**',
+      },
+      {
         protocol: 'http',
         hostname: 'www.tdm.vn',
         pathname: '/**',
