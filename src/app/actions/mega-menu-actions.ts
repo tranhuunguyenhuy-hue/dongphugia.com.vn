@@ -3,78 +3,59 @@
 import prisma from '@/lib/prisma';
 import { cache } from 'react';
 
-// Fetch toàn bộ Categories + Subcategories theo chuẩn
+// Fetch categories + subcategories + brands for mega menu using unified schema (v2)
 export const getMegaMenuData = cache(async () => {
     try {
-        const [
-            categories,
-            gachData,
-            tbvsBrands, tbvsTypes,
-            bepBrands, bepTypes,
-            sangoTypes,
-            nuocBrands, nuocTypes
-        ] = await Promise.all([
-            // Lấy danh mục gốc từ DB
-            prisma.product_categories.findMany({
+        const [categories, subcategories, brands] = await Promise.all([
+            // All active categories
+            prisma.categories.findMany({
                 where: { is_active: true },
                 orderBy: { sort_order: 'asc' },
-                select: { id: true, name: true, slug: true, thumbnail_url: true }
+                select: { id: true, name: true, slug: true, thumbnail_url: true, icon_name: true }
             }),
-            // Gạch
-            prisma.pattern_types.findMany({
-                where: { is_active: true, category_id: 1 },
-                select: { id: true, name: true, slug: true, thumbnail_url: true, hero_image_url: true },
+            // All active subcategories with their category reference
+            prisma.subcategories.findMany({
+                where: { is_active: true },
                 orderBy: { sort_order: 'asc' },
+                select: {
+                    id: true,
+                    name: true,
+                    slug: true,
+                    thumbnail_url: true,
+                    hero_image_url: true,
+                    icon_name: true,
+                    category_id: true
+                }
             }),
-            // TBVS
-            prisma.tbvs_brands.findMany({
-                where: { is_active: true },
-                take: 12,
-                orderBy: { sort_order: 'asc' }
-            }),
-            prisma.tbvs_product_types.findMany({
-                where: { is_active: true },
-                include: { tbvs_subtypes: { where: { is_active: true }, orderBy: { sort_order: 'asc' } } },
-                orderBy: { sort_order: 'asc' }
-            }),
-            // Bếp
-            prisma.bep_brands.findMany({
-                where: { is_active: true },
-                take: 12,
-                orderBy: { sort_order: 'asc' }
-            }),
-            prisma.bep_product_types.findMany({
-                where: { is_active: true },
-                include: { bep_subtypes: { where: { is_active: true }, orderBy: { sort_order: 'asc' } } },
-                orderBy: { sort_order: 'asc' }
-            }),
-            // Sàn gỗ
-            prisma.sango_product_types.findMany({
-                where: { is_active: true },
-                select: { id: true, name: true, slug: true, thumbnail_url: true, hero_image_url: true },
+            // Featured brands for quick navigation
+            prisma.brands.findMany({
+                where: { is_active: true, is_featured: true },
                 orderBy: { sort_order: 'asc' },
-            }),
-            // Nước
-            prisma.nuoc_brands.findMany({
-                where: { is_active: true },
                 select: { id: true, name: true, slug: true, logo_url: true },
-                take: 12,
-                orderBy: { sort_order: 'asc' }
-            }),
-            prisma.nuoc_product_types.findMany({
-                where: { is_active: true },
-                include: { nuoc_subtypes: { where: { is_active: true }, orderBy: { sort_order: 'asc' } } },
-                orderBy: { sort_order: 'asc' }
+                take: 20
             })
         ]);
 
-        const menuData = {
-            'gach-op-lat': { layout: 'IMAGE_CARDS' as const, items: gachData },
-            'thiet-bi-ve-sinh': { layout: 'COMPLEX_LIST' as const, brands: tbvsBrands, types: tbvsTypes },
-            'thiet-bi-bep': { layout: 'COMPLEX_LIST' as const, brands: bepBrands, types: bepTypes },
-            'san-go': { layout: 'IMAGE_CARDS' as const, items: sangoTypes },
-            'vat-lieu-nuoc': { layout: 'COMPLEX_LIST' as const, brands: nuocBrands, types: nuocTypes }
-        };
+        // Group subcategories by category_id for easy lookup
+        const subcatsByCategory: Record<number, typeof subcategories> = {};
+        for (const sub of subcategories) {
+            if (!subcatsByCategory[sub.category_id]) {
+                subcatsByCategory[sub.category_id] = [];
+            }
+            subcatsByCategory[sub.category_id].push(sub);
+        }
+
+        // Build menu data keyed by category slug
+        const menuData: Record<string, {
+            subcategories: typeof subcategories;
+            brands: typeof brands;
+        }> = {};
+        for (const cat of categories) {
+            menuData[cat.slug] = {
+                subcategories: subcatsByCategory[cat.id] || [],
+                brands: brands // Shared brands across all categories for now
+            };
+        }
 
         return { categories, menuData };
     } catch (e) {

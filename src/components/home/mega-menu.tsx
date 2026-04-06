@@ -10,13 +10,25 @@ export type Category = {
     name: string;
     slug: string;
     thumbnail_url?: string | null;
+    icon_name?: string | null;
 }
 
 export type MenuData = {
-    layout: 'IMAGE_CARDS' | 'COMPLEX_LIST';
-    items?: any[];
-    brands?: any[];
-    types?: any[];
+    subcategories: {
+        id: number;
+        name: string;
+        slug: string;
+        thumbnail_url: string | null;
+        hero_image_url: string | null;
+        icon_name: string | null;
+        category_id: number;
+    }[];
+    brands: {
+        id: number;
+        name: string;
+        slug: string;
+        logo_url: string | null;
+    }[];
 }
 
 export interface MegaMenuProps {
@@ -76,77 +88,20 @@ const renderMegaMenuContent = (cat: Category, data: MenuData | undefined) => {
                 </div>
             )}
 
-            {/* Types and Subtypes (Custom JS Masonry) */}
-            {data.types && data.types.length > 0 ? (() => {
-                const colCount = 3;
-                const cols: any[][] = Array.from({ length: colCount }, () => []);
-                const colHeights = new Array(colCount).fill(0);
-                
-                data.types.forEach((type: any) => {
-                    const subtypes = type.tbvs_subtypes || type.bep_subtypes || type.nuoc_subtypes || [];
-                    const heightCost = 30 + (Math.min(subtypes.length, 7) * 20);
-                    
-                    let minIdx = 0;
-                    let minH = colHeights[0];
-                    for (let i = 1; i < colCount; i++) {
-                        if (colHeights[i] < minH) {
-                            minH = colHeights[i];
-                            minIdx = i;
-                        }
-                    }
-                    
-                    cols[minIdx].push(type);
-                    colHeights[minIdx] += heightCost + 24;
-                });
-
-                return (
-                    <div className="grid grid-cols-3 gap-x-8">
-                        {cols.map((colTypes, i) => (
-                            <div key={i} className="flex flex-col gap-6">
-                                {colTypes.map((type: any) => {
-                                    const subtypes = type.tbvs_subtypes || type.bep_subtypes || type.nuoc_subtypes || [];
-                                    return (
-                                        <div key={type.id} className="flex flex-col gap-2.5">
-                                            <Link href={`/${cat.slug}?type=${type.slug}`} className="text-[11px] font-bold text-[#3C4E56]/60 uppercase tracking-wider hover:text-[#2E7A96] transition-colors">
-                                                {type.name}
-                                            </Link>
-                                            <div className="flex flex-col gap-1.5">
-                                                {subtypes.slice(0, 7).map((sub: any) => (
-                                                    <Link href={`/${cat.slug}?type=${type.slug}&subtype=${sub.slug}`} key={sub.id} className="text-[13.5px] leading-[1.3] font-medium text-[#192125] hover:text-[#2E7A96] transition-colors relative group/link inline-block w-full">
-                                                        <span className="block truncate w-full pr-4">{sub.name}</span>
-                                                        <span className="absolute -bottom-0.5 left-0 w-0 h-[1.5px] bg-[#2E7A96]/30 transition-all duration-300 group-hover/link:w-full"></span>
-                                                    </Link>
-                                                ))}
-                                                {subtypes.length > 7 && (
-                                                    <Link href={`/${cat.slug}?type=${type.slug}`} className="text-[12.5px] italic text-[#2E7A96] hover:text-[#1A5C73] transition-colors mt-0.5">
-                                                        Xem thêm {subtypes.length - 7} loại...
-                                                    </Link>
-                                                )}
-                                            </div>
-                                        </div>
-                                    )
-                                })}
-                            </div>
-                        ))}
-                    </div>
-                );
-            })() : data.layout === 'IMAGE_CARDS' && data.items && data.items.length > 0 ? (
-                // Filter out non-category items - Display as categories without showing exact products
+            {/* Subcategories (v2 unified schema) */}
+            {data.subcategories && data.subcategories.length > 0 ? (
                 <div>
                     <h3 className="text-[11px] font-bold text-[#3C4E56]/60 uppercase tracking-wider mb-4">Phân loại {cat.name.toLowerCase()}</h3>
                     <div className="grid grid-cols-2 gap-x-8 gap-y-3">
-                        {data.items.slice(0, 16).map((item) => {
-                            const filterKey = cat.slug === 'san-go' ? 'type' : 'pattern';
-                            return (
-                                <Link href={`/${cat.slug}?${filterKey}=${item.slug}`} key={item.id} className="text-[14px] font-medium text-[#192125] hover:text-[#2E7A96] transition-colors py-1 flex items-center justify-between group">
-                                    <span className="truncate pr-4 relative inline-block">
-                                        {item.name}
-                                        <span className="absolute -bottom-0.5 left-0 w-0 h-[1.5px] bg-[#2E7A96]/30 transition-all duration-300 group-hover:w-full"></span>
-                                    </span>
-                                    <ChevronRight className="h-3.5 w-3.5 text-[#2E7A96]/50 opacity-0 group-hover:opacity-100 -translate-x-3 group-hover:translate-x-0 transition-all duration-300" />
-                                </Link>
-                            )
-                        })}
+                        {data.subcategories.slice(0, 16).map((sub) => (
+                            <Link href={`/${cat.slug}/${sub.slug}`} key={sub.id} className="text-[14px] font-medium text-[#192125] hover:text-[#2E7A96] transition-colors py-1 flex items-center justify-between group">
+                                <span className="truncate pr-4 relative inline-block">
+                                    {sub.name}
+                                    <span className="absolute -bottom-0.5 left-0 w-0 h-[1.5px] bg-[#2E7A96]/30 transition-all duration-300 group-hover:w-full"></span>
+                                </span>
+                                <ChevronRight className="h-3.5 w-3.5 text-[#2E7A96]/50 opacity-0 group-hover:opacity-100 -translate-x-3 group-hover:translate-x-0 transition-all duration-300" />
+                            </Link>
+                        ))}
                     </div>
                 </div>
             ) : (

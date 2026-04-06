@@ -4,46 +4,45 @@ import { FeaturedTabsClient } from './featured-tabs-client'
 export const revalidate = 3600 // Cached for 1 hour
 
 export async function FeaturedCategories() {
-    const [gach, tbvs, bep, sango, nuoc] = await Promise.all([
+    // Fetch all categories and featured products using unified v2 schema
+    const [allCategories, featuredProducts] = await Promise.all([
+        prisma.categories.findMany({
+            where: { is_active: true },
+            orderBy: { sort_order: 'asc' },
+            select: { id: true, name: true, slug: true }
+        }),
         prisma.products.findMany({
             where: { is_featured: true, is_active: true },
-            include: { collections: true, sizes: true, surfaces: true, pattern_types: true },
-            take: 8,
-            orderBy: [{ sort_order: 'asc' }, { created_at: 'desc' }]
-        }),
-        prisma.tbvs_products.findMany({
-            where: { is_featured: true, is_active: true },
-            include: { tbvs_product_types: true, tbvs_brands: true, tbvs_subtypes: true, tbvs_materials: true },
-            take: 8,
-            orderBy: [{ sort_order: 'asc' }, { created_at: 'desc' }]
-        }),
-        prisma.bep_products.findMany({
-            where: { is_featured: true, is_active: true },
-            include: { bep_product_types: true, bep_brands: true, bep_subtypes: true },
-            take: 8,
-            orderBy: [{ sort_order: 'asc' }, { created_at: 'desc' }]
-        }),
-        prisma.sango_products.findMany({
-            where: { is_featured: true, is_active: true },
-            include: { sango_product_types: true, origins: true },
-            take: 8,
-            orderBy: [{ sort_order: 'asc' }, { created_at: 'desc' }]
-        }),
-        prisma.nuoc_products.findMany({
-            where: { is_featured: true, is_active: true },
-            include: { nuoc_product_types: true, nuoc_brands: true, nuoc_subtypes: true, nuoc_materials: true },
-            take: 8,
+            include: {
+                categories: { select: { id: true, slug: true } },
+                subcategories: { select: { name: true, slug: true } },
+                brands: { select: { name: true, slug: true } }
+            },
+            take: 40, // 8 per category × 5
             orderBy: [{ sort_order: 'asc' }, { created_at: 'desc' }]
         })
     ])
 
-    const categories = [
-        { id: 'gach', label: 'Gạch ốp lát', basePath: '/gach-op-lat', products: gach },
-        { id: 'tbvs', label: 'Thiết bị vệ sinh', basePath: '/thiet-bi-ve-sinh', products: tbvs },
-        { id: 'bep', label: 'Thiết bị bếp', basePath: '/thiet-bi-bep', products: bep },
-        { id: 'sango', label: 'Sàn gỗ', basePath: '/san-go', products: sango },
-        { id: 'nuoc', label: 'Vật liệu nước', basePath: '/vat-lieu-nuoc', products: nuoc }
-    ]
+    // Group products by category slug
+    const productsByCategory = new Map<string, typeof featuredProducts>()
+    for (const product of featuredProducts) {
+        const slug = product.categories?.slug
+        if (!slug) continue
+        if (!productsByCategory.has(slug)) {
+            productsByCategory.set(slug, [])
+        }
+        const items = productsByCategory.get(slug)!
+        if (items.length < 8) {
+            items.push(product)
+        }
+    }
+
+    const categories = allCategories.map(cat => ({
+        id: cat.slug,
+        label: cat.name,
+        basePath: `/${cat.slug}`,
+        products: productsByCategory.get(cat.slug) || []
+    }))
 
     return (
         <section className="py-20 lg:py-28 bg-neutral-50 overflow-hidden">
