@@ -1,10 +1,8 @@
 import type { Metadata } from "next"
-import { getFeaturedProducts, getPatternTypesByCategorySlug, getBanners } from "@/lib/public-api"
 import { HeroBanner } from "@/components/home/hero-banner"
 import { BrandSlider } from "@/components/home/brand-slider"
 import { BlogSection } from "@/components/home/blog-section"
 import { ProjectSection } from "@/components/home/project-section"
-import { HomeCategorySection } from "@/components/home/home-category-section"
 import { getFeaturedProjects } from "@/lib/public-api-projects"
 import prisma from "@/lib/prisma"
 
@@ -30,49 +28,15 @@ export const metadata: Metadata = {
 }
 
 export default async function HomePage() {
-    const [
-        patternTypes, 
-        banners, 
-        featuredProjects,
-        gach,
-        tbvs,
-        bep,
-        sango,
-        nuoc
-    ] = await Promise.all([
-        getPatternTypesByCategorySlug('gach-op-lat'),
-        getBanners(5),
+    // LEO-366: Temporarily fetch only banners and projects
+    // Product sections will be restored in Phase 3 with unified schema
+    const [banners, featuredProjects] = await Promise.all([
+        prisma.banners.findMany({
+            where: { is_active: true },
+            orderBy: { sort_order: 'asc' },
+            take: 5,
+        }),
         getFeaturedProjects(),
-        prisma.products.findMany({
-            where: { is_featured: true, is_active: true },
-            include: { collections: true, sizes: true, surfaces: true, pattern_types: true },
-            take: 12,
-            orderBy: [{ sort_order: 'asc' }, { created_at: 'desc' }]
-        }),
-        prisma.tbvs_products.findMany({
-            where: { is_featured: true, is_active: true },
-            include: { tbvs_product_types: true, tbvs_brands: true, tbvs_subtypes: true, tbvs_materials: true },
-            take: 12,
-            orderBy: [{ sort_order: 'asc' }, { created_at: 'desc' }]
-        }),
-        prisma.bep_products.findMany({
-            where: { is_featured: true, is_active: true },
-            include: { bep_product_types: true, bep_brands: true, bep_subtypes: true },
-            take: 12,
-            orderBy: [{ sort_order: 'asc' }, { created_at: 'desc' }]
-        }),
-        prisma.sango_products.findMany({
-            where: { is_featured: true, is_active: true },
-            include: { sango_product_types: true, origins: true },
-            take: 12,
-            orderBy: [{ sort_order: 'asc' }, { created_at: 'desc' }]
-        }),
-        prisma.nuoc_products.findMany({
-            where: { is_featured: true, is_active: true },
-            include: { nuoc_product_types: true, nuoc_brands: true, nuoc_subtypes: true, nuoc_materials: true },
-            take: 12,
-            orderBy: [{ sort_order: 'asc' }, { created_at: 'desc' }]
-        })
     ])
 
     return (
@@ -95,47 +59,14 @@ export default async function HomePage() {
             {/* SEO H1 — visually hidden */}
             <h1 className="sr-only">Đông Phú Gia - Đại lý Gạch ốp lát và Thiết bị vệ sinh cao cấp tại Đà Lạt</h1>
 
-            {/* Main content sections */}
-            <div className="bg-white">
-                <HomeCategorySection 
-                    title="Gạch ốp lát"
-                    subtitle="Bán chạy nhất"
-                    products={gach}
-                    basePath="/gach-op-lat"
-                    viewAllHref="/gach-op-lat"
-                />
-                
-                <HomeCategorySection 
-                    title="Thiết bị vệ sinh"
-                    subtitle="Chính Hãng Cao Cấp"
-                    products={tbvs}
-                    basePath="/thiet-bi-ve-sinh"
-                    viewAllHref="/thiet-bi-ve-sinh"
-                />
-
-                <HomeCategorySection 
-                    title="Thiết bị bếp"
-                    subtitle="Hiện Đại & Tiện Nghi"
-                    products={bep}
-                    basePath="/thiet-bi-bep"
-                    viewAllHref="/thiet-bi-bep"
-                />
-
-                <HomeCategorySection 
-                    title="Sàn gỗ"
-                    subtitle="Sang Trọng & Bền Bỉ"
-                    products={sango}
-                    basePath="/san-go"
-                    viewAllHref="/san-go"
-                />
-
-                <HomeCategorySection 
-                    title="Vật liệu ngành nước"
-                    subtitle="Chất lượng Hàng đầu"
-                    products={nuoc}
-                    basePath="/vat-lieu-nuoc"
-                    viewAllHref="/vat-lieu-nuoc"
-                />
+            {/* LEO-366: Product category sections temporarily removed during DB restructure */}
+            {/* Will be rebuilt in Phase 3 with unified product schema */}
+            <div className="bg-white py-16">
+                <div className="max-w-[1280px] mx-auto px-5 text-center">
+                    <p className="text-muted-foreground">
+                        Đang nâng cấp hệ thống sản phẩm. Vui lòng liên hệ trực tiếp để được tư vấn.
+                    </p>
+                </div>
             </div>
 
             <ProjectSection projects={featuredProjects} />

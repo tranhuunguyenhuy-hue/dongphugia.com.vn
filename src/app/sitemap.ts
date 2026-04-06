@@ -15,76 +15,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         { url: `${baseUrl}/gioi-thieu`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.7 },
     ];
 
-    // Gạch ốp lát (Pattern Types + Products)
-    const patternTypes = await prisma.pattern_types.findMany({
-        where: { is_active: true },
-        select: { slug: true, updated_at: true },
-    });
-    const patternPages: MetadataRoute.Sitemap = patternTypes.map((pt) => ({
-        url: `${baseUrl}/gach-op-lat?pattern=${pt.slug}`,
-        lastModified: pt.updated_at || new Date(),
-        changeFrequency: "weekly" as const,
-        priority: 0.8,
-    }));
-    const products = await prisma.products.findMany({
-        where: { is_active: true },
-        select: { slug: true, updated_at: true, pattern_types: { select: { slug: true } } },
-    });
-    const productPages: MetadataRoute.Sitemap = products
-        .filter((p) => p.pattern_types?.slug)
-        .map((p) => ({
-            url: `${baseUrl}/gach-op-lat/${p.pattern_types!.slug}/${p.slug}`,
-            lastModified: p.updated_at || new Date(),
-            changeFrequency: "monthly" as const, priority: 0.7,
-        }));
-
-    // Thiết bị vệ sinh
-    const tbvsProducts = await prisma.tbvs_products.findMany({
-        where: { is_active: true },
-        select: { slug: true, updated_at: true, tbvs_product_types: { select: { slug: true } } },
-    });
-    const tbvsPages: MetadataRoute.Sitemap = tbvsProducts
-        .filter((p) => p.tbvs_product_types?.slug)
-        .map((p) => ({
-            url: `${baseUrl}/thiet-bi-ve-sinh/${p.tbvs_product_types!.slug}/${p.slug}`,
-            lastModified: p.updated_at || new Date(), changeFrequency: "monthly" as const, priority: 0.7,
-        }));
-
-    // Thiết bị bếp
-    const bepProducts = await prisma.bep_products.findMany({
-        where: { is_active: true },
-        select: { slug: true, updated_at: true, bep_product_types: { select: { slug: true } } },
-    });
-    const bepPages: MetadataRoute.Sitemap = bepProducts
-        .filter((p) => p.bep_product_types?.slug)
-        .map((p) => ({
-            url: `${baseUrl}/thiet-bi-bep/${p.bep_product_types!.slug}/${p.slug}`,
-            lastModified: p.updated_at || new Date(), changeFrequency: "monthly" as const, priority: 0.7,
-        }));
-
-    // Vật liệu ngành nước
-    const nuocProducts = await (prisma as any).nuoc_products.findMany({
-        where: { is_active: true },
-        select: { slug: true, updated_at: true, nuoc_product_types: { select: { slug: true } } },
-    });
-    const nuocPages: MetadataRoute.Sitemap = (nuocProducts || [])
-        .filter((p: any) => p.nuoc_product_types?.slug)
-        .map((p: any) => ({
-            url: `${baseUrl}/vat-lieu-nuoc/${p.nuoc_product_types!.slug}/${p.slug}`,
-            lastModified: p.updated_at || new Date(), changeFrequency: "monthly" as const, priority: 0.7,
-        }));
-
-    // Sàn gỗ
-    const sangoProducts = await (prisma as any).sango_products.findMany({
-        where: { is_active: true },
-        select: { slug: true, updated_at: true, sango_product_types: { select: { slug: true } } },
-    });
-    const sangoPages: MetadataRoute.Sitemap = (sangoProducts || [])
-        .filter((p: any) => p.sango_product_types?.slug)
-        .map((p: any) => ({
-            url: `${baseUrl}/san-go/${p.sango_product_types!.slug}/${p.slug}`,
-            lastModified: p.updated_at || new Date(), changeFrequency: "monthly" as const, priority: 0.7,
-        }));
+    // LEO-366: Legacy per-category product sitemap generation removed
+    // Will be restored in Phase 3 with unified product schema
+    // Only static pages and blog posts remain for now
 
     // Blog pages
     let blogPages: MetadataRoute.Sitemap = [
@@ -112,12 +45,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
     return [
         ...staticPages,
-        ...patternPages,
-        ...productPages,
-        ...tbvsPages,
-        ...bepPages,
-        ...nuocPages,
-        ...sangoPages,
         ...blogPages
     ];
 }

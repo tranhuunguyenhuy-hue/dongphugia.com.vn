@@ -6,19 +6,13 @@ import { useState } from "react"
 import { cn } from "@/lib/utils"
 import {
     LayoutDashboard,
-    BrickWall,
     ClipboardList,
     ChevronLeft,
     ChevronRight,
     Package2,
     LogOut,
     Image,
-    ShowerHead,
-    ChefHat,
-    Droplets,
-    Layers,
     BookOpen,
-    DownloadCloud,
     FolderKanban,
     Handshake,
 } from "lucide-react"
@@ -37,17 +31,12 @@ interface SidebarNavProps {
 
 const navLinks = [
     { label: "Dashboard", href: "/admin", icon: LayoutDashboard, exact: true },
-    { label: "Gạch ốp lát", href: "/admin/products", icon: BrickWall, exact: false },
-    { label: "TB Vệ sinh", href: "/admin/tbvs/products", icon: ShowerHead, exact: false },
-    { label: "TB Bếp", href: "/admin/bep/products", icon: ChefHat, exact: false },
-    { label: "Vật liệu nước", href: "/admin/nuoc/products", icon: Droplets, exact: false },
-    { label: "Sàn gỗ", href: "/admin/sango/products", icon: Layers, exact: false },
+    // TODO: LEO-366 Phase 3 — Add unified /admin/products link here
     { label: "Blog", href: "/admin/blog/posts", icon: BookOpen, exact: false },
     { label: "Dự án", href: "/admin/du-an", icon: FolderKanban, exact: false },
     { label: "Đối tác", href: "/admin/doi-tac", icon: Handshake, exact: false },
     { label: "Banners", href: "/admin/banners", icon: Image, exact: false },
     { label: "Báo giá", href: "/admin/quote-requests", icon: ClipboardList, exact: false, quoteBadge: true },
-    { label: "Crawler Data", href: "/admin/crawler", icon: DownloadCloud, exact: false },
 ]
 
 function NavItem({
