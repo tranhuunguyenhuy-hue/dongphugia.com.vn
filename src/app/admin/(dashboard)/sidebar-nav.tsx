@@ -10,6 +10,7 @@ import {
     ChevronLeft,
     ChevronRight,
     Package2,
+    ShoppingBag,
     LogOut,
     Image,
     BookOpen,
@@ -31,7 +32,8 @@ interface SidebarNavProps {
 
 const navLinks = [
     { label: "Dashboard", href: "/admin", icon: LayoutDashboard, exact: true },
-    // TODO: LEO-366 Phase 3 — Add unified /admin/products link here
+    { label: "Sản phẩm", href: "/admin/products", icon: Package2, exact: false },
+    { label: "Đơn hàng", href: "/admin/orders", icon: ShoppingBag, exact: false },
     { label: "Blog", href: "/admin/blog/posts", icon: BookOpen, exact: false },
     { label: "Dự án", href: "/admin/du-an", icon: FolderKanban, exact: false },
     { label: "Đối tác", href: "/admin/doi-tac", icon: Handshake, exact: false },
