@@ -8,11 +8,11 @@
     "completed": true
   },
   "bep": {
-    "crawled": 450,
+    "crawled": 570,
     "skipped": 0,
     "failed": 0,
     "notFound": 0,
     "total": 570,
-    "lastIndex": 450
+    "completed": true
   }
 }
