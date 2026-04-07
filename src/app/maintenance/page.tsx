@@ -36,41 +36,19 @@ export default function MaintenancePage() {
               padding: 32px 24px;
             }
 
-            /* Soft blue gradient BG — low opacity for contrast */
-            .bg-gradient {
+            /* Background image — opacity applied directly on the img */
+            .bg-image {
               position: fixed;
               inset: 0;
               z-index: 0;
               pointer-events: none;
-              overflow: hidden;
             }
 
-            .bg-gradient::before {
-              content: '';
-              position: absolute;
-              width: 140%;
-              height: 140%;
-              top: -20%;
-              left: -20%;
-              background:
-                radial-gradient(ellipse 60% 50% at 20% 50%, rgba(147, 197, 253, 0.25) 0%, transparent 70%),
-                radial-gradient(ellipse 50% 60% at 70% 30%, rgba(96, 165, 250, 0.2) 0%, transparent 70%),
-                radial-gradient(ellipse 40% 50% at 80% 70%, rgba(103, 232, 249, 0.15) 0%, transparent 70%),
-                radial-gradient(ellipse 50% 40% at 40% 80%, rgba(147, 197, 253, 0.18) 0%, transparent 70%);
-              animation: drift 20s ease-in-out infinite alternate;
-            }
-
-            @keyframes drift {
-              0% { transform: translate(0, 0) scale(1); }
-              100% { transform: translate(30px, -20px) scale(1.03); }
-            }
-
-            /* Semi-transparent white overlay for contrast */
-            .bg-gradient::after {
-              content: '';
-              position: absolute;
-              inset: 0;
-              background: rgba(250, 251, 252, 0.55);
+            .bg-image img {
+              width: 100%;
+              height: 100%;
+              object-fit: cover;
+              opacity: 0.35;
             }
 
             .content {
@@ -224,15 +202,17 @@ export default function MaintenancePage() {
             }
 
             @media (prefers-reduced-motion: reduce) {
-              .bg-gradient::before { animation: none; }
+              /* No animations to disable */
             }
           `,
         }}
       />
 
       <div className="maintenance-root">
-        {/* Soft blue gradient background */}
-        <div className="bg-gradient" />
+        {/* Background image */}
+        <div className="bg-image">
+          <img src="/images/maintenance-bg.png" alt="" />
+        </div>
 
         <div className="content">
           {/* Logo */}
@@ -258,7 +238,7 @@ export default function MaintenancePage() {
           </p>
 
           {/* Heading */}
-          <h1 className="heading">Đông Phú Gia</h1>
+          <h1 className="heading">Hệ thống đang bảo trì</h1>
 
           {/* Subtext */}
           <p className="subtext">
