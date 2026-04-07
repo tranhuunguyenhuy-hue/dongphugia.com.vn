@@ -172,9 +172,9 @@ Initiative: ĐPG V2 — E-Commerce Showcase Launch (31/05/2026)
 
 | Category | Enriched | Ảnh CDN | DB Import | Status |
 |---|---|---|---|---|
-| **TB Vệ Sinh** | ✅ 4,417 SP | ✅ 19,025 ảnh → `cdn.dongphugia.com.vn` | ⏳ Chờ sau BEP/NUOC | 🔄 Ready to import |
-| **TB Bếp** | 🔄 Đang crawl (~400/570) | ⏳ Sau crawl | ⏳ | 🔄 In progress |
-| **Vật Liệu Nước** | ⏳ Chờ BEP | ⏳ | ⏳ | 📋 Queued |
+| **TB Vệ Sinh** | ✅ 4,417 SP | ✅ 19,025 ảnh | ✅ 4,312 SP | 🟢 Hoàn thành |
+| **TB Bếp** | ✅ 570 SP | ⏳ Sau crawl | ✅ 470 SP | 🟢 Hoàn thành |
+| **Vật Liệu Nước** | ✅ 185 SP | ⏳ | ✅ 85 SP | 🟢 Hoàn thành |
 | **Gạch Ốp Lát** | ❌ Chưa | ❌ | ❌ | 📋 Sprint 3 |
 | **Sàn Gỗ** | ❌ Chưa | ❌ | ❌ | 📋 Sprint 3 |
 
@@ -194,7 +194,7 @@ Initiative: ĐPG V2 — E-Commerce Showcase Launch (31/05/2026)
 
 | # | Task | Priority | ETA |
 |---|------|---------|-----|
-| 1 | **Import DB** — Chạy `import-v2.mjs` sau BEP/NUOC xong | 🔴 Blocker | ~16:00 hôm nay |
+| 1 | **Import DB** — Chạy `import-v2.mjs` sau BEP/NUOC xong | ✅ DONE | Đã nạp 4.867 SP |
 | 2 | **Quote Request API** — `POST /api/quote-requests` multi-product | 🔴 P0 | Sprint 2 |
 | 3 | **Quote Lookup API** — `GET /api/quote-requests?phone=xxx` | 🟡 P1 | Sprint 2 |
 | 4 | **Order API** — `POST /api/orders` | 🟡 P1 | Sprint 3 |
