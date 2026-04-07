@@ -10,12 +10,12 @@
 
 | Metric | Value |
 |--------|-------|
-| Build | ✅ TypeScript PASS |
-| Prisma | 43 models (sẽ → ~20-25 sau LEO-366) |
-| Database | Supabase PostgreSQL (production) |
-| Deploy | ✅ Live tại dongphugia.com.vn |
-| Git | `main` branch |
-| Linear | 7 Epics + 28 Sub-issues đã setup (LEO-326 → LEO-360) |
+| Build | ✅ TypeScript PASS (0 errors) |
+| Prisma | **23 models** (V2 schema — LEO-366 ✅ Done) |
+| Database | Supabase PostgreSQL — **5,167 SP / 29,197 ảnh** |
+| Deploy | ⚠️ Production đang chạy code V1 (cần LEO-383) |
+| Git | `leo-366-db-restructure` (chưa merge → `main`) |
+| Linear | LEO-366 Done + 5 issues mới (LEO-383→387) |
 | Initiative | [ĐPG V2 — E-Commerce Showcase Launch](https://linear.app/leonguyen/initiative/djpg-v2-e-commerce-showcase-launch-d7b4d0725005) |
 
 ---
