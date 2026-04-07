@@ -1,6 +1,7 @@
 'use server'
 
 import prisma from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 
@@ -24,16 +25,17 @@ const orderSchema = z.object({
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 
+// Fix #3: Entropy tăng từ 4 → 6 digits để giảm collision probability
 function generateOrderNumber(): string {
     const now = new Date()
     const yyyymmdd = now.toISOString().slice(0, 10).replace(/-/g, '')
-    const rand = Math.floor(1000 + Math.random() * 9000)
+    const rand = Math.floor(100000 + Math.random() * 900000)
     return `DPG${yyyymmdd}${rand}`
 }
 
 // ─── CREATE ORDER ─────────────────────────────────────────────────────────────
 
-export async function createOrder(data: any) {
+export async function createOrder(data: unknown) {
     const validated = orderSchema.safeParse(data)
     if (!validated.success) {
         return { errors: validated.error.flatten().fieldErrors }
@@ -149,7 +151,7 @@ export async function getAdminOrders(params: {
 }) {
     const { status, payment_status, search, page = 1, pageSize = 25 } = params
 
-    const where: any = {
+    const where: Prisma.ordersWhereInput = {
         ...(status && { status }),
         ...(payment_status && { payment_status }),
         ...(search && {

@@ -39,7 +39,7 @@ const productSchema = z.object({
 
 // ─── CREATE ──────────────────────────────────────────────────────────────────
 
-export async function createProduct(data: any) {
+export async function createProduct(data: unknown) {
     const validated = productSchema.safeParse(data)
     if (!validated.success) {
         return { errors: validated.error.flatten().fieldErrors }
@@ -47,49 +47,49 @@ export async function createProduct(data: any) {
     const d = validated.data
 
     try {
-        const product = await prisma.products.create({
-            data: {
-                sku: d.sku,
-                name: d.name,
-                slug: d.slug,
-                category_id: d.category_id,
-                subcategory_id: d.subcategory_id || null,
-                brand_id: d.brand_id || null,
-                origin_id: d.origin_id || null,
-                color_id: d.color_id || null,
-                material_id: d.material_id || null,
-                price: d.price ? d.price : null,
-                price_display: d.price_display || 'Liên hệ báo giá',
-                description: d.description || null,
-                features: d.features || null,
-                specs: (d.specs || {}) as Prisma.InputJsonValue,
-                warranty_months: d.warranty_months || null,
-                image_main_url: d.image_main_url || null,
-                image_hover_url: d.image_hover_url || null,
-                stock_status: d.stock_status,
-                is_active: d.is_active,
-                is_featured: d.is_featured,
-                is_new: d.is_new,
-                is_bestseller: d.is_bestseller,
-                sort_order: d.sort_order,
-                source_url: d.source_url || null,
-                hita_product_id: d.hita_product_id || null,
-                seo_title: d.seo_title || null,
-                seo_description: d.seo_description || null,
-            },
-        })
+        const createData: Prisma.productsUncheckedCreateInput = {
+            sku: d.sku,
+            name: d.name,
+            slug: d.slug,
+            category_id: d.category_id,
+            subcategory_id: d.subcategory_id || null,
+            brand_id: d.brand_id || null,
+            origin_id: d.origin_id || null,
+            color_id: d.color_id || null,
+            material_id: d.material_id || null,
+            price: d.price ? d.price : null,
+            price_display: d.price_display || 'Liên hệ báo giá',
+            description: d.description || null,
+            features: d.features || null,
+            specs: (d.specs || {}) as Prisma.InputJsonValue,
+            warranty_months: d.warranty_months || null,
+            image_main_url: d.image_main_url || null,
+            image_hover_url: d.image_hover_url || null,
+            stock_status: d.stock_status,
+            is_active: d.is_active,
+            is_featured: d.is_featured,
+            is_new: d.is_new,
+            is_bestseller: d.is_bestseller,
+            sort_order: d.sort_order,
+            source_url: d.source_url || null,
+            hita_product_id: d.hita_product_id || null,
+            seo_title: d.seo_title || null,
+            seo_description: d.seo_description || null,
+        }
+        const product = await prisma.products.create({ data: createData })
         revalidatePath('/admin/products')
         revalidatePath('/')
         return { success: true, id: product.id }
-    } catch (err: any) {
-        if (err.code === 'P2002') return { message: 'SKU hoặc slug đã tồn tại trong cùng danh mục' }
-        return { message: 'Lỗi tạo sản phẩm: ' + err.message }
+    } catch (err: unknown) {
+        const e = err as { code?: string; message?: string }
+        if (e.code === 'P2002') return { message: 'SKU hoặc slug đã tồn tại trong cùng danh mục' }
+        return { message: 'Lỗi tạo sản phẩm: ' + (e.message ?? 'Unknown error') }
     }
 }
 
 // ─── UPDATE ──────────────────────────────────────────────────────────────────
 
-export async function updateProduct(id: number, data: any) {
+export async function updateProduct(id: number, data: unknown) {
     const validated = productSchema.safeParse(data)
     if (!validated.success) {
         return { errors: validated.error.flatten().fieldErrors }
@@ -97,47 +97,46 @@ export async function updateProduct(id: number, data: any) {
     const d = validated.data
 
     try {
-        await prisma.products.update({
-            where: { id },
-            data: {
-                sku: d.sku,
-                name: d.name,
-                slug: d.slug,
-                category_id: d.category_id,
-                subcategory_id: d.subcategory_id || null,
-                brand_id: d.brand_id || null,
-                origin_id: d.origin_id || null,
-                color_id: d.color_id || null,
-                material_id: d.material_id || null,
-                price: d.price ? d.price : null,
-                price_display: d.price_display || 'Liên hệ báo giá',
-                description: d.description || null,
-                features: d.features || null,
-                specs: (d.specs || {}) as Prisma.InputJsonValue,
-                warranty_months: d.warranty_months || null,
-                image_main_url: d.image_main_url || null,
-                image_hover_url: d.image_hover_url || null,
-                stock_status: d.stock_status,
-                is_active: d.is_active,
-                is_featured: d.is_featured,
-                is_new: d.is_new,
-                is_bestseller: d.is_bestseller,
-                sort_order: d.sort_order,
-                source_url: d.source_url || null,
-                hita_product_id: d.hita_product_id || null,
-                seo_title: d.seo_title || null,
-                seo_description: d.seo_description || null,
-                updated_at: new Date(),
-            },
-        })
+        const updateData: Prisma.productsUncheckedUpdateInput = {
+            sku: d.sku,
+            name: d.name,
+            slug: d.slug,
+            category_id: d.category_id,
+            subcategory_id: d.subcategory_id || null,
+            brand_id: d.brand_id || null,
+            origin_id: d.origin_id || null,
+            color_id: d.color_id || null,
+            material_id: d.material_id || null,
+            price: d.price ? d.price : null,
+            price_display: d.price_display || 'Liên hệ báo giá',
+            description: d.description || null,
+            features: d.features || null,
+            specs: (d.specs || {}) as Prisma.InputJsonValue,
+            warranty_months: d.warranty_months || null,
+            image_main_url: d.image_main_url || null,
+            image_hover_url: d.image_hover_url || null,
+            stock_status: d.stock_status,
+            is_active: d.is_active,
+            is_featured: d.is_featured,
+            is_new: d.is_new,
+            is_bestseller: d.is_bestseller,
+            sort_order: d.sort_order,
+            source_url: d.source_url || null,
+            hita_product_id: d.hita_product_id || null,
+            seo_title: d.seo_title || null,
+            seo_description: d.seo_description || null,
+            updated_at: new Date(),
+        }
+        await prisma.products.update({ where: { id }, data: updateData })
         // Revalidate category listing + product detail
         revalidatePath('/admin/products')
         revalidatePath(`/admin/products/${id}`)
         revalidatePath('/')
         return { success: true }
-    } catch (err: any) {
-        if (err.code === 'P2002') return { message: 'SKU hoặc slug đã tồn tại trong cùng danh mục' }
-        return { message: 'Lỗi cập nhật sản phẩm: ' + err.message }
+    } catch (err: unknown) {
+        const e = err as { code?: string; message?: string }
+        if (e.code === 'P2002') return { message: 'SKU hoặc slug đã tồn tại trong cùng danh mục' }
+        return { message: 'Lỗi cập nhật sản phẩm: ' + (e.message ?? 'Unknown error') }
     }
 }
 
@@ -207,13 +206,18 @@ export async function bulkToggleActive(ids: number[], value: boolean) {
 
 export async function addProductImage(productId: number, imageUrl: string, altText?: string, imageType = 'gallery') {
     try {
-        const img = await prisma.product_images.create({
-            data: { product_id: productId, image_url: imageUrl, alt_text: altText || null, image_type: imageType },
-        })
+        const imgData: Prisma.product_imagesUncheckedCreateInput = {
+            product_id: productId,
+            image_url: imageUrl,
+            alt_text: altText || null,
+            image_type: imageType,
+        }
+        const img = await prisma.product_images.create({ data: imgData })
         revalidatePath(`/admin/products/${productId}`)
         return { success: true, id: img.id }
-    } catch (err: any) {
-        return { message: 'Lỗi thêm ảnh: ' + err.message }
+    } catch (err: unknown) {
+        const e = err as { message?: string }
+        return { message: 'Lỗi thêm ảnh: ' + (e.message ?? 'Unknown error') }
     }
 }
 

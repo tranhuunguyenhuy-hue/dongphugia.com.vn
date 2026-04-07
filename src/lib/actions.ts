@@ -112,7 +112,7 @@ export async function submitQuoteRequest(prevState: any, formData: FormData) {
                 phone: d.phone,
                 email: d.email || null,
                 message: d.message || null,
-                product_id: d.product_id || null,
+                quote_number: `DPG-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.floor(1000 + Math.random() * 9000)}`,
             },
         })
     } catch (error) {

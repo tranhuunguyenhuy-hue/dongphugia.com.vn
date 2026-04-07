@@ -650,19 +650,21 @@ rm -rf .turbo
 
 | Agent | Scope tóm tắt | Profile |
 |-------|--------------|---------|
-| **Claude Code** | Prisma, Server Actions, Public API, Admin CMS, Build fix, DB scripts | `.agents/profiles/claude-code.md` |
-| **Antigravity (Tninie)** | React components, public pages, Tailwind styling, responsive UI | `.agents/profiles/antigravity.md` |
-| **PM Assistant** | Linear management, sprint planning, docs, cross-agent coordination | `.agents/profiles/pm-assistant.md` |
+| **Antigravity (Tninie)** | Full-stack feature development: DB, Prisma, Server Actions, Admin CMS, React UI, Tailwind, public pages | `.agents/profiles/antigravity.md` |
+| **Claude Code** | DevOps: Vercel deploy, CI/CD, build verification, domain/DNS, env vars, infra | `.agents/profiles/claude-code.md` |
+| **PM Assistant** | Project coordination + Linear management (cùng PM Huy): issue tracking, sprint planning, stakeholder reports, scope arbitration | `.agents/profiles/pm-assistant.md` |
 | **PM (Huy)** | Strategy, final approval, deploy trigger, conflict resolution | — |
 
 ### Scope Boundary Quick Reference
 
 | Nếu task liên quan đến... | Assign cho |
 |--------------------------|------------|
-| DB, Prisma, Server Actions, Admin CMS | **Claude Code** |
+| DB, Prisma, Server Actions, Admin CMS | **Antigravity** |
 | Public pages, React UI, Tailwind, Figma | **Antigravity** |
-| Linear, sprint planning, docs | **PM Assistant** |
-| Deploy Vercel, merge PR, arch decisions | **PM (Huy) — human only** |
+| Vercel deploy, build config, CI/CD, env vars | **Claude Code** |
+| Linear issues, sprint planning, scope arbitration | **PM (Huy) + PM Assistant** |
+| Stakeholder reports, client briefs, retrospectives | **PM (Huy) + PM Assistant** |
+| Final deploy trigger, arch decisions | **PM (Huy) — human only** |
 | **Không rõ scope** | → Hỏi PM trước khi làm |
 
 **Không overlap scope mà không xác nhận với PM.**

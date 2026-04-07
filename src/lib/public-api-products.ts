@@ -31,9 +31,15 @@ export type ProductFilters = {
     category_slug?: string
     subcategory_slug?: string
     brand_id?: number
+    color_id?: number
+    material_id?: number
+    origin_id?: number
     is_featured?: boolean
     is_new?: boolean
+    is_bestseller?: boolean
     is_active?: boolean
+    price_min?: number
+    price_max?: number
     search?: string
     page?: number
     pageSize?: number
@@ -48,8 +54,14 @@ export async function getPublicProducts(filters: ProductFilters = {}) {
         category_slug,
         subcategory_slug,
         brand_id,
+        color_id,
+        material_id,
+        origin_id,
         is_featured,
         is_new,
+        is_bestseller,
+        price_min,
+        price_max,
         search,
         page = 1,
         pageSize = 24,
@@ -62,8 +74,18 @@ export async function getPublicProducts(filters: ProductFilters = {}) {
         ...(category_slug && { categories: { slug: category_slug } }),
         ...(subcategory_slug && { subcategories: { slug: subcategory_slug } }),
         ...(brand_id && { brand_id }),
+        ...(color_id && { color_id }),
+        ...(material_id && { material_id }),
+        ...(origin_id && { origin_id }),
         ...(is_featured !== undefined && { is_featured }),
         ...(is_new !== undefined && { is_new }),
+        ...(is_bestseller !== undefined && { is_bestseller }),
+        ...((price_min !== undefined || price_max !== undefined) && {
+            price: {
+                ...(price_min !== undefined && { gte: price_min }),
+                ...(price_max !== undefined && { lte: price_max }),
+            },
+        }),
         ...(search && {
             OR: [
                 { name: { contains: search, mode: 'insensitive' } },
@@ -122,7 +144,7 @@ export async function getPublicProducts(filters: ProductFilters = {}) {
 
 // ─── PUBLIC: PRODUCT DETAIL ──────────────────────────────────────────────────
 
-export async function getPublicProductBySlug(categorySlug: string, slug: string) {
+async function _getPublicProductBySlug(categorySlug: string, slug: string) {
     return prisma.products.findFirst({
         where: {
             slug,
@@ -146,6 +168,12 @@ export async function getPublicProductBySlug(categorySlug: string, slug: string)
         },
     })
 }
+
+export const getPublicProductBySlug = unstable_cache(
+    _getPublicProductBySlug,
+    ['product-detail'],
+    { revalidate: 1800, tags: ['products', 'product-detail'] }
+)
 
 // ─── CACHED: FEATURED PRODUCTS (per category) ────────────────────────────────
 

@@ -86,13 +86,13 @@ model products {
   order_items            order_items[]
   product_feature_values product_feature_values[]
   product_images         product_images[]
+  quote_items            quote_items[]
   brands                 brands?                  @relation(fields: [brand_id], references: [id], onUpdate: NoAction)
   categories             categories               @relation(fields: [category_id], references: [id], onUpdate: NoAction)
   colors                 colors?                  @relation(fields: [color_id], references: [id], onUpdate: NoAction)
   materials              materials?               @relation(fields: [material_id], references: [id], onUpdate: NoAction)
   origins                origins?                 @relation(fields: [origin_id], references: [id], onUpdate: NoAction)
   subcategories          subcategories?           @relation(fields: [subcategory_id], references: [id], onUpdate: NoAction)
-  quote_requests         quote_requests[]
 
   @@unique([category_id, slug])
   @@index([is_active], map: "idx_products_active")
@@ -120,20 +120,35 @@ model redirects {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model quote_requests {
-  id         Int       @id @default(autoincrement())
-  name       String    @db.VarChar(100)
-  phone      String    @db.VarChar(20)
-  email      String?   @db.VarChar(200)
-  message    String?
-  product_id Int?
-  status     String    @default("pending") @db.VarChar(20)
-  created_at DateTime  @default(now()) @db.Timestamptz(6)
-  updated_at DateTime  @default(now()) @db.Timestamptz(6)
-  products   products? @relation(fields: [product_id], references: [id], onUpdate: NoAction)
+  id            Int           @id @default(autoincrement())
+  quote_number  String?       @unique @db.VarChar(30)
+  name          String        @db.VarChar(100)
+  phone         String        @db.VarChar(20)
+  email         String?       @db.VarChar(200)
+  message       String?
+  status        String        @default("pending") @db.VarChar(20)
+  created_at    DateTime      @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime      @default(now()) @db.Timestamptz(6)
+  quote_items   quote_items[]
 
+  @@index([quote_number], map: "idx_quote_requests_number")
   @@index([created_at(sort: Desc)], map: "idx_quote_requests_created")
   @@index([status], map: "idx_quote_requests_status")
-  @@index([product_id], map: "idx_quote_requests_product")
+  @@index([phone], map: "idx_quote_requests_phone")
+}
+
+model quote_items {
+  id             Int            @id @default(autoincrement())
+  quote_id       Int
+  product_id     Int
+  quantity       Int            @default(1)
+  note           String?        @db.VarChar(500)
+  created_at     DateTime       @default(now()) @db.Timestamptz(6)
+  quote_requests quote_requests @relation(fields: [quote_id], references: [id], onDelete: Cascade)
+  products       products       @relation(fields: [product_id], references: [id], onUpdate: NoAction)
+
+  @@index([quote_id], map: "idx_quote_items_quote")
+  @@index([product_id], map: "idx_quote_items_product")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.

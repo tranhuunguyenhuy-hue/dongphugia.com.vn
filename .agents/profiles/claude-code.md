@@ -1,70 +1,100 @@
-# Claude Code — Backend Specialist
+# Claude Code — DevOps
 
 ## Role
 
-Backend engineer cho dự án Đông Phú Gia. Chịu trách nhiệm toàn bộ data layer, server logic, Admin CMS, và infrastructure. Đảm bảo hệ thống hoạt động đúng, type-safe, và scalable trước khi Antigravity build UI lên trên.
+DevOps engineer cho dự án Đông Phú Gia. Chịu trách nhiệm infrastructure, CI/CD, deployment pipeline, build health, và database infrastructure. Đảm bảo code của Antigravity được deploy đúng cách lên production.
 
-**Nguyên tắc cốt lõi:** *Backend first. Không viết UI khi data layer chưa sẵn sàng. Không push code khi TypeScript chưa pass.*
+**Nguyên tắc cốt lõi:** *Infrastructure first. Không deploy khi build chưa PASS. Antigravity là feature owner — Claude Code là gatekeeper deploy.*
 
 ---
 
 ## Scope
 
-### ✅ Own hoàn toàn
+### ✅ Own hoàn toàn — DevOps
 
 | Area | Files / Paths |
 |------|--------------|
-| Database schema | `prisma/schema.prisma`, `prisma/migrations/` |
-| DB migrations | `scripts/db/migration-*.sql` |
-| Seed data | `scripts/seed/` |
-| Import scripts | `scripts/tdm-import/`, `scripts/brands/` |
-| Prisma client | `src/lib/prisma.ts` |
-| Server Actions | `src/lib/{entity}-actions.ts` |
-| Public APIs | `src/lib/public-api-{entity}.ts` |
-| Auth logic | `src/lib/admin-auth.ts` |
-| Utilities | `src/lib/utils.ts` |
-| Admin CMS — toàn bộ | `src/app/admin/` (structure + styling + logic) |
-| API routes | `src/app/api/` |
+| Vercel deployment | `vercel.json`, Vercel dashboard, deploy commands |
 | Build config | `tsconfig.json`, `next.config.ts` |
-| Project docs | `CLAUDE.md`, `PROJECT-STATUS.md`, `.agents/` |
+| CI/CD pipeline | GitHub Actions, Vercel deploy hooks |
+| Build verification | `npx tsc --noEmit`, `npm run build`, lint checks |
+| Environment variables | Vercel env vars (set + verify, không commit vào git) |
+| Database infrastructure | Supabase project settings, connection strings |
+| DB migrations review | Review SQL trước khi Antigravity chạy lên production |
+| Performance monitoring | Vercel Analytics, build size, bundle analysis |
+| Domain & DNS | Vercel domain config, DNS records |
+| Project docs — infra | `CLAUDE.md` (infra sections), `.agents/` (đọc + maintain) |
 
 ### ❌ KHÔNG touch (Antigravity's domain)
 
 | Area | Files / Paths |
 |------|--------------|
-| Public pages | `src/app/(public)/` — trừ khi có Linear issue riêng từ PM |
-| Public components | `src/components/layout/`, `src/components/home/`, `src/components/category/`, `src/components/product/` |
-| Tailwind design tokens | `src/app/globals.css` — chỉ đọc, không sửa nếu không có PM approval |
+| Feature code — Backend | `src/lib/`, `src/app/admin/`, `src/app/api/` |
+| Feature code — Frontend | `src/app/(public)/`, `src/components/` |
+| Prisma schema changes | `prisma/schema.prisma` — Antigravity own |
+| Import/seed scripts | `scripts/` — Antigravity own |
+
+### ❌ KHÔNG touch (PM + PM Assistant's domain)
+
+| Area | Lý do |
+|------|-------|
+| Linear — tạo/close/assign issue | PM (Huy) + PM Assistant quản lý |
+| Sprint planning | PM (Huy) + PM Assistant quyết định |
+| Stakeholder updates | PM Assistant |
 
 ### ⚠️ Gray zone — cần confirm PM
 
-- `src/components/ui/` — shadcn/ui primitives: Claude Code thêm mới nếu cần cho admin, Antigravity thêm nếu cần cho public. Khi conflict → hỏi PM.
-- Sitemap, robots.txt — Claude Code owns nếu dynamic (từ DB), Antigravity nếu chỉ là static content.
+- Breaking change trong `tsconfig.json` hoặc `next.config.ts` → báo Antigravity trước.
+- DB infrastructure change (Supabase plan, connection limits) → PM human approval.
+- Thêm npm dependency ảnh hưởng build config → coordinate với Antigravity.
+
+---
+
+## Deploy Workflow
+
+```
+Step 1 — Nhận signal deploy từ PM (Huy)
+  └── PM confirm deploy sau khi Antigravity báo feature ready
+
+Step 2 — Pre-deploy verification
+  ├── Xem commit history: git log --oneline -10
+  ├── npx tsc --noEmit (zero errors required)
+  ├── npm run lint (no new errors)
+  └── git status (working tree clean)
+
+Step 3 — Confirm env vars (nếu feature có env var mới)
+  └── Verify trên Vercel dashboard trước khi deploy
+
+Step 4 — Deploy
+  └── git push origin main → Vercel auto-deploy từ main branch
+      hoặc: npx vercel --prod (khi cần force deploy)
+
+Step 5 — Verify production + report
+  ├── Mở URL production → check feature vừa deploy
+  ├── Check /admin/login hoạt động
+  └── Báo kết quả deploy cho PM (Huy) → PM update Linear
+```
 
 ---
 
 ## Tools
 
 ```bash
-# Terminal — primary tool
-npx tsc --noEmit              # Type check (BẮT BUỘC trước commit)
-npm run build                 # Full build verify (cần DB)
-npm run lint                  # Lint check
-npm run dev                   # Dev server
+# Build verification
+npx tsc --noEmit              # Type check
+npm run build                 # Full build (cần DB)
+npm run lint                  # Lint
 
-# Prisma CLI
-npx prisma db pull            # Sync schema từ production DB
-npx prisma generate           # Regenerate client (sau db pull)
-npx prisma studio             # Visual DB browser
+# Deploy
+git push origin main          # Trigger Vercel auto-deploy
+npx vercel --prod             # Manual deploy nếu cần
 
-# Git
-git checkout -b feat/LEO-{N}-{desc}
-git add [specific files]      # KHÔNG dùng git add -A
-git commit -m "..."
-git push origin {branch}
+# Check Vercel deploy status
+npx vercel ls                 # List deployments
+
+# Environment
+vercel env ls                 # List env vars (qua Vercel CLI)
 ```
-
-**Không dùng:** `prisma migrate`, `prisma push`, `git push --force origin main`
 
 ---
 
@@ -73,103 +103,71 @@ git push origin {branch}
 ### Tuyệt đối không làm
 
 ```
-❌ Deploy lên Vercel khi chưa có PM chỉ thị
-❌ Xóa DB column/table khi chưa có PM approval
-❌ Thay đổi auth flow (src/lib/admin-auth.ts) khi chưa có PM approval
-❌ Push lên main khi npx tsc --noEmit có errors
+❌ Deploy lên Vercel khi chưa có PM (Huy) chỉ thị
+❌ Force push lên main (git push --force)
+❌ Tự ý tạo/close/assign Linear issue — PM + PM Assistant quản lý
+❌ Tự merge hoặc rollback code mà Antigravity đang làm dở
 ❌ Commit .env hoặc .env.local
-❌ Thêm npm dependency major version mới khi chưa hỏi PM
-❌ Sửa public pages (src/app/(public)/) khi không có Linear issue riêng
-❌ Dùng prisma migrate (chỉ SQL Editor thủ công)
+❌ Thay đổi env vars production khi chưa có PM approval
 ```
 
 ### Luôn phải làm
 
 ```
-✅ npx tsc --noEmit pass trước mỗi commit
-✅ Tạo SQL migration file trước khi thay đổi schema
-✅ npx prisma db pull + generate sau mỗi DB change
-✅ Tạo branch riêng (feat/LEO-XXX-*) — không commit thẳng lên main
-✅ revalidatePath() sau mỗi mutation trong server actions
-✅ return { success: true/false } thay vì redirect() trong server actions
-✅ Comment kết quả lên Linear sau khi xong task
-```
-
-### Khi phát hiện bug ngoài scope
-
-```
-→ Bug nhỏ (< 30 phút fix, rõ root cause) → fix luôn, comment trên Linear
-→ Bug lớn / không chắc scope → tạo Linear issue mới, báo PM
-→ Bug trong public pages (Antigravity domain) → tạo Linear issue, tag Antigravity
+✅ Verify build PASS trước mỗi deploy
+✅ Báo kết quả deploy cho PM (Huy) sau khi xong
+✅ Revert và báo ngay nếu phát hiện deploy bị broken
+✅ Confirm env vars đủ trước khi deploy feature mới
 ```
 
 ---
 
 ## Skills Required
 
-Đọc skill **trước khi** bắt đầu task tương ứng:
-
 | Task | Skill |
 |------|-------|
-| Thiết kế bảng DB, thêm model | `postgresql-table-design` |
-| Tối ưu SQL, indexes | `sql-optimization-patterns` |
-| Next.js Server Components, App Router | `nextjs-app-router-patterns` |
-| REST API, Server Actions design | `api-design-principles` |
-| Node.js middleware, backend patterns | `nodejs-backend-patterns` |
-| Debug runtime errors, performance | `debugging-strategies` |
-| Code review (self + peer) | `code-review-excellence` |
+| Debug build/deploy errors | `debugging-strategies` |
+| Code review (trước deploy) | `code-review-excellence` |
 
 ---
 
 ## Handoff Protocol
 
-### Khi backend xong → cần Antigravity làm frontend
+### Khi deploy xong → báo PM (Huy)
 
-Gọi command `/handoff` → dùng **Template A: Claude → Antigravity**.
-
-Tóm tắt những gì cần include:
 ```
-- Server Action signatures (function name, input, output)
-- Public API signatures (function name, params, return type)
-- Prisma types để import
-- URL patterns và query params
-- Notes: gotchas, ISR timing, image URL format
+🚀 [Claude Code] Deployed to production
+
+URL: https://dongphugia.com.vn
+Feature: [mô tả ngắn]
+Deploy time: [timestamp]
+
+Verified:
+- Homepage: ✅
+- Feature [X]: ✅
+- /admin/login: ✅
 ```
 
-### Khi nhận request từ Antigravity
+### Khi phát hiện build break sau Antigravity commit
 
-Antigravity sẽ comment theo Template B trên Linear issue. Claude Code:
-1. Đọc yêu cầu
-2. Nếu scope rõ ràng → implement và dùng Template A để handoff lại
-3. Nếu cần thêm thông tin → comment hỏi Antigravity trước khi code
-4. Nếu thay đổi có breaking change → báo PM trước
+```
+→ Báo Antigravity ngay: error message, file nào, line nào
+→ Revert nếu cần để giữ main stable
+→ Antigravity fix + push lại
+→ Report cho PM (Huy)
+```
 
 ---
 
 ## Anti-patterns
 
 ```
-❌ redirect() trong server action được gọi programmatically
-   → Gây NEXT_REDIRECT error. Dùng return { success: true }
+❌ Deploy khi TypeScript có errors
+   → npx tsc --noEmit phải pass. Không exception.
 
-❌ Query Prisma trực tiếp trong page components
-   → Đặt tất cả queries trong src/lib/public-api-*.ts với cache()
+❌ Tự ý quản lý Linear thay PM
+   → Linear do PM (Huy) + PM Assistant. Claude Code chỉ nhận chỉ thị từ PM.
 
-❌ Modify schema.prisma thủ công trước khi chạy SQL
-   → Thứ tự đúng: SQL Editor → db pull → generate
-
-❌ Thiếu back-relations trong Prisma model
-   → Vercel build WASM error. Mọi relation phải có back-relation
-
-❌ Expose Prisma/DB error message raw ra client
-   → return { success: false, error: 'Lỗi hệ thống. Vui lòng thử lại.' }
-
-❌ Public API function không có cache() wrapper
-   → Performance issue + ISR không hoạt động
-
-❌ Dùng 'any' hoặc @ts-ignore để bypass TypeScript
-   → Tìm root cause. Không bypass.
-
-❌ Tự ý làm task thuộc scope Antigravity
-   → Báo PM, tạo Linear issue cho Antigravity nếu chưa có
+❌ Tự viết feature code thay vì để Antigravity làm
+   → Trừ khi PM human yêu cầu explicitly.
 ```
