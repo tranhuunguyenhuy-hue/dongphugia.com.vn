@@ -27,7 +27,9 @@ export default async function QuoteRequestsPage({ searchParams }: PageProps) {
         where: statusFilter ? { status: statusFilter } : undefined,
         orderBy: { created_at: 'desc' },
         include: {
-            products: { select: { id: true, name: true } },
+            quote_items: {
+                include: { products: { select: { id: true, name: true } } },
+            },
         },
     })
 
@@ -100,11 +102,14 @@ export default async function QuoteRequestsPage({ searchParams }: PageProps) {
                                     </TableCell>
                                     <TableCell className="text-sm text-muted-foreground">{q.email || '—'}</TableCell>
                                     <TableCell className="text-sm">
-                                        {q.products ? (
-                                            <Link href={`/admin/products/${q.products.id}`} className="hover:text-primary transition-colors">
-                                                {q.products.name}
-                                            </Link>
-                                        ) : '—'}
+                                    {q.quote_items.length > 0 ? (
+                            <span className="text-sm">
+                                {q.quote_items.map(qi => qi.products.name).join(', ')}
+                                {q.quote_items.length > 1 && (
+                                    <span className="ml-1 text-xs text-muted-foreground">+{q.quote_items.length} SP</span>
+                                )}
+                            </span>
+                        ) : '—'}
                                     </TableCell>
                                     <TableCell className="text-sm text-muted-foreground max-w-[180px]">
                                         <span className="line-clamp-2">{q.message || '—'}</span>
