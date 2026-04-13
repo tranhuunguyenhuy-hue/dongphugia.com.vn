@@ -2,7 +2,7 @@
 
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
-import { ADMIN_SESSION_COOKIE, getExpectedToken } from '@/lib/admin-auth'
+import { ADMIN_SESSION_COOKIE, createSessionToken, SESSION_MS } from '@/lib/admin-auth'
 
 export async function loginAction(
     _prevState: { error?: string } | null,
@@ -23,13 +23,19 @@ export async function loginAction(
         return { error: 'Mật khẩu không đúng.' }
     }
 
-    const token = getExpectedToken()!
+    // LEO-389: Bind token to current timestamp for session expiry support
+    const issuedAt = Date.now()
+    const token = createSessionToken(issuedAt)
+    // Cookie value format: "<hmac>:<issuedAt>"
+    const cookieValue = `${token}:${issuedAt}`
+
     const cookieStore = await cookies()
-    cookieStore.set(ADMIN_SESSION_COOKIE, token, {
+    cookieStore.set(ADMIN_SESSION_COOKIE, cookieValue, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
-        maxAge: 60 * 60 * 24 * 30, // 30 days
+        // maxAge matches SESSION_MS — browser clears cookie after this duration
+        maxAge: Math.floor(SESSION_MS / 1000),
         path: '/',
     })
 
