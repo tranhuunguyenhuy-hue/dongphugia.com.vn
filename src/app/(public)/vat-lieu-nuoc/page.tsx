@@ -1,18 +1,90 @@
 import { Metadata } from "next"
+import { Suspense } from "react"
+import { getCategoryWithSubcategories } from "@/lib/category-helpers"
+import { getPublicProducts } from "@/lib/public-api-products"
+import { SubcategoryTabs } from "@/components/category/subcategory-tabs"
+import { ProductCard } from "@/components/ui/product-card"
+import { ProductPagination } from "@/components/ui/product-pagination"
+
+export const revalidate = 3600
 
 export const metadata: Metadata = {
-  title: "Vật Liệu Nước | Đông Phú Gia",
-  description: "Vật liệu nước cao cấp tại Đông Phú Gia",
+    title: "Vật Liệu Nước | Đông Phú Gia",
+    description: "Vật liệu nước chính hãng tại Đông Phú Gia Đà Lạt. Đường ống, phụ kiện nước, van, khớp nối cao cấp.",
+    keywords: ["vật liệu nước", "đường ống", "phụ kiện nước", "van nước", "Đà Lạt"],
 }
 
-// LEO-366: Page will be rebuilt in Phase 3 with unified product schema
-export default function VatLieuNuocPage() {
-  return (
-    <div className="container mx-auto px-4 py-20 text-center">
-      <h1 className="text-3xl font-bold mb-4">Vật Liệu Nước</h1>
-      <p className="text-muted-foreground">
-        Trang đang được nâng cấp. Vui lòng quay lại sau.
-      </p>
-    </div>
-  )
+const CATEGORY_SLUG = "vat-lieu-nuoc"
+const BASE_PATH = "/vat-lieu-nuoc"
+const PAGE_SIZE = 24
+
+interface PageProps {
+    searchParams: Promise<{ sub?: string; page?: string }>
+}
+
+export default async function VatLieuNuocPage({ searchParams }: PageProps) {
+    const params = await searchParams
+    const currentPage = Math.max(1, parseInt(params.page || "1"))
+    const activeSubSlug = params.sub
+
+    const [category, { products, totalPages }] = await Promise.all([
+        getCategoryWithSubcategories(CATEGORY_SLUG),
+        getPublicProducts({
+            category_slug: CATEGORY_SLUG,
+            subcategory_slug: activeSubSlug,
+            page: currentPage,
+            pageSize: PAGE_SIZE,
+            sortBy: "sort_order",
+            sortDir: "asc",
+        }),
+    ])
+
+    const subcategories = category?.subcategories ?? []
+
+    return (
+        <main className="max-w-[1280px] mx-auto px-5 py-8 lg:py-12">
+            <div className="mb-6">
+                <h1 className="text-3xl font-bold text-[#192125] tracking-tight mb-1">
+                    Vật Liệu Nước
+                </h1>
+                <p className="text-neutral-500 text-sm">
+                    Sản phẩm chính hãng. Bảo hành đầy đủ. Tư vấn miễn phí.
+                </p>
+            </div>
+
+            <Suspense>
+                <div className="mb-8">
+                    <SubcategoryTabs
+                        subcategories={subcategories}
+                        activeSlug={activeSubSlug}
+                        basePath={BASE_PATH}
+                        searchParams={activeSubSlug ? { sub: activeSubSlug } : {}}
+                    />
+                </div>
+            </Suspense>
+
+            {products.length > 0 ? (
+                <>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                        {products.map(product => (
+                            <ProductCard
+                                key={product.id}
+                                product={{ ...product }}
+                                basePath={BASE_PATH}
+                                patternSlug={product.subcategories?.slug ?? "san-pham"}
+                            />
+                        ))}
+                    </div>
+                    <Suspense>
+                        <ProductPagination totalPages={totalPages} currentPage={currentPage} />
+                    </Suspense>
+                </>
+            ) : (
+                <div className="py-24 text-center text-neutral-400">
+                    <p className="text-lg font-medium">Chưa có sản phẩm trong mục này.</p>
+                    <p className="text-sm mt-1">Vui lòng liên hệ để được tư vấn trực tiếp.</p>
+                </div>
+            )}
+        </main>
+    )
 }
