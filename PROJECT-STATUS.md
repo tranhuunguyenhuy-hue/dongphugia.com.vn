@@ -1,205 +1,120 @@
-# PROJECT STATUS — Đông Phú Gia
+# PROJECT STATUS — Đông Phú Gia V2
 
-> Cập nhật: **07/04/2026** — V2 Data Pipeline + Backend đang hoàn thiện
-> Linear: [Đông Phú Gia - Website VLXD](https://linear.app/leonguyen/project/djong-phu-gia-website-vlxd-179a568436a0)
-> **Cập nhật file này sau mỗi milestone hoàn thành.**
-
----
-
-## Trạng thái tổng quan
-
-| Metric | Value |
-|--------|-------|
-| Build | ✅ TypeScript PASS (0 errors) |
-| Prisma | **23 models** (V2 schema — LEO-366 ✅ Done) |
-| Database | Supabase PostgreSQL — **5,167 SP / 29,197 ảnh** |
-| Deploy | ⚠️ Production đang chạy code V1 (cần LEO-383) |
-| Git | `leo-366-db-restructure` (chưa merge → `main`) |
-| Linear | LEO-366 Done + 5 issues mới (LEO-383→387) |
-| Initiative | [ĐPG V2 — E-Commerce Showcase Launch](https://linear.app/leonguyen/initiative/djpg-v2-e-commerce-showcase-launch-d7b4d0725005) |
+> **Cập nhật:** 09/04/2026 — Tái cấu trúc Linear sang Feature/Domain
+> Linear: [ĐPG V2 Initiative](https://linear.app/leonguyen/initiative/dpg-v2-e-commerce-showcase-launch-f9198055)
+> **Deadline cứng: 31/05/2026 — Final Deploy V2**
 
 ---
 
-## V1 — Hoàn thành ✅
+## 🗂️ Cấu trúc Linear (Feature/Domain — 09/04/2026)
 
-### Backend + Frontend (5 danh mục)
-- ✅ Gạch ốp lát, TB Vệ sinh, TB Bếp, Vật liệu nước, Sàn gỗ: Server Actions + Public API + Admin CMS + Public pages
+### Initiative: ĐPG V2 — E-Commerce Showcase Launch
 
-### Content & Pages
-- ✅ Blog, Đối tác, Dự án, Về chúng tôi, Trang chủ
+| Project | Timeline | Status | Key Issues |
+|---------|----------|--------|------------|
+| **Design System & Foundation** | 09/04 → 26/04 | 🔵 Active | LEO-371→373, 392, 393, 388→391 |
+| **Page Redesign — 3 Core Pages** | 27/04 → 10/05 | ⏳ Upcoming | LEO-374→376, 394→396, 348, 352 |
+| **Quote Cart & Checkout** | 01/05 → 15/05 | ⏳ Upcoming | LEO-397, 398, 399 |
+| **SEO, Testing & Launch** | 11/05 → 31/05 | ⏳ Upcoming | LEO-353→359 |
 
-### Infrastructure
-- ✅ Auth HMAC-SHA256, ImageUploader → Supabase, Sitemap động, Quote Request, Admin Crawler, Floating Contact
-
----
-
-## Sprint 1 — Hoàn thành ✅ (29/03 → 01/04)
-
-| Issue | Nội dung | Ngày xong |
-|-------|---------|-----------|
-| LEO-307/308 | Cleanup + clone fresh codebase | 29-30/03 |
-| LEO-289-291 | DB Audit + xóa dien_*/khoa_* | 30/03 |
-| LEO-309-319 | Agent Framework: Rules, Commands, Profiles | 30-31/03 |
-| LEO-292, LEO-278 | Vercel deploy + DNS dongphugia.com.vn | 30-31/03 |
-| LEO-320, LEO-321 | Hita crawler + import 5,254 SP | 31/03-01/04 |
-| LEO-322 | Mirror 5,254 ảnh chính → Supabase Storage | 01/04 |
-| LEO-323 | Gallery crawl TBVS (in progress khi S1 kết thúc) | ~02/04 |
-
----
-
-## V2 Roadmap — Cấu trúc mới (03/04/2026)
-
-> Tất cả issues đã được tổ chức lại trên Linear theo "Layered Linear" model.
-> Initiative → Project → Milestones → Epics → Sub-issues
-
-### Linear Structure
-
+### Workflow bất biến: Designer → Dev (Contract-Driven)
 ```
-Initiative: ĐPG V2 — E-Commerce Showcase Launch (31/05/2026)
-└── Project: Đông Phú Gia - Website VLXD
-    ├── Milestone: Sprint 2 — P0 Hotfix + Design System + Data (26/04)
-    ├── Milestone: Sprint 3 — Search + Navigation + Page Redesign (10/05)
-    └── Milestone: Sprint 4 — SEO + Content + Launch (31/05)
+[Designer] Figma DONE  →  [Dev] Implementation starts
+KHÔNG bắt đầu Dev khi Design chưa Done
 ```
 
-### Labels
+---
 
-| Label | Màu | Mục đích |
-|-------|-----|----------|
-| Bug | 🔴 | Lỗi runtime/UI |
-| Feature | 🟣 | Tính năng mới |
-| PM Decision | 🟡 | Cần PM chốt trước khi làm |
-| Blocked | 🔴 | Bị chặn bởi dependency |
-| Data | 🟢 | Data pipeline, crawl, import |
-| Design | 🩷 | Design system, visual |
-| Frontend | 🟣 | UI/UX, React |
-| Backend | 🔵 | DB, Prisma, Server Actions |
-| SEO | 🟢 | SEO, schema, sitemap |
-| Content | 🟡 | Blog, ảnh, data entry |
-| DevOps | 🟠 | Deploy, CI/CD |
+## 🔒 Project 1: Design System & Foundation (09/04 → 26/04)
+
+### 🎨 Designer Track
+| Issue | Title | Due | BlockedBy | Status |
+|-------|-------|-----|-----------|--------|
+| LEO-371 | [Designer] Color Palette & Typography | 14/04 | — | 📋 Todo |
+| LEO-372 | [Designer] Design Tokens — globals.css spec | 18/04 | LEO-371 | 📋 Todo |
+| LEO-373 | [Designer] Base Components Figma Kit | 23/04 | LEO-372 | 📋 Todo |
+
+### ⚙️ Dev Track
+| Issue | Title | Due | BlockedBy | Status |
+|-------|-------|-----|-----------|--------|
+| LEO-392 | [Dev] Implement Design Tokens in globals.css | 25/04 | LEO-372 | 📋 Todo |
+| LEO-393 | [Dev] Build Base Components (Button, Card, Nav...) | 26/04 | LEO-373, LEO-392 | 📋 Todo |
+
+### 🔒 Security & Platform (URGENT — trước 20/04)
+| Issue | Title | Due | Status |
+|-------|-------|-----|--------|
+| LEO-388 | [Security] API Rate Limiting | **20/04** | 📋 Todo |
+| LEO-389 | [Security] Admin Session Expiry | **20/04** | 📋 Todo |
+| LEO-390 | [Reliability] Centralized Error Handler | 05/05 | 📋 Todo |
+| LEO-391 | [Observability] Structured Production Logging | 05/05 | 📋 Todo |
 
 ---
 
-## ⚠️ Scope V2 — Thay đổi 06/04/2026
+## 🖥️ Project 2: Page Redesign — 3 Core Pages (27/04 → 10/05)
 
-3 hạng mục chính thay thế hoàn toàn scope V2 cũ (6 workstreams):
-
-| Hạng mục | Priority | Status |
-|----------|----------|--------|
-| 🗄️ Tái cấu trúc database hoàn toàn (LEO-366) | 🔴 Urgent | Backlog → bắt đầu ngay |
-| 🛒 Giỏ hàng & checkout cơ bản | 🟠 High | Blocked by LEO-366 |
-| 🎨 Thay đổi giao diện (Design System) | 🟡 Medium | Song song với DB |
-
-**Issues đã cancel (06/04):** LEO-327, 329, 332, 338, 339, 340, 341, 342, 346, 347, 348, 360, 361, 365
-
----
-
-## Sprint 2 (revised) — DB Restructure + Design System (06/04 → 26/04)
-
-### 🔴 Epic: P0 Hotfixes (LEO-326) — ✅ Hoàn thành
-
-| Sub-issue | Nội dung | Priority | Status |
-|-----------|---------|----------|--------|
-| LEO-333 | Thêm cdn.hita.com.vn vào next.config.ts | 🔴 Urgent | ✅ Done |
-| LEO-334 | Set is_featured = true cho TBVS/BEP/NUOC | 🔴 Urgent | ✅ Done |
-| LEO-335 | Cleanup debug routes /api/db-test... | 🟠 High | ✅ Done |
-| LEO-336 | Fix About stats "0+" | 🟠 High | ✅ Done |
-| LEO-337 | Xử lý Sàn gỗ 0 SP | 🟠 High | ✅ Done |
-
-### 🗄️ DB Restructure (LEO-366) — 🔴 Urgent — **MỚI**
-
-| Phase | Nội dung | Deadline |
-|-------|---------|----------|
-| Phase 1 | Audit hita data structure + thiết kế schema mới | 10/04 |
-| Phase 2 | SQL migration + Prisma sync | 15/04 |
-| Phase 3 | Viết lại Server Actions + Public API | 19/04 |
-| Phase 4 | Import data từ hita (TBVS + Bếp + Nước + Gạch + Sàn gỗ) | 26/04 |
-
-### 🎨 Epic: Design System (LEO-328) — Song song với DB
-
-| Sub-issue | Nội dung | Priority | Due |
-|-----------|---------|----------|-----|
-| LEO-343 | Định nghĩa Color Palette + Typography mới | 🟠 High | 12/04 |
-| LEO-344 | Implement Design Tokens globals.css @theme | 🟠 High | 15/04 |
-| LEO-345 | Redesign Base Components | 🟠 High | 22/04 |
+| Issue | Role | Title | Due | BlockedBy |
+|-------|------|-------|-----|-----------|
+| LEO-374 | Designer | Homepage — Hero + Category + Featured | 30/04 | LEO-373 |
+| LEO-394 | Dev | Homepage Frontend Implementation | 03/05 | LEO-374 |
+| LEO-375 | Designer | Category Page — Filter + Grid + Sort | 02/05 | LEO-373 |
+| LEO-395 | Dev | Category Page — Filter URL State + Grid | 07/05 | LEO-375, LEO-393 |
+| LEO-376 | Designer | Product Detail — Gallery + Specs + CTA | 05/05 | LEO-373 |
+| LEO-396 | Dev | Product Detail — Gallery + Specs + Quote | 09/05 | LEO-376 |
+| LEO-348 | Dev | Mega Dropdown Menu (Desktop + Mobile) | 08/05 | LEO-393 |
+| LEO-352 | Dev | About + Partners + Projects Pages | 10/05 | LEO-393 |
 
 ---
 
-## Sprint 3 (revised) — Cart/Checkout + Page Redesign (27/04 → 10/05)
+## 🛒 Project 3: Quote Cart & Checkout (01/05 → 15/05)
 
-### 🛒 Cart & Checkout — 🟠 High (sau khi LEO-366 xong)
+| Issue | Role | Title | Due | BlockedBy |
+|-------|------|-------|-----|-----------|
+| LEO-397 | Designer | Cart Drawer + Checkout + VietQR + Lookup | 07/05 | LEO-373 |
+| LEO-398 | Dev | Quote Cart Frontend (Context, Drawer, Form) | 12/05 | LEO-397, LEO-396 |
+| LEO-399 | Dev | Admin Order Management Dashboard | 15/05 | — |
 
-| Task | Nội dung | Due |
-|------|---------|-----|
-| TBD | Backend: orders + order_items schema, order-actions.ts | 01/05 |
-| TBD | Backend: Admin order management CMS (/admin/orders) | 03/05 |
-| TBD | Frontend: Cart page + Checkout flow | 07/05 |
-| TBD | Frontend: Order confirmation + QR VietQR | 10/05 |
-
-> ⚠️ PM cần cung cấp thông tin tài khoản ngân hàng ĐPG trước 26/04 để build QR VietQR.
-
-### 🖼️ Epic: Page Redesign (LEO-330)
-
-| Sub-issue | Nội dung | Priority | Due |
-|-----------|---------|----------|-----|
-| LEO-349 | Homepage — Hero, Featured, Sections | 🟠 High | 05/05 |
-| LEO-350 | Category Pages — Layout, Filter, Grid | 🟠 High | 08/05 |
-| LEO-351 | Product Detail — Gallery Lightbox + Tabs | 🟠 High | 10/05 |
-| LEO-352 | About + Partners + Projects pages | 🟡 Medium | 10/05 |
+> ⚠️ **Blocker:** Bank info ĐPG (tên/STK/ngân hàng) cần trước 26/04 để build VietQR
 
 ---
 
-## Sprint 4 — SEO + Content + Launch (11/05 → 31/05)
+## 🚀 Project 4: SEO, Testing & Launch (11/05 → 31/05)
 
-### 🚀 Epic: Launch Readiness (LEO-331)
-
-| Sub-issue | Nội dung | Priority | Due |
-|-----------|---------|----------|-----|
-| LEO-353 | JSON-LD Schema Markup | 🟠 High | 15/05 |
-| LEO-354 | Open Graph + Meta Tags | 🟠 High | 15/05 |
-| LEO-355 | Sitemap.xml + robots.txt | 🟠 High | 17/05 |
-| LEO-356 | Blog Content — 10 bài VLXD | 🟡 Medium | 20/05 |
-| LEO-357 | E2E Testing Playwright | 🟠 High | 22/05 |
-| LEO-358 | Lighthouse Performance >90 | 🟠 High | 25/05 |
-| LEO-359 | Final Deploy V2 | 🔴 Urgent | **31/05** |
+| Issue | Title | Due | Status |
+|-------|-------|-----|--------|
+| LEO-353 | JSON-LD Schema (Product, Breadcrumb, LocalBusiness) | 15/05 | 📋 Todo |
+| LEO-354 | Open Graph + Meta Tags toàn trang | 15/05 | 📋 Todo |
+| LEO-355 | Sitemap.xml + robots.txt (5,288 SP) | 17/05 | 📋 Todo |
+| LEO-356 | Blog Content — 10 bài VLXD | 22/05 | 📋 Todo |
+| LEO-357 | E2E Testing — Playwright critical flows | 25/05 | 📋 Todo |
+| LEO-358 | Lighthouse Score >90 | 27/05 | 📋 Todo |
+| LEO-359 | **Final Deploy V2** | **31/05** | 📋 Todo |
 
 ---
 
-## 📌 Data Status (07/04/2026)
+## ⚠️ PM Decisions Cần Chốt
 
-> LEO-366 DB Restructure **HOÀN THÀNH** — Schema mới live trên Supabase với 22 models.
-> Pipeline mới (Bunny CDN) đang chạy.
-
-| Category | Enriched | Ảnh CDN | DB Import | Status |
-|---|---|---|---|---|
-| **TB Vệ Sinh** | ✅ 4,417 SP | ✅ 19,025 ảnh | ✅ 4,312 SP | 🟢 Hoàn thành |
-| **TB Bếp** | ✅ 570 SP | ⏳ Sau crawl | ✅ 470 SP | 🟢 Hoàn thành |
-| **Vật Liệu Nước** | ✅ 185 SP | ⏳ | ✅ 85 SP | 🟢 Hoàn thành |
-| **Gạch Ốp Lát** | ❌ Chưa | ❌ | ❌ | 📋 Sprint 3 |
-| **Sàn Gỗ** | ❌ Chưa | ❌ | ❌ | 📋 Sprint 3 |
+| Câu hỏi | Deadline | Blocks |
+|---------|----------|--------|
+| **Color palette reference sites** (2-3 website VLXD) | **14/04** | LEO-371 → toàn bộ Design System |
+| **Bank info ĐPG** (tên, STK, ngân hàng) | **26/04** | LEO-397 VietQR |
+| **10 SP GACH-36GP*** — giữ ẩn hay xóa? | 15/04 | DB cleanliness |
 
 ---
 
-## 🔧 Backend Progress (07/04/2026)
+## ⚠️ Critical Blockers Kỹ Thuật
 
-### ✅ Hoàn thành hôm nay
+### 1. Git Branch chưa merge
+```
+leo-366-db-restructure → main  (PENDING MERGE)
+Risk: Conflict khi develop Page Redesign song song
+Action: Merge trước 27/04 (trước khi bắt đầu Project 2)
+```
 
-| Task | Mô tả | Commit |
-|------|-------|--------|
-| **quote_items migration** | Thêm `quote_items` table + `quote_number` vào `quote_requests` | `db push` ✅ |
-| **Filter params** | Thêm `color_id`, `material_id`, `origin_id`, `price_min`, `price_max`, `is_bestseller` vào `getPublicProducts()` | ✅ |
-| **Prisma client** | Regenerated với schema mới (23 models) | ✅ |
-
-### 📋 Còn lại để 100% Backend
-
-| # | Task | Priority | ETA |
-|---|------|---------|-----|
-| 1 | **Import DB** — Chạy `import-v2.mjs` sau BEP/NUOC xong | ✅ DONE | Đã nạp 4.867 SP |
-| 2 | **Quote Request API** — `POST /api/quote-requests` multi-product | 🔴 P0 | Sprint 2 |
-| 3 | **Quote Lookup API** — `GET /api/quote-requests?phone=xxx` | 🟡 P1 | Sprint 2 |
-| 4 | **Order API** — `POST /api/orders` | 🟡 P1 | Sprint 3 |
-| 5 | **Search API** — Full-text `/api/products/search` | 🟡 P1 | Sprint 3 |
-| 6 | **Middleware** — Edge-level `/admin/*` protection | 🟢 P2 | Sprint 2 |
+### 2. Security Issues URGENT
+```
+LEO-388 Rate Limiter + LEO-389 Session Expiry → Deadline 20/04
+Cần thực hiện TRƯỚC bất kỳ page redesign nào
+```
 
 ---
 
@@ -207,26 +122,73 @@ Initiative: ĐPG V2 — E-Commerce Showcase Launch (31/05/2026)
 
 | Issue | Quyết định | Ngày |
 |-------|-----------|------|
-| **LEO-360** | ~~Crawl vietceramics.com~~ → **SUPERSEDED** | 03/04 |
-| **Scope V2** | DB tái cấu trúc hoàn toàn + Cart/Checkout + Design | 06/04 |
-| **Quote Flow** | **Multi-product** — `quote_items` table (không phải single product_id) | 07/04 |
-| **Cart** | **localStorage** only — không cần DB (B2B/quote-heavy) | 07/04 |
-| **CDN** | **Bunny CDN** (`cdn.dongphugia.com.vn`) thay Supabase Storage | 07/04 |
-| **Filters** | Sidebar có Color, Material, Origin — supported bởi DB hiện tại | 07/04 |
-
-## 🔴 PM Decisions Còn Đang Chờ
-
-| Câu hỏi | Deadline | Blocks |
-|---------|----------|--------|
-| Design reference sites cho color palette VLXD? (LEO-343) | **12/04** | Design System |
-| Thông tin tài khoản ngân hàng ĐPG (tên, STK, ngân hàng) | **26/04** | QR VietQR |
-| Wireframe update (Quote modal multi-product, Category filters, Cart notice) | **10/04** | Frontend Sprint 2 |
+| **Scope V2** | DB tái cấu trúc + Cart/Checkout + Design | 06/04 |
+| **Search** | Không nằm trong scope V2 | 09/04 |
+| **Sàn Gỗ** | Bỏ qua — Vietceramics không có data | 08/04 |
+| **Gạch Ốp Lát** | Crawl vietceramics.com, SKU prefix GACH- | 08/04 |
+| **Quote Flow** | Multi-product — `quote_items` table | 07/04 |
+| **Cart** | localStorage only — không cần DB | 07/04 |
+| **CDN** | Bunny CDN (`cdn.dongphugia.com.vn`) | 07/04 |
+| **Deploy** | Maintenance Mode bật chờ V2 xong | 07/04 |
 
 ---
 
-## Scope loại bỏ khỏi V2
+## 📊 Data Status (09/04/2026)
 
-- `dien_*` (Điện), `khoa_*` (Khóa) — đã xóa khỏi DB + Prisma (LEO-291)
-- Data Pipeline cũ (mirror gallery/hover, dead URL detector) — cancelled 06/04
-- Search & Navigation (LEO-329, 346, 347) — xem xét lại Sprint 3
-- Vietceramics crawl (LEO-361) — cancelled 06/04
+| Category | SP Active | Ảnh CDN | Status |
+|----------|-----------|---------|--------|
+| TB Vệ Sinh | 4,312 | ✅ Bunny CDN | 🟢 Done |
+| TB Bếp | 470 | ✅ Bunny CDN | 🟢 Done |
+| Vật Liệu Nước | 85 | ✅ Bunny CDN | 🟢 Done |
+| Gạch Ốp Lát | 111 (10 inactive) | ✅ 92% | 🟢 Done |
+| Sàn Gỗ | 0 | — | ⚫ Bỏ qua |
+
+**Tổng: 4,978 sản phẩm active**
+
+### Ghi chú Gạch (LEO-387)
+- 10 SP `GACH-36GP*` đã `is_active = false` — nguồn đã xóa trang
+- PM confirm trước 15/04: **giữ ẩn hay xóa hẳn?**
+
+---
+
+## 🔧 Codebase Health (09/04/2026)
+
+| Metric | Value |
+|--------|-------|
+| TypeScript errors | 0 |
+| Prisma schema | 23 models, valid |
+| Next.js | Build pass |
+| Backend API | `public-api-products.ts` + `actions.ts` V2 |
+| Admin CMS | `/admin/*` fully functional |
+| Public pages | V1 design — chờ Design System |
+| Maintenance | Active trên production |
+| Backend Audit Score | 25/55 (45%) — 08/04/2026 |
+
+---
+
+## 📁 Scripts & Tools
+
+| Script | Mục đích |
+|--------|---------|
+| `scripts/seed/seed-gach-categories.mjs` | Seed categories Gạch |
+| `scripts/product-import/crawl-vietceramics-listing.mjs` | Crawl listing |
+| `scripts/product-import/crawl-vietceramics-detail.mjs` | Crawl chi tiết |
+| `scripts/product-import/import-vietceramics.mjs` | Import vào DB |
+| `scripts/product-import/patch-gach-specs.mjs` | Re-patch specs |
+| `scripts/product-import/fix-cdn-images.mjs` | Mirror ảnh CDN |
+| `scripts/product-import/verify-gach-import.mjs` | Verification |
+
+---
+
+## 🗑️ Issues Cancelled (09/04 Restructure)
+
+> Sprint-based epics + duplicate issues — thay thế bởi Feature/Domain structure:
+> `LEO-328` `LEO-329` `LEO-330` `LEO-331` (4 Epics cũ)
+> `LEO-343` `LEO-344` `LEO-345` `LEO-349` `LEO-350` `LEO-351` (6 Duplicates)
+
+## Scope Loại Bỏ Khỏi V2
+
+- `dien_*` `khoa_*` — xóa khỏi DB + Prisma (LEO-291)
+- Sàn gỗ data pipeline — không có data (08/04)
+- Search backend (LEO-346, 347) — cancelled 09/04
+- Data pipeline cũ (mirror gallery/hover, dead URL detector) — cancelled

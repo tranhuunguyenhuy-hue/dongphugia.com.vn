@@ -81,47 +81,62 @@ export async function deleteBanner(id: number) {
 }
 
 // --- Quote Requests ---
-const quoteRequestSchema = z.object({
-    name: z.string().min(1, "Tên là bắt buộc"),
-    phone: z.string().min(9, "Số điện thoại không hợp lệ"),
-    email: z.string().email("Email không hợp lệ").optional().or(z.literal('')),
-    message: z.string().optional().nullable(),
-    product_id: z.coerce.number().int().positive().optional().nullable(),
+
+// Schema for multi-product quote cart submission
+const quoteCartItemSchema = z.object({
+    product_id: z.number().int().positive(),
+    quantity: z.number().int().min(1).default(1),
+    note: z.string().max(500).optional().nullable(),
 })
 
-export async function submitQuoteRequest(prevState: any, formData: FormData) {
-    const data = {
-        name: formData.get('name'),
-        phone: formData.get('phone'),
-        email: formData.get('email') || undefined,
-        message: formData.get('message') || null,
-        product_id: formData.get('product_id') ? Number(formData.get('product_id')) : null,
-    }
+const quoteCartSchema = z.object({
+    name: z.string().min(1, "Tên là bắt buộc"),
+    phone: z.string().min(9, "Số điện thoại không hợp lệ").max(15),
+    email: z.string().email("Email không hợp lệ").optional().or(z.literal('')),
+    message: z.string().max(2000).optional().nullable(),
+    products: z.array(quoteCartItemSchema).min(1, "Cần ít nhất 1 sản phẩm").max(50),
+})
 
-    const validated = quoteRequestSchema.safeParse(data)
+export type QuoteCartPayload = z.infer<typeof quoteCartSchema>
+
+export async function submitQuoteRequest(payload: QuoteCartPayload) {
+    const validated = quoteCartSchema.safeParse(payload)
     if (!validated.success) {
         return { success: false, errors: validated.error.flatten().fieldErrors }
     }
 
-    const d = validated.data
+    const { name, phone, email, message, products } = validated.data
+    const quoteNumber = `DPG-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.floor(1000 + Math.random() * 9000)}`
 
     try {
         await prisma.quote_requests.create({
             data: {
-                name: d.name,
-                phone: d.phone,
-                email: d.email || null,
-                message: d.message || null,
-                quote_number: `DPG-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.floor(1000 + Math.random() * 9000)}`,
+                name,
+                phone,
+                email: email || null,
+                message: message || null,
+                quote_number: quoteNumber,
+                // Nested write: create all quote_items in one operation
+                quote_items: {
+                    create: products.map(p => ({
+                        product_id: p.product_id,
+                        quantity: p.quantity ?? 1,
+                        note: p.note ?? null,
+                    })),
+                },
             },
         })
     } catch (error) {
-        console.error("Database Error:", error)
+        console.error("Quote creation error:", error)
         return { success: false, message: 'Lỗi khi gửi yêu cầu. Vui lòng thử lại.' }
     }
 
     revalidatePath('/admin/quote-requests')
-    return { success: true, message: 'Đã gửi yêu cầu báo giá thành công! Chúng tôi sẽ liên hệ bạn sớm nhất.' }
+    return {
+        success: true,
+        quote_number: quoteNumber,
+        message: `Đã gửi yêu cầu báo giá thành công! Mã đơn của bạn: ${quoteNumber}`,
+    }
 }
 
 export async function updateQuoteRequestStatus(id: number, status: string) {
@@ -138,3 +153,4 @@ export async function updateQuoteRequestStatus(id: number, status: string) {
         return { success: false, message: 'Lỗi khi cập nhật trạng thái.' }
     }
 }
+

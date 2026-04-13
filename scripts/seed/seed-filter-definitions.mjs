@@ -138,6 +138,28 @@ const SUBCAT_FILTER_CONFIG = {
   'loc-nuoc': [],
   'bon-chua-nuoc': [],
   'may-bom-nuoc': [],
+
+  // === GACH ===
+  'gach-van-da-marble': [
+    { key: 'Bề mặt', label: 'Bề mặt', type: 'checkbox' },
+    { key: 'Xuất xứ', label: 'Xuất xứ', type: 'checkbox' },
+  ],
+  'gach-van-da-tu-nhien': [
+    { key: 'Bề mặt', label: 'Bề mặt', type: 'checkbox' },
+    { key: 'Xuất xứ', label: 'Xuất xứ', type: 'checkbox' },
+  ],
+  'gach-van-go': [
+    { key: 'Bề mặt', label: 'Bề mặt', type: 'checkbox' },
+    { key: 'Xuất xứ', label: 'Xuất xứ', type: 'checkbox' },
+  ],
+  'gach-thiet-ke-xi-mang': [
+    { key: 'Bề mặt', label: 'Bề mặt', type: 'checkbox' },
+    { key: 'Xuất xứ', label: 'Xuất xứ', type: 'checkbox' },
+  ],
+  'gach-trang-tri': [
+    { key: 'Bề mặt', label: 'Bề mặt', type: 'checkbox' },
+    { key: 'Xuất xứ', label: 'Xuất xứ', type: 'checkbox' },
+  ],
 };
 
 async function collectSpecValues(subcategoryId, specKey) {
