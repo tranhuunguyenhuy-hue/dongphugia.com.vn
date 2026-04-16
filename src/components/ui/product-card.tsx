@@ -13,14 +13,12 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
     const isTBVS = basePath.includes('/thiet-bi-ve-sinh');
     const isBep = basePath.includes('/thiet-bi-bep');
     const isNuoc = basePath.includes('/vat-lieu-nuoc');
-    const isSango = basePath.includes('/san-go');
 
     let slug = patternSlug;
     if (!slug) {
         if (isTBVS) slug = product.tbvs_product_types?.slug;
         else if (isBep) slug = product.bep_product_types?.slug;
         else if (isNuoc) slug = product.nuoc_product_types?.slug;
-        else if (isSango) slug = product.sango_product_types?.slug;
         else slug = product.pattern_types?.slug;
     }
     if (!slug) {
@@ -58,10 +56,6 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
         collectionName = product.nuoc_brands?.name;
         dimensionText = product.nuoc_subtypes?.name;
         surfaceText = product.nuoc_materials?.name;
-    } else if (isSango) {
-        collectionName = product.origins?.name;
-        dimensionText = product.thickness_mm ? `${product.thickness_mm}mm` : (product.width_mm && product.length_mm ? `${product.width_mm}x${product.length_mm}` : '');
-        surfaceText = product.ac_rating;
     } else {
         collectionName = product.collection?.name || product.collections?.name;
         dimensionText = product.dimensions || specs.dimensions || specs.simDimensions || product.sizes?.label;
@@ -127,7 +121,7 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
                 {/* Brand + Bookmark */}
                 <div className="flex items-center justify-between mb-2">
                     <span className="text-[12px] text-neutral-500 truncate pr-2 capitalize">
-                        {collectionName || (isSango ? 'Sàn gỗ' : (isTBVS ? 'Thiết bị vệ sinh' : 'Đông Phú Gia'))}
+                        {collectionName || (isTBVS ? 'Thiết bị vệ sinh' : 'Đông Phú Gia')}
                     </span>
                     <div className="text-neutral-300 hover:text-blue-600 transition-colors z-10 shrink-0 cursor-pointer" aria-label="Save product">
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>

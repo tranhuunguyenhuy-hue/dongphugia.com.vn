@@ -1,19 +1,18 @@
 "use client"
 
 import { useEffect, useRef } from "react"
-import Image from "next/image"
 
-// Partner brand data - will be replaced by DB images in the future
+// Partner brand data - text-only until brand assets are finalized
 const BRANDS = [
-    { name: "TOTO", logoText: "TOTO", logoUrl: "/images/brands/toto.png" },
-    { name: "INAX", logoText: "INAX", logoUrl: "/images/brands/inax.png" },
-    { name: "Caesar", logoText: "CAESAR", logoUrl: "/images/brands/caesar.png" },
-    { name: "Viglacera", logoText: "VIGLACERA", logoUrl: "/images/brands/viglacera.png" },
-    { name: "Hafele", logoText: "HÄFELE", logoUrl: "/images/brands/hafele.png" },
-    { name: "Bosch", logoText: "BOSCH", logoUrl: "/images/brands/bosch.png" },
-    { name: "Cotto", logoText: "COTTO", logoUrl: "/images/brands/cotto.png" },
+    { name: "TOTO", logoText: "TOTO" },
+    { name: "INAX", logoText: "INAX" },
+    { name: "Caesar", logoText: "CAESAR" },
+    { name: "Viglacera", logoText: "VIGLACERA" },
+    { name: "Hafele", logoText: "HÄFELE" },
+    { name: "Bosch", logoText: "BOSCH" },
+    { name: "Cotto", logoText: "COTTO" },
     { name: "Jomoo", logoText: "JOMOO" },
-    { name: "American Standard", logoText: "AMERICAN STD", logoUrl: "/images/brands/american-standard.png" },
+    { name: "American Standard", logoText: "AMERICAN STD" },
     { name: "Kohler", logoText: "KOHLER" },
 ]
 
@@ -63,19 +62,9 @@ export function BrandSlider() {
                             key={`${brand.name}-${i}`}
                             className="shrink-0 flex items-center justify-center h-12 px-4 opacity-40 hover:opacity-100 transition-opacity duration-300 cursor-default select-none"
                         >
-                            {brand.logoUrl ? (
-                                <Image
-                                    src={brand.logoUrl}
-                                    alt={`${brand.name} logo`}
-                                    width={212}
-                                    height={116}
-                                    className="object-contain h-8 lg:h-10 w-auto"
-                                />
-                            ) : (
-                                <span className="text-[17px] lg:text-[19px] font-bold text-[#3C4E56] tracking-[0.15em] whitespace-nowrap">
-                                    {brand.logoText}
-                                </span>
-                            )}
+                            <span className="text-[17px] lg:text-[19px] font-bold text-[#3C4E56] tracking-[0.15em] whitespace-nowrap">
+                                {brand.logoText}
+                            </span>
                         </div>
                     ))}
                 </div>

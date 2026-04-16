@@ -8,7 +8,6 @@ const categories = [
     { name: "Gạch ốp lát", href: "/gach-op-lat", activePrefix: "/gach-op-lat" },
     { name: "Thiết bị vệ sinh", href: "/thiet-bi-ve-sinh", activePrefix: "/thiet-bi-ve-sinh" },
     { name: "Thiết bị bếp", href: "/thiet-bi-bep", activePrefix: "/thiet-bi-bep" },
-    { name: "Sàn gỗ", href: "/san-go", activePrefix: "/san-go" },
     { name: "Vật liệu nước", href: "/vat-lieu-nuoc", activePrefix: "/vat-lieu-nuoc" },
 ]
 

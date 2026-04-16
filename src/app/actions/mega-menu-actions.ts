@@ -9,7 +9,10 @@ export const getMegaMenuData = cache(async () => {
         const [categories, subcategories, brands] = await Promise.all([
             // All active categories
             prisma.categories.findMany({
-                where: { is_active: true },
+                where: {
+                    is_active: true,
+                    slug: { not: 'san-go' }, // Removed from project scope
+                },
                 orderBy: { sort_order: 'asc' },
                 select: { id: true, name: true, slug: true, thumbnail_url: true, icon_name: true }
             }),

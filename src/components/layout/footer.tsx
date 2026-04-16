@@ -58,8 +58,7 @@ export function Footer() {
                                 <li><Link href="/gach-op-lat" className="text-neutral-600 text-[14px] hover:text-[#2E7A96] transition-colors">Gạch ốp lát</Link></li>
                                 <li><Link href="/thiet-bi-ve-sinh" className="text-neutral-600 text-[14px] hover:text-[#2E7A96] transition-colors">Thiết bị vệ sinh</Link></li>
                                 <li><Link href="/thiet-bi-bep" className="text-neutral-600 text-[14px] hover:text-[#2E7A96] transition-colors">Thiết bị bếp</Link></li>
-                                <li><Link href="/san-go" className="text-neutral-600 text-[14px] hover:text-[#2E7A96] transition-colors">Sàn gỗ</Link></li>
-                                <li><Link href="#" className="text-neutral-600 text-[14px] hover:text-[#2E7A96] transition-colors">Vật liệu nước</Link></li>
+                                <li><Link href="/vat-lieu-nuoc" className="text-neutral-600 text-[14px] hover:text-[#2E7A96] transition-colors">Vật liệu nước</Link></li>
                             </ul>
                         </div>
 
