@@ -3,11 +3,8 @@
 import { useState, useRef, useCallback } from "react"
 import Image from "next/image"
 import { Upload, X, Loader2, ImageIcon } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
-// Import Supabase client
-import { supabase } from "@/lib/supabase"
 
 interface ImageUploaderProps {
     value: string | string[]
@@ -16,7 +13,27 @@ interface ImageUploaderProps {
     maxFiles?: number
     label?: string
     className?: string
-    folder?: string // Optional folder path in bucket
+    folder?: string // Folder path in Supabase bucket
+}
+
+/** Upload a single file via the server-side API route (uses service role key) */
+async function uploadViaApi(file: File, folder: string): Promise<string | null> {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('folder', folder)
+
+    const res = await fetch('/api/upload-image', {
+        method: 'POST',
+        body: formData,
+    })
+
+    const json = await res.json()
+
+    if (!res.ok || json.error) {
+        throw new Error(json.error || `HTTP ${res.status}`)
+    }
+
+    return json.url as string
 }
 
 export function ImageUploader({
@@ -39,47 +56,17 @@ export function ImageUploader({
             ? [value]
             : []
 
-    const uploadFile = useCallback(async (file: File): Promise<string | null> => {
-        try {
-            // Validate file size (e.g. 5MB)
-            if (file.size > 5 * 1024 * 1024) {
-                toast.error(`File ${file.name} quá lớn (Max 5MB)`)
-                return null
-            }
-
-            // Generate unique path
-            const fileExt = file.name.split('.').pop()
-            const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
-            const filePath = `${folder}/${fileName}`
-
-            // Upload to Supabase
-            const { error: uploadError } = await supabase.storage
-                .from('images') // Bucket name
-                .upload(filePath, file, {
-                    cacheControl: '3600',
-                    upsert: false
-                })
-
-            if (uploadError) {
-                throw uploadError
-            }
-
-            // Get Public URL
-            const { data } = supabase.storage
-                .from('images')
-                .getPublicUrl(filePath)
-
-            return data.publicUrl
-        } catch (err: any) {
-            console.error("Supabase Upload Error:", err)
-            toast.error(`Lỗi upload ${file.name}: ${err.message}`)
-            return null
-        }
-    }, [folder])
-
     const handleFiles = useCallback(
         async (files: FileList | File[]) => {
             const fileArray = Array.from(files)
+
+            // Validate extensions client-side for quick feedback
+            const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+            const invalid = fileArray.filter(f => !allowed.includes(f.type))
+            if (invalid.length > 0) {
+                toast.error('Chỉ hỗ trợ JPG, PNG, WebP, GIF')
+                return
+            }
 
             // Check max files limit
             if (multiple && images.length + fileArray.length > maxFiles) {
@@ -89,26 +76,40 @@ export function ImageUploader({
 
             setUploading(true)
 
-            // Upload all files in parallel
-            const uploadPromises = fileArray.map((file) => uploadFile(file))
-            const urls = await Promise.all(uploadPromises)
-            const successUrls = urls.filter((url): url is string => url !== null)
+            try {
+                const uploadPromises = fileArray.map(file => uploadViaApi(file, folder))
+                const results = await Promise.allSettled(uploadPromises)
 
-            if (successUrls.length > 0) {
-                if (multiple) {
-                    onChange([...images, ...successUrls])
-                } else {
-                    // Start replacing
-                    onChange(successUrls[0])
+                const successUrls: string[] = []
+                const errors: string[] = []
+
+                results.forEach((result, i) => {
+                    if (result.status === 'fulfilled' && result.value) {
+                        successUrls.push(result.value)
+                    } else if (result.status === 'rejected') {
+                        errors.push(`${fileArray[i].name}: ${result.reason?.message}`)
+                    }
+                })
+
+                if (errors.length > 0) {
+                    toast.error(`Lỗi upload: ${errors.join(', ')}`)
                 }
-                toast.success(
-                    `Đã upload ${successUrls.length} ảnh lên Supabase`
-                )
-            }
 
-            setUploading(false)
+                if (successUrls.length > 0) {
+                    if (multiple) {
+                        onChange([...images, ...successUrls])
+                    } else {
+                        onChange(successUrls[0])
+                    }
+                    toast.success(`Đã upload ${successUrls.length} ảnh thành công`)
+                }
+            } catch (err: any) {
+                toast.error('Lỗi upload: ' + err.message)
+            } finally {
+                setUploading(false)
+            }
         },
-        [images, maxFiles, multiple, onChange, uploadFile]
+        [images, maxFiles, multiple, onChange, folder]
     )
 
     const handleDrop = useCallback(
@@ -155,7 +156,7 @@ export function ImageUploader({
                                 fill
                                 className="object-cover"
                                 sizes="120px"
-                                unoptimized={url.includes('vietceramics.com')}
+                                unoptimized
                             />
                             <button
                                 type="button"
@@ -202,7 +203,7 @@ export function ImageUploader({
                     {uploading ? (
                         <div className="flex flex-col items-center gap-2 text-muted-foreground">
                             <Loader2 className="h-8 w-8 animate-spin" />
-                            <p className="text-sm">Đang upload lên Supabase...</p>
+                            <p className="text-sm">Đang upload...</p>
                         </div>
                     ) : (
                         <div className="flex flex-col items-center gap-2 text-muted-foreground">

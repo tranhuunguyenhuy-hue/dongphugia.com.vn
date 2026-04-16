@@ -5,22 +5,30 @@ import StarterKit from '@tiptap/starter-kit'
 import Image from '@tiptap/extension-image'
 import Link from '@tiptap/extension-link'
 import Placeholder from '@tiptap/extension-placeholder'
-import { useEffect, useCallback } from 'react'
+import { useEffect, useCallback, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import {
     Bold, Italic, Strikethrough, Code, Heading2, Heading3,
-    List, ListOrdered, Quote, Minus, Link2, ImageIcon, Undo, Redo,
+    List, ListOrdered, Quote, Minus, Link2, ImageIcon, Undo, Redo, Loader2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { toast } from 'sonner'
 
 interface RichTextEditorProps {
     value: string
     onChange: (value: string) => void
     placeholder?: string
     className?: string
+    folder?: string // Supabase storage folder for inline images
 }
 
-export function RichTextEditor({ value, onChange, placeholder = 'Bắt đầu viết nội dung...', className }: RichTextEditorProps) {
+export function RichTextEditor({
+    value,
+    onChange,
+    placeholder = 'Bắt đầu viết nội dung...',
+    className,
+    folder = 'blog',
+}: RichTextEditorProps) {
     const editor = useEditor({
         extensions: [
             StarterKit,
@@ -40,6 +48,9 @@ export function RichTextEditor({ value, onChange, placeholder = 'Bắt đầu vi
         immediatelyRender: false,
     })
 
+    const imageInputRef = useRef<HTMLInputElement>(null)
+    const [imageUploading, setImageUploading] = useState(false)
+
     // Sync external value changes (e.g. on edit load)
     useEffect(() => {
         if (editor && value !== editor.getHTML()) {
@@ -47,12 +58,42 @@ export function RichTextEditor({ value, onChange, placeholder = 'Bắt đầu vi
         }
     }, [editor, value])
 
-    const addImage = useCallback(() => {
-        const url = window.prompt('URL ảnh:')
-        if (url && editor) {
-            editor.chain().focus().setImage({ src: url }).run()
+    // Upload image file via server API route, then insert public URL into editor
+    const handleImageUpload = useCallback(async (file: File) => {
+        if (!editor) return
+
+        if (file.size > 5 * 1024 * 1024) {
+            toast.error('Ảnh quá lớn (Max 5MB)')
+            return
         }
-    }, [editor])
+
+        setImageUploading(true)
+        try {
+            const formData = new FormData()
+            formData.append('file', file)
+            formData.append('folder', folder)
+
+            const res = await fetch('/api/upload-image', {
+                method: 'POST',
+                body: formData,
+            })
+
+            const json = await res.json()
+            if (!res.ok || json.error) throw new Error(json.error || `HTTP ${res.status}`)
+
+            editor.chain().focus().setImage({ src: json.url }).run()
+            toast.success('Đã chèn ảnh vào nội dung')
+        } catch (err: any) {
+            console.error('Image upload error:', err)
+            toast.error('Lỗi upload ảnh: ' + err.message)
+        } finally {
+            setImageUploading(false)
+        }
+    }, [editor, folder])
+
+    const openImagePicker = useCallback(() => {
+        imageInputRef.current?.click()
+    }, [])
 
     const setLink = useCallback(() => {
         const prev = editor?.getAttributes('link').href || ''
@@ -67,18 +108,20 @@ export function RichTextEditor({ value, onChange, placeholder = 'Bắt đầu vi
 
     if (!editor) return null
 
-    const ToolbarBtn = ({ onClick, active, title, children }: {
+    const ToolbarBtn = ({ onClick, active, title, disabled, children }: {
         onClick: () => void
         active?: boolean
         title: string
+        disabled?: boolean
         children: React.ReactNode
     }) => (
         <button
             type="button"
             onClick={onClick}
             title={title}
+            disabled={disabled}
             className={cn(
-                'h-8 w-8 flex items-center justify-center rounded text-sm transition-colors',
+                'h-8 w-8 flex items-center justify-center rounded text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed',
                 active
                     ? 'bg-primary/10 text-primary'
                     : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
@@ -90,6 +133,19 @@ export function RichTextEditor({ value, onChange, placeholder = 'Bắt đầu vi
 
     return (
         <div className={cn('border border-[#E4EEF2] rounded-xl overflow-hidden bg-white', className)}>
+            {/* Hidden file input for image upload */}
+            <input
+                ref={imageInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                className="hidden"
+                onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (file) handleImageUpload(file)
+                    e.target.value = '' // reset for re-upload same file
+                }}
+            />
+
             {/* Toolbar */}
             <div className="flex flex-wrap items-center gap-0.5 border-b border-[#E4EEF2] px-2 py-1.5 bg-muted/30">
                 <ToolbarBtn onClick={() => editor.chain().focus().undo().run()} title="Hoàn tác">
@@ -143,8 +199,17 @@ export function RichTextEditor({ value, onChange, placeholder = 'Bắt đầu vi
                 <ToolbarBtn onClick={setLink} active={editor.isActive('link')} title="Chèn liên kết">
                     <Link2 className="h-3.5 w-3.5" />
                 </ToolbarBtn>
-                <ToolbarBtn onClick={addImage} title="Chèn ảnh (URL)">
-                    <ImageIcon className="h-3.5 w-3.5" />
+
+                {/* Image upload button — uploads to Supabase then inserts URL */}
+                <ToolbarBtn
+                    onClick={openImagePicker}
+                    title="Chèn ảnh (upload lên Supabase)"
+                    disabled={imageUploading}
+                >
+                    {imageUploading
+                        ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        : <ImageIcon className="h-3.5 w-3.5" />
+                    }
                 </ToolbarBtn>
             </div>
 

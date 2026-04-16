@@ -6,10 +6,10 @@
   --font-sans: var(--font-inter);
 
   /* ============================================
-   * DESIGN TOKENS — Đông Phú Gia
-   * AquaHome Color System
-   * Style: Clean Corporate Minimalist
-   * Palette: Blue + Neutral (INAX-inspired)
+   * DESIGN TOKENS — Đông Phú Gia V2
+   * Luxury Light Design System
+   * Palette: Brand Teal + Warm Stone
+   * Docs: figma_color_tokens.md · spacing_system.md
    * ============================================ */
 
   /* ---- Color Primitives ---- */
@@ -118,23 +118,44 @@
   --color-stat-cyan: #5AAFC9;
   --color-stat-amber: #EBBE74;
 
-  /* ---- Spacing Tokens ---- */
-  --spacing-xxs: 4px;
-  --spacing-xs: 8px;
-  --spacing-sm: 12px;
-  --spacing-md: 16px;
-  --spacing-big: 20px;
-  --spacing-xbig: 24px;
-  --spacing-xxbig: 28px;
-  --spacing-xxxbig: 32px;
-  --spacing-lg: 40px;
-  --spacing-xlg: 48px;
-  --spacing-xxlg: 64px;
-  --spacing-xxxlg: 80px;
-  --spacing-huge: 96px;
-  --spacing-xhuge: 128px;
-  --spacing-xxhuge: 160px;
-  --spacing-xxxhuge: 192px;
+  /* ============================================
+   * SPACING SYSTEM V2 — Đông Phú Gia
+   * Base: 4px grid · Primitives = Tailwind built-in
+   * Semantic tokens only (purpose-driven)
+   * ============================================ */
+
+  /* --- Component Spacing (inside components) --- */
+  --spacing-component-gap-xs: 0.25rem;    /* 4px  · icon↔text (XS btn) */
+  --spacing-component-gap-sm: 0.375rem;   /* 6px  · icon↔text (SM btn) */
+  --spacing-component-gap-md: 0.5rem;     /* 8px  · icon↔text (MD+ btn), badge group */
+  --spacing-component-gap-lg: 0.75rem;    /* 12px · CTA pair, button group */
+  --spacing-component-padding-xs: 0.5rem;    /* 8px  · chips, tags, badges */
+  --spacing-component-padding-sm: 0.75rem;   /* 12px · input fields, small cards */
+  --spacing-component-padding-md: 1rem;      /* 16px · card content, modal body */
+  --spacing-component-padding-lg: 1.5rem;    /* 24px · card wrapper, modal, drawer */
+  --spacing-component-padding-xl: 2rem;      /* 32px · feature cards, pricing cards */
+
+  /* --- Layout Spacing (between blocks) --- */
+  --spacing-layout-gutter: 1rem;       /* 16px · grid gutter mobile */
+  --spacing-layout-gutter-lg: 1.5rem;  /* 24px · grid gutter desktop */
+  --spacing-layout-stack-sm: 1rem;     /* 16px · between form elements */
+  --spacing-layout-stack-md: 1.5rem;   /* 24px · between cards in grid */
+  --spacing-layout-stack-lg: 2.5rem;   /* 40px · between content blocks */
+
+  /* --- Section Spacing (mobile-first, desktop via @media) --- */
+  --spacing-section-sm: 3rem;    /* 48px → 64px */
+  --spacing-section-md: 4rem;    /* 64px → 80px */
+  --spacing-section-lg: 5rem;    /* 80px → 96px */
+  --spacing-section-xl: 6rem;    /* 96px → 128px */
+
+  /* --- Container & Page --- */
+  --spacing-container-px: 1rem;     /* 16px → 32px */
+  --spacing-page-top: 1.5rem;      /* 24px → 40px */
+  --spacing-page-bottom: 4rem;     /* 64px → 96px */
+
+  /* --- Specific --- */
+  --spacing-header-height: 4rem;     /* 64px → 72px */
+  --spacing-sidebar-width: 16rem;    /* 256px */
 
   /* ---- Radius (minimal for Clean Corporate style) ---- */
   --radius: 0.375rem;
@@ -246,6 +267,22 @@
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* ============================================
+ * RESPONSIVE SPACING — Desktop Overrides
+ * ============================================ */
+@media (min-width: 768px) {
+  :root {
+    --spacing-section-sm: 4rem;       /* 64px */
+    --spacing-section-md: 5rem;       /* 80px */
+    --spacing-section-lg: 6rem;       /* 96px */
+    --spacing-section-xl: 8rem;       /* 128px */
+    --spacing-container-px: 2rem;     /* 32px */
+    --spacing-page-top: 2.5rem;       /* 40px */
+    --spacing-page-bottom: 6rem;      /* 96px */
+    --spacing-header-height: 4.5rem;  /* 72px */
   }
 }
 
@@ -401,6 +438,10 @@
   }
 
   .prose img {
+    max-width: 100%;
+    width: 100%;
+    height: auto;
+    display: block;
     margin-top: 2em;
     margin-bottom: 2em;
     border-radius: var(--radius-lg);

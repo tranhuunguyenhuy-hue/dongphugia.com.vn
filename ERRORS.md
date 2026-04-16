@@ -5,8 +5,49 @@
 ---
 
 ## Thống kê nhanh
-- **Tổng lỗi**: 1
-- **Đã sửa**: 1
+- **Tổng lỗi**: 4
+- **Đã sửa**: 4
+
+---
+
+## [2026-04-15 09:18] — Blog: Ảnh không upload được + lỗi hiển thị ảnh
+
+### Lỗi 1: Supabase key sai tên biến môi trường
+
+- **Type**: Integration / Agent Error
+- **Severity**: Critical
+- **File**: `src/lib/supabase.ts`
+- **Agent**: Antigravity Orchestrator
+- **Root Cause**: Code gọi `NEXT_PUBLIC_SUPABASE_ANON_KEY` nhưng `.env.local` chỉ có `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY` (tên key mới của Supabase). Kết quả: client khởi tạo với `'placeholder-anon-key'` → mọi upload đều fail silently.
+- **Error Message**:
+  ```
+  Missing Supabase environment variables: NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY
+  Upload fails with: invalid API key
+  ```
+- **Fix Applied**: `supabase.ts` fallback đọc cả `NEXT_PUBLIC_SUPABASE_ANON_KEY || NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY`
+- **Prevention**: Khi thêm Supabase vào dự án, luôn kiểm tra tên key trong Supabase dashboard → dự án mới dùng `PUBLISHABLE_DEFAULT_KEY` thay cho `ANON_KEY`
+- **Status**: Fixed ✅
+
+### Lỗi 2: Upload phía client không có permission (RLS/anon key)
+
+- **Type**: Integration
+- **Severity**: High
+- **File**: `src/components/ui/image-uploader.tsx`, `src/components/ui/rich-text-editor.tsx`
+- **Agent**: Antigravity Orchestrator
+- **Root Cause**: Upload dùng anon key phía client. Supabase RLS policy trên bucket `images` không cho phép unauthenticated users upload → cần service role key (chỉ dùng được phía server).
+- **Fix Applied**: Tạo API route server-side `/api/upload-image` dùng `SUPABASE_SERVICE_ROLE_KEY` để bypass RLS. `ImageUploader` và `RichTextEditor` refactor để `fetch('/api/upload-image')` thay vì gọi Supabase SDK trực tiếp.
+- **Prevention**: Mọi thao tác mutate Supabase Storage từ admin phải đi qua server-side route với service key.
+- **Status**: Fixed ✅
+
+### Lỗi 3: Ảnh trong prose/blog content bị vỡ layout
+
+- **Type**: Logic (CSS)
+- **Severity**: Medium
+- **File**: `src/app/globals.css`
+- **Root Cause**: `.prose img` thiếu `max-width: 100%`, `width: 100%`, `height: auto`, `display: block` → ảnh chèn từ TipTap bị tràn container hoặc không responsive.
+- **Fix Applied**: Thêm 4 properties trên vào `.prose img` rule.
+- **Prevention**: Luôn include `max-width: 100%; height: auto` khi có custom prose styles.
+- **Status**: Fixed ✅
 
 ---
 

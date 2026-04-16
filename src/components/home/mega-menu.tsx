@@ -3,7 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import * as NavigationMenu from '@radix-ui/react-navigation-menu'
-import { ChevronRight, ChevronDown, Bath, Flame, Grid2X2, Droplet, Layers } from "lucide-react"
+import { ChevronRight, ChevronDown, Bath, Flame, Grid2X2, Droplet } from "lucide-react"
 
 export type Category = {
     id: number;
@@ -41,7 +41,6 @@ const CATEGORY_INFO: Record<string, { icon: any, desc: string }> = {
     'thiet-bi-bep': { icon: Flame, desc: 'Bếp từ, hút mùi, chậu rửa, lò vi sóng...' },
     'gach-op-lat': { icon: Grid2X2, desc: 'Gạch lát nền, ốp tường, gạch trang trí...' },
     'vat-lieu-nuoc': { icon: Droplet, desc: 'Ống nước, van vòi, phụ kiện ngành nước...' },
-    'san-go': { icon: Layers, desc: 'Sàn gỗ tự nhiên, công nghiệp, sàn nhựa...' },
 }
 
 const renderMegaMenuContent = (cat: Category, data: MenuData | undefined) => {
@@ -205,7 +204,7 @@ export function MegaMenuHeader({ categories, menuData }: MegaMenuProps) {
                             <h3 className="text-[11px] font-bold text-[#3C4E56]/60 uppercase tracking-wider">Danh mục</h3>
                         </div>
                         {categories.map((cat) => {
-                            const info = CATEGORY_INFO[cat.slug] || { icon: Layers, desc: 'Khám phá sản phẩm của chúng tôi' };
+                            const info = CATEGORY_INFO[cat.slug] || { icon: Grid2X2, desc: 'Khám phá sản phẩm của chúng tôi' };
                             const Icon = info.icon;
                             const isActive = currentCat?.slug === cat.slug;
                             

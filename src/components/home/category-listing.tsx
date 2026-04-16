@@ -26,27 +26,19 @@ const CATEGORIES = [
   },
   {
     title: "Vật liệu nước",
-    href: "#",
+    href: "/vat-lieu-nuoc",
     img: "/images/categories/vat-lieu-nuoc.png",
-    cta: "Sắp có",
-    available: false,
+    cta: "Xem tất cả",
+    available: true,
     imgClass: "absolute bottom-0 right-0 h-full w-auto max-w-none",
   },
   {
     title: "Thiết bị bếp",
-    href: "#",
+    href: "/thiet-bi-bep",
     img: "/images/categories/thiet-bi-bep.png",
-    cta: "Sắp có",
-    available: false,
+    cta: "Xem tất cả",
+    available: true,
     imgClass: "absolute bottom-0 right-0 h-full w-auto max-w-none",
-  },
-  {
-    title: "Sàn gỗ",
-    href: "#",
-    img: "/images/categories/san-go.png",
-    cta: "Sắp có",
-    available: false,
-    imgClass: "absolute bottom-0 right-0 w-full h-auto object-cover",
   },
 ]
 
@@ -115,7 +107,7 @@ export function CategoryListing() {
     return () => observer.disconnect()
   }, [])
 
-  const [gach, veSinh, vatLieu, bep, sanGo] = CATEGORIES
+  const [gach, veSinh, vatLieu, bep] = CATEGORIES
 
   return (
     <section ref={ref} className="max-w-[1280px] mx-auto px-5 py-16 lg:py-24">
@@ -139,19 +131,16 @@ export function CategoryListing() {
 
       {/* Bento grid */}
       <div className="grid gap-5" style={{ gridTemplateColumns: "repeat(1, 1fr)" }}>
-        {/* Row 1: Big card + 2×1 */}
+        {/* Row 1: Big card + 3×1 */}
         <div className="grid gap-5 grid-cols-1 lg:grid-cols-[417px_1fr]">
           {/* Big card */}
-          <CategoryCard cat={gach} className="h-[260px] sm:h-[340px] lg:h-[507px]" visible={visible} delay={0.05} isBig />
+          <CategoryCard cat={gach} className="h-[260px] sm:h-[340px] lg:h-[400px]" visible={visible} delay={0.05} isBig />
 
-          {/* 2×2 inner grid */}
-          <div className="grid grid-cols-2 gap-5"
-            style={{ gridTemplateRows: "1fr 1fr" }}
-          >
+          {/* 3-item inner grid */}
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-5">
             <CategoryCard cat={veSinh} className="h-[160px] sm:h-[200px] lg:h-auto" visible={visible} delay={0.12} />
             <CategoryCard cat={vatLieu} className="h-[160px] sm:h-[200px] lg:h-auto" visible={visible} delay={0.18} />
-            <CategoryCard cat={bep} className="h-[160px] sm:h-[200px] lg:h-auto" visible={visible} delay={0.24} />
-            <CategoryCard cat={sanGo} className="h-[160px] sm:h-[200px] lg:h-auto" visible={visible} delay={0.30} />
+            <CategoryCard cat={bep} className="col-span-2 lg:col-span-1 h-[160px] sm:h-[200px] lg:h-auto" visible={visible} delay={0.24} />
           </div>
         </div>
       </div>
