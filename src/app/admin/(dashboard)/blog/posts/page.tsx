@@ -1,8 +1,8 @@
 import Link from 'next/link'
-import { Plus, FileText, Eye, Star } from 'lucide-react'
+import Image from 'next/image'
+import { Plus, FileText, Eye, Star, Pin, PenLine } from 'lucide-react'
 import prisma from '@/lib/prisma'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { BlogPostDeleteButton } from './blog-post-delete-button'
 import { format } from 'date-fns'
 
@@ -10,16 +10,10 @@ interface PageProps {
     searchParams: Promise<{ status?: string; category?: string }>
 }
 
-const statusColors: Record<string, string> = {
-    published: 'bg-green-100 text-green-700',
-    draft: 'bg-yellow-100 text-yellow-700',
-    scheduled: 'bg-blue-100 text-blue-700',
-}
-
-const statusLabels: Record<string, string> = {
-    published: 'Đã đăng',
-    draft: 'Nháp',
-    scheduled: 'Lên lịch',
+const statusConfig: Record<string, { label: string; cls: string; dot: string }> = {
+    published: { label: 'Đã đăng', cls: 'bg-green-50 text-green-700 border border-green-200', dot: 'bg-green-500' },
+    draft: { label: 'Nháp', cls: 'bg-amber-50 text-amber-700 border border-amber-200', dot: 'bg-amber-400' },
+    scheduled: { label: 'Lên lịch', cls: 'bg-blue-50 text-blue-700 border border-blue-200', dot: 'bg-blue-500' },
 }
 
 export default async function BlogPostsPage({ searchParams }: PageProps) {
@@ -40,110 +34,154 @@ export default async function BlogPostsPage({ searchParams }: PageProps) {
     ])
 
     const countMap = counts.reduce((acc, c) => ({ ...acc, [c.status]: c._count.id }), {} as Record<string, number>)
-    const totalCount = posts.length
+    const totalCount = Object.values(countMap).reduce((a, b) => a + b, 0)
+
+    const tabs = [
+        { label: 'Tất cả', value: '', count: totalCount },
+        { label: '✅ Đã đăng', value: 'published', count: countMap['published'] ?? 0 },
+        { label: '📝 Nháp', value: 'draft', count: countMap['draft'] ?? 0 },
+        { label: '🕐 Lên lịch', value: 'scheduled', count: countMap['scheduled'] ?? 0 },
+    ]
 
     return (
         <div className="space-y-6">
+            {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-2xl font-bold">Quản lý bài viết</h1>
-                    <p className="text-sm text-muted-foreground mt-0.5">{totalCount} bài viết</p>
+                    <p className="text-sm text-muted-foreground mt-0.5">
+                        {totalCount} bài · {countMap['published'] ?? 0} đang live
+                    </p>
                 </div>
                 <Button asChild className="gap-2">
                     <Link href="/admin/blog/posts/new">
-                        <Plus className="h-4 w-4" /> Thêm bài viết
+                        <Plus className="h-4 w-4" /> Viết bài mới
                     </Link>
                 </Button>
             </div>
 
             {/* Status tabs */}
             <div className="flex gap-2 flex-wrap">
-                {[
-                    { label: 'Tất cả', value: '' },
-                    { label: 'Đã đăng', value: 'published' },
-                    { label: 'Nháp', value: 'draft' },
-                    { label: 'Lên lịch', value: 'scheduled' },
-                ].map((tab) => (
+                {tabs.map((tab) => (
                     <Link
                         key={tab.value}
                         href={tab.value ? `/admin/blog/posts?status=${tab.value}` : '/admin/blog/posts'}
-                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                            (status ?? '') === tab.value
-                                ? 'bg-primary text-white'
-                                : 'bg-white border border-[#E4EEF2] text-muted-foreground hover:text-foreground'
-                        }`}
+                        className={`px-3.5 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${(status ?? '') === tab.value
+                            ? 'bg-primary text-white shadow-sm'
+                            : 'bg-white border border-[#E4EEF2] text-muted-foreground hover:text-foreground'
+                            }`}
                     >
                         {tab.label}
-                        {tab.value && countMap[tab.value] ? (
-                            <span className="ml-1.5 text-xs opacity-80">({countMap[tab.value]})</span>
-                        ) : null}
+                        {tab.count > 0 && (
+                            <span className={`text-xs opacity-80 font-normal ${(status ?? '') === tab.value ? '' : 'bg-muted rounded-full px-1.5'}`}>
+                                {tab.count}
+                            </span>
+                        )}
                     </Link>
                 ))}
             </div>
 
-            {/* Posts table */}
-            <div className="bg-white rounded-2xl border border-[#E4EEF2] overflow-hidden">
-                {posts.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-16 text-muted-foreground gap-3">
-                        <FileText className="h-10 w-10 opacity-30" />
-                        <p className="text-sm">Chưa có bài viết nào</p>
-                        <Button asChild size="sm" variant="outline">
-                            <Link href="/admin/blog/posts/new">Tạo bài viết đầu tiên</Link>
-                        </Button>
-                    </div>
-                ) : (
-                    <table className="w-full text-sm">
-                        <thead>
-                            <tr className="border-b border-[#E4EEF2] bg-muted/40">
-                                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Tiêu đề</th>
-                                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Chuyên mục</th>
-                                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Trạng thái</th>
-                                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Lượt xem</th>
-                                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Ngày</th>
-                                <th className="text-right px-4 py-3 font-medium text-muted-foreground">Hành động</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {posts.map((post) => (
-                                <tr key={post.id} className="border-b border-[#E4EEF2] last:border-0 table-row-hover">
-                                    <td className="px-4 py-3">
-                                        <div className="flex items-center gap-2">
-                                            {post.is_featured && <Star className="h-3.5 w-3.5 text-amber-400 shrink-0" />}
-                                            <span className="font-medium text-foreground line-clamp-1 max-w-[280px]">{post.title}</span>
+            {/* Posts list */}
+            {posts.length === 0 ? (
+                <div className="bg-white rounded-2xl border border-[#E4EEF2] flex flex-col items-center justify-center py-20 text-muted-foreground gap-3">
+                    <FileText className="h-12 w-12 opacity-20" />
+                    <p className="font-medium">Chưa có bài viết nào</p>
+                    <p className="text-sm opacity-70">Hãy tạo bài viết đầu tiên để thu hút khách hàng!</p>
+                    <Button asChild size="sm" className="mt-1">
+                        <Link href="/admin/blog/posts/new">
+                            <Plus className="h-4 w-4 mr-1" /> Viết bài đầu tiên
+                        </Link>
+                    </Button>
+                </div>
+            ) : (
+                <div className="bg-white rounded-2xl border border-[#E4EEF2] overflow-hidden divide-y divide-[#E4EEF2]">
+                    {posts.map((post) => {
+                        const sc = statusConfig[post.status] ?? statusConfig['draft']
+                        const date = post.published_at ?? post.updated_at
+                        return (
+                            <div key={post.id} className="flex items-center gap-4 px-4 py-3 hover:bg-muted/30 transition-colors group">
+                                {/* Thumbnail preview */}
+                                <div className="shrink-0 w-14 h-14 rounded-lg overflow-hidden bg-muted border border-[#E4EEF2] relative">
+                                    {post.thumbnail_url ? (
+                                        <Image
+                                            src={post.thumbnail_url}
+                                            alt={post.title}
+                                            fill
+                                            className="object-cover"
+                                            unoptimized
+                                            sizes="56px"
+                                        />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center">
+                                            <FileText className="h-5 w-5 text-muted-foreground/30" />
                                         </div>
-                                        <p className="text-xs text-muted-foreground mt-0.5">{post.slug}</p>
-                                    </td>
-                                    <td className="px-4 py-3 text-muted-foreground">{post.blog_categories?.name}</td>
-                                    <td className="px-4 py-3">
-                                        <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${statusColors[post.status] ?? ''}`}>
-                                            {statusLabels[post.status] ?? post.status}
+                                    )}
+                                </div>
+
+                                {/* Title + meta */}
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                        {post.is_pinned && <Pin className="h-3 w-3 text-blue-500 shrink-0" />}
+                                        {post.is_featured && <Star className="h-3 w-3 text-amber-400 shrink-0" />}
+                                        <span className="text-sm font-medium text-foreground line-clamp-1 max-w-[320px]">
+                                            {post.title}
                                         </span>
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        <span className="flex items-center gap-1 text-muted-foreground">
+                                    </div>
+                                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                                        <span className="text-xs text-muted-foreground">
+                                            {post.blog_categories?.name ?? 'Chưa phân loại'}
+                                        </span>
+                                        <span className="text-muted-foreground/30">·</span>
+                                        <span className="text-xs text-muted-foreground">
+                                            {format(date, 'dd/MM/yyyy')}
+                                        </span>
+                                        {post.reading_time && (
+                                            <>
+                                                <span className="text-muted-foreground/30">·</span>
+                                                <span className="text-xs text-muted-foreground">{post.reading_time} phút đọc</span>
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Views */}
+                                <div className="shrink-0 flex items-center gap-1 text-xs text-muted-foreground min-w-[50px]">
+                                    <Eye className="h-3.5 w-3.5" />
+                                    {post.view_count.toLocaleString()}
+                                </div>
+
+                                {/* Status badge */}
+                                <div className="shrink-0">
+                                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${sc.cls}`}>
+                                        <span className={`h-1.5 w-1.5 rounded-full ${sc.dot}`} />
+                                        {sc.label}
+                                    </span>
+                                </div>
+
+                                {/* Actions */}
+                                <div className="shrink-0 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <Button asChild size="sm" variant="outline" className="h-7 px-2.5 text-xs gap-1">
+                                        <Link href={`/admin/blog/posts/${post.id}`}>
+                                            <PenLine className="h-3 w-3" /> Sửa
+                                        </Link>
+                                    </Button>
+                                    {post.status === 'published' && post.slug && (
+                                        <a
+                                            href={`/blog/${post.blog_categories?.slug ?? 'tin-tuc'}/${post.slug}`}
+                                            target="_blank"
+                                            className="h-7 px-2 flex items-center text-muted-foreground hover:text-foreground"
+                                            title="Xem trên website"
+                                        >
                                             <Eye className="h-3.5 w-3.5" />
-                                            {post.view_count.toLocaleString()}
-                                        </span>
-                                    </td>
-                                    <td className="px-4 py-3 text-muted-foreground text-xs">
-                                        {post.published_at
-                                            ? format(post.published_at, 'dd/MM/yyyy')
-                                            : format(post.updated_at, 'dd/MM/yyyy')}
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        <div className="flex items-center gap-2 justify-end">
-                                            <Button asChild size="sm" variant="ghost" className="h-7 px-2 text-xs">
-                                                <Link href={`/admin/blog/posts/${post.id}`}>Sửa</Link>
-                                            </Button>
-                                            <BlogPostDeleteButton id={post.id} title={post.title} />
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                )}
-            </div>
+                                        </a>
+                                    )}
+                                    <BlogPostDeleteButton id={post.id} title={post.title} />
+                                </div>
+                            </div>
+                        )
+                    })}
+                </div>
+            )}
         </div>
     )
 }
