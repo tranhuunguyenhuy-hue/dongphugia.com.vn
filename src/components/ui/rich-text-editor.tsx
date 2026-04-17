@@ -38,6 +38,10 @@ export function RichTextEditor({
         ],
         content: value,
         onUpdate: ({ editor }) => {
+            // Only mark as internal if user is typing/uploading, not if useEffect is resetting
+            if (!isSettingContent.current) {
+                isInternalUpdate.current = true
+            }
             onChange(editor.getHTML())
         },
         editorProps: {
@@ -50,11 +54,29 @@ export function RichTextEditor({
 
     const imageInputRef = useRef<HTMLInputElement>(null)
     const [imageUploading, setImageUploading] = useState(false)
+    // Track whether the last HTML change originated from the editor itself (user typing/uploading)
+    // vs. from an external prop change (e.g. initial load on edit page).
+    // This prevents the useEffect below from overwriting the editor content
+    // immediately after the user inserts an image — which would wipe the image.
+    const isInternalUpdate = useRef(false)
+    // Prevents the onUpdate handler from marking a setContent() call from useEffect as internal
+    const isSettingContent = useRef(false)
 
-    // Sync external value changes (e.g. on edit load)
+    // Sync external value changes ONLY (e.g. on edit page initial load)
     useEffect(() => {
-        if (editor && value !== editor.getHTML()) {
+        if (!editor) return
+        if (isInternalUpdate.current) {
+            // Change came from the editor itself — don't reset
+            isInternalUpdate.current = false
+            return
+        }
+        // Only overwrite if content is meaningfully different
+        // (avoids reset loop when value === editor.getHTML())
+        const editorHtml = editor.getHTML()
+        if (value !== editorHtml) {
+            isSettingContent.current = true
             editor.commands.setContent(value)
+            isSettingContent.current = false
         }
     }, [editor, value])
 

@@ -5,8 +5,24 @@
 ---
 
 ## Thống kê nhanh
-- **Tổng lỗi**: 4
-- **Đã sửa**: 4
+- **Tổng lỗi**: 5
+- **Đã sửa**: 5
+
+---
+
+## [2026-04-17 11:38] — RichTextEditor: Ảnh bị mất sau khi upload vào nội dung
+
+- **Type**: Logic (React State/useEffect)
+- **Severity**: Critical
+- **File**: `src/components/ui/rich-text-editor.tsx:55-59`
+- **Agent**: Antigravity Orchestrator
+- **Root Cause**: `useEffect` theo dõi `[editor, value]`. Khi user upload ảnh:
+  1. `handleImageUpload` → `editor.setImage(url)` → `onUpdate` → `onChange(html)` → parent `set('content', html)` → re-render → `value` prop mới
+  2. `useEffect` thấy `value !== editor.getHTML()` → gọi `editor.commands.setContent(value)` → **reset editor về state cũ** → ảnh biến mất
+- **Error Message**: Ảnh chèn vào editor nhưng không hiển thị sau khi save; content DB không có `<img>` tag
+- **Fix Applied**: Thêm 2 refs `isInternalUpdate` và `isSettingContent` để phân biệt user action vs external prop update. `onUpdate` set `isInternalUpdate=true` (trừ khi `isSettingContent=true`); `useEffect` skip nếu `isInternalUpdate=true`
+- **Prevention**: Khi dùng controlled component với editor WYSIWYG (TipTap, Quill, Slate), KHÔNG sync external prop mỗi khi value thay đổi — chỉ sync lần đầu mount hoặc explicit reset
+- **Status**: Fixed ✅
 
 ---
 
