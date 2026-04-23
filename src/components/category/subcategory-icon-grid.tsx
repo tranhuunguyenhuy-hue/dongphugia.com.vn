@@ -92,15 +92,17 @@ export function SubcategoryIconGrid({
               * Outer wrapper: NO overflow-hidden so item shadows are never clipped.
               * py-1 on the scroll row gives vertical breathing room for shadows.
               */}
-            <div className="relative bg-neutral-50 rounded-xl border border-neutral-100 px-4 pt-4 pb-3">
+            <div className="relative bg-neutral-50 rounded-xl border border-neutral-100 px-3 pt-4 pb-3">
                 <div
                     ref={scrollRef}
-                    className={`flex gap-1.5 overflow-x-auto py-1 snap-x [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] ${
+                    className={`flex gap-4 overflow-x-auto py-2 snap-x [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] ${
                         !activeSlug ? '[&:has(a:active)>a:not(:active)]:opacity-50 [&:has(a:active)>a:not(:active)]:transition-opacity' : ''
                     }`}
                     style={{
-                        paddingLeft: canScrollLeft ? '36px' : undefined,
-                        paddingRight: canScrollRight ? '36px' : undefined,
+                        // Always keep 4px padding so outline of edge items isn't clipped.
+                        // Expand to 40px when arrow button is visible.
+                        paddingLeft: canScrollLeft ? '40px' : '4px',
+                        paddingRight: canScrollRight ? '40px' : '4px',
                     }}
                 >
                     {subcategories.map((sub) => {
@@ -111,11 +113,14 @@ export function SubcategoryIconGrid({
                                 key={sub.id}
                                 href={`${basePath}/${sub.slug}`}
                                 ref={isActive ? activeItemRef : null}
-                                className={`group/item shrink-0 snap-start flex flex-col items-center gap-1.5 w-[96px] transition-opacity duration-150 ${
+                                className={`group/item shrink-0 snap-start flex flex-col items-center gap-2 w-[96px] transition-opacity duration-200 ${
                                     activeSlug && !isActive ? 'opacity-50 hover:opacity-100' : ''
                                 }`}
                             >
-                                <div className="relative w-full aspect-square">
+                                {/* Image wrapper: scale here — not on the Link — keeps text in place */}
+                                <div className={`relative w-full aspect-square transition-transform duration-200 ease-out ${
+                                    isActive ? '' : 'group-hover/item:scale-[1.04]'
+                                }`}>
                                     {imgSrc ? (
                                         <Image
                                             src={imgSrc}
@@ -124,20 +129,18 @@ export function SubcategoryIconGrid({
                                             sizes="96px"
                                             className={[
                                                 'object-contain mix-blend-multiply rounded-md',
-                                                // Active: thicker outline + custom brand shadow — NO scale to avoid clip
                                                 isActive
                                                     ? 'outline outline-[2.5px] outline-[#2E7A96]/90 shadow-[0_4px_16px_rgba(46,122,150,0.22)]'
-                                                    : 'outline outline-1 outline-neutral-200/70 shadow-xs',
-                                                !isActive && 'group-hover/item:outline-neutral-300/80 group-hover/item:shadow-md',
-                                                !isActive && 'group-active/item:outline-[#2E7A96]/50 group-active/item:shadow-lg',
+                                                    : 'outline outline-1 outline-neutral-200/70 shadow-xs group-hover/item:outline-neutral-300 group-hover/item:shadow-[0_2px_8px_rgba(0,0,0,0.08)]',
+                                                !isActive && 'group-active/item:outline-[#2E7A96]/50 group-active/item:shadow-[0_4px_12px_rgba(46,122,150,0.18)]',
                                                 'transition-all duration-200',
                                             ].filter(Boolean).join(' ')}
                                         />
                                     ) : (
-                                        <div className={`w-full h-full flex items-center justify-center rounded-md ${
+                                        <div className={`w-full h-full flex items-center justify-center rounded-md transition-all duration-200 ${
                                             isActive
                                                 ? 'text-[#2E7A96] outline outline-[2.5px] outline-[#2E7A96]/90 shadow-[0_4px_16px_rgba(46,122,150,0.22)]'
-                                                : 'text-neutral-300 outline outline-1 outline-neutral-200/70 shadow-xs'
+                                                : 'text-neutral-300 outline outline-1 outline-neutral-200/70 shadow-xs group-hover/item:outline-neutral-300 group-hover/item:shadow-[0_2px_8px_rgba(0,0,0,0.08)]'
                                         }`}>
                                             <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" strokeWidth={1.2} stroke="currentColor">
                                                 <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Z" />
