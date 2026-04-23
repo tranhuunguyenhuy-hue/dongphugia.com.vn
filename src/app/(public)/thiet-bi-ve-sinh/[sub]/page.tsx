@@ -154,9 +154,6 @@ export default async function ThietBiVeSinhSubPage({ params, searchParams }: Pag
                         <ProductTypeFilter activeSubSlug={sub} />
                     </Suspense>
 
-                    {/* Divider */}
-                    <div className="border-t border-neutral-100" />
-
 
 
                     <div className="mb-4 flex flex-col gap-3">
