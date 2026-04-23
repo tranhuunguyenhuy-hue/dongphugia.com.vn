@@ -16,6 +16,7 @@ import {
     BookOpen,
     FolderKanban,
     Handshake,
+    LayoutGrid,
 } from "lucide-react"
 import { logoutAction } from "@/app/admin/login/actions"
 import { Badge } from "@/components/ui/badge"
@@ -38,6 +39,7 @@ const navLinks = [
     { label: "Dự án", href: "/admin/du-an", icon: FolderKanban, exact: false },
     { label: "Đối tác", href: "/admin/doi-tac", icon: Handshake, exact: false },
     { label: "Banners", href: "/admin/banners", icon: Image, exact: false },
+    { label: "Danh mục", href: "/admin/categories", icon: LayoutGrid, exact: false },
     { label: "Báo giá", href: "/admin/quote-requests", icon: ClipboardList, exact: false, quoteBadge: true },
 ]
 

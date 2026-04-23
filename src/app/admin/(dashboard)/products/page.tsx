@@ -135,11 +135,23 @@ export default async function AdminProductsPage({ searchParams }: PageProps) {
                                     )}
                                 </TableCell>
                                 <TableCell>
-                                    <span className="text-sm font-medium">
-                                        {product.price
-                                            ? `${product.price.toLocaleString('vi-VN')}đ`
-                                            : product.price_display || 'Liên hệ'}
-                                    </span>
+                                    <div className="space-y-0.5">
+                                        <span className={`text-sm font-medium ${product.original_price && product.original_price > (product.price || 0) ? 'text-red-600' : ''}`}>
+                                            {product.price
+                                                ? `${product.price.toLocaleString('vi-VN')}đ`
+                                                : product.price_display || 'Liên hệ'}
+                                        </span>
+                                        {product.original_price && product.original_price > (product.price || 0) && (
+                                            <div className="flex items-center gap-1.5">
+                                                <span className="text-xs text-muted-foreground line-through">
+                                                    {product.original_price.toLocaleString('vi-VN')}đ
+                                                </span>
+                                                <span className="text-[10px] font-bold text-white bg-red-500 px-1.5 py-0.5 rounded">
+                                                    -{Math.round(((product.original_price - (product.price || 0)) / product.original_price) * 100)}%
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
                                 </TableCell>
                                 <TableCell>
                                     <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${statusColor[product.stock_status] || 'bg-neutral-100 text-neutral-600'}`}>
@@ -168,6 +180,7 @@ export default async function AdminProductsPage({ searchParams }: PageProps) {
                                         id={product.id}
                                         isActive={product.is_active}
                                         isFeatured={product.is_featured}
+                                        productName={product.name}
                                     />
                                 </TableCell>
                             </TableRow>

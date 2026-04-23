@@ -5,21 +5,21 @@ import { Slot } from "radix-ui"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-[var(--radius-btn)] text-label-md transition-all press-effect disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-5 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:ring-ring focus-visible:ring-[3px]",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        default: "bg-primary text-primary-foreground hover:bg-brand-600 shadow-sm",
         destructive:
-          "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
+          "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20",
         outline:
-          "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
+          "border border-stone-300 bg-background shadow-xs hover:bg-stone-100 hover:text-stone-900",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+          "bg-brand-50 text-brand-600 border border-brand-400 hover:bg-brand-100",
         ghost:
-          "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
-        link: "text-primary underline-offset-4 hover:underline",
-        cta: "text-white font-semibold rounded-[var(--radius-btn)] hover:brightness-110 hover:shadow-md transition-all [background:radial-gradient(ellipse_200%_150%_at_-20%_-50%,#EAF6FB_0%,#C1E1EB_10%,#97CBDB_20%,#6EB6CA_32%,#44A0BA_45%,#338099_65%,#216077_90%)]",
+          "hover:bg-stone-100 hover:text-stone-900 text-stone-600",
+        link: "text-primary underline-offset-4 flex-row-reverse hover:underline",
+        cta: "text-white font-semibold rounded-[var(--radius-btn)] hover:brightness-110 shadow-sm transition-all bg-accent hover:bg-accent-500",
       },
       size: {
         default: "h-9 px-4 py-2 has-[>svg]:px-3",

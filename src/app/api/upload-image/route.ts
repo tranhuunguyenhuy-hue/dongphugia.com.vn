@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
 
-// Use service role key on the server to bypass RLS policies
-const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { persistSession: false } }
-)
+// Bunny CDN Storage configuration
+const BUNNY_STORAGE_ZONE = process.env.BUNNY_STORAGE_ZONE_NAME!
+const BUNNY_API_KEY = process.env.BUNNY_STORAGE_API_KEY!
+const BUNNY_STORAGE_HOST = process.env.BUNNY_STORAGE_HOSTNAME || 'sg.storage.bunnycdn.com'
+const BUNNY_CDN_HOST = process.env.BUNNY_CDN_HOSTNAME || 'cdn.dongphugia.com.vn'
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 const MAX_SIZE_BYTES = 5 * 1024 * 1024 // 5MB
@@ -49,25 +47,30 @@ export async function POST(request: NextRequest) {
         const arrayBuffer = await file.arrayBuffer()
         const buffer = Buffer.from(arrayBuffer)
 
-        const { error: uploadError } = await supabaseAdmin.storage
-            .from('images')
-            .upload(filePath, buffer, {
-                contentType: file.type,
-                cacheControl: '31536000', // 1 year cache
-                upsert: false,
-            })
+        // Upload to Bunny CDN Storage via REST PUT
+        const uploadUrl = `https://${BUNNY_STORAGE_HOST}/${BUNNY_STORAGE_ZONE}/${filePath}`
+        const uploadRes = await fetch(uploadUrl, {
+            method: 'PUT',
+            headers: {
+                'AccessKey': BUNNY_API_KEY,
+                'Content-Type': 'application/octet-stream',
+            },
+            body: buffer,
+        })
 
-        if (uploadError) {
-            console.error('[upload-image] Supabase error:', uploadError)
+        if (!uploadRes.ok) {
+            const errorText = await uploadRes.text()
+            console.error('[upload-image] Bunny CDN error:', uploadRes.status, errorText)
             return NextResponse.json(
-                { error: 'Upload thất bại: ' + uploadError.message },
+                { error: `Upload thất bại (${uploadRes.status}): ${errorText}` },
                 { status: 500 }
             )
         }
 
-        const { data } = supabaseAdmin.storage.from('images').getPublicUrl(filePath)
+        // Return the public CDN URL
+        const publicUrl = `https://${BUNNY_CDN_HOST}/${filePath}`
 
-        return NextResponse.json({ url: data.publicUrl }, { status: 200 })
+        return NextResponse.json({ url: publicUrl }, { status: 200 })
     } catch (err: any) {
         console.error('[upload-image] Unexpected error:', err)
         return NextResponse.json(
@@ -76,3 +79,4 @@ export async function POST(request: NextRequest) {
         )
     }
 }
+

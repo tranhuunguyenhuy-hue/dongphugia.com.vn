@@ -14,14 +14,12 @@ type Banner = {
 
 type HeroBannerProps = { banners: Banner[] }
 
-// Standard banner aspect ratio: 1024:479 ≈ 2.14:1
-// All banner images should follow this proportion for consistency
-const BANNER_WIDTH = 1920
-const BANNER_HEIGHT = 898 // 1920 / (1024/479) ≈ 898
+// Standard banner aspect ratio: 1216:568 ≈ 2.14:1
+const BANNER_WIDTH = 1216
+const BANNER_HEIGHT = 568
 
 /**
- * Hero banner carousel — preserves original image aspect ratio.
- * Container scales responsively while keeping the full image visible (no crop).
+ * Hero banner carousel
  */
 export function HeroBanner({ banners }: HeroBannerProps) {
     const items = banners.length > 0 ? banners : []
@@ -43,13 +41,12 @@ export function HeroBanner({ banners }: HeroBannerProps) {
         return () => { if (timerRef.current) clearInterval(timerRef.current) }
     }, [next, items.length, isHovered])
 
-    // Empty state — fallback banner
     if (items.length === 0) {
         return (
-            <div className="relative w-full rounded-[var(--radius-hero)] overflow-hidden bg-neutral-100">
+            <div className="relative w-full rounded-md shadow-md overflow-hidden bg-stone-50" style={{ aspectRatio: '1216 / 568' }}>
                 <Image
-                    src="/images/hero-banner-inax.jpg"
-                    alt="Đông Phú Gia - Thiết bị vệ sinh INAX cao cấp"
+                    src="/images/assets-v2/hero-banner.png"
+                    alt="Đông Phú Gia - Vật liệu xây dựng"
                     width={BANNER_WIDTH}
                     height={BANNER_HEIGHT}
                     className="w-full h-auto"
@@ -64,7 +61,8 @@ export function HeroBanner({ banners }: HeroBannerProps) {
 
     return (
         <div
-            className="relative w-full rounded-[var(--radius-hero)] overflow-hidden bg-neutral-100"
+            className="relative w-full rounded-md shadow-md overflow-hidden bg-stone-50"
+            style={{ aspectRatio: '1216 / 568' }}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
         >
@@ -77,7 +75,7 @@ export function HeroBanner({ banners }: HeroBannerProps) {
                         alt={item.title || "Banner Đông Phú Gia"}
                         width={BANNER_WIDTH}
                         height={BANNER_HEIGHT}
-                        className={`w-full h-auto transition-opacity duration-700 ease-in-out ${isActive ? "opacity-100" : "opacity-0"}`}
+                        className={`w-full h-full object-cover transition-opacity duration-700 ease-in-out ${isActive ? "opacity-100" : "opacity-0"}`}
                         priority={i === 0}
                         quality={100}
                         sizes="100vw"
@@ -103,22 +101,22 @@ export function HeroBanner({ banners }: HeroBannerProps) {
                 )
             })}
 
-            {/* Prev / Next — 44px touch targets */}
+            {/* Prev / Next — 48px outline circular nav buttons */}
             {items.length > 1 && (
                 <>
                     <button
                         onClick={prevSlide}
-                        className="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-white/80 hover:bg-white backdrop-blur-sm flex items-center justify-center transition-all duration-200 active:scale-90"
+                        className="absolute left-3 lg:left-6 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full border border-border bg-white/50 hover:bg-white flex items-center justify-center transition-colors shadow-sm"
                         aria-label="Banner trước"
                     >
-                        <ChevronLeft className="h-5 w-5 text-[#192125]" />
+                        <ChevronLeft className="h-6 w-6 text-stone-900" strokeWidth={1.5} />
                     </button>
                     <button
                         onClick={next}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-white/80 hover:bg-white backdrop-blur-sm flex items-center justify-center transition-all duration-200 active:scale-90"
+                        className="absolute right-3 lg:right-6 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full border border-border bg-white/50 hover:bg-white flex items-center justify-center transition-colors shadow-sm"
                         aria-label="Banner tiếp"
                     >
-                        <ChevronRight className="h-5 w-5 text-[#192125]" />
+                        <ChevronRight className="h-6 w-6 text-stone-900" strokeWidth={1.5} />
                     </button>
                 </>
             )}

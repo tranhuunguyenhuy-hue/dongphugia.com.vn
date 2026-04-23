@@ -2,519 +2,166 @@
 @source "..";
 
 @theme {
+  /* ==========================================================
+     DPG V2 DESIGN TOKENS
+     Mapped from DPG Design System for Tailwind CSS v4 
+     ========================================================== */
+
   /* Fonts */
-  --font-sans: var(--font-inter);
+  --font-sans: var(--font-sans, "Be Vietnam Pro", sans-serif);
+  --font-display: var(--font-display, "Playfair Display", serif);
 
-  /* ============================================
-   * DESIGN TOKENS — Đông Phú Gia V2
-   * Luxury Light Design System
-   * Palette: Brand Teal + Warm Stone
-   * Docs: figma_color_tokens.md · spacing_system.md
-   * ============================================ */
+  /* Primary colors - Sky/Cyan Brand */
+  --color-brand-50:  #ECFEFF;
+  --color-brand-100: #D2F9FD;
+  --color-brand-200: #A5F3FC;
+  --color-brand-300: #67E8F9;
+  --color-brand-400: #37B4D1;
+  --color-brand-500: #2D90AF;
+  --color-brand-600: #25738E;
+  --color-brand-700: #225D73;
+  --color-brand-800: #164355;
+  --color-brand-900: #0E2E3C;
 
-  /* ---- Color Primitives ---- */
-  /* Blue Scale */
-  --color-blue-50: #EAF6FB;
-  --color-blue-100: #C5E8F5;
-  --color-blue-200: #8DCDE6;
-  --color-blue-300: #70BFD8;
-  --color-blue-400: #5AAFC9;
-  --color-blue-500: #44A0BA;
-  --color-blue-600: #2E7A96;
-  --color-blue-700: #216077;
-  --color-blue-800: #1A4A5C;
-  --color-blue-900: #0F2E3A;
+  /* Stone Neutrals - Tailwind v4 */
+  --color-stone-50:  #FAFAF9;
+  --color-stone-100: #F5F5F4;
+  --color-stone-200: #E7E5E4;
+  --color-stone-300: #D6D3D1;
+  --color-stone-400: #A7A29E;
+  --color-stone-500: #77716C;
+  --color-stone-600: #57534E;
+  --color-stone-700: #44403C;
+  --color-stone-800: #292524;
+  --color-stone-900: #1C1917;
 
-  /* Neutral Scale */
-  --color-neutral-50: #F5F9FB;
-  --color-neutral-100: #E4EEF2;
-  --color-neutral-200: #C8D9E0;
-  --color-neutral-300: #B0C4CD;
-  --color-neutral-400: #88A3AE;
-  --color-neutral-500: #6A8A97;
-  --color-neutral-600: #516A74;
-  --color-neutral-700: #3C4E56;
-  --color-neutral-800: #263238;
-  --color-neutral-900: #192125;
+  /* Accent Terracotta */
+  --color-accent-50:  #FDF4EE;
+  --color-accent-100: #FBE7D6;
+  --color-accent-200: #F6C8A3;
+  --color-accent-300: #EFA673;
+  --color-accent-400: #E8824A;
+  --color-accent-500: #D46A31;
+  --color-accent-600: #B4551F;
+  --color-accent-700: #8E4217;
 
-  /* Sand Scale (Warm Accent) */
-  --color-sand-50: #FDF7EE;
-  --color-sand-100: #FBF0DD;
-  --color-sand-200: #F7E1BB;
-  --color-sand-400: #EBBE74;
-  --color-sand-600: #D99A3F;
-  --color-sand-800: #93682B;
-  --color-sand-900: #5C411B;
-
-  /* ---- Semantic Tokens ---- */
-
-  /* Background & Foreground */
+  /* Semantic UI Tokens */
   --color-background: #FFFFFF;
-  /* pure white — clean minimalist base */
-  --color-foreground: #192125;
-  /* neutral-900 */
+  --color-foreground: var(--color-stone-800);
 
-  /* Cards */
-  --color-card: #ffffff;
-  --color-card-foreground: #192125;
+  --color-primary: var(--color-brand-500);
+  --color-primary-foreground: #FFFFFF;
 
-  /* Popover */
-  --color-popover: #ffffff;
-  --color-popover-foreground: #192125;
+  --color-secondary: var(--color-stone-50);
+  --color-secondary-foreground: var(--color-stone-800);
 
-  /* Primary — Blue Brand */
-  --color-primary: #2E7A96;
-  /* blue-600 */
-  --color-primary-foreground: #ffffff;
+  --color-accent: var(--color-accent-400);
+  --color-accent-foreground: #FFFFFF;
 
-  /* Secondary */
-  --color-secondary: #EAF6FB;
-  /* blue-50 */
-  --color-secondary-foreground: #0F2E3A;
-  /* blue-900 */
+  --color-muted: var(--color-stone-100);
+  --color-muted-foreground: var(--color-stone-600); /* secondary fg */
 
-  /* Muted */
-  --color-muted: #F5F5F5;
-  /* neutral gray — clean, no blue tint */
-  --color-muted-foreground: #6B7280;
-  /* gray-500 neutral */
+  --color-card: #FFFFFF;
+  --color-card-foreground: var(--color-stone-800);
+  
+  --color-popover: #FFFFFF;
+  --color-popover-foreground: var(--color-stone-800);
 
-  /* Accent — Sand warm */
-  --color-accent: #FDF7EE;
-  /* sand-50 */
-  --color-accent-foreground: #D99A3F;
-  /* sand-600 */
+  --color-destructive: #D94545;
+  --color-destructive-foreground: #FFFFFF;
 
-  /* Destructive */
-  --color-destructive: #ef4444;
-  --color-destructive-foreground: #ffffff;
+  /* Form & Borders */
+  --color-border: var(--color-stone-200);
+  --color-input: var(--color-stone-200);
+  --color-ring: rgba(55,180,209,0.35); /* --brand-400 ring */
 
-  /* Borders & Input */
-  --color-border: #E4EEF2;
-  /* neutral-100 */
-  --color-input: #E4EEF2;
-  --color-ring: #44A0BA;
-  /* blue-500 */
+  /* Radius System (mapped to Tailwind defaults) */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 24px;
+  --radius-btn: var(--radius-md);
 
-  /* Sidebar-specific tokens */
-  --color-sidebar: #ffffff;
-  --color-sidebar-foreground: #3C4E56;
-  /* neutral-700 */
-  --color-sidebar-border: #E4EEF2;
-  /* neutral-100 */
-  --color-sidebar-hover: #EAF6FB;
-  /* blue-50 */
-  --color-sidebar-active: #C5E8F5;
-  /* blue-100 */
-  --color-sidebar-active-foreground: #2E7A96;
-  /* blue-600 */
-
-  /* Stat Card Gradients (admin dashboard — keep for CMS) */
-  --color-stat-blue: #44A0BA;
-  --color-stat-orange: #D99A3F;
-  --color-stat-emerald: #44A0BA;
-  --color-stat-purple: #8b5cf6;
-  --color-stat-rose: #f43f5e;
-  --color-stat-cyan: #5AAFC9;
-  --color-stat-amber: #EBBE74;
-
-  /* ============================================
-   * SPACING SYSTEM V2 — Đông Phú Gia
-   * Base: 4px grid · Primitives = Tailwind built-in
-   * Semantic tokens only (purpose-driven)
-   * ============================================ */
-
-  /* --- Component Spacing (inside components) --- */
-  --spacing-component-gap-xs: 0.25rem;    /* 4px  · icon↔text (XS btn) */
-  --spacing-component-gap-sm: 0.375rem;   /* 6px  · icon↔text (SM btn) */
-  --spacing-component-gap-md: 0.5rem;     /* 8px  · icon↔text (MD+ btn), badge group */
-  --spacing-component-gap-lg: 0.75rem;    /* 12px · CTA pair, button group */
-  --spacing-component-padding-xs: 0.5rem;    /* 8px  · chips, tags, badges */
-  --spacing-component-padding-sm: 0.75rem;   /* 12px · input fields, small cards */
-  --spacing-component-padding-md: 1rem;      /* 16px · card content, modal body */
-  --spacing-component-padding-lg: 1.5rem;    /* 24px · card wrapper, modal, drawer */
-  --spacing-component-padding-xl: 2rem;      /* 32px · feature cards, pricing cards */
-
-  /* --- Layout Spacing (between blocks) --- */
-  --spacing-layout-gutter: 1rem;       /* 16px · grid gutter mobile */
-  --spacing-layout-gutter-lg: 1.5rem;  /* 24px · grid gutter desktop */
-  --spacing-layout-stack-sm: 1rem;     /* 16px · between form elements */
-  --spacing-layout-stack-md: 1.5rem;   /* 24px · between cards in grid */
-  --spacing-layout-stack-lg: 2.5rem;   /* 40px · between content blocks */
-
-  /* --- Section Spacing (mobile-first, desktop via @media) --- */
-  --spacing-section-sm: 3rem;    /* 48px → 64px */
-  --spacing-section-md: 4rem;    /* 64px → 80px */
-  --spacing-section-lg: 5rem;    /* 80px → 96px */
-  --spacing-section-xl: 6rem;    /* 96px → 128px */
-
-  /* --- Container & Page --- */
-  --spacing-container-px: 1rem;     /* 16px → 32px */
-  --spacing-page-top: 1.5rem;      /* 24px → 40px */
-  --spacing-page-bottom: 4rem;     /* 64px → 96px */
-
-  /* --- Specific --- */
-  --spacing-header-height: 4rem;     /* 64px → 72px */
-  --spacing-sidebar-width: 16rem;    /* 256px */
-
-  /* ---- Radius (minimal for Clean Corporate style) ---- */
-  --radius: 0.375rem;
-  /* 6px — default */
-  --radius-lg: 0.5rem;
-  /* 8px — cards, sections */
-  --radius-md: 0.25rem;
-  /* 4px */
-  --radius-sm: 0.125rem;
-  /* 2px */
-  --radius-pill: 4rem;
-  /* 64px — pill buttons, badges (keep) */
-  --radius-btn: 0.75rem;
-  /* 12px — CTA button (Figma) */
-  --radius-hero: 1.25rem;
-  /* 20px — hero banner (Figma) */
-
-  /* ---- Animations ---- */
-  --animate-fade-in: fade-in 0.3s ease-out;
-  --animate-slide-in: slide-in 0.3s ease-out;
-  --animate-scale-in: scale-in 0.2s ease-out;
-  --animate-shimmer: shimmer 2s infinite;
-  --animate-pulse-soft: pulse-soft 2s infinite;
-  --animate-marquee: marquee 20s linear infinite;
+  /* Box Shadows */
+  --shadow-xs: 0 1px 2px 0 rgba(0,0,0,0.05);
+  --shadow-sm: 0 1px 3px 0 rgba(0,0,0,0.10), 0 1px 2px 0 rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 6px 0 rgba(0,0,0,0.07), 0 2px 4px 0 rgba(0,0,0,0.06);
+  --shadow-lg: 0 10px 15px 0 rgba(0,0,0,0.10), 0 4px 6px 0 rgba(0,0,0,0.05);
+  --shadow-xl: 0 25px 50px 0 rgba(0,0,0,0.25);
 }
 
-/* ============================================
- * KEYFRAMES — Micro-interactions
- * ============================================ */
-@keyframes fade-in {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes slide-in {
-  from {
-    opacity: 0;
-    transform: translateX(-12px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes scale-in {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@keyframes shimmer {
-  0% {
-    background-position: -200% 0;
-  }
-
-  100% {
-    background-position: 200% 0;
-  }
-}
-
-@keyframes pulse-soft {
-
-  0%,
-  100% {
-    opacity: 1;
-  }
-
-  50% {
-    opacity: 0.7;
-  }
-}
-
-@keyframes marquee {
-  0% {
-    transform: translateX(0%);
-  }
-
-  100% {
-    transform: translateX(-25%);
-  }
-}
-
-/* ============================================
- * BASE STYLES
- * ============================================ */
 @layer base {
-  * {
+  *, *::before, *::after {
     border-color: var(--color-border);
+    box-sizing: border-box;
   }
 
-  body {
+  html, body {
+    margin: 0;
+    padding: 0;
     background-color: var(--color-background);
     color: var(--color-foreground);
-    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
   }
+  
+  :focus { outline: none; }
+  :focus-visible { outline: none; box-shadow: var(--color-ring); border-radius: var(--radius-md); }
 }
 
-/* ============================================
- * RESPONSIVE SPACING — Desktop Overrides
- * ============================================ */
-@media (min-width: 768px) {
-  :root {
-    --spacing-section-sm: 4rem;       /* 64px */
-    --spacing-section-md: 5rem;       /* 80px */
-    --spacing-section-lg: 6rem;       /* 96px */
-    --spacing-section-xl: 8rem;       /* 128px */
-    --spacing-container-px: 2rem;     /* 32px */
-    --spacing-page-top: 2.5rem;       /* 40px */
-    --spacing-page-bottom: 6rem;      /* 96px */
-    --spacing-header-height: 4.5rem;  /* 72px */
-  }
-}
-
-/* ============================================
- * UTILITY CLASSES — Pro Max Interactions
- * ============================================ */
+/* ============================================================
+   TYPOGRAPHY HELPERS (Mapped from DPG Styles)
+   ============================================================ */
 @layer utilities {
+  .text-display-xl { @apply text-5xl font-display font-bold leading-[56px] tracking-tight; }
+  .text-display-lg { @apply text-4xl font-display font-semibold leading-[44px] tracking-tight; }
+  .text-display-md { @apply text-2xl font-display font-semibold leading-8; }
+  .text-display-md-italic { @apply text-2xl font-display font-normal italic leading-9; }
 
-  /* Page entrance */
-  .animate-page-enter {
-    animation: var(--animate-fade-in);
+  .text-heading-xl { @apply text-3xl font-bold leading-10; }
+  .text-heading-lg { @apply text-2xl font-semibold leading-8; }
+  .text-heading-md { @apply text-xl font-semibold leading-7; }
+  .text-heading-sm { @apply text-lg font-medium leading-[26px]; }
+  .text-heading-xs { @apply text-base font-medium leading-6; }
+
+  .text-body-lg { @apply text-lg font-normal leading-[30px]; }
+  .text-body-md { @apply text-base font-normal leading-[26px]; }
+  .text-body-sm { @apply text-sm font-normal leading-[22px]; }
+
+  .text-label-lg { @apply text-base font-medium leading-6; }
+  .text-label-md { @apply text-sm font-medium leading-5; }
+  .text-label-sm { @apply text-xs font-medium leading-4; }
+
+  .text-caption-md { @apply text-[13px] font-normal leading-[18px]; }
+  .text-caption-sm { @apply text-xs font-normal leading-[18px] tracking-wide; }
+  
+  .text-overline-md { @apply text-xs font-semibold leading-4 uppercase tracking-[0.06em]; }
+
+  /* Utility wrappers & Grid System */
+  .u-container { 
+    @apply w-full max-w-[1280px] mx-auto px-4 md:px-6 lg:px-8; 
   }
-
-  /* Card subtle hover — minimalist style */
+  
+  /* 
+   * DPG V2 Responsive Grid System:
+   * - Mobile (<768px): 4 columns, 16px gap
+   * - Tablet (768px - 1023px): 8 columns, 24px gap
+   * - Desktop (>=1024px): 12 columns, 24px gap
+   */
+  .u-grid {
+    @apply grid grid-cols-4 gap-4 md:grid-cols-8 md:gap-6 lg:grid-cols-12 lg:gap-6;
+  }
+  
+  /* Animations & Microinteractions */
   .card-hover {
-    transition: border-color 0.2s ease, background-color 0.2s ease;
-    border: 1px solid transparent;
+    @apply transition-all duration-200;
   }
-
   .card-hover:hover {
-    border-color: var(--color-border);
-    background-color: #FAFAFA;
+    @apply shadow-lg border-stone-200 transform -translate-y-[2px];
   }
-
-  /* Active press effect for buttons */
   .press-effect:active {
-    transform: scale(0.97);
-  }
-
-  /* Gradient stat cards (AquaHome palette) */
-  .stat-gradient-blue {
-    background: linear-gradient(135deg, #EAF6FB 0%, #C5E8F5 100%);
-  }
-
-  .stat-gradient-orange {
-    background: linear-gradient(135deg, #FDF7EE 0%, #F7E1BB 100%);
-  }
-
-  .stat-gradient-emerald {
-    background: linear-gradient(135deg, #EAF6FB 0%, #8DCDE6 100%);
-  }
-
-  .stat-gradient-purple {
-    background: linear-gradient(135deg, #f5f3ff 0%, #ddd6fe 100%);
-  }
-
-  .stat-gradient-rose {
-    background: linear-gradient(135deg, #fff1f2 0%, #fecdd3 100%);
-  }
-
-  .stat-gradient-cyan {
-    background: linear-gradient(135deg, #EAF6FB 0%, #5AAFC9 100%);
-  }
-
-  .stat-gradient-amber {
-    background: linear-gradient(135deg, #FDF7EE 0%, #EBBE74 100%);
-  }
-
-  /* Sidebar transition */
-  .sidebar-transition {
-    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), padding 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  /* Table row highlight */
-  .table-row-hover {
-    transition: background-color 0.15s ease;
-  }
-
-  .table-row-hover:hover {
-    background-color: var(--color-muted);
-  }
-
-  /* Shimmer skeleton */
-  .skeleton-shimmer {
-    background: linear-gradient(90deg, var(--color-neutral-50) 25%, var(--color-neutral-100) 50%, var(--color-neutral-50) 75%);
-    background-size: 200% 100%;
-    animation: var(--animate-shimmer);
-  }
-
-  /* Badge pulse for pending items */
-  .badge-pulse {
-    animation: var(--animate-pulse-soft);
-  }
-
-  /* Active left indicator */
-  .active-indicator {
-    position: relative;
-  }
-
-  .active-indicator::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 4px;
-    bottom: 4px;
-    width: 3px;
-    border-radius: 0 4px 4px 0;
-    background-color: var(--color-primary);
-  }
-
-  /* Marquee for topbar mobile */
-  .animate-marquee {
-    animation: marquee 25s linear infinite;
-    will-change: transform;
-  }
-
-  /* Custom Prose for Blog (Fallback since @tailwindcss/typography install failed) */
-  .prose {
-    color: var(--color-foreground);
-    line-height: 1.75;
-  }
-
-  .prose p {
-    margin-top: 1.25em;
-    margin-bottom: 1.25em;
-  }
-
-  .prose h2 {
-    font-size: 1.5em;
-    font-weight: 700;
-    margin-top: 2em;
-    margin-bottom: 1em;
-    color: var(--color-foreground);
-  }
-
-  .prose h3 {
-    font-size: 1.25em;
-    font-weight: 600;
-    margin-top: 1.6em;
-    margin-bottom: 0.6em;
-    color: var(--color-neutral-700);
-  }
-
-  .prose a {
-    color: var(--color-primary);
-    text-decoration: underline;
-    font-weight: 500;
-  }
-
-  .prose ul {
-    list-style-type: disc;
-    padding-left: 1.625em;
-  }
-
-  .prose ol {
-    list-style-type: decimal;
-    padding-left: 1.625em;
-  }
-
-  .prose li {
-    margin-top: 0.5em;
-    margin-bottom: 0.5em;
-  }
-
-  .prose img {
-    max-width: 100%;
-    width: 100%;
-    height: auto;
-    display: block;
-    margin-top: 2em;
-    margin-bottom: 2em;
-    border-radius: var(--radius-lg);
-    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-  }
-
-  .prose blockquote {
-    font-weight: 500;
-    font-style: italic;
-    color: var(--color-neutral-600);
-    border-left-width: 0.25rem;
-    border-left-color: var(--color-border);
-    quotes: "\201C" "\201D" "\2018" "\2019";
-    padding-left: 1em;
-    margin-top: 1.6em;
-    margin-bottom: 1.6em;
-  }
-
-  .prose strong {
-    font-weight: 600;
-    color: var(--color-foreground);
-  }
-
-  /* ---- Minimalist Utilities ---- */
-
-  /* Accent bar — INAX-inspired heading decorator */
-  .accent-bar {
-    display: block;
-    width: 2rem;
-    height: 3px;
-    background-color: var(--color-primary);
-    margin-bottom: 1rem;
-  }
-
-  /* Section heading — uppercase tracking */
-  .section-heading {
-    text-transform: uppercase;
-    letter-spacing: 0.15em;
-    font-weight: 300;
-  }
-
-  /* Subtle border for cards (Clean Corporate style) */
-  .subtle-border {
-    border: 1px solid #E5E7EB;
-  }
-
-  .subtle-border-hover:hover {
-    border-color: var(--color-primary);
-  }
-}
-
-/* ============================================
- * ANIMATION — Marquee (BrandSlider)
- * ============================================ */
-@keyframes marquee {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
-}
-
-.animate-marquee {
-  animation: marquee 30s linear infinite;
-}
-
-/* ============================================
- * ACCESSIBILITY — Reduced Motion
- * ============================================ */
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
+    @apply transform scale-[0.98];
   }
 }

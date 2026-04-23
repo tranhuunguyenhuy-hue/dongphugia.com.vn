@@ -54,8 +54,8 @@ const renderMegaMenuContent = (cat: Category, data: MenuData | undefined) => {
         <div className="flex flex-col p-6 pl-8 w-full max-h-[calc(100vh-200px)] overflow-y-auto custom-scrollbar">
             {/* Brands or Highlights */}
             {data.brands && data.brands.length > 0 && (
-                <div className="mb-6 border-b border-white/30 pb-5">
-                    <h3 className="text-[11px] font-bold text-[#3C4E56]/60 uppercase tracking-wider mb-3">Thương hiệu nổi bật</h3>
+                <div className="mb-6 border-b border-stone-200 pb-5">
+                    <h3 className="text-[11px] font-bold text-stone-500 uppercase tracking-wider mb-3">Thương hiệu nổi bật</h3>
                     <div className="grid grid-cols-3 sm:grid-cols-4 xl:grid-cols-5 gap-2.5">
                         {data.brands.map((brand: any) => (
                             <Link href={`/${cat.slug}?brand=${brand.slug}`} key={brand.id} className="h-9 px-2 rounded-[8px] bg-white/40 backdrop-blur-md border border-white/60 hover:border-white/90 hover:bg-white/80 hover:shadow-[0_4px_12px_rgba(46,122,150,0.08)] flex items-center justify-center transition-all duration-300 group/brand relative">
@@ -77,7 +77,7 @@ const renderMegaMenuContent = (cat: Category, data: MenuData | undefined) => {
                                             }
                                         }}
                                     />
-                                    <span style={{ display: 'none' }} className="text-[11.5px] font-semibold text-[#3C4E56]/70 text-center break-words group-hover/brand:text-[#2E7A96] transition-colors line-clamp-2">
+                                    <span style={{ display: 'none' }} className="text-[11.5px] font-semibold text-stone-600 text-center break-words group-hover/brand:text-brand-600 transition-colors line-clamp-2">
                                         {brand.name}
                                     </span>
                                 </div>
@@ -90,15 +90,15 @@ const renderMegaMenuContent = (cat: Category, data: MenuData | undefined) => {
             {/* Subcategories (v2 unified schema) */}
             {data.subcategories && data.subcategories.length > 0 ? (
                 <div>
-                    <h3 className="text-[11px] font-bold text-[#3C4E56]/60 uppercase tracking-wider mb-4">Phân loại {cat.name.toLowerCase()}</h3>
+                    <h3 className="text-[11px] font-bold text-stone-500 uppercase tracking-wider mb-4">Phân loại {cat.name.toLowerCase()}</h3>
                     <div className="grid grid-cols-2 gap-x-8 gap-y-3">
                         {data.subcategories.slice(0, 16).map((sub) => (
-                            <Link href={`/${cat.slug}/${sub.slug}`} key={sub.id} className="text-[14px] font-medium text-[#192125] hover:text-[#2E7A96] transition-colors py-1 flex items-center justify-between group">
+                            <Link href={`/${cat.slug}?sub=${sub.slug}`} key={sub.id} className="text-[14px] font-medium text-stone-900 hover:text-brand-600 transition-colors py-1 flex items-center justify-between group">
                                 <span className="truncate pr-4 relative inline-block">
                                     {sub.name}
-                                    <span className="absolute -bottom-0.5 left-0 w-0 h-[1.5px] bg-[#2E7A96]/30 transition-all duration-300 group-hover:w-full"></span>
+                                    <span className="absolute -bottom-0.5 left-0 w-0 h-[1.5px] bg-brand-500/30 transition-all duration-300 group-hover:w-full"></span>
                                 </span>
-                                <ChevronRight className="h-3.5 w-3.5 text-[#2E7A96]/50 opacity-0 group-hover:opacity-100 -translate-x-3 group-hover:translate-x-0 transition-all duration-300" />
+                                <ChevronRight className="h-3.5 w-3.5 text-brand-500/50 opacity-0 group-hover:opacity-100 -translate-x-3 group-hover:translate-x-0 transition-all duration-300" />
                             </Link>
                         ))}
                     </div>
@@ -107,7 +107,7 @@ const renderMegaMenuContent = (cat: Category, data: MenuData | undefined) => {
                 <div className="text-gray-400 text-sm">Chưa có thông tin danh mục</div>
             )}
             
-            <Link href={`/${cat.slug}`} className="text-[13px] font-medium text-blue-600 hover:text-blue-700 mt-8 flex items-center gap-1 group w-max">
+            <Link href={`/${cat.slug}`} className="text-[13px] font-medium text-brand-600 hover:text-brand-700 mt-8 flex items-center gap-1 group w-max">
                 Xem tất cả sản phẩm {cat.name} <ChevronRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
             </Link>
         </div>
@@ -120,9 +120,9 @@ export function MegaMenuSidebar({ categories, menuData }: MegaMenuProps) {
 
     return (
         <NavigationMenu.Root orientation="vertical" delayDuration={150} className="relative z-[40] flex w-full max-w-[302px]">
-            <div className="w-[302px] shrink-0 bg-[#C5E8F5] border border-[#44A0BA]/50 rounded-[24px] shadow-[0_4px_12px_rgba(16,24,40,0.06)] flex flex-col overflow-hidden">
+            <div className="w-[302px] shrink-0 bg-stone-50 border border-stone-200 rounded-[24px] shadow-[0_4px_12px_rgba(16,24,40,0.06)] flex flex-col overflow-hidden">
                 <div className="px-5 pt-4 pb-3">
-                    <p className="text-[13px] font-semibold leading-[20px] text-[#0F2E3A] uppercase tracking-wide">
+                    <p className="text-[13px] font-semibold leading-[20px] text-stone-900 uppercase tracking-wide">
                         Danh mục sản phẩm
                     </p>
                 </div>
@@ -136,11 +136,11 @@ export function MegaMenuSidebar({ categories, menuData }: MegaMenuProps) {
 
                         return (
                             <NavigationMenu.Item key={cat.id} className="w-full">
-                                <NavigationMenu.Trigger className={`group/item flex w-full items-center justify-between px-5 h-[58px] text-[14px] font-medium text-[#3C4E56] hover:bg-[#EAF6FB] hover:text-[#2E7A96] data-[state=open]:bg-[#EAF6FB] data-[state=open]:text-[#2E7A96] transition-colors duration-200 ${rounding} ${!isLast ? "border-b border-[#E4EEF2]" : ""}`}>
+                                <NavigationMenu.Trigger className={`group/item flex w-full items-center justify-between px-5 h-[58px] text-[15px] font-medium text-stone-700 hover:bg-white hover:text-brand-600 data-[state=open]:bg-white data-[state=open]:text-brand-600 transition-colors duration-200 ${rounding} ${!isLast ? "border-b border-stone-200" : ""}`}>
                                     <Link href={`/${cat.slug}`} className="w-full text-left outline-none py-1 block" onClick={(e) => e.stopPropagation()}>
                                         {cat.name}
                                     </Link>
-                                    <ChevronRight className="h-4 w-4 shrink-0 text-[#C8D9E0] group-hover/item:text-[#2E7A96] group-data-[state=open]/item:translate-x-0.5 transition-all duration-200" />
+                                    <ChevronRight className="h-4 w-4 shrink-0 text-stone-400 group-hover/item:text-brand-600 group-data-[state=open]/item:translate-x-0.5 transition-all duration-200" />
                                 </NavigationMenu.Trigger>
 
                                 {/* Responsive width: adapts to viewport to prevent horizontal scrollbar */}
@@ -155,23 +155,21 @@ export function MegaMenuSidebar({ categories, menuData }: MegaMenuProps) {
 
             {/* Viewport - positioned to avoid stretching the page width */}
             <div className="absolute top-0 left-[302px] pl-3 pointer-events-none z-[40]">
-                <NavigationMenu.Viewport className="pointer-events-auto relative overflow-hidden rounded-[20px] bg-white shadow-[0_8px_30px_rgba(0,0,0,0.08)] border border-[#C8D9E0] origin-top-left data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out data-[state=open]:fade-in data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 duration-200 w-[var(--radix-navigation-menu-viewport-width)] h-[var(--radix-navigation-menu-viewport-height)] transition-[height] ease-out" />
+                <NavigationMenu.Viewport className="pointer-events-auto relative overflow-hidden rounded-[20px] bg-white shadow-[0_8px_30px_rgba(0,0,0,0.08)] border border-stone-200 origin-top-left data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out data-[state=open]:fade-in data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 duration-200 w-[var(--radix-navigation-menu-viewport-width)] h-[var(--radix-navigation-menu-viewport-height)] transition-[height] ease-out" />
             </div>
         </NavigationMenu.Root>
     )
 }
 
-// ── MEGA MENU HEADER (Unified Dropdown Panel - ATTIO STYLE) ──
+// ── MEGA MENU HEADER (Flat 4-Column Layout) ──
 export function MegaMenuHeader({ categories, menuData }: MegaMenuProps) {
     const [isOpen, setIsOpen] = React.useState(false);
-    const [activeCat, setActiveCat] = React.useState<Category | null>(null);
     const closeTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    const currentCat = activeCat || (categories?.[0] ?? null);
+    // Limit to 4 main categories for the 4-column grid
+    const mainCategories = categories?.slice(0, 4) || [];
 
-    if (!categories || categories.length === 0) return null;
-
-    const data = menuData && currentCat ? menuData[currentCat.slug] : undefined;
+    if (!mainCategories.length) return null;
 
     const handleMouseEnter = () => {
         if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
@@ -184,56 +182,47 @@ export function MegaMenuHeader({ categories, menuData }: MegaMenuProps) {
 
     return (
         <div className="flex items-center h-full" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
-            <button className={`flex items-center gap-1 text-[15px] font-medium transition-colors ${isOpen ? 'text-[#2E7A96]' : 'text-[#3C4E56] hover:text-[#2E7A96]'}`}>
+            <button className={`flex items-center gap-1.5 font-medium transition-all duration-300 px-4 py-2 rounded-md h-[38px] focus:outline-none ${isOpen ? 'bg-brand-50 text-brand-600' : 'bg-transparent text-stone-700 hover:bg-brand-50 hover:text-brand-600'} text-[15px] leading-[20px]`}>
                 Sản phẩm
-                <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${isOpen ? 'rotate-180 text-brand-600' : 'text-stone-400'}`} />
             </button>
 
             <div
-                className={`absolute top-full mt-3 left-1/2 -translate-x-1/2 z-50 transition-all duration-200 ${isOpen ? 'opacity-100 visible translate-y-0 scale-100 origin-top' : 'opacity-0 invisible translate-y-2 scale-95 origin-top pointer-events-none'
-                    }`}
+                className={`absolute top-full left-0 w-full z-50 transition-opacity duration-150 ease-out ${isOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'}`}
             >
-                <div className="absolute -top-3 left-0 right-0 h-3" />
-                
-                {/* Glassmorphism Mega Menu Container */}
-                <div className="w-[840px] xl:w-[940px] bg-white/70 backdrop-blur-2xl rounded-[24px] shadow-[0_24px_80px_-12px_rgba(46,122,150,0.15)] border border-white/60 flex p-3 relative z-20">
-                    
-                    {/* Left: Category list (Glassmorphism style) */}
-                    <div className="w-[320px] xl:w-[340px] shrink-0 flex flex-col gap-1 pr-3 border-r border-[#C8D9E0]/30">
-                        <div className="px-3 pt-2 pb-3">
-                            <h3 className="text-[11px] font-bold text-[#3C4E56]/60 uppercase tracking-wider">Danh mục</h3>
+                {/* Flat 100vw V2 Mega Menu Container */}
+                <div className="w-full bg-white border-b border-stone-200 relative z-20 shadow-sm">
+                    {/* Inner wrapper to match max-w-[1280px] center layout */}
+                    <div className="max-w-[1280px] mx-auto px-5 lg:px-8 py-10 border-t border-stone-100">
+                        <div className="grid grid-cols-4 gap-12 relative w-full">
+                            {mainCategories.map((cat) => {
+                                const data = menuData ? menuData[cat.slug] : undefined;
+                                return (
+                                    <div key={cat.id} className="flex flex-col">
+                                        <Link href={`/${cat.slug}`} className="group/cathead flex items-center justify-between pb-2 mb-3 border-b border-stone-100">
+                                            <h3 className="text-[13px] font-normal text-[#888] group-hover/cathead:text-brand-600 transition-colors">
+                                                {cat.name}
+                                            </h3>
+                                            <span className="text-[11px] font-medium text-brand-600 opacity-0 group-hover/cathead:opacity-100 -translate-x-2 group-hover/cathead:translate-x-0 transition-all duration-200 flex items-center">
+                                                Xem đầy đủ <ChevronRight className="w-3 h-3 ml-0.5" />
+                                            </span>
+                                        </Link>
+                                        
+                                        {data?.subcategories?.length ? (
+                                            <div className="flex flex-col">
+                                                {data.subcategories.slice(0, 9).map(sub => (
+                                                    <Link key={sub.id} href={`/${cat.slug}?sub=${sub.slug}`} className="text-[14px] text-stone-900 hover:text-brand-600 font-normal transition-colors leading-[32px] block w-full truncate pr-4">
+                                                        {sub.name}
+                                                    </Link>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <span className="text-sm text-stone-400 py-1 font-light">Đang cập nhật...</span>
+                                        )}
+                                    </div>
+                                )
+                            })}
                         </div>
-                        {categories.map((cat) => {
-                            const info = CATEGORY_INFO[cat.slug] || { icon: Grid2X2, desc: 'Khám phá sản phẩm của chúng tôi' };
-                            const Icon = info.icon;
-                            const isActive = currentCat?.slug === cat.slug;
-                            
-                            return (
-                                <Link
-                                    key={cat.id}
-                                    href={`/${cat.slug}`}
-                                    onMouseEnter={() => setActiveCat(cat)}
-                                    className={`flex items-start gap-4 px-3 py-3 rounded-[12px] transition-all duration-300 relative group overflow-hidden ${isActive
-                                            ? 'bg-white/60 shadow-sm shadow-[#2E7A96]/5 border border-white/60'
-                                            : 'hover:bg-white/40 border border-transparent'
-                                        }`}
-                                >
-                                    {isActive && <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-gradient-to-b from-[#44A0BA] to-[#2E7A96] rounded-r-full" />}
-                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-all duration-300 ${isActive ? 'bg-gradient-to-br from-[#44A0BA] to-[#2E7A96] text-white shadow-md shadow-[#2E7A96]/30 scale-105' : 'bg-white text-[#3C4E56]/60 shadow-sm border border-white/80 group-hover:text-[#2E7A96] group-hover:scale-105'}`}>
-                                        <Icon className="w-[18px] h-[18px]" />
-                                    </div>
-                                    <div className="flex flex-col pt-0.5 z-10">
-                                        <span className={`text-[15px] font-semibold transition-colors ${isActive ? 'text-[#0F2E3A]' : 'text-[#3C4E56] group-hover:text-[#2E7A96]'}`}>{cat.name}</span>
-                                        <span className={`text-[13px] mt-0.5 leading-snug line-clamp-2 transition-colors ${isActive ? 'text-[#3C4E56]/80' : 'text-[#3C4E56]/50 group-hover:text-[#3C4E56]/70'}`}>{info.desc}</span>
-                                    </div>
-                                </Link>
-                            )
-                        })}
-                    </div>
-
-                    {/* Right: Content panel */}
-                    <div className="flex-1">
-                        {currentCat && renderMegaMenuContent(currentCat, data)}
                     </div>
                 </div>
             </div>

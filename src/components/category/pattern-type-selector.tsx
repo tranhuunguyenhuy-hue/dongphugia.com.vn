@@ -68,7 +68,7 @@ export function PatternTypeSelector({ patternTypes }: PatternTypeSelectorProps) 
                     onClick={() => scroll("left")}
                     aria-label="Xem loại gạch trước"
                     className={`lg:hidden absolute left-0 top-[50px] -translate-y-1/2 -translate-x-2 z-20
-                        w-9 h-9 rounded-full bg-white border border-neutral-200 shadow-sm
+                        w-9 h-9 rounded-lg bg-white border border-neutral-200 shadow-sm
                         flex items-center justify-center text-neutral-600
                         hover:bg-neutral-50 hover:text-neutral-900 hover:border-neutral-300
                         active:scale-95 transition-all duration-200
@@ -93,7 +93,7 @@ export function PatternTypeSelector({ patternTypes }: PatternTypeSelectorProps) 
                                 className="flex flex-col items-center gap-3 group text-center w-[90px] lg:w-[100px] shrink-0 snap-start"
                             >
                                 {/* Image card */}
-                                <div className={`w-full aspect-square rounded-full overflow-hidden relative
+                                <div className={`w-full aspect-square rounded-lg overflow-hidden relative
                                     transition-all duration-300
                                     ${isActive
                                         ? "ring-2 ring-neutral-900 ring-offset-2"
@@ -125,7 +125,7 @@ export function PatternTypeSelector({ patternTypes }: PatternTypeSelectorProps) 
                     onClick={() => scroll("right")}
                     aria-label="Xem loại gạch tiếp theo"
                     className={`lg:hidden absolute right-0 top-[50px] -translate-y-1/2 translate-x-2 z-20
-                        w-9 h-9 rounded-full bg-white border border-neutral-200 shadow-sm
+                        w-9 h-9 rounded-lg bg-white border border-neutral-200 shadow-sm
                         flex items-center justify-center text-neutral-600
                         hover:bg-neutral-50 hover:text-neutral-900 hover:border-neutral-300
                         active:scale-95 transition-all duration-200

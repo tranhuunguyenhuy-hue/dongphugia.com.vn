@@ -10,6 +10,7 @@ import { z } from 'zod'
 const productSchema = z.object({
     sku: z.string().min(1, 'SKU là bắt buộc').max(100),
     name: z.string().min(1, 'Tên sản phẩm là bắt buộc').max(500),
+    display_name: z.string().max(500).optional().nullable(),
     slug: z.string().min(1, 'Slug là bắt buộc').max(500),
     category_id: z.coerce.number().int().positive('Phải chọn danh mục'),
     subcategory_id: z.coerce.number().int().positive().optional().nullable(),
@@ -18,6 +19,7 @@ const productSchema = z.object({
     color_id: z.coerce.number().int().positive().optional().nullable(),
     material_id: z.coerce.number().int().positive().optional().nullable(),
     price: z.coerce.number().positive().optional().nullable(),
+    original_price: z.coerce.number().positive().optional().nullable(),
     price_display: z.string().max(50).optional().default('Liên hệ báo giá'),
     description: z.string().optional().nullable(),
     features: z.string().optional().nullable(),
@@ -31,6 +33,8 @@ const productSchema = z.object({
     is_new: z.boolean().default(false),
     is_bestseller: z.boolean().default(false),
     sort_order: z.coerce.number().int().default(0),
+    product_type: z.string().max(50).optional().nullable(),
+    product_sub_type: z.string().max(50).optional().nullable(),
     source_url: z.string().url().max(1000).optional().nullable().or(z.literal('')),
     hita_product_id: z.string().max(100).optional().nullable(),
     seo_title: z.string().max(200).optional().nullable(),
@@ -50,6 +54,7 @@ export async function createProduct(data: unknown) {
         const createData: Prisma.productsUncheckedCreateInput = {
             sku: d.sku,
             name: d.name,
+            display_name: d.display_name || null,
             slug: d.slug,
             category_id: d.category_id,
             subcategory_id: d.subcategory_id || null,
@@ -58,6 +63,7 @@ export async function createProduct(data: unknown) {
             color_id: d.color_id || null,
             material_id: d.material_id || null,
             price: d.price ? d.price : null,
+            original_price: d.original_price ? d.original_price : null,
             price_display: d.price_display || 'Liên hệ báo giá',
             description: d.description || null,
             features: d.features || null,
@@ -71,6 +77,8 @@ export async function createProduct(data: unknown) {
             is_new: d.is_new,
             is_bestseller: d.is_bestseller,
             sort_order: d.sort_order,
+            product_type: d.product_type || null,
+            product_sub_type: d.product_sub_type || null,
             source_url: d.source_url || null,
             hita_product_id: d.hita_product_id || null,
             seo_title: d.seo_title || null,
@@ -100,6 +108,7 @@ export async function updateProduct(id: number, data: unknown) {
         const updateData: Prisma.productsUncheckedUpdateInput = {
             sku: d.sku,
             name: d.name,
+            display_name: d.display_name || null,
             slug: d.slug,
             category_id: d.category_id,
             subcategory_id: d.subcategory_id || null,
@@ -108,6 +117,7 @@ export async function updateProduct(id: number, data: unknown) {
             color_id: d.color_id || null,
             material_id: d.material_id || null,
             price: d.price ? d.price : null,
+            original_price: d.original_price ? d.original_price : null,
             price_display: d.price_display || 'Liên hệ báo giá',
             description: d.description || null,
             features: d.features || null,
@@ -121,6 +131,8 @@ export async function updateProduct(id: number, data: unknown) {
             is_new: d.is_new,
             is_bestseller: d.is_bestseller,
             sort_order: d.sort_order,
+            product_type: d.product_type || null,
+            product_sub_type: d.product_sub_type || null,
             source_url: d.source_url || null,
             hita_product_id: d.hita_product_id || null,
             seo_title: d.seo_title || null,
@@ -221,6 +233,22 @@ export async function addProductImage(productId: number, imageUrl: string, altTe
     }
 }
 
+export async function addProductImages(productId: number, imageUrls: string[]) {
+    try {
+        const data = imageUrls.map((url, i) => ({
+            product_id: productId,
+            image_url: url,
+            image_type: 'gallery' as const,
+            sort_order: i,
+        }))
+        await prisma.product_images.createMany({ data })
+        revalidatePath(`/admin/products/${productId}`)
+        return { success: true, count: imageUrls.length }
+    } catch (err: any) {
+        return { message: 'Lỗi thêm ảnh: ' + err.message }
+    }
+}
+
 export async function deleteProductImage(imageId: number, productId: number) {
     try {
         await prisma.product_images.delete({ where: { id: imageId } })
@@ -230,3 +258,19 @@ export async function deleteProductImage(imageId: number, productId: number) {
         return { message: 'Lỗi xóa ảnh: ' + err.message }
     }
 }
+
+export async function setProductThumbnail(productId: number, imageUrl: string) {
+    try {
+        await prisma.products.update({
+            where: { id: productId },
+            data: { image_main_url: imageUrl, updated_at: new Date() },
+        })
+        revalidatePath(`/admin/products/${productId}`)
+        revalidatePath('/admin/products')
+        revalidatePath('/')
+        return { success: true }
+    } catch (err: any) {
+        return { message: 'Lỗi đặt thumbnail: ' + err.message }
+    }
+}
+
