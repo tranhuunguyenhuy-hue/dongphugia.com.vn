@@ -3,6 +3,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { ChevronDown } from 'lucide-react'
+import type { SpecFilterDef } from './subcategory-spec-filter'
 
 // --- Types ---
 type FilterOption = { name: string; slug: string; icon_name?: string | null; logo_url?: string | null }
@@ -255,15 +256,24 @@ function AdvancedFilterGroup({
     )
 }
 
+// ── Spec Filter URL helpers ────────────────────────────────────────────────────
+const SF_PREFIX = 'sf_'
+function getSpecActiveValues(searchParams: URLSearchParams, key: string): string[] {
+    const raw = searchParams.get(SF_PREFIX + key) || ''
+    return raw ? raw.split(',').filter(Boolean) : []
+}
+
 // ── Main Component ─────────────────────────────────────────────────────────────
 export function AdvancedSidebarFilter({
     availableFilters,
     hideSubcategoryFilter = false,
     hideTitle = false,
+    specFilters = [],
 }: {
     availableFilters: AvailableFiltersData
     hideSubcategoryFilter?: boolean
     hideTitle?: boolean
+    specFilters?: SpecFilterDef[]
 }) {
     const router = useRouter()
     const pathname = usePathname()
@@ -323,15 +333,36 @@ export function AdvancedSidebarFilter({
     const isNew      = searchParams.get('is_new') === 'true'
     const isFeatured = searchParams.get('is_featured') === 'true'
 
+    // Spec filter counts
+    const specActiveCount = specFilters.reduce((acc, f) => acc + getSpecActiveValues(searchParams, f.key).length, 0)
+
+    const toggleSpec = useCallback((key: string, value: string) => {
+        const params = new URLSearchParams(searchParams.toString())
+        const urlKey = SF_PREFIX + key
+        const current = (params.get(urlKey) || '').split(',').filter(Boolean)
+        const updated = current.includes(value)
+            ? current.filter(v => v !== value)
+            : [...current, value]
+        if (updated.length > 0) params.set(urlKey, updated.join(','))
+        else params.delete(urlKey)
+        params.delete('page')
+        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+    }, [router, pathname, searchParams])
+
     const hasFilters =
         brandSlugs.length > 0 || featureSlugs.length > 0 ||
         materialSlugs.length > 0 || originSlugs.length > 0 ||
-        isPriceActive || isNew || isFeatured
+        isPriceActive || isNew || isFeatured || specActiveCount > 0
+
+    const totalActiveCount =
+        brandSlugs.length + featureSlugs.length + materialSlugs.length +
+        originSlugs.length + (isPriceActive ? 1 : 0) + (isNew ? 1 : 0) + (isFeatured ? 1 : 0) + specActiveCount
 
     const clearAll = () => {
         setLocalPrice([PRICE_MIN, PRICE_MAX])
         const params = new URLSearchParams(searchParams.toString())
         ;['brand', 'features', 'material', 'origin', 'price', 'is_new', 'is_featured', 'priceRange'].forEach(k => params.delete(k))
+        specFilters.forEach(f => params.delete(SF_PREFIX + f.key))
         params.set('page', '1')
         router.push(`${pathname}?${params.toString()}`, { scroll: false })
     }
@@ -340,9 +371,16 @@ export function AdvancedSidebarFilter({
         <div className="bg-white rounded-md border border-neutral-200 [overflow:clip]">
             {/* Header */}
             <div className="px-5 py-3 border-b border-neutral-100 flex items-center justify-between">
-                <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-neutral-400">
-                    Lọc sản phẩm
-                </span>
+                <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-neutral-400">
+                        Lọc nâng cao
+                    </span>
+                    {totalActiveCount > 0 && (
+                        <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 rounded-full bg-[#2E7A96] text-white text-[10px] font-bold tabular-nums">
+                            {totalActiveCount}
+                        </span>
+                    )}
+                </div>
                 {hasFilters && (
                     <button onClick={clearAll} className="text-[10px] text-[#2E7A96] hover:underline font-medium">
                         Xoá lọc
@@ -350,10 +388,14 @@ export function AdvancedSidebarFilter({
                 )}
             </div>
 
-            <div className="divide-y divide-neutral-100">
+            {/* ── All filter sections — flat layout ── */}
+            <div className="px-5 py-4 space-y-5">
                 {/* Subcategory (hidden on sub pages) */}
                 {!hideSubcategoryFilter && availableFilters.subcategories.length > 0 && (
-                    <FilterSection title="Loại sản phẩm">
+                    <div className="space-y-2">
+                        <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
+                            Loại sản phẩm
+                        </p>
                         <div className="space-y-1">
                             {availableFilters.subcategories.map(opt => (
                                 <CheckRow
@@ -363,159 +405,172 @@ export function AdvancedSidebarFilter({
                                 />
                             ))}
                         </div>
-                    </FilterSection>
+                    </div>
                 )}
 
-                {/* ── Lọc nâng cao — groups: brands, price, features, materials, origins, misc ── */}
-                <AdvancedFilterGroup
-                    defaultOpen={true}
-                    activeCount={
-                        brandSlugs.length + featureSlugs.length + materialSlugs.length +
-                        originSlugs.length + (isPriceActive ? 1 : 0) + (isNew ? 1 : 0) + (isFeatured ? 1 : 0)
-                    }
-                >
-                    {/* ── Brands — logo tags ── */}
-                    {availableFilters.brands.length > 0 && (
-                        <div className="space-y-2">
-                            <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
-                                Thương hiệu
-                            </p>
-                            <div className="flex flex-wrap gap-1.5">
-                                {availableFilters.brands.map(b => (
-                                    <BrandTagChip
-                                        key={b.slug}
-                                        slug={b.slug}
-                                        name={b.name}
-                                        active={brandSlugs.includes(b.slug)}
-                                        onClick={() => toggle('brand', brandSlugs, b.slug)}
-                                    />
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* ── Price — dual range slider ── */}
-                    <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                            <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
-                                Khoảng giá
-                            </p>
-                            {isPriceActive && (
-                                <button
-                                    onClick={() => {
-                                        setLocalPrice([PRICE_MIN, PRICE_MAX])
-                                        const params = new URLSearchParams(searchParams.toString())
-                                        params.delete('price')
-                                        params.set('page', '1')
-                                        router.push(`${pathname}?${params.toString()}`, { scroll: false })
-                                    }}
-                                    className="text-[10px] text-neutral-400 hover:text-neutral-600 transition-colors"
-                                >
-                                    Reset
-                                </button>
-                            )}
-                        </div>
-                        <DualRangeSlider
-                            min={PRICE_MIN} max={PRICE_MAX} step={PRICE_STEP}
-                            value={localPrice} onChange={handleSlider}
-                        />
-                        <div className="flex items-center justify-between">
-                            <span className={`text-[12px] font-semibold tabular-nums transition-colors ${isPriceActive ? 'text-[#2E7A96]' : 'text-neutral-500'}`}>
-                                {formatPrice(localPrice[0])}
-                            </span>
-                            <span className="text-[10px] text-neutral-300 mx-1">—</span>
-                            <span className={`text-[12px] font-semibold tabular-nums transition-colors ${isPriceActive ? 'text-[#2E7A96]' : 'text-neutral-500'}`}>
-                                {localPrice[1] >= PRICE_MAX ? `${formatPrice(PRICE_MAX)}+` : formatPrice(localPrice[1])}
-                            </span>
-                        </div>
-                    </div>
-
-                    {/* ── Features — tag chips ── */}
-                    {availableFilters.features.length > 0 && (
-                        <div className="space-y-2">
-                            <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
-                                Chức năng
-                            </p>
-                            <div className="flex flex-wrap gap-1.5">
-                                {availableFilters.features.map(opt => (
-                                    <TagChip
-                                        key={opt.slug}
-                                        label={opt.name}
-                                        active={featureSlugs.includes(opt.slug)}
-                                        onClick={() => toggle('features', featureSlugs, opt.slug)}
-                                    />
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* ── Materials — tag chips ── */}
-                    {availableFilters.materials.length > 0 && (
-                        <div className="space-y-2">
-                            <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
-                                Chất liệu
-                            </p>
-                            <div className="flex flex-wrap gap-1.5">
-                                {availableFilters.materials.map(opt => (
-                                    <TagChip
-                                        key={opt.slug}
-                                        label={opt.name}
-                                        active={materialSlugs.includes(opt.slug)}
-                                        onClick={() => toggle('material', materialSlugs, opt.slug)}
-                                    />
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* ── Origins — tag chips ── */}
-                    {availableFilters.origins.length > 0 && (
-                        <div className="space-y-2">
-                            <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
-                                Xuất xứ
-                            </p>
-                            <div className="flex flex-wrap gap-1.5">
-                                {availableFilters.origins.map(opt => (
-                                    <TagChip
-                                        key={opt.slug}
-                                        label={opt.name}
-                                        active={originSlugs.includes(opt.slug)}
-                                        onClick={() => toggle('origin', originSlugs, opt.slug)}
-                                    />
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* ── Misc toggles — tag chips ── */}
+                {/* ── Brands — logo tags ── */}
+                {availableFilters.brands.length > 0 && (
                     <div className="space-y-2">
                         <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
-                            Tùy chọn khác
+                            Thương hiệu
                         </p>
                         <div className="flex flex-wrap gap-1.5">
-                            <TagChip
-                                label="Sản phẩm mới"
-                                active={isNew}
-                                onClick={() => {
-                                    const params = new URLSearchParams(searchParams.toString())
-                                    isNew ? params.delete('is_new') : params.set('is_new', 'true')
-                                    params.set('page', '1')
-                                    router.push(`${pathname}?${params.toString()}`, { scroll: false })
-                                }}
-                            />
-                            <TagChip
-                                label="Sản phẩm nổi bật"
-                                active={isFeatured}
-                                onClick={() => {
-                                    const params = new URLSearchParams(searchParams.toString())
-                                    isFeatured ? params.delete('is_featured') : params.set('is_featured', 'true')
-                                    params.set('page', '1')
-                                    router.push(`${pathname}?${params.toString()}`, { scroll: false })
-                                }}
-                            />
+                            {availableFilters.brands.map(b => (
+                                <BrandTagChip
+                                    key={b.slug}
+                                    slug={b.slug}
+                                    name={b.name}
+                                    active={brandSlugs.includes(b.slug)}
+                                    onClick={() => toggle('brand', brandSlugs, b.slug)}
+                                />
+                            ))}
                         </div>
                     </div>
-                </AdvancedFilterGroup>
+                )}
+
+                {/* ── Price — dual range slider ── */}
+                <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                        <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
+                            Khoảng giá
+                        </p>
+                        {isPriceActive && (
+                            <button
+                                onClick={() => {
+                                    setLocalPrice([PRICE_MIN, PRICE_MAX])
+                                    const params = new URLSearchParams(searchParams.toString())
+                                    params.delete('price')
+                                    params.set('page', '1')
+                                    router.push(`${pathname}?${params.toString()}`, { scroll: false })
+                                }}
+                                className="text-[10px] text-neutral-400 hover:text-neutral-600 transition-colors"
+                            >
+                                Reset
+                            </button>
+                        )}
+                    </div>
+                    <DualRangeSlider
+                        min={PRICE_MIN} max={PRICE_MAX} step={PRICE_STEP}
+                        value={localPrice} onChange={handleSlider}
+                    />
+                    <div className="flex items-center justify-between">
+                        <span className={`text-[12px] font-semibold tabular-nums transition-colors ${isPriceActive ? 'text-[#2E7A96]' : 'text-neutral-500'}`}>
+                            {formatPrice(localPrice[0])}
+                        </span>
+                        <span className="text-[10px] text-neutral-300 mx-1">—</span>
+                        <span className={`text-[12px] font-semibold tabular-nums transition-colors ${isPriceActive ? 'text-[#2E7A96]' : 'text-neutral-500'}`}>
+                            {localPrice[1] >= PRICE_MAX ? `${formatPrice(PRICE_MAX)}+` : formatPrice(localPrice[1])}
+                        </span>
+                    </div>
+                </div>
+
+                {/* ── Features — tag chips ── */}
+                {availableFilters.features.length > 0 && (
+                    <div className="space-y-2">
+                        <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
+                            Chức năng
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                            {availableFilters.features.map(opt => (
+                                <TagChip
+                                    key={opt.slug}
+                                    label={opt.name}
+                                    active={featureSlugs.includes(opt.slug)}
+                                    onClick={() => toggle('features', featureSlugs, opt.slug)}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* ── Materials — tag chips ── */}
+                {availableFilters.materials.length > 0 && (
+                    <div className="space-y-2">
+                        <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
+                            Chất liệu
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                            {availableFilters.materials.map(opt => (
+                                <TagChip
+                                    key={opt.slug}
+                                    label={opt.name}
+                                    active={materialSlugs.includes(opt.slug)}
+                                    onClick={() => toggle('material', materialSlugs, opt.slug)}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* ── Origins — tag chips ── */}
+                {availableFilters.origins.length > 0 && (
+                    <div className="space-y-2">
+                        <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
+                            Xuất xứ
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                            {availableFilters.origins.map(opt => (
+                                <TagChip
+                                    key={opt.slug}
+                                    label={opt.name}
+                                    active={originSlugs.includes(opt.slug)}
+                                    onClick={() => toggle('origin', originSlugs, opt.slug)}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* ── Spec filters — tag chips (e.g. Kiểu thoát, Lỗ bắt vòi) ── */}
+                {specFilters.map(sf => {
+                    const activeVals = getSpecActiveValues(searchParams, sf.key)
+                    return (
+                        <div key={sf.key} className="space-y-2">
+                            <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
+                                {sf.label}
+                            </p>
+                            <div className="flex flex-wrap gap-1.5">
+                                {sf.values.map(val => (
+                                    <TagChip
+                                        key={val}
+                                        label={val}
+                                        active={activeVals.includes(val)}
+                                        onClick={() => toggleSpec(sf.key, val)}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    )
+                })}
+
+                {/* ── Misc toggles — tag chips ── */}
+                <div className="space-y-2">
+                    <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
+                        Tùy chọn khác
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                        <TagChip
+                            label="Sản phẩm mới"
+                            active={isNew}
+                            onClick={() => {
+                                const params = new URLSearchParams(searchParams.toString())
+                                isNew ? params.delete('is_new') : params.set('is_new', 'true')
+                                params.set('page', '1')
+                                router.push(`${pathname}?${params.toString()}`, { scroll: false })
+                            }}
+                        />
+                        <TagChip
+                            label="Sản phẩm nổi bật"
+                            active={isFeatured}
+                            onClick={() => {
+                                const params = new URLSearchParams(searchParams.toString())
+                                isFeatured ? params.delete('is_featured') : params.set('is_featured', 'true')
+                                params.set('page', '1')
+                                router.push(`${pathname}?${params.toString()}`, { scroll: false })
+                            }}
+                        />
+                    </div>
+                </div>
             </div>
         </div>
     )

@@ -10,7 +10,7 @@ import { ActiveFilters, ActiveFilterDict } from "@/components/category/active-fi
 import { CategoryMobileFilter } from "@/components/category/category-mobile-filter"
 import { CategorySort } from "@/components/category/category-sort"
 import { ProductTypeFilter } from "@/components/category/product-type-filter"
-import { SubcategorySpecFilter, ActiveSpecFilterChips, SpecFilterDef } from "@/components/category/subcategory-spec-filter"
+import { ActiveSpecFilterChips, SpecFilterDef } from "@/components/category/subcategory-spec-filter"
 import { SubcategoryIconGrid } from "@/components/category/subcategory-icon-grid"
 import { ChevronRight, Home } from "lucide-react"
 import Link from "next/link"
@@ -131,13 +131,12 @@ export default async function ThietBiVeSinhSubPage({ params, searchParams }: Pag
                 {/* ── Sidebar: Desktop only. Mobile uses Sheet via CategoryMobileFilter ── */}
                 <aside className="hidden lg:flex w-[290px] flex-shrink-0 sticky top-24 scroll-sidebar flex-col gap-4">
                     <Suspense fallback={<div className="h-96 bg-neutral-100 animate-pulse rounded-lg" />}>
-                        <AdvancedSidebarFilter availableFilters={availableFilters} hideSubcategoryFilter />
+                        <AdvancedSidebarFilter
+                            availableFilters={availableFilters}
+                            hideSubcategoryFilter
+                            specFilters={specFilterDefs as SpecFilterDef[]}
+                        />
                     </Suspense>
-                    {specFilterDefs.length > 0 && (
-                        <Suspense fallback={<div className="h-48 bg-neutral-100 animate-pulse rounded-lg" />}>
-                            <SubcategorySpecFilter filters={specFilterDefs as SpecFilterDef[]} />
-                        </Suspense>
-                    )}
                 </aside>
 
                 {/* ── Main 70% ── */}
