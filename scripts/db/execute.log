@@ -1,0 +1,2934 @@
+[dotenv@17.3.1] injecting env (0) from .env.local -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
+🚀 Bắt đầu PRODUCTION RUN Phase 1 Data Cleanup
+
+🏷️  [CLEAN NAME] ID:248
+  - Old: Bồn cầu 1 khối INAX AC-4005VN (AC4005VN) nắp đóng êm AC-4005VN/BW1
+  - New: Bồn cầu 1 khối INAX AC-4005VN (AC4005VN) nắp đóng êm
+🏷️  [CLEAN NAME] ID:249
+  - Old: Bồn cầu 1 khối INAX AC-2700VN (AC2700VN) nắp đóng êm AC-2700VN/BW1
+  - New: Bồn cầu 1 khối INAX AC-2700VN (AC2700VN) nắp đóng êm
+🏷️  [CLEAN NAME] ID:250
+  - Old: Bồn cầu 1 khối INAX AC-1035VN (AC1035VN) nắp đóng êm AC-1035VN/BW1
+  - New: Bồn cầu 1 khối INAX AC-1035VN (AC1035VN) nắp đóng êm
+🏷️  [CLEAN NAME] ID:251
+  - Old: Bồn cầu 1 khối INAX AC-1008VRN (AC1008VRN) nắp đóng êm AC-1008VRN/BW1
+  - New: Bồn cầu 1 khối INAX AC-1008VRN (AC1008VRN) nắp đóng êm
+🏷️  [CLEAN NAME] ID:252
+  - Old: Bồn cầu 1 khối INAX AC-1017VRN (AC1017VRN) nắp đóng êm AC-1017VRN/BW1
+  - New: Bồn cầu 1 khối INAX AC-1017VRN (AC1017VRN) nắp đóng êm
+🏷️  [CLEAN NAME] ID:253
+  - Old: Bồn cầu 2 khối INAX C-504VAN (C504VAN) nắp đóng êm C-504VAN/BW1
+  - New: Bồn cầu 2 khối INAX C-504VAN (C504VAN) nắp đóng êm
+🏷️  [CLEAN NAME] ID:254
+  - Old: Bồn cầu 2 khối INAX C-306VPT (C306VPT) thoát ngang nắp thường C-306VPT/BW1
+  - New: Bồn cầu 2 khối INAX C-306VPT (C306VPT) thoát ngang nắp thường
+🏷️  [CLEAN NAME] ID:255
+  - Old: Bồn cầu 2 khối INAX C-306VA (C306VA) xả nhấn nắp thường C-306VA/BW1
+  - New: Bồn cầu 2 khối INAX C-306VA (C306VA) xả nhấn nắp thường
+🏷️  [CLEAN NAME] ID:256
+  - Old: Bồn cầu 2 khối INAX C-108VA (C108VA) xả nhấn nắp thường C-108VA/BW1
+  - New: Bồn cầu 2 khối INAX C-108VA (C108VA) xả nhấn nắp thường
+🏷️  [CLEAN NAME] ID:257
+  - Old: Bồn cầu 2 khối INAX C-117VA (C117VA) xả gạt nắp thường C-117VA/BW1
+  - New: Bồn cầu 2 khối INAX C-117VA (C117VA) xả gạt nắp thường
+🏷️  [CLEAN NAME] ID:258
+  - Old: Bồn cầu 1 khối INAX AC-1135VN (AC1135VN) nắp đóng êm AC-1135VN/BW1
+  - New: Bồn cầu 1 khối INAX AC-1135VN (AC1135VN) nắp đóng êm
+🏷️  [CLEAN NAME] ID:259
+  - Old: Bồn cầu 2 khối INAX AC-504VAN (AC504VAN) nắp đóng êm AC-504VAN/BW1
+  - New: Bồn cầu 2 khối INAX AC-504VAN (AC504VAN) nắp đóng êm
+🏷️  [CLEAN NAME] ID:260
+  - Old: Bồn cầu 1 khối INAX AC-900VRN (AC900VRN) nắp đóng êm AC-900VRN/BW1
+  - New: Bồn cầu 1 khối INAX AC-900VRN (AC900VRN) nắp đóng êm
+🏷️  [CLEAN NAME] ID:261
+  - Old: Bồn cầu 1 khối nắp điện tử INAX AC-618VN (AC618VN) AC-618VN/BW1
+  - New: Bồn cầu 1 khối nắp điện tử INAX AC-618VN (AC618VN)
+🏷️  [CLEAN NAME] ID:262
+  - Old: Bồn cầu 1 khối INAX AC-959VAN (AC959VAN) nắp đóng êm AC-959VAN/BW1
+  - New: Bồn cầu 1 khối INAX AC-959VAN (AC959VAN) nắp đóng êm
+🏷️  [CLEAN NAME] ID:263
+  - Old: Bồn cầu 2 khối INAX AC-700VAN (AC700VAN) nắp đóng êm AC-700VAN/BW1
+  - New: Bồn cầu 2 khối INAX AC-700VAN (AC700VAN) nắp đóng êm
+🏷️  [CLEAN NAME] ID:271
+  - Old: Bồn cầu 1 khối INAX AC-969VN (AC969VN) nắp đóng êm AC-969VN/BW1
+  - New: Bồn cầu 1 khối INAX AC-969VN (AC969VN) nắp đóng êm
+🏷️  [CLEAN NAME] ID:274
+  - Old: Bồn cầu 1 khối INAX AC-1032VN (AC1032VN) nắp đóng êm AC-1032VN/BW1
+  - New: Bồn cầu 1 khối INAX AC-1032VN (AC1032VN) nắp đóng êm
+🏷️  [CLEAN NAME] ID:275
+  - Old: Bồn cầu 1 khối INAX AC-1052VN (AC1052VN) nắp đóng êm AC-1052VN/BW1
+  - New: Bồn cầu 1 khối INAX AC-1052VN (AC1052VN) nắp đóng êm
+🏷️  [CLEAN NAME] ID:278
+  - Old: Bồn cầu 2 khối INAX C-108VAN (C108VAN) nắp đóng êm C-108VAN/BW1
+  - New: Bồn cầu 2 khối INAX C-108VAN (C108VAN) nắp đóng êm
+🏷️  [CLEAN NAME] ID:279
+  - Old: Bồn cầu 2 khối INAX C-117VAN (C117VAN) nắp đóng êm C-117VAN/BW1
+  - New: Bồn cầu 2 khối INAX C-117VAN (C117VAN) nắp đóng êm
+🏷️  [CLEAN NAME] ID:280
+  - Old: Bồn cầu 2 khối INAX C-306VAN (C306VAN) nắp đóng êm C-306VAN/BW1
+  - New: Bồn cầu 2 khối INAX C-306VAN (C306VAN) nắp đóng êm
+🏷️  [CLEAN NAME] ID:281
+  - Old: Bồn cầu 2 khối INAX C-306VPTN (C306VPTN) nắp đóng êm C-306VPTN/BW1
+  - New: Bồn cầu 2 khối INAX C-306VPTN (C306VPTN) nắp đóng êm
+🏷️  [CLEAN NAME] ID:282
+  - Old: Bồn cầu 2 khối INAX C-504VWN (C504VWN) nắp đóng êm C-504VWN/BW1
+  - New: Bồn cầu 2 khối INAX C-504VWN (C504VWN) nắp đóng êm
+🏷️  [CLEAN NAME] ID:283
+  - Old: Bồn cầu 2 khối INAX AC-504VWN (AC504VWN) nắp đóng êm AC-504VWN/BW1
+  - New: Bồn cầu 2 khối INAX AC-504VWN (AC504VWN) nắp đóng êm
+🏷️  [CLEAN NAME] ID:285
+  - Old: Bồn cầu 2 khối INAX AC-832VN (AC832VN) nắp đóng êm AC-832VN/BW1
+  - New: Bồn cầu 2 khối INAX AC-832VN (AC832VN) nắp đóng êm
+🏷️  [CLEAN NAME] ID:676
+  - Old: Bồn cầu 1 khối TOTO MS636DT2 nắp đóng êm TC393VS MS636DT2#XW
+  - New: Bồn cầu 1 khối TOTO MS636DT2 nắp đóng êm TC393VS
+🏷️  [CLEAN NAME] ID:677
+  - Old: Bồn cầu 2 khối TOTO CS320DRT3 nắp đóng êm TC385VS CS320DRT3#W
+  - New: Bồn cầu 2 khối TOTO CS320DRT3 nắp đóng êm TC385VS
+🏷️  [CLEAN NAME] ID:678
+  - Old: Bồn cầu 2 khối TOTO CS325DRT3 nắp đóng êm TC385VS CS325DRT3#W
+  - New: Bồn cầu 2 khối TOTO CS325DRT3 nắp đóng êm TC385VS
+🏷️  [CLEAN NAME] ID:679
+  - Old: Bồn cầu 2 khối TOTO CS945DNT3 nắp đóng êm TC385VS CS945DNT3#XW
+  - New: Bồn cầu 2 khối TOTO CS945DNT3 nắp đóng êm TC385VS
+📦 [MOVE -> THÂN CẦU] ID:680
+  - Current: Thân cầu treo tường TOTO CW762 CW762#XW
+🏷️  [CLEAN NAME] ID:680
+  - Old: Thân cầu treo tường TOTO CW762 CW762#XW
+  - New: Thân cầu treo tường TOTO CW762
+🏷️  [CLEAN NAME] ID:681
+  - Old: Bồn cầu 2 khối TOTO CS300DT3Y1 nắp đóng êm TC385VS CS300DT3Y1#W
+  - New: Bồn cầu 2 khối TOTO CS300DT3Y1 nắp đóng êm TC385VS
+📦 [MOVE -> THÂN CẦU] ID:682
+  - Current: Thân cầu treo trường TOTO CW162 CW162#XW
+🏷️  [CLEAN NAME] ID:682
+  - Old: Thân cầu treo trường TOTO CW162 CW162#XW
+  - New: Thân cầu treo trường TOTO CW162
+🏷️  [CLEAN NAME] ID:683
+  - Old: Bồn cầu 1 khối TOTO MS636DT8 nắp đóng êm TC600VS MS636DT8#XW
+  - New: Bồn cầu 1 khối TOTO MS636DT8 nắp đóng êm TC600VS
+🏷️  [CLEAN NAME] ID:684
+  - Old: Bồn cầu 2 khối TOTO CS945DNT8 nắp đóng êm TC600VS CS945DNT8#XW
+  - New: Bồn cầu 2 khối TOTO CS945DNT8 nắp đóng êm TC600VS
+🏷️  [CLEAN NAME] ID:685
+  - Old: Bồn cầu 2 khối TOTO CS945DNT2 nắp đóng êm TC393VS CS945DNT2#XW
+  - New: Bồn cầu 2 khối TOTO CS945DNT2 nắp đóng êm TC393VS
+🏷️  [CLEAN NAME] ID:686
+  - Old: Bồn cầu 2 khối TOTO CS767RT8 nắp đóng êm TC600VS CS767RT8#XW
+  - New: Bồn cầu 2 khối TOTO CS767RT8 nắp đóng êm TC600VS
+🏷️  [CLEAN NAME] ID:687
+  - Old: Bồn cầu 2 khối TOTO CS767RT2 nắp đóng êm TC393VS CS767RT2#XW
+  - New: Bồn cầu 2 khối TOTO CS767RT2 nắp đóng êm TC393VS
+🏷️  [CLEAN NAME] ID:688
+  - Old: Bồn cầu TOTO CS767CRW12 2 khối nắp điện tử Washlet S7 TCF4911EZ giấu dây CS767CRW12#XW
+  - New: Bồn cầu TOTO CS767CRW12 2 khối nắp điện tử Washlet S7 TCF4911EZ giấu dây
+🏷️  [CLEAN NAME] ID:689
+  - Old: Bồn cầu TOTO CS767RW11 2 khối nắp điện tử Washlet S7 TCF4911Z CS767RW11#XW
+  - New: Bồn cầu TOTO CS767RW11 2 khối nắp điện tử Washlet S7 TCF4911Z
+🏷️  [CLEAN NAME] ID:690
+  - Old: Bồn cầu 2 khối TOTO CS767RT3 nắp đóng êm TC385VS CS767RT3#XW
+  - New: Bồn cầu 2 khối TOTO CS767RT3 nắp đóng êm TC385VS
+🏷️  [CLEAN NAME] ID:691
+  - Old: Bồn cầu TOTO CS767RE2 2 khối nắp rửa cơ TCW07S CS767RE2#XW
+  - New: Bồn cầu TOTO CS767RE2 2 khối nắp rửa cơ TCW07S
+🏷️  [CLEAN NAME] ID:692
+  - Old: Bồn cầu TOTO CS767RE4 2 khối nắp rửa cơ TCW1211A CS767RE4#XW
+  - New: Bồn cầu TOTO CS767RE4 2 khối nắp rửa cơ TCW1211A
+🏷️  [CLEAN NAME] ID:693
+  - Old: Bồn cầu thông minh Neorest AH TOTO CS989VT TCF9788WZ T53P100VR CS989VT#NW1/TCF9788WZ#NW1/T53P100VR
+  - New: Bồn cầu thông minh Neorest AH TOTO CS989VT TCF9788WZ T53P100VR
+🏷️  [CLEAN NAME] ID:694
+  - Old: Bồn cầu thông minh Neorest DH TOTO CS988VT TCF9575Z T53P100VR CS988VT#NW1/TCF9575Z#NW1/T53P100VR
+  - New: Bồn cầu thông minh Neorest DH TOTO CS988VT TCF9575Z T53P100VR
+🏷️  [CLEAN NAME] ID:695
+  - Old: Bồn cầu treo tường nắp êm TOTO CW762 TC384CVK WH172A MB176GH CW762#XW/TC384CVK#W/WH172A/MB176G#WH
+  - New: Bồn cầu treo tường nắp êm TOTO CW762 TC384CVK WH172A MB176GH
+🏷️  [CLEAN NAME] ID:696
+  - Old: Bồn cầu điện tử GG TOTO C971 TCF9433A C971#XW/TCF9433A#NW1
+  - New: Bồn cầu điện tử GG TOTO C971 TCF9433A
+🏷️  [CLEAN NAME] ID:697
+  - Old: Bồn cầu 1 khối TOTO MS885DT2 nắp đóng êm TC393VS MS885DT2#XW
+  - New: Bồn cầu 1 khối TOTO MS885DT2 nắp đóng êm TC393VS
+🏷️  [CLEAN NAME] ID:698
+  - Old: Bồn cầu 1 khối TOTO MS885DT8 nắp đóng êm TC600VS MS885DT8#XW
+  - New: Bồn cầu 1 khối TOTO MS885DT8 nắp đóng êm TC600VS
+🏷️  [CLEAN NAME] ID:699
+  - Old: Bồn cầu 1 khối TOTO MS885DT3 nắp đóng êm TC385VS MS885DT3#XW
+  - New: Bồn cầu 1 khối TOTO MS885DT3 nắp đóng êm TC385VS
+🏷️  [CLEAN NAME] ID:700
+  - Old: Bồn cầu TOTO MS885DE4 1 khối nắp rửa cơ TCW1211A MS885DE4#XW
+  - New: Bồn cầu TOTO MS885DE4 1 khối nắp rửa cơ TCW1211A
+🏷️  [CLEAN NAME] ID:701
+  - Old: Bồn cầu TOTO MS885DE2 1 khối nắp rửa cơ TCW07S MS885DE2#XW
+  - New: Bồn cầu TOTO MS885DE2 1 khối nắp rửa cơ TCW07S
+🏷️  [CLEAN NAME] ID:702
+  - Old: Bồn cầu TOTO MS885CDW12 1 khối nắp điện tử Washlet S7 TCF4911EZ giấu dây MS885CDW12#XW
+  - New: Bồn cầu TOTO MS885CDW12 1 khối nắp điện tử Washlet S7 TCF4911EZ giấu dây
+🏷️  [CLEAN NAME] ID:703
+  - Old: Bồn cầu TOTO MS885DW11 1 khối nắp điện tử Washlet S7 TCF4911Z MS885DW11#XW
+  - New: Bồn cầu TOTO MS885DW11 1 khối nắp điện tử Washlet S7 TCF4911Z
+🏷️  [CLEAN NAME] ID:704
+  - Old: Bồn cầu TOTO MS855DW11 1 khối nắp điện tử Washlet S7 TCF4911Z MS855DW11#XW
+  - New: Bồn cầu TOTO MS855DW11 1 khối nắp điện tử Washlet S7 TCF4911Z
+🏷️  [CLEAN NAME] ID:705
+  - Old: Bồn cầu TOTO MS855CDW12 1 khối nắp điện tử Washlet S7 TCF4911EZ giấu dây MS855CDW12#XW
+  - New: Bồn cầu TOTO MS855CDW12 1 khối nắp điện tử Washlet S7 TCF4911EZ giấu dây
+🏷️  [CLEAN NAME] ID:706
+  - Old: Bồn cầu TOTO MS855DE2 1 khối nắp rửa cơ TCW07S MS855DE2#XW
+  - New: Bồn cầu TOTO MS855DE2 1 khối nắp rửa cơ TCW07S
+🏷️  [CLEAN NAME] ID:707
+  - Old: Bồn cầu TOTO MS855DE4 1 khối nắp rửa cơ TCW1211A MS855DE4#XW
+  - New: Bồn cầu TOTO MS855DE4 1 khối nắp rửa cơ TCW1211A
+🏷️  [CLEAN NAME] ID:708
+  - Old: Bồn cầu 1 khối TOTO MS855DT3 nắp đóng êm TC385VS MS855DT3#XW
+  - New: Bồn cầu 1 khối TOTO MS855DT3 nắp đóng êm TC385VS
+🏷️  [CLEAN NAME] ID:709
+  - Old: Bồn cầu 1 khối TOTO MS855DT2 nắp đóng êm TC393VS MS855DT2#XW
+  - New: Bồn cầu 1 khối TOTO MS855DT2 nắp đóng êm TC393VS
+🏷️  [CLEAN NAME] ID:710
+  - Old: Bồn cầu 1 khối TOTO MS855DT8 nắp đóng êm TC600VS MS855DT8#XW
+  - New: Bồn cầu 1 khối TOTO MS855DT8 nắp đóng êm TC600VS
+🏷️  [CLEAN NAME] ID:711
+  - Old: Bồn cầu TOTO MS887CRW12 1 khối nắp điện tử Washlet S7 TCF4911EZ giấu dây MS887CRW12#XW
+  - New: Bồn cầu TOTO MS887CRW12 1 khối nắp điện tử Washlet S7 TCF4911EZ giấu dây
+🏷️  [CLEAN NAME] ID:712
+  - Old: Bồn cầu TOTO CS986GW11 2 khối nắp điện tử Washlet S7 TCF4911Z CS986GW11#XW
+  - New: Bồn cầu TOTO CS986GW11 2 khối nắp điện tử Washlet S7 TCF4911Z
+🏷️  [CLEAN NAME] ID:713
+  - Old: Bồn cầu TOTO CS986CGW12 2 khối nắp điện tử Washlet S7 TCF4911EZ giấu dây CS986CGW12#XW
+  - New: Bồn cầu TOTO CS986CGW12 2 khối nắp điện tử Washlet S7 TCF4911EZ giấu dây
+🏷️  [CLEAN NAME] ID:714
+  - Old: Bồn cầu TOTO CS986GE4 2 khối nắp rửa cơ TCW1211A CS986GE4#XW
+  - New: Bồn cầu TOTO CS986GE4 2 khối nắp rửa cơ TCW1211A
+🏷️  [CLEAN NAME] ID:715
+  - Old: Bồn cầu TOTO CS986GE2 2 khối nắp rửa cơ TCW07S CS986GE2#XW
+  - New: Bồn cầu TOTO CS986GE2 2 khối nắp rửa cơ TCW07S
+🏷️  [CLEAN NAME] ID:716
+  - Old: Bồn cầu 2 khối TOTO CS986GT8 nắp đóng êm TC600VS CS986GT8#XW
+  - New: Bồn cầu 2 khối TOTO CS986GT8 nắp đóng êm TC600VS
+🏷️  [CLEAN NAME] ID:717
+  - Old: Bồn cầu 2 khối TOTO CS986GT2 nắp đóng êm TC393VS CS986GT2#XW
+  - New: Bồn cầu 2 khối TOTO CS986GT2 nắp đóng êm TC393VS
+🏷️  [CLEAN NAME] ID:718
+  - Old: Bồn cầu 2 khối TOTO CS986GT3 nắp đóng êm TC385VS CS986GT3#XW
+  - New: Bồn cầu 2 khối TOTO CS986GT3 nắp đóng êm TC385VS
+🏷️  [CLEAN NAME] ID:742
+  - Old: Bồn cầu treo tường nắp êm TOTO CW822RA TC385VS WH172A MB175M CW822RA#W/TC385VS#W/WH172A/MB175M#SS
+  - New: Bồn cầu treo tường nắp êm TOTO CW822RA TC385VS WH172A MB175M
+🏷️  [CLEAN NAME] ID:743
+  - Old: Bồn cầu treo tường điện tử S7 (giấu dây) xả tự động TOTO CW822REA TCF4911EZ WH172AAT TCA464 MB176GH CW822REA#W/TCF4911EZ#NW1/WH172AAT/TCA464/MB176G#WH
+  - New: Bồn cầu treo tường điện tử S7 (giấu dây) xả tự động TOTO CW822REA TCF4911EZ WH172AAT TCA464 MB176GH
+🏷️  [CLEAN NAME] ID:744
+  - Old: Bồn cầu treo tường điện tử S7 (giấu dây) xả tự động TOTO CW812REA TCF4911EZ WH172AAT TCA464 MB176GH CW812REA#W/TCF4911EZ#NW1/WH172AAT/TCA464/MB176G#WH
+  - New: Bồn cầu treo tường điện tử S7 (giấu dây) xả tự động TOTO CW812REA TCF4911EZ WH172AAT TCA464 MB176GH
+🏷️  [CLEAN NAME] ID:745
+  - Old: Bồn cầu treo tường điện tử RW (giấu dây) TOTO CW542HME5U TCF801CZ WH172AT MB175M CW542HME5U#NW1/TCF801CZ#NW1/WH172AT/MB175M#SS
+  - New: Bồn cầu treo tường điện tử RW (giấu dây) TOTO CW542HME5U TCF801CZ WH172AT MB175M
+🏷️  [CLEAN NAME] ID:746
+  - Old: Bồn cầu treo tường điện tử C5 TOTO CW822RA TCF24410AAA WH172A MB175M CW822RA#W/TCF24410AAA#NW1/WH172A/MB175M#SS
+  - New: Bồn cầu treo tường điện tử C5 TOTO CW822RA TCF24410AAA WH172A MB175M
+🏷️  [CLEAN NAME] ID:747
+  - Old: Bồn cầu treo tường điện tử S7 (giấu dây) TOTO CW822REA TCF4911EZ WH172AT TCA465 MB175M CW822REA#W/TCF4911EZ#NW1/WH172AT/TCA465/MB175M#SS
+  - New: Bồn cầu treo tường điện tử S7 (giấu dây) TOTO CW822REA TCF4911EZ WH172AT TCA465 MB175M
+🏷️  [CLEAN NAME] ID:748
+  - Old: Bồn cầu treo tường điện tử SW (giấu dây) TOTO CW522EA TCF803CZ WH172AT MB171M CW522EA#NW1/TCF803CZ#NW1/WH172AT/MB171M#SS
+  - New: Bồn cầu treo tường điện tử SW (giấu dây) TOTO CW522EA TCF803CZ WH172AT MB171M
+🏷️  [CLEAN NAME] ID:749
+  - Old: Bồn cầu treo tường điện tử SW (giấu dây) xả tự động TOTO CW522EA TCF804C2Z WH172AAT MB171M CW522EA#NW1/TCF804C2Z#NW1/WH172AAT/MB171M#SS
+  - New: Bồn cầu treo tường điện tử SW (giấu dây) xả tự động TOTO CW522EA TCF804C2Z WH172AAT MB171M
+🏷️  [CLEAN NAME] ID:750
+  - Old: Bồn cầu treo tường điện tử SX (giấu dây) TOTO CW522EA TCF796CZ WH172AT MB171M CW522EA#NW1/TCF796CZ#NW1/WH172AT/MB171M#SS
+  - New: Bồn cầu treo tường điện tử SX (giấu dây) TOTO CW522EA TCF796CZ WH172AT MB171M
+🏷️  [CLEAN NAME] ID:751
+  - Old: Bồn cầu treo tường điện tử RX (giấu dây) xả tự động TOTO CW542HME5U TCF795C2Z WH172AAT MB175M CW542HME5U#NW1/TCF795C2Z#NW1/WH172AAT/MB175M#SS
+  - New: Bồn cầu treo tường điện tử RX (giấu dây) xả tự động TOTO CW542HME5U TCF795C2Z WH172AAT MB175M
+🏷️  [CLEAN NAME] ID:752
+  - Old: Bồn cầu treo tường nắp êm TOTO CW522A TC512A WH172A MB171M CW522A#NW1/TC512A/WH172A/MB171M#SS
+  - New: Bồn cầu treo tường nắp êm TOTO CW522A TC512A WH172A MB171M
+🏷️  [CLEAN NAME] ID:753
+  - Old: Bồn cầu treo tường nắp êm TOTO CW822RA TC600VS WH172A MB175M CW822RA#W/TC600VS#W/WH172A/MB175M#SS
+  - New: Bồn cầu treo tường nắp êm TOTO CW822RA TC600VS WH172A MB175M
+🏷️  [CLEAN NAME] ID:755
+  - Old: Bồn cầu treo tường nắp êm TOTO CW542ME5U TC513A WH172A MB175M CW542ME5U#NW1/TC513A/WH172A/MB175M#SS
+  - New: Bồn cầu treo tường nắp êm TOTO CW542ME5U TC513A WH172A MB175M
+🏷️  [CLEAN NAME] ID:757
+  - Old: Bồn cầu treo tường điện tử RX (giấu dây)TOTO CW542HME5U TCF794CZ WH172AT MB175M CW542HME5U#NW1/TCF794CZ#NW1/WH172AT/MB175M#SS
+  - New: Bồn cầu treo tường điện tử RX (giấu dây)TOTO CW542HME5U TCF794CZ WH172AT MB175M
+🏷️  [CLEAN NAME] ID:758
+  - Old: Bồn cầu treo tường điện tử SX (giấu dây) xả tự động TOTO CW522EA TCF797C2Z WH172AAT MB171M CW522EA#NW1/TCF797C2Z#NW1/WH172AAT/MB171M#SS
+  - New: Bồn cầu treo tường điện tử SX (giấu dây) xả tự động TOTO CW522EA TCF797C2Z WH172AAT MB171M
+🏷️  [CLEAN NAME] ID:929
+  - Old: Bồn cầu 1 khối Caesar C1356 (CD1356) nắp đóng êm C1356
+  - New: Bồn cầu 1 khối Caesar C1356 (CD1356) nắp đóng êm
+🏷️  [CLEAN NAME] ID:930
+  - Old: Bồn cầu 1 khối nắp rửa cơ Caesar C1356F + TAF060 (CD1356+TAF060) CD1356+TAF060
+  - New: Bồn cầu 1 khối nắp rửa cơ Caesar C1356F + TAF060 CD1356+TAF060
+🏷️  [CLEAN NAME] ID:931
+  - Old: Bồn cầu đặt sàn thông minh IGINA GROHE 36543SH0 36543SH0
+  - New: Bồn cầu đặt sàn thông minh IGINA GROHE
+📦 [MOVE -> PHỤ KIỆN] ID:932
+  - Current: Két nước âm tường Rapid SLX GROHE 39596000 39596000
+🏷️  [CLEAN NAME] ID:932
+  - Old: Két nước âm tường Rapid SLX GROHE 39596000 39596000
+  - New: Két nước âm tường Rapid SLX GROHE
+🏷️  [CLEAN NAME] ID:933
+  - Old: Bồn cầu 1 khối nắp rửa cơ Caesar C1395F + TAF060 (CD1395+TAF060) CD1395+TAF060
+  - New: Bồn cầu 1 khối nắp rửa cơ Caesar C1395F + TAF060 CD1395+TAF060
+📦 [MOVE -> PHỤ KIỆN] ID:934
+  - Current: Két nước âm tường GROHE 38528001 38528001
+🏷️  [CLEAN NAME] ID:934
+  - Old: Két nước âm tường GROHE 38528001 38528001
+  - New: Két nước âm tường GROHE
+🏷️  [CLEAN NAME] ID:935
+  - Old: Bồn cầu 1 khối Caesar C1395 (CD1395) nắp đóng êm C1395
+  - New: Bồn cầu 1 khối Caesar C1395 (CD1395) nắp đóng êm
+🏷️  [CLEAN NAME] ID:936
+  - Old: Bồn cầu 1 khối nắp điện tử Caesar C1395F + TAF400H (CD1395+TAF400H) CD1395+TAF400H
+  - New: Bồn cầu 1 khối nắp điện tử Caesar C1395F + TAF400H CD1395+TAF400H
+🏷️  [CLEAN NAME] ID:939
+  - Old: Bồn cầu 1 khối nắp điện tử Caesar C1395F + TAF512H (CD1395+TAF512H) CD1395+TAF512H
+  - New: Bồn cầu 1 khối nắp điện tử Caesar C1395F + TAF512H CD1395+TAF512H
+🏷️  [CLEAN NAME] ID:940
+  - Old: Bồn cầu 1 khối Caesar C1375 (CD1375) nắp đóng êm CD1375
+  - New: Bồn cầu 1 khối Caesar C1375 nắp đóng êm
+🏷️  [CLEAN NAME] ID:941
+  - Old: Bồn cầu 1 khối nắp rửa cơ Caesar C1375F + TAF060 (CD1375+TAF060) CD1375+TAF060
+  - New: Bồn cầu 1 khối nắp rửa cơ Caesar C1375F + TAF060 CD1375+TAF060
+🏷️  [CLEAN NAME] ID:942
+  - Old: Bồn cầu 1 khối nắp rửa cơ Caesar C1353F + TAF060 (C1353+TAF060) C1353+TAF060
+  - New: Bồn cầu 1 khối nắp rửa cơ Caesar C1353F + TAF060 C1353+TAF060
+📦 [MOVE -> PHỤ KIỆN] ID:943
+  - Current: Két nước âm tường có khung 3 trong 1 GROHE 38722001 38722001
+🏷️  [CLEAN NAME] ID:943
+  - Old: Két nước âm tường có khung 3 trong 1 GROHE 38722001 38722001
+  - New: Két nước âm tường có khung 3 trong 1 GROHE
+🏷️  [CLEAN NAME] ID:944
+  - Old: Bồn cầu 1 khối nắp điện tử Caesar C1374F + TAF400H (CD1374+TAF400H) CD1374+TAF400H
+  - New: Bồn cầu 1 khối nắp điện tử Caesar C1374F + TAF400H CD1374+TAF400H
+🏷️  [CLEAN NAME] ID:945
+  - Old: Bồn cầu 1 khối nắp rửa cơ Caesar C1374F + TAF060 (CD1374+TAF060) CD1374+TAF060
+  - New: Bồn cầu 1 khối nắp rửa cơ Caesar C1374F + TAF060 CD1374+TAF060
+🏷️  [CLEAN NAME] ID:946
+  - Old: Bồn cầu 1 khối nắp điện tử Caesar C1375F + TAF512H (CD1375+TAF512H) CD1375+TAF512H
+  - New: Bồn cầu 1 khối nắp điện tử Caesar C1375F + TAF512H CD1375+TAF512H
+🏷️  [CLEAN NAME] ID:947
+  - Old: Bồn cầu 1 khối nắp điện tử Caesar C1374F + TAF512H (CD1374+TAF512H) CD1374+TAF512H
+  - New: Bồn cầu 1 khối nắp điện tử Caesar C1374F + TAF512H CD1374+TAF512H
+🏷️  [CLEAN NAME] ID:948
+  - Old: Bồn cầu 1 khối nắp điện tử Caesar C1356F + TAF400H (CD1356+TAF400H) CD1356+TAF400H
+  - New: Bồn cầu 1 khối nắp điện tử Caesar C1356F + TAF400H CD1356+TAF400H
+🏷️  [CLEAN NAME] ID:979
+  - Old: Bồn cầu 1 khối nắp điện tử Caesar C1394F + TAF400H (CD1394+TAF400H) CD1394+TAF400H
+  - New: Bồn cầu 1 khối nắp điện tử Caesar C1394F + TAF400H CD1394+TAF400H
+🏷️  [CLEAN NAME] ID:980
+  - Old: Bồn cầu 1 khối nắp điện tử Caesar C1375F + TAF400H (CD1375+TAF400H) CD1375+TAF400H
+  - New: Bồn cầu 1 khối nắp điện tử Caesar C1375F + TAF400H CD1375+TAF400H
+🏷️  [CLEAN NAME] ID:981
+  - Old: Bồn cầu 1 khối nắp điện tử Caesar C1363F + TAF400H (CD1363+TAF400H) CD1363+TAF400H
+  - New: Bồn cầu 1 khối nắp điện tử Caesar C1363F + TAF400H CD1363+TAF400H
+🏷️  [CLEAN NAME] ID:982
+  - Old: Bồn cầu 1 khối nắp rửa cơ Caesar C1394F + TAF060 (CD1394+TAF060) CD1394+TAF060
+  - New: Bồn cầu 1 khối nắp rửa cơ Caesar C1394F + TAF060 CD1394+TAF060
+🏷️  [CLEAN NAME] ID:983
+  - Old: Bồn cầu 1 khối nắp điện tử Caesar C1363F + TAF512H (CD1363+TAF512H) CD1363+TAF512H
+  - New: Bồn cầu 1 khối nắp điện tử Caesar C1363F + TAF512H CD1363+TAF512H
+🏷️  [CLEAN NAME] ID:988
+  - Old: Bồn cầu 2 khối American Standard VF-2162SW (VF2162SW) nắp rửa cơ M4A839 VF-2162SW
+  - New: Bồn cầu 2 khối American Standard VF-2162SW nắp rửa cơ M4A839
+🏷️  [CLEAN NAME] ID:989
+  - Old: Bồn cầu 2 khối Caesar CT1338 nắp thường CT1338
+  - New: Bồn cầu 2 khối Caesar CT1338 nắp thường
+🏷️  [CLEAN NAME] ID:990
+  - Old: Bồn cầu 2 khối Caesar CD1340 nắp đóng êm CD1340
+  - New: Bồn cầu 2 khối Caesar CD1340 nắp đóng êm
+🏷️  [CLEAN NAME] ID:991
+  - Old: Bồn cầu 2 khối Caesar CD1341 nắp đóng êm CD1341
+  - New: Bồn cầu 2 khối Caesar CD1341 nắp đóng êm
+🏷️  [CLEAN NAME] ID:992
+  - Old: Bồn cầu 2 khối Caesar CTS1338 nắp êm CTS1338
+  - New: Bồn cầu 2 khối Caesar CTS1338 nắp êm
+🏷️  [CLEAN NAME] ID:993
+  - Old: Bồn cầu 2 khối Caesar CD1338 nắp thường CD1338
+  - New: Bồn cầu 2 khối Caesar CD1338 nắp thường
+🏷️  [CLEAN NAME] ID:994
+  - Old: Bồn cầu 2 khối Caesar CDS1338 nắp êm CDS1338
+  - New: Bồn cầu 2 khối Caesar CDS1338 nắp êm
+🏷️  [CLEAN NAME] ID:995
+  - Old: Bồn cầu 2 khối Caesar CD1320 nắp đóng êm CD1320
+  - New: Bồn cầu 2 khối Caesar CD1320 nắp đóng êm
+🏷️  [CLEAN NAME] ID:996
+  - Old: Bồn cầu 2 khối CAESAR CD1342 nắp đóng êm CD1342
+  - New: Bồn cầu 2 khối CAESAR CD1342 nắp đóng êm
+🏷️  [CLEAN NAME] ID:997
+  - Old: Bồn cầu treo tường INAX AC-22PVN (AC22PVN) nắp đóng êm AC-22PVN/BW1
+  - New: Bồn cầu treo tường INAX AC-22PVN (AC22PVN) nắp đóng êm
+🏷️  [CLEAN NAME] ID:998
+  - Old: Bồn cầu treo tường INAX AC-23PVN (AC23PVN) nắp đóng êm AC-23PVN/BW1
+  - New: Bồn cầu treo tường INAX AC-23PVN (AC23PVN) nắp đóng êm
+🏷️  [CLEAN NAME] ID:999
+  - Old: Bồn cầu treo tường INAX AC-952VN (AC952VN) nắp đóng êm AC-952VN/BW1
+  - New: Bồn cầu treo tường INAX AC-952VN (AC952VN) nắp đóng êm
+📦 [MOVE -> NẮP] ID:1191
+  - Current: Nắp rửa điện tử Caesar TAF400H (TAF400H-PW) TAF400H-PW
+🏷️  [CLEAN NAME] ID:1191
+  - Old: Nắp rửa điện tử Caesar TAF400H (TAF400H-PW) TAF400H-PW
+  - New: Nắp rửa điện tử Caesar TAF400H
+📦 [MOVE -> NẮP] ID:1192
+  - Current: Nắp rửa điện tử Caesar TAF512H (TAF512H-PW) TAF512H-PW
+🏷️  [CLEAN NAME] ID:1192
+  - Old: Nắp rửa điện tử Caesar TAF512H (TAF512H-PW) TAF512H-PW
+  - New: Nắp rửa điện tử Caesar TAF512H
+📦 [MOVE -> NẮP] ID:1193
+  - Current: Nắp rửa điện tử Caesar TAF610H (TAF610H-PW) TAF610H-PW
+🏷️  [CLEAN NAME] ID:1193
+  - Old: Nắp rửa điện tử Caesar TAF610H (TAF610H-PW) TAF610H-PW
+  - New: Nắp rửa điện tử Caesar TAF610H
+📦 [MOVE -> NẮP] ID:1194
+  - Current: Nắp rửa điện tử Caesar TAF710H (TAF710H-PW) TAF710H-PW
+🏷️  [CLEAN NAME] ID:1194
+  - Old: Nắp rửa điện tử Caesar TAF710H (TAF710H-PW) TAF710H-PW
+  - New: Nắp rửa điện tử Caesar TAF710H
+📦 [MOVE -> NẮP] ID:1195
+  - Current: Nắp bệ ngồi đóng êm Grohe 101330SH00 101330SH00
+🏷️  [CLEAN NAME] ID:1195
+  - Old: Nắp bệ ngồi đóng êm Grohe 101330SH00 101330SH00
+  - New: Nắp bệ ngồi đóng êm Grohe
+📦 [MOVE -> NẮP] ID:1196
+  - Current: Nắp bồn cầu thông minh TOTO TCF23710AAA (W18) Washlet C2 cơ bản TCF23710AAA#NW1
+🏷️  [CLEAN NAME] ID:1196
+  - Old: Nắp bồn cầu thông minh TOTO TCF23710AAA (W18) Washlet C2 cơ bản TCF23710AAA#NW1
+  - New: Nắp bồn cầu thông minh TOTO TCF23710AAA (W18) Washlet C2 cơ bản
+📦 [MOVE -> NẮP] ID:1197
+  - Current: Nắp đóng êm American Standard CrysralSleek WP-C119 (WPC119) WP-C119
+🏷️  [CLEAN NAME] ID:1197
+  - Old: Nắp đóng êm American Standard CrysralSleek WP-C119 (WPC119) WP-C119
+  - New: Nắp đóng êm American Standard CrysralSleek WP-C119
+📦 [MOVE -> NẮP] ID:1198
+  - Current: Nắp bồn cầu đóng êm TOTO TC393VS (T2) TC393VS#W
+🏷️  [CLEAN NAME] ID:1198
+  - Old: Nắp bồn cầu đóng êm TOTO TC393VS (T2) TC393VS#W
+  - New: Nắp bồn cầu đóng êm TOTO TC393VS (T2)
+📦 [MOVE -> NẮP] ID:1199
+  - Current: Nắp bồn cầu đóng êm TOTO TC385VS (T3) TC385VS#W
+🏷️  [CLEAN NAME] ID:1199
+  - Old: Nắp bồn cầu đóng êm TOTO TC385VS (T3) TC385VS#W
+  - New: Nắp bồn cầu đóng êm TOTO TC385VS (T3)
+📦 [MOVE -> NẮP] ID:1200
+  - Current: Nắp rửa điện tử thông minh INAX CW-H17VN (CWH17VN) CW-H17VN/BW1
+🏷️  [CLEAN NAME] ID:1200
+  - Old: Nắp rửa điện tử thông minh INAX CW-H17VN (CWH17VN) CW-H17VN/BW1
+  - New: Nắp rửa điện tử thông minh INAX CW-H17VN (CWH17VN)
+📦 [MOVE -> NẮP] ID:1201
+  - Current: Nắp rửa điện tử thông minh INAX CW-H18VN (CWH18VN) CW-H18VN/BW1
+🏷️  [CLEAN NAME] ID:1201
+  - Old: Nắp rửa điện tử thông minh INAX CW-H18VN (CWH18VN) CW-H18VN/BW1
+  - New: Nắp rửa điện tử thông minh INAX CW-H18VN (CWH18VN)
+📦 [MOVE -> NẮP] ID:1202
+  - Current: Nắp rửa điện tử INAX thông minh CW-KA22AVN (CWKA22AVN) CW-KA22AVN/BW1
+🏷️  [CLEAN NAME] ID:1202
+  - Old: Nắp rửa điện tử INAX thông minh CW-KA22AVN (CWKA22AVN) CW-KA22AVN/BW1
+  - New: Nắp rửa điện tử INAX thông minh CW-KA22AVN (CWKA22AVN)
+📦 [MOVE -> NẮP] ID:1203
+  - Current: Nắp rửa điện tử INAX thông minh CW-KB22AVN (CWKB22AVN) CW-KB22AVN/BW1
+🏷️  [CLEAN NAME] ID:1203
+  - Old: Nắp rửa điện tử INAX thông minh CW-KB22AVN (CWKB22AVN) CW-KB22AVN/BW1
+  - New: Nắp rửa điện tử INAX thông minh CW-KB22AVN (CWKB22AVN)
+📦 [MOVE -> NẮP] ID:1204
+  - Current: Nắp rửa điện tử Washlet S7 TOTO TCF4911Z (W11) TCF4911Z#NW1
+🏷️  [CLEAN NAME] ID:1204
+  - Old: Nắp rửa điện tử Washlet S7 TOTO TCF4911Z (W11) TCF4911Z#NW1
+  - New: Nắp rửa điện tử Washlet S7 TOTO TCF4911Z (W11)
+📦 [MOVE -> NẮP] ID:1205
+  - Current: Nắp bồn cầu đóng êm TOTO TC600VS (T8) TC600VS#W
+🏷️  [CLEAN NAME] ID:1205
+  - Old: Nắp bồn cầu đóng êm TOTO TC600VS (T8) TC600VS#W
+  - New: Nắp bồn cầu đóng êm TOTO TC600VS (T8)
+📦 [MOVE -> NẮP] ID:1206
+  - Current: Nắp bồn cầu thường Caesar M284 M284
+🏷️  [CLEAN NAME] ID:1206
+  - Old: Nắp bồn cầu thường Caesar M284 M284
+  - New: Nắp bồn cầu thường Caesar
+📦 [MOVE -> NẮP] ID:1207
+  - Current: Nắp bồn cầu thường Caesar M220 M220
+🏷️  [CLEAN NAME] ID:1207
+  - Old: Nắp bồn cầu thường Caesar M220 M220
+  - New: Nắp bồn cầu thường Caesar
+📦 [MOVE -> NẮP] ID:1208
+  - Current: Nắp bồn cầu đóng êm Caesar MS220 MS220
+🏷️  [CLEAN NAME] ID:1208
+  - Old: Nắp bồn cầu đóng êm Caesar MS220 MS220
+  - New: Nắp bồn cầu đóng êm Caesar
+📦 [MOVE -> NẮP] ID:1209
+  - Current: Nắp bồn cầu thường Caesar M282 M282
+🏷️  [CLEAN NAME] ID:1209
+  - Old: Nắp bồn cầu thường Caesar M282 M282
+  - New: Nắp bồn cầu thường Caesar
+📦 [MOVE -> NẮP] ID:1210
+  - Current: Nắp bồn cầu đóng êm Caesar M232 M232
+🏷️  [CLEAN NAME] ID:1210
+  - Old: Nắp bồn cầu đóng êm Caesar M232 M232
+  - New: Nắp bồn cầu đóng êm Caesar
+📦 [MOVE -> NẮP] ID:1211
+  - Current: Nắp bồn cầu đóng êm Caesar M256 M256
+🏷️  [CLEAN NAME] ID:1211
+  - Old: Nắp bồn cầu đóng êm Caesar M256 M256
+  - New: Nắp bồn cầu đóng êm Caesar
+📦 [MOVE -> NẮP] ID:1212
+  - Current: Nắp bồn cầu đóng êm Caesar MU234 MU234
+🏷️  [CLEAN NAME] ID:1212
+  - Old: Nắp bồn cầu đóng êm Caesar MU234 MU234
+  - New: Nắp bồn cầu đóng êm Caesar
+📦 [MOVE -> NẮP] ID:1213
+  - Current: Nắp bồn cầu đóng êm Caesar M221 M221
+🏷️  [CLEAN NAME] ID:1213
+  - Old: Nắp bồn cầu đóng êm Caesar M221 M221
+  - New: Nắp bồn cầu đóng êm Caesar
+📦 [MOVE -> NẮP] ID:1214
+  - Current: Nắp bồn cầu đóng êm Caesar M243 M243
+🏷️  [CLEAN NAME] ID:1214
+  - Old: Nắp bồn cầu đóng êm Caesar M243 M243
+  - New: Nắp bồn cầu đóng êm Caesar
+📦 [MOVE -> NẮP] ID:1215
+  - Current: Nắp bồn cầu American Standard CTSS1808-1M (CTSS18081M) CTSS1808-1M
+🏷️  [CLEAN NAME] ID:1215
+  - Old: Nắp bồn cầu American Standard CTSS1808-1M (CTSS18081M) CTSS1808-1M
+  - New: Nắp bồn cầu American Standard CTSS1808-1M
+📦 [MOVE -> NẮP] ID:1216
+  - Current: Nắp bàn cầu đóng êm COTTO C9161 C9161
+🏷️  [CLEAN NAME] ID:1216
+  - Old: Nắp bàn cầu đóng êm COTTO C9161 C9161
+  - New: Nắp bàn cầu đóng êm COTTO
+📦 [MOVE -> NẮP] ID:1217
+  - Current: Nắp bàn cầu đóng êm COTTO C91252 C91252
+🏷️  [CLEAN NAME] ID:1217
+  - Old: Nắp bàn cầu đóng êm COTTO C91252 C91252
+  - New: Nắp bàn cầu đóng êm COTTO
+📦 [MOVE -> NẮP] ID:1218
+  - Current: Nắp bồn cầu đóng êm TOTO TC395VS (T10) TC395VS#W
+🏷️  [CLEAN NAME] ID:1218
+  - Old: Nắp bồn cầu đóng êm TOTO TC395VS (T10) TC395VS#W
+  - New: Nắp bồn cầu đóng êm TOTO TC395VS (T10)
+📦 [MOVE -> NẮP] ID:1219
+  - Current: Nắp bồn cầu đóng êm INAX CF-700VS (CF700VS) CF-700VS/BW1
+🏷️  [CLEAN NAME] ID:1219
+  - Old: Nắp bồn cầu đóng êm INAX CF-700VS (CF700VS) CF-700VS/BW1
+  - New: Nắp bồn cầu đóng êm INAX CF-700VS (CF700VS)
+📦 [MOVE -> NẮP] ID:1220
+  - Current: Nắp bồn cầu đóng êm INAX CF-500VS (CF500VS) CF-500VS/BW1
+🏷️  [CLEAN NAME] ID:1220
+  - Old: Nắp bồn cầu đóng êm INAX CF-500VS (CF500VS) CF-500VS/BW1
+  - New: Nắp bồn cầu đóng êm INAX CF-500VS (CF500VS)
+📦 [MOVE -> NẮP] ID:1221
+  - Current: Nắp bồn cầu đóng êm TOTO TC384CVK#W (CS761D, CS761P) TC384CVK#W
+🏷️  [CLEAN NAME] ID:1221
+  - Old: Nắp bồn cầu đóng êm TOTO TC384CVK#W (CS761D, CS761P) TC384CVK#W
+  - New: Nắp bồn cầu đóng êm TOTO TC384CVK#W (CS761D, CS761P)
+📦 [MOVE -> NẮP] ID:1222
+  - Current: Nắp bồn cầu đóng êm TOTO TC513A (CW542ME5U) TC513A
+🏷️  [CLEAN NAME] ID:1222
+  - Old: Nắp bồn cầu đóng êm TOTO TC513A (CW542ME5U) TC513A
+  - New: Nắp bồn cầu đóng êm TOTO TC513A (CW542ME5U)
+📦 [MOVE -> NẮP] ID:1223
+  - Current: Nắp bồn cầu đóng êm TOTO TC512A (CW522A) TC512A
+🏷️  [CLEAN NAME] ID:1223
+  - Old: Nắp bồn cầu đóng êm TOTO TC512A (CW522A) TC512A
+  - New: Nắp bồn cầu đóng êm TOTO TC512A (CW522A)
+🏷️  [CLEAN NAME] ID:1244
+  - Old: Bồn cầu TOTO MS889CDRW12 1 khối nắp điện tử Washlet S7 TCF4911EZ giấu dây MS889CDRW12#XW
+  - New: Bồn cầu TOTO MS889CDRW12 1 khối nắp điện tử Washlet S7 TCF4911EZ giấu dây
+🏷️  [CLEAN NAME] ID:1245
+  - Old: Bồn cầu TOTO CS769CDRW12 2 khối nắp điện tử Washlet S7 TCF4911EZ giấu dây CS769CDRW12#XW
+  - New: Bồn cầu TOTO CS769CDRW12 2 khối nắp điện tử Washlet S7 TCF4911EZ giấu dây
+🏷️  [CLEAN NAME] ID:1246
+  - Old: Bồn cầu TOTO MS889DRW11 1 khối nắp điện tử Washlet S7 TCF4911Z MS889DRW11#XW
+  - New: Bồn cầu TOTO MS889DRW11 1 khối nắp điện tử Washlet S7 TCF4911Z
+🏷️  [CLEAN NAME] ID:1247
+  - Old: Bồn cầu TOTO MS887RW11 1 khối nắp điện tử Washlet S7 TCF4911Z MS887RW11#XW
+  - New: Bồn cầu TOTO MS887RW11 1 khối nắp điện tử Washlet S7 TCF4911Z
+🏷️  [CLEAN NAME] ID:1248
+  - Old: Bồn cầu TOTO CS769DRW11 2 khối nắp điện tử Washlet S7 TCF4911Z CS769DRW11#XW
+  - New: Bồn cầu TOTO CS769DRW11 2 khối nắp điện tử Washlet S7 TCF4911Z
+🏷️  [CLEAN NAME] ID:1249
+  - Old: Bồn cầu TOTO CS838CDW12 2 khối nắp điện tử Washlet S7 TCF4911EZ giấu dây CS838CDW12#XW
+  - New: Bồn cầu TOTO CS838CDW12 2 khối nắp điện tử Washlet S7 TCF4911EZ giấu dây
+🏷️  [CLEAN NAME] ID:1250
+  - Old: Bồn cầu TOTO CS838DW11 2 khối nắp điện tử Washlet S7 TCF4911Z CS838DW11#XW
+  - New: Bồn cầu TOTO CS838DW11 2 khối nắp điện tử Washlet S7 TCF4911Z
+🏷️  [CLEAN NAME] ID:1251
+  - Old: Bồn cầu TOTO MS889DRW14 1 khối nắp điện tử Washlet C5 TCF24410AAA MS889DRW14#XW
+  - New: Bồn cầu TOTO MS889DRW14 1 khối nắp điện tử Washlet C5 TCF24410AAA
+🏷️  [CLEAN NAME] ID:1252
+  - Old: Bồn cầu điện tử Satis G INAX AC-G216VN màu trắng/ đen AC-G216VN/BW1
+  - New: Bồn cầu điện tử Satis G INAX AC-G216VN màu trắng/ đen
+🏷️  [CLEAN NAME] ID:1267
+  - Old: Bồn cầu TOTO CS735DE2 2 khối nắp rửa cơ TCW07S CS735DE2#XW
+  - New: Bồn cầu TOTO CS735DE2 2 khối nắp rửa cơ TCW07S
+🏷️  [CLEAN NAME] ID:1268
+  - Old: Bồn cầu TOTO CS735DE4 2 khối nắp rửa cơ TCW1211A CS735DE4#XW
+  - New: Bồn cầu TOTO CS735DE4 2 khối nắp rửa cơ TCW1211A
+🏷️  [CLEAN NAME] ID:1269
+  - Old: Bồn cầu TOTO CS769DRE2 2 khối nắp rửa cơ TCW07S CS769DRE2#XW
+  - New: Bồn cầu TOTO CS769DRE2 2 khối nắp rửa cơ TCW07S
+🏷️  [CLEAN NAME] ID:1270
+  - Old: Bồn cầu TOTO MS889DRE4 1 khối nắp rửa cơ TCW1211A MS889DRE4#XW
+  - New: Bồn cầu TOTO MS889DRE4 1 khối nắp rửa cơ TCW1211A
+🏷️  [CLEAN NAME] ID:1271
+  - Old: Bồn cầu TOTO MS889DRE2 1 khối nắp rửa cơ TCW07S MS889DRE2#XW
+  - New: Bồn cầu TOTO MS889DRE2 1 khối nắp rửa cơ TCW07S
+🏷️  [CLEAN NAME] ID:1272
+  - Old: Bồn cầu TOTO MS887RE4 1 khối nắp rửa cơ TCW1211A MS887RE4#XW
+  - New: Bồn cầu TOTO MS887RE4 1 khối nắp rửa cơ TCW1211A
+🏷️  [CLEAN NAME] ID:1273
+  - Old: Bồn cầu TOTO MS887RE2 1 khối nắp rửa cơ TCW07S MS887RE2#XW
+  - New: Bồn cầu TOTO MS887RE2 1 khối nắp rửa cơ TCW07S
+🏷️  [CLEAN NAME] ID:1274
+  - Old: Bồn cầu TOTO CS769DRE4 2 khối nắp rửa cơ TCW1211A CS769DRE4#XW
+  - New: Bồn cầu TOTO CS769DRE4 2 khối nắp rửa cơ TCW1211A
+🏷️  [CLEAN NAME] ID:1275
+  - Old: Bồn cầu TOTO CS838DE2 2 khối nắp rửa cơ TCW07S CS838DE2#XW
+  - New: Bồn cầu TOTO CS838DE2 2 khối nắp rửa cơ TCW07S
+🏷️  [CLEAN NAME] ID:1276
+  - Old: Bồn cầu TOTO CS838DE4 2 khối nắp rửa cơ TCW1211A CS838DE4#XW
+  - New: Bồn cầu TOTO CS838DE4 2 khối nắp rửa cơ TCW1211A
+🏷️  [CLEAN NAME] ID:1277
+  - Old: Bồn cầu TOTO MS188VKE4 T53P100VR 1 khối nắp rửa cơ TCW1211A MS188VKE4#XW/T53P100VR
+  - New: Bồn cầu TOTO MS188VKE4 T53P100VR 1 khối nắp rửa cơ TCW1211A
+🏷️  [CLEAN NAME] ID:1278
+  - Old: Bồn cầu TOTO CS948DE4 2 khối nắp rửa cơ TCW1211A CS948DE4#XW
+  - New: Bồn cầu TOTO CS948DE4 2 khối nắp rửa cơ TCW1211A
+📦 [MOVE -> NẮP] ID:1291
+  - Current: Nắp rửa điện tử Washlet S7 TOTO TCF4911EZ (W12) dành cho bồn cầu giấu dây TCF4911EZ#NW1
+🏷️  [CLEAN NAME] ID:1291
+  - Old: Nắp rửa điện tử Washlet S7 TOTO TCF4911EZ (W12) dành cho bồn cầu giấu dây TCF4911EZ#NW1
+  - New: Nắp rửa điện tử Washlet S7 TOTO TCF4911EZ (W12) dành cho bồn cầu giấu dây
+📦 [MOVE -> NẮP] ID:1292
+  - Current: Nắp bồn cầu thông minh Washlet S5 TOTO TCF34320GAA TCF34320GAA#NW1
+🏷️  [CLEAN NAME] ID:1292
+  - Old: Nắp bồn cầu thông minh Washlet S5 TOTO TCF34320GAA TCF34320GAA#NW1
+  - New: Nắp bồn cầu thông minh Washlet S5 TOTO TCF34320GAA
+📦 [MOVE -> NẮP] ID:1293
+  - Current: Nắp bồn cầu thông minh Washlet S5 TOTO TCF34570GAA dành cho bồn cầu giấu dây TCF34570GAA#NW1
+🏷️  [CLEAN NAME] ID:1293
+  - Old: Nắp bồn cầu thông minh Washlet S5 TOTO TCF34570GAA dành cho bồn cầu giấu dây TCF34570GAA#NW1
+  - New: Nắp bồn cầu thông minh Washlet S5 TOTO TCF34570GAA dành cho bồn cầu giấu dây
+📦 [MOVE -> NẮP] ID:1294
+  - Current: Nắp bồn cầu thông minh Washlet C5 TOTO TCF24460AAA (W15) dành cho bồn cầu giấu dây TCF24460AAA#NW1
+🏷️  [CLEAN NAME] ID:1294
+  - Old: Nắp bồn cầu thông minh Washlet C5 TOTO TCF24460AAA (W15) dành cho bồn cầu giấu dây TCF24460AAA#NW1
+  - New: Nắp bồn cầu thông minh Washlet C5 TOTO TCF24460AAA (W15) dành cho bồn cầu giấu dây
+📦 [MOVE -> NẮP] ID:1295
+  - Current: Nắp bồn cầu thông minh Washlet C5 TOTO TCF24410AAA (W14) TCF24410AAA#NW1
+🏷️  [CLEAN NAME] ID:1295
+  - Old: Nắp bồn cầu thông minh Washlet C5 TOTO TCF24410AAA (W14) TCF24410AAA#NW1
+  - New: Nắp bồn cầu thông minh Washlet C5 TOTO TCF24410AAA (W14)
+📦 [MOVE -> NẮP] ID:1296
+  - Current: Nắp bồn cầu thông minh Washlet S2 TOTO TCF33320GAA TCF33320GAA#NW1
+🏷️  [CLEAN NAME] ID:1296
+  - Old: Nắp bồn cầu thông minh Washlet S2 TOTO TCF33320GAA TCF33320GAA#NW1
+  - New: Nắp bồn cầu thông minh Washlet S2 TOTO TCF33320GAA
+📦 [MOVE -> NẮP] ID:1297
+  - Current: Nắp bồn cầu thông minh Washlet S2 TOTO TCF33370GAA dành cho bồn cầu giấu dây TCF33370GAA#NW1
+🏷️  [CLEAN NAME] ID:1297
+  - Old: Nắp bồn cầu thông minh Washlet S2 TOTO TCF33370GAA dành cho bồn cầu giấu dây TCF33370GAA#NW1
+  - New: Nắp bồn cầu thông minh Washlet S2 TOTO TCF33370GAA dành cho bồn cầu giấu dây
+📦 [MOVE -> NẮP] ID:1298
+  - Current: Nắp bồn cầu thông minh Washlet C2 TOTO TCF23460AAA (W17) dành cho bồn cầu giấu dây TCF23460AAA#NW1
+🏷️  [CLEAN NAME] ID:1298
+  - Old: Nắp bồn cầu thông minh Washlet C2 TOTO TCF23460AAA (W17) dành cho bồn cầu giấu dây TCF23460AAA#NW1
+  - New: Nắp bồn cầu thông minh Washlet C2 TOTO TCF23460AAA (W17) dành cho bồn cầu giấu dây
+📦 [MOVE -> NẮP] ID:1299
+  - Current: Nắp bồn cầu thông minh Washlet C2 TOTO TCF23410AAA (W16) TCF23410AAA#NW1
+🏷️  [CLEAN NAME] ID:1299
+  - Old: Nắp bồn cầu thông minh Washlet C2 TOTO TCF23410AAA (W16) TCF23410AAA#NW1
+  - New: Nắp bồn cầu thông minh Washlet C2 TOTO TCF23410AAA (W16)
+📦 [MOVE -> NẮP] ID:1300
+  - Current: Nắp rửa điện tử Washlet S7 TOTO TCF47360GAA (W23) TCF47360GAA#NW1
+🏷️  [CLEAN NAME] ID:1300
+  - Old: Nắp rửa điện tử Washlet S7 TOTO TCF47360GAA (W23) TCF47360GAA#NW1
+  - New: Nắp rửa điện tử Washlet S7 TOTO TCF47360GAA (W23)
+📦 [MOVE -> NẮP] ID:1301
+  - Current: Nắp rửa điện tử INAX CW-H20VN (CWH20VN) CW-H20VN/BW1
+🏷️  [CLEAN NAME] ID:1301
+  - Old: Nắp rửa điện tử INAX CW-H20VN (CWH20VN) CW-H20VN/BW1
+  - New: Nắp rửa điện tử INAX CW-H20VN (CWH20VN)
+📦 [MOVE -> NẮP] ID:1302
+  - Current: Nắp bồn cầu đóng êm INAX CF-37VSAK (CF37VSAK) CF-37VSAK/BW1
+🏷️  [CLEAN NAME] ID:1302
+  - Old: Nắp bồn cầu đóng êm INAX CF-37VSAK (CF37VSAK) CF-37VSAK/BW1
+  - New: Nắp bồn cầu đóng êm INAX CF-37VSAK (CF37VSAK)
+📦 [MOVE -> NẮP] ID:1303
+  - Current: Nắp bồn cầu đóng thường INAX CF-37AKV (CF37AKV) CF-37AKV/BW1
+🏷️  [CLEAN NAME] ID:1303
+  - Old: Nắp bồn cầu đóng thường INAX CF-37AKV (CF37AKV) CF-37AKV/BW1
+  - New: Nắp bồn cầu đóng thường INAX CF-37AKV (CF37AKV)
+📦 [MOVE -> NẮP] ID:1304
+  - Current: Nắp bồn cầu đóng êm INAX CF-57VSAK (CF57VSAK) CF-57VSAK/BW1
+🏷️  [CLEAN NAME] ID:1304
+  - Old: Nắp bồn cầu đóng êm INAX CF-57VSAK (CF57VSAK) CF-57VSAK/BW1
+  - New: Nắp bồn cầu đóng êm INAX CF-57VSAK (CF57VSAK)
+📦 [MOVE -> NẮP] ID:1305
+  - Current: Nắp bồn cầu đóng thường INAX CF-57AKV (CF57AKV) CF-57AKV/BW1
+🏷️  [CLEAN NAME] ID:1305
+  - Old: Nắp bồn cầu đóng thường INAX CF-57AKV (CF57AKV) CF-57AKV/BW1
+  - New: Nắp bồn cầu đóng thường INAX CF-57AKV (CF57AKV)
+📦 [MOVE -> NẮP] ID:1306
+  - Current: Nắp bồn cầu đóng êm INAX CF-2700VS (CF2700VS) CF-2700VS/BW1
+🏷️  [CLEAN NAME] ID:1306
+  - Old: Nắp bồn cầu đóng êm INAX CF-2700VS (CF2700VS) CF-2700VS/BW1
+  - New: Nắp bồn cầu đóng êm INAX CF-2700VS (CF2700VS)
+📦 [MOVE -> NẮP] ID:1307
+  - Current: Nắp bồn cầu đóng êm INAX CF-832VS (CF832VS) CF-832VS/BW1
+🏷️  [CLEAN NAME] ID:1307
+  - Old: Nắp bồn cầu đóng êm INAX CF-832VS (CF832VS) CF-832VS/BW1
+  - New: Nắp bồn cầu đóng êm INAX CF-832VS (CF832VS)
+📦 [MOVE -> NẮP] ID:1308
+  - Current: Nắp bồn cầu đóng êm INAX CF-99AT (CF99AT) CF-99AT/BW1
+🏷️  [CLEAN NAME] ID:1308
+  - Old: Nắp bồn cầu đóng êm INAX CF-99AT (CF99AT) CF-99AT/BW1
+  - New: Nắp bồn cầu đóng êm INAX CF-99AT (CF99AT)
+📦 [MOVE -> NẮP] ID:1309
+  - Current: Nắp bồn cầu đóng êm INAX CF-602VS (CF602VS) CF-602VS/BW1
+🏷️  [CLEAN NAME] ID:1309
+  - Old: Nắp bồn cầu đóng êm INAX CF-602VS (CF602VS) CF-602VS/BW1
+  - New: Nắp bồn cầu đóng êm INAX CF-602VS (CF602VS)
+📦 [MOVE -> NẮP] ID:1310
+  - Current: Nắp bồn cầu đóng êm INAX CF-606VS (CF606VS) CF-606VS/BW1
+🏷️  [CLEAN NAME] ID:1310
+  - Old: Nắp bồn cầu đóng êm INAX CF-606VS (CF606VS) CF-606VS/BW1
+  - New: Nắp bồn cầu đóng êm INAX CF-606VS (CF606VS)
+📦 [MOVE -> NẮP] ID:1311
+  - Current: Nắp đóng êm INAX CF-1032VS/BW1 CF-1032VS/BW1
+🏷️  [CLEAN NAME] ID:1311
+  - Old: Nắp đóng êm INAX CF-1032VS/BW1 CF-1032VS/BW1
+  - New: Nắp đóng êm INAX CF-1032VS/BW1
+📦 [MOVE -> NẮP] ID:1312
+  - Current: Nắp đóng êm INAX CF-502VS/BW1 CF-502VS/BW1
+🏷️  [CLEAN NAME] ID:1312
+  - Old: Nắp đóng êm INAX CF-502VS/BW1 CF-502VS/BW1
+  - New: Nắp đóng êm INAX CF-502VS/BW1
+🏷️  [CLEAN NAME] ID:1313
+  - Old: Bồn cầu 1 khối nắp điện tử Caesar C1356F + TAF512H (CD1356+TAF512H) CD1356+TAF512H
+  - New: Bồn cầu 1 khối nắp điện tử Caesar C1356F + TAF512H CD1356+TAF512H
+🏷️  [CLEAN NAME] ID:1314
+  - Old: Bồn cầu 2 khối Caesar CT1325 nắp thường CT1325
+  - New: Bồn cầu 2 khối Caesar CT1325 nắp thường
+🏷️  [CLEAN NAME] ID:1315
+  - Old: Bồn cầu 2 khối Caesar CD1325 nắp thường CD1325
+  - New: Bồn cầu 2 khối Caesar CD1325 nắp thường
+🏷️  [CLEAN NAME] ID:1316
+  - Old: Bồn cầu trẻ em 2 khối Caesar CT1026 nắp êm CT1026
+  - New: Bồn cầu trẻ em 2 khối Caesar CT1026 nắp êm
+🏷️  [CLEAN NAME] ID:1317
+  - Old: Bồn cầu 2 khối Caesar CTS1325 nắp êm CTS1325
+  - New: Bồn cầu 2 khối Caesar CTS1325 nắp êm
+🏷️  [CLEAN NAME] ID:1318
+  - Old: Bồn cầu 2 khối Caesar CDS1325 nắp êm CDS1325
+  - New: Bồn cầu 2 khối Caesar CDS1325 nắp êm
+🏷️  [CLEAN NAME] ID:1319
+  - Old: Bồn cầu 2 khối Caesar CPT1332 nắp thường CPT1332
+  - New: Bồn cầu 2 khối Caesar CPT1332 nắp thường
+🏷️  [CLEAN NAME] ID:1320
+  - Old: Bồn cầu 1 khối nắp điện tử Caesar C1394F + TAF512H (CD1394+TAF512H) CD1394+TAF512H
+  - New: Bồn cầu 1 khối nắp điện tử Caesar C1394F + TAF512H CD1394+TAF512H
+🏷️  [CLEAN NAME] ID:1323
+  - Old: Bồn cầu 1 khối nắp điện tử Caesar C1391F + TAF400H (C1391+TAF400H) C1391+TAF400H
+  - New: Bồn cầu 1 khối nắp điện tử Caesar C1391F + TAF400H C1391+TAF400H
+🏷️  [CLEAN NAME] ID:1324
+  - Old: Bồn cầu điện tử thông minh Caesar CA1389H CA1389H
+  - New: Bồn cầu điện tử thông minh Caesar
+🏷️  [CLEAN NAME] ID:1325
+  - Old: Bồn cầu 1 khối nắp rửa cơ Caesar C1363F + TAF060 (CD1363+TAF060) CD1363+TAF060
+  - New: Bồn cầu 1 khối nắp rửa cơ Caesar C1363F + TAF060 CD1363+TAF060
+📦 [MOVE -> NẮP] ID:1533
+  - Current: Nắp điện tử American Standard WP-7SL1 (WP7SL1) WP-7SL1
+🏷️  [CLEAN NAME] ID:1533
+  - Old: Nắp điện tử American Standard WP-7SL1 (WP7SL1) WP-7SL1
+  - New: Nắp điện tử American Standard WP-7SL1
+📦 [MOVE -> NẮP] ID:1593
+  - Current: Nắp bồn cầu thông minh Washlet S2 TOTO TCF33461GAA (W24) TCF33461GAA#NW1
+🏷️  [CLEAN NAME] ID:1593
+  - Old: Nắp bồn cầu thông minh Washlet S2 TOTO TCF33461GAA (W24) TCF33461GAA#NW1
+  - New: Nắp bồn cầu thông minh Washlet S2 TOTO TCF33461GAA (W24)
+📦 [MOVE -> NẮP] ID:1594
+  - Current: Nắp bồn cầu thông minh Washlet S5 TOTO TCF34461GAA (W25) TCF34461GAA#NW1
+🏷️  [CLEAN NAME] ID:1594
+  - Old: Nắp bồn cầu thông minh Washlet S5 TOTO TCF34461GAA (W25) TCF34461GAA#NW1
+  - New: Nắp bồn cầu thông minh Washlet S5 TOTO TCF34461GAA (W25)
+🏷️  [CLEAN NAME] ID:1668
+  - Old: Bồn cầu thông minh 1 khối Viglacera V91 V91
+  - New: Bồn cầu thông minh 1 khối Viglacera
+🏷️  [CLEAN NAME] ID:1669
+  - Old: Bồn cầu điện tử Viglacera V882F (V.16.882F) V882F
+  - New: Bồn cầu điện tử Viglacera V882F (V.16.882F)
+🏷️  [CLEAN NAME] ID:1670
+  - Old: Bồn cầu thông minh Viglacera V885 V885
+  - New: Bồn cầu thông minh Viglacera
+🏷️  [CLEAN NAME] ID:1671
+  - Old: Bồn cầu 2 khối Viglacera VI107 nắp êm VI107
+  - New: Bồn cầu 2 khối Viglacera VI107 nắp êm
+🏷️  [CLEAN NAME] ID:1672
+  - Old: Bồn cầu 2 khối Viglacera VI44 nắp thường (+ lavabo VTL2) VI44
+  - New: Bồn cầu 2 khối Viglacera VI44 nắp thường (+ lavabo VTL2)
+🏷️  [CLEAN NAME] ID:1673
+  - Old: Bồn cầu 2 khối Viglacera VI77 nắp thường (+ lavabo VTL2) VI77
+  - New: Bồn cầu 2 khối Viglacera VI77 nắp thường (+ lavabo VTL2)
+🏷️  [CLEAN NAME] ID:1674
+  - Old: Bồn cầu 2 khối Viglacera VI28 nắp thường (+ lavabo VTL2) VI28
+  - New: Bồn cầu 2 khối Viglacera VI28 nắp thường (+ lavabo VTL2)
+🏷️  [CLEAN NAME] ID:1675
+  - Old: Bồn cầu 2 khối Viglacera VI6 nắp êm VI6
+  - New: Bồn cầu 2 khối Viglacera VI6 nắp êm
+🏷️  [CLEAN NAME] ID:1680
+  - Old: Bồn cầu 1 khối Viglacera BL5 nắp êm xả thẳng (+ vòi xịt VG826) BL5
+  - New: Bồn cầu 1 khối Viglacera BL5 nắp êm xả thẳng (+ vòi xịt VG826)
+🏷️  [CLEAN NAME] ID:1681
+  - Old: Bồn cầu 1 khối Viglacera V62 nắp êm (+ vòi xịt VG826 & van VG853) V62
+  - New: Bồn cầu 1 khối Viglacera V62 nắp êm (+ vòi xịt VG826 & van VG853)
+🏷️  [CLEAN NAME] ID:1682
+  - Old: Bồn cầu 1 khối Viglacera V36 nắp êm (+ vòi xịt VG826) V36
+  - New: Bồn cầu 1 khối Viglacera V36 nắp êm (+ vòi xịt VG826)
+🏷️  [CLEAN NAME] ID:1684
+  - Old: Bồn cầu 1 khối cho trẻ em Viglacera BTE nắp thường BTE
+  - New: Bồn cầu 1 khối cho trẻ em Viglacera BTE nắp thường
+🏷️  [CLEAN NAME] ID:1685
+  - Old: Bồn cầu 1 khối Viglacera V42 nắp êm (+ vòi xịt VG826) V42
+  - New: Bồn cầu 1 khối Viglacera V42 nắp êm (+ vòi xịt VG826)
+🏷️  [CLEAN NAME] ID:1686
+  - Old: Bồn cầu 1 khối Viglacera V64 nắp êm (+ vòi xịt VG826 & van VG853) V64
+  - New: Bồn cầu 1 khối Viglacera V64 nắp êm (+ vòi xịt VG826 & van VG853)
+🏷️  [CLEAN NAME] ID:1687
+  - Old: Bồn cầu 1 khối Viglacera V65 nắp êm (+ vòi xịt VG826 & van VG853) V65
+  - New: Bồn cầu 1 khối Viglacera V65 nắp êm (+ vòi xịt VG826 & van VG853)
+🏷️  [CLEAN NAME] ID:1688
+  - Old: Bồn cầu 1 khối Viglacera V199 nắp êm (+ vòi xịt VG826 & van VG853) V199
+  - New: Bồn cầu 1 khối Viglacera V199 nắp êm (+ vòi xịt VG826 & van VG853)
+🏷️  [CLEAN NAME] ID:1689
+  - Old: Bồn cầu 1 khối Viglacera V72-CAU nắp êm (+ vòi xịt VG826) V72-CAU
+  - New: Bồn cầu 1 khối Viglacera V72-CAU nắp êm (+ vòi xịt VG826)
+🏷️  [CLEAN NAME] ID:1690
+  - Old: Bồn cầu 1 khối Viglacera V37M nắp êm (+ vòi xịt VG826) V37M
+  - New: Bồn cầu 1 khối Viglacera V37M nắp êm (+ vòi xịt VG826)
+🏷️  [CLEAN NAME] ID:1691
+  - Old: Bồn cầu 1 khối Viglacera V39 nắp êm xả thẳng (+ vòi xịt VG826) V39
+  - New: Bồn cầu 1 khối Viglacera V39 nắp êm xả thẳng (+ vòi xịt VG826)
+🏷️  [CLEAN NAME] ID:1692
+  - Old: Bồn cầu 1 khối Viglacera V37S nắp êm tráp nhựa con thỏ rời (+ vòi xịt VG826) V37S
+  - New: Bồn cầu 1 khối Viglacera V37S nắp êm tráp nhựa con thỏ rời (+ vòi xịt VG826)
+🏷️  [CLEAN NAME] ID:1693
+  - Old: Bồn cầu 1 khối Viglacera V38 nắp êm xả thẳng (+ vòi xịt VG826) V38
+  - New: Bồn cầu 1 khối Viglacera V38 nắp êm xả thẳng (+ vòi xịt VG826)
+🏷️  [CLEAN NAME] ID:1694
+  - Old: Bồn cầu 1 khối Viglacera V68 nắp êm (+ vòi xịt VG826 & van VG853) V68
+  - New: Bồn cầu 1 khối Viglacera V68 nắp êm (+ vòi xịt VG826 & van VG853)
+🏷️  [CLEAN NAME] ID:1695
+  - Old: Bồn cầu 1 khối Viglacera BL5V nắp êm xả xoáy (+ vòi xịt VG826) BL5V
+  - New: Bồn cầu 1 khối Viglacera BL5V nắp êm xả xoáy (+ vòi xịt VG826)
+🏷️  [CLEAN NAME] ID:1696
+  - Old: Bồn cầu 1 khối Viglacera V38M nắp êm xả xoáy (+ vòi xịt VG826) V38M
+  - New: Bồn cầu 1 khối Viglacera V38M nắp êm xả xoáy (+ vòi xịt VG826)
+🏷️  [CLEAN NAME] ID:1697
+  - Old: Bồn cầu 1 khối Viglacera V35M nắp êm xả xoáy (+ vòi xịt VG826) V35M
+  - New: Bồn cầu 1 khối Viglacera V35M nắp êm xả xoáy (+ vòi xịt VG826)
+🏷️  [CLEAN NAME] ID:1698
+  - Old: Bồn cầu 1 khối Viglacera V39M nắp êm xả xoáy (+ vòi xịt VG826) V39M
+  - New: Bồn cầu 1 khối Viglacera V39M nắp êm xả xoáy (+ vòi xịt VG826)
+🏷️  [CLEAN NAME] ID:1699
+  - Old: Bồn cầu 1 khối Viglacera V45M nắp êm xả xoáy (+ vòi xịt VG826 & van VG853) V45M
+  - New: Bồn cầu 1 khối Viglacera V45M nắp êm xả xoáy (+ vòi xịt VG826 & van VG853)
+🏷️  [CLEAN NAME] ID:1833
+  - Old: Bồn cầu 1 khối ATMOR AT1157 nắp êm xả nhấn ATMOR AT1157 AT1157
+  - New: Bồn cầu 1 khối ATMOR AT1157 nắp êm xả nhấn ATMOR
+🏷️  [CLEAN NAME] ID:1834
+  - Old: Bồn cầu 1 khối ATMOR AT1084S nắp êm xả nhấn AT1084S
+  - New: Bồn cầu 1 khối ATMOR AT1084S nắp êm xả nhấn
+🏷️  [CLEAN NAME] ID:1835
+  - Old: Bồn cầu 1 khối ATMOR AT1171 nắp êm xả nhấn AT1171
+  - New: Bồn cầu 1 khối ATMOR AT1171 nắp êm xả nhấn
+🏷️  [CLEAN NAME] ID:1836
+  - Old: Bồn cầu 1 khối ATMOR AT1177 nắp êm AT1177
+  - New: Bồn cầu 1 khối ATMOR AT1177 nắp êm
+🏷️  [CLEAN NAME] ID:1837
+  - Old: Bồn cầu 1 khối ATMOR AT1620 nắp êm xả nhấn AT1620
+  - New: Bồn cầu 1 khối ATMOR AT1620 nắp êm xả nhấn
+🏷️  [CLEAN NAME] ID:1838
+  - Old: Bồn cầu 1 khối ATMOR AT1635 nắp êm xả nhấn AT1635
+  - New: Bồn cầu 1 khối ATMOR AT1635 nắp êm xả nhấn
+🏷️  [CLEAN NAME] ID:1839
+  - Old: Bồn cầu 1 khối ATMOR AT1692 nắp êm xả nhấn AT1692
+  - New: Bồn cầu 1 khối ATMOR AT1692 nắp êm xả nhấn
+🏷️  [CLEAN NAME] ID:1840
+  - Old: Bồn cầu 1 khối ATMOR AT2156 nắp êm xả nhấn AT2156
+  - New: Bồn cầu 1 khối ATMOR AT2156 nắp êm xả nhấn
+🏷️  [CLEAN NAME] ID:1841
+  - Old: Bồn cầu 1 khối ATMOR AT2177 nắp êm xả nhấn AT2177
+  - New: Bồn cầu 1 khối ATMOR AT2177 nắp êm xả nhấn
+🏷️  [CLEAN NAME] ID:1842
+  - Old: Bồn cầu 1 khối ATMOR AT541 nắp êm xả nhấn AT541
+  - New: Bồn cầu 1 khối ATMOR AT541 nắp êm xả nhấn
+🏷️  [CLEAN NAME] ID:1843
+  - Old: Bồn cầu 1 khối ATMOR AT8098 nắp êm xả nhấn AT8098
+  - New: Bồn cầu 1 khối ATMOR AT8098 nắp êm xả nhấn
+🏷️  [CLEAN NAME] ID:1844
+  - Old: Bồn cầu 1 khối ATMOR AT518 nắp êm xả nhấn AT518
+  - New: Bồn cầu 1 khối ATMOR AT518 nắp êm xả nhấn
+🏷️  [CLEAN NAME] ID:1845
+  - Old: Bồn cầu 1 khối ATMOR AT815 nắp êm xả gạt AT815
+  - New: Bồn cầu 1 khối ATMOR AT815 nắp êm xả gạt
+🏷️  [CLEAN NAME] ID:1846
+  - Old: Bồn cầu 1 khối ATMOR AT8650 nắp êm xả nhấn AT8650
+  - New: Bồn cầu 1 khối ATMOR AT8650 nắp êm xả nhấn
+🏷️  [CLEAN NAME] ID:1847
+  - Old: Bồn cầu 1 khối ATMOR AT8867 nắp êm xả nhấn tiết kiệm nước AT8867
+  - New: Bồn cầu 1 khối ATMOR AT8867 nắp êm xả nhấn tiết kiệm nước
+🏷️  [CLEAN NAME] ID:1848
+  - Old: Bồn cầu 1 khối ATMOR AT8866 nắp êm xả nhấn tiết kiệm nước AT8866
+  - New: Bồn cầu 1 khối ATMOR AT8866 nắp êm xả nhấn tiết kiệm nước
+🏷️  [CLEAN NAME] ID:1849
+  - Old: Bồn cầu 1 khối ATMOR AT8869 nắp êm xả nhấn AT8869
+  - New: Bồn cầu 1 khối ATMOR AT8869 nắp êm xả nhấn
+🏷️  [CLEAN NAME] ID:1850
+  - Old: Bồn cầu 2 khối ATMOR AT2032 nắp êm xả nhấn AT2032
+  - New: Bồn cầu 2 khối ATMOR AT2032 nắp êm xả nhấn
+🏷️  [CLEAN NAME] ID:1851
+  - Old: Bồn cầu 2 khối ATMOR AT2112 nắp êm xả nhấn AT2112
+  - New: Bồn cầu 2 khối ATMOR AT2112 nắp êm xả nhấn
+🏷️  [CLEAN NAME] ID:1852
+  - Old: Bồn cầu xí xổm vệ sinh ATMOR AT5204S AT5204S
+  - New: Bồn cầu xí xổm vệ sinh ATMOR
+🏷️  [CLEAN NAME] ID:1853
+  - Old: Bồn cầu 1 khối American Standard VF-1808ET (VF1808ET) nắp êm dòng Acacia SupaSleek VF-1808ET
+  - New: Bồn cầu 1 khối American Standard VF-1808ET nắp êm dòng Acacia SupaSleek
+🏷️  [CLEAN NAME] ID:1854
+  - Old: Bồn cầu 1 khối American Standard WP-2025 (WP2025) nắp êm dòng Kastello WP-2025
+  - New: Bồn cầu 1 khối American Standard WP-2025 nắp êm dòng Kastello
+🏷️  [CLEAN NAME] ID:1855
+  - Old: Bồn cầu 1 khối American Standard 2007-WT (2007WT) nắp êm dòng Acacia Evolution 2007-WT
+  - New: Bồn cầu 1 khối American Standard 2007-WT nắp êm dòng Acacia Evolution
+🏷️  [CLEAN NAME] ID:1856
+  - Old: Bồn cầu 1 khối American Standard VF-1808 (VF1808) nắp êm dòng Acacia Evolution VF-1808
+  - New: Bồn cầu 1 khối American Standard VF-1808 nắp êm dòng Acacia Evolution
+🏷️  [CLEAN NAME] ID:1857
+  - Old: Bồn cầu 1 khối American Standard WP-1830 (WP1830) nắp êm dòng Milano WP-1830
+  - New: Bồn cầu 1 khối American Standard WP-1830 nắp êm dòng Milano
+🏷️  [CLEAN NAME] ID:1858
+  - Old: Bồn cầu 1 khối American Standard WP-1880N (WP1880N) nắp êm dòng Signature WP-1880N
+  - New: Bồn cầu 1 khối American Standard WP-1880N nắp êm dòng Signature
+🏷️  [CLEAN NAME] ID:1859
+  - Old: Bồn cầu 1 khối American Standard WP-1880 (WP1880) nắp êm dòng Signature WP-1880
+  - New: Bồn cầu 1 khối American Standard WP-1880 nắp êm dòng Signature
+🏷️  [CLEAN NAME] ID:1860
+  - Old: Bồn cầu 1 khối American Standard VF-2011 (VF2011) nắp êm dòng Active VF-2011
+  - New: Bồn cầu 1 khối American Standard VF-2011 nắp êm dòng Active
+🏷️  [CLEAN NAME] ID:1861
+  - Old: Bồn cầu 1 khối American Standard VF-2010 (VF2010) nắp êm dòng Activa VF-2010
+  - New: Bồn cầu 1 khối American Standard VF-2010 nắp êm dòng Activa
+🏷️  [CLEAN NAME] ID:1862
+  - Old: Bồn cầu 1 khối American Standard WP-2073 (WP2073) nắp êm dòng Neo Modern WP-2073
+  - New: Bồn cầu 1 khối American Standard WP-2073 nắp êm dòng Neo Modern
+🏷️  [CLEAN NAME] ID:1863
+  - Old: Bồn cầu 1 khối American Standard 2530-WT (2530WT) nắp êm dòng Flexio 2530-WT
+  - New: Bồn cầu 1 khối American Standard 2530-WT nắp êm dòng Flexio
+🏷️  [CLEAN NAME] ID:1864
+  - Old: Bồn cầu 2 khối American Standard 2307-WT (2307WT) nắp êm 2307-WT
+  - New: Bồn cầu 2 khối American Standard 2307-WT nắp êm
+🏷️  [CLEAN NAME] ID:1865
+  - Old: Bồn cầu 2 khối American Standard 2407-WT (2407WT) nắp êm dòng Compact Codie 2407-WT
+  - New: Bồn cầu 2 khối American Standard 2407-WT nắp êm dòng Compact Codie
+🏷️  [CLEAN NAME] ID:1866
+  - Old: Bồn cầu điện tử thông minh American Standard WP-1806 (WP1806) dòng Acacia Evolution WP-1806
+  - New: Bồn cầu điện tử thông minh American Standard WP-1806 dòng Acacia Evolution
+🏷️  [CLEAN NAME] ID:1867
+  - Old: Bồn cầu 1 khối American Standard VF-1858 (VF1858) nắp êm VF-1858
+  - New: Bồn cầu 1 khối American Standard VF-1858 nắp êm
+🏷️  [CLEAN NAME] ID:1868
+  - Old: Bồn cầu 1 khối American Standard VF-1808E (VF1808E) nắp êm dòng Acacia SupaSleek VF-1808E
+  - New: Bồn cầu 1 khối American Standard VF-1808E nắp êm dòng Acacia SupaSleek
+🏷️  [CLEAN NAME] ID:1869
+  - Old: Bồn cầu điện tử thông minh American Standard WP-5017 (WP5017) dòng New AeroZen WP-5017
+  - New: Bồn cầu điện tử thông minh American Standard WP-5017 dòng New AeroZen
+🏷️  [CLEAN NAME] ID:1870
+  - Old: Bồn cầu 1 khối American Standard VF-2530 (VF2530) nắp êm dòng Flexico VF-2530
+  - New: Bồn cầu 1 khối American Standard VF-2530 nắp êm dòng Flexico
+🏷️  [CLEAN NAME] ID:1871
+  - Old: Bồn cầu 2 khối American Standard VF-2781 (VF2781) nắp êm dòng Kastello VF-2781
+  - New: Bồn cầu 2 khối American Standard VF-2781 nắp êm dòng Kastello
+🏷️  [CLEAN NAME] ID:1927
+  - Old: Bồn cầu 1 khối Euro Ceramic 2.0 GROHE 100995SH00 100995SH00
+  - New: Bồn cầu 1 khối Euro Ceramic 2.0 GROHE
+🏷️  [CLEAN NAME] ID:1928
+  - Old: Bồn cầu 1 khối Bau Ceramic GROHE 39990000 39990000
+  - New: Bồn cầu 1 khối Bau Ceramic GROHE
+🏷️  [CLEAN NAME] ID:1929
+  - Old: Bồn cầu một khối Eurostyle GROHE 39310000 39310000
+  - New: Bồn cầu một khối Eurostyle GROHE
+🏷️  [CLEAN NAME] ID:1930
+  - Old: Bồn cầu treo tường Eurosmart GROHE 39205000 39205000
+  - New: Bồn cầu treo tường Eurosmart GROHE
+🏷️  [CLEAN NAME] ID:1931
+  - Old: Bồn cầu đặt sàn điện tử Sensia Arena GROHE 39355SH0 39355SH0
+  - New: Bồn cầu đặt sàn điện tử Sensia Arena GROHE
+🏷️  [CLEAN NAME] ID:1932
+  - Old: Bồn cầu 1 khối Eurosmart GROHE 39119001 39119001
+  - New: Bồn cầu 1 khối Eurosmart GROHE
+🏷️  [CLEAN NAME] ID:1933
+  - Old: Bồn cầu treo tường Eurosmart GROHE 39126001 39126001
+  - New: Bồn cầu treo tường Eurosmart GROHE
+🏷️  [CLEAN NAME] ID:1934
+  - Old: Bồn cầu treo tường Essence GROHE 3957100H 3957100H
+  - New: Bồn cầu treo tường Essence GROHE
+🏷️  [CLEAN NAME] ID:1935
+  - Old: Bồn cầu đặt sàn cảm ứng Sensia Arena GROHE 36492SH0 36492SH0
+  - New: Bồn cầu đặt sàn cảm ứng Sensia Arena GROHE
+🏷️  [CLEAN NAME] ID:1936
+  - Old: Bồn cầu 1 khối dòng Projectline GROHE 39316000 39316000
+  - New: Bồn cầu 1 khối dòng Projectline GROHE
+🏷️  [CLEAN NAME] ID:1937
+  - Old: Bồn cầu treo tường Eurocosmo GROHE 39296000 39296000
+  - New: Bồn cầu treo tường Eurocosmo GROHE
+🏷️  [CLEAN NAME] ID:1938
+  - Old: Bồn cầu treo tường Eurocube GROHE 39244000 39244000
+  - New: Bồn cầu treo tường Eurocube GROHE
+🏷️  [CLEAN NAME] ID:1939
+  - Old: Bồn cầu treo tường thông minh Sensia Arena GROHE 39354SH1 39354SH1
+  - New: Bồn cầu treo tường thông minh Sensia Arena GROHE
+📦 [MOVE -> PHỤ KIỆN] ID:1940
+  - Current: Két nước âm tường GROHE 38643001 38643001
+🏷️  [CLEAN NAME] ID:1940
+  - Old: Két nước âm tường GROHE 38643001 38643001
+  - New: Két nước âm tường GROHE
+📦 [MOVE -> PHỤ KIỆN] ID:1941
+  - Current: Két nước âm tường GROHE 39112001 39112001
+🏷️  [CLEAN NAME] ID:1941
+  - Old: Két nước âm tường GROHE 39112001 39112001
+  - New: Két nước âm tường GROHE
+📦 [MOVE -> THÂN CẦU] ID:1942
+  - Current: Thân bồn cầu 2 khối Euro Ceramic 3933800H 3933800H
+🏷️  [CLEAN NAME] ID:1942
+  - Old: Thân bồn cầu 2 khối Euro Ceramic 3933800H 3933800H
+  - New: Thân bồn cầu 2 khối Euro Ceramic
+🏷️  [CLEAN NAME] ID:1943
+  - Old: Bồn cầu treo tường Viglacera V901 V901
+  - New: Bồn cầu treo tường Viglacera
+🏷️  [CLEAN NAME] ID:1968
+  - Old: Bồn cầu đặt sàn nắp êm TOTO CW705ENJ (van xả trực tiếp) TOTO-CW705ENJ#W
+  - New: Bồn cầu đặt sàn nắp êm TOTO CW705ENJ (van xả trực tiếp)
+🏷️  [CLEAN NAME] ID:1969
+  - Old: Bồn cầu trẻ em đặt sàn TOTO CW425J (van xả trực tiếp) TOTO-CW425J#W
+  - New: Bồn cầu trẻ em đặt sàn TOTO CW425J (van xả trực tiếp)
+🏷️  [CLEAN NAME] ID:1970
+  - Old: Bồn cầu đặt sàn Caesar CP1333 nắp thường (van xả trực tiếp) CP1333
+  - New: Bồn cầu đặt sàn Caesar CP1333 nắp thường (van xả trực tiếp)
+🏷️  [CLEAN NAME] ID:1971
+  - Old: Bồn cầu đặt sàn American Standard VF-2141P (VF2141P) nắp êm VF-2141P
+  - New: Bồn cầu đặt sàn American Standard VF-2141P nắp êm
+🏷️  [CLEAN NAME] ID:1972
+  - Old: Bồn cầu đặt sàn American Standard 3229B-WT (3229BWT) (chưa gồm nắp) 3229B-WT
+  - New: Bồn cầu đặt sàn American Standard 3229B-WT (chưa gồm nắp)
+🏷️  [CLEAN NAME] ID:1973
+  - Old: Bồn cầu đặt sàn COTTO C1320 nắp êm dòng Simply Modish C1320
+  - New: Bồn cầu đặt sàn COTTO C1320 nắp êm dòng Simply Modish
+🏷️  [CLEAN NAME] ID:1974
+  - Old: Bồn cầu đặt sàn COTTO C1322 nắp êm dòng Munich II C1322
+  - New: Bồn cầu đặt sàn COTTO C1322 nắp êm dòng Munich II
+🏷️  [CLEAN NAME] ID:1975
+  - Old: Bồn cầu đặt sàn COTTO C1322BI nắp êm dòng Munich II C1322BI
+  - New: Bồn cầu đặt sàn COTTO C1322BI nắp êm dòng Munich II
+📦 [MOVE -> THÂN CẦU] ID:1981
+  - Current: Thân bồn cầu đặt sàn Euro Ceramic GROHE 39339000 39339000
+🏷️  [CLEAN NAME] ID:1981
+  - Old: Thân bồn cầu đặt sàn Euro Ceramic GROHE 39339000 39339000
+  - New: Thân bồn cầu đặt sàn Euro Ceramic GROHE
+🏷️  [CLEAN NAME] ID:1982
+  - Old: Bồn cầu đặt sàn COTTO C1323 van xả trực tiếp Duble nắp đóng êm C1323
+  - New: Bồn cầu đặt sàn COTTO C1323 van xả trực tiếp Duble nắp đóng êm
+📦 [MOVE -> THÂN CẦU] ID:1983
+  - Current: Thân bồn cầu đặt sàn Euro Ceramic GROHE 3933900H 3933900H
+🏷️  [CLEAN NAME] ID:1983
+  - Old: Thân bồn cầu đặt sàn Euro Ceramic GROHE 3933900H 3933900H
+  - New: Thân bồn cầu đặt sàn Euro Ceramic GROHE
+📦 [MOVE -> THÂN CẦU] ID:1984
+  - Current: Thân bồn cầu đặt sàn Cube Ceramic GROHE 3948500H 3948500H
+🏷️  [CLEAN NAME] ID:1984
+  - Old: Thân bồn cầu đặt sàn Cube Ceramic GROHE 3948500H 3948500H
+  - New: Thân bồn cầu đặt sàn Cube Ceramic GROHE
+📦 [MOVE -> THÂN CẦU] ID:1985
+  - Current: Thân bồn cầu đặt sàn Essence GROHE 3957300H 3957300H
+🏷️  [CLEAN NAME] ID:1985
+  - Old: Thân bồn cầu đặt sàn Essence GROHE 3957300H 3957300H
+  - New: Thân bồn cầu đặt sàn Essence GROHE
+📦 [MOVE -> PHỤ KIỆN] ID:1986
+  - Current: Nút nhấn xả Arena Cosmopolitan GROHE 38844000 38844000
+🏷️  [CLEAN NAME] ID:1986
+  - Old: Nút nhấn xả Arena Cosmopolitan GROHE 38844000 38844000
+  - New: Nút nhấn xả Arena Cosmopolitan GROHE
+📦 [MOVE -> PHỤ KIỆN] ID:1987
+  - Current: Van khóa nước GROHE 22037000 22037000
+🏷️  [CLEAN NAME] ID:1987
+  - Old: Van khóa nước GROHE 22037000 22037000
+  - New: Van khóa nước GROHE
+🏷️  [CLEAN NAME] ID:1988
+  - Old: Van khoá 1 đường nước GROHE 2201600M 2201600M
+  - New: Van khoá 1 đường nước GROHE
+🏷️  [CLEAN NAME] ID:1989
+  - Old: Van chia nước chữ t 2 đường nước Caesar BF403T BF403T
+  - New: Van chia nước chữ t 2 đường nước Caesar
+📦 [MOVE -> PHỤ KIỆN] ID:1990
+  - Current: Ống nối thoát ngang American Standard VPTL-3815 (VPTL3815) VPTL-3815
+🏷️  [CLEAN NAME] ID:1990
+  - Old: Ống nối thoát ngang American Standard VPTL-3815 (VPTL3815) VPTL-3815
+  - New: Ống nối thoát ngang American Standard VPTL-3815
+🏷️  [CLEAN NAME] ID:1992
+  - Old: Van vặn khoá chữ T INAX A-703-7 (A7037) A-703-7
+  - New: Van vặn khoá chữ T INAX A-703-7
+📦 [MOVE -> PHỤ KIỆN] ID:1993
+  - Current: Ống nối thoát sàn TOTO T53P100VR T53P100VR
+🏷️  [CLEAN NAME] ID:1993
+  - Old: Ống nối thoát sàn TOTO T53P100VR T53P100VR
+  - New: Ống nối thoát sàn TOTO
+📦 [MOVE -> NẮP] ID:1994
+  - Current: Nắp đậy nút xả TOTO MB170P MB170P#WH
+🏷️  [CLEAN NAME] ID:1994
+  - Old: Nắp đậy nút xả TOTO MB170P MB170P#WH
+  - New: Nắp đậy nút xả TOTO MB170P
+📦 [MOVE -> NẮP] ID:1995
+  - Current: Nắp đậy nút xả TOTO MB174P MB174P#WH
+🏷️  [CLEAN NAME] ID:1995
+  - Old: Nắp đậy nút xả TOTO MB174P MB174P#WH
+  - New: Nắp đậy nút xả TOTO MB174P
+📦 [MOVE -> NẮP] ID:1996
+  - Current: Nắp đậy nút xả TOTO MB176G MB176G#WH
+🏷️  [CLEAN NAME] ID:1996
+  - Old: Nắp đậy nút xả TOTO MB176G MB176G#WH
+  - New: Nắp đậy nút xả TOTO MB176G
+📦 [MOVE -> NẮP] ID:1997
+  - Current: Nắp đậy nút xả TOTO MB171M MB171M#SS
+🏷️  [CLEAN NAME] ID:1997
+  - Old: Nắp đậy nút xả TOTO MB171M MB171M#SS
+  - New: Nắp đậy nút xả TOTO MB171M
+📦 [MOVE -> NẮP] ID:1998
+  - Current: Nắp đậy nút xả thép không gỉ TOTO MB175M MB175M#SS
+🏷️  [CLEAN NAME] ID:1998
+  - Old: Nắp đậy nút xả thép không gỉ TOTO MB175M MB175M#SS
+  - New: Nắp đậy nút xả thép không gỉ TOTO MB175M
+📦 [MOVE -> PHỤ KIỆN] ID:1999
+  - Current: Dây cấp nước 40cm INAX A-701-7 (A7017) A-701-7
+🏷️  [CLEAN NAME] ID:1999
+  - Old: Dây cấp nước 40cm INAX A-701-7 (A7017) A-701-7
+  - New: Dây cấp nước 40cm INAX A-701-7
+📦 [MOVE -> PHỤ KIỆN] ID:2000
+  - Current: Gioăng nối tường INAX UF-104BWP (UF104BWP)(VU) UF-104BWP(VU)
+📦 [MOVE -> PHỤ KIỆN] ID:2001
+  - Current: Gioăng nối tường INAX UF-13AWP (UF13AWP)(VU) UF-13AWP(VU)
+🏷️  [CLEAN NAME] ID:3016
+  - Old: Bồn cầu 1 khối MOEN SW0182C nắp êm SW0182C
+  - New: Bồn cầu 1 khối MOEN SW0182C nắp êm
+🏷️  [CLEAN NAME] ID:3017
+  - Old: Bồn cầu 1 khối MOEN SW0142C nắp êm SW0142C
+  - New: Bồn cầu 1 khối MOEN SW0142C nắp êm
+🏷️  [CLEAN NAME] ID:3018
+  - Old: Bồn cầu 1 khối MOEN SW0154C nắp êm SW0154C
+  - New: Bồn cầu 1 khối MOEN SW0154C nắp êm
+📦 [MOVE -> PHỤ KIỆN] ID:3019
+  - Current: Két nước âm tường MOEN SW8001C SW8001C
+🏷️  [CLEAN NAME] ID:3019
+  - Old: Két nước âm tường MOEN SW8001C SW8001C
+  - New: Két nước âm tường MOEN
+🏷️  [CLEAN NAME] ID:3020
+  - Old: Bồn cầu treo tường MOEN SW0313PO nắp êm SW0313PO
+  - New: Bồn cầu treo tường MOEN SW0313PO nắp êm
+🏷️  [CLEAN NAME] ID:3021
+  - Old: Bồn cầu 1 khối MOEN SW0116C nắp êm SW0116C
+  - New: Bồn cầu 1 khối MOEN SW0116C nắp êm
+🏷️  [CLEAN NAME] ID:3022
+  - Old: Bồn cầu điện tử thông minh Fascination MOEN SW1093C SW1093C
+  - New: Bồn cầu điện tử thông minh Fascination MOEN
+🏷️  [CLEAN NAME] ID:3023
+  - Old: Bồn cầu điện tử treo tường MOEN SW1071P0 SW1071P0
+  - New: Bồn cầu điện tử treo tường MOEN
+🏷️  [CLEAN NAME] ID:3024
+  - Old: Bàn cầu điện tử WALDEN MOEN HKSW1291C HKSW1291C
+  - New: Bàn cầu điện tử WALDEN MOEN
+🏷️  [CLEAN NAME] ID:3025
+  - Old: Bàn cầu điện tử MOEN POLARIS MOEN HKSW1361C HKSW1361C
+  - New: Bàn cầu điện tử MOEN POLARIS MOEN
+🏷️  [CLEAN NAME] ID:3026
+  - Old: Bồn cầu 1 khối COTTO C110517 nắp êm dòng Harmony C110517
+  - New: Bồn cầu 1 khối COTTO C110517 nắp êm dòng Harmony
+🏷️  [CLEAN NAME] ID:3027
+  - Old: Bồn cầu 2 khối COTTO C135137 nắp êm dòng Hercules Curve C135137
+  - New: Bồn cầu 2 khối COTTO C135137 nắp êm dòng Hercules Curve
+🏷️  [CLEAN NAME] ID:3028
+  - Old: Bồn cầu 2 khối COTTO C126227 nắp êm dòng Mood C126227
+  - New: Bồn cầu 2 khối COTTO C126227 nắp êm dòng Mood
+🏷️  [CLEAN NAME] ID:3029
+  - Old: Bồn cầu 2 khối COTTO C167517 nắp êm dòng Harmony C167517
+  - New: Bồn cầu 2 khối COTTO C167517 nắp êm dòng Harmony
+🏷️  [CLEAN NAME] ID:3030
+  - Old: Bồn cầu 2 khối COTTO C125337 nắp êm dòng Simply Connect C125337
+  - New: Bồn cầu 2 khối COTTO C125337 nắp êm dòng Simply Connect
+🏷️  [CLEAN NAME] ID:3031
+  - Old: Bồn cầu 1 khối COTTO C103357 nắp êm dòng Simply Connect C103357
+  - New: Bồn cầu 1 khối COTTO C103357 nắp êm dòng Simply Connect
+🏷️  [CLEAN NAME] ID:3032
+  - Old: Bồn cầu 1 khối COTTO C100207 nắp êm dòng Oval C100207
+  - New: Bồn cầu 1 khối COTTO C100207 nắp êm dòng Oval
+🏷️  [CLEAN NAME] ID:3033
+  - Old: Bồn cầu 1 khối COTTO C103327 nắp êm dòng Simply Connect C103327
+  - New: Bồn cầu 1 khối COTTO C103327 nắp êm dòng Simply Connect
+🏷️  [CLEAN NAME] ID:3034
+  - Old: Bồn cầu 1 khối COTTO C110507 nắp êm dòng Harmony C110507
+  - New: Bồn cầu 1 khối COTTO C110507 nắp êm dòng Harmony
+🏷️  [CLEAN NAME] ID:3035
+  - Old: Bồn cầu 1 khối COTTO C10147 nắp êm dòng Thantara C10147
+  - New: Bồn cầu 1 khối COTTO C10147 nắp êm dòng Thantara
+🏷️  [CLEAN NAME] ID:3036
+  - Old: Bồn cầu 1 khối COTTO C102807 nắp êm dòng Skive C102807
+  - New: Bồn cầu 1 khối COTTO C102807 nắp êm dòng Skive
+🏷️  [CLEAN NAME] ID:3037
+  - Old: Bồn cầu 1 khối COTTO C1032MBK nắp êm dòng Simply Modish C1032MBK
+  - New: Bồn cầu 1 khối COTTO C1032MBK nắp êm dòng Simply Modish
+🏷️  [CLEAN NAME] ID:3038
+  - Old: Bồn cầu 1 khối COTTO C10347 nắp êm dòng Pause C10347
+  - New: Bồn cầu 1 khối COTTO C10347 nắp êm dòng Pause
+🏷️  [CLEAN NAME] ID:3039
+  - Old: Bồn cầu 1 khối COTTO C10357 nắp êm dòng Veranda C10357
+  - New: Bồn cầu 1 khối COTTO C10357 nắp êm dòng Veranda
+🏷️  [CLEAN NAME] ID:3040
+  - Old: Bồn cầu 1 khối COTTO C105257 nắp êm dòng Riviera Pro C105257
+  - New: Bồn cầu 1 khối COTTO C105257 nắp êm dòng Riviera Pro
+🏷️  [CLEAN NAME] ID:3041
+  - Old: Bồn cầu 1 khối COTTO C1053 nắp êm dòng Micc C1053
+  - New: Bồn cầu 1 khối COTTO C1053 nắp êm dòng Micc
+🏷️  [CLEAN NAME] ID:3042
+  - Old: Bồn cầu 1 khối COTTO C1015 nắp êm dòng Macc C1015
+  - New: Bồn cầu 1 khối COTTO C1015 nắp êm dòng Macc
+🏷️  [CLEAN NAME] ID:3043
+  - Old: Bồn cầu 1 khối COTTO C105407 nắp êm dòng Valento C105407
+  - New: Bồn cầu 1 khối COTTO C105407 nắp êm dòng Valento
+🏷️  [CLEAN NAME] ID:3044
+  - Old: Bồn cầu 1 khối COTTO C105507 nắp êm dòng Mood C105507
+  - New: Bồn cầu 1 khối COTTO C105507 nắp êm dòng Mood
+🏷️  [CLEAN NAME] ID:3045
+  - Old: Bồn cầu 1 khối COTTO C1142 nắp êm dòng Priz II C1142
+  - New: Bồn cầu 1 khối COTTO C1142 nắp êm dòng Priz II
+🏷️  [CLEAN NAME] ID:3046
+  - Old: Bồn cầu điện tử thông minh American Standard WP-70DY (WP70DY) WP-70DY
+  - New: Bồn cầu điện tử thông minh American Standard WP-70DY
+🏷️  [CLEAN NAME] ID:3047
+  - Old: Bồn cầu điện tử thông minh American Standard KP-8310 (KP8310) dòng PLAT KP-8310
+  - New: Bồn cầu điện tử thông minh American Standard KP-8310 dòng PLAT
+🏷️  [CLEAN NAME] ID:3048
+  - Old: Bồn cầu 1 khối American Standard VF-1808PL (VF1808PL) nắp điện tử VF-1808PL
+  - New: Bồn cầu 1 khối American Standard VF-1808PL nắp điện tử
+🏷️  [CLEAN NAME] ID:3049
+  - Old: Bồn cầu 1 khối American Standard VF-1808TPR (VF1808TPR) nắp điện tử VF-1808TPR
+  - New: Bồn cầu 1 khối American Standard VF-1808TPR nắp điện tử
+🏷️  [CLEAN NAME] ID:3050
+  - Old: Bồn cầu 1 khối American Standard VF-1808TPL (VF1808TPL) nắp điện tử VF-1808TPL
+  - New: Bồn cầu 1 khối American Standard VF-1808TPL nắp điện tử
+🏷️  [CLEAN NAME] ID:3051
+  - Old: Bồn cầu 1 khối American Standard VF-2010PR (VF2010PR) nắp điện tử VF-2010PR
+  - New: Bồn cầu 1 khối American Standard VF-2010PR nắp điện tử
+🏷️  [CLEAN NAME] ID:3052
+  - Old: Bồn cầu 1 khối American Standard VF-1808PR (VF1808PR) nắp điện tử VF-1808PR
+  - New: Bồn cầu 1 khối American Standard VF-1808PR nắp điện tử
+🏷️  [CLEAN NAME] ID:3053
+  - Old: Bồn cầu 1 khối American Standard VF-2011PL (VF2011PL) nắp điện tử VF-2011PL
+  - New: Bồn cầu 1 khối American Standard VF-2011PL nắp điện tử
+🏷️  [CLEAN NAME] ID:3054
+  - Old: Bồn cầu 1 khối American Standard VF-2011PR (VF2011PR) nắp điện tử VF-2011PR
+  - New: Bồn cầu 1 khối American Standard VF-2011PR nắp điện tử
+🏷️  [CLEAN NAME] ID:3055
+  - Old: Bồn cầu 1 khối American Standard VF-2010PL (VF2010PL) nắp điện tử VF-2010PL
+  - New: Bồn cầu 1 khối American Standard VF-2010PL nắp điện tử
+🏷️  [CLEAN NAME] ID:3056
+  - Old: Bồn cầu 1 khối American Standard VF-1858PL (VF1858PL) nắp điện tử VF-1858PL
+  - New: Bồn cầu 1 khối American Standard VF-1858PL nắp điện tử
+🏷️  [CLEAN NAME] ID:3057
+  - Old: Bồn cầu 1 khối American Standard VF-1858PR (VF1858PR) nắp điện tử VF-1858PR
+  - New: Bồn cầu 1 khối American Standard VF-1858PR nắp điện tử
+🏷️  [CLEAN NAME] ID:3058
+  - Old: Bồn cầu 1 khối American Standard WP-2025PL (WP2025PL) nắp điện tử WP-2025PL
+  - New: Bồn cầu 1 khối American Standard WP-2025PL nắp điện tử
+🏷️  [CLEAN NAME] ID:3059
+  - Old: Bồn cầu 1 khối American Standard WP-2025PR (WP2025PR) nắp điện tử WP-2025PR
+  - New: Bồn cầu 1 khối American Standard WP-2025PR nắp điện tử
+🏷️  [CLEAN NAME] ID:3060
+  - Old: Bồn cầu 1 khối American Standard WP-1880PL (WP1880PL) nắp điện tử WP-1880PL
+  - New: Bồn cầu 1 khối American Standard WP-1880PL nắp điện tử
+🏷️  [CLEAN NAME] ID:3061
+  - Old: Bồn cầu 1 khối American Standard WP-1880PR (WP1880PR) nắp điện tử WP-1880PR
+  - New: Bồn cầu 1 khối American Standard WP-1880PR nắp điện tử
+🏷️  [CLEAN NAME] ID:3062
+  - Old: Bồn cầu điện tử thông minh American Standard KP-8312 (KP8312) dòng PLAT KP-8312
+  - New: Bồn cầu điện tử thông minh American Standard KP-8312 dòng PLAT
+🏷️  [CLEAN NAME] ID:3063
+  - Old: Bồn cầu 1 khối American Standard VF-1862PL (VF1862PL) nắp điện tử VF-1862PL
+  - New: Bồn cầu 1 khối American Standard VF-1862PL nắp điện tử
+🏷️  [CLEAN NAME] ID:3064
+  - Old: Bồn cầu treo tường American Standard VF-3119 (VF3119) nắp êm dòng Acacia Evolution VF-3119
+  - New: Bồn cầu treo tường American Standard VF-3119 nắp êm dòng Acacia Evolution
+🏷️  [CLEAN NAME] ID:3065
+  - Old: Bồn cầu treo tường American Standard WP-2140 (WP2140) nắp êm dòng Signature WP-2140
+  - New: Bồn cầu treo tường American Standard WP-2140 nắp êm dòng Signature
+🏷️  [CLEAN NAME] ID:3066
+  - Old: Bồn cầu treo tường American Standard WP-2131 (WP2131) nắp êm dòng Kastello Square WP-2131
+  - New: Bồn cầu treo tường American Standard WP-2131 nắp êm dòng Kastello Square
+🏷️  [CLEAN NAME] ID:3067
+  - Old: Bồn cầu treo tường American Standard VF-3119E (VF3119E) nắp êm dòng Acacia SupaSleek VF-3119E
+  - New: Bồn cầu treo tường American Standard VF-3119E nắp êm dòng Acacia SupaSleek
+🏷️  [CLEAN NAME] ID:3068
+  - Old: Bồn cầu treo tường nắp điện tử thông minh dòng Aero-Lite American Standard 1073919990 (103032BL00+103026SH00) 1073919990
+  - New: Bồn cầu treo tường nắp điện tử thông minh dòng Aero-Lite American Standard 1073919990 (103032BL00+103026SH00)
+🏷️  [CLEAN NAME] ID:3069
+  - Old: Bồn cầu treo tường American Standard WP-2265 (WP2265) nắp êm dòng Loven WP-2265
+  - New: Bồn cầu treo tường American Standard WP-2265 nắp êm dòng Loven
+🏷️  [CLEAN NAME] ID:3070
+  - Old: Bồn cầu 2 khối American Standard 2622-WT (2622WT) nắp êm dòng Signature 2622-WT
+  - New: Bồn cầu 2 khối American Standard 2622-WT nắp êm dòng Signature
+🏷️  [CLEAN NAME] ID:3071
+  - Old: Bồn cầu 2 khối American Standard 2309-WT (2309WT) nắp êm dòng Cygnet 2309-WT
+  - New: Bồn cầu 2 khối American Standard 2309-WT nắp êm dòng Cygnet
+🏷️  [CLEAN NAME] ID:3072
+  - Old: Bồn cầu 2 khối American Standard 2630-WT (2630WT) nắp êm dòng Neo Modern 2630-WT
+  - New: Bồn cầu 2 khối American Standard 2630-WT nắp êm dòng Neo Modern
+🏷️  [CLEAN NAME] ID:3073
+  - Old: Bồn cầu 2 khối American Standard VF-2719 (VF2719) nắp êm VF-2719
+  - New: Bồn cầu 2 khối American Standard VF-2719 nắp êm
+🏷️  [CLEAN NAME] ID:3074
+  - Old: Bồn cầu 2 khối American Standard VF-2013 (VF2013) nắp êm VF-2013
+  - New: Bồn cầu 2 khối American Standard VF-2013 nắp êm
+🏷️  [CLEAN NAME] ID:3075
+  - Old: Bồn cầu 2 khối American Standard VF-2397 (VF2397) nắp thường dòng Winplus+ VF-2397
+  - New: Bồn cầu 2 khối American Standard VF-2397 nắp thường dòng Winplus+
+🏷️  [CLEAN NAME] ID:3076
+  - Old: Bồn cầu 2 khối American Standard VF-2398 (VF2398) nắp thường VF-2398
+  - New: Bồn cầu 2 khối American Standard VF-2398 nắp thường
+🏷️  [CLEAN NAME] ID:3077
+  - Old: Bồn cầu 2 khối American Standard VF-2397SL (VF2397SL) nắp êm dòng Winplus+ VF-2397SL
+  - New: Bồn cầu 2 khối American Standard VF-2397SL nắp êm dòng Winplus+
+🏷️  [CLEAN NAME] ID:3078
+  - Old: Bồn cầu 2 khối American Standard VF-2398SL (VF2398SL) nắp êm VF-2398SL
+  - New: Bồn cầu 2 khối American Standard VF-2398SL nắp êm
+🏷️  [CLEAN NAME] ID:3079
+  - Old: Bồn cầu 2 khối American Standard VF-2719S (VF2719S) nắp rửa cơ Slim VF-2719S
+  - New: Bồn cầu 2 khối American Standard VF-2719S nắp rửa cơ Slim
+🏷️  [CLEAN NAME] ID:3080
+  - Old: Bồn cầu 2 khối American Standard VF-2013S (VF2013S) nắp rửa cơ Slim VF-2013S
+  - New: Bồn cầu 2 khối American Standard VF-2013S nắp rửa cơ Slim
+🏷️  [CLEAN NAME] ID:3081
+  - Old: Bồn cầu 2 khối American Standard VF-2397S (VF2397S) nắp rửa cơ Slim VF-2397S
+  - New: Bồn cầu 2 khối American Standard VF-2397S nắp rửa cơ Slim
+🏷️  [CLEAN NAME] ID:3082
+  - Old: Bồn cầu 2 khối American Standard VF-2397S3 (VF2397S3) nắp rửa cơ Slim 3 VF-2397S3
+  - New: Bồn cầu 2 khối American Standard VF-2397S3 nắp rửa cơ Slim 3
+🏷️  [CLEAN NAME] ID:3083
+  - Old: Bồn cầu 2 khối American Standard VF-2162 (VF2162) nắp êm dòng Loven VF-2162
+  - New: Bồn cầu 2 khối American Standard VF-2162 nắp êm dòng Loven
+🏷️  [CLEAN NAME] ID:3084
+  - Old: Bồn cầu 2 khối American Standard VF-2397SW (VF2397SW) nắp rửa cơ M4A839 VF-2397SW
+  - New: Bồn cầu 2 khối American Standard VF-2397SW nắp rửa cơ M4A839
+🏷️  [CLEAN NAME] ID:3085
+  - Old: Bồn cầu 2 khối American Standard VF-2162S (VF2162S) nắp rửa cơ Slim VF-2162S
+  - New: Bồn cầu 2 khối American Standard VF-2162S nắp rửa cơ Slim
+📦 [MOVE -> NẮP] ID:3086
+  - Current: Nắp điện tử American Standard WP-7SR1 (WP7SR1) WP-7SR1
+🏷️  [CLEAN NAME] ID:3086
+  - Old: Nắp điện tử American Standard WP-7SR1 (WP7SR1) WP-7SR1
+  - New: Nắp điện tử American Standard WP-7SR1
+📦 [MOVE -> NẮP] ID:3087
+  - Current: Nắp bồn cầu đóng êm American Standard 491000S-WT (2530-WT, VF-2530, 2407-WT) 491000S-WT
+🏷️  [CLEAN NAME] ID:3087
+  - Old: Nắp bồn cầu đóng êm American Standard 491000S-WT (2530-WT, VF-2530, 2407-WT) 491000S-WT
+  - New: Nắp bồn cầu đóng êm American Standard 491000S-WT (2530-WT, VF-2530, 2407-WT)
+📦 [MOVE -> NẮP] ID:3088
+  - Current: Nắp bồn cầu đóng êm American Standard SCCNI1518S-WT (VF-2010, VF-2011) SCCNI1518S-WT
+🏷️  [CLEAN NAME] ID:3088
+  - Old: Nắp bồn cầu đóng êm American Standard SCCNI1518S-WT (VF-2010, VF-2011) SCCNI1518S-WT
+  - New: Nắp bồn cầu đóng êm American Standard SCCNI1518S-WT (VF-2010, VF-2011)
+📦 [MOVE -> NẮP] ID:3089
+  - Current: Nắp bồn cầu đóng êm American Standard SCVN4800-WT (VF-2397SL, VF-2398SL) SCVN4800-WT
+🏷️  [CLEAN NAME] ID:3089
+  - Old: Nắp bồn cầu đóng êm American Standard SCVN4800-WT (VF-2397SL, VF-2398SL) SCVN4800-WT
+  - New: Nắp bồn cầu đóng êm American Standard SCVN4800-WT (VF-2397SL, VF-2398SL)
+📦 [MOVE -> NẮP] ID:3090
+  - Current: Nắp bồn cầu đóng êm American Standard WP-C025 (WP-2025) WP-C025
+🏷️  [CLEAN NAME] ID:3090
+  - Old: Nắp bồn cầu đóng êm American Standard WP-C025 (WP-2025) WP-C025
+  - New: Nắp bồn cầu đóng êm American Standard WP-C025 (WP-2025)
+📦 [MOVE -> NẮP] ID:3091
+  - Current: Nắp bồn cầu đóng êm American Standard WP-C119S (WP-1880, 2622-WT) WP-C119S
+🏷️  [CLEAN NAME] ID:3091
+  - Old: Nắp bồn cầu đóng êm American Standard WP-C119S (WP-1880, 2622-WT) WP-C119S
+  - New: Nắp bồn cầu đóng êm American Standard WP-C119S (WP-1880, 2622-WT)
+📦 [MOVE -> NẮP] ID:3092
+  - Current: Nắp bồn cầu đóng êm American Standard SCVN4900S-WT (VF-2013) SCVN4900S-WT
+🏷️  [CLEAN NAME] ID:3092
+  - Old: Nắp bồn cầu đóng êm American Standard SCVN4900S-WT (VF-2013) SCVN4900S-WT
+  - New: Nắp bồn cầu đóng êm American Standard SCVN4900S-WT (VF-2013)
+📦 [MOVE -> NẮP] ID:3093
+  - Current: Nắp bồn cầu đóng êm American Standard WP-C630 (WP-2073) WP-C630
+🏷️  [CLEAN NAME] ID:3093
+  - Old: Nắp bồn cầu đóng êm American Standard WP-C630 (WP-2073) WP-C630
+  - New: Nắp bồn cầu đóng êm American Standard WP-C630 (WP-2073)
+📦 [MOVE -> NẮP] ID:3095
+  - Current: Nắp bồn cầu đóng êm American Standard CTSS1858-1M (VF-1858) CTSS1858-1M
+🏷️  [CLEAN NAME] ID:3095
+  - Old: Nắp bồn cầu đóng êm American Standard CTSS1858-1M (VF-1858) CTSS1858-1M
+  - New: Nắp bồn cầu đóng êm American Standard CTSS1858-1M (VF-1858)
+📦 [MOVE -> NẮP] ID:3097
+  - Current: Nắp bồn cầu đóng êm American Standard WP-C630S (WP-1880N) WP-C630S
+🏷️  [CLEAN NAME] ID:3097
+  - Old: Nắp bồn cầu đóng êm American Standard WP-C630S (WP-1880N) WP-C630S
+  - New: Nắp bồn cầu đóng êm American Standard WP-C630S (WP-1880N)
+📦 [MOVE -> NẮP] ID:3098
+  - Current: Nắp bồn cầu American Standard SCVN4500-WT (VF-2397, VF-2398) SCVN4500-WT
+🏷️  [CLEAN NAME] ID:3098
+  - Old: Nắp bồn cầu American Standard SCVN4500-WT (VF-2397, VF-2398) SCVN4500-WT
+  - New: Nắp bồn cầu American Standard SCVN4500-WT (VF-2397, VF-2398)
+📦 [MOVE -> NẮP] ID:3099
+  - Current: Nắp bồn cầu đóng êm American Standard WP-C162 (VF-1862, VF-1863, VF-2162) WP-C162
+🏷️  [CLEAN NAME] ID:3099
+  - Old: Nắp bồn cầu đóng êm American Standard WP-C162 (VF-1862, VF-1863, VF-2162) WP-C162
+  - New: Nắp bồn cầu đóng êm American Standard WP-C162 (VF-1862, VF-1863, VF-2162)
+📦 [MOVE -> NẮP] ID:3100
+  - Current: Nắp bồn cầu đóng êm Caesar M233 M233
+🏷️  [CLEAN NAME] ID:3100
+  - Old: Nắp bồn cầu đóng êm Caesar M233 M233
+  - New: Nắp bồn cầu đóng êm Caesar
+📦 [MOVE -> NẮP] ID:3101
+  - Current: Nắp bồn cầu đóng êm Caesar M260 M260
+🏷️  [CLEAN NAME] ID:3101
+  - Old: Nắp bồn cầu đóng êm Caesar M260 M260
+  - New: Nắp bồn cầu đóng êm Caesar
+📦 [MOVE -> NẮP] ID:3102
+  - Current: Nắp bồn cầu đóng êm Caesar MU263 MU263
+🏷️  [CLEAN NAME] ID:3102
+  - Old: Nắp bồn cầu đóng êm Caesar MU263 MU263
+  - New: Nắp bồn cầu đóng êm Caesar
+📦 [MOVE -> NẮP] ID:3103
+  - Current: Nắp bồn cầu đóng êm Caesar M245 M245
+🏷️  [CLEAN NAME] ID:3103
+  - Old: Nắp bồn cầu đóng êm Caesar M245 M245
+  - New: Nắp bồn cầu đóng êm Caesar
+📦 [MOVE -> NẮP] ID:3104
+  - Current: Nắp rửa điện tử COTTO C9201 C9201
+🏷️  [CLEAN NAME] ID:3104
+  - Old: Nắp rửa điện tử COTTO C9201 C9201
+  - New: Nắp rửa điện tử COTTO
+📦 [MOVE -> NẮP] ID:3105
+  - Current: Nắp rửa điện tử COTTO C9203 C9203
+🏷️  [CLEAN NAME] ID:3105
+  - Old: Nắp rửa điện tử COTTO C9203 C9203
+  - New: Nắp rửa điện tử COTTO
+📦 [MOVE -> NẮP] ID:3106
+  - Current: Nắp rửa điện tử COTTO C9204 C9204
+🏷️  [CLEAN NAME] ID:3106
+  - Old: Nắp rửa điện tử COTTO C9204 C9204
+  - New: Nắp rửa điện tử COTTO
+📦 [MOVE -> NẮP] ID:3107
+  - Current: Nắp bàn cầu đóng êm COTTO C91542 C91542
+🏷️  [CLEAN NAME] ID:3107
+  - Old: Nắp bàn cầu đóng êm COTTO C91542 C91542
+  - New: Nắp bàn cầu đóng êm COTTO
+📦 [MOVE -> NẮP] ID:3108
+  - Current: Nắp bàn cầu đóng êm COTTO C90801 C90801
+🏷️  [CLEAN NAME] ID:3108
+  - Old: Nắp bàn cầu đóng êm COTTO C90801 C90801
+  - New: Nắp bàn cầu đóng êm COTTO
+📦 [MOVE -> NẮP] ID:3109
+  - Current: Nắp bàn cầu đóng êm COTTO C91831 C91831
+🏷️  [CLEAN NAME] ID:3109
+  - Old: Nắp bàn cầu đóng êm COTTO C91831 C91831
+  - New: Nắp bàn cầu đóng êm COTTO
+📦 [MOVE -> NẮP] ID:3110
+  - Current: Nắp bàn cầu đóng êm COTTO C9151 C9151
+🏷️  [CLEAN NAME] ID:3110
+  - Old: Nắp bàn cầu đóng êm COTTO C9151 C9151
+  - New: Nắp bàn cầu đóng êm COTTO
+📦 [MOVE -> NẮP] ID:3111
+  - Current: Nắp bàn cầu đóng êm COTTO C90804 C90804
+🏷️  [CLEAN NAME] ID:3111
+  - Old: Nắp bàn cầu đóng êm COTTO C90804 C90804
+  - New: Nắp bàn cầu đóng êm COTTO
+📦 [MOVE -> NẮP] ID:3112
+  - Current: Nắp bàn cầu đóng êm COTTO C9154MBK C9154MBK
+🏷️  [CLEAN NAME] ID:3112
+  - Old: Nắp bàn cầu đóng êm COTTO C9154MBK C9154MBK
+  - New: Nắp bàn cầu đóng êm COTTO
+📦 [MOVE -> NẮP] ID:3113
+  - Current: Nắp bàn cầu đóng êm COTTO C91253 C91253
+🏷️  [CLEAN NAME] ID:3113
+  - Old: Nắp bàn cầu đóng êm COTTO C91253 C91253
+  - New: Nắp bàn cầu đóng êm COTTO
+📦 [MOVE -> NẮP] ID:3114
+  - Current: Nắp bàn cầu đóng êm COTTO C91620 C91620
+🏷️  [CLEAN NAME] ID:3114
+  - Old: Nắp bàn cầu đóng êm COTTO C91620 C91620
+  - New: Nắp bàn cầu đóng êm COTTO
+📦 [MOVE -> NẮP] ID:3115
+  - Current: Nắp bàn cầu đóng êm COTTO C9006 C9006
+🏷️  [CLEAN NAME] ID:3115
+  - Old: Nắp bàn cầu đóng êm COTTO C9006 C9006
+  - New: Nắp bàn cầu đóng êm COTTO
+🏷️  [CLEAN NAME] ID:3181
+  - Old: Bồn cầu điện tử thông minh dòng Verzo COTTO C10207 C10207
+  - New: Bồn cầu điện tử thông minh dòng Verzo COTTO
+🏷️  [CLEAN NAME] ID:3182
+  - Old: Bồn cầu điện tử thông minh dòng Optimum COTTO C10257 C10257
+  - New: Bồn cầu điện tử thông minh dòng Optimum COTTO
+🏷️  [CLEAN NAME] ID:3183
+  - Old: Bồn cầu thông minh dòng Vizio COTTO C10217 C10217
+  - New: Bồn cầu thông minh dòng Vizio COTTO
+📦 [MOVE -> NẮP] ID:3184
+  - Current: Nắp đóng êm INAX CF-952VS/BW1 CF-952VS/BW1
+🏷️  [CLEAN NAME] ID:3184
+  - Old: Nắp đóng êm INAX CF-952VS/BW1 CF-952VS/BW1
+  - New: Nắp đóng êm INAX CF-952VS/BW1
+📦 [MOVE -> NẮP] ID:3185
+  - Current: Nắp bồn cầu INAX CF-1008VS/BW1 CF-1008VS/BW1
+🏷️  [CLEAN NAME] ID:3185
+  - Old: Nắp bồn cầu INAX CF-1008VS/BW1 CF-1008VS/BW1
+  - New: Nắp bồn cầu INAX CF-1008VS/BW1
+📦 [MOVE -> NẮP] ID:3186
+  - Current: Nắp đóng êm INAX CF-800VS/BW1 CF-800VS/BW1
+🏷️  [CLEAN NAME] ID:3186
+  - Old: Nắp đóng êm INAX CF-800VS/BW1 CF-800VS/BW1
+  - New: Nắp đóng êm INAX CF-800VS/BW1
+📦 [MOVE -> NẮP] ID:3187
+  - Current: Nắp đóng êm INAX CF-918VS/BW1 CF-918VS/BW1
+🏷️  [CLEAN NAME] ID:3187
+  - Old: Nắp đóng êm INAX CF-918VS/BW1 CF-918VS/BW1
+  - New: Nắp đóng êm INAX CF-918VS/BW1
+📦 [MOVE -> NẮP] ID:3188
+  - Current: Nắp đóng êm INAX CF-600VS/BW1 CF-600VS/BW1
+🏷️  [CLEAN NAME] ID:3188
+  - Old: Nắp đóng êm INAX CF-600VS/BW1 CF-600VS/BW1
+  - New: Nắp đóng êm INAX CF-600VS/BW1
+📦 [MOVE -> NẮP] ID:3189
+  - Current: Nắp đóng êm INAX CF-900VS/BW1 CF-900VS/BW1
+🏷️  [CLEAN NAME] ID:3189
+  - Old: Nắp đóng êm INAX CF-900VS/BW1 CF-900VS/BW1
+  - New: Nắp đóng êm INAX CF-900VS/BW1
+📦 [MOVE -> NẮP] ID:3190
+  - Current: Nắp bồn cầu INAX CF-3003VS/BW1 CF-3003VS/BW1
+🏷️  [CLEAN NAME] ID:3190
+  - Old: Nắp bồn cầu INAX CF-3003VS/BW1 CF-3003VS/BW1
+  - New: Nắp bồn cầu INAX CF-3003VS/BW1
+🏷️  [CLEAN NAME] ID:3191
+  - Old: Bồn cầu 2 khối COTTO C16817 nắp êm dòng 3x3-E1 C16817
+  - New: Bồn cầu 2 khối COTTO C16817 nắp êm dòng 3x3-E1
+🏷️  [CLEAN NAME] ID:3192
+  - Old: Bồn cầu 2 khối COTTO C16897 nắp êm dòng 3x3-R3 C16897
+  - New: Bồn cầu 2 khối COTTO C16897 nắp êm dòng 3x3-R3
+🏷️  [CLEAN NAME] ID:3193
+  - Old: Bồn cầu 2 khối COTTO C17017 nắp êm dòng Space Solution C17017
+  - New: Bồn cầu 2 khối COTTO C17017 nắp êm dòng Space Solution
+🏷️  [CLEAN NAME] ID:3194
+  - Old: Bồn cầu 2 khối COTTO C135107 nắp êm dòng Hercules Curve C135107
+  - New: Bồn cầu 2 khối COTTO C135107 nắp êm dòng Hercules Curve
+🏷️  [CLEAN NAME] ID:3195
+  - Old: Bồn cầu 2 khối COTTO C12417 nắp êm dòng Simply Modish C12417
+  - New: Bồn cầu 2 khối COTTO C12417 nắp êm dòng Simply Modish
+🏷️  [CLEAN NAME] ID:3196
+  - Old: Bồn cầu 2 khối COTTO C125317 nắp êm dòng Simply Connect C125317
+  - New: Bồn cầu 2 khối COTTO C125317 nắp êm dòng Simply Connect
+🏷️  [CLEAN NAME] ID:3197
+  - Old: Bồn cầu 2 khối COTTO C126207 nắp êm dòng Mood C126207
+  - New: Bồn cầu 2 khối COTTO C126207 nắp êm dòng Mood
+🏷️  [CLEAN NAME] ID:3198
+  - Old: Bồn cầu 2 khối COTTO C167507 nắp êm dòng Harmony C167507
+  - New: Bồn cầu 2 khối COTTO C167507 nắp êm dòng Harmony
+🏷️  [CLEAN NAME] ID:3199
+  - Old: Bồn cầu 2 khối COTTO C17027 nắp êm dòng Space Solution C17027
+  - New: Bồn cầu 2 khối COTTO C17027 nắp êm dòng Space Solution
+🏷️  [CLEAN NAME] ID:3200
+  - Old: Bồn cầu 2 khối COTTO C13537 nắp êm dòng Riviera Pro C13537
+  - New: Bồn cầu 2 khối COTTO C13537 nắp êm dòng Riviera Pro
+🏷️  [CLEAN NAME] ID:3201
+  - Old: Bồn cầu 2 khối COTTO SC6657WH nắp êm dòng Forall SC6657WH
+  - New: Bồn cầu 2 khối COTTO SC6657WH nắp êm dòng Forall
+🏷️  [CLEAN NAME] ID:3202
+  - Old: Bồn cầu 2 khối COTTO SC6652WH nắp êm dòng Forall 40 SC6652WH
+  - New: Bồn cầu 2 khối COTTO SC6652WH nắp êm dòng Forall 40
+🏷️  [CLEAN NAME] ID:3203
+  - Old: Bồn cầu 2 khối COTTO C13330 nắp êm dòng Sella C13330
+  - New: Bồn cầu 2 khối COTTO C13330 nắp êm dòng Sella
+🏷️  [CLEAN NAME] ID:3204
+  - Old: Bồn cầu 1 khối COTTO C10717 nắp êm C10717
+  - New: Bồn cầu 1 khối COTTO C10717 nắp êm
+🏷️  [CLEAN NAME] ID:3205
+  - Old: Bồn cầu 1 khối COTTO C107127 nắp êm dòng Grand Tetragon C107127
+  - New: Bồn cầu 1 khối COTTO C107127 nắp êm dòng Grand Tetragon
+🏷️  [CLEAN NAME] ID:3206
+  - Old: Bồn cầu 1 khối COTTO C107147 nắp êm dòng Grand Tetragon C107147
+  - New: Bồn cầu 1 khối COTTO C107147 nắp êm dòng Grand Tetragon
+🏷️  [CLEAN NAME] ID:3207
+  - Old: Bồn cầu 1 khối COTTO C103257 nắp êm dòng Simply Modish C103257
+  - New: Bồn cầu 1 khối COTTO C103257 nắp êm dòng Simply Modish
+🏷️  [CLEAN NAME] ID:3210
+  - Old: Bồn cầu treo tường COTTO SC19337 nắp êm dòng Thantara SC19337
+  - New: Bồn cầu treo tường COTTO SC19337 nắp êm dòng Thantara
+🏷️  [CLEAN NAME] ID:3588
+  - Old: Bồn cầu 1 khối ATMOR AT271B màu đen nắp êm AT271B
+  - New: Bồn cầu 1 khối ATMOR AT271B màu đen nắp êm
+🏷️  [CLEAN NAME] ID:3589
+  - Old: Bồn cầu 1 khối ATMOR AT295B màu đen nắp êm AT295B
+  - New: Bồn cầu 1 khối ATMOR AT295B màu đen nắp êm
+🏷️  [CLEAN NAME] ID:3590
+  - Old: Bồn cầu 1 khối ATMOR AT1206 AT1206
+  - New: Bồn cầu 1 khối ATMOR
+🏷️  [CLEAN NAME] ID:3591
+  - Old: Bồn cầu 1 khối GROHE 115609 115609
+  - New: Bồn cầu 1 khối GROHE
+🏷️  [CLEAN NAME] ID:3592
+  - Old: Bồn cầu 1 khối Eurocosmo GROHE 39075001 39075001
+  - New: Bồn cầu 1 khối Eurocosmo GROHE
+🏷️  [CLEAN NAME] ID:3593
+  - Old: Bồn cầu 2 khối ATMOR AT8857 nắp êm xả nhấn AT8857
+  - New: Bồn cầu 2 khối ATMOR AT8857 nắp êm xả nhấn
+🏷️  [CLEAN NAME] ID:3594
+  - Old: Bồn cầu 2 khối INNOCENCE ATMOR S-1402.1/WT S-1402.1/WT
+  - New: Bồn cầu 2 khối INNOCENCE ATMOR S-1402.1/WT
+🏷️  [CLEAN NAME] ID:3595
+  - Old: Bồn cầu 2 khối ATMOR S-1407.1/WT S-1407.1/WT
+  - New: Bồn cầu 2 khối ATMOR S-1407.1/WT
+🏷️  [CLEAN NAME] ID:3596
+  - Old: Bồn cầu treo tường Caesar CPT1505 gồm két nước âm tường CPT1505
+  - New: Bồn cầu treo tường Caesar CPT1505 gồm két nước âm tường
+📦 [MOVE -> THÂN CẦU] ID:3597
+  - Current: Thân bồn cầu treo tường Euro Ceramic GROHE 39328000 39328000
+🏷️  [CLEAN NAME] ID:3597
+  - Old: Thân bồn cầu treo tường Euro Ceramic GROHE 39328000 39328000
+  - New: Thân bồn cầu treo tường Euro Ceramic GROHE
+📦 [MOVE -> THÂN CẦU] ID:3598
+  - Current: Thân cầu treo tường Euro Ceramic GROHE 3920600H 3920600H
+🏷️  [CLEAN NAME] ID:3598
+  - Old: Thân cầu treo tường Euro Ceramic GROHE 3920600H 3920600H
+  - New: Thân cầu treo tường Euro Ceramic GROHE
+🏷️  [CLEAN NAME] ID:3599
+  - Old: Bồn cầu treo tường thông minh IGINA GROHE 102915SH00 102915SH00
+  - New: Bồn cầu treo tường thông minh IGINA GROHE
+📦 [MOVE -> THÂN CẦU] ID:3600
+  - Current: Thân bồn cầu treo tường Euro Ceramic GROHE 100999SH00 100999SH00
+🏷️  [CLEAN NAME] ID:3600
+  - Old: Thân bồn cầu treo tường Euro Ceramic GROHE 100999SH00 100999SH00
+  - New: Thân bồn cầu treo tường Euro Ceramic GROHE
+📦 [MOVE -> THÂN CẦU] ID:3601
+  - Current: Thân bồn cầu treo tường Euro Ceramic GROHE 39206000 39206000
+🏷️  [CLEAN NAME] ID:3601
+  - Old: Thân bồn cầu treo tường Euro Ceramic GROHE 39206000 39206000
+  - New: Thân bồn cầu treo tường Euro Ceramic GROHE
+🏷️  [CLEAN NAME] ID:3602
+  - Old: Bồn cầu treo tường GROHE 3932100A 3932100A
+  - New: Bồn cầu treo tường GROHE
+📦 [MOVE -> THÂN CẦU] ID:3603
+  - Current: Thân bồn cầu treo tường Bau Ceramic GROHE 39427000 39427000
+🏷️  [CLEAN NAME] ID:3603
+  - Old: Thân bồn cầu treo tường Bau Ceramic GROHE 39427000 39427000
+  - New: Thân bồn cầu treo tường Bau Ceramic GROHE
+📦 [MOVE -> THÂN CẦU] ID:3604
+  - Current: Thân bồn cầu treo tường Euro Ceramic GROHE 3932800H 3932800H
+🏷️  [CLEAN NAME] ID:3604
+  - Old: Thân bồn cầu treo tường Euro Ceramic GROHE 3932800H 3932800H
+  - New: Thân bồn cầu treo tường Euro Ceramic GROHE
+📦 [MOVE -> THÂN CẦU] ID:3605
+  - Current: Thân bồn cầu treo tường Bau Ceramic GROHE 39929000 39929000
+🏷️  [CLEAN NAME] ID:3605
+  - Old: Thân bồn cầu treo tường Bau Ceramic GROHE 39929000 39929000
+  - New: Thân bồn cầu treo tường Bau Ceramic GROHE
+🏷️  [CLEAN NAME] ID:3606
+  - Old: Bồn cầu treo tường GROHE 39743000 39743000
+  - New: Bồn cầu treo tường GROHE
+🏷️  [CLEAN NAME] ID:3607
+  - Old: Bồn cầu treo tường thông minh IGINA GROHE 102914SH00 102914SH00
+  - New: Bồn cầu treo tường thông minh IGINA GROHE
+🏷️  [CLEAN NAME] ID:3608
+  - Old: Bồn cầu treo tường thông minh IGINA GROHE 36552SH0 36552SH0
+  - New: Bồn cầu treo tường thông minh IGINA GROHE
+🏷️  [CLEAN NAME] ID:3609
+  - Old: Bồn cầu treo tường Projectline GROHE 39321000 39321000
+  - New: Bồn cầu treo tường Projectline GROHE
+🏷️  [CLEAN NAME] ID:3612
+  - Old: Bồn cầu treo tường ATMOR AT2155W AT2155W
+  - New: Bồn cầu treo tường ATMOR
+🏷️  [CLEAN NAME] ID:3613
+  - Old: Bồn cầu treo tường ATMOR AT2178W AT2178W
+  - New: Bồn cầu treo tường ATMOR
+🏷️  [CLEAN NAME] ID:3615
+  - Old: Bồn cầu 1 khối American Standard VF-2010S (VF2010S) nắp rửa cơ Slim VF-2010S
+  - New: Bồn cầu 1 khối American Standard VF-2010S nắp rửa cơ Slim
+🏷️  [CLEAN NAME] ID:3616
+  - Old: Bồn cầu 1 khối American Standard VF-2011S (VF2011S) nắp rửa cơ Slim VF-2011S
+  - New: Bồn cầu 1 khối American Standard VF-2011S nắp rửa cơ Slim
+🏷️  [CLEAN NAME] ID:3617
+  - Old: Bồn cầu 1 khối American Standard VF-1858S3 (VF1858S3) nắp rửa cơ Slim 3 VF-1858S3
+  - New: Bồn cầu 1 khối American Standard VF-1858S3 nắp rửa cơ Slim 3
+🏷️  [CLEAN NAME] ID:3618
+  - Old: Bồn cầu 1 khối American Standard VF-2530S (VF2530S) nắp rửa cơ dòng Slim VF-2530S
+  - New: Bồn cầu 1 khối American Standard VF-2530S nắp rửa cơ dòng Slim
+🏷️  [CLEAN NAME] ID:3619
+  - Old: Bồn cầu 1 khối American Standard VF-1858S (VF1858S) nắp rửa cơ Slim VF-1858S
+  - New: Bồn cầu 1 khối American Standard VF-1858S nắp rửa cơ Slim
+🏷️  [CLEAN NAME] ID:3620
+  - Old: Bồn cầu 1 khối American Standard VF-1858SW (VF1858SW) nắp rửa cơ M4A839 VF-1858SW
+  - New: Bồn cầu 1 khối American Standard VF-1858SW nắp rửa cơ M4A839
+🏷️  [CLEAN NAME] ID:3621
+  - Old: Bồn cầu 1 khối American Standard VF-1808TSW (VF1808TSW) nắp rửa cơ M4A839 VF-1808TSW
+  - New: Bồn cầu 1 khối American Standard VF-1808TSW nắp rửa cơ M4A839
+🏷️  [CLEAN NAME] ID:3622
+  - Old: Bồn cầu 1 khối American Standard VF-1862SW (VF1862SW) nắp rửa cơ M4A839 VF-1862SW
+  - New: Bồn cầu 1 khối American Standard VF-1862SW nắp rửa cơ M4A839
+🏷️  [CLEAN NAME] ID:3623
+  - Old: Bồn cầu 1 khối American Standard WP-1880SW (WP1880SW) nắp rửa cơ M4A839 WP-1880SW
+  - New: Bồn cầu 1 khối American Standard WP-1880SW nắp rửa cơ M4A839
+🏷️  [CLEAN NAME] ID:3624
+  - Old: Bồn cầu 1 khối American Standard VF-2010SW (VF2010SW) nắp rửa cơ M4A839 VF-2010SW
+  - New: Bồn cầu 1 khối American Standard VF-2010SW nắp rửa cơ M4A839
+🏷️  [CLEAN NAME] ID:3625
+  - Old: Bồn cầu 1 khối American Standard VF-2011SW (VF2011SW) nắp rửa cơ M4A839 VF-2011SW
+  - New: Bồn cầu 1 khối American Standard VF-2011SW nắp rửa cơ M4A839
+🏷️  [CLEAN NAME] ID:3626
+  - Old: Bồn cầu 1 khối American Standard VF-2530SW (VF2530SW) nắp rửa cơ M4A839 VF-2530SW
+  - New: Bồn cầu 1 khối American Standard VF-2530SW nắp rửa cơ M4A839
+🏷️  [CLEAN NAME] ID:3627
+  - Old: Bồn cầu 1 khối American Standard VF-1863SW (VF1863SW) nắp rửa cơ M4A839 VF-1863SW
+  - New: Bồn cầu 1 khối American Standard VF-1863SW nắp rửa cơ M4A839
+🏷️  [CLEAN NAME] ID:3630
+  - Old: Bồn cầu xí xổm Caesar C1230 C1230
+  - New: Bồn cầu xí xổm Caesar
+🏷️  [CLEAN NAME] ID:3631
+  - Old: Bồn cầu xí xổm Caesar C1280 C1280
+  - New: Bồn cầu xí xổm Caesar
+🏷️  [CLEAN NAME] ID:3632
+  - Old: Bồn cầu xí xổm Caesar CS1280 CS1280
+  - New: Bồn cầu xí xổm Caesar
+🏷️  [CLEAN NAME] ID:3633
+  - Old: Bồn cầu xí xổm Caesar C1250 C1250
+  - New: Bồn cầu xí xổm Caesar
+🏷️  [CLEAN NAME] ID:3634
+  - Old: Bồn cầu xí xổm Caesar CS1230 CS1230
+  - New: Bồn cầu xí xổm Caesar
+📦 [MOVE -> PHỤ KIỆN] ID:3641
+  - Current: Bộ bồn cầu xổm và két nước xả nhấn Atmor AT5204S+AT4406 AT5204S+AT4406
+📦 [MOVE -> NẮP] ID:3658
+  - Current: Nắp bồn cầu đóng êm Essence GROHE 39577000 39577000
+🏷️  [CLEAN NAME] ID:3658
+  - Old: Nắp bồn cầu đóng êm Essence GROHE 39577000 39577000
+  - New: Nắp bồn cầu đóng êm Essence GROHE
+📦 [MOVE -> NẮP] ID:3659
+  - Current: Nắp bồn cầu đóng êm BAU OP Grohe 36490000 36490000
+🏷️  [CLEAN NAME] ID:3659
+  - Old: Nắp bồn cầu đóng êm BAU OP Grohe 36490000 36490000
+  - New: Nắp bồn cầu đóng êm BAU OP Grohe
+📦 [MOVE -> NẮP] ID:3660
+  - Current: Nắp bồn cầu Grohe 34958000 39458000
+🏷️  [CLEAN NAME] ID:3660
+  - Old: Nắp bồn cầu Grohe 34958000 39458000
+  - New: Nắp bồn cầu Grohe 34958000
+📦 [MOVE -> NẮP] ID:3661
+  - Current: Nắp bồn cầu đóng êm Euro Ceramic Grohe 39330000 39330000
+🏷️  [CLEAN NAME] ID:3661
+  - Old: Nắp bồn cầu đóng êm Euro Ceramic Grohe 39330000 39330000
+  - New: Nắp bồn cầu đóng êm Euro Ceramic Grohe
+📦 [MOVE -> NẮP] ID:3662
+  - Current: Nắp bồn cầu điện tử GROHE 39384L00 39384L00
+🏷️  [CLEAN NAME] ID:3662
+  - Old: Nắp bồn cầu điện tử GROHE 39384L00 39384L00
+  - New: Nắp bồn cầu điện tử GROHE
+📦 [MOVE -> NẮP] ID:3663
+  - Current: Nắp đóng êm Euro Ceramic GROHE 101036SH00 101036SH00
+🏷️  [CLEAN NAME] ID:3663
+  - Old: Nắp đóng êm Euro Ceramic GROHE 101036SH00 101036SH00
+  - New: Nắp đóng êm Euro Ceramic GROHE
+📦 [MOVE -> NẮP] ID:3665
+  - Current: Nắp bồn cầu đóng êm Euro Ceramic GROHE 39331001 39331001
+🏷️  [CLEAN NAME] ID:3665
+  - Old: Nắp bồn cầu đóng êm Euro Ceramic GROHE 39331001 39331001
+  - New: Nắp bồn cầu đóng êm Euro Ceramic GROHE
+📦 [MOVE -> NẮP] ID:3666
+  - Current: Nắp bồn cầu đóng êm Cube Ceramic GROHE 39488000 39488000
+🏷️  [CLEAN NAME] ID:3666
+  - Old: Nắp bồn cầu đóng êm Cube Ceramic GROHE 39488000 39488000
+  - New: Nắp bồn cầu đóng êm Cube Ceramic GROHE
+📦 [MOVE -> NẮP] ID:3667
+  - Current: Nắp bồn cầu đóng êm Bau Ceramic GROHE 39493000 39493000
+🏷️  [CLEAN NAME] ID:3667
+  - Old: Nắp bồn cầu đóng êm Bau Ceramic GROHE 39493000 39493000
+  - New: Nắp bồn cầu đóng êm Bau Ceramic GROHE
+📦 [MOVE -> NẮP] ID:3668
+  - Current: Nắp bồn cầu đóng êm Euro Ceramic GROHE 39330002 39330002
+🏷️  [CLEAN NAME] ID:3668
+  - Old: Nắp bồn cầu đóng êm Euro Ceramic GROHE 39330002 39330002
+  - New: Nắp bồn cầu đóng êm Euro Ceramic GROHE
+📦 [MOVE -> NẮP] ID:3669
+  - Current: Nắp bồn cầu đóng êm Essence GROHE 39577001 39577001
+🏷️  [CLEAN NAME] ID:3669
+  - Old: Nắp bồn cầu đóng êm Essence GROHE 39577001 39577001
+  - New: Nắp bồn cầu đóng êm Essence GROHE
+📦 [MOVE -> NẮP] ID:3670
+  - Current: Nắp và bệ ngồi bồn cầu GROHE 49506000 49506000
+🏷️  [CLEAN NAME] ID:3670
+  - Old: Nắp và bệ ngồi bồn cầu GROHE 49506000 49506000
+  - New: Nắp và bệ ngồi bồn cầu GROHE
+📦 [MOVE -> NẮP] ID:3671
+  - Current: Nắp và bệ ngồi bồn cầu GROHE 49508000 49508000
+🏷️  [CLEAN NAME] ID:3671
+  - Old: Nắp và bệ ngồi bồn cầu GROHE 49508000 49508000
+  - New: Nắp và bệ ngồi bồn cầu GROHE
+📦 [MOVE -> NẮP] ID:3672
+  - Current: Nắp bồn cầu đóng êm American Standard 61000NS-WT (2630-WT) 61000NS-WT
+🏷️  [CLEAN NAME] ID:3672
+  - Old: Nắp bồn cầu đóng êm American Standard 61000NS-WT (2630-WT) 61000NS-WT
+  - New: Nắp bồn cầu đóng êm American Standard 61000NS-WT (2630-WT)
+📦 [MOVE -> NẮP] ID:3673
+  - Current: Nắp bồn cầu đóng êm American Standard 640000S-WT (2007-WT, 2307-WT) 640000S-WT
+🏷️  [CLEAN NAME] ID:3673
+  - Old: Nắp bồn cầu đóng êm American Standard 640000S-WT (2007-WT, 2307-WT) 640000S-WT
+  - New: Nắp bồn cầu đóng êm American Standard 640000S-WT (2007-WT, 2307-WT)
+📦 [MOVE -> NẮP] ID:3674
+  - Current: Nắp bồn cầu đóng êm American Standard 580000S-WT (2309-WT) 580000S-WT
+🏷️  [CLEAN NAME] ID:3674
+  - Old: Nắp bồn cầu đóng êm American Standard 580000S-WT (2309-WT) 580000S-WT
+  - New: Nắp bồn cầu đóng êm American Standard 580000S-WT (2309-WT)
+📦 [MOVE -> NẮP] ID:3677
+  - Current: Nắp bàn cầu đóng êm cho bồn cầu trẻ em COTTO C9007 C9007
+🏷️  [CLEAN NAME] ID:3677
+  - Old: Nắp bàn cầu đóng êm cho bồn cầu trẻ em COTTO C9007 C9007
+  - New: Nắp bàn cầu đóng êm cho bồn cầu trẻ em COTTO
+📦 [MOVE -> NẮP] ID:3678
+  - Current: Nắp bàn cầu đóng êm COTTO C90841 C90841
+🏷️  [CLEAN NAME] ID:3678
+  - Old: Nắp bàn cầu đóng êm COTTO C90841 C90841
+  - New: Nắp bàn cầu đóng êm COTTO
+📦 [MOVE -> PHỤ KIỆN] ID:3836
+  - Current: Van khóa kèm dây cấp nước TOTO HAP004A-F HAP004A-F
+🏷️  [CLEAN NAME] ID:3836
+  - Old: Van khóa kèm dây cấp nước TOTO HAP004A-F HAP004A-F
+  - New: Van khóa kèm dây cấp nước TOTO HAP004A-F
+📦 [MOVE -> PHỤ KIỆN] ID:3837
+  - Current: Van khóa TOTO HAP004A HAP004A
+🏷️  [CLEAN NAME] ID:3837
+  - Old: Van khóa TOTO HAP004A HAP004A
+  - New: Van khóa TOTO
+📦 [MOVE -> PHỤ KIỆN] ID:3838
+  - Current: Đế Washlet đa năng TOTO SHXCP407 SHXCP407
+🏷️  [CLEAN NAME] ID:3838
+  - Old: Đế Washlet đa năng TOTO SHXCP407 SHXCP407
+  - New: Đế Washlet đa năng TOTO
+📦 [MOVE -> PHỤ KIỆN] ID:3839
+  - Current: Mặt nạ xả nhấn TOTO HMB003CPR-2 HMB003CPR-2
+🏷️  [CLEAN NAME] ID:3839
+  - Old: Mặt nạ xả nhấn TOTO HMB003CPR-2 HMB003CPR-2
+  - New: Mặt nạ xả nhấn TOTO HMB003CPR-2
+🏷️  [CLEAN NAME] ID:3840
+  - Old: Đầu nối chữ T chia 2 đường nước TOTO HTHX58 HTHX58
+  - New: Đầu nối chữ T chia 2 đường nước TOTO
+📦 [MOVE -> PHỤ KIỆN] ID:3841
+  - Current: Bộ xả bồn cầu TOTO HTSV366-R (MS366) HTSV366-R
+🏷️  [CLEAN NAME] ID:3841
+  - Old: Bộ xả bồn cầu TOTO HTSV366-R (MS366) HTSV366-R
+  - New: Bộ xả bồn cầu TOTO HTSV366-R (MS366)
+📦 [MOVE -> PHỤ KIỆN] ID:3842
+  - Current: Bộ xả bồn cầu TOTO HTSV914-S (MS914, MS884, MS864, MS905) HTSV914-S
+🏷️  [CLEAN NAME] ID:3842
+  - Old: Bộ xả bồn cầu TOTO HTSV914-S (MS914, MS884, MS864, MS905) HTSV914-S
+  - New: Bộ xả bồn cầu TOTO HTSV914-S (MS914, MS884, MS864, MS905)
+📦 [MOVE -> PHỤ KIỆN] ID:3843
+  - Current: Bộ xả bồn cầu TOTO HTSV688 (MS688) HTSV688
+🏷️  [CLEAN NAME] ID:3843
+  - Old: Bộ xả bồn cầu TOTO HTSV688 (MS688) HTSV688
+  - New: Bộ xả bồn cầu TOTO HTSV688 (MS688)
+📦 [MOVE -> PHỤ KIỆN] ID:3845
+  - Current: Bộ xả bồn cầu TOTO HTSV818S (CS818D, CS819DR, CS945DN) HTSV818S
+🏷️  [CLEAN NAME] ID:3845
+  - Old: Bộ xả bồn cầu TOTO HTSV818S (CS818D, CS819DR, CS945DN) HTSV818S
+  - New: Bộ xả bồn cầu TOTO HTSV818S (CS818D, CS819DR, CS945DN)
+📦 [MOVE -> PHỤ KIỆN] ID:3846
+  - Current: Bộ xả bồn cầu TOTO HTSV889DS (MS889D) HTSV889DS
+🏷️  [CLEAN NAME] ID:3846
+  - Old: Bộ xả bồn cầu TOTO HTSV889DS (MS889D) HTSV889DS
+  - New: Bộ xả bồn cầu TOTO HTSV889DS (MS889D)
+📦 [MOVE -> PHỤ KIỆN] ID:3847
+  - Current: Bộ xả bồn cầu TOTO HTSV760DR (CS761D, CS761PD) HTSV760DR
+🏷️  [CLEAN NAME] ID:3847
+  - Old: Bộ xả bồn cầu TOTO HTSV760DR (CS761D, CS761PD) HTSV760DR
+  - New: Bộ xả bồn cầu TOTO HTSV760DR (CS761D, CS761PD)
+📦 [MOVE -> PHỤ KIỆN] ID:3848
+  - Current: Bộ xả bồn cầu TOTO HTSV300-R (CS300D, CS320D, CS325, CS660D) HTSV300-R
+🏷️  [CLEAN NAME] ID:3848
+  - Old: Bộ xả bồn cầu TOTO HTSV300-R (CS300D, CS320D, CS325, CS660D) HTSV300-R
+  - New: Bộ xả bồn cầu TOTO HTSV300-R (CS300D, CS320D, CS325, CS660D)
+📦 [MOVE -> PHỤ KIỆN] ID:3849
+  - Current: Bộ xả bồn cầu TOTO HTSV948R (CS948 ) HTSV948R
+🏷️  [CLEAN NAME] ID:3849
+  - Old: Bộ xả bồn cầu TOTO HTSV948R (CS948 ) HTSV948R
+  - New: Bộ xả bồn cầu TOTO HTSV948R (CS948 )
+📦 [MOVE -> PHỤ KIỆN] ID:3856
+  - Current: Dây cấp nước 60cm INAX A-701-9 (A7019) A-701-9
+🏷️  [CLEAN NAME] ID:3856
+  - Old: Dây cấp nước 60cm INAX A-701-9 (A7019) A-701-9
+  - New: Dây cấp nước 60cm INAX A-701-9
+🏷️  [CLEAN NAME] ID:3857
+  - Old: Van Vặn Khóa INAX A-703-8 (A7038) A-703-8
+  - New: Van Vặn Khóa INAX A-703-8
+📦 [MOVE -> PHỤ KIỆN] ID:3858
+  - Current: Đế thải bồn cầu INAX PT-17V-01 (PT17V01) PT-17V-01
+🏷️  [CLEAN NAME] ID:3858
+  - Old: Đế thải bồn cầu INAX PT-17V-01 (PT17V01) PT-17V-01
+  - New: Đế thải bồn cầu INAX PT-17V-01
+📦 [MOVE -> PHỤ KIỆN] ID:3859
+  - Current: Chốt nắp đóng êm INAX A-1008VS-3/BW1 A-1008VS-3/BW1
+🏷️  [CLEAN NAME] ID:3859
+  - Old: Chốt nắp đóng êm INAX A-1008VS-3/BW1 A-1008VS-3/BW1
+  - New: Chốt nắp đóng êm INAX A-1008VS-3/BW1
+📦 [MOVE -> PHỤ KIỆN] ID:3860
+  - Current: Chốt nắp đóng êm INAX A-2700VS-3 A-2700VS-3
+🏷️  [CLEAN NAME] ID:3860
+  - Old: Chốt nắp đóng êm INAX A-2700VS-3 A-2700VS-3
+  - New: Chốt nắp đóng êm INAX A-2700VS-3
+📦 [MOVE -> NẮP] ID:3861
+  - Current: Nắp két nước INAX A-T1035V-1/BW1 A-T1035V-1/BW1
+🏷️  [CLEAN NAME] ID:3861
+  - Old: Nắp két nước INAX A-T1035V-1/BW1 A-T1035V-1/BW1
+  - New: Nắp két nước INAX A-T1035V-1/BW1
+🏷️  [CLEAN NAME] ID:3862
+  - Old: Bộ vít cố định INAX A-S32VN-5 A-S32VN-5
+  - New: Bộ vít cố định INAX A-S32VN-5
+📦 [MOVE -> NẮP] ID:3863
+  - Current: Nắp két nước INAX FR.A-T989V-1 FR.A-T989V-1
+🏷️  [CLEAN NAME] ID:3863
+  - Old: Nắp két nước INAX FR.A-T989V-1 FR.A-T989V-1
+  - New: Nắp két nước INAX FR.A-T989V-1
+📦 [MOVE -> PHỤ KIỆN] ID:3864
+  - Current: Chốt đóng êm INAX A-S32VN-3 A-S32VN-3
+🏷️  [CLEAN NAME] ID:3864
+  - Old: Chốt đóng êm INAX A-S32VN-3 A-S32VN-3
+  - New: Chốt đóng êm INAX A-S32VN-3
+🏷️  [CLEAN NAME] ID:3865
+  - Old: Đế cố định với bồn cầu INAX A-500VS-5B A-500VS-5B
+  - New: Đế cố định với bồn cầu INAX A-500VS-5B
+📦 [MOVE -> PHỤ KIỆN] ID:3866
+  - Current: Nút nhấn INAX A-504V-2 A-504V-2
+🏷️  [CLEAN NAME] ID:3866
+  - Old: Nút nhấn INAX A-504V-2 A-504V-2
+  - New: Nút nhấn INAX A-504V-2
+📦 [MOVE -> PHỤ KIỆN] ID:3867
+  - Current: Nút nhấn INAX A-959-2 A-959-2
+🏷️  [CLEAN NAME] ID:3867
+  - Old: Nút nhấn INAX A-959-2 A-959-2
+  - New: Nút nhấn INAX A-959-2
+📦 [MOVE -> NẮP] ID:3868
+  - Current: Nắp két nước INAX A-T1017VR-1/BW1 A-T1017VR-1/BW1
+🏷️  [CLEAN NAME] ID:3868
+  - Old: Nắp két nước INAX A-T1017VR-1/BW1 A-T1017VR-1/BW1
+  - New: Nắp két nước INAX A-T1017VR-1/BW1
+📦 [MOVE -> NẮP] ID:3869
+  - Current: Nắp két nước INAX A-T117VA-1/BW1 A-T117VA-1/BW1
+🏷️  [CLEAN NAME] ID:3869
+  - Old: Nắp két nước INAX A-T117VA-1/BW1 A-T117VA-1/BW1
+  - New: Nắp két nước INAX A-T117VA-1/BW1
+📦 [MOVE -> NẮP] ID:3870
+  - Current: Nắp két nước INAX A-T108VA-1/BW1 A-T108VA-1/BW1
+🏷️  [CLEAN NAME] ID:3870
+  - Old: Nắp két nước INAX A-T108VA-1/BW1 A-T108VA-1/BW1
+  - New: Nắp két nước INAX A-T108VA-1/BW1
+📦 [MOVE -> NẮP] ID:3871
+  - Current: Nắp két nước INAX A-T504VA-1/BW1 A-T504VA-1/BW1
+🏷️  [CLEAN NAME] ID:3871
+  - Old: Nắp két nước INAX A-T504VA-1/BW1 A-T504VA-1/BW1
+  - New: Nắp két nước INAX A-T504VA-1/BW1
+📦 [MOVE -> PHỤ KIỆN] ID:3872
+  - Current: Dây cấp nước nhựa 30cm Caesar BF423 BF423
+🏷️  [CLEAN NAME] ID:3872
+  - Old: Dây cấp nước nhựa 30cm Caesar BF423 BF423
+  - New: Dây cấp nước nhựa 30cm Caesar
+🏷️  [CLEAN NAME] ID:3873
+  - Old: Van khoá chữ T Caesar BF427 BF427
+  - New: Van khoá chữ T Caesar
+🏷️  [CLEAN NAME] ID:3874
+  - Old: Van vặn khóa chữ F nhựa - φ21 Caesar BF403P BF403P
+  - New: Van vặn khóa chữ F nhựa - φ21 Caesar
+🏷️  [CLEAN NAME] ID:3875
+  - Old: Van vặn khóa chữ T nhựa - φ21 Caesar BF427P BF427P
+  - New: Van vặn khóa chữ T nhựa - φ21 Caesar
+🏷️  [CLEAN NAME] ID:3876
+  - Old: Van vặn khóa chữ F xi - φ21 Caesar BF403 BF403
+  - New: Van vặn khóa chữ F xi - φ21 Caesar
+📦 [MOVE -> PHỤ KIỆN] ID:3877
+  - Current: Dây cấp nước xi 40cm Caesar BF422 BF422
+🏷️  [CLEAN NAME] ID:3877
+  - Old: Dây cấp nước xi 40cm Caesar BF422 BF422
+  - New: Dây cấp nước xi 40cm Caesar
+📦 [MOVE -> PHỤ KIỆN] ID:3878
+  - Current: Bộ xả gạt tay bồn cầu Caesar BF521 BF521
+🏷️  [CLEAN NAME] ID:3878
+  - Old: Bộ xả gạt tay bồn cầu Caesar BF521 BF521
+  - New: Bộ xả gạt tay bồn cầu Caesar
+📦 [MOVE -> PHỤ KIỆN] ID:3879
+  - Current: Bộ xả gạt tay bồn cầu Caesar BF523 BF523A
+🏷️  [CLEAN NAME] ID:3879
+  - Old: Bộ xả gạt tay bồn cầu Caesar BF523 BF523A
+  - New: Bộ xả gạt tay bồn cầu Caesar BF523
+📦 [MOVE -> PHỤ KIỆN] ID:3880
+  - Current: Bộ xả gạt tay bồn cầu Caesar BF525 BF525A
+🏷️  [CLEAN NAME] ID:3880
+  - Old: Bộ xả gạt tay bồn cầu Caesar BF525 BF525A
+  - New: Bộ xả gạt tay bồn cầu Caesar BF525
+🏷️  [CLEAN NAME] ID:3881
+  - Old: Van vặn khóa chữ F xi Caesar BF403S BF403S
+  - New: Van vặn khóa chữ F xi Caesar
+📦 [MOVE -> PHỤ KIỆN] ID:3882
+  - Current: Dây cấp nước nhựa 40cm Caesar BF423-40 (BF42340) BF423-40
+🏷️  [CLEAN NAME] ID:3882
+  - Old: Dây cấp nước nhựa 40cm Caesar BF423-40 (BF42340) BF423-40
+  - New: Dây cấp nước nhựa 40cm Caesar BF423-40
+📦 [MOVE -> PHỤ KIỆN] ID:3883
+  - Current: Van khóa nước chữ T Caesar BF428 BF428
+🏷️  [CLEAN NAME] ID:3883
+  - Old: Van khóa nước chữ T Caesar BF428 BF428
+  - New: Van khóa nước chữ T Caesar
+📦 [MOVE -> PHỤ KIỆN] ID:3884
+  - Current: Bộ xả bồn cầu Caesar FP807A FP807A
+🏷️  [CLEAN NAME] ID:3884
+  - Old: Bộ xả bồn cầu Caesar FP807A FP807A
+  - New: Bộ xả bồn cầu Caesar
+📦 [MOVE -> PHỤ KIỆN] ID:3885
+  - Current: Nút nhấn Caesar FP897B-1 FP897B-1
+🏷️  [CLEAN NAME] ID:3885
+  - Old: Nút nhấn Caesar FP897B-1 FP897B-1
+  - New: Nút nhấn Caesar FP897B-1
+📦 [MOVE -> PHỤ KIỆN] ID:3886
+  - Current: Bộ xả bồn cầu Caesar FP856A FP856A
+🏷️  [CLEAN NAME] ID:3886
+  - Old: Bộ xả bồn cầu Caesar FP856A FP856A
+  - New: Bộ xả bồn cầu Caesar
+📦 [MOVE -> NẮP] ID:3887
+  - Current: Nắp két nước Caesar T1140-1-PW T1140-1-PW
+🏷️  [CLEAN NAME] ID:3887
+  - Old: Nắp két nước Caesar T1140-1-PW T1140-1-PW
+  - New: Nắp két nước Caesar T1140-1-PW
+📦 [MOVE -> NẮP] ID:3888
+  - Current: Nắp két nước Caesar C1375-1-PW C1375-1-PW
+🏷️  [CLEAN NAME] ID:3888
+  - Old: Nắp két nước Caesar C1375-1-PW C1375-1-PW
+  - New: Nắp két nước Caesar C1375-1-PW
+📦 [MOVE -> PHỤ KIỆN] ID:3889
+  - Current: Bộ xả bồn cầu Caesar FP840A FP840A
+🏷️  [CLEAN NAME] ID:3889
+  - Old: Bộ xả bồn cầu Caesar FP840A FP840A
+  - New: Bộ xả bồn cầu Caesar
+📦 [MOVE -> PHỤ KIỆN] ID:3890
+  - Current: Bộ xả bồn cầu Caesar FP825BV FP825BV
+🏷️  [CLEAN NAME] ID:3890
+  - Old: Bộ xả bồn cầu Caesar FP825BV FP825BV
+  - New: Bộ xả bồn cầu Caesar
+📦 [MOVE -> PHỤ KIỆN] ID:3891
+  - Current: Két nước xí xổm treo tường xả nhấn ATMOR AT4406 AT4406
+🏷️  [CLEAN NAME] ID:3891
+  - Old: Két nước xí xổm treo tường xả nhấn ATMOR AT4406 AT4406
+  - New: Két nước xí xổm treo tường xả nhấn ATMOR
+📦 [MOVE -> PHỤ KIỆN] ID:3892
+  - Current: Dây cấp inox 40cm ATMOR AT07010 AT07010
+🏷️  [CLEAN NAME] ID:3892
+  - Old: Dây cấp inox 40cm ATMOR AT07010 AT07010
+  - New: Dây cấp inox 40cm ATMOR
+📦 [MOVE -> PHỤ KIỆN] ID:3893
+  - Current: Van khóa chữ F ATMOR AE020 AE020
+🏷️  [CLEAN NAME] ID:3893
+  - Old: Van khóa chữ F ATMOR AE020 AE020
+  - New: Van khóa chữ F ATMOR
+📦 [MOVE -> PHỤ KIỆN] ID:3894
+  - Current: Van khóa chữ T ATMOR AE036 AE036
+🏷️  [CLEAN NAME] ID:3894
+  - Old: Van khóa chữ T ATMOR AE036 AE036
+  - New: Van khóa chữ T ATMOR
+📦 [MOVE -> PHỤ KIỆN] ID:3895
+  - Current: Van khóa chữ T ATMOR AT21012 AT21012
+🏷️  [CLEAN NAME] ID:3895
+  - Old: Van khóa chữ T ATMOR AT21012 AT21012
+  - New: Van khóa chữ T ATMOR
+🏷️  [CLEAN NAME] ID:3896
+  - Old: Van xả gạt bồn cầu ATMOR AT8108-2 (AT81082) AT8108-2
+  - New: Van xả gạt bồn cầu ATMOR AT8108-2
+📦 [MOVE -> PHỤ KIỆN] ID:3897
+  - Current: Van khóa ATMOR AT06021 AT06021
+🏷️  [CLEAN NAME] ID:3897
+  - Old: Van khóa ATMOR AT06021 AT06021
+  - New: Van khóa ATMOR
+🏷️  [CLEAN NAME] ID:3898
+  - Old: Van xả gạt bồn cầu ATMOR BFV21-50 BFV21-50
+  - New: Van xả gạt bồn cầu ATMOR BFV21-50
+📦 [MOVE -> NẮP] ID:3899
+  - Current: Nắp bồn cầu điện tử MOEN SW2070 SW2070
+🏷️  [CLEAN NAME] ID:3899
+  - Old: Nắp bồn cầu điện tử MOEN SW2070 SW2070
+  - New: Nắp bồn cầu điện tử MOEN
+📦 [MOVE -> NẮP] ID:3900
+  - Current: Nắp bồn cầu điện tử MOEN SW2221 SW2221
+🏷️  [CLEAN NAME] ID:3900
+  - Old: Nắp bồn cầu điện tử MOEN SW2221 SW2221
+  - New: Nắp bồn cầu điện tử MOEN
+📦 [MOVE -> PHỤ KIỆN] ID:3925
+  - Current: Van khóa MOEN 118097 118097
+🏷️  [CLEAN NAME] ID:3925
+  - Old: Van khóa MOEN 118097 118097
+  - New: Van khóa MOEN
+📦 [MOVE -> PHỤ KIỆN] ID:3926
+  - Current: Van khóa 2 đường MOEN 139504 139504
+🏷️  [CLEAN NAME] ID:3926
+  - Old: Van khóa 2 đường MOEN 139504 139504
+  - New: Van khóa 2 đường MOEN
+🏷️  [CLEAN NAME] ID:3927
+  - Old: Van xả gạt bàn cầu MOEN 8313M16 8313M16
+  - New: Van xả gạt bàn cầu MOEN
+📦 [MOVE -> PHỤ KIỆN] ID:3928
+  - Current: Van khóa MOEN PH144510 PH144510
+🏷️  [CLEAN NAME] ID:3928
+  - Old: Van khóa MOEN PH144510 PH144510
+  - New: Van khóa MOEN
+📦 [MOVE -> PHỤ KIỆN] ID:3929
+  - Current: Van khóa MOEN PH144512 PH144512
+🏷️  [CLEAN NAME] ID:3929
+  - Old: Van khóa MOEN PH144512 PH144512
+  - New: Van khóa MOEN
+📦 [MOVE -> PHỤ KIỆN] ID:3930
+  - Current: Van khóa MOEN PH144513 PH144513
+🏷️  [CLEAN NAME] ID:3930
+  - Old: Van khóa MOEN PH144513 PH144513
+  - New: Van khóa MOEN
+🏷️  [CLEAN NAME] ID:3931
+  - Old: Gạt nước bàn cầu MOEN Bamboo YB9501BN YB9501BN
+  - New: Gạt nước bàn cầu MOEN Bamboo
+🏷️  [CLEAN NAME] ID:3932
+  - Old: Van xả MOEN 23147 23147
+  - New: Van xả MOEN
+🏷️  [CLEAN NAME] ID:3933
+  - Old: Van nước 2 chiều chữ T MOEN GN101333 GN101333
+  - New: Van nước 2 chiều chữ T MOEN
+📦 [MOVE -> PHỤ KIỆN] ID:3938
+  - Current: Bích nối sàn COTTO C9309 C9309
+🏷️  [CLEAN NAME] ID:3938
+  - Old: Bích nối sàn COTTO C9309 C9309
+  - New: Bích nối sàn COTTO
+🏷️  [CLEAN NAME] ID:3939
+  - Old: Van xả trực tiếp cho bàn cầu COTTO CT457XNS CT457XNS
+  - New: Van xả trực tiếp cho bàn cầu COTTO
+🏷️  [CLEAN NAME] ID:3940
+  - Old: Van xả trực tiếp cho bàn cầu COTTO CT458NS CT458NS
+  - New: Van xả trực tiếp cho bàn cầu COTTO
+🏷️  [CLEAN NAME] ID:3941
+  - Old: Van xả bồn cầu tự động COTTO CT4806ACNS CT4806ACNS
+  - New: Van xả bồn cầu tự động COTTO
+🏷️  [CLEAN NAME] ID:3942
+  - Old: Van xả bồn cầu cảm ứng COTTO CT483AC CT483AC
+  - New: Van xả bồn cầu cảm ứng COTTO
+📦 [MOVE -> PHỤ KIỆN] ID:3943
+  - Current: Bộ nút nhấn xả bồn cầu gắn tường COTTO C942100 C942100
+🏷️  [CLEAN NAME] ID:3943
+  - Old: Bộ nút nhấn xả bồn cầu gắn tường COTTO C942100 C942100
+  - New: Bộ nút nhấn xả bồn cầu gắn tường COTTO
+📦 [MOVE -> PHỤ KIỆN] ID:3944
+  - Current: Bộ nút nhấn xả bồn cầu gắn tường COTTO C942101 C942101
+🏷️  [CLEAN NAME] ID:3944
+  - Old: Bộ nút nhấn xả bồn cầu gắn tường COTTO C942101 C942101
+  - New: Bộ nút nhấn xả bồn cầu gắn tường COTTO
+📦 [MOVE -> PHỤ KIỆN] ID:3945
+  - Current: Dây cấp nước 40cm COTTO Z402(HM) Flexible Hose Z402(HM)
+📦 [MOVE -> PHỤ KIỆN] ID:3946
+  - Current: Van khóa COTTO CT1053N(HM) 1 in 2 out CT1053N(HM)
+📦 [MOVE -> PHỤ KIỆN] ID:3947
+  - Current: Van khóa COTTO CT1701(HM) 1 in 1 out CT1701(HM)
+📦 [MOVE -> PHỤ KIỆN] ID:3948
+  - Current: Van khóa COTTO CT1702(HM) 1 in 2 out CT1702(HM)
+📦 [MOVE -> PHỤ KIỆN] ID:3949
+  - Current: Van khóa COTTO CT179N(HM) 1 in 1 out CT179N(HM)
+📦 [MOVE -> PHỤ KIỆN] ID:3950
+  - Current: Van khóa COTTO CT190C6(HM) 1 in 1 out CT190C6(HM)
+📦 [MOVE -> PHỤ KIỆN] ID:3951
+  - Current: Van khóa COTTO CT198(HM) 1 in 2 out CT198(HM)
+🏷️  [CLEAN NAME] ID:3952
+  - Old: Van xả trực tiếp cho bàn cầu COTTO CT4571NS CT4571NS
+  - New: Van xả trực tiếp cho bàn cầu COTTO
+🏷️  [CLEAN NAME] ID:3953
+  - Old: Van xả trực tiếp cho bàn cầu COTTO CT440XNS CT440XNS
+  - New: Van xả trực tiếp cho bàn cầu COTTO
+📦 [MOVE -> PHỤ KIỆN] ID:3954
+  - Current: Bộ nút nhấn xả bồn cầu gắn tường COTTO C942102 C942102
+🏷️  [CLEAN NAME] ID:3954
+  - Old: Bộ nút nhấn xả bồn cầu gắn tường COTTO C942102 C942102
+  - New: Bộ nút nhấn xả bồn cầu gắn tường COTTO
+📦 [MOVE -> PHỤ KIỆN] ID:3955
+  - Current: Gioăng đế bồn cầu COTTO C939 C939
+🏷️  [CLEAN NAME] ID:3955
+  - Old: Gioăng đế bồn cầu COTTO C939 C939
+  - New: Gioăng đế bồn cầu COTTO
+🏷️  [CLEAN NAME] ID:3956
+  - Old: Van xả bồn cầu tay gạt COTTO CT4571NSL4D CT4571NSL4D
+  - New: Van xả bồn cầu tay gạt COTTO
+📦 [MOVE -> PHỤ KIỆN] ID:4012
+  - Current: Van khóa nước Universal GROHE 22041000 22041000
+🏷️  [CLEAN NAME] ID:4012
+  - Old: Van khóa nước Universal GROHE 22041000 22041000
+  - New: Van khóa nước Universal GROHE
+📦 [MOVE -> PHỤ KIỆN] ID:4013
+  - Current: Bộ linh kiện cảm ứng GROHE 46944001 46944001
+🏷️  [CLEAN NAME] ID:4013
+  - Old: Bộ linh kiện cảm ứng GROHE 46944001 46944001
+  - New: Bộ linh kiện cảm ứng GROHE
+🏷️  [CLEAN NAME] ID:4015
+  - Old: Van khoá 1 đường nước GROHE 2201700M 2201700M
+  - New: Van khoá 1 đường nước GROHE
+📦 [MOVE -> PHỤ KIỆN] ID:4016
+  - Current: Nút nhấn xả Arena Cosmopolitan GROHE 38858000 38858000
+🏷️  [CLEAN NAME] ID:4016
+  - Old: Nút nhấn xả Arena Cosmopolitan GROHE 38858000 38858000
+  - New: Nút nhấn xả Arena Cosmopolitan GROHE
+🏷️  [CLEAN NAME] ID:4017
+  - Old: Bộ kết nối đầu vào và đầu ra GROHE 37311K00 37311K00
+  - New: Bộ kết nối đầu vào và đầu ra GROHE
+📦 [MOVE -> PHỤ KIỆN] ID:4018
+  - Current: Nút nhấn xả Skate Cosmopolitan Flush GROHE 38732000 38732000
+🏷️  [CLEAN NAME] ID:4018
+  - Old: Nút nhấn xả Skate Cosmopolitan Flush GROHE 38732000 38732000
+  - New: Nút nhấn xả Skate Cosmopolitan Flush GROHE
+📦 [MOVE -> PHỤ KIỆN] ID:4019
+  - Current: Nút nhấn xả Skate Cosmopolitan S GROHE 37535000 37535000
+🏷️  [CLEAN NAME] ID:4019
+  - Old: Nút nhấn xả Skate Cosmopolitan S GROHE 37535000 37535000
+  - New: Nút nhấn xả Skate Cosmopolitan S GROHE
+📦 [MOVE -> PHỤ KIỆN] ID:4020
+  - Current: Nút nhấn xả Skate Air Flush GROHE 38505000 38505000
+🏷️  [CLEAN NAME] ID:4020
+  - Old: Nút nhấn xả Skate Air Flush GROHE 38505000 38505000
+  - New: Nút nhấn xả Skate Air Flush GROHE
+📦 [MOVE -> PHỤ KIỆN] ID:4021
+  - Current: Van cấp nước bồn cầu GROHE 49502000 49502000
+🏷️  [CLEAN NAME] ID:4021
+  - Old: Van cấp nước bồn cầu GROHE 49502000 49502000
+  - New: Van cấp nước bồn cầu GROHE
+🏷️  [CLEAN NAME] ID:4022
+  - Old: Bộ ốc vít cho két âm tường Rapid SL GROHE 3855800M 3855800M
+  - New: Bộ ốc vít cho két âm tường Rapid SL GROHE
+📦 [MOVE -> PHỤ KIỆN] ID:4023
+  - Current: Nút nhấn xả Arena Cosmo S GROHE 37624000 37624000
+🏷️  [CLEAN NAME] ID:4023
+  - Old: Nút nhấn xả Arena Cosmo S GROHE 37624000 37624000
+  - New: Nút nhấn xả Arena Cosmo S GROHE
+📦 [MOVE -> PHỤ KIỆN] ID:4024
+  - Current: Bộ xả tự động cho bồn cầu treo tường điện tử IGINA GROHE 1029950200 1029950200
+🏷️  [CLEAN NAME] ID:4024
+  - Old: Bộ xả tự động cho bồn cầu treo tường điện tử IGINA GROHE 1029950200 1029950200
+  - New: Bộ xả tự động cho bồn cầu treo tường điện tử IGINA GROHE
+📦 [MOVE -> PHỤ KIỆN] ID:4025
+  - Current: Van góc 1/2 GROHE 22074KF0 22074KF0
+🏷️  [CLEAN NAME] ID:4025
+  - Old: Van góc 1/2 GROHE 22074KF0 22074KF0
+  - New: Van góc 1/2 GROHE
+📦 [MOVE -> PHỤ KIỆN] ID:4026
+  - Current: Nút nhấn xả Nova Cosmopolitan Light GROHE 38809000 38809000
+🏷️  [CLEAN NAME] ID:4026
+  - Old: Nút nhấn xả Nova Cosmopolitan Light GROHE 38809000 38809000
+  - New: Nút nhấn xả Nova Cosmopolitan Light GROHE
+📦 [MOVE -> PHỤ KIỆN] ID:4027
+  - Current: Két nước Essence GROHE 39578000 39578000
+🏷️  [CLEAN NAME] ID:4027
+  - Old: Két nước Essence GROHE 39578000 39578000
+  - New: Két nước Essence GROHE
+📦 [MOVE -> PHỤ KIỆN] ID:4028
+  - Current: Két nước Essence GROHE 39579000 39579000
+🏷️  [CLEAN NAME] ID:4028
+  - Old: Két nước Essence GROHE 39579000 39579000
+  - New: Két nước Essence GROHE
+🏷️  [CLEAN NAME] ID:4041
+  - Old: Van giảm áp American Standard M19225 M19225
+  - New: Van giảm áp American Standard
+📦 [MOVE -> PHỤ KIỆN] ID:4050
+  - Current: Bộ xả bồn cầu American Standard M12314 (VF-1808ET, VF-1808T) M12314
+🏷️  [CLEAN NAME] ID:4050
+  - Old: Bộ xả bồn cầu American Standard M12314 (VF-1808ET, VF-1808T) M12314
+  - New: Bộ xả bồn cầu American Standard M12314 (VF-1808ET, VF-1808T)
+📦 [MOVE -> PHỤ KIỆN] ID:4051
+  - Current: Bộ xả bồn cầu American Standard CRTF240T (VF-2010) CRTF240T
+🏷️  [CLEAN NAME] ID:4051
+  - Old: Bộ xả bồn cầu American Standard CRTF240T (VF-2010) CRTF240T
+  - New: Bộ xả bồn cầu American Standard CRTF240T (VF-2010)
+📦 [MOVE -> PHỤ KIỆN] ID:4052
+  - Current: Bộ xả bồn cầu American Standard CRTF250T (VF-2011) CRTF250T
+🏷️  [CLEAN NAME] ID:4052
+  - Old: Bộ xả bồn cầu American Standard CRTF250T (VF-2011) CRTF250T
+  - New: Bộ xả bồn cầu American Standard CRTF250T (VF-2011)
+📦 [MOVE -> PHỤ KIỆN] ID:4056
+  - Current: Bộ xả bồn cầu American Standard M19224 (VF-2781) M19224
+🏷️  [CLEAN NAME] ID:4056
+  - Old: Bộ xả bồn cầu American Standard M19224 (VF-2781) M19224
+  - New: Bộ xả bồn cầu American Standard M19224 (VF-2781)
+📦 [MOVE -> PHỤ KIỆN] ID:4057
+  - Current: Bộ xả bồn cầu American Standard M120151 (VF-2162) M120151
+🏷️  [CLEAN NAME] ID:4057
+  - Old: Bộ xả bồn cầu American Standard M120151 (VF-2162) M120151
+  - New: Bộ xả bồn cầu American Standard M120151 (VF-2162)
+🏷️  [CLEAN NAME] ID:4059
+  - Old: Van xả trực tiếp cho bồn cầu American Standard 13L WF-9858 (WF9858) WF-9858
+  - New: Van xả trực tiếp cho bồn cầu American Standard 13L WF-9858
+📦 [MOVE -> THÂN CẦU] ID:4121
+  - Current: Thân bồn cầu 2 khối Euro Ceramic GROHE 39338000 39338000
+🏷️  [CLEAN NAME] ID:4121
+  - Old: Thân bồn cầu 2 khối Euro Ceramic GROHE 39338000 39338000
+  - New: Thân bồn cầu 2 khối Euro Ceramic GROHE
+📦 [MOVE -> THÂN CẦU] ID:4122
+  - Current: Thân bồn cầu 2 khối Essence GROHE 3957200H 3957200H
+🏷️  [CLEAN NAME] ID:4122
+  - Old: Thân bồn cầu 2 khối Essence GROHE 3957200H 3957200H
+  - New: Thân bồn cầu 2 khối Essence GROHE
+📦 [MOVE -> THÂN CẦU] ID:4123
+  - Current: Thân bồn cầu 2 khối Cube Ceramic GROHE 3948400H 3948400H
+🏷️  [CLEAN NAME] ID:4123
+  - Old: Thân bồn cầu 2 khối Cube Ceramic GROHE 3948400H 3948400H
+  - New: Thân bồn cầu 2 khối Cube Ceramic GROHE
+📦 [MOVE -> THÂN CẦU] ID:4124
+  - Current: Thân bồn cầu 2 khối BauEdge Ceramic GROHE 39989000 39989000
+🏷️  [CLEAN NAME] ID:4124
+  - Old: Thân bồn cầu 2 khối BauEdge Ceramic GROHE 39989000 39989000
+  - New: Thân bồn cầu 2 khối BauEdge Ceramic GROHE
+📦 [MOVE -> PHỤ KIỆN] ID:4552
+  - Current: Bộ xả bồn cầu TOTO HTSV855 (MS855D) HTSV855
+🏷️  [CLEAN NAME] ID:4552
+  - Old: Bộ xả bồn cầu TOTO HTSV855 (MS855D) HTSV855
+  - New: Bộ xả bồn cầu TOTO HTSV855 (MS855D)
+📦 [MOVE -> PHỤ KIỆN] ID:4553
+  - Current: Bộ xả bồn cầu TOTO HTSV300S (CS300D, CS320D, CS325, CS660D) HTSV300S
+🏷️  [CLEAN NAME] ID:4553
+  - Old: Bộ xả bồn cầu TOTO HTSV300S (CS300D, CS320D, CS325, CS660D) HTSV300S
+  - New: Bộ xả bồn cầu TOTO HTSV300S (CS300D, CS320D, CS325, CS660D)
+📦 [MOVE -> PHỤ KIỆN] ID:4554
+  - Current: Bộ xả bồn cầu TOTO TX823C1-2WS (CW823W/F) TX823C1-2WS
+🏷️  [CLEAN NAME] ID:4554
+  - Old: Bộ xả bồn cầu TOTO TX823C1-2WS (CW823W/F) TX823C1-2WS
+  - New: Bộ xả bồn cầu TOTO TX823C1-2WS (CW823W/F)
+🏷️  [CLEAN NAME] ID:4555
+  - Old: Van xả trên bồn cầu TOTO HB4068-688 (MS688) HB4068-688
+  - New: Van xả trên bồn cầu TOTO HB4068-688 (MS688)
+🏷️  [CLEAN NAME] ID:4556
+  - Old: Van xả dưới bồn cầu TOTO HB4610-688 (MS688) HB4610-688
+  - New: Van xả dưới bồn cầu TOTO HB4610-688 (MS688)
+📦 [MOVE -> PHỤ KIỆN] ID:4557
+  - Current: Van cấp bồn cầu TOTO HF9B208A (CS300D, CS320D, CS325D, CS660D, CS818D, CS819DR, CS945DN) HF9B208A
+🏷️  [CLEAN NAME] ID:4557
+  - Old: Van cấp bồn cầu TOTO HF9B208A (CS300D, CS320D, CS325D, CS660D, CS818D, CS819DR, CS945DN) HF9B208A
+  - New: Van cấp bồn cầu TOTO HF9B208A (CS300D, CS320D, CS325D, CS660D, CS818D, CS819DR, CS945DN)
+📦 [MOVE -> PHỤ KIỆN] ID:4558
+  - Current: Van cấp bồn cầu TOTO HF9B212A (CS769D, MS855D, CS838D, CS986G) HF9B212A
+🏷️  [CLEAN NAME] ID:4558
+  - Old: Van cấp bồn cầu TOTO HF9B212A (CS769D, MS855D, CS838D, CS986G) HF9B212A
+  - New: Van cấp bồn cầu TOTO HF9B212A (CS769D, MS855D, CS838D, CS986G)
+📦 [MOVE -> PHỤ KIỆN] ID:4559
+  - Current: Bộ xả bồn cầu TOTO HTSV326 (CS326) HTSV326
+🏷️  [CLEAN NAME] ID:4559
+  - Old: Bộ xả bồn cầu TOTO HTSV326 (CS326) HTSV326
+  - New: Bộ xả bồn cầu TOTO HTSV326 (CS326)
+📦 [MOVE -> PHỤ KIỆN] ID:4560
+  - Current: Bộ xả bồn cầu TOTO HTSV838 (C838) HTSV838
+🏷️  [CLEAN NAME] ID:4560
+  - Old: Bộ xả bồn cầu TOTO HTSV838 (C838) HTSV838
+  - New: Bộ xả bồn cầu TOTO HTSV838 (C838)
+📦 [MOVE -> PHỤ KIỆN] ID:4561
+  - Current: Bộ xả bồn cầu TOTO HTSV823 (C823 ) HTSV823
+🏷️  [CLEAN NAME] ID:4561
+  - Old: Bộ xả bồn cầu TOTO HTSV823 (C823 ) HTSV823
+  - New: Bộ xả bồn cầu TOTO HTSV823 (C823 )
+📦 [MOVE -> PHỤ KIỆN] ID:4562
+  - Current: Bộ xả bồn cầu TOTO HTSV302 (CS302) HTSV302
+🏷️  [CLEAN NAME] ID:4562
+  - Old: Bộ xả bồn cầu TOTO HTSV302 (CS302) HTSV302
+  - New: Bộ xả bồn cầu TOTO HTSV302 (CS302)
+🏷️  [CLEAN NAME] ID:4575
+  - Old: Bu lông inox nắp TC385VS TOTO HN069 HN069
+  - New: Bu lông inox nắp TC385VS TOTO
+📦 [MOVE -> PHỤ KIỆN] ID:4576
+  - Current: Bộ đệm cao su nắp TC392VS và TC393VS TOTO HKSVN004 HKSVN004
+🏷️  [CLEAN NAME] ID:4576
+  - Old: Bộ đệm cao su nắp TC392VS và TC393VS TOTO HKSVN004 HKSVN004
+  - New: Bộ đệm cao su nắp TC392VS và TC393VS TOTO
+📦 [MOVE -> PHỤ KIỆN] ID:4577
+  - Current: Chốt nắp TC395VS TOTO TTC395VS#W-00PK TTC395VS#W-00PK
+🏷️  [CLEAN NAME] ID:4577
+  - Old: Chốt nắp TC395VS TOTO TTC395VS#W-00PK TTC395VS#W-00PK
+  - New: Chốt nắp TC395VS TOTO TTC395VS#W-00PK
+🏷️  [CLEAN NAME] ID:4578
+  - Old: Cục hơi nắp bồn cầu TC385VS bên phải TOTO HCV-HA10 HCV-HA10
+  - New: Cục hơi nắp bồn cầu TC385VS bên phải TOTO HCV-HA10
+🏷️  [CLEAN NAME] ID:4579
+  - Old: Cục hơi nắp bồn cầu TC385VS bên trái TOTO HSV-HA10 HSV-HA10
+  - New: Cục hơi nắp bồn cầu TC385VS bên trái TOTO HSV-HA10
+🏷️  [CLEAN NAME] ID:4580
+  - Old: Cục hơi đế nắp bồn cầu TC600VS TOTO HCH08D-TO1 HCH08D-TO1
+  - New: Cục hơi đế nắp bồn cầu TC600VS TOTO HCH08D-TO1
+🏷️  [CLEAN NAME] ID:4581
+  - Old: Lõi đóng êm nắp ngồi TOTO D46964R (nắp TCW1211A) D46964R
+  - New: Lõi đóng êm nắp ngồi TOTO D46964R (nắp TCW1211A)
+🏷️  [CLEAN NAME] ID:4582
+  - Old: Lõi đóng êm nắp ngồi TOTO D46965R (nắp TCW1211A) D46965R
+  - New: Lõi đóng êm nắp ngồi TOTO D46965R (nắp TCW1211A)
+🏷️  [CLEAN NAME] ID:4583
+  - Old: Miếng đệm bằng thép nắp TC385VS TOTO HVM2B100 HVM2B100
+  - New: Miếng đệm bằng thép nắp TC385VS TOTO
+📦 [MOVE -> PHỤ KIỆN] ID:4584
+  - Current: Tấm trượt nắp TC385VS TOTO HN065 HN065
+🏷️  [CLEAN NAME] ID:4584
+  - Old: Tấm trượt nắp TC385VS TOTO HN065 HN065
+  - New: Tấm trượt nắp TC385VS TOTO
+📦 [MOVE -> PHỤ KIỆN] ID:4585
+  - Current: Đế Washlet đa năng TOTO TCM10717 TCM10717
+🏷️  [CLEAN NAME] ID:4585
+  - Old: Đế Washlet đa năng TOTO TCM10717 TCM10717
+  - New: Đế Washlet đa năng TOTO
+🏷️  [CLEAN NAME] ID:4586
+  - Old: Bộ chống trượt TOTO HHF90590U (CS818D, CS945D) HHF90590U
+  - New: Bộ chống trượt TOTO HHF90590U (CS818D, CS945D)
+🏷️  [CLEAN NAME] ID:4587
+  - Old: Bộ cố định TOTO TWF01#00 (CW166RB#XW) TWF01
+  - New: Bộ cố định TOTO TWF01#00 (CW166RB#XW)
+📦 [MOVE -> PHỤ KIỆN] ID:4588
+  - Current: Cao su non TOTO HTH633-3 (MS885D, MS855D, CS948, T53P100V) HTH633-3
+🏷️  [CLEAN NAME] ID:4588
+  - Old: Cao su non TOTO HTH633-3 (MS885D, MS855D, CS948, T53P100V) HTH633-3
+  - New: Cao su non TOTO HTH633-3 (MS885D, MS855D, CS948, T53P100V)
+📦 [MOVE -> PHỤ KIỆN] ID:4589
+  - Current: Mũ chụp vít nối sàn TOTO HTWP23 (MS688) HTWP23
+🏷️  [CLEAN NAME] ID:4589
+  - Old: Mũ chụp vít nối sàn TOTO HTWP23 (MS688) HTWP23
+  - New: Mũ chụp vít nối sàn TOTO HTWP23 (MS688)
+📦 [MOVE -> NẮP] ID:4590
+  - Current: Nắp che bên phải TOTO HH05500#NW1 (CS921VT) HH05500#NW1
+🏷️  [CLEAN NAME] ID:4590
+  - Old: Nắp che bên phải TOTO HH05500#NW1 (CS921VT) HH05500#NW1
+  - New: Nắp che bên phải TOTO HH05500#NW1 (CS921VT)
+📦 [MOVE -> NẮP] ID:4591
+  - Current: Nắp và bệ ngồi TOTO TC6040S-366V#W (MS366) TC6040S-366V#W
+🏷️  [CLEAN NAME] ID:4591
+  - Old: Nắp và bệ ngồi TOTO TC6040S-366V#W (MS366) TC6040S-366V#W
+  - New: Nắp và bệ ngồi TOTO TC6040S-366V#W (MS366)
+📦 [MOVE -> PHỤ KIỆN] ID:4592
+  - Current: Nút nhấn bồn cầu (MS889D, CS769D) TOTO HB5039-769 HB5039-769
+🏷️  [CLEAN NAME] ID:4592
+  - Old: Nút nhấn bồn cầu (MS889D, CS769D) TOTO HB5039-769 HB5039-769
+  - New: Nút nhấn bồn cầu (MS889D, CS769D) TOTO HB5039-769
+🏷️  [CLEAN NAME] ID:4593
+  - Old: Tay gạt xả bồn cầu TOTO HB5674-767 HB5674-767
+  - New: Tay gạt xả bồn cầu TOTO HB5674-767
+📦 [MOVE -> PHỤ KIỆN] ID:4594
+  - Current: Nút nhấn xả MS636 TOTO HB5239-636 HB5239-636
+🏷️  [CLEAN NAME] ID:4594
+  - Old: Nút nhấn xả MS636 TOTO HB5239-636 HB5239-636
+  - New: Nút nhấn xả MS636 TOTO HB5239-636
+🏷️  [CLEAN NAME] ID:4595
+  - Old: Núm hãm nước TOTO S90245 S90245
+  - New: Núm hãm nước TOTO
+🏷️  [CLEAN NAME] ID:4596
+  - Old: Van xả bệt treo tường INAX CFV-002 CFV-002
+  - New: Van xả bệt treo tường INAX CFV-002
+🏷️  [CLEAN NAME] ID:4598
+  - Old: Mặt van xả cảm ứng hồng ngoại Tectron Bau E GROHE 39882000 39882000
+  - New: Mặt van xả cảm ứng hồng ngoại Tectron Bau E GROHE
+🏷️  [CLEAN NAME] ID:4599
+  - Old: Mặt van xả cảm ứng hồng ngoại Tectron Bau E GROHE 39881000 39881000
+  - New: Mặt van xả cảm ứng hồng ngoại Tectron Bau E GROHE
+📦 [MOVE -> PHỤ KIỆN] ID:4600
+  - Current: Ống nối sàn bồn cầu TOTO TCP02-305 TCP02-305
+🏷️  [CLEAN NAME] ID:4600
+  - Old: Ống nối sàn bồn cầu TOTO TCP02-305 TCP02-305
+  - New: Ống nối sàn bồn cầu TOTO TCP02-305
+📦 [MOVE -> PHỤ KIỆN] ID:4601
+  - Current: Ống thoát sàn tâm xả 305mm cho bồn cầu TOTO HVM3D046Z HVM3D046Z
+🏷️  [CLEAN NAME] ID:4601
+  - Old: Ống thoát sàn tâm xả 305mm cho bồn cầu TOTO HVM3D046Z HVM3D046Z
+  - New: Ống thoát sàn tâm xả 305mm cho bồn cầu TOTO
+📦 [MOVE -> PHỤ KIỆN] ID:4602
+  - Current: Bích nối sàn TOTO HT53VN100 (MS885D, CS819D, MS855D) HT53VN100
+🏷️  [CLEAN NAME] ID:4602
+  - Old: Bích nối sàn TOTO HT53VN100 (MS885D, CS819D, MS855D) HT53VN100
+  - New: Bích nối sàn TOTO HT53VN100 (MS885D, CS819D, MS855D)
+🏷️  [CLEAN NAME] ID:4603
+  - Old: Bộ thoát thải bồn cầu TOTO VM5U024#W (C326, C302) VM5U024#W
+  - New: Bộ thoát thải bồn cầu TOTO VM5U024#W (C326, C302)
+🏷️  [CLEAN NAME] ID:4604
+  - Old: Bộ thoát thải bồn cầu TOTO HTSU08W.10 (C625, C823DR#XW) HTSU08W.10
+  - New: Bộ thoát thải bồn cầu TOTO HTSU08W.10 (C625, C823DR#XW)
+📦 [MOVE -> PHỤ KIỆN] ID:4605
+  - Current: Ống nối sàn TOTO HTCP300 (CS300D, CS320D, CS325D) HTCP300
+🏷️  [CLEAN NAME] ID:4605
+  - Old: Ống nối sàn TOTO HTCP300 (CS300D, CS320D, CS325D) HTCP300
+  - New: Ống nối sàn TOTO HTCP300 (CS300D, CS320D, CS325D)
+🏷️  [CLEAN NAME] ID:4606
+  - Old: Đệm thoát sàn TOTO TX215C (CS761D, CS761P, CW823W/F, CS351, CS350) TX215C
+  - New: Đệm thoát sàn TOTO TX215C (CS761D, CS761P, CW823W/F, CS351, CS350)
+📦 [MOVE -> PHỤ KIỆN] ID:4607
+  - Current: Ống nối sàn TOTO TCP19R (CS761D) TCP19R
+🏷️  [CLEAN NAME] ID:4607
+  - Old: Ống nối sàn TOTO TCP19R (CS761D) TCP19R
+  - New: Ống nối sàn TOTO TCP19R (CS761D)
+📦 [MOVE -> PHỤ KIỆN] ID:4608
+  - Current: Ống nối sàn TOTO TCP-16 (MS636) TCP-16
+🏷️  [CLEAN NAME] ID:4608
+  - Old: Ống nối sàn TOTO TCP-16 (MS636) TCP-16
+  - New: Ống nối sàn TOTO TCP-16 (MS636)
+📦 [MOVE -> PHỤ KIỆN] ID:4609
+  - Current: Ống nối sàn TOTO TCP09-305V (MS688) TCP09-305V
+🏷️  [CLEAN NAME] ID:4609
+  - Old: Ống nối sàn TOTO TCP09-305V (MS688) TCP09-305V
+  - New: Ống nối sàn TOTO TCP09-305V (MS688)
+📦 [MOVE -> PHỤ KIỆN] ID:4665
+  - Current: Ống thoát sàn TOTO HH02138 (CS921VT) HH02138
+🏷️  [CLEAN NAME] ID:4665
+  - Old: Ống thoát sàn TOTO HH02138 (CS921VT) HH02138
+  - New: Ống thoát sàn TOTO HH02138 (CS921VT)
+📦 [MOVE -> PHỤ KIỆN] ID:4666
+  - Current: Ống thoát sàn TOTO HH02139 (CS911VT) HH02139
+🏷️  [CLEAN NAME] ID:4666
+  - Old: Ống thoát sàn TOTO HH02139 (CS911VT) HH02139
+  - New: Ống thoát sàn TOTO HH02139 (CS911VT)
+📦 [MOVE -> PHỤ KIỆN] ID:4667
+  - Current: Ống thoát sàn TOTO HVM3D042Z (CS767) HVM3D042Z
+🏷️  [CLEAN NAME] ID:4667
+  - Old: Ống thoát sàn TOTO HVM3D042Z (CS767) HVM3D042Z
+  - New: Ống thoát sàn TOTO HVM3D042Z (CS767)
+📦 [MOVE -> PHỤ KIỆN] ID:4668
+  - Current: Ống nối sàn TOTO 60002103 (CW188V#XW) 60002103
+🏷️  [CLEAN NAME] ID:4668
+  - Old: Ống nối sàn TOTO 60002103 (CW188V#XW) 60002103
+  - New: Ống nối sàn TOTO 60002103 (CW188V#XW)
+🏷️  [CLEAN NAME] ID:4669
+  - Old: Đệm thoát sàn TOTO HTHU291D (CS819D) HTHU291D
+  - New: Đệm thoát sàn TOTO HTHU291D (CS819D)
+📦 [MOVE -> THÂN CẦU] ID:4671
+  - Current: Vít nối két nước với thân bồn cầu TOTO TS810DV3 TS810DV3
+🏷️  [CLEAN NAME] ID:4671
+  - Old: Vít nối két nước với thân bồn cầu TOTO TS810DV3 TS810DV3
+  - New: Vít nối két nước với thân bồn cầu TOTO
+🏷️  [CLEAN NAME] ID:4672
+  - Old: Bộ cố định của nắp bồn cầu TOTO HVM5B059Z HVM5B059Z
+  - New: Bộ cố định của nắp bồn cầu TOTO
+📦 [MOVE -> PHỤ KIỆN] ID:4673
+  - Current: Nút nhấn xả bồn cầu TOTO HHF9B701U HHF9B701U
+🏷️  [CLEAN NAME] ID:4673
+  - Old: Nút nhấn xả bồn cầu TOTO HHF9B701U HHF9B701U
+  - New: Nút nhấn xả bồn cầu TOTO
+📦 [MOVE -> PHỤ KIỆN] ID:4674
+  - Current: Nút nhấn bồn cầu (MS885D, MS855D) TOTO HB5039-885 HB5039-885
+🏷️  [CLEAN NAME] ID:4674
+  - Old: Nút nhấn bồn cầu (MS885D, MS855D) TOTO HB5039-885 HB5039-885
+  - New: Nút nhấn bồn cầu (MS885D, MS855D) TOTO HB5039-885
+📦 [MOVE -> PHỤ KIỆN] ID:4675
+  - Current: Bộ nút nhấn xả TOTO HHF9B702U (S948D#W, S326, S302, CS350D, CS838D) HHF9B702U
+🏷️  [CLEAN NAME] ID:4675
+  - Old: Bộ nút nhấn xả TOTO HHF9B702U (S948D#W, S326, S302, CS350D, CS838D) HHF9B702U
+  - New: Bộ nút nhấn xả TOTO HHF9B702U (S948D#W, S326, S302, CS350D, CS838D)
+📦 [MOVE -> PHỤ KIỆN] ID:4676
+  - Current: Nút nhấn xả TOTO HB5039 (CS300D, CS320, CS325, CS818D, CS819, CS945, CS660D, CS351D, CS350D) HB5039
+🏷️  [CLEAN NAME] ID:4676
+  - Old: Nút nhấn xả TOTO HB5039 (CS300D, CS320, CS325, CS818D, CS819, CS945, CS660D, CS351D, CS350D) HB5039
+  - New: Nút nhấn xả TOTO HB5039 (CS300D, CS320, CS325, CS818D, CS819, CS945, CS660D, CS351D, CS350D)
+📦 [MOVE -> PHỤ KIỆN] ID:4677
+  - Current: Nút nhấn TOTO H34605107 (CS350D, CS945) H34605107
+🏷️  [CLEAN NAME] ID:4677
+  - Old: Nút nhấn TOTO H34605107 (CS350D, CS945) H34605107
+  - New: Nút nhấn TOTO H34605107 (CS350D, CS945)
+🏷️  [CLEAN NAME] ID:4678
+  - Old: Tay gạt TOTO 60002102 (CW188V#XW) 60002102
+  - New: Tay gạt TOTO 60002102 (CW188V#XW)
+📦 [MOVE -> PHỤ KIỆN] ID:4679
+  - Current: Nút nhấn TOTO HB5760-769 (CS838D) HB5760-769
+🏷️  [CLEAN NAME] ID:4679
+  - Old: Nút nhấn TOTO HB5760-769 (CS838D) HB5760-769
+  - New: Nút nhấn TOTO HB5760-769 (CS838D)
+📦 [MOVE -> PHỤ KIỆN] ID:4680
+  - Current: Nút nhấn TOTO TB5239-G-STIV3 (CW823RA, CW823REA) TB5239-G-STIV3
+🏷️  [CLEAN NAME] ID:4680
+  - Old: Nút nhấn TOTO TB5239-G-STIV3 (CW823RA, CW823REA) TB5239-G-STIV3
+  - New: Nút nhấn TOTO TB5239-G-STIV3 (CW823RA, CW823REA)
+📦 [MOVE -> PHỤ KIỆN] ID:4681
+  - Current: Nút nhấn xả TOTO B5761A (CW166RB#XW) B5761A
+🏷️  [CLEAN NAME] ID:4681
+  - Old: Nút nhấn xả TOTO B5761A (CW166RB#XW) B5761A
+  - New: Nút nhấn xả TOTO B5761A (CW166RB#XW)
+📦 [MOVE -> PHỤ KIỆN] ID:4682
+  - Current: Nút nhấn xả TOTO HB5239-823 (C823DR#XW) HB5239-823
+🏷️  [CLEAN NAME] ID:4682
+  - Old: Nút nhấn xả TOTO HB5239-823 (C823DR#XW) HB5239-823
+  - New: Nút nhấn xả TOTO HB5239-823 (C823DR#XW)
+📦 [MOVE -> PHỤ KIỆN] ID:4683
+  - Current: Nút nhấn xả TOTO HB5239-625 (C625) HB5239-625
+🏷️  [CLEAN NAME] ID:4683
+  - Old: Nút nhấn xả TOTO HB5239-625 (C625) HB5239-625
+  - New: Nút nhấn xả TOTO HB5239-625 (C625)
+📦 [MOVE -> PHỤ KIỆN] ID:4706
+  - Current: Đế thải nước INAX PT-B102 PT-B102
+🏷️  [CLEAN NAME] ID:4706
+  - Old: Đế thải nước INAX PT-B102 PT-B102
+  - New: Đế thải nước INAX PT-B102
+🏷️  [CLEAN NAME] ID:4709
+  - Old: Ống thải cong INAX A-DTF23P-2 A-DTF23P-2
+  - New: Ống thải cong INAX A-DTF23P-2
+🏷️  [CLEAN NAME] ID:4710
+  - Old: Ống thải thẳng INAX A-DTF23P-3 A-DTF23P-3
+  - New: Ống thải thẳng INAX A-DTF23P-3
+📦 [MOVE -> PHỤ KIỆN] ID:4712
+  - Current: Đế thải nước INAX A-S20S(305)-1 A-S20S(305)-1
+📦 [MOVE -> PHỤ KIỆN] ID:4713
+  - Current: Đế thải nước INAX CF-420SG-SET(305) CF-420SG-SET(305)
+📦 [MOVE -> PHỤ KIỆN] ID:4714
+  - Current: Đế thải nhựa INAX PT-1052G52G17(305) PT-1052G52G17(305)
+📦 [MOVE -> PHỤ KIỆN] ID:4718
+  - Current: Đế thải nước INAX TR-SS/BW1 TR-SS/BW1
+🏷️  [CLEAN NAME] ID:4718
+  - Old: Đế thải nước INAX TR-SS/BW1 TR-SS/BW1
+  - New: Đế thải nước INAX TR-SS/BW1
+📦 [MOVE -> PHỤ KIỆN] ID:4720
+  - Current: Đế thải nhựa INAX T-82V/BW1 T-82V/BW1
+🏷️  [CLEAN NAME] ID:4720
+  - Old: Đế thải nhựa INAX T-82V/BW1 T-82V/BW1
+  - New: Đế thải nhựa INAX T-82V/BW1
+📦 [MOVE -> PHỤ KIỆN] ID:4722
+  - Current: Đế thải nước INAX PT-1032A80(305) PT-1032A80(305)
+📦 [MOVE -> PHỤ KIỆN] ID:4723
+  - Current: Ống thoát sàn American Standard CN511P900KL808 (VF-1808ET, VF-1808T, VF-1858, WP-1830, WP-1880, WP-1880N, WP-2025) CN511P900KL808
+🏷️  [CLEAN NAME] ID:4723
+  - Old: Ống thoát sàn American Standard CN511P900KL808 (VF-1808ET, VF-1808T, VF-1858, WP-1830, WP-1880, WP-1880N, WP-2025) CN511P900KL808
+  - New: Ống thoát sàn American Standard CN511P900KL808 (VF-1808ET, VF-1808T, VF-1858, WP-1830, WP-1880, WP-1880N, WP-2025)
+📦 [MOVE -> PHỤ KIỆN] ID:4724
+  - Current: Ống thoát sàn American Standard VP-JT43 (2007-WT, 2309-WT) VP-JT43
+🏷️  [CLEAN NAME] ID:4724
+  - Old: Ống thoát sàn American Standard VP-JT43 (2007-WT, 2309-WT) VP-JT43
+  - New: Ống thoát sàn American Standard VP-JT43 (2007-WT, 2309-WT)
+📦 [MOVE -> PHỤ KIỆN] ID:4725
+  - Current: Ống thoát sàn American Standard VP-3170000272 (WP-2073) VP-3170000272
+🏷️  [CLEAN NAME] ID:4725
+  - Old: Ống thoát sàn American Standard VP-3170000272 (WP-2073) VP-3170000272
+  - New: Ống thoát sàn American Standard VP-3170000272 (WP-2073)
+📦 [MOVE -> PHỤ KIỆN] ID:4726
+  - Current: Ống nối thoát sàn American Standard VP-JT43N (2307-WT, 2327-WT, 2407-WT, 2630-WT) VP-JT43N
+🏷️  [CLEAN NAME] ID:4726
+  - Old: Ống nối thoát sàn American Standard VP-JT43N (2307-WT, 2327-WT, 2407-WT, 2630-WT) VP-JT43N
+  - New: Ống nối thoát sàn American Standard VP-JT43N (2307-WT, 2327-WT, 2407-WT, 2630-WT)
+📦 [MOVE -> PHỤ KIỆN] ID:4727
+  - Current: Ống thoát sàn American Standard M12576 (2622-WT) M12576
+🏷️  [CLEAN NAME] ID:4727
+  - Old: Ống thoát sàn American Standard M12576 (2622-WT) M12576
+  - New: Ống thoát sàn American Standard M12576 (2622-WT)
+🏷️  [CLEAN NAME] ID:4729
+  - Old: Van chia nước Viglacera VG853 VG853
+  - New: Van chia nước Viglacera
+🏷️  [CLEAN NAME] ID:4730
+  - Old: Van giảm áp Viglacera VG851 VG851
+  - New: Van giảm áp Viglacera
+📦 [MOVE -> PHỤ KIỆN] ID:4731
+  - Current: Ron cao su (gioăng cao su) cho bồn cầu Viglacera RONCAOSU-VIGLACERA
+🏷️  [CLEAN NAME] ID:4731
+  - Old: Ron cao su (gioăng cao su) cho bồn cầu Viglacera RONCAOSU-VIGLACERA
+  - New: Ron cao su (gioăng cao su) cho bồn cầu Viglacera
+📦 [MOVE -> PHỤ KIỆN] ID:4732
+  - Current: Nút nhấn xả Nova Cosmopolitan S GROHE 37601000 37601000
+🏷️  [CLEAN NAME] ID:4732
+  - Old: Nút nhấn xả Nova Cosmopolitan S GROHE 37601000 37601000
+  - New: Nút nhấn xả Nova Cosmopolitan S GROHE
+📦 [MOVE -> PHỤ KIỆN] ID:4733
+  - Current: Nút nhấn xả Nova Cosmopolitan Flush GROHE 38765000 38765000
+🏷️  [CLEAN NAME] ID:4733
+  - Old: Nút nhấn xả Nova Cosmopolitan Flush GROHE 38765000 38765000
+  - New: Nút nhấn xả Nova Cosmopolitan Flush GROHE
+📦 [MOVE -> PHỤ KIỆN] ID:4734
+  - Current: Nút nhấn xả Skate GROHE 38862000 38862000
+🏷️  [CLEAN NAME] ID:4734
+  - Old: Nút nhấn xả Skate GROHE 38862000 38862000
+  - New: Nút nhấn xả Skate GROHE
+📦 [MOVE -> PHỤ KIỆN] ID:4735
+  - Current: Nút nhấn xả Tectron Skate GROHE 37419000 37419000
+🏷️  [CLEAN NAME] ID:4735
+  - Old: Nút nhấn xả Tectron Skate GROHE 37419000 37419000
+  - New: Nút nhấn xả Tectron Skate GROHE
+📦 [MOVE -> PHỤ KIỆN] ID:4736
+  - Current: Nút nhấn xả Arena Cosmopolitan GROHE 37973000 37973000
+🏷️  [CLEAN NAME] ID:4736
+  - Old: Nút nhấn xả Arena Cosmopolitan GROHE 37973000 37973000
+  - New: Nút nhấn xả Arena Cosmopolitan GROHE
+📦 [MOVE -> PHỤ KIỆN] ID:4737
+  - Current: Nút nhấn xả Skate Air GROHE 38506000 38506000
+🏷️  [CLEAN NAME] ID:4737
+  - Old: Nút nhấn xả Skate Air GROHE 38506000 38506000
+  - New: Nút nhấn xả Skate Air GROHE
+📦 [MOVE -> PHỤ KIỆN] ID:4738
+  - Current: Nút nhấn xả Skate Cosmopolitan GROHE 38845KS0 38845KS0
+🏷️  [CLEAN NAME] ID:4738
+  - Old: Nút nhấn xả Skate Cosmopolitan GROHE 38845KS0 38845KS0
+  - New: Nút nhấn xả Skate Cosmopolitan GROHE
+📦 [MOVE -> PHỤ KIỆN] ID:4739
+  - Current: Nút nhấn xả Nova Cosmopolitan GROHE 38847LI0 38847LI0
+🏷️  [CLEAN NAME] ID:4739
+  - Old: Nút nhấn xả Nova Cosmopolitan GROHE 38847LI0 38847LI0
+  - New: Nút nhấn xả Nova Cosmopolitan GROHE
+📦 [MOVE -> PHỤ KIỆN] ID:4740
+  - Current: Nút nhấn xả Surf GROHE 38861000 38861000
+🏷️  [CLEAN NAME] ID:4740
+  - Old: Nút nhấn xả Surf GROHE 38861000 38861000
+  - New: Nút nhấn xả Surf GROHE
+📦 [MOVE -> PHỤ KIỆN] ID:4741
+  - Current: Nút nhấn xả Skate Cosmopolitan GROHE 38913XM0 38913XM0
+🏷️  [CLEAN NAME] ID:4741
+  - Old: Nút nhấn xả Skate Cosmopolitan GROHE 38913XM0 38913XM0
+  - New: Nút nhấn xả Skate Cosmopolitan GROHE
+📦 [MOVE -> PHỤ KIỆN] ID:4742
+  - Current: Nút nhấn xả Skate Cosmopolitan GROHE 38849HP0 38849HP0
+🏷️  [CLEAN NAME] ID:4742
+  - Old: Nút nhấn xả Skate Cosmopolitan GROHE 38849HP0 38849HP0
+  - New: Nút nhấn xả Skate Cosmopolitan GROHE
+📦 [MOVE -> NẮP] ID:4759
+  - Current: Bệ ngồi bồn cầu GROHE 14924SH0 14924SH0
+🏷️  [CLEAN NAME] ID:4759
+  - Old: Bệ ngồi bồn cầu GROHE 14924SH0 14924SH0
+  - New: Bệ ngồi bồn cầu GROHE
+📦 [MOVE -> PHỤ KIỆN] ID:4760
+  - Current: Bộ đế lắp đặt GROHE 14973000 14973000
+🏷️  [CLEAN NAME] ID:4760
+  - Old: Bộ đế lắp đặt GROHE 14973000 14973000
+  - New: Bộ đế lắp đặt GROHE
+📦 [MOVE -> PHỤ KIỆN] ID:4761
+  - Current: Bộ đế lắp đặt GROHE 14978000 14978000
+🏷️  [CLEAN NAME] ID:4761
+  - Old: Bộ đế lắp đặt GROHE 14978000 14978000
+  - New: Bộ đế lắp đặt GROHE
+📦 [MOVE -> PHỤ KIỆN] ID:4762
+  - Current: Ống xả thoát ngang 320mm GROHE 39453000 39453000
+🏷️  [CLEAN NAME] ID:4762
+  - Old: Ống xả thoát ngang 320mm GROHE 39453000 39453000
+  - New: Ống xả thoát ngang 320mm GROHE
+📦 [MOVE -> PHỤ KIỆN] ID:4763
+  - Current: Ống xả thoát thẳng GROHE 39457000 39457000
+🏷️  [CLEAN NAME] ID:4763
+  - Old: Ống xả thoát thẳng GROHE 39457000 39457000
+  - New: Ống xả thoát thẳng GROHE
+📦 [MOVE -> PHỤ KIỆN] ID:4764
+  - Current: Ống xả thoát sàn / ngang GROHE 39454000 39454000
+🏷️  [CLEAN NAME] ID:4764
+  - Old: Ống xả thoát sàn / ngang GROHE 39454000 39454000
+  - New: Ống xả thoát sàn / ngang GROHE
+📦 [MOVE -> PHỤ KIỆN] ID:4765
+  - Current: Bộ linh kiện giảm chấn GROHE 49119000 49119000
+🏷️  [CLEAN NAME] ID:4765
+  - Old: Bộ linh kiện giảm chấn GROHE 49119000 49119000
+  - New: Bộ linh kiện giảm chấn GROHE
+📦 [MOVE -> PHỤ KIỆN] ID:4766
+  - Current: Bộ linh kiện lắp đặt cho bồn cầu treo tường GROHE 49511000 49511000
+🏷️  [CLEAN NAME] ID:4766
+  - Old: Bộ linh kiện lắp đặt cho bồn cầu treo tường GROHE 49511000 49511000
+  - New: Bộ linh kiện lắp đặt cho bồn cầu treo tường GROHE
+📦 [MOVE -> PHỤ KIỆN] ID:4767
+  - Current: Bộ linh kiện lắp đặt cho bồn cầu treo tường GROHE 49510000 49510000
+🏷️  [CLEAN NAME] ID:4767
+  - Old: Bộ linh kiện lắp đặt cho bồn cầu treo tường GROHE 49510000 49510000
+  - New: Bộ linh kiện lắp đặt cho bồn cầu treo tường GROHE
+🏷️  [CLEAN NAME] ID:4768
+  - Old: Thanh bật cho van xả điện tử Servo GROHE 43306000 43306000
+  - New: Thanh bật cho van xả điện tử Servo GROHE
+📦 [MOVE -> PHỤ KIỆN] ID:4796
+  - Current: Trụ cấp Caesar FP862-1 FP862-1
+🏷️  [CLEAN NAME] ID:4796
+  - Old: Trụ cấp Caesar FP862-1 FP862-1
+  - New: Trụ cấp Caesar FP862-1
+📦 [MOVE -> PHỤ KIỆN] ID:4797
+  - Current: Trụ xả Caesar FP865-4 FP865-4
+🏷️  [CLEAN NAME] ID:4797
+  - Old: Trụ xả Caesar FP865-4 FP865-4
+  - New: Trụ xả Caesar FP865-4
+📦 [MOVE -> PHỤ KIỆN] ID:4798
+  - Current: Trụ xả Caesar FP807A-5/F01-24 FP807A-5/F01-24
+🏷️  [CLEAN NAME] ID:4798
+  - Old: Trụ xả Caesar FP807A-5/F01-24 FP807A-5/F01-24
+  - New: Trụ xả Caesar FP807A-5/F01-24
+📦 [MOVE -> PHỤ KIỆN] ID:4799
+  - Current: Trụ xả Caesar FP8012/F01-24 FP8012/F01-24
+🏷️  [CLEAN NAME] ID:4799
+  - Old: Trụ xả Caesar FP8012/F01-24 FP8012/F01-24
+  - New: Trụ xả Caesar FP8012/F01-24
+📦 [MOVE -> PHỤ KIỆN] ID:4800
+  - Current: Trụ xả Caesar FP855-3 FP855-3
+🏷️  [CLEAN NAME] ID:4800
+  - Old: Trụ xả Caesar FP855-3 FP855-3
+  - New: Trụ xả Caesar FP855-3
+📦 [MOVE -> PHỤ KIỆN] ID:4801
+  - Current: Trụ cấp Caesar FP807A-1/FP8015 FP807A-1/FP8015
+🏷️  [CLEAN NAME] ID:4801
+  - Old: Trụ cấp Caesar FP807A-1/FP8015 FP807A-1/FP8015
+  - New: Trụ cấp Caesar FP807A-1/FP8015
+📦 [MOVE -> PHỤ KIỆN] ID:4802
+  - Current: Trụ cấp Caesar FP813-1/FP8015 FP813-1/FP8015
+🏷️  [CLEAN NAME] ID:4802
+  - Old: Trụ cấp Caesar FP813-1/FP8015 FP813-1/FP8015
+  - New: Trụ cấp Caesar FP813-1/FP8015
+📦 [MOVE -> PHỤ KIỆN] ID:4803
+  - Current: Trụ cấp Caesar FP856A-1 FP856A-1
+🏷️  [CLEAN NAME] ID:4803
+  - Old: Trụ cấp Caesar FP856A-1 FP856A-1
+  - New: Trụ cấp Caesar FP856A-1
+📦 [MOVE -> PHỤ KIỆN] ID:4804
+  - Current: Trụ xả Caesar FP808-2 FP808-2
+🏷️  [CLEAN NAME] ID:4804
+  - Old: Trụ xả Caesar FP808-2 FP808-2
+  - New: Trụ xả Caesar FP808-2
+📦 [MOVE -> PHỤ KIỆN] ID:4805
+  - Current: Bộ xả bồn cầu Caesar FP853A FP853A
+🏷️  [CLEAN NAME] ID:4805
+  - Old: Bộ xả bồn cầu Caesar FP853A FP853A
+  - New: Bộ xả bồn cầu Caesar
+📦 [MOVE -> PHỤ KIỆN] ID:4806
+  - Current: Bộ xả bồn cầu Caesar FP872A FP872A
+🏷️  [CLEAN NAME] ID:4806
+  - Old: Bộ xả bồn cầu Caesar FP872A FP872A
+  - New: Bộ xả bồn cầu Caesar
+📦 [MOVE -> PHỤ KIỆN] ID:4807
+  - Current: Bộ xả bồn cầu Caesar FP826A FP826A
+🏷️  [CLEAN NAME] ID:4807
+  - Old: Bộ xả bồn cầu Caesar FP826A FP826A
+  - New: Bộ xả bồn cầu Caesar
+📦 [MOVE -> PHỤ KIỆN] ID:4808
+  - Current: Trụ cấp Caesar FP8011 FP8011
+🏷️  [CLEAN NAME] ID:4808
+  - Old: Trụ cấp Caesar FP8011 FP8011
+  - New: Trụ cấp Caesar
+📦 [MOVE -> PHỤ KIỆN] ID:4809
+  - Current: Bộ xả bồn cầu Caesar FP825AV FP825AV
+🏷️  [CLEAN NAME] ID:4809
+  - Old: Bộ xả bồn cầu Caesar FP825AV FP825AV
+  - New: Bộ xả bồn cầu Caesar
+📦 [MOVE -> PHỤ KIỆN] ID:4810
+  - Current: Trụ cấp Caesar R90B R90B
+🏷️  [CLEAN NAME] ID:4810
+  - Old: Trụ cấp Caesar R90B R90B
+  - New: Trụ cấp Caesar
+📦 [MOVE -> PHỤ KIỆN] ID:4811
+  - Current: Trụ cấp Caesar R-99T R-99T
+🏷️  [CLEAN NAME] ID:4811
+  - Old: Trụ cấp Caesar R-99T R-99T
+  - New: Trụ cấp Caesar R-99T
+🏷️  [CLEAN NAME - Nắp Cũ] ID:774
+  - Old: Nắp bồn cầu rửa cơ Eco washer TOTO TCW07S (E2) TCW07S#W
+  - New: Nắp bồn cầu rửa cơ Eco washer TOTO TCW07S (E2)
+🏷️  [CLEAN NAME - Nắp Cũ] ID:775
+  - Old: Nắp rửa cơ Eco washer TOTO TCW1211A (E4) 2 chế độ rửa trước & sau TCW1211A#NW1
+  - New: Nắp rửa cơ Eco washer TOTO TCW1211A (E4) 2 chế độ rửa trước & sau
+🏷️  [CLEAN NAME - Nắp Cũ] ID:776
+  - Old: Nắp bồn cầu rửa cơ TOTO TCW09S (E5) 2 chế độ rửa trước & sau TCW09S#W
+  - New: Nắp bồn cầu rửa cơ TOTO TCW09S (E5) 2 chế độ rửa trước & sau
+🏷️  [CLEAN NAME - Nắp Cũ] ID:1000
+  - Old: Nắp rửa cơ Slim American Standard SLIM00001-WT (SLIM00001WT) SLIM00001-WT
+  - New: Nắp rửa cơ Slim American Standard SLIM00001-WT
+🏷️  [CLEAN NAME - Nắp Cũ] ID:1001
+  - Old: Nắp bồn cầu rửa cơ Caesar TAF060 TAF060
+  - New: Nắp bồn cầu rửa cơ Caesar
+🏷️  [CLEAN NAME - Nắp Cũ] ID:1002
+  - Old: Nắp rửa cơ INAX CW-S15VN (CWS15VN) CW-S15VN/BW1
+  - New: Nắp rửa cơ INAX CW-S15VN (CWS15VN)
+🏷️  [CLEAN NAME - Nắp Cũ] ID:1003
+  - Old: Nắp rửa cơ INAX CW-S32VN (CWS32VN)(-1) CW-S32VN/BW1
+  - New: Nắp rửa cơ INAX CW-S32VN (CWS32VN)(-1)
+🏷️  [CLEAN NAME - Nắp Cũ] ID:1004
+  - Old: Nắp rửa cơ Slim 3 American Standard CSCFA650 CSCFA650
+  - New: Nắp rửa cơ Slim 3 American Standard
+🏷️  [CLEAN NAME - Nắp Cũ] ID:1005
+  - Old: Nắp rửa cơ COTTO CVN92200 CVN92200
+  - New: Nắp rửa cơ COTTO
+🏷️  [CLEAN NAME - Nắp Cũ] ID:1006
+  - Old: Nắp rửa cơ COTTO CVN92201 CVN92201
+  - New: Nắp rửa cơ COTTO
+🏷️  [CLEAN NAME - Nắp Cũ] ID:1007
+  - Old: Nắp rửa cơ COTTO CVN92203 CVN92203
+  - New: Nắp rửa cơ COTTO
+🏷️  [CLEAN NAME - Nắp Cũ] ID:1008
+  - Old: Nắp rửa cơ COTTO CVN92202 CVN92202
+  - New: Nắp rửa cơ COTTO
+🏷️  [CLEAN NAME - Nắp Cũ] ID:1009
+  - Old: Nắp rửa cơ COTTO CVN92204 CVN92204
+  - New: Nắp rửa cơ COTTO
+🏷️  [CLEAN NAME - Nắp Cũ] ID:1010
+  - Old: Nắp rửa cơ COTTO CVN92205 CVN92205
+  - New: Nắp rửa cơ COTTO
+🏷️  [CLEAN NAME - Nắp Cũ] ID:1011
+  - Old: Nắp rửa cơ American Standard M4A839 M4A839
+  - New: Nắp rửa cơ American Standard
+🏷️  [CLEAN NAME - Nắp Cũ] ID:1013
+  - Old: Nắp rửa cơ GROHE 39557SH0 39557SH0
+  - New: Nắp rửa cơ GROHE
+🏷️  [CLEAN NAME - Nắp Cũ] ID:1197
+  - Old: Nắp đóng êm American Standard CrysralSleek WP-C119
+  - New: Nắp đóng êm American Standard CrysralSleek
+🏷️  [CLEAN NAME - Nắp Cũ] ID:1215
+  - Old: Nắp bồn cầu American Standard CTSS1808-1M
+  - New: Nắp bồn cầu American Standard
+🏷️  [CLEAN NAME - Nắp Cũ] ID:1311
+  - Old: Nắp đóng êm INAX CF-1032VS/BW1
+  - New: Nắp đóng êm INAX
+🏷️  [CLEAN NAME - Nắp Cũ] ID:1312
+  - Old: Nắp đóng êm INAX CF-502VS/BW1
+  - New: Nắp đóng êm INAX
+🏷️  [CLEAN NAME - Nắp Cũ] ID:1533
+  - Old: Nắp điện tử American Standard WP-7SL1
+  - New: Nắp điện tử American Standard
+🏷️  [CLEAN NAME - Nắp Cũ] ID:3086
+  - Old: Nắp điện tử American Standard WP-7SR1
+  - New: Nắp điện tử American Standard
+🏷️  [CLEAN NAME - Nắp Cũ] ID:3184
+  - Old: Nắp đóng êm INAX CF-952VS/BW1
+  - New: Nắp đóng êm INAX
+🏷️  [CLEAN NAME - Nắp Cũ] ID:3185
+  - Old: Nắp bồn cầu INAX CF-1008VS/BW1
+  - New: Nắp bồn cầu INAX
+🏷️  [CLEAN NAME - Nắp Cũ] ID:3186
+  - Old: Nắp đóng êm INAX CF-800VS/BW1
+  - New: Nắp đóng êm INAX
+🏷️  [CLEAN NAME - Nắp Cũ] ID:3187
+  - Old: Nắp đóng êm INAX CF-918VS/BW1
+  - New: Nắp đóng êm INAX
+🏷️  [CLEAN NAME - Nắp Cũ] ID:3188
+  - Old: Nắp đóng êm INAX CF-600VS/BW1
+  - New: Nắp đóng êm INAX
+🏷️  [CLEAN NAME - Nắp Cũ] ID:3189
+  - Old: Nắp đóng êm INAX CF-900VS/BW1
+  - New: Nắp đóng êm INAX
+🏷️  [CLEAN NAME - Nắp Cũ] ID:3190
+  - Old: Nắp bồn cầu INAX CF-3003VS/BW1
+  - New: Nắp bồn cầu INAX
+🏷️  [CLEAN NAME - Nắp Cũ] ID:3861
+  - Old: Nắp két nước INAX A-T1035V-1/BW1
+  - New: Nắp két nước INAX
+🏷️  [CLEAN NAME - Nắp Cũ] ID:3863
+  - Old: Nắp két nước INAX FR.A-T989V-1
+  - New: Nắp két nước INAX
+🏷️  [CLEAN NAME - Nắp Cũ] ID:3868
+  - Old: Nắp két nước INAX A-T1017VR-1/BW1
+  - New: Nắp két nước INAX
+🏷️  [CLEAN NAME - Nắp Cũ] ID:3869
+  - Old: Nắp két nước INAX A-T117VA-1/BW1
+  - New: Nắp két nước INAX
+🏷️  [CLEAN NAME - Nắp Cũ] ID:3870
+  - Old: Nắp két nước INAX A-T108VA-1/BW1
+  - New: Nắp két nước INAX
+🏷️  [CLEAN NAME - Nắp Cũ] ID:3871
+  - Old: Nắp két nước INAX A-T504VA-1/BW1
+  - New: Nắp két nước INAX
+🏷️  [CLEAN NAME - Nắp Cũ] ID:3887
+  - Old: Nắp két nước Caesar T1140-1-PW
+  - New: Nắp két nước Caesar
+🏷️  [CLEAN NAME - Nắp Cũ] ID:3888
+  - Old: Nắp két nước Caesar C1375-1-PW
+  - New: Nắp két nước Caesar
+
+======================================================
+🎯 KẾT QUẢ THỰC THI PHASE 1
+======================================================
+Tổng kiểm tra (Sub=1): 848 sản phẩm
+🔄 Chuyển sang Nắp Bồn Cầu (Sub=9): 129 sp
+🔄 Chuyển sang Phụ Kiện Bồn Cầu (Sub=32): 172 sp
+🔄 Chuyển sang Thân Bồn Cầu (Sub=33): 19 sp
+✨ Số tên sản phẩm được dọn dẹp SKU đuôi: 760 sp
+
+✅ UPDATE THÀNH CÔNG VÀO DATABASE.

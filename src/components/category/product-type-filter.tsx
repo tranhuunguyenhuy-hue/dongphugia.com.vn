@@ -4,8 +4,7 @@ import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { useCallback } from 'react'
 
 // ── Type configs per subcategory slug ────────────────────────────────────────
-// Each entry maps a subcategory URL slug → array of product_type values from DB
-export const SUBCATEGORY_TYPE_CONFIG: Record<string, { slug: string; label: string }[]> = {
+export const SUBCATEGORY_TYPE_CONFIG: Record<string, { slug: string; label: string; icon?: string }[]> = {
     'bon-cau': [
         { slug: '', label: 'Tất cả' },
         { slug: 'bon-cau-1-khoi', label: '1 Khối' },
@@ -51,7 +50,6 @@ export const SUBCATEGORY_TYPE_CONFIG: Record<string, { slug: string; label: stri
 export const BON_CAU_TYPES = SUBCATEGORY_TYPE_CONFIG['bon-cau']
 
 interface ProductTypeFilterProps {
-    /** The active subcategory slug (e.g. 'bon-cau', 'lavabo', 'sen-tam') */
     activeSubSlug?: string
 }
 
@@ -60,7 +58,6 @@ export function ProductTypeFilter({ activeSubSlug }: ProductTypeFilterProps) {
     const pathname = usePathname()
     const searchParams = useSearchParams()
 
-    // Only show if this subcategory has a type config
     const types = activeSubSlug ? SUBCATEGORY_TYPE_CONFIG[activeSubSlug] : undefined
     if (!types || types.length <= 1) return null
 
@@ -78,28 +75,58 @@ export function ProductTypeFilter({ activeSubSlug }: ProductTypeFilterProps) {
     }, [router, pathname, searchParams])
 
     return (
-        <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs font-semibold text-neutral-400 uppercase tracking-widest shrink-0 mr-1">
-                Loại:
-            </span>
-            {types.map((type) => {
-                const isActive = activeType === type.slug
-                return (
-                    <button
-                        key={type.slug || 'all'}
-                        onClick={() => setType(type.slug)}
-                        className={`
-                            px-3.5 py-1.5 rounded-lg text-[13px] font-medium transition-all duration-150 border
-                            ${isActive
-                                ? 'bg-[#2E7A96] text-white border-[#2E7A96] shadow-sm'
-                                : 'bg-white text-neutral-600 border-neutral-200 hover:border-[#2E7A96]/40 hover:text-[#2E7A96]'
-                            }
-                        `}
-                    >
-                        {type.label}
-                    </button>
-                )
-            })}
+        /* ── Hierarchical container below SubcategoryIconGrid ── */
+        <div className="w-full">
+            {/* Section header */}
+            <div className="flex items-center gap-3 mb-3">
+                <div className="flex items-center gap-2">
+                    {/* Decorative accent */}
+                    <span className="block w-[3px] h-4 rounded-full bg-[#2E7A96]/40" />
+                    <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-neutral-400">
+                        Kiểu sản phẩm
+                    </span>
+                </div>
+                <div className="flex-1 h-px bg-neutral-100" />
+            </div>
+
+            {/* Segmented control — premium macOS-style */}
+            <div
+                className="inline-flex items-center gap-1 bg-neutral-100/70 rounded-2xl p-1.5 flex-wrap"
+                role="group"
+                aria-label="Lọc theo kiểu sản phẩm"
+            >
+                {types.map((type) => {
+                    const isActive = activeType === type.slug
+                    return (
+                        <button
+                            key={type.slug || 'all'}
+                            onClick={() => setType(type.slug)}
+                            role="radio"
+                            aria-checked={isActive}
+                            className={`
+                                relative px-4 py-2 rounded-xl text-[13px] font-medium
+                                transition-all duration-200 cursor-pointer select-none
+                                whitespace-nowrap
+                                ${isActive
+                                    ? [
+                                        'bg-white text-[#2E7A96] font-semibold',
+                                        'shadow-[0_1px_4px_0_rgba(0,0,0,0.10),0_0_0_1px_rgba(46,122,150,0.12)]',
+                                      ].join(' ')
+                                    : [
+                                        'text-neutral-500 hover:text-neutral-800 hover:bg-white/50',
+                                      ].join(' ')
+                                }
+                            `}
+                        >
+                            {/* Active indicator dot */}
+                            {isActive && (
+                                <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-[#2E7A96]/70" />
+                            )}
+                            {type.label}
+                        </button>
+                    )
+                })}
+            </div>
         </div>
     )
 }

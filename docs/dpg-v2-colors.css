@@ -1,0 +1,292 @@
+/* ============================================================
+   DPG (Đồng Phú Gia) — Colors & Typography
+   Source of truth for the design system. Mirrors the Figma file
+   "DPG. Design system ver 2.0".
+   ============================================================ */
+
+/* ---------- Font faces ----------
+   Be Vietnam Pro — the workhorse UI / body family (Google Fonts).
+   Playfair Display — uploaded locally as the editorial display serif
+   used for luxury headlines and quotations. */
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap');
+
+@font-face { font-family: 'Playfair Display'; font-weight: 400; font-style: normal;
+  src: url('./fonts/PlayfairDisplay-Regular.ttf') format('truetype'); font-display: swap; }
+@font-face { font-family: 'Playfair Display'; font-weight: 400; font-style: italic;
+  src: url('./fonts/PlayfairDisplay-Italic.ttf') format('truetype'); font-display: swap; }
+@font-face { font-family: 'Playfair Display'; font-weight: 500; font-style: normal;
+  src: url('./fonts/PlayfairDisplay-Medium.ttf') format('truetype'); font-display: swap; }
+@font-face { font-family: 'Playfair Display'; font-weight: 500; font-style: italic;
+  src: url('./fonts/PlayfairDisplay-MediumItalic.ttf') format('truetype'); font-display: swap; }
+@font-face { font-family: 'Playfair Display'; font-weight: 600; font-style: normal;
+  src: url('./fonts/PlayfairDisplay-SemiBold.ttf') format('truetype'); font-display: swap; }
+@font-face { font-family: 'Playfair Display'; font-weight: 600; font-style: italic;
+  src: url('./fonts/PlayfairDisplay-SemiBoldItalic.ttf') format('truetype'); font-display: swap; }
+@font-face { font-family: 'Playfair Display'; font-weight: 700; font-style: normal;
+  src: url('./fonts/PlayfairDisplay-Bold.ttf') format('truetype'); font-display: swap; }
+@font-face { font-family: 'Playfair Display'; font-weight: 700; font-style: italic;
+  src: url('./fonts/PlayfairDisplay-BoldItalic.ttf') format('truetype'); font-display: swap; }
+@font-face { font-family: 'Playfair Display'; font-weight: 800; font-style: normal;
+  src: url('./fonts/PlayfairDisplay-ExtraBold.ttf') format('truetype'); font-display: swap; }
+@font-face { font-family: 'Playfair Display'; font-weight: 800; font-style: italic;
+  src: url('./fonts/PlayfairDisplay-ExtraBoldItalic.ttf') format('truetype'); font-display: swap; }
+@font-face { font-family: 'Playfair Display'; font-weight: 900; font-style: normal;
+  src: url('./fonts/PlayfairDisplay-Black.ttf') format('truetype'); font-display: swap; }
+@font-face { font-family: 'Playfair Display'; font-weight: 900; font-style: italic;
+  src: url('./fonts/PlayfairDisplay-BlackItalic.ttf') format('truetype'); font-display: swap; }
+
+:root {
+  /* ==========================================================
+     1. BRAND COLOR — Sky / Cyan
+     The DPG teal that appears on CTAs, links, logo, hover states.
+     Full 50→900 scale derived from the figma brand row.
+     ========================================================== */
+  --brand-50:  #ECFEFF;        /* rgb(237,254,255) — pale tint, button hover bg */
+  --brand-100: #D2F9FD;        /* rgb(210,249,253) — surface tint, focus ring */
+  --brand-200: #A5F3FC;
+  --brand-300: #67E8F9;
+  --brand-400: #37B4D1;        /* rgb(55,180,209)  — BRAND PRIMARY */
+  --brand-500: #2D90AF;        /* rgb(45,144,175)  — button default */
+  --brand-600: #25738E;        /* rgb(37,115,142)  — button hover */
+  --brand-700: #225D73;        /* rgb(34,93,115)   — dark text on tint */
+  --brand-800: #164355;
+  --brand-900: #0E2E3C;
+
+  --brand: var(--brand-400);
+  --brand-ink: var(--brand-500);        /* text-on-white brand color */
+  --brand-ink-hover: var(--brand-600);
+
+  /* ==========================================================
+     2. NEUTRALS — Stone scale (Tailwind stone)
+     Warm gray used for text, borders, surfaces. Matches figma.
+     ========================================================== */
+  --stone-50:  #FAFAF9;        /* rgb(250,250,249) — page alt bg */
+  --stone-100: #F5F5F4;        /* rgb(245,245,244) — muted surface */
+  --stone-200: #E7E5E4;        /* rgb(231,229,228) — hairline border */
+  --stone-300: #D6D3D1;        /* rgb(214,211,209) — divider / button-outline */
+  --stone-400: #A7A29E;        /* rgb(167,162,158) — placeholder */
+  --stone-500: #77716C;        /* rgb(119,113,108) — caption */
+  --stone-600: #57534E;        /* rgb(87,83,78)    — body secondary */
+  --stone-700: #44403C;        /* rgb(68,64,60)    — body primary */
+  --stone-800: #292524;        /* rgb(41,37,36)    — headings */
+  --stone-900: #1C1917;        /* rgb(28,25,23)    — strongest ink */
+
+  /* ==========================================================
+     3. BASE
+     ========================================================== */
+  --white: #FFFFFF;
+  --black: #000000;
+
+  /* ==========================================================
+     4. SEMANTIC
+     ========================================================== */
+  --bg:             var(--white);
+  --bg-alt:         var(--stone-50);
+  --bg-muted:       var(--stone-100);
+  --bg-brand-tint:  var(--brand-50);
+
+  --fg:             var(--stone-800);   /* primary ink */
+  --fg-body:        var(--stone-700);   /* paragraph */
+  --fg-muted:       var(--stone-600);   /* secondary */
+  --fg-subtle:      var(--stone-500);   /* tertiary / caption */
+  --fg-placeholder: var(--stone-400);
+
+  --border:         var(--stone-200);
+  --border-strong:  var(--stone-300);
+
+  --link:           var(--brand-ink);
+  --link-hover:     var(--brand-ink-hover);
+
+  /* Warm accent — Terracotta. Complements the cool cyan without fighting it.
+     Use sparingly: sale price, "hot" badge, promotional highlights.
+     Not a second brand color — brand-500 is still the primary CTA. */
+  --accent-50:  #FDF4EE;
+  --accent-100: #FBE7D6;
+  --accent-200: #F6C8A3;
+  --accent-300: #EFA673;
+  --accent-400: #E8824A;           /* warm accent primary */
+  --accent-500: #D46A31;           /* deeper, for text-on-white */
+  --accent-600: #B4551F;
+  --accent-700: #8E4217;
+
+  --accent:       var(--accent-400);
+  --accent-ink:   var(--accent-500);
+
+  /* Status colors — tints available for backgrounds */
+  --danger:        #D94545;            /* slightly warmer than the raw #F24040 */
+  --danger-50:     #FEF2F2;
+  --danger-100:    #FEE2E2;
+  --success:       #16A34A;
+  --success-50:    #F0FDF4;
+  --success-100:   #DCFCE7;
+  --warning:       #D97706;
+  --warning-50:    #FFFBEB;
+  --warning-100:   #FEF3C7;
+  --info:          var(--brand-500);
+  --info-50:       var(--brand-50);
+  --info-100:      var(--brand-100);
+
+  /* Focus ring — used on all focusable elements (input, button, link) */
+  --ring:          0 0 0 3px rgba(55,180,209,0.35);
+  --ring-accent:   0 0 0 3px rgba(232,130,74,0.35);
+  --ring-danger:   0 0 0 3px rgba(217,69,69,0.30);
+
+  /* Overlay — for modals, drawers */
+  --overlay:       rgba(28,25,23,0.55);
+
+  /* ==========================================================
+     5. ELEVATION
+     Exact shadow recipe observed across figma components.
+     ========================================================== */
+  --shadow-xs: 0 1px 2px 0 rgba(0,0,0,0.05);
+  --shadow-sm: 0 1px 3px 0 rgba(0,0,0,0.10), 0 1px 2px 0 rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 6px 0 rgba(0,0,0,0.07), 0 2px 4px 0 rgba(0,0,0,0.06);
+  --shadow-lg: 0 10px 15px 0 rgba(0,0,0,0.10), 0 4px 6px 0 rgba(0,0,0,0.05);
+  --shadow-xl: 0 25px 50px 0 rgba(0,0,0,0.25);
+
+  /* ==========================================================
+     6. RADII
+     ========================================================== */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;   /* buttons default */
+  --radius-lg: 12px;  /* cards, thumbnails, icon buttons */
+  --radius-xl: 16px;  /* large cards */
+  --radius-2xl: 24px;
+  --radius-full: 9999px;
+
+  /* ==========================================================
+     7. SPACING (4-pt system, same as figma gaps)
+     ========================================================== */
+  --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
+  --sp-5: 20px; --sp-6: 24px; --sp-8: 32px; --sp-10: 40px;
+  --sp-12: 48px; --sp-16: 64px; --sp-20: 80px;
+
+  /* ==========================================================
+     8. LAYOUT
+     ========================================================== */
+  --container-max: 1280px;
+  --container-pad: 32px;
+  --page-pad: 80px;
+
+  /* ==========================================================
+     9. TYPOGRAPHY — families & scale
+     Only one family in the system: Be Vietnam Pro.
+     Medium (500) is the canonical weight across the figma file.
+     ========================================================== */
+  --font-sans: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont,
+               'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-serif: 'Playfair Display', 'Times New Roman', Georgia, serif;
+  --font-display: var(--font-serif);   /* editorial / luxury headlines */
+  --font-body: var(--font-sans);
+
+  --fw-light:    300;
+  --fw-regular:  400;
+  --fw-medium:   500;   /* default weight */
+  --fw-semibold: 600;
+  --fw-bold:     700;
+
+  /* Sizes observed in figma: 12, 14, 16, 20, 24, 32, 48, 64 */
+  --text-xs:   12px;     --lh-xs:   18px;
+  --text-sm:   14px;     --lh-sm:   20px;
+  --text-base: 16px;     --lh-base: 24px;   /* most common */
+  --text-lg:   20px;     --lh-lg:   28px;
+  --text-xl:   24px;     --lh-xl:   32px;
+  --text-2xl:  32px;     --lh-2xl:  40px;
+  --text-3xl:  48px;     --lh-3xl:  56px;
+  --text-4xl:  64px;     --lh-4xl:  72px;
+
+  /* ==========================================================
+     10. MOTION
+     ========================================================== */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-fast: 120ms;
+  --dur-base: 200ms;
+  --dur-slow: 320ms;
+}
+
+/* ------------------------------------------------------------
+   Base resets + element defaults
+   ------------------------------------------------------------ */
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-body);
+  font-weight: var(--fw-medium);
+  font-size: var(--text-base);
+  line-height: var(--lh-base);
+  color: var(--fg);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* ------------------------------------------------------------
+   Semantic type
+   ------------------------------------------------------------ */
+h1, .h1 {
+  font-size: var(--text-4xl); line-height: var(--lh-4xl);
+  font-weight: var(--fw-bold); letter-spacing: -0.02em;
+  color: var(--fg); margin: 0;
+}
+h2, .h2 {
+  font-size: var(--text-3xl); line-height: var(--lh-3xl);
+  font-weight: var(--fw-bold); letter-spacing: -0.015em;
+  color: var(--fg); margin: 0;
+}
+h3, .h3 {
+  font-size: var(--text-2xl); line-height: var(--lh-2xl);
+  font-weight: var(--fw-semibold); letter-spacing: -0.01em;
+  color: var(--fg); margin: 0;
+}
+h4, .h4 {
+  font-size: var(--text-xl); line-height: var(--lh-xl);
+  font-weight: var(--fw-semibold); color: var(--fg); margin: 0;
+}
+h5, .h5 {
+  font-size: var(--text-lg); line-height: var(--lh-lg);
+  font-weight: var(--fw-semibold); color: var(--fg); margin: 0;
+}
+
+p, .p {
+  font-size: var(--text-base); line-height: var(--lh-base);
+  font-weight: var(--fw-medium); color: var(--fg-body); margin: 0;
+}
+.caption, small {
+  font-size: var(--text-sm); line-height: var(--lh-sm);
+  color: var(--fg-muted);
+}
+.eyebrow {
+  font-size: var(--text-xs); line-height: var(--lh-xs);
+  font-weight: var(--fw-medium); color: var(--fg-subtle);
+  text-transform: uppercase; letter-spacing: 0.08em;
+}
+
+a { color: var(--link); text-decoration: none;
+    transition: color var(--dur-fast) var(--ease-out); }
+a:hover { color: var(--link-hover); }
+
+/* ------------------------------------------------------------
+   Focus — keyboard only. Always a ring, never an outline.
+   ------------------------------------------------------------ */
+:focus { outline: none; }
+:focus-visible { outline: none; box-shadow: var(--ring); border-radius: var(--radius-md); }
+button:focus-visible, a:focus-visible, input:focus-visible,
+select:focus-visible, textarea:focus-visible { outline: none; box-shadow: var(--ring); }
+
+/* ------------------------------------------------------------
+   Utility helpers (opt-in classes used by UI kit pages)
+   ------------------------------------------------------------ */
+.u-container  { max-width: var(--container-max); margin: 0 auto; padding: 0 var(--container-pad); }
+.u-page       { padding: 0 var(--page-pad); }
+.u-row        { display: flex; align-items: center; }
+.u-col        { display: flex; flex-direction: column; }
+.u-stack-2    { display: flex; flex-direction: column; gap: var(--sp-2); }
+.u-stack-3    { display: flex; flex-direction: column; gap: var(--sp-3); }
+.u-stack-4    { display: flex; flex-direction: column; gap: var(--sp-4); }
+.u-stack-6    { display: flex; flex-direction: column; gap: var(--sp-6); }
+.u-stack-8    { display: flex; flex-direction: column; gap: var(--sp-8); }
+.u-hairline   { height: 1px; background: var(--border); }
