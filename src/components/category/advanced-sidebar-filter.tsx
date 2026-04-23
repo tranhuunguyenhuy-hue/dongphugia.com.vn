@@ -188,6 +188,73 @@ function BrandTagChip({ slug, name, active, onClick }: {
     )
 }
 
+// ── Tag Chip (text-based, for features/materials/origins/misc) ─────────────────
+function TagChip({ label, active, onClick }: {
+    label: string; active: boolean; onClick: () => void
+}) {
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            className={`
+                relative h-8 px-3 rounded-lg border flex items-center justify-center
+                transition-all duration-200 cursor-pointer select-none group/tag
+                text-[11px] font-medium whitespace-nowrap
+                ${active
+                    ? 'bg-[#2E7A96]/8 border-[#2E7A96]/30 text-[#2E7A96] shadow-[0_0_0_1px_rgba(46,122,150,0.12)]'
+                    : 'bg-white border-neutral-200 text-neutral-500 hover:border-neutral-300 hover:bg-neutral-50 hover:text-neutral-700'
+                }
+            `}
+        >
+            {label}
+            {active && (
+                <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-[#2E7A96] flex items-center justify-center">
+                    <svg className="w-2 h-2 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                    </svg>
+                </span>
+            )}
+        </button>
+    )
+}
+
+// ── AdvancedFilterGroup — collapsible "Lọc nâng cao" wrapper ───────────────────
+function AdvancedFilterGroup({
+    children, defaultOpen = true, activeCount = 0,
+}: {
+    children: React.ReactNode
+    defaultOpen?: boolean
+    activeCount?: number
+}) {
+    const [open, setOpen] = useState(defaultOpen)
+    return (
+        <div className="px-5 py-4 border-b border-neutral-100 last:border-0">
+            <button
+                type="button"
+                onClick={() => setOpen(!open)}
+                className="w-full flex items-center justify-between mb-0 group"
+            >
+                <div className="flex items-center gap-2">
+                    <p className="text-[11px] font-semibold text-neutral-500 uppercase tracking-wider">
+                        Lọc nâng cao
+                    </p>
+                    {activeCount > 0 && (
+                        <span className="inline-flex items-center justify-center min-w-[16px] h-[16px] px-1 rounded-full bg-[#2E7A96]/15 text-[#2E7A96] text-[9px] font-bold tabular-nums">
+                            {activeCount}
+                        </span>
+                    )}
+                </div>
+                <ChevronDown className={`h-3.5 w-3.5 text-neutral-400 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
+            </button>
+            {open && (
+                <div className="mt-4 space-y-5">
+                    {children}
+                </div>
+            )}
+        </div>
+    )
+}
+
 // ── Main Component ─────────────────────────────────────────────────────────────
 export function AdvancedSidebarFilter({
     availableFilters,
@@ -299,126 +366,156 @@ export function AdvancedSidebarFilter({
                     </FilterSection>
                 )}
 
-                {/* Brands — logo tag chips */}
-                {availableFilters.brands.length > 0 && (
-                    <FilterSection title="Thương hiệu">
-                        <div className="flex flex-wrap gap-2">
-                            {availableFilters.brands.map(b => {
-                                const active = brandSlugs.includes(b.slug)
-                                return (
+                {/* ── Lọc nâng cao — groups: brands, price, features, materials, origins, misc ── */}
+                <AdvancedFilterGroup
+                    defaultOpen={true}
+                    activeCount={
+                        brandSlugs.length + featureSlugs.length + materialSlugs.length +
+                        originSlugs.length + (isPriceActive ? 1 : 0) + (isNew ? 1 : 0) + (isFeatured ? 1 : 0)
+                    }
+                >
+                    {/* ── Brands — logo tags ── */}
+                    {availableFilters.brands.length > 0 && (
+                        <div className="space-y-2">
+                            <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
+                                Thương hiệu
+                            </p>
+                            <div className="flex flex-wrap gap-1.5">
+                                {availableFilters.brands.map(b => (
                                     <BrandTagChip
                                         key={b.slug}
                                         slug={b.slug}
                                         name={b.name}
-                                        active={active}
+                                        active={brandSlugs.includes(b.slug)}
                                         onClick={() => toggle('brand', brandSlugs, b.slug)}
                                     />
-                                )
-                            })}
+                                ))}
+                            </div>
                         </div>
-                    </FilterSection>
-                )}
+                    )}
 
-                {/* Price — dual range slider */}
-                <FilterSection title="Khoảng giá">
-                    <div className="flex items-center justify-between mb-4">
-                        <span />
-                        {isPriceActive && (
-                            <button
+                    {/* ── Price — dual range slider ── */}
+                    <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                            <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
+                                Khoảng giá
+                            </p>
+                            {isPriceActive && (
+                                <button
+                                    onClick={() => {
+                                        setLocalPrice([PRICE_MIN, PRICE_MAX])
+                                        const params = new URLSearchParams(searchParams.toString())
+                                        params.delete('price')
+                                        params.set('page', '1')
+                                        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+                                    }}
+                                    className="text-[10px] text-neutral-400 hover:text-neutral-600 transition-colors"
+                                >
+                                    Reset
+                                </button>
+                            )}
+                        </div>
+                        <DualRangeSlider
+                            min={PRICE_MIN} max={PRICE_MAX} step={PRICE_STEP}
+                            value={localPrice} onChange={handleSlider}
+                        />
+                        <div className="flex items-center justify-between">
+                            <span className={`text-[12px] font-semibold tabular-nums transition-colors ${isPriceActive ? 'text-[#2E7A96]' : 'text-neutral-500'}`}>
+                                {formatPrice(localPrice[0])}
+                            </span>
+                            <span className="text-[10px] text-neutral-300 mx-1">—</span>
+                            <span className={`text-[12px] font-semibold tabular-nums transition-colors ${isPriceActive ? 'text-[#2E7A96]' : 'text-neutral-500'}`}>
+                                {localPrice[1] >= PRICE_MAX ? `${formatPrice(PRICE_MAX)}+` : formatPrice(localPrice[1])}
+                            </span>
+                        </div>
+                    </div>
+
+                    {/* ── Features — tag chips ── */}
+                    {availableFilters.features.length > 0 && (
+                        <div className="space-y-2">
+                            <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
+                                Chức năng
+                            </p>
+                            <div className="flex flex-wrap gap-1.5">
+                                {availableFilters.features.map(opt => (
+                                    <TagChip
+                                        key={opt.slug}
+                                        label={opt.name}
+                                        active={featureSlugs.includes(opt.slug)}
+                                        onClick={() => toggle('features', featureSlugs, opt.slug)}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ── Materials — tag chips ── */}
+                    {availableFilters.materials.length > 0 && (
+                        <div className="space-y-2">
+                            <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
+                                Chất liệu
+                            </p>
+                            <div className="flex flex-wrap gap-1.5">
+                                {availableFilters.materials.map(opt => (
+                                    <TagChip
+                                        key={opt.slug}
+                                        label={opt.name}
+                                        active={materialSlugs.includes(opt.slug)}
+                                        onClick={() => toggle('material', materialSlugs, opt.slug)}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ── Origins — tag chips ── */}
+                    {availableFilters.origins.length > 0 && (
+                        <div className="space-y-2">
+                            <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
+                                Xuất xứ
+                            </p>
+                            <div className="flex flex-wrap gap-1.5">
+                                {availableFilters.origins.map(opt => (
+                                    <TagChip
+                                        key={opt.slug}
+                                        label={opt.name}
+                                        active={originSlugs.includes(opt.slug)}
+                                        onClick={() => toggle('origin', originSlugs, opt.slug)}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ── Misc toggles — tag chips ── */}
+                    <div className="space-y-2">
+                        <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
+                            Tùy chọn khác
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                            <TagChip
+                                label="Sản phẩm mới"
+                                active={isNew}
                                 onClick={() => {
-                                    setLocalPrice([PRICE_MIN, PRICE_MAX])
                                     const params = new URLSearchParams(searchParams.toString())
-                                    params.delete('price')
+                                    isNew ? params.delete('is_new') : params.set('is_new', 'true')
                                     params.set('page', '1')
                                     router.push(`${pathname}?${params.toString()}`, { scroll: false })
                                 }}
-                                className="text-[10px] text-neutral-400 hover:text-neutral-600 transition-colors"
-                            >
-                                Reset
-                            </button>
-                        )}
-                    </div>
-                    <DualRangeSlider
-                        min={PRICE_MIN} max={PRICE_MAX} step={PRICE_STEP}
-                        value={localPrice} onChange={handleSlider}
-                    />
-                    <div className="flex items-center justify-between mt-3">
-                        <span className={`text-[12px] font-semibold tabular-nums transition-colors ${isPriceActive ? 'text-[#2E7A96]' : 'text-neutral-500'}`}>
-                            {formatPrice(localPrice[0])}
-                        </span>
-                        <span className="text-[10px] text-neutral-300 mx-1">—</span>
-                        <span className={`text-[12px] font-semibold tabular-nums transition-colors ${isPriceActive ? 'text-[#2E7A96]' : 'text-neutral-500'}`}>
-                            {localPrice[1] >= PRICE_MAX ? `${formatPrice(PRICE_MAX)}+` : formatPrice(localPrice[1])}
-                        </span>
-                    </div>
-                </FilterSection>
-
-                {/* Features */}
-                {availableFilters.features.length > 0 && (
-                    <FilterSection title="Chức năng" defaultOpen={false}>
-                        <div className="space-y-1">
-                            {availableFilters.features.map(opt => (
-                                <CheckRow
-                                    key={opt.slug} label={opt.name}
-                                    active={featureSlugs.includes(opt.slug)}
-                                    onClick={() => toggle('features', featureSlugs, opt.slug)}
-                                />
-                            ))}
+                            />
+                            <TagChip
+                                label="Sản phẩm nổi bật"
+                                active={isFeatured}
+                                onClick={() => {
+                                    const params = new URLSearchParams(searchParams.toString())
+                                    isFeatured ? params.delete('is_featured') : params.set('is_featured', 'true')
+                                    params.set('page', '1')
+                                    router.push(`${pathname}?${params.toString()}`, { scroll: false })
+                                }}
+                            />
                         </div>
-                    </FilterSection>
-                )}
-
-                {/* Materials */}
-                {availableFilters.materials.length > 0 && (
-                    <FilterSection title="Chất liệu" defaultOpen={false}>
-                        <div className="space-y-1">
-                            {availableFilters.materials.map(opt => (
-                                <CheckRow
-                                    key={opt.slug} label={opt.name}
-                                    active={materialSlugs.includes(opt.slug)}
-                                    onClick={() => toggle('material', materialSlugs, opt.slug)}
-                                />
-                            ))}
-                        </div>
-                    </FilterSection>
-                )}
-
-                {/* Origins */}
-                {availableFilters.origins.length > 0 && (
-                    <FilterSection title="Xuất xứ" defaultOpen={false}>
-                        <div className="space-y-1">
-                            {availableFilters.origins.map(opt => (
-                                <CheckRow
-                                    key={opt.slug} label={opt.name}
-                                    active={originSlugs.includes(opt.slug)}
-                                    onClick={() => toggle('origin', originSlugs, opt.slug)}
-                                />
-                            ))}
-                        </div>
-                    </FilterSection>
-                )}
-
-                {/* Misc */}
-                <FilterSection title="Tùy chọn khác" defaultOpen={false}>
-                    <div className="space-y-1">
-                        {[
-                            { label: 'Sản phẩm mới', active: isNew, action: () => {
-                                const params = new URLSearchParams(searchParams.toString())
-                                isNew ? params.delete('is_new') : params.set('is_new', 'true')
-                                params.set('page', '1')
-                                router.push(`${pathname}?${params.toString()}`, { scroll: false })
-                            }},
-                            { label: 'Sản phẩm nổi bật', active: isFeatured, action: () => {
-                                const params = new URLSearchParams(searchParams.toString())
-                                isFeatured ? params.delete('is_featured') : params.set('is_featured', 'true')
-                                params.set('page', '1')
-                                router.push(`${pathname}?${params.toString()}`, { scroll: false })
-                            }},
-                        ].map(({ label, active, action }) => (
-                            <CheckRow key={label} label={label} active={active} onClick={action} />
-                        ))}
                     </div>
-                </FilterSection>
+                </AdvancedFilterGroup>
             </div>
         </div>
     )
