@@ -97,7 +97,7 @@ export default async function VatLieuNuocPage({ searchParams }: PageProps) {
                     </Suspense>
                 </aside>
 
-                <div className="flex-1 min-w-0 space-y-10">
+                <div className="w-full flex-1 min-w-0 space-y-10">
                     <SubcategoryIconGrid
                         subcategories={subcategories}
                         basePath={BASE_PATH}
