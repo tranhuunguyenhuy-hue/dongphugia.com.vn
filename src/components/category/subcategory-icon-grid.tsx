@@ -99,10 +99,10 @@ export function SubcategoryIconGrid({
                         !activeSlug ? '[&:has(a:active)>a:not(:active)]:opacity-50 [&:has(a:active)>a:not(:active)]:transition-opacity' : ''
                     }`}
                     style={{
-                        // Always keep 4px padding so outline of edge items isn't clipped.
-                        // Expand to 40px when arrow button is visible.
-                        paddingLeft: canScrollLeft ? '40px' : '4px',
-                        paddingRight: canScrollRight ? '40px' : '4px',
+                        // 12px baseline: enough room for 2.5px outline + hover scale.
+                        // Expand to 44px when scroll arrow is visible.
+                        paddingLeft: canScrollLeft ? '44px' : '12px',
+                        paddingRight: canScrollRight ? '44px' : '12px',
                     }}
                 >
                     {subcategories.map((sub) => {
