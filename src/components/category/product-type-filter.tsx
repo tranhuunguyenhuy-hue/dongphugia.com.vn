@@ -75,25 +75,21 @@ export function ProductTypeFilter({ activeSubSlug }: ProductTypeFilterProps) {
     }, [router, pathname, searchParams])
 
     return (
-        /* ── Hierarchical container below SubcategoryIconGrid ── */
-        <div className="w-full">
-            {/* Section header */}
-            <div className="flex items-center gap-3 mb-3">
-                <div className="flex items-center gap-2">
-                    {/* Decorative accent */}
-                    <span className="block w-[3px] h-4 rounded-full bg-[#2E7A96]/40" />
-                    <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-neutral-400">
-                        Kiểu sản phẩm
-                    </span>
-                </div>
-                <div className="flex-1 h-px bg-neutral-100" />
+        /* ── Title + segmented control on one row ── */
+        <div className="w-full flex items-center gap-4 flex-wrap">
+            {/* Title */}
+            <div className="flex items-center gap-2 shrink-0">
+                <span className="block w-[3px] h-4 rounded-full bg-[#2E7A96]/40" />
+                <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-neutral-400">
+                    Loại sản phẩm
+                </span>
             </div>
 
             {/* Segmented control — premium macOS-style */}
             <div
                 className="inline-flex items-center gap-1 bg-neutral-100/70 rounded-2xl p-1.5 flex-wrap"
                 role="group"
-                aria-label="Lọc theo kiểu sản phẩm"
+                aria-label="Lọc theo loại sản phẩm"
             >
                 {types.map((type) => {
                     const isActive = activeType === type.slug
