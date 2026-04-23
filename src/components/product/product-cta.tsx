@@ -63,23 +63,46 @@ export function ProductCTA({
         });
     };
 
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+        setIsSubmitting(true);
         const form = e.currentTarget;
         const data = new FormData(form);
 
-        await fetch("/api/quote-requests", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                product_name: productName,
-                customer_name: data.get("customerName"),
-                customer_phone: data.get("customerPhone"),
-                note: data.get("note") ?? "",
-            }),
-        }).catch(() => { });
+        try {
+            const res = await fetch("/api/quote-requests", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    name: data.get("customerName"),
+                    phone: data.get("customerPhone"),
+                    message: `Yêu cầu tư vấn/đặt hàng cho sản phẩm: ${productName} (SKU: ${productSku})`,
+                    products: [
+                        {
+                            product_id: productId,
+                            quantity: hasPrice ? quantity : 1,
+                        }
+                    ]
+                }),
+            });
 
-        setIsSuccess(true);
+            const result = await res.json();
+            if (result.success) {
+                setIsSuccess(true);
+            } else {
+                toast.error("Không thể gửi yêu cầu", {
+                    description: result.error || result.message || "Vui lòng kiểm tra lại thông tin."
+                });
+            }
+        } catch (error) {
+            toast.error("Lỗi kết nối", {
+                description: "Đã có lỗi xảy ra. Vui lòng thử lại sau."
+            });
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const resetState = () => {
@@ -231,9 +254,10 @@ export function ProductCTA({
                                     <div className="mt-4 pt-4 border-t border-stone-100">
                                         <Button
                                             type="submit"
-                                            className="w-full h-12 bg-brand-500 hover:bg-brand-600 text-white font-semibold text-[15px] rounded-[var(--radius-btn)] shadow-md transition-all"
+                                            disabled={isSubmitting}
+                                            className="w-full h-12 bg-brand-500 hover:bg-brand-600 text-white font-semibold text-[15px] rounded-[var(--radius-btn)] shadow-md transition-all gap-2"
                                         >
-                                            {hasPrice ? "Xác nhận đặt hàng" : "Gửi yêu cầu báo giá"}
+                                            {isSubmitting ? "Đang xử lý..." : (hasPrice ? "Xác nhận đặt hàng" : "Gửi yêu cầu báo giá")}
                                         </Button>
                                         <p className="text-[11px] text-center text-stone-400 mt-3">
                                             Thông tin của bạn sẽ được bảo mật tuyệt đối.
