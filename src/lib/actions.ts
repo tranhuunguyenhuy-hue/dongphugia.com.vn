@@ -113,7 +113,7 @@ const quoteCartSchema = z.object({
     phone: z.string().min(9, "Số điện thoại không hợp lệ").max(15),
     email: z.string().email("Email không hợp lệ").optional().or(z.literal('')),
     message: z.string().max(2000).optional().nullable(),
-    products: z.array(quoteCartItemSchema).min(1, "Cần ít nhất 1 sản phẩm").max(50),
+    products: z.array(quoteCartItemSchema).optional().default([]),
 })
 
 export type QuoteCartPayload = z.infer<typeof quoteCartSchema>
@@ -135,14 +135,16 @@ export async function submitQuoteRequest(payload: QuoteCartPayload) {
                 email: email || null,
                 message: message || null,
                 quote_number: quoteNumber,
-                // Nested write: create all quote_items in one operation
-                quote_items: {
-                    create: products.map(p => ({
-                        product_id: p.product_id,
-                        quantity: p.quantity ?? 1,
-                        note: p.note ?? null,
-                    })),
-                },
+                // Nested write: create quote_items only if products exist
+                ...(products.length > 0 && {
+                    quote_items: {
+                        create: products.map(p => ({
+                            product_id: p.product_id,
+                            quantity: p.quantity ?? 1,
+                            note: p.note ?? null,
+                        })),
+                    },
+                }),
             },
         })
     } catch (error) {

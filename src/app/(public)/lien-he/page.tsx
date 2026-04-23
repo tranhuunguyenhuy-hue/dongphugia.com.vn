@@ -1,12 +1,55 @@
 "use client";
 
-import { Mail, MapPin, Phone, Globe, Clock, ArrowRight } from "lucide-react";
+import { Mail, MapPin, Phone, Globe, Clock, ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { siteConfig } from "@/config/site";
+import { useState } from "react";
+import { toast } from "sonner";
 
 export default function ContactPage() {
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        setIsSubmitting(true);
+
+        const formData = new FormData(e.currentTarget);
+        const data = {
+            name: formData.get("name") as string,
+            phone: formData.get("phone") as string,
+            email: formData.get("email") as string,
+            message: formData.get("message") as string,
+        };
+
+        try {
+            const res = await fetch('/api/quote-requests', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            const result = await res.json();
+            
+            if (result.success) {
+                toast.success("Đã gửi yêu cầu thành công!", {
+                    description: "Chúng tôi sẽ sớm liên hệ lại với bạn."
+                });
+                (e.target as HTMLFormElement).reset();
+            } else {
+                toast.error("Không thể gửi yêu cầu", {
+                    description: result.error || result.message || "Vui lòng thiết lập lại thông tin."
+                });
+            }
+        } catch (error) {
+            toast.error("Lỗi hệ thống", {
+                description: "Đã có lỗi xảy ra. Vui lòng thử lại sau."
+            });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
     return (
         <div className="w-full bg-neutral-50/50 min-h-screen pb-20">
             {/* Header Area */}
@@ -115,15 +158,13 @@ export default function ContactPage() {
                                 <h3 className="text-2xl font-bold text-neutral-900 mb-2">Gửi yêu cầu trực tuyến</h3>
                                 <p className="text-neutral-500 text-sm mb-8">Điền thông tin bên dưới, chúng tôi sẽ phản hồi lại bạn nhanh nhất.</p>
 
-                                <form className="flex flex-col gap-6" onSubmit={(e) => {
-                                    e.preventDefault();
-                                    alert("Form đang ở chế độ giao diện, tính năng gửi sẽ được kích hoạt sau khi có API.");
-                                }}>
+                                <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                         <div className="flex flex-col gap-2.5">
                                             <label htmlFor="name" className="text-sm font-medium text-neutral-700">Họ và tên <span className="text-red-500">*</span></label>
                                             <Input 
                                                 id="name" 
+                                                name="name" 
                                                 placeholder="VD: Nguyễn Văn A" 
                                                 required 
                                                 className="h-12 bg-neutral-50 border-neutral-200 focus-visible:ring-[#2E7A96] focus-visible:border-[#2E7A96]"
@@ -133,6 +174,7 @@ export default function ContactPage() {
                                             <label htmlFor="phone" className="text-sm font-medium text-neutral-700">Số điện thoại <span className="text-red-500">*</span></label>
                                             <Input 
                                                 id="phone" 
+                                                name="phone" 
                                                 type="tel"
                                                 placeholder="VD: 09..." 
                                                 required 
@@ -145,6 +187,7 @@ export default function ContactPage() {
                                         <label htmlFor="email" className="text-sm font-medium text-neutral-700">Email</label>
                                         <Input 
                                             id="email" 
+                                            name="email" 
                                             type="email"
                                             placeholder="VD: example@email.com" 
                                             className="h-12 bg-neutral-50 border-neutral-200 focus-visible:ring-[#2E7A96] focus-visible:border-[#2E7A96]"
@@ -155,6 +198,7 @@ export default function ContactPage() {
                                         <label htmlFor="message" className="text-sm font-medium text-neutral-700">Nội dung tư vấn <span className="text-red-500">*</span></label>
                                         <Textarea 
                                             id="message" 
+                                            name="message" 
                                             placeholder="Bạn đang muốn tìm mua dòng sản phẩm nào? Hoặc để lại lời nhắn cho chúng tôi..." 
                                             required 
                                             rows={5}
@@ -162,9 +206,22 @@ export default function ContactPage() {
                                         />
                                     </div>
 
-                                    <Button type="submit" className="h-14 mt-2 bg-[#2E7A96] hover:bg-[#256579] text-base gap-2 w-full sm:w-auto self-start px-10 shadow-lg shadow-[#2E7A96]/20 transition-all active:scale-[0.98]">
-                                        Gửi yêu cầu tư vấn
-                                        <ArrowRight className="w-5 h-5" />
+                                    <Button 
+                                        type="submit" 
+                                        disabled={isSubmitting}
+                                        className="h-14 mt-2 bg-[#2E7A96] hover:bg-[#256579] text-base gap-2 w-full sm:w-auto self-start px-10 shadow-lg shadow-[#2E7A96]/20 transition-all active:scale-[0.98]"
+                                    >
+                                        {isSubmitting ? (
+                                            <>
+                                                <Loader2 className="w-5 h-5 animate-spin" />
+                                                Đang gửi...
+                                            </>
+                                        ) : (
+                                            <>
+                                                Gửi yêu cầu tư vấn
+                                                <ArrowRight className="w-5 h-5" />
+                                            </>
+                                        )}
                                     </Button>
                                     <p className="text-xs text-neutral-400 mt-2">
                                         * Thông tin của bạn sẽ được bảo mật tuyệt đối theo chính sách của Đông Phú Gia.
