@@ -149,6 +149,11 @@ export default async function ThietBiVeSinhSubPage({ params, searchParams }: Pag
                         activeSlug={sub}
                     />
 
+                    {/* Product Type filter tabs — directly below icon grid */}
+                    <Suspense>
+                        <ProductTypeFilter activeSubSlug={sub} />
+                    </Suspense>
+
                     {/* Divider */}
                     <div className="border-t border-neutral-100" />
 
@@ -164,11 +169,6 @@ export default async function ThietBiVeSinhSubPage({ params, searchParams }: Pag
                                 <CategorySort />
                             </div>
                         </div>
-
-                        {/* Product Type filter tabs */}
-                        <Suspense>
-                            <ProductTypeFilter activeSubSlug={sub} />
-                        </Suspense>
 
                         {/* Spec filter chips */}
                         {specFilterDefs.length > 0 && (
