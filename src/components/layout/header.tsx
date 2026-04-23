@@ -2,9 +2,8 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import { Phone, Menu, ChevronDown, ChevronRight } from "lucide-react"
+import { Phone, ChevronDown, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet"
 import { useState, useEffect } from "react"
 import { getMegaMenuData } from '@/app/actions/mega-menu-actions'
 import type { Category, MenuData } from '@/components/home/mega-menu'
@@ -12,6 +11,7 @@ import { MegaMenuHeader } from '@/components/home/mega-menu'
 import { CartIcon } from '@/components/cart/cart-icon'
 import { CartDrawer } from '@/components/cart/cart-drawer'
 import { SearchBar } from '@/components/home/search-bar'
+import { MobileMenuSheet } from '@/components/layout/mobile-menu-sheet'
 
 import { siteConfig, NAV_PRODUCT_CATEGORIES as PRODUCT_CATEGORIES, NAV_MAIN_LINKS as NAV_LINKS, NAV_ABOUT_LINKS as ABOUT_LINKS } from "@/config/site"
 
@@ -126,68 +126,11 @@ export function Header() {
                                 </Button>
                             </div>
 
-                            {/* Mobile: Cart + Menu */}
-                            <div className="flex lg:hidden items-center gap-1">
+                            {/* Mobile: Search + Cart + Menu */}
+                            <div className="flex lg:hidden items-center gap-0.5">
+                                <SearchBar />
                                 <CartIcon />
-                                <Sheet>
-                                    <SheetTrigger asChild>
-                                        <Button variant="ghost" size="icon" aria-label="Mở menu điều hướng">
-                                            <Menu className="h-6 w-6 text-stone-900" aria-hidden="true" />
-                                        </Button>
-                                    </SheetTrigger>
-                                    <SheetContent side="left" className="w-[300px] p-0 border-r border-border">
-                                        <SheetTitle className="sr-only">Menu điều hướng</SheetTitle>
-                                        <div className="flex flex-col h-full bg-background">
-                                            {/* Mobile logo */}
-                                            <div className="flex items-center px-6 h-[72px] border-b border-border">
-                                                <Link href="/" className="flex items-center">
-                                                    <Image src="/images/logo-dpg.png" alt="Đông Phú Gia" width={184} height={36} className="h-8 w-auto object-contain" />
-                                                </Link>
-                                            </div>
-
-                                            {/* Mobile nav */}
-                                            <nav className="flex-1 overflow-y-auto py-6">
-                                                <div className="px-6 pb-4">
-                                                    <p className="text-[11px] font-semibold text-stone-400 uppercase tracking-[0.15em] mb-3">Sản phẩm</p>
-                                                    {PRODUCT_CATEGORIES.map((cat) =>
-                                                        cat.active ? (
-                                                            <Link key={cat.href} href={cat.href} className="flex items-center justify-between py-3 text-[15px] font-medium text-stone-900 hover:text-brand-600 transition-colors">
-                                                                {cat.label}
-                                                                <ChevronRight className="h-4 w-4 text-stone-400" />
-                                                            </Link>
-                                                        ) : (
-                                                            <div key={cat.href} className="flex items-center justify-between py-3 text-[15px] font-medium text-stone-300 cursor-not-allowed" title="Sắp có">
-                                                                {cat.label}
-                                                                <span className="text-[10px] font-bold bg-stone-100 text-stone-400 px-2 py-0.5 rounded">Sắp có</span>
-                                                            </div>
-                                                        )
-                                                    )}
-                                                </div>
-
-                                                <div className="h-px bg-stone-200 mx-6 my-2" />
-
-                                                <div className="px-6 py-4">
-                                                    <p className="text-[11px] font-semibold text-stone-400 uppercase tracking-[0.15em] mb-3">Menu chính</p>
-                                                    {NAV_LINKS.map((link) => (
-                                                        <Link key={link.href} href={link.href} className="block py-3 text-[15px] font-medium text-stone-900 hover:text-brand-600 transition-colors">
-                                                            {link.label}
-                                                        </Link>
-                                                    ))}
-                                                </div>
-                                            </nav>
-
-                                            {/* Mobile CTA */}
-                                            <div className="p-6 border-t border-border">
-                                                <Button asChild variant="cta" className="w-full h-12 gap-2">
-                                                    <Link href="/lien-he" className="flex items-center justify-center w-full">
-                                                        <Phone className="h-4 w-4" />
-                                                        Liên hệ tư vấn
-                                                    </Link>
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    </SheetContent>
-                                </Sheet>
+                                <MobileMenuSheet />
                             </div>
                         </div>
                     </div>
