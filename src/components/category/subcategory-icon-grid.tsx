@@ -86,7 +86,7 @@ export function SubcategoryIconGrid({
         // ROOT: max-w-full + overflow-hidden prevents this component from
         // ever expanding beyond its parent — the critical mobile fix.
         <div className="w-full overflow-hidden">
-            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-neutral-400 mb-3">
+            <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-neutral-400 mb-2">
                 Danh mục sản phẩm
             </p>
 
@@ -99,7 +99,7 @@ export function SubcategoryIconGrid({
                 <div
                     ref={scrollRef}
                     className={[
-                        'flex gap-3 sm:gap-4 overflow-x-auto py-3 px-3 sm:px-4',
+                        'flex gap-2 sm:gap-3 overflow-x-auto py-2 px-2.5 sm:px-3',
                         'snap-x snap-mandatory',
                         'touch-pan-x',
                         // Hide scrollbar for clean slider look
@@ -122,7 +122,7 @@ export function SubcategoryIconGrid({
                                 key={sub.id}
                                 href={`${basePath}/${sub.slug}`}
                                 ref={isActive ? activeItemRef : null}
-                                className={`group/item shrink-0 snap-start flex flex-col items-center gap-1.5 w-[72px] sm:w-[88px] lg:w-[96px] transition-opacity duration-200 ${
+                                className={`group/item shrink-0 snap-start flex flex-col items-center gap-1 w-[56px] sm:w-[68px] lg:w-[76px] transition-opacity duration-200 ${
                                     activeSlug && !isActive ? 'opacity-50 hover:opacity-100' : ''
                                 }`}
                             >
@@ -135,7 +135,7 @@ export function SubcategoryIconGrid({
                                             src={imgSrc}
                                             alt={sub.name}
                                             fill
-                                            sizes="96px"
+                                            sizes="76px"
                                             className={[
                                                 'object-contain mix-blend-multiply rounded-md',
                                                 isActive
@@ -158,7 +158,7 @@ export function SubcategoryIconGrid({
                                     )}
                                 </div>
 
-                                <span className={`text-[10px] sm:text-[11px] font-medium text-center leading-tight transition-colors line-clamp-2 ${
+                                <span className={`text-[9px] sm:text-[10px] font-medium text-center leading-tight transition-colors line-clamp-2 ${
                                     isActive ? 'text-[#2E7A96]' : 'text-neutral-500 group-hover/item:text-[#2E7A96]'
                                 }`}>
                                     {sub.name}
