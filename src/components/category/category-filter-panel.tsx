@@ -194,6 +194,7 @@ export function CategoryFilterPanel({ brands }: CategoryFilterPanelProps) {
         priceParam ? parsePriceParam(priceParam) : [PRICE_MIN, PRICE_MAX]
     )
     const isPriceActive = priceParam !== ''
+    const [advOpen, setAdvOpen] = useState(true)
 
     useEffect(() => {
         setLocalPrice(priceParam ? parsePriceParam(priceParam) : [PRICE_MIN, PRICE_MAX])
@@ -274,63 +275,93 @@ export function CategoryFilterPanel({ brands }: CategoryFilterPanelProps) {
                 )}
             </div>
 
-            <div className="divide-y divide-neutral-100">
-                {/* Brands */}
-                {brands.length > 0 && (
-                    <BrandSection
-                        brands={brands}
-                        activeBrands={activeBrands}
-                        onToggle={toggleBrand}
-                        activeCount={activeBrands.length}
-                    />
-                )}
-
-                {/* Price Range Slider */}
-                <div className="px-5 py-4">
-                    <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-2">
-                            <p className="text-[11px] font-semibold text-neutral-500 uppercase tracking-wider">
-                                Khoảng giá
-                            </p>
-                            {isPriceActive && (
-                                <span className="w-1.5 h-1.5 rounded-full bg-[#2E7A96] flex-shrink-0" />
-                            )}
-                        </div>
-                        {isPriceActive && (
-                            <button
-                                onClick={() => {
-                                    setLocalPrice([PRICE_MIN, PRICE_MAX])
-                                    updateParam('price', null)
-                                }}
-                                className="text-[10px] text-neutral-400 hover:text-neutral-600 transition-colors"
-                            >
-                                Reset
-                            </button>
+            {/* ── Lọc nâng cao — collapsible group ── */}
+            <div className="px-5 py-4">
+                <button
+                    type="button"
+                    onClick={() => setAdvOpen(!advOpen)}
+                    className="w-full flex items-center justify-between mb-0 group"
+                >
+                    <div className="flex items-center gap-2">
+                        <p className="text-[11px] font-semibold text-neutral-500 uppercase tracking-wider">
+                            Lọc nâng cao
+                        </p>
+                        {totalActiveCount > 0 && (
+                            <span className="inline-flex items-center justify-center min-w-[16px] h-[16px] px-1 rounded-full bg-[#2E7A96]/15 text-[#2E7A96] text-[9px] font-bold tabular-nums">
+                                {totalActiveCount}
+                            </span>
                         )}
                     </div>
+                    <svg
+                        className={`h-3.5 w-3.5 text-neutral-400 transition-transform duration-200 ${advOpen ? 'rotate-180' : ''}`}
+                        fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor"
+                    >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+                    </svg>
+                </button>
 
-                    <DualRangeSlider
-                        min={PRICE_MIN}
-                        max={PRICE_MAX}
-                        step={PRICE_STEP}
-                        value={localPrice}
-                        onChange={handleSliderChange}
-                    />
+                {advOpen && (
+                    <div className="mt-4 space-y-5">
+                        {/* ── Brands — logo tags ── */}
+                        {brands.length > 0 && (
+                            <div className="space-y-2">
+                                <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
+                                    Thương hiệu
+                                </p>
+                                <div className="flex flex-wrap gap-1.5">
+                                    {brands.map((b) => (
+                                        <BrandTag
+                                            key={b.id}
+                                            brand={b}
+                                            active={activeBrands.includes(b.name)}
+                                            onToggle={() => toggleBrand(b.name)}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                        )}
 
-                    <div className="flex items-center justify-between mt-3">
-                        <span className={`text-[12px] font-semibold tabular-nums transition-colors ${
-                            isPriceActive ? 'text-[#2E7A96]' : 'text-neutral-500'
-                        }`}>
-                            {formatPrice(localPrice[0])}
-                        </span>
-                        <span className="text-[10px] text-neutral-300 mx-1">—</span>
-                        <span className={`text-[12px] font-semibold tabular-nums transition-colors ${
-                            isPriceActive ? 'text-[#2E7A96]' : 'text-neutral-500'
-                        }`}>
-                            {localPrice[1] >= PRICE_MAX ? `${formatPrice(PRICE_MAX)}+` : formatPrice(localPrice[1])}
-                        </span>
+                        {/* ── Price — dual range slider ── */}
+                        <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                                <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
+                                    Khoảng giá
+                                </p>
+                                {isPriceActive && (
+                                    <button
+                                        onClick={() => {
+                                            setLocalPrice([PRICE_MIN, PRICE_MAX])
+                                            updateParam('price', null)
+                                        }}
+                                        className="text-[10px] text-neutral-400 hover:text-neutral-600 transition-colors"
+                                    >
+                                        Reset
+                                    </button>
+                                )}
+                            </div>
+                            <DualRangeSlider
+                                min={PRICE_MIN}
+                                max={PRICE_MAX}
+                                step={PRICE_STEP}
+                                value={localPrice}
+                                onChange={handleSliderChange}
+                            />
+                            <div className="flex items-center justify-between">
+                                <span className={`text-[12px] font-semibold tabular-nums transition-colors ${
+                                    isPriceActive ? 'text-[#2E7A96]' : 'text-neutral-500'
+                                }`}>
+                                    {formatPrice(localPrice[0])}
+                                </span>
+                                <span className="text-[10px] text-neutral-300 mx-1">—</span>
+                                <span className={`text-[12px] font-semibold tabular-nums transition-colors ${
+                                    isPriceActive ? 'text-[#2E7A96]' : 'text-neutral-500'
+                                }`}>
+                                    {localPrice[1] >= PRICE_MAX ? `${formatPrice(PRICE_MAX)}+` : formatPrice(localPrice[1])}
+                                </span>
+                            </div>
+                        </div>
                     </div>
-                </div>
+                )}
             </div>
         </div>
     )

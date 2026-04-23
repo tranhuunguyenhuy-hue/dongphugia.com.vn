@@ -141,7 +141,7 @@ export function SubcategorySpecFilter({ filters }: SubcategorySpecFilterProps) {
         <div className="flex items-center gap-2">
           <SlidersHorizontal className="h-4 w-4 text-neutral-500" strokeWidth={1.5} />
           <span className="text-[13px] font-semibold text-neutral-700 uppercase tracking-wider">
-            Lọc nâng cao
+            Thông số kỹ thuật
           </span>
           {activeCount > 0 && (
             <span className="flex items-center justify-center bg-[#2E7A96] text-white text-[11px] font-bold h-5 min-w-5 px-1.5 rounded-lg">
