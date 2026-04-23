@@ -107,7 +107,7 @@ export function SearchBar({ onExpandedChange }: { onExpandedChange?: (expanded: 
     return (
         <div ref={containerRef} className="relative w-11 h-11 shrink-0 z-50">
             {/* Absolute overlay that expands to the left without pushing siblings */}
-            <form onSubmit={handleSubmit} className={`absolute right-0 top-0 transition-all duration-300 ease-out origin-right ${isExpanded ? 'w-[360px] xl:w-[420px]' : 'w-11'} shrink-0 z-50`}>
+            <form onSubmit={handleSubmit} className={`absolute right-0 top-0 transition-all duration-300 ease-out origin-right ${isExpanded ? 'w-[min(360px,calc(100vw-4.5rem))] xl:w-[420px]' : 'w-11'} shrink-0 z-50`}>
                 <div 
                     className={`flex items-center h-11 rounded-full transition-all duration-300 overflow-hidden border ${isExpanded ? (isOpen ? 'bg-white border-brand-500 shadow-[0_0_0_3px_rgba(46,122,150,0.12)]' : 'bg-stone-50 border-stone-200 hover:bg-stone-100') : 'bg-transparent border-transparent cursor-pointer hover:bg-brand-50'}`}
                     onClick={() => {
@@ -138,7 +138,7 @@ export function SearchBar({ onExpandedChange }: { onExpandedChange?: (expanded: 
                             if (results.length > 0) setIsOpen(true);
                         }}
                         placeholder="Tìm kiếm..."
-                        className={`flex-1 h-full bg-transparent text-[14px] text-stone-900 placeholder:text-stone-500 outline-none transition-opacity duration-200 ${isExpanded ? 'opacity-100 min-w-[200px]' : 'opacity-0 w-0'}`}
+                        className={`flex-1 h-full bg-transparent text-[14px] text-stone-900 placeholder:text-stone-500 outline-none transition-opacity duration-200 min-w-0 ${isExpanded ? 'opacity-100' : 'opacity-0 w-0'}`}
                         autoComplete="off"
                         spellCheck={false}
                         tabIndex={isExpanded ? 0 : -1}
@@ -157,7 +157,7 @@ export function SearchBar({ onExpandedChange }: { onExpandedChange?: (expanded: 
 
             {/* Autocomplete Dropdown */}
             {isOpen && results.length > 0 && (
-                <div className="absolute top-[calc(100%+8px)] left-0 min-w-full w-[360px] xl:w-[420px] bg-white rounded-[20px] shadow-[0_12px_40px_rgba(0,0,0,0.12)] border border-stone-200 z-[60] overflow-hidden">
+                <div className="absolute top-[calc(100%+8px)] right-0 w-[min(360px,calc(100vw-2rem))] xl:w-[420px] bg-white rounded-[20px] shadow-[0_12px_40px_rgba(0,0,0,0.12)] border border-stone-200 z-[60] overflow-hidden">
                     {/* Results list */}
                     <div className="py-2 max-h-[400px] overflow-y-auto custom-scrollbar">
                         {results.map((item) => (
@@ -226,7 +226,7 @@ export function SearchBar({ onExpandedChange }: { onExpandedChange?: (expanded: 
 
             {/* No results */}
             {isOpen && !isLoading && query.length >= 2 && results.length === 0 && (
-                <div className="absolute top-[calc(100%+8px)] left-0 min-w-full w-[360px] xl:w-[420px] bg-white rounded-[20px] shadow-[0_12px_40px_rgba(0,0,0,0.12)] border border-stone-200 z-[60] px-6 py-10 text-center">
+                <div className="absolute top-[calc(100%+8px)] right-0 w-[min(360px,calc(100vw-2rem))] xl:w-[420px] bg-white rounded-[20px] shadow-[0_12px_40px_rgba(0,0,0,0.12)] border border-stone-200 z-[60] px-6 py-10 text-center">
                     <div className="w-12 h-12 rounded-full bg-stone-50 flex items-center justify-center mx-auto mb-4">
                         <Search className="w-6 h-6 text-stone-300" />
                     </div>
