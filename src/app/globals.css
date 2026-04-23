@@ -172,10 +172,12 @@
    *   • show a thin 4px scrollbar only on hover (premium interaction)
    * ─────────────────────────────────────────────────────────────────────── */
   .scroll-sidebar {
-    max-height: calc(100vh - 6.5rem); /* 96px sticky top + 8px breathing room */
+    max-height: calc(100vh - 6.5rem);
     overflow-y: auto;
     overflow-x: hidden;
     scroll-behavior: smooth;
+    /* KEY: prevents scroll chaining — sidebar scrolls independently from page */
+    overscroll-behavior: contain;
     /* Firefox */
     scrollbar-width: thin;
     scrollbar-color: transparent transparent;
