@@ -1,63 +1,124 @@
 'use client'
 
 import React, { Suspense } from 'react'
-import { SlidersHorizontal } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { SlidersHorizontal, X } from 'lucide-react'
 import {
   Sheet,
   SheetContent,
-  SheetDescription,
+  SheetClose,
   SheetHeader,
   SheetTitle,
+  SheetDescription,
   SheetTrigger,
 } from '@/components/ui/sheet'
 import { AdvancedSidebarFilter, AvailableFiltersData } from './advanced-sidebar-filter'
+import type { SpecFilterDef } from './subcategory-spec-filter'
 import { useSearchParams } from 'next/navigation'
 
-// Inner component that uses useSearchParams — must be wrapped in Suspense
+// ── Filter count badge (needs Suspense boundary) ────────────────────────────────
 function FilterCount() {
     const sp = useSearchParams()
-    const count = [
-        sp.get('brand'), sp.get('features'), sp.get('material'),
-        sp.get('origin'), sp.get('price'), sp.get('is_new'), sp.get('is_featured'),
-    ].filter(Boolean).length
+    const keys = ['brand', 'features', 'material', 'origin', 'price', 'is_new', 'is_featured']
+    // Also count spec filters (sf_*)
+    let count = keys.filter(k => sp.get(k)).length
+    sp.forEach((_v, k) => { if (k.startsWith('sf_')) count++ })
     if (count === 0) return null
     return (
-        <span className="min-w-[16px] h-4 rounded-full bg-[#2E7A96] text-white text-[10px] font-bold flex items-center justify-center px-1">
+        <span className="inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full bg-[#2E7A96] text-white text-[9px] font-bold tabular-nums">
             {count}
         </span>
     )
 }
 
-export function CategoryMobileFilter({ availableFilters }: { availableFilters: AvailableFiltersData }) {
+interface CategoryMobileFilterProps {
+    availableFilters: AvailableFiltersData
+    specFilters?: SpecFilterDef[]
+}
+
+export function CategoryMobileFilter({ availableFilters, specFilters }: CategoryMobileFilterProps) {
     return (
         <Sheet>
+            {/* ── Trigger — ghost-style matching sort-by button ── */}
             <SheetTrigger asChild>
-                <Button
-                    variant="outline"
-                    className="flex items-center gap-1.5 h-10 px-3.5 bg-white border-neutral-200 lg:hidden shadow-sm rounded-lg min-w-[100px]"
+                <button
+                    type="button"
+                    className="
+                        inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md
+                        border border-neutral-200 bg-transparent
+                        text-[11px] font-medium text-neutral-400
+                        cursor-pointer select-none
+                        transition-all duration-150
+                        hover:border-neutral-300 hover:text-neutral-600 hover:bg-neutral-50
+                        active:bg-neutral-100
+                        lg:hidden
+                    "
                 >
-                    <SlidersHorizontal className="h-4 w-4 text-neutral-700 flex-shrink-0" />
-                    <span className="text-sm font-medium text-neutral-700">Bộ lọc</span>
-                    {/* Suspense required by Next.js 15 when using useSearchParams in a client component */}
+                    <SlidersHorizontal className="size-3 opacity-50" />
+                    <span>Bộ lọc</span>
                     <Suspense fallback={null}>
                         <FilterCount />
                     </Suspense>
-                </Button>
+                </button>
             </SheetTrigger>
+
+            {/* ── Bottom Sheet ── */}
             <SheetContent
                 side="bottom"
-                className="h-[88vh] px-0 pb-0 pt-4 bg-white rounded-t-2xl flex flex-col items-stretch"
+                showCloseButton={false}
+                className="h-[85vh] px-0 pb-0 pt-0 bg-white rounded-t-2xl flex flex-col items-stretch"
             >
-                <SheetHeader className="px-5 pb-4 border-b border-neutral-100 text-left shrink-0">
-                    <SheetTitle className="text-lg font-bold tracking-tight">Bộ lọc sản phẩm</SheetTitle>
-                    <SheetDescription className="text-xs text-neutral-500">
-                        Chọn nhiều tiêu chí để tìm sản phẩm chính xác nhất
-                    </SheetDescription>
+                {/* ── Handle bar — drag affordance ── */}
+                <div className="flex justify-center pt-3 pb-1 shrink-0">
+                    <div className="w-10 h-1 rounded-full bg-neutral-200" />
+                </div>
+
+                {/* ── Header ── */}
+                <SheetHeader className="px-5 pb-3 border-b border-neutral-100 text-left shrink-0 flex flex-row items-center justify-between">
+                    <div>
+                        <SheetTitle className="text-[14px] font-bold tracking-tight text-neutral-800">
+                            Lọc nâng cao
+                        </SheetTitle>
+                        <SheetDescription className="text-[11px] text-neutral-400 mt-0.5">
+                            Chọn tiêu chí để lọc sản phẩm
+                        </SheetDescription>
+                    </div>
+                    <SheetClose className="
+                        flex items-center justify-center w-8 h-8 rounded-lg
+                        bg-neutral-100 text-neutral-400
+                        hover:bg-neutral-200 hover:text-neutral-600
+                        transition-colors duration-150
+                    ">
+                        <X className="size-4" />
+                        <span className="sr-only">Đóng</span>
+                    </SheetClose>
                 </SheetHeader>
 
-                <div className="flex-1 overflow-y-auto min-h-0">
-                    <AdvancedSidebarFilter availableFilters={availableFilters} hideTitle={true} />
+                {/* ── Scrollable filter content ── */}
+                <div className="flex-1 overflow-y-auto min-h-0 overscroll-contain">
+                    <AdvancedSidebarFilter
+                        availableFilters={availableFilters}
+                        hideTitle={true}
+                        specFilters={specFilters}
+                    />
+                </div>
+
+                {/* ── Sticky footer — apply & clear ── */}
+                <div className="shrink-0 border-t border-neutral-100 bg-white px-5 py-3 flex items-center gap-3">
+                    <SheetClose asChild>
+                        <button
+                            type="button"
+                            className="
+                                flex-1 h-10 rounded-xl
+                                bg-[#2E7A96] text-white
+                                text-[13px] font-semibold
+                                transition-colors duration-150
+                                hover:bg-[#256880] active:bg-[#1d5668]
+                                shadow-[0_2px_8px_-2px_rgba(46,122,150,0.3)]
+                            "
+                        >
+                            Xem kết quả
+                        </button>
+                    </SheetClose>
                 </div>
             </SheetContent>
         </Sheet>
