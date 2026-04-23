@@ -82,20 +82,20 @@ export default async function ProductDetailPage({ params }: PageProps) {
     return (
         <main className="u-container py-8 lg:py-12">
             {/* Breadcrumb */}
-            <nav className="flex items-center gap-2 text-sm text-stone-500 mb-8" aria-label="Breadcrumb">
-                <Link href="/" className="hover:text-stone-900 transition-colors">Trang chủ</Link>
-                <span>/</span>
-                <Link href={BASE_PATH} className="hover:text-stone-900 transition-colors">{CATEGORY_NAME}</Link>
+            <nav className="flex items-center gap-1.5 text-[11px] text-stone-500 mb-5 overflow-x-auto whitespace-nowrap scrollbar-hide" aria-label="Breadcrumb">
+                <Link href="/" className="hover:text-stone-900 transition-colors shrink-0">Trang chủ</Link>
+                <span className="text-stone-300 shrink-0">/</span>
+                <Link href={BASE_PATH} className="hover:text-stone-900 transition-colors shrink-0">{CATEGORY_NAME}</Link>
                 {product.subcategories && (
                     <>
-                        <span>/</span>
-                        <Link href={`${BASE_PATH}?sub=${sub}`} className="hover:text-stone-900 transition-colors">
+                        <span className="text-stone-300 shrink-0">/</span>
+                        <Link href={`${BASE_PATH}?sub=${sub}`} className="hover:text-stone-900 transition-colors shrink-0">
                             {product.subcategories.name}
                         </Link>
                     </>
                 )}
-                <span>/</span>
-                <span className="text-stone-900 font-medium truncate max-w-[200px]">{product.name}</span>
+                <span className="text-stone-300 shrink-0">/</span>
+                <span className="text-stone-900 font-medium truncate max-w-[200px] sm:max-w-none shrink-0">{product.name}</span>
             </nav>
 
             {/* Main Content */}

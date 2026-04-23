@@ -99,7 +99,7 @@ export default async function GachOpLatSubPage({ params, searchParams }: PagePro
     return (
         <main className="max-w-[1380px] mx-auto px-5 lg:px-8">
             {/* Breadcrumb */}
-            <nav className="flex items-center gap-1.5 text-[12px] text-neutral-400 mt-5 mb-0" aria-label="Breadcrumb">
+            <nav className="hidden lg:flex items-center gap-1.5 text-[11px] text-neutral-400 pt-5 pb-0" aria-label="Breadcrumb">
                 <Home className="h-3 w-3 flex-shrink-0" />
                 <ChevronRight className="h-3 w-3 text-neutral-300" />
                 <Link href="/" className="hover:text-neutral-700 transition-colors">Trang chủ</Link>
@@ -109,7 +109,7 @@ export default async function GachOpLatSubPage({ params, searchParams }: PagePro
                 <span className="text-neutral-600 font-medium">{subcategory.name}</span>
             </nav>
 
-            <div className="flex flex-col lg:flex-row gap-6 lg:gap-10 items-start py-5 lg:py-10">
+            <div className="flex flex-col lg:flex-row gap-5 lg:gap-10 items-start pt-3 pb-8 lg:pt-6 lg:pb-12">
                 {/* ── Sidebar: Desktop only. Mobile uses Sheet via CategoryMobileFilter ── */}
                 <aside className="hidden lg:flex w-[290px] flex-shrink-0 sticky top-24 scroll-sidebar flex-col gap-4">
                     <Suspense fallback={<div className="h-96 bg-neutral-100 animate-pulse rounded-lg" />}>
