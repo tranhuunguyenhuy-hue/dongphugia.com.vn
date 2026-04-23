@@ -85,7 +85,7 @@ export function SubcategoryIconGrid({
     return (
         // ROOT: max-w-full + overflow-hidden prevents this component from
         // ever expanding beyond its parent — the critical mobile fix.
-        <div className="max-w-full overflow-hidden">
+        <div className="w-full overflow-hidden">
             <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-neutral-400 mb-3">
                 Danh mục sản phẩm
             </p>

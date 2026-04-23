@@ -141,7 +141,7 @@ export default async function ThietBiVeSinhSubPage({ params, searchParams }: Pag
                 </aside>
 
                 {/* ── Main 70% ── */}
-                <div className="flex-1 min-w-0 space-y-8">
+                <div className="w-full flex-1 min-w-0 space-y-8">
                     {/* Subcategory icon grid */}
                     <SubcategoryIconGrid
                         subcategories={allSubcategories}
