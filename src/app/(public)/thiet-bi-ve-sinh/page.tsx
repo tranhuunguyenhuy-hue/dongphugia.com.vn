@@ -79,7 +79,7 @@ export default async function ThietBiVeSinhPage({ searchParams }: PageProps) {
             <div className="flex flex-col lg:flex-row gap-8 lg:gap-10 items-start py-8 lg:py-10">
 
                 {/* ── Sidebar 30% ── */}
-                <aside className="w-full lg:w-[290px] flex-shrink-0 lg:sticky lg:top-24 flex flex-col gap-4">
+                <aside className="w-full lg:w-[290px] flex-shrink-0 lg:sticky lg:top-24 scroll-sidebar flex flex-col gap-4">
                     {/* Banner placeholder */}
                     <div className="relative w-full aspect-video rounded-md overflow-hidden bg-neutral-100 border border-dashed border-neutral-200">
                         {bannerUrl ? (
