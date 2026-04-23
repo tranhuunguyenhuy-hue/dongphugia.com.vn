@@ -98,6 +98,7 @@ export function CategoryMobileFilter({ availableFilters, specFilters }: Category
                     <AdvancedSidebarFilter
                         availableFilters={availableFilters}
                         hideTitle={true}
+                        hideSubcategoryFilter={true}
                         specFilters={specFilters}
                     />
                 </div>
