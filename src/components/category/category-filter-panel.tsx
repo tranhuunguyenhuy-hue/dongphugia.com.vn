@@ -3,7 +3,7 @@
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-interface Brand { id: number; name: string }
+interface Brand { id: number; name: string; slug?: string }
 
 interface CategoryFilterPanelProps {
     brands: Brand[]
@@ -81,7 +81,57 @@ function DualRangeSlider({
     )
 }
 
-// ── Brand Section (collapsible) ───────────────────────────────────────────────
+// ── Brand Tag with Logo ───────────────────────────────────────────────────────
+function BrandTag({ brand, active, onToggle }: { brand: Brand; active: boolean; onToggle: () => void }) {
+    const slug = brand.slug || brand.name.toLowerCase().replace(/\s+/g, '-')
+    const [imgFailed, setImgFailed] = useState(false)
+
+    return (
+        <button
+            type="button"
+            onClick={onToggle}
+            className={`
+                relative h-8 px-2.5 rounded-lg border flex items-center justify-center gap-1.5
+                transition-all duration-200 cursor-pointer select-none group/tag
+                ${active
+                    ? 'bg-[#2E7A96]/8 border-[#2E7A96]/30 shadow-[0_0_0_1px_rgba(46,122,150,0.12)]'
+                    : 'bg-white border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50'
+                }
+            `}
+            title={brand.name}
+        >
+            {/* Logo or text fallback */}
+            {!imgFailed ? (
+                <img
+                    src={`/images/brands/${slug}.png`}
+                    alt={brand.name}
+                    className={`h-[16px] max-w-[56px] object-contain transition-all duration-200 ${
+                        active ? 'opacity-100' : 'opacity-50 grayscale group-hover/tag:opacity-80 group-hover/tag:grayscale-0'
+                    }`}
+                    loading="lazy"
+                    onError={() => setImgFailed(true)}
+                />
+            ) : (
+                <span className={`text-[11px] font-semibold whitespace-nowrap transition-colors ${
+                    active ? 'text-[#2E7A96]' : 'text-neutral-500 group-hover/tag:text-neutral-700'
+                }`}>
+                    {brand.name}
+                </span>
+            )}
+
+            {/* Active check indicator */}
+            {active && (
+                <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-[#2E7A96] flex items-center justify-center">
+                    <svg className="w-2 h-2 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                    </svg>
+                </span>
+            )}
+        </button>
+    )
+}
+
+// ── Brand Section (compact tags) ──────────────────────────────────────────────
 function BrandSection({
     brands, activeBrands, onToggle, activeCount,
 }: {
@@ -117,32 +167,15 @@ function BrandSection({
             </button>
 
             {open && (
-                <div className="mt-3 space-y-1">
-                    {brands.map((b) => {
-                        const active = activeBrands.includes(b.name)
-                        return (
-                            <button
-                                key={b.id}
-                                onClick={() => onToggle(b.name)}
-                                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-[12px] transition-all duration-150 text-left ${
-                                    active
-                                        ? 'bg-[#2E7A96]/10 text-[#2E7A96] font-medium'
-                                        : 'text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900'
-                                }`}
-                            >
-                                <span className={`w-3.5 h-3.5 rounded-sm border flex-shrink-0 flex items-center justify-center transition-all duration-150 ${
-                                    active ? 'bg-[#2E7A96] border-[#2E7A96]' : 'border-neutral-300'
-                                }`}>
-                                    {active && (
-                                        <svg className="w-2 h-2 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
-                                        </svg>
-                                    )}
-                                </span>
-                                {b.name}
-                            </button>
-                        )
-                    })}
+                <div className="mt-3 flex flex-wrap gap-2">
+                    {brands.map((b) => (
+                        <BrandTag
+                            key={b.id}
+                            brand={b}
+                            active={activeBrands.includes(b.name)}
+                            onToggle={() => onToggle(b.name)}
+                        />
+                    ))}
                 </div>
             )}
         </div>

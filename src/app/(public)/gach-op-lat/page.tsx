@@ -57,7 +57,7 @@ export default async function GachOpLatPage({ searchParams }: PageProps) {
         }),
         prisma.brands.findMany({
             where: { is_active: true, products: { some: { categories: { slug: CATEGORY_SLUG }, is_active: true } } },
-            select: { id: true, name: true },
+            select: { id: true, name: true, slug: true },
             orderBy: { sort_order: "asc" },
             take: 20,
         }),

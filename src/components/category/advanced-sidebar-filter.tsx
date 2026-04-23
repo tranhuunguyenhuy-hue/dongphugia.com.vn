@@ -141,6 +141,53 @@ function CheckRow({
     )
 }
 
+// ── Brand Tag Chip (logo-based) ────────────────────────────────────────────────
+function BrandTagChip({ slug, name, active, onClick }: {
+    slug: string; name: string; active: boolean; onClick: () => void
+}) {
+    const [imgFailed, setImgFailed] = React.useState(false)
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            className={`
+                relative h-8 px-2.5 rounded-lg border flex items-center justify-center gap-1.5
+                transition-all duration-200 cursor-pointer select-none group/tag
+                ${active
+                    ? 'bg-[#2E7A96]/8 border-[#2E7A96]/30 shadow-[0_0_0_1px_rgba(46,122,150,0.12)]'
+                    : 'bg-white border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50'
+                }
+            `}
+            title={name}
+        >
+            {!imgFailed ? (
+                <img
+                    src={`/images/brands/${slug}.png`}
+                    alt={name}
+                    className={`h-[16px] max-w-[56px] object-contain transition-all duration-200 ${
+                        active ? 'opacity-100' : 'opacity-50 grayscale group-hover/tag:opacity-80 group-hover/tag:grayscale-0'
+                    }`}
+                    loading="lazy"
+                    onError={() => setImgFailed(true)}
+                />
+            ) : (
+                <span className={`text-[11px] font-semibold whitespace-nowrap transition-colors ${
+                    active ? 'text-[#2E7A96]' : 'text-neutral-500 group-hover/tag:text-neutral-700'
+                }`}>
+                    {name}
+                </span>
+            )}
+            {active && (
+                <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-[#2E7A96] flex items-center justify-center">
+                    <svg className="w-2 h-2 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                    </svg>
+                </span>
+            )}
+        </button>
+    )
+}
+
 // ── Main Component ─────────────────────────────────────────────────────────────
 export function AdvancedSidebarFilter({
     availableFilters,
@@ -252,17 +299,22 @@ export function AdvancedSidebarFilter({
                     </FilterSection>
                 )}
 
-                {/* Brands */}
+                {/* Brands — logo tag chips */}
                 {availableFilters.brands.length > 0 && (
                     <FilterSection title="Thương hiệu">
-                        <div className="space-y-1">
-                            {availableFilters.brands.map(b => (
-                                <CheckRow
-                                    key={b.slug} label={b.name}
-                                    active={brandSlugs.includes(b.slug)}
-                                    onClick={() => toggle('brand', brandSlugs, b.slug)}
-                                />
-                            ))}
+                        <div className="flex flex-wrap gap-2">
+                            {availableFilters.brands.map(b => {
+                                const active = brandSlugs.includes(b.slug)
+                                return (
+                                    <BrandTagChip
+                                        key={b.slug}
+                                        slug={b.slug}
+                                        name={b.name}
+                                        active={active}
+                                        onClick={() => toggle('brand', brandSlugs, b.slug)}
+                                    />
+                                )
+                            })}
                         </div>
                     </FilterSection>
                 )}
