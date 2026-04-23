@@ -109,9 +109,9 @@ export default async function ThietBiBepSubPage({ params, searchParams }: PagePr
                 <span className="text-neutral-600 font-medium">{subcategory.name}</span>
             </nav>
 
-            <div className="flex flex-col lg:flex-row gap-8 lg:gap-10 items-start py-8 lg:py-10">
-                {/* ── Sidebar 30% ── */}
-                <aside className="w-full lg:w-[290px] flex-shrink-0 lg:sticky lg:top-24 scroll-sidebar flex flex-col gap-4">
+            <div className="flex flex-col lg:flex-row gap-6 lg:gap-10 items-start py-5 lg:py-10">
+                {/* ── Sidebar: Desktop only. Mobile uses Sheet via CategoryMobileFilter ── */}
+                <aside className="hidden lg:flex w-[290px] flex-shrink-0 sticky top-24 scroll-sidebar flex-col gap-4">
                     <Suspense fallback={<div className="h-96 bg-neutral-100 animate-pulse rounded-lg" />}>
                         <AdvancedSidebarFilter availableFilters={availableFilters} hideSubcategoryFilter />
                     </Suspense>
@@ -130,7 +130,7 @@ export default async function ThietBiBepSubPage({ params, searchParams }: PagePr
                     <div className="border-t border-neutral-100" />
 
                     <div className="mb-6 flex flex-col gap-3">
-                        <div className="flex justify-between items-center bg-neutral-50 lg:bg-transparent lg:border-none lg:p-0 px-4 py-3 rounded-xl border border-neutral-200">
+                        <div className="flex justify-between items-center gap-2 py-2 lg:py-0">
                             <span className="text-sm font-medium text-neutral-500">
                                 <strong className="text-neutral-900">{total.toLocaleString('vi-VN')}</strong> sản phẩm
                             </span>
@@ -143,7 +143,7 @@ export default async function ThietBiBepSubPage({ params, searchParams }: PagePr
                     </div>
                     {products.length > 0 ? (
                         <>
-                            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6">
+                            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
                                 {products.map(product => (
                                     <ProductCard
                                         key={product.id}

@@ -75,8 +75,9 @@ export default async function VatLieuNuocPage({ searchParams }: PageProps) {
                 <span className="text-neutral-600 font-medium">{CATEGORY_NAME}</span>
             </nav>
 
-            <div className="flex flex-col lg:flex-row gap-8 lg:gap-10 items-start py-8 lg:py-10">
-                <aside className="w-full lg:w-[290px] flex-shrink-0 lg:sticky lg:top-24 scroll-sidebar flex flex-col gap-4">
+            <div className="flex flex-col lg:flex-row gap-6 lg:gap-10 items-start py-5 lg:py-10">
+                {/* ── Sidebar: Desktop only ── */}
+                <aside className="hidden lg:flex w-[290px] flex-shrink-0 sticky top-24 scroll-sidebar flex-col gap-4">
                     <div className="relative w-full aspect-video rounded-md [overflow:clip] bg-neutral-100 border border-dashed border-neutral-200">
                         {bannerUrl ? (
                             <Image src={bannerUrl} alt={`Banner ${CATEGORY_NAME}`} fill className="object-cover" priority />
@@ -117,7 +118,7 @@ export default async function VatLieuNuocPage({ searchParams }: PageProps) {
                             <span className="text-[12px] text-neutral-400">{featuredProducts.length} sản phẩm</span>
                         </div>
                         {featuredProducts.length > 0 ? (
-                            <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-5">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-5">
                                 {featuredProducts.map((product) => (
                                     <ProductCard key={product.id} product={product} basePath={BASE_PATH} patternSlug={product.subcategories?.slug} />
                                 ))}

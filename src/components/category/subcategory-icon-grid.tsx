@@ -113,7 +113,7 @@ export function SubcategoryIconGrid({
                                 key={sub.id}
                                 href={`${basePath}/${sub.slug}`}
                                 ref={isActive ? activeItemRef : null}
-                                className={`group/item shrink-0 snap-start flex flex-col items-center gap-2 w-[96px] transition-opacity duration-200 ${
+                                className={`group/item shrink-0 snap-start flex flex-col items-center gap-1.5 w-[72px] sm:w-[88px] lg:w-[96px] transition-opacity duration-200 ${
                                     activeSlug && !isActive ? 'opacity-50 hover:opacity-100' : ''
                                 }`}
                             >
@@ -149,7 +149,7 @@ export function SubcategoryIconGrid({
                                     )}
                                 </div>
 
-                                <span className={`text-[11px] font-medium text-center leading-tight transition-colors line-clamp-2 ${
+                                <span className={`text-[10px] sm:text-[11px] font-medium text-center leading-tight transition-colors line-clamp-2 ${
                                     isActive ? 'text-[#2E7A96]' : 'text-neutral-500 group-hover/item:text-[#2E7A96]'
                                 }`}>
                                     {sub.name}
