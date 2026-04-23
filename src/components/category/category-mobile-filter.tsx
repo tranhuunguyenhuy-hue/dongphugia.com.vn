@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { Suspense } from 'react'
 import { SlidersHorizontal } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -14,7 +14,7 @@ import {
 import { AdvancedSidebarFilter, AvailableFiltersData } from './advanced-sidebar-filter'
 import { useSearchParams } from 'next/navigation'
 
-// Shows a count badge of how many filters are active
+// Inner component that uses useSearchParams — must be wrapped in Suspense
 function FilterCount() {
     const sp = useSearchParams()
     const count = [
@@ -39,7 +39,10 @@ export function CategoryMobileFilter({ availableFilters }: { availableFilters: A
                 >
                     <SlidersHorizontal className="h-4 w-4 text-neutral-700 flex-shrink-0" />
                     <span className="text-sm font-medium text-neutral-700">Bộ lọc</span>
-                    <FilterCount />
+                    {/* Suspense required by Next.js 15 when using useSearchParams in a client component */}
+                    <Suspense fallback={null}>
+                        <FilterCount />
+                    </Suspense>
                 </Button>
             </SheetTrigger>
             <SheetContent
