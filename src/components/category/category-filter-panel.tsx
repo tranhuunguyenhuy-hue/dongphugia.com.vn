@@ -215,7 +215,7 @@ export function CategoryFilterPanel({ brands }: CategoryFilterPanelProps) {
     const totalActiveCount = activeBrands.length + (isPriceActive ? 1 : 0)
 
     return (
-        <div className="bg-white rounded-md border border-neutral-200 overflow-hidden">
+        <div className="bg-white rounded-md border border-neutral-200 [overflow:clip]">
             {/* Header */}
             <div className="px-5 py-3 border-b border-neutral-100 flex items-center justify-between">
                 <div className="flex items-center gap-2">

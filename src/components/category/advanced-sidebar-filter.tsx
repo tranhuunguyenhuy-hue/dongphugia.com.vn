@@ -223,7 +223,7 @@ export function AdvancedSidebarFilter({
     }
 
     return (
-        <div className="bg-white rounded-md border border-neutral-200 overflow-hidden">
+        <div className="bg-white rounded-md border border-neutral-200 [overflow:clip]">
             {/* Header */}
             <div className="px-5 py-3 border-b border-neutral-100 flex items-center justify-between">
                 <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-neutral-400">
