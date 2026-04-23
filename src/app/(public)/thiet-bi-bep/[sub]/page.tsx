@@ -129,14 +129,6 @@ export default async function ThietBiBepSubPage({ params, searchParams }: PagePr
                     {/* Divider */}
                     <div className="border-t border-neutral-100" />
 
-                    {/* Title and descriptions (formerly CategoryHeader) */}
-                    <div>
-                        <h1 className="text-2xl font-bold text-neutral-900 mb-2">{subcategory.name}</h1>
-                        <p className="text-sm text-neutral-500">
-                            {subcategory.description || 'Sản phẩm chính hãng · Bảo hành đầy đủ · Tư vấn miễn phí'}
-                        </p>
-                    </div>
-
                     <div className="mb-6 flex flex-col gap-3">
                         <div className="flex justify-between items-center bg-neutral-50 lg:bg-transparent lg:border-none lg:p-0 px-4 py-3 rounded-xl border border-neutral-200">
                             <span className="text-sm font-medium text-neutral-500">
