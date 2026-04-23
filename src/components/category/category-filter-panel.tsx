@@ -10,8 +10,8 @@ interface CategoryFilterPanelProps {
 }
 
 const PRICE_MIN = 0
-const PRICE_MAX = 50_000_000  // 50 triệu
-const PRICE_STEP = 500_000    // 500k mỗi bước
+const PRICE_MAX = 50_000_000
+const PRICE_STEP = 500_000
 
 function formatPrice(value: number): string {
     if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(value % 1_000_000 === 0 ? 0 : 1)}tr`
@@ -19,7 +19,6 @@ function formatPrice(value: number): string {
     return `${value}`
 }
 
-// Parse URL price param → [min, max]
 function parsePriceParam(param: string): [number, number] {
     const [a, b] = param.split('-').map(Number)
     if (!isNaN(a) && !isNaN(b)) return [a, Math.min(b, PRICE_MAX)]
@@ -55,56 +54,97 @@ function DualRangeSlider({
         )`
     }
 
+    const thumbCls = `
+        absolute w-full h-1.5 appearance-none bg-transparent cursor-pointer z-10
+        [&::-webkit-slider-thumb]:appearance-none
+        [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4
+        [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white
+        [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-[#2E7A96]
+        [&::-webkit-slider-thumb]:shadow-sm [&::-webkit-slider-thumb]:cursor-grab
+        [&::-webkit-slider-thumb]:transition-transform [&::-webkit-slider-thumb]:duration-100
+        [&::-webkit-slider-thumb:active]:scale-110 [&::-webkit-slider-thumb:active]:cursor-grabbing
+        [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4
+        [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white
+        [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-[#2E7A96]
+        [&::-moz-range-thumb]:shadow-sm [&::-moz-range-thumb]:cursor-grab
+    `
+
     return (
         <div className="relative h-5 flex items-center" style={{ WebkitTapHighlightColor: 'transparent' }}>
-            {/* Track */}
             <div className="absolute w-full h-1.5 rounded-full" style={trackStyle} />
-
-            {/* Low handle */}
-            <input
-                type="range"
-                min={min} max={max} step={step}
-                value={lo}
-                onChange={handleLo}
-                className="
-                    absolute w-full h-1.5 appearance-none bg-transparent cursor-pointer z-10
-                    [&::-webkit-slider-thumb]:appearance-none
-                    [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4
-                    [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white
-                    [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-[#2E7A96]
-                    [&::-webkit-slider-thumb]:shadow-sm [&::-webkit-slider-thumb]:cursor-grab
-                    [&::-webkit-slider-thumb]:transition-transform [&::-webkit-slider-thumb]:duration-100
-                    [&::-webkit-slider-thumb:active]:scale-110 [&::-webkit-slider-thumb:active]:cursor-grabbing
-                    [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4
-                    [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white
-                    [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-[#2E7A96]
-                    [&::-moz-range-thumb]:shadow-sm [&::-moz-range-thumb]:cursor-grab
-                "
-            />
-
-            {/* High handle */}
-            <input
-                type="range"
-                min={min} max={max} step={step}
-                value={hi}
+            <input type="range" min={min} max={max} step={step} value={lo}
+                onChange={handleLo} className={thumbCls} />
+            <input type="range" min={min} max={max} step={step} value={hi}
                 onChange={handleHi}
-                className="
-                    absolute w-full h-1.5 appearance-none bg-transparent cursor-pointer z-10
-                    pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto
-                    [&::-webkit-slider-thumb]:appearance-none
-                    [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4
-                    [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white
-                    [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-[#2E7A96]
-                    [&::-webkit-slider-thumb]:shadow-sm [&::-webkit-slider-thumb]:cursor-grab
-                    [&::-webkit-slider-thumb]:transition-transform [&::-webkit-slider-thumb]:duration-100
-                    [&::-webkit-slider-thumb:active]:scale-110 [&::-webkit-slider-thumb:active]:cursor-grabbing
-                    [&::-moz-range-thumb]:pointer-events-auto
-                    [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4
-                    [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white
-                    [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-[#2E7A96]
-                    [&::-moz-range-thumb]:shadow-sm [&::-moz-range-thumb]:cursor-grab
-                "
-            />
+                className={`${thumbCls} pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-moz-range-thumb]:pointer-events-auto`} />
+        </div>
+    )
+}
+
+// ── Brand Section (collapsible) ───────────────────────────────────────────────
+function BrandSection({
+    brands, activeBrands, onToggle, activeCount,
+}: {
+    brands: Brand[]
+    activeBrands: string[]
+    onToggle: (name: string) => void
+    activeCount: number
+}) {
+    const [open, setOpen] = useState(true)
+    return (
+        <div className="px-5 py-4 border-b border-neutral-100">
+            <button
+                type="button"
+                onClick={() => setOpen(!open)}
+                className="w-full flex items-center justify-between group"
+            >
+                <div className="flex items-center gap-2">
+                    <p className="text-[11px] font-semibold text-neutral-500 uppercase tracking-wider">
+                        Thương hiệu
+                    </p>
+                    {activeCount > 0 && (
+                        <span className="inline-flex items-center justify-center min-w-[16px] h-[16px] px-1 rounded-full bg-[#2E7A96]/15 text-[#2E7A96] text-[9px] font-bold tabular-nums">
+                            {activeCount}
+                        </span>
+                    )}
+                </div>
+                <svg
+                    className={`h-3.5 w-3.5 text-neutral-400 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+                    fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor"
+                >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+                </svg>
+            </button>
+
+            {open && (
+                <div className="mt-3 space-y-1">
+                    {brands.map((b) => {
+                        const active = activeBrands.includes(b.name)
+                        return (
+                            <button
+                                key={b.id}
+                                onClick={() => onToggle(b.name)}
+                                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-[12px] transition-all duration-150 text-left ${
+                                    active
+                                        ? 'bg-[#2E7A96]/10 text-[#2E7A96] font-medium'
+                                        : 'text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900'
+                                }`}
+                            >
+                                <span className={`w-3.5 h-3.5 rounded-sm border flex-shrink-0 flex items-center justify-center transition-all duration-150 ${
+                                    active ? 'bg-[#2E7A96] border-[#2E7A96]' : 'border-neutral-300'
+                                }`}>
+                                    {active && (
+                                        <svg className="w-2 h-2 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                                        </svg>
+                                    )}
+                                </span>
+                                {b.name}
+                            </button>
+                        )
+                    })}
+                </div>
+            )}
         </div>
     )
 }
@@ -122,12 +162,10 @@ export function CategoryFilterPanel({ brands }: CategoryFilterPanelProps) {
     )
     const isPriceActive = priceParam !== ''
 
-    // Sync slider with URL on external navigation
     useEffect(() => {
         setLocalPrice(priceParam ? parsePriceParam(priceParam) : [PRICE_MIN, PRICE_MAX])
     }, [priceParam])
 
-    // Debounced URL push
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
     const commitPrice = useCallback(
         (value: [number, number]) => {
@@ -135,7 +173,6 @@ export function CategoryFilterPanel({ brands }: CategoryFilterPanelProps) {
             debounceRef.current = setTimeout(() => {
                 const [lo, hi] = value
                 const params = new URLSearchParams(searchParams.toString())
-                // Reset if full range selected
                 if (lo <= PRICE_MIN && hi >= PRICE_MAX) params.delete('price')
                 else params.set('price', `${lo}-${hi}`)
                 router.push(`${pathname}?${params.toString()}`, { scroll: false })
@@ -175,16 +212,30 @@ export function CategoryFilterPanel({ brands }: CategoryFilterPanelProps) {
     }
 
     const hasFilters = activeBrands.length > 0 || isPriceActive
+    const totalActiveCount = activeBrands.length + (isPriceActive ? 1 : 0)
 
     return (
         <div className="bg-white rounded-md border border-neutral-200 overflow-hidden">
             {/* Header */}
             <div className="px-5 py-3 border-b border-neutral-100 flex items-center justify-between">
-                <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-neutral-400">
-                    Lọc sản phẩm nổi bật
-                </span>
+                <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-neutral-400">
+                        Lọc sản phẩm
+                    </span>
+                    {totalActiveCount > 0 && (
+                        <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 rounded-full bg-[#2E7A96] text-white text-[10px] font-bold tabular-nums">
+                            {totalActiveCount}
+                        </span>
+                    )}
+                </div>
                 {hasFilters && (
-                    <button onClick={clearAll} className="text-[10px] text-[#2E7A96] hover:underline font-medium">
+                    <button
+                        onClick={clearAll}
+                        className="text-[10px] text-[#2E7A96] hover:text-[#2E7A96]/70 font-medium transition-colors flex items-center gap-1"
+                    >
+                        <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                        </svg>
                         Xoá lọc
                     </button>
                 )}
@@ -193,46 +244,25 @@ export function CategoryFilterPanel({ brands }: CategoryFilterPanelProps) {
             <div className="divide-y divide-neutral-100">
                 {/* Brands */}
                 {brands.length > 0 && (
-                    <div className="px-5 py-4">
-                        <p className="text-[11px] font-semibold text-neutral-500 uppercase tracking-wider mb-3">
-                            Thương hiệu
-                        </p>
-                        <div className="space-y-1.5">
-                            {brands.map((b) => {
-                                const active = activeBrands.includes(b.name)
-                                return (
-                                    <button
-                                        key={b.id}
-                                        onClick={() => toggleBrand(b.name)}
-                                        className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-[12px] transition-all duration-150 text-left ${
-                                            active
-                                                ? 'bg-[#2E7A96]/10 text-[#2E7A96] font-medium'
-                                                : 'text-neutral-600 hover:bg-neutral-50'
-                                        }`}
-                                    >
-                                        <span className={`w-3.5 h-3.5 rounded-sm border flex-shrink-0 flex items-center justify-center transition-colors ${
-                                            active ? 'bg-[#2E7A96] border-[#2E7A96]' : 'border-neutral-300'
-                                        }`}>
-                                            {active && (
-                                                <svg className="w-2 h-2 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
-                                                </svg>
-                                            )}
-                                        </span>
-                                        {b.name}
-                                    </button>
-                                )
-                            })}
-                        </div>
-                    </div>
+                    <BrandSection
+                        brands={brands}
+                        activeBrands={activeBrands}
+                        onToggle={toggleBrand}
+                        activeCount={activeBrands.length}
+                    />
                 )}
 
                 {/* Price Range Slider */}
                 <div className="px-5 py-4">
                     <div className="flex items-center justify-between mb-4">
-                        <p className="text-[11px] font-semibold text-neutral-500 uppercase tracking-wider">
-                            Khoảng giá
-                        </p>
+                        <div className="flex items-center gap-2">
+                            <p className="text-[11px] font-semibold text-neutral-500 uppercase tracking-wider">
+                                Khoảng giá
+                            </p>
+                            {isPriceActive && (
+                                <span className="w-1.5 h-1.5 rounded-full bg-[#2E7A96] flex-shrink-0" />
+                            )}
+                        </div>
                         {isPriceActive && (
                             <button
                                 onClick={() => {
@@ -254,7 +284,6 @@ export function CategoryFilterPanel({ brands }: CategoryFilterPanelProps) {
                         onChange={handleSliderChange}
                     />
 
-                    {/* Price labels */}
                     <div className="flex items-center justify-between mt-3">
                         <span className={`text-[12px] font-semibold tabular-nums transition-colors ${
                             isPriceActive ? 'text-[#2E7A96]' : 'text-neutral-500'

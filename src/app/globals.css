@@ -164,4 +164,42 @@
   .press-effect:active {
     @apply transform scale-[0.98];
   }
+
+  /* ── Sticky sidebar with hover-reveal scrollbar ───────────────────────────
+   * Usage: add class="scroll-sidebar" to any <aside> that should:
+   *   • stick to top-24 (96px nav offset)
+   *   • scroll independently when content overflows viewport
+   *   • show a thin 4px scrollbar only on hover (premium interaction)
+   * ─────────────────────────────────────────────────────────────────────── */
+  .scroll-sidebar {
+    max-height: calc(100vh - 6.5rem); /* 96px sticky top + 8px breathing room */
+    overflow-y: auto;
+    overflow-x: hidden;
+    scroll-behavior: smooth;
+    /* Firefox */
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+    transition: scrollbar-color 0.25s ease;
+  }
+  .scroll-sidebar:hover {
+    scrollbar-color: #d1d5db transparent;
+  }
+  /* Chrome / Safari / Edge */
+  .scroll-sidebar::-webkit-scrollbar {
+    width: 4px;
+  }
+  .scroll-sidebar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scroll-sidebar::-webkit-scrollbar-thumb {
+    background: transparent;
+    border-radius: 9999px;
+    transition: background 0.25s ease;
+  }
+  .scroll-sidebar:hover::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+  }
+  .scroll-sidebar:hover::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+  }
 }

@@ -111,7 +111,7 @@ export default async function VatLieuNuocSubPage({ params, searchParams }: PageP
 
             <div className="flex flex-col lg:flex-row gap-8 lg:gap-10 items-start py-8 lg:py-10">
                 {/* ── Sidebar 30% ── */}
-                <aside className="w-full lg:w-[290px] flex-shrink-0 lg:sticky lg:top-24 flex flex-col gap-4">
+                <aside className="w-full lg:w-[290px] flex-shrink-0 lg:sticky lg:top-24 scroll-sidebar flex flex-col gap-4">
                     <Suspense fallback={<div className="h-96 bg-neutral-100 animate-pulse rounded-lg" />}>
                         <AdvancedSidebarFilter availableFilters={availableFilters} hideSubcategoryFilter />
                     </Suspense>
