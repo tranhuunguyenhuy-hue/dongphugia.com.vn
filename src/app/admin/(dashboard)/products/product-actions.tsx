@@ -20,9 +20,10 @@ interface Props {
     id: number
     isActive: boolean
     isFeatured: boolean
+    productName?: string
 }
 
-export function ProductActions({ id, isActive, isFeatured }: Props) {
+export function ProductActions({ id, isActive, isFeatured, productName }: Props) {
     const [showDelete, setShowDelete] = useState(false)
     const [loading, setLoading] = useState<string | null>(null)
 

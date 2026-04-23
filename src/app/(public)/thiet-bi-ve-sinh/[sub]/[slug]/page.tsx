@@ -1,9 +1,14 @@
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 import Link from "next/link"
-import { getPublicProductBySlug } from "@/lib/public-api-products"
+import { getPublicProductBySlug, getCompatibleLids, getPublicProducts, getProductComponents } from "@/lib/public-api-products"
 import { ProductImageGallery } from "@/components/product/product-image-gallery"
 import { ProductDetailTabs } from "@/components/product/product-detail-tabs"
+import { ProductCTA } from "@/components/product/product-cta"
+import { CompatibleLidsSection } from "@/components/product/compatible-lids-section"
+import { ProductComponentsSection } from "@/components/product/product-components-section"
+import { ProductCard } from "@/components/ui/product-card"
+import { BrandBadge } from "@/components/ui/brand-badge"
 
 export const revalidate = 1800
 
@@ -30,30 +35,83 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
     const product = await getPublicProductBySlug(CATEGORY_SLUG, slug)
     if (!product) notFound()
 
+    // Fetch compatible lids only for Bon Cau (subcategory_id = 1)
+    const IS_BON_CAU = product.subcategory_id === 1
+    const compatibleLids = IS_BON_CAU
+        ? await getCompatibleLids(product.brand_id, 6)
+        : []
+
+    // Fetch product components from product_relationships
+    const productComponents = await getProductComponents(product.id)
+    const hasComponents = productComponents.some(c => c.child !== null)
+
     const additionalImages = product.product_images?.filter(i => i.image_url !== product.image_main_url) ?? []
     const features = product.product_feature_values ?? []
 
+    // Fetch related products
+    const { products: relatedItems } = await getPublicProducts({
+        category_slug: CATEGORY_SLUG,
+        subcategory_slug: product.subcategories?.slug || undefined,
+        page: 1,
+        pageSize: 5
+    })
+    const relatedProducts = relatedItems.filter(p => p.slug !== slug).slice(0, 4)
+
+    // Build extra specs to pass into Tabs
+    const extraSpecs: { key: string, value: React.ReactNode }[] = []
+    if (product.brands) {
+        extraSpecs.push({ key: 'Thương hiệu', value: product.brands.name })
+    }
+    if (product.origins) {
+        extraSpecs.push({ key: 'Xuất xứ', value: product.origins.name })
+    }
+    if (product.materials) {
+        extraSpecs.push({ key: 'Chất liệu', value: product.materials.name })
+    }
+    if (product.colors) {
+        extraSpecs.push({ 
+            key: 'Màu sắc', 
+            value: (
+                <div className="flex items-center gap-2">
+                    {product.colors.hex_code && (
+                        <div 
+                            className="w-4 h-4 rounded-[4px] border border-neutral-200 shadow-sm" 
+                            style={{ backgroundColor: product.colors.hex_code }}
+                        />
+                    )}
+                    <span>{product.colors.name}</span>
+                </div>
+            ) 
+        })
+    }
+
+    const stockDisplay = product.stock_status === 'in_stock'
+        ? <span className="text-emerald-600 font-medium">Còn hàng</span>
+        : product.stock_status === 'pre_order'
+        ? <span className="text-amber-600 font-medium">Đặt trước</span>
+        : <span className="text-rose-600 font-medium">Hết hàng</span>;
+
     return (
-        <main className="max-w-[1280px] mx-auto px-5 py-8 lg:py-12">
+        <main className="u-container py-8 lg:py-12">
             {/* Breadcrumb */}
-            <nav className="flex items-center gap-2 text-sm text-neutral-500 mb-8" aria-label="Breadcrumb">
-                <Link href="/" className="hover:text-neutral-800 transition-colors">Trang chủ</Link>
+            <nav className="flex items-center gap-2 text-sm text-stone-500 mb-8" aria-label="Breadcrumb">
+                <Link href="/" className="hover:text-stone-900 transition-colors">Trang chủ</Link>
                 <span>/</span>
-                <Link href={BASE_PATH} className="hover:text-neutral-800 transition-colors">{CATEGORY_NAME}</Link>
+                <Link href={BASE_PATH} className="hover:text-stone-900 transition-colors">{CATEGORY_NAME}</Link>
                 {product.subcategories && (
                     <>
                         <span>/</span>
-                        <Link href={`${BASE_PATH}?sub=${sub}`} className="hover:text-neutral-800 transition-colors">
+                        <Link href={`${BASE_PATH}?sub=${sub}`} className="hover:text-stone-900 transition-colors">
                             {product.subcategories.name}
                         </Link>
                     </>
                 )}
                 <span>/</span>
-                <span className="text-neutral-800 font-medium truncate max-w-[200px]">{product.name}</span>
+                <span className="text-stone-900 font-medium truncate max-w-[200px]">{product.name}</span>
             </nav>
 
             {/* Main Content */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-14">
                 {/* Gallery */}
                 <ProductImageGallery
                     mainImageUrl={product.image_main_url}
@@ -63,50 +121,50 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
                 />
 
                 {/* Info */}
-                <div className="flex flex-col gap-5">
+                <div className="flex flex-col gap-6">
                     {/* Badges */}
                     <div className="flex gap-2 flex-wrap">
                         {product.is_new && (
-                            <span className="px-2.5 py-1 text-xs font-bold uppercase tracking-wider bg-blue-50 text-blue-600 rounded-full border border-blue-100">
+                            <span className="px-3 py-1 text-[11px] font-bold uppercase tracking-wider border border-brand-500 text-brand-600 bg-brand-50 rounded-full">
                                 Sản phẩm mới
                             </span>
                         )}
                         {product.is_bestseller && (
-                            <span className="px-2.5 py-1 text-xs font-bold uppercase tracking-wider bg-neutral-100 text-neutral-700 rounded-full border border-neutral-200">
+                            <span className="px-3 py-1 text-[11px] font-bold uppercase tracking-wider bg-stone-900 text-white rounded-full">
                                 Bán chạy
                             </span>
                         )}
-                        {product.brands && (
-                            <span className="px-2.5 py-1 text-xs font-semibold text-neutral-600 bg-neutral-50 rounded-full border border-neutral-200">
-                                {product.brands.name}
-                            </span>
-                        )}
+                        {product.brands && <BrandBadge brand={product.brands as any} />}
                     </div>
 
                     <div>
-                        <p className="text-sm text-neutral-500 mb-1">Mã SP: {product.sku}</p>
-                        <h1 className="text-2xl lg:text-3xl font-bold text-[#192125] leading-tight">
+                        <h1 className="text-display-sm font-bold text-stone-900 leading-tight mb-3 tracking-tight">
                             {product.name}
                         </h1>
+                        <div className="flex items-center gap-4 text-[13px]">
+                            <p className="text-stone-500">Mã SP: <span className="font-medium text-stone-900">{product.sku}</span></p>
+                            <div className="w-1 h-1 rounded-full bg-stone-300" />
+                            <p className="text-stone-500">Tình trạng: {stockDisplay}</p>
+                        </div>
                     </div>
 
                     {/* Price */}
-                    <div className="py-4 border-y border-neutral-100">
-                        <p className="text-xs text-neutral-400 uppercase tracking-wider mb-1">Giá tham khảo</p>
-                        <p className="text-2xl font-bold text-[#192125]">
+                    <div className="py-4 border-y border-stone-100">
+                        <p className="text-xs text-stone-400 uppercase tracking-wider mb-1">Giá tham khảo</p>
+                        <p className="text-3xl font-bold text-accent-500 tracking-tight">
                             {product.price_display || "Liên hệ báo giá"}
                         </p>
                     </div>
 
                     {/* Features highlights */}
                     {features.length > 0 && (
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-2 gap-3 mt-1">
                             {features.slice(0, 4).map(f => (
-                                <div key={f.id} className="flex items-start gap-2 p-3 rounded-xl bg-neutral-50 border border-neutral-100">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-[#2E7A96] mt-1.5 shrink-0" />
+                                <div key={f.id} className="flex items-start gap-2.5 p-3 rounded-xl bg-stone-50 border border-stone-200">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-stone-300 mt-2 shrink-0" />
                                     <div>
-                                        <p className="text-xs text-neutral-500">{f.product_features?.name}</p>
-                                        <p className="text-sm font-medium text-neutral-800">{f.value}</p>
+                                        <p className="text-[11px] text-stone-400 uppercase tracking-wider">{f.product_features?.name}</p>
+                                        <p className="text-[13px] font-medium text-stone-800 leading-tight mt-0.5">{f.value}</p>
                                     </div>
                                 </div>
                             ))}
@@ -114,36 +172,62 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
                     )}
 
                     {/* CTA */}
-                    <div className="flex flex-col sm:flex-row gap-3 pt-2">
-                        <a
-                            href="tel:02633520316"
-                            className="flex-1 flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-[#192125] text-white font-semibold text-sm hover:bg-[#2E7A96] transition-colors duration-200"
-                        >
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z" />
-                            </svg>
-                            Gọi tư vấn ngay
-                        </a>
-                        <a
-                            href="https://zalo.me/0263352316"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex-1 flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl border-2 border-[#192125] text-[#192125] font-semibold text-sm hover:bg-neutral-50 transition-colors duration-200"
-                        >
-                            Yêu cầu báo giá
-                        </a>
-                    </div>
+                    <ProductCTA
+                        productId={product.id}
+                        productSku={product.sku}
+                        productName={product.name}
+                        price={product.price ? Number(product.price) : null}
+                        priceDisplay={product.price_display}
+                        imageUrl={product.image_main_url}
+                        categorySlug={CATEGORY_SLUG}
+                        subcategorySlug={product.subcategories?.slug}
+                        brandName={product.brands?.name}
+                        slug={product.slug}
+                    />
                 </div>
             </div>
 
             {/* Detail Tabs */}
-            <div className="mt-12">
+            <div className="mt-16 border-t border-stone-100 pt-8">
                 <ProductDetailTabs
                     description={product.description}
                     features={product.features}
                     specifications={null}
+                    extraSpecs={extraSpecs}
                 />
             </div>
+
+            {/* Compatible Lids — only for Bon Cau */}
+            {IS_BON_CAU && (
+                <CompatibleLidsSection
+                    lids={compatibleLids}
+                    brandName={product.brands?.name}
+                />
+            )}
+
+            {/* Product Components (Bộ linh kiện) */}
+            {hasComponents && (
+                <ProductComponentsSection
+                    components={productComponents as any}
+                    basePath={BASE_PATH}
+                />
+            )}
+
+            {/* Related Products */}
+            {relatedProducts.length > 0 && (
+                <div className="mt-16 pt-8 border-t border-stone-100">
+                    <h2 className="text-display-xs font-bold text-stone-900 mb-6">Sản phẩm liên quan</h2>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+                        {relatedProducts.map(p => (
+                            <ProductCard
+                                key={p.id}
+                                product={p}
+                                basePath={BASE_PATH}
+                            />
+                        ))}
+                    </div>
+                </div>
+            )}
         </main>
     )
 }

@@ -173,7 +173,7 @@ export function SmartFilter({ sections, heading = 'Filters', variant = 'sidebar'
                     <div className="flex items-center gap-2">
                         <h2 className="text-[15px] font-semibold text-neutral-900">{heading}</h2>
                         {activeFilterCount > 0 && (
-                            <span className="flex items-center justify-center bg-neutral-900 text-white text-[10px] font-bold w-4 h-4 rounded-full leading-none">
+                            <span className="flex items-center justify-center bg-neutral-900 text-white text-[10px] font-bold w-4 h-4 rounded-lg leading-none">
                                 {activeFilterCount}
                             </span>
                         )}

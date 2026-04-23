@@ -80,6 +80,25 @@ export async function deleteBanner(id: number) {
     }
 }
 
+// --- Category Banners ---
+export async function updateCategoryBanner(id: number, banner_url: string | null) {
+    try {
+        await prisma.categories.update({
+            where: { id },
+            data: { banner_url: banner_url || null },
+        })
+        revalidatePath('/admin/categories')
+        revalidatePath('/thiet-bi-ve-sinh')
+        revalidatePath('/thiet-bi-bep')
+        revalidatePath('/vat-lieu-nuoc')
+        revalidatePath('/gach-op-lat')
+        return { success: true }
+    } catch (error) {
+        console.error("Database Error:", error)
+        return { success: false, message: 'Lỗi khi cập nhật banner danh mục.' }
+    }
+}
+
 // --- Quote Requests ---
 
 // Schema for multi-product quote cart submission

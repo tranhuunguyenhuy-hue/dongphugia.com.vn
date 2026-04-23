@@ -1,11 +1,21 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google"; // Changed from Geist to Inter
+import { Be_Vietnam_Pro, Playfair_Display } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin", "vietnamese"], // Added vietnamese subset
+const beVietnamPro = Be_Vietnam_Pro({
+  variable: "--font-sans",
+  subsets: ["latin", "vietnamese"],
+  weight: ["300", "400", "500", "600", "700"],
+  display: "swap",
+});
+
+const playfairDisplay = Playfair_Display({
+  variable: "--font-display",
+  subsets: ["latin", "vietnamese"],
+  weight: ["400", "500", "600", "700", "800", "900"],
+  style: ["normal", "italic"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -40,7 +50,7 @@ export default function RootLayout({
   return (
     <html lang="vi">
       <body
-        className={`${inter.variable} antialiased font-sans`} // Changed to use inter variable
+        className={`${beVietnamPro.variable} ${playfairDisplay.variable} antialiased font-sans`}
       >
         {children}
         <Toaster richColors position="top-right" />

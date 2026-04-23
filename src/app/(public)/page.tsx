@@ -2,12 +2,12 @@ import type { Metadata } from "next"
 import { HeroBanner } from "@/components/home/hero-banner"
 import { BrandSlider } from "@/components/home/brand-slider"
 import { BlogSection } from "@/components/home/blog-section"
-import { ProjectSection } from "@/components/home/project-section"
-import { getFeaturedProductsByCategorySlug } from "@/lib/public-api-products"
-import { getFeaturedProjects } from "@/lib/public-api-projects"
-import { ProductCard } from "@/components/ui/product-card"
-import Link from "next/link"
+import { CategoryTabsSection } from "@/components/home/category-tabs-section"
+import { FeaturedProductsClient } from "@/components/home/featured-products-client"
+import { ContactSection } from "@/components/home/contact-section"
+import { getFeaturedProductsByCategorySlug, getTopProductsPerBrand } from "@/lib/public-api-products"
 import prisma from "@/lib/prisma"
+import { siteConfig } from "@/config/site"
 
 export const revalidate = 3600
 
@@ -23,27 +23,29 @@ export const metadata: Metadata = {
     },
 }
 
-const FEATURED_CATEGORIES = [
-    { slug: "thiet-bi-ve-sinh", name: "Thiết Bị Vệ Sinh", basePath: "/thiet-bi-ve-sinh" },
-    { slug: "thiet-bi-bep", name: "Thiết Bị Bếp", basePath: "/thiet-bi-bep" },
-    { slug: "gach-op-lat", name: "Gạch Ốp Lát", basePath: "/gach-op-lat" },
-    { slug: "vat-lieu-nuoc", name: "Vật Liệu Nước", basePath: "/vat-lieu-nuoc" },
-]
-
 export default async function HomePage() {
-    const [banners, featuredProjects, ...featuredByCategory] = await Promise.all([
+    const [banners, tbvsData, bepData, gachData, nuocData] = await Promise.all([
         prisma.banners.findMany({
             where: { is_active: true },
             orderBy: { sort_order: 'asc' },
             take: 5,
         }),
-        getFeaturedProjects(),
-        ...FEATURED_CATEGORIES.map(c => getFeaturedProductsByCategorySlug(c.slug, 8)),
+        getFeaturedProductsByCategorySlug('thiet-bi-ve-sinh', null, null, 0, 20),
+        getFeaturedProductsByCategorySlug('thiet-bi-bep', null, null, 0, 20),
+        getFeaturedProductsByCategorySlug('gach-op-lat', null, null, 0, 20),
+        getFeaturedProductsByCategorySlug('vat-lieu-nuoc', null, null, 0, 20),
     ])
+
+    const allCategories = [
+        { id: 'thiet-bi-ve-sinh', label: 'Thiết Bị Vệ Sinh', basePath: '/thiet-bi-ve-sinh', products: tbvsData.products, totalCount: tbvsData.total },
+        { id: 'thiet-bi-bep', label: 'Thiết Bị Bếp', basePath: '/thiet-bi-bep', products: bepData.products, totalCount: bepData.total },
+        { id: 'vat-lieu-nuoc', label: 'Vật Liệu Nước', basePath: '/vat-lieu-nuoc', products: nuocData.products, totalCount: nuocData.total },
+        { id: 'gach-op-lat', label: 'Gạch Ốp Lát', basePath: '/gach-op-lat', products: gachData.products, totalCount: gachData.total },
+    ].filter(c => c.products.length > 0)
 
     return (
         <div className="bg-white">
-            {/* Hero */}
+            {/* Hero Banner */}
             <div className="-mt-[126px] pt-[126px]">
                 <section className="max-w-[1280px] mx-auto px-5 pt-8 pb-4 lg:pt-10 lg:pb-6">
                     <div className="w-full">
@@ -57,42 +59,21 @@ export default async function HomePage() {
                 <BrandSlider />
             </div>
 
-            <h1 className="sr-only">Đông Phú Gia - Đại lý Gạch ốp lát và Thiết bị vệ sinh cao cấp tại Đà Lạt</h1>
+            {/* Category Tabs & Subcategories (DPG V2) */}
+            <CategoryTabsSection />
 
-            {/* Featured products per category */}
-            {FEATURED_CATEGORIES.map((cat, idx) => {
-                const products = featuredByCategory[idx] ?? []
-                if (products.length === 0) return null
-                return (
-                    <section key={cat.slug} className="max-w-[1280px] mx-auto px-5 py-10 lg:py-14">
-                        <div className="flex items-end justify-between mb-6">
-                            <div>
-                                <h2 className="text-2xl font-bold text-[#192125] tracking-tight">{cat.name}</h2>
-                                <p className="text-sm text-neutral-500 mt-0.5">Sản phẩm nổi bật</p>
-                            </div>
-                            <Link
-                                href={cat.basePath}
-                                className="text-sm font-medium text-[#2E7A96] hover:underline underline-offset-4 transition-all whitespace-nowrap"
-                            >
-                                Xem tất cả →
-                            </Link>
-                        </div>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                            {products.map(p => (
-                                <ProductCard
-                                    key={p.id}
-                                    product={p}
-                                    basePath={cat.basePath}
-                                    patternSlug={(p as any).subcategories?.slug ?? "san-pham"}
-                                />
-                            ))}
-                        </div>
-                    </section>
-                )
-            })}
+            {/* Featured Products */}
+            {allCategories.length > 0 && (
+                <section className="px-5 py-10 lg:py-14">
+                    <FeaturedProductsClient categories={allCategories as any} />
+                </section>
+            )}
 
-            <ProjectSection projects={featuredProjects} />
+            {/* Blog */}
             <BlogSection />
+
+            {/* Contact Form */}
+            <ContactSection />
         </div>
     )
 }

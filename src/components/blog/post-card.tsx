@@ -57,7 +57,7 @@ export function PostCard({ post, featured = false }: PostCardProps) {
                     <div className="flex items-center gap-3 mb-4">
                         <Link
                             href={`/blog/${post.blog_categories.slug}`}
-                            className="bg-[#C5E8F5] text-[#2E7A96] px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider hover:bg-[#C5E8F5] transition-colors"
+                            className="bg-[#C5E8F5] text-[#2E7A96] px-3 py-1 rounded-md text-xs font-semibold uppercase tracking-wider hover:bg-[#C5E8F5] transition-colors"
                         >
                             {post.blog_categories.name}
                         </Link>

@@ -30,7 +30,7 @@ export function SubcategoryTabs({ subcategories, activeSlug, basePath, searchPar
                 {/* "All" tab */}
                 <Link
                     href={buildHref(null)}
-                    className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap border ${
+                    className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap border ${
                         !activeSlug
                             ? 'bg-[#192125] text-white border-[#192125]'
                             : 'bg-white text-neutral-600 border-neutral-200 hover:border-neutral-400'
@@ -45,7 +45,7 @@ export function SubcategoryTabs({ subcategories, activeSlug, basePath, searchPar
                         <Link
                             key={sub.id}
                             href={buildHref(sub.slug)}
-                            className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap border ${
+                            className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap border ${
                                 isActive
                                     ? 'bg-[#192125] text-white border-[#192125]'
                                     : 'bg-white text-neutral-600 border-neutral-200 hover:border-neutral-400'

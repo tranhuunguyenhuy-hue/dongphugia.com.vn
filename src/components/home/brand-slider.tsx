@@ -2,18 +2,12 @@
 
 import { useEffect, useRef } from "react"
 
-// Partner brand data - text-only until brand assets are finalized
-const BRANDS = [
-    { name: "TOTO", logoText: "TOTO" },
-    { name: "INAX", logoText: "INAX" },
-    { name: "Caesar", logoText: "CAESAR" },
-    { name: "Viglacera", logoText: "VIGLACERA" },
-    { name: "Hafele", logoText: "HÄFELE" },
-    { name: "Bosch", logoText: "BOSCH" },
-    { name: "Cotto", logoText: "COTTO" },
-    { name: "Jomoo", logoText: "JOMOO" },
-    { name: "American Standard", logoText: "AMERICAN STD" },
-    { name: "Kohler", logoText: "KOHLER" },
+const BRAND_SLUGS = [
+    'toto', 'inax', 'caesar', 'american-standard', 'grohe', 'cotto', 'viglacera',
+    'hansgrohe', 'duravit', 'moen', 'mowoen', 'kluger', 'atmor',
+    'elica', 'kaff', 'samsung', 'panasonic', 'toshiba',
+    'ariston', 'ferroli', 'rheem', 'karofi', 'mitsubishi-cleansui', 
+    'unilever-pureit', 'dai-thanh', 'coway', 'philips'
 ]
 
 export function BrandSlider() {
@@ -36,35 +30,46 @@ export function BrandSlider() {
     }, [])
 
     // Duplicate brands for seamless loop
-    const allBrands = [...BRANDS, ...BRANDS]
+    const allBrands = [...BRAND_SLUGS, ...BRAND_SLUGS]
 
     return (
-        <section className="w-full py-6 lg:py-8 overflow-hidden" aria-label="Đối tác thương hiệu">
+        <section className="w-full py-8 lg:py-10 overflow-hidden" aria-label="Đối tác thương hiệu">
             {/* Section label */}
-            <p className="text-center text-[13px] font-medium text-[#88A3AE] uppercase tracking-[0.2em] mb-6">
-                Đối tác thương hiệu hàng đầu
+            <p className="text-center text-[13px] uppercase tracking-widest font-semibold text-stone-400 mb-8 w-full">
+                Được hơn 30 đối tác toàn cầu tin tưởng
             </p>
 
             {/* Marquee container */}
-            <div className="relative">
+            <div className="relative group/slider">
                 {/* Fade edges */}
-                <div className="absolute left-0 top-0 bottom-0 w-16 sm:w-24 bg-gradient-to-r from-[#F5F9FB] to-transparent z-10 pointer-events-none" />
-                <div className="absolute right-0 top-0 bottom-0 w-16 sm:w-24 bg-gradient-to-l from-[#F5F9FB] to-transparent z-10 pointer-events-none" />
+                <div className="absolute left-0 top-0 bottom-0 w-16 sm:w-32 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
+                <div className="absolute right-0 top-0 bottom-0 w-16 sm:w-32 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
 
                 {/* Scrolling track */}
                 <div
                     ref={scrollRef}
-                    className="flex items-center gap-12 lg:gap-16 animate-marquee"
+                    className="flex items-center gap-8 lg:gap-12 animate-marquee"
                     style={{ width: "max-content" }}
                 >
-                    {allBrands.map((brand, i) => (
+                    {allBrands.map((slug, i) => (
                         <div
-                            key={`${brand.name}-${i}`}
-                            className="shrink-0 flex items-center justify-center h-12 px-4 opacity-40 hover:opacity-100 transition-opacity duration-300 cursor-default select-none"
+                            key={`${slug}-${i}`}
+                            className="shrink-0 flex items-center justify-center w-[120px] h-[60px] lg:w-[140px] lg:h-[80px] relative transition-all duration-300 transform hover:scale-105 group/brand"
                         >
-                            <span className="text-[17px] lg:text-[19px] font-bold text-[#3C4E56] tracking-[0.15em] whitespace-nowrap">
-                                {brand.logoText}
-                            </span>
+                            <img
+                                src={`/images/brands/${slug}.png`}
+                                alt={`Thương hiệu ${slug}`}
+                                className="max-w-[80px] max-h-[40px] lg:max-w-[100px] lg:max-h-[50px] object-contain grayscale opacity-40 group-hover/brand:grayscale-0 group-hover/brand:opacity-100 transition-all duration-300"
+                                loading="lazy"
+                                onError={(e) => {
+                                    const target = e.currentTarget;
+                                    if (target.src.endsWith('.png')) {
+                                        target.src = `/images/brands/${slug}.svg`;
+                                    } else {
+                                        target.style.display = 'none';
+                                    }
+                                }}
+                            />
                         </div>
                     ))}
                 </div>

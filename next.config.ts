@@ -61,6 +61,22 @@ const nextConfig: NextConfig = {
     ]
   },
 
+  // 301 redirects: old query-param URLs → new path-based URLs
+  async redirects() {
+    const CATEGORIES = [
+      'thiet-bi-ve-sinh',
+      'thiet-bi-bep',
+      'vat-lieu-nuoc',
+      'gach-op-lat',
+    ]
+    return CATEGORIES.map((cat) => ({
+      source: `/${cat}`,
+      has: [{ type: 'query' as const, key: 'sub', value: '(?<sub>.+)' }],
+      destination: `/${cat}/:sub`,
+      permanent: true,
+    }))
+  },
+
   // LEO-392 Security Headers (SECURITY_AUDIT.md — P2)
   async headers() {
     return [
