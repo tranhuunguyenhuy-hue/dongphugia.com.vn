@@ -1,71 +1,11 @@
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useCallback, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Label } from '@/components/ui/label'
-import { ChevronDown, ChevronRight, Filter } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { ChevronDown } from 'lucide-react'
 
 // --- Types ---
 type FilterOption = { name: string; slug: string; icon_name?: string | null; logo_url?: string | null }
-type FilterSectionProps = {
-    title: string
-    options: FilterOption[]
-    selectedSlugs: string[]
-    onChange: (slug: string, checked: boolean) => void
-    defaultOpen?: boolean
-}
-
-// --- Components ---
-const FilterSection = ({ title, options, selectedSlugs, onChange, defaultOpen = true }: FilterSectionProps) => {
-    const [isOpen, setIsOpen] = useState(defaultOpen)
-
-    if (!options || options.length === 0) return null
-
-    return (
-        <div className="border-b border-neutral-200 py-4 last:border-0">
-            <button
-                type="button"
-                className="flex w-full items-center justify-between text-left text-sm font-semibold tracking-tight text-neutral-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded-md py-1"
-                onClick={() => setIsOpen(!isOpen)}
-            >
-                {title}
-                {isOpen ? <ChevronDown className="h-4 w-4 text-neutral-500" /> : <ChevronRight className="h-4 w-4 text-neutral-500" />}
-            </button>
-
-            {isOpen && (
-                <div className="mt-4 space-y-3">
-                    {options.map((opt) => {
-                        const isChecked = selectedSlugs.includes(opt.slug)
-                        const id = `filter-${title}-${opt.slug}`
-                        return (
-                            <div key={opt.slug} className="flex items-center space-x-3">
-                                <Checkbox
-                                    id={id}
-                                    checked={isChecked}
-                                    onCheckedChange={(checked) => onChange(opt.slug, checked === true)}
-                                    className="mt-0.5 border-neutral-300"
-                                />
-                                <Label
-                                    htmlFor={id}
-                                    className={cn(
-                                        "text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer transition-colors",
-                                        isChecked 
-                                            ? "font-semibold text-blue-700" 
-                                            : "font-medium text-neutral-700 hover:text-neutral-900"
-                                    )}
-                                >
-                                    {opt.name}
-                                </Label>
-                            </div>
-                        )
-                    })}
-                </div>
-            )}
-        </div>
-    )
-}
 
 export type AvailableFiltersData = {
     subcategories: FilterOption[]
@@ -75,163 +15,358 @@ export type AvailableFiltersData = {
     features: FilterOption[]
 }
 
-export function AdvancedSidebarFilter({ availableFilters, hideTitle = false, hideSubcategoryFilter = false }: { availableFilters: AvailableFiltersData, hideTitle?: boolean, hideSubcategoryFilter?: boolean }) {
+// ── Price constants ────────────────────────────────────────────────────────────
+const PRICE_MIN = 0
+const PRICE_MAX = 50_000_000
+const PRICE_STEP = 500_000
+
+function formatPrice(value: number): string {
+    if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(value % 1_000_000 === 0 ? 0 : 1)}tr`
+    if (value >= 1_000) return `${(value / 1_000).toFixed(0)}k`
+    return `${value}`
+}
+
+function parsePriceParam(param: string): [number, number] {
+    const [a, b] = param.split('-').map(Number)
+    if (!isNaN(a) && !isNaN(b)) return [a, Math.min(b, PRICE_MAX)]
+    return [PRICE_MIN, PRICE_MAX]
+}
+
+// ── Dual Range Slider ──────────────────────────────────────────────────────────
+function DualRangeSlider({
+    min, max, step, value, onChange,
+}: {
+    min: number; max: number; step: number
+    value: [number, number]
+    onChange: (v: [number, number]) => void
+}) {
+    const [lo, hi] = value
+    const pct = (v: number) => ((v - min) / (max - min)) * 100
+
+    const handleLo = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const v = Math.min(Number(e.target.value), hi - step)
+        onChange([v, hi])
+    }
+    const handleHi = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const v = Math.max(Number(e.target.value), lo + step)
+        onChange([lo, v])
+    }
+
+    const trackStyle = {
+        background: `linear-gradient(to right,
+            #e5e7eb ${pct(lo)}%,
+            #2E7A96 ${pct(lo)}%,
+            #2E7A96 ${pct(hi)}%,
+            #e5e7eb ${pct(hi)}%)`
+    }
+
+    const thumbCls = `
+        absolute w-full h-1.5 appearance-none bg-transparent cursor-pointer z-10
+        [&::-webkit-slider-thumb]:appearance-none
+        [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4
+        [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white
+        [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-[#2E7A96]
+        [&::-webkit-slider-thumb]:shadow-sm [&::-webkit-slider-thumb]:cursor-grab
+        [&::-webkit-slider-thumb]:transition-transform [&::-webkit-slider-thumb]:duration-100
+        [&::-webkit-slider-thumb:active]:scale-110 [&::-webkit-slider-thumb:active]:cursor-grabbing
+        [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4
+        [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white
+        [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-[#2E7A96]
+        [&::-moz-range-thumb]:shadow-sm [&::-moz-range-thumb]:cursor-grab
+    `
+
+    return (
+        <div className="relative h-5 flex items-center" style={{ WebkitTapHighlightColor: 'transparent' }}>
+            <div className="absolute w-full h-1.5 rounded-full" style={trackStyle} />
+            <input type="range" min={min} max={max} step={step} value={lo}
+                onChange={handleLo} className={thumbCls} />
+            <input type="range" min={min} max={max} step={step} value={hi}
+                onChange={handleHi}
+                className={`${thumbCls} pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-moz-range-thumb]:pointer-events-auto`} />
+        </div>
+    )
+}
+
+// ── Collapsible Section ────────────────────────────────────────────────────────
+function FilterSection({
+    title, children, defaultOpen = true,
+}: {
+    title: string
+    children: React.ReactNode
+    defaultOpen?: boolean
+}) {
+    const [open, setOpen] = useState(defaultOpen)
+    return (
+        <div className="px-5 py-4 border-b border-neutral-100 last:border-0">
+            <button
+                type="button"
+                onClick={() => setOpen(!open)}
+                className="w-full flex items-center justify-between mb-0 group"
+            >
+                <p className="text-[11px] font-semibold text-neutral-500 uppercase tracking-wider">
+                    {title}
+                </p>
+                <ChevronDown className={`h-3.5 w-3.5 text-neutral-400 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
+            </button>
+            {open && <div className="mt-3">{children}</div>}
+        </div>
+    )
+}
+
+// ── CheckRow (matches CategoryFilterPanel brand button style) ──────────────────
+function CheckRow({
+    label, active, onClick,
+}: { label: string; active: boolean; onClick: () => void }) {
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-[12px] transition-all duration-150 text-left ${
+                active
+                    ? 'bg-[#2E7A96]/10 text-[#2E7A96] font-medium'
+                    : 'text-neutral-600 hover:bg-neutral-50'
+            }`}
+        >
+            <span className={`w-3.5 h-3.5 rounded-sm border flex-shrink-0 flex items-center justify-center transition-colors ${
+                active ? 'bg-[#2E7A96] border-[#2E7A96]' : 'border-neutral-300'
+            }`}>
+                {active && (
+                    <svg className="w-2 h-2 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                    </svg>
+                )}
+            </span>
+            {label}
+        </button>
+    )
+}
+
+// ── Main Component ─────────────────────────────────────────────────────────────
+export function AdvancedSidebarFilter({
+    availableFilters,
+    hideSubcategoryFilter = false,
+    hideTitle = false,
+}: {
+    availableFilters: AvailableFiltersData
+    hideSubcategoryFilter?: boolean
+    hideTitle?: boolean
+}) {
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()
 
-    // Create a new URLSearchParams object from current to manipulate
-    const createQueryString = useCallback(
-        (name: string, value: string[]) => {
-            const params = new URLSearchParams(searchParams.toString())
-            if (value.length > 0) {
-                params.set(name, value.join(','))
-            } else {
-                params.delete(name)
-            }
-            // Always reset page to 1 when filtering
-            params.set('page', '1')
-            return params.toString()
-        },
-        [searchParams]
-    )
-
-    // Helper to get array from CSV string
-    const getParamAsArray = (key: string) => {
+    // ── Helpers ──────────────────────────────────────────────────────────────
+    const getArr = (key: string) => {
         const val = searchParams.get(key)
         return val ? val.split(',') : []
     }
 
-    const subcategorySlugs = getParamAsArray('sub')
-    const brandSlugs = getParamAsArray('brand')
-    const featureSlugs = getParamAsArray('features')
-    const materialSlugs = getParamAsArray('material')
-    const originSlugs = getParamAsArray('origin')
+    const subcategorySlugs = getArr('sub')
+    const brandSlugs       = getArr('brand')
+    const featureSlugs     = getArr('features')
+    const materialSlugs    = getArr('material')
+    const originSlugs      = getArr('origin')
 
-    const handleChange = (key: string, currentSelected: string[], targetSlug: string, checked: boolean) => {
-        let newSelected = [...currentSelected]
-        if (checked) {
-            newSelected.push(targetSlug)
-        } else {
-            newSelected = newSelected.filter(s => s !== targetSlug)
-        }
-        
-        // Use router.replace to avoid clogging the history stack (or router.push if desired)
-        const newQuery = createQueryString(key, newSelected)
-        router.push(`${pathname}?${newQuery}`)
+    const priceParam = searchParams.get('price') ?? ''
+    const [localPrice, setLocalPrice] = useState<[number, number]>(() =>
+        priceParam ? parsePriceParam(priceParam) : [PRICE_MIN, PRICE_MAX]
+    )
+    const isPriceActive = priceParam !== ''
+
+    useEffect(() => {
+        setLocalPrice(priceParam ? parsePriceParam(priceParam) : [PRICE_MIN, PRICE_MAX])
+    }, [priceParam])
+
+    const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+    const commitPrice = useCallback((value: [number, number]) => {
+        if (debounceRef.current) clearTimeout(debounceRef.current)
+        debounceRef.current = setTimeout(() => {
+            const [lo, hi] = value
+            const params = new URLSearchParams(searchParams.toString())
+            if (lo <= PRICE_MIN && hi >= PRICE_MAX) params.delete('price')
+            else params.set('price', `${lo}-${hi}`)
+            params.set('page', '1')
+            router.push(`${pathname}?${params.toString()}`, { scroll: false })
+        }, 400)
+    }, [router, pathname, searchParams])
+
+    const handleSlider = (value: [number, number]) => {
+        setLocalPrice(value)
+        commitPrice(value)
     }
 
-    // Pricing filters 
-    const PRICE_OPTIONS = [
-        { name: 'Dưới 1 triệu', slug: '0-1000000' },
-        { name: 'Từ 1 - 3 triệu', slug: '1000000-3000000' },
-        { name: 'Từ 3 - 5 triệu', slug: '3000000-5000000' },
-        { name: 'Trên 5 triệu', slug: '5000000-999999999' },
-    ]
-    const currentPriceStr = searchParams.get('priceRange')
-    const priceSlugs = currentPriceStr ? currentPriceStr.split(',') : []
-
-    const handlePriceChange = (slug: string, checked: boolean) => {
-        let newSelected = [...priceSlugs]
-        if (checked) {
-            newSelected.push(slug)
-        } else {
-            newSelected = newSelected.filter(s => s !== slug)
-        }
-
+    const toggle = (key: string, current: string[], slug: string) => {
+        const next = current.includes(slug)
+            ? current.filter(s => s !== slug)
+            : [...current, slug]
         const params = new URLSearchParams(searchParams.toString())
-        if (newSelected.length > 0) {
-            params.set('priceRange', newSelected.join(','))
-            // Also map to min/max for the API if needed, or API can handle priceRange directly.
-            // Let's keep it simple and just use priceRange in URL, we will parse it in the page component.
-        } else {
-            params.delete('priceRange')
-        }
+        if (next.length) params.set(key, next.join(','))
+        else params.delete(key)
         params.set('page', '1')
-        router.push(`${pathname}?${params.toString()}`)
+        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+    }
+
+    const isNew      = searchParams.get('is_new') === 'true'
+    const isFeatured = searchParams.get('is_featured') === 'true'
+
+    const hasFilters =
+        brandSlugs.length > 0 || featureSlugs.length > 0 ||
+        materialSlugs.length > 0 || originSlugs.length > 0 ||
+        isPriceActive || isNew || isFeatured
+
+    const clearAll = () => {
+        setLocalPrice([PRICE_MIN, PRICE_MAX])
+        const params = new URLSearchParams(searchParams.toString())
+        ;['brand', 'features', 'material', 'origin', 'price', 'is_new', 'is_featured', 'priceRange'].forEach(k => params.delete(k))
+        params.set('page', '1')
+        router.push(`${pathname}?${params.toString()}`, { scroll: false })
     }
 
     return (
-        <div className={cn("w-full bg-white rounded-lg", !hideTitle && "sticky top-24")}>
-            {!hideTitle && (
-                <div className="flex items-center gap-2 mb-4">
-                    <Filter className="h-5 w-5 text-neutral-900" />
-                    <h3 className="text-lg font-semibold tracking-tight text-neutral-900">Tính năng lọc</h3>
-                </div>
-            )}
-
-            <div className="space-y-1">
-                {/* Hide subcategory filter when already on a subcategory page */}
-                {!hideSubcategoryFilter && (
-                    <FilterSection
-                        title="Loại sản phẩm"
-                        options={availableFilters.subcategories}
-                        selectedSlugs={subcategorySlugs}
-                        onChange={(slug, checked) => handleChange('sub', subcategorySlugs, slug, checked)}
-                        defaultOpen={true}
-                    />
+        <div className="bg-white rounded-md border border-neutral-200 overflow-hidden">
+            {/* Header */}
+            <div className="px-5 py-3 border-b border-neutral-100 flex items-center justify-between">
+                <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-neutral-400">
+                    Lọc sản phẩm
+                </span>
+                {hasFilters && (
+                    <button onClick={clearAll} className="text-[10px] text-[#2E7A96] hover:underline font-medium">
+                        Xoá lọc
+                    </button>
                 )}
-                
-                <FilterSection
-                    title="Thương hiệu"
-                    options={availableFilters.brands}
-                    selectedSlugs={brandSlugs}
-                    onChange={(slug, checked) => handleChange('brand', brandSlugs, slug, checked)}
-                    defaultOpen={true}
-                />
+            </div>
 
-                <FilterSection
-                    title="Khoảng giá"
-                    options={PRICE_OPTIONS}
-                    selectedSlugs={priceSlugs}
-                    onChange={handlePriceChange}
-                    defaultOpen={true}
-                />
+            <div className="divide-y divide-neutral-100">
+                {/* Subcategory (hidden on sub pages) */}
+                {!hideSubcategoryFilter && availableFilters.subcategories.length > 0 && (
+                    <FilterSection title="Loại sản phẩm">
+                        <div className="space-y-1">
+                            {availableFilters.subcategories.map(opt => (
+                                <CheckRow
+                                    key={opt.slug} label={opt.name}
+                                    active={subcategorySlugs.includes(opt.slug)}
+                                    onClick={() => toggle('sub', subcategorySlugs, opt.slug)}
+                                />
+                            ))}
+                        </div>
+                    </FilterSection>
+                )}
 
-                <FilterSection
-                    title="Chức năng"
-                    options={availableFilters.features}
-                    selectedSlugs={featureSlugs}
-                    onChange={(slug, checked) => handleChange('features', featureSlugs, slug, checked)}
-                    defaultOpen={true}
-                />
+                {/* Brands */}
+                {availableFilters.brands.length > 0 && (
+                    <FilterSection title="Thương hiệu">
+                        <div className="space-y-1">
+                            {availableFilters.brands.map(b => (
+                                <CheckRow
+                                    key={b.slug} label={b.name}
+                                    active={brandSlugs.includes(b.slug)}
+                                    onClick={() => toggle('brand', brandSlugs, b.slug)}
+                                />
+                            ))}
+                        </div>
+                    </FilterSection>
+                )}
 
-                <FilterSection
-                    title="Chất liệu"
-                    options={availableFilters.materials}
-                    selectedSlugs={materialSlugs}
-                    onChange={(slug, checked) => handleChange('material', materialSlugs, slug, checked)}
-                    defaultOpen={false}
-                />
+                {/* Price — dual range slider */}
+                <FilterSection title="Khoảng giá">
+                    <div className="flex items-center justify-between mb-4">
+                        <span />
+                        {isPriceActive && (
+                            <button
+                                onClick={() => {
+                                    setLocalPrice([PRICE_MIN, PRICE_MAX])
+                                    const params = new URLSearchParams(searchParams.toString())
+                                    params.delete('price')
+                                    params.set('page', '1')
+                                    router.push(`${pathname}?${params.toString()}`, { scroll: false })
+                                }}
+                                className="text-[10px] text-neutral-400 hover:text-neutral-600 transition-colors"
+                            >
+                                Reset
+                            </button>
+                        )}
+                    </div>
+                    <DualRangeSlider
+                        min={PRICE_MIN} max={PRICE_MAX} step={PRICE_STEP}
+                        value={localPrice} onChange={handleSlider}
+                    />
+                    <div className="flex items-center justify-between mt-3">
+                        <span className={`text-[12px] font-semibold tabular-nums transition-colors ${isPriceActive ? 'text-[#2E7A96]' : 'text-neutral-500'}`}>
+                            {formatPrice(localPrice[0])}
+                        </span>
+                        <span className="text-[10px] text-neutral-300 mx-1">—</span>
+                        <span className={`text-[12px] font-semibold tabular-nums transition-colors ${isPriceActive ? 'text-[#2E7A96]' : 'text-neutral-500'}`}>
+                            {localPrice[1] >= PRICE_MAX ? `${formatPrice(PRICE_MAX)}+` : formatPrice(localPrice[1])}
+                        </span>
+                    </div>
+                </FilterSection>
 
-                <FilterSection
-                    title="Tùy chọn khác"
-                    options={
-                        [
-                            { name: 'Sản phẩm mới', slug: 'new' },
-                            { name: 'Khuyến mãi đặc biệt', slug: 'special' }
-                        ]
-                    }
-                    selectedSlugs={
-                        (searchParams.get('is_new') === 'true' ? ['new'] : []).concat(
-                            searchParams.get('is_featured') === 'true' ? ['special'] : []
-                        )
-                    }
-                    onChange={(slug, checked) => {
-                        const params = new URLSearchParams(searchParams.toString())
-                        if (slug === 'new') {
-                            if (checked) params.set('is_new', 'true')
-                            else params.delete('is_new')
-                        }
-                        if (slug === 'special') {
-                            if (checked) params.set('is_featured', 'true')
-                            else params.delete('is_featured')
-                        }
-                        params.set('page', '1')
-                        router.push(`${pathname}?${params.toString()}`)
-                    }}
-                    defaultOpen={false}
-                />
+                {/* Features */}
+                {availableFilters.features.length > 0 && (
+                    <FilterSection title="Chức năng" defaultOpen={false}>
+                        <div className="space-y-1">
+                            {availableFilters.features.map(opt => (
+                                <CheckRow
+                                    key={opt.slug} label={opt.name}
+                                    active={featureSlugs.includes(opt.slug)}
+                                    onClick={() => toggle('features', featureSlugs, opt.slug)}
+                                />
+                            ))}
+                        </div>
+                    </FilterSection>
+                )}
+
+                {/* Materials */}
+                {availableFilters.materials.length > 0 && (
+                    <FilterSection title="Chất liệu" defaultOpen={false}>
+                        <div className="space-y-1">
+                            {availableFilters.materials.map(opt => (
+                                <CheckRow
+                                    key={opt.slug} label={opt.name}
+                                    active={materialSlugs.includes(opt.slug)}
+                                    onClick={() => toggle('material', materialSlugs, opt.slug)}
+                                />
+                            ))}
+                        </div>
+                    </FilterSection>
+                )}
+
+                {/* Origins */}
+                {availableFilters.origins.length > 0 && (
+                    <FilterSection title="Xuất xứ" defaultOpen={false}>
+                        <div className="space-y-1">
+                            {availableFilters.origins.map(opt => (
+                                <CheckRow
+                                    key={opt.slug} label={opt.name}
+                                    active={originSlugs.includes(opt.slug)}
+                                    onClick={() => toggle('origin', originSlugs, opt.slug)}
+                                />
+                            ))}
+                        </div>
+                    </FilterSection>
+                )}
+
+                {/* Misc */}
+                <FilterSection title="Tùy chọn khác" defaultOpen={false}>
+                    <div className="space-y-1">
+                        {[
+                            { label: 'Sản phẩm mới', active: isNew, action: () => {
+                                const params = new URLSearchParams(searchParams.toString())
+                                isNew ? params.delete('is_new') : params.set('is_new', 'true')
+                                params.set('page', '1')
+                                router.push(`${pathname}?${params.toString()}`, { scroll: false })
+                            }},
+                            { label: 'Sản phẩm nổi bật', active: isFeatured, action: () => {
+                                const params = new URLSearchParams(searchParams.toString())
+                                isFeatured ? params.delete('is_featured') : params.set('is_featured', 'true')
+                                params.set('page', '1')
+                                router.push(`${pathname}?${params.toString()}`, { scroll: false })
+                            }},
+                        ].map(({ label, active, action }) => (
+                            <CheckRow key={label} label={label} active={active} onClick={action} />
+                        ))}
+                    </div>
+                </FilterSection>
             </div>
         </div>
     )

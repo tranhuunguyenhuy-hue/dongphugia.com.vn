@@ -56,16 +56,10 @@ export default async function GachOpLatSubPage({ params, searchParams }: PagePro
 
     let price_min: number | undefined
     let price_max: number | undefined
-    if (sp.priceRange) {
-        const ranges = sp.priceRange.split(',')
-        let globalMin = Infinity, globalMax = -1
-        ranges.forEach(r => {
-            const [min, max] = r.split('-').map(Number)
-            if (!isNaN(min) && min < globalMin) globalMin = min
-            if (!isNaN(max) && max > globalMax) globalMax = max
-        })
-        if (globalMin !== Infinity) price_min = globalMin
-        if (globalMax !== -1) price_max = globalMax
+    if (sp.price) {
+        const [a, b] = sp.price.split("-").map(Number)
+        if (!isNaN(a)) price_min = a
+        if (!isNaN(b)) price_max = b
     }
 
     const sortParam = sp.sort
