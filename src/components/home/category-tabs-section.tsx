@@ -24,6 +24,7 @@ const CATEGORY_TABS = [
             { label: "Vòi Nước",          slug: "voi-nuoc" },
             { label: "Nắp Bồn Cầu",       slug: "nap-bon-cau" },
             { label: "Phụ Kiện Bồn Cầu", slug: "phu-kien-bon-cau" },
+            { label: "Thân Bồn Cầu",      slug: "than-bon-cau" },
         ]
     },
     {
@@ -31,10 +32,14 @@ const CATEGORY_TABS = [
         label: "Thiết Bị Bếp",
         basePath: "/thiet-bi-bep",
         subcategories: [
-            { label: "Bếp Từ",       slug: "bep-tu" },
-            { label: "Máy Hút Mùi", slug: "may-hut-mui" },
-            { label: "Chậu Rửa Bát", slug: "chau-rua-bat" },
-            { label: "Vòi Rửa Bát", slug: "voi-rua-bat" },
+            { label: "Vòi Rửa Chén", slug: "voi-rua-chen" },
+            { label: "Phụ Kiện Bếp", slug: "thiet-bi-bep-khac" },
+            { label: "Chậu Rửa Chén", slug: "chau-rua-chen" },
+            { label: "Bếp Điện Từ",   slug: "bep-dien-tu" },
+            { label: "Máy Hút Mùi",  slug: "may-hut-mui" },
+            { label: "Máy Rửa Chén", slug: "may-rua-chen" },
+            { label: "Bếp Gas",      slug: "bep-gas" },
+            { label: "Lò Nướng",     slug: "lo-nuong" },
         ]
     },
     {
@@ -43,9 +48,9 @@ const CATEGORY_TABS = [
         basePath: "/vat-lieu-nuoc",
         subcategories: [
             { label: "Máy Nước Nóng", slug: "may-nuoc-nong" },
-            { label: "Máy Lọc Nước", slug: "may-loc-nuoc" },
-            { label: "Bồn Chứa",     slug: "bon-chua" },
-            { label: "Máy Bơm",      slug: "may-bom" },
+            { label: "Lọc Nước",      slug: "loc-nuoc" },
+            { label: "Bồn Chứa Nước", slug: "bon-chua-nuoc" },
+            { label: "Máy Bơm Nước",  slug: "may-bom-nuoc" },
         ]
     },
     {
@@ -53,9 +58,11 @@ const CATEGORY_TABS = [
         label: "Gạch Ốp Lát",
         basePath: "/gach-op-lat",
         subcategories: [
-            { label: "Gạch Ốp Tường", slug: "gach-op-tuong" },
-            { label: "Gạch Lát Nền",  slug: "gach-lat-nen" },
-            { label: "Gạch Vân Đá",   slug: "gach-van-da" },
+            { label: "Đá Marble",       slug: "gach-van-da-marble" },
+            { label: "Đá Tự Nhiên",     slug: "gach-van-da-tu-nhien" },
+            { label: "Gạch Vân Gỗ",     slug: "gach-van-go" },
+            { label: "Gạch Xi Măng",    slug: "gach-thiet-ke-xi-mang" },
+            { label: "Gạch Trang Trí",  slug: "gach-trang-tri" },
         ]
     }
 ]
