@@ -161,7 +161,7 @@ export default async function ThietBiVeSinhSubPage({ params, searchParams }: Pag
                                 <strong className="text-neutral-900">{total.toLocaleString('vi-VN')}</strong> sản phẩm
                             </span>
                             <div className="flex items-center gap-2">
-                                <CategoryMobileFilter availableFilters={availableFilters} />
+                                <CategoryMobileFilter availableFilters={availableFilters} specFilters={specFilterDefs as SpecFilterDef[]} />
                                 <CategorySort />
                             </div>
                         </div>
