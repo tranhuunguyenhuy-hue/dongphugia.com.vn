@@ -1,5 +1,5 @@
 import prisma from '@/lib/prisma'
-import { FeaturedTabsClient } from './featured-tabs-client'
+import { FeaturedProductsClient } from './featured-products-client'
 
 export const revalidate = 3600 // Cached for 1 hour
 
@@ -41,7 +41,21 @@ export async function FeaturedCategories() {
         id: cat.slug,
         label: cat.name,
         basePath: `/${cat.slug}`,
-        products: productsByCategory.get(cat.slug) || []
+        products: (productsByCategory.get(cat.slug) || []).map(p => ({
+            id: p.id,
+            name: p.name,
+            slug: p.slug,
+            price: p.price != null ? Number(p.price) : null,
+            original_price: p.original_price != null ? Number(p.original_price) : null,
+            price_display: p.price_display,
+            image_main_url: p.image_main_url,
+            image_hover_url: p.image_hover_url,
+            is_new: p.is_new,
+            is_bestseller: p.is_bestseller,
+            stock_status: p.stock_status,
+            subcategories: p.subcategories,
+            brands: p.brands,
+        }))
     }))
 
     return (
@@ -59,7 +73,7 @@ export async function FeaturedCategories() {
                     </div>
                 </div>
 
-                <FeaturedTabsClient categories={categories} />
+                <FeaturedProductsClient categories={categories} />
             </div>
         </section>
     )
