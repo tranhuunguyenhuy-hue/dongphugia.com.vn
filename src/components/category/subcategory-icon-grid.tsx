@@ -83,26 +83,35 @@ export function SubcategoryIconGrid({
         scrollRef.current?.scrollBy({ left: dir === 'right' ? 300 : -300, behavior: 'smooth' })
 
     return (
-        <div>
+        // ROOT: max-w-full + overflow-hidden prevents this component from
+        // ever expanding beyond its parent — the critical mobile fix.
+        <div className="max-w-full overflow-hidden">
             <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-neutral-400 mb-3">
                 Danh mục sản phẩm
             </p>
 
             {/*
-              * Outer wrapper: NO overflow-hidden so item shadows are never clipped.
-              * py-1 on the scroll row gives vertical breathing room for shadows.
+              * Outer container: overflow-hidden clips the scroll content
+              * at the rounded border. Shadows on items are contained within.
               */}
-            <div className="relative bg-neutral-50 rounded-xl border border-neutral-100 px-3 pt-4 pb-3">
+            <div className="relative bg-neutral-50 rounded-xl border border-neutral-100 overflow-hidden">
+                {/* Scrollable row — touch-friendly slider on mobile */}
                 <div
                     ref={scrollRef}
-                    className={`flex gap-4 overflow-x-auto py-2 snap-x [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] ${
-                        !activeSlug ? '[&:has(a:active)>a:not(:active)]:opacity-50 [&:has(a:active)>a:not(:active)]:transition-opacity' : ''
-                    }`}
+                    className={[
+                        'flex gap-3 sm:gap-4 overflow-x-auto py-3 px-3 sm:px-4',
+                        'snap-x snap-mandatory',
+                        'touch-pan-x',
+                        // Hide scrollbar for clean slider look
+                        '[&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]',
+                        // Ripple effect: dim siblings when pressing one item
+                        !activeSlug ? '[&:has(a:active)>a:not(:active)]:opacity-50 [&:has(a:active)>a:not(:active)]:transition-opacity' : '',
+                    ].filter(Boolean).join(' ')}
                     style={{
-                        // 12px baseline: enough room for 2.5px outline + hover scale.
-                        // Expand to 44px when scroll arrow is visible.
-                        paddingLeft: canScrollLeft ? '44px' : '12px',
-                        paddingRight: canScrollRight ? '44px' : '12px',
+                        // Extra padding when scroll arrows are visible (desktop)
+                        paddingLeft: canScrollLeft ? '44px' : undefined,
+                        paddingRight: canScrollRight ? '44px' : undefined,
+                        WebkitOverflowScrolling: 'touch',
                     }}
                 >
                     {subcategories.map((sub) => {
@@ -117,7 +126,7 @@ export function SubcategoryIconGrid({
                                     activeSlug && !isActive ? 'opacity-50 hover:opacity-100' : ''
                                 }`}
                             >
-                                {/* Image wrapper: scale here — not on the Link — keeps text in place */}
+                                {/* Image wrapper */}
                                 <div className={`relative w-full aspect-square transition-transform duration-200 ease-out ${
                                     isActive ? '' : 'group-hover/item:scale-[1.04]'
                                 }`}>
@@ -162,7 +171,7 @@ export function SubcategoryIconGrid({
                 {/* Left fade + back button */}
                 {canScrollLeft && (
                     <>
-                        <div className="absolute top-0 left-0 bottom-0 w-14 bg-gradient-to-r from-neutral-50/95 to-transparent pointer-events-none rounded-l-xl z-10" />
+                        <div className="absolute top-0 left-0 bottom-0 w-14 bg-gradient-to-r from-neutral-50/95 to-transparent pointer-events-none z-10" />
                         <button
                             type="button"
                             onClick={() => scroll('left')}
@@ -177,7 +186,7 @@ export function SubcategoryIconGrid({
                 {/* Right fade + forward button */}
                 {canScrollRight && (
                     <>
-                        <div className="absolute top-0 right-0 bottom-0 w-14 bg-gradient-to-l from-neutral-50/95 to-transparent pointer-events-none rounded-r-xl z-10" />
+                        <div className="absolute top-0 right-0 bottom-0 w-14 bg-gradient-to-l from-neutral-50/95 to-transparent pointer-events-none z-10" />
                         <button
                             type="button"
                             onClick={() => scroll('right')}
