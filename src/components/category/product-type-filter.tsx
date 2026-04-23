@@ -76,18 +76,18 @@ export function ProductTypeFilter({ activeSubSlug }: ProductTypeFilterProps) {
 
     return (
         /* ── Title + segmented control on one row ── */
-        <div className="w-full flex items-center gap-4 flex-wrap">
+        <div className="w-full flex items-center gap-3 flex-wrap">
             {/* Title */}
-            <div className="flex items-center gap-2 shrink-0">
-                <span className="block w-[3px] h-4 rounded-full bg-[#2E7A96]/40" />
-                <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-neutral-400">
+            <div className="flex items-center gap-1.5 shrink-0">
+                <span className="block w-[2.5px] h-3.5 rounded-full bg-[#2E7A96]/40" />
+                <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-neutral-400">
                     Loại sản phẩm
                 </span>
             </div>
 
-            {/* Segmented control — premium macOS-style */}
+            {/* Segmented control — compact */}
             <div
-                className="inline-flex items-center gap-1 bg-neutral-100/70 rounded-2xl p-1.5 flex-wrap"
+                className="inline-flex items-center gap-0.5 bg-neutral-100/70 rounded-xl p-1 flex-wrap"
                 role="group"
                 aria-label="Lọc theo loại sản phẩm"
             >
@@ -100,13 +100,13 @@ export function ProductTypeFilter({ activeSubSlug }: ProductTypeFilterProps) {
                             role="radio"
                             aria-checked={isActive}
                             className={`
-                                relative px-4 py-2 rounded-xl text-[13px] font-medium
+                                relative px-3 py-1.5 rounded-lg text-[11px] font-medium
                                 transition-all duration-200 cursor-pointer select-none
                                 whitespace-nowrap
                                 ${isActive
                                     ? [
                                         'bg-white text-[#2E7A96] font-semibold',
-                                        'shadow-[0_1px_4px_0_rgba(0,0,0,0.10),0_0_0_1px_rgba(46,122,150,0.12)]',
+                                        'shadow-[0_1px_3px_0_rgba(0,0,0,0.08),0_0_0_1px_rgba(46,122,150,0.10)]',
                                       ].join(' ')
                                     : [
                                         'text-neutral-500 hover:text-neutral-800 hover:bg-white/50',
@@ -116,7 +116,7 @@ export function ProductTypeFilter({ activeSubSlug }: ProductTypeFilterProps) {
                         >
                             {/* Active indicator dot */}
                             {isActive && (
-                                <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-[#2E7A96]/70" />
+                                <span className="absolute top-1 right-1 w-1 h-1 rounded-full bg-[#2E7A96]/70" />
                             )}
                             {type.label}
                         </button>
