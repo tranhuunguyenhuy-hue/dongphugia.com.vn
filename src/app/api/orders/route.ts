@@ -70,8 +70,8 @@ export async function POST(req: NextRequest) {
                                 price: number | null
                             }) => ({
                                 product_id: item.productId,
-                                product_name: item.name,
-                                product_sku: item.sku,
+                                product_name: item.name ? String(item.name).slice(0, 500) : 'Sản phẩm',
+                                product_sku: item.sku ? String(item.sku).slice(0, 100) : 'N/A',
                                 quantity: item.quantity,
                                 unit_price: item.price ?? 0,
                                 total_price: (item.price ?? 0) * item.quantity,

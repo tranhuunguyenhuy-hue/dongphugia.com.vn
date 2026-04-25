@@ -63,8 +63,8 @@ export async function createOrder(data: unknown) {
                 order_items: {
                     create: d.items.map(item => ({
                         product_id: item.product_id,
-                        product_name: item.product_name,
-                        product_sku: item.product_sku,
+                        product_name: item.product_name ? String(item.product_name).slice(0, 500) : 'Sản phẩm',
+                        product_sku: item.product_sku ? String(item.product_sku).slice(0, 100) : 'N/A',
                         quantity: item.quantity,
                         unit_price: item.unit_price,
                         total_price: item.unit_price * item.quantity,
@@ -175,19 +175,39 @@ export async function getAdminOrders(params: {
                 customer_name: true,
                 customer_phone: true,
                 customer_email: true,
+                note: true,
                 total: true,
                 status: true,
                 payment_status: true,
                 payment_method: true,
                 created_at: true,
                 _count: { select: { order_items: true } },
+                order_items: {
+                    select: {
+                        id: true,
+                        product_name: true,
+                        product_sku: true,
+                        quantity: true,
+                        unit_price: true,
+                        total_price: true,
+                    },
+                    take: 3, // Preview first 3 items in list view
+                },
             },
         }),
         prisma.orders.count({ where }),
     ])
 
     return {
-        orders: orders.map(o => ({ ...o, total: Number(o.total) })),
+        orders: orders.map(o => ({
+            ...o,
+            total: Number(o.total),
+            order_items: o.order_items.map(item => ({
+                ...item,
+                unit_price: Number(item.unit_price),
+                total_price: Number(item.total_price),
+            })),
+        })),
         total,
         page,
         pageSize,
