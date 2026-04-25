@@ -1,0 +1,252 @@
+[
+  {
+    "source": "/san-pham/chau-rua-lavabo-treo-tuong-chan-dai-caesar-l2140p2445-l2140p2445",
+    "destination": "/san-pham/chau-rua-lavabo-treo-tuong-caesar-l2140-kem-chan-chau-p2445",
+    "permanent": true
+  },
+  {
+    "source": "/san-pham/chau-rua-lavabo-treo-tuong-chan-lung-caesar-l2150p2443-l2150sp2443-l2150sp2443",
+    "destination": "/san-pham/chau-rua-lavabo-treo-tuong-caesar-l2150s-kem-chan-chau-p2443",
+    "permanent": true
+  },
+  {
+    "source": "/san-pham/chau-rua-lavabo-treo-tuong-chan-dai-caesar-l2150p2445-l2150sp2445-l2150sp2445",
+    "destination": "/san-pham/chau-rua-lavabo-treo-tuong-caesar-l2150s-kem-chan-chau-p2445",
+    "permanent": true
+  },
+  {
+    "source": "/san-pham/chau-rua-lavabo-treo-tuong-chan-dai-caesar-l2152p2445-l2152p2445",
+    "destination": "/san-pham/chau-rua-lavabo-treo-tuong-caesar-l2152-kem-chan-chau-p2445",
+    "permanent": true
+  },
+  {
+    "source": "/san-pham/chau-rua-lavabo-treo-tuong-chan-dai-caesar-l2220p2445-l2220p2445",
+    "destination": "/san-pham/chau-rua-lavabo-treo-tuong-caesar-l2220-kem-chan-chau-p2445",
+    "permanent": true
+  },
+  {
+    "source": "/san-pham/chau-rua-lavabo-treo-tuong-chan-lung-caesar-l2365p2443-l2365p2443",
+    "destination": "/san-pham/chau-rua-lavabo-treo-tuong-caesar-l2365-kem-chan-chau-p2443",
+    "permanent": true
+  },
+  {
+    "source": "/san-pham/tu-chau-cabinet-treo-mau-xam-dam-caesar-l5022eh05022asv-l5022eh05022asv",
+    "destination": "/san-pham/tu-chau-cabinet-treo-caesar-l5022-kem-tu-eh05022asv",
+    "permanent": true
+  },
+  {
+    "source": "/san-pham/tu-chau-cabinet-caesar-l5022eh15022aw7v-l5022eh15022aw7v",
+    "destination": "/san-pham/tu-chau-cabinet-caesar-l5022-kem-tu-eh15022aw7v",
+    "permanent": true
+  },
+  {
+    "source": "/san-pham/bo-tu-chau-cabinet-treo-van-go-caesar-lf5017eh15017aw7v-lf5017eh15017aw7v",
+    "destination": "/san-pham/bo-tu-chau-caesar-lf5017-kem-tu-eh15017aw7v",
+    "permanent": true
+  },
+  {
+    "source": "/san-pham/bo-tu-chau-cabinet-treo-mau-xam-dam-caesar-lf5024eh05024asv-lf5024eh05024asv",
+    "destination": "/san-pham/bo-tu-chau-caesar-lf5024-kem-tu-eh05024asv",
+    "permanent": true
+  },
+  {
+    "source": "/san-pham/bo-tu-chau-cabinet-treo-van-go-caesar-lf5024eh15024aw7v-lf5024eh15024aw7v",
+    "destination": "/san-pham/bo-tu-chau-caesar-lf5024-kem-tu-eh15024aw7v",
+    "permanent": true
+  },
+  {
+    "source": "/san-pham/bo-tu-chau-cabinet-caesar-lf5024eh15024ddw7v-lf5024eh15024ddw7v",
+    "destination": "/san-pham/bo-tu-chau-caesar-lf5024-kem-tu-eh15024ddw7v",
+    "permanent": true
+  },
+  {
+    "source": "/san-pham/bo-tu-chau-cabinet-treo-mau-xam-dam-caesar-lf5026eh05026asv-lf5026eh05026asv",
+    "destination": "/san-pham/bo-tu-chau-caesar-lf5026-kem-tu-eh05026asv",
+    "permanent": true
+  },
+  {
+    "source": "/san-pham/bo-tu-chau-cabinet-treo-van-go-caesar-lf5026eh15026aw7v-lf5026eh15026aw7v",
+    "destination": "/san-pham/bo-tu-chau-caesar-lf5026-kem-tu-eh15026aw7v",
+    "permanent": true
+  },
+  {
+    "source": "/san-pham/bo-tu-chau-cabinet-treo-mau-xam-dam-caesar-lf5028eh05028asv-lf5028eh05028asv",
+    "destination": "/san-pham/bo-tu-chau-caesar-lf5028-kem-tu-eh05028asv",
+    "permanent": true
+  },
+  {
+    "source": "/san-pham/bo-tu-chau-cabinet-van-go-caesar-lf5028eh15028aw7v-lf5028eh15028aw7v",
+    "destination": "/san-pham/bo-tu-chau-caesar-lf5028-kem-tu-eh15028aw7v",
+    "permanent": true
+  },
+  {
+    "source": "/san-pham/tu-chau-cabinet-treo-mau-xam-dam-caesar-lf5030eh05030asv-lf5030eh05030asv",
+    "destination": "/san-pham/tu-chau-cabinet-treo-caesar-lf5030-kem-tu-eh05030asv",
+    "permanent": true
+  },
+  {
+    "source": "/san-pham/bo-tu-chau-cabinet-treo-mau-van-go-caesar-lf5030eh05030awv-lf5030eh05030awv",
+    "destination": "/san-pham/bo-tu-chau-caesar-lf5030-kem-tu-eh05030awv",
+    "permanent": true
+  },
+  {
+    "source": "/san-pham/tu-chau-cabinet-treo-mau-van-go-nhat-caesar-lf5030eh15030aw7v-lf5030eh15030aw7v",
+    "destination": "/san-pham/tu-chau-cabinet-treo-caesar-lf5030-kem-tu-eh15030aw7v",
+    "permanent": true
+  },
+  {
+    "source": "/san-pham/bo-tu-chau-cabinet-treo-mau-van-go-caesar-lf5032eh05032awv-lf5032eh05032awv",
+    "destination": "/san-pham/bo-tu-chau-caesar-lf5032-kem-tu-eh05032awv",
+    "permanent": true
+  },
+  {
+    "source": "/san-pham/tu-chau-cabinet-treo-mau-van-go-nhat-caesar-lf5032eh15032aw7v-lf5032eh15032aw7v",
+    "destination": "/san-pham/tu-chau-cabinet-treo-caesar-lf5032-kem-tu-eh15032aw7v",
+    "permanent": true
+  },
+  {
+    "source": "/san-pham/chau-lavabo-treo-tuong-chan-lung-caesar-lf5261-pf2463-lf5261pf2463",
+    "destination": "/san-pham/chau-lavabo-treo-tuong-caesar-lf5261-kem-chan-chau-pf2463",
+    "permanent": true
+  },
+  {
+    "source": "/san-pham/chau-lavabo-treo-tuong-chan-lung-caesar-lf5263-pf2463-lf5263pf2463",
+    "destination": "/san-pham/chau-lavabo-treo-tuong-caesar-lf5263-kem-chan-chau-pf2463",
+    "permanent": true
+  },
+  {
+    "source": "/san-pham/bo-tu-chau-cabinet-treo-caesar-lf5356eh15356aw7v-lf5356eh15356aw7v",
+    "destination": "/san-pham/bo-tu-chau-caesar-lf5356-kem-tu-eh15356aw7v",
+    "permanent": true
+  },
+  {
+    "source": "/san-pham/bo-tu-chau-cabinet-treo-caesar-lf5357eh15357clw7v-lf5357eh15357clw7v",
+    "destination": "/san-pham/bo-tu-chau-caesar-lf5357-kem-tu-eh15357clw7v",
+    "permanent": true
+  },
+  {
+    "source": "/san-pham/bo-tu-chau-cabinet-treo-caesar-lf5357eh15357crw7v-lf5357eh15357crw7v",
+    "destination": "/san-pham/bo-tu-chau-caesar-lf5357-kem-tu-eh15357crw7v",
+    "permanent": true
+  },
+  {
+    "source": "/san-pham/bo-tu-chau-cabinet-treo-caesar-lf5358eh15358clw7v-lf5358eh15358clw7v",
+    "destination": "/san-pham/bo-tu-chau-caesar-lf5358-kem-tu-eh15358clw7v",
+    "permanent": true
+  },
+  {
+    "source": "/san-pham/bo-tu-chau-cabinet-treo-caesar-lf5358eh15358crw7v-lf5358eh15358crw7v",
+    "destination": "/san-pham/bo-tu-chau-caesar-lf5358-kem-tu-eh15358crw7v",
+    "permanent": true
+  },
+  {
+    "source": "/san-pham/chau-lavabo-treo-tuong-chan-lung-caesar-lf5370-pf2463-lf5370pf2463",
+    "destination": "/san-pham/chau-lavabo-treo-tuong-caesar-lf5370-kem-chan-chau-pf2463",
+    "permanent": true
+  },
+  {
+    "source": "/san-pham/chau-rua-lavabo-treo-tuong-viglacera-v23-chan-lung-v23-chauv23-chan",
+    "destination": "/san-pham/chau-rua-lavabo-treo-tuong-viglacera-v23-chau-kem-v23-chan",
+    "permanent": true
+  },
+  {
+    "source": "/san-pham/chau-rua-lavabo-treo-tuong-viglacera-v36-chan-lung-v36-chauv36-chan",
+    "destination": "/san-pham/chau-rua-lavabo-treo-tuong-viglacera-v36-chau-kem-v36-chan",
+    "permanent": true
+  },
+  {
+    "source": "/san-pham/chau-rua-lavabo-treo-tuong-viglacera-v37-chan-lung-v37-chauv37-chan",
+    "destination": "/san-pham/chau-rua-lavabo-treo-tuong-viglacera-v37-chau-kem-v37-chan",
+    "permanent": true
+  },
+  {
+    "source": "/san-pham/chau-rua-lavabo-treo-tuong-viglacera-v39-chan-lung-v39-chauv39-chan",
+    "destination": "/san-pham/chau-rua-lavabo-treo-tuong-viglacera-v39-chau-kem-v39-chan",
+    "permanent": true
+  },
+  {
+    "source": "/san-pham/chau-rua-lavabo-treo-tuong-viglacera-v50-chan-lung-v50-chauv50-chan",
+    "destination": "/san-pham/chau-rua-lavabo-treo-tuong-viglacera-v50-chau-kem-v50-chan",
+    "permanent": true
+  },
+  {
+    "source": "/san-pham/chau-rua-lavabo-treo-tuong-viglacera-v58-chan-lung-v58-chauv58-chan",
+    "destination": "/san-pham/chau-rua-lavabo-treo-tuong-viglacera-v58-chau-kem-v58-chan",
+    "permanent": true
+  },
+  {
+    "source": "/san-pham/chau-rua-lavabo-treo-tuong-viglacera-vi5-chan-lung-vi5-chauvi5-chan",
+    "destination": "/san-pham/chau-rua-lavabo-treo-tuong-viglacera-vi5-chau-kem-vi5-chan",
+    "permanent": true
+  },
+  {
+    "source": "/san-pham/chau-treo-tuong-toto-lw103jt1-tl220d-t205qn-cho-nguoi-khuyet-tat-lw103jt1wtl220dt205qn",
+    "destination": "/san-pham/chau-treo-tuong-toto-lw103jt1-kem-voi-tl220d-bo-xa-t205qn",
+    "permanent": true
+  },
+  {
+    "source": "/san-pham/chau-rua-mat-lavabo-am-ban-toto-lw1505vxw-tl516gv-kem-gia-do-lw1505vxwtl516gv",
+    "destination": "/san-pham/chau-rua-mat-lavabo-am-ban-toto-lw1505v-kem-voi-tl516gv",
+    "permanent": true
+  },
+  {
+    "source": "/san-pham/chau-rua-mat-lavabo-am-ban-toto-lw1506vxw-tl516gv-kem-gia-do-lw1506vxwtl516gv",
+    "destination": "/san-pham/chau-rua-mat-lavabo-am-ban-toto-lw1506v-kem-voi-tl516gv",
+    "permanent": true
+  },
+  {
+    "source": "/san-pham/chau-rua-mat-lavabo-am-ban-toto-lw1535vxw-tl516gv-kem-gia-do-lw1535vxwtl516gv",
+    "destination": "/san-pham/chau-rua-mat-lavabo-am-ban-toto-lw1535v-kem-voi-tl516gv",
+    "permanent": true
+  },
+  {
+    "source": "/san-pham/chau-rua-mat-lavabo-am-ban-toto-lw1536vxw-tl516gv-kem-gia-do-lw1536vxwtl516gv",
+    "destination": "/san-pham/chau-rua-mat-lavabo-am-ban-toto-lw1536v-kem-voi-tl516gv",
+    "permanent": true
+  },
+  {
+    "source": "/san-pham/chau-rua-lavabo-dat-ban-toto-lw573jwf-lw573jwfw",
+    "destination": "/san-pham/chau-rua-lavabo-dat-ban-toto-lw573jw-kem-chan-chau-f",
+    "permanent": true
+  },
+  {
+    "source": "/san-pham/chau-rua-lavabo-dat-ban-toto-lw574jwf-lw574jwfw",
+    "destination": "/san-pham/chau-rua-lavabo-dat-ban-toto-lw574jw-kem-chan-chau-f",
+    "permanent": true
+  },
+  {
+    "source": "/san-pham/chau-rua-lavabo-dat-ban-toto-lw643jwf-lw643jwfw",
+    "destination": "/san-pham/chau-rua-lavabo-dat-ban-toto-lw643jw-kem-chan-chau-f",
+    "permanent": true
+  },
+  {
+    "source": "/san-pham/chau-rua-lavabo-dat-ban-toto-lw645jnwf-lw645jnwfw",
+    "destination": "/san-pham/chau-rua-lavabo-dat-ban-toto-lw645jnw-kem-chan-chau-f",
+    "permanent": true
+  },
+  {
+    "source": "/san-pham/chau-rua-mat-lavabo-ban-am-toto-lw646jwf-lw646jwfw",
+    "destination": "/san-pham/chau-rua-mat-lavabo-ban-am-toto-lw646jw-kem-chan-chau-f",
+    "permanent": true
+  },
+  {
+    "source": "/san-pham/chau-lavabo-treo-tuong-toto-lw780j-lw780fj-tx801ln-tl510err-chan-dai-co-dien-lw780jwlw780fjwtx801lntl510err",
+    "destination": "/san-pham/chau-lavabo-treo-tuong-toto-lw780j-kem-chau-lw780fj-voi-tx801ln-voi-tl510err",
+    "permanent": true
+  },
+  {
+    "source": "/san-pham/chau-lavabo-treo-tuong-toto-lw815cjwf-dat-goc-lw815cjwfw",
+    "destination": "/san-pham/chau-lavabo-treo-tuong-toto-lw815cjw-kem-chan-chau-f",
+    "permanent": true
+  },
+  {
+    "source": "/san-pham/chau-rua-lavabo-dat-ban-toto-lw818jwf-lw818jwfw",
+    "destination": "/san-pham/chau-rua-lavabo-dat-ban-toto-lw818jw-kem-chan-chau-f",
+    "permanent": true
+  },
+  {
+    "source": "/san-pham/chau-rua-lavabo-dat-ban-toto-lw896jwfw-lw896jwfw-mau-trang-lw896jwfw",
+    "destination": "/san-pham/chau-rua-lavabo-dat-ban-toto-lw896jw-kem-chan-chau-f",
+    "permanent": true
+  }
+]
