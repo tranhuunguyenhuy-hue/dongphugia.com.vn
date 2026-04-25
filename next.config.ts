@@ -1,5 +1,4 @@
 import type { NextConfig } from "next";
-import { getProductRedirects } from "./config/product-redirects";
 
 const nextConfig: NextConfig = {
   /* config options here */
@@ -62,9 +61,9 @@ const nextConfig: NextConfig = {
     ]
   },
 
-  // 301 redirects: old URLs → new URLs
+  // 301 redirects: category query-param → clean URLs
+  // Product slug redirects are handled in middleware.ts (3,000+ entries)
   async redirects() {
-    // Category query-param redirects
     const CATEGORIES = [
       'thiet-bi-ve-sinh',
       'thiet-bi-bep',
@@ -78,10 +77,7 @@ const nextConfig: NextConfig = {
       permanent: true,
     }))
 
-    // Product slug redirects (from variant pipeline rename)
-    const productRedirects = getProductRedirects()
-
-    return [...categoryRedirects, ...productRedirects]
+    return categoryRedirects
   },
 
   // LEO-392 Security Headers (SECURITY_AUDIT.md — P2)
