@@ -90,11 +90,19 @@ export async function getPublicProducts(filters: ProductFilters = {}) {
 
     const toArray = (val: string | string[] | undefined) => val ? (Array.isArray(val) ? val : val.split(',')) : undefined
 
+    // Build subcategory filter: include products from both primary and secondary subcategories
+    const subcatSlugs = subcategory_slugs ? toArray(subcategory_slugs) : (subcategory_slug ? [subcategory_slug] : undefined)
+    const subcatFilter: Prisma.productsWhereInput | undefined = subcatSlugs ? {
+        OR: [
+            { subcategories: { slug: { in: subcatSlugs } } },
+            { secondary_subcategories: { some: { subcategories: { slug: { in: subcatSlugs } } } } },
+        ]
+    } : undefined
+
     const where: Prisma.productsWhereInput = {
         is_active: true,
         ...(category_slug && { categories: { slug: category_slug } }),
-        ...(subcategory_slug && { subcategories: { slug: subcategory_slug } }),
-        ...(subcategory_slugs && { subcategories: { slug: { in: toArray(subcategory_slugs) } } }),
+        ...subcatFilter,
         ...(product_type && { product_type: { in: toArray(product_type) } }),
         ...(brand_id && { brand_id }),
         ...(brand_slug && { brands: { slug: { in: toArray(brand_slug) } } }),

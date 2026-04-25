@@ -10,7 +10,7 @@ interface Subcategory {
     name: string
     slug: string
     thumbnail_url: string | null
-    _count: { products: number }
+    _count: { products: number; secondary_product_subcategories?: number }
 }
 
 interface SubcategoryIconGridProps {
