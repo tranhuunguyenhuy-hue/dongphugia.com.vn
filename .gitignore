@@ -87,3 +87,8 @@ scripts/brands/*.json
 
 # Backups (local only)
 backups/
+
+# Scratch & export scripts output
+scripts/scratch/
+scripts/output/
+scripts/export-products.mts
