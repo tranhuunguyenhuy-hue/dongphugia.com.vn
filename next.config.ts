@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { getProductRedirects } from "./config/product-redirects";
 
 const nextConfig: NextConfig = {
   /* config options here */
@@ -61,20 +62,26 @@ const nextConfig: NextConfig = {
     ]
   },
 
-  // 301 redirects: old query-param URLs → new path-based URLs
+  // 301 redirects: old URLs → new URLs
   async redirects() {
+    // Category query-param redirects
     const CATEGORIES = [
       'thiet-bi-ve-sinh',
       'thiet-bi-bep',
       'vat-lieu-nuoc',
       'gach-op-lat',
     ]
-    return CATEGORIES.map((cat) => ({
+    const categoryRedirects = CATEGORIES.map((cat) => ({
       source: `/${cat}`,
       has: [{ type: 'query' as const, key: 'sub', value: '(?<sub>.+)' }],
       destination: `/${cat}/:sub`,
       permanent: true,
     }))
+
+    // Product slug redirects (from variant pipeline rename)
+    const productRedirects = getProductRedirects()
+
+    return [...categoryRedirects, ...productRedirects]
   },
 
   // LEO-392 Security Headers (SECURITY_AUDIT.md — P2)

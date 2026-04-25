@@ -109,16 +109,16 @@ export default async function ProductDetailPage({ params }: PageProps) {
                 />
 
                 {/* Info */}
-                <div className="flex flex-col gap-6">
+                <div className="flex flex-col gap-5 lg:gap-7 pt-2">
                     {/* Badges */}
                     <div className="flex gap-2 flex-wrap">
                         {product.is_new && (
-                            <span className="px-3 py-1 text-[11px] font-bold uppercase tracking-wider border border-brand-500 text-brand-600 bg-brand-50 rounded-full">
+                            <span className="px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest border border-brand-500 text-brand-600 bg-brand-50 rounded-full">
                                 Sản phẩm mới
                             </span>
                         )}
                         {product.is_bestseller && (
-                            <span className="px-3 py-1 text-[11px] font-bold uppercase tracking-wider bg-stone-900 text-white rounded-full">
+                            <span className="px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest bg-stone-900 text-white rounded-full">
                                 Bán chạy
                             </span>
                         )}
@@ -126,36 +126,42 @@ export default async function ProductDetailPage({ params }: PageProps) {
                     </div>
 
                     <div>
-                        <h1 className="text-display-sm font-bold text-stone-900 leading-tight mb-3 tracking-tight">
+                        <h1 className="text-display-xs lg:text-[32px] font-bold text-stone-900 leading-[1.2] mb-3 tracking-tight">
                             {product.name}
                         </h1>
-                        <div className="flex items-center gap-4 text-[13px]">
-                            <p className="text-stone-500">Mã SP: <span className="font-medium text-stone-900">{product.sku}</span></p>
+                        <div className="flex items-center gap-3 text-[13px] text-stone-500 font-medium tracking-wide">
+                            <p>Mã SP: <span className="text-stone-900 font-bold">{product.sku}</span></p>
                             <div className="w-1 h-1 rounded-full bg-stone-300" />
-                            <p className="text-stone-500">Tình trạng: {stockDisplay}</p>
+                            <p>Tình trạng: {stockDisplay}</p>
                         </div>
                     </div>
 
                     {/* Price */}
-                    <div className="py-4 border-y border-stone-100">
-                        <p className="text-xs text-stone-400 uppercase tracking-wider mb-1">Giá tham khảo</p>
-                        <p className="text-3xl font-bold text-accent-500 tracking-tight">
+                    <div className="py-5 border-y border-stone-100">
+                        <p className="text-[11px] text-stone-400 font-bold tracking-widest uppercase mb-1.5 hidden lg:block">Giá tham khảo</p>
+                        <p className="text-3xl lg:text-4xl font-bold text-accent-500 tracking-tighter">
                             {product.price_display || "Liên hệ báo giá"}
                         </p>
                     </div>
 
                     {/* Features highlights */}
                     {features.length > 0 && (
-                        <div className="grid grid-cols-2 gap-3 mt-1">
-                            {features.slice(0, 4).map(f => (
-                                <div key={f.id} className="flex items-start gap-2.5 p-3 rounded-xl bg-stone-50 border border-stone-200">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-stone-300 mt-2 shrink-0" />
-                                    <div>
-                                        <p className="text-[11px] text-stone-400 uppercase tracking-wider">{f.product_features?.name}</p>
-                                        <p className="text-[13px] font-medium text-stone-800 leading-tight mt-0.5">{f.value}</p>
-                                    </div>
-                                </div>
-                            ))}
+                        <div className="flex flex-col gap-3">
+                            <h3 className="text-[12px] font-bold text-stone-900 uppercase tracking-widest flex items-center gap-2">
+                                <span className="w-1.5 h-1.5 rounded-full bg-brand-500" />
+                                Đặc điểm nổi bật
+                            </h3>
+                            <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-y-2.5 gap-x-4">
+                                {features.slice(0, 6).map(f => (
+                                    <li key={f.id} className="flex items-start gap-2.5 text-[13px]">
+                                        <svg className="w-4 h-4 text-brand-500 shrink-0 mt-0.5 opacity-80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                        <span className="text-stone-600 leading-snug">
+                                            <span className="text-stone-900 font-semibold mr-1.5">{f.product_features?.name}:</span>
+                                            {f.value}
+                                        </span>
+                                    </li>
+                                ))}
+                            </ul>
                         </div>
                     )}
 

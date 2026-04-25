@@ -77,6 +77,8 @@ model products {
   is_featured            Boolean                  @default(false)
   is_new                 Boolean                  @default(false)
   is_bestseller          Boolean                  @default(false)
+  is_combo               Boolean                  @default(false)
+  variant_group          String?                  @db.VarChar(50)
   search_vector          Unsupported("tsvector")?
   sort_order             Int                      @default(0)
   source_url             String?                  @db.VarChar(1000)
@@ -89,12 +91,13 @@ model products {
   seo_description        String?                  @db.VarChar(500)
   created_at             DateTime                 @default(now()) @db.Timestamptz(6)
   updated_at             DateTime                 @default(now()) @db.Timestamptz(6)
-  order_items            order_items[]
-  product_feature_values product_feature_values[]
-  product_images         product_images[]
-  quote_items            quote_items[]
-  parent_relationships   product_relationships[] @relation("parent_relationships")
-  child_relationships    product_relationships[] @relation("child_relationships")
+  order_items                     order_items[]
+  product_feature_values          product_feature_values[]
+  product_images                  product_images[]
+  quote_items                     quote_items[]
+  parent_relationships            product_relationships[]             @relation("parent_relationships")
+  child_relationships             product_relationships[]             @relation("child_relationships")
+  secondary_subcategories         product_secondary_subcategories[]
   brands                 brands?                  @relation(fields: [brand_id], references: [id], onUpdate: NoAction)
   categories             categories               @relation(fields: [category_id], references: [id], onUpdate: NoAction)
   colors                 colors?                  @relation(fields: [color_id], references: [id], onUpdate: NoAction)
@@ -116,6 +119,8 @@ model products {
   @@index([subcategory_id], map: "idx_products_subcategory")
   @@index([subcategory_id, product_type], map: "idx_products_sub_type_active")
   @@index([product_type], map: "idx_products_product_type")
+  @@index([is_combo], map: "idx_products_is_combo")
+  @@index([variant_group], map: "idx_products_variant_group")
 }
 
 // Product relationships: combo products → component parts, compatible accessories, variants
@@ -125,6 +130,7 @@ model product_relationships {
   child_sku         String    @db.VarChar(200)
   child_id          Int?
   relationship_type String    @default("component") @db.VarChar(50)
+  component_type    String    @default("component") @db.VarChar(30)
   sort_order        Int       @default(0)
   created_at        DateTime  @default(now()) @db.Timestamptz(6)
 
@@ -135,6 +141,7 @@ model product_relationships {
   @@index([parent_id], map: "idx_prel_parent")
   @@index([child_id], map: "idx_prel_child")
   @@index([child_sku], map: "idx_prel_child_sku")
+  @@index([component_type], map: "idx_prel_component_type")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -449,11 +456,30 @@ model subcategories {
   seo_description    String?              @db.VarChar(500)
   created_at         DateTime             @default(now()) @db.Timestamptz(6)
   updated_at         DateTime             @default(now()) @db.Timestamptz(6)
-  filter_definitions filter_definitions[]
-  products           products[]
+  filter_definitions              filter_definitions[]
+  products                        products[]
+  secondary_product_subcategories product_secondary_subcategories[]
   categories         categories           @relation(fields: [category_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([category_id, slug])
   @@index([is_active], map: "idx_subcategories_active")
   @@index([category_id], map: "idx_subcategories_category")
+}
+
+/// Junction table: allows a product to appear in multiple subcategories.
+/// Use for combo products (e.g., bồn cầu + lavabo) that belong to 2+ subcategories.
+/// The primary subcategory is still products.subcategory_id.
+model product_secondary_subcategories {
+  id             Int           @id @default(autoincrement())
+  product_id     Int
+  subcategory_id Int
+  sort_order     Int           @default(0)
+  created_at     DateTime      @default(now()) @db.Timestamptz(6)
+
+  products      products      @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  subcategories subcategories @relation(fields: [subcategory_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([product_id, subcategory_id])
+  @@index([product_id], map: "idx_prod_sec_subcat_product")
+  @@index([subcategory_id], map: "idx_prod_sec_subcat_subcat")
 }

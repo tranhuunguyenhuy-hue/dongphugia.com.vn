@@ -74,7 +74,14 @@ export default async function VatLieuNuocSubPage({ params, searchParams }: PageP
         prisma.subcategories.findMany({
             where: { categories: { slug: CATEGORY_SLUG }, is_active: true },
             orderBy: { sort_order: "asc" },
-            include: { _count: { select: { products: { where: { is_active: true } } } } },
+            include: {
+                _count: {
+                    select: {
+                        products: { where: { is_active: true } },
+                        secondary_product_subcategories: { where: { products: { is_active: true } } },
+                    }
+                }
+            },
         }),
         getPublicProducts({
             category_slug: CATEGORY_SLUG,
