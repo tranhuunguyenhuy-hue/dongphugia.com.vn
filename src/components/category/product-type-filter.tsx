@@ -44,6 +44,12 @@ export const SUBCATEGORY_TYPE_CONFIG: Record<string, { slug: string; label: stri
         { slug: 'bon-tam-massage', label: 'Massage' },
         { slug: 'bon-tam-xay', label: 'Xây' },
     ],
+    'nap-bon-cau': [
+        { slug: '', label: 'Tất cả' },
+        { slug: 'nap-thuong-dong-em', label: 'Thường / Đóng Êm' },
+        { slug: 'nap-dien-tu', label: 'Điện Tử / Thông Minh' },
+        { slug: 'nap-rua-co', label: 'Rửa Cơ' },
+    ],
 }
 
 // Backward-compat export
