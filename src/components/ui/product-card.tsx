@@ -189,6 +189,17 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
                     </div>
                 )}
 
+                {/* Color chip */}
+                {product.colors && (
+                    <div className="flex items-center gap-1.5 mt-2">
+                        <span
+                            className="w-3 h-3 rounded-full border border-black/10 shrink-0 shadow-sm"
+                            style={{ backgroundColor: product.colors.hex_code || '#ccc' }}
+                        />
+                        <span className="text-[10px] text-neutral-500 font-medium">{product.colors.name}</span>
+                    </div>
+                )}
+
                 {/* Price */}
                 <div className="flex flex-col gap-1 mt-2.5 border-t border-neutral-100 pt-2.5">
                     {showPrice && product.price ? (

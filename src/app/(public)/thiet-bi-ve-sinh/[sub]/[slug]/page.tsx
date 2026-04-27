@@ -144,6 +144,18 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
                             <p className="text-stone-500">Mã SP: <span className="font-medium text-stone-900">{product.sku}</span></p>
                             <div className="w-1 h-1 rounded-full bg-stone-300" />
                             <p className="text-stone-500">Tình trạng: {stockDisplay}</p>
+                            {product.colors && (
+                                <>
+                                    <div className="w-1 h-1 rounded-full bg-stone-300" />
+                                    <div className="flex items-center gap-1.5">
+                                        <span
+                                            className="w-3.5 h-3.5 rounded-full border border-black/10 shadow-sm"
+                                            style={{ backgroundColor: product.colors.hex_code || '#ccc' }}
+                                        />
+                                        <span className="text-stone-600 font-medium">{product.colors.name}</span>
+                                    </div>
+                                </>
+                            )}
                         </div>
                     </div>
 

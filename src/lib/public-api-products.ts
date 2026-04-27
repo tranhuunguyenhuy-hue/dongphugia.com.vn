@@ -206,6 +206,7 @@ export async function getPublicProducts(filters: ProductFilters = {}) {
                 categories: { select: { name: true, slug: true } },
                 subcategories: { select: { name: true, slug: true } },
                 brands: { select: { name: true, slug: true } },
+                colors: { select: { name: true, hex_code: true, slug: true } },
                 product_feature_values: { select: { product_features: { select: { name: true, icon_name: true } } } },
             },
         }),
