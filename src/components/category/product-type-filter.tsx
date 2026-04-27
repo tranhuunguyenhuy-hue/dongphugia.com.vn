@@ -31,12 +31,11 @@ export const SUBCATEGORY_TYPE_CONFIG: Record<string, { slug: string; label: stri
     ],
     'sen-tam': [
         { slug: '', label: 'Tất cả' },
-        { slug: 'sen-am-tuong', label: 'Âm Tường' },
-        { slug: 'sen-cay', label: 'Sen Cây' },
-        { slug: 'sen-cay-nhiet-do', label: 'Cây Nhiệt Độ' },
-        { slug: 'sen-nhiet-do', label: 'Nhiệt Độ' },
         { slug: 'tay-sen', label: 'Tay Sen' },
-        { slug: 'bat-sen', label: 'Bát Sen' },
+        { slug: 'sen-dung', label: 'Sen Đứng' },
+        { slug: 'cu-sen', label: 'Củ Sen' },
+        { slug: 'sen-am-tuong', label: 'Âm Tường' },
+        { slug: 'phu-kien', label: 'Phụ Kiện' },
     ],
     'bon-tam': [
         { slug: '', label: 'Tất cả' },
