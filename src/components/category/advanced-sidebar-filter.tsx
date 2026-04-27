@@ -521,27 +521,29 @@ export function AdvancedSidebarFilter({
                     </div>
                 )}
 
-                {/* ── Spec filters — tag chips (e.g. Kiểu thoát, Lỗ bắt vòi) ── */}
-                {specFilters.map(sf => {
-                    const activeVals = getSpecActiveValues(searchParams, sf.key)
-                    return (
-                        <div key={sf.key} className="space-y-2">
-                            <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
-                                {sf.label}
-                            </p>
-                            <div className="flex flex-wrap gap-1.5">
-                                {sf.values.map(val => (
-                                    <TagChip
-                                        key={val}
-                                        label={val}
-                                        active={activeVals.includes(val)}
-                                        onClick={() => toggleSpec(sf.key, val)}
-                                    />
-                                ))}
+                {/* ── Spec filters — tag chips (skip brand/price — rendered separately above) ── */}
+                {specFilters
+                    .filter(sf => sf.key !== 'brand' && sf.key !== 'price')
+                    .map(sf => {
+                        const activeVals = getSpecActiveValues(searchParams, sf.key)
+                        return (
+                            <div key={sf.key} className="space-y-2">
+                                <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
+                                    {sf.label}
+                                </p>
+                                <div className="flex flex-wrap gap-1.5">
+                                    {sf.values.map(val => (
+                                        <TagChip
+                                            key={val}
+                                            label={val}
+                                            active={activeVals.includes(val)}
+                                            onClick={() => toggleSpec(sf.key, val)}
+                                        />
+                                    ))}
+                                </div>
                             </div>
-                        </div>
-                    )
-                })}
+                        )
+                    })}
 
                 {/* ── Misc toggles — tag chips ── */}
                 <div className="space-y-2">
