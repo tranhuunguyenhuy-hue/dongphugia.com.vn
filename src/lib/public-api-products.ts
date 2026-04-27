@@ -266,6 +266,43 @@ export const getAvailableFilters = unstable_cache(
     { revalidate: 3600, tags: ['products', 'filters'] }
 )
 
+// ─── PUBLIC: GET AVAILABLE FILTERS SCOPED TO SUBCATEGORY + PRODUCT TYPE ──────
+// Returns only brands/features that actually have products in this subcategory
+// (+ optional product_type). Prevents user from clicking a brand with 0 results.
+
+export const getAvailableFiltersBySubcategory = unstable_cache(
+    async (subcategorySlug: string, productType?: string) => {
+        const productWhere = {
+            is_active: true,
+            subcategories: { slug: subcategorySlug },
+            ...(productType ? { product_type: productType } : {}),
+        }
+
+        const [brands, features] = await Promise.all([
+            prisma.brands.findMany({
+                where: { products: { some: productWhere }, is_active: true },
+                select: { name: true, slug: true, logo_url: true },
+                orderBy: { sort_order: 'asc' }
+            }),
+            prisma.product_features.findMany({
+                where: { product_feature_values: { some: { products: productWhere } } },
+                select: { name: true, slug: true, icon_name: true },
+                orderBy: { sort_order: 'asc' }
+            }),
+        ])
+
+        return {
+            subcategories: [] as { name: string; slug: string; icon_name: string | null }[],
+            brands,
+            materials: [] as { name: string; slug: string }[],
+            origins: [] as { name: string; slug: string }[],
+            features,
+        }
+    },
+    ['available-filters-subcategory'],
+    { revalidate: 3600, tags: ['products', 'filters'] }
+)
+
 // ─── PUBLIC: GET SPEC FILTERS FOR SUBCATEGORY (from filter_definitions) ───────
 
 export const getSubcategorySpecFilters = unstable_cache(

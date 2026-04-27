@@ -1,7 +1,7 @@
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { Suspense } from "react"
-import { getPublicProducts, getAvailableFilters, getSubcategorySpecFilters } from "@/lib/public-api-products"
+import { getPublicProducts, getAvailableFiltersBySubcategory, getSubcategorySpecFilters } from "@/lib/public-api-products"
 import prisma from "@/lib/prisma"
 import { ProductCard } from "@/components/ui/product-card"
 import { ProductPagination } from "@/components/ui/product-pagination"
@@ -82,7 +82,7 @@ export default async function ThietBiVeSinhSubPage({ params, searchParams }: Pag
     })
 
     const [availableFilters, specFilterDefs, allSubcategories, { products, totalPages, total }] = await Promise.all([
-        getAvailableFilters(CATEGORY_SLUG),
+        getAvailableFiltersBySubcategory(sub, activeProductType),
         getSubcategorySpecFilters(subcategory.id),
         prisma.subcategories.findMany({
             where: { categories: { slug: CATEGORY_SLUG }, is_active: true },
