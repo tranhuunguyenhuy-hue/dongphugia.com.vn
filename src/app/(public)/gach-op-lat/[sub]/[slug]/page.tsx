@@ -8,7 +8,7 @@ import { ProductCTA } from "@/components/product/product-cta"
 import { ProductCard } from "@/components/ui/product-card"
 import { BrandBadge } from "@/components/ui/brand-badge"
 
-export const revalidate = 1800
+export const revalidate = 21600
 
 interface PageProps {
     params: Promise<{ sub: string; slug: string }>

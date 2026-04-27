@@ -22,6 +22,9 @@ const BYPASS_PATHS = [
   "/favicon.ico",
   "/images",
   "/banners",
+  "/icons",
+  "/fonts",
+  "/og",
   "/robots.txt",
   "/sitemap.xml",
 ];
@@ -52,7 +55,8 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Match all paths except static files
-    "/((?!_next/static|_next/image|favicon.ico).*)",
+    // Exclude static assets from middleware invocations to reduce Edge Requests
+    // This covers: Next.js internals, images, fonts, icons, and common static file types
+    "/((?!_next/static|_next/image|favicon\\.ico|robots\\.txt|sitemap\\.xml|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff|woff2|ttf|eot|css|js\\.map)).*)",
   ],
 };
