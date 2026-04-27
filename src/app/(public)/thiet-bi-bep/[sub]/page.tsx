@@ -1,7 +1,7 @@
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { Suspense } from "react"
-import { getPublicProducts, getAvailableFilters } from "@/lib/public-api-products"
+import { getPublicProducts, getAvailableFiltersBySubcategory } from "@/lib/public-api-products"
 import prisma from "@/lib/prisma"
 import { ProductCard } from "@/components/ui/product-card"
 import { ProductPagination } from "@/components/ui/product-pagination"
@@ -70,7 +70,7 @@ export default async function ThietBiBepSubPage({ params, searchParams }: PagePr
     else if (sortParam === 'newest') { sortBy = 'created_at'; sortDir = 'desc' }
 
     const [availableFilters, allSubcategories, { products, totalPages, total }] = await Promise.all([
-        getAvailableFilters(CATEGORY_SLUG),
+        getAvailableFiltersBySubcategory(sub),
         prisma.subcategories.findMany({
             where: { categories: { slug: CATEGORY_SLUG }, is_active: true },
             orderBy: { sort_order: "asc" },
