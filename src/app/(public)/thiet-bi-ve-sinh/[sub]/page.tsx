@@ -55,6 +55,7 @@ export default async function ThietBiVeSinhSubPage({ params, searchParams }: Pag
     const activeMaterialSlugs = sp.material
     const activeOriginSlugs = sp.origin
     const activeProductType = sp.type
+    const activeProductSubType = sp.subtype
     const isNew = sp.is_new === 'true'
     const isFeatured = sp.is_featured === 'true'
 
@@ -99,6 +100,7 @@ export default async function ThietBiVeSinhSubPage({ params, searchParams }: Pag
             category_slug: CATEGORY_SLUG,
             subcategory_slugs: sub,
             product_type: activeProductType,
+            product_sub_type: activeProductSubType,
             brand_slug: activeBrandSlugs,
             feature_slugs: activeFeatureSlugs,
             material_slug: activeMaterialSlugs,

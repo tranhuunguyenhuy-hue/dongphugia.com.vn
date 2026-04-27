@@ -32,7 +32,8 @@ export type ProductFilters = {
     category_slug?: string
     subcategory_slug?: string // Legacy
     subcategory_slugs?: string | string[]
-    product_type?: string | string[] // e.g. 'bon-cau-1-khoi', 'bon-cau-2-khoi'
+    product_type?: string | string[] // e.g. 'tay-sen', 'sen-am-tuong'
+    product_sub_type?: string | string[] // e.g. '1-duong', 'bat-sen'
     brand_id?: number // Legacy
     brand_slug?: string | string[]
     color_id?: number // Legacy
@@ -66,6 +67,7 @@ export async function getPublicProducts(filters: ProductFilters = {}) {
         subcategory_slug,
         subcategory_slugs,
         product_type,
+        product_sub_type,
         brand_id,
         brand_slug,
         color_id,
@@ -104,6 +106,7 @@ export async function getPublicProducts(filters: ProductFilters = {}) {
         ...(category_slug && { categories: { slug: category_slug } }),
         ...subcatFilter,
         ...(product_type && { product_type: { in: toArray(product_type) } }),
+        ...(product_sub_type && { product_sub_type: { in: toArray(product_sub_type) } }),
         ...(brand_id && { brand_id }),
         ...(brand_slug && { brands: { slug: { in: toArray(brand_slug) } } }),
         ...(color_id && { color_id }),
