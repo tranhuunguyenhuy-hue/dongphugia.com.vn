@@ -85,6 +85,16 @@ export const SUBCATEGORY_TYPE_CONFIG: Record<string, TypeConfig[]> = {
         { slug: 'nap-dien-tu', label: 'Điện Tử / Thông Minh' },
         { slug: 'nap-rua-co', label: 'Rửa Cơ' },
     ],
+    'voi-chau': [
+        { slug: '', label: 'Tất cả' },
+        { slug: 'voi-nong-lanh', label: 'Nóng Lạnh' },
+        { slug: 'voi-co-cao', label: 'Cổ Cao' },
+        { slug: 'voi-co-trung', label: 'Cổ Trung' },
+        { slug: 'voi-cam-ung', label: 'Cảm Ứng' },
+        { slug: 'voi-ban-tu-dong', label: 'Bán Tự Động' },
+        { slug: 'voi-gan-tuong', label: 'Gắn Tường' },
+        { slug: 'phu-kien-voi', label: 'Phụ Kiện' },
+    ],
 }
 
 // Backward-compat export
