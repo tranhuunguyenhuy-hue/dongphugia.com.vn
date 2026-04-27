@@ -165,10 +165,11 @@ export async function getPublicProducts(filters: ProductFilters = {}) {
         orderBy.push({ created_at: sortDir })
         orderBy.push({ price: 'desc' })
     } else {
-        // Default sort: featured → bestseller → high price
-        // (sort_order removed: 100% products have sort_order=0, meaningless)
+        // Default sort: featured → bestseller → has-variant-group → high price
+        // Products with a variant_group (multi-variant) are surfaced before single products
         orderBy.push({ is_featured: 'desc' })
         orderBy.push({ is_bestseller: 'desc' })
+        orderBy.push({ variant_group: { sort: 'asc', nulls: 'last' } })
         orderBy.push({ price: 'desc' })
     }
 
@@ -320,6 +321,53 @@ export const getPublicProductBySlug = unstable_cache(
     _getPublicProductBySlug,
     ['product-detail'],
     { revalidate: 1800, tags: ['products', 'product-detail'] }
+)
+
+// ─── PUBLIC: GET VARIANT SIBLINGS (same variant_group) ────────────────────────
+
+export type VariantSibling = {
+    id: number
+    sku: string
+    name: string
+    slug: string
+    price: number | null
+    price_display: string | null
+    image_main_url: string | null
+    subcategories: { slug: string } | null
+    categories: { slug: string }
+}
+
+export const getVariantSiblings = unstable_cache(
+    async (variantGroup: string, currentProductId: number): Promise<VariantSibling[]> => {
+        if (!variantGroup) return []
+
+        const siblings = await prisma.products.findMany({
+            where: {
+                variant_group: variantGroup,
+                is_active: true,
+                id: { not: currentProductId },
+            },
+            orderBy: [{ price: 'desc' }, { sku: 'asc' }],
+            select: {
+                id: true,
+                sku: true,
+                name: true,
+                slug: true,
+                price: true,
+                price_display: true,
+                image_main_url: true,
+                subcategories: { select: { slug: true } },
+                categories: { select: { slug: true } },
+            },
+        })
+
+        return siblings.map(s => ({
+            ...s,
+            price: s.price ? Number(s.price) : null,
+        }))
+    },
+    ['variant-siblings'],
+    { revalidate: 3600, tags: ['products', 'variant-siblings'] }
 )
 
 // ─── PUBLIC: GET PRODUCT COMPONENTS (from product_relationships) ──────────────

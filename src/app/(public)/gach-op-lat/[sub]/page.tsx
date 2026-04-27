@@ -13,7 +13,7 @@ import { SubcategoryIconGrid } from "@/components/category/subcategory-icon-grid
 import { ChevronRight, Home } from "lucide-react"
 import Link from "next/link"
 
-export const revalidate = 3600
+export const revalidate = 10800
 
 const CATEGORY_SLUG = "gach-op-lat"
 const CATEGORY_NAME = "Gạch Ốp Lát"

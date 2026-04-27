@@ -1,16 +1,16 @@
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 import Link from "next/link"
-import { getPublicProductBySlug, getCompatibleLids, getPublicProducts, getProductComponents } from "@/lib/public-api-products"
+import { getPublicProductBySlug, getPublicProducts, getProductComponents, getVariantSiblings } from "@/lib/public-api-products"
 import { ProductImageGallery } from "@/components/product/product-image-gallery"
 import { ProductDetailTabs } from "@/components/product/product-detail-tabs"
 import { ProductCTA } from "@/components/product/product-cta"
-import { CompatibleLidsSection } from "@/components/product/compatible-lids-section"
 import { ProductComponentsSection } from "@/components/product/product-components-section"
+import { VariantSelector } from "@/components/product/variant-selector"
 import { ProductCard } from "@/components/ui/product-card"
 import { BrandBadge } from "@/components/ui/brand-badge"
 
-export const revalidate = 1800
+export const revalidate = 21600
 
 interface PageProps {
     params: Promise<{ sub: string; slug: string }>
@@ -35,14 +35,13 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
     const product = await getPublicProductBySlug(CATEGORY_SLUG, slug)
     if (!product) notFound()
 
-    // Fetch compatible lids only for Bon Cau (subcategory_id = 1)
-    const IS_BON_CAU = product.subcategory_id === 1
-    const compatibleLids = IS_BON_CAU
-        ? await getCompatibleLids(product.brand_id, 6)
-        : []
 
-    // Fetch product components from product_relationships
-    const productComponents = await getProductComponents(product.id)
+
+    // Fetch product components + variant siblings in parallel
+    const [productComponents, variantSiblings] = await Promise.all([
+        getProductComponents(product.id),
+        product.variant_group ? getVariantSiblings(product.variant_group, product.id) : Promise.resolve([]),
+    ])
     const hasComponents = productComponents.some(c => c.child !== null)
 
     const additionalImages = product.product_images?.filter(i => i.image_url !== product.image_main_url) ?? []
@@ -148,6 +147,20 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
                         </div>
                     </div>
 
+                    {/* Variant Selector — between title and price */}
+                    {product.variant_group && variantSiblings.length > 0 && (
+                        <VariantSelector
+                            currentSku={product.sku}
+                            currentSlug={product.slug}
+                            currentName={product.name}
+                            currentPriceDisplay={product.price_display}
+                            variantGroup={product.variant_group}
+                            siblings={variantSiblings}
+                            categorySlug={CATEGORY_SLUG}
+                            subcategorySlug={product.subcategories?.slug}
+                        />
+                    )}
+
                     {/* Price */}
                     <div className="py-4 border-y border-stone-100">
                         <p className="text-xs text-stone-400 uppercase tracking-wider mb-1">Giá tham khảo</p>
@@ -197,13 +210,6 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
                 />
             </div>
 
-            {/* Compatible Lids — only for Bon Cau */}
-            {IS_BON_CAU && (
-                <CompatibleLidsSection
-                    lids={compatibleLids}
-                    brandName={product.brands?.name}
-                />
-            )}
 
             {/* Product Components (Bộ linh kiện) */}
             {hasComponents && (
