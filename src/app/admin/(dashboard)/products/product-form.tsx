@@ -266,16 +266,28 @@ export function ProductForm({ product, categories, subcategories, brands, origin
                     </div>
                     <div>
                         <label className={labelCls}>Màu sắc</label>
-                        <select
-                            className={selectCls}
-                            value={form.color_id}
-                            onChange={e => set('color_id', e.target.value)}
-                        >
-                            <option value="">Không chọn</option>
-                            {colors.map(c => (
-                                <option key={c.id} value={c.id}>{c.name}</option>
-                            ))}
-                        </select>
+                        <div className="relative">
+                            {/* Preview swatch of selected color */}
+                            {form.color_id && (() => {
+                                const sel = colors.find(c => c.id === Number(form.color_id))
+                                return sel ? (
+                                    <span
+                                        className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border border-black/10 shadow-sm z-10"
+                                        style={{ backgroundColor: sel.hex_code || '#ccc' }}
+                                    />
+                                ) : null
+                            })()}
+                            <select
+                                className={`${selectCls} ${form.color_id ? 'pl-9' : ''}`}
+                                value={form.color_id}
+                                onChange={e => set('color_id', e.target.value)}
+                            >
+                                <option value="">Không chọn</option>
+                                {colors.map(c => (
+                                    <option key={c.id} value={c.id}>{c.name}{c.hex_code ? ` (${c.hex_code})` : ''}</option>
+                                ))}
+                            </select>
+                        </div>
                     </div>
                     <div>
                         <label className={labelCls}>Chất liệu</label>
