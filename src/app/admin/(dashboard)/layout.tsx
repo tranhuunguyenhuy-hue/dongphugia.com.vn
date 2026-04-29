@@ -4,11 +4,18 @@ import prisma from "@/lib/prisma"
 import SidebarNav from "./sidebar-nav"
 import AdminHeader from "./admin-header"
 
+// ── Maintenance mode flag ──────────────────────────────────────────────────
+// Set to `false` and redeploy to restore admin access.
+const ADMIN_MAINTENANCE = true
+// ──────────────────────────────────────────────────────────────────────────
+
 export default async function AdminLayout({
     children,
 }: {
     children: React.ReactNode
 }) {
+    if (ADMIN_MAINTENANCE) redirect("/maintenance")
+
     const isAuthenticated = await verifyAdminSession()
     if (!isAuthenticated) redirect("/admin/login")
 
