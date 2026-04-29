@@ -128,3 +128,12 @@ scripts/export-products.mts
 # AI agent config files at root (internal only, not for client)
 CLAUDE.md
 GEMINI.md
+
+# Skills workspace (Antigravity internal)
+skills/
+skills-lock.json
+
+# Internal audit reports (keep locally, not for client repo)
+DB-AUDIT-REPORT.md
+ERRORS.md
+UI-UX-Audit-Report-DongPhuGia.docx
