@@ -92,3 +92,39 @@ backups/
 scripts/scratch/
 scripts/output/
 scripts/export-products.mts
+
+# AI IDE tool config folders (accumulated from various coding assistants — local only)
+# NOTE: .agent/ .claude/ .vscode/ .idea/ are already covered above
+.adal/
+.agents/
+.augment/
+.bob/
+.codebuddy/
+.commandcode/
+.continue/
+.cortex/
+.crush/
+.factory/
+.goose/
+.iflow/
+.junie/
+.kilocode/
+.kiro/
+.kode/
+.mcpjam/
+.mux/
+.neovate/
+.openhands/
+.pi/
+.pochi/
+.qoder/
+.qwen/
+.roo/
+.trae/
+.vibe/
+.windsurf/
+.zencoder/
+
+# AI agent config files at root (internal only, not for client)
+CLAUDE.md
+GEMINI.md
