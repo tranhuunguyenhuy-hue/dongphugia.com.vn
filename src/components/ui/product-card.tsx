@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { formatPrice, cn } from '@/lib/utils';
@@ -34,13 +33,7 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
     try {
         images = product.images ? JSON.parse(product.images as string) : [];
     } catch { /* ignore */ }
-    const firstImage = product.image_main_url || product.thumbnail || (images.length > 0 ? images[0] : null)
-        const [imgSrc, setImgSrc] = useState(firstImage || "/images/assets-v2/hero-banner.png");
-  
-    useEffect(() => {
-          setImgSrc(firstImage || "/images/assets-v2/hero-banner.png");
-    }, [firstImage]);
-  ;
+    const firstImage = product.image_main_url || product.thumbnail || (images.length > 0 ? images[0] : null);
 
     // Parse specs for display
     let specs: any = {};
@@ -85,17 +78,19 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
                 {firstImage ? (
                     firstImage.includes('vietceramics.com') ? (
                         <img
-                            src={imgSrc}
+                            src={firstImage}
                             alt={product.name}
-                            className="absolute inset-0 w-full h-full object-cover mix-blend-multiply transition-transform duration-700 group-hover:scale-105" onError={() => setImgSrc("/images/assets-v2/hero-banner.png")}
+                            className="absolute inset-0 w-full h-full object-cover mix-blend-multiply transition-transform duration-700 group-hover:scale-105"
                         />
                     ) : (
                         <Image
-                            src={imgSrc    }                    alt={product.name}
+                            src={firstImage}
+                            alt={product.name}
                             fill
                             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                             className="object-cover mix-blend-multiply transition-transform duration-700 group-hover:scale-105"
-                            unoptimized={firstImage.includes('vietceramics.com')}    onError={() => setImgSrc("/images/assets-v2/hero-banner.png")}        />
+                            unoptimized={firstImage.includes('vietceramics.com')}
+                        />
                     )
                 ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center text-neutral-400 gap-2">
