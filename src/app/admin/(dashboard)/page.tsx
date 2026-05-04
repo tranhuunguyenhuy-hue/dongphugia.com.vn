@@ -1,140 +1,260 @@
-import prisma from "@/lib/prisma"
+import { getPendingQuotes, getPendingOrders } from "@/lib/admin-dashboard-queries"
+import { formatPrice } from "@/lib/utils"
+import { format } from "date-fns"
+import { vi } from "date-fns/locale"
+import { Card } from "@/components/ui/card"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import Link from "next/link"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import {
-    Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from "@/components/ui/table"
-import {
-    ClipboardList, ArrowRight, TrendingUp, BookOpen, FolderKanban, Handshake, Image,
-} from "lucide-react"
-import { QuoteStatusButton } from "./quote-requests/quote-status-button"
+import Image from "next/image"
+import prisma from "@/lib/prisma"
 
-export default async function AdminDashboard() {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
+export const metadata = {
+    title: "Tổng quan — Admin",
+}
 
-    // LEO-366: Legacy product stats removed during DB restructure
-    // Will be restored in Phase 3 with unified product schema
-    const [
-        pendingQuotes,
-        todayQuotes,
-        totalBlogPosts,
-        totalPartners,
-        recentPendingQuotes,
-    ] = await Promise.all([
-        prisma.quote_requests.count({ where: { status: 'pending' } }),
-        prisma.quote_requests.count({ where: { created_at: { gte: today } } }),
-        prisma.blog_posts.count().catch(() => 0),
-        prisma.partners.count().catch(() => 0),
-        prisma.quote_requests.findMany({
-            where: { status: 'pending' },
-            take: 5,
-            orderBy: { created_at: 'desc' },
-        }),
+async function getDashboardProducts() {
+    const products = await prisma.products.findMany({
+        take: 12,
+        where: { is_active: true },
+        include: {
+            categories: { select: { name: true } }
+        },
+        orderBy: { created_at: 'desc' }
+    });
+    return products;
+}
+
+export default async function AdminDashboardPage() {
+    const [pendingQuotes, pendingOrders, products] = await Promise.all([
+        getPendingQuotes(),
+        getPendingOrders(),
+        getDashboardProducts(),
     ])
 
-    const stats = [
-        { label: "Báo giá chờ xử lý", value: pendingQuotes, href: "/admin/quote-requests", icon: ClipboardList, gradient: "stat-gradient-rose", iconColor: "text-rose-600", iconBg: "bg-rose-100" },
-        { label: "Báo giá hôm nay", value: todayQuotes, href: "/admin/quote-requests", icon: ClipboardList, gradient: "stat-gradient-amber", iconColor: "text-amber-600", iconBg: "bg-amber-100" },
-        { label: "Bài viết blog", value: totalBlogPosts, href: "/admin/blog/posts", icon: BookOpen, gradient: "stat-gradient-blue", iconColor: "text-blue-600", iconBg: "bg-blue-100" },
-        { label: "Đối tác", value: totalPartners, href: "/admin/doi-tac", icon: Handshake, gradient: "stat-gradient-emerald", iconColor: "text-emerald-600", iconBg: "bg-emerald-100" },
-    ]
-
     return (
-        <div className="space-y-8">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight text-foreground">Dashboard</h1>
-                    <p className="text-sm text-muted-foreground mt-1">Tổng quan hệ thống quản lý Đông Phú Gia</p>
-                </div>
-            </div>
-
-            {/* DB Restructure Notice */}
-            <Card className="border-amber-200 bg-amber-50">
-                <CardContent className="pt-6">
-                    <p className="text-sm text-amber-800">
-                        ⚠️ <strong>LEO-366:</strong> Hệ thống đang tái cấu trúc database. 
-                        Quản lý sản phẩm tạm thời không khả dụng và sẽ được khôi phục sau khi migration hoàn tất.
-                    </p>
-                </CardContent>
-            </Card>
-
-            {/* Stat Cards */}
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                {stats.map((stat) => {
-                    const Icon = stat.icon
-                    return (
-                        <Link key={stat.label} href={stat.href} className="block">
-                            <Card className={`${stat.gradient} border-0 card-hover cursor-pointer h-full`}>
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium text-slate-600">{stat.label}</CardTitle>
-                                    <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${stat.iconBg}`}>
-                                        <Icon className={`h-4 w-4 ${stat.iconColor}`} />
-                                    </div>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-3xl font-bold text-slate-800 tabular-nums">{stat.value}</div>
-                                    <div className="flex items-center gap-1 mt-2">
-                                        <TrendingUp className="h-3 w-3 text-emerald-600" />
-                                        <p className="text-xs text-slate-500">Hiện tại</p>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </Link>
-                    )
-                })}
-            </div>
-
-            {/* Pending Quotes */}
-            {recentPendingQuotes.length > 0 && (
-                <Card className="overflow-hidden">
-                    <CardHeader className="flex flex-row items-center justify-between bg-slate-50/50 border-b">
-                        <div>
-                            <CardTitle className="text-base flex items-center gap-2">
-                                Báo giá chờ xử lý
-                                {pendingQuotes > 0 && (
-                                    <Badge variant="destructive" className="badge-pulse">{pendingQuotes}</Badge>
-                                )}
-                            </CardTitle>
-                            <p className="text-sm text-muted-foreground mt-0.5">5 yêu cầu mới nhất</p>
+        <div className="flex flex-col lg:flex-row gap-4 min-h-[calc(100vh-8rem)]">
+            {/* Left: Sản phẩm nổi bật (2/3) */}
+            <div className="w-full lg:w-2/3 flex flex-col h-full lg:min-h-0">
+                <Card className="flex-1 bg-[#F6F5F8] border-0 shadow-none rounded-2xl p-1.5 flex flex-col h-full">
+                    <div className="px-3 py-2.5 flex items-center justify-between">
+                        <h2 className="text-[14px] font-semibold text-slate-800">Sản phẩm nổi bật</h2>
+                        <div className="flex items-center gap-2">
+                            {/* Pagination mockup */}
+                            <div className="flex items-center bg-white rounded-md overflow-hidden shadow-sm">
+                                <button className="px-2 py-1 hover:bg-slate-50 text-slate-400 border-r border-slate-100/50">
+                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                                </button>
+                                <span className="px-3 text-[12px] font-medium text-slate-600">1 / 10</span>
+                                <button className="px-2 py-1 hover:bg-slate-50 text-slate-600 border-l border-slate-100/50">
+                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                                </button>
+                            </div>
                         </div>
-                        <Button variant="outline" size="sm" className="press-effect" asChild>
-                            <Link href="/admin/quote-requests">Xem tất cả <ArrowRight className="ml-1.5 h-3.5 w-3.5" /></Link>
-                        </Button>
-                    </CardHeader>
-                    <CardContent className="p-0">
-                        <Table>
-                            <TableHeader>
-                                <TableRow className="bg-slate-50/30 hover:bg-slate-50/30">
-                                    <TableHead>Khách hàng</TableHead>
-                                    <TableHead>SĐT</TableHead>
-                                    <TableHead>Email</TableHead>
-                                    <TableHead>Thời gian</TableHead>
-                                    <TableHead className="text-right">Thao tác</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {recentPendingQuotes.map((q) => (
-                                    <TableRow key={q.id} className="table-row-hover">
-                                        <TableCell className="font-medium">{q.name}</TableCell>
-                                        <TableCell className="text-sm text-muted-foreground">{q.phone}</TableCell>
-                                        <TableCell className="text-sm text-muted-foreground">{q.email || '—'}</TableCell>
-                                        <TableCell className="text-sm text-muted-foreground">
-                                            {q.created_at?.toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' }) || '—'}
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <QuoteStatusButton id={q.id} currentStatus="pending" />
-                                        </TableCell>
+                    </div>
+                    <div className="flex-1 bg-white rounded-xl overflow-hidden shadow-sm flex flex-col relative">
+                        <div className="absolute inset-0 overflow-auto">
+                            <Table>
+                                <TableHeader className="sticky top-0 bg-white z-10 shadow-sm">
+                                    <TableRow className="hover:bg-transparent border-b border-slate-100">
+                                        <TableHead className="w-10 py-2.5 px-4 h-auto text-slate-500 font-medium text-[12px] bg-slate-50/50 rounded-tl-xl">
+                                            <div className="w-4 h-4 rounded border border-slate-200 bg-white"></div>
+                                        </TableHead>
+                                        <TableHead className="py-2.5 px-4 h-auto text-slate-500 font-medium text-[12px] bg-slate-50/50">
+                                            <div className="flex items-center gap-1.5">Sản phẩm <svg className="w-3 h-3 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" /></svg></div>
+                                        </TableHead>
+                                        <TableHead className="py-2.5 px-4 h-auto text-slate-500 font-medium text-[12px] bg-slate-50/50">
+                                            <div className="flex items-center gap-1.5">Danh mục <svg className="w-3 h-3 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" /></svg></div>
+                                        </TableHead>
+                                        <TableHead className="py-2.5 px-4 h-auto text-slate-500 font-medium text-[12px] bg-slate-50/50">Giá bán</TableHead>
+                                        <TableHead className="py-2.5 px-4 h-auto text-slate-500 font-medium text-[12px] bg-slate-50/50 text-right">Tồn kho</TableHead>
+                                        <TableHead className="w-10 py-2.5 px-4 h-auto text-slate-500 font-medium text-[12px] bg-slate-50/50 rounded-tr-xl"></TableHead>
                                     </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </CardContent>
+                                </TableHeader>
+                                <TableBody>
+                                    {products.map((product) => (
+                                        <TableRow key={product.id} className="hover:bg-slate-50/50 border-b border-slate-50">
+                                            <TableCell className="py-2 px-4">
+                                                <div className="w-4 h-4 rounded border border-slate-200 bg-white"></div>
+                                            </TableCell>
+                                            <TableCell className="py-2 px-4">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="h-9 w-9 rounded-md bg-slate-100 overflow-hidden relative shrink-0 border border-slate-200/60">
+                                                        {product.image_main_url ? (
+                                                            <Image src={product.image_main_url} alt={product.name} fill className="object-cover" sizes="36px" />
+                                                        ) : (
+                                                            <div className="w-full h-full bg-slate-100" />
+                                                        )}
+                                                    </div>
+                                                    <div className="flex flex-col justify-center max-w-[200px]">
+                                                        <span className="text-[13px] font-medium text-slate-900 truncate" title={product.name}>{product.name}</span>
+                                                        <span className="text-[11px] text-slate-400 font-medium truncate">{product.sku}</span>
+                                                    </div>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="py-2 px-4">
+                                                <span className="inline-flex px-2 py-0.5 rounded-md bg-slate-100 text-[12px] text-slate-600 font-medium truncate max-w-[120px]">
+                                                    {product.categories?.name || "Chưa phân loại"}
+                                                </span>
+                                            </TableCell>
+                                            <TableCell className="py-2 px-4 text-[13px] font-medium text-slate-700">
+                                                {formatPrice(Number(product.price) || 0)}
+                                            </TableCell>
+                                            <TableCell className="py-2 px-4 text-[13px] text-right font-medium text-slate-600">
+                                                {product.stock_quantity || 0}
+                                            </TableCell>
+                                            <TableCell className="py-2 px-4 text-right text-slate-400 hover:text-slate-600 cursor-pointer">
+                                                <svg className="w-4 h-4 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" /></svg>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    </div>
                 </Card>
-            )}
+            </div>
+
+            {/* Right: Chăm sóc khách hàng + Google Analytics (1/3) */}
+            <div className="w-full lg:w-1/3 flex flex-col gap-4 h-full lg:min-h-0">
+                <Card className="flex-1 bg-[#F6F5F8] border-0 shadow-none rounded-2xl p-1.5 flex flex-col h-full lg:min-h-0">
+                    <Tabs defaultValue="orders" className="flex-1 flex flex-col h-full lg:min-h-0">
+                        <div className="px-3 py-2 flex flex-col gap-2">
+                            <h2 className="text-[14px] font-semibold text-slate-800">Chăm sóc khách hàng</h2>
+                            <TabsList className="h-8 bg-black/5 p-0.5 w-full justify-start rounded-[8px]">
+                                <TabsTrigger value="orders" className="text-[12px] h-7 px-3 rounded-[6px] data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-slate-900 text-slate-600">Đơn hàng mới</TabsTrigger>
+                                <TabsTrigger value="quotes" className="text-[12px] h-7 px-3 rounded-[6px] data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-slate-900 text-slate-600">Báo giá</TabsTrigger>
+                            </TabsList>
+                        </div>
+                        <div className="flex-1 bg-white rounded-xl shadow-sm relative overflow-hidden">
+                            <TabsContent value="orders" className="absolute inset-0 overflow-auto m-0 p-0 border-0 outline-none">
+                                <Table className="min-w-[500px]">
+                                    <TableHeader className="sticky top-0 bg-white z-10 shadow-sm">
+                                        <TableRow className="hover:bg-transparent border-b border-slate-100">
+                                            <TableHead className="py-2.5 px-4 h-auto text-slate-500 font-medium text-[12px] bg-slate-50/50">Khách hàng</TableHead>
+                                            <TableHead className="py-2.5 px-4 h-auto text-slate-500 font-medium text-[12px] bg-slate-50/50">Sản phẩm</TableHead>
+                                            <TableHead className="py-2.5 px-4 h-auto text-slate-500 font-medium text-[12px] bg-slate-50/50">SL</TableHead>
+                                            <TableHead className="py-2.5 px-4 h-auto text-slate-500 font-medium text-[12px] bg-slate-50/50">Trạng thái</TableHead>
+                                            <TableHead className="py-2.5 px-4 h-auto text-slate-500 font-medium text-[12px] bg-slate-50/50 text-right">Thời gian</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {pendingOrders.map((order) => {
+                                            const totalQty = order.order_items.reduce((sum, item) => sum + item.quantity, 0);
+                                            const firstProductName = order.order_items[0]?.product_name || "N/A";
+                                            const otherCount = order.order_items.length - 1;
+                                            return (
+                                                <TableRow key={order.id} className="hover:bg-slate-50/50 border-b border-slate-50 last:border-0 group cursor-pointer">
+                                                    <TableCell className="py-2.5 px-4">
+                                                        <div className="flex flex-col">
+                                                            <Link href={`/admin/orders/${order.id}`} className="text-[13px] font-semibold text-slate-900 group-hover:text-emerald-600 transition-colors whitespace-nowrap">
+                                                                {order.customer_name}
+                                                            </Link>
+                                                            <span className="text-[11px] text-slate-500">{order.customer_phone}</span>
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell className="py-2.5 px-4">
+                                                        <div className="text-[12px] text-slate-700 max-w-[150px] truncate" title={firstProductName}>
+                                                            {firstProductName} {otherCount > 0 && <span className="text-slate-400">(+{otherCount})</span>}
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell className="py-2.5 px-4 text-[13px] font-medium text-slate-700">
+                                                        {totalQty}
+                                                    </TableCell>
+                                                    <TableCell className="py-2.5 px-4">
+                                                        <span className="inline-flex px-1.5 py-0.5 rounded text-[11px] font-semibold bg-amber-50 text-amber-600 whitespace-nowrap">
+                                                            Chờ XL
+                                                        </span>
+                                                    </TableCell>
+                                                    <TableCell className="py-2.5 px-4 text-[12px] text-right text-slate-500 whitespace-nowrap">
+                                                        {format(new Date(order.created_at), 'dd/MM, HH:mm')}
+                                                    </TableCell>
+                                                </TableRow>
+                                            );
+                                        })}
+                                        {pendingOrders.length === 0 && (
+                                            <TableRow>
+                                                <TableCell colSpan={5} className="text-center py-8 text-[13px] text-slate-500">
+                                                    Không có đơn hàng mới.
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </TabsContent>
+                            <TabsContent value="quotes" className="absolute inset-0 overflow-auto m-0 p-0 border-0 outline-none">
+                                <Table className="min-w-[500px]">
+                                    <TableHeader className="sticky top-0 bg-white z-10 shadow-sm">
+                                        <TableRow className="hover:bg-transparent border-b border-slate-100">
+                                            <TableHead className="py-2.5 px-4 h-auto text-slate-500 font-medium text-[12px] bg-slate-50/50">Khách hàng</TableHead>
+                                            <TableHead className="py-2.5 px-4 h-auto text-slate-500 font-medium text-[12px] bg-slate-50/50">Sản phẩm</TableHead>
+                                            <TableHead className="py-2.5 px-4 h-auto text-slate-500 font-medium text-[12px] bg-slate-50/50">SL</TableHead>
+                                            <TableHead className="py-2.5 px-4 h-auto text-slate-500 font-medium text-[12px] bg-slate-50/50">Trạng thái</TableHead>
+                                            <TableHead className="py-2.5 px-4 h-auto text-slate-500 font-medium text-[12px] bg-slate-50/50 text-right">Thời gian</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {pendingQuotes.map((quote) => {
+                                            const totalQty = quote.quote_items.reduce((sum, item) => sum + item.quantity, 0);
+                                            const firstProductName = quote.quote_items[0]?.products?.name || "N/A";
+                                            const otherCount = quote.quote_items.length - 1;
+                                            return (
+                                                <TableRow key={quote.id} className="hover:bg-slate-50/50 border-b border-slate-50 last:border-0 group cursor-pointer">
+                                                    <TableCell className="py-2.5 px-4">
+                                                        <div className="flex flex-col">
+                                                            <Link href={`/admin/quotes/${quote.id}`} className="text-[13px] font-semibold text-slate-900 group-hover:text-emerald-600 transition-colors whitespace-nowrap">
+                                                                {quote.name}
+                                                            </Link>
+                                                            <span className="text-[11px] text-slate-500">{quote.phone}</span>
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell className="py-2.5 px-4">
+                                                        <div className="text-[12px] text-slate-700 max-w-[150px] truncate" title={firstProductName}>
+                                                            {firstProductName} {otherCount > 0 && <span className="text-slate-400">(+{otherCount})</span>}
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell className="py-2.5 px-4 text-[13px] font-medium text-slate-700">
+                                                        {totalQty}
+                                                    </TableCell>
+                                                    <TableCell className="py-2.5 px-4">
+                                                        <span className="inline-flex px-1.5 py-0.5 rounded text-[11px] font-semibold bg-amber-50 text-amber-600 whitespace-nowrap">
+                                                            Chờ XL
+                                                        </span>
+                                                    </TableCell>
+                                                    <TableCell className="py-2.5 px-4 text-[12px] text-right text-slate-500 whitespace-nowrap">
+                                                        {format(new Date(quote.created_at), 'dd/MM, HH:mm')}
+                                                    </TableCell>
+                                                </TableRow>
+                                            );
+                                        })}
+                                        {pendingQuotes.length === 0 && (
+                                            <TableRow>
+                                                <TableCell colSpan={5} className="text-center py-8 text-[13px] text-slate-500">
+                                                    Không có báo giá mới.
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </TabsContent>
+                        </div>
+                    </Tabs>
+                </Card>
+
+                <Card className="h-44 shrink-0 bg-[#F6F5F8] border-0 shadow-none rounded-2xl p-1.5 flex flex-col">
+                    <div className="px-3 py-2.5">
+                        <h2 className="text-[14px] font-semibold text-slate-800">Google analytic</h2>
+                    </div>
+                    <div className="flex-1 bg-white rounded-xl flex flex-col items-center justify-center shadow-sm gap-3">
+                        <div className="h-12 w-12 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-300">
+                            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                            </svg>
+                        </div>
+                        <span className="text-[13px] font-medium text-slate-400">Chưa tích hợp</span>
+                    </div>
+                </Card>
+            </div>
         </div>
     )
 }

@@ -29,10 +29,12 @@ export async function loginAction(
     // Cookie value format: "<hmac>:<issuedAt>"
     const cookieValue = `${token}:${issuedAt}`
 
+    const isProduction = process.env.NODE_ENV === 'production'
+
     const cookieStore = await cookies()
     cookieStore.set(ADMIN_SESSION_COOKIE, cookieValue, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: isProduction,
         sameSite: 'lax',
         // maxAge matches SESSION_MS — browser clears cookie after this duration
         maxAge: Math.floor(SESSION_MS / 1000),
@@ -45,5 +47,7 @@ export async function loginAction(
 export async function logoutAction() {
     const cookieStore = await cookies()
     cookieStore.delete(ADMIN_SESSION_COOKIE)
+
     redirect('/admin/login')
 }
+
