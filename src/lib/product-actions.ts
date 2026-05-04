@@ -26,7 +26,7 @@ const productSchema = z.object({
     specs: z.record(z.string(), z.unknown()).optional().default({}),
     warranty_months: z.coerce.number().int().positive().optional().nullable(),
     image_main_url: z.string().url().max(1000).optional().nullable().or(z.literal('')),
-    image_hover_url: z.string().url().max(1000).optional().nullable().or(z.literal('')),
+
     stock_status: z.enum(['in_stock', 'out_of_stock', 'preorder']).default('in_stock'),
     is_active: z.boolean().default(true),
     is_featured: z.boolean().default(false),
@@ -70,7 +70,7 @@ export async function createProduct(data: unknown) {
             specs: (d.specs || {}) as Prisma.InputJsonValue,
             warranty_months: d.warranty_months || null,
             image_main_url: d.image_main_url || null,
-            image_hover_url: d.image_hover_url || null,
+
             stock_status: d.stock_status,
             is_active: d.is_active,
             is_featured: d.is_featured,
@@ -124,7 +124,7 @@ export async function updateProduct(id: number, data: unknown) {
             specs: (d.specs || {}) as Prisma.InputJsonValue,
             warranty_months: d.warranty_months || null,
             image_main_url: d.image_main_url || null,
-            image_hover_url: d.image_hover_url || null,
+
             stock_status: d.stock_status,
             is_active: d.is_active,
             is_featured: d.is_featured,
@@ -274,3 +274,91 @@ export async function setProductThumbnail(productId: number, imageUrl: string) {
     }
 }
 
+export async function updateProductImageSortOrder(productId: number, imageIds: number[]) {
+    try {
+        // Bulk update is tricky in Prisma, so we do a transaction
+        const updates = imageIds.map((id, index) => 
+            prisma.product_images.update({
+                where: { id },
+                data: { sort_order: index }
+            })
+        )
+        await prisma.$transaction(updates)
+        revalidatePath(`/admin/products/${productId}`)
+        return { success: true }
+    } catch (err: any) {
+        return { message: 'Lỗi cập nhật thứ tự: ' + err.message }
+    }
+}
+
+// ─── SEARCH PRODUCTS (For Combo & Relationships) ─────────────────────────────
+export async function searchProducts(query: string, excludeId?: number) {
+    try {
+        const whereClause: any = {
+            ...(excludeId ? { id: { not: excludeId } } : {})
+        };
+
+        if (query && query.length > 0) {
+            whereClause.OR = [
+                { name: { contains: query, mode: 'insensitive' } },
+                { sku: { contains: query, mode: 'insensitive' } },
+            ];
+        }
+
+        const results = await prisma.products.findMany({
+            where: whereClause,
+            orderBy: query ? { created_at: 'desc' } : { created_at: 'desc' }, // always recent
+            select: {
+                id: true,
+                sku: true,
+                name: true,
+                price: true,
+                image_main_url: true,
+                stock_status: true
+            },
+            take: 10
+        });
+        return results.map(r => ({
+            ...r,
+            price: r.price ? Number(r.price) : null
+        }));
+    } catch (err: any) {
+        console.error("searchProducts error:", err);
+        return [];
+    }
+}
+
+// ─── RELATIONSHIPS (COMBO/RELATED) ───────────────────────────────────────────
+export async function addProductRelationship(parentId: number, childId: number, childSku: string, relationshipType: string = 'component') {
+    try {
+        const existingCount = await prisma.product_relationships.count({
+            where: { parent_id: parentId, relationship_type: relationshipType }
+        });
+        
+        await prisma.product_relationships.create({
+            data: {
+                parent_id: parentId,
+                child_id: childId,
+                child_sku: childSku,
+                relationship_type: relationshipType,
+                sort_order: existingCount
+            }
+        });
+        revalidatePath(`/admin/products/${parentId}`);
+        return { success: true };
+    } catch (err: any) {
+        return { message: 'Lỗi thêm sản phẩm liên kết: ' + err.message };
+    }
+}
+
+export async function removeProductRelationship(id: number, parentId: number) {
+    try {
+        await prisma.product_relationships.delete({
+            where: { id }
+        });
+        revalidatePath(`/admin/products/${parentId}`);
+        return { success: true };
+    } catch (err: any) {
+        return { message: 'Lỗi xóa sản phẩm liên kết: ' + err.message };
+    }
+}

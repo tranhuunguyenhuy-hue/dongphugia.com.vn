@@ -1,15 +1,144 @@
-@tailwind utilities;
+@reference "../globals.css";
 
 @layer utilities {
     .admin-theme {
-        /* Admin-specific CSS variables - Clean Minimalist SaaS */
-        --sidebar-background: 0 0% 100%;
-        --sidebar-foreground: 215 28% 17%;
-        --sidebar-primary: 222.2 47.4% 11.2%;
-        --sidebar-primary-foreground: 210 40% 98%;
-        --sidebar-accent: 210 40% 96.1%;
-        --sidebar-accent-foreground: 222.2 47.4% 11.2%;
-        --sidebar-border: 214.3 31.8% 91.4%;
-        --sidebar-ring: 222.2 84% 4.9%;
+        /* Admin-specific CSS variables - Website Neutral Theme (Stone) */
+        --background: #F5F5F4; /* stone-100 */
+        --color-background: #F5F5F4;
+        --foreground: #1C1917; /* stone-900 */
+        --color-foreground: #1C1917;
+        
+        --card: #FFFFFF; /* White for card backgrounds */
+        --color-card: #FFFFFF;
+        --card-foreground: #1C1917;
+        --color-card-foreground: #1C1917;
+        
+        --popover: #FFFFFF;
+        --color-popover: #FFFFFF;
+        --popover-foreground: #1C1917;
+        --color-popover-foreground: #1C1917;
+        
+        --primary: #1C1917; /* stone-900 */
+        --color-primary: #1C1917;
+        --primary-foreground: #FAFAF9; /* stone-50 */
+        --color-primary-foreground: #FAFAF9;
+        
+        --secondary: #E7E5E4; /* stone-200 */
+        --color-secondary: #E7E5E4;
+        --secondary-foreground: #1C1917;
+        --color-secondary-foreground: #1C1917;
+        
+        --muted: #F5F5F4;
+        --color-muted: #F5F5F4;
+        --muted-foreground: #57534E; /* stone-600 */
+        --color-muted-foreground: #57534E;
+        
+        --accent: #E7E5E4; /* stone-200 */
+        --color-accent: #E7E5E4;
+        --accent-foreground: #1C1917;
+        --color-accent-foreground: #1C1917;
+        
+        --destructive: #D94545; /* Brand red from website */
+        --color-destructive: #D94545;
+        --destructive-foreground: #FFFFFF;
+        --color-destructive-foreground: #FFFFFF;
+        
+        /* Semantic colors for badges/status */
+        --success: #22C55E;
+        --success-foreground: #FFFFFF;
+        --warning: #F59E0B;
+        --warning-foreground: #FFFFFF;
+        --info: #37B4D1; /* Brand cyan 400 */
+        --info-foreground: #FFFFFF;
+        
+        /* Border and Input */
+        --border: #E7E5E4; /* stone-200 */
+        --color-border: #E7E5E4;
+        --input: #E7E5E4;
+        --color-input: #E7E5E4;
+        --ring: rgba(55,180,209,0.35); /* Brand cyan ring */
+        --color-ring: rgba(55,180,209,0.35);
+        
+        /* Sidebar specific */
+        --sidebar: #F5F5F4; 
+        --color-sidebar: #F5F5F4; /* Bypass Tailwind v4 @theme strict resolution */
+        --sidebar-foreground: #1C1917;
+        --color-sidebar-foreground: #1C1917;
+        --sidebar-primary: #1C1917;
+        --color-sidebar-primary: #1C1917;
+        --sidebar-primary-foreground: #FAFAF9;
+        --color-sidebar-primary-foreground: #FAFAF9;
+        --sidebar-accent: #E7E5E4;
+        --color-sidebar-accent: #E7E5E4;
+        --sidebar-accent-foreground: #1C1917;
+        --color-sidebar-accent-foreground: #1C1917;
+        --sidebar-border: #E7E5E4; /* stone-200 for Hierarchy Line */
+        --color-sidebar-border: #E7E5E4;
+        --sidebar-ring: rgba(55,180,209,0.35);
+        --color-sidebar-ring: rgba(55,180,209,0.35);
+
+        /* Radius for a slightly sharp, minimalist look */
+        --radius: 0.375rem; /* 6px */
     }
+
+    /* Override shadcn defaults for admin-theme */
+    .admin-theme .shadow,
+    .admin-theme .shadow-md,
+    .admin-theme .shadow-lg,
+    .admin-theme .shadow-xl {
+        box-shadow: none !important; /* No heavy shadow globally in admin */
+    }
+    /* Note: We allow shadow-sm to render normally for the main layout */
+
+    /* Inside card sections - white background */
+    .admin-theme .card-section {
+        background-color: #FFFFFF;
+        border-radius: var(--radius);
+        border: 1px solid var(--border);
+    }
+
+    /* Force App-like layout on global body when admin-theme is active */
+    body:has(.admin-theme) {
+        background-color: var(--color-stone-100) !important;
+        overflow: hidden !important;
+    }
+
+    /* Elegant glass/elevation effect for sidebar items */
+    .sidebar-item-glass {
+        transition: all 0.2s ease-in-out;
+    }
+    .sidebar-item-glass:hover,
+    .sidebar-item-glass[data-active="true"] {
+        background-color: #FFFFFF !important;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.04) !important;
+    }
+
+    /* =========================================
+       SHADCN UI TYPOGRAPHY SYSTEM
+       Dùng các class này để format text chuẩn CMS
+       ========================================= */
+    .typ-h1 { @apply scroll-m-20 text-4xl font-extrabold tracking-tight; }
+    @media (min-width: 1024px) {
+        .typ-h1 { @apply text-5xl; }
+    }
+
+    .typ-h2 { @apply scroll-m-20 border-b border-border pb-2 text-3xl font-semibold tracking-tight; }
+    .typ-h2:first-child { @apply mt-0; }
+
+    .typ-h3 { @apply scroll-m-20 text-2xl font-semibold tracking-tight; }
+    .typ-h4 { @apply scroll-m-20 text-xl font-semibold tracking-tight; }
+
+    .typ-p { @apply leading-7; }
+    .typ-p:not(:first-child) { @apply mt-6; }
+
+    .typ-blockquote { @apply mt-6 border-l-2 border-border pl-6 italic text-muted-foreground; }
+
+    .typ-list { @apply my-6 ml-6 list-disc; }
+    .typ-list > li { @apply mt-2; }
+
+    .typ-code { @apply relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold; }
+    .typ-lead { @apply text-xl text-muted-foreground; }
+    .typ-large { @apply text-lg font-semibold; }
+    .typ-small { @apply text-sm font-medium leading-none; }
+    .typ-muted { @apply text-sm text-muted-foreground; }
 }

@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation"
 import Link from "next/link"
 import { ChevronRight, Home } from "lucide-react"
+import { SidebarTrigger } from "@/components/ui/sidebar"
 
 // Map of URL segments to Vietnamese labels
 const segmentLabels: Record<string, string> = {
@@ -37,7 +38,8 @@ export default function AdminHeader() {
         : "Dashboard"
 
     return (
-        <header className="sticky top-0 z-[5] flex h-14 items-center gap-4 border-b bg-white/80 backdrop-blur-sm px-6">
+        <header className="sticky top-0 z-[5] flex h-14 shrink-0 items-center gap-4 border-b bg-transparent px-6">
+            <SidebarTrigger className="-ml-2 md:hidden" />
             {/* Breadcrumb */}
             <nav className="flex items-center gap-1.5 text-sm">
                 <Link

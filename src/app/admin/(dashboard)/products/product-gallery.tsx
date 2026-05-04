@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { Star, Trash2, Upload, Loader2, ImageIcon, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
-import { addProductImages, deleteProductImage, setProductThumbnail } from '@/lib/product-actions'
+import { addProductImages, deleteProductImage, setProductThumbnail, updateProductImageSortOrder } from '@/lib/product-actions'
 import { cn } from '@/lib/utils'
 
 interface GalleryImage {
@@ -40,6 +40,9 @@ export function ProductGallery({ productId, images: initialImages, currentThumbn
     const [dragOver, setDragOver] = useState(false)
     const [deletingId, setDeletingId] = useState<number | null>(null)
     const [settingThumbnail, setSettingThumbnail] = useState<number | null>(null)
+    const [isReordering, setIsReordering] = useState(false)
+    const dragItem = useRef<number | null>(null)
+    const dragOverItem = useRef<number | null>(null)
     const inputRef = useRef<HTMLInputElement>(null)
 
     const handleFiles = useCallback(async (files: FileList | File[]) => {
@@ -121,26 +124,72 @@ export function ProductGallery({ productId, images: initialImages, currentThumbn
         setSettingThumbnail(null)
     }
 
-    return (
-        <div className="space-y-3 pt-4 border-t border-[#E4EEF2]">
+    const handleSort = async () => {
+        if (dragItem.current === null || dragOverItem.current === null || dragItem.current === dragOverItem.current) {
+            return;
+        }
+
+        const newImages = [...images];
+        const draggedImage = newImages.splice(dragItem.current, 1)[0];
+        newImages.splice(dragOverItem.current, 0, draggedImage);
+
+        // Update local state
+        setImages(newImages);
+
+        // Update API
+        setIsReordering(true);
+        const imageIds = newImages.map(img => img.id);
+        const res = await updateProductImageSortOrder(productId, imageIds);
+        if (res?.message) {
+            toast.error(res.message);
+            // Revert on error
+            setImages(images);
+        } else {
+            toast.success('Đã cập nhật thứ tự ảnh');
+        }
+        setIsReordering(false);
+        dragItem.current = null;
+        dragOverItem.current = null;
+    }
+
+        return (
+        <div className="space-y-4">
             <div className="flex items-center justify-between">
                 <div>
                     <p className="text-sm font-medium text-[#3C4E56]">Gallery ảnh ({images.length})</p>
-                    <p className="text-xs text-muted-foreground">Kéo thả hoặc nhấn để upload nhiều ảnh. Bấm ⭐ để đặt làm thumbnail.</p>
+                    <p className="text-xs text-muted-foreground">Kéo thả hoặc nhấn để upload ảnh. Đặt một ảnh làm thumbnail (hiển thị 120x120px).</p>
                 </div>
             </div>
 
-            {/* Image Grid */}
+            {/* Image Grid using Flex layout for variable sizes */}
             {images.length > 0 && (
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
-                    {images.map(img => {
+                <div className="flex flex-wrap items-end gap-4">
+                    {images.map((img, index) => {
                         const isThumbnail = img.image_url === currentThumbnail
+                        let sizeClass = "w-[100px] h-[100px]"
+                        if (images.length >= 2) {
+                            if (currentThumbnail) {
+                                sizeClass = isThumbnail ? "w-[120px] h-[120px]" : "w-[80px] h-[80px]"
+                            } else {
+                                sizeClass = "w-[100px] h-[100px]"
+                            }
+                        } else if (images.length === 1) {
+                            sizeClass = "w-[120px] h-[120px]"
+                        }
+
                         return (
                             <div
                                 key={img.id}
+                                draggable
+                                onDragStart={(e) => { dragItem.current = index; e.currentTarget.style.opacity = '0.5' }}
+                                onDragEnter={() => { dragOverItem.current = index }}
+                                onDragEnd={(e) => { e.currentTarget.style.opacity = '1'; handleSort() }}
+                                onDragOver={(e) => e.preventDefault()}
                                 className={cn(
-                                    "relative group rounded-lg overflow-hidden border-2 aspect-square bg-neutral-100 transition-all",
-                                    isThumbnail ? "border-amber-400 ring-2 ring-amber-200" : "border-[#E4EEF2] hover:border-[#2E7A96]"
+                                    "relative group rounded-lg overflow-hidden border bg-neutral-100 transition-all duration-300 ease-in-out shrink-0 cursor-move",
+                                    isThumbnail ? "border-amber-400 shadow-sm" : "border-[#E4EEF2] hover:border-[#2E7A96]",
+                                    sizeClass,
+                                    isReordering && "opacity-50 pointer-events-none"
                                 )}
                             >
                                 <Image
@@ -148,49 +197,49 @@ export function ProductGallery({ productId, images: initialImages, currentThumbn
                                     alt={img.alt_text || 'Product image'}
                                     fill
                                     className="object-cover"
-                                    sizes="150px"
+                                    sizes="120px"
                                     unoptimized
                                 />
                                 {/* Thumbnail badge */}
                                 {isThumbnail && (
-                                    <div className="absolute top-1 left-1 bg-amber-400 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
+                                    <div className="absolute top-1 left-1 bg-amber-400 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow-sm">
                                         THUMBNAIL
                                     </div>
                                 )}
                                 {/* Action overlay */}
-                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100">
+                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all flex flex-col items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
                                     {/* Set as thumbnail */}
                                     {!isThumbnail && (
                                         <Button
                                             type="button"
-                                            size="icon"
+                                            size="sm"
                                             variant="secondary"
-                                            className="h-8 w-8 bg-white/90 hover:bg-amber-50"
-                                            title="Đặt làm thumbnail"
+                                            className="h-7 px-2 text-[10px] bg-white/90 hover:bg-amber-50 text-amber-600"
                                             disabled={settingThumbnail === img.id}
                                             onClick={() => handleSetThumbnail(img.id, img.image_url)}
                                         >
                                             {settingThumbnail === img.id ? (
-                                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                                <Loader2 className="h-3 w-3 animate-spin mr-1" />
                                             ) : (
-                                                <Star className="h-3.5 w-3.5 text-amber-500" />
+                                                <Star className="h-3 w-3 mr-1" />
                                             )}
+                                            Thumbnail
                                         </Button>
                                     )}
                                     {/* Delete */}
                                     <Button
                                         type="button"
                                         size="icon"
-                                        variant="secondary"
-                                        className="h-8 w-8 bg-white/90 hover:bg-red-50"
+                                        variant="destructive"
+                                        className="h-6 w-6 rounded-full"
                                         title="Xóa ảnh"
                                         disabled={deletingId === img.id}
                                         onClick={() => handleDelete(img.id)}
                                     >
                                         {deletingId === img.id ? (
-                                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                            <Loader2 className="h-3 w-3 animate-spin" />
                                         ) : (
-                                            <Trash2 className="h-3.5 w-3.5 text-red-500" />
+                                            <Trash2 className="h-3 w-3" />
                                         )}
                                     </Button>
                                 </div>
@@ -207,7 +256,7 @@ export function ProductGallery({ productId, images: initialImages, currentThumbn
                 onDrop={e => { e.preventDefault(); setDragOver(false); if (e.dataTransfer.files.length > 0) handleFiles(e.dataTransfer.files) }}
                 onClick={() => inputRef.current?.click()}
                 className={cn(
-                    "border-2 border-dashed rounded-lg p-5 text-center cursor-pointer transition-colors",
+                    "border-2 border-dashed rounded-lg p-3 text-center cursor-pointer transition-colors mt-4",
                     dragOver
                         ? "border-primary bg-primary/5"
                         : "border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/50",
@@ -223,17 +272,19 @@ export function ProductGallery({ productId, images: initialImages, currentThumbn
                     className="hidden"
                 />
                 {uploading ? (
-                    <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                        <Loader2 className="h-7 w-7 animate-spin" />
+                    <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                        <Loader2 className="h-4 w-4 animate-spin" />
                         <p className="text-sm">Đang upload...</p>
                     </div>
                 ) : (
-                    <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                        <div className="rounded-full bg-muted p-2.5">
-                            <Upload className="h-5 w-5" />
+                    <div className="flex items-center justify-center gap-3 text-muted-foreground">
+                        <div className="rounded-full bg-muted p-2">
+                            <Upload className="h-4 w-4" />
                         </div>
-                        <p className="text-sm font-medium">Kéo thả hoặc nhấn để thêm ảnh gallery</p>
-                        <p className="text-xs">JPG, PNG, WebP, GIF — Tối đa 5MB/ảnh · 20 ảnh/lần</p>
+                        <div className="text-left">
+                            <p className="text-sm font-medium">Kéo thả hoặc nhấn để thêm ảnh</p>
+                            <p className="text-[11px]">JPG, PNG, WebP — Tối đa 5MB/ảnh</p>
+                        </div>
                     </div>
                 )}
             </div>

@@ -2,20 +2,48 @@
 
 import { useState, useTransition, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { createProduct, updateProduct } from '@/lib/product-actions'
 import { toast } from 'sonner'
-import { Loader2, Save, ArrowLeft, Tag, DollarSign, Image as ImageIcon, FileText, Settings, Search as SearchIcon, Sparkles } from 'lucide-react'
+import { Loader2, Save, ArrowLeft, Image as ImageIcon, Sparkles, LayoutGrid, Tag, Settings2, FileText, SearchIcon, Upload, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Label } from '@/components/ui/label'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { ImageUploader } from '@/components/ui/image-uploader'
+import { RichTextEditor } from '@/components/ui/rich-text-editor'
 import { ProductGallery } from './product-gallery'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from '@/components/ui/form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useForm } from 'react-hook-form'
+import * as z from 'zod'
 import Link from 'next/link'
+import { ProductRelationshipPicker } from './product-relationship-picker'
+import { QuickCreateProductModal } from './quick-create-product-modal'
+import { addProductRelationship, removeProductRelationship } from '@/lib/product-actions'
+
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 // Slug generation utility
 function generateSlug(text: string): string {
     return text
         .toLowerCase()
         .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '') // Remove diacritics
+        .replace(/[\u0300-\u036f]/g, '')
         .replace(/đ/g, 'd').replace(/Đ/g, 'd')
         .replace(/[^a-z0-9\s-]/g, '')
         .replace(/\s+/g, '-')
@@ -23,11 +51,64 @@ function generateSlug(text: string): string {
         .trim()
 }
 
+// Validation Schema
+const formSchema = z.object({
+    sku: z.string().min(1, 'Mã SKU là bắt buộc'),
+    name: z.string().min(1, 'Tên sản phẩm là bắt buộc'),
+    display_name: z.string().optional(),
+    slug: z.string().min(1, 'Slug là bắt buộc'),
+    category_id: z.string().min(1, 'Danh mục là bắt buộc'),
+    subcategory_id: z.string().optional(),
+    brand_id: z.string().optional(),
+    origin_id: z.string().optional(),
+    color_id: z.string().optional(),
+    material_id: z.string().optional(),
+    price: z.string().optional(),
+    original_price: z.string().optional(),
+    price_display: z.string().optional(),
+    description: z.string().optional(),
+    features: z.string().optional(),
+    warranty_months: z.string().optional(),
+    image_main_url: z.string().optional(),
+    stock_status: z.string().optional(),
+    is_active: z.boolean().optional(),
+    is_featured: z.boolean().optional(),
+    is_new: z.boolean().optional(),
+    is_bestseller: z.boolean().optional(),
+    sort_order: z.string().optional(),
+    product_type: z.string().optional(),
+    product_sub_type: z.string().optional(),
+    source_url: z.string().optional(),
+    hita_product_id: z.string().optional(),
+    seo_title: z.string().optional(),
+    seo_description: z.string().optional(),
+})
+
+type FormValues = z.infer<typeof formSchema>
+
 interface LookupItem { id: number; name: string; slug?: string }
 interface SubcategoryItem extends LookupItem { category_id: number }
 interface ColorItem extends LookupItem { hex_code?: string | null }
+interface FilterDefinitionItem {
+    id: number;
+    category_id: number | null;
+    subcategory_id: number | null;
+    filter_key: string;
+    filter_label: string;
+    filter_type: string;
+    options: any;
+    sort_order: number;
+}
+
+interface ProductTypeItem {
+    subcategory_id: number | null;
+    product_type: string | null;
+    product_sub_type: string | null;
+}
 
 interface ProductFormProps {
+    pageTitle: string
+    pageSubtitle?: string
     product?: any // Full product data from getAdminProductById
     categories: LookupItem[]
     subcategories: SubcategoryItem[]
@@ -35,95 +116,150 @@ interface ProductFormProps {
     origins: LookupItem[]
     colors: ColorItem[]
     materials: LookupItem[]
+    filterDefinitions?: FilterDefinitionItem[]
+    productTypes?: ProductTypeItem[]
 }
 
-export function ProductForm({ product, categories, subcategories, brands, origins, colors, materials }: ProductFormProps) {
+export function ProductForm({ pageTitle, pageSubtitle, product, categories, subcategories, brands, origins, colors, materials, filterDefinitions = [], productTypes = [] }: ProductFormProps) {
     const router = useRouter()
     const [isPending, startTransition] = useTransition()
     const isEdit = !!product
 
-    const [form, setForm] = useState({
-        sku: product?.sku || '',
-        name: product?.name || '',
-        display_name: product?.display_name || '',
-        slug: product?.slug || '',
-        category_id: product?.category_id?.toString() || '',
-        subcategory_id: product?.subcategory_id?.toString() || '',
-        brand_id: product?.brand_id?.toString() || '',
-        origin_id: product?.origin_id?.toString() || '',
-        color_id: product?.color_id?.toString() || '',
-        material_id: product?.material_id?.toString() || '',
-        price: product?.price?.toString() || '',
-        original_price: product?.original_price?.toString() || '',
-        price_display: product?.price_display || 'Liên hệ báo giá',
-        description: product?.description || '',
-        features: product?.features || '',
-        warranty_months: product?.warranty_months?.toString() || '',
-        image_main_url: product?.image_main_url || '',
-        image_hover_url: product?.image_hover_url || '',
-        stock_status: product?.stock_status || 'in_stock',
-        is_active: product?.is_active ?? true,
-        is_featured: product?.is_featured ?? false,
-        is_new: product?.is_new ?? false,
-        is_bestseller: product?.is_bestseller ?? false,
-        sort_order: product?.sort_order?.toString() || '0',
-        product_type: product?.product_type || '',
-        product_sub_type: product?.product_sub_type || '',
-        source_url: product?.source_url || '',
-        hita_product_id: product?.hita_product_id || '',
-        seo_title: product?.seo_title || '',
-        seo_description: product?.seo_description || '',
+    // Specs state is still separate as it's dynamic
+    const [specs, setSpecs] = useState<Record<string, any>>(
+        typeof product?.specs === 'string' ? JSON.parse(product.specs) : product?.specs || {}
+    )
+
+    const form = useForm<FormValues>({
+        resolver: zodResolver(formSchema),
+        defaultValues: {
+            sku: product?.sku || '',
+            name: product?.name || '',
+            display_name: product?.display_name || '',
+            slug: product?.slug || '',
+            category_id: product?.category_id?.toString() || '',
+            subcategory_id: product?.subcategory_id?.toString() || '',
+            brand_id: product?.brand_id?.toString() || '',
+            origin_id: product?.origin_id?.toString() || '',
+            color_id: product?.color_id?.toString() || '',
+            material_id: product?.material_id?.toString() || '',
+            price: product?.price?.toString() || '',
+            original_price: product?.original_price?.toString() || '',
+            price_display: product?.price_display || 'Liên hệ báo giá',
+            description: product?.description || '',
+            features: product?.features || '',
+            warranty_months: product?.warranty_months?.toString() || '',
+            image_main_url: product?.image_main_url || '',
+            stock_status: product?.stock_status || 'in_stock',
+            is_active: product?.is_active ?? true,
+            is_featured: product?.is_featured ?? false,
+            is_new: product?.is_new ?? false,
+            is_bestseller: product?.is_bestseller ?? false,
+            sort_order: product?.sort_order?.toString() || '0',
+            product_type: product?.product_type || '',
+            product_sub_type: product?.product_sub_type || '',
+            source_url: product?.source_url || '',
+            hita_product_id: product?.hita_product_id || '',
+            seo_title: product?.seo_title || '',
+            seo_description: product?.seo_description || '',
+        }
     })
 
-    const set = (key: string, value: any) => setForm(prev => ({ ...prev, [key]: value }))
+    const categoryId = form.watch('category_id')
+    const subcategoryId = form.watch('subcategory_id')
+    const currentPrice = form.watch('price')
+    const currentOriginalPrice = form.watch('original_price')
+    const currentProductType = form.watch('product_type')
 
-    // Auto-slug when name changes (only for new products)
-    const handleNameChange = (name: string) => {
-        set('name', name)
-        if (!isEdit || !form.slug) {
-            set('slug', generateSlug(name))
-        }
-    }
-
-    // Filter subcategories by selected category
     const filteredSubcategories = useMemo(() => {
-        if (!form.category_id) return []
-        return subcategories.filter(s => s.category_id === Number(form.category_id))
-    }, [form.category_id, subcategories])
+        if (!categoryId) return []
+        return subcategories.filter(s => s.category_id === Number(categoryId))
+    }, [categoryId, subcategories])
 
-    // Calculate discount percentage for preview
+    const availableProductTypes = useMemo(() => {
+        if (!subcategoryId || !productTypes.length) return []
+        const subId = Number(subcategoryId)
+        const types = productTypes
+            .filter(t => t.subcategory_id === subId && t.product_type)
+            .map(t => t.product_type as string)
+        return Array.from(new Set(types)).sort()
+    }, [subcategoryId, productTypes])
+
+    const availableProductSubTypes = useMemo(() => {
+        if (!subcategoryId || !currentProductType || !productTypes.length) return []
+        const subId = Number(subcategoryId)
+        const types = productTypes
+            .filter(t => t.subcategory_id === subId && t.product_type === currentProductType && t.product_sub_type)
+            .map(t => t.product_sub_type as string)
+        return Array.from(new Set(types)).sort()
+    }, [subcategoryId, currentProductType, productTypes])
+
+    const relevantFilters = useMemo(() => {
+        const EXCLUDED_KEYS = ['brand', 'thuong-hieu', 'price', 'khoang-gia', 'origin', 'xuat-xu', 'color', 'mau-sac', 'material', 'chat-lieu']
+        const filtered = filterDefinitions.filter(f => {
+            if (EXCLUDED_KEYS.includes(f.filter_key.toLowerCase())) return false;
+            const isGlobal = f.category_id === null && f.subcategory_id === null;
+            const isCategorySpecific = f.category_id === Number(categoryId) && f.subcategory_id === null;
+            const isSubcategorySpecific = f.subcategory_id === Number(subcategoryId);
+
+            if (subcategoryId) {
+                return isSubcategorySpecific || isCategorySpecific || isGlobal;
+            } else if (categoryId) {
+                return isCategorySpecific || isGlobal;
+            }
+            return isGlobal;
+        })
+
+        const uniqueFilters = new Map<string, typeof filtered[0]>()
+        filtered.forEach(f => {
+            const existing = uniqueFilters.get(f.filter_key)
+            if (!existing) {
+                uniqueFilters.set(f.filter_key, f)
+            } else {
+                const getSpecificity = (filter: typeof f) => {
+                    if (filter.subcategory_id) return 3
+                    if (filter.category_id) return 2
+                    return 1
+                }
+                if (getSpecificity(f) > getSpecificity(existing)) {
+                    uniqueFilters.set(f.filter_key, f)
+                }
+            }
+        })
+        return Array.from(uniqueFilters.values()).sort((a, b) => a.sort_order - b.sort_order)
+    }, [filterDefinitions, categoryId, subcategoryId])
+
     const discountPercent = useMemo(() => {
-        const price = parseFloat(form.price)
-        const original = parseFloat(form.original_price)
+        const price = parseFloat(currentPrice || '0')
+        const original = parseFloat(currentOriginalPrice || '0')
         if (original && price && original > price) {
             return Math.round(((original - price) / original) * 100)
         }
         return 0
-    }, [form.price, form.original_price])
+    }, [currentPrice, currentOriginalPrice])
 
-    const onSubmit = (e: React.FormEvent) => {
-        e.preventDefault()
+    const onSubmit = (values: FormValues) => {
         startTransition(async () => {
             const payload = {
-                ...form,
-                category_id: Number(form.category_id),
-                subcategory_id: form.subcategory_id ? Number(form.subcategory_id) : null,
-                brand_id: form.brand_id ? Number(form.brand_id) : null,
-                origin_id: form.origin_id ? Number(form.origin_id) : null,
-                color_id: form.color_id ? Number(form.color_id) : null,
-                material_id: form.material_id ? Number(form.material_id) : null,
-                price: form.price ? Number(form.price) : null,
-                original_price: form.original_price ? Number(form.original_price) : null,
-                warranty_months: form.warranty_months ? Number(form.warranty_months) : null,
-                sort_order: Number(form.sort_order) || 0,
-                specs: {},
-                display_name: form.display_name || null,
-                product_type: form.product_type || null,
-                product_sub_type: form.product_sub_type || null,
-                source_url: form.source_url || null,
-                hita_product_id: form.hita_product_id || null,
-                seo_title: form.seo_title || null,
-                seo_description: form.seo_description || null,
+                ...values,
+                category_id: Number(values.category_id),
+                subcategory_id: values.subcategory_id ? Number(values.subcategory_id) : null,
+                brand_id: values.brand_id ? Number(values.brand_id) : null,
+                origin_id: values.origin_id ? Number(values.origin_id) : null,
+                color_id: values.color_id ? Number(values.color_id) : null,
+                material_id: values.material_id ? Number(values.material_id) : null,
+                price: values.price ? Number(values.price) : null,
+                original_price: values.original_price ? Number(values.original_price) : null,
+                warranty_months: values.warranty_months ? Number(values.warranty_months) : null,
+                sort_order: Number(values.sort_order) || 0,
+                specs: specs,
+                display_name: values.display_name || null,
+                product_type: values.product_type || null,
+                product_sub_type: values.product_sub_type || null,
+                source_url: values.source_url || null,
+                hita_product_id: values.hita_product_id || null,
+                seo_title: values.seo_title || null,
+                seo_description: values.seo_description || null,
             }
 
             const result = isEdit
@@ -143,426 +279,777 @@ export function ProductForm({ product, categories, subcategories, brands, origin
         })
     }
 
-    const inputCls = "w-full h-10 px-3 rounded-lg border border-[#E4EEF2] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors bg-white"
-    const selectCls = "w-full h-10 px-3 rounded-lg border border-[#E4EEF2] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors bg-white appearance-none"
-    const labelCls = "block text-sm font-medium text-[#3C4E56] mb-1.5"
-    const sectionCls = "bg-white rounded-2xl border border-[#E4EEF2] p-6 space-y-5"
-    const sectionTitleCls = "flex items-center gap-2 text-base font-semibold text-[#1A2B34] pb-3 border-b border-[#E4EEF2] mb-4"
-
     return (
-        <form onSubmit={onSubmit} className="space-y-6 max-w-4xl">
-            {/* ── Section 1: Thông tin cơ bản ───────────────────────────── */}
-            <div className={sectionCls}>
-                <div className={sectionTitleCls}>
-                    <Tag className="h-4 w-4 text-[#2E7A96]" />
-                    Thông tin cơ bản
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="md:col-span-2">
-                        <label className={labelCls}>Tên sản phẩm *</label>
-                        <input
-                            className={inputCls}
-                            value={form.name}
-                            onChange={e => handleNameChange(e.target.value)}
-                            placeholder="VD: Bồn cầu 1 khối INAX AC-4005VN"
-                            required
-                        />
-                    </div>
-                    <div>
-                        <label className={labelCls}>Tên hiển thị (tuỳ chọn)</label>
-                        <input
-                            className={inputCls}
-                            value={form.display_name}
-                            onChange={e => set('display_name', e.target.value)}
-                            placeholder="Tên rút gọn hiển thị trên card..."
-                        />
-                    </div>
-                    <div>
-                        <label className={labelCls}>Mã SKU *</label>
-                        <input
-                            className={inputCls}
-                            value={form.sku}
-                            onChange={e => set('sku', e.target.value)}
-                            placeholder="VD: INAX-AC4005VN"
-                            required
-                        />
-                    </div>
-                    <div className="md:col-span-2">
-                        <label className={labelCls}>Slug (URL) *</label>
-                        <input
-                            className={inputCls}
-                            value={form.slug}
-                            onChange={e => set('slug', e.target.value)}
-                            placeholder="bon-cau-1-khoi-inax-ac-4005vn"
-                            required
-                        />
-                        <p className="text-xs text-muted-foreground mt-1">Tự động tạo từ tên. Sửa tay nếu cần.</p>
-                    </div>
-                </div>
-            </div>
-
-            {/* ── Section 2: Phân loại ─────────────────────────────────── */}
-            <div className={sectionCls}>
-                <div className={sectionTitleCls}>
-                    <Sparkles className="h-4 w-4 text-[#2E7A96]" />
-                    Phân loại
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <div>
-                        <label className={labelCls}>Danh mục *</label>
-                        <select
-                            className={selectCls}
-                            value={form.category_id}
-                            onChange={e => {
-                                set('category_id', e.target.value)
-                                set('subcategory_id', '') // Reset sub when cat changes
-                            }}
-                            required
+        <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="relative w-full pb-10 admin-theme">
+                {/* Top Action Bar */}
+                <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                        <Link
+                            href="/admin/products"
+                            className="h-9 w-9 flex items-center justify-center rounded-lg border border-[#E4EEF2] text-muted-foreground hover:bg-muted transition-colors"
                         >
-                            <option value="">Chọn danh mục</option>
-                            {categories.map(c => (
-                                <option key={c.id} value={c.id}>{c.name}</option>
-                            ))}
-                        </select>
-                    </div>
-                    <div>
-                        <label className={labelCls}>Danh mục con</label>
-                        <select
-                            className={selectCls}
-                            value={form.subcategory_id}
-                            onChange={e => set('subcategory_id', e.target.value)}
-                        >
-                            <option value="">Không chọn</option>
-                            {filteredSubcategories.map(s => (
-                                <option key={s.id} value={s.id}>{s.name}</option>
-                            ))}
-                        </select>
-                    </div>
-                    <div>
-                        <label className={labelCls}>Thương hiệu</label>
-                        <select
-                            className={selectCls}
-                            value={form.brand_id}
-                            onChange={e => set('brand_id', e.target.value)}
-                        >
-                            <option value="">Không chọn</option>
-                            {brands.map(b => (
-                                <option key={b.id} value={b.id}>{b.name}</option>
-                            ))}
-                        </select>
-                    </div>
-                    <div>
-                        <label className={labelCls}>Xuất xứ</label>
-                        <select
-                            className={selectCls}
-                            value={form.origin_id}
-                            onChange={e => set('origin_id', e.target.value)}
-                        >
-                            <option value="">Không chọn</option>
-                            {origins.map(o => (
-                                <option key={o.id} value={o.id}>{o.name}</option>
-                            ))}
-                        </select>
-                    </div>
-                    <div>
-                        <label className={labelCls}>Màu sắc</label>
-                        <div className="relative">
-                            {/* Preview swatch of selected color */}
-                            {form.color_id && (() => {
-                                const sel = colors.find(c => c.id === Number(form.color_id))
-                                return sel ? (
-                                    <span
-                                        className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border border-black/10 shadow-sm z-10"
-                                        style={{ backgroundColor: sel.hex_code || '#ccc' }}
-                                    />
-                                ) : null
-                            })()}
-                            <select
-                                className={`${selectCls} ${form.color_id ? 'pl-9' : ''}`}
-                                value={form.color_id}
-                                onChange={e => set('color_id', e.target.value)}
-                            >
-                                <option value="">Không chọn</option>
-                                {colors.map(c => (
-                                    <option key={c.id} value={c.id}>{c.name}{c.hex_code ? ` (${c.hex_code})` : ''}</option>
-                                ))}
-                            </select>
+                            <ArrowLeft className="h-4 w-4" />
+                        </Link>
+                        <div>
+                            <h1 className="text-2xl font-bold tracking-tight">{pageTitle}</h1>
+                            {pageSubtitle && <p className="text-sm text-muted-foreground mt-0.5 line-clamp-1">{pageSubtitle}</p>}
                         </div>
                     </div>
-                    <div>
-                        <label className={labelCls}>Chất liệu</label>
-                        <select
-                            className={selectCls}
-                            value={form.material_id}
-                            onChange={e => set('material_id', e.target.value)}
-                        >
-                            <option value="">Không chọn</option>
-                            {materials.map(m => (
-                                <option key={m.id} value={m.id}>{m.name}</option>
-                            ))}
-                        </select>
+                    <div className="flex items-center gap-3">
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button type="button" variant="outline" className="rounded-full px-6 bg-white shadow-none border-[#E4EEF2] hover:bg-stone-50">
+                                    Huỷ
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent className="admin-theme">
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Bạn có chắc chắn muốn huỷ?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        Các thay đổi của bạn sẽ không được lưu. Hành động này không thể hoàn tác.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel className="shadow-none rounded-md">Trở lại</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => router.push('/admin/products')} className="bg-red-600 hover:bg-red-700 text-white shadow-none rounded-md">
+                                        Đồng ý huỷ
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                        <Button type="submit" disabled={isPending} className="gap-2 rounded-full px-8 bg-stone-900 hover:bg-stone-800 text-white shadow-none">
+                            {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                            {isEdit ? 'Cập nhật' : 'Lưu sản phẩm'}
+                        </Button>
                     </div>
-                </div>
-                {/* Product Type */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 border-t border-[#E4EEF2]">
-                    <div>
-                        <label className={labelCls}>Loại sản phẩm</label>
-                        <input
-                            className={inputCls}
-                            value={form.product_type}
-                            onChange={e => set('product_type', e.target.value)}
-                            placeholder="VD: don-le, bo-combo"
-                        />
-                    </div>
-                    <div>
-                        <label className={labelCls}>Loại phụ</label>
-                        <input
-                            className={inputCls}
-                            value={form.product_sub_type}
-                            onChange={e => set('product_sub_type', e.target.value)}
-                            placeholder="VD: 1-khoi, 2-khoi"
-                        />
-                    </div>
-                </div>
-            </div>
-
-            {/* ── Section 3: Giá cả ───────────────────────────────────── */}
-            <div className={sectionCls}>
-                <div className={sectionTitleCls}>
-                    <DollarSign className="h-4 w-4 text-[#2E7A96]" />
-                    Giá cả
-                    {discountPercent > 0 && (
-                        <span className="ml-auto text-xs font-bold text-white bg-red-500 px-2.5 py-1 rounded-full">
-                            -{discountPercent}%
-                        </span>
-                    )}
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                        <label className={labelCls}>Giá bán (VNĐ)</label>
-                        <input
-                            type="number"
-                            className={inputCls}
-                            value={form.price}
-                            onChange={e => set('price', e.target.value)}
-                            placeholder="0"
-                            min={0}
-                            step={1000}
-                        />
-                    </div>
-                    <div>
-                        <label className={labelCls}>Giá gốc (VNĐ) — Gạch ngang</label>
-                        <input
-                            type="number"
-                            className={inputCls}
-                            value={form.original_price}
-                            onChange={e => set('original_price', e.target.value)}
-                            placeholder="0"
-                            min={0}
-                            step={1000}
-                        />
-                        <p className="text-xs text-muted-foreground mt-1">Để trống nếu không giảm giá. Nhập giá cao hơn giá bán để hiển thị tag giảm giá.</p>
-                    </div>
-                    <div>
-                        <label className={labelCls}>Văn bản giá</label>
-                        <input
-                            className={inputCls}
-                            value={form.price_display}
-                            onChange={e => set('price_display', e.target.value)}
-                            placeholder="Liên hệ báo giá"
-                        />
-                    </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label className={labelCls}>Tồn kho</label>
-                        <select
-                            className={selectCls}
-                            value={form.stock_status}
-                            onChange={e => set('stock_status', e.target.value)}
-                        >
-                            <option value="in_stock">Còn hàng</option>
-                            <option value="out_of_stock">Hết hàng</option>
-                            <option value="preorder">Đặt trước</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label className={labelCls}>Bảo hành (tháng)</label>
-                        <input
-                            type="number"
-                            className={inputCls}
-                            value={form.warranty_months}
-                            onChange={e => set('warranty_months', e.target.value)}
-                            placeholder="12"
-                            min={0}
-                        />
-                    </div>
-                </div>
-            </div>
-
-            {/* ── Section 4: Hình ảnh ─────────────────────────────────── */}
-            <div className={sectionCls}>
-                <div className={sectionTitleCls}>
-                    <ImageIcon className="h-4 w-4 text-[#2E7A96]" />
-                    Hình ảnh sản phẩm
                 </div>
 
-                {/* Thumbnail (ảnh chính) */}
-                <div>
-                    <label className={labelCls}>Ảnh đại diện (Thumbnail)</label>
-                    <p className="text-xs text-muted-foreground mb-3">Ảnh hiển thị trên Product Card. Bấm ⭐ trên ảnh gallery bên dưới để đổi.</p>
-                    <ImageUploader
-                        label=""
-                        value={form.image_main_url}
-                        onChange={v => set('image_main_url', v as string)}
-                        folder="products"
-                    />
-                </div>
+                <div className="flex flex-col lg:flex-row gap-6 items-start">
+                    {/* ── LEFT COLUMN ────────────────────────────────────────── */}
+                    <div className="w-full lg:w-[320px] xl:w-[380px] space-y-6 flex-shrink-0 lg:sticky lg:top-[88px]">
+                        
+                        {/* Hình ảnh sản phẩm */}
+                        <Card className="shadow-none rounded-xl overflow-hidden p-0 gap-0">
+                            <CardHeader className="bg-stone-100 border-b px-5 !py-3">
+                                <CardTitle className="text-base font-semibold text-stone-900">Hình ảnh sản phẩm
+                                </CardTitle>
+                                <CardDescription className="text-xs">
+                                    Quản lý ảnh đại diện và thư viện ảnh.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="p-5">
+                                {isEdit ? (
+                                    <ProductGallery
+                                        productId={product.id}
+                                        images={product.product_images || []}
+                                        currentThumbnail={form.watch('image_main_url') || ''}
+                                        onSetThumbnail={(url: string) => form.setValue('image_main_url', url)}
+                                    />
+                                ) : (
+                                    <div className="space-y-4">
+                                        <FormField
+                                            control={form.control}
+                                            name="image_main_url"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel className="text-sm font-semibold text-[#1A2B34]">Ảnh đại diện</FormLabel>
+                                                    <FormControl>
+                                                        <ImageUploader
+                                                            label=""
+                                                            value={field.value || ''}
+                                                            onChange={v => field.onChange(v as string)}
+                                                            folder="products"
+                                                        />
+                                                    </FormControl>
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <div className="rounded-lg border-2 border-dashed border-[#E4EEF2] p-3 text-center text-muted-foreground flex items-center justify-center gap-3">
+                                            <div className="rounded-full bg-stone-100 p-2">
+                                                <Upload className="h-4 w-4 text-stone-500" />
+                                            </div>
+                                            <p className="text-sm font-medium text-left">Lưu sản phẩm trước để sử dụng Thư viện ảnh</p>
+                                        </div>
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
 
-                {/* Gallery multi-upload — chỉ hiện khi đang edit sản phẩm đã có ID */}
-                {isEdit && (
-                    <ProductGallery
-                        productId={product.id}
-                        images={product.product_images || []}
-                        currentThumbnail={form.image_main_url}
-                        onSetThumbnail={(url: string) => set('image_main_url', url)}
-                    />
-                )}
-                {!isEdit && (
-                    <div className="rounded-lg border-2 border-dashed border-[#E4EEF2] p-6 text-center text-muted-foreground text-sm">
-                        💡 Lưu sản phẩm trước, sau đó quay lại để thêm ảnh gallery.
+
+
+                        {/* Phân loại Cơ bản */}
+                        <Card className="shadow-none rounded-xl overflow-hidden p-0 gap-0">
+                            <CardHeader className="bg-stone-100 border-b px-5 !py-3">
+                                <CardTitle className="text-base font-semibold text-stone-900">Phân loại chi tiết
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="p-5 space-y-4">
+                                <FormField
+                                    control={form.control}
+                                    name="category_id"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Danh mục chính *</FormLabel>
+                                            <Select onValueChange={(val) => { field.onChange(val); form.setValue('subcategory_id', '') }} defaultValue={field.value}>
+                                                <FormControl>
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Chọn danh mục" />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    {categories.map(c => <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>)}
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                {categoryId && (
+                                    <FormField
+                                        control={form.control}
+                                        name="subcategory_id"
+                                        render={({ field }) => (
+                                            <FormItem className="animate-in fade-in slide-in-from-top-2 duration-300">
+                                                <FormLabel>Danh mục con</FormLabel>
+                                                <Select onValueChange={field.onChange} value={field.value || undefined}>
+                                                    <FormControl>
+                                                        <SelectTrigger>
+                                                            <SelectValue placeholder="Không chọn" />
+                                                        </SelectTrigger>
+                                                    </FormControl>
+                                                    <SelectContent>
+                                                        {filteredSubcategories.map(s => <SelectItem key={s.id} value={s.id.toString()}>{s.name}</SelectItem>)}
+                                                    </SelectContent>
+                                                </Select>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                )}
+                                {subcategoryId && (
+                                    <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                                        {availableProductTypes.length > 0 && (
+                                            <FormField
+                                                control={form.control}
+                                                name="product_type"
+                                                render={({ field }) => (
+                                                    <FormItem className="animate-in fade-in slide-in-from-top-2 duration-300">
+                                                        <FormLabel>Loại sản phẩm</FormLabel>
+                                                        <Select onValueChange={(val) => { field.onChange(val); form.setValue('product_sub_type', '') }} value={field.value || undefined}>
+                                                            <FormControl>
+                                                                <SelectTrigger>
+                                                                    <SelectValue placeholder="Chọn loại sản phẩm" />
+                                                                </SelectTrigger>
+                                                            </FormControl>
+                                                            <SelectContent>
+                                                                {availableProductTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                                                            </SelectContent>
+                                                        </Select>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                        )}
+                                        {availableProductSubTypes.length > 0 && (
+                                            <FormField
+                                                control={form.control}
+                                                name="product_sub_type"
+                                                render={({ field }) => (
+                                                    <FormItem className="animate-in fade-in slide-in-from-top-2 duration-300">
+                                                        <FormLabel>Loại phụ</FormLabel>
+                                                        <Select onValueChange={field.onChange} value={field.value || undefined}>
+                                                            <FormControl>
+                                                                <SelectTrigger>
+                                                                    <SelectValue placeholder="Chọn loại phụ" />
+                                                                </SelectTrigger>
+                                                            </FormControl>
+                                                            <SelectContent>
+                                                                {availableProductSubTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                                                            </SelectContent>
+                                                        </Select>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                        )}
+                                        <FormField
+                                            control={form.control}
+                                            name="brand_id"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Thương hiệu</FormLabel>
+                                                    <Select onValueChange={field.onChange} value={field.value || undefined}>
+                                                        <FormControl>
+                                                            <SelectTrigger>
+                                                                <SelectValue placeholder="Không chọn" />
+                                                            </SelectTrigger>
+                                                        </FormControl>
+                                                        <SelectContent>
+                                                            {brands.map(b => <SelectItem key={b.id} value={b.id.toString()}>{b.name}</SelectItem>)}
+                                                        </SelectContent>
+                                                    </Select>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+
                     </div>
-                )}
-            </div>
 
-            {/* ── Section 5: Mô tả & Tính năng ───────────────────────── */}
-            <div className={sectionCls}>
-                <div className={sectionTitleCls}>
-                    <FileText className="h-4 w-4 text-[#2E7A96]" />
-                    Mô tả & Tính năng
-                </div>
-                <div>
-                    <label className={labelCls}>Mô tả chi tiết</label>
-                    <textarea
-                        className="w-full px-3 py-2 rounded-lg border border-[#E4EEF2] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors bg-white min-h-[120px] resize-y"
-                        value={form.description}
-                        onChange={e => set('description', e.target.value)}
-                        placeholder="Mô tả đầy đủ sản phẩm..."
-                        rows={5}
-                    />
-                </div>
-                <div>
-                    <label className={labelCls}>Tính năng (HTML)</label>
-                    <textarea
-                        className="w-full px-3 py-2 rounded-lg border border-[#E4EEF2] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors bg-white min-h-[100px] resize-y font-mono"
-                        value={form.features}
-                        onChange={e => set('features', e.target.value)}
-                        placeholder="<ul><li>Tính năng 1</li></ul>"
-                        rows={4}
-                    />
-                </div>
-            </div>
+                    {/* ── RIGHT COLUMN (TABS) ─────────────────────────────────── */}
+                    <div className="flex-1 min-w-0 w-full bg-transparent">
+                        <Tabs defaultValue="general" className="w-full">
+                            <TabsList variant="line" className="mb-6 flex w-fit justify-start gap-5 rounded-none bg-transparent h-auto p-0 border-none">
+                                <TabsTrigger value="general" className="px-1 py-1.5 font-medium text-stone-500 data-[state=active]:text-stone-900 data-[state=active]:shadow-none focus-visible:ring-0 focus-visible:outline-none border-none">
+                                    Thông tin chung
+                                </TabsTrigger>
+                                <TabsTrigger value="description" className="px-1 py-1.5 font-medium text-stone-500 data-[state=active]:text-stone-900 data-[state=active]:shadow-none focus-visible:ring-0 focus-visible:outline-none border-none">
+                                    Mô tả chi tiết
+                                </TabsTrigger>
+                                <TabsTrigger value="advance" className="px-1 py-1.5 font-medium text-stone-500 data-[state=active]:text-stone-900 data-[state=active]:shadow-none focus-visible:ring-0 focus-visible:outline-none border-none">
+                                    Nâng cao & Thông số
+                                </TabsTrigger>
+                                <TabsTrigger value="combo" className="px-1 py-1.5 font-medium text-stone-500 data-[state=active]:text-stone-900 data-[state=active]:shadow-none focus-visible:ring-0 focus-visible:outline-none border-none">
+                                    Combo & Liên kết
+                                </TabsTrigger>
+                            </TabsList>
 
-            {/* ── Section 6: SEO ──────────────────────────────────────── */}
-            <div className={sectionCls}>
-                <div className={sectionTitleCls}>
-                    <SearchIcon className="h-4 w-4 text-[#2E7A96]" />
-                    SEO
-                </div>
-                <div>
-                    <label className={labelCls}>SEO Title</label>
-                    <input
-                        className={inputCls}
-                        value={form.seo_title}
-                        onChange={e => set('seo_title', e.target.value)}
-                        placeholder="Tiêu đề SEO (tối đa 200 ký tự)"
-                        maxLength={200}
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">{form.seo_title.length}/200 ký tự</p>
-                </div>
-                <div>
-                    <label className={labelCls}>SEO Description</label>
-                    <textarea
-                        className="w-full px-3 py-2 rounded-lg border border-[#E4EEF2] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors bg-white min-h-[80px] resize-y"
-                        value={form.seo_description}
-                        onChange={e => set('seo_description', e.target.value)}
-                        placeholder="Mô tả SEO (tối đa 500 ký tự)"
-                        maxLength={500}
-                        rows={3}
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">{form.seo_description.length}/500 ký tự</p>
-                </div>
-            </div>
+                            {/* TAB 1: THÔNG TIN CHUNG */}
+                            <TabsContent value="general" className="space-y-6 outline-none">
+                                {/* General Information */}
+                                <Card className="shadow-none rounded-xl overflow-hidden p-0 gap-0">
+                                    <CardHeader className="bg-stone-100 border-b px-5 !py-3">
+                                        <CardTitle className="text-base font-semibold text-stone-900">Tổng quan sản phẩm
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="p-5 space-y-5">
+                                        <FormField
+                                            control={form.control}
+                                            name="name"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Tên sản phẩm *</FormLabel>
+                                                    <FormControl>
+                                                        <Input placeholder="VD: Bồn cầu 1 khối INAX AC-4005VN" {...field} onChange={(e) => { field.onChange(e); if(!isEdit || !form.getValues('slug')) { form.setValue('slug', generateSlug(e.target.value)) } }} />
+                                                    </FormControl>
+                                                    <FormDescription>Tên đầy đủ của sản phẩm, khuyến nghị chứa mã SKU để dễ tìm kiếm.</FormDescription>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <FormField
+                                                control={form.control}
+                                                name="sku"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Mã SKU *</FormLabel>
+                                                        <FormControl>
+                                                            <Input placeholder="VD: INAX-AC4005VN" {...field} />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                            <FormField
+                                                control={form.control}
+                                                name="slug"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Slug (URL) *</FormLabel>
+                                                        <FormControl>
+                                                            <Input placeholder="bon-cau-inax..." {...field} />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <FormField
+                                                control={form.control}
+                                                name="display_name"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Tên hiển thị (tuỳ chọn)</FormLabel>
+                                                        <FormControl>
+                                                            <Input placeholder="Tên rút gọn hiển thị trên card..." {...field} />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                            <FormField
+                                                control={form.control}
+                                                name="stock_status"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Tình trạng hàng</FormLabel>
+                                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                            <FormControl>
+                                                                <SelectTrigger>
+                                                                    <SelectValue placeholder="Chọn tình trạng" />
+                                                                </SelectTrigger>
+                                                            </FormControl>
+                                                            <SelectContent>
+                                                                <SelectItem value="in_stock">Còn hàng</SelectItem>
+                                                                <SelectItem value="out_of_stock">Hết hàng</SelectItem>
+                                                                <SelectItem value="preorder">Đặt trước</SelectItem>
+                                                            </SelectContent>
+                                                        </Select>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                        </div>
+                                        <div className="border-t border-[#E4EEF2] pt-4 mt-4 space-y-4">
+                                            <FormField
+                                                control={form.control}
+                                                name="is_active"
+                                                render={({ field }) => (
+                                                    <FormItem className="flex flex-row items-center justify-between">
+                                                        <div className="space-y-0.5">
+                                                            <FormLabel className="text-sm font-medium text-[#1A2B34] cursor-pointer" onClick={() => field.onChange(!field.value)}>Hiển thị (Active)</FormLabel>
+                                                            <FormDescription className="text-xs">Sản phẩm sẽ được hiển thị công khai trên website.</FormDescription>
+                                                        </div>
+                                                        <FormControl>
+                                                            <label className="relative inline-flex h-6 w-11 items-center rounded-full peer-focus-visible:outline-none cursor-pointer">
+                                                                <input type="checkbox" checked={field.value} onChange={e => field.onChange(e.target.checked)} className="peer sr-only" />
+                                                                <div className="w-11 h-6 bg-stone-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                                                            </label>
+                                                        </FormControl>
+                                                    </FormItem>
+                                                )}
+                                            />
+                                            
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+                                                {[
+                                                    { name: 'is_featured' as const, label: 'Nổi bật', desc: 'Hiển thị ở trang chủ' },
+                                                    { name: 'is_new' as const, label: 'Hàng mới', desc: 'Sản phẩm mới ra mắt' },
+                                                    { name: 'is_bestseller' as const, label: 'Bán chạy', desc: 'Badge bán chạy' },
+                                                ].map(({ name, label, desc }) => (
+                                                    <FormField
+                                                        key={name}
+                                                        control={form.control}
+                                                        name={name}
+                                                        render={({ field }) => (
+                                                            <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border border-[#E4EEF2] p-4 bg-[#F8FAFB]/50">
+                                                                <FormControl>
+                                                                    <Checkbox checked={field.value} onCheckedChange={field.onChange} className="mt-1" />
+                                                                </FormControl>
+                                                                <div className="space-y-1 leading-none">
+                                                                    <FormLabel className="text-sm font-medium cursor-pointer" onClick={() => field.onChange(!field.value)}>
+                                                                        {label}
+                                                                    </FormLabel>
+                                                                    <p className="text-[11px] text-muted-foreground">{desc}</p>
+                                                                </div>
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                ))}
+                                            </div>
 
-            {/* ── Section 7: Cài đặt ─────────────────────────────────── */}
-            <div className={sectionCls}>
-                <div className={sectionTitleCls}>
-                    <Settings className="h-4 w-4 text-[#2E7A96]" />
-                    Cài đặt & Hiển thị
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {[
-                        { key: 'is_active', label: 'Hiển thị', color: 'text-emerald-600' },
-                        { key: 'is_featured', label: 'Nổi bật', color: 'text-amber-600' },
-                        { key: 'is_new', label: 'Sản phẩm mới', color: 'text-blue-600' },
-                        { key: 'is_bestseller', label: 'Bán chạy', color: 'text-red-600' },
-                    ].map(({ key, label, color }) => (
-                        <label key={key} className="flex items-center gap-3 cursor-pointer p-3 rounded-lg border border-[#E4EEF2] hover:bg-[#F8FAFB] transition-colors">
-                            <input
-                                type="checkbox"
-                                checked={(form as any)[key]}
-                                onChange={e => set(key, e.target.checked)}
-                                className="h-4 w-4 rounded border-gray-300 text-primary"
-                            />
-                            <span className={`text-sm font-medium ${color}`}>{label}</span>
-                        </label>
-                    ))}
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-3 border-t border-[#E4EEF2]">
-                    <div>
-                        <label className={labelCls}>Thứ tự sắp xếp</label>
-                        <input
-                            type="number"
-                            className={inputCls}
-                            value={form.sort_order}
-                            onChange={e => set('sort_order', e.target.value)}
-                            min={0}
-                        />
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+                                                <FormField
+                                                    control={form.control}
+                                                    name="sort_order"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel>Thứ tự hiển thị</FormLabel>
+                                                            <FormControl>
+                                                                <Input type="number" min={0} {...field} />
+                                                            </FormControl>
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                                <FormField
+                                                    control={form.control}
+                                                    name="source_url"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel>Nguồn gốc URL</FormLabel>
+                                                            <FormControl>
+                                                                <Input placeholder="https://..." {...field} />
+                                                            </FormControl>
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                                <FormField
+                                                    control={form.control}
+                                                    name="hita_product_id"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel>ID Hita (Crawler)</FormLabel>
+                                                            <FormControl>
+                                                                <Input placeholder="Mã ID gốc" {...field} />
+                                                            </FormControl>
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+
+
+                                {/* Giá cả */}
+                                <Card className="shadow-none rounded-xl overflow-hidden p-0 gap-0">
+                                    <CardHeader className="bg-stone-100 border-b px-5 !py-3 flex flex-row items-center justify-between">
+                                        <CardTitle className="text-base font-semibold text-stone-900">Giá cả & Thanh toán
+                                        </CardTitle>
+                                        {discountPercent > 0 && (
+                                            <span className="text-xs font-bold text-white bg-red-500 px-2.5 py-1 rounded-full">
+                                                -{discountPercent}%
+                                            </span>
+                                        )}
+                                    </CardHeader>
+                                    <CardContent className="p-5 grid grid-cols-1 md:grid-cols-2 gap-5">
+                                        <FormField
+                                            control={form.control}
+                                            name="price"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Giá bán hiện tại (VNĐ)</FormLabel>
+                                                    <FormControl>
+                                                        <Input type="number" min={0} step={1000} {...field} />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
+                                            name="original_price"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Giá gốc (VNĐ) — Bị gạch ngang</FormLabel>
+                                                    <FormControl>
+                                                        <Input type="number" min={0} step={1000} {...field} />
+                                                    </FormControl>
+                                                    <FormDescription>Nhập giá cao hơn để hệ thống tính toán % giảm giá.</FormDescription>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
+                                            name="price_display"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Văn bản hiển thị thay thế</FormLabel>
+                                                    <FormControl>
+                                                        <Input placeholder="VD: Liên hệ báo giá" {...field} />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
+                                            name="warranty_months"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Thời gian bảo hành</FormLabel>
+                                                    <FormControl>
+                                                        <Input type="number" placeholder="Tính bằng tháng (VD: 12)" min={0} {...field} />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </CardContent>
+                                </Card>
+                            </TabsContent>
+
+                            {/* TAB: MÔ TẢ CHI TIẾT */}
+                            <TabsContent value="description" className="space-y-6 outline-none">
+                                <Card className="shadow-none rounded-xl overflow-hidden p-0 gap-0">
+                                    <CardHeader className="bg-stone-100 border-b px-5 !py-3">
+                                        <CardTitle className="text-base font-semibold text-stone-900">Mô tả & Bài viết
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="p-5 space-y-5">
+                                        <FormField
+                                            control={form.control}
+                                            name="description"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Bài viết / Mô tả</FormLabel>
+                                                    <FormControl>
+                                                        <RichTextEditor 
+                                                            value={field.value || ''} 
+                                                            onChange={field.onChange} 
+                                                            placeholder="Nhập nội dung bài viết..."
+                                                            folder="products"
+                                                        />
+                                                    </FormControl>
+                                                    <FormDescription>Mô tả đầy đủ để tăng tỉ lệ chốt sale và tối ưu SEO.</FormDescription>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
+                                            name="features"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Tính năng nổi bật</FormLabel>
+                                                    <FormControl>
+                                                        <RichTextEditor 
+                                                            value={field.value || ''} 
+                                                            onChange={field.onChange} 
+                                                            placeholder="Liệt kê các tính năng nổi bật..."
+                                                            folder="products"
+                                                        />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </CardContent>
+                                </Card>
+                            </TabsContent>
+
+                            {/* TAB 3: NÂNG CAO & THÔNG SỐ */}
+                            <TabsContent value="advance" className="space-y-6 outline-none">
+                                {/* Thông số Native */}
+                                <Card className="shadow-none rounded-xl overflow-hidden p-0 gap-0">
+                                    <CardHeader className="bg-stone-100 border-b px-5 !py-3">
+                                        <CardTitle className="text-base font-semibold text-stone-900">Phân loại phụ
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="p-5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                        <FormField
+                                            control={form.control}
+                                            name="origin_id"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Xuất xứ</FormLabel>
+                                                    <Select onValueChange={field.onChange} value={field.value || undefined}>
+                                                        <FormControl>
+                                                            <SelectTrigger><SelectValue placeholder="Không chọn" /></SelectTrigger>
+                                                        </FormControl>
+                                                        <SelectContent>{origins.map(o => <SelectItem key={o.id} value={o.id.toString()}>{o.name}</SelectItem>)}</SelectContent>
+                                                    </Select>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
+                                            name="color_id"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Màu sắc</FormLabel>
+                                                    <div className="relative">
+                                                        {field.value && (() => {
+                                                            const sel = colors.find(c => c.id === Number(field.value))
+                                                            return sel ? <span className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border border-black/10 shadow-sm z-10" style={{ backgroundColor: sel.hex_code || '#ccc' }} /> : null
+                                                        })()}
+                                                        <Select onValueChange={field.onChange} value={field.value || undefined}>
+                                                            <FormControl>
+                                                                <SelectTrigger className={field.value ? 'pl-9' : ''}>
+                                                                    <SelectValue placeholder="Không chọn" />
+                                                                </SelectTrigger>
+                                                            </FormControl>
+                                                            <SelectContent>{colors.map(c => <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>)}</SelectContent>
+                                                        </Select>
+                                                    </div>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
+                                            name="material_id"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Chất liệu</FormLabel>
+                                                    <Select onValueChange={field.onChange} value={field.value || undefined}>
+                                                        <FormControl>
+                                                            <SelectTrigger><SelectValue placeholder="Không chọn" /></SelectTrigger>
+                                                        </FormControl>
+                                                        <SelectContent>{materials.map(m => <SelectItem key={m.id} value={m.id.toString()}>{m.name}</SelectItem>)}</SelectContent>
+                                                    </Select>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+
+                                    </CardContent>
+                                </Card>
+
+                                {/* Dynamic Specs (Not part of strict form schema) */}
+                                <Card className="shadow-none rounded-xl overflow-hidden p-0 gap-0">
+                                    <CardHeader className="bg-stone-100 border-b px-5 !py-3">
+                                        <CardTitle className="text-base font-semibold text-stone-900">
+                                            Thông số kỹ thuật mở rộng
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="p-5">
+                                        {relevantFilters.length === 0 ? (
+                                            <p className="text-sm text-muted-foreground bg-stone-50 p-4 rounded-lg border border-stone-100 text-center">
+                                                Vui lòng chọn <strong>Danh mục chính</strong> ở bên trái để hiển thị các thông số phù hợp.
+                                            </p>
+                                        ) : (
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                                {relevantFilters.map(filter => (
+                                                    <div key={filter.id} className="space-y-2">
+                                                        <Label>{filter.filter_label}</Label>
+                                                        {filter.filter_type === 'select' || filter.filter_type === 'radio' ? (
+                                                            <Select value={specs[filter.filter_key] || undefined} onValueChange={v => setSpecs(prev => ({ ...prev, [filter.filter_key]: v }))}>
+                                                                <SelectTrigger>
+                                                                    <SelectValue placeholder="Không chọn" />
+                                                                </SelectTrigger>
+                                                                <SelectContent>
+                                                                    {Array.isArray(filter.options) && filter.options.map((opt: any) => (
+                                                                        <SelectItem key={String(opt)} value={String(opt)}>{String(opt)}</SelectItem>
+                                                                    ))}
+                                                                </SelectContent>
+                                                            </Select>
+                                                        ) : (
+                                                            <Input value={specs[filter.filter_key] || ''} onChange={e => setSpecs(prev => ({ ...prev, [filter.filter_key]: e.target.value }))} placeholder={`Nhập ${filter.filter_label.toLowerCase()}...`} />
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </CardContent>
+                                </Card>
+
+                                {/* SEO */}
+                                <Card className="shadow-none rounded-xl overflow-hidden p-0 gap-0">
+                                    <CardHeader className="bg-stone-100 border-b px-5 !py-3">
+                                        <CardTitle className="text-base font-semibold text-stone-900">Tối ưu hoá SEO
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="p-5 space-y-4">
+                                        <FormField
+                                            control={form.control}
+                                            name="seo_title"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>SEO Title</FormLabel>
+                                                    <FormControl>
+                                                        <Input placeholder="Tiêu đề SEO (tối đa 200 ký tự)" maxLength={200} {...field} />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
+                                            name="seo_description"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>SEO Description</FormLabel>
+                                                    <FormControl>
+                                                        <Textarea className="min-h-[80px] resize-y" placeholder="Mô tả SEO (tối đa 500 ký tự)" maxLength={500} {...field} />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </CardContent>
+                                </Card>
+
+
+                            </TabsContent>
+
+                            {/* TAB: COMBO & LIÊN KẾT */}
+                            <TabsContent value="combo" className="space-y-6 outline-none">
+                                <Card className="shadow-none rounded-xl overflow-hidden p-0 gap-0">
+                                    <CardHeader className="bg-stone-100 border-b px-5 !py-3 flex flex-row items-center justify-between">
+                                        <CardTitle className="text-base font-semibold text-stone-900">
+                                            Sản phẩm trong Combo / Tương thích
+                                        </CardTitle>
+                                        <QuickCreateProductModal 
+                                            categories={categories} 
+                                            onSuccess={async (newProduct) => {
+                                                if (isEdit && product.id) {
+                                                    const res = await addProductRelationship(product.id, newProduct.id, newProduct.sku, 'component')
+                                                    if (res.message) toast.error(res.message)
+                                                    else toast.success('Đã thêm sản phẩm vào Combo')
+                                                } else {
+                                                    toast.info('Sản phẩm đã được tạo, nhưng Combo chỉ hoạt động sau khi bạn LƯU sản phẩm chính này.')
+                                                }
+                                            }}
+                                        />
+                                    </CardHeader>
+                                    <CardContent className="p-5 space-y-5">
+                                        {isEdit ? (
+                                            <>
+                                                <div className="space-y-2">
+                                                    <Label>Thêm sản phẩm có sẵn</Label>
+                                                    <ProductRelationshipPicker 
+                                                        excludeId={product.id} 
+                                                        onSelect={async (child) => {
+                                                            const res = await addProductRelationship(product.id, child.id, child.sku, 'component')
+                                                            if (res.message) toast.error(res.message)
+                                                            else toast.success('Đã thêm sản phẩm vào Combo')
+                                                        }} 
+                                                    />
+                                                </div>
+
+                                                <div className="space-y-3">
+                                                    <Label>Danh sách sản phẩm liên kết</Label>
+                                                    {(product as any).product_relationships?.length > 0 ? (
+                                                        <div className="divide-y border rounded-lg overflow-hidden bg-white">
+                                                            {(product as any).product_relationships.map((rel: any) => (
+                                                                <div key={rel.id} className="flex items-center justify-between p-3 hover:bg-stone-50">
+                                                                    <div className="flex items-center gap-3">
+                                                                        <div className="h-10 w-10 relative rounded bg-stone-100 border shrink-0">
+                                                                            {rel.child?.image_main_url ? (
+                                                                                <Image src={rel.child.image_main_url} alt={rel.child.name} fill className="object-cover" />
+                                                                            ) : (
+                                                                                <div className="w-full h-full flex items-center justify-center text-[10px] text-stone-400">Img</div>
+                                                                            )}
+                                                                        </div>
+                                                                        <div>
+                                                                            <p className="text-sm font-medium">{rel.child?.name}</p>
+                                                                            <p className="text-xs text-muted-foreground">{rel.child_sku}</p>
+                                                                        </div>
+                                                                    </div>
+                                                                    <Button 
+                                                                        variant="ghost" 
+                                                                        size="icon" 
+                                                                        className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                                                                        onClick={async () => {
+                                                                            if (confirm('Bỏ liên kết sản phẩm này?')) {
+                                                                                const res = await removeProductRelationship(rel.id, product.id)
+                                                                                if (res.message) toast.error(res.message)
+                                                                                else toast.success('Đã bỏ liên kết')
+                                                                            }
+                                                                        }}
+                                                                    >
+                                                                        <Trash2 className="h-4 w-4" />
+                                                                    </Button>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    ) : (
+                                                        <p className="text-sm text-muted-foreground text-center py-6 border rounded-lg bg-stone-50 border-dashed">
+                                                            Chưa có sản phẩm liên kết nào.
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <p className="text-sm text-muted-foreground bg-amber-50 text-amber-800 p-4 rounded-lg border border-amber-200">
+                                                Tính năng Combo chỉ khả dụng khi bạn <strong>chỉnh sửa</strong> sản phẩm. Vui lòng thêm sản phẩm này trước, sau đó vào lại để gắn các sản phẩm con.
+                                            </p>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                            </TabsContent>
+                        </Tabs>
                     </div>
-                    <div>
-                        <label className={labelCls}>Nguồn gốc URL</label>
-                        <input
-                            className={inputCls}
-                            value={form.source_url}
-                            onChange={e => set('source_url', e.target.value)}
-                            placeholder="https://..."
-                        />
-                    </div>
-                    <div>
-                        <label className={labelCls}>Hita Product ID</label>
-                        <input
-                            className={inputCls}
-                            value={form.hita_product_id}
-                            onChange={e => set('hita_product_id', e.target.value)}
-                            placeholder="ID từ hệ thống Hita"
-                        />
-                    </div>
                 </div>
-            </div>
-
-            {/* ── Action Buttons ────────────────────────────────────── */}
-            <div className="flex items-center gap-3 justify-between sticky bottom-0 bg-[#F8FAFB]/95 backdrop-blur-sm py-4 px-1 -mx-1 border-t border-[#E4EEF2]">
-                <Link href="/admin/products">
-                    <Button type="button" variant="outline" className="gap-2">
-                        <ArrowLeft className="h-4 w-4" />
-                        Quay lại
-                    </Button>
-                </Link>
-                <Button type="submit" disabled={isPending} className="gap-2 min-w-[160px]">
-                    {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                    {isEdit ? 'Cập nhật sản phẩm' : 'Thêm sản phẩm'}
-                </Button>
-            </div>
-        </form>
+            </form>
+        </Form>
     )
 }

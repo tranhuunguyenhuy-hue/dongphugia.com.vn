@@ -17,7 +17,7 @@ export function RevenueChart({ initialData }: RevenueChartProps) {
     const [period, setPeriod] = useState<RevenuePeriod>('month')
     const [data, setData] = useState<RevenueDataPoint[]>(initialData)
     const [isPending, startTransition] = useTransition()
-    const [activeIndex, setActiveIndex] = useState<number | null>(null)
+    const [activeIndex, setActiveIndex] = useState<number | string | null>(null)
 
     useEffect(() => {
         if (period === 'month') {
@@ -93,7 +93,7 @@ export function RevenueChart({ initialData }: RevenueChartProps) {
                                     cursor={{ fill: 'transparent' }}
                                     contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.05)', fontWeight: 500 }}
                                     labelFormatter={(label) => formatDate(label as string)}
-                                    formatter={(value: number) => [formatPrice(value), 'Doanh thu']}
+                                    formatter={(value: any) => [formatPrice(Number(value) || 0), 'Doanh thu']}
                                 />
                                 <Bar
                                     dataKey="revenue"

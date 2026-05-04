@@ -1,5 +1,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import { Package, ChevronRight } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
@@ -47,23 +49,14 @@ export function ProductComponentsSection({ components, basePath = '/thiet-bi-ve-
   if (resolved.length === 0) return null;
 
   return (
-    <section className="mt-16 pt-8 border-t border-stone-100">
+    <div className="mt-16 border rounded-xl p-5 bg-white shadow-sm border-stone-200">
       {/* Section Header */}
-      <div className="flex items-start justify-between mb-6">
-        <div>
-          <h2 className="text-xl font-bold text-stone-900 tracking-tight">
-            Linh kiện trong bộ
-          </h2>
-          <p className="text-sm text-stone-500 mt-1">
-            Bộ sản phẩm này bao gồm {resolved.length} linh kiện
-          </p>
-        </div>
-        <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">
-          <svg className="h-3 w-3" viewBox="0 0 16 16" fill="currentColor">
-            <path fillRule="evenodd" d="M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5z" clipRule="evenodd" />
-          </svg>
-          Chính hãng
-        </span>
+      <div className="flex items-center gap-2 mb-4">
+        <Package className="w-5 h-5 text-stone-900" />
+        <h3 className="text-lg font-semibold text-stone-900">Trọn bộ sản phẩm bao gồm</h3>
+        <Badge variant="secondary" className="bg-stone-100 text-stone-600 hover:bg-stone-100 font-medium">
+          {resolved.length} món
+        </Badge>
       </div>
 
       {/* Component Cards */}
@@ -77,15 +70,12 @@ export function ProductComponentsSection({ components, basePath = '/thiet-bi-ve-
             <Link
               key={child_sku}
               href={href}
-              className="group flex items-center gap-3 p-3.5 rounded-xl border border-stone-200 bg-white hover:border-[#2E7A96]/30 hover:shadow-sm transition-all duration-200"
+              target="_blank"
+              className="group flex items-center gap-4 p-3 rounded-xl border border-stone-100 bg-white hover:border-[#2E7A96]/30 hover:bg-[#2E7A96]/[0.02] transition-all duration-200"
             >
-              {/* Số thứ tự */}
-              <div className="flex-shrink-0 w-7 h-7 rounded-full bg-stone-100 flex items-center justify-center text-[11px] font-bold text-stone-500">
-                {sort_order + 1}
-              </div>
 
               {/* Ảnh nhỏ */}
-              <div className="flex-shrink-0 w-14 h-14 rounded-lg bg-stone-50 overflow-hidden border border-stone-100">
+              <div className="flex-shrink-0 w-16 h-16 rounded-lg bg-stone-50 overflow-hidden border border-stone-100 relative">
                 {child.image_main_url ? (
                   child.image_main_url.includes('vietceramics.com') ? (
                     <img
@@ -97,9 +87,8 @@ export function ProductComponentsSection({ components, basePath = '/thiet-bi-ve-
                     <Image
                       src={child.image_main_url}
                       alt={displayName}
-                      width={56}
-                      height={56}
-                      className="object-cover mix-blend-multiply"
+                      fill
+                      className="object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-300 p-1"
                       unoptimized={false}
                     />
                   )
@@ -114,10 +103,14 @@ export function ProductComponentsSection({ components, basePath = '/thiet-bi-ve-
 
               {/* Info */}
               <div className="flex-1 min-w-0">
-                <p className="text-[12.5px] font-medium text-stone-800 group-hover:text-[#2E7A96] leading-snug line-clamp-2 transition-colors">
+                <p className="text-[10px] font-semibold text-[#2E7A96] mb-1 uppercase tracking-wider">
+                  {/* Có thể thay bằng child.component_type từ DB nếu có */}
+                  Linh kiện
+                </p>
+                <p className="text-[13px] font-medium text-stone-800 group-hover:text-[#2E7A96] leading-snug line-clamp-2 transition-colors">
                   {displayName}
                 </p>
-                <p className="text-[11px] text-stone-400 mt-0.5 font-mono">{child.sku}</p>
+                <p className="text-[11px] text-stone-400 mt-0.5 font-mono">SKU: {child.sku}</p>
                 {child.price ? (
                   <p className="text-[12px] font-semibold text-[#2E7A96] mt-1">{formatPrice(child.price)}</p>
                 ) : child.price_display ? (
@@ -126,9 +119,7 @@ export function ProductComponentsSection({ components, basePath = '/thiet-bi-ve-
               </div>
 
               {/* Arrow */}
-              <svg className="w-4 h-4 text-stone-300 group-hover:text-[#2E7A96] transition-colors flex-shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-              </svg>
+              <ChevronRight className="w-4 h-4 text-stone-300 group-hover:text-[#2E7A96] transition-colors flex-shrink-0" />
             </Link>
           );
         })}
@@ -141,6 +132,6 @@ export function ProductComponentsSection({ components, basePath = '/thiet-bi-ve-
         </svg>
         Bạn có thể mua riêng từng linh kiện hoặc mua nguyên bộ tại Đông Phú Gia.
       </p>
-    </section>
+    </div>
   );
 }

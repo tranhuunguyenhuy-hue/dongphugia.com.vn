@@ -197,7 +197,7 @@ export function MobileMenuSheet() {
 
                     {/* ── Footer CTA ── */}
                     <div className="p-5 border-t border-border shrink-0">
-                        <Button asChild variant="cta" className="w-full h-12 gap-2 rounded-xl">
+                        <Button asChild variant="default" className="w-full h-12 gap-2 rounded-xl">
                             <Link
                                 href="/lien-he"
                                 onClick={handleNavigate}

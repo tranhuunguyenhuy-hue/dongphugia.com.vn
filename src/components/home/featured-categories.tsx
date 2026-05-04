@@ -49,7 +49,7 @@ export async function FeaturedCategories() {
             original_price: p.original_price != null ? Number(p.original_price) : null,
             price_display: p.price_display,
             image_main_url: p.image_main_url,
-            image_hover_url: p.image_hover_url,
+
             is_new: p.is_new,
             is_bestseller: p.is_bestseller,
             stock_status: p.stock_status,

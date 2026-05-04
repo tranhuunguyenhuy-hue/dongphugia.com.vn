@@ -100,8 +100,14 @@ export default async function AdminDashboardPage() {
                                             <TableCell className="py-2 px-4 text-[13px] font-medium text-slate-700">
                                                 {formatPrice(Number(product.price) || 0)}
                                             </TableCell>
-                                            <TableCell className="py-2 px-4 text-[13px] text-right font-medium text-slate-600">
-                                                {product.stock_quantity || 0}
+                                            <TableCell className="py-2 px-4 text-[13px] text-right font-medium">
+                                                {product.stock_status === 'in_stock' ? (
+                                                    <span className="text-emerald-600">Còn hàng</span>
+                                                ) : product.stock_status === 'out_of_stock' ? (
+                                                    <span className="text-red-600">Hết hàng</span>
+                                                ) : (
+                                                    <span className="text-amber-600">Đặt trước</span>
+                                                )}
                                             </TableCell>
                                             <TableCell className="py-2 px-4 text-right text-slate-400 hover:text-slate-600 cursor-pointer">
                                                 <svg className="w-4 h-4 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" /></svg>
