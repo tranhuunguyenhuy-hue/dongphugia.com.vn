@@ -68,7 +68,7 @@ export function ProjectSection({ projects }: ProjectSectionProps) {
                             <div className="group relative aspect-[4/5] rounded-sm overflow-hidden bg-neutral-200 cursor-pointer">
                                 {/* Image */}
                                 <Image
-                                    src={project.thumbnail_url || '/images/hero-banner.jpg'}
+                                    src={project.thumbnail_url || '/images/assets-v2/hero-banner.png'}
                                     alt={project.title}
                                     fill
                                     className="object-cover transition-transform duration-700 group-hover:scale-105"

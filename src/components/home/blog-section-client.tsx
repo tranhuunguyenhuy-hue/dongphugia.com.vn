@@ -66,7 +66,7 @@ export function BlogSectionClient({ posts }: { posts: any[] }) {
                             <Link href={`/blog/${post.blog_categories?.slug}/${post.slug}`} className="group flex flex-col gap-4">
                                 <div className="relative aspect-[4/3] rounded-sm overflow-hidden bg-neutral-200">
                                     <Image
-                                        src={post.thumbnail_url || '/images/hero-banner.jpg'}
+                                        src={post.thumbnail_url || '/images/assets-v2/hero-banner.png'}
                                         alt={post.title}
                                         fill
                                         className="object-cover transition-transform duration-500 group-hover:scale-105"
