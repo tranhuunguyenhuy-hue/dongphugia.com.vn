@@ -65,3 +65,26 @@ export const getMaterials = unstable_cache(
     ['materials'],
     { revalidate: 86400, tags: ['materials'] }
 )
+
+// Filter Definitions - For dynamic product specs
+export const getFilterDefinitions = unstable_cache(
+    async () => prisma.filter_definitions.findMany({
+        where: { is_active: true },
+        orderBy: { sort_order: 'asc' },
+    }),
+    ['filter_definitions'],
+    { revalidate: 3600, tags: ['filter_definitions'] }
+)
+
+// Product Types - Unique combinations of subcategory_id, product_type, product_sub_type
+export const getProductTypes = unstable_cache(
+    async () => prisma.products.findMany({
+        where: { 
+            product_type: { not: null, notIn: [''] }
+        },
+        select: { subcategory_id: true, product_type: true, product_sub_type: true },
+        distinct: ['subcategory_id', 'product_type', 'product_sub_type'],
+    }),
+    ['product_types'],
+    { revalidate: 3600, tags: ['product_types', 'products'] }
+)

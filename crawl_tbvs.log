@@ -1,0 +1,445 @@
+[2026-05-04T20:54:24.143Z] === DATA PIPELINE INITIATED ===
+[2026-05-04T20:54:24.427Z] Phase 1: Finding missing SKUs in product_relationships...
+[2026-05-04T20:54:25.133Z] Found 219 missing SKUs out of 225 total required SKUs.
+[2026-05-04T20:54:25.133Z] Starting crawl for 219 missing SKUs...
+[2026-05-04T20:54:25.133Z] [1/219] Crawling missing SKU: TAF400H
+[2026-05-04T20:54:27.477Z]    [!] No search results found for SKU: TAF400H
+[2026-05-04T20:54:27.480Z] [2/219] Crawling missing SKU: TAF512H
+[2026-05-04T20:54:29.644Z]    [!] No search results found for SKU: TAF512H
+[2026-05-04T20:54:29.646Z] [3/219] Crawling missing SKU: CD1356
+[2026-05-04T20:54:31.825Z]    [!] No search results found for SKU: CD1356
+[2026-05-04T20:54:31.826Z] [4/219] Crawling missing SKU: CD1363
+[2026-05-04T20:54:33.985Z]    [!] No search results found for SKU: CD1363
+[2026-05-04T20:54:33.987Z] [5/219] Crawling missing SKU: CD1374
+[2026-05-04T20:54:36.167Z]    [!] No search results found for SKU: CD1374
+[2026-05-04T20:54:36.170Z] [6/219] Crawling missing SKU: CD1394
+[2026-05-04T20:54:38.338Z]    [!] No search results found for SKU: CD1394
+[2026-05-04T20:54:38.339Z] [7/219] Crawling missing SKU: CD1395
+[2026-05-04T20:54:40.498Z]    [!] No search results found for SKU: CD1395
+[2026-05-04T20:54:40.499Z] [8/219] Crawling missing SKU: AC-1017R
+[2026-05-04T20:54:42.642Z]    [!] No search results found for SKU: AC-1017R
+[2026-05-04T20:54:42.644Z] [9/219] Crawling missing SKU: AC-1032
+[2026-05-04T20:54:44.793Z]    [!] No search results found for SKU: AC-1032
+[2026-05-04T20:54:44.795Z] [10/219] Crawling missing SKU: AC-2700
+[2026-05-04T20:54:46.938Z]    [!] No search results found for SKU: AC-2700
+[2026-05-04T20:54:46.939Z] [11/219] Crawling missing SKU: AC-4005
+[2026-05-04T20:54:49.103Z]    [!] No search results found for SKU: AC-4005
+[2026-05-04T20:54:49.104Z] [12/219] Crawling missing SKU: AC-504A
+[2026-05-04T20:54:51.247Z]    [!] No search results found for SKU: AC-504A
+[2026-05-04T20:54:51.248Z] [13/219] Crawling missing SKU: AC-602
+[2026-05-04T20:54:53.394Z]    [!] No search results found for SKU: AC-602
+[2026-05-04T20:54:53.395Z] [14/219] Crawling missing SKU: AC-700A
+[2026-05-04T20:54:55.541Z]    [!] No search results found for SKU: AC-700A
+[2026-05-04T20:54:55.543Z] [15/219] Crawling missing SKU: AC-832
+[2026-05-04T20:54:57.690Z]    [!] No search results found for SKU: AC-832
+[2026-05-04T20:54:57.692Z] [16/219] Crawling missing SKU: AC-900R
+[2026-05-04T20:54:59.848Z]    [!] No search results found for SKU: AC-900R
+[2026-05-04T20:54:59.849Z] [17/219] Crawling missing SKU: AC-902
+[2026-05-04T20:55:01.999Z]    [!] No search results found for SKU: AC-902
+[2026-05-04T20:55:02.000Z] [18/219] Crawling missing SKU: AC-959A
+[2026-05-04T20:55:04.151Z]    [!] No search results found for SKU: AC-959A
+[2026-05-04T20:55:04.152Z] [19/219] Crawling missing SKU: C-504A
+[2026-05-04T20:55:06.300Z]    [!] No search results found for SKU: C-504A
+[2026-05-04T20:55:06.301Z] [20/219] Crawling missing SKU: C1353
+[2026-05-04T20:55:08.440Z]    [!] No search results found for SKU: C1353
+[2026-05-04T20:55:08.442Z] [21/219] Crawling missing SKU: CS300
+[2026-05-04T20:55:10.608Z]    [!] No search results found for SKU: CS300
+[2026-05-04T20:55:10.609Z] [22/219] Crawling missing SKU: TC385VS
+[2026-05-04T20:55:12.762Z]    [!] No search results found for SKU: TC385VS
+[2026-05-04T20:55:12.763Z] [23/219] Crawling missing SKU: CS320D
+[2026-05-04T20:55:14.899Z]    [!] No search results found for SKU: CS320D
+[2026-05-04T20:55:14.900Z] [24/219] Crawling missing SKU: CS325D
+[2026-05-04T20:55:17.043Z]    [!] No search results found for SKU: CS325D
+[2026-05-04T20:55:17.044Z] [25/219] Crawling missing SKU: CS735
+[2026-05-04T20:55:19.187Z]    [!] No search results found for SKU: CS735
+[2026-05-04T20:55:19.188Z] [26/219] Crawling missing SKU: TCW07S
+[2026-05-04T20:55:21.332Z]    [!] No search results found for SKU: TCW07S
+[2026-05-04T20:55:21.333Z] [27/219] Crawling missing SKU: TCW1211A
+[2026-05-04T20:55:23.477Z]    [!] No search results found for SKU: TCW1211A
+[2026-05-04T20:55:23.478Z] [28/219] Crawling missing SKU: AC-1008R
+[2026-05-04T20:55:25.631Z]    [!] No search results found for SKU: AC-1008R
+[2026-05-04T20:55:25.632Z] [29/219] Crawling missing SKU: AC-1052
+[2026-05-04T20:55:27.792Z]    [!] No search results found for SKU: AC-1052
+[2026-05-04T20:55:27.793Z] [30/219] Crawling missing SKU: C1391
+[2026-05-04T20:55:29.936Z]    [!] No search results found for SKU: C1391
+[2026-05-04T20:55:29.937Z] [31/219] Crawling missing SKU: C1391F
+[2026-05-04T20:55:32.078Z]    [!] No search results found for SKU: C1391F
+[2026-05-04T20:55:32.079Z] [32/219] Crawling missing SKU: CS767
+[2026-05-04T20:55:34.221Z]    [!] No search results found for SKU: CS767
+[2026-05-04T20:55:34.222Z] [33/219] Crawling missing SKU: TCF4911EZ
+[2026-05-04T20:55:36.353Z]    [!] No search results found for SKU: TCF4911EZ
+[2026-05-04T20:55:36.354Z] [34/219] Crawling missing SKU: TC393VS
+[2026-05-04T20:55:38.510Z]    [!] No search results found for SKU: TC393VS
+[2026-05-04T20:55:38.512Z] [35/219] Crawling missing SKU: TC600VS
+[2026-05-04T20:55:40.672Z]    [!] No search results found for SKU: TC600VS
+[2026-05-04T20:55:40.675Z] [36/219] Crawling missing SKU: TCF4911Z
+[2026-05-04T20:55:42.844Z]    [!] No search results found for SKU: TCF4911Z
+[2026-05-04T20:55:42.845Z] [37/219] Crawling missing SKU: CS769
+[2026-05-04T20:55:45.016Z]    [!] No search results found for SKU: CS769
+[2026-05-04T20:55:45.017Z] [38/219] Crawling missing SKU: CS769D
+[2026-05-04T20:55:47.162Z]    [!] No search results found for SKU: CS769D
+[2026-05-04T20:55:47.163Z] [39/219] Crawling missing SKU: CS838
+[2026-05-04T20:55:49.347Z]    [!] No search results found for SKU: CS838
+[2026-05-04T20:55:49.349Z] [40/219] Crawling missing SKU: CS945D
+[2026-05-04T20:55:51.522Z]    [!] No search results found for SKU: CS945D
+[2026-05-04T20:55:51.524Z] [41/219] Crawling missing SKU: CS948
+[2026-05-04T20:55:53.687Z]    [!] No search results found for SKU: CS948
+[2026-05-04T20:55:53.689Z] [42/219] Crawling missing SKU: CS986
+[2026-05-04T20:55:55.855Z]    [!] No search results found for SKU: CS986
+[2026-05-04T20:55:55.856Z] [43/219] Crawling missing SKU: MS636
+[2026-05-04T20:55:58.022Z]    [!] No search results found for SKU: MS636
+[2026-05-04T20:55:58.023Z] [44/219] Crawling missing SKU: MS855
+[2026-05-04T20:56:00.190Z]    [!] No search results found for SKU: MS855
+[2026-05-04T20:56:00.191Z] [45/219] Crawling missing SKU: AC-22P
+[2026-05-04T20:56:02.363Z]    [!] No search results found for SKU: AC-22P
+[2026-05-04T20:56:02.363Z] [46/219] Crawling missing SKU: AC-23P
+[2026-05-04T20:56:04.513Z]    [!] No search results found for SKU: AC-23P
+[2026-05-04T20:56:04.514Z] [47/219] Crawling missing SKU: CW-S32VN-1/BW1
+[2026-05-04T20:56:06.678Z]    [!] No search results found for SKU: CW-S32VN-1/BW1
+[2026-05-04T20:56:06.678Z] [48/219] Crawling missing SKU: AC-952
+[2026-05-04T20:56:08.834Z]    [!] No search results found for SKU: AC-952
+[2026-05-04T20:56:08.835Z] [49/219] Crawling missing SKU: C1364F
+[2026-05-04T20:56:10.984Z]    [!] No search results found for SKU: C1364F
+[2026-05-04T20:56:10.986Z] [50/219] Crawling missing SKU: TAF710H
+[2026-05-04T20:56:13.146Z]    [!] No search results found for SKU: TAF710H
+[2026-05-04T20:56:13.147Z] [51/219] Crawling missing SKU: BF521A
+[2026-05-04T20:56:15.298Z]    [!] No search results found for SKU: BF521A
+[2026-05-04T20:56:15.299Z] [52/219] Crawling missing SKU: SC198717(F)
+[2026-05-04T20:56:17.417Z]    [!] No search results found for SKU: SC198717(F)
+[2026-05-04T20:56:17.418Z] [53/219] Crawling missing SKU: 2268
+[2026-05-04T20:56:19.573Z]    [!] No search results found for SKU: 2268
+[2026-05-04T20:56:19.574Z] [54/219] Crawling missing SKU: TS3420
+[2026-05-04T20:56:21.716Z]    [!] No search results found for SKU: TS3420
+[2026-05-04T20:56:21.719Z] [55/219] Crawling missing SKU: 16273
+[2026-05-04T20:56:23.894Z]    [!] No search results found for SKU: 16273
+[2026-05-04T20:56:23.895Z] [56/219] Crawling missing SKU: 7040MCLKBL
+[2026-05-04T20:56:26.046Z]    [!] No search results found for SKU: 7040MCLKBL
+[2026-05-04T20:56:26.047Z] [57/219] Crawling missing SKU: AT-002MX(AC)
+[2026-05-04T20:56:28.249Z]    [!] No search results found for SKU: AT-002MX(AC)
+[2026-05-04T20:56:28.250Z] [58/219] Crawling missing SKU: T2285(T2284)
+[2026-05-04T20:56:30.391Z]    [!] No search results found for SKU: T2285(T2284)
+[2026-05-04T20:56:30.392Z] [59/219] Crawling missing SKU: 130394
+[2026-05-04T20:56:32.547Z]    [!] No search results found for SKU: 130394
+[2026-05-04T20:56:32.548Z] [60/219] Crawling missing SKU: T68142
+[2026-05-04T20:56:34.691Z]    [!] No search results found for SKU: T68142
+[2026-05-04T20:56:34.692Z] [61/219] Crawling missing SKU: T63948
+[2026-05-04T20:56:36.849Z]    [!] No search results found for SKU: T63948
+[2026-05-04T20:56:36.849Z] [62/219] Crawling missing SKU: SA340
+[2026-05-04T20:56:38.988Z]    [!] No search results found for SKU: SA340
+[2026-05-04T20:56:38.989Z] [63/219] Crawling missing SKU: S3384
+[2026-05-04T20:56:41.140Z]    [!] No search results found for SKU: S3384
+[2026-05-04T20:56:41.140Z] [64/219] Crawling missing SKU: A501(4)
+[2026-05-04T20:56:43.297Z]    [!] No search results found for SKU: A501(4)
+[2026-05-04T20:56:43.297Z] [65/219] Crawling missing SKU: S6310
+[2026-05-04T20:56:45.441Z]    [!] No search results found for SKU: S6310
+[2026-05-04T20:56:45.442Z] [66/219] Crawling missing SKU: 006059000
+[2026-05-04T20:56:47.584Z]    [!] No search results found for SKU: 006059000
+[2026-05-04T20:56:47.585Z] [67/219] Crawling missing SKU: 2173010001
+[2026-05-04T20:56:49.733Z]    [!] No search results found for SKU: 2173010001
+[2026-05-04T20:56:49.734Z] [68/219] Crawling missing SKU: 0014160000
+[2026-05-04T20:56:51.894Z]    [!] No search results found for SKU: 0014160000
+[2026-05-04T20:56:51.895Z] [69/219] Crawling missing SKU: 2181090000
+[2026-05-04T20:56:54.037Z]    [!] No search results found for SKU: 2181090000
+[2026-05-04T20:56:54.037Z] [70/219] Crawling missing SKU: 0023090000
+[2026-05-04T20:56:56.181Z]    [!] No search results found for SKU: 0023090000
+[2026-05-04T20:56:56.181Z] [71/219] Crawling missing SKU: 0064590000
+[2026-05-04T20:56:58.353Z]    [!] No search results found for SKU: 0064590000
+[2026-05-04T20:56:58.354Z] [72/219] Crawling missing SKU: AT200-G2
+[2026-05-04T20:57:00.486Z]    [!] No search results found for SKU: AT200-G2
+[2026-05-04T20:57:00.487Z] [73/219] Crawling missing SKU: AT2000
+[2026-05-04T20:57:02.625Z]    [!] No search results found for SKU: AT2000
+[2026-05-04T20:57:02.626Z] [74/219] Crawling missing SKU: AT2003-A
+[2026-05-04T20:57:04.782Z]    [!] No search results found for SKU: AT2003-A
+[2026-05-04T20:57:04.784Z] [75/219] Crawling missing SKU: S122
+[2026-05-04T20:57:06.945Z]    [!] No search results found for SKU: S122
+[2026-05-04T20:57:06.946Z] [76/219] Crawling missing SKU: AT12102
+[2026-05-04T20:57:09.085Z]    [!] No search results found for SKU: AT12102
+[2026-05-04T20:57:09.086Z] [77/219] Crawling missing SKU: 2232A
+[2026-05-04T20:57:11.239Z]    [!] No search results found for SKU: 2232A
+[2026-05-04T20:57:11.240Z] [78/219] Crawling missing SKU: 64132
+[2026-05-04T20:57:13.397Z]    [!] No search results found for SKU: 64132
+[2026-05-04T20:57:13.398Z] [79/219] Crawling missing SKU: 143572
+[2026-05-04T20:57:15.548Z]    [!] No search results found for SKU: 143572
+[2026-05-04T20:57:15.549Z] [80/219] Crawling missing SKU: 147169
+[2026-05-04T20:57:17.708Z]    [!] No search results found for SKU: 147169
+[2026-05-04T20:57:17.709Z] [81/219] Crawling missing SKU: 2296
+[2026-05-04T20:57:19.862Z]    [!] No search results found for SKU: 2296
+[2026-05-04T20:57:19.862Z] [82/219] Crawling missing SKU: 106444
+[2026-05-04T20:57:22.006Z]    [!] No search results found for SKU: 106444
+[2026-05-04T20:57:22.006Z] [83/219] Crawling missing SKU: 2255
+[2026-05-04T20:57:24.146Z]    [!] No search results found for SKU: 2255
+[2026-05-04T20:57:24.147Z] [84/219] Crawling missing SKU: 15142
+[2026-05-04T20:57:26.286Z]    [!] No search results found for SKU: 15142
+[2026-05-04T20:57:26.286Z] [85/219] Crawling missing SKU: 143574
+[2026-05-04T20:57:28.415Z]    [!] No search results found for SKU: 143574
+[2026-05-04T20:57:28.416Z] [86/219] Crawling missing SKU: 2276
+[2026-05-04T20:57:30.568Z]    [!] No search results found for SKU: 2276
+[2026-05-04T20:57:30.569Z] [87/219] Crawling missing SKU: 148691
+[2026-05-04T20:57:32.711Z]    [!] No search results found for SKU: 148691
+[2026-05-04T20:57:32.712Z] [88/219] Crawling missing SKU: HK88132
+[2026-05-04T20:57:34.858Z]    [!] No search results found for SKU: HK88132
+[2026-05-04T20:57:34.859Z] [89/219] Crawling missing SKU: 2380A
+[2026-05-04T20:57:37.000Z]    [!] No search results found for SKU: 2380A
+[2026-05-04T20:57:37.001Z] [90/219] Crawling missing SKU: HH202022BL
+[2026-05-04T20:57:39.147Z]    [!] No search results found for SKU: HH202022BL
+[2026-05-04T20:57:39.148Z] [91/219] Crawling missing SKU: 737B
+[2026-05-04T20:57:41.299Z]    [!] No search results found for SKU: 737B
+[2026-05-04T20:57:41.299Z] [92/219] Crawling missing SKU: UHT73343FBL
+[2026-05-04T20:57:43.458Z]    [!] No search results found for SKU: UHT73343FBL
+[2026-05-04T20:57:43.459Z] [93/219] Crawling missing SKU: A725
+[2026-05-04T20:57:45.612Z]    [!] No search results found for SKU: A725
+[2026-05-04T20:57:45.613Z] [94/219] Crawling missing SKU: C962100
+[2026-05-04T20:57:47.757Z]    [!] No search results found for SKU: C962100
+[2026-05-04T20:57:47.758Z] [95/219] Crawling missing SKU: M22033
+[2026-05-04T20:57:49.907Z]    [!] No search results found for SKU: M22033
+[2026-05-04T20:57:49.908Z] [96/219] Crawling missing SKU: M22050
+[2026-05-04T20:57:52.079Z]    [!] No search results found for SKU: M22050
+[2026-05-04T20:57:52.080Z] [97/219] Crawling missing SKU: M22081
+[2026-05-04T20:57:54.217Z]    [!] No search results found for SKU: M22081
+[2026-05-04T20:57:54.218Z] [98/219] Crawling missing SKU: MR23012BL
+[2026-05-04T20:57:56.355Z]    [!] No search results found for SKU: MR23012BL
+[2026-05-04T20:57:56.356Z] [99/219] Crawling missing SKU: MR23014BL
+[2026-05-04T20:57:58.505Z]    [!] No search results found for SKU: MR23014BL
+[2026-05-04T20:57:58.507Z] [100/219] Crawling missing SKU: NCN212CO
+[2026-05-04T20:58:00.679Z]    [!] No search results found for SKU: NCN212CO
+[2026-05-04T20:58:00.680Z] [101/219] Crawling missing SKU: SA1201BL
+[2026-05-04T20:58:02.827Z]    [!] No search results found for SKU: SA1201BL
+[2026-05-04T20:58:02.829Z] [102/219] Crawling missing SKU: 157642
+[2026-05-04T20:58:04.972Z]    [!] No search results found for SKU: 157642
+[2026-05-04T20:58:04.973Z] [103/219] Crawling missing SKU: T57140
+[2026-05-04T20:58:07.143Z]    [!] No search results found for SKU: T57140
+[2026-05-04T20:58:07.144Z] [104/219] Crawling missing SKU: 2278
+[2026-05-04T20:58:09.297Z]    [!] No search results found for SKU: 2278
+[2026-05-04T20:58:09.298Z] [105/219] Crawling missing SKU: 162479
+[2026-05-04T20:58:11.438Z]    [!] No search results found for SKU: 162479
+[2026-05-04T20:58:11.439Z] [106/219] Crawling missing SKU: 2088
+[2026-05-04T20:58:13.577Z]    [!] No search results found for SKU: 2088
+[2026-05-04T20:58:13.579Z] [107/219] Crawling missing SKU: 57132V
+[2026-05-04T20:58:15.719Z]    [!] No search results found for SKU: 57132V
+[2026-05-04T20:58:15.720Z] [108/219] Crawling missing SKU: 21132
+[2026-05-04T20:58:17.872Z]    [!] No search results found for SKU: 21132
+[2026-05-04T20:58:17.872Z] [109/219] Crawling missing SKU: 57902A
+[2026-05-04T20:58:20.030Z]    [!] No search results found for SKU: 57902A
+[2026-05-04T20:58:20.032Z] [110/219] Crawling missing SKU: 2298
+[2026-05-04T20:58:22.195Z]    [!] No search results found for SKU: 2298
+[2026-05-04T20:58:22.196Z] [111/219] Crawling missing SKU: 11231
+[2026-05-04T20:58:24.366Z]    [!] No search results found for SKU: 11231
+[2026-05-04T20:58:24.369Z] [112/219] Crawling missing SKU: 91074EC
+[2026-05-04T20:58:26.521Z]    [!] No search results found for SKU: 91074EC
+[2026-05-04T20:58:26.522Z] [113/219] Crawling missing SKU: T57282
+[2026-05-04T20:58:28.672Z]    [!] No search results found for SKU: T57282
+[2026-05-04T20:58:28.673Z] [114/219] Crawling missing SKU: HK30012
+[2026-05-04T20:58:30.816Z]    [!] No search results found for SKU: HK30012
+[2026-05-04T20:58:30.817Z] [115/219] Crawling missing SKU: A721
+[2026-05-04T20:58:32.957Z]    [!] No search results found for SKU: A721
+[2026-05-04T20:58:32.958Z] [116/219] Crawling missing SKU: UR4000
+[2026-05-04T20:58:35.105Z]    [!] No search results found for SKU: UR4000
+[2026-05-04T20:58:35.107Z] [117/219] Crawling missing SKU: A716BL
+[2026-05-04T20:58:37.261Z]    [!] No search results found for SKU: A716BL
+[2026-05-04T20:58:37.263Z] [118/219] Crawling missing SKU: HH202023BL
+[2026-05-04T20:58:39.407Z]    [!] No search results found for SKU: HH202023BL
+[2026-05-04T20:58:39.408Z] [119/219] Crawling missing SKU: A716
+[2026-05-04T20:58:41.549Z]    [!] No search results found for SKU: A716
+[2026-05-04T20:58:41.550Z] [120/219] Crawling missing SKU: A717BL
+[2026-05-04T20:58:43.703Z]    [!] No search results found for SKU: A717BL
+[2026-05-04T20:58:43.705Z] [121/219] Crawling missing SKU: A71
+[2026-05-04T20:58:45.842Z]    [!] No search results found for SKU: A71
+[2026-05-04T20:58:45.844Z] [122/219] Crawling missing SKU: UHT73343BL
+[2026-05-04T20:58:47.986Z]    [!] No search results found for SKU: UHT73343BL
+[2026-05-04T20:58:47.988Z] [123/219] Crawling missing SKU: 737BL
+[2026-05-04T20:58:50.134Z]    [!] No search results found for SKU: 737BL
+[2026-05-04T20:58:50.135Z] [124/219] Crawling missing SKU: A716B
+[2026-05-04T20:58:52.299Z]    [!] No search results found for SKU: A716B
+[2026-05-04T20:58:52.300Z] [125/219] Crawling missing SKU: T57143
+[2026-05-04T20:58:54.450Z]    [!] No search results found for SKU: T57143
+[2026-05-04T20:58:54.454Z] [126/219] Crawling missing SKU: T16142
+[2026-05-04T20:58:56.630Z]    [!] No search results found for SKU: T16142
+[2026-05-04T20:58:56.632Z] [127/219] Crawling missing SKU: MS885
+[2026-05-04T20:58:58.794Z]    [!] No search results found for SKU: MS885
+[2026-05-04T20:58:58.795Z] [128/219] Crawling missing SKU: MS887
+[2026-05-04T20:59:00.942Z]    [!] No search results found for SKU: MS887
+[2026-05-04T20:59:00.943Z] [129/219] Crawling missing SKU: 2157010083
+[2026-05-04T20:59:03.092Z]    [!] No search results found for SKU: 2157010083
+[2026-05-04T20:59:03.093Z] [130/219] Crawling missing SKU: 0020290000
+[2026-05-04T20:59:05.236Z]    [!] No search results found for SKU: 0020290000
+[2026-05-04T20:59:05.237Z] [131/219] Crawling missing SKU: 0920800085
+[2026-05-04T20:59:07.391Z]    [!] No search results found for SKU: 0920800085
+[2026-05-04T20:59:07.392Z] [132/219] Crawling missing SKU: 2221090000
+[2026-05-04T20:59:09.547Z]    [!] No search results found for SKU: 2221090000
+[2026-05-04T20:59:09.547Z] [133/219] Crawling missing SKU: WD1011000000
+[2026-05-04T20:59:11.692Z]    [!] No search results found for SKU: WD1011000000
+[2026-05-04T20:59:11.693Z] [134/219] Crawling missing SKU: WD5001021000
+[2026-05-04T20:59:13.840Z]    [!] No search results found for SKU: WD5001021000
+[2026-05-04T20:59:13.841Z] [135/219] Crawling missing SKU: 2544090000
+[2026-05-04T20:59:16.017Z]    [!] No search results found for SKU: 2544090000
+[2026-05-04T20:59:16.018Z] [136/219] Crawling missing SKU: 0069890000
+[2026-05-04T20:59:18.178Z]    [!] No search results found for SKU: 0069890000
+[2026-05-04T20:59:18.178Z] [137/219] Crawling missing SKU: 2561090000
+[2026-05-04T20:59:20.323Z]    [!] No search results found for SKU: 2561090000
+[2026-05-04T20:59:20.324Z] [138/219] Crawling missing SKU: 0020390000
+[2026-05-04T20:59:22.480Z]    [!] No search results found for SKU: 0020390000
+[2026-05-04T20:59:22.481Z] [139/219] Crawling missing SKU: MS889
+[2026-05-04T20:59:24.623Z]    [!] No search results found for SKU: MS889
+[2026-05-04T20:59:24.625Z] [140/219] Crawling missing SKU: MS889D
+[2026-05-04T20:59:26.774Z]    [!] No search results found for SKU: MS889D
+[2026-05-04T20:59:26.775Z] [141/219] Crawling missing SKU: TCF24410AAA
+[2026-05-04T20:59:28.933Z]    [!] No search results found for SKU: TCF24410AAA
+[2026-05-04T20:59:28.934Z] [142/219] Crawling missing SKU: TOTO-CW425J
+[2026-05-04T20:59:31.074Z]    [!] No search results found for SKU: TOTO-CW425J
+[2026-05-04T20:59:31.075Z] [143/219] Crawling missing SKU: TOTO-CW705ENJ
+[2026-05-04T20:59:33.224Z]    [!] No search results found for SKU: TOTO-CW705ENJ
+[2026-05-04T20:59:33.225Z] [144/219] Crawling missing SKU: C971
+[2026-05-04T20:59:35.361Z]    [!] No search results found for SKU: C971
+[2026-05-04T20:59:35.362Z] [145/219] Crawling missing SKU: TCF9433A
+[2026-05-04T20:59:37.520Z]    [!] No search results found for SKU: TCF9433A
+[2026-05-04T20:59:37.521Z] [146/219] Crawling missing SKU: CS988VT
+[2026-05-04T20:59:39.665Z]    [!] No search results found for SKU: CS988VT
+[2026-05-04T20:59:39.666Z] [147/219] Crawling missing SKU: TCF9575Z
+[2026-05-04T20:59:41.800Z]    [!] No search results found for SKU: TCF9575Z
+[2026-05-04T20:59:41.802Z] [148/219] Crawling missing SKU: CS989VT
+[2026-05-04T20:59:43.938Z]    [!] No search results found for SKU: CS989VT
+[2026-05-04T20:59:43.940Z] [149/219] Crawling missing SKU: TCF9788WZ
+[2026-05-04T20:59:46.151Z]    [!] No search results found for SKU: TCF9788WZ
+[2026-05-04T20:59:46.153Z] [150/219] Crawling missing SKU: CW522A
+[2026-05-04T20:59:48.297Z]    [!] No search results found for SKU: CW522A
+[2026-05-04T20:59:48.298Z] [151/219] Crawling missing SKU: MB171M
+[2026-05-04T20:59:50.440Z]    [!] No search results found for SKU: MB171M
+[2026-05-04T20:59:50.440Z] [152/219] Crawling missing SKU: CW522EA
+[2026-05-04T20:59:52.598Z]    [!] No search results found for SKU: CW522EA
+[2026-05-04T20:59:52.599Z] [153/219] Crawling missing SKU: TCF796CZ
+[2026-05-04T20:59:54.743Z]    [!] No search results found for SKU: TCF796CZ
+[2026-05-04T20:59:54.744Z] [154/219] Crawling missing SKU: M22021ABL
+[2026-05-04T20:59:56.888Z]    [!] No search results found for SKU: M22021ABL
+[2026-05-04T20:59:56.890Z] [155/219] Crawling missing SKU: T57143BL
+[2026-05-04T20:59:59.050Z]    [!] No search results found for SKU: T57143BL
+[2026-05-04T20:59:59.051Z] [156/219] Crawling missing SKU: R3500BL
+[2026-05-04T21:00:01.193Z]    [!] No search results found for SKU: R3500BL
+[2026-05-04T21:00:01.195Z] [157/219] Crawling missing SKU: 737
+[2026-05-04T21:00:03.322Z]    [!] No search results found for SKU: 737
+[2026-05-04T21:00:03.323Z] [158/219] Crawling missing SKU: TS3600
+[2026-05-04T21:00:05.467Z]    [!] No search results found for SKU: TS3600
+[2026-05-04T21:00:05.469Z] [159/219] Crawling missing SKU: S3600(2)
+[2026-05-04T21:00:07.623Z]    [!] No search results found for SKU: S3600(2)
+[2026-05-04T21:00:07.624Z] [160/219] Crawling missing SKU: TS3411
+[2026-05-04T21:00:09.764Z]    [!] No search results found for SKU: TS3411
+[2026-05-04T21:00:09.765Z] [161/219] Crawling missing SKU: AT30101
+[2026-05-04T21:00:11.909Z]    [!] No search results found for SKU: AT30101
+[2026-05-04T21:00:11.910Z] [162/219] Crawling missing SKU: TCF797C2Z
+[2026-05-04T21:00:14.062Z]    [!] No search results found for SKU: TCF797C2Z
+[2026-05-04T21:00:14.063Z] [163/219] Crawling missing SKU: TCF803CZ
+[2026-05-04T21:00:16.210Z]    [!] No search results found for SKU: TCF803CZ
+[2026-05-04T21:00:16.211Z] [164/219] Crawling missing SKU: TCF804C2Z
+[2026-05-04T21:00:18.356Z]    [!] No search results found for SKU: TCF804C2Z
+[2026-05-04T21:00:18.356Z] [165/219] Crawling missing SKU: CW542HME5U
+[2026-05-04T21:00:20.501Z]    [!] No search results found for SKU: CW542HME5U
+[2026-05-04T21:00:20.502Z] [166/219] Crawling missing SKU: TCF794CZ
+[2026-05-04T21:00:22.667Z]    [!] No search results found for SKU: TCF794CZ
+[2026-05-04T21:00:22.669Z] [167/219] Crawling missing SKU: MB175M
+[2026-05-04T21:00:24.817Z]    [!] No search results found for SKU: MB175M
+[2026-05-04T21:00:24.818Z] [168/219] Crawling missing SKU: TCF795C2Z
+[2026-05-04T21:00:26.971Z]    [!] No search results found for SKU: TCF795C2Z
+[2026-05-04T21:00:26.972Z] [169/219] Crawling missing SKU: TCF801CZ
+[2026-05-04T21:00:29.136Z]    [!] No search results found for SKU: TCF801CZ
+[2026-05-04T21:00:29.137Z] [170/219] Crawling missing SKU: CW542ME5U
+[2026-05-04T21:00:31.266Z]    [!] No search results found for SKU: CW542ME5U
+[2026-05-04T21:00:31.269Z] [171/219] Crawling missing SKU: CW762
+[2026-05-04T21:00:33.475Z]    [!] No search results found for SKU: CW762
+[2026-05-04T21:00:33.476Z] [172/219] Crawling missing SKU: TC384CVK
+[2026-05-04T21:00:35.627Z]    [!] No search results found for SKU: TC384CVK
+[2026-05-04T21:00:35.628Z] [173/219] Crawling missing SKU: MB176G
+[2026-05-04T21:00:37.780Z]    [!] No search results found for SKU: MB176G
+[2026-05-04T21:00:37.781Z] [174/219] Crawling missing SKU: CW812REA
+[2026-05-04T21:00:39.927Z]    [!] No search results found for SKU: CW812REA
+[2026-05-04T21:00:39.929Z] [175/219] Crawling missing SKU: TCF24460AAA
+[2026-05-04T21:00:42.112Z]    [!] No search results found for SKU: TCF24460AAA
+[2026-05-04T21:00:42.113Z] [176/219] Crawling missing SKU: CW822RA
+[2026-05-04T21:00:44.264Z]    [!] No search results found for SKU: CW822RA
+[2026-05-04T21:00:44.265Z] [177/219] Crawling missing SKU: CW822REA
+[2026-05-04T21:00:46.417Z]    [!] No search results found for SKU: CW822REA
+[2026-05-04T21:00:46.419Z] [178/219] Crawling missing SKU: MS188VKE4
+[2026-05-04T21:00:48.567Z]    [!] No search results found for SKU: MS188VKE4
+[2026-05-04T21:00:48.568Z] [179/219] Crawling missing SKU: VI66
+[2026-05-04T21:00:50.723Z]    [!] No search results found for SKU: VI66
+[2026-05-04T21:00:50.725Z] [180/219] Crawling missing SKU: V1102
+[2026-05-04T21:00:52.871Z]    [!] No search results found for SKU: V1102
+[2026-05-04T21:00:52.873Z] [181/219] Crawling missing SKU: VI88
+[2026-05-04T21:00:55.011Z]    [!] No search results found for SKU: VI88
+[2026-05-04T21:00:55.021Z] [182/219] Crawling missing SKU: VT18M
+[2026-05-04T21:00:57.243Z]    [!] No search results found for SKU: VT18M
+[2026-05-04T21:00:57.244Z] [183/219] Crawling missing SKU: VT34
+[2026-05-04T21:00:59.390Z]    [!] No search results found for SKU: VT34
+[2026-05-04T21:00:59.391Z] [184/219] Crawling missing SKU: TCA464
+[2026-05-04T21:01:01.534Z]    [!] No search results found for SKU: TCA464
+[2026-05-04T21:01:01.535Z] [185/219] Crawling missing SKU: TCA465
+[2026-05-04T21:01:03.654Z]    [!] No search results found for SKU: TCA465
+[2026-05-04T21:01:03.656Z] [186/219] Crawling missing SKU: EH05022ASV
+[2026-05-04T21:01:05.844Z]    [!] No search results found for SKU: EH05022ASV
+[2026-05-04T21:01:05.846Z] [187/219] Crawling missing SKU: EH15022AW7V
+[2026-05-04T21:01:07.967Z]    [!] No search results found for SKU: EH15022AW7V
+[2026-05-04T21:01:07.968Z] [188/219] Crawling missing SKU: EH15017AW7V
+[2026-05-04T21:01:10.111Z]    [!] No search results found for SKU: EH15017AW7V
+[2026-05-04T21:01:10.113Z] [189/219] Crawling missing SKU: EH05024ASV
+[2026-05-04T21:01:12.229Z]    [!] No search results found for SKU: EH05024ASV
+[2026-05-04T21:01:12.230Z] [190/219] Crawling missing SKU: EH15024AW7V
+[2026-05-04T21:01:14.378Z]    [!] No search results found for SKU: EH15024AW7V
+[2026-05-04T21:01:14.379Z] [191/219] Crawling missing SKU: EH15024DDW7V
+[2026-05-04T21:01:16.528Z]    [!] No search results found for SKU: EH15024DDW7V
+[2026-05-04T21:01:16.529Z] [192/219] Crawling missing SKU: EH05026ASV
+[2026-05-04T21:01:18.677Z]    [!] No search results found for SKU: EH05026ASV
+[2026-05-04T21:01:18.679Z] [193/219] Crawling missing SKU: EH15026AW7V
+[2026-05-04T21:01:20.824Z]    [!] No search results found for SKU: EH15026AW7V
+[2026-05-04T21:01:20.826Z] [194/219] Crawling missing SKU: EH05028ASV
+[2026-05-04T21:01:22.977Z]    [!] No search results found for SKU: EH05028ASV
+[2026-05-04T21:01:22.978Z] [195/219] Crawling missing SKU: EH15028AW7V
+[2026-05-04T21:01:25.123Z]    [!] No search results found for SKU: EH15028AW7V
+[2026-05-04T21:01:25.124Z] [196/219] Crawling missing SKU: EH05030ASV
+[2026-05-04T21:01:27.284Z]    [!] No search results found for SKU: EH05030ASV
+[2026-05-04T21:01:27.285Z] [197/219] Crawling missing SKU: EH05030AWV
+[2026-05-04T21:01:29.418Z]    [!] No search results found for SKU: EH05030AWV
+[2026-05-04T21:01:29.420Z] [198/219] Crawling missing SKU: EH15030AW7V
+[2026-05-04T21:01:31.573Z]    [!] No search results found for SKU: EH15030AW7V
+[2026-05-04T21:01:31.573Z] [199/219] Crawling missing SKU: EH05032AWV
+[2026-05-04T21:01:33.722Z]    [!] No search results found for SKU: EH05032AWV
+[2026-05-04T21:01:33.723Z] [200/219] Crawling missing SKU: EH15032AW7V
+[2026-05-04T21:01:35.866Z]    [!] No search results found for SKU: EH15032AW7V
+[2026-05-04T21:01:35.867Z] [201/219] Crawling missing SKU: LF5356
+[2026-05-04T21:01:38.026Z]    [!] No search results found for SKU: LF5356
+[2026-05-04T21:01:38.027Z] [202/219] Crawling missing SKU: EH15356AW7V
+[2026-05-04T21:01:40.179Z]    [!] No search results found for SKU: EH15356AW7V
+[2026-05-04T21:01:40.180Z] [203/219] Crawling missing SKU: LF5357
+[2026-05-04T21:01:42.349Z]    [!] No search results found for SKU: LF5357
+[2026-05-04T21:01:42.350Z] [204/219] Crawling missing SKU: EH15357CLW7V
+[2026-05-04T21:01:44.462Z]    [!] No search results found for SKU: EH15357CLW7V
+[2026-05-04T21:01:44.463Z] [205/219] Crawling missing SKU: EH15357CRW7V
+[2026-05-04T21:01:46.637Z]    [!] No search results found for SKU: EH15357CRW7V
+[2026-05-04T21:01:46.638Z] [206/219] Crawling missing SKU: LF5358
+[2026-05-04T21:01:48.788Z]    [!] No search results found for SKU: LF5358
+[2026-05-04T21:01:48.789Z] [207/219] Crawling missing SKU: EH15358CLW7V
+[2026-05-04T21:01:50.941Z]    [!] No search results found for SKU: EH15358CLW7V
+[2026-05-04T21:01:50.943Z] [208/219] Crawling missing SKU: EH15358CRW7V
+[2026-05-04T21:01:53.101Z]    [!] No search results found for SKU: EH15358CRW7V
+[2026-05-04T21:01:53.102Z] [209/219] Crawling missing SKU: V58-CHAU
+[2026-05-04T21:01:55.243Z]    [!] No search results found for SKU: V58-CHAU
+[2026-05-04T21:01:55.244Z] [210/219] Crawling missing SKU: 16273F
+[2026-05-04T21:01:57.375Z]    [!] No search results found for SKU: 16273F
+[2026-05-04T21:01:57.377Z] [211/219] Crawling missing SKU: AT-102MX(DC)
+[2026-05-04T21:01:59.526Z]    [!] No search results found for SKU: AT-102MX(DC)
+[2026-05-04T21:01:59.527Z] [212/219] Crawling missing SKU: T5465
+[2026-05-04T21:02:01.667Z]    [!] No search results found for SKU: T5465
+[2026-05-04T21:02:01.668Z] [213/219] Crawling missing SKU: 57902
+[2026-05-04T21:02:03.809Z]    [!] No search results found for SKU: 57902
+[2026-05-04T21:02:03.810Z] [214/219] Crawling missing SKU: 14132
+[2026-05-04T21:02:05.955Z]    [!] No search results found for SKU: 14132
+[2026-05-04T21:02:05.956Z] [215/219] Crawling missing SKU: 18131V-1
+[2026-05-04T21:02:08.117Z]    [!] No search results found for SKU: 18131V-1
+[2026-05-04T21:02:08.118Z] [216/219] Crawling missing SKU: UHT73342BL
+[2026-05-04T21:02:10.254Z]    [!] No search results found for SKU: UHT73342BL
+[2026-05-04T21:02:10.255Z] [217/219] Crawling missing SKU: T63142
+[2026-05-04T21:02:12.403Z]    [!] No search results found for SKU: T63142
+[2026-05-04T21:02:12.404Z] [218/219] Crawling missing SKU: T57146
+[2026-05-04T21:02:14.545Z]    [!] No search results found for SKU: T57146
+[2026-05-04T21:02:14.546Z] [219/219] Crawling missing SKU: S3371
+[2026-05-04T21:02:16.691Z]    [!] No search results found for SKU: S3371
+[2026-05-04T21:02:16.692Z] === PHASE 1 COMPLETED ===
+[2026-05-04T21:02:16.692Z] You can add Category Crawl later if needed.
+[2026-05-04T21:02:16.732Z] === DATA PIPELINE TERMINATED ===

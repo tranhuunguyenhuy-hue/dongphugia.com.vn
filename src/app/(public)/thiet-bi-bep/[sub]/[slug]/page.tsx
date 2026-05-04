@@ -103,7 +103,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
                 {/* Gallery */}
                 <ProductImageGallery
                     mainImageUrl={product.image_main_url}
-                    hoverImageUrl={product.image_hover_url}
+
                     additionalImages={additionalImages.map(i => ({ image_url: i.image_url, alt_text: i.alt_text }))}
                     productName={product.name}
                 />

@@ -15,7 +15,7 @@ export type ProductListItem = {
     price: number | null
     price_display: string | null
     image_main_url: string | null
-    image_hover_url: string | null
+
     stock_status: string
     is_active: boolean
     is_featured: boolean
@@ -195,7 +195,7 @@ export async function getPublicProducts(filters: ProductFilters = {}) {
                 original_price: true,
                 price_display: true,
                 image_main_url: true,
-                image_hover_url: true,
+
                 stock_status: true,
                 is_active: true,
                 is_featured: true,
@@ -484,7 +484,7 @@ export const getFeaturedProductsByCategorySlug = unstable_cache(
                 original_price: true,
                     price_display: true,
                     image_main_url: true,
-                    image_hover_url: true,
+
                     is_new: true,
                     is_bestseller: true,
                     stock_status: true,
@@ -532,7 +532,7 @@ export const getTopProductsPerBrand = unstable_cache(
                 original_price: true,
                         price_display: true,
                         image_main_url: true,
-                        image_hover_url: true,
+
                         is_new: true,
                         is_bestseller: true,
                         stock_status: true,
@@ -659,7 +659,22 @@ export async function getAdminProductById(id: number) {
         },
     })
     if (!p) return null
-    return { ...p, price: p.price ? Number(p.price) : null, original_price: p.original_price ? Number(p.original_price) : null }
+
+    const relationships = await prisma.product_relationships.findMany({
+        where: { parent_id: id },
+        orderBy: { sort_order: 'asc' },
+        include: { child: { select: { id: true, sku: true, name: true, price: true, image_main_url: true } } }
+    })
+
+    return { 
+        ...p, 
+        product_relationships: relationships.map(rel => ({
+            ...rel,
+            child: rel.child ? { ...rel.child, price: rel.child.price ? Number(rel.child.price) : null } : null
+        })),
+        price: p.price ? Number(p.price) : null, 
+        original_price: p.original_price ? Number(p.original_price) : null 
+    }
 }
 
 // ─── STATS ───────────────────────────────────────────────────────────────────

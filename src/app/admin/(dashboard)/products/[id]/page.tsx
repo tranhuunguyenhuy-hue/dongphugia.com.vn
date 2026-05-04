@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ChevronLeft } from 'lucide-react'
 import { getAdminProductById } from '@/lib/public-api-products'
-import { getCategories, getSubcategories, getBrands, getOrigins, getColors, getMaterials } from '@/lib/cache'
+import { getCategories, getSubcategories, getBrands, getOrigins, getColors, getMaterials, getFilterDefinitions, getProductTypes } from '@/lib/cache'
 import { ProductForm } from '../product-form'
 
 export const dynamic = 'force-dynamic'
@@ -17,7 +17,7 @@ export default async function EditProductPage({ params }: PageProps) {
 
     if (isNaN(productId)) notFound()
 
-    const [product, categories, subcategories, brands, origins, colors, materials] = await Promise.all([
+    const [product, categories, subcategories, brands, origins, colors, materials, filterDefinitions, productTypes] = await Promise.all([
         getAdminProductById(productId),
         getCategories(),
         getSubcategories(),
@@ -25,25 +25,17 @@ export default async function EditProductPage({ params }: PageProps) {
         getOrigins(),
         getColors(),
         getMaterials(),
+        getFilterDefinitions(),
+        getProductTypes(),
     ])
 
     if (!product) notFound()
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center gap-3">
-                <Link
-                    href="/admin/products"
-                    className="h-9 w-9 flex items-center justify-center rounded-lg border border-[#E4EEF2] text-muted-foreground hover:bg-muted transition-colors"
-                >
-                    <ChevronLeft className="h-4 w-4" />
-                </Link>
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Chỉnh sửa sản phẩm</h1>
-                    <p className="text-sm text-muted-foreground mt-0.5 line-clamp-1">{product.name}</p>
-                </div>
-            </div>
             <ProductForm
+                pageTitle="Chỉnh sửa sản phẩm"
+                pageSubtitle={product.name}
                 product={product}
                 categories={categories}
                 subcategories={subcategories}
@@ -51,6 +43,8 @@ export default async function EditProductPage({ params }: PageProps) {
                 origins={origins}
                 colors={colors}
                 materials={materials}
+                filterDefinitions={filterDefinitions}
+                productTypes={productTypes}
             />
         </div>
     )

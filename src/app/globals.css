@@ -1,4 +1,6 @@
 @import "tailwindcss" source(none);
+
+@custom-variant dark (&:is(.dark *));
 @source "..";
 
 @theme {
@@ -63,7 +65,7 @@
 
   --color-card: #FFFFFF;
   --color-card-foreground: var(--color-stone-800);
-  
+
   --color-popover: #FFFFFF;
   --color-popover-foreground: var(--color-stone-800);
 
@@ -106,7 +108,7 @@
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
   }
-  
+
   :focus { outline: none; }
   :focus-visible { outline: none; box-shadow: var(--color-ring); border-radius: var(--radius-md); }
 }
@@ -136,14 +138,14 @@
 
   .text-caption-md { @apply text-[13px] font-normal leading-[18px]; }
   .text-caption-sm { @apply text-xs font-normal leading-[18px] tracking-wide; }
-  
+
   .text-overline-md { @apply text-xs font-semibold leading-4 uppercase tracking-[0.06em]; }
 
   /* Utility wrappers & Grid System */
   .u-container { 
     @apply w-full max-w-[1280px] mx-auto px-4 md:px-6 lg:px-8; 
   }
-  
+
   /* 
    * DPG V2 Responsive Grid System:
    * - Mobile (<768px): 4 columns, 16px gap
@@ -153,7 +155,7 @@
   .u-grid {
     @apply grid grid-cols-4 gap-4 md:grid-cols-8 md:gap-6 lg:grid-cols-12 lg:gap-6;
   }
-  
+
   /* Animations & Microinteractions */
   .card-hover {
     @apply transition-all duration-200;
@@ -204,4 +206,37 @@
   .scroll-sidebar:hover::-webkit-scrollbar-thumb:hover {
     background: #9ca3af;
   }
+}
+
+:root {
+  --sidebar: hsl(0 0% 98%);
+  --sidebar-foreground: hsl(240 5.3% 26.1%);
+  --sidebar-primary: hsl(240 5.9% 10%);
+  --sidebar-primary-foreground: hsl(0 0% 98%);
+  --sidebar-accent: hsl(240 4.8% 95.9%);
+  --sidebar-accent-foreground: hsl(240 5.9% 10%);
+  --sidebar-border: hsl(220 13% 91%);
+  --sidebar-ring: hsl(217.2 91.2% 59.8%);
+}
+
+.dark {
+  --sidebar: hsl(240 5.9% 10%);
+  --sidebar-foreground: hsl(240 4.8% 95.9%);
+  --sidebar-primary: hsl(224.3 76.3% 48%);
+  --sidebar-primary-foreground: hsl(0 0% 100%);
+  --sidebar-accent: hsl(240 3.7% 15.9%);
+  --sidebar-accent-foreground: hsl(240 4.8% 95.9%);
+  --sidebar-border: hsl(240 3.7% 15.9%);
+  --sidebar-ring: hsl(217.2 91.2% 59.8%);
+}
+
+@theme inline {
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
 }

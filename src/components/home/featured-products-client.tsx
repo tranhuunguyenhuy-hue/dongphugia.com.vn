@@ -26,7 +26,7 @@ interface FeaturedProduct {
     original_price?: number | null
     price_display: string | null
     image_main_url: string | null
-    image_hover_url?: string | null
+
     is_new: boolean
     is_bestseller: boolean
     stock_status: string
