@@ -127,7 +127,7 @@ export function ProductCTA({
                 {hasPrice && (
                     <Button
                         onClick={handleAddToCart}
-                        className="flex-1 h-12 bg-brand-500 hover:bg-brand-600 text-white text-label-lg rounded-[var(--radius-btn)] shadow-sm gap-2"
+                        className="flex-1 h-12 bg-brand-500 hover:bg-brand-600 !text-white text-label-lg rounded-[var(--radius-btn)] shadow-sm gap-2"
                     >
                         <ShoppingBag className="w-4 h-4" />
                         Thêm vào giỏ hàng
