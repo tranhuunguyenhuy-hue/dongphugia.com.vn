@@ -45,7 +45,7 @@ export function QuoteBuilderClient({ quote }: { quote: any }) {
     }
 
     const handlePrint = useReactToPrint({
-        content: () => printRef.current,
+        contentRef: printRef,
         documentTitle: `BaoGia_${quote.quote_number || quote.id}`,
     })
 

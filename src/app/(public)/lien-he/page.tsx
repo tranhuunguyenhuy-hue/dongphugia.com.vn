@@ -36,7 +36,7 @@ export default function ContactPage() {
                 (e.target as HTMLFormElement).reset();
             } else {
                 toast.error("Không thể gửi yêu cầu", {
-                    description: result.error || result.message || "Vui lòng thiết lập lại thông tin."
+                    description: result.error || "Vui lòng thiết lập lại thông tin."
                 });
             }
         } catch (error) {

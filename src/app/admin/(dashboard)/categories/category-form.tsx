@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Badge } from '@/components/ui/badge'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -227,7 +228,7 @@ export function CategoryForm({ pageTitle, pageSubtitle, category, activeBanners 
                                                         <FormDescription className="text-xs mb-2">Dùng để hiển thị ở các lưới danh mục nổi bật ngoài trang chủ.</FormDescription>
                                                         <FormControl>
                                                             <ImageUploader
-                                                                value={field.value}
+                                                                value={field.value || ''}
                                                                 onChange={field.onChange}
                                                                 folder="categories"
                                                                 className="h-40 w-40 aspect-square"
