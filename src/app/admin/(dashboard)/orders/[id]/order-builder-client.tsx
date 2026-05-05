@@ -38,7 +38,7 @@ export function OrderBuilderClient({ order }: { order: any }) {
     }
 
     const handlePrint = useReactToPrint({
-        content: () => printRef.current,
+        contentRef: printRef,
         documentTitle: `DonHang_${order.order_number}`,
     })
 
