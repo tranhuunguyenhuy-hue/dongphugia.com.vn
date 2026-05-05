@@ -101,15 +101,15 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
                 
                 {/* Badges */}
                 <div className="absolute top-3 left-3 flex flex-col gap-2 z-10 items-start">
-                    {(product.is_new || product.is_bestseller) && (
+                    {(product.is_promotion || product.is_featured) && (
                         <div className="flex gap-1.5">
-                            {product.is_new && (
-                                <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest bg-white text-blue-600 rounded-md shadow-sm border border-neutral-200">
-                                    Mới
+                            {product.is_promotion && (
+                                <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest bg-red-500 text-white rounded-md shadow-sm border border-red-500/20">
+                                    Khuyến mãi
                                 </span>
                             )}
-                            {product.is_bestseller && (
-                                <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest bg-red-500 text-white rounded-md shadow-sm border border-red-500/20">
+                            {product.is_featured && (
+                                <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest bg-amber-500 text-white rounded-md shadow-sm border border-amber-500/20">
                                     Nổi bật
                                 </span>
                             )}

@@ -2,9 +2,16 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
-import { Pencil, Trash2, Star, Eye, EyeOff } from 'lucide-react'
+import { Pencil, Trash2, Star, Eye, EyeOff, MoreHorizontal } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { toggleProductFeatured, toggleProductActive, deleteProduct } from '@/lib/product-actions'
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import {
     AlertDialog,
     AlertDialogAction,
@@ -34,14 +41,7 @@ export function ProductActions({ id, isActive, isFeatured, productName }: Props)
     }
 
     return (
-        <div className="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
-            {/* Edit */}
-            <Link href={`/admin/products/${id}`}>
-                <Button variant="ghost" size="icon" className="h-8 w-8" title="Chỉnh sửa">
-                    <Pencil className="h-3.5 w-3.5" />
-                </Button>
-            </Link>
-
+        <div className="flex items-center justify-end gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
             {/* Toggle Featured */}
             <Button
                 variant="ghost"
@@ -51,31 +51,42 @@ export function ProductActions({ id, isActive, isFeatured, productName }: Props)
                 disabled={loading === 'featured'}
                 onClick={() => handle('featured', () => toggleProductFeatured(id, !isFeatured))}
             >
-                <Star className={`h-3.5 w-3.5 ${isFeatured ? 'fill-amber-400' : ''}`} />
+                <Star className={`h-4 w-4 ${isFeatured ? 'fill-amber-400' : ''}`} />
             </Button>
 
-            {/* Toggle Active */}
-            <Button
-                variant="ghost"
-                size="icon"
-                className={`h-8 w-8 ${isActive ? 'text-emerald-500' : 'text-neutral-400'}`}
-                title={isActive ? 'Ẩn sản phẩm' : 'Hiển thị sản phẩm'}
-                disabled={loading === 'active'}
-                onClick={() => handle('active', () => toggleProductActive(id, !isActive))}
-            >
-                {isActive ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
-            </Button>
-
-            {/* Delete */}
-            <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-red-400 hover:text-red-600 hover:bg-red-50"
-                title="Xóa"
-                onClick={() => setShowDelete(true)}
-            >
-                <Trash2 className="h-3.5 w-3.5" />
-            </Button>
+            {/* More Actions Dropdown */}
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="h-8 w-8 p-0">
+                        <span className="sr-only">Mở menu</span>
+                        <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-[160px]">
+                    <Link href={`/admin/products/${id}`}>
+                        <DropdownMenuItem className="cursor-pointer">
+                            <Pencil className="mr-2 h-4 w-4" />
+                            <span>Chỉnh sửa</span>
+                        </DropdownMenuItem>
+                    </Link>
+                    <DropdownMenuItem 
+                        className="cursor-pointer"
+                        disabled={loading === 'active'}
+                        onClick={() => handle('active', () => toggleProductActive(id, !isActive))}
+                    >
+                        {isActive ? <EyeOff className="mr-2 h-4 w-4" /> : <Eye className="mr-2 h-4 w-4" />}
+                        <span>{isActive ? 'Ẩn sản phẩm' : 'Hiện sản phẩm'}</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem 
+                        className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50"
+                        onClick={() => setShowDelete(true)}
+                    >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        <span>Xoá sản phẩm</span>
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
 
             <AlertDialog open={showDelete} onOpenChange={setShowDelete}>
                 <AlertDialogContent>

@@ -18,7 +18,7 @@ import { useSearchParams } from 'next/navigation'
 // ── Filter count badge (needs Suspense boundary) ────────────────────────────────
 function FilterCount() {
     const sp = useSearchParams()
-    const keys = ['brand', 'features', 'material', 'origin', 'price', 'is_new', 'is_featured']
+    const keys = ['brand', 'features', 'material', 'origin', 'price', 'is_promotion', 'is_featured']
     // Also count spec filters (sf_*)
     let count = keys.filter(k => sp.get(k)).length
     sp.forEach((_v, k) => { if (k.startsWith('sf_')) count++ })

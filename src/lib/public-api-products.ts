@@ -19,9 +19,8 @@ export type ProductListItem = {
     stock_status: string
     is_active: boolean
     is_featured: boolean
-    is_new: boolean
-    is_bestseller: boolean
-    sort_order: number
+    is_promotion?: boolean
+        sort_order: number
     categories: { name: string; slug: string }
     subcategories: { name: string; slug: string } | null
     brands: { name: string; slug: string } | null
@@ -47,9 +46,8 @@ export type ProductFilters = {
     // Format: { "Kiểu thoát": "Thoát sàn", "Loại nắp": "Nắp đóng êm" }
     spec_filters?: Record<string, string | string[]>
     is_featured?: boolean
-    is_new?: boolean
-    is_bestseller?: boolean
-    is_active?: boolean
+    is_promotion?: boolean
+        is_active?: boolean
     price_min?: number
     price_max?: number
     search?: string
@@ -79,8 +77,7 @@ export async function getPublicProducts(filters: ProductFilters = {}) {
         feature_slugs,
         spec_filters,
         is_featured,
-        is_new,
-        is_bestseller,
+        is_promotion,
         price_min,
         price_max,
         search,
@@ -125,8 +122,7 @@ export async function getPublicProducts(filters: ProductFilters = {}) {
             }
         }),
         ...(is_featured !== undefined && { is_featured }),
-        ...(is_new !== undefined && { is_new }),
-        ...(is_bestseller !== undefined && { is_bestseller }),
+        ...(is_promotion !== undefined && { is_promotion }),
         ...((price_min !== undefined || price_max !== undefined) && {
             price: {
                 ...(price_min !== undefined && { gte: price_min }),
@@ -171,7 +167,7 @@ export async function getPublicProducts(filters: ProductFilters = {}) {
         // Default sort: featured → bestseller → has-variant-group → high price
         // Products with a variant_group (multi-variant) are surfaced before single products
         orderBy.push({ is_featured: 'desc' })
-        orderBy.push({ is_bestseller: 'desc' })
+        orderBy.push({ is_promotion: 'desc' })
         orderBy.push({ variant_group: { sort: 'asc', nulls: 'last' } })
         orderBy.push({ price: 'desc' })
     }
@@ -199,8 +195,7 @@ export async function getPublicProducts(filters: ProductFilters = {}) {
                 stock_status: true,
                 is_active: true,
                 is_featured: true,
-                is_new: true,
-                is_bestseller: true,
+                is_promotion: true,
                 sort_order: true,
                 product_type: true,
                 categories: { select: { name: true, slug: true } },
@@ -485,8 +480,7 @@ export const getFeaturedProductsByCategorySlug = unstable_cache(
                     price_display: true,
                     image_main_url: true,
 
-                    is_new: true,
-                    is_bestseller: true,
+                    is_promotion: true,
                     stock_status: true,
                     categories: { select: { slug: true } },
                     subcategories: { select: { name: true, slug: true } },
@@ -533,8 +527,7 @@ export const getTopProductsPerBrand = unstable_cache(
                         price_display: true,
                         image_main_url: true,
 
-                        is_new: true,
-                        is_bestseller: true,
+                        is_promotion: true,
                         stock_status: true,
                         categories: { select: { slug: true } },
                         subcategories: { select: { name: true, slug: true } },
@@ -558,7 +551,7 @@ export const getTopProductsPerBrand = unstable_cache(
 export const getNewArrivals = unstable_cache(
     async (limit = 12) => {
         const products = await prisma.products.findMany({
-            where: { is_active: true, is_new: true },
+            where: { is_active: true, is_promotion: true },
             orderBy: { created_at: 'desc' },
             take: limit,
             select: {
@@ -569,8 +562,7 @@ export const getNewArrivals = unstable_cache(
                 original_price: true,
                 price_display: true,
                 image_main_url: true,
-                is_new: true,
-                is_bestseller: true,
+                is_promotion: true,
                 categories: { select: { name: true, slug: true } },
                 brands: { select: { name: true, slug: true } },
             },
@@ -586,11 +578,15 @@ export const getNewArrivals = unstable_cache(
 export async function getAdminProducts(params: {
     search?: string
     category_id?: number
+    subcategory_id?: number
+    brand_id?: number
+    highlight_type?: 'featured' | 'promotion'
     is_active?: boolean
+    sort?: 'price_asc' | 'price_desc' | 'default'
     page?: number
     pageSize?: number
 }) {
-    const { search, category_id, is_active, page = 1, pageSize = 50 } = params
+    const { search, category_id, subcategory_id, brand_id, highlight_type, is_active, sort, page = 1, pageSize = 50 } = params
 
     const where: Prisma.productsWhereInput = {
         ...(search && {
@@ -600,13 +596,28 @@ export async function getAdminProducts(params: {
             ],
         }),
         ...(category_id && { category_id }),
+        ...(subcategory_id && { subcategory_id }),
+        ...(brand_id && { brand_id }),
+        ...(highlight_type === 'featured' && { is_featured: true }),
+        ...(highlight_type === 'promotion' && { is_promotion: true }),
         ...(is_active !== undefined && { is_active }),
     }
+
+    const orderBy: Prisma.productsOrderByWithRelationInput[] = []
+    if (sort === 'price_asc') {
+        orderBy.push({ price: 'asc' })
+    } else if (sort === 'price_desc') {
+        orderBy.push({ price: 'desc' })
+    } else {
+        orderBy.push({ is_featured: 'desc' }, { is_promotion: 'desc' })
+    }
+    // Always fallback to default sorting
+    orderBy.push({ sort_order: 'asc' }, { created_at: 'desc' })
 
     const [products, total] = await Promise.all([
         prisma.products.findMany({
             where,
-            orderBy: [{ category_id: 'asc' }, { sort_order: 'asc' }, { created_at: 'desc' }],
+            orderBy,
             skip: (page - 1) * pageSize,
             take: pageSize,
             select: {
@@ -621,10 +632,11 @@ export async function getAdminProducts(params: {
                 stock_status: true,
                 is_active: true,
                 is_featured: true,
-                is_new: true,
+                is_promotion: true,
                 sort_order: true,
                 created_at: true,
                 categories: { select: { name: true, slug: true } },
+                subcategories: { select: { name: true } },
                 brands: { select: { name: true } },
             },
         }),
@@ -666,8 +678,30 @@ export async function getAdminProductById(id: number) {
         include: { child: { select: { id: true, sku: true, name: true, price: true, image_main_url: true } } }
     })
 
+    let variants: any[] = []
+    if (p.variant_group) {
+        const rawVariants = await prisma.products.findMany({
+            where: { variant_group: p.variant_group },
+            select: {
+                id: true,
+                sku: true,
+                name: true,
+                price: true,
+                image_main_url: true,
+                variant_group: true,
+                colors: { select: { name: true, hex_code: true } }
+            },
+            orderBy: { id: 'asc' }
+        })
+        variants = rawVariants.map(v => ({
+            ...v,
+            price: v.price ? Number(v.price) : null
+        }))
+    }
+
     return { 
         ...p, 
+        variants,
         product_relationships: relationships.map(rel => ({
             ...rel,
             child: rel.child ? { ...rel.child, price: rel.child.price ? Number(rel.child.price) : null } : null
@@ -680,13 +714,13 @@ export async function getAdminProductById(id: number) {
 // ─── STATS ───────────────────────────────────────────────────────────────────
 
 export async function getProductStats() {
-    const [total, active, featured, outOfStock] = await Promise.all([
+    const [total, active, featured, promotion] = await Promise.all([
         prisma.products.count(),
         prisma.products.count({ where: { is_active: true } }),
         prisma.products.count({ where: { is_featured: true } }),
-        prisma.products.count({ where: { stock_status: 'out_of_stock' } }),
+        prisma.products.count({ where: { OR: [{ is_promotion: true }, { original_price: { gt: prisma.products.fields.price } }] } }),
     ])
-    return { total, active, featured, outOfStock }
+    return { total, active, featured, promotion }
 }
 
 // ─── PUBLIC: COMPATIBLE LIDS (Nắp bồn cầu tương thích) ──────────────────────
@@ -727,7 +761,7 @@ async function _getCompatibleLids(brandId: number | null, limit = 6): Promise<Co
                 is_active: true,
             },
             select: lidSelect,
-            orderBy: [{ is_bestseller: 'desc' }, { sort_order: 'asc' }],
+            orderBy: [{ is_promotion: 'desc' }, { sort_order: 'asc' }],
             take: limit,
         })
         if (sameBrand.length > 0) return sameBrand
@@ -737,7 +771,7 @@ async function _getCompatibleLids(brandId: number | null, limit = 6): Promise<Co
     return prisma.products.findMany({
         where: { subcategory_id: SUB_NAP_BON_CAU, is_active: true },
         select: lidSelect,
-        orderBy: [{ is_bestseller: 'desc' }, { sort_order: 'asc' }],
+        orderBy: [{ is_promotion: 'desc' }, { sort_order: 'asc' }],
         take: limit,
     })
 }

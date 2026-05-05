@@ -1,11 +1,30 @@
 'use client'
 
+import { useState } from "react"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
-import { ArrowRight } from "lucide-react"
+import { ArrowRight, Loader2 } from "lucide-react"
+import { submitContactForm } from "@/lib/actions"
+import { toast } from "sonner"
 
 export function ContactSection() {
+    const [isSubmitting, setIsSubmitting] = useState(false)
+    const [formData, setFormData] = useState({ name: '', phone: '', email: '', message: '' })
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault()
+        setIsSubmitting(true)
+        const res = await submitContactForm(formData)
+        if (res.success) {
+            toast.success("Đã gửi yêu cầu tư vấn thành công!")
+            setFormData({ name: '', phone: '', email: '', message: '' })
+        } else {
+            toast.error(res.error || "Có lỗi xảy ra.")
+        }
+        setIsSubmitting(false)
+    }
+
     return (
         <section className="bg-stone-50 py-16 lg:py-24">
             <div className="u-container max-w-3xl mx-auto">
@@ -21,10 +40,7 @@ export function ContactSection() {
                             </p>
                         </div>
 
-                        <form className="flex flex-col gap-6" onSubmit={(e) => {
-                            e.preventDefault();
-                            alert("Form đang ở chế độ giao diện, tính năng gửi sẽ được kích hoạt sau khi có API.");
-                        }}>
+                        <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                 <div className="flex flex-col gap-2.5">
                                     <label htmlFor="name" className="text-sm font-medium text-neutral-700">Họ và tên <span className="text-red-500">*</span></label>
@@ -32,6 +48,8 @@ export function ContactSection() {
                                         id="name" 
                                         placeholder="VD: Nguyễn Văn A" 
                                         required 
+                                        value={formData.name}
+                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                         className="h-12 bg-neutral-50 border-neutral-200 focus-visible:ring-[#2E7A96] focus-visible:border-[#2E7A96]"
                                     />
                                 </div>
@@ -42,6 +60,8 @@ export function ContactSection() {
                                         type="tel"
                                         placeholder="VD: 09..." 
                                         required 
+                                        value={formData.phone}
+                                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                                         className="h-12 bg-neutral-50 border-neutral-200 focus-visible:ring-[#2E7A96] focus-visible:border-[#2E7A96]"
                                     />
                                 </div>
@@ -53,6 +73,8 @@ export function ContactSection() {
                                     id="email" 
                                     type="email"
                                     placeholder="VD: example@email.com" 
+                                    value={formData.email}
+                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                     className="h-12 bg-neutral-50 border-neutral-200 focus-visible:ring-[#2E7A96] focus-visible:border-[#2E7A96]"
                                 />
                             </div>
@@ -64,13 +86,14 @@ export function ContactSection() {
                                     placeholder="Bạn đang muốn tìm mua dòng sản phẩm nào? Hoặc để lại lời nhắn cho chúng tôi..." 
                                     required 
                                     rows={5}
+                                    value={formData.message}
+                                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                                     className="resize-none bg-neutral-50 border-neutral-200 shadow-none focus-visible:ring-[#2E7A96] focus-visible:border-[#2E7A96] p-4 text-base"
                                 />
                             </div>
 
-                            <Button type="submit" className="h-14 mt-4 bg-[#2E7A96] hover:bg-[#256579] text-base gap-2 w-full shadow-lg shadow-[#2E7A96]/20 transition-all active:scale-[0.98] rounded-xl">
-                                Gửi yêu cầu tư vấn
-                                <ArrowRight className="w-5 h-5" />
+                            <Button type="submit" disabled={isSubmitting} className="h-14 mt-4 bg-[#2E7A96] hover:bg-[#256579] text-base gap-2 w-full shadow-lg shadow-[#2E7A96]/20 transition-all active:scale-[0.98] rounded-xl">
+                                {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Gửi yêu cầu tư vấn <ArrowRight className="w-5 h-5" /></>}
                             </Button>
                         </form>
                     </div>

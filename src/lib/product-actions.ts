@@ -30,8 +30,7 @@ const productSchema = z.object({
     stock_status: z.enum(['in_stock', 'out_of_stock', 'preorder']).default('in_stock'),
     is_active: z.boolean().default(true),
     is_featured: z.boolean().default(false),
-    is_new: z.boolean().default(false),
-    is_bestseller: z.boolean().default(false),
+    is_promotion: z.boolean().default(false),
     sort_order: z.coerce.number().int().default(0),
     product_type: z.string().max(50).optional().nullable(),
     product_sub_type: z.string().max(50).optional().nullable(),
@@ -74,8 +73,7 @@ export async function createProduct(data: unknown) {
             stock_status: d.stock_status,
             is_active: d.is_active,
             is_featured: d.is_featured,
-            is_new: d.is_new,
-            is_bestseller: d.is_bestseller,
+            is_promotion: d.is_promotion,
             sort_order: d.sort_order,
             product_type: d.product_type || null,
             product_sub_type: d.product_sub_type || null,
@@ -128,8 +126,7 @@ export async function updateProduct(id: number, data: unknown) {
             stock_status: d.stock_status,
             is_active: d.is_active,
             is_featured: d.is_featured,
-            is_new: d.is_new,
-            is_bestseller: d.is_bestseller,
+            is_promotion: d.is_promotion,
             sort_order: d.sort_order,
             product_type: d.product_type || null,
             product_sub_type: d.product_sub_type || null,
@@ -360,5 +357,122 @@ export async function removeProductRelationship(id: number, parentId: number) {
         return { success: true };
     } catch (err: any) {
         return { message: 'Lỗi xóa sản phẩm liên kết: ' + err.message };
+    }
+}
+
+// ─── VARIANTS MANAGEMENT ───────────────────────────────────────────────────
+
+export async function getProductVariants(variantGroup: string | null) {
+    if (!variantGroup) return [];
+    try {
+        const variants = await prisma.products.findMany({
+            where: { variant_group: variantGroup },
+            select: {
+                id: true,
+                sku: true,
+                name: true,
+                price: true,
+                image_main_url: true,
+                variant_group: true,
+                colors: { select: { name: true, hex_code: true } }
+            },
+            orderBy: { id: 'asc' }
+        });
+        
+        // Serialize price Decimal to Number
+        return variants.map(v => ({
+            ...v,
+            price: v.price ? Number(v.price) : null
+        }));
+    } catch (err: any) {
+        console.error('Error fetching variants:', err);
+        return [];
+    }
+}
+
+export async function linkVariant(currentProductId: number, targetProductId: number) {
+    try {
+        const currentProduct = await prisma.products.findUnique({
+            where: { id: currentProductId },
+            select: { variant_group: true }
+        });
+
+        if (!currentProduct) {
+            return { message: 'Không tìm thấy sản phẩm hiện tại.' };
+        }
+
+        // Lấy hoặc tạo variant_group mới (VD: VG-<timestamp>)
+        const variantGroup = currentProduct.variant_group || `VG-${Date.now()}`;
+
+        // Nếu sản phẩm hiện tại chưa có variant_group thì cập nhật nó trước
+        if (!currentProduct.variant_group) {
+            await prisma.products.update({
+                where: { id: currentProductId },
+                data: { variant_group: variantGroup }
+            });
+        }
+
+        // Cập nhật sản phẩm mục tiêu (target) vào chung variant_group
+        await prisma.products.update({
+            where: { id: targetProductId },
+            data: { variant_group: variantGroup }
+        });
+
+        revalidatePath(`/admin/products/${currentProductId}`);
+        return { success: true };
+    } catch (err: any) {
+        console.error('Error linking variant:', err);
+        return { message: 'Lỗi khi liên kết biến thể: ' + err.message };
+    }
+}
+
+export async function unlinkVariant(productId: number, currentProductId: number) {
+    try {
+        await prisma.products.update({
+            where: { id: productId },
+            data: { variant_group: null }
+        });
+
+        revalidatePath(`/admin/products/${currentProductId}`);
+        return { success: true };
+    } catch (err: any) {
+        console.error('Error unlinking variant:', err);
+        return { message: 'Lỗi khi hủy liên kết biến thể: ' + err.message };
+    }
+}
+
+export async function bulkToggleFeatured(ids: number[], value: boolean) {
+    try {
+        const result = await prisma.products.updateMany({
+            where: { id: { in: ids } },
+            data: { is_featured: value, updated_at: new Date() },
+        })
+        revalidatePath('/admin/products')
+        revalidatePath('/')
+        return { success: true, count: result.count }
+    } catch (error) {
+        console.error('Lỗi bulkToggleFeatured:', error)
+        return { success: false, message: 'Lỗi server' }
+    }
+}
+
+// ─── REORDER ─────────────────────────────────────────────────────────────────
+
+export async function updateProductSortOrders(updates: { id: number; sort_order: number }[]) {
+    try {
+        await prisma.$transaction(
+            updates.map((u) =>
+                prisma.products.update({
+                    where: { id: u.id },
+                    data: { sort_order: u.sort_order }
+                })
+            )
+        )
+        revalidatePath('/admin/products')
+        revalidatePath('/')
+        return { success: true }
+    } catch (err: unknown) {
+        console.error('Error updating sort orders:', err)
+        return { success: false, message: 'Lỗi cập nhật vị trí' }
     }
 }

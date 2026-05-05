@@ -82,7 +82,7 @@ export async function createOrder(data: unknown) {
 // ─── UPDATE ORDER STATUS ──────────────────────────────────────────────────────
 
 export async function updateOrderStatus(id: number, status: string) {
-    const validStatuses = ['pending', 'confirmed', 'processing', 'shipping', 'delivered', 'cancelled']
+    const validStatuses = ['pending', 'received', 'confirmed', 'inventory_check', 'completed', 'cancelled']
     if (!validStatuses.includes(status)) {
         return { message: 'Trạng thái không hợp lệ' }
     }
@@ -250,11 +250,11 @@ export async function getOrderStats() {
     const [total, pending, processing, delivered, revenue] = await Promise.all([
         prisma.orders.count(),
         prisma.orders.count({ where: { status: 'pending' } }),
-        prisma.orders.count({ where: { status: { in: ['confirmed', 'processing', 'shipping'] } } }),
-        prisma.orders.count({ where: { status: 'delivered' } }),
+        prisma.orders.count({ where: { status: { in: ['received', 'confirmed', 'inventory_check'] } } }),
+        prisma.orders.count({ where: { status: 'completed' } }),
         prisma.orders.aggregate({
             _sum: { total: true },
-            where: { status: 'delivered', payment_status: 'paid' },
+            where: { status: 'completed', payment_status: 'paid' },
         }),
     ])
     return {
@@ -263,5 +263,90 @@ export async function getOrderStats() {
         processing,
         delivered,
         revenue: Number(revenue._sum.total || 0),
+    }
+}
+
+// ─── CREATE QUOTE FROM ORDER ──────────────────────────────────────────────────
+
+export async function createQuoteFromOrder(orderId: number) {
+    const order = await prisma.orders.findUnique({
+        where: { id: orderId },
+        include: { order_items: true }
+    })
+    
+    if (!order) return { success: false, error: 'Không tìm thấy đơn hàng' }
+
+    try {
+        const quote = await prisma.quote_requests.create({
+            data: {
+                quote_number: `Q-${order.order_number}`,
+                name: order.customer_name,
+                phone: order.customer_phone,
+                email: order.customer_email || null,
+                message: `Tạo từ đơn hàng ${order.order_number}`,
+                status: 'resolved',
+                shipping_fee: order.shipping_fee,
+                quote_items: {
+                    create: order.order_items.map(item => ({
+                        product_id: item.product_id,
+                        admin_unit_price: item.unit_price,
+                        admin_quantity: item.quantity,
+                    }))
+                }
+            }
+        })
+        return { success: true, quoteId: quote.id }
+    } catch (err: any) {
+        return { success: false, error: err.message }
+    }
+}
+
+// ─── UPDATE ORDER DETAILS (Builder) ──────────────────────────────────────────
+
+export async function updateOrderData(orderId: number, data: any) {
+    try {
+        const items = data.items || []
+        const subtotal = items.reduce((acc: number, item: any) => {
+            const price = item.unit_price ?? 0
+            const qty = item.quantity ?? 1
+            return acc + (price * qty)
+        }, 0)
+
+        const vatRate = data.vat_rate || 0
+        const vatAmount = subtotal * (vatRate / 100)
+        const shippingFee = Number(data.shipping_fee) || 0
+        const discount = Number(data.discount) || 0
+        const total = subtotal + vatAmount + shippingFee - discount
+
+        // Update order
+        await prisma.orders.update({
+            where: { id: orderId },
+            data: {
+                vat_rate: vatRate,
+                shipping_fee: shippingFee,
+                discount: discount,
+                note: data.note,
+                subtotal: subtotal,
+                total: total,
+            }
+        })
+
+        // Update items
+        for (const item of items) {
+            await prisma.order_items.update({
+                where: { id: item.id },
+                data: {
+                    unit_price: item.unit_price,
+                    quantity: item.quantity,
+                    total_price: Number(item.unit_price) * Number(item.quantity)
+                }
+            })
+        }
+
+        revalidatePath(`/admin/orders/${orderId}`)
+        return { success: true }
+    } catch (error: any) {
+        console.error('Failed to update order data:', error)
+        return { success: false, error: 'Lỗi server khi lưu đơn hàng: ' + error.message }
     }
 }

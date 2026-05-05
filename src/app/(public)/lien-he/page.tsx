@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { siteConfig } from "@/config/site";
 import { useState } from "react";
 import { toast } from "sonner";
+import { submitContactForm } from "@/lib/actions";
 
 export default function ContactPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -24,13 +25,9 @@ export default function ContactPage() {
         };
 
         try {
-            const res = await fetch('/api/quote-requests', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
+            const res = await submitContactForm(data);
 
-            const result = await res.json();
+            const result = res;
             
             if (result.success) {
                 toast.success("Đã gửi yêu cầu thành công!", {

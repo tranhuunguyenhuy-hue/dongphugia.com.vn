@@ -7,11 +7,11 @@ import {
 import { updateOrderStatus } from '@/lib/order-actions'
 
 const STATUS_OPTIONS = [
-    { value: 'pending', label: 'Chờ xác nhận' },
-    { value: 'confirmed', label: 'Đã xác nhận' },
-    { value: 'processing', label: 'Đang xử lý' },
-    { value: 'shipping', label: 'Đang giao' },
-    { value: 'delivered', label: 'Đã giao' },
+    { value: 'pending', label: 'Cần xử lý' },
+    { value: 'received', label: 'Tiếp nhận' },
+    { value: 'confirmed', label: 'Xác nhận đơn' },
+    { value: 'inventory_check', label: 'Báo cáo kho' },
+    { value: 'completed', label: 'Đặt hàng thành công' },
     { value: 'cancelled', label: 'Đã hủy' },
 ]
 

@@ -105,7 +105,7 @@ export default async function ThietBiVeSinhSubPage({ params, searchParams }: Pag
             feature_slugs: activeFeatureSlugs,
             material_slug: activeMaterialSlugs,
             origin_slug: activeOriginSlugs,
-            is_new: isNew ? true : undefined,
+            is_promotion: isNew ? true : undefined,
             is_featured: isFeatured ? true : undefined,
             spec_filters: Object.keys(spec_filters).length > 0 ? spec_filters : undefined,
             price_min,

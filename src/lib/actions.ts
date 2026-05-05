@@ -175,3 +175,26 @@ export async function updateQuoteRequestStatus(id: number, status: string) {
     }
 }
 
+export async function submitContactForm(data: { name: string, phone: string, email?: string, message: string }) {
+    try {
+        await prisma.customers.upsert({
+            where: { phone: data.phone },
+            create: {
+                full_name: data.name,
+                phone: data.phone,
+                email: data.email || null,
+                notes: `Khách hàng từ Form Liên Hệ:\n${data.message}`,
+                source: 'CONTACT_FORM'
+            },
+            update: {
+                last_interacted_at: new Date(),
+                notes: `[Cập nhật mới]: Khách hàng gửi form liên hệ với nội dung:\n${data.message}`
+            }
+        })
+        revalidatePath('/admin/customers')
+        return { success: true }
+    } catch (error) {
+        console.error("Lỗi khi lưu form liên hệ:", error)
+        return { success: false, error: 'Có lỗi xảy ra, vui lòng thử lại sau.' }
+    }
+}

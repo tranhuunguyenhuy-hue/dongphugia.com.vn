@@ -50,8 +50,8 @@ export async function FeaturedCategories() {
             price_display: p.price_display,
             image_main_url: p.image_main_url,
 
-            is_new: p.is_new,
-            is_bestseller: p.is_bestseller,
+            is_promotion: p.is_promotion,
+            
             stock_status: p.stock_status,
             subcategories: p.subcategories,
             brands: p.brands,
