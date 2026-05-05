@@ -64,8 +64,9 @@ model products {
   color_id        Int?
   material_id     Int?
   price           Decimal? @db.Decimal(15, 2)
-  original_price  Decimal? @db.Decimal(15, 2)
-  price_display   String?  @default("Liên hệ báo giá") @db.VarChar(50)
+  original_price          Decimal? @db.Decimal(15, 2)
+  online_discount_amount  Decimal? @db.Decimal(15, 2)
+  price_display           String?  @default("Liên hệ báo giá") @db.VarChar(50)
   description     String?
   features        String?
   specs           Json     @default("{}")
@@ -165,17 +166,20 @@ model quote_requests {
   admin_notes  String?
   customer_id  Int?
   status       String        @default("pending") @db.VarChar(20)
+  assigned_to  Int?          // FK to admin_users (assigned sale staff)
   created_at   DateTime      @default(now()) @db.Timestamptz(6)
   updated_at   DateTime      @default(now()) @db.Timestamptz(6)
   
-  quote_items  quote_items[]
-  customers    customers?    @relation(fields: [customer_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  quote_items    quote_items[]
+  customers      customers?   @relation(fields: [customer_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  assigned_user  admin_users? @relation("quote_assigned_to", fields: [assigned_to], references: [id], onDelete: SetNull, onUpdate: NoAction)
 
   @@index([quote_number], map: "idx_quote_requests_number")
   @@index([created_at(sort: Desc)], map: "idx_quote_requests_created")
   @@index([status], map: "idx_quote_requests_status")
   @@index([phone], map: "idx_quote_requests_phone")
   @@index([customer_id], map: "idx_quote_requests_customer")
+  @@index([assigned_to], map: "idx_quote_requests_assigned")
 }
 
 model quote_items {
@@ -423,7 +427,8 @@ model orders {
   customer_phone   String        @db.VarChar(20)
   customer_email   String?       @db.VarChar(200)
   customer_address String?
-  note             String?
+  note             String?       // Customer-facing note (from checkout form)
+  internal_note    String?       // Internal team note (not shown to customer)
   subtotal         Decimal       @default(0) @db.Decimal(15, 2)
   shipping_fee     Decimal       @default(0) @db.Decimal(15, 2)
   discount         Decimal       @default(0) @db.Decimal(15, 2)
@@ -432,14 +437,18 @@ model orders {
   status           String        @default("pending") @db.VarChar(30)
   payment_method   String?       @db.VarChar(50)
   payment_status   String        @default("unpaid") @db.VarChar(30)
+  assigned_to      Int?          // FK to admin_users (assigned sale staff)
+  assigned_at      DateTime?     @db.Timestamptz(6)
   created_at       DateTime      @default(now()) @db.Timestamptz(6)
   updated_at       DateTime      @default(now()) @db.Timestamptz(6)
   order_items      order_items[]
+  assigned_user    admin_users?  @relation("order_assigned_to", fields: [assigned_to], references: [id], onDelete: SetNull, onUpdate: NoAction)
 
   @@index([created_at(sort: Desc)], map: "idx_orders_created")
   @@index([order_number], map: "idx_orders_number")
   @@index([payment_status], map: "idx_orders_payment")
   @@index([status], map: "idx_orders_status")
+  @@index([assigned_to], map: "idx_orders_assigned")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -509,4 +518,68 @@ model product_secondary_subcategories {
   @@unique([product_id, subcategory_id])
   @@index([product_id], map: "idx_prod_sec_subcat_product")
   @@index([subcategory_id], map: "idx_prod_sec_subcat_subcat")
+}
+
+// ─── RBAC: Admin User Management ─────────────────────────────────────────────
+
+/// Admin users with role-based access control.
+/// Roles: admin | sale_manager | sale
+model admin_users {
+  id            Int       @id @default(autoincrement())
+  email         String    @unique @db.VarChar(200)
+  name          String    @db.VarChar(100)
+  password_hash String    @db.VarChar(255)
+  role          String    @default("sale") @db.VarChar(20) // admin | sale_manager | sale
+  is_active     Boolean   @default(true)
+  avatar_url    String?   @db.VarChar(500)
+  last_login_at DateTime? @db.Timestamptz(6)
+  created_at    DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime  @default(now()) @db.Timestamptz(6)
+
+  // Relations
+  sessions       admin_sessions[]
+  audit_logs     audit_logs[]
+  orders_assigned     orders[]         @relation("order_assigned_to")
+  quotes_assigned     quote_requests[] @relation("quote_assigned_to")
+
+  @@index([email], map: "idx_admin_users_email")
+  @@index([role], map: "idx_admin_users_role")
+  @@index([is_active], map: "idx_admin_users_active")
+}
+
+/// Active sessions for admin users. One user can have multiple sessions (multi-device).
+model admin_sessions {
+  id          Int       @id @default(autoincrement())
+  user_id     Int
+  token_hash  String    @unique @db.VarChar(255) // SHA-256 hash of the actual session token
+  ip_address  String?   @db.VarChar(45)
+  user_agent  String?
+  expires_at  DateTime  @db.Timestamptz(6)
+  created_at  DateTime  @default(now()) @db.Timestamptz(6)
+
+  user admin_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([token_hash], map: "idx_admin_sessions_token")
+  @@index([user_id], map: "idx_admin_sessions_user")
+  @@index([expires_at], map: "idx_admin_sessions_expires")
+}
+
+/// Audit trail for all admin actions. Used for traceability and dispute resolution.
+model audit_logs {
+  id          Int      @id @default(autoincrement())
+  user_id     Int?
+  action      String   @db.VarChar(100) // ORDER_STATUS_CHANGED | ORDER_ASSIGNED | QUOTE_CREATED | ...
+  entity_type String   @db.VarChar(50)  // orders | quote_requests | products | ...
+  entity_id   Int?
+  old_value   Json?
+  new_value   Json?
+  ip_address  String?  @db.VarChar(45)
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+
+  user admin_users? @relation(fields: [user_id], references: [id], onDelete: SetNull)
+
+  @@index([user_id], map: "idx_audit_logs_user")
+  @@index([entity_type, entity_id], map: "idx_audit_logs_entity")
+  @@index([created_at(sort: Desc)], map: "idx_audit_logs_created")
+  @@index([action], map: "idx_audit_logs_action")
 }
