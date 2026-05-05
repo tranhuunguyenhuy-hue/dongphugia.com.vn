@@ -23,6 +23,7 @@ import { useForm } from 'react-hook-form'
 import * as z from 'zod'
 import Link from 'next/link'
 import { ProductRelationshipPicker } from './product-relationship-picker'
+import { ProductVariantManager } from '@/components/admin/products/product-variant-manager'
 import { QuickCreateProductModal } from './quick-create-product-modal'
 import { addProductRelationship, removeProductRelationship } from '@/lib/product-actions'
 
@@ -73,8 +74,7 @@ const formSchema = z.object({
     stock_status: z.string().optional(),
     is_active: z.boolean().optional(),
     is_featured: z.boolean().optional(),
-    is_new: z.boolean().optional(),
-    is_bestseller: z.boolean().optional(),
+    is_promotion: z.boolean().optional(),
     sort_order: z.string().optional(),
     product_type: z.string().optional(),
     product_sub_type: z.string().optional(),
@@ -153,8 +153,7 @@ export function ProductForm({ pageTitle, pageSubtitle, product, categories, subc
             stock_status: product?.stock_status || 'in_stock',
             is_active: product?.is_active ?? true,
             is_featured: product?.is_featured ?? false,
-            is_new: product?.is_new ?? false,
-            is_bestseller: product?.is_bestseller ?? false,
+            is_promotion: product?.is_promotion ?? false,
             sort_order: product?.sort_order?.toString() || '0',
             product_type: product?.product_type || '',
             product_sub_type: product?.product_sub_type || '',
@@ -516,7 +515,27 @@ export function ProductForm({ pageTitle, pageSubtitle, product, categories, subc
                                 <TabsTrigger value="combo" className="px-1 py-1.5 font-medium text-stone-500 data-[state=active]:text-stone-900 data-[state=active]:shadow-none focus-visible:ring-0 focus-visible:outline-none border-none">
                                     Combo & Liên kết
                                 </TabsTrigger>
+                                <TabsTrigger value="variants" className="px-1 py-1.5 font-medium text-stone-500 data-[state=active]:text-stone-900 data-[state=active]:shadow-none focus-visible:ring-0 focus-visible:outline-none border-none">
+                                    Biến thể
+                                </TabsTrigger>
                             </TabsList>
+
+                            {/* TAB: BIẾN THỂ (VARIANTS) */}
+                            <TabsContent value="variants" className="space-y-6 outline-none">
+                                {!isEdit ? (
+                                    <div className="flex flex-col items-center justify-center py-12 text-center bg-stone-50 rounded-xl border border-dashed">
+                                        <Sparkles className="h-10 w-10 text-stone-300 mb-4" />
+                                        <h3 className="text-lg font-medium text-stone-900">Tính năng này đã bị khóa</h3>
+                                        <p className="text-sm text-muted-foreground mt-1 max-w-md">Bạn cần phải lưu sản phẩm này lần đầu tiên trước khi có thể liên kết nó với các biến thể khác.</p>
+                                    </div>
+                                ) : (
+                                    <ProductVariantManager 
+                                        productId={product.id} 
+                                        initialVariants={product.variants || []} 
+                                        currentVariantGroup={product.variant_group}
+                                    />
+                                )}
+                            </TabsContent>
 
                             {/* TAB 1: THÔNG TIN CHUNG */}
                             <TabsContent value="general" className="space-y-6 outline-none">
@@ -629,8 +648,7 @@ export function ProductForm({ pageTitle, pageSubtitle, product, categories, subc
                                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
                                                 {[
                                                     { name: 'is_featured' as const, label: 'Nổi bật', desc: 'Hiển thị ở trang chủ' },
-                                                    { name: 'is_new' as const, label: 'Hàng mới', desc: 'Sản phẩm mới ra mắt' },
-                                                    { name: 'is_bestseller' as const, label: 'Bán chạy', desc: 'Badge bán chạy' },
+                                                    { name: 'is_promotion' as const, label: 'Khuyến mãi', desc: 'Sản phẩm đang sale' },
                                                 ].map(({ name, label, desc }) => (
                                                     <FormField
                                                         key={name}

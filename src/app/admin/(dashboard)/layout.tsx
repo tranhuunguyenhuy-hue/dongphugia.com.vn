@@ -31,7 +31,7 @@ export default async function AdminLayout({
                         <SidebarTrigger />
                     </div>
                     <div className="flex-1 overflow-y-auto relative scroll-smooth">
-                        <main className="p-4 sm:p-6 lg:p-8 animate-page-enter max-w-7xl mx-auto w-full">
+                        <main className="p-4 sm:p-6 lg:p-8 animate-page-enter w-full">
                             {children}
                         </main>
                     </div>

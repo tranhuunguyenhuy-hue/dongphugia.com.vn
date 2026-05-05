@@ -17,7 +17,7 @@ export function ActiveFilters({ filterDict, excludeKeys = [] }: { filterDict: Ac
     const FILTER_KEYS = ['sub', 'brand', 'features', 'material', 'origin'].filter(
         key => !excludeKeys.includes(key)
     )
-    const SPECIAL_KEYS = ['priceRange', 'is_new', 'is_featured']
+    const SPECIAL_KEYS = ['priceRange', 'is_promotion', 'is_featured']
 
     let activeBadges: { key: string, slug: string, label: string }[] = []
 
@@ -48,8 +48,8 @@ export function ActiveFilters({ filterDict, excludeKeys = [] }: { filterDict: Ac
         })
     }
 
-    if (searchParams.get('is_new') === 'true') {
-        activeBadges.push({ key: 'is_new', slug: 'true', label: 'Sản phẩm mới' })
+    if (searchParams.get('is_promotion') === 'true') {
+        activeBadges.push({ key: 'is_promotion', slug: 'true', label: 'Khuyến mãi' })
     }
     
     if (searchParams.get('is_featured') === 'true') {

@@ -49,7 +49,7 @@ export function ProductComponentsSection({ components, basePath = '/thiet-bi-ve-
   if (resolved.length === 0) return null;
 
   return (
-    <div className="mt-16 border rounded-xl p-5 bg-white shadow-sm border-stone-200">
+    <div className="mt-2">
       {/* Section Header */}
       <div className="flex items-center gap-2 mb-4">
         <Package className="w-5 h-5 text-stone-900" />
@@ -60,7 +60,7 @@ export function ProductComponentsSection({ components, basePath = '/thiet-bi-ve-
       </div>
 
       {/* Component Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {resolved.map(({ child, child_sku, sort_order }) => {
           if (!child) return null;
           const displayName = child.display_name || child.name;
@@ -71,7 +71,7 @@ export function ProductComponentsSection({ components, basePath = '/thiet-bi-ve-
               key={child_sku}
               href={href}
               target="_blank"
-              className="group flex items-center gap-4 p-3 rounded-xl border border-stone-100 bg-white hover:border-[#2E7A96]/30 hover:bg-[#2E7A96]/[0.02] transition-all duration-200"
+              className="group flex items-center gap-4 p-3 rounded-xl hover:bg-stone-50 transition-all duration-200"
             >
 
               {/* Ảnh nhỏ */}

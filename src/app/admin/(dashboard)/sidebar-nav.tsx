@@ -63,6 +63,7 @@ const collapsibleNav = [
         icon: ShoppingBag,
         isActive: true,
         items: [
+            { label: "Khách hàng (CSKH)", href: "/admin/customers" },
             { label: "Đơn hàng", href: "/admin/orders" },
             { label: "Báo giá", href: "/admin/quote-requests", quoteBadge: true },
         ],
@@ -72,7 +73,7 @@ const collapsibleNav = [
         icon: LayoutGrid,
         isActive: true,
         items: [
-            { label: "Banners", href: "/admin/banners" },
+            { label: "Banners", href: "/admin/content/banners" },
             { label: "Blog", href: "/admin/blog/posts" },
         ],
     },

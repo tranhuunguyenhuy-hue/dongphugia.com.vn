@@ -27,9 +27,8 @@ interface FeaturedProduct {
     price_display: string | null
     image_main_url: string | null
 
-    is_new: boolean
-    is_bestseller: boolean
-    stock_status: string
+    is_promotion: boolean
+        stock_status: string
     subcategories: Subcategory | null
     brands: Brand | null
 }

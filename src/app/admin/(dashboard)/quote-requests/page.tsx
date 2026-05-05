@@ -18,7 +18,8 @@ interface PageProps {
 const STATUS_LABELS: Record<string, string> = {
     all: 'Tất cả',
     pending: 'Chờ xử lý',
-    resolved: 'Đã xử lý',
+    resolved: 'Đang làm báo giá',
+    completed: 'Hoàn thành',
     cancelled: 'Đã huỷ',
 }
 
@@ -52,7 +53,7 @@ export default async function QuoteRequestsPage({ searchParams }: PageProps) {
 
             {/* Filter Tabs */}
             <div className="flex items-center gap-2 flex-wrap">
-                {['all', 'pending', 'resolved', 'cancelled'].map((s) => {
+                {['all', 'pending', 'resolved', 'completed', 'cancelled'].map((s) => {
                     const count = s === 'all'
                         ? Object.values(countMap).reduce((a, b) => a + b, 0)
                         : (countMap[s] || 0)
@@ -125,7 +126,8 @@ export default async function QuoteRequestsPage({ searchParams }: PageProps) {
                                             variant="secondary"
                                             className={
                                                 q.status === 'pending' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
-                                                q.status === 'resolved' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+                                                q.status === 'resolved' ? 'bg-blue-50 text-blue-700 border border-blue-200' :
+                                                q.status === 'completed' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
                                                 'bg-slate-100 text-slate-500'
                                             }
                                         >
@@ -133,7 +135,12 @@ export default async function QuoteRequestsPage({ searchParams }: PageProps) {
                                         </Badge>
                                     </TableCell>
                                     <TableCell className="text-right">
-                                        <QuoteStatusButton id={q.id} currentStatus={q.status} />
+                                        <Link
+                                            href={`/admin/quote-requests/${q.id}/builder`}
+                                            className="text-sm font-medium text-primary hover:underline inline-flex items-center gap-1"
+                                        >
+                                            Soạn Báo Giá
+                                        </Link>
                                     </TableCell>
                                 </TableRow>
                             ))}

@@ -330,7 +330,7 @@ export function AdvancedSidebarFilter({
         router.push(`${pathname}?${params.toString()}`, { scroll: false })
     }
 
-    const isNew      = searchParams.get('is_new') === 'true'
+    const isPromotion      = searchParams.get('is_promotion') === 'true'
     const isFeatured = searchParams.get('is_featured') === 'true'
 
     // Spec filter counts
@@ -352,16 +352,16 @@ export function AdvancedSidebarFilter({
     const hasFilters =
         brandSlugs.length > 0 || featureSlugs.length > 0 ||
         materialSlugs.length > 0 || originSlugs.length > 0 ||
-        isPriceActive || isNew || isFeatured || specActiveCount > 0
+        isPriceActive || isPromotion || isFeatured || specActiveCount > 0
 
     const totalActiveCount =
         brandSlugs.length + featureSlugs.length + materialSlugs.length +
-        originSlugs.length + (isPriceActive ? 1 : 0) + (isNew ? 1 : 0) + (isFeatured ? 1 : 0) + specActiveCount
+        originSlugs.length + (isPriceActive ? 1 : 0) + (isPromotion ? 1 : 0) + (isFeatured ? 1 : 0) + specActiveCount
 
     const clearAll = () => {
         setLocalPrice([PRICE_MIN, PRICE_MAX])
         const params = new URLSearchParams(searchParams.toString())
-        ;['brand', 'features', 'material', 'origin', 'price', 'is_new', 'is_featured', 'priceRange'].forEach(k => params.delete(k))
+        ;['brand', 'features', 'material', 'origin', 'price', 'is_promotion', 'is_featured', 'priceRange'].forEach(k => params.delete(k))
         specFilters.forEach(f => params.delete(SF_PREFIX + f.key))
         params.set('page', '1')
         router.push(`${pathname}?${params.toString()}`, { scroll: false })
@@ -552,11 +552,11 @@ export function AdvancedSidebarFilter({
                     </p>
                     <div className="flex flex-wrap gap-1.5">
                         <TagChip
-                            label="Sản phẩm mới"
-                            active={isNew}
+                            label="Khuyến mãi"
+                            active={isPromotion}
                             onClick={() => {
                                 const params = new URLSearchParams(searchParams.toString())
-                                isNew ? params.delete('is_new') : params.set('is_new', 'true')
+                                isPromotion ? params.delete('is_promotion') : params.set('is_promotion', 'true')
                                 params.set('page', '1')
                                 router.push(`${pathname}?${params.toString()}`, { scroll: false })
                             }}

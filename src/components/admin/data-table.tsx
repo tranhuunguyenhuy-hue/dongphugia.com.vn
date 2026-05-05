@@ -24,22 +24,25 @@ interface DataTableProps<TData, TValue> {
   data: TData[]
   pageCount?: number
   onPaginationChange?: (pageIndex: number, pageSize: number) => void
+  hidePagination?: boolean
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
+  hidePagination,
 }: DataTableProps<TData, TValue>) {
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
+    getPaginationRowModel: hidePagination ? undefined : getPaginationRowModel(),
+    initialState: hidePagination ? { pagination: { pageSize: 1000 } } : undefined,
   })
 
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl border border-slate-100 bg-white shadow-sm overflow-hidden">
+      <div className="bg-white overflow-hidden">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -84,24 +87,26 @@ export function DataTable<TData, TValue>({
           </TableBody>
         </Table>
       </div>
-      <div className="flex items-center justify-end space-x-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => table.previousPage()}
-          disabled={!table.getCanPreviousPage()}
-        >
-          Trước
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => table.nextPage()}
-          disabled={!table.getCanNextPage()}
-        >
-          Sau
-        </Button>
-      </div>
+      {!hidePagination && (
+        <div className="flex items-center justify-end space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.previousPage()}
+            disabled={!table.getCanPreviousPage()}
+          >
+            Trước
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.nextPage()}
+            disabled={!table.getCanNextPage()}
+          >
+            Sau
+          </Button>
+        </div>
+      )}
     </div>
   )
 }

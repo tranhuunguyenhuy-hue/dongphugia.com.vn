@@ -90,7 +90,7 @@ export default async function GachOpLatSubPage({ params, searchParams }: PagePro
             feature_slugs: activeFeatureSlugs,
             material_slug: activeMaterialSlugs,
             origin_slug: activeOriginSlugs,
-            is_new: isNew ? true : undefined,
+            is_promotion: isNew ? true : undefined,
             is_featured: isFeatured ? true : undefined,
             price_min, price_max,
             page: currentPage, pageSize: PAGE_SIZE, sortBy, sortDir,

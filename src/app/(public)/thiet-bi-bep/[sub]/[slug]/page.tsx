@@ -112,12 +112,12 @@ export default async function ProductDetailPage({ params }: PageProps) {
                 <div className="flex flex-col gap-6">
                     {/* Badges */}
                     <div className="flex gap-2 flex-wrap">
-                        {product.is_new && (
+                        {(product.is_promotion || (product.original_price && product.original_price > (product.price || 0))) && (
                             <span className="px-3 py-1 text-[11px] font-bold uppercase tracking-wider border border-brand-500 text-brand-600 bg-brand-50 rounded-full">
                                 Sản phẩm mới
                             </span>
                         )}
-                        {product.is_bestseller && (
+                        {false && (
                             <span className="px-3 py-1 text-[11px] font-bold uppercase tracking-wider bg-stone-900 text-white rounded-full">
                                 Bán chạy
                             </span>

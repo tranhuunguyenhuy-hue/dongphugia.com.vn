@@ -111,24 +111,32 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
 
             {/* Main Content */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-14">
-                {/* Gallery */}
-                <ProductImageGallery
-                    mainImageUrl={product.image_main_url}
+                <div className="flex flex-col gap-8">
+                    <ProductImageGallery
+                        mainImageUrl={product.image_main_url}
+                        additionalImages={additionalImages.map(i => ({ image_url: i.image_url, alt_text: i.alt_text }))}
+                        productName={product.name}
+                    />
 
-                    additionalImages={additionalImages.map(i => ({ image_url: i.image_url, alt_text: i.alt_text }))}
-                    productName={product.name}
-                />
+                    {/* Product Components (Bộ linh kiện) */}
+                    {hasComponents && (
+                        <ProductComponentsSection
+                            components={productComponents as any}
+                            basePath={BASE_PATH}
+                        />
+                    )}
+                </div>
 
                 {/* Info */}
                 <div className="flex flex-col gap-6">
                     {/* Badges */}
                     <div className="flex gap-2 flex-wrap">
-                        {product.is_new && (
+                        {(product.is_promotion || (product.original_price && product.original_price > (product.price || 0))) && (
                             <span className="px-3 py-1 text-[11px] font-bold uppercase tracking-wider border border-brand-500 text-brand-600 bg-brand-50 rounded-full">
                                 Sản phẩm mới
                             </span>
                         )}
-                        {product.is_bestseller && (
+                        {false && (
                             <span className="px-3 py-1 text-[11px] font-bold uppercase tracking-wider bg-stone-900 text-white rounded-full">
                                 Bán chạy
                             </span>
@@ -223,13 +231,7 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
             </div>
 
 
-            {/* Product Components (Bộ linh kiện) */}
-            {hasComponents && (
-                <ProductComponentsSection
-                    components={productComponents as any}
-                    basePath={BASE_PATH}
-                />
-            )}
+
 
             {/* Related Products */}
             {relatedProducts.length > 0 && (

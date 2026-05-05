@@ -75,8 +75,7 @@ model products {
   stock_status            String                            @default("in_stock") @db.VarChar(20)
   is_active               Boolean                           @default(true)
   is_featured             Boolean                           @default(false)
-  is_new                  Boolean                           @default(false)
-  is_bestseller           Boolean                           @default(false)
+  is_promotion            Boolean                           @default(false)
   is_combo                Boolean                           @default(false)
   variant_group           String?                           @db.VarChar(50)
   search_vector           Unsupported("tsvector")?
@@ -107,13 +106,12 @@ model products {
 
   @@unique([category_id, slug])
   @@index([is_active], map: "idx_products_active")
-  @@index([is_bestseller], map: "idx_products_bestseller")
+  @@index([is_promotion], map: "idx_products_promotion")
   @@index([brand_id], map: "idx_products_brand")
   @@index([category_id], map: "idx_products_category")
   @@index([created_at(sort: Desc)], map: "idx_products_created")
   @@index([is_featured], map: "idx_products_featured")
   @@index([hita_product_id], map: "idx_products_hita_id")
-  @@index([is_new], map: "idx_products_is_new")
   @@index([sort_order], map: "idx_products_sort")
   @@index([specs], map: "idx_products_specs", type: Gin)
   @@index([subcategory_id], map: "idx_products_subcategory")
@@ -162,29 +160,56 @@ model quote_requests {
   phone        String        @db.VarChar(20)
   email        String?       @db.VarChar(200)
   message      String?
+  vat_rate     Int           @default(10)
+  shipping_fee Decimal       @default(0) @db.Decimal(15, 2)
+  admin_notes  String?
+  customer_id  Int?
   status       String        @default("pending") @db.VarChar(20)
   created_at   DateTime      @default(now()) @db.Timestamptz(6)
   updated_at   DateTime      @default(now()) @db.Timestamptz(6)
+  
   quote_items  quote_items[]
+  customers    customers?    @relation(fields: [customer_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
 
   @@index([quote_number], map: "idx_quote_requests_number")
   @@index([created_at(sort: Desc)], map: "idx_quote_requests_created")
   @@index([status], map: "idx_quote_requests_status")
   @@index([phone], map: "idx_quote_requests_phone")
+  @@index([customer_id], map: "idx_quote_requests_customer")
 }
 
 model quote_items {
-  id             Int            @id @default(autoincrement())
-  quote_id       Int
-  product_id     Int
-  quantity       Int            @default(1)
-  note           String?        @db.VarChar(500)
-  created_at     DateTime       @default(now()) @db.Timestamptz(6)
-  quote_requests quote_requests @relation(fields: [quote_id], references: [id], onDelete: Cascade)
-  products       products       @relation(fields: [product_id], references: [id], onUpdate: NoAction)
+  id               Int            @id @default(autoincrement())
+  quote_id         Int
+  product_id       Int
+  quantity         Int            @default(1)
+  admin_unit_price Decimal?       @db.Decimal(15, 2)
+  admin_quantity   Int?
+  note             String?        @db.VarChar(500)
+  created_at       DateTime       @default(now()) @db.Timestamptz(6)
+  quote_requests   quote_requests @relation(fields: [quote_id], references: [id], onDelete: Cascade)
+  products         products       @relation(fields: [product_id], references: [id], onUpdate: NoAction)
 
   @@index([quote_id], map: "idx_quote_items_quote")
   @@index([product_id], map: "idx_quote_items_product")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model customers {
+  id                 Int              @id @default(autoincrement())
+  full_name          String           @db.VarChar(200)
+  phone              String           @unique @db.VarChar(20)
+  email              String?          @db.VarChar(200)
+  source             String?          @default("MANUAL") @db.VarChar(50)
+  notes              String?
+  last_interacted_at DateTime?        @default(now()) @db.Timestamptz(6)
+  created_at         DateTime         @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime         @default(now()) @db.Timestamptz(6)
+  
+  quote_requests     quote_requests[]
+
+  @@index([phone], map: "idx_customers_phone")
+  @@index([last_interacted_at(sort: Desc)], map: "idx_customers_interaction")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -401,6 +426,8 @@ model orders {
   note             String?
   subtotal         Decimal       @default(0) @db.Decimal(15, 2)
   shipping_fee     Decimal       @default(0) @db.Decimal(15, 2)
+  discount         Decimal       @default(0) @db.Decimal(15, 2)
+  vat_rate         Int           @default(0)
   total            Decimal       @default(0) @db.Decimal(15, 2)
   status           String        @default("pending") @db.VarChar(30)
   payment_method   String?       @db.VarChar(50)

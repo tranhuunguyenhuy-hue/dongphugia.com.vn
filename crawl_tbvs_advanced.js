@@ -123,10 +123,14 @@ async function runPipeline() {
             await page.goto(pageUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
             await delay(2000);
 
-            // Tìm toàn bộ link sản phẩm trên trang
-            const productLinks = await page.$$eval('a', anchors => {
-                return [...new Set(anchors.map(a => a.href).filter(h => h.includes('.html') && h.includes('https://hita.com.vn/') && !h.includes('thiet-bi-ve-sinh-231')))];
+            // Tối ưu hóa: Chỉ lấy link sản phẩm trong danh sách lưới, loại bỏ Mega Menu
+            let productLinks = await page.$$eval('.product-item a, .product-item-link, .product-image, .item-info a, .product-name a, .products-grid a', anchors => {
+                return [...new Set(anchors.map(a => a.href).filter(h => h.includes('.html') && h.includes('https://hita.com.vn/') && h.split('/').length > 3))];
             });
+            
+            // Lọc thêm để chắc chắn không dính category
+            productLinks = productLinks.filter(h => !h.match(/-(97|383|231|253|260|261|262|365|266|267|270|271|272|110|91|391|287|141|214|206|411|150|108|401|255|259|274|276|350)\.html$/) && !h.includes('thuong-hieu-') && !h.includes('thiet-bi-ve-sinh'));
+
 
             if (productLinks.length === 0) {
                 logMsg("Không tìm thấy link sản phẩm nào. Có thể đã hết trang hoặc bị chặn. Dừng cào.");
