@@ -130,7 +130,7 @@ export function ProductCTA({
                         className="flex-1 h-12 bg-brand-500 hover:bg-brand-600 text-white text-label-lg rounded-[var(--radius-btn)] shadow-sm gap-2"
                     >
                         <ShoppingBag className="w-4 h-4" />
-                        Thêm vào giỏ
+                        Thêm vào giỏ hàng
                     </Button>
                 )}
 
@@ -142,8 +142,8 @@ export function ProductCTA({
                                 variant="outline"
                                 className="flex-[0.8] h-12 border-brand-500 text-brand-500 hover:bg-brand-500 hover:text-white font-semibold text-[14px] rounded-[var(--radius-btn)] gap-2 transition-all"
                             >
-                                <ShoppingCart className="w-4 h-4" />
-                                Đặt hàng ngay
+                                <MessageSquareText className="w-4 h-4" />
+                                Yêu cầu báo giá
                             </Button>
                         ) : (
                             <Button className="flex-1 h-12 bg-brand-500 hover:bg-brand-600 text-white font-semibold text-[15px] rounded-[var(--radius-btn)] shadow-sm gap-2">
@@ -162,11 +162,11 @@ export function ProductCTA({
                                     <CheckCircle2 className="w-8 h-8 text-success-500" />
                                 </div>
                                 <DialogTitle className="text-2xl font-bold text-stone-900 mb-3 tracking-tight">
-                                    {hasPrice ? "Yêu cầu đặt hàng đã được gửi!" : "Yêu cầu báo giá thành công!"}
+                                    {hasPrice ? "Yêu cầu báo giá đã được gửi!" : "Yêu cầu báo giá thành công!"}
                                 </DialogTitle>
                                 <DialogDescription className="text-[15px] text-stone-600 mb-8 leading-relaxed">
                                     {hasPrice
-                                        ? "Cảm ơn bạn đã lựa chọn Đông Phú Gia. Nhân viên của chúng tôi sẽ liên lạc xác nhận đơn hàng ngay."
+                                        ? "Cảm ơn bạn đã lựa chọn Đông Phú Gia. Nhân viên của chúng tôi sẽ liên lạc xác nhận ngay."
                                         : "Nhân viên Đông Phú Gia đã nhận được yêu cầu và sẽ gọi điện tư vấn ngay cho bạn."}
                                 </DialogDescription>
                                 <Button
@@ -180,7 +180,7 @@ export function ProductCTA({
                             <div className="p-6 sm:p-8">
                                 <DialogHeader className="mb-6">
                                     <DialogTitle className="text-2xl font-bold text-stone-900 tracking-tight">
-                                        {hasPrice ? "Yêu cầu đặt hàng" : "Yêu cầu báo giá"}
+                                        Yêu cầu báo giá
                                     </DialogTitle>
                                     <DialogDescription className="text-stone-500 text-sm mt-1">
                                         Điền thông tin bên dưới để chúng tôi có thể hỗ trợ bạn nhanh nhất
@@ -257,7 +257,7 @@ export function ProductCTA({
                                             disabled={isSubmitting}
                                             className="w-full h-12 bg-brand-500 hover:bg-brand-600 text-white font-semibold text-[15px] rounded-[var(--radius-btn)] shadow-md transition-all gap-2"
                                         >
-                                            {isSubmitting ? "Đang xử lý..." : (hasPrice ? "Xác nhận đặt hàng" : "Gửi yêu cầu báo giá")}
+                                            {isSubmitting ? "Đang xử lý..." : "Gửi yêu cầu báo giá"}
                                         </Button>
                                         <p className="text-[11px] text-center text-stone-400 mt-3">
                                             Thông tin của bạn sẽ được bảo mật tuyệt đối.
