@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers'
 import { verifySession, ADMIN_SESSION_COOKIE, type SessionUser } from './session'
+import { can, type Permission } from './permissions'
 
 /**
  * Get the currently authenticated admin user from the session cookie.
@@ -35,6 +36,17 @@ export async function requireRole(role: string): Promise<SessionUser> {
     const requiredLevel = hierarchy[role as keyof typeof hierarchy] ?? 99
     if (userLevel < requiredLevel) {
         throw new Error('FORBIDDEN')
+    }
+    return user
+}
+
+/**
+ * Require a specific permission. Throws if not authenticated or lacks permission.
+ */
+export async function requirePermission(permission: Permission): Promise<SessionUser> {
+    const user = await requireAuth()
+    if (!can(user.role, permission)) {
+        throw new Error(`FORBIDDEN: Requires ${permission} permission`)
     }
     return user
 }
