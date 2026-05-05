@@ -2,9 +2,12 @@
 
 import prisma from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
+import { requirePermission } from '@/lib/auth/get-current-user'
 
 export async function updateQuoteData(quoteId: number, data: any) {
     try {
+        await requirePermission('quotes:update')
+
         // Update quote
         await prisma.quote_requests.update({
             where: { id: quoteId },
@@ -37,6 +40,8 @@ export async function updateQuoteData(quoteId: number, data: any) {
 
 export async function completeQuote(quoteId: number, data: any) {
     try {
+        await requirePermission('quotes:update')
+
         // Save first
         await updateQuoteData(quoteId, data)
 

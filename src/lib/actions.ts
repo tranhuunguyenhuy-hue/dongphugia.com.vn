@@ -3,6 +3,7 @@
 import prisma from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
+import { requirePermission } from '@/lib/auth/get-current-user'
 
 // NOTE: Legacy product/collection/pattern-type actions removed in LEO-366.
 // Will be rebuilt as unified product actions in Phase 3.
@@ -17,6 +18,8 @@ const bannerSchema = z.object({
 })
 
 export async function createBanner(data: any) {
+    await requirePermission('blog:write')
+    
     const validated = bannerSchema.safeParse(data)
     if (!validated.success) {
         return { errors: validated.error.flatten().fieldErrors }
@@ -42,6 +45,8 @@ export async function createBanner(data: any) {
 }
 
 export async function updateBanner(id: number, data: any) {
+    await requirePermission('blog:write')
+
     const validated = bannerSchema.safeParse(data)
     if (!validated.success) {
         return { errors: validated.error.flatten().fieldErrors }
@@ -69,6 +74,8 @@ export async function updateBanner(id: number, data: any) {
 }
 
 export async function deleteBanner(id: number) {
+    await requirePermission('blog:write')
+
     try {
         await prisma.banners.delete({ where: { id } })
         revalidatePath('/admin/banners')
@@ -82,6 +89,8 @@ export async function deleteBanner(id: number) {
 
 // --- Category Banners ---
 export async function updateCategoryBanner(id: number, banner_url: string | null) {
+    await requirePermission('categories:write')
+
     try {
         await prisma.categories.update({
             where: { id },
@@ -161,6 +170,8 @@ export async function submitQuoteRequest(payload: QuoteCartPayload) {
 }
 
 export async function updateQuoteRequestStatus(id: number, status: string) {
+    await requirePermission('quotes:update')
+
     try {
         await prisma.quote_requests.update({
             where: { id },

@@ -2,6 +2,7 @@
 
 import prisma from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
+import { requirePermission } from '@/lib/auth/get-current-user'
 
 export async function saveCustomer(data: {
     id?: number
@@ -12,6 +13,8 @@ export async function saveCustomer(data: {
     source?: string
 }) {
     try {
+        await requirePermission('customers:write')
+
         if (data.id) {
             // Update
             const updated = await prisma.customers.update({
