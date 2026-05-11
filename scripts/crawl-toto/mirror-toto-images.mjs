@@ -129,11 +129,13 @@ function collectAssets(products) {
       }
     }
 
-    // Documents (PDF, DWG)
+    // Documents (PDF only — skip DWG/DXF per user decision)
     if (p.documents) {
       for (const doc of p.documents) {
         if (!doc.url || seen.has(doc.url)) continue
         if (!doc.url.includes('hita.com.vn')) continue
+        // Skip DWG/DXF CAD files
+        if (/\.(dwg|dxf)$/i.test(doc.url)) continue
         seen.add(doc.url)
         assets.push({ url: doc.url, type: 'document', hita_id: p.hita_id, name: doc.name })
       }

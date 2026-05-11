@@ -1,0 +1,1106 @@
+SKU: PJS07WE#MW
+Quy tắc: Đặt bàn
+Tên cũ: Chậu lavabo đặt bàn Galalato TOTO PJS07WE#MW (PJS07WEMW) trắng mờ
+Tên mới: Chậu lavabo đặt bàn Galalato TOTO PJS07WE#MW (PJS07WEMW) trắng mờ
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LW1536V#XW/TL516GV
+Quy tắc: Âm bàn
+Tên cũ: Chậu rửa lavabo âm bàn TOTO LW1536V
+Tên mới: Chậu Lavabo Âm Bàn TOTO LW1536V
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-am-ban -> Loại mới: lavabo-am-ban
+------------------------------------------------
+SKU: LW896JW/F#W
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LW896JW
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LW896JW
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-dat-ban -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LW1506V#XW/TL516GV
+Quy tắc: Âm bàn
+Tên cũ: Chậu rửa lavabo âm bàn TOTO LW1506V
+Tên mới: Chậu Lavabo Âm Bàn TOTO LW1506V
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-am-ban -> Loại mới: lavabo-am-ban
+------------------------------------------------
+SKU: LW1535V#XW/TL516GV
+Quy tắc: Âm bàn
+Tên cũ: Chậu rửa lavabo âm bàn TOTO LW1535V
+Tên mới: Chậu Lavabo Âm Bàn TOTO LW1535V
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-am-ban -> Loại mới: lavabo-am-ban
+------------------------------------------------
+SKU: LT700CTR#W
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT700CTR
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT700CTR
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-dat-ban -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: PJS01WE#MW
+Quy tắc: Đặt bàn
+Tên cũ: Chậu lavabo đặt bàn Galalato TOTO PJS01WE#MW (PJS01WEMW) trắng mờ
+Tên mới: Chậu lavabo đặt bàn Galalato TOTO PJS01WE#MW (PJS01WEMW) trắng mờ
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT5615C#XW
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT5615C
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT5615C
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-dat-ban -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT1515#XW
+Quy tắc: Âm bàn
+Tên cũ: Chậu rửa lavabo âm bàn TOTO LT1515
+Tên mới: Chậu Lavabo Âm Bàn TOTO LT1515
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-am-ban -> Loại mới: lavabo-am-ban
+------------------------------------------------
+SKU: LT367CR#XW
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT367CR
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT367CR
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-dat-ban -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT5616#XW
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT5616
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT5616
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-dat-ban -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT5716#XW
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT5716
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT5716
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-dat-ban -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT4704G17#MW
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT4704G17
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT4704G17
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: L762#XW
+Quy tắc: Dương vành
+Tên cũ: Chậu rửa lavabo dương vành TOTO L762
+Tên mới: Chậu Lavabo Dương Vành TOTO L762
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-duong-vanh
+------------------------------------------------
+SKU: LPT239CR#W
+Quy tắc: Treo tường
+Tên cũ: Chậu rửa lavabo treo tường TOTO LPT239CR
+Tên mới: Chậu Lavabo Treo Tường TOTO LPT239CR
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-treo-tuong
+------------------------------------------------
+SKU: LW526NJU#W
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LW526NJU
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LW526NJU
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-dat-ban -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: TLG04307V1
+Quy tắc: Kẻ lạc bầy -> Vòi Chậu
+Tên cũ: Vòi chậu lavabo nóng lạnh TOTO TLG04307V1
+Tên mới: Vòi chậu lavabo nóng lạnh TOTO TLG04307V1
+Sub ID cũ: 2 -> Sub ID mới: 6
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-treo-tuong
+------------------------------------------------
+SKU: LT328C#XW
+Quy tắc: Treo tường
+Tên cũ: Chậu rửa lavabo treo tường TOTO LT328C
+Tên mới: Chậu Lavabo Treo Tường TOTO LT328C
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-treo-tuong
+------------------------------------------------
+SKU: LT328CHR#XW
+Quy tắc: Treo tường
+Tên cũ: Chậu rửa lavabo treo tường TOTO LT328CHR
+Tên mới: Chậu Lavabo Treo Tường TOTO LT328CHR
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-treo-tuong
+------------------------------------------------
+SKU: TS250A
+Quy tắc: Kẻ lạc bầy -> Vòi Chậu
+Tên cũ: Vòi chậu lavabo nóng lạnh Grand C TOTO TS250A
+Tên mới: Vòi chậu lavabo nóng lạnh Grand C TOTO TS250A
+Sub ID cũ: 2 -> Sub ID mới: 6
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-treo-tuong
+------------------------------------------------
+SKU: LHT328C#XW
+Quy tắc: Treo tường
+Tên cũ: Chậu rửa lavabo treo tường TOTO LHT328C
+Tên mới: Chậu Lavabo Treo Tường TOTO LHT328C
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-treo-tuong
+------------------------------------------------
+SKU: LT5615#XW
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT5615
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT5615
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-dat-ban -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT952#XW
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT952
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT952
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-dat-ban -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT5715#XW
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT5715
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT5715
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-dat-ban -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT5616C#XW
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT5616C
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT5616C
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-dat-ban -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT710CSR#XW
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT710CSR
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT710CSR
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-dat-ban -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LPT766C#XW
+Quy tắc: Treo tường
+Tên cũ: Chậu rửa lavabo treo tường TOTO LPT766C
+Tên mới: Chậu Lavabo Treo Tường TOTO LPT766C
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-treo-tuong
+------------------------------------------------
+SKU: LW780J#W/LW780FJ#W/TX801LN/TL510ERR
+Quy tắc: Treo tường
+Tên cũ: Chậu rửa lavabo treo tường TOTO LW780J
+Tên mới: Chậu Lavabo Treo Tường TOTO LW780J
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-treo-tuong
+------------------------------------------------
+SKU: L909C#XW
+Quy tắc: Dương vành
+Tên cũ: Chậu rửa lavabo dương vành TOTO L909C
+Tên mới: Chậu Lavabo Dương Vành TOTO L909C
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-duong-vanh
+------------------------------------------------
+SKU: PJS05WE#GW
+Quy tắc: Đặt bàn
+Tên cũ: Chậu lavabo đặt bàn Galalato TOTO PJS05WE#GW (PJS05WEGW) trắng bóng
+Tên mới: Chậu lavabo đặt bàn Galalato TOTO PJS05WE#GW (PJS05WEGW) trắng bóng
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT700CTR#XW
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT700CTR
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT700CTR
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-dat-ban -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LW1505V#XW/TL516GV
+Quy tắc: Âm bàn
+Tên cũ: Chậu rửa lavabo âm bàn TOTO LW1505V
+Tên mới: Chậu Lavabo Âm Bàn TOTO LW1505V
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-am-ban -> Loại mới: lavabo-am-ban
+------------------------------------------------
+SKU: LT4704G17#MBL
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT4704G17
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT4704G17
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT765#XW
+Quy tắc: Âm bàn
+Tên cũ: Chậu rửa lavabo âm bàn TOTO LT765
+Tên mới: Chậu Lavabo Âm Bàn TOTO LT765
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-am-ban -> Loại mới: lavabo-am-ban
+------------------------------------------------
+SKU: LW646JW/F#W
+Quy tắc: Bán âm
+Tên cũ: Chậu rửa lavabo bán âm bàn TOTO LW646JW
+Tên mới: Chậu Lavabo Bán Âm Bàn TOTO LW646JW
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-ban-am -> Loại mới: lavabo-ban-am
+------------------------------------------------
+SKU: LT4715G17#MBE
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT4715G17
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT4715G17
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT523S#XW
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT523S
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT523S
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-dat-ban -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT4715G17#MW
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT4715G17
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT4715G17
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT4716G19#MBE
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT4716G19
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT4716G19
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT1615C#XW
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT1615C
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT1615C
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-dat-ban -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LW1315CBVN#XW
+Quy tắc: Bán âm
+Tên cũ: Chậu rửa lavabo bán âm bàn TOTO LW1315CBVN
+Tên mới: Chậu Lavabo Bán Âm Bàn TOTO LW1315CBVN
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-ban-am -> Loại mới: lavabo-ban-am
+------------------------------------------------
+SKU: PJS03WE#GW
+Quy tắc: Đặt bàn
+Tên cũ: Chậu lavabo đặt bàn Galalato TOTO PJS03WE#GW (PJS03WEGW) trắng bóng
+Tên mới: Chậu lavabo đặt bàn Galalato TOTO PJS03WE#GW (PJS03WEGW) trắng bóng
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LW643JW/F#W
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LW643JW
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LW643JW
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-dat-ban -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT1706#XW
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT1706
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT1706
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-dat-ban -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: L1616C#W
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO L1616C
+Tên mới: Chậu Lavabo Đặt Bàn TOTO L1616C
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-dat-ban -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT4706MT#CMW
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT4706MT
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT4706MT
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LHT236CS#W
+Quy tắc: Treo tường
+Tên cũ: Chậu rửa lavabo treo tường TOTO LHT236CS
+Tên mới: Chậu Lavabo Treo Tường TOTO LHT236CS
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-treo-tuong
+------------------------------------------------
+SKU: LHT328CHR#XW
+Quy tắc: Treo tường
+Tên cũ: Chậu rửa lavabo treo tường TOTO LHT328CHR
+Tên mới: Chậu Lavabo Treo Tường TOTO LHT328CHR
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-treo-tuong
+------------------------------------------------
+SKU: LPT236CS#W
+Quy tắc: Treo tường
+Tên cũ: Chậu rửa lavabo treo tường TOTO LPT236CS
+Tên mới: Chậu Lavabo Treo Tường TOTO LPT236CS
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-treo-tuong
+------------------------------------------------
+SKU: LT681#W
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT681
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT681
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-dat-ban -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT548#XW
+Quy tắc: Âm bàn
+Tên cũ: Chậu rửa lavabo âm bàn TOTO LT548
+Tên mới: Chậu Lavabo Âm Bàn TOTO LT548
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-am-ban -> Loại mới: lavabo-am-ban
+------------------------------------------------
+SKU: LHT240CS#W
+Quy tắc: Treo tường
+Tên cũ: Chậu rửa lavabo treo tường TOTO LHT240CS
+Tên mới: Chậu Lavabo Treo Tường TOTO LHT240CS
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-treo-tuong
+------------------------------------------------
+SKU: LT1735#MGR
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT1735
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT1735
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-dat-ban -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT1735#MBL
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT1735
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT1735
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-dat-ban -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT4706#MW
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT4706
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT4706
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LW630JDW/F#ASB
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LW630JDW
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LW630JDW
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-dat-ban -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT4716G19#MBL
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT4716G19
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT4716G19
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LW630JDW/F#SCR
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LW630JDW
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LW630JDW
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-dat-ban -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LW896JW/F#FRG
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LW896JW
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LW896JW
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-dat-ban -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT1705#MGR
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT1705
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT1705
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-dat-ban -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT1735#MW
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT1735
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT1735
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-dat-ban -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT4704G17#MGR
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT4704G17
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT4704G17
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT4704G19#MBL
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT4704G19
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT4704G19
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT4704G19#MGR
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT4704G19
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT4704G19
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT4715G17#MBL
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT4715G17
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT4715G17
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT4715G17#MGR
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT4715G17
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT4715G17
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT4715G19#MBE
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT4715G19
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT4715G19
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT4715G19#MGR
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT4715G19
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT4715G19
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT4716G17#MBL
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT4716G17
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT4716G17
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT4716G17#MW
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT4716G17
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT4716G17
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT300C#W
+Quy tắc: Treo tường
+Tên cũ: Chậu rửa lavabo treo tường TOTO LT300C
+Tên mới: Chậu Lavabo Treo Tường TOTO LT300C
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-treo-tuong
+------------------------------------------------
+SKU: LT4716G19#MGR
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT4716G19
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT4716G19
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: PJS03WE#MW
+Quy tắc: Đặt bàn
+Tên cũ: Chậu lavabo đặt bàn Galalato TOTO PJS03WE#MW (PJS03WEMW) trắng mờ
+Tên mới: Chậu lavabo đặt bàn Galalato TOTO PJS03WE#MW (PJS03WEMW) trắng mờ
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LHT239CR#W
+Quy tắc: Treo tường
+Tên cũ: Chậu rửa lavabo treo tường TOTO LHT239CR
+Tên mới: Chậu Lavabo Treo Tường TOTO LHT239CR
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-treo-tuong
+------------------------------------------------
+SKU: PJS06WE#MW
+Quy tắc: Đặt bàn
+Tên cũ: Chậu lavabo đặt bàn Galalato TOTO PJS06WE#MW (PJS06WEMW) trắng mờ
+Tên mới: Chậu lavabo đặt bàn Galalato TOTO PJS06WE#MW (PJS06WEMW) trắng mờ
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: PJS02WE#MW
+Quy tắc: Đặt bàn
+Tên cũ: Chậu lavabo đặt bàn Galalato TOTO PJS02WE#MW (PJS02WEMW) trắng mờ
+Tên mới: Chậu lavabo đặt bàn Galalato TOTO PJS02WE#MW (PJS02WEMW) trắng mờ
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: PJS07WE#GW
+Quy tắc: Đặt bàn
+Tên cũ: Chậu lavabo đặt bàn Galalato TOTO PJS07WE#GW (PJS07WEGW) trắng bóng
+Tên mới: Chậu lavabo đặt bàn Galalato TOTO PJS07WE#GW (PJS07WEGW) trắng bóng
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT4716G19#XW
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT4716G19
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT4716G19
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT4715G17#XW
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT4715G17
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT4715G17
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LW631JW/F#W
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LW631JW
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LW631JW
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-dat-ban -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT1615K#XW
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT1615K
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT1615K
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-dat-ban -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT4704MTG17#CMW
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT4704MTG17
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT4704MTG17
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT4715MTG17#CMW
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT4715MTG17
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT4715MTG17
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LW630JW/F#W
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LW630JW
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LW630JW
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-dat-ban -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LW895JW/F#W
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LW895JW
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LW895JW
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-dat-ban -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LW893CJW/F#W
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LW893CJW
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LW893CJW
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-dat-ban -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT1705#MBE
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT1705
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT1705
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-dat-ban -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT1705#MW
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT1705
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT1705
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-dat-ban -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT4706#MBE
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT4706
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT4706
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LW630JDW/F#MDR
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LW630JDW
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LW630JDW
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-dat-ban -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LW630JDW/F#FRG
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LW630JDW
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LW630JDW
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-dat-ban -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LW896JW/F#MDR
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LW896JW
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LW896JW
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-dat-ban -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LW896JW/F#SCR
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LW896JW
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LW896JW
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-dat-ban -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT1705#MBL
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT1705
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT1705
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-dat-ban -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT1735#MBE
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT1735
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT1735
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-dat-ban -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT4704G19#MBE
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT4704G19
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT4704G19
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT4706#MBL
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT4706
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT4706
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT4704G19#MW
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT4704G19
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT4704G19
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT4706#MGR
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT4706
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT4706
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT4715G19#MBL
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT4715G19
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT4715G19
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT4716G17#MBE
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT4716G17
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT4716G17
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT4716G19#MW
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT4716G19
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT4716G19
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT4724#XW
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT4724
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT4724
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT4724MT#CMW
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT4724MT
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT4724MT
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: L300HF#W
+Quy tắc: Treo tường
+Tên cũ: Chậu rửa lavabo TOTO L300HF
+Tên mới: Chậu Lavabo Treo Tường TOTO L300HF
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-treo-tuong
+------------------------------------------------
+SKU: LW573JW/F#W
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LW573JW
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LW573JW
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-dat-ban -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LW574JW/F#W
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LW574JW
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LW574JW
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-dat-ban -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT4704G17#XW
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT4704G17
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT4704G17
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT1735#XW
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT1735
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT1735
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-dat-ban -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LW896JW/F#ASB
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LW896JW
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LW896JW
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-dat-ban -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT4704MTG19#CMW
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT4704MTG19
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT4704MTG19
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LW815CJW/F#W
+Quy tắc: Treo tường
+Tên cũ: Chậu rửa lavabo treo tường TOTO LW815CJW
+Tên mới: Chậu Lavabo Treo Tường TOTO LW815CJW
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-treo-tuong
+------------------------------------------------
+SKU: L239FR#W
+Quy tắc: Treo tường
+Tên cũ: Chậu rửa lavabo TOTO L239FR
+Tên mới: Chậu Lavabo Treo Tường TOTO L239FR
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-treo-tuong
+------------------------------------------------
+SKU: L763#XW
+Quy tắc: Dương vành
+Tên cũ: Chậu rửa lavabo dương vành TOTO L763
+Tên mới: Chậu Lavabo Dương Vành TOTO L763
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-duong-vanh
+------------------------------------------------
+SKU: L501C#W
+Quy tắc: Dương vành
+Tên cũ: Chậu rửa lavabo dương vành TOTO L501C
+Tên mới: Chậu Lavabo Dương Vành TOTO L501C
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-duong-vanh
+------------------------------------------------
+SKU: LT4704G19#XW
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT4704G19
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT4704G19
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: PJS06WE#GW
+Quy tắc: Đặt bàn
+Tên cũ: Chậu lavabo đặt bàn Galalato TOTO PJS06WE#GW (PJS06WEGW) trắng bóng
+Tên mới: Chậu lavabo đặt bàn Galalato TOTO PJS06WE#GW (PJS06WEGW) trắng bóng
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: PJS02WE#GW
+Quy tắc: Đặt bàn
+Tên cũ: Chậu lavabo đặt bàn Galalato TOTO PJS02WE#GW (PJS02WEGW) trắng bóng
+Tên mới: Chậu lavabo đặt bàn Galalato TOTO PJS02WE#GW (PJS02WEGW) trắng bóng
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: PJS01WE#GW
+Quy tắc: Đặt bàn
+Tên cũ: Chậu lavabo đặt bàn Galalato TOTO PJS01WE#GW (PJS01WEGW) trắng bóng
+Tên mới: Chậu lavabo đặt bàn Galalato TOTO PJS01WE#GW (PJS01WEGW) trắng bóng
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT4716G17#XW
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT4716G17
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT4716G17
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT4715G19#XW
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT4715G19
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT4715G19
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT4706#XW
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT4706
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT4706
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT4716G17#MGR
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT4716G17
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT4716G17
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: PJS05WE#MW
+Quy tắc: Đặt bàn
+Tên cũ: Chậu lavabo đặt bàn Galalato TOTO PJS05WE#MW (PJS05WEMW) trắng mờ
+Tên mới: Chậu lavabo đặt bàn Galalato TOTO PJS05WE#MW (PJS05WEMW) trắng mờ
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT4704G17#MBE
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT4704G17
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT4704G17
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT4715G19#MW
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT4715G19
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT4715G19
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT4715MTG19#CMW
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT4715MTG19
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT4715MTG19
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT4716MTG17#CMW
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT4716MTG17
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT4716MTG17
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: TLG04304V1
+Quy tắc: Kẻ lạc bầy -> Vòi Chậu
+Tên cũ: Vòi chậu lavabo nóng lạnh TOTO TLG04304V1
+Tên mới: Vòi chậu lavabo nóng lạnh TOTO TLG04304V1
+Sub ID cũ: 2 -> Sub ID mới: 6
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-treo-tuong
+------------------------------------------------
+SKU: T6JV6
+Quy tắc: Phụ kiện (Ống xả)
+Tên cũ: Chậu rửa lavabo TOTO Lavabo
+Tên mới: Ống xả Lavabo TOTO T6JV6
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo -> Loại mới: phu-kien-lavabo
+------------------------------------------------
+SKU: LT710CTR#XW
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT710CTR
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT710CTR
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-dat-ban -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT533R#XW
+Quy tắc: Bán âm
+Tên cũ: Chậu rửa lavabo bán âm bàn TOTO LT533R
+Tên mới: Chậu Lavabo Bán Âm Bàn TOTO LT533R
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-ban-am -> Loại mới: lavabo-ban-am
+------------------------------------------------
+SKU: LT546#XW
+Quy tắc: Âm bàn
+Tên cũ: Chậu rửa lavabo âm bàn TOTO LT546
+Tên mới: Chậu Lavabo Âm Bàn TOTO LT546
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-am-ban -> Loại mới: lavabo-am-ban
+------------------------------------------------
+SKU: LT950C#XW
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT950C
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT950C
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-dat-ban -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT951C#XW
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT951C
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT951C
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-dat-ban -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LHT300CR#W
+Quy tắc: Treo tường
+Tên cũ: Chậu rửa lavabo treo tường TOTO LHT300CR
+Tên mới: Chậu Lavabo Treo Tường TOTO LHT300CR
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-treo-tuong
+------------------------------------------------
+SKU: LHT766CR#XW
+Quy tắc: Treo tường
+Tên cũ: Chậu rửa lavabo treo tường TOTO LHT766CR
+Tên mới: Chậu Lavabo Treo Tường TOTO LHT766CR
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-treo-tuong
+------------------------------------------------
+SKU: LW645JNW/F#W
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LW645JNW
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LW645JNW
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-dat-ban -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LW1617C#W
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LW1617C
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LW1617C
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-dat-ban -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT1705#XW
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT1705
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT1705
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-dat-ban -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: L1704#XW
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO L1704
+Tên mới: Chậu Lavabo Đặt Bàn TOTO L1704
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-dat-ban -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: L1715#W
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO L1715
+Tên mới: Chậu Lavabo Đặt Bàn TOTO L1715
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-dat-ban -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: L1716#W
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO L1716
+Tên mới: Chậu Lavabo Đặt Bàn TOTO L1716
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-dat-ban -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT1717#XW
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT1717
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT1717
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-dat-ban -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LW1535V#XW
+Quy tắc: Âm bàn
+Tên cũ: Chậu rửa lavabo âm bàn TOTO LW1535V
+Tên mới: Chậu Lavabo Âm Bàn TOTO LW1535V
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-am-ban -> Loại mới: lavabo-am-ban
+------------------------------------------------
+SKU: LW1536V#XW
+Quy tắc: Âm bàn
+Tên cũ: Chậu rửa lavabo âm bàn TOTO LW1536V
+Tên mới: Chậu Lavabo Âm Bàn TOTO LW1536V
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-am-ban -> Loại mới: lavabo-am-ban
+------------------------------------------------
+SKU: LW1505V#XW
+Quy tắc: Âm bàn
+Tên cũ: Chậu rửa lavabo âm bàn TOTO LW1505V
+Tên mới: Chậu Lavabo Âm Bàn TOTO LW1505V
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-am-ban -> Loại mới: lavabo-am-ban
+------------------------------------------------
+SKU: LT328CTR#XW
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT328CTR
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT328CTR
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-dat-ban -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LW781CJ#W
+Quy tắc: Dương vành
+Tên cũ: Chậu rửa lavabo dương vành TOTO LW781CJ
+Tên mới: Chậu Lavabo Dương Vành TOTO LW781CJ
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-duong-vanh
+------------------------------------------------
+SKU: LW818JW/F#W
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LW818JW
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LW818JW
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-dat-ban -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT4716MTG19#CMW
+Quy tắc: Đặt bàn
+Tên cũ: Chậu rửa lavabo đặt bàn TOTO LT4716MTG19
+Tên mới: Chậu Lavabo Đặt Bàn TOTO LT4716MTG19
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-dat-ban
+------------------------------------------------
+SKU: LT764#XW
+Quy tắc: Âm bàn
+Tên cũ: Chậu rửa lavabo âm bàn TOTO LT764
+Tên mới: Chậu Lavabo Âm Bàn TOTO LT764
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-am-ban -> Loại mới: lavabo-am-ban
+------------------------------------------------
+SKU: LT240CS#W
+Quy tắc: Treo tường
+Tên cũ: Chậu rửa lavabo treo tường TOTO LT240CS
+Tên mới: Chậu Lavabo Treo Tường TOTO LT240CS
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-treo-tuong
+------------------------------------------------
+SKU: LT505T#XW
+Quy tắc: Âm bàn
+Tên cũ: Chậu rửa lavabo âm bàn TOTO LT505T
+Tên mới: Chậu Lavabo Âm Bàn TOTO LT505T
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-am-ban -> Loại mới: lavabo-am-ban
+------------------------------------------------
+SKU: LT647CS#XW
+Quy tắc: Bán âm
+Tên cũ: Chậu rửa lavabo bán âm bàn TOTO LT647CS
+Tên mới: Chậu Lavabo Bán Âm Bàn TOTO LT647CS
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-ban-am -> Loại mới: lavabo-ban-am
+------------------------------------------------
+SKU: LW1506V#XW
+Quy tắc: Âm bàn
+Tên cũ: Chậu rửa lavabo âm bàn TOTO LW1506V
+Tên mới: Chậu Lavabo Âm Bàn TOTO LW1506V
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-am-ban -> Loại mới: lavabo-am-ban
+------------------------------------------------
+SKU: L242HF#W
+Quy tắc: Treo tường
+Tên cũ: Chậu rửa lavabo TOTO L242HF
+Tên mới: Chậu Lavabo Treo Tường TOTO L242HF
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-treo-tuong
+------------------------------------------------
+SKU: L240HF#W
+Quy tắc: Treo tường
+Tên cũ: Chậu rửa lavabo TOTO L240HF
+Tên mới: Chậu Lavabo Treo Tường TOTO L240HF
+Sub ID cũ: 2 -> Sub ID mới: 2
+Loại cũ: lavabo-treo-tuong -> Loại mới: lavabo-treo-tuong
+------------------------------------------------

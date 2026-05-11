@@ -39,6 +39,8 @@ interface CategoryData {
     basePath: string
     products: FeaturedProduct[]
     totalCount?: number
+    availableBrands?: Brand[]
+    availableSubcategories?: Subcategory[]
 }
 
 interface FeaturedProductsClientProps {
@@ -111,6 +113,13 @@ export function FeaturedProductsClient({ categories }: FeaturedProductsClientPro
     // Extract unique brands and subcategories for the active category based purely on its unfiltered default items
     const { brands, subcategories } = useMemo(() => {
         if (!activeCategory) return { brands: [], subcategories: [] }
+
+        if (activeCategory.availableBrands && activeCategory.availableSubcategories) {
+            return {
+                brands: activeCategory.availableBrands,
+                subcategories: activeCategory.availableSubcategories
+            }
+        }
 
         const brandMap = new Map<string, Brand>()
         const subMap = new Map<string, Subcategory>()

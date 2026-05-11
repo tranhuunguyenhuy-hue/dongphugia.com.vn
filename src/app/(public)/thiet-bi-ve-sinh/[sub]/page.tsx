@@ -54,6 +54,7 @@ export default async function ThietBiVeSinhSubPage({ params, searchParams }: Pag
     const activeFeatureSlugs = sp.features
     const activeMaterialSlugs = sp.material
     const activeOriginSlugs = sp.origin
+    const activeColorSlugs = sp.color
     const activeProductType = sp.type
     const activeProductSubType = sp.subtype
     const isNew = sp.is_new === 'true'
@@ -105,6 +106,7 @@ export default async function ThietBiVeSinhSubPage({ params, searchParams }: Pag
             feature_slugs: activeFeatureSlugs,
             material_slug: activeMaterialSlugs,
             origin_slug: activeOriginSlugs,
+            color_slug: activeColorSlugs,
             is_promotion: isNew ? true : undefined,
             is_featured: isFeatured ? true : undefined,
             spec_filters: Object.keys(spec_filters).length > 0 ? spec_filters : undefined,
@@ -122,6 +124,7 @@ export default async function ThietBiVeSinhSubPage({ params, searchParams }: Pag
     availableFilters.features.forEach(f => filterDict[f.slug] = f.name)
     availableFilters.materials.forEach(f => filterDict[f.slug] = f.name)
     availableFilters.origins.forEach(f => filterDict[f.slug] = f.name)
+    availableFilters.colors?.forEach(f => filterDict[f.slug] = f.name)
 
     return (
         <main className="max-w-[1380px] mx-auto px-4 sm:px-5 lg:px-8">

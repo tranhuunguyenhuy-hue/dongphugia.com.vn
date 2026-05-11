@@ -1,12 +1,14 @@
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 import Link from "next/link"
-import { getPublicProductBySlug, getPublicProducts } from "@/lib/public-api-products"
+import { getPublicProductBySlug, getPublicProducts, getVariantSiblings } from "@/lib/public-api-products"
+import { VariantSelector } from "@/components/product/variant-selector"
 import { ProductImageGallery } from "@/components/product/product-image-gallery"
 import { ProductDetailTabs } from "@/components/product/product-detail-tabs"
 import { ProductCTA } from "@/components/product/product-cta"
 import { ProductCard } from "@/components/ui/product-card"
 import { BrandBadge } from "@/components/ui/brand-badge"
+import { ProductPrice } from "@/components/product/product-price"
 
 export const revalidate = 1800
 
@@ -35,6 +37,8 @@ export default async function ProductDetailPage({ params }: PageProps) {
 
     const additionalImages = product.product_images?.filter(i => i.image_url !== product.image_main_url) ?? []
     const features = product.product_feature_values ?? []
+
+    const variantSiblings = product.variant_group ? await getVariantSiblings(product.variant_group, product.id) : []
 
     // Fetch related products
     const { products: relatedItems } = await getPublicProducts({
@@ -73,6 +77,14 @@ export default async function ProductDetailPage({ params }: PageProps) {
         })
     }
 
+    if (features.length > 0) {
+        features.forEach(f => {
+            if (f.product_features?.name && f.value) {
+                extraSpecs.push({ key: f.product_features.name, value: f.value })
+            }
+        })
+    }
+
     const stockDisplay = product.stock_status === 'in_stock'
         ? <span className="text-success-600 font-medium">Còn hàng</span>
         : product.stock_status === 'pre_order'
@@ -107,82 +119,115 @@ export default async function ProductDetailPage({ params }: PageProps) {
                     additionalImages={additionalImages.map(i => ({ image_url: i.image_url, alt_text: i.alt_text }))}
                     productName={product.name}
                 />
+                    {/* Detail Tabs */}
+                    <div className="mt-4 pt-4 border-t border-stone-100">
+                        <ProductDetailTabs
+                            description={product.description}
+                            features={product.features}
+                            specifications={null}
+                            extraSpecs={extraSpecs}
+                        />
+                    </div>
 
                 {/* Info */}
                 <div className="flex flex-col gap-6">
-                    {/* Badges */}
-                    <div className="flex gap-2 flex-wrap">
-                        {(product.is_promotion || (product.original_price && product.original_price > (product.price || 0))) && (
-                            <span className="px-3 py-1 text-[11px] font-bold uppercase tracking-wider border border-brand-500 text-brand-600 bg-brand-50 rounded-full">
-                                Sản phẩm mới
-                            </span>
-                        )}
-                        {false && (
-                            <span className="px-3 py-1 text-[11px] font-bold uppercase tracking-wider bg-stone-900 text-white rounded-full">
-                                Bán chạy
-                            </span>
-                        )}
-                        {product.brands && <BrandBadge brand={product.brands as any} />}
-                    </div>
-
                     <div>
-                        <h1 className="text-display-sm font-bold text-stone-900 leading-tight mb-3 tracking-tight">
+                        {/* Brand & Badges */}
+                        <div className="flex items-center gap-2 mb-3">
+                            {product.is_featured && (
+                                <span className="flex items-center gap-1 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white bg-gradient-to-r from-[#FF9800] to-[#FF5722] rounded-[4px] shadow-sm">
+                                    <svg className="w-3 h-3 mb-[1px]" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+                                    </svg>
+                                    Nổi Bật
+                                </span>
+                            )}
+
+                            {(product.is_promotion || (product.original_price && product.original_price > (product.price || 0))) && (
+                                <span className="flex items-center gap-1 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white bg-gradient-to-r from-[#FF0055] to-[#FF0033] rounded-[4px] shadow-sm">
+                                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                                    </svg>
+                                    Đang Khuyến Mãi
+                                </span>
+                            )}
+                        </div>
+
+                        <h1 className="text-2xl md:text-[28px] font-bold text-stone-900 leading-[1.2] mb-4 tracking-tight">
                             {product.name}
                         </h1>
-                        <div className="flex items-center gap-4 text-[13px]">
-                            <p className="text-stone-500">Mã SP: <span className="font-medium text-stone-900">{product.sku}</span></p>
-                            <div className="w-1 h-1 rounded-full bg-stone-300" />
-                            <p className="text-stone-500">Tình trạng: {stockDisplay}</p>
+
+                        <div className="flex flex-wrap items-center gap-2 text-[12px]">
+                            {/* Brand Badge */}
+                            {product.brands && <BrandBadge brand={product.brands as any} className="!h-7 !px-2.5 rounded-md border-stone-200/60 shadow-sm" />}
+
+                            {/* SKU Pill */}
+                            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-stone-100/80 border border-stone-200/60">
+                                <span className="text-stone-500">Mã SP:</span>
+                                <span className="font-mono font-bold text-stone-800">{product.sku}</span>
+                            </div>
+
+                            {/* Status Pill */}
+                            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md border ${product.stock_status === 'in_stock' ? 'bg-emerald-50 border-emerald-100' : 'bg-rose-50 border-rose-100'}`}>
+                                <div className={`w-1.5 h-1.5 rounded-full ${product.stock_status === 'in_stock' ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`} />
+                                <span className={`font-medium ${product.stock_status === 'in_stock' ? 'text-emerald-700' : 'text-rose-700'}`}>
+                                    {product.stock_status === 'in_stock' ? 'Còn hàng' : 'Liên hệ'}
+                                </span>
+                            </div>
+
+                            {/* Color Pill */}
+                            {product.colors && (
+                                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-stone-50 border border-stone-200/60">
+                                    <span
+                                        className="w-3 h-3 rounded-full border border-black/10 shadow-sm"
+                                        style={{ backgroundColor: product.colors.hex_code || '#ccc' }}
+                                    />
+                                    <span className="font-medium text-stone-700">{product.colors.name}</span>
+                                </div>
+                            )}
                         </div>
                     </div>
 
-                    {/* Price */}
-                    <div className="py-4 border-y border-stone-100">
-                        <p className="text-xs text-stone-400 uppercase tracking-wider mb-1">Giá tham khảo</p>
-                        <p className="text-3xl font-bold text-accent-500 tracking-tight">
-                            {product.price_display || "Liên hệ báo giá"}
-                        </p>
-                    </div>
-
-                    {/* Features highlights */}
-                    {features.length > 0 && (
-                        <div className="grid grid-cols-2 gap-3 mt-1">
-                            {features.slice(0, 4).map(f => (
-                                <div key={f.id} className="flex items-start gap-2.5 p-3 rounded-xl bg-stone-50 border border-stone-200">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-stone-300 mt-2 shrink-0" />
-                                    <div>
-                                        <p className="text-[11px] text-stone-400 uppercase tracking-wider">{f.product_features?.name}</p>
-                                        <p className="text-[13px] font-medium text-stone-800 leading-tight mt-0.5">{f.value}</p>
-                                    </div>
-                                </div>
-                            ))}
+                    {/* Variant Selector */}
+                    {product.variant_group && variantSiblings.length > 0 && (
+                        <div className="mt-2 mb-2">
+                            <VariantSelector
+                                currentSku={product.sku}
+                                currentSlug={product.slug}
+                                currentName={product.name}
+                                currentPriceDisplay={product.price_display}
+                                currentPrice={Number(product.price)}
+                                currentOriginalPrice={Number(product.original_price)}
+                                currentColor={product.colors}
+                                variantGroup={product.variant_group}
+                                siblings={variantSiblings}
+                                categorySlug={CATEGORY_SLUG}
+                                subcategorySlug={product.subcategories?.slug}
+                            />
                         </div>
                     )}
 
-                    {/* CTA */}
-                    <ProductCTA
-                        productId={product.id}
-                        productSku={product.sku}
-                        productName={product.name}
-                        price={product.price ? Number(product.price) : null}
+                    {/* Price and CTA */}
+                    <ProductPrice 
+                        price={Number(product.price)}
+                        originalPrice={Number(product.original_price)}
                         priceDisplay={product.price_display}
-                        imageUrl={product.image_main_url}
-                        categorySlug={CATEGORY_SLUG}
-                        subcategorySlug={product.subcategories?.slug ?? null}
-                        brandName={product.brands?.name}
-                        slug={product.slug}
-                    />
+                        onlineDiscountAmount={Number(product.online_discount_amount)}
+                    >
+                        <ProductCTA
+                            productId={product.id}
+                            productSku={product.sku}
+                            productName={product.name}
+                            price={product.price ? Number(product.price) : null}
+                            priceDisplay={product.price_display}
+                            imageUrl={product.image_main_url}
+                            categorySlug={CATEGORY_SLUG}
+                            subcategorySlug={product.subcategories?.slug ?? null}
+                            brandName={product.brands?.name}
+                            slug={product.slug}
+                        />
+                    </ProductPrice>
                 </div>
-            </div>
-
-            {/* Detail Tabs */}
-            <div className="mt-16 border-t border-stone-100 pt-8">
-                <ProductDetailTabs
-                    description={product.description}
-                    features={product.features}
-                    specifications={null}
-                    extraSpecs={extraSpecs}
-                />
             </div>
 
             {/* Related Products */}

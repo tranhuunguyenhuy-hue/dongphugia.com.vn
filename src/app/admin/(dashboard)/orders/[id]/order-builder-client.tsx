@@ -15,8 +15,10 @@ import { ArrowLeft, Printer, Save, CreditCard, Truck } from 'lucide-react'
 import { updateOrderData } from '@/lib/order-actions'
 import { OrderStatusSelect } from '../order-status-select'
 import { OrderPaymentSelect } from '../order-payment-select'
+import { OrderAssignSelect } from '../order-assign-select'
+import { UserPlus } from 'lucide-react'
 
-export function OrderBuilderClient({ order }: { order: any }) {
+export function OrderBuilderClient({ order, staffMembers }: { order: any, staffMembers: any[] }) {
     const router = useRouter()
     const printRef = useRef<HTMLDivElement>(null)
 
@@ -86,7 +88,7 @@ export function OrderBuilderClient({ order }: { order: any }) {
 
                 <div className="space-y-6">
                     {/* Status Update Block */}
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-3 gap-4">
                         <Card className="border-stone-200/60 shadow-sm">
                             <CardHeader className="py-3 border-b border-stone-100">
                                 <CardTitle className="text-sm font-semibold flex items-center gap-2">
@@ -107,6 +109,21 @@ export function OrderBuilderClient({ order }: { order: any }) {
                             </CardHeader>
                             <CardContent className="p-3">
                                 <OrderPaymentSelect id={order.id} currentPaymentStatus={order.payment_status} />
+                            </CardContent>
+                        </Card>
+                        <Card className="border-stone-200/60 shadow-sm">
+                            <CardHeader className="py-3 border-b border-stone-100">
+                                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                                    <UserPlus className="w-4 h-4 text-stone-500" />
+                                    Người phụ trách
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="p-3">
+                                <OrderAssignSelect 
+                                    orderId={order.id} 
+                                    currentAssigneeId={order.assigned_to} 
+                                    staffMembers={staffMembers} 
+                                />
                             </CardContent>
                         </Card>
                     </div>

@@ -18,13 +18,8 @@ const CATEGORY_TABS = [
             { label: "Chậu Lavabo",       slug: "lavabo" },
             { label: "Sen Tắm",           slug: "sen-tam" },
             { label: "Bồn Tắm",           slug: "bon-tam" },
-            { label: "Phụ Kiện P.Tắm",   slug: "phu-kien-phong-tam" },
             { label: "Vòi Chậu",          slug: "voi-chau" },
-            { label: "Bồn Tiểu",          slug: "bon-tieu" },
-            { label: "Vòi Nước",          slug: "voi-nuoc" },
             { label: "Nắp Bồn Cầu",       slug: "nap-bon-cau" },
-            { label: "Phụ Kiện Bồn Cầu", slug: "phu-kien-bon-cau" },
-            { label: "Thân Bồn Cầu",      slug: "than-bon-cau" },
         ]
     },
     {
@@ -33,7 +28,6 @@ const CATEGORY_TABS = [
         basePath: "/thiet-bi-bep",
         subcategories: [
             { label: "Vòi Rửa Chén", slug: "voi-rua-chen" },
-            { label: "Phụ Kiện Bếp", slug: "thiet-bi-bep-khac" },
             { label: "Chậu Rửa Chén", slug: "chau-rua-chen" },
             { label: "Bếp Điện Từ",   slug: "bep-dien-tu" },
             { label: "Máy Hút Mùi",  slug: "may-hut-mui" },

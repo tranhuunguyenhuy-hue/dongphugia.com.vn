@@ -17,6 +17,11 @@ export interface CartItem {
     imageUrl: string | null
     brandName?: string | null
     quantity: number
+    cartItemId: string
+    installOption?: 'none' | 'install' | 'replace'
+    installationFee?: number
+    onlineDiscountAmount?: number
+    finalPrice?: number
 }
 
 interface CartStore {
@@ -24,9 +29,9 @@ interface CartStore {
     isOpen: boolean
 
     // Actions
-    addItem: (item: Omit<CartItem, 'quantity'> & { quantity?: number }) => void
-    removeItem: (productId: number) => void
-    updateQuantity: (productId: number, qty: number) => void
+    addItem: (item: Omit<CartItem, 'quantity' | 'cartItemId'> & { quantity?: number }) => void
+    removeItem: (cartItemId: string) => void
+    updateQuantity: (cartItemId: string, qty: number) => void
     clearCart: () => void
     openCart: () => void
     closeCart: () => void
@@ -44,13 +49,14 @@ export const useCartStore = create<CartStore>()(
             isOpen: false,
 
             addItem: (item) => {
-                const { quantity = 1, ...rest } = item
+                const { quantity = 1, installOption = 'none', ...rest } = item
+                const cartItemId = `${rest.productId}-${installOption}`
                 set((state) => {
-                    const existing = state.items.find(i => i.productId === rest.productId)
+                    const existing = state.items.find(i => i.cartItemId === cartItemId)
                     if (existing) {
                         return {
                             items: state.items.map(i =>
-                                i.productId === rest.productId
+                                i.cartItemId === cartItemId
                                     ? { ...i, quantity: Math.min(i.quantity + quantity, 99) }
                                     : i
                             ),
@@ -58,26 +64,26 @@ export const useCartStore = create<CartStore>()(
                         }
                     }
                     return {
-                        items: [...state.items, { ...rest, quantity }],
+                        items: [...state.items, { ...rest, quantity, installOption, cartItemId }],
                         isOpen: true,
                     }
                 })
             },
 
-            removeItem: (productId) => {
+            removeItem: (cartItemId) => {
                 set((state) => ({
-                    items: state.items.filter(i => i.productId !== productId),
+                    items: state.items.filter(i => i.cartItemId !== cartItemId),
                 }))
             },
 
-            updateQuantity: (productId, qty) => {
+            updateQuantity: (cartItemId, qty) => {
                 if (qty < 1) {
-                    get().removeItem(productId)
+                    get().removeItem(cartItemId)
                     return
                 }
                 set((state) => ({
                     items: state.items.map(i =>
-                        i.productId === productId
+                        i.cartItemId === cartItemId
                             ? { ...i, quantity: Math.min(qty, 99) }
                             : i
                     ),
@@ -105,8 +111,8 @@ export const useCartCount = () =>
 
 export const useCartTotal = () =>
     useCartStore((state) =>
-        state.items.reduce((sum, i) => sum + (i.price ?? 0) * i.quantity, 0)
+        state.items.reduce((sum, i) => sum + (i.finalPrice ?? i.price ?? 0) * i.quantity, 0)
     )
 
 export const useCartHasPricedItems = () =>
-    useCartStore((state) => state.items.some(i => i.price !== null && i.price > 0))
+    useCartStore((state) => state.items.some(i => (i.finalPrice !== undefined && i.finalPrice !== null ? i.finalPrice > 0 : (i.price !== null && i.price > 0))))

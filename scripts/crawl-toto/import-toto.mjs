@@ -54,12 +54,27 @@ function slugify(text) {
     .replace(/--+/g, '-').replace(/^-+/, '').replace(/-+$/, '')
 }
 
-/** Extract SKU from product name: "Bồn cầu 1 khối TOTO MS636DT2 nắp đóng êm" → "TOTO-MS636DT2" */
+/** Extract SKU from product name. Handles combo names with 2+ TOTO model codes:
+ *  "Bộ sen tắm nóng lạnh TOTO TBG11302VA TBW01010A (3 chế độ)" → "TOTO-TBG11302VA-TBW01010A"
+ *  "Bồn cầu 1 khối TOTO MS636DT2 nắp đóng êm TC393VS" → "TOTO-MS636DT2"
+ */
 function extractSku(name) {
   if (!name) return null
-  // Match TOTO model codes (usually uppercase letters + digits)
-  const match = name.match(/TOTO\s+([A-Z0-9]{2,}(?:[-/][A-Z0-9]+)*)/i)
-  if (match) return `TOTO-${match[1].toUpperCase()}`
+  // Match ALL uppercase model codes after "TOTO" (letters + digits, optional -/)
+  const modelPattern = /\b([A-Z]{2,}[A-Z0-9]*(?:[-/][A-Z0-9]+)*)\b/g
+  const afterToto = name.replace(/^.*?TOTO\s*/i, '')
+  const models = []
+  let m
+  while ((m = modelPattern.exec(afterToto)) !== null) {
+    const code = m[1]
+    // Must be at least 4 chars and contain at least one digit to be a model code
+    if (code.length >= 4 && /\d/.test(code)) {
+      models.push(code)
+    }
+    // Stop after 2 model codes (combo: valve + showerhead)
+    if (models.length >= 2) break
+  }
+  if (models.length > 0) return `TOTO-${models.join('-')}`
   return null
 }
 
@@ -71,16 +86,42 @@ function generateSku(name, hitaId) {
   return `TOTO-HITA-${hitaId}`
 }
 
+// Track SKUs used in this import batch to detect intra-batch collisions
+const usedSkus = new Set()
+
 // ─── IMPORT SINGLE PRODUCT ──────────────────────────────────────────────────
 async function importProduct(prisma, p, brandId) {
-  const sku = generateSku(p.name, p.hita_id)
+  let sku = p.sku || generateSku(p.name, p.hita_id)
   if (!sku) return { status: 'no_sku', reason: 'Cannot extract SKU' }
+
+  // Deduplicate: if SKU already used in this batch or exists in DB for a DIFFERENT product,
+  // append hita_id to make it unique
+  if (usedSkus.has(sku)) {
+    sku = `${sku}-H${p.hita_id}`
+  }
 
   // Check existing product by SKU
   const existing = await prisma.products.findUnique({
     where: { sku },
     select: { id: true, source_url: true },
   })
+
+  // If exists but for a different hita source → deduplicate
+  if (existing && existing.source_url !== p.url && !sku.includes('-H')) {
+    sku = `${sku}-H${p.hita_id}`
+    // Re-check with deduped SKU
+    const existsDeduped = await prisma.products.findUnique({
+      where: { sku },
+      select: { id: true },
+    })
+    if (existsDeduped) {
+      // Already imported this exact product
+      usedSkus.add(sku)
+      return { status: 'exists_skip' }
+    }
+  }
+
+  usedSkus.add(sku)
 
   if (existing && CREATE_ONLY) return { status: 'exists_skip' }
   if (!existing && UPDATE_ONLY) return { status: 'new_skip' }
@@ -94,14 +135,17 @@ async function importProduct(prisma, p, brandId) {
     .map(remapUrl)
   const mainImageUrl = galleryImages[0] || null
 
-  // Specs + documents
+  // Specs + documents (skip DWG/DXF per user decision)
   const specs = { ...(p.specs_raw || {}) }
   if (p.documents?.length) {
-    specs.documents = p.documents.map(d => ({
-      name: d.name,
-      url: remapUrl(d.url),
-      type: d.type,
-    }))
+    const filteredDocs = p.documents
+      .filter(d => !/\.(dwg|dxf)$/i.test(d.url))
+      .map(d => ({
+        name: d.name,
+        url: remapUrl(d.url),
+        type: d.type,
+      }))
+    if (filteredDocs.length) specs.documents = filteredDocs
   }
 
   // SEO
@@ -144,7 +188,7 @@ async function importProduct(prisma, p, brandId) {
     seo_description: seoDesc,
     specs: Object.keys(specs).length ? specs : undefined,
     ...(p.warranty_months && { warranty_months: p.warranty_months }),
-    ...(p.origin_text && { origins: p.origin_text }),
+    // Note: origins → use origin_id FK, not text field
     ...(mainImageUrl && { image_main_url: mainImageUrl.substring(0, 1000) }),
   }
 
@@ -220,12 +264,16 @@ async function main() {
 
   let products = JSON.parse(readFileSync(PATHS.enriched, 'utf-8'))
   // Filter to successfully crawled TOTO products
+  // Also exclude navigation-link entries (all-caps names with no TOTO model code)
   products = products.filter(p =>
     p.crawl_status === 'success' &&
     p.name &&
-    /toto/i.test(p.name)
+    /toto/i.test(p.name) &&
+    // Skip navigation links: entries where name is ALL uppercase Vietnamese
+    // (e.g. "Vòi Hồ, Vòi Gắn Tường", "Phụ Kiện Sen Vòi")
+    !/^[A-ZĐÀ-Ỹ\s,]+$/u.test(p.name.trim())
   )
-  console.log(`📂 Loaded ${products.length} enriched TOTO products`)
+  console.log(`📂 Loaded ${products.length} enriched TOTO products (nav links filtered)`)
 
   if (LIMIT) products = products.slice(0, LIMIT)
 

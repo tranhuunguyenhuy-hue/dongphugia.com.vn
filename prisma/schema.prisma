@@ -78,6 +78,7 @@ model products {
   is_featured             Boolean                           @default(false)
   is_promotion            Boolean                           @default(false)
   is_combo                Boolean                           @default(false)
+  is_master               Boolean                           @default(true)
   variant_group           String?                           @db.VarChar(50)
   search_vector           Unsupported("tsvector")?
   sort_order              Int                               @default(0)
@@ -526,6 +527,7 @@ model product_secondary_subcategories {
 /// Roles: admin | sale_manager | sale
 model admin_users {
   id            Int       @id @default(autoincrement())
+  username      String?   @unique @db.VarChar(100)
   email         String    @unique @db.VarChar(200)
   name          String    @db.VarChar(100)
   password_hash String    @db.VarChar(255)

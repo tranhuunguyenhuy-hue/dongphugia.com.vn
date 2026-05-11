@@ -37,8 +37,8 @@ export async function POST(req: NextRequest) {
 
         // Calculate totals
         const subtotal = items.reduce(
-            (sum: number, item: { price: number | null; quantity: number }) =>
-                sum + (item.price ?? 0) * item.quantity,
+            (sum: number, item: { price: number | null; quantity: number; finalPrice?: number }) =>
+                sum + ((item.finalPrice ?? item.price) ?? 0) * item.quantity,
             0
         )
 
@@ -68,14 +68,31 @@ export async function POST(req: NextRequest) {
                                 sku: string
                                 quantity: number
                                 price: number | null
-                            }) => ({
-                                product_id: item.productId,
-                                product_name: item.name ? String(item.name).slice(0, 500) : 'Sản phẩm',
-                                product_sku: item.sku ? String(item.sku).slice(0, 100) : 'N/A',
-                                quantity: item.quantity,
-                                unit_price: item.price ?? 0,
-                                total_price: (item.price ?? 0) * item.quantity,
-                            })),
+                                finalPrice?: number
+                                installOption?: string
+                                onlineDiscountAmount?: number
+                            }) => {
+                                let displayName = item.name ? String(item.name) : 'Sản phẩm';
+                                const options = [];
+                                if (item.installOption === 'install') options.push('Cần Lắp Đặt');
+                                if (item.installOption === 'replace') options.push('Tháo dỡ & Lắp Đặt');
+                                if (item.onlineDiscountAmount && item.onlineDiscountAmount > 0) options.push(`Giảm Online ${item.onlineDiscountAmount}đ`);
+                                
+                                if (options.length > 0) {
+                                    displayName += ` (${options.join(' | ')})`;
+                                }
+                                
+                                const finalItemPrice = item.finalPrice ?? item.price ?? 0;
+                                
+                                return {
+                                    product_id: item.productId,
+                                    product_name: displayName.slice(0, 500),
+                                    product_sku: item.sku ? String(item.sku).slice(0, 100) : 'N/A',
+                                    quantity: item.quantity,
+                                    unit_price: finalItemPrice,
+                                    total_price: finalItemPrice * item.quantity,
+                                };
+                            }),
                         },
                     },
                 })

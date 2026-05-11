@@ -114,6 +114,25 @@ export function OrdersTableClient({
             },
         },
         {
+            accessorKey: 'assigned_to',
+            header: 'Phụ trách',
+            cell: ({ row }) => {
+                const assignee = row.original.assigned_user
+                return (
+                    <div className="flex items-center">
+                        {assignee ? (
+                            <div className="flex flex-col">
+                                <span className="text-xs font-medium text-stone-700">{assignee.name}</span>
+                                <span className="text-[10px] text-stone-400">{assignee.email}</span>
+                            </div>
+                        ) : (
+                            <span className="text-xs italic text-stone-400">Chưa giao</span>
+                        )}
+                    </div>
+                )
+            },
+        },
+        {
             accessorKey: 'status',
             header: 'Trạng thái',
             cell: ({ row }) => {

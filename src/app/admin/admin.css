@@ -107,10 +107,9 @@
     .sidebar-item-glass {
         transition: all 0.2s ease-in-out;
     }
-    .sidebar-item-glass:hover,
     .sidebar-item-glass[data-active="true"] {
         background-color: #FFFFFF !important;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.04) !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.03) !important;
     }
 
     /* =========================================

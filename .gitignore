@@ -146,3 +146,6 @@ scripts/db/*.log
 scripts/db/*.json
 scripts/product-import/*.json
 scripts/variant-pipeline/output/
+
+# Product exports
+exports/
