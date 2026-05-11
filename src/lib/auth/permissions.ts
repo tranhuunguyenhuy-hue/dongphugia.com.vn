@@ -12,6 +12,7 @@ export type Permission =
     | 'orders:edit'            // Full order edit (items, pricing)
     | 'orders:delete'
     | 'quotes:read'
+    | 'quotes:read_assigned'
     | 'quotes:create'
     | 'quotes:update'
     | 'quotes:delete'
@@ -55,7 +56,7 @@ const PERMISSIONS: Record<AdminRole, Permission[]> = {
         'orders:read_assigned',
         'orders:update_status',
         'orders:edit_note',
-        'quotes:read',
+        'quotes:read_assigned',
         'quotes:create',
         'quotes:update',
         'customers:read',

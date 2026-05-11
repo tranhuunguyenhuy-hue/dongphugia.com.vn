@@ -62,6 +62,8 @@ export interface ProductDetailTabsProps {
     technologies?: Technology[];
     /** Locations list (e.g. gach-op-lat usage locations) */
     locations?: { locations: { id: number; name: string; slug: string } }[];
+    /** Documents list (e.g. PDF, manuals) */
+    documents?: { name: string; url: string; size?: string; type?: string }[];
     /** Tab config for labels and theming */
     tabConfig?: TabConfig;
 }
@@ -75,14 +77,16 @@ export function ProductDetailTabs({
     extraSpecs,
     technologies = [],
     locations = [],
+    documents = [],
     tabConfig,
 }: ProductDetailTabsProps) {
-    const [activeTab, setActiveTab] = useState<'info' | 'specs' | 'features'>('info');
+    const [activeTab, setActiveTab] = useState<'info' | 'specs' | 'features' | 'docs'>('info');
 
     const config = {
         infoLabel: tabConfig?.infoLabel ?? 'Thông tin chung',
         featuresLabel: tabConfig?.featuresLabel ?? 'Tính năng nổi bật',
         specsLabel: tabConfig?.specsLabel ?? 'Thông số kỹ thuật',
+        docsLabel: 'Tài liệu & Hướng dẫn',
     };
 
     // Parse specifications robustly
@@ -109,6 +113,29 @@ export function ProductDetailTabs({
         }
     }
 
+    // Auto-extract documents from specs if they are links
+    const parsedDocuments = [...documents];
+    const filteredSpecsList: typeof specsList = [];
+
+    specsList.forEach(spec => {
+        const keyLower = spec.key.toLowerCase();
+        const valueStr = String(spec.value).trim();
+        const isDocKey = keyLower.includes('tài liệu') || keyLower.includes('hướng dẫn') || keyLower.includes('bản vẽ') || keyLower.includes('catalogue') || keyLower.includes('pdf');
+        
+        if (isDocKey && valueStr.startsWith('http')) {
+            parsedDocuments.push({
+                name: spec.key,
+                url: valueStr,
+                type: valueStr.toLowerCase().endsWith('.pdf') ? 'PDF' : 'Link',
+                size: 'Xem chi tiết',
+            });
+        } else {
+            filteredSpecsList.push(spec);
+        }
+    });
+
+    specsList = filteredSpecsList;
+
     const hasSpecs = specsList.length > 0 || technologies.length > 0;
     const hasFeatures = !!features;
 
@@ -133,6 +160,13 @@ export function ProductDetailTabs({
                     isActive={activeTab === 'specs'}
                     onClick={() => setActiveTab('specs')}
                 />
+                {parsedDocuments.length > 0 && (
+                    <TabButton
+                        label={config.docsLabel}
+                        isActive={activeTab === 'docs'}
+                        onClick={() => setActiveTab('docs')}
+                    />
+                )}
             </div>
 
             {/* Tab Content */}
@@ -235,6 +269,37 @@ export function ProductDetailTabs({
                                 </div>
                             </div>
                         )}
+                    </div>
+                )}
+
+                {activeTab === 'docs' && parsedDocuments.length > 0 && (
+                    <div className="space-y-4">
+                        <h3 className="text-lg font-semibold text-stone-900 mb-4">Tài liệu đính kèm</h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {parsedDocuments.map((doc, idx) => (
+                                <a 
+                                    key={idx} 
+                                    href={doc.url} 
+                                    target="_blank" 
+                                    rel="noreferrer"
+                                    className="group flex items-start gap-4 p-4 rounded-xl border border-stone-200 bg-white hover:border-brand-300 hover:shadow-md transition-all duration-200"
+                                >
+                                    <div className="w-10 h-10 rounded-lg bg-stone-100 text-stone-500 group-hover:bg-brand-50 group-hover:text-brand-600 flex items-center justify-center shrink-0 transition-colors">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                        </svg>
+                                    </div>
+                                    <div className="flex flex-col gap-1">
+                                        <h4 className="text-sm font-semibold text-stone-900 group-hover:text-brand-600 line-clamp-2 transition-colors">
+                                            {doc.name}
+                                        </h4>
+                                        <p className="text-xs text-stone-500 uppercase tracking-wider font-medium">
+                                            {doc.type || 'PDF'} • {doc.size || 'Tải xuống'}
+                                        </p>
+                                    </div>
+                                </a>
+                            ))}
+                        </div>
                     </div>
                 )}
             </div>

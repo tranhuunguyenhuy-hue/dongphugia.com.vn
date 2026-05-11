@@ -40,10 +40,10 @@ export function CartDrawer() {
                         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
                             {items.map((item) => (
                                 <CartItemRow
-                                    key={item.productId}
+                                    key={item.cartItemId}
                                     item={item}
-                                    onRemove={() => removeItem(item.productId)}
-                                    onQtyChange={(qty) => updateQuantity(item.productId, qty)}
+                                    onRemove={() => removeItem(item.cartItemId)}
+                                    onQtyChange={(qty) => updateQuantity(item.cartItemId, qty)}
                                 />
                             ))}
                         </div>
@@ -90,7 +90,8 @@ function CartItemRow({
     onRemove: () => void
     onQtyChange: (qty: number) => void
 }) {
-    const lineTotal = item.price ? item.price * item.quantity : null
+    const finalItemPrice = item.finalPrice ?? item.price;
+    const lineTotal = finalItemPrice ? finalItemPrice * item.quantity : null;
 
     return (
         <div className="flex gap-3 py-3 border-b border-neutral-100 last:border-0">
@@ -119,6 +120,19 @@ function CartItemRow({
                 {item.brandName && (
                     <p className="text-xs text-neutral-400 mt-0.5">{item.brandName}</p>
                 )}
+                
+                {/* Options display */}
+                <div className="flex flex-col gap-0.5 mt-1.5">
+                    {item.installOption === 'install' && (
+                        <p className="text-[11px] text-sky-600 font-medium">+ Lắp đặt: {formatPrice(item.installationFee || 0)}</p>
+                    )}
+                    {item.installOption === 'replace' && (
+                        <p className="text-[11px] text-sky-600 font-medium">+ Tháo dỡ & Lắp đặt: {formatPrice(item.installationFee || 0)}</p>
+                    )}
+                    {(item.onlineDiscountAmount || 0) > 0 && (
+                        <p className="text-[11px] text-emerald-600 font-medium">- Giảm Online: {formatPrice(item.onlineDiscountAmount || 0)}</p>
+                    )}
+                </div>
 
                 <div className="flex items-center justify-between mt-2">
                     {/* Qty control */}

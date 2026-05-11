@@ -24,21 +24,59 @@ export const metadata: Metadata = {
 }
 
 export default async function HomePage() {
-    const [banners, tbvsData, bepData, gachData, nuocData] = await Promise.all([
+    const [banners, tbvsData, bepData, gachData, nuocData, tbvsBrands, tbvsSubcats, bepSubcats, bepBrands] = await Promise.all([
         prisma.banners.findMany({
             where: { is_active: true },
             orderBy: { sort_order: 'asc' },
             take: 5,
         }),
-        getFeaturedProductsByCategorySlug('thiet-bi-ve-sinh', null, null, 0, 20),
+        getFeaturedProductsByCategorySlug('thiet-bi-ve-sinh', ['toto', 'inax'], null, 0, 20),
         getFeaturedProductsByCategorySlug('thiet-bi-bep', null, null, 0, 20),
         getFeaturedProductsByCategorySlug('gach-op-lat', null, null, 0, 20),
         getFeaturedProductsByCategorySlug('vat-lieu-nuoc', null, null, 0, 20),
+        prisma.brands.findMany({
+            where: { products: { some: { categories: { slug: 'thiet-bi-ve-sinh' } } } },
+            select: { name: true, slug: true }
+        }),
+        prisma.subcategories.findMany({
+            where: { 
+                categories: { slug: 'thiet-bi-ve-sinh' },
+                slug: { notIn: ['phu-kien-phong-tam', 'phu-kien-bon-cau', 'than-bon-cau', 'voi-nuoc', 'bon-tieu'] }
+            },
+            select: { name: true, slug: true }
+        }),
+        prisma.subcategories.findMany({
+            where: { 
+                categories: { slug: 'thiet-bi-bep' },
+                slug: { notIn: ['thiet-bi-bep-khac'] }
+            },
+            select: { name: true, slug: true }
+        }),
+        prisma.brands.findMany({
+            where: { products: { some: { categories: { slug: 'thiet-bi-bep' } } } },
+            select: { name: true, slug: true }
+        })
     ])
 
     const allCategories = [
-        { id: 'thiet-bi-ve-sinh', label: 'Thiết Bị Vệ Sinh', basePath: '/thiet-bi-ve-sinh', products: tbvsData.products, totalCount: tbvsData.total },
-        { id: 'thiet-bi-bep', label: 'Thiết Bị Bếp', basePath: '/thiet-bi-bep', products: bepData.products, totalCount: bepData.total },
+        { 
+            id: 'thiet-bi-ve-sinh', 
+            label: 'Thiết Bị Vệ Sinh', 
+            basePath: '/thiet-bi-ve-sinh', 
+            products: tbvsData.products, 
+            totalCount: tbvsData.total,
+            availableBrands: tbvsBrands,
+            availableSubcategories: tbvsSubcats
+        },
+        { 
+            id: 'thiet-bi-bep', 
+            label: 'Thiết Bị Bếp', 
+            basePath: '/thiet-bi-bep', 
+            products: bepData.products, 
+            totalCount: bepData.total,
+            availableBrands: bepBrands,
+            availableSubcategories: bepSubcats
+        },
         { id: 'vat-lieu-nuoc', label: 'Vật Liệu Nước', basePath: '/vat-lieu-nuoc', products: nuocData.products, totalCount: nuocData.total },
         { id: 'gach-op-lat', label: 'Gạch Ốp Lát', basePath: '/gach-op-lat', products: gachData.products, totalCount: gachData.total },
     ].filter(c => c.products.length > 0)

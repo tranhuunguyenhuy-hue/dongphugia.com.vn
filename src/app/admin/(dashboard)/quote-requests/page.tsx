@@ -7,6 +7,9 @@ import {
 } from "@/components/ui/table"
 import { ClipboardList } from "lucide-react"
 import { QuoteStatusButton } from "./quote-status-button"
+import { QuoteAssignSelect } from "./quote-assign-select"
+import { getCurrentUser } from '@/lib/auth/get-current-user'
+import { can } from '@/lib/auth/permissions'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -27,14 +30,28 @@ export default async function QuoteRequestsPage({ searchParams }: PageProps) {
     const sp = await searchParams
     const statusFilter = sp.status && sp.status !== 'all' ? sp.status : undefined
 
+    const currentUser = await getCurrentUser()
+    const isSaleOnly = currentUser && !can(currentUser.role, 'quotes:read')
+
+    const whereObj: any = {}
+    if (statusFilter) whereObj.status = statusFilter
+    if (isSaleOnly) whereObj.assigned_to = currentUser.id
+
     const quotes = await prisma.quote_requests.findMany({
-        where: statusFilter ? { status: statusFilter } : undefined,
+        where: whereObj,
         orderBy: { created_at: 'desc' },
         include: {
+            assigned_user: { select: { id: true, name: true, email: true } },
             quote_items: {
                 include: { products: { select: { id: true, name: true } } },
             },
         },
+    })
+
+    const staffMembers = await prisma.admin_users.findMany({
+        where: { is_active: true, role: { in: ['admin', 'sale_manager', 'sale'] } },
+        select: { id: true, name: true, email: true, role: true },
+        orderBy: { name: 'asc' }
     })
 
     const counts = await prisma.quote_requests.groupBy({
@@ -92,6 +109,7 @@ export default async function QuoteRequestsPage({ searchParams }: PageProps) {
                                 <TableHead>Ghi chú</TableHead>
                                 <TableHead>Ngày gửi</TableHead>
                                 <TableHead>Trạng thái</TableHead>
+                                <TableHead>Phụ trách</TableHead>
                                 <TableHead className="text-right">Thao tác</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -106,9 +124,9 @@ export default async function QuoteRequestsPage({ searchParams }: PageProps) {
                                     </TableCell>
                                     <TableCell className="text-sm text-muted-foreground">{q.email || '—'}</TableCell>
                                     <TableCell className="text-sm">
-                                    {q.quote_items.length > 0 ? (
+                                    {q.quote_items && q.quote_items.length > 0 ? (
                             <span className="text-sm">
-                                {q.quote_items.map(qi => qi.products.name).join(', ')}
+                                {q.quote_items.map((qi: any) => qi.products?.name).filter(Boolean).join(', ')}
                                 {q.quote_items.length > 1 && (
                                     <span className="ml-1 text-xs text-muted-foreground">+{q.quote_items.length} SP</span>
                                 )}
@@ -134,6 +152,13 @@ export default async function QuoteRequestsPage({ searchParams }: PageProps) {
                                             {STATUS_LABELS[q.status] || q.status}
                                         </Badge>
                                     </TableCell>
+                                    <TableCell>
+                                        <QuoteAssignSelect 
+                                            quoteId={q.id}
+                                            currentAssigneeId={q.assigned_to}
+                                            staffMembers={staffMembers}
+                                        />
+                                    </TableCell>
                                     <TableCell className="text-right">
                                         <Link
                                             href={`/admin/quote-requests/${q.id}/builder`}
@@ -146,7 +171,7 @@ export default async function QuoteRequestsPage({ searchParams }: PageProps) {
                             ))}
                             {quotes.length === 0 && (
                                 <TableRow>
-                                    <TableCell colSpan={8} className="text-center text-muted-foreground py-16">
+                                    <TableCell colSpan={9} className="text-center text-muted-foreground py-16">
                                         <ClipboardList className="h-8 w-8 mx-auto mb-2 opacity-30" />
                                         <p>Không có yêu cầu báo giá nào</p>
                                     </TableCell>

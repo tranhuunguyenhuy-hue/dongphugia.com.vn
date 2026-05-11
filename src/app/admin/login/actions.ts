@@ -51,24 +51,29 @@ export async function loginAction(
         return { error: 'Quá nhiều lần thử. Vui lòng đợi 15 phút và thử lại.' }
     }
 
-    const email = (formData.get('email') as string)?.trim().toLowerCase()
+    const identifier = (formData.get('identifier') as string)?.trim().toLowerCase()
     const password = formData.get('password') as string
 
-    if (!email || !password) {
-        return { error: 'Vui lòng nhập đầy đủ email và mật khẩu.' }
+    if (!identifier || !password) {
+        return { error: 'Vui lòng nhập tên đăng nhập và mật khẩu.' }
     }
 
-    // Look up user
-    const user = await prisma.admin_users.findUnique({
-        where: { email },
-        select: { id: true, email: true, name: true, role: true, password_hash: true, is_active: true },
+    // Look up user by email or username
+    const user = await prisma.admin_users.findFirst({
+        where: {
+            OR: [
+                { email: identifier },
+                { username: identifier }
+            ]
+        },
+        select: { id: true, email: true, username: true, name: true, role: true, password_hash: true, is_active: true },
     })
 
     // Constant-time response (prevent user enumeration)
     const isValid = user ? await verifyPassword(password, user.password_hash) : false
 
     if (!user || !isValid) {
-        return { error: 'Email hoặc mật khẩu không đúng.' }
+        return { error: 'Thông tin đăng nhập không đúng.' }
     }
 
     if (!user.is_active) {

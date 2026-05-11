@@ -51,6 +51,7 @@ export default async function GachOpLatSubPage({ params, searchParams }: PagePro
     const activeFeatureSlugs = sp.features
     const activeMaterialSlugs = sp.material
     const activeOriginSlugs = sp.origin
+    const activeColorSlugs = sp.color
     const isNew = sp.is_new === 'true'
     const isFeatured = sp.is_featured === 'true'
 
@@ -90,6 +91,7 @@ export default async function GachOpLatSubPage({ params, searchParams }: PagePro
             feature_slugs: activeFeatureSlugs,
             material_slug: activeMaterialSlugs,
             origin_slug: activeOriginSlugs,
+            color_slug: activeColorSlugs,
             is_promotion: isNew ? true : undefined,
             is_featured: isFeatured ? true : undefined,
             price_min, price_max,
@@ -102,6 +104,7 @@ export default async function GachOpLatSubPage({ params, searchParams }: PagePro
     availableFilters.features.forEach(f => filterDict[f.slug] = f.name)
     availableFilters.materials.forEach(f => filterDict[f.slug] = f.name)
     availableFilters.origins.forEach(f => filterDict[f.slug] = f.name)
+    availableFilters.colors?.forEach(f => filterDict[f.slug] = f.name)
 
     return (
         <main className="max-w-[1380px] mx-auto px-5 lg:px-8">

@@ -12,19 +12,19 @@ export function LoginForm() {
 
     return (
         <form action={formAction} className="space-y-4">
-            {/* Email */}
+            {/* Identifier */}
             <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="identifier">Tên đăng nhập hoặc Email</Label>
                 <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
-                        id="email"
-                        name="email"
-                        type="email"
-                        placeholder="admin@dongphugia.com.vn"
+                        id="identifier"
+                        name="identifier"
+                        type="text"
+                        placeholder="admin / admin@dongphugia.com.vn"
                         required
                         autoFocus
-                        autoComplete="email"
+                        autoComplete="username"
                         className="pl-9"
                     />
                 </div>

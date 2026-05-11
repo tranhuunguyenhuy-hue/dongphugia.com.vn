@@ -14,6 +14,7 @@ export type AvailableFiltersData = {
     materials: FilterOption[]
     origins: FilterOption[]
     features: FilterOption[]
+    colors?: { name: string; slug: string; hex_code: string | null }[]
 }
 
 // ── Price constants ────────────────────────────────────────────────────────────
@@ -219,6 +220,38 @@ function TagChip({ label, active, onClick }: {
     )
 }
 
+// ── Color Swatch Chip ──────────────────────────────────────────────────────────
+function ColorSwatchChip({ label, hex_code, active, onClick }: {
+    label: string; hex_code: string; active: boolean; onClick: () => void
+}) {
+    // Determine if the color is light (like white) to adjust border
+    const isLight = hex_code.toLowerCase() === '#ffffff' || hex_code.toLowerCase() === '#fffdd0';
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            title={label}
+            className={`
+                relative w-7 h-7 rounded-full border flex items-center justify-center
+                transition-all duration-200 cursor-pointer shadow-sm
+                ${active 
+                    ? 'border-[#2E7A96] ring-2 ring-[#2E7A96]/20' 
+                    : isLight ? 'border-neutral-300 hover:border-neutral-400 hover:scale-105' : 'border-black/10 hover:border-black/30 hover:scale-105'
+                }
+            `}
+            style={{ backgroundColor: hex_code || '#cccccc' }}
+        >
+            {active && (
+                <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-[#2E7A96] flex items-center justify-center">
+                    <svg className="w-2 h-2 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                    </svg>
+                </span>
+            )}
+        </button>
+    )
+}
+
 // ── AdvancedFilterGroup — collapsible "Lọc nâng cao" wrapper ───────────────────
 function AdvancedFilterGroup({
     children, defaultOpen = true, activeCount = 0,
@@ -290,6 +323,7 @@ export function AdvancedSidebarFilter({
     const featureSlugs     = getArr('features')
     const materialSlugs    = getArr('material')
     const originSlugs      = getArr('origin')
+    const colorSlugs       = getArr('color')
 
     const priceParam = searchParams.get('price') ?? ''
     const [localPrice, setLocalPrice] = useState<[number, number]>(() =>
@@ -351,17 +385,17 @@ export function AdvancedSidebarFilter({
 
     const hasFilters =
         brandSlugs.length > 0 || featureSlugs.length > 0 ||
-        materialSlugs.length > 0 || originSlugs.length > 0 ||
+        materialSlugs.length > 0 || originSlugs.length > 0 || colorSlugs.length > 0 ||
         isPriceActive || isPromotion || isFeatured || specActiveCount > 0
 
     const totalActiveCount =
         brandSlugs.length + featureSlugs.length + materialSlugs.length +
-        originSlugs.length + (isPriceActive ? 1 : 0) + (isPromotion ? 1 : 0) + (isFeatured ? 1 : 0) + specActiveCount
+        originSlugs.length + colorSlugs.length + (isPriceActive ? 1 : 0) + (isPromotion ? 1 : 0) + (isFeatured ? 1 : 0) + specActiveCount
 
     const clearAll = () => {
         setLocalPrice([PRICE_MIN, PRICE_MAX])
         const params = new URLSearchParams(searchParams.toString())
-        ;['brand', 'features', 'material', 'origin', 'price', 'is_promotion', 'is_featured', 'priceRange'].forEach(k => params.delete(k))
+        ;['brand', 'features', 'material', 'origin', 'color', 'price', 'is_promotion', 'is_featured', 'priceRange'].forEach(k => params.delete(k))
         specFilters.forEach(f => params.delete(SF_PREFIX + f.key))
         params.set('page', '1')
         router.push(`${pathname}?${params.toString()}`, { scroll: false })
@@ -422,6 +456,26 @@ export function AdvancedSidebarFilter({
                                     name={b.name}
                                     active={brandSlugs.includes(b.slug)}
                                     onClick={() => toggle('brand', brandSlugs, b.slug)}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* ── Colors — swatch chips ── */}
+                {availableFilters.colors && availableFilters.colors.length > 0 && (
+                    <div className="space-y-2">
+                        <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
+                            Màu sắc
+                        </p>
+                        <div className="flex flex-wrap gap-2.5">
+                            {availableFilters.colors.map(c => (
+                                <ColorSwatchChip
+                                    key={c.slug}
+                                    label={c.name}
+                                    hex_code={c.hex_code || '#ccc'}
+                                    active={colorSlugs.includes(c.slug)}
+                                    onClick={() => toggle('color', colorSlugs, c.slug)}
                                 />
                             ))}
                         </div>

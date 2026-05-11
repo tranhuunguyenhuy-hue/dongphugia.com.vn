@@ -253,8 +253,17 @@ export function ProductsTableClient({ products }: { products: Product[] }) {
                         <Loader2 className="h-6 w-6 animate-spin text-primary" />
                     </div>
                 )}
-                <Table>
-                    <TableHeader>
+                <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={handleDragEnd}
+                >
+                    <SortableContext
+                        items={localProducts.map(p => p.id)}
+                        strategy={verticalListSortingStrategy}
+                    >
+                        <Table>
+                            <TableHeader>
                         <TableRow className="bg-neutral-50/50 hover:bg-neutral-50/50 border-b-border/60">
                             <TableHead className="w-[40px] text-center px-3">
                                 <Checkbox 
@@ -283,32 +292,23 @@ export function ProductsTableClient({ products }: { products: Product[] }) {
                                 </TableCell>
                             </TableRow>
                         ) : (
-                            <DndContext
-                                sensors={sensors}
-                                collisionDetection={closestCenter}
-                                onDragEnd={handleDragEnd}
-                            >
-                                <SortableContext
-                                    items={localProducts.map(p => p.id)}
-                                    strategy={verticalListSortingStrategy}
-                                >
-                                    {localProducts.map(product => {
-                                        const isSelected = selectedIds.has(product.id)
-                                        return (
-                                            <SortableProductRow
-                                                key={product.id}
-                                                product={product}
-                                                isSelected={isSelected}
-                                                canReorder={canReorder}
-                                                handleSelectRow={handleSelectRow}
-                                            />
-                                        )
-                                    })}
-                                </SortableContext>
-                            </DndContext>
+                            localProducts.map(product => {
+                                const isSelected = selectedIds.has(product.id)
+                                return (
+                                    <SortableProductRow
+                                        key={product.id}
+                                        product={product}
+                                        isSelected={isSelected}
+                                        canReorder={canReorder}
+                                        handleSelectRow={handleSelectRow}
+                                    />
+                                )
+                            })
                         )}
                     </TableBody>
-                </Table>
+                        </Table>
+                    </SortableContext>
+                </DndContext>
             </div>
         </div>
     )

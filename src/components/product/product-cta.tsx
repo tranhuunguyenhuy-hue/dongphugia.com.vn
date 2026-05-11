@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Phone, CheckCircle2, Minus, Plus, ShoppingCart, MessageSquareText, ShoppingBag } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 import { useCartStore } from "@/lib/cart-store";
+import { useProductOptions } from "./product-options-context";
 import { toast } from "sonner";
 
 interface ProductCTAProps {
@@ -36,6 +37,11 @@ export function ProductCTA({
     slug,
 }: ProductCTAProps) {
     const hasPrice = price !== null && price > 0;
+    
+    const productOptions = useProductOptions();
+    const installOption = productOptions?.installOption || 'none';
+    const installationFee = productOptions?.installationFee || 0;
+    const onlineDiscountAmount = productOptions?.onlineDiscountAmount || 0;
 
     const [isOpen, setIsOpen] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
@@ -44,6 +50,8 @@ export function ProductCTA({
     const addItem = useCartStore((s) => s.addItem);
 
     const handleAddToCart = () => {
+        const finalPrice = hasPrice ? (price! - onlineDiscountAmount + installationFee) : undefined;
+        
         addItem({
             productId,
             sku: productSku,
@@ -56,6 +64,10 @@ export function ProductCTA({
             imageUrl: imageUrl ?? null,
             brandName: brandName ?? null,
             quantity,
+            installOption,
+            installationFee,
+            onlineDiscountAmount,
+            finalPrice,
         });
         toast.success("Đã thêm vào giỏ hàng!", {
             description: productName,
@@ -78,7 +90,7 @@ export function ProductCTA({
                 body: JSON.stringify({
                     name: data.get("customerName"),
                     phone: data.get("customerPhone"),
-                    message: `Yêu cầu tư vấn/đặt hàng cho sản phẩm: ${productName} (SKU: ${productSku})`,
+                    message: `Yêu cầu tư vấn/đặt hàng cho sản phẩm: ${productName} (SKU: ${productSku})${installOption !== 'none' ? ` - Có kèm yêu cầu ${installOption === 'install' ? 'Lắp đặt' : 'Tháo dỡ & Lắp đặt'}` : ''}`,
                     products: [
                         {
                             product_id: productId,
@@ -117,10 +129,11 @@ export function ProductCTA({
         }
     };
 
-    const totalPrice = (price || 0) * quantity;
+    const finalItemPrice = hasPrice ? (price! - onlineDiscountAmount + installationFee) : 0;
+    const totalPrice = finalItemPrice * quantity;
 
     return (
-        <div className="flex flex-col gap-3 pt-4">
+        <div className="flex flex-col gap-3">
             {/* Row 1: Add to Cart + Quote/Order */}
             <div className="flex gap-3">
                 {/* Add to Cart — primary if has price */}

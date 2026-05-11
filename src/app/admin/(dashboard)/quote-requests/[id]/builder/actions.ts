@@ -2,7 +2,7 @@
 
 import prisma from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
-import { requirePermission } from '@/lib/auth/get-current-user'
+import { requirePermission, getCurrentUser } from '@/lib/auth/get-current-user'
 
 export async function updateQuoteData(quoteId: number, data: any) {
     try {
@@ -86,5 +86,36 @@ export async function completeQuote(quoteId: number, data: any) {
     } catch (error) {
         console.error('Failed to complete quote:', error)
         return { success: false, error: 'Lỗi server khi hoàn thành báo giá' }
+    }
+}
+
+export async function assignQuote(quoteId: number, userId: number | null) {
+    try {
+        await requirePermission('quotes:update')
+        
+        await prisma.quote_requests.update({
+            where: { id: quoteId },
+            data: {
+                assigned_to: userId
+            }
+        })
+        
+        const currentUser = await getCurrentUser()
+        await prisma.audit_logs.create({
+            data: {
+                user_id: currentUser?.id,
+                action: userId ? 'ASSIGN_QUOTE' : 'UNASSIGN_QUOTE',
+                entity_type: 'quote_requests',
+                entity_id: quoteId,
+                new_value: { assigned_to: userId }
+            }
+        })
+
+        revalidatePath('/admin/quote-requests')
+        revalidatePath(`/admin/quote-requests/${quoteId}/builder`)
+        return { success: true }
+    } catch (error: any) {
+        console.error('Failed to assign quote:', error)
+        return { success: false, error: 'Lỗi khi giao báo giá: ' + error.message }
     }
 }

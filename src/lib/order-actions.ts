@@ -4,6 +4,8 @@ import prisma from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
+import { getCurrentUser, requirePermission } from '@/lib/auth/get-current-user'
+import { can } from '@/lib/auth/permissions'
 
 // ─── SCHEMAS ─────────────────────────────────────────────────────────────────
 
@@ -151,7 +153,11 @@ export async function getAdminOrders(params: {
 }) {
     const { status, payment_status, search, page = 1, pageSize = 25 } = params
 
+    const currentUser = await getCurrentUser()
+    const isSaleOnly = currentUser && !can(currentUser.role, 'orders:read')
+
     const where: Prisma.ordersWhereInput = {
+        ...(isSaleOnly && { assigned_to: currentUser.id }),
         ...(status && { status }),
         ...(payment_status && { payment_status }),
         ...(search && {
@@ -181,6 +187,9 @@ export async function getAdminOrders(params: {
                 payment_status: true,
                 payment_method: true,
                 created_at: true,
+                assigned_to: true,
+                assigned_at: true,
+                assigned_user: { select: { name: true, email: true } },
                 _count: { select: { order_items: true } },
                 order_items: {
                     select: {
@@ -202,11 +211,11 @@ export async function getAdminOrders(params: {
         orders: orders.map(o => ({
             ...o,
             total: Number(o.total),
-            order_items: o.order_items.map(item => ({
+            order_items: o.order_items?.map((item: any) => ({
                 ...item,
                 unit_price: Number(item.unit_price),
                 total_price: Number(item.total_price),
-            })),
+            })) || [],
         })),
         total,
         page,
@@ -221,6 +230,7 @@ export async function getAdminOrderById(id: number) {
     const order = await prisma.orders.findUnique({
         where: { id },
         include: {
+            assigned_user: { select: { name: true, email: true } },
             order_items: {
                 include: {
                     products: {
@@ -236,11 +246,11 @@ export async function getAdminOrderById(id: number) {
         subtotal: Number(order.subtotal),
         shipping_fee: Number(order.shipping_fee),
         total: Number(order.total),
-        order_items: order.order_items.map(item => ({
+        order_items: order.order_items?.map((item: any) => ({
             ...item,
             unit_price: Number(item.unit_price),
             total_price: Number(item.total_price),
-        })),
+        })) || [],
     }
 }
 
@@ -348,5 +358,40 @@ export async function updateOrderData(orderId: number, data: any) {
     } catch (error: any) {
         console.error('Failed to update order data:', error)
         return { success: false, error: 'Lỗi server khi lưu đơn hàng: ' + error.message }
+    }
+}
+
+// ─── ASSIGN ORDER ─────────────────────────────────────────────────────────────
+
+export async function assignOrder(orderId: number, userId: number | null) {
+    try {
+        await requirePermission('orders:assign')
+        
+        await prisma.orders.update({
+            where: { id: orderId },
+            data: {
+                assigned_to: userId,
+                assigned_at: userId ? new Date() : null
+            }
+        })
+        
+        // Log to audit (optional for later, but handled here)
+        const currentUser = await getCurrentUser()
+        await prisma.audit_logs.create({
+            data: {
+                user_id: currentUser?.id,
+                action: userId ? 'ASSIGN_ORDER' : 'UNASSIGN_ORDER',
+                entity_type: 'orders',
+                entity_id: orderId,
+                new_value: { assigned_to: userId }
+            }
+        })
+
+        revalidatePath('/admin/orders')
+        revalidatePath(`/admin/orders/${orderId}`)
+        return { success: true }
+    } catch (error: any) {
+        console.error('Failed to assign order:', error)
+        return { success: false, error: 'Lỗi khi giao đơn hàng: ' + error.message }
     }
 }

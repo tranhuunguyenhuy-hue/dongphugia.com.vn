@@ -153,14 +153,23 @@ export const PRODUCT_TYPE_RULES = [
   { pattern: /sen.*âm tường|âm tường.*sen|set sen/i,
     subcategory_id: 3, product_type: 'sen-am-tuong' },
   // Sen cây / sen đứng
-  { pattern: /sen cây|sen đứng/i,
+  { pattern: /sen cây|sen đứng|sen tắm cây|sen tắm.*cây đứng/i,
     subcategory_id: 3, product_type: 'sen-dung' },
   // Củ sen
   { pattern: /củ sen|bộ điều khiển sen/i,
     subcategory_id: 3, product_type: 'cu-sen' },
-  // Tay sen
-  { pattern: /tay sen/i,
+  // Tay sen / đầu sen
+  { pattern: /tay sen|đầu sen/i,
     subcategory_id: 3, product_type: 'tay-sen' },
+  // Van gật gù / van điều chỉnh / van nhiệt độ (mixer valves)
+  { pattern: /van gật gù|van điều chỉnh|van nhiệt độ|van trộn/i,
+    subcategory_id: 3, product_type: 'van-sen' },
+  // Bộ sen tắm (largest group — 456 SP)
+  { pattern: /bộ sen tắm|bộ sen.*nóng lạnh|sen tắm.*nóng lạnh|sen tắm TOTO|sen tắm nhiệt độ/i,
+    subcategory_id: 3, product_type: 'bo-sen-tam' },
+  // Vòi xả bồn tắm
+  { pattern: /vòi xả.*bồn tắm|vòi xả.*bon tam|vòi bồn tắm|vòi xả/i,
+    subcategory_id: 3, product_type: 'voi-xa-bon-tam' },
   // Phụ kiện sen (bát sen, gác sen, thanh trượt, cút nối)
   { pattern: /bát sen|gác sen|thanh trượt|cút nối.*tường|co nối/i,
     subcategory_id: 3, product_type: 'phu-kien', 
@@ -171,6 +180,9 @@ export const PRODUCT_TYPE_RULES = [
       return null
     }
   },
+  // Phụ kiện sen chung (vòi sen, phụ kiện sen)
+  { pattern: /phụ kiện.*sen|vòi sen/i,
+    subcategory_id: 3, product_type: 'phu-kien' },
 
   // ── BỒN TẮM (subcategory_id: 4) ──────────────────────────────────────────
   // Bồn tắm massage
@@ -184,16 +196,67 @@ export const PRODUCT_TYPE_RULES = [
     subcategory_id: 4, product_type: 'bon-tam' },
 
   // ── BỒN TIỂU (subcategory_id: 7) ─────────────────────────────────────────
-  { pattern: /bồn tiểu|tiểu nam|tiểu nữ|urinal/i,
-    subcategory_id: 7, product_type: null },
+  { pattern: /bồn tiểu|tiểu nam|tiểu nữ|urinal|vách ngăn tiểu/i,
+    subcategory_id: 7, product_type: 'bon-tieu' },
 
   // ── PHỤ KIỆN PHÒNG TẮM (subcategory_id: 5) ──────────────────────────────
-  { pattern: /thanh vịn|kệ.*phòng tắm|giá treo|móc áo|hộp giấy|gương.*phòng/i,
-    subcategory_id: 5, product_type: null },
+  // Vòi xịt vệ sinh
+  { pattern: /vòi xịt.*vệ sinh|vòi xịt TOTO/i,
+    subcategory_id: 5, product_type: 'voi-xit-ve-sinh' },
+  // Gương phòng tắm
+  { pattern: /gương.*phòng tắm|gương.*toto|gương soi/i,
+    subcategory_id: 5, product_type: 'guong-phong-tam' },
+  // Lô giấy / hộp giấy vệ sinh
+  { pattern: /lô giấy|hộp giấy|đựng giấy/i,
+    subcategory_id: 5, product_type: 'lo-giay' },
+  // Thanh vắt khăn / vòng treo khăn
+  { pattern: /thanh vắt|vòng treo|treo khăn|thanh treo khăn/i,
+    subcategory_id: 5, product_type: 'treo-khan' },
+  // Móc áo / móc treo
+  { pattern: /móc áo|móc treo|móc/i,
+    subcategory_id: 5, product_type: 'moc-ao' },
+  // Thanh vịn / tay vịn
+  { pattern: /thanh vịn|tay vịn/i,
+    subcategory_id: 5, product_type: 'thanh-vin' },
+  // Kệ / giá đỡ
+  { pattern: /kệ.*phòng tắm|giá treo|giá đỡ|kệ kính|kệ đựng/i,
+    subcategory_id: 5, product_type: 'ke-phong-tam' },
+  // Hộp xà phòng / chén xà phòng
+  { pattern: /xà phòng|hộp xịt/i,
+    subcategory_id: 5, product_type: 'hop-xa-phong' },
+  // Máy sấy tay
+  { pattern: /máy sấy tay|máy sấy/i,
+    subcategory_id: 5, product_type: 'may-say-tay' },
+  // Ga thoát sàn / phễu thoát sàn
+  { pattern: /ga thoát|phễu thoát|thoát sàn|lọc rác/i,
+    subcategory_id: 5, product_type: 'ga-thoat-san' },
+  // Lô bàn chải / ly thuỷ tinh / khay kính
+  { pattern: /lô bàn chải|ly thuỷ tinh|khay kính|lô xà bông|dây phơi/i,
+    subcategory_id: 5, product_type: 'phu-kien-phong-tam' },
+  // Bộ cố định / vít / nắp che / mô tơ / bảng mạch (spare parts)
+  { pattern: /bộ cố định|vít cố định|nắp che|mô tơ|bảng mạch|thiết bị đóng ngắt/i,
+    subcategory_id: 5, product_type: 'phu-kien-phong-tam' },
+  // Phụ kiện phòng tắm chung (catch-all for sub_5)
+  { pattern: /phụ kiện|chậu dịch vụ|khu công cộng/i,
+    subcategory_id: 5, product_type: 'phu-kien-phong-tam' },
+
+  // ── SEN TẮM BỔ SUNG ──────────────────────────────────────────────────────
+  // Van chuyển hướng / van dừng (mixer valves - sub_3)
+  { pattern: /van chuyển|van dừng|bộ chuyển hướng|đầu chuyển nước/i,
+    subcategory_id: 3, product_type: 'van-sen' },
+  // Lõi van / tay vặn / dây sen / bộ chia nước (spare parts for shower)
+  { pattern: /lõi van|tay vặn|dây sen|bộ chia nước|thân sen|van biến nhiệt/i,
+    subcategory_id: 3, product_type: 'phu-kien' },
+  // Sen tắm lạnh
+  { pattern: /sen tắm lạnh/i,
+    subcategory_id: 3, product_type: 'sen-tam-lanh' },
+  // Vòi xịt nước (generic — fallback for sub_5)
+  { pattern: /vòi xịt/i,
+    subcategory_id: 5, product_type: 'voi-xit-ve-sinh' },
 
   // ── VÒI RỬA CHÉN (subcategory_id: 10) ────────────────────────────────────
-  { pattern: /vòi.*chén|vòi.*bát|vòi bếp|kitchen/i,
-    subcategory_id: 10, product_type: null },
+  { pattern: /vòi.*chén|vòi.*bát|vòi bếp|kitchen|vòi rửa chén/i,
+    subcategory_id: 10, product_type: 'voi-rua-chen' },
 ]
 
 // ─── CLASSIFY PRODUCT ────────────────────────────────────────────────────────

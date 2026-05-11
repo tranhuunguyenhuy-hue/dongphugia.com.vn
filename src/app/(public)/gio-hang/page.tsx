@@ -96,10 +96,10 @@ export default function CartPage() {
                 <div className="space-y-4">
                     {items.map((item) => (
                         <CartPageItem
-                            key={item.productId}
+                            key={item.cartItemId}
                             item={item}
-                            onRemove={() => removeItem(item.productId)}
-                            onQtyChange={(qty) => updateQuantity(item.productId, qty)}
+                            onRemove={() => removeItem(item.cartItemId)}
+                            onQtyChange={(qty) => updateQuantity(item.cartItemId, qty)}
                         />
                     ))}
 
@@ -124,14 +124,26 @@ export default function CartPage() {
                         <h2 className="font-semibold text-neutral-900 text-lg">Tóm tắt đơn hàng</h2>
 
                         <div className="space-y-2 text-sm">
-                            {items.map(item => (
-                                <div key={item.productId} className="flex justify-between text-neutral-600">
-                                    <span className="line-clamp-1 flex-1 mr-2">{item.name} × {item.quantity}</span>
-                                    <span className="shrink-0 font-medium">
-                                        {item.price ? formatPrice(item.price * item.quantity) : 'Liên hệ'}
-                                    </span>
-                                </div>
-                            ))}
+                            {items.map(item => {
+                                const finalItemPrice = item.finalPrice ?? item.price;
+                                return (
+                                    <div key={item.cartItemId} className="flex flex-col mb-2 last:mb-0">
+                                        <div className="flex justify-between text-neutral-600">
+                                            <span className="line-clamp-1 flex-1 mr-2">{item.name} × {item.quantity}</span>
+                                            <span className="shrink-0 font-medium">
+                                                {finalItemPrice ? formatPrice(finalItemPrice * item.quantity) : 'Liên hệ'}
+                                            </span>
+                                        </div>
+                                        {(item.installOption === 'install' || item.installOption === 'replace' || (item.onlineDiscountAmount || 0) > 0) && (
+                                            <div className="text-[11px] text-neutral-400 pl-2">
+                                                {item.installOption === 'install' && <span>+ Lắp đặt</span>}
+                                                {item.installOption === 'replace' && <span>+ Tháo dỡ & Lắp đặt</span>}
+                                                {(item.onlineDiscountAmount || 0) > 0 && <span>, - Giảm Online</span>}
+                                            </div>
+                                        )}
+                                    </div>
+                                )
+                            })}
                         </div>
 
                         <div className="border-t border-neutral-200 pt-4 flex justify-between">
@@ -241,6 +253,7 @@ function CartPageItem({ item, onRemove, onQtyChange }: {
     onRemove: () => void
     onQtyChange: (qty: number) => void
 }) {
+    const finalItemPrice = item.finalPrice ?? item.price;
     return (
         <div className="flex gap-4 p-4 bg-white border border-neutral-200 rounded-2xl">
             <div className="w-20 h-20 rounded-xl border border-neutral-100 bg-neutral-50 overflow-hidden shrink-0">
@@ -257,6 +270,19 @@ function CartPageItem({ item, onRemove, onQtyChange }: {
                 <p className="font-semibold text-neutral-900 line-clamp-2 text-sm leading-snug">{item.name}</p>
                 {item.brandName && <p className="text-xs text-neutral-400 mt-0.5">{item.brandName}</p>}
                 <p className="text-xs text-neutral-400 mt-0.5">SKU: {item.sku}</p>
+                
+                {/* Options display */}
+                <div className="flex flex-col gap-0.5 mt-1.5">
+                    {item.installOption === 'install' && (
+                        <p className="text-[12px] text-sky-600 font-medium">+ Lắp đặt: {formatPrice(item.installationFee || 0)}</p>
+                    )}
+                    {item.installOption === 'replace' && (
+                        <p className="text-[12px] text-sky-600 font-medium">+ Tháo dỡ & Lắp đặt: {formatPrice(item.installationFee || 0)}</p>
+                    )}
+                    {(item.onlineDiscountAmount || 0) > 0 && (
+                        <p className="text-[12px] text-emerald-600 font-medium">- Giảm Online: {formatPrice(item.onlineDiscountAmount || 0)}</p>
+                    )}
+                </div>
 
                 <div className="flex items-center justify-between mt-3">
                     <div className="flex items-center border border-neutral-200 rounded-lg overflow-hidden h-9">
@@ -273,7 +299,7 @@ function CartPageItem({ item, onRemove, onQtyChange }: {
 
                     <div className="flex items-center gap-3">
                         <span className="font-bold text-[#2E7A96]">
-                            {item.price ? formatPrice(item.price * item.quantity) : 'Liên hệ'}
+                            {finalItemPrice ? formatPrice(finalItemPrice * item.quantity) : 'Liên hệ'}
                         </span>
                         <button onClick={onRemove} className="w-8 h-8 flex items-center justify-center text-neutral-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
                             <Trash2 className="w-3.5 h-3.5" />

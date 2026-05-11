@@ -733,7 +733,15 @@ export function ProductForm({ pageTitle, pageSubtitle, product, categories, subc
                                                 <FormItem>
                                                     <FormLabel>Giá bán hiện tại (VNĐ)</FormLabel>
                                                     <FormControl>
-                                                        <Input type="number" min={0} step={1000} {...field} />
+                                                        <Input 
+                                                            type="text" 
+                                                            value={field.value !== undefined && field.value !== null && Number(field.value) !== 0 ? new Intl.NumberFormat('vi-VN').format(Number(field.value)) : ''}
+                                                            onChange={(e) => {
+                                                                const rawValue = e.target.value.replace(/\D/g, '');
+                                                                field.onChange(rawValue ? Number(rawValue) : 0);
+                                                            }}
+                                                            placeholder="0"
+                                                        />
                                                     </FormControl>
                                                     <FormMessage />
                                                 </FormItem>
@@ -746,7 +754,15 @@ export function ProductForm({ pageTitle, pageSubtitle, product, categories, subc
                                                 <FormItem>
                                                     <FormLabel>Giá gốc (VNĐ) — Bị gạch ngang</FormLabel>
                                                     <FormControl>
-                                                        <Input type="number" min={0} step={1000} {...field} />
+                                                        <Input 
+                                                            type="text" 
+                                                            value={field.value !== undefined && field.value !== null && Number(field.value) !== 0 ? new Intl.NumberFormat('vi-VN').format(Number(field.value)) : ''}
+                                                            onChange={(e) => {
+                                                                const rawValue = e.target.value.replace(/\D/g, '');
+                                                                field.onChange(rawValue ? Number(rawValue) : 0);
+                                                            }}
+                                                            placeholder="0"
+                                                        />
                                                     </FormControl>
                                                     <FormDescription>Nhập giá cao hơn để hệ thống tính toán % giảm giá.</FormDescription>
                                                     <FormMessage />
@@ -757,12 +773,28 @@ export function ProductForm({ pageTitle, pageSubtitle, product, categories, subc
                                             control={form.control}
                                             name="price_display"
                                             render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>Văn bản hiển thị thay thế</FormLabel>
+                                                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow-sm md:col-span-2">
                                                     <FormControl>
-                                                        <Input placeholder="VD: Liên hệ báo giá" {...field} />
+                                                        <Checkbox 
+                                                            checked={field.value === "Liên hệ báo giá" || field.value === "Liên hệ"}
+                                                            onCheckedChange={(checked) => {
+                                                                if (checked) {
+                                                                    field.onChange("Liên hệ báo giá")
+                                                                    form.setValue("price", "0" as any)
+                                                                } else {
+                                                                    field.onChange("")
+                                                                }
+                                                            }}
+                                                        />
                                                     </FormControl>
-                                                    <FormMessage />
+                                                    <div className="space-y-1 leading-none">
+                                                        <FormLabel>
+                                                            Sản phẩm liên hệ báo giá
+                                                        </FormLabel>
+                                                        <FormDescription>
+                                                            Tích chọn nếu bạn muốn ẩn giá và yêu cầu khách hàng liên hệ. (Giá sẽ tự động được set về 0)
+                                                        </FormDescription>
+                                                    </div>
                                                 </FormItem>
                                             )}
                                         />

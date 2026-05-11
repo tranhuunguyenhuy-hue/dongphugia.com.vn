@@ -207,6 +207,25 @@ function parseDocuments(html) {
   return docs
 }
 
+/** Parse official SKU from JSON-LD */
+function parseSku(html) {
+  const regex = /<script type=\"application\/ld\+json\">([\s\S]*?)<\/script>/gi
+  let match
+  while ((match = regex.exec(html)) !== null) {
+    try {
+      const json = JSON.parse(match[1])
+      if (json['@type'] === 'Product' && json.sku) return json.sku
+      if (json['@graph']) {
+        const p = json['@graph'].find(i => i['@type'] === 'Product')
+        if (p && p.sku) return p.sku
+      }
+    } catch (e) {}
+  }
+  const skuMatch = html.match(/\"sku\"\s*:\s*\"([^\"]+)\"/i)
+  if (skuMatch) return skuMatch[1]
+  return null
+}
+
 /** Parse variant links from variant-slider or box-categories-related */
 function parseVariants(html) {
   const variants = []
@@ -294,6 +313,7 @@ async function enrichProduct(product) {
   const documents = parseDocuments(html)
   const variants = parseVariants(html)
   const productStatus = parseStatus(html)
+  const officialSku = parseSku(html)
 
   // Extract fields from specs
   const warrantyMonths = parseWarrantyMonths(specs['Bảo hành'] || specs['Bảo Hành'])
@@ -313,6 +333,7 @@ async function enrichProduct(product) {
 
     // PDP enriched
     name,
+    sku: officialSku,
     ...pricing,
     specs_raw: specs,
     gallery_images: galleryImages,

@@ -100,26 +100,26 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
                 )}
                 
                 {/* Badges */}
-                <div className="absolute top-3 left-3 flex flex-col gap-2 z-10 items-start">
-                    {(product.is_promotion || product.is_featured) && (
-                        <div className="flex gap-1.5">
-                            {product.is_promotion && (
-                                <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest bg-red-500 text-white rounded-md shadow-sm border border-red-500/20">
-                                    Khuyến mãi
-                                </span>
-                            )}
+                <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-10 items-start">
+                    {(product.is_promotion || product.is_featured || (product.original_price && product.price && Number(product.original_price) > Number(product.price))) && (
+                        <div className="flex flex-wrap gap-1.5">
                             {product.is_featured && (
-                                <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest bg-amber-500 text-white rounded-md shadow-sm border border-amber-500/20">
+                                <span className="flex items-center px-2 py-[3px] text-[10px] font-bold uppercase tracking-wide text-white bg-gradient-to-r from-[#FF9800] to-[#FF5722] rounded-[4px] shadow-sm w-fit">
+                                    <svg className="w-2.5 h-2.5 mr-1 mb-[1px]" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+                                    </svg>
                                     Nổi bật
                                 </span>
                             )}
+                            {(product.is_promotion || (product.original_price && product.price && Number(product.original_price) > Number(product.price))) && (
+                                <span className="flex items-center px-2 py-[3px] text-[10px] font-bold uppercase tracking-wide text-white bg-gradient-to-r from-[#FF0055] to-[#FF0033] rounded-[4px] shadow-sm w-fit">
+                                    <svg className="w-2.5 h-2.5 mr-1" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                                    </svg>
+                                    Đang khuyến mãi
+                                </span>
+                            )}
                         </div>
-                    )}
-                    {/* Discount Badge */}
-                    {product.original_price && product.price && Number(product.original_price) > Number(product.price) && (
-                        <span className="px-2 py-1 text-[11px] font-bold tracking-wider bg-[#E53935] text-white rounded-md shadow-md animate-in zoom-in duration-300">
-                            -{Math.round(((Number(product.original_price) - Number(product.price)) / Number(product.original_price)) * 100)}%
-                        </span>
                     )}
                 </div>
 
@@ -131,67 +131,51 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
                         </svg>
                     </div>
                 </div>
+                {/* Features overlay at bottom of image */}
+                {featuresList.length > 0 && (
+                    <div className="absolute bottom-2 left-2 right-2 flex flex-wrap gap-1 z-10 pointer-events-none">
+                        {featuresList.slice(0, 2).map((feat, idx) => (
+                            <span key={idx} className="px-1.5 py-[3px] text-[9px] font-semibold border border-white/40 bg-white/80 backdrop-blur-md text-neutral-700 rounded shadow-sm">
+                                {feat}
+                            </span>
+                        ))}
+                    </div>
+                )}
             </div>
 
             {/* Content Section */}
-            <div className="flex flex-col pt-4 pb-2 w-full flex-grow">
-                {/* Brand + SKU */}
-                <div className="flex items-center justify-between mb-[6px] min-h-[20px]">
-                    <span className="text-[11px] font-semibold text-neutral-400 truncate pr-2 uppercase tracking-widest flex-1">
+            <div className="flex flex-col pt-3 pb-1 w-full flex-grow">
+                {/* Brand & Status Header */}
+                <div className="flex items-center justify-between mb-1 min-h-[16px]">
+                    <span className="text-[10px] font-semibold text-neutral-400 truncate pr-2 uppercase tracking-widest flex-1">
                         {collectionName || (isTBVS ? 'Thiết bị vệ sinh' : 'Đông Phú Gia')}
                     </span>
-                    {sku && (
-                        <span className="text-[10px] font-medium text-neutral-500 bg-neutral-100 px-1.5 py-0.5 rounded-sm shrink-0">
-                            Mã: {sku}
-                        </span>
-                    )}
-                </div>
-
-                {/* Status & Warranty (Moved above Title) */}
-                {(product.stock_status || product.warranty_months) && (
-                    <div className="flex items-center gap-2 text-[11px] text-neutral-400 mb-1.5">
-                        {product.stock_status && (
-                            <div className="flex items-center gap-1.5">
+                    {(product.stock_status || product.warranty_months || sku) && (
+                        <div className="flex items-center gap-1.5 text-[10px] text-neutral-400 shrink-0">
+                            {product.stock_status && (
                                 <span className={cn(
-                                    "w-1.5 h-1.5 rounded-md",
+                                    "w-1.5 h-1.5 rounded-full",
                                     product.stock_status === 'in_stock' ? "bg-emerald-500" :
                                     product.stock_status === 'out_of_stock' ? "bg-red-500" : "bg-neutral-300"
                                 )} />
-                                <span>
-                                    {product.stock_status === 'in_stock' ? siteConfig.ui.status.in_stock :
-                                        product.stock_status === 'out_of_stock' ? siteConfig.ui.status.out_of_stock : "Đặt hàng"}
-                                </span>
-                            </div>
-                        )}
-                        {product.stock_status && product.warranty_months && <span className="text-neutral-300">•</span>}
-                        {product.warranty_months && (
-                            <span>BH {product.warranty_months} tháng</span>
-                        )}
-                    </div>
-                )}
+                            )}
+                            {sku && <span>Mã: {sku}</span>}
+                            {product.warranty_months && <span>• BH {product.warranty_months}T</span>}
+                        </div>
+                    )}
+                </div>
 
                 {/* Title */}
-                <h3 className="font-medium text-[14px] leading-snug text-neutral-800 group-hover:text-[#2E7A96] transition-colors duration-200 line-clamp-2">
+                <h3 className="font-medium text-[13px] leading-tight text-neutral-800 group-hover:text-[#2E7A96] transition-colors duration-200 line-clamp-2 mb-1.5">
                     {product.display_name || product.name}
                 </h3>
 
                 {/* Grow empty space to push tags & price to bottom so cards have equal height content */}
                 <div className="mt-auto"></div>
 
-                {/* Feature Tags Layer */}
-                {featuresList.length > 0 && (
-                    <div className="flex flex-wrap items-center gap-1.5 mt-2.5">
-                        {featuresList.slice(0, 3).map((feat, idx) => (
-                            <span key={idx} className="px-1.5 py-[2px] text-[10px] font-medium border border-neutral-200 bg-neutral-50/50 text-neutral-500 rounded-sm">
-                                {feat}
-                            </span>
-                        ))}
-                    </div>
-                )}
-
-                {/* Color chip */}
-                {product.colors && (
-                    <div className="flex items-center gap-1.5 mt-2">
+                {/* Color Layer (Hide if White/Trắng to reduce visual repetition) */}
+                {product.colors && product.colors.name?.toLowerCase() !== 'trắng' && product.colors.name?.toLowerCase() !== 'white' && (
+                    <div className="flex items-center gap-1.5 mt-1 mb-2">
                         <span
                             className="w-3 h-3 rounded-full border border-black/10 shrink-0 shadow-sm"
                             style={{ backgroundColor: product.colors.hex_code || '#ccc' }}
@@ -201,22 +185,32 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
                 )}
 
                 {/* Price */}
-                <div className="flex flex-col gap-1 mt-2.5 border-t border-neutral-100 pt-2.5">
+                <div className="flex flex-col gap-1 mt-1 border-t border-neutral-100 pt-2.5">
                     {showPrice && product.price ? (
                         <>
-                            <div className="flex items-baseline gap-2">
+                            {product.online_discount_amount && Number(product.online_discount_amount) > 0 && (
+                                <span className="px-2 py-[5px] mb-0.5 text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-[4px] leading-none whitespace-nowrap w-fit">
+                                    Giảm thêm {formatPrice(Number(product.online_discount_amount))} khi đặt online
+                                </span>
+                            )}
+                            <div className="flex items-center gap-1.5 flex-wrap">
                                 <span className={`font-semibold text-[15px] sm:text-[16px] tracking-tight ${product.original_price && Number(product.original_price) > Number(product.price) ? 'text-red-600' : 'text-[#2E7A96]'}`}>
                                     {formatPrice(Number(product.price))}
                                 </span>
+                                {product.original_price && Number(product.original_price) > Number(product.price) && (
+                                    <>
+                                        <span className="px-1 py-0.5 text-[9px] font-bold text-white bg-[#E53935] rounded-sm shadow-sm leading-none">
+                                            -{Math.round(((Number(product.original_price) - Number(product.price)) / Number(product.original_price)) * 100)}%
+                                        </span>
+                                        <span className="font-normal text-[11px] text-neutral-400 line-through">
+                                            {formatPrice(Number(product.original_price))}
+                                        </span>
+                                    </>
+                                )}
                             </div>
-                            {product.original_price && Number(product.original_price) > Number(product.price) && (
-                                <span className="font-normal text-[12px] text-neutral-400 line-through">
-                                    {formatPrice(Number(product.original_price))}
-                                </span>
-                            )}
                         </>
                     ) : (
-                        <span className="font-semibold text-[15px] text-[#2E7A96] tracking-tight">
+                        <span className="font-semibold text-[14px] text-[#2E7A96] tracking-tight">
                             {product.price_display || siteConfig.ui.status.contact}
                         </span>
                     )}
