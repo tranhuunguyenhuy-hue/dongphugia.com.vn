@@ -1,4 +1,5 @@
 import { forwardRef } from 'react'
+import { siteConfig } from "@/config/site"
 
 export const OrderTemplateA4 = forwardRef<HTMLDivElement, { data: any }>(
     ({ data }, ref) => {
@@ -26,8 +27,8 @@ export const OrderTemplateA4 = forwardRef<HTMLDivElement, { data: any }>(
                     <div>
                         <h1 className="text-2xl font-bold text-red-600 mb-1">ĐÔNG PHÚ GIA</h1>
                         <p className="font-semibold text-sm">Công ty TNHH Đầu tư Thương Mại Đông Phú Gia</p>
-                        <p className="text-sm">Hotline: 090 295 2468</p>
-                        <p className="text-sm">Địa chỉ: 271-273 Đường Cách Mạng Tháng 8, P.Khuê Trung, Q.Cẩm Lệ, Đà Nẵng</p>
+                        <p className="text-sm">Hotline: {siteConfig.contact.hotlineLabel} - Phòng KD: {siteConfig.contact.businessRoomLabel}</p>
+                        <p className="text-sm">Địa chỉ: {siteConfig.contact.addressLine2 ? `${siteConfig.contact.address}, ${siteConfig.contact.addressLine2}` : siteConfig.contact.address}</p>
                         <p className="text-sm">Website: dongphugia.com</p>
                     </div>
                 </div>

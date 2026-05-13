@@ -87,11 +87,21 @@ export function Footer() {
                                     <br />{siteConfig.contact.addressLine2}
                                 </li>
                                 <li>
-                                    <a href={`tel:${siteConfig.contact.phone}`} className="text-stone-600 text-body-sm font-medium hover:text-brand-600 transition-colors">
-                                        {siteConfig.contact.phoneLabel} <span className="font-normal text-[13px]">(CSKH / Sale)</span>
-                                    </a>
+                                    <div className="flex flex-col gap-1.5 mt-1">
+                                        <div className="text-stone-600 text-body-sm">
+                                            <span className="font-medium">Hotline:</span>{" "}
+                                            <a href={`tel:0949349949`} className="hover:text-brand-600 font-medium transition-colors">
+                                                {siteConfig.contact.hotlineLabel}
+                                            </a>
+                                        </div>
+                                        <div className="text-stone-600 text-[13px]">
+                                            <span className="font-medium">Phòng KD:</span>{" "}
+                                            <a href={`tel:${siteConfig.contact.businessRoom}`} className="hover:text-brand-600 transition-colors">
+                                                {siteConfig.contact.businessRoomLabel}
+                                            </a>
+                                        </div>
+                                    </div>
                                 </li>
-                                <li><a href={`mailto:${siteConfig.contact.email}`} className="text-stone-600 text-body-sm hover:text-brand-600 transition-colors">{siteConfig.contact.email}</a></li>
                                 <li><a href={siteConfig.url} target="_blank" rel="noopener noreferrer" className="text-stone-600 text-body-sm hover:text-brand-600 transition-colors">{siteConfig.url.replace('https://', '')}</a></li>
                             </ul>
                         </div>

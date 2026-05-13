@@ -6,9 +6,12 @@ export const siteConfig = {
     
     // Contact Info
     contact: {
-        phone: "0855528688",
-        phoneLabel: "0855 528 688", // formatted for display
-        hotlineLabel: "085 552 8688", 
+        hotline: "0949349949",
+        hotlineLabel: "094 9349 949 - 094 5343 494",
+        businessRoom: "0855528688",
+        businessRoomLabel: "0855 528 688",
+        phone: "0855528688", // legacy field, kept for compatibility if needed, map to business room
+        phoneLabel: "0855 528 688",
         email: "vlxd.dongphu@gmail.com",
         address: "273–275 Phan Đình Phùng",
         addressLine2: "Phường 2, Đà Lạt, Lâm Đồng",
