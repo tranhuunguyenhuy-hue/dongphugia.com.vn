@@ -5,7 +5,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Phone, CheckCircle2, Minus, Plus, ShoppingCart, MessageSquareText, ShoppingBag } from "lucide-react";
+import { Phone, CheckCircle2, Minus, Plus, ShoppingCart, MessageSquareText, ShoppingBag, Wrench, ArrowRight } from "lucide-react";
+import Link from "next/link";
 import { formatPrice } from "@/lib/utils";
 import { useCartStore } from "@/lib/cart-store";
 import { useProductOptions } from "./product-options-context";
@@ -298,6 +299,20 @@ export function ProductCTA({
                     <span>Cần tư vấn ngay? <span className="underline decoration-[#2E7A96]/30 underline-offset-4 group-hover:decoration-[#2E7A96] transition-colors">Liên hệ Phòng kinh doanh: {siteConfig.contact.businessRoomLabel}</span></span>
                 </a>
             </div>
+
+            {/* Installation Service Link */}
+            <Link href="/dich-vu-lap-dat" className="mt-2 group flex items-center justify-between p-3.5 bg-gradient-to-r from-blue-50/80 to-blue-50/30 border border-blue-100 rounded-[12px] hover:border-blue-200 transition-all duration-300 shadow-sm">
+                <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-center w-8 h-8 rounded-full bg-white shadow-sm border border-blue-100 text-[#2E7A96]">
+                        <Wrench className="w-4 h-4" />
+                    </div>
+                    <div className="flex flex-col">
+                        <span className="text-[13px] font-bold text-slate-800 leading-tight group-hover:text-[#2E7A96] transition-colors">Bảng giá Dịch vụ Lắp đặt</span>
+                        <span className="text-[11px] text-slate-500 mt-0.5">Công khai, chuyên nghiệp, bảo hành dài hạn</span>
+                    </div>
+                </div>
+                <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-[#2E7A96] group-hover:translate-x-0.5 transition-all" />
+            </Link>
 
             {/* Mobile Sticky Bottom Bar */}
             <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-stone-200 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:hidden z-[100] flex items-center justify-between gap-4 shadow-[0_-8px_30px_rgba(0,0,0,0.06)]">
