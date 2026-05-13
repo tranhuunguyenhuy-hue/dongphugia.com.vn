@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { createProduct, updateProduct } from '@/lib/product-actions'
 import { toast } from 'sonner'
-import { Loader2, Save, ArrowLeft, Image as ImageIcon, Sparkles, LayoutGrid, Tag, Settings2, FileText, SearchIcon, Upload, Trash2 } from 'lucide-react'
+import { Loader2, ArrowLeft, Sparkles, Upload, Trash2, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -66,6 +66,7 @@ const formSchema = z.object({
     material_id: z.string().optional(),
     price: z.string().optional(),
     original_price: z.string().optional(),
+    online_discount_amount: z.string().optional(),
     price_display: z.string().optional(),
     description: z.string().optional(),
     features: z.string().optional(),
@@ -74,7 +75,10 @@ const formSchema = z.object({
     stock_status: z.string().optional(),
     is_active: z.boolean().optional(),
     is_featured: z.boolean().optional(),
+    is_home_featured: z.boolean().optional(),
     is_promotion: z.boolean().optional(),
+    is_combo: z.boolean().optional(),
+    is_master: z.boolean().optional(),
     sort_order: z.string().optional(),
     product_type: z.string().optional(),
     product_sub_type: z.string().optional(),
@@ -96,7 +100,7 @@ interface FilterDefinitionItem {
     filter_key: string;
     filter_label: string;
     filter_type: string;
-    options: any;
+    options: unknown;
     sort_order: number;
 }
 
@@ -109,7 +113,7 @@ interface ProductTypeItem {
 interface ProductFormProps {
     pageTitle: string
     pageSubtitle?: string
-    product?: any // Full product data from getAdminProductById
+    product?: any; // Full product data from getAdminProductById
     categories: LookupItem[]
     subcategories: SubcategoryItem[]
     brands: LookupItem[]
@@ -145,6 +149,7 @@ export function ProductForm({ pageTitle, pageSubtitle, product, categories, subc
             material_id: product?.material_id?.toString() || '',
             price: product?.price?.toString() || '',
             original_price: product?.original_price?.toString() || '',
+            online_discount_amount: product?.online_discount_amount?.toString() || '',
             price_display: product?.price_display || 'Liên hệ báo giá',
             description: product?.description || '',
             features: product?.features || '',
@@ -153,7 +158,10 @@ export function ProductForm({ pageTitle, pageSubtitle, product, categories, subc
             stock_status: product?.stock_status || 'in_stock',
             is_active: product?.is_active ?? true,
             is_featured: product?.is_featured ?? false,
+            is_home_featured: product?.is_home_featured ?? false,
             is_promotion: product?.is_promotion ?? false,
+            is_combo: product?.is_combo ?? false,
+            is_master: product?.is_master ?? true,
             sort_order: product?.sort_order?.toString() || '0',
             product_type: product?.product_type || '',
             product_sub_type: product?.product_sub_type || '',
@@ -249,6 +257,7 @@ export function ProductForm({ pageTitle, pageSubtitle, product, categories, subc
                 material_id: values.material_id ? Number(values.material_id) : null,
                 price: values.price ? Number(values.price) : null,
                 original_price: values.original_price ? Number(values.original_price) : null,
+                online_discount_amount: values.online_discount_amount ? Number(values.online_discount_amount) : null,
                 warranty_months: values.warranty_months ? Number(values.warranty_months) : null,
                 sort_order: Number(values.sort_order) || 0,
                 specs: specs,
@@ -259,6 +268,8 @@ export function ProductForm({ pageTitle, pageSubtitle, product, categories, subc
                 hita_product_id: values.hita_product_id || null,
                 seo_title: values.seo_title || null,
                 seo_description: values.seo_description || null,
+                is_combo: values.is_combo ?? false,
+                is_master: values.is_master ?? true,
             }
 
             const result = isEdit
@@ -645,10 +656,13 @@ export function ProductForm({ pageTitle, pageSubtitle, product, categories, subc
                                                 )}
                                             />
                                             
-                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
                                                 {[
-                                                    { name: 'is_featured' as const, label: 'Nổi bật', desc: 'Hiển thị ở trang chủ' },
+                                                    { name: 'is_featured' as const, label: 'Nổi bật (Chung)', desc: 'Sản phẩm nổi bật chung' },
+                                                    { name: 'is_home_featured' as const, label: 'Hiển thị trên trang chủ', desc: 'Xuất hiện tại các khối trên trang chủ' },
                                                     { name: 'is_promotion' as const, label: 'Khuyến mãi', desc: 'Sản phẩm đang sale' },
+                                                    { name: 'is_combo' as const, label: 'Combo', desc: 'Là sản phẩm combo' },
+                                                    { name: 'is_master' as const, label: 'Master', desc: 'Sản phẩm độc lập' },
                                                 ].map(({ name, label, desc }) => (
                                                     <FormField
                                                         key={name}
@@ -725,7 +739,7 @@ export function ProductForm({ pageTitle, pageSubtitle, product, categories, subc
                                             </span>
                                         )}
                                     </CardHeader>
-                                    <CardContent className="p-5 grid grid-cols-1 md:grid-cols-2 gap-5">
+                                    <CardContent className="p-5 grid grid-cols-1 md:grid-cols-3 gap-5">
                                         <FormField
                                             control={form.control}
                                             name="price"
@@ -771,16 +785,37 @@ export function ProductForm({ pageTitle, pageSubtitle, product, categories, subc
                                         />
                                         <FormField
                                             control={form.control}
+                                            name="online_discount_amount"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Chiết khấu Online (VNĐ)</FormLabel>
+                                                    <FormControl>
+                                                        <Input 
+                                                            type="text" 
+                                                            value={field.value !== undefined && field.value !== null && Number(field.value) !== 0 ? new Intl.NumberFormat('vi-VN').format(Number(field.value)) : ''}
+                                                            onChange={(e) => {
+                                                                const rawValue = e.target.value.replace(/\D/g, '');
+                                                                field.onChange(rawValue ? Number(rawValue) : 0);
+                                                            }}
+                                                            placeholder="0"
+                                                        />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
                                             name="price_display"
                                             render={({ field }) => (
-                                                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow-sm md:col-span-2">
+                                                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow-sm md:col-span-3">
                                                     <FormControl>
                                                         <Checkbox 
                                                             checked={field.value === "Liên hệ báo giá" || field.value === "Liên hệ"}
                                                             onCheckedChange={(checked) => {
                                                                 if (checked) {
                                                                     field.onChange("Liên hệ báo giá")
-                                                                    form.setValue("price", "0" as any)
+                                                                    form.setValue("price", "0")
                                                                 } else {
                                                                     field.onChange("")
                                                                 }
@@ -940,34 +975,109 @@ export function ProductForm({ pageTitle, pageSubtitle, product, categories, subc
                                             Thông số kỹ thuật mở rộng
                                         </CardTitle>
                                     </CardHeader>
-                                    <CardContent className="p-5">
-                                        {relevantFilters.length === 0 ? (
-                                            <p className="text-sm text-muted-foreground bg-stone-50 p-4 rounded-lg border border-stone-100 text-center">
-                                                Vui lòng chọn <strong>Danh mục chính</strong> ở bên trái để hiển thị các thông số phù hợp.
-                                            </p>
-                                        ) : (
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                                {relevantFilters.map(filter => (
-                                                    <div key={filter.id} className="space-y-2">
-                                                        <Label>{filter.filter_label}</Label>
-                                                        {filter.filter_type === 'select' || filter.filter_type === 'radio' ? (
-                                                            <Select value={specs[filter.filter_key] || undefined} onValueChange={v => setSpecs(prev => ({ ...prev, [filter.filter_key]: v }))}>
-                                                                <SelectTrigger>
-                                                                    <SelectValue placeholder="Không chọn" />
-                                                                </SelectTrigger>
-                                                                <SelectContent>
-                                                                    {Array.isArray(filter.options) && filter.options.map((opt: any) => (
-                                                                        <SelectItem key={String(opt)} value={String(opt)}>{String(opt)}</SelectItem>
-                                                                    ))}
-                                                                </SelectContent>
-                                                            </Select>
-                                                        ) : (
-                                                            <Input value={specs[filter.filter_key] || ''} onChange={e => setSpecs(prev => ({ ...prev, [filter.filter_key]: e.target.value }))} placeholder={`Nhập ${filter.filter_label.toLowerCase()}...`} />
-                                                        )}
-                                                    </div>
-                                                ))}
+                                    <CardContent className="p-5 space-y-6">
+                                        {/* Phần thông số mặc định từ Danh mục */}
+                                        <div>
+                                            <h3 className="text-sm font-semibold mb-3 text-stone-700">Theo danh mục chuẩn</h3>
+                                            {relevantFilters.length === 0 ? (
+                                                <p className="text-sm text-muted-foreground bg-stone-50 p-4 rounded-lg border border-stone-100 text-center">
+                                                    Vui lòng chọn <strong>Danh mục chính</strong> ở bên trái để hiển thị các thông số phù hợp.
+                                                </p>
+                                            ) : (
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                                    {relevantFilters.map(filter => (
+                                                        <div key={filter.id} className="space-y-2">
+                                                            <Label>{filter.filter_label}</Label>
+                                                            {filter.filter_type === 'select' || filter.filter_type === 'radio' ? (
+                                                                <Select value={specs[filter.filter_key] || undefined} onValueChange={v => setSpecs(prev => ({ ...prev, [filter.filter_key]: v }))}>
+                                                                    <SelectTrigger>
+                                                                        <SelectValue placeholder="Không chọn" />
+                                                                    </SelectTrigger>
+                                                                    <SelectContent>
+                                                                        {Array.isArray(filter.options) && filter.options.map((opt: unknown) => (
+                                                                            <SelectItem key={String(opt)} value={String(opt)}>{String(opt)}</SelectItem>
+                                                                        ))}
+                                                                    </SelectContent>
+                                                                </Select>
+                                                            ) : (
+                                                                <Input value={specs[filter.filter_key] || ''} onChange={e => setSpecs(prev => ({ ...prev, [filter.filter_key]: e.target.value }))} placeholder={`Nhập ${filter.filter_label.toLowerCase()}...`} />
+                                                            )}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Phần thông số tự do */}
+                                        <div className="border-t pt-6">
+                                            <div className="flex items-center justify-between mb-4">
+                                                <div>
+                                                    <h3 className="text-sm font-semibold text-stone-900">Thông số tùy chỉnh (Custom)</h3>
+                                                    <p className="text-xs text-muted-foreground mt-0.5">Dữ liệu cào được (bản vẽ, phụ kiện) hoặc tuỳ chọn.</p>
+                                                </div>
+                                                <Button type="button" variant="outline" size="sm" onClick={() => {
+                                                    const key = prompt('Nhập tên thông số mới (VD: Phụ kiện đi kèm):')
+                                                    if (key && !specs[key]) {
+                                                        setSpecs(prev => ({ ...prev, [key]: '' }))
+                                                    }
+                                                }}>
+                                                    <Plus className="w-4 h-4 mr-2" /> Thêm thông số
+                                                </Button>
                                             </div>
-                                        )}
+                                            
+                                            {Object.keys(specs).filter(k => !relevantFilters.find(f => f.filter_key === k)).length === 0 ? (
+                                                <p className="text-sm text-muted-foreground italic text-center py-6 bg-stone-50 rounded-lg border border-dashed">
+                                                    Chưa có thông số tùy chỉnh nào.
+                                                </p>
+                                            ) : (
+                                                <div className="space-y-3">
+                                                    {Object.keys(specs).filter(k => !relevantFilters.find(f => f.filter_key === k)).map(key => (
+                                                        <div key={key} className="flex items-start gap-3 bg-stone-50/50 p-2 rounded-lg border border-stone-100">
+                                                            <div className="w-1/3">
+                                                                <Input 
+                                                                    value={key} 
+                                                                    disabled 
+                                                                    className="bg-white font-medium text-stone-600" 
+                                                                />
+                                                            </div>
+                                                            <div className="flex-1">
+                                                                {/* Render Textarea for long values like HTML lists from crawler */}
+                                                                {typeof specs[key] === 'string' && specs[key].length > 50 ? (
+                                                                    <Textarea 
+                                                                        value={specs[key]} 
+                                                                        onChange={e => setSpecs(prev => ({ ...prev, [key]: e.target.value }))} 
+                                                                        placeholder="Giá trị..." 
+                                                                        className="min-h-[80px]"
+                                                                    />
+                                                                ) : (
+                                                                    <Input 
+                                                                        value={typeof specs[key] === 'string' ? specs[key] : JSON.stringify(specs[key])} 
+                                                                        onChange={e => setSpecs(prev => ({ ...prev, [key]: e.target.value }))} 
+                                                                        placeholder="Giá trị..." 
+                                                                        className="bg-white"
+                                                                    />
+                                                                )}
+                                                            </div>
+                                                            <Button 
+                                                                type="button" 
+                                                                variant="ghost" 
+                                                                size="icon" 
+                                                                className="text-red-500 hover:text-red-600 hover:bg-red-50 mt-1 shrink-0"
+                                                                onClick={() => {
+                                                                    if (confirm(`Bạn có chắc chắn muốn xóa thông số "${key}"?`)) {
+                                                                        const newSpecs = { ...specs }
+                                                                        delete newSpecs[key]
+                                                                        setSpecs(newSpecs)
+                                                                    }
+                                                                }}
+                                                            >
+                                                                <Trash2 className="w-4 h-4" />
+                                                            </Button>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
                                     </CardContent>
                                 </Card>
 
@@ -1047,9 +1157,9 @@ export function ProductForm({ pageTitle, pageSubtitle, product, categories, subc
 
                                                 <div className="space-y-3">
                                                     <Label>Danh sách sản phẩm liên kết</Label>
-                                                    {(product as any).product_relationships?.length > 0 ? (
+                                                    {product?.product_relationships && (product?.product_relationships as any[])?.length > 0 ? (
                                                         <div className="divide-y border rounded-lg overflow-hidden bg-white">
-                                                            {(product as any).product_relationships.map((rel: any) => (
+                                                            {(product?.product_relationships as any[]).map((rel: any) => (
                                                                 <div key={rel.id} className="flex items-center justify-between p-3 hover:bg-stone-50">
                                                                     <div className="flex items-center gap-3">
                                                                         <div className="h-10 w-10 relative rounded bg-stone-100 border shrink-0">

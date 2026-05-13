@@ -116,8 +116,8 @@ export function MobileMenuSheet() {
     return (
         <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" aria-label="Mở menu điều hướng">
-                    <Menu className="h-6 w-6 text-stone-900" aria-hidden="true" />
+                <Button variant="ghost" className="w-11 h-11 p-0 rounded-full text-stone-700 hover:text-brand-600 hover:bg-stone-100 transition-colors" aria-label="Mở menu điều hướng">
+                    <Menu className="h-[22px] w-[22px] text-current" aria-hidden="true" strokeWidth={2} />
                 </Button>
             </SheetTrigger>
 

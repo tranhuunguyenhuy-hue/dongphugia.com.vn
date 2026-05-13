@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import { Phone, ChevronDown, ChevronRight } from "lucide-react"
+import { Phone, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useState, useEffect } from "react"
 import { getMegaMenuData } from '@/app/actions/mega-menu-actions'
@@ -13,7 +13,7 @@ import { CartDrawer } from '@/components/cart/cart-drawer'
 import { SearchBar } from '@/components/home/search-bar'
 import { MobileMenuSheet } from '@/components/layout/mobile-menu-sheet'
 
-import { siteConfig, NAV_PRODUCT_CATEGORIES as PRODUCT_CATEGORIES, NAV_MAIN_LINKS as NAV_LINKS, NAV_ABOUT_LINKS as ABOUT_LINKS } from "@/config/site"
+import { NAV_MAIN_LINKS as NAV_LINKS, NAV_ABOUT_LINKS as ABOUT_LINKS } from "@/config/site"
 
 function ProductsDropdown() {
     const [data, setData] = useState<{ categories: Category[], menuData: Record<string, MenuData> } | null>(null)
@@ -51,8 +51,6 @@ function AboutDropdown() {
     )
 }
 
-const TOPBAR_TEXT = `${siteConfig.ui.topbarText} Liên hệ: ${siteConfig.contact.phone} • `
-
 export function Header() {
     const [isScrolled, setIsScrolled] = useState(false)
 
@@ -66,40 +64,14 @@ export function Header() {
 
     return (
         <>
-            <header className={`fixed w-full z-50 top-0 left-0 right-0 transition-all duration-300 ${isScrolled ? 'shadow-md translate-y-[-48px] sm:translate-y-[-44px]' : ''}`}>
-                {/* Topbar */}
-                <div className="bg-brand-500 py-3 w-full relative z-10">
-                    <div className="hidden sm:flex max-w-[1280px] mx-auto px-5 justify-center items-center gap-1">
-                        <p className="text-body-sm text-brand-100">
-                            Gọi điện nhận tư vấn ngay để nhận được giá ưu đãi nhất.
-                        </p>
-                        <div className="flex items-center gap-1 pl-1">
-                            <span className="text-body-sm text-white">Liên hệ:</span>
-                            <a
-                                href={`tel:${siteConfig.contact.phone}`}
-                                className="text-body-sm text-white underline underline-offset-2 hover:text-brand-50 transition-colors"
-                            >
-                                {siteConfig.contact.phone}
-                            </a>
-                        </div>
-                    </div>
-                    <div className="sm:hidden overflow-hidden whitespace-nowrap">
-                        <div className="inline-flex animate-marquee">
-                            <span className="text-body-sm text-brand-100 pr-16">{TOPBAR_TEXT}</span>
-                            <span className="text-body-sm text-brand-100 pr-16">{TOPBAR_TEXT}</span>
-                            <span className="text-body-sm text-brand-100 pr-16">{TOPBAR_TEXT}</span>
-                            <span className="text-body-sm text-brand-100 pr-16">{TOPBAR_TEXT}</span>
-                        </div>
-                    </div>
-                </div>
-
+            <header className="fixed w-full z-50 top-0 left-0 right-0 transition-all duration-300">
                 {/* Navigation Bar */}
                 <div className={`relative z-10 w-full transition-colors duration-300 ${isScrolled ? 'bg-white shadow-[0_4px_20px_rgba(0,0,0,0.08)]' : 'bg-white border-b border-stone-200'}`}>
-                    <div className="max-w-[1280px] mx-auto px-5 lg:px-8">
-                        <div className="h-[64px] lg:h-[88px] flex items-center justify-between transition-all duration-300 w-full">
+                    <div className="max-w-[1280px] mx-auto px-6 lg:px-8">
+                        <div className="h-[72px] lg:h-[88px] flex items-center justify-between transition-all duration-300 w-full">
                             {/* Logo */}
                             <Link href="/" className="flex items-center shrink-0" aria-label="Đông Phú Gia - Trang chủ">
-                                <Image src="/images/logo-dpg.png" alt="Đông Phú Gia" width={184} height={36} priority className="h-8 lg:h-9 w-auto object-contain" />
+                                <Image src="/images/Logo.png" alt="Đông Phú Gia" width={245} height={48} priority className="h-10 lg:h-12 w-auto object-contain" />
                             </Link>
 
                             {/* Desktop Nav */}

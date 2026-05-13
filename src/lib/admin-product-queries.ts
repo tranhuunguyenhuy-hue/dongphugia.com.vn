@@ -79,6 +79,7 @@ export async function getAdminProducts(params: AdminProductsParams = {}) {
         stock_status: true,
         is_active: true,
         is_featured: true,
+        is_home_featured: true,
         is_promotion: true,
         
         product_type: true,

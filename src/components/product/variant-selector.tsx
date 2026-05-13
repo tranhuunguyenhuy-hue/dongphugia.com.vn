@@ -14,7 +14,7 @@ function getShortVariantName(fullName: string, sku: string, subcategorySlug?: st
     
     // 1. Áp dụng chuẩn [Công nghệ] (Giấu dây) [Series] cho Bồn Cầu và Nắp Bồn Cầu
     if (subcategorySlug === 'bon-cau' || subcategorySlug === 'nap-bon-cau') {
-        let isConcealed = lowerName.includes('giấu dây');
+        const isConcealed = lowerName.includes('giấu dây');
         
         // Cố gắng tìm mã Series (W12, T8, E4...) trong SKU hoặc tên
         let seriesCode = '';
@@ -44,7 +44,7 @@ function getShortVariantName(fullName: string, sku: string, subcategorySlug?: st
         }
         
         if (tech) {
-            let parts = [tech];
+            const parts = [tech];
             if (isConcealed) parts.push('(Giấu dây)');
             if (seriesCode) parts.push(`(${seriesCode})`);
             return parts.join(' ').trim();
@@ -289,7 +289,7 @@ export function VariantSelector({
                                 className="
                                     relative flex flex-col justify-center gap-0.5
                                     px-2 py-1.5 rounded-lg
-                                    bg-brand-50 border border-brand-500
+                                    bg-brand-50 ring-2 ring-inset ring-brand-500 border border-transparent
                                     cursor-default select-none shadow-sm
                                 "
                                 aria-current="true"
@@ -302,7 +302,7 @@ export function VariantSelector({
                                             title={variant.color.name}
                                         />
                                     )}
-                                    <span className="text-[11px] font-semibold text-stone-900 leading-[1.3] line-clamp-2" title={variant.name}>
+                                    <span className="text-[11px] font-semibold text-brand-900 leading-[1.3] line-clamp-2" title={variant.name}>
                                         {shortName}
                                     </span>
                                 </div>
@@ -324,11 +324,11 @@ export function VariantSelector({
                         <Link
                             key={variant.sku}
                             href={href}
-                            className="
+                                className="
                                 group relative flex flex-col justify-center gap-0.5
                                 px-2 py-1.5 rounded-lg
                                 bg-white border border-stone-200
-                                hover:border-brand-400 hover:bg-stone-50 hover:shadow-sm
+                                hover:border-brand-500 hover:bg-brand-50 hover:shadow-sm
                                 active:scale-[0.98] transition-all duration-200 cursor-pointer
                             "
                         >
@@ -340,12 +340,12 @@ export function VariantSelector({
                                         title={variant.color.name}
                                     />
                                 )}
-                                <span className="text-[11px] font-medium text-stone-700 group-hover:text-stone-900 leading-[1.3] line-clamp-2 transition-colors" title={variant.name}>
+                                <span className="text-[11px] font-medium text-stone-700 group-hover:text-brand-900 leading-[1.3] line-clamp-2 transition-colors" title={variant.name}>
                                     {shortName}
                                 </span>
                             </div>
                             <div className="flex items-center gap-1 mt-0.5">
-                                <span className="text-[11px] font-medium text-stone-500 group-hover:text-brand-600 leading-none transition-colors">
+                                <span className="text-[11px] font-medium text-stone-500 group-hover:text-brand-700 leading-none transition-colors">
                                     {priceDisplay}
                                 </span>
                                 {hasDiscount && (

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 // ────────── HTML Sanitizer ──────────
 // Defensive layer: strips hita spinner images and broken links from
@@ -81,12 +81,27 @@ export function ProductDetailTabs({
     tabConfig,
 }: ProductDetailTabsProps) {
     const [activeTab, setActiveTab] = useState<'info' | 'specs' | 'features' | 'docs'>('info');
+    const [isSpecsExpanded, setIsSpecsExpanded] = useState(false);
+    const [isInfoExpanded, setIsInfoExpanded] = useState(false);
+    const [showInfoToggle, setShowInfoToggle] = useState(false);
+    const infoContentRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (activeTab === 'info' && infoContentRef.current) {
+            // Check if content exceeds our max-height of 500px
+            if (infoContentRef.current.scrollHeight > 500) {
+                setShowInfoToggle(true);
+            } else {
+                setShowInfoToggle(false);
+            }
+        }
+    }, [activeTab, description]);
 
     const config = {
         infoLabel: tabConfig?.infoLabel ?? 'Thông tin chung',
         featuresLabel: tabConfig?.featuresLabel ?? 'Tính năng nổi bật',
         specsLabel: tabConfig?.specsLabel ?? 'Thông số kỹ thuật',
-        docsLabel: 'Tài liệu & Hướng dẫn',
+        docsLabel: 'Tài liệu hướng dẫn',
     };
 
     // Parse specifications robustly
@@ -104,17 +119,55 @@ export function ProductDetailTabs({
                 value: s.value || Object.values(s)[0] || '',
             })).filter((s: { key: string; value: any }) => s.key && s.value);
             specsList = [...specsList, ...parsed];
-        } else if (typeof specifications === 'object') {
-            const parsed = Object.entries(specifications).map(([key, value]) => ({
-                key,
-                value: String(value),
-            }));
+        } else if (typeof specifications === 'object' && specifications !== null) {
+            const parsed = Object.entries(specifications)
+                .filter(([key]) => key !== 'documents' && key !== 'technologies' && key !== 'Phụ kiện đi kèm') // exclude reserved keys from raw specs table
+                .map(([key, value]) => {
+                    let displayValue = String(value);
+                    if (typeof value === 'object' && value !== null) {
+                        try {
+                            displayValue = Array.isArray(value) ? value.join(', ') : JSON.stringify(value);
+                        } catch (e) {
+                            displayValue = '[Dữ liệu phức tạp]';
+                        }
+                    }
+                    return {
+                        key,
+                        value: displayValue,
+                    };
+                });
             specsList = [...specsList, ...parsed];
         }
     }
 
+    // Deduplicate specs by key (case-insensitive)
+    const uniqueSpecs = new Map<string, typeof specsList[0]>();
+    specsList.forEach(spec => {
+        const lowerKey = spec.key.toLowerCase().trim();
+        // Keep the first encountered (extraSpecs are richer, e.g. Color with Hex block)
+        if (!uniqueSpecs.has(lowerKey)) {
+            uniqueSpecs.set(lowerKey, spec);
+        }
+    });
+    specsList = Array.from(uniqueSpecs.values());
+
     // Auto-extract documents from specs if they are links
     const parsedDocuments = [...documents];
+    
+    // Extract explicitly parsed documents array if injected by crawler
+    if (specifications && typeof specifications === 'object' && Array.isArray(specifications.documents)) {
+        specifications.documents.forEach((doc: any) => {
+            if (doc.url && doc.name) {
+                parsedDocuments.push({
+                    name: doc.name,
+                    url: doc.url,
+                    type: doc.type || (doc.url.toLowerCase().endsWith('.pdf') ? 'PDF' : 'Link'),
+                    size: doc.size || 'Xem chi tiết',
+                });
+            }
+        });
+    }
+
     const filteredSpecsList: typeof specsList = [];
 
     specsList.forEach(spec => {
@@ -136,13 +189,75 @@ export function ProductDetailTabs({
 
     specsList = filteredSpecsList;
 
+    // ────────── Sort Specifications by Importance ──────────
+    const PRIORITY_KEYS = [
+        'thương hiệu',
+        'nơi sản xuất',
+        'xuất xứ',
+        'bảo hành',
+        'loại nắp',
+        'mẫu nắp',
+        'kiểu xả',
+        'lượng nước xả',
+        'kiểu thoát',
+        'tâm xả',
+        'hệ thống xả',
+        'loại thân cầu',
+        'thiết kế',
+        'thân kín',
+        'vành',
+        'màu sắc',
+        'chất liệu',
+        'công nghệ',
+        'kích thước (dxrxc)',
+        'kích thước',
+        'thân cầu',
+        'mã sản phẩm'
+    ];
+
+    const getSpecPriority = (key: string) => {
+        const normalizedKey = key.toLowerCase().trim();
+        const exactMatch = PRIORITY_KEYS.findIndex(p => normalizedKey === p);
+        if (exactMatch !== -1) return exactMatch;
+        
+        const partialMatch = PRIORITY_KEYS.findIndex(p => normalizedKey.includes(p));
+        return partialMatch !== -1 ? partialMatch + 50 : 999;
+    };
+
+    specsList.sort((a, b) => getSpecPriority(a.key) - getSpecPriority(b.key));
+
+    const renderSpecValue = (key: string, value: any) => {
+        if (typeof value !== 'string') {
+            // If value is a ReactNode (like the color swatch), render it directly
+            return value;
+        }
+        const valStr = String(value);
+        if (key.toLowerCase().trim() === 'thương hiệu') {
+            return <span className="text-[#00b2e3] font-semibold">{valStr}</span>;
+        }
+        if (valStr.includes('\n')) {
+            return (
+                <div className="flex flex-col gap-0.5">
+                    {valStr.split('\n').map((line, i) => {
+                        const isTech = line.toLowerCase().includes('cefiontect') || line.toLowerCase().includes('ewater');
+                        return (
+                            <span key={i} className={isTech ? "text-[#00b2e3]" : ""}>
+                                {line}
+                            </span>
+                        );
+                    })}
+                </div>
+            );
+        }
+        return valStr;
+    };
+
     const hasSpecs = specsList.length > 0 || technologies.length > 0;
     const hasFeatures = !!features;
 
     return (
-        <div className="mt-8 mb-16 max-w-[1216px] w-full">
-            {/* Tab Headers */}
-            <div className="flex flex-wrap gap-6 sm:gap-10 mb-8 border-b-2 border-stone-100" role="tablist">
+        <div className="mt-0 mb-16 max-w-[1216px] w-full">
+            <div className="flex overflow-x-auto overflow-y-hidden whitespace-nowrap gap-3 sm:gap-6 lg:gap-8 mb-6 sm:mb-8 border-b-2 border-stone-100 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]" role="tablist">
                 <TabButton
                     label={config.infoLabel}
                     isActive={activeTab === 'info'}
@@ -174,10 +289,29 @@ export function ProductDetailTabs({
                 {activeTab === 'info' && (
                     <div>
                         {description ? (
-                            <div
-                                className="font-normal text-base leading-relaxed text-stone-700 prose prose-sm max-w-none prose-img:rounded-xl prose-img:shadow-sm"
-                                dangerouslySetInnerHTML={{ __html: sanitizeProductHtml(description) }}
-                            />
+                            <div className="relative">
+                                <div
+                                    ref={infoContentRef}
+                                    className={`font-normal text-base leading-relaxed text-stone-700 prose max-w-none prose-headings:font-bold prose-headings:text-stone-900 prose-h2:text-2xl prose-h3:text-xl prose-a:text-[#00b2e3] hover:prose-a:text-[#25738E] prose-ul:list-disc prose-ul:pl-5 prose-li:my-1 prose-img:rounded-xl prose-img:shadow-sm transition-all duration-500 overflow-hidden ${(!isInfoExpanded && showInfoToggle) ? 'max-h-[500px]' : ''}`}
+                                    dangerouslySetInnerHTML={{ __html: sanitizeProductHtml(description) }}
+                                />
+                                {showInfoToggle && !isInfoExpanded && (
+                                    <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-white via-white/80 to-transparent pointer-events-none" />
+                                )}
+                                {showInfoToggle && (
+                                    <div className={`flex justify-center mt-6 ${!isInfoExpanded ? 'absolute bottom-2 left-0 right-0 z-10' : ''}`}>
+                                        <button 
+                                            onClick={() => setIsInfoExpanded(!isInfoExpanded)}
+                                            className="px-6 py-2.5 rounded-full border border-stone-200 text-sm font-semibold text-brand-600 bg-white hover:bg-stone-50 hover:border-brand-300 transition-all shadow-[0_4px_14px_rgba(0,0,0,0.05)] flex items-center gap-2"
+                                        >
+                                            {isInfoExpanded ? 'Thu gọn nội dung' : 'Đọc thêm nội dung'}
+                                            <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 transition-transform duration-300 ${isInfoExpanded ? 'rotate-180' : ''}`} viewBox="0 0 20 20" fill="currentColor">
+                                                <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
                         ) : (
                             <p className="text-stone-500 italic text-[15px]">
                                 Nội dung đang được cập nhật...
@@ -218,23 +352,41 @@ export function ProductDetailTabs({
                     <div className="space-y-10">
                         {specsList.length > 0 && (
                             <div>
-                                <h3 className="text-lg font-semibold text-stone-900 mb-4">Thông số chi tiết</h3>
-                                <div className="border border-stone-200 rounded-[var(--radius)] overflow-hidden">
-                                    <table className="w-full text-left border-collapse">
-                                        <tbody>
-                                            {specsList.map((spec, idx) => (
-                                                <tr key={idx} className="border-b border-stone-100 last:border-0 hover:bg-stone-50 transition-colors">
-                                                    <th className="py-3 px-4 w-1/3 bg-stone-50/50 font-medium text-stone-700 text-sm border-r border-stone-100">
-                                                        {spec.key}
-                                                    </th>
-                                                    <td className="py-3 px-4 text-stone-900 text-sm">
-                                                        {spec.value}
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+                                <h3 className="text-lg font-semibold text-stone-900 mb-4">Thông số kỹ thuật</h3>
+                                <div className="relative">
+                                    <div className="rounded-[12px] overflow-hidden border border-stone-200">
+                                        <table className="w-full text-left border-collapse">
+                                            <tbody>
+                                                {(isSpecsExpanded ? specsList : specsList.slice(0, 6)).map((spec, idx) => (
+                                                    <tr key={idx} className="odd:bg-[#f8f9fa] even:bg-white hover:bg-stone-100/50 transition-colors border-b border-stone-100 last:border-0">
+                                                        <th className="py-3.5 px-5 w-[40%] md:w-[30%] font-semibold text-stone-900 text-[14px] align-top">
+                                                            {spec.key}
+                                                        </th>
+                                                        <td className="py-3.5 px-5 text-stone-800 text-[14px] leading-relaxed">
+                                                            {renderSpecValue(spec.key, spec.value)}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {!isSpecsExpanded && specsList.length > 6 && (
+                                        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-white to-transparent pointer-events-none rounded-b-[12px]" />
+                                    )}
                                 </div>
+                                {specsList.length > 6 && (
+                                    <div className="mt-5 flex justify-center">
+                                        <button 
+                                            onClick={() => setIsSpecsExpanded(!isSpecsExpanded)}
+                                            className="px-6 py-2.5 rounded-full border border-stone-200 text-sm font-semibold text-brand-600 bg-white hover:bg-stone-50 hover:border-brand-300 transition-all shadow-[0_4px_14px_rgba(0,0,0,0.05)] flex items-center gap-2"
+                                        >
+                                            {isSpecsExpanded ? 'Thu gọn thông số' : 'Xem toàn bộ thông số'}
+                                            <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 transition-transform duration-300 ${isSpecsExpanded ? 'rotate-180' : ''}`} viewBox="0 0 20 20" fill="currentColor">
+                                                <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         )}
 
@@ -273,8 +425,7 @@ export function ProductDetailTabs({
                 )}
 
                 {activeTab === 'docs' && parsedDocuments.length > 0 && (
-                    <div className="space-y-4">
-                        <h3 className="text-lg font-semibold text-stone-900 mb-4">Tài liệu đính kèm</h3>
+                    <div className="space-y-4 animate-fade-in">
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             {parsedDocuments.map((doc, idx) => (
                                 <a 
@@ -302,6 +453,7 @@ export function ProductDetailTabs({
                         </div>
                     </div>
                 )}
+
             </div>
         </div>
     );
@@ -325,7 +477,7 @@ function TabButton({
             tabIndex={isActive ? 0 : -1}
             onClick={onClick}
             className={`
-                pb-4 font-semibold text-lg sm:text-xl leading-tight transition-colors duration-200 relative whitespace-nowrap
+                pb-3 sm:pb-4 font-semibold text-[13px] sm:text-[15px] lg:text-[17px] leading-tight transition-colors duration-200 relative whitespace-nowrap
                 ${isActive
                     ? 'text-stone-900'
                     : 'text-stone-400 hover:text-stone-600'

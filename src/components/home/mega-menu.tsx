@@ -3,7 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import * as NavigationMenu from '@radix-ui/react-navigation-menu'
-import { ChevronRight, ChevronDown, Bath, Flame, Grid2X2, Droplet } from "lucide-react"
+import { ChevronRight, ChevronDown } from "lucide-react"
 
 export type Category = {
     id: number;
@@ -36,12 +36,7 @@ export interface MegaMenuProps {
     menuData: Record<string, MenuData> | null;
 }
 
-const CATEGORY_INFO: Record<string, { icon: any, desc: string }> = {
-    'thiet-bi-ve-sinh': { icon: Bath, desc: 'Bồn cầu, lavabo, bồn tắm, sen vòi...' },
-    'thiet-bi-bep': { icon: Flame, desc: 'Bếp từ, hút mùi, chậu rửa, lò vi sóng...' },
-    'gach-op-lat': { icon: Grid2X2, desc: 'Gạch lát nền, ốp tường, gạch trang trí...' },
-    'vat-lieu-nuoc': { icon: Droplet, desc: 'Ống nước, van vòi, phụ kiện ngành nước...' },
-}
+
 
 const renderMegaMenuContent = (cat: Category, data: MenuData | undefined) => {
     if (!data) return (
@@ -57,9 +52,11 @@ const renderMegaMenuContent = (cat: Category, data: MenuData | undefined) => {
                 <div className="mb-6 border-b border-stone-200 pb-5">
                     <h3 className="text-[11px] font-bold text-stone-500 uppercase tracking-wider mb-3">Thương hiệu nổi bật</h3>
                     <div className="grid grid-cols-3 sm:grid-cols-4 xl:grid-cols-5 gap-2.5">
+                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                         {data.brands.map((brand: any) => (
                             <Link href={`/${cat.slug}?brand=${brand.slug}`} key={brand.id} className="h-9 px-2 rounded-[8px] bg-white/40 backdrop-blur-md border border-white/60 hover:border-white/90 hover:bg-white/80 hover:shadow-[0_4px_12px_rgba(46,122,150,0.08)] flex items-center justify-center transition-all duration-300 group/brand relative">
                                 <div className="w-full h-[18px] grayscale opacity-60 group-hover/brand:grayscale-0 group-hover/brand:opacity-100 transition-all duration-300 transform group-hover/brand:scale-105 flex items-center justify-center">
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
                                     <img 
                                         src={`/images/brands/${brand.slug}.png`} 
                                         alt={brand.name} 

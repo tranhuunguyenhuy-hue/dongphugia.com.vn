@@ -1,0 +1,25 @@
+{
+  "completedIds": [
+    685,
+    2764,
+    5633,
+    5704,
+    6336,
+    6447,
+    6539,
+    6573,
+    6589,
+    7073,
+    7091
+  ],
+  "failedIds": [],
+  "stats": {
+    "descUpdated": 11,
+    "accessoriesUpdated": 11,
+    "docsUpdated": 8,
+    "pdfsMigrated": 31,
+    "imgsUploaded": 0
+  },
+  "version": "2.0",
+  "lastRunAt": "2026-05-12T23:55:56.003Z"
+}

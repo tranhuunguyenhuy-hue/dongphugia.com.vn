@@ -12,6 +12,8 @@ interface SearchResult {
     name: string
     slug: string
     price: number | null
+    original_price?: number | null
+    online_discount_amount?: number | null
     price_display: string | null
     image_main_url: string | null
     category_slug: string
@@ -48,6 +50,7 @@ export function SearchBar({ onExpandedChange }: { onExpandedChange?: (expanded: 
     // Fetch autocomplete results
     useEffect(() => {
         if (debouncedQuery.length < 2) {
+            // eslint-disable-next-line
             setResults([])
             setTotal(0)
             setIsOpen(false)
@@ -123,8 +126,8 @@ export function SearchBar({ onExpandedChange }: { onExpandedChange?: (expanded: 
                         className={`w-11 h-11 flex items-center justify-center shrink-0 transition-colors ${isExpanded ? '' : 'text-stone-700 hover:text-brand-600'}`}
                     >
                         {isLoading
-                            ? <Loader2 className="w-[18px] h-[18px] text-brand-600 animate-spin" />
-                            : <Search className={`w-[18px] h-[18px] ${isExpanded ? 'text-stone-500' : 'text-current'}`} strokeWidth={2} />
+                            ? <Loader2 className="w-[22px] h-[22px] text-brand-600 animate-spin" />
+                            : <Search className={`w-[22px] h-[22px] ${isExpanded ? 'text-stone-500' : 'text-current'}`} strokeWidth={2} />
                         }
                     </button>
 
@@ -153,54 +156,67 @@ export function SearchBar({ onExpandedChange }: { onExpandedChange?: (expanded: 
                 </div>
             </form>
 
-            <div className={`fixed inset-0 bg-stone-900/10 backdrop-blur-[2px] z-40 transition-opacity duration-300 pointer-events-none ${isExpanded ? 'opacity-100' : 'opacity-0'}`} />
+            {/* Removed backdrop blur as requested */}
 
             {/* Autocomplete Dropdown */}
             {isOpen && results.length > 0 && (
-                <div className="absolute top-[calc(100%+8px)] right-0 w-[min(360px,calc(100vw-2rem))] xl:w-[420px] bg-white rounded-[20px] shadow-[0_12px_40px_rgba(0,0,0,0.12)] border border-stone-200 z-[60] overflow-hidden">
+                <div className="absolute top-[calc(100%+8px)] right-[-90px] lg:right-0 w-[calc(100vw-40px)] lg:w-[400px] xl:w-[420px] bg-white rounded-[20px] shadow-[0_12px_40px_rgba(0,0,0,0.12)] border border-stone-200 z-[60] overflow-hidden">
                     {/* Results list */}
-                    <div className="py-2 max-h-[400px] overflow-y-auto custom-scrollbar">
+                    <div className="py-2 max-h-[60vh] overflow-y-auto custom-scrollbar">
                         {results.map((item) => (
                             <button
                                 key={item.id}
                                 type="button"
                                 onClick={() => handleResultClick(item.url)}
-                                className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-stone-50 transition-colors text-left group"
+                                className="w-full flex items-start gap-4 px-5 py-3 hover:bg-stone-50 transition-colors text-left group border-b border-stone-50 last:border-b-0"
                             >
                                 {/* Image */}
-                                <div className="w-11 h-11 rounded-[10px] bg-stone-100 border border-stone-100 overflow-hidden shrink-0 flex items-center justify-center">
+                                <div className="w-16 h-16 sm:w-14 sm:h-14 rounded-xl bg-stone-50 border border-stone-100 overflow-hidden shrink-0 flex items-center justify-center relative mt-0.5">
                                     {item.image_main_url ? (
                                         <Image
                                             src={item.image_main_url}
                                             alt={item.name}
-                                            width={44}
-                                            height={44}
-                                            className="object-cover w-full h-full mix-blend-multiply"
+                                            fill
+                                            className="object-cover mix-blend-multiply group-hover:scale-105 transition-transform duration-300"
                                         />
                                     ) : (
-                                        <Package2 className="w-5 h-5 text-stone-300" />
+                                        <Package2 className="w-6 h-6 text-stone-200" />
                                     )}
                                 </div>
 
-                                {/* Info */}
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-[13.5px] font-medium text-stone-900 line-clamp-1 group-hover:text-brand-600 transition-colors">
+                                {/* Info synced with Product Card */}
+                                <div className="flex-1 min-w-0 flex flex-col">
+                                    {item.brand_name && (
+                                        <span className="text-[10px] sm:text-[11px] font-bold text-stone-400 uppercase tracking-wider mb-0.5">{item.brand_name}</span>
+                                    )}
+                                    <p className="text-[13.5px] sm:text-[14px] font-semibold text-stone-900 line-clamp-2 leading-snug group-hover:text-brand-600 transition-colors">
                                         {item.name}
                                     </p>
-                                    <div className="flex items-center gap-2 mt-0.5">
-                                        {item.brand_name && (
-                                            <span className="text-[11px] text-stone-500 font-medium">{item.brand_name}</span>
-                                        )}
-                                        {item.brand_name && <span className="text-[10px] text-stone-300">·</span>}
+                                    <div className="flex items-center gap-2 mt-1 mb-1.5">
                                         <span className="text-[11px] text-stone-400">SKU: {item.sku}</span>
                                     </div>
-                                </div>
-
-                                {/* Price */}
-                                <div className="shrink-0 text-right pl-2">
-                                    <span className="text-[13px] font-bold text-brand-600">
-                                        {item.price ? formatPrice(item.price) : (item.price_display ?? 'Liên hệ')}
-                                    </span>
+                                    <div className="mt-auto flex flex-col gap-0.5">
+                                        {item.online_discount_amount && Number(item.online_discount_amount) > 0 && (
+                                            <span className="px-1.5 py-[3px] text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-[4px] leading-none whitespace-nowrap w-fit mb-0.5">
+                                                Giảm thêm {formatPrice(Number(item.online_discount_amount))} online
+                                            </span>
+                                        )}
+                                        <div className="flex items-center gap-1.5 flex-wrap">
+                                            <span className={`text-[14px] font-bold ${item.original_price && Number(item.original_price) > Number(item.price) ? 'text-red-600' : 'text-brand-600'}`}>
+                                                {item.price ? formatPrice(item.price) : (item.price_display ?? 'Liên hệ')}
+                                            </span>
+                                            {item.original_price && item.price && Number(item.original_price) > Number(item.price) && (
+                                                <>
+                                                    <span className="px-1 py-0.5 text-[9px] font-bold text-white bg-[#E53935] rounded-sm shadow-sm leading-none">
+                                                        -{Math.round(((Number(item.original_price) - Number(item.price)) / Number(item.original_price)) * 100)}%
+                                                    </span>
+                                                    <span className="font-normal text-[11px] text-neutral-400 line-through">
+                                                        {formatPrice(Number(item.original_price))}
+                                                    </span>
+                                                </>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
                             </button>
                         ))}
@@ -208,16 +224,16 @@ export function SearchBar({ onExpandedChange }: { onExpandedChange?: (expanded: 
 
                     {/* Footer: Xem tất cả */}
                     {total > results.length && (
-                        <div className="border-t border-stone-100 px-4 py-3 bg-stone-50/50">
+                        <div className="border-t border-stone-100 px-5 py-3.5 bg-stone-50/50">
                             <button
                                 type="button"
                                 onClick={() => {
                                     setIsOpen(false)
                                     router.push(`/tim-kiem?q=${encodeURIComponent(query)}`)
                                 }}
-                                className="flex items-center gap-2 text-[13px] text-brand-600 font-medium hover:underline"
+                                className="flex items-center justify-center w-full gap-2 text-[13px] text-brand-600 font-bold hover:text-brand-700 transition-colors"
                             >
-                                Xem tất cả {total.toLocaleString('vi-VN')} kết quả <ArrowRight className="w-3.5 h-3.5" />
+                                Xem tất cả {total.toLocaleString('vi-VN')} kết quả <ArrowRight className="w-4 h-4" />
                             </button>
                         </div>
                     )}
@@ -226,7 +242,7 @@ export function SearchBar({ onExpandedChange }: { onExpandedChange?: (expanded: 
 
             {/* No results */}
             {isOpen && !isLoading && query.length >= 2 && results.length === 0 && (
-                <div className="absolute top-[calc(100%+8px)] right-0 w-[min(360px,calc(100vw-2rem))] xl:w-[420px] bg-white rounded-[20px] shadow-[0_12px_40px_rgba(0,0,0,0.12)] border border-stone-200 z-[60] px-6 py-10 text-center">
+                <div className="absolute top-[calc(100%+8px)] right-[-90px] lg:right-0 w-[calc(100vw-40px)] lg:w-[400px] xl:w-[420px] bg-white rounded-[20px] shadow-[0_12px_40px_rgba(0,0,0,0.12)] border border-stone-200 z-[60] px-6 py-10 text-center">
                     <div className="w-12 h-12 rounded-full bg-stone-50 flex items-center justify-center mx-auto mb-4">
                         <Search className="w-6 h-6 text-stone-300" />
                     </div>

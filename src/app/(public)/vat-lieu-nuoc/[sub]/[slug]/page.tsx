@@ -6,6 +6,7 @@ import { VariantSelector } from "@/components/product/variant-selector"
 import { ProductImageGallery } from "@/components/product/product-image-gallery"
 import { ProductDetailTabs } from "@/components/product/product-detail-tabs"
 import { ProductCTA } from "@/components/product/product-cta"
+import { ProductBoxIncludes } from "@/components/product/product-box-includes"
 import { ProductCard } from "@/components/ui/product-card"
 import { BrandBadge } from "@/components/ui/brand-badge"
 import { ProductPrice } from "@/components/product/product-price"
@@ -40,6 +41,12 @@ export default async function ProductDetailPage({ params }: PageProps) {
 
     const variantSiblings = product.variant_group ? await getVariantSiblings(product.variant_group, product.id) : []
 
+    // Extract "Phụ kiện đi kèm" from specs
+    let boxIncludes: string[] = []
+    if (product.specs && typeof product.specs === 'object' && !Array.isArray(product.specs)) {
+        boxIncludes = (product.specs as any)['Phụ kiện đi kèm'] || []
+    }
+
     // Fetch related products
     const { products: relatedItems } = await getPublicProducts({
         category_slug: CATEGORY_SLUG,
@@ -49,41 +56,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
     })
     const relatedProducts = relatedItems.filter(p => p.slug !== slug).slice(0, 4)
 
-    // Build extra specs to pass into Tabs
-    const extraSpecs: { key: string, value: React.ReactNode }[] = []
-    if (product.brands) {
-        extraSpecs.push({ key: 'Thương hiệu', value: product.brands.name })
-    }
-    if (product.origins) {
-        extraSpecs.push({ key: 'Xuất xứ', value: product.origins.name })
-    }
-    if (product.materials) {
-        extraSpecs.push({ key: 'Chất liệu', value: product.materials.name })
-    }
-    if (product.colors) {
-        extraSpecs.push({ 
-            key: 'Màu sắc', 
-            value: (
-                <div className="flex items-center gap-2">
-                    {product.colors.hex_code && (
-                        <div 
-                            className="w-4 h-4 rounded-[4px] border border-stone-200 shadow-sm" 
-                            style={{ backgroundColor: product.colors.hex_code }}
-                        />
-                    )}
-                    <span>{product.colors.name}</span>
-                </div>
-            ) 
-        })
-    }
 
-    if (features.length > 0) {
-        features.forEach(f => {
-            if (f.product_features?.name && f.value) {
-                extraSpecs.push({ key: f.product_features.name, value: f.value })
-            }
-        })
-    }
 
     const stockDisplay = product.stock_status === 'in_stock'
         ? <span className="text-success-600 font-medium">Còn hàng</span>
@@ -92,7 +65,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
         : <span className="text-danger-600 font-medium">Hết hàng</span>;
 
     return (
-        <main className="u-container py-8 lg:py-12">
+        <main className="u-container pt-8 pb-28 lg:py-12">
             {/* Breadcrumb */}
             <nav className="flex items-center gap-1.5 text-[11px] text-stone-500 mb-5 overflow-x-auto whitespace-nowrap scrollbar-hide" aria-label="Breadcrumb">
                 <Link href="/" className="hover:text-stone-900 transition-colors shrink-0">Trang chủ</Link>
@@ -110,48 +83,26 @@ export default async function ProductDetailPage({ params }: PageProps) {
                 <span className="text-stone-900 font-medium truncate max-w-[200px] sm:max-w-none shrink-0">{product.name}</span>
             </nav>
 
-            {/* Main Content */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-14">
-                {/* Gallery */}
-                <ProductImageGallery
+                        {/* Main Content */}
+            <div className="flex flex-col lg:grid lg:grid-cols-2 gap-8 lg:gap-x-14 lg:gap-y-4 lg:items-start">
+                {/* 1. Image Gallery (Mobile: Top, Desktop: Top Left) */}
+                <div className="w-full lg:col-start-1 lg:row-start-1">
+                    <ProductImageGallery
                     mainImageUrl={product.image_main_url}
-
                     additionalImages={additionalImages.map(i => ({ image_url: i.image_url, alt_text: i.alt_text }))}
                     productName={product.name}
+                    discountPercent={
+                        product.original_price && product.price && Number(product.original_price) > Number(product.price)
+                            ? Math.round(((Number(product.original_price) - Number(product.price)) / Number(product.original_price)) * 100)
+                            : 0
+                    }
                 />
-                    {/* Detail Tabs */}
-                    <div className="mt-4 pt-4 border-t border-stone-100">
-                        <ProductDetailTabs
-                            description={product.description}
-                            features={product.features}
-                            specifications={null}
-                            extraSpecs={extraSpecs}
-                        />
-                    </div>
+                </div>
 
-                {/* Info */}
-                <div className="flex flex-col gap-5 lg:gap-7 pt-2">
+                {/* 2. Info & CTA (Mobile: Middle, Desktop: Right Column Sticky) */}
+                <div className="flex flex-col gap-6 w-full lg:col-start-2 lg:row-start-1 lg:row-span-2 relative">
                     <div>
-                        {/* Brand & Badges */}
-                        <div className="flex items-center gap-2 mb-3">
-                            {product.is_featured && (
-                                <span className="flex items-center gap-1 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white bg-gradient-to-r from-[#FF9800] to-[#FF5722] rounded-[4px] shadow-sm">
-                                    <svg className="w-3 h-3 mb-[1px]" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
-                                    </svg>
-                                    Nổi Bật
-                                </span>
-                            )}
-
-                            {(product.is_promotion || (product.original_price && product.original_price > (product.price || 0))) && (
-                                <span className="flex items-center gap-1 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white bg-gradient-to-r from-[#FF0055] to-[#FF0033] rounded-[4px] shadow-sm">
-                                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-                                    </svg>
-                                    Đang Khuyến Mãi
-                                </span>
-                            )}
-                        </div>
+                        {/* Removed promotional badges (Nổi bật, Khuyến mãi) to clean up visual noise */}
 
                         <h1 className="text-2xl md:text-[28px] font-bold text-stone-900 leading-[1.2] mb-4 tracking-tight">
                             {product.name}
@@ -162,7 +113,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
                             {product.brands && <BrandBadge brand={product.brands as any} className="!h-7 !px-2.5 rounded-md border-stone-200/60 shadow-sm" />}
 
                             {/* SKU Pill */}
-                            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-stone-100/80 border border-stone-200/60">
+                            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-stone-100">
                                 <span className="text-stone-500">Mã SP:</span>
                                 <span className="font-mono font-bold text-stone-800">{product.sku}</span>
                             </div>
@@ -219,6 +170,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
                             productSku={product.sku}
                             productName={product.name}
                             price={product.price ? Number(product.price) : null}
+                            originalPrice={product.original_price ? Number(product.original_price) : null}
                             priceDisplay={product.price_display}
                             imageUrl={product.image_main_url}
                             categorySlug={CATEGORY_SLUG}
@@ -227,6 +179,26 @@ export default async function ProductDetailPage({ params }: PageProps) {
                             slug={product.slug}
                         />
                     </ProductPrice>
+
+                    {/* Box Includes (Nguyên hộp bao gồm) */}
+                    {boxIncludes.length > 0 && (
+                        <div className="flex flex-col gap-6 pt-6 border-t border-stone-100">
+                            <ProductBoxIncludes items={boxIncludes} />
+                        </div>
+                    )}
+</div>
+
+                {/* 3. Product Details & Tabs (Mobile: Bottom, Desktop: Bottom Left) */}
+                <div className="flex flex-col gap-8 w-full lg:col-start-1 lg:row-start-2">
+                    
+                    {/* Detail Tabs */}
+                    <div className="mt-2">
+                        <ProductDetailTabs
+                            description={product.description}
+                            features={product.features}
+                            specifications={product.specs}
+                        />
+                    </div>
                 </div>
             </div>
 

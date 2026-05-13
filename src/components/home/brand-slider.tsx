@@ -56,6 +56,7 @@ export function BrandSlider() {
                             key={`${slug}-${i}`}
                             className="shrink-0 flex items-center justify-center w-[120px] h-[60px] lg:w-[140px] lg:h-[80px] relative transition-all duration-300 transform hover:scale-105 group/brand"
                         >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                                 src={`/images/brands/${slug}.png`}
                                 alt={`Thương hiệu ${slug}`}

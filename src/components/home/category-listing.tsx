@@ -1,6 +1,5 @@
 "use client"
 
-import Image from "next/image"
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
@@ -56,6 +55,7 @@ function CategoryCard({ cat, className = "", visible, delay = 0, isBig = false }
 
   return (
     <Wrapper
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       {...(wrapperProps as any)}
       className={`group relative overflow-hidden rounded-sm flex flex-col p-6 sm:p-8 border border-neutral-200 bg-neutral-50 transition-all duration-300 ease-out hover:border-[#2E7A96] hover:bg-white ${cat.available ? "cursor-pointer" : "cursor-default"} ${className}`}
       style={{
