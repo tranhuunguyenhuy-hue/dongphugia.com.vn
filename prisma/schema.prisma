@@ -9,14 +9,20 @@ datasource db {
 }
 
 model banners {
-  id         Int       @id @default(autoincrement())
-  title      String?   @db.VarChar(200)
-  image_url  String    @db.VarChar(500)
-  link_url   String?   @db.VarChar(500)
-  is_active  Boolean   @default(true)
-  sort_order Int       @default(0)
-  created_at DateTime? @default(now()) @db.Timestamp(6)
-  updated_at DateTime? @default(now()) @db.Timestamp(6)
+  id          Int       @id @default(autoincrement())
+  title       String?   @db.VarChar(200)
+  image_url   String    @db.VarChar(500)
+  link_url    String?   @db.VarChar(500)
+  is_active   Boolean   @default(true)
+  sort_order  Int       @default(0)
+  position    String?   @default("HERO") @db.VarChar(50)
+  brand_id    Int?
+  category_id Int?
+  created_at  DateTime? @default(now()) @db.Timestamp(6)
+  updated_at  DateTime? @default(now()) @db.Timestamp(6)
+
+  brands     brands?     @relation(fields: [brand_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  categories categories? @relation(fields: [category_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -53,29 +59,30 @@ model product_images {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model products {
-  id              Int      @id @default(autoincrement())
-  sku             String   @unique @db.VarChar(100)
-  name            String   @db.VarChar(500)
-  slug            String   @db.VarChar(500)
-  category_id     Int
-  subcategory_id  Int?
-  brand_id        Int?
-  origin_id       Int?
-  color_id        Int?
-  material_id     Int?
-  price           Decimal? @db.Decimal(15, 2)
-  original_price          Decimal? @db.Decimal(15, 2)
-  online_discount_amount  Decimal? @db.Decimal(15, 2)
-  price_display           String?  @default("Liên hệ báo giá") @db.VarChar(50)
-  description     String?
-  features        String?
-  specs           Json     @default("{}")
-  warranty_months Int?
-  image_main_url  String?  @db.VarChar(1000)
+  id                     Int      @id @default(autoincrement())
+  sku                    String   @unique @db.VarChar(100)
+  name                   String   @db.VarChar(500)
+  slug                   String   @db.VarChar(500)
+  category_id            Int
+  subcategory_id         Int?
+  brand_id               Int?
+  origin_id              Int?
+  color_id               Int?
+  material_id            Int?
+  price                  Decimal? @db.Decimal(15, 2)
+  original_price         Decimal? @db.Decimal(15, 2)
+  online_discount_amount Decimal? @db.Decimal(15, 2)
+  price_display          String?  @default("Liên hệ báo giá") @db.VarChar(50)
+  description            String?
+  features               String?
+  specs                  Json     @default("{}")
+  warranty_months        Int?
+  image_main_url         String?  @db.VarChar(1000)
 
   stock_status            String                            @default("in_stock") @db.VarChar(20)
   is_active               Boolean                           @default(true)
   is_featured             Boolean                           @default(false)
+  is_home_featured        Boolean                           @default(false)
   is_promotion            Boolean                           @default(false)
   is_combo                Boolean                           @default(false)
   is_master               Boolean                           @default(true)
@@ -113,6 +120,7 @@ model products {
   @@index([category_id], map: "idx_products_category")
   @@index([created_at(sort: Desc)], map: "idx_products_created")
   @@index([is_featured], map: "idx_products_featured")
+  @@index([is_home_featured], map: "idx_products_home_featured")
   @@index([hita_product_id], map: "idx_products_hita_id")
   @@index([sort_order], map: "idx_products_sort")
   @@index([specs], map: "idx_products_specs", type: Gin)
@@ -156,24 +164,24 @@ model redirects {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model quote_requests {
-  id           Int           @id @default(autoincrement())
-  quote_number String?       @unique @db.VarChar(30)
-  name         String        @db.VarChar(100)
-  phone        String        @db.VarChar(20)
-  email        String?       @db.VarChar(200)
+  id           Int      @id @default(autoincrement())
+  quote_number String?  @unique @db.VarChar(30)
+  name         String   @db.VarChar(100)
+  phone        String   @db.VarChar(20)
+  email        String?  @db.VarChar(200)
   message      String?
-  vat_rate     Int           @default(10)
-  shipping_fee Decimal       @default(0) @db.Decimal(15, 2)
+  vat_rate     Int      @default(10)
+  shipping_fee Decimal  @default(0) @db.Decimal(15, 2)
   admin_notes  String?
   customer_id  Int?
-  status       String        @default("pending") @db.VarChar(20)
-  assigned_to  Int?          // FK to admin_users (assigned sale staff)
-  created_at   DateTime      @default(now()) @db.Timestamptz(6)
-  updated_at   DateTime      @default(now()) @db.Timestamptz(6)
-  
-  quote_items    quote_items[]
-  customers      customers?   @relation(fields: [customer_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
-  assigned_user  admin_users? @relation("quote_assigned_to", fields: [assigned_to], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  status       String   @default("pending") @db.VarChar(20)
+  assigned_to  Int? // FK to admin_users (assigned sale staff)
+  created_at   DateTime @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime @default(now()) @db.Timestamptz(6)
+
+  quote_items   quote_items[]
+  customers     customers?    @relation(fields: [customer_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  assigned_user admin_users?  @relation("quote_assigned_to", fields: [assigned_to], references: [id], onDelete: SetNull, onUpdate: NoAction)
 
   @@index([quote_number], map: "idx_quote_requests_number")
   @@index([created_at(sort: Desc)], map: "idx_quote_requests_created")
@@ -201,17 +209,17 @@ model quote_items {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model customers {
-  id                 Int              @id @default(autoincrement())
-  full_name          String           @db.VarChar(200)
-  phone              String           @unique @db.VarChar(20)
-  email              String?          @db.VarChar(200)
-  source             String?          @default("MANUAL") @db.VarChar(50)
+  id                 Int       @id @default(autoincrement())
+  full_name          String    @db.VarChar(200)
+  phone              String    @unique @db.VarChar(20)
+  email              String?   @db.VarChar(200)
+  source             String?   @default("MANUAL") @db.VarChar(50)
   notes              String?
-  last_interacted_at DateTime?        @default(now()) @db.Timestamptz(6)
-  created_at         DateTime         @default(now()) @db.Timestamptz(6)
-  updated_at         DateTime         @default(now()) @db.Timestamptz(6)
-  
-  quote_requests     quote_requests[]
+  last_interacted_at DateTime? @default(now()) @db.Timestamptz(6)
+  created_at         DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime  @default(now()) @db.Timestamptz(6)
+
+  quote_requests quote_requests[]
 
   @@index([phone], map: "idx_customers_phone")
   @@index([last_interacted_at(sort: Desc)], map: "idx_customers_interaction")
@@ -345,6 +353,7 @@ model brands {
   created_at     DateTime   @default(now()) @db.Timestamptz(6)
   updated_at     DateTime   @default(now()) @db.Timestamptz(6)
   products       products[]
+  banners        banners[]
 
   @@index([is_active], map: "idx_brands_active")
   @@index([is_featured], map: "idx_brands_featured")
@@ -368,6 +377,7 @@ model categories {
   filter_definitions filter_definitions[]
   products           products[]
   subcategories      subcategories[]
+  banners            banners[]
 
   @@index([is_active], map: "idx_categories_active")
 }
@@ -428,8 +438,8 @@ model orders {
   customer_phone   String        @db.VarChar(20)
   customer_email   String?       @db.VarChar(200)
   customer_address String?
-  note             String?       // Customer-facing note (from checkout form)
-  internal_note    String?       // Internal team note (not shown to customer)
+  note             String? // Customer-facing note (from checkout form)
+  internal_note    String? // Internal team note (not shown to customer)
   subtotal         Decimal       @default(0) @db.Decimal(15, 2)
   shipping_fee     Decimal       @default(0) @db.Decimal(15, 2)
   discount         Decimal       @default(0) @db.Decimal(15, 2)
@@ -438,7 +448,7 @@ model orders {
   status           String        @default("pending") @db.VarChar(30)
   payment_method   String?       @db.VarChar(50)
   payment_status   String        @default("unpaid") @db.VarChar(30)
-  assigned_to      Int?          // FK to admin_users (assigned sale staff)
+  assigned_to      Int? // FK to admin_users (assigned sale staff)
   assigned_at      DateTime?     @db.Timestamptz(6)
   created_at       DateTime      @default(now()) @db.Timestamptz(6)
   updated_at       DateTime      @default(now()) @db.Timestamptz(6)
@@ -539,10 +549,10 @@ model admin_users {
   updated_at    DateTime  @default(now()) @db.Timestamptz(6)
 
   // Relations
-  sessions       admin_sessions[]
-  audit_logs     audit_logs[]
-  orders_assigned     orders[]         @relation("order_assigned_to")
-  quotes_assigned     quote_requests[] @relation("quote_assigned_to")
+  sessions        admin_sessions[]
+  audit_logs      audit_logs[]
+  orders_assigned orders[]         @relation("order_assigned_to")
+  quotes_assigned quote_requests[] @relation("quote_assigned_to")
 
   @@index([email], map: "idx_admin_users_email")
   @@index([role], map: "idx_admin_users_role")
@@ -551,13 +561,13 @@ model admin_users {
 
 /// Active sessions for admin users. One user can have multiple sessions (multi-device).
 model admin_sessions {
-  id          Int       @id @default(autoincrement())
-  user_id     Int
-  token_hash  String    @unique @db.VarChar(255) // SHA-256 hash of the actual session token
-  ip_address  String?   @db.VarChar(45)
-  user_agent  String?
-  expires_at  DateTime  @db.Timestamptz(6)
-  created_at  DateTime  @default(now()) @db.Timestamptz(6)
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  token_hash String   @unique @db.VarChar(255) // SHA-256 hash of the actual session token
+  ip_address String?  @db.VarChar(45)
+  user_agent String?
+  expires_at DateTime @db.Timestamptz(6)
+  created_at DateTime @default(now()) @db.Timestamptz(6)
 
   user admin_users @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
@@ -571,7 +581,7 @@ model audit_logs {
   id          Int      @id @default(autoincrement())
   user_id     Int?
   action      String   @db.VarChar(100) // ORDER_STATUS_CHANGED | ORDER_ASSIGNED | QUOTE_CREATED | ...
-  entity_type String   @db.VarChar(50)  // orders | quote_requests | products | ...
+  entity_type String   @db.VarChar(50) // orders | quote_requests | products | ...
   entity_id   Int?
   old_value   Json?
   new_value   Json?

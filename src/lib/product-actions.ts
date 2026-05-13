@@ -20,6 +20,7 @@ const productSchema = z.object({
     material_id: z.coerce.number().int().positive().optional().nullable(),
     price: z.coerce.number().positive().optional().nullable(),
     original_price: z.coerce.number().positive().optional().nullable(),
+    online_discount_amount: z.coerce.number().min(0).optional().nullable(),
     price_display: z.string().max(50).optional().default('Liên hệ báo giá'),
     description: z.string().optional().nullable(),
     features: z.string().optional().nullable(),
@@ -30,7 +31,10 @@ const productSchema = z.object({
     stock_status: z.enum(['in_stock', 'out_of_stock', 'preorder']).default('in_stock'),
     is_active: z.boolean().default(true),
     is_featured: z.boolean().default(false),
+    is_home_featured: z.boolean().default(false),
     is_promotion: z.boolean().default(false),
+    is_combo: z.boolean().default(false),
+    is_master: z.boolean().default(true),
     sort_order: z.coerce.number().int().default(0),
     product_type: z.string().max(50).optional().nullable(),
     product_sub_type: z.string().max(50).optional().nullable(),
@@ -63,6 +67,7 @@ export async function createProduct(data: unknown) {
             material_id: d.material_id || null,
             price: d.price ? d.price : null,
             original_price: d.original_price ? d.original_price : null,
+            online_discount_amount: d.online_discount_amount ? d.online_discount_amount : null,
             price_display: d.price_display || 'Liên hệ báo giá',
             description: d.description || null,
             features: d.features || null,
@@ -73,7 +78,10 @@ export async function createProduct(data: unknown) {
             stock_status: d.stock_status,
             is_active: d.is_active,
             is_featured: d.is_featured,
+            is_home_featured: d.is_home_featured,
             is_promotion: d.is_promotion,
+            is_combo: d.is_combo,
+            is_master: d.is_master,
             sort_order: d.sort_order,
             product_type: d.product_type || null,
             product_sub_type: d.product_sub_type || null,
@@ -86,7 +94,7 @@ export async function createProduct(data: unknown) {
         revalidatePath('/admin/products')
         revalidatePath('/')
         return { success: true, id: product.id }
-    } catch (err: unknown) {
+    } catch (err: any) {
         const e = err as { code?: string; message?: string }
         if (e.code === 'P2002') return { message: 'SKU hoặc slug đã tồn tại trong cùng danh mục' }
         return { message: 'Lỗi tạo sản phẩm: ' + (e.message ?? 'Unknown error') }
@@ -116,6 +124,7 @@ export async function updateProduct(id: number, data: unknown) {
             material_id: d.material_id || null,
             price: d.price ? d.price : null,
             original_price: d.original_price ? d.original_price : null,
+            online_discount_amount: d.online_discount_amount ? d.online_discount_amount : null,
             price_display: d.price_display || 'Liên hệ báo giá',
             description: d.description || null,
             features: d.features || null,
@@ -126,7 +135,10 @@ export async function updateProduct(id: number, data: unknown) {
             stock_status: d.stock_status,
             is_active: d.is_active,
             is_featured: d.is_featured,
+            is_home_featured: d.is_home_featured,
             is_promotion: d.is_promotion,
+            is_combo: d.is_combo,
+            is_master: d.is_master,
             sort_order: d.sort_order,
             product_type: d.product_type || null,
             product_sub_type: d.product_sub_type || null,
@@ -142,7 +154,7 @@ export async function updateProduct(id: number, data: unknown) {
         revalidatePath(`/admin/products/${id}`)
         revalidatePath('/')
         return { success: true }
-    } catch (err: unknown) {
+    } catch (err: any) {
         const e = err as { code?: string; message?: string }
         if (e.code === 'P2002') return { message: 'SKU hoặc slug đã tồn tại trong cùng danh mục' }
         return { message: 'Lỗi cập nhật sản phẩm: ' + (e.message ?? 'Unknown error') }
@@ -224,7 +236,7 @@ export async function addProductImage(productId: number, imageUrl: string, altTe
         const img = await prisma.product_images.create({ data: imgData })
         revalidatePath(`/admin/products/${productId}`)
         return { success: true, id: img.id }
-    } catch (err: unknown) {
+    } catch (err: any) {
         const e = err as { message?: string }
         return { message: 'Lỗi thêm ảnh: ' + (e.message ?? 'Unknown error') }
     }

@@ -2,6 +2,7 @@
 
 @custom-variant dark (&:is(.dark *));
 @source "..";
+@plugin "@tailwindcss/typography";
 
 @theme {
   /* ==========================================================
@@ -240,3 +241,9 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 }
+
+@keyframes shimmer-slide {
+  from { transform: translateX(-100%) skewX(-15deg); }
+  to { transform: translateX(200%) skewX(-15deg); }
+}
+

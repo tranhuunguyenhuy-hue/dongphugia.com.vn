@@ -49,6 +49,7 @@ interface Product {
     stock_status: string
     is_active: boolean
     is_featured: boolean
+    is_home_featured: boolean
     is_promotion: boolean
     sort_order: number
     created_at: Date
@@ -402,6 +403,11 @@ function SortableProductRow({ product, isSelected, canReorder, handleSelectRow }
                         {product.is_featured && (
                             <Badge className="text-[9px] px-1 py-0 h-4 rounded-sm bg-amber-100 text-amber-700 hover:bg-amber-100 border border-amber-200">
                                 Nổi bật
+                            </Badge>
+                        )}
+                        {product.is_home_featured && (
+                            <Badge className="text-[9px] px-1 py-0 h-4 rounded-sm bg-blue-100 text-blue-700 hover:bg-blue-100 border border-blue-200">
+                                Trang chủ
                             </Badge>
                         )}
                         {(product.is_promotion || (product.original_price && product.original_price > (product.price || 0))) && (

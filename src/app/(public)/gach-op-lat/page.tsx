@@ -53,6 +53,8 @@ export default async function GachOpLatPage({ searchParams }: PageProps) {
             include: {
                 brands: { select: { name: true } },
                 subcategories: { select: { name: true, slug: true } },
+                colors: { select: { name: true, hex_code: true } },
+                product_feature_values: { select: { product_features: { select: { name: true, icon_name: true } } } },
             },
         }),
         prisma.brands.findMany({

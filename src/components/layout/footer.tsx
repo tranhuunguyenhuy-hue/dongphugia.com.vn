@@ -13,7 +13,7 @@ export function Footer() {
                     <div className="w-full lg:w-[380px] shrink-0 flex flex-col gap-8">
                         <Link href="/" className="inline-flex items-center" aria-label="Đông Phú Gia - Trang chủ">
                             <Image
-                                src="/images/logo-dpg.png"
+                                src="/images/Logo.png"
                                 alt="Đông Phú Gia - Đồng hành, Phát triển"
                                 width={184}
                                 height={36}

@@ -11,11 +11,11 @@ export function CartIcon() {
         <button
             onClick={toggleCart}
             aria-label={`Giỏ hàng${count > 0 ? ` (${count} sản phẩm)` : ''}`}
-            className="relative flex items-center justify-center w-11 h-11 rounded-[12px] border border-[#3C8A9E]/60 hover:bg-brand-50 transition-colors shrink-0"
+            className="relative flex items-center justify-center w-11 h-11 rounded-full hover:bg-stone-100 transition-colors shrink-0 text-stone-700 hover:text-brand-600"
         >
-            <ShoppingCart className="w-[20px] h-[20px] text-brand-600" strokeWidth={2.25} />
+            <ShoppingCart className="w-[22px] h-[22px] text-current" strokeWidth={2} />
             {count > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 min-w-[20px] h-[20px] bg-brand-600 border-2 border-white text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 leading-none shadow-sm">
+                <span className="absolute top-[4px] right-[2px] min-w-[18px] h-[18px] bg-brand-500 border-2 border-white text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 leading-none shadow-sm">
                     {count > 99 ? '99+' : count}
                 </span>
             )}

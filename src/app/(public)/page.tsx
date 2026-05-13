@@ -2,12 +2,10 @@ import type { Metadata } from "next"
 import { HeroBanner } from "@/components/home/hero-banner"
 import { BrandSlider } from "@/components/home/brand-slider"
 import { BlogSection } from "@/components/home/blog-section"
-import { CategoryTabsSection } from "@/components/home/category-tabs-section"
-import { FeaturedProductsClient } from "@/components/home/featured-products-client"
+import { HomeCategoryBlockAlt } from "@/components/home/home-category-block-alt"
 import { ContactSection } from "@/components/home/contact-section"
-import { getFeaturedProductsByCategorySlug, getTopProductsPerBrand } from "@/lib/public-api-products"
+import { getFeaturedProductsByCategorySlug } from "@/lib/public-api-products"
 import prisma from "@/lib/prisma"
-import { siteConfig } from "@/config/site"
 
 export const revalidate = 3600
 
@@ -30,6 +28,7 @@ export default async function HomePage() {
             orderBy: { sort_order: 'asc' },
             take: 5,
         }),
+        // getHomeFeaturedProducts(15), // Tạm ẩn để nghiên cứu thêm
         getFeaturedProductsByCategorySlug('thiet-bi-ve-sinh', ['toto', 'inax'], null, 0, 20),
         getFeaturedProductsByCategorySlug('thiet-bi-bep', null, null, 0, 20),
         getFeaturedProductsByCategorySlug('gach-op-lat', null, null, 0, 20),
@@ -40,8 +39,7 @@ export default async function HomePage() {
         }),
         prisma.subcategories.findMany({
             where: { 
-                categories: { slug: 'thiet-bi-ve-sinh' },
-                slug: { notIn: ['phu-kien-phong-tam', 'phu-kien-bon-cau', 'than-bon-cau', 'voi-nuoc', 'bon-tieu'] }
+                categories: { slug: 'thiet-bi-ve-sinh' }
             },
             select: { name: true, slug: true }
         }),
@@ -97,14 +95,22 @@ export default async function HomePage() {
                 <BrandSlider />
             </div>
 
-            {/* Category Tabs & Subcategories (DPG V2) */}
-            <CategoryTabsSection />
+            {/* Featured Products (Khối 1) - Tạm ẩn để nghiên cứu thêm */}
+            {/* 
+            {homeFeatured && homeFeatured.length > 0 && (
+                <div className="max-w-[1280px] mx-auto px-5 mt-8">
+                    <HomeFeaturedProducts products={homeFeatured} />
+                </div>
+            )}
+            */}
 
-            {/* Featured Products */}
+            {/* Category Blocks (Khối 2-5) */}
             {allCategories.length > 0 && (
-                <section className="px-5 py-10 lg:py-14">
-                    <FeaturedProductsClient categories={allCategories as any} />
-                </section>
+                <div className="max-w-[1280px] mx-auto px-5 py-6 lg:py-10 flex flex-col gap-12 lg:gap-16">
+                    {allCategories.map((cat) => (
+                        <HomeCategoryBlockAlt key={cat.id} categoryData={cat} />
+                    ))}
+                </div>
             )}
 
             {/* Blog */}

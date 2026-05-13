@@ -14,6 +14,7 @@ interface ProductImageGalleryProps {
     hoverImageUrl?: string | null;
     additionalImages?: GalleryImage[];
     productName: string;
+    discountPercent?: number;
 }
 
 function isValidImageUrl(url: string | null | undefined): boolean {
@@ -30,6 +31,7 @@ export function ProductImageGallery({
     hoverImageUrl,
     additionalImages = [],
     productName,
+    discountPercent = 0,
 }: ProductImageGalleryProps) {
     // Build full image list: main + additional (filter broken URLs)
     const allImages: string[] = [];
@@ -59,48 +61,9 @@ export function ProductImageGallery({
         .filter(({ idx }) => !erroredIndices.has(idx));
 
     return (
-        <div className="flex flex-col lg:flex-row gap-3 lg:gap-4 w-full">
-            {/* Thumbnail Strip — vertical on desktop, horizontal on mobile */}
-            {visibleImages.length > 1 && (
-                <div className="flex lg:flex-col gap-2 sm:gap-3 lg:gap-2.5 overflow-x-auto lg:overflow-x-visible pb-1 lg:pb-0 order-2 lg:order-1">
-                    {visibleImages.slice(0, 6).map(({ img, idx }) => (
-                        <button
-                            key={idx}
-                            onClick={() => setActiveIndex(idx)}
-                            className={`
-                                relative shrink-0 w-[80px] h-[80px] lg:w-[72px] lg:h-[72px]
-                                rounded-xl lg:rounded-lg overflow-hidden transition-all duration-200
-                                bg-stone-50
-                                ${idx === activeIndex
-                                    ? 'border-2 border-brand-500 shadow-sm'
-                                    : 'border border-stone-200 hover:border-stone-400'
-                                }
-                            `}
-                        >
-                            {img.includes('vietceramics.com') ? (
-                                <img
-                                    src={img}
-                                    alt={`${productName} - ${idx + 1}`}
-                                    className="absolute inset-0 w-full h-full object-cover"
-                                    onError={() => handleImageError(idx)}
-                                />
-                            ) : (
-                                <Image
-                                    src={img}
-                                    alt={`${productName} - ${idx + 1}`}
-                                    fill
-                                    sizes="80px"
-                                    className="object-cover"
-                                    onError={() => handleImageError(idx)}
-                                />
-                            )}
-                        </button>
-                    ))}
-                </div>
-            )}
-
+        <div className="flex flex-col gap-3 lg:gap-4 w-full">
             {/* Main Image */}
-            <div className="relative w-full aspect-square md:aspect-[628/590] lg:aspect-square flex-1 rounded-[16px] overflow-hidden bg-stone-50 border border-stone-200 order-1 lg:order-2">
+            <div className="relative w-full aspect-square md:aspect-[628/590] lg:aspect-square rounded-[16px] overflow-hidden bg-stone-50 border border-stone-200">
                 {activeImage && !erroredIndices.has(activeIndex) ? (
                     activeImage.includes('vietceramics.com') ? (
                         <img
@@ -125,7 +88,65 @@ export function ProductImageGallery({
                         <span className="text-sm text-stone-400">Chưa có hình ảnh</span>
                     </div>
                 )}
+                
+                {/* Discount Flag Badge */}
+                {discountPercent > 0 && (
+                    <div className="absolute top-0 right-4 z-20 drop-shadow-[0_2px_4px_rgba(255,23,68,0.25)]">
+                        {/* Top Rod Effect */}
+                        <div className="absolute top-0 left-[-1.5px] right-[-1.5px] h-[2px] bg-[#B71C1C] rounded-t-sm z-10" />
+                        {/* Flag Body */}
+                        <div 
+                            className="bg-[#FF1744] text-white font-bold text-[12px] tracking-tighter flex items-start justify-center pt-2"
+                            style={{ 
+                                width: '40px', 
+                                height: '48px', 
+                                clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 10px), 50% 100%, 0 calc(100% - 10px))'
+                            }}
+                        >
+                            -{discountPercent}%
+                        </div>
+                    </div>
+                )}
             </div>
+
+            {/* Thumbnail Strip — horizontal on all screens */}
+            {visibleImages.length > 1 && (
+                <div className="flex gap-2 sm:gap-3 lg:gap-3 overflow-x-auto pb-1 scrollbar-hide">
+                    {visibleImages.map(({ img, idx }) => (
+                        <button
+                            key={idx}
+                            onClick={() => setActiveIndex(idx)}
+                            className={`
+                                relative shrink-0 w-[80px] h-[80px] lg:w-[88px] lg:h-[88px]
+                                rounded-xl overflow-hidden transition-all duration-200
+                                bg-stone-50
+                                ${idx === activeIndex
+                                    ? 'border-2 border-brand-500 shadow-sm'
+                                    : 'border border-stone-200 hover:border-stone-400'
+                                }
+                            `}
+                        >
+                            {img.includes('vietceramics.com') ? (
+                                <img
+                                    src={img}
+                                    alt={`${productName} - ${idx + 1}`}
+                                    className="absolute inset-0 w-full h-full object-cover"
+                                    onError={() => handleImageError(idx)}
+                                />
+                            ) : (
+                                <Image
+                                    src={img}
+                                    alt={`${productName} - ${idx + 1}`}
+                                    fill
+                                    sizes="(min-width: 1024px) 88px, 80px"
+                                    className="object-cover"
+                                    onError={() => handleImageError(idx)}
+                                />
+                            )}
+                        </button>
+                    ))}
+                </div>
+            )}
         </div>
     );
 }

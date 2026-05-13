@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { format } from 'date-fns'
 import { vi } from 'date-fns/locale'
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function BlogSectionClient({ posts }: { posts: any[] }) {
     const scrollRef = useRef<HTMLDivElement>(null)
 

@@ -29,92 +29,80 @@ export function ProductPrice({ price, originalPrice, priceDisplay, onlineDiscoun
 
     return (
         <ProductOptionsContext.Provider value={{ installOption, setInstallOption, installationFee, onlineDiscountAmount: numOnlineDiscount }}>
-        <div className={cn("relative rounded-[24px] overflow-hidden shadow-2xl shadow-orange-900/10 mb-6 border border-orange-100", className)}>
-            {/* Outer Mesh Background */}
-            <div 
-                className="absolute inset-0 bg-cover bg-center z-0" 
-                style={{ backgroundImage: "url('/images/new-mesh-gradient.webp')", backgroundColor: "#F97316" }}
-            />
-            {/* Fallback solid color behind the image just in case it doesn't load immediately */}
-
-            <div className="relative z-10 flex flex-col p-1.5 gap-1.5 h-full">
+        <div className={cn("relative rounded-[24px] bg-white shadow-[0_8px_30px_rgba(0,0,0,0.06)] mb-6", className)}>
+            <div className="flex flex-col p-5 lg:p-6 h-full">
                 
-                {/* === CARD 1: PRICING SECTION === */}
-                <div className="bg-white p-3.5 lg:p-4 rounded-[16px] shadow-sm border border-white/50">
-                    <div className="flex flex-col gap-1.5">
-                        {/* Eyebrow */}
-                        <div className="flex items-center justify-between gap-2 flex-wrap">
-                            <h3 className="text-[10px] font-bold text-stone-400 tracking-widest uppercase flex items-center gap-1.5">
-                                <div className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
-                                Giá hiện tại
-                            </h3>
+                {/* === BLOCK 1: PRICING SECTION === */}
+                <div className="flex flex-col gap-1.5 mb-5">
+                    <h3 className="text-[10px] font-bold text-stone-400 tracking-widest uppercase flex items-center gap-1.5 mb-1">
+                        <div className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
+                        Giá hiện tại
+                    </h3>
+                    
+                    {/* Price Block */}
+                    {hasDiscount ? (
+                        <div className="flex items-center gap-3 flex-wrap mt-0.5">
+                            <p className="text-[32px] font-black text-rose-600 tracking-tight leading-none">
+                                {finalDisplayPrice}
+                            </p>
+                            <p className="text-[15px] font-semibold text-stone-400 line-through decoration-stone-300">
+                                {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(numOriginal)}
+                            </p>
+                            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-700">
+                                <span className="text-[12px] font-bold">✨ Tiết kiệm {Math.round(((numOriginal - numPrice) / numOriginal) * 100)}%</span>
+                            </div>
                         </div>
-                        
-                        {/* Price Block */}
-                        {hasDiscount ? (
-                            <div className="flex items-end gap-2 flex-wrap mt-0.5">
-                                <p className="text-[26px] lg:text-[28px] font-bold text-red-600 tracking-tight leading-none">
-                                    {finalDisplayPrice}
-                                </p>
-                                <div className="flex flex-col justify-end pb-0.5 gap-1">
-                                    <div className="flex items-center gap-1.5">
-                                        <p className="text-[12px] font-medium text-stone-400 line-through decoration-stone-300">
-                                            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(numOriginal)}
-                                        </p>
-                                        <span className="px-1.5 py-0.5 text-[10px] font-bold text-white bg-[#E53935] rounded-sm shadow-sm leading-none">
-                                            -{Math.round(((numOriginal - numPrice) / numOriginal) * 100)}%
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="mt-0.5">
-                                <p className="text-[26px] lg:text-[28px] font-bold text-[#2E7A96] tracking-tight leading-none">
-                                    {finalDisplayPrice}
-                                </p>
-                            </div>
-                        )}
+                    ) : (
+                        <div className="mt-0.5">
+                            <p className="text-[32px] font-black text-[#2E7A96] tracking-tight leading-none">
+                                {finalDisplayPrice}
+                            </p>
+                        </div>
+                    )}
 
-                        {/* Online Discount Sub-Card */}
-                        {numOnlineDiscount > 0 && (
-                            <div className="relative mt-2 bg-gradient-to-r from-emerald-50 to-emerald-50/40 border border-emerald-100 p-2.5 rounded-[10px] flex flex-col gap-0.5 shadow-sm overflow-hidden group">
+                    {/* Online Discount Sub-Card (Shopee-style Voucher) */}
+                    {numOnlineDiscount > 0 && numPrice > 0 && (
+                        <div className="mt-4 flex relative rounded-xl bg-orange-50/60 border border-orange-200">
+                            
+                            {/* Left Stub */}
+                            <div className="relative flex flex-col items-center justify-center pl-4 pr-3 border-r border-dashed border-orange-300">
+                                <span className="text-[20px] leading-none">🎁</span>
                                 
-                                {/* Shimmer / Slide Light Effect */}
-                                <div className="absolute top-0 bottom-0 left-0 w-[70%] bg-gradient-to-r from-white/0 via-white to-white/0 animate-[shimmer_2.5s_infinite_ease-in-out] opacity-100 z-0 pointer-events-none" />
-                                
-                                <div className="relative z-10 flex items-center gap-1.5">
-                                    <svg className="w-3.5 h-3.5 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
-                                    </svg>
-                                    <p className="text-[13px] font-extrabold text-emerald-800 uppercase tracking-wide">
-                                        Giảm thêm: {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(numOnlineDiscount)}
-                                    </p>
+                                {/* Top Hole */}
+                                <div className="absolute -right-2 -top-[9px] w-4 h-4 bg-white rounded-full border-b border-orange-200 z-10" />
+                                {/* Bottom Hole */}
+                                <div className="absolute -right-2 -bottom-[9px] w-4 h-4 bg-white rounded-full border-t border-orange-200 z-10" />
+                            </div>
+
+                            {/* Right Content */}
+                            <div className="flex-1 py-2.5 px-3 flex flex-col justify-center">
+                                <div className="text-[10px] font-bold text-orange-600/80 uppercase tracking-widest mb-0.5">
+                                    Độc quyền đặt Online
                                 </div>
-                                <p className="relative z-10 text-[10px] text-emerald-700/90 leading-relaxed font-medium">
-                                    Ưu đãi đặc biệt khi đặt hàng Online. Chỉ áp dụng cho dongphugia.com.vn
-                                </p>
-                                
-                                <style dangerouslySetInnerHTML={{__html: `
-                                    @keyframes shimmer {
-                                        0% { transform: translateX(-150%) skewX(-25deg); }
-                                        100% { transform: translateX(250%) skewX(-25deg); }
-                                    }
-                                `}} />
+                                <div className="flex items-center gap-1.5">
+                                    <span className="text-[13px] font-medium text-stone-600">Giá chỉ còn:</span>
+                                    <span className="text-[16px] font-black text-[#d64a25] tracking-tight">
+                                        {new Intl.NumberFormat('vi-VN').format(numPrice - numOnlineDiscount)}đ
+                                    </span>
+                                </div>
                             </div>
-                        )}
-                        
-                        {/* CTA Container */}
-                        {children && (
-                            <div className="mt-2 pt-2">
-                                {children}
-                            </div>
-                        )}
-                    </div>
+                        </div>
+                    )}
                 </div>
+
+                {/* Divider */}
+                <div className="h-px bg-stone-100 w-full mb-5" />
+
+                {/* === BLOCK 2: ACTION SECTION (CTA) === */}
+                {children && (
+                    <div className="flex flex-col">
+                        {children}
+                    </div>
+                )}
 
                 
                 {/* === CARD 2: INSTALLATION SERVICES SECTION (Demoted Hierarchy) === */}
-                <div className="bg-white/75 backdrop-blur-xl p-3.5 lg:p-4 rounded-[16px] border border-white/60 shadow-sm">
+                <div className="hidden bg-white/75 backdrop-blur-xl p-3.5 lg:p-4 rounded-[16px] border border-white/60 shadow-sm">
                     <div className="flex flex-col gap-2.5">
                         <div className="flex flex-col gap-0.5">
                             <h4 className="text-[11px] font-bold text-stone-500 uppercase tracking-widest">
@@ -206,34 +194,18 @@ export function ProductPrice({ price, originalPrice, priceDisplay, onlineDiscoun
                                     checked={installOption === 'replace'}
                                     onChange={() => setInstallOption('replace')}
                                 />
-                                <div className={cn(
-                                    "w-3.5 h-3.5 rounded-full border-[1.5px] flex items-center justify-center shrink-0 transition-colors",
-                                    installOption === 'replace' ? "border-sky-600 bg-white" : "border-stone-400 bg-transparent"
-                                )}>
-                                    <div className={cn(
-                                        "w-1.5 h-1.5 rounded-full bg-sky-600 transition-transform duration-200",
-                                        installOption === 'replace' ? "scale-100" : "scale-0"
-                                    )} />
+                                <div className={cn("w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors", installOption === 'replace' ? "border-sky-600 bg-white" : "border-stone-400 bg-transparent")}>
+                                    <div className={cn("w-2 h-2 rounded-full bg-sky-600 transition-transform duration-200", installOption === 'replace' ? "scale-100" : "scale-0")} />
                                 </div>
-                                <div className="flex flex-col flex-1">
-                                    <span className={cn(
-                                        "text-[12px] font-semibold transition-colors",
-                                        installOption === 'replace' ? "text-sky-900" : "text-stone-700"
-                                    )}>Tháo dỡ & Lắp đặt</span>
-                                </div>
-                                <span className={cn(
-                                    "ml-auto text-[12px] font-bold transition-colors",
-                                    installOption === 'replace' ? "text-sky-700" : "text-stone-600"
-                                )}>
-                                    +350.000đ
-                                </span>
+                                <span className={cn("text-[12px] font-medium flex-1", installOption === 'replace' ? "text-sky-900" : "text-stone-600")}>Tháo dỡ & Lắp đặt</span>
+                                <span className="text-[12px] font-bold text-sky-700">+350.000đ</span>
                             </label>
                         </div>
                     </div>
                 </div>
 
                 {/* === CARD 3: TRUST BADGES === */}
-                <div className="grid grid-cols-2 gap-x-2 gap-y-2 mt-1.5 px-2">
+                <div className="grid grid-cols-2 gap-x-3 gap-y-2 mt-5 px-1">
                     {[
                         "100% Chính hãng",
                         "Bảo hành tiêu chuẩn",
@@ -241,10 +213,10 @@ export function ProductPrice({ price, originalPrice, priceDisplay, onlineDiscoun
                         "Tư vấn kỹ thuật 24/7"
                     ].map((feature, idx) => (
                         <div key={idx} className="flex items-center gap-1.5">
-                            <svg className="w-3.5 h-3.5 text-white shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            <svg className="w-3.5 h-3.5 text-stone-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
-                            <span className="text-[11px] font-semibold text-white leading-tight drop-shadow-sm">
+                            <span className="text-[11px] font-medium text-stone-600 leading-tight">
                                 {feature}
                             </span>
                         </div>
@@ -255,7 +227,7 @@ export function ProductPrice({ price, originalPrice, priceDisplay, onlineDiscoun
                     Bottom area showing the gradient edge.
                     The Add to Cart component or trust badges will be placed here later.
                 */}
-                <div className="h-4 md:h-6" />
+                <div className="h-1" />
 
             </div>
         </div>

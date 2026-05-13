@@ -49,18 +49,18 @@ export function ProductComponentsSection({ components, basePath = '/thiet-bi-ve-
   if (resolved.length === 0) return null;
 
   return (
-    <div className="mt-2">
+    <div className="mt-0">
       {/* Section Header */}
-      <div className="flex items-center gap-2 mb-4">
+      <div className="flex items-center gap-2 mb-3">
         <Package className="w-5 h-5 text-stone-900" />
-        <h3 className="text-lg font-semibold text-stone-900">Trọn bộ sản phẩm bao gồm</h3>
+        <h3 className="text-base font-semibold text-stone-900">Trọn bộ sản phẩm</h3>
         <Badge variant="secondary" className="bg-stone-100 text-stone-600 hover:bg-stone-100 font-medium">
           {resolved.length} món
         </Badge>
       </div>
 
       {/* Component Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="flex flex-col gap-3">
         {resolved.map(({ child, child_sku, sort_order }) => {
           if (!child) return null;
           const displayName = child.display_name || child.name;

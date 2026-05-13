@@ -293,7 +293,7 @@ export const getAvailableFiltersBySubcategory = unstable_cache(
             ...(productType ? { product_type: productType } : {}),
         }
 
-        const [brands, features, colors] = await Promise.all([
+        const [brands, features, colors, materials, origins] = await Promise.all([
             prisma.brands.findMany({
                 where: { products: { some: productWhere }, is_active: true },
                 select: { name: true, slug: true, logo_url: true },
@@ -308,13 +308,22 @@ export const getAvailableFiltersBySubcategory = unstable_cache(
                 where: { products: { some: productWhere } },
                 select: { name: true, slug: true, hex_code: true }
             }),
+            prisma.materials.findMany({
+                where: { products: { some: productWhere } },
+                select: { name: true, slug: true },
+                orderBy: { sort_order: 'asc' }
+            }),
+            prisma.origins.findMany({
+                where: { products: { some: productWhere } },
+                select: { name: true, slug: true }
+            }),
         ])
 
         return {
             subcategories: [] as { name: string; slug: string; icon_name: string | null }[],
             brands,
-            materials: [] as { name: string; slug: string }[],
-            origins: [] as { name: string; slug: string }[],
+            materials,
+            origins,
             features,
             colors,
         }
@@ -336,6 +345,7 @@ export const getSubcategorySpecFilters = unstable_cache(
         // Only return filters with source='specs' that have options
         return defs
             .filter(d => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const opts = d.options as any
                 return opts && opts.source === 'specs' && Array.isArray(opts.values) && opts.values.length > 0
             })
@@ -343,6 +353,7 @@ export const getSubcategorySpecFilters = unstable_cache(
                 key: d.filter_key,
                 label: d.filter_label,
                 type: d.filter_type,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 values: (d.options as any).values as string[],
             }))
     },
@@ -482,7 +493,7 @@ export const getFeaturedProductsByCategorySlug = unstable_cache(
     async (categorySlug: string, brandSlugs?: string | string[] | null, subcategorySlug?: string | null, skip = 0, take = 20) => {
         const whereClause: Prisma.productsWhereInput = {
             is_active: true,
-            OR: [{ is_master: true }, { is_featured: true }, { sort_order: { gt: 0 } }],
+            is_home_featured: true,
             NOT: { product_type: { contains: 'phu-kien' } },
             categories: { slug: categorySlug },
         }
@@ -511,6 +522,8 @@ export const getFeaturedProductsByCategorySlug = unstable_cache(
                 select: {
                     id: true,
                     name: true,
+                    display_name: true,
+                    sku: true,
                     slug: true,
                     price: true,
                 original_price: true,
@@ -523,6 +536,7 @@ export const getFeaturedProductsByCategorySlug = unstable_cache(
                     categories: { select: { slug: true } },
                     subcategories: { select: { name: true, slug: true } },
                     brands: { select: { name: true, slug: true } },
+                    colors: { select: { name: true, hex_code: true, slug: true } },
                     product_feature_values: { select: { product_features: { select: { name: true, icon_name: true } } } },
                 },
             }),
@@ -561,6 +575,8 @@ export const getTopProductsPerBrand = unstable_cache(
                     select: {
                         id: true,
                         name: true,
+                        display_name: true,
+                        sku: true,
                         slug: true,
                         price: true,
                 original_price: true,
@@ -573,6 +589,7 @@ export const getTopProductsPerBrand = unstable_cache(
                         categories: { select: { slug: true } },
                         subcategories: { select: { name: true, slug: true } },
                         brands: { select: { name: true, slug: true } },
+                        colors: { select: { name: true, hex_code: true, slug: true } },
                         product_feature_values: { select: { product_features: { select: { name: true, icon_name: true } } } },
                     },
                 })
@@ -613,6 +630,37 @@ export const getNewArrivals = unstable_cache(
     },
     ['new-arrivals'],
     { revalidate: 3600, tags: ['products', 'new-arrivals'] }
+)
+
+// ─── CACHED: HOME FEATURED PRODUCTS ─────────────────────────────────────────
+
+export const getHomeFeaturedProducts = unstable_cache(
+    async (limit = 15) => {
+        const products = await prisma.products.findMany({
+            where: { is_active: true, is_home_featured: true },
+            orderBy: [{ sort_order: 'desc' }, { created_at: 'desc' }],
+            take: limit,
+            select: {
+                id: true,
+                name: true,
+                slug: true,
+                price: true,
+                original_price: true,
+                online_discount_amount: true,
+                price_display: true,
+                image_main_url: true,
+                is_promotion: true,
+                stock_status: true,
+                categories: { select: { name: true, slug: true } },
+                subcategories: { select: { name: true, slug: true } },
+                brands: { select: { name: true, slug: true } },
+                product_feature_values: { select: { product_features: { select: { name: true, icon_name: true } } } },
+            },
+        })
+        return products.map(p => ({ ...p, price: p.price ? Number(p.price) : null, original_price: p.original_price ? Number(p.original_price) : null }))
+    },
+    ['home-featured-products'],
+    { revalidate: 3600, tags: ['products', 'home-featured'] }
 )
 
 // ─── ADMIN: LIST ALL (with pagination + search, no RLS filter) ───────────────
@@ -675,6 +723,7 @@ export async function getAdminProducts(params: {
                 stock_status: true,
                 is_active: true,
                 is_featured: true,
+                is_home_featured: true,
                 is_promotion: true,
                 sort_order: true,
                 created_at: true,
@@ -721,6 +770,7 @@ export async function getAdminProductById(id: number) {
         include: { child: { select: { id: true, sku: true, name: true, price: true, image_main_url: true } } }
     })
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let variants: any[] = []
     if (p.variant_group) {
         const rawVariants = await prisma.products.findMany({

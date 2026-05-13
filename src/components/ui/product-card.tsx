@@ -8,9 +8,10 @@ export interface ProductCardProps {
     showPrice?: boolean;
     patternSlug?: string;
     basePath?: string;
+    href?: string;
 }
 
-export function ProductCard({ product, showPrice = true, patternSlug, basePath = '/gach-op-lat' }: ProductCardProps) {
+export function ProductCard({ product, showPrice = true, patternSlug, basePath = '/gach-op-lat', ...props }: ProductCardProps) {
     const isTBVS = basePath.includes('/thiet-bi-ve-sinh');
     const isBep = basePath.includes('/thiet-bi-bep');
     const isNuoc = basePath.includes('/vat-lieu-nuoc');
@@ -27,7 +28,7 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
         else slug = 'all';
     }
 
-    const href = `${basePath}/${slug}/${product.slug}`;
+    const resolvedHref = props.href || product.url || `${basePath}/${slug}/${product.slug}`;
 
     let images: string[] = [];
     try {
@@ -63,6 +64,21 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
     }
     const sku = product.sku || product.product_code || product.code || '';
 
+    let discountPercent = 0;
+    if (product.original_price && product.price && Number(product.original_price) > Number(product.price)) {
+        discountPercent = Math.round(((Number(product.original_price) - Number(product.price)) / Number(product.original_price)) * 100);
+    }
+
+    // Determine if product image should have margin (cutout/no-background)
+    // Tiles (gach-op-lat) usually have full backgrounds, so we keep them object-cover
+    const catSlug = product.category_slug || product.categories?.slug || basePath || '';
+    const isCutout = !catSlug.includes('gach-op-lat');
+
+    const imageClassName = cn(
+        "object-cover mix-blend-multiply transition-transform duration-700",
+        isCutout ? "object-contain p-4 md:p-6 group-hover:scale-110" : "object-cover group-hover:scale-105"
+    );
+
     // Extract feature tags
     let featuresList: string[] = [];
     if (Array.isArray(product.product_feature_values)) {
@@ -72,15 +88,39 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
     }
 
     return (
-        <Link href={href} className="group flex flex-col w-full h-full bg-white overflow-hidden transition-all duration-300 relative">
-            {/* Product Image — full top bleed */}
-            <div className="relative w-full aspect-square bg-[#F8F9FA] rounded-[12px] overflow-hidden shrink-0">
+        <Link href={resolvedHref} className="group flex flex-col w-full h-full transition-all duration-300 relative">
+            {product.is_featured && (
+                <>
+                    {/* Fading Border Wrapper */}
+                    <div className="absolute inset-0 w-full h-full bg-gradient-to-b from-amber-300/60 from-0% via-amber-100/20 via-[25%] to-transparent to-[50%] rounded-[16px] z-0 pointer-events-none p-[1px]">
+                        {/* Top Banner Background */}
+                        <div className="w-full h-[32px] bg-amber-50 shadow-[inset_0_2px_4px_rgba(217,119,6,0.06)] rounded-t-[15px]" />
+                    </div>
+                </>
+            )}
+            
+            {/* 32px Spacer / Banner Text */}
+            <div className="w-full h-[32px] flex items-center justify-center text-amber-700 text-[10px] font-bold uppercase tracking-widest rounded-t-[16px] z-10 shrink-0 pt-[2px]">
+                {product.is_featured ? <span className="relative z-20">Sản phẩm nổi bật</span> : null}
+            </div>
+            
+            <div className={cn(
+                "flex flex-col flex-1 relative z-20 h-full overflow-hidden",
+                product.is_featured ? "bg-white rounded-b-[15px] rounded-t-none mx-[1px] mb-[1px] w-[calc(100%-2px)]" : "bg-white rounded-[16px] w-full"
+            )}>
+                {/* Background filler to create a cohesive 3D effect behind the rounded image corners */}
+                {product.is_featured && (
+                    <div className="absolute top-0 left-0 w-full h-[24px] bg-amber-50 z-0" />
+                )}
+
+                {/* Product Image — full top bleed */}
+                <div className="relative w-full aspect-square bg-[#F8F9FA] rounded-[12px] overflow-hidden shrink-0 z-10">
                 {firstImage ? (
                     firstImage.includes('vietceramics.com') ? (
                         <img
                             src={firstImage}
                             alt={product.name}
-                            className="absolute inset-0 w-full h-full object-cover mix-blend-multiply transition-transform duration-700 group-hover:scale-105"
+                            className={cn("absolute inset-0 w-full h-full", imageClassName)}
                         />
                     ) : (
                         <Image
@@ -88,7 +128,7 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
                             alt={product.name}
                             fill
                             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                            className="object-cover mix-blend-multiply transition-transform duration-700 group-hover:scale-105"
+                            className={imageClassName}
                             unoptimized={firstImage.includes('vietceramics.com')}
                         />
                     )
@@ -99,48 +139,26 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
                     </div>
                 )}
                 
-                {/* Badges */}
-                <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-10 items-start">
-                    {(product.is_promotion || product.is_featured || (product.original_price && product.price && Number(product.original_price) > Number(product.price))) && (
-                        <div className="flex flex-wrap gap-1.5">
-                            {product.is_featured && (
-                                <span className="flex items-center px-2 py-[3px] text-[10px] font-bold uppercase tracking-wide text-white bg-gradient-to-r from-[#FF9800] to-[#FF5722] rounded-[4px] shadow-sm w-fit">
-                                    <svg className="w-2.5 h-2.5 mr-1 mb-[1px]" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
-                                    </svg>
-                                    Nổi bật
-                                </span>
-                            )}
-                            {(product.is_promotion || (product.original_price && product.price && Number(product.original_price) > Number(product.price))) && (
-                                <span className="flex items-center px-2 py-[3px] text-[10px] font-bold uppercase tracking-wide text-white bg-gradient-to-r from-[#FF0055] to-[#FF0033] rounded-[4px] shadow-sm w-fit">
-                                    <svg className="w-2.5 h-2.5 mr-1" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-                                    </svg>
-                                    Đang khuyến mãi
-                                </span>
-                            )}
+                {/* Discount Flag Badge */}
+                {(discountPercent > 0 || product.is_promotion) && (
+                    <div className="absolute top-4 left-0 z-20">
+                        <div className="bg-[#E53935] text-white font-bold text-[11px] px-2.5 py-[3px] rounded-r-md shadow-md flex items-center shadow-red-900/20 tracking-wider">
+                            {discountPercent > 0 ? `-${discountPercent}%` : 'SALE'}
                         </div>
-                    )}
-                </div>
+                    </div>
+                )}
 
-                {/* Quick Expand Button overlay (Hover state) */}
-                <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-20">
-                    <div className="bg-white/90 backdrop-blur-[2px] p-2 rounded-md shadow-sm text-neutral-700">
-                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
+                {/* Quick Action Overlay */}
+                <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10 pointer-events-none" />
+                <div className="absolute bottom-3 right-3 translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 z-20">
+                    <div className="bg-white text-brand-600 hover:bg-brand-600 hover:text-white p-2.5 rounded-full shadow-lg border border-brand-100 transition-colors">
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
                         </svg>
                     </div>
                 </div>
-                {/* Features overlay at bottom of image */}
-                {featuresList.length > 0 && (
-                    <div className="absolute bottom-2 left-2 right-2 flex flex-wrap gap-1 z-10 pointer-events-none">
-                        {featuresList.slice(0, 2).map((feat, idx) => (
-                            <span key={idx} className="px-1.5 py-[3px] text-[9px] font-semibold border border-white/40 bg-white/80 backdrop-blur-md text-neutral-700 rounded shadow-sm">
-                                {feat}
-                            </span>
-                        ))}
-                    </div>
-                )}
+
+
             </div>
 
             {/* Content Section */}
@@ -166,9 +184,20 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
                 </div>
 
                 {/* Title */}
-                <h3 className="font-medium text-[13px] leading-tight text-neutral-800 group-hover:text-[#2E7A96] transition-colors duration-200 line-clamp-2 mb-1.5">
+                <h3 className="font-semibold text-[14px] leading-[1.4] text-neutral-800 group-hover:text-brand-600 transition-colors duration-200 line-clamp-2 mb-1.5" title={product.display_name || product.name}>
                     {product.display_name || product.name}
                 </h3>
+
+                {/* Features Tags */}
+                {featuresList.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mb-2">
+                        {featuresList.slice(0, 3).map((feat, idx) => (
+                            <span key={idx} className="px-2 py-[3px] text-[10px] text-neutral-500 bg-transparent rounded-[4px] border border-neutral-200">
+                                {feat}
+                            </span>
+                        ))}
+                    </div>
+                )}
 
                 {/* Grow empty space to push tags & price to bottom so cards have equal height content */}
                 <div className="mt-auto"></div>
@@ -185,29 +214,24 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
                 )}
 
                 {/* Price */}
-                <div className="flex flex-col gap-1 mt-1 border-t border-neutral-100 pt-2.5">
+                <div className="flex flex-col gap-0.5 mt-1 border-t border-neutral-100 pt-3">
                     {showPrice && product.price ? (
                         <>
-                            {product.online_discount_amount && Number(product.online_discount_amount) > 0 && (
-                                <span className="px-2 py-[5px] mb-0.5 text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-[4px] leading-none whitespace-nowrap w-fit">
-                                    Giảm thêm {formatPrice(Number(product.online_discount_amount))} khi đặt online
-                                </span>
-                            )}
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                                <span className={`font-semibold text-[15px] sm:text-[16px] tracking-tight ${product.original_price && Number(product.original_price) > Number(product.price) ? 'text-red-600' : 'text-[#2E7A96]'}`}>
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <span className={`font-bold text-[17px] sm:text-[18px] tracking-tight ${product.original_price && Number(product.original_price) > Number(product.price) ? 'text-red-600' : 'text-brand-700'}`}>
                                     {formatPrice(Number(product.price))}
                                 </span>
                                 {product.original_price && Number(product.original_price) > Number(product.price) && (
-                                    <>
-                                        <span className="px-1 py-0.5 text-[9px] font-bold text-white bg-[#E53935] rounded-sm shadow-sm leading-none">
-                                            -{Math.round(((Number(product.original_price) - Number(product.price)) / Number(product.original_price)) * 100)}%
-                                        </span>
-                                        <span className="font-normal text-[11px] text-neutral-400 line-through">
-                                            {formatPrice(Number(product.original_price))}
-                                        </span>
-                                    </>
+                                    <span className="font-medium text-[13px] text-neutral-400 line-through">
+                                        {formatPrice(Number(product.original_price))}
+                                    </span>
                                 )}
                             </div>
+                            {product.online_discount_amount && Number(product.online_discount_amount) > 0 && (
+                                <span className="px-2 py-[5px] mt-0.5 text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-[4px] leading-none whitespace-nowrap w-fit">
+                                    Giảm thêm {formatPrice(Number(product.online_discount_amount))}
+                                </span>
+                            )}
                         </>
                     ) : (
                         <span className="font-semibold text-[14px] text-[#2E7A96] tracking-tight">
@@ -215,6 +239,7 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
                         </span>
                     )}
                 </div>
+            </div>
             </div>
         </Link>
     );
