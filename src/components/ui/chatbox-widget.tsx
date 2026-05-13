@@ -4,11 +4,13 @@ import { useState, useEffect, useRef } from "react";
 import { Send, X, Bot, User, Phone } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+import { siteConfig } from "@/config/site";
+
 // --- Rule-based Database ---
 const KNOWLEDGE_BASE = [
     {
         keywords: ["giá", "bao nhiêu", "bảng giá", "chi phí", "tiền"],
-        response: "Dạ, giá sản phẩm dao động tùy thuộc vào mẫu mã và thương hiệu. Để nhận báo giá chính xác kèm ưu đãi tốt nhất, anh/chị vui lòng gọi Hotline: 094 9349 949 ạ."
+        response: `Dạ, giá sản phẩm dao động tùy thuộc vào mẫu mã và thương hiệu. Để nhận báo giá chính xác kèm ưu đãi tốt nhất, anh/chị vui lòng gọi Hotline: ${siteConfig.contact.hotlineLabel} ạ.`
     },
     {
         keywords: ["địa chỉ", "ở đâu", "cửa hàng", "showroom"],
@@ -16,7 +18,7 @@ const KNOWLEDGE_BASE = [
     },
     {
         keywords: ["bảo hành", "sửa chữa", "lỗi"],
-        response: "Dạ, tất cả sản phẩm chính hãng tại Đông Phú Gia đều được bảo hành theo tiêu chuẩn của nhà sản xuất. Anh/chị cần hỗ trợ kỹ thuật vui lòng gọi Hotline: 0855 528 688."
+        response: `Dạ, tất cả sản phẩm chính hãng tại Đông Phú Gia đều được bảo hành theo tiêu chuẩn của nhà sản xuất. Anh/chị cần hỗ trợ kỹ thuật vui lòng gọi Phòng kinh doanh: ${siteConfig.contact.businessRoomLabel}.`
     },
     {
         keywords: ["giao hàng", "vận chuyển", "ship", "phí ship"],
@@ -24,13 +26,13 @@ const KNOWLEDGE_BASE = [
     },
     {
         keywords: ["có hàng", "còn hàng", "sẵn"],
-        response: "Dạ, để kiểm tra tồn kho chính xác của sản phẩm này, anh/chị vui lòng để lại SĐT hoặc gọi trực tiếp Hotline: 094 9349 949 giúp em nhé."
+        response: `Dạ, để kiểm tra tồn kho chính xác của sản phẩm này, anh/chị vui lòng để lại SĐT hoặc gọi trực tiếp Hotline: ${siteConfig.contact.hotlineLabel} giúp em nhé.`
     }
 ];
 
-const FALLBACK_RESPONSE = "Dạ, câu hỏi này hơi chuyên sâu. Anh/chị vui lòng gọi trực tiếp Hotline: 094 9349 949 hoặc 0855 528 688 để chuyên viên Đông Phú Gia tư vấn chi tiết hơn ạ!";
+const FALLBACK_RESPONSE = `Dạ, câu hỏi này hơi chuyên sâu. Anh/chị vui lòng gọi trực tiếp Hotline: ${siteConfig.contact.hotlineLabel} hoặc Phòng kinh doanh: ${siteConfig.contact.businessRoomLabel} để chuyên viên Đông Phú Gia tư vấn chi tiết hơn ạ!`;
 
-const INITIAL_MESSAGE = "Chào anh/chị! Em là trợ lý ảo của Đông Phú Gia. Anh/chị cần tư vấn về thiết bị vệ sinh, nhà bếp hay gạch ốp lát ạ? (Hotline hỗ trợ nhanh: 094 9349 949)";
+const INITIAL_MESSAGE = `Chào anh/chị! Em là trợ lý ảo của Đông Phú Gia. Anh/chị cần tư vấn về thiết bị vệ sinh, nhà bếp hay gạch ốp lát ạ? (Hotline hỗ trợ nhanh: ${siteConfig.contact.hotlineLabel})`;
 
 // --- Types ---
 type Message = {
@@ -185,7 +187,7 @@ export function ChatboxWidget({ isOpen, onClose }: ChatboxWidgetProps) {
 
             {/* Quick Actions / Hotlines */}
             <div className="px-4 py-2 bg-white border-t border-stone-100 flex items-center gap-2 overflow-x-auto scrollbar-hide">
-                <a href="tel:0949349949" className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 text-rose-700 rounded-full text-[11px] font-semibold shrink-0 hover:bg-rose-100 transition-colors">
+                <a href={`tel:${siteConfig.contact.hotline.split('-')[0]}`} className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 text-rose-700 rounded-full text-[11px] font-semibold shrink-0 hover:bg-rose-100 transition-colors">
                     <Phone className="w-3 h-3" /> Gọi Hotline
                 </a>
                 <button onClick={() => setInputValue("Xin báo giá")} className="px-3 py-1.5 bg-stone-100 text-stone-600 rounded-full text-[11px] font-medium shrink-0 hover:bg-stone-200 transition-colors">

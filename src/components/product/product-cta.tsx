@@ -10,6 +10,7 @@ import { formatPrice } from "@/lib/utils";
 import { useCartStore } from "@/lib/cart-store";
 import { useProductOptions } from "./product-options-context";
 import { toast } from "sonner";
+import { siteConfig } from "@/config/site";
 
 interface ProductCTAProps {
     productId: number;
@@ -285,17 +286,16 @@ export function ProductCTA({
                 </Dialog>
             </div>
 
-            {/* Row 2: Hotline (Tertiary Link) */}
             <div className="mt-3 flex justify-center">
                 <a
-                    href="tel:0855528688"
+                    href={`tel:${siteConfig.contact.businessRoom}`}
                     className="group flex items-center justify-center gap-2 text-[#2E7A96] font-semibold text-[13px] hover:text-[#1e586e] transition-colors"
                 >
                     <div className="relative flex items-center justify-center">
                         <span className="absolute w-6 h-6 rounded-full bg-[#2E7A96]/20 group-hover:animate-ping" />
                         <Phone className="w-4 h-4 relative z-10" />
                     </div>
-                    <span>Cần tư vấn ngay? <span className="underline decoration-[#2E7A96]/30 underline-offset-4 group-hover:decoration-[#2E7A96] transition-colors">Gọi 0855 528 688</span></span>
+                    <span>Cần tư vấn ngay? <span className="underline decoration-[#2E7A96]/30 underline-offset-4 group-hover:decoration-[#2E7A96] transition-colors">Liên hệ Phòng kinh doanh: {siteConfig.contact.businessRoomLabel}</span></span>
                 </a>
             </div>
 

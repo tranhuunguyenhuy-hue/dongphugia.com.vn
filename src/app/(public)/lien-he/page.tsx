@@ -97,12 +97,20 @@ export default function ContactPage() {
                                     <div className="flex shrink-0 items-center justify-center w-12 h-12 rounded-xl bg-white border border-neutral-200 text-[#2E7A96] shadow-sm">
                                         <Phone className="w-5 h-5 stroke-[1.5]" />
                                     </div>
-                                    <div className="flex flex-col pt-1">
-                                        <span className="text-sm font-medium text-neutral-500 uppercase tracking-widest mb-1.5">Hotline Tổng Đài</span>
-                                        <a href={`tel:${siteConfig.contact.phone}`} className="text-base text-neutral-900 font-bold hover:text-[#2E7A96] transition-colors">
-                                            {siteConfig.contact.hotlineLabel}
-                                        </a>
-                                        <span className="text-sm text-neutral-500 mt-0.5">CSKH - Sale - Tư vấn sản phẩm</span>
+                                    <div className="flex flex-col pt-1 gap-1">
+                                        <div>
+                                            <span className="text-[13px] font-medium text-neutral-500 uppercase tracking-widest block mb-0.5">Hotline Tổng Đài</span>
+                                            <a href={`tel:${siteConfig.contact.hotline.split('-')[0]}`} className="text-base text-neutral-900 font-bold hover:text-[#2E7A96] transition-colors">
+                                                {siteConfig.contact.hotlineLabel}
+                                            </a>
+                                        </div>
+                                        <div>
+                                            <span className="text-[13px] font-medium text-neutral-500 uppercase tracking-widest block mb-0.5 mt-2">Phòng Kinh Doanh</span>
+                                            <a href={`tel:${siteConfig.contact.businessRoom}`} className="text-base text-neutral-900 font-bold hover:text-[#2E7A96] transition-colors">
+                                                {siteConfig.contact.businessRoomLabel}
+                                            </a>
+                                            <span className="text-[13px] text-neutral-500 block mt-0.5">CSKH - Sale - Tư vấn sản phẩm</span>
+                                        </div>
                                     </div>
                                 </div>
 

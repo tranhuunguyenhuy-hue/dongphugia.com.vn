@@ -53,16 +53,16 @@ export default async function OrderSuccessPage({ searchParams }: Props) {
                     </div>
                     <div className="flex items-start gap-3">
                         <div className="w-6 h-6 rounded-full bg-[#2E7A96] text-white text-xs flex items-center justify-center font-bold shrink-0 mt-0.5">3</div>
-                        <p className="text-sm text-neutral-700">Bạn cũng có thể liên hệ trực tiếp qua hotline để được hỗ trợ ngay.</p>
+                        <p className="text-sm text-neutral-700">Bạn cũng có thể liên hệ trực tiếp qua Phòng kinh doanh để được hỗ trợ ngay.</p>
                     </div>
                 </div>
 
                 {/* Actions */}
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                    <a href={`tel:${siteConfig.contact.phone}`}>
+                    <a href={`tel:${siteConfig.contact.businessRoom}`}>
                         <Button variant="outline" className="w-full sm:w-auto border-[#2E7A96] text-[#2E7A96] hover:bg-[#2E7A96] hover:text-white gap-2">
                             <Phone className="w-4 h-4" />
-                            Gọi {siteConfig.contact.phoneLabel}
+                            Phòng KD: {siteConfig.contact.businessRoomLabel}
                         </Button>
                     </a>
                     <Link href="/">
