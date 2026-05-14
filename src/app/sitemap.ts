@@ -16,11 +16,20 @@ export async function generateSitemaps() {
     return sitemaps;
 }
 
-export default async function sitemap({ id }: { id: number }): Promise<MetadataRoute.Sitemap> {
+export default async function sitemap({ id }: { id?: number | string }): Promise<MetadataRoute.Sitemap> {
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.dongphugia.com.vn";
+    
+    // Prevent NaN or undefined id
+    let sitemapId = 0;
+    if (id !== undefined && id !== null) {
+        const parsed = parseInt(String(id), 10);
+        if (!isNaN(parsed)) {
+            sitemapId = parsed;
+        }
+    }
 
     // Static pages and Blog posts (id = 0)
-    if (id === 0) {
+    if (sitemapId === 0) {
         const staticPages: MetadataRoute.Sitemap = [
             { url: baseUrl, lastModified: new Date(), changeFrequency: "daily", priority: 1 },
             { url: `${baseUrl}/gach-op-lat`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.9 },
@@ -54,14 +63,15 @@ export default async function sitemap({ id }: { id: number }): Promise<MetadataR
         return [...staticPages, ...blogPages];
     }
 
-    // Product pages (id > 0)
+    // Product pages (sitemapId > 0)
     const limit = 1000;
-    const skip = (id - 1) * limit;
+    let skip = (sitemapId - 1) * limit;
+    if (skip < 0) skip = 0;
 
     const products = await prisma.products.findMany({
         where: { is_active: true },
         select: { slug: true, updated_at: true, categories: { select: { slug: true } }, subcategories: { select: { slug: true } } },
-        skip,
+        skip: skip,
         take: limit,
         orderBy: { id: 'asc' }
     });
