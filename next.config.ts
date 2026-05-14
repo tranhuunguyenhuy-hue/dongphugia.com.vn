@@ -81,7 +81,7 @@ const nextConfig: NextConfig = {
     const sitemapRedirects = [
       {
         source: '/sitemap_product_:id.xml',
-        destination: '/sitemap.xml',
+        destination: '/sitemap-:id.xml',
         permanent: true,
       }
     ];
