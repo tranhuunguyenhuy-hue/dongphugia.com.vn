@@ -88,6 +88,14 @@ export function ProductDetailTabs({
 
     useEffect(() => {
         if (activeTab === 'info' && infoContentRef.current) {
+            // Tự động ẩn các hình ảnh bị lỗi/bị xóa khỏi CDN (Ví dụ: Banner quảng cáo đã xóa)
+            const images = infoContentRef.current.querySelectorAll('img');
+            images.forEach(img => {
+                img.onerror = function() {
+                    (this as HTMLImageElement).style.display = 'none';
+                };
+            });
+
             // Check if content exceeds our max-height of 500px
             if (infoContentRef.current.scrollHeight > 500) {
                 setShowInfoToggle(true);
