@@ -58,10 +58,6 @@ const nextConfig: NextConfig = {
         source: '/admin/tin-tuc/:path*',
         destination: '/admin/blog/:path*',
       },
-      {
-        source: '/sitemap_product_:id.xml',
-        destination: '/api/sitemap/:id',
-      },
     ]
   },
 
@@ -81,7 +77,16 @@ const nextConfig: NextConfig = {
       permanent: true,
     }))
 
-    return categoryRedirects
+    // Redirect legacy sitemaps to the new main sitemap index
+    const sitemapRedirects = [
+      {
+        source: '/sitemap_product_:id.xml',
+        destination: '/sitemap.xml',
+        permanent: true,
+      }
+    ];
+
+    return [...categoryRedirects, ...sitemapRedirects];
   },
 
   // LEO-392 Security Headers (SECURITY_AUDIT.md — P2)
@@ -105,4 +110,3 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
-
