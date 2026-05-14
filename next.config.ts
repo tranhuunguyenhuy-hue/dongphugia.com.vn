@@ -58,6 +58,10 @@ const nextConfig: NextConfig = {
         source: '/admin/tin-tuc/:path*',
         destination: '/admin/blog/:path*',
       },
+      {
+        source: '/sitemap_product_:id.xml',
+        destination: '/api/sitemap/:id',
+      },
     ]
   },
 

@@ -6,4 +6,7 @@ Disallow: /admin/
 Disallow: /admin
 Disallow: /api/
 
-Sitemap: https://dongphugia.vn/sitemap.xml
+Sitemap: https://dongphugia.com.vn/sitemap.xml
+Sitemap: https://dongphugia.com.vn/sitemap_product_1.xml
+Sitemap: https://dongphugia.com.vn/sitemap_product_2.xml
+Sitemap: https://dongphugia.com.vn/sitemap_product_3.xml
