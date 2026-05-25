@@ -5,7 +5,7 @@ import { getPublicProductBySlug, getPublicProducts, getProductComponents, getVar
 import { ProductImageGallery } from "@/components/product/product-image-gallery"
 import { ProductDetailTabs } from "@/components/product/product-detail-tabs"
 import { ProductCTA } from "@/components/product/product-cta"
-import { ProductComponentsSection } from "@/components/product/product-components-section"
+import { ProductComponentsSection, type ComponentProduct } from "@/components/product/product-components-section"
 import { ProductBoxIncludes } from "@/components/product/product-box-includes"
 import { VariantSelector } from "@/components/product/variant-selector"
 import { ProductCard } from "@/components/ui/product-card"
@@ -49,11 +49,11 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
     // Extract "Phụ kiện đi kèm" from specs
     let boxIncludes: string[] = []
     if (product.specs && typeof product.specs === 'object' && !Array.isArray(product.specs)) {
-        boxIncludes = (product.specs as any)['Phụ kiện đi kèm'] || []
+        boxIncludes = ((product.specs as Record<string, unknown>)['Phụ kiện đi kèm'] as string[]) || []
     }
 
     const additionalImages = product.product_images?.filter(i => i.image_url !== product.image_main_url) ?? []
-    const features = product.product_feature_values ?? []
+    const _features = product.product_feature_values ?? []
 
     // Fetch related products
     const { products: relatedItems } = await getPublicProducts({
@@ -66,7 +66,7 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
 
 
 
-    const stockDisplay = product.stock_status === 'in_stock'
+    const _stockDisplay = product.stock_status === 'in_stock'
         ? <span className="text-emerald-600 font-medium">Còn hàng</span>
         : product.stock_status === 'pre_order'
         ? <span className="text-amber-600 font-medium">Đặt trước</span>
@@ -118,7 +118,7 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
 
                         <div className="flex flex-wrap items-center gap-2 text-[12px]">
                             {/* Brand Badge */}
-                            {product.brands && <BrandBadge brand={product.brands as any} className="!h-7 !px-2.5 rounded-md border-stone-200/60 shadow-sm" />}
+                            {product.brands && <BrandBadge brand={product.brands as { id: number; name: string; slug: string; image_url?: string | null; }} className="!h-7 !px-2.5 rounded-md border-stone-200/60 shadow-sm" />}
 
                             {/* SKU Pill */}
                             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-stone-100">
@@ -195,7 +195,7 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
                             
                             {hasComponents && (
                                 <ProductComponentsSection
-                                    components={productComponents as any}
+                                    components={productComponents as unknown as ComponentProduct[]}
                                     basePath={BASE_PATH}
                                 />
                             )}

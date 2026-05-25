@@ -11,7 +11,7 @@ import { ImageUploader } from '@/components/ui/image-uploader'
 const TIER_OPTIONS = ['Vàng', 'Bạch kim', 'Đồng']
 
 interface PartnerFormProps {
-    partner?: any
+    partner?: { id: number; name: string; logo_url: string; description?: string | null; tier: string; gradient_class?: string | null; link_url?: string | null; is_active: boolean; sort_order: number; } | null
 }
 
 export function PartnerForm({ partner }: PartnerFormProps) {
@@ -30,7 +30,7 @@ export function PartnerForm({ partner }: PartnerFormProps) {
         sort_order: partner?.sort_order?.toString() || '0',
     })
 
-    const set = (key: string, value: any) => setForm(p => ({ ...p, [key]: value }))
+    const set = (key: string, value: string | boolean | number) => setForm(p => ({ ...p, [key]: value }))
 
     const onSubmit = (e: React.FormEvent) => {
         e.preventDefault()

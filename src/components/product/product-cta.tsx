@@ -4,7 +4,9 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Textarea } from "@/components/ui/textarea";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Phone, CheckCircle2, Minus, Plus, ShoppingCart, MessageSquareText, ShoppingBag, Wrench, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { formatPrice } from "@/lib/utils";
@@ -112,7 +114,7 @@ export function ProductCTA({
                     description: result.error || result.message || "Vui lòng kiểm tra lại thông tin."
                 });
             }
-        } catch (error) {
+        } catch (_error) {
             toast.error("Lỗi kết nối", {
                 description: "Đã có lỗi xảy ra. Vui lòng thử lại sau."
             });

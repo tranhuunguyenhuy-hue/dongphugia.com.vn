@@ -71,12 +71,8 @@ export async function POST(request: NextRequest) {
         const publicUrl = `https://${BUNNY_CDN_HOST}/${filePath}`
 
         return NextResponse.json({ url: publicUrl }, { status: 200 })
-    } catch (err: any) {
-        console.error('[upload-image] Unexpected error:', err)
-        return NextResponse.json(
-            { error: 'Lỗi server: ' + err.message },
-            { status: 500 }
-        )
+    } catch (err: unknown) {
+        console.error('Lỗi API upload:', err)
+        return NextResponse.json({ error: err instanceof Error ? err.message : String(err) }, { status: 500 })
     }
 }
-

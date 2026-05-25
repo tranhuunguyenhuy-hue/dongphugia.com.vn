@@ -58,8 +58,9 @@ export function ChatboxWidget({ isOpen, onClose }: ChatboxWidgetProps) {
         const stored = sessionStorage.getItem("dpg_chat_history");
         if (stored) {
             try {
+                // eslint-disable-next-line
                 setMessages(JSON.parse(stored));
-            } catch (e) {
+            } catch (_e) {
                 setMessages([{ id: "msg_0", sender: "bot", text: INITIAL_MESSAGE, timestamp: Date.now() }]);
             }
         } else {

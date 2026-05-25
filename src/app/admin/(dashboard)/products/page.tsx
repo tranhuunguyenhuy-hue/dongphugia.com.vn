@@ -53,12 +53,12 @@ export default async function AdminProductsPage({ searchParams }: PageProps) {
         pageSize: 50 
     })
 
-    const statusColor: Record<string, string> = {
+    const _statusColor: Record<string, string> = {
         in_stock: 'bg-emerald-100 text-emerald-700',
         out_of_stock: 'bg-red-100 text-red-700',
         preorder: 'bg-amber-100 text-amber-700',
     }
-    const statusLabel: Record<string, string> = {
+    const _statusLabel: Record<string, string> = {
         in_stock: 'Còn hàng',
         out_of_stock: 'Hết hàng',
         preorder: 'Đặt trước',

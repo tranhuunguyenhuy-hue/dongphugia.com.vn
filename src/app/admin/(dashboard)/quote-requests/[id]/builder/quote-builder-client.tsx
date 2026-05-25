@@ -14,12 +14,35 @@ import { Textarea } from '@/components/ui/textarea'
 import { ArrowLeft, Printer, Save, CheckCircle } from 'lucide-react'
 import { updateQuoteData, completeQuote } from './actions'
 
-export function QuoteBuilderClient({ quote }: { quote: any }) {
+interface QuoteData {
+    id: number;
+    quote_number?: string;
+    name?: string;
+    phone?: string;
+    email?: string;
+    vat_rate?: number;
+    shipping_fee?: number;
+    admin_notes?: string;
+    quote_items: {
+        id: number;
+        quantity: number;
+        admin_unit_price?: number;
+        admin_quantity?: number;
+        products: {
+            name: string;
+            sku: string;
+            price?: number | null;
+            original_price?: number | null;
+        }
+    }[];
+}
+
+export function QuoteBuilderClient({ quote }: { quote: QuoteData }) {
     const router = useRouter()
     const printRef = useRef<HTMLDivElement>(null)
 
     // Format initial items to match our schema needs
-    const initialItems = quote.quote_items.map((qi: any) => ({
+    const initialItems = quote.quote_items.map((qi) => ({
         id: qi.id,
         name: qi.products.name,
         sku: qi.products.sku,
@@ -125,7 +148,7 @@ export function QuoteBuilderClient({ quote }: { quote: any }) {
                             <CardTitle className="text-base">Danh sách sản phẩm</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            {items.map((item: any, idx: number) => (
+                            {items.map((item: { id: number, name: string, sku: string, price: number, quantity: number, admin_unit_price: number, admin_quantity: number }, idx: number) => (
                                 <div key={item.id} className="p-4 border rounded-lg bg-slate-50 space-y-3">
                                     <div>
                                         <p className="font-medium text-sm line-clamp-1" title={item.name}>{item.name}</p>

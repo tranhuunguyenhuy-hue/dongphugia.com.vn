@@ -30,7 +30,7 @@ export default async function ThietBiBepPage({ searchParams }: PageProps) {
     const activeBrands = params.brands?.split(",").filter(Boolean) ?? []
     const [priceMin, priceMax] = params.price?.split("-").map(Number) ?? []
 
-    const featuredWhere: any = {
+    const featuredWhere: import('@prisma/client').Prisma.productsWhereInput = {
         categories: { slug: CATEGORY_SLUG },
         is_featured: true,
         is_active: true,

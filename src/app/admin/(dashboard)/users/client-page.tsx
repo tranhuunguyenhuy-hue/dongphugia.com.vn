@@ -16,8 +16,18 @@ import { UserFormModal } from './user-form'
 import type { AdminRole } from '@/lib/auth/permissions'
 import { ROLE_LABELS, ROLE_COLORS } from '@/lib/auth/permissions'
 
-export function UsersClient({ users }: { users: any[] }) {
-    const [selectedUser, setSelectedUser] = useState<any | null>(null)
+interface User {
+    id: number;
+    name: string;
+    email: string;
+    username: string | null;
+    role: string;
+    is_active: boolean;
+    last_login_at: Date | null;
+}
+
+export function UsersClient({ users }: { users: User[] }) {
+    const [selectedUser, setSelectedUser] = useState<User | null>(null)
     const [isModalOpen, setIsModalOpen] = useState(false)
 
     const openCreate = () => {
@@ -25,7 +35,7 @@ export function UsersClient({ users }: { users: any[] }) {
         setIsModalOpen(true)
     }
 
-    const openEdit = (user: any) => {
+    const openEdit = (user: User) => {
         setSelectedUser(user)
         setIsModalOpen(true)
     }

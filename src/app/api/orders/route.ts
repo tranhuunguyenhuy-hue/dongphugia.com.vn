@@ -96,9 +96,9 @@ export async function POST(req: NextRequest) {
                         },
                     },
                 })
-            } catch (err: any) {
-                // P2002 = unique constraint violation → retry
-                if (err?.code === 'P2002') continue
+            } catch (err: unknown) {
+                console.error("Order completion failed:", err)
+                if (typeof err === 'object' && err !== null && (err as { code?: string }).code === 'P2002') continue
                 throw err
             }
         }

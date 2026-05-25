@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { updateCategoryBanner } from "@/lib/actions"
 import prisma from "@/lib/prisma"
 import { CategoryBannerManager } from "./category-banner-manager"

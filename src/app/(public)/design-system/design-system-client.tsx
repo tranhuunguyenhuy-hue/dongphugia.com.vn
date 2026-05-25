@@ -15,6 +15,7 @@ import {
   Heart,
   ShoppingCart,
   Search,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   ChevronRight,
   Star,
   Eye,

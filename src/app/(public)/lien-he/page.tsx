@@ -39,7 +39,7 @@ export default function ContactPage() {
                     description: result.error || "Vui lòng thiết lập lại thông tin."
                 });
             }
-        } catch (error) {
+        } catch (_error) {
             toast.error("Lỗi hệ thống", {
                 description: "Đã có lỗi xảy ra. Vui lòng thử lại sau."
             });

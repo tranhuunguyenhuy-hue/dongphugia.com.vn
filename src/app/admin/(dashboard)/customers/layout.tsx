@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation'
 export default async function CustomersLayout({ children }: { children: React.ReactNode }) {
     try {
         await requirePermission('customers:read')
-    } catch (e) {
+    } catch (_e) {
         redirect('/admin')
     }
     return children

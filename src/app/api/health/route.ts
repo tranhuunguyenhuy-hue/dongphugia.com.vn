@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic'
 
 export async function GET() {
     const start = Date.now()
-    let dbStatus: any = { ok: false }
+    let dbStatus: Record<string, unknown> = { ok: false }
 
     try {
         const productCount = await prisma.products.count({ where: { is_active: true } })
@@ -15,11 +15,11 @@ export async function GET() {
             categories: categoryCount,
             queryTime: Date.now() - start,
         }
-    } catch (e: any) {
+    } catch (e: unknown) {
         dbStatus = {
             ok: false,
-            error: e.message,
-            code: e.code,
+            error: e instanceof Error ? e.message : String(e),
+            code: typeof e === 'object' && e !== null ? (e as { code?: string }).code : undefined,
             queryTime: Date.now() - start,
         }
     }

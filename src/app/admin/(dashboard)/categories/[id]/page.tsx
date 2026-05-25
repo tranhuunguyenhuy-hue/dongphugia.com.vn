@@ -33,7 +33,7 @@ export default async function EditCategoryPage({ params }: PageProps) {
 
     // Banners count/preview - fetch from marketing content in the future.
     // For now, we simulate fetching banners.
-    const activeBanners: any[] = []
+    const activeBanners: { id: number; title: string | null; image_url: string; link_url: string | null; is_active: boolean; }[] = []
 
     return (
         <div className="space-y-6">
