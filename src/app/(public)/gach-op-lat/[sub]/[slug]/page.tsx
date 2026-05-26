@@ -12,7 +12,6 @@ import { BrandBadge } from "@/components/ui/brand-badge"
 import { ProductPrice } from "@/components/product/product-price"
 import { JsonLd } from "@/components/seo/json-ld"
 import { buildProductSchema, buildBreadcrumbSchema } from "@/lib/seo/schema"
-import prisma from "@/lib/prisma"
 
 export const revalidate = 21600
 export const dynamicParams = true
@@ -21,15 +20,6 @@ const CATEGORY_SLUG = "gach-op-lat"
 const CATEGORY_NAME = "Gạch Ốp Lát"
 const BASE_PATH = "/gach-op-lat"
 
-export async function generateStaticParams(): Promise<{ sub: string; slug: string }[]> {
-    const products = await prisma.products.findMany({
-        where: { categories: { slug: CATEGORY_SLUG }, is_active: true },
-        select: { slug: true, subcategories: { select: { slug: true } } },
-    })
-    return products
-        .filter((p) => p.subcategories?.slug)
-        .map((p) => ({ sub: p.subcategories!.slug, slug: p.slug }))
-}
 
 interface PageProps {
     params: Promise<{ sub: string; slug: string }>
