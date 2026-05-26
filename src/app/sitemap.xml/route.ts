@@ -4,7 +4,8 @@ import prisma from '@/lib/prisma';
 export const revalidate = 86400; // 24 hours
 
 export async function GET() {
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.dongphugia.com.vn';
+    // Canonical base — no www, no trailing slash
+    const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://dongphugia.com.vn').replace(/\/$/, '');
     const totalProducts = await prisma.products.count({ where: { is_active: true } });
     const PAGE_SIZE = 2000;
     const sitemapsCount = Math.ceil(totalProducts / PAGE_SIZE);

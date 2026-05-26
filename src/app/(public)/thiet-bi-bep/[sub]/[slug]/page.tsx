@@ -10,16 +10,31 @@ import { ProductBoxIncludes } from "@/components/product/product-box-includes"
 import { ProductCard } from "@/components/ui/product-card"
 import { BrandBadge } from "@/components/ui/brand-badge"
 import { ProductPrice } from "@/components/product/product-price"
+import { JsonLd } from "@/components/seo/json-ld"
+import { buildProductSchema, buildBreadcrumbSchema } from "@/lib/seo/schema"
+import prisma from "@/lib/prisma"
 
 export const revalidate = 1800
+export const dynamicParams = true
+
+const CATEGORY_SLUG = "thiet-bi-bep"
+const CATEGORY_NAME = "Thiết Bị Bếp"
+const BASE_PATH = "/thiet-bi-bep"
+
+export async function generateStaticParams(): Promise<{ sub: string; slug: string }[]> {
+    const products = await prisma.products.findMany({
+        where: { categories: { slug: CATEGORY_SLUG }, is_active: true },
+        select: { slug: true, subcategories: { select: { slug: true } } },
+    })
+    return products
+        .filter((p) => p.subcategories?.slug)
+        .map((p) => ({ sub: p.subcategories!.slug, slug: p.slug }))
+}
 
 interface PageProps {
     params: Promise<{ sub: string; slug: string }>
 }
 
-const CATEGORY_SLUG = "thiet-bi-bep"
-const CATEGORY_NAME = "Thiết Bị Bếp"
-const BASE_PATH = "/thiet-bi-bep"
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
     const { slug } = await params
@@ -28,6 +43,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return {
         title: `${product.name} | ${CATEGORY_NAME} | Đông Phú Gia`,
         description: product.description?.slice(0, 160) || `${product.name} - Chính hãng tại Đông Phú Gia Đà Lạt.`,
+        alternates: { canonical: `${BASE_PATH}/${slug}` },
+        openGraph: {
+            title: `${product.name} | Đông Phú Gia`,
+            description: product.description?.slice(0, 160) || `${product.name} - Chính hãng tại Đông Phú Gia Đà Lạt.`,
+            images: product.image_main_url
+                ? [{ url: product.image_main_url, width: 800, height: 600, alt: product.name }]
+                : [],
+        },
     }
 }
 
@@ -66,6 +89,28 @@ export default async function ProductDetailPage({ params }: PageProps) {
 
     return (
         <main className="u-container pt-8 pb-28 lg:py-12">
+            {/* JSON-LD Structured Data */}
+            <JsonLd data={buildProductSchema({
+                name: product.name,
+                description: product.description,
+                sku: product.sku,
+                image_main_url: product.image_main_url,
+                price: Number(product.price),
+                stock_status: product.stock_status,
+                brands: product.brands,
+                slug: product.slug,
+                categorySlug: CATEGORY_SLUG,
+                subcategorySlug: product.subcategories?.slug,
+            })} />
+            <JsonLd data={buildBreadcrumbSchema([
+                { name: "Trang chủ", url: "/" },
+                { name: CATEGORY_NAME, url: BASE_PATH },
+                ...(product.subcategories
+                    ? [{ name: product.subcategories.name, url: `${BASE_PATH}/${product.subcategories.slug}` }]
+                    : []),
+                { name: product.name, url: `${BASE_PATH}/${sub}/${product.slug}` },
+            ])} />
+
             {/* Breadcrumb */}
             <nav className="flex items-center gap-1.5 text-[11px] text-stone-500 mb-5 overflow-x-auto whitespace-nowrap scrollbar-hide" aria-label="Breadcrumb">
                 <Link href="/" className="hover:text-stone-900 transition-colors shrink-0">Trang chủ</Link>
