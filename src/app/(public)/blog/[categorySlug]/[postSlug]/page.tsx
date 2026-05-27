@@ -16,7 +16,7 @@ export async function generateMetadata({ params }: { params: Promise<{ postSlug:
     if (!post) return { title: 'Bài viết không tồn tại' }
 
     return {
-        title: `${post.title} | Blog Đông Phú Gia`,
+        title: post.title,
         description: post.excerpt,
         openGraph: {
             title: post.title,

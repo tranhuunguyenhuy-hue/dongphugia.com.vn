@@ -14,7 +14,7 @@ export async function generateMetadata({ params }: { params: Promise<{ categoryS
     if (!category) return { title: 'Không tìm thấy chuyên mục' }
 
     return {
-        title: `${category.name} | Blog Đông Phú Gia`,
+        title: category.name,
         description: category.description || `Các bài viết mới nhất thuộc chuyên mục ${category.name}`
     }
 }

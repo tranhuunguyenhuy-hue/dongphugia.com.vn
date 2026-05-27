@@ -32,7 +32,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     })
     if (!subcategory) return { title: `${CATEGORY_NAME}` }
     return {
-        title: `${subcategory.name} | ${CATEGORY_NAME}`,
+        title: subcategory.name,
         description: subcategory.description || `${subcategory.name} cao cấp chính hãng tại Đông Phú Gia Đà Lạt.`,
     }
 }

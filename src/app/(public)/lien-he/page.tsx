@@ -242,11 +242,13 @@ export default function ContactPage() {
                     <iframe
                         src="https://maps.google.com/maps?q=vlxd+dong+phu+gia+da+lat+lam+dong&output=embed"
                         width="100%"
-                        height="400"
+                        height="100%"
                         style={{ border: 0 }}
                         allowFullScreen
                         loading="lazy"
                         referrerPolicy="no-referrer-when-downgrade"
+                        title="Bản đồ đường đi Showroom Đông Phú Gia"
+                        className="grayscale-[0.2] contrast-[0.9] opacity-90 transition-all duration-700 hover:grayscale-0 hover:opacity-100 hover:contrast-100"
                     />
                 </div>
             </div>
