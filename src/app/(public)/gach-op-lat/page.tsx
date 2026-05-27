@@ -11,7 +11,7 @@ import { SubcategoryIconGrid } from "@/components/category/subcategory-icon-grid
 export const revalidate = 3600
 
 export const metadata: Metadata = {
-    title: "Gạch Ốp Lát | Đông Phú Gia",
+    title: "Gạch Ốp Lát",
     description: "Gạch ceramic, porcelain, đá ốp lát từ Vietceramics. Đa dạng kích thước.",
     keywords: ["gạch ốp lát", "gạch ceramic", "gạch porcelain", "Vietceramics", "Đà Lạt"],
 }

@@ -11,7 +11,7 @@ import { SubcategoryIconGrid } from "@/components/category/subcategory-icon-grid
 export const revalidate = 3600
 
 export const metadata: Metadata = {
-    title: "Vật Liệu Nước | Đông Phú Gia",
+    title: "Vật Liệu Nước",
     description: "Máy nước nóng, máy lọc nước, bồn chứa, máy bơm từ các thương hiệu uy tín tại Đà Lạt.",
     keywords: ["vật liệu nước", "máy nước nóng", "máy lọc nước", "Đà Lạt"],
 }

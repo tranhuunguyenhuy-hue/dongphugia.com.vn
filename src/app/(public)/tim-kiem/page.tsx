@@ -47,9 +47,9 @@ interface SearchResponse {
 
 export async function generateMetadata({ searchParams }: { searchParams: Promise<{ q?: string }> }): Promise<Metadata> {
     const { q } = await searchParams
-    if (!q) return { title: 'Tìm kiếm sản phẩm | Đông Phú Gia' }
+    if (!q) return { title: 'Tìm kiếm sản phẩm' }
     return {
-        title: `Kết quả tìm kiếm "${q}" | Đông Phú Gia`,
+        title: `Kết quả tìm kiếm "${q}"`,
         description: `Kết quả tìm kiếm cho "${q}" tại Đông Phú Gia — Thiết bị vệ sinh, gạch ốp lát, thiết bị bếp chính hãng.`,
         robots: { index: false, follow: true },
     }
