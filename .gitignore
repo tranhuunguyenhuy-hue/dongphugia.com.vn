@@ -149,3 +149,8 @@ scripts/variant-pipeline/output/
 
 # Product exports
 exports/
+
+# Scratch workspace (temp scripts, logs — local only)
+scratch/
+output/
+ORIGINAL_REQUEST.md

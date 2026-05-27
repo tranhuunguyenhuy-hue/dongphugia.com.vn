@@ -54,6 +54,10 @@ export const rateLimiter = new RateLimiter()
 /**
  * Extract the real client IP from Vercel's x-forwarded-for header.
  * Falls back to 'unknown' (still rate-limited as a group).
+ *
+ * Trust model: On Vercel, x-forwarded-for is injected by infrastructure
+ * and cannot be spoofed by the client. On custom deployments, ensure your
+ * reverse proxy strips/overwrites this header before it reaches the app.
  */
 export function getClientIp(req: NextRequest): string {
     const forwarded = req.headers.get('x-forwarded-for')
@@ -69,4 +73,8 @@ export const RATE_LIMITS = {
     quoteGet: { maxReqs: 10, windowMs: 60_000 },
     // Quote submission: 5 req/min per IP (anti-spam)
     quotePost: { maxReqs: 5, windowMs: 60_000 },
+    // Order submission: 5 req/min per IP (anti-spam, prevent fake orders)
+    ordersPost: { maxReqs: 5, windowMs: 60_000 },
+    // Product search: 30 req/min per IP (generous for UX, prevent compute abuse)
+    searchGet: { maxReqs: 30, windowMs: 60_000 },
 } as const

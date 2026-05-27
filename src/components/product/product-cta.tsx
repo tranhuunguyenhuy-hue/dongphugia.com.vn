@@ -12,6 +12,9 @@ import { useCartStore } from "@/lib/cart-store";
 import { useProductOptions } from "./product-options-context";
 import { toast } from "sonner";
 import { siteConfig } from "@/config/site";
+import { ViewItemTracker } from "@/components/tracking/view-item-tracker";
+import { trackGenerateLead } from "@/lib/tracking";
+
 
 interface ProductCTAProps {
     productId: number;
@@ -107,6 +110,7 @@ export function ProductCTA({
             const result = await res.json();
             if (result.success) {
                 setIsSuccess(true);
+                trackGenerateLead('quote_form_submit');
             } else {
                 toast.error("Không thể gửi yêu cầu", {
                     description: result.error || result.message || "Vui lòng kiểm tra lại thông tin."
@@ -138,6 +142,14 @@ export function ProductCTA({
 
     return (
         <div className="flex flex-col gap-3">
+            <ViewItemTracker item={{
+                item_id: productSku || productId.toString(),
+                item_name: productName,
+                price: price || 0,
+                item_category: categorySlug,
+                item_brand: brandName || undefined
+            }} />
+            
             {/* Row 1: Add to Cart + Quote/Order */}
             <div className="flex gap-3">
                 {/* Add to Cart — primary if has price */}
@@ -152,7 +164,7 @@ export function ProductCTA({
                 )}
 
                 {/* Quote / Order Dialog */}
-                <Dialog open={isOpen} onOpenChange={setIsOpen}>
+                <Dialog open={isOpen} onOpenChange={(open) => { setIsOpen(open); if(open) trackGenerateLead('quote_cta'); }}>
                     <DialogTrigger asChild>
                         {hasPrice ? (
                             <Button
@@ -290,6 +302,7 @@ export function ProductCTA({
             <div className="mt-3 flex justify-center">
                 <a
                     href={`tel:${siteConfig.contact.businessRoom}`}
+                    onClick={() => trackGenerateLead('business_room_hotline')}
                     className="group flex items-center justify-center gap-2 text-[#2E7A96] font-semibold text-[13px] hover:text-[#1e586e] transition-colors"
                 >
                     <div className="relative flex items-center justify-center">
@@ -355,7 +368,7 @@ export function ProductCTA({
                         </Button>
                     ) : (
                         <Button 
-                            onClick={() => setIsOpen(true)}
+                            onClick={() => { setIsOpen(true); trackGenerateLead('quote_cta_mobile'); }}
                             className="w-full h-12 bg-gradient-to-r from-[#2E7A96] to-[#1e586e] hover:brightness-110 !text-white text-[15px] font-semibold rounded-xl shadow-[0_4px_14px_rgba(46,122,150,0.25)] transition-all duration-300 gap-2 border-0"
                         >
                             <MessageSquareText className="w-[18px] h-[18px]" />

@@ -28,7 +28,7 @@ const productSchema = z.object({
     warranty_months: z.coerce.number().int().positive().optional().nullable(),
     image_main_url: z.string().url().max(1000).optional().nullable().or(z.literal('')),
 
-    stock_status: z.enum(['in_stock', 'out_of_stock', 'preorder']).default('in_stock'),
+    stock_status: z.enum(['in_stock', 'out_of_stock', 'discontinued', 'pre_order', 'contact']).default('in_stock'),
     is_active: z.boolean().default(true),
     is_featured: z.boolean().default(false),
     is_home_featured: z.boolean().default(false),
@@ -52,6 +52,14 @@ export async function createProduct(data: unknown) {
         return { errors: validated.error.flatten().fieldErrors }
     }
     const d = validated.data
+
+    // Validation: không cho is_active=true nếu thiếu price hoặc ảnh chính
+    if (d.is_active === true) {
+        if (!d.price || d.price === 0)
+            return { success: false, error: 'Sản phẩm cần có giá trước khi kích hoạt' }
+        if (!d.image_main_url || d.image_main_url.trim() === '')
+            return { success: false, error: 'Sản phẩm cần có ảnh chính trước khi kích hoạt' }
+    }
 
     try {
         const createData: Prisma.productsUncheckedCreateInput = {
@@ -109,6 +117,14 @@ export async function updateProduct(id: number, data: unknown) {
         return { errors: validated.error.flatten().fieldErrors }
     }
     const d = validated.data
+
+    // Validation: không cho is_active=true nếu thiếu price hoặc ảnh chính
+    if (d.is_active === true) {
+        if (!d.price || d.price === 0)
+            return { success: false, error: 'Sản phẩm cần có giá trước khi kích hoạt' }
+        if (!d.image_main_url || d.image_main_url.trim() === '')
+            return { success: false, error: 'Sản phẩm cần có ảnh chính trước khi kích hoạt' }
+    }
 
     try {
         const updateData: Prisma.productsUncheckedUpdateInput = {
@@ -175,6 +191,18 @@ export async function toggleProductFeatured(id: number, value: boolean) {
 }
 
 export async function toggleProductActive(id: number, value: boolean) {
+    // Guard: cannot activate stub products missing price or image
+    if (value === true) {
+        const product = await prisma.products.findUnique({
+            where: { id },
+            select: { price: true, image_main_url: true },
+        })
+        if (!product) return { message: 'Không tìm thấy sản phẩm' }
+        if (!product.price || Number(product.price) === 0)
+            return { success: false, error: 'Sản phẩm cần có giá trước khi kích hoạt' }
+        if (!product.image_main_url || product.image_main_url.trim() === '')
+            return { success: false, error: 'Sản phẩm cần có ảnh chính trước khi kích hoạt' }
+    }
     try {
         await prisma.products.update({ where: { id }, data: { is_active: value, updated_at: new Date() } })
         revalidatePath('/admin/products')

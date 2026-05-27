@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { getCurrentUser, requirePermission } from '@/lib/auth/get-current-user'
 import { can } from '@/lib/auth/permissions'
+import { generateOrderNumber } from '@/lib/utils'
 
 // ─── SCHEMAS ─────────────────────────────────────────────────────────────────
 
@@ -27,13 +28,7 @@ const orderSchema = z.object({
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 
-// Fix #3: Entropy tăng từ 4 → 6 digits để giảm collision probability
-function generateOrderNumber(): string {
-    const now = new Date()
-    const yyyymmdd = now.toISOString().slice(0, 10).replace(/-/g, '')
-    const rand = Math.floor(100000 + Math.random() * 900000)
-    return `DPG${yyyymmdd}${rand}`
-}
+// generateOrderNumber() is imported from @/lib/utils (LEO-421: unified format DPG-YYYYMMDD-XXXXXX)
 
 // ─── CREATE ORDER ─────────────────────────────────────────────────────────────
 
