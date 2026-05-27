@@ -1,7 +1,9 @@
 'use client'
 
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import type { VariantSibling } from '@/lib/public-api-products'
+import { siteConfig } from '@/config/site'
 
 // ─── UTILS ────────────────────────────────────────────────────────────────────
 
@@ -17,7 +19,7 @@ function getShortVariantName(fullName: string, sku: string, subcategorySlug?: st
         const isConcealed = lowerName.includes('giấu dây');
         
         // Cố gắng tìm mã Series (W12, T8, E4...) trong SKU hoặc tên
-        let seriesCode = '';
+        let seriesCode = ''
         const skuMatch = sku.split('/')[0].split('#')[0].match(/(T\d+|E\d+|W\d+)[A-Z]*$/i);
         if (skuMatch) {
             seriesCode = skuMatch[1].toUpperCase();
@@ -29,7 +31,7 @@ function getShortVariantName(fullName: string, sku: string, subcategorySlug?: st
         }
         
         // Phân loại công nghệ
-        let tech = '';
+        let tech = ''
         if (lowerName.includes('washlet')) {
             const washletMatch = lowerName.match(/washlet\s+(c\d|s\d|g\d)/i);
             tech = washletMatch ? `Washlet ${washletMatch[1].toUpperCase()}` : 'Washlet';
@@ -191,86 +193,206 @@ interface VariantSelectorProps {
     currentPrice?: number | null
     currentOriginalPrice?: number | null
     currentColor?: { name: string; hex_code: string | null } | null
+    /** variant_type of the current product (drives UI mode) */
+    variantType?: string | null
+    /** variant_label of the current product */
+    variantLabel?: string | null
     variantGroup: string
     siblings: VariantSibling[]
     categorySlug: string
     subcategorySlug?: string | null
 }
 
-// ─── COMPONENT ────────────────────────────────────────────────────────────────
+// ─── COLOR SWATCH MODE ────────────────────────────────────────────────────────
 
-export function VariantSelector({
-    currentSku,
-    currentSlug,
-    currentName,
-    currentPriceDisplay,
-    currentPrice,
-    currentOriginalPrice,
-    currentColor,
-    variantGroup,
-    siblings,
-    categorySlug,
-    subcategorySlug,
-}: VariantSelectorProps) {
-    if (!siblings || siblings.length === 0) return null
+interface SwatchVariant {
+    sku: string
+    slug: string
+    name: string
+    label: string | null
+    priceDisplay: string | null
+    price: number | null
+    originalPrice: number | null
+    color: { name: string; hex_code: string | null } | null | undefined
+    isActive: boolean
+    isCurrent: boolean
+    subcategorySlug: string | null | undefined
+}
 
-    // Stable sort by SKU — active card NEVER moves position
-    const allVariants = [
-        {
-            sku: currentSku,
-            slug: currentSlug,
-            name: currentName,
-            priceDisplay: currentPriceDisplay,
-            price: currentPrice,
-            originalPrice: currentOriginalPrice,
-            color: currentColor,
-            isCurrent: true,
-            subcategorySlug,
-        },
-        ...siblings.map(s => ({
-            sku: s.sku,
-            slug: s.slug,
-            name: s.name,
-            priceDisplay: s.price_display,
-            price: s.price,
-            originalPrice: s.original_price,
-            color: s.colors,
-            isCurrent: false,
-            subcategorySlug: s.subcategories?.slug || subcategorySlug,
-        })),
-    ].sort((a, b) => a.sku.localeCompare(b.sku))
+interface ColorSwatchesProps {
+    variants: SwatchVariant[]
+    categorySlug: string
+    subcategorySlug?: string | null
+}
 
-    // Determine if we should show color dots
+function ColorSwatches({ variants, categorySlug, subcategorySlug }: ColorSwatchesProps) {
+    return (
+        <div className="flex flex-col gap-3" role="group" aria-label="Chọn màu sắc">
+            <p className="text-xs font-semibold text-stone-500 uppercase tracking-widest">Màu sắc</p>
+            <div className="flex flex-wrap gap-2">
+                {variants.map((variant) => {
+                    const swatchColor = variant.color?.hex_code || '#e5e7eb'
+                    const swatchLabel = variant.label || variant.color?.name || variant.name
+                    const href = `/${categorySlug}/${variant.subcategorySlug || subcategorySlug}/${variant.slug}`
+
+                    if (variant.isCurrent) {
+                        return (
+                            <div
+                                key={variant.sku}
+                                title={swatchLabel}
+                                aria-current="true"
+                                aria-label={`Màu hiện tại: ${swatchLabel}`}
+                                className="relative w-8 h-8 rounded-full ring-2 ring-offset-2 ring-brand-500 cursor-default shadow"
+                                style={{ backgroundColor: swatchColor }}
+                            >
+                                {/* Active checkmark */}
+                                <span className="absolute inset-0 flex items-center justify-center">
+                                    <svg className="w-3 h-3 text-white drop-shadow" fill="currentColor" viewBox="0 0 12 12">
+                                        <path d="M10 3L5 8.5 2 5.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                                    </svg>
+                                </span>
+                            </div>
+                        )
+                    }
+
+                    // Stub swatch: is_active=false — show as dashed, open mailto on click
+                    if (!variant.isActive) {
+                        const subject = encodeURIComponent(`Yêu cầu báo giá: ${variant.name}`)
+                        const body = encodeURIComponent(`Kính gửi Đông Phú Gia,\n\nTôi muốn hỏi về sản phẩm:\nMã SKU: ${variant.sku}\nMàu: ${swatchLabel}\n\nVui lòng báo giá cho tôi.\n\nXin cảm ơn.`)
+                        const mailtoHref = `mailto:${siteConfig.contact.email}?subject=${subject}&body=${body}`
+
+                        return (
+                            <a
+                                key={variant.sku}
+                                href={mailtoHref}
+                                title={`${swatchLabel} — Liên hệ báo giá`}
+                                aria-label={`Màu ${swatchLabel} (liên hệ để đặt hàng)`}
+                                className="relative w-8 h-8 rounded-full border-2 border-dashed border-stone-400 opacity-60 hover:opacity-90 cursor-pointer transition-opacity shadow-sm"
+                                style={{ backgroundColor: swatchColor }}
+                            >
+                                {/* Question mark indicator for stub */}
+                                <span className="absolute inset-0 flex items-center justify-center">
+                                    <svg className="w-3 h-3 text-white/80 drop-shadow-sm" fill="currentColor" viewBox="0 0 12 12">
+                                        <text x="2" y="10" fontSize="10" fontWeight="bold">?</text>
+                                    </svg>
+                                </span>
+                            </a>
+                        )
+                    }
+
+                    // Active sibling — navigate to product page
+                    return (
+                        <Link
+                            key={variant.sku}
+                            href={href}
+                            title={swatchLabel}
+                            aria-label={`Màu: ${swatchLabel}`}
+                            className="w-8 h-8 rounded-full border-2 border-stone-200 hover:ring-2 hover:ring-offset-1 hover:ring-brand-400 transition-all cursor-pointer shadow-sm"
+                            style={{ backgroundColor: swatchColor }}
+                        />
+                    )
+                })}
+            </div>
+        </div>
+    )
+}
+
+// ─── DROPDOWN MODE ────────────────────────────────────────────────────────────
+
+interface DropdownVariant {
+    sku: string
+    slug: string
+    name: string
+    label: string | null
+    isCurrent: boolean
+    subcategorySlug: string | null | undefined
+}
+
+interface DropdownSelectorProps {
+    variants: DropdownVariant[]
+    categorySlug: string
+    subcategorySlug?: string | null
+    label?: string
+}
+
+function DropdownSelector({ variants, categorySlug, subcategorySlug, label = 'Phiên bản' }: DropdownSelectorProps) {
+    const router = useRouter()
+    const currentVariant = variants.find(v => v.isCurrent)
+
+    const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const selected = variants.find(v => v.sku === e.target.value)
+        if (!selected || selected.isCurrent) return
+        const href = `/${categorySlug}/${selected.subcategorySlug || subcategorySlug}/${selected.slug}`
+        router.push(href)
+    }
+
+    return (
+        <div className="flex flex-col gap-2">
+            <p className="text-xs font-semibold text-stone-500 uppercase tracking-widest">{label}</p>
+            <select
+                className="w-full rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm text-stone-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors cursor-pointer"
+                value={currentVariant?.sku ?? ''}
+                onChange={handleChange}
+                aria-label={`Chọn ${label.toLowerCase()}`}
+            >
+                {variants.map((variant) => (
+                    <option key={variant.sku} value={variant.sku}>
+                        {variant.label || variant.name}
+                    </option>
+                ))}
+            </select>
+        </div>
+    )
+}
+
+// ─── LEGACY CARD GRID MODE (original behavior for non-typed variants) ──────────
+
+interface CardGridVariant {
+    sku: string
+    slug: string
+    name: string
+    priceDisplay: string | null
+    price: number | null
+    originalPrice: number | null
+    color: { name: string; hex_code: string | null } | null | undefined
+    isCurrent: boolean
+    subcategorySlug: string | null | undefined
+}
+
+interface CardGridProps {
+    variants: CardGridVariant[]
+    categorySlug: string
+    subcategorySlug?: string | null
+    variantGroup: string
+}
+
+function CardGrid({ variants, categorySlug, subcategorySlug, variantGroup }: CardGridProps) {
     const uniqueColors = new Set(
-        allVariants
+        variants
             .map(v => v.color?.hex_code?.toLowerCase())
             .filter(Boolean)
     )
     const hasMultipleColors = uniqueColors.size > 1
 
     return (
-        <div
-            className="flex flex-col gap-3"
-            role="group"
-            aria-label="Chọn phiên bản sản phẩm"
-        >
+        <div className="flex flex-col gap-3" role="group" aria-label="Chọn phiên bản sản phẩm">
             {/* Header */}
             <div className="flex items-center justify-between">
                 <p className="text-xs font-semibold text-stone-500 uppercase tracking-widest">
                     Phiên bản
                 </p>
                 <span className="text-[11px] text-stone-400 font-medium tabular-nums">
-                    {allVariants.length} mẫu
+                    {variants.length} mẫu
                 </span>
             </div>
 
-            {/* Grid Layout — optimized for space, no internal scroll, ensuring text fits */}
+            {/* Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-1.5">
-                {allVariants.map((variant) => {
+                {variants.map((variant) => {
                     const href = `/${categorySlug}/${variant.subcategorySlug || subcategorySlug}/${variant.slug}`
                     const originalPrice = Number(variant.originalPrice)
                     const sellingPrice = Number(variant.price)
-                    
+
                     let priceDisplay = 'Liên hệ'
                     if (sellingPrice > 0) {
                         priceDisplay = new Intl.NumberFormat('vi-VN').format(sellingPrice) + 'đ'
@@ -296,8 +418,8 @@ export function VariantSelector({
                             >
                                 <div className="flex items-start gap-1">
                                     {hasMultipleColors && variant.color?.hex_code && (
-                                        <div 
-                                            className="w-2.5 h-2.5 mt-0.5 rounded-full border border-black/10 shrink-0 shadow-sm" 
+                                        <div
+                                            className="w-2.5 h-2.5 mt-0.5 rounded-full border border-black/10 shrink-0 shadow-sm"
                                             style={{ backgroundColor: variant.color.hex_code }}
                                             title={variant.color.name}
                                         />
@@ -324,7 +446,7 @@ export function VariantSelector({
                         <Link
                             key={variant.sku}
                             href={href}
-                                className="
+                            className="
                                 group relative flex flex-col justify-center gap-0.5
                                 px-2 py-1.5 rounded-lg
                                 bg-white border border-stone-200
@@ -334,8 +456,8 @@ export function VariantSelector({
                         >
                             <div className="flex items-start gap-1">
                                 {hasMultipleColors && variant.color?.hex_code && (
-                                    <div 
-                                        className="w-2.5 h-2.5 mt-0.5 rounded-full border border-black/10 shrink-0 opacity-80 group-hover:opacity-100 transition-opacity shadow-sm" 
+                                    <div
+                                        className="w-2.5 h-2.5 mt-0.5 rounded-full border border-black/10 shrink-0 opacity-80 group-hover:opacity-100 transition-opacity shadow-sm"
                                         style={{ backgroundColor: variant.color.hex_code }}
                                         title={variant.color.name}
                                     />
@@ -362,3 +484,145 @@ export function VariantSelector({
     )
 }
 
+// ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
+
+export function VariantSelector({
+    currentSku,
+    currentSlug,
+    currentName,
+    currentPriceDisplay,
+    currentPrice,
+    currentOriginalPrice,
+    currentColor,
+    variantType,
+    variantLabel,
+    variantGroup,
+    siblings,
+    categorySlug,
+    subcategorySlug,
+}: VariantSelectorProps) {
+    // Type C/D: no variant_group → render nothing
+    if (!siblings || siblings.length === 0) return null
+
+    // Determine the effective variant_type by checking current product first,
+    // then falling back to siblings (all should have the same type within a group)
+    const effectiveVariantType = variantType
+        ?? siblings.find(s => s.variant_type)?.variant_type
+        ?? null
+
+    // ── Mode: color swatches ──────────────────────────────────────────────────
+    if (effectiveVariantType === 'color') {
+        const allVariants: SwatchVariant[] = [
+            {
+                sku: currentSku,
+                slug: currentSlug,
+                name: currentName,
+                label: variantLabel ?? null,
+                priceDisplay: currentPriceDisplay,
+                price: currentPrice ?? null,
+                originalPrice: currentOriginalPrice ?? null,
+                color: currentColor,
+                isActive: true,
+                isCurrent: true,
+                subcategorySlug,
+            },
+            ...siblings.map(s => ({
+                sku: s.sku,
+                slug: s.slug,
+                name: s.name,
+                label: s.variant_label ?? null,
+                priceDisplay: s.price_display,
+                price: s.price,
+                originalPrice: s.original_price,
+                color: s.colors,
+                isActive: s.is_active,
+                isCurrent: false,
+                subcategorySlug: s.subcategories?.slug ?? subcategorySlug,
+            })),
+        ].sort((a, b) => a.sku.localeCompare(b.sku))
+
+        return (
+            <ColorSwatches
+                variants={allVariants}
+                categorySlug={categorySlug}
+                subcategorySlug={subcategorySlug}
+            />
+        )
+    }
+
+    // ── Mode: dropdown (seat_type or other non-null non-color type) ────────────
+    if (effectiveVariantType !== null) {
+        // Only include active siblings in dropdown (stub variants are not navigable)
+        const activeSiblings = siblings.filter(s => s.is_active)
+        if (activeSiblings.length === 0) return null
+
+        const allVariants: DropdownVariant[] = [
+            {
+                sku: currentSku,
+                slug: currentSlug,
+                name: currentName,
+                label: variantLabel ?? null,
+                isCurrent: true,
+                subcategorySlug,
+            },
+            ...activeSiblings.map(s => ({
+                sku: s.sku,
+                slug: s.slug,
+                name: s.name,
+                label: s.variant_label ?? null,
+                isCurrent: false,
+                subcategorySlug: s.subcategories?.slug ?? subcategorySlug,
+            })),
+        ].sort((a, b) => a.sku.localeCompare(b.sku))
+
+        // Derive a human-readable label for the dropdown header from variant_type
+        const dropdownLabel =
+            effectiveVariantType === 'seat_type' ? 'Loại chỗ ngồi' : 'Phiên bản'
+
+        return (
+            <DropdownSelector
+                variants={allVariants}
+                categorySlug={categorySlug}
+                subcategorySlug={subcategorySlug}
+                label={dropdownLabel}
+            />
+        )
+    }
+
+    // ── Mode: legacy card grid (variant_type = null, backwards-compatible) ─────
+    const allCardVariants: CardGridVariant[] = [
+        {
+            sku: currentSku,
+            slug: currentSlug,
+            name: currentName,
+            priceDisplay: currentPriceDisplay,
+            price: currentPrice ?? null,
+            originalPrice: currentOriginalPrice ?? null,
+            color: currentColor,
+            isCurrent: true,
+            subcategorySlug,
+        },
+        ...siblings
+            .filter(s => s.is_active) // only active in card grid legacy mode
+            .map(s => ({
+                sku: s.sku,
+                slug: s.slug,
+                name: s.name,
+                priceDisplay: s.price_display,
+                price: s.price,
+                originalPrice: s.original_price,
+                color: s.colors,
+                isCurrent: false,
+                subcategorySlug: s.subcategories?.slug ?? subcategorySlug,
+            })),
+    ].sort((a, b) => a.sku.localeCompare(b.sku))
+
+    return (
+        <CardGrid
+            variants={allCardVariants}
+            categorySlug={categorySlug}
+            subcategorySlug={subcategorySlug}
+            variantGroup={variantGroup}
+        />
+    )
+}

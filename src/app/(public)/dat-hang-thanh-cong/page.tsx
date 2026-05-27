@@ -16,7 +16,8 @@ interface Props {
 
 export default async function OrderSuccessPage({ searchParams }: Props) {
     const { order } = await searchParams
-    const orderNumber = order ?? 'DPG-XXXXXXXX-XXXX'
+    const orderNumber = order ?? 'DPG-XXXXXXXX-XXXXXX'
+
 
     return (
         <div className="min-h-[60vh] flex items-center justify-center px-5 py-16">

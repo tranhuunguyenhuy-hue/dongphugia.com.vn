@@ -192,6 +192,8 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
                             currentPrice={Number(product.price)}
                             currentOriginalPrice={Number(product.original_price)}
                             currentColor={product.colors}
+                            variantType={product.variant_type}
+                            variantLabel={product.variant_label}
                             variantGroup={product.variant_group}
                             siblings={variantSiblings}
                             categorySlug={CATEGORY_SLUG}
