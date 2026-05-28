@@ -1,11 +1,43 @@
 import { forwardRef } from 'react'
 import { siteConfig } from "@/config/site"
 
-export const QuoteTemplateA4 = forwardRef<HTMLDivElement, { data: any }>(
+interface QuoteItem {
+    id: number;
+    name: string;
+    sku?: string;
+    price?: number;
+    admin_unit_price?: number;
+    quantity?: number;
+    admin_quantity?: number;
+}
+interface QuoteData {
+    name?: string;
+    phone?: string;
+    email?: string;
+    quote_number?: string;
+    items?: QuoteItem[];
+    quote_items?: {
+        id: number;
+        quantity: number;
+        admin_unit_price?: number;
+        admin_quantity?: number;
+        products: {
+            name: string;
+            sku: string;
+            price?: number | null;
+            original_price?: number | null;
+        }
+    }[];
+    vat_rate?: number;
+    shipping_fee?: number;
+    admin_notes?: string;
+}
+
+export const QuoteTemplateA4 = forwardRef<HTMLDivElement, { data: QuoteData }>(
     ({ data }, ref) => {
         // Calculate totals
         const items = data.items || []
-        const subtotal = items.reduce((acc: number, item: any) => {
+        const subtotal = items.reduce((acc: number, item: QuoteItem) => {
             const price = item.admin_unit_price ?? item.price ?? 0
             const qty = item.admin_quantity ?? item.quantity ?? 1
             return acc + (price * qty)
@@ -64,7 +96,7 @@ export const QuoteTemplateA4 = forwardRef<HTMLDivElement, { data: any }>(
                         </tr>
                     </thead>
                     <tbody>
-                        {items.map((item: any, idx: number) => {
+                        {items.map((item: QuoteItem, idx: number) => {
                             const price = item.admin_unit_price ?? item.price ?? 0
                             const qty = item.admin_quantity ?? item.quantity ?? 1
                             return (

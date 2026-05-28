@@ -53,6 +53,7 @@ export function BrandFilterBar({ brands, activeBrandSlug, basePath }: BrandFilte
                         aria-current={isActive ? 'true' : undefined}
                     >
                         <div className="h-5 flex items-center justify-center w-full">
+                            
                             <img
                                 src={`/images/brands/${brand.slug}.png`}
                                 alt={brand.name}

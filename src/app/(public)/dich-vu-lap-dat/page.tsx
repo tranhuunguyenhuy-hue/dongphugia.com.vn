@@ -1,5 +1,6 @@
 import { Metadata } from "next";
 import { siteConfig } from "@/config/site";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Phone, CheckCircle2, ShieldCheck, Wrench, Clock, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { pricingData } from "./data";

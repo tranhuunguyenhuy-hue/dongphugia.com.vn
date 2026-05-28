@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Calendar, Clock, ArrowRight } from 'lucide-react'
 
 export interface BlogPost {

@@ -4,8 +4,6 @@ import { notFound } from 'next/navigation'
 import { ChevronRight, Calendar, User, Eye, Share2 } from 'lucide-react'
 import { TableOfContents } from '@/components/blog/toc'
 import { PostCard, BlogPost } from '@/components/blog/post-card'
-import { JsonLd } from '@/components/seo/json-ld'
-import { buildArticleSchema, buildBreadcrumbSchema } from '@/lib/seo/schema'
 
 import { getBlogPostBySlug, getRelatedBlogPosts } from '@/lib/public-api-blog'
 
@@ -20,15 +18,11 @@ export async function generateMetadata({ params }: { params: Promise<{ postSlug:
     return {
         title: `${post.title} | Blog Đông Phú Gia`,
         description: post.excerpt,
-        alternates: {
-            canonical: `https://dongphugia.com.vn/blog/${post.blog_categories?.slug}/${post.slug}`,
-        },
         openGraph: {
             title: post.title,
             description: post.excerpt || '',
             type: 'article',
             publishedTime: post.published_at ? new Date(post.published_at).toISOString() : undefined,
-            images: post.cover_image_url ? [{ url: post.cover_image_url }] : [],
         }
     }
 }
@@ -47,22 +41,6 @@ export default async function BlogPostPage({ params }: { params: Promise<{ categ
 
     return (
         <div className="bg-[#F5F9FB] min-h-screen pb-20">
-            <JsonLd data={buildArticleSchema({
-                title: post.title,
-                excerpt: post.excerpt,
-                thumbnail_url: post.cover_image_url,
-                published_at: post.published_at,
-                updated_at: post.updated_at,
-                author_name: 'Đông Phú Gia',
-                slug: post.slug,
-                blog_categories: post.blog_categories,
-            })} />
-            <JsonLd data={buildBreadcrumbSchema([
-                { name: 'Trang chủ', url: 'https://dongphugia.com.vn' },
-                { name: 'Blog', url: 'https://dongphugia.com.vn/blog' },
-                { name: post.blog_categories.name, url: `https://dongphugia.com.vn/blog/${post.blog_categories.slug}` },
-                { name: post.title, url: `https://dongphugia.com.vn/blog/${post.blog_categories.slug}/${post.slug}` },
-            ])} />
 
             {/* Article Header (Title & Meta area within main container) */}
             <div className="max-w-[1280px] mx-auto px-5 pt-10">

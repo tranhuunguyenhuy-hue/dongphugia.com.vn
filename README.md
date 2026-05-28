@@ -138,7 +138,24 @@ prisma/
 scripts/
 ├── seed/                 # Database seeding scripts
 ├── product-import/       # Product import utilities
-└── db/                   # DB utility scripts
+├── db/                   # DB utility scripts
+├── crawl-toto/           # Toto product crawling
+├── brands/               # Brand-specific import scripts
+├── colors/               # Color mapping utilities
+├── showers/              # Shower product scripts
+├── toilets/              # Toilet product scripts
+└── variant-pipeline/     # Product variant processing
+docs/
+├── prd/                  # Product requirements documents
+│   └── PRD-dongphugia-v2.md
+└── plans/                # Kế hoạch & tài liệu nội bộ
+    ├── PROJECT-SCOPE-V2.md
+    ├── findings.md
+    ├── progress.md
+    ├── task_plan.md
+    └── 2026-05-08-dual-layer-color-architecture.md
+public/
+└── images/               # Static assets (logo, placeholder images)
 ```
 
 ---

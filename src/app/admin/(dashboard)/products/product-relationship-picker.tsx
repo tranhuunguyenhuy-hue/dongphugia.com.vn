@@ -14,7 +14,7 @@ interface ProductRelationshipPickerProps {
 
 export function ProductRelationshipPicker({ excludeId, onSelect }: ProductRelationshipPickerProps) {
     const [query, setQuery] = useState('')
-    const [results, setResults] = useState<any[]>([])
+    const [results, setResults] = useState<{ id: number, name: string, sku: string, price: number | null, image_main_url: string | null }[]>([])
     const [isLoading, setIsLoading] = useState(false)
     const [isOpen, setIsOpen] = useState(false)
 

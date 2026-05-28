@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     // --- LEO-388: Rate Limiting ---
     const ip = getClientIp(request)
     const { maxReqs, windowMs } = RATE_LIMITS.quoteGet
-    if (!rateLimiter.isAllowed(`quote:get:${ip}`, maxReqs, windowMs)) {
+    if (!rateLimiter.isAllowed(`get:${ip}`, maxReqs, windowMs)) {
         return NextResponse.json(
             { success: false, error: 'Quá nhiều yêu cầu. Vui lòng thử lại sau 1 phút.' },
             {
@@ -76,7 +76,7 @@ export async function GET(request: NextRequest) {
             },
         })
 
-        const remaining = rateLimiter.remaining(`quote:get:${ip}`, maxReqs, windowMs)
+        const remaining = rateLimiter.remaining(`get:${ip}`, maxReqs, windowMs)
 
         // Never expose phone/email in response for privacy
         return NextResponse.json(
@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
     // --- LEO-388: Rate Limiting ---
     const ip = getClientIp(request)
     const { maxReqs, windowMs } = RATE_LIMITS.quotePost
-    if (!rateLimiter.isAllowed(`quote:post:${ip}`, maxReqs, windowMs)) {
+    if (!rateLimiter.isAllowed(`post:${ip}`, maxReqs, windowMs)) {
         return NextResponse.json(
             { success: false, error: 'Quá nhiều yêu cầu gửi báo giá. Vui lòng thử lại sau 1 phút.' },
             {

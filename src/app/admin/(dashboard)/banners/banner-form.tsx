@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { ImageUploader } from '@/components/ui/image-uploader'
 
 interface BannerFormProps {
-    banner?: any
+    banner?: { id: number; title?: string | null; image_url: string; link_url?: string | null; is_active: boolean; sort_order: number } | null
 }
 
 export function BannerForm({ banner }: BannerFormProps) {
@@ -25,7 +25,7 @@ export function BannerForm({ banner }: BannerFormProps) {
         sort_order: banner?.sort_order?.toString() || '0',
     })
 
-    const set = (key: string, value: any) => setForm((prev) => ({ ...prev, [key]: value }))
+    const set = (key: string, value: string | boolean) => setForm((prev) => ({ ...prev, [key]: value }))
 
     const onSubmit = (e: React.FormEvent) => {
         e.preventDefault()

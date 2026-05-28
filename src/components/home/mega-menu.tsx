@@ -56,7 +56,7 @@ const renderMegaMenuContent = (cat: Category, data: MenuData | undefined) => {
                         {data.brands.map((brand: any) => (
                             <Link href={`/${cat.slug}?brand=${brand.slug}`} key={brand.id} className="h-9 px-2 rounded-[8px] bg-white/40 backdrop-blur-md border border-white/60 hover:border-white/90 hover:bg-white/80 hover:shadow-[0_4px_12px_rgba(46,122,150,0.08)] flex items-center justify-center transition-all duration-300 group/brand relative">
                                 <div className="w-full h-[18px] grayscale opacity-60 group-hover/brand:grayscale-0 group-hover/brand:opacity-100 transition-all duration-300 transform group-hover/brand:scale-105 flex items-center justify-center">
-                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    
                                     <img 
                                         src={`/images/brands/${brand.slug}.png`} 
                                         alt={brand.name} 

@@ -38,7 +38,7 @@ export async function saveUser(data: {
                 }
             }
 
-            const updateData: any = {
+            const updateData: import('@prisma/client').Prisma.admin_usersUpdateInput = {
                 username: data.username || null,
                 email: data.email,
                 name: data.name,

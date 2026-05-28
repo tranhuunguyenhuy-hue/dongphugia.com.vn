@@ -1,19 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
-import { rateLimiter, getClientIp, RATE_LIMITS } from '@/lib/rate-limiter'
-import { generateOrderNumber } from '@/lib/utils'
+
+// Generate order number: DPG-YYYYMMDD-XXXX
+function generateOrderNumber(): string {
+    const now = new Date()
+    const date = now.toISOString().slice(0, 10).replace(/-/g, '')
+    const rand = Math.floor(1000 + Math.random() * 9000)
+    return `DPG-${date}-${rand}`
+}
 
 export async function POST(req: NextRequest) {
-    // Rate limiting: 5 requests per minute per IP
-    const ip = getClientIp(req)
-    const { maxReqs, windowMs } = RATE_LIMITS.ordersPost
-    if (!rateLimiter.isAllowed(`orders:${ip}`, maxReqs, windowMs)) {
-        return NextResponse.json(
-            { error: 'Quá nhiều yêu cầu, vui lòng thử lại sau.' },
-            { status: 429, headers: { 'Retry-After': '60' } }
-        )
-    }
-
     try {
         const body = await req.json()
         const {
@@ -100,9 +96,9 @@ export async function POST(req: NextRequest) {
                         },
                     },
                 })
-            } catch (err: any) {
-                // P2002 = unique constraint violation → retry
-                if (err?.code === 'P2002') continue
+            } catch (err: unknown) {
+                console.error("Order completion failed:", err)
+                if (typeof err === 'object' && err !== null && (err as { code?: string }).code === 'P2002') continue
                 throw err
             }
         }

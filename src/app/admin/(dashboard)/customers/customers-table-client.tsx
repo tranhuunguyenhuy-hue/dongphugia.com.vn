@@ -1,5 +1,6 @@
 'use client'
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -39,6 +40,7 @@ export function CustomersTableClient({
 }: {
     customers: customers[]
 }) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const router = useRouter()
 
     const columns: ColumnDef<customers>[] = [

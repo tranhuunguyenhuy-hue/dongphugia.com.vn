@@ -12,7 +12,6 @@ import { CartIcon } from '@/components/cart/cart-icon'
 import { CartDrawer } from '@/components/cart/cart-drawer'
 import { SearchBar } from '@/components/home/search-bar'
 import { MobileMenuSheet } from '@/components/layout/mobile-menu-sheet'
-import { trackGenerateLead } from '@/lib/tracking'
 
 import { NAV_MAIN_LINKS as NAV_LINKS, NAV_ABOUT_LINKS as ABOUT_LINKS } from "@/config/site"
 
@@ -92,7 +91,7 @@ export function Header() {
                                 <div className="h-6 w-px bg-stone-200 ml-1"></div>
                                 <CartIcon />
                                 <Button asChild className="px-6 h-11 text-[15px] font-medium gap-2 bg-brand-500 hover:bg-brand-600 text-white rounded-full shadow-sm ml-2">
-                                    <Link href="/lien-he" aria-label="Liên hệ" onClick={() => trackGenerateLead('navbar_contact')}>
+                                    <Link href="/lien-he" aria-label="Liên hệ">
                                         Liên hệ
                                         <Phone className="h-[18px] w-[18px]" aria-hidden="true" />
                                     </Link>

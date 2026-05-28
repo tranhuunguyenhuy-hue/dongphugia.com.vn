@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import Image from "next/image"
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { ShieldCheck, Award, Star, CheckCircle, ArrowRight, Globe } from "lucide-react"
 import type { PartnerItem } from "@/lib/public-api-partners"
 

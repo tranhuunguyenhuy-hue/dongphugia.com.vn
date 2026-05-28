@@ -17,7 +17,7 @@ const bannerSchema = z.object({
     sort_order: z.coerce.number().int().optional().default(0),
 })
 
-export async function createBanner(data: any) {
+export async function createBanner(data: unknown) {
     await requirePermission('blog:write')
     
     const validated = bannerSchema.safeParse(data)
@@ -44,7 +44,7 @@ export async function createBanner(data: any) {
     return { success: true }
 }
 
-export async function updateBanner(id: number, data: any) {
+export async function updateBanner(id: number, data: unknown) {
     await requirePermission('blog:write')
 
     const validated = bannerSchema.safeParse(data)

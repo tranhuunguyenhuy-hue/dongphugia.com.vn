@@ -1,12 +1,12 @@
 import { forwardRef } from 'react'
 import { siteConfig } from "@/config/site"
 
-export const OrderTemplateA4 = forwardRef<HTMLDivElement, { data: any }>(
+export const OrderTemplateA4 = forwardRef<HTMLDivElement, { data: import('@prisma/client').orders & { items?: import('@prisma/client').order_items[] } }>(
     ({ data }, ref) => {
         // Calculate totals
         const items = data.items || []
-        const subtotal = items.reduce((acc: number, item: any) => {
-            const price = item.unit_price ?? 0
+        const subtotal = items.reduce((acc: number, item: import('@prisma/client').order_items) => {
+            const price = Number(item.unit_price ?? 0)
             const qty = item.quantity ?? 1
             return acc + (price * qty)
         }, 0)
@@ -65,8 +65,8 @@ export const OrderTemplateA4 = forwardRef<HTMLDivElement, { data: any }>(
                         </tr>
                     </thead>
                     <tbody>
-                        {items.map((item: any, idx: number) => {
-                            const price = item.unit_price ?? 0
+                        {items.map((item: import('@prisma/client').order_items, idx: number) => {
+                            const price = Number(item.unit_price ?? 0)
                             const qty = item.quantity ?? 1
                             return (
                                 <tr key={item.id} style={{ pageBreakInside: 'avoid' }}>
