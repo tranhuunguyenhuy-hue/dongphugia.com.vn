@@ -16,9 +16,7 @@ export const metadata: Metadata = {
     description: "Đông Phú Gia - Nhà phân phối gạch ốp lát, thiết bị vệ sinh cao cấp tại Đà Lạt. Hơn 1.500 mẫu sản phẩm chính hãng từ TOTO, Inax, Kohler, Marble và nhiều thương hiệu uy tín.",
     keywords: ["gạch ốp lát", "thiết bị vệ sinh", "vật liệu xây dựng", "Đà Lạt", "Đông Phú Gia"],
     openGraph: {
-        title: {
-        absolute: "Đông Phú Gia — Vật Liệu Xây Dựng Cao Cấp Đà Lạt",
-    },
+        title: "Đông Phú Gia — Vật Liệu Xây Dựng Cao Cấp Đà Lạt",
         description: "Hơn 1.500 mẫu gạch ốp lát, thiết bị vệ sinh chính hãng. Tư vấn miễn phí, giao hàng Đà Lạt và các tỉnh lân cận.",
         url: "/",
         images: [{ url: "/images/hero-banner.jpg", width: 1200, height: 630, alt: "Đông Phú Gia" }],
