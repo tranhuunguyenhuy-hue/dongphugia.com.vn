@@ -19,7 +19,7 @@ export const getBlogPosts = cache(async (options: {
 } = {}) => {
     const { categorySlug, tagSlug, page = 1, limit = POSTS_PER_PAGE, featuredOnly } = options
 
-    const where: any = {
+    const where: import('@prisma/client').Prisma.blog_postsWhereInput = {
         status: 'published',
         published_at: { lte: new Date() },
     }

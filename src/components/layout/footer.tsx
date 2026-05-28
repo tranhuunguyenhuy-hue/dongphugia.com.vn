@@ -113,9 +113,9 @@ export function Footer() {
                     <p className="text-stone-500 text-[13px] text-center lg:text-left">
                         © {new Date().getFullYear()} {siteConfig.name}. All rights reserved.
                     </p>
-                    <div className="flex items-center gap-6">
+                    <div className="flex flex-wrap items-center justify-center lg:justify-end gap-4 lg:gap-6">
                         {NAV_FOOTER_LEGAL_LINKS.map(link => (
-                            <Link key={link.href} href={link.href} className="text-stone-500 text-[13px] hover:text-brand-600 transition-colors">{link.label}</Link>
+                            <Link key={link.href} href={link.href} className="text-stone-500 text-[13px] hover:text-brand-600 transition-colors whitespace-nowrap">{link.label}</Link>
                         ))}
                     </div>
                 </div>

@@ -1,5 +1,6 @@
 'use client'
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { useState } from 'react'
 import Link from 'next/link'
 import { MoreHorizontal, Edit, Trash2, Eye, LayoutGrid } from 'lucide-react'
@@ -15,7 +16,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 
-export function CategoriesTableClient({ categories }: { categories: any[] }) {
+export function CategoriesTableClient({ categories }: { categories: { id: number; name: string; slug: string; thumbnail_url?: string | null; is_active: boolean; _count: { subcategories: number; products: number; } }[] }) {
     return (
         <div className="border border-border/60 rounded-xl overflow-hidden bg-white">
             <Table>
@@ -44,6 +45,7 @@ export function CategoriesTableClient({ categories }: { categories: any[] }) {
                                 <TableCell className="text-center">
                                     <div className="w-10 h-10 mx-auto rounded border bg-neutral-50 flex items-center justify-center overflow-hidden">
                                         {category.thumbnail_url ? (
+                                            
                                             <img src={category.thumbnail_url} alt={category.name} className="w-full h-full object-cover" />
                                         ) : (
                                             <LayoutGrid className="h-4 w-4 text-neutral-300" />

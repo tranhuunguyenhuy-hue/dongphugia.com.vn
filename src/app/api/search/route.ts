@@ -1,18 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
-import { rateLimiter, getClientIp, RATE_LIMITS } from '@/lib/rate-limiter'
 
-export async function GET(request: NextRequest) {
-    // Rate limiting: 30 requests per minute per IP
-    const ip = getClientIp(request)
-    const { maxReqs, windowMs } = RATE_LIMITS.searchGet
-    if (!rateLimiter.isAllowed(`search:${ip}`, maxReqs, windowMs)) {
-        return NextResponse.json(
-            { error: 'Quá nhiều yêu cầu, vui lòng thử lại sau.' },
-            { status: 429, headers: { 'Retry-After': '60' } }
-        )
-    }
-
+export async function GET(request: Request) {
     try {
         const { searchParams } = new URL(request.url)
         const q = searchParams.get('q')

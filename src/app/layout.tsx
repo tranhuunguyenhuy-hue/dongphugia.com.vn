@@ -1,9 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Be_Vietnam_Pro, Playfair_Display } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
-import { GoogleTagManager } from '@next/third-parties/google';
-import { JsonLd } from "@/components/seo/json-ld";
-import { buildOrganizationSchema } from "@/lib/seo/schema";
 import "./globals.css";
 
 const beVietnamPro = Be_Vietnam_Pro({
@@ -22,20 +19,17 @@ const playfairDisplay = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://dongphugia.com.vn"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://dongphugia.vn"),
   title: {
     default: "Đông Phú Gia - Vật liệu xây dựng cao cấp tại Đà Lạt",
     template: "%s | Đông Phú Gia",
   },
   description: "Đông Phú Gia - Nhà phân phối vật liệu xây dựng cao cấp tại Đà Lạt: gạch ốp lát, thiết bị vệ sinh chính hãng từ các thương hiệu uy tín.",
-  alternates: {
-    canonical: "https://dongphugia.com.vn",
-  },
   openGraph: {
     type: "website",
     locale: "vi_VN",
     siteName: "Đông Phú Gia",
-    url: process.env.NEXT_PUBLIC_SITE_URL || "https://dongphugia.com.vn",
+    url: process.env.NEXT_PUBLIC_SITE_URL || "https://dongphugia.vn",
   },
   twitter: {
     card: "summary_large_image",
@@ -71,10 +65,7 @@ export default function RootLayout({
         className={`${beVietnamPro.variable} ${playfairDisplay.variable} antialiased font-sans`}
       >
         {children}
-        {/* Organization / LocalBusiness structured data — site-wide SEO signal */}
-        <JsonLd data={buildOrganizationSchema()} />
         <Toaster richColors position="top-right" />
-        <GoogleTagManager gtmId={process.env.NEXT_PUBLIC_GTM_ID || ""} />
       </body>
     </html>
   );

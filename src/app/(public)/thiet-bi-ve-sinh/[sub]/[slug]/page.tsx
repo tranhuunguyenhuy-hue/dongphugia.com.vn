@@ -5,27 +5,22 @@ import { getPublicProductBySlug, getPublicProducts, getProductComponents, getVar
 import { ProductImageGallery } from "@/components/product/product-image-gallery"
 import { ProductDetailTabs } from "@/components/product/product-detail-tabs"
 import { ProductCTA } from "@/components/product/product-cta"
-import { ProductComponentsSection } from "@/components/product/product-components-section"
+import { ProductComponentsSection, type ComponentProduct } from "@/components/product/product-components-section"
 import { ProductBoxIncludes } from "@/components/product/product-box-includes"
 import { VariantSelector } from "@/components/product/variant-selector"
 import { ProductCard } from "@/components/ui/product-card"
 import { BrandBadge } from "@/components/ui/brand-badge"
 import { ProductPrice } from "@/components/product/product-price"
-import { JsonLd } from "@/components/seo/json-ld"
-import { buildProductSchema, buildBreadcrumbSchema } from "@/lib/seo/schema"
 
 export const revalidate = 21600
-export const dynamicParams = true
-
-const CATEGORY_SLUG = "thiet-bi-ve-sinh"
-const CATEGORY_NAME = "Thiết Bị Vệ Sinh"
-const BASE_PATH = "/thiet-bi-ve-sinh"
-
 
 interface PageProps {
     params: Promise<{ sub: string; slug: string }>
 }
 
+const CATEGORY_SLUG = "thiet-bi-ve-sinh"
+const CATEGORY_NAME = "Thiết Bị Vệ Sinh"
+const BASE_PATH = "/thiet-bi-ve-sinh"
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
     const { slug } = await params
@@ -34,14 +29,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return {
         title: `${product.name} | ${CATEGORY_NAME} | Đông Phú Gia`,
         description: product.description?.slice(0, 160) || `${product.name} - Chính hãng tại Đông Phú Gia Đà Lạt.`,
-        alternates: { canonical: `${BASE_PATH}/${slug}` },
-        openGraph: {
-            title: `${product.name} | Đông Phú Gia`,
-            description: product.description?.slice(0, 160) || `${product.name} - Chính hãng tại Đông Phú Gia Đà Lạt.`,
-            images: product.image_main_url
-                ? [{ url: product.image_main_url, width: 800, height: 600, alt: product.name }]
-                : [],
-        },
     }
 }
 
@@ -62,11 +49,11 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
     // Extract "Phụ kiện đi kèm" from specs
     let boxIncludes: string[] = []
     if (product.specs && typeof product.specs === 'object' && !Array.isArray(product.specs)) {
-        boxIncludes = (product.specs as any)['Phụ kiện đi kèm'] || []
+        boxIncludes = ((product.specs as Record<string, unknown>)['Phụ kiện đi kèm'] as string[]) || []
     }
 
     const additionalImages = product.product_images?.filter(i => i.image_url !== product.image_main_url) ?? []
-    const features = product.product_feature_values ?? []
+    const _features = product.product_feature_values ?? []
 
     // Fetch related products
     const { products: relatedItems } = await getPublicProducts({
@@ -79,7 +66,7 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
 
 
 
-    const stockDisplay = product.stock_status === 'in_stock'
+    const _stockDisplay = product.stock_status === 'in_stock'
         ? <span className="text-emerald-600 font-medium">Còn hàng</span>
         : product.stock_status === 'pre_order'
         ? <span className="text-amber-600 font-medium">Đặt trước</span>
@@ -87,28 +74,6 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
 
     return (
         <main className="u-container pt-8 pb-28 lg:py-12">
-            {/* JSON-LD Structured Data */}
-            <JsonLd data={buildProductSchema({
-                name: product.name,
-                description: product.description,
-                sku: product.sku,
-                image_main_url: product.image_main_url,
-                price: Number(product.price),
-                stock_status: product.stock_status,
-                brands: product.brands,
-                slug: product.slug,
-                categorySlug: CATEGORY_SLUG,
-                subcategorySlug: product.subcategories?.slug,
-            })} />
-            <JsonLd data={buildBreadcrumbSchema([
-                { name: "Trang chủ", url: "/" },
-                { name: CATEGORY_NAME, url: BASE_PATH },
-                ...(product.subcategories
-                    ? [{ name: product.subcategories.name, url: `${BASE_PATH}/${product.subcategories.slug}` }]
-                    : []),
-                { name: product.name, url: `${BASE_PATH}/${sub}/${product.slug}` },
-            ])} />
-
             {/* Breadcrumb */}
             <nav className="flex items-center gap-1.5 text-[11px] text-stone-500 mb-5 overflow-x-auto whitespace-nowrap scrollbar-hide" aria-label="Breadcrumb">
                 <Link href="/" className="hover:text-stone-900 transition-colors shrink-0">Trang chủ</Link>
@@ -153,7 +118,7 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
 
                         <div className="flex flex-wrap items-center gap-2 text-[12px]">
                             {/* Brand Badge */}
-                            {product.brands && <BrandBadge brand={product.brands as any} className="!h-7 !px-2.5 rounded-md border-stone-200/60 shadow-sm" />}
+                            {product.brands && <BrandBadge brand={product.brands as { id: number; name: string; slug: string; image_url?: string | null; }} className="!h-7 !px-2.5 rounded-md border-stone-200/60 shadow-sm" />}
 
                             {/* SKU Pill */}
                             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-stone-100">
@@ -192,8 +157,6 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
                             currentPrice={Number(product.price)}
                             currentOriginalPrice={Number(product.original_price)}
                             currentColor={product.colors}
-                            variantType={product.variant_type}
-                            variantLabel={product.variant_label}
                             variantGroup={product.variant_group}
                             siblings={variantSiblings}
                             categorySlug={CATEGORY_SLUG}
@@ -232,7 +195,7 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
                             
                             {hasComponents && (
                                 <ProductComponentsSection
-                                    components={productComponents as any}
+                                    components={productComponents as unknown as ComponentProduct[]}
                                     basePath={BASE_PATH}
                                 />
                             )}

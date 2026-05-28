@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation'
 export default async function CategoriesLayout({ children }: { children: React.ReactNode }) {
     try {
         await requirePermission('categories:read')
-    } catch (e) {
+    } catch (_e) {
         redirect('/admin')
     }
     return children

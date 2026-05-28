@@ -4,8 +4,7 @@ const nextConfig: NextConfig = {
   /* config options here */
   reactCompiler: true,
   images: {
-    // LEO-420: unoptimized was removed — all CDN domains are whitelisted below.
-    // Next.js image optimizer is now active (serves via /_next/image).
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: 'https',

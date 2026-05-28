@@ -70,6 +70,10 @@ export const NAV_FOOTER_ABOUT_LINKS = [
 ];
 
 export const NAV_FOOTER_LEGAL_LINKS = [
-    { label: "Điều khoản", href: "/dieu-khoan" },
-    { label: "Quyền riêng tư", href: "/quyen-rieng-tu" },
+    { label: "Vận chuyển - Giao nhận", href: "/van-chuyen-giao-nhan" },
+    { label: "Thông tin Hàng hóa", href: "/thong-tin-hang-hoa" },
+    { label: "Thông tin Giá", href: "/thong-tin-gia" },
+    { label: "Điều kiện Giao dịch", href: "/dieu-kien-giao-dich" },
+    { label: "Kinh doanh có điều kiện", href: "/dieu-kien-kinh-doanh" },
+    { label: "Chính sách Bảo mật", href: "/chinh-sach-bao-mat" },
 ];

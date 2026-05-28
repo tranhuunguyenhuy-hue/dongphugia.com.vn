@@ -30,7 +30,7 @@ export default async function ThietBiBepPage({ searchParams }: PageProps) {
     const activeBrands = params.brands?.split(",").filter(Boolean) ?? []
     const [priceMin, priceMax] = params.price?.split("-").map(Number) ?? []
 
-    const featuredWhere: any = {
+    const featuredWhere: import('@prisma/client').Prisma.productsWhereInput = {
         categories: { slug: CATEGORY_SLUG },
         is_featured: true,
         is_active: true,
@@ -92,13 +92,14 @@ export default async function ThietBiBepPage({ searchParams }: PageProps) {
                             </div>
                         )}
                     </div>
+                    <h1 className="sr-only">{CATEGORY_NAME}</h1>
+
                     <Suspense>
                         <CategoryFilterPanel brands={brands} />
                     </Suspense>
                 </aside>
 
                 <div className="w-full flex-1 min-w-0 space-y-10">
-                    <h1 className="text-2xl font-bold text-gray-800 mb-4">{CATEGORY_NAME}</h1>
                     <SubcategoryIconGrid
                         subcategories={subcategories}
                         basePath={BASE_PATH}

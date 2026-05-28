@@ -18,7 +18,6 @@ import {
     Settings,
     MessageSquare,
     Megaphone,
-    ImagePlay,
 } from "lucide-react"
 
 import {
@@ -108,16 +107,6 @@ const getNavConfig = (role: SessionUser['role'], pendingQuotes: number): NavGrou
                     children: [
                         { label: "Banners", href: "/admin/content/banners", permission: "blog:read" },
                         { label: "Blog Posts", href: "/admin/blog/posts", permission: "blog:read" },
-                    ]
-                },
-                // LEO-422: Admin-only content management items
-                {
-                    title: "Nội dung trang",
-                    icon: ImagePlay,
-                    children: [
-                        { label: "Banners", href: "/admin/banners", permission: "users:read" },
-                        { label: "Đối tác", href: "/admin/doi-tac", permission: "users:read" },
-                        { label: "Dự án", href: "/admin/du-an", permission: "users:read" },
                     ]
                 }
             ]

@@ -15,7 +15,26 @@ import { RichTextEditor } from '@/components/ui/rich-text-editor'
 import Image from 'next/image'
 
 interface BlogPostFormProps {
-    post?: any
+    post?: {
+        id: number;
+        title: string;
+        slug: string;
+        excerpt?: string | null;
+        content?: string | null;
+        category_id?: number | null;
+        thumbnail_url?: string | null;
+        cover_image_url?: string | null;
+        seo_title?: string | null;
+        seo_description?: string | null;
+        seo_keywords?: string | null;
+        reading_time?: number | null;
+        status?: string;
+        author_name?: string | null;
+        is_featured?: boolean;
+        is_pinned?: boolean;
+        blog_categories?: { slug: string; } | null;
+        blog_post_tags?: { tag_id: number; }[];
+    } | null
     categories: { id: number; name: string }[]
     tags: { id: number; name: string; slug: string }[]
 }
@@ -68,7 +87,7 @@ export function BlogPostForm({ post, categories, tags }: BlogPostFormProps) {
     const [showSlug, setShowSlug] = useState(false) // slug hidden by default for marketing
     const [showSeoPreview, setShowSeoPreview] = useState(false)
 
-    const existingTagIds: number[] = post?.blog_post_tags?.map((pt: any) => pt.tag_id) ?? []
+    const existingTagIds: number[] = post?.blog_post_tags?.map((pt: { tag_id: number }) => pt.tag_id) ?? []
 
     const [form, setForm] = useState({
         title: post?.title ?? '',
@@ -89,12 +108,13 @@ export function BlogPostForm({ post, categories, tags }: BlogPostFormProps) {
         tag_ids: existingTagIds,
     })
 
-    const set = (key: string, value: any) => setForm((prev) => ({ ...prev, [key]: value }))
+    const set = (key: string, value: string | boolean | number | number[]) => setForm((prev) => ({ ...prev, [key]: value }))
 
     // Auto-update reading time when content changes
     useEffect(() => {
         if (form.content) {
             const rt = calcReadingTime(form.content)
+            // eslint-disable-next-line
             setForm((prev) => ({ ...prev, reading_time: rt.toString() }))
         }
     }, [form.content])
@@ -384,7 +404,7 @@ export function BlogPostForm({ post, categories, tags }: BlogPostFormProps) {
                                 <label key={key} className="flex items-start gap-2.5 cursor-pointer group">
                                     <input
                                         type="checkbox"
-                                        checked={(form as any)[key]}
+                                        checked={(form as Record<string, unknown>)[key] as boolean}
                                         onChange={(e) => set(key, e.target.checked)}
                                         className="h-4 w-4 rounded border-gray-300 text-primary mt-0.5"
                                     />

@@ -13,8 +13,6 @@ import {
     NAV_MAIN_LINKS as NAV_LINKS,
     NAV_ABOUT_LINKS as ABOUT_LINKS,
 } from '@/config/site'
-import { trackGenerateLead } from '@/lib/tracking'
-
 
 // ── Accordion item for a single product category ──
 function CategoryAccordionItem({
@@ -202,7 +200,7 @@ export function MobileMenuSheet() {
                         <Button asChild variant="default" className="w-full h-12 gap-2 rounded-xl">
                             <Link
                                 href="/lien-he"
-                                onClick={() => { handleNavigate(); trackGenerateLead('mobile_menu_contact'); }}
+                                onClick={handleNavigate}
                                 className="flex items-center justify-center w-full"
                             >
                                 <Phone className="h-4 w-4" />

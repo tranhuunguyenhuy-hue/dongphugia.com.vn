@@ -6,12 +6,11 @@ import { useCartStore, useCartTotal, CartItem } from '@/lib/cart-store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { formatPrice, generateOrderNumber } from '@/lib/utils'
+import { formatPrice } from '@/lib/utils'
 import { Minus, Plus, Trash2, Package2, ShoppingBag, ArrowLeft, Loader2 } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { toast } from 'sonner'
-import { trackPurchase } from '@/lib/tracking'
 
 export default function CartPage() {
     const router = useRouter()
@@ -46,21 +45,6 @@ export default function CartPage() {
                 toast.error(data.error ?? 'Đã có lỗi xảy ra. Vui lòng thử lại.')
                 return
             }
-
-            // Track purchase
-            const transaction_id = data.order_number || generateOrderNumber()
-            trackPurchase(
-                transaction_id,
-                total,
-                items.map(item => ({
-                    item_id: item.sku || item.productId.toString(),
-                    item_name: item.name,
-                    price: item.finalPrice ?? item.price ?? 0,
-                    quantity: item.quantity,
-                    item_category: item.categorySlug,
-                    item_brand: item.brandName || undefined
-                }))
-            )
 
             clearCart()
             router.push(`/dat-hang-thanh-cong?order=${data.order_number}`)

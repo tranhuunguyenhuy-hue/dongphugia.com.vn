@@ -1,7 +1,7 @@
 'use client'
 
 import { cn } from "@/lib/utils"
-import { useState, useRef } from "react"
+import { useState } from "react"
 import { ProductOptionsContext } from "./product-options-context"
 
 interface ProductPriceProps {
@@ -15,8 +15,6 @@ interface ProductPriceProps {
 
 export function ProductPrice({ price, originalPrice, priceDisplay, onlineDiscountAmount, className, children }: ProductPriceProps) {
     const [installOption, setInstallOption] = useState<'none' | 'install' | 'replace'>('none')
-    const [showTooltip, setShowTooltip] = useState(false)
-    const tooltipRef = useRef<HTMLDivElement>(null)
 
     const installationFee = installOption === 'install' ? 200000 : installOption === 'replace' ? 350000 : 0;
 
@@ -82,35 +80,14 @@ export function ProductPrice({ price, originalPrice, priceDisplay, onlineDiscoun
                                     Độc quyền đặt Online
                                 </div>
                                 <div className="flex items-center gap-1.5">
-                                    <span className="text-[14px] font-black text-[#d64a25] tracking-tight">
-                                        Giảm thêm {new Intl.NumberFormat('vi-VN').format(numOnlineDiscount)}đ
+                                    <span className="text-[13px] font-medium text-stone-600">Giá chỉ còn:</span>
+                                    <span className="text-[16px] font-black text-[#d64a25] tracking-tight">
+                                        {new Intl.NumberFormat('vi-VN').format(numPrice - numOnlineDiscount)}đ
                                     </span>
-                                    {/* Info tooltip trigger */}
-                                    <div className="relative" ref={tooltipRef}>
-                                        <button
-                                            type="button"
-                                            aria-label="Thông tin giảm giá online"
-                                            className="w-4 h-4 rounded-full bg-orange-200/80 text-orange-700 flex items-center justify-center text-[9px] font-black hover:bg-orange-300 transition-colors cursor-help"
-                                            onMouseEnter={() => setShowTooltip(true)}
-                                            onMouseLeave={() => setShowTooltip(false)}
-                                            onFocus={() => setShowTooltip(true)}
-                                            onBlur={() => setShowTooltip(false)}
-                                        >
-                                            i
-                                        </button>
-                                        {showTooltip && (
-                                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 px-3 py-2 rounded-lg bg-stone-800 text-white text-[11px] leading-snug shadow-lg z-50 pointer-events-none">
-                                                Giảm giá được tính tự động khi đặt online qua website. Hiển thị trong giỏ hàng.
-                                                {/* Tooltip Arrow */}
-                                                <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-stone-800" />
-                                            </div>
-                                        )}
-                                    </div>
                                 </div>
                             </div>
                         </div>
                     )}
-
                 </div>
 
                 {/* Divider */}

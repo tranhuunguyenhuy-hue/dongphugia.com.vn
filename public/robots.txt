@@ -1,24 +1,12 @@
-# Robots.txt — Đông Phú Gia
-# Generated: 2025-05
-#
-# Rules:
-#   - Allow all crawlers to access public pages
-#   - Block /api/ endpoints (except sitemap routes now moved out of /api/)
-#   - Block /admin, /_next internal routes
-
 User-agent: *
-
-# ── Allowed ─────────────────────────────────────────────────────────────────
 Allow: /
-Allow: /sitemap.xml
-Allow: /sitemap_static.xml
-Allow: /sitemap_product_*.xml
 
-# ── Blocked ──────────────────────────────────────────────────────────────────
-Disallow: /api/
+# Block admin panel and API routes from indexing
 Disallow: /admin/
-Disallow: /_next/
-Disallow: /studio/
+Disallow: /admin
+Disallow: /api/
 
-# Sitemap index
 Sitemap: https://dongphugia.com.vn/sitemap.xml
+Sitemap: https://dongphugia.com.vn/sitemap_product_1.xml
+Sitemap: https://dongphugia.com.vn/sitemap_product_2.xml
+Sitemap: https://dongphugia.com.vn/sitemap_product_3.xml

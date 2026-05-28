@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Plus, Minus, Check, X } from 'lucide-react';
 import { useState, useCallback, useMemo } from 'react';
 
