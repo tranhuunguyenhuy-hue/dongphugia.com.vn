@@ -248,11 +248,11 @@ export function ContactForm() {
                 {/* Full width Map Section */}
                 <div className="mt-20 w-full rounded-2xl overflow-hidden border border-neutral-200 shadow-sm bg-white h-[450px]">
                     <iframe
-                        src={siteConfig.mapUrl}
+                        src="https://maps.google.com/maps?q=vlxd+dong+phu+gia+da+lat+lam+dong&output=embed"
                         width="100%"
                         height="100%"
                         style={{ border: 0 }}
-                        allowFullScreen={true}
+                        allowFullScreen
                         loading="lazy"
                         referrerPolicy="no-referrer-when-downgrade"
                         title="Bản đồ đường đi Showroom Đông Phú Gia"

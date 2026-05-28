@@ -31,11 +31,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     const product = await getPublicProductBySlug(CATEGORY_SLUG, slug)
     if (!product) return { title: "Sản phẩm không tìm thấy" }
     return {
-        title: `${product.name} | ${CATEGORY_NAME} | Đông Phú Gia`,
+        title: `${product.name} | ${CATEGORY_NAME}`,
         description: product.description?.slice(0, 160) || `${product.name} - Chính hãng tại Đông Phú Gia Đà Lạt.`,
         alternates: { canonical: `${BASE_PATH}/${slug}` },
         openGraph: {
-            title: `${product.name} | Đông Phú Gia`,
+            title: `${product.name}`,
             description: product.description?.slice(0, 160) || `${product.name} - Chính hãng tại Đông Phú Gia Đà Lạt.`,
             images: product.image_main_url
                 ? [{ url: product.image_main_url, width: 800, height: 600, alt: product.name }]

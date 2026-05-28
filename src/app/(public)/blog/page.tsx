@@ -7,7 +7,7 @@ import { getBlogPosts, getBlogCategories, getPopularTags } from '@/lib/public-ap
 export const revalidate = 3600
 
 export const metadata = {
-    title: 'Blog & Tin tức | Đông Phú Gia',
+    title: 'Blog & Tin tức',
     description: 'Cập nhật kiến thức, xu hướng thiết kế nội thất, hướng dẫn chọn vật liệu xây dựng và thông tin dự án mới nhất từ Đông Phú Gia Đà Lạt.',
 }
 

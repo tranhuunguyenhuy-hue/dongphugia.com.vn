@@ -11,7 +11,7 @@ import { SubcategoryIconGrid } from "@/components/category/subcategory-icon-grid
 export const revalidate = 3600
 
 export const metadata: Metadata = {
-    title: "Thiết Bị Vệ Sinh | Đông Phú Gia",
+    title: "Thiết Bị Vệ Sinh",
     description: "Thiết bị vệ sinh cao cấp chính hãng TOTO, INAX, Caesar tại Đông Phú Gia Đà Lạt. Hơn 500 mẫu bồn cầu, lavabo, vòi nước, sen tắm.",
     keywords: ["thiết bị vệ sinh", "bồn cầu", "lavabo", "TOTO", "INAX", "Caesar", "Đà Lạt"],
 }
