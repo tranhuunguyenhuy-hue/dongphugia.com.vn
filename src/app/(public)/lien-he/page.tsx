@@ -16,13 +16,13 @@ import { buildBreadcrumbSchema } from "@/lib/seo/schema"
 import { siteConfig } from "@/config/site"
 
 export const metadata: Metadata = {
-    title: "Liên Hệ Tư Vấn | Đông Phú Gia",
+    title: "Liên Hệ Tư Vấn",
     description: `Liên hệ Đông Phú Gia để được tư vấn miễn phí về vật liệu xây dựng cao cấp tại Đà Lạt. Hotline: ${siteConfig.contact.hotlineLabel}. Địa chỉ: ${siteConfig.contact.fullAddress}.`,
     alternates: {
         canonical: "/lien-he",
     },
     openGraph: {
-        title: "Liên Hệ Tư Vấn | Đông Phú Gia",
+        title: "Liên Hệ Tư Vấn",
         description:
             "Tư vấn miễn phí về gạch ốp lát, thiết bị vệ sinh, thiết bị bếp tại Đà Lạt. Đội ngũ chuyên gia sẵn sàng hỗ trợ.",
         url: "/lien-he",

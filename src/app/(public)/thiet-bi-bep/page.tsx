@@ -11,7 +11,7 @@ import { SubcategoryIconGrid } from "@/components/category/subcategory-icon-grid
 export const revalidate = 3600
 
 export const metadata: Metadata = {
-    title: "Thiết Bị Bếp | Đông Phú Gia",
+    title: "Thiết Bị Bếp",
     description: "Thiết bị bếp chính hãng Hafele, Bosch, Cotto tại Đông Phú Gia Đà Lạt.",
     keywords: ["thiết bị bếp", "bếp từ", "máy hút mùi", "Hafele", "Bosch", "Đà Lạt"],
 }
