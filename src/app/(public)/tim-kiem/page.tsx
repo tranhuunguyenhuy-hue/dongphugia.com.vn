@@ -7,6 +7,8 @@ import { formatPrice } from '@/lib/utils'
 import { ProductCard } from '@/components/ui/product-card'
 import prisma from '@/lib/prisma'
 
+import { Prisma } from '@prisma/client'
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 interface SearchResult {
@@ -66,7 +68,7 @@ async function fetchSearchResults(q: string, page: number): Promise<SearchRespon
         const skip = (page - 1) * limit
         const searchTerm = q.trim()
 
-        const whereClause = {
+        const whereClause: Prisma.productsWhereInput = {
             is_active: true,
             OR: [
                 { name: { contains: searchTerm, mode: 'insensitive' as const } },
@@ -95,8 +97,7 @@ async function fetchSearchResults(q: string, page: number): Promise<SearchRespon
                     display_name: true,
                     categories: { select: { slug: true, name: true } },
                     subcategories: { select: { slug: true, name: true } },
-                    // @ts-ignore
-                    brands: { select: { name: true } },
+                    brands: { select: { name: true, slug: true } },
                 },
                 orderBy: [
                     { is_promotion: 'desc' },
@@ -113,7 +114,7 @@ async function fetchSearchResults(q: string, page: number): Promise<SearchRespon
             online_discount_amount: p.online_discount_amount ? Number(p.online_discount_amount) : null,
             category_slug: p.categories?.slug || 'san-pham',
             subcategory_slug: p.subcategories?.slug || 'chi-tiet',
-            brand_name: (p.brands as any)?.name || null,
+            brand_name: p.brands?.name || null,
             url: `/${p.categories?.slug || 'san-pham'}/${p.subcategories?.slug || 'chi-tiet'}/${p.slug}`
         })) as SearchResult[]
 
