@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { Search, Package2, ChevronRight, SlidersHorizontal } from 'lucide-react'
 import { formatPrice } from '@/lib/utils'
 import { ProductCard } from '@/components/ui/product-card'
+import prisma from '@/lib/prisma'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -41,8 +42,10 @@ interface SearchResponse {
 
 // ── Metadata ──────────────────────────────────────────────────────────────────
 
-export async function generateMetadata({ searchParams }: { searchParams: Promise<{ q?: string }> }): Promise<Metadata> {
-    const { q } = await searchParams
+export async function generateMetadata({ searchParams }: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }): Promise<Metadata> {
+    const rawParams = await searchParams
+    const rawQ = Array.isArray(rawParams.q) ? rawParams.q[0] : rawParams.q
+    const q = rawQ?.trim()
     if (!q) return { title: 'Tìm kiếm sản phẩm' }
     return {
         title: `Kết quả tìm kiếm "${q}"`,
@@ -54,14 +57,71 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
 // ── Server data fetch ─────────────────────────────────────────────────────────
 
 async function fetchSearchResults(q: string, page: number): Promise<SearchResponse> {
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
     const limit = 24
-    const res = await fetch(
-        `${baseUrl}/api/search?q=${encodeURIComponent(q)}&limit=${limit}&page=${page}`,
-        { next: { revalidate: 60 } }
-    )
-    if (!res.ok) return { results: [], total: 0, page, limit, query: q }
-    return res.json()
+    if (!q || q.trim().length < 2) {
+        return { results: [], total: 0, page, limit, query: q }
+    }
+
+    try {
+        const skip = (page - 1) * limit
+        const searchTerm = q.trim()
+
+        const whereClause = {
+            is_active: true,
+            OR: [
+                { name: { contains: searchTerm, mode: 'insensitive' as const } },
+                { sku: { contains: searchTerm, mode: 'insensitive' as const } },
+            ]
+        }
+
+        const [products, total] = await Promise.all([
+            prisma.products.findMany({
+                where: whereClause,
+                take: limit,
+                skip,
+                select: {
+                    id: true,
+                    sku: true,
+                    name: true,
+                    slug: true,
+                    price: true,
+                    original_price: true,
+                    online_discount_amount: true,
+                    price_display: true,
+                    image_main_url: true,
+                    is_promotion: true,
+                    is_featured: true,
+                    stock_status: true,
+                    display_name: true,
+                    categories: { select: { slug: true, name: true } },
+                    subcategories: { select: { slug: true, name: true } },
+                    // @ts-ignore
+                    brands: { select: { name: true } },
+                },
+                orderBy: [
+                    { is_promotion: 'desc' },
+                    { created_at: 'desc' }
+                ]
+            }),
+            prisma.products.count({ where: whereClause })
+        ])
+
+        const results = products.map(p => ({
+            ...p,
+            price: p.price ? Number(p.price) : null,
+            original_price: p.original_price ? Number(p.original_price) : null,
+            online_discount_amount: p.online_discount_amount ? Number(p.online_discount_amount) : null,
+            category_slug: p.categories?.slug || 'san-pham',
+            subcategory_slug: p.subcategories?.slug || 'chi-tiet',
+            brand_name: (p.brands as any)?.name || null,
+            url: `/${p.categories?.slug || 'san-pham'}/${p.subcategories?.slug || 'chi-tiet'}/${p.slug}`
+        })) as SearchResult[]
+
+        return { results, total, page, limit, query: searchTerm }
+    } catch (error) {
+        console.error('[Search] Prisma error:', error)
+        return { results: [], total: 0, page, limit, query: q }
+    }
 }
 
 // ── Inline Search Form (client-side redirect) ─────────────────────────────────
@@ -88,17 +148,32 @@ function SearchForm({ defaultValue }: { defaultValue: string }) {
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 interface PageProps {
-    searchParams: Promise<{ q?: string; page?: string }>
+    searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }
 
 export default async function SearchPage({ searchParams }: PageProps) {
-    const { q, page: pageStr } = await searchParams
-    const query = q?.trim() ?? ''
-    const page = Math.max(parseInt(pageStr ?? '1'), 1)
+    const rawParams = await searchParams
+    const rawQ = Array.isArray(rawParams.q) ? rawParams.q[0] : rawParams.q
+    const rawPage = Array.isArray(rawParams.page) ? rawParams.page[0] : rawParams.page
 
-    const data = query.length >= 2 ? await fetchSearchResults(query, page) : null
+    const query = rawQ?.trim() ?? ''
+    let page = parseInt(rawPage ?? '1', 10)
+    if (isNaN(page) || page < 1) page = 1
 
-    const totalPages = data ? Math.ceil(data.total / (data.limit ?? 24)) : 1
+    let data: SearchResponse | null = null
+
+    try {
+        if (query) {
+            data = await fetchSearchResults(query, page)
+        }
+    } catch (error) {
+        console.error('[SearchPage] Unexpected error:', error)
+        if (query) {
+            data = { results: [], total: 0, page, limit: 24, query }
+        }
+    }
+
+    const totalPages = data && data.total > 0 ? Math.ceil(data.total / (data.limit ?? 24)) : 1
 
     return (
         <div className="max-w-[1280px] mx-auto px-5 lg:px-8 py-8 lg:py-12">
