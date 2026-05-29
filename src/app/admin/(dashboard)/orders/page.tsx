@@ -90,7 +90,7 @@ export default async function AdminOrdersPage({ searchParams }: PageProps) {
             </div>
 
             {/* Table */}
-            <OrdersTableClient orders={orders as any} />
+            <OrdersTableClient orders={orders} />
 
             {/* Pagination */}
             {totalPages > 1 && (

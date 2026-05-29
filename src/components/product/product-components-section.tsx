@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
-export interface ComponentProduct {
+interface ComponentProduct {
   id: number;
   child_sku: string;
   relationship_type: string;
@@ -61,7 +61,7 @@ export function ProductComponentsSection({ components, basePath = '/thiet-bi-ve-
 
       {/* Component Cards */}
       <div className="flex flex-col gap-3">
-        {resolved.map(({ child, child_sku, sort_order: _sort_order }) => {
+        {resolved.map(({ child, child_sku, sort_order }) => {
           if (!child) return null;
           const displayName = child.display_name || child.name;
           const href = `${basePath}/${child.subcategories?.slug || 'san-pham'}/${child.slug}`;
@@ -78,7 +78,6 @@ export function ProductComponentsSection({ components, basePath = '/thiet-bi-ve-
               <div className="flex-shrink-0 w-16 h-16 rounded-lg bg-stone-50 overflow-hidden border border-stone-100 relative">
                 {child.image_main_url ? (
                   child.image_main_url.includes('vietceramics.com') ? (
-                    
                     <img
                       src={child.image_main_url}
                       alt={displayName}

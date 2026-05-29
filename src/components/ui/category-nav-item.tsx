@@ -4,7 +4,7 @@ import { ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils'; // Make sure you have this utility
 
 interface CategoryItemProps {
-    category: { slug: string, name: string, image_url?: string | null };
+    category: any;
     className?: string; // Allow passing Tailwind classes for styling (e.g., bg color, borders)
 }
 

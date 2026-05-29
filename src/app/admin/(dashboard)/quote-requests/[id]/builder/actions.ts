@@ -4,23 +4,7 @@ import prisma from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import { requirePermission, getCurrentUser } from '@/lib/auth/get-current-user'
 
-interface QuoteData {
-    vat_rate?: number;
-    shipping_fee?: number;
-    admin_notes?: string;
-    items: {
-        id: number;
-        admin_unit_price: number;
-        admin_quantity: number;
-    }[];
-    phone?: string;
-    name?: string;
-    email?: string;
-    quote_number?: string;
-    id?: number;
-}
-
-export async function updateQuoteData(quoteId: number, data: QuoteData) {
+export async function updateQuoteData(quoteId: number, data: any) {
     try {
         await requirePermission('quotes:update')
 
@@ -54,7 +38,7 @@ export async function updateQuoteData(quoteId: number, data: QuoteData) {
     }
 }
 
-export async function completeQuote(quoteId: number, data: QuoteData) {
+export async function completeQuote(quoteId: number, data: any) {
     try {
         await requirePermission('quotes:update')
 
@@ -69,9 +53,7 @@ export async function completeQuote(quoteId: number, data: QuoteData) {
         if (!customer) {
             customer = await prisma.customers.create({
                 data: {
-                // @ts-expect-error - Expected type mismatch due to Prisma Decimal vs number or partial types
                     full_name: data.name,
-                // @ts-expect-error - Expected type mismatch due to Prisma Decimal vs number or partial types
                     phone: data.phone,
                     email: data.email,
                     source: 'QUOTE_FORM',
@@ -132,8 +114,8 @@ export async function assignQuote(quoteId: number, userId: number | null) {
         revalidatePath('/admin/quote-requests')
         revalidatePath(`/admin/quote-requests/${quoteId}/builder`)
         return { success: true }
-    } catch (error: unknown) {
+    } catch (error: any) {
         console.error('Failed to assign quote:', error)
-        return { success: false, error: 'Lỗi khi giao báo giá: ' + (error instanceof Error ? error.message : String(error)) }
+        return { success: false, error: 'Lỗi khi giao báo giá: ' + error.message }
     }
 }

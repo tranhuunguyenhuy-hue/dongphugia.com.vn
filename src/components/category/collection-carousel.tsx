@@ -29,7 +29,7 @@ export function CollectionCarousel({ patternName, patternSlug, collections, acti
     const [canLeft, setCanLeft] = useState(false);
     const [canRight, setCanRight] = useState(true);
 
-
+    if (collections.length === 0) return null;
 
     const updateArrows = useCallback(() => {
         const el = scrollRef.current;
@@ -38,7 +38,7 @@ export function CollectionCarousel({ patternName, patternSlug, collections, acti
         setCanRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 8);
     }, []);
 
-
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     useEffect(() => {
         const el = scrollRef.current;
         if (!el) return;
@@ -54,14 +54,11 @@ export function CollectionCarousel({ patternName, patternSlug, collections, acti
         scrollRef.current?.scrollBy({ left: dir === 'left' ? -200 : 200, behavior: 'smooth' });
     };
 
-    if (collections.length === 0) return null;
-
     const buildHref = (col: CollectionItem) => {
         const isActive = col.slug === activeSlug;
         if (categoryMode) {
             const params = new URLSearchParams(searchParams.toString());
-            if (isActive) params.delete('collection');
-            else params.set('collection', col.slug);
+            isActive ? params.delete('collection') : params.set('collection', col.slug);
             const qs = params.toString();
             return qs ? `/gach-op-lat?${qs}` : '/gach-op-lat';
         }
@@ -121,7 +118,6 @@ export function CollectionCarousel({ patternName, patternSlug, collections, acti
                                 >
                                     {col.thumbnail_url ? (
                                         col.thumbnail_url.includes('vietceramics.com') ? (
-                                            
                                             <img
                                                 src={col.thumbnail_url}
                                                 alt={col.name}

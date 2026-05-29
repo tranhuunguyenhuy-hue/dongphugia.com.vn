@@ -211,23 +211,19 @@ export default function MaintenancePage() {
       <div className="maintenance-root">
         {/* Background image */}
         <div className="bg-image">
-          
           <img src="/images/maintenance-bg.png" alt="" />
         </div>
 
         <div className="content">
           {/* Logo */}
           <div className="logo-group">
-            
             <img src="/images/logo-icon.svg" alt="" className="logo-icon" />
             <div className="logo-text-wrap">
-              
               <img
                 src="/images/logo-text.svg"
                 alt="ĐÔNG PHÚ GIA"
                 className="logo-text-img"
               />
-              
               <img
                 src="/images/logo-tagline.svg"
                 alt="Đồng hành - Phát triển"

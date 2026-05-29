@@ -19,11 +19,11 @@ const statusConfig: Record<string, { label: string; cls: string; dot: string }> 
 export default async function BlogPostsPage({ searchParams }: PageProps) {
     const { status, category } = await searchParams
 
-    const where: import('@prisma/client').Prisma.blog_postsWhereInput = {}
+    const where: any = {}
     if (status) where.status = status
     if (category) where.category_id = parseInt(category)
 
-    const [posts, _categories, counts] = await Promise.all([
+    const [posts, categories, counts] = await Promise.all([
         prisma.blog_posts.findMany({
             where,
             include: { blog_categories: { select: { name: true, slug: true } } },

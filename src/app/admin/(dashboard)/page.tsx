@@ -1,7 +1,6 @@
 import { getPendingQuotes, getPendingOrders } from "@/lib/admin-dashboard-queries"
 import { formatPrice } from "@/lib/utils"
 import { format } from "date-fns"
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { vi } from "date-fns/locale"
 import { Card } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"

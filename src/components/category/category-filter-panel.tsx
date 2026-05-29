@@ -102,7 +102,6 @@ function BrandTag({ brand, active, onToggle }: { brand: Brand; active: boolean; 
         >
             {/* Logo or text fallback */}
             {!imgFailed ? (
-                
                 <img
                     src={`/images/brands/${slug}.png`}
                     alt={brand.name}
@@ -133,7 +132,6 @@ function BrandTag({ brand, active, onToggle }: { brand: Brand; active: boolean; 
 }
 
 // ── Brand Section (compact tags) ──────────────────────────────────────────────
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function BrandSection({
     brands, activeBrands, onToggle, activeCount,
 }: {
@@ -199,7 +197,6 @@ export function CategoryFilterPanel({ brands }: CategoryFilterPanelProps) {
     const [advOpen, setAdvOpen] = useState(true)
 
     useEffect(() => {
-        // eslint-disable-next-line
         setLocalPrice(priceParam ? parsePriceParam(priceParam) : [PRICE_MIN, PRICE_MAX])
     }, [priceParam])
 

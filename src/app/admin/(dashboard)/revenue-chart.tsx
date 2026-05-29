@@ -21,7 +21,6 @@ export function RevenueChart({ initialData }: RevenueChartProps) {
 
     useEffect(() => {
         if (period === 'month') {
-            // eslint-disable-next-line
             setData(initialData)
             return
         }
@@ -94,7 +93,7 @@ export function RevenueChart({ initialData }: RevenueChartProps) {
                                     cursor={{ fill: 'transparent' }}
                                     contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.05)', fontWeight: 500 }}
                                     labelFormatter={(label) => formatDate(label as string)}
-                                    formatter={(value: unknown) => [formatPrice(Number(value) || 0), 'Doanh thu']}
+                                    formatter={(value: any) => [formatPrice(Number(value) || 0), 'Doanh thu']}
                                 />
                                 <Bar
                                     dataKey="revenue"

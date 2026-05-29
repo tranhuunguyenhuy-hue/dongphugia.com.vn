@@ -17,7 +17,6 @@ interface SubCategoryGridProps {
     activeId?: string;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function SubCategoryGrid({ categoryName, productTypes, categorySlug, title, activeId }: SubCategoryGridProps) {
     if (productTypes.length === 0) return null;
 
@@ -46,7 +45,6 @@ export function SubCategoryGrid({ categoryName, productTypes, categorySlug, titl
                             <div className={`w-full aspect-square rounded-2xl overflow-hidden shadow-[0px_2px_6px_0px_rgba(16,24,40,0.06)] bg-white transition-all duration-300 ${isActive ? 'ring-2 ring-[#2E7A96] ring-offset-2' : ''}`}>
                                 {pt.image ? (
                                     pt.image.includes('vietceramics.com') ? (
-                                        
                                         <img
                                             src={pt.image}
                                             alt={pt.name}

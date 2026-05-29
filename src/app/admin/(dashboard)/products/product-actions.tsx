@@ -30,12 +30,11 @@ interface Props {
     productName?: string
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function ProductActions({ id, isActive, isFeatured, productName }: Props) {
     const [showDelete, setShowDelete] = useState(false)
     const [loading, setLoading] = useState<string | null>(null)
 
-    const handle = async (action: string, fn: () => Promise<unknown>) => {
+    const handle = async (action: string, fn: () => Promise<any>) => {
         setLoading(action)
         await fn()
         setLoading(null)

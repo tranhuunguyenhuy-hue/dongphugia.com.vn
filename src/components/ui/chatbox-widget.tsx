@@ -5,6 +5,8 @@ import { Send, X, Bot, User, Phone } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 import { siteConfig } from "@/config/site";
+import { trackGenerateLead } from "@/lib/tracking";
+
 
 // --- Rule-based Database ---
 const KNOWLEDGE_BASE = [
@@ -58,9 +60,8 @@ export function ChatboxWidget({ isOpen, onClose }: ChatboxWidgetProps) {
         const stored = sessionStorage.getItem("dpg_chat_history");
         if (stored) {
             try {
-                // eslint-disable-next-line
                 setMessages(JSON.parse(stored));
-            } catch (_e) {
+            } catch (e) {
                 setMessages([{ id: "msg_0", sender: "bot", text: INITIAL_MESSAGE, timestamp: Date.now() }]);
             }
         } else {
@@ -85,6 +86,8 @@ export function ChatboxWidget({ isOpen, onClose }: ChatboxWidgetProps) {
     const handleSend = () => {
         const text = inputValue.trim();
         if (!text) return;
+
+        trackGenerateLead('chat_message');
 
         // Add user message
         const userMsg: Message = { id: Date.now().toString(), sender: "user", text, timestamp: Date.now() };
@@ -188,10 +191,10 @@ export function ChatboxWidget({ isOpen, onClose }: ChatboxWidgetProps) {
 
             {/* Quick Actions / Hotlines */}
             <div className="px-4 py-2 bg-white border-t border-stone-100 flex items-center gap-2 overflow-x-auto scrollbar-hide">
-                <a href={`tel:${siteConfig.contact.hotline.split('-')[0]}`} className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 text-rose-700 rounded-full text-[11px] font-semibold shrink-0 hover:bg-rose-100 transition-colors">
+                <a href={`tel:${siteConfig.contact.hotline.split('-')[0]}`} onClick={() => trackGenerateLead('hotline')} className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 text-rose-700 rounded-full text-[11px] font-semibold shrink-0 hover:bg-rose-100 transition-colors">
                     <Phone className="w-3 h-3" /> Gọi Hotline
                 </a>
-                <button onClick={() => setInputValue("Xin báo giá")} className="px-3 py-1.5 bg-stone-100 text-stone-600 rounded-full text-[11px] font-medium shrink-0 hover:bg-stone-200 transition-colors">
+                <button onClick={() => { setInputValue("Xin báo giá"); trackGenerateLead('quote_quick'); }} className="px-3 py-1.5 bg-stone-100 text-stone-600 rounded-full text-[11px] font-medium shrink-0 hover:bg-stone-200 transition-colors">
                     Xin báo giá
                 </button>
                 <button onClick={() => setInputValue("Địa chỉ ở đâu?")} className="px-3 py-1.5 bg-stone-100 text-stone-600 rounded-full text-[11px] font-medium shrink-0 hover:bg-stone-200 transition-colors">

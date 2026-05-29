@@ -35,6 +35,7 @@
 - [x] Tìm kiếm full-text (`/tim-kiem`) — PostgreSQL tsvector + ILIKE fallback
 - [x] Blog listing + detail (`/tin-tuc` rewrite → `/blog`)
 - [x] Liên hệ, Về chúng tôi, Đối tác, Dự án, Dịch vụ lắp đặt
+- [x] 6 trang Chính sách pháp lý & Footer links (LEO-446)
 
 ### Admin CMS
 - [x] Auth — bcrypt + session DB, rate limit 5 attempts/IP

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getCurrentUser } from '@/lib/auth/get-current-user'
 
 // Bunny CDN Storage configuration
 const BUNNY_STORAGE_ZONE = process.env.BUNNY_STORAGE_ZONE_NAME!
@@ -11,6 +12,12 @@ const MAX_SIZE_BYTES = 5 * 1024 * 1024 // 5MB
 
 export async function POST(request: NextRequest) {
     try {
+        // Auth guard — only authenticated admin users can upload
+        const user = await getCurrentUser()
+        if (!user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        }
+
         const formData = await request.formData()
         const file = formData.get('file') as File | null
         const folder = (formData.get('folder') as string) || 'blog'
@@ -71,8 +78,12 @@ export async function POST(request: NextRequest) {
         const publicUrl = `https://${BUNNY_CDN_HOST}/${filePath}`
 
         return NextResponse.json({ url: publicUrl }, { status: 200 })
-    } catch (err: unknown) {
-        console.error('Lỗi API upload:', err)
-        return NextResponse.json({ error: err instanceof Error ? err.message : String(err) }, { status: 500 })
+    } catch (err: any) {
+        console.error('[upload-image] Unexpected error:', err)
+        return NextResponse.json(
+            { error: 'Lỗi server: ' + err.message },
+            { status: 500 }
+        )
     }
 }
+

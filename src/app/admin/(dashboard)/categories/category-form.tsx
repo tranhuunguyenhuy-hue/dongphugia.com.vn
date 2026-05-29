@@ -1,18 +1,15 @@
 'use client'
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { toast } from 'sonner'
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { ArrowLeft, Save, LayoutGrid, Image as ImageIcon, SearchIcon, Layers, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -53,11 +50,10 @@ type FormValues = z.infer<typeof formSchema>
 interface CategoryFormProps {
     pageTitle: string
     pageSubtitle?: string
-    category?: import('@prisma/client').categories & { filter_definitions?: import('@prisma/client').filter_definitions[] }
-    activeBanners?: { id: number; title: string | null; image_url: string; link_url: string | null; is_active: boolean; }[]
+    category?: any
+    activeBanners?: any[]
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function CategoryForm({ pageTitle, pageSubtitle, category, activeBanners = [] }: CategoryFormProps) {
     const router = useRouter()
     const [isPending, startTransition] = useTransition()
@@ -86,7 +82,7 @@ export function CategoryForm({ pageTitle, pageSubtitle, category, activeBanners 
         }
     }
 
-    const onSubmit = async (_values: FormValues) => {
+    const onSubmit = async (values: FormValues) => {
         startTransition(async () => {
             // Note: Replace with actual category-actions in the future
             toast.success('Tính năng lưu danh mục đang được phát triển')
@@ -329,7 +325,7 @@ export function CategoryForm({ pageTitle, pageSubtitle, category, activeBanners 
                                         <Layers className="h-12 w-12 text-neutral-300 mb-4" />
                                         <h3 className="text-lg font-medium text-neutral-700 mb-2">Trình quản lý bộ lọc đang được xây dựng</h3>
                                         <p className="text-sm text-neutral-500 max-w-md">
-                                            Tại đây, bạn sẽ có thể tự do kéo thả, thêm bớt và định nghĩa các thuộc tính như &quot;Kiểu dáng&quot;, &quot;Tính năng&quot; cho danh mục này một cách trực quan.
+                                            Tại đây, bạn sẽ có thể tự do kéo thả, thêm bớt và định nghĩa các thuộc tính như "Kiểu dáng", "Tính năng" cho danh mục này một cách trực quan.
                                         </p>
                                     </CardContent>
                                 </Card>

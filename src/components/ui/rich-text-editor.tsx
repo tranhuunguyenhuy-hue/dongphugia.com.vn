@@ -11,7 +11,6 @@ import {
     Bold, Italic, Strikethrough, Code, Heading2, Heading3,
     List, ListOrdered, Quote, Minus, Link2, ImageIcon, Undo, Redo, Loader2,
 } from 'lucide-react'
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 
@@ -106,9 +105,9 @@ export function RichTextEditor({
 
             editor.chain().focus().setImage({ src: json.url }).run()
             toast.success('Đã chèn ảnh vào nội dung')
-        } catch (err: unknown) {
+        } catch (err: any) {
             console.error('Image upload error:', err)
-            toast.error('Lỗi upload ảnh: ' + (err instanceof Error ? err.message : String(err)))
+            toast.error('Lỗi upload ảnh: ' + err.message)
         } finally {
             setImageUploading(false)
         }

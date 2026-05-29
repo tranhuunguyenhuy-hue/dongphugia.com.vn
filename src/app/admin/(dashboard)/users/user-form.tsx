@@ -27,14 +27,7 @@ export function UserFormModal({
     open,
     onOpenChange
 }: {
-    user?: {
-        id?: number;
-        username?: string | null;
-        name?: string;
-        email?: string;
-        role?: string;
-        is_active?: boolean;
-    } | null;
+    user?: any
     open: boolean
     onOpenChange: (open: boolean) => void
 }) {
@@ -79,9 +72,7 @@ export function UserFormModal({
                 <form onSubmit={onSubmit} className="space-y-4 pt-4">
                     <div className="space-y-2">
                         <Label htmlFor="username">Tên đăng nhập</Label>
-                // @ts-expect-error - Expected type mismatch due to Prisma Decimal vs number or partial types
-                // @ts-expect-error - Expected type mismatch due to Prisma Decimal vs number or partial types
-                        <Input id="username" name="username" defaultValue={user?.username || ""} placeholder="Mặc định đăng nhập bằng email" />
+                        <Input id="username" name="username" defaultValue={user?.username} placeholder="Mặc định đăng nhập bằng email" />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="name">Họ và tên</Label>

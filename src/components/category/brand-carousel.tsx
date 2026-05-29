@@ -109,7 +109,6 @@ export function BrandCarousel({ heading = "Thương hiệu", brands, activeSlug 
                                         : "bg-neutral-50 border-neutral-200 group-hover:bg-white group-hover:border-neutral-400"
                                     }`}
                                 >
-                                    
                                     <img
                                         src={`/images/brands/${brand.slug}.png`}
                                         alt={brand.name}

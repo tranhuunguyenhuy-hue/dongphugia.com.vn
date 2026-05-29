@@ -167,12 +167,13 @@ export function ProductTypeFilter({ activeSubSlug }: ProductTypeFilterProps) {
     const searchParams = useSearchParams()
 
     const types = activeSubSlug ? SUBCATEGORY_TYPE_CONFIG[activeSubSlug] : undefined
+    if (!types || types.length <= 1) return null
 
     const activeType = searchParams.get('type') || ''
     const activeSubType = searchParams.get('subtype') || ''
 
     // Active type config (for sub-types)
-    const activeTypeConfig = types?.find(t => t.slug === activeType)
+    const activeTypeConfig = types.find(t => t.slug === activeType)
     const subTypes = activeTypeConfig?.subTypes
 
     const setType = useCallback((typeSlug: string) => {
@@ -198,8 +199,6 @@ export function ProductTypeFilter({ activeSubSlug }: ProductTypeFilterProps) {
         params.delete('page')
         router.push(`${pathname}?${params.toString()}`, { scroll: false })
     }, [router, pathname, searchParams])
-
-    if (!types || types.length <= 1) return null
 
     return (
         <div className="w-full flex flex-col gap-2.5">

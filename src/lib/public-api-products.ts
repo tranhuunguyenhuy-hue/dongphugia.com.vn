@@ -91,28 +91,64 @@ export async function getPublicProducts(filters: ProductFilters = {}) {
 
     const toArray = (val: string | string[] | undefined) => val ? (Array.isArray(val) ? val : val.split(',')) : undefined
 
-    // Build subcategory filter: include products from both primary and secondary subcategories
+    // Build AND array to prevent multiple OR conditions from overwriting each other at the root level
+    const AND: Prisma.productsWhereInput[] = []
+
+    if (is_master !== undefined) {
+        AND.push({ is_master })
+    } else if (!search) {
+        // Bypass Logic: Hide variants by default, BUT allow CMS override via is_featured or sort_order
+        AND.push({ OR: [{ is_master: true }, { is_featured: true }, { sort_order: { gt: 0 } }] })
+    }
+
     const subcatSlugs = subcategory_slugs ? toArray(subcategory_slugs) : (subcategory_slug ? [subcategory_slug] : undefined)
-    const subcatFilter: Prisma.productsWhereInput | undefined = subcatSlugs ? {
-        OR: [
-            { subcategories: { slug: { in: subcatSlugs } } },
-            { secondary_subcategories: { some: { subcategories: { slug: { in: subcatSlugs } } } } },
-        ]
-    } : undefined
+    if (subcatSlugs) {
+        AND.push({
+            OR: [
+                { subcategories: { slug: { in: subcatSlugs } } },
+                { secondary_subcategories: { some: { subcategories: { slug: { in: subcatSlugs } } } } },
+            ]
+        })
+    }
+
+    // Không hiển thị phụ kiện ở trang listing chính (trừ khi khách đang xem danh mục phụ kiện hoặc tìm kiếm)
+    if (!search && !subcatSlugs?.some(s => s.includes('phu-kien')) && (!product_type || !String(product_type).includes('phu-kien'))) {
+        AND.push({
+            OR: [
+                { product_type: null },
+                { NOT: { product_type: { contains: 'phu-kien' } } }
+            ]
+        })
+    }
+
+    if (search) {
+        AND.push({
+            OR: [
+                { name: { contains: search, mode: 'insensitive' } },
+                { sku: { contains: search, mode: 'insensitive' } },
+                { description: { contains: search, mode: 'insensitive' } },
+            ]
+        })
+    }
+
+    // Spec-based filters: filter by JSON field values in specs column
+    if (spec_filters && Object.keys(spec_filters).length > 0) {
+        Object.entries(spec_filters).forEach(([key, value]) => {
+            const values = String(value).split(',').map(v => v.trim()).filter(Boolean)
+            if (values.length === 1) {
+                AND.push({ specs: { path: [key], string_contains: values[0] } })
+            } else if (values.length > 1) {
+                AND.push({
+                    OR: values.map(v => ({ specs: { path: [key], string_contains: v } }))
+                })
+            }
+        })
+    }
 
     const where: Prisma.productsWhereInput = {
         is_active: true,
-        // Bypass Logic: Hide variants by default, BUT allow CMS override via is_featured or sort_order
-        ...(is_master !== undefined 
-            ? { is_master } 
-            : (!search ? { OR: [{ is_master: true }, { is_featured: true }, { sort_order: { gt: 0 } }] } : {})
-        ),
+        ...(AND.length > 0 ? { AND } : {}),
         ...(category_slug && { categories: { slug: category_slug } }),
-        ...subcatFilter,
-        // Không hiển thị phụ kiện ở trang listing chính (trừ khi khách đang xem danh mục phụ kiện hoặc tìm kiếm)
-        ...(!search && !subcatSlugs?.some(s => s.includes('phu-kien')) && (!product_type || !String(product_type).includes('phu-kien'))
-            ? { NOT: { product_type: { contains: 'phu-kien' } } }
-            : {}),
         ...(product_type && { product_type: { in: toArray(product_type) } }),
         ...(product_sub_type && { product_sub_type: { in: toArray(product_sub_type) } }),
         ...(brand_id && { brand_id }),
@@ -139,27 +175,6 @@ export async function getPublicProducts(filters: ProductFilters = {}) {
                 ...(price_min !== undefined && { gte: price_min }),
                 ...(price_max !== undefined && { lte: price_max }),
             },
-        }),
-        ...(search && {
-            OR: [
-                { name: { contains: search, mode: 'insensitive' } },
-                { sku: { contains: search, mode: 'insensitive' } },
-                { description: { contains: search, mode: 'insensitive' } },
-            ],
-        }),
-        // Spec-based filters: filter by JSON field values in specs column
-        // Uses Prisma JsonFilter: path + string_contains for JSONB key matching
-        ...(spec_filters && Object.keys(spec_filters).length > 0 && {
-            AND: Object.entries(spec_filters).map(([key, value]) => {
-                const values = String(value).split(',').map(v => v.trim()).filter(Boolean)
-                if (values.length === 1) {
-                    return { specs: { path: [key], string_contains: values[0] } } as Prisma.productsWhereInput
-                }
-                // Multiple values → OR between them
-                return {
-                    OR: values.map(v => ({ specs: { path: [key], string_contains: v } }))
-                } as Prisma.productsWhereInput
-            })
         }),
     }
 
@@ -405,6 +420,9 @@ export type VariantSibling = {
     original_price: number | null
     price_display: string | null
     image_main_url: string | null
+    is_active: boolean
+    variant_type: string | null
+    variant_label: string | null
     subcategories: { slug: string } | null
     categories: { slug: string }
     colors?: { name: string; hex_code: string | null } | null
@@ -414,13 +432,14 @@ export const getVariantSiblings = unstable_cache(
     async (variantGroup: string, currentProductId: number): Promise<VariantSibling[]> => {
         if (!variantGroup) return []
 
+        // Include both active and inactive siblings so the UI can render stub swatches
+        // for colour variants that exist but are not yet available (is_active=false)
         const siblings = await prisma.products.findMany({
             where: {
                 variant_group: variantGroup,
-                is_active: true,
                 id: { not: currentProductId },
             },
-            orderBy: [{ price: 'desc' }, { sku: 'asc' }],
+            orderBy: [{ is_active: 'desc' }, { price: 'desc' }, { sku: 'asc' }],
             select: {
                 id: true,
                 sku: true,
@@ -431,6 +450,9 @@ export const getVariantSiblings = unstable_cache(
                 online_discount_amount: true,
                 price_display: true,
                 image_main_url: true,
+                is_active: true,
+                variant_type: true,
+                variant_label: true,
                 subcategories: { select: { slug: true } },
                 categories: { select: { slug: true } },
                 colors: { select: { name: true, hex_code: true } },
