@@ -36,7 +36,6 @@ export default async function EditProductPage({ params }: PageProps) {
             <ProductForm
                 pageTitle="Chỉnh sửa sản phẩm"
                 pageSubtitle={product.name}
-                // @ts-expect-error - Expected type mismatch due to Prisma Decimal vs number or partial types
                 product={product}
                 categories={categories}
                 subcategories={subcategories}

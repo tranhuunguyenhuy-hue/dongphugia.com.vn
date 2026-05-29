@@ -25,7 +25,7 @@ export function CategorySidebar() {
 
             {/* List items */}
             <div className="flex flex-col">
-                {categories.map((cat, _index) => {
+                {categories.map((cat, index) => {
                     const isActive = pathname.startsWith(cat.activePrefix)
 
                     return (

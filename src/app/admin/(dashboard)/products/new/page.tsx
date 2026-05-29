@@ -1,6 +1,4 @@
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import Link from 'next/link'
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { ChevronLeft } from 'lucide-react'
 import { getCategories, getSubcategories, getBrands, getOrigins, getColors, getMaterials, getFilterDefinitions, getProductTypes } from '@/lib/cache'
 import { ProductForm } from '../product-form'

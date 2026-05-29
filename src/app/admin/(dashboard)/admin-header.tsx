@@ -33,7 +33,7 @@ export default function AdminHeader() {
     })
 
     // Get current page title (last breadcrumb)
-    const _pageTitle = breadcrumbs.length > 0
+    const pageTitle = breadcrumbs.length > 0
         ? breadcrumbs[breadcrumbs.length - 1].label
         : "Dashboard"
 

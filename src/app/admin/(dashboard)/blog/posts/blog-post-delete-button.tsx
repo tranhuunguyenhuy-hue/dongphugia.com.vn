@@ -6,7 +6,6 @@ import { toast } from 'sonner'
 import { Trash2, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function BlogPostDeleteButton({ id, title }: { id: number; title: string }) {
     const [confirm, setConfirm] = useState(false)
     const [isPending, startTransition] = useTransition()

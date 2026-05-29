@@ -11,7 +11,7 @@ import { ImageUploader } from '@/components/ui/image-uploader'
 const CATEGORY_OPTIONS = ['Biệt thự', 'Khách sạn', 'Resort', 'Nhà ở', 'Chung cư', 'Văn phòng', 'Khác']
 
 interface ProjectFormProps {
-    project?: { id: number; title: string; location?: string | null; thumbnail_url: string; description?: string | null; category?: string | null; tags: unknown; is_featured: boolean; is_active: boolean; sort_order: number; } | null
+    project?: any
 }
 
 export function ProjectForm({ project }: ProjectFormProps) {
@@ -32,7 +32,7 @@ export function ProjectForm({ project }: ProjectFormProps) {
     })
     const [tagInput, setTagInput] = useState('')
 
-    const set = (key: string, value: string | boolean | string[] | number) => setForm(p => ({ ...p, [key]: value }))
+    const set = (key: string, value: any) => setForm(p => ({ ...p, [key]: value }))
 
     const addTag = () => {
         const t = tagInput.trim()

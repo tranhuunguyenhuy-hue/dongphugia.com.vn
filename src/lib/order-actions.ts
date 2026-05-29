@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { getCurrentUser, requirePermission } from '@/lib/auth/get-current-user'
 import { can } from '@/lib/auth/permissions'
+import { generateOrderNumber } from '@/lib/utils'
 
 // ─── SCHEMAS ─────────────────────────────────────────────────────────────────
 
@@ -27,13 +28,7 @@ const orderSchema = z.object({
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 
-// Fix #3: Entropy tăng từ 4 → 6 digits để giảm collision probability
-function generateOrderNumber(): string {
-    const now = new Date()
-    const yyyymmdd = now.toISOString().slice(0, 10).replace(/-/g, '')
-    const rand = Math.floor(100000 + Math.random() * 900000)
-    return `DPG${yyyymmdd}${rand}`
-}
+// generateOrderNumber() is imported from @/lib/utils (LEO-421: unified format DPG-YYYYMMDD-XXXXXX)
 
 // ─── CREATE ORDER ─────────────────────────────────────────────────────────────
 
@@ -76,8 +71,8 @@ export async function createOrder(data: unknown) {
         })
         revalidatePath('/admin/orders')
         return { success: true, id: order.id, orderNumber: order.order_number }
-    } catch (err: unknown) {
-        return { message: 'Lỗi tạo đơn hàng: ' + (err instanceof Error ? err.message : String(err)) }
+    } catch (err: any) {
+        return { message: 'Lỗi tạo đơn hàng: ' + err.message }
     }
 }
 
@@ -96,8 +91,8 @@ export async function updateOrderStatus(id: number, status: string) {
         revalidatePath('/admin/orders')
         revalidatePath(`/admin/orders/${id}`)
         return { success: true }
-    } catch (err: unknown) {
-        return { message: 'Lỗi cập nhật trạng thái: ' + (err instanceof Error ? err.message : String(err)) }
+    } catch (err: any) {
+        return { message: 'Lỗi cập nhật trạng thái: ' + err.message }
     }
 }
 
@@ -114,8 +109,8 @@ export async function updatePaymentStatus(id: number, paymentStatus: string) {
         revalidatePath('/admin/orders')
         revalidatePath(`/admin/orders/${id}`)
         return { success: true }
-    } catch (err: unknown) {
-        return { message: 'Lỗi cập nhật thanh toán: ' + (err instanceof Error ? err.message : String(err)) }
+    } catch (err: any) {
+        return { message: 'Lỗi cập nhật thanh toán: ' + err.message }
     }
 }
 
@@ -211,7 +206,7 @@ export async function getAdminOrders(params: {
         orders: orders.map(o => ({
             ...o,
             total: Number(o.total),
-            order_items: o.order_items?.map((item: { unit_price: { toString(): string } | number, total_price: { toString(): string } | number } & Record<string, unknown>) => ({
+            order_items: o.order_items?.map((item: any) => ({
                 ...item,
                 unit_price: Number(item.unit_price),
                 total_price: Number(item.total_price),
@@ -246,7 +241,7 @@ export async function getAdminOrderById(id: number) {
         subtotal: Number(order.subtotal),
         shipping_fee: Number(order.shipping_fee),
         total: Number(order.total),
-        order_items: order.order_items?.map((item: { unit_price: { toString(): string } | number, total_price: { toString(): string } | number } & Record<string, unknown>) => ({
+        order_items: order.order_items?.map((item: any) => ({
             ...item,
             unit_price: Number(item.unit_price),
             total_price: Number(item.total_price),
@@ -306,17 +301,17 @@ export async function createQuoteFromOrder(orderId: number) {
             }
         })
         return { success: true, quoteId: quote.id }
-    } catch (err: unknown) {
-        return { success: false, error: (err instanceof Error ? err.message : String(err)) }
+    } catch (err: any) {
+        return { success: false, error: err.message }
     }
 }
 
 // ─── UPDATE ORDER DETAILS (Builder) ──────────────────────────────────────────
 
-export async function updateOrderData(orderId: number, data: { items?: Array<{ id: number, unit_price?: number, quantity?: number }>, vat_rate?: number, shipping_fee?: number | string, discount?: number | string, note?: string }) {
+export async function updateOrderData(orderId: number, data: any) {
     try {
         const items = data.items || []
-        const subtotal = items.reduce((acc: number, item) => {
+        const subtotal = items.reduce((acc: number, item: any) => {
             const price = item.unit_price ?? 0
             const qty = item.quantity ?? 1
             return acc + (price * qty)
@@ -355,9 +350,8 @@ export async function updateOrderData(orderId: number, data: { items?: Array<{ i
 
         revalidatePath(`/admin/orders/${orderId}`)
         return { success: true }
-    } catch (error: unknown) {
+    } catch (error: any) {
         console.error('Failed to update order data:', error)
-                // @ts-expect-error - Expected type mismatch due to Prisma Decimal vs number or partial types
         return { success: false, error: 'Lỗi server khi lưu đơn hàng: ' + error.message }
     }
 }
@@ -391,9 +385,8 @@ export async function assignOrder(orderId: number, userId: number | null) {
         revalidatePath('/admin/orders')
         revalidatePath(`/admin/orders/${orderId}`)
         return { success: true }
-    } catch (error: unknown) {
+    } catch (error: any) {
         console.error('Failed to assign order:', error)
-                // @ts-expect-error - Expected type mismatch due to Prisma Decimal vs number or partial types
         return { success: false, error: 'Lỗi khi giao đơn hàng: ' + error.message }
     }
 }

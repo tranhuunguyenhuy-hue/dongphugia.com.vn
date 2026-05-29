@@ -28,7 +28,6 @@ function isValidImageUrl(url: string | null | undefined): boolean {
 
 export function ProductImageGallery({
     mainImageUrl,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     hoverImageUrl,
     additionalImages = [],
     productName,
@@ -67,7 +66,6 @@ export function ProductImageGallery({
             <div className="relative w-full aspect-square md:aspect-[628/590] lg:aspect-square rounded-[16px] overflow-hidden bg-stone-50 border border-stone-200">
                 {activeImage && !erroredIndices.has(activeIndex) ? (
                     activeImage.includes('vietceramics.com') ? (
-                        
                         <img
                             src={activeImage}
                             alt={productName}
@@ -129,7 +127,6 @@ export function ProductImageGallery({
                             `}
                         >
                             {img.includes('vietceramics.com') ? (
-                                
                                 <img
                                     src={img}
                                     alt={`${productName} - ${idx + 1}`}

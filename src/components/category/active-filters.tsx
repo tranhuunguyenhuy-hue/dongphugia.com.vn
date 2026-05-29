@@ -19,7 +19,7 @@ export function ActiveFilters({ filterDict, excludeKeys = [] }: { filterDict: Ac
     )
     const SPECIAL_KEYS = ['priceRange', 'is_promotion', 'is_featured']
 
-    const activeBadges: { key: string, slug: string, label: string }[] = []
+    let activeBadges: { key: string, slug: string, label: string }[] = []
 
     FILTER_KEYS.forEach(key => {
         const val = searchParams.get(key)

@@ -1,6 +1,5 @@
 import prisma from '@/lib/prisma'
 import { UsersClient } from './client-page'
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { ROLE_LABELS } from '@/lib/auth/permissions'
 
 export const metadata = {

@@ -42,6 +42,8 @@ interface CartStore {
 
 // ─── Store ────────────────────────────────────────────────────────────────────
 
+import { trackAddToCart } from '@/lib/tracking'
+
 export const useCartStore = create<CartStore>()(
     persist(
         (set, get) => ({
@@ -51,6 +53,17 @@ export const useCartStore = create<CartStore>()(
             addItem: (item) => {
                 const { quantity = 1, installOption = 'none', ...rest } = item
                 const cartItemId = `${rest.productId}-${installOption}`
+                
+                // Track Add to Cart
+                trackAddToCart({
+                    item_id: rest.sku || rest.productId.toString(),
+                    item_name: rest.name,
+                    price: rest.price || 0,
+                    quantity,
+                    item_category: rest.categorySlug,
+                    item_brand: rest.brandName || undefined,
+                })
+
                 set((state) => {
                     const existing = state.items.find(i => i.cartItemId === cartItemId)
                     if (existing) {

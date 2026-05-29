@@ -113,7 +113,7 @@ interface ProductTypeItem {
 interface ProductFormProps {
     pageTitle: string
     pageSubtitle?: string
-    product?: import('@prisma/client').products & { specs?: unknown, product_images?: import('@prisma/client').product_images[], variants?: import('@prisma/client').products[], variant_group?: unknown, product_relationships?: (import('@prisma/client').product_relationships & { child?: import('@prisma/client').products | null })[] } | null; // Full product data from getAdminProductById
+    product?: any; // Full product data from getAdminProductById
     categories: LookupItem[]
     subcategories: SubcategoryItem[]
     brands: LookupItem[]
@@ -130,7 +130,7 @@ export function ProductForm({ pageTitle, pageSubtitle, product, categories, subc
     const isEdit = !!product
 
     // Specs state is still separate as it's dynamic
-    const [specs, setSpecs] = useState<Record<string, string | number | boolean>>(
+    const [specs, setSpecs] = useState<Record<string, any>>(
         typeof product?.specs === 'string' ? JSON.parse(product.specs) : product?.specs || {}
     )
 
@@ -542,7 +542,6 @@ export function ProductForm({ pageTitle, pageSubtitle, product, categories, subc
                                 ) : (
                                     <ProductVariantManager 
                                         productId={product.id} 
-                // @ts-expect-error - Expected type mismatch due to Prisma Decimal vs number or partial types
                                         initialVariants={product.variants || []} 
                                         currentVariantGroup={product.variant_group}
                                     />
@@ -990,7 +989,6 @@ export function ProductForm({ pageTitle, pageSubtitle, product, categories, subc
                                                         <div key={filter.id} className="space-y-2">
                                                             <Label>{filter.filter_label}</Label>
                                                             {filter.filter_type === 'select' || filter.filter_type === 'radio' ? (
-                // @ts-expect-error - Expected type mismatch due to Prisma Decimal vs number or partial types
                                                                 <Select value={specs[filter.filter_key] || undefined} onValueChange={v => setSpecs(prev => ({ ...prev, [filter.filter_key]: v }))}>
                                                                     <SelectTrigger>
                                                                         <SelectValue placeholder="Không chọn" />
@@ -1002,7 +1000,6 @@ export function ProductForm({ pageTitle, pageSubtitle, product, categories, subc
                                                                     </SelectContent>
                                                                 </Select>
                                                             ) : (
-                // @ts-expect-error - Expected type mismatch due to Prisma Decimal vs number or partial types
                                                                 <Input value={specs[filter.filter_key] || ''} onChange={e => setSpecs(prev => ({ ...prev, [filter.filter_key]: e.target.value }))} placeholder={`Nhập ${filter.filter_label.toLowerCase()}...`} />
                                                             )}
                                                         </div>
@@ -1151,7 +1148,7 @@ export function ProductForm({ pageTitle, pageSubtitle, product, categories, subc
                                                     <ProductRelationshipPicker 
                                                         excludeId={product.id} 
                                                         onSelect={async (child) => {
-                                                            const res = await addProductRelationship(product.id, child.id, child?.sku, 'component')
+                                                            const res = await addProductRelationship(product.id, child.id, child.sku, 'component')
                                                             if (res.message) toast.error(res.message)
                                                             else toast.success('Đã thêm sản phẩm vào Combo')
                                                         }} 
@@ -1160,9 +1157,9 @@ export function ProductForm({ pageTitle, pageSubtitle, product, categories, subc
 
                                                 <div className="space-y-3">
                                                     <Label>Danh sách sản phẩm liên kết</Label>
-                                                    {product?.product_relationships && (product?.product_relationships as { id: number, child?: { image_main_url?: string | null, name: string, sku: string } | null }[])?.length > 0 ? (
+                                                    {product?.product_relationships && (product?.product_relationships as any[])?.length > 0 ? (
                                                         <div className="divide-y border rounded-lg overflow-hidden bg-white">
-                                                            {(product?.product_relationships as { id: number, child?: { image_main_url?: string | null, name: string, sku: string } | null }[]).map((rel) => (
+                                                            {(product?.product_relationships as any[]).map((rel: any) => (
                                                                 <div key={rel.id} className="flex items-center justify-between p-3 hover:bg-stone-50">
                                                                     <div className="flex items-center gap-3">
                                                                         <div className="h-10 w-10 relative rounded bg-stone-100 border shrink-0">
@@ -1174,9 +1171,7 @@ export function ProductForm({ pageTitle, pageSubtitle, product, categories, subc
                                                                         </div>
                                                                         <div>
                                                                             <p className="text-sm font-medium">{rel.child?.name}</p>
-                // @ts-expect-error - Expected type mismatch due to Prisma Decimal vs number or partial types
-                // @ts-expect-error - Expected type mismatch due to Prisma Decimal vs number or partial types
-                                                                            <p className="text-xs text-muted-foreground">{rel.child?.sku}</p>
+                                                                            <p className="text-xs text-muted-foreground">{rel.child_sku}</p>
                                                                         </div>
                                                                     </div>
                                                                     <Button 

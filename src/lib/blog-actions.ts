@@ -31,7 +31,7 @@ const blogTagSchema = z.object({
     description: z.string().optional().default(''),
 })
 
-export async function createBlogPost(data: unknown) {
+export async function createBlogPost(data: any) {
     const validated = blogPostSchema.safeParse(data)
     if (!validated.success) {
         return { errors: validated.error.flatten().fieldErrors }
@@ -80,13 +80,13 @@ export async function createBlogPost(data: unknown) {
         revalidatePath('/admin/blog/posts')
         revalidatePath('/blog')
         return { success: true, id: post.id }
-    } catch (err: unknown) {
-        if ((err as {code?: string}).code === 'P2002') return { message: 'Slug đã tồn tại, vui lòng dùng slug khác' }
-        return { message: 'Lỗi tạo bài viết: ' + (err instanceof Error ? err.message : String(err)) }
+    } catch (err: any) {
+        if (err.code === 'P2002') return { message: 'Slug đã tồn tại, vui lòng dùng slug khác' }
+        return { message: 'Lỗi tạo bài viết: ' + err.message }
     }
 }
 
-export async function updateBlogPost(id: number, data: unknown) {
+export async function updateBlogPost(id: number, data: any) {
     const validated = blogPostSchema.safeParse(data)
     if (!validated.success) {
         return { errors: validated.error.flatten().fieldErrors }
@@ -142,9 +142,9 @@ export async function updateBlogPost(id: number, data: unknown) {
         revalidatePath('/admin/blog/posts')
         revalidatePath('/blog')
         return { success: true }
-    } catch (err: unknown) {
-        if ((err as {code?: string}).code === 'P2002') return { message: 'Slug đã tồn tại, vui lòng dùng slug khác' }
-        return { message: 'Lỗi cập nhật bài viết: ' + (err instanceof Error ? err.message : String(err)) }
+    } catch (err: any) {
+        if (err.code === 'P2002') return { message: 'Slug đã tồn tại, vui lòng dùng slug khác' }
+        return { message: 'Lỗi cập nhật bài viết: ' + err.message }
     }
 }
 
@@ -158,12 +158,12 @@ export async function deleteBlogPost(id: number) {
         revalidatePath('/admin/blog/posts')
         revalidatePath('/blog')
         return { success: true }
-    } catch (err: unknown) {
-        return { message: 'Lỗi xóa bài viết: ' + (err instanceof Error ? err.message : String(err)) }
+    } catch (err: any) {
+        return { message: 'Lỗi xóa bài viết: ' + err.message }
     }
 }
 
-export async function createBlogTag(data: unknown) {
+export async function createBlogTag(data: any) {
     const validated = blogTagSchema.safeParse(data)
     if (!validated.success) {
         return { errors: validated.error.flatten().fieldErrors }
@@ -178,9 +178,9 @@ export async function createBlogTag(data: unknown) {
         })
         revalidatePath('/admin/blog/tags')
         return { success: true, id: tag.id }
-    } catch (err: unknown) {
-        if ((err as {code?: string}).code === 'P2002') return { message: 'Slug tag đã tồn tại' }
-        return { message: 'Lỗi tạo tag: ' + (err instanceof Error ? err.message : String(err)) }
+    } catch (err: any) {
+        if (err.code === 'P2002') return { message: 'Slug tag đã tồn tại' }
+        return { message: 'Lỗi tạo tag: ' + err.message }
     }
 }
 
@@ -189,8 +189,8 @@ export async function deleteBlogTag(id: number) {
         await prisma.blog_tags.delete({ where: { id } })
         revalidatePath('/admin/blog/tags')
         return { success: true }
-    } catch (err: unknown) {
-        return { message: 'Lỗi xóa tag: ' + (err instanceof Error ? err.message : String(err)) }
+    } catch (err: any) {
+        return { message: 'Lỗi xóa tag: ' + err.message }
     }
 }
 

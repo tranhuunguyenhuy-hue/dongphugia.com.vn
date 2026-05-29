@@ -175,7 +175,7 @@ export function ProductsTableClient({ products }: { products: Product[] }) {
                 } else {
                     toast.error(res?.message || 'Có lỗi xảy ra')
                 }
-            } catch (_error) {
+            } catch (error) {
                 toast.error('Có lỗi xảy ra')
             }
         })
@@ -315,7 +315,7 @@ export function ProductsTableClient({ products }: { products: Product[] }) {
     )
 }
 
-function SortableProductRow({ product, isSelected, canReorder, handleSelectRow }: { product: Product, isSelected: boolean, canReorder: boolean, handleSelectRow: (id: number, checked: boolean) => void }) {
+function SortableProductRow({ product, isSelected, canReorder, handleSelectRow }: any) {
     const {
         attributes,
         listeners,
@@ -356,7 +356,6 @@ function SortableProductRow({ product, isSelected, canReorder, handleSelectRow }
             <TableCell className="px-2 py-2">
                 <div className="w-10 h-10 rounded-md border bg-neutral-50 overflow-hidden relative flex-shrink-0">
                     {product.image_main_url && (
-                        
                         <img
                             src={product.image_main_url}
                             alt={product.name}

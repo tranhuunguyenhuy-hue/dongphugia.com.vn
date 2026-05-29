@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useRef, useCallback, useMemo } from "react"
+import { useState, useRef, useCallback } from "react"
 import Image from "next/image"
-import { X, Loader2, ImageIcon } from "lucide-react"
+import { Upload, X, Loader2, ImageIcon } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 
@@ -50,11 +50,11 @@ export function ImageUploader({
     const inputRef = useRef<HTMLInputElement>(null)
 
     // Normalize value to array for internal handling
-    const images: string[] = useMemo(() => Array.isArray(value)
+    const images: string[] = Array.isArray(value)
         ? value
         : value
             ? [value]
-            : [], [value])
+            : []
 
     const handleFiles = useCallback(
         async (files: FileList | File[]) => {
@@ -103,8 +103,8 @@ export function ImageUploader({
                     }
                     toast.success(`Đã upload ${successUrls.length} ảnh thành công`)
                 }
-            } catch (err: unknown) {
-                toast.error('Lỗi upload: ' + (err instanceof Error ? err.message : String(err)))
+            } catch (err: any) {
+                toast.error('Lỗi upload: ' + err.message)
             } finally {
                 setUploading(false)
             }

@@ -139,7 +139,7 @@ export function HomeCategoryBlockAlt({ categoryData }: HomeCategoryBlockAltProps
                                                 ? "opacity-100 scale-[1.35]" 
                                                 : "opacity-40 grayscale hover:opacity-70 hover:grayscale-0 scale-[0.85]"
                                         )}>
-                                            
+                                            {/* eslint-disable-next-line @next/next/no-img-element */}
                                             <img 
                                                 src={`/images/brands/${brand.slug}.png`}
                                                 alt={brand.name}

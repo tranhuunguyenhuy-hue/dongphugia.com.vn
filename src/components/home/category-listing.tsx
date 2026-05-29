@@ -81,7 +81,7 @@ function CategoryCard({ cat, className = "", visible, delay = 0, isBig = false }
       {/* Thumbnail Background Image */}
       <div className="absolute inset-x-0 bottom-0 pointer-events-none flex justify-end items-end h-[80%]">
         {/* We use an img tag to handle simple bottom-right positioning without layout shifts */}
-        
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={cat.img}
           alt={cat.title}

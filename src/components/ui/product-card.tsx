@@ -4,7 +4,6 @@ import { formatPrice, cn } from '@/lib/utils';
 import { siteConfig } from '@/config/site';
 
 export interface ProductCardProps {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Generic product type used across multiple categories
     product: any;
     showPrice?: boolean;
     patternSlug?: string;
@@ -38,7 +37,6 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
     const firstImage = product.image_main_url || product.thumbnail || (images.length > 0 ? images[0] : null);
 
     // Parse specs for display
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Parsed JSON specs with dynamic structure
     let specs: any = {};
     try {
         if (product.specs) specs = JSON.parse(product.specs as string);
@@ -46,23 +44,23 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
 
     // Use specific properties based on Category
     let collectionName = '';
-    let _dimensionText = '';
-    let _surfaceText = '';
+    let dimensionText = '';
+    let surfaceText = '';
 
     if (isTBVS) {
         collectionName = product.brands?.name || product.tbvs_brands?.name;
-        _dimensionText = product.tbvs_subtypes?.name || product.subcategories?.name;
-        _surfaceText = product.tbvs_materials?.name || product.materials?.name;
+        dimensionText = product.tbvs_subtypes?.name || product.subcategories?.name;
+        surfaceText = product.tbvs_materials?.name || product.materials?.name;
     } else if (isBep) {
         collectionName = product.brands?.name || product.bep_brands?.name;
-        _dimensionText = product.bep_subtypes?.name || product.subcategories?.name;
+        dimensionText = product.bep_subtypes?.name || product.subcategories?.name;
     } else if (isNuoc) {
         collectionName = product.brands?.name || product.nuoc_brands?.name;
-        _dimensionText = product.nuoc_subtypes?.name || product.subcategories?.name;
-        _surfaceText = product.nuoc_materials?.name || product.materials?.name;
+        dimensionText = product.nuoc_subtypes?.name || product.subcategories?.name;
+        surfaceText = product.nuoc_materials?.name || product.materials?.name;
     } else {
         collectionName = product.brands?.name || product.collection?.name || product.collections?.name;
-        _dimensionText = product.dimensions || specs.dimensions || specs.simDimensions || product.sizes?.label;
+        dimensionText = product.dimensions || specs.dimensions || specs.simDimensions || product.sizes?.label;
     }
     const sku = product.sku || product.product_code || product.code || '';
 
@@ -85,7 +83,6 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
     let featuresList: string[] = [];
     if (Array.isArray(product.product_feature_values)) {
         featuresList = product.product_feature_values
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic feature values
             .map((item: any) => item.product_features?.name)
             .filter(Boolean);
     }
@@ -120,7 +117,6 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
                 <div className="relative w-full aspect-square bg-[#F8F9FA] rounded-[12px] overflow-hidden shrink-0 z-10">
                 {firstImage ? (
                     firstImage.includes('vietceramics.com') ? (
-                        
                         <img
                             src={firstImage}
                             alt={product.name}

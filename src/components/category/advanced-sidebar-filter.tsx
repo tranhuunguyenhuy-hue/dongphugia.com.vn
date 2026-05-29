@@ -90,7 +90,6 @@ function DualRangeSlider({
 }
 
 // ── Collapsible Section ────────────────────────────────────────────────────────
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function FilterSection({
     title, children, defaultOpen = true,
 }: {
@@ -164,7 +163,6 @@ function BrandTagChip({ slug, name, active, onClick }: {
             title={name}
         >
             {!imgFailed ? (
-                
                 <img
                     src={`/images/brands/${slug}.png`}
                     alt={name}
@@ -255,7 +253,6 @@ function ColorSwatchChip({ label, hex_code, active, onClick }: {
 }
 
 // ── AdvancedFilterGroup — collapsible "Lọc nâng cao" wrapper ───────────────────
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function AdvancedFilterGroup({
     children, defaultOpen = true, activeCount = 0,
 }: {
@@ -303,7 +300,6 @@ function getSpecActiveValues(searchParams: URLSearchParams, key: string): string
 export function AdvancedSidebarFilter({
     availableFilters,
     hideSubcategoryFilter = false,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     hideTitle = false,
     specFilters = [],
 }: {
@@ -336,7 +332,6 @@ export function AdvancedSidebarFilter({
     const isPriceActive = priceParam !== ''
 
     useEffect(() => {
-        // eslint-disable-next-line
         setLocalPrice(priceParam ? parsePriceParam(priceParam) : [PRICE_MIN, PRICE_MAX])
     }, [priceParam])
 
@@ -615,8 +610,7 @@ export function AdvancedSidebarFilter({
                             active={isPromotion}
                             onClick={() => {
                                 const params = new URLSearchParams(searchParams.toString())
-                                if (isPromotion) params.delete('is_promotion')
-                                else params.set('is_promotion', 'true')
+                                isPromotion ? params.delete('is_promotion') : params.set('is_promotion', 'true')
                                 params.set('page', '1')
                                 router.push(`${pathname}?${params.toString()}`, { scroll: false })
                             }}
@@ -626,8 +620,7 @@ export function AdvancedSidebarFilter({
                             active={isFeatured}
                             onClick={() => {
                                 const params = new URLSearchParams(searchParams.toString())
-                                if (isFeatured) params.delete('is_featured')
-                                else params.set('is_featured', 'true')
+                                isFeatured ? params.delete('is_featured') : params.set('is_featured', 'true')
                                 params.set('page', '1')
                                 router.push(`${pathname}?${params.toString()}`, { scroll: false })
                             }}
