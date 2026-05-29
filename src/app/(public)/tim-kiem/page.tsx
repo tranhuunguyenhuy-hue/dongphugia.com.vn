@@ -1,12 +1,8 @@
 import type { Metadata } from 'next'
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Suspense } from 'react'
 import Link from 'next/link'
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import Image from 'next/image'
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Search, Package2, ChevronRight, SlidersHorizontal } from 'lucide-react'
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { formatPrice } from '@/lib/utils'
 import { ProductCard } from '@/components/ui/product-card'
 
@@ -30,9 +26,9 @@ interface SearchResult {
     subcategory_slug: string | null
     brand_name: string | null
     url: string
-    categories?: { slug: string; name?: string } | null
-    subcategories?: { slug: string; name?: string } | null
-    brands?: { slug: string; name?: string; image_url?: string | null } | null
+    categories?: any
+    subcategories?: any
+    brands?: any
 }
 
 interface SearchResponse {
@@ -47,9 +43,9 @@ interface SearchResponse {
 
 export async function generateMetadata({ searchParams }: { searchParams: Promise<{ q?: string }> }): Promise<Metadata> {
     const { q } = await searchParams
-    if (!q) return { title: 'Tìm kiếm sản phẩm | Đông Phú Gia' }
+    if (!q) return { title: 'Tìm kiếm sản phẩm' }
     return {
-        title: `Kết quả tìm kiếm "${q}" | Đông Phú Gia`,
+        title: `Kết quả tìm kiếm "${q}"`,
         description: `Kết quả tìm kiếm cho "${q}" tại Đông Phú Gia — Thiết bị vệ sinh, gạch ốp lát, thiết bị bếp chính hãng.`,
         robots: { index: false, follow: true },
     }
@@ -115,7 +111,7 @@ export default async function SearchPage({ searchParams }: PageProps) {
                 </nav>
                 <h1 className="text-3xl font-bold text-stone-900 mb-6 tracking-tight">
                     {query
-                        ? <>Kết quả cho <span className="text-brand-600">&quot;{query}&quot;</span></>
+                        ? <>Kết quả cho <span className="text-brand-600">"{query}"</span></>
                         : 'Tìm kiếm sản phẩm'
                     }
                 </h1>
@@ -130,7 +126,7 @@ export default async function SearchPage({ searchParams }: PageProps) {
                     </div>
                     <p className="text-xl font-bold text-stone-800 mb-2">Nhập từ khóa để bắt đầu tìm kiếm</p>
                     <p className="text-stone-500 text-[15px] max-w-md">
-                        Thử tìm tên sản phẩm, mã SKU, hoặc tên thương hiệu như &quot;TOTO&quot;, &quot;HCG&quot;, &quot;Hafele&quot;...
+                        Thử tìm tên sản phẩm, mã SKU, hoặc tên thương hiệu như "TOTO", "HCG", "Hafele"...
                     </p>
                 </div>
             )}
@@ -162,7 +158,7 @@ export default async function SearchPage({ searchParams }: PageProps) {
                             </div>
                             <p className="text-xl font-bold text-stone-800 mb-2">Không có kết quả</p>
                             <p className="text-stone-500 text-[15px] max-w-sm mb-8">
-                                Không tìm thấy sản phẩm nào cho &quot;{query}&quot;. Hãy thử dùng từ khóa khác hoặc tham khảo các gợi ý bên dưới.
+                                Không tìm thấy sản phẩm nào cho "{query}". Hãy thử dùng từ khóa khác hoặc tham khảo các gợi ý bên dưới.
                             </p>
                             <div className="flex flex-wrap gap-2 justify-center">
                                 {['TOTO', 'HCG', 'CAESAR', 'Hafele', 'Gạch ốp lát'].map(s => (

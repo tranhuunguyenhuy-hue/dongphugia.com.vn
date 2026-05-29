@@ -9,12 +9,12 @@ export const revalidate = 3600
 export async function generateMetadata({ params }: { params: Promise<{ categorySlug: string }> }) {
     const { categorySlug } = await params
     const categories = await getBlogCategories()
-    const category = categories.find((c: { slug: string, name: string, description?: string | null }) => c.slug === categorySlug)
+    const category = categories.find((c: any) => c.slug === categorySlug)
 
     if (!category) return { title: 'Không tìm thấy chuyên mục' }
 
     return {
-        title: `${category.name} | Blog Đông Phú Gia`,
+        title: `${category.name}`,
         description: category.description || `Các bài viết mới nhất thuộc chuyên mục ${category.name}`
     }
 }
@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: { params: Promise<{ categoryS
 export default async function BlogCategoryPage({ params }: { params: Promise<{ categorySlug: string }> }) {
     const { categorySlug } = await params
     const categories = await getBlogCategories()
-    const category = categories.find((c: { slug: string, name: string, description?: string | null }) => c.slug === categorySlug)
+    const category = categories.find((c: any) => c.slug === categorySlug)
 
     if (!category) {
         return (

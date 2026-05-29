@@ -10,7 +10,7 @@ import prisma from "@/lib/prisma"
 export const revalidate = 3600
 
 export const metadata: Metadata = {
-    title: "Vật liệu xây dựng cao cấp tại Đà Lạt",
+    title: { absolute: "Đông Phú Gia - Vật liệu xây dựng cao cấp tại Đà Lạt" },
     description: "Đông Phú Gia - Nhà phân phối gạch ốp lát, thiết bị vệ sinh cao cấp tại Đà Lạt. Hơn 1.500 mẫu sản phẩm chính hãng từ TOTO, Inax, Kohler, Marble và nhiều thương hiệu uy tín.",
     keywords: ["gạch ốp lát", "thiết bị vệ sinh", "vật liệu xây dựng", "Đà Lạt", "Đông Phú Gia"],
     openGraph: {
