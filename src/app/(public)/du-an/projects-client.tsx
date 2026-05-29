@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState, useMemo } from "react"
 import Image from "next/image"
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import Link from "next/link"
 import { ArrowRight, MapPin } from "lucide-react"
 import type { ProjectItem } from "@/lib/public-api-projects"

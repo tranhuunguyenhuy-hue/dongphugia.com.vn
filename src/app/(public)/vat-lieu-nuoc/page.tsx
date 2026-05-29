@@ -11,7 +11,7 @@ import { SubcategoryIconGrid } from "@/components/category/subcategory-icon-grid
 export const revalidate = 3600
 
 export const metadata: Metadata = {
-    title: "Vật Liệu Nước | Đông Phú Gia",
+    title: "Vật Liệu Nước",
     description: "Máy nước nóng, máy lọc nước, bồn chứa, máy bơm từ các thương hiệu uy tín tại Đà Lạt.",
     keywords: ["vật liệu nước", "máy nước nóng", "máy lọc nước", "Đà Lạt"],
 }
@@ -30,7 +30,7 @@ export default async function VatLieuNuocPage({ searchParams }: PageProps) {
     const activeBrands = params.brands?.split(",").filter(Boolean) ?? []
     const [priceMin, priceMax] = params.price?.split("-").map(Number) ?? []
 
-    const featuredWhere: import('@prisma/client').Prisma.productsWhereInput = {
+    const featuredWhere: any = {
         categories: { slug: CATEGORY_SLUG },
         is_featured: true,
         is_active: true,
@@ -92,14 +92,13 @@ export default async function VatLieuNuocPage({ searchParams }: PageProps) {
                             </div>
                         )}
                     </div>
-                    <h1 className="sr-only">{CATEGORY_NAME}</h1>
-
                     <Suspense>
                         <CategoryFilterPanel brands={brands} />
                     </Suspense>
                 </aside>
 
                 <div className="w-full flex-1 min-w-0 space-y-10">
+                    <h1 className="text-2xl font-bold text-gray-800 mb-4">{CATEGORY_NAME}</h1>
                     <SubcategoryIconGrid
                         subcategories={subcategories}
                         basePath={BASE_PATH}

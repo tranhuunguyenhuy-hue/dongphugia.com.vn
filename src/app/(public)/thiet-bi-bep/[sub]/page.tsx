@@ -30,9 +30,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     const subcategory = await prisma.subcategories.findFirst({
         where: { slug: sub, is_active: true },
     })
-    if (!subcategory) return { title: `${CATEGORY_NAME} | Đông Phú Gia` }
+    if (!subcategory) return { title: `${CATEGORY_NAME}` }
     return {
-        title: `${subcategory.name} | ${CATEGORY_NAME} | Đông Phú Gia`,
+        title: `${subcategory.name} | ${CATEGORY_NAME}`,
         description: subcategory.description || `${subcategory.name} chính hãng tại Đông Phú Gia Đà Lạt.`,
     }
 }

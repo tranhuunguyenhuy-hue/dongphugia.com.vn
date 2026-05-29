@@ -1,13 +1,12 @@
 import { Metadata } from "next";
 import { siteConfig } from "@/config/site";
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Phone, CheckCircle2, ShieldCheck, Wrench, Clock, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { pricingData } from "./data";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-    title: "Dịch Vụ Lắp Đặt Thiết Bị Vệ Sinh Chuyên Nghiệp | Đông Phú Gia",
+    title: "Dịch Vụ Lắp Đặt Thiết Bị Vệ Sinh Chuyên Nghiệp",
     description: "Bảng giá dịch vụ lắp đặt thiết bị vệ sinh, bồn cầu, lavabo, phòng tắm kính chuyên nghiệp tại Đông Phú Gia. Cam kết minh bạch, thợ lành nghề, bảo hành dài hạn.",
 };
 

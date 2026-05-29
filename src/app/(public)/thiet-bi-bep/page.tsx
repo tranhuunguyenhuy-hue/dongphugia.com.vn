@@ -11,7 +11,7 @@ import { SubcategoryIconGrid } from "@/components/category/subcategory-icon-grid
 export const revalidate = 3600
 
 export const metadata: Metadata = {
-    title: "Thiết Bị Bếp | Đông Phú Gia",
+    title: "Thiết Bị Bếp",
     description: "Thiết bị bếp chính hãng Hafele, Bosch, Cotto tại Đông Phú Gia Đà Lạt.",
     keywords: ["thiết bị bếp", "bếp từ", "máy hút mùi", "Hafele", "Bosch", "Đà Lạt"],
 }
@@ -30,7 +30,7 @@ export default async function ThietBiBepPage({ searchParams }: PageProps) {
     const activeBrands = params.brands?.split(",").filter(Boolean) ?? []
     const [priceMin, priceMax] = params.price?.split("-").map(Number) ?? []
 
-    const featuredWhere: import('@prisma/client').Prisma.productsWhereInput = {
+    const featuredWhere: any = {
         categories: { slug: CATEGORY_SLUG },
         is_featured: true,
         is_active: true,
@@ -92,14 +92,13 @@ export default async function ThietBiBepPage({ searchParams }: PageProps) {
                             </div>
                         )}
                     </div>
-                    <h1 className="sr-only">{CATEGORY_NAME}</h1>
-
                     <Suspense>
                         <CategoryFilterPanel brands={brands} />
                     </Suspense>
                 </aside>
 
                 <div className="w-full flex-1 min-w-0 space-y-10">
+                    <h1 className="text-2xl font-bold text-gray-800 mb-4">{CATEGORY_NAME}</h1>
                     <SubcategoryIconGrid
                         subcategories={subcategories}
                         basePath={BASE_PATH}
