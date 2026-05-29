@@ -22,3 +22,14 @@ export function formatPrice(price: number | string) {
   if (!price) return 'Liên hệ'
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Number(price))
 }
+
+/**
+ * Generate a unique order number in the format DPG-YYYYMMDD-XXXXXX.
+ * Uses zero-padded 6-digit random suffix (1M combinations/day — sufficient for volume).
+ * LEO-421: unified format across REST API and server actions.
+ */
+export function generateOrderNumber(): string {
+  const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '')
+  const random = Math.floor(Math.random() * 1_000_000).toString().padStart(6, '0')
+  return `DPG-${dateStr}-${random}`
+}
