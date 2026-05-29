@@ -20,7 +20,10 @@ export const siteConfig = {
     },
 
     // Maps iframe URL
-    mapUrl: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1m3!1d3903.220199043!2d108.435777715277!3d11.954605191530999!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x317112d1b110ba2b%3A0xc3f8373b88ea2859!2zxJDDtG5nIFBow7ogR2lh!5e0!3m2!1svi!2s!4v1713421715423!5m2!1svi!2s",
+    // FIX LEO-438: Replaced invalid embed URL (expired 'pb' param) with stable
+    // plain-text search embed — no API key required, no expiry risk.
+    // Address: 273-275 Phan Dinh Phung, Phuong 2, Da Lat, Lam Dong
+    mapUrl: "https://maps.google.com/maps?q=273+Phan+Dinh+Phung+Phuong+2+Da+Lat+Lam+Dong&output=embed",
 
     // Featured Settings
     featuredBrands: {
