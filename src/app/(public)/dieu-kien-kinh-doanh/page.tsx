@@ -1,7 +1,7 @@
 import { Metadata } from 'next'
 
 export const metadata: Metadata = {
-    title: 'Kinh doanh có Điều kiện',
+    title: 'Lĩnh vực Kinh doanh có Điều kiện | Đông Phú Gia',
     description: 'Thông tin về các lĩnh vực kinh doanh có điều kiện và chứng nhận đăng ký doanh nghiệp của Đông Phú Gia.',
 }
 
