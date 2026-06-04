@@ -1,7 +1,8 @@
 'use client'
 
 import { cn } from "@/lib/utils"
-import { useState, useRef } from "react"
+import { Sparkles, Gift, ShieldCheck, Award, Truck, Headphones } from 'lucide-react'
+import { useState } from "react"
 import { ProductOptionsContext } from "./product-options-context"
 
 interface ProductPriceProps {
@@ -15,8 +16,6 @@ interface ProductPriceProps {
 
 export function ProductPrice({ price, originalPrice, priceDisplay, onlineDiscountAmount, className, children }: ProductPriceProps) {
     const [installOption, setInstallOption] = useState<'none' | 'install' | 'replace'>('none')
-    const [showTooltip, setShowTooltip] = useState(false)
-    const tooltipRef = useRef<HTMLDivElement>(null)
 
     const installationFee = installOption === 'install' ? 200000 : installOption === 'replace' ? 350000 : 0;
 
@@ -51,7 +50,7 @@ export function ProductPrice({ price, originalPrice, priceDisplay, onlineDiscoun
                                 {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(numOriginal)}
                             </p>
                             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-700">
-                                <span className="text-[12px] font-bold">✨ Tiết kiệm {Math.round(((numOriginal - numPrice) / numOriginal) * 100)}%</span>
+                                <span className="flex items-center gap-1 text-[12px] font-bold"><Sparkles className="w-3 h-3" /> Tiết kiệm {Math.round(((numOriginal - numPrice) / numOriginal) * 100)}%</span>
                             </div>
                         </div>
                     ) : (
@@ -68,7 +67,7 @@ export function ProductPrice({ price, originalPrice, priceDisplay, onlineDiscoun
                             
                             {/* Left Stub */}
                             <div className="relative flex flex-col items-center justify-center pl-4 pr-3 border-r border-dashed border-orange-300">
-                                <span className="text-[20px] leading-none">🎁</span>
+                                <span className="text-[20px] leading-none flex items-center justify-center"><Gift className="w-5 h-5 text-orange-500" /></span>
                                 
                                 {/* Top Hole */}
                                 <div className="absolute -right-2 -top-[9px] w-4 h-4 bg-white rounded-full border-b border-orange-200 z-10" />
@@ -82,35 +81,14 @@ export function ProductPrice({ price, originalPrice, priceDisplay, onlineDiscoun
                                     Độc quyền đặt Online
                                 </div>
                                 <div className="flex items-center gap-1.5">
-                                    <span className="text-[14px] font-black text-[#d64a25] tracking-tight">
-                                        Giảm thêm {new Intl.NumberFormat('vi-VN').format(numOnlineDiscount)}đ
+                                    <span className="text-[13px] font-medium text-stone-600">Giá chỉ còn:</span>
+                                    <span className="text-[16px] font-black text-[#d64a25] tracking-tight">
+                                        {new Intl.NumberFormat('vi-VN').format(numPrice - numOnlineDiscount)}đ
                                     </span>
-                                    {/* Info tooltip trigger */}
-                                    <div className="relative" ref={tooltipRef}>
-                                        <button
-                                            type="button"
-                                            aria-label="Thông tin giảm giá online"
-                                            className="w-4 h-4 rounded-full bg-orange-200/80 text-orange-700 flex items-center justify-center text-[9px] font-black hover:bg-orange-300 transition-colors cursor-help"
-                                            onMouseEnter={() => setShowTooltip(true)}
-                                            onMouseLeave={() => setShowTooltip(false)}
-                                            onFocus={() => setShowTooltip(true)}
-                                            onBlur={() => setShowTooltip(false)}
-                                        >
-                                            i
-                                        </button>
-                                        {showTooltip && (
-                                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 px-3 py-2 rounded-lg bg-stone-800 text-white text-[11px] leading-snug shadow-lg z-50 pointer-events-none">
-                                                Giảm giá được tính tự động khi đặt online qua website. Hiển thị trong giỏ hàng.
-                                                {/* Tooltip Arrow */}
-                                                <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-stone-800" />
-                                            </div>
-                                        )}
-                                    </div>
                                 </div>
                             </div>
                         </div>
                     )}
-
                 </div>
 
                 {/* Divider */}
@@ -228,20 +206,25 @@ export function ProductPrice({ price, originalPrice, priceDisplay, onlineDiscoun
                 </div>
 
                 {/* === CARD 3: TRUST BADGES === */}
-                <div className="grid grid-cols-2 gap-x-3 gap-y-2 mt-5 px-1">
+                <div className="grid grid-cols-2 gap-x-3 gap-y-3 mt-5 px-1">
                     {[
-                        "100% Chính hãng",
-                        "Bảo hành tiêu chuẩn",
-                        "Giao hàng toàn quốc",
-                        "Tư vấn kỹ thuật 24/7"
+                        { icon: ShieldCheck, text: "100% Chính hãng", sub: "Phân phối độc quyền" },
+                        { icon: Award,       text: "Bảo hành 3–5 năm", sub: "Theo NSX" },
+                        { icon: Truck,       text: "Giao toàn quốc",   sub: "Miễn phí nội thành" },
+                        { icon: Headphones,  text: "Tư vấn 24/7",      sub: "Kỹ thuật chuyên sâu" },
                     ].map((feature, idx) => (
-                        <div key={idx} className="flex items-center gap-1.5">
-                            <svg className="w-3.5 h-3.5 text-stone-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            <span className="text-[11px] font-medium text-stone-600 leading-tight">
-                                {feature}
-                            </span>
+                        <div key={idx} className="flex items-start gap-2">
+                            <div className="mt-0.5 text-brand-600 shrink-0">
+                                <feature.icon className="w-4 h-4" />
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-[11px] font-bold text-stone-700 leading-tight">
+                                    {feature.text}
+                                </span>
+                                <span className="text-[10px] text-stone-500 leading-tight mt-0.5">
+                                    {feature.sub}
+                                </span>
+                            </div>
                         </div>
                     ))}
                 </div>

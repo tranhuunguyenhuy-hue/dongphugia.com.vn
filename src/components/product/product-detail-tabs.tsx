@@ -9,10 +9,10 @@ function sanitizeProductHtml(html: string): string {
     if (!html) return html;
     let result = html;
 
-    // 1. Remove <img> tags with src pointing to hita spinner image
-    //    (catches hita.com.vn/images/original.jpg spinner)
+    // 1. Remove <img> tags with src pointing to any hita domain
+    //    (catches hita.com.vn/images/original.jpg spinner and cdn.hita.com.vn CDN images)
     result = result.replace(
-        /<img\b[^>]*\bsrc=["']https?:\/\/[^"']*hita\.com\.vn\/images\/original\.jpg["'][^>]*\/?>/gi,
+        /<img\b[^>]*\bsrc=["']https?:\/\/[^"']*hita[^"']*["'][^>]*\/?>/gi,
         ''
     );
 
@@ -265,26 +265,30 @@ export function ProductDetailTabs({
 
     return (
         <div className="mt-0 mb-16 max-w-[1216px] w-full">
-            <div className="flex overflow-x-auto overflow-y-hidden whitespace-nowrap gap-3 sm:gap-6 lg:gap-8 mb-6 sm:mb-8 border-b-2 border-stone-100 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]" role="tablist">
+            <div className="flex overflow-x-auto overflow-y-hidden whitespace-nowrap border-b border-stone-200 w-full mb-6 sm:mb-8 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]" role="tablist">
                 <TabButton
+                    icon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z" /></svg>}
                     label={config.infoLabel}
                     isActive={activeTab === 'info'}
                     onClick={() => setActiveTab('info')}
                 />
                 {hasFeatures && (
                     <TabButton
+                        icon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" /></svg>}
                         label={config.featuresLabel}
                         isActive={activeTab === 'features'}
                         onClick={() => setActiveTab('features')}
                     />
                 )}
                 <TabButton
+                    icon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg>}
                     label={config.specsLabel}
                     isActive={activeTab === 'specs'}
                     onClick={() => setActiveTab('specs')}
                 />
                 {parsedDocuments.length > 0 && (
                     <TabButton
+                        icon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" /></svg>}
                         label={config.docsLabel}
                         isActive={activeTab === 'docs'}
                         onClick={() => setActiveTab('docs')}
@@ -293,7 +297,7 @@ export function ProductDetailTabs({
             </div>
 
             {/* Tab Content */}
-            <div className="mt-6 animate-fade-in">
+            <div key={activeTab} className="mt-6 animate-tabFadeIn">
                 {activeTab === 'info' && (
                     <div>
                         {description ? (
@@ -366,11 +370,11 @@ export function ProductDetailTabs({
                                         <table className="w-full text-left border-collapse">
                                             <tbody>
                                                 {(isSpecsExpanded ? specsList : specsList.slice(0, 6)).map((spec, idx) => (
-                                                    <tr key={idx} className="odd:bg-[#f8f9fa] even:bg-white hover:bg-stone-100/50 transition-colors border-b border-stone-100 last:border-0">
-                                                        <th className="py-3.5 px-5 w-[40%] md:w-[30%] font-semibold text-stone-900 text-[14px] align-top">
+                                                    <tr key={idx} className="group border-b border-stone-100 last:border-0 hover:bg-stone-100/50 transition-colors">
+                                                        <th className="py-3.5 px-5 w-[40%] md:w-[30%] bg-stone-50/60 text-stone-500 font-medium text-[13px] align-top transition-colors group-hover:bg-stone-100/50">
                                                             {spec.key}
                                                         </th>
-                                                        <td className="py-3.5 px-5 text-stone-800 text-[14px] leading-relaxed">
+                                                        <td className="py-3.5 px-5 text-stone-800 font-semibold text-[14px] leading-relaxed transition-colors group-hover:bg-transparent">
                                                             {renderSpecValue(spec.key, spec.value)}
                                                         </td>
                                                     </tr>
@@ -471,10 +475,12 @@ export function ProductDetailTabs({
 
 function TabButton({
     label,
+    icon,
     isActive,
     onClick,
 }: {
-    label: string;
+    label: string | React.ReactNode;
+    icon?: React.ReactNode;
     isActive: boolean;
     onClick: () => void;
 }) {
@@ -485,19 +491,19 @@ function TabButton({
             tabIndex={isActive ? 0 : -1}
             onClick={onClick}
             className={`
-                pb-3 sm:pb-4 font-semibold text-[13px] sm:text-[15px] lg:text-[17px] leading-tight transition-colors duration-200 relative whitespace-nowrap
+                flex-1 px-4 sm:px-6 py-3 sm:py-4 font-semibold text-[14px] sm:text-[15px] min-h-[52px] flex items-center justify-center gap-2.5 leading-tight transition-all duration-200 relative whitespace-nowrap border-b-2 -mb-[1px]
                 ${isActive
-                    ? 'text-stone-900'
-                    : 'text-stone-400 hover:text-stone-600'
+                    ? 'text-brand-600 border-brand-600'
+                    : 'text-stone-500 border-transparent hover:text-stone-800 hover:border-stone-300'
                 }
             `}
         >
-            {label}
-            {isActive && (
-                <div
-                    className="absolute -bottom-[2px] left-0 right-0 h-[3px] rounded-t-full bg-brand-500"
-                />
+            {icon && (
+                <span className={`flex-shrink-0 ${isActive ? 'text-brand-600' : 'text-stone-400'}`}>
+                    {icon}
+                </span>
             )}
+            {label}
         </button>
     );
 }
