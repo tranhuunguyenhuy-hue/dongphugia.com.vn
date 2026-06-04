@@ -119,6 +119,24 @@ export function Footer() {
                         ))}
                     </div>
                 </div>
+
+                {/* BCT Badge */}
+                <div className="pt-6 flex justify-center">
+                    <a
+                        href="http://online.gov.vn/Home/WebDetails/143418"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label="Đã thông báo Bộ Công Thương"
+                    >
+                        <Image
+                            src="/images/bct-badge.png"
+                            alt="Đã Thông Báo Bộ Công Thương"
+                            width={250}
+                            height={100}
+                            className="h-20 lg:h-[100px] w-auto object-contain opacity-90 hover:opacity-100 transition-opacity"
+                        />
+                    </a>
+                </div>
             </div>
         </footer>
     );
