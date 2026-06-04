@@ -9,6 +9,7 @@ import { ProductComponentsSection } from "@/components/product/product-component
 import { ProductBoxIncludes } from "@/components/product/product-box-includes"
 import { VariantSelector } from "@/components/product/variant-selector"
 import { ProductCard } from "@/components/ui/product-card"
+import { RecentlyViewedProducts } from "@/components/product/recently-viewed"
 import { BrandBadge } from "@/components/ui/brand-badge"
 import { ProductPrice } from "@/components/product/product-price"
 import { JsonLd } from "@/components/seo/json-ld"
@@ -17,15 +18,13 @@ import { buildProductSchema, buildBreadcrumbSchema } from "@/lib/seo/schema"
 export const revalidate = 21600
 export const dynamicParams = true
 
-const CATEGORY_SLUG = "thiet-bi-ve-sinh"
-const CATEGORY_NAME = "Thiết Bị Vệ Sinh"
-const BASE_PATH = "/thiet-bi-ve-sinh"
-
-
 interface PageProps {
     params: Promise<{ sub: string; slug: string }>
 }
 
+const CATEGORY_SLUG = "thiet-bi-ve-sinh"
+const CATEGORY_NAME = "Thiết Bị Vệ Sinh"
+const BASE_PATH = "/thiet-bi-ve-sinh"
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
     const { slug } = await params
@@ -87,7 +86,6 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
 
     return (
         <main className="u-container pt-8 pb-28 lg:py-12">
-            {/* JSON-LD Structured Data */}
             <JsonLd data={buildProductSchema({
                 name: product.name,
                 description: product.description,
@@ -108,7 +106,6 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
                     : []),
                 { name: product.name, url: `${BASE_PATH}/${sub}/${product.slug}` },
             ])} />
-
             {/* Breadcrumb */}
             <nav className="flex items-center gap-1.5 text-[11px] text-stone-500 mb-5 overflow-x-auto whitespace-nowrap scrollbar-hide" aria-label="Breadcrumb">
                 <Link href="/" className="hover:text-stone-900 transition-colors shrink-0">Trang chủ</Link>
@@ -145,23 +142,23 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
                 {/* 2. Info & CTA (Mobile: Middle, Desktop: Right Column Sticky) */}
                 <div className="flex flex-col gap-6 w-full lg:col-start-2 lg:row-start-1 lg:row-span-2 relative">
                     <div>
-                        {/* Removed promotional badges (Nổi bật, Khuyến mãi) to clean up visual noise */}
+                        {/* Eyebrow / Breadcrumb badge (HI-5) */}
+                        <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-stone-100 text-[11px] font-medium text-stone-500 mb-3">
+                            <span className="uppercase tracking-wider">{product.categories?.name}</span>
+                            {product.subcategories && (
+                                <>
+                                    <span className="text-stone-300">/</span>
+                                    <span>{product.subcategories.name}</span>
+                                </>
+                            )}
+                        </div>
 
-                        <h1 className="text-2xl md:text-[28px] font-bold text-stone-900 leading-[1.2] mb-4 tracking-tight">
+                        <h1 className="text-3xl md:text-[34px] lg:text-[36px] font-bold text-stone-900 leading-[1.15] mb-4 tracking-tight">
                             {product.name}
                         </h1>
 
                         <div className="flex flex-wrap items-center gap-2 text-[12px]">
-                            {/* Brand Badge */}
-                            {product.brands && <BrandBadge brand={product.brands as any} className="!h-7 !px-2.5 rounded-md border-stone-200/60 shadow-sm" />}
-
-                            {/* SKU Pill */}
-                            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-stone-100">
-                                <span className="text-stone-500">Mã SP:</span>
-                                <span className="font-mono font-bold text-stone-800">{product.sku}</span>
-                            </div>
-
-                            {/* Status Pill */}
+                            {/* 1. Status Pill */}
                             <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md border ${product.stock_status === 'in_stock' ? 'bg-emerald-50 border-emerald-100' : 'bg-rose-50 border-rose-100'}`}>
                                 <div className={`w-1.5 h-1.5 rounded-full ${product.stock_status === 'in_stock' ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`} />
                                 <span className={`font-medium ${product.stock_status === 'in_stock' ? 'text-emerald-700' : 'text-rose-700'}`}>
@@ -169,7 +166,10 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
                                 </span>
                             </div>
 
-                            {/* Color Pill */}
+                            {/* 2. Brand Badge */}
+                            {product.brands && <BrandBadge brand={product.brands as any} className="!h-7 !px-2.5 rounded-md border-stone-200/60 shadow-sm" />}
+
+                            {/* 3. Color Pill */}
                             {product.colors && (
                                 <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-stone-50 border border-stone-200/60">
                                     <span
@@ -179,6 +179,12 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
                                     <span className="font-medium text-stone-700">{product.colors.name}</span>
                                 </div>
                             )}
+
+                            {/* 4. SKU Pill */}
+                            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-stone-100">
+                                <span className="text-stone-500">Mã SP:</span>
+                                <span className="font-mono font-bold text-stone-800">{product.sku}</span>
+                            </div>
                         </div>
                     </div>
 
@@ -271,6 +277,26 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
                     </div>
                 </div>
             )}
+            <RecentlyViewedProducts currentProduct={{
+                id: product.id,
+                name: product.name,
+                display_name: product.display_name,
+                slug: product.slug,
+                sku: product.sku,
+                image_main_url: product.image_main_url,
+                price: product.price ? Number(product.price) : null,
+                original_price: product.original_price ? Number(product.original_price) : null,
+                online_discount_amount: product.online_discount_amount ? Number(product.online_discount_amount) : null,
+                price_display: product.price_display,
+                category_slug: CATEGORY_SLUG,
+                is_featured: product.is_featured,
+                is_promotion: product.is_promotion,
+                url: `${BASE_PATH}/${sub}/${slug}`,
+                colors: product.colors,
+                brands: product.brands,
+                subcategories: product.subcategories,
+                stock_status: product.stock_status,
+            }} />
         </main>
     )
 }

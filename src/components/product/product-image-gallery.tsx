@@ -3,6 +3,9 @@
 import Image from 'next/image';
 import { useState } from 'react';
 import { Package2 } from 'lucide-react';
+import Lightbox from "yet-another-react-lightbox";
+import "yet-another-react-lightbox/styles.css";
+import Zoom from "yet-another-react-lightbox/plugins/zoom";
 
 interface GalleryImage {
     image_url: string;
@@ -55,6 +58,40 @@ export function ProductImageGallery({
         }
     };
 
+    // Lightbox state
+    const [lightboxOpen, setLightboxOpen] = useState(false);
+
+    // Swipe gesture state
+    const [touchStart, setTouchStart] = useState<number | null>(null);
+    const [touchEnd, setTouchEnd] = useState<number | null>(null);
+    const minSwipeDistance = 50;
+
+    const onTouchStart = (e: React.TouchEvent) => {
+        setTouchEnd(null);
+        setTouchStart(e.targetTouches[0].clientX);
+    };
+
+    const onTouchMove = (e: React.TouchEvent) => {
+        setTouchEnd(e.targetTouches[0].clientX);
+    };
+
+    const onTouchEndHandler = () => {
+        if (!touchStart || !touchEnd) return;
+        const distance = touchStart - touchEnd;
+        const isLeftSwipe = distance > minSwipeDistance;
+        const isRightSwipe = distance < -minSwipeDistance;
+
+        const visibleIndices = allImages.map((_, i) => i).filter(i => !erroredIndices.has(i));
+        const currentPos = visibleIndices.indexOf(activeIndex);
+
+        if (isLeftSwipe && currentPos < visibleIndices.length - 1) {
+            setActiveIndex(visibleIndices[currentPos + 1]);
+        }
+        if (isRightSwipe && currentPos > 0) {
+            setActiveIndex(visibleIndices[currentPos - 1]);
+        }
+    };
+
     // Visible thumbnails: only those that haven't errored
     const visibleImages = allImages
         .map((img, idx) => ({ img, idx }))
@@ -65,23 +102,33 @@ export function ProductImageGallery({
             {/* Main Image */}
             <div className="relative w-full aspect-square md:aspect-[628/590] lg:aspect-square rounded-[16px] overflow-hidden bg-stone-50 border border-stone-200">
                 {activeImage && !erroredIndices.has(activeIndex) ? (
-                    activeImage.includes('vietceramics.com') ? (
-                        <img
-                            src={activeImage}
-                            alt={productName}
-                            className="absolute inset-0 w-full h-full object-contain"
-                            onError={() => handleImageError(activeIndex)}
-                        />
-                    ) : (
-                        <Image
-                            src={activeImage}
-                            alt={productName}
-                            fill
-                            className="object-contain"
-                            priority
-                            onError={() => handleImageError(activeIndex)}
-                        />
-                    )
+                    <div 
+                        className="w-full h-full cursor-zoom-in"
+                        role="button"
+                        aria-label="Phóng to ảnh sản phẩm"
+                        onClick={() => setLightboxOpen(true)}
+                        onTouchStart={onTouchStart}
+                        onTouchMove={onTouchMove}
+                        onTouchEnd={onTouchEndHandler}
+                    >
+                        {activeImage.includes('vietceramics.com') ? (
+                            <img
+                                src={activeImage}
+                                alt={productName}
+                                className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+                                onError={() => handleImageError(activeIndex)}
+                            />
+                        ) : (
+                            <Image
+                                src={activeImage}
+                                alt={productName}
+                                fill
+                                className="object-contain pointer-events-none"
+                                priority
+                                onError={() => handleImageError(activeIndex)}
+                            />
+                        )}
+                    </div>
                 ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center text-stone-300 gap-2">
                         <Package2 className="w-16 h-16" />
@@ -109,6 +156,22 @@ export function ProductImageGallery({
                 )}
             </div>
 
+            {/* Dot Indicator Strip for Mobile */}
+            {visibleImages.length > 1 && (
+                <div className="flex items-center justify-center gap-1.5 mt-1 lg:hidden">
+                    {visibleImages.map(({ idx }) => (
+                        <button
+                            key={idx}
+                            onClick={() => setActiveIndex(idx)}
+                            aria-label={`Ảnh ${idx + 1}`}
+                            className={`h-1.5 rounded-full transition-all duration-300 ${
+                                idx === activeIndex ? "w-4 bg-brand-500" : "w-1.5 bg-stone-200"
+                            }`}
+                        />
+                    ))}
+                </div>
+            )}
+
             {/* Thumbnail Strip — horizontal on all screens */}
             {visibleImages.length > 1 && (
                 <div className="flex gap-2 sm:gap-3 lg:gap-3 overflow-x-auto pb-1 scrollbar-hide">
@@ -116,9 +179,11 @@ export function ProductImageGallery({
                         <button
                             key={idx}
                             onClick={() => setActiveIndex(idx)}
+                            aria-label={`Xem ảnh sản phẩm ${idx + 1}`}
+                            aria-pressed={idx === activeIndex}
                             className={`
                                 relative shrink-0 w-[80px] h-[80px] lg:w-[88px] lg:h-[88px]
-                                rounded-xl overflow-hidden transition-all duration-200
+                                rounded-xl overflow-hidden transition-all duration-200 cursor-pointer
                                 bg-stone-50
                                 ${idx === activeIndex
                                     ? 'border-2 border-brand-500 shadow-sm'
@@ -147,6 +212,16 @@ export function ProductImageGallery({
                     ))}
                 </div>
             )}
+
+            {/* Lightbox */}
+            <Lightbox
+                open={lightboxOpen}
+                close={() => setLightboxOpen(false)}
+                index={visibleImages.findIndex(vi => vi.idx === activeIndex) !== -1 ? visibleImages.findIndex(vi => vi.idx === activeIndex) : 0}
+                slides={visibleImages.map(({ img }) => ({ src: img }))}
+                plugins={[Zoom]}
+                on={{ view: ({ index }) => setActiveIndex(visibleImages[index].idx) }}
+            />
         </div>
     );
 }
