@@ -1,0 +1,144 @@
+═══════════════════════════════════════════════════════════════
+  PHÂN TÍCH TÀI LIỆU ĐÍNH KÈM (PDF) - SẢN PHẨM TOTO
+═══════════════════════════════════════════════════════════════
+
+📊 Tổng sản phẩm có key "documents" trong specs: 1044
+✅ Có tài liệu thực tế (non-empty): 1044
+❌ Có key nhưng rỗng: 0
+
+📄 Tổng số link tài liệu: 3022
+📈 Trung bình tài liệu/SP: 2.9
+📎 PDF files: 3022
+🔗 Non-PDF: 0
+
+── Phân bố theo danh mục con ──
+  Sen Tắm: 620 SP
+  Bồn Cầu: 130 SP
+  Vòi Chậu: 118 SP
+  Chậu Lavabo: 89 SP
+  Phụ Kiện Phòng Tắm: 63 SP
+  Bồn Tắm: 23 SP
+  Bồn Tiểu: 1 SP
+
+── Loại tài liệu (theo title) — Top 30 ──
+  "Thông số kỹ thuật": 553
+  "Hướng dẫn sử dụng": 517
+  "Hướng dẫn lắp đặt": 504
+  "Thông số kỹ thuật củ sen": 420
+  "Hướng dẫn lắp đặt củ sen": 241
+  "Thông số kỹ thuật tay sen": 200
+  "Hướng dẫn sử dụng củ sen": 186
+  "HDLĐ & HDSD củ sen": 157
+  "HDLĐ & HDSD tay sen": 68
+  "Bảng giá hàng phụ kiện TOTO": 44
+  "Hướng dẫn lắp đặt tay sen": 40
+  "Thông số kỹ thuật sen cây": 20
+  "Lưu lượng nước": 12
+  "Hướng dẫn sử dụng tay sen": 10
+  "Hướng dẫn lắp đặt sen cây": 8
+  "Thông Số Kỹ Thuật": 7
+  "Hướng dẫn vệ sinh": 7
+  "HDLĐ & HDSD sen cây": 6
+  "Hướng Dẫn Lắp Đặt": 4
+  "Hướng Dẫn Sử Dụng": 4
+  "Hướng dẫn lắp đặt nắp rửa": 4
+  "Hướng dẫn sử dụng nắp rửa": 4
+  "HDSD/Lắp đặt két nước": 1
+  "Hướng dẫn lắp đặt bồn cầu": 1
+  "HDLĐ & HDSD củ sẹn": 1
+  "Hướng dẫn sử dụng sen cây": 1
+  "HDLĐ và HDSD": 1
+  "Lưu ý lắp đặt và sử dụng": 1
+
+── Nguồn tài liệu (domain) ──
+  cdn.dongphugia.com.vn: 3007 links
+  cdn.hita.com.vn: 15 links
+
+── 10 Mẫu đại diện ──
+
+  SKU: MS636DT2#XW [TOTO]
+  Tên: Bồn cầu 1 khối TOTO MS636DT2 kèm nắp đóng êm TC393VS
+  Danh mục: Bồn Cầu
+  Số tài liệu: 1
+    📄 "Thông số kỹ thuật" → https://cdn.dongphugia.com.vn/documents/toto/bon-cau-mot-khoi/tskt-ban-cau-mot-khoi-ms636-rv09.pdf
+
+  SKU: MS636DT8#XW [TOTO]
+  Tên: Bồn cầu 1 khối TOTO MS636DT8 kèm nắp đóng êm TC600VS
+  Danh mục: Bồn Cầu
+  Số tài liệu: 1
+    📄 "Thông số kỹ thuật" → https://cdn.dongphugia.com.vn/documents/toto/bon-cau-mot-khoi/tskt-ban-cau-mot-khoi-ms636-rv09.pdf
+
+  SKU: CS767RT8#XW [TOTO]
+  Tên: Bồn cầu 2 khối TOTO CS767RT8 kèm nắp đóng êm TC600VS
+  Danh mục: Bồn Cầu
+  Số tài liệu: 3
+    📄 "Thông số kỹ thuật" → https://cdn.dongphugia.com.vn/documents/toto/bon-cau-hai-khoi/tskt-ban-cau-hai-khoi-cs767r-rv08.pdf
+    📄 "Hướng dẫn sử dụng" → https://cdn.dongphugia.com.vn/documents/toto/bon-cau-hai-khoi/hdsd-ban-cau-0im067301s1-rv06.pdf
+    📄 "Hướng dẫn lắp đặt" → https://cdn.dongphugia.com.vn/documents/toto/bon-cau-hai-khoi/cs767rt8-xw-huong-dan-lap-dat.pdf
+
+  SKU: CS767RT2#XW [TOTO]
+  Tên: Bồn cầu 2 khối TOTO CS767RT2 kèm nắp đóng êm TC393VS
+  Danh mục: Bồn Cầu
+  Số tài liệu: 3
+    📄 "Thông số kỹ thuật" → https://cdn.dongphugia.com.vn/documents/toto/bon-cau-hai-khoi/cs767rt2-xw-thong-so-ky-thuat.pdf
+    📄 "Hướng dẫn lắp đặt" → https://cdn.dongphugia.com.vn/documents/toto/bon-cau-hai-khoi/cs767rt2-xw-huong-dan-lap-dat.pdf
+    📄 "Hướng dẫn sử dụng" → https://cdn.dongphugia.com.vn/documents/toto/bon-cau-hai-khoi/cs767rt2-xw-huong-dan-su-dung.pdf
+
+  SKU: CS767RT3#XW [TOTO]
+  Tên: Bồn cầu 2 khối TOTO CS767RT3 kèm nắp đóng êm TC385VS
+  Danh mục: Bồn Cầu
+  Số tài liệu: 3
+    📄 "Thông số kỹ thuật" → https://cdn.dongphugia.com.vn/documents/toto/bon-cau-hai-khoi/tskt-ban-cau-hai-khoi-cs767r-rv08.pdf
+    📄 "Hướng dẫn sử dụng" → https://cdn.dongphugia.com.vn/documents/toto/bon-cau-hai-khoi/hdsd-ban-cau-0im067301s1-rv06.pdf
+    📄 "Hướng dẫn lắp đặt" → https://cdn.dongphugia.com.vn/documents/toto/bon-cau-hai-khoi/cs767rt3xw-huong-dan-lap-dat.pdf
+
+  SKU: CS735DT3#XW [TOTO]
+  Tên: Bồn cầu 2 khối TOTO CS735DT3 kèm nắp đóng êm TC385VS
+  Danh mục: Bồn Cầu
+  Số tài liệu: 3
+    📄 "Thông số kỹ thuật" → https://cdn.dongphugia.com.vn/documents/toto/bon-cau-hai-khoi/tskt-ban-cau-hai-khoi-cs735d-rv01.pdf
+    📄 "Hướng dẫn sử dụng" → https://cdn.dongphugia.com.vn/documents/toto/bon-cau-hai-khoi/hdsd-ban-cau-0im067301s1-rv06.pdf
+    📄 "Hướng dẫn lắp đặt" → https://cdn.dongphugia.com.vn/documents/toto/bon-cau-hai-khoi/cs735dt3-xw-huong-dan-lap-dat.pdf
+
+  SKU: CS735DT2#XW [TOTO]
+  Tên: Bồn cầu 2 khối TOTO CS735DT2 kèm nắp đóng êm TC393VS
+  Danh mục: Bồn Cầu
+  Số tài liệu: 3
+    📄 "Thông số kỹ thuật" → https://cdn.dongphugia.com.vn/documents/toto/bon-cau-hai-khoi/cs735dt2-xw-thong-so-ky-thuat.pdf
+    📄 "Hướng dẫn lắp đặt" → https://cdn.dongphugia.com.vn/documents/toto/bon-cau-hai-khoi/cs735dt2-xw-huong-dan-lap-dat.pdf
+    📄 "Hướng dẫn sử dụng" → https://cdn.dongphugia.com.vn/documents/toto/bon-cau-hai-khoi/cs735dt2-xw-huong-dan-su-dung.pdf
+
+  SKU: CS735DT8#XW [TOTO]
+  Tên: Bồn cầu 2 khối TOTO CS735DT8 kèm nắp đóng êm TC600VS
+  Danh mục: Bồn Cầu
+  Số tài liệu: 3
+    📄 "Thông số kỹ thuật" → https://cdn.dongphugia.com.vn/documents/toto/bon-cau-hai-khoi/cs735dt8-xw-thong-so-ky-thuat.pdf
+    📄 "Hướng dẫn lắp đặt" → https://cdn.dongphugia.com.vn/documents/toto/bon-cau-hai-khoi/cs735dt8-xw-huong-dan-lap-dat.pdf
+    📄 "Hướng dẫn sử dụng" → https://cdn.dongphugia.com.vn/documents/toto/bon-cau-hai-khoi/cs735dt8-xw-huong-dan-su-dung.pdf
+
+  SKU: CS769DRT2#XW [TOTO]
+  Tên: Bồn cầu 2 khối TOTO CS769DRT2 kèm nắp đóng êm TC393VS
+  Danh mục: Bồn Cầu
+  Số tài liệu: 3
+    📄 "Thông số kỹ thuật" → https://cdn.dongphugia.com.vn/documents/toto/bon-cau-hai-khoi/cs769drt2-xw-thong-so-ky-thuat.pdf
+    📄 "Hướng dẫn lắp đặt" → https://cdn.dongphugia.com.vn/documents/toto/bon-cau-hai-khoi/cs769drt2-xw-huong-dan-lap-dat.pdf
+    📄 "Hướng dẫn sử dụng" → https://cdn.dongphugia.com.vn/documents/toto/bon-cau-hai-khoi/cs769drt2-xw-huong-dan-su-dung.pdf
+
+  SKU: CS769DRT8#XW [TOTO]
+  Tên: Bồn cầu 2 khối TOTO CS769DRT8 kèm nắp đóng êm TC600VS
+  Danh mục: Bồn Cầu
+  Số tài liệu: 3
+    📄 "Thông số kỹ thuật" → https://cdn.dongphugia.com.vn/documents/toto/bon-cau-hai-khoi/tskt-ban-cau-hai-khoi-cs769d-cs769dr-c
+    📄 "Hướng dẫn sử dụng" → https://cdn.dongphugia.com.vn/documents/toto/bon-cau-hai-khoi/hdsd-ban-cau-0im067301s1-rv06.pdf
+    📄 "Hướng dẫn lắp đặt" → https://cdn.dongphugia.com.vn/documents/toto/bon-cau-hai-khoi/cs769drt8-xw-huong-dan-lap-dat.pdf
+
+── SP không phải TOTO có documents: 0 ──
+
+── TOTO Coverage ──
+  Tổng SP TOTO: 2091
+  Có tài liệu: 1044 (49.9%)
+  Thiếu tài liệu: 1047 (50.1%)
+
+═══════════════════════════════════════════════════════════════
+  PHÂN TÍCH HOÀN TẤT
+═══════════════════════════════════════════════════════════════

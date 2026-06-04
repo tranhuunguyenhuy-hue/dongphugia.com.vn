@@ -1,0 +1,479 @@
+<!DOCTYPE html><html lang="vi"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Đông Phú Gia — Hi-fi mock (Airbnb style)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+ --font:"Inter",-apple-system,"Segoe UI",Roboto,sans-serif;
+ --text:#222;--soft:#6A6A6A;--mute:#B0B0B0;--border:#DDDDDD;
+ --surface:#F7F7F7;--surface2:#F2F2F2;--white:#fff;
+ --brand:#16a34a;--brand-dark:#15803d;
+ --grad:linear-gradient(to right,#15803d,#16a34a 55%,#22c55e);
+ --tint:#f0fdf4;--sale:#dc2626;
+ --r-img:12px;--r-card:12px;--r-input:10px;--r-pill:999px;
+ --sh-card:0 6px 16px rgba(0,0,0,.12);
+ --sh-pop:rgba(0,0,0,.08) 0 0 0 1px,rgba(0,0,0,.1) 0 8px 24px;
+ --container:1200px;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:var(--font);color:var(--text);background:#fff;font-size:15px;line-height:1.5}
+img{display:block}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:var(--container);margin:0 auto;padding:0 28px}
+h1,h2,h3{margin:0}
+.muted{color:var(--soft)}
+
+/* ---- header ---- */
+header{position:sticky;top:0;z-index:30;background:#fff;border-bottom:1px solid #eee}
+.hd{display:flex;align-items:center;gap:22px;height:74px}
+.logo{font-weight:800;font-size:20px;color:var(--brand);letter-spacing:-.3px;white-space:nowrap}
+.logo small{display:block;font-size:9px;font-weight:600;color:var(--soft);letter-spacing:2px}
+.hnav{display:flex;gap:20px;font-size:14px;color:#444;flex:1}
+.hnav a:hover{color:var(--brand)}
+.hsearch{display:flex;align-items:center;border:1px solid var(--border);border-radius:var(--r-pill);box-shadow:0 1px 4px rgba(0,0,0,.06);height:46px;padding:2px 2px 2px 18px;gap:10px;cursor:text}
+.hsearch input{border:0;outline:0;font:inherit;font-size:14px;width:190px;color:var(--text);background:transparent}
+.hsearch .go{width:38px;height:38px;border-radius:50%;background:var(--grad);color:#fff;display:grid;place-items:center;font-size:15px}
+.hicons{display:flex;align-items:center;gap:6px}
+.iconbtn{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;color:#444;background:transparent}
+.iconbtn:hover{background:var(--surface2)}
+.cartbtn{position:relative}
+.cartbtn b{position:absolute;top:4px;right:4px;background:var(--brand);color:#fff;font-size:10px;width:16px;height:16px;border-radius:50%;display:grid;place-items:center;font-weight:700}
+
+/* tab switcher */
+.tabs{display:flex;gap:8px;border-bottom:1px solid #eee;background:#fff;position:sticky;top:74px;z-index:20}
+.tabs .wrap{display:flex;gap:6px}
+.tab{padding:14px 16px;font-size:14px;font-weight:600;color:var(--soft);border-bottom:2px solid transparent;cursor:pointer}
+.tab.active{color:var(--text);border-color:var(--text)}
+
+.screen{display:none;padding:28px 0 60px}
+.screen.active{display:block}
+
+/* ---- buttons ---- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font:inherit;font-weight:600;font-size:15px;border-radius:var(--r-pill);padding:12px 22px;cursor:pointer;border:0}
+.btn.primary{background:var(--grad);color:#fff}
+.btn.primary:hover{filter:brightness(.96)}
+.btn.outline{background:#fff;border:1px solid var(--text);color:var(--text);border-radius:10px}
+.btn.ghost{background:transparent;color:var(--brand);padding:8px 4px}
+.btn.block{width:100%}
+.btn.lg{height:52px;font-size:16px}
+
+/* ---- section ---- */
+.sec{margin-top:46px}
+.sechd{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:18px}
+.sechd h2{font-size:22px;font-weight:700;letter-spacing:-.3px}
+.sechd a{color:var(--brand);font-weight:600;font-size:14px}
+
+/* ---- hero ---- */
+.hero{border-radius:18px;overflow:hidden;position:relative;height:340px;
+ background:linear-gradient(120deg,#15803d,#16a34a 60%,#22c55e);display:flex;align-items:center}
+.hero .ov{padding:0 56px;color:#fff;max-width:620px}
+.hero h1{font-size:40px;font-weight:800;line-height:1.1;letter-spacing:-1px}
+.hero p{font-size:17px;opacity:.92;margin:14px 0 0}
+.bigsearch{margin-top:26px;background:#fff;border-radius:var(--r-pill);display:flex;align-items:center;box-shadow:var(--sh-card);padding:6px 6px 6px 4px}
+.bigseg{padding:8px 20px;border-right:1px solid #eee;flex:1}
+.bigseg:last-of-type{border:0}
+.bigseg .lb{font-size:11px;font-weight:700;color:var(--text)}
+.bigseg .ph{font-size:13px;color:var(--mute)}
+.bigsearch .go{width:48px;height:48px;border-radius:50%;background:var(--grad);color:#fff;display:grid;place-items:center;font-size:18px;flex:none}
+
+/* category pills */
+.cats{display:flex;gap:10px;flex-wrap:wrap;margin-top:26px}
+.catpill{display:flex;align-items:center;gap:8px;border:1px solid var(--border);border-radius:var(--r-pill);padding:9px 16px;font-size:14px;font-weight:500;cursor:pointer;background:#fff}
+.catpill:hover{border-color:var(--text)}
+.catpill.on{background:var(--text);color:#fff;border-color:var(--text)}
+
+/* ---- product grid + card ---- */
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:22px}
+.grid.g5{grid-template-columns:repeat(5,1fr)}
+.pcard{cursor:pointer}
+.pcard .imgwrap{position:relative;border-radius:var(--r-img);overflow:hidden;aspect-ratio:1/1}
+.pimg{width:100%;height:100%;background-size:cover;background-position:center;transition:transform .4s}
+.pcard:hover .pimg{transform:scale(1.05)}
+.heart{position:absolute;top:10px;right:10px;width:30px;height:30px;color:#fff;filter:drop-shadow(0 1px 2px rgba(0,0,0,.4));font-size:20px;display:grid;place-items:center;cursor:pointer}
+.pbadge{position:absolute;top:10px;left:10px;background:#fff;border-radius:var(--r-pill);font-size:12px;font-weight:600;padding:5px 10px;box-shadow:0 1px 3px rgba(0,0,0,.18)}
+.pbadge.sale{background:var(--sale);color:#fff}
+.ptitle{font-size:15px;font-weight:600;margin-top:10px;color:var(--text)}
+.pbrand{font-size:13px;color:var(--soft)}
+.prow{display:flex;align-items:center;justify-content:space-between;margin-top:3px}
+.price{font-size:16px;font-weight:700}
+.price .old{font-size:12px;color:var(--mute);text-decoration:line-through;font-weight:400;margin-left:6px}
+.rate{font-size:13px;color:var(--text)}
+
+/* banners */
+.banners{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+.banner{height:200px;border-radius:16px;display:flex;align-items:flex-end;padding:24px;color:#fff;font-size:22px;font-weight:700;
+ background:linear-gradient(0deg,rgba(0,0,0,.45),transparent 70%),var(--bg);background-size:cover;background-position:center}
+
+/* b2b strip */
+.b2b{margin-top:46px;background:var(--tint);border:1px solid #dcfce7;border-radius:16px;padding:26px 30px;display:flex;align-items:center;gap:30px}
+.b2b h3{font-size:20px}
+.b2b .feats{display:flex;gap:26px;flex:1;color:var(--text);font-size:14px}
+.b2b .feats div b{display:block;font-size:15px}
+
+/* breadcrumb */
+.bc{font-size:13px;color:var(--soft);margin-bottom:16px}
+.bc b{color:var(--text)}
+
+/* category layout */
+.catlayout{display:grid;grid-template-columns:248px 1fr;gap:30px}
+.filter h4{font-size:13px;text-transform:uppercase;letter-spacing:.4px;color:var(--soft);margin:20px 0 10px}
+.filter .fcard{border:1px solid var(--border);border-radius:12px;padding:16px}
+.frow{display:flex;align-items:center;gap:8px;font-size:14px;padding:5px 0;color:#333}
+.range{display:flex;gap:8px}
+.range input{width:100%;height:40px;border:1px solid var(--border);border-radius:8px;padding:0 10px;font:inherit;font-size:13px}
+.sortbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.sortbar .sel{border:1px solid var(--border);border-radius:var(--r-pill);padding:9px 16px;font-size:14px;font-weight:500;cursor:pointer}
+
+/* product detail */
+.pd{display:grid;grid-template-columns:1.55fr 1fr;gap:40px}
+.gallery{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.gallery .main{grid-column:1/-1;aspect-ratio:16/11;border-radius:var(--r-img);background-size:cover;background-position:center}
+.gallery .th{aspect-ratio:1/1;border-radius:10px;background-size:cover;background-position:center;cursor:pointer;border:2px solid transparent}
+.gallery .th.on{border-color:var(--brand)}
+.pdtitle{font-size:26px;font-weight:700;letter-spacing:-.4px}
+.pdmeta{display:flex;gap:14px;align-items:center;color:var(--soft);font-size:14px;margin-top:8px}
+.buycard{position:sticky;top:150px;border:1px solid var(--border);border-radius:16px;box-shadow:var(--sh-card);padding:24px}
+.buycard .p{font-size:24px;font-weight:700}
+.buycard .p small{font-size:14px;font-weight:400;color:var(--soft)}
+.stock{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--brand);font-weight:600;margin-top:6px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--brand)}
+.qty{display:flex;align-items:center;border:1px solid var(--border);border-radius:10px;width:130px;justify-content:space-between;padding:8px 14px;margin:16px 0;font-weight:600}
+.qbtn{cursor:pointer;color:var(--soft);font-size:18px}
+.buycard .note{text-align:center;font-size:13px;color:var(--soft);margin-top:12px}
+.trust{display:flex;gap:14px;margin-top:18px;border-top:1px solid #eee;padding-top:16px;font-size:13px;color:var(--soft)}
+.trust div{flex:1;text-align:center}
+.specrow{display:flex;border-bottom:1px solid #f0f0f0;padding:11px 0;font-size:14px}
+.specrow .k{width:40%;color:var(--soft)}
+.specrow .v{font-weight:500}
+
+/* checkout */
+.co{display:grid;grid-template-columns:1.4fr 1fr;gap:36px}
+.stepper{display:flex;gap:10px;align-items:center;font-size:14px;margin-bottom:24px;color:var(--soft)}
+.stepper b{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--brand);color:#fff;font-size:12px;margin-right:6px}
+.stepper .st.on{color:var(--text);font-weight:600}
+.stepper .st .n{background:var(--surface2);color:var(--soft)}
+.cohd{font-size:17px;font-weight:700;margin:22px 0 12px}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:13px;color:var(--soft);margin-bottom:5px}
+.field input,.field select{width:100%;height:46px;border:1px solid var(--border);border-radius:var(--r-input);padding:0 14px;font:inherit;font-size:14px;background:#fff}
+.f2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.f3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.opt{display:flex;align-items:center;gap:10px;border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px;font-size:14px;cursor:pointer}
+.opt.on{border-color:var(--brand);background:var(--tint)}
+.opt .rd{width:18px;height:18px;border-radius:50%;border:2px solid var(--brand);display:grid;place-items:center}
+.opt.on .rd:after{content:"";width:8px;height:8px;border-radius:50%;background:var(--brand)}
+.ordercard{border:1px solid var(--border);border-radius:16px;padding:22px;position:sticky;top:150px;box-shadow:var(--sh-card)}
+.oitem{display:flex;gap:12px;align-items:center;margin-bottom:14px}
+.oitem .th{width:52px;height:52px;border-radius:10px;background-size:cover;background-position:center;flex:none}
+.oitem .nm{font-size:13px;font-weight:500}
+.oitem .q{font-size:12px;color:var(--soft)}
+.oline{display:flex;justify-content:space-between;font-size:14px;padding:5px 0;color:#333}
+.oline.total{border-top:1px solid #eee;margin-top:8px;padding-top:12px;font-size:18px;font-weight:700}
+.code{display:flex;gap:8px;margin:8px 0 14px}
+.code input{flex:1;height:42px;border:1px solid var(--border);border-radius:10px;padding:0 12px;font:inherit;font-size:13px}
+
+/* footer */
+footer{border-top:1px solid #eee;margin-top:60px;background:var(--surface)}
+.foot{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:30px;padding:40px 0}
+.foot h5{font-size:14px;margin:0 0 12px}
+.foot a{display:block;color:var(--soft);font-size:13px;padding:4px 0}
+.copyright{border-top:1px solid #e5e5e5;padding:16px 0;font-size:13px;color:var(--soft)}
+
+@media(max-width:920px){
+ .grid,.grid.g5{grid-template-columns:repeat(2,1fr)}
+ .pd,.co,.catlayout{grid-template-columns:1fr}
+ .banners,.foot{grid-template-columns:1fr}
+ .hnav,.hsearch{display:none}
+ .hero h1{font-size:30px}
+ .bigsearch{flex-wrap:wrap}
+ .buycard,.ordercard{position:static}
+}
+</style></head>
+<body>
+
+<header>
+ <div class="wrap hd">
+  <div class="logo">ĐÔNG PHÚ GIA<small>VLXD CAO CẤP</small></div>
+  <nav class="hnav">
+   <a>Thiết bị vệ sinh</a><a>Thiết bị bếp</a><a>Vật liệu nước</a><a>Gạch ốp lát</a><a>Dự án</a><a>Cẩm nang</a>
+  </nav>
+  <div class="hsearch"><input placeholder="Tìm sản phẩm, thương hiệu…"><span class="go">🔍</span></div>
+  <div class="hicons">
+   <span class="iconbtn">🏢</span>
+   <span class="iconbtn">👤</span>
+   <span class="iconbtn cartbtn">🛒<b>2</b></span>
+  </div>
+ </div>
+</header>
+
+<div class="tabs"><div class="wrap">
+ <div class="tab active" data-s="home">Trang chủ</div>
+ <div class="tab" data-s="cat">Danh mục</div>
+ <div class="tab" data-s="prod">Chi tiết sản phẩm</div>
+ <div class="tab" data-s="checkout">Thanh toán</div>
+</div></div>
+
+<main class="wrap">
+
+<!-- ============ HOME ============ -->
+<section class="screen active" id="home">
+ <div class="hero">
+  <div class="ov">
+   <h1>Vật liệu xây dựng cao cấp,<br>giao lắp tận nơi Đà Lạt</h1>
+   <p>Thiết bị vệ sinh · Bếp · Vật liệu nước · Gạch ốp lát — chính hãng, bảo hành đầy đủ.</p>
+   <div class="bigsearch">
+    <div class="bigseg"><div class="lb">Ngành hàng</div><div class="ph">Tất cả danh mục</div></div>
+    <div class="bigseg"><div class="lb">Thương hiệu</div><div class="ph">TOTO, INAX, MOEN…</div></div>
+    <div class="bigseg"><div class="lb">Từ khoá</div><div class="ph">Bồn cầu, sen vòi…</div></div>
+    <span class="go">🔍</span>
+   </div>
+  </div>
+ </div>
+
+ <div class="cats">
+  <span class="catpill on">🚿 Thiết bị vệ sinh</span>
+  <span class="catpill">🍳 Thiết bị bếp</span>
+  <span class="catpill">🚰 Vật liệu nước</span>
+  <span class="catpill">🧱 Gạch ốp lát</span>
+  <span class="catpill">🔥 Khuyến mãi</span>
+ </div>
+
+ <div class="sec">
+  <div class="sechd"><h2>Sản phẩm nổi bật</h2><a>Xem tất cả ›</a></div>
+  <div class="grid" id="homeGrid"></div>
+ </div>
+
+ <div class="sec">
+  <div class="sechd"><h2>Mua theo ngành hàng</h2></div>
+  <div class="banners">
+   <div class="banner" style="--bg:linear-gradient(120deg,#0e7490,#0891b2)">Phòng tắm trọn gói</div>
+   <div class="banner" style="--bg:linear-gradient(120deg,#b45309,#d97706)">Gạch ốp lát nhập khẩu</div>
+  </div>
+ </div>
+
+ <div class="b2b">
+  <div><h3>Dành cho nhà thầu & đại lý</h3><div class="muted" style="font-size:14px;margin-top:4px">Giá sỉ theo hạng, báo giá nhanh, công nợ linh hoạt.</div></div>
+  <div class="feats">
+   <div><b>Báo giá 24h</b>Gửi danh sách → nhận giá</div>
+   <div><b>Giá sỉ theo hạng</b>Chiết khấu đại lý</div>
+   <div><b>Công nợ</b>Hạn mức linh hoạt</div>
+  </div>
+  <button class="btn primary">Đăng ký B2B</button>
+ </div>
+
+ <div class="sec">
+  <div class="sechd"><h2>Cẩm nang & dự án</h2><a>Xem tất cả ›</a></div>
+  <div class="grid" id="blogGrid"></div>
+ </div>
+</section>
+
+<!-- ============ CATEGORY ============ -->
+<section class="screen" id="cat">
+ <div class="bc">Trang chủ › Thiết bị vệ sinh › <b>Bồn cầu</b></div>
+ <h1 style="font-size:28px;font-weight:700;letter-spacing:-.4px">Bồn cầu</h1>
+ <div class="muted" style="margin:6px 0 22px">48 sản phẩm · TOTO, INAX, Caesar, MOEN…</div>
+ <div class="catlayout">
+  <aside class="filter">
+   <div class="fcard">
+    <h4 style="margin-top:0">Khoảng giá</h4>
+    <div class="range"><input placeholder="Từ"><input placeholder="Đến"></div>
+    <h4>Thương hiệu</h4>
+    <div class="frow"><input type="checkbox" checked> TOTO</div>
+    <div class="frow"><input type="checkbox"> INAX</div>
+    <div class="frow"><input type="checkbox"> Caesar</div>
+    <div class="frow"><input type="checkbox"> MOEN</div>
+    <h4>Loại</h4>
+    <div class="frow"><input type="checkbox"> 1 khối</div>
+    <div class="frow"><input type="checkbox"> 2 khối</div>
+    <div style="margin-top:16px"><button class="btn primary block">Áp dụng</button></div>
+    <div style="margin-top:8px"><button class="btn ghost">Xoá lọc</button></div>
+   </div>
+  </aside>
+  <div>
+   <div class="sortbar">
+    <div class="muted" style="font-size:14px">Hiển thị 1–12 trong 48</div>
+    <div class="sel">Sắp xếp: Bán chạy ▾</div>
+   </div>
+   <div class="grid" id="catGrid"></div>
+   <div style="text-align:center;margin-top:30px"><button class="btn outline">Xem thêm sản phẩm</button></div>
+  </div>
+ </div>
+</section>
+
+<!-- ============ PRODUCT DETAIL ============ -->
+<section class="screen" id="prod">
+ <div class="bc">Trang chủ › Thiết bị vệ sinh › Bồn cầu › <b>TOTO MS914T8</b></div>
+ <div class="pd">
+  <div>
+   <div class="gallery">
+    <div class="main" id="pdmain"></div>
+    <div class="th on"></div><div class="th"></div><div class="th"></div><div class="th"></div>
+   </div>
+   <div class="sec" style="margin-top:34px">
+    <h2 style="font-size:20px;font-weight:700">Thông số kỹ thuật</h2>
+    <div style="margin-top:10px">
+     <div class="specrow"><div class="k">Thương hiệu</div><div class="v">TOTO (Nhật Bản)</div></div>
+     <div class="specrow"><div class="k">Kiểu dáng</div><div class="v">Một khối, nắp êm</div></div>
+     <div class="specrow"><div class="k">Công nghệ xả</div><div class="v">Tornado Flush 4.8L</div></div>
+     <div class="specrow"><div class="k">Kích thước</div><div class="v">650 × 380 × 730 mm</div></div>
+     <div class="specrow"><div class="k">Bảo hành</div><div class="v">3 năm chính hãng</div></div>
+    </div>
+   </div>
+   <div class="sec">
+    <h2 style="font-size:20px;font-weight:700">Mô tả</h2>
+    <p class="muted" style="margin-top:8px">Bồn cầu một khối cao cấp với công nghệ xoáy Tornado Flush làm sạch tối ưu, men Cefiontect chống bám bẩn. Thiết kế tối giản phù hợp không gian hiện đại.</p>
+   </div>
+  </div>
+
+  <div>
+   <div class="buycard">
+    <div class="muted" style="font-size:13px">TOTO MS914T8</div>
+    <div class="pdtitle" style="font-size:21px;margin:2px 0 8px">Bồn cầu một khối Tornado</div>
+    <div class="pdmeta" style="margin:0 0 10px"><span>⭐ 4.8</span><span>·</span><span>24 đánh giá</span></div>
+    <div class="p">3.450.000đ <small>· đã gồm VAT</small></div>
+    <div class="stock"><span class="dot"></span> Còn hàng — giao trong 24h</div>
+    <div class="qty"><span class="qbtn">−</span><span>1</span><span class="qbtn">+</span></div>
+    <button class="btn primary block lg">Thêm vào giỏ</button>
+    <div style="height:10px"></div>
+    <button class="btn outline block lg">Mua ngay</button>
+    <button class="btn ghost block" style="margin-top:6px">Yêu cầu báo giá số lượng lớn ›</button>
+    <div class="note">Bạn chưa bị trừ tiền — thanh toán khi nhận hàng</div>
+    <div class="trust">
+     <div>🚚<br>Giao tận nơi</div><div>🔧<br>Lắp đặt</div><div>🛡<br>BH 3 năm</div>
+    </div>
+   </div>
+  </div>
+ </div>
+
+ <div class="sec">
+  <div class="sechd"><h2>Sản phẩm mua kèm</h2><a>Xem tất cả ›</a></div>
+  <div class="grid" id="relGrid"></div>
+ </div>
+</section>
+
+<!-- ============ CHECKOUT ============ -->
+<section class="screen" id="checkout">
+ <h1 style="font-size:26px;font-weight:700;margin-bottom:18px">Thanh toán</h1>
+ <div class="stepper">
+  <span class="st on"><b>1</b>Thông tin</span><span>→</span>
+  <span class="st on"><b>2</b>Vận chuyển</span><span>→</span>
+  <span class="st"><b class="n">3</b>Thanh toán</span>
+ </div>
+ <div class="co">
+  <div>
+   <div class="cohd">Thông tin nhận hàng</div>
+   <div class="opt on"><span class="rd"></span> Dùng địa chỉ mặc định — Nguyen Huy, 094 9349 949</div>
+   <div class="f2"><div class="field"><label>Họ tên</label><input value="Nguyen Huy"></div><div class="field"><label>Số điện thoại</label><input value="094 9349 949"></div></div>
+   <div class="field"><label>Địa chỉ</label><input placeholder="Số nhà, đường"></div>
+   <div class="f3">
+    <div class="field"><label>Tỉnh/TP</label><select><option>Lâm Đồng</option></select></div>
+    <div class="field"><label>Quận/Huyện</label><select><option>TP. Đà Lạt</option></select></div>
+    <div class="field"><label>Phường/Xã</label><select><option>Phường 1</option></select></div>
+   </div>
+
+   <div class="cohd">Phương thức vận chuyển</div>
+   <div class="opt on"><span class="rd"></span> Giao tận nơi nội thành Đà Lạt — 50.000đ</div>
+   <div class="opt"><span class="rd"></span> Nhận tại cửa hàng — Miễn phí</div>
+
+   <div class="cohd">Thanh toán</div>
+   <div class="opt on"><span class="rd"></span> VNPay / QR ngân hàng</div>
+   <div class="opt"><span class="rd"></span> Ví Momo</div>
+   <div class="opt"><span class="rd"></span> Chuyển khoản</div>
+   <div class="opt"><span class="rd"></span> Thanh toán khi nhận hàng (COD)</div>
+  </div>
+
+  <div>
+   <div class="ordercard">
+    <div style="font-weight:700;font-size:17px;margin-bottom:14px">Đơn hàng (3)</div>
+    <div class="oitem"><div class="th" id="o1"></div><div style="flex:1"><div class="nm">Bồn cầu TOTO MS914T8</div><div class="q">SL 1</div></div><div style="font-weight:600;font-size:13px">3.450.000đ</div></div>
+    <div class="oitem"><div class="th" id="o2"></div><div style="flex:1"><div class="nm">Sen tắm MOEN nhiệt độ</div><div class="q">SL 2</div></div><div style="font-weight:600;font-size:13px">2.500.000đ</div></div>
+    <div class="oitem"><div class="th" id="o3"></div><div style="flex:1"><div class="nm">Gạch lát Granite 60×60</div><div class="q">SL 1 thùng</div></div><div style="font-weight:600;font-size:13px">850.000đ</div></div>
+    <div class="code"><input placeholder="Mã giảm giá"><button class="btn outline" style="border-radius:10px">Áp dụng</button></div>
+    <div class="oline"><span>Tạm tính</span><span>6.800.000đ</span></div>
+    <div class="oline"><span>Phí vận chuyển</span><span>50.000đ</span></div>
+    <div class="oline"><span>Giảm giá (GIAM10)</span><span style="color:var(--sale)">−300.000đ</span></div>
+    <div class="oline total"><span>Tổng cộng</span><span>6.550.000đ</span></div>
+    <div style="margin-top:16px"><button class="btn primary block lg">Đặt hàng</button></div>
+    <div class="note" style="margin-top:10px;font-size:13px;color:var(--soft);text-align:center">Bằng việc đặt hàng, bạn đồng ý với Điều kiện giao dịch</div>
+   </div>
+  </div>
+ </div>
+</section>
+
+</main>
+
+<footer><div class="wrap">
+ <div class="foot">
+  <div><div class="logo">ĐÔNG PHÚ GIA</div><p class="muted" style="font-size:13px;margin-top:10px">VLXD cao cấp Đà Lạt. Giao lắp tận nơi, bảo hành chính hãng.</p></div>
+  <div><h5>Ngành hàng</h5><a>Thiết bị vệ sinh</a><a>Thiết bị bếp</a><a>Vật liệu nước</a><a>Gạch ốp lát</a></div>
+  <div><h5>Hỗ trợ</h5><a>Cẩm nang chọn mua</a><a>Vận chuyển & lắp đặt</a><a>Đổi trả & bảo hành</a><a>Câu hỏi thường gặp</a></div>
+  <div><h5>Liên hệ</h5><a>☎ 094 9349 949</a><a>✉ vlxd.dongphu@gmail.com</a><a>📍 TP. Đà Lạt, Lâm Đồng</a></div>
+ </div>
+ <div class="copyright">© 2026 Đông Phú Gia · dongphugia.com.vn</div>
+</div></footer>
+
+<script>
+const IMG=[
+ 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=500&q=70',
+ 'https://images.unsplash.com/photo-1620626011761-996317b8d101?w=500&q=70',
+ 'https://images.unsplash.com/photo-1556228453-efd6c1ff04f6?w=500&q=70',
+ 'https://images.unsplash.com/photo-1507652313519-d4e9174996dd?w=500&q=70',
+ 'https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?w=500&q=70',
+ 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=500&q=70',
+ 'https://images.unsplash.com/photo-1584622781564-1d987f7333c1?w=500&q=70',
+ 'https://images.unsplash.com/photo-1631889993959-41b4e9c6e3c5?w=500&q=70'
+];
+const PROD=[
+ ['Bồn cầu một khối Tornado','TOTO','3.450.000đ','4.290.000đ','-19%','4.8'],
+ ['Sen tắm nhiệt độ cao cấp','MOEN','2.500.000đ','','HOT','4.9'],
+ ['Lavabo đặt bàn sứ trắng','INAX','1.250.000đ','','','4.7'],
+ ['Gạch Granite 60×60 bóng kính','Viglacera','185.000đ','','','4.6'],
+ ['Vòi rửa chén rút dây','GROHE','1.890.000đ','2.190.000đ','-14%','4.8'],
+ ['Bồn rửa chén 2 hộc inox','Hafele','2.350.000đ','','','4.7'],
+ ['Máy nước nóng trực tiếp','ATMOR','1.690.000đ','','HOT','4.5'],
+ ['Gạch men ốp tường 30×60','Đồng Tâm','165.000đ','','','4.6']
+];
+const BLOG=[
+ ['Chọn bồn cầu phù hợp cho nhà phố','Cẩm nang'],
+ ['5 xu hướng gạch ốp lát 2026','Xu hướng'],
+ ['Hướng dẫn lắp sen tắm tại nhà','Hướng dẫn'],
+ ['Dự án biệt thự Đà Lạt — trọn gói','Dự án']
+];
+function pcard(p,i){
+ const badge=p[4]?`<span class="pbadge ${/-/.test(p[4])?'sale':''}">${p[4]}</span>`:'';
+ const old=p[3]?`<span class="old">${p[3]}</span>`:'';
+ return `<div class="pcard"><div class="imgwrap">
+   <div class="pimg" style="background-image:url('${IMG[i%IMG.length]}')"></div>
+   ${badge}<span class="heart">♡</span></div>
+   <div class="ptitle">${p[0]}</div><div class="pbrand">${p[1]}</div>
+   <div class="prow"><div class="price">${p[2]}${old}</div><div class="rate">⭐ ${p[5]}</div></div></div>`;
+}
+function bcard(b,i){
+ return `<div class="pcard"><div class="imgwrap" style="aspect-ratio:4/3">
+   <div class="pimg" style="background-image:url('${IMG[(i+3)%IMG.length]}')"></div></div>
+   <div class="pbrand" style="margin-top:8px;color:var(--brand);font-weight:600">${b[1]}</div>
+   <div class="ptitle" style="margin-top:2px">${b[0]}</div></div>`;
+}
+document.getElementById('homeGrid').innerHTML=PROD.slice(0,4).map(pcard).join('');
+document.getElementById('catGrid').innerHTML=PROD.concat(PROD).slice(0,8).map(pcard).join('');
+document.getElementById('relGrid').innerHTML=PROD.slice(2,6).map(pcard).join('');
+document.getElementById('blogGrid').innerHTML=BLOG.map(bcard).join('');
+document.getElementById('pdmain').style.backgroundImage=`url('${IMG[0]}')`;
+['o1','o2','o3'].forEach((id,i)=>document.getElementById(id).style.backgroundImage=`url('${IMG[i]}')`);
+document.querySelectorAll('.gallery .th').forEach((t,i)=>{t.style.backgroundImage=`url('${IMG[(i+1)%IMG.length]}')`;
+ t.onclick=()=>{document.querySelectorAll('.gallery .th').forEach(x=>x.classList.remove('on'));t.classList.add('on');document.getElementById('pdmain').style.backgroundImage=t.style.backgroundImage;};});
+// tabs
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
+ document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+ document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));
+ t.classList.add('active');document.getElementById(t.dataset.s).classList.add('active');
+ window.scrollTo({top:0,behavior:'smooth'});
+});
+// qty + catpill interactivity
+document.querySelectorAll('.qbtn').forEach(b=>b.onclick=()=>{const s=b.parentElement.children[1];let n=+s.textContent;n=b.textContent==='+'?n+1:Math.max(1,n-1);s.textContent=n;});
+document.querySelectorAll('.catpill').forEach(c=>c.onclick=()=>{document.querySelectorAll('.catpill').forEach(x=>x.classList.remove('on'));c.classList.add('on');});
+document.querySelectorAll('.opt').forEach(o=>o.onclick=()=>{[...o.parentElement.children].filter(x=>x.classList.contains('opt')).forEach(x=>x.classList.remove('on'));o.classList.add('on');});
+</script>
+</body></html>
