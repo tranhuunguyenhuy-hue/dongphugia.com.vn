@@ -1,0 +1,789 @@
+═══════════════════════════════════════════════════════════════
+  PHÂN TÍCH CẤU TRÚC DATABASE DANH MỤC - ĐÔNG PHÚ GIA
+═══════════════════════════════════════════════════════════════
+
+
+╔══════════════════════════════════════════════════════════════╗
+║  1. TỔNG QUAN CÁC DANH MỤC (Categories)                    ║
+╚══════════════════════════════════════════════════════════════╝
+
+🏷️  [ID:1] Thiết bị vệ sinh (slug: thiet-bi-ve-sinh)
+   └─ Sản phẩm: 4929 | Active: true | SEO: ❌
+      ├─ [ID:1] Bồn Cầu (bon-cau) → 757 SP | Active: true
+      ├─ [ID:2] Chậu Lavabo (lavabo) → 627 SP | Active: true
+      ├─ [ID:3] Sen Tắm (sen-tam) → 1770 SP | Active: true
+      ├─ [ID:4] Bồn Tắm (bon-tam) → 414 SP | Active: true
+      ├─ [ID:5] Phụ Kiện Phòng Tắm (phu-kien-phong-tam) → 176 SP | Active: true
+      ├─ [ID:6] Vòi Chậu (voi-chau) → 503 SP | Active: true
+      ├─ [ID:7] Bồn Tiểu (bon-tieu) → 194 SP | Active: true
+      ├─ [ID:8] Vòi Nước (voi-nuoc) → 63 SP | Active: true
+      ├─ [ID:9] Nắp Bồn Cầu (nap-bon-cau) → 131 SP | Active: true
+      ├─ [ID:32] Phụ Kiện Bồn Cầu (phu-kien-bon-cau) → 259 SP | Active: true
+      ├─ [ID:33] Thân Bồn Cầu (than-bon-cau) → 39 SP | Active: true
+
+🏷️  [ID:2] Thiết bị bếp (slug: thiet-bi-bep)
+   └─ Sản phẩm: 446 | Active: true | SEO: ❌
+      ├─ [ID:10] Vòi Rửa Chén (voi-rua-chen) → 187 SP | Active: true
+      ├─ [ID:11] Thiết Bị Bếp Khác (thiet-bi-bep-khac) → 44 SP | Active: true
+      ├─ [ID:12] Chậu Rửa Chén (chau-rua-chen) → 94 SP | Active: true
+      ├─ [ID:13] Bếp Điện Từ (bep-dien-tu) → 41 SP | Active: true
+      ├─ [ID:14] Máy Hút Mùi (may-hut-mui) → 23 SP | Active: true
+      ├─ [ID:15] Máy Rửa Chén (may-rua-chen) → 20 SP | Active: true
+      ├─ [ID:16] Bếp Gas (bep-gas) → 17 SP | Active: true
+      ├─ [ID:17] Lò Nướng (lo-nuong) → 16 SP | Active: true
+
+🏷️  [ID:3] Vật liệu nước (slug: vat-lieu-nuoc)
+   └─ Sản phẩm: 185 | Active: true | SEO: ❌
+      ├─ [ID:18] Máy Nước Nóng (may-nuoc-nong) → 73 SP | Active: true
+      ├─ [ID:19] Lọc Nước (loc-nuoc) → 73 SP | Active: true
+      ├─ [ID:20] Bồn Chứa Nước (bon-chua-nuoc) → 20 SP | Active: true
+      ├─ [ID:21] Máy Bơm Nước (may-bom-nuoc) → 19 SP | Active: true
+
+🏷️  [ID:5] Gạch Ốp Lát (slug: gach-op-lat)
+   └─ Sản phẩm: 121 | Active: true | SEO: ✅
+      ├─ [ID:22] Gạch Vân Đá Marble (gach-van-da-marble) → 26 SP | Active: true
+      ├─ [ID:23] Gạch Vân Đá Tự Nhiên (gach-van-da-tu-nhien) → 23 SP | Active: true
+      ├─ [ID:24] Gạch Vân Gỗ (gach-van-go) → 12 SP | Active: true
+      ├─ [ID:25] Gạch Thiết Kế Xi Măng (gach-thiet-ke-xi-mang) → 26 SP | Active: true
+      ├─ [ID:26] Gạch Trang Trí (gach-trang-tri) → 34 SP | Active: true
+
+🏷️  [ID:4] Sàn gỗ (slug: san-go)
+   └─ Sản phẩm: 0 | Active: true | SEO: ❌
+
+
+╔══════════════════════════════════════════════════════════════╗
+║  2. PHÂN BỐ THƯƠNG HIỆU                                    ║
+╚══════════════════════════════════════════════════════════════╝
+  65PRL [ID:94] → 2 sản phẩm | Active: true
+  American Standard [ID:4] → 374 sản phẩm | Active: true
+  Ariston [ID:27] → 18 sản phẩm | Active: true
+  ASCOLANO [ID:89] → 3 sản phẩm | Active: true
+  ATMOR [ID:12] → 293 sản phẩm | Active: true
+  BALTIMORE [ID:105] → 2 sản phẩm | Active: true
+  BOOST [ID:102] → 3 sản phẩm | Active: true
+  BOOST BALANCE [ID:103] → 9 sản phẩm | Active: true
+  BOOST MINERAL [ID:106] → 1 sản phẩm | Active: true
+  BOOST NATURAL [ID:104] → 11 sản phẩm | Active: true
+  CAESAR [ID:3] → 472 sản phẩm | Active: true
+  COTTO [ID:8] → 412 sản phẩm | Active: true
+  Coway [ID:36] → 8 sản phẩm | Active: true
+  CREA LA [ID:110] → 3 sản phẩm | Active: true
+  Đại Thành [ID:39] → 20 sản phẩm | Active: true
+  DGAUDY [ID:112] → 1 sản phẩm | Active: true
+  DIMORE [ID:98] → 2 sản phẩm | Active: true
+  Duravit [ID:23] → 10 sản phẩm | Active: true
+  Elica [ID:26] → 43 sản phẩm | Active: true
+  Ferroli [ID:32] → 24 sản phẩm | Active: true
+  FUN [ID:111] → 3 sản phẩm | Active: true
+  FUSION [ID:113] → 1 sản phẩm | Active: true
+  GROHE [ID:7] → 506 sản phẩm | Active: true
+  Hansgrohe [ID:19] → 112 sản phẩm | Active: true
+  HELSINKI [ID:99] → 1 sản phẩm | Active: true
+  HITA [ID:6] → 0 sản phẩm | Active: true
+  INAX [ID:2] → 384 sản phẩm | Active: true
+  INTENSE [ID:95] → 3 sản phẩm | Active: true
+  INTRECCI [ID:100] → 3 sản phẩm | Active: true
+  INVICTUS [ID:88] → 1 sản phẩm | Active: true
+  JARDIN [ID:114] → 2 sản phẩm | Active: true
+  Kaff [ID:28] → 84 sản phẩm | Active: true
+  KALON [ID:101] → 1 sản phẩm | Active: true
+  Karofi [ID:33] → 21 sản phẩm | Active: true
+  KECH [ID:109] → 18 sản phẩm | Active: true
+  Kluger [ID:25] → 54 sản phẩm | Active: true
+  LOG [ID:107] → 1 sản phẩm | Active: true
+  MARVEL GALA [ID:85] → 4 sản phẩm | Active: true
+  MARVEL X [ID:86] → 3 sản phẩm | Active: true
+  MIMESIS [ID:97] → 5 sản phẩm | Active: true
+  Mitsubishi Cleansui [ID:34] → 21 sản phẩm | Active: true
+  Mitsubishi Electric [ID:41] → 0 sản phẩm | Active: true
+  MOEN [ID:18] → 297 sản phẩm | Active: true
+  MOTLEY [ID:91] → 6 sản phẩm | Active: true
+  Mowoen [ID:14] → 45 sản phẩm | Active: true
+  NANOCO [ID:35] → 9 sản phẩm | Active: true
+  ONIX [ID:87] → 3 sản phẩm | Active: true
+  ONYCE [ID:83] → 5 sản phẩm | Active: true
+  PANASONIC [ID:30] → 24 sản phẩm | Active: true
+  PAPIER [ID:108] → 5 sản phẩm | Active: true
+  PHILIPS [ID:37] → 9 sản phẩm | Active: true
+  Rheem [ID:31] → 3 sản phẩm | Active: true
+  SAMSUNG [ID:29] → 10 sản phẩm | Active: true
+  TELE DI MARMO LUMIA [ID:84] → 4 sản phẩm | Active: true
+  TELE DI MARMO ONYX [ID:90] → 3 sản phẩm | Active: true
+  Toshiba [ID:40] → 3 sản phẩm | Active: true
+  TOTO [ID:1] → 2091 sản phẩm | Active: true
+  Unilever Pureit [ID:38] → 14 sản phẩm | Active: true
+  VARANA [ID:92] → 4 sản phẩm | Active: true
+  VARANA STONE [ID:93] → 6 sản phẩm | Active: true
+  VEIN STONE [ID:96] → 2 sản phẩm | Active: true
+  Viglacera [ID:11] → 199 sản phẩm | Active: true
+
+
+╔══════════════════════════════════════════════════════════════╗
+║  3. SO SÁNH TOTO (Hita crawl) vs SẢN PHẨM CŨ               ║
+╚══════════════════════════════════════════════════════════════╝
+
+  📊 Tổng sản phẩm TOTO: 2091
+  📊 Tổng sản phẩm KHÁC: 3590
+  📊 Tổng cộng: 5681
+
+  🔗 TOTO có source_url (Hita): 1882
+  🔗 TOTO có hita_product_id: 0
+  🔗 TOTO không có source_url: 209
+
+  ────────────────────────────────────────────────────────
+  PHÂN BỐ THEO SUBCATEGORY:
+  ────────────────────────────────────────────────────────
+  Danh mục                            |   TOTO |   Khác |   Tổng
+  ------------------------------------|--------|--------|-------
+  Thiết bị vệ sinh > Bồn Cầu          |    366 |    391 |    757
+  Thiết bị vệ sinh > Chậu Lavabo      |    156 |    471 |    627
+  Thiết bị vệ sinh > Sen Tắm          |    945 |    825 |   1770
+  Thiết bị vệ sinh > Bồn Tắm          |    153 |    261 |    414
+  Thiết bị vệ sinh > Phụ Kiện Phòng Tắm |     79 |     97 |    176
+  Thiết bị vệ sinh > Vòi Chậu         |    212 |    291 |    503
+  Thiết bị vệ sinh > Bồn Tiểu         |     43 |    151 |    194
+  Thiết bị vệ sinh > Vòi Nước         |      0 |     63 |     63
+  Thiết bị vệ sinh > Nắp Bồn Cầu      |     24 |    107 |    131
+  Thiết bị vệ sinh > Phụ Kiện Bồn Cầu |     78 |    181 |    259
+  Thiết bị vệ sinh > Thân Bồn Cầu     |     23 |     16 |     39
+  Thiết bị bếp > Vòi Rửa Chén         |     12 |    175 |    187
+  Thiết bị bếp > Thiết Bị Bếp Khác    |      0 |     44 |     44
+  Thiết bị bếp > Chậu Rửa Chén        |      0 |     94 |     94
+  Thiết bị bếp > Bếp Điện Từ          |      0 |     41 |     41
+  Thiết bị bếp > Máy Hút Mùi          |      0 |     23 |     23
+  Thiết bị bếp > Máy Rửa Chén         |      0 |     20 |     20
+  Thiết bị bếp > Bếp Gas              |      0 |     17 |     17
+  Thiết bị bếp > Lò Nướng             |      0 |     16 |     16
+  Vật liệu nước > Máy Nước Nóng       |      0 |     73 |     73
+  Vật liệu nước > Lọc Nước            |      0 |     73 |     73
+  Vật liệu nước > Bồn Chứa Nước       |      0 |     20 |     20
+  Vật liệu nước > Máy Bơm Nước        |      0 |     19 |     19
+  Gạch Ốp Lát > Gạch Vân Đá Marble    |      0 |     26 |     26
+  Gạch Ốp Lát > Gạch Vân Đá Tự Nhiên  |      0 |     23 |     23
+  Gạch Ốp Lát > Gạch Vân Gỗ           |      0 |     12 |     12
+  Gạch Ốp Lát > Gạch Thiết Kế Xi Măng |      0 |     26 |     26
+  Gạch Ốp Lát > Gạch Trang Trí        |      0 |     34 |     34
+
+
+╔══════════════════════════════════════════════════════════════╗
+║  4. CHẤT LƯỢNG DỮ LIỆU: TOTO vs SẢN PHẨM CŨ               ║
+╚══════════════════════════════════════════════════════════════╝
+
+  ── SẢN PHẨM TOTO (Crawl từ Hita) (2091 sản phẩm) ──
+  Trường                       | Giá trị
+  -----------------------------|--------
+  Có giá bán (price)           | 1912/2091 (91.4%)
+  Có giá gốc (original_price)  | 1670/2091 (79.9%)
+  Có giảm online               | 1151/2091 (55.0%)
+  Có mô tả (description)       | 2091/2091 (100.0%)
+  Có features                  | 0/2091 (0.0%)
+  Có specs (JSON)              | 2033/2091 (97.2%)
+  Có ảnh chính                 | 2091/2091 (100.0%)
+  Có gallery                   | 2091/2091 (100.0%)
+  Số ảnh gallery TB            | 5.7
+  Có xuất xứ (origin)          | 0/2091 (0.0%)
+  Có màu sắc (color)           | 1359/2091 (65.0%)
+  Có chất liệu (material)      | 0/2091 (0.0%)
+  Có bảo hành                  | 1975/2091 (94.5%)
+  Có product_type              | 2089/2091 (99.9%)
+  Có product_sub_type          | 146/2091 (7.0%)
+  Có variant_group             | 1849/2091 (88.4%)
+  is_master = true             | 924/2091 (44.2%)
+  is_combo                     | 251/2091 (12.0%)
+  is_featured                  | 4/2091 (0.2%)
+  is_promotion                 | 0/2091 (0.0%)
+  Có SEO title                 | 2091/2091 (100.0%)
+  Có SEO description           | 2091/2091 (100.0%)
+  Có display_name              | 297/2091 (14.2%)
+  Có source_url                | 1882/2091 (90.0%)
+  Có hita_product_id           | 0/2091 (0.0%)
+
+  ── SẢN PHẨM CŨ (Không phải TOTO) (3590 sản phẩm) ──
+  Trường                       | Giá trị
+  -----------------------------|--------
+  Có giá bán (price)           | 3390/3590 (94.4%)
+  Có giá gốc (original_price)  | 4/3590 (0.1%)
+  Có giảm online               | 0/3590 (0.0%)
+  Có mô tả (description)       | 3590/3590 (100.0%)
+  Có features                  | 0/3590 (0.0%)
+  Có specs (JSON)              | 3468/3590 (96.6%)
+  Có ảnh chính                 | 3590/3590 (100.0%)
+  Có gallery                   | 3590/3590 (100.0%)
+  Số ảnh gallery TB            | 4.9
+  Có xuất xứ (origin)          | 0/3590 (0.0%)
+  Có màu sắc (color)           | 1810/3590 (50.4%)
+  Có chất liệu (material)      | 0/3590 (0.0%)
+  Có bảo hành                  | 3012/3590 (83.9%)
+  Có product_type              | 2370/3590 (66.0%)
+  Có product_sub_type          | 397/3590 (11.1%)
+  Có variant_group             | 528/3590 (14.7%)
+  is_master = true             | 3351/3590 (93.3%)
+  is_combo                     | 203/3590 (5.7%)
+  is_featured                  | 14/3590 (0.4%)
+  is_promotion                 | 0/3590 (0.0%)
+  Có SEO title                 | 3590/3590 (100.0%)
+  Có SEO description           | 3590/3590 (100.0%)
+  Có display_name              | 209/3590 (5.8%)
+  Có source_url                | 0/3590 (0.0%)
+  Có hita_product_id           | 0/3590 (0.0%)
+
+
+╔══════════════════════════════════════════════════════════════╗
+║  5. PHÂN LOẠI PRODUCT_TYPE (TOTO)                           ║
+╚══════════════════════════════════════════════════════════════╝
+  Sen Tắm → sen-tam-nong-lanh: 367
+  Sen Tắm → sen-tam-nhiet-do: 142
+  Sen Tắm → sen-tam-am-tuong: 135
+  Bồn Cầu → bon-cau-2-khoi: 127
+  Vòi Chậu → voi-nong-lanh: 123
+  Bồn Cầu → bon-cau-1-khoi: 112
+  Chậu Lavabo → lavabo-dat-ban: 111
+  Bồn Cầu → bon-cau-treo-tuong: 106
+  Sen Tắm → phu-kien-sen-tam: 89
+  Sen Tắm → sen-cay: 67
+  Vòi Chậu → voi-cam-ung: 57
+  Bồn Tắm → bon-tam-xay: 52
+  Phụ Kiện Bồn Cầu → phu-kien-bon-cau: 48
+  Sen Tắm → cu-sen-van-sen: 45
+  Bồn Tắm → bon-tam-dat-san: 44
+  Sen Tắm → voi-xa-bon-tam: 41
+  Sen Tắm → bat-sen-cam-tay: 35
+  Bồn Tắm → bon-tam-co-yem: 24
+  Vòi Chậu → phu-kien-voi: 24
+  Phụ Kiện Phòng Tắm → phu-kien-phong-tam: 24
+  Bồn Tiểu → bon-tieu-nam: 23
+  Thân Bồn Cầu → than-bon-cau: 23
+  Bồn Tắm → bon-tam-massage: 21
+  Chậu Lavabo → lavabo-treo-tuong: 21
+  Phụ Kiện Phòng Tắm → treo-khan: 21
+  Bồn Tiểu → phu-kien-bon-tieu: 20
+  Phụ Kiện Bồn Cầu → ket-nuoc: 20
+  Bồn Cầu → bon-cau-thong-minh: 18
+  Sen Tắm → bat-sen-tran: 14
+  Nắp Bồn Cầu → nap-dien-tu: 14
+  Chậu Lavabo → lavabo-am-ban: 14
+  Vòi Rửa Chén → voi-rua-chen: 12
+  Bồn Tắm → phu-kien-bon-tam: 12
+  Phụ Kiện Phòng Tắm → lo-giay: 10
+  Phụ Kiện Phòng Tắm → voi-xit-ve-sinh: 8
+  Nắp Bồn Cầu → nap-thuong-dong-em: 7
+  Phụ Kiện Phòng Tắm → moc-ao: 6
+  Phụ Kiện Phòng Tắm → guong-phong-tam: 6
+  Phụ Kiện Bồn Cầu → nap-ket-nuoc: 5
+  Chậu Lavabo → lavabo-duong-vanh: 5
+  Phụ Kiện Bồn Cầu → nap-bon-cau: 5
+  Sen Tắm → phu-kien: 5
+  Vòi Chậu → voi-co-trung: 4
+  Chậu Lavabo → lavabo-ban-am: 4
+  Nắp Bồn Cầu → nap-rua-co: 3
+  Vòi Chậu → lavabo-treo-tuong: 3
+  Phụ Kiện Phòng Tắm → ga-thoat-san: 3
+  Sen Tắm → van-sen: 2
+  Bồn Cầu → bon-cau-dat-san: 2
+  Sen Tắm → sen-am-tuong: 2
+  Bồn Cầu → (null): 1
+  Sen Tắm → (null): 1
+  Phụ Kiện Phòng Tắm → hop-xa-phong: 1
+  Chậu Lavabo → phu-kien-lavabo: 1
+  Vòi Chậu → voi-ban-tu-dong: 1
+
+
+╔══════════════════════════════════════════════════════════════╗
+║  6. PHÂN LOẠI PRODUCT_TYPE (Sản phẩm cũ)                    ║
+╚══════════════════════════════════════════════════════════════╝
+  Sen Tắm → phu-kien [GROHE]: 76
+  Bồn Tắm → bon-tam [GROHE]: 47
+  Phụ Kiện Bồn Cầu → (null) [GROHE]: 45
+  Sen Tắm → cu-sen [American Standard]: 45
+  Sen Tắm → tay-sen [GROHE]: 42
+  Bồn Cầu → bon-cau-1-khoi [American Standard]: 42
+  Sen Tắm → sen-am-tuong [MOEN]: 39
+  Bồn Cầu → bon-cau-1-khoi [INAX]: 38
+  Bồn Tiểu → (null) [INAX]: 36
+  Bồn Tắm → bon-tam [Mowoen]: 31
+  Sen Tắm → phu-kien [COTTO]: 30
+  Bồn Cầu → bon-cau-1-khoi [COTTO]: 29
+  Sen Tắm → cu-sen [MOEN]: 29
+  Chậu Rửa Chén → (null) [Kluger]: 28
+  Sen Tắm → phu-kien [CAESAR]: 28
+  Phụ Kiện Bồn Cầu → (null) [CAESAR]: 28
+  Bồn Tắm → bon-tam-massage [CAESAR]: 28
+  Bồn Cầu → bon-cau-1-khoi [CAESAR]: 27
+  Bồn Cầu → bon-cau-2-khoi [INAX]: 26
+  Bồn Tắm → bon-tam [MOEN]: 26
+  Bồn Tiểu → (null) [CAESAR]: 26
+  Vòi Rửa Chén → (null) [INAX]: 25
+  Sen Tắm → tay-sen [CAESAR]: 25
+  Sen Tắm → cu-sen [INAX]: 25
+  Máy Nước Nóng → (null) [Ferroli]: 24
+  Sen Tắm → sen-dung [MOEN]: 24
+  Bồn Cầu → bon-cau-2-khoi [CAESAR]: 24
+  Phụ Kiện Phòng Tắm → (null) [CAESAR]: 24
+  Phụ Kiện Phòng Tắm → (null) [ATMOR]: 24
+  Phụ Kiện Bồn Cầu → (null) [INAX]: 23
+  Chậu Rửa Chén → (null) [MOEN]: 22
+  Vòi Rửa Chén → (null) [COTTO]: 22
+  Sen Tắm → sen-dung [INAX]: 22
+  Bồn Tiểu → (null) [COTTO]: 22
+  Bồn Cầu → bon-cau-2-khoi [COTTO]: 22
+  Bồn Tiểu → (null) [Viglacera]: 21
+  Sen Tắm → phu-kien [MOEN]: 21
+  Lọc Nước → (null) [Karofi]: 21
+  Lọc Nước → (null) [Mitsubishi Cleansui]: 21
+  Bồn Cầu → bon-cau-1-khoi [Viglacera]: 21
+  Chậu Lavabo → tu-chau [CAESAR]: 20
+  Sen Tắm → sen-am-tuong [COTTO]: 20
+  Bồn Chứa Nước → (null) [Đại Thành]: 20
+  Vòi Rửa Chén → (null) [ATMOR]: 20
+  Vòi Rửa Chén → (null) [CAESAR]: 20
+  Bếp Điện Từ → (null) [Kaff]: 20
+  Sen Tắm → sen-dung [CAESAR]: 20
+  Máy Hút Mùi → (null) [Elica]: 20
+  Chậu Lavabo → lavabo-am-ban [Viglacera]: 20
+  Sen Tắm → cu-sen [ATMOR]: 20
+  Bồn Cầu → bon-cau-2-khoi [American Standard]: 20
+  Chậu Lavabo → lavabo-dat-ban [ATMOR]: 20
+  Chậu Lavabo → lavabo-dat-ban [Viglacera]: 20
+  Chậu Lavabo → lavabo-treo-tuong [COTTO]: 20
+  Vòi Rửa Chén → (null) [Kluger]: 20
+  Thiết Bị Bếp Khác → (null) [Kaff]: 20
+  Bồn Cầu → bon-cau-1-khoi [ATMOR]: 20
+  Bồn Cầu → bon-cau-treo-tuong [INAX]: 20
+  Sen Tắm → sen-dung [Hansgrohe]: 20
+  Nắp Bồn Cầu → nap-thuong-dong-em [INAX]: 20
+  Chậu Lavabo → lavabo-dat-ban [COTTO]: 20
+  Chậu Lavabo → lavabo-treo-tuong [GROHE]: 20
+  Chậu Lavabo → lavabo-dat-ban [GROHE]: 20
+  Bồn Tắm → bon-tam [CAESAR]: 20
+  Chậu Lavabo → lavabo-dat-ban [CAESAR]: 20
+  Vòi Rửa Chén → (null) [MOEN]: 20
+  Chậu Lavabo → lavabo-treo-tuong [CAESAR]: 20
+  Sen Tắm → tay-sen [ATMOR]: 20
+  Chậu Lavabo → lavabo-dat-ban [INAX]: 20
+  Sen Tắm → sen-dung [GROHE]: 20
+  Sen Tắm → sen-dung [COTTO]: 20
+  Vòi Nước → (null) [GROHE]: 19
+  Sen Tắm → cu-sen [COTTO]: 19
+  Vòi Chậu → voi-nong-lanh [GROHE]: 19
+  Vòi Chậu → phu-kien-voi [INAX]: 19
+  Sen Tắm → tay-sen [MOEN]: 19
+  Vòi Chậu → phu-kien-voi [CAESAR]: 18
+  Vòi Rửa Chén → (null) [GROHE]: 18
+  Máy Rửa Chén → (null) [Kaff]: 18
+  Vòi Chậu → voi-nong-lanh [MOEN]: 18
+  Vòi Chậu → voi-nong-lanh [Hansgrohe]: 18
+  Phụ Kiện Phòng Tắm → (null) [COTTO]: 18
+  Chậu Lavabo → (null) [Viglacera]: 18
+  Sen Tắm → cu-sen [GROHE]: 18
+  Vòi Chậu → voi-nong-lanh [American Standard]: 18
+  Bồn Tiểu → (null) [American Standard]: 18
+  Gạch Trang Trí → (null) [KECH]: 18
+  Sen Tắm → cu-sen [CAESAR]: 17
+  Sen Tắm → tay-sen [COTTO]: 17
+  Bếp Điện Từ → (null) [Elica]: 17
+  Chậu Rửa Chén → (null) [GROHE]: 17
+  Máy Nước Nóng → (null) [Ariston]: 17
+  Chậu Lavabo → lavabo-dat-ban [American Standard]: 17
+  Sen Tắm → tay-sen [Hansgrohe]: 17
+  Bồn Tiểu → (null) [ATMOR]: 17
+  Sen Tắm → phu-kien [ATMOR]: 16
+  Sen Tắm → tay-sen [American Standard]: 16
+  Vòi Chậu → phu-kien-voi [COTTO]: 16
+  Nắp Bồn Cầu → nap-thuong-dong-em [American Standard]: 16
+  Thân Bồn Cầu → (null) [GROHE]: 16
+  Chậu Lavabo → lavabo-am-ban [GROHE]: 16
+  Sen Tắm → phu-kien [American Standard]: 16
+  Phụ Kiện Phòng Tắm → (null) [MOEN]: 16
+  Bếp Gas → (null) [Kaff]: 16
+  Sen Tắm → sen-am-tuong [American Standard]: 15
+  Sen Tắm → phu-kien [Hansgrohe]: 15
+  Nắp Bồn Cầu → nap-thuong-dong-em [GROHE]: 15
+  Bồn Tắm → bon-tam [INAX]: 15
+  Chậu Lavabo → lavabo-dat-ban [MOEN]: 15
+  Máy Nước Nóng → (null) [PANASONIC]: 14
+  Vòi Chậu → voi-nong-lanh [Viglacera]: 14
+  Chậu Lavabo → duong-vanh [CAESAR]: 14
+  Vòi Chậu → voi-co-trung [CAESAR]: 14
+  Vòi Rửa Chén → (null) [American Standard]: 14
+  Lọc Nước → (null) [Unilever Pureit]: 14
+  Sen Tắm → cu-sen [Viglacera]: 14
+  Bồn Tắm → bon-tam [American Standard]: 14
+  Bồn Tắm → bon-tam-massage [Mowoen]: 14
+  Nắp Bồn Cầu → nap-thuong-dong-em [COTTO]: 13
+  Nắp Bồn Cầu → nap-thuong-dong-em [CAESAR]: 13
+  Bồn Tắm → bon-tam-xay [GROHE]: 13
+  Vòi Chậu → voi-co-trung [COTTO]: 13
+  Chậu Lavabo → lavabo [Viglacera]: 13
+  Máy Nước Nóng → (null) [ATMOR]: 12
+  Vòi Chậu → voi-nong-lanh [INAX]: 12
+  Sen Tắm → sen-am-tuong [GROHE]: 12
+  Chậu Lavabo → lavabo-treo-tuong [INAX]: 12
+  Chậu Rửa Chén → (null) [ATMOR]: 12
+  Phụ Kiện Bồn Cầu → (null) [COTTO]: 12
+  Bồn Cầu → bon-cau-treo-tuong [GROHE]: 12
+  Sen Tắm → sen-dung [ATMOR]: 12
+  Bồn Tắm → bon-tam-xay [COTTO]: 12
+  Chậu Rửa Chén → (null) [Hansgrohe]: 12
+  Sen Tắm → sen-dung [American Standard]: 12
+  Vòi Chậu → voi-gan-tuong [GROHE]: 11
+  Sen Tắm → sen-dung [Viglacera]: 11
+  Phụ Kiện Bồn Cầu → (null) [American Standard]: 11
+  Sen Tắm → cu-sen [Hansgrohe]: 11
+  Vòi Nước → (null) [COTTO]: 11
+  Gạch Thiết Kế Xi Măng → (null) [BOOST NATURAL]: 11
+  Vòi Chậu → voi-nong-lanh [ATMOR]: 10
+  Vòi Chậu → phu-kien-voi [ATMOR]: 10
+  Lò Nướng → (null) [Kaff]: 10
+  Vòi Nước → (null) [ATMOR]: 10
+  Phụ Kiện Bồn Cầu → ket-nuoc-am-tuong [GROHE]: 10
+  Máy Bơm Nước → (null) [PANASONIC]: 10
+  Chậu Lavabo → lavabo-treo-tuong [ATMOR]: 10
+  Chậu Lavabo → lavabo-treo-tuong [American Standard]: 9
+  Vòi Chậu → phu-kien-voi [GROHE]: 9
+  Lọc Nước → (null) [PHILIPS]: 9
+  Máy Bơm Nước → (null) [NANOCO]: 9
+  Chậu Lavabo → lavabo [American Standard]: 9
+  Phụ Kiện Phòng Tắm → (null) [INAX]: 9
+  Bồn Tắm → bon-tam-xay [CAESAR]: 9
+  Vòi Rửa Chén → (null) [Viglacera]: 9
+  Gạch Thiết Kế Xi Măng → (null) [BOOST BALANCE]: 9
+  Bồn Cầu → bon-cau-2-khoi [Viglacera]: 9
+  Lọc Nước → (null) [Coway]: 8
+  Vòi Nước → (null) [CAESAR]: 8
+  Chậu Lavabo → lavabo-am-ban [COTTO]: 8
+  Bồn Tắm → bon-tam-xay [American Standard]: 8
+  Chậu Lavabo → lavabo-ban-am [American Standard]: 8
+  Bồn Tắm → bon-tam [COTTO]: 8
+  Chậu Lavabo → lavabo-am-ban [ATMOR]: 8
+  Bồn Cầu → bon-cau-treo-tuong [COTTO]: 8
+  Phụ Kiện Bồn Cầu → (null) [MOEN]: 7
+  Phụ Kiện Bồn Cầu → (null) [ATMOR]: 7
+  Bồn Cầu → bon-cau-1-khoi [GROHE]: 7
+  Chậu Lavabo → duong-vanh [American Standard]: 7
+  Bồn Tắm → bon-tam-massage [American Standard]: 7
+  Phụ Kiện Bồn Cầu → phu-kien-bon-cau [COTTO]: 7
+  Chậu Lavabo → duong-vanh [ATMOR]: 7
+  Chậu Lavabo → lavabo-am-ban [American Standard]: 7
+  Vòi Rửa Chén → (null) [Hansgrohe]: 7
+  Chậu Lavabo → lavabo-am-ban [INAX]: 7
+  Bồn Tiểu → (null) [MOEN]: 7
+  Chậu Lavabo → lavabo-ban-am [COTTO]: 7
+  Bồn Cầu → bon-cau-xom [CAESAR]: 7
+  Vòi Chậu → voi-nong-lanh [CAESAR]: 6
+  Thiết Bị Bếp Khác → (null) [Kluger]: 6
+  Vòi Chậu → phu-kien-voi [Viglacera]: 6
+  Sen Tắm → tay-sen [INAX]: 6
+  Bồn Cầu → bon-cau-dat-san [COTTO]: 6
+  Thiết Bị Bếp Khác → (null) [American Standard]: 6
+  Phụ Kiện Bồn Cầu → phu-kien-bon-cau [CAESAR]: 6
+  Chậu Lavabo → duong-vanh [INAX]: 6
+  Vòi Chậu → voi-co-trung [INAX]: 6
+  Chậu Lavabo → lavabo-ban-am [GROHE]: 6
+  Gạch Vân Đá Tự Nhiên → (null) [VARANA STONE]: 6
+  Nắp Bồn Cầu → nap-rua-co [COTTO]: 6
+  Gạch Vân Đá Tự Nhiên → (null) [MOTLEY]: 6
+  Chậu Lavabo → lavabo-am-ban [MOEN]: 6
+  Bồn Cầu → bon-cau-treo-tuong [American Standard]: 6
+  Vòi Chậu → voi-cam-ung [CAESAR]: 5
+  Vòi Chậu → phu-kien-voi [MOEN]: 5
+  Chậu Lavabo → lavabo-am-ban [CAESAR]: 5
+  Phụ Kiện Bồn Cầu → nap-bon-cau [INAX]: 5
+  Chậu Lavabo → lavabo [COTTO]: 5
+  Chậu Lavabo → duong-vanh [COTTO]: 5
+  Sen Tắm → sen-am-tuong [ATMOR]: 5
+  Vòi Chậu → voi-co-cao [COTTO]: 5
+  Bồn Cầu → bon-cau-2-khoi [ATMOR]: 5
+  Chậu Lavabo → lavabo [INAX]: 5
+  Nắp Bồn Cầu → nap-dien-tu [INAX]: 5
+  Thiết Bị Bếp Khác → (null) [GROHE]: 5
+  Gạch Vân Đá Marble → (null) [ONYCE]: 5
+  Gạch Vân Gỗ → (null) [MIMESIS]: 5
+  Gạch Trang Trí → (null) [PAPIER]: 5
+  Bồn Cầu → bon-cau-thong-minh [American Standard]: 5
+  Vòi Nước → (null) [American Standard]: 4
+  Lò Nướng → (null) [Elica]: 4
+  Vòi Chậu → phu-kien-voi [American Standard]: 4
+  Chậu Lavabo → lavabo [CAESAR]: 4
+  Thiết Bị Bếp Khác → (null) [ATMOR]: 4
+  Vòi Nước → (null) [INAX]: 4
+  Vòi Nước → (null) [MOEN]: 4
+  Chậu Lavabo → lavabo-ban-am [INAX]: 4
+  Chậu Lavabo → duong-vanh [Viglacera]: 4
+  Bồn Tắm → bon-tam [ATMOR]: 4
+  Sen Tắm → sen-am-tuong [INAX]: 4
+  Phụ Kiện Phòng Tắm → (null) [American Standard]: 4
+  Nắp Bồn Cầu → nap-dien-tu [CAESAR]: 4
+  Vòi Chậu → voi-ban-tu-dong [ATMOR]: 4
+  Vòi Chậu → voi-co-trung [ATMOR]: 4
+  Gạch Vân Đá Marble → (null) [TELE DI MARMO LUMIA]: 4
+  Gạch Vân Đá Marble → (null) [MARVEL GALA]: 4
+  Bồn Cầu → bon-cau-1-khoi [MOEN]: 4
+  Bồn Cầu → bon-cau-treo-tuong [ATMOR]: 4
+  Bồn Tiểu → (null) [GROHE]: 4
+  Gạch Vân Đá Tự Nhiên → (null) [VARANA]: 4
+  Nắp Bồn Cầu → nap-dien-tu [COTTO]: 3
+  Sen Tắm → sen-am-tuong [Hansgrohe]: 3
+  Vòi Chậu → phu-kien-voi [Hansgrohe]: 3
+  Máy Nước Nóng → (null) [Rheem]: 3
+  Phụ Kiện Bồn Cầu → phu-kien-bon-cau [INAX]: 3
+  Phụ Kiện Bồn Cầu → phu-kien-bon-cau [MOEN]: 3
+  Bồn Cầu → bon-cau-treo-tuong [Duravit]: 3
+  Bồn Cầu → bon-cau-thong-minh [COTTO]: 3
+  Bồn Cầu → bon-cau-dat-san [GROHE]: 3
+  Máy Nước Nóng → (null) [Toshiba]: 3
+  Sen Tắm → sen-am-tuong [CAESAR]: 3
+  Vòi Chậu → voi-cam-ung [Viglacera]: 3
+  Gạch Vân Đá Marble → (null) [ASCOLANO]: 3
+  Nắp Bồn Cầu → nap-rua-co [American Standard]: 3
+  Gạch Vân Đá Marble → (null) [TELE DI MARMO ONYX]: 3
+  Bồn Tắm → bon-tam-massage [COTTO]: 3
+  Gạch Vân Đá Tự Nhiên → (null) [INTENSE]: 3
+  Gạch Thiết Kế Xi Măng → (null) [BOOST]: 3
+  Máy Hút Mùi → (null) [SAMSUNG]: 3
+  Gạch Trang Trí → (null) [FUN]: 3
+  Gạch Trang Trí → (null) [CREA LA]: 3
+  Gạch Vân Đá Marble → (null) [MARVEL X]: 3
+  Gạch Vân Đá Marble → (null) [ONIX]: 3
+  Gạch Vân Gỗ → (null) [INTRECCI]: 3
+  Chậu Rửa Chén → (null) [American Standard]: 3
+  Bếp Điện Từ → (null) [SAMSUNG]: 3
+  Vòi Chậu → voi-gan-tuong [Hansgrohe]: 3
+  Máy Rửa Chén → (null) [SAMSUNG]: 2
+  Vòi Chậu → voi-cam-ung [INAX]: 2
+  Bồn Cầu → bon-cau-treo-tuong [MOEN]: 2
+  Vòi Nước → (null) [Viglacera]: 2
+  Phụ Kiện Bồn Cầu → nap-bon-cau [CAESAR]: 2
+  Chậu Lavabo → lavabo-treo-tuong [Viglacera]: 2
+  Phụ Kiện Bồn Cầu → phu-kien-bon-cau [GROHE]: 2
+  Bồn Cầu → (null) [MOEN]: 2
+  Phụ Kiện Bồn Cầu → phu-kien-bon-cau [American Standard]: 2
+  Phụ Kiện Bồn Cầu → phu-kien-bon-cau [Viglacera]: 2
+  Phụ Kiện Bồn Cầu → phu-kien-bon-cau [ATMOR]: 2
+  Vòi Chậu → voi-cam-ung [MOEN]: 2
+  Vòi Chậu → voi-co-trung [Viglacera]: 2
+  Phụ Kiện Bồn Cầu → ket-nuoc-am-tuong [American Standard]: 2
+  Phụ Kiện Phòng Tắm → (null) [Viglacera]: 2
+  Bồn Cầu → bon-cau-1-khoi [Duravit]: 2
+  Vòi Chậu → voi-co-cao [ATMOR]: 2
+  Bồn Cầu → bon-cau-dat-san [American Standard]: 2
+  Gạch Vân Đá Tự Nhiên → (null) [65PRL]: 2
+  Nắp Bồn Cầu → nap-rua-co [INAX]: 2
+  Vòi Chậu → voi-ban-tu-dong [COTTO]: 2
+  Nắp Bồn Cầu → nap-dien-tu [MOEN]: 2
+  Bồn Cầu → bon-cau-dat-san [CAESAR]: 2
+  Gạch Trang Trí → (null) [JARDIN]: 2
+  Gạch Vân Đá Tự Nhiên → (null) [VEIN STONE]: 2
+  Gạch Vân Gỗ → (null) [DIMORE]: 2
+  Nắp Bồn Cầu → nap-dien-tu [American Standard]: 2
+  Gạch Thiết Kế Xi Măng → (null) [BALTIMORE]: 2
+  Lò Nướng → (null) [SAMSUNG]: 2
+  Chậu Lavabo → duong-vanh [Duravit]: 2
+  Nắp Bồn Cầu → nap-rua-co [CAESAR]: 1
+  Vòi Nước → (null) [Hansgrohe]: 1
+  Chậu Lavabo → lavabo-ban-am [Duravit]: 1
+  Phụ Kiện Bồn Cầu → (null) [Viglacera]: 1
+  Thiết Bị Bếp Khác → (null) [Elica]: 1
+  Sen Tắm → phu-kien [Viglacera]: 1
+  Bồn Cầu → (null) [INAX]: 1
+  Bồn Cầu → (null) [Viglacera]: 1
+  Bồn Cầu → bon-cau-treo-tuong [CAESAR]: 1
+  Bếp Gas → (null) [Elica]: 1
+  Bồn Cầu → bon-cau-xom [ATMOR]: 1
+  Bồn Cầu → bon-cau-treo-tuong [Viglacera]: 1
+  Vòi Chậu → voi-co-cao [INAX]: 1
+  Thiết Bị Bếp Khác → (null) [Hansgrohe]: 1
+  Chậu Lavabo → lavabo-ban-am [MOEN]: 1
+  Bồn Cầu → bon-cau-thong-minh [CAESAR]: 1
+  Bồn Cầu → bon-cau-thong-minh [Viglacera]: 1
+  Vòi Chậu → voi-cam-ung [American Standard]: 1
+  Nắp Bồn Cầu → nap-rua-co [GROHE]: 1
+  Bồn Cầu → bon-cau-thong-minh [MOEN]: 1
+  Vòi Chậu → voi-gan-tuong [MOEN]: 1
+  Vòi Chậu → voi-gan-tuong [CAESAR]: 1
+  Bồn Cầu → bon-cau-2-khoi [Duravit]: 1
+  Nắp Bồn Cầu → nap-dien-tu [GROHE]: 1
+  Vòi Chậu → voi-cam-ung [GROHE]: 1
+  Gạch Vân Gỗ → (null) [HELSINKI]: 1
+  Gạch Trang Trí → (null) [FUSION]: 1
+  Gạch Thiết Kế Xi Măng → (null) [BOOST MINERAL]: 1
+  Gạch Vân Gỗ → (null) [KALON]: 1
+  Gạch Trang Trí → (null) [LOG]: 1
+  Gạch Trang Trí → (null) [DGAUDY]: 1
+  Gạch Vân Đá Marble → (null) [INVICTUS]: 1
+  Bếp Điện Từ → (null) [Ariston]: 1
+  Phụ Kiện Bồn Cầu → ket-nuoc [GROHE]: 1
+  Bồn Tắm → bon-tam [Hansgrohe]: 1
+  Bồn Cầu → (null) [ATMOR]: 1
+  Chậu Lavabo → lavabo [MOEN]: 1
+  Thiết Bị Bếp Khác → (null) [INAX]: 1
+  Chậu Lavabo → lavabo-ban-am [ATMOR]: 1
+  Vòi Chậu → voi-ban-tu-dong [Viglacera]: 1
+  Vòi Chậu → voi-ban-tu-dong [CAESAR]: 1
+  Chậu Lavabo → lavabo-am-ban [Duravit]: 1
+  Bồn Tắm → bon-tam-xay [ATMOR]: 1
+  Vòi Chậu → voi-gan-tuong [American Standard]: 1
+
+
+╔══════════════════════════════════════════════════════════════╗
+║  7. PHÂN TÍCH BIẾN THỂ (Variant)                            ║
+╚══════════════════════════════════════════════════════════════╝
+  TOTO: 682 nhóm biến thể | 1849 SP có variant_group
+  Khác: 289 nhóm biến thể | 528 SP có variant_group
+
+
+╔══════════════════════════════════════════════════════════════╗
+║  8. MẪU DỮ LIỆU ĐẠI DIỆN                                   ║
+╚══════════════════════════════════════════════════════════════╝
+
+  ── MẪU TOTO ──
+  SKU: MS636CDRW12#XW
+    name: Bồn cầu 1 khối TOTO MS636CDRW12 kèm nắp rửa điện tử Washlet S7 TCF4911EZ giấu dây
+    price: null | original: null
+    category: Thiết bị vệ sinh > Bồn Cầu
+    product_type: bon-cau-1-khoi | sub_type: null
+    variant_group: MS636 | is_master: true
+    specs keys: Vành, Tâm xả, Màu sắc, Thân kín, Bảo hành, Kiểu xả, Mẫu nắp, Thân cầu, Công nghệ, Loại nắp, Thiết kế, Kiểu thoát, Nguồn điện, Thương hiệu, Hệ thống xả, Nơi sản xuất, Loại thân cầu, Lượng nước xả, Bảng điều khiển, Kích thước (DxRxC), Tính năng nắp rửa
+    gallery: 11 images
+    origin: N/A | color: Trắng
+    source_url: https://hita.com.vn/bon-cau-1-khoi-nap-rua-dien-tu-s7-toto-ms636cdrw12-6467.html
+    hita_product_id: N/A
+
+  SKU: PAY1715HVC#W/TVBF411
+    name: Bồn tắm yếm TOTO PAY1715HVC kèm bộ xả TVBF411
+    price: 19094400 | original: 23868000
+    category: Thiết bị vệ sinh > Bồn Tắm
+    product_type: bon-tam-co-yem | sub_type: null
+    variant_group: PAY1715HVC | is_master: false
+    specs keys: Dung Tích, Màu sắc, Bảo hành, Tiện ích, Chất liệu, Thương hiệu, Nơi sản xuất, Kích thước (DxRxC), Tính năng bồn tắm, Chiều Dài Bồn Tắm
+    gallery: 5 images
+    origin: N/A | color: Trắng
+    source_url: https://hita.com.vn/bon-tam-chan-yem-toto-pay1715hvctbvf411-2996.html
+    hita_product_id: N/A
+
+  SKU: TBG08303VA
+    name: Van gật gù điều chỉnh nóng lạnh TOTO TBG08303VA
+    price: 6684000 | original: 8355000
+    category: Thiết bị vệ sinh > Sen Tắm
+    product_type: cu-sen-van-sen | sub_type: null
+    variant_group: TBG08303VA | is_master: true
+    specs keys: Bảo hành, Kiểu dáng, Bộ sưu tập, Thương hiệu, Chức năng van, Nơi sản xuất
+    gallery: 2 images
+    origin: N/A | color: N/A
+    source_url: https://hita.com.vn/van-gat-gu-dieu-chinh-nong-lanh-toto-tbg08303va-15791.html
+    hita_product_id: N/A
+
+
+  ── MẪU SẢN PHẨM CŨ ──
+  SKU: AC-2700+CW-KA22AVN/BW1
+    name: Bồn cầu 1 khối INAX AC-2700 kèm nắp điện tử CW-KA22AVN
+    price: 27803800 | original: null
+    category: Thiết bị vệ sinh > Bồn Cầu
+    product_type: bon-cau-1-khoi | sub_type: null
+    variant_group: AC-2700 | is_master: false
+    specs keys: (empty)
+    gallery: 1 images
+    origin: N/A | color: N/A
+    source_url: N/A
+    brand: INAX
+
+  SKU: KF7848FS - S78 Basic
+    name: Chậu rửa chén Posco 304 Linen dập nổi Kluger KF7848FS - S78 Basic
+    price: 4023500 | original: null
+    category: Thiết bị bếp > Chậu Rửa Chén
+    product_type: null | sub_type: null
+    variant_group: null | is_master: true
+    specs keys: (empty)
+    gallery: 1 images
+    origin: N/A | color: N/A
+    source_url: N/A
+    brand: Kluger
+
+  SKU: FFAS6868
+    name: Vòi xịt vệ sinh American Standard FFAS6868 (đầu mạ)
+    price: 468930 | original: null
+    category: Thiết bị vệ sinh > Vòi Nước
+    product_type: null | sub_type: null
+    variant_group: null | is_master: true
+    specs keys: Bảo hành, Chất liệu, Thương hiệu, Điều khiển, Lớp mạ (màu), Nơi sản xuất
+    gallery: 7 images
+    origin: N/A | color: Trắng
+    source_url: N/A
+    brand: American Standard
+
+
+
+╔══════════════════════════════════════════════════════════════╗
+║  9. SO SÁNH SPECS JSON                                      ║
+╚══════════════════════════════════════════════════════════════╝
+
+  ── Spec keys phổ biến (TOTO) ──
+    Bảo hành: 2033 SP
+    Thương hiệu: 2033 SP
+    Nơi sản xuất: 2033 SP
+    documents: 1044 SP
+    Chất liệu: 830 SP
+    Kích thước (DxRxC): 647 SP
+    Màu sắc: 631 SP
+    Chế độ: 630 SP
+    Lớp mạ (màu): 603 SP
+    Bộ sưu tập: 598 SP
+    Áp lực nước: 531 SP
+    Công nghệ: 423 SP
+    Thiết kế: 416 SP
+    Điều khiển: 391 SP
+    Lượng nước xả: 389 SP
+    Kiểu thoát: 385 SP
+    Loại nắp: 366 SP
+    Loại thân cầu: 366 SP
+    Tâm xả: 365 SP
+    Kiểu xả: 365 SP
+
+  ── Spec keys phổ biến (Sản phẩm cũ) ──
+    Bảo hành: 3162 SP
+    Thương hiệu: 3162 SP
+    Nơi sản xuất: 3162 SP
+    Chất liệu: 1576 SP
+    Kích thước (DxRxC): 1220 SP
+    Màu sắc: 1007 SP
+    Lớp mạ (màu): 802 SP
+    Chế độ: 800 SP
+    Bộ sưu tập: 673 SP
+    Áp lực nước: 568 SP
+    Thiết kế: 514 SP
+    Kiểu thoát: 454 SP
+    Điều khiển: 446 SP
+    Lượng nước xả: 423 SP
+    Hình dáng: 421 SP
+    Lỗ xả tràn nước: 413 SP
+    Lỗ bắt vòi: 412 SP
+    Công nghệ: 391 SP
+    Vị trí lắp vòi: 366 SP
+    Kiểu xả: 365 SP
+
+
+╔══════════════════════════════════════════════════════════════╗
+║  10. SẢN PHẨM KHÔNG CÓ SUBCATEGORY                         ║
+╚══════════════════════════════════════════════════════════════╝
+  Sản phẩm không có subcategory: 0
+
+
+╔══════════════════════════════════════════════════════════════╗
+║  11. SECONDARY SUBCATEGORIES (Danh mục phụ)                 ║
+╚══════════════════════════════════════════════════════════════╝
+  Tổng bản ghi secondary subcategory: 5
+    Chậu Lavabo: 3
+    Sen Tắm: 2
+
+
+╔══════════════════════════════════════════════════════════════╗
+║  12. PHÂN TÍCH NGUỒN ẢNH                                   ║
+╚══════════════════════════════════════════════════════════════╝
+  TOTO:
+    CDN DPG: 737 | Hita: 1354 | Khác: 0 | Không có: 0
+  Sản phẩm cũ:
+    CDN DPG: 3580 | Hita: 0 | Khác: 10 | Không có: 0
+
+
+═══════════════════════════════════════════════════════════════
+  PHÂN TÍCH HOÀN TẤT
+═══════════════════════════════════════════════════════════════
