@@ -6,6 +6,7 @@ const nextConfig: NextConfig = {
   images: {
     // LEO-420: unoptimized was removed — all CDN domains are whitelisted below.
     // Next.js image optimizer is now active (serves via /_next/image).
+    qualities: [75, 100],
     remotePatterns: [
       {
         protocol: 'https',
@@ -110,4 +111,3 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
-
