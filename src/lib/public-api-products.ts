@@ -58,6 +58,19 @@ export type ProductFilters = {
     sortDir?: 'asc' | 'desc'
 }
 
+function serializeProductMoney<T extends {
+    price?: unknown
+    original_price?: unknown
+    online_discount_amount?: unknown
+}>(product: T) {
+    return {
+        ...product,
+        price: product.price ? Number(product.price) : null,
+        original_price: product.original_price ? Number(product.original_price) : null,
+        online_discount_amount: product.online_discount_amount ? Number(product.online_discount_amount) : null,
+    }
+}
+
 // ─── PUBLIC: LIST PRODUCTS (with filters + pagination) ───────────────────────
 
 export async function getPublicProducts(filters: ProductFilters = {}) {
@@ -238,7 +251,7 @@ export async function getPublicProducts(filters: ProductFilters = {}) {
     ])
 
     return {
-        products: products.map(p => ({ ...p, price: p.price ? Number(p.price) : null, original_price: p.original_price ? Number(p.original_price) : null })),
+        products: products.map(serializeProductMoney),
         total,
         page,
         pageSize,
@@ -566,7 +579,7 @@ export const getFeaturedProductsByCategorySlug = unstable_cache(
         ])
         
         return {
-            products: products.map(p => ({ ...p, price: p.price ? Number(p.price) : null, original_price: p.original_price ? Number(p.original_price) : null })),
+            products: products.map(serializeProductMoney),
             total
         }
     },
@@ -619,7 +632,7 @@ export const getTopProductsPerBrand = unstable_cache(
         )
         return results
             .flat()
-            .map(p => ({ ...p, price: p.price ? Number(p.price) : null, original_price: p.original_price ? Number(p.original_price) : null }))
+            .map(serializeProductMoney)
     },
     ['top-products-per-brand'],
     { revalidate: 3600, tags: ['products', 'featured-products'] }
@@ -648,7 +661,7 @@ export const getNewArrivals = unstable_cache(
                 brands: { select: { name: true, slug: true } },
             },
         })
-        return products.map(p => ({ ...p, price: p.price ? Number(p.price) : null, original_price: p.original_price ? Number(p.original_price) : null }))
+        return products.map(serializeProductMoney)
     },
     ['new-arrivals'],
     { revalidate: 3600, tags: ['products', 'new-arrivals'] }
@@ -679,7 +692,7 @@ export const getHomeFeaturedProducts = unstable_cache(
                 product_feature_values: { select: { product_features: { select: { name: true, icon_name: true } } } },
             },
         })
-        return products.map(p => ({ ...p, price: p.price ? Number(p.price) : null, original_price: p.original_price ? Number(p.original_price) : null }))
+        return products.map(serializeProductMoney)
     },
     ['home-featured-products'],
     { revalidate: 3600, tags: ['products', 'home-featured'] }
@@ -758,7 +771,7 @@ export async function getAdminProducts(params: {
     ])
 
     return {
-        products: products.map(p => ({ ...p, price: p.price ? Number(p.price) : null, original_price: p.original_price ? Number(p.original_price) : null })),
+        products: products.map(serializeProductMoney),
         total,
         page,
         pageSize,
