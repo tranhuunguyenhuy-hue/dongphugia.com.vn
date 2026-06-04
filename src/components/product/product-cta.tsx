@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Phone, CheckCircle2, Minus, Plus, ShoppingCart, MessageSquareText, ShoppingBag, Wrench, ArrowRight } from "lucide-react";
+import { Phone, CheckCircle2, Minus, Plus, ShoppingCart, MessageSquareText, ShoppingBag, Wrench, ArrowRight, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { formatPrice } from "@/lib/utils";
 import { useCartStore } from "@/lib/cart-store";
@@ -150,15 +150,15 @@ export function ProductCTA({
                 item_brand: brandName || undefined
             }} />
             
-            {/* Row 1: Add to Cart + Quote/Order */}
-            <div className="flex gap-3">
+            {/* CTA Stack */}
+            <div className="flex flex-col gap-2.5">
                 {/* Add to Cart — primary if has price */}
                 {hasPrice && (
                     <Button
                         onClick={handleAddToCart}
-                        className="group flex-1 h-[48px] bg-gradient-to-r from-[#2E7A96] to-[#1e586e] hover:brightness-110 !text-white text-[15px] font-semibold rounded-xl shadow-[0_8px_20px_rgba(46,122,150,0.25)] transition-all duration-300 gap-2 border-0"
+                        className="group w-full h-[52px] bg-gradient-to-r from-[#2E7A96] to-[#1e586e] hover:brightness-110 !text-white text-[16px] font-bold rounded-xl shadow-[0_12px_24px_-8px_rgba(46,122,150,0.4)] transition-all duration-300 gap-2 border-0"
                     >
-                        <ShoppingBag className="w-[18px] h-[18px] transition-transform duration-300 group-hover:translate-x-1" />
+                        <ShoppingBag className="w-[20px] h-[20px] transition-transform duration-300 group-hover:translate-x-1" />
                         Thêm vào giỏ hàng
                     </Button>
                 )}
@@ -169,14 +169,14 @@ export function ProductCTA({
                         {hasPrice ? (
                             <Button
                                 variant="outline"
-                                className="flex-[0.6] h-[48px] border-stone-300 text-stone-700 hover:bg-stone-50 hover:text-stone-900 font-semibold text-[14px] rounded-xl gap-2 transition-all shadow-sm"
+                                className="w-full h-[44px] border border-stone-300 text-stone-600 hover:bg-stone-50 hover:text-stone-800 font-medium text-[14px] rounded-[10px] gap-2 transition-all shadow-sm"
                             >
                                 <MessageSquareText className="w-[18px] h-[18px]" />
                                 Báo giá
                             </Button>
                         ) : (
-                            <Button className="group flex-1 h-[48px] bg-gradient-to-r from-[#2E7A96] to-[#1e586e] hover:brightness-110 text-white font-semibold text-[15px] rounded-xl shadow-[0_8px_20px_rgba(46,122,150,0.25)] transition-all duration-300 gap-2 border-0">
-                                <MessageSquareText className="w-[18px] h-[18px] transition-transform duration-300 group-hover:translate-x-1" />
+                            <Button className="group w-full h-[52px] bg-gradient-to-r from-[#2E7A96] to-[#1e586e] hover:brightness-110 !text-white font-bold text-[16px] rounded-xl shadow-[0_12px_24px_-8px_rgba(46,122,150,0.4)] transition-all duration-300 gap-2 border-0">
+                                <MessageSquareText className="w-[20px] h-[20px] transition-transform duration-300 group-hover:translate-x-1" />
                                 Yêu cầu báo giá
                             </Button>
                         )}
@@ -284,9 +284,9 @@ export function ProductCTA({
                                         <Button
                                             type="submit"
                                             disabled={isSubmitting}
-                                            className="w-full h-12 bg-brand-500 hover:bg-brand-600 text-white font-semibold text-[15px] rounded-[var(--radius-btn)] shadow-md transition-all gap-2"
+                                            className="w-full h-12 bg-brand-500 hover:bg-brand-600 text-white font-semibold text-[15px] rounded-[var(--radius-btn)] shadow-md transition-all gap-2 flex items-center justify-center"
                                         >
-                                            {isSubmitting ? "Đang xử lý..." : "Gửi yêu cầu báo giá"}
+                                            {isSubmitting ? <><Loader2 className="w-4 h-4 animate-spin" /> Đang xử lý...</> : "Gửi yêu cầu báo giá"}
                                         </Button>
                                         <p className="text-[11px] text-center text-stone-400 mt-3">
                                             Thông tin của bạn sẽ được bảo mật tuyệt đối.

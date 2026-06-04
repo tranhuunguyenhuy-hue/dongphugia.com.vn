@@ -111,7 +111,11 @@
   }
 
   :focus { outline: none; }
-  :focus-visible { outline: none; box-shadow: var(--color-ring); border-radius: var(--radius-md); }
+  :focus-visible { 
+    outline: 2px solid var(--color-brand-400); 
+    outline-offset: 2px;
+    border-radius: var(--radius-md);
+  }
 }
 
 /* ============================================================
@@ -166,6 +170,21 @@
   }
   .press-effect:active {
     @apply transform scale-[0.98];
+  }
+
+  .animate-tabFadeIn {
+    animation: tabFadeIn 200ms ease-out forwards;
+  }
+
+  @keyframes tabFadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   /* ── Sticky sidebar with hover-reveal scrollbar ───────────────────────────
