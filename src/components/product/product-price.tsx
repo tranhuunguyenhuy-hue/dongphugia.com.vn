@@ -80,11 +80,12 @@ export function ProductPrice({ price, originalPrice, priceDisplay, onlineDiscoun
                                 <div className="text-[10px] font-bold text-orange-600/80 uppercase tracking-widest mb-0.5">
                                     Độc quyền đặt Online
                                 </div>
-                                <div className="flex items-center gap-1.5">
-                                    <span className="text-[13px] font-medium text-stone-600">Giá chỉ còn:</span>
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                    <span className="text-[13px] font-medium text-stone-600">Giảm thêm</span>
                                     <span className="text-[16px] font-black text-[#d64a25] tracking-tight">
-                                        {new Intl.NumberFormat('vi-VN').format(numPrice - numOnlineDiscount)}đ
+                                        {new Intl.NumberFormat('vi-VN').format(numOnlineDiscount)}đ
                                     </span>
+                                    <span className="text-[13px] font-medium text-stone-600">khi đặt Online</span>
                                 </div>
                             </div>
                         </div>
