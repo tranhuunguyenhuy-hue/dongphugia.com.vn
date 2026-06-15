@@ -4,8 +4,9 @@ const nextConfig: NextConfig = {
   /* config options here */
   reactCompiler: true,
   images: {
-    // LEO-420: unoptimized was removed — all CDN domains are whitelisted below.
-    // Next.js image optimizer is now active (serves via /_next/image).
+    // Product media already comes from image CDNs. Bypass Vercel's optimizer so
+    // exhausted optimization quota cannot turn valid images into HTTP 402s.
+    unoptimized: true,
     qualities: [75, 100],
     remotePatterns: [
       {
