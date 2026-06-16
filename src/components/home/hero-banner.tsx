@@ -14,9 +14,9 @@ type Banner = {
 
 type HeroBannerProps = { banners: Banner[] }
 
-// Standard banner aspect ratio: 1216:568 ≈ 2.14:1
-const BANNER_WIDTH = 1216
-const BANNER_HEIGHT = 568
+// Standard banner aspect ratio: 16:9
+const BANNER_WIDTH = 1600
+const BANNER_HEIGHT = 900
 
 /**
  * Hero banner carousel
@@ -43,7 +43,7 @@ export function HeroBanner({ banners }: HeroBannerProps) {
 
     if (items.length === 0) {
         return (
-            <div className="relative w-full rounded-md shadow-md overflow-hidden bg-stone-50" style={{ aspectRatio: '1216 / 568' }}>
+            <div className="relative w-full rounded-md shadow-md overflow-hidden bg-stone-50" style={{ aspectRatio: '16 / 9' }}>
                 <Image
                     src="/images/assets-v2/hero-banner.png"
                     alt="Đông Phú Gia - Vật liệu xây dựng"
@@ -62,7 +62,7 @@ export function HeroBanner({ banners }: HeroBannerProps) {
     return (
         <div
             className="relative w-full rounded-md shadow-md overflow-hidden bg-stone-50"
-            style={{ aspectRatio: '1216 / 568' }}
+            style={{ aspectRatio: '16 / 9' }}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
         >
