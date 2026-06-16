@@ -154,3 +154,4 @@ exports/
 scratch/
 output/
 ORIGINAL_REQUEST.md
+scripts/crawl-hita/output/

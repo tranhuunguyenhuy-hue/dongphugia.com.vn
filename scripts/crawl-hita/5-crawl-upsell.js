@@ -168,7 +168,7 @@ async function processUrl(page, url, log) {
       relationship_type: 'upsell',
       component_type: 'bought_together',
       sort_order: i,
-    }, { onConflict: 'parent_id,child_sku' });
+    }, { onConflict: 'parent_id,child_sku,relationship_type' });
 
     if (error) {
       log.push({ url, status: 'db_error', error: error.message, parentSku: parent.sku });
