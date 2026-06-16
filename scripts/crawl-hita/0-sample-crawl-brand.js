@@ -469,6 +469,7 @@ async function crawlProduct(context, candidate) {
 
       const variants = [...document.querySelectorAll(
         [
+          'a.variant-item[href]',
           '.variant-item a[href]',
           '.variant a[href]',
           '[class*="variant"] a[href]',
@@ -485,7 +486,7 @@ async function crawlProduct(context, candidate) {
             label,
             clean_label: cleanVariantLabel(label),
             url,
-            active: Boolean(a.closest('.active, .selected, .current') || a.classList.contains('active') || url === productUrl),
+            active: Boolean(a.classList.contains('active') || a.getAttribute('aria-selected') === 'true' || url === productUrl),
           };
         })
         .filter((item) => item.url && item.url.endsWith('.html'))
@@ -524,8 +525,14 @@ async function crawlProduct(context, candidate) {
         const gallerySelectors = [
           '.main-product-slider',
           '.product-slider',
+          '.product-image-slider',
+          '.product-images-slider',
+          '.product-gallery-slider',
           '.slider-for',
           '.slider-nav',
+          '.slick-slider',
+          '.swiper-wrapper',
+          '.owl-carousel',
           '.product-gallery',
           '.product-images',
           '.product-image',
@@ -536,18 +543,66 @@ async function crawlProduct(context, candidate) {
           .map((selector) => doc.querySelector(selector))
           .filter(Boolean)
           .filter((root, index, all) => all.indexOf(root) === index);
-        const sourceRoots = roots.length ? roots : [doc];
         const comboTokens = skuParts(sku);
+        const galleryUrls = roots
+          .flatMap((root) => extractImageUrlsFromRoot(root))
+          .filter(({ node }) => !isBlockedMediaSection(node))
+          .map(({ url }) => url.trim())
+          .filter(isValidProductImage);
 
-        return sourceRoots
-          .flatMap((root) => [...root.querySelectorAll('img')])
-          .filter((img) => !isBlockedMediaSection(img))
-          .map((img) => abs(img.getAttribute('data-src') || img.getAttribute('data-lazy') || img.getAttribute('data-original') || img.getAttribute('src') || ''))
+        const fallbackUrls = roots.length
+          ? []
+          : [...doc.querySelectorAll('img')]
+            .filter((img) => !isBlockedMediaSection(img))
+            .map((img) => imageUrlFromNode(img))
+            .filter((url) => isLikelyProductImageForSku(url, comboTokens))
+            .filter(isValidProductImage);
+
+        return [...galleryUrls, ...fallbackUrls]
           .map((url) => url.trim())
-          .filter(isValidProductImage)
-          .filter((url) => isLikelyProductImageForSku(url, comboTokens))
           .filter((url, index, all) => all.indexOf(url) === index)
           .slice(0, limit);
+      }
+
+      function extractImageUrlsFromRoot(root) {
+        const urls = [];
+        for (const img of root.querySelectorAll('img')) {
+          urls.push(...imageUrlsFromNode(img).map((url) => ({ node: img, url })));
+        }
+        for (const source of root.querySelectorAll('source[srcset]')) {
+          urls.push(...urlsFromSrcset(source.getAttribute('srcset')).map((url) => ({ node: source, url: abs(url) })));
+        }
+        for (const link of root.querySelectorAll('a[href]')) {
+          const href = abs(link.getAttribute('href'));
+          if (/\.(?:avif|webp|jpe?g|png)(?:$|\?)/i.test(href)) urls.push({ node: link, url: href });
+        }
+        return urls;
+      }
+
+      function imageUrlsFromNode(img) {
+        const urls = [
+          img.getAttribute('data-src'),
+          img.getAttribute('data-lazy'),
+          img.getAttribute('data-original'),
+          img.getAttribute('data-zoom-image'),
+          img.getAttribute('src'),
+        ]
+          .filter(Boolean)
+          .map(abs);
+
+        urls.push(...urlsFromSrcset(img.getAttribute('srcset')).map(abs));
+        return urls.filter(Boolean);
+      }
+
+      function imageUrlFromNode(img) {
+        return imageUrlsFromNode(img)[0] || '';
+      }
+
+      function urlsFromSrcset(srcset) {
+        return String(srcset || '')
+          .split(',')
+          .map((item) => item.trim().split(/\s+/)[0])
+          .filter(Boolean);
       }
 
       function isBlockedMediaSection(node) {
@@ -1444,6 +1499,10 @@ function deriveVariantLabel(product, rawProducts) {
   const raw = rawProducts.find((item) => item.source_url === product.source_url);
   const activeLabel = raw?.variants?.find((variant) => normalizeProductUrl(variant.url) === product.source_url || variant.active)?.clean_label;
   if (activeLabel) return activeLabel;
+  const inboundLabel = rawProducts
+    .flatMap((item) => item.variants || [])
+    .find((variant) => normalizeProductUrl(variant.url) === product.source_url)?.clean_label;
+  if (inboundLabel) return inboundLabel;
   const fromName = inferVariantLabelFromName(product.name, product.sku);
   if (fromName) return fromName;
   return product.sku;

@@ -21,6 +21,7 @@ const skipCrawl = args.includes('--skip-crawl')
 const skipStage = args.includes('--skip-stage')
 const skipUpload = args.includes('--skip-upload')
 const confirmBrand = readArg('--confirm-brand=', '')
+const stopAfter = readArg('--stop-after=', '')
 const runDir = readArg('--run-dir=', path.resolve(process.cwd(), `scripts/crawl-hita/output/${brand}/pipeline-${timestampSlug()}`))
 const normalizedDir = path.join(runDir, 'normalized')
 const preparedDir = path.join(runDir, 'prepared')
@@ -346,6 +347,7 @@ function prepareProducts(normalizedProducts: any[], rawProducts: any[], discover
     const crawledSkuSet = new Set(normalizedProducts.map(product => product.sku).filter(Boolean))
     const crawledUrlSet = new Set(normalizedProducts.map(product => normalizeUrl(product.source_url || '')).filter(Boolean))
     const matched: string[] = []
+    const matchedDbIds = new Set<number>()
     const added: string[] = []
     const fieldFlags: Array<{ sku: string; field: string; reason: string }> = []
 
@@ -353,7 +355,7 @@ function prepareProducts(normalizedProducts: any[], rawProducts: any[], discover
         const next = JSON.parse(JSON.stringify(product))
         const policy: Record<string, string> = {}
         const db = findDbMatch(product, dbProducts, discoveryUrlSet)
-        if (db) matched.push(product.sku)
+        if (db) { matched.push(product.sku); matchedDbIds.add(db.id) }
         else added.push(product.sku)
 
         if (!db) {
@@ -440,12 +442,26 @@ function prepareProducts(normalizedProducts: any[], rawProducts: any[], discover
 
     // [LEO-471 #3] Coverage accounting across ALL discovery URLs + ALL DB rows,
     // not just the kept subset — so "skipped/not-attempted" can never hide.
+    // [LEO-471 #3b] Match skipped/discovery by url + hita_product_id + sku,
+    // because DB rows may have null/differing source_url (matched via id/sku).
     const skippedByUrl = new Map<string, string>()
+    const skippedIdSet = new Set<string>()
+    const skippedSkuSet = new Set<string>()
     for (const item of skipped) {
         const url = normalizeUrl(item.source_url || '')
-        if (url) skippedByUrl.set(url, item.skipped_reason || 'unknown')
+        const reason = item.skipped_reason || 'unknown'
+        if (url) {
+            skippedByUrl.set(url, reason)
+            const id = hitaProductId(url)
+            if (id) skippedIdSet.add(id)
+        }
+        if (item.sku) skippedSkuSet.add(item.sku)
     }
-    const matchedSkuSet = new Set(matched)
+    const discoveryIdSet = new Set<string>()
+    for (const url of discoveryUrlSet) {
+        const id = hitaProductId(url)
+        if (id) discoveryIdSet.add(id)
+    }
     const discoveryCoverage = { crawled_kept: 0, not_attempted: 0, skipped: {} as Record<string, number> }
     for (const url of discoveryUrlSet) {
         if (crawledUrlSet.has(url)) discoveryCoverage.crawled_kept++
@@ -457,9 +473,12 @@ function prepareProducts(normalizedProducts: any[], rawProducts: any[], discover
     const dbCoverage = { refreshed: 0, skipped_kept_old: 0, discovered_not_crawled: 0, missing_on_hita: 0 }
     for (const row of dbProducts) {
         const url = row.source_url ? normalizeUrl(row.source_url) : ''
-        if (matchedSkuSet.has(row.sku)) dbCoverage.refreshed++
-        else if (url && skippedByUrl.has(url)) dbCoverage.skipped_kept_old++
-        else if (url && discoveryUrlSet.has(url)) dbCoverage.discovered_not_crawled++
+        const id = (url ? hitaProductId(url) : null) || (row.hita_product_id ? String(row.hita_product_id) : null)
+        const isSkipped = (!!url && skippedByUrl.has(url)) || (!!id && skippedIdSet.has(id)) || skippedSkuSet.has(row.sku)
+        const isDiscovered = (!!url && discoveryUrlSet.has(url)) || (!!id && discoveryIdSet.has(id))
+        if (matchedDbIds.has(row.id)) dbCoverage.refreshed++
+        else if (isSkipped) dbCoverage.skipped_kept_old++
+        else if (isDiscovered) dbCoverage.discovered_not_crawled++
         else dbCoverage.missing_on_hita++
     }
 
@@ -735,6 +754,50 @@ async function main() {
     writeJson(path.join(preparedDir, 'sample-products.normalized.json'), prepared)
     writeJson(path.join(runDir, 'reconciliation.json'), reconciliation)
     writeJson(path.join(runDir, 'field-policy-flags.json'), fieldFlags)
+
+    if (stopAfter === 'prepare') {
+        const summary = {
+            brand,
+            run_dir: runDir,
+            source,
+            discovery,
+            reconciliation,
+            products: prepared.length,
+            field_flags: fieldFlags,
+            stage: null,
+            manifest: { total: 0, verified: 0 },
+            import_result: null,
+            post_import: null,
+            stopped_after: 'prepare',
+        }
+        writeJson(path.join(runDir, 'pipeline-summary.json'), summary)
+        fs.writeFileSync(path.join(runDir, 'pipeline-report.md'), buildMarkdownReport(summary))
+        console.log(JSON.stringify({
+            run_dir: runDir,
+            source,
+            stopped_after: 'prepare',
+            discovery: {
+                expected_listing_count: discovery.expected_listing_count,
+                actual_listing_count: discovery.actual_listing_count,
+                merged_urls: discovery.merged_urls.length,
+            },
+            reconciliation: {
+                hita: reconciliation.hita,
+                db: reconciliation.db,
+                matched: reconciliation.matched,
+                new: reconciliation.new,
+                missing: reconciliation.missing,
+                coverage: reconciliation.coverage,
+            },
+            products: prepared.length,
+            field_flags: fieldFlags.length,
+            stage: null,
+            manifest: { total: 0, verified: 0 },
+            imported: 0,
+            failed: 0,
+        }, null, 2))
+        return
+    }
 
     const stage = await stagePrepared()
     const manifestPayload = await uploadManifest(prepared)
