@@ -9,10 +9,10 @@ function sanitizeProductHtml(html: string): string {
     if (!html) return html;
     let result = html;
 
-    // 1. Remove <img> tags with src pointing to any hita domain
-    //    (catches hita.com.vn/images/original.jpg spinner and cdn.hita.com.vn CDN images)
+    // 1. Remove <img> tags with src pointing to the real Hita host only.
+    //    Do not match Bunny URLs that happen to contain "hita" in the path.
     result = result.replace(
-        /<img\b[^>]*\bsrc=["']https?:\/\/[^"']*hita[^"']*["'][^>]*\/?>/gi,
+        /<img\b[^>]*\bsrc=["']https?:\/\/(?:[^"'\/]*\.)?hita\.com\.vn\/[^"']*["'][^>]*\/?>/gi,
         ''
     );
 
