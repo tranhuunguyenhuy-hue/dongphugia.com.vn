@@ -15,7 +15,6 @@ const forceInactive = args.includes('--force-inactive')
 const requireBunnyImages = args.includes('--require-bunny-images')
 const rewriteDescriptionImages = args.includes('--rewrite-description-images')
 const replaceRawHtml = args.includes('--replace-raw-html')
-const includeNeedsManualReview = args.includes('--include-needs-manual-review')
 const concurrency = Math.max(1, Math.min(8, Number(readArg('--concurrency=', '3')) || 3))
 const sampleDir = readArg('--sample-dir=', '')
 const imageManifestArg = readArg('--image-manifest=', '')
@@ -38,30 +37,6 @@ function slugify(value: string) {
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-+|-+$/g, '')
-}
-
-function normalizeUrl(value: string) {
-    try {
-        const parsed = new URL(value.trim(), 'https://hita.com.vn')
-        const vid = parsed.searchParams.get('vid')
-        parsed.hash = ''
-        parsed.search = ''
-        const canonical = parsed.href.replace(/\/$/, '')
-        return vid ? `${canonical}?vid=${encodeURIComponent(vid)}` : canonical
-    } catch {
-        return value.trim().replace(/\/$/, '')
-    }
-}
-
-function hitaProductId(value: string) {
-    try {
-        const parsed = new URL(value.trim(), 'https://hita.com.vn')
-        const vid = parsed.searchParams.get('vid')
-        if (vid) return vid
-    } catch {
-        // Fall through to canonical PDP id extraction.
-    }
-    return normalizeUrl(value).split('?')[0].match(/-(\d+)\.html$/)?.[1] || null
 }
 
 function humanizeSlug(slug: string) {
@@ -128,7 +103,6 @@ async function ensureProductSubType(productTypeId: number | null | undefined, sl
 
 async function ensureVariantGroup(groupKey: string | null | undefined, product: any, siblingCount: number) {
     if (!groupKey || siblingCount < 2) return null
-    const axes = normalizedVariantAxes(product)
     return prisma.product_variant_groups.upsert({
         where: { group_key: groupKey },
         create: {
@@ -136,14 +110,12 @@ async function ensureVariantGroup(groupKey: string | null | undefined, product: 
             base_sku: groupKey,
             variant_type: product.variant_type || 'variant',
             label: product.variant_group_label || groupKey,
-            axes: axes as Prisma.InputJsonValue,
             source,
             confidence: 'high',
         },
         update: {
             variant_type: product.variant_type || 'variant',
             label: product.variant_group_label || groupKey,
-            axes: axes as Prisma.InputJsonValue,
             updated_at: new Date(),
         },
         select: { id: true },
@@ -152,7 +124,6 @@ async function ensureVariantGroup(groupKey: string | null | undefined, product: 
 
 async function ensureVariantGroupForImport(groupKey: string | null | undefined, product: any, siblingCount: number) {
     if (!groupKey) return null
-    const axes = normalizedVariantAxes(product)
     if (siblingCount < 2) {
         return prisma.product_variant_groups.findUnique({
             where: { group_key: groupKey },
@@ -166,53 +137,16 @@ async function ensureVariantGroupForImport(groupKey: string | null | undefined, 
             base_sku: groupKey,
             variant_type: product.variant_type || 'variant',
             label: product.variant_group_label || groupKey,
-            axes: axes as Prisma.InputJsonValue,
             source,
             confidence: 'high',
         },
         update: {
             variant_type: product.variant_type || 'variant',
             label: product.variant_group_label || groupKey,
-            axes: axes as Prisma.InputJsonValue,
             updated_at: new Date(),
         },
         select: { id: true },
     })
-}
-
-function normalizedVariantAxes(product: any) {
-    const payloadAxes = Array.isArray(product.variant_axes) ? product.variant_axes : []
-    if (payloadAxes.length > 0) return payloadAxes.map((axis: any) => ({
-        key: toDisplayValue(axis.key),
-        label: toDisplayValue(axis.label) || axisLabel(toDisplayValue(axis.key)),
-    })).filter((axis: any) => axis.key)
-
-    const options = normalizedVariantOptions(product)
-    return options.map((option: any) => option.axis)
-        .filter((axis: string, index: number, all: string[]) => axis && all.indexOf(axis) === index)
-        .map((axis: string) => ({ key: axis, label: axisLabel(axis) }))
-}
-
-function normalizedVariantOptions(product: any) {
-    const options = Array.isArray(product.variant_options) ? product.variant_options : []
-    const normalized = options.map((option: any) => ({
-        axis: toDisplayValue(option.axis),
-        value: toDisplayValue(option.value),
-        ...(toDisplayValue(option.label) ? { label: toDisplayValue(option.label) } : {}),
-        ...(toDisplayValue(option.product_id) ? { product_id: toDisplayValue(option.product_id) } : {}),
-        ...(toDisplayValue(option.image_url) ? { image_url: toDisplayValue(option.image_url) } : {}),
-        ...(toDisplayValue(option.price_text) ? { price_text: toDisplayValue(option.price_text) } : {}),
-    })).filter((option: any) => option.axis && option.value)
-
-    if (normalized.length > 0) return normalized
-    if (toDisplayValue(product.variant_label)) return [{ axis: 'config', value: toDisplayValue(product.variant_label), label: 'Cấu hình' }]
-    return []
-}
-
-function axisLabel(axis: string) {
-    if (axis === 'config') return 'Cấu hình'
-    if (axis === 'color') return 'Màu sắc'
-    return axis
 }
 
 async function ensureSpecDefinition(key: string, filterable: boolean) {
@@ -252,60 +186,8 @@ async function ensureSpecOption(specDefinitionId: number, value: string) {
     })
 }
 
-async function resolveExistingProduct(product: any, brandId: number) {
-    const sourceUrl = normalizeUrl(toDisplayValue(product.source_url))
-    const sourceProductId = toDisplayValue(product.hita_product_id) || hitaProductId(sourceUrl)
-    const sku = toDisplayValue(product.sku)
-
-    if (sourceProductId) {
-        const byHitaId = await prisma.products.findFirst({
-            where: { brand_id: brandId, hita_product_id: sourceProductId },
-            select: { id: true },
-        })
-        if (byHitaId) return byHitaId
-
-        const bySourceMappingId = await prisma.product_source_mappings.findFirst({
-            where: { source, source_product_id: sourceProductId, products: { brand_id: brandId } },
-            select: { product_id: true },
-        })
-        if (bySourceMappingId?.product_id) return { id: bySourceMappingId.product_id }
-    }
-
-    if (sourceUrl) {
-        const bySourceUrl = await prisma.products.findFirst({
-            where: { brand_id: brandId, source_url: sourceUrl },
-            select: { id: true },
-        })
-        if (bySourceUrl) return bySourceUrl
-
-        const bySourceMappingUrl = await prisma.product_source_mappings.findFirst({
-            where: { source, source_url: sourceUrl, products: { brand_id: brandId } },
-            select: { product_id: true },
-        })
-        if (bySourceMappingUrl?.product_id) return { id: bySourceMappingUrl.product_id }
-    }
-
-    if (sku) {
-        return prisma.products.findFirst({
-            where: { brand_id: brandId, sku },
-            select: { id: true },
-        })
-    }
-
-    return null
-}
-
 function cloneProductPayload(product: Record<string, unknown>) {
     return JSON.parse(JSON.stringify(product || {}))
-}
-
-function importSafeSlug(product: any, sourceUrl: string | null, hitaId: string | null) {
-    const baseSlug = toDisplayValue(product.slug) || slugify(toDisplayValue(product.name) || toDisplayValue(product.sku))
-    if (!baseSlug || !sourceUrl?.includes('?vid=')) return baseSlug
-
-    const suffix = slugify(toDisplayValue(product.sku) || toDisplayValue(hitaId) || 'variant')
-    if (!suffix || baseSlug.endsWith(`-${suffix}`)) return baseSlug
-    return `${baseSlug}-${suffix}`
 }
 
 function readJsonFile<T = unknown>(filePath: string): T {
@@ -519,7 +401,7 @@ async function main() {
 
     const allDecisions = await prisma.crawl_import_decisions.findMany({
         where: {
-            decision: includeNeedsManualReview ? { in: ['approved', 'needs_manual_review'] } : 'approved',
+            decision: 'approved',
             crawl_product_snapshots: { crawl_run_id: runId, source },
         },
         include: {
@@ -568,7 +450,6 @@ async function main() {
             image_manifest_entries: imageMap.size,
             require_bunny_images: requireBunnyImages,
             rewrite_description_images: rewriteDescriptionImages,
-            include_needs_manual_review: includeNeedsManualReview,
         }, null, 2))
         return
     }
@@ -601,57 +482,68 @@ async function main() {
             const productType = await ensureProductType(subcategory?.id ?? null, product.product_type)
             const productSubType = await ensureProductSubType(productType?.id, product.product_sub_type)
             const variantGroup = await ensureVariantGroupForImport(product.variant_group, product, variantCounts.get(product.variant_group) || 0)
-            const variantOptions = normalizedVariantOptions(product)
             const specs = asObject(product.specs)
-            const existingProduct = await resolveExistingProduct(product, brandRow.id)
-            const sourceUrl = toDisplayValue(product.source_url) || null
-            const hitaId = toDisplayValue(product.hita_product_id) || hitaProductId(sourceUrl || '') || null
-            const productData = {
-                sku: product.sku,
-                name: product.name,
-                slug: importSafeSlug(product, sourceUrl, hitaId),
-                category_id: category.id,
-                subcategory_id: subcategory?.id ?? null,
-                brand_id: brandRow.id,
-                price: product.price ?? null,
-                original_price: product.original_price ?? null,
-                online_discount_amount: product.online_discount_amount ?? null,
-                price_display: product.price_display ?? null,
-                stock_status: product.stock_status || 'in_stock',
-                description: product.description || null,
-                specs: specs as Prisma.InputJsonValue,
-                image_main_url: product.image_main_url || null,
-                source_url: sourceUrl,
-                hita_product_id: hitaId,
-                product_type: product.product_type || null,
-                product_sub_type: product.product_sub_type || null,
-                product_type_id: productType?.id ?? null,
-                product_sub_type_id: productSubType?.id ?? null,
-                variant_group: variantGroup ? product.variant_group : null,
-                variant_group_id: variantGroup?.id ?? null,
-                variant_type: product.variant_type || null,
-                variant_label: product.variant_label || null,
-                variant_options: variantOptions as Prisma.InputJsonValue,
-                is_master: product.is_master ?? true,
-                is_combo: product.is_combo ?? false,
-            }
-            const upserted = existingProduct
-                ? await prisma.products.update({
-                    where: { id: existingProduct.id },
-                    data: {
-                        ...productData,
-                        ...(forceInactive ? { is_active: false } : {}),
-                        updated_at: new Date(),
-                    },
-                    select: { id: true },
-                })
-                : await prisma.products.create({
-                    data: {
-                        ...productData,
-                        is_active: forceInactive ? false : activate,
-                    },
-                    select: { id: true },
-                })
+
+            const upserted = await prisma.products.upsert({
+                where: { sku: product.sku },
+                create: {
+                    sku: product.sku,
+                    name: product.name,
+                    slug: product.slug,
+                    category_id: category.id,
+                    subcategory_id: subcategory?.id ?? null,
+                    brand_id: brandRow.id,
+                    price: product.price ?? null,
+                    original_price: product.original_price ?? null,
+                    online_discount_amount: product.online_discount_amount ?? null,
+                    price_display: product.price_display || 'Liên hệ báo giá',
+                    description: product.description || null,
+                    specs: specs as Prisma.InputJsonValue,
+                    image_main_url: product.image_main_url || null,
+                    source_url: product.source_url || null,
+                    hita_product_id: product.hita_product_id ? String(product.hita_product_id) : null,
+                    product_type: product.product_type || null,
+                    product_sub_type: product.product_sub_type || null,
+                    product_type_id: productType?.id ?? null,
+                    product_sub_type_id: productSubType?.id ?? null,
+                    variant_group: variantGroup ? product.variant_group : null,
+                    variant_group_id: variantGroup?.id ?? null,
+                    variant_type: product.variant_type || null,
+                    variant_label: product.variant_label || null,
+                    is_master: product.is_master ?? true,
+                    is_combo: product.is_combo ?? false,
+                    is_active: forceInactive ? false : activate,
+                },
+                update: {
+                    name: product.name,
+                    slug: product.slug,
+                    category_id: category.id,
+                    subcategory_id: subcategory?.id ?? null,
+                    brand_id: brandRow.id,
+                    price: product.price ?? null,
+                    original_price: product.original_price ?? null,
+                    online_discount_amount: product.online_discount_amount ?? null,
+                    price_display: product.price_display || 'Liên hệ báo giá',
+                    description: product.description || null,
+                    specs: specs as Prisma.InputJsonValue,
+                    image_main_url: product.image_main_url || null,
+                    source_url: product.source_url || null,
+                    hita_product_id: product.hita_product_id ? String(product.hita_product_id) : null,
+                    product_type: product.product_type || null,
+                    product_sub_type: product.product_sub_type || null,
+                    product_type_id: productType?.id ?? null,
+                    product_sub_type_id: productSubType?.id ?? null,
+                    variant_group: variantGroup ? product.variant_group : null,
+                    variant_group_id: variantGroup?.id ?? null,
+                    variant_type: product.variant_type || null,
+                    variant_label: product.variant_label || null,
+                    is_master: product.is_master ?? true,
+                    is_combo: product.is_combo ?? false,
+                    ...(forceInactive ? { is_active: false } : {}),
+                    updated_at: new Date(),
+                },
+                select: { id: true },
+            })
 
             await prisma.product_images.deleteMany({ where: { product_id: upserted.id } })
             const imageRows = (product.product_images || [])
@@ -811,7 +703,7 @@ async function main() {
                     where: { id: existingMapping.id },
                     data: {
                         product_id: upserted.id,
-                        source_product_id: hitaId,
+                        source_product_id: product.hita_product_id ? String(product.hita_product_id) : null,
                         sku: product.sku,
                         last_seen_at: new Date(),
                         last_crawl_run_id: runId,
@@ -823,7 +715,7 @@ async function main() {
                     data: {
                         product_id: upserted.id,
                         source,
-                        source_product_id: hitaId,
+                        source_product_id: product.hita_product_id ? String(product.hita_product_id) : null,
                         source_url: product.source_url,
                         sku: product.sku,
                         last_crawl_run_id: runId,
@@ -846,7 +738,6 @@ async function main() {
                         image_manifest_entries: imageMap.size,
                         rewrite_description_images: rewriteDescriptionImages,
                         replace_raw_html: replaceRawHtml,
-                        include_needs_manual_review: includeNeedsManualReview,
                     } as Prisma.InputJsonValue,
                     updated_at: new Date(),
                 },
@@ -887,7 +778,6 @@ async function main() {
                 rewrite_description_images: rewriteDescriptionImages,
                 replace_raw_html: replaceRawHtml,
                 concurrency,
-                include_needs_manual_review: includeNeedsManualReview,
             } as Prisma.InputJsonValue,
         },
     })
@@ -902,7 +792,6 @@ async function main() {
         image_manifest_entries: imageMap.size,
         rewrite_description_images: rewriteDescriptionImages,
         replace_raw_html: replaceRawHtml,
-        include_needs_manual_review: includeNeedsManualReview,
     }, null, 2))
 }
 

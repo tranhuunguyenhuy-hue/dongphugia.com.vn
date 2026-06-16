@@ -21,7 +21,6 @@ const skipCrawl = args.includes('--skip-crawl')
 const skipStage = args.includes('--skip-stage')
 const skipUpload = args.includes('--skip-upload')
 const confirmBrand = readArg('--confirm-brand=', '')
-const stopAfter = readArg('--stop-after=', '')
 const runDir = readArg('--run-dir=', path.resolve(process.cwd(), `scripts/crawl-hita/output/${brand}/pipeline-${timestampSlug()}`))
 const normalizedDir = path.join(runDir, 'normalized')
 const preparedDir = path.join(runDir, 'prepared')
@@ -75,7 +74,6 @@ type DbProduct = {
     original_price: unknown
     online_discount_amount: unknown
     price_display: string | null
-    stock_status: string
     specs: unknown
     description: string | null
     image_main_url: string | null
@@ -108,30 +106,19 @@ function writeJson(file: string, value: unknown) {
 
 function normalizeUrl(value: string) {
     try {
-        const parsed = new URL(value, 'https://hita.com.vn')
-        const vid = parsed.searchParams.get('vid')
-        parsed.hash = ''
-        parsed.search = ''
-        return vid ? `${parsed.href}?vid=${encodeURIComponent(vid)}` : parsed.href
+        return new URL(value, 'https://hita.com.vn').href.split('#')[0].split('?')[0]
     } catch {
         return ''
     }
 }
 
 function hitaProductId(url: string | null | undefined) {
-    try {
-        const parsed = new URL(String(url || ''), 'https://hita.com.vn')
-        const vid = parsed.searchParams.get('vid')
-        if (vid) return vid
-    } catch {
-        // Fall through to canonical PDP id extraction.
-    }
-    return String(url || '').split('?')[0].match(/-(\d+)\.html$/)?.[1] || null
+    return String(url || '').match(/-(\d+)\.html$/)?.[1] || null
 }
 
 function isProductUrl(url: string) {
     const id = hitaProductId(url)
-    return url.startsWith('https://hita.com.vn/') && normalizeUrl(url).split('?')[0].endsWith('.html') && Boolean(id && Number(id) >= 1000)
+    return url.startsWith('https://hita.com.vn/') && url.endsWith('.html') && Boolean(id && Number(id) >= 1000)
 }
 
 function parseRemainingCount(text: string) {
@@ -163,10 +150,6 @@ function specCount(value: unknown) {
 
 function hasImg(html: string | null | undefined) {
     return /<img\b/i.test(html || '')
-}
-
-function isContactPriceDisplay(value: unknown) {
-    return /liên hệ|lien he|contact|báo giá|bao gia/i.test(toDisplayValue(value))
 }
 
 function extractCandidateUrls(html: string | null | undefined) {
@@ -339,7 +322,6 @@ async function fetchDbProducts() {
             original_price: true,
             online_discount_amount: true,
             price_display: true,
-            stock_status: true,
             specs: true,
             description: true,
             image_main_url: true,
@@ -364,7 +346,6 @@ function prepareProducts(normalizedProducts: any[], rawProducts: any[], discover
     const crawledSkuSet = new Set(normalizedProducts.map(product => product.sku).filter(Boolean))
     const crawledUrlSet = new Set(normalizedProducts.map(product => normalizeUrl(product.source_url || '')).filter(Boolean))
     const matched: string[] = []
-    const matchedDbIds = new Set<number>()
     const added: string[] = []
     const fieldFlags: Array<{ sku: string; field: string; reason: string }> = []
 
@@ -372,7 +353,7 @@ function prepareProducts(normalizedProducts: any[], rawProducts: any[], discover
         const next = JSON.parse(JSON.stringify(product))
         const policy: Record<string, string> = {}
         const db = findDbMatch(product, dbProducts, discoveryUrlSet)
-        if (db) { matched.push(product.sku); matchedDbIds.add(db.id) }
+        if (db) matched.push(product.sku)
         else added.push(product.sku)
 
         if (!db) {
@@ -428,33 +409,13 @@ function prepareProducts(normalizedProducts: any[], rawProducts: any[], discover
             fieldFlags.push({ sku: next.sku, field: 'description', reason: `new desc/img weaker than old` })
         }
 
-        const priceState = toDisplayValue(next.price_state)
-        if (priceState === 'discontinued' || toDisplayValue(next.stock_status) === 'discontinued') {
-            next.price = null
-            next.original_price = null
-            next.online_discount_amount = null
-            next.price_display = 'Ngừng kinh doanh'
-            next.stock_status = 'discontinued'
-            policy.price = 'mark_discontinued'
-            fieldFlags.push({ sku: next.sku, field: 'price', reason: 'hita marks product discontinued; clear price and set stock_status' })
-        } else if (db.price !== null && db.price !== undefined && next.price === null) {
-            const noPriceOnHita = priceState === 'no_price_contact' || isContactPriceDisplay(next.price_display)
-            if (noPriceOnHita) {
-                next.price = null
-                next.original_price = null
-                next.online_discount_amount = null
-                next.price_display = 'Liên hệ báo giá'
-                next.stock_status = 'in_stock'
-                policy.price = 'clear_contact_price'
-                fieldFlags.push({ sku: next.sku, field: 'price', reason: 'hita has no price/contact; clear old price' })
-            } else {
-                next.price = decimalToNumber(db.price)
-                next.original_price = decimalToNumber(db.original_price)
-                next.online_discount_amount = decimalToNumber(db.online_discount_amount)
-                next.price_display = db.price_display
-                policy.price = 'preserve_old'
-                fieldFlags.push({ sku: next.sku, field: 'price', reason: 'new price null while old exists and price state is not contact/no-price' })
-            }
+        if (db.price !== null && db.price !== undefined && next.price === null) {
+            next.price = decimalToNumber(db.price)
+            next.original_price = decimalToNumber(db.original_price)
+            next.online_discount_amount = decimalToNumber(db.online_discount_amount)
+            next.price_display = db.price_display
+            policy.price = 'preserve_old'
+            fieldFlags.push({ sku: next.sku, field: 'price', reason: 'new price null while old exists' })
         }
 
         if (!next.source_url && db.source_url) {
@@ -479,26 +440,12 @@ function prepareProducts(normalizedProducts: any[], rawProducts: any[], discover
 
     // [LEO-471 #3] Coverage accounting across ALL discovery URLs + ALL DB rows,
     // not just the kept subset — so "skipped/not-attempted" can never hide.
-    // [LEO-471 #3b] Match skipped/discovery by url + hita_product_id + sku,
-    // because DB rows may have null/differing source_url (matched via id/sku).
     const skippedByUrl = new Map<string, string>()
-    const skippedIdSet = new Set<string>()
-    const skippedSkuSet = new Set<string>()
     for (const item of skipped) {
         const url = normalizeUrl(item.source_url || '')
-        const reason = item.skipped_reason || 'unknown'
-        if (url) {
-            skippedByUrl.set(url, reason)
-            const id = hitaProductId(url)
-            if (id) skippedIdSet.add(id)
-        }
-        if (item.sku) skippedSkuSet.add(item.sku)
+        if (url) skippedByUrl.set(url, item.skipped_reason || 'unknown')
     }
-    const discoveryIdSet = new Set<string>()
-    for (const url of discoveryUrlSet) {
-        const id = hitaProductId(url)
-        if (id) discoveryIdSet.add(id)
-    }
+    const matchedSkuSet = new Set(matched)
     const discoveryCoverage = { crawled_kept: 0, not_attempted: 0, skipped: {} as Record<string, number> }
     for (const url of discoveryUrlSet) {
         if (crawledUrlSet.has(url)) discoveryCoverage.crawled_kept++
@@ -510,12 +457,9 @@ function prepareProducts(normalizedProducts: any[], rawProducts: any[], discover
     const dbCoverage = { refreshed: 0, skipped_kept_old: 0, discovered_not_crawled: 0, missing_on_hita: 0 }
     for (const row of dbProducts) {
         const url = row.source_url ? normalizeUrl(row.source_url) : ''
-        const id = (url ? hitaProductId(url) : null) || (row.hita_product_id ? String(row.hita_product_id) : null)
-        const isSkipped = (!!url && skippedByUrl.has(url)) || (!!id && skippedIdSet.has(id)) || skippedSkuSet.has(row.sku)
-        const isDiscovered = (!!url && discoveryUrlSet.has(url)) || (!!id && discoveryIdSet.has(id))
-        if (matchedDbIds.has(row.id)) dbCoverage.refreshed++
-        else if (isSkipped) dbCoverage.skipped_kept_old++
-        else if (isDiscovered) dbCoverage.discovered_not_crawled++
+        if (matchedSkuSet.has(row.sku)) dbCoverage.refreshed++
+        else if (url && skippedByUrl.has(url)) dbCoverage.skipped_kept_old++
+        else if (url && discoveryUrlSet.has(url)) dbCoverage.discovered_not_crawled++
         else dbCoverage.missing_on_hita++
     }
 
@@ -773,7 +717,7 @@ async function main() {
             'scripts/crawl-hita/0-sample-crawl-brand.js',
             `--brand=${brand}`,
             '--full',
-            `--candidate-limit=${discovery.merged_urls.length + 300}`,
+            `--candidate-limit=${discovery.merged_urls.length + 25}`,
             `--concurrency=${concurrency}`,
             `--sample-dir=${normalizedDir}`,
         ])
@@ -791,50 +735,6 @@ async function main() {
     writeJson(path.join(preparedDir, 'sample-products.normalized.json'), prepared)
     writeJson(path.join(runDir, 'reconciliation.json'), reconciliation)
     writeJson(path.join(runDir, 'field-policy-flags.json'), fieldFlags)
-
-    if (stopAfter === 'prepare') {
-        const summary = {
-            brand,
-            run_dir: runDir,
-            source,
-            discovery,
-            reconciliation,
-            products: prepared.length,
-            field_flags: fieldFlags,
-            stage: null,
-            manifest: { total: 0, verified: 0 },
-            import_result: null,
-            post_import: null,
-            stopped_after: 'prepare',
-        }
-        writeJson(path.join(runDir, 'pipeline-summary.json'), summary)
-        fs.writeFileSync(path.join(runDir, 'pipeline-report.md'), buildMarkdownReport(summary))
-        console.log(JSON.stringify({
-            run_dir: runDir,
-            source,
-            stopped_after: 'prepare',
-            discovery: {
-                expected_listing_count: discovery.expected_listing_count,
-                actual_listing_count: discovery.actual_listing_count,
-                merged_urls: discovery.merged_urls.length,
-            },
-            reconciliation: {
-                hita: reconciliation.hita,
-                db: reconciliation.db,
-                matched: reconciliation.matched,
-                new: reconciliation.new,
-                missing: reconciliation.missing,
-                coverage: reconciliation.coverage,
-            },
-            products: prepared.length,
-            field_flags: fieldFlags.length,
-            stage: null,
-            manifest: { total: 0, verified: 0 },
-            imported: 0,
-            failed: 0,
-        }, null, 2))
-        return
-    }
 
     const stage = await stagePrepared()
     const manifestPayload = await uploadManifest(prepared)

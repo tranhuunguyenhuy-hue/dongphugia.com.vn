@@ -29,6 +29,11 @@ function asString(value: unknown) {
     return typeof value === 'string' ? value.trim() : ''
 }
 
+function hasStoppedPrice(product: any) {
+    const fields = [product?.price_display, product?.stock_status, product?.status].map(asString).join(' ')
+    return /ngưng hoạt động|ngung hoat dong|discontinued/i.test(fields)
+}
+
 function isBlockingDescriptionIssue(issue: unknown) {
     const value = asString(issue)
     if (!value) return false
@@ -39,6 +44,7 @@ function decideImport(product: any) {
     const reasons: string[] = []
     const qaFlags = Array.isArray(product?.qa) ? product.qa.map(String) : []
 
+    if (hasStoppedPrice(product)) reasons.push('stopped_product')
     if (!asString(product?.sku)) reasons.push('missing_sku')
     if (!asString(product?.name)) reasons.push('missing_name')
     if (!asString(product?.slug)) reasons.push('missing_slug')
