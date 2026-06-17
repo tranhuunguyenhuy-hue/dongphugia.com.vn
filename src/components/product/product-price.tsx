@@ -10,11 +10,12 @@ interface ProductPriceProps {
     originalPrice: number | null | undefined
     priceDisplay: string | null | undefined
     onlineDiscountAmount?: number | null | undefined
+    stockStatus?: string | null | undefined
     className?: string
     children?: React.ReactNode
 }
 
-export function ProductPrice({ price, originalPrice, priceDisplay, onlineDiscountAmount, className, children }: ProductPriceProps) {
+export function ProductPrice({ price, originalPrice, priceDisplay, onlineDiscountAmount, stockStatus, className, children }: ProductPriceProps) {
     const [installOption, setInstallOption] = useState<'none' | 'install' | 'replace'>('none')
 
     const installationFee = installOption === 'install' ? 200000 : installOption === 'replace' ? 350000 : 0;
@@ -23,6 +24,7 @@ export function ProductPrice({ price, originalPrice, priceDisplay, onlineDiscoun
     const numOriginal = Number(originalPrice)
     const numOnlineDiscount = Number(onlineDiscountAmount)
     const hasDiscount = numOriginal > 0 && numPrice > 0 && numOriginal > numPrice
+    const isDiscontinued = stockStatus === 'discontinued'
 
     const finalDisplayPrice = numPrice > 0 
         ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(numPrice)
@@ -41,7 +43,16 @@ export function ProductPrice({ price, originalPrice, priceDisplay, onlineDiscoun
                     </h3>
                     
                     {/* Price Block */}
-                    {hasDiscount ? (
+                    {isDiscontinued ? (
+                        <div className="mt-1 flex flex-col gap-2">
+                            <div className="inline-flex w-fit items-center rounded-full border border-rose-200 bg-rose-50 px-3 py-1.5 text-sm font-bold text-rose-700">
+                                Ngừng kinh doanh
+                            </div>
+                            <p className="text-sm leading-relaxed text-stone-500">
+                                Sản phẩm này hiện không còn kinh doanh. Đông Phú Gia vẫn có thể tư vấn mẫu thay thế phù hợp.
+                            </p>
+                        </div>
+                    ) : hasDiscount ? (
                         <div className="flex items-center gap-3 flex-wrap mt-0.5">
                             <p className="text-[32px] font-black text-rose-600 tracking-tight leading-none">
                                 {finalDisplayPrice}
@@ -62,7 +73,7 @@ export function ProductPrice({ price, originalPrice, priceDisplay, onlineDiscoun
                     )}
 
                     {/* Online Discount Sub-Card (Shopee-style Voucher) */}
-                    {numOnlineDiscount > 0 && numPrice > 0 && (
+                    {!isDiscontinued && numOnlineDiscount > 0 && numPrice > 0 && (
                         <div className="mt-4 flex relative rounded-xl bg-orange-50/60 border border-orange-200">
                             
                             {/* Left Stub */}

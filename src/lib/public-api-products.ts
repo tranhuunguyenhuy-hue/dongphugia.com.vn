@@ -436,6 +436,8 @@ export type VariantSibling = {
     is_active: boolean
     variant_type: string | null
     variant_label: string | null
+    variant_options?: unknown
+    stock_status?: string | null
     subcategories: { slug: string } | null
     categories: { slug: string }
     colors?: { name: string; hex_code: string | null } | null
@@ -466,6 +468,7 @@ export const getVariantSiblings = unstable_cache(
                 is_active: true,
                 variant_type: true,
                 variant_label: true,
+                stock_status: true,
                 subcategories: { select: { slug: true } },
                 categories: { select: { slug: true } },
                 colors: { select: { name: true, hex_code: true } },
@@ -482,6 +485,85 @@ export const getVariantSiblings = unstable_cache(
     ['variant-siblings'],
     { revalidate: 3600, tags: ['products', 'variant-siblings'] }
 )
+
+export async function getVariantSelectionData(variantGroup: string, currentProductId: number) {
+    if (!variantGroup) return { axes: [], currentVariantOptions: [], siblings: [] as VariantSibling[] }
+
+    const [groupRows, productRows] = await Promise.all([
+        prisma.$queryRaw<Array<{ axes: unknown }>>`
+            select axes
+            from product_variant_groups
+            where group_key = ${variantGroup}
+            limit 1
+        `,
+        prisma.$queryRaw<Array<{
+            id: number
+            sku: string
+            name: string
+            slug: string
+            price: unknown
+            original_price: unknown
+            price_display: string | null
+            image_main_url: string | null
+            is_active: boolean
+            variant_type: string | null
+            variant_label: string | null
+            variant_options: unknown
+            stock_status: string | null
+            category_slug: string
+            subcategory_slug: string | null
+        }>>`
+            select
+                p.id,
+                p.sku,
+                p.name,
+                p.slug,
+                p.price,
+                p.original_price,
+                p.price_display,
+                p.image_main_url,
+                p.is_active,
+                p.variant_type,
+                p.variant_label,
+                p.variant_options,
+                p.stock_status,
+                c.slug as category_slug,
+                s.slug as subcategory_slug
+            from products p
+            join categories c on c.id = p.category_id
+            left join subcategories s on s.id = p.subcategory_id
+            where p.variant_group = ${variantGroup}
+            order by p.is_active desc, p.price desc nulls last, p.sku asc
+        `,
+    ])
+
+    const current = productRows.find((row) => row.id === currentProductId)
+    const siblings = productRows
+        .filter((row) => row.id !== currentProductId)
+        .map((row) => ({
+            id: row.id,
+            sku: row.sku,
+            name: row.name,
+            slug: row.slug,
+            price: row.price ? Number(row.price) : null,
+            original_price: row.original_price ? Number(row.original_price) : null,
+            price_display: row.price_display,
+            image_main_url: row.image_main_url,
+            is_active: row.is_active,
+            variant_type: row.variant_type,
+            variant_label: row.variant_label,
+            variant_options: row.variant_options,
+            stock_status: row.stock_status,
+            categories: { slug: row.category_slug },
+            subcategories: row.subcategory_slug ? { slug: row.subcategory_slug } : null,
+        }))
+
+    return {
+        axes: groupRows[0]?.axes ?? [],
+        currentVariantOptions: current?.variant_options ?? [],
+        siblings,
+    }
+}
 
 // ─── PUBLIC: GET PRODUCT COMPONENTS (from product_relationships) ──────────────
 

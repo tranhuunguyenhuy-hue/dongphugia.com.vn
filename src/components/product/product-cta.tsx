@@ -28,6 +28,7 @@ interface ProductCTAProps {
     subcategorySlug?: string | null;
     brandName?: string | null;
     slug: string;
+    stockStatus?: string | null;
 }
 
 export function ProductCTA({
@@ -42,8 +43,10 @@ export function ProductCTA({
     subcategorySlug,
     brandName,
     slug,
+    stockStatus,
 }: ProductCTAProps) {
     const hasPrice = price !== null && price > 0;
+    const isDiscontinued = stockStatus === 'discontinued';
     
     const productOptions = useProductOptions();
     const installOption = productOptions?.installOption || 'none';
@@ -57,7 +60,7 @@ export function ProductCTA({
     const addItem = useCartStore((s) => s.addItem);
 
     const handleAddToCart = () => {
-        const finalPrice = hasPrice ? (price! - onlineDiscountAmount + installationFee) : undefined;
+        const finalPrice = hasPrice && !isDiscontinued ? (price! - onlineDiscountAmount + installationFee) : undefined;
         
         addItem({
             productId,
@@ -101,7 +104,7 @@ export function ProductCTA({
                     products: [
                         {
                             product_id: productId,
-                            quantity: hasPrice ? quantity : 1,
+                            quantity: hasPrice && !isDiscontinued ? quantity : 1,
                         }
                     ]
                 }),
@@ -137,7 +140,7 @@ export function ProductCTA({
         }
     };
 
-    const finalItemPrice = hasPrice ? (price! - onlineDiscountAmount + installationFee) : 0;
+    const finalItemPrice = hasPrice && !isDiscontinued ? (price! - onlineDiscountAmount + installationFee) : 0;
     const totalPrice = finalItemPrice * quantity;
 
     return (
@@ -153,7 +156,7 @@ export function ProductCTA({
             {/* CTA Stack */}
             <div className="flex flex-col gap-2.5">
                 {/* Add to Cart — primary if has price */}
-                {hasPrice && (
+                {hasPrice && !isDiscontinued && (
                     <Button
                         onClick={handleAddToCart}
                         className="group w-full h-[52px] bg-gradient-to-r from-[#2E7A96] to-[#1e586e] hover:brightness-110 !text-white text-[16px] font-bold rounded-xl shadow-[0_12px_24px_-8px_rgba(46,122,150,0.4)] transition-all duration-300 gap-2 border-0"
@@ -166,7 +169,12 @@ export function ProductCTA({
                 {/* Quote / Order Dialog */}
                 <Dialog open={isOpen} onOpenChange={(open) => { setIsOpen(open); if(open) trackGenerateLead('quote_cta'); }}>
                     <DialogTrigger asChild>
-                        {hasPrice ? (
+                        {isDiscontinued ? (
+                            <Button className="group w-full h-[52px] bg-stone-800 hover:bg-stone-900 !text-white font-bold text-[16px] rounded-xl shadow-[0_12px_24px_-8px_rgba(28,25,23,0.35)] transition-all duration-300 gap-2 border-0">
+                                <MessageSquareText className="w-[20px] h-[20px] transition-transform duration-300 group-hover:translate-x-1" />
+                                Liên hệ tư vấn
+                            </Button>
+                        ) : hasPrice ? (
                             <Button
                                 variant="outline"
                                 className="w-full h-[44px] border border-stone-300 text-stone-600 hover:bg-stone-50 hover:text-stone-800 font-medium text-[14px] rounded-[10px] gap-2 transition-all shadow-sm"
@@ -191,10 +199,12 @@ export function ProductCTA({
                                     <CheckCircle2 className="w-8 h-8 text-success-500" />
                                 </div>
                                 <DialogTitle className="text-2xl font-bold text-stone-900 mb-3 tracking-tight">
-                                    {hasPrice ? "Yêu cầu báo giá đã được gửi!" : "Yêu cầu báo giá thành công!"}
+                                    {isDiscontinued ? "Yêu cầu tư vấn đã được gửi!" : hasPrice ? "Yêu cầu báo giá đã được gửi!" : "Yêu cầu báo giá thành công!"}
                                 </DialogTitle>
                                 <DialogDescription className="text-[15px] text-stone-600 mb-8 leading-relaxed">
-                                    {hasPrice
+                                    {isDiscontinued
+                                        ? "Nhân viên Đông Phú Gia sẽ liên hệ tư vấn mẫu thay thế phù hợp cho bạn."
+                                        : hasPrice
                                         ? "Cảm ơn bạn đã lựa chọn Đông Phú Gia. Nhân viên của chúng tôi sẽ liên lạc xác nhận ngay."
                                         : "Nhân viên Đông Phú Gia đã nhận được yêu cầu và sẽ gọi điện tư vấn ngay cho bạn."}
                                 </DialogDescription>
@@ -329,7 +339,7 @@ export function ProductCTA({
 
             {/* Mobile Sticky Bottom Bar */}
             <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-stone-200 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:hidden z-[100] flex items-center justify-between gap-4 shadow-[0_-8px_30px_rgba(0,0,0,0.06)]">
-                {hasPrice ? (
+                {hasPrice && !isDiscontinued ? (
                     <div className="flex flex-col justify-center">
                         <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest leading-none mb-1">Tổng tạm tính</span>
                         <div className="flex items-end gap-1.5">
@@ -353,12 +363,14 @@ export function ProductCTA({
                 ) : (
                     <div className="flex flex-col">
                         <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Tạm tính</span>
-                        <span className="text-[18px] font-black text-[#2E7A96] tracking-tight leading-none mt-1">Liên hệ</span>
+                        <span className={`text-[18px] font-black tracking-tight leading-none mt-1 ${isDiscontinued ? 'text-rose-700' : 'text-[#2E7A96]'}`}>
+                            {isDiscontinued ? 'Ngừng kinh doanh' : 'Liên hệ'}
+                        </span>
                     </div>
                 )}
                 
                 <div className="flex-1 max-w-[200px]">
-                    {hasPrice ? (
+                    {hasPrice && !isDiscontinued ? (
                         <Button
                             onClick={handleAddToCart}
                             className="w-full h-12 bg-gradient-to-r from-[#2E7A96] to-[#1e586e] hover:brightness-110 !text-white text-[15px] font-semibold rounded-xl shadow-[0_4px_14px_rgba(46,122,150,0.25)] transition-all duration-300 gap-2 border-0"
@@ -372,7 +384,7 @@ export function ProductCTA({
                             className="w-full h-12 bg-gradient-to-r from-[#2E7A96] to-[#1e586e] hover:brightness-110 !text-white text-[15px] font-semibold rounded-xl shadow-[0_4px_14px_rgba(46,122,150,0.25)] transition-all duration-300 gap-2 border-0"
                         >
                             <MessageSquareText className="w-[18px] h-[18px]" />
-                            Nhận báo giá
+                            {isDiscontinued ? 'Tư vấn' : 'Nhận báo giá'}
                         </Button>
                     )}
                 </div>
