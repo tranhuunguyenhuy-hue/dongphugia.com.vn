@@ -7,6 +7,7 @@ import { ProductDetailTabs } from "@/components/product/product-detail-tabs"
 import { ProductComponentsSection } from "@/components/product/product-components-section"
 import { ProductBoxIncludes } from "@/components/product/product-box-includes"
 import { ProductPurchasePanel } from "@/components/product/product-purchase-panel"
+import { ProductVariantMetaPills } from "@/components/product/product-variant-meta-pills"
 import { ProductCard } from "@/components/ui/product-card"
 import { RecentlyViewedProducts } from "@/components/product/recently-viewed"
 import { BrandBadge } from "@/components/ui/brand-badge"
@@ -170,22 +171,12 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
                             {/* 2. Brand Badge */}
                             {product.brands && <BrandBadge brand={product.brands as any} className="!h-7 !px-2.5 rounded-md border-stone-200/60 shadow-sm" />}
 
-                            {/* 3. Color Pill */}
-                            {product.colors && (
-                                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-stone-50 border border-stone-200/60">
-                                    <span
-                                        className="w-3 h-3 rounded-full border border-black/10 shadow-sm"
-                                        style={{ backgroundColor: product.colors.hex_code || '#ccc' }}
-                                    />
-                                    <span className="font-medium text-stone-700">{product.colors.name}</span>
-                                </div>
-                            )}
-
-                            {/* 4. SKU Pill */}
-                            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-stone-100">
-                                <span className="text-stone-500">Mã SP:</span>
-                                <span className="font-mono font-bold text-stone-800">{product.sku}</span>
-                            </div>
+                            {/* 3-4. Variant-aware Color + SKU Pills */}
+                            <ProductVariantMetaPills
+                                initialSku={product.sku}
+                                initialColor={product.colors}
+                                initialVariantOptions={variantSelectionData.currentVariantOptions}
+                            />
                         </div>
                     </div>
 
