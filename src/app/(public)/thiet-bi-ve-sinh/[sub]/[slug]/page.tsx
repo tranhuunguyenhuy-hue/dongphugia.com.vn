@@ -1,17 +1,15 @@
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 import Link from "next/link"
-import { getPublicProductBySlug, getPublicProducts, getProductComponents, getVariantSiblings } from "@/lib/public-api-products"
+import { getPublicProductBySlug, getPublicProducts, getProductComponents, getVariantSelectionData, getVariantSiblings } from "@/lib/public-api-products"
 import { ProductImageGallery } from "@/components/product/product-image-gallery"
 import { ProductDetailTabs } from "@/components/product/product-detail-tabs"
-import { ProductCTA } from "@/components/product/product-cta"
 import { ProductComponentsSection } from "@/components/product/product-components-section"
 import { ProductBoxIncludes } from "@/components/product/product-box-includes"
-import { VariantSelector } from "@/components/product/variant-selector"
+import { ProductPurchasePanel } from "@/components/product/product-purchase-panel"
 import { ProductCard } from "@/components/ui/product-card"
 import { RecentlyViewedProducts } from "@/components/product/recently-viewed"
 import { BrandBadge } from "@/components/ui/brand-badge"
-import { ProductPrice } from "@/components/product/product-price"
 import { JsonLd } from "@/components/seo/json-ld"
 import { buildProductSchema, buildBreadcrumbSchema } from "@/lib/seo/schema"
 
@@ -52,9 +50,10 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
 
 
     // Fetch product components + variant siblings in parallel
-    const [productComponents, variantSiblings] = await Promise.all([
+    const [productComponents, variantSiblings, variantSelectionData] = await Promise.all([
         getProductComponents(product.id),
         product.variant_group ? getVariantSiblings(product.variant_group, product.id) : Promise.resolve([]),
+        product.variant_group ? getVariantSelectionData(product.variant_group, product.id) : Promise.resolve({ axes: [], currentVariantOptions: [], siblings: [] }),
     ])
     const hasComponents = productComponents.some(c => c.child !== null)
 
@@ -78,11 +77,13 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
 
 
 
-    const stockDisplay = product.stock_status === 'in_stock'
-        ? <span className="text-emerald-600 font-medium">Còn hàng</span>
+    const stockPill = product.stock_status === 'discontinued'
+        ? { label: 'Ngừng kinh doanh', dot: 'bg-rose-400', wrap: 'bg-rose-50 border-rose-200', text: 'text-rose-700' }
+        : product.stock_status === 'in_stock'
+        ? { label: 'Còn hàng', dot: 'bg-emerald-500 animate-pulse', wrap: 'bg-emerald-50 border-emerald-100', text: 'text-emerald-700' }
         : product.stock_status === 'pre_order'
-        ? <span className="text-amber-600 font-medium">Đặt trước</span>
-        : <span className="text-rose-600 font-medium">Hết hàng</span>;
+        ? { label: 'Đặt trước', dot: 'bg-amber-500', wrap: 'bg-amber-50 border-amber-100', text: 'text-amber-700' }
+        : { label: 'Liên hệ', dot: 'bg-rose-500', wrap: 'bg-rose-50 border-rose-100', text: 'text-rose-700' }
 
     return (
         <main className="u-container pt-8 pb-28 lg:py-12">
@@ -159,10 +160,10 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
 
                         <div className="flex flex-wrap items-center gap-2 text-[12px]">
                             {/* 1. Status Pill */}
-                            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md border ${product.stock_status === 'in_stock' ? 'bg-emerald-50 border-emerald-100' : 'bg-rose-50 border-rose-100'}`}>
-                                <div className={`w-1.5 h-1.5 rounded-full ${product.stock_status === 'in_stock' ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`} />
-                                <span className={`font-medium ${product.stock_status === 'in_stock' ? 'text-emerald-700' : 'text-rose-700'}`}>
-                                    {product.stock_status === 'in_stock' ? 'Còn hàng' : 'Liên hệ'}
+                            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md border ${stockPill.wrap}`}>
+                                <div className={`w-1.5 h-1.5 rounded-full ${stockPill.dot}`} />
+                                <span className={`font-medium ${stockPill.text}`}>
+                                    {stockPill.label}
                                 </span>
                             </div>
 
@@ -188,47 +189,14 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
                         </div>
                     </div>
 
-                    {/* Variant Selector — between title and price */}
-                    {product.variant_group && variantSiblings.length > 0 && (
-                        <VariantSelector
-                            currentSku={product.sku}
-                            currentSlug={product.slug}
-                            currentName={product.name}
-                            currentImageMainUrl={product.image_main_url}
-                            currentPriceDisplay={product.price_display}
-                            currentPrice={Number(product.price)}
-                            currentOriginalPrice={Number(product.original_price)}
-                            currentColor={product.colors}
-                            variantType={product.variant_type}
-                            variantLabel={product.variant_label}
-                            variantGroup={product.variant_group}
-                            siblings={variantSiblings}
-                            categorySlug={CATEGORY_SLUG}
-                            subcategorySlug={product.subcategories?.slug}
-                        />
-                    )}
-
-                    {/* Price and CTA */}
-                    <ProductPrice 
-                        price={Number(product.price)}
-                        originalPrice={Number(product.original_price)}
-                        priceDisplay={product.price_display}
-                        onlineDiscountAmount={Number(product.online_discount_amount)}
-                    >
-                        <ProductCTA
-                            productId={product.id}
-                            productSku={product.sku}
-                            productName={product.name}
-                            price={product.price ? Number(product.price) : null}
-                            originalPrice={product.original_price ? Number(product.original_price) : null}
-                            priceDisplay={product.price_display}
-                            imageUrl={product.image_main_url || (product.product_images && product.product_images.length > 0 ? product.product_images[0].image_url : null)}
-                            categorySlug={CATEGORY_SLUG}
-                            subcategorySlug={product.subcategories?.slug}
-                            brandName={product.brands?.name}
-                            slug={product.slug}
-                        />
-                    </ProductPrice>
+                    <ProductPurchasePanel
+                        product={product}
+                        variantSiblings={variantSelectionData.siblings.length > 0 ? variantSelectionData.siblings : variantSiblings}
+                        variantAxes={variantSelectionData.axes}
+                        currentVariantOptions={variantSelectionData.currentVariantOptions}
+                        categorySlug={CATEGORY_SLUG}
+                        subcategorySlug={product.subcategories?.slug}
+                    />
 
                     {/* Accessories & Documents (Moved from left column to save space) */}
                     {(hasComponents || boxIncludes.length > 0) && (
