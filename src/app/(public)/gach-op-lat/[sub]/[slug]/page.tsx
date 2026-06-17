@@ -187,6 +187,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
                                 currentSku={product.sku}
                                 currentSlug={product.slug}
                                 currentName={product.name}
+                                currentImageMainUrl={product.image_main_url}
                                 currentPriceDisplay={product.price_display}
                                 currentPrice={Number(product.price)}
                                 currentOriginalPrice={Number(product.original_price)}
