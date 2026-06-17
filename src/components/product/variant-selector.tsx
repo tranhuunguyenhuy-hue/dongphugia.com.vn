@@ -220,6 +220,7 @@ export interface VariantPreview {
     stock_status?: string | null
     is_active?: boolean
     subcategory_slug?: string | null
+    variant_options?: VariantOption[]
 }
 
 type VariantAxis = { key: string; label: string }
@@ -263,6 +264,24 @@ function parseVariantOptions(value: unknown): VariantOption[] {
 
 function optionValue(options: VariantOption[], axis: string) {
     return options.find((option) => option.axis === axis)?.value || null
+}
+
+function inferVariantAxesFromOptions(options: VariantOption[]): VariantAxis[] {
+    const labelsByAxis = new Map<string, string>()
+
+    for (const option of options) {
+        if (!option.axis || labelsByAxis.has(option.axis)) continue
+        labelsByAxis.set(option.axis, option.label || option.axis)
+    }
+
+    return Array.from(labelsByAxis.entries())
+        .map(([key, label]) => ({ key, label }))
+        .sort((a, b) => {
+            const order = ['config', 'color']
+            const aIndex = order.indexOf(a.key)
+            const bIndex = order.indexOf(b.key)
+            return (aIndex === -1 ? 99 : aIndex) - (bIndex === -1 ? 99 : bIndex)
+        })
 }
 
 // ─── COLOR SWATCH MODE ────────────────────────────────────────────────────────
@@ -612,6 +631,13 @@ function MultiAxisSelector({
                                     disabled={isUnavailable}
                                     onClick={() => {
                                         onPreviewVariant?.(variant)
+                                        window.dispatchEvent(new CustomEvent('product-variant-selection', {
+                                            detail: {
+                                                sku: variant.sku,
+                                                color: colorLabel,
+                                                variantOptions: variant.variant_options,
+                                            },
+                                        }))
                                         if (variant.image_main_url) {
                                             window.dispatchEvent(new CustomEvent('product-variant-preview', { detail: { imageUrl: variant.image_main_url } }))
                                         }
@@ -682,9 +708,13 @@ export function VariantSelector({
     // Type C/D: no variant_group → render nothing
     if (!siblings || siblings.length === 0) return null
 
-    const axes = parseVariantAxes(variantAxes)
     const currentOptions = parseVariantOptions(currentVariantOptions)
-    const hasMultiAxis = axes.length > 1 && axes.some((axis) => axis.key === 'config') && axes.some((axis) => axis.key === 'color')
+    const siblingOptions = siblings.flatMap((s) => parseVariantOptions(s.variant_options))
+    const axes = parseVariantAxes(variantAxes)
+    const effectiveAxes = axes.length > 0
+        ? axes
+        : inferVariantAxesFromOptions([...currentOptions, ...siblingOptions])
+    const hasMultiAxis = effectiveAxes.length > 1 && effectiveAxes.some((axis) => axis.key === 'config') && effectiveAxes.some((axis) => axis.key === 'color')
 
     if (hasMultiAxis && currentOptions.length > 0) {
         const allVariants: AxisVariant[] = [
@@ -723,7 +753,7 @@ export function VariantSelector({
 
         return (
             <MultiAxisSelector
-                axes={axes}
+                axes={effectiveAxes}
                 variants={allVariants}
                 selectedSku={selectedSku || currentSku}
                 categorySlug={categorySlug}

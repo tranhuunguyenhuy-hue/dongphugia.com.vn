@@ -474,12 +474,21 @@ export const getVariantSiblings = unstable_cache(
                 colors: { select: { name: true, hex_code: true } },
             },
         })
+        const variantOptionsRows = siblings.length > 0
+            ? await prisma.$queryRaw<Array<{ id: number; variant_options: unknown }>>`
+                select id, variant_options
+                from products
+                where id in (${Prisma.join(siblings.map((s) => s.id))})
+            `
+            : []
+        const variantOptionsById = new Map(variantOptionsRows.map((row) => [row.id, row.variant_options]))
 
         return siblings.map(s => ({
             ...s,
             price: s.price ? Number(s.price) : null,
             original_price: s.original_price ? Number(s.original_price) : null,
             online_discount_amount: s.online_discount_amount ? Number(s.online_discount_amount) : null,
+            variant_options: variantOptionsById.get(s.id) ?? null,
         }))
     },
     ['variant-siblings'],
