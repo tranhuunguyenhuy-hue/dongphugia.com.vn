@@ -41,11 +41,27 @@ function slugify(value: string) {
 }
 
 function normalizeUrl(value: string) {
-    return value.trim().replace(/\/$/, '')
+    try {
+        const parsed = new URL(value.trim(), 'https://hita.com.vn')
+        const vid = parsed.searchParams.get('vid')
+        parsed.hash = ''
+        parsed.search = ''
+        const canonical = parsed.href.replace(/\/$/, '')
+        return vid ? `${canonical}?vid=${encodeURIComponent(vid)}` : canonical
+    } catch {
+        return value.trim().replace(/\/$/, '')
+    }
 }
 
 function hitaProductId(value: string) {
-    return normalizeUrl(value).match(/-(\d+)\.html(?:[?#].*)?$/)?.[1] || null
+    try {
+        const parsed = new URL(value.trim(), 'https://hita.com.vn')
+        const vid = parsed.searchParams.get('vid')
+        if (vid) return vid
+    } catch {
+        // Fall through to canonical PDP id extraction.
+    }
+    return normalizeUrl(value).split('?')[0].match(/-(\d+)\.html$/)?.[1] || null
 }
 
 function humanizeSlug(slug: string) {
@@ -112,6 +128,7 @@ async function ensureProductSubType(productTypeId: number | null | undefined, sl
 
 async function ensureVariantGroup(groupKey: string | null | undefined, product: any, siblingCount: number) {
     if (!groupKey || siblingCount < 2) return null
+    const axes = normalizedVariantAxes(product)
     return prisma.product_variant_groups.upsert({
         where: { group_key: groupKey },
         create: {
@@ -119,12 +136,14 @@ async function ensureVariantGroup(groupKey: string | null | undefined, product: 
             base_sku: groupKey,
             variant_type: product.variant_type || 'variant',
             label: product.variant_group_label || groupKey,
+            axes: axes as Prisma.InputJsonValue,
             source,
             confidence: 'high',
         },
         update: {
             variant_type: product.variant_type || 'variant',
             label: product.variant_group_label || groupKey,
+            axes: axes as Prisma.InputJsonValue,
             updated_at: new Date(),
         },
         select: { id: true },
@@ -133,6 +152,7 @@ async function ensureVariantGroup(groupKey: string | null | undefined, product: 
 
 async function ensureVariantGroupForImport(groupKey: string | null | undefined, product: any, siblingCount: number) {
     if (!groupKey) return null
+    const axes = normalizedVariantAxes(product)
     if (siblingCount < 2) {
         return prisma.product_variant_groups.findUnique({
             where: { group_key: groupKey },
@@ -146,16 +166,53 @@ async function ensureVariantGroupForImport(groupKey: string | null | undefined, 
             base_sku: groupKey,
             variant_type: product.variant_type || 'variant',
             label: product.variant_group_label || groupKey,
+            axes: axes as Prisma.InputJsonValue,
             source,
             confidence: 'high',
         },
         update: {
             variant_type: product.variant_type || 'variant',
             label: product.variant_group_label || groupKey,
+            axes: axes as Prisma.InputJsonValue,
             updated_at: new Date(),
         },
         select: { id: true },
     })
+}
+
+function normalizedVariantAxes(product: any) {
+    const payloadAxes = Array.isArray(product.variant_axes) ? product.variant_axes : []
+    if (payloadAxes.length > 0) return payloadAxes.map((axis: any) => ({
+        key: toDisplayValue(axis.key),
+        label: toDisplayValue(axis.label) || axisLabel(toDisplayValue(axis.key)),
+    })).filter((axis: any) => axis.key)
+
+    const options = normalizedVariantOptions(product)
+    return options.map((option: any) => option.axis)
+        .filter((axis: string, index: number, all: string[]) => axis && all.indexOf(axis) === index)
+        .map((axis: string) => ({ key: axis, label: axisLabel(axis) }))
+}
+
+function normalizedVariantOptions(product: any) {
+    const options = Array.isArray(product.variant_options) ? product.variant_options : []
+    const normalized = options.map((option: any) => ({
+        axis: toDisplayValue(option.axis),
+        value: toDisplayValue(option.value),
+        ...(toDisplayValue(option.label) ? { label: toDisplayValue(option.label) } : {}),
+        ...(toDisplayValue(option.product_id) ? { product_id: toDisplayValue(option.product_id) } : {}),
+        ...(toDisplayValue(option.image_url) ? { image_url: toDisplayValue(option.image_url) } : {}),
+        ...(toDisplayValue(option.price_text) ? { price_text: toDisplayValue(option.price_text) } : {}),
+    })).filter((option: any) => option.axis && option.value)
+
+    if (normalized.length > 0) return normalized
+    if (toDisplayValue(product.variant_label)) return [{ axis: 'config', value: toDisplayValue(product.variant_label), label: 'Cấu hình' }]
+    return []
+}
+
+function axisLabel(axis: string) {
+    if (axis === 'config') return 'Cấu hình'
+    if (axis === 'color') return 'Màu sắc'
+    return axis
 }
 
 async function ensureSpecDefinition(key: string, filterable: boolean) {
@@ -240,6 +297,15 @@ async function resolveExistingProduct(product: any, brandId: number) {
 
 function cloneProductPayload(product: Record<string, unknown>) {
     return JSON.parse(JSON.stringify(product || {}))
+}
+
+function importSafeSlug(product: any, sourceUrl: string | null, hitaId: string | null) {
+    const baseSlug = toDisplayValue(product.slug) || slugify(toDisplayValue(product.name) || toDisplayValue(product.sku))
+    if (!baseSlug || !sourceUrl?.includes('?vid=')) return baseSlug
+
+    const suffix = slugify(toDisplayValue(product.sku) || toDisplayValue(hitaId) || 'variant')
+    if (!suffix || baseSlug.endsWith(`-${suffix}`)) return baseSlug
+    return `${baseSlug}-${suffix}`
 }
 
 function readJsonFile<T = unknown>(filePath: string): T {
@@ -535,6 +601,7 @@ async function main() {
             const productType = await ensureProductType(subcategory?.id ?? null, product.product_type)
             const productSubType = await ensureProductSubType(productType?.id, product.product_sub_type)
             const variantGroup = await ensureVariantGroupForImport(product.variant_group, product, variantCounts.get(product.variant_group) || 0)
+            const variantOptions = normalizedVariantOptions(product)
             const specs = asObject(product.specs)
             const existingProduct = await resolveExistingProduct(product, brandRow.id)
             const sourceUrl = toDisplayValue(product.source_url) || null
@@ -542,7 +609,7 @@ async function main() {
             const productData = {
                 sku: product.sku,
                 name: product.name,
-                slug: product.slug,
+                slug: importSafeSlug(product, sourceUrl, hitaId),
                 category_id: category.id,
                 subcategory_id: subcategory?.id ?? null,
                 brand_id: brandRow.id,
@@ -564,6 +631,7 @@ async function main() {
                 variant_group_id: variantGroup?.id ?? null,
                 variant_type: product.variant_type || null,
                 variant_label: product.variant_label || null,
+                variant_options: variantOptions as Prisma.InputJsonValue,
                 is_master: product.is_master ?? true,
                 is_combo: product.is_combo ?? false,
             }
