@@ -108,19 +108,30 @@ function writeJson(file: string, value: unknown) {
 
 function normalizeUrl(value: string) {
     try {
-        return new URL(value, 'https://hita.com.vn').href.split('#')[0].split('?')[0]
+        const parsed = new URL(value, 'https://hita.com.vn')
+        const vid = parsed.searchParams.get('vid')
+        parsed.hash = ''
+        parsed.search = ''
+        return vid ? `${parsed.href}?vid=${encodeURIComponent(vid)}` : parsed.href
     } catch {
         return ''
     }
 }
 
 function hitaProductId(url: string | null | undefined) {
-    return String(url || '').match(/-(\d+)\.html$/)?.[1] || null
+    try {
+        const parsed = new URL(String(url || ''), 'https://hita.com.vn')
+        const vid = parsed.searchParams.get('vid')
+        if (vid) return vid
+    } catch {
+        // Fall through to canonical PDP id extraction.
+    }
+    return String(url || '').split('?')[0].match(/-(\d+)\.html$/)?.[1] || null
 }
 
 function isProductUrl(url: string) {
     const id = hitaProductId(url)
-    return url.startsWith('https://hita.com.vn/') && url.endsWith('.html') && Boolean(id && Number(id) >= 1000)
+    return url.startsWith('https://hita.com.vn/') && normalizeUrl(url).split('?')[0].endsWith('.html') && Boolean(id && Number(id) >= 1000)
 }
 
 function parseRemainingCount(text: string) {
@@ -762,7 +773,7 @@ async function main() {
             'scripts/crawl-hita/0-sample-crawl-brand.js',
             `--brand=${brand}`,
             '--full',
-            `--candidate-limit=${discovery.merged_urls.length + 25}`,
+            `--candidate-limit=${discovery.merged_urls.length + 300}`,
             `--concurrency=${concurrency}`,
             `--sample-dir=${normalizedDir}`,
         ])

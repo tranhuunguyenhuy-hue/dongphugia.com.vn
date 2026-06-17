@@ -368,12 +368,36 @@ function roughSubcategoryFromUrl(url) {
 function normalizeProductUrl(rawUrl) {
   if (!rawUrl) return '';
   const url = resolveUrl(rawUrl, BASE_URL).split('#')[0];
-  return url.split('?')[0];
+  const parsed = new URL(url);
+  const vid = parsed.searchParams.get('vid');
+  parsed.search = '';
+  return vid ? `${parsed.href}?vid=${vid}` : parsed.href;
+}
+
+function canonicalProductUrl(rawUrl) {
+  if (!rawUrl) return '';
+  return resolveUrl(rawUrl, BASE_URL).split('#')[0].split('?')[0];
+}
+
+function attributeVariantSourceUrl(baseUrl, productId) {
+  const canonical = canonicalProductUrl(baseUrl);
+  return productId ? `${canonical}?vid=${encodeURIComponent(productId)}` : canonical;
+}
+
+function variantProductIdFromUrl(rawUrl) {
+  if (!rawUrl) return null;
+  try {
+    const parsed = new URL(resolveUrl(rawUrl, BASE_URL));
+    return parsed.searchParams.get('vid');
+  } catch {
+    return null;
+  }
 }
 
 function isLikelyProductUrl(url) {
-  if (!url.startsWith(BASE_URL) || !url.endsWith('.html')) return false;
-  const match = url.match(/-(\d+)\.html$/);
+  const canonical = canonicalProductUrl(url);
+  if (!canonical.startsWith(BASE_URL) || !canonical.endsWith('.html')) return false;
+  const match = canonical.match(/-(\d+)\.html$/);
   return Boolean(match && Number(match[1]) >= 1000);
 }
 
@@ -386,7 +410,13 @@ async function crawlProduct(context, candidate) {
       await page.goto(candidate.url, { waitUntil: 'domcontentloaded', timeout: 35_000 });
     });
 
-    const raw = await page.evaluate(({ baseUrl, maxImages }) => {
+    const variantProductId = variantProductIdFromUrl(candidate.url);
+    if (variantProductId) {
+      await page.locator(`.attributes-section .properties-item[data-product="${variantProductId}"]`).first().click({ timeout: 5_000 }).catch(() => {});
+      await page.waitForTimeout(600);
+    }
+
+    const raw = await page.evaluate(({ baseUrl, maxImages, requestedUrl, variantProductId }) => {
       const text = (selector) => document.querySelector(selector)?.textContent?.trim() || '';
       const html = (selector) => document.querySelector(selector)?.innerHTML?.trim() || '';
       const abs = (value) => {
@@ -398,7 +428,8 @@ async function crawlProduct(context, candidate) {
         try { return new URL(value, baseUrl).href.split('#')[0]; } catch { return ''; }
       };
       const ownText = (node) => node?.textContent?.replace(/\s+/g, ' ').trim() || '';
-      const productUrl = window.location.href.split('#')[0].split('?')[0];
+      const canonicalUrl = window.location.href.split('#')[0].split('?')[0];
+      const productUrl = requestedUrl || canonicalUrl;
 
       const priceRoot =
         document.querySelector('#main-price-product') ||
@@ -487,11 +518,23 @@ async function crawlProduct(context, candidate) {
             label,
             clean_label: cleanVariantLabel(label),
             url,
-            active: Boolean(a.classList.contains('active') || a.getAttribute('aria-selected') === 'true' || url === productUrl),
+            active: Boolean(a.classList.contains('active') || a.getAttribute('aria-selected') === 'true' || url === canonicalUrl),
           };
         })
         .filter((item) => item.url && item.url.endsWith('.html'))
         .filter((item, index, all) => all.findIndex((other) => other.url === item.url) === index);
+
+      const attributeVariants = extractAttributeVariants(document, canonicalUrl, variantProductId);
+      const activeAttributeOptions = attributeVariants
+        .filter((axis) => axis.active)
+        .map((axis) => ({
+          axis: axis.key,
+          label: axis.label,
+          value: axis.active.value,
+          product_id: axis.active.product_id,
+          image_url: axis.active.image_url,
+          price_text: axis.active.price_text,
+        }));
 
       const packageIncludes = extractPackageIncludes(document, sku, name);
 
@@ -512,7 +555,72 @@ async function crawlProduct(context, candidate) {
         documents,
         package_includes: packageIncludes,
         variants,
+        attribute_variants: attributeVariants,
+        active_attribute_options: activeAttributeOptions,
+        canonical_source_url: canonicalUrl,
+        variant_product_id: variantProductId,
       };
+
+      function extractAttributeVariants(doc, canonicalUrl, activeProductId) {
+        const sections = [...doc.querySelectorAll('.attributes-section .properties-attr, .attributes-section')];
+        const axes = [];
+        const seen = new Set();
+
+        for (const section of sections) {
+          const label = ownText(section.querySelector('.properties-label'));
+          const items = [...section.querySelectorAll('.properties-item[data-product]')];
+          if (!label || items.length === 0) continue;
+          const key = normalizeAxisKey(label);
+          const dedupeKey = `${key}:${items.map((item) => item.getAttribute('data-product')).join(',')}`;
+          if (seen.has(dedupeKey)) continue;
+          seen.add(dedupeKey);
+
+          const options = items.map((item) => {
+            const productId = item.getAttribute('data-product') || '';
+            const priceText = ownText(item.querySelector('.properties-price'));
+            const imageUrl = normalizeNullableUrl(item.getAttribute('data-imgva')) || normalizeNullableUrl(item.querySelector('img')?.getAttribute('src'));
+            const value = ownText(item.querySelector('.properties-name')) || ownText(item).replace(priceText, '').trim();
+            const active = item.classList.contains('active') || (activeProductId && productId === activeProductId);
+            return {
+              axis: key,
+              label,
+              value,
+              product_id: productId,
+              attribute_id: item.getAttribute('data-id') || null,
+              image_url: imageUrl,
+              price_text: priceText,
+              active,
+              source_url: productId ? `${canonicalUrl}?vid=${encodeURIComponent(productId)}` : canonicalUrl,
+            };
+          }).filter((item) => item.value && item.product_id);
+
+          if (options.length > 0) {
+            axes.push({
+              key,
+              label,
+              options,
+              active: options.find((item) => item.active) || options[0],
+            });
+          }
+        }
+
+        return axes;
+      }
+
+      function normalizeAxisKey(label) {
+        const normalized = String(label || '')
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .toLowerCase();
+        if (/mau|color/.test(normalized)) return 'color';
+        if (/cau hinh|phien ban|loai|config/.test(normalized)) return 'config';
+        return normalized.replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'option';
+      }
+
+      function normalizeNullableUrl(value) {
+        if (!value || value === 'null' || value === 'undefined') return null;
+        return absWithQuery(value);
+      }
 
       function isValidProductImage(url) {
         if (!url || !/^https?:\/\//i.test(url)) return false;
@@ -943,7 +1051,7 @@ async function crawlProduct(context, candidate) {
         if (/\.pdf/.test(value)) return 'PDF';
         return 'DOCUMENT';
       }
-    }, { baseUrl: BASE_URL, maxImages: MAX_IMAGES });
+    }, { baseUrl: BASE_URL, maxImages: MAX_IMAGES, requestedUrl: candidate.url, variantProductId });
 
     const price = parsePriceBlock(raw.price_block_text);
     if (raw.inactive) {
@@ -954,9 +1062,16 @@ async function crawlProduct(context, candidate) {
       price.price_state = 'discontinued';
       price.inactive = true;
     }
+    const activeColorOption = activeAxisOption(raw, 'color');
+    if (activeColorOption?.image_url) {
+      raw.images = [activeColorOption.image_url, ...(raw.images || []).filter((url) => url !== activeColorOption.image_url)];
+    }
     const taxonomy = inferTaxonomy(raw);
-    const slug = deriveSlug(raw.source_url, raw.name, raw.sku);
-    const hitaProductId = raw.source_url.match(/-(\d+)\.html$/)?.[1] || null;
+    const sku = deriveVariantSku(raw.sku, activeColorOption, variantProductId);
+    raw.sku = sku;
+    const slug = deriveSlug(raw.source_url, raw.name, sku, activeColorOption, variantProductId);
+    const canonicalHitaProductId = canonicalProductUrl(raw.source_url).match(/-(\d+)\.html$/)?.[1] || null;
+    const hitaProductId = variantProductId || canonicalHitaProductId;
     const skippedReason = getHardSkipReason({ ...raw, slug, price });
 
     return {
@@ -982,6 +1097,19 @@ async function crawlProduct(context, candidate) {
   } finally {
     await page.close().catch(() => {});
   }
+}
+
+function activeAxisOption(raw, axis) {
+  return (raw.active_attribute_options || []).find((option) => option.axis === axis) || null;
+}
+
+function deriveVariantSku(baseSku, activeColorOption, variantProductId) {
+  const sku = String(baseSku || '').trim();
+  if (!sku || !variantProductId || !activeColorOption?.value) return sku;
+  const colorSlug = slugify(activeColorOption.value).toUpperCase();
+  const normalizedSku = slugify(sku).toUpperCase();
+  if (normalizedSku.endsWith(`-${colorSlug}`)) return sku;
+  return `${sku}-${colorSlug}`;
 }
 
 function getHardSkipReason(product) {
@@ -1124,11 +1252,36 @@ function inferTaxonomy(product) {
   };
 }
 
-function deriveSlug(url, name, sku) {
+function deriveSlug(url, name, sku, activeColorOption = null, variantProductId = null) {
   const fromUrl = url ? new URL(url).pathname.replace(/^\//, '').replace(/\.html$/, '') : '';
-  if (fromUrl) return fromUrl;
+  if (fromUrl) {
+    if (variantProductId && activeColorOption?.value) return `${fromUrl}-${slugify(activeColorOption.value)}`;
+    return fromUrl;
+  }
   if (!name || !sku) return null;
   return `${slugify(name)}-${slugify(sku)}`;
+}
+
+function variantOption(axis, value, label = null, extra = {}) {
+  if (!axis || !value) return null;
+  return {
+    axis,
+    value,
+    ...(label ? { label } : {}),
+    ...extra,
+  };
+}
+
+function mergeVariantOptions(options) {
+  const result = [];
+  const seen = new Set();
+  for (const option of options.filter(Boolean)) {
+    const key = `${option.axis}:${option.value}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push(option);
+  }
+  return result;
 }
 
 function slugify(value) {
@@ -1146,6 +1299,7 @@ function normalizeProduct(raw) {
   const taxonomy = raw.taxonomy || {};
   const filterSpecs = deriveFilterSpecs(raw);
   const specs = { ...(raw.specs || {}) };
+  const colorOption = activeAxisOption(raw, 'color');
   if (raw.documents?.length) specs.documents = raw.documents;
   if (raw.package_includes?.length) specs['Phụ kiện đi kèm'] = raw.package_includes;
 
@@ -1180,6 +1334,14 @@ function normalizeProduct(raw) {
     variant_group: null,
     variant_type: null,
     variant_label: null,
+    variant_options: mergeVariantOptions([
+      variantOption(colorOption?.axis, colorOption?.value, colorOption?.label, {
+        product_id: colorOption?.product_id,
+        image_url: colorOption?.image_url,
+        price_text: colorOption?.price_text,
+      }),
+    ]),
+    variant_axes: [],
     is_master: true,
     is_combo: Boolean(raw.package_includes?.length && /(bộ|combo|bao gồm|gồm)/i.test(raw.name || '')),
     relationship_candidates: deriveRelationshipCandidates(raw),
@@ -1411,11 +1573,16 @@ function assignVariantGroups(normalizedProducts, rawProducts) {
     const validVariants = (raw.variants || [])
       .map((variant) => normalizeProductUrl(variant.url))
       .filter((url) => byUrl.has(url));
+    const validAttributeVariants = (raw.attribute_variants || [])
+      .flatMap((axis) => axis.options || [])
+      .map((option) => normalizeProductUrl(option.source_url))
+      .filter((url) => byUrl.has(url));
+    const allValidVariants = [...new Set([...validVariants, ...validAttributeVariants])];
 
-    if (validVariants.length > 0) {
+    if (allValidVariants.length > 0) {
       const source = raw.source_url;
       if (!edges.has(source)) edges.set(source, new Set());
-      for (const url of validVariants) {
+      for (const url of allValidVariants) {
         edges.get(source).add(url);
         if (!edges.has(url)) edges.set(url, new Set());
         edges.get(url).add(source);
@@ -1454,16 +1621,26 @@ function assignVariantGroups(normalizedProducts, rawProducts) {
       product.variant_label = deriveVariantLabel(product, rawProducts);
       product.is_master = product.source_url === sorted[0].source_url;
     }
+    for (const product of sorted) {
+      product.variant_options = mergeVariantOptions([
+        variantOption('config', configOptionValue(product, byUrl), 'Cấu hình'),
+        ...(product.variant_options || []),
+      ]);
+    }
+    const axes = deriveVariantAxes(sorted);
+    for (const product of sorted) product.variant_axes = axes;
 
     groups.push({
       variant_group: groupKey,
       variant_type: sorted[0].variant_type,
+      axes,
       master_sku: sorted[0].sku,
       products: sorted.map((product) => ({
         sku: product.sku,
         name: product.name,
         source_url: product.source_url,
         variant_label: product.variant_label,
+        variant_options: product.variant_options,
         is_master: product.is_master,
       })),
       rule: 'connected_hita_variant_links + base_model_from_sku',
@@ -1481,9 +1658,44 @@ function assignVariantGroups(normalizedProducts, rawProducts) {
         url: variant.url,
         crawled_in_sample: byUrl.has(normalizeProductUrl(variant.url)),
       })),
+      attribute_candidates: (raw.attribute_variants || []).flatMap((axis) => (axis.options || []).map((option) => ({
+        axis: axis.key,
+        label: axis.label,
+        value: option.value,
+        source_url: option.source_url,
+        crawled_in_sample: byUrl.has(normalizeProductUrl(option.source_url)),
+      }))),
     }));
 
   return { groups, unresolvedCandidates };
+}
+
+function configOptionValue(product, byUrl) {
+  const canonical = canonicalProductUrl(product.source_url);
+  const canonicalProduct = byUrl.get(canonical);
+  return canonicalProduct?.variant_label || product.variant_label || product.sku;
+}
+
+function deriveVariantAxes(products) {
+  const axes = [];
+  const seen = new Set();
+  for (const product of products) {
+    for (const option of product.variant_options || []) {
+      if (!option.axis || seen.has(option.axis)) continue;
+      seen.add(option.axis);
+      axes.push({
+        key: option.axis,
+        label: option.label || axisLabel(option.axis),
+      });
+    }
+  }
+  return axes;
+}
+
+function axisLabel(axis) {
+  if (axis === 'config') return 'Cấu hình';
+  if (axis === 'color') return 'Màu sắc';
+  return axis;
 }
 
 function deriveVariantGroupKey(skus) {
@@ -1718,6 +1930,7 @@ async function main() {
   const skippedProducts = [];
   const subcategoryCounts = {};
   const variantExtraCounts = {};
+  const canonicalDefaultAttributeIds = new Map();
   const limit = pLimit(CONCURRENCY);
 
   try {
@@ -1759,6 +1972,13 @@ async function main() {
           if (canSelectVariantExtra && !canSelectBase) variantExtraCounts[subcategory] = extraCount + 1;
           console.log(`[ok] ${subcategory} #${subcategoryCounts[subcategory]} ${result.sku} ${result.name}`);
 
+          if (!variantProductIdFromUrl(result.source_url)) {
+            const activeIds = (result.active_attribute_options || [])
+              .map((option) => option.product_id)
+              .filter(Boolean);
+            if (activeIds.length > 0) canonicalDefaultAttributeIds.set(canonicalProductUrl(result.source_url), new Set(activeIds));
+          }
+
           for (const variant of result.variants || []) {
             const url = normalizeProductUrl(variant.url);
             if (!url || queued.has(url) || crawled.has(url) || !isLikelyProductUrl(url)) continue;
@@ -1768,6 +1988,21 @@ async function main() {
               reason: 'variant_from_selected_product',
             });
             queued.add(url);
+          }
+          for (const attributeVariant of result.attribute_variants || []) {
+            for (const option of attributeVariant.options || []) {
+              if (option.active) continue;
+              const defaultIds = canonicalDefaultAttributeIds.get(canonicalProductUrl(option.source_url));
+              if (defaultIds?.has(option.product_id)) continue;
+              const url = normalizeProductUrl(option.source_url);
+              if (!url || queued.has(url) || crawled.has(url) || !isLikelyProductUrl(url)) continue;
+              queue.unshift({
+                url,
+                source: `attribute_variant_of:${result.sku}`,
+                reason: 'attribute_variant_from_selected_product',
+              });
+              queued.add(url);
+            }
           }
         }
       }
