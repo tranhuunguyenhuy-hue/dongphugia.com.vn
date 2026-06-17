@@ -75,6 +75,7 @@ type DbProduct = {
     original_price: unknown
     online_discount_amount: unknown
     price_display: string | null
+    stock_status: string
     specs: unknown
     description: string | null
     image_main_url: string | null
@@ -151,6 +152,10 @@ function specCount(value: unknown) {
 
 function hasImg(html: string | null | undefined) {
     return /<img\b/i.test(html || '')
+}
+
+function isContactPriceDisplay(value: unknown) {
+    return /liên hệ|lien he|contact|báo giá|bao gia/i.test(toDisplayValue(value))
 }
 
 function extractCandidateUrls(html: string | null | undefined) {
@@ -323,6 +328,7 @@ async function fetchDbProducts() {
             original_price: true,
             online_discount_amount: true,
             price_display: true,
+            stock_status: true,
             specs: true,
             description: true,
             image_main_url: true,
@@ -411,13 +417,33 @@ function prepareProducts(normalizedProducts: any[], rawProducts: any[], discover
             fieldFlags.push({ sku: next.sku, field: 'description', reason: `new desc/img weaker than old` })
         }
 
-        if (db.price !== null && db.price !== undefined && next.price === null) {
-            next.price = decimalToNumber(db.price)
-            next.original_price = decimalToNumber(db.original_price)
-            next.online_discount_amount = decimalToNumber(db.online_discount_amount)
-            next.price_display = db.price_display
-            policy.price = 'preserve_old'
-            fieldFlags.push({ sku: next.sku, field: 'price', reason: 'new price null while old exists' })
+        const priceState = toDisplayValue(next.price_state)
+        if (priceState === 'discontinued' || toDisplayValue(next.stock_status) === 'discontinued') {
+            next.price = null
+            next.original_price = null
+            next.online_discount_amount = null
+            next.price_display = 'Ngừng kinh doanh'
+            next.stock_status = 'discontinued'
+            policy.price = 'mark_discontinued'
+            fieldFlags.push({ sku: next.sku, field: 'price', reason: 'hita marks product discontinued; clear price and set stock_status' })
+        } else if (db.price !== null && db.price !== undefined && next.price === null) {
+            const noPriceOnHita = priceState === 'no_price_contact' || isContactPriceDisplay(next.price_display)
+            if (noPriceOnHita) {
+                next.price = null
+                next.original_price = null
+                next.online_discount_amount = null
+                next.price_display = 'Liên hệ báo giá'
+                next.stock_status = 'in_stock'
+                policy.price = 'clear_contact_price'
+                fieldFlags.push({ sku: next.sku, field: 'price', reason: 'hita has no price/contact; clear old price' })
+            } else {
+                next.price = decimalToNumber(db.price)
+                next.original_price = decimalToNumber(db.original_price)
+                next.online_discount_amount = decimalToNumber(db.online_discount_amount)
+                next.price_display = db.price_display
+                policy.price = 'preserve_old'
+                fieldFlags.push({ sku: next.sku, field: 'price', reason: 'new price null while old exists and price state is not contact/no-price' })
+            }
         }
 
         if (!next.source_url && db.source_url) {
