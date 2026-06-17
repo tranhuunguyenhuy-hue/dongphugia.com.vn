@@ -1,7 +1,6 @@
 'use client'
 
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import type { VariantSibling } from '@/lib/public-api-products'
 import { siteConfig } from '@/config/site'
 
@@ -189,6 +188,7 @@ interface VariantSelectorProps {
     currentSku: string
     currentSlug: string
     currentName: string
+    currentImageMainUrl?: string | null
     currentPriceDisplay: string | null
     currentPrice?: number | null
     currentOriginalPrice?: number | null
@@ -297,64 +297,19 @@ function ColorSwatches({ variants, categorySlug, subcategorySlug }: ColorSwatche
     )
 }
 
-// ─── DROPDOWN MODE ────────────────────────────────────────────────────────────
-
-interface DropdownVariant {
-    sku: string
-    slug: string
-    name: string
-    label: string | null
-    isCurrent: boolean
-    subcategorySlug: string | null | undefined
-}
-
-interface DropdownSelectorProps {
-    variants: DropdownVariant[]
-    categorySlug: string
-    subcategorySlug?: string | null
-    label?: string
-}
-
-function DropdownSelector({ variants, categorySlug, subcategorySlug, label = 'Phiên bản' }: DropdownSelectorProps) {
-    const router = useRouter()
-    const currentVariant = variants.find(v => v.isCurrent)
-
-    const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const selected = variants.find(v => v.sku === e.target.value)
-        if (!selected || selected.isCurrent) return
-        const href = `/${categorySlug}/${selected.subcategorySlug || subcategorySlug}/${selected.slug}`
-        router.push(href)
-    }
-
-    return (
-        <div className="flex flex-col gap-2">
-            <p className="text-xs font-semibold text-stone-500 uppercase tracking-widest">{label}</p>
-            <select
-                className="w-full rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm text-stone-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors cursor-pointer"
-                value={currentVariant?.sku ?? ''}
-                onChange={handleChange}
-                aria-label={`Chọn ${label.toLowerCase()}`}
-            >
-                {variants.map((variant) => (
-                    <option key={variant.sku} value={variant.sku}>
-                        {variant.label || variant.name}
-                    </option>
-                ))}
-            </select>
-        </div>
-    )
-}
-
-// ─── LEGACY CARD GRID MODE (original behavior for non-typed variants) ──────────
+// ─── HITA-LIKE CARD GRID MODE ─────────────────────────────────────────────────
 
 interface CardGridVariant {
     sku: string
     slug: string
     name: string
+    label: string | null
+    imageMainUrl: string | null
     priceDisplay: string | null
     price: number | null
     originalPrice: number | null
     color: { name: string; hex_code: string | null } | null | undefined
+    isActive: boolean
     isCurrent: boolean
     subcategorySlug: string | null | undefined
 }
@@ -387,7 +342,7 @@ function CardGrid({ variants, categorySlug, subcategorySlug, variantGroup }: Car
             </div>
 
             {/* Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-1.5">
+            <div className="flex flex-wrap gap-2">
                 {variants.map((variant) => {
                     const href = `/${categorySlug}/${variant.subcategorySlug || subcategorySlug}/${variant.slug}`
                     const originalPrice = Number(variant.originalPrice)
@@ -400,44 +355,70 @@ function CardGrid({ variants, categorySlug, subcategorySlug, variantGroup }: Car
                         priceDisplay = variant.priceDisplay
                     }
 
-                    const shortName = getShortVariantName(variant.name, variant.sku, variant.subcategorySlug || subcategorySlug, variantGroup)
+                    const displayLabel = variant.sku || variant.label || getShortVariantName(variant.name, variant.sku, variant.subcategorySlug || subcategorySlug, variantGroup)
                     const hasDiscount = originalPrice > 0 && sellingPrice > 0 && originalPrice > sellingPrice
                     const discountPercent = hasDiscount ? Math.round(((originalPrice - sellingPrice) / originalPrice) * 100) : 0
+                    const image = variant.imageMainUrl
+                    const cardInner = (
+                        <>
+                            {variant.isCurrent && (
+                                <span className="absolute left-0 top-0 flex h-4 w-4 items-start justify-start overflow-hidden rounded-tl-lg">
+                                    <span className="h-0 w-0 border-l-[16px] border-t-[16px] border-l-brand-500 border-t-brand-500 border-r-transparent border-b-transparent" />
+                                    <svg className="absolute left-[2px] top-[2px] size-2.5 text-white" fill="none" viewBox="0 0 12 12" stroke="currentColor" strokeWidth="2">
+                                        <path d="M2 6.5 4.7 9 10 3" strokeLinecap="round" strokeLinejoin="round" />
+                                    </svg>
+                                </span>
+                            )}
+                            <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-md bg-stone-50 border border-stone-100">
+                                {image ? (
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img src={image} alt={displayLabel} className="h-full w-full object-contain" loading="lazy" />
+                                ) : (
+                                    <span className="text-[10px] font-semibold text-stone-400">{variant.sku}</span>
+                                )}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                                <div className="flex items-start gap-1">
+                                    {hasMultipleColors && variant.color?.hex_code && (
+                                        <div
+                                            className="mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full border border-black/10 shadow-sm"
+                                            style={{ backgroundColor: variant.color.hex_code }}
+                                            title={variant.color.name}
+                                        />
+                                    )}
+                                    <span
+                                        className={`line-clamp-1 text-[12px] font-bold leading-tight ${variant.isCurrent ? 'text-brand-700' : 'text-stone-800 group-hover:text-brand-700'}`}
+                                        title={variant.name}
+                                    >
+                                        {displayLabel}
+                                    </span>
+                                </div>
+                                <div className="mt-1 flex flex-wrap items-center gap-1">
+                                    <span className={`text-[12px] font-semibold leading-none ${variant.isCurrent ? 'text-brand-600' : 'text-stone-600 group-hover:text-brand-600'}`}>
+                                        {priceDisplay}
+                                    </span>
+                                    {hasDiscount && (
+                                        <span className="rounded-[3px] bg-rose-500 px-1 py-[1.5px] text-[8px] font-bold leading-none text-white">
+                                            -{discountPercent}%
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                        </>
+                    )
 
                     if (variant.isCurrent) {
                         return (
                             <div
                                 key={variant.sku}
                                 className="
-                                    relative flex flex-col justify-center gap-0.5
-                                    px-2 py-1.5 rounded-lg
-                                    bg-brand-50 ring-2 ring-inset ring-brand-500 border border-transparent
+                                    relative flex min-h-[62px] w-[170px] items-center gap-2
+                                    rounded-lg border border-brand-500 bg-white px-2 py-2 pl-3
                                     cursor-default select-none shadow-sm
                                 "
                                 aria-current="true"
                             >
-                                <div className="flex items-start gap-1">
-                                    {hasMultipleColors && variant.color?.hex_code && (
-                                        <div
-                                            className="w-2.5 h-2.5 mt-0.5 rounded-full border border-black/10 shrink-0 shadow-sm"
-                                            style={{ backgroundColor: variant.color.hex_code }}
-                                            title={variant.color.name}
-                                        />
-                                    )}
-                                    <span className="text-[11px] font-semibold text-brand-900 leading-[1.3] line-clamp-2" title={variant.name}>
-                                        {shortName}
-                                    </span>
-                                </div>
-                                <div className="flex items-center gap-1 mt-0.5">
-                                    <span className="text-[11px] font-bold text-brand-700 leading-none">
-                                        {priceDisplay}
-                                    </span>
-                                    {hasDiscount && (
-                                        <span className="px-1 py-[1.5px] text-[8px] font-bold text-white bg-rose-500 rounded-[3px] leading-none">
-                                            -{discountPercent}%
-                                        </span>
-                                    )}
-                                </div>
+                                {cardInner}
                             </div>
                         )
                     }
@@ -447,35 +428,13 @@ function CardGrid({ variants, categorySlug, subcategorySlug, variantGroup }: Car
                             key={variant.sku}
                             href={href}
                             className="
-                                group relative flex flex-col justify-center gap-0.5
-                                px-2 py-1.5 rounded-lg
-                                bg-white border border-stone-200
+                                group relative flex min-h-[62px] w-[170px] items-center gap-2
+                                rounded-lg bg-white px-2 py-2 border border-stone-200
                                 hover:border-brand-500 hover:bg-brand-50 hover:shadow-sm
                                 active:scale-[0.98] transition-all duration-200 cursor-pointer
                             "
                         >
-                            <div className="flex items-start gap-1">
-                                {hasMultipleColors && variant.color?.hex_code && (
-                                    <div
-                                        className="w-2.5 h-2.5 mt-0.5 rounded-full border border-black/10 shrink-0 opacity-80 group-hover:opacity-100 transition-opacity shadow-sm"
-                                        style={{ backgroundColor: variant.color.hex_code }}
-                                        title={variant.color.name}
-                                    />
-                                )}
-                                <span className="text-[11px] font-medium text-stone-700 group-hover:text-brand-900 leading-[1.3] line-clamp-2 transition-colors" title={variant.name}>
-                                    {shortName}
-                                </span>
-                            </div>
-                            <div className="flex items-center gap-1 mt-0.5">
-                                <span className="text-[11px] font-medium text-stone-500 group-hover:text-brand-700 leading-none transition-colors">
-                                    {priceDisplay}
-                                </span>
-                                {hasDiscount && (
-                                    <span className="px-1 py-[1.5px] text-[8px] font-bold text-stone-500 bg-stone-100 group-hover:bg-rose-500 group-hover:text-white rounded-[3px] leading-none transition-colors">
-                                        -{discountPercent}%
-                                    </span>
-                                )}
-                            </div>
+                            {cardInner}
                         </Link>
                     )
                 })}
@@ -490,6 +449,7 @@ export function VariantSelector({
     currentSku,
     currentSlug,
     currentName,
+    currentImageMainUrl,
     currentPriceDisplay,
     currentPrice,
     currentOriginalPrice,
@@ -550,18 +510,23 @@ export function VariantSelector({
         )
     }
 
-    // ── Mode: dropdown (seat_type or other non-null non-color type) ────────────
+    // ── Mode: Hita-like cards (seat_type/configuration/size) ──────────────────
     if (effectiveVariantType !== null) {
-        // Only include active siblings in dropdown (stub variants are not navigable)
         const activeSiblings = siblings.filter(s => s.is_active)
         if (activeSiblings.length === 0) return null
 
-        const allVariants: DropdownVariant[] = [
+        const allCardVariants: CardGridVariant[] = [
             {
                 sku: currentSku,
                 slug: currentSlug,
                 name: currentName,
                 label: variantLabel ?? null,
+                imageMainUrl: currentImageMainUrl ?? null,
+                priceDisplay: currentPriceDisplay,
+                price: currentPrice ?? null,
+                originalPrice: currentOriginalPrice ?? null,
+                color: currentColor,
+                isActive: true,
                 isCurrent: true,
                 subcategorySlug,
             },
@@ -570,51 +535,59 @@ export function VariantSelector({
                 slug: s.slug,
                 name: s.name,
                 label: s.variant_label ?? null,
+                imageMainUrl: s.image_main_url,
+                priceDisplay: s.price_display,
+                price: s.price,
+                originalPrice: s.original_price,
+                color: s.colors,
+                isActive: s.is_active,
                 isCurrent: false,
                 subcategorySlug: s.subcategories?.slug ?? subcategorySlug,
             })),
         ].sort((a, b) => a.sku.localeCompare(b.sku))
 
-        // Derive a human-readable label for the dropdown header from variant_type
-        const dropdownLabel =
-            effectiveVariantType === 'seat_type' ? 'Loại chỗ ngồi' : 'Phiên bản'
-
         return (
-            <DropdownSelector
-                variants={allVariants}
+            <CardGrid
+                variants={allCardVariants}
                 categorySlug={categorySlug}
                 subcategorySlug={subcategorySlug}
-                label={dropdownLabel}
+                variantGroup={variantGroup}
             />
         )
     }
 
     // ── Mode: legacy card grid (variant_type = null, backwards-compatible) ─────
     const allCardVariants: CardGridVariant[] = [
-        {
-            sku: currentSku,
-            slug: currentSlug,
-            name: currentName,
-            priceDisplay: currentPriceDisplay,
-            price: currentPrice ?? null,
-            originalPrice: currentOriginalPrice ?? null,
-            color: currentColor,
-            isCurrent: true,
-            subcategorySlug,
-        },
-        ...siblings
-            .filter(s => s.is_active) // only active in card grid legacy mode
-            .map(s => ({
-                sku: s.sku,
-                slug: s.slug,
-                name: s.name,
-                priceDisplay: s.price_display,
-                price: s.price,
-                originalPrice: s.original_price,
-                color: s.colors,
-                isCurrent: false,
-                subcategorySlug: s.subcategories?.slug ?? subcategorySlug,
-            })),
+            {
+                sku: currentSku,
+                slug: currentSlug,
+                name: currentName,
+                label: variantLabel ?? null,
+                imageMainUrl: currentImageMainUrl ?? null,
+                priceDisplay: currentPriceDisplay,
+                price: currentPrice ?? null,
+                originalPrice: currentOriginalPrice ?? null,
+                color: currentColor,
+                isActive: true,
+                isCurrent: true,
+                subcategorySlug,
+            },
+            ...siblings
+                .filter(s => s.is_active) // only active in card grid legacy mode
+                .map(s => ({
+                    sku: s.sku,
+                    slug: s.slug,
+                    name: s.name,
+                    label: s.variant_label ?? null,
+                    imageMainUrl: s.image_main_url,
+                    priceDisplay: s.price_display,
+                    price: s.price,
+                    originalPrice: s.original_price,
+                    color: s.colors,
+                    isActive: s.is_active,
+                    isCurrent: false,
+                    subcategorySlug: s.subcategories?.slug ?? subcategorySlug,
+                })),
     ].sort((a, b) => a.sku.localeCompare(b.sku))
 
     return (
