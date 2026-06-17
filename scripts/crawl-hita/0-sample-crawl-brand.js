@@ -423,7 +423,8 @@ async function crawlProduct(context, candidate) {
       const earlySku = normalizeSku(skuCandidates, {}, name);
       const priceBlockText = ownText(priceRoot);
       const bodyText = ownText(document.body);
-      const inactive = /ngưng hoạt động/i.test(`${priceBlockText} ${name} ${bodyText.slice(0, 1500)}`);
+      const statusText = ownText(document.querySelector('.product-status, .label-status, [class*="product-status"], [class*="stock-status"]'));
+      const inactive = /ngưng hoạt động|ngung hoat dong|ngừng kinh doanh|ngung kinh doanh/i.test(`${statusText} ${priceBlockText} ${name} ${bodyText.slice(0, 1500)}`);
 
       const descriptionRoot = findDescriptionRoot();
       const descriptionRawHtml = extractRawDescriptionHtml(descriptionRoot);
@@ -500,6 +501,7 @@ async function crawlProduct(context, candidate) {
         sku_raw: skuCandidates,
         sku,
         price_block_text: priceBlockText,
+        status_text: statusText,
         inactive,
         breadcrumb,
         description_raw_html: descriptionRawHtml,
@@ -944,6 +946,14 @@ async function crawlProduct(context, candidate) {
     }, { baseUrl: BASE_URL, maxImages: MAX_IMAGES });
 
     const price = parsePriceBlock(raw.price_block_text);
+    if (raw.inactive) {
+      price.price = null;
+      price.original_price = null;
+      price.online_discount_amount = null;
+      price.price_display = 'Ngừng kinh doanh';
+      price.price_state = 'discontinued';
+      price.inactive = true;
+    }
     const taxonomy = inferTaxonomy(raw);
     const slug = deriveSlug(raw.source_url, raw.name, raw.sku);
     const hitaProductId = raw.source_url.match(/-(\d+)\.html$/)?.[1] || null;
@@ -975,7 +985,6 @@ async function crawlProduct(context, candidate) {
 }
 
 function getHardSkipReason(product) {
-  if (product.inactive || product.price?.inactive) return 'inactive_on_hita';
   if (!product.sku) return 'sku_null';
   if (String(product.sku).trim().length < 3) return 'sku_invalid';
   if (!product.name) return 'name_null';
@@ -987,18 +996,25 @@ function getHardSkipReason(product) {
 function parsePriceBlock(text) {
   const raw = text || '';
   const lines = raw.split(/\n| {2,}/).map((line) => line.trim()).filter(Boolean);
-  const inactive = /ngưng hoạt động/i.test(raw);
+  const inactive = /ngưng hoạt động|ngung hoat dong|ngừng kinh doanh|ngung kinh doanh/i.test(raw);
   const originalMatch = raw.match(/(?:giá gốc|giá niêm yết|gia goc|niem yet)\s*[:：]?\s*([\d.]+\s*đ?)/i);
   const discountMatch = raw.match(/(?:giảm thêm|giam them)\s*[:：]?\s*([\d.]+\s*đ?)/i);
   const leadingPriceMatch = raw.trim().match(/^([\d.]+\s*đ?)/i);
   const priceLine = leadingPriceMatch?.[1] || lines.find((line) => /\d[\d.]+\s*đ/i.test(line) && !/(giá gốc|giá niêm yết|giảm thêm|gia goc|niem yet|giam them|lắp đặt|tháo dỡ)/i.test(line) && !/%/.test(line));
   const contact = /(liên hệ|lien he|báo giá|bao gia)/i.test(raw);
+  const price = parseVND(priceLine);
+  const priceState = inactive
+    ? 'discontinued'
+    : price
+      ? 'priced'
+      : 'no_price_contact';
 
   return {
-    price: parseVND(priceLine),
+    price,
     original_price: parseVND(originalMatch?.[1]),
     online_discount_amount: parseVND(discountMatch?.[1]),
-    price_display: contact ? 'Liên hệ báo giá' : null,
+    price_display: priceState === 'discontinued' ? 'Ngừng kinh doanh' : contact || priceState === 'no_price_contact' ? 'Liên hệ báo giá' : null,
+    price_state: priceState,
     raw_text: raw,
     inactive,
   };
@@ -1148,6 +1164,8 @@ function normalizeProduct(raw) {
     original_price: raw.price?.original_price ?? null,
     online_discount_amount: raw.price?.online_discount_amount ?? null,
     price_display: raw.price?.price_display ?? null,
+    price_state: raw.price?.price_state ?? (raw.skippedReason === 'crawl_error' ? 'crawl_failed' : null),
+    stock_status: raw.price?.price_state === 'discontinued' || raw.inactive ? 'discontinued' : 'in_stock',
     image_main_url: raw.images?.[0] || null,
     product_images: (raw.images || []).map((url, index) => ({
       url,
