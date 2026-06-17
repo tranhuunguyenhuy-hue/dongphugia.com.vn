@@ -436,7 +436,7 @@ function CardGrid({ variants, categorySlug, subcategorySlug, variantGroup }: Car
                         priceDisplay = variant.priceDisplay
                     }
 
-                    const displayLabel = variant.sku || variant.label || getShortVariantName(variant.name, variant.sku, variant.subcategorySlug || subcategorySlug, variantGroup)
+                    const displayLabel = variant.label || getShortVariantName(variant.name, variant.sku, variant.subcategorySlug || subcategorySlug, variantGroup) || variant.sku
                     const hasDiscount = originalPrice > 0 && sellingPrice > 0 && originalPrice > sellingPrice
                     const discountPercent = hasDiscount ? Math.round(((originalPrice - sellingPrice) / originalPrice) * 100) : 0
                     const image = variant.imageMainUrl
