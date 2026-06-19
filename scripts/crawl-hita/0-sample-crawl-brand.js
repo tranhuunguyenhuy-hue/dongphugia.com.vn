@@ -31,6 +31,8 @@ const CANDIDATE_LIMIT = readNumberArg('--candidate-limit=', FULL_CRAWL ? 5000 : 
 const CONCURRENCY = readNumberArg('--concurrency=', 2);
 const HEADLESS = !args.includes('--headed');
 const TARGET_SUBCATEGORY = readStringArgValue('--subcategory=', '');
+const SEED_URLS = readRepeatedStringArgs('--seed-url=');
+const SEED_ONLY = args.includes('--seed-only');
 const OUTPUT_DIR = path.resolve(__dirname, `output/${BRAND_SLUG}`);
 const SAMPLE_DIR = readStringArg(
   '--sample-dir=',
@@ -206,18 +208,34 @@ function readStringArgValue(prefix, fallback) {
   return arg.slice(prefix.length).trim();
 }
 
+function readRepeatedStringArgs(prefix) {
+  return args
+    .filter((item) => item.startsWith(prefix))
+    .map((item) => item.slice(prefix.length).trim())
+    .filter(Boolean);
+}
+
 function loadCandidateUrls() {
   const urls = [];
 
-  for (const url of BRAND_CONFIG.sampleUrls || []) urls.push({ url, source: 'brand-config.sampleUrls' });
+  for (const url of SEED_URLS) urls.push({ url, source: 'cli.seed_url', priority: 0 });
+  if (SEED_ONLY) {
+    return normalizeCandidateUrls(urls);
+  }
+
+  for (const url of BRAND_CONFIG.sampleUrls || []) urls.push({ url, source: 'brand-config.sampleUrls', priority: 10 });
 
   if (fs.existsSync(URLS_FILE)) {
     const discovered = JSON.parse(fs.readFileSync(URLS_FILE, 'utf8'));
     for (const url of interleaveByRoughSubcategory(discovered)) {
-      urls.push({ url, source: 'output.urls.json' });
+      urls.push({ url, source: 'output.urls.json', priority: 20 });
     }
   }
 
+  return normalizeCandidateUrls(urls);
+}
+
+function normalizeCandidateUrls(urls) {
   const seen = new Set();
   return urls
     .map((candidate) => ({ ...candidate, url: normalizeProductUrl(candidate.url) }))
@@ -228,10 +246,16 @@ function loadCandidateUrls() {
       seen.add(candidate.url);
       return true;
     })
-    .sort((a, b) => a.url.localeCompare(b.url))
-    .sort((a, b) => compareCandidateCoverage(a.url, b.url))
     .map((candidate) => ({ ...candidate, product_type_bucket: inferProductTypeBucket(candidate.url) }))
-    .sort((a, b) => a.product_type_bucket.localeCompare(b.product_type_bucket))
+    .sort((a, b) => {
+      const priority = (a.priority || 99) - (b.priority || 99);
+      if (priority !== 0) return priority;
+      const coverage = compareCandidateCoverage(a.url, b.url);
+      if (coverage !== 0) return coverage;
+      const bucket = a.product_type_bucket.localeCompare(b.product_type_bucket);
+      if (bucket !== 0) return bucket;
+      return a.url.localeCompare(b.url);
+    })
     .reduce((ordered, candidate, _index, all) => {
       if (!TARGET_SUBCATEGORY) {
         ordered.push(candidate);
@@ -752,25 +776,40 @@ async function crawlProduct(context, candidate) {
       }
 
       function normalizeSku(candidates, specMap, productName) {
-        const joined = [...candidates, specMap['Mã sản phẩm'], specMap['Model'], specMap['SKU'], specMap['Mã']].filter(Boolean).join('\n');
-        const direct = joined
-          .replace(/(?:mã sản phẩm|mã sp|sku|model|code|mã)\s*[:：]?\s*/gi, '\n')
-          .split(/\n|;/)
-          .map((item) => item.trim())
-          .find(isUsableSkuToken);
-        if (direct) return direct.replace(/\s+/g, '').trim();
+        const explicitSources = [...candidates, specMap['Mã sản phẩm'], specMap['Model'], specMap['SKU'], specMap['Mã']].filter(Boolean);
+        for (const source of explicitSources) {
+          const direct = extractSkuCandidatesFromExplicitText(source).find((item) => isUsableSkuToken(item, { allowNoDigit: true }));
+          if (direct) return direct.replace(/\s+/g, '').trim();
+        }
 
         const nameMatches = productName?.match(/\b[A-Z0-9]{2,}[A-Z0-9#\-_/+().]*\b/gi) || [];
         const fromName = nameMatches.find(isUsableSkuToken);
         return fromName ? fromName.replace(/\s+/g, '').trim() : null;
       }
 
-      function isUsableSkuToken(item) {
+      function extractSkuCandidatesFromExplicitText(value) {
+        const knownBrands = 'viglacera|toto|inax|caesar|american\\s*standard|cotto|atmor|moen|duravit|grohe|hansgrohe|kluger';
+        return String(value || '')
+          .replace(/(?:mã sản phẩm|mã sp|sku|model|code|mã)\s*[:：]?\s*/gi, '\n')
+          .split(/\n|;|\|/)
+          .flatMap((item) => {
+            const trimmed = item.trim();
+            const withoutBrand = trimmed
+              .replace(new RegExp(`^(?:${knownBrands})\\s+`, 'i'), '')
+              .trim();
+            const tokenMatches = withoutBrand.match(/\b[A-Z0-9][A-Z0-9#\-_/+().]{1,}\b/gi) || [];
+            return [withoutBrand, ...tokenMatches];
+          })
+          .map((item) => item.trim())
+          .filter(Boolean);
+      }
+
+      function isUsableSkuToken(item, options = {}) {
         if (!item) return false;
         const normalized = item.replace(/\s+/g, '').trim();
-        if (normalized.length < 3) return false;
-        if (!/\d/.test(normalized)) return false;
-        if (!/^[A-Z0-9][A-Z0-9#\-_/+().]{2,}$/i.test(normalized)) return false;
+        if (normalized.length < 2) return false;
+        if (!options.allowNoDigit && !/\d/.test(normalized)) return false;
+        if (!/^[A-Z0-9][A-Z0-9#\-_/+().]{1,}$/i.test(normalized)) return false;
         return !/[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i.test(normalized);
       }
 
@@ -1114,7 +1153,7 @@ function deriveVariantSku(baseSku, activeColorOption, variantProductId) {
 
 function getHardSkipReason(product) {
   if (!product.sku) return 'sku_null';
-  if (String(product.sku).trim().length < 3) return 'sku_invalid';
+  if (String(product.sku).trim().length < 2) return 'sku_invalid';
   if (!product.name) return 'name_null';
   if (!product.slug) return 'slug_null';
   if (!product.images?.length) return 'image_null';
