@@ -220,6 +220,7 @@ export interface VariantPreview {
     stock_status?: string | null
     is_active?: boolean
     subcategory_slug?: string | null
+    variant_options?: VariantOption[]
 }
 
 type VariantAxis = { key: string; label: string }
@@ -263,6 +264,34 @@ function parseVariantOptions(value: unknown): VariantOption[] {
 
 function optionValue(options: VariantOption[], axis: string) {
     return options.find((option) => option.axis === axis)?.value || null
+}
+
+function stableVariantSort(a: AxisVariant, b: AxisVariant) {
+    if (a.is_active !== b.is_active) return a.is_active ? -1 : 1
+
+    const priceA = a.price ?? -1
+    const priceB = b.price ?? -1
+    if (priceA !== priceB) return priceB - priceA
+
+    return a.sku.localeCompare(b.sku)
+}
+
+function inferVariantAxesFromOptions(options: VariantOption[]): VariantAxis[] {
+    const labelsByAxis = new Map<string, string>()
+
+    for (const option of options) {
+        if (!option.axis || labelsByAxis.has(option.axis)) continue
+        labelsByAxis.set(option.axis, option.label || option.axis)
+    }
+
+    return Array.from(labelsByAxis.entries())
+        .map(([key, label]) => ({ key, label }))
+        .sort((a, b) => {
+            const order = ['config', 'color']
+            const aIndex = order.indexOf(a.key)
+            const bIndex = order.indexOf(b.key)
+            return (aIndex === -1 ? 99 : aIndex) - (bIndex === -1 ? 99 : bIndex)
+        })
 }
 
 // ─── COLOR SWATCH MODE ────────────────────────────────────────────────────────
@@ -417,7 +446,7 @@ function CardGrid({ variants, categorySlug, subcategorySlug, variantGroup }: Car
                         priceDisplay = variant.priceDisplay
                     }
 
-                    const displayLabel = variant.sku || variant.label || getShortVariantName(variant.name, variant.sku, variant.subcategorySlug || subcategorySlug, variantGroup)
+                    const displayLabel = variant.label || getShortVariantName(variant.name, variant.sku, variant.subcategorySlug || subcategorySlug, variantGroup) || variant.sku
                     const hasDiscount = originalPrice > 0 && sellingPrice > 0 && originalPrice > sellingPrice
                     const discountPercent = hasDiscount ? Math.round(((originalPrice - sellingPrice) / originalPrice) * 100) : 0
                     const image = variant.imageMainUrl
@@ -473,11 +502,7 @@ function CardGrid({ variants, categorySlug, subcategorySlug, variantGroup }: Car
                         return (
                             <div
                                 key={variant.sku}
-                                className="
-                                    relative flex min-h-[62px] w-[170px] items-center gap-2
-                                    rounded-lg border border-brand-500 bg-white px-2 py-2 pl-3
-                                    cursor-default select-none shadow-sm
-                                "
+                                className="relative flex min-h-[62px] w-[170px] items-center gap-2 rounded-lg border border-brand-500 bg-white px-2 py-2 pl-3 cursor-default select-none shadow-sm"
                                 aria-current="true"
                             >
                                 {cardInner}
@@ -489,12 +514,7 @@ function CardGrid({ variants, categorySlug, subcategorySlug, variantGroup }: Car
                         <Link
                             key={variant.sku}
                             href={href}
-                            className="
-                                group relative flex min-h-[62px] w-[170px] items-center gap-2
-                                rounded-lg bg-white px-2 py-2 border border-stone-200
-                                hover:border-brand-500 hover:bg-brand-50 hover:shadow-sm
-                                active:scale-[0.98] transition-all duration-200 cursor-pointer
-                            "
+                            className="group relative flex min-h-[62px] w-[170px] items-center gap-2 rounded-lg border border-stone-200 bg-white px-2 py-2 transition-all duration-200 cursor-pointer hover:border-brand-500 hover:bg-brand-50 hover:shadow-sm active:scale-[0.98]"
                         >
                             {cardInner}
                         </Link>
@@ -524,10 +544,11 @@ function MultiAxisSelector({
 }) {
     const configAxis = axes.find((axis) => axis.key === 'config') || axes[0]
     const colorAxis = axes.find((axis) => axis.key === 'color')
-    const selectedVariant = variants.find((variant) => variant.sku === selectedSku) || variants[0]
+    const orderedVariants = [...variants].sort(stableVariantSort)
+    const selectedVariant = orderedVariants.find((variant) => variant.sku === selectedSku) || orderedVariants[0]
     const selectedConfig = optionValue(selectedVariant.variant_options, configAxis.key)
 
-    const configVariants = variants
+    const configVariants = orderedVariants
         .filter((variant) => variant.is_active)
         .filter((variant) => optionValue(variant.variant_options, configAxis.key))
         .filter((variant, index, all) => {
@@ -536,7 +557,7 @@ function MultiAxisSelector({
         })
 
     const colorVariants = colorAxis
-        ? variants.filter((variant) => optionValue(variant.variant_options, configAxis.key) === selectedConfig && optionValue(variant.variant_options, colorAxis.key))
+        ? orderedVariants.filter((variant) => optionValue(variant.variant_options, configAxis.key) === selectedConfig && optionValue(variant.variant_options, colorAxis.key))
         : []
 
     return (
@@ -560,11 +581,7 @@ function MultiAxisSelector({
                                 key={variant.sku}
                                 href={href}
                                 aria-current={isSelectedConfig ? 'true' : undefined}
-                                className={`
-                                    group relative flex min-h-[62px] w-[180px] items-center gap-2 rounded-lg bg-white px-2 py-2 pl-3
-                                    border transition-all duration-200
-                                    ${isSelectedConfig ? 'border-brand-500 shadow-sm' : 'border-stone-200 hover:border-brand-500 hover:bg-brand-50 hover:shadow-sm'}
-                                `}
+                                className={`group relative flex min-h-[62px] w-[180px] items-center gap-2 rounded-lg border bg-white px-2 py-2 pl-3 transition-all duration-200 ${isSelectedConfig ? 'border-brand-500 shadow-sm' : 'border-stone-200 hover:border-brand-500 hover:bg-brand-50 hover:shadow-sm'}`}
                             >
                                 {isSelectedConfig && (
                                     <span className="absolute left-0 top-0 flex h-4 w-4 items-start justify-start overflow-hidden rounded-tl-lg">
@@ -612,17 +629,20 @@ function MultiAxisSelector({
                                     disabled={isUnavailable}
                                     onClick={() => {
                                         onPreviewVariant?.(variant)
+                                        window.dispatchEvent(new CustomEvent('product-variant-selection', {
+                                            detail: {
+                                                sku: variant.sku,
+                                                color: colorLabel,
+                                                variantOptions: variant.variant_options,
+                                            },
+                                        }))
                                         if (variant.image_main_url) {
                                             window.dispatchEvent(new CustomEvent('product-variant-preview', { detail: { imageUrl: variant.image_main_url } }))
                                         }
                                     }}
                                     title={colorLabel}
                                     aria-pressed={isSelected}
-                                    className={`
-                                        group flex min-w-[96px] items-center gap-2 rounded-lg border bg-white px-2 py-2 text-left transition-all
-                                        ${isSelected ? 'border-brand-500 shadow-sm ring-1 ring-brand-500/10' : 'border-stone-200 hover:border-brand-400 hover:bg-brand-50'}
-                                        ${isUnavailable ? 'cursor-not-allowed opacity-40' : 'cursor-pointer'}
-                                    `}
+                                    className={`group flex min-w-[96px] items-center gap-2 rounded-lg border bg-white px-2 py-2 text-left transition-all ${isSelected ? 'border-brand-500 shadow-sm ring-1 ring-brand-500/10' : 'border-stone-200 hover:border-brand-400 hover:bg-brand-50'} ${isUnavailable ? 'cursor-not-allowed opacity-40' : 'cursor-pointer'}`}
                                 >
                                     <span className="relative h-9 w-9 shrink-0 overflow-hidden rounded-md border border-stone-100 bg-stone-50">
                                         {variant.image_main_url ? (
@@ -682,9 +702,13 @@ export function VariantSelector({
     // Type C/D: no variant_group → render nothing
     if (!siblings || siblings.length === 0) return null
 
-    const axes = parseVariantAxes(variantAxes)
     const currentOptions = parseVariantOptions(currentVariantOptions)
-    const hasMultiAxis = axes.length > 1 && axes.some((axis) => axis.key === 'config') && axes.some((axis) => axis.key === 'color')
+    const siblingOptions = siblings.flatMap((s) => parseVariantOptions(s.variant_options))
+    const axes = parseVariantAxes(variantAxes)
+    const effectiveAxes = axes.length > 0
+        ? axes
+        : inferVariantAxesFromOptions([...currentOptions, ...siblingOptions])
+    const hasMultiAxis = effectiveAxes.length > 1 && effectiveAxes.some((axis) => axis.key === 'config') && effectiveAxes.some((axis) => axis.key === 'color')
 
     if (hasMultiAxis && currentOptions.length > 0) {
         const allVariants: AxisVariant[] = [
@@ -723,7 +747,7 @@ export function VariantSelector({
 
         return (
             <MultiAxisSelector
-                axes={axes}
+                axes={effectiveAxes}
                 variants={allVariants}
                 selectedSku={selectedSku || currentSku}
                 categorySlug={categorySlug}

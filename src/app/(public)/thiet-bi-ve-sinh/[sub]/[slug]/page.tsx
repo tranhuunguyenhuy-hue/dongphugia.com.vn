@@ -7,6 +7,7 @@ import { ProductDetailTabs } from "@/components/product/product-detail-tabs"
 import { ProductComponentsSection } from "@/components/product/product-components-section"
 import { ProductBoxIncludes } from "@/components/product/product-box-includes"
 import { ProductPurchasePanel } from "@/components/product/product-purchase-panel"
+import { ProductVariantMetaPills } from "@/components/product/product-variant-meta-pills"
 import { ProductCard } from "@/components/ui/product-card"
 import { RecentlyViewedProducts } from "@/components/product/recently-viewed"
 import { BrandBadge } from "@/components/ui/brand-badge"
@@ -84,6 +85,28 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
         : product.stock_status === 'pre_order'
         ? { label: 'Đặt trước', dot: 'bg-amber-500', wrap: 'bg-amber-50 border-amber-100', text: 'text-amber-700' }
         : { label: 'Liên hệ', dot: 'bg-rose-500', wrap: 'bg-rose-50 border-rose-100', text: 'text-rose-700' }
+
+    const purchaseProduct = {
+        id: product.id,
+        sku: product.sku,
+        slug: product.slug,
+        name: product.name,
+        price: product.price ? Number(product.price) : null,
+        original_price: product.original_price ? Number(product.original_price) : null,
+        online_discount_amount: product.online_discount_amount ? Number(product.online_discount_amount) : null,
+        price_display: product.price_display,
+        image_main_url: product.image_main_url,
+        product_images: product.product_images?.map((image) => ({
+            image_url: image.image_url,
+        })) ?? [],
+        stock_status: product.stock_status,
+        is_active: product.is_active,
+        variant_group: product.variant_group,
+        variant_type: product.variant_type,
+        variant_label: product.variant_label,
+        colors: product.colors,
+        brands: product.brands,
+    }
 
     return (
         <main className="u-container pt-8 pb-28 lg:py-12">
@@ -170,27 +193,17 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
                             {/* 2. Brand Badge */}
                             {product.brands && <BrandBadge brand={product.brands as any} className="!h-7 !px-2.5 rounded-md border-stone-200/60 shadow-sm" />}
 
-                            {/* 3. Color Pill */}
-                            {product.colors && (
-                                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-stone-50 border border-stone-200/60">
-                                    <span
-                                        className="w-3 h-3 rounded-full border border-black/10 shadow-sm"
-                                        style={{ backgroundColor: product.colors.hex_code || '#ccc' }}
-                                    />
-                                    <span className="font-medium text-stone-700">{product.colors.name}</span>
-                                </div>
-                            )}
-
-                            {/* 4. SKU Pill */}
-                            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-stone-100">
-                                <span className="text-stone-500">Mã SP:</span>
-                                <span className="font-mono font-bold text-stone-800">{product.sku}</span>
-                            </div>
+                            {/* 3-4. Variant-aware Color + SKU Pills */}
+                            <ProductVariantMetaPills
+                                initialSku={product.sku}
+                                initialColor={product.colors}
+                                initialVariantOptions={variantSelectionData.currentVariantOptions}
+                            />
                         </div>
                     </div>
 
                     <ProductPurchasePanel
-                        product={product}
+                        product={purchaseProduct}
                         variantSiblings={variantSelectionData.siblings.length > 0 ? variantSelectionData.siblings : variantSiblings}
                         variantAxes={variantSelectionData.axes}
                         currentVariantOptions={variantSelectionData.currentVariantOptions}

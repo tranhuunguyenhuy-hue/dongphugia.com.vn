@@ -300,11 +300,13 @@ function getSpecActiveValues(searchParams: URLSearchParams, key: string): string
 export function AdvancedSidebarFilter({
     availableFilters,
     hideSubcategoryFilter = false,
+    hideColorFilter = false,
     hideTitle = false,
     specFilters = [],
 }: {
     availableFilters: AvailableFiltersData
     hideSubcategoryFilter?: boolean
+    hideColorFilter?: boolean
     hideTitle?: boolean
     specFilters?: SpecFilterDef[]
 }) {
@@ -323,7 +325,7 @@ export function AdvancedSidebarFilter({
     const featureSlugs     = getArr('features')
     const materialSlugs    = getArr('material')
     const originSlugs      = getArr('origin')
-    const colorSlugs       = getArr('color')
+    const colorSlugs       = hideColorFilter ? [] : getArr('color')
 
     const priceParam = searchParams.get('price') ?? ''
     const [localPrice, setLocalPrice] = useState<[number, number]>(() =>
@@ -463,7 +465,7 @@ export function AdvancedSidebarFilter({
                 )}
 
                 {/* ── Colors — swatch chips ── */}
-                {availableFilters.colors && availableFilters.colors.length > 0 && (
+                {!hideColorFilter && availableFilters.colors && availableFilters.colors.length > 0 && (
                     <div className="space-y-2">
                         <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
                             Màu sắc
