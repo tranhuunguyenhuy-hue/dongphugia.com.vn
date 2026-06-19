@@ -107,6 +107,11 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
         colors: product.colors,
         brands: product.brands,
     }
+    const plainVariantSiblings = variantSiblings.map((sibling) => ({
+        ...sibling,
+        price: sibling.price ? Number(sibling.price) : null,
+        original_price: sibling.original_price ? Number(sibling.original_price) : null,
+    }))
 
     return (
         <main className="u-container pt-8 pb-28 lg:py-12">
@@ -204,7 +209,7 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
 
                     <ProductPurchasePanel
                         product={purchaseProduct}
-                        variantSiblings={variantSelectionData.siblings.length > 0 ? variantSelectionData.siblings : variantSiblings}
+                        variantSiblings={variantSelectionData.siblings.length > 0 ? variantSelectionData.siblings : plainVariantSiblings}
                         variantAxes={variantSelectionData.axes}
                         currentVariantOptions={variantSelectionData.currentVariantOptions}
                         categorySlug={CATEGORY_SLUG}
