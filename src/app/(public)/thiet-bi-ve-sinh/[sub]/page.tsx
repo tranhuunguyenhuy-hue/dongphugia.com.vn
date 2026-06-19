@@ -146,6 +146,7 @@ export default async function ThietBiVeSinhSubPage({ params, searchParams }: Pag
                         <AdvancedSidebarFilter
                             availableFilters={availableFilters}
                             hideSubcategoryFilter
+                            hideColorFilter
                             specFilters={specFilterDefs as SpecFilterDef[]}
                         />
                     </Suspense>
@@ -173,7 +174,7 @@ export default async function ThietBiVeSinhSubPage({ params, searchParams }: Pag
                                 <strong className="text-neutral-900">{total.toLocaleString('vi-VN')}</strong> sản phẩm
                             </span>
                             <div className="flex items-center gap-2">
-                                <CategoryMobileFilter availableFilters={availableFilters} specFilters={specFilterDefs as SpecFilterDef[]} />
+                                <CategoryMobileFilter availableFilters={availableFilters} specFilters={specFilterDefs as SpecFilterDef[]} hideColorFilter />
                                 <CategorySort />
                             </div>
                         </div>
