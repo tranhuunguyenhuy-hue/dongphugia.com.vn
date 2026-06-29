@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { siteConfig, NAV_PRODUCT_CATEGORIES, NAV_FOOTER_ABOUT_LINKS, NAV_FOOTER_LEGAL_LINKS } from "@/config/site";
 
 export function Footer() {
@@ -12,12 +11,13 @@ export function Footer() {
                     {/* Left Column: Logo & Newsletter */}
                     <div className="w-full lg:w-[380px] shrink-0 flex flex-col gap-8">
                         <Link href="/" className="inline-flex items-center" aria-label="Đông Phú Gia - Trang chủ">
-                            <Image
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
                                 src="/images/Logo.png"
                                 alt="Đông Phú Gia - Đồng hành, Phát triển"
                                 width={184}
                                 height={36}
-                                className="h-8 lg:h-9 w-auto object-contain"
+                                className="w-[164px] lg:w-[184px] h-auto object-contain"
                             />
                         </Link>
 
@@ -128,12 +128,13 @@ export function Footer() {
                         rel="noopener noreferrer"
                         aria-label="Đã thông báo Bộ Công Thương"
                     >
-                        <Image
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
                             src="/images/bct-badge.png"
                             alt="Đã Thông Báo Bộ Công Thương"
                             width={250}
                             height={100}
-                            className="h-20 lg:h-[100px] w-auto object-contain opacity-90 hover:opacity-100 transition-opacity"
+                            className="w-[200px] lg:w-[250px] h-auto object-contain opacity-90 hover:opacity-100 transition-opacity"
                         />
                     </a>
                 </div>

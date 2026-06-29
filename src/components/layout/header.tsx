@@ -1,7 +1,6 @@
 "use client"
 
 import Link from "next/link"
-import Image from "next/image"
 import { Phone, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useState, useEffect } from "react"
@@ -72,7 +71,14 @@ export function Header() {
                         <div className="h-[72px] lg:h-[88px] flex items-center justify-between transition-all duration-300 w-full">
                             {/* Logo */}
                             <Link href="/" className="flex items-center shrink-0" aria-label="Đông Phú Gia - Trang chủ">
-                                <Image src="/images/Logo.png" alt="Đông Phú Gia" width={245} height={48} priority className="h-10 lg:h-12 w-auto object-contain" />
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                    src="/images/Logo.png"
+                                    alt="Đông Phú Gia"
+                                    width={245}
+                                    height={48}
+                                    className="w-[204px] lg:w-[245px] h-auto object-contain"
+                                />
                             </Link>
 
                             {/* Desktop Nav */}
