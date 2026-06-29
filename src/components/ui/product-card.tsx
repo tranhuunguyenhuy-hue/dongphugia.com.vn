@@ -65,6 +65,7 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
     }
     const sku = product.sku || product.product_code || product.code || '';
     const isDiscontinued = product.stock_status === 'discontinued';
+    const isInactive = product.is_active === false;
 
     let discountPercent = 0;
     if (product.original_price && product.price && Number(product.original_price) > Number(product.price)) {
@@ -153,6 +154,12 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
                             Ngừng KD
                         </div>
                     </div>
+                ) : isInactive ? (
+                    <div className="absolute top-4 left-0 z-20">
+                        <div className="bg-stone-100 text-stone-700 font-bold text-[11px] px-2.5 py-[4px] rounded-r-md shadow-sm border border-l-0 border-stone-200 tracking-wide">
+                            Có trên tìm kiếm
+                        </div>
+                    </div>
                 ) : (discountPercent > 0 || product.is_promotion) && (
                     <div className="absolute top-4 left-0 z-20">
                         <div className="bg-[#E53935] text-white font-bold text-[11px] px-2.5 py-[3px] rounded-r-md shadow-md flex items-center shadow-red-900/20 tracking-wider">
@@ -187,6 +194,7 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
                                 <span className={cn(
                                     "w-1.5 h-1.5 rounded-full",
                                     product.stock_status === 'discontinued' ? "bg-rose-400" :
+                                    isInactive ? "bg-amber-400" :
                                     product.stock_status === 'in_stock' ? "bg-emerald-500" :
                                     product.stock_status === 'out_of_stock' ? "bg-red-500" : "bg-neutral-300"
                                 )} />

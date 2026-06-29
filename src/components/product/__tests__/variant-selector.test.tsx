@@ -1,5 +1,5 @@
-import { render } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { fireEvent, render, screen } from '@testing-library/react'
+import { describe, expect, it, vi } from 'vitest'
 import type { VariantSibling } from '@/lib/public-api-products'
 import { VariantSelector } from '../variant-selector'
 
@@ -64,6 +64,7 @@ describe('VariantSelector', () => {
                 .filter(Boolean)
 
         expect(getLabels()).toEqual(['Củ, tay sen & thanh trượt', 'Củ & tay sen'])
+        expect(screen.getByText('Cấu hình')).toBeInTheDocument()
 
         rerender(
             <VariantSelector
@@ -73,5 +74,95 @@ describe('VariantSelector', () => {
         )
 
         expect(getLabels()).toEqual(['Củ, tay sen & thanh trượt', 'Củ & tay sen'])
+    })
+
+    it('keeps multi-axis selector working when current variant_options are missing', () => {
+        const onPreviewVariant = vi.fn()
+        const siblings: VariantSibling[] = [
+            {
+                id: 2001,
+                sku: 'VG598.2-Den',
+                name: 'Sen cây nóng lạnh Viglacera VG598.2',
+                slug: 'sen-cay-nong-lanh-viglacera-vg598-2-17590-den-vg598-2-den',
+                price: 9_550_000,
+                original_price: null,
+                online_discount_amount: null,
+                price_display: null,
+                image_main_url: 'https://cdn.dongphugia.com.vn/migrated/viglacera/vg598-2-den.jpg',
+                is_active: false,
+                variant_type: 'configuration',
+                variant_label: 'Đen',
+                variant_options: [
+                    { axis: 'config', label: 'Cấu hình', value: 'Nóng lạnh - Không vòi xả bồn' },
+                    { axis: 'color', label: 'Màu sắc', value: 'Đen' },
+                ],
+                stock_status: 'in_stock',
+                subcategories: { slug: 'sen-tam' },
+                categories: { slug: 'thiet-bi-ve-sinh' },
+                colors: { name: 'Đen', hex_code: '#111111' },
+            },
+            {
+                id: 2002,
+                sku: 'VG598.1',
+                name: 'Sen cây tắm đứng nhiệt độ Viglacera VG598.1',
+                slug: 'sen-cay-tam-dung-nhiet-do-viglacera-vg598-1-17225',
+                price: 11_900_000,
+                original_price: null,
+                online_discount_amount: null,
+                price_display: null,
+                image_main_url: 'https://cdn.dongphugia.com.vn/migrated/viglacera/vg598-1.jpg',
+                is_active: true,
+                variant_type: 'configuration',
+                variant_label: 'Nhiệt độ - Có vòi xả bồn',
+                variant_options: [
+                    { axis: 'config', label: 'Cấu hình', value: 'Nhiệt độ - Có vòi xả bồn' },
+                    { axis: 'color', label: 'Màu sắc', value: 'Chrome' },
+                ],
+                stock_status: 'in_stock',
+                subcategories: { slug: 'sen-tam' },
+                categories: { slug: 'thiet-bi-ve-sinh' },
+                colors: { name: 'Chrome', hex_code: '#E8E9EB' },
+            },
+        ]
+
+        render(
+            <VariantSelector
+                currentSku="VG598.2"
+                currentSlug="sen-cay-nong-lanh-viglacera-vg598-2-17590"
+                currentName="Sen cây nóng lạnh Viglacera VG598.2"
+                currentImageMainUrl="https://cdn.dongphugia.com.vn/migrated/viglacera/vg598-2-crom.jpg"
+                currentPriceDisplay={null}
+                currentPrice={9_550_000}
+                currentOriginalPrice={null}
+                currentColor={{ name: 'Chrome', hex_code: '#E8E9EB' }}
+                currentStockStatus="in_stock"
+                currentVariantOptions={[]}
+                variantAxes={[
+                    { key: 'config', label: 'Cấu hình' },
+                    { key: 'color', label: 'Màu sắc' },
+                ]}
+                selectedSku="VG598.2"
+                onPreviewVariant={onPreviewVariant}
+                variantType="configuration"
+                variantLabel="Nóng lạnh - Không vòi xả bồn"
+                variantGroup="VG598"
+                siblings={siblings}
+                categorySlug="thiet-bi-ve-sinh"
+                subcategorySlug="sen-tam"
+            />
+        )
+
+        expect(screen.getByText('Cấu hình')).toBeInTheDocument()
+        expect(screen.getByText('Màu sắc')).toBeInTheDocument()
+        expect(screen.getByText('Nóng lạnh - Không vòi xả bồn')).toBeInTheDocument()
+        expect(screen.getByText('Nhiệt độ - Có vòi xả bồn')).toBeInTheDocument()
+
+        fireEvent.click(screen.getByRole('button', { name: /Đen/i }))
+
+        expect(onPreviewVariant).toHaveBeenCalledWith(
+            expect.objectContaining({
+                sku: 'VG598.2-Den',
+            })
+        )
     })
 })

@@ -23,7 +23,6 @@ export async function GET(request: NextRequest) {
         }
 
         const whereClause = {
-            is_active: true,
             OR: [
                 { name: { contains: q, mode: 'insensitive' as const } },
                 { sku: { contains: q, mode: 'insensitive' as const } },
@@ -47,12 +46,14 @@ export async function GET(request: NextRequest) {
                     is_promotion: true,
                     is_featured: true,
                     stock_status: true,
+                    is_active: true,
                     display_name: true,
                     categories: { select: { slug: true, name: true } },
                     subcategories: { select: { slug: true, name: true } },
                     brands: { select: { name: true } },
                 },
                 orderBy: [
+                    { is_active: 'desc' },
                     { is_promotion: 'desc' },
                     { created_at: 'desc' }
                 ]

@@ -317,6 +317,38 @@ function inferVariantAxesFromOptions(options: VariantOption[]): VariantAxis[] {
         })
 }
 
+function buildFallbackCurrentOptions({
+    axes,
+    currentColor,
+    variantLabel,
+}: {
+    axes: VariantAxis[]
+    currentColor?: { name: string; hex_code: string | null } | null
+    variantLabel?: string | null
+}): VariantOption[] {
+    const options: VariantOption[] = []
+
+    for (const axis of axes) {
+        if (axis.key === 'config' && variantLabel) {
+            options.push({
+                axis: 'config',
+                label: axis.label || 'Cấu hình',
+                value: variantLabel,
+            })
+        }
+
+        if (axis.key === 'color' && currentColor?.name) {
+            options.push({
+                axis: 'color',
+                label: axis.label || 'Màu sắc',
+                value: currentColor.name,
+            })
+        }
+    }
+
+    return options
+}
+
 // ─── COLOR SWATCH MODE ────────────────────────────────────────────────────────
 
 interface SwatchVariant {
@@ -433,6 +465,7 @@ interface CardGridProps {
     categorySlug: string
     subcategorySlug?: string | null
     variantGroup: string
+    headingLabel?: string | null
 }
 
 function stableCardVariantSort(a: CardGridVariant, b: CardGridVariant) {
@@ -445,15 +478,16 @@ function stableCardVariantSort(a: CardGridVariant, b: CardGridVariant) {
     return a.sku.localeCompare(b.sku)
 }
 
-function CardGrid({ variants, categorySlug, subcategorySlug, variantGroup }: CardGridProps) {
+function CardGrid({ variants, categorySlug, subcategorySlug, variantGroup, headingLabel }: CardGridProps) {
     const orderedVariants = [...variants].sort(stableCardVariantSort)
+    const resolvedHeadingLabel = headingLabel?.trim() || 'Phiên bản'
 
     return (
         <div className="flex flex-col gap-3" role="group" aria-label="Chọn phiên bản sản phẩm">
             {/* Header */}
             <div className="flex items-center justify-between">
                 <p className="text-xs font-semibold text-stone-500 uppercase tracking-widest">
-                    Phiên bản
+                    {resolvedHeadingLabel}
                 </p>
                 <span className="text-[11px] text-stone-400 font-medium tabular-nums">
                     {orderedVariants.length} mẫu
@@ -743,15 +777,23 @@ export function VariantSelector({
     // Type C/D: no variant_group → render nothing
     if (!siblings || siblings.length === 0) return null
 
-    const currentOptions = parseVariantOptions(currentVariantOptions)
+    const parsedCurrentOptions = parseVariantOptions(currentVariantOptions)
     const siblingOptions = siblings.flatMap((s) => parseVariantOptions(s.variant_options))
     const axes = parseVariantAxes(variantAxes)
     const effectiveAxes = axes.length > 0
         ? axes
-        : inferVariantAxesFromOptions([...currentOptions, ...siblingOptions])
+        : inferVariantAxesFromOptions([...parsedCurrentOptions, ...siblingOptions])
+    const currentOptions = parsedCurrentOptions.length > 0
+        ? parsedCurrentOptions
+        : buildFallbackCurrentOptions({
+            axes: effectiveAxes,
+            currentColor,
+            variantLabel,
+        })
+    const primaryAxisLabel = currentOptions[0]?.label || effectiveAxes[0]?.label || null
     const hasMultiAxis = effectiveAxes.length > 1 && effectiveAxes.some((axis) => axis.key === 'config') && effectiveAxes.some((axis) => axis.key === 'color')
 
-    if (hasMultiAxis && currentOptions.length > 0) {
+    if (hasMultiAxis) {
         const allVariants: AxisVariant[] = [
             {
                 sku: currentSku,
@@ -889,6 +931,7 @@ export function VariantSelector({
                 categorySlug={categorySlug}
                 subcategorySlug={subcategorySlug}
                 variantGroup={variantGroup}
+                headingLabel={primaryAxisLabel}
             />
         )
     }
@@ -933,6 +976,7 @@ export function VariantSelector({
             categorySlug={categorySlug}
             subcategorySlug={subcategorySlug}
             variantGroup={variantGroup}
+            headingLabel={primaryAxisLabel}
         />
     )
 }
