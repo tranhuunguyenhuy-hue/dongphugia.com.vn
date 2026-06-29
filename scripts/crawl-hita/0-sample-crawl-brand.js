@@ -28,9 +28,12 @@ const FULL_CRAWL = args.includes('--full');
 const SAMPLE_MIN = readNumberArg('--min=', 10);
 const SAMPLE_MAX = readNumberArg('--max=', 20);
 const CANDIDATE_LIMIT = readNumberArg('--candidate-limit=', FULL_CRAWL ? 5000 : 420);
+const VARIANT_CRAWL_LIMIT = readNumberArg('--variant-crawl-limit=', 2000);
 const CONCURRENCY = readNumberArg('--concurrency=', 2);
 const HEADLESS = !args.includes('--headed');
 const TARGET_SUBCATEGORY = readStringArgValue('--subcategory=', '');
+const SEED_URLS = readRepeatedStringArgs('--seed-url=');
+const SEED_ONLY = args.includes('--seed-only');
 const OUTPUT_DIR = path.resolve(__dirname, `output/${BRAND_SLUG}`);
 const SAMPLE_DIR = readStringArg(
   '--sample-dir=',
@@ -39,7 +42,7 @@ const SAMPLE_DIR = readStringArg(
 const URLS_FILE = path.join(OUTPUT_DIR, 'urls.json');
 
 const BASE_URL = 'https://hita.com.vn';
-const MAX_IMAGES = 20;
+const MAX_IMAGES = 30;
 const VARIANT_EXTRA_CAP_PER_SUBCATEGORY = 8;
 
 const FILTER_KEYS_BY_SUBCATEGORY = {
@@ -138,6 +141,7 @@ const PRODUCT_TYPE_RULES = [
   { subcategory_id: 'lavabo', product_type: 'lavabo-ban-am', regex: /bán âm/i },
   { subcategory_id: 'lavabo', product_type: 'lavabo-duong-vanh', regex: /(dương vành|dương bàn)/i },
   { subcategory_id: 'lavabo', product_type: 'lavabo-dat-ban', regex: /(đặt bàn|dat ban)/i },
+  { subcategory_id: 'lavabo', product_type: 'lavabo-dat-ban', regex: /(mặt bàn sứ|mat ban su|kệ lavabo|ke lavabo)/i },
   { subcategory_id: 'lavabo', product_type: 'lavabo-treo-tuong', regex: /treo tường/i },
   { subcategory_id: 'lavabo', product_type: 'chan-chau-lavabo', regex: /(chân chậu|chan chau)/i },
   { subcategory_id: 'lavabo', product_type: 'tu-chau', regex: /(tủ chậu|tu chau|cabinet|bộ tủ chậu|bo tu chau)/i },
@@ -179,7 +183,7 @@ const PRODUCT_TYPE_RULES = [
   { subcategory_id: 'phu-kien-phong-tam', product_type: 'vong-treo-khan', regex: /vòng treo khăn/i },
   { subcategory_id: 'phu-kien-phong-tam', product_type: 'may-say-tay', regex: /(máy sấy tay|may say tay)/i },
   { subcategory_id: 'phu-kien-phong-tam', product_type: 'phu-kien-khac', regex: /(máy tạo ozon|may tao ozon|kệ kính|cọ vệ sinh|dây phơi|gạt tàn)/i },
-  { subcategory_id: 'bon-cau', product_type: 'phu-kien-bon-cau', regex: /(két nước|nắp két|thân két|bộ két|bộ xả|van xả bồn cầu|thân sứ|đế cầu|phụ kiện bồn cầu)/i },
+  { subcategory_id: 'bon-cau', product_type: 'phu-kien-bon-cau', regex: /(két nước|nắp két|thân két|bộ két|bộ xả|van xả bồn cầu|thân sứ|đế cầu|phụ kiện bồn cầu|gioăng cao su|gioang cao su)/i },
   { subcategory_id: 'than-bon-cau', product_type: 'than-bon-cau', regex: /(thân cầu|thân bồn cầu)/i },
   { subcategory_id: 'voi-rua-chen', product_type: 'voi-rua-chen', regex: /(vòi rửa chén|vòi bếp)/i },
   { subcategory_id: 'chau-rua-chen', product_type: 'chau-rua-chen', regex: /(chậu rửa chén|chau rua chen)/i },
@@ -206,18 +210,34 @@ function readStringArgValue(prefix, fallback) {
   return arg.slice(prefix.length).trim();
 }
 
+function readRepeatedStringArgs(prefix) {
+  return args
+    .filter((item) => item.startsWith(prefix))
+    .map((item) => item.slice(prefix.length).trim())
+    .filter(Boolean);
+}
+
 function loadCandidateUrls() {
   const urls = [];
 
-  for (const url of BRAND_CONFIG.sampleUrls || []) urls.push({ url, source: 'brand-config.sampleUrls' });
+  for (const url of SEED_URLS) urls.push({ url, source: 'cli.seed_url', priority: 0 });
+  if (SEED_ONLY) {
+    return normalizeCandidateUrls(urls);
+  }
+
+  for (const url of BRAND_CONFIG.sampleUrls || []) urls.push({ url, source: 'brand-config.sampleUrls', priority: 10 });
 
   if (fs.existsSync(URLS_FILE)) {
     const discovered = JSON.parse(fs.readFileSync(URLS_FILE, 'utf8'));
     for (const url of interleaveByRoughSubcategory(discovered)) {
-      urls.push({ url, source: 'output.urls.json' });
+      urls.push({ url, source: 'output.urls.json', priority: 20 });
     }
   }
 
+  return normalizeCandidateUrls(urls);
+}
+
+function normalizeCandidateUrls(urls) {
   const seen = new Set();
   return urls
     .map((candidate) => ({ ...candidate, url: normalizeProductUrl(candidate.url) }))
@@ -228,10 +248,16 @@ function loadCandidateUrls() {
       seen.add(candidate.url);
       return true;
     })
-    .sort((a, b) => a.url.localeCompare(b.url))
-    .sort((a, b) => compareCandidateCoverage(a.url, b.url))
     .map((candidate) => ({ ...candidate, product_type_bucket: inferProductTypeBucket(candidate.url) }))
-    .sort((a, b) => a.product_type_bucket.localeCompare(b.product_type_bucket))
+    .sort((a, b) => {
+      const priority = (a.priority || 99) - (b.priority || 99);
+      if (priority !== 0) return priority;
+      const coverage = compareCandidateCoverage(a.url, b.url);
+      if (coverage !== 0) return coverage;
+      const bucket = a.product_type_bucket.localeCompare(b.product_type_bucket);
+      if (bucket !== 0) return bucket;
+      return a.url.localeCompare(b.url);
+    })
     .reduce((ordered, candidate, _index, all) => {
       if (!TARGET_SUBCATEGORY) {
         ordered.push(candidate);
@@ -354,13 +380,13 @@ function roughSubcategoryFromUrl(url) {
   if (/voi-(rua-chen|bep)/.test(lower)) return 'voi-rua-chen';
   if (/(than-bon-cau|than-su-cau|than-cau)/.test(lower)) return 'than-bon-cau';
   if (/(nap-bon-cau|nap-rua)/.test(lower)) return 'nap-bon-cau';
-  if (/(ket-nuoc|bo-xa-bon-cau|nap-ket-nuoc|van-xa-bon-cau|phu-kien-bon-cau)/.test(lower)) return 'bon-cau';
+  if (/(ket-nuoc|bo-xa-bon-cau|nap-ket-nuoc|van-xa-bon-cau|phu-kien-bon-cau|gioang-cao-su)/.test(lower)) return 'bon-cau';
   if (/(pheu-thoat|voi-xit|lo-giay|hop-giay|thanh-treo|phu-kien|ke-xa-phong|hop-xa-phong|moc-ao|may-say-tay)/.test(lower)) return 'phu-kien-phong-tam';
-  if (/bon-tieu/.test(lower)) return 'bon-tieu';
+  if (/(bon-tieu|vach-ngan-tieu)/.test(lower)) return 'bon-tieu';
   if (/bon-tam/.test(lower)) return 'bon-tam';
   if (/(sen|bat-sen|tay-sen|dau-phun)/.test(lower)) return 'sen-tam';
   if (/(voi-lavabo|voi-chau)/.test(lower)) return 'voi-chau';
-  if (/(lavabo|chau-rua|tu-chau|tu-lavabo)/.test(lower)) return 'lavabo';
+  if (/(lavabo|chau-rua|tu-chau|tu-lavabo|ke-lavabo|mat-ban-su)/.test(lower)) return 'lavabo';
   if (/bon-cau/.test(lower)) return 'bon-cau';
   return null;
 }
@@ -377,6 +403,16 @@ function normalizeProductUrl(rawUrl) {
 function canonicalProductUrl(rawUrl) {
   if (!rawUrl) return '';
   return resolveUrl(rawUrl, BASE_URL).split('#')[0].split('?')[0];
+}
+
+function cleanVariantLabel(value) {
+  return (value || '')
+    .replace(/\d{1,3}(?:\.\d{3})+\s*đ?/gi, '')
+    .replace(/giảm thêm[^|,\n]+/gi, '')
+    .replace(/giá[^|,\n]+/gi, '')
+    .replace(/\s+/g, ' ')
+    .replace(/^[|:,-]+|[|:,-]+$/g, '')
+    .trim();
 }
 
 function attributeVariantSourceUrl(baseUrl, productId) {
@@ -626,6 +662,7 @@ async function crawlProduct(context, candidate) {
         if (!url || !/^https?:\/\//i.test(url)) return false;
         const lower = url.toLowerCase();
         if (/youtube|youtu\.be|video|thumbnail|thumb-video|placeholder|loading|spinner|logo|banner|brand|no-image/.test(lower)) return false;
+        if (lower.includes('/storage/comments/')) return false;
         if (lower.includes('/storage/products/') || lower.includes('/storage/product/')) return true;
         if (lower.includes('/public/upload/images/')) return true;
         return lower.includes('hita.com.vn') && lower.includes('/storage/');
@@ -752,25 +789,40 @@ async function crawlProduct(context, candidate) {
       }
 
       function normalizeSku(candidates, specMap, productName) {
-        const joined = [...candidates, specMap['Mã sản phẩm'], specMap['Model'], specMap['SKU'], specMap['Mã']].filter(Boolean).join('\n');
-        const direct = joined
-          .replace(/(?:mã sản phẩm|mã sp|sku|model|code|mã)\s*[:：]?\s*/gi, '\n')
-          .split(/\n|;/)
-          .map((item) => item.trim())
-          .find(isUsableSkuToken);
-        if (direct) return direct.replace(/\s+/g, '').trim();
+        const explicitSources = [...candidates, specMap['Mã sản phẩm'], specMap['Model'], specMap['SKU'], specMap['Mã']].filter(Boolean);
+        for (const source of explicitSources) {
+          const direct = extractSkuCandidatesFromExplicitText(source).find((item) => isUsableSkuToken(item, { allowNoDigit: true }));
+          if (direct) return direct.replace(/\s+/g, '').trim();
+        }
 
         const nameMatches = productName?.match(/\b[A-Z0-9]{2,}[A-Z0-9#\-_/+().]*\b/gi) || [];
         const fromName = nameMatches.find(isUsableSkuToken);
         return fromName ? fromName.replace(/\s+/g, '').trim() : null;
       }
 
-      function isUsableSkuToken(item) {
+      function extractSkuCandidatesFromExplicitText(value) {
+        const knownBrands = 'viglacera|toto|inax|caesar|american\\s*standard|cotto|atmor|moen|duravit|grohe|hansgrohe|kluger';
+        return String(value || '')
+          .replace(/(?:mã sản phẩm|mã sp|sku|model|code|mã)\s*[:：]?\s*/gi, '\n')
+          .split(/\n|;|\|/)
+          .flatMap((item) => {
+            const trimmed = item.trim();
+            const withoutBrand = trimmed
+              .replace(new RegExp(`^(?:${knownBrands})\\s+`, 'i'), '')
+              .trim();
+            const tokenMatches = withoutBrand.match(/\b[A-Z0-9][A-Z0-9#\-_/+().]{1,}\b/gi) || [];
+            return [withoutBrand, ...tokenMatches];
+          })
+          .map((item) => item.trim())
+          .filter(Boolean);
+      }
+
+      function isUsableSkuToken(item, options = {}) {
         if (!item) return false;
         const normalized = item.replace(/\s+/g, '').trim();
-        if (normalized.length < 3) return false;
-        if (!/\d/.test(normalized)) return false;
-        if (!/^[A-Z0-9][A-Z0-9#\-_/+().]{2,}$/i.test(normalized)) return false;
+        if (normalized.length < 2) return false;
+        if (!options.allowNoDigit && !/\d/.test(normalized)) return false;
+        if (!/^[A-Z0-9][A-Z0-9#\-_/+().]{1,}$/i.test(normalized)) return false;
         return !/[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i.test(normalized);
       }
 
@@ -1063,15 +1115,17 @@ async function crawlProduct(context, candidate) {
       price.inactive = true;
     }
     const activeColorOption = activeAxisOption(raw, 'color');
-    if (activeColorOption?.image_url) {
-      raw.images = [activeColorOption.image_url, ...(raw.images || []).filter((url) => url !== activeColorOption.image_url)];
-    }
+    raw.images = preferActiveColorImage(raw.images, activeColorOption?.image_url);
     const taxonomy = inferTaxonomy(raw);
-    const sku = deriveVariantSku(raw.sku, activeColorOption, variantProductId);
-    raw.sku = sku;
-    const slug = deriveSlug(raw.source_url, raw.name, sku, activeColorOption, variantProductId);
+    const skuResult = resolveVariantSku(raw.sku, activeColorOption, variantProductId);
+    raw.sku = skuResult.sku;
+    if (skuResult.synthetic) {
+      raw.crawl_flags = [...(raw.crawl_flags || []), 'synthetic_variant_sku'];
+    }
+    const slug = deriveSlug(raw.source_url, raw.name, raw.sku, activeColorOption, variantProductId);
     const canonicalHitaProductId = canonicalProductUrl(raw.source_url).match(/-(\d+)\.html$/)?.[1] || null;
-    const hitaProductId = variantProductId || canonicalHitaProductId;
+    const activeAttributeProductId = !variantProductId && activeColorOption?.product_id ? activeColorOption.product_id : null;
+    const hitaProductId = variantProductId || activeAttributeProductId || canonicalHitaProductId;
     const skippedReason = getHardSkipReason({ ...raw, slug, price });
 
     return {
@@ -1103,21 +1157,45 @@ function activeAxisOption(raw, axis) {
   return (raw.active_attribute_options || []).find((option) => option.axis === axis) || null;
 }
 
-function deriveVariantSku(baseSku, activeColorOption, variantProductId) {
+function preferActiveColorImage(images, preferredImageUrl) {
+  const normalizedImages = [...new Set((images || [])
+    .map((url) => normalizeCrawlerImageUrl(url))
+    .filter(isValidCrawlerProductImageUrl))];
+  const preferred = normalizeCrawlerImageUrl(preferredImageUrl);
+  if (!isValidCrawlerProductImageUrl(preferred)) return normalizedImages;
+  return [preferred, ...normalizedImages.filter((url) => url !== preferred)];
+}
+
+function normalizeCrawlerImageUrl(rawUrl) {
+  if (!rawUrl) return '';
+  return resolveUrl(String(rawUrl).trim(), BASE_URL).split('#')[0];
+}
+
+function isValidCrawlerProductImageUrl(rawUrl) {
+  if (!rawUrl || !/^https?:\/\//i.test(rawUrl)) return false;
+  const lower = rawUrl.toLowerCase();
+  if (/youtube|youtu\.be|video|thumbnail|thumb-video|placeholder|loading|spinner|logo|banner|brand|no-image/.test(lower)) return false;
+  if (lower.includes('/storage/comments/')) return false;
+  if (lower.includes('/storage/products/') || lower.includes('/storage/product/')) return true;
+  if (lower.includes('/public/upload/images/')) return true;
+  return lower.includes('hita.com.vn') && lower.includes('/storage/');
+}
+
+function resolveVariantSku(baseSku, activeColorOption, variantProductId) {
   const sku = String(baseSku || '').trim();
-  if (!sku || !variantProductId || !activeColorOption?.value) return sku;
-  const colorSlug = slugify(activeColorOption.value).toUpperCase();
-  const normalizedSku = slugify(sku).toUpperCase();
-  if (normalizedSku.endsWith(`-${colorSlug}`)) return sku;
-  return `${sku}-${colorSlug}`;
+  if (sku) return { sku, synthetic: false };
+  if (!variantProductId || !activeColorOption?.value) return { sku, synthetic: false };
+  return {
+    sku: `HITA-${variantProductId}`,
+    synthetic: true,
+  };
 }
 
 function getHardSkipReason(product) {
   if (!product.sku) return 'sku_null';
-  if (String(product.sku).trim().length < 3) return 'sku_invalid';
+  if (String(product.sku).trim().length < 2) return 'sku_invalid';
   if (!product.name) return 'name_null';
   if (!product.slug) return 'slug_null';
-  if (!product.images?.length) return 'image_null';
   return null;
 }
 
@@ -1284,6 +1362,10 @@ function mergeVariantOptions(options) {
   return result;
 }
 
+function variantOptionValue(options, axis) {
+  return (options || []).find((option) => option.axis === axis)?.value || null;
+}
+
 function slugify(value) {
   return String(value)
     .normalize('NFD')
@@ -1329,6 +1411,7 @@ function normalizeProduct(raw) {
     description: raw.description_clean_html || null,
     description_raw_html: raw.description_raw_html || null,
     description_clean_issues: raw.description_clean_issues || [],
+    crawl_flags: raw.crawl_flags || [],
     specs,
     filter_specs: filterSpecs,
     variant_group: null,
@@ -1407,6 +1490,13 @@ function deriveFilterSpecs(raw) {
       ['Đặt bàn', /(đặt bàn|dương bàn)/i],
       ['Treo tường', /treo tường/i],
     ]) || result['Kiểu lắp'];
+
+    // "Mặt bàn sứ" / "Kệ lavabo" pages on Hita are still lavabo-family products,
+    // but they rarely expose a richer type signal in specs. Treat them as
+    // countertop-style lavabo so they don't fall out of filter QA entirely.
+    if (!result['Kiểu lắp'] && /(mặt bàn sứ|mat ban su|kệ lavabo|ke lavabo)/i.test(searchable)) {
+      result['Kiểu lắp'] = 'Đặt bàn';
+    }
   }
 
   if (taxonomy.subcategory_id === 'sen-tam') {
@@ -1615,24 +1705,36 @@ function assignVariantGroups(normalizedProducts, rawProducts) {
 
     const groupKey = deriveVariantGroupKey(uniqueProducts.map((product) => product.sku));
     const sorted = [...uniqueProducts].sort((a, b) => String(a.sku).localeCompare(String(b.sku)));
+    const includeConfigAxis = new Set(sorted.map((product) => canonicalProductUrl(product.source_url))).size > 1;
     for (const product of sorted) {
       product.variant_group = groupKey;
       product.variant_type = inferVariantType(product, rawProducts);
       product.variant_label = deriveVariantLabel(product, rawProducts);
       product.is_master = product.source_url === sorted[0].source_url;
     }
-    for (const product of sorted) {
-      product.variant_options = mergeVariantOptions([
-        variantOption('config', configOptionValue(product, byUrl), 'Cấu hình'),
-        ...(product.variant_options || []),
-      ]);
+    if (includeConfigAxis) {
+      for (const product of sorted) {
+        product.variant_options = mergeVariantOptions([
+          variantOption('config', configOptionValue(product, byUrl), 'Cấu hình'),
+          ...(product.variant_options || []),
+        ]);
+      }
     }
     const axes = deriveVariantAxes(sorted);
-    for (const product of sorted) product.variant_axes = axes;
+    const groupVariantType = deriveVariantTypeFromAxes(axes, sorted[0].variant_type);
+    for (const product of sorted) {
+      product.variant_axes = axes;
+      product.variant_type = groupVariantType;
+      if (groupVariantType === 'color') {
+        product.variant_label = variantOptionValue(product.variant_options, 'color') || product.variant_label || product.sku;
+      } else if (groupVariantType === 'configuration') {
+        product.variant_label = variantOptionValue(product.variant_options, 'config') || product.variant_label || product.sku;
+      }
+    }
 
     groups.push({
       variant_group: groupKey,
-      variant_type: sorted[0].variant_type,
+      variant_type: groupVariantType,
       axes,
       master_sku: sorted[0].sku,
       products: sorted.map((product) => ({
@@ -1698,6 +1800,19 @@ function axisLabel(axis) {
   return axis;
 }
 
+function deriveVariantTypeFromAxes(axes, fallbackType = 'configuration') {
+  const keys = new Set((axes || []).map((axis) => axis.key));
+  if (keys.has('color') && !keys.has('config')) return 'color';
+  if (keys.has('config')) {
+    const normalizedFallback = String(fallbackType || '').trim().toLowerCase();
+    if (normalizedFallback && !['configuration', 'variant', 'color'].includes(normalizedFallback)) {
+      return fallbackType;
+    }
+    return 'configuration';
+  }
+  return fallbackType || 'configuration';
+}
+
 function deriveVariantGroupKey(skus) {
   const bases = skus
     .map((sku) => String(sku || '').toUpperCase().trim())
@@ -1728,24 +1843,77 @@ function inferVariantType(product, rawProducts) {
 function deriveVariantLabel(product, rawProducts) {
   const raw = rawProducts.find((item) => item.source_url === product.source_url);
   const activeLabel = raw?.variants?.find((variant) => normalizeProductUrl(variant.url) === product.source_url || variant.active)?.clean_label;
-  if (activeLabel) return activeLabel;
   const inboundLabel = rawProducts
     .flatMap((item) => item.variants || [])
     .find((variant) => normalizeProductUrl(variant.url) === product.source_url)?.clean_label;
-  if (inboundLabel) return inboundLabel;
+  const explicitLabel = [activeLabel, inboundLabel].map(cleanVariantLabel).find(Boolean);
   const fromName = inferVariantLabelFromName(product.name, product.sku);
+
+  if (fromName && (!explicitLabel || variantLabelLooksSuspicious(explicitLabel, product))) return fromName;
+  if (explicitLabel && !variantLabelLooksSuspicious(explicitLabel, product)) return explicitLabel;
   if (fromName) return fromName;
-  return product.sku;
+  return explicitLabel || product.sku;
 }
 
 function inferVariantLabelFromName(name, sku) {
-  const text = `${name || ''} ${sku || ''}`;
+  const normalizedName = `${name || ''}`.replace(/\s+/g, ' ').trim();
+  const normalizedSku = String(sku || '').replace(/\s+/g, '').trim().toUpperCase();
+  const text = `${normalizedName} ${normalizedSku}`;
+
+  if ((/^CS988/i.test(normalizedSku) || /neorest/i.test(normalizedName)) && /PVT/i.test(normalizedSku)) {
+    return 'Neorest DH (Thoát ngang)';
+  }
+  if ((/^CS988/i.test(normalizedSku) || /neorest/i.test(normalizedName)) && (/CS988VT/i.test(normalizedSku) || /T53P100VR/i.test(normalizedSku))) {
+    return 'Neorest DH (Thoát sàn)';
+  }
+
+  if (/washlet\s*s2/i.test(normalizedName)) {
+    if (/giấu dây|giau day/i.test(normalizedName)) return 'Washlet S2 (Giấu dây)';
+    const series = normalizedName.match(/\((W\d+|T\d+|E\d+)\)/i)?.[1];
+    if (series) return `Washlet S2 (${series.toUpperCase()})`;
+    if (/TCF33320/i.test(normalizedSku)) return 'Washlet S2 (Tiêu chuẩn)';
+    return 'Washlet S2';
+  }
+
+  if ((/(bồn tắm|bon tam)/i.test(normalizedName) || /^(AT|MT)\d+/i.test(normalizedSku)) && !/(vòi|voi|phụ kiện|phu kien)/i.test(normalizedName)) {
+    const isApron = /^(AT|MT)\d+/i.test(normalizedSku)
+      ? /A$/i.test(normalizedSku)
+      : (/chân yếm|co yếm|có yếm|yếm/i.test(normalizedName) || /A$/i.test(normalizedSku));
+    const parts = [isApron ? 'Chân yếm' : 'Bồn xây'];
+    if (/massage/i.test(normalizedName) || /^MT\d+/i.test(normalizedSku)) parts.push('Massage');
+    return parts.join(', ');
+  }
+
+  if (/^BFV-81SE/i.test(normalizedSku)) return normalizedSku.split('/')[0];
+  if (/^C920\d/i.test(normalizedSku) && /cotto/i.test(normalizedName)) {
+    return `Nắp điện tử ${normalizedSku.match(/C920\d/i)?.[0] || normalizedSku}`;
+  }
+
   const suffix = String(sku || '').match(/\+([A-Z0-9-]+)$/i)?.[1];
   if (/nắp điện tử/i.test(text)) return ['Nắp điện tử', suffix].filter(Boolean).join(' ');
   if (/nắp rửa cơ/i.test(text)) return ['Nắp rửa cơ', suffix].filter(Boolean).join(' ');
   if (/nắp (?:đóng )?êm/i.test(text)) return ['Nắp êm', suffix].filter(Boolean).join(' ');
   if (suffix) return suffix;
   return null;
+}
+
+function variantLabelLooksSuspicious(label, product) {
+  const normalizedLabel = cleanVariantLabel(label);
+  if (!normalizedLabel) return true;
+
+  const normalizedSku = String(product?.sku || '').replace(/\s+/g, '').trim().toUpperCase().split('/')[0];
+  const referencedSkuTokens = normalizedLabel.toUpperCase().match(/\b[A-Z]{1,5}\d{2,}[A-Z0-9-]*\b/g) || [];
+  if (referencedSkuTokens.length > 0 && !referencedSkuTokens.some((token) => normalizedSku.includes(token))) return true;
+
+  const normalizedName = String(product?.name || '').replace(/\s+/g, ' ').trim();
+  if (/massage/i.test(normalizedName) && !/massage/i.test(normalizedLabel)) return true;
+  const isApron = /^(AT|MT)\d+/i.test(normalizedSku)
+    ? /A$/i.test(normalizedSku)
+    : (/chân yếm|co yếm|có yếm|yếm/i.test(normalizedName) || /A$/i.test(normalizedSku));
+  if (isApron && /bồn xây/i.test(normalizedLabel) && !/chân yếm/i.test(normalizedLabel)) return true;
+  if (/washlet\s*s2/i.test(normalizedName) && normalizedLabel.toUpperCase() === normalizedSku) return true;
+
+  return false;
 }
 
 function buildCoverage(normalizedProducts) {
@@ -1910,7 +2078,7 @@ async function crawlProductWithRetry(context, candidate, attempts = 3) {
 
 async function main() {
   console.log(FULL_CRAWL
-    ? `=== Hita full normalized crawl — brand=${BRAND_SLUG} limit=${CANDIDATE_LIMIT} ===`
+    ? `=== Hita full normalized crawl — brand=${BRAND_SLUG} seed_limit=${CANDIDATE_LIMIT} variant_limit=${VARIANT_CRAWL_LIMIT} ===`
     : `=== Hita sample crawl — brand=${BRAND_SLUG} min=${SAMPLE_MIN} max=${SAMPLE_MAX} ===`);
   console.log(`Output: ${SAMPLE_DIR}`);
 
@@ -1932,11 +2100,12 @@ async function main() {
   const variantExtraCounts = {};
   const canonicalDefaultAttributeIds = new Map();
   const limit = pLimit(CONCURRENCY);
+  const maxCrawledUrls = CANDIDATE_LIMIT + VARIANT_CRAWL_LIMIT;
 
   try {
     while (
       queue.length > 0 &&
-      crawled.size < CANDIDATE_LIMIT &&
+      crawled.size < maxCrawledUrls &&
       (!TARGET_SUBCATEGORY || rawProducts.length < SAMPLE_MAX)
     ) {
       const batch = queue.splice(0, CONCURRENCY).filter((candidate) => !crawled.has(candidate.url));
