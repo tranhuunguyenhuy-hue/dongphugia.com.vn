@@ -123,7 +123,7 @@ export function ProductImageGallery({
             <div className="relative w-full aspect-square md:aspect-[628/590] lg:aspect-square rounded-[16px] overflow-hidden bg-stone-50 border border-stone-200">
                 {activeImage && !erroredIndices.has(activeIndex) ? (
                     <div 
-                        className="w-full h-full cursor-zoom-in"
+                        className="relative w-full h-full cursor-zoom-in"
                         role="button"
                         aria-label="Phóng to ảnh sản phẩm"
                         onClick={() => setLightboxOpen(true)}

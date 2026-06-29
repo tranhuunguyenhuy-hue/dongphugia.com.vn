@@ -1,7 +1,7 @@
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { Suspense } from "react"
-import { getPublicProducts, getAvailableFiltersBySubcategory, getSubcategorySpecFilters } from "@/lib/public-api-products"
+import { getPublicProducts, getAvailableFiltersBySubcategory, getProductTypeFiltersBySubcategory, getSubcategorySpecFilters } from "@/lib/public-api-products"
 import prisma from "@/lib/prisma"
 import { ProductCard } from "@/components/ui/product-card"
 import { ProductPagination } from "@/components/ui/product-pagination"
@@ -82,9 +82,10 @@ export default async function ThietBiVeSinhSubPage({ params, searchParams }: Pag
         if (k.startsWith(SF_PREFIX) && v) spec_filters[k.slice(SF_PREFIX.length)] = v
     })
 
-    const [availableFilters, specFilterDefs, allSubcategories, { products, totalPages, total }] = await Promise.all([
+    const [availableFilters, specFilterDefs, productTypeFilters, allSubcategories, { products, totalPages, total }] = await Promise.all([
         getAvailableFiltersBySubcategory(sub, activeProductType),
         getSubcategorySpecFilters(subcategory.id),
+        getProductTypeFiltersBySubcategory(subcategory.id),
         prisma.subcategories.findMany({
             where: { categories: { slug: CATEGORY_SLUG }, is_active: true },
             orderBy: { sort_order: "asc" },
@@ -163,7 +164,7 @@ export default async function ThietBiVeSinhSubPage({ params, searchParams }: Pag
 
                     {/* Product Type filter tabs — directly below icon grid */}
                     <Suspense>
-                        <ProductTypeFilter activeSubSlug={sub} />
+                        <ProductTypeFilter activeSubSlug={sub} types={productTypeFilters} />
                     </Suspense>
 
 
