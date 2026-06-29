@@ -14,6 +14,7 @@ import {
 import { AdvancedSidebarFilter, AvailableFiltersData } from './advanced-sidebar-filter'
 import type { SpecFilterDef } from './subcategory-spec-filter'
 import { useSearchParams } from 'next/navigation'
+import { cn } from '@/lib/utils'
 
 // ── Filter count badge (needs Suspense boundary) ────────────────────────────────
 function FilterCount() {
@@ -43,16 +44,14 @@ export function CategoryMobileFilter({ availableFilters, specFilters, hideColorF
             <SheetTrigger asChild>
                 <button
                     type="button"
-                    className="
-                        inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md
-                        border border-neutral-200 bg-transparent
-                        text-[11px] font-medium text-neutral-400
-                        cursor-pointer select-none
-                        transition-all duration-150
-                        hover:border-neutral-300 hover:text-neutral-600 hover:bg-neutral-50
-                        active:bg-neutral-100
-                        lg:hidden
-                    "
+                    className={cn(
+                        "inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md",
+                        "border border-neutral-200 bg-transparent",
+                        "text-[11px] font-medium text-neutral-400",
+                        "cursor-pointer select-none transition-all duration-150",
+                        "hover:border-neutral-300 hover:text-neutral-600 hover:bg-neutral-50",
+                        "active:bg-neutral-100 lg:hidden"
+                    )}
                 >
                     <SlidersHorizontal className="size-3 opacity-50" />
                     <span>Bộ lọc</span>
