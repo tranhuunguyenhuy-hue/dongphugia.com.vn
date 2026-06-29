@@ -60,6 +60,7 @@ export const CATEGORY_MAP = {
   '/chau-rua-mat-lavabo-dat-ban-266.html':  { subcategory_id: 'lavabo', product_type: 'lavabo-dat-ban' },
   '/chau-rua-mat-lavabo-ban-am-ban-272.html': { subcategory_id: 'lavabo', product_type: 'lavabo-ban-am' },
   '/chan-chau-lavabo.html':             { subcategory_id: 'lavabo', product_type: 'chan-chau-lavabo' },
+  '/ke-lavabo.html':                    { subcategory_id: 'lavabo', product_type: null },
 
   // CAESAR lavabo
   '/chau-rua-mat-lavabo-caesar-391.html':   { subcategory_id: 'lavabo', product_type: null },
@@ -107,6 +108,7 @@ export const CATEGORY_MAP = {
   '/bon-tieu-nam-caesar-397.html':      { subcategory_id: 'bon-tieu', product_type: 'bon-tieu-nam' },
   '/bon-tieu-nam-cotto.html':           { subcategory_id: 'bon-tieu', product_type: 'bon-tieu-nam' },
   '/bon-tieu-nam-atmor.html':           { subcategory_id: 'bon-tieu', product_type: 'bon-tieu-nam' },
+  '/vach-ngan-tieu-nam-350.html':       { subcategory_id: 'bon-tieu', product_type: 'vach-ngan-tieu-nam' },
 
   // ── Phễu Thoát / Phụ Kiện Phòng Tắm ─────────────────────────────────────
   '/pheu-thoat-san-293.html':           { subcategory_id: 'phu-kien-phong-tam', product_type: 'pheu-thoat-san' },
@@ -168,6 +170,7 @@ export const CATEGORY_MAP = {
   '/linh-kien-lap-bon-cau-nap-cau.html': { subcategory_id: 'bon-cau', product_type: 'phu-kien-bon-cau' },
   '/day-cap-nuoc.html':                 { subcategory_id: 'bon-cau', product_type: 'phu-kien-bon-cau' },
   '/tay-gat-nut-nhan-bon-cau.html':     { subcategory_id: 'bon-cau', product_type: 'phu-kien-bon-cau' },
+  '/gioang-cao-su.html':                { subcategory_id: 'bon-cau', product_type: 'phu-kien-bon-cau' },
 
   // ── Bồn Tiểu Nam ──────────────────────────────────────────────────────────
   '/bon-tieu-nam-274.html':             { subcategory_id: 'bon-tieu', product_type: 'bon-tieu-nam' },
