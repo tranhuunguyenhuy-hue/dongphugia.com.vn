@@ -56,6 +56,10 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
         product.variant_group ? getVariantSiblings(product.variant_group, product.id) : Promise.resolve([]),
         product.variant_group ? getVariantSelectionData(product.variant_group, product.id) : Promise.resolve({ axes: [], currentVariantOptions: [], siblings: [] }),
     ])
+    const clientVariantSelectionData = JSON.parse(JSON.stringify(variantSelectionData)) as typeof variantSelectionData
+    const clientVariantSiblings = JSON.parse(
+        JSON.stringify(clientVariantSelectionData.siblings.length > 0 ? clientVariantSelectionData.siblings : variantSiblings)
+    ) as typeof variantSiblings
     const hasComponents = productComponents.some(c => c.child !== null)
 
     const boxIncludes = getPdpPackageItems(product)
@@ -195,16 +199,16 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
                             <ProductVariantMetaPills
                                 initialSku={product.sku}
                                 initialColor={product.colors}
-                                initialVariantOptions={variantSelectionData.currentVariantOptions}
+                                initialVariantOptions={clientVariantSelectionData.currentVariantOptions}
                             />
                         </div>
                     </div>
 
                     <ProductPurchasePanel
                         product={purchaseProduct}
-                        variantSiblings={variantSelectionData.siblings.length > 0 ? variantSelectionData.siblings : variantSiblings}
-                        variantAxes={variantSelectionData.axes}
-                        currentVariantOptions={variantSelectionData.currentVariantOptions}
+                        variantSiblings={clientVariantSiblings}
+                        variantAxes={clientVariantSelectionData.axes}
+                        currentVariantOptions={clientVariantSelectionData.currentVariantOptions}
                         categorySlug={CATEGORY_SLUG}
                         subcategorySlug={product.subcategories?.slug}
                     />
