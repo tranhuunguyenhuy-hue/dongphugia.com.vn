@@ -5,8 +5,18 @@ import React from 'react'
 // Mock next/image
 vi.mock('next/image', () => ({
     default: (props: any) => {
+        const { fill, unoptimized, priority, loader, blurDataURL, placeholder, ...rest } = props
+        const normalizedProps = {
+            ...rest,
+            ...(placeholder ? { 'data-placeholder': placeholder } : {}),
+            ...(fill ? { 'data-fill': 'true' } : {}),
+            ...(unoptimized ? { 'data-unoptimized': 'true' } : {}),
+            ...(priority ? { 'data-priority': 'true' } : {}),
+            ...(blurDataURL ? { 'data-blur': blurDataURL } : {}),
+        }
+
         // eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text
-        return React.createElement('img', props)
+        return React.createElement('img', normalizedProps)
     },
 }))
 

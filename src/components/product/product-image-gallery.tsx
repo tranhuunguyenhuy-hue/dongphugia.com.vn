@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Package2 } from 'lucide-react';
 import Lightbox from "yet-another-react-lightbox";
 import "yet-another-react-lightbox/styles.css";
@@ -44,16 +44,36 @@ export function ProductImageGallery({
     });
 
     const [activeIndex, setActiveIndex] = useState(0);
+    const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
     // Track per-image error state to hide broken thumbnails
     const [erroredIndices, setErroredIndices] = useState<Set<number>>(new Set());
 
-    const activeImage = allImages[activeIndex] ?? null;
+    const displayImages = useMemo(() => {
+        if (!isValidImageUrl(previewImageUrl)) return allImages;
+        return [previewImageUrl!, ...allImages.filter((url) => url !== previewImageUrl)];
+    }, [previewImageUrl, allImages]);
+
+    useEffect(() => {
+        const handlePreview = (event: Event) => {
+            const detail = (event as CustomEvent<{ imageUrl?: string | null }>).detail;
+            if (isValidImageUrl(detail?.imageUrl)) {
+                setPreviewImageUrl(detail!.imageUrl!);
+                setActiveIndex(0);
+                setErroredIndices(new Set());
+            }
+        };
+
+        window.addEventListener('product-variant-preview', handlePreview);
+        return () => window.removeEventListener('product-variant-preview', handlePreview);
+    }, []);
+
+    const activeImage = displayImages[activeIndex] ?? null;
 
     const handleImageError = (idx: number) => {
         setErroredIndices(prev => new Set(prev).add(idx));
         // If active image errored, try next valid one
         if (idx === activeIndex) {
-            const next = allImages.findIndex((_, i) => i !== idx && !erroredIndices.has(i));
+            const next = displayImages.findIndex((_, i) => i !== idx && !erroredIndices.has(i));
             if (next !== -1) setActiveIndex(next);
         }
     };
@@ -81,7 +101,7 @@ export function ProductImageGallery({
         const isLeftSwipe = distance > minSwipeDistance;
         const isRightSwipe = distance < -minSwipeDistance;
 
-        const visibleIndices = allImages.map((_, i) => i).filter(i => !erroredIndices.has(i));
+        const visibleIndices = displayImages.map((_, i) => i).filter(i => !erroredIndices.has(i));
         const currentPos = visibleIndices.indexOf(activeIndex);
 
         if (isLeftSwipe && currentPos < visibleIndices.length - 1) {
@@ -93,7 +113,7 @@ export function ProductImageGallery({
     };
 
     // Visible thumbnails: only those that haven't errored
-    const visibleImages = allImages
+    const visibleImages = displayImages
         .map((img, idx) => ({ img, idx }))
         .filter(({ idx }) => !erroredIndices.has(idx));
 
@@ -103,7 +123,7 @@ export function ProductImageGallery({
             <div className="relative w-full aspect-square md:aspect-[628/590] lg:aspect-square rounded-[16px] overflow-hidden bg-stone-50 border border-stone-200">
                 {activeImage && !erroredIndices.has(activeIndex) ? (
                     <div 
-                        className="w-full h-full cursor-zoom-in"
+                        className="relative w-full h-full cursor-zoom-in"
                         role="button"
                         aria-label="Phóng to ảnh sản phẩm"
                         onClick={() => setLightboxOpen(true)}
@@ -220,7 +240,7 @@ export function ProductImageGallery({
                 index={visibleImages.findIndex(vi => vi.idx === activeIndex) !== -1 ? visibleImages.findIndex(vi => vi.idx === activeIndex) : 0}
                 slides={visibleImages.map(({ img }) => ({ src: img }))}
                 plugins={[Zoom]}
-                on={{ view: ({ index }) => setActiveIndex(visibleImages[index].idx) }}
+                on={{ view: ({ index }: { index: number }) => setActiveIndex(visibleImages[index].idx) }}
             />
         </div>
     );

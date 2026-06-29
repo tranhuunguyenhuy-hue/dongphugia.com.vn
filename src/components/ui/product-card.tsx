@@ -2,6 +2,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { formatPrice, cn } from '@/lib/utils';
 import { siteConfig } from '@/config/site';
+import { getVariantDisplayColor } from '@/lib/variant-color-display';
 
 export interface ProductCardProps {
     product: any;
@@ -63,6 +64,7 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
         dimensionText = product.dimensions || specs.dimensions || specs.simDimensions || product.sizes?.label;
     }
     const sku = product.sku || product.product_code || product.code || '';
+    const isDiscontinued = product.stock_status === 'discontinued';
 
     let discountPercent = 0;
     if (product.original_price && product.price && Number(product.original_price) > Number(product.price)) {
@@ -86,6 +88,11 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
             .map((item: any) => item.product_features?.name)
             .filter(Boolean);
     }
+
+    const displayColor = getVariantDisplayColor({
+        variantOptions: product.variant_options,
+        fallbackColor: product.colors,
+    })
 
     return (
         <Link href={resolvedHref} className="group flex flex-col w-full h-full transition-all duration-300 relative">
@@ -140,7 +147,13 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
                 )}
                 
                 {/* Discount Flag Badge */}
-                {(discountPercent > 0 || product.is_promotion) && (
+                {isDiscontinued ? (
+                    <div className="absolute top-4 left-0 z-20">
+                        <div className="bg-rose-100 text-rose-700 font-bold text-[11px] px-2.5 py-[4px] rounded-r-md shadow-sm border border-l-0 border-rose-200 tracking-wide">
+                            Ngừng KD
+                        </div>
+                    </div>
+                ) : (discountPercent > 0 || product.is_promotion) && (
                     <div className="absolute top-4 left-0 z-20">
                         <div className="bg-[#E53935] text-white font-bold text-[11px] px-2.5 py-[3px] rounded-r-md shadow-md flex items-center shadow-red-900/20 tracking-wider">
                             {discountPercent > 0 ? `-${discountPercent}%` : 'SALE'}
@@ -173,6 +186,7 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
                             {product.stock_status && (
                                 <span className={cn(
                                     "w-1.5 h-1.5 rounded-full",
+                                    product.stock_status === 'discontinued' ? "bg-rose-400" :
                                     product.stock_status === 'in_stock' ? "bg-emerald-500" :
                                     product.stock_status === 'out_of_stock' ? "bg-red-500" : "bg-neutral-300"
                                 )} />
@@ -203,19 +217,23 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
                 <div className="mt-auto"></div>
 
                 {/* Color Layer (Hide if White/Trắng to reduce visual repetition) */}
-                {product.colors && product.colors.name?.toLowerCase() !== 'trắng' && product.colors.name?.toLowerCase() !== 'white' && (
+                {displayColor && displayColor.name?.toLowerCase() !== 'trắng' && displayColor.name?.toLowerCase() !== 'white' && (
                     <div className="flex items-center gap-1.5 mt-1 mb-2">
                         <span
                             className="w-3 h-3 rounded-full border border-black/10 shrink-0 shadow-sm"
-                            style={{ backgroundColor: product.colors.hex_code || '#ccc' }}
+                            style={{ backgroundColor: displayColor.hex_code || '#ccc' }}
                         />
-                        <span className="text-[10px] text-neutral-500 font-medium">{product.colors.name}</span>
+                        <span className="text-[10px] text-neutral-500 font-medium">{displayColor.name}</span>
                     </div>
                 )}
 
                 {/* Price */}
                 <div className="flex flex-col gap-0.5 mt-1 border-t border-neutral-100 pt-3">
-                    {showPrice && product.price ? (
+                    {isDiscontinued ? (
+                        <span className="w-fit rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-[12px] font-bold text-rose-700">
+                            Ngừng kinh doanh
+                        </span>
+                    ) : showPrice && product.price ? (
                         <>
                             <div className="flex items-center gap-2 flex-wrap">
                                 <span className={`font-bold text-[17px] sm:text-[18px] tracking-tight ${product.original_price && Number(product.original_price) > Number(product.price) ? 'text-red-600' : 'text-brand-700'}`}>
