@@ -59,6 +59,28 @@ export type ProductFilters = {
     sortDir?: 'asc' | 'desc'
 }
 
+export type AdminProductListItem = {
+    id: number
+    sku: string
+    name: string
+    slug: string
+    price: number | null
+    original_price: number | null
+    online_discount_amount: number | null
+    price_display: string | null
+    image_main_url: string | null
+    stock_status: string
+    is_active: boolean
+    is_featured: boolean
+    is_home_featured: boolean
+    is_promotion: boolean
+    sort_order: number
+    created_at: Date
+    categories: { name: string; slug: string }
+    subcategories: { name: string } | null
+    brands: { name: string } | null
+}
+
 function serializeProductMoney<T extends {
     price?: unknown
     original_price?: unknown
@@ -70,6 +92,20 @@ function serializeProductMoney<T extends {
         original_price: product.original_price ? Number(product.original_price) : null,
         online_discount_amount: product.online_discount_amount ? Number(product.online_discount_amount) : null,
     }
+}
+
+type SerializedMoneyFields<T> = Omit<T, 'price' | 'original_price' | 'online_discount_amount'> & {
+    price: number | null
+    original_price: number | null
+    online_discount_amount: number | null
+}
+
+function serializeProductListItem<T extends {
+    price?: unknown
+    original_price?: unknown
+    online_discount_amount?: unknown
+}>(product: T): SerializedMoneyFields<T> {
+    return toPlainJson(serializeProductMoney(product)) as SerializedMoneyFields<T>
 }
 
 function serializeProductDetail<T extends {
@@ -395,7 +431,7 @@ export async function getPublicProducts(filters: ProductFilters = {}) {
     ])
 
     return {
-        products: products.map(serializeProductMoney),
+        products: products.map(serializeProductListItem),
         total,
         page,
         pageSize,
@@ -892,7 +928,7 @@ export const getFeaturedProductsByCategorySlug = unstable_cache(
         ])
         
         return {
-            products: products.map(serializeProductMoney),
+            products: products.map(serializeProductListItem),
             total
         }
     },
@@ -945,7 +981,7 @@ export const getTopProductsPerBrand = unstable_cache(
         )
         return results
             .flat()
-            .map(serializeProductMoney)
+            .map(serializeProductListItem)
     },
     ['top-products-per-brand'],
     { revalidate: 3600, tags: ['products', 'featured-products'] }
@@ -974,7 +1010,7 @@ export const getNewArrivals = unstable_cache(
                 brands: { select: { name: true, slug: true } },
             },
         })
-        return products.map(serializeProductMoney)
+        return products.map(serializeProductListItem)
     },
     ['new-arrivals'],
     { revalidate: 3600, tags: ['products', 'new-arrivals'] }
@@ -1005,7 +1041,7 @@ export const getHomeFeaturedProducts = unstable_cache(
                 product_feature_values: { select: { product_features: { select: { name: true, icon_name: true } } } },
             },
         })
-        return products.map(serializeProductMoney)
+        return products.map(serializeProductListItem)
     },
     ['home-featured-products'],
     { revalidate: 3600, tags: ['products', 'home-featured'] }
@@ -1023,7 +1059,13 @@ export async function getAdminProducts(params: {
     sort?: 'price_asc' | 'price_desc' | 'default'
     page?: number
     pageSize?: number
-}) {
+}): Promise<{
+    products: AdminProductListItem[]
+    total: number
+    page: number
+    pageSize: number
+    totalPages: number
+}> {
     const { search, category_id, subcategory_id, brand_id, highlight_type, is_active, sort, page = 1, pageSize = 50 } = params
 
     const where: Prisma.productsWhereInput = {
@@ -1084,7 +1126,7 @@ export async function getAdminProducts(params: {
     ])
 
     return {
-        products: products.map(serializeProductMoney),
+        products: products.map(serializeProductListItem),
         total,
         page,
         pageSize,
