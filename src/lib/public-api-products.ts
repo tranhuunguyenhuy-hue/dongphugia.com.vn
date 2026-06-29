@@ -15,6 +15,7 @@ export type ProductListItem = {
     price: number | null
     price_display: string | null
     image_main_url: string | null
+    variant_options?: unknown
 
     stock_status: string
     is_active: boolean
@@ -375,6 +376,7 @@ export async function getPublicProducts(filters: ProductFilters = {}) {
                 online_discount_amount: true,
                 price_display: true,
                 image_main_url: true,
+                variant_options: true,
 
                 stock_status: true,
                 is_active: true,
