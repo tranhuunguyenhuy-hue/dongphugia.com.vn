@@ -99,17 +99,31 @@ model products {
   is_home_featured        Boolean                           @default(false)
   variant_type            String?                           @db.VarChar(30)
   variant_label           String?                           @db.VarChar(100)
+  variant_options         Json                              @default("[]")
+  product_type_id         Int?
+  product_sub_type_id     Int?
+  variant_group_id        Int?
   order_items             order_items[]
+  crawl_import_decisions  crawl_import_decisions[]          @relation("import_decision_target_product")
+  package_child_items     product_package_items[]           @relation("package_child")
+  package_items           product_package_items[]           @relation("package_parent")
+  product_descriptions    product_descriptions?
+  product_documents       product_documents[]
   product_feature_values  product_feature_values[]
   product_images          product_images[]
+  product_spec_values     product_spec_values[]
   child_relationships     product_relationships[]           @relation("child_relationships")
   parent_relationships    product_relationships[]           @relation("parent_relationships")
+  product_source_mappings product_source_mappings[]
   secondary_subcategories product_secondary_subcategories[]
   brands                  brands?                           @relation(fields: [brand_id], references: [id], onUpdate: NoAction)
   categories              categories                        @relation(fields: [category_id], references: [id], onUpdate: NoAction)
   colors                  colors?                           @relation(fields: [color_id], references: [id], onUpdate: NoAction)
   materials               materials?                        @relation(fields: [material_id], references: [id], onUpdate: NoAction)
   origins                 origins?                          @relation(fields: [origin_id], references: [id], onUpdate: NoAction)
+  product_sub_types       product_sub_types?                @relation(fields: [product_sub_type_id], references: [id], onUpdate: NoAction)
+  product_types           product_types?                    @relation(fields: [product_type_id], references: [id], onUpdate: NoAction)
+  product_variant_groups  product_variant_groups?           @relation(fields: [variant_group_id], references: [id], onUpdate: NoAction)
   subcategories           subcategories?                    @relation(fields: [subcategory_id], references: [id], onUpdate: NoAction)
   quote_items             quote_items[]
 
@@ -129,6 +143,11 @@ model products {
   @@index([product_type], map: "idx_products_product_type")
   @@index([is_combo], map: "idx_products_is_combo")
   @@index([variant_group], map: "idx_products_variant_group")
+  @@index([product_type_id], map: "idx_products_product_type_id")
+  @@index([product_sub_type_id], map: "idx_products_product_sub_type_id")
+  @@index([variant_group_id], map: "idx_products_variant_group_id")
+  @@index([subcategory_id, product_type_id, is_active], map: "idx_products_sub_typeid_active")
+  @@index([product_sub_type_id, is_active], map: "idx_products_subtypeid_active")
 }
 
 model product_relationships {
@@ -140,14 +159,188 @@ model product_relationships {
   sort_order        Int       @default(0)
   created_at        DateTime  @default(now()) @db.Timestamptz(6)
   component_type    String    @default("component") @db.VarChar(30)
+  quantity          Int?
+  resolution_status String    @default("unresolved") @db.VarChar(30)
+  source            String?   @db.VarChar(50)
   child             products? @relation("child_relationships", fields: [child_id], references: [id])
   parent            products  @relation("parent_relationships", fields: [parent_id], references: [id], onDelete: Cascade)
 
-  @@unique([parent_id, child_sku], name: "uq_product_rel")
+  @@unique([parent_id, child_sku, relationship_type], name: "uq_product_rel", map: "uq_product_rel")
   @@index([parent_id], map: "idx_prel_parent")
   @@index([child_id], map: "idx_prel_child")
   @@index([child_sku], map: "idx_prel_child_sku")
   @@index([component_type], map: "idx_prel_component_type")
+  @@index([resolution_status], map: "idx_prel_resolution_status")
+}
+
+model product_types {
+  id                 Int                  @id @default(autoincrement())
+  subcategory_id     Int
+  slug               String               @db.VarChar(100)
+  name               String               @db.VarChar(200)
+  description        String?
+  sort_order         Int                  @default(0)
+  is_active          Boolean              @default(true)
+  filter_policy      Json                 @default("{}")
+  created_at         DateTime             @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime             @default(now()) @db.Timestamptz(6)
+  products           products[]
+  sub_types          product_sub_types[]
+  subcategories      subcategories        @relation(fields: [subcategory_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  filter_definitions filter_definitions[]
+
+  @@unique([subcategory_id, slug], map: "uq_product_types_sub_slug")
+  @@index([subcategory_id], map: "idx_product_types_subcategory")
+  @@index([is_active], map: "idx_product_types_active")
+}
+
+model product_sub_types {
+  id              Int           @id @default(autoincrement())
+  product_type_id Int
+  slug            String        @db.VarChar(100)
+  name            String        @db.VarChar(200)
+  sort_order      Int           @default(0)
+  is_active       Boolean       @default(true)
+  products        products[]
+  product_types   product_types @relation(fields: [product_type_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([product_type_id, slug], map: "uq_product_sub_types_type_slug")
+  @@index([product_type_id], map: "idx_product_sub_types_type")
+  @@index([is_active], map: "idx_product_sub_types_active")
+}
+
+model spec_definitions {
+  id                 Int                   @id @default(autoincrement())
+  key                String                @unique @db.VarChar(120)
+  label              String                @db.VarChar(200)
+  data_type          String                @default("text") @db.VarChar(30)
+  unit               String?               @db.VarChar(30)
+  is_filterable      Boolean               @default(false)
+  is_pdp_visible     Boolean               @default(true)
+  is_reserved        Boolean               @default(false)
+  sort_order         Int                   @default(0)
+  normalize_rule     Json                  @default("{}")
+  created_at         DateTime              @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime              @default(now()) @db.Timestamptz(6)
+  filter_definitions filter_definitions[]
+  options            spec_options[]
+  values             product_spec_values[]
+
+  @@index([is_filterable], map: "idx_spec_definitions_filterable")
+  @@index([is_pdp_visible], map: "idx_spec_definitions_pdp_visible")
+}
+
+model spec_options {
+  id                  Int                   @id @default(autoincrement())
+  spec_definition_id  Int
+  value               String                @db.VarChar(200)
+  slug                String                @db.VarChar(160)
+  sort_order          Int                   @default(0)
+  aliases             String[]              @default([])
+  is_active           Boolean               @default(true)
+  spec_definitions    spec_definitions      @relation(fields: [spec_definition_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  product_spec_values product_spec_values[]
+
+  @@unique([spec_definition_id, slug], map: "uq_spec_options_definition_slug")
+  @@index([spec_definition_id], map: "idx_spec_options_definition")
+  @@index([spec_definition_id, value], map: "idx_spec_options_definition_value")
+  @@index([is_active], map: "idx_spec_options_active")
+}
+
+model product_spec_values {
+  id                 Int              @id @default(autoincrement())
+  product_id         Int
+  spec_definition_id Int
+  option_id          Int?
+  value_text         String?          @db.VarChar(500)
+  value_number       Decimal?         @db.Decimal(15, 4)
+  value_json         Json?
+  raw_key            String?          @db.VarChar(200)
+  raw_value          String?
+  source             String           @default("manual") @db.VarChar(50)
+  confidence         String           @default("medium") @db.VarChar(20)
+  sort_order         Int              @default(0)
+  created_at         DateTime         @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime         @default(now()) @db.Timestamptz(6)
+  products           products         @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  spec_definitions   spec_definitions @relation(fields: [spec_definition_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  spec_options       spec_options?    @relation(fields: [option_id], references: [id], onUpdate: NoAction)
+
+  @@unique([product_id, spec_definition_id, option_id], map: "uq_product_spec_option")
+  @@index([product_id], map: "idx_product_spec_values_product")
+  @@index([spec_definition_id, option_id], map: "idx_product_spec_values_definition_option")
+  @@index([spec_definition_id, value_text], map: "idx_product_spec_values_definition_text")
+  @@index([value_text], map: "idx_product_spec_values_text")
+  @@index([source], map: "idx_product_spec_values_source")
+}
+
+model product_documents {
+  id            Int      @id @default(autoincrement())
+  product_id    Int
+  name          String   @db.VarChar(200)
+  url           String   @db.VarChar(1000)
+  source_url    String?  @db.VarChar(1000)
+  document_type String   @default("DOCUMENT") @db.VarChar(30)
+  file_ext      String?  @db.VarChar(20)
+  file_size     Int?
+  sort_order    Int      @default(0)
+  created_at    DateTime @default(now()) @db.Timestamptz(6)
+  products      products @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([product_id, url], map: "uq_product_documents_product_url")
+  @@index([product_id], map: "idx_product_documents_product")
+  @@index([document_type], map: "idx_product_documents_type")
+}
+
+model product_package_items {
+  id                Int       @id @default(autoincrement())
+  product_id        Int
+  label             String    @db.VarChar(300)
+  child_sku         String?   @db.VarChar(200)
+  child_id          Int?
+  component_type    String    @default("included_item") @db.VarChar(50)
+  quantity          Int?
+  sort_order        Int       @default(0)
+  resolution_status String    @default("unresolved") @db.VarChar(30)
+  created_at        DateTime  @default(now()) @db.Timestamptz(6)
+  child             products? @relation("package_child", fields: [child_id], references: [id], onUpdate: NoAction)
+  products          products  @relation("package_parent", fields: [product_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([product_id, label], map: "uq_product_package_items_product_label")
+  @@index([product_id], map: "idx_product_package_items_product")
+  @@index([child_sku], map: "idx_product_package_items_child_sku")
+  @@index([child_id], map: "idx_product_package_items_child")
+  @@index([resolution_status], map: "idx_product_package_items_resolution")
+}
+
+model product_variant_groups {
+  id           Int        @id @default(autoincrement())
+  group_key    String     @unique @db.VarChar(100)
+  base_sku     String?    @db.VarChar(100)
+  variant_type String     @db.VarChar(50)
+  label        String?    @db.VarChar(200)
+  axes         Json       @default("[]")
+  source       String     @default("manual") @db.VarChar(50)
+  confidence   String     @default("medium") @db.VarChar(20)
+  created_at   DateTime   @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime   @default(now()) @db.Timestamptz(6)
+  products     products[]
+
+  @@index([base_sku], map: "idx_product_variant_groups_base_sku")
+  @@index([variant_type], map: "idx_product_variant_groups_type")
+}
+
+model product_descriptions {
+  id           Int      @id @default(autoincrement())
+  product_id   Int      @unique
+  raw_html     String?
+  clean_html   String?
+  clean_issues String[] @default([])
+  source       String   @default("manual") @db.VarChar(50)
+  updated_at   DateTime @default(now()) @db.Timestamptz(6)
+  products     products @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([source], map: "idx_product_descriptions_source")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -380,21 +573,28 @@ model categories {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model filter_definitions {
-  id             Int            @id @default(autoincrement())
-  category_id    Int?
-  subcategory_id Int?
-  filter_key     String         @db.VarChar(100)
-  filter_label   String         @db.VarChar(200)
-  filter_type    String         @default("select") @db.VarChar(50)
-  options        Json?
-  sort_order     Int            @default(0)
-  is_active      Boolean        @default(true)
-  created_at     DateTime       @default(now()) @db.Timestamptz(6)
-  categories     categories?    @relation(fields: [category_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  subcategories  subcategories? @relation(fields: [subcategory_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id                 Int               @id @default(autoincrement())
+  category_id        Int?
+  subcategory_id     Int?
+  product_type_id    Int?
+  spec_definition_id Int?
+  filter_key         String            @db.VarChar(100)
+  filter_label       String            @db.VarChar(200)
+  filter_type        String            @default("select") @db.VarChar(50)
+  options            Json?
+  sort_order         Int               @default(0)
+  is_active          Boolean           @default(true)
+  created_at         DateTime          @default(now()) @db.Timestamptz(6)
+  categories         categories?       @relation(fields: [category_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  product_types      product_types?    @relation(fields: [product_type_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  spec_definitions   spec_definitions? @relation(fields: [spec_definition_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  subcategories      subcategories?    @relation(fields: [subcategory_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([category_id], map: "idx_filter_def_category")
   @@index([subcategory_id], map: "idx_filter_def_subcategory")
+  @@index([subcategory_id, is_active, sort_order], map: "idx_filter_def_sub_active_sort")
+  @@index([product_type_id], map: "idx_filter_def_product_type")
+  @@index([spec_definition_id], map: "idx_filter_def_spec_definition")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -500,6 +700,7 @@ model subcategories {
   created_at                      DateTime                          @default(now()) @db.Timestamptz(6)
   updated_at                      DateTime                          @default(now()) @db.Timestamptz(6)
   filter_definitions              filter_definitions[]
+  product_types                   product_types[]
   secondary_product_subcategories product_secondary_subcategories[]
   products                        products[]
   categories                      categories                        @relation(fields: [category_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
@@ -524,6 +725,92 @@ model product_secondary_subcategories {
   @@unique([product_id, subcategory_id])
   @@index([product_id], map: "idx_prod_sec_subcat_product")
   @@index([subcategory_id], map: "idx_prod_sec_subcat_subcat")
+}
+
+model crawl_runs {
+  id                      Int                       @id @default(autoincrement())
+  source                  String                    @db.VarChar(50)
+  brand_slug              String?                   @db.VarChar(100)
+  status                  String                    @default("running") @db.VarChar(30)
+  started_at              DateTime                  @default(now()) @db.Timestamptz(6)
+  finished_at             DateTime?                 @db.Timestamptz(6)
+  input                   Json                      @default("{}")
+  summary                 Json                      @default("{}")
+  created_by              Int?
+  crawl_product_snapshots crawl_product_snapshots[]
+
+  @@index([source, brand_slug], map: "idx_crawl_runs_source_brand")
+  @@index([status], map: "idx_crawl_runs_status")
+  @@index([started_at], map: "idx_crawl_runs_started")
+}
+
+model crawl_product_snapshots {
+  id                     Int                     @id @default(autoincrement())
+  crawl_run_id           Int
+  source                 String                  @db.VarChar(50)
+  source_url             String                  @db.VarChar(1000)
+  source_product_id      String?                 @db.VarChar(100)
+  brand_slug             String?                 @db.VarChar(100)
+  sku                    String?                 @db.VarChar(200)
+  raw_payload            Json
+  normalized_payload     Json?
+  content_hash           String?                 @db.VarChar(100)
+  status                 String                  @default("crawled") @db.VarChar(30)
+  skipped_reason         String?                 @db.VarChar(100)
+  qa_flags               String[]                @default([])
+  created_at             DateTime                @default(now()) @db.Timestamptz(6)
+  crawl_runs             crawl_runs              @relation(fields: [crawl_run_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  crawl_import_decisions crawl_import_decisions?
+
+  @@unique([source, source_url, crawl_run_id], map: "uq_crawl_snapshots_source_url_run")
+  @@index([crawl_run_id], map: "idx_crawl_snapshots_run")
+  @@index([sku], map: "idx_crawl_snapshots_sku")
+  @@index([status], map: "idx_crawl_snapshots_status")
+  @@index([source_product_id], map: "idx_crawl_snapshots_source_product")
+}
+
+model crawl_import_decisions {
+  id                      Int                     @id @default(autoincrement())
+  crawl_snapshot_id       Int
+  target_product_id       Int?
+  decision                String                  @default("needs_review") @db.VarChar(40)
+  reason                  String?                 @db.VarChar(200)
+  taxonomy_confidence     String?                 @db.VarChar(20)
+  price_confidence        String?                 @db.VarChar(20)
+  media_confidence        String?                 @db.VarChar(20)
+  specs_confidence        String?                 @db.VarChar(20)
+  reviewer_id             Int?
+  reviewed_at             DateTime?               @db.Timestamptz(6)
+  import_payload          Json?
+  import_result           Json?
+  created_at              DateTime                @default(now()) @db.Timestamptz(6)
+  updated_at              DateTime                @default(now()) @db.Timestamptz(6)
+  crawl_product_snapshots crawl_product_snapshots @relation(fields: [crawl_snapshot_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  products                products?               @relation("import_decision_target_product", fields: [target_product_id], references: [id], onUpdate: NoAction)
+
+  @@unique([crawl_snapshot_id], map: "uq_crawl_import_decisions_snapshot")
+  @@index([decision], map: "idx_crawl_import_decisions_decision")
+  @@index([target_product_id], map: "idx_crawl_import_decisions_target")
+}
+
+model product_source_mappings {
+  id                Int       @id @default(autoincrement())
+  product_id        Int?
+  source            String    @db.VarChar(50)
+  source_product_id String?   @db.VarChar(100)
+  source_url        String    @db.VarChar(1000)
+  sku               String?   @db.VarChar(200)
+  first_seen_at     DateTime  @default(now()) @db.Timestamptz(6)
+  last_seen_at      DateTime  @default(now()) @db.Timestamptz(6)
+  last_crawl_run_id Int?
+  status            String    @default("active") @db.VarChar(30)
+  products          products? @relation(fields: [product_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+
+  @@unique([source, source_url], map: "uq_product_source_mappings_source_url")
+  @@index([product_id], map: "idx_product_source_mappings_product")
+  @@index([source, source_product_id], map: "idx_product_source_mappings_source_product")
+  @@index([sku], map: "idx_product_source_mappings_sku")
+  @@index([status], map: "idx_product_source_mappings_status")
 }
 
 /// Admin users with role-based access control.

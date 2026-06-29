@@ -71,6 +71,151 @@ function serializeProductMoney<T extends {
     }
 }
 
+function serializeProductDetail<T extends {
+    price?: unknown
+    original_price?: unknown
+    online_discount_amount?: unknown
+}>(product: T | null) {
+    if (!product) return null
+
+    // Normalize top-level money fields first, then strip any remaining Prisma/Decimal
+    // instances from nested data before passing across the server -> client boundary.
+    return JSON.parse(JSON.stringify(serializeProductMoney(product))) as T
+}
+
+function toPlainJson<T>(value: T): T {
+    return JSON.parse(JSON.stringify(value)) as T
+}
+
+function toFilterArray(val: string | string[] | undefined) {
+    return val ? (Array.isArray(val) ? val : val.split(',')).map(v => v.trim()).filter(Boolean) : undefined
+}
+
+function buildProductTypeFilter(values: string[], level: 'type' | 'subtype'): Prisma.productsWhereInput {
+    if (level === 'type') {
+        return {
+            product_types: { slug: { in: values } },
+        }
+    }
+
+    return {
+        product_sub_types: { slug: { in: values } },
+    }
+}
+
+function buildSpecFilter(key: string, values: string[]): Prisma.productsWhereInput | null {
+    if (values.length === 0) return null
+
+    const normalizedMatches = values.flatMap((value): Prisma.product_spec_valuesWhereInput[] => [
+        { value_text: { equals: value, mode: 'insensitive' } },
+        { spec_options: { value: { equals: value, mode: 'insensitive' } } },
+    ])
+
+    return {
+        product_spec_values: {
+            some: {
+                spec_definitions: { key },
+                OR: normalizedMatches,
+            },
+        },
+    }
+}
+
+function asPlainObject(value: unknown): Record<string, unknown> {
+    return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {}
+}
+
+function stringifySpecValue(value: unknown) {
+    if (value === null || value === undefined) return ''
+    if (Array.isArray(value)) return value.map(v => String(v).trim()).filter(Boolean).join(', ')
+    if (typeof value === 'object') return JSON.stringify(value)
+    return String(value)
+}
+
+export function getPdpPackageItems(product: {
+    specs?: unknown
+    package_items?: { label: string | null }[]
+}) {
+    const normalized = product.package_items?.map(item => item.label?.trim()).filter(Boolean) as string[] | undefined
+    if (normalized?.length) return normalized
+
+    const legacy = asPlainObject(product.specs)['Phụ kiện đi kèm']
+    if (Array.isArray(legacy)) return legacy.map(item => String(item).trim()).filter(Boolean)
+    if (typeof legacy === 'string' && legacy.trim()) return [legacy.trim()]
+    return []
+}
+
+export function getPdpDocuments(product: {
+    specs?: unknown
+    product_documents?: {
+        name: string
+        url: string
+        document_type?: string | null
+        file_ext?: string | null
+        file_size?: number | null
+    }[]
+}) {
+    const normalized = product.product_documents?.map(doc => ({
+        name: doc.name,
+        url: doc.url,
+        type: doc.document_type || doc.file_ext || undefined,
+        size: doc.file_size ? `${Math.round(doc.file_size / 1024)} KB` : 'Xem chi tiết',
+    })) ?? []
+
+    if (normalized.length) return normalized
+
+    const legacyDocs = asPlainObject(product.specs).documents
+    if (!Array.isArray(legacyDocs)) return []
+
+    return legacyDocs
+        .map((doc: any) => ({
+            name: String(doc?.name || doc?.title || 'Tài liệu').trim(),
+            url: String(doc?.url || '').trim(),
+            type: doc?.type || undefined,
+            size: doc?.size || 'Xem chi tiết',
+        }))
+        .filter(doc => doc.url)
+}
+
+export function getPdpSpecifications(product: {
+    specs?: unknown
+    product_spec_values?: {
+        value_text: string | null
+        value_number: unknown
+        value_json: unknown
+        sort_order: number
+        spec_definitions: { label: string; is_pdp_visible: boolean; sort_order: number }
+        spec_options?: { value: string } | null
+    }[]
+}) {
+    const legacySpecs = asPlainObject(product.specs)
+    const normalizedSpecs: Record<string, string> = {}
+
+    product.product_spec_values
+        ?.filter(value => value.spec_definitions?.is_pdp_visible)
+        .sort((a, b) =>
+            (a.sort_order - b.sort_order)
+            || (a.spec_definitions.sort_order - b.spec_definitions.sort_order)
+        )
+        .forEach(value => {
+            const label = value.spec_definitions.label
+            const display = value.spec_options?.value
+                || value.value_text
+                || stringifySpecValue(value.value_json)
+                || stringifySpecValue(value.value_number)
+            if (label && display && !normalizedSpecs[label]) normalizedSpecs[label] = display
+        })
+
+    if (Object.keys(normalizedSpecs).length === 0) return legacySpecs
+
+    for (const [key, value] of Object.entries(legacySpecs)) {
+        if (['documents', 'technologies', 'Phụ kiện đi kèm'].includes(key)) continue
+        if (!normalizedSpecs[key]) normalizedSpecs[key] = stringifySpecValue(value)
+    }
+
+    return normalizedSpecs
+}
+
 // ─── PUBLIC: LIST PRODUCTS (with filters + pagination) ───────────────────────
 
 export async function getPublicProducts(filters: ProductFilters = {}) {
@@ -102,8 +247,6 @@ export async function getPublicProducts(filters: ProductFilters = {}) {
         sortDir = 'desc',
     } = filters
 
-    const toArray = (val: string | string[] | undefined) => val ? (Array.isArray(val) ? val : val.split(',')) : undefined
-
     // Build AND array to prevent multiple OR conditions from overwriting each other at the root level
     const AND: Prisma.productsWhereInput[] = []
 
@@ -114,7 +257,7 @@ export async function getPublicProducts(filters: ProductFilters = {}) {
         AND.push({ OR: [{ is_master: true }, { is_featured: true }, { sort_order: { gt: 0 } }] })
     }
 
-    const subcatSlugs = subcategory_slugs ? toArray(subcategory_slugs) : (subcategory_slug ? [subcategory_slug] : undefined)
+    const subcatSlugs = subcategory_slugs ? toFilterArray(subcategory_slugs) : (subcategory_slug ? [subcategory_slug] : undefined)
     if (subcatSlugs) {
         AND.push({
             OR: [
@@ -126,12 +269,7 @@ export async function getPublicProducts(filters: ProductFilters = {}) {
 
     // Không hiển thị phụ kiện ở trang listing chính (trừ khi khách đang xem danh mục phụ kiện hoặc tìm kiếm)
     if (!search && !subcatSlugs?.some(s => s.includes('phu-kien')) && (!product_type || !String(product_type).includes('phu-kien'))) {
-        AND.push({
-            OR: [
-                { product_type: null },
-                { NOT: { product_type: { contains: 'phu-kien' } } }
-            ]
-        })
+        AND.push({ NOT: { product_types: { slug: { contains: 'phu-kien' } } } })
     }
 
     if (search) {
@@ -144,17 +282,23 @@ export async function getPublicProducts(filters: ProductFilters = {}) {
         })
     }
 
-    // Spec-based filters: filter by JSON field values in specs column
+    const productTypeValues = toFilterArray(product_type)
+    const productSubTypeValues = toFilterArray(product_sub_type)
+
+    if (productTypeValues?.length) {
+        AND.push(buildProductTypeFilter(productTypeValues, 'type'))
+    }
+
+    if (productSubTypeValues?.length) {
+        AND.push(buildProductTypeFilter(productSubTypeValues, 'subtype'))
+    }
+
+    // Spec-based filters: exact-match normalized values only.
     if (spec_filters && Object.keys(spec_filters).length > 0) {
         Object.entries(spec_filters).forEach(([key, value]) => {
             const values = String(value).split(',').map(v => v.trim()).filter(Boolean)
-            if (values.length === 1) {
-                AND.push({ specs: { path: [key], string_contains: values[0] } })
-            } else if (values.length > 1) {
-                AND.push({
-                    OR: values.map(v => ({ specs: { path: [key], string_contains: v } }))
-                })
-            }
+            const filter = buildSpecFilter(key, values)
+            if (filter) AND.push(filter)
         })
     }
 
@@ -162,21 +306,19 @@ export async function getPublicProducts(filters: ProductFilters = {}) {
         is_active: true,
         ...(AND.length > 0 ? { AND } : {}),
         ...(category_slug && { categories: { slug: category_slug } }),
-        ...(product_type && { product_type: { in: toArray(product_type) } }),
-        ...(product_sub_type && { product_sub_type: { in: toArray(product_sub_type) } }),
         ...(brand_id && { brand_id }),
-        ...(brand_slug && { brands: { slug: { in: toArray(brand_slug) } } }),
+        ...(brand_slug && { brands: { slug: { in: toFilterArray(brand_slug) } } }),
         ...(color_id && { color_id }),
-        ...(color_slug && { colors: { slug: { in: toArray(color_slug) } } }),
+        ...(color_slug && { colors: { slug: { in: toFilterArray(color_slug) } } }),
         ...(material_id && { material_id }),
-        ...(material_slug && { materials: { slug: { in: toArray(material_slug) } } }),
+        ...(material_slug && { materials: { slug: { in: toFilterArray(material_slug) } } }),
         ...(origin_id && { origin_id }),
-        ...(origin_slug && { origins: { slug: { in: toArray(origin_slug) } } }),
+        ...(origin_slug && { origins: { slug: { in: toFilterArray(origin_slug) } } }),
         ...(feature_slugs && {
             product_feature_values: {
                 some: {
                     product_features: {
-                        slug: { in: toArray(feature_slugs) }
+                        slug: { in: toFilterArray(feature_slugs) }
                     }
                 }
             }
@@ -315,10 +457,10 @@ export const getAvailableFilters = unstable_cache(
 
 export const getAvailableFiltersBySubcategory = unstable_cache(
     async (subcategorySlug: string, productType?: string) => {
-        const productWhere = {
+        const productWhere: Prisma.productsWhereInput = {
             is_active: true,
             subcategories: { slug: subcategorySlug },
-            ...(productType ? { product_type: productType } : {}),
+            ...(productType ? { product_types: { slug: productType } } : {}),
         }
 
         const [brands, features, colors, materials, origins] = await Promise.all([
@@ -360,30 +502,86 @@ export const getAvailableFiltersBySubcategory = unstable_cache(
     { revalidate: 3600, tags: ['products', 'filters'] }
 )
 
+export const getProductTypeFiltersBySubcategory = unstable_cache(
+    async (subcategoryId: number) => {
+        const types = await prisma.product_types.findMany({
+            where: {
+                subcategory_id: subcategoryId,
+                is_active: true,
+                products: { some: { is_active: true } },
+            },
+            orderBy: [{ sort_order: 'asc' }, { name: 'asc' }],
+            select: {
+                slug: true,
+                name: true,
+                sub_types: {
+                    where: {
+                        is_active: true,
+                        products: { some: { is_active: true } },
+                    },
+                    orderBy: [{ sort_order: 'asc' }, { name: 'asc' }],
+                    select: { slug: true, name: true },
+                },
+            },
+        })
+
+        if (types.length === 0) return []
+
+        return [
+            { slug: '', label: 'Tất cả' },
+            ...types.map(type => ({
+                slug: type.slug,
+                label: type.name,
+                subTypes: type.sub_types.length > 0
+                    ? [
+                        { slug: '', label: 'Tất cả' },
+                        ...type.sub_types.map(subType => ({ slug: subType.slug, label: subType.name })),
+                    ]
+                    : undefined,
+            })),
+        ]
+    },
+    ['product-type-filters-subcategory'],
+    { revalidate: 3600, tags: ['products', 'product_types'] }
+)
+
 // ─── PUBLIC: GET SPEC FILTERS FOR SUBCATEGORY (from filter_definitions) ───────
 
 export const getSubcategorySpecFilters = unstable_cache(
     async (subcategoryId: number) => {
         const defs = await prisma.filter_definitions.findMany({
-            where: { subcategory_id: subcategoryId, is_active: true },
+            where: {
+                subcategory_id: subcategoryId,
+                is_active: true,
+                spec_definition_id: { not: null },
+                spec_definitions: {
+                    options: { some: { is_active: true } },
+                },
+            },
             orderBy: { sort_order: 'asc' },
-            select: { filter_key: true, filter_label: true, filter_type: true, options: true }
+            select: {
+                filter_type: true,
+                spec_definitions: {
+                    select: {
+                        key: true,
+                        label: true,
+                        options: {
+                            where: { is_active: true },
+                            orderBy: { sort_order: 'asc' },
+                            select: { value: true },
+                        },
+                    },
+                },
+            }
         })
 
-        // Only return filters with source='specs' that have options
-        return defs
-            .filter(d => {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const opts = d.options as any
-                return opts && opts.source === 'specs' && Array.isArray(opts.values) && opts.values.length > 0
-            })
-            .map(d => ({
-                key: d.filter_key,
-                label: d.filter_label,
-                type: d.filter_type,
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                values: (d.options as any).values as string[],
-            }))
+        // Full cutover: spec filter UI is driven by canonical spec_options only.
+        return defs.map(d => ({
+            key: d.spec_definitions!.key,
+            label: d.spec_definitions!.label,
+            type: d.filter_type,
+            values: d.spec_definitions!.options.map(option => option.value),
+        }))
     },
     ['subcategory-spec-filters'],
     { revalidate: 3600, tags: ['filters'] }
@@ -392,7 +590,7 @@ export const getSubcategorySpecFilters = unstable_cache(
 // ─── PUBLIC: PRODUCT DETAIL ──────────────────────────────────────────────────
 
 async function _getPublicProductBySlug(categorySlug: string, slug: string) {
-    return prisma.products.findFirst({
+    const product = await prisma.products.findFirst({
         where: {
             slug,
             is_active: true,
@@ -412,8 +610,26 @@ async function _getPublicProductBySlug(categorySlug: string, slug: string) {
                 include: { product_features: { select: { name: true, icon_name: true } } },
                 orderBy: { product_features: { sort_order: 'asc' } },
             },
+            product_documents: {
+                orderBy: { sort_order: 'asc' },
+            },
+            package_items: {
+                orderBy: { sort_order: 'asc' },
+            },
+            product_spec_values: {
+                include: {
+                    spec_definitions: { select: { label: true, is_pdp_visible: true, sort_order: true } },
+                    spec_options: { select: { value: true } },
+                },
+                orderBy: { sort_order: 'asc' },
+            },
+            product_types: { select: { id: true, slug: true, name: true } },
+            product_sub_types: { select: { id: true, slug: true, name: true } },
+            product_variant_groups: { select: { id: true, group_key: true, base_sku: true, variant_type: true, label: true } },
         },
     })
+
+    return serializeProductDetail(product)
 }
 
 export const getPublicProductBySlug = unstable_cache(
@@ -431,11 +647,14 @@ export type VariantSibling = {
     slug: string
     price: number | null
     original_price: number | null
+    online_discount_amount?: number | null
     price_display: string | null
     image_main_url: string | null
     is_active: boolean
     variant_type: string | null
     variant_label: string | null
+    variant_options?: unknown
+    stock_status?: string | null
     subcategories: { slug: string } | null
     categories: { slug: string }
     colors?: { name: string; hex_code: string | null } | null
@@ -466,22 +685,114 @@ export const getVariantSiblings = unstable_cache(
                 is_active: true,
                 variant_type: true,
                 variant_label: true,
+                stock_status: true,
                 subcategories: { select: { slug: true } },
                 categories: { select: { slug: true } },
                 colors: { select: { name: true, hex_code: true } },
             },
         })
+        const variantOptionsRows = siblings.length > 0
+            ? await prisma.$queryRaw<Array<{ id: number; variant_options: unknown }>>`
+                select id, variant_options
+                from products
+                where id in (${Prisma.join(siblings.map((s) => s.id))})
+            `
+            : []
+        const variantOptionsById = new Map(variantOptionsRows.map((row) => [row.id, row.variant_options]))
 
         return siblings.map(s => ({
             ...s,
             price: s.price ? Number(s.price) : null,
             original_price: s.original_price ? Number(s.original_price) : null,
             online_discount_amount: s.online_discount_amount ? Number(s.online_discount_amount) : null,
+            variant_options: toPlainJson(variantOptionsById.get(s.id) ?? null),
         }))
     },
     ['variant-siblings'],
     { revalidate: 3600, tags: ['products', 'variant-siblings'] }
 )
+
+export async function getVariantSelectionData(variantGroup: string, currentProductId: number) {
+    if (!variantGroup) return { axes: [], currentVariantOptions: [], siblings: [] as VariantSibling[] }
+
+    const [groupRows, productRows] = await Promise.all([
+        prisma.$queryRaw<Array<{ axes: unknown }>>`
+            select axes
+            from product_variant_groups
+            where group_key = ${variantGroup}
+            limit 1
+        `,
+        prisma.$queryRaw<Array<{
+            id: number
+            sku: string
+            name: string
+            slug: string
+            price: unknown
+            original_price: unknown
+            online_discount_amount: unknown
+            price_display: string | null
+            image_main_url: string | null
+            is_active: boolean
+            variant_type: string | null
+            variant_label: string | null
+            variant_options: unknown
+            stock_status: string | null
+            category_slug: string
+            subcategory_slug: string | null
+        }>>`
+            select
+                p.id,
+                p.sku,
+                p.name,
+                p.slug,
+                p.price,
+                p.original_price,
+                p.online_discount_amount,
+                p.price_display,
+                p.image_main_url,
+                p.is_active,
+                p.variant_type,
+                p.variant_label,
+                p.variant_options,
+                p.stock_status,
+                c.slug as category_slug,
+                s.slug as subcategory_slug
+            from products p
+            join categories c on c.id = p.category_id
+            left join subcategories s on s.id = p.subcategory_id
+            where p.variant_group = ${variantGroup}
+            order by p.is_active desc, p.price desc nulls last, p.sku asc
+        `,
+    ])
+
+    const current = productRows.find((row) => row.id === currentProductId)
+    const siblings = productRows
+        .filter((row) => row.id !== currentProductId)
+        .map((row) => ({
+            id: row.id,
+            sku: row.sku,
+            name: row.name,
+            slug: row.slug,
+            price: row.price ? Number(row.price) : null,
+            original_price: row.original_price ? Number(row.original_price) : null,
+            online_discount_amount: row.online_discount_amount ? Number(row.online_discount_amount) : null,
+            price_display: row.price_display,
+            image_main_url: row.image_main_url,
+            is_active: row.is_active,
+            variant_type: row.variant_type,
+            variant_label: row.variant_label,
+            variant_options: row.variant_options,
+            stock_status: row.stock_status,
+            categories: { slug: row.category_slug },
+            subcategories: row.subcategory_slug ? { slug: row.subcategory_slug } : null,
+        }))
+
+    return {
+        axes: toPlainJson(groupRows[0]?.axes ?? []),
+        currentVariantOptions: toPlainJson(current?.variant_options ?? []),
+        siblings: toPlainJson(siblings),
+    }
+}
 
 // ─── PUBLIC: GET PRODUCT COMPONENTS (from product_relationships) ──────────────
 
@@ -529,7 +840,7 @@ export const getFeaturedProductsByCategorySlug = unstable_cache(
         const whereClause: Prisma.productsWhereInput = {
             is_active: true,
             is_home_featured: true,
-            NOT: { product_type: { contains: 'phu-kien' } },
+            NOT: { product_types: { slug: { contains: 'phu-kien' } } },
             categories: { slug: categorySlug },
         }
         
@@ -601,7 +912,7 @@ export const getTopProductsPerBrand = unstable_cache(
                         is_active: true,
                         OR: [{ is_master: true }, { is_featured: true }, { sort_order: { gt: 0 } }],
                         is_featured: true,          // only admin-selected featured products
-                        NOT: { product_type: { contains: 'phu-kien' } },
+                        NOT: { product_types: { slug: { contains: 'phu-kien' } } },
                         categories: { slug: categorySlug },
                         brands: { slug: brandSlug },
                     },

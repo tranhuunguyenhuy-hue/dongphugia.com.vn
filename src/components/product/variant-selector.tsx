@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import type { VariantSibling } from '@/lib/public-api-products'
 import { siteConfig } from '@/config/site'
+import { getPreferredVariantLabel } from '@/lib/variant-labels'
 
 // ─── UTILS ────────────────────────────────────────────────────────────────────
 
@@ -10,7 +11,7 @@ import { siteConfig } from '@/config/site'
  * Rút gọn tên sản phẩm để hiển thị gọn gàng trên Variant Selector
  * Định dạng chuẩn: [Loại nắp] (Giấu dây) [Mã Series W/T/E] hoặc rút gọn phụ kiện Sen tắm
  */
-function getShortVariantName(fullName: string, sku: string, subcategorySlug?: string | null, variantGroup?: string): string {
+function getShortVariantName(fullName: string, sku: string, subcategorySlug?: string | null, variantGroup?: string | null): string {
     const lowerName = fullName.toLowerCase();
     
     // 1. Áp dụng chuẩn [Công nghệ] (Giấu dây) [Series] cho Bồn Cầu và Nắp Bồn Cầu
@@ -182,6 +183,27 @@ function getShortVariantName(fullName: string, sku: string, subcategorySlug?: st
     return trimmed;
 }
 
+function getDisplayVariantLabel({
+    explicitLabel,
+    name,
+    sku,
+    subcategorySlug,
+    variantGroup,
+}: {
+    explicitLabel?: string | null
+    name: string
+    sku: string
+    subcategorySlug?: string | null
+    variantGroup?: string | null
+}) {
+    return getPreferredVariantLabel({
+        explicitLabel,
+        name,
+        sku,
+        fallbackLabel: getShortVariantName(name, sku, subcategorySlug, variantGroup),
+    }) || sku
+}
+
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 
 interface VariantSelectorProps {
@@ -193,6 +215,11 @@ interface VariantSelectorProps {
     currentPrice?: number | null
     currentOriginalPrice?: number | null
     currentColor?: { name: string; hex_code: string | null } | null
+    currentStockStatus?: string | null
+    currentVariantOptions?: unknown
+    variantAxes?: unknown
+    selectedSku?: string | null
+    onPreviewVariant?: (variant: VariantPreview) => void
     /** variant_type of the current product (drives UI mode) */
     variantType?: string | null
     /** variant_label of the current product */
@@ -201,6 +228,93 @@ interface VariantSelectorProps {
     siblings: VariantSibling[]
     categorySlug: string
     subcategorySlug?: string | null
+}
+
+export interface VariantPreview {
+    id?: number
+    sku: string
+    slug: string
+    name: string
+    price: number | null
+    original_price: number | null
+    online_discount_amount?: number | null
+    price_display: string | null
+    image_main_url: string | null
+    stock_status?: string | null
+    is_active?: boolean
+    subcategory_slug?: string | null
+    variant_options?: VariantOption[]
+}
+
+type VariantAxis = { key: string; label: string }
+type VariantOption = { axis: string; value: string; label?: string; image_url?: string; price_text?: string; product_id?: string }
+
+type AxisVariant = VariantPreview & {
+    variant_label: string | null
+    variant_options: VariantOption[]
+    category_slug: string
+}
+
+function parseVariantAxes(value: unknown): VariantAxis[] {
+    if (!Array.isArray(value)) return []
+    return value
+        .map((axis) => {
+            const item = axis as Record<string, unknown>
+            return {
+                key: String(item.key || ''),
+                label: String(item.label || item.key || ''),
+            }
+        })
+        .filter((axis) => axis.key && axis.label)
+}
+
+function parseVariantOptions(value: unknown): VariantOption[] {
+    if (!Array.isArray(value)) return []
+    return value
+        .map((option) => {
+            const item = option as Record<string, unknown>
+            return {
+                axis: String(item.axis || ''),
+                value: String(item.value || ''),
+                label: item.label ? String(item.label) : undefined,
+                image_url: item.image_url ? String(item.image_url) : undefined,
+                price_text: item.price_text ? String(item.price_text) : undefined,
+                product_id: item.product_id ? String(item.product_id) : undefined,
+            }
+        })
+        .filter((option) => option.axis && option.value)
+}
+
+function optionValue(options: VariantOption[], axis: string) {
+    return options.find((option) => option.axis === axis)?.value || null
+}
+
+function stableVariantSort(a: AxisVariant, b: AxisVariant) {
+    if (a.is_active !== b.is_active) return a.is_active ? -1 : 1
+
+    const priceA = a.price ?? -1
+    const priceB = b.price ?? -1
+    if (priceA !== priceB) return priceB - priceA
+
+    return a.sku.localeCompare(b.sku)
+}
+
+function inferVariantAxesFromOptions(options: VariantOption[]): VariantAxis[] {
+    const labelsByAxis = new Map<string, string>()
+
+    for (const option of options) {
+        if (!option.axis || labelsByAxis.has(option.axis)) continue
+        labelsByAxis.set(option.axis, option.label || option.axis)
+    }
+
+    return Array.from(labelsByAxis.entries())
+        .map(([key, label]) => ({ key, label }))
+        .sort((a, b) => {
+            const order = ['config', 'color']
+            const aIndex = order.indexOf(a.key)
+            const bIndex = order.indexOf(b.key)
+            return (aIndex === -1 ? 99 : aIndex) - (bIndex === -1 ? 99 : bIndex)
+        })
 }
 
 // ─── COLOR SWATCH MODE ────────────────────────────────────────────────────────
@@ -355,10 +469,22 @@ function CardGrid({ variants, categorySlug, subcategorySlug, variantGroup }: Car
                         priceDisplay = variant.priceDisplay
                     }
 
-                    const displayLabel = variant.sku || variant.label || getShortVariantName(variant.name, variant.sku, variant.subcategorySlug || subcategorySlug, variantGroup)
+                    const displayLabel = getDisplayVariantLabel({
+                        explicitLabel: variant.label,
+                        name: variant.name,
+                        sku: variant.sku,
+                        subcategorySlug: variant.subcategorySlug || subcategorySlug,
+                        variantGroup,
+                    })
                     const hasDiscount = originalPrice > 0 && sellingPrice > 0 && originalPrice > sellingPrice
                     const discountPercent = hasDiscount ? Math.round(((originalPrice - sellingPrice) / originalPrice) * 100) : 0
                     const image = variant.imageMainUrl
+                    const cardClassName = [
+                        'group relative flex min-h-[62px] w-[170px] items-center gap-2 rounded-lg bg-white px-2 py-2 pl-3 transition-all duration-200',
+                        variant.isCurrent
+                            ? 'border border-brand-500 cursor-default select-none shadow-sm'
+                            : 'border border-stone-200 cursor-pointer hover:border-brand-500 hover:bg-brand-50 hover:shadow-sm active:scale-[0.98]',
+                    ].join(' ')
                     const cardInner = (
                         <>
                             {variant.isCurrent && (
@@ -407,38 +533,188 @@ function CardGrid({ variants, categorySlug, subcategorySlug, variantGroup }: Car
                         </>
                     )
 
-                    if (variant.isCurrent) {
-                        return (
-                            <div
-                                key={variant.sku}
-                                className="
-                                    relative flex min-h-[62px] w-[170px] items-center gap-2
-                                    rounded-lg border border-brand-500 bg-white px-2 py-2 pl-3
-                                    cursor-default select-none shadow-sm
-                                "
-                                aria-current="true"
-                            >
-                                {cardInner}
-                            </div>
-                        )
-                    }
-
                     return (
                         <Link
                             key={variant.sku}
                             href={href}
-                            className="
-                                group relative flex min-h-[62px] w-[170px] items-center gap-2
-                                rounded-lg bg-white px-2 py-2 border border-stone-200
-                                hover:border-brand-500 hover:bg-brand-50 hover:shadow-sm
-                                active:scale-[0.98] transition-all duration-200 cursor-pointer
-                            "
+                            aria-current={variant.isCurrent ? 'true' : undefined}
+                            className={cardClassName}
+                            onClick={variant.isCurrent ? (event) => event.preventDefault() : undefined}
                         >
                             {cardInner}
                         </Link>
                     )
                 })}
             </div>
+        </div>
+    )
+}
+
+function MultiAxisSelector({
+    axes,
+    variants,
+    selectedSku,
+    categorySlug,
+    subcategorySlug,
+    variantGroup,
+    onPreviewVariant,
+}: {
+    axes: VariantAxis[]
+    variants: AxisVariant[]
+    selectedSku: string
+    categorySlug: string
+    subcategorySlug?: string | null
+    variantGroup: string
+    onPreviewVariant?: (variant: VariantPreview) => void
+}) {
+    const configAxis = axes.find((axis) => axis.key === 'config') || axes[0]
+    const colorAxis = axes.find((axis) => axis.key === 'color')
+    const orderedVariants = [...variants].sort(stableVariantSort)
+    const selectedVariant = orderedVariants.find((variant) => variant.sku === selectedSku) || orderedVariants[0]
+    const selectedConfig = optionValue(selectedVariant.variant_options, configAxis.key)
+
+    const configVariants = orderedVariants
+        .filter((variant) => variant.is_active)
+        .filter((variant) => optionValue(variant.variant_options, configAxis.key))
+        .filter((variant, index, all) => {
+            const value = optionValue(variant.variant_options, configAxis.key)
+            return all.findIndex((other) => optionValue(other.variant_options, configAxis.key) === value) === index
+        })
+
+    const colorVariants = colorAxis
+        ? orderedVariants.filter((variant) => optionValue(variant.variant_options, configAxis.key) === selectedConfig && optionValue(variant.variant_options, colorAxis.key))
+        : []
+
+    return (
+        <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-3" role="group" aria-label={`Chọn ${configAxis.label}`}>
+                <div className="flex items-center justify-between">
+                    <p className="text-xs font-semibold text-stone-500 uppercase tracking-widest">{configAxis.label}</p>
+                    <span className="text-[11px] text-stone-400 font-medium tabular-nums">{configVariants.length} mẫu</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                    {configVariants.map((variant) => {
+                        const href = `/${categorySlug}/${variant.subcategory_slug || subcategorySlug}/${variant.slug}`
+                        const isSelectedConfig = optionValue(variant.variant_options, configAxis.key) === selectedConfig
+                        const priceDisplay = variant.price && variant.price > 0
+                            ? new Intl.NumberFormat('vi-VN').format(variant.price) + 'đ'
+                            : variant.price_display || 'Liên hệ'
+                        const displayLabel = getDisplayVariantLabel({
+                            explicitLabel: optionValue(variant.variant_options, configAxis.key) || variant.variant_label,
+                            name: variant.name,
+                            sku: variant.sku,
+                            subcategorySlug: variant.subcategory_slug || subcategorySlug,
+                            variantGroup,
+                        })
+                        const cardClassName = [
+                            'group relative flex min-h-[62px] w-[180px] items-center gap-2 rounded-lg bg-white px-2 py-2 pl-3 transition-all duration-200',
+                            isSelectedConfig
+                                ? 'border border-brand-500 shadow-sm'
+                                : 'border border-stone-200 hover:border-brand-500 hover:bg-brand-50 hover:shadow-sm',
+                        ].join(' ')
+
+                        return (
+                            <Link
+                                key={variant.sku}
+                                href={href}
+                                aria-current={isSelectedConfig ? 'true' : undefined}
+                                className={cardClassName}
+                            >
+                                {isSelectedConfig && (
+                                    <span className="absolute left-0 top-0 flex h-4 w-4 items-start justify-start overflow-hidden rounded-tl-lg">
+                                        <span className="h-0 w-0 border-l-[16px] border-t-[16px] border-l-brand-500 border-t-brand-500 border-r-transparent border-b-transparent" />
+                                        <svg className="absolute left-[2px] top-[2px] size-2.5 text-white" fill="none" viewBox="0 0 12 12" stroke="currentColor" strokeWidth="2">
+                                            <path d="M2 6.5 4.7 9 10 3" strokeLinecap="round" strokeLinejoin="round" />
+                                        </svg>
+                                    </span>
+                                )}
+                                <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-md border border-stone-100 bg-stone-50">
+                                    {variant.image_main_url ? (
+                                        // eslint-disable-next-line @next/next/no-img-element
+                                        <img src={variant.image_main_url} alt={displayLabel} className="h-full w-full object-contain" loading="lazy" />
+                                    ) : (
+                                        <span className="text-[10px] font-semibold text-stone-400">{variant.sku}</span>
+                                    )}
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                    <span className={`line-clamp-2 text-[12px] font-bold leading-tight ${isSelectedConfig ? 'text-brand-700' : 'text-stone-800 group-hover:text-brand-700'}`}>
+                                        {displayLabel}
+                                    </span>
+                                    <span className={`mt-1 block text-[12px] font-semibold leading-none ${isSelectedConfig ? 'text-brand-600' : 'text-stone-600 group-hover:text-brand-600'}`}>
+                                        {priceDisplay}
+                                    </span>
+                                </div>
+                            </Link>
+                        )
+                    })}
+                </div>
+            </div>
+
+            {colorAxis && colorVariants.length > 0 && (
+                <div className="flex flex-col gap-3" role="group" aria-label={`Chọn ${colorAxis.label}`}>
+                    <p className="text-xs font-semibold text-stone-500 uppercase tracking-widest">{colorAxis.label}</p>
+                    <div className="flex flex-wrap gap-2">
+                        {colorVariants.map((variant) => {
+                            const colorLabel = getDisplayVariantLabel({
+                                explicitLabel: optionValue(variant.variant_options, colorAxis.key) || variant.variant_label,
+                                name: variant.name,
+                                sku: variant.sku,
+                                subcategorySlug: variant.subcategory_slug || subcategorySlug,
+                                variantGroup,
+                            })
+                            const isSelected = variant.sku === selectedVariant.sku
+                            const isUnavailable = !variant.sku
+
+                            return (
+                                <button
+                                    key={variant.sku}
+                                    type="button"
+                                    disabled={isUnavailable}
+                                    onClick={() => {
+                                        onPreviewVariant?.(variant)
+                                        window.dispatchEvent(new CustomEvent('product-variant-selection', {
+                                            detail: {
+                                                sku: variant.sku,
+                                                color: colorLabel,
+                                                variantOptions: variant.variant_options,
+                                            },
+                                        }))
+                                        if (variant.image_main_url) {
+                                            window.dispatchEvent(new CustomEvent('product-variant-preview', { detail: { imageUrl: variant.image_main_url } }))
+                                        }
+                                    }}
+                                    title={colorLabel}
+                                    aria-pressed={isSelected}
+                                    className={`group flex min-w-[96px] items-center gap-2 rounded-lg border bg-white px-2 py-2 text-left transition-all ${isSelected ? 'border-brand-500 shadow-sm ring-1 ring-brand-500/10' : 'border-stone-200 hover:border-brand-400 hover:bg-brand-50'} ${isUnavailable ? 'cursor-not-allowed opacity-40' : 'cursor-pointer'}`}
+                                >
+                                    <span className="relative h-9 w-9 shrink-0 overflow-hidden rounded-md border border-stone-100 bg-stone-50">
+                                        {variant.image_main_url ? (
+                                            // eslint-disable-next-line @next/next/no-img-element
+                                            <img src={variant.image_main_url} alt={colorLabel} className="h-full w-full object-contain" loading="lazy" />
+                                        ) : (
+                                            <span className="flex h-full w-full items-center justify-center text-[10px] font-semibold text-stone-400">{colorLabel.slice(0, 2)}</span>
+                                        )}
+                                    </span>
+                                    <span className="flex min-w-0 flex-col">
+                                        <span className={`text-[12px] font-bold leading-tight ${isSelected ? 'text-brand-700' : 'text-stone-800 group-hover:text-brand-700'}`}>
+                                            {colorLabel}
+                                        </span>
+                                        <span className="text-[11px] font-medium text-stone-500">
+                                            {variant.price && variant.price > 0 ? new Intl.NumberFormat('vi-VN').format(variant.price) + 'đ' : variant.price_display || 'Liên hệ'}
+                                        </span>
+                                    </span>
+                                </button>
+                            )
+                        })}
+                    </div>
+                </div>
+            )}
+
+            {colorAxis && colorVariants.length === 0 && (
+                <div className="rounded-lg border border-dashed border-stone-200 bg-stone-50 px-3 py-2 text-xs font-medium text-stone-500">
+                    Cấu hình này chưa có tuỳ chọn {colorAxis.label.toLowerCase()} trên Hita.
+                </div>
+            )}
         </div>
     )
 }
@@ -454,6 +730,11 @@ export function VariantSelector({
     currentPrice,
     currentOriginalPrice,
     currentColor,
+    currentStockStatus,
+    currentVariantOptions,
+    variantAxes,
+    selectedSku,
+    onPreviewVariant,
     variantType,
     variantLabel,
     variantGroup,
@@ -463,6 +744,64 @@ export function VariantSelector({
 }: VariantSelectorProps) {
     // Type C/D: no variant_group → render nothing
     if (!siblings || siblings.length === 0) return null
+
+    const currentOptions = parseVariantOptions(currentVariantOptions)
+    const siblingOptions = siblings.flatMap((s) => parseVariantOptions(s.variant_options))
+    const axes = parseVariantAxes(variantAxes)
+    const effectiveAxes = axes.length > 0
+        ? axes
+        : inferVariantAxesFromOptions([...currentOptions, ...siblingOptions])
+    const hasMultiAxis = effectiveAxes.length > 1 && effectiveAxes.some((axis) => axis.key === 'config') && effectiveAxes.some((axis) => axis.key === 'color')
+
+    if (hasMultiAxis && currentOptions.length > 0) {
+        const allVariants: AxisVariant[] = [
+            {
+                sku: currentSku,
+                slug: currentSlug,
+                name: currentName,
+                price: currentPrice ?? null,
+                original_price: currentOriginalPrice ?? null,
+                online_discount_amount: null,
+                price_display: currentPriceDisplay,
+                image_main_url: currentImageMainUrl ?? null,
+                stock_status: currentStockStatus ?? null,
+                is_active: true,
+                variant_label: variantLabel ?? null,
+                variant_options: currentOptions,
+                category_slug: categorySlug,
+                subcategory_slug: subcategorySlug,
+            },
+            ...siblings.map((s) => ({
+                id: s.id,
+                sku: s.sku,
+                slug: s.slug,
+                name: s.name,
+                price: s.price,
+                original_price: s.original_price,
+                online_discount_amount: s.online_discount_amount ?? null,
+                price_display: s.price_display,
+                image_main_url: s.image_main_url,
+                stock_status: s.stock_status ?? null,
+                is_active: s.is_active,
+                variant_label: s.variant_label,
+                variant_options: parseVariantOptions(s.variant_options),
+                category_slug: s.categories.slug,
+                subcategory_slug: s.subcategories?.slug ?? subcategorySlug,
+            })),
+        ].filter((variant) => variant.variant_options.length > 0)
+
+        return (
+            <MultiAxisSelector
+                axes={effectiveAxes}
+                variants={allVariants}
+                selectedSku={selectedSku || currentSku}
+                categorySlug={categorySlug}
+                subcategorySlug={subcategorySlug}
+                variantGroup={variantGroup}
+                onPreviewVariant={onPreviewVariant}
+            />
+        )
+    }
 
     // Determine the effective variant_type by checking current product first,
     // then falling back to siblings (all should have the same type within a group)
@@ -527,7 +866,7 @@ export function VariantSelector({
                 originalPrice: currentOriginalPrice ?? null,
                 color: currentColor,
                 isActive: true,
-                isCurrent: true,
+                isCurrent: currentSku === selectedSku || !selectedSku,
                 subcategorySlug,
             },
             ...activeSiblings.map(s => ({
@@ -541,7 +880,7 @@ export function VariantSelector({
                 originalPrice: s.original_price,
                 color: s.colors,
                 isActive: s.is_active,
-                isCurrent: false,
+                isCurrent: s.sku === currentSku,
                 subcategorySlug: s.subcategories?.slug ?? subcategorySlug,
             })),
         ].sort((a, b) => a.sku.localeCompare(b.sku))
@@ -569,7 +908,7 @@ export function VariantSelector({
                 originalPrice: currentOriginalPrice ?? null,
                 color: currentColor,
                 isActive: true,
-                isCurrent: true,
+                isCurrent: currentSku === selectedSku || !selectedSku,
                 subcategorySlug,
             },
             ...siblings
@@ -585,7 +924,7 @@ export function VariantSelector({
                     originalPrice: s.original_price,
                     color: s.colors,
                     isActive: s.is_active,
-                    isCurrent: false,
+                    isCurrent: s.sku === currentSku,
                     subcategorySlug: s.subcategories?.slug ?? subcategorySlug,
                 })),
     ].sort((a, b) => a.sku.localeCompare(b.sku))

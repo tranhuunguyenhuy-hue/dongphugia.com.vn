@@ -1,7 +1,7 @@
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 import Link from "next/link"
-import { getPublicProductBySlug, getPublicProducts, getVariantSiblings } from "@/lib/public-api-products"
+import { getPdpDocuments, getPdpPackageItems, getPdpSpecifications, getPublicProductBySlug, getPublicProducts, getVariantSiblings } from "@/lib/public-api-products"
 import { VariantSelector } from "@/components/product/variant-selector"
 import { ProductImageGallery } from "@/components/product/product-image-gallery"
 import { ProductDetailTabs } from "@/components/product/product-detail-tabs"
@@ -53,11 +53,9 @@ export default async function ProductDetailPage({ params }: PageProps) {
 
     const variantSiblings = product.variant_group ? await getVariantSiblings(product.variant_group, product.id) : []
 
-    // Extract "Phụ kiện đi kèm" from specs
-    let boxIncludes: string[] = []
-    if (product.specs && typeof product.specs === 'object' && !Array.isArray(product.specs)) {
-        boxIncludes = (product.specs as any)['Phụ kiện đi kèm'] || []
-    }
+    const boxIncludes = getPdpPackageItems(product)
+    const productDocuments = getPdpDocuments(product)
+    const productSpecifications = getPdpSpecifications(product)
 
     // Fetch related products
     const { products: relatedItems } = await getPublicProducts({
@@ -240,7 +238,8 @@ export default async function ProductDetailPage({ params }: PageProps) {
                         <ProductDetailTabs
                             description={product.description}
                             features={product.features}
-                            specifications={product.specs}
+                            specifications={productSpecifications}
+                            documents={productDocuments}
                         />
                     </div>
                 </div>
