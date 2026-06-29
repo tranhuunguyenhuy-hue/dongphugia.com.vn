@@ -435,13 +435,18 @@ interface CardGridProps {
     variantGroup: string
 }
 
+function stableCardVariantSort(a: CardGridVariant, b: CardGridVariant) {
+    if (a.isActive !== b.isActive) return a.isActive ? -1 : 1
+
+    const priceA = a.price ?? -1
+    const priceB = b.price ?? -1
+    if (priceA !== priceB) return priceB - priceA
+
+    return a.sku.localeCompare(b.sku)
+}
+
 function CardGrid({ variants, categorySlug, subcategorySlug, variantGroup }: CardGridProps) {
-    const uniqueColors = new Set(
-        variants
-            .map(v => v.color?.hex_code?.toLowerCase())
-            .filter(Boolean)
-    )
-    const hasMultipleColors = uniqueColors.size > 1
+    const orderedVariants = [...variants].sort(stableCardVariantSort)
 
     return (
         <div className="flex flex-col gap-3" role="group" aria-label="Chọn phiên bản sản phẩm">
@@ -451,13 +456,13 @@ function CardGrid({ variants, categorySlug, subcategorySlug, variantGroup }: Car
                     Phiên bản
                 </p>
                 <span className="text-[11px] text-stone-400 font-medium tabular-nums">
-                    {variants.length} mẫu
+                    {orderedVariants.length} mẫu
                 </span>
             </div>
 
             {/* Grid */}
             <div className="flex flex-wrap gap-2">
-                {variants.map((variant) => {
+                {orderedVariants.map((variant) => {
                     const href = `/${categorySlug}/${variant.subcategorySlug || subcategorySlug}/${variant.slug}`
                     const originalPrice = Number(variant.originalPrice)
                     const sellingPrice = Number(variant.price)
@@ -505,16 +510,9 @@ function CardGrid({ variants, categorySlug, subcategorySlug, variantGroup }: Car
                             </div>
                             <div className="min-w-0 flex-1">
                                 <div className="flex items-start gap-1">
-                                    {hasMultipleColors && variant.color?.hex_code && (
-                                        <div
-                                            className="mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full border border-black/10 shadow-sm"
-                                            style={{ backgroundColor: variant.color.hex_code }}
-                                            title={variant.color.name}
-                                        />
-                                    )}
                                     <span
                                         className={`line-clamp-1 text-[12px] font-bold leading-tight ${variant.isCurrent ? 'text-brand-700' : 'text-stone-800 group-hover:text-brand-700'}`}
-                                        title={variant.name}
+                                        title={displayLabel}
                                     >
                                         {displayLabel}
                                     </span>
