@@ -33,9 +33,10 @@ function FilterCount() {
 interface CategoryMobileFilterProps {
     availableFilters: AvailableFiltersData
     specFilters?: SpecFilterDef[]
+    hideColorFilter?: boolean
 }
 
-export function CategoryMobileFilter({ availableFilters, specFilters }: CategoryMobileFilterProps) {
+export function CategoryMobileFilter({ availableFilters, specFilters, hideColorFilter = false }: CategoryMobileFilterProps) {
     return (
         <Sheet>
             {/* ── Trigger — ghost-style matching sort-by button ── */}
@@ -99,6 +100,7 @@ export function CategoryMobileFilter({ availableFilters, specFilters }: Category
                         availableFilters={availableFilters}
                         hideTitle={true}
                         hideSubcategoryFilter={true}
+                        hideColorFilter={hideColorFilter}
                         specFilters={specFilters}
                     />
                 </div>
