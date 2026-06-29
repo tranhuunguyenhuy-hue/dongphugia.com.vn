@@ -1,7 +1,7 @@
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 import Link from "next/link"
-import { getPublicProductBySlug, getPublicProducts, getProductComponents, getVariantSelectionData, getVariantSiblings } from "@/lib/public-api-products"
+import { getPdpDocuments, getPdpPackageItems, getPdpSpecifications, getPublicProductBySlug, getPublicProducts, getProductComponents, getVariantSelectionData, getVariantSiblings } from "@/lib/public-api-products"
 import { ProductImageGallery } from "@/components/product/product-image-gallery"
 import { ProductDetailTabs } from "@/components/product/product-detail-tabs"
 import { ProductComponentsSection } from "@/components/product/product-components-section"
@@ -58,11 +58,9 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
     ])
     const hasComponents = productComponents.some(c => c.child !== null)
 
-    // Extract "Phụ kiện đi kèm" from specs
-    let boxIncludes: string[] = []
-    if (product.specs && typeof product.specs === 'object' && !Array.isArray(product.specs)) {
-        boxIncludes = (product.specs as any)['Phụ kiện đi kèm'] || []
-    }
+    const boxIncludes = getPdpPackageItems(product)
+    const productDocuments = getPdpDocuments(product)
+    const productSpecifications = getPdpSpecifications(product)
 
     const additionalImages = product.product_images?.filter(i => i.image_url !== product.image_main_url) ?? []
     const features = product.product_feature_values ?? []
@@ -107,11 +105,6 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
         colors: product.colors,
         brands: product.brands,
     }
-    const plainVariantSiblings = variantSiblings.map((sibling) => ({
-        ...sibling,
-        price: sibling.price ? Number(sibling.price) : null,
-        original_price: sibling.original_price ? Number(sibling.original_price) : null,
-    }))
 
     return (
         <main className="u-container pt-8 pb-28 lg:py-12">
@@ -209,7 +202,7 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
 
                     <ProductPurchasePanel
                         product={purchaseProduct}
-                        variantSiblings={variantSelectionData.siblings.length > 0 ? variantSelectionData.siblings : plainVariantSiblings}
+                        variantSiblings={variantSelectionData.siblings.length > 0 ? variantSelectionData.siblings : variantSiblings}
                         variantAxes={variantSelectionData.axes}
                         currentVariantOptions={variantSelectionData.currentVariantOptions}
                         categorySlug={CATEGORY_SLUG}
@@ -240,7 +233,8 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
                         <ProductDetailTabs
                             description={product.description}
                             features={product.features}
-                            specifications={product.specs}
+                            specifications={productSpecifications}
+                            documents={productDocuments}
                         />
                     </div>
                 </div>

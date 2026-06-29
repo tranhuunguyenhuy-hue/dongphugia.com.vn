@@ -55,13 +55,18 @@ export function ProductVariantMetaPills({
     const [colorName, setColorName] = useState(initialOptionColor || initialColor?.name || null)
 
     useEffect(() => {
+        setSku(initialSku)
+        setColorName(initialOptionColor || initialColor?.name || null)
+    }, [initialSku, initialOptionColor, initialColor?.name])
+
+    useEffect(() => {
         const handleSelection = (event: Event) => {
             const detail = (event as CustomEvent<{ sku?: string; color?: string; variantOptions?: unknown }>).detail
             if (!detail) return
 
             if (detail.sku) setSku(detail.sku)
             const nextColor = detail.color || colorFromOptions(detail.variantOptions)
-            if (nextColor) setColorName(nextColor)
+            setColorName(nextColor || null)
         }
 
         window.addEventListener('product-variant-selection', handleSelection)

@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { VariantSibling } from '@/lib/public-api-products'
 import { ProductCTA } from '@/components/product/product-cta'
 import { ProductPrice } from '@/components/product/product-price'
@@ -25,6 +25,10 @@ export function ProductPurchasePanel({
 }: ProductPurchasePanelProps) {
     const [selectedVariant, setSelectedVariant] = useState<VariantPreview | null>(null)
 
+    useEffect(() => {
+        setSelectedVariant(null)
+    }, [product.id, product.sku])
+
     const displayProduct = useMemo(() => {
         if (!selectedVariant) return product
         return {
@@ -35,6 +39,7 @@ export function ProductPurchasePanel({
             name: selectedVariant.name,
             price: selectedVariant.price,
             original_price: selectedVariant.original_price,
+            online_discount_amount: selectedVariant.online_discount_amount ?? product.online_discount_amount,
             price_display: selectedVariant.price_display,
             image_main_url: selectedVariant.image_main_url,
             stock_status: selectedVariant.stock_status ?? product.stock_status,
@@ -72,7 +77,7 @@ export function ProductPurchasePanel({
                 price={displayProduct.price ? Number(displayProduct.price) : null}
                 originalPrice={displayProduct.original_price ? Number(displayProduct.original_price) : null}
                 priceDisplay={displayProduct.price_display}
-                onlineDiscountAmount={product.online_discount_amount ? Number(product.online_discount_amount) : null}
+                onlineDiscountAmount={displayProduct.online_discount_amount ? Number(displayProduct.online_discount_amount) : null}
                 stockStatus={displayProduct.stock_status}
             >
                 <ProductCTA
