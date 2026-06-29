@@ -33,4 +33,32 @@ describe('ProductCard', () => {
         expect(screen.getByText('Chrome')).toBeInTheDocument()
         expect(screen.queryByText('Đen Bóng')).not.toBeInTheDocument()
     })
+
+    it('marks inactive products as search-only when they appear outside public listings', () => {
+        render(
+            <ProductCard
+                basePath="/thiet-bi-ve-sinh"
+                product={{
+                    name: 'Bồn cầu treo tường Viglacera V902',
+                    slug: 'bon-cau-treo-tuong-viglacera-v902-23451',
+                    sku: 'V902',
+                    price: null,
+                    original_price: null,
+                    online_discount_amount: null,
+                    price_display: 'Liên hệ báo giá',
+                    image_main_url: 'https://cdn.dongphugia.com.vn/migrated/viglacera/73723e4b8565-v902-avt.jpg',
+                    stock_status: 'in_stock',
+                    is_active: false,
+                    is_featured: false,
+                    is_promotion: false,
+                    tbvs_product_types: { slug: 'bon-cau' },
+                    brands: { name: 'Viglacera', slug: 'viglacera' },
+                    variant_options: [],
+                }}
+            />
+        )
+
+        expect(screen.getByText('Có trên tìm kiếm')).toBeInTheDocument()
+        expect(screen.getByText('Liên hệ báo giá')).toBeInTheDocument()
+    })
 })

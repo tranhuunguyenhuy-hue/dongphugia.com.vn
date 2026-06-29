@@ -24,6 +24,7 @@ interface SearchResult {
     is_promotion?: boolean
     is_featured?: boolean
     stock_status?: string | null
+    is_active?: boolean
     display_name?: string | null
     category_slug: string
     subcategory_slug: string | null
@@ -69,7 +70,6 @@ async function fetchSearchResults(q: string, page: number): Promise<SearchRespon
         const searchTerm = q.trim()
 
         const whereClause: Prisma.productsWhereInput = {
-            is_active: true,
             OR: [
                 { name: { contains: searchTerm, mode: 'insensitive' as const } },
                 { sku: { contains: searchTerm, mode: 'insensitive' as const } },
@@ -94,12 +94,14 @@ async function fetchSearchResults(q: string, page: number): Promise<SearchRespon
                     is_promotion: true,
                     is_featured: true,
                     stock_status: true,
+                    is_active: true,
                     display_name: true,
                     categories: { select: { slug: true, name: true } },
                     subcategories: { select: { slug: true, name: true } },
                     brands: { select: { name: true, slug: true } },
                 },
                 orderBy: [
+                    { is_active: 'desc' },
                     { is_promotion: 'desc' },
                     { created_at: 'desc' }
                 ]
@@ -212,12 +214,19 @@ export default async function SearchPage({ searchParams }: PageProps) {
                 <>
                     {/* Stats */}
                     <div className="flex items-center justify-between mb-8 pb-4 border-b border-stone-100">
-                        <p className="text-[15px] text-stone-600">
-                            {data.total > 0
-                                ? <>Tìm thấy <strong className="text-stone-900 font-bold">{data.total.toLocaleString('vi-VN')}</strong> sản phẩm phù hợp</>
-                                : 'Không tìm thấy sản phẩm nào'
-                            }
-                        </p>
+                        <div className="space-y-1">
+                            <p className="text-[15px] text-stone-600">
+                                {data.total > 0
+                                    ? <>Tìm thấy <strong className="text-stone-900 font-bold">{data.total.toLocaleString('vi-VN')}</strong> sản phẩm phù hợp</>
+                                    : 'Không tìm thấy sản phẩm nào'
+                                }
+                            </p>
+                            {data.results.some(item => item.is_active === false) && (
+                                <p className="text-[13px] text-stone-500">
+                                    Một số kết quả là sản phẩm không hiển thị trong danh mục nhưng vẫn có thể mở trang chi tiết khi tìm kiếm trực tiếp.
+                                </p>
+                            )}
+                        </div>
                     </div>
 
                     {/* Grid */}
