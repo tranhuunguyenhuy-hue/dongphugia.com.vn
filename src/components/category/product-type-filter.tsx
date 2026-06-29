@@ -21,11 +21,24 @@ export const SUBCATEGORY_TYPE_CONFIG: Record<string, TypeConfig[]> = {
         { slug: 'bon-cau-treo-tuong', label: 'Treo Tường' },
         { slug: 'bon-cau-dat-san', label: 'Đặt Sàn' },
         { slug: 'bon-cau-thong-minh', label: 'Thông Minh' },
+        {
+            slug: 'phu-kien-bon-cau',
+            label: 'Phụ Kiện',
+            subTypes: [
+                { slug: '', label: 'Tất cả' },
+                { slug: 'ket-nuoc', label: 'Két Nước' },
+                { slug: 'nap-ket-nuoc', label: 'Nắp Két' },
+                { slug: 'bo-xa-bon-cau', label: 'Bộ Xả' },
+                { slug: 'van-xa-bon-cau', label: 'Van Xả' },
+                { slug: 'than-ket-nuoc', label: 'Thân Két' },
+                { slug: 'linh-kien-bon-cau', label: 'Linh Kiện' },
+            ],
+        },
     ],
     'lavabo': [
         { slug: '', label: 'Tất cả' },
         { slug: 'lavabo-dat-ban', label: 'Đặt Bàn' },
-        { slug: 'duong-vanh', label: 'Dương Vành' },
+        { slug: 'lavabo-duong-vanh', label: 'Dương Vành' },
         { slug: 'lavabo-treo-tuong', label: 'Treo Tường' },
         { slug: 'lavabo-am-ban', label: 'Âm Bàn' },
         { slug: 'lavabo-ban-am', label: 'Bán Âm' },
@@ -35,7 +48,7 @@ export const SUBCATEGORY_TYPE_CONFIG: Record<string, TypeConfig[]> = {
     'chau-lavabo': [
         { slug: '', label: 'Tất cả' },
         { slug: 'lavabo-dat-ban', label: 'Đặt Bàn' },
-        { slug: 'duong-vanh', label: 'Dương Vành' },
+        { slug: 'lavabo-duong-vanh', label: 'Dương Vành' },
         { slug: 'lavabo-treo-tuong', label: 'Treo Tường' },
         { slug: 'lavabo-am-ban', label: 'Âm Bàn' },
         { slug: 'lavabo-ban-am', label: 'Bán Âm' },
@@ -44,9 +57,9 @@ export const SUBCATEGORY_TYPE_CONFIG: Record<string, TypeConfig[]> = {
     ],
     'sen-tam': [
         { slug: '', label: 'Tất cả' },
-        { slug: 'tay-sen', label: 'Tay Sen' },
-        { slug: 'sen-dung', label: 'Sen Đứng' },
         { slug: 'cu-sen', label: 'Củ Sen' },
+        { slug: 'bo-sen-cay', label: 'Sen Cây' },
+        { slug: 'tay-sen', label: 'Tay Sen' },
         {
             slug: 'sen-am-tuong',
             label: 'Âm Tường',
@@ -59,17 +72,16 @@ export const SUBCATEGORY_TYPE_CONFIG: Record<string, TypeConfig[]> = {
             ],
         },
         {
-            slug: 'phu-kien',
-            label: 'Phụ Kiện',
+            slug: 'phu-kien-sen-voi',
+            label: 'Phụ Kiện Sen',
             subTypes: [
                 { slug: '', label: 'Tất cả' },
                 { slug: 'bat-sen', label: 'Bát Sen' },
-                { slug: 'tay-sen-dau', label: 'Đầu Sen' },
-                { slug: 'gac-sen', label: 'Gác / Cút Nối' },
-                { slug: 'thanh-truot', label: 'Thanh Trượt' },
+                { slug: 'gac-sen-cut-noi', label: 'Gác / Cút Nối' },
+                { slug: 'thanh-truot-sen', label: 'Thanh Trượt' },
+                { slug: 'van-dieu-chinh', label: 'Van Điều Chỉnh' },
                 { slug: 'day-sen', label: 'Dây & Cần Sen' },
-                { slug: 'mat-dieu-khien', label: 'Mặt Điều Khiển' },
-                { slug: 'linh-kien', label: 'Linh Kiện' },
+                { slug: 'linh-kien-sen', label: 'Linh Kiện' },
             ],
         },
     ],
@@ -84,6 +96,13 @@ export const SUBCATEGORY_TYPE_CONFIG: Record<string, TypeConfig[]> = {
         { slug: 'nap-thuong-dong-em', label: 'Thường / Đóng Êm' },
         { slug: 'nap-dien-tu', label: 'Điện Tử / Thông Minh' },
         { slug: 'nap-rua-co', label: 'Rửa Cơ' },
+    ],
+    'bon-tieu': [
+        { slug: '', label: 'Tất cả' },
+        { slug: 'bon-tieu-nam', label: 'Bồn Tiểu Nam' },
+        { slug: 'van-xa-tieu', label: 'Van Xả Tiểu' },
+        { slug: 'vach-ngan-tieu-nam', label: 'Vách Ngăn' },
+        { slug: 'bon-tieu-nu', label: 'Bồn Tiểu Nữ' },
     ],
     'voi-chau': [
         { slug: '', label: 'Tất cả' },
@@ -102,6 +121,7 @@ export const BON_CAU_TYPES = SUBCATEGORY_TYPE_CONFIG['bon-cau']
 
 interface ProductTypeFilterProps {
     activeSubSlug?: string
+    types?: TypeConfig[]
 }
 
 // ── Segmented tab button ───────────────────────────────────────────────────────
@@ -161,12 +181,14 @@ function RowLabel({ children }: { children: React.ReactNode }) {
 }
 
 // ── Main component ─────────────────────────────────────────────────────────────
-export function ProductTypeFilter({ activeSubSlug }: ProductTypeFilterProps) {
+export function ProductTypeFilter({ activeSubSlug, types: dbTypes }: ProductTypeFilterProps) {
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()
 
-    const types = activeSubSlug ? SUBCATEGORY_TYPE_CONFIG[activeSubSlug] : undefined
+    const types = dbTypes && dbTypes.length > 1
+        ? dbTypes
+        : activeSubSlug ? SUBCATEGORY_TYPE_CONFIG[activeSubSlug] : undefined
     if (!types || types.length <= 1) return null
 
     const activeType = searchParams.get('type') || ''
