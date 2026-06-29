@@ -2,6 +2,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { formatPrice, cn } from '@/lib/utils';
 import { siteConfig } from '@/config/site';
+import { getVariantDisplayColor } from '@/lib/variant-color-display';
 
 export interface ProductCardProps {
     product: any;
@@ -87,6 +88,11 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
             .map((item: any) => item.product_features?.name)
             .filter(Boolean);
     }
+
+    const displayColor = getVariantDisplayColor({
+        variantOptions: product.variant_options,
+        fallbackColor: product.colors,
+    })
 
     return (
         <Link href={resolvedHref} className="group flex flex-col w-full h-full transition-all duration-300 relative">
@@ -211,13 +217,13 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
                 <div className="mt-auto"></div>
 
                 {/* Color Layer (Hide if White/Trắng to reduce visual repetition) */}
-                {product.colors && product.colors.name?.toLowerCase() !== 'trắng' && product.colors.name?.toLowerCase() !== 'white' && (
+                {displayColor && displayColor.name?.toLowerCase() !== 'trắng' && displayColor.name?.toLowerCase() !== 'white' && (
                     <div className="flex items-center gap-1.5 mt-1 mb-2">
                         <span
                             className="w-3 h-3 rounded-full border border-black/10 shrink-0 shadow-sm"
-                            style={{ backgroundColor: product.colors.hex_code || '#ccc' }}
+                            style={{ backgroundColor: displayColor.hex_code || '#ccc' }}
                         />
-                        <span className="text-[10px] text-neutral-500 font-medium">{product.colors.name}</span>
+                        <span className="text-[10px] text-neutral-500 font-medium">{displayColor.name}</span>
                     </div>
                 )}
 
