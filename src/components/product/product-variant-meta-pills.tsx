@@ -65,7 +65,7 @@ export function ProductVariantMetaPills({
             if (!detail) return
 
             if (detail.sku) setSku(detail.sku)
-            const nextColor = detail.color || colorFromOptions(detail.variantOptions)
+            const nextColor = colorFromOptions(detail.variantOptions) || detail.color
             setColorName(nextColor || null)
         }
 
