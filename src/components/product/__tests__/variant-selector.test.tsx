@@ -165,4 +165,92 @@ describe('VariantSelector', () => {
             })
         )
     })
+
+    it('renders color-only variants as Hita-like option cards and previews inline', () => {
+        const onPreviewVariant = vi.fn()
+        const siblings: VariantSibling[] = [
+            {
+                id: 3001,
+                sku: 'VG583-DEN',
+                name: 'Sen cây nóng lạnh Viglacera VG583',
+                slug: 'sen-cay-nong-lanh-viglacera-vg583-den',
+                price: null,
+                original_price: null,
+                online_discount_amount: null,
+                price_display: 'Liên hệ báo giá',
+                image_main_url: 'https://cdn.dongphugia.com.vn/migrated/viglacera/vg583-den.jpg',
+                is_active: false,
+                variant_type: 'color',
+                variant_label: 'Đen',
+                variant_options: [
+                    { axis: 'color', label: 'Màu sắc', value: 'Đen' },
+                ],
+                stock_status: 'in_stock',
+                subcategories: { slug: 'sen-tam' },
+                categories: { slug: 'thiet-bi-ve-sinh' },
+                colors: { name: 'Đen', hex_code: '#111111' },
+            },
+            {
+                id: 3002,
+                sku: 'VG583-XAM',
+                name: 'Sen cây nóng lạnh Viglacera VG583',
+                slug: 'sen-cay-nong-lanh-viglacera-vg583-xam',
+                price: null,
+                original_price: null,
+                online_discount_amount: null,
+                price_display: 'Liên hệ báo giá',
+                image_main_url: 'https://cdn.dongphugia.com.vn/migrated/viglacera/vg583-xam.jpg',
+                is_active: false,
+                variant_type: 'color',
+                variant_label: 'Xám',
+                variant_options: [
+                    { axis: 'color', label: 'Màu sắc', value: 'Xám' },
+                ],
+                stock_status: 'in_stock',
+                subcategories: { slug: 'sen-tam' },
+                categories: { slug: 'thiet-bi-ve-sinh' },
+                colors: { name: 'Xám', hex_code: '#777777' },
+            },
+        ]
+
+        render(
+            <VariantSelector
+                currentSku="VG583"
+                currentSlug="sen-cay-nong-lanh-viglacera-vg583-7265"
+                currentName="Sen cây nóng lạnh Viglacera VG583"
+                currentImageMainUrl="https://cdn.dongphugia.com.vn/migrated/viglacera/vg583-chrome.jpg"
+                currentPriceDisplay={null}
+                currentPrice={6_685_000}
+                currentOriginalPrice={9_550_000}
+                currentColor={{ name: 'Chrome', hex_code: '#E8E9EB' }}
+                currentStockStatus="in_stock"
+                currentVariantOptions={[
+                    { axis: 'color', label: 'Màu sắc', value: 'Chrome' },
+                ]}
+                variantAxes={[{ key: 'color', label: 'Màu sắc' }]}
+                selectedSku="VG583"
+                onPreviewVariant={onPreviewVariant}
+                variantType="color"
+                variantLabel="Chrome"
+                variantGroup="VG583"
+                siblings={siblings}
+                categorySlug="thiet-bi-ve-sinh"
+                subcategorySlug="sen-tam"
+            />
+        )
+
+        expect(screen.getByText('Màu sắc')).toBeInTheDocument()
+        expect(screen.getByText('Chrome')).toBeInTheDocument()
+        expect(screen.getByText('Đen')).toBeInTheDocument()
+        expect(screen.queryByTitle('Màu Đen (liên hệ để đặt hàng)')).not.toBeInTheDocument()
+
+        fireEvent.click(screen.getByRole('button', { name: /Đen/i }))
+
+        expect(onPreviewVariant).toHaveBeenCalledWith(
+            expect.objectContaining({
+                sku: 'VG583-DEN',
+                image_main_url: 'https://cdn.dongphugia.com.vn/migrated/viglacera/vg583-den.jpg',
+            })
+        )
+    })
 })
