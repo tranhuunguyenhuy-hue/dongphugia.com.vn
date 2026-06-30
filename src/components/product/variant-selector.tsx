@@ -2,7 +2,6 @@
 
 import Link from 'next/link'
 import type { VariantSibling } from '@/lib/public-api-products'
-import { siteConfig } from '@/config/site'
 import { getPreferredVariantLabel } from '@/lib/variant-labels'
 
 // ─── UTILS ────────────────────────────────────────────────────────────────────
@@ -352,6 +351,7 @@ function buildFallbackCurrentOptions({
 // ─── COLOR SWATCH MODE ────────────────────────────────────────────────────────
 
 interface SwatchVariant {
+    id?: number
     sku: string
     slug: string
     name: string
@@ -359,83 +359,103 @@ interface SwatchVariant {
     priceDisplay: string | null
     price: number | null
     originalPrice: number | null
+    imageMainUrl: string | null
     color: { name: string; hex_code: string | null } | null | undefined
-    isActive: boolean
     isCurrent: boolean
     subcategorySlug: string | null | undefined
+    variantOptions?: VariantOption[]
+    stockStatus?: string | null
 }
 
 interface ColorSwatchesProps {
     variants: SwatchVariant[]
-    categorySlug: string
-    subcategorySlug?: string | null
+    onPreviewVariant?: (variant: VariantPreview) => void
 }
 
-function ColorSwatches({ variants, categorySlug, subcategorySlug }: ColorSwatchesProps) {
+function formatVariantPrice(price: number | null, priceDisplay: string | null) {
+    if (price && price > 0) return `${new Intl.NumberFormat('vi-VN').format(price)}đ`
+    return priceDisplay || 'Liên hệ'
+}
+
+function ColorSwatches({ variants, onPreviewVariant }: ColorSwatchesProps) {
     return (
         <div className="flex flex-col gap-3" role="group" aria-label="Chọn màu sắc">
             <p className="text-xs font-semibold text-stone-500 uppercase tracking-widest">Màu sắc</p>
             <div className="flex flex-wrap gap-2">
                 {variants.map((variant) => {
-                    const swatchColor = variant.color?.hex_code || '#e5e7eb'
                     const swatchLabel = variant.label || variant.color?.name || variant.name
-                    const href = `/${categorySlug}/${variant.subcategorySlug || subcategorySlug}/${variant.slug}`
+                    const priceDisplay = formatVariantPrice(variant.price, variant.priceDisplay)
+                    const cardClassName = [
+                        'group relative flex min-h-[62px] w-[150px] items-center gap-2 rounded-lg bg-white px-2 py-2 pl-3 text-left transition-all duration-200',
+                        variant.isCurrent
+                            ? 'border border-brand-500 cursor-default shadow-sm'
+                            : 'border border-stone-200 hover:border-brand-500 hover:bg-brand-50 hover:shadow-sm',
+                    ].join(' ')
 
-                    if (variant.isCurrent) {
-                        return (
-                            <div
-                                key={variant.sku}
-                                title={swatchLabel}
-                                aria-current="true"
-                                aria-label={`Màu hiện tại: ${swatchLabel}`}
-                                className="relative w-8 h-8 rounded-full ring-2 ring-offset-2 ring-brand-500 cursor-default shadow"
-                                style={{ backgroundColor: swatchColor }}
-                            >
-                                {/* Active checkmark */}
-                                <span className="absolute inset-0 flex items-center justify-center">
-                                    <svg className="w-3 h-3 text-white drop-shadow" fill="currentColor" viewBox="0 0 12 12">
-                                        <path d="M10 3L5 8.5 2 5.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                    return (
+                        <button
+                            key={variant.sku}
+                            type="button"
+                            title={swatchLabel}
+                            aria-current={variant.isCurrent ? 'true' : undefined}
+                            aria-pressed={variant.isCurrent}
+                            className={cardClassName}
+                            onClick={() => {
+                                if (variant.isCurrent) return
+                                onPreviewVariant?.({
+                                    id: variant.id,
+                                    sku: variant.sku,
+                                    slug: variant.slug,
+                                    name: variant.name,
+                                    price: variant.price,
+                                    original_price: variant.originalPrice,
+                                    price_display: variant.priceDisplay,
+                                    image_main_url: variant.imageMainUrl,
+                                    stock_status: variant.stockStatus,
+                                    variant_options: variant.variantOptions,
+                                })
+                                window.dispatchEvent(new CustomEvent('product-variant-selection', {
+                                    detail: {
+                                        sku: variant.sku,
+                                        color: swatchLabel,
+                                        variantOptions: variant.variantOptions,
+                                    },
+                                }))
+                                if (variant.imageMainUrl) {
+                                    window.dispatchEvent(new CustomEvent('product-variant-preview', {
+                                        detail: { imageUrl: variant.imageMainUrl },
+                                    }))
+                                }
+                            }}
+                        >
+                            {variant.isCurrent && (
+                                <span className="absolute left-0 top-0 flex h-4 w-4 items-start justify-start overflow-hidden rounded-tl-lg">
+                                    <span className="h-0 w-0 border-l-[16px] border-t-[16px] border-l-brand-500 border-t-brand-500 border-r-transparent border-b-transparent" />
+                                    <svg className="absolute left-[2px] top-[2px] size-2.5 text-white" fill="none" viewBox="0 0 12 12" stroke="currentColor" strokeWidth="2">
+                                        <path d="M2 6.5 4.7 9 10 3" strokeLinecap="round" strokeLinejoin="round" />
                                     </svg>
+                                </span>
+                            )}
+                            <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-md border border-stone-100 bg-stone-50">
+                                {variant.imageMainUrl ? (
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img src={variant.imageMainUrl} alt={swatchLabel} className="h-full w-full object-contain" loading="lazy" />
+                                ) : (
+                                    <span
+                                        className="h-7 w-7 rounded-full border border-stone-200"
+                                        style={{ backgroundColor: variant.color?.hex_code || '#e5e7eb' }}
+                                    />
+                                )}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                                <span className={`line-clamp-1 text-[12px] font-bold leading-tight ${variant.isCurrent ? 'text-brand-700' : 'text-stone-800 group-hover:text-brand-700'}`}>
+                                    {swatchLabel}
+                                </span>
+                                <span className={`mt-1 block text-[12px] font-semibold leading-none ${variant.isCurrent ? 'text-brand-600' : 'text-stone-600 group-hover:text-brand-600'}`}>
+                                    {priceDisplay}
                                 </span>
                             </div>
-                        )
-                    }
-
-                    // Stub swatch: is_active=false — show as dashed, open mailto on click
-                    if (!variant.isActive) {
-                        const subject = encodeURIComponent(`Yêu cầu báo giá: ${variant.name}`)
-                        const body = encodeURIComponent(`Kính gửi Đông Phú Gia,\n\nTôi muốn hỏi về sản phẩm:\nMã SKU: ${variant.sku}\nMàu: ${swatchLabel}\n\nVui lòng báo giá cho tôi.\n\nXin cảm ơn.`)
-                        const mailtoHref = `mailto:${siteConfig.contact.email}?subject=${subject}&body=${body}`
-
-                        return (
-                            <a
-                                key={variant.sku}
-                                href={mailtoHref}
-                                title={`${swatchLabel} — Liên hệ báo giá`}
-                                aria-label={`Màu ${swatchLabel} (liên hệ để đặt hàng)`}
-                                className="relative w-8 h-8 rounded-full border-2 border-dashed border-stone-400 opacity-60 hover:opacity-90 cursor-pointer transition-opacity shadow-sm"
-                                style={{ backgroundColor: swatchColor }}
-                            >
-                                {/* Question mark indicator for stub */}
-                                <span className="absolute inset-0 flex items-center justify-center">
-                                    <svg className="w-3 h-3 text-white/80 drop-shadow-sm" fill="currentColor" viewBox="0 0 12 12">
-                                        <text x="2" y="10" fontSize="10" fontWeight="bold">?</text>
-                                    </svg>
-                                </span>
-                            </a>
-                        )
-                    }
-
-                    // Active sibling — navigate to product page
-                    return (
-                        <Link
-                            key={variant.sku}
-                            href={href}
-                            title={swatchLabel}
-                            aria-label={`Màu: ${swatchLabel}`}
-                            className="w-8 h-8 rounded-full border-2 border-stone-200 hover:ring-2 hover:ring-offset-1 hover:ring-brand-400 transition-all cursor-pointer shadow-sm"
-                            style={{ backgroundColor: swatchColor }}
-                        />
+                        </button>
                     )
                 })}
             </div>
@@ -860,12 +880,15 @@ export function VariantSelector({
                 priceDisplay: currentPriceDisplay,
                 price: currentPrice ?? null,
                 originalPrice: currentOriginalPrice ?? null,
+                imageMainUrl: currentImageMainUrl ?? null,
                 color: currentColor,
-                isActive: true,
-                isCurrent: true,
+                isCurrent: (selectedSku || currentSku) === currentSku,
                 subcategorySlug,
+                variantOptions: currentOptions,
+                stockStatus: currentStockStatus ?? null,
             },
             ...siblings.map(s => ({
+                id: s.id,
                 sku: s.sku,
                 slug: s.slug,
                 name: s.name,
@@ -873,18 +896,19 @@ export function VariantSelector({
                 priceDisplay: s.price_display,
                 price: s.price,
                 originalPrice: s.original_price,
+                imageMainUrl: s.image_main_url,
                 color: s.colors,
-                isActive: s.is_active,
-                isCurrent: false,
+                isCurrent: s.sku === (selectedSku || currentSku),
                 subcategorySlug: s.subcategories?.slug ?? subcategorySlug,
+                variantOptions: parseVariantOptions(s.variant_options),
+                stockStatus: s.stock_status ?? null,
             })),
         ].sort((a, b) => a.sku.localeCompare(b.sku))
 
         return (
             <ColorSwatches
                 variants={allVariants}
-                categorySlug={categorySlug}
-                subcategorySlug={subcategorySlug}
+                onPreviewVariant={onPreviewVariant}
             />
         )
     }
