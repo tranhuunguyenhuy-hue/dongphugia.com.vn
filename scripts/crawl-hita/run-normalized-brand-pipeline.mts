@@ -981,8 +981,11 @@ async function stagePrepared() {
     return result
 }
 
-async function importPrepared(runId: number, requireCount: number) {
+async function importPrepared(runId: number) {
     const approvedSkus = await approvedSkusForRun(runId)
+    const alreadyImportedSkus = await importedSkusForRun(runId)
+    const importableSkus = approvedSkus.filter(sku => !alreadyImportedSkus.has(sku))
+    const requireCount = importableSkus.length
     const commonArgs = [
         'tsx',
         'scripts/crawl-hita/import-approved-crawl-snapshots.mts',
@@ -992,7 +995,7 @@ async function importPrepared(runId: number, requireCount: number) {
         `--sample-dir=${preparedDir}`,
         `--image-manifest=${path.join(preparedDir, 'image-migration-manifest.json')}`,
         `--require-count=${requireCount}`,
-        `--only-skus=${approvedSkus.join(',')}`,
+        `--only-skus=${importableSkus.join(',')}`,
         `--concurrency=${Math.max(1, Math.min(8, concurrency))}`,
         '--require-bunny-images',
         '--rewrite-description-images',
@@ -1020,6 +1023,23 @@ async function approvedSkusForRun(runId: number) {
         const payload = asObject(decision.import_payload || decision.crawl_product_snapshots.normalized_payload)
         return toDisplayValue(payload.sku)
     }).filter(Boolean)
+}
+
+async function importedSkusForRun(runId: number) {
+    const decisions = await prisma.crawl_import_decisions.findMany({
+        where: {
+            decision: 'imported',
+            crawl_product_snapshots: { crawl_run_id: runId, source },
+        },
+        include: {
+            crawl_product_snapshots: true,
+        },
+        orderBy: { id: 'asc' },
+    })
+    return new Set(decisions.map(decision => {
+        const payload = asObject(decision.import_payload || decision.crawl_product_snapshots.normalized_payload)
+        return toDisplayValue(payload.sku)
+    }).filter(Boolean))
 }
 
 async function postImportCheck(skus: string[], activeBefore: number) {
@@ -1193,7 +1213,7 @@ async function main() {
     const manifestPayload = await uploadManifest(prepared)
     const manifest = manifestPayload.manifest || []
     const verified = manifest.filter((entry: any) => entry.upload?.verified).length
-    const importResult = await importPrepared(stage.crawl_run_id, stage.summary.approved)
+    const importResult = await importPrepared(stage.crawl_run_id)
     const postImport = importResult ? await postImportCheck(prepared.map(product => product.sku), activeBefore) : null
 
     const summary = {

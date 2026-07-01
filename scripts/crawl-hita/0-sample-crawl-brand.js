@@ -18,7 +18,7 @@ import { fileURLToPath } from 'node:url';
 import { atomicWrite, parseVND, resolveUrl, sleep, withRetry } from './utils.js';
 import { getBrandConfig, parseBrandArg } from './brand-configs.js';
 import { lookupCategory } from './category-map.js';
-import { buildStableProductSlug } from './slug-utils.js';
+import { buildStableProductSlug } from './slug-utils.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const BRAND_SLUG = parseBrandArg();

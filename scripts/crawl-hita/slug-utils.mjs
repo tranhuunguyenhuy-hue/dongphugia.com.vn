@@ -61,4 +61,3 @@ export function buildStableProductSlug({
 
   return fallbackParts.join('-').replace(/-+/g, '-').replace(/^-+|-+$/g, '')
 }
-
