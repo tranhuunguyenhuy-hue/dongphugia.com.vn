@@ -1,12 +1,14 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { getCanonicalSiteUrl } from '@/lib/site';
+import { buildPublicProductVisibilityWhere } from '@/lib/public-product-visibility';
 
 export const revalidate = 86400; // 24 hours
 
 export async function GET() {
-    // Canonical base — no www, no trailing slash
-    const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://dongphugia.com.vn').replace(/\/$/, '');
-    const totalProducts = await prisma.products.count({ where: { is_active: true } });
+    const baseUrl = getCanonicalSiteUrl();
+    const where = buildPublicProductVisibilityWhere();
+    const totalProducts = await prisma.products.count({ where });
     const PAGE_SIZE = 2000;
     const sitemapsCount = Math.ceil(totalProducts / PAGE_SIZE);
 

@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache'
  * Cross-domain cache revalidation endpoint.
  *
  * Called by admin.dongphugia.com.vn after any write operation
- * to ensure the main site (dongphugia.com.vn) reflects fresh data.
+ * to ensure the main site (www.dongphugia.com.vn) reflects fresh data.
  *
  * Security: Protected by REVALIDATION_SECRET header.
  *
@@ -14,7 +14,7 @@ import { revalidatePath } from 'next/cache'
  * Body: { paths?: string[], tags?: string[] }
  *
  * Example call from admin CMS:
- *   await fetch('https://dongphugia.com.vn/api/revalidate', {
+ *   await fetch('https://www.dongphugia.com.vn/api/revalidate', {
  *     method: 'POST',
  *     headers: { 'x-revalidation-secret': process.env.REVALIDATION_SECRET },
  *     body: JSON.stringify({ paths: ['/thiet-bi-ve-sinh', '/'] })

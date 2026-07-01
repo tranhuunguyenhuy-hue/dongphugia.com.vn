@@ -43,7 +43,7 @@ function CharCount({ value, max, warn = 0.85 }: { value: string; max: number; wa
 function SeoPreview({ title, description, slug }: { title: string; description: string; slug: string }) {
     const displayTitle = title || 'Tiêu đề bài viết'
     const displayDesc = description || 'Mô tả SEO sẽ hiển thị tại đây...'
-    const displayUrl = `dongphugia.com.vn/blog/.../${slug || 'slug-bai-viet'}`
+    const displayUrl = `www.dongphugia.com.vn/blog/.../${slug || 'slug-bai-viet'}`
 
     return (
         <div className="rounded-xl border border-[#E4EEF2] bg-white p-4 space-y-1.5">

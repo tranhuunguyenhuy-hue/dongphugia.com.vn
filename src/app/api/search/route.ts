@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { rateLimiter, getClientIp, RATE_LIMITS } from '@/lib/rate-limiter'
+import { buildPublicProductVisibilityWhere } from '@/lib/public-product-visibility'
 
 export async function GET(request: NextRequest) {
     // Rate limiting: 30 requests per minute per IP
@@ -23,11 +24,15 @@ export async function GET(request: NextRequest) {
         }
 
         const whereClause = {
-            is_active: true,
-            OR: [
-                { name: { contains: q, mode: 'insensitive' as const } },
-                { sku: { contains: q, mode: 'insensitive' as const } },
-            ]
+            AND: [
+                buildPublicProductVisibilityWhere(),
+                {
+                    OR: [
+                        { name: { contains: q, mode: 'insensitive' as const } },
+                        { sku: { contains: q, mode: 'insensitive' as const } },
+                    ]
+                },
+            ],
         }
 
         const [products, total] = await Promise.all([
