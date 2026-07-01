@@ -33,6 +33,7 @@ const CONCURRENCY = readNumberArg('--concurrency=', 2);
 const HEADLESS = !args.includes('--headed');
 const TARGET_SUBCATEGORY = readStringArgValue('--subcategory=', '');
 const SEED_URLS = readRepeatedStringArgs('--seed-url=');
+const SEED_FILE = readStringArg('--seed-file=', '');
 const SEED_ONLY = args.includes('--seed-only');
 const OUTPUT_DIR = path.resolve(__dirname, `output/${BRAND_SLUG}`);
 const SAMPLE_DIR = readStringArg(
@@ -217,10 +218,29 @@ function readRepeatedStringArgs(prefix) {
     .filter(Boolean);
 }
 
+function loadSeedUrlsFromFile(file) {
+  if (!file || !fs.existsSync(file)) return [];
+  const raw = fs.readFileSync(file, 'utf8').trim();
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return parsed.map((value) => String(value));
+    if (parsed && typeof parsed === 'object') {
+      const buckets = ['merged_urls', 'listing_urls', 'sitemap_urls', 'urls']
+        .flatMap((key) => (Array.isArray(parsed[key]) ? parsed[key] : []));
+      if (buckets.length > 0) return buckets.map((value) => String(value));
+    }
+  } catch {
+    // Fall back to line-based parsing below.
+  }
+  return raw.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+}
+
 function loadCandidateUrls() {
   const urls = [];
 
   for (const url of SEED_URLS) urls.push({ url, source: 'cli.seed_url', priority: 0 });
+  for (const url of loadSeedUrlsFromFile(SEED_FILE)) urls.push({ url, source: 'cli.seed_file', priority: 0 });
   if (SEED_ONLY) {
     return normalizeCandidateUrls(urls);
   }
@@ -801,7 +821,7 @@ async function crawlProduct(context, candidate) {
       }
 
       function extractSkuCandidatesFromExplicitText(value) {
-        const knownBrands = 'viglacera|toto|inax|caesar|american\\s*standard|cotto|atmor|moen|duravit|grohe|hansgrohe|kluger';
+        const knownBrands = 'viglacera|toto|inax|caesar|american\\s*standard|cotto|atmor|moen|duravit|grohe|hansgrohe|kluger|kanly|panasonic|thien\\s*thanh';
         return String(value || '')
           .replace(/(?:mã sản phẩm|mã sp|sku|model|code|mã)\s*[:：]?\s*/gi, '\n')
           .split(/\n|;|\|/)
@@ -1682,6 +1702,7 @@ function assignVariantGroups(normalizedProducts, rawProducts) {
 
   const visited = new Set();
   const groups = [];
+  const usedVariantGroupKeys = new Map();
 
   for (const url of byUrl.keys()) {
     if (visited.has(url) || !edges.has(url)) continue;
@@ -1703,8 +1724,9 @@ function assignVariantGroups(normalizedProducts, rawProducts) {
     const uniqueProducts = [...new Map(component.map((product) => [product.source_url, product])).values()];
     if (uniqueProducts.length < 2) continue;
 
-    const groupKey = deriveVariantGroupKey(uniqueProducts.map((product) => product.sku));
     const sorted = [...uniqueProducts].sort((a, b) => String(a.sku).localeCompare(String(b.sku)));
+    const baseGroupKey = deriveVariantGroupKey(uniqueProducts.map((product) => product.sku));
+    const groupKey = uniqueVariantGroupKey(baseGroupKey, sorted, usedVariantGroupKeys);
     const includeConfigAxis = new Set(sorted.map((product) => canonicalProductUrl(product.source_url))).size > 1;
     for (const product of sorted) {
       product.variant_group = groupKey;
@@ -1745,7 +1767,9 @@ function assignVariantGroups(normalizedProducts, rawProducts) {
         variant_options: product.variant_options,
         is_master: product.is_master,
       })),
-      rule: 'connected_hita_variant_links + base_model_from_sku',
+      rule: groupKey === baseGroupKey
+        ? 'connected_hita_variant_links + base_model_from_sku'
+        : 'connected_hita_variant_links + base_model_from_sku + collision_suffix',
     });
   }
 
@@ -1770,6 +1794,47 @@ function assignVariantGroups(normalizedProducts, rawProducts) {
     }));
 
   return { groups, unresolvedCandidates };
+}
+
+function uniqueVariantGroupKey(baseGroupKey, products, usedGroupKeys) {
+  const base = String(baseGroupKey || '').trim() || deriveVariantGroupKey(products.map((product) => product.sku));
+  const productSignature = products
+    .map((product) => canonicalProductUrl(product.source_url) || product.source_url || product.sku)
+    .sort()
+    .join('|');
+
+  const existingSignature = usedGroupKeys.get(base);
+  if (!existingSignature) {
+    usedGroupKeys.set(base, productSignature);
+    return base;
+  }
+  if (existingSignature === productSignature) return base;
+
+  const suffix = deriveVariantGroupCollisionSuffix(products);
+  const candidate = `${base}-${suffix}`.slice(0, 50);
+  let uniqueCandidate = candidate;
+  let index = 2;
+  while (usedGroupKeys.has(uniqueCandidate) && usedGroupKeys.get(uniqueCandidate) !== productSignature) {
+    uniqueCandidate = `${candidate}-${index}`.slice(0, 50);
+    index += 1;
+  }
+  usedGroupKeys.set(uniqueCandidate, productSignature);
+  return uniqueCandidate;
+}
+
+function deriveVariantGroupCollisionSuffix(products) {
+  const canonicalSkus = products
+    .map((product) => String(product.sku || '').toUpperCase().trim())
+    .filter(Boolean)
+    .map((sku) => sku.replace(/#[A-Z0-9]+$/i, '').replace(/\/[A-Z]{1,4}\d?$/i, '').split('+')[0].trim())
+    .sort((a, b) => a.length - b.length || a.localeCompare(b));
+  const skuSuffix = canonicalSkus[0]?.replace(/[^A-Z0-9]+/gi, '').slice(0, 24);
+  if (skuSuffix) return skuSuffix;
+
+  const hitaId = products
+    .map((product) => String(product.hita_product_id || product.source_url || '').match(/-(\d+)\.html/i)?.[1] || '')
+    .find(Boolean);
+  return hitaId ? `hita-${hitaId}` : 'variant';
 }
 
 function configOptionValue(product, byUrl) {

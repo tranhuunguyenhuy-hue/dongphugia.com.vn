@@ -138,6 +138,34 @@ export const BRAND_CONFIGS = {
     ],
   },
 
+  duravit: {
+    slug: 'duravit',
+    brandPageUrl: 'https://hita.com.vn/duravit.html',
+    sitemapKeyword: 'duravit',
+    sampleUrls: [],
+  },
+
+  kanly: {
+    slug: 'kanly',
+    brandPageUrl: 'https://hita.com.vn/kanly.html',
+    sitemapKeyword: 'kanly',
+    sampleUrls: [],
+  },
+
+  panasonic: {
+    slug: 'panasonic',
+    brandPageUrl: 'https://hita.com.vn/thiet-bi-dien-panasonic.html',
+    sitemapKeyword: 'panasonic',
+    sampleUrls: [],
+  },
+
+  'thien-thanh': {
+    slug: 'thien-thanh',
+    brandPageUrl: 'https://hita.com.vn/thien-thanh.html',
+    sitemapKeyword: 'thien-thanh',
+    sampleUrls: [],
+  },
+
   grohe: {
     slug: 'grohe',
     brandPageUrl: 'https://hita.com.vn/grohe.html',
