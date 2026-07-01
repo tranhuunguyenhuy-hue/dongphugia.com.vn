@@ -2,7 +2,7 @@ import { Prisma, PrismaClient } from '@prisma/client'
 import fs from 'node:fs'
 import path from 'node:path'
 import pLimit from 'p-limit'
-import { buildStableProductSlug } from './slug-utils.js'
+import { buildStableProductSlug } from './slug-utils.mjs'
 
 const prisma = new PrismaClient()
 
@@ -439,12 +439,31 @@ function manifestPath() {
     return path.join(sampleDir, 'image-migration-manifest.json')
 }
 
-function loadOnlySkus() {
+async function loadOnlySkus() {
     const fromArg = onlySkusArg
         .split(',')
         .map(item => item.trim())
         .filter(Boolean)
     if (fromArg.length > 0) return new Set(fromArg)
+
+    if (runIdArg) {
+        const runId = Number(runIdArg)
+        if (!Number.isFinite(runId)) throw new Error(`Invalid --run-id=${runIdArg}`)
+        const decisions = await prisma.crawl_import_decisions.findMany({
+            where: {
+                decision: includeNeedsManualReview ? { in: ['approved', 'needs_manual_review'] } : 'approved',
+                crawl_product_snapshots: { crawl_run_id: runId, source },
+            },
+            include: {
+                crawl_product_snapshots: true,
+            },
+            orderBy: { id: 'asc' },
+        })
+        return new Set(decisions.map(decision => {
+            const payload = asObject(decision.import_payload || decision.crawl_product_snapshots.normalized_payload)
+            return toDisplayValue(payload.sku)
+        }).filter(Boolean))
+    }
 
     const filePath = sampleProductPath()
     if (!filePath || !fs.existsSync(filePath)) return null
@@ -649,7 +668,7 @@ async function main() {
     if (!Number.isFinite(runId)) throw new Error(`Invalid --run-id=${runIdArg}`)
     if (activate && forceInactive) throw new Error('Use only one of --activate or --force-inactive')
 
-    const onlySkus = loadOnlySkus()
+    const onlySkus = await loadOnlySkus()
     const { verifiedMap: imageMap, brokenSourceUrls } = loadImageManifestState()
 
     const allDecisions = await prisma.crawl_import_decisions.findMany({
@@ -659,9 +678,26 @@ async function main() {
         },
         include: {
             crawl_product_snapshots: true,
-        },
+            },
         orderBy: { id: 'asc' },
     })
+    const alreadyImportedSkus = new Set(
+        (
+            await prisma.crawl_import_decisions.findMany({
+                where: {
+                    decision: 'imported',
+                    crawl_product_snapshots: { crawl_run_id: runId, source },
+                },
+                include: {
+                    crawl_product_snapshots: true,
+                },
+                orderBy: { id: 'asc' },
+            })
+        ).map(decision => {
+            const payload = asObject(decision.import_payload || decision.crawl_product_snapshots.normalized_payload)
+            return toDisplayValue(payload.sku)
+        }).filter(Boolean),
+    )
     const decisions = onlySkus
         ? allDecisions.filter(decision => {
             const payload = asObject(decision.import_payload || decision.crawl_product_snapshots.normalized_payload)
@@ -674,16 +710,24 @@ async function main() {
             const payload = asObject(decision.import_payload || decision.crawl_product_snapshots.normalized_payload)
             return toDisplayValue(payload.sku)
         }))
-        const missing = Array.from(onlySkus).filter(sku => !found.has(sku))
+        const missing = Array.from(onlySkus).filter(sku => !found.has(sku) && !alreadyImportedSkus.has(sku))
         if (missing.length > 0) {
             throw new Error(`SKU guard failed: expected ${onlySkus.size}, found=${found.size}, missing=${missing.join(', ')}`)
+        }
+        const alreadyImported = Array.from(onlySkus).filter(sku => alreadyImportedSkus.has(sku) && !found.has(sku))
+        if (alreadyImported.length > 0) {
+            console.warn(`[import] skipping ${alreadyImported.length} SKU(s) already marked imported for this run`)
         }
         if (decisions.length !== found.size) {
             console.warn(`[import] duplicate approved decisions detected: rows=${decisions.length}, unique_skus=${found.size}`)
         }
     }
     if (requireCount > 0 && decisions.length !== requireCount) {
-        throw new Error(`Count guard failed: expected ${requireCount}, found ${decisions.length}`)
+        if (runIdArg && onlySkus) {
+            console.warn(`[import] count guard mismatch for resumed run: expected ${requireCount}, found ${decisions.length}`)
+        } else {
+            throw new Error(`Count guard failed: expected ${requireCount}, found ${decisions.length}`)
+        }
     }
 
     const variantCounts = new Map<string, number>()
