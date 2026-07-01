@@ -27,13 +27,13 @@ const CATEGORY_NAME = "Thiết Bị Bếp"
 const BASE_PATH = "/thiet-bi-bep"
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-    const { slug } = await params
+    const { sub, slug } = await params
     const product = await getPublicProductBySlug(CATEGORY_SLUG, slug)
     if (!product) return { title: "Sản phẩm không tìm thấy" }
     return {
         title: `${product.name} | ${CATEGORY_NAME}`,
         description: product.description?.slice(0, 160) || `${product.name} - Chính hãng tại Đông Phú Gia Đà Lạt.`,
-        alternates: { canonical: canonicalUrl(`${BASE_PATH}/${slug}`) },
+        alternates: { canonical: canonicalUrl(`${BASE_PATH}/${sub}/${slug}`) },
         openGraph: {
             title: `${product.name}`,
             description: product.description?.slice(0, 160) || `${product.name} - Chính hãng tại Đông Phú Gia Đà Lạt.`,
