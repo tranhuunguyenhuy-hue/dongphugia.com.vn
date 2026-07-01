@@ -2,6 +2,7 @@ import { Prisma, PrismaClient } from '@prisma/client'
 import fs from 'node:fs'
 import path from 'node:path'
 import pLimit from 'p-limit'
+import { buildStableProductSlug } from './slug-utils.js'
 
 const prisma = new PrismaClient()
 
@@ -339,12 +340,26 @@ function cloneProductPayload(product: Record<string, unknown>) {
 }
 
 function importSafeSlug(product: any, sourceUrl: string | null, hitaId: string | null) {
-    const baseSlug = toDisplayValue(product.slug) || slugify(toDisplayValue(product.name) || toDisplayValue(product.sku))
-    if (!baseSlug || !sourceUrl?.includes('?vid=')) return baseSlug
+    return buildStableProductSlug({
+        sourceUrl: sourceUrl || toDisplayValue(product.slug),
+        taxonomy: {
+            product_type: toDisplayValue(product.product_type),
+            product_sub_type: toDisplayValue(product.product_sub_type),
+        },
+        brandSlug: brand,
+        sku: toDisplayValue(product.sku) || toDisplayValue(hitaId) || '',
+        name: toDisplayValue(product.name),
+        variantLabel: variantLabelFromProduct(product),
+        activeVariantLabel: variantLabelFromProduct(product),
+    }) || toDisplayValue(product.slug) || slugify(toDisplayValue(product.name) || toDisplayValue(product.sku))
+}
 
-    const suffix = slugify(toDisplayValue(product.sku) || toDisplayValue(hitaId) || 'variant')
-    if (!suffix || baseSlug.endsWith(`-${suffix}`)) return baseSlug
-    return `${baseSlug}-${suffix}`
+function variantLabelFromProduct(product: any) {
+    if (toDisplayValue(product.variant_label)) return toDisplayValue(product.variant_label)
+    const optionValues = Array.isArray(product.variant_options)
+        ? product.variant_options.map((option: any) => toDisplayValue(option?.value)).filter(Boolean)
+        : []
+    return optionValues.join('-')
 }
 
 function legacySku(value: string, id: number) {

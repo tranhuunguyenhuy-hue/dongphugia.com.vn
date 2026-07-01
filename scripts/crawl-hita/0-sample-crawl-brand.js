@@ -18,6 +18,7 @@ import { fileURLToPath } from 'node:url';
 import { atomicWrite, parseVND, resolveUrl, sleep, withRetry } from './utils.js';
 import { getBrandConfig, parseBrandArg } from './brand-configs.js';
 import { lookupCategory } from './category-map.js';
+import { buildStableProductSlug } from './slug-utils.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const BRAND_SLUG = parseBrandArg();
@@ -454,7 +455,22 @@ function isLikelyProductUrl(url) {
   const canonical = canonicalProductUrl(url);
   if (!canonical.startsWith(BASE_URL) || !canonical.endsWith('.html')) return false;
   const match = canonical.match(/-(\d+)\.html$/);
-  return Boolean(match && Number(match[1]) >= 1000);
+  if (!match) return false;
+  const productId = Number(match[1]);
+  if (productId >= 1000) return true;
+  return hasProductSignals(canonical);
+}
+
+function hasProductSignals(url) {
+  const text = decodeURIComponent(url)
+    .replace(/[-_/]+/g, ' ')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+  if (/(toto|inax|caesar|viglacera|cotto|duravit|grohe|panasonic|atmor|moen|kanly|thien thanh)/.test(text)) return true;
+  if (/\b[a-z]{1,4}\d{2,}[a-z0-9]*\b/.test(text)) return true;
+  if (/\b\d{3,}[a-z]{0,3}\b/.test(text) && /(bon cau|lavabo|sen tam|voi chau|bon tam|nap bon cau|phu kien|thanh truot|ban cau|be ngoi)/.test(text)) return true;
+  return false;
 }
 
 async function crawlProduct(context, candidate) {
@@ -1142,7 +1158,7 @@ async function crawlProduct(context, candidate) {
     if (skuResult.synthetic) {
       raw.crawl_flags = [...(raw.crawl_flags || []), 'synthetic_variant_sku'];
     }
-    const slug = deriveSlug(raw.source_url, raw.name, raw.sku, activeColorOption, variantProductId);
+    const slug = deriveSlug(raw.source_url, raw.name, raw.sku, taxonomy, activeColorOption);
     const canonicalHitaProductId = canonicalProductUrl(raw.source_url).match(/-(\d+)\.html$/)?.[1] || null;
     const activeAttributeProductId = !variantProductId && activeColorOption?.product_id ? activeColorOption.product_id : null;
     const hitaProductId = variantProductId || activeAttributeProductId || canonicalHitaProductId;
@@ -1350,14 +1366,16 @@ function inferTaxonomy(product) {
   };
 }
 
-function deriveSlug(url, name, sku, activeColorOption = null, variantProductId = null) {
-  const fromUrl = url ? new URL(url).pathname.replace(/^\//, '').replace(/\.html$/, '') : '';
-  if (fromUrl) {
-    if (variantProductId && activeColorOption?.value) return `${fromUrl}-${slugify(activeColorOption.value)}`;
-    return fromUrl;
-  }
-  if (!name || !sku) return null;
-  return `${slugify(name)}-${slugify(sku)}`;
+function deriveSlug(url, name, sku, taxonomy, activeColorOption = null) {
+  return buildStableProductSlug({
+    sourceUrl: url,
+    taxonomy,
+    brandSlug: BRAND_SLUG,
+    sku,
+    name,
+    variantLabel: activeColorOption?.label || activeColorOption?.value || '',
+    activeVariantLabel: activeColorOption?.value || '',
+  }) || null;
 }
 
 function variantOption(axis, value, label = null, extra = {}) {
