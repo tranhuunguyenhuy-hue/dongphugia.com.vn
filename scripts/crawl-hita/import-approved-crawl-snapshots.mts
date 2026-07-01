@@ -2,6 +2,7 @@ import { Prisma, PrismaClient } from '@prisma/client'
 import fs from 'node:fs'
 import path from 'node:path'
 import pLimit from 'p-limit'
+import { buildStableProductSlug } from './slug-utils.mjs'
 
 const prisma = new PrismaClient()
 
@@ -66,6 +67,23 @@ function hitaProductId(value: string) {
 
 function humanizeSlug(slug: string) {
     return slug.split('-').map(part => part.charAt(0).toUpperCase() + part.slice(1)).join(' ')
+}
+
+async function ensureBrandRow(brandSlug: string) {
+    const existing = await prisma.brands.findFirst({
+        where: { slug: brandSlug },
+        select: { id: true },
+    })
+    if (existing) return existing
+
+    return prisma.brands.create({
+        data: {
+            name: humanizeSlug(brandSlug),
+            slug: brandSlug,
+            is_active: true,
+        },
+        select: { id: true },
+    })
 }
 
 function asObject(value: unknown): Record<string, unknown> {
@@ -254,41 +272,63 @@ async function ensureSpecOption(specDefinitionId: number, value: string) {
 
 async function resolveExistingProduct(product: any, brandId: number) {
     const sourceUrl = normalizeUrl(toDisplayValue(product.source_url))
-    const sourceProductId = toDisplayValue(product.hita_product_id) || hitaProductId(sourceUrl)
+    const sourceProductId = hitaProductId(sourceUrl) || toDisplayValue(product.hita_product_id)
     const sku = toDisplayValue(product.sku)
 
-    if (sourceProductId) {
-        const byHitaId = await prisma.products.findFirst({
-            where: { brand_id: brandId, hita_product_id: sourceProductId },
-            select: { id: true },
-        })
-        if (byHitaId) return byHitaId
+    const directClauses = [
+        sourceUrl ? { source_url: sourceUrl } : null,
+        sourceProductId ? { hita_product_id: sourceProductId } : null,
+        sku ? { sku } : null,
+    ].filter(Boolean) as Prisma.productsWhereInput[]
 
-        const bySourceMappingId = await prisma.product_source_mappings.findFirst({
-            where: { source, source_product_id: sourceProductId, products: { brand_id: brandId } },
-            select: { product_id: true },
+    if (directClauses.length > 0) {
+        const directMatches = await prisma.products.findMany({
+            where: {
+                brand_id: brandId,
+                OR: directClauses,
+            },
+            select: {
+                id: true,
+                is_active: true,
+                sku: true,
+                source_url: true,
+                hita_product_id: true,
+            },
         })
-        if (bySourceMappingId?.product_id) return { id: bySourceMappingId.product_id }
+
+        const ranked = directMatches
+            .map(row => ({
+                id: row.id,
+                is_active: row.is_active,
+                score:
+                    ((sourceUrl && normalizeUrl(toDisplayValue(row.source_url)) === sourceUrl) ? 100 : 0) +
+                    ((sku && toDisplayValue(row.sku) === sku) ? 80 : 0) +
+                    ((sourceProductId && toDisplayValue(row.hita_product_id) === sourceProductId) ? 60 : 0),
+            }))
+            .filter(row => row.score > 0)
+            .sort((a, b) => b.score - a.score || a.id - b.id)
+
+        if (ranked[0]) return { id: ranked[0].id, is_active: ranked[0].is_active }
     }
 
     if (sourceUrl) {
         const bySourceUrl = await prisma.products.findFirst({
             where: { brand_id: brandId, source_url: sourceUrl },
-            select: { id: true },
+            select: { id: true, is_active: true },
         })
         if (bySourceUrl) return bySourceUrl
 
         const bySourceMappingUrl = await prisma.product_source_mappings.findFirst({
             where: { source, source_url: sourceUrl, products: { brand_id: brandId } },
-            select: { product_id: true },
+            select: { product_id: true, products: { select: { is_active: true } } },
         })
-        if (bySourceMappingUrl?.product_id) return { id: bySourceMappingUrl.product_id }
+        if (bySourceMappingUrl?.product_id) return { id: bySourceMappingUrl.product_id, is_active: bySourceMappingUrl.products?.is_active ?? true }
     }
 
     if (sku) {
         return prisma.products.findFirst({
             where: { brand_id: brandId, sku },
-            select: { id: true },
+            select: { id: true, is_active: true },
         })
     }
 
@@ -300,12 +340,88 @@ function cloneProductPayload(product: Record<string, unknown>) {
 }
 
 function importSafeSlug(product: any, sourceUrl: string | null, hitaId: string | null) {
-    const baseSlug = toDisplayValue(product.slug) || slugify(toDisplayValue(product.name) || toDisplayValue(product.sku))
-    if (!baseSlug || !sourceUrl?.includes('?vid=')) return baseSlug
+    return buildStableProductSlug({
+        sourceUrl: sourceUrl || toDisplayValue(product.slug),
+        taxonomy: {
+            product_type: toDisplayValue(product.product_type),
+            product_sub_type: toDisplayValue(product.product_sub_type),
+        },
+        brandSlug: brand,
+        sku: toDisplayValue(product.sku) || toDisplayValue(hitaId) || '',
+        name: toDisplayValue(product.name),
+        variantLabel: variantLabelFromProduct(product),
+        activeVariantLabel: variantLabelFromProduct(product),
+    }) || toDisplayValue(product.slug) || slugify(toDisplayValue(product.name) || toDisplayValue(product.sku))
+}
 
-    const suffix = slugify(toDisplayValue(product.sku) || toDisplayValue(hitaId) || 'variant')
-    if (!suffix || baseSlug.endsWith(`-${suffix}`)) return baseSlug
-    return `${baseSlug}-${suffix}`
+function variantLabelFromProduct(product: any) {
+    if (toDisplayValue(product.variant_label)) return toDisplayValue(product.variant_label)
+    const optionValues = Array.isArray(product.variant_options)
+        ? product.variant_options.map((option: any) => toDisplayValue(option?.value)).filter(Boolean)
+        : []
+    return optionValues.join('-')
+}
+
+function legacySku(value: string, id: number) {
+    const suffix = `-legacy-${id}`
+    const trimmed = value.slice(0, Math.max(1, 100 - suffix.length))
+    return `${trimmed}${suffix}`
+}
+
+function legacySlug(value: string, id: number) {
+    const suffix = `-legacy-${id}`
+    const trimmed = value.slice(0, Math.max(1, 500 - suffix.length))
+    return `${trimmed}${suffix}`
+}
+
+async function releaseInactiveConflicts(params: {
+    targetProductId: number | null
+    desiredSku: string
+    desiredSlug: string
+    categoryId: number
+    sourceUrl: string | null
+    sourceProductId: string | null
+}) {
+    const conflicts = await prisma.products.findMany({
+        where: {
+            OR: [
+                params.desiredSku ? { sku: params.desiredSku } : undefined,
+                params.desiredSlug ? { category_id: params.categoryId, slug: params.desiredSlug } : undefined,
+            ].filter(Boolean) as Prisma.productsWhereInput[],
+        },
+        select: {
+            id: true,
+            sku: true,
+            slug: true,
+            category_id: true,
+            source_url: true,
+            hita_product_id: true,
+            is_active: true,
+        },
+    })
+
+    for (const conflict of conflicts) {
+        if (conflict.id === params.targetProductId) continue
+
+        if (conflict.is_active) {
+            throw new Error(`Active conflict blocks import: sku=${params.desiredSku} slug=${params.desiredSlug} blocker_id=${conflict.id}`)
+        }
+
+        const data: Prisma.productsUpdateInput = {}
+        if (toDisplayValue(conflict.sku) === params.desiredSku) {
+            data.sku = legacySku(params.desiredSku, conflict.id)
+        }
+        if (conflict.category_id === params.categoryId && toDisplayValue(conflict.slug) === params.desiredSlug) {
+            data.slug = legacySlug(params.desiredSlug, conflict.id)
+        }
+        if (Object.keys(data).length === 0) continue
+        data.updated_at = new Date()
+
+        await prisma.products.update({
+            where: { id: conflict.id },
+            data,
+        })
+    }
 }
 
 function readJsonFile<T = unknown>(filePath: string): T {
@@ -323,12 +439,31 @@ function manifestPath() {
     return path.join(sampleDir, 'image-migration-manifest.json')
 }
 
-function loadOnlySkus() {
+async function loadOnlySkus() {
     const fromArg = onlySkusArg
         .split(',')
         .map(item => item.trim())
         .filter(Boolean)
     if (fromArg.length > 0) return new Set(fromArg)
+
+    if (runIdArg) {
+        const runId = Number(runIdArg)
+        if (!Number.isFinite(runId)) throw new Error(`Invalid --run-id=${runIdArg}`)
+        const decisions = await prisma.crawl_import_decisions.findMany({
+            where: {
+                decision: includeNeedsManualReview ? { in: ['approved', 'needs_manual_review'] } : 'approved',
+                crawl_product_snapshots: { crawl_run_id: runId, source },
+            },
+            include: {
+                crawl_product_snapshots: true,
+            },
+            orderBy: { id: 'asc' },
+        })
+        return new Set(decisions.map(decision => {
+            const payload = asObject(decision.import_payload || decision.crawl_product_snapshots.normalized_payload)
+            return toDisplayValue(payload.sku)
+        }).filter(Boolean))
+    }
 
     const filePath = sampleProductPath()
     if (!filePath || !fs.existsSync(filePath)) return null
@@ -337,24 +472,30 @@ function loadOnlySkus() {
     return new Set(products.map(product => toDisplayValue(product.sku)).filter(Boolean))
 }
 
-function loadVerifiedBunnyMap() {
+function loadImageManifestState() {
     const filePath = manifestPath()
-    if (!filePath) return new Map<string, string>()
+    if (!filePath) return { verifiedMap: new Map<string, string>(), brokenSourceUrls: new Set<string>() }
     if (!fs.existsSync(filePath)) throw new Error(`Image manifest not found: ${filePath}`)
 
     const raw = readJsonFile<any>(filePath)
     const entries = Array.isArray(raw) ? raw : Array.isArray(raw.manifest) ? raw.manifest : []
-    const mapping = new Map<string, string>()
+    const verifiedMap = new Map<string, string>()
+    const brokenSourceUrls = new Set<string>()
 
     for (const entry of entries) {
         const sourceUrl = toDisplayValue(entry.source_url)
         const bunnyUrl = toDisplayValue(entry.upload?.bunny_url || entry.bunny_url)
-        if (!sourceUrl || !bunnyUrl) continue
-        if (!entry.upload?.verified) continue
-        mapping.set(sourceUrl, bunnyUrl)
+        if (!sourceUrl) continue
+        if (entry.upload?.verified && bunnyUrl) {
+            verifiedMap.set(sourceUrl, bunnyUrl)
+            continue
+        }
+        if (String(entry.upload?.error || '').startsWith('source_fetch_404')) {
+            brokenSourceUrls.add(sourceUrl)
+        }
     }
 
-    return mapping
+    return { verifiedMap, brokenSourceUrls }
 }
 
 function rewriteUrl(value: unknown, imageMap: Map<string, string>, context: string) {
@@ -368,11 +509,12 @@ function rewriteUrl(value: unknown, imageMap: Map<string, string>, context: stri
     return url
 }
 
-function rewriteProductMediaUrl(value: unknown, imageMap: Map<string, string>, context: string) {
+function rewriteProductMediaUrl(value: unknown, imageMap: Map<string, string>, context: string, brokenSourceUrls?: Set<string>) {
     const url = toDisplayValue(value)
     if (!url) return ''
     const rewritten = imageMap.get(url)
     if (rewritten) return rewritten
+    if (brokenSourceUrls?.has(url)) return ''
     if (requireBunnyImages && isAnyHitaAssetUrl(url)) {
         throw new Error(`Missing verified Bunny mapping for ${context}: ${url}`)
     }
@@ -409,16 +551,23 @@ function rewriteHtmlImageUrls(html: unknown, imageMap: Map<string, string>) {
     return output
 }
 
-function applyImageManifest(product: any, imageMap: Map<string, string>) {
-    if (imageMap.size === 0) return product
+function applyImageManifest(product: any, imageMap: Map<string, string>, brokenSourceUrls: Set<string>) {
+    if (imageMap.size === 0 && brokenSourceUrls.size === 0) return product
 
-    product.image_main_url = rewriteProductMediaUrl(product.image_main_url, imageMap, `${product.sku}.image_main_url`) || null
+    product.image_main_url = rewriteProductMediaUrl(product.image_main_url, imageMap, `${product.sku}.image_main_url`, brokenSourceUrls) || null
     product.product_images = Array.isArray(product.product_images)
-        ? product.product_images.map((image: any, index: number) => ({
-            ...image,
-            url: rewriteProductMediaUrl(image.url || image.image_url, imageMap, `${product.sku}.product_images[${index}]`),
-            image_url: image.image_url ? rewriteProductMediaUrl(image.image_url, imageMap, `${product.sku}.product_images[${index}].image_url`) : undefined,
-        }))
+        ? product.product_images.map((image: any, index: number) => {
+            const rewrittenUrl = rewriteProductMediaUrl(image.url || image.image_url, imageMap, `${product.sku}.product_images[${index}]`, brokenSourceUrls)
+            const rewrittenImageUrl = image.image_url
+                ? rewriteProductMediaUrl(image.image_url, imageMap, `${product.sku}.product_images[${index}].image_url`, brokenSourceUrls)
+                : undefined
+
+            return {
+                ...image,
+                url: rewrittenUrl,
+                image_url: rewrittenImageUrl,
+            }
+        }).filter((image: any) => image.url || image.image_url)
         : []
 
     if (rewriteDescriptionImages) {
@@ -509,13 +658,18 @@ function sanitizeImportPayload(rawProduct: Record<string, unknown>) {
     return product
 }
 
+function isDiscontinuedProduct(product: any) {
+    return toDisplayValue(product.stock_status) === 'discontinued'
+        || /ngừng kinh doanh|ngung kinh doanh/i.test(toDisplayValue(product.price_display))
+}
+
 async function main() {
     const runId = runIdArg ? Number(runIdArg) : await latestRunId()
     if (!Number.isFinite(runId)) throw new Error(`Invalid --run-id=${runIdArg}`)
     if (activate && forceInactive) throw new Error('Use only one of --activate or --force-inactive')
 
-    const onlySkus = loadOnlySkus()
-    const imageMap = loadVerifiedBunnyMap()
+    const onlySkus = await loadOnlySkus()
+    const { verifiedMap: imageMap, brokenSourceUrls } = loadImageManifestState()
 
     const allDecisions = await prisma.crawl_import_decisions.findMany({
         where: {
@@ -524,9 +678,26 @@ async function main() {
         },
         include: {
             crawl_product_snapshots: true,
-        },
+            },
         orderBy: { id: 'asc' },
     })
+    const alreadyImportedSkus = new Set(
+        (
+            await prisma.crawl_import_decisions.findMany({
+                where: {
+                    decision: 'imported',
+                    crawl_product_snapshots: { crawl_run_id: runId, source },
+                },
+                include: {
+                    crawl_product_snapshots: true,
+                },
+                orderBy: { id: 'asc' },
+            })
+        ).map(decision => {
+            const payload = asObject(decision.import_payload || decision.crawl_product_snapshots.normalized_payload)
+            return toDisplayValue(payload.sku)
+        }).filter(Boolean),
+    )
     const decisions = onlySkus
         ? allDecisions.filter(decision => {
             const payload = asObject(decision.import_payload || decision.crawl_product_snapshots.normalized_payload)
@@ -534,21 +705,34 @@ async function main() {
         })
         : allDecisions
 
-    if (onlySkus && decisions.length !== onlySkus.size) {
+    if (onlySkus) {
         const found = new Set(decisions.map(decision => {
             const payload = asObject(decision.import_payload || decision.crawl_product_snapshots.normalized_payload)
             return toDisplayValue(payload.sku)
         }))
-        const missing = Array.from(onlySkus).filter(sku => !found.has(sku))
-        throw new Error(`SKU guard failed: expected ${onlySkus.size}, found ${decisions.length}, missing=${missing.join(', ')}`)
+        const missing = Array.from(onlySkus).filter(sku => !found.has(sku) && !alreadyImportedSkus.has(sku))
+        if (missing.length > 0) {
+            throw new Error(`SKU guard failed: expected ${onlySkus.size}, found=${found.size}, missing=${missing.join(', ')}`)
+        }
+        const alreadyImported = Array.from(onlySkus).filter(sku => alreadyImportedSkus.has(sku) && !found.has(sku))
+        if (alreadyImported.length > 0) {
+            console.warn(`[import] skipping ${alreadyImported.length} SKU(s) already marked imported for this run`)
+        }
+        if (decisions.length !== found.size) {
+            console.warn(`[import] duplicate approved decisions detected: rows=${decisions.length}, unique_skus=${found.size}`)
+        }
     }
     if (requireCount > 0 && decisions.length !== requireCount) {
-        throw new Error(`Count guard failed: expected ${requireCount}, found ${decisions.length}`)
+        if (runIdArg && onlySkus) {
+            console.warn(`[import] count guard mismatch for resumed run: expected ${requireCount}, found ${decisions.length}`)
+        } else {
+            throw new Error(`Count guard failed: expected ${requireCount}, found ${decisions.length}`)
+        }
     }
 
     const variantCounts = new Map<string, number>()
     for (const decision of decisions) {
-        const payload = applyImageManifest(sanitizeImportPayload(asObject(decision.import_payload || decision.crawl_product_snapshots.normalized_payload)), imageMap)
+        const payload = applyImageManifest(sanitizeImportPayload(asObject(decision.import_payload || decision.crawl_product_snapshots.normalized_payload)), imageMap, brokenSourceUrls)
         const group = toDisplayValue(payload.variant_group)
         if (group) variantCounts.set(group, (variantCounts.get(group) || 0) + 1)
     }
@@ -573,8 +757,7 @@ async function main() {
         return
     }
 
-    const brandRow = await prisma.brands.findFirst({ where: { slug: brand }, select: { id: true } })
-    if (!brandRow) throw new Error(`Brand not found: ${brand}`)
+    const brandRow = await ensureBrandRow(brand)
 
     let imported = 0
     let failed = 0
@@ -584,6 +767,7 @@ async function main() {
         const product = applyImageManifest(
             sanitizeImportPayload(asObject(decision.import_payload || decision.crawl_product_snapshots.normalized_payload)),
             imageMap,
+            brokenSourceUrls,
         )
 
         try {
@@ -605,7 +789,12 @@ async function main() {
             const specs = asObject(product.specs)
             const existingProduct = await resolveExistingProduct(product, brandRow.id)
             const sourceUrl = toDisplayValue(product.source_url) || null
-            const hitaId = toDisplayValue(product.hita_product_id) || hitaProductId(sourceUrl || '') || null
+            const hitaId = hitaProductId(sourceUrl || '') || toDisplayValue(product.hita_product_id) || null
+            const createIsActive = forceInactive
+                ? false
+                : isDiscontinuedProduct(product)
+                    ? false
+                    : activate
             const productData = {
                 sku: product.sku,
                 name: product.name,
@@ -635,6 +824,14 @@ async function main() {
                 is_master: product.is_master ?? true,
                 is_combo: product.is_combo ?? false,
             }
+            await releaseInactiveConflicts({
+                targetProductId: existingProduct?.id ?? null,
+                desiredSku: productData.sku,
+                desiredSlug: productData.slug,
+                categoryId: category.id,
+                sourceUrl,
+                sourceProductId: hitaId,
+            })
             const upserted = existingProduct
                 ? await prisma.products.update({
                     where: { id: existingProduct.id },
@@ -648,7 +845,7 @@ async function main() {
                 : await prisma.products.create({
                     data: {
                         ...productData,
-                        is_active: forceInactive ? false : activate,
+                        is_active: createIsActive,
                     },
                     select: { id: true },
                 })

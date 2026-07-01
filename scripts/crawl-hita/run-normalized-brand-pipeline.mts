@@ -3,6 +3,7 @@ import crypto from 'node:crypto'
 import { execFile } from 'node:child_process'
 import dotenv from 'dotenv'
 import fs from 'node:fs'
+import https from 'node:https'
 import path from 'node:path'
 import { promisify } from 'node:util'
 import { chromium } from 'playwright'
@@ -20,20 +21,30 @@ const skipDiscovery = args.includes('--skip-discovery')
 const skipCrawl = args.includes('--skip-crawl')
 const skipStage = args.includes('--skip-stage')
 const skipUpload = args.includes('--skip-upload')
+const seedOnly = args.includes('--seed-only')
+const seedUrls = readRepeatedArgs('--seed-url=')
+const seedFile = readArg('--seed-file=', '')
 const confirmBrand = readArg('--confirm-brand=', '')
 const stopAfter = readArg('--stop-after=', '')
 const runDir = readArg('--run-dir=', path.resolve(process.cwd(), `scripts/crawl-hita/output/${brand}/pipeline-${timestampSlug()}`))
 const normalizedDir = path.join(runDir, 'normalized')
 const preparedDir = path.join(runDir, 'prepared')
 const source = readArg('--source=', `hita-normalized-${brand}`.slice(0, 50))
-const concurrency = Math.max(1, Math.min(4, Number(readArg('--concurrency=', '2')) || 2))
+const concurrency = Math.max(1, Math.min(24, Number(readArg('--concurrency=', '8')) || 8))
+const discoveryTimeoutMs = Math.max(30_000, Number(readArg('--discovery-timeout-ms=', '120000')) || 120_000)
 
 const brandConfig: Record<string, { brandPageUrl: string; sitemapKeyword: string }> = {
     caesar: { brandPageUrl: 'https://hita.com.vn/thiet-bi-ve-sinh-caesar-383.html', sitemapKeyword: 'caesar' },
     'american-standard': { brandPageUrl: 'https://hita.com.vn/american-standard.html', sitemapKeyword: 'american-standard' },
     cotto: { brandPageUrl: 'https://hita.com.vn/cotto.html', sitemapKeyword: 'cotto' },
+    duravit: { brandPageUrl: 'https://hita.com.vn/duravit.html', sitemapKeyword: 'duravit' },
     grohe: { brandPageUrl: 'https://hita.com.vn/grohe.html', sitemapKeyword: 'grohe' },
+    inax: { brandPageUrl: 'https://hita.com.vn/thiet-bi-ve-sinh-inax-97.html', sitemapKeyword: 'inax' },
+    kanly: { brandPageUrl: 'https://hita.com.vn/kanly.html', sitemapKeyword: 'kanly' },
+    panasonic: { brandPageUrl: 'https://hita.com.vn/thiet-bi-dien-panasonic.html', sitemapKeyword: 'panasonic' },
+    'thien-thanh': { brandPageUrl: 'https://hita.com.vn/thien-thanh.html', sitemapKeyword: 'thien-thanh' },
     viglacera: { brandPageUrl: 'https://hita.com.vn/viglacera-597.html', sitemapKeyword: 'viglacera' },
+    toto: { brandPageUrl: 'https://hita.com.vn/thuong-hieu-thiet-bi-ve-sinh-toto.html', sitemapKeyword: 'toto' },
     atmor: { brandPageUrl: 'https://hita.com.vn/atmor.html', sitemapKeyword: 'atmor' },
     moen: { brandPageUrl: 'https://hita.com.vn/moen.html', sitemapKeyword: 'moen' },
 }
@@ -89,12 +100,43 @@ function readArg(prefix: string, fallback: string) {
     return arg ? arg.slice(prefix.length) : fallback
 }
 
+function readRepeatedArgs(prefix: string) {
+    return args
+        .filter(item => item.startsWith(prefix))
+        .map(item => item.slice(prefix.length).trim())
+        .filter(Boolean)
+}
+
+function loadSeedUrlsFromFile(file: string) {
+    if (!file) return []
+    const raw = fs.readFileSync(path.resolve(process.cwd(), file), 'utf8').trim()
+    if (!raw) return []
+    const parsed = (() => {
+        try {
+            return JSON.parse(raw)
+        } catch {
+            return null
+        }
+    })()
+    if (Array.isArray(parsed)) return parsed.map(value => String(value))
+    if (parsed && typeof parsed === 'object') {
+        const buckets = ['merged_urls', 'listing_urls', 'sitemap_urls', 'urls']
+            .flatMap(key => Array.isArray((parsed as Record<string, unknown>)[key]) ? (parsed as Record<string, unknown>)[key] as unknown[] : [])
+        if (buckets.length > 0) return buckets.map(value => String(value))
+    }
+    return raw.split(/\r?\n/).map(line => line.trim()).filter(Boolean)
+}
+
 function timestampSlug() {
     return new Date().toISOString().replace(/[:.]/g, '-')
 }
 
 function ensureDir(dir: string) {
     fs.mkdirSync(dir, { recursive: true })
+}
+
+function sleep(ms: number) {
+    return new Promise(resolve => setTimeout(resolve, ms))
 }
 
 function readJson<T>(file: string): T {
@@ -130,8 +172,7 @@ function hitaProductId(url: string | null | undefined) {
 }
 
 function isProductUrl(url: string) {
-    const id = hitaProductId(url)
-    return url.startsWith('https://hita.com.vn/') && normalizeUrl(url).split('?')[0].endsWith('.html') && Boolean(id && Number(id) >= 1000)
+    return url.startsWith('https://hita.com.vn/') && normalizeUrl(url).split('?')[0].endsWith('.html')
 }
 
 function parseRemainingCount(text: string) {
@@ -167,6 +208,58 @@ function hasImg(html: string | null | undefined) {
 
 function isContactPriceDisplay(value: unknown) {
     return /liên hệ|lien he|contact|báo giá|bao gia/i.test(toDisplayValue(value))
+}
+
+function normalizeGalleryUrl(value: string | null | undefined) {
+    if (!value) return ''
+    return String(value).trim()
+}
+
+function dehashMigratedFilename(filename: string) {
+    return filename.replace(/^[a-f0-9]{12}-/i, '')
+}
+
+function galleryImageIdentity(rawUrl: string | null | undefined) {
+    const url = normalizeGalleryUrl(rawUrl)
+    if (!url) return ''
+    try {
+        const pathname = decodeURIComponent(new URL(url).pathname)
+        const basename = pathname.split('/').pop() || ''
+        return dehashMigratedFilename(basename).toLowerCase()
+    } catch {
+        return dehashMigratedFilename(url.split('/').pop() || '').toLowerCase()
+    }
+}
+
+function isSuspiciousGalleryIdentity(identity: string) {
+    const stem = identity.replace(/\.[a-z0-9]+$/i, '')
+    if (!stem) return true
+    if (/^resize[-_]?\d+/i.test(stem)) return true
+    if (/screen-shot|screenshot|screen_shot/i.test(stem)) return true
+    if (/^[0-9]{10,}screen-shot/i.test(stem)) return true
+    if (/^[a-z0-9]{18,}\d{6,}$/i.test(stem)) return true
+    if (/^[a-z0-9]{22,}$/i.test(stem) && !/-/.test(stem)) return true
+    return false
+}
+
+function assessGalleryImages(urls: Array<string | null | undefined>) {
+    const details = [...new Set((urls || []).map(galleryImageIdentity).filter(Boolean))]
+        .map(identity => ({
+            identity,
+            suspicious: isSuspiciousGalleryIdentity(identity),
+        }))
+
+    const clean = details.filter(item => !item.suspicious).map(item => item.identity)
+    const suspicious = details.filter(item => item.suspicious).map(item => item.identity)
+
+    return {
+        raw_count: (urls || []).map(normalizeGalleryUrl).filter(Boolean).length,
+        unique_count: details.length,
+        clean_count: clean.length,
+        suspicious_count: suspicious.length,
+        clean,
+        suspicious,
+    }
 }
 
 function extractCandidateUrls(html: string | null | undefined) {
@@ -232,7 +325,7 @@ function storageUploadUrl(storagePath: string) {
 async function discoverFromSitemap(page: any) {
     const found = new Set<string>()
     for (let pageNum = 1; pageNum <= 20; pageNum += 1) {
-        await page.goto(`https://hita.com.vn/product-sitemap.xml?page=${pageNum}`, { waitUntil: 'domcontentloaded', timeout: 30_000 })
+        await page.goto(`https://hita.com.vn/product-sitemap.xml?page=${pageNum}`, { waitUntil: 'domcontentloaded', timeout: discoveryTimeoutMs })
         const text = await page.locator('pre, body').innerText().catch(() => '')
         for (const match of text.match(/https:\/\/hita\.com\.vn\/[^\s<>]+\.html/g) || []) {
             const url = normalizeUrl(match)
@@ -244,7 +337,7 @@ async function discoverFromSitemap(page: any) {
 }
 
 async function discoverFromListing(page: any) {
-    await page.goto(config.brandPageUrl, { waitUntil: 'domcontentloaded', timeout: 60_000 })
+    await page.goto(config.brandPageUrl, { waitUntil: 'domcontentloaded', timeout: discoveryTimeoutMs })
     const initial = await listingState(page)
     const expected = initial.urls.length + initial.remaining
     let previousCount = initial.urls.length
@@ -256,8 +349,7 @@ async function discoverFromListing(page: any) {
         if (state.remaining <= 0) break
         if ((await button.count()) === 0) break
         await button.click({ timeout: 10_000 }).catch(() => null)
-        await page.waitForTimeout(900)
-        const after = await listingState(page)
+        const after = await waitForListingAdvance(page, previousCount, state.remaining)
         clicks += 1
         if (after.urls.length <= previousCount) break
         previousCount = after.urls.length
@@ -274,11 +366,23 @@ async function discoverFromListing(page: any) {
     }
 }
 
+async function waitForListingAdvance(page: any, previousCount: number, previousRemaining: number) {
+    const startedAt = Date.now()
+    let latest = await listingState(page)
+    while (Date.now() - startedAt < 12_000) {
+        if (latest.urls.length > previousCount) return latest
+        if (latest.remaining < previousRemaining) return latest
+        await page.waitForTimeout(400)
+        latest = await listingState(page)
+    }
+    return latest
+}
+
 async function listingState(page: any) {
     return page.evaluate(() => {
         const urls = [...document.querySelectorAll('.product-box-item a.main-link-product[href]')]
             .map((a: Element) => (a as HTMLAnchorElement).href)
-            .filter((href: string) => /-\d+\.html$/.test(href))
+            .filter((href: string) => href.split('?')[0].endsWith('.html'))
             .filter((href: string, index: number, all: string[]) => all.indexOf(href) === index)
         const text = document.querySelector('#category-view-more')?.textContent || ''
         return { urls, remainingText: text }
@@ -291,11 +395,35 @@ async function listingState(page: any) {
 async function runDiscovery() {
     const discoveryFile = path.join(runDir, 'discovery.json')
     if (skipDiscovery && fs.existsSync(discoveryFile)) return readJson<DiscoveryReport>(discoveryFile)
+    if (seedOnly) {
+        const mergedUrls = [...new Set([...seedUrls, ...loadSeedUrlsFromFile(seedFile)].map(normalizeUrl).filter(isProductUrl))].sort()
+        if (mergedUrls.length === 0) throw new Error('--seed-only requires at least one --seed-url=<hita PDP URL> or --seed-file=<path>')
+        const report: DiscoveryReport = {
+            brand,
+            generated_at: new Date().toISOString(),
+            brand_page_url: config.brandPageUrl,
+            sitemap_keyword: config.sitemapKeyword,
+            sitemap_urls: [],
+            listing_urls: mergedUrls,
+            merged_urls: mergedUrls,
+            sitemap_only: [],
+            listing_only: mergedUrls,
+            expected_listing_count: mergedUrls.length,
+            actual_listing_count: mergedUrls.length,
+            listing_delta_pct: 0,
+            load_more_clicks: 0,
+        }
+        writeJson(discoveryFile, report)
+        return report
+    }
 
     const browser = await chromium.launch({ headless: true })
     try {
         const page = await browser.newPage()
-        const sitemapUrls = await discoverFromSitemap(page)
+        const sitemapUrls = await discoverFromSitemap(page).catch(error => {
+            console.warn(`[discover] sitemap fallback for ${brand}: ${(error as Error).message}`)
+            return []
+        })
         const listing = await discoverFromListing(page)
         const listingUrls = listing.urls
         const mergedUrls = [...new Set([...sitemapUrls, ...listingUrls])].sort()
@@ -359,6 +487,49 @@ function findDbMatch(product: any, dbProducts: DbProduct[], discoveryUrlSet: Set
         || null
 }
 
+function findRawMatch(product: any, rawProducts: any[]) {
+    const sourceUrl = normalizeUrl(product.source_url || '')
+    const canonicalSourceUrl = normalizeUrl(product.canonical_source_url || '')
+    return rawProducts.find(row => row?.source_url && normalizeUrl(row.source_url) === sourceUrl)
+        || rawProducts.find(row => row?.source_url && canonicalSourceUrl && normalizeUrl(row.source_url) === canonicalSourceUrl)
+        || rawProducts.find(row => row?.sku && product.sku && String(row.sku) === String(product.sku))
+        || null
+}
+
+function normalizeLegacyBaseSku(value: string | null | undefined) {
+    const sku = toDisplayValue(value).toUpperCase()
+    if (!sku) return ''
+    return sku
+        .replace(/^C(?=\d)/, 'CD')
+        .replace(/\+TAF(?:060|400H|512H)$/i, '')
+}
+
+function classifyMissingDbRows(missingRows: DbProduct[], normalizedProducts: any[]) {
+    const crawledBaseSkuSet = new Set(
+        normalizedProducts
+            .map(product => normalizeLegacyBaseSku(product?.sku))
+            .filter(Boolean),
+    )
+
+    const legacy: DbProduct[] = []
+    const trueMissing: DbProduct[] = []
+
+    for (const row of missingRows) {
+        const hasSourceIdentity = Boolean(toDisplayValue(row.source_url) || toDisplayValue(row.hita_product_id))
+        const baseSku = normalizeLegacyBaseSku(row.sku)
+        const looksLikeLegacyCombo = /\+TAF/i.test(row.sku) || /^BF\d+/i.test(row.sku)
+
+        if (!hasSourceIdentity && (looksLikeLegacyCombo || (baseSku && crawledBaseSkuSet.has(baseSku)))) {
+            legacy.push(row)
+            continue
+        }
+
+        trueMissing.push(row)
+    }
+
+    return { legacy, trueMissing }
+}
+
 function prepareProducts(normalizedProducts: any[], rawProducts: any[], discovery: DiscoveryReport, dbProducts: DbProduct[], skipped: Array<{ source_url?: string | null; sku?: string | null; skipped_reason?: string | null }> = []) {
     const discoveryUrlSet = new Set(discovery.merged_urls.map(normalizeUrl))
     const crawledSkuSet = new Set(normalizedProducts.map(product => product.sku).filter(Boolean))
@@ -372,6 +543,7 @@ function prepareProducts(normalizedProducts: any[], rawProducts: any[], discover
         const next = JSON.parse(JSON.stringify(product))
         const policy: Record<string, string> = {}
         const db = findDbMatch(product, dbProducts, discoveryUrlSet)
+        const raw = findRawMatch(product, rawProducts)
         if (db) { matched.push(product.sku); matchedDbIds.add(db.id) }
         else added.push(product.sku)
 
@@ -388,9 +560,15 @@ function prepareProducts(normalizedProducts: any[], rawProducts: any[], discover
             fieldFlags.push({ sku: next.sku, field: 'specs', reason: `new ${newSpecCount} < old ${oldSpecCount}` })
         }
 
-        const oldGalleryCount = db.product_images.length
-        const newGalleryCount = Array.isArray(next.product_images) ? next.product_images.length : 0
-        if (oldGalleryCount > 0 && newGalleryCount < oldGalleryCount) {
+        const oldGalleryUrls = db.product_images.map(image => image.image_url)
+        const newGalleryUrls = Array.isArray(next.product_images)
+            ? next.product_images.map((image: any) => image.url || image.image_url).filter(Boolean)
+            : []
+        const oldGallery = assessGalleryImages(oldGalleryUrls)
+        const newGallery = assessGalleryImages(newGalleryUrls)
+        const rawImageCount = Array.isArray(raw?.images) ? raw.images.filter(Boolean).length : 0
+        const galleryEvidenceMissing = raw?.skippedReason === 'crawl_error' || (newGallery.raw_count === 0 && rawImageCount === 0)
+        if (oldGallery.clean_count > 0 && newGallery.clean_count === 0 && galleryEvidenceMissing) {
             next.image_main_url = db.image_main_url
             next.product_images = db.product_images.map(image => ({
                 url: image.image_url,
@@ -399,7 +577,29 @@ function prepareProducts(normalizedProducts: any[], rawProducts: any[], discover
                 sort_order: image.sort_order,
             }))
             policy.gallery = 'preserve_old'
-            fieldFlags.push({ sku: next.sku, field: 'gallery', reason: `new ${newGalleryCount} < old ${oldGalleryCount}` })
+            fieldFlags.push({
+                sku: next.sku,
+                field: 'gallery',
+                reason: `preserve old gallery because crawl evidence is missing (raw new ${newGallery.raw_count}, old ${oldGallery.raw_count}, raw images ${rawImageCount})`,
+            })
+        } else if (
+            oldGallery.clean_count > 0
+            && newGallery.clean_count < oldGallery.clean_count
+            && galleryEvidenceMissing
+        ) {
+            next.image_main_url = db.image_main_url
+            next.product_images = db.product_images.map(image => ({
+                url: image.image_url,
+                image_url: image.image_url,
+                alt: image.alt_text || next.name,
+                sort_order: image.sort_order,
+            }))
+            policy.gallery = 'preserve_old'
+            fieldFlags.push({
+                sku: next.sku,
+                field: 'gallery',
+                reason: `preserve old gallery because crawl evidence is incomplete (new clean ${newGallery.clean_count}, old clean ${oldGallery.clean_count}, raw images ${rawImageCount})`,
+            })
         }
 
         const oldDocsCount = db.product_documents.length
@@ -422,7 +622,11 @@ function prepareProducts(normalizedProducts: any[], rawProducts: any[], discover
         const newHasImg = hasImg(next.description)
         const oldDescLength = (db.description || '').length
         const newDescLength = (next.description || '').length
-        if ((oldHasImg && !newHasImg) || (oldDescLength > 500 && newDescLength < oldDescLength * 0.5)) {
+        if (
+            (oldHasImg && !newHasImg)
+            || (oldDescLength > 500 && newDescLength < oldDescLength * 0.5)
+            || (oldDescLength > 0 && newDescLength === 0)
+        ) {
             next.description = db.description
             policy.description = 'preserve_old'
             fieldFlags.push({ sku: next.sku, field: 'description', reason: `new desc/img weaker than old` })
@@ -467,7 +671,7 @@ function prepareProducts(normalizedProducts: any[], rawProducts: any[], discover
         return next
     })
 
-    const missing = dbProducts
+    const missingRows = dbProducts
         .filter(row => {
             const sourceUrl = row.source_url ? normalizeUrl(row.source_url) : ''
             const id = row.hita_product_id
@@ -475,7 +679,8 @@ function prepareProducts(normalizedProducts: any[], rawProducts: any[], discover
                 && (!sourceUrl || !discoveryUrlSet.has(sourceUrl))
                 && (!id || ![...discoveryUrlSet].some(url => hitaProductId(url) === String(id)))
         })
-        .map(row => row.sku)
+    const { legacy: legacyMissingRows, trueMissing: trueMissingRows } = classifyMissingDbRows(missingRows, normalizedProducts)
+    const missing = missingRows.map(row => row.sku)
 
     // [LEO-471 #3] Coverage accounting across ALL discovery URLs + ALL DB rows,
     // not just the kept subset — so "skipped/not-attempted" can never hide.
@@ -529,11 +734,17 @@ function prepareProducts(normalizedProducts: any[], rawProducts: any[], discover
             discovery_total: discovery.merged_urls.length,
             discovery: discoveryCoverage,
             db_total: dbProducts.length,
-            db: dbCoverage,
+            db: {
+                ...dbCoverage,
+                legacy_missing: legacyMissingRows.length,
+                true_missing_on_hita: trueMissingRows.length,
+            },
         },
         matched_skus: [...new Set(matched)].sort(),
         new_skus: [...new Set(added)].sort(),
         missing_skus: [...new Set(missing)].sort(),
+        legacy_missing_skus: legacyMissingRows.map(row => row.sku).sort(),
+        true_missing_skus: trueMissingRows.map(row => row.sku).sort(),
     }
 
     return { prepared, reconciliation, fieldFlags }
@@ -560,22 +771,132 @@ function collectImageManifest(products: any[]) {
     return [...deduped.values()]
 }
 
+async function fetchWithRetry(url: string, init: RequestInit | undefined, label: string, attempts = 4, baseDelayMs = 500) {
+    let lastError: unknown = null
+    let delayMs = baseDelayMs
+    for (let attempt = 1; attempt <= attempts; attempt += 1) {
+        try {
+            return await fetch(url, init)
+        } catch (error) {
+            lastError = error
+            if (attempt === attempts) break
+            console.warn(`[B4][retry] ${label} failed on attempt ${attempt}/${attempts}: ${error instanceof Error ? error.message : String(error)}`)
+            await sleep(delayMs)
+            delayMs *= 2
+        }
+    }
+    throw lastError instanceof Error ? lastError : new Error(String(lastError))
+}
+
+async function resolveHostViaDnsGoogle(hostname: string) {
+    const response = await fetchWithRetry(
+        `https://dns.google/resolve?name=${encodeURIComponent(hostname)}&type=A`,
+        undefined,
+        `dns:${hostname}`,
+        3,
+        500,
+    )
+    if (!response.ok) throw new Error(`dns_lookup_${response.status}`)
+    const payload = await response.json() as { Answer?: Array<{ type?: number; data?: string }> }
+    const ip = payload.Answer?.find(record => record.type === 1 && record.data)?.data
+    if (!ip) throw new Error(`dns_no_a_record:${hostname}`)
+    return ip
+}
+
+async function headViaResolvedIp(rawUrl: string) {
+    const url = new URL(rawUrl)
+    const ip = await resolveHostViaDnsGoogle(url.hostname)
+    return new Promise<{ status: number; content_type: string | null }>((resolve, reject) => {
+        const req = https.request({
+            host: ip,
+            servername: url.hostname,
+            path: `${url.pathname}${url.search}`,
+            method: 'HEAD',
+            headers: { Host: url.hostname },
+        }, res => {
+            resolve({
+                status: res.statusCode || 0,
+                content_type: typeof res.headers['content-type'] === 'string' ? res.headers['content-type'] : null,
+            })
+            res.resume()
+        })
+        req.on('error', reject)
+        req.end()
+    })
+}
+
+async function headImageUrl(rawUrl: string) {
+    try {
+        const head = await fetchWithRetry(rawUrl, { method: 'HEAD' }, `verify:${rawUrl}`, 1, 250)
+        return {
+            status: head.status,
+            content_type: head.headers.get('content-type'),
+        }
+    } catch (error) {
+        console.warn(`[B4][dns-fallback] ${rawUrl}: ${error instanceof Error ? error.message : String(error)}`)
+        return headViaResolvedIp(rawUrl)
+    }
+}
+
+async function verifyBunnyImage(url: string, attempts = 5) {
+    let lastStatus = 0
+    let lastContentType: string | null = null
+    for (let attempt = 1; attempt <= attempts; attempt += 1) {
+        try {
+            const head = await headImageUrl(url)
+            lastStatus = head.status
+            lastContentType = head.content_type
+        } catch (error) {
+            console.warn(`[B4][verify-error] ${url} attempt ${attempt}/${attempts}: ${error instanceof Error ? error.message : String(error)}`)
+        }
+        if (lastStatus === 200 && (lastContentType || '').startsWith('image/')) {
+            return { verified: true, status: lastStatus, content_type: lastContentType }
+        }
+        await sleep(250)
+    }
+    return { verified: false, status: lastStatus, content_type: lastContentType }
+}
+
 async function uploadAndVerify(entry: { source_url: string; bunny_url: string; storage_path: string }) {
     if (!bunnyKey || !bunnyZone) return { copied: false, verified: false, status: 0, content_type: null, error: 'missing_bunny_env' }
     try {
-        const source = await fetch(entry.source_url)
-        if (!source.ok) throw new Error(`source_fetch_${source.status}`)
+        const existing = await verifyBunnyImage(entry.bunny_url, 2)
+        if (existing.verified) {
+            return {
+                copied: true,
+                verified: true,
+                status: existing.status,
+                content_type: existing.content_type,
+                bunny_url: entry.bunny_url,
+                bytes: 0,
+                error: null,
+            }
+        }
+        let source: Response
+        try {
+            source = await fetchWithRetry(entry.source_url, undefined, `source:${entry.source_url}`)
+        } catch {
+            return { copied: false, verified: false, status: 0, content_type: null, error: 'source_fetch_failed' }
+        }
+        if (!source.ok) return { copied: false, verified: false, status: source.status, content_type: source.headers.get('content-type'), error: `source_fetch_${source.status}` }
         const contentType = source.headers.get('content-type') || 'application/octet-stream'
         const buffer = await source.arrayBuffer()
-        const upload = await fetch(storageUploadUrl(entry.storage_path), {
+        const upload = await fetchWithRetry(storageUploadUrl(entry.storage_path), {
             method: 'PUT',
             headers: { AccessKey: bunnyKey, 'Content-Type': contentType },
             body: buffer,
-        })
+        }, `upload:${entry.storage_path}`)
         if (!upload.ok) throw new Error(`bunny_upload_${upload.status}`)
-        const head = await fetch(entry.bunny_url, { method: 'HEAD' })
-        const verified = head.status === 200 && (head.headers.get('content-type') || '').startsWith('image/')
-        return { copied: true, verified, status: head.status, content_type: head.headers.get('content-type'), bunny_url: entry.bunny_url, bytes: buffer.byteLength, error: verified ? null : 'verify_failed' }
+        const verify = await verifyBunnyImage(entry.bunny_url)
+        return {
+            copied: true,
+            verified: verify.verified,
+            status: verify.status,
+            content_type: verify.content_type,
+            bunny_url: entry.bunny_url,
+            bytes: buffer.byteLength,
+            error: verify.verified ? null : 'verify_failed',
+        }
     } catch (error) {
         return { copied: false, verified: false, status: 0, content_type: null, error: error instanceof Error ? error.message : String(error) }
     }
@@ -584,19 +905,41 @@ async function uploadAndVerify(entry: { source_url: string; bunny_url: string; s
 async function uploadManifest(products: any[]) {
     const manifestFile = path.join(preparedDir, 'image-migration-manifest.json')
     if (skipUpload && fs.existsSync(manifestFile)) return readJson<any>(manifestFile)
-    const manifest = collectImageManifest(products)
+    const priorPayload = fs.existsSync(manifestFile) ? readJson<any>(manifestFile) : null
+    const priorBySourceUrl = new Map<string, any>(
+        ((priorPayload?.manifest as any[]) || []).map(entry => [entry.source_url, entry]),
+    )
+    const manifest = collectImageManifest(products).map(entry => {
+        const prior = priorBySourceUrl.get(entry.source_url)
+        return prior ? { ...entry, upload: prior.upload } : entry
+    })
+    const sourceRun = { brand, run_dir: runDir, generated_at: new Date().toISOString() }
+    const checkpointEveryBatches = 20
     for (let index = 0; index < manifest.length; index += concurrency) {
-        const batch = manifest.slice(index, index + concurrency)
+        const batch = manifest.slice(index, index + concurrency).filter(entry => !(entry.upload as any)?.verified)
+        if (batch.length === 0) {
+            console.log(`[B4] skipped verified batch ending ${Math.min(index + concurrency, manifest.length)}/${manifest.length}`)
+            continue
+        }
         await Promise.all(batch.map(async entry => {
             entry.upload = await uploadAndVerify(entry)
         }))
-        console.log(`[B4] uploaded ${Math.min(index + concurrency, manifest.length)}/${manifest.length}`)
+        const verified = manifest.filter(entry => (entry.upload as any)?.verified).length
+        const batchNumber = Math.floor(index / concurrency) + 1
+        const isCheckpointBatch = batchNumber % checkpointEveryBatches === 0 || index + concurrency >= manifest.length
+        if (isCheckpointBatch) writeJson(manifestFile, { sourceRun, manifest })
+        console.log(`[B4] uploaded ${Math.min(index + concurrency, manifest.length)}/${manifest.length} verified=${verified}/${manifest.length}`)
+        await sleep(0)
     }
-    const sourceRun = { brand, run_dir: runDir, generated_at: new Date().toISOString() }
     const payload = { sourceRun, manifest }
     writeJson(manifestFile, payload)
     const failed = manifest.filter(entry => !(entry.upload as any)?.verified)
-    if (failed.length > 0) throw new Error(`B4 upload gate failed: ${failed.length}/${manifest.length} failed`)
+    const fatalFailures = failed.filter(entry => !String((entry.upload as any)?.error || '').startsWith('source_fetch_'))
+    const brokenSources = failed.filter(entry => String((entry.upload as any)?.error || '').startsWith('source_fetch_'))
+    if (brokenSources.length > 0) {
+        console.warn(`[B4] ${brokenSources.length}/${manifest.length} source images failed to fetch and will be treated as broken-source assets`)
+    }
+    if (fatalFailures.length > 0) throw new Error(`B4 upload gate failed: ${fatalFailures.length}/${manifest.length} fatal failures`)
     return payload
 }
 
@@ -638,8 +981,11 @@ async function stagePrepared() {
     return result
 }
 
-async function importPrepared(runId: number, requireCount: number) {
+async function importPrepared(runId: number) {
     const approvedSkus = await approvedSkusForRun(runId)
+    const alreadyImportedSkus = await importedSkusForRun(runId)
+    const importableSkus = approvedSkus.filter(sku => !alreadyImportedSkus.has(sku))
+    const requireCount = importableSkus.length
     const commonArgs = [
         'tsx',
         'scripts/crawl-hita/import-approved-crawl-snapshots.mts',
@@ -649,7 +995,8 @@ async function importPrepared(runId: number, requireCount: number) {
         `--sample-dir=${preparedDir}`,
         `--image-manifest=${path.join(preparedDir, 'image-migration-manifest.json')}`,
         `--require-count=${requireCount}`,
-        `--only-skus=${approvedSkus.join(',')}`,
+        `--only-skus=${importableSkus.join(',')}`,
+        `--concurrency=${Math.max(1, Math.min(8, concurrency))}`,
         '--require-bunny-images',
         '--rewrite-description-images',
     ]
@@ -676,6 +1023,23 @@ async function approvedSkusForRun(runId: number) {
         const payload = asObject(decision.import_payload || decision.crawl_product_snapshots.normalized_payload)
         return toDisplayValue(payload.sku)
     }).filter(Boolean)
+}
+
+async function importedSkusForRun(runId: number) {
+    const decisions = await prisma.crawl_import_decisions.findMany({
+        where: {
+            decision: 'imported',
+            crawl_product_snapshots: { crawl_run_id: runId, source },
+        },
+        include: {
+            crawl_product_snapshots: true,
+        },
+        orderBy: { id: 'asc' },
+    })
+    return new Set(decisions.map(decision => {
+        const payload = asObject(decision.import_payload || decision.crawl_product_snapshots.normalized_payload)
+        return toDisplayValue(payload.sku)
+    }).filter(Boolean))
 }
 
 async function postImportCheck(skus: string[], activeBefore: number) {
@@ -734,6 +1098,8 @@ function buildMarkdownReport(summary: any) {
         `- Skipped → giữ data cũ: ${summary.reconciliation.coverage?.db?.skipped_kept_old ?? 'n/a'}`,
         `- Discovered nhưng chưa crawl: ${summary.reconciliation.coverage?.db?.discovered_not_crawled ?? 'n/a'}`,
         `- Không còn trên hita: ${summary.reconciliation.coverage?.db?.missing_on_hita ?? 'n/a'}`,
+        `- Legacy missing (DB null-source / old combo): ${summary.reconciliation.coverage?.db?.legacy_missing ?? 'n/a'}`,
+        `- True missing on hita: ${summary.reconciliation.coverage?.db?.true_missing_on_hita ?? 'n/a'}`,
         '',
         '## B3 QA new >= old',
         '',
@@ -769,11 +1135,18 @@ async function main() {
     writeJson(path.resolve(process.cwd(), `scripts/crawl-hita/output/${brand}/urls.json`), discovery.merged_urls)
 
     if (!skipCrawl) {
+        const crawlSeedArgs = seedFile ? [`--seed-file=${seedFile}`] : []
+        const crawlSeedUrls = seedOnly
+            ? (seedFile ? [] : discovery.merged_urls)
+            : seedUrls
         await runCommand('node', [
             'scripts/crawl-hita/0-sample-crawl-brand.js',
             `--brand=${brand}`,
             '--full',
-            `--candidate-limit=${discovery.merged_urls.length + 300}`,
+            ...(seedOnly ? ['--seed-only'] : []),
+            ...crawlSeedArgs,
+            ...crawlSeedUrls.flatMap(url => [`--seed-url=${url}`]),
+            `--candidate-limit=${seedOnly ? discovery.merged_urls.length : discovery.merged_urls.length + 300}`,
             `--concurrency=${concurrency}`,
             `--sample-dir=${normalizedDir}`,
         ])
@@ -840,7 +1213,7 @@ async function main() {
     const manifestPayload = await uploadManifest(prepared)
     const manifest = manifestPayload.manifest || []
     const verified = manifest.filter((entry: any) => entry.upload?.verified).length
-    const importResult = await importPrepared(stage.crawl_run_id, stage.summary.approved)
+    const importResult = await importPrepared(stage.crawl_run_id)
     const postImport = importResult ? await postImportCheck(prepared.map(product => product.sku), activeBefore) : null
 
     const summary = {

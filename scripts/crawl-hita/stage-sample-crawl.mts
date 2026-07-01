@@ -25,6 +25,29 @@ function hashPayload(payload: unknown) {
     return crypto.createHash('sha256').update(JSON.stringify(payload)).digest('hex')
 }
 
+function isRetryablePrismaConnectionError(error: unknown) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        return error.code === 'P1017'
+    }
+    return /server has closed the connection/i.test(String(error || ''))
+}
+
+async function withPrismaRetry<T>(label: string, task: () => Promise<T>, maxAttempts = 4): Promise<T> {
+    let attempt = 1
+    while (true) {
+        try {
+            return await task()
+        } catch (error) {
+            if (attempt >= maxAttempts || !isRetryablePrismaConnectionError(error)) throw error
+            console.warn(`[retry] ${label} failed on attempt ${attempt}/${maxAttempts}: ${String(error)}`)
+            await prisma.$disconnect().catch(() => null)
+            await new Promise(resolve => setTimeout(resolve, 500 * attempt))
+            await prisma.$connect().catch(() => null)
+            attempt += 1
+        }
+    }
+}
+
 function asString(value: unknown) {
     return typeof value === 'string' ? value.trim() : ''
 }
@@ -108,7 +131,7 @@ async function main() {
         return
     }
 
-    const run = await prisma.crawl_runs.create({
+    const run = await withPrismaRetry('crawl_runs.create', () => prisma.crawl_runs.create({
         data: {
             source,
             brand_slug: brand,
@@ -119,14 +142,14 @@ async function main() {
                 raw_file: fs.existsSync(rawFile) ? rawFile : null,
             } as Prisma.InputJsonValue,
         },
-    })
+    }))
 
     for (const [index, product] of normalizedProducts.entries()) {
         const decision = decisions[index]
         const sourceUrl = asString(product.source_url)
         const rawPayload = rawByUrl.get(sourceUrl) || product
 
-        const snapshot = await prisma.crawl_product_snapshots.create({
+        const snapshot = await withPrismaRetry(`crawl_product_snapshots.create:${product.sku || index}`, () => prisma.crawl_product_snapshots.create({
             data: {
                 crawl_run_id: run.id,
                 source,
@@ -141,9 +164,9 @@ async function main() {
                 skipped_reason: decision.decision === 'skipped' ? decision.reason : null,
                 qa_flags: decision.qaFlags,
             },
-        })
+        }))
 
-        await prisma.crawl_import_decisions.create({
+        await withPrismaRetry(`crawl_import_decisions.create:${product.sku || index}`, () => prisma.crawl_import_decisions.create({
             data: {
                 crawl_snapshot_id: snapshot.id,
                 decision: decision.decision,
@@ -154,17 +177,17 @@ async function main() {
                 specs_confidence: product.specs && Object.keys(product.specs).length > 0 ? 'medium' : 'low',
                 import_payload: product as Prisma.InputJsonValue,
             },
-        })
+        }))
     }
 
-    await prisma.crawl_runs.update({
+    await withPrismaRetry('crawl_runs.update', () => prisma.crawl_runs.update({
         where: { id: run.id },
         data: {
             status: 'completed',
             finished_at: new Date(),
             summary: summary as Prisma.InputJsonValue,
         },
-    })
+    }))
 
     console.log(JSON.stringify({ crawl_run_id: run.id, summary }, null, 2))
 }
