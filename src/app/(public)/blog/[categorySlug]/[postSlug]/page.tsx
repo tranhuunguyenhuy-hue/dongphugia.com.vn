@@ -6,6 +6,7 @@ import { TableOfContents } from '@/components/blog/toc'
 import { PostCard, BlogPost } from '@/components/blog/post-card'
 import { JsonLd } from '@/components/seo/json-ld'
 import { buildArticleSchema, buildBreadcrumbSchema } from '@/lib/seo/schema'
+import { canonicalUrl } from '@/lib/site'
 
 import { getBlogPostBySlug, getRelatedBlogPosts } from '@/lib/public-api-blog'
 
@@ -21,7 +22,7 @@ export async function generateMetadata({ params }: { params: Promise<{ postSlug:
         title: `${post.title}`,
         description: post.excerpt,
         alternates: {
-            canonical: `https://dongphugia.com.vn/blog/${post.blog_categories?.slug}/${post.slug}`,
+            canonical: canonicalUrl(`/blog/${post.blog_categories?.slug}/${post.slug}`),
         },
         openGraph: {
             title: post.title,
@@ -58,10 +59,10 @@ export default async function BlogPostPage({ params }: { params: Promise<{ categ
                 blog_categories: post.blog_categories,
             })} />
             <JsonLd data={buildBreadcrumbSchema([
-                { name: 'Trang chủ', url: 'https://dongphugia.com.vn' },
-                { name: 'Blog', url: 'https://dongphugia.com.vn/blog' },
-                { name: post.blog_categories.name, url: `https://dongphugia.com.vn/blog/${post.blog_categories.slug}` },
-                { name: post.title, url: `https://dongphugia.com.vn/blog/${post.blog_categories.slug}/${post.slug}` },
+                { name: 'Trang chủ', url: canonicalUrl('/') },
+                { name: 'Blog', url: canonicalUrl('/blog') },
+                { name: post.blog_categories.name, url: canonicalUrl(`/blog/${post.blog_categories.slug}`) },
+                { name: post.title, url: canonicalUrl(`/blog/${post.blog_categories.slug}/${post.slug}`) },
             ])} />
 
             {/* Article Header (Title & Meta area within main container) */}
