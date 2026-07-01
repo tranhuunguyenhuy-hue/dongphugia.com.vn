@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { GoogleTagManager } from '@next/third-parties/google';
 import { JsonLd } from "@/components/seo/json-ld";
 import { buildOrganizationSchema } from "@/lib/seo/schema";
+import { getCanonicalSiteUrl } from "@/lib/site";
 import "./globals.css";
 
 const beVietnamPro = Be_Vietnam_Pro({
@@ -22,20 +23,20 @@ const playfairDisplay = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://dongphugia.com.vn"),
+  metadataBase: new URL(getCanonicalSiteUrl()),
   title: {
     default: "Đông Phú Gia - Vật liệu xây dựng cao cấp tại Đà Lạt",
     template: "%s | Đông Phú Gia",
   },
   description: "Đông Phú Gia - Nhà phân phối vật liệu xây dựng cao cấp tại Đà Lạt: gạch ốp lát, thiết bị vệ sinh chính hãng từ các thương hiệu uy tín.",
   alternates: {
-    canonical: "https://dongphugia.com.vn",
+    canonical: getCanonicalSiteUrl(),
   },
   openGraph: {
     type: "website",
     locale: "vi_VN",
     siteName: "Đông Phú Gia",
-    url: process.env.NEXT_PUBLIC_SITE_URL || "https://dongphugia.com.vn",
+    url: getCanonicalSiteUrl(),
   },
   twitter: {
     card: "summary_large_image",

@@ -1,8 +1,10 @@
+import { getCanonicalSiteUrl } from "@/lib/site"
+
 export const siteConfig = {
     name: "Đông Phú Gia",
     shortName: "DPG",
     description: "Vật liệu xây dựng cao cấp, uy tín, chính hãng. Đồng hành & Phát triển.",
-    url: "https://dongphugia.com.vn",
+    url: getCanonicalSiteUrl(),
     
     // Contact Info
     contact: {
