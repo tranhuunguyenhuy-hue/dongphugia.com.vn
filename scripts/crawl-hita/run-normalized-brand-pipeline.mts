@@ -172,8 +172,7 @@ function hitaProductId(url: string | null | undefined) {
 }
 
 function isProductUrl(url: string) {
-    const id = hitaProductId(url)
-    return url.startsWith('https://hita.com.vn/') && normalizeUrl(url).split('?')[0].endsWith('.html') && Boolean(id && Number(id) >= 1000)
+    return url.startsWith('https://hita.com.vn/') && normalizeUrl(url).split('?')[0].endsWith('.html')
 }
 
 function parseRemainingCount(text: string) {
@@ -383,7 +382,7 @@ async function listingState(page: any) {
     return page.evaluate(() => {
         const urls = [...document.querySelectorAll('.product-box-item a.main-link-product[href]')]
             .map((a: Element) => (a as HTMLAnchorElement).href)
-            .filter((href: string) => /-\d+\.html$/.test(href))
+            .filter((href: string) => href.split('?')[0].endsWith('.html'))
             .filter((href: string, index: number, all: string[]) => all.indexOf(href) === index)
         const text = document.querySelector('#category-view-more')?.textContent || ''
         return { urls, remainingText: text }
