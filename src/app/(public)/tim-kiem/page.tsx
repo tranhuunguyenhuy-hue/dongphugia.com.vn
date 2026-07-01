@@ -6,6 +6,7 @@ import { Search, Package2, ChevronRight, SlidersHorizontal } from 'lucide-react'
 import { formatPrice } from '@/lib/utils'
 import { ProductCard } from '@/components/ui/product-card'
 import prisma from '@/lib/prisma'
+import { buildPublicProductVisibilityWhere } from '@/lib/public-product-visibility'
 
 import { Prisma } from '@prisma/client'
 
@@ -69,11 +70,15 @@ async function fetchSearchResults(q: string, page: number): Promise<SearchRespon
         const searchTerm = q.trim()
 
         const whereClause: Prisma.productsWhereInput = {
-            is_active: true,
-            OR: [
-                { name: { contains: searchTerm, mode: 'insensitive' as const } },
-                { sku: { contains: searchTerm, mode: 'insensitive' as const } },
-            ]
+            AND: [
+                buildPublicProductVisibilityWhere(),
+                {
+                    OR: [
+                        { name: { contains: searchTerm, mode: 'insensitive' as const } },
+                        { sku: { contains: searchTerm, mode: 'insensitive' as const } },
+                    ]
+                },
+            ],
         }
 
         const [products, total] = await Promise.all([

@@ -1,6 +1,7 @@
 import { unstable_cache } from 'next/cache'
 import prisma from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
+import { buildPublicProductVisibilityWhere } from '@/lib/public-product-visibility'
 
 // ─── TYPES ───────────────────────────────────────────────────────────────────
 
@@ -159,7 +160,7 @@ export async function getPublicProducts(filters: ProductFilters = {}) {
     }
 
     const where: Prisma.productsWhereInput = {
-        is_active: true,
+        ...(search ? buildPublicProductVisibilityWhere() : { is_active: true }),
         ...(AND.length > 0 ? { AND } : {}),
         ...(category_slug && { categories: { slug: category_slug } }),
         ...(product_type && { product_type: { in: toArray(product_type) } }),
@@ -395,7 +396,6 @@ async function _getPublicProductBySlug(categorySlug: string, slug: string) {
     return prisma.products.findFirst({
         where: {
             slug,
-            is_active: true,
             categories: { slug: categorySlug },
         },
         include: {

@@ -18,9 +18,10 @@ describe('Footer Component', () => {
 
     it('renders the contact information', () => {
         render(<Footer />)
-        expect(screen.getByText(/200 - 202 - 204 Phan Đình Phùng/i)).toBeInTheDocument()
-        expect(screen.getByText('0263 3520 316')).toBeInTheDocument()
-        expect(screen.getByText('info@dongphugia.vn')).toBeInTheDocument()
+        expect(screen.getByText(/273–275 Phan Đình Phùng/i)).toBeInTheDocument()
+        expect(screen.getByText('094 9349 949 - 094 5343 494')).toBeInTheDocument()
+        expect(screen.getByText('0855 528 688')).toBeInTheDocument()
+        expect(screen.getByText('www.dongphugia.com.vn')).toBeInTheDocument()
     })
 
     it('renders the copyright text', () => {

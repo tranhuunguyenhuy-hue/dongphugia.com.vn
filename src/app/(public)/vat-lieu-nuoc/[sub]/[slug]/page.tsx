@@ -13,6 +13,7 @@ import { BrandBadge } from "@/components/ui/brand-badge"
 import { ProductPrice } from "@/components/product/product-price"
 import { JsonLd } from "@/components/seo/json-ld"
 import { buildProductSchema, buildBreadcrumbSchema } from "@/lib/seo/schema"
+import { canonicalUrl } from "@/lib/site"
 
 export const revalidate = 1800
 export const dynamicParams = true
@@ -32,7 +33,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return {
         title: `${product.name} | ${CATEGORY_NAME}`,
         description: product.description?.slice(0, 160) || `${product.name} - Chính hãng tại Đông Phú Gia Đà Lạt.`,
-        alternates: { canonical: `${BASE_PATH}/${slug}` },
+        alternates: { canonical: canonicalUrl(`${BASE_PATH}/${slug}`) },
         openGraph: {
             title: `${product.name}`,
             description: product.description?.slice(0, 160) || `${product.name} - Chính hãng tại Đông Phú Gia Đà Lạt.`,

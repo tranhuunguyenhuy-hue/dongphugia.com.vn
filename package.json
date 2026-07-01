@@ -7,6 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "audit:canonical-slugs": "tsx scripts/db/migrate-canonical-product-slugs.mts",
+    "generate:redirect-map": "tsx scripts/db/export-product-redirect-map.mts",
+    "check:canonical-rollout": "tsx scripts/db/check-canonical-rollout.mts",
     "postinstall": "prisma generate",
     "test": "vitest run"
   },
