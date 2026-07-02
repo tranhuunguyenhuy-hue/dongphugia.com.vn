@@ -76,6 +76,29 @@ model products {
   warranty_months         Int?
   image_main_url          String?                           @db.VarChar(1000)
   stock_status            String                            @default("in_stock") @db.VarChar(20)
+  publication_status      String                            @default("public") @db.VarChar(30)
+  pdp_visibility          String                            @default("public") @db.VarChar(30)
+  listing_visibility      String                            @default("default") @db.VarChar(30)
+  search_visibility       String                            @default("visible") @db.VarChar(30)
+  listing_tier            Int                               @default(2)
+  listing_priority        Int                               @default(0)
+  listing_reason          String?                           @db.VarChar(50)
+  data_quality_score      Int                               @default(0)
+  sale_status             String                            @default("available") @db.VarChar(40)
+  price_state             String                            @default("unknown") @db.VarChar(40)
+  list_price              Decimal?                          @db.Decimal(15, 2)
+  sale_price              Decimal?                          @db.Decimal(15, 2)
+  price_source            String                            @default("unknown") @db.VarChar(40)
+  price_confidence        String                            @default("medium") @db.VarChar(40)
+  price_updated_at        DateTime?                         @db.Timestamptz(6)
+  sellable_status         String                            @default("sellable") @db.VarChar(40)
+  seo_indexing            String                            @default("index") @db.VarChar(40)
+  sitemap_include         Boolean                           @default(true)
+  canonical_product_id    Int?
+  source_system           String                            @default("hita") @db.VarChar(40)
+  source_confidence       String                            @default("medium") @db.VarChar(40)
+  last_crawled_at         DateTime?                         @db.Timestamptz(6)
+  crawl_status            String                            @default("fresh") @db.VarChar(40)
   is_active               Boolean                           @default(true)
   is_featured             Boolean                           @default(false)
   sort_order              Int                               @default(0)
@@ -102,6 +125,8 @@ model products {
   order_items             order_items[]
   product_feature_values  product_feature_values[]
   product_images          product_images[]
+  canonical_children      products[]                         @relation("products_canonical_product")
+  canonical_product       products?                          @relation("products_canonical_product", fields: [canonical_product_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
   child_relationships     product_relationships[]           @relation("child_relationships")
   parent_relationships    product_relationships[]           @relation("parent_relationships")
   secondary_subcategories product_secondary_subcategories[]
@@ -116,6 +141,7 @@ model products {
   @@unique([category_id, slug])
   @@index([is_active], map: "idx_products_active")
   @@index([is_promotion], map: "idx_products_promotion")
+  @@index([canonical_product_id], map: "idx_products_canonical_product")
   @@index([brand_id], map: "idx_products_brand")
   @@index([category_id], map: "idx_products_category")
   @@index([created_at(sort: Desc)], map: "idx_products_created")
@@ -129,6 +155,10 @@ model products {
   @@index([product_type], map: "idx_products_product_type")
   @@index([is_combo], map: "idx_products_is_combo")
   @@index([variant_group], map: "idx_products_variant_group")
+  @@index([publication_status, listing_visibility, listing_tier, listing_priority(sort: Desc)], map: "idx_products_public_listing")
+  @@index([publication_status, search_visibility], map: "idx_products_search_visibility")
+  @@index([seo_indexing, sitemap_include], map: "idx_products_seo")
+  @@index([sale_status, price_state], map: "idx_products_sale_status")
 }
 
 model product_relationships {

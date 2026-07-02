@@ -76,6 +76,17 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
     })
     const relatedProducts = relatedItems.filter(p => p.slug !== slug).slice(0, 4)
 
+    const saleStatus = product.sale_status || (product.stock_status === 'discontinued' ? 'discontinued' : 'available')
+    const saleStatusLabel =
+        saleStatus === 'discontinued' ? 'Ngừng kinh doanh' :
+        saleStatus === 'contact_for_price' ? 'Liên hệ báo giá' :
+        saleStatus === 'updating' ? 'Đang cập nhật' :
+        saleStatus === 'coming_soon' ? 'Chuẩn bị mở bán' :
+        saleStatus === 'temporarily_unavailable' ? 'Tạm ngừng bán' :
+        'Đang bán'
+    const saleStatusTone = saleStatus === 'available' ? 'emerald' : saleStatus === 'discontinued' ? 'rose' : 'amber'
+    const salePrice = product.sale_price ?? product.price
+    const listPrice = product.list_price ?? product.original_price
 
 
     const stockDisplay = product.stock_status === 'in_stock'
@@ -159,10 +170,10 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
 
                         <div className="flex flex-wrap items-center gap-2 text-[12px]">
                             {/* 1. Status Pill */}
-                            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md border ${product.stock_status === 'in_stock' ? 'bg-emerald-50 border-emerald-100' : 'bg-rose-50 border-rose-100'}`}>
-                                <div className={`w-1.5 h-1.5 rounded-full ${product.stock_status === 'in_stock' ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`} />
-                                <span className={`font-medium ${product.stock_status === 'in_stock' ? 'text-emerald-700' : 'text-rose-700'}`}>
-                                    {product.stock_status === 'in_stock' ? 'Còn hàng' : 'Liên hệ'}
+                            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md border ${saleStatusTone === 'emerald' ? 'bg-emerald-50 border-emerald-100' : saleStatusTone === 'rose' ? 'bg-rose-50 border-rose-100' : 'bg-amber-50 border-amber-100'}`}>
+                                <div className={`w-1.5 h-1.5 rounded-full ${saleStatusTone === 'emerald' ? 'bg-emerald-500 animate-pulse' : saleStatusTone === 'rose' ? 'bg-rose-500' : 'bg-amber-500'}`} />
+                                <span className={`font-medium ${saleStatusTone === 'emerald' ? 'text-emerald-700' : saleStatusTone === 'rose' ? 'text-rose-700' : 'text-amber-700'}`}>
+                                    {saleStatusLabel}
                                 </span>
                             </div>
 
@@ -196,8 +207,8 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
                             currentName={product.name}
                             currentImageMainUrl={product.image_main_url}
                             currentPriceDisplay={product.price_display}
-                            currentPrice={Number(product.price)}
-                            currentOriginalPrice={Number(product.original_price)}
+                            currentPrice={Number(salePrice)}
+                            currentOriginalPrice={Number(listPrice)}
                             currentColor={product.colors}
                             variantType={product.variant_type}
                             variantLabel={product.variant_label}
@@ -210,17 +221,19 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
 
                     {/* Price and CTA */}
                     <ProductPrice 
-                        price={Number(product.price)}
-                        originalPrice={Number(product.original_price)}
+                        price={Number(salePrice)}
+                        originalPrice={Number(listPrice)}
                         priceDisplay={product.price_display}
                         onlineDiscountAmount={Number(product.online_discount_amount)}
+                        saleStatus={product.sale_status}
+                        priceState={product.price_state}
                     >
                         <ProductCTA
                             productId={product.id}
                             productSku={product.sku}
                             productName={product.name}
-                            price={product.price ? Number(product.price) : null}
-                            originalPrice={product.original_price ? Number(product.original_price) : null}
+                            price={salePrice ? Number(salePrice) : null}
+                            originalPrice={listPrice ? Number(listPrice) : null}
                             priceDisplay={product.price_display}
                             imageUrl={product.image_main_url || (product.product_images && product.product_images.length > 0 ? product.product_images[0].image_url : null)}
                             categorySlug={CATEGORY_SLUG}
