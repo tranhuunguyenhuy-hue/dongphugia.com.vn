@@ -29,6 +29,8 @@ interface ProductCTAProps {
     brandName?: string | null;
     slug: string;
     stockStatus?: string | null;
+    saleStatus?: string | null;
+    priceState?: string | null;
 }
 
 export function ProductCTA({
@@ -44,9 +46,11 @@ export function ProductCTA({
     brandName,
     slug,
     stockStatus,
+    saleStatus,
+    priceState,
 }: ProductCTAProps) {
-    const hasPrice = price !== null && price > 0;
-    const isDiscontinued = stockStatus === 'discontinued';
+    const isDiscontinued = stockStatus === 'discontinued' || saleStatus === 'discontinued' || priceState === 'discontinued';
+    const hasPrice = price !== null && price > 0 && (!priceState || priceState === 'priced');
     
     const productOptions = useProductOptions();
     const installOption = productOptions?.installOption || 'none';

@@ -11,11 +11,13 @@ interface ProductPriceProps {
     priceDisplay: string | null | undefined
     onlineDiscountAmount?: number | null | undefined
     stockStatus?: string | null | undefined
+    saleStatus?: string | null | undefined
+    priceState?: string | null | undefined
     className?: string
     children?: React.ReactNode
 }
 
-export function ProductPrice({ price, originalPrice, priceDisplay, onlineDiscountAmount, stockStatus, className, children }: ProductPriceProps) {
+export function ProductPrice({ price, originalPrice, priceDisplay, onlineDiscountAmount, stockStatus, saleStatus, priceState, className, children }: ProductPriceProps) {
     const [installOption, setInstallOption] = useState<'none' | 'install' | 'replace'>('none')
 
     const installationFee = installOption === 'install' ? 200000 : installOption === 'replace' ? 350000 : 0;
@@ -24,11 +26,21 @@ export function ProductPrice({ price, originalPrice, priceDisplay, onlineDiscoun
     const numOriginal = Number(originalPrice)
     const numOnlineDiscount = Number(onlineDiscountAmount)
     const hasDiscount = numOriginal > 0 && numPrice > 0 && numOriginal > numPrice
-    const isDiscontinued = stockStatus === 'discontinued'
+    const normalizedSaleStatus = saleStatus || (stockStatus === 'discontinued' ? 'discontinued' : 'available')
+    const normalizedPriceState = priceState || (numPrice > 0 ? 'priced' : 'contact')
+    const statusDisplay =
+        normalizedSaleStatus === 'discontinued' || normalizedPriceState === 'discontinued' ? 'Ngừng kinh doanh' :
+        normalizedSaleStatus === 'contact_for_price' || normalizedPriceState === 'contact' ? 'Liên hệ báo giá' :
+        normalizedSaleStatus === 'updating' || normalizedPriceState === 'updating' ? 'Đang cập nhật' :
+        normalizedSaleStatus === 'coming_soon' || normalizedPriceState === 'coming_soon' ? 'Chuẩn bị mở bán' :
+        normalizedSaleStatus === 'temporarily_unavailable' ? 'Tạm ngừng bán' :
+        priceDisplay || 'Liên hệ báo giá'
+    const hasPublicPrice = normalizedPriceState === 'priced' && numPrice > 0
+    const isDiscontinued = normalizedSaleStatus === 'discontinued' || normalizedPriceState === 'discontinued'
 
-    const finalDisplayPrice = numPrice > 0 
+    const finalDisplayPrice = hasPublicPrice
         ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(numPrice)
-        : (priceDisplay || "Liên hệ báo giá")
+        : statusDisplay
 
     return (
         <ProductOptionsContext.Provider value={{ installOption, setInstallOption, installationFee, onlineDiscountAmount: numOnlineDiscount }}>

@@ -79,25 +79,32 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
     })
     const relatedProducts = relatedItems.filter(p => p.slug !== slug).slice(0, 4)
 
+    const saleStatus = product.sale_status || (product.stock_status === 'discontinued' ? 'discontinued' : 'available')
+    const saleStatusLabel =
+        saleStatus === 'discontinued' ? 'Ngừng kinh doanh' :
+        saleStatus === 'contact_for_price' ? 'Liên hệ báo giá' :
+        saleStatus === 'updating' ? 'Đang cập nhật' :
+        saleStatus === 'coming_soon' ? 'Chuẩn bị mở bán' :
+        saleStatus === 'temporarily_unavailable' ? 'Tạm ngừng bán' :
+        'Đang bán'
+    const saleStatusTone = saleStatus === 'available' ? 'emerald' : saleStatus === 'discontinued' ? 'rose' : 'amber'
+    const salePrice = product.sale_price ?? product.price
+    const listPrice = product.list_price ?? product.original_price
 
-
-    const stockPill = product.stock_status === 'discontinued'
-        ? { label: 'Ngừng kinh doanh', dot: 'bg-rose-400', wrap: 'bg-rose-50 border-rose-200', text: 'text-rose-700' }
-        : product.stock_status === 'in_stock'
-        ? { label: 'Còn hàng', dot: 'bg-emerald-500 animate-pulse', wrap: 'bg-emerald-50 border-emerald-100', text: 'text-emerald-700' }
-        : product.stock_status === 'pre_order'
-        ? { label: 'Đặt trước', dot: 'bg-amber-500', wrap: 'bg-amber-50 border-amber-100', text: 'text-amber-700' }
-        : { label: 'Liên hệ', dot: 'bg-rose-500', wrap: 'bg-rose-50 border-rose-100', text: 'text-rose-700' }
 
     const purchaseProduct = {
         id: product.id,
         sku: product.sku,
         slug: product.slug,
         name: product.name,
-        price: product.price ? Number(product.price) : null,
-        original_price: product.original_price ? Number(product.original_price) : null,
+        price: salePrice ? Number(salePrice) : null,
+        original_price: listPrice ? Number(listPrice) : null,
+        sale_price: salePrice ? Number(salePrice) : null,
+        list_price: listPrice ? Number(listPrice) : null,
         online_discount_amount: product.online_discount_amount ? Number(product.online_discount_amount) : null,
         price_display: product.price_display,
+        sale_status: product.sale_status,
+        price_state: product.price_state,
         image_main_url: product.image_main_url,
         product_images: product.product_images?.map((image) => ({
             image_url: image.image_url,
@@ -118,7 +125,7 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
                 description: product.description,
                 sku: product.sku,
                 image_main_url: product.image_main_url,
-                price: Number(product.price),
+                price: salePrice ? Number(salePrice) : null,
                 stock_status: product.stock_status,
                 brands: product.brands,
                 slug: product.slug,
@@ -159,8 +166,8 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
                         additionalImages={additionalImages.map(i => ({ image_url: i.image_url, alt_text: i.alt_text }))}
                         productName={product.name}
                         discountPercent={
-                            product.original_price && product.price && Number(product.original_price) > Number(product.price)
-                                ? Math.round(((Number(product.original_price) - Number(product.price)) / Number(product.original_price)) * 100)
+                            listPrice && salePrice && Number(listPrice) > Number(salePrice)
+                                ? Math.round(((Number(listPrice) - Number(salePrice)) / Number(listPrice)) * 100)
                                 : 0
                         }
                     />
@@ -186,10 +193,10 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
 
                         <div className="flex flex-wrap items-center gap-2 text-[12px]">
                             {/* 1. Status Pill */}
-                            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md border ${stockPill.wrap}`}>
-                                <div className={`w-1.5 h-1.5 rounded-full ${stockPill.dot}`} />
-                                <span className={`font-medium ${stockPill.text}`}>
-                                    {stockPill.label}
+                            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md border ${saleStatusTone === 'emerald' ? 'bg-emerald-50 border-emerald-100' : saleStatusTone === 'rose' ? 'bg-rose-50 border-rose-100' : 'bg-amber-50 border-amber-100'}`}>
+                                <div className={`w-1.5 h-1.5 rounded-full ${saleStatusTone === 'emerald' ? 'bg-emerald-500 animate-pulse' : saleStatusTone === 'rose' ? 'bg-rose-500' : 'bg-amber-500'}`} />
+                                <span className={`font-medium ${saleStatusTone === 'emerald' ? 'text-emerald-700' : saleStatusTone === 'rose' ? 'text-rose-700' : 'text-amber-700'}`}>
+                                    {saleStatusLabel}
                                 </span>
                             </div>
 
@@ -270,10 +277,14 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
                 slug: product.slug,
                 sku: product.sku,
                 image_main_url: product.image_main_url,
-                price: product.price ? Number(product.price) : null,
-                original_price: product.original_price ? Number(product.original_price) : null,
+                price: salePrice ? Number(salePrice) : null,
+                original_price: listPrice ? Number(listPrice) : null,
+                sale_price: salePrice ? Number(salePrice) : null,
+                list_price: listPrice ? Number(listPrice) : null,
                 online_discount_amount: product.online_discount_amount ? Number(product.online_discount_amount) : null,
                 price_display: product.price_display,
+                sale_status: product.sale_status,
+                price_state: product.price_state,
                 category_slug: CATEGORY_SLUG,
                 is_featured: product.is_featured,
                 is_promotion: product.is_promotion,

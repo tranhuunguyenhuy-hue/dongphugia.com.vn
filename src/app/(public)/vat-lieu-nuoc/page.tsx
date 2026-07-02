@@ -20,6 +20,11 @@ const CATEGORY_SLUG = "vat-lieu-nuoc"
 const CATEGORY_NAME = "Vật Liệu Nước"
 const BASE_PATH = "/vat-lieu-nuoc"
 const EMOJI_FALLBACK = "💧"
+const LISTING_PRODUCT_WHERE = {
+    publication_status: "public",
+    pdp_visibility: "public",
+    listing_visibility: { in: ["default", "low_priority"] },
+}
 
 interface PageProps {
     searchParams: Promise<{ brands?: string; price?: string }>
@@ -33,7 +38,7 @@ export default async function VatLieuNuocPage({ searchParams }: PageProps) {
     const featuredWhere: any = {
         categories: { slug: CATEGORY_SLUG },
         is_featured: true,
-        is_active: true,
+        ...LISTING_PRODUCT_WHERE,
     }
     if (activeBrands.length > 0) featuredWhere.brands = { name: { in: activeBrands } }
     if (priceMin !== undefined && priceMax !== undefined)
@@ -44,7 +49,7 @@ export default async function VatLieuNuocPage({ searchParams }: PageProps) {
         prisma.subcategories.findMany({
             where: { categories: { slug: CATEGORY_SLUG }, is_active: true },
             orderBy: { sort_order: "asc" },
-            include: { _count: { select: { products: { where: { is_active: true } } } } },
+            include: { _count: { select: { products: { where: LISTING_PRODUCT_WHERE } } } },
         }),
         prisma.products.findMany({
             where: featuredWhere,
@@ -58,7 +63,7 @@ export default async function VatLieuNuocPage({ searchParams }: PageProps) {
             },
         }),
         prisma.brands.findMany({
-            where: { is_active: true, products: { some: { categories: { slug: CATEGORY_SLUG }, is_active: true } } },
+            where: { is_active: true, products: { some: { categories: { slug: CATEGORY_SLUG }, ...LISTING_PRODUCT_WHERE } } },
             select: { id: true, name: true, slug: true },
             orderBy: { sort_order: "asc" },
             take: 20,
