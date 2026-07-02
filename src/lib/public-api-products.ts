@@ -58,16 +58,35 @@ export type ProductFilters = {
     sortDir?: 'asc' | 'desc'
 }
 
+const publicProductWhere = {
+    publication_status: 'public',
+    pdp_visibility: 'public',
+} satisfies Prisma.productsWhereInput
+
+const listingProductWhere = {
+    ...publicProductWhere,
+    listing_visibility: { in: ['default', 'low_priority'] },
+} satisfies Prisma.productsWhereInput
+
+const searchProductWhere = {
+    ...publicProductWhere,
+    search_visibility: 'visible',
+} satisfies Prisma.productsWhereInput
+
 function serializeProductMoney<T extends {
     price?: unknown
     original_price?: unknown
     online_discount_amount?: unknown
+    list_price?: unknown
+    sale_price?: unknown
 }>(product: T) {
     return {
         ...product,
         price: product.price ? Number(product.price) : null,
         original_price: product.original_price ? Number(product.original_price) : null,
         online_discount_amount: product.online_discount_amount ? Number(product.online_discount_amount) : null,
+        list_price: product.list_price ? Number(product.list_price) : null,
+        sale_price: product.sale_price ? Number(product.sale_price) : null,
     }
 }
 
@@ -159,7 +178,7 @@ export async function getPublicProducts(filters: ProductFilters = {}) {
     }
 
     const where: Prisma.productsWhereInput = {
-        is_active: true,
+        ...(search ? searchProductWhere : listingProductWhere),
         ...(AND.length > 0 ? { AND } : {}),
         ...(category_slug && { categories: { slug: category_slug } }),
         ...(product_type && { product_type: { in: toArray(product_type) } }),
@@ -206,10 +225,14 @@ export async function getPublicProducts(filters: ProductFilters = {}) {
         orderBy.push({ price: 'desc' })
     } else {
         // Default sort: featured → sort_order (TOTO with variants > TOTO > Others) → bestseller → high price
+        orderBy.push({ listing_tier: 'asc' })
         orderBy.push({ is_featured: 'desc' })
+        orderBy.push({ listing_priority: 'desc' })
         orderBy.push({ sort_order: 'desc' })
         orderBy.push({ is_promotion: 'desc' })
+        orderBy.push({ data_quality_score: 'desc' })
         orderBy.push({ variant_group: { sort: 'asc', nulls: 'last' } })
+        orderBy.push({ sale_price: 'desc' })
         orderBy.push({ price: 'desc' })
     }
 
@@ -230,11 +253,22 @@ export async function getPublicProducts(filters: ProductFilters = {}) {
                 brand_id: true,
                 price: true,
                 original_price: true,
+                list_price: true,
+                sale_price: true,
                 online_discount_amount: true,
                 price_display: true,
                 image_main_url: true,
 
                 stock_status: true,
+                publication_status: true,
+                pdp_visibility: true,
+                listing_visibility: true,
+                search_visibility: true,
+                listing_tier: true,
+                listing_priority: true,
+                sale_status: true,
+                price_state: true,
+                sellable_status: true,
                 is_active: true,
                 is_featured: true,
                 is_promotion: true,
@@ -263,35 +297,36 @@ export async function getPublicProducts(filters: ProductFilters = {}) {
 
 export const getAvailableFilters = unstable_cache(
     async (categorySlug: string) => {
-        // Query to get all subcategories, brands, materials, origins, features that are connected to an active product in this category.
+        // Query to get all subcategories, brands, materials, origins, features that are connected to listable public products.
+        const productWhere = { ...listingProductWhere, categories: { slug: categorySlug } } satisfies Prisma.productsWhereInput
 
         const [subcategories, brands, materials, origins, features, colors] = await Promise.all([
             prisma.subcategories.findMany({
-                where: { products: { some: { is_active: true, categories: { slug: categorySlug } } }, is_active: true },
+                where: { products: { some: productWhere }, is_active: true },
                 select: { name: true, slug: true, icon_name: true },
                 orderBy: { sort_order: 'asc' }
             }),
             prisma.brands.findMany({
-                where: { products: { some: { is_active: true, categories: { slug: categorySlug } } }, is_active: true },
+                where: { products: { some: productWhere }, is_active: true },
                 select: { name: true, slug: true, logo_url: true },
                 orderBy: { sort_order: 'asc' }
             }),
             prisma.materials.findMany({
-                where: { products: { some: { is_active: true, categories: { slug: categorySlug } } } },
+                where: { products: { some: productWhere } },
                 select: { name: true, slug: true },
                 orderBy: { sort_order: 'asc' }
             }),
             prisma.origins.findMany({
-                where: { products: { some: { is_active: true, categories: { slug: categorySlug } } } },
+                where: { products: { some: productWhere } },
                 select: { name: true, slug: true }
             }),
             prisma.product_features.findMany({
-                where: { product_feature_values: { some: { products: { is_active: true, categories: { slug: categorySlug } } } } },
+                where: { product_feature_values: { some: { products: productWhere } } },
                 select: { name: true, slug: true, icon_name: true },
                 orderBy: { sort_order: 'asc' }
             }),
             prisma.colors.findMany({
-                where: { products: { some: { is_active: true, categories: { slug: categorySlug } } } },
+                where: { products: { some: productWhere } },
                 select: { name: true, slug: true, hex_code: true }
             })
         ])
@@ -316,10 +351,10 @@ export const getAvailableFilters = unstable_cache(
 export const getAvailableFiltersBySubcategory = unstable_cache(
     async (subcategorySlug: string, productType?: string) => {
         const productWhere = {
-            is_active: true,
+            ...listingProductWhere,
             subcategories: { slug: subcategorySlug },
             ...(productType ? { product_type: productType } : {}),
-        }
+        } satisfies Prisma.productsWhereInput
 
         const [brands, features, colors, materials, origins] = await Promise.all([
             prisma.brands.findMany({
@@ -395,7 +430,7 @@ async function _getPublicProductBySlug(categorySlug: string, slug: string) {
     return prisma.products.findFirst({
         where: {
             slug,
-            is_active: true,
+            ...publicProductWhere,
             categories: { slug: categorySlug },
         },
         include: {

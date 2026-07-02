@@ -19,6 +19,11 @@ const CATEGORY_SLUG = "vat-lieu-nuoc"
 const CATEGORY_NAME = "Vật Liệu Nước"
 const BASE_PATH = "/vat-lieu-nuoc"
 const PAGE_SIZE = 24
+const LISTING_PRODUCT_WHERE = {
+    publication_status: "public",
+    pdp_visibility: "public",
+    listing_visibility: { in: ["default", "low_priority"] },
+}
 
 interface PageProps {
     params: Promise<{ sub: string }>
@@ -78,8 +83,8 @@ export default async function VatLieuNuocSubPage({ params, searchParams }: PageP
             include: {
                 _count: {
                     select: {
-                        products: { where: { is_active: true } },
-                        secondary_product_subcategories: { where: { products: { is_active: true } } },
+                        products: { where: LISTING_PRODUCT_WHERE },
+                        secondary_product_subcategories: { where: { products: LISTING_PRODUCT_WHERE } },
                     }
                 }
             },
