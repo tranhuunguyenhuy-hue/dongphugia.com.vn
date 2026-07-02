@@ -64,12 +64,24 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
         dimensionText = product.dimensions || specs.dimensions || specs.simDimensions || product.sizes?.label;
     }
     const sku = product.sku || product.product_code || product.code || '';
-    const isDiscontinued = product.stock_status === 'discontinued';
+    const saleStatus = product.sale_status || (product.stock_status === 'discontinued' ? 'discontinued' : 'available');
+    const priceState = product.price_state || (product.price ? 'priced' : 'contact');
+    const salePrice = product.sale_price ?? product.price;
+    const listPrice = product.list_price ?? product.original_price;
+    const isDiscontinued = saleStatus === 'discontinued' || priceState === 'discontinued';
     const isInactive = product.is_active === false;
+    const statusLabel =
+        saleStatus === 'discontinued' ? 'Ngừng kinh doanh' :
+        saleStatus === 'contact_for_price' ? 'Liên hệ báo giá' :
+        saleStatus === 'updating' ? 'Đang cập nhật' :
+        saleStatus === 'coming_soon' ? 'Chuẩn bị mở bán' :
+        saleStatus === 'temporarily_unavailable' ? 'Tạm ngừng bán' :
+        'Đang bán';
+    const canShowPrice = Boolean(showPrice && priceState === 'priced' && salePrice && Number(salePrice) > 0);
 
     let discountPercent = 0;
-    if (product.original_price && product.price && Number(product.original_price) > Number(product.price)) {
-        discountPercent = Math.round(((Number(product.original_price) - Number(product.price)) / Number(product.original_price)) * 100);
+    if (listPrice && salePrice && Number(listPrice) > Number(salePrice)) {
+        discountPercent = Math.round(((Number(listPrice) - Number(salePrice)) / Number(listPrice)) * 100);
     }
 
     // Determine if product image should have margin (cutout/no-background)
@@ -188,15 +200,15 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
                     <span className="text-[10px] font-semibold text-neutral-400 truncate pr-2 uppercase tracking-widest flex-1">
                         {collectionName || (isTBVS ? 'Thiết bị vệ sinh' : 'Đông Phú Gia')}
                     </span>
-                    {(product.stock_status || product.warranty_months || sku) && (
+                    {(saleStatus || product.warranty_months || sku) && (
                         <div className="flex items-center gap-1.5 text-[10px] text-neutral-400 shrink-0">
-                            {product.stock_status && (
+                            {saleStatus && (
                                 <span className={cn(
                                     "w-1.5 h-1.5 rounded-full",
-                                    product.stock_status === 'discontinued' ? "bg-rose-400" :
+                                    isDiscontinued ? "bg-rose-400" :
                                     isInactive ? "bg-amber-400" :
-                                    product.stock_status === 'in_stock' ? "bg-emerald-500" :
-                                    product.stock_status === 'out_of_stock' ? "bg-red-500" : "bg-neutral-300"
+                                    saleStatus === 'available' ? "bg-emerald-500" :
+                                    saleStatus === 'contact_for_price' ? "bg-sky-500" : "bg-neutral-300"
                                 )} />
                             )}
                             {sku && <span>Mã: {sku}</span>}
@@ -241,15 +253,15 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
                         <span className="w-fit rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-[12px] font-bold text-rose-700">
                             Ngừng kinh doanh
                         </span>
-                    ) : showPrice && product.price ? (
+                    ) : canShowPrice ? (
                         <>
                             <div className="flex items-center gap-2 flex-wrap">
-                                <span className={`font-bold text-[17px] sm:text-[18px] tracking-tight ${product.original_price && Number(product.original_price) > Number(product.price) ? 'text-red-600' : 'text-brand-700'}`}>
-                                    {formatPrice(Number(product.price))}
+                                <span className={`font-bold text-[17px] sm:text-[18px] tracking-tight ${listPrice && Number(listPrice) > Number(salePrice) ? 'text-red-600' : 'text-brand-700'}`}>
+                                    {formatPrice(Number(salePrice))}
                                 </span>
-                                {product.original_price && Number(product.original_price) > Number(product.price) && (
+                                {listPrice && Number(listPrice) > Number(salePrice) && (
                                     <span className="font-medium text-[13px] text-neutral-400 line-through">
-                                        {formatPrice(Number(product.original_price))}
+                                        {formatPrice(Number(listPrice))}
                                     </span>
                                 )}
                             </div>
@@ -261,7 +273,7 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
                         </>
                     ) : (
                         <span className="font-semibold text-[14px] text-[#2E7A96] tracking-tight">
-                            {product.price_display || siteConfig.ui.status.contact}
+                            {statusLabel === 'Đang bán' ? (product.price_display || siteConfig.ui.status.contact) : statusLabel}
                         </span>
                     )}
                 </div>

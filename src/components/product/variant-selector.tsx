@@ -236,10 +236,14 @@ export interface VariantPreview {
     name: string
     price: number | null
     original_price: number | null
+    sale_price?: number | null
+    list_price?: number | null
     online_discount_amount?: number | null
     price_display: string | null
     image_main_url: string | null
     stock_status?: string | null
+    sale_status?: string | null
+    price_state?: string | null
     is_active?: boolean
     subcategory_slug?: string | null
     variant_options?: VariantOption[]
@@ -359,12 +363,16 @@ interface SwatchVariant {
     priceDisplay: string | null
     price: number | null
     originalPrice: number | null
+    salePrice?: number | null
+    listPrice?: number | null
     imageMainUrl: string | null
     color: { name: string; hex_code: string | null } | null | undefined
     isCurrent: boolean
     subcategorySlug: string | null | undefined
     variantOptions?: VariantOption[]
     stockStatus?: string | null
+    saleStatus?: string | null
+    priceState?: string | null
 }
 
 interface ColorSwatchesProps {
@@ -409,9 +417,13 @@ function ColorSwatches({ variants, onPreviewVariant }: ColorSwatchesProps) {
                                     name: variant.name,
                                     price: variant.price,
                                     original_price: variant.originalPrice,
+                                    sale_price: variant.salePrice,
+                                    list_price: variant.listPrice,
                                     price_display: variant.priceDisplay,
                                     image_main_url: variant.imageMainUrl,
                                     stock_status: variant.stockStatus,
+                                    sale_status: variant.saleStatus,
+                                    price_state: variant.priceState,
                                     variant_options: variant.variantOptions,
                                 })
                                 window.dispatchEvent(new CustomEvent('product-variant-selection', {
@@ -821,10 +833,14 @@ export function VariantSelector({
                 name: currentName,
                 price: currentPrice ?? null,
                 original_price: currentOriginalPrice ?? null,
+                sale_price: currentPrice ?? null,
+                list_price: currentOriginalPrice ?? null,
                 online_discount_amount: null,
                 price_display: currentPriceDisplay,
                 image_main_url: currentImageMainUrl ?? null,
                 stock_status: currentStockStatus ?? null,
+                sale_status: null,
+                price_state: currentPrice && currentPrice > 0 ? 'priced' : null,
                 is_active: true,
                 variant_label: variantLabel ?? null,
                 variant_options: currentOptions,
@@ -838,10 +854,14 @@ export function VariantSelector({
                 name: s.name,
                 price: s.price,
                 original_price: s.original_price,
+                sale_price: s.sale_price ?? s.price,
+                list_price: s.list_price ?? s.original_price,
                 online_discount_amount: s.online_discount_amount ?? null,
                 price_display: s.price_display,
                 image_main_url: s.image_main_url,
                 stock_status: s.stock_status ?? null,
+                sale_status: s.sale_status ?? null,
+                price_state: s.price_state ?? null,
                 is_active: s.is_active,
                 variant_label: s.variant_label,
                 variant_options: parseVariantOptions(s.variant_options),
@@ -880,12 +900,16 @@ export function VariantSelector({
                 priceDisplay: currentPriceDisplay,
                 price: currentPrice ?? null,
                 originalPrice: currentOriginalPrice ?? null,
+                salePrice: currentPrice ?? null,
+                listPrice: currentOriginalPrice ?? null,
                 imageMainUrl: currentImageMainUrl ?? null,
                 color: currentColor,
                 isCurrent: (selectedSku || currentSku) === currentSku,
                 subcategorySlug,
                 variantOptions: currentOptions,
                 stockStatus: currentStockStatus ?? null,
+                saleStatus: null,
+                priceState: currentPrice && currentPrice > 0 ? 'priced' : null,
             },
             ...siblings.map(s => ({
                 id: s.id,
@@ -894,14 +918,18 @@ export function VariantSelector({
                 name: s.name,
                 label: s.variant_label ?? null,
                 priceDisplay: s.price_display,
-                price: s.price,
-                originalPrice: s.original_price,
+                price: s.sale_price ?? s.price,
+                originalPrice: s.list_price ?? s.original_price,
+                salePrice: s.sale_price ?? s.price,
+                listPrice: s.list_price ?? s.original_price,
                 imageMainUrl: s.image_main_url,
                 color: s.colors,
                 isCurrent: s.sku === (selectedSku || currentSku),
                 subcategorySlug: s.subcategories?.slug ?? subcategorySlug,
                 variantOptions: parseVariantOptions(s.variant_options),
                 stockStatus: s.stock_status ?? null,
+                saleStatus: s.sale_status ?? null,
+                priceState: s.price_state ?? null,
             })),
         ].sort((a, b) => a.sku.localeCompare(b.sku))
 
@@ -940,8 +968,8 @@ export function VariantSelector({
                 label: s.variant_label ?? null,
                 imageMainUrl: s.image_main_url,
                 priceDisplay: s.price_display,
-                price: s.price,
-                originalPrice: s.original_price,
+                price: s.sale_price ?? s.price,
+                originalPrice: s.list_price ?? s.original_price,
                 color: s.colors,
                 isActive: s.is_active,
                 isCurrent: s.sku === currentSku,
@@ -985,8 +1013,8 @@ export function VariantSelector({
                     label: s.variant_label ?? null,
                     imageMainUrl: s.image_main_url,
                     priceDisplay: s.price_display,
-                    price: s.price,
-                    originalPrice: s.original_price,
+                    price: s.sale_price ?? s.price,
+                    originalPrice: s.list_price ?? s.original_price,
                     color: s.colors,
                     isActive: s.is_active,
                     isCurrent: s.sku === currentSku,

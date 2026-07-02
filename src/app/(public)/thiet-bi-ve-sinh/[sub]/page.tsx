@@ -21,6 +21,11 @@ const CATEGORY_SLUG = "thiet-bi-ve-sinh"
 const CATEGORY_NAME = "Thiết Bị Vệ Sinh"
 const BASE_PATH = "/thiet-bi-ve-sinh"
 const PAGE_SIZE = 24
+const LISTING_PRODUCT_WHERE = {
+    publication_status: "public",
+    pdp_visibility: "public",
+    listing_visibility: { in: ["default", "low_priority"] },
+}
 
 interface PageProps {
     params: Promise<{ sub: string }>
@@ -92,8 +97,8 @@ export default async function ThietBiVeSinhSubPage({ params, searchParams }: Pag
             include: {
                 _count: {
                     select: {
-                        products: { where: { is_active: true } },
-                        secondary_product_subcategories: { where: { products: { is_active: true } } },
+                        products: { where: LISTING_PRODUCT_WHERE },
+                        secondary_product_subcategories: { where: { products: LISTING_PRODUCT_WHERE } },
                     }
                 }
             },
