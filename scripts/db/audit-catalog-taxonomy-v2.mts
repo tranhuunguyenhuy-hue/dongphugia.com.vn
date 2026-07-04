@@ -10,7 +10,7 @@ type TableName =
 
 async function tableExists(tableName: TableName) {
   const rows = await prisma.$queryRaw<Array<{ exists: string | null }>>`
-    SELECT to_regclass(${`public.${tableName}`}) AS exists
+    SELECT to_regclass(${`public.${tableName}`})::text AS exists
   `
 
   return rows[0]?.exists === tableName
