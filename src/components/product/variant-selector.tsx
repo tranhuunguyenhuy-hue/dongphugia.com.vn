@@ -208,6 +208,7 @@ interface VariantSelectorProps {
 interface SwatchVariant {
     sku: string
     slug: string
+    url?: string
     name: string
     label: string | null
     priceDisplay: string | null
@@ -233,7 +234,7 @@ function ColorSwatches({ variants, categorySlug, subcategorySlug }: ColorSwatche
                 {variants.map((variant) => {
                     const swatchColor = variant.color?.hex_code || '#e5e7eb'
                     const swatchLabel = variant.label || variant.color?.name || variant.name
-                    const href = `/${categorySlug}/${variant.subcategorySlug || subcategorySlug}/${variant.slug}`
+                    const href = variant.url || `/${categorySlug}/${variant.subcategorySlug || subcategorySlug}/${variant.slug}`
 
                     if (variant.isCurrent) {
                         return (
@@ -302,6 +303,7 @@ function ColorSwatches({ variants, categorySlug, subcategorySlug }: ColorSwatche
 interface CardGridVariant {
     sku: string
     slug: string
+    url?: string
     name: string
     label: string | null
     imageMainUrl: string | null
@@ -344,7 +346,7 @@ function CardGrid({ variants, categorySlug, subcategorySlug, variantGroup }: Car
             {/* Grid */}
             <div className="flex flex-wrap gap-2">
                 {variants.map((variant) => {
-                    const href = `/${categorySlug}/${variant.subcategorySlug || subcategorySlug}/${variant.slug}`
+                    const href = variant.url || `/${categorySlug}/${variant.subcategorySlug || subcategorySlug}/${variant.slug}`
                     const originalPrice = Number(variant.originalPrice)
                     const sellingPrice = Number(variant.price)
 
@@ -497,6 +499,7 @@ export function VariantSelector({
                 color: s.colors,
                 isActive: s.is_active,
                 isCurrent: false,
+                url: s.url,
                 subcategorySlug: s.subcategories?.slug ?? subcategorySlug,
             })),
         ].sort((a, b) => a.sku.localeCompare(b.sku))
@@ -542,6 +545,7 @@ export function VariantSelector({
                 color: s.colors,
                 isActive: s.is_active,
                 isCurrent: false,
+                url: s.url,
                 subcategorySlug: s.subcategories?.slug ?? subcategorySlug,
             })),
         ].sort((a, b) => a.sku.localeCompare(b.sku))
@@ -586,6 +590,7 @@ export function VariantSelector({
                     color: s.colors,
                     isActive: s.is_active,
                     isCurrent: false,
+                    url: s.url,
                     subcategorySlug: s.subcategories?.slug ?? subcategorySlug,
                 })),
     ].sort((a, b) => a.sku.localeCompare(b.sku))

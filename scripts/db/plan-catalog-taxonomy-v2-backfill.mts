@@ -65,6 +65,7 @@ type Candidate = {
 type Proposal = {
   productId: number
   sku: string
+  slug: string
   name: string
   brand: string | null
   categorySlug: string | null
@@ -195,6 +196,10 @@ type ExecuteResult = {
     existingSource: string
     targetTaxonId: number
   }>
+}
+
+type CrossRootExecuteResult = ExecuteResult & {
+  source: 'taxonomy_v2_cross_root_backfill'
 }
 
 const OUTPUT_DIR = path.resolve(process.cwd(), 'scripts/output')
@@ -896,6 +901,7 @@ async function main() {
     const proposal: Proposal = {
       productId: product.id,
       sku: product.sku,
+      slug: product.slug,
       name: product.name,
       brand: product.brands?.name ?? null,
       categorySlug,
@@ -1124,6 +1130,7 @@ async function main() {
   const finalDecisionSafeCases = finalDecisionCases.filter((item) => item.decision === 'safe_for_assignment_only')
   const finalDecisionLegacyCases = finalDecisionCases.filter((item) => item.decision === 'requires_legacy_category_migration')
   const finalDecisionManualCases = finalDecisionCases.filter((item) => item.decision === 'needs_manual_business_decision')
+  const finalDecisionLegacyBySku = new Map(finalDecisionLegacyCases.map((item) => [item.sku, item]))
 
   const goal3aCandidates = proposals.filter(
     (proposal) =>
@@ -1136,11 +1143,15 @@ async function main() {
   )
 
   let executeResult: ExecuteResult | null = null
+  let crossRootExecuteResult: CrossRootExecuteResult | null = null
 
   if (executeMode) {
-    if (scopeArg !== 'assignment-only' || confirmArg !== 'taxonomy-v2') {
+    const isAssignmentOnly = scopeArg === 'assignment-only' && confirmArg === 'taxonomy-v2'
+    const isCrossRoot = scopeArg === 'cross-root-assignment' && confirmArg === 'taxonomy-v2-cross-root'
+
+    if (!isAssignmentOnly && !isCrossRoot) {
       throw new Error(
-        'Execute mode requires --scope=assignment-only --confirm=taxonomy-v2'
+        'Execute mode requires --scope=assignment-only --confirm=taxonomy-v2 or --scope=cross-root-assignment --confirm=taxonomy-v2-cross-root'
       )
     }
 
@@ -1157,7 +1168,19 @@ async function main() {
         .map((proposal) => proposal.sku)
     )
 
-    const candidateRows = goal3aCandidates.map((proposal) => {
+    const scopeLabel = isAssignmentOnly ? 'assignment-only' : 'cross-root-assignment'
+    const sourceLabel = isAssignmentOnly ? 'taxonomy_v2_backfill' : 'taxonomy_v2_cross_root_backfill'
+    const sourceProposals = isAssignmentOnly
+      ? goal3aCandidates
+      : finalDecisionLegacyCases.map((item) => {
+          const proposal = proposals.find((entry) => entry.productId === item.productId)
+          if (!proposal) {
+            throw new Error(`Missing proposal for legacy migration SKU ${item.sku}`)
+          }
+          return proposal
+        })
+
+    const candidateRows = sourceProposals.map((proposal) => {
       const targetTaxon = proposal.proposedPrimaryCanonicalPath
         ? taxons.find((taxon) => taxon.canonical_path === proposal.proposedPrimaryCanonicalPath) ?? null
         : findTaxonRecord(proposal.proposedPrimaryTaxonSlug, {
@@ -1181,6 +1204,16 @@ async function main() {
           current_subcategory: proposal.currentSubcategorySlug,
           product_type: proposal.productType,
           product_sub_type: proposal.productSubType,
+          old_url: proposal.categorySlug && proposal.slug
+            ? `/${proposal.categorySlug}/${proposal.currentSubcategorySlug || (proposal.categorySlug === 'gach-op-lat' ? 'gach-op-lat' : 'all')}/${proposal.slug}`
+            : null,
+          new_url: proposal.proposedPrimaryCanonicalPath
+            ? `/${proposal.proposedPrimaryCanonicalPath}/${proposal.slug}`
+            : null,
+          risk_level: finalDecisionLegacyBySku.get(proposal.sku)
+            ? (finalDecisionLegacyBySku.get(proposal.sku)?.targetCanonicalPath?.startsWith('gach-op-lat') ? 'high' : 'medium')
+            : null,
+          target_taxon: proposal.proposedPrimaryTaxonSlug,
         },
       }
     })
@@ -1212,7 +1245,7 @@ async function main() {
         continue
       }
 
-      if (assignment.source === 'taxonomy_v2_backfill') {
+      if (assignment.source === 'taxonomy_v2_backfill' || assignment.source === 'taxonomy_v2_cross_root_backfill') {
         backfillPrimaryDemotions.add(assignment.product_id)
       } else {
         manualPrimaryConflicts.set(assignment.product_id, {
@@ -1284,7 +1317,7 @@ async function main() {
           taxon_id,
           true,
           'primary',
-          'taxonomy_v2_backfill',
+          ${sourceLabel},
           confidence,
           metadata,
           0
@@ -1305,21 +1338,21 @@ async function main() {
     const primaryViolationsAfter = await readPrimaryViolationsCount()
     const assignedCandidateCount = await prisma.product_taxon_assignments.count({
       where: {
-        source: 'taxonomy_v2_backfill',
+        source: sourceLabel,
         is_primary: true,
         product_id: { in: executableRows.map((row) => row.productId) },
       },
     })
     const legacyCaseAssignedCount = await prisma.product_taxon_assignments.count({
       where: {
-        source: 'taxonomy_v2_backfill',
+        source: sourceLabel,
         product_id: { in: finalDecisionLegacyCases.map((item) => item.productId) },
       },
     })
 
-    executeResult = {
+    const executionResultBase = {
       executed: true,
-      scope: 'assignment-only',
+      scope: scopeLabel,
       confirmed: true,
       candidateCount: candidateRows.length,
       skippedDueToPrimaryConflictCount: manualPrimaryConflicts.size,
@@ -1334,6 +1367,15 @@ async function main() {
       before,
       after,
       skippedPrimaryConflictSamples,
+    }
+
+    if (isAssignmentOnly) {
+      executeResult = executionResultBase
+    } else {
+      crossRootExecuteResult = {
+        ...executionResultBase,
+        source: 'taxonomy_v2_cross_root_backfill',
+      }
     }
   }
 
@@ -1877,6 +1919,76 @@ async function main() {
     console.log(`Wrote ${path.join(OUTPUT_DIR, 'catalog-taxonomy-v2-assignment-execute-result.json')}`)
     console.log(`Wrote ${path.join(OUTPUT_DIR, 'catalog-taxonomy-v2-assignment-execute-result.md')}`)
     console.log(JSON.stringify(executeResult, null, 2))
+  }
+
+  if (crossRootExecuteResult) {
+    fs.writeFileSync(
+      path.join(OUTPUT_DIR, 'catalog-taxonomy-v2-cross-root-assignment-result.json'),
+      JSON.stringify(
+        {
+          generatedAt: new Date().toISOString(),
+          result: crossRootExecuteResult,
+        },
+        null,
+        2
+      )
+    )
+
+    const crossRootExecuteMdSections = [
+      '# Catalog Taxonomy v2 Cross-Root Assignment Result',
+      '',
+      `Generated: ${new Date().toISOString()}`,
+      '',
+      '## Execute Summary',
+      '',
+      buildMarkdownTable([
+        ['Metric', 'Value'],
+        ['Executed', crossRootExecuteResult.executed ? 'yes' : 'no'],
+        ['Scope', crossRootExecuteResult.scope],
+        ['Source', crossRootExecuteResult.source],
+        ['Candidate count', String(crossRootExecuteResult.candidateCount)],
+        ['Inserted or updated assignments', String(crossRootExecuteResult.insertedOrUpdatedCount)],
+        ['Assigned candidate count', String(crossRootExecuteResult.assignedCandidateCount)],
+        ['Skipped due to primary conflict', String(crossRootExecuteResult.skippedDueToPrimaryConflictCount)],
+        ['Primary violations after', String(crossRootExecuteResult.primaryViolationsAfter)],
+      ]),
+      '',
+      '## Before / After',
+      '',
+      buildMarkdownTable([
+        ['Metric', 'Before', 'After'],
+        ['Products count', String(crossRootExecuteResult.before.productsCount), String(crossRootExecuteResult.after.productsCount)],
+        ['Active products count', String(crossRootExecuteResult.before.activeProductsCount), String(crossRootExecuteResult.after.activeProductsCount)],
+        ['Assignment count', String(crossRootExecuteResult.before.productTaxonAssignmentsCount), String(crossRootExecuteResult.after.productTaxonAssignmentsCount)],
+        ['Primary assignment count', String(crossRootExecuteResult.before.primaryAssignmentsCount), String(crossRootExecuteResult.after.primaryAssignmentsCount)],
+      ]),
+      '',
+      '## Primary Conflict Samples',
+      '',
+      buildMarkdownTable([
+        ['Product ID', 'SKU', 'Existing Taxon ID', 'Existing Source', 'Target Taxon ID'],
+        ...(
+          crossRootExecuteResult.skippedPrimaryConflictSamples.length > 0
+            ? crossRootExecuteResult.skippedPrimaryConflictSamples.map((item) => [
+                String(item.productId),
+                item.sku,
+                String(item.existingTaxonId),
+                item.existingSource,
+                String(item.targetTaxonId),
+              ])
+            : [['(none)', '(none)', '(none)', '(none)', '(none)']]
+        ),
+      ]),
+    ]
+
+    fs.writeFileSync(
+      path.join(OUTPUT_DIR, 'catalog-taxonomy-v2-cross-root-assignment-result.md'),
+      crossRootExecuteMdSections.join('\n')
+    )
+
+    console.log(`Wrote ${path.join(OUTPUT_DIR, 'catalog-taxonomy-v2-cross-root-assignment-result.json')}`)
+    console.log(`Wrote ${path.join(OUTPUT_DIR, 'catalog-taxonomy-v2-cross-root-assignment-result.md')}`)
+    console.log(JSON.stringify(crossRootExecuteResult, null, 2))
   }
 }
 

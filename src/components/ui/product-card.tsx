@@ -28,7 +28,12 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
         else slug = 'all';
     }
 
-    const resolvedHref = props.href || product.url || `${basePath}/${slug}/${product.slug}`;
+    const resolvedCategorySlug = product.canonical_category_slug || product.category_slug || product.categories?.slug || basePath.replace(/^\//, '');
+    const resolvedSubcategorySlug = product.canonical_subcategory_slug || slug;
+    const resolvedHref =
+        props.href ||
+        product.url ||
+        `/${resolvedCategorySlug}/${resolvedSubcategorySlug}/${product.slug}`;
 
     let images: string[] = [];
     try {

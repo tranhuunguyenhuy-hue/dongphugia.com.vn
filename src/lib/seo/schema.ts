@@ -58,6 +58,7 @@ type ProductSchemaInput = {
   slug: string
   categorySlug: string
   subcategorySlug?: string | null
+  urlPath?: string | null
 }
 
 /**
@@ -73,7 +74,9 @@ export function buildProductSchema(product: ProductSchemaInput) {
   const hasPrice = product.price && Number(product.price) > 0
 
   // Canonical URL: /category/subcategory/slug
-  const productUrl = `${BASE_URL}/${product.categorySlug}/${product.subcategorySlug ?? "_"}/${product.slug}`
+  const productUrl = product.urlPath
+    ? `${BASE_URL}${product.urlPath}`
+    : `${BASE_URL}/${product.categorySlug}/${product.subcategorySlug ?? "_"}/${product.slug}`
 
   return {
     "@context": "https://schema.org",

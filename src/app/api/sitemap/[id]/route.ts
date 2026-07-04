@@ -1,9 +1,16 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { getCanonicalProductPath, primaryTaxonAssignmentSelect } from '@/lib/taxonomy-paths';
 
 export const revalidate = 86400; // 24 hours
 
 const PAGE_SIZE = 2000;
+const SITEMAP_PUBLIC_WHERE = {
+    publication_status: 'public',
+    pdp_visibility: 'public',
+    sitemap_include: true,
+    seo_indexing: { not: 'noindex' },
+} as const;
 
 export async function GET(
     request: Request,
@@ -20,7 +27,8 @@ export async function GET(
     const skip = (id - 1) * PAGE_SIZE;
 
     const products = await prisma.products.findMany({
-        where: { is_active: true },
+        // Sitemap should follow SEO/public visibility, not internal merchandising activity.
+        where: SITEMAP_PUBLIC_WHERE,
         skip: skip,
         take: PAGE_SIZE,
         select: {
@@ -28,7 +36,8 @@ export async function GET(
             updated_at: true,
             categories: { select: { slug: true } },
             subcategories: { select: { slug: true } },
-            product_type: true
+            product_type: true,
+            product_taxon_assignments: primaryTaxonAssignmentSelect,
         },
         orderBy: { id: 'asc' }
     });
@@ -50,14 +59,10 @@ export async function GET(
     xml += `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
 
     products.forEach((product) => {
-        const cat = product.categories?.slug || 'danh-muc';
-        let sub = product.subcategories?.slug || product.product_type;
-        if (!sub) {
-            sub = cat === 'gach-op-lat' ? 'gach-op-lat' : 'all';
-        }
+        const canonical = getCanonicalProductPath(product);
         
         // Escape special characters in XML
-        const loc = `${baseUrl}/${cat}/${sub}/${product.slug}`
+        const loc = `${baseUrl}${canonical.urlPath}`
             .replace(/&/g, '&amp;')
             .replace(/'/g, '&apos;')
             .replace(/"/g, '&quot;')

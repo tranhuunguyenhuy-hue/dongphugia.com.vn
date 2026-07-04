@@ -13,6 +13,8 @@ export interface RecentlyViewedProduct {
     online_discount_amount: number | null;
     price_display?: string | null;
     category_slug?: string;
+    canonical_category_slug?: string;
+    canonical_subcategory_slug?: string;
     is_featured?: boolean;
     is_promotion?: boolean;
     url: string;

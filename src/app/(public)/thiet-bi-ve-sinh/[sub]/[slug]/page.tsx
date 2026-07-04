@@ -33,7 +33,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return {
         title: `${product.name} | ${CATEGORY_NAME}`,
         description: product.description?.slice(0, 160) || `${product.name} - Chính hãng tại Đông Phú Gia Đà Lạt.`,
-        alternates: { canonical: `${BASE_PATH}/${slug}` },
+        alternates: { canonical: product.url || `${BASE_PATH}/${slug}` },
         openGraph: {
             title: `${product.name}`,
             description: product.description?.slice(0, 160) || `${product.name} - Chính hãng tại Đông Phú Gia Đà Lạt.`,
@@ -48,6 +48,12 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
     const { sub, slug } = await params
     const product = await getPublicProductBySlug(CATEGORY_SLUG, slug)
     if (!product) notFound()
+
+    const canonicalCategorySlug = product.canonical_category_slug || CATEGORY_SLUG
+    const canonicalSubcategorySlug = product.canonical_subcategory_slug || product.subcategories?.slug || sub
+    const canonicalBasePath = `/${canonicalCategorySlug}`
+    const canonicalSubcategoryUrl = `${canonicalBasePath}/${canonicalSubcategorySlug}`
+    const canonicalProductUrl = product.url || `${canonicalSubcategoryUrl}/${product.slug}`
 
 
 
@@ -69,8 +75,8 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
 
     // Fetch related products
     const { products: relatedItems } = await getPublicProducts({
-        category_slug: CATEGORY_SLUG,
-        subcategory_slug: product.subcategories?.slug || undefined,
+        category_slug: canonicalCategorySlug,
+        subcategory_slug: canonicalSubcategorySlug || undefined,
         page: 1,
         pageSize: 5
     })
@@ -106,26 +112,27 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
                 stock_status: product.stock_status,
                 brands: product.brands,
                 slug: product.slug,
-                categorySlug: CATEGORY_SLUG,
-                subcategorySlug: product.subcategories?.slug,
+                categorySlug: canonicalCategorySlug,
+                subcategorySlug: canonicalSubcategorySlug,
+                urlPath: canonicalProductUrl,
             })} />
             <JsonLd data={buildBreadcrumbSchema([
                 { name: "Trang chủ", url: "/" },
-                { name: CATEGORY_NAME, url: BASE_PATH },
+                { name: CATEGORY_NAME, url: canonicalBasePath },
                 ...(product.subcategories
-                    ? [{ name: product.subcategories.name, url: `${BASE_PATH}/${product.subcategories.slug}` }]
+                    ? [{ name: product.subcategories.name, url: canonicalSubcategoryUrl }]
                     : []),
-                { name: product.name, url: `${BASE_PATH}/${sub}/${product.slug}` },
+                { name: product.name, url: canonicalProductUrl },
             ])} />
             {/* Breadcrumb */}
             <nav className="flex items-center gap-1.5 text-[11px] text-stone-500 mb-5 overflow-x-auto whitespace-nowrap scrollbar-hide" aria-label="Breadcrumb">
                 <Link href="/" className="hover:text-stone-900 transition-colors shrink-0">Trang chủ</Link>
                 <span className="text-stone-300 shrink-0">/</span>
-                <Link href={BASE_PATH} className="hover:text-stone-900 transition-colors shrink-0">{CATEGORY_NAME}</Link>
+                <Link href={canonicalBasePath} className="hover:text-stone-900 transition-colors shrink-0">{CATEGORY_NAME}</Link>
                 {product.subcategories && (
                     <>
                         <span className="text-stone-300 shrink-0">/</span>
-                        <Link href={`${BASE_PATH}?sub=${sub}`} className="hover:text-stone-900 transition-colors shrink-0">
+                        <Link href={canonicalSubcategoryUrl} className="hover:text-stone-900 transition-colors shrink-0">
                             {product.subcategories.name}
                         </Link>
                     </>
@@ -214,8 +221,8 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
                             variantLabel={product.variant_label}
                             variantGroup={product.variant_group}
                             siblings={variantSiblings}
-                            categorySlug={CATEGORY_SLUG}
-                            subcategorySlug={product.subcategories?.slug}
+                            categorySlug={canonicalCategorySlug}
+                            subcategorySlug={canonicalSubcategorySlug}
                         />
                     )}
 
@@ -236,8 +243,8 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
                             originalPrice={listPrice ? Number(listPrice) : null}
                             priceDisplay={product.price_display}
                             imageUrl={product.image_main_url || (product.product_images && product.product_images.length > 0 ? product.product_images[0].image_url : null)}
-                            categorySlug={CATEGORY_SLUG}
-                            subcategorySlug={product.subcategories?.slug}
+                            categorySlug={canonicalCategorySlug}
+                            subcategorySlug={canonicalSubcategorySlug}
                             brandName={product.brands?.name}
                             slug={product.slug}
                         />
@@ -253,7 +260,7 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
                             {hasComponents && (
                                 <ProductComponentsSection
                                     components={productComponents as any}
-                                    basePath={BASE_PATH}
+                                    basePath={canonicalBasePath}
                                 />
                             )}
                         </div>
@@ -285,7 +292,7 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
                             <ProductCard
                                 key={p.id}
                                 product={p}
-                                basePath={BASE_PATH}
+                                basePath={canonicalBasePath}
                             />
                         ))}
                     </div>
@@ -302,10 +309,12 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
                 original_price: product.original_price ? Number(product.original_price) : null,
                 online_discount_amount: product.online_discount_amount ? Number(product.online_discount_amount) : null,
                 price_display: product.price_display,
-                category_slug: CATEGORY_SLUG,
+                category_slug: canonicalCategorySlug,
                 is_featured: product.is_featured,
                 is_promotion: product.is_promotion,
-                url: `${BASE_PATH}/${sub}/${slug}`,
+                canonical_category_slug: canonicalCategorySlug,
+                canonical_subcategory_slug: canonicalSubcategorySlug,
+                url: canonicalProductUrl,
                 colors: product.colors,
                 brands: product.brands,
                 subcategories: product.subcategories,

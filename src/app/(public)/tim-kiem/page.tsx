@@ -6,6 +6,7 @@ import { Search, Package2, ChevronRight, SlidersHorizontal } from 'lucide-react'
 import { formatPrice } from '@/lib/utils'
 import { ProductCard } from '@/components/ui/product-card'
 import prisma from '@/lib/prisma'
+import { getCanonicalProductPath, primaryTaxonAssignmentSelect } from '@/lib/taxonomy-paths'
 
 import { Prisma } from '@prisma/client'
 
@@ -95,9 +96,11 @@ async function fetchSearchResults(q: string, page: number): Promise<SearchRespon
                     is_featured: true,
                     stock_status: true,
                     display_name: true,
+                    product_type: true,
                     categories: { select: { slug: true, name: true } },
                     subcategories: { select: { slug: true, name: true } },
                     brands: { select: { name: true, slug: true } },
+                    product_taxon_assignments: primaryTaxonAssignmentSelect,
                 },
                 orderBy: [
                     { is_promotion: 'desc' },
@@ -107,16 +110,18 @@ async function fetchSearchResults(q: string, page: number): Promise<SearchRespon
             prisma.products.count({ where: whereClause })
         ])
 
-        const results = products.map(p => ({
+        const results = products.map(p => {
+            const canonical = getCanonicalProductPath(p)
+            return {
             ...p,
             price: p.price ? Number(p.price) : null,
             original_price: p.original_price ? Number(p.original_price) : null,
             online_discount_amount: p.online_discount_amount ? Number(p.online_discount_amount) : null,
-            category_slug: p.categories?.slug || 'san-pham',
-            subcategory_slug: p.subcategories?.slug || 'chi-tiet',
+            category_slug: canonical.categorySlug,
+            subcategory_slug: canonical.subcategorySlug,
             brand_name: p.brands?.name || null,
-            url: `/${p.categories?.slug || 'san-pham'}/${p.subcategories?.slug || 'chi-tiet'}/${p.slug}`
-        })) as SearchResult[]
+            url: canonical.urlPath
+        }}) as SearchResult[]
 
         return { results, total, page, limit, query: searchTerm }
     } catch (error) {
