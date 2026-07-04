@@ -545,6 +545,12 @@ model catalog_taxons {
   is_active                  Boolean                      @default(true)
   created_at                 DateTime                     @default(now()) @db.Timestamptz(6)
   updated_at                 DateTime                     @default(now()) @db.Timestamptz(6)
+  kind                       String                       @default("type") @db.VarChar(40)
+  status                     String                       @default("active") @db.VarChar(40)
+  seo_title                  String?                      @db.VarChar(200)
+  seo_description            String?                      @db.VarChar(500)
+  is_indexable               Boolean                      @default(true)
+  is_listing_enabled         Boolean                      @default(true)
   parent                     catalog_taxons?              @relation("catalog_taxons_hierarchy", fields: [parent_id], references: [id], onUpdate: NoAction)
   children                   catalog_taxons[]             @relation("catalog_taxons_hierarchy")
   external_taxonomy_mappings external_taxonomy_mappings[]
@@ -566,6 +572,9 @@ model product_taxon_assignments {
   sort_order     Int            @default(0)
   created_at     DateTime       @default(now()) @db.Timestamptz(6)
   updated_at     DateTime       @default(now()) @db.Timestamptz(6)
+  role           String         @default("primary") @db.VarChar(40)
+  confidence     Int            @default(100)
+  metadata       Json           @default("{}")
   products       products       @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   catalog_taxons catalog_taxons @relation(fields: [taxon_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
@@ -578,7 +587,7 @@ model product_taxon_assignments {
 model external_taxonomy_mappings {
   id                   Int             @id @default(autoincrement())
   source               String          @db.VarChar(40)
-  source_category_slug String          @db.VarChar(255)
+  source_category_slug String?         @db.VarChar(255)
   source_category_name String?         @db.VarChar(255)
   source_category_path String?         @db.VarChar(1000)
   taxon_id             Int?
@@ -587,27 +596,37 @@ model external_taxonomy_mappings {
   metadata             Json            @default("{}")
   created_at           DateTime        @default(now()) @db.Timestamptz(6)
   updated_at           DateTime        @default(now()) @db.Timestamptz(6)
+  source_key           String          @db.VarChar(255)
+  source_breadcrumb    String?
+  source_url_pattern   String?
+  confidence           Int             @default(100)
+  mapping_rule         Json            @default("{}")
+  reviewed             Boolean         @default(false)
   catalog_taxons       catalog_taxons? @relation(fields: [taxon_id], references: [id], onUpdate: NoAction)
 
   @@unique([source, source_category_slug], map: "uq_external_taxonomy_mappings_source_slug")
+  @@unique([source, source_key], map: "uq_external_taxonomy_mappings_source_key")
   @@index([source], map: "idx_external_taxonomy_mappings_source")
   @@index([source_category_slug], map: "idx_external_taxonomy_mappings_source_category_slug")
   @@index([taxon_id], map: "idx_external_taxonomy_mappings_taxon")
+  @@index([source_key], map: "idx_external_taxonomy_mappings_source_key")
 }
 
 model product_attribute_values {
-  id             Int             @id @default(autoincrement())
-  product_id     Int
-  taxon_id       Int?
-  attribute_key  String          @db.VarChar(120)
-  value_text     String          @db.VarChar(255)
-  value_slug     String          @db.VarChar(120)
-  source         String          @default("manual") @db.VarChar(40)
-  metadata       Json            @default("{}")
-  created_at     DateTime        @default(now()) @db.Timestamptz(6)
-  updated_at     DateTime        @default(now()) @db.Timestamptz(6)
-  products       products        @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  catalog_taxons catalog_taxons? @relation(fields: [taxon_id], references: [id], onUpdate: NoAction)
+  id              Int             @id @default(autoincrement())
+  product_id      Int
+  taxon_id        Int?
+  attribute_key   String          @db.VarChar(120)
+  value_text      String
+  value_slug      String          @db.VarChar(120)
+  source          String          @default("manual") @db.VarChar(40)
+  metadata        Json            @default("{}")
+  created_at      DateTime        @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime        @default(now()) @db.Timestamptz(6)
+  attribute_label String?         @db.VarChar(200)
+  confidence      Int             @default(100)
+  products        products        @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  catalog_taxons  catalog_taxons? @relation(fields: [taxon_id], references: [id], onUpdate: NoAction)
 
   @@unique([product_id, attribute_key, value_slug], map: "uq_product_attribute_values_product_key_value")
   @@index([product_id], map: "idx_product_attribute_values_product")
