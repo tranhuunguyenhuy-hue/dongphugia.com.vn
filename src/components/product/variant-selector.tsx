@@ -233,11 +233,12 @@ export interface VariantPreview {
     id?: number
     sku: string
     slug: string
+    url?: string
     name: string
     price: number | null
     original_price: number | null
-    sale_price?: number | null
     list_price?: number | null
+    sale_price?: number | null
     online_discount_amount?: number | null
     price_display: string | null
     image_main_url: string | null
@@ -246,11 +247,21 @@ export interface VariantPreview {
     price_state?: string | null
     is_active?: boolean
     subcategory_slug?: string | null
+    canonical_category_slug?: string | null
+    canonical_subcategory_slug?: string | null
     variant_options?: VariantOption[]
 }
 
 type VariantAxis = { key: string; label: string }
 type VariantOption = { axis: string; value: string; label?: string; image_url?: string; price_text?: string; product_id?: string }
+type VariantHrefInput = {
+    slug: string
+    url?: string | null
+    categorySlug: string
+    subcategorySlug?: string | null
+    canonicalCategorySlug?: string | null
+    canonicalSubcategorySlug?: string | null
+}
 
 type AxisVariant = VariantPreview & {
     variant_label: string | null
@@ -300,6 +311,18 @@ function stableVariantSort(a: AxisVariant, b: AxisVariant) {
     if (priceA !== priceB) return priceB - priceA
 
     return a.sku.localeCompare(b.sku)
+}
+
+function resolveVariantHref({
+    slug,
+    url,
+    categorySlug,
+    subcategorySlug,
+    canonicalCategorySlug,
+    canonicalSubcategorySlug,
+}: VariantHrefInput) {
+    if (url) return url
+    return `/${canonicalCategorySlug || categorySlug}/${canonicalSubcategorySlug || subcategorySlug || 'all'}/${slug}`
 }
 
 function inferVariantAxesFromOptions(options: VariantOption[]): VariantAxis[] {
@@ -363,16 +386,12 @@ interface SwatchVariant {
     priceDisplay: string | null
     price: number | null
     originalPrice: number | null
-    salePrice?: number | null
-    listPrice?: number | null
     imageMainUrl: string | null
     color: { name: string; hex_code: string | null } | null | undefined
     isCurrent: boolean
     subcategorySlug: string | null | undefined
     variantOptions?: VariantOption[]
     stockStatus?: string | null
-    saleStatus?: string | null
-    priceState?: string | null
 }
 
 interface ColorSwatchesProps {
@@ -417,13 +436,9 @@ function ColorSwatches({ variants, onPreviewVariant }: ColorSwatchesProps) {
                                     name: variant.name,
                                     price: variant.price,
                                     original_price: variant.originalPrice,
-                                    sale_price: variant.salePrice,
-                                    list_price: variant.listPrice,
                                     price_display: variant.priceDisplay,
                                     image_main_url: variant.imageMainUrl,
                                     stock_status: variant.stockStatus,
-                                    sale_status: variant.saleStatus,
-                                    price_state: variant.priceState,
                                     variant_options: variant.variantOptions,
                                 })
                                 window.dispatchEvent(new CustomEvent('product-variant-selection', {
@@ -480,6 +495,7 @@ function ColorSwatches({ variants, onPreviewVariant }: ColorSwatchesProps) {
 interface CardGridVariant {
     sku: string
     slug: string
+    url?: string | null
     name: string
     label: string | null
     imageMainUrl: string | null
@@ -490,6 +506,8 @@ interface CardGridVariant {
     isActive: boolean
     isCurrent: boolean
     subcategorySlug: string | null | undefined
+    canonicalCategorySlug?: string | null
+    canonicalSubcategorySlug?: string | null
 }
 
 interface CardGridProps {
@@ -529,7 +547,14 @@ function CardGrid({ variants, categorySlug, subcategorySlug, variantGroup, headi
             {/* Grid */}
             <div className="flex flex-wrap gap-2">
                 {orderedVariants.map((variant) => {
-                    const href = `/${categorySlug}/${variant.subcategorySlug || subcategorySlug}/${variant.slug}`
+                    const href = resolveVariantHref({
+                        slug: variant.slug,
+                        url: variant.url,
+                        categorySlug,
+                        subcategorySlug: variant.subcategorySlug || subcategorySlug,
+                        canonicalCategorySlug: variant.canonicalCategorySlug,
+                        canonicalSubcategorySlug: variant.canonicalSubcategorySlug,
+                    })
                     const originalPrice = Number(variant.originalPrice)
                     const sellingPrice = Number(variant.price)
 
@@ -658,7 +683,14 @@ function MultiAxisSelector({
                 </div>
                 <div className="flex flex-wrap gap-2">
                     {configVariants.map((variant) => {
-                        const href = `/${categorySlug}/${variant.subcategory_slug || subcategorySlug}/${variant.slug}`
+                        const href = resolveVariantHref({
+                            slug: variant.slug,
+                            url: variant.url,
+                            categorySlug,
+                            subcategorySlug: variant.subcategory_slug || subcategorySlug,
+                            canonicalCategorySlug: variant.canonical_category_slug,
+                            canonicalSubcategorySlug: variant.canonical_subcategory_slug,
+                        })
                         const isSelectedConfig = optionValue(variant.variant_options, configAxis.key) === selectedConfig
                         const priceDisplay = variant.price && variant.price > 0
                             ? new Intl.NumberFormat('vi-VN').format(variant.price) + 'đ'
@@ -833,17 +865,18 @@ export function VariantSelector({
                 name: currentName,
                 price: currentPrice ?? null,
                 original_price: currentOriginalPrice ?? null,
-                sale_price: currentPrice ?? null,
-                list_price: currentOriginalPrice ?? null,
                 online_discount_amount: null,
                 price_display: currentPriceDisplay,
                 image_main_url: currentImageMainUrl ?? null,
                 stock_status: currentStockStatus ?? null,
-                sale_status: null,
-                price_state: currentPrice && currentPrice > 0 ? 'priced' : null,
                 is_active: true,
                 variant_label: variantLabel ?? null,
                 variant_options: currentOptions,
+                url: resolveVariantHref({
+                    slug: currentSlug,
+                    categorySlug,
+                    subcategorySlug,
+                }),
                 category_slug: categorySlug,
                 subcategory_slug: subcategorySlug,
             },
@@ -854,17 +887,16 @@ export function VariantSelector({
                 name: s.name,
                 price: s.price,
                 original_price: s.original_price,
-                sale_price: s.sale_price ?? s.price,
-                list_price: s.list_price ?? s.original_price,
                 online_discount_amount: s.online_discount_amount ?? null,
                 price_display: s.price_display,
                 image_main_url: s.image_main_url,
                 stock_status: s.stock_status ?? null,
-                sale_status: s.sale_status ?? null,
-                price_state: s.price_state ?? null,
                 is_active: s.is_active,
                 variant_label: s.variant_label,
                 variant_options: parseVariantOptions(s.variant_options),
+                url: s.url,
+                canonical_category_slug: s.canonical_category_slug,
+                canonical_subcategory_slug: s.canonical_subcategory_slug,
                 category_slug: s.categories.slug,
                 subcategory_slug: s.subcategories?.slug ?? subcategorySlug,
             })),
@@ -900,16 +932,19 @@ export function VariantSelector({
                 priceDisplay: currentPriceDisplay,
                 price: currentPrice ?? null,
                 originalPrice: currentOriginalPrice ?? null,
-                salePrice: currentPrice ?? null,
-                listPrice: currentOriginalPrice ?? null,
                 imageMainUrl: currentImageMainUrl ?? null,
                 color: currentColor,
                 isCurrent: (selectedSku || currentSku) === currentSku,
                 subcategorySlug,
                 variantOptions: currentOptions,
                 stockStatus: currentStockStatus ?? null,
-                saleStatus: null,
-                priceState: currentPrice && currentPrice > 0 ? 'priced' : null,
+                url: resolveVariantHref({
+                    slug: currentSlug,
+                    categorySlug,
+                    subcategorySlug,
+                }),
+                canonical_category_slug: categorySlug,
+                canonical_subcategory_slug: subcategorySlug,
             },
             ...siblings.map(s => ({
                 id: s.id,
@@ -918,18 +953,17 @@ export function VariantSelector({
                 name: s.name,
                 label: s.variant_label ?? null,
                 priceDisplay: s.price_display,
-                price: s.sale_price ?? s.price,
-                originalPrice: s.list_price ?? s.original_price,
-                salePrice: s.sale_price ?? s.price,
-                listPrice: s.list_price ?? s.original_price,
+                price: s.price,
+                originalPrice: s.original_price,
                 imageMainUrl: s.image_main_url,
                 color: s.colors,
                 isCurrent: s.sku === (selectedSku || currentSku),
                 subcategorySlug: s.subcategories?.slug ?? subcategorySlug,
                 variantOptions: parseVariantOptions(s.variant_options),
                 stockStatus: s.stock_status ?? null,
-                saleStatus: s.sale_status ?? null,
-                priceState: s.price_state ?? null,
+                url: s.url,
+                canonical_category_slug: s.canonical_category_slug,
+                canonical_subcategory_slug: s.canonical_subcategory_slug,
             })),
         ].sort((a, b) => a.sku.localeCompare(b.sku))
 
@@ -960,20 +994,30 @@ export function VariantSelector({
                 isActive: true,
                 isCurrent: currentSku === selectedSku || !selectedSku,
                 subcategorySlug,
+                url: resolveVariantHref({
+                    slug: currentSlug,
+                    categorySlug,
+                    subcategorySlug,
+                }),
+                canonicalCategorySlug: categorySlug,
+                canonicalSubcategorySlug: subcategorySlug,
             },
             ...activeSiblings.map(s => ({
                 sku: s.sku,
                 slug: s.slug,
+                url: s.url,
                 name: s.name,
                 label: s.variant_label ?? null,
                 imageMainUrl: s.image_main_url,
                 priceDisplay: s.price_display,
-                price: s.sale_price ?? s.price,
-                originalPrice: s.list_price ?? s.original_price,
+                price: s.price,
+                originalPrice: s.original_price,
                 color: s.colors,
                 isActive: s.is_active,
                 isCurrent: s.sku === currentSku,
                 subcategorySlug: s.subcategories?.slug ?? subcategorySlug,
+                canonicalCategorySlug: s.canonical_category_slug,
+                canonicalSubcategorySlug: s.canonical_subcategory_slug,
             })),
         ].sort((a, b) => a.sku.localeCompare(b.sku))
 
@@ -1003,22 +1047,32 @@ export function VariantSelector({
                 isActive: true,
                 isCurrent: currentSku === selectedSku || !selectedSku,
                 subcategorySlug,
+                url: resolveVariantHref({
+                    slug: currentSlug,
+                    categorySlug,
+                    subcategorySlug,
+                }),
+                canonicalCategorySlug: categorySlug,
+                canonicalSubcategorySlug: subcategorySlug,
             },
             ...siblings
                 .filter(s => s.is_active) // only active in card grid legacy mode
                 .map(s => ({
                     sku: s.sku,
                     slug: s.slug,
+                    url: s.url,
                     name: s.name,
                     label: s.variant_label ?? null,
                     imageMainUrl: s.image_main_url,
                     priceDisplay: s.price_display,
-                    price: s.sale_price ?? s.price,
-                    originalPrice: s.list_price ?? s.original_price,
+                    price: s.price,
+                    originalPrice: s.original_price,
                     color: s.colors,
                     isActive: s.is_active,
                     isCurrent: s.sku === currentSku,
                     subcategorySlug: s.subcategories?.slug ?? subcategorySlug,
+                    canonicalCategorySlug: s.canonical_category_slug,
+                    canonicalSubcategorySlug: s.canonical_subcategory_slug,
                 })),
     ].sort((a, b) => a.sku.localeCompare(b.sku))
 

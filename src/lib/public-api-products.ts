@@ -1,6 +1,13 @@
 import { unstable_cache } from 'next/cache'
 import prisma from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
+import { buildPublicProductVisibilityWhere } from '@/lib/public-product-visibility'
+import {
+    getCanonicalProductPath,
+    getCategoryRootFilter,
+    getTaxonomyLeafFilter,
+    primaryTaxonAssignmentSelect,
+} from '@/lib/taxonomy-paths'
 
 // ─── TYPES ───────────────────────────────────────────────────────────────────
 
@@ -26,6 +33,10 @@ export type ProductListItem = {
     subcategories: { name: string; slug: string } | null
     brands: { name: string; slug: string } | null
     product_feature_values?: { product_features: { name: string; icon_name: string | null } }[]
+    url?: string
+    canonical_category_slug?: string
+    canonical_subcategory_slug?: string
+    canonical_taxonomy_path?: string | null
 }
 
 export type ProductFilters = {
@@ -81,28 +92,27 @@ export type AdminProductListItem = {
     brands: { name: string } | null
 }
 
-const publicProductWhere = {
-    publication_status: 'public',
-    pdp_visibility: 'public',
-} satisfies Prisma.productsWhereInput
-
-const listingProductWhere = {
-    ...publicProductWhere,
-    listing_visibility: { in: ['default', 'low_priority'] },
-} satisfies Prisma.productsWhereInput
-
-const searchProductWhere = {
-    ...publicProductWhere,
-    search_visibility: 'visible',
-} satisfies Prisma.productsWhereInput
-
 function serializeProductMoney<T extends {
     price?: unknown
     original_price?: unknown
     online_discount_amount?: unknown
     list_price?: unknown
     sale_price?: unknown
+    slug: string
+    product_type?: string | null
+    categories?: { slug: string; name?: string | null } | null
+    subcategories?: { slug: string; name?: string | null } | null
+    product_taxon_assignments?: Array<{
+        is_primary: boolean
+        catalog_taxons: {
+            slug: string
+            name: string
+            canonical_path: string
+            parent_id: number | null
+        } | null
+    }>
 }>(product: T) {
+    const canonical = getCanonicalProductPath(product)
     return {
         ...product,
         price: product.price ? Number(product.price) : null,
@@ -110,26 +120,40 @@ function serializeProductMoney<T extends {
         online_discount_amount: product.online_discount_amount ? Number(product.online_discount_amount) : null,
         list_price: product.list_price ? Number(product.list_price) : null,
         sale_price: product.sale_price ? Number(product.sale_price) : null,
+        url: canonical.urlPath,
+        canonical_category_slug: canonical.categorySlug,
+        canonical_subcategory_slug: canonical.subcategorySlug,
+        canonical_taxonomy_path: canonical.canonicalTaxonomyPath,
     }
 }
 
-type SerializedMoneyFields<T> = Omit<T, 'price' | 'original_price' | 'online_discount_amount' | 'list_price' | 'sale_price'> & {
+type SerializedMoneyFields<T> = Omit<T, 'price' | 'original_price' | 'online_discount_amount'> & {
     price: number | null
     original_price: number | null
     online_discount_amount: number | null
-    list_price: number | null
-    sale_price: number | null
 }
 
 function serializeProductListItem<T extends {
+    slug: string
     price?: unknown
     original_price?: unknown
     online_discount_amount?: unknown
-}>(product: T): SerializedMoneyFields<T> {
-    return toPlainJson(serializeProductMoney(product)) as SerializedMoneyFields<T>
+}>(product: T): SerializedMoneyFields<T> & {
+    url: string
+    canonical_category_slug: string
+    canonical_subcategory_slug: string
+    canonical_taxonomy_path: string | null
+} {
+    return toPlainJson(serializeProductMoney(product as any)) as unknown as SerializedMoneyFields<T> & {
+        url: string
+        canonical_category_slug: string
+        canonical_subcategory_slug: string
+        canonical_taxonomy_path: string | null
+    }
 }
 
 function serializeProductDetail<T extends {
+    slug: string
     price?: unknown
     original_price?: unknown
     online_discount_amount?: unknown
@@ -138,7 +162,12 @@ function serializeProductDetail<T extends {
 
     // Normalize top-level money fields first, then strip any remaining Prisma/Decimal
     // instances from nested data before passing across the server -> client boundary.
-    return JSON.parse(JSON.stringify(serializeProductMoney(product))) as T
+    return JSON.parse(JSON.stringify(serializeProductMoney(product as any))) as T & {
+        url: string
+        canonical_category_slug: string
+        canonical_subcategory_slug: string
+        canonical_taxonomy_path: string | null
+    }
 }
 
 function toPlainJson<T>(value: T): T {
@@ -193,8 +222,12 @@ function stringifySpecValue(value: unknown) {
 export function getPdpPackageItems(product: {
     specs?: unknown
     package_items?: { label: string | null }[]
+    product_package_items_product_package_items_product_idToproducts?: { label: string | null }[]
 }) {
-    const normalized = product.package_items?.map(item => item.label?.trim()).filter(Boolean) as string[] | undefined
+    const normalized = (
+        product.package_items?.map(item => item.label?.trim()).filter(Boolean)
+        || product.product_package_items_product_package_items_product_idToproducts?.map(item => item.label?.trim()).filter(Boolean)
+    ) as string[] | undefined
     if (normalized?.length) return normalized
 
     const legacy = asPlainObject(product.specs)['Phụ kiện đi kèm']
@@ -321,6 +354,7 @@ export async function getPublicProducts(filters: ProductFilters = {}) {
             OR: [
                 { subcategories: { slug: { in: subcatSlugs } } },
                 { secondary_subcategories: { some: { subcategories: { slug: { in: subcatSlugs } } } } },
+                getTaxonomyLeafFilter(subcatSlugs),
             ]
         })
     }
@@ -361,9 +395,14 @@ export async function getPublicProducts(filters: ProductFilters = {}) {
     }
 
     const where: Prisma.productsWhereInput = {
-        ...(search ? searchProductWhere : listingProductWhere),
+        ...(search ? buildPublicProductVisibilityWhere() : { is_active: true }),
         ...(AND.length > 0 ? { AND } : {}),
-        ...(category_slug && { categories: { slug: category_slug } }),
+        ...(category_slug && {
+            OR: [
+                { categories: { slug: category_slug } },
+                getCategoryRootFilter(category_slug),
+            ],
+        }),
         ...(brand_id && { brand_id }),
         ...(brand_slug && { brands: { slug: { in: toFilterArray(brand_slug) } } }),
         ...(color_id && { color_id }),
@@ -406,14 +445,10 @@ export async function getPublicProducts(filters: ProductFilters = {}) {
         orderBy.push({ price: 'desc' })
     } else {
         // Default sort: featured → sort_order (TOTO with variants > TOTO > Others) → bestseller → high price
-        orderBy.push({ listing_tier: 'asc' })
         orderBy.push({ is_featured: 'desc' })
-        orderBy.push({ listing_priority: 'desc' })
         orderBy.push({ sort_order: 'desc' })
         orderBy.push({ is_promotion: 'desc' })
-        orderBy.push({ data_quality_score: 'desc' })
         orderBy.push({ variant_group: { sort: 'asc', nulls: 'last' } })
-        orderBy.push({ sale_price: 'desc' })
         orderBy.push({ price: 'desc' })
     }
 
@@ -434,23 +469,12 @@ export async function getPublicProducts(filters: ProductFilters = {}) {
                 brand_id: true,
                 price: true,
                 original_price: true,
-                list_price: true,
-                sale_price: true,
                 online_discount_amount: true,
                 price_display: true,
                 image_main_url: true,
                 variant_options: true,
 
                 stock_status: true,
-                publication_status: true,
-                pdp_visibility: true,
-                listing_visibility: true,
-                search_visibility: true,
-                listing_tier: true,
-                listing_priority: true,
-                sale_status: true,
-                price_state: true,
-                sellable_status: true,
                 is_active: true,
                 is_featured: true,
                 is_promotion: true,
@@ -460,6 +484,7 @@ export async function getPublicProducts(filters: ProductFilters = {}) {
                 subcategories: { select: { name: true, slug: true } },
                 brands: { select: { name: true, slug: true } },
                 colors: { select: { name: true, hex_code: true, slug: true } },
+                product_taxon_assignments: primaryTaxonAssignmentSelect,
                 product_feature_values: { select: { product_features: { select: { name: true, icon_name: true } } } },
             },
         }),
@@ -479,36 +504,35 @@ export async function getPublicProducts(filters: ProductFilters = {}) {
 
 export const getAvailableFilters = unstable_cache(
     async (categorySlug: string) => {
-        // Query to get all subcategories, brands, materials, origins, features that are connected to listable public products.
-        const productWhere = { ...listingProductWhere, categories: { slug: categorySlug } } satisfies Prisma.productsWhereInput
+        // Query to get all subcategories, brands, materials, origins, features that are connected to an active product in this category.
 
         const [subcategories, brands, materials, origins, features, colors] = await Promise.all([
             prisma.subcategories.findMany({
-                where: { products: { some: productWhere }, is_active: true },
+                where: { products: { some: { is_active: true, categories: { slug: categorySlug } } }, is_active: true },
                 select: { name: true, slug: true, icon_name: true },
                 orderBy: { sort_order: 'asc' }
             }),
             prisma.brands.findMany({
-                where: { products: { some: productWhere }, is_active: true },
+                where: { products: { some: { is_active: true, categories: { slug: categorySlug } } }, is_active: true },
                 select: { name: true, slug: true, logo_url: true },
                 orderBy: { sort_order: 'asc' }
             }),
             prisma.materials.findMany({
-                where: { products: { some: productWhere } },
+                where: { products: { some: { is_active: true, categories: { slug: categorySlug } } } },
                 select: { name: true, slug: true },
                 orderBy: { sort_order: 'asc' }
             }),
             prisma.origins.findMany({
-                where: { products: { some: productWhere } },
+                where: { products: { some: { is_active: true, categories: { slug: categorySlug } } } },
                 select: { name: true, slug: true }
             }),
             prisma.product_features.findMany({
-                where: { product_feature_values: { some: { products: productWhere } } },
+                where: { product_feature_values: { some: { products: { is_active: true, categories: { slug: categorySlug } } } } },
                 select: { name: true, slug: true, icon_name: true },
                 orderBy: { sort_order: 'asc' }
             }),
             prisma.colors.findMany({
-                where: { products: { some: productWhere } },
+                where: { products: { some: { is_active: true, categories: { slug: categorySlug } } } },
                 select: { name: true, slug: true, hex_code: true }
             })
         ])
@@ -532,11 +556,11 @@ export const getAvailableFilters = unstable_cache(
 
 export const getAvailableFiltersBySubcategory = unstable_cache(
     async (subcategorySlug: string, productType?: string) => {
-        const productWhere = {
-            ...listingProductWhere,
+        const productWhere: Prisma.productsWhereInput = {
+            is_active: true,
             subcategories: { slug: subcategorySlug },
             ...(productType ? { product_types: { slug: productType } } : {}),
-        } satisfies Prisma.productsWhereInput
+        }
 
         const [brands, features, colors, materials, origins] = await Promise.all([
             prisma.brands.findMany({
@@ -583,16 +607,16 @@ export const getProductTypeFiltersBySubcategory = unstable_cache(
             where: {
                 subcategory_id: subcategoryId,
                 is_active: true,
-                products: { some: listingProductWhere },
+                products: { some: { is_active: true } },
             },
             orderBy: [{ sort_order: 'asc' }, { name: 'asc' }],
             select: {
                 slug: true,
                 name: true,
-                sub_types: {
+                product_sub_types: {
                     where: {
                         is_active: true,
-                        products: { some: listingProductWhere },
+                        products: { some: { is_active: true } },
                     },
                     orderBy: [{ sort_order: 'asc' }, { name: 'asc' }],
                     select: { slug: true, name: true },
@@ -607,10 +631,10 @@ export const getProductTypeFiltersBySubcategory = unstable_cache(
             ...types.map(type => ({
                 slug: type.slug,
                 label: type.name,
-                subTypes: type.sub_types.length > 0
+                subTypes: type.product_sub_types.length > 0
                     ? [
                         { slug: '', label: 'Tất cả' },
-                        ...type.sub_types.map(subType => ({ slug: subType.slug, label: subType.name })),
+                        ...type.product_sub_types.map(subType => ({ slug: subType.slug, label: subType.name })),
                     ]
                     : undefined,
             })),
@@ -630,7 +654,7 @@ export const getSubcategorySpecFilters = unstable_cache(
                 is_active: true,
                 spec_definition_id: { not: null },
                 spec_definitions: {
-                    options: { some: { is_active: true } },
+                    spec_options: { some: { is_active: true } },
                 },
             },
             orderBy: { sort_order: 'asc' },
@@ -640,7 +664,7 @@ export const getSubcategorySpecFilters = unstable_cache(
                     select: {
                         key: true,
                         label: true,
-                        options: {
+                        spec_options: {
                             where: { is_active: true },
                             orderBy: { sort_order: 'asc' },
                             select: { value: true },
@@ -655,7 +679,7 @@ export const getSubcategorySpecFilters = unstable_cache(
             key: d.spec_definitions!.key,
             label: d.spec_definitions!.label,
             type: d.filter_type,
-            values: d.spec_definitions!.options.map(option => option.value),
+            values: d.spec_definitions!.spec_options.map(option => option.value),
         }))
     },
     ['subcategory-spec-filters'],
@@ -668,8 +692,12 @@ async function _getPublicProductBySlug(categorySlug: string, slug: string) {
     const product = await prisma.products.findFirst({
         where: {
             slug,
-            ...publicProductWhere,
-            categories: { slug: categorySlug },
+            publication_status: 'public',
+            pdp_visibility: 'public',
+            OR: [
+                { categories: { slug: categorySlug } },
+                getCategoryRootFilter(categorySlug),
+            ],
         },
         include: {
             categories: { select: { id: true, name: true, slug: true } },
@@ -688,7 +716,7 @@ async function _getPublicProductBySlug(categorySlug: string, slug: string) {
             product_documents: {
                 orderBy: { sort_order: 'asc' },
             },
-            package_items: {
+            product_package_items_product_package_items_product_idToproducts: {
                 orderBy: { sort_order: 'asc' },
             },
             product_spec_values: {
@@ -701,6 +729,7 @@ async function _getPublicProductBySlug(categorySlug: string, slug: string) {
             product_types: { select: { id: true, slug: true, name: true } },
             product_sub_types: { select: { id: true, slug: true, name: true } },
             product_variant_groups: { select: { id: true, group_key: true, base_sku: true, variant_type: true, label: true } },
+            product_taxon_assignments: primaryTaxonAssignmentSelect,
         },
     })
 
@@ -720,10 +749,11 @@ export type VariantSibling = {
     sku: string
     name: string
     slug: string
+    url?: string
+    canonical_category_slug?: string
+    canonical_subcategory_slug?: string
     price: number | null
     original_price: number | null
-    list_price?: number | null
-    sale_price?: number | null
     online_discount_amount?: number | null
     price_display: string | null
     image_main_url: string | null
@@ -732,8 +762,6 @@ export type VariantSibling = {
     variant_label: string | null
     variant_options?: unknown
     stock_status?: string | null
-    sale_status?: string | null
-    price_state?: string | null
     subcategories: { slug: string } | null
     categories: { slug: string }
     colors?: { name: string; hex_code: string | null } | null
@@ -758,8 +786,6 @@ export const getVariantSiblings = unstable_cache(
                 slug: true,
                 price: true,
                 original_price: true,
-                list_price: true,
-                sale_price: true,
                 online_discount_amount: true,
                 price_display: true,
                 image_main_url: true,
@@ -767,11 +793,10 @@ export const getVariantSiblings = unstable_cache(
                 variant_type: true,
                 variant_label: true,
                 stock_status: true,
-                sale_status: true,
-                price_state: true,
                 subcategories: { select: { slug: true } },
                 categories: { select: { slug: true } },
                 colors: { select: { name: true, hex_code: true } },
+                product_taxon_assignments: primaryTaxonAssignmentSelect,
             },
         })
         const variantOptionsRows = siblings.length > 0
@@ -787,8 +812,6 @@ export const getVariantSiblings = unstable_cache(
             ...s,
             price: s.price ? Number(s.price) : null,
             original_price: s.original_price ? Number(s.original_price) : null,
-            list_price: s.list_price ? Number(s.list_price) : null,
-            sale_price: s.sale_price ? Number(s.sale_price) : null,
             online_discount_amount: s.online_discount_amount ? Number(s.online_discount_amount) : null,
             variant_options: toPlainJson(variantOptionsById.get(s.id) ?? null),
         }))
@@ -814,8 +837,6 @@ export async function getVariantSelectionData(variantGroup: string, currentProdu
             slug: string
             price: unknown
             original_price: unknown
-            list_price: unknown
-            sale_price: unknown
             online_discount_amount: unknown
             price_display: string | null
             image_main_url: string | null
@@ -824,8 +845,6 @@ export async function getVariantSelectionData(variantGroup: string, currentProdu
             variant_label: string | null
             variant_options: unknown
             stock_status: string | null
-            sale_status: string | null
-            price_state: string | null
             category_slug: string
             subcategory_slug: string | null
         }>>`
@@ -836,8 +855,6 @@ export async function getVariantSelectionData(variantGroup: string, currentProdu
                 p.slug,
                 p.price,
                 p.original_price,
-                p.list_price,
-                p.sale_price,
                 p.online_discount_amount,
                 p.price_display,
                 p.image_main_url,
@@ -846,8 +863,6 @@ export async function getVariantSelectionData(variantGroup: string, currentProdu
                 p.variant_label,
                 p.variant_options,
                 p.stock_status,
-                p.sale_status,
-                p.price_state,
                 c.slug as category_slug,
                 s.slug as subcategory_slug
             from products p
@@ -868,8 +883,6 @@ export async function getVariantSelectionData(variantGroup: string, currentProdu
             slug: row.slug,
             price: row.price ? Number(row.price) : null,
             original_price: row.original_price ? Number(row.original_price) : null,
-            list_price: row.list_price ? Number(row.list_price) : null,
-            sale_price: row.sale_price ? Number(row.sale_price) : null,
             online_discount_amount: row.online_discount_amount ? Number(row.online_discount_amount) : null,
             price_display: row.price_display,
             image_main_url: row.image_main_url,
@@ -878,8 +891,6 @@ export async function getVariantSelectionData(variantGroup: string, currentProdu
             variant_label: row.variant_label,
             variant_options: row.variant_options,
             stock_status: row.stock_status,
-            sale_status: row.sale_status,
-            price_state: row.price_state,
             categories: { slug: row.category_slug },
             subcategories: row.subcategory_slug ? { slug: row.subcategory_slug } : null,
         }))
@@ -949,7 +960,14 @@ export const getFeaturedProductsByCategorySlug = unstable_cache(
         }
         
         if (subcategorySlug) {
-            whereClause.subcategories = { slug: subcategorySlug }
+            whereClause.AND = [
+                {
+                    OR: [
+                        { subcategories: { slug: subcategorySlug } },
+                        getTaxonomyLeafFilter([subcategorySlug]),
+                    ],
+                },
+            ]
         }
 
         const [products, total] = await Promise.all([
@@ -980,6 +998,8 @@ export const getFeaturedProductsByCategorySlug = unstable_cache(
                     subcategories: { select: { name: true, slug: true } },
                     brands: { select: { name: true, slug: true } },
                     colors: { select: { name: true, hex_code: true, slug: true } },
+                    product_type: true,
+                    product_taxon_assignments: primaryTaxonAssignmentSelect,
                     product_feature_values: { select: { product_features: { select: { name: true, icon_name: true } } } },
                 },
             }),
@@ -1010,8 +1030,15 @@ export const getTopProductsPerBrand = unstable_cache(
                         OR: [{ is_master: true }, { is_featured: true }, { sort_order: { gt: 0 } }],
                         is_featured: true,          // only admin-selected featured products
                         NOT: { product_types: { slug: { contains: 'phu-kien' } } },
-                        categories: { slug: categorySlug },
                         brands: { slug: brandSlug },
+                        AND: [
+                            {
+                                OR: [
+                                    { categories: { slug: categorySlug } },
+                                    getCategoryRootFilter(categorySlug),
+                                ],
+                            },
+                        ],
                     },
                     orderBy: [{ sort_order: 'desc' }, { created_at: 'desc' }],
                     take: perBrand,
@@ -1033,6 +1060,8 @@ export const getTopProductsPerBrand = unstable_cache(
                         subcategories: { select: { name: true, slug: true } },
                         brands: { select: { name: true, slug: true } },
                         colors: { select: { name: true, hex_code: true, slug: true } },
+                        product_type: true,
+                        product_taxon_assignments: primaryTaxonAssignmentSelect,
                         product_feature_values: { select: { product_features: { select: { name: true, icon_name: true } } } },
                     },
                 })
@@ -1065,8 +1094,10 @@ export const getNewArrivals = unstable_cache(
                 price_display: true,
                 image_main_url: true,
                 is_promotion: true,
+                product_type: true,
                 categories: { select: { name: true, slug: true } },
                 brands: { select: { name: true, slug: true } },
+                product_taxon_assignments: primaryTaxonAssignmentSelect,
             },
         })
         return products.map(serializeProductListItem)
@@ -1097,6 +1128,8 @@ export const getHomeFeaturedProducts = unstable_cache(
                 categories: { select: { name: true, slug: true } },
                 subcategories: { select: { name: true, slug: true } },
                 brands: { select: { name: true, slug: true } },
+                product_type: true,
+                product_taxon_assignments: primaryTaxonAssignmentSelect,
                 product_feature_values: { select: { product_features: { select: { name: true, icon_name: true } } } },
             },
         })

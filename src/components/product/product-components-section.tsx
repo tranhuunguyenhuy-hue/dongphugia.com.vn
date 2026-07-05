@@ -10,17 +10,18 @@ interface ComponentProduct {
   child_sku: string;
   relationship_type: string;
   sort_order: number;
-  child: {
+    child: {
     id: number;
     name: string;
     display_name: string | null;
     slug: string;
     sku: string;
     price: number | null;
-    price_display: string | null;
-    image_main_url: string | null;
-    subcategories: { slug: string } | null;
-  } | null;
+      price_display: string | null;
+      image_main_url: string | null;
+      url?: string;
+      subcategories: { slug: string } | null;
+    } | null;
 }
 
 interface ProductComponentsSectionProps {
@@ -64,7 +65,7 @@ export function ProductComponentsSection({ components, basePath = '/thiet-bi-ve-
         {resolved.map(({ child, child_sku, sort_order }) => {
           if (!child) return null;
           const displayName = child.display_name || child.name;
-          const href = `${basePath}/${child.subcategories?.slug || 'san-pham'}/${child.slug}`;
+          const href = child.url || `${basePath}/${child.subcategories?.slug || 'san-pham'}/${child.slug}`;
 
           return (
             <Link

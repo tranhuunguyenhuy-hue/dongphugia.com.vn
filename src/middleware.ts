@@ -4,8 +4,12 @@ import type { NextRequest } from "next/server";
 // ── Pre-compiled redirect map (source → destination) ────────
 // Generated from the redirects table via scripts/db/export-product-redirect-map.mts
 import redirectData from "@/data/product-redirect-map.json";
+import catalogTaxonomyRedirectData from "@/data/catalog-taxonomy-v2-redirect-map.json";
 
-const redirectMap = new Map<string, string>(Object.entries(redirectData));
+const redirectMap = new Map<string, string>([
+  ...Object.entries(redirectData),
+  ...Object.entries(catalogTaxonomyRedirectData),
+]);
 const CANONICAL_HOST = "www.dongphugia.com.vn";
 const LEGACY_HOSTS = new Set(["dongphugia.com.vn"]);
 
