@@ -13,7 +13,6 @@ import { BrandBadge } from "@/components/ui/brand-badge"
 import { ProductPrice } from "@/components/product/product-price"
 import { JsonLd } from "@/components/seo/json-ld"
 import { buildProductSchema, buildBreadcrumbSchema } from "@/lib/seo/schema"
-import { canonicalUrl } from "@/lib/site"
 
 export const revalidate = 1800
 export const dynamicParams = true
@@ -27,13 +26,13 @@ const CATEGORY_NAME = "Thiết Bị Bếp"
 const BASE_PATH = "/thiet-bi-bep"
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-    const { sub, slug } = await params
+    const { slug } = await params
     const product = await getPublicProductBySlug(CATEGORY_SLUG, slug)
     if (!product) return { title: "Sản phẩm không tìm thấy" }
     return {
         title: `${product.name} | ${CATEGORY_NAME}`,
         description: product.description?.slice(0, 160) || `${product.name} - Chính hãng tại Đông Phú Gia Đà Lạt.`,
-        alternates: { canonical: canonicalUrl(`${BASE_PATH}/${sub}/${slug}`) },
+        alternates: { canonical: product.url || `${BASE_PATH}/${slug}` },
         openGraph: {
             title: `${product.name}`,
             description: product.description?.slice(0, 160) || `${product.name} - Chính hãng tại Đông Phú Gia Đà Lạt.`,
@@ -48,6 +47,11 @@ export default async function ProductDetailPage({ params }: PageProps) {
     const { sub, slug } = await params
     const product = await getPublicProductBySlug(CATEGORY_SLUG, slug)
     if (!product) notFound()
+    const canonicalCategorySlug = product.canonical_category_slug || CATEGORY_SLUG
+    const canonicalSubcategorySlug = product.canonical_subcategory_slug || product.subcategories?.slug || sub
+    const canonicalBasePath = `/${canonicalCategorySlug}`
+    const canonicalSubcategoryUrl = `${canonicalBasePath}/${canonicalSubcategorySlug}`
+    const canonicalProductUrl = product.url || `${canonicalSubcategoryUrl}/${product.slug}`
 
     const additionalImages = product.product_images?.filter(i => i.image_url !== product.image_main_url) ?? []
     const features = product.product_feature_values ?? []
@@ -60,24 +64,13 @@ export default async function ProductDetailPage({ params }: PageProps) {
 
     // Fetch related products
     const { products: relatedItems } = await getPublicProducts({
-        category_slug: CATEGORY_SLUG,
-        subcategory_slug: product.subcategories?.slug || undefined,
+        category_slug: canonicalCategorySlug,
+        subcategory_slug: canonicalSubcategorySlug || undefined,
         page: 1,
         pageSize: 5
     })
     const relatedProducts = relatedItems.filter(p => p.slug !== slug).slice(0, 4)
 
-    const saleStatus = product.sale_status || (product.stock_status === 'discontinued' ? 'discontinued' : 'available')
-    const saleStatusLabel =
-        saleStatus === 'discontinued' ? 'Ngừng kinh doanh' :
-        saleStatus === 'contact_for_price' ? 'Liên hệ báo giá' :
-        saleStatus === 'updating' ? 'Đang cập nhật' :
-        saleStatus === 'coming_soon' ? 'Chuẩn bị mở bán' :
-        saleStatus === 'temporarily_unavailable' ? 'Tạm ngừng bán' :
-        'Đang bán'
-    const saleStatusTone = saleStatus === 'available' ? 'emerald' : saleStatus === 'discontinued' ? 'rose' : 'amber'
-    const salePrice = product.sale_price ?? product.price
-    const listPrice = product.list_price ?? product.original_price
 
 
     const stockDisplay = product.stock_status === 'in_stock'
@@ -97,26 +90,27 @@ export default async function ProductDetailPage({ params }: PageProps) {
                 stock_status: product.stock_status,
                 brands: product.brands,
                 slug: product.slug,
-                categorySlug: CATEGORY_SLUG,
-                subcategorySlug: product.subcategories?.slug,
+                categorySlug: canonicalCategorySlug,
+                subcategorySlug: canonicalSubcategorySlug,
+                urlPath: canonicalProductUrl,
             })} />
             <JsonLd data={buildBreadcrumbSchema([
                 { name: "Trang chủ", url: "/" },
-                { name: CATEGORY_NAME, url: BASE_PATH },
+                { name: CATEGORY_NAME, url: canonicalBasePath },
                 ...(product.subcategories
-                    ? [{ name: product.subcategories.name, url: `${BASE_PATH}/${product.subcategories.slug}` }]
+                    ? [{ name: product.subcategories.name, url: canonicalSubcategoryUrl }]
                     : []),
-                { name: product.name, url: `${BASE_PATH}/${sub}/${product.slug}` },
+                { name: product.name, url: canonicalProductUrl },
             ])} />
             {/* Breadcrumb */}
             <nav className="flex items-center gap-1.5 text-[11px] text-stone-500 mb-5 overflow-x-auto whitespace-nowrap scrollbar-hide" aria-label="Breadcrumb">
                 <Link href="/" className="hover:text-stone-900 transition-colors shrink-0">Trang chủ</Link>
                 <span className="text-stone-300 shrink-0">/</span>
-                <Link href={BASE_PATH} className="hover:text-stone-900 transition-colors shrink-0">{CATEGORY_NAME}</Link>
+                <Link href={canonicalBasePath} className="hover:text-stone-900 transition-colors shrink-0">{CATEGORY_NAME}</Link>
                 {product.subcategories && (
                     <>
                         <span className="text-stone-300 shrink-0">/</span>
-                        <Link href={`${BASE_PATH}?sub=${sub}`} className="hover:text-stone-900 transition-colors shrink-0">
+                        <Link href={canonicalSubcategoryUrl} className="hover:text-stone-900 transition-colors shrink-0">
                             {product.subcategories.name}
                         </Link>
                     </>
@@ -161,10 +155,10 @@ export default async function ProductDetailPage({ params }: PageProps) {
 
                         <div className="flex flex-wrap items-center gap-2 text-[12px]">
                             {/* 1. Status Pill */}
-                            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md border ${saleStatusTone === 'emerald' ? 'bg-emerald-50 border-emerald-100' : saleStatusTone === 'rose' ? 'bg-rose-50 border-rose-100' : 'bg-amber-50 border-amber-100'}`}>
-                                <div className={`w-1.5 h-1.5 rounded-full ${saleStatusTone === 'emerald' ? 'bg-emerald-500 animate-pulse' : saleStatusTone === 'rose' ? 'bg-rose-500' : 'bg-amber-500'}`} />
-                                <span className={`font-medium ${saleStatusTone === 'emerald' ? 'text-emerald-700' : saleStatusTone === 'rose' ? 'text-rose-700' : 'text-amber-700'}`}>
-                                    {saleStatusLabel}
+                            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md border ${product.stock_status === 'in_stock' ? 'bg-emerald-50 border-emerald-100' : 'bg-rose-50 border-rose-100'}`}>
+                                <div className={`w-1.5 h-1.5 rounded-full ${product.stock_status === 'in_stock' ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`} />
+                                <span className={`font-medium ${product.stock_status === 'in_stock' ? 'text-emerald-700' : 'text-rose-700'}`}>
+                                    {product.stock_status === 'in_stock' ? 'Còn hàng' : 'Liên hệ'}
                                 </span>
                             </div>
 
@@ -199,38 +193,36 @@ export default async function ProductDetailPage({ params }: PageProps) {
                                 currentName={product.name}
                                 currentImageMainUrl={product.image_main_url}
                                 currentPriceDisplay={product.price_display}
-                            currentPrice={Number(salePrice)}
-                            currentOriginalPrice={Number(listPrice)}
+                                currentPrice={Number(product.price)}
+                                currentOriginalPrice={Number(product.original_price)}
                                 currentColor={product.colors}
                                 variantType={product.variant_type}
                                 variantLabel={product.variant_label}
                                 variantGroup={product.variant_group}
                                 siblings={variantSiblings}
-                                categorySlug={CATEGORY_SLUG}
-                                subcategorySlug={product.subcategories?.slug}
+                                categorySlug={canonicalCategorySlug}
+                                subcategorySlug={canonicalSubcategorySlug}
                             />
                         </div>
                     )}
 
                     {/* Price and CTA */}
                     <ProductPrice 
-                        price={Number(salePrice)}
-                        originalPrice={Number(listPrice)}
+                        price={Number(product.price)}
+                        originalPrice={Number(product.original_price)}
                         priceDisplay={product.price_display}
                         onlineDiscountAmount={Number(product.online_discount_amount)}
-                        saleStatus={product.sale_status}
-                        priceState={product.price_state}
                     >
                         <ProductCTA
                             productId={product.id}
                             productSku={product.sku}
                             productName={product.name}
-                            price={salePrice ? Number(salePrice) : null}
-                            originalPrice={listPrice ? Number(listPrice) : null}
+                            price={product.price ? Number(product.price) : null}
+                            originalPrice={product.original_price ? Number(product.original_price) : null}
                             priceDisplay={product.price_display}
                             imageUrl={product.image_main_url || (product.product_images && product.product_images.length > 0 ? product.product_images[0].image_url : null)}
-                            categorySlug={CATEGORY_SLUG}
-                            subcategorySlug={product.subcategories?.slug ?? null}
+                            categorySlug={canonicalCategorySlug}
+                            subcategorySlug={canonicalSubcategorySlug ?? null}
                             brandName={product.brands?.name}
                             slug={product.slug}
                         />
@@ -268,7 +260,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
                             <ProductCard
                                 key={p.id}
                                 product={p}
-                                basePath={BASE_PATH}
+                                basePath={canonicalBasePath}
                             />
                         ))}
                     </div>
@@ -285,10 +277,12 @@ export default async function ProductDetailPage({ params }: PageProps) {
                 original_price: product.original_price ? Number(product.original_price) : null,
                 online_discount_amount: product.online_discount_amount ? Number(product.online_discount_amount) : null,
                 price_display: product.price_display,
-                category_slug: CATEGORY_SLUG,
+                category_slug: canonicalCategorySlug,
                 is_featured: product.is_featured,
                 is_promotion: product.is_promotion,
-                url: `${BASE_PATH}/${sub}/${slug}`,
+                canonical_category_slug: canonicalCategorySlug,
+                canonical_subcategory_slug: canonicalSubcategorySlug,
+                url: canonicalProductUrl,
                 colors: product.colors,
                 brands: product.brands,
                 subcategories: product.subcategories,

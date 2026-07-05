@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { rateLimiter, getClientIp, RATE_LIMITS } from '@/lib/rate-limiter'
 import { buildPublicProductVisibilityWhere } from '@/lib/public-product-visibility'
+import { getCanonicalProductPath, primaryTaxonAssignmentSelect } from '@/lib/taxonomy-paths'
 
 export async function GET(request: NextRequest) {
     // Rate limiting: 30 requests per minute per IP
@@ -54,9 +55,11 @@ export async function GET(request: NextRequest) {
                     stock_status: true,
                     is_active: true,
                     display_name: true,
+                    product_type: true,
                     categories: { select: { slug: true, name: true } },
                     subcategories: { select: { slug: true, name: true } },
                     brands: { select: { name: true } },
+                    product_taxon_assignments: primaryTaxonAssignmentSelect,
                 },
                 orderBy: [
                     { is_active: 'desc' },
@@ -67,16 +70,19 @@ export async function GET(request: NextRequest) {
             prisma.products.count({ where: whereClause })
         ])
 
-        const results = products.map(p => ({
-            ...p,
-            price: p.price ? Number(p.price) : null,
-            original_price: p.original_price ? Number(p.original_price) : null,
-            online_discount_amount: p.online_discount_amount ? Number(p.online_discount_amount) : null,
-            category_slug: p.categories?.slug || 'san-pham',
-            subcategory_slug: p.subcategories?.slug || 'chi-tiet',
-            brand_name: p.brands?.name || null,
-            url: `/${p.categories?.slug || 'san-pham'}/${p.subcategories?.slug || 'chi-tiet'}/${p.slug}`
-        }))
+        const results = products.map(p => {
+            const canonical = getCanonicalProductPath(p)
+            return {
+                ...p,
+                price: p.price ? Number(p.price) : null,
+                original_price: p.original_price ? Number(p.original_price) : null,
+                online_discount_amount: p.online_discount_amount ? Number(p.online_discount_amount) : null,
+                category_slug: canonical.categorySlug,
+                subcategory_slug: canonical.subcategorySlug,
+                brand_name: p.brands?.name || null,
+                url: canonical.urlPath,
+            }
+        })
 
         return NextResponse.json({ results, total })
     } catch (error) {
