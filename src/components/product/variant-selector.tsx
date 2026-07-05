@@ -237,10 +237,14 @@ export interface VariantPreview {
     name: string
     price: number | null
     original_price: number | null
+    list_price?: number | null
+    sale_price?: number | null
     online_discount_amount?: number | null
     price_display: string | null
     image_main_url: string | null
     stock_status?: string | null
+    sale_status?: string | null
+    price_state?: string | null
     is_active?: boolean
     subcategory_slug?: string | null
     canonical_category_slug?: string | null
