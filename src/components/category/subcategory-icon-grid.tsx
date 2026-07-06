@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { useEffect, useRef, useState, useCallback } from 'react'
 
 interface Subcategory {
-    id: number
+    id: number | null
     name: string
     slug: string
     thumbnail_url: string | null

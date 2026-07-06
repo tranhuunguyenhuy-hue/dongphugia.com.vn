@@ -70,6 +70,19 @@ export type ProductFilters = {
     sortDir?: 'asc' | 'desc'
 }
 
+export type PublicListingLeaf = {
+    id: number | null
+    name: string
+    slug: string
+    description: string | null
+    thumbnail_url: string | null
+    source: 'legacy' | 'taxonomy'
+    _count: {
+        products: number
+        secondary_product_subcategories?: number
+    }
+}
+
 export type AdminProductListItem = {
     id: number
     sku: string
@@ -555,11 +568,17 @@ export const getAvailableFilters = unstable_cache(
 // (+ optional product_type). Prevents user from clicking a brand with 0 results.
 
 export const getAvailableFiltersBySubcategory = unstable_cache(
-    async (subcategorySlug: string, productType?: string) => {
+    async (subcategorySlug: string, productType?: string, categorySlug?: string) => {
+        const listingLeaf = categorySlug
+            ? await getPublicListingLeaf(categorySlug, subcategorySlug)
+            : null
+
         const productWhere: Prisma.productsWhereInput = {
             is_active: true,
-            subcategories: { slug: subcategorySlug },
             ...(productType ? { product_types: { slug: productType } } : {}),
+            ...(listingLeaf?.source === 'taxonomy'
+                ? getTaxonomyLeafFilter([subcategorySlug])
+                : { subcategories: { slug: subcategorySlug } }),
         }
 
         const [brands, features, colors, materials, origins] = await Promise.all([
@@ -599,6 +618,164 @@ export const getAvailableFiltersBySubcategory = unstable_cache(
     },
     ['available-filters-subcategory'],
     { revalidate: 3600, tags: ['products', 'filters'] }
+)
+
+const PUBLIC_LISTING_PRODUCT_WHERE: Prisma.productsWhereInput = {
+    publication_status: 'public',
+    pdp_visibility: 'public',
+    listing_visibility: { in: ['default', 'low_priority'] },
+}
+
+function mapLegacyListingLeaf(
+    leaf: {
+        id: number
+        name: string
+        slug: string
+        description: string | null
+        thumbnail_url: string | null
+        _count: { products: number; secondary_product_subcategories: number }
+    }
+): PublicListingLeaf {
+    return {
+        id: leaf.id,
+        name: leaf.name,
+        slug: leaf.slug,
+        description: leaf.description,
+        thumbnail_url: leaf.thumbnail_url,
+        source: 'legacy',
+        _count: leaf._count,
+    }
+}
+
+export const getPublicListingLeaves = unstable_cache(
+    async (categorySlug: string): Promise<PublicListingLeaf[]> => {
+        const [legacyLeaves, taxonomyLeaves] = await Promise.all([
+            prisma.subcategories.findMany({
+                where: { categories: { slug: categorySlug }, is_active: true },
+                orderBy: { sort_order: 'asc' },
+                include: {
+                    _count: {
+                        select: {
+                            products: { where: PUBLIC_LISTING_PRODUCT_WHERE },
+                            secondary_product_subcategories: { where: { products: PUBLIC_LISTING_PRODUCT_WHERE } },
+                        },
+                    },
+                },
+            }),
+            prisma.catalog_taxons.findMany({
+                where: {
+                    is_active: true,
+                    is_listing_enabled: true,
+                    parent: { slug: categorySlug, is_active: true },
+                },
+                orderBy: [{ sort_order: 'asc' }, { name: 'asc' }],
+                select: {
+                    id: true,
+                    name: true,
+                    slug: true,
+                    seo_description: true,
+                },
+            }),
+        ])
+
+        if (taxonomyLeaves.length === 0) {
+            return legacyLeaves.map(mapLegacyListingLeaf)
+        }
+
+        const taxonomyCounts = taxonomyLeaves.length
+            ? await prisma.product_taxon_assignments.groupBy({
+                by: ['taxon_id'],
+                where: {
+                    is_primary: true,
+                    taxon_id: { in: taxonomyLeaves.map((leaf) => leaf.id) },
+                    products: PUBLIC_LISTING_PRODUCT_WHERE,
+                },
+                _count: { product_id: true },
+            })
+            : []
+
+        const taxonomyCountMap = new Map(
+            taxonomyCounts.map((entry) => [entry.taxon_id, entry._count.product_id])
+        )
+
+        const mergedLeaves = taxonomyLeaves.map((leaf) => ({
+            id: null,
+            name: leaf.name,
+            slug: leaf.slug,
+            description: leaf.seo_description,
+            thumbnail_url: null,
+            source: 'taxonomy' as const,
+            _count: {
+                products: taxonomyCountMap.get(leaf.id) ?? 0,
+            },
+        }))
+
+        const taxonomySlugSet = new Set(mergedLeaves.map((leaf) => leaf.slug))
+        const legacyOnlyLeaves = legacyLeaves
+            .filter((leaf) => !taxonomySlugSet.has(leaf.slug))
+            .map(mapLegacyListingLeaf)
+
+        return [...mergedLeaves, ...legacyOnlyLeaves]
+    },
+    ['public-listing-leaves'],
+    { revalidate: 3600, tags: ['products', 'filters', 'taxonomy'] }
+)
+
+export const getPublicListingLeaf = unstable_cache(
+    async (categorySlug: string, leafSlug: string): Promise<PublicListingLeaf | null> => {
+        const legacyLeaf = await prisma.subcategories.findFirst({
+            where: { slug: leafSlug, categories: { slug: categorySlug }, is_active: true },
+            include: {
+                _count: {
+                    select: {
+                        products: { where: PUBLIC_LISTING_PRODUCT_WHERE },
+                        secondary_product_subcategories: { where: { products: PUBLIC_LISTING_PRODUCT_WHERE } },
+                    },
+                },
+            },
+        })
+
+        if (legacyLeaf) {
+            return mapLegacyListingLeaf(legacyLeaf)
+        }
+
+        const taxonomyLeaf = await prisma.catalog_taxons.findFirst({
+            where: {
+                slug: leafSlug,
+                is_active: true,
+                is_listing_enabled: true,
+                parent: { slug: categorySlug, is_active: true },
+            },
+            select: {
+                id: true,
+                name: true,
+                slug: true,
+                seo_description: true,
+            },
+        })
+
+        if (!taxonomyLeaf) return null
+
+        const productCount = await prisma.product_taxon_assignments.count({
+            where: {
+                is_primary: true,
+                taxon_id: taxonomyLeaf.id,
+                products: PUBLIC_LISTING_PRODUCT_WHERE,
+            },
+        })
+
+        return {
+            id: null,
+            name: taxonomyLeaf.name,
+            slug: taxonomyLeaf.slug,
+            description: taxonomyLeaf.seo_description,
+            thumbnail_url: null,
+            source: 'taxonomy',
+            _count: { products: productCount },
+        }
+    },
+    ['public-listing-leaf'],
+    { revalidate: 3600, tags: ['products', 'filters', 'taxonomy'] }
 )
 
 export const getProductTypeFiltersBySubcategory = unstable_cache(

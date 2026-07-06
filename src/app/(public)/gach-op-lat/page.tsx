@@ -7,6 +7,7 @@ import { ChevronRight, Home, Star } from "lucide-react"
 import { ProductCard } from "@/components/ui/product-card"
 import { CategoryFilterPanel } from "@/components/category/category-filter-panel"
 import { SubcategoryIconGrid } from "@/components/category/subcategory-icon-grid"
+import { getPublicListingLeaves } from "@/lib/public-api-products"
 
 export const revalidate = 3600
 
@@ -46,11 +47,7 @@ export default async function GachOpLatPage({ searchParams }: PageProps) {
 
     const [bannerResult, subcategories, featuredProducts, brands] = await Promise.all([
         prisma.$queryRaw<{ banner_url: string | null }[]>`SELECT banner_url FROM categories WHERE slug = ${CATEGORY_SLUG} LIMIT 1`,
-        prisma.subcategories.findMany({
-            where: { categories: { slug: CATEGORY_SLUG }, is_active: true },
-            orderBy: { sort_order: "asc" },
-            include: { _count: { select: { products: { where: LISTING_PRODUCT_WHERE } } } },
-        }),
+        getPublicListingLeaves(CATEGORY_SLUG),
         prisma.products.findMany({
             where: featuredWhere,
             orderBy: { sort_order: "asc" },
@@ -126,7 +123,12 @@ export default async function GachOpLatPage({ searchParams }: PageProps) {
                         {featuredProducts.length > 0 ? (
                             <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-5">
                                 {featuredProducts.map((product) => (
-                                    <ProductCard key={product.id} product={product} basePath={BASE_PATH} patternSlug={product.subcategories?.slug} />
+                                    <ProductCard
+                                        key={product.id}
+                                        product={product}
+                                        basePath={BASE_PATH}
+                                        patternSlug={product.subcategories?.slug}
+                                    />
                                 ))}
                             </div>
                         ) : (

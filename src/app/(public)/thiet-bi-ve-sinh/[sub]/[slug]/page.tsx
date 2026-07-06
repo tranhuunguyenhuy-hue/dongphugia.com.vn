@@ -13,6 +13,7 @@ import { RecentlyViewedProducts } from "@/components/product/recently-viewed"
 import { BrandBadge } from "@/components/ui/brand-badge"
 import { JsonLd } from "@/components/seo/json-ld"
 import { buildProductSchema, buildBreadcrumbSchema } from "@/lib/seo/schema"
+import { getCanonicalProductPath } from "@/lib/taxonomy-paths"
 
 export const revalidate = 21600
 export const dynamicParams = true
@@ -47,11 +48,14 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
     const { sub, slug } = await params
     const product = await getPublicProductBySlug(CATEGORY_SLUG, slug)
     if (!product) notFound()
-    const canonicalCategorySlug = product.canonical_category_slug || CATEGORY_SLUG
-    const canonicalSubcategorySlug = product.canonical_subcategory_slug || product.subcategories?.slug || sub
+    const canonicalPath = getCanonicalProductPath(product)
+    const canonicalCategorySlug = canonicalPath.categorySlug || product.canonical_category_slug || CATEGORY_SLUG
+    const canonicalCategoryName = canonicalPath.categoryName || CATEGORY_NAME
+    const canonicalSubcategorySlug = canonicalPath.subcategorySlug || product.canonical_subcategory_slug || product.subcategories?.slug || sub
+    const canonicalSubcategoryName = canonicalPath.subcategoryName || product.subcategories?.name || null
     const canonicalBasePath = `/${canonicalCategorySlug}`
     const canonicalSubcategoryUrl = `${canonicalBasePath}/${canonicalSubcategorySlug}`
-    const canonicalProductUrl = product.url || `${canonicalSubcategoryUrl}/${product.slug}`
+    const canonicalProductUrl = product.url || canonicalPath.urlPath || `${canonicalSubcategoryUrl}/${product.slug}`
 
     // Fetch product components + variant siblings in parallel
     const [productComponents, variantSiblings, variantSelectionData] = await Promise.all([
@@ -130,9 +134,9 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
             })} />
             <JsonLd data={buildBreadcrumbSchema([
                 { name: "Trang chủ", url: "/" },
-                { name: CATEGORY_NAME, url: canonicalBasePath },
-                ...(product.subcategories
-                    ? [{ name: product.subcategories.name, url: canonicalSubcategoryUrl }]
+                { name: canonicalCategoryName, url: canonicalBasePath },
+                ...(canonicalSubcategoryName
+                    ? [{ name: canonicalSubcategoryName, url: canonicalSubcategoryUrl }]
                     : []),
                 { name: product.name, url: canonicalProductUrl },
             ])} />
@@ -140,12 +144,12 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
             <nav className="flex items-center gap-1.5 text-[11px] text-stone-500 mb-5 overflow-x-auto whitespace-nowrap scrollbar-hide" aria-label="Breadcrumb">
                 <Link href="/" className="hover:text-stone-900 transition-colors shrink-0">Trang chủ</Link>
                 <span className="text-stone-300 shrink-0">/</span>
-                <Link href={canonicalBasePath} className="hover:text-stone-900 transition-colors shrink-0">{CATEGORY_NAME}</Link>
-                {product.subcategories && (
+                <Link href={canonicalBasePath} className="hover:text-stone-900 transition-colors shrink-0">{canonicalCategoryName}</Link>
+                {canonicalSubcategoryName && (
                     <>
                         <span className="text-stone-300 shrink-0">/</span>
                         <Link href={canonicalSubcategoryUrl} className="hover:text-stone-900 transition-colors shrink-0">
-                            {product.subcategories.name}
+                            {canonicalSubcategoryName}
                         </Link>
                     </>
                 )}
@@ -174,11 +178,11 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
                     <div>
                         {/* Eyebrow / Breadcrumb badge (HI-5) */}
                         <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-stone-100 text-[11px] font-medium text-stone-500 mb-3">
-                            <span className="uppercase tracking-wider">{product.categories?.name}</span>
-                            {product.subcategories && (
+                            <span className="uppercase tracking-wider">{canonicalCategoryName}</span>
+                            {canonicalSubcategoryName && (
                                 <>
                                     <span className="text-stone-300">/</span>
-                                    <span>{product.subcategories.name}</span>
+                                    <span>{canonicalSubcategoryName}</span>
                                 </>
                             )}
                         </div>
