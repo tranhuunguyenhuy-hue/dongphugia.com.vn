@@ -13,8 +13,9 @@
  */
 
 import { siteConfig } from "@/config/site"
+import { canonicalUrl, getCanonicalSiteUrl } from "@/lib/site"
 
-const BASE_URL = siteConfig.url // "https://dongphugia.com.vn"
+const BASE_URL = getCanonicalSiteUrl()
 
 // ─── Organization / LocalBusiness ─────────────────────────────────────────────
 
@@ -73,7 +74,7 @@ export function buildProductSchema(product: ProductSchemaInput) {
   const hasPrice = product.price && Number(product.price) > 0
 
   // Canonical URL: /category/subcategory/slug
-  const productUrl = `${BASE_URL}/${product.categorySlug}/${product.subcategorySlug ?? "_"}/${product.slug}`
+  const productUrl = canonicalUrl(`/${product.categorySlug}/${product.subcategorySlug ?? "_"}/${product.slug}`)
 
   return {
     "@context": "https://schema.org",
@@ -131,7 +132,7 @@ export function buildBreadcrumbSchema(items: BreadcrumbItem[]) {
       "@type": "ListItem",
       position: index + 1,
       name: item.name,
-      item: item.url.startsWith("http") ? item.url : `${BASE_URL}${item.url}`,
+      item: item.url.startsWith("http") ? canonicalUrl(item.url) : canonicalUrl(item.url),
     })),
   }
 }
@@ -174,6 +175,6 @@ export function buildArticleSchema(post: ArticleSchemaInput) {
     },
     datePublished: post.published_at?.toISOString(),
     dateModified: post.updated_at.toISOString(),
-    mainEntityOfPage: `${BASE_URL}/blog/${post.blog_categories.slug}/${post.slug}`,
+    mainEntityOfPage: canonicalUrl(`/blog/${post.blog_categories.slug}/${post.slug}`),
   }
 }
