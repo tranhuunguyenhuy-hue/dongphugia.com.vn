@@ -2,10 +2,10 @@
  * @file category-map.js
  * @description Mapping table: hita.com.vn breadcrumb URL paths → DPG category/subcategory IDs.
  *
- * IMPORTANT for Antigravity:
- *   After running Phase 0 (--sample-only) for each new brand, inspect the
- *   breadcrumbs in sample-20.json and add any missing entries here before
- *   running the full crawl. The crawler logs a warning for every unmapped URL.
+ * IMPORTANT:
+ *   After a read-only prepare run, inspect discovery/reconciliation artifacts
+ *   and add any missing breadcrumb mappings here before any execute import.
+ *   The crawler logs a warning for every unmapped URL.
  *
  * Key   = URL path from breadcrumb `href` (e.g. '/bon-cau-253.html')
  * Value = { subcategory_id, product_type }
@@ -26,7 +26,7 @@ export const CATEGORY_MAP = {
   '/bon-cau-nap-rua-co-368.html':       { subcategory_id: 'bon-cau', product_type: 'bon-cau-thong-minh' },
   '/phu-kien-bon-cau.html':             { subcategory_id: 'bon-cau', product_type: 'phu-kien-bon-cau' },
 
-  // CAESAR-specific bồn cầu paths (verify in sample-20)
+  // CAESAR-specific bồn cầu paths.
   '/bon-cau-caesar-384.html':           { subcategory_id: 'bon-cau', product_type: null },
   '/bon-cau-1-khoi-caesar.html':        { subcategory_id: 'bon-cau', product_type: 'bon-cau-1-khoi' },
   '/bon-cau-2-khoi-caesar.html':        { subcategory_id: 'bon-cau', product_type: 'bon-cau-2-khoi' },
@@ -200,6 +200,13 @@ export const CATEGORY_MAP = {
 
   // ── Thanh Tay Vịn Gắn Bồn Tắm (MOEN) ────────────────────────────────────
   '/thanh-tay-vin-gan-thanh-bon-tam.html': { subcategory_id: 'phu-kien-phong-tam', product_type: 'thanh-tay-vin' },
+
+  // ── Gạch / Ecocarat / vật liệu ốp gạch (INAX lane trên Hita) ────────────
+  '/gach.html':                           { category_id: 'gach-op-lat', subcategory_id: 'gach-op-lat', product_type: null },
+  '/gach-ho-boi.html':                    { category_id: 'gach-op-lat', subcategory_id: 'gach-op-lat', product_type: null },
+  '/gach-op-tuong.html':                  { category_id: 'gach-op-lat', subcategory_id: 'gach-op-tuong', product_type: null },
+  '/ecocarat.html':                       { category_id: 'gach-op-lat', subcategory_id: 'gach-inax-ecocarat', product_type: null },
+  '/vat-lieu-op-gach.html':               { category_id: 'gach-op-lat', subcategory_id: 'gach-op-lat', product_type: null },
 
   // ── Thiết bị bếp (category riêng — subcategory_id = null, dùng bep_product_types) ──
   // category_id = 'thiet-bi-bep', subcategory_id = null (bep schema khác thiet-bi-ve-sinh)

@@ -16,26 +16,40 @@ const args = process.argv.slice(2)
 
 const brand = readArg('--brand=', 'viglacera')
 const executeImport = args.includes('--execute')
+const includeNeedsManualReview = args.includes('--include-needs-manual-review')
 const skipDiscovery = args.includes('--skip-discovery')
 const skipCrawl = args.includes('--skip-crawl')
 const skipStage = args.includes('--skip-stage')
 const skipUpload = args.includes('--skip-upload')
 const confirmBrand = readArg('--confirm-brand=', '')
 const stopAfter = readArg('--stop-after=', '')
+const requestedCandidateLimit = Math.max(0, Number(readArg('--candidate-limit=', '0')) || 0)
 const runDir = readArg('--run-dir=', path.resolve(process.cwd(), `scripts/crawl-hita/output/${brand}/pipeline-${timestampSlug()}`))
 const normalizedDir = path.join(runDir, 'normalized')
 const preparedDir = path.join(runDir, 'prepared')
 const source = readArg('--source=', `hita-normalized-${brand}`.slice(0, 50))
-const concurrency = Math.max(1, Math.min(4, Number(readArg('--concurrency=', '2')) || 2))
+const concurrency = Math.max(1, Math.min(8, Number(readArg('--concurrency=', '2')) || 2))
 
-const brandConfig: Record<string, { brandPageUrl: string; sitemapKeyword: string }> = {
+type BrandConfig = {
+    brandPageUrl: string
+    sitemapKeyword: string
+    excludeKeywords?: string[]
+    skipListingDeltaGate?: boolean
+}
+
+const brandConfig: Record<string, BrandConfig> = {
     caesar: { brandPageUrl: 'https://hita.com.vn/thiet-bi-ve-sinh-caesar-383.html', sitemapKeyword: 'caesar' },
     'american-standard': { brandPageUrl: 'https://hita.com.vn/american-standard.html', sitemapKeyword: 'american-standard' },
     cotto: { brandPageUrl: 'https://hita.com.vn/cotto.html', sitemapKeyword: 'cotto' },
-    grohe: { brandPageUrl: 'https://hita.com.vn/grohe.html', sitemapKeyword: 'grohe' },
+    grohe: { brandPageUrl: 'https://hita.com.vn/grohe.html', sitemapKeyword: 'grohe', excludeKeywords: ['hansgrohe'] },
     viglacera: { brandPageUrl: 'https://hita.com.vn/viglacera-597.html', sitemapKeyword: 'viglacera' },
     atmor: { brandPageUrl: 'https://hita.com.vn/atmor.html', sitemapKeyword: 'atmor' },
     moen: { brandPageUrl: 'https://hita.com.vn/moen.html', sitemapKeyword: 'moen' },
+    kanly: { brandPageUrl: 'https://hita.com.vn/kanly.html', sitemapKeyword: 'kanly' },
+    esslinger: { brandPageUrl: 'https://hita.com.vn/esslinger.html', sitemapKeyword: 'esslinger' },
+    hansgrohe: { brandPageUrl: 'https://hita.com.vn/hansgrohe.html', sitemapKeyword: 'hansgrohe' },
+    inax: { brandPageUrl: 'https://hita.com.vn/thiet-bi-ve-sinh-inax-97.html', sitemapKeyword: 'inax', skipListingDeltaGate: true },
+    panasonic: { brandPageUrl: 'https://hita.com.vn/thiet-bi-dien-panasonic.html', sitemapKeyword: 'panasonic' },
 }
 
 const config = brandConfig[brand]
@@ -84,6 +98,26 @@ type DbProduct = {
     product_descriptions: { raw_html: string | null; clean_html: string | null } | null
 }
 
+type CrawlProgress = {
+    brand: string
+    full_crawl: boolean
+    target_subcategory: string | null
+    generated_at: string
+    status: string
+    checkpoint_reason: string
+    candidate_limit: number
+    concurrency: number
+    crawled_count: number
+    selected_count: number
+    skipped_count: number
+    queue_remaining: number
+    queued_total: number
+    subcategory_counts: Record<string, number>
+    variant_extra_counts: Record<string, number>
+    last_completed_url: string | null
+    error: string | null
+}
+
 function readArg(prefix: string, fallback: string) {
     const arg = args.find(item => item.startsWith(prefix))
     return arg ? arg.slice(prefix.length) : fallback
@@ -104,6 +138,32 @@ function readJson<T>(file: string): T {
 function writeJson(file: string, value: unknown) {
     ensureDir(path.dirname(file))
     fs.writeFileSync(file, `${JSON.stringify(value, null, 2)}\n`)
+}
+
+function resolveCandidateLimit(discovery: DiscoveryReport) {
+    if (requestedCandidateLimit > 0) return requestedCandidateLimit
+    return Math.max(5000, discovery.merged_urls.length * 2)
+}
+
+function readCrawlProgress() {
+    const progressFile = path.join(normalizedDir, 'sample-progress.json')
+    if (!fs.existsSync(progressFile)) return null
+    return readJson<CrawlProgress>(progressFile)
+}
+
+function assertCrawlNotCapped(progress: CrawlProgress | null) {
+    if (!progress) return
+    if (progress.status !== 'final') {
+        throw new Error(`Normalized crawl did not finish cleanly (status=${progress.status})`)
+    }
+    if (progress.error) {
+        throw new Error(`Normalized crawl ended with error: ${progress.error}`)
+    }
+    if (progress.queue_remaining > 0 && progress.crawled_count >= progress.candidate_limit) {
+        throw new Error(
+            `Normalized crawl hit candidate cap before queue drained (crawled=${progress.crawled_count}, limit=${progress.candidate_limit}, queue_remaining=${progress.queue_remaining})`
+        )
+    }
 }
 
 function normalizeUrl(value: string) {
@@ -229,6 +289,36 @@ function storageUploadUrl(storagePath: string) {
     return `https://${bunnyHostname}/${bunnyZone}/${storagePath}`
 }
 
+function urlMatchesBrand(url: string) {
+    const lower = url.toLowerCase()
+    if (!lower.includes(config.sitemapKeyword.toLowerCase())) return false
+    if (config.excludeKeywords?.some(keyword => lower.includes(keyword.toLowerCase()))) return false
+    return true
+}
+
+function sanitizeDiscoveryReport(report: DiscoveryReport): DiscoveryReport {
+    const sitemapUrls = report.sitemap_urls.map(normalizeUrl).filter(url => isProductUrl(url) && urlMatchesBrand(url))
+    const listingUrls = report.listing_urls.map(normalizeUrl).filter(url => isProductUrl(url) && urlMatchesBrand(url))
+    const sitemapSet = new Set(sitemapUrls)
+    const listingSet = new Set(listingUrls)
+    const filteredListingCount = Math.max(0, report.listing_urls.length - listingUrls.length)
+    const expectedListingCount = report.expected_listing_count === null
+        ? null
+        : Math.max(listingUrls.length, report.expected_listing_count - filteredListingCount)
+    const actualListingCount = listingUrls.length
+    return {
+        ...report,
+        sitemap_urls: sitemapUrls,
+        listing_urls: listingUrls,
+        merged_urls: [...new Set([...sitemapUrls, ...listingUrls])].sort(),
+        sitemap_only: sitemapUrls.filter(url => !listingSet.has(url)),
+        listing_only: listingUrls.filter(url => !sitemapSet.has(url)),
+        expected_listing_count: expectedListingCount,
+        actual_listing_count: actualListingCount,
+        listing_delta_pct: expectedListingCount ? Math.abs(actualListingCount - expectedListingCount) / expectedListingCount : null,
+    }
+}
+
 async function discoverFromSitemap(page: any) {
     const found = new Set<string>()
     for (let pageNum = 1; pageNum <= 20; pageNum += 1) {
@@ -236,7 +326,7 @@ async function discoverFromSitemap(page: any) {
         const text = await page.locator('pre, body').innerText().catch(() => '')
         for (const match of text.match(/https:\/\/hita\.com\.vn\/[^\s<>]+\.html/g) || []) {
             const url = normalizeUrl(match)
-            if (url.toLowerCase().includes(config.sitemapKeyword.toLowerCase()) && isProductUrl(url)) found.add(url)
+            if (urlMatchesBrand(url) && isProductUrl(url)) found.add(url)
         }
         await new Promise(resolve => setTimeout(resolve, 350))
     }
@@ -249,17 +339,28 @@ async function discoverFromListing(page: any) {
     const expected = initial.urls.length + initial.remaining
     let previousCount = initial.urls.length
     let clicks = 0
+    let stagnantAttempts = 0
 
     for (let i = 0; i < 250; i += 1) {
         const state = await listingState(page)
         const button = page.locator('#category-view-more')
         if (state.remaining <= 0) break
         if ((await button.count()) === 0) break
+        await button.scrollIntoViewIfNeeded().catch(() => null)
         await button.click({ timeout: 10_000 }).catch(() => null)
-        await page.waitForTimeout(900)
-        const after = await listingState(page)
+        let after = state
+        for (let retry = 0; retry < 6; retry += 1) {
+            await page.waitForTimeout(1000 + retry * 250)
+            after = await listingState(page)
+            if (after.urls.length > previousCount) break
+        }
         clicks += 1
-        if (after.urls.length <= previousCount) break
+        if (after.urls.length <= previousCount) {
+            stagnantAttempts += 1
+            if (stagnantAttempts >= 3) break
+            continue
+        }
+        stagnantAttempts = 0
         previousCount = after.urls.length
         if (expected && after.urls.length >= expected) break
     }
@@ -290,7 +391,7 @@ async function listingState(page: any) {
 
 async function runDiscovery() {
     const discoveryFile = path.join(runDir, 'discovery.json')
-    if (skipDiscovery && fs.existsSync(discoveryFile)) return readJson<DiscoveryReport>(discoveryFile)
+    if (skipDiscovery && fs.existsSync(discoveryFile)) return sanitizeDiscoveryReport(readJson<DiscoveryReport>(discoveryFile))
 
     const browser = await chromium.launch({ headless: true })
     try {
@@ -316,11 +417,12 @@ async function runDiscovery() {
             listing_delta_pct: listing.deltaPct,
             load_more_clicks: listing.clicks,
         }
-        writeJson(discoveryFile, report)
-        if (report.listing_delta_pct !== null && report.listing_delta_pct > 0.02) {
-            throw new Error(`B0 discovery gate failed: listing delta ${(report.listing_delta_pct * 100).toFixed(2)}% > 2%`)
+        const sanitized = sanitizeDiscoveryReport(report)
+        writeJson(discoveryFile, sanitized)
+        if (!config.skipListingDeltaGate && sanitized.listing_delta_pct !== null && sanitized.listing_delta_pct > 0.02) {
+            throw new Error(`B0 discovery gate failed: listing delta ${(sanitized.listing_delta_pct * 100).toFixed(2)}% > 2%`)
         }
-        return report
+        return sanitized
     } finally {
         await browser.close().catch(() => null)
     }
@@ -585,17 +687,50 @@ async function uploadManifest(products: any[]) {
     const manifestFile = path.join(preparedDir, 'image-migration-manifest.json')
     if (skipUpload && fs.existsSync(manifestFile)) return readJson<any>(manifestFile)
     const manifest = collectImageManifest(products)
-    for (let index = 0; index < manifest.length; index += concurrency) {
-        const batch = manifest.slice(index, index + concurrency)
+    const existingImageMapFile = path.resolve(process.cwd(), `scripts/crawl-hita/output/${brand}/image-map.json`)
+    const existingImageMap = fs.existsSync(existingImageMapFile)
+        ? new Map<string, string>(Object.entries(readJson<Record<string, string>>(existingImageMapFile)))
+        : new Map<string, string>()
+    const uploadConcurrency = Math.max(concurrency, 24)
+    for (let index = 0; index < manifest.length; index += uploadConcurrency) {
+        const batch = manifest.slice(index, index + uploadConcurrency)
         await Promise.all(batch.map(async entry => {
+            const mirroredBunnyUrl = existingImageMap.get(entry.source_url)
+            if (mirroredBunnyUrl) {
+                try {
+                    const head = await fetch(mirroredBunnyUrl, { method: 'HEAD' })
+                    const contentType = head.headers.get('content-type') || null
+                    const verified = head.status === 200 && Boolean(contentType?.startsWith('image/'))
+                    entry.bunny_url = mirroredBunnyUrl
+                    entry.upload = {
+                        copied: false,
+                        verified,
+                        broken_source: false,
+                        status: head.status,
+                        content_type: contentType,
+                        error: verified ? null : 'verify_failed',
+                    }
+                    return
+                } catch {
+                    // Fall through and try the source URL if the mirrored Bunny URL cannot be checked.
+                }
+            }
+
             entry.upload = await uploadAndVerify(entry)
+            if (!(entry.upload as any)?.verified) {
+                const errorCode = String((entry.upload as any)?.error || '')
+                entry.upload = {
+                    ...(entry.upload as Record<string, unknown>),
+                    broken_source: errorCode === 'source_fetch_404' || errorCode === 'source_fetch_410',
+                }
+            }
         }))
-        console.log(`[B4] uploaded ${Math.min(index + concurrency, manifest.length)}/${manifest.length}`)
+        console.log(`[B4] uploaded ${Math.min(index + uploadConcurrency, manifest.length)}/${manifest.length}`)
     }
     const sourceRun = { brand, run_dir: runDir, generated_at: new Date().toISOString() }
     const payload = { sourceRun, manifest }
     writeJson(manifestFile, payload)
-    const failed = manifest.filter(entry => !(entry.upload as any)?.verified)
+    const failed = manifest.filter(entry => !(entry.upload as any)?.verified && !(entry.upload as any)?.broken_source)
     if (failed.length > 0) throw new Error(`B4 upload gate failed: ${failed.length}/${manifest.length} failed`)
     return payload
 }
@@ -640,6 +775,7 @@ async function stagePrepared() {
 
 async function importPrepared(runId: number, requireCount: number) {
     const approvedSkus = await approvedSkusForRun(runId)
+    const importCount = approvedSkus.length
     const commonArgs = [
         'tsx',
         'scripts/crawl-hita/import-approved-crawl-snapshots.mts',
@@ -648,11 +784,13 @@ async function importPrepared(runId: number, requireCount: number) {
         `--run-id=${runId}`,
         `--sample-dir=${preparedDir}`,
         `--image-manifest=${path.join(preparedDir, 'image-migration-manifest.json')}`,
-        `--require-count=${requireCount}`,
+        `--require-count=${importCount}`,
+        `--concurrency=${concurrency}`,
         `--only-skus=${approvedSkus.join(',')}`,
         '--require-bunny-images',
         '--rewrite-description-images',
     ]
+    if (includeNeedsManualReview) commonArgs.push('--include-needs-manual-review')
     await runCommand('npx', commonArgs)
     if (!executeImport) return null
     const stdout = await runCommand('npx', [...commonArgs, '--execute'])
@@ -664,7 +802,7 @@ async function importPrepared(runId: number, requireCount: number) {
 async function approvedSkusForRun(runId: number) {
     const decisions = await prisma.crawl_import_decisions.findMany({
         where: {
-            decision: 'approved',
+            decision: includeNeedsManualReview ? { in: ['approved', 'needs_manual_review'] } : 'approved',
             crawl_product_snapshots: { crawl_run_id: runId, source },
         },
         include: {
@@ -769,15 +907,18 @@ async function main() {
     writeJson(path.resolve(process.cwd(), `scripts/crawl-hita/output/${brand}/urls.json`), discovery.merged_urls)
 
     if (!skipCrawl) {
+        const candidateLimit = resolveCandidateLimit(discovery)
         await runCommand('node', [
             'scripts/crawl-hita/0-sample-crawl-brand.js',
             `--brand=${brand}`,
             '--full',
-            `--candidate-limit=${discovery.merged_urls.length + 300}`,
+            `--candidate-limit=${candidateLimit}`,
             `--concurrency=${concurrency}`,
             `--sample-dir=${normalizedDir}`,
         ])
     }
+
+    assertCrawlNotCapped(readCrawlProgress())
 
     const normalizedProducts = readJson<any[]>(path.join(normalizedDir, 'sample-products.normalized.json'))
     const rawProducts = readJson<any[]>(path.join(normalizedDir, 'sample-products.raw.json'))

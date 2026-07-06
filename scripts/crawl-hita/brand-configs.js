@@ -142,6 +142,7 @@ export const BRAND_CONFIGS = {
     slug: 'grohe',
     brandPageUrl: 'https://hita.com.vn/grohe.html',
     sitemapKeyword: 'grohe',
+    excludeKeywords: ['hansgrohe'],
     sampleUrls: [
       // Vòi chậu nóng lạnh
       'https://hita.com.vn/voi-chau-nong-lanh-eurosmart-cosmo-m-size-grohe-23325000-8084.html',
@@ -161,7 +162,7 @@ export const BRAND_CONFIGS = {
       'https://hita.com.vn/van-nhiet-do-kem-chuyen-huong-2-duong-grohtherm-cube-grohe-24154000-16441.html',
       'https://hita.com.vn/van-nong-lanh-kem-chuyen-huong-2-duong-grandera-grohe-24067000-16455.html',
       // Van điều chỉnh
-      'https://hita.com.vn/van-dieu-chinh-nong-lanh-am-tuong-hg-talis-e-hansgrohe-71745000-14673.html',
+      'https://hita.com.vn/van-dieu-chinh-nong-lanh-am-tuong-grandera-grohe-19934000-16453.html',
       // Vòi bếp
       'https://hita.com.vn/voi-bep-day-rut-nong-lanh-minta-grohe-32168000-8175.html',
       'https://hita.com.vn/voi-bep-nong-lanh-eurostyle-cosmopolitan-grohe-33977002-8178.html',
@@ -170,15 +171,99 @@ export const BRAND_CONFIGS = {
       // Lõ giấy vệ sinh
       'https://hita.com.vn/lo-giay-ve-sinh-co-nap-essentials-grohe-40367001-8162.html',
       // Sen cây nhiệt độ
+      'https://hita.com.vn/bo-cay-sen-tam-on-nhiet-euphoria-grohe-27296002-12978.html',
+    ],
+  },
+
+  kanly: {
+    slug: 'kanly',
+    brandPageUrl: 'https://hita.com.vn/kanly.html',
+    sitemapKeyword: 'kanly',
+    sampleUrls: [
+      'https://hita.com.vn/ban-dat-chau-lavabo-mat-da-kanly-fp07-11722.html',
+      'https://hita.com.vn/ban-de-chau-rua-lavabo-kanly-mat-da-nhan-tao-fp12-5609.html',
+      'https://hita.com.vn/ban-de-lavabo-mat-da-tu-nhien-kanly-fw03-6334.html',
+      'https://hita.com.vn/bat-sen-bang-dong-kanly-gck93-11750.html',
+      'https://hita.com.vn/bat-sen-bang-dong-kanly-gck95-6337.html',
+      'https://hita.com.vn/bat-sen-tam-co-dien-bang-dong-kanly-gck91-6332.html',
+      'https://hita.com.vn/bat-sen-tron-bang-dong-kanly-gck94-6333.html',
+      'https://hita.com.vn/bat-sen-tron-bang-dong-kanly-gck94b-23510.html',
+      'https://hita.com.vn/bat-sen-tron-bang-dong-kanly-gck95b-23509.html',
+      'https://hita.com.vn/bat-sen-vuong-bang-dong-kanly-gck92-6335.html',
+      'https://hita.com.vn/bat-sen-vuong-bang-dong-kanly-gck92b-23512.html',
+      'https://hita.com.vn/binh-dung-dung-dich-kanly-gck44b17-11777.html',
+      'https://hita.com.vn/binh-dung-dung-dich-kanly-pk08-11770.html',
+      'https://hita.com.vn/binh-dung-nuoc-rua-tay-gan-tuong-kanly-binhdung-xaphong-19965.html',
+      'https://hita.com.vn/binh-dung-nuoc-rua-tay-kanly-pk01b-23513.html',
+      'https://hita.com.vn/binh-dung-nuoc-rua-tay-kanly-pk02b-23515.html',
+      'https://hita.com.vn/binh-dung-nuoc-rua-tay-kanly-pk03b-23514.html',
+      'https://hita.com.vn/binh-dung-nuoc-rua-tay-kanly-pk04b-23511.html',
+      'https://hita.com.vn/binh-dung-nuoc-rua-tay-kanly-pk10b-23516.html',
+      'https://hita.com.vn/bo-chau-lavabo-kanly-treo-tuong-bang-dong-dl2911b-23519.html',
+    ],
+  },
+
+  esslinger: {
+    slug: 'esslinger',
+    brandPageUrl: 'https://hita.com.vn/esslinger.html',
+    sitemapKeyword: 'esslinger',
+    sampleUrls: [
+      'https://hita.com.vn/voi-xit-ve-sinh-esslinger-es-1085a-12460.html',
+      'https://hita.com.vn/voi-xit-ve-sinh-esslinger-es-9836a-12461.html',
+      'https://hita.com.vn/thanh-treo-khan-esslinger-es-bh1101-12483.html',
+      'https://hita.com.vn/thanh-treo-khan-esslinger-es-bh1103-12486.html',
+      'https://hita.com.vn/ke-goc-esslinger-es-811211-12504.html',
+      'https://hita.com.vn/sen-cay-tam-dung-esslinger-es-00202a-12350.html',
+      'https://hita.com.vn/cu-sen-tam-esslinger.html',
+      'https://hita.com.vn/voi-xit-ve-sinh-esslinger.html',
+      'https://hita.com.vn/phu-kien-nha-tam-esslinger.html',
+      'https://hita.com.vn/phu-kien-sen-voi-esslinger.html',
+    ],
+  },
+
+  hansgrohe: {
+    slug: 'hansgrohe',
+    brandPageUrl: 'https://hita.com.vn/hansgrohe.html',
+    sitemapKeyword: 'hansgrohe',
+    sampleUrls: [
+      'https://hita.com.vn/cu-sen-tam-nong-lanh-talis-s-hansgrohe-72400000-15611.html',
+      'https://hita.com.vn/cu-sen-tam-nong-lanh-hg-rebris-s-hansgrohe-72440007-14649.html',
+      'https://hita.com.vn/cu-sen-tam-nong-lanh-logis-hansgrohe-71400000-15607.html',
+      'https://hita.com.vn/cu-sen-tam-nong-lanh-croma-220-hansgrohe-27223000-15615.html',
+      'https://hita.com.vn/cu-sen-tam-nong-lanh-hg-crometta-s-240-1jet-eco-hansgrohe-26186000-14645.html',
       'https://hita.com.vn/sen-cay-nhiet-do-hg-crometta-s-240-1jet-eco-hansgrohe-26186000-14645.html',
-      // Vòi xả bồn âm
+      'https://hita.com.vn/sen-cay-nhiet-do-hg-vernis-shape-26286007-14647.html',
+      'https://hita.com.vn/van-dieu-chinh-hansgrohe-cao-cap-cho-sen-tam.html',
       'https://hita.com.vn/voi-xa-bon-am-tuong-hg-logis-hansgrohe-71410000-14672.html',
-      // Thân sen cây
-      'https://hita.com.vn/than-sen-cay-tam-dung-croma-reno-220-hansgrohe-27224000-15628.html',
-      // Vòi lavabo nong lanh (Hansgrohe sub-brand)
-      'https://hita.com.vn/voi-chau-lavabo-nong-lanh-hg-rebris-s-110-hansgrohe-72517007-14621.html',
-      // Vòi xả bồn âm tường
-      'https://hita.com.vn/voi-xa-bon-am-tuong-hg-logis-hansgrohe-71410000-14672.html',
+      'https://hita.com.vn/bo-voi-chau-lavabo-am-tuong-2-lo-hg-vernis-blend-hansgrohe-71555007-14617.html',
+    ],
+  },
+
+  panasonic: {
+    slug: 'panasonic',
+    brandPageUrl: 'https://hita.com.vn/thiet-bi-dien-panasonic.html',
+    sitemapKeyword: 'panasonic',
+    sampleUrls: [
+      'https://hita.com.vn/may-nuoc-nong-truc-tiep-panasonic-4-5kw-dh-4ms1vw-5240.html',
+      'https://hita.com.vn/may-loc-khong-khi-panasonic-f-pxj30a-5242.html',
+      'https://hita.com.vn/may-loc-khong-khi-panasonic-f-p15eha-5243.html',
+      'https://hita.com.vn/may-loc-khong-khi-danh-cho-o-to-panasonic-f-gpt01a-5244.html',
+      'https://hita.com.vn/may-nuoc-nong-gian-tiep-panasonic-dh-15hbmvw-5295.html',
+      'https://hita.com.vn/may-nuoc-nong-truc-tiep-panasonic-4-5kw-dh-4mp1vw-5301.html',
+      'https://hita.com.vn/den-led-am-tran-panasonic-downlight-neo-slim-vuong-nnp72250-5336.html',
+      'https://hita.com.vn/den-led-am-tran-panasonic-downlight-dn-2g-5353.html',
+      'https://hita.com.vn/den-led-am-tran-panasonic-downlight-ez-series-sieu-mong-5357.html',
+      'https://hita.com.vn/den-led-op-tran-panasonic-downlight-noi-khong-vien-rimless-tron-5371.html',
+      'https://hita.com.vn/den-led-op-tran-panasonic-downlight-noi-khong-vien-rimless-vuong-5375.html',
+      'https://hita.com.vn/den-tran-led-trang-tri-panasonic-co-cam-bien-5427.html',
+      'https://hita.com.vn/den-gan-tuong-led-trang-tri-panasonic-bq1004w88-5454.html',
+      'https://hita.com.vn/den-gan-tuong-led-trang-tri-panasonic-hh-bq1005w88-5455.html',
+      'https://hita.com.vn/den-led-day-panasonic-ngoai-troi-nfv80003ce1a-5463.html',
+      'https://hita.com.vn/driver-cho-den-led-day-panasonic-5464.html',
+      'https://hita.com.vn/den-ban-led-panasonic-hh-lt0421-5465.html',
+      'https://hita.com.vn/den-ban-led-panasonic-hh-lt0623-5467.html',
+      'https://hita.com.vn/den-ban-led-panasonic-hh-lt062919-trang-den-co-the-thay-doi-chieu-cao-5471.html',
+      'https://hita.com.vn/den-led-panasonic.html',
     ],
   },
 

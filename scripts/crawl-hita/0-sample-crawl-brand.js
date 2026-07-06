@@ -29,6 +29,8 @@ const SAMPLE_MIN = readNumberArg('--min=', 10);
 const SAMPLE_MAX = readNumberArg('--max=', 20);
 const CANDIDATE_LIMIT = readNumberArg('--candidate-limit=', FULL_CRAWL ? 5000 : 420);
 const CONCURRENCY = readNumberArg('--concurrency=', 2);
+const CHECKPOINT_EVERY_COUNT = readNumberArg('--checkpoint-every=', FULL_CRAWL ? 25 : 0);
+const CHECKPOINT_EVERY_MS = readNumberArg('--checkpoint-ms=', FULL_CRAWL ? 120000 : 0);
 const HEADLESS = !args.includes('--headed');
 const TARGET_SUBCATEGORY = readStringArgValue('--subcategory=', '');
 const OUTPUT_DIR = path.resolve(__dirname, `output/${BRAND_SLUG}`);
@@ -333,6 +335,7 @@ function interleaveByRoughSubcategory(urls) {
     'phu-kien-bon-cau',
     'than-bon-cau',
     'voi-rua-chen',
+    'chau-rua-chen',
     'other',
   ].filter((key) => buckets.has(key));
 
@@ -379,6 +382,12 @@ function canonicalProductUrl(rawUrl) {
   return resolveUrl(rawUrl, BASE_URL).split('#')[0].split('?')[0];
 }
 
+function isAllowedBrandProductUrl(rawUrl) {
+  const canonical = canonicalProductUrl(rawUrl).toLowerCase();
+  const excludes = BRAND_CONFIG.excludeKeywords || [];
+  return !excludes.some((keyword) => canonical.includes(String(keyword).toLowerCase()));
+}
+
 function attributeVariantSourceUrl(baseUrl, productId) {
   const canonical = canonicalProductUrl(baseUrl);
   return productId ? `${canonical}?vid=${encodeURIComponent(productId)}` : canonical;
@@ -397,6 +406,7 @@ function variantProductIdFromUrl(rawUrl) {
 function isLikelyProductUrl(url) {
   const canonical = canonicalProductUrl(url);
   if (!canonical.startsWith(BASE_URL) || !canonical.endsWith('.html')) return false;
+  if (!isAllowedBrandProductUrl(canonical)) return false;
   const match = canonical.match(/-(\d+)\.html$/);
   return Boolean(match && Number(match[1]) >= 1000);
 }
@@ -832,6 +842,15 @@ async function crawlProduct(context, candidate) {
           if (/hita\.com\.vn/i.test(href) && !/\.pdf($|\?)/i.test(href)) {
             issues.push(`unwrapped_hita_link:${href}`);
             link.replaceWith(...link.childNodes);
+          }
+        }
+
+        for (const node of [...clone.querySelectorAll('*')]) {
+          for (const attr of [...node.attributes]) {
+            if (/^data-sheets-/i.test(attr.name)) {
+              node.removeAttribute(attr.name);
+              issues.push(`removed_sheets_metadata:${attr.name}`);
+            }
           }
         }
 
@@ -1890,6 +1909,163 @@ function buildQaReport({ rawProducts, normalizedProducts, skippedProducts, varia
   return lines.join('\n');
 }
 
+function buildSkippedPayload(skippedProducts) {
+  const items = skippedProducts.map((product) => ({
+    source_url: product.source_url || product.url || null,
+    sku: product.sku || null,
+    name: product.name || null,
+    skipped_reason: product.skippedReason || 'unknown',
+    error: product.error || null,
+  }));
+  const breakdown = items.reduce((acc, item) => {
+    acc[item.skipped_reason] = (acc[item.skipped_reason] || 0) + 1;
+    return acc;
+  }, {});
+  return {
+    total_skipped: items.length,
+    breakdown,
+    items,
+  };
+}
+
+function buildArtifactBundle(rawProducts, skippedProducts) {
+  const normalizedProducts = rawProducts.map(normalizeProduct);
+  const variantReport = assignVariantGroups(normalizedProducts, rawProducts);
+  const coverage = buildCoverage(normalizedProducts);
+
+  const urlsBySubcategory = Object.fromEntries(
+    Object.entries(groupBy(rawProducts, (product) => product.taxonomy?.subcategory_id || 'unmapped')).map(([subcategory, products]) => [
+      subcategory,
+      products.map((product) => ({
+        url: product.source_url,
+        sku: product.sku,
+        name: product.name,
+        sample_reason: product.sample_reason,
+        taxonomy_confidence: product.taxonomy?.confidence,
+      })),
+    ])
+  );
+
+  const taxonomyMap = normalizedProducts.map((product) => {
+    const raw = rawProducts.find((item) => item.source_url === product.source_url);
+    return {
+      sku: product.sku,
+      name: product.name,
+      source_url: product.source_url,
+      category_id: product.category_id,
+      subcategory_id: product.subcategory_id,
+      product_type: product.product_type,
+      product_sub_type: product.product_sub_type,
+      confidence: raw?.taxonomy?.confidence,
+      sources: raw?.taxonomy?.sources,
+      reasons: raw?.taxonomy?.reasons,
+      quarantine_reason: raw?.taxonomy?.quarantine_reason,
+    };
+  });
+
+  const relationshipCandidates = normalizedProducts
+    .filter((product) => product.relationship_candidates.length)
+    .map((product) => ({
+      sku: product.sku,
+      source_url: product.source_url,
+      relationship_candidates: product.relationship_candidates,
+    }));
+
+  const assets = normalizedProducts.map((product) => ({
+    sku: product.sku,
+    source_url: product.source_url,
+    image_main_url: product.image_main_url,
+    product_images: product.product_images,
+    documents: product.specs.documents || [],
+    description_clean_issues: product.description_clean_issues,
+  }));
+
+  const skippedPayload = buildSkippedPayload(skippedProducts);
+
+  return {
+    normalizedProducts,
+    variantReport,
+    coverage,
+    urlsBySubcategory,
+    taxonomyMap,
+    relationshipCandidates,
+    assets,
+    skippedPayload,
+  };
+}
+
+function writeArtifactBundle(bundle, progress = null) {
+  fs.mkdirSync(SAMPLE_DIR, { recursive: true });
+  atomicWrite(path.join(SAMPLE_DIR, 'urls-by-subcategory.json'), bundle.urlsBySubcategory);
+  atomicWrite(path.join(SAMPLE_DIR, 'sample-products.raw.json'), bundle.rawProducts);
+  atomicWrite(path.join(SAMPLE_DIR, 'sample-products.normalized.json'), bundle.normalizedProducts);
+  atomicWrite(path.join(SAMPLE_DIR, 'sample-taxonomy-map.json'), bundle.taxonomyMap);
+  atomicWrite(path.join(SAMPLE_DIR, 'sample-filter-coverage.json'), bundle.coverage.filterCoverage);
+  atomicWrite(path.join(SAMPLE_DIR, 'sample-pdp-coverage.json'), bundle.coverage.pdpCoverage);
+  atomicWrite(path.join(SAMPLE_DIR, 'sample-variant-groups.json'), bundle.variantReport);
+  atomicWrite(path.join(SAMPLE_DIR, 'sample-relationships.json'), bundle.relationshipCandidates);
+  atomicWrite(path.join(SAMPLE_DIR, 'sample-assets.json'), bundle.assets);
+  atomicWrite(path.join(SAMPLE_DIR, 'sample-skipped.json'), bundle.skippedPayload);
+  if (progress) atomicWrite(path.join(SAMPLE_DIR, 'sample-progress.json'), progress);
+  fs.writeFileSync(
+    path.join(SAMPLE_DIR, 'sample-qa-report.md'),
+    buildQaReport({
+      rawProducts: bundle.rawProducts,
+      normalizedProducts: bundle.normalizedProducts,
+      skippedProducts: bundle.skippedProducts,
+      variantReport: bundle.variantReport,
+      coverage: bundle.coverage,
+    }),
+    'utf8'
+  );
+}
+
+function persistCheckpoint({
+  rawProducts,
+  skippedProducts,
+  crawled,
+  queue,
+  queued,
+  subcategoryCounts,
+  variantExtraCounts,
+  reason,
+  lastCompletedUrl = null,
+  crawlError = null,
+  final = false,
+}) {
+  const bundle = buildArtifactBundle(rawProducts, skippedProducts);
+  bundle.rawProducts = rawProducts;
+  bundle.skippedProducts = skippedProducts;
+
+  const progress = {
+    brand: BRAND_SLUG,
+    full_crawl: FULL_CRAWL,
+    target_subcategory: TARGET_SUBCATEGORY || null,
+    generated_at: new Date().toISOString(),
+    status: final ? 'final' : 'checkpoint',
+    checkpoint_reason: reason,
+    candidate_limit: CANDIDATE_LIMIT,
+    concurrency: CONCURRENCY,
+    crawled_count: crawled.size,
+    selected_count: rawProducts.length,
+    skipped_count: skippedProducts.length,
+    queue_remaining: queue.length,
+    queued_total: queued.size,
+    subcategory_counts: subcategoryCounts,
+    variant_extra_counts: variantExtraCounts,
+    last_completed_url: lastCompletedUrl,
+    error: crawlError ? {
+      message: crawlError.message,
+      stack: crawlError.stack,
+    } : null,
+  };
+
+  writeArtifactBundle(bundle, progress);
+  console.log(`[checkpoint] reason=${reason} selected=${rawProducts.length} skipped=${skippedProducts.length} crawled=${crawled.size} queue_remaining=${queue.length}`);
+
+  return bundle;
+}
+
 // [LEO-471 #2] Retry transient crawl failures before giving up, so real
 // products are not silently dropped on a flaky network/page load.
 async function crawlProductWithRetry(context, candidate, attempts = 3) {
@@ -1932,6 +2108,10 @@ async function main() {
   const variantExtraCounts = {};
   const canonicalDefaultAttributeIds = new Map();
   const limit = pLimit(CONCURRENCY);
+  let lastCheckpointAt = Date.now();
+  let lastCheckpointCrawled = 0;
+  let lastCompletedUrl = null;
+  let crawlError = null;
 
   try {
     while (
@@ -1946,6 +2126,7 @@ async function main() {
 
       for (const result of results) {
         crawled.add(result.source_url || result.url);
+        lastCompletedUrl = result.source_url || result.url || null;
         const subcategory = result.taxonomy?.subcategory_id || 'unmapped';
 
         if (result.skippedReason) {
@@ -2007,104 +2188,68 @@ async function main() {
         }
       }
 
+      const reachedCountCheckpoint = CHECKPOINT_EVERY_COUNT > 0 && (crawled.size - lastCheckpointCrawled) >= CHECKPOINT_EVERY_COUNT;
+      const reachedTimeCheckpoint = CHECKPOINT_EVERY_MS > 0 && (Date.now() - lastCheckpointAt) >= CHECKPOINT_EVERY_MS;
+      if (FULL_CRAWL && (reachedCountCheckpoint || reachedTimeCheckpoint)) {
+        persistCheckpoint({
+          rawProducts,
+          skippedProducts,
+          crawled,
+          queue,
+          queued,
+          subcategoryCounts,
+          variantExtraCounts,
+          reason: reachedCountCheckpoint ? 'interval_count' : 'interval_time',
+          lastCompletedUrl,
+        });
+        lastCheckpointAt = Date.now();
+        lastCheckpointCrawled = crawled.size;
+      }
+
       await sleep(700);
     }
+  } catch (error) {
+    crawlError = error;
   } finally {
+    try {
+      persistCheckpoint({
+        rawProducts,
+        skippedProducts,
+        crawled,
+        queue,
+        queued,
+        subcategoryCounts,
+        variantExtraCounts,
+        reason: crawlError ? 'fatal_error' : 'loop_complete',
+        lastCompletedUrl,
+        crawlError,
+      });
+    } catch (checkpointError) {
+      console.warn(`[checkpoint] Failed to persist final checkpoint: ${checkpointError.message}`);
+    }
     await context.close().catch(() => {});
     await browser.close().catch(() => {});
   }
+  if (crawlError) throw crawlError;
 
-  const normalizedProducts = rawProducts.map(normalizeProduct);
-  const variantReport = assignVariantGroups(normalizedProducts, rawProducts);
-  const coverage = buildCoverage(normalizedProducts);
-
-  const urlsBySubcategory = Object.fromEntries(
-    Object.entries(groupBy(rawProducts, (product) => product.taxonomy?.subcategory_id || 'unmapped')).map(([subcategory, products]) => [
-      subcategory,
-      products.map((product) => ({
-        url: product.source_url,
-        sku: product.sku,
-        name: product.name,
-        sample_reason: product.sample_reason,
-        taxonomy_confidence: product.taxonomy?.confidence,
-      })),
-    ])
-  );
-
-  const taxonomyMap = normalizedProducts.map((product) => {
-    const raw = rawProducts.find((item) => item.source_url === product.source_url);
-    return {
-      sku: product.sku,
-      name: product.name,
-      source_url: product.source_url,
-      category_id: product.category_id,
-      subcategory_id: product.subcategory_id,
-      product_type: product.product_type,
-      product_sub_type: product.product_sub_type,
-      confidence: raw?.taxonomy?.confidence,
-      sources: raw?.taxonomy?.sources,
-      reasons: raw?.taxonomy?.reasons,
-      quarantine_reason: raw?.taxonomy?.quarantine_reason,
-    };
+  const bundle = persistCheckpoint({
+    rawProducts,
+    skippedProducts,
+    crawled,
+    queue,
+    queued,
+    subcategoryCounts,
+    variantExtraCounts,
+    reason: 'final_complete',
+    lastCompletedUrl,
+    final: true,
   });
-
-  const relationshipCandidates = normalizedProducts
-    .filter((product) => product.relationship_candidates.length)
-    .map((product) => ({
-      sku: product.sku,
-      source_url: product.source_url,
-      relationship_candidates: product.relationship_candidates,
-    }));
-
-  const assets = normalizedProducts.map((product) => ({
-    sku: product.sku,
-    source_url: product.source_url,
-    image_main_url: product.image_main_url,
-    product_images: product.product_images,
-    documents: product.specs.documents || [],
-    description_clean_issues: product.description_clean_issues,
-  }));
-
-  fs.mkdirSync(SAMPLE_DIR, { recursive: true });
-  atomicWrite(path.join(SAMPLE_DIR, 'urls-by-subcategory.json'), urlsBySubcategory);
-  atomicWrite(path.join(SAMPLE_DIR, 'sample-products.raw.json'), rawProducts);
-  atomicWrite(path.join(SAMPLE_DIR, 'sample-products.normalized.json'), normalizedProducts);
-  atomicWrite(path.join(SAMPLE_DIR, 'sample-taxonomy-map.json'), taxonomyMap);
-  atomicWrite(path.join(SAMPLE_DIR, 'sample-filter-coverage.json'), coverage.filterCoverage);
-  atomicWrite(path.join(SAMPLE_DIR, 'sample-pdp-coverage.json'), coverage.pdpCoverage);
-  atomicWrite(path.join(SAMPLE_DIR, 'sample-variant-groups.json'), variantReport);
-  atomicWrite(path.join(SAMPLE_DIR, 'sample-relationships.json'), relationshipCandidates);
-  atomicWrite(path.join(SAMPLE_DIR, 'sample-assets.json'), assets);
-
-  // [LEO-471 #1] Persist EVERY skipped product + reason so coverage is provable.
-  const skippedDetail = skippedProducts.map((product) => ({
-    source_url: product.source_url || product.url || null,
-    sku: product.sku || null,
-    name: product.name || null,
-    skipped_reason: product.skippedReason || 'unknown',
-    error: product.error || null,
-  }));
-  const skipBreakdown = skippedDetail.reduce((acc, item) => {
-    acc[item.skipped_reason] = (acc[item.skipped_reason] || 0) + 1;
-    return acc;
-  }, {});
-  atomicWrite(path.join(SAMPLE_DIR, 'sample-skipped.json'), {
-    total_skipped: skippedDetail.length,
-    breakdown: skipBreakdown,
-    items: skippedDetail,
-  });
-
-  fs.writeFileSync(
-    path.join(SAMPLE_DIR, 'sample-qa-report.md'),
-    buildQaReport({ rawProducts, normalizedProducts, skippedProducts, variantReport, coverage }),
-    'utf8'
-  );
 
   console.log('\n=== Summary ===');
-  console.log(`Selected products: ${normalizedProducts.length}`);
+  console.log(`Selected products: ${bundle.normalizedProducts.length}`);
   console.log(`Skipped products: ${skippedProducts.length}`);
-  console.log(`Skip breakdown: ${JSON.stringify(skipBreakdown)}`);
-  console.log(`Variant groups: ${variantReport.groups.length}`);
+  console.log(`Skip breakdown: ${JSON.stringify(bundle.skippedPayload.breakdown)}`);
+  console.log(`Variant groups: ${bundle.variantReport.groups.length}`);
   console.log(`Saved ${FULL_CRAWL ? 'full normalized' : 'sample'} audit files to ${SAMPLE_DIR}`);
 }
 

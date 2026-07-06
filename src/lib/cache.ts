@@ -1,6 +1,12 @@
 import { unstable_cache } from 'next/cache'
 import prisma from '@/lib/prisma'
 
+export type ProductTypeLookup = {
+    subcategory_id: number | null
+    product_type: string | null
+    product_sub_type: string | null
+}
+
 // Categories — changes rarely, cache aggressively
 export const getCategories = unstable_cache(
     async () => prisma.categories.findMany({
@@ -76,15 +82,17 @@ export const getFilterDefinitions = unstable_cache(
     { revalidate: 3600, tags: ['filter_definitions'] }
 )
 
-// Product Types - Unique combinations of subcategory_id, product_type, product_sub_type
+// Product Types - derived from product string fields in the current catalog schema.
 export const getProductTypes = unstable_cache(
-    async () => prisma.products.findMany({
-        where: { 
-            product_type: { not: null, notIn: [''] }
-        },
-        select: { subcategory_id: true, product_type: true, product_sub_type: true },
-        distinct: ['subcategory_id', 'product_type', 'product_sub_type'],
-    }),
+    async (): Promise<ProductTypeLookup[]> => {
+        return prisma.products.findMany({
+            where: {
+                product_type: { not: null, notIn: [''] }
+            },
+            select: { subcategory_id: true, product_type: true, product_sub_type: true },
+            distinct: ['subcategory_id', 'product_type', 'product_sub_type'],
+        })
+    },
     ['product_types'],
     { revalidate: 3600, tags: ['product_types', 'products'] }
 )

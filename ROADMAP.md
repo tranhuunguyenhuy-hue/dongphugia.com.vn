@@ -1,243 +1,100 @@
 # ROADMAP — Đông Phú Gia
 
-> **Cập nhật:** 01/06/2026 — Tech Lead (Claude Cowork)
-> **Chiến lược:** Rebuild frontend hoàn toàn trên staging repo mới, giữ nguyên backend + DB. Production chỉ nhận backend/DB upgrades trong thời gian này.
+> **Cập nhật:** 14/06/2026 — Tech Lead (Claude Cowork)
+> **Nguồn chân lý:** [Linear Initiative "Đông Phú Gia — Website VLXD"](https://linear.app/leonguyen/initiative/djong-phu-gia-website-vlxd-1c5cd0379e7a)
+> File này là bản chiếu (mirror) của Linear để đọc nhanh trong repo. Khi lệch, **Linear là chuẩn**.
 
 ---
 
-## Kiến trúc 2-Track
+## Chiến lược hiện tại
+
+Single-repo, incremental. `main` là canonical branch và production deploy từ `main`. Không còn chiến lược 2-track staging trước đây — chúng ta nâng cấp trực tiếp trên `main` theo từng project ưu tiên, mỗi feature đi qua Vercel Preview → production.
 
 ```
-PRODUCTION repo (dongphugia — repo này)       STAGING repo (mới — tạo ở Phase 1)
-────────────────────────────────────          ────────────────────────────────────
-✅ Đang live: dongphugia.com.vn               🚧 Vercel Preview URL
-Backend upgrades + DB completion              Frontend rebuild hoàn toàn
-Không đổi frontend                            Connect production DB (read + controlled)
-User vẫn truy cập bình thường                 Mobile-first, new design system
+main (canonical) ──push──▶ Vercel Preview ──approve──▶ Production (dongphugia.com.vn)
 ```
 
 ---
 
-## Milestones
+## Cấu trúc quản lý: Initiative → Project → Milestone → Issue
 
-| # | Milestone | Target | Criteria |
-|---|-----------|--------|----------|
-| M0 | Backend & DB frozen | **07/06** | API contracts stable, schema final, security fixed |
-| M1 | Staging ready + Design handoff | **14/06** | Repo mới setup, design tokens, Figma handoff xong |
-| M2 | Core pages complete | **21/06** | Homepage, categories ×4, product detail pass QA |
-| M3 | All pages complete | **28/06** | Full frontend trên staging — mọi trang, mọi flow |
-| M4 | QA & Integration pass | **05/07** | CWV ≥90, zero critical bugs, E2E test pass |
-| M5 | Production launch | **12/07** | Hard switch deployed, 48h monitoring clean |
-| M6 | Admin redesign + Payment | **Tháng 8** | Phase 2 complete |
+| Tầng | Vai trò |
+|------|---------|
+| **Initiative** | Đông Phú Gia — Website VLXD (umbrella, target 31/10/2026) |
+| **Project (P0–P5)** | Khối việc theo chủ đề, có priority + timeline |
+| **Milestone** | Checkpoint có target date bên trong project |
+| **Issue** | Task đơn lẻ giao Antigravity (LEO-xxx) |
 
 ---
 
-## Phase 0 — Backend & DB Lock-down
+## Roadmap P0–P5
 
-**Target:** 01/06 → 07/06 | **Repo:** production (repo này)
+### P0 — Stabilization & Production Safety · `Urgent` · 04/06 → 31/07
+Giữ production ổn định sau khi hợp nhất về `main`. **Bug P0 đã xử lý xong** (search crash, 404, Google Maps, cart images, title duplication — LEO-436→440). Không còn issue mở.
 
-**Goal:** Chốt hoàn toàn backend trước khi staging bắt đầu build. Staging không có moving target.
+### P1 — Frontend Core Experience · `High` · 04/06 → 31/08
+Nâng trải nghiệm 4 trang chuyển đổi mạnh nhất.
 
-### Backend / Security
-- [ ] Upload API authentication (`/api/upload-image` — hiện tại ai cũng upload được)
-- [ ] Rate limit cho `/api/orders` và `/api/search`
-- [ ] Fix dual order number format (REST API vs Server Action dùng 2 format khác nhau)
-- [ ] `images.unoptimized: true` — điều tra lý do, enable nếu safe
+| Milestone | Target | Issues |
+|-----------|--------|--------|
+| M1 · Trang lõi (Home · Category · PDP) | **31/07** | LEO-441, LEO-442, LEO-443 |
+| M2 · Conversion & Design System | **31/08** | LEO-444, LEO-445, LEO-433 |
 
-### Database
-- [ ] Variant system upgrade — apply cho INAX, Caesar, Kohler (hiện chỉ TOTO)
-- [ ] Data expansion: INAX, Caesar crawl/import đầy đủ
-- [ ] Data expansion: Gạch + Nước categories hoàn thiện
-- [ ] Final `npx prisma db pull` → commit schema chốt
+### P2 — SEO, Content & Discovery · `High` · 04/06 → 30/09
+Tăng organic traffic — structured data, sitemap, internal linking.
 
-### Features
-- [ ] VietQR tích hợp vào `/dat-hang-thanh-cong`
-- [ ] Admin sidebar: thêm Banners, Đối tác, Dự án entries
-- [ ] Admin sidebar: xóa dead links (Settings, Feedback, Support)
+| Milestone | Target | Issues |
+|-----------|--------|--------|
+| M1 · Technical SEO | **30/09** | LEO-429, LEO-430 |
 
----
+### P3 — Admin CMS & Operations · `Medium` · 01/07 → 30/09
+Để team vận hành tự xử lý không cần kỹ thuật.
 
-## Phase 1 — Staging Setup + Design Handoff
+| Milestone | Target | Issues |
+|-----------|--------|--------|
+| M1 · Admin Operations | **30/09** | LEO-434, LEO-432 |
 
-**Target:** 08/06 → 14/06 | **Repo:** staging (mới)
+### P4 — Commercial Features · `Medium` · 01/08 → 31/10
+Catalog đủ hàng + thanh toán + chốt đơn. (Bao gồm cả Data/Catalog expansion.)
 
-**Goal:** Môi trường staging sẵn sàng, design handoff complete, Antigravity có thể bắt đầu build.
+| Milestone | Target | Issues |
+|-----------|--------|--------|
+| M1 · Mở rộng Catalog | **30/09** | LEO-426, LEO-427 |
+| M2 · Thanh toán & Chốt đơn | **31/10** | LEO-431 |
 
-### Infrastructure
-- [ ] Tạo repo mới: copy prisma/, src/app/api/, src/lib/, src/middleware.ts, config files
-- [ ] Strip toàn bộ `src/app/(public)/` và `src/components/` (sẽ rebuild từ đầu)
-- [ ] Setup Vercel project mới → Preview URL
-- [ ] Copy env vars (DATABASE_URL, BUNNY_CDN, etc.) → Vercel environment
-- [ ] Confirm staging có read/write DB — setup `STAGING_MODE=true` để disable real mutations khi test
+### P5 — Technical Debt & Performance · `Low` · 04/06 → 31/10
+Giảm nợ kỹ thuật, đạt Lighthouse mobile ≥90.
 
-### Design System
-- [ ] Nhận design handoff từ Claude Design (Figma)
-- [ ] Setup Tailwind v4 `@theme` với brand tokens mới (màu, typography, spacing)
-- [ ] Define component primitives: Button, Card, Badge, Input, Typography scale
-- [ ] Mobile-first breakpoints confirmed
-
-### Agent setup
-- [ ] Tạo CLAUDE.md + AGENTS.md cho staging repo
-- [ ] Antigravity nhận Linear issues đầu tiên
+| Milestone | Target | Issues |
+|-----------|--------|--------|
+| M1 · Hiệu năng ≥90 | **31/10** | LEO-428 |
 
 ---
 
-## Phase 2 — Frontend Build: Core Pages
+## Timeline tổng (2026)
 
-**Target:** 08/06 → 21/06 | **Repo:** staging
-
-**Goal:** Các trang core hoàn thiện với design mới, connect API production.
-
-### Layout Shell
-- [ ] Header mới (navigation, search, cart icon)
-- [ ] Footer mới
-- [ ] Mobile navigation drawer
-- [ ] FloatingContact component
-
-### Homepage
-- [ ] Hero Banner section (mới)
-- [ ] Brand slider / Featured brands
-- [ ] Featured products ×4 categories
-- [ ] Blog preview section
-- [ ] Contact section
-
-### Category Pages (×4)
-- [ ] `/thiet-bi-ve-sinh` — listing + smart filter + mobile drawer
-- [ ] `/thiet-bi-bep` — listing + filter (bep_* schema)
-- [ ] `/gach-op-lat` — listing + filter
-- [ ] `/vat-lieu-nuoc` — listing + filter
-- [ ] ProductCard component (mobile-first)
-- [ ] Pagination
-
-### Product Detail
-- [ ] Gallery (main + thumbnails)
-- [ ] Variant selector (TOTO system)
-- [ ] Price display + CTA
-- [ ] Specs tabs
-- [ ] Related products
+```
+        Jun     Jul     Aug     Sep     Oct
+P0      ███████████                              (done)
+P1      ████████████████████████
+          └M1 31/07      └M2 31/08
+P2      ████████████████████████████████████
+                                  └M1 30/09
+P3            ██████████████████████████
+                                  └M1 30/09
+P4                  ████████████████████████████
+                                  └M1 30/09 └M2 31/10
+P5      ██████████████████████████████████████████
+                                          └M1 31/10
+```
 
 ---
 
-## Phase 3 — Frontend Build: Flow & Content
+## Lịch sử
 
-**Target:** 15/06 → 28/06 | **Repo:** staging
-
-**Goal:** Tất cả user flows và content pages hoàn thiện.
-
-### Cart & Checkout
-- [ ] Cart drawer (new design)
-- [ ] Cart page `/gio-hang`
-- [ ] Checkout form
-- [ ] Order success `/dat-hang-thanh-cong` + VietQR
-- [ ] Quote request flow
-
-### Blog
-- [ ] Blog listing `/blog`
-- [ ] Blog detail `/blog/[slug]`
-
-### Search
-- [ ] `/tim-kiem` — full-text search UI mới
-
-### Static Pages
-- [ ] Về chúng tôi
-- [ ] Liên hệ
-- [ ] Đối tác
-- [ ] Dự án
-- [ ] Dịch vụ lắp đặt
-- [ ] 6 trang Chính sách pháp lý
-
-### SEO Infrastructure (staging)
-- [ ] JSON-LD: LocalBusiness, Product, BreadcrumbList, Article
-- [ ] OpenGraph + meta tags
-- [ ] Sitemap dynamic
-- [ ] Redirect mapping cho các URL thay đổi (update bảng `redirects`)
+**Sprint 1 — Foundation (đã hoàn thành)** — archived trong Linear (project `📦 Sprint 1`). Gồm: security hardening (upload auth, rate limiting), unify order number format, image optimization investigation, variant system upgrade (TOTO→multi-brand), và toàn bộ bug P0 production. 12 issue done.
 
 ---
 
-## Phase 4 — Integration & QA
-
-**Target:** 22/06 → 05/07 | **Repo:** staging
-
-**Goal:** Staging hoàn toàn connected với production data, mọi flow pass test.
-
-### Integration
-- [ ] Verify tất cả API calls production → staging hoạt động
-- [ ] Cart → Order submission E2E test
-- [ ] Quote request E2E test
-- [ ] Search E2E test
-- [ ] Image CDN load đúng (cdn.dongphugia.com.vn)
-
-### Performance
-- [ ] Core Web Vitals: LCP < 2.5s, CLS < 0.1, FID < 100ms
-- [ ] Lighthouse Mobile ≥ 90
-- [ ] `next/image` optimization enabled
-
-### QA
-- [ ] Mobile: iOS Safari + Android Chrome
-- [ ] Desktop: Chrome, Firefox, Safari
-- [ ] Cross-page navigation flows
-- [ ] 404 / error states
-
-### Cutover Prep
-- [ ] Document URL changes → update `redirects` table
-- [ ] Rollback plan: document Vercel rollback steps
-- [ ] PM sign-off checklist ready
-
----
-
-## Phase 5 — Production Cutover
-
-**Target:** 06/07 → 12/07
-
-**Goal:** Hard switch toàn bộ frontend mới lên dongphugia.com.vn.
-
-### Pre-launch
-- [ ] Final PM review + sign-off
-- [ ] Announce maintenance window (nếu cần)
-- [ ] Backup current Vercel deployment ID
-
-### Deploy
-- [ ] Copy staging code → production repo (giữ nguyên prisma/, api/, lib/)
-- [ ] Deploy lên Vercel production
-- [ ] Smoke test ngay sau deploy (homepage, search, order)
-
-### Post-launch (48h monitoring)
-- [ ] Monitor error logs Vercel
-- [ ] Check Supabase query load
-- [ ] Confirm CDN images load đúng
-- [ ] GTM events firing
-- [ ] Nếu critical bug → Vercel instant rollback
-
----
-
-## Phase 6 — Post-Launch
-
-**Target:** Tháng 8+
-
-**Goal:** Hoàn thiện hệ thống sau khi frontend mới ổn định.
-
-- [ ] **Admin panel redesign** — mobile-friendly, new design system
-- [ ] **Payment gateway** — VNPAY hoặc MoMo tích hợp
-- [ ] **SEO deep optimization** — Lighthouse, internal linking, structured data
-- [ ] **Data expansion** — brands còn thiếu
-- [ ] **Performance tuning** — ISR strategy, cache optimization
-
----
-
-## Quyết định kiến trúc đã chốt
-
-| Quyết định | Lựa chọn | Lý do |
-|-----------|---------|-------|
-| Repo strategy | Repo mới hoàn toàn | Isolate frontend, không conflict với production |
-| DB strategy | Share production DB | Data thật ngay, không sync overhead |
-| Staging write | `STAGING_MODE=true` disable mutations | Bảo vệ production data khi test |
-| Admin redesign | Phase 6 — sau launch | Không block deadline frontend |
-| Payment gateway | Post-launch | Không bundle vào redesign deadline |
-| Cutover | Hard switch 1 lần | Đơn giản, Vercel instant rollback là safety net |
-| URL changes | Partial — update `redirects` table | Giữ SEO, cho phép UX improvements |
-| Antigravity workload | Song song với production tasks | Phân chia rõ theo phase |
-
----
-
-> **Tech Lead:** Cập nhật checkboxes sau mỗi task complete.
-> **PM:** Review milestone đạt/trượt vào cuối mỗi tuần.
+> **Tech Lead:** Khi đổi scope/timeline, sửa trong Linear trước rồi mirror lại file này.
+> **PM:** Review tiến độ ở Initiative Roadmap view cuối mỗi tuần.

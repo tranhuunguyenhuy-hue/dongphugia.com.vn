@@ -44,6 +44,14 @@ const productSchema = z.object({
     seo_description: z.string().max(500).optional().nullable(),
 })
 
+async function resolveProductTypeIds(
+    _subcategoryId: number | null | undefined,
+    _productType: string | null | undefined,
+    _productSubType: string | null | undefined
+) {
+    return {}
+}
+
 // ─── CREATE ──────────────────────────────────────────────────────────────────
 
 export async function createProduct(data: unknown) {
@@ -62,6 +70,7 @@ export async function createProduct(data: unknown) {
     }
 
     try {
+        await resolveProductTypeIds(d.subcategory_id, d.product_type, d.product_sub_type)
         const createData: Prisma.productsUncheckedCreateInput = {
             sku: d.sku,
             name: d.name,
@@ -127,6 +136,7 @@ export async function updateProduct(id: number, data: unknown) {
     }
 
     try {
+        await resolveProductTypeIds(d.subcategory_id, d.product_type, d.product_sub_type)
         const updateData: Prisma.productsUncheckedUpdateInput = {
             sku: d.sku,
             name: d.name,

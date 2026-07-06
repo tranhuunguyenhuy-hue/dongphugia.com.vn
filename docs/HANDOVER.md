@@ -4,6 +4,11 @@
 > **Domain**: [dongphugia.com.vn](https://dongphugia.com.vn)  
 > **Repository**: `tranhuunguyenhuy-hue/dongphugia.com.vn`  
 > **Trạng thái**: ✅ Production — đang chạy trên Vercel
+>
+> **Lưu ý 2026-07:** file này là bản kiến trúc/handover nền. Với task vận hành hiện tại, đọc thêm:
+> - [/Users/m-ac/Projects/dongphugia/docs/AGENTS.md](/Users/m-ac/Projects/dongphugia/docs/AGENTS.md)
+> - [/Users/m-ac/Projects/dongphugia/scripts/crawl-hita/README.md](/Users/m-ac/Projects/dongphugia/scripts/crawl-hita/README.md)
+> - [/Users/m-ac/Projects/dongphugia/docs/handoffs/2026-07-07-crawl-import-status.md](/Users/m-ac/Projects/dongphugia/docs/handoffs/2026-07-07-crawl-import-status.md)
 
 ---
 
@@ -180,8 +185,7 @@ dongphugia/
 ├── public/                    # Static assets (images, icons, robots.txt)
 │
 ├── scripts/                   # Data pipeline scripts
-│   ├── crawl-toto/            # TOTO product crawlers
-│   ├── crawl-inax/            # INAX product crawlers
+│   ├── crawl-hita/            # Hita normalized brand pipeline (only supported Hita product crawl/import path)
 │   ├── product-import/        # Import pipelines
 │   ├── variant-pipeline/      # Variant processing (multi-phase)
 │   ├── db/                    # Database utilities & migrations
@@ -678,20 +682,20 @@ Permissions-Policy: camera=(), microphone=(), geolocation=(), interest-cohort=()
 
 ```mermaid
 flowchart TD
-    A["hita.com.vn<br/>(Nguồn dữ liệu)"] -->|Playwright/Cheerio crawl| B["Raw Data<br/>(name, SKU, price, images, specs)"]
-    B --> C["Data Processing<br/>(clean, normalize, categorize)"]
-    C --> D["Import to PostgreSQL<br/>(via Prisma/raw SQL)"]
-    D --> E["Image Migration<br/>(Hita CDN → Bunny CDN)"]
-    E --> F["Variant Processing<br/>(group by color/size)"]
-    F --> G["SEO Optimization<br/>(slugs, redirects, meta)"]
+    A["hita.com.vn<br/>(Nguồn dữ liệu)"] --> B["run-normalized-brand-pipeline.mts"]
+    B --> C["Read-only prepare<br/>(discovery, reconciliation, QA policy)"]
+    C --> D["Stage crawl_* audit tables"]
+    D --> E["Bunny image upload + verify"]
+    E --> F["Import approved snapshots<br/>(guarded by --execute --confirm-brand)"]
+    F --> G["Post-import QA<br/>(PDP, variants, SEO, media)"]
 ```
 
 ### Scripts chính
 
 | Script | Mục đích | Vị trí |
 |--------|----------|--------|
-| `scripts/crawl_toto_v2.ts` | Crawl TOTO từ Hita (chính) | 25KB, resumable |
-| `scripts/crawl-inax/` | Crawl INAX | Riêng directory |
+| `scripts/crawl-hita/run-normalized-brand-pipeline.mts` | Crawl/import sản phẩm Hita theo từng brand | Nguồn duy nhất |
+| `scripts/crawl-hita/import-approved-crawl-snapshots.mts` | Import staged approved snapshots | Chỉ gọi trực tiếp khi debug run đã stage |
 | `scripts/product-import/crawl-vietceramics-*.mjs` | Crawl gạch Vietceramics | |
 | `scripts/product-import/mirror-images.mjs` | Mirror images → Bunny CDN | |
 | `scripts/variant-pipeline/` | Multi-phase variant processing | Phase 1-4 (bồn cầu, sen tắm, lavabo, mixed) |

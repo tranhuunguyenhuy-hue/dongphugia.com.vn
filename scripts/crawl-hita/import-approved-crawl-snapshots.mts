@@ -265,7 +265,7 @@ async function resolveExistingProduct(product: any, brandId: number) {
         if (byHitaId) return byHitaId
 
         const bySourceMappingId = await prisma.product_source_mappings.findFirst({
-            where: { source, source_product_id: sourceProductId, products: { brand_id: brandId } },
+            where: { source, source_product_id: sourceProductId },
             select: { product_id: true },
         })
         if (bySourceMappingId?.product_id) return { id: bySourceMappingId.product_id }
@@ -279,15 +279,21 @@ async function resolveExistingProduct(product: any, brandId: number) {
         if (bySourceUrl) return bySourceUrl
 
         const bySourceMappingUrl = await prisma.product_source_mappings.findFirst({
-            where: { source, source_url: sourceUrl, products: { brand_id: brandId } },
+            where: { source, source_url: sourceUrl },
             select: { product_id: true },
         })
         if (bySourceMappingUrl?.product_id) return { id: bySourceMappingUrl.product_id }
     }
 
     if (sku) {
-        return prisma.products.findFirst({
+        const bySku = await prisma.products.findFirst({
             where: { brand_id: brandId, sku },
+            select: { id: true },
+        })
+        if (bySku) return bySku
+
+        return prisma.products.findFirst({
+            where: { sku },
             select: { id: true },
         })
     }
@@ -339,40 +345,48 @@ function loadOnlySkus() {
 
 function loadVerifiedBunnyMap() {
     const filePath = manifestPath()
-    if (!filePath) return new Map<string, string>()
+    if (!filePath) return { map: new Map<string, string>(), brokenSourceUrls: new Set<string>() }
     if (!fs.existsSync(filePath)) throw new Error(`Image manifest not found: ${filePath}`)
 
     const raw = readJsonFile<any>(filePath)
     const entries = Array.isArray(raw) ? raw : Array.isArray(raw.manifest) ? raw.manifest : []
     const mapping = new Map<string, string>()
+    const brokenSourceUrls = new Set<string>()
 
     for (const entry of entries) {
         const sourceUrl = toDisplayValue(entry.source_url)
         const bunnyUrl = toDisplayValue(entry.upload?.bunny_url || entry.bunny_url)
         if (!sourceUrl || !bunnyUrl) continue
-        if (!entry.upload?.verified) continue
-        mapping.set(sourceUrl, bunnyUrl)
+        if (entry.upload?.verified) {
+            mapping.set(sourceUrl, bunnyUrl)
+            continue
+        }
+        if (entry.upload?.broken_source || ['source_fetch_404', 'source_fetch_410'].includes(toDisplayValue(entry.upload?.error))) {
+            brokenSourceUrls.add(sourceUrl)
+        }
     }
 
-    return mapping
+    return { map: mapping, brokenSourceUrls }
 }
 
-function rewriteUrl(value: unknown, imageMap: Map<string, string>, context: string) {
+function rewriteUrl(value: unknown, imageState: { map: Map<string, string>; brokenSourceUrls: Set<string> }, context: string) {
     const url = toDisplayValue(value)
     if (!url) return ''
-    const rewritten = imageMap.get(url)
+    const rewritten = imageState.map.get(url)
     if (rewritten) return rewritten
+    if (imageState.brokenSourceUrls.has(url)) return ''
     if (requireBunnyImages && isWhitelistedHitaDescriptionAssetUrl(url)) {
         throw new Error(`Missing verified Bunny mapping for ${context}: ${url}`)
     }
     return url
 }
 
-function rewriteProductMediaUrl(value: unknown, imageMap: Map<string, string>, context: string) {
+function rewriteProductMediaUrl(value: unknown, imageState: { map: Map<string, string>; brokenSourceUrls: Set<string> }, context: string) {
     const url = toDisplayValue(value)
     if (!url) return ''
-    const rewritten = imageMap.get(url)
+    const rewritten = imageState.map.get(url)
     if (rewritten) return rewritten
+    if (imageState.brokenSourceUrls.has(url)) return ''
     if (requireBunnyImages && isAnyHitaAssetUrl(url)) {
         throw new Error(`Missing verified Bunny mapping for ${context}: ${url}`)
     }
@@ -400,29 +414,32 @@ function isWhitelistedHitaDescriptionAssetUrl(url: string) {
     }
 }
 
-function rewriteHtmlImageUrls(html: unknown, imageMap: Map<string, string>) {
+function rewriteHtmlImageUrls(html: unknown, imageState: { map: Map<string, string>; brokenSourceUrls: Set<string> }) {
     let output = toDisplayValue(html)
-    if (!output || imageMap.size === 0) return output
-    for (const [sourceUrl, bunnyUrl] of imageMap.entries()) {
+    if (!output || imageState.map.size === 0) return output
+    for (const [sourceUrl, bunnyUrl] of imageState.map.entries()) {
         output = output.split(sourceUrl).join(bunnyUrl)
+    }
+    for (const sourceUrl of imageState.brokenSourceUrls) {
+        output = output.split(sourceUrl).join('')
     }
     return output
 }
 
-function applyImageManifest(product: any, imageMap: Map<string, string>) {
-    if (imageMap.size === 0) return product
+function applyImageManifest(product: any, imageState: { map: Map<string, string>; brokenSourceUrls: Set<string> }) {
+    if (imageState.map.size === 0 && imageState.brokenSourceUrls.size === 0) return product
 
-    product.image_main_url = rewriteProductMediaUrl(product.image_main_url, imageMap, `${product.sku}.image_main_url`) || null
+    product.image_main_url = rewriteProductMediaUrl(product.image_main_url, imageState, `${product.sku}.image_main_url`) || null
     product.product_images = Array.isArray(product.product_images)
         ? product.product_images.map((image: any, index: number) => ({
             ...image,
-            url: rewriteProductMediaUrl(image.url || image.image_url, imageMap, `${product.sku}.product_images[${index}]`),
-            image_url: image.image_url ? rewriteProductMediaUrl(image.image_url, imageMap, `${product.sku}.product_images[${index}].image_url`) : undefined,
+            url: rewriteProductMediaUrl(image.url || image.image_url, imageState, `${product.sku}.product_images[${index}]`),
+            image_url: image.image_url ? rewriteProductMediaUrl(image.image_url, imageState, `${product.sku}.product_images[${index}].image_url`) : undefined,
         }))
         : []
 
     if (rewriteDescriptionImages) {
-        product.description = rewriteHtmlImageUrls(product.description, imageMap) || null
+        product.description = rewriteHtmlImageUrls(product.description, imageState) || null
     }
 
     return product
@@ -527,27 +544,30 @@ async function main() {
         },
         orderBy: { id: 'asc' },
     })
-    const decisions = onlySkus
+    const selectedDecisions = onlySkus
         ? allDecisions.filter(decision => {
             const payload = asObject(decision.import_payload || decision.crawl_product_snapshots.normalized_payload)
             return onlySkus.has(toDisplayValue(payload.sku))
         })
         : allDecisions
+    const pendingDecisions = selectedDecisions.filter(decision => !decision.import_result)
 
-    if (onlySkus && decisions.length !== onlySkus.size) {
-        const found = new Set(decisions.map(decision => {
+    if (onlySkus) {
+        const found = new Set(selectedDecisions.map(decision => {
             const payload = asObject(decision.import_payload || decision.crawl_product_snapshots.normalized_payload)
             return toDisplayValue(payload.sku)
         }))
         const missing = Array.from(onlySkus).filter(sku => !found.has(sku))
-        throw new Error(`SKU guard failed: expected ${onlySkus.size}, found ${decisions.length}, missing=${missing.join(', ')}`)
+        if (missing.length > 0) {
+            throw new Error(`SKU guard failed: expected ${onlySkus.size}, found ${found.size}, missing=${missing.join(', ')}`)
+        }
     }
-    if (requireCount > 0 && decisions.length !== requireCount) {
-        throw new Error(`Count guard failed: expected ${requireCount}, found ${decisions.length}`)
+    if (requireCount > 0 && selectedDecisions.length !== requireCount) {
+        throw new Error(`Count guard failed: expected ${requireCount}, found ${selectedDecisions.length}`)
     }
 
     const variantCounts = new Map<string, number>()
-    for (const decision of decisions) {
+    for (const decision of selectedDecisions) {
         const payload = applyImageManifest(sanitizeImportPayload(asObject(decision.import_payload || decision.crawl_product_snapshots.normalized_payload)), imageMap)
         const group = toDisplayValue(payload.variant_group)
         if (group) variantCounts.set(group, (variantCounts.get(group) || 0) + 1)
@@ -559,7 +579,9 @@ async function main() {
             run_id: runId,
             source,
             brand,
-            approved_snapshots: decisions.length,
+            approved_snapshots: selectedDecisions.length,
+            pending_snapshots: pendingDecisions.length,
+            already_imported_snapshots: selectedDecisions.length - pendingDecisions.length,
             only_skus: onlySkus ? Array.from(onlySkus) : null,
             variant_groups_multi_item: Array.from(variantCounts.entries()).filter(([, count]) => count > 1).length,
             activate,
@@ -580,7 +602,7 @@ async function main() {
     let failed = 0
     const limit = pLimit(concurrency)
 
-    await Promise.all(decisions.map(decision => limit(async () => {
+    await Promise.all(pendingDecisions.map(decision => limit(async () => {
         const product = applyImageManifest(
             sanitizeImportPayload(asObject(decision.import_payload || decision.crawl_product_snapshots.normalized_payload)),
             imageMap,
@@ -873,14 +895,26 @@ async function main() {
         select: { summary: true },
     })
     const previousSummary = asObject(run?.summary)
+    const totalImported = await prisma.crawl_import_decisions.count({
+        where: {
+            decision: 'imported',
+            crawl_snapshot_id: { in: selectedDecisions.map(decision => decision.crawl_snapshot_id) },
+        },
+    })
+    const totalFailed = await prisma.crawl_import_decisions.count({
+        where: {
+            decision: 'needs_manual_review',
+            crawl_snapshot_id: { in: selectedDecisions.map(decision => decision.crawl_snapshot_id) },
+        },
+    })
     await prisma.crawl_runs.update({
         where: { id: runId },
         data: {
             status: failed > 0 ? 'completed_with_import_errors' : 'completed',
             summary: {
                 ...previousSummary,
-                imported,
-                failed,
+                imported: totalImported,
+                failed: totalFailed,
                 activate,
                 force_inactive: forceInactive,
                 image_manifest_entries: imageMap.size,

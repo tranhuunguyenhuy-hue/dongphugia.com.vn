@@ -1,112 +1,199 @@
-# Shared Hita Crawl Pipeline
+# Hita Normalized Brand Pipeline
 
-Crawl sản phẩm từ hita.com.vn cho tất cả brands vào DPG database.
+This is the only supported pipeline for crawling products from `hita.com.vn` into Dong Phu Gia.
 
-## Brands được hỗ trợ
+Do not run the legacy per-brand crawlers or the old loose phase scripts:
 
-| Brand | DB slug | Status |
-|---|---|---|
-| CAESAR | `caesar` | Todo |
-| GROHE | `grohe` | Todo |
-| COTTO | `cotto` | Todo |
-| Viglacera | `viglacera` | Todo |
-| American Standard | `american-standard` | Todo |
-| ATMOR | `atmor` | Todo |
-| MOEN | `moen` | Todo |
-| INAX | `inax` | ✅ Done (Phase 5 retroactive only) |
-| TOTO | `toto` | ✅ Done (Phase 5 retroactive only) |
+- `scripts/crawl-hita/1-discover-urls.js`
+- `scripts/crawl-hita/2-crawl-pdp.js`
+- `scripts/crawl-hita/3-upload-images.js`
+- `scripts/crawl-hita/4-import-db.js`
+- `scripts/crawl-hita/orchestrator.js`
+- `scripts/crawl-toto/*`
+- `scripts/crawl-inax/*`
+- `scripts/crawl-hita-inax/*`
 
-## Quy trình cho từng brand mới
+The supported entrypoint is:
 
 ```bash
-# 1. Discover URLs
-node 1-discover-urls.js --brand=caesar
-# → output/caesar/urls.json
-
-# 2a. Phase 0: Sample 20 PDPs (Tech Lead review trước khi full crawl)
-node 2-crawl-pdp.js --brand=caesar --sample-only
-# → output/caesar/sample-20.json
-# ⚠️  Comment sample-20.json lên Linear, đợi Tech Lead approve
-
-# 2b. Tech Lead approve → tạo flag file
-touch output/caesar/phase0-approved.flag
-
-# 2c. Full crawl
-node 2-crawl-pdp.js --brand=caesar
-# → output/caesar/crawled-products.json
-
-# Resume nếu bị interrupt
-node 2-crawl-pdp.js --brand=caesar --resume
-
-# 3. Upload images lên Bunny CDN
-node 3-upload-images.js --brand=caesar
-# → output/caesar/crawled-products-with-cdn.json
-
-# 4. Import vào Supabase (is_active=false)
-node 4-import-db.js --brand=caesar
-
-# 5. Crawl upsell relationships
-node 5-crawl-upsell.js --brand=caesar
-# → upsert vào product_relationships table
-
-# 6. Comment summary lên Linear issue LEO-454
+npx tsx scripts/crawl-hita/run-normalized-brand-pipeline.mts
 ```
 
-## Retroactive INAX + TOTO (Phase 5 upsell)
+The importer used internally by the pipeline is:
 
 ```bash
-node 5-crawl-upsell.js --brand=inax --urls-from=../crawl-hita-inax/output/inax-urls.json
-node 5-crawl-upsell.js --brand=toto --urls-from=../crawl-toto/output/toto-urls.json
+npx tsx scripts/crawl-hita/import-approved-crawl-snapshots.mts
 ```
 
-> Chạy sau khi đã import xong tất cả brands để maximize complement resolution.
+Do not call the importer directly unless you are debugging an already staged run and you have an exact `crawl_run_id`.
 
-## Output files (per brand)
+## Current DB Evidence
 
+Always verify current state from `crawl_runs`; this file can go stale, DB history is the source of truth.
+
+Latest normalized runs checked on 2026-07-07:
+
+| Brand | Latest run | Status | Products | Approved | Imported | Notes |
+|---|---:|---|---:|---:|---:|---|
+| `viglacera` | 19 | completed | 449 | 448 | 448 | Baseline proof brand |
+| `caesar` | 20 | completed | 1568 | 1562 | 1562 | Imported with normalized policy |
+| `atmor` | 21 | completed | 573 | 542 | 542 | Imported |
+| `cotto` | 24 | completed | 1655 | 1647 | 1647 | Imported |
+| `duravit` | 28 | completed | 10 | 10 | 10 | Imported |
+| `thien-thanh` | 29 | completed | 52 | 52 | 52 | Imported |
+| `toto` | 30 | completed | 2625 | 2623 | 2623 | Imported |
+| `hansgrohe` | 43 | completed | 174 | 174 | 174 | Imported |
+| `grohe` | 44 | completed | 3252 | 3251 | 3251 | Imported |
+| `esslinger` | 45 | completed | 291 | 291 | 291 | Imported |
+| `moen` | 48 | completed | 287 | 286 | 286 | Imported |
+| `american-standard` | 49 | completed | 846 | 846 | 0 | Restaged clean, ready for import lane |
+| `kanly` | 50 | completed | 762 | 718 | 0 | Restaged clean, ready for import lane |
+| `inax` | 47 | completed_with_import_errors | 2260 | 2046 | 1826 | Needs full rerun from fresh prepare, not frozen replay |
+
+Current operational note:
+
+- `american-standard` and `kanly` were restaged into fresh `crawl_*` runs on 2026-07-06 and can be imported from those runs.
+- `inax` has a newer validated prepare outside `crawl_runs`, at:
+  `/Users/m-ac/Projects/dongphugia-data-phase/scripts/crawl-hita/output/inax/pipeline-2026-07-06T14-49-58-730Z`
+  with `products=2260`, `skipped=6`, and `null-subcategory=0`.
+- See the concise handoff:
+  [/Users/m-ac/Projects/dongphugia/docs/handoffs/2026-07-07-crawl-import-status.md](/Users/m-ac/Projects/dongphugia/docs/handoffs/2026-07-07-crawl-import-status.md)
+
+## Standard Request Handling
+
+When the PM asks: `crawl va import <brand>`, do this exact sequence.
+
+1. Preflight.
+
+```bash
+git status --short --branch
+npx tsc --noEmit
 ```
-output/<brand>/
-├── urls.json                      # Phase 1: danh sách PDPs discovered
-├── sample-20.json                 # Phase 0: 20 sample products
-├── phase0-approved.flag           # Gate file — tạo thủ công sau khi Tech Lead approve
-├── crawl-progress.json            # Resume checkpoint
-├── crawled-products.json          # Phase 2: raw PDP data
-├── crawled-products-with-cdn.json # Phase 3: CDN URLs replaced
-├── image-map.json                 # Phase 3: source→CDN URL mapping
-├── crawl-log.json                 # Phase 2: per-URL log
-├── upsell-progress.json           # Phase 5: resume checkpoint
-└── upsell-log.json                # Phase 5: per-URL log
+
+Confirm Hita is reachable from the current network/VPN before a long run. Keep concurrency low if Hita is unstable.
+
+2. Run read-only prepare first.
+
+```bash
+npx tsx scripts/crawl-hita/run-normalized-brand-pipeline.mts \
+  --brand=<brand> \
+  --concurrency=2 \
+  --stop-after=prepare
 ```
 
-## Thứ tự ưu tiên brand
+This may read Hita and DB and write local artifacts only. It must not stage DB, upload Bunny, or import production.
 
-CAESAR → GROHE → COTTO → Viglacera → American Standard → ATMOR → MOEN
+Review artifacts in the printed `run_dir`:
 
-## Lessons learned / Gotchas
+- `discovery.json`
+- `reconciliation.json`
+- `field-policy-flags.json`
+- `pipeline-summary.json`
+- `pipeline-report.md`
+- `normalized/sample-skipped.json`
+- `prepared/sample-products.normalized.json`
 
-| Vấn đề | Fix |
-|---|---|
-| Cloudflare throttle | Giữ `p-limit(3)`, delay 1-1.8s. KHÔNG tăng concurrency |
-| Gallery template 2 loại | Script tự detect: `/storage/` (new) → `/public/upload/` (legacy) |
-| SKU null | D-03: skip sản phẩm, không fallback sang slug |
-| Interrupt giữa chừng | `--resume` flag đọc `crawl-progress.json` |
-| Complement chưa import | Phase 5 skip + log. Re-run sau khi import đủ brands |
-| `--brand` thiếu | Error rõ ràng + danh sách valid brands |
-| Category chưa map | Warning trong console + null. Bổ sung vào `category-map.js` |
+3. Gate the run before any production write.
 
-## Category map
+Minimum gates:
 
-Nếu thấy warning `No mapping for: "/some-path.html"` trong crawl log:
-1. Inspect breadcrumb URL đó trên hita.com.vn
-2. Map sang subcategory_id + product_type tương ứng trong DPG
-3. Thêm vào `category-map.js`
-4. Re-run Phase 2 (với `--resume` nếu chỉ fix một phần)
+- Discovery count is explainable.
+- `approved`, `quarantine`, `skipped`, and `needs_manual_review` are understood.
+- Variant groups do not show obvious collisions.
+- Field policy flags are explainable, especially price, gallery, docs, specs, and description images.
+- `npx tsc --noEmit` still passes.
 
-## Environment variables (`.env` ở root)
+4. If the read-only gate passes, run full pipeline with import.
 
+```bash
+npx tsx scripts/crawl-hita/run-normalized-brand-pipeline.mts \
+  --brand=<brand> \
+  --concurrency=2 \
+  --execute \
+  --confirm-brand=<brand> \
+  --run-dir=<run_dir_from_prepare_if_reusing_artifacts>
 ```
-NEXT_PUBLIC_SUPABASE_URL=...
-SUPABASE_SERVICE_ROLE_KEY=...
-BUNNY_STORAGE_API_KEY=...
-BUNNY_STORAGE_ZONE_NAME=...
-BUNNY_CDN_HOSTNAME=cdn.dongphugia.com.vn
+
+If reusing a frozen prepared run and Bunny manifest, use the skip flags intentionally:
+
+```bash
+npx tsx scripts/crawl-hita/run-normalized-brand-pipeline.mts \
+  --brand=<brand> \
+  --skip-discovery \
+  --skip-crawl \
+  --skip-stage \
+  --skip-upload \
+  --execute \
+  --confirm-brand=<brand> \
+  --run-dir=<frozen_run_dir>
 ```
+
+5. Post-import checks.
+
+Confirm:
+
+- `failed = 0`, unless the PM/Tech Lead explicitly accepted the failures.
+- No unexpected active-count regression for the brand.
+- No duplicate product rows from SKU/slug collision.
+- No Hita image URLs remain in main/gallery/description for imported rows except accepted preserved fields.
+- PDP spot checks cover normal priced, contact price, discontinued, docs/specs, and variant products.
+- `pipeline-report.md` and `import-result.json` are present in the run dir.
+
+## Safety Rules
+
+- Never use old `4-import-db.js` for Hita product imports.
+- Never import without `--execute --confirm-brand=<brand>`.
+- Never skip the read-only prepare gate for a new or suspicious brand.
+- Never mutate multiple brands in one run.
+- Preserve existing `is_active` unless a task explicitly says otherwise.
+- Preserve `product_descriptions.raw_html`.
+- New products default inactive unless the importer policy explicitly says otherwise.
+- Bunny image replacements must verify HTTP 200 and `content-type: image/*` before replacing DB URLs.
+- Hita access problems are a blocker for discovery/crawl, not for reviewing existing artifacts.
+
+## Useful DB History Query
+
+```bash
+zsh -lc 'set -a; source .env.local; set +a; node - <<"NODE"
+const { Client } = require("pg")
+const client = new Client({ connectionString: process.env.DIRECT_URL || process.env.DATABASE_URL })
+;(async () => {
+  await client.connect()
+  const rows = await client.query(`
+    SELECT DISTINCT ON (brand_slug)
+      id, source, brand_slug, status, started_at, finished_at, summary
+    FROM crawl_runs
+    WHERE brand_slug IS NOT NULL
+    ORDER BY brand_slug, id DESC
+  `)
+  console.log(JSON.stringify(rows.rows.sort((a, b) => b.id - a.id), null, 2))
+  await client.end()
+})().catch(async error => {
+  console.error(error)
+  try { await client.end() } catch {}
+  process.exit(1)
+})
+NODE'
+```
+
+## Supported Brand Config
+
+The pipeline only supports brands declared in `brandConfig` inside `run-normalized-brand-pipeline.mts`.
+
+Supported brand slugs:
+
+- `american-standard`
+- `atmor`
+- `caesar`
+- `cotto`
+- `esslinger`
+- `grohe`
+- `hansgrohe`
+- `inax`
+- `kanly`
+- `moen`
+- `panasonic`
+- `toto`
+- `viglacera`
+
+If a requested brand is missing there, add and test the brand page URL first in a separate small change. Do not hack around it by using an old crawler.

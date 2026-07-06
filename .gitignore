@@ -155,3 +155,9 @@ scratch/
 output/
 ORIGINAL_REQUEST.md
 scripts/crawl-hita/output/
+.playwright-cli/
+tmp/
+memory/
+dashboard.html
+q_tmp.mjs
+q2_tmp.cjs

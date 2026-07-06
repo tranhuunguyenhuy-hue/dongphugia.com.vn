@@ -1,8 +1,8 @@
 # Đông Phú Gia — Agent Reference (Single Source of Truth)
 
-**Updated:** 04/06/2026 | Live: dongphugia.com.vn | Deploy: Vercel (auto khi push `main`)
+**Updated:** 14/06/2026 | Live: dongphugia.com.vn | Deploy: Vercel (auto khi push `main`)
 
-> ⚠️ **TEAM CHANGE (04/06/2026):** Antigravity đã ngừng hoạt động. Xem section "Team & Workflow" bên dưới.
+> ⚠️ **TEAM CHANGE (04/06/2026):** Antigravity đã ngừng hoạt động. **Codex (OpenAI)** thay thế làm Developer. Claude giữ vai Tech Lead.
 
 > **Mọi AI agent đọc file này trước tiên.** CLAUDE.md và docs/AGENT.md là alias trỏ về đây.
 
@@ -14,6 +14,24 @@ E-commerce B2C, VLXD cao cấp Đà Lạt. Thanh toán offline. 4 categories:
 `/thiet-bi-ve-sinh` · `/thiet-bi-bep` · `/vat-lieu-nuoc` · `/gach-op-lat`
 
 Contact: 094 9349 949 · vlxd.dongphu@gmail.com
+
+---
+
+## Roadmap (nguồn chân lý = Linear)
+
+Quản lý theo 4 tầng: **Initiative → Project (P0–P5) → Milestone → Issue**.
+[Linear Initiative "Đông Phú Gia — Website VLXD"](https://linear.app/leonguyen/initiative/djong-phu-gia-website-vlxd-1c5cd0379e7a) · mirror đọc nhanh trong repo: `ROADMAP.md`.
+
+| Project | Priority | Timeline |
+|---------|----------|----------|
+| P0 Stabilization | Urgent | 04/06→31/07 (bug P0 đã xong) |
+| P1 Frontend Core Experience | High | 04/06→31/08 |
+| P2 SEO, Content & Discovery | High | 04/06→30/09 |
+| P3 Admin CMS & Operations | Medium | 01/07→30/09 |
+| P4 Commercial Features (gồm Data/Catalog) | Medium | 01/08→31/10 |
+| P5 Technical Debt & Performance | Low | 04/06→31/10 |
+
+Issue mở giao Codex đã nằm sẵn đúng Project + Milestone. Sprint 1 (security, variant system, bug fix) đã archive.
 
 ---
 
@@ -33,33 +51,37 @@ Bunny CDN: cdn.dongphugia.com.vn · Vercel deploy
 | Role | Who | Scope |
 |------|-----|-------|
 | PM | Nguyen Huy | Requirements, approve, deploy Vercel |
-| Tech Lead + Dev | Claude (Cowork) | Spec, implement, review, báo deploy |
+| Tech Lead | Claude (Cowork) | Spec, review code, báo deploy |
+| Developer | Codex (OpenAI) | Implement từ Linear issue, push branch, comment báo cáo |
 
-> ⚠️ **TUẦN 04/06/2026:** Antigravity ngừng hoạt động. Claude implement trực tiếp vào repo.
-> Tuần tới: OpenAI Codex sẽ được thêm vào làm Dev.
-
-**Per-task flow (Claude implement):**
+**Per-task flow (Codex as Developer):**
 1. PM → mô tả yêu cầu trong Cowork chat
 2. Claude → hỏi nếu thiếu thông tin (tối đa 1 câu)
 3. Claude → tạo Linear issue với spec đầy đủ
-4. Claude → implement trực tiếp vào repo, push branch
-5. Claude → tự review, comment LGTM trên Linear
-6. Claude → báo PM "Ready for deploy" với tóm tắt ngắn
-7. PM → deploy lên Vercel (CHỈ PM deploy)
+4. Claude → comment GO lên Linear để Codex bắt đầu
+5. Codex → implement, push branch, comment báo cáo trên Linear
+6. PM → báo Claude "Codex xong"
+7. Claude → vào Linear đọc comment Codex, pull code về review
+8. Claude → comment LGTM hoặc CHANGES REQUESTED lên Linear
+9. Nếu LGTM → Claude báo PM "Ready for deploy" với tóm tắt ngắn
+10. PM → deploy lên Vercel (CHỈ PM deploy)
 
 ---
 
-## Session Start Checklist (Antigravity)
+## Session Start Checklist (Codex)
 
 ```
 □ 1. Đọc file này (docs/AGENTS.md)
-□ 2. Đọc PROJECT-STATUS.md — trạng thái hiện tại
-□ 3. git pull origin main
-□ 4. npm install
-□ 5. npx tsc --noEmit → PHẢI pass. Nếu fail: comment Linear, đợi Tech Lead
-□ 6. Đọc Linear issue đầy đủ (description + checklist)
-□ 7. Spec không rõ → comment hỏi Tech Lead, đợi reply trước khi code
+□ 2. git status --short --branch — xem worktree có thay đổi đang chờ không
+□ 3. git fetch origin main — không merge/rebase nếu task không yêu cầu
+□ 4. npm install nếu dependencies thiếu
+□ 5. npx tsc --noEmit → PHẢI pass trước khi commit/deploy
+□ 6. Đọc Linear issue hoặc yêu cầu PM mới nhất đầy đủ
+□ 7. Nếu task liên quan Hita product crawl/import, đọc scripts/crawl-hita/README.md
+□ 8. Spec không rõ hoặc có rủi ro production write → hỏi PM/Tech Lead trước khi execute
 ```
+
+**Git state:** `main` là canonical branch. Production deploy từ `main`, nhưng agent không tự deploy trừ khi PM yêu cầu rõ.
 
 ---
 
@@ -117,6 +139,17 @@ admin/{entity}/
 **Images:** Bunny CDN qua `/api/upload-image`. NEVER `public/uploads/`.
 
 **Metadata titles:** Plain string WITHOUT `| Đông Phú Gia` suffix — root layout template `"%s | Đông Phú Gia"` tự xử lý. Homepage dùng `{ absolute: "..." }`.
+
+**Hita product crawl/import:** ONLY use `scripts/crawl-hita/run-normalized-brand-pipeline.mts`. The detailed playbook is [scripts/crawl-hita/README.md](/Users/m-ac/Projects/dongphugia/scripts/crawl-hita/README.md). Never run legacy Hita import scripts such as `4-import-db.js`, `scripts/crawl-toto/*`, `scripts/crawl-inax/*`, or `scripts/crawl-hita-inax/*`.
+
+**Current crawl/import state handoff:** read [/Users/m-ac/Projects/dongphugia/docs/handoffs/2026-07-07-crawl-import-status.md](/Users/m-ac/Projects/dongphugia/docs/handoffs/2026-07-07-crawl-import-status.md) before touching `american-standard`, `kanly`, or `inax`.
+
+When PM says `crawl và import <brand>`:
+1. Run `npx tsc --noEmit`.
+2. Run read-only prepare with `--stop-after=prepare`.
+3. Review `discovery.json`, `reconciliation.json`, `field-policy-flags.json`, `pipeline-report.md`, and skipped/quarantine counts.
+4. Only if gates pass, run with `--execute --confirm-brand=<brand>`.
+5. Report run dir, `crawl_run_id`, approved/imported/failed counts, image verification, active-count guard, and PDP spot checks.
 
 ---
 
@@ -224,7 +257,7 @@ MAINTENANCE_MODE=false
 | Không xóa bảng/column DB khi chưa hỏi Tech Lead | Block ngay |
 | Không thay đổi auth flow khi chưa hỏi Tech Lead | Block ngay |
 | Không thêm major npm dependency khi chưa hỏi Tech Lead | Block ngay |
-| Antigravity mark Done ONLY sau khi Tech Lead comment LGTM | Block ngay |
+| Codex mark Done ONLY sau khi Tech Lead comment LGTM | Block ngay |
 | Tech Lead review mọi change — không có bypass | Block ngay |
 
 ---
@@ -269,9 +302,11 @@ MAINTENANCE_MODE=false
 | `thiet-bi-bep` dùng schema riêng | Bảng `bep_brands`, `bep_product_types`, `bep_subtypes` — không dùng `products`/`subcategories` |
 | MOEN/GROHE/ATMOR ảnh trên Bunny CDN | URL dạng `cdn.hita.com.vn/storage/` — `isProductImage()` phải support cả CDN domain này |
 | Image fallback quét nhầm upsell section | Template 3 fallback phải scope vào `.product-column-left` và filter `.section-buy-more` |
-| `4-import-db.js` NO IMAGE trên listing | `ProductCard` dùng `products.image_main_url` — script phải set field này trong upsert payload |
+| Legacy Hita scripts nhìn có vẻ còn chạy được | Không dùng. Chạy pipeline normalized trong `scripts/crawl-hita/README.md` |
 
 ---
 
-> **Tech Lead:** Cập nhật file này sau mỗi convention mới hoặc gotcha mới phát hiện.
-> **Antigravity:** Đây là file duy nhất cần đọc cho context. Không cần đọc CLAUDE.md hay docs/AGENT.md (chúng trỏ về đây).
+> **Tech Lead (Claude):** Cập nhật file này sau mỗi convention mới hoặc gotcha mới phát hiện.
+> **Codex:** Đây là file duy nhất cần đọc cho context. Không cần đọc CLAUDE.md hay docs/AGENT.md (chúng trỏ về đây).
+> **Hita crawl/import:** `scripts/crawl-hita/README.md` là nguồn chuẩn duy nhất cho quy trình crawl sản phẩm Hita theo brand.
+> **Archive:** `docs/archive/` chỉ là lịch sử, không dùng làm nguồn hướng dẫn vận hành hiện tại.

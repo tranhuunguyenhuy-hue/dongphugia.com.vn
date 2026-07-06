@@ -48,7 +48,7 @@ export async function getAdminProducts(params: AdminProductsParams = {}) {
   const where: Prisma.productsWhereInput = {
     ...(categoryId && { category_id: categoryId }),
     ...(subcategoryId && { subcategory_id: subcategoryId }),
-    ...(productType && { product_type: productType }),
+    ...(productType && { product_types: { slug: productType } }),
     ...(stockStatus && { stock_status: stockStatus }),
     ...(isActive !== undefined && { is_active: isActive }),
     ...(brandId && { brand_id: brandId }),
@@ -187,11 +187,11 @@ export async function getProductTypeOptions(params: {
 }) {
   const { categoryId, subcategoryId } = params
 
-  const products = await prisma.products.findMany({
+  const types = await prisma.products.findMany({
     where: {
-      ...(categoryId && { category_id: categoryId }),
+      product_type: { not: null, notIn: [''] },
       ...(subcategoryId && { subcategory_id: subcategoryId }),
-      product_type: { not: null },
+      ...(categoryId && { category_id: categoryId }),
       is_active: true,
     },
     select: { product_type: true },
@@ -199,9 +199,7 @@ export async function getProductTypeOptions(params: {
     orderBy: { product_type: 'asc' },
   })
 
-  return products
-    .map(p => p.product_type)
-    .filter((t): t is string => t !== null)
+  return types.map(type => type.product_type).filter(Boolean)
 }
 
 /**

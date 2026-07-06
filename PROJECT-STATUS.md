@@ -1,7 +1,9 @@
 # PROJECT-STATUS — Đông Phú Gia
 
-> **Cập nhật:** 27/05/2026 — Được tạo bởi Tech Lead (Claude Cowork) khi tiếp nhận dự án.
+> **Cập nhật:** 14/06/2026 — Tech Lead (Claude Cowork).
 > **Đọc file này đầu mỗi session** để nắm trạng thái hiện tại trước khi làm việc.
+> **Roadmap & task:** [Linear Initiative "Đông Phú Gia — Website VLXD"](https://linear.app/leonguyen/initiative/djong-phu-gia-website-vlxd-1c5cd0379e7a) (P0–P5) — xem `ROADMAP.md` để đọc nhanh.
+> **Team:** PM — Nguyen Huy · Tech Lead — Claude (Cowork) · **Dev chính — Codex (OpenAI)**, nhận task qua Linear, báo cáo qua Linear comments.
 > Xem `docs/HANDOVER.md` để hiểu chi tiết kiến trúc hệ thống.
 
 ---
@@ -60,59 +62,78 @@
 - [x] TOTO — sản phẩm đầy đủ nhất, variant system đang chạy
 - [x] INAX, Caesar, Kohler và các brand khác — cơ bản
 
----
-
-## 🔄 Đang phát triển
-
-### Variant System — Nâng cấp
-- **Trạng thái:** Logic cơ bản đã chạy tốt với TOTO
-- **Cần làm:** Nâng cấp để áp dụng cho các brand khác (INAX, Caesar, v.v.)
-- **Blocker:** Cần spec từ Tech Lead trước khi implement
-
-### QR VietQR — Checkout
-- **Trạng thái:** Thông tin tài khoản ngân hàng ĐPG đã có, chưa build
-- **Cần làm:** Tích hợp QR vào trang `/dat-hang-thanh-cong`
-
-### Design System
-- **Trạng thái:** Implement một phần
-- **Cần làm:** Hoàn thiện color palette + typography áp dụng đồng bộ toàn site
+### Hita normalized pipeline — trạng thái hiện tại
+- Pipeline chuẩn duy nhất: `scripts/crawl-hita/run-normalized-brand-pipeline.mts`
+- Các brand đã imported sạch theo lane mới: `viglacera`, `caesar`, `atmor`, `cotto`, `duravit`, `thien-thanh`, `toto`, `grohe`, `esslinger`, `hansgrohe`, `moen`
+- Đang chốt dở trước khi mở phase tiếp:
+  - `american-standard` — restage sạch, ready for import lane
+  - `kanly` — restage sạch, ready for import lane
+  - `inax` — cần full rerun từ prepare mới đã validate
+- Xem handoff ngắn:
+  `docs/handoffs/2026-07-07-crawl-import-status.md`
 
 ---
 
-## 🔴 Known Issues cần xử lý
+## 🔄 Đang phát triển (theo Linear P0–P5)
 
-### Security (cần đánh giá trước khi fix)
-| # | Issue | Location | Risk |
-|---|-------|----------|------|
-| 1 | Upload API không có auth | `/api/upload-image` | Ai cũng upload được lên Bunny CDN |
-| 2 | Orders API không có rate limit | `/api/orders` | Có thể bị spam |
-| 3 | Search API không có rate limit | `/api/search` | Có thể bị abuse |
+### Variant System — Nâng cấp ✅ DONE
+- Spec (LEO-423) + implement (LEO-435) đã hoàn thành. Variant system đã sẵn sàng scale multi-brand.
 
-> **Note:** Tech Lead cần đánh giá risk thực tế trước khi prioritize fix.
+### QR VietQR — Checkout → P4 / M2 (LEO-431)
+- **Trạng thái:** Thông tin tài khoản ngân hàng ĐPG đã có, chưa build.
+- **Cần làm:** Tích hợp QR vào `/dat-hang-thanh-cong`. Target 31/10.
 
-### Technical Debt (medium)
-| # | Issue | Chi tiết |
-|---|-------|---------|
-| 4 | `images.unoptimized: true` | Next.js image optimization bị tắt — lý do chưa rõ |
-| 5 | Revenue chart không dùng | `revenue-chart.tsx` tồn tại nhưng không import vào dashboard |
-| 6 | Admin sidebar thiếu entries | Banners, Đối tác, Dự án có pages nhưng không trong sidebar |
-| 7 | Dead links sidebar | Settings, Feedback, Support — không có trang thực tế |
-| 8 | Dual order number format | REST API dùng `DPG-YYYYMMDD-XXXX`, Server Action dùng 6-digit random |
+### Design System → P1 / M2 (LEO-433)
+- **Trạng thái:** Implement một phần.
+- **Cần làm:** Đồng bộ color token + typography toàn site. Target 31/08.
+
+### Frontend redesign 4 trang lõi → P1 (LEO-441→445)
+- Homepage, Category, PDP, Cart/Checkout, Search — redesign theo design system mới. Target 31/07–31/08.
 
 ---
 
-## 📋 Backlog (chưa lên lịch)
+## ✅ Đã xử lý (Sprint 1 — Foundation)
 
-Theo thứ tự ưu tiên PM đã xác nhận (27/05/2026):
+### Security — DONE
+| # | Issue | Linear | Trạng thái |
+|---|-------|--------|-----------|
+| 1 | Upload API không có auth | LEO-418 | ✅ Đã thêm admin auth |
+| 2 | Orders API không rate limit | LEO-419 | ✅ Đã rate limit |
+| 3 | Search API không rate limit | LEO-419 | ✅ Đã rate limit |
 
-1. **Security assessment + fix** — Đánh giá 3 issues trên, implement fix phù hợp
-2. **Variant system upgrade** — Nâng cấp để apply cho các brand khác ngoài TOTO
-3. **Data expansion** — Crawl thêm INAX, Caesar, Kohler; hoàn thiện dữ liệu Gạch + Nước
-4. **SEO optimization** — Lighthouse >90, internal linking, URL structure
-5. **QR VietQR** — Tích hợp vào checkout
-6. **Design system** — Hoàn thiện và đồng bộ toàn site
-7. **Admin UX fixes** — Sidebar entries, dead links, revenue chart
-8. **Thanh toán online** — VNPay/MoMo/ZaloPay (long-term)
+### Technical Debt — DONE
+| # | Issue | Linear | Trạng thái |
+|---|-------|--------|-----------|
+| 4 | `images.unoptimized: true` | LEO-420 | ✅ Đã điều tra & xử lý |
+| 6 | Admin sidebar thiếu entries | LEO-422 | ✅ Đã thêm Banners/Đối tác/Dự án |
+| 8 | Dual order number format | LEO-421 | ✅ Đã chuẩn hóa `DPG-YYYYMMDD-XXXXXX` |
+
+## 🔴 Known Issues còn mở (đã đưa vào Linear)
+
+| # | Issue | Linear / Project |
+|---|-------|------------------|
+| 5 | Revenue chart chưa dùng | LEO-432 · P3 (Admin) |
+| 7 | Dead links sidebar + CRUD Banners/Partners/Projects | LEO-434 · P3 (Admin) |
+| — | Lighthouse mobile chưa ≥90 | LEO-428 · P5 (Performance) |
+| — | JSON-LD / sitemap audit | LEO-429, LEO-430 · P2 (SEO) |
+| — | Catalog thiếu (Caesar/Kohler, Gạch, Nước) | LEO-426, LEO-427 · P4 |
+
+---
+
+## 📋 Backlog → đã cấu trúc thành Linear P0–P5
+
+Toàn bộ backlog cũ đã được sắp xếp vào Initiative/Project/Milestone trong Linear (xem `ROADMAP.md`):
+
+| Ưu tiên cũ | Nay nằm ở |
+|-----------|-----------|
+| Security assessment + fix | ✅ Done (Sprint 1) |
+| Variant system upgrade | ✅ Done (Sprint 1) |
+| Frontend redesign 4 trang | **P1** (LEO-441→445, 433) |
+| SEO optimization | **P2** (LEO-429, 430) + **P5** Lighthouse (LEO-428) |
+| Admin UX fixes | **P3** (LEO-434, 432) |
+| Data expansion (Caesar/Kohler/Gạch/Nước) | **P4 / M1** (LEO-426, 427) |
+| QR VietQR | **P4 / M2** (LEO-431) |
+| Thanh toán online (VNPay/MoMo) | Chưa lên lịch (post P4) |
 
 ---
 
@@ -122,7 +143,7 @@ Theo thứ tự ưu tiên PM đã xác nhận (27/05/2026):
 |------|---------|
 | `CLAUDE.md` | Tech conventions, workflow, rules — đọc mỗi session |
 | `PROJECT-STATUS.md` | File này — snapshot hiện tại |
-| `GEMINI.md` | Antigravity agent config |
+| `GEMINI.md` | ⚠️ Deprecated (config Antigravity cũ) — dev hiện tại là Codex, đọc `docs/AGENTS.md` |
 | `docs/HANDOVER.md` | Bàn giao chi tiết 27/05/2026 — kiến trúc, APIs, tất cả |
 | `docs/plans/` | Scope plans lịch sử |
 | `docs/prd/` | PRD documents |
@@ -130,4 +151,4 @@ Theo thứ tự ưu tiên PM đã xác nhận (27/05/2026):
 ---
 
 > **Tech Lead:** Cập nhật section "Đang phát triển" và "Known Issues" khi có thay đổi.
-> **Antigravity:** Đọc file này đầu mỗi session. Không tự sửa — báo Tech Lead nếu có gì sai.
+> **Codex (Dev):** Đọc file này đầu mỗi session. Không tự sửa — báo Tech Lead nếu có gì sai.
