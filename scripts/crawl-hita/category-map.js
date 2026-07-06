@@ -201,6 +201,13 @@ export const CATEGORY_MAP = {
   // ── Thanh Tay Vịn Gắn Bồn Tắm (MOEN) ────────────────────────────────────
   '/thanh-tay-vin-gan-thanh-bon-tam.html': { subcategory_id: 'phu-kien-phong-tam', product_type: 'thanh-tay-vin' },
 
+  // ── Gạch / Ecocarat / vật liệu ốp gạch (INAX lane trên Hita) ────────────
+  '/gach.html':                           { category_id: 'gach-op-lat', subcategory_id: 'gach-op-lat', product_type: null },
+  '/gach-ho-boi.html':                    { category_id: 'gach-op-lat', subcategory_id: 'gach-op-lat', product_type: null },
+  '/gach-op-tuong.html':                  { category_id: 'gach-op-lat', subcategory_id: 'gach-op-tuong', product_type: null },
+  '/ecocarat.html':                       { category_id: 'gach-op-lat', subcategory_id: 'gach-inax-ecocarat', product_type: null },
+  '/vat-lieu-op-gach.html':               { category_id: 'gach-op-lat', subcategory_id: 'gach-op-lat', product_type: null },
+
   // ── Thiết bị bếp (category riêng — subcategory_id = null, dùng bep_product_types) ──
   // category_id = 'thiet-bi-bep', subcategory_id = null (bep schema khác thiet-bi-ve-sinh)
   '/voi-rua-chen-bat-283.html':         { category_id: 'thiet-bi-bep', subcategory_id: null, product_type: 'voi-rua-chen' },
