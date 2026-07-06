@@ -41,6 +41,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return {
         title: `${subcategory.name} | ${CATEGORY_NAME}`,
         description: subcategory.description || `${subcategory.name} chính hãng tại Đông Phú Gia Đà Lạt. Đa dạng mẫu mã, giá tốt.`,
+        alternates: { canonical: `${BASE_PATH}/${sub}` },
+        openGraph: {
+            title: `${subcategory.name} | ${CATEGORY_NAME}`,
+            description: subcategory.description || `${subcategory.name} chính hãng tại Đông Phú Gia Đà Lạt. Đa dạng mẫu mã, giá tốt.`,
+            url: `${BASE_PATH}/${sub}`,
+        },
     }
 }
 
