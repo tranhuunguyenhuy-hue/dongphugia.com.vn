@@ -1,8 +1,7 @@
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { Suspense } from "react"
-import { getPublicProducts, getAvailableFiltersBySubcategory } from "@/lib/public-api-products"
-import prisma from "@/lib/prisma"
+import { getPublicProducts, getAvailableFiltersBySubcategory, getPublicListingLeaf, getPublicListingLeaves } from "@/lib/public-api-products"
 import { ProductCard } from "@/components/ui/product-card"
 import { ProductPagination } from "@/components/ui/product-pagination"
 import { AdvancedSidebarFilter } from "@/components/category/advanced-sidebar-filter"
@@ -19,11 +18,6 @@ const CATEGORY_SLUG = "gach-op-lat"
 const CATEGORY_NAME = "Gạch Ốp Lát"
 const BASE_PATH = "/gach-op-lat"
 const PAGE_SIZE = 24
-const LISTING_PRODUCT_WHERE = {
-    publication_status: "public",
-    pdp_visibility: "public",
-    listing_visibility: { in: ["default", "low_priority"] },
-}
 
 interface PageProps {
     params: Promise<{ sub: string }>
@@ -32,13 +26,17 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
     const { sub } = await params
-    const subcategory = await prisma.subcategories.findFirst({
-        where: { slug: sub, is_active: true },
-    })
+    const subcategory = await getPublicListingLeaf(CATEGORY_SLUG, sub)
     if (!subcategory) return { title: `${CATEGORY_NAME}` }
     return {
         title: `${subcategory.name} | ${CATEGORY_NAME}`,
         description: subcategory.description || `${subcategory.name} cao cấp chính hãng tại Đông Phú Gia Đà Lạt.`,
+        alternates: { canonical: `${BASE_PATH}/${sub}` },
+        openGraph: {
+            title: `${subcategory.name} | ${CATEGORY_NAME}`,
+            description: subcategory.description || `${subcategory.name} cao cấp chính hãng tại Đông Phú Gia Đà Lạt.`,
+            url: `${BASE_PATH}/${sub}`,
+        },
     }
 }
 
@@ -46,9 +44,7 @@ export default async function GachOpLatSubPage({ params, searchParams }: PagePro
     const { sub } = await params
     const sp = await searchParams
 
-    const subcategory = await prisma.subcategories.findFirst({
-        where: { slug: sub, is_active: true },
-    })
+    const subcategory = await getPublicListingLeaf(CATEGORY_SLUG, sub)
     if (!subcategory) notFound()
 
     const currentPage = Math.max(1, parseInt(sp.page || "1"))
@@ -76,19 +72,8 @@ export default async function GachOpLatSubPage({ params, searchParams }: PagePro
     else if (sortParam === 'newest') { sortBy = 'created_at'; sortDir = 'desc' }
 
     const [availableFilters, allSubcategories, { products, totalPages, total }] = await Promise.all([
-        getAvailableFiltersBySubcategory(sub),
-        prisma.subcategories.findMany({
-            where: { categories: { slug: CATEGORY_SLUG }, is_active: true },
-            orderBy: { sort_order: "asc" },
-            include: {
-                _count: {
-                    select: {
-                        products: { where: LISTING_PRODUCT_WHERE },
-                        secondary_product_subcategories: { where: { products: LISTING_PRODUCT_WHERE } },
-                    }
-                }
-            },
-        }),
+        getAvailableFiltersBySubcategory(sub, undefined, CATEGORY_SLUG),
+        getPublicListingLeaves(CATEGORY_SLUG),
         getPublicProducts({
             category_slug: CATEGORY_SLUG,
             subcategory_slugs: sub,
