@@ -41,7 +41,7 @@ function asString(value: unknown) {
 function isBlockingDescriptionIssue(issue: unknown) {
     const value = asString(issue)
     if (!value) return false
-    return !/^(rewrote_lazy_image|unwrapped_hita_link|needs_cdn_rewrite):/i.test(value)
+    return !/^(rewrote_lazy_image|unwrapped_hita_link|needs_cdn_rewrite|removed_sheets_metadata|removed_non_content_block):/i.test(value)
 }
 
 function decideImport(product: any) {

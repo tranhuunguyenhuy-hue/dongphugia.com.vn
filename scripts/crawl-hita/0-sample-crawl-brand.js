@@ -153,7 +153,7 @@ const PRODUCT_TYPE_RULES = [
   { subcategory_id: 'voi-chau', product_type: 'voi-cam-ung', regex: /cảm ứng/i },
   { subcategory_id: 'voi-chau', product_type: 'voi-gan-tuong', regex: /gắn tường/i },
   { subcategory_id: 'voi-chau', product_type: 'voi-nong-lanh', regex: /(nóng lạnh|nong lanh)/i },
-  { subcategory_id: 'voi-chau', product_type: 'voi-lanh', regex: /vòi chậu lavabo/i },
+  { subcategory_id: 'voi-chau', product_type: 'voi-lanh', regex: /(vòi chậu lavabo|vòi chậu|voi chau|voi lavabo)/i },
   { subcategory_id: 'voi-chau', product_type: 'voi-lanh', regex: /(nước lạnh|lạnh)/i },
   { subcategory_id: 'bon-tam', product_type: 'bon-tam-massage', regex: /massage/i },
   { subcategory_id: 'bon-tam', product_type: 'bon-tam-chan-yem', regex: /(chân yếm|có yếm|yếm)/i },
