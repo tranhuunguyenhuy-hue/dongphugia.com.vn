@@ -917,9 +917,18 @@ async function crawlProduct(context, candidate) {
         ];
 
         const candidates = selectors
-          .map((selector) => document.querySelector(selector))
-          .filter(Boolean)
-          .filter((node) => ownText(node).length > 120 || node.querySelector('img, h2, h3, table, ul, ol'));
+          .map((selector) => ({ selector, node: document.querySelector(selector) }))
+          .filter((entry) => entry.node)
+          .filter(({ selector, node }) => {
+            const textLength = ownText(node).length;
+            const hasRichContent = Boolean(node.querySelector('img, h2, h3, table, ul, ol, p'));
+            const isDedicatedDescriptionSelector = /^#description-content|^\.description-collapse/.test(selector);
+            if (isDedicatedDescriptionSelector) {
+              return textLength > 0 || hasRichContent;
+            }
+            return textLength > 120 || hasRichContent;
+          })
+          .map((entry) => entry.node);
 
         if (candidates.length === 0) return null;
         return candidates.sort((a, b) => ownText(b).length - ownText(a).length)[0];
@@ -938,7 +947,10 @@ async function crawlProduct(context, candidate) {
 
         for (const selector of selectors) {
           const candidate = root.matches?.(selector) ? root : root.querySelector(selector);
-          if (candidate && (ownText(candidate).length > 120 || candidate.querySelector('img, h2, h3, table, ul, ol'))) {
+          const textLength = candidate ? ownText(candidate).length : 0;
+          const hasRichContent = candidate ? Boolean(candidate.querySelector('img, h2, h3, table, ul, ol, p')) : false;
+          const isDedicatedDescriptionSelector = /^#description-content|^\.description-collapse/.test(selector);
+          if (candidate && ((isDedicatedDescriptionSelector && (textLength > 0 || hasRichContent)) || textLength > 120 || hasRichContent)) {
             return candidate;
           }
         }
