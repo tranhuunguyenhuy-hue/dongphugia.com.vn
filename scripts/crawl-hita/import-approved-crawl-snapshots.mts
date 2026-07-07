@@ -352,6 +352,47 @@ function cloneProductPayload(product: Record<string, unknown>) {
     return JSON.parse(JSON.stringify(product || {}))
 }
 
+function isEmptyPayloadValue(value: unknown) {
+    if (value === null || value === undefined) return true
+    if (typeof value === 'string') return value.trim().length === 0
+    if (Array.isArray(value)) return value.length === 0
+    return false
+}
+
+function shouldPreferNormalizedArray(importValue: unknown, normalizedValue: unknown, marker: string) {
+    if (!Array.isArray(normalizedValue) || normalizedValue.length === 0) return false
+    if (!Array.isArray(importValue) || importValue.length === 0) return true
+    return importValue.some(item => toDisplayValue(item) === marker) && !normalizedValue.some(item => toDisplayValue(item) === marker)
+}
+
+function effectiveDecisionPayload(decision: { import_payload: unknown; crawl_product_snapshots: { normalized_payload: unknown } }) {
+    const normalized = cloneProductPayload(asObject(decision.crawl_product_snapshots.normalized_payload))
+    const staged = cloneProductPayload(asObject(decision.import_payload))
+    if (Object.keys(staged).length === 0) return normalized
+
+    const merged: Record<string, unknown> = {
+        ...normalized,
+        ...staged,
+    }
+
+    for (const field of ['product_type', 'product_sub_type', 'description', 'description_raw_html', 'variant_type', 'variant_label']) {
+        if (!isEmptyPayloadValue(normalized[field]) && isEmptyPayloadValue(staged[field])) {
+            merged[field] = normalized[field]
+        }
+    }
+
+    if (shouldPreferNormalizedArray(staged.description_clean_issues, normalized.description_clean_issues, 'description_missing')) {
+        merged.description_clean_issues = normalized.description_clean_issues
+    }
+
+    if (shouldPreferNormalizedArray(staged.qa, normalized.qa, 'missing_description_clean_html')
+        || shouldPreferNormalizedArray(staged.qa, normalized.qa, 'missing_description_raw_html')) {
+        merged.qa = normalized.qa
+    }
+
+    return merged
+}
+
 function importSafeSlug(product: any, sourceUrl: string | null, hitaId: string | null) {
     const baseSlug = toDisplayValue(product.slug) || slugify(toDisplayValue(product.name) || toDisplayValue(product.sku))
     if (!baseSlug || !sourceUrl?.includes('?vid=')) return baseSlug
@@ -593,7 +634,7 @@ async function main() {
     })
     const selectedDecisions = onlySkus
         ? allDecisions.filter(decision => {
-            const payload = asObject(decision.import_payload || decision.crawl_product_snapshots.normalized_payload)
+            const payload = effectiveDecisionPayload(decision)
             return onlySkus.has(toDisplayValue(payload.sku))
         })
         : allDecisions
@@ -601,7 +642,7 @@ async function main() {
 
     if (onlySkus) {
         const found = new Set(selectedDecisions.map(decision => {
-            const payload = asObject(decision.import_payload || decision.crawl_product_snapshots.normalized_payload)
+            const payload = effectiveDecisionPayload(decision)
             return toDisplayValue(payload.sku)
         }))
         const missing = Array.from(onlySkus).filter(sku => !found.has(sku))
@@ -615,7 +656,7 @@ async function main() {
 
     const variantCounts = new Map<string, number>()
     for (const decision of selectedDecisions) {
-        const payload = applyImageManifest(sanitizeImportPayload(asObject(decision.import_payload || decision.crawl_product_snapshots.normalized_payload)), imageMap)
+        const payload = applyImageManifest(sanitizeImportPayload(effectiveDecisionPayload(decision)), imageMap)
         const group = toDisplayValue(payload.variant_group)
         if (group) variantCounts.set(group, (variantCounts.get(group) || 0) + 1)
     }
@@ -651,7 +692,7 @@ async function main() {
 
     await Promise.all(pendingDecisions.map(decision => limit(async () => {
         const product = applyImageManifest(
-            sanitizeImportPayload(asObject(decision.import_payload || decision.crawl_product_snapshots.normalized_payload)),
+            sanitizeImportPayload(effectiveDecisionPayload(decision)),
             imageMap,
         )
 
