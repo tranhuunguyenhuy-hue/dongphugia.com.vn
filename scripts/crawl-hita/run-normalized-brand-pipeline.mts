@@ -29,6 +29,7 @@ const normalizedDir = path.join(runDir, 'normalized')
 const preparedDir = path.join(runDir, 'prepared')
 const source = readArg('--source=', `hita-normalized-${brand}`.slice(0, 50))
 const concurrency = Math.max(1, Math.min(8, Number(readArg('--concurrency=', '2')) || 2))
+const uploadConcurrencyArg = Math.max(1, Number(readArg('--upload-concurrency=', '24')) || 24)
 
 type BrandConfig = {
     brandPageUrl: string
@@ -691,7 +692,7 @@ async function uploadManifest(products: any[]) {
     const existingImageMap = fs.existsSync(existingImageMapFile)
         ? new Map<string, string>(Object.entries(readJson<Record<string, string>>(existingImageMapFile)))
         : new Map<string, string>()
-    const uploadConcurrency = Math.max(concurrency, 24)
+    const uploadConcurrency = Math.max(uploadConcurrencyArg, 24)
     for (let index = 0; index < manifest.length; index += uploadConcurrency) {
         const batch = manifest.slice(index, index + uploadConcurrency)
         await Promise.all(batch.map(async entry => {
@@ -933,7 +934,7 @@ async function main() {
     writeJson(path.join(runDir, 'reconciliation.json'), reconciliation)
     writeJson(path.join(runDir, 'field-policy-flags.json'), fieldFlags)
 
-    if (stopAfter === 'prepare') {
+    if (stopAfter === 'prepare' || (!executeImport && !stopAfter)) {
         const summary = {
             brand,
             run_dir: runDir,
@@ -978,9 +979,69 @@ async function main() {
     }
 
     const stage = await stagePrepared()
+    if (stopAfter === 'stage') {
+        const summary = {
+            brand,
+            run_dir: runDir,
+            source,
+            discovery,
+            reconciliation,
+            products: prepared.length,
+            field_flags: fieldFlags,
+            stage,
+            manifest: { total: 0, verified: 0 },
+            import_result: null,
+            post_import: null,
+            stopped_after: 'stage',
+        }
+        writeJson(path.join(runDir, 'pipeline-summary.json'), summary)
+        fs.writeFileSync(path.join(runDir, 'pipeline-report.md'), buildMarkdownReport(summary))
+        console.log(JSON.stringify({
+            run_dir: runDir,
+            source,
+            crawl_run_id: stage.crawl_run_id,
+            stopped_after: 'stage',
+            stage,
+            manifest: { total: 0, verified: 0 },
+            imported: 0,
+            failed: 0,
+        }, null, 2))
+        return
+    }
+
     const manifestPayload = await uploadManifest(prepared)
     const manifest = manifestPayload.manifest || []
     const verified = manifest.filter((entry: any) => entry.upload?.verified).length
+    if (stopAfter === 'upload') {
+        const summary = {
+            brand,
+            run_dir: runDir,
+            source,
+            discovery,
+            reconciliation,
+            products: prepared.length,
+            field_flags: fieldFlags,
+            stage,
+            manifest: { total: manifest.length, verified },
+            import_result: null,
+            post_import: null,
+            stopped_after: 'upload',
+        }
+        writeJson(path.join(runDir, 'pipeline-summary.json'), summary)
+        fs.writeFileSync(path.join(runDir, 'pipeline-report.md'), buildMarkdownReport(summary))
+        console.log(JSON.stringify({
+            run_dir: runDir,
+            source,
+            crawl_run_id: stage.crawl_run_id,
+            stopped_after: 'upload',
+            stage,
+            manifest: { total: manifest.length, verified },
+            imported: 0,
+            failed: 0,
+        }, null, 2))
+        return
+    }
+
     const importResult = await importPrepared(stage.crawl_run_id, stage.summary.approved)
     const postImport = importResult ? await postImportCheck(prepared.map(product => product.sku), activeBefore) : null
 

@@ -257,32 +257,67 @@ async function resolveExistingProduct(product: any, brandId: number) {
     const sourceProductId = toDisplayValue(product.hita_product_id) || hitaProductId(sourceUrl)
     const sku = toDisplayValue(product.sku)
 
-    if (sourceProductId) {
-        const byHitaId = await prisma.products.findFirst({
-            where: { brand_id: brandId, hita_product_id: sourceProductId },
-            select: { id: true },
+    if (sourceUrl) {
+        const bySourceUrlCandidates = await prisma.products.findMany({
+            where: { brand_id: brandId, source_url: sourceUrl },
+            select: { id: true, sku: true, hita_product_id: true },
+            orderBy: { id: 'desc' },
         })
-        if (byHitaId) return byHitaId
+        if (bySourceUrlCandidates.length > 0) {
+            const exactSourceSku = sku
+                ? bySourceUrlCandidates.find(candidate => toDisplayValue(candidate.sku) === sku)
+                : null
+            if (exactSourceSku) return { id: exactSourceSku.id }
+
+            const exactSourceProductId = sourceProductId
+                ? bySourceUrlCandidates.find(candidate => toDisplayValue(candidate.hita_product_id) === sourceProductId)
+                : null
+            if (exactSourceProductId) return { id: exactSourceProductId.id }
+
+            return { id: bySourceUrlCandidates[0].id }
+        }
+
+        const bySourceMappingUrl = await prisma.product_source_mappings.findFirst({
+            where: { source, source_url: sourceUrl },
+            select: { product_id: true },
+        })
+        if (bySourceMappingUrl?.product_id) {
+            if (sku) {
+                const bySku = await prisma.products.findFirst({
+                    where: { brand_id: brandId, sku },
+                    select: { id: true },
+                })
+                if (bySku) return bySku
+            }
+            return { id: bySourceMappingUrl.product_id }
+        }
+    }
+
+    if (sourceProductId) {
+        const byHitaIdCandidates = await prisma.products.findMany({
+            where: { brand_id: brandId, hita_product_id: sourceProductId },
+            select: { id: true, source_url: true, sku: true },
+            orderBy: { id: 'desc' },
+        })
+        if (byHitaIdCandidates.length > 0) {
+            const exactSourceUrl = sourceUrl
+                ? byHitaIdCandidates.find(candidate => normalizeUrl(toDisplayValue(candidate.source_url)) === sourceUrl)
+                : null
+            if (exactSourceUrl) return { id: exactSourceUrl.id }
+
+            const exactSku = sku
+                ? byHitaIdCandidates.find(candidate => toDisplayValue(candidate.sku) === sku)
+                : null
+            if (exactSku) return { id: exactSku.id }
+
+            return { id: byHitaIdCandidates[0].id }
+        }
 
         const bySourceMappingId = await prisma.product_source_mappings.findFirst({
             where: { source, source_product_id: sourceProductId },
             select: { product_id: true },
         })
         if (bySourceMappingId?.product_id) return { id: bySourceMappingId.product_id }
-    }
-
-    if (sourceUrl) {
-        const bySourceUrl = await prisma.products.findFirst({
-            where: { brand_id: brandId, source_url: sourceUrl },
-            select: { id: true },
-        })
-        if (bySourceUrl) return bySourceUrl
-
-        const bySourceMappingUrl = await prisma.product_source_mappings.findFirst({
-            where: { source, source_url: sourceUrl },
-            select: { product_id: true },
-        })
-        if (bySourceMappingUrl?.product_id) return { id: bySourceMappingUrl.product_id }
     }
 
     if (sku) {

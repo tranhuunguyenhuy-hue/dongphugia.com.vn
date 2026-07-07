@@ -10,6 +10,7 @@ const brand = readArg('--brand=', 'caesar')
 const source = readArg('--source=', 'hita-sample')
 const sampleDir = readArg('--sample-dir=', path.resolve(process.cwd(), `scripts/crawl-hita/output/${brand}/sample`))
 const execute = args.includes('--execute')
+const STAGE_BATCH_SIZE = 200
 
 function readArg(prefix: string, fallback: string) {
     const arg = args.find(item => item.startsWith(prefix))
@@ -25,6 +26,14 @@ function hashPayload(payload: unknown) {
     return crypto.createHash('sha256').update(JSON.stringify(payload)).digest('hex')
 }
 
+function chunk<T>(items: T[], size: number) {
+    const chunks: T[][] = []
+    for (let index = 0; index < items.length; index += size) {
+        chunks.push(items.slice(index, index + size))
+    }
+    return chunks
+}
+
 function asString(value: unknown) {
     return typeof value === 'string' ? value.trim() : ''
 }
@@ -38,6 +47,11 @@ function isBlockingDescriptionIssue(issue: unknown) {
 function decideImport(product: any) {
     const reasons: string[] = []
     const qaFlags = Array.isArray(product?.qa) ? product.qa.map(String) : []
+    const categorySlug = asString(product?.category_id)
+    const subcategorySlug = asString(product?.subcategory_id)
+    const allowsLeafOnlyTaxonomy =
+        categorySlug === 'gach-op-lat'
+        && ['gach-op-lat', 'gach-op-tuong', 'gach-inax-ecocarat'].includes(subcategorySlug)
 
     if (!asString(product?.sku)) reasons.push('missing_sku')
     if (!asString(product?.name)) reasons.push('missing_name')
@@ -55,7 +69,7 @@ function decideImport(product: any) {
     }
 
     const quarantine: string[] = []
-    if (!asString(product?.product_type)) quarantine.push('low_taxonomy_confidence')
+    if (!asString(product?.product_type) && !allowsLeafOnlyTaxonomy) quarantine.push('low_taxonomy_confidence')
     if (asString(product?.variant_group) && !asString(product?.variant_type)) quarantine.push('variant_group_missing_type')
     const blockingDescriptionIssues = Array.isArray(product?.description_clean_issues)
         ? product.description_clean_issues.filter(isBlockingDescriptionIssue)
@@ -121,13 +135,14 @@ async function main() {
         },
     })
 
-    for (const [index, product] of normalizedProducts.entries()) {
+    const stagedRows = normalizedProducts.map((product, index) => {
         const decision = decisions[index]
         const sourceUrl = asString(product.source_url)
         const rawPayload = rawByUrl.get(sourceUrl) || product
-
-        const snapshot = await prisma.crawl_product_snapshots.create({
-            data: {
+        return {
+            product,
+            decision,
+            snapshot: {
                 crawl_run_id: run.id,
                 source,
                 source_url: sourceUrl || `sample://${brand}/${product.sku || index}`,
@@ -141,19 +156,46 @@ async function main() {
                 skipped_reason: decision.decision === 'skipped' ? decision.reason : null,
                 qa_flags: decision.qaFlags,
             },
+        }
+    })
+
+    for (const batch of chunk(stagedRows, STAGE_BATCH_SIZE)) {
+        const snapshots = await prisma.crawl_product_snapshots.createManyAndReturn({
+            data: batch.map(item => item.snapshot),
+            select: {
+                id: true,
+                source_url: true,
+                sku: true,
+                content_hash: true,
+            },
         })
 
-        await prisma.crawl_import_decisions.create({
-            data: {
-                crawl_snapshot_id: snapshot.id,
-                decision: decision.decision,
-                reason: decision.reason,
-                taxonomy_confidence: product.product_type ? 'high' : 'low',
-                price_confidence: product.price || product.price_display ? 'medium' : 'low',
-                media_confidence: product.image_main_url ? 'high' : 'low',
-                specs_confidence: product.specs && Object.keys(product.specs).length > 0 ? 'medium' : 'low',
-                import_payload: product as Prisma.InputJsonValue,
-            },
+        const snapshotKeyToId = new Map(
+            snapshots.map(snapshot => [
+                `${snapshot.source_url}::${snapshot.sku || ''}::${snapshot.content_hash}`,
+                snapshot.id,
+            ]),
+        )
+
+        await prisma.crawl_import_decisions.createMany({
+            data: batch.map(item => {
+                const snapshotKey = `${item.snapshot.source_url}::${item.snapshot.sku || ''}::${item.snapshot.content_hash}`
+                const snapshotId = snapshotKeyToId.get(snapshotKey)
+                if (!snapshotId) {
+                    throw new Error(`Missing snapshot id for ${item.snapshot.source_url}`)
+                }
+
+                return {
+                    crawl_snapshot_id: snapshotId,
+                    decision: item.decision.decision,
+                    reason: item.decision.reason,
+                    taxonomy_confidence: item.product.product_type ? 'high' : 'low',
+                    price_confidence: item.product.price || item.product.price_display ? 'medium' : 'low',
+                    media_confidence: item.product.image_main_url ? 'high' : 'low',
+                    specs_confidence: item.product.specs && Object.keys(item.product.specs).length > 0 ? 'medium' : 'low',
+                    import_payload: item.product as Prisma.InputJsonValue,
+                }
+            }),
         })
     }
 

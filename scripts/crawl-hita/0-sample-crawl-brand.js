@@ -1246,6 +1246,14 @@ function inferTaxonomy(product) {
     else product_sub_type = 'linh-kien-bon-cau';
   }
 
+  if (
+    category_id === 'gach-op-lat' &&
+    !product_type &&
+    ['gach-op-lat', 'gach-op-tuong', 'gach-inax-ecocarat'].includes(subcategory_id)
+  ) {
+    product_type = subcategory_id;
+  }
+
   const confidence = (() => {
     if (!subcategory_id) return 'quarantine';
     if (breadcrumbResolved && rule) return 'high';
