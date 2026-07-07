@@ -1,9 +1,17 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { getCanonicalSiteUrl } from '@/lib/site';
 
 export const revalidate = 86400; // 24 hours
 
 const PAGE_SIZE = 2000;
+
+const sitemapEligibleProductWhere = {
+    publication_status: 'public',
+    pdp_visibility: 'public',
+    sitemap_include: true,
+    seo_indexing: { not: 'noindex' },
+} as const;
 
 export async function GET(
     request: Request,
@@ -16,11 +24,11 @@ export async function GET(
         return new NextResponse('Invalid sitemap ID', { status: 400 });
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://dongphugia.com.vn';
+    const baseUrl = getCanonicalSiteUrl();
     const skip = (id - 1) * PAGE_SIZE;
 
     const products = await prisma.products.findMany({
-        where: { is_active: true },
+        where: sitemapEligibleProductWhere,
         skip: skip,
         take: PAGE_SIZE,
         select: {
