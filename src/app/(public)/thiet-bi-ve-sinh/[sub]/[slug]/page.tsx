@@ -1,5 +1,5 @@
 import { Metadata } from "next"
-import { notFound } from "next/navigation"
+import { notFound, permanentRedirect } from "next/navigation"
 import Link from "next/link"
 import { getPublicProductBySlug, getPublicProducts, getProductComponents, getVariantSiblings } from "@/lib/public-api-products"
 import { ProductImageGallery } from "@/components/product/product-image-gallery"
@@ -27,14 +27,19 @@ const CATEGORY_SLUG = "thiet-bi-ve-sinh"
 const CATEGORY_NAME = "Thiết Bị Vệ Sinh"
 const BASE_PATH = "/thiet-bi-ve-sinh"
 
+function getProductSubSlug(product: { subcategories?: { slug: string } | null }) {
+    return product.subcategories?.slug ?? "all"
+}
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
     const { sub, slug } = await params
     const product = await getPublicProductBySlug(CATEGORY_SLUG, slug)
     if (!product) return { title: "Sản phẩm không tìm thấy" }
+    const productSub = getProductSubSlug(product)
     return {
         title: `${product.name} | ${CATEGORY_NAME}`,
         description: product.description?.slice(0, 160) || `${product.name} - Chính hãng tại Đông Phú Gia Đà Lạt.`,
-        alternates: { canonical: canonicalUrl(`${BASE_PATH}/${sub}/${slug}`) },
+        alternates: { canonical: canonicalUrl(`${BASE_PATH}/${productSub}/${slug}`) },
         openGraph: {
             title: `${product.name}`,
             description: product.description?.slice(0, 160) || `${product.name} - Chính hãng tại Đông Phú Gia Đà Lạt.`,
@@ -49,6 +54,10 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
     const { sub, slug } = await params
     const product = await getPublicProductBySlug(CATEGORY_SLUG, slug)
     if (!product) notFound()
+    const productSub = getProductSubSlug(product)
+    if (sub !== productSub) {
+        permanentRedirect(`${BASE_PATH}/${productSub}/${product.slug}`)
+    }
 
 
 
@@ -116,7 +125,7 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
                 ...(product.subcategories
                     ? [{ name: product.subcategories.name, url: `${BASE_PATH}/${product.subcategories.slug}` }]
                     : []),
-                { name: product.name, url: `${BASE_PATH}/${sub}/${product.slug}` },
+                { name: product.name, url: `${BASE_PATH}/${productSub}/${product.slug}` },
             ])} />
             {/* Breadcrumb */}
             <nav className="flex items-center gap-1.5 text-[11px] text-stone-500 mb-5 overflow-x-auto whitespace-nowrap scrollbar-hide" aria-label="Breadcrumb">
@@ -126,7 +135,7 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
                 {product.subcategories && (
                     <>
                         <span className="text-stone-300 shrink-0">/</span>
-                        <Link href={`${BASE_PATH}?sub=${sub}`} className="hover:text-stone-900 transition-colors shrink-0">
+                        <Link href={`${BASE_PATH}?sub=${productSub}`} className="hover:text-stone-900 transition-colors shrink-0">
                             {product.subcategories.name}
                         </Link>
                     </>
@@ -306,7 +315,7 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
                 category_slug: CATEGORY_SLUG,
                 is_featured: product.is_featured,
                 is_promotion: product.is_promotion,
-                url: `${BASE_PATH}/${sub}/${slug}`,
+                url: `${BASE_PATH}/${productSub}/${slug}`,
                 colors: product.colors,
                 brands: product.brands,
                 subcategories: product.subcategories,
