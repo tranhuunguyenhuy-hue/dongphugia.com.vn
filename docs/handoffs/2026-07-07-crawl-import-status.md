@@ -42,26 +42,25 @@ Verified from `crawl_runs` on 2026-07-07:
 | `esslinger` | 45 | completed | 291 | 291 | 291 | Imported |
 | `hansgrohe` | 43 | completed | 174 | 174 | 174 | Imported |
 | `moen` | 48 | completed | 287 | 286 | 286 | Imported, follow-up QA optional |
-| `american-standard` | 49 | completed | 846 | 846 | 0 | Restaged clean on 2026-07-06, ready for import lane |
-| `kanly` | 50 | completed | 762 | 718 | 0 | Restaged clean on 2026-07-06, ready for import lane |
-| `inax` | 47 | completed_with_import_errors | 2260 | 2046 | 1826 | Old execute run still not clean; rerun from fresh prepare |
+| `american-standard` | 49 | completed | 846 | 846 | 846 | Clean after importer identity retry (`WF-0916`) |
+| `kanly` | 50 | completed | 762 | 718 | 718 | Imported; residual `8 manual / 33 quarantine / 3 skipped` remain by policy |
+| `inax` | 54 | completed | 2260 | 2256 | 2256 | Fresh rerun imported clean; `4 quarantine`, `0 manual`, no active-count drift |
 
-## Latest validated INAX prepare
-
-Fresh read-only prepare was validated in the data-phase worktree on 2026-07-06:
+## Latest validated INAX rerun
+Fresh prepare + staged execute was completed on 2026-07-06/07 in the main repo:
 
 - run dir:
-  `/Users/m-ac/Projects/dongphugia-data-phase/scripts/crawl-hita/output/inax/pipeline-2026-07-06T14-49-58-730Z`
+  `/Users/m-ac/Projects/dongphugia/scripts/crawl-hita/output/inax/pipeline-2026-07-06T18-48-29-047Z`
 - summary:
   - `products=2260`
-  - `skipped=6`
-  - `sku_null=2`
-  - `image_null=4`
-  - `null-subcategory=0`
+  - `approved=2256`
+  - `quarantine=4`
+  - `needs_manual_review=0`
+  - `skipped=0`
 - key fix:
-  INAX tile and Ecocarat breadcrumbs now map correctly through `scripts/crawl-hita/category-map.js`
+  INAX tile and Ecocarat breadcrumbs now map correctly, staging is batched, and importer identity resolution now prefers the exact brand SKU row when a legacy source-url row conflicts.
 
-Reconciliation from that prepare:
+Reconciliation from that rerun:
 
 - `hita=2099`
 - `db=2226`
@@ -69,15 +68,28 @@ Reconciliation from that prepare:
 - `new=156`
 - `missing=110`
 
-That run is the current best evidence that INAX can be re-run cleanly with the normalized pipeline.
+Import follow-up from run `54`:
+
+- initial full execute imported `2250`, then 6 legacy/manual collisions were retried
+- final DB state:
+  - `2256 imported`
+  - `4 quarantine`
+  - `0 manual`
+  - `0 approved pending`
+- active-count guardrail stayed unchanged
+
+Residual QA note:
+
+- INAX still has `25` products whose `description` HTML contains legacy `hita.com.vn` URLs.
+- This is a description-only cleanup lane; main image and gallery replacement are not blocked by it.
 
 ## Immediate next steps
 
 If continuing the data phase, use this order:
 
-1. `inax` — run fresh full execute from the validated prepare path above
-2. `american-standard` — import from restaged run `49`
-3. `kanly` — import from restaged run `50`
+1. `kanly` — audit the remaining `8 manual / 33 quarantine / 3 skipped` and decide what can be promoted
+2. `inax` — inspect the `4 quarantine` cases and optionally clean the `25` description leftovers
+3. `moen` — QA-only follow-up if needed; not a blocker for the normalized pipeline
 
 ## Guardrails
 

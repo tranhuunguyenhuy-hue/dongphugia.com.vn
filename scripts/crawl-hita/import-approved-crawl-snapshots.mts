@@ -256,6 +256,12 @@ async function resolveExistingProduct(product: any, brandId: number) {
     const sourceUrl = normalizeUrl(toDisplayValue(product.source_url))
     const sourceProductId = toDisplayValue(product.hita_product_id) || hitaProductId(sourceUrl)
     const sku = toDisplayValue(product.sku)
+    const exactSkuRow = sku
+        ? await prisma.products.findFirst({
+            where: { brand_id: brandId, sku },
+            select: { id: true, source_url: true, hita_product_id: true },
+        })
+        : null
 
     if (sourceUrl) {
         const bySourceUrlCandidates = await prisma.products.findMany({
@@ -268,6 +274,16 @@ async function resolveExistingProduct(product: any, brandId: number) {
                 ? bySourceUrlCandidates.find(candidate => toDisplayValue(candidate.sku) === sku)
                 : null
             if (exactSourceSku) return { id: exactSourceSku.id }
+
+            if (exactSkuRow) {
+                const skuRowSourceUrl = normalizeUrl(toDisplayValue(exactSkuRow.source_url))
+                const skuRowHitaId = toDisplayValue(exactSkuRow.hita_product_id)
+                const sourceUrlConflict = Boolean(skuRowSourceUrl) && skuRowSourceUrl !== sourceUrl
+                const hitaIdConflict = Boolean(sourceProductId) && Boolean(skuRowHitaId) && skuRowHitaId !== sourceProductId
+                if (sourceUrlConflict || hitaIdConflict) {
+                    return { id: exactSkuRow.id }
+                }
+            }
 
             const exactSourceProductId = sourceProductId
                 ? bySourceUrlCandidates.find(candidate => toDisplayValue(candidate.hita_product_id) === sourceProductId)
@@ -321,11 +337,7 @@ async function resolveExistingProduct(product: any, brandId: number) {
     }
 
     if (sku) {
-        const bySku = await prisma.products.findFirst({
-            where: { brand_id: brandId, sku },
-            select: { id: true },
-        })
-        if (bySku) return bySku
+        if (exactSkuRow) return { id: exactSkuRow.id }
 
         return prisma.products.findFirst({
             where: { sku },
