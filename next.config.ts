@@ -64,10 +64,6 @@ const nextConfig: NextConfig = {
       {
         source: '/sitemap_product_:id.xml',
         destination: '/api/sitemap/:id',
-      },
-      {
-        source: '/sitemap_static.xml',
-        destination: '/api/sitemap_static',
       }
     ]
   },
