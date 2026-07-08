@@ -1,5 +1,5 @@
 import { Metadata } from "next"
-import { notFound } from "next/navigation"
+import { notFound, permanentRedirect } from "next/navigation"
 import Link from "next/link"
 import { getPdpDocuments, getPdpPackageItems, getPdpSpecifications, getPublicProductBySlug, getPublicProducts, getVariantSiblings } from "@/lib/public-api-products"
 import { VariantSelector } from "@/components/product/variant-selector"
@@ -56,6 +56,9 @@ export default async function ProductDetailPage({ params }: PageProps) {
     const canonicalBasePath = `/${canonicalCategorySlug}`
     const canonicalSubcategoryUrl = `${canonicalBasePath}/${canonicalSubcategorySlug}`
     const canonicalProductUrl = product.url || canonicalPath.urlPath || `${canonicalSubcategoryUrl}/${product.slug}`
+    if (canonicalCategorySlug !== CATEGORY_SLUG || sub !== canonicalSubcategorySlug) {
+        permanentRedirect(canonicalProductUrl)
+    }
 
     const additionalImages = product.product_images?.filter(i => i.image_url !== product.image_main_url) ?? []
     const features = product.product_feature_values ?? []
