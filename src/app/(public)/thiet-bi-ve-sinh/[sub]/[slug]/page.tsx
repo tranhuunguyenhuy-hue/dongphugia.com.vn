@@ -1,5 +1,5 @@
 import { Metadata } from "next"
-import { notFound } from "next/navigation"
+import { notFound, permanentRedirect } from "next/navigation"
 import Link from "next/link"
 import { getPdpDocuments, getPdpPackageItems, getPdpSpecifications, getPublicProductBySlug, getPublicProducts, getProductComponents, getVariantSelectionData, getVariantSiblings } from "@/lib/public-api-products"
 import { ProductImageGallery } from "@/components/product/product-image-gallery"
@@ -56,6 +56,9 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
     const canonicalBasePath = `/${canonicalCategorySlug}`
     const canonicalSubcategoryUrl = `${canonicalBasePath}/${canonicalSubcategorySlug}`
     const canonicalProductUrl = product.url || canonicalPath.urlPath || `${canonicalSubcategoryUrl}/${product.slug}`
+    if (canonicalCategorySlug !== CATEGORY_SLUG || sub !== canonicalSubcategorySlug) {
+        permanentRedirect(canonicalProductUrl)
+    }
 
     // Fetch product components + variant siblings in parallel
     const [productComponents, variantSiblings, variantSelectionData] = await Promise.all([
