@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { rateLimiter, getClientIp, RATE_LIMITS } from '@/lib/rate-limiter'
-import { buildPublicProductVisibilityWhere } from '@/lib/public-product-visibility'
+import { buildPublicSearchVisibilityWhere } from '@/lib/public-product-visibility'
 import { getCanonicalProductPath, primaryTaxonAssignmentSelect } from '@/lib/taxonomy-paths'
 
 export async function GET(request: NextRequest) {
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
 
         const whereClause = {
             AND: [
-                buildPublicProductVisibilityWhere(),
+                buildPublicSearchVisibilityWhere(),
                 {
                     OR: [
                         { name: { contains: q, mode: 'insensitive' as const } },

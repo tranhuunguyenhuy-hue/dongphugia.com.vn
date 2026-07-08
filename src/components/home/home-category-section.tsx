@@ -55,6 +55,7 @@ export function HomeCategorySection({
                             key={product.id}
                             product={product}
                             basePath={basePath}
+                            href={product.url}
                         />
                     ))}
                 </div>

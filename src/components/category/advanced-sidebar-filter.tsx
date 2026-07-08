@@ -4,6 +4,7 @@ import React, { useState, useCallback, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { ChevronDown } from 'lucide-react'
 import type { SpecFilterDef } from './subcategory-spec-filter'
+import type { ListingRuntimeConfig } from '@/lib/public-api-products'
 
 // --- Types ---
 type FilterOption = { name: string; slug: string; icon_name?: string | null; logo_url?: string | null }
@@ -299,12 +300,14 @@ function getSpecActiveValues(searchParams: URLSearchParams, key: string): string
 // ── Main Component ─────────────────────────────────────────────────────────────
 export function AdvancedSidebarFilter({
     availableFilters,
+    runtimeConfig,
     hideSubcategoryFilter = false,
     hideColorFilter = false,
     hideTitle = false,
     specFilters = [],
 }: {
     availableFilters: AvailableFiltersData
+    runtimeConfig?: ListingRuntimeConfig
     hideSubcategoryFilter?: boolean
     hideColorFilter?: boolean
     hideTitle?: boolean
@@ -320,12 +323,15 @@ export function AdvancedSidebarFilter({
         return val ? val.split(',') : []
     }
 
+    const effectiveHideColorFilter = runtimeConfig?.hideColorFilter ?? hideColorFilter
+    const effectiveEnableSpecFilters = runtimeConfig?.enableSpecFilters ?? true
+
     const subcategorySlugs = getArr('sub')
     const brandSlugs       = getArr('brand')
     const featureSlugs     = getArr('features')
     const materialSlugs    = getArr('material')
     const originSlugs      = getArr('origin')
-    const colorSlugs       = hideColorFilter ? [] : getArr('color')
+    const colorSlugs       = effectiveHideColorFilter ? [] : getArr('color')
 
     const priceParam = searchParams.get('price') ?? ''
     const [localPrice, setLocalPrice] = useState<[number, number]>(() =>
@@ -370,7 +376,9 @@ export function AdvancedSidebarFilter({
     const isFeatured = searchParams.get('is_featured') === 'true'
 
     // Spec filter counts
-    const specActiveCount = specFilters.reduce((acc, f) => acc + getSpecActiveValues(searchParams, f.key).length, 0)
+    const specActiveCount = effectiveEnableSpecFilters
+        ? specFilters.reduce((acc, f) => acc + getSpecActiveValues(searchParams, f.key).length, 0)
+        : 0
 
     const toggleSpec = useCallback((key: string, value: string) => {
         const params = new URLSearchParams(searchParams.toString())
@@ -398,7 +406,9 @@ export function AdvancedSidebarFilter({
         setLocalPrice([PRICE_MIN, PRICE_MAX])
         const params = new URLSearchParams(searchParams.toString())
         ;['brand', 'features', 'material', 'origin', 'color', 'price', 'is_promotion', 'is_featured', 'priceRange'].forEach(k => params.delete(k))
-        specFilters.forEach(f => params.delete(SF_PREFIX + f.key))
+        if (effectiveEnableSpecFilters) {
+            specFilters.forEach(f => params.delete(SF_PREFIX + f.key))
+        }
         params.set('page', '1')
         router.push(`${pathname}?${params.toString()}`, { scroll: false })
     }
@@ -465,7 +475,7 @@ export function AdvancedSidebarFilter({
                 )}
 
                 {/* ── Colors — swatch chips ── */}
-                {!hideColorFilter && availableFilters.colors && availableFilters.colors.length > 0 && (
+                {!effectiveHideColorFilter && availableFilters.colors && availableFilters.colors.length > 0 && (
                     <div className="space-y-2">
                         <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
                             Màu sắc
@@ -578,7 +588,7 @@ export function AdvancedSidebarFilter({
                 )}
 
                 {/* ── Spec filters — tag chips (skip brand/price — rendered separately above) ── */}
-                {specFilters
+                {effectiveEnableSpecFilters && specFilters
                     .filter(sf => sf.key !== 'brand' && sf.key !== 'price')
                     .map(sf => {
                         const activeVals = getSpecActiveValues(searchParams, sf.key)

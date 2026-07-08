@@ -252,6 +252,7 @@ export function HomeCategoryBlockAlt({ categoryData }: HomeCategoryBlockAltProps
                                     product={product}
                                     basePath={categoryData.basePath}
                                     patternSlug={product.subcategories?.slug ?? 'san-pham'}
+                                    href={product.url}
                                 />
                             </div>
                         ))}

@@ -1,0 +1,3879 @@
+[
+  {
+    "group": "bon-cau",
+    "label": "Bon cau",
+    "category_slug": "thiet-bi-ve-sinh",
+    "subcategory_slugs": [
+      "bon-cau"
+    ],
+    "totals": {
+      "total": 2872,
+      "public_pdp": 2872,
+      "listing_eligible": 2092,
+      "search_visible": 2872,
+      "search_only_gap": 780
+    },
+    "taxonomy": {
+      "subcategory_counts": [
+        {
+          "sub_slug": "bon-cau",
+          "count": 2872
+        }
+      ],
+      "product_types": [
+        {
+          "key": "phu-kien-bon-cau",
+          "count": 1470
+        },
+        {
+          "key": "bon-cau-1-khoi",
+          "count": 678
+        },
+        {
+          "key": "bon-cau-2-khoi",
+          "count": 503
+        },
+        {
+          "key": "bon-cau-treo-tuong",
+          "count": 172
+        },
+        {
+          "key": "bon-cau-dat-san",
+          "count": 38
+        },
+        {
+          "key": "bon-cau-xom",
+          "count": 11
+        }
+      ],
+      "product_sub_types": [
+        {
+          "key": "linh-kien-bon-cau",
+          "count": 1084
+        },
+        {
+          "key": "nap-dien-tu",
+          "count": 580
+        },
+        {
+          "key": "nap-dong-em",
+          "count": 539
+        },
+        {
+          "key": "nap-rua-co",
+          "count": 194
+        },
+        {
+          "key": "ket-nuoc",
+          "count": 107
+        },
+        {
+          "key": "van-xa-bon-cau",
+          "count": 91
+        },
+        {
+          "key": "(null)",
+          "count": 89
+        },
+        {
+          "key": "bo-xa-bon-cau",
+          "count": 88
+        },
+        {
+          "key": "nap-ket-nuoc",
+          "count": 56
+        },
+        {
+          "key": "than-su-cau",
+          "count": 28
+        },
+        {
+          "key": "than-ket-nuoc",
+          "count": 16
+        }
+      ],
+      "primary_taxon_coverage": [
+        {
+          "has_primary_taxon": "yes",
+          "count": 2092
+        },
+        {
+          "has_primary_taxon": "no",
+          "count": 780
+        }
+      ]
+    },
+    "relations": {
+      "brand": {
+        "count": 2872,
+        "pct": 100
+      },
+      "origin": {
+        "count": 0,
+        "pct": 0
+      },
+      "color": {
+        "count": 697,
+        "pct": 24.3
+      },
+      "material": {
+        "count": 0,
+        "pct": 0
+      }
+    },
+    "visibility": {
+      "listing_visibility": [
+        {
+          "key": "low_priority",
+          "count": 1308
+        },
+        {
+          "key": "default",
+          "count": 784
+        },
+        {
+          "key": "search_only",
+          "count": 780
+        }
+      ],
+      "search_visibility": [
+        {
+          "key": "visible",
+          "count": 2872
+        }
+      ],
+      "seo": [
+        {
+          "seo_indexing": "index",
+          "sitemap_include": true,
+          "count": 2188
+        },
+        {
+          "seo_indexing": "canonical_to_parent",
+          "sitemap_include": false,
+          "count": 684
+        }
+      ],
+      "stock_status": [
+        {
+          "key": "in_stock",
+          "count": 2453
+        },
+        {
+          "key": "discontinued",
+          "count": 419
+        }
+      ]
+    },
+    "attributes": {
+      "filter_definitions": [
+        {
+          "filter_key": "brand",
+          "filter_label": "Thương hiệu",
+          "filter_type": "checkbox_searchable",
+          "sub_slug": "sen-tam"
+        },
+        {
+          "filter_key": "brand",
+          "filter_label": "Thương hiệu",
+          "filter_type": "checkbox_searchable",
+          "sub_slug": "bon-tieu"
+        },
+        {
+          "filter_key": "brand",
+          "filter_label": "Thương hiệu",
+          "filter_type": "checkbox_searchable",
+          "sub_slug": "bon-cau"
+        },
+        {
+          "filter_key": "brand",
+          "filter_label": "Thương hiệu",
+          "filter_type": "checkbox_searchable",
+          "sub_slug": "voi-nuoc"
+        },
+        {
+          "filter_key": "brand",
+          "filter_label": "Thương hiệu",
+          "filter_type": "checkbox_searchable",
+          "sub_slug": "nap-bon-cau"
+        },
+        {
+          "filter_key": "brand",
+          "filter_label": "Thương hiệu",
+          "filter_type": "checkbox_searchable",
+          "sub_slug": "lavabo"
+        },
+        {
+          "filter_key": "brand",
+          "filter_label": "Thương hiệu",
+          "filter_type": "checkbox_searchable",
+          "sub_slug": "phu-kien-phong-tam"
+        },
+        {
+          "filter_key": "brand",
+          "filter_label": "Thương hiệu",
+          "filter_type": "checkbox_searchable",
+          "sub_slug": "bon-tam"
+        },
+        {
+          "filter_key": "brand",
+          "filter_label": "Thương hiệu",
+          "filter_type": "checkbox_searchable",
+          "sub_slug": "voi-chau"
+        },
+        {
+          "filter_key": "price",
+          "filter_label": "Khoảng giá",
+          "filter_type": "range_preset",
+          "sub_slug": "bon-cau"
+        },
+        {
+          "filter_key": "price",
+          "filter_label": "Khoảng giá",
+          "filter_type": "range_preset",
+          "sub_slug": "lavabo"
+        },
+        {
+          "filter_key": "price",
+          "filter_label": "Khoảng giá",
+          "filter_type": "range_preset",
+          "sub_slug": "sen-tam"
+        },
+        {
+          "filter_key": "price",
+          "filter_label": "Khoảng giá",
+          "filter_type": "range_preset",
+          "sub_slug": "bon-tam"
+        },
+        {
+          "filter_key": "price",
+          "filter_label": "Khoảng giá",
+          "filter_type": "range_preset",
+          "sub_slug": "phu-kien-phong-tam"
+        },
+        {
+          "filter_key": "price",
+          "filter_label": "Khoảng giá",
+          "filter_type": "range_preset",
+          "sub_slug": "voi-chau"
+        },
+        {
+          "filter_key": "price",
+          "filter_label": "Khoảng giá",
+          "filter_type": "range_preset",
+          "sub_slug": "nap-bon-cau"
+        },
+        {
+          "filter_key": "price",
+          "filter_label": "Khoảng giá",
+          "filter_type": "range_preset",
+          "sub_slug": "voi-nuoc"
+        },
+        {
+          "filter_key": "price",
+          "filter_label": "Khoảng giá",
+          "filter_type": "range_preset",
+          "sub_slug": "bon-tieu"
+        },
+        {
+          "filter_key": "Chất liệu",
+          "filter_label": "Chất liệu",
+          "filter_type": "checkbox",
+          "sub_slug": "nap-bon-cau"
+        },
+        {
+          "filter_key": "Chất liệu",
+          "filter_label": "Chất liệu",
+          "filter_type": "checkbox",
+          "sub_slug": "voi-nuoc"
+        },
+        {
+          "filter_key": "Chất liệu",
+          "filter_label": "Chất liệu",
+          "filter_type": "checkbox",
+          "sub_slug": "bon-tam"
+        },
+        {
+          "filter_key": "Chế độ",
+          "filter_label": "Chế độ nhiệt",
+          "filter_type": "checkbox",
+          "sub_slug": "sen-tam"
+        },
+        {
+          "filter_key": "Kiểu Dáng Gương",
+          "filter_label": "Kiểu dáng",
+          "filter_type": "checkbox",
+          "sub_slug": "phu-kien-phong-tam"
+        },
+        {
+          "filter_key": "Kiểu thoát",
+          "filter_label": "Kiểu thoát",
+          "filter_type": "checkbox",
+          "sub_slug": "bon-tieu"
+        },
+        {
+          "filter_key": "Kiểu xả",
+          "filter_label": "Kiểu xả",
+          "filter_type": "checkbox",
+          "sub_slug": "bon-cau"
+        },
+        {
+          "filter_key": "Loại chậu rửa mặt",
+          "filter_label": "Loại chậu",
+          "filter_type": "checkbox",
+          "sub_slug": "lavabo"
+        },
+        {
+          "filter_key": "Chế Độ Rửa Cơ",
+          "filter_label": "Chế độ rửa",
+          "filter_type": "checkbox",
+          "sub_slug": "nap-bon-cau"
+        },
+        {
+          "filter_key": "Điều khiển",
+          "filter_label": "Điều khiển",
+          "filter_type": "checkbox",
+          "sub_slug": "voi-nuoc"
+        },
+        {
+          "filter_key": "Hình dáng",
+          "filter_label": "Hình dáng",
+          "filter_type": "checkbox",
+          "sub_slug": "lavabo"
+        },
+        {
+          "filter_key": "Kiểu dáng",
+          "filter_label": "Kiểu dáng",
+          "filter_type": "checkbox",
+          "sub_slug": "sen-tam"
+        },
+        {
+          "filter_key": "Kiểu thoát",
+          "filter_label": "Kiểu thoát",
+          "filter_type": "checkbox",
+          "sub_slug": "bon-cau"
+        },
+        {
+          "filter_key": "Tính năng bồn tắm",
+          "filter_label": "Tính năng",
+          "filter_type": "checkbox",
+          "sub_slug": "bon-tam"
+        },
+        {
+          "filter_key": "Vị trí lắp",
+          "filter_label": "Vị trí lắp",
+          "filter_type": "checkbox",
+          "sub_slug": "bon-tieu"
+        },
+        {
+          "filter_key": "Chất liệu",
+          "filter_label": "Chất liệu",
+          "filter_type": "checkbox",
+          "sub_slug": "sen-tam"
+        },
+        {
+          "filter_key": "Chất liệu",
+          "filter_label": "Chất liệu",
+          "filter_type": "checkbox",
+          "sub_slug": "lavabo"
+        },
+        {
+          "filter_key": "Chiều Dài Bồn Tắm",
+          "filter_label": "Chiều dài",
+          "filter_type": "checkbox",
+          "sub_slug": "bon-tam"
+        },
+        {
+          "filter_key": "Loại nắp",
+          "filter_label": "Loại nắp",
+          "filter_type": "checkbox",
+          "sub_slug": "bon-cau"
+        },
+        {
+          "filter_key": "Lượng nước xả",
+          "filter_label": "Lượng nước xả",
+          "filter_type": "checkbox",
+          "sub_slug": "bon-tieu"
+        },
+        {
+          "filter_key": "Lớp mạ (màu)",
+          "filter_label": "Màu sắc",
+          "filter_type": "checkbox",
+          "sub_slug": "voi-nuoc"
+        },
+        {
+          "filter_key": "Lượng nước xả",
+          "filter_label": "Lượng nước xả",
+          "filter_type": "checkbox",
+          "sub_slug": "bon-cau"
+        },
+        {
+          "filter_key": "Màu sắc",
+          "filter_label": "Màu sắc",
+          "filter_type": "checkbox",
+          "sub_slug": "bon-tam"
+        },
+        {
+          "filter_key": "Thiết kế",
+          "filter_label": "Thiết kế",
+          "filter_type": "checkbox",
+          "sub_slug": "sen-tam"
+        },
+        {
+          "filter_key": "Lỗ xả tràn nước",
+          "filter_label": "Xả tràn",
+          "filter_type": "checkbox",
+          "sub_slug": "lavabo"
+        },
+        {
+          "filter_key": "Loại thân cầu",
+          "filter_label": "Loại thân cầu",
+          "filter_type": "checkbox",
+          "sub_slug": "bon-cau"
+        },
+        {
+          "filter_key": "Màu sắc",
+          "filter_label": "Màu sắc",
+          "filter_type": "checkbox",
+          "sub_slug": "bon-cau"
+        }
+      ],
+      "spec_candidates": [
+        {
+          "label": "Bảo hành",
+          "coverage_count": 2872,
+          "coverage_pct": 100,
+          "distinct_values": 6,
+          "recommendation": "filter-ready"
+        },
+        {
+          "label": "Nơi sản xuất",
+          "coverage_count": 2872,
+          "coverage_pct": 100,
+          "distinct_values": 66,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Thương hiệu",
+          "coverage_count": 2872,
+          "coverage_pct": 100,
+          "distinct_values": 14,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Loại thân cầu",
+          "coverage_count": 1385,
+          "coverage_pct": 48.2,
+          "distinct_values": 10,
+          "recommendation": "filter-ready"
+        },
+        {
+          "label": "Loại nắp",
+          "coverage_count": 1374,
+          "coverage_pct": 47.8,
+          "distinct_values": 5,
+          "recommendation": "filter-ready"
+        },
+        {
+          "label": "Kiểu thoát",
+          "coverage_count": 1303,
+          "coverage_pct": 45.4,
+          "distinct_values": 3,
+          "recommendation": "filter-ready"
+        },
+        {
+          "label": "Lượng nước xả",
+          "coverage_count": 1302,
+          "coverage_pct": 45.3,
+          "distinct_values": 36,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Kiểu xả",
+          "coverage_count": 1299,
+          "coverage_pct": 45.2,
+          "distinct_values": 6,
+          "recommendation": "filter-ready"
+        },
+        {
+          "label": "Kích thước (DxRxC)",
+          "coverage_count": 1297,
+          "coverage_pct": 45.2,
+          "distinct_values": 449,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Màu sắc",
+          "coverage_count": 1297,
+          "coverage_pct": 45.2,
+          "distinct_values": 6,
+          "recommendation": "filter-ready"
+        },
+        {
+          "label": "Hệ thống xả",
+          "coverage_count": 1291,
+          "coverage_pct": 45,
+          "distinct_values": 4,
+          "recommendation": "filter-ready"
+        },
+        {
+          "label": "Tâm xả",
+          "coverage_count": 1282,
+          "coverage_pct": 44.6,
+          "distinct_values": 40,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Thiết kế",
+          "coverage_count": 1117,
+          "coverage_pct": 38.9,
+          "distinct_values": 3,
+          "recommendation": "filter-ready"
+        },
+        {
+          "label": "Thân cầu",
+          "coverage_count": 1110,
+          "coverage_pct": 38.6,
+          "distinct_values": 333,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Mẫu nắp",
+          "coverage_count": 1069,
+          "coverage_pct": 37.2,
+          "distinct_values": 205,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Công nghệ",
+          "coverage_count": 1024,
+          "coverage_pct": 35.7,
+          "distinct_values": 144,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Thân kín",
+          "coverage_count": 713,
+          "coverage_pct": 24.8,
+          "distinct_values": 1,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Tính năng nắp rửa",
+          "coverage_count": 639,
+          "coverage_pct": 22.2,
+          "distinct_values": 157,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Bảng điều khiển",
+          "coverage_count": 615,
+          "coverage_pct": 21.4,
+          "distinct_values": 2,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Vành",
+          "coverage_count": 538,
+          "coverage_pct": 18.7,
+          "distinct_values": 1,
+          "recommendation": "not-ready"
+        }
+      ],
+      "filter_ready_specs": [
+        {
+          "label": "Bảo hành",
+          "coverage_count": 2872,
+          "coverage_pct": 100,
+          "distinct_values": 6,
+          "recommendation": "filter-ready"
+        },
+        {
+          "label": "Loại thân cầu",
+          "coverage_count": 1385,
+          "coverage_pct": 48.2,
+          "distinct_values": 10,
+          "recommendation": "filter-ready"
+        },
+        {
+          "label": "Loại nắp",
+          "coverage_count": 1374,
+          "coverage_pct": 47.8,
+          "distinct_values": 5,
+          "recommendation": "filter-ready"
+        },
+        {
+          "label": "Kiểu thoát",
+          "coverage_count": 1303,
+          "coverage_pct": 45.4,
+          "distinct_values": 3,
+          "recommendation": "filter-ready"
+        },
+        {
+          "label": "Kiểu xả",
+          "coverage_count": 1299,
+          "coverage_pct": 45.2,
+          "distinct_values": 6,
+          "recommendation": "filter-ready"
+        },
+        {
+          "label": "Màu sắc",
+          "coverage_count": 1297,
+          "coverage_pct": 45.2,
+          "distinct_values": 6,
+          "recommendation": "filter-ready"
+        },
+        {
+          "label": "Hệ thống xả",
+          "coverage_count": 1291,
+          "coverage_pct": 45,
+          "distinct_values": 4,
+          "recommendation": "filter-ready"
+        },
+        {
+          "label": "Thiết kế",
+          "coverage_count": 1117,
+          "coverage_pct": 38.9,
+          "distinct_values": 3,
+          "recommendation": "filter-ready"
+        }
+      ],
+      "pdp_only_specs": [
+        {
+          "label": "Nơi sản xuất",
+          "coverage_count": 2872,
+          "coverage_pct": 100,
+          "distinct_values": 66,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Thương hiệu",
+          "coverage_count": 2872,
+          "coverage_pct": 100,
+          "distinct_values": 14,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Lượng nước xả",
+          "coverage_count": 1302,
+          "coverage_pct": 45.3,
+          "distinct_values": 36,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Kích thước (DxRxC)",
+          "coverage_count": 1297,
+          "coverage_pct": 45.2,
+          "distinct_values": 449,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Tâm xả",
+          "coverage_count": 1282,
+          "coverage_pct": 44.6,
+          "distinct_values": 40,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Thân cầu",
+          "coverage_count": 1110,
+          "coverage_pct": 38.6,
+          "distinct_values": 333,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Mẫu nắp",
+          "coverage_count": 1069,
+          "coverage_pct": 37.2,
+          "distinct_values": 205,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Công nghệ",
+          "coverage_count": 1024,
+          "coverage_pct": 35.7,
+          "distinct_values": 144,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Thân kín",
+          "coverage_count": 713,
+          "coverage_pct": 24.8,
+          "distinct_values": 1,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Tính năng nắp rửa",
+          "coverage_count": 639,
+          "coverage_pct": 22.2,
+          "distinct_values": 157,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Bảng điều khiển",
+          "coverage_count": 615,
+          "coverage_pct": 21.4,
+          "distinct_values": 2,
+          "recommendation": "pdp-only"
+        }
+      ],
+      "not_ready_specs": [
+        {
+          "label": "Vành",
+          "coverage_count": 538,
+          "coverage_pct": 18.7,
+          "distinct_values": 1,
+          "recommendation": "not-ready"
+        }
+      ],
+      "top_brands": [
+        {
+          "brand": "TOTO",
+          "count": 984
+        },
+        {
+          "brand": "INAX",
+          "count": 861
+        },
+        {
+          "brand": "CAESAR",
+          "count": 290
+        },
+        {
+          "brand": "COTTO",
+          "count": 224
+        },
+        {
+          "brand": "American Standard",
+          "count": 191
+        },
+        {
+          "brand": "GROHE",
+          "count": 135
+        },
+        {
+          "brand": "Viglacera",
+          "count": 85
+        },
+        {
+          "brand": "ATMOR",
+          "count": 49
+        },
+        {
+          "brand": "Thien Thanh",
+          "count": 28
+        },
+        {
+          "brand": "MOEN",
+          "count": 13
+        },
+        {
+          "brand": "Duravit",
+          "count": 6
+        },
+        {
+          "brand": "Esslinger",
+          "count": 3
+        }
+      ]
+    },
+    "use_case_layer": {
+      "modeled": false,
+      "note": "Chua co field use-case/intent normalized trong DB hien tai. Can them o phase sau neu muon dung quick chips va merchandising theo nhu cau."
+    },
+    "recommendation": {
+      "status": "ready-for-backend-refactor",
+      "note": "Du du lieu nen de bat dau refactor helper listing/search/filter."
+    }
+  },
+  {
+    "group": "lavabo",
+    "label": "Lavabo",
+    "category_slug": "thiet-bi-ve-sinh",
+    "subcategory_slugs": [
+      "lavabo"
+    ],
+    "totals": {
+      "total": 1464,
+      "public_pdp": 1464,
+      "listing_eligible": 1036,
+      "search_visible": 1464,
+      "search_only_gap": 428
+    },
+    "taxonomy": {
+      "subcategory_counts": [
+        {
+          "sub_slug": "lavabo",
+          "count": 1464
+        }
+      ],
+      "product_types": [
+        {
+          "key": "lavabo-dat-ban",
+          "count": 556
+        },
+        {
+          "key": "tu-chau",
+          "count": 349
+        },
+        {
+          "key": "lavabo-treo-tuong",
+          "count": 220
+        },
+        {
+          "key": "lavabo-am-ban",
+          "count": 127
+        },
+        {
+          "key": "lavabo-duong-vanh",
+          "count": 69
+        },
+        {
+          "key": "chan-chau-lavabo",
+          "count": 64
+        },
+        {
+          "key": "lavabo-ban-am",
+          "count": 43
+        },
+        {
+          "key": "phu-kien-lavabo",
+          "count": 36
+        }
+      ],
+      "product_sub_types": [
+        {
+          "key": "(null)",
+          "count": 1464
+        }
+      ],
+      "primary_taxon_coverage": [
+        {
+          "has_primary_taxon": "yes",
+          "count": 1000
+        },
+        {
+          "has_primary_taxon": "no",
+          "count": 464
+        }
+      ]
+    },
+    "relations": {
+      "brand": {
+        "count": 1464,
+        "pct": 100
+      },
+      "origin": {
+        "count": 0,
+        "pct": 0
+      },
+      "color": {
+        "count": 536,
+        "pct": 36.6
+      },
+      "material": {
+        "count": 0,
+        "pct": 0
+      }
+    },
+    "visibility": {
+      "listing_visibility": [
+        {
+          "key": "default",
+          "count": 1018
+        },
+        {
+          "key": "search_only",
+          "count": 428
+        },
+        {
+          "key": "low_priority",
+          "count": 18
+        }
+      ],
+      "search_visibility": [
+        {
+          "key": "visible",
+          "count": 1464
+        }
+      ],
+      "seo": [
+        {
+          "seo_indexing": "index",
+          "sitemap_include": true,
+          "count": 1147
+        },
+        {
+          "seo_indexing": "canonical_to_parent",
+          "sitemap_include": false,
+          "count": 317
+        }
+      ],
+      "stock_status": [
+        {
+          "key": "in_stock",
+          "count": 1303
+        },
+        {
+          "key": "discontinued",
+          "count": 161
+        }
+      ]
+    },
+    "attributes": {
+      "filter_definitions": [
+        {
+          "filter_key": "brand",
+          "filter_label": "Thương hiệu",
+          "filter_type": "checkbox_searchable",
+          "sub_slug": "bon-tieu"
+        },
+        {
+          "filter_key": "brand",
+          "filter_label": "Thương hiệu",
+          "filter_type": "checkbox_searchable",
+          "sub_slug": "sen-tam"
+        },
+        {
+          "filter_key": "brand",
+          "filter_label": "Thương hiệu",
+          "filter_type": "checkbox_searchable",
+          "sub_slug": "bon-tam"
+        },
+        {
+          "filter_key": "brand",
+          "filter_label": "Thương hiệu",
+          "filter_type": "checkbox_searchable",
+          "sub_slug": "phu-kien-phong-tam"
+        },
+        {
+          "filter_key": "brand",
+          "filter_label": "Thương hiệu",
+          "filter_type": "checkbox_searchable",
+          "sub_slug": "voi-chau"
+        },
+        {
+          "filter_key": "brand",
+          "filter_label": "Thương hiệu",
+          "filter_type": "checkbox_searchable",
+          "sub_slug": "bon-cau"
+        },
+        {
+          "filter_key": "brand",
+          "filter_label": "Thương hiệu",
+          "filter_type": "checkbox_searchable",
+          "sub_slug": "nap-bon-cau"
+        },
+        {
+          "filter_key": "brand",
+          "filter_label": "Thương hiệu",
+          "filter_type": "checkbox_searchable",
+          "sub_slug": "voi-nuoc"
+        },
+        {
+          "filter_key": "brand",
+          "filter_label": "Thương hiệu",
+          "filter_type": "checkbox_searchable",
+          "sub_slug": "lavabo"
+        },
+        {
+          "filter_key": "price",
+          "filter_label": "Khoảng giá",
+          "filter_type": "range_preset",
+          "sub_slug": "voi-chau"
+        },
+        {
+          "filter_key": "price",
+          "filter_label": "Khoảng giá",
+          "filter_type": "range_preset",
+          "sub_slug": "bon-cau"
+        },
+        {
+          "filter_key": "price",
+          "filter_label": "Khoảng giá",
+          "filter_type": "range_preset",
+          "sub_slug": "bon-tam"
+        },
+        {
+          "filter_key": "price",
+          "filter_label": "Khoảng giá",
+          "filter_type": "range_preset",
+          "sub_slug": "bon-tieu"
+        },
+        {
+          "filter_key": "price",
+          "filter_label": "Khoảng giá",
+          "filter_type": "range_preset",
+          "sub_slug": "phu-kien-phong-tam"
+        },
+        {
+          "filter_key": "price",
+          "filter_label": "Khoảng giá",
+          "filter_type": "range_preset",
+          "sub_slug": "voi-nuoc"
+        },
+        {
+          "filter_key": "price",
+          "filter_label": "Khoảng giá",
+          "filter_type": "range_preset",
+          "sub_slug": "lavabo"
+        },
+        {
+          "filter_key": "price",
+          "filter_label": "Khoảng giá",
+          "filter_type": "range_preset",
+          "sub_slug": "sen-tam"
+        },
+        {
+          "filter_key": "price",
+          "filter_label": "Khoảng giá",
+          "filter_type": "range_preset",
+          "sub_slug": "nap-bon-cau"
+        },
+        {
+          "filter_key": "Chất liệu",
+          "filter_label": "Chất liệu",
+          "filter_type": "checkbox",
+          "sub_slug": "bon-tam"
+        },
+        {
+          "filter_key": "Chất liệu",
+          "filter_label": "Chất liệu",
+          "filter_type": "checkbox",
+          "sub_slug": "nap-bon-cau"
+        },
+        {
+          "filter_key": "Chất liệu",
+          "filter_label": "Chất liệu",
+          "filter_type": "checkbox",
+          "sub_slug": "voi-nuoc"
+        },
+        {
+          "filter_key": "Chế độ",
+          "filter_label": "Chế độ nhiệt",
+          "filter_type": "checkbox",
+          "sub_slug": "sen-tam"
+        },
+        {
+          "filter_key": "Kiểu Dáng Gương",
+          "filter_label": "Kiểu dáng",
+          "filter_type": "checkbox",
+          "sub_slug": "phu-kien-phong-tam"
+        },
+        {
+          "filter_key": "Kiểu thoát",
+          "filter_label": "Kiểu thoát",
+          "filter_type": "checkbox",
+          "sub_slug": "bon-tieu"
+        },
+        {
+          "filter_key": "Kiểu xả",
+          "filter_label": "Kiểu xả",
+          "filter_type": "checkbox",
+          "sub_slug": "bon-cau"
+        },
+        {
+          "filter_key": "Loại chậu rửa mặt",
+          "filter_label": "Loại chậu",
+          "filter_type": "checkbox",
+          "sub_slug": "lavabo"
+        },
+        {
+          "filter_key": "Chế Độ Rửa Cơ",
+          "filter_label": "Chế độ rửa",
+          "filter_type": "checkbox",
+          "sub_slug": "nap-bon-cau"
+        },
+        {
+          "filter_key": "Điều khiển",
+          "filter_label": "Điều khiển",
+          "filter_type": "checkbox",
+          "sub_slug": "voi-nuoc"
+        },
+        {
+          "filter_key": "Hình dáng",
+          "filter_label": "Hình dáng",
+          "filter_type": "checkbox",
+          "sub_slug": "lavabo"
+        },
+        {
+          "filter_key": "Kiểu dáng",
+          "filter_label": "Kiểu dáng",
+          "filter_type": "checkbox",
+          "sub_slug": "sen-tam"
+        },
+        {
+          "filter_key": "Kiểu thoát",
+          "filter_label": "Kiểu thoát",
+          "filter_type": "checkbox",
+          "sub_slug": "bon-cau"
+        },
+        {
+          "filter_key": "Màu sắc",
+          "filter_label": "Màu sắc",
+          "filter_type": "checkbox",
+          "sub_slug": "lavabo"
+        },
+        {
+          "filter_key": "Tính năng bồn tắm",
+          "filter_label": "Tính năng",
+          "filter_type": "checkbox",
+          "sub_slug": "bon-tam"
+        },
+        {
+          "filter_key": "Vị trí lắp",
+          "filter_label": "Vị trí lắp",
+          "filter_type": "checkbox",
+          "sub_slug": "bon-tieu"
+        },
+        {
+          "filter_key": "Chất liệu",
+          "filter_label": "Chất liệu",
+          "filter_type": "checkbox",
+          "sub_slug": "lavabo"
+        },
+        {
+          "filter_key": "Chất liệu",
+          "filter_label": "Chất liệu",
+          "filter_type": "checkbox",
+          "sub_slug": "sen-tam"
+        },
+        {
+          "filter_key": "Chiều Dài Bồn Tắm",
+          "filter_label": "Chiều dài",
+          "filter_type": "checkbox",
+          "sub_slug": "bon-tam"
+        },
+        {
+          "filter_key": "Loại nắp",
+          "filter_label": "Loại nắp",
+          "filter_type": "checkbox",
+          "sub_slug": "bon-cau"
+        },
+        {
+          "filter_key": "Lượng nước xả",
+          "filter_label": "Lượng nước xả",
+          "filter_type": "checkbox",
+          "sub_slug": "bon-tieu"
+        },
+        {
+          "filter_key": "Lớp mạ (màu)",
+          "filter_label": "Màu sắc",
+          "filter_type": "checkbox",
+          "sub_slug": "voi-nuoc"
+        },
+        {
+          "filter_key": "Lượng nước xả",
+          "filter_label": "Lượng nước xả",
+          "filter_type": "checkbox",
+          "sub_slug": "bon-cau"
+        },
+        {
+          "filter_key": "Màu sắc",
+          "filter_label": "Màu sắc",
+          "filter_type": "checkbox",
+          "sub_slug": "bon-tam"
+        },
+        {
+          "filter_key": "Thiết kế",
+          "filter_label": "Thiết kế",
+          "filter_type": "checkbox",
+          "sub_slug": "sen-tam"
+        },
+        {
+          "filter_key": "Lỗ xả tràn nước",
+          "filter_label": "Xả tràn",
+          "filter_type": "checkbox",
+          "sub_slug": "lavabo"
+        },
+        {
+          "filter_key": "Loại thân cầu",
+          "filter_label": "Loại thân cầu",
+          "filter_type": "checkbox",
+          "sub_slug": "bon-cau"
+        },
+        {
+          "filter_key": "Nơi sản xuất",
+          "filter_label": "Xuất xứ",
+          "filter_type": "checkbox",
+          "sub_slug": "lavabo"
+        },
+        {
+          "filter_key": "Bộ sưu tập",
+          "filter_label": "Bộ sưu tập",
+          "filter_type": "checkbox",
+          "sub_slug": "lavabo"
+        },
+        {
+          "filter_key": "Màu sắc",
+          "filter_label": "Màu sắc",
+          "filter_type": "checkbox",
+          "sub_slug": "bon-cau"
+        },
+        {
+          "filter_key": "Công nghệ",
+          "filter_label": "Công nghệ",
+          "filter_type": "checkbox",
+          "sub_slug": "lavabo"
+        }
+      ],
+      "spec_candidates": [
+        {
+          "label": "Bảo hành",
+          "coverage_count": 1449,
+          "coverage_pct": 99,
+          "distinct_values": 8,
+          "recommendation": "filter-ready"
+        },
+        {
+          "label": "Nơi sản xuất",
+          "coverage_count": 1449,
+          "coverage_pct": 99,
+          "distinct_values": 16,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Thương hiệu",
+          "coverage_count": 1449,
+          "coverage_pct": 99,
+          "distinct_values": 13,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Chất liệu",
+          "coverage_count": 1332,
+          "coverage_pct": 91,
+          "distinct_values": 13,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Kích thước (DxRxC)",
+          "coverage_count": 1026,
+          "coverage_pct": 70.1,
+          "distinct_values": 572,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Màu sắc",
+          "coverage_count": 994,
+          "coverage_pct": 67.9,
+          "distinct_values": 20,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Hình dáng",
+          "coverage_count": 939,
+          "coverage_pct": 64.1,
+          "distinct_values": 10,
+          "recommendation": "filter-ready"
+        },
+        {
+          "label": "Lỗ bắt vòi",
+          "coverage_count": 939,
+          "coverage_pct": 64.1,
+          "distinct_values": 3,
+          "recommendation": "filter-ready"
+        },
+        {
+          "label": "Lỗ xả tràn nước",
+          "coverage_count": 939,
+          "coverage_pct": 64.1,
+          "distinct_values": 2,
+          "recommendation": "filter-ready"
+        },
+        {
+          "label": "Số lỗ bắt vòi",
+          "coverage_count": 399,
+          "coverage_pct": 27.3,
+          "distinct_values": 3,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Đường kính lỗ bắt vòi",
+          "coverage_count": 364,
+          "coverage_pct": 24.9,
+          "distinct_values": 1,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Vị trí lắp",
+          "coverage_count": 335,
+          "coverage_pct": 22.9,
+          "distinct_values": 2,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Size tủ chậu",
+          "coverage_count": 333,
+          "coverage_pct": 22.7,
+          "distinct_values": 9,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Loại chậu rửa mặt",
+          "coverage_count": 261,
+          "coverage_pct": 17.8,
+          "distinct_values": 4,
+          "recommendation": "not-ready"
+        },
+        {
+          "label": "Kích thước tủ cabinet",
+          "coverage_count": 237,
+          "coverage_pct": 16.2,
+          "distinct_values": 84,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Bộ sưu tập",
+          "coverage_count": 221,
+          "coverage_pct": 15.1,
+          "distinct_values": 88,
+          "recommendation": "not-ready"
+        },
+        {
+          "label": "Công nghệ",
+          "coverage_count": 199,
+          "coverage_pct": 13.6,
+          "distinct_values": 9,
+          "recommendation": "not-ready"
+        },
+        {
+          "label": "Kích thước lavabo",
+          "coverage_count": 197,
+          "coverage_pct": 13.5,
+          "distinct_values": 52,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Nguyên hộp",
+          "coverage_count": 26,
+          "coverage_pct": 1.8,
+          "distinct_values": 26,
+          "recommendation": "not-ready"
+        },
+        {
+          "label": "Kích thước tủ gương",
+          "coverage_count": 19,
+          "coverage_pct": 1.3,
+          "distinct_values": 13,
+          "recommendation": "pdp-only"
+        }
+      ],
+      "filter_ready_specs": [
+        {
+          "label": "Bảo hành",
+          "coverage_count": 1449,
+          "coverage_pct": 99,
+          "distinct_values": 8,
+          "recommendation": "filter-ready"
+        },
+        {
+          "label": "Hình dáng",
+          "coverage_count": 939,
+          "coverage_pct": 64.1,
+          "distinct_values": 10,
+          "recommendation": "filter-ready"
+        },
+        {
+          "label": "Lỗ bắt vòi",
+          "coverage_count": 939,
+          "coverage_pct": 64.1,
+          "distinct_values": 3,
+          "recommendation": "filter-ready"
+        },
+        {
+          "label": "Lỗ xả tràn nước",
+          "coverage_count": 939,
+          "coverage_pct": 64.1,
+          "distinct_values": 2,
+          "recommendation": "filter-ready"
+        }
+      ],
+      "pdp_only_specs": [
+        {
+          "label": "Nơi sản xuất",
+          "coverage_count": 1449,
+          "coverage_pct": 99,
+          "distinct_values": 16,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Thương hiệu",
+          "coverage_count": 1449,
+          "coverage_pct": 99,
+          "distinct_values": 13,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Chất liệu",
+          "coverage_count": 1332,
+          "coverage_pct": 91,
+          "distinct_values": 13,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Kích thước (DxRxC)",
+          "coverage_count": 1026,
+          "coverage_pct": 70.1,
+          "distinct_values": 572,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Màu sắc",
+          "coverage_count": 994,
+          "coverage_pct": 67.9,
+          "distinct_values": 20,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Số lỗ bắt vòi",
+          "coverage_count": 399,
+          "coverage_pct": 27.3,
+          "distinct_values": 3,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Đường kính lỗ bắt vòi",
+          "coverage_count": 364,
+          "coverage_pct": 24.9,
+          "distinct_values": 1,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Vị trí lắp",
+          "coverage_count": 335,
+          "coverage_pct": 22.9,
+          "distinct_values": 2,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Size tủ chậu",
+          "coverage_count": 333,
+          "coverage_pct": 22.7,
+          "distinct_values": 9,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Kích thước tủ cabinet",
+          "coverage_count": 237,
+          "coverage_pct": 16.2,
+          "distinct_values": 84,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Kích thước lavabo",
+          "coverage_count": 197,
+          "coverage_pct": 13.5,
+          "distinct_values": 52,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Kích thước tủ gương",
+          "coverage_count": 19,
+          "coverage_pct": 1.3,
+          "distinct_values": 13,
+          "recommendation": "pdp-only"
+        }
+      ],
+      "not_ready_specs": [
+        {
+          "label": "Loại chậu rửa mặt",
+          "coverage_count": 261,
+          "coverage_pct": 17.8,
+          "distinct_values": 4,
+          "recommendation": "not-ready"
+        },
+        {
+          "label": "Bộ sưu tập",
+          "coverage_count": 221,
+          "coverage_pct": 15.1,
+          "distinct_values": 88,
+          "recommendation": "not-ready"
+        },
+        {
+          "label": "Công nghệ",
+          "coverage_count": 199,
+          "coverage_pct": 13.6,
+          "distinct_values": 9,
+          "recommendation": "not-ready"
+        },
+        {
+          "label": "Nguyên hộp",
+          "coverage_count": 26,
+          "coverage_pct": 1.8,
+          "distinct_values": 26,
+          "recommendation": "not-ready"
+        }
+      ],
+      "top_brands": [
+        {
+          "brand": "CAESAR",
+          "count": 406
+        },
+        {
+          "brand": "Kanly",
+          "count": 278
+        },
+        {
+          "brand": "COTTO",
+          "count": 171
+        },
+        {
+          "brand": "Viglacera",
+          "count": 133
+        },
+        {
+          "brand": "TOTO",
+          "count": 114
+        },
+        {
+          "brand": "INAX",
+          "count": 89
+        },
+        {
+          "brand": "American Standard",
+          "count": 83
+        },
+        {
+          "brand": "GROHE",
+          "count": 69
+        },
+        {
+          "brand": "ATMOR",
+          "count": 65
+        },
+        {
+          "brand": "MOEN",
+          "count": 33
+        },
+        {
+          "brand": "Thien Thanh",
+          "count": 19
+        },
+        {
+          "brand": "Duravit",
+          "count": 4
+        }
+      ]
+    },
+    "use_case_layer": {
+      "modeled": false,
+      "note": "Chua co field use-case/intent normalized trong DB hien tai. Can them o phase sau neu muon dung quick chips va merchandising theo nhu cau."
+    },
+    "recommendation": {
+      "status": "ready-for-backend-refactor",
+      "note": "Du du lieu nen de bat dau refactor helper listing/search/filter."
+    }
+  },
+  {
+    "group": "sen-voi",
+    "label": "Sen voi",
+    "category_slug": "thiet-bi-ve-sinh",
+    "subcategory_slugs": [
+      "sen-tam",
+      "voi-chau"
+    ],
+    "totals": {
+      "total": 7991,
+      "public_pdp": 7991,
+      "listing_eligible": 5734,
+      "search_visible": 7991,
+      "search_only_gap": 2257
+    },
+    "taxonomy": {
+      "subcategory_counts": [
+        {
+          "sub_slug": "sen-tam",
+          "count": 4913
+        },
+        {
+          "sub_slug": "voi-chau",
+          "count": 3078
+        }
+      ],
+      "product_types": [
+        {
+          "key": "phu-kien-sen-voi",
+          "count": 2251
+        },
+        {
+          "key": "voi-nong-lanh",
+          "count": 1455
+        },
+        {
+          "key": "cu-sen",
+          "count": 1030
+        },
+        {
+          "key": "phu-kien-voi",
+          "count": 729
+        },
+        {
+          "key": "bo-sen-cay",
+          "count": 696
+        },
+        {
+          "key": "tay-sen",
+          "count": 517
+        },
+        {
+          "key": "voi-gan-tuong",
+          "count": 452
+        },
+        {
+          "key": "sen-am-tuong",
+          "count": 385
+        },
+        {
+          "key": "voi-lanh",
+          "count": 234
+        },
+        {
+          "key": "voi-cam-ung",
+          "count": 202
+        },
+        {
+          "key": "sen-tam-am-tuong",
+          "count": 29
+        },
+        {
+          "key": "(null)",
+          "count": 5
+        },
+        {
+          "key": "phu-kien",
+          "count": 2
+        },
+        {
+          "key": "bo-sen-tam",
+          "count": 1
+        },
+        {
+          "key": "phu-kien-sen-tam",
+          "count": 1
+        },
+        {
+          "key": "sen-dung",
+          "count": 1
+        },
+        {
+          "key": "voi-co-trung",
+          "count": 1
+        }
+      ],
+      "product_sub_types": [
+        {
+          "key": "(null)",
+          "count": 4736
+        },
+        {
+          "key": "linh-kien-sen",
+          "count": 995
+        },
+        {
+          "key": "bat-sen",
+          "count": 638
+        },
+        {
+          "key": "sen-nhiet-do",
+          "count": 448
+        },
+        {
+          "key": "sen-am-tuong",
+          "count": 294
+        },
+        {
+          "key": "voi-cam-ung",
+          "count": 226
+        },
+        {
+          "key": "van-dieu-chinh",
+          "count": 216
+        },
+        {
+          "key": "gac-sen-cut-noi",
+          "count": 127
+        },
+        {
+          "key": "day-sen",
+          "count": 123
+        },
+        {
+          "key": "tay-sen",
+          "count": 100
+        },
+        {
+          "key": "thanh-truot-sen",
+          "count": 54
+        },
+        {
+          "key": "1-duong",
+          "count": 34
+        }
+      ],
+      "primary_taxon_coverage": [
+        {
+          "has_primary_taxon": "yes",
+          "count": 5730
+        },
+        {
+          "has_primary_taxon": "no",
+          "count": 2261
+        }
+      ]
+    },
+    "relations": {
+      "brand": {
+        "count": 7991,
+        "pct": 100
+      },
+      "origin": {
+        "count": 0,
+        "pct": 0
+      },
+      "color": {
+        "count": 1259,
+        "pct": 15.8
+      },
+      "material": {
+        "count": 0,
+        "pct": 0
+      }
+    },
+    "visibility": {
+      "listing_visibility": [
+        {
+          "key": "default",
+          "count": 4343
+        },
+        {
+          "key": "search_only",
+          "count": 2257
+        },
+        {
+          "key": "low_priority",
+          "count": 1391
+        }
+      ],
+      "search_visibility": [
+        {
+          "key": "visible",
+          "count": 7991
+        }
+      ],
+      "seo": [
+        {
+          "seo_indexing": "index",
+          "sitemap_include": true,
+          "count": 5574
+        },
+        {
+          "seo_indexing": "canonical_to_parent",
+          "sitemap_include": false,
+          "count": 2417
+        }
+      ],
+      "stock_status": [
+        {
+          "key": "in_stock",
+          "count": 7377
+        },
+        {
+          "key": "discontinued",
+          "count": 614
+        }
+      ]
+    },
+    "attributes": {
+      "filter_definitions": [
+        {
+          "filter_key": "brand",
+          "filter_label": "Thương hiệu",
+          "filter_type": "checkbox_searchable",
+          "sub_slug": "sen-tam"
+        },
+        {
+          "filter_key": "brand",
+          "filter_label": "Thương hiệu",
+          "filter_type": "checkbox_searchable",
+          "sub_slug": "phu-kien-phong-tam"
+        },
+        {
+          "filter_key": "brand",
+          "filter_label": "Thương hiệu",
+          "filter_type": "checkbox_searchable",
+          "sub_slug": "bon-cau"
+        },
+        {
+          "filter_key": "brand",
+          "filter_label": "Thương hiệu",
+          "filter_type": "checkbox_searchable",
+          "sub_slug": "lavabo"
+        },
+        {
+          "filter_key": "brand",
+          "filter_label": "Thương hiệu",
+          "filter_type": "checkbox_searchable",
+          "sub_slug": "bon-tam"
+        },
+        {
+          "filter_key": "brand",
+          "filter_label": "Thương hiệu",
+          "filter_type": "checkbox_searchable",
+          "sub_slug": "voi-nuoc"
+        },
+        {
+          "filter_key": "brand",
+          "filter_label": "Thương hiệu",
+          "filter_type": "checkbox_searchable",
+          "sub_slug": "bon-tieu"
+        },
+        {
+          "filter_key": "brand",
+          "filter_label": "Thương hiệu",
+          "filter_type": "checkbox_searchable",
+          "sub_slug": "voi-chau"
+        },
+        {
+          "filter_key": "brand",
+          "filter_label": "Thương hiệu",
+          "filter_type": "checkbox_searchable",
+          "sub_slug": "nap-bon-cau"
+        },
+        {
+          "filter_key": "price",
+          "filter_label": "Khoảng giá",
+          "filter_type": "range_preset",
+          "sub_slug": "voi-nuoc"
+        },
+        {
+          "filter_key": "price",
+          "filter_label": "Khoảng giá",
+          "filter_type": "range_preset",
+          "sub_slug": "bon-tieu"
+        },
+        {
+          "filter_key": "price",
+          "filter_label": "Khoảng giá",
+          "filter_type": "range_preset",
+          "sub_slug": "sen-tam"
+        },
+        {
+          "filter_key": "price",
+          "filter_label": "Khoảng giá",
+          "filter_type": "range_preset",
+          "sub_slug": "bon-tam"
+        },
+        {
+          "filter_key": "price",
+          "filter_label": "Khoảng giá",
+          "filter_type": "range_preset",
+          "sub_slug": "phu-kien-phong-tam"
+        },
+        {
+          "filter_key": "price",
+          "filter_label": "Khoảng giá",
+          "filter_type": "range_preset",
+          "sub_slug": "voi-chau"
+        },
+        {
+          "filter_key": "price",
+          "filter_label": "Khoảng giá",
+          "filter_type": "range_preset",
+          "sub_slug": "bon-cau"
+        },
+        {
+          "filter_key": "price",
+          "filter_label": "Khoảng giá",
+          "filter_type": "range_preset",
+          "sub_slug": "lavabo"
+        },
+        {
+          "filter_key": "price",
+          "filter_label": "Khoảng giá",
+          "filter_type": "range_preset",
+          "sub_slug": "nap-bon-cau"
+        },
+        {
+          "filter_key": "Kích thước bát sen",
+          "filter_label": "Kích thước bát sen",
+          "filter_type": "checkbox",
+          "sub_slug": "sen-tam"
+        },
+        {
+          "filter_key": "Chất liệu",
+          "filter_label": "Chất liệu",
+          "filter_type": "checkbox",
+          "sub_slug": "nap-bon-cau"
+        },
+        {
+          "filter_key": "Chất liệu",
+          "filter_label": "Chất liệu",
+          "filter_type": "checkbox",
+          "sub_slug": "voi-nuoc"
+        },
+        {
+          "filter_key": "Chất liệu",
+          "filter_label": "Chất liệu",
+          "filter_type": "checkbox",
+          "sub_slug": "bon-tam"
+        },
+        {
+          "filter_key": "Chế độ",
+          "filter_label": "Chế độ nhiệt",
+          "filter_type": "checkbox",
+          "sub_slug": "sen-tam"
+        },
+        {
+          "filter_key": "Kiểu Dáng Gương",
+          "filter_label": "Kiểu dáng",
+          "filter_type": "checkbox",
+          "sub_slug": "phu-kien-phong-tam"
+        },
+        {
+          "filter_key": "Kiểu thoát",
+          "filter_label": "Kiểu thoát",
+          "filter_type": "checkbox",
+          "sub_slug": "bon-tieu"
+        },
+        {
+          "filter_key": "Kiểu xả",
+          "filter_label": "Kiểu xả",
+          "filter_type": "checkbox",
+          "sub_slug": "bon-cau"
+        },
+        {
+          "filter_key": "Loại chậu rửa mặt",
+          "filter_label": "Loại chậu",
+          "filter_type": "checkbox",
+          "sub_slug": "lavabo"
+        },
+        {
+          "filter_key": "Chế Độ Rửa Cơ",
+          "filter_label": "Chế độ rửa",
+          "filter_type": "checkbox",
+          "sub_slug": "nap-bon-cau"
+        },
+        {
+          "filter_key": "Điều khiển",
+          "filter_label": "Điều khiển",
+          "filter_type": "checkbox",
+          "sub_slug": "voi-nuoc"
+        },
+        {
+          "filter_key": "Hình dáng",
+          "filter_label": "Hình dáng",
+          "filter_type": "checkbox",
+          "sub_slug": "lavabo"
+        },
+        {
+          "filter_key": "Kiểu dáng",
+          "filter_label": "Kiểu dáng",
+          "filter_type": "checkbox",
+          "sub_slug": "sen-tam"
+        },
+        {
+          "filter_key": "Kiểu thoát",
+          "filter_label": "Kiểu thoát",
+          "filter_type": "checkbox",
+          "sub_slug": "bon-cau"
+        },
+        {
+          "filter_key": "Tính năng bồn tắm",
+          "filter_label": "Tính năng",
+          "filter_type": "checkbox",
+          "sub_slug": "bon-tam"
+        },
+        {
+          "filter_key": "Vị trí lắp",
+          "filter_label": "Vị trí lắp",
+          "filter_type": "checkbox",
+          "sub_slug": "bon-tieu"
+        },
+        {
+          "filter_key": "Chất liệu",
+          "filter_label": "Chất liệu",
+          "filter_type": "checkbox",
+          "sub_slug": "lavabo"
+        },
+        {
+          "filter_key": "Chất liệu",
+          "filter_label": "Chất liệu",
+          "filter_type": "checkbox",
+          "sub_slug": "sen-tam"
+        },
+        {
+          "filter_key": "Chiều Dài Bồn Tắm",
+          "filter_label": "Chiều dài",
+          "filter_type": "checkbox",
+          "sub_slug": "bon-tam"
+        },
+        {
+          "filter_key": "Loại nắp",
+          "filter_label": "Loại nắp",
+          "filter_type": "checkbox",
+          "sub_slug": "bon-cau"
+        },
+        {
+          "filter_key": "Lượng nước xả",
+          "filter_label": "Lượng nước xả",
+          "filter_type": "checkbox",
+          "sub_slug": "bon-tieu"
+        },
+        {
+          "filter_key": "Lớp mạ (màu)",
+          "filter_label": "Màu sắc",
+          "filter_type": "checkbox",
+          "sub_slug": "voi-nuoc"
+        },
+        {
+          "filter_key": "Lượng nước xả",
+          "filter_label": "Lượng nước xả",
+          "filter_type": "checkbox",
+          "sub_slug": "bon-cau"
+        },
+        {
+          "filter_key": "Màu sắc",
+          "filter_label": "Màu sắc",
+          "filter_type": "checkbox",
+          "sub_slug": "bon-tam"
+        },
+        {
+          "filter_key": "Thiết kế",
+          "filter_label": "Thiết kế",
+          "filter_type": "checkbox",
+          "sub_slug": "sen-tam"
+        },
+        {
+          "filter_key": "Lỗ xả tràn nước",
+          "filter_label": "Xả tràn",
+          "filter_type": "checkbox",
+          "sub_slug": "lavabo"
+        },
+        {
+          "filter_key": "Loại thân cầu",
+          "filter_label": "Loại thân cầu",
+          "filter_type": "checkbox",
+          "sub_slug": "bon-cau"
+        },
+        {
+          "filter_key": "Màu sắc",
+          "filter_label": "Màu sắc",
+          "filter_type": "checkbox",
+          "sub_slug": "bon-cau"
+        },
+        {
+          "filter_key": "Chế độ",
+          "filter_label": "Chế độ",
+          "filter_type": "checkbox",
+          "sub_slug": "voi-chau"
+        },
+        {
+          "filter_key": "Kiểu lắp vòi",
+          "filter_label": "Kiểu lắp",
+          "filter_type": "checkbox",
+          "sub_slug": "voi-chau"
+        },
+        {
+          "filter_key": "Điều khiển",
+          "filter_label": "Điều khiển",
+          "filter_type": "checkbox",
+          "sub_slug": "voi-chau"
+        },
+        {
+          "filter_key": "Nơi sản xuất",
+          "filter_label": "Xuất xứ",
+          "filter_type": "checkbox",
+          "sub_slug": "voi-chau"
+        }
+      ],
+      "spec_candidates": [
+        {
+          "label": "Bảo hành",
+          "coverage_count": 7990,
+          "coverage_pct": 100,
+          "distinct_values": 8,
+          "recommendation": "filter-ready"
+        },
+        {
+          "label": "Nơi sản xuất",
+          "coverage_count": 7990,
+          "coverage_pct": 100,
+          "distinct_values": 33,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Thương hiệu",
+          "coverage_count": 7990,
+          "coverage_pct": 100,
+          "distinct_values": 13,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Lớp mạ (màu)",
+          "coverage_count": 4142,
+          "coverage_pct": 51.8,
+          "distinct_values": 112,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Chế độ",
+          "coverage_count": 3851,
+          "coverage_pct": 48.2,
+          "distinct_values": 5,
+          "recommendation": "filter-ready"
+        },
+        {
+          "label": "Chất liệu",
+          "coverage_count": 3547,
+          "coverage_pct": 44.4,
+          "distinct_values": 11,
+          "recommendation": "filter-ready"
+        },
+        {
+          "label": "Điều khiển",
+          "coverage_count": 2655,
+          "coverage_pct": 33.2,
+          "distinct_values": 9,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Áp lực nước",
+          "coverage_count": 2611,
+          "coverage_pct": 32.7,
+          "distinct_values": 39,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Bộ sưu tập",
+          "coverage_count": 2281,
+          "coverage_pct": 28.5,
+          "distinct_values": 182,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Vị trí lắp vòi",
+          "coverage_count": 2220,
+          "coverage_pct": 27.8,
+          "distinct_values": 3,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Loại vòi",
+          "coverage_count": 2219,
+          "coverage_pct": 27.8,
+          "distinct_values": 3,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Kiểu lắp vòi",
+          "coverage_count": 2207,
+          "coverage_pct": 27.6,
+          "distinct_values": 3,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Độ cao vòi",
+          "coverage_count": 1790,
+          "coverage_pct": 22.4,
+          "distinct_values": 3,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Kích thước đầu vòi",
+          "coverage_count": 1507,
+          "coverage_pct": 18.9,
+          "distinct_values": 225,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Kiểu dáng",
+          "coverage_count": 1331,
+          "coverage_pct": 16.7,
+          "distinct_values": 5,
+          "recommendation": "not-ready"
+        },
+        {
+          "label": "Chế độ phun nước tay sen",
+          "coverage_count": 1049,
+          "coverage_pct": 13.1,
+          "distinct_values": 5,
+          "recommendation": "not-ready"
+        },
+        {
+          "label": "Chế độ phun nước bát sen",
+          "coverage_count": 841,
+          "coverage_pct": 10.5,
+          "distinct_values": 5,
+          "recommendation": "not-ready"
+        },
+        {
+          "label": "Kích thước bát sen",
+          "coverage_count": 809,
+          "coverage_pct": 10.1,
+          "distinct_values": 70,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Đường kính lỗ chờ",
+          "coverage_count": 726,
+          "coverage_pct": 9.1,
+          "distinct_values": 5,
+          "recommendation": "not-ready"
+        },
+        {
+          "label": "Kích thước lỗ chờ",
+          "coverage_count": 649,
+          "coverage_pct": 8.1,
+          "distinct_values": 18,
+          "recommendation": "pdp-only"
+        }
+      ],
+      "filter_ready_specs": [
+        {
+          "label": "Bảo hành",
+          "coverage_count": 7990,
+          "coverage_pct": 100,
+          "distinct_values": 8,
+          "recommendation": "filter-ready"
+        },
+        {
+          "label": "Chế độ",
+          "coverage_count": 3851,
+          "coverage_pct": 48.2,
+          "distinct_values": 5,
+          "recommendation": "filter-ready"
+        },
+        {
+          "label": "Chất liệu",
+          "coverage_count": 3547,
+          "coverage_pct": 44.4,
+          "distinct_values": 11,
+          "recommendation": "filter-ready"
+        }
+      ],
+      "pdp_only_specs": [
+        {
+          "label": "Nơi sản xuất",
+          "coverage_count": 7990,
+          "coverage_pct": 100,
+          "distinct_values": 33,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Thương hiệu",
+          "coverage_count": 7990,
+          "coverage_pct": 100,
+          "distinct_values": 13,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Lớp mạ (màu)",
+          "coverage_count": 4142,
+          "coverage_pct": 51.8,
+          "distinct_values": 112,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Điều khiển",
+          "coverage_count": 2655,
+          "coverage_pct": 33.2,
+          "distinct_values": 9,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Áp lực nước",
+          "coverage_count": 2611,
+          "coverage_pct": 32.7,
+          "distinct_values": 39,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Bộ sưu tập",
+          "coverage_count": 2281,
+          "coverage_pct": 28.5,
+          "distinct_values": 182,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Vị trí lắp vòi",
+          "coverage_count": 2220,
+          "coverage_pct": 27.8,
+          "distinct_values": 3,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Loại vòi",
+          "coverage_count": 2219,
+          "coverage_pct": 27.8,
+          "distinct_values": 3,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Kiểu lắp vòi",
+          "coverage_count": 2207,
+          "coverage_pct": 27.6,
+          "distinct_values": 3,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Độ cao vòi",
+          "coverage_count": 1790,
+          "coverage_pct": 22.4,
+          "distinct_values": 3,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Kích thước đầu vòi",
+          "coverage_count": 1507,
+          "coverage_pct": 18.9,
+          "distinct_values": 225,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Kích thước bát sen",
+          "coverage_count": 809,
+          "coverage_pct": 10.1,
+          "distinct_values": 70,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Kích thước lỗ chờ",
+          "coverage_count": 649,
+          "coverage_pct": 8.1,
+          "distinct_values": 18,
+          "recommendation": "pdp-only"
+        }
+      ],
+      "not_ready_specs": [
+        {
+          "label": "Kiểu dáng",
+          "coverage_count": 1331,
+          "coverage_pct": 16.7,
+          "distinct_values": 5,
+          "recommendation": "not-ready"
+        },
+        {
+          "label": "Chế độ phun nước tay sen",
+          "coverage_count": 1049,
+          "coverage_pct": 13.1,
+          "distinct_values": 5,
+          "recommendation": "not-ready"
+        },
+        {
+          "label": "Chế độ phun nước bát sen",
+          "coverage_count": 841,
+          "coverage_pct": 10.5,
+          "distinct_values": 5,
+          "recommendation": "not-ready"
+        },
+        {
+          "label": "Đường kính lỗ chờ",
+          "coverage_count": 726,
+          "coverage_pct": 9.1,
+          "distinct_values": 5,
+          "recommendation": "not-ready"
+        }
+      ],
+      "top_brands": [
+        {
+          "brand": "TOTO",
+          "count": 2458
+        },
+        {
+          "brand": "GROHE",
+          "count": 2074
+        },
+        {
+          "brand": "INAX",
+          "count": 752
+        },
+        {
+          "brand": "COTTO",
+          "count": 735
+        },
+        {
+          "brand": "CAESAR",
+          "count": 412
+        },
+        {
+          "brand": "American Standard",
+          "count": 395
+        },
+        {
+          "brand": "MOEN",
+          "count": 339
+        },
+        {
+          "brand": "Kanly",
+          "count": 252
+        },
+        {
+          "brand": "ATMOR",
+          "count": 156
+        },
+        {
+          "brand": "Esslinger",
+          "count": 149
+        },
+        {
+          "brand": "Hansgrohe",
+          "count": 137
+        },
+        {
+          "brand": "Viglacera",
+          "count": 132
+        }
+      ]
+    },
+    "use_case_layer": {
+      "modeled": false,
+      "note": "Chua co field use-case/intent normalized trong DB hien tai. Can them o phase sau neu muon dung quick chips va merchandising theo nhu cau."
+    },
+    "recommendation": {
+      "status": "ready-for-backend-refactor",
+      "note": "Du du lieu nen de bat dau refactor helper listing/search/filter."
+    }
+  },
+  {
+    "group": "gach-op-lat",
+    "label": "Gach op lat",
+    "category_slug": "gach-op-lat",
+    "subcategory_slugs": [
+      "gach-op-lat",
+      "gach-op-tuong",
+      "gach-inax-ecocarat",
+      "gach-trang-tri",
+      "gach-thiet-ke-xi-mang",
+      "gach-van-da-marble",
+      "gach-van-da-tu-nhien",
+      "gach-van-go"
+    ],
+    "totals": {
+      "total": 330,
+      "public_pdp": 320,
+      "listing_eligible": 320,
+      "search_visible": 320,
+      "search_only_gap": 0
+    },
+    "taxonomy": {
+      "subcategory_counts": [
+        {
+          "sub_slug": "gach-op-tuong",
+          "count": 181
+        },
+        {
+          "sub_slug": "gach-trang-tri",
+          "count": 34
+        },
+        {
+          "sub_slug": "gach-thiet-ke-xi-mang",
+          "count": 26
+        },
+        {
+          "sub_slug": "gach-van-da-marble",
+          "count": 26
+        },
+        {
+          "sub_slug": "gach-van-da-tu-nhien",
+          "count": 23
+        },
+        {
+          "sub_slug": "gach-inax-ecocarat",
+          "count": 19
+        },
+        {
+          "sub_slug": "gach-van-go",
+          "count": 12
+        },
+        {
+          "sub_slug": "gach-op-lat",
+          "count": 9
+        }
+      ],
+      "product_types": [
+        {
+          "key": "(null)",
+          "count": 330
+        }
+      ],
+      "product_sub_types": [
+        {
+          "key": "(null)",
+          "count": 330
+        }
+      ],
+      "primary_taxon_coverage": [
+        {
+          "has_primary_taxon": "no",
+          "count": 165
+        },
+        {
+          "has_primary_taxon": "yes",
+          "count": 165
+        }
+      ]
+    },
+    "relations": {
+      "brand": {
+        "count": 330,
+        "pct": 100
+      },
+      "origin": {
+        "count": 0,
+        "pct": 0
+      },
+      "color": {
+        "count": 0,
+        "pct": 0
+      },
+      "material": {
+        "count": 0,
+        "pct": 0
+      }
+    },
+    "visibility": {
+      "listing_visibility": [
+        {
+          "key": "default",
+          "count": 319
+        },
+        {
+          "key": "low_priority",
+          "count": 1
+        }
+      ],
+      "search_visibility": [
+        {
+          "key": "visible",
+          "count": 320
+        }
+      ],
+      "seo": [
+        {
+          "seo_indexing": "index",
+          "sitemap_include": true,
+          "count": 320
+        }
+      ],
+      "stock_status": [
+        {
+          "key": "in_stock",
+          "count": 320
+        }
+      ]
+    },
+    "attributes": {
+      "filter_definitions": [
+        {
+          "filter_key": "brand",
+          "filter_label": "Thương hiệu",
+          "filter_type": "checkbox_searchable",
+          "sub_slug": "gach-van-go"
+        },
+        {
+          "filter_key": "brand",
+          "filter_label": "Thương hiệu",
+          "filter_type": "checkbox_searchable",
+          "sub_slug": "gach-trang-tri"
+        },
+        {
+          "filter_key": "brand",
+          "filter_label": "Thương hiệu",
+          "filter_type": "checkbox_searchable",
+          "sub_slug": "gach-thiet-ke-xi-mang"
+        },
+        {
+          "filter_key": "brand",
+          "filter_label": "Thương hiệu",
+          "filter_type": "checkbox_searchable",
+          "sub_slug": "gach-van-da-marble"
+        },
+        {
+          "filter_key": "brand",
+          "filter_label": "Thương hiệu",
+          "filter_type": "checkbox_searchable",
+          "sub_slug": "gach-van-da-tu-nhien"
+        },
+        {
+          "filter_key": "price",
+          "filter_label": "Khoảng giá",
+          "filter_type": "range_preset",
+          "sub_slug": "gach-van-da-marble"
+        },
+        {
+          "filter_key": "price",
+          "filter_label": "Khoảng giá",
+          "filter_type": "range_preset",
+          "sub_slug": "gach-van-da-tu-nhien"
+        },
+        {
+          "filter_key": "price",
+          "filter_label": "Khoảng giá",
+          "filter_type": "range_preset",
+          "sub_slug": "gach-van-go"
+        },
+        {
+          "filter_key": "price",
+          "filter_label": "Khoảng giá",
+          "filter_type": "range_preset",
+          "sub_slug": "gach-thiet-ke-xi-mang"
+        },
+        {
+          "filter_key": "price",
+          "filter_label": "Khoảng giá",
+          "filter_type": "range_preset",
+          "sub_slug": "gach-trang-tri"
+        }
+      ],
+      "spec_candidates": [
+        {
+          "label": "Bảo hành",
+          "coverage_count": 209,
+          "coverage_pct": 65.3,
+          "distinct_values": 1,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Nơi sản xuất",
+          "coverage_count": 209,
+          "coverage_pct": 65.3,
+          "distinct_values": 3,
+          "recommendation": "filter-ready"
+        },
+        {
+          "label": "Thương hiệu",
+          "coverage_count": 209,
+          "coverage_pct": 65.3,
+          "distinct_values": 1,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "bo_suu_tap",
+          "coverage_count": 121,
+          "coverage_pct": 37.8,
+          "distinct_values": 32,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "don_vi_tinh",
+          "coverage_count": 121,
+          "coverage_pct": 37.8,
+          "distinct_values": 2,
+          "recommendation": "filter-ready"
+        },
+        {
+          "label": "be_mat",
+          "coverage_count": 111,
+          "coverage_pct": 34.7,
+          "distinct_values": 3,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "do_chong_truot",
+          "coverage_count": 111,
+          "coverage_pct": 34.7,
+          "distinct_values": 3,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "gach_cat_canh",
+          "coverage_count": 111,
+          "coverage_pct": 34.7,
+          "distinct_values": 2,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "khu_vuc_op_lat",
+          "coverage_count": 111,
+          "coverage_pct": 34.7,
+          "distinct_values": 1,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "kich_thuoc_mo_phong",
+          "coverage_count": 111,
+          "coverage_pct": 34.7,
+          "distinct_values": 13,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "mau_sac",
+          "coverage_count": 111,
+          "coverage_pct": 34.7,
+          "distinct_values": 9,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "quy_cach",
+          "coverage_count": 111,
+          "coverage_pct": 34.7,
+          "distinct_values": 14,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "so_van",
+          "coverage_count": 111,
+          "coverage_pct": 34.7,
+          "distinct_values": 27,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "thiet_ke",
+          "coverage_count": 111,
+          "coverage_pct": 34.7,
+          "distinct_values": 6,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "vi_tri_op_lat",
+          "coverage_count": 111,
+          "coverage_pct": 34.7,
+          "distinct_values": 3,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "xuat_xu",
+          "coverage_count": 111,
+          "coverage_pct": 34.7,
+          "distinct_values": 5,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "do_khac_biet_mau_sac",
+          "coverage_count": 102,
+          "coverage_pct": 31.9,
+          "distinct_values": 4,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "chung_chi_moi_truong",
+          "coverage_count": 93,
+          "coverage_pct": 29.1,
+          "distinct_values": 2,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "cong_nghe",
+          "coverage_count": 34,
+          "coverage_pct": 10.6,
+          "distinct_values": 6,
+          "recommendation": "not-ready"
+        }
+      ],
+      "filter_ready_specs": [
+        {
+          "label": "Nơi sản xuất",
+          "coverage_count": 209,
+          "coverage_pct": 65.3,
+          "distinct_values": 3,
+          "recommendation": "filter-ready"
+        },
+        {
+          "label": "don_vi_tinh",
+          "coverage_count": 121,
+          "coverage_pct": 37.8,
+          "distinct_values": 2,
+          "recommendation": "filter-ready"
+        }
+      ],
+      "pdp_only_specs": [
+        {
+          "label": "Bảo hành",
+          "coverage_count": 209,
+          "coverage_pct": 65.3,
+          "distinct_values": 1,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Thương hiệu",
+          "coverage_count": 209,
+          "coverage_pct": 65.3,
+          "distinct_values": 1,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "bo_suu_tap",
+          "coverage_count": 121,
+          "coverage_pct": 37.8,
+          "distinct_values": 32,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "be_mat",
+          "coverage_count": 111,
+          "coverage_pct": 34.7,
+          "distinct_values": 3,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "do_chong_truot",
+          "coverage_count": 111,
+          "coverage_pct": 34.7,
+          "distinct_values": 3,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "gach_cat_canh",
+          "coverage_count": 111,
+          "coverage_pct": 34.7,
+          "distinct_values": 2,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "khu_vuc_op_lat",
+          "coverage_count": 111,
+          "coverage_pct": 34.7,
+          "distinct_values": 1,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "kich_thuoc_mo_phong",
+          "coverage_count": 111,
+          "coverage_pct": 34.7,
+          "distinct_values": 13,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "mau_sac",
+          "coverage_count": 111,
+          "coverage_pct": 34.7,
+          "distinct_values": 9,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "quy_cach",
+          "coverage_count": 111,
+          "coverage_pct": 34.7,
+          "distinct_values": 14,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "so_van",
+          "coverage_count": 111,
+          "coverage_pct": 34.7,
+          "distinct_values": 27,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "thiet_ke",
+          "coverage_count": 111,
+          "coverage_pct": 34.7,
+          "distinct_values": 6,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "vi_tri_op_lat",
+          "coverage_count": 111,
+          "coverage_pct": 34.7,
+          "distinct_values": 3,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "xuat_xu",
+          "coverage_count": 111,
+          "coverage_pct": 34.7,
+          "distinct_values": 5,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "do_khac_biet_mau_sac",
+          "coverage_count": 102,
+          "coverage_pct": 31.9,
+          "distinct_values": 4,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "chung_chi_moi_truong",
+          "coverage_count": 93,
+          "coverage_pct": 29.1,
+          "distinct_values": 2,
+          "recommendation": "pdp-only"
+        }
+      ],
+      "not_ready_specs": [
+        {
+          "label": "cong_nghe",
+          "coverage_count": 34,
+          "coverage_pct": 10.6,
+          "distinct_values": 6,
+          "recommendation": "not-ready"
+        }
+      ],
+      "top_brands": [
+        {
+          "brand": "INAX",
+          "count": 209
+        },
+        {
+          "brand": "KECH",
+          "count": 18
+        },
+        {
+          "brand": "BOOST NATURAL",
+          "count": 11
+        },
+        {
+          "brand": "BOOST BALANCE",
+          "count": 9
+        },
+        {
+          "brand": "MOTLEY",
+          "count": 6
+        },
+        {
+          "brand": "VARANA STONE",
+          "count": 6
+        },
+        {
+          "brand": "MIMESIS",
+          "count": 5
+        },
+        {
+          "brand": "ONYCE",
+          "count": 5
+        },
+        {
+          "brand": "PAPIER",
+          "count": 5
+        },
+        {
+          "brand": "MARVEL GALA",
+          "count": 4
+        },
+        {
+          "brand": "TELE DI MARMO LUMIA",
+          "count": 4
+        },
+        {
+          "brand": "VARANA",
+          "count": 4
+        }
+      ]
+    },
+    "use_case_layer": {
+      "modeled": false,
+      "note": "Chua co field use-case/intent normalized trong DB hien tai. Can them o phase sau neu muon dung quick chips va merchandising theo nhu cau."
+    },
+    "recommendation": {
+      "status": "data-cleanup-first",
+      "note": "Can don data/mapping truoc khi sua UI listing de tranh filter vo nghia."
+    }
+  },
+  {
+    "group": "thiet-bi-bep",
+    "label": "Thiet bi bep",
+    "category_slug": "thiet-bi-bep",
+    "subcategory_slugs": [
+      "chau-rua-chen",
+      "voi-rua-chen",
+      "bep-dien-tu",
+      "bep-gas",
+      "may-hut-mui",
+      "may-rua-chen",
+      "lo-nuong",
+      "phu-kien-bep",
+      "phu-kien-chau-rua-chen",
+      "thiet-bi-bep-khac"
+    ],
+    "totals": {
+      "total": 790,
+      "public_pdp": 790,
+      "listing_eligible": 712,
+      "search_visible": 790,
+      "search_only_gap": 78
+    },
+    "taxonomy": {
+      "subcategory_counts": [
+        {
+          "sub_slug": "voi-rua-chen",
+          "count": 467
+        },
+        {
+          "sub_slug": "chau-rua-chen",
+          "count": 136
+        },
+        {
+          "sub_slug": "thiet-bi-bep-khac",
+          "count": 66
+        },
+        {
+          "sub_slug": "bep-dien-tu",
+          "count": 41
+        },
+        {
+          "sub_slug": "may-hut-mui",
+          "count": 23
+        },
+        {
+          "sub_slug": "may-rua-chen",
+          "count": 20
+        },
+        {
+          "sub_slug": "bep-gas",
+          "count": 17
+        },
+        {
+          "sub_slug": "lo-nuong",
+          "count": 16
+        },
+        {
+          "sub_slug": "phu-kien-bep",
+          "count": 3
+        },
+        {
+          "sub_slug": "phu-kien-chau-rua-chen",
+          "count": 1
+        }
+      ],
+      "product_types": [
+        {
+          "key": "voi-rua-chen",
+          "count": 349
+        },
+        {
+          "key": "(null)",
+          "count": 247
+        },
+        {
+          "key": "phu-kien-voi-rua-chen",
+          "count": 95
+        },
+        {
+          "key": "chau-rua-chen",
+          "count": 60
+        },
+        {
+          "key": "tu-bep",
+          "count": 39
+        }
+      ],
+      "product_sub_types": [
+        {
+          "key": "(null)",
+          "count": 790
+        }
+      ],
+      "primary_taxon_coverage": [
+        {
+          "has_primary_taxon": "yes",
+          "count": 712
+        },
+        {
+          "has_primary_taxon": "no",
+          "count": 78
+        }
+      ]
+    },
+    "relations": {
+      "brand": {
+        "count": 790,
+        "pct": 100
+      },
+      "origin": {
+        "count": 0,
+        "pct": 0
+      },
+      "color": {
+        "count": 85,
+        "pct": 10.8
+      },
+      "material": {
+        "count": 0,
+        "pct": 0
+      }
+    },
+    "visibility": {
+      "listing_visibility": [
+        {
+          "key": "default",
+          "count": 615
+        },
+        {
+          "key": "low_priority",
+          "count": 97
+        },
+        {
+          "key": "search_only",
+          "count": 78
+        }
+      ],
+      "search_visibility": [
+        {
+          "key": "visible",
+          "count": 790
+        }
+      ],
+      "seo": [
+        {
+          "seo_indexing": "index",
+          "sitemap_include": true,
+          "count": 734
+        },
+        {
+          "seo_indexing": "canonical_to_parent",
+          "sitemap_include": false,
+          "count": 56
+        }
+      ],
+      "stock_status": [
+        {
+          "key": "in_stock",
+          "count": 760
+        },
+        {
+          "key": "discontinued",
+          "count": 30
+        }
+      ]
+    },
+    "attributes": {
+      "filter_definitions": [
+        {
+          "filter_key": "brand",
+          "filter_label": "Thương hiệu",
+          "filter_type": "checkbox_searchable",
+          "sub_slug": "voi-rua-chen"
+        },
+        {
+          "filter_key": "brand",
+          "filter_label": "Thương hiệu",
+          "filter_type": "checkbox_searchable",
+          "sub_slug": "thiet-bi-bep-khac"
+        },
+        {
+          "filter_key": "brand",
+          "filter_label": "Thương hiệu",
+          "filter_type": "checkbox_searchable",
+          "sub_slug": "chau-rua-chen"
+        },
+        {
+          "filter_key": "brand",
+          "filter_label": "Thương hiệu",
+          "filter_type": "checkbox_searchable",
+          "sub_slug": "bep-dien-tu"
+        },
+        {
+          "filter_key": "brand",
+          "filter_label": "Thương hiệu",
+          "filter_type": "checkbox_searchable",
+          "sub_slug": "may-hut-mui"
+        },
+        {
+          "filter_key": "brand",
+          "filter_label": "Thương hiệu",
+          "filter_type": "checkbox_searchable",
+          "sub_slug": "may-rua-chen"
+        },
+        {
+          "filter_key": "brand",
+          "filter_label": "Thương hiệu",
+          "filter_type": "checkbox_searchable",
+          "sub_slug": "bep-gas"
+        },
+        {
+          "filter_key": "brand",
+          "filter_label": "Thương hiệu",
+          "filter_type": "checkbox_searchable",
+          "sub_slug": "lo-nuong"
+        },
+        {
+          "filter_key": "price",
+          "filter_label": "Khoảng giá",
+          "filter_type": "range_preset",
+          "sub_slug": "may-rua-chen"
+        },
+        {
+          "filter_key": "price",
+          "filter_label": "Khoảng giá",
+          "filter_type": "range_preset",
+          "sub_slug": "thiet-bi-bep-khac"
+        },
+        {
+          "filter_key": "price",
+          "filter_label": "Khoảng giá",
+          "filter_type": "range_preset",
+          "sub_slug": "bep-gas"
+        },
+        {
+          "filter_key": "price",
+          "filter_label": "Khoảng giá",
+          "filter_type": "range_preset",
+          "sub_slug": "chau-rua-chen"
+        },
+        {
+          "filter_key": "price",
+          "filter_label": "Khoảng giá",
+          "filter_type": "range_preset",
+          "sub_slug": "voi-rua-chen"
+        },
+        {
+          "filter_key": "price",
+          "filter_label": "Khoảng giá",
+          "filter_type": "range_preset",
+          "sub_slug": "bep-dien-tu"
+        },
+        {
+          "filter_key": "price",
+          "filter_label": "Khoảng giá",
+          "filter_type": "range_preset",
+          "sub_slug": "lo-nuong"
+        },
+        {
+          "filter_key": "price",
+          "filter_label": "Khoảng giá",
+          "filter_type": "range_preset",
+          "sub_slug": "may-hut-mui"
+        },
+        {
+          "filter_key": "Chế độ",
+          "filter_label": "Chế độ",
+          "filter_type": "checkbox",
+          "sub_slug": "voi-rua-chen"
+        },
+        {
+          "filter_key": "Loại bếp",
+          "filter_label": "Loại bếp",
+          "filter_type": "checkbox",
+          "sub_slug": "bep-dien-tu"
+        },
+        {
+          "filter_key": "Số hộc",
+          "filter_label": "Số hộc",
+          "filter_type": "checkbox",
+          "sub_slug": "chau-rua-chen"
+        },
+        {
+          "filter_key": "Loại hộc",
+          "filter_label": "Loại hộc",
+          "filter_type": "checkbox",
+          "sub_slug": "chau-rua-chen"
+        },
+        {
+          "filter_key": "Loại vòi",
+          "filter_label": "Loại vòi",
+          "filter_type": "checkbox",
+          "sub_slug": "voi-rua-chen"
+        },
+        {
+          "filter_key": "Số lượng vùng nấu",
+          "filter_label": "Số vùng nấu",
+          "filter_type": "checkbox",
+          "sub_slug": "bep-dien-tu"
+        },
+        {
+          "filter_key": "Chất liệu",
+          "filter_label": "Chất liệu",
+          "filter_type": "checkbox",
+          "sub_slug": "chau-rua-chen"
+        },
+        {
+          "filter_key": "Chất liệu",
+          "filter_label": "Chất liệu",
+          "filter_type": "checkbox",
+          "sub_slug": "voi-rua-chen"
+        },
+        {
+          "filter_key": "Lớp mạ (màu)",
+          "filter_label": "Màu sắc",
+          "filter_type": "checkbox",
+          "sub_slug": "voi-rua-chen"
+        }
+      ],
+      "spec_candidates": [
+        {
+          "label": "Bảo hành",
+          "coverage_count": 719,
+          "coverage_pct": 91,
+          "distinct_values": 8,
+          "recommendation": "filter-ready"
+        },
+        {
+          "label": "Nơi sản xuất",
+          "coverage_count": 719,
+          "coverage_pct": 91,
+          "distinct_values": 24,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Thương hiệu",
+          "coverage_count": 719,
+          "coverage_pct": 91,
+          "distinct_values": 18,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Chất liệu",
+          "coverage_count": 309,
+          "coverage_pct": 39.1,
+          "distinct_values": 10,
+          "recommendation": "filter-ready"
+        },
+        {
+          "label": "Loại vòi",
+          "coverage_count": 282,
+          "coverage_pct": 35.7,
+          "distinct_values": 3,
+          "recommendation": "filter-ready"
+        },
+        {
+          "label": "Chế độ",
+          "coverage_count": 267,
+          "coverage_pct": 33.8,
+          "distinct_values": 2,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Vị trí lắp vòi",
+          "coverage_count": 265,
+          "coverage_pct": 33.5,
+          "distinct_values": 3,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Chế độ xả nước đầu vòi",
+          "coverage_count": 239,
+          "coverage_pct": 30.3,
+          "distinct_values": 4,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Chiều cao đầu vòi",
+          "coverage_count": 210,
+          "coverage_pct": 26.6,
+          "distinct_values": 102,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Kích thước (DxRxC)",
+          "coverage_count": 193,
+          "coverage_pct": 24.4,
+          "distinct_values": 154,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Kích thước đầu vòi",
+          "coverage_count": 193,
+          "coverage_pct": 24.4,
+          "distinct_values": 68,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Lớp mạ (màu)",
+          "coverage_count": 163,
+          "coverage_pct": 20.6,
+          "distinct_values": 20,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Tiện ích",
+          "coverage_count": 123,
+          "coverage_pct": 15.6,
+          "distinct_values": 14,
+          "recommendation": "not-ready"
+        },
+        {
+          "label": "Áp lực nước",
+          "coverage_count": 88,
+          "coverage_pct": 11.1,
+          "distinct_values": 14,
+          "recommendation": "not-ready"
+        },
+        {
+          "label": "Bộ sưu tập",
+          "coverage_count": 81,
+          "coverage_pct": 10.3,
+          "distinct_values": 45,
+          "recommendation": "not-ready"
+        },
+        {
+          "label": "Kích thước cắt đá",
+          "coverage_count": 55,
+          "coverage_pct": 7,
+          "distinct_values": 34,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Kích thước",
+          "coverage_count": 52,
+          "coverage_pct": 6.6,
+          "distinct_values": 31,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Điều khiển",
+          "coverage_count": 45,
+          "coverage_pct": 5.7,
+          "distinct_values": 5,
+          "recommendation": "not-ready"
+        },
+        {
+          "label": "Nguồn điện",
+          "coverage_count": 39,
+          "coverage_pct": 4.9,
+          "distinct_values": 3,
+          "recommendation": "not-ready"
+        },
+        {
+          "label": "Chất liệu mặt bếp",
+          "coverage_count": 37,
+          "coverage_pct": 4.7,
+          "distinct_values": 8,
+          "recommendation": "not-ready"
+        }
+      ],
+      "filter_ready_specs": [
+        {
+          "label": "Bảo hành",
+          "coverage_count": 719,
+          "coverage_pct": 91,
+          "distinct_values": 8,
+          "recommendation": "filter-ready"
+        },
+        {
+          "label": "Chất liệu",
+          "coverage_count": 309,
+          "coverage_pct": 39.1,
+          "distinct_values": 10,
+          "recommendation": "filter-ready"
+        },
+        {
+          "label": "Loại vòi",
+          "coverage_count": 282,
+          "coverage_pct": 35.7,
+          "distinct_values": 3,
+          "recommendation": "filter-ready"
+        }
+      ],
+      "pdp_only_specs": [
+        {
+          "label": "Nơi sản xuất",
+          "coverage_count": 719,
+          "coverage_pct": 91,
+          "distinct_values": 24,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Thương hiệu",
+          "coverage_count": 719,
+          "coverage_pct": 91,
+          "distinct_values": 18,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Chế độ",
+          "coverage_count": 267,
+          "coverage_pct": 33.8,
+          "distinct_values": 2,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Vị trí lắp vòi",
+          "coverage_count": 265,
+          "coverage_pct": 33.5,
+          "distinct_values": 3,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Chế độ xả nước đầu vòi",
+          "coverage_count": 239,
+          "coverage_pct": 30.3,
+          "distinct_values": 4,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Chiều cao đầu vòi",
+          "coverage_count": 210,
+          "coverage_pct": 26.6,
+          "distinct_values": 102,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Kích thước (DxRxC)",
+          "coverage_count": 193,
+          "coverage_pct": 24.4,
+          "distinct_values": 154,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Kích thước đầu vòi",
+          "coverage_count": 193,
+          "coverage_pct": 24.4,
+          "distinct_values": 68,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Lớp mạ (màu)",
+          "coverage_count": 163,
+          "coverage_pct": 20.6,
+          "distinct_values": 20,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Kích thước cắt đá",
+          "coverage_count": 55,
+          "coverage_pct": 7,
+          "distinct_values": 34,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "Kích thước",
+          "coverage_count": 52,
+          "coverage_pct": 6.6,
+          "distinct_values": 31,
+          "recommendation": "pdp-only"
+        }
+      ],
+      "not_ready_specs": [
+        {
+          "label": "Tiện ích",
+          "coverage_count": 123,
+          "coverage_pct": 15.6,
+          "distinct_values": 14,
+          "recommendation": "not-ready"
+        },
+        {
+          "label": "Áp lực nước",
+          "coverage_count": 88,
+          "coverage_pct": 11.1,
+          "distinct_values": 14,
+          "recommendation": "not-ready"
+        },
+        {
+          "label": "Bộ sưu tập",
+          "coverage_count": 81,
+          "coverage_pct": 10.3,
+          "distinct_values": 45,
+          "recommendation": "not-ready"
+        },
+        {
+          "label": "Điều khiển",
+          "coverage_count": 45,
+          "coverage_pct": 5.7,
+          "distinct_values": 5,
+          "recommendation": "not-ready"
+        },
+        {
+          "label": "Nguồn điện",
+          "coverage_count": 39,
+          "coverage_pct": 4.9,
+          "distinct_values": 3,
+          "recommendation": "not-ready"
+        },
+        {
+          "label": "Chất liệu mặt bếp",
+          "coverage_count": 37,
+          "coverage_pct": 4.7,
+          "distinct_values": 8,
+          "recommendation": "not-ready"
+        }
+      ],
+      "top_brands": [
+        {
+          "brand": "GROHE",
+          "count": 169
+        },
+        {
+          "brand": "CAESAR",
+          "count": 94
+        },
+        {
+          "brand": "Kaff",
+          "count": 84
+        },
+        {
+          "brand": "INAX",
+          "count": 82
+        },
+        {
+          "brand": "MOEN",
+          "count": 62
+        },
+        {
+          "brand": "Kluger",
+          "count": 54
+        },
+        {
+          "brand": "COTTO",
+          "count": 43
+        },
+        {
+          "brand": "Elica",
+          "count": 43
+        },
+        {
+          "brand": "ATMOR",
+          "count": 40
+        },
+        {
+          "brand": "American Standard",
+          "count": 28
+        },
+        {
+          "brand": "Esslinger",
+          "count": 27
+        },
+        {
+          "brand": "TOTO",
+          "count": 21
+        }
+      ]
+    },
+    "use_case_layer": {
+      "modeled": false,
+      "note": "Chua co field use-case/intent normalized trong DB hien tai. Can them o phase sau neu muon dung quick chips va merchandising theo nhu cau."
+    },
+    "recommendation": {
+      "status": "ready-for-backend-refactor",
+      "note": "Du du lieu nen de bat dau refactor helper listing/search/filter."
+    }
+  },
+  {
+    "group": "vat-lieu-nuoc",
+    "label": "Vat lieu nuoc",
+    "category_slug": "vat-lieu-nuoc",
+    "subcategory_slugs": [
+      "loc-nuoc",
+      "may-nuoc-nong",
+      "bon-chua-nuoc",
+      "may-bom-nuoc"
+    ],
+    "totals": {
+      "total": 185,
+      "public_pdp": 185,
+      "listing_eligible": 185,
+      "search_visible": 185,
+      "search_only_gap": 0
+    },
+    "taxonomy": {
+      "subcategory_counts": [
+        {
+          "sub_slug": "loc-nuoc",
+          "count": 73
+        },
+        {
+          "sub_slug": "may-nuoc-nong",
+          "count": 73
+        },
+        {
+          "sub_slug": "bon-chua-nuoc",
+          "count": 20
+        },
+        {
+          "sub_slug": "may-bom-nuoc",
+          "count": 19
+        }
+      ],
+      "product_types": [
+        {
+          "key": "(null)",
+          "count": 173
+        },
+        {
+          "key": "may-nuoc-nong-truc-tiep",
+          "count": 7
+        },
+        {
+          "key": "may-nuoc-nong-gian-tiep",
+          "count": 5
+        }
+      ],
+      "product_sub_types": [
+        {
+          "key": "(null)",
+          "count": 185
+        }
+      ],
+      "primary_taxon_coverage": [
+        {
+          "has_primary_taxon": "yes",
+          "count": 185
+        }
+      ]
+    },
+    "relations": {
+      "brand": {
+        "count": 185,
+        "pct": 100
+      },
+      "origin": {
+        "count": 0,
+        "pct": 0
+      },
+      "color": {
+        "count": 0,
+        "pct": 0
+      },
+      "material": {
+        "count": 0,
+        "pct": 0
+      }
+    },
+    "visibility": {
+      "listing_visibility": [
+        {
+          "key": "default",
+          "count": 185
+        }
+      ],
+      "search_visibility": [
+        {
+          "key": "visible",
+          "count": 185
+        }
+      ],
+      "seo": [
+        {
+          "seo_indexing": "index",
+          "sitemap_include": true,
+          "count": 185
+        }
+      ],
+      "stock_status": [
+        {
+          "key": "in_stock",
+          "count": 185
+        }
+      ]
+    },
+    "attributes": {
+      "filter_definitions": [
+        {
+          "filter_key": "price",
+          "filter_label": "Khoảng giá",
+          "filter_type": "range_preset",
+          "sub_slug": "bon-chua-nuoc"
+        },
+        {
+          "filter_key": "brand",
+          "filter_label": "Thương hiệu",
+          "filter_type": "checkbox_searchable",
+          "sub_slug": "may-bom-nuoc"
+        },
+        {
+          "filter_key": "brand",
+          "filter_label": "Thương hiệu",
+          "filter_type": "checkbox_searchable",
+          "sub_slug": "loc-nuoc"
+        },
+        {
+          "filter_key": "brand",
+          "filter_label": "Thương hiệu",
+          "filter_type": "checkbox_searchable",
+          "sub_slug": "may-nuoc-nong"
+        },
+        {
+          "filter_key": "price",
+          "filter_label": "Khoảng giá",
+          "filter_type": "range_preset",
+          "sub_slug": "loc-nuoc"
+        },
+        {
+          "filter_key": "price",
+          "filter_label": "Khoảng giá",
+          "filter_type": "range_preset",
+          "sub_slug": "may-nuoc-nong"
+        },
+        {
+          "filter_key": "price",
+          "filter_label": "Khoảng giá",
+          "filter_type": "range_preset",
+          "sub_slug": "may-bom-nuoc"
+        }
+      ],
+      "spec_candidates": [
+        {
+          "label": "capacity_liters",
+          "coverage_count": 42,
+          "coverage_pct": 22.7,
+          "distinct_values": 21,
+          "recommendation": "pdp-only"
+        },
+        {
+          "label": "power_watts",
+          "coverage_count": 32,
+          "coverage_pct": 17.3,
+          "distinct_values": 9,
+          "recommendation": "not-ready"
+        }
+      ],
+      "filter_ready_specs": [],
+      "pdp_only_specs": [
+        {
+          "label": "capacity_liters",
+          "coverage_count": 42,
+          "coverage_pct": 22.7,
+          "distinct_values": 21,
+          "recommendation": "pdp-only"
+        }
+      ],
+      "not_ready_specs": [
+        {
+          "label": "power_watts",
+          "coverage_count": 32,
+          "coverage_pct": 17.3,
+          "distinct_values": 9,
+          "recommendation": "not-ready"
+        }
+      ],
+      "top_brands": [
+        {
+          "brand": "Ferroli",
+          "count": 24
+        },
+        {
+          "brand": "PANASONIC",
+          "count": 24
+        },
+        {
+          "brand": "Karofi",
+          "count": 21
+        },
+        {
+          "brand": "Mitsubishi Cleansui",
+          "count": 21
+        },
+        {
+          "brand": "Đại Thành",
+          "count": 20
+        },
+        {
+          "brand": "Ariston",
+          "count": 17
+        },
+        {
+          "brand": "Unilever Pureit",
+          "count": 14
+        },
+        {
+          "brand": "ATMOR",
+          "count": 12
+        },
+        {
+          "brand": "NANOCO",
+          "count": 9
+        },
+        {
+          "brand": "PHILIPS",
+          "count": 9
+        },
+        {
+          "brand": "Coway",
+          "count": 8
+        },
+        {
+          "brand": "Rheem",
+          "count": 3
+        }
+      ]
+    },
+    "use_case_layer": {
+      "modeled": false,
+      "note": "Chua co field use-case/intent normalized trong DB hien tai. Can them o phase sau neu muon dung quick chips va merchandising theo nhu cau."
+    },
+    "recommendation": {
+      "status": "data-cleanup-first",
+      "note": "Can don data/mapping truoc khi sua UI listing de tranh filter vo nghia."
+    }
+  }
+]

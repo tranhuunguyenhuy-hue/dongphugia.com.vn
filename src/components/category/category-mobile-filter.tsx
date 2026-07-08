@@ -15,14 +15,20 @@ import { AdvancedSidebarFilter, AvailableFiltersData } from './advanced-sidebar-
 import type { SpecFilterDef } from './subcategory-spec-filter'
 import { useSearchParams } from 'next/navigation'
 import { cn } from '@/lib/utils'
+import type { ListingRuntimeConfig } from '@/lib/public-api-products'
 
 // ── Filter count badge (needs Suspense boundary) ────────────────────────────────
-function FilterCount() {
+function FilterCount({ runtimeConfig }: { runtimeConfig?: ListingRuntimeConfig }) {
     const sp = useSearchParams()
     const keys = ['brand', 'features', 'material', 'origin', 'price', 'is_promotion', 'is_featured']
+    if (!(runtimeConfig?.hideColorFilter ?? false)) {
+        keys.push('color')
+    }
     // Also count spec filters (sf_*)
     let count = keys.filter(k => sp.get(k)).length
-    sp.forEach((_v, k) => { if (k.startsWith('sf_')) count++ })
+    if (runtimeConfig?.enableSpecFilters ?? true) {
+        sp.forEach((_v, k) => { if (k.startsWith('sf_')) count++ })
+    }
     if (count === 0) return null
     return (
         <span className="inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full bg-[#2E7A96] text-white text-[9px] font-bold tabular-nums">
@@ -34,10 +40,16 @@ function FilterCount() {
 interface CategoryMobileFilterProps {
     availableFilters: AvailableFiltersData
     specFilters?: SpecFilterDef[]
+    runtimeConfig?: ListingRuntimeConfig
     hideColorFilter?: boolean
 }
 
-export function CategoryMobileFilter({ availableFilters, specFilters, hideColorFilter = false }: CategoryMobileFilterProps) {
+export function CategoryMobileFilter({
+    availableFilters,
+    specFilters,
+    runtimeConfig,
+    hideColorFilter = false,
+}: CategoryMobileFilterProps) {
     return (
         <Sheet>
             {/* ── Trigger — ghost-style matching sort-by button ── */}
@@ -56,7 +68,7 @@ export function CategoryMobileFilter({ availableFilters, specFilters, hideColorF
                     <SlidersHorizontal className="size-3 opacity-50" />
                     <span>Bộ lọc</span>
                     <Suspense fallback={null}>
-                        <FilterCount />
+                        <FilterCount runtimeConfig={runtimeConfig} />
                     </Suspense>
                 </button>
             </SheetTrigger>
@@ -97,6 +109,7 @@ export function CategoryMobileFilter({ availableFilters, specFilters, hideColorF
                 <div className="flex-1 overflow-y-auto min-h-0 overscroll-contain">
                     <AdvancedSidebarFilter
                         availableFilters={availableFilters}
+                        runtimeConfig={runtimeConfig}
                         hideTitle={true}
                         hideSubcategoryFilter={true}
                         hideColorFilter={hideColorFilter}

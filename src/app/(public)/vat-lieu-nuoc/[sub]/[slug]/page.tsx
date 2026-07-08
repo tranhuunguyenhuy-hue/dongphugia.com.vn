@@ -268,6 +268,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
                                 key={p.id}
                                 product={p}
                                 basePath={canonicalBasePath}
+                                href={p.url}
                             />
                         ))}
                     </div>

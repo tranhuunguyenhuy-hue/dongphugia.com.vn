@@ -1,0 +1,7 @@
+group,category_slug,subcategory_slugs,total,public_pdp,listing_eligible,search_visible,search_only_gap,primary_taxon_yes,primary_taxon_no,status,top_filter_ready_specs
+bon-cau,thiet-bi-ve-sinh,bon-cau,2872,2872,2092,2872,780,2092,780,ready-for-backend-refactor,Bảo hành | Loại thân cầu | Loại nắp | Kiểu thoát | Kiểu xả
+lavabo,thiet-bi-ve-sinh,lavabo,1464,1464,1036,1464,428,1000,464,ready-for-backend-refactor,Bảo hành | Hình dáng | Lỗ bắt vòi | Lỗ xả tràn nước
+sen-voi,thiet-bi-ve-sinh,sen-tam|voi-chau,7991,7991,5734,7991,2257,5730,2261,ready-for-backend-refactor,Bảo hành | Chế độ | Chất liệu
+gach-op-lat,gach-op-lat,gach-op-lat|gach-op-tuong|gach-inax-ecocarat|gach-trang-tri|gach-thiet-ke-xi-mang|gach-van-da-marble|gach-van-da-tu-nhien|gach-van-go,330,320,320,320,0,165,165,data-cleanup-first,Nơi sản xuất | don_vi_tinh
+thiet-bi-bep,thiet-bi-bep,chau-rua-chen|voi-rua-chen|bep-dien-tu|bep-gas|may-hut-mui|may-rua-chen|lo-nuong|phu-kien-bep|phu-kien-chau-rua-chen|thiet-bi-bep-khac,790,790,712,790,78,712,78,ready-for-backend-refactor,Bảo hành | Chất liệu | Loại vòi
+vat-lieu-nuoc,vat-lieu-nuoc,loc-nuoc|may-nuoc-nong|bon-chua-nuoc|may-bom-nuoc,185,185,185,185,0,185,0,data-cleanup-first,
