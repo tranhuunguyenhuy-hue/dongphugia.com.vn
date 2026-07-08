@@ -143,6 +143,7 @@ export default async function ThietBiVeSinhPage({ searchParams }: PageProps) {
                                         product={product}
                                         basePath={BASE_PATH}
                                         patternSlug={product.subcategories?.slug}
+                                        href={(product as { url?: string }).url}
                                     />
                                 ))}
                             </div>

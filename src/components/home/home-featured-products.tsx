@@ -30,6 +30,7 @@ export function HomeFeaturedProducts({ products }: HomeFeaturedProductsProps) {
                                 product={product}
                                 basePath={`/${product.categories?.slug || 'san-pham'}`}
                                 patternSlug={product.subcategories?.slug || 'all'}
+                                href={product.url}
                             />
                         </div>
                     ))}

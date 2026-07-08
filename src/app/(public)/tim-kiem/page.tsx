@@ -6,8 +6,9 @@ import { Search, Package2, ChevronRight, SlidersHorizontal } from 'lucide-react'
 import { formatPrice } from '@/lib/utils'
 import { ProductCard } from '@/components/ui/product-card'
 import prisma from '@/lib/prisma'
-import { buildPublicProductVisibilityWhere } from '@/lib/public-product-visibility'
+import { buildPublicSearchVisibilityWhere } from '@/lib/public-product-visibility'
 import { getCanonicalProductPath, primaryTaxonAssignmentSelect } from '@/lib/taxonomy-paths'
+import { canonicalUrl } from '@/lib/site'
 
 import { Prisma } from '@prisma/client'
 
@@ -55,6 +56,12 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
     return {
         title: `Kết quả tìm kiếm "${q}"`,
         description: `Kết quả tìm kiếm cho "${q}" tại Đông Phú Gia — Thiết bị vệ sinh, gạch ốp lát, thiết bị bếp chính hãng.`,
+        alternates: {
+            canonical: canonicalUrl('/tim-kiem'),
+        },
+        openGraph: {
+            url: canonicalUrl('/tim-kiem'),
+        },
         robots: { index: false, follow: true },
     }
 }
@@ -73,7 +80,7 @@ async function fetchSearchResults(q: string, page: number): Promise<SearchRespon
 
         const whereClause: Prisma.productsWhereInput = {
             AND: [
-                buildPublicProductVisibilityWhere(),
+                buildPublicSearchVisibilityWhere(),
                 {
                     OR: [
                         { name: { contains: searchTerm, mode: 'insensitive' as const } },

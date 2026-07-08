@@ -1,0 +1,2689 @@
+{
+  "generatedAt": "2026-07-08T19:29:41.938Z",
+  "sourceTag": "catalog_cleanup_high_confidence_v1",
+  "counts": {
+    "vatLieuNuocHighConfidence": 112,
+    "gachOpLatHighConfidence": 165,
+    "total": 277
+  },
+  "taxonMap": {
+    "gach-inax-ecocarat": {
+      "id": 35,
+      "canonicalPath": "gach-op-lat/gach-inax-ecocarat"
+    },
+    "gach-op-lat": {
+      "id": 31,
+      "canonicalPath": "gach-op-lat/gach-op-lat"
+    },
+    "gach-op-tuong": {
+      "id": 32,
+      "canonicalPath": "gach-op-lat/gach-op-tuong"
+    },
+    "gach-trang-tri": {
+      "id": 34,
+      "canonicalPath": "gach-op-lat/gach-trang-tri"
+    }
+  },
+  "vatLieuNuoc": [
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 5348,
+      "sku": "BNDTl1000D",
+      "name": "Bồn nước inox Đại Thành 1000L đứng SUS 304 BNDTl1000D",
+      "subcategory_slug": "bon-chua-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "bon-chua-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 5349,
+      "sku": "BNDTl1000N",
+      "name": "Bồn nước inox Đại Thành 1000L ngang SUS 304 BNDTl1000N",
+      "subcategory_slug": "bon-chua-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "bon-chua-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 5350,
+      "sku": "BNDTl1500N",
+      "name": "Bồn nước inox Đại Thành 1500L ngang SUS 304 BNDTl1500N",
+      "subcategory_slug": "bon-chua-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "bon-chua-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 5351,
+      "sku": "BNDTl1500D",
+      "name": "Bồn nước inox Đại Thành 1500L đứng SUS 304 BNDTl1500D",
+      "subcategory_slug": "bon-chua-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "bon-chua-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 5352,
+      "sku": "BNDTl2000N",
+      "name": "Bồn nước inox Đại Thành 2000L ngang SUS 304 BNDTl2000N",
+      "subcategory_slug": "bon-chua-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "bon-chua-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 5353,
+      "sku": "BNDTl2000D",
+      "name": "Bồn nước inox Đại Thành 2000L đứng SUS 304 BNDTl2000D",
+      "subcategory_slug": "bon-chua-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "bon-chua-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 5354,
+      "sku": "BNDTl2500N",
+      "name": "Bồn nước inox Đại Thành 2500L ngang SUS 304 BNDTl2500N",
+      "subcategory_slug": "bon-chua-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "bon-chua-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 5355,
+      "sku": "BNDTl2500D",
+      "name": "Bồn nước inox Đại Thành 2500L đứng SUS 304 BNDTl2500D",
+      "subcategory_slug": "bon-chua-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "bon-chua-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 5356,
+      "sku": "BNDTl3000N",
+      "name": "Bồn nước inox Đại Thành 3000L ngang SUS 304 BNDTl3000N",
+      "subcategory_slug": "bon-chua-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "bon-chua-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 5357,
+      "sku": "BNDTl3000D",
+      "name": "Bồn nước inox Đại Thành 3000L đứng SUS 304 BNDTl3000D",
+      "subcategory_slug": "bon-chua-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "bon-chua-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 5358,
+      "sku": "BNDTl4000N",
+      "name": "Bồn nước inox Đại Thành 4000L ngang SUS 304 BNDTl4000N",
+      "subcategory_slug": "bon-chua-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "bon-chua-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 5359,
+      "sku": "BNDTl4500N",
+      "name": "Bồn nước inox Đại Thành 4500L ngang SUS 304 BNDTl4500N",
+      "subcategory_slug": "bon-chua-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "bon-chua-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 5360,
+      "sku": "BNDTl4000D",
+      "name": "Bồn nước inox Đại Thành 4000L đứng SUS 304 BNDTl4000D",
+      "subcategory_slug": "bon-chua-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "bon-chua-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 5361,
+      "sku": "BNDTl4500D",
+      "name": "Bồn nước inox Đại Thành 4500L đứng SUS 304 BNDTl4500D",
+      "subcategory_slug": "bon-chua-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "bon-chua-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 5362,
+      "sku": "BNDTl5000N",
+      "name": "Bồn nước inox Đại Thành 5000L ngang SUS 304 BNDTl5000N",
+      "subcategory_slug": "bon-chua-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "bon-chua-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 5363,
+      "sku": "BNDTl5000D",
+      "name": "Bồn nước inox Đại Thành 5000L đứng SUS 304 BNDTl5000D",
+      "subcategory_slug": "bon-chua-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "bon-chua-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 5364,
+      "sku": "BNDTl500N",
+      "name": "Bồn nước inox Đại Thành 500L ngang SUS 304 BNDTl500N",
+      "subcategory_slug": "bon-chua-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "bon-chua-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 5365,
+      "sku": "BNDTl500D",
+      "name": "Bồn nước inox Đại Thành 500L đứng SUS 304 BNDTl500D",
+      "subcategory_slug": "bon-chua-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "bon-chua-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 5366,
+      "sku": "BNDTl6000N",
+      "name": "Bồn nước inox Đại Thành 6000L ngang SUS 304 BNDTl6000N",
+      "subcategory_slug": "bon-chua-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "bon-chua-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 5367,
+      "sku": "BNDTl6000D",
+      "name": "Bồn nước inox Đại Thành 6000L đứng SUS 304 BNDTl6000D",
+      "subcategory_slug": "bon-chua-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "bon-chua-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 422,
+      "sku": "KAQ-U99",
+      "name": "Máy lọc nước Karofi KAQ-U99",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 423,
+      "sku": "KTF-P01",
+      "name": "Lọc tổng trung tâm cao cấp Karofi KTF-P01",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 424,
+      "sku": "KTF-P02",
+      "name": "Lọc tổng trung tâm cao cấp Karofi KTF-P02",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 425,
+      "sku": "KTF-222C",
+      "name": "Máy lọc tổng đầu nguồn Karofi KTF-222C",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 426,
+      "sku": "KTF-552",
+      "name": "Máy lọc tổng đầu nguồn Karofi KTF-552",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 427,
+      "sku": "WHF-E666",
+      "name": "Lọc tổng trung tâm cao cấp Karofi WHF-E666",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 428,
+      "sku": "SA9 PREMIUM",
+      "name": "Máy lọc nước Karofi SA9 PREMIUM nóng lạnh Hydro-ion kiềm",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 429,
+      "sku": "DA9 PREMIUM",
+      "name": "Máy lọc nước Karofi DA9 PREMIUM Hydro-ion kiềm",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 430,
+      "sku": "KMF-68",
+      "name": "Lọc tổng trung tâm cao cấp Karofi KMF-68",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 431,
+      "sku": "KST-79",
+      "name": "Lọc tổng trung tâm cao cấp Karofi KST-79",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 432,
+      "sku": "KTF-332C",
+      "name": "Máy lọc tổng đầu nguồn Karofi KTF-332C",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 433,
+      "sku": "KTF-332I",
+      "name": "Máy lọc tổng đầu nguồn Karofi KTF-332I",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 434,
+      "sku": "KTF-333C",
+      "name": "Máy lọc tổng đầu nguồn Karofi KTF-333C",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 435,
+      "sku": "KTF-333I",
+      "name": "Máy lọc tổng đầu nguồn Karofi KTF-333I",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 436,
+      "sku": "KTF-552 ECO",
+      "name": "Máy lọc tổng đầu nguồn Karofi KTF-552 ECO",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 437,
+      "sku": "KTF-662",
+      "name": "Máy lọc tổng đầu nguồn Karofi KTF-662",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 438,
+      "sku": "KTF-888",
+      "name": "Lọc tổng trung tâm cao cấp Karofi KTF-888",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 439,
+      "sku": "WHF-E666 PLUS",
+      "name": "Lọc tổng trung tâm Karofi WHF-E666 PLUS cao cấp",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 440,
+      "sku": "EF401",
+      "name": "Máy lọc nước lắp tại vòi Mitsubishi Cleansui EF401",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 441,
+      "sku": "EF201",
+      "name": "Máy lọc nước lắp tại vòi Mitsubishi Cleansui EF201",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 461,
+      "sku": "EF102",
+      "name": "Đầu lọc nước tại vòi Mitsubishi Cleansui EF102",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 462,
+      "sku": "ES301-WT",
+      "name": "Thiết bị lọc nước Mitsubishi Cleansui ES301-WT/BK vòi sen tắm",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 463,
+      "sku": "ES101",
+      "name": "Thiết bị lọc nước Mitsubishi Cleansui ES101 vòi sen tắm",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 464,
+      "sku": "ES201W",
+      "name": "Thiết bị lọc nước Mitsubishi Cleansui ES201W vòi sen tắm",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 465,
+      "sku": "MP02-4",
+      "name": "Thiết bị lọc nước Mitsubishi Cleansui MP02-4 công nghiệp",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 466,
+      "sku": "MP02-3",
+      "name": "Thiết bị lọc nước Mitsubishi Cleansui MP02-3 công nghiệp",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 467,
+      "sku": "ET101",
+      "name": "Thiết bị lọc nước Mitsubishi Cleansui ET101 trên bồn rửa",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 468,
+      "sku": "EU202",
+      "name": "Thiết bị lọc nước Mitsubishi Cleansui EU202 âm tủ bếp",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 469,
+      "sku": "EU201",
+      "name": "Thiết bị lọc nước Mitsubishi Cleansui EU201 dưới bồn rửa",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 470,
+      "sku": "EU301",
+      "name": "Thiết bị lọc nước Mitsubishi Cleansui EU301 ion kiềm",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 471,
+      "sku": "EUC2000",
+      "name": "Bộ lọc thay thế Mitsubishi Cleansui EUC2000/UZC2000E dành cho EU301",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 472,
+      "sku": "ESC21W",
+      "name": "Bộ lõi lọc Mitsubishi Cleansui ESC21W dành cho ES201W",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 473,
+      "sku": "MPOE-S",
+      "name": "Hệ thống lọc tổng Mitsubishi Cleansui MPOE-S",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 474,
+      "sku": "MPOE-P",
+      "name": "Hệ thống lọc tổng Cleansui MPOE-P điều khiển cảm ứng",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 475,
+      "sku": "EJ101",
+      "name": "Bình lọc nước cầm tay Mitsubishi Cleansui EJ101 0.9 lít/1.35 lít",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 476,
+      "sku": "EJ102",
+      "name": "Bình lọc nước cầm tay Mitsubishi Cleansui EJ102 1 lít/1.5 lít",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 477,
+      "sku": "EJ103",
+      "name": "Bình nước lọc cầm tay Mitsubishi Cleansui EJ103 1.5 lít/2.2 lít",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 478,
+      "sku": "ET201",
+      "name": "Thiết bị lọc nước Cleansui ET201 lắp trên bồn rửa vỏ thép không gỉ",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 479,
+      "sku": "P-6320R",
+      "name": "Máy lọc nước Coway Cinnamon P-6320R",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 480,
+      "sku": "CHP-18AR",
+      "name": "Máy lọc nước Coway Villaem 2 CHP-18AR",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 481,
+      "sku": "P-300R",
+      "name": "Máy lọc nước Coway Joey P-300R",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 482,
+      "sku": "CHP-260L",
+      "name": "Máy lọc nước Coway Neo CHP-260L",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 483,
+      "sku": "P-300L",
+      "name": "Máy lọc nước Coway Finn P-300L không dùng điện",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 484,
+      "sku": "CHP-590R",
+      "name": "Máy lọc nước Coway Harry CHP-590R",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 485,
+      "sku": "CHP-671R",
+      "name": "Máy lọc nước Coway Core CHP-671R nóng lạnh",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 486,
+      "sku": "CHP-264L",
+      "name": "Máy lọc nước Neo Plus Coway CHP-264L",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 487,
+      "sku": "ADD8980",
+      "name": "Máy lọc nước RO 3 chế độ nước bộ lọc khoáng 4 trong 1 Philips ADD8980",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 488,
+      "sku": "ADD6910",
+      "name": "Máy lọc nước RO lõi lọc 5 thành phần và khử trùng UV Philips ADD6910",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 489,
+      "sku": "AUT2015",
+      "name": "Máy lọc nước RO để gầm Philips AUT2015/3015",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 490,
+      "sku": "ADD8970/74",
+      "name": "Máy lọc nước RO 6 lõi lọc Philips ADD8970/74",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 491,
+      "sku": "ADD8976",
+      "name": "Máy lọc nước RO 9 lõi lọc Philips ADD8976",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 492,
+      "sku": "AWP3753/98",
+      "name": "Bộ lọc nước tại vòi Philips AWP3753/98",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 493,
+      "sku": "AWP1775WH/74",
+      "name": "Bộ lọc nước vòi sen Philips AWP1775WH/74",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 494,
+      "sku": "AWP2712RDR/97",
+      "name": "Bình nước cầm tay  Bottle GoZero Philips AWP2712",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 495,
+      "sku": "AWP2788GN/74",
+      "name": "Bình giữ nhiệt diệt khuẩn UV Smart Philips AWP2788",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 5321,
+      "sku": "MPOE-S4",
+      "name": "Hệ thống lọc tổng Mitsubishi Cleansui MPOE-S4 4 bộ lọc",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 5322,
+      "sku": "KTF-662-AIO",
+      "name": "Máy lọc tổng đầu nguồn Karofi KTF-662-AIO",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 5323,
+      "sku": "ULTIMA-WHITE",
+      "name": "Máy Lọc Nước Unilever Pureit Ultima 7 Cấp Lọc",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 5324,
+      "sku": "Lavita",
+      "name": "Máy Lọc Nước Unilever Pureit LAVITA Lọc  Sạch & Làm Nóng Thông Minh (công suất lọc 4000L)",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 5325,
+      "sku": "DELICA UR5640",
+      "name": "Máy Lọc Nước Âm Tủ Bếp Unilever Pureit DELICA UR5640 (công suất lọc 14000L)",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 5326,
+      "sku": "CASA-GKK",
+      "name": "Bộ lọc diệt khuẩn cho máy CASA Unilever Pureit CASA-GKK",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 5327,
+      "sku": "Ultima-GKK1",
+      "name": "Bộ lọc thay thế cho máy Ultima Unilever Pureit",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 5328,
+      "sku": "LAVITA-CTO",
+      "name": "Bộ lọc thay thế cho máy LAVITA Unilever Pureit",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 5329,
+      "sku": "DELICA-CTO",
+      "name": "Bộ lọc thay thế cho máy DELICA UR5640 Unilever Pureit",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 5330,
+      "sku": "DELICA UR5840",
+      "name": "Máy Lọc Nước Âm Tủ Bếp Unilever Pureit DELICA UR5840 (công suất lọc 18000L)",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 5331,
+      "sku": "DELICA UR5440",
+      "name": "Máy Lọc Nước Âm Tủ Bếp Unilever Pureit DELICA UR5440 (công suất lọc 11000L)",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 5332,
+      "sku": "TANKA UR3140",
+      "name": "Máy Lọc Nước Âm Tủ Bếp Pure It TANKA UR3140 (công suất lọc 5000L)",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 5333,
+      "sku": "EXCELLA-GKK",
+      "name": "Gói thiết bị diệt khuẩn công suất 3000L Unilever Pureit EXCELLA-GKK",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 5334,
+      "sku": "DELICA-UR5440-CTO",
+      "name": "Bộ lọc thay thế cho máy DELICA UR5440 Unilever Pureit",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 5335,
+      "sku": "TANKA-UR3140-PCM",
+      "name": "Bộ lọc thay thế cho máy TANKA UR3140 Unilever Pureit",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 5336,
+      "sku": "DELICA-UR5840-CTO",
+      "name": "Bộ lọc thay thế cho máy DELICA UR5840 Unilever Pureit",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 5337,
+      "sku": "SA8 PREMIUM",
+      "name": "Máy lọc nước Karofi SA8 PREMIUM nóng lạnh Hydro-ion kiềm",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 5338,
+      "sku": "DA8 PREMIUM",
+      "name": "Máy lọc nước Karofi DA8 PREMIUM Hydro-ion kiềm",
+      "subcategory_slug": "loc-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "loc-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 442,
+      "sku": "GP-10HCN1SVN",
+      "name": "Máy bơm ly tâm 740W-1480W Panasonic GP-10HCN1SVN / GP-15HCN1SVN /  GP-20HCN1SVN",
+      "subcategory_slug": "may-bom-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "may-bom-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 443,
+      "sku": "A-130JAK",
+      "name": "Máy bơm Panasonic tăng áp 125W A-130JAK",
+      "subcategory_slug": "may-bom-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "may-bom-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 444,
+      "sku": "A-200JAK",
+      "name": "Máy bơm Panasonic tăng áp 200W A-200JAK",
+      "subcategory_slug": "may-bom-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "may-bom-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 445,
+      "sku": "GA-125FAK",
+      "name": "Máy bơm Panasonic tăng áp 125W GA-125FAK",
+      "subcategory_slug": "may-bom-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "may-bom-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 446,
+      "sku": "A-130JTX",
+      "name": "Máy bơm Panasonic tăng áp 125W tạo bọt khí A-130JTX",
+      "subcategory_slug": "may-bom-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "may-bom-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 447,
+      "sku": "A-130JACK",
+      "name": "Máy bơm Panasonic tăng áp 125W A-130JACK",
+      "subcategory_slug": "may-bom-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "may-bom-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 448,
+      "sku": "GP-129JXK-SV5",
+      "name": "Máy bơm Panasonic đẩy cao 125W GP-129JXK-SV5 / GP-129JXK-NV5",
+      "subcategory_slug": "may-bom-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "may-bom-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 449,
+      "sku": "GP-200JXK-SV5",
+      "name": "Máy bơm Panasonic đẩy cao 200W GP-200JXK-SV5 / GP-200JXK-NV5",
+      "subcategory_slug": "may-bom-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "may-bom-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 450,
+      "sku": "GP-250JXK-SV5",
+      "name": "Máy bơm Panasonic đẩy cao 250W GP-250JXK-SV5 / GP-250JXK-NV5",
+      "subcategory_slug": "may-bom-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "may-bom-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 451,
+      "sku": "NJET750",
+      "name": "Máy bơm đầu JET 750W Nanoco NJET750",
+      "subcategory_slug": "may-bom-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "may-bom-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 452,
+      "sku": "NCP750",
+      "name": "Máy bơm ly tâm 750W Nanoco NCP750",
+      "subcategory_slug": "may-bom-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "may-bom-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 453,
+      "sku": "NHF1500",
+      "name": "Máy bơm lưu lượng 750W Nanoco NHF750 NHF1500",
+      "subcategory_slug": "may-bom-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "may-bom-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 454,
+      "sku": "NSP128",
+      "name": "Máy bơm nước đẩy cao Nanoco NSP128",
+      "subcategory_slug": "may-bom-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "may-bom-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 455,
+      "sku": "NDK1100",
+      "name": "Máy bơm lưu lượng Nanoco NDK1100 / NDK1500",
+      "subcategory_slug": "may-bom-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "may-bom-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 456,
+      "sku": "NCPS128-A",
+      "name": "Máy bơm nước nóng tăng áp điện tử Nanoco NCPS128-A / NCPS200-A / NCPS300-A / NCPS400-A",
+      "subcategory_slug": "may-bom-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "may-bom-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 457,
+      "sku": "GA-200FAH",
+      "name": "Máy bơm Panasonic tăng áp 200W GA-200FAH",
+      "subcategory_slug": "may-bom-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "may-bom-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 458,
+      "sku": "NCLP550",
+      "name": "Máy bơm nước đẩy cao Nanoco NCLP750 / NCLP550",
+      "subcategory_slug": "may-bom-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "may-bom-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 459,
+      "sku": "NCPS250-AT",
+      "name": "Máy bơm nước nóng lạnh tăng áp điện tử Nanoco NCPS250-AT / NCPS750-AT / NCPS550-AT / NCPS370-AT",
+      "subcategory_slug": "may-bom-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "may-bom-nuoc"
+    },
+    {
+      "lane": "vat-lieu-nuoc",
+      "product_id": 460,
+      "sku": "NIP400",
+      "name": "Máy bơm nước tăng áp biến tần Nanoco NIP400 / NIP600",
+      "subcategory_slug": "may-bom-nuoc",
+      "current_product_type": null,
+      "proposed_product_type": "may-bom-nuoc"
+    }
+  ],
+  "gachOpLat": [
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39435,
+      "sku": "ECP-25NET-LUX-13",
+      "name": "Gạch nội thất ECOCARAT PLUS LUXURY MOSAIC INAX ECP-25NET/LUX",
+      "subcategory_slug": "gach-inax-ecocarat",
+      "taxon_id": 35,
+      "proposed_primary_taxon_slug": "gach-inax-ecocarat",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-inax-ecocarat"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39437,
+      "sku": "ECP-60NET/PMK12",
+      "name": "Gạch nội thất ECOCARAT PLUS PEARL MASK INAX ECP-60NET/PMK",
+      "subcategory_slug": "gach-inax-ecocarat",
+      "taxon_id": 35,
+      "proposed_primary_taxon_slug": "gach-inax-ecocarat",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-inax-ecocarat"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39438,
+      "sku": "ECP-375/RTZ3N",
+      "name": "Gạch nội thất ECOCARAT PLUS ROUGH QUARTZ INAX ECP-375/RTZ",
+      "subcategory_slug": "gach-inax-ecocarat",
+      "taxon_id": 35,
+      "proposed_primary_taxon_slug": "gach-inax-ecocarat",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-inax-ecocarat"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39439,
+      "sku": "ECP-375/RTZ2N",
+      "name": "Gạch nội thất ECOCARAT PLUS ROUGH QUARTZ INAX ECP-375/RTZ",
+      "subcategory_slug": "gach-inax-ecocarat",
+      "taxon_id": 35,
+      "proposed_primary_taxon_slug": "gach-inax-ecocarat",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-inax-ecocarat"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39440,
+      "sku": "ECP-303/RBM3N",
+      "name": "Gạch nội thất ECOCARAT PLUS RIBMIX INAX ECP-303/RBM",
+      "subcategory_slug": "gach-inax-ecocarat",
+      "taxon_id": 35,
+      "proposed_primary_taxon_slug": "gach-inax-ecocarat",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-inax-ecocarat"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39441,
+      "sku": "ECP-630/STG-4N",
+      "name": "Gạch nội thất ECOCARAT PLUS STONE GRACE INAX ECP-630/STG",
+      "subcategory_slug": "gach-inax-ecocarat",
+      "taxon_id": 35,
+      "proposed_primary_taxon_slug": "gach-inax-ecocarat",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-inax-ecocarat"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39442,
+      "sku": "ECP-275NET/RGS3",
+      "name": "Gạch nội thất ECOCARAT PLUS ROUGHSAWN INAX ECP-275/RGS",
+      "subcategory_slug": "gach-inax-ecocarat",
+      "taxon_id": 35,
+      "proposed_primary_taxon_slug": "gach-inax-ecocarat",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-inax-ecocarat"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39443,
+      "sku": "ECP-275NET/RGS2",
+      "name": "Gạch nội thất ECOCARAT PLUS ROUGHSAWN INAX ECP-275/RGS",
+      "subcategory_slug": "gach-inax-ecocarat",
+      "taxon_id": 35,
+      "proposed_primary_taxon_slug": "gach-inax-ecocarat",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-inax-ecocarat"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39444,
+      "sku": "ECO-30NET/WE3NN",
+      "name": "Gạch nội thất ECOCARAT PLUS VELE INAX ECP-30NET/WE",
+      "subcategory_slug": "gach-inax-ecocarat",
+      "taxon_id": 35,
+      "proposed_primary_taxon_slug": "gach-inax-ecocarat",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-inax-ecocarat"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39434,
+      "sku": "INAX-1025/POL-G1/G2/G3",
+      "name": "Gạch hồ bơi INAX 22.5 x 22.5 1025/POL-B1,2,3:G1,2,3",
+      "subcategory_slug": "gach-op-lat",
+      "taxon_id": 31,
+      "proposed_primary_taxon_slug": "gach-op-lat",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-lat"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39436,
+      "sku": "INAX-97/POL-G1/G2/G3",
+      "name": "Gạch hồ bơi INAX 97 x 97 97/POL-B1,2,3: G1,2,3",
+      "subcategory_slug": "gach-op-lat",
+      "taxon_id": 31,
+      "proposed_primary_taxon_slug": "gach-op-lat",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-lat"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39445,
+      "sku": "INAX-1525/EAC-4",
+      "name": "Gạch ốp tường 1525/EAC-EARTH COLOR BORDER INAX-1525/EAC",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39446,
+      "sku": "INAX-1525/EAC-3",
+      "name": "Gạch ốp tường 1525/EAC-EARTH COLOR BORDER INAX-1525/EAC",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39447,
+      "sku": "INAX-1525/EAC-2",
+      "name": "Gạch ốp tường 1525/EAC-EARTH COLOR BORDER INAX-1525/EAC",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39448,
+      "sku": "INAX-255/VIZ-10",
+      "name": "Gạch ốp tường 255-VIZ INAX-255VIZ (INAX255VIZ)",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39449,
+      "sku": "INAX-255/VIZ-9",
+      "name": "Gạch ốp tường 255-VIZ INAX-255VIZ (INAX255VIZ)",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39450,
+      "sku": "INAX-255/VIZ-8",
+      "name": "Gạch ốp tường 255-VIZ INAX-255VIZ (INAX255VIZ)",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39451,
+      "sku": "INAX-255/VIZ-7",
+      "name": "Gạch ốp tường 255-VIZ INAX-255VIZ (INAX255VIZ)",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39452,
+      "sku": "INAX-255/VIZ-6",
+      "name": "Gạch ốp tường 255-VIZ INAX-255VIZ (INAX255VIZ)",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39453,
+      "sku": "INAX-255/VIZ-5",
+      "name": "Gạch ốp tường 255-VIZ INAX-255VIZ (INAX255VIZ)",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39454,
+      "sku": "INAX-255/VIZ-4",
+      "name": "Gạch ốp tường 255-VIZ INAX-255VIZ (INAX255VIZ)",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39455,
+      "sku": "INAX-255/VIZ-3",
+      "name": "Gạch ốp tường 255-VIZ INAX-255VIZ (INAX255VIZ)",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39456,
+      "sku": "INAX-255/VIZ-2",
+      "name": "Gạch ốp tường 255-VIZ INAX-255VIZ (INAX255VIZ)",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39457,
+      "sku": "INAX-355-VIZ-9N",
+      "name": "Gạch ốp tường 355-VIZ INAX-355VIZ (INAX355VIZ)",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39458,
+      "sku": "INAX-355-VIZ-8N",
+      "name": "Gạch ốp tường 355-VIZ INAX-355VIZ (INAX355VIZ)",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39459,
+      "sku": "INAX-355-VIZ-7N",
+      "name": "Gạch ốp tường 355-VIZ INAX-355VIZ (INAX355VIZ)",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39460,
+      "sku": "INAX-355-VIZ-6N",
+      "name": "Gạch ốp tường 355-VIZ INAX-355VIZ (INAX355VIZ)",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39461,
+      "sku": "INAX-355-VIZ-5N",
+      "name": "Gạch ốp tường 355-VIZ INAX-355VIZ (INAX355VIZ)",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39462,
+      "sku": "INAX-355-VIZ-4N",
+      "name": "Gạch ốp tường 355-VIZ INAX-355VIZ (INAX355VIZ)",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39463,
+      "sku": "INAX-355-VIZ-3N",
+      "name": "Gạch ốp tường 355-VIZ INAX-355VIZ (INAX355VIZ)",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39464,
+      "sku": "INAX-355-VIZ-2N",
+      "name": "Gạch ốp tường 355-VIZ INAX-355VIZ (INAX355VIZ)",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39465,
+      "sku": "INAX-355-VIZ-1N",
+      "name": "Gạch ốp tường 355-VIZ INAX-355VIZ (INAX355VIZ)",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39466,
+      "sku": "INAX-355/EAC-4",
+      "name": "Gạch ốp tường 355/EAC-EARTH COLOR BORDER INAX-355/EAC",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39467,
+      "sku": "INAX-355/EAC-3",
+      "name": "Gạch ốp tường 355/EAC-EARTH COLOR BORDER INAX-355/EAC",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39468,
+      "sku": "INAX-355/EAC-2",
+      "name": "Gạch ốp tường 355/EAC-EARTH COLOR BORDER INAX-355/EAC",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39469,
+      "sku": "INAX-20B/BB-3",
+      "name": "Gạch ốp tường BB-BAMBOO BORDER INAX-20B/BB",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39470,
+      "sku": "INAX-20B/BB-2",
+      "name": "Gạch ốp tường BB-BAMBOO BORDER INAX-20B/BB",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39471,
+      "sku": "HAL-155/CEF-2",
+      "name": "Gạch ốp tường CELAVIO E INAX HAL-155/CEF",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39472,
+      "sku": "IM-1520P1/BL-2",
+      "name": "Gạch ốp tường BL-BULLION BORDER INAX IM-1520P1/BL",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39473,
+      "sku": "INAX-40B/CK-6",
+      "name": "Gạch ốp tường CHECKER INAX-40B/CK",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39474,
+      "sku": "INAX-40B/CK-3",
+      "name": "Gạch ốp tường CHECKER INAX-40B/CK",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39475,
+      "sku": "HAL-35B/GRA-M4",
+      "name": "Gạch ốp tường CELAVIOGRAN A INAX HAL-35B/GRA",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39476,
+      "sku": "HAL-35B/GRA-M3",
+      "name": "Gạch ốp tường CELAVIOGRAN A INAX HAL-35B/GRA",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39477,
+      "sku": "HAL-35B/GRA-M2",
+      "name": "Gạch ốp tường CELAVIOGRAN A INAX HAL-35B/GRA",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39478,
+      "sku": "355TT/CMG-4B",
+      "name": "Gạch ốp tường COOL MIST GLASS INAX-355TT,SD/CMG",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39479,
+      "sku": "355TT/CMG-5B",
+      "name": "Gạch ốp tường COOL MIST GLASS INAX-355TT,SD/CMG",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39480,
+      "sku": "355TT/CMG-3B",
+      "name": "Gạch ốp tường COOL MIST GLASS INAX-355TT,SD/CMG",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39481,
+      "sku": "355TT/CMG-2M",
+      "name": "Gạch ốp tường COOL MIST GLASS INAX-355TT,SD/CMG",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39482,
+      "sku": "355TT/CMG-2B",
+      "name": "Gạch ốp tường COOL MIST GLASS INAX-355TT,SD/CMG",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39483,
+      "sku": "355TT/CMG-1M",
+      "name": "Gạch ốp tường COOL MIST GLASS INAX-355TT,SD/CMG",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39484,
+      "sku": "355TT/CMG-1B",
+      "name": "Gạch ốp tường COOL MIST GLASS INAX-355TT,SD/CMG",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39485,
+      "sku": "355SD/CMG-5B",
+      "name": "Gạch ốp tường COOL MIST GLASS INAX-355TT,SD/CMG",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39486,
+      "sku": "355SD/CMG-3B",
+      "name": "Gạch ốp tường COOL MIST GLASS INAX-355TT,SD/CMG",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39487,
+      "sku": "355SD/CMG-4B",
+      "name": "Gạch ốp tường COOL MIST GLASS INAX-355TT,SD/CMG",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39488,
+      "sku": "355SD/CMG-2M",
+      "name": "Gạch ốp tường COOL MIST GLASS INAX-355TT,SD/CMG",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39489,
+      "sku": "355SD/CMG-2B",
+      "name": "Gạch ốp tường COOL MIST GLASS INAX-355TT,SD/CMG",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39490,
+      "sku": "355SD/CMG-1M",
+      "name": "Gạch ốp tường COOL MIST GLASS INAX-355TT,SD/CMG",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39491,
+      "sku": "IM-50P1/DL-2",
+      "name": "Gạch ốp tường DL-DELTA INAX IM-50P1/DL",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39492,
+      "sku": "INAX-255/DPL-108V",
+      "name": "Gạch ốp tường DPL POINT COLOR INAX-255/DPL",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39493,
+      "sku": "INAX-255/DPL-107V",
+      "name": "Gạch ốp tường DPL POINT COLOR INAX-255/DPL",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39494,
+      "sku": "INAX-255/DPL-106V",
+      "name": "Gạch ốp tường DPL POINT COLOR INAX-255/DPL",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39495,
+      "sku": "INAX-255/DPL-104V",
+      "name": "Gạch ốp tường DPL POINT COLOR INAX-255/DPL",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39496,
+      "sku": "INAX-255/DPL-103V",
+      "name": "Gạch ốp tường DPL POINT COLOR INAX-255/DPL",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39497,
+      "sku": "INAX-255/DPL-102V",
+      "name": "Gạch ốp tường DPL POINT COLOR INAX-255/DPL",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39498,
+      "sku": "INAX-355/GLM-3",
+      "name": "Gạch ốp tường GLAZED MOSAIC INAX-355/GLM",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39499,
+      "sku": "INAX-355/GLM-2",
+      "name": "Gạch ốp tường GLAZED MOSAIC INAX-355/GLM",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39500,
+      "sku": "INAX-325/FBM-3",
+      "name": "Gạch ốp tường FISHBONE MOSAIC INAX-325/FBM",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39501,
+      "sku": "INAX-325/FBM-2",
+      "name": "Gạch ốp tường FISHBONE MOSAIC INAX-325/FBM",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39502,
+      "sku": "HAL-20BR/HB-7",
+      "name": "Gạch ốp tường HOSOWARI BORDER RANDOM INAX HAL-20BR/HB",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39503,
+      "sku": "HAL-20BR/HB-6",
+      "name": "Gạch ốp tường HOSOWARI BORDER RANDOM INAX HAL-20BR/HB",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39504,
+      "sku": "HAL-20BR/HB-5",
+      "name": "Gạch ốp tường HOSOWARI BORDER RANDOM INAX HAL-20BR/HB",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39505,
+      "sku": "HAL-20BR/HB-4",
+      "name": "Gạch ốp tường HOSOWARI BORDER RANDOM INAX HAL-20BR/HB",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39506,
+      "sku": "HAL-20BR/HB-3",
+      "name": "Gạch ốp tường HOSOWARI BORDER RANDOM INAX HAL-20BR/HB",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39507,
+      "sku": "HAL-20BR/HB-2",
+      "name": "Gạch ốp tường HOSOWARI BORDER RANDOM INAX HAL-20BR/HB",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39508,
+      "sku": "HAL-20BN/HB-7",
+      "name": "Gạch ốp tường HOSOWARI BORDER INAX HAL-20BN/HB",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39509,
+      "sku": "HAL-20BN/HB-6",
+      "name": "Gạch ốp tường HOSOWARI BORDER INAX HAL-20BN/HB",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39510,
+      "sku": "HAL-20BN/HB-5",
+      "name": "Gạch ốp tường HOSOWARI BORDER INAX HAL-20BN/HB",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39511,
+      "sku": "HAL-20BN/HB-4",
+      "name": "Gạch ốp tường HOSOWARI BORDER INAX HAL-20BN/HB",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39512,
+      "sku": "HAL-20BN/HB-3",
+      "name": "Gạch ốp tường HOSOWARI BORDER INAX HAL-20BN/HB",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39513,
+      "sku": "HAL-20BN/HB-2",
+      "name": "Gạch ốp tường HOSOWARI BORDER INAX HAL-20BN/HB",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39514,
+      "sku": "INAX-40B/SLT-4",
+      "name": "Gạch ốp tường I-Concept SLIT INAX-40B/SLT",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39515,
+      "sku": "INAX-40B/SLT-3",
+      "name": "Gạch ốp tường I-Concept SLIT INAX-40B/SLT",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39516,
+      "sku": "INAX-20B/CRB-6",
+      "name": "Gạch ốp tường I-Concept CERABORDER INAX-20B/CRB",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39517,
+      "sku": "INAX-20B/CRB-4",
+      "name": "Gạch ốp tường I-Concept CERABORDER INAX-20B/CRB",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39518,
+      "sku": "INAX-20B/CRB-3",
+      "name": "Gạch ốp tường I-Concept CERABORDER INAX-20B/CRB",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39519,
+      "sku": "INAX-20B/CRB-5",
+      "name": "Gạch ốp tường I-Concept CERABORDER INAX-20B/CRB",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39520,
+      "sku": "INAX-20B/CRB-2",
+      "name": "Gạch ốp tường I-Concept CERABORDER INAX-20B/CRB",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39521,
+      "sku": "INAX-3040B/TRP-4",
+      "name": "Gạch ốp tường I-Concept TRAPE INAX-3040B/TRP",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39522,
+      "sku": "INAX-3040B/TRP-3",
+      "name": "Gạch ốp tường I-Concept TRAPE INAX-3040B/TRP",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39523,
+      "sku": "INAX-3040B/TRP-2",
+      "name": "Gạch ốp tường I-Concept TRAPE INAX-3040B/TRP",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39524,
+      "sku": "INAX-20B/STB-4",
+      "name": "Gạch ốp tường I-Concept STRIPE BORDER INAX-20B/STB",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39525,
+      "sku": "INAX-20B/STB-3",
+      "name": "Gạch ốp tường I-Concept STRIPE BORDER INAX-20B/STB",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39526,
+      "sku": "INAX-20B/STB-2",
+      "name": "Gạch ốp tường I-Concept STRIPE BORDER INAX-20B/STB",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39527,
+      "sku": "INAX-2I/IMM-6",
+      "name": "Gạch ốp tường Imperial Mosaic INAX-2I/IMM (INAX2IIMM)",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39528,
+      "sku": "INAX-2I/IMM-5",
+      "name": "Gạch ốp tường Imperial Mosaic INAX-2I/IMM (INAX2IIMM)",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39529,
+      "sku": "INAX-2I/IMM-4",
+      "name": "Gạch ốp tường Imperial Mosaic INAX-2I/IMM (INAX2IIMM)",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39530,
+      "sku": "INAX-2I/IMM-3",
+      "name": "Gạch ốp tường Imperial Mosaic INAX-2I/IMM (INAX2IIMM)",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39531,
+      "sku": "INAX-2I/IMM-2",
+      "name": "Gạch ốp tường Imperial Mosaic INAX-2I/IMM (INAX2IIMM)",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39532,
+      "sku": "INAX-255/WM-4",
+      "name": "Gạch ốp tường I-Concept WAVY MOSAIC INAX-255/WM",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39533,
+      "sku": "INAX-255/WM-3",
+      "name": "Gạch ốp tường I-Concept WAVY MOSAIC INAX-255/WM",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39534,
+      "sku": "INAX-255/WM-2",
+      "name": "Gạch ốp tường I-Concept WAVY MOSAIC INAX-255/WM",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39535,
+      "sku": "INAX-300/LTC-14",
+      "name": "Gạch ốp tường LATTICE INAX-300/LTC",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39536,
+      "sku": "INAX-300/LTC-13",
+      "name": "Gạch ốp tường LATTICE INAX-300/LTC",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39537,
+      "sku": "INAX-300/LTC-12",
+      "name": "Gạch ốp tường LATTICE INAX-300/LTC",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39538,
+      "sku": "INAX-40B/KH-5",
+      "name": "Gạch ốp tường KAIHA INAX-40B/KH",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39539,
+      "sku": "HAL-R/MAL-3",
+      "name": "Gạch ốp tường MELVIO ALDEA INAX HAL-R/MAL",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39540,
+      "sku": "HAL-R/MAL-2",
+      "name": "Gạch ốp tường MELVIO ALDEA INAX HAL-R/MAL",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39541,
+      "sku": "INAX-40B/RB-2",
+      "name": "Gạch ốp tường R-BORDER INAX-40B/RB",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39542,
+      "sku": "INAX-255/PPC-209",
+      "name": "Gạch ốp tường PASTEL PLAIN COLOR INAX-255/PPC",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39543,
+      "sku": "INAX-255/PPC-207",
+      "name": "Gạch ốp tường PASTEL PLAIN COLOR INAX-255/PPC",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39544,
+      "sku": "INAX-255/PPC-204",
+      "name": "Gạch ốp tường PASTEL PLAIN COLOR INAX-255/PPC",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39545,
+      "sku": "INAX-255/PPC-133",
+      "name": "Gạch ốp tường PASTEL PLAIN COLOR INAX-255/PPC",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39546,
+      "sku": "INAX-255/PPC-123",
+      "name": "Gạch ốp tường PASTEL PLAIN COLOR INAX-255/PPC",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39547,
+      "sku": "INAX-255/PPC-93",
+      "name": "Gạch ốp tường PASTEL PLAIN COLOR INAX-255/PPC",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39548,
+      "sku": "INAX-255/PPC-63",
+      "name": "Gạch ốp tường PASTEL PLAIN COLOR INAX-255/PPC",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39549,
+      "sku": "INAX-255/PPC-33",
+      "name": "Gạch ốp tường PASTEL PLAIN COLOR INAX-255/PPC",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39550,
+      "sku": "INAX-255/PPC-23",
+      "name": "Gạch ốp tường PASTEL PLAIN COLOR INAX-255/PPC",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39551,
+      "sku": "INAX-255/PPC-21",
+      "name": "Gạch ốp tường PASTEL PLAIN COLOR INAX-255/PPC",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39552,
+      "sku": "INAX-255/PPC-11",
+      "name": "Gạch ốp tường PASTEL PLAIN COLOR INAX-255/PPC",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39553,
+      "sku": "INAX-30B/SB-3",
+      "name": "Gạch ốp tường SB-STONE BORDER INAX-30B/SB",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39554,
+      "sku": "INAX-30B/SB-2",
+      "name": "Gạch ốp tường SB-STONE BORDER INAX-30B/SB",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39555,
+      "sku": "INAX-30B/TKB-4",
+      "name": "Gạch ốp tường TAKEBORDER INAX-30B/TKB",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39556,
+      "sku": "INAX-30B/TKB-3",
+      "name": "Gạch ốp tường TAKEBORDER INAX-30B/TKB",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39557,
+      "sku": "INAX-30B/TKB-2",
+      "name": "Gạch ốp tường TAKEBORDER INAX-30B/TKB",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39558,
+      "sku": "INAX-255/SLC-9",
+      "name": "Gạch ốp tường SLC-SHIJYU LUSTER COLOR INAX-255/SLC",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39559,
+      "sku": "INAX-255/SLC-8",
+      "name": "Gạch ốp tường SLC-SHIJYU LUSTER COLOR INAX-255/SLC",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39560,
+      "sku": "INAX-255/SLC-6",
+      "name": "Gạch ốp tường SLC-SHIJYU LUSTER COLOR INAX-255/SLC",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39561,
+      "sku": "INAX-255/SLC-5",
+      "name": "Gạch ốp tường SLC-SHIJYU LUSTER COLOR INAX-255/SLC",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39562,
+      "sku": "INAX-255/SLC-4",
+      "name": "Gạch ốp tường SLC-SHIJYU LUSTER COLOR INAX-255/SLC",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39563,
+      "sku": "INAX-255/SLC-3",
+      "name": "Gạch ốp tường SLC-SHIJYU LUSTER COLOR INAX-255/SLC",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39564,
+      "sku": "INAX-255/SLC-2",
+      "name": "Gạch ốp tường SLC-SHIJYU LUSTER COLOR INAX-255/SLC",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39565,
+      "sku": "INAX-2312/VIZ-10-DV",
+      "name": "Gạch ốp tường VIZ ZEN sử dụng vữa INAX hoặc keo dán INAX-2312VIZ (INAX2312VIZ)",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39566,
+      "sku": "INAX-2312/VIZ-10-DK",
+      "name": "Gạch ốp tường VIZ ZEN sử dụng vữa INAX hoặc keo dán INAX-2312VIZ (INAX2312VIZ)",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39567,
+      "sku": "INAX-2312/VIZ-8-DV",
+      "name": "Gạch ốp tường VIZ ZEN sử dụng vữa INAX hoặc keo dán INAX-2312VIZ (INAX2312VIZ)",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39568,
+      "sku": "INAX-2312/VIZ-8-DK",
+      "name": "Gạch ốp tường VIZ ZEN sử dụng vữa INAX hoặc keo dán INAX-2312VIZ (INAX2312VIZ)",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39569,
+      "sku": "INAX-2312/VIZ-6-DV",
+      "name": "Gạch ốp tường VIZ ZEN sử dụng vữa INAX hoặc keo dán INAX-2312VIZ (INAX2312VIZ)",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39570,
+      "sku": "INAX-2312/VIZ-6-DK",
+      "name": "Gạch ốp tường VIZ ZEN sử dụng vữa INAX hoặc keo dán INAX-2312VIZ (INAX2312VIZ)",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39571,
+      "sku": "INAX-2312/VIZ-4-DV",
+      "name": "Gạch ốp tường VIZ ZEN sử dụng vữa INAX hoặc keo dán INAX-2312VIZ (INAX2312VIZ)",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39572,
+      "sku": "INAX-2312/VIZ-4-DK",
+      "name": "Gạch ốp tường VIZ ZEN sử dụng vữa INAX hoặc keo dán INAX-2312VIZ (INAX2312VIZ)",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39573,
+      "sku": "INAX-2312/VIZ-3-DV",
+      "name": "Gạch ốp tường VIZ ZEN sử dụng vữa INAX hoặc keo dán INAX-2312VIZ (INAX2312VIZ)",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39574,
+      "sku": "INAX-2312/VIZ-3-DK",
+      "name": "Gạch ốp tường VIZ ZEN sử dụng vữa INAX hoặc keo dán INAX-2312VIZ (INAX2312VIZ)",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39575,
+      "sku": "INAX-2312/VIZ-2-DV",
+      "name": "Gạch ốp tường VIZ ZEN sử dụng vữa INAX hoặc keo dán INAX-2312VIZ (INAX2312VIZ)",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39576,
+      "sku": "INAX-2312/VIZ-2-DK",
+      "name": "Gạch ốp tường VIZ ZEN sử dụng vữa INAX hoặc keo dán INAX-2312VIZ (INAX2312VIZ)",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39577,
+      "sku": "INAX-2312/VIZ-1-DV",
+      "name": "Gạch ốp tường VIZ ZEN sử dụng vữa INAX hoặc keo dán INAX-2312VIZ (INAX2312VIZ)",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39578,
+      "sku": "INAX-255/TND-8",
+      "name": "Gạch ốp tường TANADA INAX-255/TND",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39579,
+      "sku": "INAX-255/TND-7",
+      "name": "Gạch ốp tường TANADA INAX-255/TND",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39580,
+      "sku": "INAX-255/TND-6",
+      "name": "Gạch ốp tường TANADA INAX-255/TND",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39581,
+      "sku": "INAX-255/TND-5",
+      "name": "Gạch ốp tường TANADA INAX-255/TND",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39582,
+      "sku": "INAX-255/TND-4",
+      "name": "Gạch ốp tường TANADA INAX-255/TND",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39583,
+      "sku": "INAX-255/TND-3",
+      "name": "Gạch ốp tường TANADA INAX-255/TND",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39584,
+      "sku": "INAX-255/TND-2",
+      "name": "Gạch ốp tường TANADA INAX-255/TND",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39585,
+      "sku": "IM-50P1/WV-2",
+      "name": "Gạch ốp tường WV-WAVES INAX-50P1/WV",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39586,
+      "sku": "DCF-20BNET/WAB-4",
+      "name": "Gạch ốp tường WAVE BORDER INAX DCF-20BNET/WAB",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39587,
+      "sku": "DCF-20BNET/WAB-3",
+      "name": "Gạch ốp tường WAVE BORDER INAX DCF-20BNET/WAB",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 39588,
+      "sku": "DCF-20BNET/WAB-2",
+      "name": "Gạch ốp tường WAVE BORDER INAX DCF-20BNET/WAB",
+      "subcategory_slug": "gach-op-tuong",
+      "taxon_id": 32,
+      "proposed_primary_taxon_slug": "gach-op-tuong",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-op-tuong"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 5475,
+      "sku": "GACH-36GP0814",
+      "name": "Gạch 36GP0814_N",
+      "subcategory_slug": "gach-trang-tri",
+      "taxon_id": 34,
+      "proposed_primary_taxon_slug": "gach-trang-tri",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-trang-tri"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 5476,
+      "sku": "GACH-36GP0812",
+      "name": "Gạch 36GP0812_N",
+      "subcategory_slug": "gach-trang-tri",
+      "taxon_id": 34,
+      "proposed_primary_taxon_slug": "gach-trang-tri",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-trang-tri"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 5477,
+      "sku": "GACH-36GP0811",
+      "name": "Gạch 36GP0811_N",
+      "subcategory_slug": "gach-trang-tri",
+      "taxon_id": 34,
+      "proposed_primary_taxon_slug": "gach-trang-tri",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-trang-tri"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 5478,
+      "sku": "GACH-36GP0808",
+      "name": "Gạch 36GP0808_N",
+      "subcategory_slug": "gach-trang-tri",
+      "taxon_id": 34,
+      "proposed_primary_taxon_slug": "gach-trang-tri",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-trang-tri"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 5479,
+      "sku": "GACH-36GP0807",
+      "name": "Gạch 36GP0807_N",
+      "subcategory_slug": "gach-trang-tri",
+      "taxon_id": 34,
+      "proposed_primary_taxon_slug": "gach-trang-tri",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-trang-tri"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 5480,
+      "sku": "GACH-36GP0806",
+      "name": "Gạch 36GP0806_N",
+      "subcategory_slug": "gach-trang-tri",
+      "taxon_id": 34,
+      "proposed_primary_taxon_slug": "gach-trang-tri",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-trang-tri"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 5481,
+      "sku": "GACH-36GP0804",
+      "name": "Gạch 36GP0804_N",
+      "subcategory_slug": "gach-trang-tri",
+      "taxon_id": 34,
+      "proposed_primary_taxon_slug": "gach-trang-tri",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-trang-tri"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 5482,
+      "sku": "GACH-36GP0803",
+      "name": "Gạch 36GP0803_N",
+      "subcategory_slug": "gach-trang-tri",
+      "taxon_id": 34,
+      "proposed_primary_taxon_slug": "gach-trang-tri",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-trang-tri"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 5483,
+      "sku": "GACH-36GP0800",
+      "name": "Gạch 36GP0800_N",
+      "subcategory_slug": "gach-trang-tri",
+      "taxon_id": 34,
+      "proposed_primary_taxon_slug": "gach-trang-tri",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-trang-tri"
+    },
+    {
+      "lane": "gach-op-lat",
+      "product_id": 5484,
+      "sku": "GACH-36GP0799",
+      "name": "Gạch 36GP0799_N",
+      "subcategory_slug": "gach-trang-tri",
+      "taxon_id": 34,
+      "proposed_primary_taxon_slug": "gach-trang-tri",
+      "proposed_primary_taxon_path": "gach-op-lat/gach-trang-tri"
+    }
+  ]
+}

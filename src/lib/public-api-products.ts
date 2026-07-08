@@ -1,7 +1,11 @@
 import { unstable_cache } from 'next/cache'
 import prisma from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
-import { buildPublicProductVisibilityWhere } from '@/lib/public-product-visibility'
+import { buildPublicSearchVisibilityWhere } from '@/lib/public-product-visibility'
+import {
+    getCatalogFilterReadySpecLabels,
+    getCatalogUxProfileByTaxonomy,
+} from '@/lib/catalog-ux-profiles'
 import {
     getCanonicalProductPath,
     getCategoryRootFilter,
@@ -81,6 +85,14 @@ export type PublicListingLeaf = {
         products: number
         secondary_product_subcategories?: number
     }
+}
+
+export type ListingRuntimeConfig = {
+    profileKey: string | null
+    hideColorFilter: boolean
+    enableSpecFilters: boolean
+    enableProductTypeTabs: boolean
+    readyForRefactor: boolean
 }
 
 export type AdminProductListItem = {
@@ -408,7 +420,7 @@ export async function getPublicProducts(filters: ProductFilters = {}) {
     }
 
     const where: Prisma.productsWhereInput = {
-        ...(search ? buildPublicProductVisibilityWhere() : { is_active: true }),
+        ...(search ? buildPublicSearchVisibilityWhere() : { is_active: true }),
         ...(AND.length > 0 ? { AND } : {}),
         ...(category_slug && {
             OR: [
@@ -572,6 +584,10 @@ export const getAvailableFiltersBySubcategory = unstable_cache(
         const listingLeaf = categorySlug
             ? await getPublicListingLeaf(categorySlug, subcategorySlug)
             : null
+        const profile = getCatalogUxProfileByTaxonomy({
+            categorySlug,
+            subcategorySlug,
+        })
 
         const productWhere: Prisma.productsWhereInput = {
             is_active: true,
@@ -613,7 +629,7 @@ export const getAvailableFiltersBySubcategory = unstable_cache(
             materials,
             origins,
             features,
-            colors,
+            colors: profile?.listingUi.hideColorFilter ? [] : colors,
         }
     },
     ['available-filters-subcategory'],
@@ -824,7 +840,16 @@ export const getProductTypeFiltersBySubcategory = unstable_cache(
 // ─── PUBLIC: GET SPEC FILTERS FOR SUBCATEGORY (from filter_definitions) ───────
 
 export const getSubcategorySpecFilters = unstable_cache(
-    async (subcategoryId: number) => {
+    async (subcategoryId: number, categorySlug?: string, subcategorySlug?: string) => {
+        const profile = getCatalogUxProfileByTaxonomy({
+            categorySlug,
+            subcategorySlug,
+        })
+
+        if (profile && !profile.listingUi.enableSpecFilters) {
+            return []
+        }
+
         const defs = await prisma.filter_definitions.findMany({
             where: {
                 subcategory_id: subcategoryId,
@@ -851,17 +876,54 @@ export const getSubcategorySpecFilters = unstable_cache(
             }
         })
 
-        // Full cutover: spec filter UI is driven by canonical spec_options only.
-        return defs.map(d => ({
+        const allowedLabels = getCatalogFilterReadySpecLabels({
+            categorySlug,
+            subcategorySlug,
+        })
+
+        const seenKeys = new Set<string>()
+
+        return defs
+            .filter((d) => {
+                const key = d.spec_definitions!.key
+                const label = d.spec_definitions!.label
+                if (seenKeys.has(key)) return false
+                seenKeys.add(key)
+                if (!allowedLabels) return true
+                return allowedLabels.includes(label)
+            })
+            .map(d => ({
             key: d.spec_definitions!.key,
             label: d.spec_definitions!.label,
             type: d.filter_type,
             values: d.spec_definitions!.spec_options.map(option => option.value),
-        }))
+            }))
     },
     ['subcategory-spec-filters'],
     { revalidate: 3600, tags: ['filters'] }
 )
+
+export function getListingRuntimeConfig(categorySlug: string, subcategorySlug: string): ListingRuntimeConfig {
+    const profile = getCatalogUxProfileByTaxonomy({ categorySlug, subcategorySlug })
+
+    if (!profile) {
+        return {
+            profileKey: null,
+            hideColorFilter: false,
+            enableSpecFilters: false,
+            enableProductTypeTabs: true,
+            readyForRefactor: false,
+        }
+    }
+
+    return {
+        profileKey: profile.key,
+        hideColorFilter: profile.listingUi.hideColorFilter,
+        enableSpecFilters: profile.listingUi.enableSpecFilters,
+        enableProductTypeTabs: profile.listingUi.enableProductTypeTabs,
+        readyForRefactor: profile.readiness === 'ready-for-backend-refactor',
+    }
+}
 
 // ─── PUBLIC: PRODUCT DETAIL ──────────────────────────────────────────────────
 
