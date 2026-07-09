@@ -1,0 +1,62 @@
+product_id,sku,brand_name,name,current_product_type,proposed_product_type,heuristic_reason
+402,DH-4MS1VW,PANASONIC,Máy nước nóng trực tiếp Panasonic 4.5kW DH-4MS1VW,,may-nuoc-nong-truc-tiep,name-keywords-truc-tiep
+403,DH-15HBMVW,PANASONIC,Máy Nước Nóng Panasonic Gián Tiếp DH DH-15HBMVW,,may-nuoc-nong-gian-tiep,name-keywords-gian-tiep
+404,DH-4NTP1VM,PANASONIC,Máy nước nóng trực tiếp Panasonic 4.5kW DH-4NTP1VM,,may-nuoc-nong-truc-tiep,name-keywords-truc-tiep
+405,DH-4MP1VW,PANASONIC,Máy nước nóng trực tiếp Panasonic 4.5kW DH-4MP1VW,,may-nuoc-nong-truc-tiep,name-keywords-truc-tiep
+406,Rheem XC-15 W,Rheem,Bình nước nóng gián tiếp Rheem Xwell,,may-nuoc-nong-gian-tiep,name-keywords-gian-tiep
+407,Rheem RH-688E WT,Rheem,Máy nước nóng trực tiếp Rheem Performance Plus Rheem RH-688E WT,,may-nuoc-nong-truc-tiep,name-keywords-truc-tiep
+408,Rheem 25V/P,Rheem,Bình nước nóng gián tiếp Rheem Mekong,,may-nuoc-nong-gian-tiep,name-keywords-gian-tiep
+409,AMORE GDP 4500W,Ferroli,Máy nước nóng trực tiếp Ferroli Amore GDP điều khiển điện tử,,may-nuoc-nong-truc-tiep,name-keywords-truc-tiep
+410,AMORE GSP 4500W,Ferroli,Máy nước nóng trực tiếp Ferroli Amore GSP bơm tăng áp,,may-nuoc-nong-truc-tiep,name-keywords-truc-tiep
+411,AMORE GSN 4500W,Ferroli,Máy nước nóng trực tiếp Ferroli Amore GSN điều khiển cơ,,may-nuoc-nong-truc-tiep,name-keywords-truc-tiep
+412,RITA FS-4.5 DE,Ferroli,Máy nước nóng trực tiếp Ferroli Rita DE hiển thị nhiệt độ RITA FS-4.5 DE,,may-nuoc-nong-truc-tiep,name-keywords-truc-tiep
+413,RITA FS-4.5 TE,Ferroli,Máy nước nóng trực tiếp Ferroli Rita TE chống giật RITA FS-4.5 TE,,may-nuoc-nong-truc-tiep,name-keywords-truc-tiep
+414,RITA FS-4.5 TM,Ferroli,Máy nước nóng trực tiếp Ferroli Rita TM không bơm RITA FS-4.5 TM,,may-nuoc-nong-truc-tiep,name-keywords-truc-tiep
+415,DIVO SSN,Ferroli,Máy nước nóng trực tiếp Ferroli Divo SSN không bơm,,may-nuoc-nong-truc-tiep,name-keywords-truc-tiep
+416,DIVO SSP,Ferroli,Máy nước nóng trực tiếp Ferroli Divo SSP bơm tăng áp,,may-nuoc-nong-truc-tiep,name-keywords-truc-tiep
+417,DIVO SDN,Ferroli,Máy nước nóng trực tiếp Ferroli Divo SDN hiển thị nhiệt độ,,may-nuoc-nong-truc-tiep,name-keywords-truc-tiep
+418,DIVO SDP,Ferroli,Máy nước nóng trực tiếp Ferroli Divo SDP hiển thị nhiệt độ bơm tăng áp,,may-nuoc-nong-truc-tiep,name-keywords-truc-tiep
+419,HOT DOG 5L,Ferroli,Máy nước nóng gián tiếp Ferroli Hot Dog cho chậu bếp,,may-nuoc-nong-gian-tiep,name-keywords-gian-tiep
+420,AN2 RS 15,Ariston,Máy nước nóng gián tiếp Andris2 Rs Ariston AN2 RS 15,,may-nuoc-nong-gian-tiep,name-keywords-gian-tiep
+421,AN2 R 15,Ariston,Máy nước nóng gián tiếp Andris2 R Ariston AN2 R 15,,may-nuoc-nong-gian-tiep,name-keywords-gian-tiep
+496,DH-4UP1VS,PANASONIC,Máy nước nóng trực tiếp Panasonic 4.5 kW DH-4UP1VS,,may-nuoc-nong-truc-tiep,name-keywords-truc-tiep
+497,DH-4US1VW,PANASONIC,Máy nước nóng Panasonic trực tiếp 4.5 kW DH-4US1VW,,may-nuoc-nong-truc-tiep,name-keywords-truc-tiep
+498,DH-4UDP1VZ,PANASONIC,Máy nước nóng trực tiếp Panasonic 4.5 kW DH-4UDP1VZ,,may-nuoc-nong-truc-tiep,name-keywords-truc-tiep
+499,DH-4US1VS,PANASONIC,Máy nước nóng trực tiếp Panasonic 4.5 kW DH-4US1VS,,may-nuoc-nong-truc-tiep,name-keywords-truc-tiep
+500,DH-4UD1VZ,PANASONIC,Máy nước nóng trực tiếp Panasonic 4.5 kW DH-4UD1VZ,,may-nuoc-nong-truc-tiep,name-keywords-truc-tiep
+501,DH-4UP1VW,PANASONIC,Máy nước nóng trực tiếp Panasonic 4.5 kW DH-4UP1VW,,may-nuoc-nong-truc-tiep,name-keywords-truc-tiep
+5289,DH-4VP1VW,PANASONIC,Máy nước nóng trực tiếp V-series 4.5kW Panasonic DH-4VP1VW,,may-nuoc-nong-truc-tiep,name-keywords-truc-tiep
+5290,DH-4VS1VW,PANASONIC,Máy nước nóng trực tiếp V-series 4.5kW Panasonic DH-4VS1VW,,may-nuoc-nong-truc-tiep,name-keywords-truc-tiep
+5291,DH-3VP1VW,PANASONIC,Máy nước nóng trực tiếp V-series 3.5kW Panasonic DH-3VP1VW,,may-nuoc-nong-truc-tiep,name-keywords-truc-tiep
+5292,DH-3VS1VW,PANASONIC,Máy nước nóng trực tiếp V-series 3.5kW Panasonic DH-3VS1VW,,may-nuoc-nong-truc-tiep,name-keywords-truc-tiep
+5293,VITALY 15,Ariston,Máy nước nóng gián tiếp Vitaly Ariston,,may-nuoc-nong-gian-tiep,name-keywords-gian-tiep
+5294,VERDI-TE 15L,Ferroli,Máy nước nóng gián tiếp Ferroli Verdi TE,,may-nuoc-nong-gian-tiep,name-keywords-gian-tiep
+5295,VERDI-DE 15L,Ferroli,Máy nước nóng gián tiếp Ferroli Verdi DE,,may-nuoc-nong-gian-tiep,name-keywords-gian-tiep
+5296,VERDI-AE 15L,Ferroli,Máy nước nóng gián tiếp Ferroli Verdi AE,,may-nuoc-nong-gian-tiep,name-keywords-gian-tiep
+5297,QQ ME 15L,Ferroli,Máy nước nóng gián tiếp Ferroli QQ ME 15L / 20L / 30L chống giật,,may-nuoc-nong-gian-tiep,name-keywords-gian-tiep
+5298,QQ TE 15L,Ferroli,Máy nước nóng gián tiếp Ferroli QQ TE QQ TE 15L,,may-nuoc-nong-gian-tiep,name-keywords-gian-tiep
+5299,QQ AE 15L,Ferroli,Máy nước nóng gián tiếp Ferroli QQ AE chống cặn chống giật QQ AE 15L,,may-nuoc-nong-gian-tiep,name-keywords-gian-tiep
+5300,CUBO 15L,Ferroli,Máy nước nóng gián tiếp Ferroli Cubo CUBO 15L,,may-nuoc-nong-gian-tiep,name-keywords-gian-tiep
+5301,CUBO E 15L,Ferroli,Máy nước nóng gián tiếp Ferroli Cubo E chống giật,,may-nuoc-nong-gian-tiep,name-keywords-gian-tiep
+5302,AQUA 50L DUNG,Ferroli,Máy Nước Nóng Gián Tiếp Aqua Ferroli AQUA 50L DUNG,,may-nuoc-nong-gian-tiep,name-keywords-gian-tiep
+5303,AQUA E 50L,Ferroli,Máy nước nóng gián tiếp Ferroli Aqua E thể tích lớn chống giật,,may-nuoc-nong-gian-tiep,name-keywords-gian-tiep
+5307,AURESTOP 4.5P,Ariston,Máy nước nóng trực tiếp Aures Top Ariston AuresTop 4.5P,,may-nuoc-nong-truc-tiep,name-keywords-truc-tiep
+5308,AuresEasy4.5P,Ariston,Máy nước nóng trực tiếp Aures Easy Ariston,,may-nuoc-nong-truc-tiep,name-keywords-truc-tiep
+5309,AuresPremium4.5,Ariston,Máy nước nóng trực tiếp Aures Premium Ariston,,may-nuoc-nong-truc-tiep,name-keywords-truc-tiep
+5310,AuresPremium+4.5P,Ariston,Máy nước nóng trực tiếp Aures Premium+ Ariston,,may-nuoc-nong-truc-tiep,name-keywords-truc-tiep
+5311,PRO R 100L H,Ariston,Máy nước nóng gián tiếp Pro R Ariston ngang/ đứng PRO R 100L H,,may-nuoc-nong-gian-tiep,name-keywords-gian-tiep
+5312,AN2 15 LUX-D,Ariston,Máy nước nóng gián tiếp Andris Lux-D Ariston AN2 LUX-D AN2 15 LUX-D,,may-nuoc-nong-gian-tiep,name-keywords-gian-tiep
+5313,ECO2 1810 25,Ariston,Máy nước nóng năng lượng mặt trời dạng ống Ariston ECO TUBE ECO2 1810 25,,may-nuoc-nong-nang-luong-mat-troi,name-keywords-solar
+5314,KAIROS THERMO DR-2 150-1 N TT,Ariston,Máy nước nóng năng lượng mặt trời tấm phẳng Ariston KAIROS THERMO DR-2,,may-nuoc-nong-nang-luong-mat-troi,name-keywords-solar
+5315,SL3 20 R,Ariston,Máy nước nóng gián tiếp Slim3 R Ariston SL3 20 R,,may-nuoc-nong-gian-tiep,name-keywords-gian-tiep
+5316,SL3 15 RS,Ariston,Máy nước nóng gián tiếp Slim3 RS Ariston SL3 15 RS,,may-nuoc-nong-gian-tiep,name-keywords-gian-tiep
+5317,SL3 20 LUX,Ariston,Máy nước nóng gián tiếp Slim3 LUX Ariston SL3 20 LUX,,may-nuoc-nong-gian-tiep,name-keywords-gian-tiep
+5318,SL3 20 TOP WIFI,Ariston,Máy nước nóng gián tiếp Slim3 TOP WIFI Ariston SL3 20 TOP WIFI,,may-nuoc-nong-gian-tiep,name-keywords-gian-tiep
+5319,3687025,Ariston,Thanh đốt cho máy nước nóng năng lượng mặt trời Ariston 3687025,,phu-kien-may-nuoc-nong,name-keywords-phu-kien
+5320,PC-3-E,Ariston,Bộ hỗ trợ nhiệt cho máy nước nóng năng lượng mặt trời dạng ống Ariston PC-3-E,,phu-kien-may-nuoc-nong,name-keywords-phu-kien
+5368,VERDI-AG+ 15L,Ferroli,Máy nước nóng gián tiếp Ferroli Verdi AG+,,may-nuoc-nong-gian-tiep,name-keywords-gian-tiep
+5369,QQ AG+ 15L,Ferroli,Máy nước nóng gián tiếp Ferroli QQ AG+ QQ AG+ 15L,,may-nuoc-nong-gian-tiep,name-keywords-gian-tiep
+5370,SQ 200L DUNG 3000W,Ferroli,Bình nước nóng gián tiếp thể tích lớn Ferroli SQ SQ 200L DUNG 3000W,,may-nuoc-nong-gian-tiep,name-keywords-gian-tiep
+5371,TWH-45EMC1PVN(K)-KB,Toshiba,Máy tắm nước nóng Toshiba TWH-45EMC1PVN(K)-KB,,may-nuoc-nong-truc-tiep,name-keywords-truc-tiep
+5372,TWH-45EMCPVN(K)-CB,Toshiba,Máy tắm nước nóng Toshiba TWH-45EMCPVN(K)-CB,,may-nuoc-nong-truc-tiep,name-keywords-truc-tiep
+5373,TWH-45EMCPVN(S)-CB,Toshiba,Máy tắm nước nóng Toshiba TWH-45EMCPVN(S)-CB,,may-nuoc-nong-truc-tiep,name-keywords-truc-tiep

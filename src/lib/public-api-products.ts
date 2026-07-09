@@ -714,21 +714,41 @@ export const getPublicListingLeaves = unstable_cache(
             taxonomyCounts.map((entry) => [entry.taxon_id, entry._count.product_id])
         )
 
-        const mergedLeaves = taxonomyLeaves.map((leaf) => ({
-            id: null,
-            name: leaf.name,
-            slug: leaf.slug,
-            description: leaf.seo_description,
-            thumbnail_url: null,
-            source: 'taxonomy' as const,
-            _count: {
-                products: taxonomyCountMap.get(leaf.id) ?? 0,
-            },
-        }))
+        const legacyLeafMap = new Map(legacyLeaves.map((leaf) => [leaf.slug, leaf]))
+        const mergedLeaves: PublicListingLeaf[] = []
+        const consumedLegacySlugs = new Set<string>()
 
-        const taxonomySlugSet = new Set(mergedLeaves.map((leaf) => leaf.slug))
+        for (const leaf of taxonomyLeaves) {
+            const taxonomyProductCount = taxonomyCountMap.get(leaf.id) ?? 0
+            const matchingLegacyLeaf = legacyLeafMap.get(leaf.slug)
+            const legacyProductCount = matchingLegacyLeaf?._count.products ?? 0
+
+            // Do not let a zero-product taxonomy leaf override a populated legacy leaf.
+            // And do not surface zero-product taxonomy-only leaves as standalone indexable listings.
+            if (taxonomyProductCount === 0) {
+                if (matchingLegacyLeaf && legacyProductCount > 0) {
+                    mergedLeaves.push(mapLegacyListingLeaf(matchingLegacyLeaf))
+                    consumedLegacySlugs.add(matchingLegacyLeaf.slug)
+                }
+                continue
+            }
+
+            mergedLeaves.push({
+                id: null,
+                name: leaf.name,
+                slug: leaf.slug,
+                description: leaf.seo_description,
+                thumbnail_url: null,
+                source: 'taxonomy' as const,
+                _count: {
+                    products: taxonomyProductCount,
+                },
+            })
+            if (matchingLegacyLeaf) consumedLegacySlugs.add(matchingLegacyLeaf.slug)
+        }
+
         const legacyOnlyLeaves = legacyLeaves
-            .filter((leaf) => !taxonomySlugSet.has(leaf.slug))
+            .filter((leaf) => !consumedLegacySlugs.has(leaf.slug))
             .map(mapLegacyListingLeaf)
 
         return [...mergedLeaves, ...legacyOnlyLeaves]
@@ -779,6 +799,8 @@ export const getPublicListingLeaf = unstable_cache(
                 products: PUBLIC_LISTING_PRODUCT_WHERE,
             },
         })
+
+        if (productCount === 0) return null
 
         return {
             id: null,
