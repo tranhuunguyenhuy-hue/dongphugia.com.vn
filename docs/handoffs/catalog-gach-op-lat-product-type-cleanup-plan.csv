@@ -1,0 +1,331 @@
+product_id,sku,subcategory_slug,name,current_product_type,proposed_product_type,heuristic_reason
+7824,ECP-25NET-LUX-12,gach-inax-ecocarat,Gạch nội thất ECOCARAT PLUS LUXURY MOSAIC INAX ECP-25NET/LUX,,gach-inax-ecocarat,subcategory-direct-map
+39435,ECP-25NET-LUX-13,gach-inax-ecocarat,Gạch nội thất ECOCARAT PLUS LUXURY MOSAIC INAX ECP-25NET/LUX,,gach-inax-ecocarat,subcategory-direct-map
+7826,ECP-60NET/PMK11,gach-inax-ecocarat,Gạch nội thất ECOCARAT PLUS PEARL MASK INAX ECP-60NET/PMK,,gach-inax-ecocarat,subcategory-direct-map
+39437,ECP-60NET/PMK12,gach-inax-ecocarat,Gạch nội thất ECOCARAT PLUS PEARL MASK INAX ECP-60NET/PMK,,gach-inax-ecocarat,subcategory-direct-map
+7827,ECP-60NET/QLT2,gach-inax-ecocarat,Gạch nội thất ECOCARAT PLUS QUILT INAX ECP-60NET/QLT,,gach-inax-ecocarat,subcategory-direct-map
+12027,ECP-60NET/QLT1,gach-inax-ecocarat,Gạch nội thất ECOCARAT PLUS QUILT INAX ECP-60NET/QLT,,gach-inax-ecocarat,subcategory-direct-map
+7822,ECP-303/RBM2N,gach-inax-ecocarat,Gạch nội thất ECOCARAT PLUS RIBMIX INAX ECP-303/RBM,,gach-inax-ecocarat,subcategory-direct-map
+12032,ECP-303/RBM1N,gach-inax-ecocarat,Gạch nội thất ECOCARAT PLUS RIBMIX INAX ECP-303/RBM,,gach-inax-ecocarat,subcategory-direct-map
+39440,ECP-303/RBM3N,gach-inax-ecocarat,Gạch nội thất ECOCARAT PLUS RIBMIX INAX ECP-303/RBM,,gach-inax-ecocarat,subcategory-direct-map
+7829,ECP-375/RTZ1N,gach-inax-ecocarat,Gạch nội thất ECOCARAT PLUS ROUGH QUARTZ INAX ECP-375/RTZ,,gach-inax-ecocarat,subcategory-direct-map
+39438,ECP-375/RTZ3N,gach-inax-ecocarat,Gạch nội thất ECOCARAT PLUS ROUGH QUARTZ INAX ECP-375/RTZ,,gach-inax-ecocarat,subcategory-direct-map
+39439,ECP-375/RTZ2N,gach-inax-ecocarat,Gạch nội thất ECOCARAT PLUS ROUGH QUARTZ INAX ECP-375/RTZ,,gach-inax-ecocarat,subcategory-direct-map
+7828,ECP-275NET/RGS1,gach-inax-ecocarat,Gạch nội thất ECOCARAT PLUS ROUGHSAWN INAX ECP-275/RGS,,gach-inax-ecocarat,subcategory-direct-map
+39442,ECP-275NET/RGS3,gach-inax-ecocarat,Gạch nội thất ECOCARAT PLUS ROUGHSAWN INAX ECP-275/RGS,,gach-inax-ecocarat,subcategory-direct-map
+39443,ECP-275NET/RGS2,gach-inax-ecocarat,Gạch nội thất ECOCARAT PLUS ROUGHSAWN INAX ECP-275/RGS,,gach-inax-ecocarat,subcategory-direct-map
+7823,ECP-630/STG-1N,gach-inax-ecocarat,Gạch nội thất ECOCARAT PLUS STONE GRACE INAX ECP-630/STG,,gach-inax-ecocarat,subcategory-direct-map
+39441,ECP-630/STG-4N,gach-inax-ecocarat,Gạch nội thất ECOCARAT PLUS STONE GRACE INAX ECP-630/STG,,gach-inax-ecocarat,subcategory-direct-map
+7825,ECO-30NET/WE2NN,gach-inax-ecocarat,Gạch nội thất ECOCARAT PLUS VELE INAX ECP-30NET/WE,,gach-inax-ecocarat,subcategory-direct-map
+39444,ECO-30NET/WE3NN,gach-inax-ecocarat,Gạch nội thất ECOCARAT PLUS VELE INAX ECP-30NET/WE,,gach-inax-ecocarat,subcategory-direct-map
+7816,INAX-255/90-14/POL-B1-B2-B3,gach-op-lat,"Gạch góc hồ bơi 255/90-14 INAX-255/90-14/POL-B1,B2,B3",,gach-ho-boi,name-keywords-gach-ho-boi
+7817,INAX-255/90-15/POL-B1-B2-B3,gach-op-lat,"Gạch góc hồ bơi 255/90-15 INAX-255/90-15/POL-B1,B2,B3",,gach-ho-boi,name-keywords-gach-ho-boi
+7818,INAX-47/90-14/POL-B1-B2-B3,gach-op-lat,"Gạch góc hồ bơi 47 INAX-47/90-14/POL-B1,B2,B3",,gach-ho-boi,name-keywords-gach-ho-boi
+7819,INAX-1025/POL-B1/B2/B3,gach-op-lat,"Gạch hồ bơi INAX 22.5 x 22.5 1025/POL-B1,2,3:G1,2,3",,gach-ho-boi,name-keywords-gach-ho-boi
+39434,INAX-1025/POL-G1/G2/G3,gach-op-lat,"Gạch hồ bơi INAX 22.5 x 22.5 1025/POL-B1,2,3:G1,2,3",,gach-ho-boi,name-keywords-gach-ho-boi
+7821,47/POL-B1,gach-op-lat,"Gạch hồ bơi INAX 47 x 47 47/POL-B1,2,3: G1,2,3",,gach-ho-boi,name-keywords-gach-ho-boi
+7820,INAX-97/POL-B1/B2/B3,gach-op-lat,"Gạch hồ bơi INAX 97 x 97 97/POL-B1,2,3: G1,2,3",,gach-ho-boi,name-keywords-gach-ho-boi
+39436,INAX-97/POL-G1/G2/G3,gach-op-lat,"Gạch hồ bơi INAX 97 x 97 97/POL-B1,2,3: G1,2,3",,gach-ho-boi,name-keywords-gach-ho-boi
+7868,EGR-V2SP/G3,gach-op-lat,Keo dán gạch INAX EGR-V2SP/G3 (2kg / 1 tuýp),,keo-dan-gach,name-keywords-keo-dan-gach
+7856,INAX-1525/EAC-1,gach-op-tuong,Gạch ốp tường 1525/EAC-EARTH COLOR BORDER INAX-1525/EAC,,gach-op-tuong,subcategory-direct-map
+39445,INAX-1525/EAC-4,gach-op-tuong,Gạch ốp tường 1525/EAC-EARTH COLOR BORDER INAX-1525/EAC,,gach-op-tuong,subcategory-direct-map
+39446,INAX-1525/EAC-3,gach-op-tuong,Gạch ốp tường 1525/EAC-EARTH COLOR BORDER INAX-1525/EAC,,gach-op-tuong,subcategory-direct-map
+39447,INAX-1525/EAC-2,gach-op-tuong,Gạch ốp tường 1525/EAC-EARTH COLOR BORDER INAX-1525/EAC,,gach-op-tuong,subcategory-direct-map
+7859,INAX-255/VIZ-1,gach-op-tuong,Gạch ốp tường 255-VIZ INAX-255VIZ (INAX255VIZ),,gach-op-tuong,subcategory-direct-map
+39448,INAX-255/VIZ-10,gach-op-tuong,Gạch ốp tường 255-VIZ INAX-255VIZ (INAX255VIZ),,gach-op-tuong,subcategory-direct-map
+39449,INAX-255/VIZ-9,gach-op-tuong,Gạch ốp tường 255-VIZ INAX-255VIZ (INAX255VIZ),,gach-op-tuong,subcategory-direct-map
+39450,INAX-255/VIZ-8,gach-op-tuong,Gạch ốp tường 255-VIZ INAX-255VIZ (INAX255VIZ),,gach-op-tuong,subcategory-direct-map
+39451,INAX-255/VIZ-7,gach-op-tuong,Gạch ốp tường 255-VIZ INAX-255VIZ (INAX255VIZ),,gach-op-tuong,subcategory-direct-map
+39452,INAX-255/VIZ-6,gach-op-tuong,Gạch ốp tường 255-VIZ INAX-255VIZ (INAX255VIZ),,gach-op-tuong,subcategory-direct-map
+39453,INAX-255/VIZ-5,gach-op-tuong,Gạch ốp tường 255-VIZ INAX-255VIZ (INAX255VIZ),,gach-op-tuong,subcategory-direct-map
+39454,INAX-255/VIZ-4,gach-op-tuong,Gạch ốp tường 255-VIZ INAX-255VIZ (INAX255VIZ),,gach-op-tuong,subcategory-direct-map
+39455,INAX-255/VIZ-3,gach-op-tuong,Gạch ốp tường 255-VIZ INAX-255VIZ (INAX255VIZ),,gach-op-tuong,subcategory-direct-map
+39456,INAX-255/VIZ-2,gach-op-tuong,Gạch ốp tường 255-VIZ INAX-255VIZ (INAX255VIZ),,gach-op-tuong,subcategory-direct-map
+7858,INAX-355-VIZ-10N,gach-op-tuong,Gạch ốp tường 355-VIZ INAX-355VIZ (INAX355VIZ),,gach-op-tuong,subcategory-direct-map
+39457,INAX-355-VIZ-9N,gach-op-tuong,Gạch ốp tường 355-VIZ INAX-355VIZ (INAX355VIZ),,gach-op-tuong,subcategory-direct-map
+39458,INAX-355-VIZ-8N,gach-op-tuong,Gạch ốp tường 355-VIZ INAX-355VIZ (INAX355VIZ),,gach-op-tuong,subcategory-direct-map
+39459,INAX-355-VIZ-7N,gach-op-tuong,Gạch ốp tường 355-VIZ INAX-355VIZ (INAX355VIZ),,gach-op-tuong,subcategory-direct-map
+39460,INAX-355-VIZ-6N,gach-op-tuong,Gạch ốp tường 355-VIZ INAX-355VIZ (INAX355VIZ),,gach-op-tuong,subcategory-direct-map
+39461,INAX-355-VIZ-5N,gach-op-tuong,Gạch ốp tường 355-VIZ INAX-355VIZ (INAX355VIZ),,gach-op-tuong,subcategory-direct-map
+39462,INAX-355-VIZ-4N,gach-op-tuong,Gạch ốp tường 355-VIZ INAX-355VIZ (INAX355VIZ),,gach-op-tuong,subcategory-direct-map
+39463,INAX-355-VIZ-3N,gach-op-tuong,Gạch ốp tường 355-VIZ INAX-355VIZ (INAX355VIZ),,gach-op-tuong,subcategory-direct-map
+39464,INAX-355-VIZ-2N,gach-op-tuong,Gạch ốp tường 355-VIZ INAX-355VIZ (INAX355VIZ),,gach-op-tuong,subcategory-direct-map
+39465,INAX-355-VIZ-1N,gach-op-tuong,Gạch ốp tường 355-VIZ INAX-355VIZ (INAX355VIZ),,gach-op-tuong,subcategory-direct-map
+7855,INAX-355/EAC-1,gach-op-tuong,Gạch ốp tường 355/EAC-EARTH COLOR BORDER INAX-355/EAC,,gach-op-tuong,subcategory-direct-map
+39466,INAX-355/EAC-4,gach-op-tuong,Gạch ốp tường 355/EAC-EARTH COLOR BORDER INAX-355/EAC,,gach-op-tuong,subcategory-direct-map
+39467,INAX-355/EAC-3,gach-op-tuong,Gạch ốp tường 355/EAC-EARTH COLOR BORDER INAX-355/EAC,,gach-op-tuong,subcategory-direct-map
+39468,INAX-355/EAC-2,gach-op-tuong,Gạch ốp tường 355/EAC-EARTH COLOR BORDER INAX-355/EAC,,gach-op-tuong,subcategory-direct-map
+7849,INAX-20B/BB-1,gach-op-tuong,Gạch ốp tường BB-BAMBOO BORDER INAX-20B/BB,,gach-op-tuong,subcategory-direct-map
+39469,INAX-20B/BB-3,gach-op-tuong,Gạch ốp tường BB-BAMBOO BORDER INAX-20B/BB,,gach-op-tuong,subcategory-direct-map
+39470,INAX-20B/BB-2,gach-op-tuong,Gạch ốp tường BB-BAMBOO BORDER INAX-20B/BB,,gach-op-tuong,subcategory-direct-map
+7838,IM-1520P1/BL-1,gach-op-tuong,Gạch ốp tường BL-BULLION BORDER INAX IM-1520P1/BL,,gach-op-tuong,subcategory-direct-map
+39472,IM-1520P1/BL-2,gach-op-tuong,Gạch ốp tường BL-BULLION BORDER INAX IM-1520P1/BL,,gach-op-tuong,subcategory-direct-map
+7833,HAL-155/CEF-1,gach-op-tuong,Gạch ốp tường CELAVIO E INAX HAL-155/CEF,,gach-op-tuong,subcategory-direct-map
+39471,HAL-155/CEF-2,gach-op-tuong,Gạch ốp tường CELAVIO E INAX HAL-155/CEF,,gach-op-tuong,subcategory-direct-map
+7832,HAL-35B/GRA-M1,gach-op-tuong,Gạch ốp tường CELAVIOGRAN A INAX HAL-35B/GRA,,gach-op-tuong,subcategory-direct-map
+39475,HAL-35B/GRA-M4,gach-op-tuong,Gạch ốp tường CELAVIOGRAN A INAX HAL-35B/GRA,,gach-op-tuong,subcategory-direct-map
+39476,HAL-35B/GRA-M3,gach-op-tuong,Gạch ốp tường CELAVIOGRAN A INAX HAL-35B/GRA,,gach-op-tuong,subcategory-direct-map
+39477,HAL-35B/GRA-M2,gach-op-tuong,Gạch ốp tường CELAVIOGRAN A INAX HAL-35B/GRA,,gach-op-tuong,subcategory-direct-map
+7845,INAX-40B/CK-1,gach-op-tuong,Gạch ốp tường CHECKER INAX-40B/CK,,gach-op-tuong,subcategory-direct-map
+39473,INAX-40B/CK-6,gach-op-tuong,Gạch ốp tường CHECKER INAX-40B/CK,,gach-op-tuong,subcategory-direct-map
+39474,INAX-40B/CK-3,gach-op-tuong,Gạch ốp tường CHECKER INAX-40B/CK,,gach-op-tuong,subcategory-direct-map
+7854,355SD/CMG-1B,gach-op-tuong,"Gạch ốp tường COOL MIST GLASS INAX-355TT,SD/CMG",,gach-op-tuong,subcategory-direct-map
+39478,355TT/CMG-4B,gach-op-tuong,"Gạch ốp tường COOL MIST GLASS INAX-355TT,SD/CMG",,gach-op-tuong,subcategory-direct-map
+39479,355TT/CMG-5B,gach-op-tuong,"Gạch ốp tường COOL MIST GLASS INAX-355TT,SD/CMG",,gach-op-tuong,subcategory-direct-map
+39480,355TT/CMG-3B,gach-op-tuong,"Gạch ốp tường COOL MIST GLASS INAX-355TT,SD/CMG",,gach-op-tuong,subcategory-direct-map
+39481,355TT/CMG-2M,gach-op-tuong,"Gạch ốp tường COOL MIST GLASS INAX-355TT,SD/CMG",,gach-op-tuong,subcategory-direct-map
+39482,355TT/CMG-2B,gach-op-tuong,"Gạch ốp tường COOL MIST GLASS INAX-355TT,SD/CMG",,gach-op-tuong,subcategory-direct-map
+39483,355TT/CMG-1M,gach-op-tuong,"Gạch ốp tường COOL MIST GLASS INAX-355TT,SD/CMG",,gach-op-tuong,subcategory-direct-map
+39484,355TT/CMG-1B,gach-op-tuong,"Gạch ốp tường COOL MIST GLASS INAX-355TT,SD/CMG",,gach-op-tuong,subcategory-direct-map
+39485,355SD/CMG-5B,gach-op-tuong,"Gạch ốp tường COOL MIST GLASS INAX-355TT,SD/CMG",,gach-op-tuong,subcategory-direct-map
+39486,355SD/CMG-3B,gach-op-tuong,"Gạch ốp tường COOL MIST GLASS INAX-355TT,SD/CMG",,gach-op-tuong,subcategory-direct-map
+39487,355SD/CMG-4B,gach-op-tuong,"Gạch ốp tường COOL MIST GLASS INAX-355TT,SD/CMG",,gach-op-tuong,subcategory-direct-map
+39488,355SD/CMG-2M,gach-op-tuong,"Gạch ốp tường COOL MIST GLASS INAX-355TT,SD/CMG",,gach-op-tuong,subcategory-direct-map
+39489,355SD/CMG-2B,gach-op-tuong,"Gạch ốp tường COOL MIST GLASS INAX-355TT,SD/CMG",,gach-op-tuong,subcategory-direct-map
+39490,355SD/CMG-1M,gach-op-tuong,"Gạch ốp tường COOL MIST GLASS INAX-355TT,SD/CMG",,gach-op-tuong,subcategory-direct-map
+7837,IM-50P1/DL-1,gach-op-tuong,Gạch ốp tường DL-DELTA INAX IM-50P1/DL,,gach-op-tuong,subcategory-direct-map
+39491,IM-50P1/DL-2,gach-op-tuong,Gạch ốp tường DL-DELTA INAX IM-50P1/DL,,gach-op-tuong,subcategory-direct-map
+7861,INAX-255/DPL-101V,gach-op-tuong,Gạch ốp tường DPL POINT COLOR INAX-255/DPL,,gach-op-tuong,subcategory-direct-map
+39492,INAX-255/DPL-108V,gach-op-tuong,Gạch ốp tường DPL POINT COLOR INAX-255/DPL,,gach-op-tuong,subcategory-direct-map
+39493,INAX-255/DPL-107V,gach-op-tuong,Gạch ốp tường DPL POINT COLOR INAX-255/DPL,,gach-op-tuong,subcategory-direct-map
+39494,INAX-255/DPL-106V,gach-op-tuong,Gạch ốp tường DPL POINT COLOR INAX-255/DPL,,gach-op-tuong,subcategory-direct-map
+39495,INAX-255/DPL-104V,gach-op-tuong,Gạch ốp tường DPL POINT COLOR INAX-255/DPL,,gach-op-tuong,subcategory-direct-map
+39496,INAX-255/DPL-103V,gach-op-tuong,Gạch ốp tường DPL POINT COLOR INAX-255/DPL,,gach-op-tuong,subcategory-direct-map
+39497,INAX-255/DPL-102V,gach-op-tuong,Gạch ốp tường DPL POINT COLOR INAX-255/DPL,,gach-op-tuong,subcategory-direct-map
+7851,INAX-325/FBM-1,gach-op-tuong,Gạch ốp tường FISHBONE MOSAIC INAX-325/FBM,,gach-op-tuong,subcategory-direct-map
+39500,INAX-325/FBM-3,gach-op-tuong,Gạch ốp tường FISHBONE MOSAIC INAX-325/FBM,,gach-op-tuong,subcategory-direct-map
+39501,INAX-325/FBM-2,gach-op-tuong,Gạch ốp tường FISHBONE MOSAIC INAX-325/FBM,,gach-op-tuong,subcategory-direct-map
+7850,INAX-355/GLM-1,gach-op-tuong,Gạch ốp tường GLAZED MOSAIC INAX-355/GLM,,gach-op-tuong,subcategory-direct-map
+39498,INAX-355/GLM-3,gach-op-tuong,Gạch ốp tường GLAZED MOSAIC INAX-355/GLM,,gach-op-tuong,subcategory-direct-map
+39499,INAX-355/GLM-2,gach-op-tuong,Gạch ốp tường GLAZED MOSAIC INAX-355/GLM,,gach-op-tuong,subcategory-direct-map
+7834,HAL-20BN/HB-1,gach-op-tuong,Gạch ốp tường HOSOWARI BORDER INAX HAL-20BN/HB,,gach-op-tuong,subcategory-direct-map
+39508,HAL-20BN/HB-7,gach-op-tuong,Gạch ốp tường HOSOWARI BORDER INAX HAL-20BN/HB,,gach-op-tuong,subcategory-direct-map
+39509,HAL-20BN/HB-6,gach-op-tuong,Gạch ốp tường HOSOWARI BORDER INAX HAL-20BN/HB,,gach-op-tuong,subcategory-direct-map
+39510,HAL-20BN/HB-5,gach-op-tuong,Gạch ốp tường HOSOWARI BORDER INAX HAL-20BN/HB,,gach-op-tuong,subcategory-direct-map
+39511,HAL-20BN/HB-4,gach-op-tuong,Gạch ốp tường HOSOWARI BORDER INAX HAL-20BN/HB,,gach-op-tuong,subcategory-direct-map
+39512,HAL-20BN/HB-3,gach-op-tuong,Gạch ốp tường HOSOWARI BORDER INAX HAL-20BN/HB,,gach-op-tuong,subcategory-direct-map
+39513,HAL-20BN/HB-2,gach-op-tuong,Gạch ốp tường HOSOWARI BORDER INAX HAL-20BN/HB,,gach-op-tuong,subcategory-direct-map
+7835,HAL-20BR/HB-1,gach-op-tuong,Gạch ốp tường HOSOWARI BORDER RANDOM INAX HAL-20BR/HB,,gach-op-tuong,subcategory-direct-map
+39502,HAL-20BR/HB-7,gach-op-tuong,Gạch ốp tường HOSOWARI BORDER RANDOM INAX HAL-20BR/HB,,gach-op-tuong,subcategory-direct-map
+39503,HAL-20BR/HB-6,gach-op-tuong,Gạch ốp tường HOSOWARI BORDER RANDOM INAX HAL-20BR/HB,,gach-op-tuong,subcategory-direct-map
+39504,HAL-20BR/HB-5,gach-op-tuong,Gạch ốp tường HOSOWARI BORDER RANDOM INAX HAL-20BR/HB,,gach-op-tuong,subcategory-direct-map
+39505,HAL-20BR/HB-4,gach-op-tuong,Gạch ốp tường HOSOWARI BORDER RANDOM INAX HAL-20BR/HB,,gach-op-tuong,subcategory-direct-map
+39506,HAL-20BR/HB-3,gach-op-tuong,Gạch ốp tường HOSOWARI BORDER RANDOM INAX HAL-20BR/HB,,gach-op-tuong,subcategory-direct-map
+39507,HAL-20BR/HB-2,gach-op-tuong,Gạch ốp tường HOSOWARI BORDER RANDOM INAX HAL-20BR/HB,,gach-op-tuong,subcategory-direct-map
+7862,INAX-20B/CRB-1,gach-op-tuong,Gạch ốp tường I-Concept CERABORDER INAX-20B/CRB,,gach-op-tuong,subcategory-direct-map
+39516,INAX-20B/CRB-6,gach-op-tuong,Gạch ốp tường I-Concept CERABORDER INAX-20B/CRB,,gach-op-tuong,subcategory-direct-map
+39517,INAX-20B/CRB-4,gach-op-tuong,Gạch ốp tường I-Concept CERABORDER INAX-20B/CRB,,gach-op-tuong,subcategory-direct-map
+39518,INAX-20B/CRB-3,gach-op-tuong,Gạch ốp tường I-Concept CERABORDER INAX-20B/CRB,,gach-op-tuong,subcategory-direct-map
+39519,INAX-20B/CRB-5,gach-op-tuong,Gạch ốp tường I-Concept CERABORDER INAX-20B/CRB,,gach-op-tuong,subcategory-direct-map
+39520,INAX-20B/CRB-2,gach-op-tuong,Gạch ốp tường I-Concept CERABORDER INAX-20B/CRB,,gach-op-tuong,subcategory-direct-map
+7843,INAX-40B/SLT-2,gach-op-tuong,Gạch ốp tường I-Concept SLIT INAX-40B/SLT,,gach-op-tuong,subcategory-direct-map
+9960,INAX-40B/SLT-1,gach-op-tuong,Gạch ốp tường I-Concept SLIT INAX-40B/SLT,,gach-op-tuong,subcategory-direct-map
+39514,INAX-40B/SLT-4,gach-op-tuong,Gạch ốp tường I-Concept SLIT INAX-40B/SLT,,gach-op-tuong,subcategory-direct-map
+39515,INAX-40B/SLT-3,gach-op-tuong,Gạch ốp tường I-Concept SLIT INAX-40B/SLT,,gach-op-tuong,subcategory-direct-map
+7841,INAX-20B/STB-1,gach-op-tuong,Gạch ốp tường I-Concept STRIPE BORDER INAX-20B/STB,,gach-op-tuong,subcategory-direct-map
+39524,INAX-20B/STB-4,gach-op-tuong,Gạch ốp tường I-Concept STRIPE BORDER INAX-20B/STB,,gach-op-tuong,subcategory-direct-map
+39525,INAX-20B/STB-3,gach-op-tuong,Gạch ốp tường I-Concept STRIPE BORDER INAX-20B/STB,,gach-op-tuong,subcategory-direct-map
+39526,INAX-20B/STB-2,gach-op-tuong,Gạch ốp tường I-Concept STRIPE BORDER INAX-20B/STB,,gach-op-tuong,subcategory-direct-map
+7842,INAX-3040B/TRP-1,gach-op-tuong,Gạch ốp tường I-Concept TRAPE INAX-3040B/TRP,,gach-op-tuong,subcategory-direct-map
+39521,INAX-3040B/TRP-4,gach-op-tuong,Gạch ốp tường I-Concept TRAPE INAX-3040B/TRP,,gach-op-tuong,subcategory-direct-map
+39522,INAX-3040B/TRP-3,gach-op-tuong,Gạch ốp tường I-Concept TRAPE INAX-3040B/TRP,,gach-op-tuong,subcategory-direct-map
+39523,INAX-3040B/TRP-2,gach-op-tuong,Gạch ốp tường I-Concept TRAPE INAX-3040B/TRP,,gach-op-tuong,subcategory-direct-map
+7840,INAX-255/WM-1,gach-op-tuong,Gạch ốp tường I-Concept WAVY MOSAIC INAX-255/WM,,gach-op-tuong,subcategory-direct-map
+39532,INAX-255/WM-4,gach-op-tuong,Gạch ốp tường I-Concept WAVY MOSAIC INAX-255/WM,,gach-op-tuong,subcategory-direct-map
+39533,INAX-255/WM-3,gach-op-tuong,Gạch ốp tường I-Concept WAVY MOSAIC INAX-255/WM,,gach-op-tuong,subcategory-direct-map
+39534,INAX-255/WM-2,gach-op-tuong,Gạch ốp tường I-Concept WAVY MOSAIC INAX-255/WM,,gach-op-tuong,subcategory-direct-map
+7867,INAX-2I/IMM-1,gach-op-tuong,Gạch ốp tường Imperial Mosaic INAX-2I/IMM (INAX2IIMM),,gach-op-tuong,subcategory-direct-map
+39527,INAX-2I/IMM-6,gach-op-tuong,Gạch ốp tường Imperial Mosaic INAX-2I/IMM (INAX2IIMM),,gach-op-tuong,subcategory-direct-map
+39528,INAX-2I/IMM-5,gach-op-tuong,Gạch ốp tường Imperial Mosaic INAX-2I/IMM (INAX2IIMM),,gach-op-tuong,subcategory-direct-map
+39529,INAX-2I/IMM-4,gach-op-tuong,Gạch ốp tường Imperial Mosaic INAX-2I/IMM (INAX2IIMM),,gach-op-tuong,subcategory-direct-map
+39530,INAX-2I/IMM-3,gach-op-tuong,Gạch ốp tường Imperial Mosaic INAX-2I/IMM (INAX2IIMM),,gach-op-tuong,subcategory-direct-map
+39531,INAX-2I/IMM-2,gach-op-tuong,Gạch ốp tường Imperial Mosaic INAX-2I/IMM (INAX2IIMM),,gach-op-tuong,subcategory-direct-map
+7844,INAX-40B/KH-4,gach-op-tuong,Gạch ốp tường KAIHA INAX-40B/KH,,gach-op-tuong,subcategory-direct-map
+9961,INAX-40B/KH-2,gach-op-tuong,Gạch ốp tường KAIHA INAX-40B/KH,,gach-op-tuong,subcategory-direct-map
+39538,INAX-40B/KH-5,gach-op-tuong,Gạch ốp tường KAIHA INAX-40B/KH,,gach-op-tuong,subcategory-direct-map
+7852,INAX-300/LTC-11,gach-op-tuong,Gạch ốp tường LATTICE INAX-300/LTC,,gach-op-tuong,subcategory-direct-map
+39535,INAX-300/LTC-14,gach-op-tuong,Gạch ốp tường LATTICE INAX-300/LTC,,gach-op-tuong,subcategory-direct-map
+39536,INAX-300/LTC-13,gach-op-tuong,Gạch ốp tường LATTICE INAX-300/LTC,,gach-op-tuong,subcategory-direct-map
+39537,INAX-300/LTC-12,gach-op-tuong,Gạch ốp tường LATTICE INAX-300/LTC,,gach-op-tuong,subcategory-direct-map
+7831,HAL-R/MAL-1,gach-op-tuong,Gạch ốp tường MELVIO ALDEA INAX HAL-R/MAL,,gach-op-tuong,subcategory-direct-map
+39539,HAL-R/MAL-3,gach-op-tuong,Gạch ốp tường MELVIO ALDEA INAX HAL-R/MAL,,gach-op-tuong,subcategory-direct-map
+39540,HAL-R/MAL-2,gach-op-tuong,Gạch ốp tường MELVIO ALDEA INAX HAL-R/MAL,,gach-op-tuong,subcategory-direct-map
+7860,INAX-255/PPC-103,gach-op-tuong,Gạch ốp tường PASTEL PLAIN COLOR INAX-255/PPC,,gach-op-tuong,subcategory-direct-map
+39542,INAX-255/PPC-209,gach-op-tuong,Gạch ốp tường PASTEL PLAIN COLOR INAX-255/PPC,,gach-op-tuong,subcategory-direct-map
+39543,INAX-255/PPC-207,gach-op-tuong,Gạch ốp tường PASTEL PLAIN COLOR INAX-255/PPC,,gach-op-tuong,subcategory-direct-map
+39544,INAX-255/PPC-204,gach-op-tuong,Gạch ốp tường PASTEL PLAIN COLOR INAX-255/PPC,,gach-op-tuong,subcategory-direct-map
+39545,INAX-255/PPC-133,gach-op-tuong,Gạch ốp tường PASTEL PLAIN COLOR INAX-255/PPC,,gach-op-tuong,subcategory-direct-map
+39546,INAX-255/PPC-123,gach-op-tuong,Gạch ốp tường PASTEL PLAIN COLOR INAX-255/PPC,,gach-op-tuong,subcategory-direct-map
+39547,INAX-255/PPC-93,gach-op-tuong,Gạch ốp tường PASTEL PLAIN COLOR INAX-255/PPC,,gach-op-tuong,subcategory-direct-map
+39548,INAX-255/PPC-63,gach-op-tuong,Gạch ốp tường PASTEL PLAIN COLOR INAX-255/PPC,,gach-op-tuong,subcategory-direct-map
+39549,INAX-255/PPC-33,gach-op-tuong,Gạch ốp tường PASTEL PLAIN COLOR INAX-255/PPC,,gach-op-tuong,subcategory-direct-map
+39550,INAX-255/PPC-23,gach-op-tuong,Gạch ốp tường PASTEL PLAIN COLOR INAX-255/PPC,,gach-op-tuong,subcategory-direct-map
+39551,INAX-255/PPC-21,gach-op-tuong,Gạch ốp tường PASTEL PLAIN COLOR INAX-255/PPC,,gach-op-tuong,subcategory-direct-map
+39552,INAX-255/PPC-11,gach-op-tuong,Gạch ốp tường PASTEL PLAIN COLOR INAX-255/PPC,,gach-op-tuong,subcategory-direct-map
+7846,INAX-40B/RB-3,gach-op-tuong,Gạch ốp tường R-BORDER INAX-40B/RB,,gach-op-tuong,subcategory-direct-map
+9963,INAX-40B/RB-1,gach-op-tuong,Gạch ốp tường R-BORDER INAX-40B/RB,,gach-op-tuong,subcategory-direct-map
+39541,INAX-40B/RB-2,gach-op-tuong,Gạch ốp tường R-BORDER INAX-40B/RB,,gach-op-tuong,subcategory-direct-map
+7848,INAX-30B/SB-1,gach-op-tuong,Gạch ốp tường SB-STONE BORDER INAX-30B/SB,,gach-op-tuong,subcategory-direct-map
+39553,INAX-30B/SB-3,gach-op-tuong,Gạch ốp tường SB-STONE BORDER INAX-30B/SB,,gach-op-tuong,subcategory-direct-map
+39554,INAX-30B/SB-2,gach-op-tuong,Gạch ốp tường SB-STONE BORDER INAX-30B/SB,,gach-op-tuong,subcategory-direct-map
+7857,INAX-255/SLC-1,gach-op-tuong,Gạch ốp tường SLC-SHIJYU LUSTER COLOR INAX-255/SLC,,gach-op-tuong,subcategory-direct-map
+39558,INAX-255/SLC-9,gach-op-tuong,Gạch ốp tường SLC-SHIJYU LUSTER COLOR INAX-255/SLC,,gach-op-tuong,subcategory-direct-map
+39559,INAX-255/SLC-8,gach-op-tuong,Gạch ốp tường SLC-SHIJYU LUSTER COLOR INAX-255/SLC,,gach-op-tuong,subcategory-direct-map
+39560,INAX-255/SLC-6,gach-op-tuong,Gạch ốp tường SLC-SHIJYU LUSTER COLOR INAX-255/SLC,,gach-op-tuong,subcategory-direct-map
+39561,INAX-255/SLC-5,gach-op-tuong,Gạch ốp tường SLC-SHIJYU LUSTER COLOR INAX-255/SLC,,gach-op-tuong,subcategory-direct-map
+39562,INAX-255/SLC-4,gach-op-tuong,Gạch ốp tường SLC-SHIJYU LUSTER COLOR INAX-255/SLC,,gach-op-tuong,subcategory-direct-map
+39563,INAX-255/SLC-3,gach-op-tuong,Gạch ốp tường SLC-SHIJYU LUSTER COLOR INAX-255/SLC,,gach-op-tuong,subcategory-direct-map
+39564,INAX-255/SLC-2,gach-op-tuong,Gạch ốp tường SLC-SHIJYU LUSTER COLOR INAX-255/SLC,,gach-op-tuong,subcategory-direct-map
+7847,INAX-30B/TKB-1,gach-op-tuong,Gạch ốp tường TAKEBORDER INAX-30B/TKB,,gach-op-tuong,subcategory-direct-map
+39555,INAX-30B/TKB-4,gach-op-tuong,Gạch ốp tường TAKEBORDER INAX-30B/TKB,,gach-op-tuong,subcategory-direct-map
+39556,INAX-30B/TKB-3,gach-op-tuong,Gạch ốp tường TAKEBORDER INAX-30B/TKB,,gach-op-tuong,subcategory-direct-map
+39557,INAX-30B/TKB-2,gach-op-tuong,Gạch ốp tường TAKEBORDER INAX-30B/TKB,,gach-op-tuong,subcategory-direct-map
+7839,INAX-255/TND-1,gach-op-tuong,Gạch ốp tường TANADA INAX-255/TND,,gach-op-tuong,subcategory-direct-map
+39578,INAX-255/TND-8,gach-op-tuong,Gạch ốp tường TANADA INAX-255/TND,,gach-op-tuong,subcategory-direct-map
+39579,INAX-255/TND-7,gach-op-tuong,Gạch ốp tường TANADA INAX-255/TND,,gach-op-tuong,subcategory-direct-map
+39580,INAX-255/TND-6,gach-op-tuong,Gạch ốp tường TANADA INAX-255/TND,,gach-op-tuong,subcategory-direct-map
+39581,INAX-255/TND-5,gach-op-tuong,Gạch ốp tường TANADA INAX-255/TND,,gach-op-tuong,subcategory-direct-map
+39582,INAX-255/TND-4,gach-op-tuong,Gạch ốp tường TANADA INAX-255/TND,,gach-op-tuong,subcategory-direct-map
+39583,INAX-255/TND-3,gach-op-tuong,Gạch ốp tường TANADA INAX-255/TND,,gach-op-tuong,subcategory-direct-map
+39584,INAX-255/TND-2,gach-op-tuong,Gạch ốp tường TANADA INAX-255/TND,,gach-op-tuong,subcategory-direct-map
+7853,INAX-2312/VIZ-1-DK,gach-op-tuong,Gạch ốp tường VIZ ZEN sử dụng vữa INAX hoặc keo dán INAX-2312VIZ (INAX2312VIZ),,gach-op-tuong,subcategory-direct-map
+39565,INAX-2312/VIZ-10-DV,gach-op-tuong,Gạch ốp tường VIZ ZEN sử dụng vữa INAX hoặc keo dán INAX-2312VIZ (INAX2312VIZ),,gach-op-tuong,subcategory-direct-map
+39566,INAX-2312/VIZ-10-DK,gach-op-tuong,Gạch ốp tường VIZ ZEN sử dụng vữa INAX hoặc keo dán INAX-2312VIZ (INAX2312VIZ),,gach-op-tuong,subcategory-direct-map
+39567,INAX-2312/VIZ-8-DV,gach-op-tuong,Gạch ốp tường VIZ ZEN sử dụng vữa INAX hoặc keo dán INAX-2312VIZ (INAX2312VIZ),,gach-op-tuong,subcategory-direct-map
+39568,INAX-2312/VIZ-8-DK,gach-op-tuong,Gạch ốp tường VIZ ZEN sử dụng vữa INAX hoặc keo dán INAX-2312VIZ (INAX2312VIZ),,gach-op-tuong,subcategory-direct-map
+39569,INAX-2312/VIZ-6-DV,gach-op-tuong,Gạch ốp tường VIZ ZEN sử dụng vữa INAX hoặc keo dán INAX-2312VIZ (INAX2312VIZ),,gach-op-tuong,subcategory-direct-map
+39570,INAX-2312/VIZ-6-DK,gach-op-tuong,Gạch ốp tường VIZ ZEN sử dụng vữa INAX hoặc keo dán INAX-2312VIZ (INAX2312VIZ),,gach-op-tuong,subcategory-direct-map
+39571,INAX-2312/VIZ-4-DV,gach-op-tuong,Gạch ốp tường VIZ ZEN sử dụng vữa INAX hoặc keo dán INAX-2312VIZ (INAX2312VIZ),,gach-op-tuong,subcategory-direct-map
+39572,INAX-2312/VIZ-4-DK,gach-op-tuong,Gạch ốp tường VIZ ZEN sử dụng vữa INAX hoặc keo dán INAX-2312VIZ (INAX2312VIZ),,gach-op-tuong,subcategory-direct-map
+39573,INAX-2312/VIZ-3-DV,gach-op-tuong,Gạch ốp tường VIZ ZEN sử dụng vữa INAX hoặc keo dán INAX-2312VIZ (INAX2312VIZ),,gach-op-tuong,subcategory-direct-map
+39574,INAX-2312/VIZ-3-DK,gach-op-tuong,Gạch ốp tường VIZ ZEN sử dụng vữa INAX hoặc keo dán INAX-2312VIZ (INAX2312VIZ),,gach-op-tuong,subcategory-direct-map
+39575,INAX-2312/VIZ-2-DV,gach-op-tuong,Gạch ốp tường VIZ ZEN sử dụng vữa INAX hoặc keo dán INAX-2312VIZ (INAX2312VIZ),,gach-op-tuong,subcategory-direct-map
+39576,INAX-2312/VIZ-2-DK,gach-op-tuong,Gạch ốp tường VIZ ZEN sử dụng vữa INAX hoặc keo dán INAX-2312VIZ (INAX2312VIZ),,gach-op-tuong,subcategory-direct-map
+39577,INAX-2312/VIZ-1-DV,gach-op-tuong,Gạch ốp tường VIZ ZEN sử dụng vữa INAX hoặc keo dán INAX-2312VIZ (INAX2312VIZ),,gach-op-tuong,subcategory-direct-map
+7830,DCF-20BNET/WAB-1,gach-op-tuong,Gạch ốp tường WAVE BORDER INAX DCF-20BNET/WAB,,gach-op-tuong,subcategory-direct-map
+39586,DCF-20BNET/WAB-4,gach-op-tuong,Gạch ốp tường WAVE BORDER INAX DCF-20BNET/WAB,,gach-op-tuong,subcategory-direct-map
+39587,DCF-20BNET/WAB-3,gach-op-tuong,Gạch ốp tường WAVE BORDER INAX DCF-20BNET/WAB,,gach-op-tuong,subcategory-direct-map
+39588,DCF-20BNET/WAB-2,gach-op-tuong,Gạch ốp tường WAVE BORDER INAX DCF-20BNET/WAB,,gach-op-tuong,subcategory-direct-map
+7836,IM-50P1/WV-1,gach-op-tuong,Gạch ốp tường WV-WAVES INAX-50P1/WV,,gach-op-tuong,subcategory-direct-map
+39585,IM-50P1/WV-2,gach-op-tuong,Gạch ốp tường WV-WAVES INAX-50P1/WV,,gach-op-tuong,subcategory-direct-map
+5439,GACH-120278BBIV,gach-thiet-ke-xi-mang,Gạch 120278BBIV,,gach-thiet-ke-xi-mang,subcategory-direct-map
+5438,GACH-120278BBSM,gach-thiet-ke-xi-mang,Gạch 120278BBSM,,gach-thiet-ke-xi-mang,subcategory-direct-map
+5447,GACH-120278BNKA,gach-thiet-ke-xi-mang,Gạch 120278BNKA,,gach-thiet-ke-xi-mang,subcategory-direct-map
+5437,GACH-120278BOSM,gach-thiet-ke-xi-mang,Gạch 120278BOSM,,gach-thiet-ke-xi-mang,subcategory-direct-map
+5436,GACH-120278BOTA,gach-thiet-ke-xi-mang,Gạch 120278BOTA,,gach-thiet-ke-xi-mang,subcategory-direct-map
+5440,GACH-120BBIV,gach-thiet-ke-xi-mang,Gạch 120BBIV,,gach-thiet-ke-xi-mang,subcategory-direct-map
+5444,GACH-120BBIVVEL,gach-thiet-ke-xi-mang,Gạch 120BBIVVEL,,gach-thiet-ke-xi-mang,subcategory-direct-map
+5441,GACH-120BBPE,gach-thiet-ke-xi-mang,Gạch 120BBPE,,gach-thiet-ke-xi-mang,subcategory-direct-map
+5446,GACH-120BBPEVE,gach-thiet-ke-xi-mang,Gạch 120BBPEVE,,gach-thiet-ke-xi-mang,subcategory-direct-map
+5445,GACH-120BBPUVE,gach-thiet-ke-xi-mang,Gạch 120BBPUVE,,gach-thiet-ke-xi-mang,subcategory-direct-map
+5443,GACH-120BBSM,gach-thiet-ke-xi-mang,Gạch 120BBSM,,gach-thiet-ke-xi-mang,subcategory-direct-map
+5448,GACH-120BNKA,gach-thiet-ke-xi-mang,Gạch 120BNKA,,gach-thiet-ke-xi-mang,subcategory-direct-map
+5435,GACH-120BOSM,gach-thiet-ke-xi-mang,Gạch 120BOSM,,gach-thiet-ke-xi-mang,subcategory-direct-map
+5456,GACH-36BNCO,gach-thiet-ke-xi-mang,Gạch 36BNCO,,gach-thiet-ke-xi-mang,subcategory-direct-map
+5455,GACH-36BNKA,gach-thiet-ke-xi-mang,Gạch 36BNKA,,gach-thiet-ke-xi-mang,subcategory-direct-map
+5457,GACH-36BNUM,gach-thiet-ke-xi-mang,Gạch 36BNUM,,gach-thiet-ke-xi-mang,subcategory-direct-map
+5453,GACH-60BNCO,gach-thiet-ke-xi-mang,Gạch 60BNCO,,gach-thiet-ke-xi-mang,subcategory-direct-map
+5452,GACH-60BNKA,gach-thiet-ke-xi-mang,Gạch 60BNKA,,gach-thiet-ke-xi-mang,subcategory-direct-map
+5454,GACH-60BNUM,gach-thiet-ke-xi-mang,Gạch 60BNUM,,gach-thiet-ke-xi-mang,subcategory-direct-map
+5459,GACH-612BAGR,gach-thiet-ke-xi-mang,Gạch 612BAGR,,gach-thiet-ke-xi-mang,subcategory-direct-map
+5442,GACH-612BBSM,gach-thiet-ke-xi-mang,Gạch 612BBSM,,gach-thiet-ke-xi-mang,subcategory-direct-map
+5460,GACH-612BMSMMT,gach-thiet-ke-xi-mang,Gạch 612BMSMMT,,gach-thiet-ke-xi-mang,subcategory-direct-map
+5450,GACH-612BNCO,gach-thiet-ke-xi-mang,Gạch 612BNCO,,gach-thiet-ke-xi-mang,subcategory-direct-map
+5449,GACH-612BNKA,gach-thiet-ke-xi-mang,Gạch 612BNKA,,gach-thiet-ke-xi-mang,subcategory-direct-map
+5451,GACH-612BNUM,gach-thiet-ke-xi-mang,Gạch 612BNUM,,gach-thiet-ke-xi-mang,subcategory-direct-map
+5458,GACH-90BAGR,gach-thiet-ke-xi-mang,Gạch 90BAGR,,gach-thiet-ke-xi-mang,subcategory-direct-map
+5461,GACH-120278LOICLI,gach-trang-tri,Gạch 120278LOICLI,,gach-trang-tri,subcategory-direct-map
+5466,GACH-120278PAENGO,gach-trang-tri,Gạch 120278PAENGO,,gach-trang-tri,subcategory-direct-map
+5488,GACH-20FUAU,gach-trang-tri,Gạch 20FUAU,,gach-trang-tri,subcategory-direct-map
+5490,GACH-20FUAU_16V,gach-trang-tri,Gạch 20FUAU_16V,,gach-trang-tri,subcategory-direct-map
+5489,GACH-20FUAU_18V,gach-trang-tri,Gạch 20FUAU_18V,,gach-trang-tri,subcategory-direct-map
+5491,GACH-30AGTA332727R_N,gach-trang-tri,Gạch 30AGTA332727R_N,,gach-trang-tri,subcategory-direct-map
+5492,GACH-33FUMI,gach-trang-tri,Gạch 33FUMI,,gach-trang-tri,subcategory-direct-map
+5484,GACH-36GP0799,gach-trang-tri,Gạch 36GP0799_N,,gach-trang-tri,subcategory-direct-map
+5483,GACH-36GP0800,gach-trang-tri,Gạch 36GP0800_N,,gach-trang-tri,subcategory-direct-map
+5482,GACH-36GP0803,gach-trang-tri,Gạch 36GP0803_N,,gach-trang-tri,subcategory-direct-map
+5481,GACH-36GP0804,gach-trang-tri,Gạch 36GP0804_N,,gach-trang-tri,subcategory-direct-map
+5480,GACH-36GP0806,gach-trang-tri,Gạch 36GP0806_N,,gach-trang-tri,subcategory-direct-map
+5479,GACH-36GP0807,gach-trang-tri,Gạch 36GP0807_N,,gach-trang-tri,subcategory-direct-map
+5478,GACH-36GP0808,gach-trang-tri,Gạch 36GP0808_N,,gach-trang-tri,subcategory-direct-map
+5477,GACH-36GP0811,gach-trang-tri,Gạch 36GP0811_N,,gach-trang-tri,subcategory-direct-map
+5476,GACH-36GP0812,gach-trang-tri,Gạch 36GP0812_N,,gach-trang-tri,subcategory-direct-map
+5475,GACH-36GP0814,gach-trang-tri,Gạch 36GP0814_N,,gach-trang-tri,subcategory-direct-map
+5471,GACH-36GP0876,gach-trang-tri,Gạch 36GP0876,,gach-trang-tri,subcategory-direct-map
+5474,GACH-36GP0877,gach-trang-tri,Gạch 36GP0877,,gach-trang-tri,subcategory-direct-map
+5473,GACH-36GP0879,gach-trang-tri,Gạch 36GP0879,,gach-trang-tri,subcategory-direct-map
+5472,GACH-36GP0880,gach-trang-tri,Gạch 36GP0880,,gach-trang-tri,subcategory-direct-map
+5467,GACH-36GP0882,gach-trang-tri,Gạch 36GP0882,,gach-trang-tri,subcategory-direct-map
+5470,GACH-36GP0883,gach-trang-tri,Gạch 36GP0883,,gach-trang-tri,subcategory-direct-map
+5469,GACH-36GP0885,gach-trang-tri,Gạch 36GP0885,,gach-trang-tri,subcategory-direct-map
+5468,GACH-36GP0886,gach-trang-tri,Gạch 36GP0886,,gach-trang-tri,subcategory-direct-map
+5494,GACH-612JA02,gach-trang-tri,Gạch 612JA02,,gach-trang-tri,subcategory-direct-map
+5493,GACH-612JA07,gach-trang-tri,Gạch 612JA07,,gach-trang-tri,subcategory-direct-map
+5462,GACH-612PABL,gach-trang-tri,Gạch 612PABL,,gach-trang-tri,subcategory-direct-map
+5464,GACH-612PAMABL,gach-trang-tri,Gạch 612PAMABL,,gach-trang-tri,subcategory-direct-map
+5463,GACH-612PAMAPU,gach-trang-tri,Gạch 612PAMAPU,,gach-trang-tri,subcategory-direct-map
+5465,GACH-612PAPA_3V,gach-trang-tri,Gạch 612PAPA_3V,,gach-trang-tri,subcategory-direct-map
+5485,GACH-612ROMA612,gach-trang-tri,Gạch 612ROMA612,,gach-trang-tri,subcategory-direct-map
+5486,GACH-612TROP612,gach-trang-tri,Gạch 612TROP612,,gach-trang-tri,subcategory-direct-map
+5487,GACH-612XILEMA612,gach-trang-tri,Gạch 612XILEMA612,,gach-trang-tri,subcategory-direct-map
+5398,GACH-120278EKPF,gach-van-da-marble,Gạch 120278EKPF,,gach-van-da-marble,subcategory-direct-map
+5381,GACH-120278EN7Y,gach-van-da-marble,Gạch 120278EN7Y,,gach-van-da-marble,subcategory-direct-map
+5382,GACH-120278EN7Z,gach-van-da-marble,Gạch 120278EN7Z,,gach-van-da-marble,subcategory-direct-map
+5385,GACH-120278MACABLLP,gach-van-da-marble,Gạch 120278MACABLLP,,gach-van-da-marble,subcategory-direct-map
+5383,GACH-120278MADSOLP,gach-van-da-marble,Gạch 120278MADSOLP,,gach-van-da-marble,subcategory-direct-map
+5377,GACH-120278ON02,gach-van-da-marble,Gạch 120278ON02,,gach-van-da-marble,subcategory-direct-map
+5376,GACH-120278ON04,gach-van-da-marble,Gạch 120278ON04,,gach-van-da-marble,subcategory-direct-map
+5378,GACH-120278ON05,gach-van-da-marble,Gạch 120278ON05,,gach-van-da-marble,subcategory-direct-map
+5375,GACH-120278ON05A,gach-van-da-marble,Gạch 120278ON05A,,gach-van-da-marble,subcategory-direct-map
+5374,GACH-120278ON05B,gach-van-da-marble,Gạch 120278ON05B,,gach-van-da-marble,subcategory-direct-map
+5396,GACH-120ASMAPUL,gach-van-da-marble,Gạch 120ASMAPUL,,gach-van-da-marble,subcategory-direct-map
+5394,GACH-120ASPEPUL,gach-van-da-marble,Gạch 120ASPEPUL,,gach-van-da-marble,subcategory-direct-map
+5397,GACH-120ELDM,gach-van-da-marble,Gạch 120ELDM,,gach-van-da-marble,subcategory-direct-map
+5399,GACH-612EKTM,gach-van-da-marble,Gạch 612EKTM,,gach-van-da-marble,subcategory-direct-map
+5380,GACH-612EN88,gach-van-da-marble,Gạch 612EN88,,gach-van-da-marble,subcategory-direct-map
+5379,GACH-612EN8A,gach-van-da-marble,Gạch 612EN8A,,gach-van-da-marble,subcategory-direct-map
+5386,GACH-612MACABLLP,gach-van-da-marble,Gạch 612MACABLLP,,gach-van-da-marble,subcategory-direct-map
+5384,GACH-612MADSOLP,gach-van-da-marble,Gạch 612MADSOLP,,gach-van-da-marble,subcategory-direct-map
+5388,GACH-612MXCAAPHA,gach-van-da-marble,Gạch 612MXCAAPHA,,gach-van-da-marble,subcategory-direct-map
+5389,GACH-75150MXFIBOLP,gach-van-da-marble,Gạch 75150MXFIBOLP,,gach-van-da-marble,subcategory-direct-map
+5387,GACH-75150MXFIBOSK,gach-van-da-marble,Gạch 75150MXFIBOSK,,gach-van-da-marble,subcategory-direct-map
+5395,GACH-90ASPEPUL,gach-van-da-marble,Gạch 90ASPEPUL,,gach-van-da-marble,subcategory-direct-map
+5392,GACH-90ONBE,gach-van-da-marble,Gạch 90ONBE,,gach-van-da-marble,subcategory-direct-map
+5390,GACH-90ONBENP,gach-van-da-marble,Gạch 90ONBENP,,gach-van-da-marble,subcategory-direct-map
+5391,GACH-90ONBLNP,gach-van-da-marble,Gạch 90ONBLNP,,gach-van-da-marble,subcategory-direct-map
+5393,GACH-918INIVKRY,gach-van-da-marble,Gạch 918INIVKRY,,gach-van-da-marble,subcategory-direct-map
+5413,GACH-120EN1W,gach-van-da-tu-nhien,Gạch 120EN1W,,gach-van-da-tu-nhien,subcategory-direct-map
+5410,GACH-120EN1X,gach-van-da-tu-nhien,Gạch 120EN1X,,gach-van-da-tu-nhien,subcategory-direct-map
+5409,GACH-4590VAAL,gach-van-da-tu-nhien,Gạch 4590VAAL,,gach-van-da-tu-nhien,subcategory-direct-map
+5408,GACH-4590VABL,gach-van-da-tu-nhien,Gạch 4590VABL,,gach-van-da-tu-nhien,subcategory-direct-map
+5407,GACH-4590VAGR,gach-van-da-tu-nhien,Gạch 4590VAGR,,gach-van-da-tu-nhien,subcategory-direct-map
+5406,GACH-4590VAMA,gach-van-da-tu-nhien,Gạch 4590VAMA,,gach-van-da-tu-nhien,subcategory-direct-map
+5402,GACH-60MT02,gach-van-da-tu-nhien,Gạch 60MT02,,gach-van-da-tu-nhien,subcategory-direct-map
+5401,GACH-60MT04,gach-van-da-tu-nhien,Gạch 60MT04,,gach-van-da-tu-nhien,subcategory-direct-map
+5400,GACH-60MT06,gach-van-da-tu-nhien,Gạch 60MT06,,gach-van-da-tu-nhien,subcategory-direct-map
+5420,GACH-612INBENA,gach-van-da-tu-nhien,Gạch 612INBENA,,gach-van-da-tu-nhien,subcategory-direct-map
+5419,GACH-612INPENA,gach-van-da-tu-nhien,Gạch 612INPENA,,gach-van-da-tu-nhien,subcategory-direct-map
+5405,GACH-612MT02,gach-van-da-tu-nhien,Gạch 612MT02,,gach-van-da-tu-nhien,subcategory-direct-map
+5404,GACH-612MT04,gach-van-da-tu-nhien,Gạch 612MT04,,gach-van-da-tu-nhien,subcategory-direct-map
+5403,GACH-612MT06,gach-van-da-tu-nhien,Gạch 612MT06,,gach-van-da-tu-nhien,subcategory-direct-map
+5416,GACH-65PRL60N,gach-van-da-tu-nhien,Gạch 65PRL60N,,gach-van-da-tu-nhien,subcategory-direct-map
+5417,GACH-65PRL60W,gach-van-da-tu-nhien,Gạch 65PRL60W,,gach-van-da-tu-nhien,subcategory-direct-map
+5418,GACH-90INCRLP,gach-van-da-tu-nhien,Gạch 90INCRLP,,gach-van-da-tu-nhien,subcategory-direct-map
+5411,GACH-918EN20,gach-van-da-tu-nhien,Gạch 918EN20,,gach-van-da-tu-nhien,subcategory-direct-map
+5414,GACH-918EN21,gach-van-da-tu-nhien,Gạch 918EN21,,gach-van-da-tu-nhien,subcategory-direct-map
+5415,GACH-918EN3Z,gach-van-da-tu-nhien,Gạch 918EN3Z,,gach-van-da-tu-nhien,subcategory-direct-map
+5412,GACH-918EN40,gach-van-da-tu-nhien,Gạch 918EN40,,gach-van-da-tu-nhien,subcategory-direct-map
+5422,GACH-918ST89660N,gach-van-da-tu-nhien,Gạch 918ST89660N,,gach-van-da-tu-nhien,subcategory-direct-map
+5421,GACH-918ST89662N,gach-van-da-tu-nhien,Gạch 918ST89662N,,gach-van-da-tu-nhien,subcategory-direct-map
+5427,GACH-1154EKP9,gach-van-go,Gạch 1154EKP9,,gach-van-go,subcategory-direct-map
+5425,GACH-1154EKPA,gach-van-go,Gạch 1154EKPA,,gach-van-go,subcategory-direct-map
+5426,GACH-1154EKPC,gach-van-go,Gạch 1154EKPC,,gach-van-go,subcategory-direct-map
+5424,GACH-1154EKPD,gach-van-go,Gạch 1154EKPD,,gach-van-go,subcategory-direct-map
+5428,GACH-212EGN8,gach-van-go,Gạch 212EGN8,,gach-van-go,subcategory-direct-map
+5429,GACH-212EGN9,gach-van-go,Gạch 212EGN9,,gach-van-go,subcategory-direct-map
+5423,GACH-212EKN8,gach-van-go,Gạch 212EKN8,,gach-van-go,subcategory-direct-map
+5430,GACH-212HEEN,gach-van-go,Gạch 212HEEN,,gach-van-go,subcategory-direct-map
+5434,GACH-212KANO,gach-van-go,Gạch 212KANO,,gach-van-go,subcategory-direct-map
+5432,GACH-212MF7D,gach-van-go,Gạch 212MF7D,,gach-van-go,subcategory-direct-map
+5431,GACH-212MF7F,gach-van-go,Gạch 212MF7F,,gach-van-go,subcategory-direct-map
+5433,GACH-212MF7G,gach-van-go,Gạch 212MF7G,,gach-van-go,subcategory-direct-map
