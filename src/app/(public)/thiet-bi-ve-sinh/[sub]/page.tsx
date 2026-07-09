@@ -1,7 +1,7 @@
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { Suspense } from "react"
-import { getPublicProducts, getAvailableFiltersBySubcategory, getProductTypeFiltersBySubcategory, getSubcategorySpecFilters } from "@/lib/public-api-products"
+import { getPublicProducts, getAvailableFiltersBySubcategory, getProductTypeFiltersBySubcategory, getSubcategorySpecFilters, getListingRuntimeConfig } from "@/lib/public-api-products"
 import prisma from "@/lib/prisma"
 import { ProductCard } from "@/components/ui/product-card"
 import { ProductPagination } from "@/components/ui/product-pagination"
@@ -12,6 +12,7 @@ import { CategorySort } from "@/components/category/category-sort"
 import { ProductTypeFilter } from "@/components/category/product-type-filter"
 import { ActiveSpecFilterChips, SpecFilterDef } from "@/components/category/subcategory-spec-filter"
 import { SubcategoryIconGrid } from "@/components/category/subcategory-icon-grid"
+import { buildPublicListingVisibilityWhere } from "@/lib/public-product-visibility"
 import { ChevronRight, Home } from "lucide-react"
 import Link from "next/link"
 
@@ -21,11 +22,7 @@ const CATEGORY_SLUG = "thiet-bi-ve-sinh"
 const CATEGORY_NAME = "Thiết Bị Vệ Sinh"
 const BASE_PATH = "/thiet-bi-ve-sinh"
 const PAGE_SIZE = 24
-const LISTING_PRODUCT_WHERE = {
-    publication_status: "public",
-    pdp_visibility: "public",
-    listing_visibility: { in: ["default", "low_priority"] },
-}
+const LISTING_PRODUCT_WHERE = buildPublicListingVisibilityWhere()
 
 interface PageProps {
     params: Promise<{ sub: string }>
@@ -70,6 +67,7 @@ export default async function ThietBiVeSinhSubPage({ params, searchParams }: Pag
     const activeProductSubType = sp.subtype
     const isNew = sp.is_new === 'true'
     const isFeatured = sp.is_featured === 'true'
+    const listingRuntimeConfig = getListingRuntimeConfig(CATEGORY_SLUG, sub)
 
     let price_min: number | undefined
     let price_max: number | undefined
@@ -94,9 +92,9 @@ export default async function ThietBiVeSinhSubPage({ params, searchParams }: Pag
     })
 
     const [availableFilters, specFilterDefs, productTypeFilters, allSubcategories, { products, totalPages, total }] = await Promise.all([
-        getAvailableFiltersBySubcategory(sub, activeProductType),
-        getSubcategorySpecFilters(subcategory.id),
-        getProductTypeFiltersBySubcategory(subcategory.id),
+        getAvailableFiltersBySubcategory(sub, activeProductType, CATEGORY_SLUG),
+        getSubcategorySpecFilters(subcategory.id, CATEGORY_SLUG, sub),
+        listingRuntimeConfig.enableProductTypeTabs ? getProductTypeFiltersBySubcategory(subcategory.id) : Promise.resolve([]),
         prisma.subcategories.findMany({
             where: { categories: { slug: CATEGORY_SLUG }, is_active: true },
             orderBy: { sort_order: "asc" },
@@ -157,8 +155,9 @@ export default async function ThietBiVeSinhSubPage({ params, searchParams }: Pag
                     <Suspense fallback={<div className="h-96 bg-neutral-100 animate-pulse rounded-lg" />}>
                         <AdvancedSidebarFilter
                             availableFilters={availableFilters}
+                            runtimeConfig={listingRuntimeConfig}
                             hideSubcategoryFilter
-                            hideColorFilter
+                            hideColorFilter={listingRuntimeConfig.hideColorFilter}
                             specFilters={specFilterDefs as SpecFilterDef[]}
                         />
                     </Suspense>
@@ -174,9 +173,11 @@ export default async function ThietBiVeSinhSubPage({ params, searchParams }: Pag
                     />
 
                     {/* Product Type filter tabs — directly below icon grid */}
-                    <Suspense>
-                        <ProductTypeFilter activeSubSlug={sub} types={productTypeFilters} />
-                    </Suspense>
+                    {listingRuntimeConfig.enableProductTypeTabs && (
+                        <Suspense>
+                            <ProductTypeFilter activeSubSlug={sub} types={productTypeFilters} />
+                        </Suspense>
+                    )}
 
 
 
@@ -186,13 +187,18 @@ export default async function ThietBiVeSinhSubPage({ params, searchParams }: Pag
                                 <strong className="text-neutral-900">{total.toLocaleString('vi-VN')}</strong> sản phẩm
                             </span>
                             <div className="flex items-center gap-2">
-                                <CategoryMobileFilter availableFilters={availableFilters} specFilters={specFilterDefs as SpecFilterDef[]} hideColorFilter />
+                                <CategoryMobileFilter
+                                    availableFilters={availableFilters}
+                                    specFilters={specFilterDefs as SpecFilterDef[]}
+                                    runtimeConfig={listingRuntimeConfig}
+                                    hideColorFilter={listingRuntimeConfig.hideColorFilter}
+                                />
                                 <CategorySort />
                             </div>
                         </div>
 
                         {/* Spec filter chips */}
-                        {specFilterDefs.length > 0 && (
+                        {listingRuntimeConfig.enableSpecFilters && specFilterDefs.length > 0 && (
                             <Suspense>
                                 <ActiveSpecFilterChips filters={specFilterDefs as SpecFilterDef[]} />
                             </Suspense>
@@ -212,6 +218,7 @@ export default async function ThietBiVeSinhSubPage({ params, searchParams }: Pag
                                         product={{ ...product, subcategories: product.subcategories, brands: product.brands }}
                                         basePath={BASE_PATH}
                                         patternSlug={product.subcategories?.slug ?? "san-pham"}
+                                        href={product.url}
                                     />
                                 ))}
                             </div>

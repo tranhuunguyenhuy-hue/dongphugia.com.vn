@@ -13,6 +13,7 @@ import { RecentlyViewedProducts } from "@/components/product/recently-viewed"
 import { BrandBadge } from "@/components/ui/brand-badge"
 import { JsonLd } from "@/components/seo/json-ld"
 import { buildProductSchema, buildBreadcrumbSchema } from "@/lib/seo/schema"
+import { buildProductMetadata, toNullableNumber } from "@/lib/seo/product-seo"
 import { getCanonicalProductPath } from "@/lib/taxonomy-paths"
 
 export const revalidate = 21600
@@ -30,24 +31,28 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     const { slug } = await params
     const product = await getPublicProductBySlug(CATEGORY_SLUG, slug)
     if (!product) return { title: "Sản phẩm không tìm thấy" }
-    return {
-        title: `${product.name} | ${CATEGORY_NAME}`,
-        description: product.description?.slice(0, 160) || `${product.name} - Chính hãng tại Đông Phú Gia Đà Lạt.`,
-        alternates: { canonical: product.url || `${BASE_PATH}/${slug}` },
-        openGraph: {
-            title: `${product.name}`,
-            description: product.description?.slice(0, 160) || `${product.name} - Chính hãng tại Đông Phú Gia Đà Lạt.`,
-            images: product.image_main_url
-                ? [{ url: product.image_main_url, width: 800, height: 600, alt: product.name }]
-                : [],
-        },
-    }
+    return buildProductMetadata({
+        name: product.name,
+        seo_title: (product as { seo_title?: string | null }).seo_title,
+        seo_description: (product as { seo_description?: string | null }).seo_description,
+        description: product.description,
+        image_main_url: product.image_main_url,
+        canonicalUrl: product.url || `${BASE_PATH}/${slug}`,
+        categoryName: CATEGORY_NAME,
+    })
 }
 
 export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
     const { sub, slug } = await params
     const product = await getPublicProductBySlug(CATEGORY_SLUG, slug)
     if (!product) notFound()
+    const currentPrice = toNullableNumber(product.price)
+    const currentOriginalPrice = toNullableNumber(product.original_price)
+    const onlineDiscountAmount = toNullableNumber(product.online_discount_amount)
+    const discountPercent =
+        currentOriginalPrice && currentPrice && currentOriginalPrice > currentPrice
+            ? Math.round(((currentOriginalPrice - currentPrice) / currentOriginalPrice) * 100)
+            : 0
     const canonicalPath = getCanonicalProductPath(product)
     const canonicalCategorySlug = canonicalPath.categorySlug || product.canonical_category_slug || CATEGORY_SLUG
     const canonicalCategoryName = canonicalPath.categoryName || CATEGORY_NAME
@@ -103,9 +108,9 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
         sku: product.sku,
         slug: product.slug,
         name: product.name,
-        price: product.price ? Number(product.price) : null,
-        original_price: product.original_price ? Number(product.original_price) : null,
-        online_discount_amount: product.online_discount_amount ? Number(product.online_discount_amount) : null,
+        price: currentPrice,
+        original_price: currentOriginalPrice,
+        online_discount_amount: onlineDiscountAmount,
         price_display: product.price_display,
         image_main_url: product.image_main_url,
         product_images: product.product_images?.map((image) => ({
@@ -127,7 +132,7 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
                 description: product.description,
                 sku: product.sku,
                 image_main_url: product.image_main_url,
-                price: Number(product.price),
+                price: currentPrice,
                 stock_status: product.stock_status,
                 brands: product.brands,
                 slug: product.slug,
@@ -168,11 +173,7 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
                         mainImageUrl={product.image_main_url}
                         additionalImages={additionalImages.map(i => ({ image_url: i.image_url, alt_text: i.alt_text }))}
                         productName={product.name}
-                        discountPercent={
-                            product.original_price && product.price && Number(product.original_price) > Number(product.price)
-                                ? Math.round(((Number(product.original_price) - Number(product.price)) / Number(product.original_price)) * 100)
-                                : 0
-                        }
+                        discountPercent={discountPercent}
                     />
                 </div>
 
@@ -268,6 +269,7 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
                                 key={p.id}
                                 product={p}
                                 basePath={canonicalBasePath}
+                                href={p.url}
                             />
                         ))}
                     </div>
@@ -280,9 +282,9 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
                 slug: product.slug,
                 sku: product.sku,
                 image_main_url: product.image_main_url,
-                price: product.price ? Number(product.price) : null,
-                original_price: product.original_price ? Number(product.original_price) : null,
-                online_discount_amount: product.online_discount_amount ? Number(product.online_discount_amount) : null,
+        price: currentPrice,
+        original_price: currentOriginalPrice,
+        online_discount_amount: onlineDiscountAmount,
                 price_display: product.price_display,
                 category_slug: canonicalCategorySlug,
                 is_featured: product.is_featured,

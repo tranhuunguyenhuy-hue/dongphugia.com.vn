@@ -1,0 +1,587 @@
+{
+  "generatedAt": "2026-07-09T07:48:18.387Z",
+  "sourceTag": "may_nuoc_nong_product_type_cleanup_v1",
+  "subcategoryId": 18,
+  "seedsToEnsure": [
+    {
+      "slug": "may-nuoc-nong-truc-tiep",
+      "name": "Máy nước nóng trực tiếp",
+      "sort_order": 10
+    },
+    {
+      "slug": "may-nuoc-nong-gian-tiep",
+      "name": "Máy nước nóng gián tiếp",
+      "sort_order": 20
+    },
+    {
+      "slug": "may-nuoc-nong-nang-luong-mat-troi",
+      "name": "Máy nước nóng năng lượng mặt trời",
+      "sort_order": 30
+    },
+    {
+      "slug": "phu-kien-may-nuoc-nong",
+      "name": "Phụ kiện máy nước nóng",
+      "sort_order": 40
+    }
+  ],
+  "counts": {
+    "total": 61,
+    "byType": {
+      "may-nuoc-nong-gian-tiep": 26,
+      "may-nuoc-nong-nang-luong-mat-troi": 2,
+      "may-nuoc-nong-truc-tiep": 31,
+      "phu-kien-may-nuoc-nong": 2
+    }
+  },
+  "rows": [
+    {
+      "product_id": 402,
+      "sku": "DH-4MS1VW",
+      "name": "Máy nước nóng trực tiếp Panasonic 4.5kW DH-4MS1VW",
+      "brand_name": "PANASONIC",
+      "current_product_type": null,
+      "proposed_product_type": "may-nuoc-nong-truc-tiep",
+      "heuristic_reason": "name-keywords-truc-tiep"
+    },
+    {
+      "product_id": 403,
+      "sku": "DH-15HBMVW",
+      "name": "Máy Nước Nóng Panasonic Gián Tiếp DH DH-15HBMVW",
+      "brand_name": "PANASONIC",
+      "current_product_type": null,
+      "proposed_product_type": "may-nuoc-nong-gian-tiep",
+      "heuristic_reason": "name-keywords-gian-tiep"
+    },
+    {
+      "product_id": 404,
+      "sku": "DH-4NTP1VM",
+      "name": "Máy nước nóng trực tiếp Panasonic 4.5kW DH-4NTP1VM",
+      "brand_name": "PANASONIC",
+      "current_product_type": null,
+      "proposed_product_type": "may-nuoc-nong-truc-tiep",
+      "heuristic_reason": "name-keywords-truc-tiep"
+    },
+    {
+      "product_id": 405,
+      "sku": "DH-4MP1VW",
+      "name": "Máy nước nóng trực tiếp Panasonic 4.5kW DH-4MP1VW",
+      "brand_name": "PANASONIC",
+      "current_product_type": null,
+      "proposed_product_type": "may-nuoc-nong-truc-tiep",
+      "heuristic_reason": "name-keywords-truc-tiep"
+    },
+    {
+      "product_id": 406,
+      "sku": "Rheem XC-15 W",
+      "name": "Bình nước nóng gián tiếp Rheem Xwell",
+      "brand_name": "Rheem",
+      "current_product_type": null,
+      "proposed_product_type": "may-nuoc-nong-gian-tiep",
+      "heuristic_reason": "name-keywords-gian-tiep"
+    },
+    {
+      "product_id": 407,
+      "sku": "Rheem RH-688E WT",
+      "name": "Máy nước nóng trực tiếp Rheem Performance Plus Rheem RH-688E WT",
+      "brand_name": "Rheem",
+      "current_product_type": null,
+      "proposed_product_type": "may-nuoc-nong-truc-tiep",
+      "heuristic_reason": "name-keywords-truc-tiep"
+    },
+    {
+      "product_id": 408,
+      "sku": "Rheem 25V/P",
+      "name": "Bình nước nóng gián tiếp Rheem Mekong",
+      "brand_name": "Rheem",
+      "current_product_type": null,
+      "proposed_product_type": "may-nuoc-nong-gian-tiep",
+      "heuristic_reason": "name-keywords-gian-tiep"
+    },
+    {
+      "product_id": 409,
+      "sku": "AMORE GDP 4500W",
+      "name": "Máy nước nóng trực tiếp Ferroli Amore GDP điều khiển điện tử",
+      "brand_name": "Ferroli",
+      "current_product_type": null,
+      "proposed_product_type": "may-nuoc-nong-truc-tiep",
+      "heuristic_reason": "name-keywords-truc-tiep"
+    },
+    {
+      "product_id": 410,
+      "sku": "AMORE GSP 4500W",
+      "name": "Máy nước nóng trực tiếp Ferroli Amore GSP bơm tăng áp",
+      "brand_name": "Ferroli",
+      "current_product_type": null,
+      "proposed_product_type": "may-nuoc-nong-truc-tiep",
+      "heuristic_reason": "name-keywords-truc-tiep"
+    },
+    {
+      "product_id": 411,
+      "sku": "AMORE GSN 4500W",
+      "name": "Máy nước nóng trực tiếp Ferroli Amore GSN điều khiển cơ",
+      "brand_name": "Ferroli",
+      "current_product_type": null,
+      "proposed_product_type": "may-nuoc-nong-truc-tiep",
+      "heuristic_reason": "name-keywords-truc-tiep"
+    },
+    {
+      "product_id": 412,
+      "sku": "RITA FS-4.5 DE",
+      "name": "Máy nước nóng trực tiếp Ferroli Rita DE hiển thị nhiệt độ RITA FS-4.5 DE",
+      "brand_name": "Ferroli",
+      "current_product_type": null,
+      "proposed_product_type": "may-nuoc-nong-truc-tiep",
+      "heuristic_reason": "name-keywords-truc-tiep"
+    },
+    {
+      "product_id": 413,
+      "sku": "RITA FS-4.5 TE",
+      "name": "Máy nước nóng trực tiếp Ferroli Rita TE chống giật RITA FS-4.5 TE",
+      "brand_name": "Ferroli",
+      "current_product_type": null,
+      "proposed_product_type": "may-nuoc-nong-truc-tiep",
+      "heuristic_reason": "name-keywords-truc-tiep"
+    },
+    {
+      "product_id": 414,
+      "sku": "RITA FS-4.5 TM",
+      "name": "Máy nước nóng trực tiếp Ferroli Rita TM không bơm RITA FS-4.5 TM",
+      "brand_name": "Ferroli",
+      "current_product_type": null,
+      "proposed_product_type": "may-nuoc-nong-truc-tiep",
+      "heuristic_reason": "name-keywords-truc-tiep"
+    },
+    {
+      "product_id": 415,
+      "sku": "DIVO SSN",
+      "name": "Máy nước nóng trực tiếp Ferroli Divo SSN không bơm",
+      "brand_name": "Ferroli",
+      "current_product_type": null,
+      "proposed_product_type": "may-nuoc-nong-truc-tiep",
+      "heuristic_reason": "name-keywords-truc-tiep"
+    },
+    {
+      "product_id": 416,
+      "sku": "DIVO SSP",
+      "name": "Máy nước nóng trực tiếp Ferroli Divo SSP bơm tăng áp",
+      "brand_name": "Ferroli",
+      "current_product_type": null,
+      "proposed_product_type": "may-nuoc-nong-truc-tiep",
+      "heuristic_reason": "name-keywords-truc-tiep"
+    },
+    {
+      "product_id": 417,
+      "sku": "DIVO SDN",
+      "name": "Máy nước nóng trực tiếp Ferroli Divo SDN hiển thị nhiệt độ",
+      "brand_name": "Ferroli",
+      "current_product_type": null,
+      "proposed_product_type": "may-nuoc-nong-truc-tiep",
+      "heuristic_reason": "name-keywords-truc-tiep"
+    },
+    {
+      "product_id": 418,
+      "sku": "DIVO SDP",
+      "name": "Máy nước nóng trực tiếp Ferroli Divo SDP hiển thị nhiệt độ bơm tăng áp",
+      "brand_name": "Ferroli",
+      "current_product_type": null,
+      "proposed_product_type": "may-nuoc-nong-truc-tiep",
+      "heuristic_reason": "name-keywords-truc-tiep"
+    },
+    {
+      "product_id": 419,
+      "sku": "HOT DOG 5L",
+      "name": "Máy nước nóng gián tiếp Ferroli Hot Dog cho chậu bếp",
+      "brand_name": "Ferroli",
+      "current_product_type": null,
+      "proposed_product_type": "may-nuoc-nong-gian-tiep",
+      "heuristic_reason": "name-keywords-gian-tiep"
+    },
+    {
+      "product_id": 420,
+      "sku": "AN2 RS 15",
+      "name": "Máy nước nóng gián tiếp Andris2 Rs Ariston AN2 RS 15",
+      "brand_name": "Ariston",
+      "current_product_type": null,
+      "proposed_product_type": "may-nuoc-nong-gian-tiep",
+      "heuristic_reason": "name-keywords-gian-tiep"
+    },
+    {
+      "product_id": 421,
+      "sku": "AN2 R 15",
+      "name": "Máy nước nóng gián tiếp Andris2 R Ariston AN2 R 15",
+      "brand_name": "Ariston",
+      "current_product_type": null,
+      "proposed_product_type": "may-nuoc-nong-gian-tiep",
+      "heuristic_reason": "name-keywords-gian-tiep"
+    },
+    {
+      "product_id": 496,
+      "sku": "DH-4UP1VS",
+      "name": "Máy nước nóng trực tiếp Panasonic 4.5 kW DH-4UP1VS",
+      "brand_name": "PANASONIC",
+      "current_product_type": null,
+      "proposed_product_type": "may-nuoc-nong-truc-tiep",
+      "heuristic_reason": "name-keywords-truc-tiep"
+    },
+    {
+      "product_id": 497,
+      "sku": "DH-4US1VW",
+      "name": "Máy nước nóng Panasonic trực tiếp 4.5 kW DH-4US1VW",
+      "brand_name": "PANASONIC",
+      "current_product_type": null,
+      "proposed_product_type": "may-nuoc-nong-truc-tiep",
+      "heuristic_reason": "name-keywords-truc-tiep"
+    },
+    {
+      "product_id": 498,
+      "sku": "DH-4UDP1VZ",
+      "name": "Máy nước nóng trực tiếp Panasonic 4.5 kW DH-4UDP1VZ",
+      "brand_name": "PANASONIC",
+      "current_product_type": null,
+      "proposed_product_type": "may-nuoc-nong-truc-tiep",
+      "heuristic_reason": "name-keywords-truc-tiep"
+    },
+    {
+      "product_id": 499,
+      "sku": "DH-4US1VS",
+      "name": "Máy nước nóng trực tiếp Panasonic 4.5 kW DH-4US1VS",
+      "brand_name": "PANASONIC",
+      "current_product_type": null,
+      "proposed_product_type": "may-nuoc-nong-truc-tiep",
+      "heuristic_reason": "name-keywords-truc-tiep"
+    },
+    {
+      "product_id": 500,
+      "sku": "DH-4UD1VZ",
+      "name": "Máy nước nóng trực tiếp Panasonic 4.5 kW DH-4UD1VZ",
+      "brand_name": "PANASONIC",
+      "current_product_type": null,
+      "proposed_product_type": "may-nuoc-nong-truc-tiep",
+      "heuristic_reason": "name-keywords-truc-tiep"
+    },
+    {
+      "product_id": 501,
+      "sku": "DH-4UP1VW",
+      "name": "Máy nước nóng trực tiếp Panasonic 4.5 kW DH-4UP1VW",
+      "brand_name": "PANASONIC",
+      "current_product_type": null,
+      "proposed_product_type": "may-nuoc-nong-truc-tiep",
+      "heuristic_reason": "name-keywords-truc-tiep"
+    },
+    {
+      "product_id": 5289,
+      "sku": "DH-4VP1VW",
+      "name": "Máy nước nóng trực tiếp V-series 4.5kW Panasonic DH-4VP1VW",
+      "brand_name": "PANASONIC",
+      "current_product_type": null,
+      "proposed_product_type": "may-nuoc-nong-truc-tiep",
+      "heuristic_reason": "name-keywords-truc-tiep"
+    },
+    {
+      "product_id": 5290,
+      "sku": "DH-4VS1VW",
+      "name": "Máy nước nóng trực tiếp V-series 4.5kW Panasonic DH-4VS1VW",
+      "brand_name": "PANASONIC",
+      "current_product_type": null,
+      "proposed_product_type": "may-nuoc-nong-truc-tiep",
+      "heuristic_reason": "name-keywords-truc-tiep"
+    },
+    {
+      "product_id": 5291,
+      "sku": "DH-3VP1VW",
+      "name": "Máy nước nóng trực tiếp V-series 3.5kW Panasonic DH-3VP1VW",
+      "brand_name": "PANASONIC",
+      "current_product_type": null,
+      "proposed_product_type": "may-nuoc-nong-truc-tiep",
+      "heuristic_reason": "name-keywords-truc-tiep"
+    },
+    {
+      "product_id": 5292,
+      "sku": "DH-3VS1VW",
+      "name": "Máy nước nóng trực tiếp V-series 3.5kW Panasonic DH-3VS1VW",
+      "brand_name": "PANASONIC",
+      "current_product_type": null,
+      "proposed_product_type": "may-nuoc-nong-truc-tiep",
+      "heuristic_reason": "name-keywords-truc-tiep"
+    },
+    {
+      "product_id": 5293,
+      "sku": "VITALY 15",
+      "name": "Máy nước nóng gián tiếp Vitaly Ariston",
+      "brand_name": "Ariston",
+      "current_product_type": null,
+      "proposed_product_type": "may-nuoc-nong-gian-tiep",
+      "heuristic_reason": "name-keywords-gian-tiep"
+    },
+    {
+      "product_id": 5294,
+      "sku": "VERDI-TE 15L",
+      "name": "Máy nước nóng gián tiếp Ferroli Verdi TE",
+      "brand_name": "Ferroli",
+      "current_product_type": null,
+      "proposed_product_type": "may-nuoc-nong-gian-tiep",
+      "heuristic_reason": "name-keywords-gian-tiep"
+    },
+    {
+      "product_id": 5295,
+      "sku": "VERDI-DE 15L",
+      "name": "Máy nước nóng gián tiếp Ferroli Verdi DE",
+      "brand_name": "Ferroli",
+      "current_product_type": null,
+      "proposed_product_type": "may-nuoc-nong-gian-tiep",
+      "heuristic_reason": "name-keywords-gian-tiep"
+    },
+    {
+      "product_id": 5296,
+      "sku": "VERDI-AE 15L",
+      "name": "Máy nước nóng gián tiếp Ferroli Verdi AE",
+      "brand_name": "Ferroli",
+      "current_product_type": null,
+      "proposed_product_type": "may-nuoc-nong-gian-tiep",
+      "heuristic_reason": "name-keywords-gian-tiep"
+    },
+    {
+      "product_id": 5297,
+      "sku": "QQ ME 15L",
+      "name": "Máy nước nóng gián tiếp Ferroli QQ ME 15L / 20L / 30L chống giật",
+      "brand_name": "Ferroli",
+      "current_product_type": null,
+      "proposed_product_type": "may-nuoc-nong-gian-tiep",
+      "heuristic_reason": "name-keywords-gian-tiep"
+    },
+    {
+      "product_id": 5298,
+      "sku": "QQ TE 15L",
+      "name": "Máy nước nóng gián tiếp Ferroli QQ TE QQ TE 15L",
+      "brand_name": "Ferroli",
+      "current_product_type": null,
+      "proposed_product_type": "may-nuoc-nong-gian-tiep",
+      "heuristic_reason": "name-keywords-gian-tiep"
+    },
+    {
+      "product_id": 5299,
+      "sku": "QQ AE 15L",
+      "name": "Máy nước nóng gián tiếp Ferroli QQ AE chống cặn chống giật QQ AE 15L",
+      "brand_name": "Ferroli",
+      "current_product_type": null,
+      "proposed_product_type": "may-nuoc-nong-gian-tiep",
+      "heuristic_reason": "name-keywords-gian-tiep"
+    },
+    {
+      "product_id": 5300,
+      "sku": "CUBO 15L",
+      "name": "Máy nước nóng gián tiếp Ferroli Cubo CUBO 15L",
+      "brand_name": "Ferroli",
+      "current_product_type": null,
+      "proposed_product_type": "may-nuoc-nong-gian-tiep",
+      "heuristic_reason": "name-keywords-gian-tiep"
+    },
+    {
+      "product_id": 5301,
+      "sku": "CUBO E 15L",
+      "name": "Máy nước nóng gián tiếp Ferroli Cubo E chống giật",
+      "brand_name": "Ferroli",
+      "current_product_type": null,
+      "proposed_product_type": "may-nuoc-nong-gian-tiep",
+      "heuristic_reason": "name-keywords-gian-tiep"
+    },
+    {
+      "product_id": 5302,
+      "sku": "AQUA 50L DUNG",
+      "name": "Máy Nước Nóng Gián Tiếp Aqua Ferroli AQUA 50L DUNG",
+      "brand_name": "Ferroli",
+      "current_product_type": null,
+      "proposed_product_type": "may-nuoc-nong-gian-tiep",
+      "heuristic_reason": "name-keywords-gian-tiep"
+    },
+    {
+      "product_id": 5303,
+      "sku": "AQUA E 50L",
+      "name": "Máy nước nóng gián tiếp Ferroli Aqua E thể tích lớn chống giật",
+      "brand_name": "Ferroli",
+      "current_product_type": null,
+      "proposed_product_type": "may-nuoc-nong-gian-tiep",
+      "heuristic_reason": "name-keywords-gian-tiep"
+    },
+    {
+      "product_id": 5307,
+      "sku": "AURESTOP 4.5P",
+      "name": "Máy nước nóng trực tiếp Aures Top Ariston AuresTop 4.5P",
+      "brand_name": "Ariston",
+      "current_product_type": null,
+      "proposed_product_type": "may-nuoc-nong-truc-tiep",
+      "heuristic_reason": "name-keywords-truc-tiep"
+    },
+    {
+      "product_id": 5308,
+      "sku": "AuresEasy4.5P",
+      "name": "Máy nước nóng trực tiếp Aures Easy Ariston",
+      "brand_name": "Ariston",
+      "current_product_type": null,
+      "proposed_product_type": "may-nuoc-nong-truc-tiep",
+      "heuristic_reason": "name-keywords-truc-tiep"
+    },
+    {
+      "product_id": 5309,
+      "sku": "AuresPremium4.5",
+      "name": "Máy nước nóng trực tiếp Aures Premium Ariston",
+      "brand_name": "Ariston",
+      "current_product_type": null,
+      "proposed_product_type": "may-nuoc-nong-truc-tiep",
+      "heuristic_reason": "name-keywords-truc-tiep"
+    },
+    {
+      "product_id": 5310,
+      "sku": "AuresPremium+4.5P",
+      "name": "Máy nước nóng trực tiếp Aures Premium+ Ariston",
+      "brand_name": "Ariston",
+      "current_product_type": null,
+      "proposed_product_type": "may-nuoc-nong-truc-tiep",
+      "heuristic_reason": "name-keywords-truc-tiep"
+    },
+    {
+      "product_id": 5311,
+      "sku": "PRO R 100L H",
+      "name": "Máy nước nóng gián tiếp Pro R Ariston ngang/ đứng PRO R 100L H",
+      "brand_name": "Ariston",
+      "current_product_type": null,
+      "proposed_product_type": "may-nuoc-nong-gian-tiep",
+      "heuristic_reason": "name-keywords-gian-tiep"
+    },
+    {
+      "product_id": 5312,
+      "sku": "AN2 15 LUX-D",
+      "name": "Máy nước nóng gián tiếp Andris Lux-D Ariston AN2 LUX-D AN2 15 LUX-D",
+      "brand_name": "Ariston",
+      "current_product_type": null,
+      "proposed_product_type": "may-nuoc-nong-gian-tiep",
+      "heuristic_reason": "name-keywords-gian-tiep"
+    },
+    {
+      "product_id": 5313,
+      "sku": "ECO2 1810 25",
+      "name": "Máy nước nóng năng lượng mặt trời dạng ống Ariston ECO TUBE ECO2 1810 25",
+      "brand_name": "Ariston",
+      "current_product_type": null,
+      "proposed_product_type": "may-nuoc-nong-nang-luong-mat-troi",
+      "heuristic_reason": "name-keywords-solar"
+    },
+    {
+      "product_id": 5314,
+      "sku": "KAIROS THERMO DR-2 150-1 N TT",
+      "name": "Máy nước nóng năng lượng mặt trời tấm phẳng Ariston KAIROS THERMO DR-2",
+      "brand_name": "Ariston",
+      "current_product_type": null,
+      "proposed_product_type": "may-nuoc-nong-nang-luong-mat-troi",
+      "heuristic_reason": "name-keywords-solar"
+    },
+    {
+      "product_id": 5315,
+      "sku": "SL3 20 R",
+      "name": "Máy nước nóng gián tiếp Slim3 R Ariston SL3 20 R",
+      "brand_name": "Ariston",
+      "current_product_type": null,
+      "proposed_product_type": "may-nuoc-nong-gian-tiep",
+      "heuristic_reason": "name-keywords-gian-tiep"
+    },
+    {
+      "product_id": 5316,
+      "sku": "SL3 15 RS",
+      "name": "Máy nước nóng gián tiếp Slim3 RS Ariston SL3 15 RS",
+      "brand_name": "Ariston",
+      "current_product_type": null,
+      "proposed_product_type": "may-nuoc-nong-gian-tiep",
+      "heuristic_reason": "name-keywords-gian-tiep"
+    },
+    {
+      "product_id": 5317,
+      "sku": "SL3 20 LUX",
+      "name": "Máy nước nóng gián tiếp Slim3 LUX Ariston SL3 20 LUX",
+      "brand_name": "Ariston",
+      "current_product_type": null,
+      "proposed_product_type": "may-nuoc-nong-gian-tiep",
+      "heuristic_reason": "name-keywords-gian-tiep"
+    },
+    {
+      "product_id": 5318,
+      "sku": "SL3 20 TOP WIFI",
+      "name": "Máy nước nóng gián tiếp Slim3 TOP WIFI Ariston SL3 20 TOP WIFI",
+      "brand_name": "Ariston",
+      "current_product_type": null,
+      "proposed_product_type": "may-nuoc-nong-gian-tiep",
+      "heuristic_reason": "name-keywords-gian-tiep"
+    },
+    {
+      "product_id": 5319,
+      "sku": "3687025",
+      "name": "Thanh đốt cho máy nước nóng năng lượng mặt trời Ariston 3687025",
+      "brand_name": "Ariston",
+      "current_product_type": null,
+      "proposed_product_type": "phu-kien-may-nuoc-nong",
+      "heuristic_reason": "name-keywords-phu-kien"
+    },
+    {
+      "product_id": 5320,
+      "sku": "PC-3-E",
+      "name": "Bộ hỗ trợ nhiệt cho máy nước nóng năng lượng mặt trời dạng ống Ariston PC-3-E",
+      "brand_name": "Ariston",
+      "current_product_type": null,
+      "proposed_product_type": "phu-kien-may-nuoc-nong",
+      "heuristic_reason": "name-keywords-phu-kien"
+    },
+    {
+      "product_id": 5368,
+      "sku": "VERDI-AG+ 15L",
+      "name": "Máy nước nóng gián tiếp Ferroli Verdi AG+",
+      "brand_name": "Ferroli",
+      "current_product_type": null,
+      "proposed_product_type": "may-nuoc-nong-gian-tiep",
+      "heuristic_reason": "name-keywords-gian-tiep"
+    },
+    {
+      "product_id": 5369,
+      "sku": "QQ AG+ 15L",
+      "name": "Máy nước nóng gián tiếp Ferroli QQ AG+ QQ AG+ 15L",
+      "brand_name": "Ferroli",
+      "current_product_type": null,
+      "proposed_product_type": "may-nuoc-nong-gian-tiep",
+      "heuristic_reason": "name-keywords-gian-tiep"
+    },
+    {
+      "product_id": 5370,
+      "sku": "SQ 200L DUNG 3000W",
+      "name": "Bình nước nóng gián tiếp thể tích lớn Ferroli SQ SQ 200L DUNG 3000W",
+      "brand_name": "Ferroli",
+      "current_product_type": null,
+      "proposed_product_type": "may-nuoc-nong-gian-tiep",
+      "heuristic_reason": "name-keywords-gian-tiep"
+    },
+    {
+      "product_id": 5371,
+      "sku": "TWH-45EMC1PVN(K)-KB",
+      "name": "Máy tắm nước nóng Toshiba TWH-45EMC1PVN(K)-KB",
+      "brand_name": "Toshiba",
+      "current_product_type": null,
+      "proposed_product_type": "may-nuoc-nong-truc-tiep",
+      "heuristic_reason": "name-keywords-truc-tiep"
+    },
+    {
+      "product_id": 5372,
+      "sku": "TWH-45EMCPVN(K)-CB",
+      "name": "Máy tắm nước nóng Toshiba TWH-45EMCPVN(K)-CB",
+      "brand_name": "Toshiba",
+      "current_product_type": null,
+      "proposed_product_type": "may-nuoc-nong-truc-tiep",
+      "heuristic_reason": "name-keywords-truc-tiep"
+    },
+    {
+      "product_id": 5373,
+      "sku": "TWH-45EMCPVN(S)-CB",
+      "name": "Máy tắm nước nóng Toshiba TWH-45EMCPVN(S)-CB",
+      "brand_name": "Toshiba",
+      "current_product_type": null,
+      "proposed_product_type": "may-nuoc-nong-truc-tiep",
+      "heuristic_reason": "name-keywords-truc-tiep"
+    }
+  ]
+}

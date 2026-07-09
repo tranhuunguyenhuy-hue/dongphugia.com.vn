@@ -1,7 +1,7 @@
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { Suspense } from "react"
-import { getPublicProducts, getAvailableFiltersBySubcategory, getPublicListingLeaf, getPublicListingLeaves } from "@/lib/public-api-products"
+import { getPublicProducts, getAvailableFiltersBySubcategory, getPublicListingLeaf, getPublicListingLeaves, getListingRuntimeConfig } from "@/lib/public-api-products"
 import { ProductCard } from "@/components/ui/product-card"
 import { ProductPagination } from "@/components/ui/product-pagination"
 import { AdvancedSidebarFilter } from "@/components/category/advanced-sidebar-filter"
@@ -55,6 +55,7 @@ export default async function GachOpLatSubPage({ params, searchParams }: PagePro
     const activeColorSlugs = sp.color
     const isNew = sp.is_new === 'true'
     const isFeatured = sp.is_featured === 'true'
+    const listingRuntimeConfig = getListingRuntimeConfig(CATEGORY_SLUG, sub)
 
     let price_min: number | undefined
     let price_max: number | undefined
@@ -113,7 +114,11 @@ export default async function GachOpLatSubPage({ params, searchParams }: PagePro
                 {/* ── Sidebar: Desktop only. Mobile uses Sheet via CategoryMobileFilter ── */}
                 <aside className="hidden lg:flex w-[290px] flex-shrink-0 sticky top-24 scroll-sidebar flex-col gap-4">
                     <Suspense fallback={<div className="h-96 bg-neutral-100 animate-pulse rounded-lg" />}>
-                        <AdvancedSidebarFilter availableFilters={availableFilters} hideSubcategoryFilter />
+                        <AdvancedSidebarFilter
+                            availableFilters={availableFilters}
+                            runtimeConfig={listingRuntimeConfig}
+                            hideSubcategoryFilter
+                        />
                     </Suspense>
                 </aside>
 
@@ -135,7 +140,10 @@ export default async function GachOpLatSubPage({ params, searchParams }: PagePro
                                 <strong className="text-neutral-900">{total.toLocaleString('vi-VN')}</strong> sản phẩm
                             </span>
                             <div className="flex items-center gap-2">
-                                <CategoryMobileFilter availableFilters={availableFilters} />
+                                <CategoryMobileFilter
+                                    availableFilters={availableFilters}
+                                    runtimeConfig={listingRuntimeConfig}
+                                />
                                 <CategorySort />
                             </div>
                         </div>
@@ -150,6 +158,7 @@ export default async function GachOpLatSubPage({ params, searchParams }: PagePro
                                         product={{ ...product, subcategories: product.subcategories, brands: product.brands }}
                                         basePath={BASE_PATH}
                                         patternSlug={product.subcategories?.slug ?? "san-pham"}
+                                        href={product.url}
                                     />
                                 ))}
                             </div>
