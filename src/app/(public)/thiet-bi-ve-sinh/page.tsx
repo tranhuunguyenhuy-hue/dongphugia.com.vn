@@ -8,6 +8,7 @@ import { ProductCard } from "@/components/ui/product-card"
 import { CategoryFilterPanel } from "@/components/category/category-filter-panel"
 import { SubcategoryIconGrid } from "@/components/category/subcategory-icon-grid"
 import { buildPublicListingVisibilityWhere } from "@/lib/public-product-visibility"
+import { canonicalUrl } from "@/lib/site"
 
 export const revalidate = 3600
 
@@ -15,6 +16,12 @@ export const metadata: Metadata = {
     title: "Thiết Bị Vệ Sinh",
     description: "Thiết bị vệ sinh cao cấp chính hãng TOTO, INAX, Caesar tại Đông Phú Gia Đà Lạt. Hơn 500 mẫu bồn cầu, lavabo, vòi nước, sen tắm.",
     keywords: ["thiết bị vệ sinh", "bồn cầu", "lavabo", "TOTO", "INAX", "Caesar", "Đà Lạt"],
+    alternates: { canonical: canonicalUrl("/thiet-bi-ve-sinh") },
+    openGraph: {
+        title: "Thiết Bị Vệ Sinh",
+        description: "Thiết bị vệ sinh cao cấp chính hãng TOTO, INAX, Caesar tại Đông Phú Gia Đà Lạt. Hơn 500 mẫu bồn cầu, lavabo, vòi nước, sen tắm.",
+        url: canonicalUrl("/thiet-bi-ve-sinh"),
+    },
 }
 
 const CATEGORY_SLUG = "thiet-bi-ve-sinh"

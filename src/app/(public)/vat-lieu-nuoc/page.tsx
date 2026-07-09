@@ -8,6 +8,7 @@ import { ProductCard } from "@/components/ui/product-card"
 import { CategoryFilterPanel } from "@/components/category/category-filter-panel"
 import { SubcategoryIconGrid } from "@/components/category/subcategory-icon-grid"
 import { buildPublicListingVisibilityWhere } from "@/lib/public-product-visibility"
+import { canonicalUrl } from "@/lib/site"
 
 export const revalidate = 3600
 
@@ -15,6 +16,12 @@ export const metadata: Metadata = {
     title: "Vật Liệu Nước",
     description: "Máy nước nóng, máy lọc nước, bồn chứa, máy bơm từ các thương hiệu uy tín tại Đà Lạt.",
     keywords: ["vật liệu nước", "máy nước nóng", "máy lọc nước", "Đà Lạt"],
+    alternates: { canonical: canonicalUrl("/vat-lieu-nuoc") },
+    openGraph: {
+        title: "Vật Liệu Nước",
+        description: "Máy nước nóng, máy lọc nước, bồn chứa, máy bơm từ các thương hiệu uy tín tại Đà Lạt.",
+        url: canonicalUrl("/vat-lieu-nuoc"),
+    },
 }
 
 const CATEGORY_SLUG = "vat-lieu-nuoc"

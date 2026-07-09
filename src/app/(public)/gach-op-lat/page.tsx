@@ -9,6 +9,7 @@ import { CategoryFilterPanel } from "@/components/category/category-filter-panel
 import { SubcategoryIconGrid } from "@/components/category/subcategory-icon-grid"
 import { getPublicListingLeaves } from "@/lib/public-api-products"
 import { buildPublicListingVisibilityWhere } from "@/lib/public-product-visibility"
+import { canonicalUrl } from "@/lib/site"
 
 export const revalidate = 3600
 
@@ -16,6 +17,12 @@ export const metadata: Metadata = {
     title: "Gạch Ốp Lát",
     description: "Gạch ceramic, porcelain, đá ốp lát từ Vietceramics. Đa dạng kích thước.",
     keywords: ["gạch ốp lát", "gạch ceramic", "gạch porcelain", "Vietceramics", "Đà Lạt"],
+    alternates: { canonical: canonicalUrl("/gach-op-lat") },
+    openGraph: {
+        title: "Gạch Ốp Lát",
+        description: "Gạch ceramic, porcelain, đá ốp lát từ Vietceramics. Đa dạng kích thước.",
+        url: canonicalUrl("/gach-op-lat"),
+    },
 }
 
 const CATEGORY_SLUG = "gach-op-lat"
