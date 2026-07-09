@@ -2,9 +2,9 @@
 
 Updated: 2026-07-09
 
-- Vật liệu nước candidates: 61
+- Vật liệu nước candidates: 0
   - High-confidence direct product_type proposals: 0
-  - Low-confidence/manual needed: 61
+  - Low-confidence/manual needed: 0
 - Gạch ốp lát missing primary taxon: 0
   - High-confidence subcategory -> taxon proposals: 0
 
