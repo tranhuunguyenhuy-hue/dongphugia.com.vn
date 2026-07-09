@@ -1,7 +1,11 @@
 import { unstable_cache } from 'next/cache'
 import prisma from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
-import { buildPublicSearchVisibilityWhere } from '@/lib/public-product-visibility'
+import {
+    buildPublicListingVisibilityWhere,
+    buildPublicPdpVisibilityWhere,
+    buildPublicSearchVisibilityWhere,
+} from '@/lib/public-product-visibility'
 import {
     getCatalogFilterReadySpecLabels,
     getCatalogUxProfileByTaxonomy,
@@ -636,11 +640,7 @@ export const getAvailableFiltersBySubcategory = unstable_cache(
     { revalidate: 3600, tags: ['products', 'filters'] }
 )
 
-const PUBLIC_LISTING_PRODUCT_WHERE: Prisma.productsWhereInput = {
-    publication_status: 'public',
-    pdp_visibility: 'public',
-    listing_visibility: { in: ['default', 'low_priority'] },
-}
+const PUBLIC_LISTING_PRODUCT_WHERE: Prisma.productsWhereInput = buildPublicListingVisibilityWhere()
 
 function mapLegacyListingLeaf(
     leaf: {
@@ -953,8 +953,7 @@ async function _getPublicProductBySlug(categorySlug: string, slug: string) {
     const product = await prisma.products.findFirst({
         where: {
             slug,
-            publication_status: 'public',
-            pdp_visibility: 'public',
+            ...buildPublicPdpVisibilityWhere(),
             OR: [
                 { categories: { slug: categorySlug } },
                 getCategoryRootFilter(categorySlug),

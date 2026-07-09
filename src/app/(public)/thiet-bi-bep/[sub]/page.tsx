@@ -10,6 +10,7 @@ import { ActiveFilters, ActiveFilterDict } from "@/components/category/active-fi
 import { CategoryMobileFilter } from "@/components/category/category-mobile-filter"
 import { CategorySort } from "@/components/category/category-sort"
 import { SubcategoryIconGrid } from "@/components/category/subcategory-icon-grid"
+import { buildPublicListingVisibilityWhere } from "@/lib/public-product-visibility"
 import { ChevronRight, Home } from "lucide-react"
 import Link from "next/link"
 
@@ -19,11 +20,7 @@ const CATEGORY_SLUG = "thiet-bi-bep"
 const CATEGORY_NAME = "Thiết Bị Bếp"
 const BASE_PATH = "/thiet-bi-bep"
 const PAGE_SIZE = 24
-const LISTING_PRODUCT_WHERE = {
-    publication_status: "public",
-    pdp_visibility: "public",
-    listing_visibility: { in: ["default", "low_priority"] },
-}
+const LISTING_PRODUCT_WHERE = buildPublicListingVisibilityWhere()
 
 interface PageProps {
     params: Promise<{ sub: string }>

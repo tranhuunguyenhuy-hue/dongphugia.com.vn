@@ -8,6 +8,7 @@ import { ProductCard } from "@/components/ui/product-card"
 import { CategoryFilterPanel } from "@/components/category/category-filter-panel"
 import { SubcategoryIconGrid } from "@/components/category/subcategory-icon-grid"
 import { getPublicListingLeaves } from "@/lib/public-api-products"
+import { buildPublicListingVisibilityWhere } from "@/lib/public-product-visibility"
 
 export const revalidate = 3600
 
@@ -21,11 +22,7 @@ const CATEGORY_SLUG = "gach-op-lat"
 const CATEGORY_NAME = "Gạch Ốp Lát"
 const BASE_PATH = "/gach-op-lat"
 const EMOJI_FALLBACK = "🏠"
-const LISTING_PRODUCT_WHERE = {
-    publication_status: "public",
-    pdp_visibility: "public",
-    listing_visibility: { in: ["default", "low_priority"] },
-}
+const LISTING_PRODUCT_WHERE = buildPublicListingVisibilityWhere()
 
 interface PageProps {
     searchParams: Promise<{ brands?: string; price?: string }>
