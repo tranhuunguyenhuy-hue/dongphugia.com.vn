@@ -6,23 +6,17 @@ This report turns the remaining weak data lanes into execution-ready cleanup buc
 
 ## Vật liệu nước
 
-- Candidate rows: 61
-- Missing product_type: 61
+- Candidate rows: 0
+- Missing product_type: 0
 - Missing primary taxon: 0
-- Public PDP rows: 61
-- Listing-visible rows: 61
+- Public PDP rows: 0
+- Listing-visible rows: 0
 
 ### Breakdown by subcategory
 
-- may-nuoc-nong: 61
 
 ### Breakdown by brand
 
-- Ferroli: 24
-- Ariston: 17
-- PANASONIC: 14
-- Rheem: 3
-- Toshiba: 3
 
 ### Notes
 
@@ -32,18 +26,6 @@ This report turns the remaining weak data lanes into execution-ready cleanup buc
 
 ### Sample rows
 
-- [5320] PC-3-E | may-nuoc-nong | Ariston | type=(null) | primary_taxon=yes | Bộ hỗ trợ nhiệt cho máy nước nóng năng lượng mặt trời dạng ống Ariston PC-3-E
-- [5312] AN2 15 LUX-D | may-nuoc-nong | Ariston | type=(null) | primary_taxon=yes | Máy nước nóng gián tiếp Andris Lux-D Ariston AN2 LUX-D AN2 15 LUX-D
-- [421] AN2 R 15 | may-nuoc-nong | Ariston | type=(null) | primary_taxon=yes | Máy nước nóng gián tiếp Andris2 R Ariston AN2 R 15
-- [420] AN2 RS 15 | may-nuoc-nong | Ariston | type=(null) | primary_taxon=yes | Máy nước nóng gián tiếp Andris2 Rs Ariston AN2 RS 15
-- [5311] PRO R 100L H | may-nuoc-nong | Ariston | type=(null) | primary_taxon=yes | Máy nước nóng gián tiếp Pro R Ariston ngang/ đứng PRO R 100L H
-- [5317] SL3 20 LUX | may-nuoc-nong | Ariston | type=(null) | primary_taxon=yes | Máy nước nóng gián tiếp Slim3 LUX Ariston SL3 20 LUX
-- [5315] SL3 20 R | may-nuoc-nong | Ariston | type=(null) | primary_taxon=yes | Máy nước nóng gián tiếp Slim3 R Ariston SL3 20 R
-- [5316] SL3 15 RS | may-nuoc-nong | Ariston | type=(null) | primary_taxon=yes | Máy nước nóng gián tiếp Slim3 RS Ariston SL3 15 RS
-- [5318] SL3 20 TOP WIFI | may-nuoc-nong | Ariston | type=(null) | primary_taxon=yes | Máy nước nóng gián tiếp Slim3 TOP WIFI Ariston SL3 20 TOP WIFI
-- [5293] VITALY 15 | may-nuoc-nong | Ariston | type=(null) | primary_taxon=yes | Máy nước nóng gián tiếp Vitaly Ariston
-- [5313] ECO2 1810 25 | may-nuoc-nong | Ariston | type=(null) | primary_taxon=yes | Máy nước nóng năng lượng mặt trời dạng ống Ariston ECO TUBE ECO2 1810 25
-- [5314] KAIROS THERMO DR-2 150-1 N TT | may-nuoc-nong | Ariston | type=(null) | primary_taxon=yes | Máy nước nóng năng lượng mặt trời tấm phẳng Ariston KAIROS THERMO DR-2
 
 ## Gạch ốp lát
 
