@@ -1,0 +1,21 @@
+{
+  "executedAt": "2026-07-08T19:29:45.978Z",
+  "sourceTag": "catalog_cleanup_high_confidence_v1",
+  "before": {
+    "vatExactCount": 112,
+    "gachExactCount": 165,
+    "productsCount": 17752,
+    "activeProductsCount": 5971
+  },
+  "result": {
+    "vatUpdated": 112,
+    "gachInserted": 165
+  },
+  "after": {
+    "vatExactCount": 0,
+    "gachExactCount": 0,
+    "productsCount": 17752,
+    "activeProductsCount": 5971
+  },
+  "rollbackArtifact": "/Users/m-ac/Projects/dongphugia/scripts/output/catalog-cleanup-high-confidence-rollback.json"
+}

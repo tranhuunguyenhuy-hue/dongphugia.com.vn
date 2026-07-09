@@ -173,6 +173,7 @@ export function HomeCategoryBlock({ categoryData }: HomeCategoryBlockProps) {
                                             product={product}
                                             basePath={categoryData.basePath}
                                             patternSlug={product.subcategories?.slug ?? 'san-pham'}
+                                            href={product.url}
                                         />
                                     </div>
                                 ))}

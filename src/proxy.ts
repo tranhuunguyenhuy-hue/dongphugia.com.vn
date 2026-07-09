@@ -14,7 +14,7 @@ const CANONICAL_HOST = "www.dongphugia.com.vn";
 const LEGACY_HOSTS = new Set(["dongphugia.com.vn"]);
 
 // ============================================================
-// MIDDLEWARE: Maintenance Mode + Product Slug Redirects
+// PROXY: Maintenance Mode + Product Slug Redirects
 // ============================================================
 
 const MAINTENANCE_MODE = process.env.MAINTENANCE_MODE === "true";
@@ -34,7 +34,7 @@ const BYPASS_PATHS = [
   "/sitemap.xml",
 ];
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const search = request.nextUrl.search || "";
 
@@ -68,7 +68,7 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Exclude static assets from middleware invocations to reduce Edge Requests
+    // Exclude static assets from proxy invocations to reduce Edge Requests
     // This covers: Next.js internals, images, fonts, icons, and common static file types
     "/((?!_next/static|_next/image|favicon\\.ico|robots\\.txt|sitemap\\.xml|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff|woff2|ttf|eot|css|js\\.map)).*)",
   ],

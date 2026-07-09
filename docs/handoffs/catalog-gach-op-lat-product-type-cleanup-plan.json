@@ -1,0 +1,3402 @@
+{
+  "generatedAt": "2026-07-09T08:40:22.713Z",
+  "sourceTag": "gach_op_lat_product_type_cleanup_v1",
+  "seedsToEnsure": [
+    {
+      "subcategorySlug": "gach-van-da-marble",
+      "subcategoryId": 22,
+      "slug": "gach-van-da-marble",
+      "name": "Gạch Vân Đá Marble",
+      "sortOrder": 10
+    },
+    {
+      "subcategorySlug": "gach-van-da-tu-nhien",
+      "subcategoryId": 23,
+      "slug": "gach-van-da-tu-nhien",
+      "name": "Gạch Vân Đá Tự Nhiên",
+      "sortOrder": 20
+    },
+    {
+      "subcategorySlug": "gach-van-go",
+      "subcategoryId": 24,
+      "slug": "gach-van-go",
+      "name": "Gạch Vân Gỗ",
+      "sortOrder": 30
+    },
+    {
+      "subcategorySlug": "gach-thiet-ke-xi-mang",
+      "subcategoryId": 25,
+      "slug": "gach-thiet-ke-xi-mang",
+      "name": "Gạch Thiết Kế Xi Măng",
+      "sortOrder": 40
+    },
+    {
+      "subcategorySlug": "gach-trang-tri",
+      "subcategoryId": 26,
+      "slug": "gach-trang-tri",
+      "name": "Gạch Trang Trí",
+      "sortOrder": 50
+    },
+    {
+      "subcategorySlug": "gach-op-tuong",
+      "subcategoryId": 36,
+      "slug": "gach-op-tuong",
+      "name": "Gạch Ốp Tường",
+      "sortOrder": 60
+    },
+    {
+      "subcategorySlug": "gach-inax-ecocarat",
+      "subcategoryId": 37,
+      "slug": "gach-inax-ecocarat",
+      "name": "Gạch Inax Ecocarat",
+      "sortOrder": 70
+    },
+    {
+      "subcategorySlug": "gach-op-lat",
+      "subcategoryId": 35,
+      "slug": "gach-ho-boi",
+      "name": "Gạch hồ bơi",
+      "sortOrder": 10
+    },
+    {
+      "subcategorySlug": "gach-op-lat",
+      "subcategoryId": 35,
+      "slug": "keo-dan-gach",
+      "name": "Keo dán gạch",
+      "sortOrder": 20
+    },
+    {
+      "subcategorySlug": "gach-op-lat",
+      "subcategoryId": 35,
+      "slug": "gach-op-lat",
+      "name": "Gạch ốp lát",
+      "sortOrder": 30
+    }
+  ],
+  "counts": {
+    "total": 330,
+    "byType": {
+      "gach-ho-boi": 8,
+      "gach-inax-ecocarat": 19,
+      "gach-op-tuong": 181,
+      "gach-thiet-ke-xi-mang": 26,
+      "gach-trang-tri": 34,
+      "gach-van-da-marble": 26,
+      "gach-van-da-tu-nhien": 23,
+      "gach-van-go": 12,
+      "keo-dan-gach": 1
+    },
+    "bySubcategory": {
+      "gach-inax-ecocarat": 19,
+      "gach-op-lat": 9,
+      "gach-op-tuong": 181,
+      "gach-thiet-ke-xi-mang": 26,
+      "gach-trang-tri": 34,
+      "gach-van-da-marble": 26,
+      "gach-van-da-tu-nhien": 23,
+      "gach-van-go": 12
+    }
+  },
+  "rows": [
+    {
+      "product_id": 7824,
+      "sku": "ECP-25NET-LUX-12",
+      "name": "Gạch nội thất ECOCARAT PLUS LUXURY MOSAIC INAX ECP-25NET/LUX",
+      "subcategory_id": 37,
+      "subcategory_slug": "gach-inax-ecocarat",
+      "current_product_type": null,
+      "proposed_product_type": "gach-inax-ecocarat",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39435,
+      "sku": "ECP-25NET-LUX-13",
+      "name": "Gạch nội thất ECOCARAT PLUS LUXURY MOSAIC INAX ECP-25NET/LUX",
+      "subcategory_id": 37,
+      "subcategory_slug": "gach-inax-ecocarat",
+      "current_product_type": null,
+      "proposed_product_type": "gach-inax-ecocarat",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 7826,
+      "sku": "ECP-60NET/PMK11",
+      "name": "Gạch nội thất ECOCARAT PLUS PEARL MASK INAX ECP-60NET/PMK",
+      "subcategory_id": 37,
+      "subcategory_slug": "gach-inax-ecocarat",
+      "current_product_type": null,
+      "proposed_product_type": "gach-inax-ecocarat",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39437,
+      "sku": "ECP-60NET/PMK12",
+      "name": "Gạch nội thất ECOCARAT PLUS PEARL MASK INAX ECP-60NET/PMK",
+      "subcategory_id": 37,
+      "subcategory_slug": "gach-inax-ecocarat",
+      "current_product_type": null,
+      "proposed_product_type": "gach-inax-ecocarat",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 7827,
+      "sku": "ECP-60NET/QLT2",
+      "name": "Gạch nội thất ECOCARAT PLUS QUILT INAX ECP-60NET/QLT",
+      "subcategory_id": 37,
+      "subcategory_slug": "gach-inax-ecocarat",
+      "current_product_type": null,
+      "proposed_product_type": "gach-inax-ecocarat",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 12027,
+      "sku": "ECP-60NET/QLT1",
+      "name": "Gạch nội thất ECOCARAT PLUS QUILT INAX ECP-60NET/QLT",
+      "subcategory_id": 37,
+      "subcategory_slug": "gach-inax-ecocarat",
+      "current_product_type": null,
+      "proposed_product_type": "gach-inax-ecocarat",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 7822,
+      "sku": "ECP-303/RBM2N",
+      "name": "Gạch nội thất ECOCARAT PLUS RIBMIX INAX ECP-303/RBM",
+      "subcategory_id": 37,
+      "subcategory_slug": "gach-inax-ecocarat",
+      "current_product_type": null,
+      "proposed_product_type": "gach-inax-ecocarat",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 12032,
+      "sku": "ECP-303/RBM1N",
+      "name": "Gạch nội thất ECOCARAT PLUS RIBMIX INAX ECP-303/RBM",
+      "subcategory_id": 37,
+      "subcategory_slug": "gach-inax-ecocarat",
+      "current_product_type": null,
+      "proposed_product_type": "gach-inax-ecocarat",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39440,
+      "sku": "ECP-303/RBM3N",
+      "name": "Gạch nội thất ECOCARAT PLUS RIBMIX INAX ECP-303/RBM",
+      "subcategory_id": 37,
+      "subcategory_slug": "gach-inax-ecocarat",
+      "current_product_type": null,
+      "proposed_product_type": "gach-inax-ecocarat",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 7829,
+      "sku": "ECP-375/RTZ1N",
+      "name": "Gạch nội thất ECOCARAT PLUS ROUGH QUARTZ INAX ECP-375/RTZ",
+      "subcategory_id": 37,
+      "subcategory_slug": "gach-inax-ecocarat",
+      "current_product_type": null,
+      "proposed_product_type": "gach-inax-ecocarat",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39438,
+      "sku": "ECP-375/RTZ3N",
+      "name": "Gạch nội thất ECOCARAT PLUS ROUGH QUARTZ INAX ECP-375/RTZ",
+      "subcategory_id": 37,
+      "subcategory_slug": "gach-inax-ecocarat",
+      "current_product_type": null,
+      "proposed_product_type": "gach-inax-ecocarat",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39439,
+      "sku": "ECP-375/RTZ2N",
+      "name": "Gạch nội thất ECOCARAT PLUS ROUGH QUARTZ INAX ECP-375/RTZ",
+      "subcategory_id": 37,
+      "subcategory_slug": "gach-inax-ecocarat",
+      "current_product_type": null,
+      "proposed_product_type": "gach-inax-ecocarat",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 7828,
+      "sku": "ECP-275NET/RGS1",
+      "name": "Gạch nội thất ECOCARAT PLUS ROUGHSAWN INAX ECP-275/RGS",
+      "subcategory_id": 37,
+      "subcategory_slug": "gach-inax-ecocarat",
+      "current_product_type": null,
+      "proposed_product_type": "gach-inax-ecocarat",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39442,
+      "sku": "ECP-275NET/RGS3",
+      "name": "Gạch nội thất ECOCARAT PLUS ROUGHSAWN INAX ECP-275/RGS",
+      "subcategory_id": 37,
+      "subcategory_slug": "gach-inax-ecocarat",
+      "current_product_type": null,
+      "proposed_product_type": "gach-inax-ecocarat",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39443,
+      "sku": "ECP-275NET/RGS2",
+      "name": "Gạch nội thất ECOCARAT PLUS ROUGHSAWN INAX ECP-275/RGS",
+      "subcategory_id": 37,
+      "subcategory_slug": "gach-inax-ecocarat",
+      "current_product_type": null,
+      "proposed_product_type": "gach-inax-ecocarat",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 7823,
+      "sku": "ECP-630/STG-1N",
+      "name": "Gạch nội thất ECOCARAT PLUS STONE GRACE INAX ECP-630/STG",
+      "subcategory_id": 37,
+      "subcategory_slug": "gach-inax-ecocarat",
+      "current_product_type": null,
+      "proposed_product_type": "gach-inax-ecocarat",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39441,
+      "sku": "ECP-630/STG-4N",
+      "name": "Gạch nội thất ECOCARAT PLUS STONE GRACE INAX ECP-630/STG",
+      "subcategory_id": 37,
+      "subcategory_slug": "gach-inax-ecocarat",
+      "current_product_type": null,
+      "proposed_product_type": "gach-inax-ecocarat",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 7825,
+      "sku": "ECO-30NET/WE2NN",
+      "name": "Gạch nội thất ECOCARAT PLUS VELE INAX ECP-30NET/WE",
+      "subcategory_id": 37,
+      "subcategory_slug": "gach-inax-ecocarat",
+      "current_product_type": null,
+      "proposed_product_type": "gach-inax-ecocarat",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39444,
+      "sku": "ECO-30NET/WE3NN",
+      "name": "Gạch nội thất ECOCARAT PLUS VELE INAX ECP-30NET/WE",
+      "subcategory_id": 37,
+      "subcategory_slug": "gach-inax-ecocarat",
+      "current_product_type": null,
+      "proposed_product_type": "gach-inax-ecocarat",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 7816,
+      "sku": "INAX-255/90-14/POL-B1-B2-B3",
+      "name": "Gạch góc hồ bơi 255/90-14 INAX-255/90-14/POL-B1,B2,B3",
+      "subcategory_id": 35,
+      "subcategory_slug": "gach-op-lat",
+      "current_product_type": null,
+      "proposed_product_type": "gach-ho-boi",
+      "heuristic_reason": "name-keywords-gach-ho-boi"
+    },
+    {
+      "product_id": 7817,
+      "sku": "INAX-255/90-15/POL-B1-B2-B3",
+      "name": "Gạch góc hồ bơi 255/90-15 INAX-255/90-15/POL-B1,B2,B3",
+      "subcategory_id": 35,
+      "subcategory_slug": "gach-op-lat",
+      "current_product_type": null,
+      "proposed_product_type": "gach-ho-boi",
+      "heuristic_reason": "name-keywords-gach-ho-boi"
+    },
+    {
+      "product_id": 7818,
+      "sku": "INAX-47/90-14/POL-B1-B2-B3",
+      "name": "Gạch góc hồ bơi 47 INAX-47/90-14/POL-B1,B2,B3",
+      "subcategory_id": 35,
+      "subcategory_slug": "gach-op-lat",
+      "current_product_type": null,
+      "proposed_product_type": "gach-ho-boi",
+      "heuristic_reason": "name-keywords-gach-ho-boi"
+    },
+    {
+      "product_id": 7819,
+      "sku": "INAX-1025/POL-B1/B2/B3",
+      "name": "Gạch hồ bơi INAX 22.5 x 22.5 1025/POL-B1,2,3:G1,2,3",
+      "subcategory_id": 35,
+      "subcategory_slug": "gach-op-lat",
+      "current_product_type": null,
+      "proposed_product_type": "gach-ho-boi",
+      "heuristic_reason": "name-keywords-gach-ho-boi"
+    },
+    {
+      "product_id": 39434,
+      "sku": "INAX-1025/POL-G1/G2/G3",
+      "name": "Gạch hồ bơi INAX 22.5 x 22.5 1025/POL-B1,2,3:G1,2,3",
+      "subcategory_id": 35,
+      "subcategory_slug": "gach-op-lat",
+      "current_product_type": null,
+      "proposed_product_type": "gach-ho-boi",
+      "heuristic_reason": "name-keywords-gach-ho-boi"
+    },
+    {
+      "product_id": 7821,
+      "sku": "47/POL-B1",
+      "name": "Gạch hồ bơi INAX 47 x 47 47/POL-B1,2,3: G1,2,3",
+      "subcategory_id": 35,
+      "subcategory_slug": "gach-op-lat",
+      "current_product_type": null,
+      "proposed_product_type": "gach-ho-boi",
+      "heuristic_reason": "name-keywords-gach-ho-boi"
+    },
+    {
+      "product_id": 7820,
+      "sku": "INAX-97/POL-B1/B2/B3",
+      "name": "Gạch hồ bơi INAX 97 x 97 97/POL-B1,2,3: G1,2,3",
+      "subcategory_id": 35,
+      "subcategory_slug": "gach-op-lat",
+      "current_product_type": null,
+      "proposed_product_type": "gach-ho-boi",
+      "heuristic_reason": "name-keywords-gach-ho-boi"
+    },
+    {
+      "product_id": 39436,
+      "sku": "INAX-97/POL-G1/G2/G3",
+      "name": "Gạch hồ bơi INAX 97 x 97 97/POL-B1,2,3: G1,2,3",
+      "subcategory_id": 35,
+      "subcategory_slug": "gach-op-lat",
+      "current_product_type": null,
+      "proposed_product_type": "gach-ho-boi",
+      "heuristic_reason": "name-keywords-gach-ho-boi"
+    },
+    {
+      "product_id": 7868,
+      "sku": "EGR-V2SP/G3",
+      "name": "Keo dán gạch INAX EGR-V2SP/G3 (2kg / 1 tuýp)",
+      "subcategory_id": 35,
+      "subcategory_slug": "gach-op-lat",
+      "current_product_type": null,
+      "proposed_product_type": "keo-dan-gach",
+      "heuristic_reason": "name-keywords-keo-dan-gach"
+    },
+    {
+      "product_id": 7856,
+      "sku": "INAX-1525/EAC-1",
+      "name": "Gạch ốp tường 1525/EAC-EARTH COLOR BORDER INAX-1525/EAC",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39445,
+      "sku": "INAX-1525/EAC-4",
+      "name": "Gạch ốp tường 1525/EAC-EARTH COLOR BORDER INAX-1525/EAC",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39446,
+      "sku": "INAX-1525/EAC-3",
+      "name": "Gạch ốp tường 1525/EAC-EARTH COLOR BORDER INAX-1525/EAC",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39447,
+      "sku": "INAX-1525/EAC-2",
+      "name": "Gạch ốp tường 1525/EAC-EARTH COLOR BORDER INAX-1525/EAC",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 7859,
+      "sku": "INAX-255/VIZ-1",
+      "name": "Gạch ốp tường 255-VIZ INAX-255VIZ (INAX255VIZ)",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39448,
+      "sku": "INAX-255/VIZ-10",
+      "name": "Gạch ốp tường 255-VIZ INAX-255VIZ (INAX255VIZ)",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39449,
+      "sku": "INAX-255/VIZ-9",
+      "name": "Gạch ốp tường 255-VIZ INAX-255VIZ (INAX255VIZ)",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39450,
+      "sku": "INAX-255/VIZ-8",
+      "name": "Gạch ốp tường 255-VIZ INAX-255VIZ (INAX255VIZ)",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39451,
+      "sku": "INAX-255/VIZ-7",
+      "name": "Gạch ốp tường 255-VIZ INAX-255VIZ (INAX255VIZ)",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39452,
+      "sku": "INAX-255/VIZ-6",
+      "name": "Gạch ốp tường 255-VIZ INAX-255VIZ (INAX255VIZ)",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39453,
+      "sku": "INAX-255/VIZ-5",
+      "name": "Gạch ốp tường 255-VIZ INAX-255VIZ (INAX255VIZ)",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39454,
+      "sku": "INAX-255/VIZ-4",
+      "name": "Gạch ốp tường 255-VIZ INAX-255VIZ (INAX255VIZ)",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39455,
+      "sku": "INAX-255/VIZ-3",
+      "name": "Gạch ốp tường 255-VIZ INAX-255VIZ (INAX255VIZ)",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39456,
+      "sku": "INAX-255/VIZ-2",
+      "name": "Gạch ốp tường 255-VIZ INAX-255VIZ (INAX255VIZ)",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 7858,
+      "sku": "INAX-355-VIZ-10N",
+      "name": "Gạch ốp tường 355-VIZ INAX-355VIZ (INAX355VIZ)",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39457,
+      "sku": "INAX-355-VIZ-9N",
+      "name": "Gạch ốp tường 355-VIZ INAX-355VIZ (INAX355VIZ)",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39458,
+      "sku": "INAX-355-VIZ-8N",
+      "name": "Gạch ốp tường 355-VIZ INAX-355VIZ (INAX355VIZ)",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39459,
+      "sku": "INAX-355-VIZ-7N",
+      "name": "Gạch ốp tường 355-VIZ INAX-355VIZ (INAX355VIZ)",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39460,
+      "sku": "INAX-355-VIZ-6N",
+      "name": "Gạch ốp tường 355-VIZ INAX-355VIZ (INAX355VIZ)",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39461,
+      "sku": "INAX-355-VIZ-5N",
+      "name": "Gạch ốp tường 355-VIZ INAX-355VIZ (INAX355VIZ)",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39462,
+      "sku": "INAX-355-VIZ-4N",
+      "name": "Gạch ốp tường 355-VIZ INAX-355VIZ (INAX355VIZ)",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39463,
+      "sku": "INAX-355-VIZ-3N",
+      "name": "Gạch ốp tường 355-VIZ INAX-355VIZ (INAX355VIZ)",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39464,
+      "sku": "INAX-355-VIZ-2N",
+      "name": "Gạch ốp tường 355-VIZ INAX-355VIZ (INAX355VIZ)",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39465,
+      "sku": "INAX-355-VIZ-1N",
+      "name": "Gạch ốp tường 355-VIZ INAX-355VIZ (INAX355VIZ)",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 7855,
+      "sku": "INAX-355/EAC-1",
+      "name": "Gạch ốp tường 355/EAC-EARTH COLOR BORDER INAX-355/EAC",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39466,
+      "sku": "INAX-355/EAC-4",
+      "name": "Gạch ốp tường 355/EAC-EARTH COLOR BORDER INAX-355/EAC",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39467,
+      "sku": "INAX-355/EAC-3",
+      "name": "Gạch ốp tường 355/EAC-EARTH COLOR BORDER INAX-355/EAC",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39468,
+      "sku": "INAX-355/EAC-2",
+      "name": "Gạch ốp tường 355/EAC-EARTH COLOR BORDER INAX-355/EAC",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 7849,
+      "sku": "INAX-20B/BB-1",
+      "name": "Gạch ốp tường BB-BAMBOO BORDER INAX-20B/BB",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39469,
+      "sku": "INAX-20B/BB-3",
+      "name": "Gạch ốp tường BB-BAMBOO BORDER INAX-20B/BB",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39470,
+      "sku": "INAX-20B/BB-2",
+      "name": "Gạch ốp tường BB-BAMBOO BORDER INAX-20B/BB",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 7838,
+      "sku": "IM-1520P1/BL-1",
+      "name": "Gạch ốp tường BL-BULLION BORDER INAX IM-1520P1/BL",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39472,
+      "sku": "IM-1520P1/BL-2",
+      "name": "Gạch ốp tường BL-BULLION BORDER INAX IM-1520P1/BL",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 7833,
+      "sku": "HAL-155/CEF-1",
+      "name": "Gạch ốp tường CELAVIO E INAX HAL-155/CEF",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39471,
+      "sku": "HAL-155/CEF-2",
+      "name": "Gạch ốp tường CELAVIO E INAX HAL-155/CEF",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 7832,
+      "sku": "HAL-35B/GRA-M1",
+      "name": "Gạch ốp tường CELAVIOGRAN A INAX HAL-35B/GRA",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39475,
+      "sku": "HAL-35B/GRA-M4",
+      "name": "Gạch ốp tường CELAVIOGRAN A INAX HAL-35B/GRA",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39476,
+      "sku": "HAL-35B/GRA-M3",
+      "name": "Gạch ốp tường CELAVIOGRAN A INAX HAL-35B/GRA",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39477,
+      "sku": "HAL-35B/GRA-M2",
+      "name": "Gạch ốp tường CELAVIOGRAN A INAX HAL-35B/GRA",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 7845,
+      "sku": "INAX-40B/CK-1",
+      "name": "Gạch ốp tường CHECKER INAX-40B/CK",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39473,
+      "sku": "INAX-40B/CK-6",
+      "name": "Gạch ốp tường CHECKER INAX-40B/CK",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39474,
+      "sku": "INAX-40B/CK-3",
+      "name": "Gạch ốp tường CHECKER INAX-40B/CK",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 7854,
+      "sku": "355SD/CMG-1B",
+      "name": "Gạch ốp tường COOL MIST GLASS INAX-355TT,SD/CMG",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39478,
+      "sku": "355TT/CMG-4B",
+      "name": "Gạch ốp tường COOL MIST GLASS INAX-355TT,SD/CMG",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39479,
+      "sku": "355TT/CMG-5B",
+      "name": "Gạch ốp tường COOL MIST GLASS INAX-355TT,SD/CMG",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39480,
+      "sku": "355TT/CMG-3B",
+      "name": "Gạch ốp tường COOL MIST GLASS INAX-355TT,SD/CMG",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39481,
+      "sku": "355TT/CMG-2M",
+      "name": "Gạch ốp tường COOL MIST GLASS INAX-355TT,SD/CMG",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39482,
+      "sku": "355TT/CMG-2B",
+      "name": "Gạch ốp tường COOL MIST GLASS INAX-355TT,SD/CMG",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39483,
+      "sku": "355TT/CMG-1M",
+      "name": "Gạch ốp tường COOL MIST GLASS INAX-355TT,SD/CMG",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39484,
+      "sku": "355TT/CMG-1B",
+      "name": "Gạch ốp tường COOL MIST GLASS INAX-355TT,SD/CMG",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39485,
+      "sku": "355SD/CMG-5B",
+      "name": "Gạch ốp tường COOL MIST GLASS INAX-355TT,SD/CMG",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39486,
+      "sku": "355SD/CMG-3B",
+      "name": "Gạch ốp tường COOL MIST GLASS INAX-355TT,SD/CMG",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39487,
+      "sku": "355SD/CMG-4B",
+      "name": "Gạch ốp tường COOL MIST GLASS INAX-355TT,SD/CMG",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39488,
+      "sku": "355SD/CMG-2M",
+      "name": "Gạch ốp tường COOL MIST GLASS INAX-355TT,SD/CMG",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39489,
+      "sku": "355SD/CMG-2B",
+      "name": "Gạch ốp tường COOL MIST GLASS INAX-355TT,SD/CMG",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39490,
+      "sku": "355SD/CMG-1M",
+      "name": "Gạch ốp tường COOL MIST GLASS INAX-355TT,SD/CMG",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 7837,
+      "sku": "IM-50P1/DL-1",
+      "name": "Gạch ốp tường DL-DELTA INAX IM-50P1/DL",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39491,
+      "sku": "IM-50P1/DL-2",
+      "name": "Gạch ốp tường DL-DELTA INAX IM-50P1/DL",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 7861,
+      "sku": "INAX-255/DPL-101V",
+      "name": "Gạch ốp tường DPL POINT COLOR INAX-255/DPL",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39492,
+      "sku": "INAX-255/DPL-108V",
+      "name": "Gạch ốp tường DPL POINT COLOR INAX-255/DPL",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39493,
+      "sku": "INAX-255/DPL-107V",
+      "name": "Gạch ốp tường DPL POINT COLOR INAX-255/DPL",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39494,
+      "sku": "INAX-255/DPL-106V",
+      "name": "Gạch ốp tường DPL POINT COLOR INAX-255/DPL",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39495,
+      "sku": "INAX-255/DPL-104V",
+      "name": "Gạch ốp tường DPL POINT COLOR INAX-255/DPL",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39496,
+      "sku": "INAX-255/DPL-103V",
+      "name": "Gạch ốp tường DPL POINT COLOR INAX-255/DPL",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39497,
+      "sku": "INAX-255/DPL-102V",
+      "name": "Gạch ốp tường DPL POINT COLOR INAX-255/DPL",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 7851,
+      "sku": "INAX-325/FBM-1",
+      "name": "Gạch ốp tường FISHBONE MOSAIC INAX-325/FBM",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39500,
+      "sku": "INAX-325/FBM-3",
+      "name": "Gạch ốp tường FISHBONE MOSAIC INAX-325/FBM",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39501,
+      "sku": "INAX-325/FBM-2",
+      "name": "Gạch ốp tường FISHBONE MOSAIC INAX-325/FBM",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 7850,
+      "sku": "INAX-355/GLM-1",
+      "name": "Gạch ốp tường GLAZED MOSAIC INAX-355/GLM",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39498,
+      "sku": "INAX-355/GLM-3",
+      "name": "Gạch ốp tường GLAZED MOSAIC INAX-355/GLM",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39499,
+      "sku": "INAX-355/GLM-2",
+      "name": "Gạch ốp tường GLAZED MOSAIC INAX-355/GLM",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 7834,
+      "sku": "HAL-20BN/HB-1",
+      "name": "Gạch ốp tường HOSOWARI BORDER INAX HAL-20BN/HB",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39508,
+      "sku": "HAL-20BN/HB-7",
+      "name": "Gạch ốp tường HOSOWARI BORDER INAX HAL-20BN/HB",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39509,
+      "sku": "HAL-20BN/HB-6",
+      "name": "Gạch ốp tường HOSOWARI BORDER INAX HAL-20BN/HB",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39510,
+      "sku": "HAL-20BN/HB-5",
+      "name": "Gạch ốp tường HOSOWARI BORDER INAX HAL-20BN/HB",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39511,
+      "sku": "HAL-20BN/HB-4",
+      "name": "Gạch ốp tường HOSOWARI BORDER INAX HAL-20BN/HB",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39512,
+      "sku": "HAL-20BN/HB-3",
+      "name": "Gạch ốp tường HOSOWARI BORDER INAX HAL-20BN/HB",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39513,
+      "sku": "HAL-20BN/HB-2",
+      "name": "Gạch ốp tường HOSOWARI BORDER INAX HAL-20BN/HB",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 7835,
+      "sku": "HAL-20BR/HB-1",
+      "name": "Gạch ốp tường HOSOWARI BORDER RANDOM INAX HAL-20BR/HB",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39502,
+      "sku": "HAL-20BR/HB-7",
+      "name": "Gạch ốp tường HOSOWARI BORDER RANDOM INAX HAL-20BR/HB",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39503,
+      "sku": "HAL-20BR/HB-6",
+      "name": "Gạch ốp tường HOSOWARI BORDER RANDOM INAX HAL-20BR/HB",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39504,
+      "sku": "HAL-20BR/HB-5",
+      "name": "Gạch ốp tường HOSOWARI BORDER RANDOM INAX HAL-20BR/HB",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39505,
+      "sku": "HAL-20BR/HB-4",
+      "name": "Gạch ốp tường HOSOWARI BORDER RANDOM INAX HAL-20BR/HB",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39506,
+      "sku": "HAL-20BR/HB-3",
+      "name": "Gạch ốp tường HOSOWARI BORDER RANDOM INAX HAL-20BR/HB",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39507,
+      "sku": "HAL-20BR/HB-2",
+      "name": "Gạch ốp tường HOSOWARI BORDER RANDOM INAX HAL-20BR/HB",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 7862,
+      "sku": "INAX-20B/CRB-1",
+      "name": "Gạch ốp tường I-Concept CERABORDER INAX-20B/CRB",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39516,
+      "sku": "INAX-20B/CRB-6",
+      "name": "Gạch ốp tường I-Concept CERABORDER INAX-20B/CRB",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39517,
+      "sku": "INAX-20B/CRB-4",
+      "name": "Gạch ốp tường I-Concept CERABORDER INAX-20B/CRB",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39518,
+      "sku": "INAX-20B/CRB-3",
+      "name": "Gạch ốp tường I-Concept CERABORDER INAX-20B/CRB",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39519,
+      "sku": "INAX-20B/CRB-5",
+      "name": "Gạch ốp tường I-Concept CERABORDER INAX-20B/CRB",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39520,
+      "sku": "INAX-20B/CRB-2",
+      "name": "Gạch ốp tường I-Concept CERABORDER INAX-20B/CRB",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 7843,
+      "sku": "INAX-40B/SLT-2",
+      "name": "Gạch ốp tường I-Concept SLIT INAX-40B/SLT",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 9960,
+      "sku": "INAX-40B/SLT-1",
+      "name": "Gạch ốp tường I-Concept SLIT INAX-40B/SLT",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39514,
+      "sku": "INAX-40B/SLT-4",
+      "name": "Gạch ốp tường I-Concept SLIT INAX-40B/SLT",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39515,
+      "sku": "INAX-40B/SLT-3",
+      "name": "Gạch ốp tường I-Concept SLIT INAX-40B/SLT",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 7841,
+      "sku": "INAX-20B/STB-1",
+      "name": "Gạch ốp tường I-Concept STRIPE BORDER INAX-20B/STB",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39524,
+      "sku": "INAX-20B/STB-4",
+      "name": "Gạch ốp tường I-Concept STRIPE BORDER INAX-20B/STB",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39525,
+      "sku": "INAX-20B/STB-3",
+      "name": "Gạch ốp tường I-Concept STRIPE BORDER INAX-20B/STB",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39526,
+      "sku": "INAX-20B/STB-2",
+      "name": "Gạch ốp tường I-Concept STRIPE BORDER INAX-20B/STB",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 7842,
+      "sku": "INAX-3040B/TRP-1",
+      "name": "Gạch ốp tường I-Concept TRAPE INAX-3040B/TRP",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39521,
+      "sku": "INAX-3040B/TRP-4",
+      "name": "Gạch ốp tường I-Concept TRAPE INAX-3040B/TRP",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39522,
+      "sku": "INAX-3040B/TRP-3",
+      "name": "Gạch ốp tường I-Concept TRAPE INAX-3040B/TRP",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39523,
+      "sku": "INAX-3040B/TRP-2",
+      "name": "Gạch ốp tường I-Concept TRAPE INAX-3040B/TRP",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 7840,
+      "sku": "INAX-255/WM-1",
+      "name": "Gạch ốp tường I-Concept WAVY MOSAIC INAX-255/WM",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39532,
+      "sku": "INAX-255/WM-4",
+      "name": "Gạch ốp tường I-Concept WAVY MOSAIC INAX-255/WM",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39533,
+      "sku": "INAX-255/WM-3",
+      "name": "Gạch ốp tường I-Concept WAVY MOSAIC INAX-255/WM",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39534,
+      "sku": "INAX-255/WM-2",
+      "name": "Gạch ốp tường I-Concept WAVY MOSAIC INAX-255/WM",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 7867,
+      "sku": "INAX-2I/IMM-1",
+      "name": "Gạch ốp tường Imperial Mosaic INAX-2I/IMM (INAX2IIMM)",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39527,
+      "sku": "INAX-2I/IMM-6",
+      "name": "Gạch ốp tường Imperial Mosaic INAX-2I/IMM (INAX2IIMM)",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39528,
+      "sku": "INAX-2I/IMM-5",
+      "name": "Gạch ốp tường Imperial Mosaic INAX-2I/IMM (INAX2IIMM)",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39529,
+      "sku": "INAX-2I/IMM-4",
+      "name": "Gạch ốp tường Imperial Mosaic INAX-2I/IMM (INAX2IIMM)",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39530,
+      "sku": "INAX-2I/IMM-3",
+      "name": "Gạch ốp tường Imperial Mosaic INAX-2I/IMM (INAX2IIMM)",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39531,
+      "sku": "INAX-2I/IMM-2",
+      "name": "Gạch ốp tường Imperial Mosaic INAX-2I/IMM (INAX2IIMM)",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 7844,
+      "sku": "INAX-40B/KH-4",
+      "name": "Gạch ốp tường KAIHA INAX-40B/KH",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 9961,
+      "sku": "INAX-40B/KH-2",
+      "name": "Gạch ốp tường KAIHA INAX-40B/KH",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39538,
+      "sku": "INAX-40B/KH-5",
+      "name": "Gạch ốp tường KAIHA INAX-40B/KH",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 7852,
+      "sku": "INAX-300/LTC-11",
+      "name": "Gạch ốp tường LATTICE INAX-300/LTC",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39535,
+      "sku": "INAX-300/LTC-14",
+      "name": "Gạch ốp tường LATTICE INAX-300/LTC",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39536,
+      "sku": "INAX-300/LTC-13",
+      "name": "Gạch ốp tường LATTICE INAX-300/LTC",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39537,
+      "sku": "INAX-300/LTC-12",
+      "name": "Gạch ốp tường LATTICE INAX-300/LTC",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 7831,
+      "sku": "HAL-R/MAL-1",
+      "name": "Gạch ốp tường MELVIO ALDEA INAX HAL-R/MAL",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39539,
+      "sku": "HAL-R/MAL-3",
+      "name": "Gạch ốp tường MELVIO ALDEA INAX HAL-R/MAL",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39540,
+      "sku": "HAL-R/MAL-2",
+      "name": "Gạch ốp tường MELVIO ALDEA INAX HAL-R/MAL",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 7860,
+      "sku": "INAX-255/PPC-103",
+      "name": "Gạch ốp tường PASTEL PLAIN COLOR INAX-255/PPC",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39542,
+      "sku": "INAX-255/PPC-209",
+      "name": "Gạch ốp tường PASTEL PLAIN COLOR INAX-255/PPC",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39543,
+      "sku": "INAX-255/PPC-207",
+      "name": "Gạch ốp tường PASTEL PLAIN COLOR INAX-255/PPC",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39544,
+      "sku": "INAX-255/PPC-204",
+      "name": "Gạch ốp tường PASTEL PLAIN COLOR INAX-255/PPC",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39545,
+      "sku": "INAX-255/PPC-133",
+      "name": "Gạch ốp tường PASTEL PLAIN COLOR INAX-255/PPC",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39546,
+      "sku": "INAX-255/PPC-123",
+      "name": "Gạch ốp tường PASTEL PLAIN COLOR INAX-255/PPC",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39547,
+      "sku": "INAX-255/PPC-93",
+      "name": "Gạch ốp tường PASTEL PLAIN COLOR INAX-255/PPC",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39548,
+      "sku": "INAX-255/PPC-63",
+      "name": "Gạch ốp tường PASTEL PLAIN COLOR INAX-255/PPC",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39549,
+      "sku": "INAX-255/PPC-33",
+      "name": "Gạch ốp tường PASTEL PLAIN COLOR INAX-255/PPC",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39550,
+      "sku": "INAX-255/PPC-23",
+      "name": "Gạch ốp tường PASTEL PLAIN COLOR INAX-255/PPC",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39551,
+      "sku": "INAX-255/PPC-21",
+      "name": "Gạch ốp tường PASTEL PLAIN COLOR INAX-255/PPC",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39552,
+      "sku": "INAX-255/PPC-11",
+      "name": "Gạch ốp tường PASTEL PLAIN COLOR INAX-255/PPC",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 7846,
+      "sku": "INAX-40B/RB-3",
+      "name": "Gạch ốp tường R-BORDER INAX-40B/RB",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 9963,
+      "sku": "INAX-40B/RB-1",
+      "name": "Gạch ốp tường R-BORDER INAX-40B/RB",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39541,
+      "sku": "INAX-40B/RB-2",
+      "name": "Gạch ốp tường R-BORDER INAX-40B/RB",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 7848,
+      "sku": "INAX-30B/SB-1",
+      "name": "Gạch ốp tường SB-STONE BORDER INAX-30B/SB",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39553,
+      "sku": "INAX-30B/SB-3",
+      "name": "Gạch ốp tường SB-STONE BORDER INAX-30B/SB",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39554,
+      "sku": "INAX-30B/SB-2",
+      "name": "Gạch ốp tường SB-STONE BORDER INAX-30B/SB",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 7857,
+      "sku": "INAX-255/SLC-1",
+      "name": "Gạch ốp tường SLC-SHIJYU LUSTER COLOR INAX-255/SLC",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39558,
+      "sku": "INAX-255/SLC-9",
+      "name": "Gạch ốp tường SLC-SHIJYU LUSTER COLOR INAX-255/SLC",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39559,
+      "sku": "INAX-255/SLC-8",
+      "name": "Gạch ốp tường SLC-SHIJYU LUSTER COLOR INAX-255/SLC",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39560,
+      "sku": "INAX-255/SLC-6",
+      "name": "Gạch ốp tường SLC-SHIJYU LUSTER COLOR INAX-255/SLC",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39561,
+      "sku": "INAX-255/SLC-5",
+      "name": "Gạch ốp tường SLC-SHIJYU LUSTER COLOR INAX-255/SLC",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39562,
+      "sku": "INAX-255/SLC-4",
+      "name": "Gạch ốp tường SLC-SHIJYU LUSTER COLOR INAX-255/SLC",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39563,
+      "sku": "INAX-255/SLC-3",
+      "name": "Gạch ốp tường SLC-SHIJYU LUSTER COLOR INAX-255/SLC",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39564,
+      "sku": "INAX-255/SLC-2",
+      "name": "Gạch ốp tường SLC-SHIJYU LUSTER COLOR INAX-255/SLC",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 7847,
+      "sku": "INAX-30B/TKB-1",
+      "name": "Gạch ốp tường TAKEBORDER INAX-30B/TKB",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39555,
+      "sku": "INAX-30B/TKB-4",
+      "name": "Gạch ốp tường TAKEBORDER INAX-30B/TKB",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39556,
+      "sku": "INAX-30B/TKB-3",
+      "name": "Gạch ốp tường TAKEBORDER INAX-30B/TKB",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39557,
+      "sku": "INAX-30B/TKB-2",
+      "name": "Gạch ốp tường TAKEBORDER INAX-30B/TKB",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 7839,
+      "sku": "INAX-255/TND-1",
+      "name": "Gạch ốp tường TANADA INAX-255/TND",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39578,
+      "sku": "INAX-255/TND-8",
+      "name": "Gạch ốp tường TANADA INAX-255/TND",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39579,
+      "sku": "INAX-255/TND-7",
+      "name": "Gạch ốp tường TANADA INAX-255/TND",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39580,
+      "sku": "INAX-255/TND-6",
+      "name": "Gạch ốp tường TANADA INAX-255/TND",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39581,
+      "sku": "INAX-255/TND-5",
+      "name": "Gạch ốp tường TANADA INAX-255/TND",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39582,
+      "sku": "INAX-255/TND-4",
+      "name": "Gạch ốp tường TANADA INAX-255/TND",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39583,
+      "sku": "INAX-255/TND-3",
+      "name": "Gạch ốp tường TANADA INAX-255/TND",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39584,
+      "sku": "INAX-255/TND-2",
+      "name": "Gạch ốp tường TANADA INAX-255/TND",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 7853,
+      "sku": "INAX-2312/VIZ-1-DK",
+      "name": "Gạch ốp tường VIZ ZEN sử dụng vữa INAX hoặc keo dán INAX-2312VIZ (INAX2312VIZ)",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39565,
+      "sku": "INAX-2312/VIZ-10-DV",
+      "name": "Gạch ốp tường VIZ ZEN sử dụng vữa INAX hoặc keo dán INAX-2312VIZ (INAX2312VIZ)",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39566,
+      "sku": "INAX-2312/VIZ-10-DK",
+      "name": "Gạch ốp tường VIZ ZEN sử dụng vữa INAX hoặc keo dán INAX-2312VIZ (INAX2312VIZ)",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39567,
+      "sku": "INAX-2312/VIZ-8-DV",
+      "name": "Gạch ốp tường VIZ ZEN sử dụng vữa INAX hoặc keo dán INAX-2312VIZ (INAX2312VIZ)",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39568,
+      "sku": "INAX-2312/VIZ-8-DK",
+      "name": "Gạch ốp tường VIZ ZEN sử dụng vữa INAX hoặc keo dán INAX-2312VIZ (INAX2312VIZ)",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39569,
+      "sku": "INAX-2312/VIZ-6-DV",
+      "name": "Gạch ốp tường VIZ ZEN sử dụng vữa INAX hoặc keo dán INAX-2312VIZ (INAX2312VIZ)",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39570,
+      "sku": "INAX-2312/VIZ-6-DK",
+      "name": "Gạch ốp tường VIZ ZEN sử dụng vữa INAX hoặc keo dán INAX-2312VIZ (INAX2312VIZ)",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39571,
+      "sku": "INAX-2312/VIZ-4-DV",
+      "name": "Gạch ốp tường VIZ ZEN sử dụng vữa INAX hoặc keo dán INAX-2312VIZ (INAX2312VIZ)",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39572,
+      "sku": "INAX-2312/VIZ-4-DK",
+      "name": "Gạch ốp tường VIZ ZEN sử dụng vữa INAX hoặc keo dán INAX-2312VIZ (INAX2312VIZ)",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39573,
+      "sku": "INAX-2312/VIZ-3-DV",
+      "name": "Gạch ốp tường VIZ ZEN sử dụng vữa INAX hoặc keo dán INAX-2312VIZ (INAX2312VIZ)",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39574,
+      "sku": "INAX-2312/VIZ-3-DK",
+      "name": "Gạch ốp tường VIZ ZEN sử dụng vữa INAX hoặc keo dán INAX-2312VIZ (INAX2312VIZ)",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39575,
+      "sku": "INAX-2312/VIZ-2-DV",
+      "name": "Gạch ốp tường VIZ ZEN sử dụng vữa INAX hoặc keo dán INAX-2312VIZ (INAX2312VIZ)",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39576,
+      "sku": "INAX-2312/VIZ-2-DK",
+      "name": "Gạch ốp tường VIZ ZEN sử dụng vữa INAX hoặc keo dán INAX-2312VIZ (INAX2312VIZ)",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39577,
+      "sku": "INAX-2312/VIZ-1-DV",
+      "name": "Gạch ốp tường VIZ ZEN sử dụng vữa INAX hoặc keo dán INAX-2312VIZ (INAX2312VIZ)",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 7830,
+      "sku": "DCF-20BNET/WAB-1",
+      "name": "Gạch ốp tường WAVE BORDER INAX DCF-20BNET/WAB",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39586,
+      "sku": "DCF-20BNET/WAB-4",
+      "name": "Gạch ốp tường WAVE BORDER INAX DCF-20BNET/WAB",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39587,
+      "sku": "DCF-20BNET/WAB-3",
+      "name": "Gạch ốp tường WAVE BORDER INAX DCF-20BNET/WAB",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39588,
+      "sku": "DCF-20BNET/WAB-2",
+      "name": "Gạch ốp tường WAVE BORDER INAX DCF-20BNET/WAB",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 7836,
+      "sku": "IM-50P1/WV-1",
+      "name": "Gạch ốp tường WV-WAVES INAX-50P1/WV",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 39585,
+      "sku": "IM-50P1/WV-2",
+      "name": "Gạch ốp tường WV-WAVES INAX-50P1/WV",
+      "subcategory_id": 36,
+      "subcategory_slug": "gach-op-tuong",
+      "current_product_type": null,
+      "proposed_product_type": "gach-op-tuong",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5439,
+      "sku": "GACH-120278BBIV",
+      "name": "Gạch 120278BBIV",
+      "subcategory_id": 25,
+      "subcategory_slug": "gach-thiet-ke-xi-mang",
+      "current_product_type": null,
+      "proposed_product_type": "gach-thiet-ke-xi-mang",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5438,
+      "sku": "GACH-120278BBSM",
+      "name": "Gạch 120278BBSM",
+      "subcategory_id": 25,
+      "subcategory_slug": "gach-thiet-ke-xi-mang",
+      "current_product_type": null,
+      "proposed_product_type": "gach-thiet-ke-xi-mang",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5447,
+      "sku": "GACH-120278BNKA",
+      "name": "Gạch 120278BNKA",
+      "subcategory_id": 25,
+      "subcategory_slug": "gach-thiet-ke-xi-mang",
+      "current_product_type": null,
+      "proposed_product_type": "gach-thiet-ke-xi-mang",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5437,
+      "sku": "GACH-120278BOSM",
+      "name": "Gạch 120278BOSM",
+      "subcategory_id": 25,
+      "subcategory_slug": "gach-thiet-ke-xi-mang",
+      "current_product_type": null,
+      "proposed_product_type": "gach-thiet-ke-xi-mang",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5436,
+      "sku": "GACH-120278BOTA",
+      "name": "Gạch 120278BOTA",
+      "subcategory_id": 25,
+      "subcategory_slug": "gach-thiet-ke-xi-mang",
+      "current_product_type": null,
+      "proposed_product_type": "gach-thiet-ke-xi-mang",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5440,
+      "sku": "GACH-120BBIV",
+      "name": "Gạch 120BBIV",
+      "subcategory_id": 25,
+      "subcategory_slug": "gach-thiet-ke-xi-mang",
+      "current_product_type": null,
+      "proposed_product_type": "gach-thiet-ke-xi-mang",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5444,
+      "sku": "GACH-120BBIVVEL",
+      "name": "Gạch 120BBIVVEL",
+      "subcategory_id": 25,
+      "subcategory_slug": "gach-thiet-ke-xi-mang",
+      "current_product_type": null,
+      "proposed_product_type": "gach-thiet-ke-xi-mang",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5441,
+      "sku": "GACH-120BBPE",
+      "name": "Gạch 120BBPE",
+      "subcategory_id": 25,
+      "subcategory_slug": "gach-thiet-ke-xi-mang",
+      "current_product_type": null,
+      "proposed_product_type": "gach-thiet-ke-xi-mang",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5446,
+      "sku": "GACH-120BBPEVE",
+      "name": "Gạch 120BBPEVE",
+      "subcategory_id": 25,
+      "subcategory_slug": "gach-thiet-ke-xi-mang",
+      "current_product_type": null,
+      "proposed_product_type": "gach-thiet-ke-xi-mang",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5445,
+      "sku": "GACH-120BBPUVE",
+      "name": "Gạch 120BBPUVE",
+      "subcategory_id": 25,
+      "subcategory_slug": "gach-thiet-ke-xi-mang",
+      "current_product_type": null,
+      "proposed_product_type": "gach-thiet-ke-xi-mang",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5443,
+      "sku": "GACH-120BBSM",
+      "name": "Gạch 120BBSM",
+      "subcategory_id": 25,
+      "subcategory_slug": "gach-thiet-ke-xi-mang",
+      "current_product_type": null,
+      "proposed_product_type": "gach-thiet-ke-xi-mang",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5448,
+      "sku": "GACH-120BNKA",
+      "name": "Gạch 120BNKA",
+      "subcategory_id": 25,
+      "subcategory_slug": "gach-thiet-ke-xi-mang",
+      "current_product_type": null,
+      "proposed_product_type": "gach-thiet-ke-xi-mang",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5435,
+      "sku": "GACH-120BOSM",
+      "name": "Gạch 120BOSM",
+      "subcategory_id": 25,
+      "subcategory_slug": "gach-thiet-ke-xi-mang",
+      "current_product_type": null,
+      "proposed_product_type": "gach-thiet-ke-xi-mang",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5456,
+      "sku": "GACH-36BNCO",
+      "name": "Gạch 36BNCO",
+      "subcategory_id": 25,
+      "subcategory_slug": "gach-thiet-ke-xi-mang",
+      "current_product_type": null,
+      "proposed_product_type": "gach-thiet-ke-xi-mang",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5455,
+      "sku": "GACH-36BNKA",
+      "name": "Gạch 36BNKA",
+      "subcategory_id": 25,
+      "subcategory_slug": "gach-thiet-ke-xi-mang",
+      "current_product_type": null,
+      "proposed_product_type": "gach-thiet-ke-xi-mang",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5457,
+      "sku": "GACH-36BNUM",
+      "name": "Gạch 36BNUM",
+      "subcategory_id": 25,
+      "subcategory_slug": "gach-thiet-ke-xi-mang",
+      "current_product_type": null,
+      "proposed_product_type": "gach-thiet-ke-xi-mang",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5453,
+      "sku": "GACH-60BNCO",
+      "name": "Gạch 60BNCO",
+      "subcategory_id": 25,
+      "subcategory_slug": "gach-thiet-ke-xi-mang",
+      "current_product_type": null,
+      "proposed_product_type": "gach-thiet-ke-xi-mang",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5452,
+      "sku": "GACH-60BNKA",
+      "name": "Gạch 60BNKA",
+      "subcategory_id": 25,
+      "subcategory_slug": "gach-thiet-ke-xi-mang",
+      "current_product_type": null,
+      "proposed_product_type": "gach-thiet-ke-xi-mang",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5454,
+      "sku": "GACH-60BNUM",
+      "name": "Gạch 60BNUM",
+      "subcategory_id": 25,
+      "subcategory_slug": "gach-thiet-ke-xi-mang",
+      "current_product_type": null,
+      "proposed_product_type": "gach-thiet-ke-xi-mang",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5459,
+      "sku": "GACH-612BAGR",
+      "name": "Gạch 612BAGR",
+      "subcategory_id": 25,
+      "subcategory_slug": "gach-thiet-ke-xi-mang",
+      "current_product_type": null,
+      "proposed_product_type": "gach-thiet-ke-xi-mang",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5442,
+      "sku": "GACH-612BBSM",
+      "name": "Gạch 612BBSM",
+      "subcategory_id": 25,
+      "subcategory_slug": "gach-thiet-ke-xi-mang",
+      "current_product_type": null,
+      "proposed_product_type": "gach-thiet-ke-xi-mang",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5460,
+      "sku": "GACH-612BMSMMT",
+      "name": "Gạch 612BMSMMT",
+      "subcategory_id": 25,
+      "subcategory_slug": "gach-thiet-ke-xi-mang",
+      "current_product_type": null,
+      "proposed_product_type": "gach-thiet-ke-xi-mang",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5450,
+      "sku": "GACH-612BNCO",
+      "name": "Gạch 612BNCO",
+      "subcategory_id": 25,
+      "subcategory_slug": "gach-thiet-ke-xi-mang",
+      "current_product_type": null,
+      "proposed_product_type": "gach-thiet-ke-xi-mang",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5449,
+      "sku": "GACH-612BNKA",
+      "name": "Gạch 612BNKA",
+      "subcategory_id": 25,
+      "subcategory_slug": "gach-thiet-ke-xi-mang",
+      "current_product_type": null,
+      "proposed_product_type": "gach-thiet-ke-xi-mang",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5451,
+      "sku": "GACH-612BNUM",
+      "name": "Gạch 612BNUM",
+      "subcategory_id": 25,
+      "subcategory_slug": "gach-thiet-ke-xi-mang",
+      "current_product_type": null,
+      "proposed_product_type": "gach-thiet-ke-xi-mang",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5458,
+      "sku": "GACH-90BAGR",
+      "name": "Gạch 90BAGR",
+      "subcategory_id": 25,
+      "subcategory_slug": "gach-thiet-ke-xi-mang",
+      "current_product_type": null,
+      "proposed_product_type": "gach-thiet-ke-xi-mang",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5461,
+      "sku": "GACH-120278LOICLI",
+      "name": "Gạch 120278LOICLI",
+      "subcategory_id": 26,
+      "subcategory_slug": "gach-trang-tri",
+      "current_product_type": null,
+      "proposed_product_type": "gach-trang-tri",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5466,
+      "sku": "GACH-120278PAENGO",
+      "name": "Gạch 120278PAENGO",
+      "subcategory_id": 26,
+      "subcategory_slug": "gach-trang-tri",
+      "current_product_type": null,
+      "proposed_product_type": "gach-trang-tri",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5488,
+      "sku": "GACH-20FUAU",
+      "name": "Gạch 20FUAU",
+      "subcategory_id": 26,
+      "subcategory_slug": "gach-trang-tri",
+      "current_product_type": null,
+      "proposed_product_type": "gach-trang-tri",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5490,
+      "sku": "GACH-20FUAU_16V",
+      "name": "Gạch 20FUAU_16V",
+      "subcategory_id": 26,
+      "subcategory_slug": "gach-trang-tri",
+      "current_product_type": null,
+      "proposed_product_type": "gach-trang-tri",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5489,
+      "sku": "GACH-20FUAU_18V",
+      "name": "Gạch 20FUAU_18V",
+      "subcategory_id": 26,
+      "subcategory_slug": "gach-trang-tri",
+      "current_product_type": null,
+      "proposed_product_type": "gach-trang-tri",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5491,
+      "sku": "GACH-30AGTA332727R_N",
+      "name": "Gạch 30AGTA332727R_N",
+      "subcategory_id": 26,
+      "subcategory_slug": "gach-trang-tri",
+      "current_product_type": null,
+      "proposed_product_type": "gach-trang-tri",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5492,
+      "sku": "GACH-33FUMI",
+      "name": "Gạch 33FUMI",
+      "subcategory_id": 26,
+      "subcategory_slug": "gach-trang-tri",
+      "current_product_type": null,
+      "proposed_product_type": "gach-trang-tri",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5484,
+      "sku": "GACH-36GP0799",
+      "name": "Gạch 36GP0799_N",
+      "subcategory_id": 26,
+      "subcategory_slug": "gach-trang-tri",
+      "current_product_type": null,
+      "proposed_product_type": "gach-trang-tri",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5483,
+      "sku": "GACH-36GP0800",
+      "name": "Gạch 36GP0800_N",
+      "subcategory_id": 26,
+      "subcategory_slug": "gach-trang-tri",
+      "current_product_type": null,
+      "proposed_product_type": "gach-trang-tri",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5482,
+      "sku": "GACH-36GP0803",
+      "name": "Gạch 36GP0803_N",
+      "subcategory_id": 26,
+      "subcategory_slug": "gach-trang-tri",
+      "current_product_type": null,
+      "proposed_product_type": "gach-trang-tri",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5481,
+      "sku": "GACH-36GP0804",
+      "name": "Gạch 36GP0804_N",
+      "subcategory_id": 26,
+      "subcategory_slug": "gach-trang-tri",
+      "current_product_type": null,
+      "proposed_product_type": "gach-trang-tri",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5480,
+      "sku": "GACH-36GP0806",
+      "name": "Gạch 36GP0806_N",
+      "subcategory_id": 26,
+      "subcategory_slug": "gach-trang-tri",
+      "current_product_type": null,
+      "proposed_product_type": "gach-trang-tri",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5479,
+      "sku": "GACH-36GP0807",
+      "name": "Gạch 36GP0807_N",
+      "subcategory_id": 26,
+      "subcategory_slug": "gach-trang-tri",
+      "current_product_type": null,
+      "proposed_product_type": "gach-trang-tri",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5478,
+      "sku": "GACH-36GP0808",
+      "name": "Gạch 36GP0808_N",
+      "subcategory_id": 26,
+      "subcategory_slug": "gach-trang-tri",
+      "current_product_type": null,
+      "proposed_product_type": "gach-trang-tri",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5477,
+      "sku": "GACH-36GP0811",
+      "name": "Gạch 36GP0811_N",
+      "subcategory_id": 26,
+      "subcategory_slug": "gach-trang-tri",
+      "current_product_type": null,
+      "proposed_product_type": "gach-trang-tri",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5476,
+      "sku": "GACH-36GP0812",
+      "name": "Gạch 36GP0812_N",
+      "subcategory_id": 26,
+      "subcategory_slug": "gach-trang-tri",
+      "current_product_type": null,
+      "proposed_product_type": "gach-trang-tri",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5475,
+      "sku": "GACH-36GP0814",
+      "name": "Gạch 36GP0814_N",
+      "subcategory_id": 26,
+      "subcategory_slug": "gach-trang-tri",
+      "current_product_type": null,
+      "proposed_product_type": "gach-trang-tri",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5471,
+      "sku": "GACH-36GP0876",
+      "name": "Gạch 36GP0876",
+      "subcategory_id": 26,
+      "subcategory_slug": "gach-trang-tri",
+      "current_product_type": null,
+      "proposed_product_type": "gach-trang-tri",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5474,
+      "sku": "GACH-36GP0877",
+      "name": "Gạch 36GP0877",
+      "subcategory_id": 26,
+      "subcategory_slug": "gach-trang-tri",
+      "current_product_type": null,
+      "proposed_product_type": "gach-trang-tri",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5473,
+      "sku": "GACH-36GP0879",
+      "name": "Gạch 36GP0879",
+      "subcategory_id": 26,
+      "subcategory_slug": "gach-trang-tri",
+      "current_product_type": null,
+      "proposed_product_type": "gach-trang-tri",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5472,
+      "sku": "GACH-36GP0880",
+      "name": "Gạch 36GP0880",
+      "subcategory_id": 26,
+      "subcategory_slug": "gach-trang-tri",
+      "current_product_type": null,
+      "proposed_product_type": "gach-trang-tri",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5467,
+      "sku": "GACH-36GP0882",
+      "name": "Gạch 36GP0882",
+      "subcategory_id": 26,
+      "subcategory_slug": "gach-trang-tri",
+      "current_product_type": null,
+      "proposed_product_type": "gach-trang-tri",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5470,
+      "sku": "GACH-36GP0883",
+      "name": "Gạch 36GP0883",
+      "subcategory_id": 26,
+      "subcategory_slug": "gach-trang-tri",
+      "current_product_type": null,
+      "proposed_product_type": "gach-trang-tri",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5469,
+      "sku": "GACH-36GP0885",
+      "name": "Gạch 36GP0885",
+      "subcategory_id": 26,
+      "subcategory_slug": "gach-trang-tri",
+      "current_product_type": null,
+      "proposed_product_type": "gach-trang-tri",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5468,
+      "sku": "GACH-36GP0886",
+      "name": "Gạch 36GP0886",
+      "subcategory_id": 26,
+      "subcategory_slug": "gach-trang-tri",
+      "current_product_type": null,
+      "proposed_product_type": "gach-trang-tri",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5494,
+      "sku": "GACH-612JA02",
+      "name": "Gạch 612JA02",
+      "subcategory_id": 26,
+      "subcategory_slug": "gach-trang-tri",
+      "current_product_type": null,
+      "proposed_product_type": "gach-trang-tri",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5493,
+      "sku": "GACH-612JA07",
+      "name": "Gạch 612JA07",
+      "subcategory_id": 26,
+      "subcategory_slug": "gach-trang-tri",
+      "current_product_type": null,
+      "proposed_product_type": "gach-trang-tri",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5462,
+      "sku": "GACH-612PABL",
+      "name": "Gạch 612PABL",
+      "subcategory_id": 26,
+      "subcategory_slug": "gach-trang-tri",
+      "current_product_type": null,
+      "proposed_product_type": "gach-trang-tri",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5464,
+      "sku": "GACH-612PAMABL",
+      "name": "Gạch 612PAMABL",
+      "subcategory_id": 26,
+      "subcategory_slug": "gach-trang-tri",
+      "current_product_type": null,
+      "proposed_product_type": "gach-trang-tri",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5463,
+      "sku": "GACH-612PAMAPU",
+      "name": "Gạch 612PAMAPU",
+      "subcategory_id": 26,
+      "subcategory_slug": "gach-trang-tri",
+      "current_product_type": null,
+      "proposed_product_type": "gach-trang-tri",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5465,
+      "sku": "GACH-612PAPA_3V",
+      "name": "Gạch 612PAPA_3V",
+      "subcategory_id": 26,
+      "subcategory_slug": "gach-trang-tri",
+      "current_product_type": null,
+      "proposed_product_type": "gach-trang-tri",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5485,
+      "sku": "GACH-612ROMA612",
+      "name": "Gạch 612ROMA612",
+      "subcategory_id": 26,
+      "subcategory_slug": "gach-trang-tri",
+      "current_product_type": null,
+      "proposed_product_type": "gach-trang-tri",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5486,
+      "sku": "GACH-612TROP612",
+      "name": "Gạch 612TROP612",
+      "subcategory_id": 26,
+      "subcategory_slug": "gach-trang-tri",
+      "current_product_type": null,
+      "proposed_product_type": "gach-trang-tri",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5487,
+      "sku": "GACH-612XILEMA612",
+      "name": "Gạch 612XILEMA612",
+      "subcategory_id": 26,
+      "subcategory_slug": "gach-trang-tri",
+      "current_product_type": null,
+      "proposed_product_type": "gach-trang-tri",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5398,
+      "sku": "GACH-120278EKPF",
+      "name": "Gạch 120278EKPF",
+      "subcategory_id": 22,
+      "subcategory_slug": "gach-van-da-marble",
+      "current_product_type": null,
+      "proposed_product_type": "gach-van-da-marble",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5381,
+      "sku": "GACH-120278EN7Y",
+      "name": "Gạch 120278EN7Y",
+      "subcategory_id": 22,
+      "subcategory_slug": "gach-van-da-marble",
+      "current_product_type": null,
+      "proposed_product_type": "gach-van-da-marble",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5382,
+      "sku": "GACH-120278EN7Z",
+      "name": "Gạch 120278EN7Z",
+      "subcategory_id": 22,
+      "subcategory_slug": "gach-van-da-marble",
+      "current_product_type": null,
+      "proposed_product_type": "gach-van-da-marble",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5385,
+      "sku": "GACH-120278MACABLLP",
+      "name": "Gạch 120278MACABLLP",
+      "subcategory_id": 22,
+      "subcategory_slug": "gach-van-da-marble",
+      "current_product_type": null,
+      "proposed_product_type": "gach-van-da-marble",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5383,
+      "sku": "GACH-120278MADSOLP",
+      "name": "Gạch 120278MADSOLP",
+      "subcategory_id": 22,
+      "subcategory_slug": "gach-van-da-marble",
+      "current_product_type": null,
+      "proposed_product_type": "gach-van-da-marble",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5377,
+      "sku": "GACH-120278ON02",
+      "name": "Gạch 120278ON02",
+      "subcategory_id": 22,
+      "subcategory_slug": "gach-van-da-marble",
+      "current_product_type": null,
+      "proposed_product_type": "gach-van-da-marble",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5376,
+      "sku": "GACH-120278ON04",
+      "name": "Gạch 120278ON04",
+      "subcategory_id": 22,
+      "subcategory_slug": "gach-van-da-marble",
+      "current_product_type": null,
+      "proposed_product_type": "gach-van-da-marble",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5378,
+      "sku": "GACH-120278ON05",
+      "name": "Gạch 120278ON05",
+      "subcategory_id": 22,
+      "subcategory_slug": "gach-van-da-marble",
+      "current_product_type": null,
+      "proposed_product_type": "gach-van-da-marble",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5375,
+      "sku": "GACH-120278ON05A",
+      "name": "Gạch 120278ON05A",
+      "subcategory_id": 22,
+      "subcategory_slug": "gach-van-da-marble",
+      "current_product_type": null,
+      "proposed_product_type": "gach-van-da-marble",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5374,
+      "sku": "GACH-120278ON05B",
+      "name": "Gạch 120278ON05B",
+      "subcategory_id": 22,
+      "subcategory_slug": "gach-van-da-marble",
+      "current_product_type": null,
+      "proposed_product_type": "gach-van-da-marble",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5396,
+      "sku": "GACH-120ASMAPUL",
+      "name": "Gạch 120ASMAPUL",
+      "subcategory_id": 22,
+      "subcategory_slug": "gach-van-da-marble",
+      "current_product_type": null,
+      "proposed_product_type": "gach-van-da-marble",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5394,
+      "sku": "GACH-120ASPEPUL",
+      "name": "Gạch 120ASPEPUL",
+      "subcategory_id": 22,
+      "subcategory_slug": "gach-van-da-marble",
+      "current_product_type": null,
+      "proposed_product_type": "gach-van-da-marble",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5397,
+      "sku": "GACH-120ELDM",
+      "name": "Gạch 120ELDM",
+      "subcategory_id": 22,
+      "subcategory_slug": "gach-van-da-marble",
+      "current_product_type": null,
+      "proposed_product_type": "gach-van-da-marble",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5399,
+      "sku": "GACH-612EKTM",
+      "name": "Gạch 612EKTM",
+      "subcategory_id": 22,
+      "subcategory_slug": "gach-van-da-marble",
+      "current_product_type": null,
+      "proposed_product_type": "gach-van-da-marble",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5380,
+      "sku": "GACH-612EN88",
+      "name": "Gạch 612EN88",
+      "subcategory_id": 22,
+      "subcategory_slug": "gach-van-da-marble",
+      "current_product_type": null,
+      "proposed_product_type": "gach-van-da-marble",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5379,
+      "sku": "GACH-612EN8A",
+      "name": "Gạch 612EN8A",
+      "subcategory_id": 22,
+      "subcategory_slug": "gach-van-da-marble",
+      "current_product_type": null,
+      "proposed_product_type": "gach-van-da-marble",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5386,
+      "sku": "GACH-612MACABLLP",
+      "name": "Gạch 612MACABLLP",
+      "subcategory_id": 22,
+      "subcategory_slug": "gach-van-da-marble",
+      "current_product_type": null,
+      "proposed_product_type": "gach-van-da-marble",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5384,
+      "sku": "GACH-612MADSOLP",
+      "name": "Gạch 612MADSOLP",
+      "subcategory_id": 22,
+      "subcategory_slug": "gach-van-da-marble",
+      "current_product_type": null,
+      "proposed_product_type": "gach-van-da-marble",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5388,
+      "sku": "GACH-612MXCAAPHA",
+      "name": "Gạch 612MXCAAPHA",
+      "subcategory_id": 22,
+      "subcategory_slug": "gach-van-da-marble",
+      "current_product_type": null,
+      "proposed_product_type": "gach-van-da-marble",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5389,
+      "sku": "GACH-75150MXFIBOLP",
+      "name": "Gạch 75150MXFIBOLP",
+      "subcategory_id": 22,
+      "subcategory_slug": "gach-van-da-marble",
+      "current_product_type": null,
+      "proposed_product_type": "gach-van-da-marble",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5387,
+      "sku": "GACH-75150MXFIBOSK",
+      "name": "Gạch 75150MXFIBOSK",
+      "subcategory_id": 22,
+      "subcategory_slug": "gach-van-da-marble",
+      "current_product_type": null,
+      "proposed_product_type": "gach-van-da-marble",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5395,
+      "sku": "GACH-90ASPEPUL",
+      "name": "Gạch 90ASPEPUL",
+      "subcategory_id": 22,
+      "subcategory_slug": "gach-van-da-marble",
+      "current_product_type": null,
+      "proposed_product_type": "gach-van-da-marble",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5392,
+      "sku": "GACH-90ONBE",
+      "name": "Gạch 90ONBE",
+      "subcategory_id": 22,
+      "subcategory_slug": "gach-van-da-marble",
+      "current_product_type": null,
+      "proposed_product_type": "gach-van-da-marble",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5390,
+      "sku": "GACH-90ONBENP",
+      "name": "Gạch 90ONBENP",
+      "subcategory_id": 22,
+      "subcategory_slug": "gach-van-da-marble",
+      "current_product_type": null,
+      "proposed_product_type": "gach-van-da-marble",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5391,
+      "sku": "GACH-90ONBLNP",
+      "name": "Gạch 90ONBLNP",
+      "subcategory_id": 22,
+      "subcategory_slug": "gach-van-da-marble",
+      "current_product_type": null,
+      "proposed_product_type": "gach-van-da-marble",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5393,
+      "sku": "GACH-918INIVKRY",
+      "name": "Gạch 918INIVKRY",
+      "subcategory_id": 22,
+      "subcategory_slug": "gach-van-da-marble",
+      "current_product_type": null,
+      "proposed_product_type": "gach-van-da-marble",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5413,
+      "sku": "GACH-120EN1W",
+      "name": "Gạch 120EN1W",
+      "subcategory_id": 23,
+      "subcategory_slug": "gach-van-da-tu-nhien",
+      "current_product_type": null,
+      "proposed_product_type": "gach-van-da-tu-nhien",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5410,
+      "sku": "GACH-120EN1X",
+      "name": "Gạch 120EN1X",
+      "subcategory_id": 23,
+      "subcategory_slug": "gach-van-da-tu-nhien",
+      "current_product_type": null,
+      "proposed_product_type": "gach-van-da-tu-nhien",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5409,
+      "sku": "GACH-4590VAAL",
+      "name": "Gạch 4590VAAL",
+      "subcategory_id": 23,
+      "subcategory_slug": "gach-van-da-tu-nhien",
+      "current_product_type": null,
+      "proposed_product_type": "gach-van-da-tu-nhien",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5408,
+      "sku": "GACH-4590VABL",
+      "name": "Gạch 4590VABL",
+      "subcategory_id": 23,
+      "subcategory_slug": "gach-van-da-tu-nhien",
+      "current_product_type": null,
+      "proposed_product_type": "gach-van-da-tu-nhien",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5407,
+      "sku": "GACH-4590VAGR",
+      "name": "Gạch 4590VAGR",
+      "subcategory_id": 23,
+      "subcategory_slug": "gach-van-da-tu-nhien",
+      "current_product_type": null,
+      "proposed_product_type": "gach-van-da-tu-nhien",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5406,
+      "sku": "GACH-4590VAMA",
+      "name": "Gạch 4590VAMA",
+      "subcategory_id": 23,
+      "subcategory_slug": "gach-van-da-tu-nhien",
+      "current_product_type": null,
+      "proposed_product_type": "gach-van-da-tu-nhien",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5402,
+      "sku": "GACH-60MT02",
+      "name": "Gạch 60MT02",
+      "subcategory_id": 23,
+      "subcategory_slug": "gach-van-da-tu-nhien",
+      "current_product_type": null,
+      "proposed_product_type": "gach-van-da-tu-nhien",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5401,
+      "sku": "GACH-60MT04",
+      "name": "Gạch 60MT04",
+      "subcategory_id": 23,
+      "subcategory_slug": "gach-van-da-tu-nhien",
+      "current_product_type": null,
+      "proposed_product_type": "gach-van-da-tu-nhien",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5400,
+      "sku": "GACH-60MT06",
+      "name": "Gạch 60MT06",
+      "subcategory_id": 23,
+      "subcategory_slug": "gach-van-da-tu-nhien",
+      "current_product_type": null,
+      "proposed_product_type": "gach-van-da-tu-nhien",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5420,
+      "sku": "GACH-612INBENA",
+      "name": "Gạch 612INBENA",
+      "subcategory_id": 23,
+      "subcategory_slug": "gach-van-da-tu-nhien",
+      "current_product_type": null,
+      "proposed_product_type": "gach-van-da-tu-nhien",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5419,
+      "sku": "GACH-612INPENA",
+      "name": "Gạch 612INPENA",
+      "subcategory_id": 23,
+      "subcategory_slug": "gach-van-da-tu-nhien",
+      "current_product_type": null,
+      "proposed_product_type": "gach-van-da-tu-nhien",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5405,
+      "sku": "GACH-612MT02",
+      "name": "Gạch 612MT02",
+      "subcategory_id": 23,
+      "subcategory_slug": "gach-van-da-tu-nhien",
+      "current_product_type": null,
+      "proposed_product_type": "gach-van-da-tu-nhien",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5404,
+      "sku": "GACH-612MT04",
+      "name": "Gạch 612MT04",
+      "subcategory_id": 23,
+      "subcategory_slug": "gach-van-da-tu-nhien",
+      "current_product_type": null,
+      "proposed_product_type": "gach-van-da-tu-nhien",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5403,
+      "sku": "GACH-612MT06",
+      "name": "Gạch 612MT06",
+      "subcategory_id": 23,
+      "subcategory_slug": "gach-van-da-tu-nhien",
+      "current_product_type": null,
+      "proposed_product_type": "gach-van-da-tu-nhien",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5416,
+      "sku": "GACH-65PRL60N",
+      "name": "Gạch 65PRL60N",
+      "subcategory_id": 23,
+      "subcategory_slug": "gach-van-da-tu-nhien",
+      "current_product_type": null,
+      "proposed_product_type": "gach-van-da-tu-nhien",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5417,
+      "sku": "GACH-65PRL60W",
+      "name": "Gạch 65PRL60W",
+      "subcategory_id": 23,
+      "subcategory_slug": "gach-van-da-tu-nhien",
+      "current_product_type": null,
+      "proposed_product_type": "gach-van-da-tu-nhien",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5418,
+      "sku": "GACH-90INCRLP",
+      "name": "Gạch 90INCRLP",
+      "subcategory_id": 23,
+      "subcategory_slug": "gach-van-da-tu-nhien",
+      "current_product_type": null,
+      "proposed_product_type": "gach-van-da-tu-nhien",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5411,
+      "sku": "GACH-918EN20",
+      "name": "Gạch 918EN20",
+      "subcategory_id": 23,
+      "subcategory_slug": "gach-van-da-tu-nhien",
+      "current_product_type": null,
+      "proposed_product_type": "gach-van-da-tu-nhien",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5414,
+      "sku": "GACH-918EN21",
+      "name": "Gạch 918EN21",
+      "subcategory_id": 23,
+      "subcategory_slug": "gach-van-da-tu-nhien",
+      "current_product_type": null,
+      "proposed_product_type": "gach-van-da-tu-nhien",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5415,
+      "sku": "GACH-918EN3Z",
+      "name": "Gạch 918EN3Z",
+      "subcategory_id": 23,
+      "subcategory_slug": "gach-van-da-tu-nhien",
+      "current_product_type": null,
+      "proposed_product_type": "gach-van-da-tu-nhien",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5412,
+      "sku": "GACH-918EN40",
+      "name": "Gạch 918EN40",
+      "subcategory_id": 23,
+      "subcategory_slug": "gach-van-da-tu-nhien",
+      "current_product_type": null,
+      "proposed_product_type": "gach-van-da-tu-nhien",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5422,
+      "sku": "GACH-918ST89660N",
+      "name": "Gạch 918ST89660N",
+      "subcategory_id": 23,
+      "subcategory_slug": "gach-van-da-tu-nhien",
+      "current_product_type": null,
+      "proposed_product_type": "gach-van-da-tu-nhien",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5421,
+      "sku": "GACH-918ST89662N",
+      "name": "Gạch 918ST89662N",
+      "subcategory_id": 23,
+      "subcategory_slug": "gach-van-da-tu-nhien",
+      "current_product_type": null,
+      "proposed_product_type": "gach-van-da-tu-nhien",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5427,
+      "sku": "GACH-1154EKP9",
+      "name": "Gạch 1154EKP9",
+      "subcategory_id": 24,
+      "subcategory_slug": "gach-van-go",
+      "current_product_type": null,
+      "proposed_product_type": "gach-van-go",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5425,
+      "sku": "GACH-1154EKPA",
+      "name": "Gạch 1154EKPA",
+      "subcategory_id": 24,
+      "subcategory_slug": "gach-van-go",
+      "current_product_type": null,
+      "proposed_product_type": "gach-van-go",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5426,
+      "sku": "GACH-1154EKPC",
+      "name": "Gạch 1154EKPC",
+      "subcategory_id": 24,
+      "subcategory_slug": "gach-van-go",
+      "current_product_type": null,
+      "proposed_product_type": "gach-van-go",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5424,
+      "sku": "GACH-1154EKPD",
+      "name": "Gạch 1154EKPD",
+      "subcategory_id": 24,
+      "subcategory_slug": "gach-van-go",
+      "current_product_type": null,
+      "proposed_product_type": "gach-van-go",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5428,
+      "sku": "GACH-212EGN8",
+      "name": "Gạch 212EGN8",
+      "subcategory_id": 24,
+      "subcategory_slug": "gach-van-go",
+      "current_product_type": null,
+      "proposed_product_type": "gach-van-go",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5429,
+      "sku": "GACH-212EGN9",
+      "name": "Gạch 212EGN9",
+      "subcategory_id": 24,
+      "subcategory_slug": "gach-van-go",
+      "current_product_type": null,
+      "proposed_product_type": "gach-van-go",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5423,
+      "sku": "GACH-212EKN8",
+      "name": "Gạch 212EKN8",
+      "subcategory_id": 24,
+      "subcategory_slug": "gach-van-go",
+      "current_product_type": null,
+      "proposed_product_type": "gach-van-go",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5430,
+      "sku": "GACH-212HEEN",
+      "name": "Gạch 212HEEN",
+      "subcategory_id": 24,
+      "subcategory_slug": "gach-van-go",
+      "current_product_type": null,
+      "proposed_product_type": "gach-van-go",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5434,
+      "sku": "GACH-212KANO",
+      "name": "Gạch 212KANO",
+      "subcategory_id": 24,
+      "subcategory_slug": "gach-van-go",
+      "current_product_type": null,
+      "proposed_product_type": "gach-van-go",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5432,
+      "sku": "GACH-212MF7D",
+      "name": "Gạch 212MF7D",
+      "subcategory_id": 24,
+      "subcategory_slug": "gach-van-go",
+      "current_product_type": null,
+      "proposed_product_type": "gach-van-go",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5431,
+      "sku": "GACH-212MF7F",
+      "name": "Gạch 212MF7F",
+      "subcategory_id": 24,
+      "subcategory_slug": "gach-van-go",
+      "current_product_type": null,
+      "proposed_product_type": "gach-van-go",
+      "heuristic_reason": "subcategory-direct-map"
+    },
+    {
+      "product_id": 5433,
+      "sku": "GACH-212MF7G",
+      "name": "Gạch 212MF7G",
+      "subcategory_id": 24,
+      "subcategory_slug": "gach-van-go",
+      "current_product_type": null,
+      "proposed_product_type": "gach-van-go",
+      "heuristic_reason": "subcategory-direct-map"
+    }
+  ]
+}

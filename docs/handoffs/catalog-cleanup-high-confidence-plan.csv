@@ -1,0 +1,278 @@
+lane,product_id,sku,name,subcategory_slug,current_product_type,proposed_product_type,taxon_id,proposed_primary_taxon_slug,proposed_primary_taxon_path
+vat-lieu-nuoc,5348,BNDTl1000D,Bồn nước inox Đại Thành 1000L đứng SUS 304 BNDTl1000D,bon-chua-nuoc,,bon-chua-nuoc,,,
+vat-lieu-nuoc,5349,BNDTl1000N,Bồn nước inox Đại Thành 1000L ngang SUS 304 BNDTl1000N,bon-chua-nuoc,,bon-chua-nuoc,,,
+vat-lieu-nuoc,5350,BNDTl1500N,Bồn nước inox Đại Thành 1500L ngang SUS 304 BNDTl1500N,bon-chua-nuoc,,bon-chua-nuoc,,,
+vat-lieu-nuoc,5351,BNDTl1500D,Bồn nước inox Đại Thành 1500L đứng SUS 304 BNDTl1500D,bon-chua-nuoc,,bon-chua-nuoc,,,
+vat-lieu-nuoc,5352,BNDTl2000N,Bồn nước inox Đại Thành 2000L ngang SUS 304 BNDTl2000N,bon-chua-nuoc,,bon-chua-nuoc,,,
+vat-lieu-nuoc,5353,BNDTl2000D,Bồn nước inox Đại Thành 2000L đứng SUS 304 BNDTl2000D,bon-chua-nuoc,,bon-chua-nuoc,,,
+vat-lieu-nuoc,5354,BNDTl2500N,Bồn nước inox Đại Thành 2500L ngang SUS 304 BNDTl2500N,bon-chua-nuoc,,bon-chua-nuoc,,,
+vat-lieu-nuoc,5355,BNDTl2500D,Bồn nước inox Đại Thành 2500L đứng SUS 304 BNDTl2500D,bon-chua-nuoc,,bon-chua-nuoc,,,
+vat-lieu-nuoc,5356,BNDTl3000N,Bồn nước inox Đại Thành 3000L ngang SUS 304 BNDTl3000N,bon-chua-nuoc,,bon-chua-nuoc,,,
+vat-lieu-nuoc,5357,BNDTl3000D,Bồn nước inox Đại Thành 3000L đứng SUS 304 BNDTl3000D,bon-chua-nuoc,,bon-chua-nuoc,,,
+vat-lieu-nuoc,5358,BNDTl4000N,Bồn nước inox Đại Thành 4000L ngang SUS 304 BNDTl4000N,bon-chua-nuoc,,bon-chua-nuoc,,,
+vat-lieu-nuoc,5359,BNDTl4500N,Bồn nước inox Đại Thành 4500L ngang SUS 304 BNDTl4500N,bon-chua-nuoc,,bon-chua-nuoc,,,
+vat-lieu-nuoc,5360,BNDTl4000D,Bồn nước inox Đại Thành 4000L đứng SUS 304 BNDTl4000D,bon-chua-nuoc,,bon-chua-nuoc,,,
+vat-lieu-nuoc,5361,BNDTl4500D,Bồn nước inox Đại Thành 4500L đứng SUS 304 BNDTl4500D,bon-chua-nuoc,,bon-chua-nuoc,,,
+vat-lieu-nuoc,5362,BNDTl5000N,Bồn nước inox Đại Thành 5000L ngang SUS 304 BNDTl5000N,bon-chua-nuoc,,bon-chua-nuoc,,,
+vat-lieu-nuoc,5363,BNDTl5000D,Bồn nước inox Đại Thành 5000L đứng SUS 304 BNDTl5000D,bon-chua-nuoc,,bon-chua-nuoc,,,
+vat-lieu-nuoc,5364,BNDTl500N,Bồn nước inox Đại Thành 500L ngang SUS 304 BNDTl500N,bon-chua-nuoc,,bon-chua-nuoc,,,
+vat-lieu-nuoc,5365,BNDTl500D,Bồn nước inox Đại Thành 500L đứng SUS 304 BNDTl500D,bon-chua-nuoc,,bon-chua-nuoc,,,
+vat-lieu-nuoc,5366,BNDTl6000N,Bồn nước inox Đại Thành 6000L ngang SUS 304 BNDTl6000N,bon-chua-nuoc,,bon-chua-nuoc,,,
+vat-lieu-nuoc,5367,BNDTl6000D,Bồn nước inox Đại Thành 6000L đứng SUS 304 BNDTl6000D,bon-chua-nuoc,,bon-chua-nuoc,,,
+vat-lieu-nuoc,422,KAQ-U99,Máy lọc nước Karofi KAQ-U99,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,423,KTF-P01,Lọc tổng trung tâm cao cấp Karofi KTF-P01,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,424,KTF-P02,Lọc tổng trung tâm cao cấp Karofi KTF-P02,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,425,KTF-222C,Máy lọc tổng đầu nguồn Karofi KTF-222C,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,426,KTF-552,Máy lọc tổng đầu nguồn Karofi KTF-552,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,427,WHF-E666,Lọc tổng trung tâm cao cấp Karofi WHF-E666,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,428,SA9 PREMIUM,Máy lọc nước Karofi SA9 PREMIUM nóng lạnh Hydro-ion kiềm,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,429,DA9 PREMIUM,Máy lọc nước Karofi DA9 PREMIUM Hydro-ion kiềm,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,430,KMF-68,Lọc tổng trung tâm cao cấp Karofi KMF-68,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,431,KST-79,Lọc tổng trung tâm cao cấp Karofi KST-79,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,432,KTF-332C,Máy lọc tổng đầu nguồn Karofi KTF-332C,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,433,KTF-332I,Máy lọc tổng đầu nguồn Karofi KTF-332I,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,434,KTF-333C,Máy lọc tổng đầu nguồn Karofi KTF-333C,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,435,KTF-333I,Máy lọc tổng đầu nguồn Karofi KTF-333I,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,436,KTF-552 ECO,Máy lọc tổng đầu nguồn Karofi KTF-552 ECO,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,437,KTF-662,Máy lọc tổng đầu nguồn Karofi KTF-662,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,438,KTF-888,Lọc tổng trung tâm cao cấp Karofi KTF-888,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,439,WHF-E666 PLUS,Lọc tổng trung tâm Karofi WHF-E666 PLUS cao cấp,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,440,EF401,Máy lọc nước lắp tại vòi Mitsubishi Cleansui EF401,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,441,EF201,Máy lọc nước lắp tại vòi Mitsubishi Cleansui EF201,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,461,EF102,Đầu lọc nước tại vòi Mitsubishi Cleansui EF102,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,462,ES301-WT,Thiết bị lọc nước Mitsubishi Cleansui ES301-WT/BK vòi sen tắm,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,463,ES101,Thiết bị lọc nước Mitsubishi Cleansui ES101 vòi sen tắm,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,464,ES201W,Thiết bị lọc nước Mitsubishi Cleansui ES201W vòi sen tắm,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,465,MP02-4,Thiết bị lọc nước Mitsubishi Cleansui MP02-4 công nghiệp,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,466,MP02-3,Thiết bị lọc nước Mitsubishi Cleansui MP02-3 công nghiệp,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,467,ET101,Thiết bị lọc nước Mitsubishi Cleansui ET101 trên bồn rửa,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,468,EU202,Thiết bị lọc nước Mitsubishi Cleansui EU202 âm tủ bếp,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,469,EU201,Thiết bị lọc nước Mitsubishi Cleansui EU201 dưới bồn rửa,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,470,EU301,Thiết bị lọc nước Mitsubishi Cleansui EU301 ion kiềm,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,471,EUC2000,Bộ lọc thay thế Mitsubishi Cleansui EUC2000/UZC2000E dành cho EU301,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,472,ESC21W,Bộ lõi lọc Mitsubishi Cleansui ESC21W dành cho ES201W,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,473,MPOE-S,Hệ thống lọc tổng Mitsubishi Cleansui MPOE-S,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,474,MPOE-P,Hệ thống lọc tổng Cleansui MPOE-P điều khiển cảm ứng,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,475,EJ101,Bình lọc nước cầm tay Mitsubishi Cleansui EJ101 0.9 lít/1.35 lít,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,476,EJ102,Bình lọc nước cầm tay Mitsubishi Cleansui EJ102 1 lít/1.5 lít,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,477,EJ103,Bình nước lọc cầm tay Mitsubishi Cleansui EJ103 1.5 lít/2.2 lít,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,478,ET201,Thiết bị lọc nước Cleansui ET201 lắp trên bồn rửa vỏ thép không gỉ,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,479,P-6320R,Máy lọc nước Coway Cinnamon P-6320R,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,480,CHP-18AR,Máy lọc nước Coway Villaem 2 CHP-18AR,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,481,P-300R,Máy lọc nước Coway Joey P-300R,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,482,CHP-260L,Máy lọc nước Coway Neo CHP-260L,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,483,P-300L,Máy lọc nước Coway Finn P-300L không dùng điện,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,484,CHP-590R,Máy lọc nước Coway Harry CHP-590R,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,485,CHP-671R,Máy lọc nước Coway Core CHP-671R nóng lạnh,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,486,CHP-264L,Máy lọc nước Neo Plus Coway CHP-264L,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,487,ADD8980,Máy lọc nước RO 3 chế độ nước bộ lọc khoáng 4 trong 1 Philips ADD8980,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,488,ADD6910,Máy lọc nước RO lõi lọc 5 thành phần và khử trùng UV Philips ADD6910,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,489,AUT2015,Máy lọc nước RO để gầm Philips AUT2015/3015,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,490,ADD8970/74,Máy lọc nước RO 6 lõi lọc Philips ADD8970/74,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,491,ADD8976,Máy lọc nước RO 9 lõi lọc Philips ADD8976,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,492,AWP3753/98,Bộ lọc nước tại vòi Philips AWP3753/98,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,493,AWP1775WH/74,Bộ lọc nước vòi sen Philips AWP1775WH/74,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,494,AWP2712RDR/97,Bình nước cầm tay  Bottle GoZero Philips AWP2712,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,495,AWP2788GN/74,Bình giữ nhiệt diệt khuẩn UV Smart Philips AWP2788,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,5321,MPOE-S4,Hệ thống lọc tổng Mitsubishi Cleansui MPOE-S4 4 bộ lọc,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,5322,KTF-662-AIO,Máy lọc tổng đầu nguồn Karofi KTF-662-AIO,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,5323,ULTIMA-WHITE,Máy Lọc Nước Unilever Pureit Ultima 7 Cấp Lọc,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,5324,Lavita,Máy Lọc Nước Unilever Pureit LAVITA Lọc  Sạch & Làm Nóng Thông Minh (công suất lọc 4000L),loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,5325,DELICA UR5640,Máy Lọc Nước Âm Tủ Bếp Unilever Pureit DELICA UR5640 (công suất lọc 14000L),loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,5326,CASA-GKK,Bộ lọc diệt khuẩn cho máy CASA Unilever Pureit CASA-GKK,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,5327,Ultima-GKK1,Bộ lọc thay thế cho máy Ultima Unilever Pureit,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,5328,LAVITA-CTO,Bộ lọc thay thế cho máy LAVITA Unilever Pureit,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,5329,DELICA-CTO,Bộ lọc thay thế cho máy DELICA UR5640 Unilever Pureit,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,5330,DELICA UR5840,Máy Lọc Nước Âm Tủ Bếp Unilever Pureit DELICA UR5840 (công suất lọc 18000L),loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,5331,DELICA UR5440,Máy Lọc Nước Âm Tủ Bếp Unilever Pureit DELICA UR5440 (công suất lọc 11000L),loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,5332,TANKA UR3140,Máy Lọc Nước Âm Tủ Bếp Pure It TANKA UR3140 (công suất lọc 5000L),loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,5333,EXCELLA-GKK,Gói thiết bị diệt khuẩn công suất 3000L Unilever Pureit EXCELLA-GKK,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,5334,DELICA-UR5440-CTO,Bộ lọc thay thế cho máy DELICA UR5440 Unilever Pureit,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,5335,TANKA-UR3140-PCM,Bộ lọc thay thế cho máy TANKA UR3140 Unilever Pureit,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,5336,DELICA-UR5840-CTO,Bộ lọc thay thế cho máy DELICA UR5840 Unilever Pureit,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,5337,SA8 PREMIUM,Máy lọc nước Karofi SA8 PREMIUM nóng lạnh Hydro-ion kiềm,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,5338,DA8 PREMIUM,Máy lọc nước Karofi DA8 PREMIUM Hydro-ion kiềm,loc-nuoc,,loc-nuoc,,,
+vat-lieu-nuoc,442,GP-10HCN1SVN,Máy bơm ly tâm 740W-1480W Panasonic GP-10HCN1SVN / GP-15HCN1SVN /  GP-20HCN1SVN,may-bom-nuoc,,may-bom-nuoc,,,
+vat-lieu-nuoc,443,A-130JAK,Máy bơm Panasonic tăng áp 125W A-130JAK,may-bom-nuoc,,may-bom-nuoc,,,
+vat-lieu-nuoc,444,A-200JAK,Máy bơm Panasonic tăng áp 200W A-200JAK,may-bom-nuoc,,may-bom-nuoc,,,
+vat-lieu-nuoc,445,GA-125FAK,Máy bơm Panasonic tăng áp 125W GA-125FAK,may-bom-nuoc,,may-bom-nuoc,,,
+vat-lieu-nuoc,446,A-130JTX,Máy bơm Panasonic tăng áp 125W tạo bọt khí A-130JTX,may-bom-nuoc,,may-bom-nuoc,,,
+vat-lieu-nuoc,447,A-130JACK,Máy bơm Panasonic tăng áp 125W A-130JACK,may-bom-nuoc,,may-bom-nuoc,,,
+vat-lieu-nuoc,448,GP-129JXK-SV5,Máy bơm Panasonic đẩy cao 125W GP-129JXK-SV5 / GP-129JXK-NV5,may-bom-nuoc,,may-bom-nuoc,,,
+vat-lieu-nuoc,449,GP-200JXK-SV5,Máy bơm Panasonic đẩy cao 200W GP-200JXK-SV5 / GP-200JXK-NV5,may-bom-nuoc,,may-bom-nuoc,,,
+vat-lieu-nuoc,450,GP-250JXK-SV5,Máy bơm Panasonic đẩy cao 250W GP-250JXK-SV5 / GP-250JXK-NV5,may-bom-nuoc,,may-bom-nuoc,,,
+vat-lieu-nuoc,451,NJET750,Máy bơm đầu JET 750W Nanoco NJET750,may-bom-nuoc,,may-bom-nuoc,,,
+vat-lieu-nuoc,452,NCP750,Máy bơm ly tâm 750W Nanoco NCP750,may-bom-nuoc,,may-bom-nuoc,,,
+vat-lieu-nuoc,453,NHF1500,Máy bơm lưu lượng 750W Nanoco NHF750 NHF1500,may-bom-nuoc,,may-bom-nuoc,,,
+vat-lieu-nuoc,454,NSP128,Máy bơm nước đẩy cao Nanoco NSP128,may-bom-nuoc,,may-bom-nuoc,,,
+vat-lieu-nuoc,455,NDK1100,Máy bơm lưu lượng Nanoco NDK1100 / NDK1500,may-bom-nuoc,,may-bom-nuoc,,,
+vat-lieu-nuoc,456,NCPS128-A,Máy bơm nước nóng tăng áp điện tử Nanoco NCPS128-A / NCPS200-A / NCPS300-A / NCPS400-A,may-bom-nuoc,,may-bom-nuoc,,,
+vat-lieu-nuoc,457,GA-200FAH,Máy bơm Panasonic tăng áp 200W GA-200FAH,may-bom-nuoc,,may-bom-nuoc,,,
+vat-lieu-nuoc,458,NCLP550,Máy bơm nước đẩy cao Nanoco NCLP750 / NCLP550,may-bom-nuoc,,may-bom-nuoc,,,
+vat-lieu-nuoc,459,NCPS250-AT,Máy bơm nước nóng lạnh tăng áp điện tử Nanoco NCPS250-AT / NCPS750-AT / NCPS550-AT / NCPS370-AT,may-bom-nuoc,,may-bom-nuoc,,,
+vat-lieu-nuoc,460,NIP400,Máy bơm nước tăng áp biến tần Nanoco NIP400 / NIP600,may-bom-nuoc,,may-bom-nuoc,,,
+gach-op-lat,39435,ECP-25NET-LUX-13,Gạch nội thất ECOCARAT PLUS LUXURY MOSAIC INAX ECP-25NET/LUX,gach-inax-ecocarat,,,35,gach-inax-ecocarat,gach-op-lat/gach-inax-ecocarat
+gach-op-lat,39437,ECP-60NET/PMK12,Gạch nội thất ECOCARAT PLUS PEARL MASK INAX ECP-60NET/PMK,gach-inax-ecocarat,,,35,gach-inax-ecocarat,gach-op-lat/gach-inax-ecocarat
+gach-op-lat,39438,ECP-375/RTZ3N,Gạch nội thất ECOCARAT PLUS ROUGH QUARTZ INAX ECP-375/RTZ,gach-inax-ecocarat,,,35,gach-inax-ecocarat,gach-op-lat/gach-inax-ecocarat
+gach-op-lat,39439,ECP-375/RTZ2N,Gạch nội thất ECOCARAT PLUS ROUGH QUARTZ INAX ECP-375/RTZ,gach-inax-ecocarat,,,35,gach-inax-ecocarat,gach-op-lat/gach-inax-ecocarat
+gach-op-lat,39440,ECP-303/RBM3N,Gạch nội thất ECOCARAT PLUS RIBMIX INAX ECP-303/RBM,gach-inax-ecocarat,,,35,gach-inax-ecocarat,gach-op-lat/gach-inax-ecocarat
+gach-op-lat,39441,ECP-630/STG-4N,Gạch nội thất ECOCARAT PLUS STONE GRACE INAX ECP-630/STG,gach-inax-ecocarat,,,35,gach-inax-ecocarat,gach-op-lat/gach-inax-ecocarat
+gach-op-lat,39442,ECP-275NET/RGS3,Gạch nội thất ECOCARAT PLUS ROUGHSAWN INAX ECP-275/RGS,gach-inax-ecocarat,,,35,gach-inax-ecocarat,gach-op-lat/gach-inax-ecocarat
+gach-op-lat,39443,ECP-275NET/RGS2,Gạch nội thất ECOCARAT PLUS ROUGHSAWN INAX ECP-275/RGS,gach-inax-ecocarat,,,35,gach-inax-ecocarat,gach-op-lat/gach-inax-ecocarat
+gach-op-lat,39444,ECO-30NET/WE3NN,Gạch nội thất ECOCARAT PLUS VELE INAX ECP-30NET/WE,gach-inax-ecocarat,,,35,gach-inax-ecocarat,gach-op-lat/gach-inax-ecocarat
+gach-op-lat,39434,INAX-1025/POL-G1/G2/G3,"Gạch hồ bơi INAX 22.5 x 22.5 1025/POL-B1,2,3:G1,2,3",gach-op-lat,,,31,gach-op-lat,gach-op-lat/gach-op-lat
+gach-op-lat,39436,INAX-97/POL-G1/G2/G3,"Gạch hồ bơi INAX 97 x 97 97/POL-B1,2,3: G1,2,3",gach-op-lat,,,31,gach-op-lat,gach-op-lat/gach-op-lat
+gach-op-lat,39445,INAX-1525/EAC-4,Gạch ốp tường 1525/EAC-EARTH COLOR BORDER INAX-1525/EAC,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39446,INAX-1525/EAC-3,Gạch ốp tường 1525/EAC-EARTH COLOR BORDER INAX-1525/EAC,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39447,INAX-1525/EAC-2,Gạch ốp tường 1525/EAC-EARTH COLOR BORDER INAX-1525/EAC,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39448,INAX-255/VIZ-10,Gạch ốp tường 255-VIZ INAX-255VIZ (INAX255VIZ),gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39449,INAX-255/VIZ-9,Gạch ốp tường 255-VIZ INAX-255VIZ (INAX255VIZ),gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39450,INAX-255/VIZ-8,Gạch ốp tường 255-VIZ INAX-255VIZ (INAX255VIZ),gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39451,INAX-255/VIZ-7,Gạch ốp tường 255-VIZ INAX-255VIZ (INAX255VIZ),gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39452,INAX-255/VIZ-6,Gạch ốp tường 255-VIZ INAX-255VIZ (INAX255VIZ),gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39453,INAX-255/VIZ-5,Gạch ốp tường 255-VIZ INAX-255VIZ (INAX255VIZ),gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39454,INAX-255/VIZ-4,Gạch ốp tường 255-VIZ INAX-255VIZ (INAX255VIZ),gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39455,INAX-255/VIZ-3,Gạch ốp tường 255-VIZ INAX-255VIZ (INAX255VIZ),gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39456,INAX-255/VIZ-2,Gạch ốp tường 255-VIZ INAX-255VIZ (INAX255VIZ),gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39457,INAX-355-VIZ-9N,Gạch ốp tường 355-VIZ INAX-355VIZ (INAX355VIZ),gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39458,INAX-355-VIZ-8N,Gạch ốp tường 355-VIZ INAX-355VIZ (INAX355VIZ),gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39459,INAX-355-VIZ-7N,Gạch ốp tường 355-VIZ INAX-355VIZ (INAX355VIZ),gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39460,INAX-355-VIZ-6N,Gạch ốp tường 355-VIZ INAX-355VIZ (INAX355VIZ),gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39461,INAX-355-VIZ-5N,Gạch ốp tường 355-VIZ INAX-355VIZ (INAX355VIZ),gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39462,INAX-355-VIZ-4N,Gạch ốp tường 355-VIZ INAX-355VIZ (INAX355VIZ),gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39463,INAX-355-VIZ-3N,Gạch ốp tường 355-VIZ INAX-355VIZ (INAX355VIZ),gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39464,INAX-355-VIZ-2N,Gạch ốp tường 355-VIZ INAX-355VIZ (INAX355VIZ),gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39465,INAX-355-VIZ-1N,Gạch ốp tường 355-VIZ INAX-355VIZ (INAX355VIZ),gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39466,INAX-355/EAC-4,Gạch ốp tường 355/EAC-EARTH COLOR BORDER INAX-355/EAC,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39467,INAX-355/EAC-3,Gạch ốp tường 355/EAC-EARTH COLOR BORDER INAX-355/EAC,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39468,INAX-355/EAC-2,Gạch ốp tường 355/EAC-EARTH COLOR BORDER INAX-355/EAC,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39469,INAX-20B/BB-3,Gạch ốp tường BB-BAMBOO BORDER INAX-20B/BB,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39470,INAX-20B/BB-2,Gạch ốp tường BB-BAMBOO BORDER INAX-20B/BB,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39471,HAL-155/CEF-2,Gạch ốp tường CELAVIO E INAX HAL-155/CEF,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39472,IM-1520P1/BL-2,Gạch ốp tường BL-BULLION BORDER INAX IM-1520P1/BL,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39473,INAX-40B/CK-6,Gạch ốp tường CHECKER INAX-40B/CK,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39474,INAX-40B/CK-3,Gạch ốp tường CHECKER INAX-40B/CK,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39475,HAL-35B/GRA-M4,Gạch ốp tường CELAVIOGRAN A INAX HAL-35B/GRA,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39476,HAL-35B/GRA-M3,Gạch ốp tường CELAVIOGRAN A INAX HAL-35B/GRA,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39477,HAL-35B/GRA-M2,Gạch ốp tường CELAVIOGRAN A INAX HAL-35B/GRA,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39478,355TT/CMG-4B,"Gạch ốp tường COOL MIST GLASS INAX-355TT,SD/CMG",gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39479,355TT/CMG-5B,"Gạch ốp tường COOL MIST GLASS INAX-355TT,SD/CMG",gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39480,355TT/CMG-3B,"Gạch ốp tường COOL MIST GLASS INAX-355TT,SD/CMG",gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39481,355TT/CMG-2M,"Gạch ốp tường COOL MIST GLASS INAX-355TT,SD/CMG",gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39482,355TT/CMG-2B,"Gạch ốp tường COOL MIST GLASS INAX-355TT,SD/CMG",gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39483,355TT/CMG-1M,"Gạch ốp tường COOL MIST GLASS INAX-355TT,SD/CMG",gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39484,355TT/CMG-1B,"Gạch ốp tường COOL MIST GLASS INAX-355TT,SD/CMG",gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39485,355SD/CMG-5B,"Gạch ốp tường COOL MIST GLASS INAX-355TT,SD/CMG",gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39486,355SD/CMG-3B,"Gạch ốp tường COOL MIST GLASS INAX-355TT,SD/CMG",gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39487,355SD/CMG-4B,"Gạch ốp tường COOL MIST GLASS INAX-355TT,SD/CMG",gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39488,355SD/CMG-2M,"Gạch ốp tường COOL MIST GLASS INAX-355TT,SD/CMG",gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39489,355SD/CMG-2B,"Gạch ốp tường COOL MIST GLASS INAX-355TT,SD/CMG",gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39490,355SD/CMG-1M,"Gạch ốp tường COOL MIST GLASS INAX-355TT,SD/CMG",gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39491,IM-50P1/DL-2,Gạch ốp tường DL-DELTA INAX IM-50P1/DL,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39492,INAX-255/DPL-108V,Gạch ốp tường DPL POINT COLOR INAX-255/DPL,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39493,INAX-255/DPL-107V,Gạch ốp tường DPL POINT COLOR INAX-255/DPL,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39494,INAX-255/DPL-106V,Gạch ốp tường DPL POINT COLOR INAX-255/DPL,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39495,INAX-255/DPL-104V,Gạch ốp tường DPL POINT COLOR INAX-255/DPL,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39496,INAX-255/DPL-103V,Gạch ốp tường DPL POINT COLOR INAX-255/DPL,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39497,INAX-255/DPL-102V,Gạch ốp tường DPL POINT COLOR INAX-255/DPL,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39498,INAX-355/GLM-3,Gạch ốp tường GLAZED MOSAIC INAX-355/GLM,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39499,INAX-355/GLM-2,Gạch ốp tường GLAZED MOSAIC INAX-355/GLM,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39500,INAX-325/FBM-3,Gạch ốp tường FISHBONE MOSAIC INAX-325/FBM,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39501,INAX-325/FBM-2,Gạch ốp tường FISHBONE MOSAIC INAX-325/FBM,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39502,HAL-20BR/HB-7,Gạch ốp tường HOSOWARI BORDER RANDOM INAX HAL-20BR/HB,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39503,HAL-20BR/HB-6,Gạch ốp tường HOSOWARI BORDER RANDOM INAX HAL-20BR/HB,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39504,HAL-20BR/HB-5,Gạch ốp tường HOSOWARI BORDER RANDOM INAX HAL-20BR/HB,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39505,HAL-20BR/HB-4,Gạch ốp tường HOSOWARI BORDER RANDOM INAX HAL-20BR/HB,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39506,HAL-20BR/HB-3,Gạch ốp tường HOSOWARI BORDER RANDOM INAX HAL-20BR/HB,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39507,HAL-20BR/HB-2,Gạch ốp tường HOSOWARI BORDER RANDOM INAX HAL-20BR/HB,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39508,HAL-20BN/HB-7,Gạch ốp tường HOSOWARI BORDER INAX HAL-20BN/HB,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39509,HAL-20BN/HB-6,Gạch ốp tường HOSOWARI BORDER INAX HAL-20BN/HB,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39510,HAL-20BN/HB-5,Gạch ốp tường HOSOWARI BORDER INAX HAL-20BN/HB,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39511,HAL-20BN/HB-4,Gạch ốp tường HOSOWARI BORDER INAX HAL-20BN/HB,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39512,HAL-20BN/HB-3,Gạch ốp tường HOSOWARI BORDER INAX HAL-20BN/HB,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39513,HAL-20BN/HB-2,Gạch ốp tường HOSOWARI BORDER INAX HAL-20BN/HB,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39514,INAX-40B/SLT-4,Gạch ốp tường I-Concept SLIT INAX-40B/SLT,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39515,INAX-40B/SLT-3,Gạch ốp tường I-Concept SLIT INAX-40B/SLT,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39516,INAX-20B/CRB-6,Gạch ốp tường I-Concept CERABORDER INAX-20B/CRB,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39517,INAX-20B/CRB-4,Gạch ốp tường I-Concept CERABORDER INAX-20B/CRB,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39518,INAX-20B/CRB-3,Gạch ốp tường I-Concept CERABORDER INAX-20B/CRB,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39519,INAX-20B/CRB-5,Gạch ốp tường I-Concept CERABORDER INAX-20B/CRB,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39520,INAX-20B/CRB-2,Gạch ốp tường I-Concept CERABORDER INAX-20B/CRB,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39521,INAX-3040B/TRP-4,Gạch ốp tường I-Concept TRAPE INAX-3040B/TRP,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39522,INAX-3040B/TRP-3,Gạch ốp tường I-Concept TRAPE INAX-3040B/TRP,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39523,INAX-3040B/TRP-2,Gạch ốp tường I-Concept TRAPE INAX-3040B/TRP,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39524,INAX-20B/STB-4,Gạch ốp tường I-Concept STRIPE BORDER INAX-20B/STB,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39525,INAX-20B/STB-3,Gạch ốp tường I-Concept STRIPE BORDER INAX-20B/STB,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39526,INAX-20B/STB-2,Gạch ốp tường I-Concept STRIPE BORDER INAX-20B/STB,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39527,INAX-2I/IMM-6,Gạch ốp tường Imperial Mosaic INAX-2I/IMM (INAX2IIMM),gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39528,INAX-2I/IMM-5,Gạch ốp tường Imperial Mosaic INAX-2I/IMM (INAX2IIMM),gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39529,INAX-2I/IMM-4,Gạch ốp tường Imperial Mosaic INAX-2I/IMM (INAX2IIMM),gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39530,INAX-2I/IMM-3,Gạch ốp tường Imperial Mosaic INAX-2I/IMM (INAX2IIMM),gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39531,INAX-2I/IMM-2,Gạch ốp tường Imperial Mosaic INAX-2I/IMM (INAX2IIMM),gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39532,INAX-255/WM-4,Gạch ốp tường I-Concept WAVY MOSAIC INAX-255/WM,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39533,INAX-255/WM-3,Gạch ốp tường I-Concept WAVY MOSAIC INAX-255/WM,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39534,INAX-255/WM-2,Gạch ốp tường I-Concept WAVY MOSAIC INAX-255/WM,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39535,INAX-300/LTC-14,Gạch ốp tường LATTICE INAX-300/LTC,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39536,INAX-300/LTC-13,Gạch ốp tường LATTICE INAX-300/LTC,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39537,INAX-300/LTC-12,Gạch ốp tường LATTICE INAX-300/LTC,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39538,INAX-40B/KH-5,Gạch ốp tường KAIHA INAX-40B/KH,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39539,HAL-R/MAL-3,Gạch ốp tường MELVIO ALDEA INAX HAL-R/MAL,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39540,HAL-R/MAL-2,Gạch ốp tường MELVIO ALDEA INAX HAL-R/MAL,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39541,INAX-40B/RB-2,Gạch ốp tường R-BORDER INAX-40B/RB,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39542,INAX-255/PPC-209,Gạch ốp tường PASTEL PLAIN COLOR INAX-255/PPC,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39543,INAX-255/PPC-207,Gạch ốp tường PASTEL PLAIN COLOR INAX-255/PPC,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39544,INAX-255/PPC-204,Gạch ốp tường PASTEL PLAIN COLOR INAX-255/PPC,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39545,INAX-255/PPC-133,Gạch ốp tường PASTEL PLAIN COLOR INAX-255/PPC,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39546,INAX-255/PPC-123,Gạch ốp tường PASTEL PLAIN COLOR INAX-255/PPC,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39547,INAX-255/PPC-93,Gạch ốp tường PASTEL PLAIN COLOR INAX-255/PPC,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39548,INAX-255/PPC-63,Gạch ốp tường PASTEL PLAIN COLOR INAX-255/PPC,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39549,INAX-255/PPC-33,Gạch ốp tường PASTEL PLAIN COLOR INAX-255/PPC,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39550,INAX-255/PPC-23,Gạch ốp tường PASTEL PLAIN COLOR INAX-255/PPC,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39551,INAX-255/PPC-21,Gạch ốp tường PASTEL PLAIN COLOR INAX-255/PPC,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39552,INAX-255/PPC-11,Gạch ốp tường PASTEL PLAIN COLOR INAX-255/PPC,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39553,INAX-30B/SB-3,Gạch ốp tường SB-STONE BORDER INAX-30B/SB,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39554,INAX-30B/SB-2,Gạch ốp tường SB-STONE BORDER INAX-30B/SB,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39555,INAX-30B/TKB-4,Gạch ốp tường TAKEBORDER INAX-30B/TKB,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39556,INAX-30B/TKB-3,Gạch ốp tường TAKEBORDER INAX-30B/TKB,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39557,INAX-30B/TKB-2,Gạch ốp tường TAKEBORDER INAX-30B/TKB,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39558,INAX-255/SLC-9,Gạch ốp tường SLC-SHIJYU LUSTER COLOR INAX-255/SLC,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39559,INAX-255/SLC-8,Gạch ốp tường SLC-SHIJYU LUSTER COLOR INAX-255/SLC,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39560,INAX-255/SLC-6,Gạch ốp tường SLC-SHIJYU LUSTER COLOR INAX-255/SLC,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39561,INAX-255/SLC-5,Gạch ốp tường SLC-SHIJYU LUSTER COLOR INAX-255/SLC,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39562,INAX-255/SLC-4,Gạch ốp tường SLC-SHIJYU LUSTER COLOR INAX-255/SLC,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39563,INAX-255/SLC-3,Gạch ốp tường SLC-SHIJYU LUSTER COLOR INAX-255/SLC,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39564,INAX-255/SLC-2,Gạch ốp tường SLC-SHIJYU LUSTER COLOR INAX-255/SLC,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39565,INAX-2312/VIZ-10-DV,Gạch ốp tường VIZ ZEN sử dụng vữa INAX hoặc keo dán INAX-2312VIZ (INAX2312VIZ),gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39566,INAX-2312/VIZ-10-DK,Gạch ốp tường VIZ ZEN sử dụng vữa INAX hoặc keo dán INAX-2312VIZ (INAX2312VIZ),gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39567,INAX-2312/VIZ-8-DV,Gạch ốp tường VIZ ZEN sử dụng vữa INAX hoặc keo dán INAX-2312VIZ (INAX2312VIZ),gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39568,INAX-2312/VIZ-8-DK,Gạch ốp tường VIZ ZEN sử dụng vữa INAX hoặc keo dán INAX-2312VIZ (INAX2312VIZ),gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39569,INAX-2312/VIZ-6-DV,Gạch ốp tường VIZ ZEN sử dụng vữa INAX hoặc keo dán INAX-2312VIZ (INAX2312VIZ),gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39570,INAX-2312/VIZ-6-DK,Gạch ốp tường VIZ ZEN sử dụng vữa INAX hoặc keo dán INAX-2312VIZ (INAX2312VIZ),gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39571,INAX-2312/VIZ-4-DV,Gạch ốp tường VIZ ZEN sử dụng vữa INAX hoặc keo dán INAX-2312VIZ (INAX2312VIZ),gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39572,INAX-2312/VIZ-4-DK,Gạch ốp tường VIZ ZEN sử dụng vữa INAX hoặc keo dán INAX-2312VIZ (INAX2312VIZ),gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39573,INAX-2312/VIZ-3-DV,Gạch ốp tường VIZ ZEN sử dụng vữa INAX hoặc keo dán INAX-2312VIZ (INAX2312VIZ),gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39574,INAX-2312/VIZ-3-DK,Gạch ốp tường VIZ ZEN sử dụng vữa INAX hoặc keo dán INAX-2312VIZ (INAX2312VIZ),gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39575,INAX-2312/VIZ-2-DV,Gạch ốp tường VIZ ZEN sử dụng vữa INAX hoặc keo dán INAX-2312VIZ (INAX2312VIZ),gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39576,INAX-2312/VIZ-2-DK,Gạch ốp tường VIZ ZEN sử dụng vữa INAX hoặc keo dán INAX-2312VIZ (INAX2312VIZ),gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39577,INAX-2312/VIZ-1-DV,Gạch ốp tường VIZ ZEN sử dụng vữa INAX hoặc keo dán INAX-2312VIZ (INAX2312VIZ),gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39578,INAX-255/TND-8,Gạch ốp tường TANADA INAX-255/TND,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39579,INAX-255/TND-7,Gạch ốp tường TANADA INAX-255/TND,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39580,INAX-255/TND-6,Gạch ốp tường TANADA INAX-255/TND,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39581,INAX-255/TND-5,Gạch ốp tường TANADA INAX-255/TND,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39582,INAX-255/TND-4,Gạch ốp tường TANADA INAX-255/TND,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39583,INAX-255/TND-3,Gạch ốp tường TANADA INAX-255/TND,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39584,INAX-255/TND-2,Gạch ốp tường TANADA INAX-255/TND,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39585,IM-50P1/WV-2,Gạch ốp tường WV-WAVES INAX-50P1/WV,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39586,DCF-20BNET/WAB-4,Gạch ốp tường WAVE BORDER INAX DCF-20BNET/WAB,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39587,DCF-20BNET/WAB-3,Gạch ốp tường WAVE BORDER INAX DCF-20BNET/WAB,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,39588,DCF-20BNET/WAB-2,Gạch ốp tường WAVE BORDER INAX DCF-20BNET/WAB,gach-op-tuong,,,32,gach-op-tuong,gach-op-lat/gach-op-tuong
+gach-op-lat,5475,GACH-36GP0814,Gạch 36GP0814_N,gach-trang-tri,,,34,gach-trang-tri,gach-op-lat/gach-trang-tri
+gach-op-lat,5476,GACH-36GP0812,Gạch 36GP0812_N,gach-trang-tri,,,34,gach-trang-tri,gach-op-lat/gach-trang-tri
+gach-op-lat,5477,GACH-36GP0811,Gạch 36GP0811_N,gach-trang-tri,,,34,gach-trang-tri,gach-op-lat/gach-trang-tri
+gach-op-lat,5478,GACH-36GP0808,Gạch 36GP0808_N,gach-trang-tri,,,34,gach-trang-tri,gach-op-lat/gach-trang-tri
+gach-op-lat,5479,GACH-36GP0807,Gạch 36GP0807_N,gach-trang-tri,,,34,gach-trang-tri,gach-op-lat/gach-trang-tri
+gach-op-lat,5480,GACH-36GP0806,Gạch 36GP0806_N,gach-trang-tri,,,34,gach-trang-tri,gach-op-lat/gach-trang-tri
+gach-op-lat,5481,GACH-36GP0804,Gạch 36GP0804_N,gach-trang-tri,,,34,gach-trang-tri,gach-op-lat/gach-trang-tri
+gach-op-lat,5482,GACH-36GP0803,Gạch 36GP0803_N,gach-trang-tri,,,34,gach-trang-tri,gach-op-lat/gach-trang-tri
+gach-op-lat,5483,GACH-36GP0800,Gạch 36GP0800_N,gach-trang-tri,,,34,gach-trang-tri,gach-op-lat/gach-trang-tri
+gach-op-lat,5484,GACH-36GP0799,Gạch 36GP0799_N,gach-trang-tri,,,34,gach-trang-tri,gach-op-lat/gach-trang-tri

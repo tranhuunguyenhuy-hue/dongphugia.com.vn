@@ -14,6 +14,7 @@
 
 import { siteConfig } from "@/config/site"
 import { canonicalUrl, getCanonicalSiteUrl } from "@/lib/site"
+import { toNullableNumber } from "@/lib/seo/product-seo"
 
 const BASE_URL = getCanonicalSiteUrl()
 
@@ -70,9 +71,14 @@ export function buildProductSchema(product: ProductSchemaInput) {
   const availability =
     product.stock_status === "in_stock"
       ? "https://schema.org/InStock"
+      : product.stock_status === "pre_order"
+      ? "https://schema.org/PreOrder"
+      : product.stock_status === "discontinued"
+      ? "https://schema.org/Discontinued"
       : "https://schema.org/OutOfStock"
 
-  const hasPrice = product.price && Number(product.price) > 0
+  const normalizedPrice = toNullableNumber(product.price)
+  const hasPrice = normalizedPrice !== null && normalizedPrice > 0
 
   const productUrl = product.urlPath
     ? canonicalUrl(product.urlPath)
@@ -92,11 +98,14 @@ export function buildProductSchema(product: ProductSchemaInput) {
     offers: {
       "@type": "Offer",
       priceCurrency: "VND",
-      price: hasPrice ? Number(product.price) : undefined,
-      // Valid for 30 days — refresh on next ISR cycle
-      priceValidUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-        .toISOString()
-        .split("T")[0],
+      ...(hasPrice
+        ? {
+            price: normalizedPrice,
+            priceValidUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+              .toISOString()
+              .split("T")[0],
+          }
+        : {}),
       availability,
       url: productUrl,
       seller: {

@@ -1,7 +1,15 @@
 import { unstable_cache } from 'next/cache'
 import prisma from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
-import { buildPublicProductVisibilityWhere } from '@/lib/public-product-visibility'
+import {
+    buildPublicListingVisibilityWhere,
+    buildPublicPdpVisibilityWhere,
+    buildPublicSearchVisibilityWhere,
+} from '@/lib/public-product-visibility'
+import {
+    getCatalogFilterReadySpecLabels,
+    getCatalogUxProfileByTaxonomy,
+} from '@/lib/catalog-ux-profiles'
 import {
     getCanonicalProductPath,
     getCategoryRootFilter,
@@ -81,6 +89,15 @@ export type PublicListingLeaf = {
         products: number
         secondary_product_subcategories?: number
     }
+}
+
+export type ListingRuntimeConfig = {
+    profileKey: string | null
+    hideColorFilter: boolean
+    enableSpecFilters: boolean
+    enableProductTypeTabs: boolean
+    readyForRefactor: boolean
+    relationPriority: Array<'brand' | 'origin' | 'color' | 'material'>
 }
 
 export type AdminProductListItem = {
@@ -408,7 +425,7 @@ export async function getPublicProducts(filters: ProductFilters = {}) {
     }
 
     const where: Prisma.productsWhereInput = {
-        ...(search ? buildPublicProductVisibilityWhere() : { is_active: true }),
+        ...(search ? buildPublicSearchVisibilityWhere() : { is_active: true }),
         ...(AND.length > 0 ? { AND } : {}),
         ...(category_slug && {
             OR: [
@@ -572,6 +589,10 @@ export const getAvailableFiltersBySubcategory = unstable_cache(
         const listingLeaf = categorySlug
             ? await getPublicListingLeaf(categorySlug, subcategorySlug)
             : null
+        const profile = getCatalogUxProfileByTaxonomy({
+            categorySlug,
+            subcategorySlug,
+        })
 
         const productWhere: Prisma.productsWhereInput = {
             is_active: true,
@@ -613,18 +634,14 @@ export const getAvailableFiltersBySubcategory = unstable_cache(
             materials,
             origins,
             features,
-            colors,
+            colors: profile?.listingUi.hideColorFilter ? [] : colors,
         }
     },
     ['available-filters-subcategory'],
     { revalidate: 3600, tags: ['products', 'filters'] }
 )
 
-const PUBLIC_LISTING_PRODUCT_WHERE: Prisma.productsWhereInput = {
-    publication_status: 'public',
-    pdp_visibility: 'public',
-    listing_visibility: { in: ['default', 'low_priority'] },
-}
+const PUBLIC_LISTING_PRODUCT_WHERE: Prisma.productsWhereInput = buildPublicListingVisibilityWhere()
 
 function mapLegacyListingLeaf(
     leaf: {
@@ -698,21 +715,41 @@ export const getPublicListingLeaves = unstable_cache(
             taxonomyCounts.map((entry) => [entry.taxon_id, entry._count.product_id])
         )
 
-        const mergedLeaves = taxonomyLeaves.map((leaf) => ({
-            id: null,
-            name: leaf.name,
-            slug: leaf.slug,
-            description: leaf.seo_description,
-            thumbnail_url: null,
-            source: 'taxonomy' as const,
-            _count: {
-                products: taxonomyCountMap.get(leaf.id) ?? 0,
-            },
-        }))
+        const legacyLeafMap = new Map(legacyLeaves.map((leaf) => [leaf.slug, leaf]))
+        const mergedLeaves: PublicListingLeaf[] = []
+        const consumedLegacySlugs = new Set<string>()
 
-        const taxonomySlugSet = new Set(mergedLeaves.map((leaf) => leaf.slug))
+        for (const leaf of taxonomyLeaves) {
+            const taxonomyProductCount = taxonomyCountMap.get(leaf.id) ?? 0
+            const matchingLegacyLeaf = legacyLeafMap.get(leaf.slug)
+            const legacyProductCount = matchingLegacyLeaf?._count.products ?? 0
+
+            // Do not let a zero-product taxonomy leaf override a populated legacy leaf.
+            // And do not surface zero-product taxonomy-only leaves as standalone indexable listings.
+            if (taxonomyProductCount === 0) {
+                if (matchingLegacyLeaf && legacyProductCount > 0) {
+                    mergedLeaves.push(mapLegacyListingLeaf(matchingLegacyLeaf))
+                    consumedLegacySlugs.add(matchingLegacyLeaf.slug)
+                }
+                continue
+            }
+
+            mergedLeaves.push({
+                id: null,
+                name: leaf.name,
+                slug: leaf.slug,
+                description: leaf.seo_description,
+                thumbnail_url: null,
+                source: 'taxonomy' as const,
+                _count: {
+                    products: taxonomyProductCount,
+                },
+            })
+            if (matchingLegacyLeaf) consumedLegacySlugs.add(matchingLegacyLeaf.slug)
+        }
+
         const legacyOnlyLeaves = legacyLeaves
-            .filter((leaf) => !taxonomySlugSet.has(leaf.slug))
+            .filter((leaf) => !consumedLegacySlugs.has(leaf.slug))
             .map(mapLegacyListingLeaf)
 
         return [...mergedLeaves, ...legacyOnlyLeaves]
@@ -763,6 +800,8 @@ export const getPublicListingLeaf = unstable_cache(
                 products: PUBLIC_LISTING_PRODUCT_WHERE,
             },
         })
+
+        if (productCount === 0) return null
 
         return {
             id: null,
@@ -824,7 +863,16 @@ export const getProductTypeFiltersBySubcategory = unstable_cache(
 // ─── PUBLIC: GET SPEC FILTERS FOR SUBCATEGORY (from filter_definitions) ───────
 
 export const getSubcategorySpecFilters = unstable_cache(
-    async (subcategoryId: number) => {
+    async (subcategoryId: number, categorySlug?: string, subcategorySlug?: string) => {
+        const profile = getCatalogUxProfileByTaxonomy({
+            categorySlug,
+            subcategorySlug,
+        })
+
+        if (profile && !profile.listingUi.enableSpecFilters) {
+            return []
+        }
+
         const defs = await prisma.filter_definitions.findMany({
             where: {
                 subcategory_id: subcategoryId,
@@ -851,17 +899,56 @@ export const getSubcategorySpecFilters = unstable_cache(
             }
         })
 
-        // Full cutover: spec filter UI is driven by canonical spec_options only.
-        return defs.map(d => ({
+        const allowedLabels = getCatalogFilterReadySpecLabels({
+            categorySlug,
+            subcategorySlug,
+        })
+
+        const seenKeys = new Set<string>()
+
+        return defs
+            .filter((d) => {
+                const key = d.spec_definitions!.key
+                const label = d.spec_definitions!.label
+                if (seenKeys.has(key)) return false
+                seenKeys.add(key)
+                if (!allowedLabels) return true
+                return allowedLabels.includes(label)
+            })
+            .map(d => ({
             key: d.spec_definitions!.key,
             label: d.spec_definitions!.label,
             type: d.filter_type,
             values: d.spec_definitions!.spec_options.map(option => option.value),
-        }))
+            }))
     },
     ['subcategory-spec-filters'],
     { revalidate: 3600, tags: ['filters'] }
 )
+
+export function getListingRuntimeConfig(categorySlug: string, subcategorySlug: string): ListingRuntimeConfig {
+    const profile = getCatalogUxProfileByTaxonomy({ categorySlug, subcategorySlug })
+
+    if (!profile) {
+        return {
+            profileKey: null,
+            hideColorFilter: false,
+            enableSpecFilters: false,
+            enableProductTypeTabs: true,
+            readyForRefactor: false,
+            relationPriority: ['brand', 'color', 'material', 'origin'],
+        }
+    }
+
+    return {
+        profileKey: profile.key,
+        hideColorFilter: profile.listingUi.hideColorFilter,
+        enableSpecFilters: profile.listingUi.enableSpecFilters,
+        enableProductTypeTabs: profile.listingUi.enableProductTypeTabs,
+        readyForRefactor: profile.readiness === 'ready-for-backend-refactor',
+        relationPriority: profile.relationPriority,
+    }
+}
 
 // ─── PUBLIC: PRODUCT DETAIL ──────────────────────────────────────────────────
 
@@ -869,8 +956,7 @@ async function _getPublicProductBySlug(categorySlug: string, slug: string) {
     const product = await prisma.products.findFirst({
         where: {
             slug,
-            publication_status: 'public',
-            pdp_visibility: 'public',
+            ...buildPublicPdpVisibilityWhere(),
             OR: [
                 { categories: { slug: categorySlug } },
                 getCategoryRootFilter(categorySlug),

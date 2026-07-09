@@ -4,6 +4,7 @@ import React, { useState, useCallback, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { ChevronDown } from 'lucide-react'
 import type { SpecFilterDef } from './subcategory-spec-filter'
+import type { ListingRuntimeConfig } from '@/lib/public-api-products'
 
 // --- Types ---
 type FilterOption = { name: string; slug: string; icon_name?: string | null; logo_url?: string | null }
@@ -299,12 +300,14 @@ function getSpecActiveValues(searchParams: URLSearchParams, key: string): string
 // ── Main Component ─────────────────────────────────────────────────────────────
 export function AdvancedSidebarFilter({
     availableFilters,
+    runtimeConfig,
     hideSubcategoryFilter = false,
     hideColorFilter = false,
     hideTitle = false,
     specFilters = [],
 }: {
     availableFilters: AvailableFiltersData
+    runtimeConfig?: ListingRuntimeConfig
     hideSubcategoryFilter?: boolean
     hideColorFilter?: boolean
     hideTitle?: boolean
@@ -320,12 +323,16 @@ export function AdvancedSidebarFilter({
         return val ? val.split(',') : []
     }
 
+    const effectiveHideColorFilter = runtimeConfig?.hideColorFilter ?? hideColorFilter
+    const effectiveEnableSpecFilters = runtimeConfig?.enableSpecFilters ?? true
+    const relationPriority = runtimeConfig?.relationPriority ?? ['brand', 'color', 'material', 'origin']
+
     const subcategorySlugs = getArr('sub')
     const brandSlugs       = getArr('brand')
     const featureSlugs     = getArr('features')
     const materialSlugs    = getArr('material')
     const originSlugs      = getArr('origin')
-    const colorSlugs       = hideColorFilter ? [] : getArr('color')
+    const colorSlugs       = effectiveHideColorFilter ? [] : getArr('color')
 
     const priceParam = searchParams.get('price') ?? ''
     const [localPrice, setLocalPrice] = useState<[number, number]>(() =>
@@ -370,7 +377,9 @@ export function AdvancedSidebarFilter({
     const isFeatured = searchParams.get('is_featured') === 'true'
 
     // Spec filter counts
-    const specActiveCount = specFilters.reduce((acc, f) => acc + getSpecActiveValues(searchParams, f.key).length, 0)
+    const specActiveCount = effectiveEnableSpecFilters
+        ? specFilters.reduce((acc, f) => acc + getSpecActiveValues(searchParams, f.key).length, 0)
+        : 0
 
     const toggleSpec = useCallback((key: string, value: string) => {
         const params = new URLSearchParams(searchParams.toString())
@@ -394,11 +403,101 @@ export function AdvancedSidebarFilter({
         brandSlugs.length + featureSlugs.length + materialSlugs.length +
         originSlugs.length + colorSlugs.length + (isPriceActive ? 1 : 0) + (isPromotion ? 1 : 0) + (isFeatured ? 1 : 0) + specActiveCount
 
+    const relationSections = relationPriority
+        .map((relationKey) => {
+            if (relationKey === 'brand' && availableFilters.brands.length > 0) {
+                return (
+                    <div key="brand" className="space-y-2">
+                        <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
+                            Thương hiệu
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                            {availableFilters.brands.map((brand) => (
+                                <BrandTagChip
+                                    key={brand.slug}
+                                    slug={brand.slug}
+                                    name={brand.name}
+                                    active={brandSlugs.includes(brand.slug)}
+                                    onClick={() => toggle('brand', brandSlugs, brand.slug)}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                )
+            }
+
+            if (relationKey === 'color' && !effectiveHideColorFilter && availableFilters.colors && availableFilters.colors.length > 0) {
+                return (
+                    <div key="color" className="space-y-2">
+                        <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
+                            Màu sắc
+                        </p>
+                        <div className="flex flex-wrap gap-2.5">
+                            {availableFilters.colors.map((color) => (
+                                <ColorSwatchChip
+                                    key={color.slug}
+                                    label={color.name}
+                                    hex_code={color.hex_code || '#ccc'}
+                                    active={colorSlugs.includes(color.slug)}
+                                    onClick={() => toggle('color', colorSlugs, color.slug)}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                )
+            }
+
+            if (relationKey === 'material' && availableFilters.materials.length > 0) {
+                return (
+                    <div key="material" className="space-y-2">
+                        <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
+                            Chất liệu
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                            {availableFilters.materials.map((material) => (
+                                <TagChip
+                                    key={material.slug}
+                                    label={material.name}
+                                    active={materialSlugs.includes(material.slug)}
+                                    onClick={() => toggle('material', materialSlugs, material.slug)}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                )
+            }
+
+            if (relationKey === 'origin' && availableFilters.origins.length > 0) {
+                return (
+                    <div key="origin" className="space-y-2">
+                        <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
+                            Xuất xứ
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                            {availableFilters.origins.map((origin) => (
+                                <TagChip
+                                    key={origin.slug}
+                                    label={origin.name}
+                                    active={originSlugs.includes(origin.slug)}
+                                    onClick={() => toggle('origin', originSlugs, origin.slug)}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                )
+            }
+
+            return null
+        })
+        .filter(Boolean)
+
     const clearAll = () => {
         setLocalPrice([PRICE_MIN, PRICE_MAX])
         const params = new URLSearchParams(searchParams.toString())
         ;['brand', 'features', 'material', 'origin', 'color', 'price', 'is_promotion', 'is_featured', 'priceRange'].forEach(k => params.delete(k))
-        specFilters.forEach(f => params.delete(SF_PREFIX + f.key))
+        if (effectiveEnableSpecFilters) {
+            specFilters.forEach(f => params.delete(SF_PREFIX + f.key))
+        }
         params.set('page', '1')
         router.push(`${pathname}?${params.toString()}`, { scroll: false })
     }
@@ -444,45 +543,7 @@ export function AdvancedSidebarFilter({
                     </div>
                 )}
 
-                {/* ── Brands — logo tags ── */}
-                {availableFilters.brands.length > 0 && (
-                    <div className="space-y-2">
-                        <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
-                            Thương hiệu
-                        </p>
-                        <div className="flex flex-wrap gap-1.5">
-                            {availableFilters.brands.map(b => (
-                                <BrandTagChip
-                                    key={b.slug}
-                                    slug={b.slug}
-                                    name={b.name}
-                                    active={brandSlugs.includes(b.slug)}
-                                    onClick={() => toggle('brand', brandSlugs, b.slug)}
-                                />
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-                {/* ── Colors — swatch chips ── */}
-                {!hideColorFilter && availableFilters.colors && availableFilters.colors.length > 0 && (
-                    <div className="space-y-2">
-                        <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
-                            Màu sắc
-                        </p>
-                        <div className="flex flex-wrap gap-2.5">
-                            {availableFilters.colors.map(c => (
-                                <ColorSwatchChip
-                                    key={c.slug}
-                                    label={c.name}
-                                    hex_code={c.hex_code || '#ccc'}
-                                    active={colorSlugs.includes(c.slug)}
-                                    onClick={() => toggle('color', colorSlugs, c.slug)}
-                                />
-                            ))}
-                        </div>
-                    </div>
-                )}
+                {relationSections}
 
                 {/* ── Price — dual range slider ── */}
                 <div className="space-y-2">
@@ -539,46 +600,8 @@ export function AdvancedSidebarFilter({
                     </div>
                 )}
 
-                {/* ── Materials — tag chips ── */}
-                {availableFilters.materials.length > 0 && (
-                    <div className="space-y-2">
-                        <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
-                            Chất liệu
-                        </p>
-                        <div className="flex flex-wrap gap-1.5">
-                            {availableFilters.materials.map(opt => (
-                                <TagChip
-                                    key={opt.slug}
-                                    label={opt.name}
-                                    active={materialSlugs.includes(opt.slug)}
-                                    onClick={() => toggle('material', materialSlugs, opt.slug)}
-                                />
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-                {/* ── Origins — tag chips ── */}
-                {availableFilters.origins.length > 0 && (
-                    <div className="space-y-2">
-                        <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
-                            Xuất xứ
-                        </p>
-                        <div className="flex flex-wrap gap-1.5">
-                            {availableFilters.origins.map(opt => (
-                                <TagChip
-                                    key={opt.slug}
-                                    label={opt.name}
-                                    active={originSlugs.includes(opt.slug)}
-                                    onClick={() => toggle('origin', originSlugs, opt.slug)}
-                                />
-                            ))}
-                        </div>
-                    </div>
-                )}
-
                 {/* ── Spec filters — tag chips (skip brand/price — rendered separately above) ── */}
-                {specFilters
+                {effectiveEnableSpecFilters && specFilters
                     .filter(sf => sf.key !== 'brand' && sf.key !== 'price')
                     .map(sf => {
                         const activeVals = getSpecActiveValues(searchParams, sf.key)

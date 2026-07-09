@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCanonicalSiteUrl } from '@/lib/site';
+import { buildPublicSitemapVisibilityWhere } from '@/lib/public-product-visibility';
 import { getCanonicalProductPath, primaryTaxonAssignmentSelect } from '@/lib/taxonomy-paths';
 
 export const revalidate = 86400; // 24 hours
@@ -20,12 +21,7 @@ export async function GET(
 
     const baseUrl = getCanonicalSiteUrl();
     const skip = (id - 1) * PAGE_SIZE;
-    const where = {
-        publication_status: 'public',
-        pdp_visibility: 'public',
-        sitemap_include: true,
-        seo_indexing: { not: 'noindex' },
-    } as const;
+    const where = buildPublicSitemapVisibilityWhere();
 
     const products = await prisma.products.findMany({
         where,
