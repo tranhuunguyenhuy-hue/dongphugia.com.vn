@@ -8,6 +8,7 @@ import { ProductCard } from "@/components/ui/product-card"
 import { CategoryFilterPanel } from "@/components/category/category-filter-panel"
 import { SubcategoryIconGrid } from "@/components/category/subcategory-icon-grid"
 import { buildPublicListingVisibilityWhere } from "@/lib/public-product-visibility"
+import { canonicalUrl } from "@/lib/site"
 
 export const revalidate = 3600
 
@@ -15,6 +16,12 @@ export const metadata: Metadata = {
     title: "Thiết Bị Bếp",
     description: "Thiết bị bếp chính hãng Hafele, Bosch, Cotto tại Đông Phú Gia Đà Lạt.",
     keywords: ["thiết bị bếp", "bếp từ", "máy hút mùi", "Hafele", "Bosch", "Đà Lạt"],
+    alternates: { canonical: canonicalUrl("/thiet-bi-bep") },
+    openGraph: {
+        title: "Thiết Bị Bếp",
+        description: "Thiết bị bếp chính hãng Hafele, Bosch, Cotto tại Đông Phú Gia Đà Lạt.",
+        url: canonicalUrl("/thiet-bi-bep"),
+    },
 }
 
 const CATEGORY_SLUG = "thiet-bi-bep"

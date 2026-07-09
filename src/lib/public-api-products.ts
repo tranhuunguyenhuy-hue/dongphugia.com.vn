@@ -97,6 +97,7 @@ export type ListingRuntimeConfig = {
     enableSpecFilters: boolean
     enableProductTypeTabs: boolean
     readyForRefactor: boolean
+    relationPriority: Array<'brand' | 'origin' | 'color' | 'material'>
 }
 
 export type AdminProductListItem = {
@@ -935,6 +936,7 @@ export function getListingRuntimeConfig(categorySlug: string, subcategorySlug: s
             enableSpecFilters: false,
             enableProductTypeTabs: true,
             readyForRefactor: false,
+            relationPriority: ['brand', 'color', 'material', 'origin'],
         }
     }
 
@@ -944,6 +946,7 @@ export function getListingRuntimeConfig(categorySlug: string, subcategorySlug: s
         enableSpecFilters: profile.listingUi.enableSpecFilters,
         enableProductTypeTabs: profile.listingUi.enableProductTypeTabs,
         readyForRefactor: profile.readiness === 'ready-for-backend-refactor',
+        relationPriority: profile.relationPriority,
     }
 }
 
