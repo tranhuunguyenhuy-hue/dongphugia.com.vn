@@ -155,3 +155,9 @@ scratch/
 output/
 ORIGINAL_REQUEST.md
 scripts/crawl-hita/output/
+
+# Keep the TOTO output directory available on fresh clones, but never track
+# generated crawler data.
+!scripts/crawl-toto/output/
+scripts/crawl-toto/output/*
+!scripts/crawl-toto/output/.gitkeep
