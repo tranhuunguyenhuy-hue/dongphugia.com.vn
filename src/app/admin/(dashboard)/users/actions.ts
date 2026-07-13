@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { requirePermission, getCurrentUser } from '@/lib/auth/get-current-user'
 import { hashPassword } from '@/lib/auth/password'
 import type { AdminRole } from '@/lib/auth/permissions'
+import type { Prisma } from '@prisma/client'
 
 export async function saveUser(data: {
     id?: number
@@ -38,7 +39,7 @@ export async function saveUser(data: {
                 }
             }
 
-            const updateData: any = {
+            const updateData: Prisma.admin_usersUpdateInput = {
                 username: data.username || null,
                 email: data.email,
                 name: data.name,
@@ -50,14 +51,19 @@ export async function saveUser(data: {
                 updateData.password_hash = await hashPassword(data.password)
             }
 
-            await prisma.admin_users.update({
+            const updateUser = prisma.admin_users.update({
                 where: { id: data.id },
                 data: updateData
             })
 
-            // Force logout if user is deactivated
-            if (!data.is_active) {
-                await prisma.admin_sessions.deleteMany({ where: { user_id: data.id } })
+            const shouldInvalidateSessions = Boolean(data.password) || !data.is_active
+            if (shouldInvalidateSessions) {
+                await prisma.$transaction([
+                    updateUser,
+                    prisma.admin_sessions.deleteMany({ where: { user_id: data.id } })
+                ])
+            } else {
+                await updateUser
             }
         } else {
             if (!data.password) return { success: false, error: 'Mật khẩu là bắt buộc khi tạo mới' }
