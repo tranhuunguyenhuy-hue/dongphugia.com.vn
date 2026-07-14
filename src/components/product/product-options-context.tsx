@@ -1,10 +1,11 @@
 'use client'
 
 import { createContext, useContext } from 'react'
+import type { InstallOption } from '@/lib/order-pricing'
 
 interface ProductOptionsContextType {
-    installOption: 'none' | 'install' | 'replace'
-    setInstallOption: (opt: 'none' | 'install' | 'replace') => void
+    installOption: InstallOption
+    setInstallOption: (opt: InstallOption) => void
     installationFee: number
     onlineDiscountAmount: number
 }

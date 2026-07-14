@@ -69,8 +69,6 @@ export function getClientIp(req: NextRequest): string {
 
 // Rate limit configs per route
 export const RATE_LIMITS = {
-    // Public lookup: 10 req/min per IP
-    quoteGet: { maxReqs: 10, windowMs: 60_000 },
     // Quote submission: 5 req/min per IP (anti-spam)
     quotePost: { maxReqs: 5, windowMs: 60_000 },
     // Order submission: 5 req/min per IP (anti-spam, prevent fake orders)
