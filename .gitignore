@@ -161,3 +161,4 @@ scripts/crawl-hita/output/
 !scripts/crawl-toto/output/
 scripts/crawl-toto/output/*
 !scripts/crawl-toto/output/.gitkeep
+.env*
