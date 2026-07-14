@@ -38,7 +38,14 @@ export default function CartPage() {
             const res = await fetch('/api/orders', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...form, items }),
+                body: JSON.stringify({
+                    ...form,
+                    items: items.map(item => ({
+                        productId: item.productId,
+                        quantity: item.quantity,
+                        installOption: item.installOption ?? 'none',
+                    })),
+                }),
             })
             const data = await res.json()
 
@@ -49,9 +56,10 @@ export default function CartPage() {
 
             // Track purchase
             const transaction_id = data.order_number || generateOrderNumber()
+            const authoritativeTotal = Number(data.total)
             trackPurchase(
                 transaction_id,
-                total,
+                Number.isFinite(authoritativeTotal) ? authoritativeTotal : total,
                 items.map(item => ({
                     item_id: item.sku || item.productId.toString(),
                     item_name: item.name,

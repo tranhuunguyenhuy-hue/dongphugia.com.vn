@@ -2,6 +2,8 @@
 
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import type { InstallOption } from '@/lib/order-pricing'
+import { trackAddToCart } from '@/lib/tracking'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -18,7 +20,7 @@ export interface CartItem {
     brandName?: string | null
     quantity: number
     cartItemId: string
-    installOption?: 'none' | 'install' | 'replace'
+    installOption?: InstallOption
     installationFee?: number
     onlineDiscountAmount?: number
     finalPrice?: number
@@ -41,8 +43,6 @@ interface CartStore {
 }
 
 // ─── Store ────────────────────────────────────────────────────────────────────
-
-import { trackAddToCart } from '@/lib/tracking'
 
 export const useCartStore = create<CartStore>()(
     persist(

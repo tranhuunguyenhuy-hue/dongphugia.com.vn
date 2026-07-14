@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils"
 import { Sparkles, Gift, ShieldCheck, Award, Truck, Headphones } from 'lucide-react'
 import { useState } from "react"
 import { ProductOptionsContext } from "./product-options-context"
+import { getInstallationFee, type InstallOption } from "@/lib/order-pricing"
 
 interface ProductPriceProps {
     price: number | null | undefined
@@ -18,9 +19,9 @@ interface ProductPriceProps {
 }
 
 export function ProductPrice({ price, originalPrice, priceDisplay, onlineDiscountAmount, stockStatus, saleStatus, priceState, className, children }: ProductPriceProps) {
-    const [installOption, setInstallOption] = useState<'none' | 'install' | 'replace'>('none')
+    const [installOption, setInstallOption] = useState<InstallOption>('none')
 
-    const installationFee = installOption === 'install' ? 200000 : installOption === 'replace' ? 350000 : 0;
+    const installationFee = getInstallationFee(installOption)
 
     const numPrice = Number(price)
     const numOriginal = Number(originalPrice)
