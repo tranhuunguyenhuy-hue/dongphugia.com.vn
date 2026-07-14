@@ -2,11 +2,19 @@
   "name": "dongphugia-web",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "npm@11.6.2",
+  "engines": {
+    "node": "24.x"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
+    "lint": "node scripts/quality/lint-with-baseline.mjs",
+    "lint:all": "eslint",
+    "lint:baseline:update": "node scripts/quality/lint-with-baseline.mjs --update",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run lint && npm run typecheck && npm test",
     "audit:canonical-slugs": "tsx scripts/db/migrate-canonical-product-slugs.mts",
     "generate:redirect-map": "tsx scripts/db/export-product-redirect-map.mts",
     "check:canonical-rollout": "tsx scripts/db/check-canonical-rollout.mts",
