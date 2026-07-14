@@ -13,6 +13,8 @@ import Link from 'next/link'
 import { toast } from 'sonner'
 import { trackPurchase } from '@/lib/tracking'
 
+const VIETNAM_MOBILE_PATTERN = /^(?:\+84|0)(?:3|5|7|8|9)\d{8}$/
+
 export default function CartPage() {
     const router = useRouter()
     const { items, removeItem, updateQuantity, clearCart } = useCartStore()
@@ -28,10 +30,22 @@ export default function CartPage() {
     })
 
     const hasPricedItems = items.some(i => i.price !== null && i.price > 0)
+    const normalizedPhone = form.customer_phone.replace(/[\s().-]/g, '')
+    const phoneIsInvalid = form.customer_phone.length > 0 && !VIETNAM_MOBILE_PATTERN.test(normalizedPhone)
+
+    const handleClearCart = () => {
+        if (window.confirm('Xóa toàn bộ sản phẩm khỏi giỏ hàng?')) {
+            clearCart()
+        }
+    }
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         if (items.length === 0) return
+        if (!VIETNAM_MOBILE_PATTERN.test(normalizedPhone)) {
+            toast.error('Vui lòng nhập số điện thoại Việt Nam hợp lệ.')
+            return
+        }
 
         setIsSubmitting(true)
         try {
@@ -133,7 +147,7 @@ export default function CartPage() {
                             Tiếp tục mua hàng
                         </Link>
                         <button
-                            onClick={clearCart}
+                            onClick={handleClearCart}
                             className="text-sm text-red-400 hover:text-red-600 transition-colors"
                         >
                             Xóa toàn bộ
@@ -187,10 +201,12 @@ export default function CartPage() {
                         <h2 className="font-semibold text-neutral-900 text-lg">Thông tin đặt hàng</h2>
 
                         <div className="space-y-1">
-                            <label className="text-sm font-medium text-neutral-700">
+                            <label htmlFor="customer-name" className="text-sm font-medium text-neutral-700">
                                 Họ và tên <span className="text-red-500">*</span>
                             </label>
                             <Input
+                                id="customer-name"
+                                autoComplete="name"
                                 placeholder="Nguyễn Văn A"
                                 required
                                 value={form.customer_name}
@@ -200,17 +216,27 @@ export default function CartPage() {
                         </div>
 
                         <div className="space-y-1">
-                            <label className="text-sm font-medium text-neutral-700">
+                            <label htmlFor="customer-phone" className="text-sm font-medium text-neutral-700">
                                 Số điện thoại <span className="text-red-500">*</span>
                             </label>
                             <Input
+                                id="customer-phone"
                                 type="tel"
-                                placeholder="09..."
+                                inputMode="tel"
+                                autoComplete="tel"
+                                placeholder="0912 345 678"
                                 required
                                 value={form.customer_phone}
                                 onChange={e => setForm(f => ({ ...f, customer_phone: e.target.value }))}
+                                aria-invalid={phoneIsInvalid}
+                                aria-describedby={phoneIsInvalid ? 'customer-phone-error' : undefined}
                                 className="h-11"
                             />
+                            {phoneIsInvalid && (
+                                <p id="customer-phone-error" className="text-xs text-red-600" role="alert">
+                                    Nhập số di động Việt Nam gồm 10 số, ví dụ 0912 345 678.
+                                </p>
+                            )}
                         </div>
 
                         <div className="space-y-1">
@@ -247,7 +273,7 @@ export default function CartPage() {
 
                         <Button
                             type="submit"
-                            disabled={isSubmitting}
+                            disabled={isSubmitting || phoneIsInvalid}
                             className="w-full h-12 bg-[#2E7A96] hover:bg-[#25617a] text-white font-semibold text-[15px] rounded-xl gap-2 mt-2"
                         >
                             {isSubmitting ? (
@@ -260,8 +286,11 @@ export default function CartPage() {
                             )}
                         </Button>
 
-                        <p className="text-xs text-center text-neutral-400">
-                            Bằng cách đặt hàng, bạn đồng ý với chính sách của Đông Phú Gia.
+                        <p className="text-xs text-center text-neutral-500">
+                            Bằng cách đặt hàng, bạn đồng ý với{' '}
+                            <Link href="/chinh-sach-bao-mat" className="underline hover:text-[#2E7A96]">chính sách bảo mật</Link>
+                            {' '}và{' '}
+                            <Link href="/dieu-kien-giao-dich" className="underline hover:text-[#2E7A96]">điều kiện giao dịch</Link>.
                         </p>
                     </form>
                 </div>
@@ -310,13 +339,23 @@ function CartPageItem({ item, onRemove, onQtyChange }: {
 
                 <div className="flex items-center justify-between mt-3">
                     <div className="flex items-center border border-neutral-200 rounded-lg overflow-hidden h-9">
-                        <button onClick={() => onQtyChange(item.quantity - 1)} className="w-9 h-full flex items-center justify-center bg-neutral-50 hover:bg-neutral-100 transition-colors">
+                        <button
+                            type="button"
+                            onClick={() => onQtyChange(item.quantity - 1)}
+                            aria-label={`Giảm số lượng ${item.name}`}
+                            className="w-9 h-full flex items-center justify-center bg-neutral-50 hover:bg-neutral-100 transition-colors"
+                        >
                             <Minus className="w-3 h-3 text-neutral-600" />
                         </button>
                         <span className="w-10 text-center text-sm font-semibold border-x border-neutral-200">
                             {item.quantity}
                         </span>
-                        <button onClick={() => onQtyChange(item.quantity + 1)} className="w-9 h-full flex items-center justify-center bg-neutral-50 hover:bg-neutral-100 transition-colors">
+                        <button
+                            type="button"
+                            onClick={() => onQtyChange(item.quantity + 1)}
+                            aria-label={`Tăng số lượng ${item.name}`}
+                            className="w-9 h-full flex items-center justify-center bg-neutral-50 hover:bg-neutral-100 transition-colors"
+                        >
                             <Plus className="w-3 h-3 text-neutral-600" />
                         </button>
                     </div>
@@ -325,7 +364,12 @@ function CartPageItem({ item, onRemove, onQtyChange }: {
                         <span className="font-bold text-[#2E7A96]">
                             {finalItemPrice ? formatPrice(finalItemPrice * item.quantity) : 'Liên hệ'}
                         </span>
-                        <button onClick={onRemove} className="w-8 h-8 flex items-center justify-center text-neutral-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                        <button
+                            type="button"
+                            onClick={onRemove}
+                            aria-label={`Xóa ${item.name} khỏi giỏ hàng`}
+                            className="w-8 h-8 flex items-center justify-center text-neutral-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                        >
                             <Trash2 className="w-3.5 h-3.5" />
                         </button>
                     </div>

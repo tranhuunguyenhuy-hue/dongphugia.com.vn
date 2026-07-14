@@ -37,8 +37,10 @@ export function HomeCategoryBlockAlt({ categoryData }: HomeCategoryBlockAltProps
     const brands = useMemo(() => categoryData.availableBrands || [], [categoryData.availableBrands])
     const subcats = useMemo(() => categoryData.availableSubcategories || [], [categoryData.availableSubcategories])
 
-    // Create a large array to simulate infinite scroll without complex CSS reset logic
-    const LOOPS = 60
+    // Keep enough clones for smooth navigation without multiplying hundreds of
+    // focusable controls into the DOM. Only the middle loop is exposed to AT.
+    const LOOPS = 9
+    const accessibleLoopStart = Math.floor(LOOPS / 2) * brands.length
     const extendedBrands = useMemo(() => {
         if (brands.length === 0) return []
         const arr = []
@@ -125,12 +127,17 @@ export function HomeCategoryBlockAlt({ categoryData }: HomeCategoryBlockAltProps
                         >
                             {extendedBrands.map((brand, idx) => {
                                 const isActive = idx === activeVirtualIndex
+                                const isAccessible = idx >= accessibleLoopStart
+                                    && idx < accessibleLoopStart + brands.length
                                 return (
                                     <button
                                         key={`${brand.slug}-${idx}`}
                                         onClick={() => {
                                             setActiveVirtualIndex(idx)
                                         }}
+                                        aria-hidden={!isAccessible}
+                                        aria-pressed={isAccessible ? isActive : undefined}
+                                        tabIndex={isAccessible ? 0 : -1}
                                         className="w-[140px] h-[72px] shrink-0 flex items-center justify-center px-3 transition-all duration-300 focus:outline-none"
                                     >
                                         <div className={cn(
@@ -142,7 +149,7 @@ export function HomeCategoryBlockAlt({ categoryData }: HomeCategoryBlockAltProps
                                             {/* eslint-disable-next-line @next/next/no-img-element */}
                                             <img 
                                                 src={`/images/brands/${brand.slug}.png`}
-                                                alt={brand.name}
+                                                alt={isAccessible ? brand.name : ""}
                                                 className="max-w-[80px] max-h-[32px] object-contain"
                                                 onError={(e) => {
                                                     const target = e.currentTarget;

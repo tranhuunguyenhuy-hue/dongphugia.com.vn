@@ -120,7 +120,7 @@ export function ProductImageGallery({
     return (
         <div className="flex flex-col gap-3 lg:gap-4 w-full">
             {/* Main Image */}
-            <div className="relative w-full aspect-square md:aspect-[628/590] lg:aspect-square rounded-[16px] overflow-hidden bg-stone-50 border border-stone-200">
+            <div className="relative w-full aspect-[4/3] sm:aspect-square md:aspect-[628/590] lg:aspect-square rounded-[16px] overflow-hidden bg-stone-50 border border-stone-200">
                 {activeImage && !erroredIndices.has(activeIndex) ? (
                     <div 
                         className="relative w-full h-full cursor-zoom-in"
