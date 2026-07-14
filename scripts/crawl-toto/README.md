@@ -39,6 +39,15 @@ node scripts/crawl-toto/audit-toto.mjs                       # Kiểm tra
 node scripts/crawl-toto/backup-toto.mjs --restore <file>     # Rollback
 ```
 
+## Output retention
+
+`scripts/crawl-toto/output/` chỉ chứa dữ liệu sinh tự động và không được commit.
+Fresh clone giữ lại thư mục rỗng; chạy pipeline theo thứ tự phía trên để tái tạo
+listing, snapshot, image map và backup cần thiết.
+
+Khi cần bàn giao một snapshot, đóng gói và mã hóa file ngoài repository. Không
+dùng Git làm nơi lưu database backup hoặc crawler output.
+
 ## Rate Limiting
 
 - Category: 2-3.5s delay
