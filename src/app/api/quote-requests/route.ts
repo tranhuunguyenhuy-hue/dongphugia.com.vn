@@ -18,6 +18,7 @@ export async function GET() {
 // POST /api/quote-requests
 // Alternative REST endpoint for quote submission (Server Action is primary)
 export async function POST(request: NextRequest) {
+    const startedAt = Date.now()
     // --- LEO-388: Rate Limiting ---
     const ip = getClientIp(request)
     const { maxReqs, windowMs } = RATE_LIMITS.quotePost
@@ -43,10 +44,20 @@ export async function POST(request: NextRequest) {
             return NextResponse.json(result, { status: 400 })
         }
 
-        logger.info('Quote request submitted', { route: 'POST /api/quote-requests' })
+        logger.info('Quote request submitted', {
+            route: 'POST /api/quote-requests',
+            duration_ms: Date.now() - startedAt,
+        })
         return NextResponse.json(result, { status: 201 })
     } catch (error) {
-        logger.error('Quote submission failed', { route: 'POST /api/quote-requests', error: String(error) })
+        const prismaCode = error && typeof error === 'object' && 'code' in error
+            ? String(error.code)
+            : undefined
+        logger.error('Quote submission failed', {
+            route: 'POST /api/quote-requests',
+            duration_ms: Date.now() - startedAt,
+            prisma_code: prismaCode,
+        })
         return handleApiError(error)
     }
 }

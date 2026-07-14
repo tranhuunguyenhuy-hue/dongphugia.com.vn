@@ -208,7 +208,7 @@ export default async function AdminDashboardPage() {
                                                 <TableRow key={quote.id} className="hover:bg-slate-50/50 border-b border-slate-50 last:border-0 group cursor-pointer">
                                                     <TableCell className="py-2.5 px-4">
                                                         <div className="flex flex-col">
-                                                            <Link href={`/admin/quotes/${quote.id}`} className="text-[13px] font-semibold text-slate-900 group-hover:text-emerald-600 transition-colors whitespace-nowrap">
+                                                            <Link href={`/admin/quote-requests/${quote.id}/builder`} className="text-[13px] font-semibold text-slate-900 group-hover:text-emerald-600 transition-colors whitespace-nowrap">
                                                                 {quote.name}
                                                             </Link>
                                                             <span className="text-[11px] text-slate-500">{quote.phone}</span>

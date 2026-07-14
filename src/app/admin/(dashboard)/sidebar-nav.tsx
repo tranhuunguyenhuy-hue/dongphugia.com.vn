@@ -14,9 +14,6 @@ import {
     BookOpen,
     LayoutGrid,
     ChevronRight,
-    HeadphonesIcon,
-    Settings,
-    MessageSquare,
     Megaphone,
     ImagePlay,
 } from "lucide-react"
@@ -106,7 +103,7 @@ const getNavConfig = (role: SessionUser['role'], pendingQuotes: number): NavGrou
                     title: "Marketing",
                     icon: Megaphone,
                     children: [
-                        { label: "Banners", href: "/admin/content/banners", permission: "blog:read" },
+                        { label: "Banner chiến dịch", href: "/admin/content/banners", permission: "blog:read" },
                         { label: "Blog Posts", href: "/admin/blog/posts", permission: "blog:read" },
                     ]
                 },
@@ -115,7 +112,7 @@ const getNavConfig = (role: SessionUser['role'], pendingQuotes: number): NavGrou
                     title: "Nội dung trang",
                     icon: ImagePlay,
                     children: [
-                        { label: "Banners", href: "/admin/banners", permission: "users:read" },
+                        { label: "Banner trang chủ", href: "/admin/banners", permission: "users:read" },
                         { label: "Đối tác", href: "/admin/doi-tac", permission: "users:read" },
                         { label: "Dự án", href: "/admin/du-an", permission: "users:read" },
                     ]
@@ -126,14 +123,6 @@ const getNavConfig = (role: SessionUser['role'], pendingQuotes: number): NavGrou
             label: "HỆ THỐNG",
             items: [
                 { title: "Nhân viên", href: "/admin/users", icon: ClipboardList, permission: "users:read" },
-            ]
-        },
-        {
-            label: "HỖ TRỢ",
-            items: [
-                { title: "Feedback", href: "#feedback", icon: MessageSquare },
-                { title: "Liên hệ hỗ trợ", href: "#support", icon: HeadphonesIcon },
-                { title: "Cài đặt", href: "/admin/settings", icon: Settings },
             ]
         }
     ]
@@ -176,28 +165,12 @@ export default function SidebarNav({ pendingQuotes, pendingOrders, currentUser }
             </SidebarHeader>
             <SidebarContent className="px-2 pb-0 gap-0">
                 {visibleNavGroups.map((group, index) => (
-                    <SidebarGroup key={group.label} className={group.label === "HỖ TRỢ" ? "mt-auto pt-4 pb-1" : "pt-4 pb-2"}>
+                    <SidebarGroup key={group.label} className="pt-4 pb-2">
                         <SidebarGroupLabel className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider mb-2 px-2 h-auto">
                             {group.label}
                         </SidebarGroupLabel>
                         <SidebarMenu className="gap-0.5">
                             {group.items.map((item) => {
-                                if (group.label === "HỖ TRỢ") {
-                                    const isActive = item.exact
-                                        ? pathname === item.href
-                                        : pathname.startsWith(item.href || "#")
-                                    return (
-                                        <SidebarMenuItem key={item.title}>
-                                            <SidebarMenuButton asChild isActive={isActive} tooltip={item.title} className={`h-8 rounded-md px-2.5 text-[12.5px] transition-colors ${isActive ? 'bg-white shadow-sm text-neutral-900 font-medium' : 'text-neutral-500 hover:text-neutral-900 hover:bg-white hover:shadow-sm'}`}>
-                                                <Link href={item.href || "#"}>
-                                                    {item.icon && <item.icon className="size-3.5 opacity-70 shrink-0" />}
-                                                    <span className="group-data-[collapsible=icon]:hidden">{item.title}</span>
-                                                </Link>
-                                            </SidebarMenuButton>
-                                        </SidebarMenuItem>
-                                    )
-                                }
-                                
                                 if (item.children) {
                                     // It's a collapsible item
                                     const isChildActive = item.children.some(child => pathname === child.href || pathname.startsWith(child.href + "/"))

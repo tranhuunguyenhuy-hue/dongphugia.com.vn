@@ -33,9 +33,9 @@ export function BrandSlider() {
     const allBrands = [...BRAND_SLUGS, ...BRAND_SLUGS]
 
     return (
-        <section className="w-full py-8 lg:py-10 overflow-hidden" aria-label="Đối tác thương hiệu">
+        <section className="w-full py-5 lg:py-10 overflow-hidden" aria-label="Đối tác thương hiệu">
             {/* Section label */}
-            <p className="text-center text-[13px] uppercase tracking-widest font-semibold text-stone-400 mb-8 w-full">
+            <p className="text-center text-[13px] uppercase tracking-widest font-semibold text-stone-400 mb-5 lg:mb-8 w-full">
                 Được hơn 30 đối tác toàn cầu tin tưởng
             </p>
 
@@ -54,12 +54,13 @@ export function BrandSlider() {
                     {allBrands.map((slug, i) => (
                         <div
                             key={`${slug}-${i}`}
+                            aria-hidden={i >= BRAND_SLUGS.length}
                             className="shrink-0 flex items-center justify-center w-[120px] h-[60px] lg:w-[140px] lg:h-[80px] relative transition-all duration-300 transform hover:scale-105 group/brand"
                         >
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                                 src={`/images/brands/${slug}.png`}
-                                alt={`Thương hiệu ${slug}`}
+                                alt={i >= BRAND_SLUGS.length ? "" : `Thương hiệu ${slug}`}
                                 className="max-w-[80px] max-h-[40px] lg:max-w-[100px] lg:max-h-[50px] object-contain grayscale opacity-40 group-hover/brand:grayscale-0 group-hover/brand:opacity-100 transition-all duration-300"
                                 loading="lazy"
                                 onError={(e) => {
