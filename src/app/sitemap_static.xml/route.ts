@@ -58,8 +58,6 @@ export async function GET() {
   addUrl(`${baseUrl}/ve-chung-toi`, now, "monthly", 0.6)  // fixed: was /gioi-thieu (404)
   addUrl(`${baseUrl}/doi-tac`, now, "monthly", 0.5)
   addUrl(`${baseUrl}/du-an`, now, "monthly", 0.5)
-  addUrl(`${baseUrl}/tin-tuc`, now, "weekly", 0.6)
-
   // ── Dynamic subcategory pages (from DB) ─────────────────────────────────────
   try {
     const subcategories = await prisma.subcategories.findMany({

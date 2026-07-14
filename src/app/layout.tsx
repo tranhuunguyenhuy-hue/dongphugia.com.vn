@@ -29,14 +29,10 @@ export const metadata: Metadata = {
     template: "%s | Đông Phú Gia",
   },
   description: "Đông Phú Gia - Nhà phân phối vật liệu xây dựng cao cấp tại Đà Lạt: gạch ốp lát, thiết bị vệ sinh chính hãng từ các thương hiệu uy tín.",
-  alternates: {
-    canonical: getCanonicalSiteUrl(),
-  },
   openGraph: {
     type: "website",
     locale: "vi_VN",
     siteName: "Đông Phú Gia",
-    url: getCanonicalSiteUrl(),
   },
   twitter: {
     card: "summary_large_image",

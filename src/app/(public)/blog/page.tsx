@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import type { Metadata } from 'next'
 import { ChevronRight } from 'lucide-react'
 import { PostCard, BlogPost } from '@/components/blog/post-card'
 
@@ -6,9 +7,11 @@ import { getBlogPosts, getBlogCategories, getPopularTags } from '@/lib/public-ap
 
 export const revalidate = 3600
 
-export const metadata = {
+export const metadata: Metadata = {
     title: 'Blog & Tin tức',
     description: 'Cập nhật kiến thức, xu hướng thiết kế nội thất, hướng dẫn chọn vật liệu xây dựng và thông tin dự án mới nhất từ Đông Phú Gia Đà Lạt.',
+    alternates: { canonical: '/blog' },
+    openGraph: { url: '/blog' },
 }
 
 export default async function BlogPage() {

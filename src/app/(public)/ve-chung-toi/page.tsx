@@ -4,6 +4,8 @@ import { AboutClient } from './about-client'
 export const metadata: Metadata = {
     title: 'Về chúng tôi',
     description: 'Khám phá hành trình hơn thập kỷ kiến tạo không gian sống và cung cấp vật liệu xây dựng cao cấp hàng đầu thiết kế tại Đà Lạt.',
+    alternates: { canonical: '/ve-chung-toi' },
+    openGraph: { url: '/ve-chung-toi' },
 }
 
 export default function AboutPage() {
