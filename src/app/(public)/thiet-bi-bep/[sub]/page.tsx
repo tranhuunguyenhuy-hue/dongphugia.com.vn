@@ -143,6 +143,10 @@ export default async function ThietBiBepSubPage({ params, searchParams }: PagePr
 
                 {/* ── Main 70% ── */}
                 <div className="flex-1 w-full min-w-0 pb-16 space-y-8">
+                    <h1 className="text-2xl lg:text-3xl font-bold text-neutral-900">
+                        {subcategory.name}
+                    </h1>
+
                     {/* Subcategory icon grid */}
                     <SubcategoryIconGrid
                         subcategories={allSubcategories}

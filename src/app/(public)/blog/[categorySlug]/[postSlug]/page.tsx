@@ -42,6 +42,12 @@ export default async function BlogPostPage({ params }: { params: Promise<{ categ
         notFound()
     }
 
+    // The page title is the only H1. Legacy editor content may contain H1 tags,
+    // so demote those headings before rendering and building the table of contents.
+    const articleContent = (post.content || '')
+        .replace(/<h1(\s|>)/gi, '<h2$1')
+        .replace(/<\/h1>/gi, '</h2>')
+
     // Related posts from same category (excluding current)
     const relatedPostsRaw = await getRelatedBlogPosts(post.id, post.category_id, 3)
     const relatedPosts = relatedPostsRaw as unknown as BlogPost[]
@@ -142,7 +148,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ categ
                             {/* HTML TipTap Render Content */}
                             <div
                                 className="prose prose-lg max-w-none prose-slate"
-                                dangerouslySetInnerHTML={{ __html: post.content || '' }}
+                                dangerouslySetInnerHTML={{ __html: articleContent }}
                             />
 
                             {/* Article Footer & Share */}
@@ -181,7 +187,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ categ
                         {/* Sticky TOC Widget */}
                         <div className="sticky top-24">
                             {/* Client Component bóc tách H2/H3 nội dung */}
-                            <TableOfContents htmlContent={post.content || ''} />
+                            <TableOfContents htmlContent={articleContent} />
 
                             {/* Banner quảng cáo dọc nếu có */}
                             <div className="mt-6 rounded-2xl overflow-hidden relative h-[400px] border border-[#E4EEF2] bg-slate-100 group cursor-pointer shadow-sm hidden lg:block">

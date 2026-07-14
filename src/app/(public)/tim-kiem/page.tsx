@@ -52,7 +52,13 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
     const rawParams = await searchParams
     const rawQ = Array.isArray(rawParams.q) ? rawParams.q[0] : rawParams.q
     const q = rawQ?.trim()
-    if (!q) return { title: 'Tìm kiếm sản phẩm' }
+    if (!q) {
+        return {
+            title: 'Tìm kiếm sản phẩm',
+            alternates: { canonical: canonicalUrl('/tim-kiem') },
+            robots: { index: false, follow: true },
+        }
+    }
     return {
         title: `Kết quả tìm kiếm "${q}"`,
         description: `Kết quả tìm kiếm cho "${q}" tại Đông Phú Gia — Thiết bị vệ sinh, gạch ốp lát, thiết bị bếp chính hãng.`,
@@ -208,7 +214,7 @@ export default async function SearchPage({ searchParams }: PageProps) {
                 </nav>
                 <h1 className="text-3xl font-bold text-stone-900 mb-6 tracking-tight">
                     {query
-                        ? <>Kết quả cho <span className="text-brand-600">"{query}"</span></>
+                        ? <>Kết quả cho <span className="text-brand-600">&quot;{query}&quot;</span></>
                         : 'Tìm kiếm sản phẩm'
                     }
                 </h1>
@@ -223,7 +229,7 @@ export default async function SearchPage({ searchParams }: PageProps) {
                     </div>
                     <p className="text-xl font-bold text-stone-800 mb-2">Nhập từ khóa để bắt đầu tìm kiếm</p>
                     <p className="text-stone-500 text-[15px] max-w-md">
-                        Thử tìm tên sản phẩm, mã SKU, hoặc tên thương hiệu như "TOTO", "HCG", "Hafele"...
+                        Thử tìm tên sản phẩm, mã SKU, hoặc tên thương hiệu như &quot;TOTO&quot;, &quot;HCG&quot;, &quot;Hafele&quot;...
                     </p>
                 </div>
             )}
@@ -262,7 +268,7 @@ export default async function SearchPage({ searchParams }: PageProps) {
                             </div>
                             <p className="text-xl font-bold text-stone-800 mb-2">Không có kết quả</p>
                             <p className="text-stone-500 text-[15px] max-w-sm mb-8">
-                                Không tìm thấy sản phẩm nào cho "{query}". Hãy thử dùng từ khóa khác hoặc tham khảo các gợi ý bên dưới.
+                                Không tìm thấy sản phẩm nào cho &quot;{query}&quot;. Hãy thử dùng từ khóa khác hoặc tham khảo các gợi ý bên dưới.
                             </p>
                             <div className="flex flex-wrap gap-2 justify-center">
                                 {['TOTO', 'HCG', 'CAESAR', 'Hafele', 'Gạch ốp lát'].map(s => (

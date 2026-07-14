@@ -95,24 +95,24 @@ export function buildProductSchema(product: ProductSchemaInput) {
       ? { "@type": "Brand", name: product.brands.name }
       : undefined,
     url: productUrl,
-    offers: {
-      "@type": "Offer",
-      priceCurrency: "VND",
-      ...(hasPrice
-        ? {
+    ...(hasPrice
+      ? {
+          offers: {
+            "@type": "Offer",
+            priceCurrency: "VND",
             price: normalizedPrice,
             priceValidUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
               .toISOString()
               .split("T")[0],
-          }
-        : {}),
-      availability,
-      url: productUrl,
-      seller: {
-        "@type": "Organization",
-        name: "Đông Phú Gia",
-      },
-    },
+            availability,
+            url: productUrl,
+            seller: {
+              "@type": "Organization",
+              name: "Đông Phú Gia",
+            },
+          },
+        }
+      : {}),
   }
 }
 

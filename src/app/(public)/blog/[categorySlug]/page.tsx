@@ -1,28 +1,34 @@
 import Link from 'next/link'
+import type { Metadata } from 'next'
 import { ChevronRight } from 'lucide-react'
 import { PostCard, BlogPost } from '@/components/blog/post-card'
 
 import { getBlogPosts, getBlogCategories } from '@/lib/public-api-blog'
+import { canonicalUrl } from '@/lib/site'
 
 export const revalidate = 3600
 
-export async function generateMetadata({ params }: { params: Promise<{ categorySlug: string }> }) {
+export async function generateMetadata({ params }: { params: Promise<{ categorySlug: string }> }): Promise<Metadata> {
     const { categorySlug } = await params
     const categories = await getBlogCategories()
-    const category = categories.find((c: any) => c.slug === categorySlug)
+    const category = categories.find((c) => c.slug === categorySlug)
 
-    if (!category) return { title: 'Không tìm thấy chuyên mục' }
+    if (!category) return { title: 'Không tìm thấy chuyên mục', robots: { index: false, follow: false } }
+
+    const url = canonicalUrl(`/blog/${categorySlug}`)
 
     return {
         title: `${category.name}`,
-        description: category.description || `Các bài viết mới nhất thuộc chuyên mục ${category.name}`
+        description: category.description || `Các bài viết mới nhất thuộc chuyên mục ${category.name}`,
+        alternates: { canonical: url },
+        openGraph: { url },
     }
 }
 
 export default async function BlogCategoryPage({ params }: { params: Promise<{ categorySlug: string }> }) {
     const { categorySlug } = await params
     const categories = await getBlogCategories()
-    const category = categories.find((c: any) => c.slug === categorySlug)
+    const category = categories.find((c) => c.slug === categorySlug)
 
     if (!category) {
         return (

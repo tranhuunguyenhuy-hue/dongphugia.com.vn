@@ -50,14 +50,6 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       {
-        source: '/tin-tuc',
-        destination: '/blog',
-      },
-      {
-        source: '/tin-tuc/:path*',
-        destination: '/blog/:path*',
-      },
-      {
         source: '/admin/tin-tuc/:path*',
         destination: '/admin/blog/:path*',
       },
@@ -84,7 +76,19 @@ const nextConfig: NextConfig = {
       permanent: true,
     }))
 
-    return categoryRedirects
+    return [
+      {
+        source: '/tin-tuc',
+        destination: '/blog',
+        permanent: true,
+      },
+      {
+        source: '/tin-tuc/:path*',
+        destination: '/blog/:path*',
+        permanent: true,
+      },
+      ...categoryRedirects,
+    ]
   },
 
   // LEO-392 Security Headers (SECURITY_AUDIT.md — P2)
