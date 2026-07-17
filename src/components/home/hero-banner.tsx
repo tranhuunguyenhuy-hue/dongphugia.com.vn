@@ -82,6 +82,7 @@ export function HeroBanner({ banners }: HeroBannerProps) {
                         profile="hero"
                         className="h-full w-full object-cover"
                         priority={current === 0}
+                        mobileWidth={720}
                         sizes="(max-width: 768px) 100vw, 1280px"
                     />
                 )

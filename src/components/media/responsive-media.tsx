@@ -1,5 +1,6 @@
 import type { ImgHTMLAttributes } from 'react'
 import {
+    createResponsiveMediaUrl,
     createResponsiveSrcSet,
     type MediaProfile,
 } from '@/lib/media/media-profiles'
@@ -16,6 +17,7 @@ export interface ResponsiveMediaProps
     height?: number
     fill?: boolean
     priority?: boolean
+    mobileWidth?: number
 }
 
 export function ResponsiveMedia({
@@ -26,6 +28,7 @@ export function ResponsiveMedia({
     height,
     fill = false,
     priority = false,
+    mobileWidth,
     sizes = '100vw',
     className,
     style,
@@ -33,12 +36,24 @@ export function ResponsiveMedia({
     ...props
 }: ResponsiveMediaProps) {
     const srcSet = createResponsiveSrcSet(src, profile)
+    const mobileSrcSet =
+        srcSet && mobileWidth
+            ? `${createResponsiveMediaUrl(src, mobileWidth)} ${mobileWidth}w`
+            : undefined
     const imageStyle = fill
         ? { ...style, position: 'absolute' as const, inset: 0 }
         : style
 
     return (
         <picture>
+            {mobileSrcSet ? (
+                <source
+                    media="(max-width: 768px)"
+                    type="image/webp"
+                    srcSet={mobileSrcSet}
+                    sizes="100vw"
+                />
+            ) : null}
             {srcSet ? (
                 <source type="image/webp" srcSet={srcSet} sizes={sizes} />
             ) : null}

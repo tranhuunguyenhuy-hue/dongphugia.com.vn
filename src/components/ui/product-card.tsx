@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { formatPrice, cn } from '@/lib/utils';
 import { siteConfig } from '@/config/site';
 import { getVariantDisplayColor } from '@/lib/variant-color-display';
-import { ResponsiveMedia } from '@/components/media/responsive-media';
+import { DeferredResponsiveMedia } from '@/components/media/deferred-responsive-media';
 
 export interface ProductCardProps {
     product: any;
@@ -129,7 +129,7 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
                 {/* Product Image — full top bleed */}
                 <div className="relative w-full aspect-square bg-[#F8F9FA] rounded-[12px] overflow-hidden shrink-0 z-10">
                 {firstImage ? (
-                    <ResponsiveMedia
+                    <DeferredResponsiveMedia
                         src={firstImage}
                         alt={product.name}
                         fill
