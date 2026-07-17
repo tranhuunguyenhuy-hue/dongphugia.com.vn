@@ -68,6 +68,7 @@ export function BannerForm({ banner }: BannerFormProps) {
                         value={form.image_url}
                         onChange={(v) => set('image_url', v as string)}
                         folder="banners"
+                        profile="hero"
                     />
                 </div>
                 <div>

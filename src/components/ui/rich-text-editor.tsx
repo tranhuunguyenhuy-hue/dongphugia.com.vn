@@ -94,6 +94,7 @@ export function RichTextEditor({
             const formData = new FormData()
             formData.append('file', file)
             formData.append('folder', folder)
+            formData.append('profile', 'editorial')
 
             const res = await fetch('/api/upload-image', {
                 method: 'POST',

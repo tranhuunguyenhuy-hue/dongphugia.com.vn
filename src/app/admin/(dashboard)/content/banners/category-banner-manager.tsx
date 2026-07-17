@@ -71,6 +71,7 @@ export function CategoryBannerManager({ category }: CategoryBannerManagerProps) 
                     value={bannerUrl}
                     onChange={(v) => setBannerUrl(v as string)}
                     folder="category-banners"
+                    profile="hero"
                 />
             </div>
         </div>

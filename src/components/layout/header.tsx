@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { Phone, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useId } from "react"
 import { getMegaMenuData } from '@/app/actions/mega-menu-actions'
 import type { Category, MenuData } from '@/components/home/mega-menu'
 import { MegaMenuHeader } from '@/components/home/mega-menu'
@@ -23,7 +23,13 @@ function ProductsDropdown() {
     }, [])
 
     if (!data) return (
-        <button className="flex items-center gap-1.5 font-medium text-[15px] leading-[20px] text-stone-700 hover:text-brand-600 focus:outline-none px-4 py-2 bg-transparent hover:bg-brand-50 transition-all duration-300 rounded-full h-[38px]">
+        <button
+            className="flex items-center gap-1.5 font-medium text-[15px] leading-[20px] text-stone-700 focus:outline-none px-4 py-2 bg-transparent transition-all duration-300 rounded-full h-[38px]"
+            aria-haspopup="menu"
+            aria-expanded="false"
+            aria-label="Đang tải menu sản phẩm"
+            disabled
+        >
             Sản phẩm
             <ChevronDown className="h-4 w-4 transition-transform duration-300" />
         </button>
@@ -34,15 +40,39 @@ function ProductsDropdown() {
 
 function AboutDropdown() {
     const [isOpen, setIsOpen] = useState(false);
+    const menuId = useId()
     return (
-        <div className="relative h-full flex items-center" onMouseEnter={() => setIsOpen(true)} onMouseLeave={() => setIsOpen(false)}>
-            <button className={`flex items-center gap-1.5 font-medium text-[15px] leading-[20px] focus:outline-none px-4 py-2 transition-all duration-300 rounded-full h-[38px] ${isOpen ? 'bg-brand-50 text-brand-600' : 'bg-transparent text-stone-700 hover:bg-brand-50 hover:text-brand-600'}`}>
+        <div
+            className="relative h-full flex items-center"
+            onMouseEnter={() => setIsOpen(true)}
+            onMouseLeave={() => setIsOpen(false)}
+            onKeyDown={(event) => {
+                if (event.key === 'Escape') {
+                    setIsOpen(false)
+                    ;(event.currentTarget.querySelector('button') as HTMLButtonElement | null)?.focus()
+                }
+            }}
+        >
+            <button
+                type="button"
+                onClick={() => setIsOpen(true)}
+                aria-expanded={isOpen}
+                aria-controls={menuId}
+                aria-haspopup="menu"
+                className={`flex items-center gap-1.5 font-medium text-[15px] leading-[20px] focus:outline-none px-4 py-2 transition-all duration-300 rounded-full h-[38px] ${isOpen ? 'bg-brand-50 text-brand-600' : 'bg-transparent text-stone-700 hover:bg-brand-50 hover:text-brand-600'}`}
+            >
                 Về chúng tôi
-                <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown aria-hidden="true" className={`h-4 w-4 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
             </button>
-            <div className={`absolute top-[calc(50%+24px)] left-1/2 -translate-x-1/2 w-[220px] bg-white shadow-[0_12px_40px_rgba(0,0,0,0.08)] rounded-[16px] border border-stone-100 py-2 transition-all duration-300 z-50 origin-top ${isOpen ? 'opacity-100 visible translate-y-0 scale-100' : 'opacity-0 invisible translate-y-2 scale-95 pointer-events-none'}`}>
+            <div
+                id={menuId}
+                role="menu"
+                aria-hidden={!isOpen}
+                inert={!isOpen}
+                className={`absolute top-[calc(50%+24px)] left-1/2 -translate-x-1/2 w-[220px] bg-white shadow-[0_12px_40px_rgba(0,0,0,0.08)] rounded-[16px] border border-stone-100 py-2 transition-all duration-300 z-50 origin-top ${isOpen ? 'opacity-100 visible translate-y-0 scale-100' : 'opacity-0 invisible translate-y-2 scale-95 pointer-events-none'}`}
+            >
                 {ABOUT_LINKS.map(link => (
-                    <Link key={link.href} href={link.href} className="block px-4 py-2.5 text-[15px] font-medium text-stone-700 hover:bg-stone-50 hover:text-brand-600 transition-colors">
+                    <Link key={link.href} href={link.href} role="menuitem" onClick={() => setIsOpen(false)} className="block px-4 py-2.5 text-[15px] font-medium text-stone-700 hover:bg-stone-50 hover:text-brand-600 transition-colors">
                         {link.label}
                     </Link>
                 ))}
@@ -97,7 +127,7 @@ export function Header() {
                                 <SearchBar />
                                 <div className="h-6 w-px bg-stone-200 ml-1"></div>
                                 <CartIcon />
-                                <Button asChild className="px-6 h-11 text-[15px] font-medium gap-2 bg-brand-500 hover:bg-brand-600 text-white rounded-full shadow-sm ml-2">
+                                <Button asChild className="px-6 h-11 text-[15px] font-medium gap-2 bg-brand-700 hover:bg-brand-800 text-white rounded-full shadow-sm ml-2">
                                     <Link href="/lien-he" aria-label="Liên hệ" onClick={() => trackGenerateLead('navbar_contact')}>
                                         Liên hệ
                                         <Phone className="h-[18px] w-[18px]" aria-hidden="true" />

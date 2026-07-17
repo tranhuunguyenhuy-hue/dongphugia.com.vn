@@ -28,6 +28,7 @@ async function uploadViaApi(file: File): Promise<string | null> {
     const formData = new FormData()
     formData.append('file', file)
     formData.append('folder', 'products')
+    formData.append('profile', 'product')
     const res = await fetch('/api/upload-image', { method: 'POST', body: formData })
     const json = await res.json()
     if (!res.ok || json.error) throw new Error(json.error || `HTTP ${res.status}`)
