@@ -1158,9 +1158,9 @@ export function ProductForm({ pageTitle, pageSubtitle, product, categories, subc
 
                                                 <div className="space-y-3">
                                                     <Label>Danh sách sản phẩm liên kết</Label>
-                                                    {product?.product_relationships && (product?.product_relationships as any[])?.length > 0 ? (
+                                                    {product?.product_relationships && (product.product_relationships as ProductRelationship[]).length > 0 ? (
                                                         <div className="divide-y border rounded-lg overflow-hidden bg-white">
-                                                            {(product?.product_relationships as any[]).map((rel: any) => (
+                                                            {(product.product_relationships as ProductRelationship[]).map((rel) => (
                                                                 <div key={rel.id} className="flex items-center justify-between p-3 hover:bg-stone-50">
                                                                     <div className="flex items-center gap-3">
                                                                         <div className="h-10 w-10 relative rounded bg-stone-100 border shrink-0">
@@ -1213,4 +1213,13 @@ export function ProductForm({ pageTitle, pageSubtitle, product, categories, subc
             </form>
         </Form>
     )
+}
+
+interface ProductRelationship {
+    id: number
+    child_sku: string | null
+    child?: {
+        name: string
+        image_main_url: string | null
+    } | null
 }

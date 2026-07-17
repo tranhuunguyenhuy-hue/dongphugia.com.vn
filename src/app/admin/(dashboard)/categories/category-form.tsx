@@ -326,7 +326,7 @@ export function CategoryForm({ pageTitle, pageSubtitle, category, activeBanners 
                                         <Layers className="h-12 w-12 text-neutral-300 mb-4" />
                                         <h3 className="text-lg font-medium text-neutral-700 mb-2">Trình quản lý bộ lọc đang được xây dựng</h3>
                                         <p className="text-sm text-neutral-500 max-w-md">
-                                            Tại đây, bạn sẽ có thể tự do kéo thả, thêm bớt và định nghĩa các thuộc tính như "Kiểu dáng", "Tính năng" cho danh mục này một cách trực quan.
+                                            Tại đây, bạn sẽ có thể tự do kéo thả, thêm bớt và định nghĩa các thuộc tính như &quot;Kiểu dáng&quot;, &quot;Tính năng&quot; cho danh mục này một cách trực quan.
                                         </p>
                                     </CardContent>
                                 </Card>

@@ -94,8 +94,9 @@ export function ProductGallery({ productId, images: initialImages, currentThumbn
                     toast.success(`Đã thêm ${urls.length} ảnh vào gallery`)
                 }
             }
-        } catch (err: any) {
-            toast.error('Lỗi upload: ' + err.message)
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'Lỗi không xác định'
+            toast.error('Lỗi upload: ' + message)
         } finally {
             setUploading(false)
         }
