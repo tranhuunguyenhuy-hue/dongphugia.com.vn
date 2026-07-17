@@ -1,12 +1,12 @@
 'use client'
 
 import { useRef } from 'react'
-import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowLeft, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { format } from 'date-fns'
 import { vi } from 'date-fns/locale'
+import { ResponsiveMedia } from '@/components/media/responsive-media'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function BlogSectionClient({ posts }: { posts: any[] }) {
@@ -42,6 +42,7 @@ export function BlogSectionClient({ posts }: { posts: any[] }) {
                             size="icon"
                             className="rounded-sm w-12 h-12 border-neutral-300 text-neutral-600 hover:text-[#2E7A96] hover:border-[#2E7A96]"
                             onClick={() => scroll('left')}
+                            aria-label="Bài viết trước"
                         >
                             <ArrowLeft className="w-5 h-5" />
                         </Button>
@@ -50,6 +51,7 @@ export function BlogSectionClient({ posts }: { posts: any[] }) {
                             size="icon"
                             className="rounded-sm w-12 h-12 border-neutral-300 text-neutral-600 hover:text-[#2E7A96] hover:border-[#2E7A96]"
                             onClick={() => scroll('right')}
+                            aria-label="Bài viết tiếp theo"
                         >
                             <ArrowRight className="w-5 h-5" />
                         </Button>
@@ -66,10 +68,12 @@ export function BlogSectionClient({ posts }: { posts: any[] }) {
                         <div key={post.id} className="snap-start shrink-0 w-[85vw] sm:w-[50vw] md:w-[calc(33.333%-16px)]">
                             <Link href={`/blog/${post.blog_categories?.slug}/${post.slug}`} className="group flex flex-col gap-4">
                                 <div className="relative aspect-[4/3] rounded-sm overflow-hidden bg-neutral-200">
-                                    <Image
-                                        src={post.thumbnail_url || '/images/assets-v2/hero-banner.png'}
+                                    <ResponsiveMedia
+                                        src={post.thumbnail_url || '/images/banner-1.jpg'}
                                         alt={post.title}
                                         fill
+                                        profile="editorial"
+                                        sizes="(max-width: 640px) 85vw, (max-width: 1024px) 50vw, 33vw"
                                         className="object-cover transition-transform duration-500 group-hover:scale-105"
                                     />
                                     {post.blog_categories && (

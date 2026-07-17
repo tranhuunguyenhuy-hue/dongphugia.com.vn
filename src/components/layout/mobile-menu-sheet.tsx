@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useId } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Phone, ChevronDown, ChevronRight, Menu } from 'lucide-react'
@@ -27,6 +27,7 @@ function CategoryAccordionItem({
     onNavigate: () => void
 }) {
     const [isOpen, setIsOpen] = useState(false)
+    const panelId = useId()
     const subs = data?.subcategories ?? []
     const hasSubs = subs.length > 0
 
@@ -49,6 +50,8 @@ function CategoryAccordionItem({
                         onClick={() => setIsOpen(v => !v)}
                         className="w-10 h-10 -mr-2 flex items-center justify-center text-stone-400 active:text-brand-600 transition-colors"
                         aria-label={isOpen ? 'Thu gọn' : 'Mở rộng'}
+                        aria-expanded={isOpen}
+                        aria-controls={panelId}
                     >
                         <ChevronDown
                             className={`h-4 w-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
@@ -62,6 +65,9 @@ function CategoryAccordionItem({
             {/* Subcategories accordion body */}
             {hasSubs && (
                 <div
+                    id={panelId}
+                    aria-hidden={!isOpen}
+                    inert={!isOpen}
                     className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out ${
                         isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
                     }`}

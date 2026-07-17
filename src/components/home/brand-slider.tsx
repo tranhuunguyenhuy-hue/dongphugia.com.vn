@@ -1,6 +1,4 @@
-"use client"
-
-import { useEffect, useRef } from "react"
+import { BrandLogo } from '@/components/media/brand-logo'
 
 const BRAND_SLUGS = [
     'toto', 'inax', 'caesar', 'american-standard', 'grohe', 'cotto', 'viglacera',
@@ -11,31 +9,10 @@ const BRAND_SLUGS = [
 ]
 
 export function BrandSlider() {
-    const scrollRef = useRef<HTMLDivElement>(null)
-
-    useEffect(() => {
-        const el = scrollRef.current
-        if (!el) return
-
-        // Pause on hover
-        const pause = () => el.style.animationPlayState = "paused"
-        const resume = () => el.style.animationPlayState = "running"
-
-        el.addEventListener("mouseenter", pause)
-        el.addEventListener("mouseleave", resume)
-        return () => {
-            el.removeEventListener("mouseenter", pause)
-            el.removeEventListener("mouseleave", resume)
-        }
-    }, [])
-
-    // Duplicate brands for seamless loop
-    const allBrands = [...BRAND_SLUGS, ...BRAND_SLUGS]
-
     return (
-        <section className="w-full py-5 lg:py-10 overflow-hidden" aria-label="Đối tác thương hiệu">
+        <section className="w-full py-8 lg:py-10 overflow-hidden" aria-label="Đối tác thương hiệu">
             {/* Section label */}
-            <p className="text-center text-[13px] uppercase tracking-widest font-semibold text-stone-400 mb-5 lg:mb-8 w-full">
+            <p className="text-center text-[13px] uppercase tracking-widest font-semibold text-stone-600 mb-8 w-full">
                 Được hơn 30 đối tác toàn cầu tin tưởng
             </p>
 
@@ -45,33 +22,26 @@ export function BrandSlider() {
                 <div className="absolute left-0 top-0 bottom-0 w-16 sm:w-32 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
                 <div className="absolute right-0 top-0 bottom-0 w-16 sm:w-32 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
 
-                {/* Scrolling track */}
-                <div
-                    ref={scrollRef}
-                    className="flex items-center gap-8 lg:gap-12 animate-marquee"
-                    style={{ width: "max-content" }}
-                >
-                    {allBrands.map((slug, i) => (
+                <div className="brand-marquee-track flex w-max items-center hover:[animation-play-state:paused]">
+                    {[false, true].map((isClone) => (
                         <div
-                            key={`${slug}-${i}`}
-                            aria-hidden={i >= BRAND_SLUGS.length}
-                            className="shrink-0 flex items-center justify-center w-[120px] h-[60px] lg:w-[140px] lg:h-[80px] relative transition-all duration-300 transform hover:scale-105 group/brand"
+                            key={isClone ? 'clone' : 'primary'}
+                            className="flex items-center gap-8 pr-8 lg:gap-12 lg:pr-12"
+                            aria-hidden={isClone || undefined}
                         >
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                                src={`/images/brands/${slug}.png`}
-                                alt={i >= BRAND_SLUGS.length ? "" : `Thương hiệu ${slug}`}
-                                className="max-w-[80px] max-h-[40px] lg:max-w-[100px] lg:max-h-[50px] object-contain grayscale opacity-40 group-hover/brand:grayscale-0 group-hover/brand:opacity-100 transition-all duration-300"
-                                loading="lazy"
-                                onError={(e) => {
-                                    const target = e.currentTarget;
-                                    if (target.src.endsWith('.png')) {
-                                        target.src = `/images/brands/${slug}.svg`;
-                                    } else {
-                                        target.style.display = 'none';
-                                    }
-                                }}
-                            />
+                            {BRAND_SLUGS.map((slug) => (
+                                <div
+                                    key={slug}
+                                    className="group/brand relative flex h-[60px] w-[120px] shrink-0 items-center justify-center transition-transform duration-300 hover:scale-105 lg:h-[80px] lg:w-[140px]"
+                                >
+                                    <BrandLogo
+                                        slug={slug}
+                                        name={slug}
+                                        decorative={isClone}
+                                        className="max-h-[40px] max-w-[80px] opacity-50 grayscale transition-all duration-300 group-hover/brand:opacity-100 group-hover/brand:grayscale-0 lg:max-h-[50px] lg:max-w-[100px]"
+                                    />
+                                </div>
+                            ))}
                         </div>
                     ))}
                 </div>

@@ -231,6 +231,7 @@ export function CategoryForm({ pageTitle, pageSubtitle, category, activeBanners 
                                                                 value={field.value || ''}
                                                                 onChange={field.onChange}
                                                                 folder="categories"
+                                                                profile="editorial"
                                                                 className="h-40 w-40 aspect-square"
                                                             />
                                                         </FormControl>

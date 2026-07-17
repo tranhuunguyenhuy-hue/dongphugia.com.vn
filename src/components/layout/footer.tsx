@@ -17,7 +17,7 @@ export function Footer() {
                                 alt="Đông Phú Gia - Đồng hành, Phát triển"
                                 width={184}
                                 height={36}
-                                className="w-[164px] lg:w-[184px] h-auto object-contain"
+                                className="h-auto w-[164px] object-contain lg:w-[184px]"
                             />
                         </Link>
 
@@ -36,7 +36,7 @@ export function Footer() {
                                 />
                                 <button
                                     type="submit"
-                                    className="h-11 px-6 bg-brand-500 hover:bg-brand-600 text-white font-medium text-[15px] transition-colors flex items-center justify-center tracking-wide"
+                                    className="h-11 px-6 bg-brand-700 hover:bg-brand-800 text-white font-medium text-[15px] transition-colors flex items-center justify-center tracking-wide"
                                 >
                                     Đăng ký
                                 </button>

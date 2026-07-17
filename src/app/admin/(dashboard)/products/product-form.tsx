@@ -370,6 +370,7 @@ export function ProductForm({ pageTitle, pageSubtitle, product, categories, subc
                                                             value={field.value || ''}
                                                             onChange={v => field.onChange(v as string)}
                                                             folder="products"
+                                                            profile="product"
                                                         />
                                                     </FormControl>
                                                 </FormItem>

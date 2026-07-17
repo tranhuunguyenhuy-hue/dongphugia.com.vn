@@ -34,10 +34,10 @@ export default async function HomePage() {
             take: 5,
         }),
         // getHomeFeaturedProducts(15), // Tạm ẩn để nghiên cứu thêm
-        getFeaturedProductsByCategorySlug('thiet-bi-ve-sinh', ['toto', 'inax'], null, 0, 20),
-        getFeaturedProductsByCategorySlug('thiet-bi-bep', null, null, 0, 20),
-        getFeaturedProductsByCategorySlug('gach-op-lat', null, null, 0, 20),
-        getFeaturedProductsByCategorySlug('vat-lieu-nuoc', null, null, 0, 20),
+        getFeaturedProductsByCategorySlug('thiet-bi-ve-sinh', ['toto', 'inax'], null, 0, 5),
+        getFeaturedProductsByCategorySlug('thiet-bi-bep', null, null, 0, 5),
+        getFeaturedProductsByCategorySlug('gach-op-lat', null, null, 0, 5),
+        getFeaturedProductsByCategorySlug('vat-lieu-nuoc', null, null, 0, 5),
         prisma.brands.findMany({
             where: { products: { some: { categories: { slug: 'thiet-bi-ve-sinh' } } } },
             select: { name: true, slug: true }

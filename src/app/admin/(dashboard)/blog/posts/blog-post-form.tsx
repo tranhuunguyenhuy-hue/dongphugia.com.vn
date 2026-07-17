@@ -440,6 +440,7 @@ export function BlogPostForm({ post, categories, tags }: BlogPostFormProps) {
                                 value={form.thumbnail_url}
                                 onChange={(v) => set('thumbnail_url', v as string)}
                                 folder="blog"
+                                profile="editorial"
                             />
                             {form.thumbnail_url && (
                                 <div className="mt-2 rounded-lg overflow-hidden border border-[#E4EEF2] aspect-[16/9] relative bg-muted">
@@ -458,6 +459,7 @@ export function BlogPostForm({ post, categories, tags }: BlogPostFormProps) {
                                 value={form.cover_image_url}
                                 onChange={(v) => set('cover_image_url', v as string)}
                                 folder="blog"
+                                profile="editorial"
                             />
                             {form.cover_image_url && (
                                 <div className="mt-2 rounded-lg overflow-hidden border border-[#E4EEF2] aspect-[21/9] relative bg-muted">
