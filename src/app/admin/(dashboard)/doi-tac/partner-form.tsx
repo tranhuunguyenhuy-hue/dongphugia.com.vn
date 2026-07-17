@@ -61,7 +61,8 @@ export function PartnerForm({ partner }: PartnerFormProps) {
                 </div>
                 <div>
                     <ImageUploader label="Logo đối tác" value={form.logo_url}
-                        onChange={v => set('logo_url', v as string)} folder="partners" />
+                        onChange={v => set('logo_url', v as string)} folder="partners"
+                        profile="product" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                     <div>

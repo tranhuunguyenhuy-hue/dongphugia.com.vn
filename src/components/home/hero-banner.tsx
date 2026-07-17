@@ -1,9 +1,9 @@
 "use client"
 
 import { useState, useEffect, useCallback, useRef } from "react"
-import Image from "next/image"
 import Link from "next/link"
 import { ChevronLeft, ChevronRight } from "lucide-react"
+import { ResponsiveMedia } from "@/components/media/responsive-media"
 
 type Banner = {
     id: number
@@ -24,7 +24,7 @@ const BANNER_HEIGHT = 900
 export function HeroBanner({ banners }: HeroBannerProps) {
     const items = banners.length > 0 ? banners : []
     const [current, setCurrent] = useState(0)
-    const [isHovered, setIsHovered] = useState(false)
+    const [isPaused, setIsPaused] = useState(false)
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
     const goTo = useCallback((idx: number) => {
@@ -36,24 +36,25 @@ export function HeroBanner({ banners }: HeroBannerProps) {
 
     // Auto-advance — pause on hover
     useEffect(() => {
-        if (items.length <= 1 || isHovered) return
+        const prefersReducedMotion = window.matchMedia(
+            '(prefers-reduced-motion: reduce)',
+        ).matches
+        if (items.length <= 1 || isPaused || prefersReducedMotion) return
         timerRef.current = setInterval(next, 5000)
         return () => { if (timerRef.current) clearInterval(timerRef.current) }
-    }, [next, items.length, isHovered])
+    }, [next, items.length, isPaused])
 
     if (items.length === 0) {
         return (
             <div className="relative w-full rounded-md shadow-md overflow-hidden bg-stone-50" style={{ aspectRatio: '16 / 9' }}>
-                <Image
-                    src="/images/assets-v2/hero-banner.png"
+                <ResponsiveMedia
+                    src="/images/banner-1.jpg"
                     alt="Đông Phú Gia - Vật liệu xây dựng"
                     width={BANNER_WIDTH}
                     height={BANNER_HEIGHT}
                     className="w-full h-auto"
                     priority
-                    quality={100}
                     sizes="100vw"
-                    unoptimized
                 />
             </div>
         )
@@ -63,43 +64,44 @@ export function HeroBanner({ banners }: HeroBannerProps) {
         <div
             className="relative w-full rounded-md shadow-md overflow-hidden bg-stone-50"
             style={{ aspectRatio: '16 / 9' }}
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
+            onMouseEnter={() => setIsPaused(true)}
+            onMouseLeave={() => setIsPaused(false)}
+            onFocusCapture={() => setIsPaused(true)}
+            onBlurCapture={() => setIsPaused(false)}
+            aria-roledescription="carousel"
+            aria-label="Banner nổi bật"
         >
-            {/* Slides — cross-fade, each slide preserves image ratio */}
-            {items.map((item, i) => {
-                const isActive = i === current
-                const imageEl = (
-                    <Image
+            {(() => {
+                const item = items[current]
+                const image = (
+                    <ResponsiveMedia
                         src={item.image_url}
-                        alt={item.title || "Banner Đông Phú Gia"}
+                        alt={item.title || "Không gian vật liệu cao cấp Đông Phú Gia"}
                         width={BANNER_WIDTH}
                         height={BANNER_HEIGHT}
-                        className={`w-full h-full object-cover transition-opacity duration-700 ease-in-out ${isActive ? "opacity-100" : "opacity-0"}`}
-                        priority={i === 0}
-                        quality={100}
-                        sizes="100vw"
-                        unoptimized
+                        profile="hero"
+                        className="h-full w-full object-cover"
+                        priority={current === 0}
+                        sizes="(max-width: 768px) 100vw, 1280px"
                     />
                 )
 
                 return (
                     <div
                         key={item.id}
-                        className={i === 0 ? "relative" : "absolute inset-0"}
-                        style={{ zIndex: isActive ? 1 : 0 }}
-                        aria-hidden={!isActive}
+                        className="relative h-full w-full"
+                        role="group"
+                        aria-roledescription="slide"
+                        aria-label={`${current + 1} trên ${items.length}`}
                     >
                         {item.link_url ? (
-                            <Link href={item.link_url} className="block">
-                                {imageEl}
+                            <Link href={item.link_url} className="block h-full w-full">
+                                {image}
                             </Link>
-                        ) : (
-                            imageEl
-                        )}
+                        ) : image}
                     </div>
                 )
-            })}
+            })()}
 
             {/* Prev / Next — 48px outline circular nav buttons */}
             {items.length > 1 && (
@@ -124,17 +126,23 @@ export function HeroBanner({ banners }: HeroBannerProps) {
             {/* Pill dots indicator */}
             {items.length > 1 && (
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2">
-                    {items.map((_, i) => (
+                    {items.map((item, i) => (
                         <button
-                            key={i}
+                            key={item.id}
                             onClick={() => goTo(i)}
-                            aria-label={`Slide ${i + 1}`}
-                            className={`h-2 rounded-full transition-all duration-400 ease-out
-                                ${i === current
-                                    ? "w-10 bg-white shadow"
-                                    : "w-2 bg-white/50 hover:bg-white/80"
+                            aria-label={`Xem banner ${i + 1}`}
+                            aria-current={i === current ? 'true' : undefined}
+                            className="flex size-11 items-center justify-center rounded-full"
+                        >
+                            <span
+                                aria-hidden="true"
+                                className={`h-2 rounded-full transition-all duration-300 ease-out ${
+                                    i === current
+                                        ? 'w-10 bg-white shadow'
+                                        : 'w-2 bg-white/60'
                                 }`}
-                        />
+                            />
+                        </button>
                     ))}
                 </div>
             )}

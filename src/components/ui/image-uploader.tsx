@@ -1,10 +1,11 @@
 "use client"
 
-import { useState, useRef, useCallback } from "react"
+import { useState, useRef, useCallback, useMemo } from "react"
 import Image from "next/image"
-import { Upload, X, Loader2, ImageIcon } from "lucide-react"
+import { X, Loader2, ImageIcon } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
+import type { MediaProfile } from "@/lib/media/media-profiles"
 
 interface ImageUploaderProps {
     value: string | string[]
@@ -13,14 +14,20 @@ interface ImageUploaderProps {
     maxFiles?: number
     label?: string
     className?: string
-    folder?: string // Folder path in Supabase bucket
+    folder?: string
+    profile?: MediaProfile
 }
 
-/** Upload a single file via the server-side API route (uses service role key) */
-async function uploadViaApi(file: File, folder: string): Promise<string | null> {
+/** Upload a single file via the authenticated server-side API route. */
+async function uploadViaApi(
+    file: File,
+    folder: string,
+    profile: MediaProfile,
+): Promise<string | null> {
     const formData = new FormData()
     formData.append('file', file)
     formData.append('folder', folder)
+    formData.append('profile', profile)
 
     const res = await fetch('/api/upload-image', {
         method: 'POST',
@@ -44,17 +51,17 @@ export function ImageUploader({
     label = "Upload ảnh",
     className,
     folder = "products",
+    profile = "product",
 }: ImageUploaderProps) {
     const [uploading, setUploading] = useState(false)
     const [dragOver, setDragOver] = useState(false)
     const inputRef = useRef<HTMLInputElement>(null)
 
     // Normalize value to array for internal handling
-    const images: string[] = Array.isArray(value)
-        ? value
-        : value
-            ? [value]
-            : []
+    const images = useMemo(
+        () => (Array.isArray(value) ? value : value ? [value] : []),
+        [value],
+    )
 
     const handleFiles = useCallback(
         async (files: FileList | File[]) => {
@@ -77,7 +84,9 @@ export function ImageUploader({
             setUploading(true)
 
             try {
-                const uploadPromises = fileArray.map(file => uploadViaApi(file, folder))
+                const uploadPromises = fileArray.map(file =>
+                    uploadViaApi(file, folder, profile),
+                )
                 const results = await Promise.allSettled(uploadPromises)
 
                 const successUrls: string[] = []
@@ -103,13 +112,15 @@ export function ImageUploader({
                     }
                     toast.success(`Đã upload ${successUrls.length} ảnh thành công`)
                 }
-            } catch (err: any) {
-                toast.error('Lỗi upload: ' + err.message)
+            } catch (error: unknown) {
+                const message =
+                    error instanceof Error ? error.message : 'Lỗi không xác định'
+                toast.error(`Lỗi upload: ${message}`)
             } finally {
                 setUploading(false)
             }
         },
-        [images, maxFiles, multiple, onChange, folder]
+        [images, maxFiles, multiple, onChange, folder, profile]
     )
 
     const handleDrop = useCallback(
@@ -161,6 +172,7 @@ export function ImageUploader({
                             <button
                                 type="button"
                                 onClick={() => removeImage(index)}
+                                aria-label={`Xóa ảnh ${index + 1}`}
                                 className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
                             >
                                 <X className="h-3 w-3" />

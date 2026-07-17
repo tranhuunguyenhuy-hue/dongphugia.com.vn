@@ -73,7 +73,8 @@ export function ProjectForm({ project }: ProjectFormProps) {
                 </div>
                 <div>
                     <ImageUploader label="Ảnh dự án *" value={form.thumbnail_url}
-                        onChange={v => set('thumbnail_url', v as string)} folder="projects" />
+                        onChange={v => set('thumbnail_url', v as string)} folder="projects"
+                        profile="editorial" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                     <div>

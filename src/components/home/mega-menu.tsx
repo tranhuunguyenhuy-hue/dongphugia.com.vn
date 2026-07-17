@@ -4,6 +4,7 @@ import * as React from "react"
 import Link from "next/link"
 import * as NavigationMenu from '@radix-ui/react-navigation-menu'
 import { ChevronRight, ChevronDown } from "lucide-react"
+import { BrandLogo } from '@/components/media/brand-logo'
 
 export type Category = {
     id: number;
@@ -56,27 +57,11 @@ const renderMegaMenuContent = (cat: Category, data: MenuData | undefined) => {
                         {data.brands.map((brand: any) => (
                             <Link href={`/${cat.slug}?brand=${brand.slug}`} key={brand.id} className="h-9 px-2 rounded-[8px] bg-white/40 backdrop-blur-md border border-white/60 hover:border-white/90 hover:bg-white/80 hover:shadow-[0_4px_12px_rgba(46,122,150,0.08)] flex items-center justify-center transition-all duration-300 group/brand relative">
                                 <div className="w-full h-[18px] grayscale opacity-60 group-hover/brand:grayscale-0 group-hover/brand:opacity-100 transition-all duration-300 transform group-hover/brand:scale-105 flex items-center justify-center">
-                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img 
-                                        src={`/images/brands/${brand.slug}.png`} 
-                                        alt={brand.name} 
-                                        loading="lazy" 
-                                        className="w-full h-full object-contain"
-                                        onError={(e) => {
-                                            const target = e.currentTarget;
-                                            if (target.src.endsWith('.png')) {
-                                                target.src = `/images/brands/${brand.slug}.svg`;
-                                            } else {
-                                                target.style.display = 'none';
-                                                if (target.nextElementSibling) {
-                                                    (target.nextElementSibling as HTMLElement).style.display = 'inline-block';
-                                                }
-                                            }
-                                        }}
+                                    <BrandLogo
+                                        slug={brand.slug}
+                                        name={brand.name}
+                                        className="h-full w-full"
                                     />
-                                    <span style={{ display: 'none' }} className="text-[11.5px] font-semibold text-stone-600 text-center break-words group-hover/brand:text-brand-600 transition-colors line-clamp-2">
-                                        {brand.name}
-                                    </span>
                                 </div>
                             </Link>
                         ))}
@@ -162,6 +147,7 @@ export function MegaMenuSidebar({ categories, menuData }: MegaMenuProps) {
 export function MegaMenuHeader({ categories, menuData }: MegaMenuProps) {
     const [isOpen, setIsOpen] = React.useState(false);
     const closeTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+    const menuId = React.useId();
 
     // Limit to 4 main categories for the 4-column grid
     const mainCategories = categories?.slice(0, 4) || [];
@@ -178,13 +164,35 @@ export function MegaMenuHeader({ categories, menuData }: MegaMenuProps) {
     };
 
     return (
-        <div className="flex items-center h-full" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
-            <button className={`flex items-center gap-1.5 font-medium transition-all duration-300 px-4 py-2 rounded-md h-[38px] focus:outline-none ${isOpen ? 'bg-brand-50 text-brand-600' : 'bg-transparent text-stone-700 hover:bg-brand-50 hover:text-brand-600'} text-[15px] leading-[20px]`}>
+        <div
+            className="flex items-center h-full"
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+            onKeyDown={(event) => {
+                if (event.key === 'Escape') {
+                    setIsOpen(false)
+                    ;(event.currentTarget.querySelector('button') as HTMLButtonElement | null)?.focus()
+                }
+            }}
+        >
+            <button
+                type="button"
+                onClick={() => setIsOpen(true)}
+                aria-expanded={isOpen}
+                aria-controls={menuId}
+                aria-haspopup="true"
+                className={`flex items-center gap-1.5 font-medium transition-all duration-300 px-4 py-2 rounded-md h-[38px] focus:outline-none ${isOpen ? 'bg-brand-50 text-brand-600' : 'bg-transparent text-stone-700 hover:bg-brand-50 hover:text-brand-600'} text-[15px] leading-[20px]`}
+            >
                 Sản phẩm
-                <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${isOpen ? 'rotate-180 text-brand-600' : 'text-stone-400'}`} />
+                <ChevronDown aria-hidden="true" className={`h-4 w-4 transition-transform duration-300 ${isOpen ? 'rotate-180 text-brand-600' : 'text-stone-400'}`} />
             </button>
 
             <div
+                id={menuId}
+                role="region"
+                aria-label="Danh mục sản phẩm"
+                aria-hidden={!isOpen}
+                inert={!isOpen}
                 className={`absolute top-full left-0 w-full z-50 transition-opacity duration-150 ease-out ${isOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'}`}
             >
                 {/* Flat 100vw V2 Mega Menu Container */}
