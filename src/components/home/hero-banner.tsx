@@ -3,7 +3,10 @@
 import { useState, useEffect, useCallback, useRef } from "react"
 import Link from "next/link"
 import { ChevronLeft, ChevronRight } from "lucide-react"
-import { createResponsiveSrcSet } from "@/lib/media/media-profiles"
+import {
+    createResponsiveMediaUrl,
+    createResponsiveSrcSet,
+} from "@/lib/media/media-profiles"
 
 type Banner = {
     id: number
@@ -17,8 +20,6 @@ type HeroBannerProps = { banners: Banner[] }
 // Standard banner aspect ratio: 16:9
 const BANNER_WIDTH = 1600
 const BANNER_HEIGHT = 900
-const TRANSPARENT_PIXEL =
-    "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs="
 
 /**
  * Hero banner carousel
@@ -41,12 +42,10 @@ export function HeroBanner({ banners }: HeroBannerProps) {
         const prefersReducedMotion = window.matchMedia(
             '(prefers-reduced-motion: reduce)',
         ).matches
-        const isMobile = window.matchMedia('(max-width: 767px)').matches
         if (
             items.length <= 1 ||
             isPaused ||
-            prefersReducedMotion ||
-            isMobile
+            prefersReducedMotion
         ) return
         timerRef.current = setInterval(next, 5000)
         return () => { if (timerRef.current) clearInterval(timerRef.current) }
@@ -54,27 +53,23 @@ export function HeroBanner({ banners }: HeroBannerProps) {
 
     if (items.length === 0) {
         return (
-            <div className="relative hidden aspect-[16/9] w-full overflow-hidden rounded-md bg-stone-50 shadow-md md:block">
-                <picture>
-                    <source
-                        media="(min-width: 768px)"
-                        srcSet="/images/banner-1.jpg"
-                    />
-                    <img
-                        src={TRANSPARENT_PIXEL}
-                        alt="Đông Phú Gia - Vật liệu xây dựng"
-                        width={BANNER_WIDTH}
-                        height={BANNER_HEIGHT}
-                        className="h-auto w-full"
-                    />
-                </picture>
+            <div className="relative aspect-[16/9] w-full overflow-hidden rounded-md bg-stone-50 shadow-md">
+                <img
+                    src="/images/banner-1.jpg"
+                    alt="Đông Phú Gia - Vật liệu xây dựng"
+                    width={BANNER_WIDTH}
+                    height={BANNER_HEIGHT}
+                    className="h-full w-full object-cover"
+                    loading="eager"
+                    fetchPriority="high"
+                />
             </div>
         )
     }
 
     return (
         <div
-            className="relative hidden aspect-[16/9] w-full overflow-hidden rounded-md bg-stone-50 shadow-md md:block"
+            className="relative aspect-[16/9] w-full overflow-hidden rounded-md bg-stone-50 shadow-md"
             onMouseEnter={() => setIsPaused(true)}
             onMouseLeave={() => setIsPaused(false)}
             onFocusCapture={() => setIsPaused(true)}
@@ -84,22 +79,32 @@ export function HeroBanner({ banners }: HeroBannerProps) {
         >
             {(() => {
                 const item = items[current]
-                const desktopSrcSet = createResponsiveSrcSet(
+                const responsiveSrcSet = createResponsiveSrcSet(
                     item.image_url,
                     'hero',
                 )
                 const image = (
-                    <picture className="hidden h-full w-full md:block">
-                        {desktopSrcSet ? (
-                            <source
-                                media="(min-width: 768px)"
-                                type="image/webp"
-                                srcSet={desktopSrcSet}
-                                sizes="1280px"
-                            />
+                    <picture className="block h-full w-full">
+                        {responsiveSrcSet ? (
+                            <>
+                                <source
+                                    media="(max-width: 767px)"
+                                    type="image/webp"
+                                    srcSet={createResponsiveMediaUrl(
+                                        item.image_url,
+                                        720,
+                                    )}
+                                />
+                                <source
+                                    media="(min-width: 768px)"
+                                    type="image/webp"
+                                    srcSet={responsiveSrcSet}
+                                    sizes="1280px"
+                                />
+                            </>
                         ) : null}
                         <img
-                            src={desktopSrcSet ? TRANSPARENT_PIXEL : item.image_url}
+                            src={item.image_url}
                             alt={item.title || "Không gian vật liệu cao cấp Đông Phú Gia"}
                             width={BANNER_WIDTH}
                             height={BANNER_HEIGHT}
@@ -133,14 +138,14 @@ export function HeroBanner({ banners }: HeroBannerProps) {
                 <>
                     <button
                         onClick={prevSlide}
-                        className="absolute left-3 top-1/2 z-20 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-white/50 shadow-sm transition-colors hover:bg-white md:flex lg:left-6"
+                        className="absolute left-3 top-1/2 z-20 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-white/50 shadow-sm transition-colors hover:bg-white lg:left-6"
                         aria-label="Banner trước"
                     >
                         <ChevronLeft className="h-6 w-6 text-stone-900" strokeWidth={1.5} />
                     </button>
                     <button
                         onClick={next}
-                        className="absolute right-3 top-1/2 z-20 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-white/50 shadow-sm transition-colors hover:bg-white md:flex lg:right-6"
+                        className="absolute right-3 top-1/2 z-20 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-white/50 shadow-sm transition-colors hover:bg-white lg:right-6"
                         aria-label="Banner tiếp"
                     >
                         <ChevronRight className="h-6 w-6 text-stone-900" strokeWidth={1.5} />
@@ -150,7 +155,7 @@ export function HeroBanner({ banners }: HeroBannerProps) {
 
             {/* Pill dots indicator */}
             {items.length > 1 && (
-                <div className="absolute bottom-4 left-1/2 z-20 hidden -translate-x-1/2 items-center gap-2 md:flex">
+                <div className="absolute bottom-2 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1 sm:bottom-4 sm:gap-2">
                     {items.map((item, i) => (
                         <button
                             key={item.id}

@@ -65,12 +65,12 @@ test.describe('homepage technical readiness', () => {
         await expect(productsButton).toBeFocused()
     })
 
-    test('defers the mobile campaign image until the user opens it', async ({
+    test('shows the responsive campaign carousel on mobile', async ({
         page,
     }) => {
         test.skip(
             (page.viewportSize()?.width ?? 0) >= 768,
-            'Mobile content-first hero only',
+            'Mobile regression only',
         )
 
         const campaignRequests: string[] = []
@@ -81,15 +81,13 @@ test.describe('homepage technical readiness', () => {
         })
 
         await page.goto('/', { waitUntil: 'networkidle' })
-        expect(campaignRequests).toEqual([])
-
-        const campaignResponse = page.waitForResponse((response) =>
-            response.url().includes('/optimized-home/home-banner-'),
-        )
-        await page.getByText('Xem ưu đãi hiện tại', { exact: true }).click()
-
-        const response = await campaignResponse
-        expect(response.ok()).toBe(true)
-        expect(response.url()).toContain('.hero.w720.webp')
+        await expect(
+            page.getByRole('group', { name: '1 trên 3' }),
+        ).toBeVisible()
+        await expect(
+            page.getByText('Xem ưu đãi hiện tại', { exact: true }),
+        ).toHaveCount(0)
+        expect(campaignRequests).toHaveLength(1)
+        expect(campaignRequests[0]).toContain('.hero.w720.webp')
     })
 })
