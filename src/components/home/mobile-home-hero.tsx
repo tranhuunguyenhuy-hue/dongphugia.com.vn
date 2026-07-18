@@ -12,18 +12,15 @@ export function MobileHomeHero({
         <section
             className="relative min-h-[320px] overflow-hidden rounded-2xl bg-gradient-to-br from-stone-950 via-stone-900 to-amber-950 shadow-md md:hidden"
             aria-label="Giới thiệu Đông Phú Gia"
+            style={{
+                fontFamily: 'Arial, Helvetica, ui-sans-serif, sans-serif',
+            }}
         >
             <div className="relative z-10 flex min-h-[320px] flex-col justify-center px-6 py-8">
                 <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-amber-300">
                     Đông Phú Gia · Đà Lạt
                 </p>
-                <h1
-                    className="max-w-[17rem] text-[2rem] font-semibold leading-[1.12] tracking-tight text-white"
-                    style={{
-                        fontFamily:
-                            'Arial, Helvetica, ui-sans-serif, sans-serif',
-                    }}
-                >
+                <h1 className="max-w-[17rem] text-[2rem] font-semibold leading-[1.12] tracking-tight text-white">
                     Hoàn thiện không gian sống, chọn đúng từ đầu
                 </h1>
                 <p className="mt-4 max-w-[19rem] text-sm leading-6 text-stone-200">
