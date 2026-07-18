@@ -64,4 +64,32 @@ test.describe('homepage technical readiness', () => {
         await expect(productsButton).toHaveAttribute('aria-expanded', 'false')
         await expect(productsButton).toBeFocused()
     })
+
+    test('defers the mobile campaign image until the user opens it', async ({
+        page,
+    }) => {
+        test.skip(
+            (page.viewportSize()?.width ?? 0) >= 768,
+            'Mobile content-first hero only',
+        )
+
+        const campaignRequests: string[] = []
+        page.on('request', (request) => {
+            if (request.url().includes('/optimized-home/home-banner-')) {
+                campaignRequests.push(request.url())
+            }
+        })
+
+        await page.goto('/', { waitUntil: 'networkidle' })
+        expect(campaignRequests).toEqual([])
+
+        const campaignResponse = page.waitForResponse((response) =>
+            response.url().includes('/optimized-home/home-banner-'),
+        )
+        await page.getByText('Xem ưu đãi hiện tại', { exact: true }).click()
+
+        const response = await campaignResponse
+        expect(response.ok()).toBe(true)
+        expect(response.url()).toContain('.hero.w720.webp')
+    })
 })

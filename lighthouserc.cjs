@@ -14,7 +14,7 @@ module.exports = {
                     deviceScaleFactor: 2,
                     disabled: false,
                 },
-                throttlingMethod: 'simulate',
+                throttlingMethod: 'devtools',
                 onlyCategories: [
                     'performance',
                     'accessibility',

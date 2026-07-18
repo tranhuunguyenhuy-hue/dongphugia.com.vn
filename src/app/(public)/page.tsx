@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { HeroBanner } from "@/components/home/hero-banner"
+import { MobileHomeHero } from "@/components/home/mobile-home-hero"
 import { BrandSlider } from "@/components/home/brand-slider"
 import { BlogSection } from "@/components/home/blog-section"
 import { HomeCategoryBlockAlt } from "@/components/home/home-category-block-alt"
@@ -86,11 +87,13 @@ export default async function HomePage() {
 
     return (
         <div className="bg-white">
-            <h1 className="sr-only">Đông Phú Gia - Vật liệu xây dựng cao cấp tại Đà Lạt</h1>
             {/* Hero Banner */}
             <div className="-mt-[126px] pt-[126px]">
                 <section className="max-w-[1280px] mx-auto px-5 pt-8 pb-4 lg:pt-10 lg:pb-6">
                     <div className="w-full">
+                        <MobileHomeHero
+                            campaignImageUrl={banners[0]?.image_url}
+                        />
                         <HeroBanner banners={banners} />
                     </div>
                 </section>
