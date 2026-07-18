@@ -1,11 +1,12 @@
 import type { Metadata } from "next"
+import { preload } from "react-dom"
 import { HeroBanner } from "@/components/home/hero-banner"
-import { MobileHomeHero } from "@/components/home/mobile-home-hero"
 import { BrandSlider } from "@/components/home/brand-slider"
 import { BlogSection } from "@/components/home/blog-section"
 import { HomeCategoryBlockAlt } from "@/components/home/home-category-block-alt"
 import { ContactSection } from "@/components/home/contact-section"
 import { getFeaturedProductsByCategorySlug } from "@/lib/public-api-products"
+import { createResponsiveMediaUrl } from "@/lib/media/media-profiles"
 import prisma from "@/lib/prisma"
 
 export const revalidate = 3600
@@ -84,16 +85,31 @@ export default async function HomePage() {
         { id: 'vat-lieu-nuoc', label: 'Vật Liệu Nước', basePath: '/vat-lieu-nuoc', products: nuocData.products, totalCount: nuocData.total },
         { id: 'gach-op-lat', label: 'Gạch Ốp Lát', basePath: '/gach-op-lat', products: gachData.products, totalCount: gachData.total },
     ].filter(c => c.products.length > 0)
+    const firstBannerUrl = banners[0]?.image_url
+    if (firstBannerUrl) {
+        preload(createResponsiveMediaUrl(firstBannerUrl, 720), {
+            as: 'image',
+            type: 'image/webp',
+            fetchPriority: 'high',
+            media: '(max-width: 767px)',
+        })
+        preload(createResponsiveMediaUrl(firstBannerUrl, 1280), {
+            as: 'image',
+            type: 'image/webp',
+            fetchPriority: 'high',
+            media: '(min-width: 768px)',
+        })
+    }
 
     return (
         <div className="bg-white">
+            <h1 className="sr-only">
+                Đông Phú Gia - Vật liệu xây dựng cao cấp tại Đà Lạt
+            </h1>
             {/* Hero Banner */}
             <div className="-mt-[126px] pt-[126px]">
                 <section className="max-w-[1280px] mx-auto px-5 pt-8 pb-4 lg:pt-10 lg:pb-6">
                     <div className="w-full">
-                        <MobileHomeHero
-                            campaignImageUrl={banners[0]?.image_url}
-                        />
                         <HeroBanner banners={banners} />
                     </div>
                 </section>
