@@ -94,6 +94,7 @@ export function RichTextEditor({
             const formData = new FormData()
             formData.append('file', file)
             formData.append('folder', folder)
+            formData.append('profile', 'editorial')
 
             const res = await fetch('/api/upload-image', {
                 method: 'POST',
@@ -105,9 +106,10 @@ export function RichTextEditor({
 
             editor.chain().focus().setImage({ src: json.url }).run()
             toast.success('Đã chèn ảnh vào nội dung')
-        } catch (err: any) {
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'Lỗi không xác định'
             console.error('Image upload error:', err)
-            toast.error('Lỗi upload ảnh: ' + err.message)
+            toast.error('Lỗi upload ảnh: ' + message)
         } finally {
             setImageUploading(false)
         }

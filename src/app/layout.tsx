@@ -5,6 +5,7 @@ import { GoogleTagManager } from '@next/third-parties/google';
 import { JsonLd } from "@/components/seo/json-ld";
 import { buildOrganizationSchema } from "@/lib/seo/schema";
 import { getCanonicalSiteUrl } from "@/lib/site";
+import { WebVitalsReporter } from "@/components/analytics/web-vitals-reporter";
 import "./globals.css";
 
 const beVietnamPro = Be_Vietnam_Pro({
@@ -62,8 +63,14 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const gtmId = process.env.NEXT_PUBLIC_GTM_ID;
+
   return (
     <html lang="vi">
+      <head>
+        <link rel="preconnect" href="https://cdn.dongphugia.com.vn" crossOrigin="" />
+        <link rel="dns-prefetch" href="https://cdn.dongphugia.com.vn" />
+      </head>
       <body
         className={`${beVietnamPro.variable} ${playfairDisplay.variable} antialiased font-sans`}
       >
@@ -71,7 +78,12 @@ export default function RootLayout({
         {/* Organization / LocalBusiness structured data — site-wide SEO signal */}
         <JsonLd data={buildOrganizationSchema()} />
         <Toaster richColors position="top-right" />
-        <GoogleTagManager gtmId={process.env.NEXT_PUBLIC_GTM_ID || ""} />
+        {gtmId ? (
+          <>
+            <WebVitalsReporter />
+            <GoogleTagManager gtmId={gtmId} />
+          </>
+        ) : null}
       </body>
     </html>
   );

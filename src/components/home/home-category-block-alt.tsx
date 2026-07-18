@@ -1,14 +1,18 @@
 "use client"
 
-import { useState, useEffect, useTransition, useMemo, useRef } from 'react'
-import { ProductCard } from '@/components/ui/product-card'
-import { Button } from '@/components/ui/button'
+import {
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+    useTransition,
+} from 'react'
+import Link from 'next/link'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-
-import { cn } from '@/lib/utils'
 import { fetchFeaturedProductsAction } from '@/app/actions/home-products'
-import Image from 'next/image'
-import { SUBCATEGORY_IMAGES } from '@/config/subcategory-images'
+import { BrandLogo } from '@/components/media/brand-logo'
+import { ProductCard } from '@/components/ui/product-card'
+import { cn } from '@/lib/utils'
 
 interface Brand {
     name: string
@@ -25,6 +29,7 @@ interface HomeCategoryBlockAltProps {
         id: string
         label: string
         basePath: string
+        // ProductCard supports the serialized product payload returned by Prisma.
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         products: any[]
         totalCount?: number
@@ -33,247 +38,228 @@ interface HomeCategoryBlockAltProps {
     }
 }
 
-export function HomeCategoryBlockAlt({ categoryData }: HomeCategoryBlockAltProps) {
-    const brands = useMemo(() => categoryData.availableBrands || [], [categoryData.availableBrands])
-    const subcats = useMemo(() => categoryData.availableSubcategories || [], [categoryData.availableSubcategories])
+export function HomeCategoryBlockAlt({
+    categoryData,
+}: HomeCategoryBlockAltProps) {
+    const brands = useMemo(
+        () => categoryData.availableBrands ?? [],
+        [categoryData.availableBrands],
+    )
+    const subcategories = useMemo(
+        () => categoryData.availableSubcategories ?? [],
+        [categoryData.availableSubcategories],
+    )
+    const defaultSubcategory = useMemo(
+        () =>
+            subcategories.find((subcategory) => subcategory.slug === 'bon-cau')
+                ?.slug ??
+            subcategories[0]?.slug ??
+            null,
+        [subcategories],
+    )
 
-    // Keep enough clones for smooth navigation without multiplying hundreds of
-    // focusable controls into the DOM. Only the middle loop is exposed to AT.
-    const LOOPS = 9
-    const accessibleLoopStart = Math.floor(LOOPS / 2) * brands.length
-    const extendedBrands = useMemo(() => {
-        if (brands.length === 0) return []
-        const arr = []
-        for (let i = 0; i < LOOPS; i++) arr.push(...brands)
-        return arr
-    }, [brands])
-
-    const [activeVirtualIndex, setActiveVirtualIndex] = useState<number>(() => {
-        if (brands.length === 0) return 0
-        // Start precisely in the middle loop
-        return Math.floor(LOOPS / 2) * brands.length
-    })
-    
-    const [activeSubcategorySlug, setActiveSubcategorySlug] = useState<string | null>(() => {
-        if (subcats.length > 0) {
-            const defaultSub = subcats.find(s => s.slug === 'bon-cau') || subcats[0]
-            return defaultSub.slug
-        }
-        return null
-    })
+    const [activeBrandIndex, setActiveBrandIndex] = useState(0)
+    const [activeSubcategorySlug, setActiveSubcategorySlug] =
+        useState<string | null>(defaultSubcategory)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const [displayedProducts, setDisplayedProducts] = useState<any[]>(categoryData.products)
+    const [displayedProducts, setDisplayedProducts] = useState<any[]>(
+        categoryData.products,
+    )
     const [isPending, startTransition] = useTransition()
-    const subcatsScrollRef = useRef<HTMLDivElement>(null)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const cacheRef = useRef(new Map<string, any[]>())
+    const requestIdRef = useRef(0)
+    const isInitialRenderRef = useRef(true)
 
-    const activeBrandSlug = extendedBrands[activeVirtualIndex]?.slug || null
+    const activeBrand = brands[activeBrandIndex] ?? null
 
-    const handleNextBrand = () => {
-        setActiveVirtualIndex((prev) => prev + 1)
+    const selectAdjacentBrand = (direction: -1 | 1) => {
+        if (brands.length === 0) return
+        setActiveBrandIndex((current) =>
+            (current + direction + brands.length) % brands.length,
+        )
     }
 
-    const handlePrevBrand = () => {
-        setActiveVirtualIndex((prev) => prev - 1)
-    }
-
-    // When filters change, fetch products
     useEffect(() => {
-        if (!activeBrandSlug && brands.length === 0) return
+        if (isInitialRenderRef.current) {
+            isInitialRenderRef.current = false
+            return
+        }
+        if (!activeBrand) return
 
+        const cacheKey = [
+            categoryData.id,
+            activeBrand.slug,
+            activeSubcategorySlug ?? '',
+        ].join(':')
+        const cached = cacheRef.current.get(cacheKey)
+        if (cached) {
+            setDisplayedProducts(cached)
+            return
+        }
+
+        const requestId = ++requestIdRef.current
         startTransition(async () => {
             try {
-                // Fetch up to 10 products for a 5-column layout
-                const res = await fetchFeaturedProductsAction(
-                    categoryData.id, 
-                    activeBrandSlug, 
-                    activeSubcategorySlug, 
-                    0, 
-                    10
+                const response = await fetchFeaturedProductsAction(
+                    categoryData.id,
+                    activeBrand.slug,
+                    activeSubcategorySlug,
+                    0,
+                    10,
                 )
-                setDisplayedProducts(res.products)
+                if (requestId !== requestIdRef.current) return
+
+                cacheRef.current.set(cacheKey, response.products)
+                setDisplayedProducts(response.products)
             } catch (error) {
-                console.error("Failed to fetch products for brand", error)
+                console.error(
+                    '[home-category] Không tải được sản phẩm',
+                    error,
+                )
             }
         })
-    }, [activeBrandSlug, activeSubcategorySlug, categoryData.id, brands.length])
+    }, [activeBrand, activeSubcategorySlug, categoryData.id])
 
     return (
-        <section className="w-full relative z-0 mt-8 mb-12">
-            {/* Header */}
-            <div className="w-full mb-6 md:mb-8 flex flex-col items-start gap-2 md:gap-3">
-                <h2 className="text-[28px] md:text-display-lg font-display font-semibold text-stone-900 tracking-tight leading-tight">
+        <section
+            className="relative z-0 my-8 w-full [content-visibility:auto] [contain-intrinsic-size:900px]"
+            aria-labelledby={`home-category-${categoryData.id}`}
+        >
+            <div className="mb-6 flex w-full flex-col items-start gap-2 md:mb-8 md:gap-3">
+                <h2
+                    id={`home-category-${categoryData.id}`}
+                    className="font-display text-[28px] font-semibold leading-tight tracking-tight text-stone-900 md:text-display-lg"
+                >
                     Sản phẩm {categoryData.label}
                 </h2>
-                <div className="w-12 h-1 bg-brand-600 rounded-full"></div>
+                <div className="h-1 w-12 rounded-full bg-brand-600" />
             </div>
 
-            {/* Horizontal Brand Carousel & Subcategories Container */}
-            {brands.length > 0 && (
-                <div className="w-full bg-neutral-50 rounded-xl mb-6 relative overflow-hidden flex flex-col py-4 md:py-6 border border-neutral-200/60 shadow-inner">
-                    {/* Background Pattern for aesthetics */}
-                    <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5 mix-blend-multiply pointer-events-none" />
-                    
-                    {/* Track Container */}
-                    <div className={cn(
-                        "w-full relative flex items-center justify-center",
-                        subcats.length > 0 ? "mb-4 md:mb-6" : ""
-                    )}>
-                        <div 
-                            className="flex transition-transform duration-500 ease-out"
-                            style={{ 
-                                // Center the active item (each item is 140px wide).
-                                transform: `translateX(calc(50% - ${activeVirtualIndex * 140 + 70}px))` 
-                            }}
-                        >
-                            {extendedBrands.map((brand, idx) => {
-                                const isActive = idx === activeVirtualIndex
-                                const isAccessible = idx >= accessibleLoopStart
-                                    && idx < accessibleLoopStart + brands.length
-                                return (
-                                    <button
-                                        key={`${brand.slug}-${idx}`}
-                                        onClick={() => {
-                                            setActiveVirtualIndex(idx)
-                                        }}
-                                        aria-hidden={!isAccessible}
-                                        aria-pressed={isAccessible ? isActive : undefined}
-                                        tabIndex={isAccessible ? 0 : -1}
-                                        className="w-[140px] h-[72px] shrink-0 flex items-center justify-center px-3 transition-all duration-300 focus:outline-none"
-                                    >
-                                        <div className={cn(
-                                            "relative w-full h-full flex items-center justify-center transition-all duration-300",
-                                            isActive 
-                                                ? "opacity-100 scale-[1.35]" 
-                                                : "opacity-40 grayscale hover:opacity-70 hover:grayscale-0 scale-[0.85]"
-                                        )}>
-                                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                                            <img 
-                                                src={`/images/brands/${brand.slug}.png`}
-                                                alt={isAccessible ? brand.name : ""}
-                                                className="max-w-[80px] max-h-[32px] object-contain"
-                                                onError={(e) => {
-                                                    const target = e.currentTarget;
-                                                    if (target.src.endsWith('.png')) target.src = `/images/brands/${brand.slug}.svg`;
-                                                    else target.style.display = 'none';
-                                                }}
-                                            />
-                                        </div>
-                                    </button>
-                                )
-                            })}
-                        </div>
-
-                        {/* Left Fade & Arrow */}
-                        <div className="absolute left-0 top-0 bottom-0 w-12 md:w-24 bg-gradient-to-r from-neutral-50 to-transparent flex items-center px-1 md:px-2 pointer-events-none z-10">
-                            <button 
-                                onClick={handlePrevBrand}
-                                className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-white/90 shadow-sm border border-neutral-200 flex items-center justify-center text-neutral-600 hover:text-brand-600 hover:border-brand-300 pointer-events-auto transition-colors"
-                                aria-label="Previous Brand"
+            {(brands.length > 0 || subcategories.length > 0) && (
+                <div className="relative mb-6 flex w-full flex-col gap-4 overflow-hidden rounded-xl border border-neutral-200/60 bg-neutral-50 p-4 md:p-6">
+                    {brands.length > 0 && (
+                        <div className="flex items-center gap-2">
+                            <button
+                                type="button"
+                                onClick={() => selectAdjacentBrand(-1)}
+                                className="flex size-11 shrink-0 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-600 transition-colors hover:border-brand-300 hover:text-brand-600"
+                                aria-label={`Thương hiệu trước trong ${categoryData.label}`}
                             >
-                                <ChevronLeft className="w-4 h-4 md:w-5 md:h-5" />
+                                <ChevronLeft className="size-5" aria-hidden="true" />
                             </button>
-                        </div>
 
-                        {/* Right Fade & Arrow */}
-                        <div className="absolute right-0 top-0 bottom-0 w-12 md:w-24 bg-gradient-to-l from-neutral-50 to-transparent flex items-center justify-end px-1 md:px-2 pointer-events-none z-10">
-                            <button 
-                                onClick={handleNextBrand}
-                                className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-white/90 shadow-sm border border-neutral-200 flex items-center justify-center text-neutral-600 hover:text-brand-600 hover:border-brand-300 pointer-events-auto transition-colors"
-                                aria-label="Next Brand"
+                            <div
+                                className="flex min-w-0 flex-1 gap-2 overflow-x-auto px-1 [scrollbar-width:none]"
+                                aria-label={`Thương hiệu ${categoryData.label}`}
                             >
-                                <ChevronRight className="w-4 h-4 md:w-5 md:h-5" />
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Subcategories Container with Thumbnails */}
-                    {subcats.length > 0 && (
-                        <div className="w-full mt-1 md:mt-2 border-t border-neutral-200/50 pt-4 md:pt-6 relative">
-                            {/* Left Scroll Arrow */}
-                            <div className="absolute left-0 top-4 md:top-6 bottom-0 w-12 md:w-16 bg-gradient-to-r from-neutral-50 via-neutral-50/80 to-transparent flex items-center justify-start pl-1 md:pl-2 pointer-events-none z-10 md:hidden">
-                                <button 
-                                    onClick={() => subcatsScrollRef.current?.scrollBy({ left: -200, behavior: 'smooth' })}
-                                    className="w-7 h-7 rounded-full bg-white/90 shadow-[0_2px_8px_rgba(0,0,0,0.08)] border border-neutral-200 flex items-center justify-center text-neutral-600 hover:text-brand-600 pointer-events-auto transition-colors"
-                                    aria-label="Cuộn trái"
-                                >
-                                    <ChevronLeft className="w-4 h-4" />
-                                </button>
-                            </div>
-
-                            <div 
-                                ref={subcatsScrollRef}
-                                className="flex gap-3 sm:gap-4 overflow-x-auto px-4 md:px-8 snap-x snap-mandatory touch-pan-x [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] md:justify-center scroll-smooth"
-                            >
-                                {/* Subcategory Items */}
-                                {subcats.map(subcat => {
-                                    const imgSrc = SUBCATEGORY_IMAGES[subcat.slug] || null
-                                    const isActive = activeSubcategorySlug === subcat.slug
+                                {brands.map((brand, index) => {
+                                    const isActive = index === activeBrandIndex
                                     return (
                                         <button
-                                            key={subcat.slug}
-                                            onClick={() => setActiveSubcategorySlug(subcat.slug)}
-                                            className="group/item shrink-0 snap-start flex flex-col items-center gap-2 w-[60px] sm:w-[72px] transition-all duration-200"
+                                            type="button"
+                                            key={brand.slug}
+                                            onClick={() => setActiveBrandIndex(index)}
+                                            className={cn(
+                                                'flex h-16 min-w-[116px] shrink-0 items-center justify-center rounded-xl border bg-white px-3 transition-colors',
+                                                isActive
+                                                    ? 'border-brand-500 shadow-sm'
+                                                    : 'border-neutral-200 opacity-70 hover:border-brand-300 hover:opacity-100',
+                                            )}
+                                            aria-pressed={isActive}
                                         >
-                                            <div className={cn(
-                                                "relative w-full aspect-square flex items-center justify-center rounded-[14px] bg-white transition-all duration-300 overflow-hidden",
-                                                isActive 
-                                                    ? "border-[2px] border-brand-600 shadow-sm" 
-                                                    : "border border-neutral-200 shadow-sm group-hover/item:border-brand-300 group-hover/item:shadow-md"
-                                            )}>
-                                                {imgSrc ? (
-                                                    <Image src={imgSrc} alt={subcat.name} fill sizes="72px" className="object-cover transition-transform duration-300 group-hover/item:scale-110" />
-                                                ) : (
-                                                    <span className="text-xs text-stone-300 font-medium">#</span>
-                                                )}
-                                            </div>
-                                            <span className={cn("text-[10px] sm:text-[11px] font-medium text-center mt-1 leading-tight line-clamp-2", isActive ? "text-brand-600 font-bold" : "text-stone-500 group-hover/item:text-brand-500")}>
-                                                {subcat.name}
-                                            </span>
+                                            <BrandLogo
+                                                slug={brand.slug}
+                                                name={brand.name}
+                                                className="max-h-8 max-w-20"
+                                            />
                                         </button>
                                     )
                                 })}
                             </div>
 
-                            {/* Right Scroll Arrow */}
-                            <div className="absolute right-0 top-4 md:top-6 bottom-0 w-12 md:w-16 bg-gradient-to-l from-neutral-50 via-neutral-50/80 to-transparent flex items-center justify-end pr-1 md:pr-2 pointer-events-none z-10 md:hidden">
-                                <button 
-                                    onClick={() => subcatsScrollRef.current?.scrollBy({ left: 200, behavior: 'smooth' })}
-                                    className="w-7 h-7 rounded-full bg-white/90 shadow-[0_2px_8px_rgba(0,0,0,0.08)] border border-neutral-200 flex items-center justify-center text-neutral-600 hover:text-brand-600 pointer-events-auto transition-colors"
-                                    aria-label="Cuộn phải"
-                                >
-                                    <ChevronRight className="w-4 h-4" />
-                                </button>
-                            </div>
+                            <button
+                                type="button"
+                                onClick={() => selectAdjacentBrand(1)}
+                                className="flex size-11 shrink-0 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-600 transition-colors hover:border-brand-300 hover:text-brand-600"
+                                aria-label={`Thương hiệu tiếp theo trong ${categoryData.label}`}
+                            >
+                                <ChevronRight className="size-5" aria-hidden="true" />
+                            </button>
+                        </div>
+                    )}
+
+                    {subcategories.length > 0 && (
+                        <div
+                            className="flex gap-2 overflow-x-auto border-t border-neutral-200 pt-4 [scrollbar-width:none]"
+                            aria-label={`Phân loại ${categoryData.label}`}
+                        >
+                            {subcategories.map((subcategory) => {
+                                const isActive =
+                                    activeSubcategorySlug === subcategory.slug
+                                return (
+                                    <button
+                                        type="button"
+                                        key={subcategory.slug}
+                                        onClick={() =>
+                                            setActiveSubcategorySlug(subcategory.slug)
+                                        }
+                                        className={cn(
+                                            'min-h-11 shrink-0 rounded-full border px-4 py-2 text-sm font-medium transition-colors',
+                                            isActive
+                                                ? 'border-brand-600 bg-brand-600 text-white'
+                                                : 'border-neutral-200 bg-white text-stone-600 hover:border-brand-300 hover:text-brand-700',
+                                        )}
+                                        aria-pressed={isActive}
+                                    >
+                                        {subcategory.name}
+                                    </button>
+                                )
+                            })}
                         </div>
                     )}
                 </div>
             )}
 
-            {/* Products Grid (5 Columns) */}
-            <div className={cn("transition-opacity duration-300 w-full", isPending ? "opacity-50" : "opacity-100")}>
+            <div
+                className={cn(
+                    'w-full transition-opacity duration-300',
+                    isPending && 'opacity-50',
+                )}
+                aria-busy={isPending}
+            >
                 {displayedProducts.length > 0 ? (
-                    <div className="flex overflow-x-auto snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] -mx-5 px-5 md:mx-0 md:px-0 gap-4 md:grid md:grid-cols-5 md:gap-5 pb-4 md:pb-0">
+                    <div className="grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-5 lg:grid-cols-5">
                         {displayedProducts.map((product) => (
-                            <div key={product.id} className="snap-start shrink-0 w-[70vw] sm:w-[45vw] md:w-auto max-w-[280px] md:max-w-none">
-                                <ProductCard
-                                    product={product}
-                                    basePath={categoryData.basePath}
-                                    patternSlug={product.subcategories?.slug ?? 'san-pham'}
-                                    href={product.url}
-                                />
-                            </div>
+                            <ProductCard
+                                key={product.id}
+                                product={product}
+                                basePath={categoryData.basePath}
+                                patternSlug={
+                                    product.subcategories?.slug ?? 'san-pham'
+                                }
+                                href={product.url}
+                            />
                         ))}
                     </div>
                 ) : (
-                    <div className="w-full min-h-[300px] flex flex-col items-center justify-center bg-stone-50 rounded-[16px] border border-dashed border-stone-200">
-                        <p className="text-stone-500 mb-2">Chưa có sản phẩm cho lựa chọn này.</p>
-                        <Button variant="link" onClick={() => setActiveSubcategorySlug(subcats.find(s => s.slug === 'bon-cau')?.slug || subcats[0]?.slug || null)} className="text-brand-600">
-                            Xóa bộ lọc
-                        </Button>
+                    <div className="flex min-h-[240px] w-full flex-col items-center justify-center rounded-2xl border border-dashed border-stone-200 bg-stone-50 px-5 text-center">
+                        <p className="text-stone-600">
+                            Chưa có sản phẩm cho lựa chọn này.
+                        </p>
                     </div>
                 )}
             </div>
-            
+
+            <div className="mt-6 flex justify-center">
+                <Link
+                    href={categoryData.basePath}
+                    className="inline-flex min-h-11 items-center rounded-full border border-brand-600 px-5 py-2 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-50"
+                >
+                    Xem tất cả {categoryData.totalCount?.toLocaleString('vi-VN') ?? ''}{' '}
+                    sản phẩm {categoryData.label.toLowerCase()}
+                </Link>
+            </div>
         </section>
     )
 }

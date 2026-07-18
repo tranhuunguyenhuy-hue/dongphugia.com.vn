@@ -46,6 +46,7 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     optimizePackageImports: ['lucide-react', 'date-fns', 'lodash'],
+    inlineCss: true,
   },
   async rewrites() {
     return [

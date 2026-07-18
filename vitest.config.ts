@@ -12,6 +12,6 @@ export default defineConfig({
             '@': path.resolve(__dirname, './src'),
         },
         // exclude next.js specific files
-        exclude: ['node_modules', '.next'],
+        exclude: ['node_modules', '.next', 'tests/readiness/**'],
     },
 })

@@ -19,7 +19,15 @@
     "generate:redirect-map": "tsx scripts/db/export-product-redirect-map.mts",
     "check:canonical-rollout": "tsx scripts/db/check-canonical-rollout.mts",
     "postinstall": "prisma generate",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:media": "vitest run src/lib/media src/app/api/upload-image",
+    "test:homepage": "playwright test --config=playwright.homepage.config.ts",
+    "perf:lighthouse": "lhci autorun",
+    "quality:homepage": "npm run test:media && npm run test:homepage && npm run build && npm run perf:lighthouse",
+    "media:backfill:home": "tsx scripts/media/backfill-homepage-images.mts",
+    "media:backfill:home:apply": "tsx scripts/media/backfill-homepage-images.mts --apply",
+    "media:rollback:home": "tsx scripts/media/rollback-homepage-images.mts",
+    "media:cleanup:home": "tsx scripts/media/cleanup-homepage-images.mts"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"
@@ -70,6 +78,8 @@
     "zustand": "^5.0.12"
   },
   "devDependencies": {
+    "@lhci/cli": "^0.15.1",
+    "@playwright/test": "^1.59.0",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",

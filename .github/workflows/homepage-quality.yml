@@ -1,0 +1,34 @@
+name: Homepage quality gate
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  homepage-readiness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DIRECT_URL: ${{ secrets.DIRECT_URL }}
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      BUNNY_CDN_HOSTNAME: cdn.dongphugia.com.vn
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: npx playwright install --with-deps chromium
+
+      - name: TypeScript
+        run: npx tsc --noEmit
+
+      - name: Homepage readiness
+        run: npm run quality:homepage

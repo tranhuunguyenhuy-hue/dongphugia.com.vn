@@ -28,6 +28,7 @@ async function uploadViaApi(file: File): Promise<string | null> {
     const formData = new FormData()
     formData.append('file', file)
     formData.append('folder', 'products')
+    formData.append('profile', 'product')
     const res = await fetch('/api/upload-image', { method: 'POST', body: formData })
     const json = await res.json()
     if (!res.ok || json.error) throw new Error(json.error || `HTTP ${res.status}`)
@@ -93,8 +94,9 @@ export function ProductGallery({ productId, images: initialImages, currentThumbn
                     toast.success(`Đã thêm ${urls.length} ảnh vào gallery`)
                 }
             }
-        } catch (err: any) {
-            toast.error('Lỗi upload: ' + err.message)
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'Lỗi không xác định'
+            toast.error('Lỗi upload: ' + message)
         } finally {
             setUploading(false)
         }

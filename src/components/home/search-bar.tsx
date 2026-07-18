@@ -123,6 +123,8 @@ export function SearchBar({ onExpandedChange }: { onExpandedChange?: (expanded: 
                     {/* Search Icon */}
                     <button 
                         type={isExpanded ? 'submit' : 'button'}
+                        aria-label={isExpanded ? 'Tìm kiếm' : 'Mở tìm kiếm'}
+                        aria-expanded={isExpanded}
                         className={`w-11 h-11 flex items-center justify-center shrink-0 transition-colors ${isExpanded ? '' : 'text-stone-700 hover:text-brand-600'}`}
                     >
                         {isLoading
@@ -141,6 +143,7 @@ export function SearchBar({ onExpandedChange }: { onExpandedChange?: (expanded: 
                             if (results.length > 0) setIsOpen(true);
                         }}
                         placeholder="Tìm kiếm..."
+                        aria-label="Tìm sản phẩm"
                         className={`flex-1 h-full bg-transparent text-[14px] text-stone-900 placeholder:text-stone-500 outline-none transition-opacity duration-200 min-w-0 ${isExpanded ? 'opacity-100' : 'opacity-0 w-0'}`}
                         autoComplete="off"
                         spellCheck={false}
@@ -149,8 +152,8 @@ export function SearchBar({ onExpandedChange }: { onExpandedChange?: (expanded: 
 
                     {/* Clear */}
                     {query && isExpanded && (
-                        <button type="button" onClick={handleClear} className="pr-4 pl-2 flex items-center text-stone-400 hover:text-stone-600 transition-colors shrink-0">
-                            <X className="w-4 h-4" />
+                        <button type="button" onClick={handleClear} aria-label="Xóa từ khóa tìm kiếm" className="flex min-h-11 min-w-11 items-center justify-center text-stone-500 hover:text-stone-700 transition-colors shrink-0">
+                            <X className="w-4 h-4" aria-hidden="true" />
                         </button>
                     )}
                 </div>

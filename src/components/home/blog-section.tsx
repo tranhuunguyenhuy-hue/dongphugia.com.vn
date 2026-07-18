@@ -8,7 +8,7 @@ export async function BlogSection() {
         where: { status: 'published' },
         include: { blog_categories: true },
         orderBy: { created_at: 'desc' },
-        take: 8
+        take: 4
     })
 
     return <BlogSectionClient posts={posts} />
