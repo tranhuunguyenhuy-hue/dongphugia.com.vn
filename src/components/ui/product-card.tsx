@@ -7,12 +7,20 @@ import { DeferredResponsiveMedia } from '@/components/media/deferred-responsive-
 export interface ProductCardProps {
     product: any;
     showPrice?: boolean;
+    reserveFeaturedLabelSpace?: boolean;
     patternSlug?: string;
     basePath?: string;
     href?: string;
 }
 
-export function ProductCard({ product, showPrice = true, patternSlug, basePath = '/gach-op-lat', ...props }: ProductCardProps) {
+export function ProductCard({
+    product,
+    showPrice = true,
+    reserveFeaturedLabelSpace = true,
+    patternSlug,
+    basePath = '/gach-op-lat',
+    ...props
+}: ProductCardProps) {
     const isTBVS = basePath.includes('/thiet-bi-ve-sinh');
     const isBep = basePath.includes('/thiet-bi-bep');
     const isNuoc = basePath.includes('/vat-lieu-nuoc');
@@ -43,7 +51,7 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
     const firstImage = product.image_main_url || product.thumbnail || (images.length > 0 ? images[0] : null);
 
     // Parse specs for display
-    let specs: any = {};
+    let specs: { dimensions?: string; simDimensions?: string } = {};
     try {
         if (product.specs) specs = JSON.parse(product.specs as string);
     } catch { /* ignore */ }
@@ -91,7 +99,11 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
     let featuresList: string[] = [];
     if (Array.isArray(product.product_feature_values)) {
         featuresList = product.product_feature_values
-            .map((item: any) => item.product_features?.name)
+            .map(
+                (item: {
+                    product_features?: { name?: string | null } | null
+                }) => item.product_features?.name,
+            )
             .filter(Boolean);
     }
 
@@ -112,10 +124,13 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
                 </>
             )}
             
-            {/* 32px Spacer / Banner Text */}
-            <div className="w-full h-[32px] flex items-center justify-center text-amber-700 text-[10px] font-bold uppercase tracking-widest rounded-t-[16px] z-10 shrink-0 pt-[2px]">
-                {product.is_featured ? <span className="relative z-20">Sản phẩm nổi bật</span> : null}
-            </div>
+            {(product.is_featured || reserveFeaturedLabelSpace) ? (
+                <div className="z-10 flex h-8 w-full shrink-0 items-center justify-center rounded-t-2xl pt-0.5 text-[10px] font-bold uppercase tracking-widest text-amber-700">
+                    {product.is_featured ? (
+                        <span className="relative z-20">Sản phẩm nổi bật</span>
+                    ) : null}
+                </div>
+            ) : null}
             
             <div className={cn(
                 "flex flex-col flex-1 relative z-20 h-full overflow-hidden",

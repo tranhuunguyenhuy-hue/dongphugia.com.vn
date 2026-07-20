@@ -36,30 +36,66 @@ export default async function HomePage() {
             take: 5,
         }),
         // getHomeFeaturedProducts(15), // Tạm ẩn để nghiên cứu thêm
-        getFeaturedProductsByCategorySlug('thiet-bi-ve-sinh', ['toto', 'inax'], null, 0, 5),
+        getFeaturedProductsByCategorySlug('thiet-bi-ve-sinh', null, null, 0, 5),
         getFeaturedProductsByCategorySlug('thiet-bi-bep', null, null, 0, 5),
         getFeaturedProductsByCategorySlug('gach-op-lat', null, null, 0, 5),
         getFeaturedProductsByCategorySlug('vat-lieu-nuoc', null, null, 0, 5),
         prisma.brands.findMany({
-            where: { products: { some: { categories: { slug: 'thiet-bi-ve-sinh' } } } },
-            select: { name: true, slug: true }
-        }),
-        prisma.subcategories.findMany({
-            where: { 
-                categories: { slug: 'thiet-bi-ve-sinh' }
+            where: {
+                is_active: true,
+                products: {
+                    some: {
+                        categories: { slug: 'thiet-bi-ve-sinh' },
+                        is_active: true,
+                        is_home_featured: true,
+                    },
+                },
             },
-            select: { name: true, slug: true }
+            select: { name: true, slug: true },
+            orderBy: { sort_order: 'asc' },
         }),
         prisma.subcategories.findMany({
-            where: { 
+            where: {
+                is_active: true,
+                categories: { slug: 'thiet-bi-ve-sinh' },
+                products: {
+                    some: {
+                        is_active: true,
+                        is_home_featured: true,
+                    },
+                },
+            },
+            select: { name: true, slug: true },
+            orderBy: { sort_order: 'asc' },
+        }),
+        prisma.subcategories.findMany({
+            where: {
+                is_active: true,
                 categories: { slug: 'thiet-bi-bep' },
-                slug: { notIn: ['thiet-bi-bep-khac'] }
+                slug: { notIn: ['thiet-bi-bep-khac'] },
+                products: {
+                    some: {
+                        is_active: true,
+                        is_home_featured: true,
+                    },
+                },
             },
-            select: { name: true, slug: true }
+            select: { name: true, slug: true },
+            orderBy: { sort_order: 'asc' },
         }),
         prisma.brands.findMany({
-            where: { products: { some: { categories: { slug: 'thiet-bi-bep' } } } },
-            select: { name: true, slug: true }
+            where: {
+                is_active: true,
+                products: {
+                    some: {
+                        categories: { slug: 'thiet-bi-bep' },
+                        is_active: true,
+                        is_home_featured: true,
+                    },
+                },
+            },
+            select: { name: true, slug: true },
+            orderBy: { sort_order: 'asc' },
         })
     ])
 

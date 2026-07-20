@@ -90,4 +90,55 @@ test.describe('homepage technical readiness', () => {
         expect(campaignRequests).toHaveLength(1)
         expect(campaignRequests[0]).toContain('.hero.w720.webp')
     })
+
+    test('keeps homepage category filters and products in sync', async ({
+        page,
+    }) => {
+        test.skip(
+            (page.viewportSize()?.width ?? 0) >= 768,
+            'Mobile interaction regression only',
+        )
+
+        await page.goto('/', { waitUntil: 'networkidle' })
+
+        const section = page.locator(
+            'section[aria-labelledby="home-category-thiet-bi-ve-sinh"]',
+        )
+        await section.scrollIntoViewIfNeeded()
+
+        const brandGroup = section.getByRole('group', {
+            name: 'Thương hiệu',
+        })
+        const subcategoryGroup = section.getByRole('group', {
+            name: 'Loại sản phẩm',
+        })
+        await expect(
+            brandGroup.getByRole('button', { name: 'Tất cả', exact: true }),
+        ).toHaveAttribute('aria-pressed', 'true')
+        await expect(
+            subcategoryGroup.getByRole('button', {
+                name: 'Tất cả',
+                exact: true,
+            }),
+        ).toHaveAttribute('aria-pressed', 'true')
+
+        const totoButton = brandGroup.getByRole('button', {
+            name: 'Lọc theo thương hiệu TOTO',
+        })
+        await totoButton.click()
+        await expect(totoButton).toHaveAttribute('aria-pressed', 'true')
+        await expect(
+            section.getByText(/sản phẩm nổi bật · TOTO/i),
+        ).toBeVisible({ timeout: 15_000 })
+
+        const productBrands = await section
+            .locator('[data-home-product-brand]')
+            .evaluateAll((elements) =>
+                elements.map((element) =>
+                    element.getAttribute('data-home-product-brand'),
+                ),
+            )
+        expect(productBrands.length).toBeGreaterThan(0)
+        expect(new Set(productBrands)).toEqual(new Set(['toto']))
+    })
 })
