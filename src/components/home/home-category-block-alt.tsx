@@ -2,15 +2,18 @@
 
 import {
     useEffect,
-    useMemo,
     useRef,
     useState,
     useTransition,
 } from 'react'
 import Link from 'next/link'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import {
+    ArrowRight,
+    ChevronLeft,
+    ChevronRight,
+    LoaderCircle,
+} from 'lucide-react'
 import { fetchFeaturedProductsAction } from '@/app/actions/home-products'
-import { BrandLogo } from '@/components/media/brand-logo'
 import { ProductCard } from '@/components/ui/product-card'
 import { cn } from '@/lib/utils'
 
@@ -19,246 +22,344 @@ interface Brand {
     slug: string
 }
 
-interface Subcategory {
-    name: string
-    slug: string
-}
-
 interface HomeCategoryBlockAltProps {
     categoryData: {
         id: string
         label: string
+        description: string
         basePath: string
         // ProductCard supports the serialized product payload returned by Prisma.
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         products: any[]
         totalCount?: number
         availableBrands?: Brand[]
-        availableSubcategories?: Subcategory[]
     }
+    sectionIndex: number
+}
+
+interface ProductCacheEntry {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    products: any[]
+    total: number
+}
+
+function createCacheKey(categoryId: string, brandSlug: string | null) {
+    return [categoryId, brandSlug ?? 'all-brands'].join(':')
 }
 
 export function HomeCategoryBlockAlt({
     categoryData,
+    sectionIndex,
 }: HomeCategoryBlockAltProps) {
-    const brands = useMemo(
-        () => categoryData.availableBrands ?? [],
-        [categoryData.availableBrands],
-    )
-    const subcategories = useMemo(
-        () => categoryData.availableSubcategories ?? [],
-        [categoryData.availableSubcategories],
-    )
-    const defaultSubcategory = useMemo(
-        () =>
-            subcategories.find((subcategory) => subcategory.slug === 'bon-cau')
-                ?.slug ??
-            subcategories[0]?.slug ??
-            null,
-        [subcategories],
-    )
-
-    const [activeBrandIndex, setActiveBrandIndex] = useState(0)
-    const [activeSubcategorySlug, setActiveSubcategorySlug] =
-        useState<string | null>(defaultSubcategory)
+    const brands = categoryData.availableBrands ?? []
+    const [activeBrandSlug, setActiveBrandSlug] = useState<string | null>(null)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [displayedProducts, setDisplayedProducts] = useState<any[]>(
         categoryData.products,
     )
+    const [resultCount, setResultCount] = useState(
+        categoryData.totalCount ?? categoryData.products.length,
+    )
+    const [mobileProductIndex, setMobileProductIndex] = useState(0)
+    const [loadError, setLoadError] = useState<string | null>(null)
     const [isPending, startTransition] = useTransition()
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const cacheRef = useRef(new Map<string, any[]>())
+    const cacheRef = useRef(
+        new Map<string, ProductCacheEntry>([
+            [
+                createCacheKey(categoryData.id, null),
+                {
+                    products: categoryData.products,
+                    total:
+                        categoryData.totalCount ?? categoryData.products.length,
+                },
+            ],
+        ]),
+    )
     const requestIdRef = useRef(0)
-    const isInitialRenderRef = useRef(true)
 
-    const activeBrand = brands[activeBrandIndex] ?? null
+    const activeBrand =
+        brands.find((brand) => brand.slug === activeBrandSlug) ?? null
+    const catalogHref = activeBrand
+        ? `${categoryData.basePath}?brands=${encodeURIComponent(activeBrand.name)}`
+        : categoryData.basePath
+    const resultDescription = activeBrand?.name ?? 'Tất cả hãng'
 
-    const selectAdjacentBrand = (direction: -1 | 1) => {
-        if (brands.length === 0) return
-        setActiveBrandIndex((current) =>
-            (current + direction + brands.length) % brands.length,
+    const selectBrand = (brandSlug: string | null) => {
+        const cached = cacheRef.current.get(
+            createCacheKey(categoryData.id, brandSlug),
         )
+
+        setMobileProductIndex(0)
+        setLoadError(null)
+        if (cached) {
+            setDisplayedProducts(cached.products)
+            setResultCount(cached.total)
+        }
+        setActiveBrandSlug(brandSlug)
     }
 
     useEffect(() => {
-        if (isInitialRenderRef.current) {
-            isInitialRenderRef.current = false
-            return
-        }
-        if (!activeBrand) return
-
-        const cacheKey = [
-            categoryData.id,
-            activeBrand.slug,
-            activeSubcategorySlug ?? '',
-        ].join(':')
-        const cached = cacheRef.current.get(cacheKey)
-        if (cached) {
-            setDisplayedProducts(cached)
-            return
-        }
-
         const requestId = ++requestIdRef.current
+        const cacheKey = createCacheKey(categoryData.id, activeBrandSlug)
+        const cached = cacheRef.current.get(cacheKey)
+
+        if (cached) return
+
         startTransition(async () => {
             try {
                 const response = await fetchFeaturedProductsAction(
                     categoryData.id,
-                    activeBrand.slug,
-                    activeSubcategorySlug,
+                    activeBrandSlug,
+                    null,
                     0,
-                    10,
+                    4,
                 )
                 if (requestId !== requestIdRef.current) return
 
-                cacheRef.current.set(cacheKey, response.products)
-                setDisplayedProducts(response.products)
+                const entry = {
+                    products: response.products,
+                    total: response.total,
+                }
+                cacheRef.current.set(cacheKey, entry)
+                setDisplayedProducts(entry.products)
+                setResultCount(entry.total)
             } catch (error) {
+                if (requestId !== requestIdRef.current) return
                 console.error(
                     '[home-category] Không tải được sản phẩm',
                     error,
                 )
+                setLoadError(
+                    'Không thể cập nhật sản phẩm. Vui lòng thử lại.',
+                )
             }
         })
-    }, [activeBrand, activeSubcategorySlug, categoryData.id])
+    }, [activeBrandSlug, categoryData.id])
+
+    const showPreviousProduct = () => {
+        setMobileProductIndex((index) => Math.max(0, index - 1))
+    }
+
+    const showNextProduct = () => {
+        setMobileProductIndex((index) =>
+            Math.min(displayedProducts.length - 1, index + 1),
+        )
+    }
+
+    const renderProduct = (
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        product: any,
+    ) => (
+        <div
+            key={product.id}
+            className="min-w-0"
+            data-home-product-brand={product.brands?.slug ?? ''}
+        >
+            <ProductCard
+                product={product}
+                basePath={categoryData.basePath}
+                displayMode="shelf"
+                reserveFeaturedLabelSpace={false}
+                patternSlug={product.subcategories?.slug ?? 'san-pham'}
+                href={product.url}
+            />
+        </div>
+    )
 
     return (
         <section
-            className="relative z-0 my-8 w-full [content-visibility:auto] [contain-intrinsic-size:900px]"
+            className="relative z-0 w-full border-t border-stone-200 py-10 [content-visibility:auto] [contain-intrinsic-size:620px] md:py-12 lg:grid lg:grid-cols-[minmax(210px,0.28fr)_minmax(0,0.72fr)] lg:gap-10 lg:py-16"
             aria-labelledby={`home-category-${categoryData.id}`}
         >
-            <div className="mb-6 flex w-full flex-col items-start gap-2 md:mb-8 md:gap-3">
-                <h2
-                    id={`home-category-${categoryData.id}`}
-                    className="font-display text-[28px] font-semibold leading-tight tracking-tight text-stone-900 md:text-display-lg"
+            <header className="mb-8 flex items-start justify-between gap-5 lg:mb-0 lg:block">
+                <div className="min-w-0">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-stone-500">
+                        {String(sectionIndex).padStart(2, '0')} / 04
+                    </p>
+                    <p className="mt-5 text-xs font-semibold uppercase tracking-[0.18em] text-brand-700">
+                        Sản phẩm nổi bật
+                    </p>
+                    <h2
+                        id={`home-category-${categoryData.id}`}
+                        className="mt-2 font-display text-[28px] font-semibold leading-tight tracking-tight text-stone-950 md:text-4xl lg:max-w-[9ch]"
+                    >
+                        {categoryData.label}
+                    </h2>
+                    <p className="mt-4 max-w-sm text-sm leading-6 text-stone-600">
+                        {categoryData.description}
+                    </p>
+                </div>
+
+                <Link
+                    href={catalogHref}
+                    className="mt-14 inline-flex min-h-11 shrink-0 items-center gap-2 border-b border-stone-400 text-sm font-semibold text-stone-800 transition-colors hover:border-brand-700 hover:text-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-4 lg:mt-7"
                 >
-                    Sản phẩm {categoryData.label}
-                </h2>
-                <div className="h-1 w-12 rounded-full bg-brand-600" />
-            </div>
+                    Xem danh mục
+                    {activeBrand ? ` ${activeBrand.name}` : ''}
+                    <ArrowRight className="size-4" aria-hidden="true" />
+                </Link>
+            </header>
 
-            {(brands.length > 0 || subcategories.length > 0) && (
-                <div className="relative mb-6 flex w-full flex-col gap-4 overflow-hidden rounded-xl border border-neutral-200/60 bg-neutral-50 p-4 md:p-6">
-                    {brands.length > 0 && (
-                        <div className="flex items-center gap-2">
-                            <button
-                                type="button"
-                                onClick={() => selectAdjacentBrand(-1)}
-                                className="flex size-11 shrink-0 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-600 transition-colors hover:border-brand-300 hover:text-brand-600"
-                                aria-label={`Thương hiệu trước trong ${categoryData.label}`}
-                            >
-                                <ChevronLeft className="size-5" aria-hidden="true" />
-                            </button>
-
-                            <div
-                                className="flex min-w-0 flex-1 gap-2 overflow-x-auto px-1 [scrollbar-width:none]"
-                                aria-label={`Thương hiệu ${categoryData.label}`}
-                            >
-                                {brands.map((brand, index) => {
-                                    const isActive = index === activeBrandIndex
-                                    return (
-                                        <button
-                                            type="button"
-                                            key={brand.slug}
-                                            onClick={() => setActiveBrandIndex(index)}
-                                            className={cn(
-                                                'flex h-16 min-w-[116px] shrink-0 items-center justify-center rounded-xl border bg-white px-3 transition-colors',
-                                                isActive
-                                                    ? 'border-brand-500 shadow-sm'
-                                                    : 'border-neutral-200 opacity-70 hover:border-brand-300 hover:opacity-100',
-                                            )}
-                                            aria-pressed={isActive}
-                                        >
-                                            <BrandLogo
-                                                slug={brand.slug}
-                                                name={brand.name}
-                                                className="max-h-8 max-w-20"
-                                            />
-                                        </button>
-                                    )
-                                })}
-                            </div>
-
-                            <button
-                                type="button"
-                                onClick={() => selectAdjacentBrand(1)}
-                                className="flex size-11 shrink-0 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-600 transition-colors hover:border-brand-300 hover:text-brand-600"
-                                aria-label={`Thương hiệu tiếp theo trong ${categoryData.label}`}
-                            >
-                                <ChevronRight className="size-5" aria-hidden="true" />
-                            </button>
-                        </div>
-                    )}
-
-                    {subcategories.length > 0 && (
-                        <div
-                            className="flex gap-2 overflow-x-auto border-t border-neutral-200 pt-4 [scrollbar-width:none]"
-                            aria-label={`Phân loại ${categoryData.label}`}
+            <div className="min-w-0">
+                {brands.length > 0 && (
+                    <div className="flex min-w-0 items-center gap-5 border-b border-stone-200">
+                        <span
+                            className="shrink-0 text-xs font-semibold uppercase tracking-[0.14em] text-stone-500"
                         >
-                            {subcategories.map((subcategory) => {
+                            Hãng
+                        </span>
+                        <div
+                            className="flex min-w-0 flex-1 gap-6 overflow-x-auto [scrollbar-width:none]"
+                            role="group"
+                            aria-label={`Lọc ${categoryData.label} theo hãng`}
+                        >
+                            <button
+                                type="button"
+                                onClick={() => selectBrand(null)}
+                                className={cn(
+                                    'relative min-h-11 shrink-0 py-3 text-sm font-semibold transition-colors after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:origin-left after:transition-transform',
+                                    activeBrandSlug === null
+                                        ? 'text-brand-700 after:scale-x-100 after:bg-brand-700'
+                                        : 'text-stone-600 after:scale-x-0 after:bg-stone-400 hover:text-stone-950 hover:after:scale-x-100',
+                                )}
+                                aria-pressed={activeBrandSlug === null}
+                            >
+                                Tất cả
+                            </button>
+
+                            {brands.map((brand) => {
                                 const isActive =
-                                    activeSubcategorySlug === subcategory.slug
+                                    brand.slug === activeBrandSlug
                                 return (
                                     <button
                                         type="button"
-                                        key={subcategory.slug}
+                                        key={brand.slug}
                                         onClick={() =>
-                                            setActiveSubcategorySlug(subcategory.slug)
+                                            selectBrand(brand.slug)
                                         }
                                         className={cn(
-                                            'min-h-11 shrink-0 rounded-full border px-4 py-2 text-sm font-medium transition-colors',
+                                            'relative min-h-11 shrink-0 py-3 text-sm font-semibold transition-colors after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:origin-left after:transition-transform',
                                             isActive
-                                                ? 'border-brand-600 bg-brand-600 text-white'
-                                                : 'border-neutral-200 bg-white text-stone-600 hover:border-brand-300 hover:text-brand-700',
+                                                ? 'text-brand-700 after:scale-x-100 after:bg-brand-700'
+                                                : 'text-stone-600 after:scale-x-0 after:bg-stone-400 hover:text-stone-950 hover:after:scale-x-100',
                                         )}
                                         aria-pressed={isActive}
                                     >
-                                        {subcategory.name}
+                                        {brand.name}
                                     </button>
                                 )
                             })}
                         </div>
+                    </div>
+                )}
+
+                <div
+                    className="flex min-h-12 items-center justify-between gap-4 py-3 text-xs"
+                    aria-live="polite"
+                    aria-atomic="true"
+                >
+                    <p
+                        className={cn(
+                            'text-stone-500',
+                            loadError && 'font-medium text-rose-700',
+                        )}
+                    >
+                        {loadError ??
+                            `${resultCount.toLocaleString('vi-VN')} sản phẩm nổi bật · ${resultDescription}`}
+                    </p>
+                    {isPending && (
+                        <span className="flex shrink-0 items-center gap-2 font-medium text-brand-700">
+                            <LoaderCircle
+                                className="size-4 animate-spin motion-reduce:animate-none"
+                                aria-hidden="true"
+                            />
+                            Đang tải
+                        </span>
                     )}
                 </div>
-            )}
 
-            <div
-                className={cn(
-                    'w-full transition-opacity duration-300',
-                    isPending && 'opacity-50',
-                )}
-                aria-busy={isPending}
-            >
-                {displayedProducts.length > 0 ? (
-                    <div className="grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-5 lg:grid-cols-5">
-                        {displayedProducts.map((product) => (
-                            <ProductCard
-                                key={product.id}
-                                product={product}
-                                basePath={categoryData.basePath}
-                                patternSlug={
-                                    product.subcategories?.slug ?? 'san-pham'
-                                }
-                                href={product.url}
-                            />
-                        ))}
-                    </div>
-                ) : (
-                    <div className="flex min-h-[240px] w-full flex-col items-center justify-center rounded-2xl border border-dashed border-stone-200 bg-stone-50 px-5 text-center">
-                        <p className="text-stone-600">
-                            Chưa có sản phẩm cho lựa chọn này.
-                        </p>
-                    </div>
-                )}
-            </div>
-
-            <div className="mt-6 flex justify-center">
-                <Link
-                    href={categoryData.basePath}
-                    className="inline-flex min-h-11 items-center rounded-full border border-brand-600 px-5 py-2 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-50"
+                <div
+                    className={cn(
+                        'w-full transition-opacity duration-200 motion-reduce:transition-none',
+                        isPending && 'opacity-50',
+                    )}
+                    aria-busy={isPending}
                 >
-                    Xem tất cả {categoryData.totalCount?.toLocaleString('vi-VN') ?? ''}{' '}
-                    sản phẩm {categoryData.label.toLowerCase()}
-                </Link>
+                    {displayedProducts.length > 0 ? (
+                        <>
+                            <div className="md:hidden">
+                                {renderProduct(
+                                    displayedProducts[mobileProductIndex],
+                                )}
+                                {displayedProducts.length > 1 && (
+                                    <div className="mt-5 flex items-center justify-between border-t border-stone-200 pt-4">
+                                        <p className="text-xs font-semibold tabular-nums text-stone-500">
+                                            {String(
+                                                mobileProductIndex + 1,
+                                            ).padStart(2, '0')}{' '}
+                                            /{' '}
+                                            {String(
+                                                displayedProducts.length,
+                                            ).padStart(2, '0')}
+                                        </p>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={showPreviousProduct}
+                                                disabled={
+                                                    mobileProductIndex === 0
+                                                }
+                                                className="flex size-11 items-center justify-center rounded-full border border-stone-300 text-stone-700 transition-colors hover:border-brand-500 hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-35"
+                                                aria-label={`Xem sản phẩm ${categoryData.label} trước`}
+                                            >
+                                                <ChevronLeft
+                                                    className="size-5"
+                                                    aria-hidden="true"
+                                                />
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={showNextProduct}
+                                                disabled={
+                                                    mobileProductIndex ===
+                                                    displayedProducts.length -
+                                                        1
+                                                }
+                                                className="flex size-11 items-center justify-center rounded-full border border-stone-300 text-stone-700 transition-colors hover:border-brand-500 hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-35"
+                                                aria-label={`Xem sản phẩm ${categoryData.label} tiếp theo`}
+                                            >
+                                                <ChevronRight
+                                                    className="size-5"
+                                                    aria-hidden="true"
+                                                />
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="hidden grid-cols-2 gap-x-5 gap-y-8 md:grid lg:grid-cols-4">
+                                {displayedProducts.map(renderProduct)}
+                            </div>
+                        </>
+                    ) : (
+                        <div className="flex min-h-60 w-full flex-col items-start justify-center border-y border-dashed border-stone-300 py-8">
+                            <p className="font-medium text-stone-900">
+                                Chưa có sản phẩm nổi bật của hãng này
+                            </p>
+                            <p className="mt-1 text-sm text-stone-600">
+                                Chọn “Tất cả” để tiếp tục khám phá danh mục.
+                            </p>
+                            <button
+                                type="button"
+                                onClick={() => selectBrand(null)}
+                                className="mt-4 inline-flex min-h-11 items-center border-b border-brand-700 text-sm font-semibold text-brand-700"
+                            >
+                                Xem tất cả hãng
+                            </button>
+                        </div>
+                    )}
+                </div>
             </div>
         </section>
     )

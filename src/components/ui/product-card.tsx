@@ -7,12 +7,24 @@ import { DeferredResponsiveMedia } from '@/components/media/deferred-responsive-
 export interface ProductCardProps {
     product: any;
     showPrice?: boolean;
+    reserveFeaturedLabelSpace?: boolean;
+    displayMode?: 'default' | 'shelf';
     patternSlug?: string;
     basePath?: string;
     href?: string;
 }
 
-export function ProductCard({ product, showPrice = true, patternSlug, basePath = '/gach-op-lat', ...props }: ProductCardProps) {
+export function ProductCard({
+    product,
+    showPrice = true,
+    reserveFeaturedLabelSpace = true,
+    displayMode = 'default',
+    patternSlug,
+    basePath = '/gach-op-lat',
+    ...props
+}: ProductCardProps) {
+    const isShelf = displayMode === 'shelf';
+    const showFeaturedTreatment = product.is_featured && !isShelf;
     const isTBVS = basePath.includes('/thiet-bi-ve-sinh');
     const isBep = basePath.includes('/thiet-bi-bep');
     const isNuoc = basePath.includes('/vat-lieu-nuoc');
@@ -43,7 +55,7 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
     const firstImage = product.image_main_url || product.thumbnail || (images.length > 0 ? images[0] : null);
 
     // Parse specs for display
-    let specs: any = {};
+    let specs: { dimensions?: string; simDimensions?: string } = {};
     try {
         if (product.specs) specs = JSON.parse(product.specs as string);
     } catch { /* ignore */ }
@@ -91,7 +103,11 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
     let featuresList: string[] = [];
     if (Array.isArray(product.product_feature_values)) {
         featuresList = product.product_feature_values
-            .map((item: any) => item.product_features?.name)
+            .map(
+                (item: {
+                    product_features?: { name?: string | null } | null
+                }) => item.product_features?.name,
+            )
             .filter(Boolean);
     }
 
@@ -102,7 +118,7 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
 
     return (
         <Link href={resolvedHref} className="group flex flex-col w-full h-full transition-all duration-300 relative">
-            {product.is_featured && (
+            {showFeaturedTreatment && (
                 <>
                     {/* Fading Border Wrapper */}
                     <div className="absolute inset-0 w-full h-full bg-gradient-to-b from-amber-300/60 from-0% via-amber-100/20 via-[25%] to-transparent to-[50%] rounded-[16px] z-0 pointer-events-none p-[1px]">
@@ -112,17 +128,20 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
                 </>
             )}
             
-            {/* 32px Spacer / Banner Text */}
-            <div className="w-full h-[32px] flex items-center justify-center text-amber-700 text-[10px] font-bold uppercase tracking-widest rounded-t-[16px] z-10 shrink-0 pt-[2px]">
-                {product.is_featured ? <span className="relative z-20">Sản phẩm nổi bật</span> : null}
-            </div>
+            {(showFeaturedTreatment || reserveFeaturedLabelSpace) ? (
+                <div className="z-10 flex h-8 w-full shrink-0 items-center justify-center rounded-t-2xl pt-0.5 text-[10px] font-bold uppercase tracking-widest text-amber-700">
+                    {showFeaturedTreatment ? (
+                        <span className="relative z-20">Sản phẩm nổi bật</span>
+                    ) : null}
+                </div>
+            ) : null}
             
             <div className={cn(
                 "flex flex-col flex-1 relative z-20 h-full overflow-hidden",
-                product.is_featured ? "bg-white rounded-b-[15px] rounded-t-none mx-[1px] mb-[1px] w-[calc(100%-2px)]" : "bg-white rounded-[16px] w-full"
+                showFeaturedTreatment ? "bg-white rounded-b-[15px] rounded-t-none mx-[1px] mb-[1px] w-[calc(100%-2px)]" : "bg-white rounded-[16px] w-full"
             )}>
                 {/* Background filler to create a cohesive 3D effect behind the rounded image corners */}
-                {product.is_featured && (
+                {showFeaturedTreatment && (
                     <div className="absolute top-0 left-0 w-full h-[24px] bg-amber-50 z-0" />
                 )}
 
@@ -134,7 +153,11 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
                         alt={product.name}
                         fill
                         profile="product"
-                        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+                        sizes={
+                            isShelf
+                                ? '(max-width: 767px) calc(100vw - 40px), (max-width: 1023px) 50vw, 18vw'
+                                : '(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw'
+                        }
                         className={cn("absolute inset-0 h-full w-full", imageClassName)}
                     />
                 ) : (
@@ -186,7 +209,10 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
                         {collectionName || (isTBVS ? 'Thiết bị vệ sinh' : 'Đông Phú Gia')}
                     </span>
                     {(product.stock_status || product.warranty_months || sku) && (
-                        <div className="flex items-center gap-1.5 text-[10px] text-neutral-600 shrink-0">
+                        <div className={cn(
+                            "items-center gap-1.5 text-[10px] text-neutral-600 shrink-0",
+                            isShelf ? "hidden" : "flex",
+                        )}>
                             {product.stock_status && (
                                 <span className={cn(
                                     "w-1.5 h-1.5 rounded-full",
@@ -208,7 +234,7 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
                 </h3>
 
                 {/* Features Tags */}
-                {featuresList.length > 0 && (
+                {!isShelf && featuresList.length > 0 && (
                     <div className="flex flex-wrap gap-1.5 mb-2">
                         {featuresList.slice(0, 3).map((feat, idx) => (
                             <span key={idx} className="px-2 py-[3px] text-[10px] text-neutral-500 bg-transparent rounded-[4px] border border-neutral-200">
@@ -222,7 +248,7 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
                 <div className="mt-auto"></div>
 
                 {/* Color Layer (Hide if White/Trắng to reduce visual repetition) */}
-                {displayColor && displayColor.name?.toLowerCase() !== 'trắng' && displayColor.name?.toLowerCase() !== 'white' && (
+                {!isShelf && displayColor && displayColor.name?.toLowerCase() !== 'trắng' && displayColor.name?.toLowerCase() !== 'white' && (
                     <div className="flex items-center gap-1.5 mt-1 mb-2">
                         <span
                             className="w-3 h-3 rounded-full border border-black/10 shrink-0 shadow-sm"
@@ -233,7 +259,10 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
                 )}
 
                 {/* Price */}
-                <div className="flex flex-col gap-0.5 mt-1 border-t border-neutral-100 pt-3">
+                <div className={cn(
+                    "flex flex-col gap-0.5 mt-1",
+                    isShelf ? "pt-2" : "border-t border-neutral-100 pt-3",
+                )}>
                     {isDiscontinued ? (
                         <span className="w-fit rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-[12px] font-bold text-rose-700">
                             Ngừng kinh doanh
