@@ -91,7 +91,7 @@ test.describe('homepage technical readiness', () => {
         expect(campaignRequests[0]).toContain('.hero.w720.webp')
     })
 
-    test('keeps homepage category filters and products in sync', async ({
+    test('keeps each homepage category shelf in sync with its brand', async ({
         page,
     }) => {
         test.skip(
@@ -107,23 +107,18 @@ test.describe('homepage technical readiness', () => {
         await section.scrollIntoViewIfNeeded()
 
         const brandGroup = section.getByRole('group', {
-            name: 'Thương hiệu',
-        })
-        const subcategoryGroup = section.getByRole('group', {
-            name: 'Loại sản phẩm',
+            name: 'Lọc Thiết Bị Vệ Sinh theo hãng',
         })
         await expect(
             brandGroup.getByRole('button', { name: 'Tất cả', exact: true }),
         ).toHaveAttribute('aria-pressed', 'true')
         await expect(
-            subcategoryGroup.getByRole('button', {
-                name: 'Tất cả',
-                exact: true,
-            }),
-        ).toHaveAttribute('aria-pressed', 'true')
+            section.getByRole('group', { name: 'Loại sản phẩm' }),
+        ).toHaveCount(0)
 
         const totoButton = brandGroup.getByRole('button', {
-            name: 'Lọc theo thương hiệu TOTO',
+            name: 'TOTO',
+            exact: true,
         })
         await totoButton.click()
         await expect(totoButton).toHaveAttribute('aria-pressed', 'true')
@@ -140,5 +135,14 @@ test.describe('homepage technical readiness', () => {
             )
         expect(productBrands.length).toBeGreaterThan(0)
         expect(new Set(productBrands)).toEqual(new Set(['toto']))
+
+        await expect(
+            section.getByRole('link', { name: /xem danh mục TOTO/i }),
+        ).toHaveAttribute('href', '/thiet-bi-ve-sinh?brands=TOTO')
+        await expect(
+            section.getByRole('button', {
+                name: 'Xem sản phẩm Thiết Bị Vệ Sinh trước',
+            }),
+        ).toBeDisabled()
     })
 })

@@ -29,17 +29,27 @@ export const metadata: Metadata = {
 }
 
 export default async function HomePage() {
-    const [banners, tbvsData, bepData, gachData, nuocData, tbvsBrands, tbvsSubcats, bepSubcats, bepBrands] = await Promise.all([
+    const [
+        banners,
+        tbvsData,
+        bepData,
+        gachData,
+        nuocData,
+        tbvsBrands,
+        bepBrands,
+        gachBrands,
+        nuocBrands,
+    ] = await Promise.all([
         prisma.banners.findMany({
             where: { is_active: true },
             orderBy: { sort_order: 'asc' },
             take: 5,
         }),
         // getHomeFeaturedProducts(15), // Tạm ẩn để nghiên cứu thêm
-        getFeaturedProductsByCategorySlug('thiet-bi-ve-sinh', null, null, 0, 5),
-        getFeaturedProductsByCategorySlug('thiet-bi-bep', null, null, 0, 5),
-        getFeaturedProductsByCategorySlug('gach-op-lat', null, null, 0, 5),
-        getFeaturedProductsByCategorySlug('vat-lieu-nuoc', null, null, 0, 5),
+        getFeaturedProductsByCategorySlug('thiet-bi-ve-sinh', null, null, 0, 4),
+        getFeaturedProductsByCategorySlug('thiet-bi-bep', null, null, 0, 4),
+        getFeaturedProductsByCategorySlug('gach-op-lat', null, null, 0, 4),
+        getFeaturedProductsByCategorySlug('vat-lieu-nuoc', null, null, 0, 4),
         prisma.brands.findMany({
             where: {
                 is_active: true,
@@ -53,35 +63,7 @@ export default async function HomePage() {
             },
             select: { name: true, slug: true },
             orderBy: { sort_order: 'asc' },
-        }),
-        prisma.subcategories.findMany({
-            where: {
-                is_active: true,
-                categories: { slug: 'thiet-bi-ve-sinh' },
-                products: {
-                    some: {
-                        is_active: true,
-                        is_home_featured: true,
-                    },
-                },
-            },
-            select: { name: true, slug: true },
-            orderBy: { sort_order: 'asc' },
-        }),
-        prisma.subcategories.findMany({
-            where: {
-                is_active: true,
-                categories: { slug: 'thiet-bi-bep' },
-                slug: { notIn: ['thiet-bi-bep-khac'] },
-                products: {
-                    some: {
-                        is_active: true,
-                        is_home_featured: true,
-                    },
-                },
-            },
-            select: { name: true, slug: true },
-            orderBy: { sort_order: 'asc' },
+            take: 6,
         }),
         prisma.brands.findMany({
             where: {
@@ -96,30 +78,81 @@ export default async function HomePage() {
             },
             select: { name: true, slug: true },
             orderBy: { sort_order: 'asc' },
-        })
+            take: 6,
+        }),
+        prisma.brands.findMany({
+            where: {
+                is_active: true,
+                products: {
+                    some: {
+                        categories: { slug: 'gach-op-lat' },
+                        is_active: true,
+                        is_home_featured: true,
+                    },
+                },
+            },
+            select: { name: true, slug: true },
+            orderBy: { sort_order: 'asc' },
+            take: 6,
+        }),
+        prisma.brands.findMany({
+            where: {
+                is_active: true,
+                products: {
+                    some: {
+                        categories: { slug: 'vat-lieu-nuoc' },
+                        is_active: true,
+                        is_home_featured: true,
+                    },
+                },
+            },
+            select: { name: true, slug: true },
+            orderBy: { sort_order: 'asc' },
+            take: 6,
+        }),
     ])
 
     const allCategories = [
-        { 
-            id: 'thiet-bi-ve-sinh', 
-            label: 'Thiết Bị Vệ Sinh', 
-            basePath: '/thiet-bi-ve-sinh', 
-            products: tbvsData.products, 
+        {
+            id: 'thiet-bi-ve-sinh',
+            label: 'Thiết Bị Vệ Sinh',
+            description:
+                'Giải pháp hoàn thiện phòng tắm từ các thương hiệu chính hãng.',
+            basePath: '/thiet-bi-ve-sinh',
+            products: tbvsData.products,
             totalCount: tbvsData.total,
             availableBrands: tbvsBrands,
-            availableSubcategories: tbvsSubcats
         },
-        { 
-            id: 'thiet-bi-bep', 
-            label: 'Thiết Bị Bếp', 
-            basePath: '/thiet-bi-bep', 
-            products: bepData.products, 
+        {
+            id: 'thiet-bi-bep',
+            label: 'Thiết Bị Bếp',
+            description:
+                'Thiết bị thiết yếu cho gian bếp tiện nghi và đồng bộ.',
+            basePath: '/thiet-bi-bep',
+            products: bepData.products,
             totalCount: bepData.total,
             availableBrands: bepBrands,
-            availableSubcategories: bepSubcats
         },
-        { id: 'vat-lieu-nuoc', label: 'Vật Liệu Nước', basePath: '/vat-lieu-nuoc', products: nuocData.products, totalCount: nuocData.total },
-        { id: 'gach-op-lat', label: 'Gạch Ốp Lát', basePath: '/gach-op-lat', products: gachData.products, totalCount: gachData.total },
+        {
+            id: 'vat-lieu-nuoc',
+            label: 'Vật Liệu Nước',
+            description:
+                'Giải pháp cấp thoát nước bền vững cho công trình.',
+            basePath: '/vat-lieu-nuoc',
+            products: nuocData.products,
+            totalCount: nuocData.total,
+            availableBrands: nuocBrands,
+        },
+        {
+            id: 'gach-op-lat',
+            label: 'Gạch Ốp Lát',
+            description:
+                'Bề mặt hoàn thiện được chọn lọc cho từng phong cách không gian.',
+            basePath: '/gach-op-lat',
+            products: gachData.products,
+            totalCount: gachData.total,
+            availableBrands: gachBrands,
+        },
     ].filter(c => c.products.length > 0)
     const firstBannerUrl = banners[0]?.image_url
     if (firstBannerUrl) {
@@ -167,9 +200,13 @@ export default async function HomePage() {
 
             {/* Category Blocks (Khối 2-5) */}
             {allCategories.length > 0 && (
-                <div className="max-w-[1280px] mx-auto px-5 py-6 lg:py-10 flex flex-col gap-12 lg:gap-16">
-                    {allCategories.map((cat) => (
-                        <HomeCategoryBlockAlt key={cat.id} categoryData={cat} />
+                <div className="mx-auto flex max-w-[1280px] flex-col px-5 py-6 lg:py-10">
+                    {allCategories.map((cat, index) => (
+                        <HomeCategoryBlockAlt
+                            key={cat.id}
+                            categoryData={cat}
+                            sectionIndex={index + 1}
+                        />
                     ))}
                 </div>
             )}
