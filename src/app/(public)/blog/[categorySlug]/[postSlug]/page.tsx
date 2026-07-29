@@ -7,6 +7,7 @@ import { PostCard, BlogPost } from '@/components/blog/post-card'
 import { JsonLd } from '@/components/seo/json-ld'
 import { buildArticleSchema, buildBreadcrumbSchema } from '@/lib/seo/schema'
 import { canonicalUrl } from '@/lib/site'
+import { sanitizeRichHtml } from '@/lib/html-sanitizer'
 
 import { getBlogPostBySlug, getRelatedBlogPosts } from '@/lib/public-api-blog'
 
@@ -44,9 +45,11 @@ export default async function BlogPostPage({ params }: { params: Promise<{ categ
 
     // The page title is the only H1. Legacy editor content may contain H1 tags,
     // so demote those headings before rendering and building the table of contents.
-    const articleContent = (post.content || '')
-        .replace(/<h1(\s|>)/gi, '<h2$1')
-        .replace(/<\/h1>/gi, '</h2>')
+    const articleContent = sanitizeRichHtml(
+        (post.content || '')
+            .replace(/<h1(\s|>)/gi, '<h2$1')
+            .replace(/<\/h1>/gi, '</h2>')
+    )
 
     // Related posts from same category (excluding current)
     const relatedPostsRaw = await getRelatedBlogPosts(post.id, post.category_id, 3)

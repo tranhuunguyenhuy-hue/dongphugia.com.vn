@@ -3,6 +3,7 @@
 import prisma from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
+import { requirePermission } from '@/lib/auth/get-current-user'
 
 const blogPostSchema = z.object({
     title: z.string().min(1, 'Tiêu đề không được để trống'),
@@ -32,6 +33,8 @@ const blogTagSchema = z.object({
 })
 
 export async function createBlogPost(data: any) {
+    await requirePermission('blog:write')
+
     const validated = blogPostSchema.safeParse(data)
     if (!validated.success) {
         return { errors: validated.error.flatten().fieldErrors }
@@ -87,6 +90,8 @@ export async function createBlogPost(data: any) {
 }
 
 export async function updateBlogPost(id: number, data: any) {
+    await requirePermission('blog:write')
+
     const validated = blogPostSchema.safeParse(data)
     if (!validated.success) {
         return { errors: validated.error.flatten().fieldErrors }
@@ -149,6 +154,8 @@ export async function updateBlogPost(id: number, data: any) {
 }
 
 export async function deleteBlogPost(id: number) {
+    await requirePermission('blog:write')
+
     try {
         await prisma.blog_posts.delete({ where: { id } })
         // Refresh tag counts
@@ -164,6 +171,8 @@ export async function deleteBlogPost(id: number) {
 }
 
 export async function createBlogTag(data: any) {
+    await requirePermission('blog:write')
+
     const validated = blogTagSchema.safeParse(data)
     if (!validated.success) {
         return { errors: validated.error.flatten().fieldErrors }
@@ -185,6 +194,8 @@ export async function createBlogTag(data: any) {
 }
 
 export async function deleteBlogTag(id: number) {
+    await requirePermission('blog:write')
+
     try {
         await prisma.blog_tags.delete({ where: { id } })
         revalidatePath('/admin/blog/tags')

@@ -4,6 +4,7 @@ import prisma from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { slugify } from '@/lib/utils'
+import { requirePermission } from '@/lib/auth/get-current-user'
 
 const ProjectSchema = z.object({
     title: z.string().min(1, 'Tiêu đề không được để trống'),
@@ -18,6 +19,8 @@ const ProjectSchema = z.object({
 })
 
 export async function createProject(data: z.infer<typeof ProjectSchema>) {
+    await requirePermission('blog:write')
+
     const parsed = ProjectSchema.safeParse(data)
     if (!parsed.success) {
         return { errors: parsed.error.flatten().fieldErrors, message: 'Dữ liệu không hợp lệ' }
@@ -44,6 +47,8 @@ export async function createProject(data: z.infer<typeof ProjectSchema>) {
 }
 
 export async function updateProject(id: number, data: z.infer<typeof ProjectSchema>) {
+    await requirePermission('blog:write')
+
     const parsed = ProjectSchema.safeParse(data)
     if (!parsed.success) {
         return { errors: parsed.error.flatten().fieldErrors, message: 'Dữ liệu không hợp lệ' }
@@ -70,6 +75,8 @@ export async function updateProject(id: number, data: z.infer<typeof ProjectSche
 }
 
 export async function deleteProject(id: number) {
+    await requirePermission('blog:write')
+
     await prisma.projects.delete({ where: { id } })
     revalidatePath('/admin/du-an')
     revalidatePath('/du-an')

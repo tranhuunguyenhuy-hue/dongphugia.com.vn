@@ -81,8 +81,12 @@ export const getFeaturedBlogPosts = cache(async (limit = 1) => {
 })
 
 export const getBlogPostBySlug = cache(async (slug: string) => {
-    return prisma.blog_posts.findUnique({
-        where: { slug },
+    return prisma.blog_posts.findFirst({
+        where: {
+            slug,
+            status: 'published',
+            published_at: { lte: new Date() },
+        },
         include: {
             blog_categories: { select: { id: true, name: true, slug: true } },
             blog_post_tags: {

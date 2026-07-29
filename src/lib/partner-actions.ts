@@ -4,6 +4,7 @@ import prisma from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { slugify } from '@/lib/utils'
+import { requirePermission } from '@/lib/auth/get-current-user'
 
 const PartnerSchema = z.object({
     name: z.string().min(1, 'Tên không được để trống'),
@@ -17,6 +18,8 @@ const PartnerSchema = z.object({
 })
 
 export async function createPartner(data: z.infer<typeof PartnerSchema>) {
+    await requirePermission('blog:write')
+
     const parsed = PartnerSchema.safeParse(data)
     if (!parsed.success) {
         return { errors: parsed.error.flatten().fieldErrors, message: 'Dữ liệu không hợp lệ' }
@@ -42,6 +45,8 @@ export async function createPartner(data: z.infer<typeof PartnerSchema>) {
 }
 
 export async function updatePartner(id: number, data: z.infer<typeof PartnerSchema>) {
+    await requirePermission('blog:write')
+
     const parsed = PartnerSchema.safeParse(data)
     if (!parsed.success) {
         return { errors: parsed.error.flatten().fieldErrors, message: 'Dữ liệu không hợp lệ' }
@@ -67,6 +72,8 @@ export async function updatePartner(id: number, data: z.infer<typeof PartnerSche
 }
 
 export async function deletePartner(id: number) {
+    await requirePermission('blog:write')
+
     await prisma.partners.delete({ where: { id } })
     revalidatePath('/admin/doi-tac')
     revalidatePath('/doi-tac')

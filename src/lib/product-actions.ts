@@ -4,6 +4,7 @@ import prisma from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
+import { requirePermission } from '@/lib/auth/get-current-user'
 
 // ─── SCHEMAS ─────────────────────────────────────────────────────────────────
 
@@ -47,6 +48,8 @@ const productSchema = z.object({
 // ─── CREATE ──────────────────────────────────────────────────────────────────
 
 export async function createProduct(data: unknown) {
+    await requirePermission('products:write')
+
     const validated = productSchema.safeParse(data)
     if (!validated.success) {
         return { errors: validated.error.flatten().fieldErrors }
@@ -112,6 +115,8 @@ export async function createProduct(data: unknown) {
 // ─── UPDATE ──────────────────────────────────────────────────────────────────
 
 export async function updateProduct(id: number, data: unknown) {
+    await requirePermission('products:write')
+
     const validated = productSchema.safeParse(data)
     if (!validated.success) {
         return { errors: validated.error.flatten().fieldErrors }
@@ -180,6 +185,8 @@ export async function updateProduct(id: number, data: unknown) {
 // ─── TOGGLE FIELDS ───────────────────────────────────────────────────────────
 
 export async function toggleProductFeatured(id: number, value: boolean) {
+    await requirePermission('products:write')
+
     try {
         await prisma.products.update({ where: { id }, data: { is_featured: value, updated_at: new Date() } })
         revalidatePath('/admin/products')
@@ -191,6 +198,8 @@ export async function toggleProductFeatured(id: number, value: boolean) {
 }
 
 export async function toggleProductActive(id: number, value: boolean) {
+    await requirePermission('products:write')
+
     // Guard: cannot activate stub products missing price or image
     if (value === true) {
         const product = await prisma.products.findUnique({
@@ -215,6 +224,8 @@ export async function toggleProductActive(id: number, value: boolean) {
 // ─── DELETE ──────────────────────────────────────────────────────────────────
 
 export async function deleteProduct(id: number) {
+    await requirePermission('products:delete')
+
     try {
         await prisma.products.delete({ where: { id } })
         revalidatePath('/admin/products')
@@ -228,6 +239,8 @@ export async function deleteProduct(id: number) {
 // ─── BULK OPERATIONS ─────────────────────────────────────────────────────────
 
 export async function bulkDeleteProducts(ids: number[]) {
+    await requirePermission('products:delete')
+
     try {
         const result = await prisma.products.deleteMany({ where: { id: { in: ids } } })
         revalidatePath('/admin/products')
@@ -239,6 +252,8 @@ export async function bulkDeleteProducts(ids: number[]) {
 }
 
 export async function bulkToggleActive(ids: number[], value: boolean) {
+    await requirePermission('products:write')
+
     try {
         const result = await prisma.products.updateMany({
             where: { id: { in: ids } },
@@ -254,6 +269,8 @@ export async function bulkToggleActive(ids: number[], value: boolean) {
 // ─── PRODUCT IMAGES ──────────────────────────────────────────────────────────
 
 export async function addProductImage(productId: number, imageUrl: string, altText?: string, imageType = 'gallery') {
+    await requirePermission('products:write')
+
     try {
         const imgData: Prisma.product_imagesUncheckedCreateInput = {
             product_id: productId,
@@ -271,6 +288,8 @@ export async function addProductImage(productId: number, imageUrl: string, altTe
 }
 
 export async function addProductImages(productId: number, imageUrls: string[]) {
+    await requirePermission('products:write')
+
     try {
         const data = imageUrls.map((url, i) => ({
             product_id: productId,
@@ -287,6 +306,8 @@ export async function addProductImages(productId: number, imageUrls: string[]) {
 }
 
 export async function deleteProductImage(imageId: number, productId: number) {
+    await requirePermission('products:write')
+
     try {
         await prisma.product_images.delete({ where: { id: imageId } })
         revalidatePath(`/admin/products/${productId}`)
@@ -297,6 +318,8 @@ export async function deleteProductImage(imageId: number, productId: number) {
 }
 
 export async function setProductThumbnail(productId: number, imageUrl: string) {
+    await requirePermission('products:write')
+
     try {
         await prisma.products.update({
             where: { id: productId },
@@ -312,6 +335,8 @@ export async function setProductThumbnail(productId: number, imageUrl: string) {
 }
 
 export async function updateProductImageSortOrder(productId: number, imageIds: number[]) {
+    await requirePermission('products:write')
+
     try {
         // Bulk update is tricky in Prisma, so we do a transaction
         const updates = imageIds.map((id, index) => 
@@ -330,6 +355,8 @@ export async function updateProductImageSortOrder(productId: number, imageIds: n
 
 // ─── SEARCH PRODUCTS (For Combo & Relationships) ─────────────────────────────
 export async function searchProducts(query: string, excludeId?: number) {
+    await requirePermission('products:read')
+
     try {
         const whereClause: any = {
             ...(excludeId ? { id: { not: excludeId } } : {})
@@ -367,6 +394,8 @@ export async function searchProducts(query: string, excludeId?: number) {
 
 // ─── RELATIONSHIPS (COMBO/RELATED) ───────────────────────────────────────────
 export async function addProductRelationship(parentId: number, childId: number, childSku: string, relationshipType: string = 'component') {
+    await requirePermission('products:write')
+
     try {
         const existingCount = await prisma.product_relationships.count({
             where: { parent_id: parentId, relationship_type: relationshipType }
@@ -389,6 +418,8 @@ export async function addProductRelationship(parentId: number, childId: number, 
 }
 
 export async function removeProductRelationship(id: number, parentId: number) {
+    await requirePermission('products:write')
+
     try {
         await prisma.product_relationships.delete({
             where: { id }
@@ -403,6 +434,8 @@ export async function removeProductRelationship(id: number, parentId: number) {
 // ─── VARIANTS MANAGEMENT ───────────────────────────────────────────────────
 
 export async function getProductVariants(variantGroup: string | null) {
+    await requirePermission('products:read')
+
     if (!variantGroup) return [];
     try {
         const variants = await prisma.products.findMany({
@@ -431,6 +464,8 @@ export async function getProductVariants(variantGroup: string | null) {
 }
 
 export async function linkVariant(currentProductId: number, targetProductId: number) {
+    await requirePermission('products:write')
+
     try {
         const currentProduct = await prisma.products.findUnique({
             where: { id: currentProductId },
@@ -467,6 +502,8 @@ export async function linkVariant(currentProductId: number, targetProductId: num
 }
 
 export async function unlinkVariant(productId: number, currentProductId: number) {
+    await requirePermission('products:write')
+
     try {
         await prisma.products.update({
             where: { id: productId },
@@ -482,6 +519,8 @@ export async function unlinkVariant(productId: number, currentProductId: number)
 }
 
 export async function bulkToggleFeatured(ids: number[], value: boolean) {
+    await requirePermission('products:write')
+
     try {
         const result = await prisma.products.updateMany({
             where: { id: { in: ids } },
@@ -499,6 +538,8 @@ export async function bulkToggleFeatured(ids: number[], value: boolean) {
 // ─── REORDER ─────────────────────────────────────────────────────────────────
 
 export async function updateProductSortOrders(updates: { id: number; sort_order: number }[]) {
+    await requirePermission('products:write')
+
     try {
         await prisma.$transaction(
             updates.map((u) =>

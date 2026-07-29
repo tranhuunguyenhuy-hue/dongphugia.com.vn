@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { sanitizeRichHtml } from '@/lib/html-sanitizer';
 
 // ────────── HTML Sanitizer ──────────
 // Defensive layer: strips hita spinner images and broken links from
@@ -30,7 +31,7 @@ function sanitizeProductHtml(html: string): string {
     // 3. Remove empty paragraph tags left after cleanup
     result = result.replace(/<p[^>]*>\s*<\/p>/gi, '');
 
-    return result;
+    return sanitizeRichHtml(result);
 }
 
 // ────────── Types ──────────

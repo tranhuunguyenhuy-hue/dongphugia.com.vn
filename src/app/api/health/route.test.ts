@@ -30,11 +30,12 @@ describe('GET /api/health', () => {
             ok: true,
             db: {
                 ok: true,
-                products: 12,
-                categories: 4,
             },
         })
         expect(body).not.toHaveProperty('env')
+        expect(body).not.toHaveProperty('region')
+        expect(body.db).not.toHaveProperty('products')
+        expect(body.db).not.toHaveProperty('categories')
         expect(JSON.stringify(body)).not.toContain('DATABASE_URL')
         expect(JSON.stringify(body)).not.toContain('postgresql://')
     })
@@ -49,6 +50,7 @@ describe('GET /api/health', () => {
         const response = await GET()
         const body = await response.json()
 
+        expect(response.status).toBe(503)
         expect(body).toMatchObject({
             ok: false,
             db: {

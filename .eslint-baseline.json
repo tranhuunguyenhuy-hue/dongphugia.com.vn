@@ -1,6 +1,6 @@
 {
   "description": "Known ESLint errors captured during repository cleanup. New errors fail CI.",
-  "generatedAt": "2026-07-13T17:17:40.505Z",
+  "generatedAt": "2026-07-29T17:02:16.992Z",
   "errors": [
     {
       "file": "scripts/crawl_toto_mass.ts",
@@ -35,20 +35,20 @@
       "fingerprint": "02cfe98e46a6be1a08d29ab432789aa33c5e7bda713a01256dc65ee6e0952ba0"
     },
     {
-      "file": "src/lib/product-actions.ts",
-      "line": 326,
-      "column": 19,
-      "rule": "@typescript-eslint/no-explicit-any",
-      "message": "Unexpected any. Specify a different type.",
-      "fingerprint": "03d141459cff85bb7886278df78d52e7a5c0ba0c6f5fc8fe6b6605e9df7e7c62"
-    },
-    {
       "file": "scripts/test_crawler.ts",
       "line": 209,
       "column": 17,
       "rule": "prefer-const",
       "message": "'container' is never reassigned. Use 'const' instead.",
       "fingerprint": "03e08227b2d547d75a09c1b7150d91349e174b29e040285ee5ae19565d3b7c30"
+    },
+    {
+      "file": "src/lib/order-actions.ts",
+      "line": 237,
+      "column": 52,
+      "rule": "@typescript-eslint/no-explicit-any",
+      "message": "Unexpected any. Specify a different type.",
+      "fingerprint": "0462d51e4518cd18e0c5677564443fb07e106ed306881a5a5804210089645cba"
     },
     {
       "file": "src/app/admin/(dashboard)/blog/posts/blog-post-form.tsx",
@@ -65,14 +65,6 @@
       "rule": "@typescript-eslint/no-explicit-any",
       "message": "Unexpected any. Specify a different type.",
       "fingerprint": "047f4699bae7bf831f75f66f9c43438d68cf1683320f2d951877fbe133b0f72c"
-    },
-    {
-      "file": "src/app/admin/(dashboard)/products/product-form.tsx",
-      "line": 1160,
-      "column": 123,
-      "rule": "@typescript-eslint/no-explicit-any",
-      "message": "Unexpected any. Specify a different type.",
-      "fingerprint": "0502ae1ab893bdcba58aa7f2d4af4be95d678589dd60ae24c17598675c79f57e"
     },
     {
       "file": "src/app/admin/(dashboard)/blog/posts/page.tsx",
@@ -97,14 +89,6 @@
       "rule": "@typescript-eslint/no-explicit-any",
       "message": "Unexpected any. Specify a different type.",
       "fingerprint": "068ce9f831af5b8deb2a1f114fb19ac63906a35be6d42a2e4583efc666e197ae"
-    },
-    {
-      "file": "src/app/(public)/tim-kiem/page.tsx",
-      "line": 211,
-      "column": 74,
-      "rule": "react/no-unescaped-entities",
-      "message": "`\"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.",
-      "fingerprint": "090e8ab633c71743cb8575f3929487223f80fe28dedb84447078edc6d3ef6a17"
     },
     {
       "file": "src/app/admin/(dashboard)/orders/[id]/order-builder-client.tsx",
@@ -211,22 +195,6 @@
       "fingerprint": "0f1d6dca9638b81969cf19dd5de65253ffb8dd450530b3a119fee93a8c6c4c8e"
     },
     {
-      "file": "src/app/admin/(dashboard)/categories/category-form.tsx",
-      "line": 328,
-      "column": 148,
-      "rule": "react/no-unescaped-entities",
-      "message": "`\"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.",
-      "fingerprint": "1059c153ac83e0947aa1be1bf6c99c13bea014c575f5532086f15599d6bc055b"
-    },
-    {
-      "file": "src/lib/order-actions.ts",
-      "line": 314,
-      "column": 59,
-      "rule": "@typescript-eslint/no-explicit-any",
-      "message": "Unexpected any. Specify a different type.",
-      "fingerprint": "110354d29ae986c94902d5ab363d508c23d39219875af59442b6f6b750da0a3c"
-    },
-    {
       "file": "src/app/(public)/thiet-bi-bep/[sub]/[slug]/page.tsx",
       "line": 174,
       "column": 85,
@@ -249,6 +217,14 @@
       "rule": "prefer-const",
       "message": "'specsObj' is never reassigned. Use 'const' instead.",
       "fingerprint": "133fb69360c7a2a032093bfacb76c3c601c5663048607eb4dc201c5583a91bb4"
+    },
+    {
+      "file": "src/lib/product-actions.ts",
+      "line": 515,
+      "column": 19,
+      "rule": "@typescript-eslint/no-explicit-any",
+      "message": "Unexpected any. Specify a different type.",
+      "fingerprint": "134b420870d87e876a8ac25ee684a7c0667066e2327661712a5640f50d494099"
     },
     {
       "file": "src/components/category/active-filters.tsx",
@@ -289,14 +265,6 @@
       "rule": "@typescript-eslint/no-explicit-any",
       "message": "Unexpected any. Specify a different type.",
       "fingerprint": "1550b6f98be3008923055a368b8252135e9c2e7eb7cd08de0ce7c50f2704de32"
-    },
-    {
-      "file": "src/lib/product-actions.ts",
-      "line": 188,
-      "column": 19,
-      "rule": "@typescript-eslint/no-explicit-any",
-      "message": "Unexpected any. Specify a different type.",
-      "fingerprint": "1675804cf7cf568254afbc99e6194e9e2db40e20609e824cfeaea1cef7e34f62"
     },
     {
       "file": "scripts/crawl-hita/import-approved-crawl-snapshots.mts",
@@ -387,6 +355,14 @@
       "fingerprint": "1ca2f2ad8001715cb379a439315cc19e37d50377b6573fc08c34052f8715aa98"
     },
     {
+      "file": "src/lib/blog-actions.ts",
+      "line": 173,
+      "column": 43,
+      "rule": "@typescript-eslint/no-explicit-any",
+      "message": "Unexpected any. Specify a different type.",
+      "fingerprint": "1d9705d5ea90eb061f18f775b9e8d07988cf1b30a145760650896486c72e3f04"
+    },
+    {
       "file": "scripts/crawl_toto_pilot.ts",
       "line": 208,
       "column": 13,
@@ -409,14 +385,6 @@
       "rule": "@typescript-eslint/no-explicit-any",
       "message": "Unexpected any. Specify a different type.",
       "fingerprint": "1ed19ebc4d1dc8e79a27054540c0595a29da1d8a91642f4fb00a2712159be659"
-    },
-    {
-      "file": "src/app/admin/(dashboard)/categories/category-form.tsx",
-      "line": 328,
-      "column": 135,
-      "rule": "react/no-unescaped-entities",
-      "message": "`\"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.",
-      "fingerprint": "200da155f49d407ddae1bd6308a003f188460906b5bd923f2677afe5e7716fff"
     },
     {
       "file": "scripts/variant-pipeline/import_toto_csv_variants.ts",
@@ -451,20 +419,20 @@
       "fingerprint": "22c4765853d189bf2cb22f1f74f70e830b2ca89ad9bc09f8e7c57d8379f55f85"
     },
     {
+      "file": "src/lib/order-actions.ts",
+      "line": 343,
+      "column": 19,
+      "rule": "@typescript-eslint/no-explicit-any",
+      "message": "Unexpected any. Specify a different type.",
+      "fingerprint": "22ea5ccbc0e201659ab9a24e5e3f061deb1c6b3512d1a7835e0f615e9efa6f3f"
+    },
+    {
       "file": "scripts/crawl-hita/stage-sample-crawl.mts",
       "line": 38,
       "column": 32,
       "rule": "@typescript-eslint/no-explicit-any",
       "message": "Unexpected any. Specify a different type.",
       "fingerprint": "230eda82e188e241a832c1f9ba5a07cfaa20832b58632e94709fb84ab9f25d31"
-    },
-    {
-      "file": "src/lib/product-actions.ts",
-      "line": 236,
-      "column": 19,
-      "rule": "@typescript-eslint/no-explicit-any",
-      "message": "Unexpected any. Specify a different type.",
-      "fingerprint": "23df03792a1104226023d94aab13243396383e817c800680a38d34917dce6479"
     },
     {
       "file": "scripts/crawl-hita/qa-sample-diff.mts",
@@ -475,6 +443,14 @@
       "fingerprint": "24ce85b531d2b1f5275db520e012f31db5846c022ca35ce9646a03809c945bb1"
     },
     {
+      "file": "src/components/product/product-detail-tabs.tsx",
+      "line": 59,
+      "column": 22,
+      "rule": "@typescript-eslint/no-explicit-any",
+      "message": "Unexpected any. Specify a different type.",
+      "fingerprint": "24eb3feb40eb17f14bf4fa5e17d4d5e7d3fb1fe14cc6eb8a0b3e6b7ad781a4d4"
+    },
+    {
       "file": "scripts/variant-pipeline/phase6a-strip-dup-sku.ts",
       "line": 289,
       "column": 27,
@@ -483,20 +459,20 @@
       "fingerprint": "25232c6f407a7048ff78cd1b7315697c5bd0920552c6217a9f6ef8db9c28aaaf"
     },
     {
-      "file": "src/lib/product-actions.ts",
-      "line": 105,
-      "column": 19,
-      "rule": "@typescript-eslint/no-explicit-any",
-      "message": "Unexpected any. Specify a different type.",
-      "fingerprint": "25cdf510477c3ad727e2b48656ab4469e57178d529734373633605bbc4fbab5a"
-    },
-    {
       "file": "src/app/admin/(dashboard)/categories/category-form.tsx",
       "line": 53,
       "column": 16,
       "rule": "@typescript-eslint/no-explicit-any",
       "message": "Unexpected any. Specify a different type.",
       "fingerprint": "26f03a8576301d2417fa0d828bc6ba259c6a8e2b54cd7aff7c2afe74d5b545ce"
+    },
+    {
+      "file": "src/lib/blog-actions.ts",
+      "line": 150,
+      "column": 19,
+      "rule": "@typescript-eslint/no-explicit-any",
+      "message": "Unexpected any. Specify a different type.",
+      "fingerprint": "2767be146a00d6709a9c8715a172035101e5c589dc5e18723f8b95485c40e935"
     },
     {
       "file": "src/components/ui/product-pagination.tsx",
@@ -521,6 +497,14 @@
       "rule": "@typescript-eslint/no-require-imports",
       "message": "A `require()` style import is forbidden.",
       "fingerprint": "2a4b10aaeb91a1733505d711794e5b864a6a9d17385b8345af1a848bd389be3e"
+    },
+    {
+      "file": "src/lib/product-actions.ts",
+      "line": 234,
+      "column": 19,
+      "rule": "@typescript-eslint/no-explicit-any",
+      "message": "Unexpected any. Specify a different type.",
+      "fingerprint": "2b253b52a2209bfca1e7808695c2c788b73c47e65c3bbab420c4502d62e776d9"
     },
     {
       "file": "src/components/category/advanced-sidebar-filter.tsx",
@@ -555,20 +539,12 @@
       "fingerprint": "2c79649a4885a310190920dc2efb9a69ab59fb216826c968174bbe3f130fdfc5"
     },
     {
-      "file": "src/app/(public)/tim-kiem/page.tsx",
-      "line": 265,
-      "column": 65,
-      "rule": "react/no-unescaped-entities",
-      "message": "`\"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.",
-      "fingerprint": "2cc4a54690d93c78e99e32ffe92f17dfd8af1eaa3f49c134927ed6ea312c2d4b"
-    },
-    {
-      "file": "src/lib/order-actions.ts",
-      "line": 74,
+      "file": "src/lib/blog-actions.ts",
+      "line": 190,
       "column": 19,
       "rule": "@typescript-eslint/no-explicit-any",
       "message": "Unexpected any. Specify a different type.",
-      "fingerprint": "2d4e8f60fcb0d1bf9037c91167237595be1f2ae353df1e109ffdc41a5051faa1"
+      "fingerprint": "2e19f454df0a764b71ebabea971250755bacfcb30e56c72082d988a90b14fb59"
     },
     {
       "file": "scripts/brands/download_icons.js",
@@ -577,6 +553,14 @@
       "rule": "@typescript-eslint/no-require-imports",
       "message": "A `require()` style import is forbidden.",
       "fingerprint": "2e2c662a257bd3d5788fdfac14ad67998bb1567b9e7a1cc57fa6fa67cd9325c1"
+    },
+    {
+      "file": "src/lib/order-actions.ts",
+      "line": 277,
+      "column": 52,
+      "rule": "@typescript-eslint/no-explicit-any",
+      "message": "Unexpected any. Specify a different type.",
+      "fingerprint": "2f78b31ac2d7c1394f28a524c9916810cb0edb8b94cd16dede07b22167d3af85"
     },
     {
       "file": "src/lib/product-actions.ts",
@@ -627,14 +611,6 @@
       "fingerprint": "328e226ddd0abcb209bfa211df23e5838694c42748593a534019394e4f99222b"
     },
     {
-      "file": "src/app/(public)/tim-kiem/page.tsx",
-      "line": 226,
-      "column": 102,
-      "rule": "react/no-unescaped-entities",
-      "message": "`\"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.",
-      "fingerprint": "32d2d824c0f253c3a3633a1e62e4939f5b3d9ac96946a0103c1665b2e4945f96"
-    },
-    {
       "file": "scripts/crawl-hita/import-approved-crawl-snapshots.mts",
       "line": 205,
       "column": 25,
@@ -675,6 +651,14 @@
       "fingerprint": "37d821105b711744905eb92d5223c7d5e1029d6c4249dd093a5179030dfa7dcc"
     },
     {
+      "file": "src/lib/product-actions.ts",
+      "line": 361,
+      "column": 28,
+      "rule": "@typescript-eslint/no-explicit-any",
+      "message": "Unexpected any. Specify a different type.",
+      "fingerprint": "38956692b3276bd01f2799aef4fca3b3ede5aa1ea029868299c77b684efec805"
+    },
+    {
       "file": "src/components/category/product-type-filter.tsx",
       "line": 201,
       "column": 21,
@@ -689,6 +673,14 @@
       "rule": "@typescript-eslint/no-explicit-any",
       "message": "Unexpected any. Specify a different type.",
       "fingerprint": "3920cf5d3add74421874348f183c07845d894930280b08f915f8387daee4d371"
+    },
+    {
+      "file": "src/lib/blog-actions.ts",
+      "line": 168,
+      "column": 19,
+      "rule": "@typescript-eslint/no-explicit-any",
+      "message": "Unexpected any. Specify a different type.",
+      "fingerprint": "39c703f8bb14a54026a424772040c8d809c6869b693f00b33d83b49a796e1334"
     },
     {
       "file": "scripts/crawl-inax/check_garbage_images.js",
@@ -723,20 +715,36 @@
       "fingerprint": "3de81823552cc19b4cc3d7e92ac7b848402ee9e267aa0245f5a64c377308f0dd"
     },
     {
-      "file": "src/lib/blog-actions.ts",
-      "line": 83,
+      "file": "src/lib/product-actions.ts",
+      "line": 195,
       "column": 19,
       "rule": "@typescript-eslint/no-explicit-any",
       "message": "Unexpected any. Specify a different type.",
-      "fingerprint": "3fb37217e43917a3ce4334b579df64526dd1e058e76e3a3295eee73007b03343"
+      "fingerprint": "3e1d7db344dc2058d07d140dfcfacbc114328892c8950cdcdcc3a642a2c39819"
     },
     {
-      "file": "src/app/(public)/tim-kiem/page.tsx",
-      "line": 265,
-      "column": 73,
-      "rule": "react/no-unescaped-entities",
-      "message": "`\"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.",
-      "fingerprint": "4028a784ec4c4122d1b47a36ec06caddac526271e3022e4a7b5a69725bdac1ec"
+      "file": "src/lib/blog-actions.ts",
+      "line": 86,
+      "column": 19,
+      "rule": "@typescript-eslint/no-explicit-any",
+      "message": "Unexpected any. Specify a different type.",
+      "fingerprint": "3fe854d4072a9c9a94c4f71cccef5f133e9dc3eda1b1e4e6a256a1934d4c8af5"
+    },
+    {
+      "file": "src/lib/product-actions.ts",
+      "line": 219,
+      "column": 19,
+      "rule": "@typescript-eslint/no-explicit-any",
+      "message": "Unexpected any. Specify a different type.",
+      "fingerprint": "40b9c577f1faf2fe75628acaeb2e5850d567505ceed92886c78cebb49a0f1362"
+    },
+    {
+      "file": "src/lib/order-actions.ts",
+      "line": 120,
+      "column": 19,
+      "rule": "@typescript-eslint/no-explicit-any",
+      "message": "Unexpected any. Specify a different type.",
+      "fingerprint": "41248e1377fa63dcc12e4e60e878cbf281d652bae048f2337fc2ee16c97a84ad"
     },
     {
       "file": "scripts/crawl-hita/import-approved-crawl-snapshots.mts",
@@ -763,22 +771,6 @@
       "fingerprint": "443f2d5c75a48e1556c373f057c7b2a0017f4ce2230b1dbb136ed401711e6801"
     },
     {
-      "file": "src/app/admin/(dashboard)/products/product-gallery.tsx",
-      "line": 96,
-      "column": 23,
-      "rule": "@typescript-eslint/no-explicit-any",
-      "message": "Unexpected any. Specify a different type.",
-      "fingerprint": "4442df6289872b9d40a675499c2a2845b6662b106a310ef2642afbf88696def3"
-    },
-    {
-      "file": "src/app/admin/(dashboard)/products/product-form.tsx",
-      "line": 1162,
-      "column": 97,
-      "rule": "@typescript-eslint/no-explicit-any",
-      "message": "Unexpected any. Specify a different type.",
-      "fingerprint": "452efbd151d31df96ee8325c0f3768c011e87fc770fbec679d65c053d1f1f660"
-    },
-    {
       "file": "scripts/crawl-hita/import-approved-crawl-snapshots.mts",
       "line": 196,
       "column": 44,
@@ -801,14 +793,6 @@
       "rule": "@typescript-eslint/no-explicit-any",
       "message": "Unexpected any. Specify a different type.",
       "fingerprint": "464e37e3d7ce70aa4c7a607e534343ab78e008620a0053794ca661a6159e6d64"
-    },
-    {
-      "file": "src/lib/order-actions.ts",
-      "line": 388,
-      "column": 21,
-      "rule": "@typescript-eslint/no-explicit-any",
-      "message": "Unexpected any. Specify a different type.",
-      "fingerprint": "46e1968a7f2b3909e58bf18d6822674ae40474a9687ca41f088b7900e6b158e9"
     },
     {
       "file": "scripts/dump_types.ts",
@@ -835,14 +819,6 @@
       "fingerprint": "4870b735b0691417d8d1143c74345f9fae4f67ece58dc70073a904554d010783"
     },
     {
-      "file": "src/components/product/product-detail-tabs.tsx",
-      "line": 237,
-      "column": 50,
-      "rule": "@typescript-eslint/no-explicit-any",
-      "message": "Unexpected any. Specify a different type.",
-      "fingerprint": "4a02e327885fea21028816cb3ed1eabc046109c1bd1fc9864a2a0864f07ffbdf"
-    },
-    {
       "file": "scripts/db/phase-a-db-changes.mts",
       "line": 30,
       "column": 15,
@@ -857,6 +833,14 @@
       "rule": "@typescript-eslint/no-require-imports",
       "message": "A `require()` style import is forbidden.",
       "fingerprint": "4a464e57b4567f05093b3db729d7932d8dbb233d6e8ce4e2c267c69d036b810e"
+    },
+    {
+      "file": "src/lib/order-actions.ts",
+      "line": 355,
+      "column": 59,
+      "rule": "@typescript-eslint/no-explicit-any",
+      "message": "Unexpected any. Specify a different type.",
+      "fingerprint": "4a8b7190ed6c82fffd44516f5aef88af197af6a7c108e2c3be653791ac1dc9ca"
     },
     {
       "file": "scripts/crawl-inax/analyze_inax_sku.js",
@@ -963,28 +947,12 @@
       "fingerprint": "51a25972294d9cb1d7fb1aa61229de72f704bedb8540381e84f91fe4550f1f38"
     },
     {
-      "file": "src/lib/order-actions.ts",
-      "line": 94,
-      "column": 19,
-      "rule": "@typescript-eslint/no-explicit-any",
-      "message": "Unexpected any. Specify a different type.",
-      "fingerprint": "51e79727e2e80854c8a2b2732d97d6e41fe367500689e4ee42276d0d02196d9f"
-    },
-    {
       "file": "scripts/crawl-inax/cleanup_duplicate_images.js",
       "line": 1,
       "column": 26,
       "rule": "@typescript-eslint/no-require-imports",
       "message": "A `require()` style import is forbidden.",
       "fingerprint": "529fc3a232ff0416382794fa6306631fb227895d6c455e8b62d11a094a5551e1"
-    },
-    {
-      "file": "src/lib/blog-actions.ts",
-      "line": 181,
-      "column": 19,
-      "rule": "@typescript-eslint/no-explicit-any",
-      "message": "Unexpected any. Specify a different type.",
-      "fingerprint": "52c9f4601f7dcad50d5605379e4acbc6ab4205b26f59b817f8e10a9183786837"
     },
     {
       "file": "scripts/brands/update_db_logos.js",
@@ -1033,14 +1001,6 @@
       "rule": "prefer-const",
       "message": "'text' is never reassigned. Use 'const' instead.",
       "fingerprint": "57adb76debf73315b9cde5b269edef87c0ce1154fd1b4bf58db784296157d887"
-    },
-    {
-      "file": "src/lib/product-actions.ts",
-      "line": 223,
-      "column": 19,
-      "rule": "@typescript-eslint/no-explicit-any",
-      "message": "Unexpected any. Specify a different type.",
-      "fingerprint": "57b67c31826b481a961a04d7b613d6223a787af2f4c38f977978652ac71fd158"
     },
     {
       "file": "src/app/admin/(dashboard)/categories/category-form.tsx",
@@ -1099,6 +1059,14 @@
       "fingerprint": "5957838918081e53c258ba6796d442121826f75101873999eb9e090ce238d80c"
     },
     {
+      "file": "src/lib/product-actions.ts",
+      "line": 303,
+      "column": 19,
+      "rule": "@typescript-eslint/no-explicit-any",
+      "message": "Unexpected any. Specify a different type.",
+      "fingerprint": "5a6cb5c617fdb3e31fcf55f75ffaa4322b249a98e5514e3314408e40aa9747aa"
+    },
+    {
       "file": "scripts/fix_toto_pdfs.ts",
       "line": 90,
       "column": 23,
@@ -1121,22 +1089,6 @@
       "rule": "@typescript-eslint/no-explicit-any",
       "message": "Unexpected any. Specify a different type.",
       "fingerprint": "5d2dd0ca4348e75a8fe1b6067c64e530c12127c22ebe6aaf3360333f1031456a"
-    },
-    {
-      "file": "src/components/product/product-detail-tabs.tsx",
-      "line": 58,
-      "column": 22,
-      "rule": "@typescript-eslint/no-explicit-any",
-      "message": "Unexpected any. Specify a different type.",
-      "fingerprint": "5d9bb57b2051547c531798037578e638868c86f04b06576c9c0317a1f1c224e9"
-    },
-    {
-      "file": "src/lib/order-actions.ts",
-      "line": 112,
-      "column": 19,
-      "rule": "@typescript-eslint/no-explicit-any",
-      "message": "Unexpected any. Specify a different type.",
-      "fingerprint": "5ec7e3f3d27a959f6ba073dec581150612b9df5ba55bafa65eee23e7b294e97e"
     },
     {
       "file": "scripts/crawl-hita/qa-sample-diff.mts",
@@ -1169,6 +1121,14 @@
       "rule": "@typescript-eslint/no-require-imports",
       "message": "A `require()` style import is forbidden.",
       "fingerprint": "60d8f12af9b2d3e2e909e6c4a9e8d6443dd09607bde8a9f58be6580f6819a71f"
+    },
+    {
+      "file": "src/components/product/product-detail-tabs.tsx",
+      "line": 168,
+      "column": 48,
+      "rule": "@typescript-eslint/no-explicit-any",
+      "message": "Unexpected any. Specify a different type.",
+      "fingerprint": "6263604f96981642cdf6315b644fdc6d57af1ee301cf3c2f7982acb6141dab9f"
     },
     {
       "file": "src/app/admin/(dashboard)/banners/banner-form.tsx",
@@ -1219,14 +1179,6 @@
       "fingerprint": "65f3e5cb0091cae1a57904eea0b0177dea64d72f3c9af581623d72942f71f28c"
     },
     {
-      "file": "src/lib/product-actions.ts",
-      "line": 334,
-      "column": 28,
-      "rule": "@typescript-eslint/no-explicit-any",
-      "message": "Unexpected any. Specify a different type.",
-      "fingerprint": "6676f69b29821975b159e40728cf58e74bc782ff0452e899e93f10c5ac6b2e11"
-    },
-    {
       "file": "src/store/useRecentlyViewedStore.ts",
       "line": 22,
       "column": 14,
@@ -1275,6 +1227,14 @@
       "fingerprint": "6980c0e81e43e311daca582e82f078fbdb495ffeea4098322a99f83690b08a67"
     },
     {
+      "file": "src/lib/blog-actions.ts",
+      "line": 92,
+      "column": 56,
+      "rule": "@typescript-eslint/no-explicit-any",
+      "message": "Unexpected any. Specify a different type.",
+      "fingerprint": "6b2ac2acc199683e2a037af5729dfed462bc8649a3b4f213673b431fe8cccb1d"
+    },
+    {
       "file": "scripts/db/migrate-canonical-product-slugs.mts",
       "line": 107,
       "column": 31,
@@ -1315,28 +1275,12 @@
       "fingerprint": "6cc286618c05dbae81b71081ce2f287c0e036b3c9e8448e7e53a31b8f750911a"
     },
     {
-      "file": "src/components/product/product-detail-tabs.tsx",
-      "line": 167,
-      "column": 48,
-      "rule": "@typescript-eslint/no-explicit-any",
-      "message": "Unexpected any. Specify a different type.",
-      "fingerprint": "6e1b75e414fa3bbaec555f04dc9d6b4e9ba30bd8ae24f0eeeb1fea6035c97123"
-    },
-    {
       "file": "scripts/db/fill-component-skus.mts",
       "line": 40,
       "column": 28,
       "rule": "@typescript-eslint/no-explicit-any",
       "message": "Unexpected any. Specify a different type.",
       "fingerprint": "6ea5d04f1e0e635ff7f0636f84bdf89757b94d4f42eb0fbf5c98b00957527d76"
-    },
-    {
-      "file": "src/lib/product-actions.ts",
-      "line": 173,
-      "column": 19,
-      "rule": "@typescript-eslint/no-explicit-any",
-      "message": "Unexpected any. Specify a different type.",
-      "fingerprint": "6f41b819ce4130ffbd34f7a5d652b3ade6d2231aea6d06ce70d7c5592ba55e0e"
     },
     {
       "file": "src/app/admin/(dashboard)/quote-requests/page.tsx",
@@ -1353,14 +1297,6 @@
       "rule": "@typescript-eslint/no-explicit-any",
       "message": "Unexpected any. Specify a different type.",
       "fingerprint": "6f84097a674455def3186c4afcd979d4bf94557c6b2baa02c2b6ddb1d6c6b127"
-    },
-    {
-      "file": "src/app/(public)/tim-kiem/page.tsx",
-      "line": 211,
-      "column": 82,
-      "rule": "react/no-unescaped-entities",
-      "message": "`\"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.",
-      "fingerprint": "7136d65889ae0d09b607fe1c7baa70165f8aae5c70476f5b97a48d454dc77718"
     },
     {
       "file": "scripts/db/phase-a-db-changes.mts",
@@ -1409,14 +1345,6 @@
       "rule": "@typescript-eslint/no-explicit-any",
       "message": "Unexpected any. Specify a different type.",
       "fingerprint": "75902e5d28d373d185d96320f680418e63debda02427d8f5901c0681f5b07db9"
-    },
-    {
-      "file": "src/app/(public)/tim-kiem/page.tsx",
-      "line": 226,
-      "column": 85,
-      "rule": "react/no-unescaped-entities",
-      "message": "`\"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.",
-      "fingerprint": "75f76d9980a52f474be074ae0937041362eae7b785bc92323a8269e22987deab"
     },
     {
       "file": "scripts/crawl-inax/check_images.js",
@@ -1531,28 +1459,12 @@
       "fingerprint": "7f00e166c8a763254b2e2213cf3f83710c258fb0a482f6033c52e7a7d1726619"
     },
     {
-      "file": "src/lib/blog-actions.ts",
-      "line": 145,
-      "column": 19,
-      "rule": "@typescript-eslint/no-explicit-any",
-      "message": "Unexpected any. Specify a different type.",
-      "fingerprint": "7f20fc893a5797ab6f2a4f3ab64ee013e16861c417aafdcc32d74f8f483614b9"
-    },
-    {
       "file": "scripts/crawl-hita/run-normalized-brand-pipeline.mts",
       "line": 709,
       "column": 39,
       "rule": "@typescript-eslint/no-explicit-any",
       "message": "Unexpected any. Specify a different type.",
       "fingerprint": "7fb39221840c71a269ead7f16fcd89ae248812c459ef24cd0cdea0a53a9e309b"
-    },
-    {
-      "file": "src/lib/product-actions.ts",
-      "line": 267,
-      "column": 19,
-      "rule": "@typescript-eslint/no-explicit-any",
-      "message": "Unexpected any. Specify a different type.",
-      "fingerprint": "8050bbde503bfa1867396f56056eeb2668c7d393e2c5e54acafe45bd94f73e67"
     },
     {
       "file": "scripts/crawl-hita/import-approved-crawl-snapshots.mts",
@@ -1579,14 +1491,6 @@
       "fingerprint": "81084ccf3f0509c04f9a971aaa9b87bae91fc889741bddf6896909729c7232ac"
     },
     {
-      "file": "src/app/admin/(dashboard)/categories/category-form.tsx",
-      "line": 328,
-      "column": 125,
-      "rule": "react/no-unescaped-entities",
-      "message": "`\"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.",
-      "fingerprint": "81b1c76a7f8d32e3c4f2224ce2e6aae35244c0746782ea723bba86142a0732e6"
-    },
-    {
       "file": "scripts/crawl-inax/phase2_main.ts",
       "line": 106,
       "column": 21,
@@ -1601,6 +1505,14 @@
       "rule": "@typescript-eslint/no-explicit-any",
       "message": "Unexpected any. Specify a different type.",
       "fingerprint": "8283794ce5c4c3b841cfe4ab5488db3c910cbd2a7bf9f5b4241dd37ceaa42d3d"
+    },
+    {
+      "file": "src/lib/order-actions.ts",
+      "line": 140,
+      "column": 19,
+      "rule": "@typescript-eslint/no-explicit-any",
+      "message": "Unexpected any. Specify a different type.",
+      "fingerprint": "82906262c5bfc930359d8e19369a39eb0e59e0776548275b17c2117b1f370471"
     },
     {
       "file": "src/app/admin/(dashboard)/banners/banner-form.tsx",
@@ -1651,14 +1563,6 @@
       "fingerprint": "85f73e6ed406961014d224bd6d14627a89fe7e55cb7b9551a3e8cfabd65a4eb1"
     },
     {
-      "file": "src/components/product/product-detail-tabs.tsx",
-      "line": 128,
-      "column": 50,
-      "rule": "@typescript-eslint/no-explicit-any",
-      "message": "Unexpected any. Specify a different type.",
-      "fingerprint": "860a5496d919699118bfed2e0fb29c8395ee863764aac10a8674f4cc8eb5ada1"
-    },
-    {
       "file": "src/components/product/product-variant-meta-pills.tsx",
       "line": 30,
       "column": 9,
@@ -1667,20 +1571,20 @@
       "fingerprint": "873e01b9b94d253af4c561b545dda6d2567b46d2bba9ec4b2d451c0b9e15b81c"
     },
     {
+      "file": "src/lib/product-actions.ts",
+      "line": 264,
+      "column": 19,
+      "rule": "@typescript-eslint/no-explicit-any",
+      "message": "Unexpected any. Specify a different type.",
+      "fingerprint": "87fcc8e74c70f0bf0ded3c26ac8b1199a4ba6563f48be0f21970a668d05afba2"
+    },
+    {
       "file": "scripts/db/migrate-canonical-product-slugs.mts",
       "line": 91,
       "column": 43,
       "rule": "@typescript-eslint/no-explicit-any",
       "message": "Unexpected any. Specify a different type.",
       "fingerprint": "883a632c92f5433f8645aee0d849849dd0d17008d27be35bd32ac6b0fa9e517d"
-    },
-    {
-      "file": "src/app/api/upload-image/route.ts",
-      "line": 81,
-      "column": 19,
-      "rule": "@typescript-eslint/no-explicit-any",
-      "message": "Unexpected any. Specify a different type.",
-      "fingerprint": "887ff733e18a07ee96728bd50c6099510207d180b5619d6be323c34404b5f14f"
     },
     {
       "file": "scripts/brands/download_icons.js",
@@ -1787,28 +1691,20 @@
       "fingerprint": "9500c0c1d6d8b7b4eaae55b2a0964d01da907d73ea2df4a3ff8ae9918d6c5e38"
     },
     {
-      "file": "src/lib/order-actions.ts",
-      "line": 353,
-      "column": 21,
-      "rule": "@typescript-eslint/no-explicit-any",
-      "message": "Unexpected any. Specify a different type.",
-      "fingerprint": "957a41f961b26a9e1fd18b5edd08b0d0e56537f343ac11c0bba3cb24a23c02bd"
-    },
-    {
-      "file": "src/lib/order-actions.ts",
-      "line": 311,
-      "column": 62,
-      "rule": "@typescript-eslint/no-explicit-any",
-      "message": "Unexpected any. Specify a different type.",
-      "fingerprint": "966e040facddf7d67946de52ade7158485358b43dd7c521c15b16c67088767b6"
-    },
-    {
       "file": "src/store/useRecentlyViewedStore.ts",
       "line": 21,
       "column": 14,
       "rule": "@typescript-eslint/no-explicit-any",
       "message": "Unexpected any. Specify a different type.",
       "fingerprint": "968e8ed426668204da706830cad21e8a60dca1f9dbd5c7c3ff6c337a0d2123bc"
+    },
+    {
+      "file": "src/components/product/product-detail-tabs.tsx",
+      "line": 126,
+      "column": 51,
+      "rule": "@typescript-eslint/no-explicit-any",
+      "message": "Unexpected any. Specify a different type.",
+      "fingerprint": "96e1a93bb22ce7e5bcd6a5804b452df1a6c8044078740552c3da78ef6c1beb0b"
     },
     {
       "file": "scripts/crawl-hita/import-approved-crawl-snapshots.mts",
@@ -1883,12 +1779,28 @@
       "fingerprint": "9dc0a0c63565190bae61b2e24c7a051b6f713354f25dd5e645918aa2d7b8cd44"
     },
     {
+      "file": "src/components/product/product-detail-tabs.tsx",
+      "line": 238,
+      "column": 50,
+      "rule": "@typescript-eslint/no-explicit-any",
+      "message": "Unexpected any. Specify a different type.",
+      "fingerprint": "9ea70d6c3b3e715dd96af6e2dee8dfe1eb5120b9346827b6ee52903ba5cd08cc"
+    },
+    {
       "file": "scripts/fix_toto_pdfs.ts",
       "line": 11,
       "column": 16,
       "rule": "@typescript-eslint/no-require-imports",
       "message": "A `require()` style import is forbidden.",
       "fingerprint": "9ebdf30b6f5a3081d43845822558f534a791963d4789e0eb02ae53dbfd37f2ef"
+    },
+    {
+      "file": "src/lib/product-actions.ts",
+      "line": 415,
+      "column": 19,
+      "rule": "@typescript-eslint/no-explicit-any",
+      "message": "Unexpected any. Specify a different type.",
+      "fingerprint": "9edccd082dce2e66df81307f0c96d4255e78a8009bdae92f6059b907f0bff2b2"
     },
     {
       "file": "src/app/(public)/vat-lieu-nuoc/page.tsx",
@@ -1923,12 +1835,12 @@
       "fingerprint": "a0547046a4e0823489c67c4f44c02dd20d91695a8170132051ee5b542f6b31ac"
     },
     {
-      "file": "src/lib/order-actions.ts",
-      "line": 209,
-      "column": 52,
+      "file": "src/lib/blog-actions.ts",
+      "line": 203,
+      "column": 19,
       "rule": "@typescript-eslint/no-explicit-any",
       "message": "Unexpected any. Specify a different type.",
-      "fingerprint": "a095aeac561af743511b59d5d07e51c52fdef3f9ca30b8f682dd8e0017c24046"
+      "fingerprint": "a0a2992b4dc2350d1d4d14b9342551b4e79d5bb6de0e048bd1d7f05aad0e3f6e"
     },
     {
       "file": "src/app/(public)/thiet-bi-ve-sinh/[sub]/[slug]/page.tsx",
@@ -1953,14 +1865,6 @@
       "rule": "react-hooks/set-state-in-effect",
       "message": "Error: Calling setState synchronously within an effect can trigger cascading renders\n\nEffects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:\n* Update external systems with the latest state from React.\n* Subscribe for updates from some external system, calling setState in a callback function when external state changes.\n\nCalling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).\n\nsrc/components/product/product-purchase-panel.tsx:29:9\n  27 |\n  28 |     useEffect(() => {\n> 29 |         setSelectedVariant(null)\n     |         ^^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect\n  30 |     }, [product.id, product.sku])\n  31 |\n  32 |     const displayProduct = useMemo(() => {",
       "fingerprint": "a301ecfb13f7de0ab82ae2e1273907dbfea1403c094d58d64d2a477f279f3fe0"
-    },
-    {
-      "file": "src/lib/product-actions.ts",
-      "line": 398,
-      "column": 19,
-      "rule": "@typescript-eslint/no-explicit-any",
-      "message": "Unexpected any. Specify a different type.",
-      "fingerprint": "a32eb8ecfdde157fbbdf9e6d214cce3b9ea84887265e77d716d458ecced47289"
     },
     {
       "file": "scripts/crawl-hita/import-approved-crawl-snapshots.mts",
@@ -2027,28 +1931,12 @@
       "fingerprint": "a715cfaf1aac03fb68dc21d69854f405587670e15931a60c377f54530c02041e"
     },
     {
-      "file": "src/app/admin/(dashboard)/categories/category-form.tsx",
-      "line": 328,
-      "column": 138,
-      "rule": "react/no-unescaped-entities",
-      "message": "`\"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.",
-      "fingerprint": "a7d29ec7bc440e3984bc7c0f76be2bd38f65b14140e9794f609591dda09e8121"
-    },
-    {
       "file": "scripts/db/fill-product-type-c3.mts",
       "line": 109,
       "column": 45,
       "rule": "@typescript-eslint/no-explicit-any",
       "message": "Unexpected any. Specify a different type.",
       "fingerprint": "a8174690e0b1921eaef4e7f0fd4b1a53a5cab006469b609c7900b413b1ae8c34"
-    },
-    {
-      "file": "src/lib/blog-actions.ts",
-      "line": 192,
-      "column": 19,
-      "rule": "@typescript-eslint/no-explicit-any",
-      "message": "Unexpected any. Specify a different type.",
-      "fingerprint": "a898a0ee76d42bd6039d645a74f1620063511f498e7d771c65556d1612d5deca"
     },
     {
       "file": "scripts/crawl-hita/stage-sample-crawl.mts",
@@ -2067,14 +1955,6 @@
       "fingerprint": "ab922d12168da9b3e8a986aba7172b84f29deb452f8a9571320fb0196c057acb"
     },
     {
-      "file": "src/lib/product-actions.ts",
-      "line": 386,
-      "column": 19,
-      "rule": "@typescript-eslint/no-explicit-any",
-      "message": "Unexpected any. Specify a different type.",
-      "fingerprint": "abdc9c6612622a593c560489401aefe17487c03f8626795937b2f5ca5cca6ae6"
-    },
-    {
       "file": "src/app/admin/(dashboard)/quote-requests/[id]/builder/quote-template-a4.tsx",
       "line": 67,
       "column": 43,
@@ -2083,20 +1963,20 @@
       "fingerprint": "ac13e988dd847856bb308baa43967ceab65d22479c5995185c2efc77e7cc2f8a"
     },
     {
-      "file": "src/lib/product-actions.ts",
-      "line": 463,
-      "column": 19,
-      "rule": "@typescript-eslint/no-explicit-any",
-      "message": "Unexpected any. Specify a different type.",
-      "fingerprint": "adfb72fff6e76958394dd2665c170d93f42c42ac051fce153a2656c7f603ff65"
-    },
-    {
       "file": "scripts/export-products.js",
       "line": 17,
       "column": 26,
       "rule": "@typescript-eslint/no-require-imports",
       "message": "A `require()` style import is forbidden.",
       "fingerprint": "ae3794d7f1d11b83b0d28773e9f1ea3d4c92dbf3193107129485aa61429ae339"
+    },
+    {
+      "file": "src/lib/product-actions.ts",
+      "line": 108,
+      "column": 19,
+      "rule": "@typescript-eslint/no-explicit-any",
+      "message": "Unexpected any. Specify a different type.",
+      "fingerprint": "ae94c5c374d77328f30bba38187df328d9aa58ade4a1734b9477a5cd68229f69"
     },
     {
       "file": "src/components/product/product-documents.tsx",
@@ -2123,22 +2003,6 @@
       "fingerprint": "af74508192686c4324b63050fb437a8f4ba2c43029af05e785b991fb97a6bf20"
     },
     {
-      "file": "src/lib/product-actions.ts",
-      "line": 294,
-      "column": 19,
-      "rule": "@typescript-eslint/no-explicit-any",
-      "message": "Unexpected any. Specify a different type.",
-      "fingerprint": "afb30a9d3201efdbb38b68181ce46376838a22f67bf6d83691e329c6e2ceda2a"
-    },
-    {
-      "file": "src/lib/product-actions.ts",
-      "line": 210,
-      "column": 19,
-      "rule": "@typescript-eslint/no-explicit-any",
-      "message": "Unexpected any. Specify a different type.",
-      "fingerprint": "b022b578c7f166aa683cac1398ff1cecb59b5942742e3fef831e504b4f0e9931"
-    },
-    {
       "file": "src/app/admin/(dashboard)/categories/categories-table-client.tsx",
       "line": 18,
       "column": 69,
@@ -2153,14 +2017,6 @@
       "rule": "@typescript-eslint/no-explicit-any",
       "message": "Unexpected any. Specify a different type.",
       "fingerprint": "b1725c4f6b757b479b9b4e4af9e472eef5bb30b213b6b89efb43581031e7f8aa"
-    },
-    {
-      "file": "src/lib/product-actions.ts",
-      "line": 478,
-      "column": 19,
-      "rule": "@typescript-eslint/no-explicit-any",
-      "message": "Unexpected any. Specify a different type.",
-      "fingerprint": "b1735ff271dba7955b316b1049522cf624a4960949ba2db228784b6403bc9d8e"
     },
     {
       "file": "scripts/brands/scrape_missing_brands.js",
@@ -2179,14 +2035,6 @@
       "fingerprint": "b191cff463d5a36fe1ff828345877410ee47c8a9ed1f497ae0f6ae36196a8725"
     },
     {
-      "file": "src/app/api/health/route.ts",
-      "line": 7,
-      "column": 19,
-      "rule": "@typescript-eslint/no-explicit-any",
-      "message": "Unexpected any. Specify a different type.",
-      "fingerprint": "b207ee482bfdcbc09b0fd8513d279069c3b22f25e075a36109d0e8f93721e416"
-    },
-    {
       "file": "src/app/admin/(dashboard)/orders/[id]/order-builder-client.tsx",
       "line": 21,
       "column": 89,
@@ -2201,14 +2049,6 @@
       "rule": "@typescript-eslint/no-explicit-any",
       "message": "Unexpected any. Specify a different type.",
       "fingerprint": "b37f5b8876461e309d1d9eb07cc901a56be8b9bbff8f088ff12f61c112485cec"
-    },
-    {
-      "file": "src/lib/blog-actions.ts",
-      "line": 161,
-      "column": 19,
-      "rule": "@typescript-eslint/no-explicit-any",
-      "message": "Unexpected any. Specify a different type.",
-      "fingerprint": "b3bf5239852e11b1035cebd415c2446440b1ba3b1a09d0eea96db4ef705ca85d"
     },
     {
       "file": "scripts/db/migrate-canonical-product-slugs.mts",
@@ -2236,11 +2076,19 @@
     },
     {
       "file": "src/lib/product-actions.ts",
-      "line": 309,
+      "line": 332,
       "column": 19,
       "rule": "@typescript-eslint/no-explicit-any",
       "message": "Unexpected any. Specify a different type.",
-      "fingerprint": "b559ba61c3c5cc7cd66b70809eed4f3f24a0214fdbf80c3e8933416d0c5f7baf"
+      "fingerprint": "b54f810bbca920d39331ab23e7533a4cc3d43a3a24c046997b82e2662ece0474"
+    },
+    {
+      "file": "src/lib/product-actions.ts",
+      "line": 429,
+      "column": 19,
+      "rule": "@typescript-eslint/no-explicit-any",
+      "message": "Unexpected any. Specify a different type.",
+      "fingerprint": "b60f423e299566ba2a0fcfbcf92a7e55d0fba7a9a9018cb5ead8797b6aef808e"
     },
     {
       "file": "scripts/crawl-inax/analyze_nulls.js",
@@ -2275,14 +2123,6 @@
       "fingerprint": "b7aa92a4b69dc56aff67228b56ab08ff7b1538e1b019c31aa2c0f3e894a1bba3"
     },
     {
-      "file": "src/components/ui/image-uploader.tsx",
-      "line": 106,
-      "column": 27,
-      "rule": "@typescript-eslint/no-explicit-any",
-      "message": "Unexpected any. Specify a different type.",
-      "fingerprint": "b7de1713aae306d0e25cf11a6ecdcbee5ebed84210e22b83de2a363a4b0cef24"
-    },
-    {
       "file": "src/app/(public)/thiet-bi-ve-sinh/[sub]/[slug]/page.tsx",
       "line": 208,
       "column": 85,
@@ -2299,14 +2139,6 @@
       "fingerprint": "b9dc178c440a8053e8b42fca5a5493c68ba90e604775b3a949fe0de286ad128b"
     },
     {
-      "file": "src/app/(public)/tim-kiem/page.tsx",
-      "line": 226,
-      "column": 92,
-      "rule": "react/no-unescaped-entities",
-      "message": "`\"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.",
-      "fingerprint": "b9e04bd3ac0b892d81d13a5d02043cba3ac3f6c23bebb5f6923b5cd27246e37a"
-    },
-    {
       "file": "scripts/crawl-hita/run-normalized-brand-pipeline.mts",
       "line": 542,
       "column": 41,
@@ -2315,20 +2147,20 @@
       "fingerprint": "ba50c3fa02cc340d9be221254c52698f29e34159611ef57ac7db9ed26a99bda7"
     },
     {
-      "file": "src/components/ui/rich-text-editor.tsx",
-      "line": 108,
-      "column": 23,
-      "rule": "@typescript-eslint/no-explicit-any",
-      "message": "Unexpected any. Specify a different type.",
-      "fingerprint": "bb144b7cc0c133b1b9e6eddf9a4c9c6b8c21b24fde273c90162c3ea847d465b1"
-    },
-    {
       "file": "src/app/admin/(dashboard)/products/product-relationship-picker.tsx",
       "line": 17,
       "column": 44,
       "rule": "@typescript-eslint/no-explicit-any",
       "message": "Unexpected any. Specify a different type.",
       "fingerprint": "bb2628bbd479e9904acd5811d290c37194f74375ef40f6c93290c289108d29f2"
+    },
+    {
+      "file": "src/lib/order-actions.ts",
+      "line": 98,
+      "column": 19,
+      "rule": "@typescript-eslint/no-explicit-any",
+      "message": "Unexpected any. Specify a different type.",
+      "fingerprint": "bb2d7292735a88695511baad7ff2312a48a2a2be23caa8cb89ca720832415e98"
     },
     {
       "file": "scripts/fix_specs_10.ts",
@@ -2345,14 +2177,6 @@
       "rule": "@typescript-eslint/no-explicit-any",
       "message": "Unexpected any. Specify a different type.",
       "fingerprint": "bbd115643b007b38ef42a61c62ecb6842dcc1d6733d16d2db090a2fdf0fec350"
-    },
-    {
-      "file": "src/lib/product-actions.ts",
-      "line": 362,
-      "column": 19,
-      "rule": "@typescript-eslint/no-explicit-any",
-      "message": "Unexpected any. Specify a different type.",
-      "fingerprint": "bc3bf20b1913790f5bcbe64a48684acd15d3133722be7508fa4a324d697ae997"
     },
     {
       "file": "scripts/db/debug-phase-d.mts",
@@ -2443,12 +2267,12 @@
       "fingerprint": "c0ab10fba26bc11afeceb4ab803d5dc84028fe821b5d46919fb4f8aa158810fe"
     },
     {
-      "file": "src/lib/blog-actions.ts",
-      "line": 89,
-      "column": 56,
+      "file": "src/lib/product-actions.ts",
+      "line": 389,
+      "column": 19,
       "rule": "@typescript-eslint/no-explicit-any",
       "message": "Unexpected any. Specify a different type.",
-      "fingerprint": "c1804adf3ebc9bb1b80355c78d78cb19f493190a9c52f1b362a72289b7ee4588"
+      "fingerprint": "c19d844592c83cfcb48ae1cd7424afd1626e19697b33f97faf1866571b4f7ff0"
     },
     {
       "file": "scripts/test_crawler.ts",
@@ -2457,14 +2281,6 @@
       "rule": "@typescript-eslint/no-explicit-any",
       "message": "Unexpected any. Specify a different type.",
       "fingerprint": "c23c720f0f7ba9e965ff3e519be3bd6b81686babf6998914fbd68f3221d15724"
-    },
-    {
-      "file": "src/app/api/health/route.ts",
-      "line": 18,
-      "column": 17,
-      "rule": "@typescript-eslint/no-explicit-any",
-      "message": "Unexpected any. Specify a different type.",
-      "fingerprint": "c2f4a34c5b00533e6cd0453b392f2fbac4b23fa98c0a426575f1fe82671d27bd"
     },
     {
       "file": "src/lib/public-api-products.ts",
@@ -2529,6 +2345,14 @@
       "rule": "@typescript-eslint/no-explicit-any",
       "message": "Unexpected any. Specify a different type.",
       "fingerprint": "c689a27485f694b5aed57504bd69b639501dba6ff0d19365d068a6bedcc67e59"
+    },
+    {
+      "file": "src/lib/blog-actions.ts",
+      "line": 35,
+      "column": 44,
+      "rule": "@typescript-eslint/no-explicit-any",
+      "message": "Unexpected any. Specify a different type.",
+      "fingerprint": "c8fe8fb8270b82173e0af59eb45e003e687708f68fc84727652448e10172226a"
     },
     {
       "file": "scripts/db/research-phase-b.mts",
@@ -2635,14 +2459,6 @@
       "fingerprint": "cd867068a54d8b4f9677f262cd50b343c36e9a4f0aa8b7ca4e62ee9ea625be5f"
     },
     {
-      "file": "src/app/api/orders/route.ts",
-      "line": 103,
-      "column": 27,
-      "rule": "@typescript-eslint/no-explicit-any",
-      "message": "Unexpected any. Specify a different type.",
-      "fingerprint": "ce466deee5eab0d6d9e29d0e77247e516cc442b9c074de492c2a8ce2b4f404d6"
-    },
-    {
       "file": "scripts/crawl-inax/phase2_main.ts",
       "line": 220,
       "column": 21,
@@ -2675,6 +2491,14 @@
       "fingerprint": "d1f6ac13813522e3a382802f3a49c2bda1a039ec92ad213420679100fe1ebfb7"
     },
     {
+      "file": "src/lib/product-actions.ts",
+      "line": 178,
+      "column": 19,
+      "rule": "@typescript-eslint/no-explicit-any",
+      "message": "Unexpected any. Specify a different type.",
+      "fingerprint": "d226a57b0d8849c1e8326c7a643f2df4e91d252a71baaa942dcf9c93a2c2b09c"
+    },
+    {
       "file": "src/app/admin/(dashboard)/products/product-actions.tsx",
       "line": 37,
       "column": 61,
@@ -2699,14 +2523,6 @@
       "fingerprint": "d4688b7abb73a6329b7a93706f639cdd7550d7a37748141d6cc13c5153b1120f"
     },
     {
-      "file": "src/app/(public)/tim-kiem/page.tsx",
-      "line": 226,
-      "column": 95,
-      "rule": "react/no-unescaped-entities",
-      "message": "`\"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.",
-      "fingerprint": "d4b288b1888abf67d77e1248e4a5d0b8daab0a2d1170ba8af4de80e10dcfc994"
-    },
-    {
       "file": "scripts/seed/migrate-hex.js",
       "line": 12,
       "column": 22,
@@ -2715,20 +2531,28 @@
       "fingerprint": "d5861d9056634ab8cee39b05ea1f16ae434b76859cd543878048a36ef1fde81f"
     },
     {
+      "file": "src/lib/order-actions.ts",
+      "line": 429,
+      "column": 21,
+      "rule": "@typescript-eslint/no-explicit-any",
+      "message": "Unexpected any. Specify a different type.",
+      "fingerprint": "d799c4b77ba3887b8fb583f87623925e8151a9f1be94972fa60eec607c7aea55"
+    },
+    {
+      "file": "src/lib/product-actions.ts",
+      "line": 351,
+      "column": 19,
+      "rule": "@typescript-eslint/no-explicit-any",
+      "message": "Unexpected any. Specify a different type.",
+      "fingerprint": "d842afa8a8b36dfa0dbef4838bf10796e09f7a7eedc28dd74b3a2deb9b3a7ace"
+    },
+    {
       "file": "scripts/fix_toto_pdfs.ts",
       "line": 12,
       "column": 18,
       "rule": "@typescript-eslint/no-require-imports",
       "message": "A `require()` style import is forbidden.",
       "fingerprint": "d9437ec25ec23c7e357d76aee664c4b3a566909f15524aa479e61890449459e6"
-    },
-    {
-      "file": "src/app/(public)/blog/[categorySlug]/page.tsx",
-      "line": 12,
-      "column": 42,
-      "rule": "@typescript-eslint/no-explicit-any",
-      "message": "Unexpected any. Specify a different type.",
-      "fingerprint": "d97b238759c049785ceb60632f5973a9c21a0f2ff69e5f7a129036460708e3ff"
     },
     {
       "file": "scripts/seed/seed-banners.ts",
@@ -2755,20 +2579,20 @@
       "fingerprint": "dc04b8661590a1d5b34f4ab2d518699e3c8b5cbbfe67cdc876fdcd48650fdf55"
     },
     {
-      "file": "src/components/product/product-detail-tabs.tsx",
-      "line": 125,
-      "column": 51,
-      "rule": "@typescript-eslint/no-explicit-any",
-      "message": "Unexpected any. Specify a different type.",
-      "fingerprint": "dd488abfc51c619f34f0a0f4f82370f626779552516cd1da6f4aa6c62a261abd"
-    },
-    {
       "file": "scripts/crawl-inax/reset_variants.js",
       "line": 1,
       "column": 26,
       "rule": "@typescript-eslint/no-require-imports",
       "message": "A `require()` style import is forbidden.",
       "fingerprint": "dd62a2c5697518239bdf7eacd93264acdcbeea0bc8b70dfd6606e9e72fa61d91"
+    },
+    {
+      "file": "src/lib/product-actions.ts",
+      "line": 460,
+      "column": 19,
+      "rule": "@typescript-eslint/no-explicit-any",
+      "message": "Unexpected any. Specify a different type.",
+      "fingerprint": "dd7742549febe282e0221c467b2923cddef1744755c48b91bb7f68a82adc39e2"
     },
     {
       "file": "scripts/test_crawler.ts",
@@ -2779,6 +2603,14 @@
       "fingerprint": "dde1cb513ecc07b4cb1976ae13a921688b5e8b2af35d7d1dc5bf5f211c76e6e2"
     },
     {
+      "file": "src/lib/order-actions.ts",
+      "line": 350,
+      "column": 62,
+      "rule": "@typescript-eslint/no-explicit-any",
+      "message": "Unexpected any. Specify a different type.",
+      "fingerprint": "dec3045c754f1af985b1d74da2c7ab97471258b74d0789b33af51e41ec0854df"
+    },
+    {
       "file": "scripts/brands/download_logos.js",
       "line": 1,
       "column": 12,
@@ -2787,20 +2619,12 @@
       "fingerprint": "df2394a946ed0f42b3fb7422621eba3fbd66fbe9259082560af1cfbfc214a034"
     },
     {
-      "file": "src/lib/blog-actions.ts",
-      "line": 166,
-      "column": 43,
+      "file": "src/lib/product-actions.ts",
+      "line": 315,
+      "column": 19,
       "rule": "@typescript-eslint/no-explicit-any",
       "message": "Unexpected any. Specify a different type.",
-      "fingerprint": "df2fbbb31c455a9cd3e99ce44fd1400bf645dbf7650384b9e1b9a4aa79cbc4bc"
-    },
-    {
-      "file": "src/app/(public)/blog/[categorySlug]/page.tsx",
-      "line": 25,
-      "column": 42,
-      "rule": "@typescript-eslint/no-explicit-any",
-      "message": "Unexpected any. Specify a different type.",
-      "fingerprint": "e04ac98674292e5f7cfb7661f8f6efa6dc18d660ad7834aad23e73067e7eea0b"
+      "fingerprint": "e165b4baf9bd29474a23e5060fa6b55e5b0e918bcfd1451d8de4f23b868db6d7"
     },
     {
       "file": "src/app/admin/(dashboard)/orders/[id]/order-builder-client.tsx",
@@ -2817,14 +2641,6 @@
       "rule": "@typescript-eslint/no-explicit-any",
       "message": "Unexpected any. Specify a different type.",
       "fingerprint": "e1cc93743489bcf778d7ffd41ca210fcaa439996985158a0854d9ed10ec0e6fd"
-    },
-    {
-      "file": "src/lib/product-actions.ts",
-      "line": 427,
-      "column": 19,
-      "rule": "@typescript-eslint/no-explicit-any",
-      "message": "Unexpected any. Specify a different type.",
-      "fingerprint": "e421d04830c6272ce3a324d44e4f83031dc388e59428fc45b48951b0b8bd432a"
     },
     {
       "file": "scripts/variant-pipeline/phase3-apply-rename.ts",
@@ -2865,14 +2681,6 @@
       "rule": "@typescript-eslint/no-explicit-any",
       "message": "Unexpected any. Specify a different type.",
       "fingerprint": "e7e973c67fec1d5f6c613eac5cabf77c750f0ec4f1cef307612a19b2b38d166d"
-    },
-    {
-      "file": "src/lib/blog-actions.ts",
-      "line": 34,
-      "column": 44,
-      "rule": "@typescript-eslint/no-explicit-any",
-      "message": "Unexpected any. Specify a different type.",
-      "fingerprint": "e8147dfa1ef51b807e001622d9e6b1e95dfbfc7c208d1b987ed4daa9f1dfb1df"
     },
     {
       "file": "scripts/find_missing_urls.ts",
@@ -2923,14 +2731,6 @@
       "fingerprint": "ed74071f58f79c3f224c5a8fb781f30565c85ab58f0e2cc00cea2bbfada73fe2"
     },
     {
-      "file": "src/app/(public)/tim-kiem/page.tsx",
-      "line": 226,
-      "column": 80,
-      "rule": "react/no-unescaped-entities",
-      "message": "`\"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.",
-      "fingerprint": "ee9a23d6e44372880a1246137f977d613fb9710c3815cb30a0b480ba308501d6"
-    },
-    {
       "file": "scripts/crawl-hita/import-approved-crawl-snapshots.mts",
       "line": 153,
       "column": 90,
@@ -2953,6 +2753,14 @@
       "rule": "@typescript-eslint/no-explicit-any",
       "message": "Unexpected any. Specify a different type.",
       "fingerprint": "ef852b938ddbce82ccd2ea411af73ee95dccdef5be2a9025e9712a776ecd63c4"
+    },
+    {
+      "file": "src/lib/product-actions.ts",
+      "line": 498,
+      "column": 19,
+      "rule": "@typescript-eslint/no-explicit-any",
+      "message": "Unexpected any. Specify a different type.",
+      "fingerprint": "efcb2a1c7fd7f401908e36383b436c655d7f1678c1ca82b88ba7a7102301df09"
     },
     {
       "file": "scripts/crawl-inax/export_variants_csv.js",
@@ -2987,14 +2795,6 @@
       "fingerprint": "f1d2d67938160cfc3bc7c0d9bac47439c674f2dfca5671dcaad970306c13c900"
     },
     {
-      "file": "src/lib/order-actions.ts",
-      "line": 304,
-      "column": 19,
-      "rule": "@typescript-eslint/no-explicit-any",
-      "message": "Unexpected any. Specify a different type.",
-      "fingerprint": "f24808278e7ce7763f7087e1a454157ad13c7bbc3f1bf44af969b243901a7609"
-    },
-    {
       "file": "scripts/crawl_toto_pilot.ts",
       "line": 46,
       "column": 21,
@@ -3027,6 +2827,14 @@
       "fingerprint": "f52a19d84aa96255e9e5a6754f972e4a9cb01ed0dabecd0f4e20c3c394bd3b49"
     },
     {
+      "file": "src/lib/order-actions.ts",
+      "line": 394,
+      "column": 21,
+      "rule": "@typescript-eslint/no-explicit-any",
+      "message": "Unexpected any. Specify a different type.",
+      "fingerprint": "f55452baf23a8d4e626a2ce30e36bfebd111584c60ee6a4e5dad31fac6fbcd6e"
+    },
+    {
       "file": "scripts/crawl-inax/export_inax_csv.js",
       "line": 2,
       "column": 12,
@@ -3043,12 +2851,12 @@
       "fingerprint": "f675bbe11a1e6eb43f0ebbf027e4e56a4d26195ad7bba66f3824d0cfa92bab02"
     },
     {
-      "file": "src/app/(public)/tim-kiem/page.tsx",
-      "line": 226,
-      "column": 88,
-      "rule": "react/no-unescaped-entities",
-      "message": "`\"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.",
-      "fingerprint": "f6e8adffec6144fd24c62caf2786698e1ac3d883a58686de9814e65d2ec5da0f"
+      "file": "src/components/product/product-detail-tabs.tsx",
+      "line": 129,
+      "column": 50,
+      "rule": "@typescript-eslint/no-explicit-any",
+      "message": "Unexpected any. Specify a different type.",
+      "fingerprint": "f95c77c9cecc31882020455bc518151da88fbd4d70acfac9c4da33bc83573a11"
     },
     {
       "file": "scripts/crawl-hita/patch-json.js",
@@ -3073,22 +2881,6 @@
       "rule": "@typescript-eslint/no-explicit-any",
       "message": "Unexpected any. Specify a different type.",
       "fingerprint": "fc1ba4046eddd836cc4a1f49889451f2ccadf46053c6fc232f1e06b07a751e8e"
-    },
-    {
-      "file": "src/app/admin/(dashboard)/products/product-form.tsx",
-      "line": 1162,
-      "column": 114,
-      "rule": "@typescript-eslint/no-explicit-any",
-      "message": "Unexpected any. Specify a different type.",
-      "fingerprint": "fd8cc97832f77cf14d76fcaa27c236397b5e5bb6e76f4d4e7209f4b95b8d2f50"
-    },
-    {
-      "file": "src/lib/order-actions.ts",
-      "line": 244,
-      "column": 52,
-      "rule": "@typescript-eslint/no-explicit-any",
-      "message": "Unexpected any. Specify a different type.",
-      "fingerprint": "fe68235eb3b1366e45573a24d315487b52d4029299d7ca3e5f340755270090f8"
     },
     {
       "file": "scripts/crawl_toto_mass.ts",
