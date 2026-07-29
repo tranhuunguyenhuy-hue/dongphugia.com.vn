@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /* config options here */
+  output: 'standalone',
   reactCompiler: true,
   images: {
     // Product media already comes from image CDNs. Bypass Vercel's optimizer so
