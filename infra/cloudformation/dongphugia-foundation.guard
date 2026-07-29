@@ -1,0 +1,37 @@
+# Dong Phu Gia EC2/Coolify foundation guardrails.
+# Scope: pre-staging review for the single CloudFormation template in this folder.
+
+let launch_templates = Resources.*[ Type == "AWS::EC2::LaunchTemplate" ]
+let security_groups = Resources.*[ Type == "AWS::EC2::SecurityGroup" ]
+let eips = Resources.*[ Type == "AWS::EC2::EIP" ]
+let dlm_roles = Resources.*[ Type == "AWS::IAM::Role" Properties.AssumeRolePolicyDocument.Statement[*].Principal.Service == "dlm.amazonaws.com" ]
+let dlm_policies = Resources.*[ Type == "AWS::DLM::LifecyclePolicy" ]
+
+rule launch_template_security when %launch_templates !empty {
+  %launch_templates.Properties.LaunchTemplateData.MetadataOptions.HttpTokens == "required"
+  %launch_templates.Properties.LaunchTemplateData.MetadataOptions.HttpPutResponseHopLimit == 2
+  %launch_templates.Properties.LaunchTemplateData.CreditSpecification.CpuCredits == "standard"
+  %launch_templates.Properties.LaunchTemplateData.BlockDeviceMappings[*].Ebs.VolumeType == "gp3"
+  %launch_templates.Properties.LaunchTemplateData.BlockDeviceMappings[*].Ebs.Encrypted == true
+  %launch_templates.Properties.LaunchTemplateData.BlockDeviceMappings[*].Ebs.DeleteOnTermination == true
+}
+
+rule no_public_admin_ports when %security_groups !empty {
+  Resources.WebSecurityGroup.Properties.SecurityGroupIngress[*].CidrIp == "0.0.0.0/0"
+  Resources.WebSecurityGroup.Properties.SecurityGroupIngress[*].FromPort IN [80, 443]
+  Resources.WebSecurityGroup.Properties.SecurityGroupIngress[*].ToPort IN [80, 443]
+}
+
+rule eip_retain_is_explicit when %eips !empty {
+  %eips.DeletionPolicy == "Retain"
+  %eips.UpdateReplacePolicy == "Retain"
+}
+
+rule dlm_backup_role_and_policy_exist {
+  %dlm_roles !empty
+  %dlm_policies !empty
+  Resources.RootVolumeSnapshotPolicy.Properties.PolicyDetails.TargetTags[*].Key IN ["Project", "Environment", "Backup"]
+  Resources.RootVolumeSnapshotPolicy.Properties.PolicyDetails.TargetTags[*][ Key == "Backup" ].Value == "ebs-daily"
+  Resources.WebLaunchTemplate.Properties.LaunchTemplateData.TagSpecifications[*][ ResourceType == "volume" ].Tags[*].Key IN ["Name", "Project", "Environment", "Owner", "ManagedBy", "CostCenter", "Backup"]
+  Resources.WebLaunchTemplate.Properties.LaunchTemplateData.TagSpecifications[*][ ResourceType == "volume" ].Tags[*][ Key == "Backup" ].Value == "ebs-daily"
+}

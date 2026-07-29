@@ -1,0 +1,651 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Dong Phu Gia EC2 Coolify foundation draft. Creates no secrets and opens no SSH.
+
+Parameters:
+  Environment:
+    Type: String
+    Default: staging
+    AllowedValues:
+      - staging
+      - production
+    Description: Deployment environment name.
+  Owner:
+    Type: String
+    Default: dongphugia
+    AllowedPattern: '^[a-zA-Z0-9._@-]{3,64}$'
+    Description: Owner tag value.
+  CostCenter:
+    Type: String
+    Default: dongphugia-web
+    AllowedPattern: '^[a-zA-Z0-9._-]{3,64}$'
+    Description: Cost allocation tag value.
+  InstanceType:
+    Type: String
+    Default: t4g.small
+    AllowedValues:
+      - t4g.small
+      - t3a.small
+      - t3.small
+    Description: EC2 instance type. t4g.small is preferred while the free trial applies.
+  RootVolumeSizeGiB:
+    Type: Number
+    Default: 30
+    MinValue: 20
+    MaxValue: 200
+    Description: Root EBS gp3 size in GiB.
+  SnapshotRetentionCount:
+    Type: Number
+    Default: 7
+    MinValue: 3
+    MaxValue: 35
+    Description: Number of daily EBS snapshots to retain.
+  EnableDetailedMonitoring:
+    Type: String
+    Default: 'false'
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Description: Enable EC2 detailed monitoring. This can increase CloudWatch cost.
+  AlarmNotificationTopicArn:
+    Type: String
+    Default: ''
+    AllowedPattern: '^$|^arn:aws:sns:[a-z0-9-]+:[0-9]{12}:[A-Za-z0-9_-]{1,256}$'
+    Description: Optional existing SNS topic ARN for CloudWatch alarm notifications. Leave blank to create alarms without actions.
+  LatestAmiArm64:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-arm64
+    Description: Latest Amazon Linux 2023 ARM64 AMI from the public SSM parameter store.
+  LatestAmiX86:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64
+    Description: Latest Amazon Linux 2023 x86_64 AMI from the public SSM parameter store.
+
+Mappings:
+  InstanceArchitecture:
+    t4g.small:
+      Architecture: arm64
+    t3a.small:
+      Architecture: x86_64
+    t3.small:
+      Architecture: x86_64
+
+Conditions:
+  UseArm64Ami: !Equals
+    - !FindInMap [InstanceArchitecture, !Ref InstanceType, Architecture]
+    - arm64
+  EnableDetailedMonitoringCondition: !Equals [!Ref EnableDetailedMonitoring, 'true']
+  HasAlarmNotificationTopic: !Not [!Equals [!Ref AlarmNotificationTopicArn, '']]
+
+Resources:
+  Vpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.42.0.0/16
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-vpc'
+        - Key: Project
+          Value: dongphugia
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Owner
+          Value: !Ref Owner
+        - Key: ManagedBy
+          Value: cloudformation
+        - Key: CostCenter
+          Value: !Ref CostCenter
+
+  PublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      CidrBlock: 10.42.10.0/24
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-public-a'
+        - Key: Project
+          Value: dongphugia
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Owner
+          Value: !Ref Owner
+        - Key: ManagedBy
+          Value: cloudformation
+        - Key: CostCenter
+          Value: !Ref CostCenter
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-igw'
+        - Key: Project
+          Value: dongphugia
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Owner
+          Value: !Ref Owner
+        - Key: ManagedBy
+          Value: cloudformation
+        - Key: CostCenter
+          Value: !Ref CostCenter
+
+  VpcGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref Vpc
+      InternetGatewayId: !Ref InternetGateway
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-public-rt'
+        - Key: Project
+          Value: dongphugia
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Owner
+          Value: !Ref Owner
+        - Key: ManagedBy
+          Value: cloudformation
+        - Key: CostCenter
+          Value: !Ref CostCenter
+
+  DefaultPublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: VpcGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicSubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet
+      RouteTableId: !Ref PublicRouteTable
+
+  WebSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow public HTTP and HTTPS only. No SSH and no public Coolify admin port.
+      VpcId: !Ref Vpc
+      SecurityGroupIngress:
+        - Description: Public HTTP for Cloudflare origin traffic
+          IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - Description: Public HTTPS for Cloudflare origin traffic
+          IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+        - Description: Outbound HTTPS for package, SSM, GHCR, Supabase, and Bunny access
+          IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+        - Description: Outbound HTTP for OS package mirror fallback only
+          IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-web-sg'
+        - Key: Project
+          Value: dongphugia
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Owner
+          Value: !Ref Owner
+        - Key: ManagedBy
+          Value: cloudformation
+        - Key: CostCenter
+          Value: !Ref CostCenter
+
+  InstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+        - arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy
+      Tags:
+        - Key: Project
+          Value: dongphugia
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Owner
+          Value: !Ref Owner
+        - Key: ManagedBy
+          Value: cloudformation
+        - Key: CostCenter
+          Value: !Ref CostCenter
+
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref InstanceRole
+
+  WebLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateName: !Sub '${AWS::StackName}-web'
+      LaunchTemplateData:
+        ImageId: !If [UseArm64Ami, !Ref LatestAmiArm64, !Ref LatestAmiX86]
+        InstanceType: !Ref InstanceType
+        IamInstanceProfile:
+          Arn: !GetAtt InstanceProfile.Arn
+        CreditSpecification:
+          CpuCredits: standard
+        Monitoring:
+          Enabled: !If [EnableDetailedMonitoringCondition, true, false]
+        MetadataOptions:
+          HttpEndpoint: enabled
+          HttpTokens: required
+          HttpPutResponseHopLimit: 2
+          InstanceMetadataTags: enabled
+        NetworkInterfaces:
+          - DeviceIndex: 0
+            AssociatePublicIpAddress: true
+            DeleteOnTermination: true
+            Groups:
+              - !Ref WebSecurityGroup
+            SubnetId: !Ref PublicSubnet
+        BlockDeviceMappings:
+          - DeviceName: /dev/xvda
+            Ebs:
+              VolumeType: gp3
+              VolumeSize: !Ref RootVolumeSizeGiB
+              Encrypted: true
+              DeleteOnTermination: true
+        UserData:
+          Fn::Base64: !Sub |
+            #!/bin/bash
+            set -euo pipefail
+            dnf update -y
+            dnf install -y docker amazon-cloudwatch-agent
+            install -d -m 0755 /etc/docker
+            cat >/etc/docker/daemon.json <<'EOF'
+            {
+              "log-driver": "json-file",
+              "log-opts": {
+                "max-size": "50m",
+                "max-file": "5"
+              }
+            }
+            EOF
+            systemctl enable docker
+            systemctl restart docker
+            install -d -m 0755 /opt/aws/amazon-cloudwatch-agent/etc
+            cat >/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json <<'EOF'
+            {
+              "agent": {
+                "metrics_collection_interval": 60,
+                "run_as_user": "root"
+              },
+              "metrics": {
+                "append_dimensions": {
+                  "InstanceId": "${!aws:InstanceId}"
+                },
+                "metrics_collected": {
+                  "mem": {
+                    "measurement": [
+                      "mem_used_percent"
+                    ],
+                    "metrics_collection_interval": 60
+                  },
+                  "disk": {
+                    "measurement": [
+                      "used_percent",
+                      "inodes_free"
+                    ],
+                    "resources": [
+                      "/"
+                    ],
+                    "metrics_collection_interval": 60
+                  }
+                }
+              }
+            }
+            EOF
+            /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
+              -a fetch-config \
+              -m ec2 \
+              -c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json \
+              -s
+            install -d -m 0755 /opt/dongphugia /opt/dongphugia/coolify /opt/dongphugia/backups /var/log/dongphugia
+            cat >/etc/dongphugia-foundation <<'EOF'
+            project=dongphugia
+            environment=${Environment}
+            managed_by=cloudformation
+            EOF
+        TagSpecifications:
+          - ResourceType: instance
+            Tags:
+              - Key: Name
+                Value: !Sub '${AWS::StackName}-web'
+              - Key: Project
+                Value: dongphugia
+              - Key: Environment
+                Value: !Ref Environment
+              - Key: Owner
+                Value: !Ref Owner
+              - Key: ManagedBy
+                Value: cloudformation
+              - Key: CostCenter
+                Value: !Ref CostCenter
+              - Key: Role
+                Value: coolify-host
+          - ResourceType: volume
+            Tags:
+              - Key: Name
+                Value: !Sub '${AWS::StackName}-root'
+              - Key: Project
+                Value: dongphugia
+              - Key: Environment
+                Value: !Ref Environment
+              - Key: Owner
+                Value: !Ref Owner
+              - Key: ManagedBy
+                Value: cloudformation
+              - Key: CostCenter
+                Value: !Ref CostCenter
+              - Key: Backup
+                Value: ebs-daily
+
+  WebInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      LaunchTemplate:
+        LaunchTemplateId: !Ref WebLaunchTemplate
+        Version: !GetAtt WebLaunchTemplate.LatestVersionNumber
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-web'
+        - Key: Project
+          Value: dongphugia
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Owner
+          Value: !Ref Owner
+        - Key: ManagedBy
+          Value: cloudformation
+        - Key: CostCenter
+          Value: !Ref CostCenter
+        - Key: Role
+          Value: coolify-host
+
+  ElasticIp:
+    Type: AWS::EC2::EIP
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-eip'
+        - Key: Project
+          Value: dongphugia
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Owner
+          Value: !Ref Owner
+        - Key: ManagedBy
+          Value: cloudformation
+        - Key: CostCenter
+          Value: !Ref CostCenter
+
+  ElasticIpAssociation:
+    Type: AWS::EC2::EIPAssociation
+    Properties:
+      AllocationId: !GetAtt ElasticIp.AllocationId
+      InstanceId: !Ref WebInstance
+
+  DataLifecycleManagerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: dlm.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: ebs-snapshot-lifecycle
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ec2:CreateSnapshot
+                  - ec2:CreateSnapshots
+                  - ec2:DeleteSnapshot
+                  - ec2:DescribeInstances
+                  - ec2:DescribeVolumes
+                  - ec2:DescribeSnapshots
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - ec2:CreateTags
+                Resource: arn:aws:ec2:*::snapshot/*
+      Tags:
+        - Key: Project
+          Value: dongphugia
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Owner
+          Value: !Ref Owner
+        - Key: ManagedBy
+          Value: cloudformation
+        - Key: CostCenter
+          Value: !Ref CostCenter
+
+  RootVolumeSnapshotPolicy:
+    Type: AWS::DLM::LifecyclePolicy
+    Properties:
+      Description: !Sub '${AWS::StackName} daily root volume snapshots'
+      State: ENABLED
+      ExecutionRoleArn: !GetAtt DataLifecycleManagerRole.Arn
+      PolicyDetails:
+        ResourceTypes:
+          - VOLUME
+        TargetTags:
+          - Key: Project
+            Value: dongphugia
+          - Key: Environment
+            Value: !Ref Environment
+          - Key: Backup
+            Value: ebs-daily
+        Schedules:
+          - Name: daily-retain
+            CopyTags: true
+            CreateRule:
+              Interval: 24
+              IntervalUnit: HOURS
+              Times:
+                - '17:00'
+            RetainRule:
+              Count: !Ref SnapshotRetentionCount
+
+  StatusCheckFailedAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: EC2 instance status check failed.
+      Namespace: AWS/EC2
+      MetricName: StatusCheckFailed
+      Dimensions:
+        - Name: InstanceId
+          Value: !Ref WebInstance
+      Statistic: Maximum
+      Period: 60
+      EvaluationPeriods: 2
+      DatapointsToAlarm: 2
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: breaching
+      AlarmActions: !If
+        - HasAlarmNotificationTopic
+        - - !Ref AlarmNotificationTopicArn
+        - !Ref AWS::NoValue
+      OKActions: !If
+        - HasAlarmNotificationTopic
+        - - !Ref AlarmNotificationTopicArn
+        - !Ref AWS::NoValue
+      Tags:
+        - Key: Project
+          Value: dongphugia
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Owner
+          Value: !Ref Owner
+        - Key: ManagedBy
+          Value: cloudformation
+        - Key: CostCenter
+          Value: !Ref CostCenter
+
+  HighCpuAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: EC2 CPU high for sustained period.
+      Namespace: AWS/EC2
+      MetricName: CPUUtilization
+      Dimensions:
+        - Name: InstanceId
+          Value: !Ref WebInstance
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 3
+      DatapointsToAlarm: 3
+      Threshold: 75
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: !If
+        - HasAlarmNotificationTopic
+        - - !Ref AlarmNotificationTopicArn
+        - !Ref AWS::NoValue
+      OKActions: !If
+        - HasAlarmNotificationTopic
+        - - !Ref AlarmNotificationTopicArn
+        - !Ref AWS::NoValue
+      Tags:
+        - Key: Project
+          Value: dongphugia
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Owner
+          Value: !Ref Owner
+        - Key: ManagedBy
+          Value: cloudformation
+        - Key: CostCenter
+          Value: !Ref CostCenter
+
+  LowCpuCreditBalanceAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: Burstable CPU credits are low.
+      Namespace: AWS/EC2
+      MetricName: CPUCreditBalance
+      Dimensions:
+        - Name: InstanceId
+          Value: !Ref WebInstance
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 3
+      DatapointsToAlarm: 3
+      Threshold: 24
+      ComparisonOperator: LessThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: !If
+        - HasAlarmNotificationTopic
+        - - !Ref AlarmNotificationTopicArn
+        - !Ref AWS::NoValue
+      OKActions: !If
+        - HasAlarmNotificationTopic
+        - - !Ref AlarmNotificationTopicArn
+        - !Ref AWS::NoValue
+      Tags:
+        - Key: Project
+          Value: dongphugia
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Owner
+          Value: !Ref Owner
+        - Key: ManagedBy
+          Value: cloudformation
+        - Key: CostCenter
+          Value: !Ref CostCenter
+
+  CpuSurplusChargedAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: CPU surplus credits charged. This should remain zero with standard credit mode.
+      Namespace: AWS/EC2
+      MetricName: CPUSurplusCreditsCharged
+      Dimensions:
+        - Name: InstanceId
+          Value: !Ref WebInstance
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      DatapointsToAlarm: 1
+      Threshold: 0
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: !If
+        - HasAlarmNotificationTopic
+        - - !Ref AlarmNotificationTopicArn
+        - !Ref AWS::NoValue
+      OKActions: !If
+        - HasAlarmNotificationTopic
+        - - !Ref AlarmNotificationTopicArn
+        - !Ref AWS::NoValue
+      Tags:
+        - Key: Project
+          Value: dongphugia
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Owner
+          Value: !Ref Owner
+        - Key: ManagedBy
+          Value: cloudformation
+        - Key: CostCenter
+          Value: !Ref CostCenter
+
+Outputs:
+  VpcId:
+    Description: VPC ID for the foundation stack.
+    Value: !Ref Vpc
+  PublicSubnetId:
+    Description: Public subnet ID for the single EC2 host.
+    Value: !Ref PublicSubnet
+  SecurityGroupId:
+    Description: Security group allowing HTTP and HTTPS only.
+    Value: !Ref WebSecurityGroup
+  InstanceId:
+    Description: EC2 instance ID for SSM Session Manager.
+    Value: !Ref WebInstance
+  ElasticIpAddress:
+    Description: Stable public IPv4 address for Cloudflare origin DNS after approval.
+    Value: !Ref ElasticIp
+  SsmStartSessionCommand:
+    Description: Operator command template for approved SSM access.
+    Value: !Sub 'aws ssm start-session --target ${WebInstance} --region ${AWS::Region} --profile dongphugia-admin'
