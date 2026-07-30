@@ -3,8 +3,8 @@ module.exports = {
         collect: {
             url: ['http://localhost:3000/'],
             numberOfRuns: 3,
-            startServerCommand: 'npm run start',
-            startServerReadyPattern: 'Ready in|Local:',
+            startServerCommand: 'node .next/standalone/server.js',
+            startServerReadyPattern: 'Ready in|Local:|http://',
             settings: {
                 formFactor: 'mobile',
                 screenEmulation: {

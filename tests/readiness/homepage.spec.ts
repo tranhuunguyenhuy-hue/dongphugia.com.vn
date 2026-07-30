@@ -75,7 +75,7 @@ test.describe('homepage technical readiness', () => {
 
         const campaignRequests: string[] = []
         page.on('request', (request) => {
-            if (request.url().includes('/images/banner-1.jpg')) {
+            if (request.url().includes('/banners/banner-kitchen.jpg')) {
                 campaignRequests.push(request.url())
             }
         })
@@ -88,6 +88,6 @@ test.describe('homepage technical readiness', () => {
             page.getByText('Xem ưu đãi hiện tại', { exact: true }),
         ).toHaveCount(0)
         expect(campaignRequests).toHaveLength(1)
-        expect(campaignRequests[0]).toContain('/images/banner-1.jpg')
+        expect(campaignRequests[0]).toContain('/banners/banner-kitchen.jpg')
     })
 })
