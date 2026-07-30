@@ -283,6 +283,14 @@ jobs:
           NODE
           }
 
+          capture_health_log() {
+            docker inspect dpg-staging-image-smoke \
+              --format '{{json .State.Health.Log}}' > /tmp/dpg-health.log 2>&1 \
+              || true
+            echo "Redacted Docker health log:"
+            redact_file /tmp/dpg-health.log
+          }
+
           capture_evidence() {
             echo "Smoke failure evidence (sensitive values redacted):"
             printf 'Runner architecture: %s\n' "$(uname -m)"
@@ -293,6 +301,7 @@ jobs:
               || true
             printf 'Last health HTTP status: %s\n' "${health_status:-not-recorded}"
             printf 'Last homepage HTTP status: %s\n' "${homepage_status:-not-recorded}"
+            capture_health_log
 
             docker exec dpg-staging-image-smoke node -e \
               "require('dns').lookup('postgres', (error, address, family) => { if (error) { console.error('DNS probe failed:', error.code || 'unknown'); process.exit(1) } console.log('DNS probe passed:', address, 'IPv' + family) })" \
@@ -319,7 +328,7 @@ jobs:
 
           cleanup() {
             docker rm -f dpg-staging-image-smoke >/dev/null 2>&1 || true
-            rm -f /tmp/dpg-smoke.log /tmp/health.json
+            rm -f /tmp/dpg-smoke.log /tmp/dpg-health.log /tmp/health.json
           }
           on_exit() {
             status=$?
@@ -350,23 +359,45 @@ jobs:
           test "$homepage_status" = "200"
 
           container_health=starting
-          for _ in $(seq 1 20); do
+          health_wait_started=$SECONDS
+          health_timeout_seconds=120
+          while true; do
+            container_status="$(docker inspect dpg-staging-image-smoke --format '{{.State.Status}}')"
             container_health="$(docker inspect dpg-staging-image-smoke --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}')"
+            restart_count="$(docker inspect dpg-staging-image-smoke --format '{{.RestartCount}}')"
+            health_wait_elapsed=$((SECONDS - health_wait_started))
+
+            if [ "$container_status" != "running" ]; then
+              echo "Smoke container exited before becoming healthy: status=$container_status" >&2
+              exit 1
+            fi
+            if [ "$restart_count" != "0" ]; then
+              echo "Smoke container restarted before becoming healthy: restartCount=$restart_count" >&2
+              exit 1
+            fi
             if [ "$container_health" = "healthy" ]; then
               break
+            fi
+            if [ "$container_health" = "unhealthy" ]; then
+              echo "Smoke container reported unhealthy after ${health_wait_elapsed}s" >&2
+              exit 1
+            fi
+            if [ "$health_wait_elapsed" -ge "$health_timeout_seconds" ]; then
+              echo "Smoke container health timed out after ${health_wait_elapsed}s: health=$container_health" >&2
+              exit 1
             fi
             sleep 3
           done
 
-          restart_count="$(docker inspect dpg-staging-image-smoke --format '{{.RestartCount}}')"
-          container_status="$(docker inspect dpg-staging-image-smoke --format '{{.State.Status}}')"
           test "$container_health" = "healthy"
           test "$restart_count" = "0"
           test "$container_status" = "running"
 
+          capture_health_log
           printf 'Smoke health status: %s\n' "$container_health"
           printf 'Smoke container status: %s\n' "$container_status"
           printf 'Smoke restart count: %s\n' "$restart_count"
+          printf 'Smoke health wait: %ss\n' "$health_wait_elapsed"
 
       - name: Summary
         shell: bash
