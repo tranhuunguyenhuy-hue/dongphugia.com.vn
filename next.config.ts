@@ -115,6 +115,15 @@ const nextConfig: NextConfig = {
 
     return [
       {
+        source: '/',
+        headers: [
+          {
+            key: 'Link',
+            value: '</api/homepage-hero?width=720>; rel=preload; as=image; type=image/webp; media="(max-width: 767px)", </api/homepage-hero?width=1280>; rel=preload; as=image; type=image/webp; media="(min-width: 768px)"',
+          },
+        ],
+      },
+      {
         source: '/(.*)',
         headers: [
           // Prevent clickjacking

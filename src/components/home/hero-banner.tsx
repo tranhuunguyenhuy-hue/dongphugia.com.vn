@@ -59,32 +59,21 @@ export function HeroBanner({ banners }: HeroBannerProps) {
         >
             {(() => {
                 const item = items[0]
-                const responsiveSrcSet = createResponsiveSrcSet(
-                    item.image_url,
-                    "hero",
-                )
                 const image = (
                     <picture className="block h-full w-full">
-                        {responsiveSrcSet ? (
-                            <>
-                                <source
-                                    media="(max-width: 767px)"
-                                    type="image/webp"
-                                    srcSet={createResponsiveMediaUrl(
-                                        item.image_url,
-                                        720,
-                                    )}
-                                />
-                                <source
-                                    media="(min-width: 768px)"
-                                    type="image/webp"
-                                    srcSet={responsiveSrcSet}
-                                    sizes="1280px"
-                                />
-                            </>
-                        ) : null}
+                        <source
+                            media="(max-width: 767px)"
+                            type="image/webp"
+                            srcSet="/api/homepage-hero?width=720"
+                        />
+                        <source
+                            media="(min-width: 768px)"
+                            type="image/webp"
+                            srcSet="/api/homepage-hero?width=1280 1280w, /api/homepage-hero?width=1600 1600w"
+                            sizes="1280px"
+                        />
                         <img
-                            src={item.image_url}
+                            src="/api/homepage-hero?width=1280"
                             alt={item.title || "Không gian vật liệu cao cấp Đông Phú Gia"}
                             width={BANNER_WIDTH}
                             height={BANNER_HEIGHT}

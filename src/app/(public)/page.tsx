@@ -2,14 +2,13 @@ import type { Metadata } from "next"
 import { unstable_cache } from "next/cache"
 import { connection } from "next/server"
 import { Suspense } from "react"
-import { preload } from "react-dom"
 import { HeroBanner } from "@/components/home/hero-banner"
 import { BrandSlider } from "@/components/home/brand-slider"
 import { BlogSection } from "@/components/home/blog-section"
 import { HomeCategoryBlockAlt } from "@/components/home/home-category-block-alt"
 import { LazyContactSection } from "@/components/home/lazy-contact-section"
 import { getFeaturedProductsByCategorySlug } from "@/lib/public-api-products"
-import { createResponsiveMediaUrl } from "@/lib/media/media-profiles"
+import { getHomepageBanners } from "@/lib/homepage-data"
 import prisma from "@/lib/prisma"
 
 export const revalidate = 3600
@@ -30,16 +29,6 @@ export const metadata: Metadata = {
         images: ["/opengraph-image"],
     },
 }
-
-const getHomepageBanners = unstable_cache(
-    async () => prisma.banners.findMany({
-        where: { is_active: true },
-        orderBy: { sort_order: 'asc' },
-        take: 5,
-    }),
-    ['homepage-banners-v1'],
-    { revalidate: 3600, tags: ['homepage'] }
-)
 
 const getHomepageContentData = unstable_cache(
     async () => Promise.all([
@@ -134,33 +123,6 @@ export default async function HomePage() {
     await connection()
 
     const banners = await getHomepageBanners()
-    const firstBannerUrl = banners[0]?.image_url
-    if (firstBannerUrl) {
-        const mobileHeroUrl = createResponsiveMediaUrl(firstBannerUrl, 720)
-        const desktopHeroUrl = createResponsiveMediaUrl(firstBannerUrl, 1280)
-        const hasResponsiveHeroVariants =
-            mobileHeroUrl !== firstBannerUrl || desktopHeroUrl !== firstBannerUrl
-
-        if (hasResponsiveHeroVariants) {
-            preload(mobileHeroUrl, {
-                as: 'image',
-                type: 'image/webp',
-                fetchPriority: 'high',
-                media: '(max-width: 767px)',
-            })
-            preload(desktopHeroUrl, {
-                as: 'image',
-                type: 'image/webp',
-                fetchPriority: 'high',
-                media: '(min-width: 768px)',
-            })
-        } else {
-            preload(firstBannerUrl, {
-                as: 'image',
-                fetchPriority: 'high',
-            })
-        }
-    }
 
     return (
         <div className="bg-white">
