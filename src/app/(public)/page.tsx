@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { unstable_cache } from "next/cache"
 import { connection } from "next/server"
+import { Suspense } from "react"
 import { preload } from "react-dom"
 import { HeroBanner } from "@/components/home/hero-banner"
 import { BrandSlider } from "@/components/home/brand-slider"
@@ -30,13 +31,18 @@ export const metadata: Metadata = {
     },
 }
 
-const getHomepageData = unstable_cache(
+const getHomepageBanners = unstable_cache(
+    async () => prisma.banners.findMany({
+        where: { is_active: true },
+        orderBy: { sort_order: 'asc' },
+        take: 5,
+    }),
+    ['homepage-banners-v1'],
+    { revalidate: 3600, tags: ['homepage'] }
+)
+
+const getHomepageContentData = unstable_cache(
     async () => Promise.all([
-        prisma.banners.findMany({
-            where: { is_active: true },
-            orderBy: { sort_order: 'asc' },
-            take: 5,
-        }),
         getFeaturedProductsByCategorySlug('thiet-bi-ve-sinh', ['toto', 'inax'], null, 0, 5),
         getFeaturedProductsByCategorySlug('thiet-bi-bep', null, null, 0, 5),
         getFeaturedProductsByCategorySlug('gach-op-lat', null, null, 0, 5),
@@ -61,15 +67,12 @@ const getHomepageData = unstable_cache(
             select: { name: true, slug: true }
         })
     ]),
-    ['homepage-data-v1'],
+    ['homepage-content-data-v1'],
     { revalidate: 3600, tags: ['homepage'] }
 )
 
-export default async function HomePage() {
-    await connection()
-
-    const [banners, tbvsData, bepData, gachData, nuocData, tbvsBrands, tbvsSubcats, bepSubcats, bepBrands] = await getHomepageData()
-
+async function HomepageContentSections() {
+    const [tbvsData, bepData, gachData, nuocData, tbvsBrands, tbvsSubcats, bepSubcats, bepBrands] = await getHomepageContentData()
     const allCategories = [
         { 
             id: 'thiet-bi-ve-sinh', 
@@ -92,6 +95,45 @@ export default async function HomePage() {
         { id: 'vat-lieu-nuoc', label: 'Vật Liệu Nước', basePath: '/vat-lieu-nuoc', products: nuocData.products, totalCount: nuocData.total },
         { id: 'gach-op-lat', label: 'Gạch Ốp Lát', basePath: '/gach-op-lat', products: gachData.products, totalCount: gachData.total },
     ].filter(c => c.products.length > 0)
+
+    return (
+        <>
+            {/* Brand Slider */}
+            <div className="max-w-[1280px] mx-auto px-5">
+                <BrandSlider />
+            </div>
+
+            {/* Featured Products (Khối 1) - Tạm ẩn để nghiên cứu thêm */}
+            {/*
+            {homeFeatured && homeFeatured.length > 0 && (
+                <div className="max-w-[1280px] mx-auto px-5 mt-8">
+                    <HomeFeaturedProducts products={homeFeatured} />
+                </div>
+            )}
+            */}
+
+            {/* Category Blocks (Khối 2-5) */}
+            {allCategories.length > 0 && (
+                <div className="max-w-[1280px] mx-auto px-5 py-6 lg:py-10 flex flex-col gap-12 lg:gap-16">
+                    {allCategories.map((cat) => (
+                        <HomeCategoryBlockAlt key={cat.id} categoryData={cat} />
+                    ))}
+                </div>
+            )}
+
+            {/* Blog */}
+            <BlogSection />
+
+            {/* Contact Form */}
+            <ContactSection />
+        </>
+    )
+}
+
+export default async function HomePage() {
+    await connection()
+
+    const banners = await getHomepageBanners()
     const firstBannerUrl = banners[0]?.image_url
     if (firstBannerUrl) {
         const mobileHeroUrl = createResponsiveMediaUrl(firstBannerUrl, 720)
@@ -134,34 +176,9 @@ export default async function HomePage() {
                 </section>
             </div>
 
-            {/* Brand Slider */}
-            <div className="max-w-[1280px] mx-auto px-5">
-                <BrandSlider />
-            </div>
-
-            {/* Featured Products (Khối 1) - Tạm ẩn để nghiên cứu thêm */}
-            {/* 
-            {homeFeatured && homeFeatured.length > 0 && (
-                <div className="max-w-[1280px] mx-auto px-5 mt-8">
-                    <HomeFeaturedProducts products={homeFeatured} />
-                </div>
-            )}
-            */}
-
-            {/* Category Blocks (Khối 2-5) */}
-            {allCategories.length > 0 && (
-                <div className="max-w-[1280px] mx-auto px-5 py-6 lg:py-10 flex flex-col gap-12 lg:gap-16">
-                    {allCategories.map((cat) => (
-                        <HomeCategoryBlockAlt key={cat.id} categoryData={cat} />
-                    ))}
-                </div>
-            )}
-
-            {/* Blog */}
-            <BlogSection />
-
-            {/* Contact Form */}
-            <ContactSection />
+            <Suspense fallback={null}>
+                <HomepageContentSections />
+            </Suspense>
         </div>
     )
 }
