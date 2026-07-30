@@ -7,17 +7,13 @@ import { Button } from "@/components/ui/button"
 import { useState, useEffect, useId, useRef } from "react"
 import { getMegaMenuData } from '@/app/actions/mega-menu-actions'
 import type { Category, MenuData } from '@/components/home/mega-menu'
+import { MegaMenuHeader } from '@/components/home/mega-menu'
 import { CartIcon } from '@/components/cart/cart-icon'
 import { LazyCartDrawer } from '@/components/cart/lazy-cart-drawer'
 import { SearchBar } from '@/components/home/search-bar'
 import { trackGenerateLead } from '@/lib/tracking'
 
 import { NAV_MAIN_LINKS as NAV_LINKS, NAV_ABOUT_LINKS as ABOUT_LINKS } from "@/config/site"
-
-const MegaMenuHeader = dynamic(
-    () => import('@/components/home/mega-menu').then((module) => module.MegaMenuHeader),
-    { ssr: false },
-)
 
 const MobileMenuSheet = dynamic(
     () => import('@/components/layout/mobile-menu-sheet').then((module) => module.MobileMenuSheet),
