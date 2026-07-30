@@ -1,38 +1,57 @@
 "use client"
 
 import Link from "next/link"
+import dynamic from "next/dynamic"
 import { Phone, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useState, useEffect, useId } from "react"
 import { getMegaMenuData } from '@/app/actions/mega-menu-actions'
 import type { Category, MenuData } from '@/components/home/mega-menu'
-import { MegaMenuHeader } from '@/components/home/mega-menu'
 import { CartIcon } from '@/components/cart/cart-icon'
-import { CartDrawer } from '@/components/cart/cart-drawer'
+import { LazyCartDrawer } from '@/components/cart/lazy-cart-drawer'
 import { SearchBar } from '@/components/home/search-bar'
-import { MobileMenuSheet } from '@/components/layout/mobile-menu-sheet'
 import { trackGenerateLead } from '@/lib/tracking'
 
 import { NAV_MAIN_LINKS as NAV_LINKS, NAV_ABOUT_LINKS as ABOUT_LINKS } from "@/config/site"
 
+const MegaMenuHeader = dynamic(
+    () => import('@/components/home/mega-menu').then((module) => module.MegaMenuHeader),
+    { ssr: false },
+)
+
+const MobileMenuSheet = dynamic(
+    () => import('@/components/layout/mobile-menu-sheet').then((module) => module.MobileMenuSheet),
+    { ssr: false },
+)
+
 function ProductsDropdown() {
     const [data, setData] = useState<{ categories: Category[], menuData: Record<string, MenuData> } | null>(null)
+    const [requested, setRequested] = useState(false)
 
     useEffect(() => {
-        getMegaMenuData().then(setData).catch(console.error)
-    }, [])
+        if (requested && !data) {
+            getMegaMenuData().then(setData).catch(console.error)
+        }
+    }, [data, requested])
 
     if (!data) return (
-        <button
-            className="flex items-center gap-1.5 font-medium text-[15px] leading-[20px] text-stone-700 focus:outline-none px-4 py-2 bg-transparent transition-all duration-300 rounded-full h-[38px]"
-            aria-haspopup="menu"
-            aria-expanded="false"
-            aria-label="Đang tải menu sản phẩm"
-            disabled
+        <div
+            className="flex h-full items-center"
+            onMouseEnter={() => setRequested(true)}
+            onFocus={() => setRequested(true)}
         >
-            Sản phẩm
-            <ChevronDown className="h-4 w-4 transition-transform duration-300" />
-        </button>
+            <button
+                type="button"
+                onClick={() => setRequested(true)}
+                className="flex h-[38px] items-center gap-1.5 rounded-full bg-transparent px-4 py-2 text-[15px] font-medium leading-[20px] text-stone-700 transition-all duration-300 hover:bg-brand-50 hover:text-brand-600 focus:outline-none"
+                aria-label={requested ? "Đang tải menu sản phẩm" : "Xem sản phẩm"}
+                aria-haspopup="menu"
+                aria-expanded="false"
+            >
+                Sản phẩm
+                <ChevronDown className="h-4 w-4 transition-transform duration-300" />
+            </button>
+        </div>
     );
 
     return <MegaMenuHeader categories={data.categories} menuData={data.menuData} />
@@ -83,6 +102,7 @@ function AboutDropdown() {
 
 export function Header() {
     const [isScrolled, setIsScrolled] = useState(false)
+    const [mobileMenuRequested, setMobileMenuRequested] = useState(false)
 
     useEffect(() => {
         const handleScroll = () => {
@@ -139,13 +159,35 @@ export function Header() {
                             <div className="flex lg:hidden items-center gap-0.5">
                                 <SearchBar />
                                 <CartIcon />
-                                <MobileMenuSheet />
+                                {mobileMenuRequested ? (
+                                    <MobileMenuSheet initiallyOpen />
+                                ) : (
+                                    <button
+                                        type="button"
+                                        onClick={() => setMobileMenuRequested(true)}
+                                        className="flex h-11 w-11 items-center justify-center rounded-full text-stone-700 transition-colors hover:bg-stone-100 hover:text-brand-600"
+                                        aria-label="Mở menu điều hướng"
+                                    >
+                                        <svg
+                                            className="h-[22px] w-[22px]"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            strokeWidth="2"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            aria-hidden="true"
+                                        >
+                                            <path d="M4 6h16M4 12h16M4 18h16" />
+                                        </svg>
+                                    </button>
+                                )}
                             </div>
                         </div>
                     </div>
                 </div>
             </header>
-            <CartDrawer />
+            <LazyCartDrawer />
         </>
     )
 }

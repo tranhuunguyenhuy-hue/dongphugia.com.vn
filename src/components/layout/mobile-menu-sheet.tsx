@@ -102,8 +102,12 @@ function CategoryAccordionItem({
 }
 
 // ── Main MobileMenuSheet component ──
-export function MobileMenuSheet() {
-    const [open, setOpen] = useState(false)
+export function MobileMenuSheet({
+    initiallyOpen = false,
+}: {
+    initiallyOpen?: boolean
+}) {
+    const [open, setOpen] = useState(initiallyOpen)
     const [menuData, setMenuData] = useState<{
         categories: Category[]
         menuData: Record<string, MenuData>
