@@ -72,10 +72,6 @@ const getHomepageContentData = unstable_cache(
 )
 
 async function HomepageContentSections() {
-    // Force a real suspension even when the data cache is warm. This lets Next.js
-    // flush the hero shell before serializing the much larger below-fold catalogue.
-    await new Promise<void>((resolve) => setImmediate(resolve))
-
     const [tbvsData, bepData, gachData, nuocData, tbvsBrands, tbvsSubcats, bepSubcats, bepBrands] = await getHomepageContentData()
     const allCategories = [
         { 
