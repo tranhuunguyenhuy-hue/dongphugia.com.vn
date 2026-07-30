@@ -30,7 +30,7 @@ concurrency:
 env:
   IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/dongphugia-web
   POSTGRES_IMAGE: postgres:16.10-bookworm@sha256:38471f330eb885e04de130b768d6db4e10469e2311879c7e5c699f6d2d8a1c74
-  BUILD_DATABASE_URL: postgresql://dpg_staging_build:dpg_staging_build_password@127.0.0.1:5432/dpg_staging_build
+  BUILD_DATABASE_URL: postgresql://dpg_staging_build:dpg_staging_build_password@postgres:5432/dpg_staging_build
   DEFAULT_STAGING_SITE_URL: https://dongphugia-staging.47-131-92-97.sslip.io
   DEFAULT_BUNNY_CDN_HOSTNAME: cdn.dongphugia.com.vn
 
@@ -85,34 +85,36 @@ jobs:
 
       - name: Bootstrap ephemeral build database
         shell: bash
+        env:
+          BUILD_NETWORK: ${{ job.services.postgres.network }}
         run: |
           set -euo pipefail
 
-          docker run --rm --network host \
+          docker run --rm --network "$BUILD_NETWORK" \
             -e PGPASSWORD=dpg_staging_build_password \
             -v "$PWD/docs/deploy/staging-db-bootstrap:/bootstrap:ro" \
             "$POSTGRES_IMAGE" \
             psql \
               --set=ON_ERROR_STOP=1 \
               --single-transaction \
-              -h 127.0.0.1 \
+              -h postgres \
               -U dpg_staging_build \
               -d dpg_staging_build \
               --file=/bootstrap/001_schema_from_prisma.sql \
               --file=/bootstrap/002_seed_synthetic_stg_demo.sql
 
           tables="$(
-            docker run --rm --network host \
+            docker run --rm --network "$BUILD_NETWORK" \
               -e PGPASSWORD=dpg_staging_build_password \
               "$POSTGRES_IMAGE" \
-              psql -h 127.0.0.1 -U dpg_staging_build -d dpg_staging_build -Atc \
+              psql -h postgres -U dpg_staging_build -d dpg_staging_build -Atc \
                 "select count(*) from information_schema.tables where table_schema = 'public' and table_type = 'BASE TABLE';"
           )"
           products="$(
-            docker run --rm --network host \
+            docker run --rm --network "$BUILD_NETWORK" \
               -e PGPASSWORD=dpg_staging_build_password \
               "$POSTGRES_IMAGE" \
-              psql -h 127.0.0.1 -U dpg_staging_build -d dpg_staging_build -Atc \
+              psql -h postgres -U dpg_staging_build -d dpg_staging_build -Atc \
                 "select count(*) from products where sku like 'STG-DEMO-%';"
           )"
 
@@ -150,7 +152,7 @@ jobs:
           file: ./Dockerfile
           platforms: linux/arm64
           push: true
-          network: host
+          network: ${{ job.services.postgres.network }}
           provenance: true
           sbom: true
           tags: |
@@ -171,6 +173,7 @@ jobs:
         shell: bash
         env:
           IMAGE_REF: ${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
+          BUILD_NETWORK: ${{ job.services.postgres.network }}
           STAGING_SITE_URL: ${{ vars.STAGING_SITE_URL || env.DEFAULT_STAGING_SITE_URL }}
           STAGING_BUNNY_CDN_HOSTNAME: ${{ vars.STAGING_BUNNY_CDN_HOSTNAME || env.DEFAULT_BUNNY_CDN_HOSTNAME }}
         run: |
@@ -179,7 +182,7 @@ jobs:
           docker run --rm --detach \
             --name dpg-staging-image-smoke \
             --platform linux/arm64 \
-            --network host \
+            --network "$BUILD_NETWORK" \
             -e DATABASE_URL="$BUILD_DATABASE_URL" \
             -e DIRECT_URL="$BUILD_DATABASE_URL" \
             -e NEXT_PUBLIC_SITE_URL="$STAGING_SITE_URL" \
@@ -191,14 +194,16 @@ jobs:
           }
           trap cleanup EXIT
 
+          smoke_ip="$(docker inspect dpg-staging-image-smoke --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}')"
+
           for _ in $(seq 1 40); do
-            if curl -fsS http://127.0.0.1:3000/api/health >/tmp/health.json; then
+            if curl -fsS "http://$smoke_ip:3000/api/health" >/tmp/health.json; then
               break
             fi
             sleep 3
           done
 
-          curl -fsS http://127.0.0.1:3000/ >/dev/null
+          curl -fsS "http://$smoke_ip:3000/" >/dev/null
           node -e "const fs = require('fs'); const body = JSON.parse(fs.readFileSync('/tmp/health.json', 'utf8')); if (!body.ok || JSON.stringify(body).includes('DATABASE_URL')) process.exit(1)"
 
       - name: Summary
