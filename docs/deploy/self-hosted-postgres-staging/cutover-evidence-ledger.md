@@ -67,7 +67,7 @@ data.
 | Reconciliation result reference | `TBD` |
 | Sequence verification | `TBD` |
 | Excluded-table verification | Restore drill confirmed zero `admin_sessions`, customers, orders and quote requests in staging synthetic dataset |
-| Latest backup timestamp / age | Manual nightly-task execution succeeded `2026-07-30 14:54 UTC`; checksum generated in the backups volume |
+| Latest backup timestamp / age | Nightly dump task succeeded `2026-07-30 14:54 UTC`; daily-retention and weekly-promote/retention tasks both passed manual execution at `15:32 UTC`; policy is 7 daily + 4 weekly |
 
 Do not paste table contents into this ledger. Record only aggregate counts,
 checksums and approved report references.
@@ -153,8 +153,8 @@ Record presence/source only, never values.
 
 Open production blockers: missing CSP/HSTS, exposed `x-powered-by`, incomplete
 structured write-freeze responses in several admin/server-action paths, failing
-Lighthouse thresholds, no post-app host metrics, no off-host backup or enforced
-7-daily/4-weekly retention, incomplete production media inventory, unresolved
+Lighthouse thresholds, no post-app host metrics, no off-host backup,
+incomplete production media inventory, unresolved
 canonical-domain/DNS ownership, and unassigned cutover/on-call owners.
 
 ## Decision log
