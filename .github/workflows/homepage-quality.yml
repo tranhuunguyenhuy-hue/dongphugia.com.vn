@@ -114,3 +114,12 @@ jobs:
           export DATABASE_URL="$database_url"
           export DIRECT_URL="$database_url"
           npm run quality:homepage
+
+      - name: Upload homepage performance diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: homepage-performance-${{ github.sha }}
+          path: scripts/output/lighthouse
+          if-no-files-found: warn
+          retention-days: 7
