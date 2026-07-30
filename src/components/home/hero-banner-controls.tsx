@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState } from "react"
 import Link from "next/link"
-import { ChevronLeft, ChevronRight } from "lucide-react"
 import {
     createResponsiveMediaUrl,
     createResponsiveSrcSet,
@@ -98,7 +97,18 @@ export function HeroBannerControls({
                 className="absolute left-3 top-1/2 z-20 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-white/50 shadow-sm transition-colors hover:bg-white lg:left-6"
                 aria-label="Banner trước"
             >
-                <ChevronLeft className="h-6 w-6 text-stone-900" strokeWidth={1.5} />
+                <svg
+                    aria-hidden="true"
+                    viewBox="0 0 24 24"
+                    className="h-6 w-6 text-stone-900"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                >
+                    <path d="m15 18-6-6 6-6" />
+                </svg>
             </button>
             <button
                 type="button"
@@ -106,7 +116,18 @@ export function HeroBannerControls({
                 className="absolute right-3 top-1/2 z-20 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-white/50 shadow-sm transition-colors hover:bg-white lg:right-6"
                 aria-label="Banner tiếp"
             >
-                <ChevronRight className="h-6 w-6 text-stone-900" strokeWidth={1.5} />
+                <svg
+                    aria-hidden="true"
+                    viewBox="0 0 24 24"
+                    className="h-6 w-6 text-stone-900"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                >
+                    <path d="m9 18 6-6-6-6" />
+                </svg>
             </button>
 
             <div className="absolute bottom-2 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1 sm:bottom-4 sm:gap-2">
