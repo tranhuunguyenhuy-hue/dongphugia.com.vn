@@ -3,6 +3,7 @@ import { submitQuoteRequest } from '@/lib/actions'
 import { rateLimiter, getClientIp, RATE_LIMITS } from '@/lib/rate-limiter'
 import { handleApiError } from '@/lib/api-error'
 import { logger } from '@/lib/logger'
+import { requireWritesAllowed } from '@/lib/write-freeze'
 
 export async function GET() {
     return NextResponse.json(
@@ -37,6 +38,7 @@ export async function POST(request: NextRequest) {
     }
 
     try {
+        requireWritesAllowed('api.quote-requests')
         const body = await request.json()
         const result = await submitQuoteRequest(body)
 
