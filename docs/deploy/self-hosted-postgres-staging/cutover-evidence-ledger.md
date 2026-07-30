@@ -10,7 +10,7 @@ data.
 | --- | --- |
 | Change ticket / approval | `TBD` |
 | Planned window, Asia/Ho_Chi_Minh | `TBD` |
-| Canonical production domain | `TBD` |
+| Canonical production domain | `https://www.dongphugia.vn` (migration charter) |
 | Go/no-go owner | `TBD` |
 | Application owner / backup | `TBD` |
 | Database owner / backup | `TBD` |
@@ -22,26 +22,27 @@ data.
 
 | Evidence | Value |
 | --- | --- |
-| Source revision | `5eece0c0b78b51bc408dbc2f06404a726bed1143` |
-| Image | `ghcr.io/tranhuunguyenhuy-hue/dongphugia-web@sha256:12b6d170e45d9c47caff2ae18466ef6ddea69f0038012a03b0fce4173aa9d5b3` |
+| Source revision | `24467553db33df19f0cd3a18b9a049a3309058c5` (candidate before robots/domain dossier update; rebuild exact final head required) |
+| Image | `ghcr.io/tranhuunguyenhuy-hue/dongphugia-web@sha256:48a4321e5b2bce1658dd1e38d2c5f09959156bf73e184996ccbac61bb196235d` (intermediate candidate; not yet deployed) |
 | Platform | `linux/arm64` |
-| GHCR workflow run URL | `https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/actions/runs/30555758799` |
+| GHCR workflow run URL | `https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/actions/runs/30573741164` |
 | Registry manifest verification | `linux/arm64` only; digest above |
 | Source revision label verification | exact match to source revision above |
 | SBOM attestation reference | registry attestation verified in GHCR run; 1 SBOM section |
 | Provenance attestation reference | registry attestation verified in GHCR run; 1 provenance section |
 | Security scan result/reference | Trivy: 0 HIGH, 0 CRITICAL in GHCR run |
 | Runtime smoke reference | GHCR run: health `200`, homepage `200`, DB query pass, healthy, restart count `0` |
+| Source performance gate | PR #26 run `30573391793`: median performance `0.99`, median LCP `1933 ms`, TBT `22.5 ms`, CLS approximately `0.00023` |
 
 ## Staging acceptance
 
 | Check | Result / timestamp / evidence reference |
 | --- | --- |
 | Coolify application deployment ID | app `q45dwq0ju41p0mpv59zdjah4`; rolling deployment finished `2026-07-30 15:23:30 UTC` |
-| Running digest equals accepted digest | PASS; Coolify redeployed the accepted digest above |
+| Running digest equals accepted digest | HOLD; staging still runs prior accepted digest `sha256:12b6d170e45d9c47caff2ae18466ef6ddea69f0038012a03b0fce4173aa9d5b3`; latest candidate deployment is blocked on authenticated Coolify control-plane access |
 | Container healthy, restart count zero | Coolify reports `Running (healthy)`; GHCR smoke restart count `0`; live Coolify restart count was not independently exposed |
 | HTTPS/homepage/health | PASS; strict TLS verification, homepage `200`, health `200`, DB query pass |
-| Catalogue/blog/search/sitemap/SEO | Functional routes PASS; production gate HOLD: Lighthouse performance `0.78` versus required `0.90`, LCP `4085 ms` versus required `2500 ms` |
+| Catalogue/blog/search/sitemap/SEO | Baseline routes return `200`; source Lighthouse gate PASS, but exact final digest staging Lighthouse/canonical/sitemap/robots acceptance remains required |
 | Write-freeze rehearsal | PASS for quote, order and upload APIs: `503 WRITE_FREEZE_ACTIVE`; revalidation GET `405`, unauthenticated POST `401` |
 | Bunny synthetic media test | NOT RUN; no staging Bunny write credential/zone was provisioned and writes remain frozen |
 | Internal DB-only connectivity | PASS; app uses the full internal Coolify PostgreSQL alias; DB health query passes; no public `5432` |
@@ -98,15 +99,15 @@ Re-capture authoritative answers immediately before cutover.
 
 | Evidence | Value |
 | --- | --- |
-| Selected primary domain | `TBD` |
-| Nameserver strategy | `TBD` |
+| Selected primary domain | `https://www.dongphugia.vn` |
+| Nameserver strategy | keep Mắt Bão authoritative for `.vn`; keep P.A Việt Nam authoritative for old `.com.vn`; no Cloudflare/nameserver migration in this cutover |
 | Complete pre-cutover zone export/reference | `TBD` |
-| Old apex record/type/TTL | `TBD` |
-| Old `www` record/type/TTL | `TBD` |
-| New apex record/type/TTL | `TBD` |
-| New `www` record/type/TTL | `TBD` |
+| Old apex record/type/TTL | `dongphugia.com.vn A 216.198.79.1`, TTL `3600` |
+| Old `www` record/type/TTL | CNAME `f67c116b40bea258.vercel-dns-017.com`, TTL `3600` |
+| New apex record/type/TTL | currently no answer; proposed A `47.131.92.97`, cutover TTL `300`, PM approval required |
+| New `www` record/type/TTL | currently no answer; proposed A `47.131.92.97`, cutover TTL `300`, PM approval required |
 | TTL reduction timestamp / old TTL aged | `TBD` |
-| Cloudflare proxy/TLS decision | `TBD` |
+| Cloudflare proxy/TLS decision | no Cloudflare/nameserver change in this cutover |
 | Vercel project ID/name | project name `dongphugia.com.vn`; internal project ID not available locally |
 | Vercel production deployment ID/URL | GitHub deployment `5498627451`; `https://dongphugiacom-b70xmrgj8-tranhuunguyenhuy-9755s-projects.vercel.app` |
 | Vercel production source commit | `cf98ab78b9fd34403e277b5e23ea8b082b6800ce` |
@@ -151,11 +152,12 @@ Record presence/source only, never values.
 | T+60m final checkpoint | `TBD` | otherwise rollback | `TBD` |
 | T+24h observation close | `TBD` | SLOs and backup pass | `TBD` |
 
-Open production blockers: missing CSP/HSTS, exposed `x-powered-by`, incomplete
-structured write-freeze responses in several admin/server-action paths, failing
-Lighthouse thresholds, no post-app host metrics, no off-host backup,
-incomplete production media inventory, unresolved
-canonical-domain/DNS ownership, and unassigned cutover/on-call owners.
+Open production blockers: latest exact-head digest not deployed/accepted,
+staging CSP/HSTS acceptance not yet evidenced on that digest, exposed
+`x-powered-by` requires re-check, incomplete structured write-freeze responses
+in several admin/server-action paths, no post-app host metrics, no off-host
+backup, incomplete production media inventory, DNS-provider execution ownership,
+and unassigned cutover/on-call owners.
 
 ## Decision log
 

@@ -10,27 +10,16 @@ PostgreSQL, backups, restore drill, migration rehearsal, write freeze and
 rollback path all have recorded evidence. Deployment and release are separate:
 the AWS application must be deployed and verified before DNS release.
 
-## Mandatory domain decision
+## Approved domain target
 
-The application currently canonicalizes to `www.dongphugia.com.vn`, while the
-migration brief also refers to `dongphugia.vn`. The cutover owner must select one
-primary production domain before any DNS change.
+The migration charter selects `https://www.dongphugia.vn` as the canonical
+production origin. `https://dongphugia.vn` redirects `308` to canonical `www`.
+The existing `dongphugia.com.vn` Vercel production stays active as rollback and
+is redirected only after the new domain passes acceptance.
 
-| Domain | Current evidence | Decision required |
-| --- | --- | --- |
-| `dongphugia.vn` | Authoritative NS: Mắt Bão; no observed apex A or `www` record | Decide whether this is a new primary, redirect-only, or reserved domain |
-| `dongphugia.com.vn` | Authoritative NS: P.A Việt Nam; apex currently resolves to Vercel IP; `www` CNAME points to Vercel | Decide whether it remains primary and is the actual migration target |
-| Cloudflare | Not currently authoritative for either domain | Decide whether to onboard nameservers in a separate, rehearsed change |
-
-Do not combine a nameserver migration, canonical-domain migration, database
-migration and origin switch in one release window. Recommended order:
-
-1. Decide and document the canonical domain.
-2. If Cloudflare is required, replicate and verify the complete DNS zone, change
-   nameservers in a separate window, and observe stability before origin cutover.
-3. Lower relevant record TTLs at the authoritative provider and wait at least
-   the previous TTL before cutover.
-4. Change only the approved apex/`www` origin records during the traffic switch.
+Keep current nameservers. Cloudflare is not part of this cutover. The exact
+record proposal, current answers, TTL preparation, provider responsibilities
+and rollback records are in `../dns-switch-approval-gate.md`.
 
 ## Responsibility matrix
 
@@ -218,12 +207,13 @@ Vercel while silently discarding accepted writes.
 
 ## Final approval boundary
 
-Current gate result: **HOLD**. Staging is deployed by accepted immutable digest,
-but production cutover is not authorized until every abort condition and open
-item in `cutover-evidence-ledger.md` is cleared. In particular, do not approve
-DNS release while the Lighthouse performance gate, security-header hardening,
-write-freeze response audit, off-host backup controls, post-app host
-capacity evidence, media inventory, domain decision, or owner matrix is open.
+Current gate result: **HOLD**. The canonical-domain decision and source
+Lighthouse gate are resolved, but the latest exact-head image still requires
+staging deployment/acceptance. Production cutover is not authorized until every
+abort condition and open item in `cutover-evidence-ledger.md` is cleared. In
+particular, do not approve DNS release while security-header acceptance,
+off-host backup controls, post-app host capacity evidence, production media
+inventory, provider execution ownership, or the owner matrix is open.
 
 The cutover approval must identify the exact image digest, canonical domain,
 DNS records, database evidence ledger, maintenance window, owners and rollback
