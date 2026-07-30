@@ -7,7 +7,7 @@ import { HeroBanner } from "@/components/home/hero-banner"
 import { BrandSlider } from "@/components/home/brand-slider"
 import { BlogSection } from "@/components/home/blog-section"
 import { HomeCategoryBlockAlt } from "@/components/home/home-category-block-alt"
-import { ContactSection } from "@/components/home/contact-section"
+import { LazyContactSection } from "@/components/home/lazy-contact-section"
 import { getFeaturedProductsByCategorySlug } from "@/lib/public-api-products"
 import { createResponsiveMediaUrl } from "@/lib/media/media-profiles"
 import prisma from "@/lib/prisma"
@@ -125,7 +125,7 @@ async function HomepageContentSections() {
             <BlogSection />
 
             {/* Contact Form */}
-            <ContactSection />
+            <LazyContactSection />
         </>
     )
 }
