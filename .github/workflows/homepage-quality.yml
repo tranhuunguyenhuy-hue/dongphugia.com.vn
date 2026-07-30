@@ -91,6 +91,10 @@ jobs:
                   ELSE slug
                 END
                 WHERE slug IN ('stg-demo-bon-cau-mot-khoi', 'stg-demo-sen-tam-cay', 'stg-demo-voi-bep');
+
+                UPDATE products
+                SET image_main_url = '/banners/banner-kitchen.jpg'
+                WHERE sku LIKE 'STG-DEMO-%';
               "
 
       - run: npm ci
