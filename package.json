@@ -23,7 +23,7 @@
     "test:media": "vitest run src/lib/media src/app/api/upload-image",
     "test:homepage": "playwright test --config=playwright.homepage.config.ts",
     "perf:lighthouse": "lhci autorun",
-    "quality:homepage": "npm run test:media && npm run test:homepage && npm run build && npm run perf:lighthouse",
+    "quality:homepage": "npm run test:media && npm run build && npm run test:homepage && npm run perf:lighthouse",
     "media:backfill:home": "tsx scripts/media/backfill-homepage-images.mts",
     "media:backfill:home:apply": "tsx scripts/media/backfill-homepage-images.mts --apply",
     "media:rollback:home": "tsx scripts/media/rollback-homepage-images.mts",
