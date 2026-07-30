@@ -64,12 +64,20 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   const gtmId = process.env.NEXT_PUBLIC_GTM_ID;
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? getCanonicalSiteUrl();
+  const cdnHostname = process.env.BUNNY_CDN_HOSTNAME ?? "cdn.dongphugia.com.vn";
+  const shouldPreconnectCdn = siteUrl.startsWith("https://") && cdnHostname;
+  const cdnOrigin = shouldPreconnectCdn ? `https://${cdnHostname}` : null;
 
   return (
     <html lang="vi">
       <head>
-        <link rel="preconnect" href="https://cdn.dongphugia.com.vn" crossOrigin="" />
-        <link rel="dns-prefetch" href="https://cdn.dongphugia.com.vn" />
+        {cdnOrigin ? (
+          <>
+            <link rel="preconnect" href={cdnOrigin} crossOrigin="" />
+            <link rel="dns-prefetch" href={`//${cdnHostname}`} />
+          </>
+        ) : null}
       </head>
       <body
         className={`${beVietnamPro.variable} ${playfairDisplay.variable} antialiased font-sans`}
