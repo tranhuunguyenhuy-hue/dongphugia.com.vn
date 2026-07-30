@@ -4,7 +4,7 @@ import Link from "next/link"
 import dynamic from "next/dynamic"
 import { Phone, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { useState, useEffect, useId } from "react"
+import { useState, useEffect, useId, useRef } from "react"
 import { getMegaMenuData } from '@/app/actions/mega-menu-actions'
 import type { Category, MenuData } from '@/components/home/mega-menu'
 import { CartIcon } from '@/components/cart/cart-icon'
@@ -27,6 +27,7 @@ const MobileMenuSheet = dynamic(
 function ProductsDropdown() {
     const [data, setData] = useState<{ categories: Category[], menuData: Record<string, MenuData> } | null>(null)
     const [requested, setRequested] = useState(false)
+    const containerRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
         if (requested && !data) {
@@ -34,8 +35,18 @@ function ProductsDropdown() {
         }
     }, [data, requested])
 
+    useEffect(() => {
+        if (!data) return
+
+        const frame = requestAnimationFrame(() => {
+            containerRef.current?.querySelector('button')?.focus()
+        })
+        return () => cancelAnimationFrame(frame)
+    }, [data])
+
     if (!data) return (
         <div
+            ref={containerRef}
             className="flex h-full items-center"
             onMouseEnter={() => setRequested(true)}
             onFocus={() => setRequested(true)}
@@ -54,7 +65,11 @@ function ProductsDropdown() {
         </div>
     );
 
-    return <MegaMenuHeader categories={data.categories} menuData={data.menuData} />
+    return (
+        <div ref={containerRef} className="flex h-full items-center">
+            <MegaMenuHeader categories={data.categories} menuData={data.menuData} />
+        </div>
+    )
 }
 
 function AboutDropdown() {
