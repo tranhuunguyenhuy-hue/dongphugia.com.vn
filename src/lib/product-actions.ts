@@ -5,6 +5,7 @@ import { Prisma } from '@prisma/client'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { requirePermission } from '@/lib/auth/get-current-user'
+import { toWriteFreezeActionResult } from '@/lib/write-freeze'
 
 // ─── SCHEMAS ─────────────────────────────────────────────────────────────────
 
@@ -106,6 +107,8 @@ export async function createProduct(data: unknown) {
         revalidatePath('/')
         return { success: true, id: product.id }
     } catch (err: any) {
+        const freezeResult = toWriteFreezeActionResult(err)
+        if (freezeResult) return freezeResult
         const e = err as { code?: string; message?: string }
         if (e.code === 'P2002') return { message: 'SKU hoặc slug đã tồn tại trong cùng danh mục' }
         return { message: 'Lỗi tạo sản phẩm: ' + (e.message ?? 'Unknown error') }
@@ -176,6 +179,8 @@ export async function updateProduct(id: number, data: unknown) {
         revalidatePath('/')
         return { success: true }
     } catch (err: any) {
+        const freezeResult = toWriteFreezeActionResult(err)
+        if (freezeResult) return freezeResult
         const e = err as { code?: string; message?: string }
         if (e.code === 'P2002') return { message: 'SKU hoặc slug đã tồn tại trong cùng danh mục' }
         return { message: 'Lỗi cập nhật sản phẩm: ' + (e.message ?? 'Unknown error') }
@@ -193,6 +198,8 @@ export async function toggleProductFeatured(id: number, value: boolean) {
         revalidatePath('/')
         return { success: true }
     } catch (err: any) {
+        const freezeResult = toWriteFreezeActionResult(err)
+        if (freezeResult) return freezeResult
         return { message: 'Lỗi cập nhật: ' + err.message }
     }
 }
@@ -217,6 +224,8 @@ export async function toggleProductActive(id: number, value: boolean) {
         revalidatePath('/admin/products')
         return { success: true }
     } catch (err: any) {
+        const freezeResult = toWriteFreezeActionResult(err)
+        if (freezeResult) return freezeResult
         return { message: 'Lỗi cập nhật: ' + err.message }
     }
 }
@@ -232,6 +241,8 @@ export async function deleteProduct(id: number) {
         revalidatePath('/')
         return { success: true }
     } catch (err: any) {
+        const freezeResult = toWriteFreezeActionResult(err)
+        if (freezeResult) return freezeResult
         return { message: 'Lỗi xóa sản phẩm: ' + err.message }
     }
 }
@@ -247,6 +258,8 @@ export async function bulkDeleteProducts(ids: number[]) {
         revalidatePath('/')
         return { success: true, count: result.count }
     } catch (err: any) {
+        const freezeResult = toWriteFreezeActionResult(err)
+        if (freezeResult) return freezeResult
         return { message: 'Lỗi xóa nhiều sản phẩm: ' + err.message }
     }
 }
@@ -262,6 +275,8 @@ export async function bulkToggleActive(ids: number[], value: boolean) {
         revalidatePath('/admin/products')
         return { success: true, count: result.count }
     } catch (err: any) {
+        const freezeResult = toWriteFreezeActionResult(err)
+        if (freezeResult) return freezeResult
         return { message: 'Lỗi cập nhật trạng thái: ' + err.message }
     }
 }
@@ -282,6 +297,8 @@ export async function addProductImage(productId: number, imageUrl: string, altTe
         revalidatePath(`/admin/products/${productId}`)
         return { success: true, id: img.id }
     } catch (err: any) {
+        const freezeResult = toWriteFreezeActionResult(err)
+        if (freezeResult) return freezeResult
         const e = err as { message?: string }
         return { message: 'Lỗi thêm ảnh: ' + (e.message ?? 'Unknown error') }
     }
@@ -301,6 +318,8 @@ export async function addProductImages(productId: number, imageUrls: string[]) {
         revalidatePath(`/admin/products/${productId}`)
         return { success: true, count: imageUrls.length }
     } catch (err: any) {
+        const freezeResult = toWriteFreezeActionResult(err)
+        if (freezeResult) return freezeResult
         return { message: 'Lỗi thêm ảnh: ' + err.message }
     }
 }
@@ -313,6 +332,8 @@ export async function deleteProductImage(imageId: number, productId: number) {
         revalidatePath(`/admin/products/${productId}`)
         return { success: true }
     } catch (err: any) {
+        const freezeResult = toWriteFreezeActionResult(err)
+        if (freezeResult) return freezeResult
         return { message: 'Lỗi xóa ảnh: ' + err.message }
     }
 }
@@ -330,6 +351,8 @@ export async function setProductThumbnail(productId: number, imageUrl: string) {
         revalidatePath('/')
         return { success: true }
     } catch (err: any) {
+        const freezeResult = toWriteFreezeActionResult(err)
+        if (freezeResult) return freezeResult
         return { message: 'Lỗi đặt thumbnail: ' + err.message }
     }
 }
@@ -349,6 +372,8 @@ export async function updateProductImageSortOrder(productId: number, imageIds: n
         revalidatePath(`/admin/products/${productId}`)
         return { success: true }
     } catch (err: any) {
+        const freezeResult = toWriteFreezeActionResult(err)
+        if (freezeResult) return freezeResult
         return { message: 'Lỗi cập nhật thứ tự: ' + err.message }
     }
 }
@@ -413,6 +438,8 @@ export async function addProductRelationship(parentId: number, childId: number, 
         revalidatePath(`/admin/products/${parentId}`);
         return { success: true };
     } catch (err: any) {
+        const freezeResult = toWriteFreezeActionResult(err)
+        if (freezeResult) return freezeResult
         return { message: 'Lỗi thêm sản phẩm liên kết: ' + err.message };
     }
 }
@@ -427,6 +454,8 @@ export async function removeProductRelationship(id: number, parentId: number) {
         revalidatePath(`/admin/products/${parentId}`);
         return { success: true };
     } catch (err: any) {
+        const freezeResult = toWriteFreezeActionResult(err)
+        if (freezeResult) return freezeResult
         return { message: 'Lỗi xóa sản phẩm liên kết: ' + err.message };
     }
 }
@@ -496,6 +525,8 @@ export async function linkVariant(currentProductId: number, targetProductId: num
         revalidatePath(`/admin/products/${currentProductId}`);
         return { success: true };
     } catch (err: any) {
+        const freezeResult = toWriteFreezeActionResult(err)
+        if (freezeResult) return freezeResult
         console.error('Error linking variant:', err);
         return { message: 'Lỗi khi liên kết biến thể: ' + err.message };
     }
@@ -513,6 +544,8 @@ export async function unlinkVariant(productId: number, currentProductId: number)
         revalidatePath(`/admin/products/${currentProductId}`);
         return { success: true };
     } catch (err: any) {
+        const freezeResult = toWriteFreezeActionResult(err)
+        if (freezeResult) return freezeResult
         console.error('Error unlinking variant:', err);
         return { message: 'Lỗi khi hủy liên kết biến thể: ' + err.message };
     }
@@ -530,6 +563,8 @@ export async function bulkToggleFeatured(ids: number[], value: boolean) {
         revalidatePath('/')
         return { success: true, count: result.count }
     } catch (error) {
+        const freezeResult = toWriteFreezeActionResult(error)
+        if (freezeResult) return freezeResult
         console.error('Lỗi bulkToggleFeatured:', error)
         return { success: false, message: 'Lỗi server' }
     }
@@ -553,6 +588,8 @@ export async function updateProductSortOrders(updates: { id: number; sort_order:
         revalidatePath('/')
         return { success: true }
     } catch (err: unknown) {
+        const freezeResult = toWriteFreezeActionResult(err)
+        if (freezeResult) return freezeResult
         console.error('Error updating sort orders:', err)
         return { success: false, message: 'Lỗi cập nhật vị trí' }
     }

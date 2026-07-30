@@ -1,6 +1,7 @@
 import { createHash, randomBytes } from 'crypto'
 import prisma from '@/lib/prisma'
 import type { AdminRole } from './permissions'
+import { isWriteFreezeError } from '@/lib/write-freeze'
 
 // Session duration: 8 hours (configurable via SESSION_HOURS env)
 const SESSION_HOURS = parseInt(process.env.SESSION_HOURS ?? '8', 10)
@@ -84,7 +85,11 @@ export async function verifySession(token: string): Promise<SessionUser | null> 
     if (!session) return null
     if (session.expires_at < new Date()) {
         // Expired — clean up
-        await prisma.admin_sessions.delete({ where: { token_hash: tokenHash } })
+        try {
+            await prisma.admin_sessions.delete({ where: { token_hash: tokenHash } })
+        } catch (error) {
+            if (!isWriteFreezeError(error)) throw error
+        }
         return null
     }
     if (!session.user.is_active) return null
@@ -101,9 +106,12 @@ export async function verifySession(token: string): Promise<SessionUser | null> 
 /** Delete a session (logout). */
 export async function deleteSession(token: string): Promise<void> {
     const tokenHash = hashToken(token)
-    await prisma.admin_sessions
-        .delete({ where: { token_hash: tokenHash } })
-        .catch(() => {}) // Silently ignore if already deleted
+    try {
+        await prisma.admin_sessions.delete({ where: { token_hash: tokenHash } })
+    } catch (error) {
+        const code = typeof error === 'object' && error && 'code' in error ? error.code : undefined
+        if (!isWriteFreezeError(error) && code !== 'P2025') throw error
+    }
 }
 
 /** Delete all sessions for a user (force logout all devices). */

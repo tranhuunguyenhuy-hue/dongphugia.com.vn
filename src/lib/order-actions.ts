@@ -7,6 +7,7 @@ import { z } from 'zod'
 import { getCurrentUser, requireAuth, requirePermission } from '@/lib/auth/get-current-user'
 import { can } from '@/lib/auth/permissions'
 import { generateOrderNumber } from '@/lib/utils'
+import { toWriteFreezeActionResult } from '@/lib/write-freeze'
 
 // ─── SCHEMAS ─────────────────────────────────────────────────────────────────
 
@@ -96,6 +97,8 @@ export async function createOrder(data: unknown) {
         revalidatePath('/admin/orders')
         return { success: true, id: order.id, orderNumber: order.order_number }
     } catch (err: any) {
+        const freezeResult = toWriteFreezeActionResult(err)
+        if (freezeResult) return freezeResult
         return { message: 'Lỗi tạo đơn hàng: ' + err.message }
     }
 }
@@ -118,6 +121,8 @@ export async function updateOrderStatus(id: number, status: string) {
         revalidatePath(`/admin/orders/${id}`)
         return { success: true }
     } catch (err: any) {
+        const freezeResult = toWriteFreezeActionResult(err)
+        if (freezeResult) return freezeResult
         return { message: 'Lỗi cập nhật trạng thái: ' + err.message }
     }
 }
@@ -138,6 +143,8 @@ export async function updatePaymentStatus(id: number, paymentStatus: string) {
         revalidatePath(`/admin/orders/${id}`)
         return { success: true }
     } catch (err: any) {
+        const freezeResult = toWriteFreezeActionResult(err)
+        if (freezeResult) return freezeResult
         return { message: 'Lỗi cập nhật thanh toán: ' + err.message }
     }
 }
@@ -341,6 +348,8 @@ export async function createQuoteFromOrder(orderId: number) {
         })
         return { success: true, quoteId: quote.id }
     } catch (err: any) {
+        const freezeResult = toWriteFreezeActionResult(err)
+        if (freezeResult) return freezeResult
         return { success: false, error: err.message }
     }
 }
@@ -392,6 +401,8 @@ export async function updateOrderData(orderId: number, data: any) {
         revalidatePath(`/admin/orders/${orderId}`)
         return { success: true }
     } catch (error: any) {
+        const freezeResult = toWriteFreezeActionResult(error)
+        if (freezeResult) return freezeResult
         console.error('Failed to update order data:', error)
         return { success: false, error: 'Lỗi server khi lưu đơn hàng: ' + error.message }
     }
@@ -427,6 +438,8 @@ export async function assignOrder(orderId: number, userId: number | null) {
         revalidatePath(`/admin/orders/${orderId}`)
         return { success: true }
     } catch (error: any) {
+        const freezeResult = toWriteFreezeActionResult(error)
+        if (freezeResult) return freezeResult
         console.error('Failed to assign order:', error)
         return { success: false, error: 'Lỗi khi giao đơn hàng: ' + error.message }
     }

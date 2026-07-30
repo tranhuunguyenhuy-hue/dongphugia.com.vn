@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { unstable_cache } from "next/cache"
 import { connection } from "next/server"
 import { preload } from "react-dom"
 import { HeroBanner } from "@/components/home/hero-banner"
@@ -29,16 +30,13 @@ export const metadata: Metadata = {
     },
 }
 
-export default async function HomePage() {
-    await connection()
-
-    const [banners, tbvsData, bepData, gachData, nuocData, tbvsBrands, tbvsSubcats, bepSubcats, bepBrands] = await Promise.all([
+const getHomepageData = unstable_cache(
+    async () => Promise.all([
         prisma.banners.findMany({
             where: { is_active: true },
             orderBy: { sort_order: 'asc' },
             take: 5,
         }),
-        // getHomeFeaturedProducts(15), // Tạm ẩn để nghiên cứu thêm
         getFeaturedProductsByCategorySlug('thiet-bi-ve-sinh', ['toto', 'inax'], null, 0, 5),
         getFeaturedProductsByCategorySlug('thiet-bi-bep', null, null, 0, 5),
         getFeaturedProductsByCategorySlug('gach-op-lat', null, null, 0, 5),
@@ -48,13 +46,11 @@ export default async function HomePage() {
             select: { name: true, slug: true }
         }),
         prisma.subcategories.findMany({
-            where: { 
-                categories: { slug: 'thiet-bi-ve-sinh' }
-            },
+            where: { categories: { slug: 'thiet-bi-ve-sinh' } },
             select: { name: true, slug: true }
         }),
         prisma.subcategories.findMany({
-            where: { 
+            where: {
                 categories: { slug: 'thiet-bi-bep' },
                 slug: { notIn: ['thiet-bi-bep-khac'] }
             },
@@ -64,7 +60,15 @@ export default async function HomePage() {
             where: { products: { some: { categories: { slug: 'thiet-bi-bep' } } } },
             select: { name: true, slug: true }
         })
-    ])
+    ]),
+    ['homepage-data-v1'],
+    { revalidate: 3600, tags: ['homepage'] }
+)
+
+export default async function HomePage() {
+    await connection()
+
+    const [banners, tbvsData, bepData, gachData, nuocData, tbvsBrands, tbvsSubcats, bepSubcats, bepBrands] = await getHomepageData()
 
     const allCategories = [
         { 

@@ -43,3 +43,16 @@ export function isWriteFreezeError(error: unknown): error is WriteFreezeError {
 export function getWriteFreezeMessage() {
     return WRITE_FREEZE_MESSAGE
 }
+
+export function toWriteFreezeActionResult(error: unknown) {
+    if (!isWriteFreezeError(error)) return null
+
+    return {
+        success: false as const,
+        errors: undefined,
+        error: WRITE_FREEZE_MESSAGE,
+        message: WRITE_FREEZE_MESSAGE,
+        code: WRITE_FREEZE_ERROR_CODE,
+        statusCode: 503 as const,
+    }
+}

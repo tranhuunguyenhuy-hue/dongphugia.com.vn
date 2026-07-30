@@ -9,9 +9,24 @@ jobs:
   homepage-readiness:
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:16.10-bookworm@sha256:38471f330eb885e04de130b768d6db4e10469e2311879c7e5c699f6d2d8a1c74
+        env:
+          POSTGRES_DB: dpg_homepage_test
+          POSTGRES_USER: dpg_homepage_test
+          POSTGRES_PASSWORD: dpg_homepage_test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U dpg_homepage_test -d dpg_homepage_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
     env:
-      DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      DIRECT_URL: ${{ secrets.DIRECT_URL }}
+      POSTGRES_DB: dpg_homepage_test
+      POSTGRES_USER: dpg_homepage_test
+      POSTGRES_PASSWORD: dpg_homepage_test_password
       NEXT_PUBLIC_SITE_URL: http://localhost:3000
       BUNNY_CDN_HOSTNAME: cdn.dongphugia.com.vn
 
@@ -23,6 +38,21 @@ jobs:
           node-version: 22
           cache: npm
 
+      - name: Bootstrap ephemeral homepage database
+        shell: bash
+        env:
+          POSTGRES_NETWORK: ${{ job.services.postgres.network }}
+        run: |
+          set -euo pipefail
+          docker run --rm --network "$POSTGRES_NETWORK" \
+            -e PGPASSWORD=dpg_homepage_test_password \
+            -v "$PWD/docs/deploy/staging-db-bootstrap:/bootstrap:ro" \
+            postgres:16.10-bookworm@sha256:38471f330eb885e04de130b768d6db4e10469e2311879c7e5c699f6d2d8a1c74 \
+            psql --set=ON_ERROR_STOP=1 --single-transaction \
+              -h postgres -U dpg_homepage_test -d dpg_homepage_test \
+              --file=/bootstrap/001_schema_from_prisma.sql \
+              --file=/bootstrap/002_seed_synthetic_stg_demo.sql
+
       - run: npm ci
 
       - run: npx playwright install --with-deps chromium
@@ -31,4 +61,12 @@ jobs:
         run: npx tsc --noEmit
 
       - name: Homepage readiness
-        run: npm run quality:homepage
+        shell: bash
+        run: |
+          set -euo pipefail
+          database_scheme=postgresql
+          printf -v database_url '%s://%s:%s@127.0.0.1:5432/%s' \
+            "$database_scheme" "$POSTGRES_USER" "$POSTGRES_PASSWORD" "$POSTGRES_DB"
+          export DATABASE_URL="$database_url"
+          export DIRECT_URL="$database_url"
+          npm run quality:homepage

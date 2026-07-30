@@ -6,6 +6,7 @@ import { requirePermission, getCurrentUser } from '@/lib/auth/get-current-user'
 import { hashPassword } from '@/lib/auth/password'
 import type { AdminRole } from '@/lib/auth/permissions'
 import type { Prisma } from '@prisma/client'
+import { toWriteFreezeActionResult } from '@/lib/write-freeze'
 
 export async function saveUser(data: {
     id?: number
@@ -92,6 +93,8 @@ export async function saveUser(data: {
         revalidatePath('/admin/users')
         return { success: true }
     } catch (error) {
+        const freezeResult = toWriteFreezeActionResult(error)
+        if (freezeResult) return freezeResult
         console.error('Save user error:', error)
         return { success: false, error: 'Đã có lỗi xảy ra' }
     }
