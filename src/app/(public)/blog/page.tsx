@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { connection } from 'next/server'
 import { ChevronRight } from 'lucide-react'
 import { PostCard, BlogPost } from '@/components/blog/post-card'
 
@@ -15,6 +16,8 @@ export const metadata: Metadata = {
 }
 
 export default async function BlogPage() {
+    await connection()
+
     const [{ posts }, categories, tags] = await Promise.all([
         getBlogPosts({ limit: 9 }),
         getBlogCategories(),

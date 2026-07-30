@@ -2,11 +2,6 @@ name: Build staging container
 
 on:
   workflow_dispatch:
-    inputs:
-      image_tag:
-        description: Optional image tag suffix. Defaults to the commit SHA.
-        required: false
-        type: string
 
 permissions:
   contents: read
@@ -18,19 +13,113 @@ concurrency:
 
 env:
   IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/dongphugia-web
+  POSTGRES_IMAGE: postgres:16.10-bookworm@sha256:38471f330eb885e04de130b768d6db4e10469e2311879c7e5c699f6d2d8a1c74
+  BUILD_DATABASE_URL: postgresql://dpg_staging_build:dpg_staging_build_password@postgres:5432/dpg_staging_build
+  DEFAULT_STAGING_SITE_URL: https://dongphugia-staging.47-131-92-97.sslip.io
+  DEFAULT_BUNNY_CDN_HOSTNAME: cdn.dongphugia.com.vn
 
 jobs:
   build:
     name: Build and push linux/arm64 image
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     timeout-minutes: 40
+    environment: staging
+
+    services:
+      postgres:
+        image: postgres:16.10-bookworm@sha256:38471f330eb885e04de130b768d6db4e10469e2311879c7e5c699f6d2d8a1c74
+        env:
+          POSTGRES_DB: dpg_staging_build
+          POSTGRES_USER: dpg_staging_build
+          POSTGRES_PASSWORD: dpg_staging_build_password
+        options: >-
+          --health-cmd "pg_isready -U dpg_staging_build -d dpg_staging_build"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+      - name: Validate staging configuration
+        shell: bash
+        env:
+          STAGING_SITE_URL: ${{ vars.STAGING_SITE_URL || env.DEFAULT_STAGING_SITE_URL }}
+          STAGING_BUNNY_CDN_HOSTNAME: ${{ vars.STAGING_BUNNY_CDN_HOSTNAME || env.DEFAULT_BUNNY_CDN_HOSTNAME }}
+        run: |
+          set -euo pipefail
+          missing=()
+          [ -n "$STAGING_SITE_URL" ] || missing+=("STAGING_SITE_URL")
+          [ -n "$STAGING_BUNNY_CDN_HOSTNAME" ] || missing+=("STAGING_BUNNY_CDN_HOSTNAME")
+          if [ "${#missing[@]}" -gt 0 ]; then
+            printf 'Missing required staging configuration keys:\n'
+            printf -- '- %s\n' "${missing[@]}"
+            exit 1
+          fi
+
+          case "$STAGING_SITE_URL" in
+            *dongphugia.vn*|*dongphugia.com.vn*)
+              echo "STAGING_SITE_URL must not use the production domain."
+              exit 1
+              ;;
+          esac
+
+      - name: Bootstrap ephemeral build database
+        shell: bash
+        env:
+          BUILD_NETWORK: ${{ job.services.postgres.network }}
+        run: |
+          set -euo pipefail
+
+          docker run --rm --network "$BUILD_NETWORK" \
+            -e PGPASSWORD=dpg_staging_build_password \
+            -v "$PWD/docs/deploy/staging-db-bootstrap:/bootstrap:ro" \
+            "$POSTGRES_IMAGE" \
+            psql \
+              --set=ON_ERROR_STOP=1 \
+              --single-transaction \
+              -h postgres \
+              -U dpg_staging_build \
+              -d dpg_staging_build \
+              --file=/bootstrap/001_schema_from_prisma.sql \
+              --file=/bootstrap/002_seed_synthetic_stg_demo.sql
+
+          tables="$(
+            docker run --rm --network "$BUILD_NETWORK" \
+              -e PGPASSWORD=dpg_staging_build_password \
+              "$POSTGRES_IMAGE" \
+              psql -h postgres -U dpg_staging_build -d dpg_staging_build -Atc \
+                "select count(*) from information_schema.tables where table_schema = 'public' and table_type = 'BASE TABLE';"
+          )"
+          products="$(
+            docker run --rm --network "$BUILD_NETWORK" \
+              -e PGPASSWORD=dpg_staging_build_password \
+              "$POSTGRES_IMAGE" \
+              psql -h postgres -U dpg_staging_build -d dpg_staging_build -Atc \
+                "select count(*) from products where sku like 'STG-DEMO-%';"
+          )"
+
+          if [ "$tables" != "46" ] || [ "$products" != "3" ]; then
+            echo "Ephemeral build database bootstrap validation failed."
+            exit 1
+          fi
+
+      - name: Verify native ARM64 build environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          runner_arch="$(uname -m)"
+          docker_arch="$(docker info --format '{{.Architecture}}')"
+          node_arch="$(node -p 'process.arch')"
+
+          case "$runner_arch" in aarch64|arm64) ;; *) exit 1 ;; esac
+          case "$docker_arch" in aarch64|arm64) ;; *) exit 1 ;; esac
+          test "$node_arch" = "arm64"
+
+          printf 'Runner architecture: %s\n' "$runner_arch"
+          printf 'Docker architecture: %s\n' "$docker_arch"
+          printf 'Node architecture: %s\n' "$node_arch"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -47,45 +136,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          suffix="${{ inputs.image_tag }}"
-          if [ -z "$suffix" ]; then
-            suffix="${GITHUB_SHA}"
-          fi
-          echo "tag=staging-${suffix}" >> "$GITHUB_OUTPUT"
+          echo "tag=staging-${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
           echo "sha_short=${GITHUB_SHA::12}" >> "$GITHUB_OUTPUT"
 
-      - name: Validate staging configuration
-        shell: bash
-        env:
-          STAGING_SITE_URL: ${{ vars.STAGING_SITE_URL }}
-          STAGING_NEXT_PUBLIC_SUPABASE_URL: ${{ vars.STAGING_NEXT_PUBLIC_SUPABASE_URL }}
-          STAGING_NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY: ${{ vars.STAGING_NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY }}
-          STAGING_BUNNY_CDN_HOSTNAME: ${{ vars.STAGING_BUNNY_CDN_HOSTNAME }}
-          STAGING_DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
-          STAGING_DIRECT_URL: ${{ secrets.STAGING_DIRECT_URL }}
-        run: |
-          set -euo pipefail
-          missing=()
-          [ -n "$STAGING_SITE_URL" ] || missing+=("STAGING_SITE_URL")
-          [ -n "$STAGING_NEXT_PUBLIC_SUPABASE_URL" ] || missing+=("STAGING_NEXT_PUBLIC_SUPABASE_URL")
-          [ -n "$STAGING_NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY" ] || missing+=("STAGING_NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY")
-          [ -n "$STAGING_BUNNY_CDN_HOSTNAME" ] || missing+=("STAGING_BUNNY_CDN_HOSTNAME")
-          [ -n "$STAGING_DATABASE_URL" ] || missing+=("STAGING_DATABASE_URL")
-          [ -n "$STAGING_DIRECT_URL" ] || missing+=("STAGING_DIRECT_URL")
-          if [ "${#missing[@]}" -gt 0 ]; then
-            printf 'Missing required staging configuration keys:\n'
-            printf -- '- %s\n' "${missing[@]}"
-            exit 1
-          fi
-
-          case "$STAGING_SITE_URL" in
-            *dongphugia.vn*|*dongphugia.com.vn*)
-              echo "STAGING_SITE_URL must not use the production domain."
-              exit 1
-              ;;
-          esac
-
       - name: Build and push
+        id: build
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -96,20 +151,237 @@ jobs:
           sbom: true
           tags: |
             ${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.tag }}
-            ${{ env.IMAGE_NAME }}:staging-latest
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.version=${{ steps.meta.outputs.tag }}
           build-args: |
-            NEXT_PUBLIC_SITE_URL=${{ vars.STAGING_SITE_URL }}
-            NEXT_PUBLIC_SUPABASE_URL=${{ vars.STAGING_NEXT_PUBLIC_SUPABASE_URL }}
-            NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY=${{ vars.STAGING_NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY }}
+            NEXT_PUBLIC_SITE_URL=${{ vars.STAGING_SITE_URL || env.DEFAULT_STAGING_SITE_URL }}
             NEXT_PUBLIC_GTM_ID=${{ vars.STAGING_NEXT_PUBLIC_GTM_ID }}
-            BUNNY_CDN_HOSTNAME=${{ vars.STAGING_BUNNY_CDN_HOSTNAME }}
-          secrets: |
-            DATABASE_URL=${{ secrets.STAGING_DATABASE_URL }}
-            DIRECT_URL=${{ secrets.STAGING_DIRECT_URL }}
+            BUNNY_CDN_HOSTNAME=${{ vars.STAGING_BUNNY_CDN_HOSTNAME || env.DEFAULT_BUNNY_CDN_HOSTNAME }}
+
+      - name: Verify image manifest and attestations
+        id: verify
+        shell: bash
+        env:
+          IMAGE_REF: ${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
+          EXPECTED_DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          set -euo pipefail
+
+          docker pull "$IMAGE_REF" >/dev/null
+          actual_digest="$(docker image inspect "$IMAGE_REF" --format '{{index .RepoDigests 0}}' | sed 's/^.*@//')"
+          image_arch="$(docker image inspect "$IMAGE_REF" --format '{{.Architecture}}')"
+          source_revision="$(docker image inspect "$IMAGE_REF" --format '{{index .Config.Labels "org.opencontainers.image.revision"}}')"
+
+          test "$actual_digest" = "$EXPECTED_DIGEST"
+          test "$image_arch" = "arm64"
+          test "$source_revision" = "$GITHUB_SHA"
+
+          docker buildx imagetools inspect "$IMAGE_REF" --raw > /tmp/image-manifest.json
+          image_manifests="$(jq '[.manifests[] | select(.platform.os != "unknown")] | length' /tmp/image-manifest.json)"
+          arm64_manifests="$(jq '[.manifests[] | select(.platform.os == "linux" and .platform.architecture == "arm64")] | length' /tmp/image-manifest.json)"
+          unexpected_manifests="$(jq '[.manifests[] | select(.platform.os != "unknown") | select(.platform.os != "linux" or .platform.architecture != "arm64")] | length' /tmp/image-manifest.json)"
+          test "$image_manifests" = "1"
+          test "$arm64_manifests" = "1"
+          test "$unexpected_manifests" = "0"
+
+          docker buildx imagetools inspect "$IMAGE_REF" --format '{{json .SBOM}}' > /tmp/image-sbom.json
+          docker buildx imagetools inspect "$IMAGE_REF" --format '{{json .Provenance}}' > /tmp/image-provenance.json
+          sbom_sections="$(jq 'if type == "object" then length else 0 end' /tmp/image-sbom.json)"
+          provenance_sections="$(jq 'if type == "object" then length else 0 end' /tmp/image-provenance.json)"
+          test "$sbom_sections" -gt 0
+          test "$provenance_sections" -gt 0
+
+          printf 'Registry digest verified: %s\n' "$actual_digest"
+          printf 'Registry image platform verified: linux/%s\n' "$image_arch"
+          printf 'Source revision label verified: %s\n' "$source_revision"
+          printf 'SBOM sections verified from registry: %s\n' "$sbom_sections"
+          printf 'Provenance sections verified from registry: %s\n' "$provenance_sections"
+
+          echo "sbom_sections=$sbom_sections" >> "$GITHUB_OUTPUT"
+          echo "provenance_sections=$provenance_sections" >> "$GITHUB_OUTPUT"
+
+      - name: Scan pushed digest for HIGH and CRITICAL vulnerabilities
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: ${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
+          format: json
+          output: /tmp/trivy-results.json
+          severity: HIGH,CRITICAL
+          ignore-unfixed: false
+          exit-code: '0'
+
+      - name: Enforce security scan result
+        id: scan
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s /tmp/trivy-results.json
+
+          critical_count="$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "CRITICAL")] | length' /tmp/trivy-results.json)"
+          high_count="$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "HIGH")] | length' /tmp/trivy-results.json)"
+          printf 'Trivy HIGH findings: %s\n' "$high_count"
+          printf 'Trivy CRITICAL findings: %s\n' "$critical_count"
+
+          if [ "$high_count" -gt 0 ] || [ "$critical_count" -gt 0 ]; then
+            jq -r '.Results[]? as $result | $result.Vulnerabilities[]? | select(.Severity == "HIGH" or .Severity == "CRITICAL") | [.Severity, .VulnerabilityID, $result.Target, .PkgName, .InstalledVersion, (.FixedVersion // "unfixed")] | @tsv' /tmp/trivy-results.json
+            exit 1
+          fi
+
+          echo "high_count=$high_count" >> "$GITHUB_OUTPUT"
+          echo "critical_count=$critical_count" >> "$GITHUB_OUTPUT"
+
+      - name: Smoke test pushed image
+        shell: bash
+        env:
+          IMAGE_REF: ${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
+          BUILD_NETWORK: ${{ job.services.postgres.network }}
+          STAGING_SITE_URL: ${{ vars.STAGING_SITE_URL || env.DEFAULT_STAGING_SITE_URL }}
+          STAGING_BUNNY_CDN_HOSTNAME: ${{ vars.STAGING_BUNNY_CDN_HOSTNAME || env.DEFAULT_BUNNY_CDN_HOSTNAME }}
+        run: |
+          set -euo pipefail
+
+          docker run --rm --detach \
+            --name dpg-staging-image-smoke \
+            --platform linux/arm64 \
+            --network "$BUILD_NETWORK" \
+            -e DATABASE_URL="$BUILD_DATABASE_URL" \
+            -e DIRECT_URL="$BUILD_DATABASE_URL" \
+            -e NEXT_PUBLIC_SITE_URL="$STAGING_SITE_URL" \
+            -e BUNNY_CDN_HOSTNAME="$STAGING_BUNNY_CDN_HOSTNAME" \
+            "$IMAGE_REF"
+
+          redact_file() {
+            local source_file="$1"
+            [ -s "$source_file" ] || return 0
+            SOURCE_FILE="$source_file" node <<'NODE'
+          const fs = require('fs')
+          const source = process.env.SOURCE_FILE
+          let output = fs.readFileSync(source, 'utf8')
+          output = output
+            .replace(/postgres(?:ql)?:\/\/[^\s"'`]+/gi, 'postgresql://[REDACTED]')
+            .replace(/((?:password|passwd|token|secret|app_key)\s*[=:]\s*)[^\s,;]+/gi, '$1[REDACTED]')
+            .replace(/dpg_staging_build_password/g, '[REDACTED]')
+          process.stdout.write(output)
+          NODE
+          }
+
+          capture_health_log() {
+            docker inspect dpg-staging-image-smoke \
+              --format '{{json .State.Health.Log}}' > /tmp/dpg-health.log 2>&1 \
+              || true
+            echo "Redacted Docker health log:"
+            redact_file /tmp/dpg-health.log
+          }
+
+          capture_evidence() {
+            echo "Smoke failure evidence (sensitive values redacted):"
+            printf 'Runner architecture: %s\n' "$(uname -m)"
+            printf 'Docker architecture: %s\n' "$(docker info --format '{{.Architecture}}')"
+            printf 'Image architecture: %s\n' "$(docker image inspect "$IMAGE_REF" --format '{{.Architecture}}')"
+            docker inspect dpg-staging-image-smoke \
+              --format 'Container status={{.State.Status}} health={{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}} restartCount={{.RestartCount}}' \
+              || true
+            printf 'Last health HTTP status: %s\n' "${health_status:-not-recorded}"
+            printf 'Last homepage HTTP status: %s\n' "${homepage_status:-not-recorded}"
+            capture_health_log
+
+            docker exec dpg-staging-image-smoke node -e \
+              "require('dns').lookup('postgres', (error, address, family) => { if (error) { console.error('DNS probe failed:', error.code || 'unknown'); process.exit(1) } console.log('DNS probe passed:', address, 'IPv' + family) })" \
+              || true
+            docker exec dpg-staging-image-smoke node -e \
+              "const socket = require('net').createConnection({ host: 'postgres', port: 5432 }); socket.setTimeout(5000); socket.on('connect', () => { console.log('TCP probe passed: postgres:5432'); socket.end() }); socket.on('timeout', () => { console.error('TCP probe failed: timeout'); socket.destroy(); process.exit(1) }); socket.on('error', error => { console.error('TCP probe failed:', error.code || 'unknown'); process.exit(1) })" \
+              || true
+
+            docker exec dpg-staging-image-smoke sh -c \
+              'if command -v openssl >/dev/null 2>&1; then openssl version; else echo "OpenSSL executable: missing"; fi' \
+              || true
+            docker exec dpg-staging-image-smoke sh -c \
+              'engines="$(find /app -type f -name "*query_engine*" -print)"; if [ -z "$engines" ]; then echo "Prisma engine files: missing"; exit 0; fi; printf "%s\n" "$engines"; for engine in $engines; do echo "ldd: $engine"; ldd "$engine" || true; done' \
+              || true
+
+            docker logs dpg-staging-image-smoke > /tmp/dpg-smoke.log 2>&1 || true
+            echo "Redacted application container logs:"
+            redact_file /tmp/dpg-smoke.log
+            if [ -s /tmp/health.json ]; then
+              echo "Redacted health response:"
+              redact_file /tmp/health.json
+            fi
+          }
+
+          cleanup() {
+            docker rm -f dpg-staging-image-smoke >/dev/null 2>&1 || true
+            rm -f /tmp/dpg-smoke.log /tmp/dpg-health.log /tmp/health.json
+          }
+          on_exit() {
+            status=$?
+            trap - EXIT
+            if [ "$status" -ne 0 ]; then
+              capture_evidence || true
+            fi
+            cleanup
+            exit "$status"
+          }
+          trap on_exit EXIT
+
+          smoke_ip="$(docker inspect dpg-staging-image-smoke --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}')"
+
+          health_status=000
+          for _ in $(seq 1 40); do
+            health_status="$(curl -sS -o /tmp/health.json -w '%{http_code}' "http://$smoke_ip:3000/api/health" || true)"
+            if [ "$health_status" = "200" ]; then
+              break
+            fi
+            sleep 3
+          done
+
+          test "$health_status" = "200"
+          node -e "const fs = require('fs'); const body = JSON.parse(fs.readFileSync('/tmp/health.json', 'utf8')); if (!body.ok || JSON.stringify(body).includes('DATABASE_URL')) process.exit(1)"
+
+          homepage_status="$(curl -sS -o /dev/null -w '%{http_code}' "http://$smoke_ip:3000/" || true)"
+          test "$homepage_status" = "200"
+
+          container_health=starting
+          health_wait_started=$SECONDS
+          health_timeout_seconds=120
+          while true; do
+            container_status="$(docker inspect dpg-staging-image-smoke --format '{{.State.Status}}')"
+            container_health="$(docker inspect dpg-staging-image-smoke --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}')"
+            restart_count="$(docker inspect dpg-staging-image-smoke --format '{{.RestartCount}}')"
+            health_wait_elapsed=$((SECONDS - health_wait_started))
+
+            if [ "$container_status" != "running" ]; then
+              echo "Smoke container exited before becoming healthy: status=$container_status" >&2
+              exit 1
+            fi
+            if [ "$restart_count" != "0" ]; then
+              echo "Smoke container restarted before becoming healthy: restartCount=$restart_count" >&2
+              exit 1
+            fi
+            if [ "$container_health" = "healthy" ]; then
+              break
+            fi
+            if [ "$container_health" = "unhealthy" ]; then
+              echo "Smoke container reported unhealthy after ${health_wait_elapsed}s" >&2
+              exit 1
+            fi
+            if [ "$health_wait_elapsed" -ge "$health_timeout_seconds" ]; then
+              echo "Smoke container health timed out after ${health_wait_elapsed}s: health=$container_health" >&2
+              exit 1
+            fi
+            sleep 3
+          done
+
+          test "$container_health" = "healthy"
+          test "$restart_count" = "0"
+          test "$container_status" = "running"
+
+          capture_health_log
+          printf 'Smoke health status: %s\n' "$container_health"
+          printf 'Smoke container status: %s\n' "$container_status"
+          printf 'Smoke restart count: %s\n' "$restart_count"
+          printf 'Smoke health wait: %ss\n' "$health_wait_elapsed"
 
       - name: Summary
         shell: bash
@@ -118,7 +390,12 @@ jobs:
             echo "### Staging image"
             echo
             echo "- Image: \`${IMAGE_NAME}:${{ steps.meta.outputs.tag }}\`"
-            echo "- Rolling tag: \`${IMAGE_NAME}:staging-latest\`"
+            echo "- Digest: \`${{ steps.build.outputs.digest }}\`"
             echo "- Platform: \`linux/arm64\`"
             echo "- Commit: \`${GITHUB_SHA}\`"
+            echo "- SBOM sections verified: \`${{ steps.verify.outputs.sbom_sections }}\`"
+            echo "- Provenance sections verified: \`${{ steps.verify.outputs.provenance_sections }}\`"
+            echo "- Trivy HIGH findings: \`${{ steps.scan.outputs.high_count }}\`"
+            echo "- Trivy CRITICAL findings: \`${{ steps.scan.outputs.critical_count }}\`"
+            echo "- Smoke test: \`GET /api/health\` and \`GET /\` passed"
           } >> "$GITHUB_STEP_SUMMARY"

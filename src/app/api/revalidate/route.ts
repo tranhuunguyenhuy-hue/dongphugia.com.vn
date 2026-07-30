@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { revalidatePath } from 'next/cache'
+import { getWriteFreezeMessage, requireWritesAllowed, WRITE_FREEZE_ERROR_CODE } from '@/lib/write-freeze'
 
 /**
  * Cross-domain cache revalidation endpoint.
@@ -31,6 +32,15 @@ export async function POST(req: NextRequest) {
   }
   if (secret !== process.env.REVALIDATION_SECRET) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  try {
+    requireWritesAllowed('api.revalidate')
+  } catch {
+    return NextResponse.json(
+      { error: getWriteFreezeMessage(), code: WRITE_FREEZE_ERROR_CODE },
+      { status: 503 }
+    )
   }
 
   // 2. Parse body

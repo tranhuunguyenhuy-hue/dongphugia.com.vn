@@ -27,8 +27,6 @@ These values are not secrets, but they affect the built Next.js client/runtime.
 | Name | Purpose |
 | --- | --- |
 | `STAGING_SITE_URL` | Temporary staging URL, not `dongphugia.vn` |
-| `STAGING_NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
-| `STAGING_NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY` | Supabase public publishable key |
 | `STAGING_NEXT_PUBLIC_GTM_ID` | Optional staging GTM ID; may be blank |
 | `STAGING_BUNNY_CDN_HOSTNAME` | Bunny CDN hostname |
 
@@ -36,8 +34,8 @@ These values are not secrets, but they affect the built Next.js client/runtime.
 
 | Name | Purpose |
 | --- | --- |
-| `STAGING_DATABASE_URL` | Supabase pooled PostgreSQL URL for app runtime/build |
-| `STAGING_DIRECT_URL` | Supabase direct PostgreSQL URL for Prisma; may match direct connection policy |
+| `STAGING_DATABASE_URL` | Self-hosted staging PostgreSQL URL for app runtime/build |
+| `STAGING_DIRECT_URL` | Self-hosted staging PostgreSQL direct URL for Prisma; may match runtime URL |
 
 The workflow intentionally fails before Docker build if any required key is
 missing, or if `STAGING_SITE_URL` uses the production domain.
@@ -48,20 +46,18 @@ Enter these through Coolify only. Do not commit values to the repository.
 
 | Name | Notes |
 | --- | --- |
-| `DATABASE_URL` | Supabase pooled PostgreSQL URL |
-| `DIRECT_URL` | Supabase direct PostgreSQL URL |
+| `DATABASE_URL` | Self-hosted staging PostgreSQL URL |
+| `DIRECT_URL` | Self-hosted staging PostgreSQL direct URL |
 | `AUTH_SECRET` | Application auth secret |
 | `ADMIN_PASSWORD` | Existing admin password model uses this in the current codebase |
 | `NEXT_PUBLIC_SITE_URL` | Temporary staging URL, not production domain |
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase URL |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY` | Supabase public publishable key |
 | `NEXT_PUBLIC_GTM_ID` | Optional |
 | `BUNNY_CDN_HOSTNAME` | Bunny CDN hostname |
 | `BUNNY_STORAGE_ZONE_NAME` | Required for upload/image admin flows |
 | `BUNNY_STORAGE_API_KEY` | Required for upload/image admin flows; secret |
 | `BUNNY_STORAGE_HOSTNAME` | Bunny storage endpoint |
-| `SUPABASE_SERVICE_ROLE_KEY` | Required only for scripts/admin paths that use service role; secret |
 | `REVALIDATION_SECRET` | Existing app env key |
+| `WRITE_FREEZE_MODE` | Optional cutover guard. Leave unset/false unless a future migration gate approves a write freeze. |
 
 ## Temporary staging domain
 

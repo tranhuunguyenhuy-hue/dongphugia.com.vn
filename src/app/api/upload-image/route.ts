@@ -10,6 +10,7 @@ import {
     type MediaVariant,
 } from '@/lib/media/media-profiles'
 import { processImage } from '@/lib/media/process-image'
+import { getWriteFreezeMessage, isWriteFreezeError, requireWritesAllowed, WRITE_FREEZE_ERROR_CODE } from '@/lib/write-freeze'
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 const MAX_SIZE_BYTES = 5 * 1024 * 1024 // 5MB
@@ -73,6 +74,8 @@ async function deleteFromBunny(config: BunnyConfig, filePath: string) {
 
 export async function POST(request: NextRequest) {
     try {
+        requireWritesAllowed('api.upload-image')
+
         // Auth guard — only authenticated admin users can upload
         const user = await getCurrentUser()
         if (!user) {
@@ -192,6 +195,16 @@ export async function POST(request: NextRequest) {
             throw error
         }
     } catch (error: unknown) {
+        if (isWriteFreezeError(error)) {
+            return NextResponse.json(
+                {
+                    error: getWriteFreezeMessage(),
+                    code: WRITE_FREEZE_ERROR_CODE,
+                },
+                { status: 503 },
+            )
+        }
+
         const message =
             error instanceof Error ? error.message : 'Lỗi không xác định'
         console.error('[upload-image] Unexpected error:', error)

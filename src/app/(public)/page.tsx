@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { connection } from "next/server"
 import { preload } from "react-dom"
 import { HeroBanner } from "@/components/home/hero-banner"
 import { BrandSlider } from "@/components/home/brand-slider"
@@ -29,6 +30,8 @@ export const metadata: Metadata = {
 }
 
 export default async function HomePage() {
+    await connection()
+
     const [banners, tbvsData, bepData, gachData, nuocData, tbvsBrands, tbvsSubcats, bepSubcats, bepBrands] = await Promise.all([
         prisma.banners.findMany({
             where: { is_active: true },
