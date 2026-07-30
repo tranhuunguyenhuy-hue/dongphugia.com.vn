@@ -196,22 +196,86 @@ jobs:
             -e BUNNY_CDN_HOSTNAME="$STAGING_BUNNY_CDN_HOSTNAME" \
             "$IMAGE_REF"
 
+          redact_file() {
+            local source_file="$1"
+            [ -s "$source_file" ] || return 0
+            SOURCE_FILE="$source_file" node <<'NODE'
+          const fs = require('fs')
+          const source = process.env.SOURCE_FILE
+          let output = fs.readFileSync(source, 'utf8')
+          output = output
+            .replace(/postgres(?:ql)?:\/\/[^\s"'`]+/gi, 'postgresql://[REDACTED]')
+            .replace(/((?:password|passwd|token|secret|app_key)\s*[=:]\s*)[^\s,;]+/gi, '$1[REDACTED]')
+            .replace(/dpg_staging_build_password/g, '[REDACTED]')
+          process.stdout.write(output)
+          NODE
+          }
+
+          capture_evidence() {
+            echo "Smoke failure evidence (sensitive values redacted):"
+            printf 'Runner architecture: %s\n' "$(uname -m)"
+            printf 'Docker architecture: %s\n' "$(docker info --format '{{.Architecture}}')"
+            printf 'Image architecture: %s\n' "$(docker image inspect "$IMAGE_REF" --format '{{.Architecture}}')"
+            docker inspect dpg-staging-image-smoke \
+              --format 'Container status={{.State.Status}} health={{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}} restartCount={{.RestartCount}}' \
+              || true
+            printf 'Last health HTTP status: %s\n' "${health_status:-not-recorded}"
+            printf 'Last homepage HTTP status: %s\n' "${homepage_status:-not-recorded}"
+
+            docker exec dpg-staging-image-smoke node -e \
+              "require('dns').lookup('postgres', (error, address, family) => { if (error) { console.error('DNS probe failed:', error.code || 'unknown'); process.exit(1) } console.log('DNS probe passed:', address, 'IPv' + family) })" \
+              || true
+            docker exec dpg-staging-image-smoke node -e \
+              "const socket = require('net').createConnection({ host: 'postgres', port: 5432 }); socket.setTimeout(5000); socket.on('connect', () => { console.log('TCP probe passed: postgres:5432'); socket.end() }); socket.on('timeout', () => { console.error('TCP probe failed: timeout'); socket.destroy(); process.exit(1) }); socket.on('error', error => { console.error('TCP probe failed:', error.code || 'unknown'); process.exit(1) })" \
+              || true
+
+            docker exec dpg-staging-image-smoke sh -c \
+              'if command -v openssl >/dev/null 2>&1; then openssl version; else echo "OpenSSL executable: missing"; fi' \
+              || true
+            docker exec dpg-staging-image-smoke sh -c \
+              'engines="$(find /app -type f -name "*query_engine*" -print)"; if [ -z "$engines" ]; then echo "Prisma engine files: missing"; exit 0; fi; printf "%s\n" "$engines"; for engine in $engines; do echo "ldd: $engine"; ldd "$engine" || true; done' \
+              || true
+
+            docker logs dpg-staging-image-smoke > /tmp/dpg-smoke.log 2>&1 || true
+            echo "Redacted application container logs:"
+            redact_file /tmp/dpg-smoke.log
+            if [ -s /tmp/health.json ]; then
+              echo "Redacted health response:"
+              redact_file /tmp/health.json
+            fi
+          }
+
           cleanup() {
             docker rm -f dpg-staging-image-smoke >/dev/null 2>&1 || true
+            rm -f /tmp/dpg-smoke.log /tmp/health.json
           }
-          trap cleanup EXIT
+          on_exit() {
+            status=$?
+            trap - EXIT
+            if [ "$status" -ne 0 ]; then
+              capture_evidence || true
+            fi
+            cleanup
+            exit "$status"
+          }
+          trap on_exit EXIT
 
           smoke_ip="$(docker inspect dpg-staging-image-smoke --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}')"
 
+          health_status=000
           for _ in $(seq 1 40); do
-            if curl -fsS "http://$smoke_ip:3000/api/health" >/tmp/health.json; then
+            health_status="$(curl -sS -o /tmp/health.json -w '%{http_code}' "http://$smoke_ip:3000/api/health" || true)"
+            if [ "$health_status" = "200" ]; then
               break
             fi
             sleep 3
           done
 
-          curl -fsS "http://$smoke_ip:3000/" >/dev/null
+          test "$health_status" = "200"
           node -e "const fs = require('fs'); const body = JSON.parse(fs.readFileSync('/tmp/health.json', 'utf8')); if (!body.ok || JSON.stringify(body).includes('DATABASE_URL')) process.exit(1)"
+
+          homepage_status="$(curl -sS -o /dev/null -w '%{http_code}' "http://$smoke_ip:3000/" || true)"
+          test "$homepage_status" = "200"
 
       - name: Summary
         shell: bash
