@@ -20,7 +20,6 @@ type HeroBannerProps = { banners: Banner[] }
 // Standard banner aspect ratio: 16:9
 const BANNER_WIDTH = 1600
 const BANNER_HEIGHT = 900
-const AUTO_ADVANCE_INTERVAL_MS = 8000
 
 /**
  * Hero banner carousel
@@ -48,7 +47,7 @@ export function HeroBanner({ banners }: HeroBannerProps) {
             isPaused ||
             prefersReducedMotion
         ) return
-        timerRef.current = setInterval(next, AUTO_ADVANCE_INTERVAL_MS)
+        timerRef.current = setInterval(next, 5000)
         return () => { if (timerRef.current) clearInterval(timerRef.current) }
     }, [next, items.length, isPaused])
 
