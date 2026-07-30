@@ -19,8 +19,8 @@ const beVietnamPro = Be_Vietnam_Pro({
 const playfairDisplay = Playfair_Display({
   variable: "--font-display",
   subsets: ["latin", "vietnamese"],
-  weight: ["400", "600", "700"],
-  style: ["normal", "italic"],
+  weight: "variable",
+  style: "normal",
   display: "swap",
   preload: false,
 });

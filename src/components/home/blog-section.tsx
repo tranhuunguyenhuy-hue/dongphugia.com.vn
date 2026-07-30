@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import prisma from '@/lib/prisma'
-import { ResponsiveMedia } from '@/components/media/responsive-media'
+import { DeferredResponsiveMedia } from '@/components/media/deferred-responsive-media'
 
 export const revalidate = 3600
 
@@ -52,7 +52,7 @@ export async function BlogSection() {
                                 className="group flex flex-col gap-4"
                             >
                                 <div className="relative aspect-[4/3] overflow-hidden rounded-sm bg-neutral-200">
-                                    <ResponsiveMedia
+                                    <DeferredResponsiveMedia
                                         src={post.thumbnail_url || '/images/banner-1.editorial.w960.webp'}
                                         alt={post.title}
                                         fill

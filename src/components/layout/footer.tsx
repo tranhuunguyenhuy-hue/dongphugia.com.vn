@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { siteConfig, NAV_PRODUCT_CATEGORIES, NAV_FOOTER_ABOUT_LINKS, NAV_FOOTER_LEGAL_LINKS } from "@/config/site";
+import { DeferredResponsiveMedia } from "@/components/media/deferred-responsive-media";
 
 export function Footer() {
     return (
@@ -132,13 +133,11 @@ export function Footer() {
                         rel="noopener noreferrer"
                         aria-label="Đã thông báo Bộ Công Thương"
                     >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
+                        <DeferredResponsiveMedia
                             src="/images/bct-badge.png"
                             alt="Đã Thông Báo Bộ Công Thương"
                             width={250}
                             height={100}
-                            loading="lazy"
                             className="w-[200px] lg:w-[250px] h-auto object-contain opacity-90 hover:opacity-100 transition-opacity"
                         />
                     </a>
