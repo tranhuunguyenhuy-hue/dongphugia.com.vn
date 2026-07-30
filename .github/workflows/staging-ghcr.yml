@@ -2,22 +2,6 @@ name: Build staging container
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - codex/self-hosted-postgres-staging-changeset
-    paths:
-      - .github/workflows/staging-ghcr.yml
-      - Dockerfile
-      - package.json
-      - package-lock.json
-      - prisma/**
-      - src/**
-      - public/**
-      - next.config.ts
-      - tsconfig.json
-      - postcss.config.mjs
-      - components.json
-      - docs/deploy/staging-db-bootstrap/**
 
 permissions:
   contents: read
