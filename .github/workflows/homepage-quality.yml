@@ -120,6 +120,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: homepage-performance-${{ github.sha }}
-          path: scripts/output/lighthouse
+          path: |
+            scripts/output/lighthouse
+            *.trace.json
+            *.devtoolslog.json
           if-no-files-found: warn
           retention-days: 7

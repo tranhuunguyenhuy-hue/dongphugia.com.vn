@@ -15,6 +15,7 @@ module.exports = {
                     disabled: false,
                 },
                 throttlingMethod: 'simulate',
+                saveAssets: true,
                 onlyCategories: [
                     'performance',
                     'accessibility',
