@@ -11,7 +11,9 @@ import "./globals.css";
 const beVietnamPro = Be_Vietnam_Pro({
   variable: "--font-sans",
   subsets: ["latin", "vietnamese"],
-  weight: ["400", "500", "600", "700"],
+  // Keep two static cuts on the critical path. Browser font matching maps the
+  // intermediate 500/600 styles to the nearest loaded brand weight.
+  weight: ["400", "700"],
   display: "swap",
   preload: false,
 });
