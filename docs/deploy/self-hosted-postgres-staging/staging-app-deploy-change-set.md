@@ -8,14 +8,14 @@ DNS, traffic, data migration, AWS, Security Group, IAM, or Vercel mutations.
 | Field | Accepted value |
 | --- | --- |
 | Registry | `ghcr.io/tranhuunguyenhuy-hue/dongphugia-web` |
-| Source revision | `e64531430d3315e01deaf311b35db08d517bee62` |
-| Immutable digest | `sha256:0ec2a8eca89b9ecae21c3397ec19657b9cc2b35d2fc730752ff82b6491d8b4df` |
+| Source revision | `5eece0c0b78b51bc408dbc2f06404a726bed1143` |
+| Immutable digest | `sha256:12b6d170e45d9c47caff2ae18466ef6ddea69f0038012a03b0fce4173aa9d5b3` |
 | Platform | `linux/arm64` |
 
 Coolify must deploy the image by digest, not a mutable tag alias or branch tag:
 
 ```text
-ghcr.io/tranhuunguyenhuy-hue/dongphugia-web@sha256:0ec2a8eca89b9ecae21c3397ec19657b9cc2b35d2fc730752ff82b6491d8b4df
+ghcr.io/tranhuunguyenhuy-hue/dongphugia-web@sha256:12b6d170e45d9c47caff2ae18466ef6ddea69f0038012a03b0fce4173aa9d5b3
 ```
 
 The accepted build used native ARM64, produced registry SBOM/provenance, passed
@@ -31,7 +31,8 @@ evidence in `cutover-evidence-ledger.md` before production approval.
 - Existing EIP: `47.131.92.97`
 - Existing Coolify project/environment: `dongphugia-staging` / `staging`
 - Existing internal Docker network: `dongphugia-staging-backend`
-- Existing PostgreSQL alias: `dpg-staging-postgres`
+- Existing PostgreSQL alias: full Coolify container alias on the shared staging
+  network (the short alias did not resolve from the application network)
 - PostgreSQL is internal-only; no host/public port `5432`
 - AWS public ingress remains `80/tcp` and `443/tcp` only
 
@@ -89,7 +90,8 @@ Optional or compatibility:
   `WRITE_FREEZE_MODE`
 
 `NEXT_PUBLIC_SITE_URL` must equal the temporary staging URL. `DATABASE_URL` and
-`DIRECT_URL` must use internal hostname `dpg-staging-postgres:5432`. Do not set
+`DIRECT_URL` must use the full internal Coolify PostgreSQL alias on port `5432`.
+Do not set
 Supabase public variables, production database URLs, `ADMIN_PASSWORD`, or other
 seed credentials on the application.
 
@@ -116,7 +118,8 @@ Stop before deployment if any condition is true:
 3. Attach the application to `dongphugia-staging-backend` without publishing a
    direct host port.
 4. Enter staging-only runtime values using the secure operator mechanism.
-5. Keep `WRITE_FREEZE_MODE=false` or unset for synthetic staging acceptance.
+5. Keep `WRITE_FREEZE_MODE=true` through migration rehearsal; unfreeze only for
+   an explicitly approved synthetic write test.
 6. Deploy once and follow the deployment to a terminal state.
 7. On failure, collect redacted events/log categories and stop. Do not retry
    blindly or change the Security Group for debugging.

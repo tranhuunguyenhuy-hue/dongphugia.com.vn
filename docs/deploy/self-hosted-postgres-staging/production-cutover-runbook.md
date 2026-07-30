@@ -218,6 +218,13 @@ Vercel while silently discarding accepted writes.
 
 ## Final approval boundary
 
+Current gate result: **HOLD**. Staging is deployed by accepted immutable digest,
+but production cutover is not authorized until every abort condition and open
+item in `cutover-evidence-ledger.md` is cleared. In particular, do not approve
+DNS release while the Lighthouse performance gate, security-header hardening,
+write-freeze response audit, off-host/retention backup controls, post-app host
+capacity evidence, media inventory, domain decision, or owner matrix is open.
+
 The cutover approval must identify the exact image digest, canonical domain,
 DNS records, database evidence ledger, maintenance window, owners and rollback
 deployment. Until that approval, production DNS, nameservers, traffic, data and

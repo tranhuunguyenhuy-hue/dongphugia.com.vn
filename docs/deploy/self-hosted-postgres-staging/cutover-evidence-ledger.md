@@ -1,6 +1,6 @@
 # Production cutover evidence ledger
 
-Status: template. Record evidence and identifiers, never secret values,
+Status: staging evidence recorded; production approval fields remain open. Record evidence and identifiers, never secret values,
 connection strings, cookies, tokens, private keys, database rows, or customer
 data.
 
@@ -22,10 +22,10 @@ data.
 
 | Evidence | Value |
 | --- | --- |
-| Source revision | `e64531430d3315e01deaf311b35db08d517bee62` |
-| Image | `ghcr.io/tranhuunguyenhuy-hue/dongphugia-web@sha256:0ec2a8eca89b9ecae21c3397ec19657b9cc2b35d2fc730752ff82b6491d8b4df` |
+| Source revision | `5eece0c0b78b51bc408dbc2f06404a726bed1143` |
+| Image | `ghcr.io/tranhuunguyenhuy-hue/dongphugia-web@sha256:12b6d170e45d9c47caff2ae18466ef6ddea69f0038012a03b0fce4173aa9d5b3` |
 | Platform | `linux/arm64` |
-| GHCR workflow run URL | `https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/actions/runs/30551255609` |
+| GHCR workflow run URL | `https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/actions/runs/30555758799` |
 | Registry manifest verification | `linux/arm64` only; digest above |
 | Source revision label verification | exact match to source revision above |
 | SBOM attestation reference | registry attestation verified in GHCR run; 1 SBOM section |
@@ -37,17 +37,17 @@ data.
 
 | Check | Result / timestamp / evidence reference |
 | --- | --- |
-| Coolify application deployment ID | `TBD` |
-| Running digest equals accepted digest | `TBD` |
-| Container healthy, restart count zero | `TBD` |
-| HTTPS/homepage/health | `TBD` |
-| Catalogue/blog/search/sitemap/SEO | `TBD` |
-| Write-freeze rehearsal | `TBD` |
-| Bunny synthetic media test | `TBD` |
-| Internal DB-only connectivity | `TBD` |
-| Public-port scan | `TBD` |
-| CPU/RAM/swap/disk observation | `TBD` |
-| Rollback rehearsal | `TBD` |
+| Coolify application deployment ID | app `q45dwq0ju41p0mpv59zdjah4`; rolling deployment finished `2026-07-30 15:23:30 UTC` |
+| Running digest equals accepted digest | PASS; Coolify redeployed the accepted digest above |
+| Container healthy, restart count zero | Coolify reports `Running (healthy)`; GHCR smoke restart count `0`; live Coolify restart count was not independently exposed |
+| HTTPS/homepage/health | PASS; strict TLS verification, homepage `200`, health `200`, DB query pass |
+| Catalogue/blog/search/sitemap/SEO | Functional routes PASS; production gate HOLD: Lighthouse performance `0.78` versus required `0.90`, LCP `4085 ms` versus required `2500 ms` |
+| Write-freeze rehearsal | PASS for quote, order and upload APIs: `503 WRITE_FREEZE_ACTIVE`; revalidation GET `405`, unauthenticated POST `401` |
+| Bunny synthetic media test | NOT RUN; no staging Bunny write credential/zone was provisioned and writes remain frozen |
+| Internal DB-only connectivity | PASS; app uses the full internal Coolify PostgreSQL alias; DB health query passes; no public `5432` |
+| Public-port scan | Last AWS read-only evidence: SG ingress only `80/443`; final refresh blocked by expired AWS CLI session |
+| CPU/RAM/swap/disk observation | Pre-app host evidence passed thresholds; Coolify metrics are not enabled, so post-app host metrics remain an approval blocker |
+| Rollback rehearsal | PASS; rolled back to digest `0ec2a8...`, verified health `200`, then forward-deployed accepted digest and verified health `200` |
 
 ## Database and backup
 
@@ -61,13 +61,13 @@ data.
 | Source export SHA-256 / size | `TBD` |
 | Freeze start UTC / export watermark | `TBD` |
 | Target pre-cutover backup SHA-256 | `TBD` |
-| EBS snapshot ID / state | `TBD` |
-| Restore drill target and elapsed time | `TBD` |
-| Measured RTO / RPO | `TBD` |
+| EBS snapshot ID / state | Existing DLM snapshot evidence: complete; no new AWS snapshot created in this phase |
+| Restore drill target and elapsed time | Disposable `dpg_restore_drill`; schema restore and sensitive-table zero checks passed; approximately `1s` for synthetic data |
+| Measured RTO / RPO | Logical restore approximately `1s` for synthetic data; nightly schedule implies up to `24h` RPO until final-delta backup |
 | Reconciliation result reference | `TBD` |
 | Sequence verification | `TBD` |
-| Excluded-table verification | `TBD` |
-| Latest backup timestamp / age | `TBD` |
+| Excluded-table verification | Restore drill confirmed zero `admin_sessions`, customers, orders and quote requests in staging synthetic dataset |
+| Latest backup timestamp / age | Manual nightly-task execution succeeded `2026-07-30 14:54 UTC`; checksum generated in the backups volume |
 
 Do not paste table contents into this ledger. Record only aggregate counts,
 checksums and approved report references.
@@ -118,20 +118,20 @@ Record presence/source only, never values.
 
 | Variable | Present | Source/owner |
 | --- | --- | --- |
-| `DATABASE_URL` | `TBD` | `TBD` |
-| `DIRECT_URL` | `TBD` | `TBD` |
-| `NEXT_PUBLIC_SITE_URL` | `TBD` | `TBD` |
+| `DATABASE_URL` | yes (staging) | Coolify locked runtime secret |
+| `DIRECT_URL` | yes (staging) | Coolify locked runtime secret |
+| `NEXT_PUBLIC_SITE_URL` | yes (staging) | Coolify locked runtime variable |
 | `NEXT_PUBLIC_GTM_ID` | `TBD` | `TBD` |
-| `BUNNY_CDN_HOSTNAME` | `TBD` | `TBD` |
-| `BUNNY_STORAGE_ZONE_NAME` | `TBD` | `TBD` |
-| `BUNNY_STORAGE_API_KEY` | `TBD` | `TBD` |
-| `BUNNY_STORAGE_HOSTNAME` | `TBD` | `TBD` |
-| `REVALIDATION_SECRET` | `TBD` | `TBD` |
-| `REVALIDATE_SECRET` | `TBD` | `TBD` |
-| `SESSION_HOURS` | `TBD` | `TBD` |
+| `BUNNY_CDN_HOSTNAME` | yes (staging) | Coolify locked runtime variable |
+| `BUNNY_STORAGE_ZONE_NAME` | no | production cutover blocker for media writes |
+| `BUNNY_STORAGE_API_KEY` | no | production cutover blocker for media writes |
+| `BUNNY_STORAGE_HOSTNAME` | yes (staging) | Coolify locked runtime variable |
+| `REVALIDATION_SECRET` | yes (staging) | Coolify locked runtime secret |
+| `REVALIDATE_SECRET` | yes (staging compatibility) | Coolify locked runtime secret |
+| `SESSION_HOURS` | yes (staging) | Coolify locked runtime variable |
 | `MAIN_SITE_URL` | `TBD` | `TBD` |
-| `WRITE_FREEZE_MODE` | `TBD` | `TBD` |
-| `MAINTENANCE_MODE` | `TBD` | `TBD` |
+| `WRITE_FREEZE_MODE` | yes; `true` | Coolify locked runtime variable |
+| `MAINTENANCE_MODE` | yes; `false` | Coolify locked runtime variable |
 
 ## Monitoring and checkpoints
 
@@ -150,6 +150,12 @@ Record presence/source only, never values.
 | T+30m unfreeze decision | `TBD` | reconciliation and writes pass | `TBD` |
 | T+60m final checkpoint | `TBD` | otherwise rollback | `TBD` |
 | T+24h observation close | `TBD` | SLOs and backup pass | `TBD` |
+
+Open production blockers: missing CSP/HSTS, exposed `x-powered-by`, incomplete
+structured write-freeze responses in several admin/server-action paths, failing
+Lighthouse thresholds, no post-app host metrics, no off-host backup or enforced
+7-daily/4-weekly retention, incomplete production media inventory, unresolved
+canonical-domain/DNS ownership, and unassigned cutover/on-call owners.
 
 ## Decision log
 
