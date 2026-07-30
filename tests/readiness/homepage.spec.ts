@@ -15,7 +15,7 @@ test.describe('homepage technical readiness', () => {
             }
         })
 
-        await page.goto('/', { waitUntil: 'networkidle' })
+        await page.goto('/', { waitUntil: 'load' })
 
         await expect(page.locator('h1')).toHaveCount(1)
         await expect(page.locator('main#main-content')).toHaveCount(1)
