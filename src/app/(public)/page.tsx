@@ -43,10 +43,10 @@ const getHomepageBanners = unstable_cache(
 
 const getHomepageContentData = unstable_cache(
     async () => Promise.all([
-        getFeaturedProductsByCategorySlug('thiet-bi-ve-sinh', ['toto', 'inax'], null, 0, 5),
-        getFeaturedProductsByCategorySlug('thiet-bi-bep', null, null, 0, 5),
-        getFeaturedProductsByCategorySlug('gach-op-lat', null, null, 0, 5),
-        getFeaturedProductsByCategorySlug('vat-lieu-nuoc', null, null, 0, 5),
+        getFeaturedProductsByCategorySlug('thiet-bi-ve-sinh', ['toto', 'inax'], null, 0, 3),
+        getFeaturedProductsByCategorySlug('thiet-bi-bep', null, null, 0, 3),
+        getFeaturedProductsByCategorySlug('gach-op-lat', null, null, 0, 3),
+        getFeaturedProductsByCategorySlug('vat-lieu-nuoc', null, null, 0, 3),
         prisma.brands.findMany({
             where: { products: { some: { categories: { slug: 'thiet-bi-ve-sinh' } } } },
             select: { name: true, slug: true }

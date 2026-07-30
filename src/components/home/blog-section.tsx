@@ -9,7 +9,7 @@ export async function BlogSection() {
         where: { status: 'published' },
         include: { blog_categories: true },
         orderBy: { created_at: 'desc' },
-        take: 4
+        take: 3
     })
 
     if (posts.length === 0) return null
