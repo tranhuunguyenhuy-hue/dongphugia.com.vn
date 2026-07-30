@@ -31,6 +31,8 @@ env:
   IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/dongphugia-web
   POSTGRES_IMAGE: postgres:16.10-bookworm@sha256:38471f330eb885e04de130b768d6db4e10469e2311879c7e5c699f6d2d8a1c74
   BUILD_DATABASE_URL: postgresql://dpg_staging_build:dpg_staging_build_password@127.0.0.1:5432/dpg_staging_build
+  DEFAULT_STAGING_SITE_URL: https://dongphugia-staging.47-131-92-97.sslip.io
+  DEFAULT_BUNNY_CDN_HOSTNAME: cdn.dongphugia.com.vn
 
 jobs:
   build:
@@ -61,8 +63,8 @@ jobs:
       - name: Validate staging configuration
         shell: bash
         env:
-          STAGING_SITE_URL: ${{ vars.STAGING_SITE_URL }}
-          STAGING_BUNNY_CDN_HOSTNAME: ${{ vars.STAGING_BUNNY_CDN_HOSTNAME }}
+          STAGING_SITE_URL: ${{ vars.STAGING_SITE_URL || env.DEFAULT_STAGING_SITE_URL }}
+          STAGING_BUNNY_CDN_HOSTNAME: ${{ vars.STAGING_BUNNY_CDN_HOSTNAME || env.DEFAULT_BUNNY_CDN_HOSTNAME }}
         run: |
           set -euo pipefail
           missing=()
@@ -158,9 +160,9 @@ jobs:
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.version=${{ steps.meta.outputs.tag }}
           build-args: |
-            NEXT_PUBLIC_SITE_URL=${{ vars.STAGING_SITE_URL }}
+            NEXT_PUBLIC_SITE_URL=${{ vars.STAGING_SITE_URL || env.DEFAULT_STAGING_SITE_URL }}
             NEXT_PUBLIC_GTM_ID=${{ vars.STAGING_NEXT_PUBLIC_GTM_ID }}
-            BUNNY_CDN_HOSTNAME=${{ vars.STAGING_BUNNY_CDN_HOSTNAME }}
+            BUNNY_CDN_HOSTNAME=${{ vars.STAGING_BUNNY_CDN_HOSTNAME || env.DEFAULT_BUNNY_CDN_HOSTNAME }}
           secrets: |
             DATABASE_URL=${{ env.BUILD_DATABASE_URL }}
             DIRECT_URL=${{ env.BUILD_DATABASE_URL }}
@@ -169,8 +171,8 @@ jobs:
         shell: bash
         env:
           IMAGE_REF: ${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
-          STAGING_SITE_URL: ${{ vars.STAGING_SITE_URL }}
-          STAGING_BUNNY_CDN_HOSTNAME: ${{ vars.STAGING_BUNNY_CDN_HOSTNAME }}
+          STAGING_SITE_URL: ${{ vars.STAGING_SITE_URL || env.DEFAULT_STAGING_SITE_URL }}
+          STAGING_BUNNY_CDN_HOSTNAME: ${{ vars.STAGING_BUNNY_CDN_HOSTNAME || env.DEFAULT_BUNNY_CDN_HOSTNAME }}
         run: |
           set -euo pipefail
 
