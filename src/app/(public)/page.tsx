@@ -176,7 +176,9 @@ export default async function HomePage() {
                 </section>
             </div>
 
-            <Suspense fallback={null}>
+            <Suspense
+                fallback={<div className="min-h-screen" aria-hidden="true" />}
+            >
                 <HomepageContentSections />
             </Suspense>
         </div>
