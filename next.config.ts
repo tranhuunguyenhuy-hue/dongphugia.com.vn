@@ -96,6 +96,24 @@ const nextConfig: NextConfig = {
 
   // LEO-392 Security Headers (SECURITY_AUDIT.md — P2)
   async headers() {
+    const enforceHttps =
+      (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.dongphugia.vn')
+        .startsWith('https://')
+    const cspDirectives = [
+      "default-src 'self'",
+      "base-uri 'self'",
+      "object-src 'none'",
+      "frame-ancestors 'self'",
+      "form-action 'self'",
+      "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com",
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+      "font-src 'self' data: https://fonts.gstatic.com",
+      "img-src 'self' data: blob: https://cdn.dongphugia.com.vn https://tygjmrhandbffjllxveu.supabase.co https://vietceramics.com https://images.unsplash.com https://cdn.hita.com.vn https://hita.com.vn https://www.transparenttextures.com",
+      "connect-src 'self' https://www.google-analytics.com https://region1.google-analytics.com https://www.googletagmanager.com",
+      "frame-src 'self' https://maps.google.com",
+      ...(enforceHttps ? ['upgrade-insecure-requests'] : []),
+    ].join('; ')
+
     return [
       {
         source: '/(.*)',
@@ -108,24 +126,11 @@ const nextConfig: NextConfig = {
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           // Disable unnecessary browser features
           { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()' },
-          // Enforce HTTPS on this host only. Subdomains/preload remain intentionally disabled.
-          { key: 'Strict-Transport-Security', value: 'max-age=31536000' },
+          // Enforce HTTPS on HTTPS deployments only. Subdomains/preload remain intentionally disabled.
+          ...(enforceHttps ? [{ key: 'Strict-Transport-Security', value: 'max-age=31536000' }] : []),
           {
             key: 'Content-Security-Policy',
-            value: [
-              "default-src 'self'",
-              "base-uri 'self'",
-              "object-src 'none'",
-              "frame-ancestors 'self'",
-              "form-action 'self'",
-              "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com",
-              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-              "font-src 'self' data: https://fonts.gstatic.com",
-              "img-src 'self' data: blob: https://cdn.dongphugia.com.vn https://tygjmrhandbffjllxveu.supabase.co https://vietceramics.com https://images.unsplash.com https://cdn.hita.com.vn https://hita.com.vn https://www.transparenttextures.com",
-              "connect-src 'self' https://www.google-analytics.com https://region1.google-analytics.com https://www.googletagmanager.com",
-              "frame-src 'self' https://maps.google.com",
-              'upgrade-insecure-requests',
-            ].join('; '),
+            value: cspDirectives,
           },
         ],
       },
