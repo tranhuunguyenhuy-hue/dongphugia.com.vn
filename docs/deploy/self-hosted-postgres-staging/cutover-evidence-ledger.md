@@ -78,7 +78,7 @@ checksums and approved report references.
 | --- | --- |
 | Production media hostname inventory query/reference | `TBD` |
 | Bunny hostname counts | `TBD` |
-| Legacy Supabase Storage hostname counts | `TBD` |
+| Legacy Supabase Storage hostname counts | Staging route HTML smoke: `0`; production-data inventory remains `TBD` |
 | Other hostname counts and disposition | `TBD` |
 | Decision to keep/remove compatibility allowlist | `TBD` |
 
@@ -107,10 +107,10 @@ Re-capture authoritative answers immediately before cutover.
 | New `www` record/type/TTL | `TBD` |
 | TTL reduction timestamp / old TTL aged | `TBD` |
 | Cloudflare proxy/TLS decision | `TBD` |
-| Vercel project ID/name | `TBD` |
-| Vercel production deployment ID/URL | `TBD` |
-| Vercel production source commit | `TBD` |
-| Vercel rollback verification timestamp | `TBD` |
+| Vercel project ID/name | project name `dongphugia.com.vn`; internal project ID not available locally |
+| Vercel production deployment ID/URL | GitHub deployment `5498627451`; `https://dongphugiacom-b70xmrgj8-tranhuunguyenhuy-9755s-projects.vercel.app` |
+| Vercel production source commit | `cf98ab78b9fd34403e277b5e23ea8b082b6800ce` |
+| Vercel rollback verification timestamp | GitHub deployment status `success`, read-only verified `2026-07-30` |
 
 ## Runtime environment inventory
 
