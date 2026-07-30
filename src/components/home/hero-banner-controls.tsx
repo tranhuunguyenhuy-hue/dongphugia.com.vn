@@ -68,11 +68,20 @@ export function HeroBannerControls({
             window.matchMedia("(prefers-reduced-motion: reduce)").matches
         ) return
 
-        const timer = window.setInterval(() => {
+        // Keep the server-rendered LCP slide stable through the initial reading
+        // window, then resume the normal five-second carousel cadence.
+        let interval: number | undefined
+        const initialTimer = window.setTimeout(() => {
             setCurrent((index) => (index + 1) % itemCount)
-        }, 5000)
+            interval = window.setInterval(() => {
+                setCurrent((index) => (index + 1) % itemCount)
+            }, 5000)
+        }, 12000)
 
-        return () => window.clearInterval(timer)
+        return () => {
+            window.clearTimeout(initialTimer)
+            if (interval !== undefined) window.clearInterval(interval)
+        }
     }, [isPaused, itemCount])
 
     const item = banners[current]
