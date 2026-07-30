@@ -2,11 +2,22 @@ name: Build staging container
 
 on:
   workflow_dispatch:
-    inputs:
-      image_tag:
-        description: Optional image tag suffix. Defaults to the commit SHA.
-        required: false
-        type: string
+  push:
+    branches:
+      - codex/self-hosted-postgres-staging-changeset
+    paths:
+      - .github/workflows/staging-ghcr.yml
+      - Dockerfile
+      - package.json
+      - package-lock.json
+      - prisma/**
+      - src/**
+      - public/**
+      - next.config.ts
+      - tsconfig.json
+      - postcss.config.mjs
+      - components.json
+      - docs/deploy/staging-db-bootstrap/**
 
 permissions:
   contents: read
@@ -18,16 +29,95 @@ concurrency:
 
 env:
   IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/dongphugia-web
+  POSTGRES_IMAGE: postgres:16.10-bookworm@sha256:38471f330eb885e04de130b768d6db4e10469e2311879c7e5c699f6d2d8a1c74
+  BUILD_DATABASE_URL: postgresql://dpg_staging_build:dpg_staging_build_password@127.0.0.1:5432/dpg_staging_build
 
 jobs:
   build:
     name: Build and push linux/arm64 image
     runs-on: ubuntu-latest
     timeout-minutes: 40
+    environment: staging
+
+    services:
+      postgres:
+        image: postgres:16.10-bookworm@sha256:38471f330eb885e04de130b768d6db4e10469e2311879c7e5c699f6d2d8a1c74
+        env:
+          POSTGRES_DB: dpg_staging_build
+          POSTGRES_USER: dpg_staging_build
+          POSTGRES_PASSWORD: dpg_staging_build_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U dpg_staging_build -d dpg_staging_build"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Validate staging configuration
+        shell: bash
+        env:
+          STAGING_SITE_URL: ${{ vars.STAGING_SITE_URL }}
+          STAGING_BUNNY_CDN_HOSTNAME: ${{ vars.STAGING_BUNNY_CDN_HOSTNAME }}
+        run: |
+          set -euo pipefail
+          missing=()
+          [ -n "$STAGING_SITE_URL" ] || missing+=("STAGING_SITE_URL")
+          [ -n "$STAGING_BUNNY_CDN_HOSTNAME" ] || missing+=("STAGING_BUNNY_CDN_HOSTNAME")
+          if [ "${#missing[@]}" -gt 0 ]; then
+            printf 'Missing required staging configuration keys:\n'
+            printf -- '- %s\n' "${missing[@]}"
+            exit 1
+          fi
+
+          case "$STAGING_SITE_URL" in
+            *dongphugia.vn*|*dongphugia.com.vn*)
+              echo "STAGING_SITE_URL must not use the production domain."
+              exit 1
+              ;;
+          esac
+
+      - name: Bootstrap ephemeral build database
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          docker run --rm --network host \
+            -e PGPASSWORD=dpg_staging_build_password \
+            -v "$PWD/docs/deploy/staging-db-bootstrap:/bootstrap:ro" \
+            "$POSTGRES_IMAGE" \
+            psql \
+              --set=ON_ERROR_STOP=1 \
+              --single-transaction \
+              -h 127.0.0.1 \
+              -U dpg_staging_build \
+              -d dpg_staging_build \
+              --file=/bootstrap/001_schema_from_prisma.sql \
+              --file=/bootstrap/002_seed_synthetic_stg_demo.sql
+
+          tables="$(
+            docker run --rm --network host \
+              -e PGPASSWORD=dpg_staging_build_password \
+              "$POSTGRES_IMAGE" \
+              psql -h 127.0.0.1 -U dpg_staging_build -d dpg_staging_build -Atc \
+                "select count(*) from information_schema.tables where table_schema = 'public' and table_type = 'BASE TABLE';"
+          )"
+          products="$(
+            docker run --rm --network host \
+              -e PGPASSWORD=dpg_staging_build_password \
+              "$POSTGRES_IMAGE" \
+              psql -h 127.0.0.1 -U dpg_staging_build -d dpg_staging_build -Atc \
+                "select count(*) from products where sku like 'STG-DEMO-%';"
+          )"
+
+          if [ "$tables" != "46" ] || [ "$products" != "3" ]; then
+            echo "Ephemeral build database bootstrap validation failed."
+            exit 1
+          fi
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -47,52 +137,22 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          suffix="${{ inputs.image_tag }}"
-          if [ -z "$suffix" ]; then
-            suffix="${GITHUB_SHA}"
-          fi
-          echo "tag=staging-${suffix}" >> "$GITHUB_OUTPUT"
+          echo "tag=staging-${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
           echo "sha_short=${GITHUB_SHA::12}" >> "$GITHUB_OUTPUT"
 
-      - name: Validate staging configuration
-        shell: bash
-        env:
-          STAGING_SITE_URL: ${{ vars.STAGING_SITE_URL }}
-          STAGING_BUNNY_CDN_HOSTNAME: ${{ vars.STAGING_BUNNY_CDN_HOSTNAME }}
-          STAGING_DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
-          STAGING_DIRECT_URL: ${{ secrets.STAGING_DIRECT_URL }}
-        run: |
-          set -euo pipefail
-          missing=()
-          [ -n "$STAGING_SITE_URL" ] || missing+=("STAGING_SITE_URL")
-          [ -n "$STAGING_BUNNY_CDN_HOSTNAME" ] || missing+=("STAGING_BUNNY_CDN_HOSTNAME")
-          [ -n "$STAGING_DATABASE_URL" ] || missing+=("STAGING_DATABASE_URL")
-          [ -n "$STAGING_DIRECT_URL" ] || missing+=("STAGING_DIRECT_URL")
-          if [ "${#missing[@]}" -gt 0 ]; then
-            printf 'Missing required staging configuration keys:\n'
-            printf -- '- %s\n' "${missing[@]}"
-            exit 1
-          fi
-
-          case "$STAGING_SITE_URL" in
-            *dongphugia.vn*|*dongphugia.com.vn*)
-              echo "STAGING_SITE_URL must not use the production domain."
-              exit 1
-              ;;
-          esac
-
       - name: Build and push
+        id: build
         uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
           platforms: linux/arm64
           push: true
+          network: host
           provenance: true
           sbom: true
           tags: |
             ${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.tag }}
-            ${{ env.IMAGE_NAME }}:staging-latest
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
@@ -102,8 +162,42 @@ jobs:
             NEXT_PUBLIC_GTM_ID=${{ vars.STAGING_NEXT_PUBLIC_GTM_ID }}
             BUNNY_CDN_HOSTNAME=${{ vars.STAGING_BUNNY_CDN_HOSTNAME }}
           secrets: |
-            DATABASE_URL=${{ secrets.STAGING_DATABASE_URL }}
-            DIRECT_URL=${{ secrets.STAGING_DIRECT_URL }}
+            DATABASE_URL=${{ env.BUILD_DATABASE_URL }}
+            DIRECT_URL=${{ env.BUILD_DATABASE_URL }}
+
+      - name: Smoke test pushed image
+        shell: bash
+        env:
+          IMAGE_REF: ${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
+          STAGING_SITE_URL: ${{ vars.STAGING_SITE_URL }}
+          STAGING_BUNNY_CDN_HOSTNAME: ${{ vars.STAGING_BUNNY_CDN_HOSTNAME }}
+        run: |
+          set -euo pipefail
+
+          docker run --rm --detach \
+            --name dpg-staging-image-smoke \
+            --platform linux/arm64 \
+            --network host \
+            -e DATABASE_URL="$BUILD_DATABASE_URL" \
+            -e DIRECT_URL="$BUILD_DATABASE_URL" \
+            -e NEXT_PUBLIC_SITE_URL="$STAGING_SITE_URL" \
+            -e BUNNY_CDN_HOSTNAME="$STAGING_BUNNY_CDN_HOSTNAME" \
+            "$IMAGE_REF"
+
+          cleanup() {
+            docker rm -f dpg-staging-image-smoke >/dev/null 2>&1 || true
+          }
+          trap cleanup EXIT
+
+          for _ in $(seq 1 40); do
+            if curl -fsS http://127.0.0.1:3000/api/health >/tmp/health.json; then
+              break
+            fi
+            sleep 3
+          done
+
+          curl -fsS http://127.0.0.1:3000/ >/dev/null
+          node -e "const fs = require('fs'); const body = JSON.parse(fs.readFileSync('/tmp/health.json', 'utf8')); if (!body.ok || JSON.stringify(body).includes('DATABASE_URL')) process.exit(1)"
 
       - name: Summary
         shell: bash
@@ -112,7 +206,9 @@ jobs:
             echo "### Staging image"
             echo
             echo "- Image: \`${IMAGE_NAME}:${{ steps.meta.outputs.tag }}\`"
-            echo "- Rolling tag: \`${IMAGE_NAME}:staging-latest\`"
+            echo "- Digest: \`${{ steps.build.outputs.digest }}\`"
             echo "- Platform: \`linux/arm64\`"
             echo "- Commit: \`${GITHUB_SHA}\`"
+            echo "- SBOM/provenance: requested from Docker Buildx"
+            echo "- Smoke test: \`GET /api/health\` and \`GET /\` passed"
           } >> "$GITHUB_STEP_SUMMARY"
