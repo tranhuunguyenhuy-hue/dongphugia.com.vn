@@ -11,7 +11,7 @@ export default function ProductsInfoPage() {
             <h1>THÔNG TIN VỀ HÀNG HÓA, DỊCH VỤ</h1>
             <p className="lead font-medium text-stone-600">CÔNG TY TNHH ĐÔNG PHÚ GIA</p>
             <p>
-                Website <a href="https://www.dongphugia.com.vn">https://www.dongphugia.com.vn</a> thuộc quyền sở hữu và quản lý của CÔNG TY TNHH ĐÔNG PHÚ GIA. Website được sử dụng để giới thiệu thông tin doanh nghiệp, hệ thống sản phẩm, dịch vụ tư vấn, chính sách bán hàng và các thông tin liên hệ chính thức của công ty. Các hàng hóa, dịch vụ được giới thiệu trên website thuộc nhóm vật liệu xây dựng, vật liệu hoàn thiện, thiết bị vệ sinh, thiết bị bếp và các giải pháp phục vụ hoàn thiện công trình.
+                Website <a href="https://www.dongphugia.vn">https://www.dongphugia.vn</a> thuộc quyền sở hữu và quản lý của CÔNG TY TNHH ĐÔNG PHÚ GIA. Website được sử dụng để giới thiệu thông tin doanh nghiệp, hệ thống sản phẩm, dịch vụ tư vấn, chính sách bán hàng và các thông tin liên hệ chính thức của công ty. Các hàng hóa, dịch vụ được giới thiệu trên website thuộc nhóm vật liệu xây dựng, vật liệu hoàn thiện, thiết bị vệ sinh, thiết bị bếp và các giải pháp phục vụ hoàn thiện công trình.
             </p>
 
             <h2>1. Gạch ốp lát và vật liệu hoàn thiện</h2>
@@ -66,7 +66,7 @@ export default function ProductsInfoPage() {
                 <li><strong>Địa chỉ:</strong> 275 Phan Đình Phùng, Phường Xuân Hương – Đà Lạt, Tỉnh Lâm Đồng, Việt Nam</li>
                 <li><strong>Điện thoại/Hotline:</strong> <a href="tel:02633520316">02633520316</a></li>
                 <li><strong>Email:</strong> <a href="mailto:vlxd.dongphu@gmail.com">vlxd.dongphu@gmail.com</a></li>
-                <li><strong>Website:</strong> <a href="https://www.dongphugia.com.vn">https://www.dongphugia.com.vn</a></li>
+                <li><strong>Website:</strong> <a href="https://www.dongphugia.vn">https://www.dongphugia.vn</a></li>
             </ul>
         </article>
     )

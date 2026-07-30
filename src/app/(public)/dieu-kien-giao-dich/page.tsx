@@ -11,7 +11,7 @@ export default function TermsAndConditionsPage() {
             <h1>THÔNG TIN VỀ ĐIỀU KIỆN GIAO DỊCH CHUNG</h1>
             <p className="lead font-medium text-stone-600">CÔNG TY TNHH ĐÔNG PHÚ GIA</p>
             <p>
-                Website <a href="https://www.dongphugia.com.vn">https://www.dongphugia.com.vn</a> thuộc quyền sở hữu và quản lý của CÔNG TY TNHH ĐÔNG PHÚ GIA.
+                Website <a href="https://www.dongphugia.vn">https://www.dongphugia.vn</a> thuộc quyền sở hữu và quản lý của CÔNG TY TNHH ĐÔNG PHÚ GIA.
             </p>
 
             <h3>Thông tin sở hữu chính thức</h3>
@@ -20,7 +20,7 @@ export default function TermsAndConditionsPage() {
                 <li><strong>Địa chỉ:</strong> 275 Phan Đình Phùng, Phường Xuân Hương - Đà Lạt, Tỉnh Lâm Đồng, Việt Nam</li>
                 <li><strong>Điện thoại/Hotline:</strong> <a href="tel:02633520316">02633520316</a></li>
                 <li><strong>Email:</strong> <a href="mailto:vlxd.dongphu@gmail.com">vlxd.dongphu@gmail.com</a></li>
-                <li><strong>Website:</strong> <a href="https://www.dongphugia.com.vn">https://www.dongphugia.com.vn</a></li>
+                <li><strong>Website:</strong> <a href="https://www.dongphugia.vn">https://www.dongphugia.vn</a></li>
             </ul>
 
             <h2>1. Quy định chung</h2>
@@ -108,7 +108,7 @@ export default function TermsAndConditionsPage() {
                 <li><strong>Địa chỉ:</strong> 275 Phan Đình Phùng, Phường Xuân Hương - Đà Lạt, Tỉnh Lâm Đồng, Việt Nam</li>
                 <li><strong>Điện thoại/Hotline:</strong> <a href="tel:02633520316">02633520316</a></li>
                 <li><strong>Email:</strong> <a href="mailto:vlxd.dongphu@gmail.com">vlxd.dongphu@gmail.com</a></li>
-                <li><strong>Website:</strong> <a href="https://www.dongphugia.com.vn">https://www.dongphugia.com.vn</a></li>
+                <li><strong>Website:</strong> <a href="https://www.dongphugia.vn">https://www.dongphugia.vn</a></li>
             </ul>
         </article>
     )
