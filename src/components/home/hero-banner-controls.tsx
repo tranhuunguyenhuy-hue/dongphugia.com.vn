@@ -1,17 +1,28 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
+import Link from "next/link"
 import { ChevronLeft, ChevronRight } from "lucide-react"
+import {
+    createResponsiveMediaUrl,
+    createResponsiveSrcSet,
+} from "@/lib/media/media-profiles"
 
 type HeroBannerControlsProps = {
     carouselId: string
-    itemCount: number
+    banners: Array<{
+        id: number
+        title?: string | null
+        image_url: string
+        link_url?: string | null
+    }>
 }
 
 export function HeroBannerControls({
     carouselId,
-    itemCount,
+    banners,
 }: HeroBannerControlsProps) {
+    const itemCount = banners.length
     const [current, setCurrent] = useState(0)
     const [isPaused, setIsPaused] = useState(false)
 
@@ -23,12 +34,13 @@ export function HeroBannerControls({
         const carousel = document.getElementById(carouselId)
         if (!carousel) return
 
-        carousel.querySelectorAll<HTMLElement>("[data-hero-slide]")
-            .forEach((slide, index) => {
-                const isCurrent = index === current
-                slide.hidden = !isCurrent
-                slide.setAttribute("aria-hidden", String(!isCurrent))
-            })
+        const initialSlide = carousel.querySelector<HTMLElement>(
+            "[data-hero-initial-slide]",
+        )
+        if (!initialSlide) return
+
+        initialSlide.hidden = current !== 0
+        initialSlide.setAttribute("aria-hidden", String(current !== 0))
     }, [carouselId, current])
 
     useEffect(() => {
@@ -63,8 +75,56 @@ export function HeroBannerControls({
         return () => window.clearInterval(timer)
     }, [isPaused, itemCount])
 
+    const item = banners[current]
+    const responsiveSrcSet = current > 0
+        ? createResponsiveSrcSet(item.image_url, "hero")
+        : null
+    const replacementImage = current > 0 ? (
+        <picture className="block h-full w-full">
+            {responsiveSrcSet ? (
+                <>
+                    <source
+                        media="(max-width: 767px)"
+                        type="image/webp"
+                        srcSet={createResponsiveMediaUrl(item.image_url, 720)}
+                    />
+                    <source
+                        media="(min-width: 768px)"
+                        type="image/webp"
+                        srcSet={responsiveSrcSet}
+                        sizes="1280px"
+                    />
+                </>
+            ) : null}
+            <img
+                src={item.image_url}
+                alt={item.title || "Không gian vật liệu cao cấp Đông Phú Gia"}
+                width={1600}
+                height={900}
+                className="h-full w-full object-cover"
+                loading="eager"
+                decoding="async"
+            />
+        </picture>
+    ) : null
+
     return (
         <>
+            {current > 0 ? (
+                <div
+                    className="absolute inset-0 h-full w-full"
+                    role="group"
+                    aria-roledescription="slide"
+                    aria-label={`${current + 1} trên ${itemCount}`}
+                >
+                    {item.link_url ? (
+                        <Link href={item.link_url} className="block h-full w-full">
+                            {replacementImage}
+                        </Link>
+                    ) : replacementImage}
+                </div>
+            ) : null}
+
             <button
                 type="button"
                 onClick={() => goTo(current - 1)}

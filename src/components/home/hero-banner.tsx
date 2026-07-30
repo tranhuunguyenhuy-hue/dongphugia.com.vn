@@ -50,7 +50,8 @@ export function HeroBanner({ banners }: HeroBannerProps) {
             aria-roledescription="carousel"
             aria-label="Banner nổi bật"
         >
-            {items.map((item, index) => {
+            {(() => {
+                const item = items[0]
                 const responsiveSrcSet = createResponsiveSrcSet(
                     item.image_url,
                     "hero",
@@ -81,8 +82,8 @@ export function HeroBanner({ banners }: HeroBannerProps) {
                             width={BANNER_WIDTH}
                             height={BANNER_HEIGHT}
                             className="h-full w-full object-cover"
-                            loading={index === 0 ? "eager" : "lazy"}
-                            fetchPriority={index === 0 ? "high" : "auto"}
+                            loading="eager"
+                            fetchPriority="high"
                             decoding="async"
                         />
                     </picture>
@@ -90,14 +91,11 @@ export function HeroBanner({ banners }: HeroBannerProps) {
 
                 return (
                     <div
-                        key={item.id}
-                        data-hero-slide={index}
-                        hidden={index !== 0}
+                        data-hero-initial-slide
                         className="absolute inset-0 h-full w-full"
                         role="group"
                         aria-roledescription="slide"
-                        aria-label={`${index + 1} trên ${items.length}`}
-                        aria-hidden={index !== 0}
+                        aria-label={`1 trên ${items.length}`}
                     >
                         {item.link_url ? (
                             <Link href={item.link_url} className="block h-full w-full">
@@ -106,12 +104,12 @@ export function HeroBanner({ banners }: HeroBannerProps) {
                         ) : image}
                     </div>
                 )
-            })}
+            })()}
 
             {items.length > 1 ? (
                 <HeroBannerControls
                     carouselId={CAROUSEL_ID}
-                    itemCount={items.length}
+                    banners={items}
                 />
             ) : null}
         </div>
