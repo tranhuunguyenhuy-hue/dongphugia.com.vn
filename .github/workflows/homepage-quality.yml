@@ -58,7 +58,7 @@ jobs:
             postgres:16.10-bookworm@sha256:38471f330eb885e04de130b768d6db4e10469e2311879c7e5c699f6d2d8a1c74 \
             psql --set=ON_ERROR_STOP=1 \
               -h postgres -U dpg_homepage_test -d dpg_homepage_test \
-              --command="INSERT INTO banners (title, image_url, is_active, sort_order) VALUES ('[STG-DEMO] Banner 1', '/banners/banner-kitchen.jpg', true, 10), ('[STG-DEMO] Banner 2', '/banners/banner-kitchen.jpg', true, 20), ('[STG-DEMO] Banner 3', '/banners/banner-kitchen.jpg', true, 30);"
+              --command="INSERT INTO banners (title, image_url, is_active, sort_order) VALUES ('[STG-DEMO] Banner 1', '/banners/banner-kitchen.hero.w1600.webp', true, 10), ('[STG-DEMO] Banner 2', '/banners/banner-kitchen.hero.w1600.webp', true, 20), ('[STG-DEMO] Banner 3', '/banners/banner-kitchen.hero.w1600.webp', true, 30);"
 
           docker run --rm --network "$POSTGRES_NETWORK" \
             -e PGPASSWORD=dpg_homepage_test_password \
