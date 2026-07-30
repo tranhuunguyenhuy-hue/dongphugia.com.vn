@@ -1,7 +1,8 @@
 # Self-hosted PostgreSQL staging change set
 
-Status: review-only. Do not create the database service, run SQL, export data,
-run GHCR, or modify production.
+Status: staging implementation and production cutover package. The staging
+PostgreSQL service and synthetic schema are present; production data, DNS,
+traffic, Supabase, Vercel and AWS infrastructure remain unchanged.
 
 Base branch/head:
 
@@ -111,8 +112,9 @@ Review:
 - `proposed-supabase-runtime-removal.patch`
 - `validation.md`
 
-PR #28 applies this source change as a Draft PR. Do not merge PR #28 or deploy
-an app image from it until PM approves a separate source integration gate.
+PR #28 applies this source change as a Draft PR. Its accepted native ARM64 image
+is recorded below; PR #28 may merge only into the staging integration branch,
+never directly into `main` from this package.
 
 Important data-compatibility note: `next.config.ts` still allows the legacy
 Supabase Storage host. Remove that host only after product/media URLs are
@@ -168,6 +170,24 @@ Review:
 
 The current `MAINTENANCE_MODE` does not cover `/api` or `/admin`, so a future
 application-level write guard is required before production cutover.
+
+## Application deployment and production cutover
+
+Review:
+
+- `staging-app-deploy-change-set.md`
+- `production-cutover-runbook.md`
+- `cutover-evidence-ledger.md`
+
+The staging application must deploy the accepted GHCR image by immutable digest.
+The production runbook separates application deployment from traffic release,
+requires a primary-domain decision, and blocks cutover until DNS, Vercel,
+migration, backup, monitoring and ownership evidence is complete.
+
+Important domain note: current source canonical behavior targets
+`www.dongphugia.com.vn`, while `dongphugia.vn` is a distinct DNS zone. Do not
+change either zone until the cutover package records which domain is primary and
+which provider is authoritative for every changed record.
 
 ## Timeline to 02/08
 
