@@ -111,7 +111,7 @@ export function HeroBanner({ banners }: HeroBannerProps) {
                             className="h-full w-full object-cover"
                             loading={current === 0 ? 'eager' : 'lazy'}
                             fetchPriority={current === 0 ? 'high' : 'auto'}
-                            decoding={current === 0 ? 'sync' : 'async'}
+                            decoding="async"
                         />
                     </picture>
                 )
