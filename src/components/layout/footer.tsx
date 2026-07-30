@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import { siteConfig, NAV_PRODUCT_CATEGORIES, NAV_FOOTER_ABOUT_LINKS, NAV_FOOTER_LEGAL_LINKS } from "@/config/site";
 
@@ -29,8 +27,13 @@ export function Footer() {
                                     Đăng ký nhận bản tin ưu đãi
                                 </h3>
                             </div>
-                            <form className="flex items-stretch max-w-[360px] gap-0 shadow-sm rounded-[8px] overflow-hidden" onSubmit={(e) => e.preventDefault()}>
+                            <form
+                                action="/lien-he"
+                                method="get"
+                                className="flex items-stretch max-w-[360px] gap-0 shadow-sm rounded-[8px] overflow-hidden"
+                            >
                                 <input
+                                    name="email"
                                     type="email"
                                     placeholder="Nhập email của bạn"
                                     className="flex-1 h-11 px-4 border border-stone-200 border-r-0 bg-white text-[15px] leading-[24px] text-stone-900 placeholder:text-stone-400 focus:outline-none transition-all"

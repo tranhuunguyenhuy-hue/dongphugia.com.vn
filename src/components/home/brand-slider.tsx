@@ -1,4 +1,4 @@
-import { BrandLogo } from '@/components/media/brand-logo'
+import { DeferredBrandLogo } from '@/components/media/deferred-brand-logo'
 
 const BRAND_SLUGS = [
     'toto', 'inax', 'caesar', 'american-standard', 'grohe', 'cotto', 'viglacera',
@@ -28,7 +28,7 @@ export function BrandSlider() {
                             key={slug}
                             className="group/brand relative flex h-[60px] w-[120px] shrink-0 items-center justify-center transition-transform duration-300 hover:scale-105 lg:h-[80px] lg:w-[140px]"
                         >
-                            <BrandLogo
+                            <DeferredBrandLogo
                                 slug={slug}
                                 name={slug}
                                 className="max-h-[40px] max-w-[80px] opacity-50 grayscale transition-all duration-300 group-hover/brand:opacity-100 group-hover/brand:grayscale-0 lg:max-h-[50px] lg:max-w-[100px]"

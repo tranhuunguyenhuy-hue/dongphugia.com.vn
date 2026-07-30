@@ -69,7 +69,7 @@ export function BlogSectionClient({ posts }: { posts: any[] }) {
                             <Link href={`/blog/${post.blog_categories?.slug}/${post.slug}`} className="group flex flex-col gap-4">
                                 <div className="relative aspect-[4/3] rounded-sm overflow-hidden bg-neutral-200">
                                     <ResponsiveMedia
-                                        src={post.thumbnail_url || '/images/banner-1.jpg'}
+                                        src={post.thumbnail_url || '/images/banner-1.editorial.w960.webp'}
                                         alt={post.title}
                                         fill
                                         profile="editorial"

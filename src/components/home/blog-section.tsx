@@ -53,7 +53,7 @@ export async function BlogSection() {
                             >
                                 <div className="relative aspect-[4/3] overflow-hidden rounded-sm bg-neutral-200">
                                     <ResponsiveMedia
-                                        src={post.thumbnail_url || '/images/banner-1.jpg'}
+                                        src={post.thumbnail_url || '/images/banner-1.editorial.w960.webp'}
                                         alt={post.title}
                                         fill
                                         profile="editorial"

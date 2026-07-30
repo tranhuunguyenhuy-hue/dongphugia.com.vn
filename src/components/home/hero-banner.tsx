@@ -29,16 +29,23 @@ export function HeroBanner({ banners }: HeroBannerProps) {
     if (items.length === 0) {
         return (
             <div className="relative aspect-[16/9] w-full overflow-hidden rounded-md bg-stone-50 shadow-md">
-                <img
-                    src="/images/banner-1.jpg"
-                    alt="Đông Phú Gia - Vật liệu xây dựng"
-                    width={BANNER_WIDTH}
-                    height={BANNER_HEIGHT}
-                    className="h-full w-full object-cover"
-                    loading="eager"
-                    fetchPriority="high"
-                    decoding="async"
-                />
+                <picture>
+                    <source
+                        type="image/webp"
+                        srcSet="/images/banner-1.editorial.w640.webp 640w, /images/banner-1.editorial.w960.webp 960w"
+                        sizes="(max-width: 767px) 100vw, 1280px"
+                    />
+                    <img
+                        src="/images/banner-1.editorial.w960.webp"
+                        alt="Đông Phú Gia - Vật liệu xây dựng"
+                        width={BANNER_WIDTH}
+                        height={BANNER_HEIGHT}
+                        className="h-full w-full object-cover"
+                        loading="eager"
+                        fetchPriority="high"
+                        decoding="async"
+                    />
+                </picture>
             </div>
         )
     }
