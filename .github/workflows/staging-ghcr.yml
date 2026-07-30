@@ -176,6 +176,78 @@ jobs:
             NEXT_PUBLIC_GTM_ID=${{ vars.STAGING_NEXT_PUBLIC_GTM_ID }}
             BUNNY_CDN_HOSTNAME=${{ vars.STAGING_BUNNY_CDN_HOSTNAME || env.DEFAULT_BUNNY_CDN_HOSTNAME }}
 
+      - name: Verify image manifest and attestations
+        id: verify
+        shell: bash
+        env:
+          IMAGE_REF: ${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
+          EXPECTED_DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          set -euo pipefail
+
+          docker pull "$IMAGE_REF" >/dev/null
+          actual_digest="$(docker image inspect "$IMAGE_REF" --format '{{index .RepoDigests 0}}' | sed 's/^.*@//')"
+          image_arch="$(docker image inspect "$IMAGE_REF" --format '{{.Architecture}}')"
+          source_revision="$(docker image inspect "$IMAGE_REF" --format '{{index .Config.Labels "org.opencontainers.image.revision"}}')"
+
+          test "$actual_digest" = "$EXPECTED_DIGEST"
+          test "$image_arch" = "arm64"
+          test "$source_revision" = "$GITHUB_SHA"
+
+          docker buildx imagetools inspect "$IMAGE_REF" --raw > /tmp/image-manifest.json
+          image_manifests="$(jq '[.manifests[] | select(.platform.os != "unknown")] | length' /tmp/image-manifest.json)"
+          arm64_manifests="$(jq '[.manifests[] | select(.platform.os == "linux" and .platform.architecture == "arm64")] | length' /tmp/image-manifest.json)"
+          unexpected_manifests="$(jq '[.manifests[] | select(.platform.os != "unknown") | select(.platform.os != "linux" or .platform.architecture != "arm64")] | length' /tmp/image-manifest.json)"
+          test "$image_manifests" = "1"
+          test "$arm64_manifests" = "1"
+          test "$unexpected_manifests" = "0"
+
+          docker buildx imagetools inspect "$IMAGE_REF" --format '{{json .SBOM}}' > /tmp/image-sbom.json
+          docker buildx imagetools inspect "$IMAGE_REF" --format '{{json .Provenance}}' > /tmp/image-provenance.json
+          sbom_sections="$(jq 'if type == "object" then length else 0 end' /tmp/image-sbom.json)"
+          provenance_sections="$(jq 'if type == "object" then length else 0 end' /tmp/image-provenance.json)"
+          test "$sbom_sections" -gt 0
+          test "$provenance_sections" -gt 0
+
+          printf 'Registry digest verified: %s\n' "$actual_digest"
+          printf 'Registry image platform verified: linux/%s\n' "$image_arch"
+          printf 'Source revision label verified: %s\n' "$source_revision"
+          printf 'SBOM sections verified from registry: %s\n' "$sbom_sections"
+          printf 'Provenance sections verified from registry: %s\n' "$provenance_sections"
+
+          echo "sbom_sections=$sbom_sections" >> "$GITHUB_OUTPUT"
+          echo "provenance_sections=$provenance_sections" >> "$GITHUB_OUTPUT"
+
+      - name: Scan pushed digest for HIGH and CRITICAL vulnerabilities
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: ${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
+          format: json
+          output: /tmp/trivy-results.json
+          severity: HIGH,CRITICAL
+          ignore-unfixed: false
+          exit-code: '0'
+
+      - name: Enforce security scan result
+        id: scan
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s /tmp/trivy-results.json
+
+          critical_count="$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "CRITICAL")] | length' /tmp/trivy-results.json)"
+          high_count="$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "HIGH")] | length' /tmp/trivy-results.json)"
+          printf 'Trivy HIGH findings: %s\n' "$high_count"
+          printf 'Trivy CRITICAL findings: %s\n' "$critical_count"
+
+          if [ "$high_count" -gt 0 ] || [ "$critical_count" -gt 0 ]; then
+            jq -r '.Results[]? as $result | $result.Vulnerabilities[]? | select(.Severity == "HIGH" or .Severity == "CRITICAL") | [.Severity, .VulnerabilityID, $result.Target, .PkgName, .InstalledVersion, (.FixedVersion // "unfixed")] | @tsv' /tmp/trivy-results.json
+            exit 1
+          fi
+
+          echo "high_count=$high_count" >> "$GITHUB_OUTPUT"
+          echo "critical_count=$critical_count" >> "$GITHUB_OUTPUT"
+
       - name: Smoke test pushed image
         shell: bash
         env:
@@ -277,6 +349,25 @@ jobs:
           homepage_status="$(curl -sS -o /dev/null -w '%{http_code}' "http://$smoke_ip:3000/" || true)"
           test "$homepage_status" = "200"
 
+          container_health=starting
+          for _ in $(seq 1 20); do
+            container_health="$(docker inspect dpg-staging-image-smoke --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}')"
+            if [ "$container_health" = "healthy" ]; then
+              break
+            fi
+            sleep 3
+          done
+
+          restart_count="$(docker inspect dpg-staging-image-smoke --format '{{.RestartCount}}')"
+          container_status="$(docker inspect dpg-staging-image-smoke --format '{{.State.Status}}')"
+          test "$container_health" = "healthy"
+          test "$restart_count" = "0"
+          test "$container_status" = "running"
+
+          printf 'Smoke health status: %s\n' "$container_health"
+          printf 'Smoke container status: %s\n' "$container_status"
+          printf 'Smoke restart count: %s\n' "$restart_count"
+
       - name: Summary
         shell: bash
         run: |
@@ -287,6 +378,9 @@ jobs:
             echo "- Digest: \`${{ steps.build.outputs.digest }}\`"
             echo "- Platform: \`linux/arm64\`"
             echo "- Commit: \`${GITHUB_SHA}\`"
-            echo "- SBOM/provenance: requested from Docker Buildx"
+            echo "- SBOM sections verified: \`${{ steps.verify.outputs.sbom_sections }}\`"
+            echo "- Provenance sections verified: \`${{ steps.verify.outputs.provenance_sections }}\`"
+            echo "- Trivy HIGH findings: \`${{ steps.scan.outputs.high_count }}\`"
+            echo "- Trivy CRITICAL findings: \`${{ steps.scan.outputs.critical_count }}\`"
             echo "- Smoke test: \`GET /api/health\` and \`GET /\` passed"
           } >> "$GITHUB_STEP_SUMMARY"
