@@ -14,6 +14,11 @@ test.describe('homepage technical readiness', () => {
                 failedResources.push(`${response.status()} ${response.url()}`)
             }
         })
+        page.on('requestfailed', (request) => {
+            failedResources.push(
+                `${request.failure()?.errorText ?? 'request failed'} ${request.url()}`,
+            )
+        })
 
         await page.goto('/', { waitUntil: 'load' })
 
