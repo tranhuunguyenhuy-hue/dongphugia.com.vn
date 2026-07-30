@@ -69,13 +69,13 @@ Recommended initial limits:
 
 | Component | Limit | Notes |
 | --- | ---: | --- |
-| PostgreSQL container memory | 768 MiB hard limit | Avoid starving Coolify/app on 2 GiB host. |
-| PostgreSQL CPU | 0.75 vCPU | Leaves headroom for web app, Docker, Coolify, SSM, CloudWatch agent. |
-| `max_connections` | 40 | Staging only; keep app Prisma pool small. |
-| `shared_buffers` | 128 MiB | Conservative for 768 MiB container. |
+| PostgreSQL container memory | 512 MiB hard limit, 768 MiB memory+swap ceiling | Actual EC2 evidence shows 768 MiB leaves too little headroom on 2 GiB. |
+| PostgreSQL CPU | 0.50 vCPU | Leaves headroom for Coolify, SSM, CloudWatch Agent, and later web app. |
+| `max_connections` | 25 | Staging only; keep app Prisma pool small. |
+| `shared_buffers` | 96 MiB | Conservative for 512 MiB container. |
 | `work_mem` | 4 MiB | Prevent per-connection memory blowups. |
-| `maintenance_work_mem` | 64 MiB | Enough for restores/index work without starving host. |
-| `effective_cache_size` | 384 MiB | Planner hint only. |
+| `maintenance_work_mem` | 48 MiB | Enough for staging restores/index work without starving host. |
+| `effective_cache_size` | 256 MiB | Planner hint only. |
 | DB persistent volume | start on existing encrypted EBS | Watch disk before app/media/log growth. |
 | Backup volume | same encrypted EBS | Move off-host later before production. |
 
@@ -111,7 +111,8 @@ Review:
 - `proposed-supabase-runtime-removal.patch`
 - `validation.md`
 
-Do not apply the patch until PM approves the runtime switch plan.
+PR #28 applies this source change as a Draft PR. Do not merge PR #28 or deploy
+an app image from it until PM approves a separate source integration gate.
 
 Important data-compatibility note: `next.config.ts` still allows the legacy
 Supabase Storage host. Remove that host only after product/media URLs are
