@@ -1,4 +1,5 @@
 import { Metadata } from 'next'
+import { connection } from 'next/server'
 import { PartnersClient } from './partners-client'
 import { getActivePartners } from '@/lib/public-api-partners'
 
@@ -10,6 +11,8 @@ export const metadata: Metadata = {
 }
 
 export default async function PartnersPage() {
+    await connection()
+
     const partners = await getActivePartners()
     return <PartnersClient partners={partners} />
 }

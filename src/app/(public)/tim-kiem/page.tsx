@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { connection } from 'next/server'
 import { Suspense } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -33,9 +34,9 @@ interface SearchResult {
     subcategory_slug: string | null
     brand_name: string | null
     url: string
-    categories?: any
-    subcategories?: any
-    brands?: any
+    categories?: { slug: string; name: string } | null
+    subcategories?: { slug: string; name: string } | null
+    brands?: { slug: string; name: string } | null
 }
 
 interface SearchResponse {
@@ -180,6 +181,8 @@ interface PageProps {
 }
 
 export default async function SearchPage({ searchParams }: PageProps) {
+    await connection()
+
     const rawParams = await searchParams
     const rawQ = Array.isArray(rawParams.q) ? rawParams.q[0] : rawParams.q
     const rawPage = Array.isArray(rawParams.page) ? rawParams.page[0] : rawParams.page

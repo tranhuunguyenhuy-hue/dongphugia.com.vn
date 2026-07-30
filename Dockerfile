@@ -19,14 +19,11 @@ ARG BUNNY_CDN_HOSTNAME
 ENV NODE_ENV=production \
     NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL} \
     NEXT_PUBLIC_GTM_ID=${NEXT_PUBLIC_GTM_ID} \
-    BUNNY_CDN_HOSTNAME=${BUNNY_CDN_HOSTNAME}
+    BUNNY_CDN_HOSTNAME=${BUNNY_CDN_HOSTNAME} \
+    DATABASE_URL=postgresql://dpg_build_unreachable:dpg_build_unreachable@127.0.0.1:1/dpg_build_unreachable \
+    DIRECT_URL=postgresql://dpg_build_unreachable:dpg_build_unreachable@127.0.0.1:1/dpg_build_unreachable
 
-RUN --mount=type=secret,id=DATABASE_URL,required=true \
-    --mount=type=secret,id=DIRECT_URL,required=false \
-    export DATABASE_URL="$(cat /run/secrets/DATABASE_URL)" && \
-    direct_url="$(cat /run/secrets/DIRECT_URL 2>/dev/null || true)" && \
-    export DIRECT_URL="${direct_url:-$DATABASE_URL}" && \
-    npx prisma generate && \
+RUN npx prisma generate && \
     npm run build
 
 FROM node:22-alpine AS runner

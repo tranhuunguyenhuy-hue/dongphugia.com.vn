@@ -5,6 +5,7 @@ import { buildPublicSitemapVisibilityWhere } from '@/lib/public-product-visibili
 import { getCanonicalProductPath, primaryTaxonAssignmentSelect } from '@/lib/taxonomy-paths';
 
 export const revalidate = 86400; // 24 hours
+export const dynamic = 'force-dynamic';
 
 const PAGE_SIZE = 2000;
 

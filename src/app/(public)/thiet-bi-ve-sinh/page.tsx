@@ -1,4 +1,6 @@
 import { Metadata } from "next"
+import type { Prisma } from "@prisma/client"
+import { connection } from "next/server"
 import Link from "next/link"
 import Image from "next/image"
 import { Suspense } from "react"
@@ -35,11 +37,13 @@ interface PageProps {
 }
 
 export default async function ThietBiVeSinhPage({ searchParams }: PageProps) {
+    await connection()
+
     const params = await searchParams
     const activeBrands = params.brands?.split(",").filter(Boolean) ?? []
     const [priceMin, priceMax] = params.price?.split("-").map(Number) ?? []
 
-    const featuredWhere: any = {
+    const featuredWhere: Prisma.productsWhereInput = {
         categories: { slug: CATEGORY_SLUG },
         is_featured: true,
         ...LISTING_PRODUCT_WHERE,

@@ -18,6 +18,7 @@ import prisma from "@/lib/prisma"
 import { getCanonicalSiteUrl } from "@/lib/site"
 
 export const revalidate = 86400 // 24 hours
+export const dynamic = "force-dynamic"
 
 export async function GET() {
   const baseUrl = getCanonicalSiteUrl()
