@@ -176,13 +176,11 @@ export default async function HomePage() {
                 </section>
             </div>
 
-            <div className="[content-visibility:auto] [contain-intrinsic-size:auto_6000px]">
-                <Suspense
-                    fallback={<div className="min-h-screen" aria-hidden="true" />}
-                >
-                    <HomepageContentSections />
-                </Suspense>
-            </div>
+            <Suspense
+                fallback={<div className="min-h-screen" aria-hidden="true" />}
+            >
+                <HomepageContentSections />
+            </Suspense>
         </div>
     )
 }
