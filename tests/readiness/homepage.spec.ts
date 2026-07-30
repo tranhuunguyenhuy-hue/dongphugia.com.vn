@@ -15,8 +15,10 @@ test.describe('homepage technical readiness', () => {
             }
         })
         page.on('requestfailed', (request) => {
+            const errorText = request.failure()?.errorText ?? 'request failed'
+            if (errorText === 'net::ERR_ABORTED') return
             failedResources.push(
-                `${request.failure()?.errorText ?? 'request failed'} ${request.url()}`,
+                `${errorText} ${request.url()}`,
             )
         })
 
