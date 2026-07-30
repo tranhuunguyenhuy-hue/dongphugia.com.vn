@@ -48,8 +48,6 @@ jobs:
           POSTGRES_DB: dpg_staging_build
           POSTGRES_USER: dpg_staging_build
           POSTGRES_PASSWORD: dpg_staging_build_password
-        ports:
-          - 5432:5432
         options: >-
           --health-cmd "pg_isready -U dpg_staging_build -d dpg_staging_build"
           --health-interval 10s
@@ -126,8 +124,26 @@ jobs:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
+      - name: Resolve build network
+        id: build-network
+        shell: bash
+        env:
+          BUILD_NETWORK: ${{ job.services.postgres.network }}
+        run: |
+          set -euo pipefail
+          if [ -z "$BUILD_NETWORK" ]; then
+            echo "GitHub Actions service network was not resolved."
+            exit 1
+          fi
+          echo "network=$BUILD_NETWORK" >> "$GITHUB_OUTPUT"
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+        with:
+          driver: docker-container
+          driver-opts: |
+            network=${{ steps.build-network.outputs.network }}
+          buildkitd-flags: --debug
 
       - name: Log in to GHCR
         uses: docker/login-action@v3
@@ -152,7 +168,6 @@ jobs:
           file: ./Dockerfile
           platforms: linux/arm64
           push: true
-          network: ${{ job.services.postgres.network }}
           provenance: true
           sbom: true
           tags: |
