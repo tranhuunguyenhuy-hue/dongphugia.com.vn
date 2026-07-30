@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { ZodError, ZodIssue } from 'zod'
+import { isWriteFreezeError, WRITE_FREEZE_ERROR_CODE } from '@/lib/write-freeze'
 
 // ================================================================
 // LEO-390: Centralized API Error Handler
@@ -70,6 +71,17 @@ export function withErrorHandler(
  *   }
  */
 export function handleApiError(error: unknown): NextResponse<ApiErrorResponse> {
+    if (isWriteFreezeError(error)) {
+        return NextResponse.json(
+            {
+                success: false,
+                error: error.message,
+                code: WRITE_FREEZE_ERROR_CODE,
+            },
+            { status: 503 }
+        )
+    }
+
     // Known API errors (expected — e.g. 404, 401, 400)
     if (error instanceof ApiError) {
         return NextResponse.json(

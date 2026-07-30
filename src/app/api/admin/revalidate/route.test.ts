@@ -55,6 +55,20 @@ describe('/api/admin/revalidate', () => {
         expect(mocks.revalidateTag).toHaveBeenCalledWith('categories', 'max')
     })
 
+    it('blocks authenticated revalidation while write freeze is active', async () => {
+        vi.stubEnv('REVALIDATE_SECRET', 'correct-secret')
+        vi.stubEnv('WRITE_FREEZE_MODE', 'true')
+
+        const response = await POST(createRequest('correct-secret', 'brands,categories'))
+        const body = await response.json()
+
+        expect(response.status).toBe(503)
+        expect(body).toMatchObject({
+            code: 'WRITE_FREEZE_ACTIVE',
+        })
+        expect(mocks.revalidateTag).not.toHaveBeenCalled()
+    })
+
     it('does not allow GET revalidation convenience calls', async () => {
         vi.stubEnv('REVALIDATE_SECRET', 'correct-secret')
 

@@ -1,0 +1,85 @@
+# Review-only Coolify compose proposal.
+# Do not deploy until a separate approval is given.
+#
+# Secrets must be entered through Coolify private environment variables.
+# Do not commit values for POSTGRES_PASSWORD, POSTGRES_USER, POSTGRES_DB, or
+# application DATABASE_URL/DIRECT_URL.
+
+services:
+  dpg-staging-postgres:
+    image: postgres:16.10-bookworm@sha256:38471f330eb885e04de130b768d6db4e10469e2311879c7e5c699f6d2d8a1c74
+    platform: linux/arm64
+    container_name: dpg-staging-postgres
+    restart: unless-stopped
+    stop_grace_period: 60s
+
+    # No public port mapping. The app must reach Postgres over the internal
+    # Docker network only.
+    expose:
+      - "5432"
+
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?set in Coolify private env}
+      POSTGRES_USER: ${POSTGRES_USER:?set in Coolify private env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set in Coolify private env}
+      PGDATA: /var/lib/postgresql/data/pgdata
+
+    command:
+      - "postgres"
+      - "-c"
+      - "max_connections=40"
+      - "-c"
+      - "shared_buffers=128MB"
+      - "-c"
+      - "work_mem=4MB"
+      - "-c"
+      - "maintenance_work_mem=64MB"
+      - "-c"
+      - "effective_cache_size=384MB"
+      - "-c"
+      - "max_wal_size=512MB"
+      - "-c"
+      - "wal_compression=on"
+      - "-c"
+      - "log_min_duration_statement=1000"
+      - "-c"
+      - "log_checkpoints=on"
+      - "-c"
+      - "idle_in_transaction_session_timeout=60000"
+
+    volumes:
+      - dpg_staging_postgres_data:/var/lib/postgresql/data
+      - dpg_staging_postgres_backups:/backups
+
+    networks:
+      - dongphugia-staging-backend
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\" -h 127.0.0.1 -p 5432",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+
+    mem_limit: 768m
+    memswap_limit: 768m
+    cpus: "0.75"
+    pids_limit: 256
+
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  dongphugia-staging-backend:
+    name: dongphugia-staging-backend
+    internal: true
+
+volumes:
+  dpg_staging_postgres_data:
+    name: dpg_staging_postgres_data
+  dpg_staging_postgres_backups:
+    name: dpg_staging_postgres_backups

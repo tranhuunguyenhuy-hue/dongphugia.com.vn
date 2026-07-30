@@ -6,6 +6,7 @@ import { generateOrderNumber } from '@/lib/utils'
 import { ApiError, handleApiError } from '@/lib/api-error'
 import { logger } from '@/lib/logger'
 import { calculateOrderUnitPrice } from '@/lib/order-pricing'
+import { isWriteFreezeError } from '@/lib/write-freeze'
 
 const MAX_ORDER_NUMBER_ATTEMPTS = 5
 
@@ -195,7 +196,7 @@ export async function POST(request: NextRequest) {
             total: Number(order.total),
         })
     } catch (error) {
-        if (error instanceof ApiError || error instanceof ZodError) {
+        if (error instanceof ApiError || error instanceof ZodError || isWriteFreezeError(error)) {
             return handleApiError(error)
         }
 

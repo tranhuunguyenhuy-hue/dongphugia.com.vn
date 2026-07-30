@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { revalidateTag } from 'next/cache'
+import { getWriteFreezeMessage, requireWritesAllowed, WRITE_FREEZE_ERROR_CODE } from '@/lib/write-freeze'
 
 const DEFAULT_TAGS = ['brands', 'categories', 'subcategories']
 const MAX_TAGS_PER_REQUEST = 20
@@ -33,6 +34,15 @@ export async function POST(req: NextRequest) {
 
     if (secret !== configuredSecret) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    try {
+        requireWritesAllowed('api.admin.revalidate')
+    } catch {
+        return NextResponse.json(
+            { error: getWriteFreezeMessage(), code: WRITE_FREEZE_ERROR_CODE },
+            { status: 503 },
+        )
     }
 
     const tags = parseTags(req)
