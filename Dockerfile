@@ -35,6 +35,8 @@ ENV NODE_ENV=production \
     HOSTNAME=0.0.0.0
 
 RUN apk add --no-cache libc6-compat openssl && \
+    rm -rf /usr/local/lib/node_modules/npm && \
+    rm -f /usr/local/bin/npm /usr/local/bin/npx && \
     addgroup -S nodejs && \
     adduser -S nextjs -G nodejs
 
