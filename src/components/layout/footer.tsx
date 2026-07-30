@@ -17,6 +17,7 @@ export function Footer() {
                                 alt="Đông Phú Gia - Đồng hành, Phát triển"
                                 width={184}
                                 height={36}
+                                loading="lazy"
                                 className="h-auto w-[164px] object-contain lg:w-[184px]"
                             />
                         </Link>
@@ -134,6 +135,7 @@ export function Footer() {
                             alt="Đã Thông Báo Bộ Công Thương"
                             width={250}
                             height={100}
+                            loading="lazy"
                             className="w-[200px] lg:w-[250px] h-auto object-contain opacity-90 hover:opacity-100 transition-opacity"
                         />
                     </a>

@@ -13,6 +13,7 @@ const beVietnamPro = Be_Vietnam_Pro({
   subsets: ["latin", "vietnamese"],
   weight: ["400", "500", "600", "700"],
   display: "swap",
+  preload: false,
 });
 
 const playfairDisplay = Playfair_Display({
@@ -21,6 +22,7 @@ const playfairDisplay = Playfair_Display({
   weight: ["400", "600", "700"],
   style: ["normal", "italic"],
   display: "swap",
+  preload: false,
 });
 
 export const metadata: Metadata = {
