@@ -24,7 +24,6 @@ export function HeroBannerControls({
 }: HeroBannerControlsProps) {
     const itemCount = banners.length
     const [current, setCurrent] = useState(0)
-    const [isPaused, setIsPaused] = useState(false)
 
     const goTo = useCallback((index: number) => {
         setCurrent((index + itemCount) % itemCount)
@@ -42,47 +41,6 @@ export function HeroBannerControls({
         initialSlide.hidden = current !== 0
         initialSlide.setAttribute("aria-hidden", String(current !== 0))
     }, [carouselId, current])
-
-    useEffect(() => {
-        const carousel = document.getElementById(carouselId)
-        if (!carousel) return
-
-        const pause = () => setIsPaused(true)
-        const resume = () => setIsPaused(false)
-        carousel.addEventListener("mouseenter", pause)
-        carousel.addEventListener("mouseleave", resume)
-        carousel.addEventListener("focusin", pause)
-        carousel.addEventListener("focusout", resume)
-
-        return () => {
-            carousel.removeEventListener("mouseenter", pause)
-            carousel.removeEventListener("mouseleave", resume)
-            carousel.removeEventListener("focusin", pause)
-            carousel.removeEventListener("focusout", resume)
-        }
-    }, [carouselId])
-
-    useEffect(() => {
-        if (
-            isPaused ||
-            window.matchMedia("(prefers-reduced-motion: reduce)").matches
-        ) return
-
-        // Keep the server-rendered LCP slide stable through the initial reading
-        // window, then resume the normal five-second carousel cadence.
-        let interval: number | undefined
-        const initialTimer = window.setTimeout(() => {
-            setCurrent((index) => (index + 1) % itemCount)
-            interval = window.setInterval(() => {
-                setCurrent((index) => (index + 1) % itemCount)
-            }, 5000)
-        }, 12000)
-
-        return () => {
-            window.clearTimeout(initialTimer)
-            if (interval !== undefined) window.clearInterval(interval)
-        }
-    }, [isPaused, itemCount])
 
     const item = banners[current]
     const responsiveSrcSet = current > 0
