@@ -94,18 +94,30 @@ export default async function HomePage() {
     ].filter(c => c.products.length > 0)
     const firstBannerUrl = banners[0]?.image_url
     if (firstBannerUrl) {
-        preload(createResponsiveMediaUrl(firstBannerUrl, 720), {
-            as: 'image',
-            type: 'image/webp',
-            fetchPriority: 'high',
-            media: '(max-width: 767px)',
-        })
-        preload(createResponsiveMediaUrl(firstBannerUrl, 1280), {
-            as: 'image',
-            type: 'image/webp',
-            fetchPriority: 'high',
-            media: '(min-width: 768px)',
-        })
+        const mobileHeroUrl = createResponsiveMediaUrl(firstBannerUrl, 720)
+        const desktopHeroUrl = createResponsiveMediaUrl(firstBannerUrl, 1280)
+        const hasResponsiveHeroVariants =
+            mobileHeroUrl !== firstBannerUrl || desktopHeroUrl !== firstBannerUrl
+
+        if (hasResponsiveHeroVariants) {
+            preload(mobileHeroUrl, {
+                as: 'image',
+                type: 'image/webp',
+                fetchPriority: 'high',
+                media: '(max-width: 767px)',
+            })
+            preload(desktopHeroUrl, {
+                as: 'image',
+                type: 'image/webp',
+                fetchPriority: 'high',
+                media: '(min-width: 768px)',
+            })
+        } else {
+            preload(firstBannerUrl, {
+                as: 'image',
+                fetchPriority: 'high',
+            })
+        }
     }
 
     return (
