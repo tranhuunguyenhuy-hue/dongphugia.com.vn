@@ -1,9 +1,48 @@
 # 📋 TÀI LIỆU BÀN GIAO DỰ ÁN — ĐÔNG PHÚ GIA
 
-> **Phiên bản**: 1.0 | **Ngày**: 2026-05-27  
-> **Domain**: [dongphugia.com.vn](https://dongphugia.com.vn)  
-> **Repository**: `tranhuunguyenhuy-hue/dongphugia.com.vn`  
-> **Trạng thái**: ✅ Production — đang chạy trên Vercel
+> **Application baseline:** 2026-05-27
+>
+> **Migration overlay updated:** 2026-08-01
+>
+> **Current production:**
+> [www.dongphugia.com.vn](https://www.dongphugia.com.vn) on Vercel; old apex
+> redirects to `www`
+>
+> **Target production:** [www.dongphugia.vn](https://www.dongphugia.vn) on
+> AWS/Coolify; production data and DNS have not switched
+
+## Current migration hand-over
+
+The authoritative goal and safety sequence are maintained in
+[`operations/MIGRATION-CHARTER.md`](operations/MIGRATION-CHARTER.md). Every
+agent takeover must use
+[`operations/AGENT-HANDOFF-STANDARD.md`](operations/AGENT-HANDOFF-STANDARD.md).
+
+Current transition model:
+
+```text
+CURRENT PUBLIC                       TARGET (DARK / NOT PUBLIC)
+www.dongphugia.com.vn                www.dongphugia.vn
+Vercel                               AWS EC2 Singapore + Coolify
+Supabase PostgreSQL source           self-hosted PostgreSQL verify-full
+Vercel rollback deployment           immutable Linux/ARM64 GHCR image
+         \________________ rollback / observation ________________/
+```
+
+Non-negotiable boundaries:
+
+- Vercel and `.com.vn` stay active through the observation window.
+- Production data is not yet migrated; write-freeze/final copy needs a new PM
+  approval after the expired 31/07/2026 window.
+- DNS, nameservers, canonical traffic and old-domain redirects are unchanged.
+- Apex `.vn` will redirect HTTP 308 to `https://www.dongphugia.vn` only after
+  the DNS gate is approved.
+- Old-domain redirects are enabled only after new-domain acceptance and a
+  separate approval.
+
+The detailed application description below is retained as product and legacy
+rollback reference. Its Vercel/Supabase deployment instructions do not override
+the current migration charter.
 
 ---
 
@@ -121,7 +160,7 @@ graph TB
 
 | Layer | Technology | Version |
 |-------|-----------|---------|
-| Framework | Next.js (App Router) | 16.2.3 |
+| Framework | Next.js (App Router) | 16.2.10 |
 | Runtime | React | 19.2.3 |
 | Language | TypeScript | 5.9.3 |
 | CSS | Tailwind CSS | v4 |
@@ -706,7 +745,24 @@ flowchart TD
 
 ## 12. Deploy & Vận Hành
 
-### Deploy (Vercel)
+### Current target release model
+
+1. Exact green source head and application tree.
+2. Immutable Linux/ARM64 GHCR digest with SBOM, provenance and zero
+   HIGH/CRITICAL scan findings.
+3. Exact-digest staging and dark-production acceptance.
+4. PM-approved write-freeze/final copy with reconciliation and no split-brain.
+5. PM-approved DNS switch with TLS, rollback records and named operator.
+
+Deployment of a dark image is not a production release. Release occurs only
+when PM approves production data and canonical traffic at their separate gates.
+
+### Legacy production deploy (Vercel rollback baseline)
+
+The following section documents the current public rollback platform. It must
+remain usable during migration, but it is not the target release workflow.
+
+#### Deploy (Vercel)
 
 | Setting | Giá trị |
 |---------|---------|
@@ -717,18 +773,18 @@ flowchart TD
 | Domain | `dongphugia.com.vn` |
 | Node.js | (Vercel default) |
 
-### Quy trình Deploy
+#### Legacy Vercel deploy process
 
 1. Push code lên branch `main` → Vercel auto-deploy
 2. Preview deploy cho các branch khác
 3. Vercel build chạy `prisma generate` (postinstall) → `next build`
 
-### Rollback
+#### Rollback
 
 - Vercel Dashboard → Deployments → chọn deployment cũ → "Promote to Production"
 - Hoặc: `git revert` + push lên `main`
 
-### Maintenance Mode
+#### Maintenance Mode
 
 Trong `.env`:
 ```
@@ -736,7 +792,7 @@ MAINTENANCE_MODE=true
 ```
 → Edge Middleware rewrite tất cả request (trừ admin/api/static) sang `/maintenance`
 
-### Cache Busting
+#### Cache Busting
 
 Sau khi thay đổi data (admin CMS):
 ```bash

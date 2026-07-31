@@ -1,6 +1,14 @@
 # 📖 Hướng Dẫn Cài Đặt Google Tag Manager (GTM)
 ## Đồng Bộ GA4 & Facebook Pixel Cho Website Đông Phú Gia
 
+> **Domain migration note — 01/08/2026:** Current canonical vẫn là
+> `www.dongphugia.com.vn`; target canonical là `www.dongphugia.vn`. Trước DNS
+> switch, team Marketing phải chuẩn bị domain/data-stream/cross-domain settings
+> cho `.vn`, nhưng chỉ publish thay đổi ảnh hưởng production trong approved
+> cutover window. Giữ tracking `.com.vn` trong observation window và kiểm tra
+> duplicate sessions/referrals sau switch. Xem
+> [`../operations/MIGRATION-CHARTER.md`](../operations/MIGRATION-CHARTER.md).
+
 > **Phiên bản:** 1.0  
 > **Ngày tạo:** 21/05/2026  
 > **Dành cho:** Team Marketing / Performance Ads  

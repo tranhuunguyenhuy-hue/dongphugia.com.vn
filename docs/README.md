@@ -6,6 +6,8 @@
 
 - [Release operations](operations/README.md): quy trình takeover, hand-off và
   quản lý branch/worktree cho migration và production release.
+- [Current migration charter](operations/MIGRATION-CHARTER.md): mục tiêu nền
+  tảng/domain, sequence, safety gates và rollback boundary hiện hành.
 - [Agent reference](AGENTS.md): quy ước kỹ thuật và quy trình triển khai.
 - [Handover](HANDOVER.md): kiến trúc, dữ liệu và hướng dẫn tiếp quản.
 - [Design system](DESIGN_SYSTEM.md): token và quy ước giao diện.

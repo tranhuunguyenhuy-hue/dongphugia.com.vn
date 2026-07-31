@@ -1,5 +1,23 @@
 # ROADMAP — Đông Phú Gia
 
+> **Current priority override — 01/08/2026:** Roadmap release hiện hành là
+> migration trong
+> [`docs/operations/MIGRATION-CHARTER.md`](docs/operations/MIGRATION-CHARTER.md).
+> Kế hoạch rebuild/Vercel staging tháng 06 bên dưới được giữ làm lịch sử sản
+> phẩm và không được dùng để suy ra hosting, database hoặc cutover hiện tại.
+
+## Current release priority
+
+1. Giữ exact green release source, staging và Vercel rollback ổn định.
+2. Hoàn tất zone exports, backup/restore/reconciliation và target TLS evidence.
+3. Xin PM phê duyệt maintenance window mới cho production-data cutover.
+4. Chỉ sau data acceptance mới trình `DNS-SWITCH-APPROVAL-GATE`.
+5. Giữ `.com.vn`/Vercel trong observation; old-domain redirect làm sau.
+
+---
+
+## Historical roadmap — 01/06/2026
+
 > **Cập nhật:** 01/06/2026 — Tech Lead (Claude Cowork)
 > **Chiến lược:** Rebuild frontend hoàn toàn trên staging repo mới, giữ nguyên backend + DB. Production chỉ nhận backend/DB upgrades trong thời gian này.
 

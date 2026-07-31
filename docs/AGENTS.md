@@ -1,11 +1,43 @@
 # Đông Phú Gia — Agent Reference (Single Source of Truth)
 
-> **Operational overlay (2026-08-01):** Phần hosting/database bên dưới mô tả
-> baseline Vercel/Supabase lịch sử. Với migration, release hoặc production
-> operation, agent phải đọc
-> [`operations/README.md`](operations/README.md) và hand-off hiện hành trước.
-> Không được suy ra current runtime, mutation owner hoặc deployment identity
-> chỉ từ tài liệu này.
+> **Current operational authority (2026-08-01):** Đọc
+> [`operations/MIGRATION-CHARTER.md`](operations/MIGRATION-CHARTER.md),
+> [`operations/AGENT-HANDOFF-STANDARD.md`](operations/AGENT-HANDOFF-STANDARD.md)
+> và hand-off hiện hành trước mọi mutation. Phần Vercel/Supabase bên dưới là
+> application/rollback baseline lịch sử; không phải target production.
+
+## Current migration objective
+
+- Current public production: `www.dongphugia.com.vn` trên Vercel; old apex
+  redirect tới `www`.
+- Target canonical: `https://www.dongphugia.vn`.
+- Target platform: AWS EC2 Singapore → Coolify → immutable Linux/ARM64 GHCR
+  image → Next.js.
+- Target database: self-hosted PostgreSQL với TLS `verify-full`.
+- Target media: Bunny Storage/CDN với compatibility được nghiệm thu.
+- Vercel và `.com.vn` phải được giữ nguyên làm rollback qua observation window.
+
+## Agent start checklist for migration/release
+
+1. Đọc migration charter và latest hand-off.
+2. Chạy `scripts/repository/audit-git-state.sh` read-only.
+3. Xác minh absolute worktree, branch, dirty files, PR head và exact digest.
+4. Xác minh mutation owner cũ đã dừng hoặc đã nhường đúng resource.
+5. Công bố owner mới; chỉ một writer trên mỗi resource.
+6. Không lặp workflow/probe nếu input hoặc evidence chưa thay đổi.
+7. Không đọc/in secret; chỉ xác minh metadata và dùng secret-safe injection.
+
+## Current hard stops
+
+- Không production write-freeze/final copy/database write nếu chưa qua
+  `PRODUCTION-DATA-WRITE-FREEZE-APPROVAL-GATE` mới.
+- Không DNS/nameserver/canonical traffic/old-domain redirect nếu chưa qua
+  `DNS-SWITCH-APPROVAL-GATE`.
+- Không tắt, xóa hoặc thay đổi Vercel rollback baseline trong observation.
+- Maintenance window ngày 31/07/2026 đã hết hiệu lực; không tự dời window.
+
+Nếu phần còn lại của file mâu thuẫn với các quy tắc trên, current migration
+charter và exact latest hand-off luôn ưu tiên.
 
 **Updated:** 04/06/2026 | Live: dongphugia.com.vn | Deploy: Vercel (auto khi push `main`)
 
@@ -27,10 +59,11 @@ Contact: 094 9349 949 · vlxd.dongphu@gmail.com
 ## Tech Stack
 
 ```
-Next.js 16.2.3 App Router · React 19.2.3 · TypeScript 5.9.3
+Next.js 16.2.10 App Router · React 19.2.3 · TypeScript 5.9.3
 Tailwind CSS v4 — @theme directive in globals.css (NO tailwind.config.js)
-shadcn/ui (Radix) · Prisma 5.22.0 · Supabase PostgreSQL · Zustand (cart)
-Bunny CDN: cdn.dongphugia.com.vn · Vercel deploy
+shadcn/ui (Radix) · Prisma 5.22.0 · PostgreSQL · Zustand (cart)
+Current rollback: Supabase + Vercel · Target: self-hosted PostgreSQL + Coolify
+Media: Bunny Storage/CDN with approved legacy compatibility
 ```
 
 ---
@@ -56,7 +89,10 @@ Bunny CDN: cdn.dongphugia.com.vn · Vercel deploy
 
 ---
 
-## Session Start Checklist (Antigravity)
+## Historical session checklist (Antigravity)
+
+> Legacy reference only. Migration/release agents must use the current checklist
+> at the top of this file and must not automatically pull/switch a dirty branch.
 
 ```
 □ 1. Đọc file này (docs/AGENTS.md)
@@ -119,7 +155,9 @@ admin/{entity}/
 
 **Server Actions:** NO `redirect()` trong programmatic call → return `{ success: true }`. `redirect()` chỉ OK trong login/logout. Always `revalidateTag()` sau mutation.
 
-**Database:** NO `prisma migrate`. Schema changes → SQL trực tiếp trên Supabase Dashboard → `npx prisma db pull` → `npx prisma generate`.
+**Database:** Không mutation production schema/data nếu chưa có approval riêng.
+Mọi migration phải được review, rehearsal trên target cô lập, backup/restore và
+reconciliation trước cutover. `prisma generate` phải khớp reviewed schema.
 
 **Images:** Bunny CDN qua `/api/upload-image`. NEVER `public/uploads/`.
 
@@ -189,11 +227,11 @@ rm -rf .next && npm run dev
 
 ```bash
 # Database
-DATABASE_URL=     # Supabase pooled (pgbouncer=true)
-DIRECT_URL=       # Supabase direct (cho prisma db pull)
+DATABASE_URL=     # Runtime PostgreSQL; production target uses verify-full
+DIRECT_URL=       # Direct PostgreSQL access for approved operations only
 
 # Site
-NEXT_PUBLIC_SITE_URL=https://dongphugia.com.vn
+NEXT_PUBLIC_SITE_URL=  # Per environment; target is https://www.dongphugia.vn
 NEXT_PUBLIC_GTM_ID=
 
 # Bunny CDN
@@ -226,7 +264,8 @@ MAINTENANCE_MODE=false
 
 | Rule | Nếu vi phạm |
 |------|-------------|
-| Chỉ PM trigger deploy Vercel | Block ngay |
+| PM duyệt production-data cutover và DNS/traffic release | Block ngay |
+| Chỉ deploy exact green source/immutable digest trong scope được duyệt | Block ngay |
 | `npx tsc --noEmit` phải pass trước commit | Block ngay |
 | Không xóa bảng/column DB khi chưa hỏi Tech Lead | Block ngay |
 | Không thay đổi auth flow khi chưa hỏi Tech Lead | Block ngay |

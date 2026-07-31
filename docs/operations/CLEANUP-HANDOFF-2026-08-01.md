@@ -1,8 +1,9 @@
 # Repository cleanup hand-off - 2026-08-01
 
-**Status:** PHASE-1-COMPLETE
+**Status:** PHASE-2-DOCUMENTATION-COMPLETE
 
-**Scope:** repository/worktree hygiene and agent hand-off standard
+**Scope:** repository/worktree hygiene, agent hand-off standard and current
+migration-document alignment
 
 **Next stop gate:** `POST-OBSERVATION-BRANCH-DELETE-APPROVAL`
 
@@ -32,6 +33,7 @@
 | Cleanup worktree | Created dedicated maintenance branch | PASS | Delete branch after review if not needed |
 | Local validation access | Stopped localhost proxy and SSM port-forward | PASS | Re-open a new authenticated tunnel if approved |
 | Documentation | Added takeover, hand-off and hygiene standards | PASS | Revert documentation commit |
+| Canonical Markdown | Added migration charter and marked legacy plans/status clearly | PASS | Revert follow-up documentation commit |
 
 ## Recovery evidence
 

@@ -1,8 +1,56 @@
 # PROJECT-STATUS — Đông Phú Gia
 
-> **Cập nhật:** 27/05/2026 — Được tạo bởi Tech Lead (Claude Cowork) khi tiếp nhận dự án.
-> **Đọc file này đầu mỗi session** để nắm trạng thái hiện tại trước khi làm việc.
-> Xem `docs/HANDOVER.md` để hiểu chi tiết kiến trúc hệ thống.
+> **Current update:** 01/08/2026 — platform/domain migration in progress.
+> Đọc `docs/operations/MIGRATION-CHARTER.md` và hand-off mới nhất trước mọi
+> mutation. Nội dung snapshot 27/05/2026 ở nửa sau file là lịch sử sản phẩm.
+
+## Trạng thái migration hiện tại
+
+| Area | Current verified state | Next gate |
+|---|---|---|
+| Public production | `www.dongphugia.com.vn` chạy trên Vercel; old apex redirect 307 tới `www` | Giữ nguyên làm rollback |
+| Target domain | `www.dongphugia.vn`; apex sẽ redirect 308 | Chưa đổi DNS/traffic |
+| PR #26 | Head `9aa93c3c565e23e459d4e4f24ba363805ab88134`; required checks xanh | Giữ exact green evidence |
+| Accepted source | `090ff89c981f8c6b2d851bf99d7fb8572dacc4da` application baseline | Không dùng experimental red head |
+| Staging | Accepted digest `sha256:65fd6460f910468bba5e6d131e45ad63bcf6cd9fb1e067ffe0398423212e03df` | Giữ stable |
+| Dark production | Production-specific digest `sha256:e5eaadf454abe9b01bb35389e80b0828dac237d9cb4195dc289345627bfeab9b` validated without public traffic | Re-verify before cutover |
+| Target PostgreSQL | Provisioned/validated with TLS `verify-full` | Production data not migrated |
+| Bunny media | Read and disposable object smoke passed | No production reference mutation |
+| Data cutover | Not started | New `PRODUCTION-DATA-WRITE-FREEZE-APPROVAL-GATE` |
+| DNS/TLS cutover | Target `www.dongphugia.vn` chưa resolve công khai | Zone exports, TLS and `DNS-SWITCH-APPROVAL-GATE` |
+
+The reserved 31/07/2026 maintenance window has expired. It grants no authority
+for an action on or after 01/08/2026. PM must approve a new window and named
+operators before write-freeze or DNS mutation.
+
+## Current critical path
+
+1. Obtain full `.vn` zone export from Mắt Bão and `.com.vn` export from
+   P.A Việt Nam without changing records.
+2. Refresh backup/restore/reconciliation evidence for the selected cutover
+   window.
+3. Re-verify exact source/image/dark deployment, target TLS and rollback.
+4. Present the production-data gate with downtime, owners and rollback trigger.
+5. After approved data cutover and acceptance, present the DNS gate.
+6. Keep Vercel and old domain through observation; delay old-domain redirect.
+
+## Hard stops
+
+- No production write-freeze, final dump/copy or target production writes
+  without a new data-gate approval.
+- No DNS, nameserver, canonical traffic or old-domain redirect without DNS-gate
+  approval.
+- No deletion/change of Vercel rollback or the old domain during observation.
+- One mutation owner per resource; every takeover uses the operations hand-off
+  standard.
+
+---
+
+## Historical product snapshot — 27/05/2026
+
+The sections below are retained for product/application context. Where they
+conflict with the current migration charter, the charter and latest verified
+hand-off take precedence.
 
 ---
 

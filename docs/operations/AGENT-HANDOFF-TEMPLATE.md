@@ -6,12 +6,17 @@
 
 **Next stop gate:** `<GATE-NAME>`
 
+**Charter/version:** `<path and updated date>`
+
+**Approved window:** `<exact time/timezone or NONE/EXPIRED>`
+
 ## 1. Authority
 
 - FACT - Current mutation owner:
 - FACT - Previous owner stopped:
 - PM DECISION - Authorized scope:
 - PM DECISION - Forbidden actions:
+- FACT - Approval/window still valid at hand-off time:
 
 ## 2. Local source
 

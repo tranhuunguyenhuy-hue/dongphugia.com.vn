@@ -1,4 +1,8 @@
 # Project: Fix P0 Quick Wins
+
+> **Historical task record:** File này chỉ mô tả LEO-437/438/440 đã hoàn tất.
+> Nó không phải current project status. Với mục tiêu hiện hành, đọc
+> `PROJECT-STATUS.md` và `docs/operations/MIGRATION-CHARTER.md`.
 # Scope: LEO-437, LEO-438, LEO-440
 
 ## Architecture

@@ -1,5 +1,9 @@
 # Kế hoạch triển khai Task LEO-440
 
+> **Historical task plan:** LEO-440 đã hoàn tất và file này không phải release
+> plan hiện hành. Current migration sequence nằm tại
+> [`operations/MIGRATION-CHARTER.md`](operations/MIGRATION-CHARTER.md).
+
 ## Mục tiêu
 Loại bỏ việc lặp lại tên thương hiệu " | Đông Phú Gia" trong tiêu đề (title) của các trang thuộc thư mục `src/app/(public)/`. Vì tên thương hiệu đã được cấu hình tự động thông qua `title.template` trong `src/app/layout.tsx`, các trang con không cần phải nối thêm chuỗi này thủ công nữa.
 
