@@ -27,6 +27,8 @@ jobs:
       POSTGRES_DB: dpg_homepage_test
       POSTGRES_USER: dpg_homepage_test
       POSTGRES_PASSWORD: dpg_homepage_test_password
+      DATABASE_URL: postgresql://dpg_homepage_test:dpg_homepage_test_password@127.0.0.1:5432/dpg_homepage_test
+      DIRECT_URL: postgresql://dpg_homepage_test:dpg_homepage_test_password@127.0.0.1:5432/dpg_homepage_test
       NEXT_PUBLIC_SITE_URL: http://localhost:3000
       BUNNY_CDN_HOSTNAME: cdn.dongphugia.com.vn
 
@@ -108,12 +110,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          database_scheme=postgresql
-          printf -v database_url '%s://%s:%s@127.0.0.1:5432/%s' \
-            "$database_scheme" "$POSTGRES_USER" "$POSTGRES_PASSWORD" "$POSTGRES_DB"
-          export DATABASE_URL="$database_url"
-          export DIRECT_URL="$database_url"
-          npm run quality:homepage
+          npm run test:media
+          npm run build
+          npm run prepare:standalone-assets
+          npm run test:homepage
+
+      - name: Lighthouse diagnostics (post-launch performance)
+        continue-on-error: true
+        run: npm run perf:lighthouse
 
       - name: Upload homepage performance diagnostics
         if: always()
