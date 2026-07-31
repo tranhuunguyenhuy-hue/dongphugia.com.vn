@@ -60,7 +60,7 @@ export function HeroBanner({ banners }: HeroBannerProps) {
                         className="h-full w-full object-cover"
                         loading="eager"
                         fetchPriority="high"
-                        decoding="sync"
+                        decoding="async"
                     />
                 </picture>
             </div>
@@ -123,7 +123,7 @@ export function HeroBanner({ banners }: HeroBannerProps) {
                                 className="h-full w-full object-cover"
                                 loading="eager"
                                 fetchPriority="high"
-                                decoding="sync"
+                                decoding="async"
                             />
                         </picture>
                     </>
