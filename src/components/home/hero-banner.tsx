@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs"
 import path from "node:path"
 import Link from "next/link"
-import { HeroBannerControls } from "@/components/home/hero-banner-controls"
+import { HeroBannerControls } from "@/components/home/hero-banner-controls-lazy"
 import {
     createResponsiveMediaUrl,
     createResponsiveSrcSet,
