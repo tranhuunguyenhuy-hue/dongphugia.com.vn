@@ -1,3 +1,5 @@
+import { existsSync } from "node:fs"
+import path from "node:path"
 import Link from "next/link"
 import { HeroBannerControls } from "@/components/home/hero-banner-controls"
 import {
@@ -18,6 +20,14 @@ type HeroBannerProps = { banners: Banner[] }
 const BANNER_WIDTH = 1600
 const BANNER_HEIGHT = 900
 const CAROUSEL_ID = "homepage-hero-carousel"
+
+function localResponsiveAsset(url: string, width: number) {
+    if (!url.startsWith("/")) return null
+    const candidate = createResponsiveMediaUrl(url, width)
+    return existsSync(path.join(process.cwd(), "public", candidate))
+        ? candidate
+        : null
+}
 
 /**
  * Server-render the hero media so its first paint does not depend on hydrating
@@ -66,12 +76,21 @@ export function HeroBanner({ banners }: HeroBannerProps) {
         >
             {(() => {
                 const item = items[0]
+                const mobileImage =
+                    localResponsiveAsset(item.image_url, 720) ??
+                    "/api/homepage-hero?width=720"
+                const desktopImage =
+                    localResponsiveAsset(item.image_url, 1280) ??
+                    "/api/homepage-hero?width=1280"
+                const desktopImage1600 =
+                    localResponsiveAsset(item.image_url, 1600) ??
+                    "/api/homepage-hero?width=1600"
                 const image = (
                     <>
                         <link
                             rel="preload"
                             as="image"
-                            href="/api/homepage-hero?width=720"
+                            href={mobileImage}
                             type="image/webp"
                             media="(max-width: 767px)"
                             fetchPriority="high"
@@ -79,7 +98,7 @@ export function HeroBanner({ banners }: HeroBannerProps) {
                         <link
                             rel="preload"
                             as="image"
-                            href="/api/homepage-hero?width=1280"
+                            href={desktopImage}
                             type="image/webp"
                             media="(min-width: 768px)"
                             fetchPriority="high"
@@ -88,16 +107,16 @@ export function HeroBanner({ banners }: HeroBannerProps) {
                             <source
                                 media="(max-width: 767px)"
                                 type="image/webp"
-                                srcSet="/api/homepage-hero?width=720"
+                                srcSet={mobileImage}
                             />
                             <source
                                 media="(min-width: 768px)"
                                 type="image/webp"
-                                srcSet="/api/homepage-hero?width=1280 1280w, /api/homepage-hero?width=1600 1600w"
+                                srcSet={`${desktopImage} 1280w, ${desktopImage1600} 1600w`}
                                 sizes="1280px"
                             />
                             <img
-                                src="/api/homepage-hero?width=1280"
+                                src={desktopImage}
                                 alt={item.title || "Không gian vật liệu cao cấp Đông Phú Gia"}
                                 width={BANNER_WIDTH}
                                 height={BANNER_HEIGHT}
