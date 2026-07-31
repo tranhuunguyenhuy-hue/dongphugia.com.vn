@@ -1,5 +1,12 @@
 # Đông Phú Gia — Agent Reference (Single Source of Truth)
 
+> **Operational overlay (2026-08-01):** Phần hosting/database bên dưới mô tả
+> baseline Vercel/Supabase lịch sử. Với migration, release hoặc production
+> operation, agent phải đọc
+> [`operations/README.md`](operations/README.md) và hand-off hiện hành trước.
+> Không được suy ra current runtime, mutation owner hoặc deployment identity
+> chỉ từ tài liệu này.
+
 **Updated:** 04/06/2026 | Live: dongphugia.com.vn | Deploy: Vercel (auto khi push `main`)
 
 > ⚠️ **TEAM CHANGE (04/06/2026):** Antigravity đã ngừng hoạt động. Xem section "Team & Workflow" bên dưới.

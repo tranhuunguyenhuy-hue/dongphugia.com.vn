@@ -4,6 +4,8 @@
 
 ## Vận hành và kiến trúc
 
+- [Release operations](operations/README.md): quy trình takeover, hand-off và
+  quản lý branch/worktree cho migration và production release.
 - [Agent reference](AGENTS.md): quy ước kỹ thuật và quy trình triển khai.
 - [Handover](HANDOVER.md): kiến trúc, dữ liệu và hướng dẫn tiếp quản.
 - [Design system](DESIGN_SYSTEM.md): token và quy ước giao diện.
@@ -19,6 +21,8 @@
 
 ## Kế hoạch và handoff
 
+- Mọi release/migration hand-off mới phải theo
+  [Agent hand-off standard](operations/AGENT-HANDOFF-STANDARD.md).
 - `plans/`: kế hoạch kỹ thuật có tên và phạm vi rõ ràng.
 - `handoffs/`: kết quả bàn giao catalog/data còn giá trị vận hành.
 - `archive/`: tài liệu lịch sử, không phải nguồn quyết định hiện tại.
