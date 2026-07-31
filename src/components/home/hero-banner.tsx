@@ -29,6 +29,13 @@ export function HeroBanner({ banners }: HeroBannerProps) {
     if (items.length === 0) {
         return (
             <div className="relative aspect-[16/9] w-full overflow-hidden rounded-md bg-stone-50 shadow-md">
+                <link
+                    rel="preload"
+                    as="image"
+                    href="/images/banner-1.editorial.w960.webp"
+                    type="image/webp"
+                    fetchPriority="high"
+                />
                 <picture>
                     <source
                         type="image/webp"
@@ -60,29 +67,47 @@ export function HeroBanner({ banners }: HeroBannerProps) {
             {(() => {
                 const item = items[0]
                 const image = (
-                    <picture className="block h-full w-full">
-                        <source
+                    <>
+                        <link
+                            rel="preload"
+                            as="image"
+                            href="/api/homepage-hero?width=720"
+                            type="image/webp"
                             media="(max-width: 767px)"
-                            type="image/webp"
-                            srcSet="/api/homepage-hero?width=720"
-                        />
-                        <source
-                            media="(min-width: 768px)"
-                            type="image/webp"
-                            srcSet="/api/homepage-hero?width=1280 1280w, /api/homepage-hero?width=1600 1600w"
-                            sizes="1280px"
-                        />
-                        <img
-                            src="/api/homepage-hero?width=1280"
-                            alt={item.title || "Không gian vật liệu cao cấp Đông Phú Gia"}
-                            width={BANNER_WIDTH}
-                            height={BANNER_HEIGHT}
-                            className="h-full w-full object-cover"
-                            loading="eager"
                             fetchPriority="high"
-                            decoding="async"
                         />
-                    </picture>
+                        <link
+                            rel="preload"
+                            as="image"
+                            href="/api/homepage-hero?width=1280"
+                            type="image/webp"
+                            media="(min-width: 768px)"
+                            fetchPriority="high"
+                        />
+                        <picture className="block h-full w-full">
+                            <source
+                                media="(max-width: 767px)"
+                                type="image/webp"
+                                srcSet="/api/homepage-hero?width=720"
+                            />
+                            <source
+                                media="(min-width: 768px)"
+                                type="image/webp"
+                                srcSet="/api/homepage-hero?width=1280 1280w, /api/homepage-hero?width=1600 1600w"
+                                sizes="1280px"
+                            />
+                            <img
+                                src="/api/homepage-hero?width=1280"
+                                alt={item.title || "Không gian vật liệu cao cấp Đông Phú Gia"}
+                                width={BANNER_WIDTH}
+                                height={BANNER_HEIGHT}
+                                className="h-full w-full object-cover"
+                                loading="eager"
+                                fetchPriority="high"
+                                decoding="async"
+                            />
+                        </picture>
+                    </>
                 )
 
                 return (
