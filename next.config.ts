@@ -115,6 +115,18 @@ const nextConfig: NextConfig = {
 
     return [
       {
+        // These checked-in fallback hero variants are immutable build assets.
+        // Allow a cold navigation to reuse them instead of re-downloading the
+        // LCP image on every staging run.
+        source: '/images/banner-1.editorial.w(640|960).webp',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      {
         source: '/(.*)',
         headers: [
           // Prevent clickjacking
