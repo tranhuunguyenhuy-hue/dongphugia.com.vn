@@ -25,7 +25,11 @@ export async function GET(request: NextRequest) {
     const width = SUPPORTED_WIDTHS.has(requestedWidth) ? requestedWidth : 1280
     const [banner] = await getHomepageBanners()
     const sourceUrl = banner?.image_url ?? '/images/banner-1.editorial.w960.webp'
-    const responsiveUrl = createResponsiveMediaUrl(sourceUrl, width)
+    // The checked-in fallback only has a w960 variant. Keep that exact local
+    // asset instead of manufacturing missing w720/w1280/w1600 paths.
+    const responsiveUrl = banner
+        ? createResponsiveMediaUrl(sourceUrl, width)
+        : sourceUrl
     const target = new URL(responsiveUrl, request.url)
 
     if (!isAllowedMediaTarget(target, request.nextUrl)) {
@@ -35,10 +39,26 @@ export async function GET(request: NextRequest) {
         )
     }
 
-    const upstream = await fetch(target, {
-        cache: 'force-cache',
-        signal: AbortSignal.timeout(10_000),
-    })
+    // Avoid sending an HTTPS request back through the public reverse proxy
+    // when the media is local to this container. Coolify terminates TLS at the
+    // proxy, while the Next.js listener itself is plain HTTP.
+    const fetchTarget =
+        target.origin === request.nextUrl.origin
+            ? new URL(`${target.pathname}${target.search}`, 'http://127.0.0.1:3000')
+            : target
+
+    let upstream: Response
+    try {
+        upstream = await fetch(fetchTarget, {
+            cache: 'force-cache',
+            signal: AbortSignal.timeout(10_000),
+        })
+    } catch {
+        return NextResponse.json(
+            { error: 'Homepage media upstream failed' },
+            { status: 502 },
+        )
+    }
     const contentType = upstream.headers.get('content-type')
 
     if (!upstream.ok || !upstream.body || !contentType?.startsWith('image/')) {
