@@ -1,3 +1,5 @@
+import { readFile } from 'node:fs/promises'
+import path from 'node:path'
 import { NextRequest, NextResponse } from 'next/server'
 import { getHomepageBanners } from '@/lib/homepage-data'
 import { createResponsiveMediaUrl } from '@/lib/media/media-profiles'
@@ -39,17 +41,29 @@ export async function GET(request: NextRequest) {
         )
     }
 
-    // Avoid sending an HTTPS request back through the public reverse proxy
-    // when the media is local to this container. Coolify terminates TLS at the
-    // proxy, while the Next.js listener itself is plain HTTP.
-    const fetchTarget =
-        target.origin === request.nextUrl.origin
-            ? new URL(`${target.pathname}${target.search}`, 'http://127.0.0.1:3000')
-            : target
+    if (target.origin === request.nextUrl.origin) {
+        try {
+            const filePath = path.join(process.cwd(), 'public', target.pathname)
+            const body = await readFile(filePath)
+            return new NextResponse(body, {
+                headers: {
+                    'Cache-Control':
+                        'public, max-age=300, s-maxage=3600, stale-while-revalidate=86400',
+                    'Content-Type': 'image/webp',
+                    'X-Content-Type-Options': 'nosniff',
+                },
+            })
+        } catch {
+            return NextResponse.json(
+                { error: 'Homepage media is unavailable' },
+                { status: 502 },
+            )
+        }
+    }
 
     let upstream: Response
     try {
-        upstream = await fetch(fetchTarget, {
+        upstream = await fetch(target, {
             cache: 'force-cache',
             signal: AbortSignal.timeout(10_000),
         })
