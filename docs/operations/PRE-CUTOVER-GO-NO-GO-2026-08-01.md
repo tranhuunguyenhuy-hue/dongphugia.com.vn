@@ -518,3 +518,43 @@ Current overall readiness is `6/10`: deployment separation `8/10`, health and
 rollback `7/10`, observability/capacity `5/10`, and data safety `8/10`.
 The missing points are the supported apex 308 path, domain-covered TLS, fresh
 window dump/reconcile, named monitoring/rollback owners and PM approvals.
+
+## Dark apex redirect service preparation - 2026-08-02
+
+### Implementation and supply-chain evidence
+
+- PR #30: `feat: add dark apex redirect service`; source revision
+  `9b7884f2ef66643f7aea2c6350fb76198fa2b508` in the dedicated production-infra
+  worktree. The service is isolated under `infra/redirect-service/` and uses
+  no database, Bunny, session or application credentials.
+- Local `linux/arm64` BuildKit image index:
+  `sha256:9ed0436d0c23b0cf5bf280e345703b69db0c0fb5f5ef66a0091b32b826181001`.
+  BuildKit emitted SBOM and max-mode provenance metadata. The pinned nginx
+  base is `sha256:59ccf0943b0b8e8d9e6ea9039a39555730f544701a655c596f7df7d096c593f5`.
+- Local tests passed for health, root and nested path/query `308`, exact
+  `Location`, no chain and query-safe access logs. Trivy `0.55.2` reports
+  `HIGH=0`, `CRITICAL=0`.
+- GHCR push is blocked by the GitHub token's missing package-write scope. No
+  mutable tag or unverified digest was deployed; no Coolify resource was
+  created. PM must grant package-write access through a secure channel without
+  pasting a token into chat.
+
+### Runtime and ACME status
+
+- Existing dark app remains unchanged at digest
+  `sha256:e5eaadf454abe9b01bb35389e80b0828dac237d9cb4195dc289345627bfeab9b`,
+  deployment `lgds74j95439opjgbyqe217u`, healthy/restart `0`. Staging and
+  Vercel rollback remain unchanged.
+- AWS read-only identity: account `503344933326`, region `ap-southeast-1`, EC2
+  `i-011fe10948e0a8c15`, SSM online. Traefik `v3.6` has the HTTP-01 resolver
+  only; ACME storage is permissioned and was not read. DNS-01 is planned while
+  the target is not on public DNS. No order or TXT record exists.
+
+### Gate decision
+
+- `PRODUCTION-DATA-WRITE-FREEZE-APPROVAL-GATE: NO-GO`.
+- `DNS-SWITCH-APPROVAL-GATE: NO-GO` - GHCR candidate is not yet available to
+  Coolify, the dedicated dark redirect resource does not yet exist, and the
+  certificate is not domain-covered. The next PM action is package-write
+  enablement; after deployment acceptance, a separate approval is required
+  before any DNS-01 TXT mutation.

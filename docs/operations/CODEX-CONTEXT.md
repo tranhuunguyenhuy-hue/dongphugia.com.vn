@@ -381,3 +381,13 @@ or DNS mutation from this context.
   operator/method first; then approve a new data window with named app/DB/
   monitoring/rollback owners. DNS records, TXT challenges and old-domain
   redirects remain untouched.
+
+## Dark apex redirect service preparation - 2026-08-02
+
+- `FACT` - Implementation worktree: `/Users/m-ac/Projects/dongphugia-aws-production`, branch `codex/apex-redirect-service`; main orchestrator is the sole mutation owner and the unrelated dirty root was not touched.
+- `FACT` - PR #30 contains the minimal service under `infra/redirect-service/`; source revision is `9b7884f2ef66643f7aea2c6350fb76198fa2b508`. It listens on unprivileged port `8080`, serves `/healthz` with `200`, returns exact `308` to `https://www.dongphugia.vn$request_uri`, and uses only method, normalized `$uri`, status, bytes and duration in access logs. Tests assert query non-leakage.
+- `FACT` - BuildKit produced local `linux/arm64` image index `sha256:9ed0436d0c23b0cf5bf280e345703b69db0c0fb5f5ef66a0091b32b826181001` with SBOM and max-mode provenance metadata. The pinned nginx base is `sha256:59ccf0943b0b8e8d9e6ea9039a39555730f544701a655c596f7df7d096c593f5`; Trivy `0.55.2` reports `HIGH=0`, `CRITICAL=0`.
+- `BLOCKER` - GHCR push was denied because the current GitHub token lacks package-write scope. No image was pushed, no Coolify redirect resource was created, and no deployment occurred. A package-write grant or secure runtime login is required; no token may be pasted into chat.
+- `FACT` - Existing dark app `ydgt1mkagpitpq8shovd726z`, staging and Vercel rollback are unchanged. Dark runtime remains `sha256:e5eaadf454abe9b01bb35389e80b0828dac237d9cb4195dc289345627bfeab9b`, deployment `lgds74j95439opjgbyqe217u`, healthy/restart `0`.
+- `FACT` - AWS account `503344933326`, region `ap-southeast-1`, EC2 `i-011fe10948e0a8c15`, and SSM online state were read-only verified. Traefik `v3.6` exposes only HTTP-01 with `/traefik/acme.json`; no DNS-01 provider is configured. No ACME order or TXT mutation was performed.
+- `GATE` - `PRODUCTION-DATA-WRITE-FREEZE-APPROVAL-GATE: NO-GO`; `DNS-SWITCH-APPROVAL-GATE: NO-GO`. Immediate PM action: grant GHCR package-write access through a secret-safe channel. After push, deploy only the exact digest to a new dark-only Coolify resource, then stop before DNS-01 TXT mutation for separate approval.
