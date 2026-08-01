@@ -374,3 +374,60 @@ production-data/DNS approvals. PM/customer is the primary DNS operator.
 No production write, freeze, final copy, migration, DNS/nameserver change,
 canonical traffic switch, old-domain redirect or Vercel mutation was made in
 this checkpoint.
+
+## Dark apex router reconciliation checkpoint - 2026-08-01 23:45 Asia/Ho_Chi_Minh
+
+### Before/after identity
+
+- Before: deployment `uedctlreknzlgyh7ogvjph4p`, exact digest
+  `sha256:e5eaadf454abe9b01bb35389e80b0828dac237d9cb4195dc289345627bfeab9b`,
+  source `090ff89c981f8c6b2d851bf99d7fb8572dacc4da`, healthy, restart `0`.
+  Effective apex router used generated `redirect-to-https`; Caddy apex redir
+  had no explicit status.
+- After: deployments `fisp4s4wve7b3s83wlq688xe`,
+  `g8fmibf4rusxv3h4anufveoq`, `o5446de3b36s4chxjugoirc9` and latest
+  `etp64no66uz4latp52thr0bs` all succeeded. Runtime container
+  `ydgt1mkagpitpq8shovd726z-164404708127` is healthy with restart `0` and the
+  exact same digest/revision. No application source or image changed.
+
+### Router evidence
+
+- Coolify retained `priority=100` and the custom `apex-to-www` middleware with
+  `permanent=true`, but emitted the apex router with
+  `middlewares=redirect-to-https`. A Caddy `redir ... 308` value was normalized
+  to a label without the status suffix.
+- `http://dongphugia.vn/_dark-validation/path?probe=1` returned `301` with
+  `Location: https://www.dongphugia.vn/_dark-validation/path?probe=1`.
+- `http://www.dongphugia.vn/_dark-validation/path?probe=1` returned `302` to
+  the equivalent HTTPS `www` URL.
+- Required apex HTTP `308` is **NOT PASS**. Path/query preservation passed;
+  there was no observed redirect chain for the apex response.
+- `dpg-production-dark.invalid` labels remain present for internal validation.
+  TLS is still not declared PASS: the SNI certificate remains Traefik default
+  and is not valid for either `.vn` hostname.
+
+### ACME plan (not executed)
+
+DNS-01 is recommended because DNS is intentionally not pointed at the target;
+HTTP-01 must not be attempted before DNS approval. After PM approval, the
+ACME operator would create CA-provided TXT values at
+`_acme-challenge.dongphugia.vn` and, if separately requested by the CA, the
+corresponding `www` challenge name, using TTL `300`, wait for authoritative
+propagation, issue SAN coverage for apex and `www`, then remove only the
+challenge records. The exact token/value, validity window and operator action
+must be supplied at the approval gate and are deliberately absent here. No
+ACME order or DNS record was created; renewal remains a Coolify/Traefik task.
+
+### Gate decision
+
+- `PRODUCTION-DATA-WRITE-FREEZE-APPROVAL-GATE: NO-GO` - no new PM-approved
+  window, freeze, final copy or final delta.
+- `DNS-SWITCH-APPROVAL-GATE: NO-GO` - router status is `301`, not `308`, and
+  the certificate is not domain-covered. Proposed records remain unchanged
+  and unapplied (`dongphugia.vn A 47.131.92.97 TTL 300`; `www A
+  47.131.92.97 TTL 300`).
+
+Source mutation is not required by evidence and was not attempted. Further
+technical action requires a Coolify-specific router mechanism that preserves
+the permanent status; no production, DNS, Vercel or staging mutation is
+authorized.

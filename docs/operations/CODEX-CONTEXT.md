@@ -210,3 +210,44 @@ or DNS mutation from this context.
   domain-covered certificate are not yet proven. The next safe technical
   action is to reconcile the Coolify generated router precedence and prepare
   the exact ACME action; no DNS mutation is authorized.
+
+## Dark apex router reconciliation - 2026-08-01 23:45 Asia/Ho_Chi_Minh
+
+- `FACT` - Before this bounded attempt, deployment `uedctlreknzlgyh7ogvjph4p`
+  was healthy on the exact approved digest/revision, with generated apex
+  router middleware `redirect-to-https` and Caddy `caddy_1.redir` lacking an
+  explicit status. This is the rollback configuration reference.
+- `FACT` - Coolify deployments `fisp4s4wve7b3s83wlq688xe`,
+  `g8fmibf4rusxv3h4anufveoq`, `o5446de3b36s4chxjugoirc9` and
+  `etp64no66uz4latp52thr0bs` completed successfully without changing the
+  image or source revision. Latest runtime container is
+  `ydgt1mkagpitpq8shovd726z-164404708127`, healthy after startup, restart `0`.
+- `FACT` - Coolify retained `priority=100` on the generated apex router and
+  retained the custom `apex-to-www` middleware (`permanent=true`), but still
+  emitted `middlewares=redirect-to-https`. A Caddy label entered as
+  `caddy_1.redir=... 308` was emitted without the status suffix. The effective
+  router therefore remains Coolify-managed rather than the requested custom
+  permanent redirect.
+- `FACT` - Final Host-header validation returned HTTP `301` from
+  `dongphugia.vn` to `https://www.dongphugia.vn/_dark-validation/path?probe=1`
+  and HTTP `302` from `www.dongphugia.vn` to its HTTPS URL. Path/query were
+  preserved, but apex status `308` was not achieved. No source mutation, DNS
+  mutation, canonical traffic switch or old-domain redirect occurred.
+- `DECISION` - Router-only configuration has now been tested with the
+  minimum reversible overrides; source editing is not authorized by this
+  checkpoint and was not attempted. The remaining issue is Coolify-generated
+  label precedence/normalization, not application behavior.
+- `ACME PLAN` - Prefer DNS-01 because the new `.vn` names are not yet pointed
+  at the target and HTTP-01 must not be probed before DNS. The eventual action
+  is to obtain the ACME order, create TXT challenge record(s) under
+  `_acme-challenge.dongphugia.vn` and, if requested by the CA, the equivalent
+  `www` challenge name, with provisional TTL `300`; wait for authoritative
+  propagation, issue a certificate covering apex and `www`, then remove only
+  the challenge records. The CA-generated TXT values, order, timing and
+  operator must be presented to PM/DNS operator at a separate approval. No
+  order or TXT record was created in this phase. Renewal must remain under
+  Coolify/Traefik ownership; rollback retains the last valid certificate and
+  removes only pending challenge records.
+- `GATE` - Both production-data write-freeze and DNS-switch gates remain
+  `NO-GO`. The next PM package must call out the 308 router blocker and the
+  exact DNS-01 operator action without exposing a challenge token.
