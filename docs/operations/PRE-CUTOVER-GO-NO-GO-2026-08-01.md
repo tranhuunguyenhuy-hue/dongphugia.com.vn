@@ -650,3 +650,25 @@ window dump/reconcile, named monitoring/rollback owners and PM approvals.
   `DNS-SWITCH-APPROVAL-GATE` remain `NO-GO` pending client `verify-full`,
   domain-covered TLS and a compliant ACME secret path. No production or DNS
   mutation occurred.
+
+## Manual ACME DNS-01 attempt - 2026-08-02
+
+- `FACT` - The PM-approved fallback used the immutable official image
+  `docker.io/certbot/certbot@sha256:34ee91d2f43008eb78a007d22f23ed4b2eaa9a454cb27ca2c042b49527a695b4`,
+  Certbot `5.7.0`, `linux/arm64`; no host package was installed.
+- `FACT` - Temporary state was on encrypted EBS at
+  `/var/lib/dongphugia-acme`, `root:root`, mode `0700`; hook/state files were
+  root-only. No account/private key contents were read, and all state was
+  removed after the failed attempt.
+- `FACT` - The single order attempt returned DNS-01 owner names
+  `_acme-challenge.dongphugia.vn` and `_acme-challenge.www.dongphugia.vn`
+  at `2026-08-01T20:00:48Z`. TXT values are withheld from this dossier because
+  the order failed and are no longer actionable.
+- `FACT` - Certbot proceeded past the detached manual prompt; with no TXT
+  records the Let's Encrypt production CA rejected the authorizations. No TXT,
+  certificate issuance/binding, DNS, routing or traffic mutation occurred.
+- `FACT` - Cleanup proof: failed container, image cache, account state,
+  challenge file and logs removed; no Certbot process remains.
+- `BLOCKER` - Resumable interactive order execution is unproven. Do not use
+  the stale values. A second order requires explicit PM approval for a tested
+  interactive/hold mechanism and must stop before TXT mutation.
