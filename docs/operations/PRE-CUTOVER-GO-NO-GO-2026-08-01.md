@@ -60,10 +60,50 @@ nameserver change, traffic switch or redirect.
   dump `...082929Z.dump`, `977` archive entries. Latest target-public dump
   checksum and archive-index inspection passed: `...191712Z.dump`, `623`
   archive entries. No dump rows were printed.
-- `UNKNOWN` - An isolated database restore plus P0/P1 reconciliation and
-  sequence/FK/media checks were not rerun in this refresh; archive-index success
-  is not a substitute for that proof. The prior restore evidence remains the
-  accepted baseline until a new drill is approved/executed.
+- `FACT` - Existing source object
+  `daily/2026/07/31/dongphugia-production-20260731T082929Z.dump` was reused;
+  no fresh production dump was created. S3 metadata remained `52,776,596`
+  bytes, SSE-S3, with manifest size `110` bytes. The downloaded object matched
+  its manifest: SHA-256
+  `efc2ee8a137407600afc972971bc8b6e228d27c3b78f240aa0a3403192fc9407`.
+- `FACT` - `pg_restore --list` passed before restore with `977` archive entries.
+  The archive contained no `auth`, `storage` or `vault` schema entries. Restore
+  was limited to schema `public` with owner/privilege restoration disabled.
+- `FACT` - Disposable target was local PostgreSQL `17.6-alpine`, container
+  `dpg-restore-drill-20260801-a`, with no published port and no persistent
+  volume. Final restore completed with exit code `0`, zero stderr lines and zero
+  restore warnings/errors. A first invocation was rejected for an omitted
+  database role before any restore; the corrected `-U postgres` invocation
+  passed.
+- `FACT` - Restored public inventory was `46` tables, `45` sequences and `224`
+  indexes; no non-system objects existed outside `public`. Aggregate critical
+  counts were: `orders 15`, `order_items 31`, `quote_requests 13`,
+  `quote_items 14`, `customers 6`, `products 17,752`, `product_images
+  110,321`, `categories 5`, `subcategories 35`, `admin_users 1` and
+  `admin_sessions 1`. No row contents or PII were read into evidence.
+- `FACT` - Foreign-key catalog validation passed (`56` FKs, `0` not-valid),
+  and all checked order, quote, product and admin assignment orphan counts were
+  `0`. Critical sequence alignment was `ALIGNED` for all checked tables; four
+  unused public sequences were empty and did not represent a sequence-behind
+  condition.
+- `FACT` - Media aggregate checks passed without exposing paths: all `110,321`
+  product-image URLs and `17,751` non-null product main-image URLs were
+  absolute HTTP(S) URLs, with `4` distinct host buckets in each set. Banner
+  URLs were `7/7` absolute with `2` host buckets; subcategory hero URLs were
+  all null in the restored data. No media hostname/path mismatch was observed.
+- `FACT` - A timed second restore into an isolated disposable database measured
+  `23.56 s` (`RTO` evidence). The application HTTP smoke was not run against
+  this local-only target because no separate isolated app endpoint was exposed;
+  the existing dark-target read-only smoke remains unchanged. Database-level
+  read-only schema/aggregate smoke passed.
+- `FACT` - Cleanup passed: the disposable container was removed, no drill named
+  volume remained, and no AWS resource was provisioned. External one-time cost
+  was `$0`, below the approved `$5` ceiling. The pre-existing PostgreSQL client
+  image cache was not deleted.
+- `GATE` - Restore/reconciliation refresh is `PASS` for this isolated proof.
+  It does not authorize production write-freeze, final copy/delta, migration,
+  traffic or DNS changes; those gates remain `NO-GO` pending their separate PM
+  approvals and the missing P.A Việt Nam export.
 
 ## Proposed DNS plan - not approved and not applied
 
