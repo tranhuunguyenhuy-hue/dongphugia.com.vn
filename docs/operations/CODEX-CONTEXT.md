@@ -162,3 +162,51 @@ or DNS mutation from this context.
 - `CODEX-SESSION-CLOSEOUT.md` is mandatory at the end of each project thread.
 - Historical material remains under `docs/archive/` as non-authoritative
   provenance only.
+
+## Dark-only ingress/TLS preparation refresh - 2026-08-01 23:17 Asia/Ho_Chi_Minh
+
+- `FACT` - PM-authorized changes were limited to Coolify app
+  `ydgt1mkagpitpq8shovd726z` (`dongphugia-web-production-dark`). The running
+  image remains the exact immutable digest
+  `sha256:e5eaadf454abe9b01bb35389e80b0828dac237d9cb4195dc289345627bfeab9b`
+  with source revision `090ff89c981f8c6b2d851bf99d7fb8572dacc4da`.
+- `FACT` - The configuration save/redeploy sequence completed successfully;
+  latest Coolify deployment is `uedctlreknzlgyh7ogvjph4p`, runtime container
+  is `ydgt1mkagpitpq8shovd726z-161316206465`, health is `healthy`, and restart
+  count is `0`. Earlier successful configuration deployments were
+  `zufd6h8561kxolkpv6ga5yxf`, `lvklw7azumo4jdecc9sa6ftf` and
+  `o2tvmkud0es2chkf06d4uevq`.
+- `FACT` - Coolify saved a custom `apex-to-www` redirectregex middleware with
+  `permanent=true` and readonly labels disabled. Runtime labels still contain
+  the generated apex router with `redirect-to-https`; the generated router has
+  precedence over the custom middleware. This is a configuration/runtime
+  divergence, not a DNS result.
+- `FACT` - Host-header validation from the EC2 host returned HTTP `302` for
+  `www.dongphugia.vn` to its HTTPS URL and HTTP `302` for
+  `dongphugia.vn` to `https://dongphugia.vn/...`; the required apex HTTP
+  `308` to `https://www.dongphugia.vn/...` is therefore **not PASS**. Path and
+  query were observed in the redirect, but the status is wrong. No DNS,
+  nameserver, traffic or old-domain redirect mutation occurred.
+- `FACT` - Internal HTTPS validation using `--resolve` reached the app: `/`
+  returned `200`, `/sitemap.xml`, `/robots.txt`, `/admin/login`, and hero
+  endpoints at widths `720` and `1280` returned `200`; homepage canonical,
+  `og:url`, JSON-LD and `.vn` references were present. The six checked
+  security headers were present. The synthetic `/_dark-validation` path is
+  not an application route and returned `404` on `www` HTTPS.
+- `FACT` - The current SNI certificate remains Traefik's default certificate
+  (`CN=TRAEFIK DEFAULT CERT`) with only an internal generated SAN; it does not
+  cover either `.vn` hostname. This is not TLS PASS. ACME/DNS-01 records were
+  not created and no HTTP-01 attempt was made.
+- `FACT` - Secret-safe runtime refresh proved target client metadata without
+  exposing values: `DATABASE_URL` host `dpg-production-postgres`, port `5432`,
+  `sslmode=verify-full`, client connection `ok`, server SSL `true`, TLS `1.3`
+  and a cipher present. No database write was issued.
+- `FACT` - Staging digest, PR #26, Vercel rollback baseline, Bunny evidence,
+  backup/restore proof and DNS exports were not changed. The exact `.vn` and
+  `.com.vn` zone records remain read-only evidence only.
+- `GATE` - `PRODUCTION-DATA-WRITE-FREEZE-APPROVAL-GATE` remains `NO-GO`:
+  no new PM-approved window, freeze, final copy or final delta exists.
+- `GATE` - `DNS-SWITCH-APPROVAL-GATE` remains `NO-GO`: apex `308` and a
+  domain-covered certificate are not yet proven. The next safe technical
+  action is to reconcile the Coolify generated router precedence and prepare
+  the exact ACME action; no DNS mutation is authorized.

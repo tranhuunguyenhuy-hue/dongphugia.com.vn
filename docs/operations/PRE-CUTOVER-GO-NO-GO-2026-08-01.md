@@ -308,3 +308,69 @@ Required before a PM may consider this gate:
 
 **Owners:** Codex coordinates technical evidence. PM owns GO/NO-GO and all
 production-data/DNS approvals. PM/customer is the primary DNS operator.
+
+## Dark-only ingress/TLS preparation checkpoint - 2026-08-01 23:17 Asia/Ho_Chi_Minh
+
+### Verified facts
+
+- Coolify app `ydgt1mkagpitpq8shovd726z` (`dongphugia-web-production-dark`)
+  is running the exact digest
+  `sha256:e5eaadf454abe9b01bb35389e80b0828dac237d9cb4195dc289345627bfeab9b`
+  from source revision `090ff89c981f8c6b2d851bf99d7fb8572dacc4da`.
+- Latest successful deployment is `uedctlreknzlgyh7ogvjph4p`; runtime
+  container `ydgt1mkagpitpq8shovd726z-161316206465` is healthy with zero
+  restarts. Prior successful deployments in this configuration sequence were
+  `zufd6h8561kxolkpv6ga5yxf`, `lvklw7azumo4jdecc9sa6ftf` and
+  `o2tvmkud0es2chkf06d4uevq`.
+- Custom `apex-to-www` middleware is saved with `permanent=true`, but runtime
+  generated apex router precedence still produces HTTP `302` from
+  `dongphugia.vn` to `https://dongphugia.vn/...`; required HTTP `308` to
+  `https://www.dongphugia.vn/...` is not met. `www` HTTP also returns `302`
+  to HTTPS as expected from the generated redirect-to-https router.
+- Internal HTTPS read-only checks passed for homepage, sitemap, robots, admin
+  login GET, hero widths 720/1280, canonical/OG/JSON-LD and the checked
+  security headers. The synthetic validation path returned `404` on HTTPS
+  `www`, which is not a product route.
+- Runtime SNI still serves Traefik default certificate `CN=TRAEFIK DEFAULT
+  CERT` with an internal generated SAN, not either `.vn` hostname. No ACME
+  challenge or DNS record was created.
+- Runtime-only DB refresh proved `sslmode=verify-full`, client connection OK,
+  server SSL true, TLS 1.3 and a cipher present for the private target host;
+  no URL/password value was recorded and no DB write occurred.
+
+### Decisions, assumptions and unknowns
+
+- `PM DECISION` - Dark-only Coolify configuration/redeploy was authorized;
+  production traffic, DNS and old-domain redirects remain out of scope.
+- `FACT` - Staging, Vercel rollback, Bunny, backup/restore evidence and both
+  portal zone exports are unchanged.
+- `ASSUMPTION` - The current Coolify generated router precedence must be
+  reconciled before the apex `308` can be accepted; no application source
+  change is inferred from this ingress-only evidence.
+- `UNKNOWN` - Exact ACME certificate issuance method and the responsible
+  operator are not yet approved; if DNS-01 is required, the exact TXT name,
+  value handling, TTL and operator action must be presented without exposing
+  the token.
+
+### Gate status
+
+- `PRODUCTION-DATA-WRITE-FREEZE-APPROVAL-GATE: NO-GO` - target client TLS is
+  now current, but there is still no new PM-approved freeze window, final dump,
+  final delta or production-data approval.
+- `DNS-SWITCH-APPROVAL-GATE: NO-GO` - apex HTTP `308` and domain-covered TLS
+  are not proven. Proposed records remain unchanged and unapplied:
+  `dongphugia.vn A 47.131.92.97 TTL 300` and
+  `www.dongphugia.vn A 47.131.92.97 TTL 300`.
+
+### PM actions required next
+
+1. Approve a new production-data window only after the router/TLS blockers are
+   closed; approval must name freeze start, duration, app/DB/monitoring/
+   rollback owners, final-copy/reconciliation steps and rollback triggers.
+2. Separately approve the exact ACME operator action (DNS-01 or a later
+   DNS-dependent method) and, only after certificate and routing acceptance,
+   approve the DNS records at `DNS-SWITCH-APPROVAL-GATE`.
+
+No production write, freeze, final copy, migration, DNS/nameserver change,
+canonical traffic switch, old-domain redirect or Vercel mutation was made in
+this checkpoint.
