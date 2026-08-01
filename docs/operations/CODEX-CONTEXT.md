@@ -187,6 +187,11 @@ or DNS mutation from this context.
   `308` to `https://www.dongphugia.vn/...` is therefore **not PASS**. Path and
   query were observed in the redirect, but the status is wrong. No DNS,
   nameserver, traffic or old-domain redirect mutation occurred.
+- `FACT` - The final root and path/query probes returned HTTP `301` with
+  `Location: https://www.dongphugia.vn/` and
+  `Location: https://www.dongphugia.vn/_dark-validation/path?probe=1`,
+  respectively. This confirms path/query preservation and no observed chain,
+  but still fails the required `308` status.
 - `FACT` - Internal HTTPS validation using `--resolve` reached the app: `/`
   returned `200`, `/sitemap.xml`, `/robots.txt`, `/admin/login`, and hero
   endpoints at widths `720` and `1280` returned `200`; homepage canonical,

@@ -398,6 +398,7 @@ this checkpoint.
   to a label without the status suffix.
 - `http://dongphugia.vn/_dark-validation/path?probe=1` returned `301` with
   `Location: https://www.dongphugia.vn/_dark-validation/path?probe=1`.
+- The apex root returned `301` with `Location: https://www.dongphugia.vn/`.
 - `http://www.dongphugia.vn/_dark-validation/path?probe=1` returned `302` to
   the equivalent HTTPS `www` URL.
 - Required apex HTTP `308` is **NOT PASS**. Path/query preservation passed;
