@@ -1,6 +1,6 @@
 # 🏗️ MASTER BLUEPRINT: UNIVERSAL BRAND CRAWL PIPELINE
 **Version**: 2.1.0
-**Author**: Antigravity Orchestrator (Data Engineer x Docs Architect)
+**Author**: Legacy data/documentation team (historical record)
 **Target**: Data Pipeline tiêu chuẩn hóa cho việc thu thập TỔNG LỰC, làm sạch và tích hợp/upsert dữ liệu sản phẩm đa thương hiệu (INAX, CAESAR, VIGLACERA,...) vào hệ thống Đồng Phú Gia.
 
 ---
@@ -105,4 +105,3 @@ graph TD
 - [ ] Gộp nhóm và ẩn Biến thể (Variant Grouping): Xác định sản phẩm Master và gán biến thể liên quan.
 - [ ] Cập nhật bảng `product_relationships` để đồng bộ Combo (Parent - Child).
 - [ ] Chạy Audit Report đếm số lượng lỗi 404, check data null, check rác text đối thủ.
-

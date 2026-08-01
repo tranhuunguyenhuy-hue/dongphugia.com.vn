@@ -42,14 +42,14 @@ Until migration and its observation window finish, preserve:
 ## Hard rules
 
 - Never clean, reset, stash or switch a dirty worktree owned by another task.
-- Never remove a living worktree while its branch may be owned by an agent.
+- Never remove a living worktree while its branch may be owned by another Codex thread.
 - Never delete release or rollback refs during the observation window.
 - Never run remote branch deletion as part of automatic housekeeping.
 - Record every destructive cleanup target and recovery path before execution.
 
 ## Routine cadence
 
-- At agent takeover: read-only audit.
+- At Codex thread takeover: read-only audit.
 - At PR merge/close: update branch classification.
 - At release gate: verify release/rollback refs are protected.
 - After observation: archive and delete approved candidates.

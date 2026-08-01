@@ -1,5 +1,5 @@
 # TOTO Product Data Audit — Đông Phú Gia
-**Ngày:** 27/05/2026 | **Tác giả:** Tech Lead (Claude)
+**Ngày:** 27/05/2026 | **Tác giả:** Legacy project team (historical record)
 
 ---
 
@@ -310,12 +310,12 @@ SKU chứa `/` ?
 
 | Priority | Action | Owner | Issue |
 |----------|--------|-------|-------|
-| 🔴 P1 | Fix Sen Tắm bundle → is_combo=true, clear variant_group | Antigravity | Cần tạo issue mới |
-| 🔴 P1 | Clean 645 single-item variant_groups → NULL | Antigravity | Cần tạo issue mới |
-| 🟠 P2 | Design variant_dimension system | Tech Lead | LEO-423 |
-| 🟠 P2 | Brand landing pages (SEO) | Antigravity | M4 |
-| 🟡 P3 | Product name standardization (batch update) | Antigravity | M3 |
-| 🟡 P3 | Bổ sung filter_definitions cho TOTO categories | Antigravity | M4 |
+| 🔴 P1 | Fix Sen Tắm bundle → is_combo=true, clear variant_group | Unassigned legacy backlog | Cần scope/evidence mới |
+| 🔴 P1 | Clean 645 single-item variant_groups → NULL | Unassigned legacy backlog | Cần scope/evidence mới |
+| 🟠 P2 | Design variant_dimension system | Codex after PM approval | LEO-423 (historical) |
+| 🟠 P2 | Brand landing pages (SEO) | Unassigned legacy backlog | M4 (historical) |
+| 🟡 P3 | Product name standardization (batch update) | Unassigned legacy backlog | M3 (historical) |
+| 🟡 P3 | Bổ sung filter_definitions cho TOTO categories | Unassigned legacy backlog | M4 (historical) |
 
 ---
 

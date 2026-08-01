@@ -4,11 +4,15 @@
 
 ## Vận hành và kiến trúc
 
+- [Root Codex context](../AGENTS.md): canonical instructions tự nạp đầu mỗi
+  session/thread.
 - [Release operations](operations/README.md): quy trình takeover, hand-off và
   quản lý branch/worktree cho migration và production release.
 - [Current migration charter](operations/MIGRATION-CHARTER.md): mục tiêu nền
   tảng/domain, sequence, safety gates và rollback boundary hiện hành.
-- [Agent reference](AGENTS.md): quy ước kỹ thuật và quy trình triển khai.
+- [Living Codex context](operations/CODEX-CONTEXT.md): trạng thái bền vững xuyên
+  session/thread.
+- [Codex technical reference](AGENTS.md): quy ước kỹ thuật application.
 - [Handover](HANDOVER.md): kiến trúc, dữ liệu và hướng dẫn tiếp quản.
 - [Design system](DESIGN_SYSTEM.md): token và quy ước giao diện.
 - [Sitemap](SITEMAP.md): cấu trúc route và nội dung.
@@ -24,10 +28,12 @@
 ## Kế hoạch và handoff
 
 - Mọi release/migration hand-off mới phải theo
-  [Agent hand-off standard](operations/AGENT-HANDOFF-STANDARD.md).
+  [Codex hand-off standard](operations/AGENT-HANDOFF-STANDARD.md) và
+  [session closeout](operations/CODEX-SESSION-CLOSEOUT.md).
 - `plans/`: kế hoạch kỹ thuật có tên và phạm vi rõ ràng.
 - `handoffs/`: kết quả bàn giao catalog/data còn giá trị vận hành.
-- `archive/`: tài liệu lịch sử, không phải nguồn quyết định hiện tại.
+- `archive/`: provenance lịch sử, không có quyền điều phối và không phải nguồn
+  quyết định hiện tại.
 
 Audit bảo mật, database dump, crawler snapshot và ghi chú nội bộ được lưu trong
 repository private `dongphugia-internal`; không đưa các dữ liệu này vào repo

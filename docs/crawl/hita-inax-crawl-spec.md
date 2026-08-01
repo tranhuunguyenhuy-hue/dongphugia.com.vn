@@ -1,7 +1,7 @@
 # Crawl Spec: INAX từ hita.com.vn → DPG
 
 **Ngày:** 29/05/2026  
-**Tác giả:** Tech Lead (Claude)  
+**Tác giả:** Legacy project team (historical record)
 **Đọc cùng với:** `docs/crawl/hita-inax-recon.md`
 
 ---
@@ -14,7 +14,7 @@ Không xóa dữ liệu cũ trước khi chạy.
 
 ### Stack yêu cầu
 - **Playwright** (bắt buộc — gallery dùng Slick.js lazy load, `requests` thuần không đọc được ảnh)
-- **Node.js** hoặc **Python** tùy Antigravity chọn
+- **Node.js** hoặc **Python** do Codex chọn theo source hiện tại và task constraints
 - Biến môi trường từ `.env`: `DATABASE_URL`, `BUNNY_STORAGE_*`, `BUNNY_CDN_HOSTNAME`
 
 ---
@@ -451,7 +451,7 @@ const log = {
 };
 ```
 
-Lưu toàn bộ log ra `output/crawl-log.json` để Tech Lead review sau.
+Lưu toàn bộ log ra `output/crawl-log.json` để Codex review sau.
 
 ---
 
@@ -459,7 +459,7 @@ Lưu toàn bộ log ra `output/crawl-log.json` để Tech Lead review sau.
 
 - Delay giữa requests: **1-2 giây** (tránh bị ban)
 - Max concurrent pages Playwright: **3**
-- Nếu gặp HTTP 429 hoặc Cloudflare block: dừng, báo Tech Lead
+- Nếu gặp HTTP 429 hoặc Cloudflare block: dừng và báo PM/Codex; không bypass
 
 ---
 

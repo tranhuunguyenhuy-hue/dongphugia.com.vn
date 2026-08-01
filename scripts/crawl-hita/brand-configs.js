@@ -7,7 +7,7 @@
  *   - brandPageUrl  : Landing page on hita listing all brand products (for Phase 1B)
  *   - sitemapKeyword: Substring to filter URLs from sitemap (Phase 1A, case-insensitive)
  *   - sampleUrls    : 20 representative PDPs used in Phase 0 (--sample-only gate)
- *                     → Antigravity: populate from Phase 1 output before first run
+ *                     → Codex: populate from verified Phase 1 output before first run
  *
  * Usage:
  *   import { getBrandConfig } from './brand-configs.js';

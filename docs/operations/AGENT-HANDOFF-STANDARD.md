@@ -1,8 +1,8 @@
-# Agent hand-off standard
+# Codex hand-off standard
 
 ## Mục tiêu
 
-Mỗi hand-off phải đủ để agent mới tiếp tục đúng checkpoint mà không phải đoán,
+Mỗi hand-off phải đủ để Codex session/thread tiếp theo tiếp tục đúng checkpoint mà không phải đoán,
 không lặp mutation và không vô tình có hai writer trên cùng resource.
 
 ## Quy tắc bắt buộc
@@ -13,8 +13,9 @@ không lặp mutation và không vô tình có hai writer trên cùng resource.
 4. Không ghi secret, credential, token, DSN có password hoặc dữ liệu cá nhân.
 5. Không coi branch name, tag mutable hoặc tên deployment là bằng chứng đủ.
 6. Không lặp probe hoặc workflow nếu input/evidence chưa thay đổi.
-7. Agent cũ phải đóng hoặc bàn giao rõ mọi tunnel, terminal session và process.
-8. Agent mới phải xác minh worktree, owner và exact head trước mutation đầu tiên.
+7. Thread cũ phải đóng hoặc bàn giao rõ mọi tunnel, terminal session và process.
+8. Thread mới phải xác minh worktree, owner và exact head trước mutation đầu tiên.
+9. Mỗi thread phải dùng mẫu `CODEX-SESSION-CLOSEOUT.md` trước khi nhường owner.
 
 ## Nội dung tối thiểu
 
@@ -82,13 +83,14 @@ reversibility và rollback action. Không ghi giá trị secret.
 
 ## Takeover protocol
 
-Agent nhận bàn giao phải thực hiện theo thứ tự:
+Codex thread nhận bàn giao phải thực hiện theo thứ tự:
 
 1. Đọc hand-off và stop gate.
 2. Chạy audit read-only bằng `scripts/repository/audit-git-state.sh`.
 3. Xác minh owner cũ đã dừng hoặc đã nhường resource.
 4. Xác minh exact PR head/artifact/runtime nếu chúng có thể đã thay đổi.
 5. Công bố mutation owner mới trước mutation đầu tiên.
+6. Đọc và cập nhật `CODEX-CONTEXT.md` khi scope cho phép.
 
-Nếu một trong năm bước không xác minh được, agent chỉ được làm read-only và
+Nếu một trong sáu bước không xác minh được, Codex chỉ được làm read-only và
 phải báo `UNKNOWN` thay vì suy đoán.

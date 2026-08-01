@@ -18,7 +18,7 @@
 
 ## Historical roadmap — 01/06/2026
 
-> **Cập nhật:** 01/06/2026 — Tech Lead (Claude Cowork)
+> **Cập nhật lịch sử:** 01/06/2026 — legacy project team
 > **Chiến lược:** Rebuild frontend hoàn toàn trên staging repo mới, giữ nguyên backend + DB. Production chỉ nhận backend/DB upgrades trong thời gian này.
 
 ---
@@ -79,7 +79,7 @@ User vẫn truy cập bình thường                 Mobile-first, new design s
 
 **Target:** 08/06 → 14/06 | **Repo:** staging (mới)
 
-**Goal:** Môi trường staging sẵn sàng, design handoff complete, Antigravity có thể bắt đầu build.
+**Goal:** Môi trường staging sẵn sàng và design handoff complete để implementation có thể bắt đầu.
 
 ### Infrastructure
 - [ ] Tạo repo mới: copy prisma/, src/app/api/, src/lib/, src/middleware.ts, config files
@@ -89,14 +89,14 @@ User vẫn truy cập bình thường                 Mobile-first, new design s
 - [ ] Confirm staging có read/write DB — setup `STAGING_MODE=true` để disable real mutations khi test
 
 ### Design System
-- [ ] Nhận design handoff từ Claude Design (Figma)
+- [ ] Nhận design handoff từ design owner (Figma)
 - [ ] Setup Tailwind v4 `@theme` với brand tokens mới (màu, typography, spacing)
 - [ ] Define component primitives: Button, Card, Badge, Input, Typography scale
 - [ ] Mobile-first breakpoints confirmed
 
-### Agent setup
-- [ ] Tạo CLAUDE.md + AGENTS.md cho staging repo
-- [ ] Antigravity nhận Linear issues đầu tiên
+### Execution context setup
+- [ ] Tạo root `AGENTS.md` và living Codex context cho staging repo
+- [ ] Codex nhận technical scope đầu tiên sau khi PM duyệt
 
 ---
 
@@ -253,9 +253,9 @@ User vẫn truy cập bình thường                 Mobile-first, new design s
 | Payment gateway | Post-launch | Không bundle vào redesign deadline |
 | Cutover | Hard switch 1 lần | Đơn giản, Vercel instant rollback là safety net |
 | URL changes | Partial — update `redirects` table | Giữ SEO, cho phép UX improvements |
-| Antigravity workload | Song song với production tasks | Phân chia rõ theo phase |
+| Codex workload | Song song read-only work khi chờ gate; một writer/resource | Phân chia rõ theo phase và owner |
 
 ---
 
-> **Tech Lead:** Cập nhật checkboxes sau mỗi task complete.
+> **Codex:** Cập nhật checkboxes khi có evidence hoàn tất; ghi continuity vào living context.
 > **PM:** Review milestone đạt/trượt vào cuối mỗi tuần.

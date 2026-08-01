@@ -1,6 +1,7 @@
 # Dual-Layer Color Architecture Implementation Plan
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
+> **Historical execution note:** Codex must re-validate this plan against current
+> source and scope before implementing any task.
 
 **Goal:** Implement the Dual-Layer Color Architecture by normalizing product colors into the `colors` table (`color_id`) for filtering and variants, while retaining raw color strings in the `specs` JSON for technical display, and updating all related Admin and Frontend UIs.
 

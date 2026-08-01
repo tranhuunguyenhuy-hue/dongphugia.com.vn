@@ -1,7 +1,7 @@
 -- ============================================================
 -- LEO-334: Set is_featured = true for homepage featured tabs
 -- Date: 2026-04-03
--- Author: Antigravity Agent
+-- Author: Legacy project tooling (historical provenance)
 -- Purpose: Populate homepage featured product tabs (TBVS, BEP, NUOC)
 -- 
 -- Strategy: Select 12 products per category that have:

@@ -115,7 +115,7 @@ hand-off take precedence.
 ### Variant System — Nâng cấp
 - **Trạng thái:** Logic cơ bản đã chạy tốt với TOTO
 - **Cần làm:** Nâng cấp để áp dụng cho các brand khác (INAX, Caesar, v.v.)
-- **Blocker:** Cần spec từ Tech Lead trước khi implement
+- **Blocker:** Cần PM chốt product behavior và Codex xác minh technical scope trước khi implement
 
 ### QR VietQR — Checkout
 - **Trạng thái:** Thông tin tài khoản ngân hàng ĐPG đã có, chưa build
@@ -136,7 +136,7 @@ hand-off take precedence.
 | 2 | Orders API không có rate limit | `/api/orders` | Có thể bị spam |
 | 3 | Search API không có rate limit | `/api/search` | Có thể bị abuse |
 
-> **Note:** Tech Lead cần đánh giá risk thực tế trước khi prioritize fix.
+> **Note:** Codex cần cung cấp security assessment; PM chốt priority/scope trước khi fix.
 
 ### Technical Debt (medium)
 | # | Issue | Chi tiết |
@@ -168,14 +168,17 @@ Theo thứ tự ưu tiên PM đã xác nhận (27/05/2026):
 
 | File | Nội dung |
 |------|---------|
-| `CLAUDE.md` | Tech conventions, workflow, rules — đọc mỗi session |
+| `AGENTS.md` | Canonical Codex instructions - đọc đầu mỗi session/thread |
+| `docs/operations/CODEX-CONTEXT.md` | Living context xuyên session/thread |
+| `docs/operations/CODEX-SESSION-CLOSEOUT.md` | Mẫu closeout bắt buộc cuối thread |
+| `docs/operations/MIGRATION-CHARTER.md` | Mục tiêu, gates và hard stops hiện hành |
 | `PROJECT-STATUS.md` | File này — snapshot hiện tại |
-| `GEMINI.md` | Antigravity agent config |
 | `docs/HANDOVER.md` | Bàn giao chi tiết 27/05/2026 — kiến trúc, APIs, tất cả |
 | `docs/plans/` | Scope plans lịch sử |
 | `docs/prd/` | PRD documents |
 
 ---
 
-> **Tech Lead:** Cập nhật section "Đang phát triển" và "Known Issues" khi có thay đổi.
-> **Antigravity:** Đọc file này đầu mỗi session. Không tự sửa — báo Tech Lead nếu có gì sai.
+> **Codex:** Cập nhật section "Đang phát triển" và "Known Issues" khi có
+> evidence mới; cập nhật trạng thái vận hành xuyên thread trong
+> `docs/operations/CODEX-CONTEXT.md`.

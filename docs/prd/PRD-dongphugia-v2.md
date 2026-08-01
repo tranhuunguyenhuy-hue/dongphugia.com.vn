@@ -354,7 +354,7 @@ Thứ tự vẽ wireframe (từ cao đến thấp):
 | Phase | Nội dung | Deadline | Status |
 |-------|---------|----------|--------|
 | **Sprint 2** | DB Restructure (LEO-366) + Design System Tokens | 26/04 | 🔄 In Progress |
-| ↳ Phase 4 | Data import 5,259 SP | 26/04 | 🔄 Antigravity đang làm |
+| ↳ Phase 4 | Data import 5,259 SP | 26/04 | Historical in-progress state; re-verify before resuming |
 | ↳ LEO-343-345 | Color palette + Design tokens + Base components | 22/04 | ⏳ Chờ PM confirm colors |
 | **Sprint 3** | Cart/Checkout + Page Redesign | 10/05 | 📋 Planned |
 | ↳ Cart & Checkout | Backend orders + Frontend cart + VietQR | 10/05 | Blocked by LEO-366 |

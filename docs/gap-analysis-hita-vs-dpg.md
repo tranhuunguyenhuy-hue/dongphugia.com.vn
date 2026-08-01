@@ -1,5 +1,5 @@
 # Báo cáo Gap Analysis: HITA vs Đông Phú Gia
-**Ngày:** 04/06/2026 | **Tác giả:** Tech Lead (Claude Cowork)  
+**Ngày:** 04/06/2026 | **Tác giả:** Legacy project team (historical record)
 **Phạm vi:** Category structure, filter system, data completeness, product coverage
 
 ---
@@ -222,10 +222,10 @@ Nếu fix hết Priority 1+2, ĐPG sẽ **vượt HITA về filter quality** do 
 
 | # | Action | Tác động | Effort | Assignee |
 |---|---|---|---|---|
-| P1.1 | **Assign subcategory_id cho 1,027 INAX products** | Toàn bộ INAX visible trên website | 3 ngày | Antigravity |
-| P1.2 | **Crawl specs MOEN** (600+ sp) | Filter hoạt động cho MOEN products | 4 ngày | Antigravity |
-| P1.3 | **Crawl specs ATMOR** (430+ sp) | Filter hoạt động cho ATMOR products | 3 ngày | Antigravity |
-| P1.4 | **Crawl specs Viglacera** (360+ sp) | Filter hoạt động cho Viglacera products | 3 ngày | Antigravity |
+| P1.1 | **Assign subcategory_id cho 1,027 INAX products** | Toàn bộ INAX visible trên website | 3 ngày | Unassigned legacy backlog |
+| P1.2 | **Crawl specs MOEN** (600+ sp) | Filter hoạt động cho MOEN products | 4 ngày | Unassigned legacy backlog |
+| P1.3 | **Crawl specs ATMOR** (430+ sp) | Filter hoạt động cho ATMOR products | 3 ngày | Unassigned legacy backlog |
+| P1.4 | **Crawl specs Viglacera** (360+ sp) | Filter hoạt động cho Viglacera products | 3 ngày | Unassigned legacy backlog |
 
 **Tổng P1: ~13 ngày · Fix 2,417 sản phẩm bị ảnh hưởng**
 
@@ -345,4 +345,5 @@ Tuần 4+ (22/06+): QA, integration testing
 ---
 
 > **Cập nhật tiếp theo**: Sau khi P1 hoàn thành, chạy lại query coverage để verify số liệu trước khi launch.
-> **Tech Lead**: Tạo Linear issues cho P1.1–P1.4 và P2.1–P2.6 ngay sau khi PM approve.
+> **Codex**: Chỉ chuyển các mục legacy thành scope hiện hành sau khi PM approve
+> và source/data hiện tại đã được xác minh lại.

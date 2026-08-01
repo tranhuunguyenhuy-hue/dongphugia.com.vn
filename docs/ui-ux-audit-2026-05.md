@@ -1,6 +1,6 @@
 # Báo Cáo Kiểm Tra UI/UX — Đông Phú Gia
 **Ngày kiểm tra:** 27/05/2026  
-**Người kiểm tra:** Claude (Tech Lead, Cowork)  
+**Người kiểm tra:** Legacy project team (historical record)
 **Phạm vi:** Toàn bộ giao diện frontend — desktop + mobile + SEO  
 **Phương pháp:** Duyệt trực tiếp trên production (`dongphugia.com.vn`) + phân tích mã nguồn
 

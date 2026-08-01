@@ -144,11 +144,11 @@ experimental source is never a release candidate.
 
 ## Ownership and hard stops
 
-- Main orchestrator: single technical mutation coordinator per resource.
+- Codex: single technical mutation coordinator per resource.
 - PM: GO/NO-GO, production-data gate and DNS approval owner.
 - PM/customer: primary DNS portal operator unless a named backup is recorded.
-- Future agents: read the latest hand-off, verify owner release and claim one
-  resource before mutation.
+- Future Codex threads: read the living context and latest hand-off, verify
+  owner release and claim one resource before mutation.
 
 Never act autonomously on:
 

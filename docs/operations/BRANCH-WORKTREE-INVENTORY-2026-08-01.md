@@ -9,8 +9,8 @@
 - `origin/*` refs before cleanup: 30
 - Registered worktrees before cleanup: 13
 - Registered worktrees after orphan-metadata prune: 9
-- Open PRs: #26 (`codex/staging-source-integration`) and #25
-  (`codex/homepage-category-ux`)
+- Open PRs: #29 (`codex/orchestrator-handoff-cleanup`), #26
+  (`codex/staging-source-integration`) and #25 (`codex/homepage-category-ux`)
 - No local or remote branch was deleted in this phase.
 
 ## Recovery archive
@@ -28,7 +28,7 @@
 | `/private/tmp/dpg-release-20260731.YwvjxU/production-image` | `codex/production-image` | HOLD-OBSERVATION |
 | `/private/tmp/dpg-release-20260731.YwvjxU/vercel-freeze` | `codex/vercel-freeze-baseline` | HOLD-OBSERVATION |
 | `~/Projects/dongphugia-aws-production` | `codex/aws-production-foundation` | KEEP-ACTIVE |
-| `~/Projects/dongphugia-repo-cleanup` | `codex/orchestrator-handoff-cleanup` | KEEP-ACTIVE |
+| `~/Projects/dongphugia-repo-cleanup` | `codex/orchestrator-handoff-cleanup` | KEEP-ACTIVE - PR #29 |
 | `~/Projects/dongphugia-security-fixes` | `codex/security-production-blockers` | KEEP-ACTIVE |
 | `~/Projects/dongphugia-selfhosted-postgres-staging` | `codex/self-hosted-postgres-staging-changeset` | HOLD-OBSERVATION |
 | `~/Projects/dongphugia-staging-db-bootstrap` | `codex/staging-db-bootstrap` | HOLD-OBSERVATION |

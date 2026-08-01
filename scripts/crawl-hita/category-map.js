@@ -2,7 +2,7 @@
  * @file category-map.js
  * @description Mapping table: hita.com.vn breadcrumb URL paths → DPG category/subcategory IDs.
  *
- * IMPORTANT for Antigravity:
+ * IMPORTANT for Codex:
  *   After running Phase 0 (--sample-only) for each new brand, inspect the
  *   breadcrumbs in sample-20.json and add any missing entries here before
  *   running the full crawl. The crawler logs a warning for every unmapped URL.

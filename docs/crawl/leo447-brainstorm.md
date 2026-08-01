@@ -1,7 +1,7 @@
 # 🧠 Multi-Agent Brainstorming — LEO-447
 ## Crawl INAX từ hita.com.vn → Import DPG
 
-> **Ngày:** 29/05/2026 | **Model:** Claude Sonnet 4.6 (Thinking)
+> **Ngày:** 29/05/2026 | **Nguồn:** Legacy brainstorming record
 > **Trạng thái cuối:** ✅ **APPROVED** (với 8 điều chỉnh bắt buộc)
 
 ---
@@ -13,7 +13,7 @@
 | Stack | Playwright + Node.js |
 | Tổng sản phẩm | ~2,208 INAX URLs từ sitemap |
 | Chiến lược DB | Upsert by SKU, không xóa cũ |
-| Gate bắt buộc | Phase 0 (10 samples) → Tech Lead LGTM → mới full run |
+| Gate bắt buộc | Phase 0 (10 samples) → Codex review pass → mới full run |
 | `is_active` default | `false` — PM review thủ công |
 | Lưu trữ ảnh | Bunny CDN (`cdn.dongphugia.com.vn`) |
 | Tài liệu đọc trước | `docs/crawl/hita-inax-recon.md` + `hita-inax-crawl-spec.md` |
@@ -57,8 +57,8 @@
 
 | ID | Mức | Người dùng | Vấn đề |
 |----|-----|-----------|--------|
-| **ADVOCATE-1** | 🟠 High | Tech Lead | 10 samples (0.45%) quá ít — có thể LGTM sai → full run sinh 200-300 lỗi |
-| **ADVOCATE-2** | 🟡 Medium | Tech Lead | Log thiếu error detail → khó triage nguyên nhân fail cụ thể |
+| **ADVOCATE-1** | 🟠 High | Codex review | 10 samples (0.45%) quá ít — có thể review sai → full run sinh 200-300 lỗi |
+| **ADVOCATE-2** | 🟡 Medium | Codex review | Log thiếu error detail → khó triage nguyên nhân fail cụ thể |
 | **ADVOCATE-3** | 🟠 High | PM | Phải publish thủ công 2,208 sản phẩm không có batch tool |
 | **ADVOCATE-4** | 🟠 High | PM | Không có signal nào cho biết sản phẩm nào thiếu data, cần review kỹ |
 | **ADVOCATE-5** | 🟠 High | Khách hàng | Không rõ timing CDN upload vs DB import → nguy cơ ảnh broken khi xem |
@@ -152,7 +152,7 @@ const pdfLinks = await page.locator('#box-attachments a[href$=".pdf"], #package-
 
 **Advocate-1 (High)**
 
-- **Objection:** 10 samples = 0.45% tổng số → Tech Lead không tự tin approve
+- **Objection:** 10 samples = 0.45% tổng số → chưa đủ evidence để approve
 - **Resolution:** ✅ **ACCEPT PARTIALLY — Tăng lên 20 samples**
   - Giữ 6 URLs mẫu từ spec (bồn cầu, lavabo, sen tắm, phụ kiện, 404)
   - Thêm: 1 sản phẩm không có PDF, 1 không có video, 1 không có variants, 1 combo, 1 có nhiều ảnh >8
@@ -289,7 +289,7 @@ output/
 
 ### Acceptance Criteria (cập nhật)
 
-- [ ] **Phase 0**: 20 sản phẩm mẫu, Tech Lead LGTM
+- [ ] **Phase 0**: 20 sản phẩm mẫu, Codex review pass
 - [ ] **Phase 1**: `inax-urls.json` có ~2,208 URLs
 - [ ] **Phase 2**: mọi product có name, sku, price, images>0, description (plain text)
 - [ ] **Phase 3**: ảnh trên CDN, không URL hita còn sót
@@ -303,11 +303,11 @@ output/
 
 ---
 
-*Tạo bởi Antigravity Multi-Agent Brainstorming — LEO-447*
+*Tạo bởi legacy brainstorming workflow - LEO-447*
 
 ---
 
-## 🔵 TECH LEAD REVIEW — 29/05/2026
+## 🔵 LEGACY TECHNICAL REVIEW - 29/05/2026
 
 **Overall: ✅ APPROVED với 3 điều chỉnh nhỏ**
 
@@ -377,14 +377,14 @@ Chạy qua `supabase.rpc()` hoặc `prisma.$executeRaw()` — không dùng Prism
 
 ### ✅ Acceptance Criteria — Final
 
-List của Antigravity đã đầy đủ. Thêm 2 items:
+Danh sách legacy đã đầy đủ. Thêm 2 items:
 
 - [ ] Gallery: không ảnh nào có `data-slick-index < 0` (clone slide)
 - [ ] DB upsert: sản phẩm đã `is_active=true` từ trước → vẫn `true` sau khi re-crawl
 
 ---
 
-### 📋 Action items cho Antigravity
+### 📋 Action items legacy - cần Codex re-validate trước khi dùng
 
 1. Sửa slider filter: dùng `data-slick-index >= 0` (không chỉ `[data-slick-index]`)
 2. Sửa `is_master` logic theo C-01

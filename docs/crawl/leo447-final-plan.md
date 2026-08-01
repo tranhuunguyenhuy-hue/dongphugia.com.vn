@@ -36,7 +36,7 @@
 | D-17 | Tên file Phase 0: `sample-20.json` (cập nhật spec dòng 428, 480) | LEO-448 | D-07 đã quyết định — spec cũ chưa cập nhật |
 | D-18 | Biến lặp sitemap: `pageNum` (không phải `page`) | LEO-449 | Shadow Playwright `page` object — TypeError risk |
 | D-19 | Resume mode: `--resume` flag cho script 2 và 3 | LEO-451 | 8 giờ crawl — crash không được mất progress |
-| D-20 | Gate file: `output/phase0-approved.flag` | LEO-449/450 | Ngăn chạy Phase 2 trước khi Tech Lead LGTM |
+| D-20 | Gate file: `output/phase0-approved.flag` | LEO-449/450 | Ngăn chạy Phase 2 trước khi Codex review pass |
 | D-21 | URL filter: kết hợp sitemap `inax` + brand page crawl | LEO-449 | Filter `includes('inax')` bỏ sót slug không có "inax" |
 | D-22 | Phase 0 checklist: verify SKU không conflict DB hiện tại | LEO-448 | 4 URL tự tìm có thể overwrite catalog đang active |
 
@@ -60,7 +60,7 @@ output/
 ├── crawled-products-with-cdn.json
 ├── image-map.json              # CDN dedup (atomic write)
 ├── crawl-log.json
-└── phase0-approved.flag        # Tech Lead tạo thủ công để unblock Phase 2
+└── phase0-approved.flag        # Codex tạo sau review hợp lệ để unblock Phase 2
 ```
 
 ---
@@ -126,7 +126,7 @@ const deduped = [...new Set(allUrls)];
 ```js
 // D-20: gate check
 if (!fs.existsSync('output/phase0-approved.flag') && !args.includes('--sample-only')) {
-  console.error('STOP: Phase 0 chưa được Tech Lead approve. Tạo output/phase0-approved.flag trước.');
+  console.error('STOP: Phase 0 chưa được review/approve. Tạo output/phase0-approved.flag trước.');
   process.exit(1);
 }
 
@@ -192,7 +192,7 @@ await supabase.rpc('replace_product_images', {
 
 ---
 
-## Phase 0 Checklist (20 samples — cho Tech Lead review)
+## Phase 0 Checklist (20 samples - cho Codex review)
 
 **URLs mẫu:**
 
@@ -222,7 +222,7 @@ await supabase.rpc('replace_product_images', {
 - [ ] Không có SKU nào được derive từ URL slug
 ```
 
-**Tech Lead approve:**
+**Codex review pass:**
 
 ```bash
 touch scripts/crawl-hita-inax/output/phase0-approved.flag
@@ -254,4 +254,4 @@ LEO-452 (Phase 4 — import DB)    Sau Phase 3
 ---
 
 *2 rounds, 5 agents, 22 decisions. APPROVED.*
-*Tech Lead signature required trên Phase 0 output trước khi full run.*
+*Codex review evidence required trên Phase 0 output trước khi full run.*

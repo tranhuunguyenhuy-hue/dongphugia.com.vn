@@ -9,10 +9,12 @@
 
 Website thương mại điện tử VLXD dành cho Đông Phú Gia — hỗ trợ catalogue sản phẩm, hệ thống báo giá, blog tin tức và quản trị nội dung toàn diện.
 
-Đây là giai đoạn migration đồng thời domain và hosting. Đọc
+Đây là giai đoạn migration đồng thời domain và hosting. Mỗi Codex session/thread
+phải bắt đầu từ [`AGENTS.md`](AGENTS.md), sau đó đọc
 [`docs/operations/MIGRATION-CHARTER.md`](docs/operations/MIGRATION-CHARTER.md)
-trước mọi release, database hoặc DNS action. Vercel và `.com.vn` phải được giữ
-nguyên làm rollback baseline cho đến hết observation window.
+và [`docs/operations/CODEX-CONTEXT.md`](docs/operations/CODEX-CONTEXT.md) trước
+mọi release, database hoặc DNS action. Vercel và `.com.vn` phải được giữ nguyên
+làm rollback baseline cho đến hết observation window.
 
 ---
 

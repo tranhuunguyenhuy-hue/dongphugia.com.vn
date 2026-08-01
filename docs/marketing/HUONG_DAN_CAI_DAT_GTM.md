@@ -414,4 +414,5 @@ Khi sự kiện `generate_lead` được kích hoạt, biến `lead_source` sẽ
 > 📧 **Hỗ trợ kỹ thuật:** Nếu gặp khó khăn trong quá trình cài đặt, vui lòng liên hệ đội phát triển để được hỗ trợ kiểm tra DataLayer.
 
 ---
-*Tài liệu được tạo bởi Antigravity Agent System — Đông Phú Gia © 2026*
+*Tài liệu lịch sử của dự án - Đông Phú Gia © 2026. Codex phải xác minh lại với
+GTM hiện tại trước khi áp dụng.*

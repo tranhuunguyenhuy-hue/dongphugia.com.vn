@@ -1,10 +1,10 @@
-# Đông Phú Gia — Agent Reference (Single Source of Truth)
+# Đông Phú Gia - Codex technical reference
 
-> **Current operational authority (2026-08-01):** Đọc
+> **Canonical instruction entry point:** repository root [`AGENTS.md`](../AGENTS.md).
+> Trước mọi task, đọc thêm
 > [`operations/MIGRATION-CHARTER.md`](operations/MIGRATION-CHARTER.md),
-> [`operations/AGENT-HANDOFF-STANDARD.md`](operations/AGENT-HANDOFF-STANDARD.md)
-> và hand-off hiện hành trước mọi mutation. Phần Vercel/Supabase bên dưới là
-> application/rollback baseline lịch sử; không phải target production.
+> [`operations/CODEX-CONTEXT.md`](operations/CODEX-CONTEXT.md) và hand-off hiện
+> hành. File này chỉ giữ technical conventions của application.
 
 ## Current migration objective
 
@@ -17,13 +17,13 @@
 - Target media: Bunny Storage/CDN với compatibility được nghiệm thu.
 - Vercel và `.com.vn` phải được giữ nguyên làm rollback qua observation window.
 
-## Agent start checklist for migration/release
+## Codex start checklist for migration/release
 
-1. Đọc migration charter và latest hand-off.
+1. Đọc root `AGENTS.md`, migration charter, living context và latest hand-off.
 2. Chạy `scripts/repository/audit-git-state.sh` read-only.
 3. Xác minh absolute worktree, branch, dirty files, PR head và exact digest.
-4. Xác minh mutation owner cũ đã dừng hoặc đã nhường đúng resource.
-5. Công bố owner mới; chỉ một writer trên mỗi resource.
+4. Xác minh thread cũ đã release mutation owner cho đúng resource.
+5. Công bố owner mới; chỉ một writer cho mỗi resource.
 6. Không lặp workflow/probe nếu input hoặc evidence chưa thay đổi.
 7. Không đọc/in secret; chỉ xác minh metadata và dùng secret-safe injection.
 
@@ -36,14 +36,12 @@
 - Không tắt, xóa hoặc thay đổi Vercel rollback baseline trong observation.
 - Maintenance window ngày 31/07/2026 đã hết hiệu lực; không tự dời window.
 
-Nếu phần còn lại của file mâu thuẫn với các quy tắc trên, current migration
-charter và exact latest hand-off luôn ưu tiên.
+Nếu phần còn lại của file mâu thuẫn với các quy tắc trên, root `AGENTS.md`,
+current migration charter, newly verified evidence và exact latest hand-off luôn
+ưu tiên.
 
-**Updated:** 04/06/2026 | Live: dongphugia.com.vn | Deploy: Vercel (auto khi push `main`)
-
-> ⚠️ **TEAM CHANGE (04/06/2026):** Antigravity đã ngừng hoạt động. Xem section "Team & Workflow" bên dưới.
-
-> **Mọi AI agent đọc file này trước tiên.** CLAUDE.md và docs/AGENT.md là alias trỏ về đây.
+**Updated:** 01/08/2026 | Current public production: `www.dongphugia.com.vn`
+on Vercel | Target: `www.dongphugia.vn` on AWS/Coolify
 
 ---
 
@@ -68,41 +66,25 @@ Media: Bunny Storage/CDN with approved legacy compatibility
 
 ---
 
-## Team & Workflow
+## Ownership and workflow
 
 | Role | Who | Scope |
 |------|-----|-------|
-| PM | Nguyen Huy | Requirements, approve, deploy Vercel |
-| Tech Lead + Dev | Claude (Cowork) | Spec, implement, review, báo deploy |
+| PM/user | Nguyen Huy | Scope, GO/NO-GO, production-data, DNS/traffic, credentials and cost approvals |
+| Technical executor | Codex | Inspect, plan, implement, review, verify and maintain cross-thread context within approved scope |
 
-> ⚠️ **TUẦN 04/06/2026:** Antigravity ngừng hoạt động. Claude implement trực tiếp vào repo.
-> Tuần tới: OpenAI Codex sẽ được thêm vào làm Dev.
+**Per-task flow:**
 
-**Per-task flow (Claude implement):**
-1. PM → mô tả yêu cầu trong Cowork chat
-2. Claude → hỏi nếu thiếu thông tin (tối đa 1 câu)
-3. Claude → tạo Linear issue với spec đầy đủ
-4. Claude → implement trực tiếp vào repo, push branch
-5. Claude → tự review, comment LGTM trên Linear
-6. Claude → báo PM "Ready for deploy" với tóm tắt ngắn
-7. PM → deploy lên Vercel (CHỈ PM deploy)
+1. PM/user describes the desired outcome and constraints.
+2. Codex reads canonical context and verifies the exact current state.
+3. Codex identifies facts, decisions, assumptions, unknowns and mutation owner.
+4. Codex performs the authorized work on an isolated `codex/*` branch/worktree.
+5. Codex runs appropriate checks and records exact evidence.
+6. Codex updates the living context and emits the mandatory session closeout.
+7. PM/user approves every production-data, DNS/traffic, credential or budget gate.
 
----
-
-## Historical session checklist (Antigravity)
-
-> Legacy reference only. Migration/release agents must use the current checklist
-> at the top of this file and must not automatically pull/switch a dirty branch.
-
-```
-□ 1. Đọc file này (docs/AGENTS.md)
-□ 2. Đọc PROJECT-STATUS.md — trạng thái hiện tại
-□ 3. git pull origin main
-□ 4. npm install
-□ 5. npx tsc --noEmit → PHẢI pass. Nếu fail: comment Linear, đợi Tech Lead
-□ 6. Đọc Linear issue đầy đủ (description + checklist)
-□ 7. Spec không rõ → comment hỏi Tech Lead, đợi reply trước khi code
-```
+No other assistant, legacy tool or historical role has current mutation or
+coordination authority.
 
 ---
 
@@ -267,11 +249,11 @@ MAINTENANCE_MODE=false
 | PM duyệt production-data cutover và DNS/traffic release | Block ngay |
 | Chỉ deploy exact green source/immutable digest trong scope được duyệt | Block ngay |
 | `npx tsc --noEmit` phải pass trước commit | Block ngay |
-| Không xóa bảng/column DB khi chưa hỏi Tech Lead | Block ngay |
-| Không thay đổi auth flow khi chưa hỏi Tech Lead | Block ngay |
-| Không thêm major npm dependency khi chưa hỏi Tech Lead | Block ngay |
-| Antigravity mark Done ONLY sau khi Tech Lead comment LGTM | Block ngay |
-| Tech Lead review mọi change — không có bypass | Block ngay |
+| Không xóa bảng/column DB khi chưa có review và PM approval phù hợp | Block ngay |
+| Không thay đổi auth flow khi chưa có security review và scope rõ | Block ngay |
+| Không thêm major npm dependency khi chưa đánh giá risk và được PM duyệt nếu ảnh hưởng phạm vi/chi phí | Block ngay |
+| Không có hai mutation writer trên cùng resource | Block ngay |
+| Không kết thúc thread mà thiếu closeout/context hand-off | Block ngay |
 
 ---
 
@@ -319,5 +301,6 @@ MAINTENANCE_MODE=false
 
 ---
 
-> **Tech Lead:** Cập nhật file này sau mỗi convention mới hoặc gotcha mới phát hiện.
-> **Antigravity:** Đây là file duy nhất cần đọc cho context. Không cần đọc CLAUDE.md hay docs/AGENT.md (chúng trỏ về đây).
+> **Codex:** Cập nhật technical reference khi convention/gotcha mới được xác
+> minh. Cập nhật cross-thread state trong `operations/CODEX-CONTEXT.md` và kết
+> thúc mỗi thread bằng `operations/CODEX-SESSION-CLOSEOUT.md`.

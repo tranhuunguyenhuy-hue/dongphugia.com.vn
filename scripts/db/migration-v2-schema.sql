@@ -1,7 +1,7 @@
 -- =============================================================================
 -- LEO-366: V2 Database Schema Migration
 -- Date: 2026-04-06
--- Author: Antigravity (Database Architect + Security Auditor + Backend Specialist)
+-- Author: Legacy project tooling (historical provenance)
 -- Purpose: Restructure 53 legacy models → 22 unified tables
 -- Target: Supabase PostgreSQL (run via SQL Editor)
 --

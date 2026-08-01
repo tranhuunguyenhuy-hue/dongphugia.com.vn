@@ -2,7 +2,7 @@
 
 > Phiên bản: 3.0 | Cập nhật: 06/04/2026
 > Linear: [Đông Phú Gia - Website VLXD](https://linear.app/leonguyen/project/djong-phu-gia-website-vlxd-179a568436a0)
-> PM: Nguyen Huy + Cowork (Claude)
+> PM: Nguyen Huy | Technical execution context: Codex
 
 ---
 
@@ -15,7 +15,7 @@ Scope V2 đã được **thay đổi hoàn toàn** vào 06/04/2026. Từ 6 works
 3. 🎨 **Thay đổi giao diện (Design System)** — Medium (song song với DB)
 
 **Timeline:** 2 tháng (29/03 → 31/05/2026)
-**Team:** Antigravity (backend + frontend) · Huy (PM/review)
+**Historical team model retired. Current ownership:** Codex (technical) · Huy (PM/approval)
 
 ---
 

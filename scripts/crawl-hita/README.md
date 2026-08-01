@@ -23,12 +23,12 @@ Crawl sản phẩm từ hita.com.vn cho tất cả brands vào DPG database.
 node 1-discover-urls.js --brand=caesar
 # → output/caesar/urls.json
 
-# 2a. Phase 0: Sample 20 PDPs (Tech Lead review trước khi full crawl)
+# 2a. Phase 0: Sample 20 PDPs (Codex review trước khi full crawl)
 node 2-crawl-pdp.js --brand=caesar --sample-only
 # → output/caesar/sample-20.json
-# ⚠️  Comment sample-20.json lên Linear, đợi Tech Lead approve
+# ⚠️  Lưu evidence sample-20.json, đợi Codex review và PM approval nếu scope yêu cầu
 
-# 2b. Tech Lead approve → tạo flag file
+# 2b. Sau review/approval hợp lệ → tạo flag file
 touch output/caesar/phase0-approved.flag
 
 # 2c. Full crawl
@@ -67,7 +67,7 @@ node 5-crawl-upsell.js --brand=toto --urls-from=../crawl-toto/output/toto-urls.j
 output/<brand>/
 ├── urls.json                      # Phase 1: danh sách PDPs discovered
 ├── sample-20.json                 # Phase 0: 20 sample products
-├── phase0-approved.flag           # Gate file — tạo thủ công sau khi Tech Lead approve
+├── phase0-approved.flag           # Gate file - chỉ tạo sau review/approval hợp lệ
 ├── crawl-progress.json            # Resume checkpoint
 ├── crawled-products.json          # Phase 2: raw PDP data
 ├── crawled-products-with-cdn.json # Phase 3: CDN URLs replaced

@@ -1,4 +1,4 @@
-# ORCHESTRATOR HAND-OFF
+# CODEX ORCHESTRATOR HAND-OFF
 
 **Timestamp:** YYYY-MM-DD HH:MM Asia/Ho_Chi_Minh
 
@@ -104,3 +104,9 @@
 ```text
 <Self-contained prompt including exact identities, authority and hard stops.>
 ```
+
+## 12. Context and owner closeout
+
+- `CODEX-CONTEXT.md` updated: YES | NO - attach ready-to-apply update
+- Temporary tunnels/processes closed or handed off:
+- Mutation ownership: RELEASED | RETAINED | NOT-CLAIMED

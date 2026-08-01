@@ -1,8 +1,8 @@
 # Repository cleanup hand-off - 2026-08-01
 
-**Status:** PHASE-2-DOCUMENTATION-COMPLETE
+**Status:** CODEX-CONTEXT-READY-FOR-REVIEW
 
-**Scope:** repository/worktree hygiene, agent hand-off standard and current
+**Scope:** repository/worktree hygiene, Codex continuity standard and current
 migration-document alignment
 
 **Next stop gate:** `POST-OBSERVATION-BRANCH-DELETE-APPROVAL`
@@ -24,6 +24,15 @@ migration-document alignment
   `cf98ab78b9fd34403e277b5e23ea8b082b6800ce`
 - Root worktree remains dirty and untouched.
 
+### Root `AGENTS.md` collision note
+
+- FACT - The dirty root worktree currently has an untracked local `AGENTS.md`.
+- FACT - Its AWS and secret-safety guidance has been incorporated into the new
+  tracked root `AGENTS.md` on `codex/orchestrator-handoff-cleanup`.
+- Do not delete or overwrite the untracked file from another thread. After this
+  documentation PR is merged, compare it with the tracked version and resolve
+  the local collision manually in a separately authorized cleanup step.
+
 ## Completed mutations
 
 | Resource | Action | Result | Recovery |
@@ -34,6 +43,8 @@ migration-document alignment
 | Local validation access | Stopped localhost proxy and SSM port-forward | PASS | Re-open a new authenticated tunnel if approved |
 | Documentation | Added takeover, hand-off and hygiene standards | PASS | Revert documentation commit |
 | Canonical Markdown | Added migration charter and marked legacy plans/status clearly | PASS | Revert follow-up documentation commit |
+| Codex continuity | Added root instructions, living context and mandatory session/thread closeout | PASS | Revert Codex-context documentation commit |
+| Active legacy references | Removed retired assistant ownership/configuration from active docs and comments | PASS | Historical provenance remains under `docs/archive/` |
 
 ## Recovery evidence
 
@@ -59,5 +70,6 @@ Branch deletion is blocked until all conditions hold:
 4. archive candidates have unique commits mapped to PRs/recovery refs; and
 5. repository owner approves exact local and remote deletion lists.
 
-Until then, future agents may update classification read-only but must not bulk
-delete branches, remove living worktrees or clean the dirty root worktree.
+Until then, future Codex threads may update classification read-only but must
+not bulk delete branches, remove living worktrees or clean the dirty root
+worktree.

@@ -972,4 +972,6 @@ npm test
 
 ---
 
-> **Tài liệu này được tạo tự động từ phân tích codebase thực tế** vào ngày 2026-05-27 bởi Antigravity. Mọi thông tin đã được xác minh trực tiếp từ source code, không dựa trên README/docs cũ.
+> **Tài liệu lịch sử này được tạo từ phân tích codebase thực tế** vào ngày
+> 2026-05-27 bởi legacy project tooling. Mọi thông tin cần được Codex xác minh
+> lại với source hiện tại trước khi dùng làm execution input.
