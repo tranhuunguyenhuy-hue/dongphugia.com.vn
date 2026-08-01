@@ -5,7 +5,7 @@ listens on unprivileged port `8080`, serves `/healthz`, and returns HTTP `308`
 for every other request to `https://www.dongphugia.vn$request_uri`.
 
 The image base is pinned to the immutable
-`nginxinc/nginx-unprivileged:1.27.5-alpine` digest recorded in the Dockerfile.
+`nginxinc/nginx-unprivileged:1.29.1-alpine` digest recorded in the Dockerfile.
 It has no database, Bunny, session or application environment variables.
 
 Build and test locally:
