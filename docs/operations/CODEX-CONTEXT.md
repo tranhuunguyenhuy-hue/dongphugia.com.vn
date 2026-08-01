@@ -67,6 +67,32 @@ truth. Do not build or deploy from a stale copied SHA or digest.
   NS are `ns1.pavietnam.vn` and `ns2.pavietnam.vn`; no public MX/CAA data was
   observed. The former P.A export blocker is closed; no DNS mutation occurred.
 
+## Latest technical readiness refresh - 2026-08-01 22:33 Asia/Ho_Chi_Minh
+
+- PR #29 remains open/draft at exact head
+  `31b6e1c60ee35cd2eab13a515d492c0f1e1c9e7b`; quality,
+  homepage-readiness, Vercel and preview comments are all `PASS`.
+- AWS profile `dongphugia-admin` is valid for account `503344933326` in
+  `ap-southeast-1`; EC2 `i-011fe10948e0a8c15` is arm64/running with EIP
+  `47.131.92.97`, status checks `ok` and SSM `Online`.
+- Dark resource `dongphugia-web-production-dark` runs exact digest
+  `sha256:e5eaadf454abe9b01bb35389e80b0828dac237d9cb4195dc289345627bfeab9b`,
+  healthy, restart `0`, internal `/` HTTP `200`.
+- Coolify ingress is `coolify-proxy` / Traefik `v3.6` on ports 80/443/8080.
+  The dark router is only HTTP `Host(dpg-production-dark.invalid)` to port
+  3000; the proposed `.vn` hosts return HTTP `404`, HTTPS returns `503`, and
+  the current SNI certificate is the Traefik default certificate, not covered
+  for either `.vn` host. This is the current TLS/ingress technical blocker.
+- Target DB is private with `pg_isready` PASS, `ssl=on`, minimum TLSv1.2 and
+  4/5 active sessions encrypted. Client `verify-full` was not reproven without
+  secret exposure; prior evidence is stale for this checkpoint.
+- Read-only dark HTTP checks passed for homepage, sitemap, robots, admin login
+  GET, hero widths 720/1280, canonical/OG/JSON-LD and security headers. No
+  credentials, sessions or business writes were created. Accepted source
+  `090ff89` statically contains centralized write-freeze coverage.
+- Data backup/restore, P.A/Mắt Bão DNS exports and rollback evidence remain
+  unchanged and are not repeated here.
+
 The session taking over a release action must locate and verify the underlying
 artifact/log evidence; this summary alone is not an approval.
 
@@ -74,10 +100,10 @@ artifact/log evidence; this summary alone is not an approval.
 
 1. Preserve the checksum-verified `.vn` and `.com.vn` zone exports as rollback
    evidence; no DNS mutation is authorized.
-2. Refresh backup, restore and reconciliation evidence for a newly approved
-   maintenance window.
-3. Re-verify exact release source/image, dark deployment, target DB TLS,
-   capacity, rollback identities and named operators.
+2. Resolve dark-only TLS/ingress routing and revalidate target DB `verify-full`
+   without exposing secrets.
+3. Refresh backup, restore and reconciliation evidence only for a newly
+   approved maintenance window.
 4. Present `PRODUCTION-DATA-WRITE-FREEZE-APPROVAL-GATE` with exact timing,
    downtime, owners, final-copy plan and rollback triggers.
 5. Only after an approved data cutover and target acceptance, present
@@ -89,6 +115,8 @@ artifact/log evidence; this summary alone is not an approval.
 - `HUMAN-ONLY` - PM must approve a new write-freeze/data-copy window.
 - `FACT` - Both `.vn` and `.com.vn` read-only zone exports are now checksum-
   verified; the former P.A Việt Nam export blocker is closed.
+- `TECHNICAL BLOCKER` - Coolify dark ingress lacks HTTPS routers and a
+  domain-covered certificate for `dongphugia.vn` and `www.dongphugia.vn`.
 - `HUMAN-ONLY` - PM/DNS portal operator must later execute only the records
   explicitly approved at the DNS gate.
 - `HUMAN-ONLY` - PM owns GO/NO-GO, production-data and DNS/traffic approval.

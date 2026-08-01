@@ -119,20 +119,74 @@ nameserver change, traffic switch or redirect.
   traffic or DNS changes; those gates remain `NO-GO` pending their separate PM
   approvals.
 
+## Technical readiness refresh - 2026-08-01 22:33 Asia/Ho_Chi_Minh
+
+- `FACT` - PR #29 remains open/draft at exact head
+  `31b6e1c60ee35cd2eab13a515d492c0f1e1c9e7b`; quality, homepage-readiness,
+  Vercel and preview comments are all `PASS`.
+- `FACT` - AWS profile `dongphugia-admin` is valid for account `503344933326`
+  in `ap-southeast-1`; EC2 `i-011fe10948e0a8c15` is arm64/running, status checks
+  are `ok`, EIP is `47.131.92.97`, and SSM agent `3.3.4624.0` is `Online`.
+- `FACT` - Current dark app identity is resource
+  `dongphugia-web-production-dark` in Coolify project `dongphugia-staging`,
+  container `ydgt1mkagpitpq8shovd726z-124225689632`, exact image digest
+  `sha256:e5eaadf454abe9b01bb35389e80b0828dac237d9cb4195dc289345627bfeab9b`.
+  It is healthy, restart count `0`, internal HTTP `/` returned `200`, and the
+  container has no published host port.
+- `FACT` - Coolify ingress identity is container `coolify-proxy` running
+  `traefik:v3.6`, healthy, publishing host ports `80`, `443` and `8080`. The
+  dark app router is HTTP-only: `Host(dpg-production-dark.invalid)` with
+  `PathPrefix(/)` to service port `3000`; no HTTPS router or TLS certificate
+  coverage exists for either `.vn` name. Host-header validation returned HTTP
+  `200` only for the invalid internal host, and HTTP `404` for both proposed
+  `.vn` hosts. HTTPS validation returned `503` for all three hosts.
+- `FACT` - The current TLS SNI certificate is the Traefik default certificate
+  (`CN=TRAEFIK DEFAULT CERT`) with an internal generated SAN, not
+  `dongphugia.vn` or `www.dongphugia.vn`, valid 2026-08-01 through 2027-08-01.
+  This is a hard technical blocker for ingress readiness. No DNS or certificate
+  mutation was made.
+- `FACT` - Target PostgreSQL remains private; `pg_isready` passes, server
+  `ssl=on`, minimum TLS is `TLSv1.2`, and current `pg_stat_ssl` showed `4/5`
+  active sessions using SSL. `verify-full` client validation was not reproven
+  without reading secret values; the previous verify-full result is therefore
+  `STALE EVIDENCE` for this checkpoint.
+- `FACT` - Current resource snapshot: app `127 MiB / 512 MiB`, target DB
+  `130.2 MiB / 640 MiB`, host available memory `690 MiB`, swap used `488 MiB`;
+  DB Docker restart count remains `11`. CloudWatch last-24-hour CPU average
+  ranged about `7.97%`-`8.97%`, with hourly maximum `34.37%`.
+- `FACT` - Read-only dark acceptance through the internal HTTP router passed:
+  homepage, `/sitemap.xml`, `/robots.txt`, `/admin/login`, hero endpoints at
+  widths `720` and `1280` all returned `200`. Canonical, `og:url`, JSON-LD and
+  `.vn` references were present; all six checked security headers were present.
+  No credential was entered and no session or business write was created.
+- `FACT` - Accepted source `090ff89...` statically contains the central Prisma
+  write guard plus order, quote, admin, upload and revalidation freeze coverage;
+  this is source evidence only. Existing admin login/session evidence remains
+  current from the prior accepted smoke and was not repeated.
+- `GATE` - TLS/ingress readiness is `NO-GO` until a dark-only router and
+  certificate covering both `.vn` names are prepared and validated. If ACME
+  requires DNS-01, only the exact challenge record/action may be presented for
+  PM/operator approval; no challenge record is created here.
+
 ## Proposed DNS plan - not approved and not applied
 
-| Host | Type | Proposed value | TTL | Purpose |
-|---|---|---:|---:|---|
-| `dongphugia.vn` | A | `47.131.92.97` | 300 | Target apex ingress |
-| `www.dongphugia.vn` | A | `47.131.92.97` | 300 | Canonical target ingress |
+| Host | Type | Proposed value | Pre-cutover TTL | Observation/steady TTL |
+|---|---|---:|---:|---:|
+| `dongphugia.vn` | A | `47.131.92.97` | 300 | 300 |
+| `www.dongphugia.vn` | A | `47.131.92.97` | 300 | 300 |
 
 - No AAAA record is proposed.
 - No CNAME record is proposed for the new `.vn` apex or `www`; both proposed
   names use the A records shown above.
+- The apex must return HTTP `308` to `https://www.dongphugia.vn`, preserving
+  path and query string. This redirect is a planned router behavior, not
+  currently active.
 - TLS must be valid for both apex and `www` before accepting canonical traffic.
 - Any ACME DNS-01 TXT record requires a separate exact record/action approval.
 - The old `.com.vn` domain remains on Vercel during the observation window; no
   old-domain redirect is in this window.
+- TTL `300` is the proposed pre-cutover and observation value; any later
+  steady-state TTL change requires PM approval.
 
 ## Current `.com.vn` rollback snapshot - read-only, not applied
 
@@ -154,19 +208,61 @@ records were observed. Export checksum:
 |---|---|
 | `FACT` release | PR #26 head `9aa93c3c565e23e459d4e4f24ba363805ab88134`; accepted source `090ff89c981f8c6b2d851bf99d7fb8572dacc4da`; stable staging digest `sha256:65fd6460f910468bba5e6d131e45ad63bcf6cd9fb1e067ffe0398423212e03df`; dark digest `sha256:e5eaadf454abe9b01bb35389e80b0828dac237d9cb4195dc289345627bfeab9b` |
 | `FACT` runtime | Dark container `ydgt1mkagpitpq8shovd726z-124225689632` healthy, restart `0`; target PostgreSQL is private, SSL on; Vercel `.com.vn` remains rollback baseline |
+| `FACT` ingress | `coolify-proxy` / Traefik `v3.6` is healthy on ports 80/443/8080, but dark route is HTTP-only on `dpg-production-dark.invalid`; proposed `.vn` hosts return 404/503 and default TLS certificate is not domain-covered |
+| `FACT` dark acceptance | Internal read-only homepage, sitemap, robots, admin login GET, hero 720/1280, canonical/OG/JSON-LD and security headers passed; no credential/session/business write was created |
+| `STALE EVIDENCE` DB TLS | Server SSL is on and active connections are encrypted, but client `verify-full` was not reproven in this refresh without secret exposure |
 | `FACT` data safety | Existing dump/checksum, isolated public-schema restore, FK/orphan/sequence/media reconciliation PASS; RTO `23.56 s`; cleanup PASS; cost `$0` |
 | `FACT` DNS | `.vn` Mắt Bão export and `.com.vn` P.A export are checksum-verified; proposed `.vn` A records and TTL are listed above; no DNS mutation |
 | `FACT` web/SEO baseline | Target release has canonical, sitemap and robots paths in the accepted application evidence; old-domain redirects remain disabled |
+| `TECHNICAL BLOCKER` | Dark-only ingress/TLS route for `dongphugia.vn` and `www.dongphugia.vn` is not prepared; ACME method and certificate ownership must be resolved before DNS gate |
 | `PM decision required` | Approve a new write-freeze/final-copy window, exact start/duration, user impact, named app/DB/monitoring/rollback owners and rollback triggers |
 | `PM decision required` | Separately approve DNS records, TLS/ACME actions, expected downtime, SEO monitoring and PM as primary DNS operator |
 | `ASSUMPTION` | No backup DNS operator is available unless PM names one; this is a single-human dependency |
-| `UNKNOWN` | Public TLS issuance/readiness for both new `.vn` names still requires final ingress/certificate validation without DNS mutation; Search Console/GTM ownership and post-cutover 404/redirect monitoring still need named operators |
+| `UNKNOWN` | Search Console/GTM ownership and post-cutover 404/redirect monitoring still need named operators; target client `verify-full` must be refreshed secret-safely |
 
 Expected cutover impact is a short controlled write-freeze plus DNS propagation;
 exact downtime remains an approval input. Rollback sequence is: stop/abort
 target writes, restore Vercel/domain records from the snapshot, validate old
 domain health, then observe before any retry. Old-domain redirects remain
 disabled until a separate post-observation approval.
+
+Candidate windows (planning only, not approved):
+
+- Window A: `23:00-23:30` Asia/Ho_Chi_Minh on a date selected by PM.
+- Window B: `10:00-10:30` Asia/Ho_Chi_Minh on a date selected by PM.
+
+### Approval package A - `PRODUCTION-DATA-WRITE-FREEZE-APPROVAL-GATE`
+
+- Exact release: source `090ff89c981f8c6b2d851bf99d7fb8572dacc4da`, stable
+  staging digest
+  `sha256:65fd6460f910468bba5e6d131e45ad63bcf6cd9fb1e067ffe0398423212e03df`,
+  dark digest
+  `sha256:e5eaadf454abe9b01bb35389e80b0828dac237d9cb4195dc289345627bfeab9b`.
+- Target identity: EC2 `i-011fe10948e0a8c15` / EIP `47.131.92.97`, Coolify
+  dark resource `dongphugia-web-production-dark`, target DB
+  `dongphugia_production` private. Current app/DB writes remain unfrozen.
+- Required PM signature: selected window, exact freeze start, expected
+  15-20-minute duration, final dump/final delta and reconciliation procedure,
+  no-split-brain owner, app/DB/monitoring/rollback owners, user impact and
+  rollback triggers.
+- Data safety evidence is PASS, but current target client `verify-full` is
+  stale for this refresh and must be revalidated before freeze. Decision:
+  `NO-GO`.
+
+### Approval package B - `DNS-SWITCH-APPROVAL-GATE`
+
+- Proposed records: apex and `www` A `47.131.92.97`, TTL `300` pre-cutover and
+  during observation; no AAAA/CNAME. Apex HTTP `308` to canonical HTTPS `www`,
+  preserving path/query. Old `.com.vn` redirects remain disabled.
+- Rollback records: use the checksum-verified P.A snapshot above; Vercel and
+  the old domain remain unchanged. PM is primary DNS operator; no backup
+  operator is named, so this is a single-human dependency.
+- Required PM signature: exact records/TTL, Mắt Bão/P.A operator actions,
+  TLS/ACME action, expected downtime, rollback propagation assumptions and
+  SEO/canonical/sitemap/robots/Search Console/GTM monitoring.
+- Current technical blocker: dark Coolify route has no HTTPS router or
+  certificate for either `.vn` host. Decision: `NO-GO` until dark-only ingress
+  and TLS validation pass.
 
 ## Gate decision
 
@@ -177,7 +273,8 @@ Required before a PM may consider this gate:
 1. Approve a new maintenance/write-freeze window. The 31 July 2026 window has
    expired.
 2. Re-verify the exact dark runtime digest, target PostgreSQL `verify-full`
-   health, restart/capacity trend, source-backup/S3 checksum, restore proof and
+   health (current server SSL is not sufficient; prior client evidence is
+   stale), restart/capacity trend, source-backup/S3 checksum, restore proof and
    reconciliation freshness.
 3. Name app, database, monitoring and rollback owners; confirm the final-copy,
    reconciliation, sequence and no-split-brain procedure.
@@ -200,6 +297,9 @@ Required before a PM may consider this gate:
 
 - `FACT` - P.A Việt Nam full customer-managed zone export is now verified and
   the former human-only blocker is closed.
+- `TECHNICAL BLOCKER` - Coolify dark ingress has no `.vn` HTTPS routers or
+  domain-covered certificate; current internal router is only
+  `dpg-production-dark.invalid` over HTTP.
 - `HUMAN-ONLY` - PM approval of a new production-data maintenance window.
 - `HUMAN-ONLY` - PM/DNS operator approval before any ACME or DNS record change.
 - `FACT` - AWS read-only session was reauthenticated and the refresh above was
