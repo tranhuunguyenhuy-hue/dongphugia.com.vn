@@ -1,4 +1,4 @@
-FROM nginxinc/nginx-unprivileged@sha256:27985295bdb22a1ef8f712863210bd5877c0f3006494a593e86b3fe0fa55467e
+FROM nginxinc/nginx-unprivileged@sha256:59ccf0943b0b8e8d9e6ea9039a39555730f544701a655c596f7df7d096c593f5
 
 ARG VCS_REF=unknown
 
