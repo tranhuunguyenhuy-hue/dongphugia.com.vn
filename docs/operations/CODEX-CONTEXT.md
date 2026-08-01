@@ -49,6 +49,13 @@ truth. Do not build or deploy from a stale copied SHA or digest.
 - Source backup, checksum, off-host copy and isolated restore evidence were
   prepared under the approved Minimum Safe Launch scope.
 - Vercel and the old domain remain available as the rollback baseline.
+- Mắt Bão `.vn` portal DNS export was captured outside the repository at
+  `/Users/m-ac/Downloads/dongphugia.vn-01082026022643.csv`. The CSV SHA-256 is
+  `5f8866721e952dc9bb6b19df2e86e9c4fab3b383659648f719a48f85d057033a` and
+  contains one operational record: `@ NS ns1.matbao.com., ns2.matbao.com.` with
+  TTL `3600`. A public authoritative NS lookup matched the CSV. The supporting
+  non-repository dossier is
+  `/Users/m-ac/Downloads/dongphugia-DNS-evidence-2026-08-01.md`.
 
 The session taking over a release action must locate and verify the underlying
 artifact/log evidence; this summary alone is not an approval.
@@ -72,6 +79,9 @@ artifact/log evidence; this summary alone is not an approval.
 - `HUMAN-ONLY` - PM must approve a new write-freeze/data-copy window.
 - `HUMAN-ONLY` - The DNS portal operator must export both full zones and later
   execute only the records explicitly approved at the DNS gate.
+- `HUMAN-ONLY` - P.A Việt Nam account recovery and a full read-only export for
+  `dongphugia.com.vn` remain pending. This blocks a complete old-domain rollback
+  dossier and the DNS gate, but does not authorize or require a DNS mutation.
 - `HUMAN-ONLY` - PM owns GO/NO-GO, production-data and DNS/traffic approval.
 - `UNKNOWN` - Named backup DNS operator and availability must be re-confirmed.
 
