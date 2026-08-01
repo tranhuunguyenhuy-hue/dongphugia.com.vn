@@ -603,3 +603,50 @@ window dump/reconcile, named monitoring/rollback owners and PM approvals.
   certificate is not domain-covered. The next PM action is package-write
   enablement; after deployment acceptance, a separate approval is required
   before any DNS-01 TXT mutation.
+
+## ACME DNS-01 bounded audit - 2026-08-02
+
+- `FACT` - The required `aws-secrets-manager` skill/retrieve surface and
+  `asm-exec` are unavailable. No local `lego`, `certbot` or `acme.sh` client
+  is installed.
+- `FACT` - EC2 read-only metadata shows Traefik `v3.6` configured for
+  HTTP-01 only, storing ACME state at `/traefik/acme.json`; no DNS-01 provider
+  is configured. The mounted file metadata is `root:root`, mode `600`, size
+  `16054` bytes. Contents were not read.
+- `FACT` - No ACME order, TXT record, certificate binding, DNS mutation or
+  traffic activation occurred.
+- `BLOCKER` - `SECRET-HANDLING-BLOCKER`: no compliant secret-safe path exists
+  in this runtime to create the approved manual DNS-01 order.
+- `PM ACTION` - Restore/approve one compliant runtime-only secret mechanism or
+  nominate an approved manual DNS-01 operator/client that keeps the account
+  key root-only and outside chat, logs, argv and artifacts. Then create one
+  SAN order and stop before `_acme-challenge` TXT mutation.
+
+## Safe readiness refresh - 2026-08-02
+
+- `FACT` - AWS account `503344933326`, region `ap-southeast-1`, EC2
+  `i-011fe10948e0a8c15` and SSM `Online` remain valid. The redirect runtime is
+  healthy with restart `0`, exact digest unchanged, `3.445 MiB / 64 MiB` and
+  `3` PIDs. Existing dark and staging runtimes remain healthy and unchanged.
+- `FACT` - EC2 point-in-time refresh: uptime `3d 8h`, load average
+  `1.75/0.80/0.58`, `676 MiB` available memory, `450 MiB` swap used and root
+  filesystem `21%` used. No soak or load-test claim is made.
+- `FACT` - Production-target PostgreSQL reports server `ssl=on` and minimum
+  TLS `1.2`; Docker restart count is `11`. Client `verify-full` could not be
+  reproven without a compliant secret-safe path and remains `STALE/UNKNOWN`.
+- `FACT` - Private S3 bucket
+  `dongphugia-prod-db-backup-503344933326-ap-southeast-1` remains SSE-S3 with
+  all four Block Public Access controls enabled. The newest target-public dump
+  is `88,396,363` bytes at `2026-08-01T19:18:56Z`; the `113`-byte checksum
+  manifest followed at `19:18:58Z`. Lifecycle retention is enabled for daily
+  `8` days and weekly `29` days. No object content was read; existing
+  checksum/restore/reconciliation evidence remains authoritative.
+- `FACT` - A local exact-digest disposable smoke passed with Docker
+  `read-only`, nginx tmpfs mounts, `no-new-privileges`, `pids-limit=64` and
+  `cap-drop=ALL`; `/healthz` returned `ok`. Coolify was not mutated. A future
+  same-digest Coolify hardening change must use a supported Compose/resource
+  path with recorded rollback; no blind Docker-options retry is allowed.
+- `GATE` - `PRODUCTION-DATA-WRITE-FREEZE-APPROVAL-GATE` and
+  `DNS-SWITCH-APPROVAL-GATE` remain `NO-GO` pending client `verify-full`,
+  domain-covered TLS and a compliant ACME secret path. No production or DNS
+  mutation occurred.

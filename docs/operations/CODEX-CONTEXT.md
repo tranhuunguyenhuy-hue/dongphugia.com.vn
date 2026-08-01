@@ -436,3 +436,55 @@ or DNS mutation from this context.
   TXT/A/AAAA/CNAME/nameserver mutation was made. The required
   `aws-secrets-manager` guidance is unavailable, so ACME key/order generation
   remains a `SECRET-HANDLING-BLOCKER` pending a compliant operator path.
+
+## ACME DNS-01 bounded audit - 2026-08-02
+
+- `FACT` - The required `aws-secrets-manager` skill/retrieve surface and
+  `asm-exec` are unavailable in the current environment. Local `lego`,
+  `certbot` and `acme.sh` clients are also absent.
+- `FACT` - Read-only EC2 metadata shows Traefik `v3.6` has only an HTTP-01
+  resolver configured, with ACME storage at `/traefik/acme.json`; no DNS-01
+  provider is configured. The mounted storage metadata is `root:root`, mode
+  `600`, size `16054` bytes. The file contents were not read.
+- `FACT` - No ACME order was created and no TXT, A, AAAA, CNAME, nameserver,
+  certificate binding or traffic mutation was performed.
+- `BLOCKER` - Status is `SECRET-HANDLING-BLOCKER`. A compliant order cannot be
+  generated without either restoring the approved runtime secret-resolution
+  path (`aws-secrets-manager` plus `asm-exec`) or naming an approved manual
+  DNS-01 client whose account key is generated and kept root-only outside
+  model/chat/log/argv/artifacts.
+- `PM ACTION` - Provide/approve exactly one compliant operator path. After it
+  exists, generate one SAN order for `dongphugia.vn` and
+  `www.dongphugia.vn`, report only public challenge metadata, and stop before
+  the PM/operator creates the `_acme-challenge` TXT record.
+
+## Safe readiness refresh - 2026-08-02
+
+- `FACT` - AWS account `503344933326`, region `ap-southeast-1`, EC2
+  `i-011fe10948e0a8c15` and SSM `Online` remain valid. The redirect container
+  is healthy, restart `0`, exact digest unchanged, using `3.445 MiB / 64 MiB`
+  and `3` PIDs. The existing dark app and staging containers remain healthy
+  on their recorded immutable digests.
+- `FACT` - Host refresh: uptime `3d 8h`, load average `1.75/0.80/0.58`,
+  `676 MiB` memory available, `450 MiB` swap used and root filesystem `21%`
+  used. This is a point-in-time capacity observation, not a soak result.
+- `FACT` - Production-target PostgreSQL server-side metadata shows `ssl=on`
+  and minimum TLS `1.2`; its Docker restart count is `11`. Client-side
+  `verify-full` was not reproven because the approved secret-safe path is
+  unavailable, so that client assertion remains `STALE/UNKNOWN`.
+- `FACT` - Private S3 backup bucket
+  `dongphugia-prod-db-backup-503344933326-ap-southeast-1` remains SSE-S3 with
+  all Block Public Access controls enabled. The newest target-public dump is
+  `88,396,363` bytes at `2026-08-01T19:18:56Z`; its `113`-byte checksum
+  manifest followed at `19:18:58Z`. Lifecycle rules are enabled for daily
+  `8` days and weekly `29` days. Object contents were not read; prior
+  checksum/restore/reconciliation evidence remains the proof baseline.
+- `FACT` - A local exact-digest disposable smoke proved the supported Docker
+  hardening syntax: `--read-only`, tmpfs for nginx runtime paths,
+  `no-new-privileges`, `pids-limit=64` and `cap-drop=ALL`; `/healthz` returned
+  `ok`. The Coolify resource was not changed. Applying this safely requires a
+  supported Compose/resource configuration and a reversible same-digest
+  redeploy; no blind Docker-options retry is authorized.
+- `GATE` - Production data and DNS gates remain `NO-GO`: client `verify-full`,
+  domain-covered TLS and the ACME secret path are unresolved; no production
+  write/freeze/final copy or DNS mutation occurred.
