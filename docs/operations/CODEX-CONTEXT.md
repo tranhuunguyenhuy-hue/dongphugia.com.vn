@@ -391,3 +391,48 @@ or DNS mutation from this context.
 - `FACT` - Existing dark app `ydgt1mkagpitpq8shovd726z`, staging and Vercel rollback are unchanged. Dark runtime remains `sha256:e5eaadf454abe9b01bb35389e80b0828dac237d9cb4195dc289345627bfeab9b`, deployment `lgds74j95439opjgbyqe217u`, healthy/restart `0`.
 - `FACT` - AWS account `503344933326`, region `ap-southeast-1`, EC2 `i-011fe10948e0a8c15`, and SSM online state were read-only verified. Traefik `v3.6` exposes only HTTP-01 with `/traefik/acme.json`; no DNS-01 provider is configured. No ACME order or TXT mutation was performed.
 - `GATE` - `PRODUCTION-DATA-WRITE-FREEZE-APPROVAL-GATE: NO-GO`; `DNS-SWITCH-APPROVAL-GATE: NO-GO`. Immediate PM action: grant GHCR package-write access through a secret-safe channel. After push, deploy only the exact digest to a new dark-only Coolify resource, then stop before DNS-01 TXT mutation for separate approval.
+
+## Dark apex redirect acceptance refresh - 2026-08-02
+
+- `FACT` - PM-approved visibility change was applied only to the GHCR package
+  `tranhuunguyenhuy-hue/dongphugia-apex-redirect`. Package metadata is now
+  `public`; no other package or permission was changed. Anonymous `docker pull`
+  of the exact immutable digest succeeded.
+- `FACT` - The pulled image is the exact `linux/arm64` digest
+  `sha256:a9ecf197c102ba26559bebf437610656b61be4a774cd63b017dce86830d1749e`
+  with source revision
+  `9b7884f2ef66643f7aea2c6350fb76198fa2b508`. The OCI index contains the
+  arm64 image and an attestation manifest with SPDX SBOM and SLSA provenance
+  layers. Trivy `0.55.2` reports `HIGH=0`, `CRITICAL=0`.
+- `FACT` - Coolify resource `mpwt7qmpjsa0izwvc8nic4co`
+  (`dongphugia-apex-redirect-dark`) deployed the same digest successfully as
+  deployment `l89vln0w0ztk73gpo52af87n`. Runtime container
+  `mpwt7qmpjsa0izwvc8nic4co-191623416242` is healthy with restart `0`.
+  Internal `/healthz` returned `200`; the service has no host port binding.
+- `FACT` - Dark-only Host-header validation passed: HTTP apex root returned one
+  `308` to `https://www.dongphugia.vn/`; the nested
+  `/_dark-validation/path?probe=1&sort=asc` request returned one `308` with
+  the identical path and query; HTTPS routing-only validation returned the
+  same `308`; `www.dongphugia.vn` HTTPS returned `200`. No redirect chain was
+  observed. The TLS certificate remains Traefik default and is not TLS-pass
+  evidence.
+- `FACT` - Redirect access-log validation found no `probe=1`, `sort=asc` or
+  encoded query values. The custom labels route only `dongphugia.vn` to the
+  service on port `8080`; Coolify's generated `sslip.io` route is internal and
+  is not a canonical DNS record.
+- `FACT` - Effective container hardening is `cap-drop=ALL`, memory `64 MiB`,
+  CPU `0.25`, and no published host ports. Coolify's custom option parser did
+  not apply `ReadonlyRootfs`, `no-new-privileges` or a PIDs limit; this is a
+  recorded hardening gap, not hidden acceptance evidence.
+- `FACT` - Existing dark app remains
+  `ydgt1mkagpitpq8shovd726z` at digest
+  `sha256:e5eaadf454abe9b01bb35389e80b0828dac237d9cb4195dc289345627bfeab9b`,
+  staging remains at `sha256:65fd6460f910468bba5e6d131e45ad63bcf6cd9fb1e067ffe0398423212e03df`,
+  and Vercel rollback was not changed. No database, DNS, traffic or old-domain
+  redirect mutation occurred.
+- `GATE` - Dark internal router acceptance is `PASS`; both protected gates
+  remain `NO-GO` until domain-covered TLS, a new PM-approved data window,
+  fresh final dump/reconcile and DNS approval are complete. No ACME order or
+  TXT/A/AAAA/CNAME/nameserver mutation was made. The required
+  `aws-secrets-manager` guidance is unavailable, so ACME key/order generation
+  remains a `SECRET-HANDLING-BLOCKER` pending a compliant operator path.

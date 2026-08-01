@@ -428,6 +428,51 @@ ACME order or DNS record was created; renewal remains a Coolify/Traefik task.
   and unapplied (`dongphugia.vn A 47.131.92.97 TTL 300`; `www A
   47.131.92.97 TTL 300`).
 
+## Dark redirect acceptance refresh - 2026-08-02
+
+### Exact release and deployment
+
+- The sole changed GHCR package is
+  `tranhuunguyenhuy-hue/dongphugia-apex-redirect`, now public by PM approval.
+  Anonymous pull of
+  `sha256:a9ecf197c102ba26559bebf437610656b61be4a774cd63b017dce86830d1749e`
+  succeeded. No registry credential was used or persisted on Coolify.
+- Exact source is
+  `9b7884f2ef66643f7aea2c6350fb76198fa2b508`; the image is `linux/arm64`.
+  Its OCI attestation contains SPDX SBOM and SLSA provenance layers, and
+  Trivy `0.55.2` reports `HIGH=0`, `CRITICAL=0`.
+- Coolify resource `mpwt7qmpjsa0izwvc8nic4co` (`dongphugia-apex-redirect-dark`)
+  completed deployment `l89vln0w0ztk73gpo52af87n`. Runtime is healthy,
+  restart count `0`, exact digest is active, and internal `/healthz` is `200`.
+  No host port is published; the generated `sslip.io` route is internal only.
+
+### Router and log acceptance
+
+- HTTP apex `/` returned exactly one `308` with
+  `Location: https://www.dongphugia.vn/`.
+- HTTP apex `/_dark-validation/path?probe=1&sort=asc` returned exactly one
+  `308` with the same path and query in the `Location` value.
+- HTTPS apex routing-only validation (`-k`) returned the same `308`; this does
+  not declare TLS pass. `www.dongphugia.vn` HTTPS returned `200`.
+- Redirect logs contained no `probe=1`, `sort=asc` or encoded query values.
+- Effective runtime caps are `cap-drop=ALL`, memory `64 MiB`, CPU `0.25`, and
+  no port bindings. Coolify did not apply `ReadonlyRootfs`,
+  `no-new-privileges` or a PIDs limit; retain this as a hardening gap for a
+  supported configuration follow-up.
+
+### Preservation and gate status
+
+- Existing dark app `ydgt1mkagpitpq8shovd726z`, accepted staging digest and
+  Vercel rollback baseline are unchanged. No production DB, DNS, traffic,
+  nameserver, old-domain redirect or write-freeze mutation occurred.
+- `PRODUCTION-DATA-WRITE-FREEZE-APPROVAL-GATE`: **NO-GO** pending a new PM
+  window, fresh final dump/S3 copy, final public-schema restore/reconcile,
+  no-split-brain validation and named owners.
+- `DNS-SWITCH-APPROVAL-GATE`: **NO-GO**. The dark router is technically `308`
+  ready, but the certificate is still Traefik default and DNS records remain
+  unapplied. ACME preparation stops before TXT mutation; the required
+  `aws-secrets-manager` guidance is unavailable (`SECRET-HANDLING-BLOCKER`).
+
 Source mutation is not required by evidence and was not attempted. Further
 technical action requires a Coolify-specific router mechanism that preserves
 the permanent status; no production, DNS, Vercel or staging mutation is
