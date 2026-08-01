@@ -256,3 +256,128 @@ or DNS mutation from this context.
 - `GATE` - Both production-data write-freeze and DNS-switch gates remain
   `NO-GO`. The next PM package must call out the 308 router blocker and the
   exact DNS-01 operator action without exposing a challenge token.
+
+## Accelerated one-pass technical readiness checkpoint - 2026-08-02
+
+### Ownership and source state
+
+- `FACT` - The documentation worktree is `/Users/m-ac/Projects/dongphugia-repo-cleanup`,
+  branch `codex/orchestrator-handoff-cleanup`; it was clean at the start of
+  this checkpoint and the root worktree `/Users/m-ac/Projects/dongphugia` was
+  left untouched despite its unrelated dirty state. The main orchestrator is
+  the only mutation owner for this pass.
+- `FACT` - PR #26 remains open and ready at exact head
+  `9aa93c3c565e23e459d4e4f24ba363805ab88134`; `quality`,
+  `homepage-readiness` and preview comments are successful. PR #29 remains a
+  draft at `40383f602dedaef75f178968aa671dd8b877a7cc`; its required checks are
+  successful. No application source or GHCR image was rebuilt.
+
+### Primary router attempt and rollback
+
+- `FACT` - Before the bounded attempt, the rollback reference was deployment
+  `etp64no66uz4latp52thr0bs` with the accepted immutable image
+  `sha256:e5eaadf454abe9b01bb35389e80b0828dac237d9cb4195dc289345627bfeab9b`
+  and source `090ff89c981f8c6b2d851bf99d7fb8572dacc4da`.
+- `FACT` - The Coolify UI displayed only `https://www.dongphugia.vn` in the
+  Domains field, while the readonly Direction value was `Redirect to www.`.
+  The Advanced page showed Force Https enabled but the control disabled. This
+  is evidence that Coolify owns the generated redirect behavior rather than a
+  free custom router surface.
+- `FACT` - A primary reversible attempt added direct `apex-http` and
+  `apex-https` Traefik routers at priority `1000` to service port `3000`, with
+  no apex middleware, and redeployed the same digest as deployment
+  `vg0xglvh8ssudzz58vdhqu5q`. Coolify still emitted `caddy_1` for the apex and
+  the generated `http-1` apex router with `redirect-to-https`; HTTP apex
+  therefore remained intercepted before the application.
+- `FACT` - The attempted custom labels were restored through the Coolify UI to
+  the recorded rollback label set and redeployed as
+  `lgds74j95439opjgbyqe217u`. The current container is
+  `ydgt1mkagpitpq8shovd726z-172109863127`, healthy with restart `0`, and still
+  runs the exact accepted digest and source revision. Staging and the Vercel
+  rollback baseline were not changed.
+- `FACT` - Final host probes after rollback were HTTP `301` for apex root and
+  `/_dark-validation/path?probe=1`, preserving path and query but failing the
+  required `308`; `www` HTTP was `302` to HTTPS, apex HTTPS with `--resolve`
+  was `302` to `www`, and `www` HTTPS was `200`. No redirect chain was observed
+  for the apex response. `curl -k` was used only for routing behavior and is
+  not TLS acceptance evidence.
+- `DECISION` - The ingress hypothesis is proven. Coolify cannot persist a
+  direct apex router ahead of its generated Caddy/FQDN redirect in this app
+  configuration. Source editing is not justified and was not attempted. The
+  next design requires a separately approved redirect service or a supported
+  Coolify routing primitive; do not loop redeploys or patch live Docker labels.
+
+### TLS, capacity and database refresh
+
+- `FACT` - `coolify-proxy` is `traefik:v3.6`, mounted from
+  `/data/coolify/proxy` at `/traefik`. Static arguments expose the Docker and
+  file providers and configure only the HTTP-01 `letsencrypt` resolver with
+  storage `/traefik/acme.json`. The storage file exists with mode `600`; its
+  contents and all private material were not read. No DNS-01 provider is
+  configured or proven.
+- `FACT` - The current host snapshot was 40 GB total, 8.2 GB used (21%), with
+  678 MB available memory. `coolify-proxy` used 1.59% CPU and 37.09 MiB; the
+  dark app used 0% CPU and 102 MiB of its 512 MiB limit. This is a point-in-time
+  snapshot, not a capacity trend.
+- `STALE EVIDENCE` - The prior secret-safe target DB check proved
+  `sslmode=verify-full`, client connection success, server SSL and TLS 1.3.
+  This pass confirmed only that the dark container exposes `DATABASE_URL` and
+  `DIRECT_URL` names; it has no `psql` or `pg` client module, so a new
+  verify-full handshake was not reproven without introducing a client image.
+  No URL, credential, PII or database write was exposed or issued.
+- `FACT` - Existing source backup/checksum, private S3 copy, public-schema
+  restore, reconciliation, sequence checks, RTO `23.56 s`, cleanup and `$0`
+  disposable cost remain the latest verified evidence. A fresh production
+  dump, final delta and write-freeze remain window-only actions.
+
+### Planning package for 02/08/2026 23:00-23:30 Asia/Ho_Chi_Minh
+
+- `PLAN` - T-60 (22:00): named owners confirm AWS/SSM/Coolify access, exact
+  digest, health/restart, current Vercel rollback and backup object checksum;
+  PM confirms the window and abort trigger.
+- `PLAN` - T-30 (22:30): verify the target certificate, proposed `.vn` DNS
+  records and monitoring; prepare but do not enable `WRITE_FREEZE_MODE`.
+- `PLAN` - T0 (23:00): PM-authorized short write-freeze; create the fresh
+  production `pg_dump`, SHA-256 manifest and private S3 copy; restore public
+  schema into the isolated target and reconcile P0/P1 counts, FK/orphans,
+  timestamps, media paths and sequences. Final copy and freeze evidence are
+  not yet completed.
+- `PLAN` - After reconciliation: run dark health, admin/session, order/quote
+  guard, media read, security-header, canonical, sitemap and robots smoke;
+  validate no split-brain writes before any traffic decision.
+- `PLAN` - DNS operator would apply only the separately approved records
+  `dongphugia.vn A 47.131.92.97 TTL 300` and
+  `www.dongphugia.vn A 47.131.92.97 TTL 300`, then run TLS and external smoke.
+  Apex must return HTTP `308` to `https://www.dongphugia.vn` with path/query
+  preserved; the old `.com.vn` redirect remains off and Vercel remains intact.
+- `ASSUMPTION` - If all gates pass, expected user-visible impact is a short
+  5-10 minute observation/cutover interval inside the 30-minute window. An
+  internal application rollback target is `<=5 minutes`; DNS rollback remains
+  bounded by TTL and resolver caching and is not guaranteed to complete in
+  five minutes.
+
+### Release It readiness score
+
+- Deployment/release separation: `8/10` (immutable dark deployment and Vercel
+  baseline exist; ingress primitive is unresolved).
+- Health and rollback: `7/10` (health/restart and immutable rollback evidence
+  are good; production traffic rollback is not exercised).
+- Observability/capacity: `5/10` (health and point-in-time resource data exist;
+  no named external RED/USE on-call or sustained trend).
+- Data safety: `8/10` (backup/checksum/isolated restore proof passes; final
+  freeze and final copy are intentionally pending).
+- Overall readiness: `6/10`. Reaching `10/10` requires a supported apex 308
+  ingress, domain-covered certificate, a fresh window dump/reconcile, named
+  monitoring/rollback owners and PM approvals.
+
+### Gate status and PM action
+
+- `GATE` - `PRODUCTION-DATA-WRITE-FREEZE-APPROVAL-GATE: NO-GO`. No new window
+  approval, freeze, final dump, final delta or production-data migration is
+  authorized.
+- `GATE` - `DNS-SWITCH-APPROVAL-GATE: NO-GO`. Apex 308 is not proven and the
+  current certificate is Traefik default, not valid for either `.vn` host.
+- `PM ACTION` - Approve a separate router/redirect-service design and ACME
+  operator/method first; then approve a new data window with named app/DB/
+  monitoring/rollback owners. DNS records, TXT challenges and old-domain
+  redirects remain untouched.

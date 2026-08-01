@@ -432,3 +432,89 @@ Source mutation is not required by evidence and was not attempted. Further
 technical action requires a Coolify-specific router mechanism that preserves
 the permanent status; no production, DNS, Vercel or staging mutation is
 authorized.
+
+## Accelerated one-pass PM page - 2026-08-02
+
+### A. Router and runtime result
+
+- **FAIL** - The exact accepted image remains
+  `sha256:e5eaadf454abe9b01bb35389e80b0828dac237d9cb4195dc289345627bfeab9b`
+  from source `090ff89c981f8c6b2d851bf99d7fb8572dacc4da` on Coolify app
+  `ydgt1mkagpitpq8shovd726z`. The latest rollback-restored deployment is
+  `lgds74j95439opjgbyqe217u`; runtime
+  `ydgt1mkagpitpq8shovd726z-172109863127` is healthy with restart `0`.
+- A direct priority-1000 apex router attempt was deployed once as
+  `vg0xglvh8ssudzz58vdhqu5q`. Coolify still generated Caddy `caddy_1` for
+  `https://dongphugia.vn` and the Traefik apex `http-1` router with
+  `redirect-to-https`, so the application never received the HTTP apex request.
+- After restoring the recorded custom labels, apex root and path/query return
+  `301` to the correct `www` URL, not `308`. `www` HTTPS returns `200`; apex
+  HTTPS routing reaches the app only under `--resolve -k`, and its certificate
+  is not accepted. This is an ingress FAIL, not a source-code FAIL.
+
+### B. TLS and exact operator action
+
+- `coolify-proxy` is Traefik `v3.6` with an HTTP-01 resolver and persistent
+  `/traefik/acme.json`; no DNS-01 integration is present. The current SNI
+  certificate is Traefik default and does not cover either `.vn` hostname.
+- **Recommendation:** use a one-time DNS-01 issuance for SANs
+  `dongphugia.vn` and `www.dongphugia.vn`, with TTL `300`, only after PM
+  approves the CA order and names the DNS operator. The operator must create
+  only the CA-provided `_acme-challenge` TXT record(s), wait for authoritative
+  propagation, verify issuance and renewal persistence, then remove only the
+  challenge records. The token is never placed in this dossier.
+- No ACME order, TXT record, A/AAAA/CNAME, nameserver, traffic or redirect
+  mutation was made. If DNS-01 cannot be automated with Mắt Bão, PM must accept
+  a named manual renewal owner or defer the cutover.
+
+### C. PRODUCTION-DATA-WRITE-FREEZE-APPROVAL-GATE
+
+**NO-GO.** Existing backup and isolated restore evidence remains PASS (public
+schema restore, 56 FK checks, zero orphans, aligned sequences, RTO `23.56 s`,
+cleanup and `$0` disposable cost). The following are still window-only:
+
+1. PM approval of a new maintenance window and exact freeze start/duration.
+2. Fresh production `pg_dump`, SHA-256 manifest and private S3 copy.
+3. Isolated public-schema final restore and P0/P1 reconciliation.
+4. No-split-brain verification, final-delta procedure and named rollback owner.
+5. Dark health/admin/order/quote/media smoke while the freeze is active.
+
+No `WRITE_FREEZE_MODE`, final dump/copy/delta or production DB write occurred.
+
+### D. DNS-SWITCH-APPROVAL-GATE
+
+**NO-GO.** Proposed records remain planning-only:
+
+| Host | Type | Value | TTL | Status |
+| --- | --- | --- | --- | --- |
+| `dongphugia.vn` | A | `47.131.92.97` | `300` | Proposed, not applied |
+| `www.dongphugia.vn` | A | `47.131.92.97` | `300` | Proposed, not applied |
+
+Before approval, the dossier must additionally show domain-covered TLS, apex
+HTTP `308` with path/query preservation, expected downtime, exact rollback
+records and TTL, Mắt Bão/P.A/PM responsibilities, and SEO monitoring for
+canonical, sitemap, robots, redirects, 404s, Search Console, GTM and traffic.
+The old `.com.vn` redirect remains OFF and Vercel remains the rollback baseline.
+
+### E. Window feasibility and decisions
+
+- The planning target `02/08/2026 23:00-23:30 Asia/Ho_Chi_Minh` is **NO-GO** at
+  this checkpoint. The technical ingress/TLS blockers and production-data
+  approval are not closed; the window must not be treated as approved.
+- `FACT` - PR #26 is open/ready at `9aa93c3c565e23e459d4e4f24ba363805ab88134`
+  with quality and homepage-readiness successful. PR #29 is draft at
+  `40383f602dedaef75f178968aa671dd8b877a7cc` with required checks successful.
+- `FACT` - Staging remains on the accepted digest
+  `sha256:65fd6460f910468bba5e6d131e45ad63bcf6cd9fb1e067ffe0398423212e03df`;
+  no staging or Vercel mutation occurred in this pass.
+- `PM DECISION REQUIRED` - approve a supported redirect-service/Coolify router
+  design and DNS-01 operator before requesting a new data window. Do not approve
+  DNS or write-freeze while the router status is `301` or the certificate is
+  default.
+
+### Release It score
+
+Current overall readiness is `6/10`: deployment separation `8/10`, health and
+rollback `7/10`, observability/capacity `5/10`, and data safety `8/10`.
+The missing points are the supported apex 308 path, domain-covered TLS, fresh
+window dump/reconcile, named monitoring/rollback owners and PM approvals.
