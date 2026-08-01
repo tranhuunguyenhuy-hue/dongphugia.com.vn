@@ -56,14 +56,24 @@ truth. Do not build or deploy from a stale copied SHA or digest.
   TTL `3600`. A public authoritative NS lookup matched the CSV. The supporting
   non-repository dossier is
   `/Users/m-ac/Downloads/dongphugia-DNS-evidence-2026-08-01.md`.
+- P.A Việt Nam `.com.vn` zone export was captured outside the repository at
+  `/Users/m-ac/Downloads/dns_records_dongphugia_com_vn_2026-08-01_22-03-51.csv`.
+  The UTF-8/BOM CSV has 5 unique customer-managed records and SHA-256
+  `cd05ed3f9413f9af99da855cd99331271819e3411227ddb8bd622c0c70f1ad50`.
+  Sanitized inventory is `@ TXT` TTL 3600 (value withheld), `cdn CNAME ->
+  dpg-products.b-cdn.net` TTL 3600, `@ A -> 216.198.79.1` TTL 3600, `www
+  CNAME -> f67c116b40bea258.vercel-dns-017.com` TTL 3600, and `* A ->
+  103.9.159.156` TTL 300. Read-only authoritative comparison passed. Current
+  NS are `ns1.pavietnam.vn` and `ns2.pavietnam.vn`; no public MX/CAA data was
+  observed. The former P.A export blocker is closed; no DNS mutation occurred.
 
 The session taking over a release action must locate and verify the underlying
 artifact/log evidence; this summary alone is not an approval.
 
 ## Current critical path
 
-1. Obtain complete read-only DNS zone exports for `dongphugia.vn` from Mắt Bão
-   and `dongphugia.com.vn` from P.A Việt Nam.
+1. Preserve the checksum-verified `.vn` and `.com.vn` zone exports as rollback
+   evidence; no DNS mutation is authorized.
 2. Refresh backup, restore and reconciliation evidence for a newly approved
    maintenance window.
 3. Re-verify exact release source/image, dark deployment, target DB TLS,
@@ -77,11 +87,10 @@ artifact/log evidence; this summary alone is not an approval.
 
 - `FACT` - The 31 July 2026 maintenance window has expired.
 - `HUMAN-ONLY` - PM must approve a new write-freeze/data-copy window.
-- `HUMAN-ONLY` - The DNS portal operator must export both full zones and later
-  execute only the records explicitly approved at the DNS gate.
-- `HUMAN-ONLY` - P.A Việt Nam account recovery and a full read-only export for
-  `dongphugia.com.vn` remain pending. This blocks a complete old-domain rollback
-  dossier and the DNS gate, but does not authorize or require a DNS mutation.
+- `FACT` - Both `.vn` and `.com.vn` read-only zone exports are now checksum-
+  verified; the former P.A Việt Nam export blocker is closed.
+- `HUMAN-ONLY` - PM/DNS portal operator must later execute only the records
+  explicitly approved at the DNS gate.
 - `HUMAN-ONLY` - PM owns GO/NO-GO, production-data and DNS/traffic approval.
 - `UNKNOWN` - Named backup DNS operator and availability must be re-confirmed.
 

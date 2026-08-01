@@ -29,6 +29,20 @@ nameserver change, traffic switch or redirect.
   `5f8866721e952dc9bb6b19df2e86e9c4fab3b383659648f719a48f85d057033a`.
   It contains one record: `@ NS ns1.matbao.com., ns2.matbao.com.` with TTL
   `3600`; public authoritative NS delegation matched the export.
+- `FACT` - P.A Việt Nam export is stored outside the repository:
+  `/Users/m-ac/Downloads/dns_records_dongphugia_com_vn_2026-08-01_22-03-51.csv`.
+  The UTF-8/BOM CSV has 10 columns, 5 customer-managed rows, no duplicates,
+  and SHA-256
+  `cd05ed3f9413f9af99da855cd99331271819e3411227ddb8bd622c0c70f1ad50`.
+  Sanitized inventory: `@ TXT` TTL `3600` (value withheld; checksum-only
+  verification), `cdn CNAME -> dpg-products.b-cdn.net` TTL `3600`, `@ A ->
+  216.198.79.1` TTL `3600`, `www CNAME ->
+  f67c116b40bea258.vercel-dns-017.com` TTL `3600`, and `* A ->
+  103.9.159.156` TTL `300`. The exact second host is `cdn`, not `cd`.
+  Read-only authoritative comparison passed for all five records. Current
+  authoritative NS are `ns1.pavietnam.vn` and `ns2.pavietnam.vn`; no public MX
+  or CAA data was observed. Evidence timestamp is 2026-08-01 22:03:51
+  Asia/Ho_Chi_Minh (filename timestamp).
 - `FACT` - Bunny/media disposable-write evidence remains accepted. Do not repeat
   it without a changed input or a new acceptance requirement.
 
@@ -103,7 +117,7 @@ nameserver change, traffic switch or redirect.
 - `GATE` - Restore/reconciliation refresh is `PASS` for this isolated proof.
   It does not authorize production write-freeze, final copy/delta, migration,
   traffic or DNS changes; those gates remain `NO-GO` pending their separate PM
-  approvals and the missing P.A Việt Nam export.
+  approvals.
 
 ## Proposed DNS plan - not approved and not applied
 
@@ -113,10 +127,46 @@ nameserver change, traffic switch or redirect.
 | `www.dongphugia.vn` | A | `47.131.92.97` | 300 | Canonical target ingress |
 
 - No AAAA record is proposed.
+- No CNAME record is proposed for the new `.vn` apex or `www`; both proposed
+  names use the A records shown above.
 - TLS must be valid for both apex and `www` before accepting canonical traffic.
 - Any ACME DNS-01 TXT record requires a separate exact record/action approval.
 - The old `.com.vn` domain remains on Vercel during the observation window; no
   old-domain redirect is in this window.
+
+## Current `.com.vn` rollback snapshot - read-only, not applied
+
+| Host | Type | Current value/target | TTL |
+|---|---|---|---:|
+| `@` | TXT | value withheld; checksum-only evidence | 3600 |
+| `cdn` | CNAME | `dpg-products.b-cdn.net` | 3600 |
+| `@` | A | `216.198.79.1` | 3600 |
+| `www` | CNAME | `f67c116b40bea258.vercel-dns-017.com` | 3600 |
+| `*` | A | `103.9.159.156` | 300 |
+
+Authoritative NS: `ns1.pavietnam.vn`, `ns2.pavietnam.vn`. No public MX/CAA
+records were observed. Export checksum:
+`cd05ed3f9413f9af99da855cd99331271819e3411227ddb8bd622c0c70f1ad50`.
+
+## PM gate package - current decision inputs
+
+| Category | Current evidence / decision state |
+|---|---|
+| `FACT` release | PR #26 head `9aa93c3c565e23e459d4e4f24ba363805ab88134`; accepted source `090ff89c981f8c6b2d851bf99d7fb8572dacc4da`; stable staging digest `sha256:65fd6460f910468bba5e6d131e45ad63bcf6cd9fb1e067ffe0398423212e03df`; dark digest `sha256:e5eaadf454abe9b01bb35389e80b0828dac237d9cb4195dc289345627bfeab9b` |
+| `FACT` runtime | Dark container `ydgt1mkagpitpq8shovd726z-124225689632` healthy, restart `0`; target PostgreSQL is private, SSL on; Vercel `.com.vn` remains rollback baseline |
+| `FACT` data safety | Existing dump/checksum, isolated public-schema restore, FK/orphan/sequence/media reconciliation PASS; RTO `23.56 s`; cleanup PASS; cost `$0` |
+| `FACT` DNS | `.vn` Mắt Bão export and `.com.vn` P.A export are checksum-verified; proposed `.vn` A records and TTL are listed above; no DNS mutation |
+| `FACT` web/SEO baseline | Target release has canonical, sitemap and robots paths in the accepted application evidence; old-domain redirects remain disabled |
+| `PM decision required` | Approve a new write-freeze/final-copy window, exact start/duration, user impact, named app/DB/monitoring/rollback owners and rollback triggers |
+| `PM decision required` | Separately approve DNS records, TLS/ACME actions, expected downtime, SEO monitoring and PM as primary DNS operator |
+| `ASSUMPTION` | No backup DNS operator is available unless PM names one; this is a single-human dependency |
+| `UNKNOWN` | Public TLS issuance/readiness for both new `.vn` names still requires final ingress/certificate validation without DNS mutation; Search Console/GTM ownership and post-cutover 404/redirect monitoring still need named operators |
+
+Expected cutover impact is a short controlled write-freeze plus DNS propagation;
+exact downtime remains an approval input. Rollback sequence is: stop/abort
+target writes, restore Vercel/domain records from the snapshot, validate old
+domain health, then observe before any retry. Old-domain redirects remain
+disabled until a separate post-observation approval.
 
 ## Gate decision
 
@@ -138,9 +188,8 @@ Required before a PM may consider this gate:
 
 Required before a PM may consider this gate:
 
-1. Recover P.A Việt Nam portal access and export the complete current
-   `dongphugia.com.vn` zone, including all A/AAAA/CNAME/MX/TXT/CAA/SRV and TTL
-   records.
+1. Use the checksum-verified P.A Việt Nam export as the rollback snapshot; the
+   former human-only export blocker is closed.
 2. Re-verify the current Vercel rollback deployment and retain it unchanged.
 3. Validate target ingress and TLS for `dongphugia.vn` and
    `www.dongphugia.vn` without changing public traffic.
@@ -149,7 +198,8 @@ Required before a PM may consider this gate:
 
 ## Current blockers and ownership
 
-- `HUMAN-ONLY` - P.A Việt Nam account recovery and old-domain zone export.
+- `FACT` - P.A Việt Nam full customer-managed zone export is now verified and
+  the former human-only blocker is closed.
 - `HUMAN-ONLY` - PM approval of a new production-data maintenance window.
 - `HUMAN-ONLY` - PM/DNS operator approval before any ACME or DNS record change.
 - `FACT` - AWS read-only session was reauthenticated and the refresh above was
