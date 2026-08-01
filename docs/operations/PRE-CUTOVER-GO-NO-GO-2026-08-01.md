@@ -32,6 +32,39 @@ nameserver change, traffic switch or redirect.
 - `FACT` - Bunny/media disposable-write evidence remains accepted. Do not repeat
   it without a changed input or a new acceptance requirement.
 
+## AWS and backup refresh - 2026-08-01
+
+- `FACT` - AWS account `503344933326`, region `ap-southeast-1`; EC2
+  `i-011fe10948e0a8c15` is running as `t4g.small`, instance and system status
+  checks are `ok`, and SSM is `Online`.
+- `FACT` - The exact EIP attached to the instance is `47.131.92.97`
+  (`eipalloc-0c4913a4df24f1722`, association
+  `eipassoc-092dfef7841b0f635`).
+- `FACT` - Coolify dark container
+  `ydgt1mkagpitpq8shovd726z-124225689632` is running with image reference
+  `ghcr.io/tranhuunguyenhuy-hue/dongphugia-web@sha256:e5eaadf454abe9b01bb35389e80b0828dac237d9cb4195dc289345627bfeab9b`,
+  healthy, restart count `0`, and no published host ports. Internal health
+  returned HTTP `200`.
+- `FACT` - Target PostgreSQL container is running with no published host ports;
+  `pg_isready` accepted connections for `dongphugia_production`, and server
+  `ssl` is `on`. Its current Docker restart count is `11`; this is a monitoring
+  item, not proof of a current outage.
+- `FACT` - Last 24-hour EC2 CPU averages were approximately `8.25%`-`13.08%`
+  with observed hourly maximum `34.42%`; CPU credit balance stayed approximately
+  `575.2`-`576`. Host memory had `702 MiB` available at refresh and `486 MiB`
+  swap in use; retain this as a capacity watch item.
+- `FACT` - S3 bucket metadata passed: `AES256` SSE-S3, all four Block Public
+  Access controls enabled, eight objects totaling `282,346,563` bytes, newest
+  object `2026-07-31T19:17:55Z`.
+- `FACT` - Source dump checksum and archive-index inspection passed: source
+  dump `...082929Z.dump`, `977` archive entries. Latest target-public dump
+  checksum and archive-index inspection passed: `...191712Z.dump`, `623`
+  archive entries. No dump rows were printed.
+- `UNKNOWN` - An isolated database restore plus P0/P1 reconciliation and
+  sequence/FK/media checks were not rerun in this refresh; archive-index success
+  is not a substitute for that proof. The prior restore evidence remains the
+  accepted baseline until a new drill is approved/executed.
+
 ## Proposed DNS plan - not approved and not applied
 
 | Host | Type | Proposed value | TTL | Purpose |
@@ -79,8 +112,8 @@ Required before a PM may consider this gate:
 - `HUMAN-ONLY` - P.A Việt Nam account recovery and old-domain zone export.
 - `HUMAN-ONLY` - PM approval of a new production-data maintenance window.
 - `HUMAN-ONLY` - PM/DNS operator approval before any ACME or DNS record change.
-- `TECHNICAL ACCESS` - AWS read-only session reauthentication is needed to
-  refresh runtime, database, capacity and backup metadata.
+- `FACT` - AWS read-only session was reauthenticated and the refresh above was
+  completed without reading credentials or secret values.
 - `UNKNOWN` - Named backup DNS operator is not yet confirmed.
 
 **Owners:** Codex coordinates technical evidence. PM owns GO/NO-GO and all
