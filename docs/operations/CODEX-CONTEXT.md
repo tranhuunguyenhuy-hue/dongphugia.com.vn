@@ -269,7 +269,7 @@ or DNS mutation from this context.
 - `FACT` - PR #26 remains open and ready at exact head
   `9aa93c3c565e23e459d4e4f24ba363805ab88134`; `quality`,
   `homepage-readiness` and preview comments are successful. PR #29 remains a
-  draft at `40383f602dedaef75f178968aa671dd8b877a7cc`; its required checks are
+  draft at `2c6e0443bcdc793c12ceaa824147e131f1a98a9f`; its required checks are
   successful. No application source or GHCR image was rebuilt.
 
 ### Primary router attempt and rollback

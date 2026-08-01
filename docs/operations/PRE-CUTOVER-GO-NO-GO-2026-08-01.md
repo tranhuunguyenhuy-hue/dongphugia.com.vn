@@ -503,7 +503,7 @@ The old `.com.vn` redirect remains OFF and Vercel remains the rollback baseline.
   approval are not closed; the window must not be treated as approved.
 - `FACT` - PR #26 is open/ready at `9aa93c3c565e23e459d4e4f24ba363805ab88134`
   with quality and homepage-readiness successful. PR #29 is draft at
-  `40383f602dedaef75f178968aa671dd8b877a7cc` with required checks successful.
+  `2c6e0443bcdc793c12ceaa824147e131f1a98a9f` with required checks successful.
 - `FACT` - Staging remains on the accepted digest
   `sha256:65fd6460f910468bba5e6d131e45ad63bcf6cd9fb1e067ffe0398423212e03df`;
   no staging or Vercel mutation occurred in this pass.
