@@ -535,3 +535,147 @@ or DNS mutation from this context.
 - `GATE` - No certificate was issued/bound and no DNS, routing, traffic,
   production DB, Vercel or existing-app mutation occurred. Challenge expiry
   was not exposed by safe metadata; treat the held order as time-sensitive.
+
+## Production data write-freeze approval package - 2026-08-02 15:56 Asia/Ho_Chi_Minh
+
+This latest section supersedes earlier historical snapshots in this file where
+runtime, certificate or ACME state differs.
+
+### Current state and proposed window
+
+- `FACT` - Current local time at package creation was `2026-08-02 15:56:36
+  +07:00`. The earliest deterministic 30-minute proposal is
+  `2026-08-02 23:00-23:30 Asia/Ho_Chi_Minh`. This is planning-only and has not
+  started or been approved. If PM approval is not recorded by `22:00`, the
+  proposal is automatically `NO-GO` and must move to a newly approved window.
+- `DECISION REQUIRED` - PM must approve the window, exact freeze start and
+  15-20 minute write-freeze duration before any freeze or final copy.
+
+### Exact release identities and freeze guards
+
+- `FACT` - The freeze-capable Vercel application tree is
+  `f06b7a3a8cfae27e440211b04e634a9f4a2d9209`, based directly on old production
+  `cf98ab78b9fd34403e277b5e23ea8b082b6800ce`. Provenance-only retrigger commit
+  `6f0678ad92b17cc13e493fab3b19412418ae7af6` has an empty tree diff from
+  `f06b7a3`; its Vercel deployment status is `B8UjK3asBEU7NtAxDVmuiHJRcofF`
+  (`Vercel: success`). The public old domain still returns `200` from Vercel.
+- `FACT` - `WRITE_FREEZE_MODE` is currently `OFF` for the accepted freeze-
+  capable deployment; its value was not read or printed from a secret-bearing
+  Vercel environment. The source default is off and no production write was
+  issued. The exact production-alias promotion metadata is not exposed by the
+  available read-only public headers and remains `UNKNOWN` until PM confirms it
+  in the Vercel dashboard.
+- `FACT` - `src/lib/write-freeze.ts` maps `WRITE_FREEZE_MODE=true` to a
+  `503 WRITE_FREEZE_ACTIVE` error. The Prisma extension blocks all ORM create,
+  update, delete, upsert and raw-write operations. Explicit guards cover orders,
+  quote requests, Bunny upload, both revalidation endpoints, admin login/session
+  writes and the product/category/blog/partner/project/customer/user/order
+  server actions. Freeze tests cover orders, quotes, revalidation, upload and
+  session paths.
+- `FACT` - Rollback baseline remains old production source
+  `cf98ab78b9fd34403e277b5e23ea8b082b6800ce` with Vercel/domain intact.
+- `FACT` - Current immutable runtimes are unchanged and healthy: dark app
+  `ydgt1mkagpitpq8shovd726z` at
+  `sha256:e5eaadf454abe9b01bb35389e80b0828dac237d9cb4195dc289345627bfeab9b`,
+  staging at `sha256:65fd6460f910468bba5e6d131e45ad63bcf6cd9fb1e067ffe0398423212e03df`,
+  and apex redirect resource `mpwt7qmpjsa0izwvc8nic4co` at
+  `sha256:a9ecf197c102ba26559bebf437610656b61be4a774cd63b017dce86830d1749e`;
+  all report restart `0` and healthy.
+- `FACT` - Dark TLS binding is PASS for the issued Let’s Encrypt certificate
+  covering both `.vn` SANs. Direct EIP validation proved apex HTTP/HTTPS `308`
+  with path/query preservation and `www` HTTPS `200`; the target is still dark
+  and no public DNS/traffic switch occurred.
+- `FACT` - Current EC2 snapshot: `t4g.small`, load `0.20/0.42/0.38`, `709 MiB`
+  available memory, `495 MiB` swap used and root filesystem `22%` used. This is
+  a point-in-time observation, not a soak or capacity guarantee.
+
+### Database identity and read-only evidence
+
+- `FACT` - Source database identity class is the official Supabase-managed
+  PostgreSQL source used by the current Vercel application. Host, URL and
+  credentials are intentionally withheld. The latest source aggregate/restore
+  evidence remains: orders `15`, quote requests `13`, customers `6`, products
+  `17,752`, product images `110,321`, admin users `1`; source writes/day were not
+  refreshed in this pass because no source credential was exposed.
+- `FACT` - Target identity is private PostgreSQL `17.6` in container
+  `dpg-production-postgres`, database `dongphugia_production`, no published
+  host port. Target `pg_database_size` is `770,722,963` bytes. Server-side
+  `ssl=on`; the container restart count is `11`. The last approved client
+  `verify-full` handshake evidence used target host `dpg-production-postgres`,
+  port `5432`, `sslmode=verify-full`, TLS `1.3`; this client assertion is marked
+  `STALE` and must be re-proven at T-60 using the secret-safe runtime path.
+- `FACT` - Current target aggregate-only query returned orders `15`, quote
+  requests `13`, customers `6`, products `17,752`, product images `110,321`,
+  admin users `1`, admin sessions `0`, audit logs `3`; trailing 1-day and 7-day
+  target orders/quotes were both `0`. These are target-copy facts, not source
+  production write-rate proof. No row content, PII or business write was read or
+  issued.
+- `FACT` - Target FK catalog state is `56` total, `56` validated, `0` invalid;
+  `45` public sequences are present. Prior isolated restore proof found zero
+  checked orphans and aligned critical sequences. No sequence repair was run.
+- `FACT` - Migration boundary remains application-owned `public` schema only;
+  Supabase `auth`, `storage` and `vault` service schemas remain excluded.
+
+### Backup and final-copy readiness
+
+- `FACT` - Private S3 bucket
+  `dongphugia-prod-db-backup-503344933326-ap-southeast-1` is in
+  `ap-southeast-1`, SSE-S3 (`AES256`) with all Block Public Access controls
+  enabled. Current lifecycle is daily `8` days and weekly `29` days. The latest
+  target-public object is
+  `daily/target/2026/08/01/dongphugia-target-public-20260801T191812Z.dump`,
+  `88,396,363` bytes, with manifest SHA-256
+  `4fac3a7b9638c032945833736c0b8e5f589ac5d7e996d18b6843d0ff8911eaa8` and
+  manifest size `113` bytes. Existing `pg_restore --list`, restore,
+  reconciliation and cleanup evidence remains valid.
+- `FACT` - The source dump object is from `2026-07-31` (`52,776,596` bytes),
+  so neither source nor target object is a substitute for a fresh pre-freeze
+  dump. The window package must create a fresh custom dump, SHA-256 manifest and
+  off-host copy after freeze is verified.
+
+### Exact 15-20 minute freeze sequence
+
+1. `T-60/T-10` - PM confirms window and owners; verify Vercel/target source and
+   digests, current health/restarts, target client `verify-full`, S3 metadata and
+   rollback contacts. Do not enable freeze early.
+2. `T+00` - Main coordinator enables `WRITE_FREEZE_MODE=true` on the current
+   Vercel freeze-capable release and the target validation runtime, then verifies
+   the guard response on every write path without creating a record. This is a
+   protected production configuration mutation and remains blocked now.
+3. `T+02` - Confirm no-split-brain: old traffic remains on Vercel, target has no
+   public DNS, and all write guards report frozen before copying.
+4. `T+03-T+08` - Run the fresh source `pg_dump --format=custom` (public schema
+   boundary), create the SHA-256 manifest and upload the private S3 copy. Dump
+   and S3 writes are window actions; no final dump/copy has occurred.
+5. `T+08-T+14` - Verify checksum and `pg_restore --list`, restore public schema
+   to the target, then reconcile P0/P1 counts, FK/orphans, timestamps, media
+   hostnames/paths and sequences. Target restore is a protected target write.
+6. `T+14-T+18` - Run target read-only health, admin/session, order/quote guard,
+   media, canonical, sitemap, robots, TLS and security-header smoke. No business
+   records may be created.
+7. `T+18-T+20` - Main and PM make explicit GO/rollback decision. On any
+   checksum, restore, reconciliation, TLS, health, timeout or split-brain
+   failure, keep Vercel serving and roll back target preparation; do not switch
+   DNS.
+
+### Owners, rollback and decision
+
+- `OWNER` - Main orchestrator: technical app/DB/backup/rollback/monitoring
+  coordinator. `OWNER` - PM: production-data GO/NO-GO and freeze approval.
+  `OWNER` - PM/DNS operator: later DNS gate only; no backup DNS operator is
+  currently named.
+- `DECISION` - Expected impact is read traffic continuing while order, quote,
+  admin/content/session and upload/revalidation writes return the documented
+  `503` freeze response for 15-20 minutes. Startup objective remains RPO at most
+  24 hours and RTO under 4 hours; within an approved freeze, target is no lost
+  transaction and no split-brain write. Internal rollback target is `<=5 min`;
+  DNS rollback is governed by TTL/cache and is not guaranteed in five minutes.
+- `GATE` - `PRODUCTION-DATA-WRITE-FREEZE-APPROVAL-GATE: NO-GO`. No freeze, fresh
+  final dump, final delta, target migration or production DB write is authorized
+  by this package.
+- `PROMPT` - `PM APPROVE PRODUCTION DATA WINDOW: I approve
+  2026-08-02 23:00-23:30 Asia/Ho_Chi_Minh, with WRITE_FREEZE_MODE enabled only
+  after T0 verification, a fresh public-schema custom dump/checksum/private S3
+  copy, isolated restore/reconciliation, no-split-brain validation, named
+  rollback owners and an explicit GO/rollback decision. This does not approve
+  DNS or production traffic switching.`

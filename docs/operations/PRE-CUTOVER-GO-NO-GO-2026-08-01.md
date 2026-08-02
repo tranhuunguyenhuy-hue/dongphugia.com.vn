@@ -693,3 +693,98 @@ window dump/reconcile, named monitoring/rollback owners and PM approvals.
 - `GATE` - No certificate issuance/binding or DNS/routing/traffic/production
   mutation occurred. Safe metadata did not expose expiry; treat the order as
   time-sensitive.
+
+## Production data write-freeze approval package - 2026-08-02 15:56 Asia/Ho_Chi_Minh
+
+This latest section supersedes earlier historical snapshots in this dossier
+where runtime, certificate or ACME state differs.
+
+### Current time, window and identities
+
+- `FACT` - Package time was `2026-08-02 15:56:36 +07:00`. Earliest deterministic
+  proposal: `2026-08-02 23:00-23:30 Asia/Ho_Chi_Minh`; planning-only, not started
+  and not approved. Automatic `NO-GO` applies if PM approval is absent by `22:00`.
+- `FACT` - Freeze-capable Vercel tree: `f06b7a3a8cfae27e440211b04e634a9f4a2d9209`.
+  Provenance-only retrigger: `6f0678ad92b17cc13e493fab3b19412418ae7af6`, empty
+  tree diff from `f06b7a3`; Vercel status deployment
+  `B8UjK3asBEU7NtAxDVmuiHJRcofF` is `success`. Current public `.com.vn` still
+  returns `200` from Vercel. Rollback baseline is
+  `cf98ab78b9fd34403e277b5e23ea8b082b6800ce`.
+- `FACT` - `WRITE_FREEZE_MODE` is OFF in the accepted deployment configuration;
+  its environment value was not read or printed. The exact Vercel production
+  alias promotion is not visible from the available public headers and remains
+  `UNKNOWN` for PM dashboard confirmation.
+- `FACT` - Current immutable runtime identities remain healthy/restart `0`:
+  dark app `sha256:e5eaadf454abe9b01bb35389e80b0828dac237d9cb4195dc289345627bfeab9b`,
+  staging `sha256:65fd6460f910468bba5e6d131e45ad63bcf6cd9fb1e067ffe0398423212e03df`,
+  and apex redirect `sha256:a9ecf197c102ba26559bebf437610656b61be4a774cd63b017dce86830d1749e`.
+- `FACT` - Dark TLS binding is PASS for both `.vn` SANs. Direct EIP testing
+  proved apex HTTP/HTTPS `308` path/query preservation and `www` HTTPS `200`;
+  canonical DNS and production traffic remain unchanged.
+- `FACT` - Current EC2 point-in-time capacity is load `0.20/0.42/0.38`,
+  `709 MiB` available memory, `495 MiB` swap used and root filesystem `22%`
+  used; no soak/capacity guarantee is claimed.
+
+### Freeze guard coverage and migration boundary
+
+- `FACT` - The accepted source guard defaults OFF and returns `503
+  WRITE_FREEZE_ACTIVE` when enabled. Central Prisma interception covers ORM and
+  raw SQL writes. Explicit coverage includes orders, quotes, Bunny upload,
+  revalidation, admin login/session and all audited product/category/blog/
+  partner/project/customer/user/order server actions; tests cover orders,
+  quotes, revalidation, upload and sessions.
+- `FACT` - Source is official Supabase-managed PostgreSQL; no source URL,
+  credential, row or PII was read. Target is private PostgreSQL `17.6`, database
+  `dongphugia_production`, container `dpg-production-postgres`, server `ssl=on`,
+  restart `11`, size `770,722,963` bytes. Prior client evidence proved
+  `sslmode=verify-full`/TLS 1.3 against target host `dpg-production-postgres`;
+  mark this stale and re-prove at T-60 through the secret-safe runtime path.
+- `FACT` - Current target aggregate: orders `15`, quotes `13`, customers `6`,
+  products `17,752`, product images `110,321`, admin users `1`, sessions `0`,
+  audit logs `3`; trailing 1-day/7-day target orders and quotes `0`. FK state is
+  `56/56` valid with `0` invalid; `45` sequences present. Source write rate is
+  not refreshed and must not be inferred from the target copy.
+- `FACT` - Only application-owned `public` schema is in scope. Supabase
+  `auth`, `storage` and `vault` remain excluded.
+
+### Backup evidence and protected final-copy requirement
+
+- `FACT` - S3 backup bucket is private, SSE-S3 `AES256`, Block Public Access
+  fully enabled. Lifecycle is daily `8` days and weekly `29` days. Latest target
+  public dump: `daily/target/2026/08/01/dongphugia-target-public-20260801T191812Z.dump`,
+  `88,396,363` bytes; manifest SHA-256
+  `4fac3a7b9638c032945833736c0b8e5f589ac5d7e996d18b6843d0ff8911eaa8`.
+- `DECISION` - Existing July 31 source/target objects are evidence only. A fresh
+  pre-freeze source custom dump, checksum manifest, private S3 copy and final
+  public-schema restore/reconciliation are mandatory window actions and have not
+  been performed.
+
+### 15-20 minute sequence, owners and rollback
+
+1. `T-60/T-10`: PM approves window; main verifies exact source/digests, health,
+   restarts, target verify-full, S3 checksum and rollback owners.
+2. `T+00`: enable `WRITE_FREEZE_MODE=true` only after approval; verify all guards
+   without creating records. This is a protected mutation and remains blocked.
+3. `T+02-T+08`: confirm no split-brain, fresh source custom `pg_dump`, SHA-256
+   manifest and private S3 copy.
+4. `T+08-T+14`: checksum/list proof, restore `public` to target, reconcile P0/P1
+   counts, FK/orphans, timestamps, media host/path and sequences.
+5. `T+14-T+18`: target read-only health, admin/session, order/quote guard, media,
+   TLS, canonical, sitemap, robots and security-header smoke.
+6. `T+18-T+20`: explicit PM/main GO or rollback. Any checksum, restore,
+   reconciliation, TLS, health, timeout or split-brain failure keeps Vercel live
+   and aborts the cutover.
+
+- `OWNER` - Main technical coordinator owns app/DB/backup/rollback/monitoring;
+  PM owns data GO/NO-GO and freeze approval; PM is later DNS operator. No backup
+  DNS operator is currently named.
+- `DECISION` - Read traffic should continue; write paths return documented `503`
+  during the 15-20 minute freeze. RPO target is `<=24h`, RTO `<4h`, internal
+  rollback target `<=5 min`; DNS rollback remains TTL/cache bounded.
+- `GATE` - `PRODUCTION-DATA-WRITE-FREEZE-APPROVAL-GATE: NO-GO`; no freeze, final
+  dump/copy/delta, target migration or production DB write occurred.
+- `PROMPT` - `PM APPROVE PRODUCTION DATA WINDOW: I approve
+  2026-08-02 23:00-23:30 Asia/Ho_Chi_Minh and the sequence above, with freeze
+  enabled only at T0, fresh dump/checksum/S3 copy, public-schema restore,
+  reconciliation, no-split-brain validation and explicit GO/rollback. This does
+  not approve DNS or production traffic switching.`
