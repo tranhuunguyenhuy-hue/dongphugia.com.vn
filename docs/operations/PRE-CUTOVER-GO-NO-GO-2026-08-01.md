@@ -672,3 +672,24 @@ window dump/reconcile, named monitoring/rollback owners and PM approvals.
 - `BLOCKER` - Resumable interactive order execution is unproven. Do not use
   the stale values. A second order requires explicit PM approval for a tested
   interactive/hold mechanism and must stop before TXT mutation.
+
+## Manual ACME DNS-01 interactive hold - 2026-08-02
+
+- `FACT` - Offline hook proof passed: first invocation returns, second
+  invocation blocks, and a root-only sentinel releases/removes the block.
+- `FACT` - Exactly one live Let's Encrypt production order is held with pinned
+  Certbot `5.7.0` `linux/arm64` image
+  `docker.io/certbot/certbot@sha256:34ee91d2f43008eb78a007d22f23ed4b2eaa9a454cb27ca2c042b49527a695b4`.
+  Interactive SSM session: `dongphugia-admin-k4deen37kuat3l85iob9okv3c4`;
+  container: `dpg-acme-order-20260802-hold`; hook is blocked after call two.
+- `FACT` - Challenge owner names captured at `2026-08-02T06:27:29Z` are
+  `_acme-challenge.dongphugia.vn` and
+  `_acme-challenge.www.dongphugia.vn`. Live values are excluded from this
+  repository.
+- `HUMAN STOP` - No TXT exists and the release sentinel is absent. PM/DNS
+  operator must create exactly those TXT records with TTL `300`, verify
+  authoritative propagation, and separately approve resume. Do not release
+  the sentinel or press Enter before approval.
+- `GATE` - No certificate issuance/binding or DNS/routing/traffic/production
+  mutation occurred. Safe metadata did not expose expiry; treat the order as
+  time-sensitive.

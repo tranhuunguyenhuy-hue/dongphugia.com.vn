@@ -511,3 +511,27 @@ or DNS mutation from this context.
 - `BLOCKER` - A resumable interactive order path was not proven. Do not use
   the captured stale values. A new order requires a separate PM approval for
   an interactive/hold mechanism, followed by the same stop before TXT.
+
+## Manual ACME DNS-01 interactive hold - 2026-08-02
+
+- `FACT` - The approved corrected hold design passed its offline proof: the
+  first hook call records and returns; the second records and blocks; a
+  root-only sentinel unblocks it and is removed. The dry state was cleaned.
+- `FACT` - One live Let's Encrypt production order is now held using the
+  pinned Certbot `5.7.0` `linux/arm64` image
+  `docker.io/certbot/certbot@sha256:34ee91d2f43008eb78a007d22f23ed4b2eaa9a454cb27ca2c042b49527a695b4`.
+  The interactive SSM session is
+  `dongphugia-admin-k4deen37kuat3l85iob9okv3c4`; container
+  `dpg-acme-order-20260802-hold` is alive and the hook is blocked after the
+  second invocation.
+- `FACT` - Exactly two public challenge owners were captured at
+  `2026-08-02T06:27:29Z`: `_acme-challenge.dongphugia.vn` and
+  `_acme-challenge.www.dongphugia.vn`. Live TXT values are intentionally not
+  committed to the repository.
+- `HUMAN STOP` - No TXT record exists and the release sentinel is absent. PM/
+  DNS operator must create only those two TXT records with TTL `300`, verify
+  authoritative propagation, then provide a separate resume approval. Do not
+  release the sentinel or press Enter before that approval.
+- `GATE` - No certificate was issued/bound and no DNS, routing, traffic,
+  production DB, Vercel or existing-app mutation occurred. Challenge expiry
+  was not exposed by safe metadata; treat the held order as time-sensitive.
