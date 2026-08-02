@@ -724,6 +724,10 @@ where runtime, certificate or ACME state differs.
 - `FACT` - Current EC2 point-in-time capacity is load `0.20/0.42/0.38`,
   `709 MiB` available memory, `495 MiB` swap used and root filesystem `22%`
   used; no soak/capacity guarantee is claimed.
+- `FACT` - PR #26 accepted head is
+  `9aa93c3c565e23e459d4e4f24ba363805ab88134` with required checks green. PR #29
+  docs head is `4f65ebc1239765204fe4aaf411eb688674f751e7`; quality,
+  homepage-readiness, Vercel and preview comments are all `SUCCESS`.
 
 ### Freeze guard coverage and migration boundary
 

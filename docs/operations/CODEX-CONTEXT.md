@@ -588,6 +588,11 @@ runtime, certificate or ACME state differs.
 - `FACT` - Current EC2 snapshot: `t4g.small`, load `0.20/0.42/0.38`, `709 MiB`
   available memory, `495 MiB` swap used and root filesystem `22%` used. This is
   a point-in-time observation, not a soak or capacity guarantee.
+- `FACT` - PR #26 remains the accepted application line at head
+  `9aa93c3c565e23e459d4e4f24ba363805ab88134` with required checks green. PR #29
+  remains open/draft at docs head
+  `4f65ebc1239765204fe4aaf411eb688674f751e7`; quality,
+  homepage-readiness, Vercel and preview comments are all `SUCCESS`.
 
 ### Database identity and read-only evidence
 
