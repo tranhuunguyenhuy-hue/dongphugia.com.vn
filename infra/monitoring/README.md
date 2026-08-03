@@ -6,11 +6,18 @@ single production EC2 instance in `ap-southeast-1`.
 ## Contents
 
 - `cloudwatch-agent.json` collects CPU, memory, root-disk and swap metrics and
-  forwards Docker stdout/stderr to a 14-day CloudWatch log group.
+  forwards only the aggregate JSONL output of
+  `sanitize-docker-observation.sh` to a 14-day CloudWatch log group. It never
+  tails `/var/lib/docker/containers/*/*.log` directly.
+- `sanitize-docker-observation.sh` requires an explicit
+  `DPG_MONITOR_CONTAINERS` allowlist and emits only numeric counts for 5xx,
+  DB, TLS, OOM and health-failure markers. Missing or stale allowlists produce
+  a `monitoring_configuration_missing` event and a non-zero exit. Its
+  append-only aggregate file is created with restrictive local permissions.
 - `ec2-cloudwatch-agent-policy.json` is the least-privilege policy to add to
   the existing EC2 instance role. It cannot read Secrets Manager or application
   environment variables.
-- `cloudwatch-monitoring.yaml` creates the log group, metric filter, alarms,
+- `cloudwatch-monitoring.yaml` creates the aggregate log group, metric filters, alarms,
   dashboard, query definition and SNS topic. The optional email subscription
   requires the operator to confirm the email from AWS.
 
@@ -42,6 +49,7 @@ conservative:
 - Application dependency health failure: one event in five minutes.
 
 Missing agent metrics are treated as breaching so a silent monitoring failure
-cannot look healthy. The application health route logs only a structured event
-and Prisma error code; the log group must never receive request bodies,
-connection strings, tokens or PII.
+cannot look healthy. The collector and log group must never receive raw Docker
+stdout/stderr, request bodies, connection strings, tokens or PII. The
+CloudWatch queries operate only on the numeric aggregate fields emitted by the
+collector.

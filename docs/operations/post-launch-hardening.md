@@ -44,6 +44,15 @@ events in the preceding six hours; SQL connection headroom was not readable
 through the default operator role and is not claimed as verified. One
 control-plane container snapshot was high, but host CPU remained mostly idle.
 
+The monitoring package received a mandatory secret-safety correction after
+review: the first draft forwarded raw Docker JSON logs and was not deployable.
+It now uses `infra/monitoring/sanitize-docker-observation.sh`, which requires an
+explicit container allowlist and writes only numeric aggregate fields to
+CloudWatch. Missing or stale configuration emits a dedicated alarm event. A
+missing-container fixture, shell syntax check, JSON validation and
+CloudFormation validation all pass. No version of the monitoring stack has
+been deployed to production.
+
 The legacy redirect inventory preparation now includes
 `scripts/seo/build-legacy-url-inventory.mjs`. From the current static product
 redirect map it produced a candidate set of `29,476` unique HTTPS URLs across

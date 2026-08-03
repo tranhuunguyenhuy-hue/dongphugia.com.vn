@@ -38,7 +38,7 @@ Resources:
     DeletionPolicy: Retain
     UpdateReplacePolicy: Retain
     Properties:
-      LogGroupName: /dongphugia/production/docker
+      LogGroupName: /dongphugia/production/aggregate
       RetentionInDays: 14
 
   HealthFailureMetric:
@@ -46,9 +46,21 @@ Resources:
     DependsOn: ProductionLogGroup
     Properties:
       LogGroupName: !Ref ProductionLogGroup
-      FilterPattern: '{ $.event = "health_check_failed" }'
+      FilterPattern: '{ $.event = "runtime_observation" && $.health_failure_count > 0 }'
       MetricTransformations:
         - MetricName: HealthCheckFailures
+          MetricNamespace: Dongphugia/Application
+          MetricValue: '1'
+          DefaultValue: 0
+
+  MonitoringConfigurationMetric:
+    Type: AWS::Logs::MetricFilter
+    DependsOn: ProductionLogGroup
+    Properties:
+      LogGroupName: !Ref ProductionLogGroup
+      FilterPattern: '{ $.event = "monitoring_configuration_missing" }'
+      MetricTransformations:
+        - MetricName: MonitoringConfigurationMissing
           MetricNamespace: Dongphugia/Application
           MetricValue: '1'
           DefaultValue: 0
@@ -146,6 +158,21 @@ Resources:
       AlarmActions:
         - !Ref AlertTopic
 
+  MonitoringConfigurationAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: Sanitized monitoring collector configuration is missing or stale.
+      Namespace: Dongphugia/Application
+      MetricName: MonitoringConfigurationMissing
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: breaching
+      AlarmActions:
+        - !Ref AlertTopic
+
   ProductionDashboard:
     Type: AWS::CloudWatch::Dashboard
     Properties:
@@ -213,7 +240,7 @@ Resources:
               "height": 6,
               "properties": {
                 "title": "Sanitized production error aggregate",
-                "query": "SOURCE '/dongphugia/production/docker' | fields @timestamp, @message | filter @message like /health_check_failed|5[0-9][0-9]|ECONN|TLS|OOM/ | stats count() as matches by bin(5m)",
+                "query": "SOURCE '/dongphugia/production/aggregate' | filter event = 'runtime_observation' | stats sum(http_5xx_count) as http_5xx, sum(db_error_count) as db_errors, sum(tls_error_count) as tls_errors, sum(oom_count) as oom, sum(health_failure_count) as health_failures by bin(5m)",
                 "region": "ap-southeast-1",
                 "view": "table"
               }
@@ -228,16 +255,15 @@ Resources:
       LogGroupNames:
         - !Ref ProductionLogGroup
       QueryString: |
-        fields @timestamp, @message
-        | filter @message like /health_check_failed|5[0-9][0-9]|ECONN|TLS|OOM/
-        | stats count() as matches by bin(5m)
+        filter event = 'runtime_observation'
+        | stats sum(http_5xx_count) as http_5xx, sum(db_error_count) as db_errors, sum(tls_error_count) as tls_errors, sum(oom_count) as oom, sum(health_failure_count) as health_failures by bin(5m)
 
 Outputs:
   AlertTopicArn:
     Description: SNS topic used by the alarms.
     Value: !Ref AlertTopic
   ProductionLogGroupName:
-    Description: Sanitized Docker log group.
+    Description: Sanitized aggregate observation log group.
     Value: !Ref ProductionLogGroup
   DashboardName:
     Description: CloudWatch dashboard name.
