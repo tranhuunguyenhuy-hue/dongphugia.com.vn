@@ -147,27 +147,32 @@ Do not create an API token by editing the database directly.
 ## Pre-deploy gates
 
 - Security P0 fixes must be included in the deployed branch/image before go-live.
-- The current app branch still has a known health endpoint leak risk; do not use
-  `/api/health` as a public smoke target until the security-fixes branch is
-  integrated.
+- The hardening candidate already contains the reviewed security patch as
+  content-equivalent commit `eb3d732` in its source ancestry. The reviewed
+  security worktree commit is `54f161a`; a no-content-difference and
+  `git diff --check` comparison was recorded before this document was updated.
+- The candidate therefore includes the bounded `/api/health` response,
+  fail-closed revalidation endpoint, authorization guards, published-blog
+  filtering, and rich-HTML sanitization. Still run the full candidate checks,
+  ARM64 image verification, and staging smoke before any registry push or
+  Coolify deployment.
+- The current production image remains unchanged until a fresh PM-approved
+  production window and all launch gates pass.
 - Do not create a new EC2/server.
 - Do not create a new Coolify admin.
 - Do not enable Coolify Build Server.
 - Do not open public `22`, `6001`, `6002`, or `8000`.
 - Do not change `dongphugia.vn`, Cloudflare, or production traffic.
 
-## Security integration prerequisite
+## Security validation record
 
-Security fixes currently live in the separate worktree:
+The reviewed security worktree remains available at
+`/Users/m-ac/Projects/dongphugia-security-fixes` on branch
+`codex/security-production-blockers` for audit comparison. Its reviewed patch
+is already represented in this candidate's source ancestry as `eb3d732`; do
+not cherry-pick the equivalent patch a second time.
 
-`/Users/m-ac/Projects/dongphugia-security-fixes`
-
-Branch:
-
-`codex/security-production-blockers`
-
-Before building/pushing the GHCR image for staging, integrate and validate the
-security changes that cover:
+The integrated changes cover:
 
 - `/api/health` no longer exposes counts, region, environment flags, DB URL
   prefixes, or raw error details, and returns `503` on unhealthy DB checks.
@@ -181,8 +186,20 @@ security changes that cover:
   not in the future.
 - Stored rich HTML is sanitized before rendering product/blog HTML.
 
-Latest local evidence from that worktree:
+The candidate must retain the following validation gates:
 
-- `npm test -- src/app/api/health/route.test.ts src/app/api/admin/revalidate/route.test.ts src/lib/admin-action-auth.test.ts src/lib/html-sanitizer.test.ts src/lib/public-api-blog.test.ts`:
-  5 files passed, 13 tests passed.
-- `npm run typecheck`: passed.
+- targeted security tests: 5 files passed, 13 tests passed;
+- `npm run typecheck`: passed;
+- full `npm run check`, production build, immutable `linux/arm64` image
+  inspection, and bounded staging smoke.
+
+Local candidate validation record (2026-08-03):
+
+- source: `codex/post-launch-hardening` at `3730086`;
+- local image: `dpg-post-launch-hardening:3730086`;
+- manifest digest: `sha256:cf5065fddec66d7c7d52272554671bee23709ac63047016d0b3629a4274fc6ac`;
+- platform: `linux/arm64`;
+- runtime user: `nextjs` (UID 100, GID 101);
+- image healthcheck: present for `GET /` on port 3000;
+- no registry push, Coolify deploy, DNS change, or production data mutation was
+  performed by this validation.
