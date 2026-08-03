@@ -144,7 +144,7 @@ Record presence/source only, never values.
 | Host available memory | `TBD` | stop below `700 MiB` | `TBD` |
 | Swap use | `TBD` | stop above `512 MiB` | `TBD` |
 | Disk free/use | `TBD` | stop below `24 GiB` or above `75%` | `TBD` |
-| DB connections/locks | `11/30` total connections (`36.7%`); active/idle/locks not yet captured | stop above `70%` of configured ceiling | Bounded read-only aggregate; active/idle/lock submetrics remain open |
+| DB connections/locks | `11/30` total (`36.7%`), active `1`, idle-in-transaction `0`, lock waits `0` | stop above `70%` of configured ceiling | Bounded read-only aggregate; PASS |
 | Backup age/checksum | `TBD` | stop above `30h` or mismatch | `TBD` |
 | T+5m external smoke | `TBD` | all critical checks pass | `TBD` |
 | T+15m go/no-go | `TBD` | owner acknowledgement | `TBD` |
