@@ -16,6 +16,8 @@ Generated at local review time for commit `348f51a571749db8463b39b2d77cb2d42a751
 - Runbook uses `ON_ERROR_STOP=1`: PASS
 - Runbook warns against shell debug / `set -x`: PASS
 - Artefacts contain actual connection string or obvious secret assignment value: PASS
+- Fresh seed attaches all three synthetic products to canonical public category slugs: PASS
+- Existing-staging repair dry-run uses six parent-qualified statements in one transaction: PASS
 
 ## Counts
 

@@ -99,8 +99,15 @@ jobs:
               psql -h postgres -U dpg_staging_build -d dpg_staging_build -Atc \
                 "select count(*) from products where sku like 'STG-DEMO-%';"
           )"
+          canonical_products="$(
+            docker run --rm --network "$BUILD_NETWORK" \
+              -e PGPASSWORD=dpg_staging_build_password \
+              "$POSTGRES_IMAGE" \
+              psql -h postgres -U dpg_staging_build -d dpg_staging_build -Atc \
+                "select count(*) from products p join categories c on c.id = p.category_id where p.sku like 'STG-DEMO-%' and c.slug in ('thiet-bi-ve-sinh', 'thiet-bi-bep');"
+          )"
 
-          if [ "$tables" != "46" ] || [ "$products" != "3" ]; then
+          if [ "$tables" != "46" ] || [ "$products" != "3" ] || [ "$canonical_products" != "3" ]; then
             echo "Ephemeral build database bootstrap validation failed."
             exit 1
           fi

@@ -9,6 +9,8 @@ until a separate approval is given.
 - `001_schema_from_prisma.sql` — schema generated from `prisma/schema.prisma`
   at commit `348f51a571749db8463b39b2d77cb2d42a751aaa`.
 - `002_seed_synthetic_stg_demo.sql` — idempotent synthetic seed data only.
+- `003_rehome_synthetic_stg_demo_to_canonical.sql` — bounded repair for an
+  existing staging database created by the earlier seed revision.
 - `RLS_FINDINGS.md` — read-only review of Supabase client/RPC usage and RLS
   implications.
 - `checksums.sha256` — SHA-256 checksums for review before any execution.
@@ -69,6 +71,24 @@ psql \
 The command shape above is for a future approved execution gate only. The
 `STAGING_DIRECT_URL` value must not be echoed, committed, or pasted into a
 report.
+
+For an already bootstrapped staging database, do not rerun the empty-database
+schema bootstrap. First confirm that the project is the approved staging
+project and that the only intended repair scope is the three fixed
+`STG-DEMO-*` SKUs. Then run only the repair file in one transaction:
+
+```bash
+psql \
+  --set=ON_ERROR_STOP=1 \
+  --single-transaction \
+  --file=docs/deploy/staging-db-bootstrap/003_rehome_synthetic_stg_demo_to_canonical.sql \
+  "$STAGING_DIRECT_URL"
+```
+
+The repair must be followed by aggregate checks proving three synthetic
+products are attached to `thiet-bi-ve-sinh` or `thiet-bi-bep`, with no row or
+credential output. It must not be used against production or a database whose
+scope has not been revalidated.
 
 ## Post-execution checks for a future gate
 
