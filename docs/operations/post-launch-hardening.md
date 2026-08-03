@@ -33,6 +33,16 @@ runs each on home and listing) measured homepage LCP `3409.969-3418.879 ms`
 and listing LCP `3548.214-3590.596 ms`; LCP <=2500 ms and best-practices `0.95`
 remain deferred/non-blocking. This candidate is not production-approved.
 
+The legacy redirect inventory preparation now includes
+`scripts/seo/build-legacy-url-inventory.mjs`. From the current static product
+redirect map it produced a candidate set of `29,476` unique HTTPS URLs across
+the two `.com.vn` web hosts (`14,738` map entries expanded to both hosts).
+This is not the final reviewed inventory because Search Console and bounded
+crawl exports have not yet been merged. The verifier was run only on a bounded
+two-URL sample; it returned aggregate `SOURCE_STATUS_307`, so the exact legacy
+one-hop `308` gate is intentionally still pending. The Bunny hostname is
+excluded by design.
+
 ## 2-3 day execution order
 
 ### Day 1: observability and baseline
