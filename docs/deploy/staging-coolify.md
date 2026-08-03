@@ -76,7 +76,7 @@ Coolify proxy.
 - Project: `dongphugia-staging`
 - Environment: `staging`
 - Resource type: Docker image
-- Image: `ghcr.io/tranhuunguyenhuy-hue/dongphugia-web@sha256:a81d54442068f70a9f5c7713ec03a565c15adcd17c871f07855be0a0081f1676`
+- Image: `ghcr.io/tranhuunguyenhuy-hue/dongphugia-web@sha256:73403c56bdc52d8c9d5a01081195de99f2a95945572fc520c292f511ec276046`
 - Application port: `3000`
 - Container liveness check: `GET /` inside the container
 - Build server: disabled

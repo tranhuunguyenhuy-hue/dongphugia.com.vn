@@ -23,7 +23,7 @@ data.
 | Evidence | Value |
 | --- | --- |
 | Source revision | `f3b5b6816654b38edc159e1702caed37deaf8555` (hardened Node 24 candidate) |
-| Image | `ghcr.io/tranhuunguyenhuy-hue/dongphugia-web@sha256:a81d54442068f70a9f5c7713ec03a565c15adcd17c871f07855be0a0081f1676` (immutable staging candidate; not yet deployed to Coolify) |
+| Image | `ghcr.io/tranhuunguyenhuy-hue/dongphugia-web@sha256:73403c56bdc52d8c9d5a01081195de99f2a95945572fc520c292f511ec276046` (immutable staging candidate; awaiting Coolify rollout) |
 | Platform | `linux/arm64` |
 | GHCR workflow run URL | `https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/actions/runs/30802230359` |
 | Registry manifest verification | `linux/arm64` only; digest above |
@@ -39,7 +39,7 @@ data.
 | Check | Result / timestamp / evidence reference |
 | --- | --- |
 | Coolify application deployment ID | app `q45dwq0ju41p0mpv59zdjah4`; rolling deployment finished `2026-07-30 15:23:30 UTC` |
-| Running digest equals accepted digest | HOLD; existing Coolify staging still runs its prior digest and has not been rolled to `sha256:a81d54442068f70a9f5c7713ec03a565c15adcd17c871f07855be0a0081f1676`; candidate rollout is blocked on authenticated Coolify control-plane access |
+| Running digest equals accepted digest | HOLD; existing Coolify staging still runs its prior digest and has not been rolled to `sha256:73403c56bdc52d8c9d5a01081195de99f2a95945572fc520c292f511ec276046`; candidate rollout requires the authenticated Coolify control plane |
 | Container healthy, restart count zero | Coolify reports `Running (healthy)`; GHCR smoke restart count `0`; live Coolify restart count was not independently exposed |
 | HTTPS/homepage/health | PASS; strict TLS verification, homepage `200`, health `200`, DB query pass |
 | Catalogue/blog/search/sitemap/SEO | Baseline routes return `200`; source Lighthouse gate PASS, but exact final digest staging Lighthouse/canonical/sitemap/robots acceptance remains required |
