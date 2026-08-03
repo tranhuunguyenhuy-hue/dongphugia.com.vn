@@ -24,7 +24,7 @@ must not be replaced with secret values, raw logs, rows or PII.
 | Production Lighthouse | BASELINE FAIL / CANDIDATE PENDING | Current production LCP exceeded optional `2500ms`; candidate has not been deployed to production | Run mobile/desktop evidence after candidate rollout; keep optional threshold disposition explicit |
 | Staging capacity | BOUNDED PASS | `149` GETs at `5 RPS`/`30s`; `0%` failures; p95 `127.8ms`; max `411.3ms` | Full campaign only with approved isolation/window; shared EC2 makes long soak unsafe without approval |
 | Production capacity/soak | PENDING | No production load was sent | PM-approved read-only campaign, or explicit deferral |
-| Legacy URL inventory | PREPARED / NOT FINAL | Static map yielded `29,476` candidate HTTPS URLs; no Search Console/crawl review merged | Merge reviewed export, classify valid/unknown/spam, verify bounded sample |
+| Legacy URL inventory | PREPARED / NOT FINAL | Deterministic local build yields `29,476` HTTPS URLs (`14,738` per web host), `0` invalid/foreign-host entries; SHA-256 `76fe49f6...a9d26`; no Search Console/crawl review merged | Merge reviewed export, classify valid/unknown/spam, verify bounded sample |
 | Legacy `.com.vn` redirects | HOLD | Seven-day stable observation not complete; sample verifier saw non-`308` current legacy behavior | Monitoring PASS, reviewed inventory, PM approval, then exactly two web-host redirects; never Bunny |
 | Rollback readiness | PASS baseline / FUTURE WINDOW REQUIRED | Vercel and `.com.vn` remain reachable and frozen; DNS rollback records retained | Re-HEAD artifacts and reverify just before any mutation |
 | Final ownership release | PENDING | AWS remains sole writer; handoff files current | Release only after final acceptance or verified rollback |
