@@ -78,6 +78,7 @@ check('service_runs_collector', contents.service.includes('ExecStart=/usr/local/
 check('timer_runs_every_minute', contents.timer.includes('OnUnitActiveSec=60s'))
 check('template_uses_aggregate_log_group', contents.template.includes('/dongphugia/production/aggregate'))
 check('template_has_configuration_alarm', contents.template.includes('MonitoringConfigurationMissing'))
+check('template_disk_alarm_matches_aggregated_dimensions', !contents.template.includes('Name: path\n          Value: /'))
 
 const failed = checks.filter((item) => !item.passed)
 console.log(JSON.stringify({ ok: failed.length === 0, checks }))
