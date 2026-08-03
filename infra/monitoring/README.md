@@ -14,6 +14,9 @@ single production EC2 instance in `ap-southeast-1`.
   DB, TLS, OOM and health-failure markers. Missing or stale allowlists produce
   a `monitoring_configuration_missing` event and a non-zero exit. Its
   append-only aggregate file is created with restrictive local permissions.
+- `dpg-sanitized-observation.service` and `.timer` run the sanitizer once per
+  minute. `monitoring.env.example` is intentionally empty and must be filled
+  only after exact production container names and digests are verified.
 - `ec2-cloudwatch-agent-policy.json` is the least-privilege policy to add to
   the existing EC2 instance role. It cannot read Secrets Manager or application
   environment variables.
@@ -38,6 +41,12 @@ aws cloudformation validate-template \
   --region ap-southeast-1 \
   --template-body file://infra/monitoring/cloudwatch-monitoring.yaml
 ```
+
+The operator must also install the sanitizer and timer through the reviewed
+change procedure, then run one bounded manual invocation and verify that the
+aggregate file contains JSON counters only. Do not copy Docker log files into
+the CloudWatch Agent path. A missing allowlist must remain an alerting failure,
+not be replaced with a wildcard.
 
 The production alert thresholds are intentionally symptom-oriented and
 conservative:

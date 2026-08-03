@@ -1,0 +1,16 @@
+[Unit]
+Description=Dongphugia sanitized Docker observation
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+User=root
+EnvironmentFile=-/etc/dongphugia/monitoring.env
+Environment=DPG_MONITOR_OUTPUT=/var/log/dongphugia/production-aggregate.jsonl
+ExecStart=/usr/local/libexec/dongphugia/sanitize-docker-observation.sh
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/var/log/dongphugia
