@@ -33,6 +33,17 @@ runs each on home and listing) measured homepage LCP `3409.969-3418.879 ms`
 and listing LCP `3548.214-3590.596 ms`; LCP <=2500 ms and best-practices `0.95`
 remain deferred/non-blocking. This candidate is not production-approved.
 
+A bounded staging-only capacity probe against the exact candidate issued `149`
+GET requests at `5 RPS` for `30s`: all returned `200`, failure rate `0%`, p95
+`127.8 ms` and max `411.3 ms`. The local runtime did not have `k6`, so this
+was an equivalent body-discarding Node probe; the longer warm-up/steady/spike/
+soak campaign remains pending. The EC2 read-only snapshot showed host load
+`0.33`, CPU idle `98%`, disk used `22%`, and memory `804/1846 MiB`. The
+production database returned `pg_isready=ready`, with no Docker restart/die/OOM
+events in the preceding six hours; SQL connection headroom was not readable
+through the default operator role and is not claimed as verified. One
+control-plane container snapshot was high, but host CPU remained mostly idle.
+
 The legacy redirect inventory preparation now includes
 `scripts/seo/build-legacy-url-inventory.mjs`. From the current static product
 redirect map it produced a candidate set of `29,476` unique HTTPS URLs across
