@@ -196,10 +196,12 @@ The candidate must retain the following validation gates:
 Local candidate validation record (2026-08-03):
 
 - source: `codex/post-launch-hardening` at `3730086`;
-- local image: `dpg-post-launch-hardening:3730086`;
-- manifest digest: `sha256:cf5065fddec66d7c7d52272554671bee23709ac63047016d0b3629a4274fc6ac`;
+- local image: `dpg-post-launch-hardening:3730086-node24`;
+- manifest digest: `sha256:696b3c707aa724c725164756a112833c4b962e74e5a4e97f58346ebe5d83f9a4`;
 - platform: `linux/arm64`;
 - runtime user: `nextjs` (UID 100, GID 101);
+- runtime: Node `v24.18.1` (matches the package engine);
 - image healthcheck: present for `GET /` on port 3000;
 - no registry push, Coolify deploy, DNS change, or production data mutation was
-  performed by this validation.
+  performed by this validation. The runner image intentionally omits npm and
+  npx after build.
