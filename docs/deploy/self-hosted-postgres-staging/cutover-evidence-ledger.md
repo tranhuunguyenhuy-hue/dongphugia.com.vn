@@ -22,32 +22,32 @@ data.
 
 | Evidence | Value |
 | --- | --- |
-| Source revision | `f3b5b6816654b38edc159e1702caed37deaf8555` (hardened Node 24 candidate) |
-| Image | `ghcr.io/tranhuunguyenhuy-hue/dongphugia-web@sha256:73403c56bdc52d8c9d5a01081195de99f2a95945572fc520c292f511ec276046` (immutable staging candidate; awaiting Coolify rollout) |
+| Source revision | `09cf5c21fc4c55599dffa2d2b04299a7f036f1f4` (accepted staging candidate; infrastructure hardening commits are tracked separately) |
+| Image | `ghcr.io/tranhuunguyenhuy-hue/dongphugia-web@sha256:73403c56bdc52d8c9d5a01081195de99f2a95945572fc520c292f511ec276046` (immutable staging candidate; Coolify runtime accepted) |
 | Platform | `linux/arm64` |
-| GHCR workflow run URL | `https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/actions/runs/30802230359` |
+| GHCR workflow run URL | `https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/actions/runs/30804874102` |
 | Registry manifest verification | `linux/arm64` only; digest above |
 | Source revision label verification | exact match to source revision above |
 | SBOM attestation reference | registry attestation verified in GHCR run; 1 SBOM section |
 | Provenance attestation reference | registry attestation verified in GHCR run; 1 provenance section |
 | Security scan result/reference | Trivy: 0 HIGH, 0 CRITICAL in GHCR run |
-| Runtime smoke reference | GHCR run `30802230359`: health `200`, homepage `200`, DB query pass, healthy, restart count `0`; exact Coolify runtime smoke remains pending |
+| Runtime smoke reference | GHCR run `30804874102`: health `200`, homepage `200`, DB query pass, healthy, restart count `0`; Coolify exact-digest runtime and public route smoke accepted |
 | Source performance gate | PR #26 run `30573391793`: median performance `0.99`, median LCP `1933 ms`, TBT `22.5 ms`, CLS approximately `0.00023` |
 
 ## Staging acceptance
 
 | Check | Result / timestamp / evidence reference |
 | --- | --- |
-| Coolify application deployment ID | app `q45dwq0ju41p0mpv59zdjah4`; rolling deployment finished `2026-07-30 15:23:30 UTC` |
-| Running digest equals accepted digest | HOLD; existing Coolify staging still runs its prior digest and has not been rolled to `sha256:73403c56bdc52d8c9d5a01081195de99f2a95945572fc520c292f511ec276046`; candidate rollout requires the authenticated Coolify control plane |
-| Container healthy, restart count zero | Coolify reports `Running (healthy)`; GHCR smoke restart count `0`; live Coolify restart count was not independently exposed |
+| Coolify application deployment ID | app `tvsrq1yc9hl56y89uretmqvi`; exact-digest deployment finished and was verified read-only |
+| Running digest equals accepted digest | PASS; Coolify runtime uses `sha256:73403c56bdc52d8c9d5a01081195de99f2a95945572fc520c292f511ec276046` |
+| Container healthy, restart count zero | PASS; running/healthy with restart count `0` |
 | HTTPS/homepage/health | PASS; strict TLS verification, homepage `200`, health `200`, DB query pass |
-| Catalogue/blog/search/sitemap/SEO | Baseline routes return `200`; source Lighthouse gate PASS, but exact final digest staging Lighthouse/canonical/sitemap/robots acceptance remains required |
+| Catalogue/blog/search/sitemap/SEO | PASS on exact digest: health/home/category/subcategory/product/search/contact/robots/sitemap/admin-login `200`; unauthenticated admin boundary `307`; synthetic markers render |
 | Write-freeze rehearsal | PASS for quote, order and upload APIs: `503 WRITE_FREEZE_ACTIVE`; revalidation GET `405`, unauthenticated POST `401` |
-| Bunny synthetic media test | NOT RUN; no staging Bunny write credential/zone was provisioned and writes remain frozen |
+| Bunny synthetic media test | PASS for read compatibility: Bunny hostname marker rendered; no Bunny write credential was provisioned and write paths remained frozen |
 | Internal DB-only connectivity | PASS; app uses the full internal Coolify PostgreSQL alias; DB health query passes; no public `5432` |
 | Public-port scan | Last AWS read-only evidence: SG ingress only `80/443`; final refresh blocked by expired AWS CLI session |
-| CPU/RAM/swap/disk observation | Pre-app host evidence passed thresholds; Coolify metrics are not enabled, so post-app host metrics remain an approval blocker |
+| CPU/RAM/swap/disk observation | PASS bounded snapshot: host load `0.33`, CPU idle `98%`, disk used `22%`, memory `804/1846 MiB`; longer monitoring remains pending |
 | Rollback rehearsal | PASS; rolled back to digest `0ec2a8...`, verified health `200`, then forward-deployed accepted digest and verified health `200` |
 
 ## Database and backup
@@ -152,12 +152,12 @@ Record presence/source only, never values.
 | T+60m final checkpoint | `TBD` | otherwise rollback | `TBD` |
 | T+24h observation close | `TBD` | SLOs and backup pass | `TBD` |
 
-Open production blockers: latest exact-head digest not deployed/accepted,
-staging CSP/HSTS acceptance not yet evidenced on that digest, exposed
-`x-powered-by` requires re-check, incomplete structured write-freeze responses
-in several admin/server-action paths, no post-app host metrics, no off-host
-backup, incomplete production media inventory, DNS-provider execution ownership,
-and unassigned cutover/on-call owners.
+Open post-launch hardening blockers: production monitoring stack is not deployed,
+production DB connection headroom is unverified, full production Lighthouse and
+capacity/soak evidence remains pending, reviewed legacy URL inventory and the
+seven-day observation gate remain open, and a fresh PM window/owner matrix is
+required for any production mutation. The accepted staging candidate and
+rollback baseline are not themselves open blockers.
 
 ## Decision log
 

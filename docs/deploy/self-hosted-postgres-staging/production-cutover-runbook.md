@@ -207,13 +207,13 @@ Vercel while silently discarding accepted writes.
 
 ## Final approval boundary
 
-Current gate result: **HOLD**. The canonical-domain decision and source
-Lighthouse gate are resolved, but the latest exact-head image still requires
-staging deployment/acceptance. Production cutover is not authorized until every
-abort condition and open item in `cutover-evidence-ledger.md` is cleared. In
-particular, do not approve DNS release while security-header acceptance,
-off-host backup controls, post-app host capacity evidence, production media
-inventory, provider execution ownership, or the owner matrix is open.
+Current gate result: **HOLD for any future production mutation**. The canonical
+launch and exact staging candidate acceptance are recorded; the remaining
+post-launch hardening work is production monitoring deployment, DB connection
+headroom evidence, full Lighthouse/capacity evidence, reviewed legacy URL
+inventory, the seven-day observation gate and fresh PM/owner approval. Do not
+use this historical cutover package to authorize a new DNS, Vercel, Coolify or
+database change while any of those items remains open.
 
 The cutover approval must identify the exact image digest, canonical domain,
 DNS records, database evidence ledger, maintenance window, owners and rollback
