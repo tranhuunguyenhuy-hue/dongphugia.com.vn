@@ -40,8 +40,9 @@ was an equivalent body-discarding Node probe; the longer warm-up/steady/spike/
 soak campaign remains pending. The EC2 read-only snapshot showed host load
 `0.33`, CPU idle `98%`, disk used `22%`, and memory `804/1846 MiB`. The
 production database returned `pg_isready=ready`, with no Docker restart/die/OOM
-events in the preceding six hours; SQL connection headroom was not readable
-through the default operator role and is not claimed as verified. One
+events in the preceding six hours. A read-only aggregate query returned `11`
+connections with `max_connections=30` (`36.7%`); active/idle submetrics remain
+unverified. One
 control-plane container snapshot was high, but host CPU remained mostly idle.
 
 The monitoring package received a mandatory secret-safety correction after

@@ -20,7 +20,7 @@ must not be replaced with secret values, raw logs, rows or PII.
 | Monitoring source package safety | PASS | `monitor:verify-package`: `15/15`; aggregate-only sanitizer; no secret-read permissions; fail-closed timer/alarm | Deploy stack and timer in PM window |
 | Monitoring AWS resources | PENDING | CloudFormation validates; no production monitoring stack exists | IAM preflight, stack deploy, SNS confirmation and bounded alarm test |
 | Production DB readiness | PASS | `pg_isready=ready`; no restart/die/OOM events in last six hours | Recheck in PM window |
-| Production DB connection headroom | UNVERIFIED | Sanitized `psql` attempts could not obtain aggregate connection/max values | Approved operator/runtime-safe DB metrics path |
+| Production DB connection headroom | PASS for total connections; active/idle submetrics UNVERIFIED | Read-only aggregate: `11` connections / `max_connections=30` (`36.7%`), below the `70%` threshold; database size also returned as an aggregate | Capture active/idle/locks through approved monitoring path before final acceptance |
 | Production Lighthouse | BASELINE FAIL / CANDIDATE PENDING | Current production LCP exceeded optional `2500ms`; candidate has not been deployed to production | Run mobile/desktop evidence after candidate rollout; keep optional threshold disposition explicit |
 | Staging capacity | BOUNDED PASS | `149` GETs at `5 RPS`/`30s`; `0%` failures; p95 `127.8ms`; max `411.3ms` | Full campaign only with approved isolation/window; shared EC2 makes long soak unsafe without approval |
 | Production capacity/soak | PENDING | No production load was sent | PM-approved read-only campaign, or explicit deferral |
