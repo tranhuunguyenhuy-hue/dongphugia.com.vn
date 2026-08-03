@@ -17,8 +17,8 @@ must not be replaced with secret values, raw logs, rows or PII.
 | Exact candidate staging runtime | PASS | Coolify deployment `tvsrq1yc9hl56y89uretmqvi`; running/healthy; restart `0`; route matrix PASS | Reconfirm digest before production rollout |
 | Bunny media compatibility | PASS for read path | Staging rendered Bunny hostname marker; no Bunny write credential used | Production media inventory still required |
 | Source-role cleanup | PASS | Both fresh/overnight roles `ROLE_ABSENT`; local material absent | Repeat for each future fresh role |
-| Monitoring source package safety | PASS | `monitor:verify-package`: `15/15`; aggregate-only sanitizer; no secret-read permissions; fail-closed timer/alarm | Deploy stack and timer in PM window |
-| Monitoring AWS resources | PENDING | CloudFormation validates; no production monitoring stack exists | IAM preflight, stack deploy, SNS confirmation and bounded alarm test |
+| Monitoring source package safety | PASS | `monitor:verify-package`: `16/16`; aggregate-only sanitizer; no secret-read permissions; fail-closed timer/alarm; installed-agent compatibility guard | Deploy stack and timer in a fresh PM window |
+| Monitoring AWS resources | NO-GO / RETRY PENDING | Prior PM attempt was rolled back after CloudWatch Agent compatibility failure; stack, alarms, SNS topic and log group are absent | Revalidate IAM, install repaired package, then perform bounded sample and alarm checks in a fresh PM window |
 | Production DB readiness | PASS | `pg_isready=ready`; no restart/die/OOM events in last six hours | Recheck in PM window |
 | Production DB connection headroom | PASS | Read-only aggregate: `11` connections / `active=1` / `idle_in_transaction=0` / `lock_waits=0` / `max_connections=30` (`36.7%`), below the `70%` threshold; database size returned as aggregate | Recheck in PM window and retain monitoring evidence |
 | Production Lighthouse | BASELINE FAIL / CANDIDATE PENDING | Current production LCP exceeded optional `2500ms`; candidate has not been deployed to production | Run mobile/desktop evidence after candidate rollout; keep optional threshold disposition explicit |
@@ -37,7 +37,9 @@ must not be replaced with secret values, raw logs, rows or PII.
    rollback records. Load the reviewed AWS secret-safety instructions before
    any credential task.
 3. Deploy only the reviewed aggregate-only monitoring package and verify the
-   timer, log group, alarms, SNS confirmation and sanitized sample event.
+   timer, log group, alarms, SNS confirmation and sanitized sample event. The
+   prior monitoring attempt is not evidence of acceptance: it was rolled back
+   after the installed agent rejected the first configuration.
 4. If production candidate rollout is approved, create the required fresh
    freeze/backup/reconciliation evidence; never reuse the prior staging or
    night copy as final.
