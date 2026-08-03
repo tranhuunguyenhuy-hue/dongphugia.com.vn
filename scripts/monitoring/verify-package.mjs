@@ -41,6 +41,7 @@ if (agent) {
   )
   check('agent_uses_aggregate_log_group', logFiles[0]?.log_group_name === '/dongphugia/production/aggregate')
   check('agent_does_not_tail_docker_logs', !contents.agent.includes('/var/lib/docker/containers/'))
+  check('agent_avoids_unverified_run_as_user', agent.agent?.run_as_user === undefined)
 }
 
 if (policy) {
