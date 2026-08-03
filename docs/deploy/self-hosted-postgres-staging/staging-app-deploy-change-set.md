@@ -8,15 +8,21 @@ DNS, traffic, data migration, AWS, Security Group, IAM, or Vercel mutations.
 | Field | Accepted value |
 | --- | --- |
 | Registry | `ghcr.io/tranhuunguyenhuy-hue/dongphugia-web` |
-| Source revision | `5eece0c0b78b51bc408dbc2f06404a726bed1143` |
-| Immutable digest | `sha256:12b6d170e45d9c47caff2ae18466ef6ddea69f0038012a03b0fce4173aa9d5b3` |
+| Source revision | `f3b5b6816654b38edc159e1702caed37deaf8555` |
+| Immutable digest | `sha256:a81d54442068f70a9f5c7713ec03a565c15adcd17c871f07855be0a0081f1676` |
 | Platform | `linux/arm64` |
 
 Coolify must deploy the image by digest, not a mutable tag alias or branch tag:
 
 ```text
-ghcr.io/tranhuunguyenhuy-hue/dongphugia-web@sha256:12b6d170e45d9c47caff2ae18466ef6ddea69f0038012a03b0fce4173aa9d5b3
+ghcr.io/tranhuunguyenhuy-hue/dongphugia-web@sha256:a81d54442068f70a9f5c7713ec03a565c15adcd17c871f07855be0a0081f1676
 ```
+
+Candidate evidence: GitHub Actions run
+`https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/actions/runs/30802230359`.
+The registry verified one `linux/arm64` manifest, one SBOM section, one
+provenance section, Trivy HIGH/CRITICAL `0/0`, and pushed-digest smoke with
+health/home `200`, healthy container and restart count `0`.
 
 The accepted build used native ARM64, produced registry SBOM/provenance, passed
 the security threshold of zero HIGH and zero CRITICAL findings, and passed the

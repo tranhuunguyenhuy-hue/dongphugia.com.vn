@@ -76,7 +76,7 @@ Coolify proxy.
 - Project: `dongphugia-staging`
 - Environment: `staging`
 - Resource type: Docker image
-- Image: `ghcr.io/tranhuunguyenhuy-hue/dongphugia-web:staging-latest`
+- Image: `ghcr.io/tranhuunguyenhuy-hue/dongphugia-web@sha256:a81d54442068f70a9f5c7713ec03a565c15adcd17c871f07855be0a0081f1676`
 - Application port: `3000`
 - Container liveness check: `GET /` inside the container
 - Build server: disabled
@@ -123,7 +123,7 @@ Do not create an API token by editing the database directly.
      "destination_uuid": "dm45dwx34qrb8gj5cstjymeo",
      "name": "dongphugia-web-staging",
      "docker_registry_image_name": "ghcr.io/tranhuunguyenhuy-hue/dongphugia-web",
-     "docker_registry_image_tag": "staging-latest",
+    "docker_registry_image_tag": "staging-f3b5b6816654b38edc159e1702caed37deaf8555",
      "ports_exposes": "3000",
      "domains": "https://dongphugia-staging.47-131-92-97.sslip.io",
      "is_force_https_enabled": true,
@@ -143,6 +143,10 @@ Do not create an API token by editing the database directly.
    are present:
 
    `POST /api/v1/applications/{application_uuid}/deploy`
+
+The API resource must resolve to the exact digest above before deployment. The
+workflow tag is only a lookup convenience; do not use `staging-latest` or any
+other mutable alias as the deployment acceptance value.
 
 ## Pre-deploy gates
 

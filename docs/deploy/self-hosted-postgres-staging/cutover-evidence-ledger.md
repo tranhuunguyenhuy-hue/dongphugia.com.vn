@@ -22,16 +22,16 @@ data.
 
 | Evidence | Value |
 | --- | --- |
-| Source revision | `24467553db33df19f0cd3a18b9a049a3309058c5` (candidate before robots/domain dossier update; rebuild exact final head required) |
-| Image | `ghcr.io/tranhuunguyenhuy-hue/dongphugia-web@sha256:48a4321e5b2bce1658dd1e38d2c5f09959156bf73e184996ccbac61bb196235d` (intermediate candidate; not yet deployed) |
+| Source revision | `f3b5b6816654b38edc159e1702caed37deaf8555` (hardened Node 24 candidate) |
+| Image | `ghcr.io/tranhuunguyenhuy-hue/dongphugia-web@sha256:a81d54442068f70a9f5c7713ec03a565c15adcd17c871f07855be0a0081f1676` (immutable staging candidate; not yet deployed to Coolify) |
 | Platform | `linux/arm64` |
-| GHCR workflow run URL | `https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/actions/runs/30573741164` |
+| GHCR workflow run URL | `https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/actions/runs/30802230359` |
 | Registry manifest verification | `linux/arm64` only; digest above |
 | Source revision label verification | exact match to source revision above |
 | SBOM attestation reference | registry attestation verified in GHCR run; 1 SBOM section |
 | Provenance attestation reference | registry attestation verified in GHCR run; 1 provenance section |
 | Security scan result/reference | Trivy: 0 HIGH, 0 CRITICAL in GHCR run |
-| Runtime smoke reference | GHCR run: health `200`, homepage `200`, DB query pass, healthy, restart count `0` |
+| Runtime smoke reference | GHCR run `30802230359`: health `200`, homepage `200`, DB query pass, healthy, restart count `0`; exact Coolify runtime smoke remains pending |
 | Source performance gate | PR #26 run `30573391793`: median performance `0.99`, median LCP `1933 ms`, TBT `22.5 ms`, CLS approximately `0.00023` |
 
 ## Staging acceptance
@@ -39,7 +39,7 @@ data.
 | Check | Result / timestamp / evidence reference |
 | --- | --- |
 | Coolify application deployment ID | app `q45dwq0ju41p0mpv59zdjah4`; rolling deployment finished `2026-07-30 15:23:30 UTC` |
-| Running digest equals accepted digest | HOLD; staging still runs prior accepted digest `sha256:12b6d170e45d9c47caff2ae18466ef6ddea69f0038012a03b0fce4173aa9d5b3`; latest candidate deployment is blocked on authenticated Coolify control-plane access |
+| Running digest equals accepted digest | HOLD; existing Coolify staging still runs its prior digest and has not been rolled to `sha256:a81d54442068f70a9f5c7713ec03a565c15adcd17c871f07855be0a0081f1676`; candidate rollout is blocked on authenticated Coolify control-plane access |
 | Container healthy, restart count zero | Coolify reports `Running (healthy)`; GHCR smoke restart count `0`; live Coolify restart count was not independently exposed |
 | HTTPS/homepage/health | PASS; strict TLS verification, homepage `200`, health `200`, DB query pass |
 | Catalogue/blog/search/sitemap/SEO | Baseline routes return `200`; source Lighthouse gate PASS, but exact final digest staging Lighthouse/canonical/sitemap/robots acceptance remains required |
