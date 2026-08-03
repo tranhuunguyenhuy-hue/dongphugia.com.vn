@@ -16,6 +16,23 @@ but it is not a passing release gate: LCP exceeded 2500 ms on both the
 homepage and the category listing. Older localhost Lighthouse output is not
 accepted as evidence.
 
+## Latest staging candidate evidence
+
+The current exact staging candidate is
+`ghcr.io/tranhuunguyenhuy-hue/dongphugia-web@sha256:73403c56bdc52d8c9d5a01081195de99f2a95945572fc520c292f511ec276046`, built from
+`09cf5c2`. Workflow `30804874102` passed with one ARM64 manifest, SBOM and
+provenance evidence, and zero HIGH/CRITICAL Trivy findings. Coolify staging
+deployment `tvsrq1yc9hl56y89uretmqvi` was verified by SSM as healthy with zero
+restarts.
+
+The staging route matrix passed, including the canonical synthetic category,
+subcategory and product detail routes. Read-only observation produced zero
+failures over 20 requests with p95 `146 ms` and max `283 ms`; app and database
+aggregate error matches were both zero. A staging Lighthouse sample (three
+runs each on home and listing) measured homepage LCP `3409.969-3418.879 ms`
+and listing LCP `3548.214-3590.596 ms`; LCP <=2500 ms and best-practices `0.95`
+remain deferred/non-blocking. This candidate is not production-approved.
+
 ## 2-3 day execution order
 
 ### Day 1: observability and baseline
