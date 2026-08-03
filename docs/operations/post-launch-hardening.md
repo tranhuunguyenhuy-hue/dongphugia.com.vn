@@ -50,8 +50,10 @@ It now uses `infra/monitoring/sanitize-docker-observation.sh`, which requires an
 explicit container allowlist and writes only numeric aggregate fields to
 CloudWatch. Missing or stale configuration emits a dedicated alarm event. A
 missing-container fixture, shell syntax check, JSON validation and
-CloudFormation validation all pass. No version of the monitoring stack has
-been deployed to production.
+CloudFormation validation all pass. The CI preflight
+`npm run monitor:verify-package` now checks these invariants on every
+performance workflow. No version of the monitoring stack has been deployed to
+production.
 
 The legacy redirect inventory preparation now includes
 `scripts/seo/build-legacy-url-inventory.mjs`. From the current static product

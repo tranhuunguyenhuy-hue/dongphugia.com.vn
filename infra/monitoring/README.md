@@ -23,6 +23,8 @@ single production EC2 instance in `ap-southeast-1`.
 - `cloudwatch-monitoring.yaml` creates the aggregate log group, metric filters, alarms,
   dashboard, query definition and SNS topic. The optional email subscription
   requires the operator to confirm the email from AWS.
+- `npm run monitor:verify-package` is a CI preflight that rejects raw-log paths,
+  secret-read permissions and missing fail-closed collector wiring.
 
 ## Safe deployment boundary
 
