@@ -133,8 +133,8 @@ export default async function ThietBiBepPage({ searchParams }: PageProps) {
                         </div>
                         {featuredProducts.length > 0 ? (
                             <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-5">
-                                {featuredProducts.map((product) => (
-                                    <ProductCard key={product.id} product={product} basePath={BASE_PATH} patternSlug={product.subcategories?.slug} href={(product as { url?: string }).url} />
+                                {featuredProducts.map((product, index) => (
+                                    <ProductCard key={product.id} product={product} basePath={BASE_PATH} patternSlug={product.subcategories?.slug} priority={index === 0} href={(product as { url?: string }).url} />
                                 ))}
                             </div>
                         ) : (

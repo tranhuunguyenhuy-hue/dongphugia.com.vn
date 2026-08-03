@@ -1,0 +1,244 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Dongphugia minimum-safe EC2 and application monitoring resources.
+
+Parameters:
+  InstanceId:
+    Type: AWS::EC2::Instance::Id
+    Default: i-011fe10948e0a8c15
+    Description: Existing Dongphugia production EC2 instance.
+  AlertEmail:
+    Type: String
+    Default: ''
+    Description: Optional operator email. SNS subscription requires human confirmation.
+    AllowedPattern: '^$|^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$'
+  DashboardName:
+    Type: String
+    Default: dongphugia-production
+    AllowedPattern: '^[A-Za-z0-9_-]{1,255}$'
+
+Conditions:
+  HasAlertEmail: !Not [!Equals [!Ref AlertEmail, '']]
+
+Resources:
+  AlertTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: dongphugia-production-alerts
+
+  AlertSubscription:
+    Type: AWS::SNS::Subscription
+    Condition: HasAlertEmail
+    Properties:
+      Endpoint: !Ref AlertEmail
+      Protocol: email
+      TopicArn: !Ref AlertTopic
+
+  ProductionLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      LogGroupName: /dongphugia/production/docker
+      RetentionInDays: 14
+
+  HealthFailureMetric:
+    Type: AWS::Logs::MetricFilter
+    DependsOn: ProductionLogGroup
+    Properties:
+      LogGroupName: !Ref ProductionLogGroup
+      FilterPattern: '{ $.event = "health_check_failed" }'
+      MetricTransformations:
+        - MetricName: HealthCheckFailures
+          MetricNamespace: Dongphugia/Application
+          MetricValue: '1'
+          DefaultValue: 0
+
+  InstanceStatusAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: Dongphugia EC2 instance status check failed.
+      Namespace: AWS/EC2
+      MetricName: StatusCheckFailed
+      Dimensions:
+        - Name: InstanceId
+          Value: !Ref InstanceId
+      Statistic: Maximum
+      Period: 60
+      EvaluationPeriods: 2
+      DatapointsToAlarm: 2
+      Threshold: 0
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: breaching
+      AlarmActions:
+        - !Ref AlertTopic
+
+  CpuAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: Dongphugia EC2 CPU sustained above 80 percent.
+      Namespace: AWS/EC2
+      MetricName: CPUUtilization
+      Dimensions:
+        - Name: InstanceId
+          Value: !Ref InstanceId
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 3
+      DatapointsToAlarm: 3
+      Threshold: 80
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: breaching
+      AlarmActions:
+        - !Ref AlertTopic
+
+  MemoryAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: Dongphugia EC2 memory above 85 percent.
+      Namespace: Dongphugia/EC2
+      MetricName: mem_used_percent
+      Dimensions:
+        - Name: InstanceId
+          Value: !Ref InstanceId
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 3
+      DatapointsToAlarm: 3
+      Threshold: 85
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: breaching
+      AlarmActions:
+        - !Ref AlertTopic
+
+  DiskAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: Dongphugia EC2 root disk above 80 percent.
+      Namespace: Dongphugia/EC2
+      MetricName: disk_used_percent
+      Dimensions:
+        - Name: InstanceId
+          Value: !Ref InstanceId
+        - Name: path
+          Value: /
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 3
+      DatapointsToAlarm: 3
+      Threshold: 80
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: breaching
+      AlarmActions:
+        - !Ref AlertTopic
+
+  HealthFailureAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: Application health check emitted a dependency failure.
+      Namespace: Dongphugia/Application
+      MetricName: HealthCheckFailures
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref AlertTopic
+
+  ProductionDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: !Ref DashboardName
+      DashboardBody: !Sub |
+        {
+          "widgets": [
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 0,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "title": "EC2 CPU and status",
+                "view": "timeSeries",
+                "region": "ap-southeast-1",
+                "stat": "Average",
+                "period": 300,
+                "metrics": [
+                  ["AWS/EC2", "CPUUtilization", "InstanceId", "${InstanceId}"]
+                ]
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12,
+              "y": 0,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "title": "EC2 memory and disk",
+                "view": "timeSeries",
+                "region": "ap-southeast-1",
+                "stat": "Average",
+                "period": 300,
+                "metrics": [
+                  ["Dongphugia/EC2", "mem_used_percent", "InstanceId", "${InstanceId}"],
+                  ["Dongphugia/EC2", "disk_used_percent", "InstanceId", "${InstanceId}", "path", "/"]
+                ]
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 6,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "title": "Application health failures",
+                "view": "timeSeries",
+                "region": "ap-southeast-1",
+                "stat": "Sum",
+                "period": 300,
+                "metrics": [
+                  ["Dongphugia/Application", "HealthCheckFailures"]
+                ]
+              }
+            },
+            {
+              "type": "log",
+              "x": 12,
+              "y": 6,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "title": "Sanitized production error aggregate",
+                "query": "SOURCE '/dongphugia/production/docker' | fields @timestamp, @message | filter @message like /health_check_failed|5[0-9][0-9]|ECONN|TLS|OOM/ | stats count() as matches by bin(5m)",
+                "region": "ap-southeast-1",
+                "view": "table"
+              }
+            }
+          ]
+        }
+
+  ProductionErrorQuery:
+    Type: AWS::Logs::QueryDefinition
+    Properties:
+      Name: dongphugia-production-error-aggregate
+      LogGroupNames:
+        - !Ref ProductionLogGroup
+      QueryString: |
+        fields @timestamp, @message
+        | filter @message like /health_check_failed|5[0-9][0-9]|ECONN|TLS|OOM/
+        | stats count() as matches by bin(5m)
+
+Outputs:
+  AlertTopicArn:
+    Description: SNS topic used by the alarms.
+    Value: !Ref AlertTopic
+  ProductionLogGroupName:
+    Description: Sanitized Docker log group.
+    Value: !Ref ProductionLogGroup
+  DashboardName:
+    Description: CloudWatch dashboard name.
+    Value: !Ref DashboardName
