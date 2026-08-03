@@ -30,6 +30,9 @@ jobs:
       - name: Verify monitoring package safety
         run: npm run monitor:verify-package
 
+      - name: Run sanitizer safety harness
+        run: npm run monitor:test-sanitizer
+
       - name: Install dependencies
         run: npm ci
 

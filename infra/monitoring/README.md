@@ -27,8 +27,10 @@ single production EC2 instance in `ap-southeast-1`.
   dashboard, query definition and SNS topic. The optional email subscription
   requires the operator to confirm the email from AWS.
 - `npm run monitor:verify-package` is a CI preflight that rejects raw-log paths,
-  secret-read permissions, unsupported `run_as_user` configuration and missing
-  fail-closed collector wiring.
+  secret-read permissions, unsupported agent configuration and missing
+  fail-closed collector wiring. `npm run monitor:test-sanitizer` executes a
+  local fake-Docker harness proving aggregate-only output and fail-closed
+  behavior without contacting production.
 
 ## Safe deployment boundary
 

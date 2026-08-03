@@ -10,6 +10,7 @@ const files = {
   environment: 'infra/monitoring/monitoring.env.example',
   service: 'infra/monitoring/dpg-sanitized-observation.service',
   timer: 'infra/monitoring/dpg-sanitized-observation.timer',
+  sanitizerTest: 'scripts/monitoring/test-sanitizer.mjs',
 }
 
 const contents = Object.fromEntries(
@@ -60,6 +61,11 @@ if (policy) {
 
 check('collector_requires_explicit_allowlist', contents.collector.includes('DPG_MONITOR_CONTAINERS'))
 check('collector_emits_configuration_failure', contents.collector.includes('monitoring_configuration_missing'))
+check(
+  'sanitizer_harness_present',
+  contents.sanitizerTest.includes('RAW_TEST_MARKER_DO_NOT_FORWARD') &&
+    contents.sanitizerTest.includes('monitoring_configuration_missing'),
+)
 check('collector_emits_aggregate_fields', [
   'http_5xx_count',
   'db_error_count',
