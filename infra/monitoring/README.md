@@ -8,7 +8,10 @@ single production EC2 instance in `ap-southeast-1`.
 - `cloudwatch-agent.json` collects CPU, memory, root-disk and swap metrics and
   forwards only the aggregate JSONL output of
   `sanitize-docker-observation.sh` to a 14-day CloudWatch log group. It never
-  tails `/var/lib/docker/containers/*/*.log` directly.
+  tails `/var/lib/docker/containers/*/*.log` directly. The configuration avoids
+  newer agent-only fields so it remains compatible with the installed
+  production agent family; the service runs the agent with its default
+  privileged account.
 - `sanitize-docker-observation.sh` requires an explicit
   `DPG_MONITOR_CONTAINERS` allowlist and emits only numeric counts for 5xx,
   DB, TLS, OOM and health-failure markers. Missing or stale allowlists produce
