@@ -42,6 +42,11 @@ if (agent) {
   check('agent_uses_aggregate_log_group', logFiles[0]?.log_group_name === '/dongphugia/production/aggregate')
   check('agent_does_not_tail_docker_logs', !contents.agent.includes('/var/lib/docker/containers/'))
   check('agent_avoids_unverified_run_as_user', agent.agent?.run_as_user === undefined)
+  check('agent_targets_production_region', agent.agent?.region === 'ap-southeast-1')
+  check(
+    'agent_avoids_unverified_disk_inode_metric',
+    !agent.metrics?.metrics_collected?.disk?.measurement?.includes('inodes_used_percent'),
+  )
 }
 
 if (policy) {
