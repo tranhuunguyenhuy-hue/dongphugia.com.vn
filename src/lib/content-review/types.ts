@@ -49,8 +49,16 @@ export interface ContentReviewProposal {
     proposalHash: string
     generation: {
         adapter: string
-        mode: 'mock'
+        mode: 'mock' | 'precomputed'
         cleanupVersion: typeof CONTENT_REVIEW_CLEANUP_VERSION
+        provenance?: {
+            source: string
+            beforeHash: string
+            afterHash: string
+            factsHash: string
+            manifestChecksum?: string
+        }
+        telemetry?: ContentReviewTelemetry
     }
     workflow: {
         paused: boolean
@@ -58,6 +66,29 @@ export interface ContentReviewProposal {
     }
     before: ReviewContentSnapshot
     after: ReviewContentSnapshot
+    audit?: ContentReviewAudit
+}
+
+export interface ContentReviewTelemetry {
+    beforeCharacters: number
+    afterCharacters: number
+    beforeTokenEstimate: number
+    afterTokenEstimate: number
+    characterDelta: number
+    tokenEstimateDelta: number
+}
+
+export interface ContentReviewAudit {
+    beforeDescriptionHash: string
+    afterDescriptionHash: string
+    diff: {
+        algorithm: 'deterministic_char_window_v1'
+        changed: boolean
+        addedCharacters: number
+        removedCharacters: number
+        commonPrefixCharacters: number
+        commonSuffixCharacters: number
+    }
 }
 
 export interface ProductContentInput {

@@ -11,6 +11,29 @@ import {
     type ReviewImage,
 } from './types'
 
+function estimateTokens(value: string): number {
+    return Math.ceil([...value].length / 4)
+}
+
+function deterministicDiff(before: string, after: string) {
+    let prefix = 0
+    while (prefix < before.length && prefix < after.length && before[prefix] === after[prefix]) prefix += 1
+    let suffix = 0
+    while (
+        suffix < before.length - prefix
+        && suffix < after.length - prefix
+        && before[before.length - suffix - 1] === after[after.length - suffix - 1]
+    ) suffix += 1
+    return {
+        algorithm: 'deterministic_char_window_v1' as const,
+        changed: before !== after,
+        addedCharacters: after.length - prefix - suffix,
+        removedCharacters: before.length - prefix - suffix,
+        commonPrefixCharacters: prefix,
+        commonSuffixCharacters: suffix,
+    }
+}
+
 function buildImages(input: ProductContentInput): ReviewImage[] {
     return dedupeReviewImages([
         ...(input.imageMainUrl ? [createReviewImage('main', input.imageMainUrl, input.name)] : []),
@@ -49,7 +72,7 @@ export async function generateContentReviewProposal(
 ): Promise<ContentReviewProposal> {
     const beforeImages = buildImages(input)
     const cleanedHtml = cleanupProductHtml(input.descriptionHtml)
-    const generated = await adapter.generate({ sku: input.sku, name: input.name, cleanedHtml })
+    const generated = await adapter.generate({ id: input.id, sku: input.sku, name: input.name, cleanedHtml })
     const afterImages = dedupeReviewImages([
         ...beforeImages.filter(image => image.kind !== 'embedded'),
         ...extractEmbeddedImageUrls(generated.html).map(url => createReviewImage('embedded', url)),
@@ -69,10 +92,24 @@ export async function generateContentReviewProposal(
             adapter: generated.adapter,
             mode: generated.mode,
             cleanupVersion: CONTENT_REVIEW_CLEANUP_VERSION,
+            ...(generated.provenance ? { provenance: generated.provenance } : {}),
+            telemetry: {
+                beforeCharacters: [...input.descriptionHtml].length,
+                afterCharacters: [...generated.html].length,
+                beforeTokenEstimate: estimateTokens(input.descriptionHtml),
+                afterTokenEstimate: estimateTokens(generated.html),
+                characterDelta: [...generated.html].length - [...input.descriptionHtml].length,
+                tokenEstimateDelta: estimateTokens(generated.html) - estimateTokens(input.descriptionHtml),
+            },
         },
         workflow: { paused: false },
         before: { descriptionHtml: input.descriptionHtml, images: beforeImages },
         after: { descriptionHtml: generated.html, images: afterImages },
+        audit: {
+            beforeDescriptionHash: hashObject(input.descriptionHtml),
+            afterDescriptionHash: hashObject(generated.html),
+            diff: deterministicDiff(input.descriptionHtml, generated.html),
+        },
     }
     return rehashProposal(proposalWithoutHash)
 }

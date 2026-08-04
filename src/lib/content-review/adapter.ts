@@ -1,4 +1,5 @@
 export interface ContentGenerationInput {
+    id?: number
     sku: string
     name: string
     cleanedHtml: string
@@ -7,7 +8,14 @@ export interface ContentGenerationInput {
 export interface ContentGenerationOutput {
     html: string
     adapter: string
-    mode: 'mock'
+    mode: 'mock' | 'precomputed'
+    provenance?: {
+        source: string
+        beforeHash: string
+        afterHash: string
+        factsHash: string
+        manifestChecksum?: string
+    }
 }
 
 export interface ContentGenerationAdapter {

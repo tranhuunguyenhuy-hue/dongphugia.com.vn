@@ -157,6 +157,7 @@ scratch/
 output/
 ORIGINAL_REQUEST.md
 scripts/crawl-hita/output/
+scripts/content-review/private/
 
 # Keep the TOTO output directory available on fresh clones, but never track
 # generated crawler data.
