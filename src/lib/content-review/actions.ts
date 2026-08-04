@@ -6,6 +6,7 @@ import { requireRole } from '@/lib/auth/get-current-user'
 import prisma from '@/lib/prisma'
 import { cleanupProductHtml, extractEmbeddedImageUrls } from './cleanup'
 import { createReviewImage, dedupeReviewImages, normalizeImageUrl, validateImageDecision } from './images'
+import { CONTENT_REVIEW_READ_BATCH_SIZE, readAllContentReviewPages } from './pagination'
 import { parseContentReviewProposal, rehashProposal } from './proposal'
 import { nextReviewState } from './state-machine'
 import { CONTENT_REVIEW_SOURCE, type ReviewImageDecision, type ReviewState, type ReviewTransition } from './types'
@@ -39,6 +40,14 @@ async function loadReviewDecision(transaction: ReviewTransaction, decisionId: nu
     return { record, proposal: parseContentReviewProposal(record.import_payload) }
 }
 
+type ReviewDecisionCandidate = { id: number; import_payload: unknown }
+
+function loadAllReviewCandidates(
+    readPage: (cursor?: number) => Promise<ReviewDecisionCandidate[]>,
+): Promise<ReviewDecisionCandidate[]> {
+    return readAllContentReviewPages(readPage)
+}
+
 function revalidateReview(decisionId: number) {
     revalidatePath('/admin/products/content-review')
     revalidatePath(`/admin/products/content-review/${decisionId}`)
@@ -54,6 +63,7 @@ export async function saveProposalDescription(
         const reason = requireReason(reasonValue)
         await prisma.$transaction(async transaction => {
             const { proposal } = await loadReviewDecision(transaction, decisionId)
+            if (proposal.workflow.paused) throw new Error('Resume the paused proposal before editing')
             const previousHash = proposal.proposalHash
             const cleanedHtml = cleanupProductHtml(descriptionHtml)
             const preserved = proposal.after.images.filter(image => image.kind !== 'embedded')
@@ -116,27 +126,31 @@ export async function setProposalImageDecision(
         const reason = requireReason(reasonValue)
         await prisma.$transaction(async transaction => {
             const replacementUrl = replacementValue ? normalizeImageUrl(replacementValue) : undefined
-            const candidates = await transaction.crawl_import_decisions.findMany({
+            const candidates = await loadAllReviewCandidates(cursor => transaction.crawl_import_decisions.findMany({
                 where: { crawl_product_snapshots: { source: CONTENT_REVIEW_SOURCE } },
                 select: { id: true, import_payload: true },
-                take: 500,
-            })
+                orderBy: { id: 'asc' },
+                ...(cursor === undefined ? {} : { cursor: { id: cursor }, skip: 1 }),
+                take: CONTENT_REVIEW_READ_BATCH_SIZE,
+            }))
             const impacted = candidates.flatMap(candidate => {
-                try {
-                    const proposal = parseContentReviewProposal(candidate.import_payload)
-                    return proposal.after.images.some(image => image.fingerprint === fingerprint)
-                        ? [{ candidate, proposal }]
-                        : []
-                } catch {
-                    return []
-                }
+                const proposal = parseContentReviewProposal(candidate.import_payload)
+                return proposal.after.images.some(image => image.fingerprint === fingerprint)
+                    ? [{ candidate, proposal }]
+                    : []
             })
             if (!impacted.some(item => item.candidate.id === decisionId)) throw new Error('Review image not found')
+            if (impacted.some(item => item.proposal.workflow.paused)) {
+                throw new Error('Resume every paused impacted proposal before changing a shared image')
+            }
             const impactedProductIds = impacted.map(item => item.proposal.product.id)
+            for (const { proposal } of impacted) {
+                proposal.after.images
+                    .filter(image => image.fingerprint === fingerprint)
+                    .forEach(image => validateImageDecision(image, decision, replacementUrl))
+            }
 
             for (const { candidate, proposal } of impacted) {
-                const images = proposal.after.images.filter(image => image.fingerprint === fingerprint)
-                images.forEach(image => validateImageDecision(image, decision, replacementUrl))
                 const updated = rehashProposal({
                     ...proposal,
                     version: proposal.version + 1,
@@ -209,7 +223,7 @@ export async function transitionContentReview(
                     version: proposal.version + 1,
                     workflow: { paused: true, pauseReason: reason },
                 })
-                : proposal.workflow.paused
+                : transition === 'resume'
                     ? rehashProposal({
                         ...proposal,
                         version: proposal.version + 1,

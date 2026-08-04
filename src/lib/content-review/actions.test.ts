@@ -141,4 +141,80 @@ describe('content review mutations are isolated from public product tables', () 
         expect(mocks.productImagesUpdate).not.toHaveBeenCalled()
         expect(mocks.productDescriptionsUpdate).not.toHaveBeenCalled()
     })
+
+    it('requires explicit audited Resume before a paused proposal can be reviewed or edited', async () => {
+        const proposal = await generateContentReviewProposal({
+            id: 44,
+            sku: 'PAUSED-44',
+            name: 'Paused proposal',
+            sourceUrl: 'https://hita.com.vn/p/44',
+            descriptionHtml: '<p>Before</p>',
+            imageMainUrl: 'https://cdn.dongphugia.com.vn/products/paused.jpg',
+        })
+        const pausedProposal = {
+            ...proposal,
+            workflow: { paused: true, pauseReason: 'Waiting for PM input' },
+        }
+        mocks.decisionFind.mockResolvedValue({ id: 7, decision: 'needs_review', import_payload: pausedProposal })
+
+        await expect(transitionContentReview(7, 'approve', 'Attempt while paused')).resolves.toMatchObject({
+            success: false,
+            error: expect.stringContaining('paused'),
+        })
+        await expect(transitionContentReview(7, 'ready', 'Attempt ready while paused')).resolves.toMatchObject({
+            success: false,
+        })
+        await expect(saveProposalDescription(7, '<p>Blocked edit</p>', 'Attempt while paused')).resolves.toMatchObject({
+            success: false,
+            error: expect.stringContaining('Resume'),
+        })
+        expect(mocks.decisionUpdate).not.toHaveBeenCalled()
+        expect(mocks.auditCreate).not.toHaveBeenCalled()
+
+        await expect(transitionContentReview(7, 'resume', 'PM resumed review')).resolves.toEqual({ success: true })
+        expect(mocks.decisionUpdate).toHaveBeenCalledWith(expect.objectContaining({
+            data: expect.objectContaining({
+                decision: 'needs_review',
+                import_payload: expect.objectContaining({ workflow: { paused: false } }),
+            }),
+        }))
+        expect(mocks.auditCreate).toHaveBeenCalledWith(expect.objectContaining({
+            data: expect.objectContaining({ action: 'CONTENT_REVIEW_RESUME' }),
+        }))
+    })
+
+    it('updates every shared fingerprint proposal beyond 500 rows without partial omission', async () => {
+        const proposal = await generateContentReviewProposal({
+            id: 44,
+            sku: 'MANY-44',
+            name: 'Shared asset',
+            sourceUrl: 'https://hita.com.vn/p/44',
+            descriptionHtml: '<p>Shared</p>',
+            imageMainUrl: 'https://cdn.hita.com.vn/storage/shared.jpg',
+        })
+        const candidates = Array.from({ length: 501 }, (_, index) => ({
+            id: index + 1,
+            import_payload: {
+                ...proposal,
+                product: { ...proposal.product, id: index + 1, sku: `MANY-${index + 1}` },
+            },
+        }))
+        mocks.decisionFindMany.mockImplementation(async (args: { cursor?: { id: number } }) => {
+            const after = args.cursor?.id || 0
+            return candidates.filter(candidate => candidate.id > after).slice(0, 100)
+        })
+
+        await expect(setProposalImageDecision(
+            1,
+            proposal.after.images[0].fingerprint,
+            'REMOVE',
+            'Remove shared Hita asset',
+        )).resolves.toEqual({ success: true })
+
+        expect(mocks.decisionUpdate).toHaveBeenCalledTimes(501)
+        expect(mocks.auditCreate).toHaveBeenCalledTimes(501)
+        expect(mocks.productsUpdate).not.toHaveBeenCalled()
+        expect(mocks.productImagesUpdate).not.toHaveBeenCalled()
+        expect(mocks.productDescriptionsUpdate).not.toHaveBeenCalled()
+    })
 })

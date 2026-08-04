@@ -27,13 +27,27 @@ function stateClass(state: ReviewState) {
 export default async function ContentReviewPage({
     searchParams,
 }: {
-    searchParams: Promise<{ state?: string; search?: string }>
+    searchParams: Promise<{ state?: string; search?: string; page?: string; pageSize?: string }>
 }) {
     const params = await searchParams
     const selectedState = STATES.some(item => item.value === params.state)
-        ? params.state as ReviewState
+        ? (params.state || undefined) as ReviewState | undefined
         : undefined
-    const items = await getContentReviewQueue({ state: selectedState, search: params.search })
+    const queue = await getContentReviewQueue({
+        state: selectedState,
+        search: params.search,
+        page: Number(params.page || 1),
+        pageSize: Number(params.pageSize || 50),
+    })
+
+    function pageHref(page: number) {
+        const query = new URLSearchParams()
+        if (params.search) query.set('search', params.search)
+        if (selectedState) query.set('state', selectedState)
+        query.set('page', String(page))
+        query.set('pageSize', String(queue.pageSize))
+        return `/admin/products/content-review?${query.toString()}`
+    }
 
     return (
         <div className="space-y-6">
@@ -69,11 +83,11 @@ export default async function ContentReviewPage({
                     <span>Ảnh</span>
                     <span>Cập nhật</span>
                 </div>
-                {items.length === 0 ? (
+                {queue.items.length === 0 ? (
                     <div className="px-5 py-14 text-center text-sm text-slate-500">
                         Chưa có proposal phù hợp. Generator mặc định dry-run và không tự ghi dữ liệu.
                     </div>
-                ) : items.map(item => (
+                ) : queue.items.map(item => (
                     <Link
                         key={item.id}
                         href={`/admin/products/content-review/${item.id}`}
@@ -102,6 +116,22 @@ export default async function ContentReviewPage({
                         </time>
                     </Link>
                 ))}
+            </div>
+            <div className="flex flex-col justify-between gap-3 text-sm text-slate-500 sm:flex-row sm:items-center">
+                <span>
+                    {queue.total === 0
+                        ? '0 proposal'
+                        : `Đang xem ${(queue.page - 1) * queue.pageSize + 1}–${Math.min(queue.page * queue.pageSize, queue.total)} / ${queue.total} proposal`}
+                </span>
+                <div className="flex items-center gap-2">
+                    {queue.page > 1
+                        ? <Link className="rounded-md border px-3 py-1.5 hover:bg-white" href={pageHref(queue.page - 1)}>← Trước</Link>
+                        : <span className="rounded-md border px-3 py-1.5 text-slate-300">← Trước</span>}
+                    <span>Trang {queue.page} / {queue.totalPages}</span>
+                    {queue.page < queue.totalPages
+                        ? <Link className="rounded-md border px-3 py-1.5 hover:bg-white" href={pageHref(queue.page + 1)}>Sau →</Link>
+                        : <span className="rounded-md border px-3 py-1.5 text-slate-300">Sau →</span>}
+                </div>
             </div>
         </div>
     )

@@ -6,6 +6,7 @@ const TRANSITIONS: Record<ReviewTransition, ReviewState[]> = {
     block: ['draft', 'needs_review', 'approved'],
     reject: ['draft', 'needs_review', 'approved'],
     pause: ['draft', 'needs_review', 'approved'],
+    resume: ['needs_review'],
     ready: ['approved'],
 }
 
@@ -17,6 +18,12 @@ export function nextReviewState(
     if (!TRANSITIONS[transition].includes(current)) {
         throw new Error(`Invalid review transition: ${current} -> ${transition}`)
     }
+    if (proposal.workflow.paused && transition !== 'resume') {
+        throw new Error('Proposal is paused; resume it before taking another action')
+    }
+    if (transition === 'resume' && !proposal.workflow.paused) {
+        throw new Error('Proposal is not paused')
+    }
     if ((transition === 'approve' || transition === 'ready')
         && proposal.after.images.some(image => image.decision === 'HUMAN_REVIEW')) {
         throw new Error('Every image must have a human decision before approval')
@@ -26,5 +33,6 @@ export function nextReviewState(
     if (transition === 'block') return 'blocked'
     if (transition === 'reject') return 'rejected'
     if (transition === 'pause') return 'needs_review'
+    if (transition === 'resume') return 'needs_review'
     return 'ready_to_apply'
 }

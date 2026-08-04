@@ -1,8 +1,9 @@
 import { requirePermission } from '@/lib/auth/get-current-user'
 import prisma from '@/lib/prisma'
 import { maskRemoteImagesForPreview } from './cleanup'
+import { CONTENT_REVIEW_READ_BATCH_SIZE, readAllContentReviewPages } from './pagination'
 import { parseContentReviewProposal } from './proposal'
-import { CONTENT_REVIEW_SOURCE, type ReviewState, type SerializedReviewDetail, type SerializedReviewQueueItem } from './types'
+import { CONTENT_REVIEW_SOURCE, type ReviewState, type SerializedReviewDetail, type SerializedReviewQueueItem, type SerializedReviewQueuePage } from './types'
 
 function proposalOrNull(value: unknown) {
     try {
@@ -12,12 +13,15 @@ function proposalOrNull(value: unknown) {
     }
 }
 
-export async function getContentReviewQueue(filters?: {
-    state?: ReviewState
-    search?: string
-}): Promise<SerializedReviewQueueItem[]> {
-    await requirePermission('products:read')
-    const decisions = await prisma.crawl_import_decisions.findMany({
+type ReviewDecisionRow = {
+    id: number
+    decision: string
+    import_payload: unknown
+    updated_at: Date
+}
+
+async function readAllReviewDecisions(): Promise<ReviewDecisionRow[]> {
+    return readAllContentReviewPages(cursor => prisma.crawl_import_decisions.findMany({
         where: {
             crawl_product_snapshots: { source: CONTENT_REVIEW_SOURCE },
         },
@@ -27,9 +31,20 @@ export async function getContentReviewQueue(filters?: {
             import_payload: true,
             updated_at: true,
         },
-        orderBy: { updated_at: 'desc' },
-        take: 250,
-    })
+        orderBy: { id: 'asc' },
+        ...(cursor === undefined ? {} : { cursor: { id: cursor }, skip: 1 }),
+        take: CONTENT_REVIEW_READ_BATCH_SIZE,
+    }))
+}
+
+export async function getContentReviewQueue(filters?: {
+    state?: ReviewState
+    search?: string
+    page?: number
+    pageSize?: number
+}): Promise<SerializedReviewQueuePage> {
+    await requirePermission('products:read')
+    const decisions = await readAllReviewDecisions()
 
     const proposals = decisions
         .map(decision => ({ decision, proposal: proposalOrNull(decision.import_payload) }))
@@ -44,7 +59,7 @@ export async function getContentReviewQueue(filters?: {
     }
 
     const normalizedSearch = filters?.search?.trim().toLowerCase()
-    return proposals
+    const allItems = proposals
         .filter(({ decision, proposal }) => {
             if (filters?.state && decision.decision !== filters.state) return false
             if (!normalizedSearch) return true
@@ -66,6 +81,18 @@ export async function getContentReviewQueue(filters?: {
             paused: proposal.workflow.paused,
             updatedAt: decision.updated_at.toISOString(),
         }))
+    const pageSize = Math.min(100, Math.max(1, Math.floor(filters?.pageSize || 50)))
+    const total = allItems.length
+    const totalPages = Math.max(1, Math.ceil(total / pageSize))
+    const page = Math.min(totalPages, Math.max(1, Math.floor(filters?.page || 1)))
+    const start = (page - 1) * pageSize
+    return {
+        items: allItems.slice(start, start + pageSize),
+        total,
+        page,
+        pageSize,
+        totalPages,
+    }
 }
 
 export async function getContentReviewDetail(decisionId: number): Promise<SerializedReviewDetail | null> {
@@ -86,11 +113,7 @@ export async function getContentReviewDetail(decisionId: number): Promise<Serial
                 import_payload: true,
             },
         }),
-        prisma.crawl_import_decisions.findMany({
-            where: { crawl_product_snapshots: { source: CONTENT_REVIEW_SOURCE } },
-            select: { import_payload: true },
-            take: 500,
-        }),
+        readAllReviewDecisions(),
     ])
     if (!decision) return null
     const proposal = proposalOrNull(decision.import_payload)

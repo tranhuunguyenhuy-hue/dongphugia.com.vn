@@ -10,7 +10,7 @@ export type ReviewState =
     | 'rejected'
     | 'ready_to_apply'
 
-export type ReviewTransition = 'submit' | 'approve' | 'block' | 'reject' | 'pause' | 'ready'
+export type ReviewTransition = 'submit' | 'approve' | 'block' | 'reject' | 'pause' | 'resume' | 'ready'
 
 export type ReviewImageKind = 'main' | 'gallery' | 'embedded'
 export type ReviewImagePolicy =
@@ -86,6 +86,14 @@ export interface SerializedReviewQueueItem {
     duplicateProducts: number
     paused: boolean
     updatedAt: string
+}
+
+export interface SerializedReviewQueuePage {
+    items: SerializedReviewQueueItem[]
+    total: number
+    page: number
+    pageSize: number
+    totalPages: number
 }
 
 export interface SerializedReviewDetail {

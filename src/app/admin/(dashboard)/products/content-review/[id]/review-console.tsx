@@ -45,12 +45,14 @@ function ImageDecisionRow({
     decisionId,
     impactedProducts,
     canMutate,
+    paused,
     onResult,
 }: {
     image: ReviewImage
     decisionId: number
     impactedProducts: number[]
     canMutate: boolean
+    paused: boolean
     onResult: (result: ContentReviewActionResult) => void
 }) {
     const [decision, setDecision] = useState<ReviewImageDecision>(image.decision)
@@ -75,7 +77,7 @@ function ImageDecisionRow({
                 Hash dùng chung trên {impactedProducts.length} sản phẩm: {impactedProducts.join(', ') || 'chỉ sản phẩm này'}.
                 Console không tải/hotlink ảnh nguồn.
             </p>
-            {canMutate && (
+            {canMutate && !paused && (
                 <div className="grid gap-2 md:grid-cols-[150px_minmax(0,1fr)_minmax(0,1fr)_auto]">
                     <select value={decision} onChange={event => setDecision(event.target.value as ReviewImageDecision)} className="h-9 rounded-md border px-2 text-sm">
                         {choices.map(choice => <option key={choice}>{choice}</option>)}
@@ -113,6 +115,7 @@ export function ContentReviewConsole({ detail, canMutate }: { detail: Serialized
     const [transitionReason, setTransitionReason] = useState('PM review decision')
     const [message, setMessage] = useState<string | null>(null)
     const [pending, startTransition] = useTransition()
+    const paused = detail.proposal.workflow.paused
 
     function handleResult(result: ContentReviewActionResult) {
         setMessage(result.success ? 'Đã lưu proposal. Public product không thay đổi.' : result.error)
@@ -160,8 +163,8 @@ export function ContentReviewConsole({ detail, canMutate }: { detail: Serialized
 
             <section className="space-y-3 rounded-xl border bg-white p-5">
                 <h2 className="font-semibold text-slate-900">Chỉnh proposal mô tả</h2>
-                <Textarea value={description} onChange={event => setDescription(event.target.value)} className="min-h-56 font-mono text-xs" disabled={!canMutate} />
-                {canMutate && (
+                <Textarea value={description} onChange={event => setDescription(event.target.value)} className="min-h-56 font-mono text-xs" disabled={!canMutate || paused} />
+                {canMutate && !paused && (
                     <div className="flex flex-col gap-2 sm:flex-row">
                         <Input value={editReason} onChange={event => setEditReason(event.target.value)} placeholder="Lý do audit" />
                         <Button
@@ -188,6 +191,7 @@ export function ContentReviewConsole({ detail, canMutate }: { detail: Serialized
                             decisionId={detail.decisionId}
                             impactedProducts={detail.duplicateProductIdsByFingerprint[image.fingerprint] || []}
                             canMutate={canMutate}
+                            paused={paused}
                             onResult={handleResult}
                         />
                     ))}
@@ -197,6 +201,12 @@ export function ContentReviewConsole({ detail, canMutate }: { detail: Serialized
                 <h2 className="font-semibold text-slate-900">Review decision</h2>
                 {!canMutate ? (
                     <p className="text-sm text-slate-500">Bạn có quyền đọc queue; chỉ role admin được approve/block/reject.</p>
+                ) : paused ? (
+                    <div className="space-y-3">
+                        <p className="text-sm font-medium text-amber-700">Proposal đang Pause. Resume là action duy nhất được phép trước khi tiếp tục review hoặc edit.</p>
+                        <Input value={transitionReason} onChange={event => setTransitionReason(event.target.value)} placeholder="Lý do bắt buộc cho audit" />
+                        <Button disabled={pending} onClick={() => runTransition('resume')}>Resume</Button>
+                    </div>
                 ) : (
                     <>
                         <Input value={transitionReason} onChange={event => setTransitionReason(event.target.value)} placeholder="Lý do bắt buộc cho audit" />
