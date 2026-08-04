@@ -1,12 +1,14 @@
 import type { Metadata } from "next"
-import { preload } from "react-dom"
+import { unstable_cache } from "next/cache"
+import { connection } from "next/server"
+import { Suspense } from "react"
 import { HeroBanner } from "@/components/home/hero-banner"
 import { BrandSlider } from "@/components/home/brand-slider"
 import { BlogSection } from "@/components/home/blog-section"
 import { HomeCategoryBlockAlt } from "@/components/home/home-category-block-alt"
-import { ContactSection } from "@/components/home/contact-section"
+import { LazyContactSection } from "@/components/home/lazy-contact-section"
 import { getFeaturedProductsByCategorySlug } from "@/lib/public-api-products"
-import { createResponsiveMediaUrl } from "@/lib/media/media-profiles"
+import { getHomepageBanners } from "@/lib/homepage-data"
 import prisma from "@/lib/prisma"
 
 export const revalidate = 3600
@@ -28,30 +30,22 @@ export const metadata: Metadata = {
     },
 }
 
-export default async function HomePage() {
-    const [banners, tbvsData, bepData, gachData, nuocData, tbvsBrands, tbvsSubcats, bepSubcats, bepBrands] = await Promise.all([
-        prisma.banners.findMany({
-            where: { is_active: true },
-            orderBy: { sort_order: 'asc' },
-            take: 5,
-        }),
-        // getHomeFeaturedProducts(15), // Tạm ẩn để nghiên cứu thêm
-        getFeaturedProductsByCategorySlug('thiet-bi-ve-sinh', ['toto', 'inax'], null, 0, 5),
-        getFeaturedProductsByCategorySlug('thiet-bi-bep', null, null, 0, 5),
-        getFeaturedProductsByCategorySlug('gach-op-lat', null, null, 0, 5),
-        getFeaturedProductsByCategorySlug('vat-lieu-nuoc', null, null, 0, 5),
+const getHomepageContentData = unstable_cache(
+    async () => Promise.all([
+        getFeaturedProductsByCategorySlug('thiet-bi-ve-sinh', ['toto', 'inax'], null, 0, 3),
+        getFeaturedProductsByCategorySlug('thiet-bi-bep', null, null, 0, 3),
+        getFeaturedProductsByCategorySlug('gach-op-lat', null, null, 0, 3),
+        getFeaturedProductsByCategorySlug('vat-lieu-nuoc', null, null, 0, 3),
         prisma.brands.findMany({
             where: { products: { some: { categories: { slug: 'thiet-bi-ve-sinh' } } } },
             select: { name: true, slug: true }
         }),
         prisma.subcategories.findMany({
-            where: { 
-                categories: { slug: 'thiet-bi-ve-sinh' }
-            },
+            where: { categories: { slug: 'thiet-bi-ve-sinh' } },
             select: { name: true, slug: true }
         }),
         prisma.subcategories.findMany({
-            where: { 
+            where: {
                 categories: { slug: 'thiet-bi-bep' },
                 slug: { notIn: ['thiet-bi-bep-khac'] }
             },
@@ -61,8 +55,13 @@ export default async function HomePage() {
             where: { products: { some: { categories: { slug: 'thiet-bi-bep' } } } },
             select: { name: true, slug: true }
         })
-    ])
+    ]),
+    ['homepage-content-data-v1'],
+    { revalidate: 3600, tags: ['homepage'] }
+)
 
+async function HomepageContentSections() {
+    const [tbvsData, bepData, gachData, nuocData, tbvsBrands, tbvsSubcats, bepSubcats, bepBrands] = await getHomepageContentData()
     const allCategories = [
         { 
             id: 'thiet-bi-ve-sinh', 
@@ -85,43 +84,16 @@ export default async function HomePage() {
         { id: 'vat-lieu-nuoc', label: 'Vật Liệu Nước', basePath: '/vat-lieu-nuoc', products: nuocData.products, totalCount: nuocData.total },
         { id: 'gach-op-lat', label: 'Gạch Ốp Lát', basePath: '/gach-op-lat', products: gachData.products, totalCount: gachData.total },
     ].filter(c => c.products.length > 0)
-    const firstBannerUrl = banners[0]?.image_url
-    if (firstBannerUrl) {
-        preload(createResponsiveMediaUrl(firstBannerUrl, 720), {
-            as: 'image',
-            type: 'image/webp',
-            fetchPriority: 'high',
-            media: '(max-width: 767px)',
-        })
-        preload(createResponsiveMediaUrl(firstBannerUrl, 1280), {
-            as: 'image',
-            type: 'image/webp',
-            fetchPriority: 'high',
-            media: '(min-width: 768px)',
-        })
-    }
 
     return (
-        <div className="bg-white">
-            <h1 className="sr-only">
-                Đông Phú Gia - Vật liệu xây dựng cao cấp tại Đà Lạt
-            </h1>
-            {/* Hero Banner */}
-            <div className="-mt-[126px] pt-[126px]">
-                <section className="max-w-[1280px] mx-auto px-5 pt-8 pb-4 lg:pt-10 lg:pb-6">
-                    <div className="w-full">
-                        <HeroBanner banners={banners} />
-                    </div>
-                </section>
-            </div>
-
+        <>
             {/* Brand Slider */}
             <div className="max-w-[1280px] mx-auto px-5">
                 <BrandSlider />
             </div>
 
             {/* Featured Products (Khối 1) - Tạm ẩn để nghiên cứu thêm */}
-            {/* 
+            {/*
             {homeFeatured && homeFeatured.length > 0 && (
                 <div className="max-w-[1280px] mx-auto px-5 mt-8">
                     <HomeFeaturedProducts products={homeFeatured} />
@@ -142,7 +114,35 @@ export default async function HomePage() {
             <BlogSection />
 
             {/* Contact Form */}
-            <ContactSection />
+            <LazyContactSection />
+        </>
+    )
+}
+
+export default async function HomePage() {
+    await connection()
+
+    const banners = await getHomepageBanners()
+
+    return (
+        <div className="bg-white">
+            <h1 className="sr-only">
+                Đông Phú Gia - Vật liệu xây dựng cao cấp tại Đà Lạt
+            </h1>
+            {/* Hero Banner */}
+            <div className="-mt-[126px] pt-[126px]">
+                <section className="max-w-[1280px] mx-auto px-5 pt-8 pb-4 lg:pt-10 lg:pb-6">
+                    <div className="w-full">
+                        <HeroBanner banners={banners} />
+                    </div>
+                </section>
+            </div>
+
+            <Suspense
+                fallback={<div className="min-h-screen" aria-hidden="true" />}
+            >
+                <HomepageContentSections />
+            </Suspense>
         </div>
     )
 }

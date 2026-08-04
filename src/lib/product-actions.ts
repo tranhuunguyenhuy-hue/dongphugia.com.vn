@@ -4,6 +4,8 @@ import prisma from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
+import { requirePermission } from '@/lib/auth/get-current-user'
+import { toWriteFreezeActionResult } from '@/lib/write-freeze'
 
 // ─── SCHEMAS ─────────────────────────────────────────────────────────────────
 
@@ -47,6 +49,8 @@ const productSchema = z.object({
 // ─── CREATE ──────────────────────────────────────────────────────────────────
 
 export async function createProduct(data: unknown) {
+    await requirePermission('products:write')
+
     const validated = productSchema.safeParse(data)
     if (!validated.success) {
         return { errors: validated.error.flatten().fieldErrors }
@@ -103,6 +107,8 @@ export async function createProduct(data: unknown) {
         revalidatePath('/')
         return { success: true, id: product.id }
     } catch (err: any) {
+        const freezeResult = toWriteFreezeActionResult(err)
+        if (freezeResult) return freezeResult
         const e = err as { code?: string; message?: string }
         if (e.code === 'P2002') return { message: 'SKU hoặc slug đã tồn tại trong cùng danh mục' }
         return { message: 'Lỗi tạo sản phẩm: ' + (e.message ?? 'Unknown error') }
@@ -112,6 +118,8 @@ export async function createProduct(data: unknown) {
 // ─── UPDATE ──────────────────────────────────────────────────────────────────
 
 export async function updateProduct(id: number, data: unknown) {
+    await requirePermission('products:write')
+
     const validated = productSchema.safeParse(data)
     if (!validated.success) {
         return { errors: validated.error.flatten().fieldErrors }
@@ -171,6 +179,8 @@ export async function updateProduct(id: number, data: unknown) {
         revalidatePath('/')
         return { success: true }
     } catch (err: any) {
+        const freezeResult = toWriteFreezeActionResult(err)
+        if (freezeResult) return freezeResult
         const e = err as { code?: string; message?: string }
         if (e.code === 'P2002') return { message: 'SKU hoặc slug đã tồn tại trong cùng danh mục' }
         return { message: 'Lỗi cập nhật sản phẩm: ' + (e.message ?? 'Unknown error') }
@@ -180,17 +190,23 @@ export async function updateProduct(id: number, data: unknown) {
 // ─── TOGGLE FIELDS ───────────────────────────────────────────────────────────
 
 export async function toggleProductFeatured(id: number, value: boolean) {
+    await requirePermission('products:write')
+
     try {
         await prisma.products.update({ where: { id }, data: { is_featured: value, updated_at: new Date() } })
         revalidatePath('/admin/products')
         revalidatePath('/')
         return { success: true }
     } catch (err: any) {
+        const freezeResult = toWriteFreezeActionResult(err)
+        if (freezeResult) return freezeResult
         return { message: 'Lỗi cập nhật: ' + err.message }
     }
 }
 
 export async function toggleProductActive(id: number, value: boolean) {
+    await requirePermission('products:write')
+
     // Guard: cannot activate stub products missing price or image
     if (value === true) {
         const product = await prisma.products.findUnique({
@@ -208,6 +224,8 @@ export async function toggleProductActive(id: number, value: boolean) {
         revalidatePath('/admin/products')
         return { success: true }
     } catch (err: any) {
+        const freezeResult = toWriteFreezeActionResult(err)
+        if (freezeResult) return freezeResult
         return { message: 'Lỗi cập nhật: ' + err.message }
     }
 }
@@ -215,12 +233,16 @@ export async function toggleProductActive(id: number, value: boolean) {
 // ─── DELETE ──────────────────────────────────────────────────────────────────
 
 export async function deleteProduct(id: number) {
+    await requirePermission('products:delete')
+
     try {
         await prisma.products.delete({ where: { id } })
         revalidatePath('/admin/products')
         revalidatePath('/')
         return { success: true }
     } catch (err: any) {
+        const freezeResult = toWriteFreezeActionResult(err)
+        if (freezeResult) return freezeResult
         return { message: 'Lỗi xóa sản phẩm: ' + err.message }
     }
 }
@@ -228,17 +250,23 @@ export async function deleteProduct(id: number) {
 // ─── BULK OPERATIONS ─────────────────────────────────────────────────────────
 
 export async function bulkDeleteProducts(ids: number[]) {
+    await requirePermission('products:delete')
+
     try {
         const result = await prisma.products.deleteMany({ where: { id: { in: ids } } })
         revalidatePath('/admin/products')
         revalidatePath('/')
         return { success: true, count: result.count }
     } catch (err: any) {
+        const freezeResult = toWriteFreezeActionResult(err)
+        if (freezeResult) return freezeResult
         return { message: 'Lỗi xóa nhiều sản phẩm: ' + err.message }
     }
 }
 
 export async function bulkToggleActive(ids: number[], value: boolean) {
+    await requirePermission('products:write')
+
     try {
         const result = await prisma.products.updateMany({
             where: { id: { in: ids } },
@@ -247,6 +275,8 @@ export async function bulkToggleActive(ids: number[], value: boolean) {
         revalidatePath('/admin/products')
         return { success: true, count: result.count }
     } catch (err: any) {
+        const freezeResult = toWriteFreezeActionResult(err)
+        if (freezeResult) return freezeResult
         return { message: 'Lỗi cập nhật trạng thái: ' + err.message }
     }
 }
@@ -254,6 +284,8 @@ export async function bulkToggleActive(ids: number[], value: boolean) {
 // ─── PRODUCT IMAGES ──────────────────────────────────────────────────────────
 
 export async function addProductImage(productId: number, imageUrl: string, altText?: string, imageType = 'gallery') {
+    await requirePermission('products:write')
+
     try {
         const imgData: Prisma.product_imagesUncheckedCreateInput = {
             product_id: productId,
@@ -265,12 +297,16 @@ export async function addProductImage(productId: number, imageUrl: string, altTe
         revalidatePath(`/admin/products/${productId}`)
         return { success: true, id: img.id }
     } catch (err: any) {
+        const freezeResult = toWriteFreezeActionResult(err)
+        if (freezeResult) return freezeResult
         const e = err as { message?: string }
         return { message: 'Lỗi thêm ảnh: ' + (e.message ?? 'Unknown error') }
     }
 }
 
 export async function addProductImages(productId: number, imageUrls: string[]) {
+    await requirePermission('products:write')
+
     try {
         const data = imageUrls.map((url, i) => ({
             product_id: productId,
@@ -282,21 +318,29 @@ export async function addProductImages(productId: number, imageUrls: string[]) {
         revalidatePath(`/admin/products/${productId}`)
         return { success: true, count: imageUrls.length }
     } catch (err: any) {
+        const freezeResult = toWriteFreezeActionResult(err)
+        if (freezeResult) return freezeResult
         return { message: 'Lỗi thêm ảnh: ' + err.message }
     }
 }
 
 export async function deleteProductImage(imageId: number, productId: number) {
+    await requirePermission('products:write')
+
     try {
         await prisma.product_images.delete({ where: { id: imageId } })
         revalidatePath(`/admin/products/${productId}`)
         return { success: true }
     } catch (err: any) {
+        const freezeResult = toWriteFreezeActionResult(err)
+        if (freezeResult) return freezeResult
         return { message: 'Lỗi xóa ảnh: ' + err.message }
     }
 }
 
 export async function setProductThumbnail(productId: number, imageUrl: string) {
+    await requirePermission('products:write')
+
     try {
         await prisma.products.update({
             where: { id: productId },
@@ -307,11 +351,15 @@ export async function setProductThumbnail(productId: number, imageUrl: string) {
         revalidatePath('/')
         return { success: true }
     } catch (err: any) {
+        const freezeResult = toWriteFreezeActionResult(err)
+        if (freezeResult) return freezeResult
         return { message: 'Lỗi đặt thumbnail: ' + err.message }
     }
 }
 
 export async function updateProductImageSortOrder(productId: number, imageIds: number[]) {
+    await requirePermission('products:write')
+
     try {
         // Bulk update is tricky in Prisma, so we do a transaction
         const updates = imageIds.map((id, index) => 
@@ -324,12 +372,16 @@ export async function updateProductImageSortOrder(productId: number, imageIds: n
         revalidatePath(`/admin/products/${productId}`)
         return { success: true }
     } catch (err: any) {
+        const freezeResult = toWriteFreezeActionResult(err)
+        if (freezeResult) return freezeResult
         return { message: 'Lỗi cập nhật thứ tự: ' + err.message }
     }
 }
 
 // ─── SEARCH PRODUCTS (For Combo & Relationships) ─────────────────────────────
 export async function searchProducts(query: string, excludeId?: number) {
+    await requirePermission('products:read')
+
     try {
         const whereClause: any = {
             ...(excludeId ? { id: { not: excludeId } } : {})
@@ -367,6 +419,8 @@ export async function searchProducts(query: string, excludeId?: number) {
 
 // ─── RELATIONSHIPS (COMBO/RELATED) ───────────────────────────────────────────
 export async function addProductRelationship(parentId: number, childId: number, childSku: string, relationshipType: string = 'component') {
+    await requirePermission('products:write')
+
     try {
         const existingCount = await prisma.product_relationships.count({
             where: { parent_id: parentId, relationship_type: relationshipType }
@@ -384,11 +438,15 @@ export async function addProductRelationship(parentId: number, childId: number, 
         revalidatePath(`/admin/products/${parentId}`);
         return { success: true };
     } catch (err: any) {
+        const freezeResult = toWriteFreezeActionResult(err)
+        if (freezeResult) return freezeResult
         return { message: 'Lỗi thêm sản phẩm liên kết: ' + err.message };
     }
 }
 
 export async function removeProductRelationship(id: number, parentId: number) {
+    await requirePermission('products:write')
+
     try {
         await prisma.product_relationships.delete({
             where: { id }
@@ -396,6 +454,8 @@ export async function removeProductRelationship(id: number, parentId: number) {
         revalidatePath(`/admin/products/${parentId}`);
         return { success: true };
     } catch (err: any) {
+        const freezeResult = toWriteFreezeActionResult(err)
+        if (freezeResult) return freezeResult
         return { message: 'Lỗi xóa sản phẩm liên kết: ' + err.message };
     }
 }
@@ -403,6 +463,8 @@ export async function removeProductRelationship(id: number, parentId: number) {
 // ─── VARIANTS MANAGEMENT ───────────────────────────────────────────────────
 
 export async function getProductVariants(variantGroup: string | null) {
+    await requirePermission('products:read')
+
     if (!variantGroup) return [];
     try {
         const variants = await prisma.products.findMany({
@@ -431,6 +493,8 @@ export async function getProductVariants(variantGroup: string | null) {
 }
 
 export async function linkVariant(currentProductId: number, targetProductId: number) {
+    await requirePermission('products:write')
+
     try {
         const currentProduct = await prisma.products.findUnique({
             where: { id: currentProductId },
@@ -461,12 +525,16 @@ export async function linkVariant(currentProductId: number, targetProductId: num
         revalidatePath(`/admin/products/${currentProductId}`);
         return { success: true };
     } catch (err: any) {
+        const freezeResult = toWriteFreezeActionResult(err)
+        if (freezeResult) return freezeResult
         console.error('Error linking variant:', err);
         return { message: 'Lỗi khi liên kết biến thể: ' + err.message };
     }
 }
 
 export async function unlinkVariant(productId: number, currentProductId: number) {
+    await requirePermission('products:write')
+
     try {
         await prisma.products.update({
             where: { id: productId },
@@ -476,12 +544,16 @@ export async function unlinkVariant(productId: number, currentProductId: number)
         revalidatePath(`/admin/products/${currentProductId}`);
         return { success: true };
     } catch (err: any) {
+        const freezeResult = toWriteFreezeActionResult(err)
+        if (freezeResult) return freezeResult
         console.error('Error unlinking variant:', err);
         return { message: 'Lỗi khi hủy liên kết biến thể: ' + err.message };
     }
 }
 
 export async function bulkToggleFeatured(ids: number[], value: boolean) {
+    await requirePermission('products:write')
+
     try {
         const result = await prisma.products.updateMany({
             where: { id: { in: ids } },
@@ -491,6 +563,8 @@ export async function bulkToggleFeatured(ids: number[], value: boolean) {
         revalidatePath('/')
         return { success: true, count: result.count }
     } catch (error) {
+        const freezeResult = toWriteFreezeActionResult(error)
+        if (freezeResult) return freezeResult
         console.error('Lỗi bulkToggleFeatured:', error)
         return { success: false, message: 'Lỗi server' }
     }
@@ -499,6 +573,8 @@ export async function bulkToggleFeatured(ids: number[], value: boolean) {
 // ─── REORDER ─────────────────────────────────────────────────────────────────
 
 export async function updateProductSortOrders(updates: { id: number; sort_order: number }[]) {
+    await requirePermission('products:write')
+
     try {
         await prisma.$transaction(
             updates.map((u) =>
@@ -512,6 +588,8 @@ export async function updateProductSortOrders(updates: { id: number; sort_order:
         revalidatePath('/')
         return { success: true }
     } catch (err: unknown) {
+        const freezeResult = toWriteFreezeActionResult(err)
+        if (freezeResult) return freezeResult
         console.error('Error updating sort orders:', err)
         return { success: false, message: 'Lỗi cập nhật vị trí' }
     }

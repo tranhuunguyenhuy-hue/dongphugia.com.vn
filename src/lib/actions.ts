@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
 import { requirePermission } from '@/lib/auth/get-current-user'
+import { toWriteFreezeActionResult } from '@/lib/write-freeze'
 
 // NOTE: Legacy product/collection/pattern-type actions removed in LEO-366.
 // Will be rebuilt as unified product actions in Phase 3.
@@ -36,6 +37,8 @@ export async function createBanner(data: any) {
             },
         })
     } catch (error) {
+        const freezeResult = toWriteFreezeActionResult(error)
+        if (freezeResult) return freezeResult
         console.error("Database Error:", error)
         return { message: 'Lỗi database khi tạo banner.' }
     }
@@ -65,6 +68,8 @@ export async function updateBanner(id: number, data: any) {
             },
         })
     } catch (error) {
+        const freezeResult = toWriteFreezeActionResult(error)
+        if (freezeResult) return freezeResult
         console.error("Database Error:", error)
         return { message: 'Lỗi database khi cập nhật banner.' }
     }
@@ -82,6 +87,8 @@ export async function deleteBanner(id: number) {
         revalidatePath('/')
         return { success: true }
     } catch (error) {
+        const freezeResult = toWriteFreezeActionResult(error)
+        if (freezeResult) return freezeResult
         console.error("Database Error:", error)
         return { success: false, message: 'Lỗi database khi xóa banner.' }
     }
@@ -103,6 +110,8 @@ export async function updateCategoryBanner(id: number, banner_url: string | null
         revalidatePath('/gach-op-lat')
         return { success: true }
     } catch (error) {
+        const freezeResult = toWriteFreezeActionResult(error)
+        if (freezeResult) return freezeResult
         console.error("Database Error:", error)
         return { success: false, message: 'Lỗi khi cập nhật banner danh mục.' }
     }
@@ -157,6 +166,8 @@ export async function submitQuoteRequest(payload: QuoteCartPayload) {
             },
         })
     } catch (error) {
+        const freezeResult = toWriteFreezeActionResult(error)
+        if (freezeResult) return freezeResult
         console.error("Quote creation error:", error)
         return { success: false, message: 'Lỗi khi gửi yêu cầu. Vui lòng thử lại.' }
     }
@@ -181,6 +192,8 @@ export async function updateQuoteRequestStatus(id: number, status: string) {
         revalidatePath('/admin')
         return { success: true }
     } catch (error) {
+        const freezeResult = toWriteFreezeActionResult(error)
+        if (freezeResult) return freezeResult
         console.error("Database Error:", error)
         return { success: false, message: 'Lỗi khi cập nhật trạng thái.' }
     }
@@ -205,6 +218,8 @@ export async function submitContactForm(data: { name: string, phone: string, ema
         revalidatePath('/admin/customers')
         return { success: true }
     } catch (error) {
+        const freezeResult = toWriteFreezeActionResult(error)
+        if (freezeResult) return freezeResult
         console.error("Lỗi khi lưu form liên hệ:", error)
         return { success: false, error: 'Có lỗi xảy ra, vui lòng thử lại sau.' }
     }

@@ -32,7 +32,7 @@ export default function ConditionalBusinessPage() {
                 <li><strong>Người đại diện theo pháp luật:</strong> Ông Dương Tiến Sỹ - Giám đốc</li>
                 <li><strong>Điện thoại/Hotline:</strong> <a href="tel:02633520316">0263 352 0316</a></li>
                 <li><strong>Email:</strong> <a href="mailto:vlxd.dongphu@gmail.com">vlxd.dongphu@gmail.com</a></li>
-                <li><strong>Website:</strong> <a href="https://www.dongphugia.com.vn">https://www.dongphugia.com.vn</a></li>
+                <li><strong>Website:</strong> <a href="https://www.dongphugia.vn">https://www.dongphugia.vn</a></li>
             </ul>
 
             <h2>2. Nhóm hàng hóa, dịch vụ doanh nghiệp đang cung cấp</h2>
@@ -72,7 +72,7 @@ export default function ConditionalBusinessPage() {
                 <li><strong>Địa chỉ:</strong> 275 Phan Đình Phùng, Phường Xuân Hương - Đà Lạt, Tỉnh Lâm Đồng, Việt Nam</li>
                 <li><strong>Điện thoại/Hotline:</strong> <a href="tel:02633520316">02633520316</a></li>
                 <li><strong>Email:</strong> <a href="mailto:vlxd.dongphu@gmail.com">vlxd.dongphu@gmail.com</a></li>
-                <li><strong>Website:</strong> <a href="https://www.dongphugia.com.vn">https://www.dongphugia.com.vn</a></li>
+                <li><strong>Website:</strong> <a href="https://www.dongphugia.vn">https://www.dongphugia.vn</a></li>
             </ul>
 
             <div className="mt-10 p-4 bg-stone-100 rounded-lg text-sm text-stone-600">

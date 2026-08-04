@@ -4,9 +4,10 @@ import prisma from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
-import { getCurrentUser, requirePermission } from '@/lib/auth/get-current-user'
+import { getCurrentUser, requireAuth, requirePermission } from '@/lib/auth/get-current-user'
 import { can } from '@/lib/auth/permissions'
 import { generateOrderNumber } from '@/lib/utils'
+import { toWriteFreezeActionResult } from '@/lib/write-freeze'
 
 // ─── SCHEMAS ─────────────────────────────────────────────────────────────────
 
@@ -30,9 +31,33 @@ const orderSchema = z.object({
 
 // generateOrderNumber() is imported from @/lib/utils (LEO-421: unified format DPG-YYYYMMDD-XXXXXX)
 
+async function requireAssignedOrderAccess(orderId: number, userId: number) {
+    const order = await prisma.orders.findUnique({
+        where: { id: orderId },
+        select: { assigned_to: true },
+    })
+
+    if (!order) return { allowed: false, missing: true }
+    return { allowed: order.assigned_to === userId, missing: false }
+}
+
+async function requireOrderActionAccess(orderId: number, permission: Parameters<typeof requirePermission>[0]) {
+    const currentUser = await requirePermission(permission)
+    if (can(currentUser.role, 'orders:read')) return currentUser
+
+    const access = await requireAssignedOrderAccess(orderId, currentUser.id)
+    if (!access.allowed) {
+        throw new Error(access.missing ? 'ORDER_NOT_FOUND' : 'FORBIDDEN: Order is not assigned to current user')
+    }
+
+    return currentUser
+}
+
 // ─── CREATE ORDER ─────────────────────────────────────────────────────────────
 
 export async function createOrder(data: unknown) {
+    await requirePermission('orders:edit')
+
     const validated = orderSchema.safeParse(data)
     if (!validated.success) {
         return { errors: validated.error.flatten().fieldErrors }
@@ -72,6 +97,8 @@ export async function createOrder(data: unknown) {
         revalidatePath('/admin/orders')
         return { success: true, id: order.id, orderNumber: order.order_number }
     } catch (err: any) {
+        const freezeResult = toWriteFreezeActionResult(err)
+        if (freezeResult) return freezeResult
         return { message: 'Lỗi tạo đơn hàng: ' + err.message }
     }
 }
@@ -79,6 +106,8 @@ export async function createOrder(data: unknown) {
 // ─── UPDATE ORDER STATUS ──────────────────────────────────────────────────────
 
 export async function updateOrderStatus(id: number, status: string) {
+    await requireOrderActionAccess(id, 'orders:update_status')
+
     const validStatuses = ['pending', 'received', 'confirmed', 'inventory_check', 'completed', 'cancelled']
     if (!validStatuses.includes(status)) {
         return { message: 'Trạng thái không hợp lệ' }
@@ -92,11 +121,15 @@ export async function updateOrderStatus(id: number, status: string) {
         revalidatePath(`/admin/orders/${id}`)
         return { success: true }
     } catch (err: any) {
+        const freezeResult = toWriteFreezeActionResult(err)
+        if (freezeResult) return freezeResult
         return { message: 'Lỗi cập nhật trạng thái: ' + err.message }
     }
 }
 
 export async function updatePaymentStatus(id: number, paymentStatus: string) {
+    await requirePermission('orders:edit')
+
     const validStatuses = ['unpaid', 'paid', 'refunded']
     if (!validStatuses.includes(paymentStatus)) {
         return { message: 'Trạng thái thanh toán không hợp lệ' }
@@ -110,6 +143,8 @@ export async function updatePaymentStatus(id: number, paymentStatus: string) {
         revalidatePath(`/admin/orders/${id}`)
         return { success: true }
     } catch (err: any) {
+        const freezeResult = toWriteFreezeActionResult(err)
+        if (freezeResult) return freezeResult
         return { message: 'Lỗi cập nhật thanh toán: ' + err.message }
     }
 }
@@ -148,8 +183,8 @@ export async function getAdminOrders(params: {
 }) {
     const { status, payment_status, search, page = 1, pageSize = 25 } = params
 
-    const currentUser = await getCurrentUser()
-    const isSaleOnly = currentUser && !can(currentUser.role, 'orders:read')
+    const currentUser = await requireAuth()
+    const isSaleOnly = !can(currentUser.role, 'orders:read')
 
     const where: Prisma.ordersWhereInput = {
         ...(isSaleOnly && { assigned_to: currentUser.id }),
@@ -222,6 +257,9 @@ export async function getAdminOrders(params: {
 // ─── ADMIN: ORDER DETAIL ──────────────────────────────────────────────────────
 
 export async function getAdminOrderById(id: number) {
+    const currentUser = await requireAuth()
+    const restrictToAssigned = !can(currentUser.role, 'orders:read')
+
     const order = await prisma.orders.findUnique({
         where: { id },
         include: {
@@ -236,6 +274,8 @@ export async function getAdminOrderById(id: number) {
         },
     })
     if (!order) return null
+    if (restrictToAssigned && order.assigned_to !== currentUser.id) return null
+
     return {
         ...order,
         subtotal: Number(order.subtotal),
@@ -252,14 +292,18 @@ export async function getAdminOrderById(id: number) {
 // ─── ORDER STATS ──────────────────────────────────────────────────────────────
 
 export async function getOrderStats() {
+    const currentUser = await requireAuth()
+    const assignedOnly = !can(currentUser.role, 'dashboard:read')
+    const assignedWhere = assignedOnly ? { assigned_to: currentUser.id } : {}
+
     const [total, pending, processing, delivered, revenue] = await Promise.all([
-        prisma.orders.count(),
-        prisma.orders.count({ where: { status: 'pending' } }),
-        prisma.orders.count({ where: { status: { in: ['received', 'confirmed', 'inventory_check'] } } }),
-        prisma.orders.count({ where: { status: 'completed' } }),
+        prisma.orders.count({ where: assignedWhere }),
+        prisma.orders.count({ where: { ...assignedWhere, status: 'pending' } }),
+        prisma.orders.count({ where: { ...assignedWhere, status: { in: ['received', 'confirmed', 'inventory_check'] } } }),
+        prisma.orders.count({ where: { ...assignedWhere, status: 'completed' } }),
         prisma.orders.aggregate({
             _sum: { total: true },
-            where: { status: 'completed', payment_status: 'paid' },
+            where: { ...assignedWhere, status: 'completed', payment_status: 'paid' },
         }),
     ])
     return {
@@ -274,6 +318,8 @@ export async function getOrderStats() {
 // ─── CREATE QUOTE FROM ORDER ──────────────────────────────────────────────────
 
 export async function createQuoteFromOrder(orderId: number) {
+    await requireOrderActionAccess(orderId, 'quotes:create')
+
     const order = await prisma.orders.findUnique({
         where: { id: orderId },
         include: { order_items: true }
@@ -302,6 +348,8 @@ export async function createQuoteFromOrder(orderId: number) {
         })
         return { success: true, quoteId: quote.id }
     } catch (err: any) {
+        const freezeResult = toWriteFreezeActionResult(err)
+        if (freezeResult) return freezeResult
         return { success: false, error: err.message }
     }
 }
@@ -309,6 +357,8 @@ export async function createQuoteFromOrder(orderId: number) {
 // ─── UPDATE ORDER DETAILS (Builder) ──────────────────────────────────────────
 
 export async function updateOrderData(orderId: number, data: any) {
+    await requirePermission('orders:edit')
+
     try {
         const items = data.items || []
         const subtotal = items.reduce((acc: number, item: any) => {
@@ -351,6 +401,8 @@ export async function updateOrderData(orderId: number, data: any) {
         revalidatePath(`/admin/orders/${orderId}`)
         return { success: true }
     } catch (error: any) {
+        const freezeResult = toWriteFreezeActionResult(error)
+        if (freezeResult) return freezeResult
         console.error('Failed to update order data:', error)
         return { success: false, error: 'Lỗi server khi lưu đơn hàng: ' + error.message }
     }
@@ -386,6 +438,8 @@ export async function assignOrder(orderId: number, userId: number | null) {
         revalidatePath(`/admin/orders/${orderId}`)
         return { success: true }
     } catch (error: any) {
+        const freezeResult = toWriteFreezeActionResult(error)
+        if (freezeResult) return freezeResult
         console.error('Failed to assign order:', error)
         return { success: false, error: 'Lỗi khi giao đơn hàng: ' + error.message }
     }

@@ -3,6 +3,8 @@
 import prisma from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
+import { requirePermission } from '@/lib/auth/get-current-user'
+import { toWriteFreezeActionResult } from '@/lib/write-freeze'
 
 const blogPostSchema = z.object({
     title: z.string().min(1, 'Tiêu đề không được để trống'),
@@ -32,6 +34,8 @@ const blogTagSchema = z.object({
 })
 
 export async function createBlogPost(data: any) {
+    await requirePermission('blog:write')
+
     const validated = blogPostSchema.safeParse(data)
     if (!validated.success) {
         return { errors: validated.error.flatten().fieldErrors }
@@ -81,12 +85,16 @@ export async function createBlogPost(data: any) {
         revalidatePath('/blog')
         return { success: true, id: post.id }
     } catch (err: any) {
+        const freezeResult = toWriteFreezeActionResult(err)
+        if (freezeResult) return freezeResult
         if (err.code === 'P2002') return { message: 'Slug đã tồn tại, vui lòng dùng slug khác' }
         return { message: 'Lỗi tạo bài viết: ' + err.message }
     }
 }
 
 export async function updateBlogPost(id: number, data: any) {
+    await requirePermission('blog:write')
+
     const validated = blogPostSchema.safeParse(data)
     if (!validated.success) {
         return { errors: validated.error.flatten().fieldErrors }
@@ -143,12 +151,16 @@ export async function updateBlogPost(id: number, data: any) {
         revalidatePath('/blog')
         return { success: true }
     } catch (err: any) {
+        const freezeResult = toWriteFreezeActionResult(err)
+        if (freezeResult) return freezeResult
         if (err.code === 'P2002') return { message: 'Slug đã tồn tại, vui lòng dùng slug khác' }
         return { message: 'Lỗi cập nhật bài viết: ' + err.message }
     }
 }
 
 export async function deleteBlogPost(id: number) {
+    await requirePermission('blog:write')
+
     try {
         await prisma.blog_posts.delete({ where: { id } })
         // Refresh tag counts
@@ -159,11 +171,15 @@ export async function deleteBlogPost(id: number) {
         revalidatePath('/blog')
         return { success: true }
     } catch (err: any) {
+        const freezeResult = toWriteFreezeActionResult(err)
+        if (freezeResult) return freezeResult
         return { message: 'Lỗi xóa bài viết: ' + err.message }
     }
 }
 
 export async function createBlogTag(data: any) {
+    await requirePermission('blog:write')
+
     const validated = blogTagSchema.safeParse(data)
     if (!validated.success) {
         return { errors: validated.error.flatten().fieldErrors }
@@ -179,17 +195,23 @@ export async function createBlogTag(data: any) {
         revalidatePath('/admin/blog/tags')
         return { success: true, id: tag.id }
     } catch (err: any) {
+        const freezeResult = toWriteFreezeActionResult(err)
+        if (freezeResult) return freezeResult
         if (err.code === 'P2002') return { message: 'Slug tag đã tồn tại' }
         return { message: 'Lỗi tạo tag: ' + err.message }
     }
 }
 
 export async function deleteBlogTag(id: number) {
+    await requirePermission('blog:write')
+
     try {
         await prisma.blog_tags.delete({ where: { id } })
         revalidatePath('/admin/blog/tags')
         return { success: true }
     } catch (err: any) {
+        const freezeResult = toWriteFreezeActionResult(err)
+        if (freezeResult) return freezeResult
         return { message: 'Lỗi xóa tag: ' + err.message }
     }
 }

@@ -36,7 +36,7 @@ export default defineConfig({
         },
     ],
     webServer: {
-        command: 'npm run dev',
+        command: 'node .next/standalone/server.js',
         url: 'http://localhost:3000',
         reuseExistingServer: true,
         timeout: 120_000,

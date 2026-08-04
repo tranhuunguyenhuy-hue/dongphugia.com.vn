@@ -3,6 +3,7 @@
 import prisma from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import { requirePermission, getCurrentUser } from '@/lib/auth/get-current-user'
+import { toWriteFreezeActionResult } from '@/lib/write-freeze'
 
 export async function updateQuoteData(quoteId: number, data: any) {
     try {
@@ -33,6 +34,8 @@ export async function updateQuoteData(quoteId: number, data: any) {
         revalidatePath(`/admin/quote-requests/${quoteId}/builder`)
         return { success: true }
     } catch (error) {
+        const freezeResult = toWriteFreezeActionResult(error)
+        if (freezeResult) return freezeResult
         console.error('Failed to update quote data:', error)
         return { success: false, error: 'Lỗi server khi lưu báo giá' }
     }
@@ -43,7 +46,8 @@ export async function completeQuote(quoteId: number, data: any) {
         await requirePermission('quotes:update')
 
         // Save first
-        await updateQuoteData(quoteId, data)
+        const saveResult = await updateQuoteData(quoteId, data)
+        if (!saveResult.success) return saveResult
 
         // Find or create customer
         let customer = await prisma.customers.findUnique({
@@ -84,6 +88,8 @@ export async function completeQuote(quoteId: number, data: any) {
         revalidatePath('/admin/customers')
         return { success: true }
     } catch (error) {
+        const freezeResult = toWriteFreezeActionResult(error)
+        if (freezeResult) return freezeResult
         console.error('Failed to complete quote:', error)
         return { success: false, error: 'Lỗi server khi hoàn thành báo giá' }
     }
@@ -115,6 +121,8 @@ export async function assignQuote(quoteId: number, userId: number | null) {
         revalidatePath(`/admin/quote-requests/${quoteId}/builder`)
         return { success: true }
     } catch (error: any) {
+        const freezeResult = toWriteFreezeActionResult(error)
+        if (freezeResult) return freezeResult
         console.error('Failed to assign quote:', error)
         return { success: false, error: 'Lỗi khi giao báo giá: ' + error.message }
     }

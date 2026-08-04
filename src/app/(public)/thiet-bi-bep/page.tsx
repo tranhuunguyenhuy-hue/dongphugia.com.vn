@@ -1,4 +1,6 @@
 import { Metadata } from "next"
+import type { Prisma } from "@prisma/client"
+import { connection } from "next/server"
 import Link from "next/link"
 import Image from "next/image"
 import { Suspense } from "react"
@@ -35,11 +37,13 @@ interface PageProps {
 }
 
 export default async function ThietBiBepPage({ searchParams }: PageProps) {
+    await connection()
+
     const params = await searchParams
     const activeBrands = params.brands?.split(",").filter(Boolean) ?? []
     const [priceMin, priceMax] = params.price?.split("-").map(Number) ?? []
 
-    const featuredWhere: any = {
+    const featuredWhere: Prisma.productsWhereInput = {
         categories: { slug: CATEGORY_SLUG },
         is_featured: true,
         ...LISTING_PRODUCT_WHERE,
@@ -129,8 +133,8 @@ export default async function ThietBiBepPage({ searchParams }: PageProps) {
                         </div>
                         {featuredProducts.length > 0 ? (
                             <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-5">
-                                {featuredProducts.map((product) => (
-                                    <ProductCard key={product.id} product={product} basePath={BASE_PATH} patternSlug={product.subcategories?.slug} href={(product as { url?: string }).url} />
+                                {featuredProducts.map((product, index) => (
+                                    <ProductCard key={product.id} product={product} basePath={BASE_PATH} patternSlug={product.subcategories?.slug} priority={index === 0} href={(product as { url?: string }).url} />
                                 ))}
                             </div>
                         ) : (

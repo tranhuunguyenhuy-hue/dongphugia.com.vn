@@ -11,7 +11,7 @@ export default function PrivacyPolicyPage() {
             <h1>CHÍNH SÁCH BẢO MẬT THÔNG TIN</h1>
             <p className="lead font-medium text-stone-600">CÔNG TY TNHH ĐÔNG PHÚ GIA</p>
             <p>
-                Chính sách này quy định cách thức CÔNG TY TNHH ĐÔNG PHÚ GIA thu thập, sử dụng, lưu trữ, bảo vệ và xử lý thông tin cá nhân của khách hàng khi khách hàng truy cập website <a href="https://www.dongphugia.com.vn">https://www.dongphugia.com.vn</a>, liên hệ tư vấn, yêu cầu báo giá, đặt mua sản phẩm hoặc sử dụng các dịch vụ liên quan đến vật liệu xây dựng, gạch ốp lát, thiết bị vệ sinh, thiết bị bếp và sản phẩm hoàn thiện công trình.
+                Chính sách này quy định cách thức CÔNG TY TNHH ĐÔNG PHÚ GIA thu thập, sử dụng, lưu trữ, bảo vệ và xử lý thông tin cá nhân của khách hàng khi khách hàng truy cập website <a href="https://www.dongphugia.vn">https://www.dongphugia.vn</a>, liên hệ tư vấn, yêu cầu báo giá, đặt mua sản phẩm hoặc sử dụng các dịch vụ liên quan đến vật liệu xây dựng, gạch ốp lát, thiết bị vệ sinh, thiết bị bếp và sản phẩm hoàn thiện công trình.
             </p>
 
             <h2>1. Mục đích và phạm vi thu thập thông tin</h2>
@@ -72,7 +72,7 @@ export default function PrivacyPolicyPage() {
                 <li><strong>Địa chỉ:</strong> 275 Phan Đình Phùng, Phường Xuân Hương - Đà Lạt, Tỉnh Lâm Đồng, Việt Nam</li>
                 <li><strong>Điện thoại:</strong> <a href="tel:02633520316">0263 352 0316</a></li>
                 <li><strong>Email:</strong> <a href="mailto:vlxd.dongphu@gmail.com">vlxd.dongphu@gmail.com</a></li>
-                <li><strong>Website:</strong> <a href="https://www.dongphugia.com.vn">https://www.dongphugia.com.vn</a></li>
+                <li><strong>Website:</strong> <a href="https://www.dongphugia.vn">https://www.dongphugia.vn</a></li>
             </ul>
         </article>
     )

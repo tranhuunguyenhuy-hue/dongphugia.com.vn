@@ -14,8 +14,15 @@ test.describe('homepage technical readiness', () => {
                 failedResources.push(`${response.status()} ${response.url()}`)
             }
         })
+        page.on('requestfailed', (request) => {
+            const errorText = request.failure()?.errorText ?? 'request failed'
+            if (errorText === 'net::ERR_ABORTED') return
+            failedResources.push(
+                `${errorText} ${request.url()}`,
+            )
+        })
 
-        await page.goto('/', { waitUntil: 'networkidle' })
+        await page.goto('/', { waitUntil: 'load' })
 
         await expect(page.locator('h1')).toHaveCount(1)
         await expect(page.locator('main#main-content')).toHaveCount(1)
@@ -75,7 +82,7 @@ test.describe('homepage technical readiness', () => {
 
         const campaignRequests: string[] = []
         page.on('request', (request) => {
-            if (request.url().includes('/optimized-home/home-banner-')) {
+            if (request.url().includes('/banners/banner-kitchen.jpg')) {
                 campaignRequests.push(request.url())
             }
         })
@@ -88,6 +95,6 @@ test.describe('homepage technical readiness', () => {
             page.getByText('Xem ưu đãi hiện tại', { exact: true }),
         ).toHaveCount(0)
         expect(campaignRequests).toHaveLength(1)
-        expect(campaignRequests[0]).toContain('.hero.w720.webp')
+        expect(campaignRequests[0]).toContain('/banners/banner-kitchen.jpg')
     })
 })

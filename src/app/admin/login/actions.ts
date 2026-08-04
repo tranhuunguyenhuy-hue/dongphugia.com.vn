@@ -6,6 +6,7 @@ import { verifyPassword } from '@/lib/auth/password'
 import { createSession, deleteSession, ADMIN_SESSION_COOKIE, SESSION_MS } from '@/lib/auth/session'
 import { getCurrentUser } from '@/lib/auth/get-current-user'
 import prisma from '@/lib/prisma'
+import { toWriteFreezeActionResult } from '@/lib/write-freeze'
 
 const MAX_LOGIN_ATTEMPTS = 5
 const LOCKOUT_MS = 15 * 60 * 1000 // 15 minutes
@@ -42,7 +43,7 @@ function clearRateLimit(ip: string): void {
 export async function loginAction(
     _prevState: { error?: string } | null,
     formData: FormData
-): Promise<{ error: string }> {
+): Promise<{ error: string; code?: string; statusCode?: number }> {
     const headerStore = await headers()
     const ip = headerStore.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
 
@@ -80,12 +81,25 @@ export async function loginAction(
         return { error: 'Tài khoản đã bị vô hiệu hóa. Vui lòng liên hệ quản trị viên.' }
     }
 
-    // Clear rate limit on success
-    clearRateLimit(ip)
-
     // Create DB session
     const userAgent = headerStore.get('user-agent') ?? undefined
-    const token = await createSession(user.id, ip, userAgent)
+    let token: string
+    try {
+        token = await createSession(user.id, ip, userAgent)
+    } catch (error) {
+        const freezeResult = toWriteFreezeActionResult(error)
+        if (freezeResult) {
+            return {
+                error: freezeResult.error,
+                code: freezeResult.code,
+                statusCode: freezeResult.statusCode,
+            }
+        }
+        throw error
+    }
+
+    // Clear rate limit only after a session was persisted successfully.
+    clearRateLimit(ip)
 
     const cookieStore = await cookies()
     cookieStore.set(ADMIN_SESSION_COOKIE, token, {

@@ -13,7 +13,7 @@ Website thương mại điện tử VLXD dành cho Đông Phú Gia — hỗ tr�
 |-------|-----------|
 | **Frontend** | Next.js 15 + React 19 + TypeScript 5 |
 | **Styling** | Tailwind CSS v4 + shadcn/ui (Radix UI) |
-| **Database** | Supabase PostgreSQL + Prisma ORM |
+| **Database** | PostgreSQL + Prisma ORM |
 | **Storage** | Bunny CDN (`cdn.dongphugia.com.vn`) |
 | **Auth** | HMAC-SHA256 cookie (Admin only) |
 | **Deploy** | Vercel |
@@ -57,10 +57,8 @@ npx prisma generate
 
 | Biến | Mô tả |
 |------|-------|
-| `DATABASE_URL` | Connection string Supabase PostgreSQL |
+| `DATABASE_URL` | PostgreSQL connection string |
 | `DIRECT_URL` | Direct URL cho Prisma migrations |
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anonymous key |
 | `ADMIN_PASSWORD` | Mật khẩu Admin CMS |
 | `ADMIN_JWT_SECRET` | Secret key cho JWT session |
 | `BUNNY_CDN_HOSTNAME` | Hostname Bunny CDN |

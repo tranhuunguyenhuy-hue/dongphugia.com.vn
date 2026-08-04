@@ -10,8 +10,12 @@ const redirectMap = new Map<string, string>([
   ...Object.entries(redirectData),
   ...Object.entries(catalogTaxonomyRedirectData),
 ]);
-const CANONICAL_HOST = "www.dongphugia.com.vn";
-const LEGACY_HOSTS = new Set(["dongphugia.com.vn"]);
+const CANONICAL_HOST = "www.dongphugia.vn";
+const LEGACY_HOSTS = new Set([
+  "dongphugia.vn",
+  "dongphugia.com.vn",
+  "www.dongphugia.com.vn",
+]);
 
 // ============================================================
 // PROXY: Maintenance Mode + Product Slug Redirects
@@ -42,7 +46,7 @@ export function proxy(request: NextRequest) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.hostname = CANONICAL_HOST;
     redirectUrl.protocol = "https:";
-    return NextResponse.redirect(redirectUrl, 301);
+    return NextResponse.redirect(redirectUrl, 308);
   }
 
   // Skip static/admin/api paths

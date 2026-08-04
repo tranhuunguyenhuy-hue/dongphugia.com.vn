@@ -1,4 +1,5 @@
 import { Metadata } from 'next'
+import { connection } from 'next/server'
 import { ProjectsClient } from './projects-client'
 import { getActiveProjects } from '@/lib/public-api-projects'
 
@@ -10,6 +11,8 @@ export const metadata: Metadata = {
 }
 
 export default async function ProjectsPage() {
+    await connection()
+
     const projects = await getActiveProjects()
     return <ProjectsClient projects={projects} />
 }

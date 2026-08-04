@@ -1,11 +1,14 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
+import dynamic from "next/dynamic"
 import { usePathname } from "next/navigation"
 import { MessageCircle, X } from "lucide-react"
-import { ChatboxWidget } from "@/components/ui/chatbox-widget"
 
-
+const ChatboxWidget = dynamic(
+    () => import("@/components/ui/chatbox-widget").then((module) => module.ChatboxWidget),
+    { ssr: false },
+)
 
 // Buttons configuration removed since ChatboxWidget will be the main interaction
 
@@ -48,7 +51,9 @@ export function FloatingContact() {
             aria-label="Liên hệ nhanh"
         >
             {/* Chatbox Widget renders relative to this container */}
-            <ChatboxWidget isOpen={isOpen} onClose={() => setIsOpen(false)} />
+            {isOpen ? (
+                <ChatboxWidget isOpen onClose={() => setIsOpen(false)} />
+            ) : null}
 
             {/* Main Toggle Button */}
             <button

@@ -10,7 +10,7 @@ export default function PricingInfoPage() {
         <article className="prose prose-stone max-w-4xl mx-auto py-16 px-6 sm:px-8 lg:px-12 prose-headings:font-semibold prose-a:text-brand-600">
             <h1>THÔNG TIN VỀ GIÁ</h1>
             <p>
-                Giá các sản phẩm, hàng hóa và dịch vụ được công bố trên website <a href="https://www.dongphugia.com.vn">https://www.dongphugia.com.vn</a> thuộc quyền sở hữu và quản lý của CÔNG TY TNHH ĐÔNG PHÚ GIA.
+                Giá các sản phẩm, hàng hóa và dịch vụ được công bố trên website <a href="https://www.dongphugia.vn">https://www.dongphugia.vn</a> thuộc quyền sở hữu và quản lý của CÔNG TY TNHH ĐÔNG PHÚ GIA.
             </p>
             <p>
                 Đông Phú Gia hoạt động trong lĩnh vực cung cấp vật liệu xây dựng, gạch ốp lát, thiết bị vệ sinh, thiết bị bếp, phụ kiện hoàn thiện công trình và các dịch vụ tư vấn, hỗ trợ liên quan. Do đặc thù sản phẩm đa dạng về thương hiệu, mẫu mã, xuất xứ, kích thước, số lượng và điều kiện giao nhận, giá bán có thể thay đổi theo từng thời điểm và theo nhu cầu cụ thể của khách hàng.
@@ -73,7 +73,7 @@ export default function PricingInfoPage() {
                 <li><strong>Địa chỉ:</strong> 275 Phan Đình Phùng, Phường Xuân Hương - Đà Lạt, Tỉnh Lâm Đồng, Việt Nam</li>
                 <li><strong>Điện thoại/Hotline:</strong> <a href="tel:02633520316">02633520316</a></li>
                 <li><strong>Email:</strong> <a href="mailto:vlxd.dongphu@gmail.com">vlxd.dongphu@gmail.com</a></li>
-                <li><strong>Website:</strong> <a href="https://www.dongphugia.com.vn">https://www.dongphugia.com.vn</a></li>
+                <li><strong>Website:</strong> <a href="https://www.dongphugia.vn">https://www.dongphugia.vn</a></li>
             </ul>
         </article>
     )

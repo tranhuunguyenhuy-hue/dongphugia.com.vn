@@ -1,10 +1,10 @@
-export const DEFAULT_CANONICAL_SITE_URL = "https://www.dongphugia.com.vn"
+export const DEFAULT_CANONICAL_SITE_URL = "https://www.dongphugia.vn"
 
 function normalizeAbsoluteUrl(value: string) {
   const url = new URL(value)
 
-  if (url.hostname === "dongphugia.com.vn" || url.hostname === "www.dongphugia.com.vn") {
-    url.hostname = "www.dongphugia.com.vn"
+  if (["dongphugia.vn", "www.dongphugia.vn", "dongphugia.com.vn", "www.dongphugia.com.vn"].includes(url.hostname)) {
+    url.hostname = "www.dongphugia.vn"
     url.protocol = "https:"
   }
 
@@ -31,4 +31,3 @@ export function canonicalUrl(pathname = "") {
     return pathname
   }
 }
-

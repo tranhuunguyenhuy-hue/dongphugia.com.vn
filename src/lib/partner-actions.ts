@@ -4,6 +4,8 @@ import prisma from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { slugify } from '@/lib/utils'
+import { requirePermission } from '@/lib/auth/get-current-user'
+import { toWriteFreezeActionResult } from '@/lib/write-freeze'
 
 const PartnerSchema = z.object({
     name: z.string().min(1, 'Tên không được để trống'),
@@ -17,59 +19,83 @@ const PartnerSchema = z.object({
 })
 
 export async function createPartner(data: z.infer<typeof PartnerSchema>) {
+    await requirePermission('blog:write')
+
     const parsed = PartnerSchema.safeParse(data)
     if (!parsed.success) {
         return { errors: parsed.error.flatten().fieldErrors, message: 'Dữ liệu không hợp lệ' }
     }
-    const slug = slugify(parsed.data.name) + '-' + Date.now()
-    await prisma.partners.create({
-        data: {
-            name: parsed.data.name,
-            slug,
-            logo_url: parsed.data.logo_url ?? null,
-            description: parsed.data.description ?? null,
-            tier: parsed.data.tier ?? 'Vàng',
-            gradient_class: parsed.data.gradient_class ?? null,
-            link_url: parsed.data.link_url ?? null,
-            is_active: parsed.data.is_active ?? true,
-            sort_order: parsed.data.sort_order ?? 0,
-        },
-    })
-    revalidatePath('/admin/doi-tac')
-    revalidatePath('/doi-tac')
-    revalidatePath('/')
-    return { success: true }
+    try {
+        const slug = slugify(parsed.data.name) + '-' + Date.now()
+        await prisma.partners.create({
+            data: {
+                name: parsed.data.name,
+                slug,
+                logo_url: parsed.data.logo_url ?? null,
+                description: parsed.data.description ?? null,
+                tier: parsed.data.tier ?? 'Vàng',
+                gradient_class: parsed.data.gradient_class ?? null,
+                link_url: parsed.data.link_url ?? null,
+                is_active: parsed.data.is_active ?? true,
+                sort_order: parsed.data.sort_order ?? 0,
+            },
+        })
+        revalidatePath('/admin/doi-tac')
+        revalidatePath('/doi-tac')
+        revalidatePath('/')
+        return { success: true }
+    } catch (error) {
+        const freezeResult = toWriteFreezeActionResult(error)
+        if (freezeResult) return freezeResult
+        throw error
+    }
 }
 
 export async function updatePartner(id: number, data: z.infer<typeof PartnerSchema>) {
+    await requirePermission('blog:write')
+
     const parsed = PartnerSchema.safeParse(data)
     if (!parsed.success) {
         return { errors: parsed.error.flatten().fieldErrors, message: 'Dữ liệu không hợp lệ' }
     }
-    await prisma.partners.update({
-        where: { id },
-        data: {
-            name: parsed.data.name,
-            logo_url: parsed.data.logo_url ?? null,
-            description: parsed.data.description ?? null,
-            tier: parsed.data.tier ?? 'Vàng',
-            gradient_class: parsed.data.gradient_class ?? null,
-            link_url: parsed.data.link_url ?? null,
-            is_active: parsed.data.is_active ?? true,
-            sort_order: parsed.data.sort_order ?? 0,
-            updated_at: new Date(),
-        },
-    })
-    revalidatePath('/admin/doi-tac')
-    revalidatePath('/doi-tac')
-    revalidatePath('/')
-    return { success: true }
+    try {
+        await prisma.partners.update({
+            where: { id },
+            data: {
+                name: parsed.data.name,
+                logo_url: parsed.data.logo_url ?? null,
+                description: parsed.data.description ?? null,
+                tier: parsed.data.tier ?? 'Vàng',
+                gradient_class: parsed.data.gradient_class ?? null,
+                link_url: parsed.data.link_url ?? null,
+                is_active: parsed.data.is_active ?? true,
+                sort_order: parsed.data.sort_order ?? 0,
+                updated_at: new Date(),
+            },
+        })
+        revalidatePath('/admin/doi-tac')
+        revalidatePath('/doi-tac')
+        revalidatePath('/')
+        return { success: true }
+    } catch (error) {
+        const freezeResult = toWriteFreezeActionResult(error)
+        if (freezeResult) return freezeResult
+        throw error
+    }
 }
 
 export async function deletePartner(id: number) {
-    await prisma.partners.delete({ where: { id } })
-    revalidatePath('/admin/doi-tac')
-    revalidatePath('/doi-tac')
-    revalidatePath('/')
-    return { success: true }
+    await requirePermission('blog:write')
+
+    try {
+        await prisma.partners.delete({ where: { id } })
+        revalidatePath('/admin/doi-tac')
+        revalidatePath('/doi-tac')
+        revalidatePath('/')
+        return { success: true }
+    } catch (error) {
+        const freezeResult = toWriteFreezeActionResult(error)
+        if (freezeResult) return freezeResult
+        throw error
+    }
 }

@@ -4,6 +4,7 @@ import { getCanonicalSiteUrl } from '@/lib/site';
 import { buildPublicProductVisibilityWhere } from '@/lib/public-product-visibility';
 
 export const revalidate = 86400; // 24 hours
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
     const baseUrl = getCanonicalSiteUrl();

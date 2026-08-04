@@ -176,12 +176,13 @@ export default async function VatLieuNuocSubPage({ params, searchParams }: PageP
                     {products.length > 0 ? (
                         <>
                             <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
-                                {products.map(product => (
+                                {products.map((product, index) => (
                                     <ProductCard
                                         key={product.id}
                                         product={{ ...product, subcategories: product.subcategories, brands: product.brands }}
                                         basePath={BASE_PATH}
                                         patternSlug={product.subcategories?.slug ?? "san-pham"}
+                                        priority={index === 0}
                                         href={product.url}
                                     />
                                 ))}

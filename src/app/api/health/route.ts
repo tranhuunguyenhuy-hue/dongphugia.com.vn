@@ -5,8 +5,6 @@ export const dynamic = 'force-dynamic'
 type DatabaseHealth =
     | {
         ok: true
-        products: number
-        categories: number
         queryTime: number
     }
     | {
@@ -20,12 +18,10 @@ export async function GET() {
     let dbStatus: DatabaseHealth
 
     try {
-        const productCount = await prisma.products.count({ where: { is_active: true } })
-        const categoryCount = await prisma.categories.count()
+        await prisma.products.count({ where: { is_active: true } })
+        await prisma.categories.count()
         dbStatus = {
             ok: true,
-            products: productCount,
-            categories: categoryCount,
             queryTime: Date.now() - start,
         }
     } catch (error: unknown) {
@@ -46,10 +42,12 @@ export async function GET() {
         }
     }
 
-    return Response.json({
-        ok: dbStatus.ok,
-        time: Date.now() - start,
-        region: process.env.VERCEL_REGION,
-        db: dbStatus,
-    })
+    return Response.json(
+        {
+            ok: dbStatus.ok,
+            time: Date.now() - start,
+            db: dbStatus,
+        },
+        { status: dbStatus.ok ? 200 : 503 },
+    )
 }

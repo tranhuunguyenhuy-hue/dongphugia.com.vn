@@ -3,6 +3,28 @@ import { describe, expect, it } from 'vitest'
 import { ProductCard } from '@/components/ui/product-card'
 
 describe('ProductCard', () => {
+    it('eagerly loads the first visible product image when priority is enabled', () => {
+        const { container } = render(
+            <ProductCard
+                priority
+                product={{
+                    name: 'Gạch ốp lát mẫu',
+                    slug: 'gach-op-lat-mau',
+                    price: 100000,
+                    image_main_url: 'https://cdn.dongphugia.com.vn/optimized-home/gach-mau.jpg',
+                    stock_status: 'in_stock',
+                    is_featured: false,
+                    is_promotion: false,
+                    variant_options: [],
+                }}
+            />,
+        )
+
+        const image = container.querySelector('img')
+        expect(image).toHaveAttribute('loading', 'eager')
+        expect(image).toHaveAttribute('fetchpriority', 'high')
+    })
+
     it('prefers variant_options color over legacy product.colors on listing cards', () => {
         render(
             <ProductCard

@@ -21,4 +21,4 @@ Disallow: /_next/
 Disallow: /studio/
 
 # Sitemap index
-Sitemap: https://dongphugia.com.vn/sitemap.xml
+Sitemap: https://www.dongphugia.vn/sitemap.xml

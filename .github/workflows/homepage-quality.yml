@@ -9,9 +9,26 @@ jobs:
   homepage-readiness:
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:16.10-bookworm@sha256:38471f330eb885e04de130b768d6db4e10469e2311879c7e5c699f6d2d8a1c74
+        env:
+          POSTGRES_DB: dpg_homepage_test
+          POSTGRES_USER: dpg_homepage_test
+          POSTGRES_PASSWORD: dpg_homepage_test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U dpg_homepage_test -d dpg_homepage_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
     env:
-      DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      DIRECT_URL: ${{ secrets.DIRECT_URL }}
+      POSTGRES_DB: dpg_homepage_test
+      POSTGRES_USER: dpg_homepage_test
+      POSTGRES_PASSWORD: dpg_homepage_test_password
+      DATABASE_URL: postgresql://dpg_homepage_test:dpg_homepage_test_password@127.0.0.1:5432/dpg_homepage_test
+      DIRECT_URL: postgresql://dpg_homepage_test:dpg_homepage_test_password@127.0.0.1:5432/dpg_homepage_test
       NEXT_PUBLIC_SITE_URL: http://localhost:3000
       BUNNY_CDN_HOSTNAME: cdn.dongphugia.com.vn
 
@@ -23,6 +40,65 @@ jobs:
           node-version: 22
           cache: npm
 
+      - name: Bootstrap ephemeral homepage database
+        shell: bash
+        env:
+          POSTGRES_NETWORK: ${{ job.services.postgres.network }}
+        run: |
+          set -euo pipefail
+          docker run --rm --network "$POSTGRES_NETWORK" \
+            -e PGPASSWORD=dpg_homepage_test_password \
+            -v "$PWD/docs/deploy/staging-db-bootstrap:/bootstrap:ro" \
+            postgres:16.10-bookworm@sha256:38471f330eb885e04de130b768d6db4e10469e2311879c7e5c699f6d2d8a1c74 \
+            psql --set=ON_ERROR_STOP=1 --single-transaction \
+              -h postgres -U dpg_homepage_test -d dpg_homepage_test \
+              --file=/bootstrap/001_schema_from_prisma.sql \
+              --file=/bootstrap/002_seed_synthetic_stg_demo.sql
+
+          docker run --rm --network "$POSTGRES_NETWORK" \
+            -e PGPASSWORD=dpg_homepage_test_password \
+            postgres:16.10-bookworm@sha256:38471f330eb885e04de130b768d6db4e10469e2311879c7e5c699f6d2d8a1c74 \
+            psql --set=ON_ERROR_STOP=1 \
+              -h postgres -U dpg_homepage_test -d dpg_homepage_test \
+              --command="INSERT INTO banners (title, image_url, is_active, sort_order) VALUES ('[STG-DEMO] Banner 1', '/banners/banner-kitchen.hero.w1600.webp', true, 10), ('[STG-DEMO] Banner 2', '/banners/banner-kitchen.hero.w1600.webp', true, 20), ('[STG-DEMO] Banner 3', '/banners/banner-kitchen.hero.w1600.webp', true, 30);"
+
+          docker run --rm --network "$POSTGRES_NETWORK" \
+            -e PGPASSWORD=dpg_homepage_test_password \
+            postgres:16.10-bookworm@sha256:38471f330eb885e04de130b768d6db4e10469e2311879c7e5c699f6d2d8a1c74 \
+            psql --set=ON_ERROR_STOP=1 \
+              -h postgres -U dpg_homepage_test -d dpg_homepage_test \
+              --command="
+                UPDATE categories
+                SET slug = CASE slug
+                  WHEN 'stg-demo-thiet-bi-ve-sinh' THEN 'thiet-bi-ve-sinh'
+                  WHEN 'stg-demo-thiet-bi-bep' THEN 'thiet-bi-bep'
+                  ELSE slug
+                END
+                WHERE slug IN ('stg-demo-thiet-bi-ve-sinh', 'stg-demo-thiet-bi-bep');
+
+                UPDATE subcategories
+                SET slug = CASE slug
+                  WHEN 'stg-demo-bon-cau' THEN 'bon-cau'
+                  WHEN 'stg-demo-sen-tam' THEN 'sen-tam'
+                  WHEN 'stg-demo-voi-rua-chen' THEN 'voi-rua-chen'
+                  ELSE slug
+                END
+                WHERE slug IN ('stg-demo-bon-cau', 'stg-demo-sen-tam', 'stg-demo-voi-rua-chen');
+
+                UPDATE product_types
+                SET slug = CASE slug
+                  WHEN 'stg-demo-bon-cau-mot-khoi' THEN 'bon-cau-mot-khoi'
+                  WHEN 'stg-demo-sen-tam-cay' THEN 'sen-tam-cay'
+                  WHEN 'stg-demo-voi-bep' THEN 'voi-bep'
+                  ELSE slug
+                END
+                WHERE slug IN ('stg-demo-bon-cau-mot-khoi', 'stg-demo-sen-tam-cay', 'stg-demo-voi-bep');
+
+                UPDATE products
+                SET image_main_url = '/banners/banner-kitchen.jpg'
+                WHERE sku LIKE 'STG-DEMO-%';
+              "
+
       - run: npm ci
 
       - run: npx playwright install --with-deps chromium
@@ -31,4 +107,26 @@ jobs:
         run: npx tsc --noEmit
 
       - name: Homepage readiness
-        run: npm run quality:homepage
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run test:media
+          npm run build
+          npm run prepare:standalone-assets
+          npm run test:homepage
+
+      - name: Lighthouse diagnostics (post-launch performance)
+        continue-on-error: true
+        run: npm run perf:lighthouse
+
+      - name: Upload homepage performance diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: homepage-performance-${{ github.sha }}
+          path: |
+            scripts/output/lighthouse
+            *.trace.json
+            *.devtoolslog.json
+          if-no-files-found: warn
+          retention-days: 7

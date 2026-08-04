@@ -1,0 +1,51 @@
+name: Production performance budget
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 2 * * 1'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-performance
+  cancel-in-progress: true
+
+jobs:
+  lighthouse-production:
+    name: Lighthouse production budget
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact workflow revision
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Verify monitoring package safety
+        run: npm run monitor:verify-package
+
+      - name: Run sanitizer safety harness
+        run: npm run monitor:test-sanitizer
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run production Lighthouse budget
+        env:
+          PRODUCTION_BASE_URL: https://www.dongphugia.vn
+        run: npm run perf:lighthouse:production
+
+      - name: Upload sanitized Lighthouse evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-production-${{ github.run_id }}
+          path: scripts/output/lighthouse-production
+          if-no-files-found: warn
+          retention-days: 14

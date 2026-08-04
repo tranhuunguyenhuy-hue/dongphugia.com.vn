@@ -3,6 +3,7 @@
 import prisma from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import { requirePermission } from '@/lib/auth/get-current-user'
+import { toWriteFreezeActionResult } from '@/lib/write-freeze'
 
 export async function saveCustomer(data: {
     id?: number
@@ -55,6 +56,8 @@ export async function saveCustomer(data: {
             return { success: true, id: created.id }
         }
     } catch (error) {
+        const freezeResult = toWriteFreezeActionResult(error)
+        if (freezeResult) return freezeResult
         console.error('Error saving customer:', error)
         return { success: false, error: 'Đã có lỗi xảy ra khi lưu khách hàng' }
     }
