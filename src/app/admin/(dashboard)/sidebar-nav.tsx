@@ -82,6 +82,7 @@ const getNavConfig = (role: SessionUser['role'], pendingQuotes: number): NavGrou
                     icon: Package2,
                     children: [
                         { label: "Tất cả sản phẩm", href: "/admin/products", permission: "products:read" },
+                        { label: "Duyệt nội dung", href: "/admin/products/content-review", permission: "products:read" },
                         { label: "Danh mục", href: "/admin/categories", permission: "categories:read" },
                     ],
                 },
