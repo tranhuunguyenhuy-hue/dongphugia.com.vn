@@ -1,10 +1,11 @@
-# Đông Phú Gia — Agent Reference (Single Source of Truth)
+# Đông Phú Gia — Application reference
 
-**Updated:** 04/06/2026 | Live: dongphugia.com.vn | Deploy: Vercel (auto khi push `main`)
+**Updated:** 04/08/2026 | Live: www.dongphugia.vn | Deploy: AWS EC2/Coolify
 
-> ⚠️ **TEAM CHANGE (04/06/2026):** Antigravity đã ngừng hoạt động. Xem section "Team & Workflow" bên dưới.
+> `AGENTS.md` ở root chứa operating rules bắt buộc. File này giữ conventions
+> ứng dụng và gotchas chi tiết.
 
-> **Mọi AI agent đọc file này trước tiên.** CLAUDE.md và docs/AGENT.md là alias trỏ về đây.
+> AI agent đọc `AGENTS.md` ở root trước, sau đó đọc file này khi làm application work.
 
 ---
 
@@ -20,10 +21,10 @@ Contact: 094 9349 949 · vlxd.dongphu@gmail.com
 ## Tech Stack
 
 ```
-Next.js 16.2.3 App Router · React 19.2.3 · TypeScript 5.9.3
+Next.js App Router · React 19 · TypeScript
 Tailwind CSS v4 — @theme directive in globals.css (NO tailwind.config.js)
-shadcn/ui (Radix) · Prisma 5.22.0 · Supabase PostgreSQL · Zustand (cart)
-Bunny CDN: cdn.dongphugia.com.vn · Vercel deploy
+shadcn/ui (Radix) · Prisma · AWS PostgreSQL · Zustand (cart)
+Bunny CDN compatibility · AWS EC2/Coolify immutable ARM64 deploy
 ```
 
 ---
@@ -32,33 +33,25 @@ Bunny CDN: cdn.dongphugia.com.vn · Vercel deploy
 
 | Role | Who | Scope |
 |------|-----|-------|
-| PM | Nguyen Huy | Requirements, approve, deploy Vercel |
-| Tech Lead + Dev | Claude (Cowork) | Spec, implement, review, báo deploy |
+| PM | Nguyen Huy | Goal, scope, acceptance và production approval |
+| Engineering | OpenAI Codex | Plan, implement, test, PR, closeout |
 
-> ⚠️ **TUẦN 04/06/2026:** Antigravity ngừng hoạt động. Claude implement trực tiếp vào repo.
-> Tuần tới: OpenAI Codex sẽ được thêm vào làm Dev.
-
-**Per-task flow (Claude implement):**
-1. PM → mô tả yêu cầu trong Cowork chat
-2. Claude → hỏi nếu thiếu thông tin (tối đa 1 câu)
-3. Claude → tạo Linear issue với spec đầy đủ
-4. Claude → implement trực tiếp vào repo, push branch
-5. Claude → tự review, comment LGTM trên Linear
-6. Claude → báo PM "Ready for deploy" với tóm tắt ngắn
-7. PM → deploy lên Vercel (CHỈ PM deploy)
+Quy trình đầy đủ: [`docs/WORKFLOW-WITH-CODEX.md`](WORKFLOW-WITH-CODEX.md).
+Mỗi task dùng branch `codex/*`, PR và protected `main`. Merge Git không đồng
+nghĩa deploy production.
 
 ---
 
-## Session Start Checklist (Antigravity)
+## Session Start Checklist
 
 ```
-□ 1. Đọc file này (docs/AGENTS.md)
-□ 2. Đọc PROJECT-STATUS.md — trạng thái hiện tại
-□ 3. git pull origin main
-□ 4. npm install
-□ 5. npx tsc --noEmit → PHẢI pass. Nếu fail: comment Linear, đợi Tech Lead
-□ 6. Đọc Linear issue đầy đủ (description + checklist)
-□ 7. Spec không rõ → comment hỏi Tech Lead, đợi reply trước khi code
+□ 1. pwd phải là /Users/m-ac/Projects/dongphugia
+□ 2. Đọc AGENTS.md ở root và docs/WORKFLOW-WITH-CODEX.md
+□ 3. git status --short --branch
+□ 4. git switch main && git pull --ff-only origin main
+□ 5. Tạo branch codex/<task-name>; không commit trực tiếp main
+□ 6. npm ci khi dependencies chưa sẵn sàng
+□ 7. npm run lint && npm run typecheck && npm test trước PR
 ```
 
 ---
@@ -112,7 +105,9 @@ admin/{entity}/
 
 **Server Actions:** NO `redirect()` trong programmatic call → return `{ success: true }`. `redirect()` chỉ OK trong login/logout. Always `revalidateTag()` sau mutation.
 
-**Database:** NO `prisma migrate`. Schema changes → SQL trực tiếp trên Supabase Dashboard → `npx prisma db pull` → `npx prisma generate`.
+**Database:** AWS PostgreSQL là production source duy nhất. Không chạy migration
+hoặc schema/data write trên production nếu chưa có PM window, backup, rollback
+và migration plan được duyệt. Sau schema sync phải chạy `npx prisma generate`.
 
 **Images:** Bunny CDN qua `/api/upload-image`. NEVER `public/uploads/`.
 
@@ -182,11 +177,11 @@ rm -rf .next && npm run dev
 
 ```bash
 # Database
-DATABASE_URL=     # Supabase pooled (pgbouncer=true)
-DIRECT_URL=       # Supabase direct (cho prisma db pull)
+DATABASE_URL=     # PostgreSQL runtime URL; never print or commit
+DIRECT_URL=       # Direct administrative URL; runtime secret only
 
 # Site
-NEXT_PUBLIC_SITE_URL=https://dongphugia.com.vn
+NEXT_PUBLIC_SITE_URL=https://www.dongphugia.vn
 NEXT_PUBLIC_GTM_ID=
 
 # Bunny CDN
@@ -219,13 +214,13 @@ MAINTENANCE_MODE=false
 
 | Rule | Nếu vi phạm |
 |------|-------------|
-| Chỉ PM trigger deploy Vercel | Block ngay |
+| Production mutation cần PM window và explicit approval | Block ngay |
+| Không commit trực tiếp hoặc force-push `main` | Block ngay |
 | `npx tsc --noEmit` phải pass trước commit | Block ngay |
 | Không xóa bảng/column DB khi chưa hỏi Tech Lead | Block ngay |
 | Không thay đổi auth flow khi chưa hỏi Tech Lead | Block ngay |
 | Không thêm major npm dependency khi chưa hỏi Tech Lead | Block ngay |
-| Antigravity mark Done ONLY sau khi Tech Lead comment LGTM | Block ngay |
-| Tech Lead review mọi change — không có bypass | Block ngay |
+| Required CI và protected `main` không được bypass | Block ngay |
 
 ---
 
@@ -260,7 +255,7 @@ MAINTENANCE_MODE=false
 | `NEXT_REDIRECT` trong server action | Return `{ success: true }`, client `router.push()` |
 | Prisma stale types sau schema change | `npx prisma generate` + restart dev |
 | `params` async error | `const { slug } = await params` |
-| Build WASM error trên Vercel | Thêm đủ back-relations vào schema |
+| Build WASM/Prisma error | Thêm đủ back-relations vào schema và regenerate client |
 | Ảnh không hiển thị | Thêm Bunny CDN vào `images.remotePatterns` |
 | Title trùng brand name | Xóa `\| Đông Phú Gia` khỏi page title string |
 | Branch diverge nhiều file | Cherry-pick thủ công từng file cần thiết, không merge nguyên branch |
@@ -273,5 +268,5 @@ MAINTENANCE_MODE=false
 
 ---
 
-> **Tech Lead:** Cập nhật file này sau mỗi convention mới hoặc gotcha mới phát hiện.
-> **Antigravity:** Đây là file duy nhất cần đọc cho context. Không cần đọc CLAUDE.md hay docs/AGENT.md (chúng trỏ về đây).
+> Cập nhật file này sau mỗi convention hoặc gotcha mới. Operating workflow nằm
+> trong `AGENTS.md` ở root và `docs/WORKFLOW-WITH-CODEX.md`.
