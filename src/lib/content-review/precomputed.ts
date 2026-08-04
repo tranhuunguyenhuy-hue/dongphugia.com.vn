@@ -18,6 +18,7 @@ export const PRECOMPUTED_PACKAGE_SOURCE = 'hita_cleanup_v1' as const
 export interface PrecomputedMediaInput {
     kind: 'main' | 'gallery' | 'embedded'
     url: string
+    sourceId: string
 }
 
 export interface PrecomputedProposalRecord {
@@ -27,11 +28,19 @@ export interface PrecomputedProposalRecord {
     generatedHtml: string
     media: PrecomputedMediaInput[]
     provenance: {
-        source: 'approved_read_only_fact_sheet'
+        source: 'aws_postgresql_read_only'
         inputHash: string
         beforeDescriptionHash: string
         afterDescriptionHash: string
         factsHash: string
+        sourceRecordHash: string
+        mediaInventoryHash: string
+    }
+    actualInventory: {
+        mainCount: number
+        galleryCount: number
+        embeddedCount: number
+        totalCount: number
     }
 }
 
@@ -39,6 +48,7 @@ export interface PrecomputedProposalPackage {
     schemaVersion: typeof PRECOMPUTED_PACKAGE_SCHEMA_VERSION
     source: typeof PRECOMPUTED_PACKAGE_SOURCE
     manifestChecksum: typeof LEO_489_PILOT_MANIFEST_CHECKSUM
+    inventoryExportHash: string
     manifestEntryHash: string
     records: PrecomputedProposalRecord[]
     packageHash: string
@@ -55,6 +65,7 @@ function packageHashPayload(value: Omit<PrecomputedProposalPackage, 'packageHash
         schemaVersion: value.schemaVersion,
         source: value.source,
         manifestChecksum: value.manifestChecksum,
+        inventoryExportHash: value.inventoryExportHash,
         manifestEntryHash: value.manifestEntryHash,
         records: value.records,
     }
@@ -71,10 +82,16 @@ function assertSafeGeneratedHtml(html: string, requiredFacts: string[]): void {
     if (/<\/?(script|iframe|object|embed|form)\b|\bon[a-z]+\s*=|javascript\s*:/i.test(html)) {
         throw new Error('Precomputed after HTML contains executable or blocked markup')
     }
-    if (/hita/i.test(html)) throw new Error('Precomputed after HTML contains Hita branding or a Hita URL')
+    const htmlWithoutAllowedHitaImageSources = html.replace(/(<img\b[^>]*\bsrc=")[^"]*hita[^\"]*("[^>]*>)/gi, '$1$2')
+    if (/hita/i.test(htmlWithoutAllowedHitaImageSources)) throw new Error('Precomputed after HTML contains Hita branding or a Hita URL')
     const lowerHtml = html.toLocaleLowerCase()
     for (const fact of requiredFacts) {
-        if (!fact.trim() || !lowerHtml.includes(fact.toLocaleLowerCase())) {
+        const escapedFact = fact
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+        if (!fact.trim() || (!lowerHtml.includes(fact.toLocaleLowerCase()) && !lowerHtml.includes(escapedFact.toLocaleLowerCase()))) {
             throw new Error(`Precomputed after HTML is missing required fact: ${fact}`)
         }
     }
@@ -84,11 +101,24 @@ function assertSafeGeneratedHtml(html: string, requiredFacts: string[]): void {
 function assertMediaInput(media: PrecomputedMediaInput[]): void {
     const seen = new Set<string>()
     for (const item of media) {
-        if (seen.has(`${item.kind}:${item.url}`)) throw new Error('Precomputed media contains a duplicate')
-        seen.add(`${item.kind}:${item.url}`)
+        if (seen.has(`${item.kind}:${item.sourceId}:${item.url}`)) throw new Error('Precomputed media contains a duplicate')
+        seen.add(`${item.kind}:${item.sourceId}:${item.url}`)
         const validHost = isBunnyAsset(item.url) || isHitaHostedAsset(item.url)
         if (!validHost) throw new Error('Precomputed media must be an existing Bunny or Hita-hosted URL')
+        if (/leo-489-redacted|offline:|placeholder|example\.(com|org)/i.test(item.url)) {
+            throw new Error('Precomputed media contains a placeholder URL')
+        }
     }
+}
+
+function structuredFactValues(input: ProductContentInput): string[] {
+    return (input.structuredFacts || []).flatMap(fact => [
+        fact.valueText,
+        fact.valueNumber,
+        fact.rawValue,
+        typeof fact.valueJson === 'string' || typeof fact.valueJson === 'number' ? String(fact.valueJson) : undefined,
+        fact.optionValue,
+    ]).filter((value): value is string => Boolean(value?.trim()))
 }
 
 function expectedMediaDecision(media: PrecomputedMediaInput) {
@@ -103,9 +133,21 @@ function validateRecord(record: PrecomputedProposalRecord, manifest: PilotManife
     if (record.input.id !== manifest.id || record.input.sku !== manifest.sku) {
         throw new Error(`Precomputed input identity does not match manifest for product ${manifest.id}`)
     }
-    if (!record.input.name || !record.input.sourceUrl) throw new Error(`Missing input identity for product ${manifest.id}`)
+    if (!record.input.name || !record.input.sourceUrl || /^offline:|leo-489-redacted/i.test(record.input.sourceUrl)) {
+        throw new Error(`Missing actual input identity for product ${manifest.id}`)
+    }
+    if (!record.input.brand || record.input.brand.slug !== manifest.brandSlug) {
+        throw new Error(`Actual brand does not match manifest for product ${manifest.id}`)
+    }
+    if (!record.input.category?.slug) throw new Error(`Actual category is missing for product ${manifest.id}`)
     if (!record.requiredFacts.includes(record.input.sku)) throw new Error(`SKU fact is not declared for product ${manifest.id}`)
-    assertSafeGeneratedHtml(record.generatedHtml, record.requiredFacts)
+    if (!record.provenance.sourceRecordHash || !record.provenance.mediaInventoryHash) {
+        throw new Error(`Actual source provenance is missing for product ${manifest.id}`)
+    }
+    if (record.generatedHtml.match(/<p\b/gi)?.length === 1 && !record.generatedHtml.includes('<ul')) {
+        throw new Error(`Precomputed after HTML is too synthetic for product ${manifest.id}`)
+    }
+    assertSafeGeneratedHtml(record.generatedHtml, [...record.requiredFacts, ...structuredFactValues(record.input)])
     assertMediaInput(record.media)
     const imageInput = dedupeReviewImages([
         ...(record.input.imageMainUrl ? [createReviewImage('main', record.input.imageMainUrl)] : []),
@@ -116,7 +158,7 @@ function validateRecord(record: PrecomputedProposalRecord, manifest: PilotManife
     const beforeDescriptionHash = hashObject(record.input.descriptionHtml)
     const afterDescriptionHash = hashObject(record.generatedHtml)
     const factsHash = hashObject(record.requiredFacts)
-    if (record.provenance.source !== 'approved_read_only_fact_sheet'
+    if (record.provenance.source !== 'aws_postgresql_read_only'
         || record.provenance.inputHash !== inputHash
         || record.provenance.beforeDescriptionHash !== beforeDescriptionHash
         || record.provenance.afterDescriptionHash !== afterDescriptionHash
@@ -136,10 +178,24 @@ function validateRecord(record: PrecomputedProposalRecord, manifest: PilotManife
         && !record.media.some(media => isHitaHostedAsset(media.url))) {
         throw new Error(`HITA_HOSTED manifest entry is missing Hita-hosted media evidence for product ${manifest.id}`)
     }
-    const inputMediaUrls = new Set(imageInput.map(image => image.normalizedUrl))
-    const recordMediaUrls = new Set(record.media.map(media => createReviewImage(media.kind, media.url).normalizedUrl))
-    if (inputMediaUrls.size !== recordMediaUrls.size || [...inputMediaUrls].some(url => !recordMediaUrls.has(url))) {
+    const expectedMedia = [
+        ...(record.input.imageMainUrl ? [{ kind: 'main' as const, url: record.input.imageMainUrl, sourceId: 'main' }] : []),
+        ...(record.input.galleryImages || []).map(image => ({ kind: 'gallery' as const, url: image.url, sourceId: `gallery:${image.id ?? image.sortOrder ?? image.url}` })),
+        ...extractEmbeddedImageUrls(record.input.descriptionHtml).map((url, index) => ({ kind: 'embedded' as const, url, sourceId: `embedded:${index}` })),
+    ]
+    const expectedMediaKeys = new Set(expectedMedia.map(media => `${media.kind}:${media.sourceId}:${createReviewImage(media.kind, media.url).normalizedUrl}`))
+    const recordMediaKeys = new Set(record.media.map(media => `${media.kind}:${media.sourceId}:${createReviewImage(media.kind, media.url).normalizedUrl}`))
+    if (expectedMediaKeys.size !== recordMediaKeys.size || [...expectedMediaKeys].some(key => !recordMediaKeys.has(key))) {
         throw new Error(`Media provenance does not match the read-only input for product ${manifest.id}`)
+    }
+    const derivedCounts = {
+        mainCount: expectedMedia.filter(image => image.kind === 'main').length,
+        galleryCount: expectedMedia.filter(image => image.kind === 'gallery').length,
+        embeddedCount: expectedMedia.filter(image => image.kind === 'embedded').length,
+        totalCount: expectedMedia.length,
+    }
+    if (JSON.stringify(record.actualInventory) !== JSON.stringify(derivedCounts)) {
+        throw new Error(`Actual media inventory counts do not match input for product ${manifest.id}`)
     }
     if (imageInput.some(image => image.policy === 'HITA_HOSTED_REVIEW' && image.decision !== 'HUMAN_REVIEW')) {
         throw new Error(`Hita-hosted input media must remain HUMAN_REVIEW for product ${manifest.id}`)
@@ -154,7 +210,8 @@ export function validatePrecomputedPackage(value: unknown): PrecomputedProposalP
         || packageValue.manifestChecksum !== LEO_489_PILOT_MANIFEST_CHECKSUM) {
         throw new Error('Unsupported precomputed proposal package')
     }
-    validatePilotManifest(packageValue.records?.map(record => record.manifest))
+    if (!Array.isArray(packageValue.records)) throw new Error('Precomputed package records are missing')
+    validatePilotManifest(packageValue.records.map(record => record.manifest))
     if (packageValue.manifestEntryHash !== pilotManifestEntryHash()) {
         throw new Error('Precomputed package manifest entry hash mismatch')
     }
@@ -214,7 +271,7 @@ export async function validateAndGeneratePrecomputedProposals(value: unknown): P
             || proposal.generation.provenance?.afterHash !== record.provenance.afterDescriptionHash) {
             throw new Error(`Generated proposal identity/provenance mismatch for product ${record.manifest.id}`)
         }
-        assertSafeGeneratedHtml(proposal.after.descriptionHtml, record.requiredFacts)
+        assertSafeGeneratedHtml(proposal.after.descriptionHtml, [...record.requiredFacts, ...structuredFactValues(record.input)])
         for (const image of proposal.after.images) {
             if (image.policy === 'HITA_HOSTED_REVIEW' && image.decision !== 'HUMAN_REVIEW') {
                 throw new Error(`Generated Hita-hosted media is not gated for product ${record.manifest.id}`)

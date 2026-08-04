@@ -99,9 +99,31 @@ export interface ProductContentInput {
     descriptionHtml: string
     imageMainUrl?: string | null
     galleryImages?: Array<{
+        id?: number
         url: string
         altText?: string | null
+        imageType?: string | null
+        sortOrder?: number
     }>
+    brand?: { id: number; name: string; slug: string } | null
+    category?: { id: number; name: string; slug: string } | null
+    subcategory?: { id: number; name: string; slug: string } | null
+    structuredFacts?: Array<{
+        definitionKey?: string | null
+        definitionLabel?: string | null
+        valueText?: string | null
+        valueNumber?: string | null
+        valueJson?: unknown
+        rawKey?: string | null
+        rawValue?: string | null
+        source?: string | null
+        confidence?: string | null
+        optionValue?: string | null
+    }>
+    features?: string | null
+    specs?: unknown
+    productType?: string | null
+    productSubType?: string | null
 }
 
 export interface SerializedReviewQueueItem {
