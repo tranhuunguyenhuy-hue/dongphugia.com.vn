@@ -1,7 +1,7 @@
 # Đông Phú Gia — Website Vật Liệu Xây Dựng
 
-> **Website:** [dongphugia.com.vn](https://dongphugia.com.vn)  
-> **Admin:** [dongphugia.com.vn/admin](https://dongphugia.com.vn/admin)
+> **Website:** [www.dongphugia.vn](https://www.dongphugia.vn)
+> **Admin:** [www.dongphugia.vn/admin](https://www.dongphugia.vn/admin)
 
 Website thương mại điện tử VLXD dành cho Đông Phú Gia — hỗ trợ catalogue sản phẩm, hệ thống báo giá, blog tin tức và quản trị nội dung toàn diện.
 
@@ -11,12 +11,12 @@ Website thương mại điện tử VLXD dành cho Đông Phú Gia — hỗ tr�
 
 | Layer | Công nghệ |
 |-------|-----------|
-| **Frontend** | Next.js 15 + React 19 + TypeScript 5 |
+| **Frontend** | Next.js 16 + React 19 + TypeScript 5 |
 | **Styling** | Tailwind CSS v4 + shadcn/ui (Radix UI) |
-| **Database** | PostgreSQL + Prisma ORM |
+| **Database** | AWS PostgreSQL + Prisma ORM |
 | **Storage** | Bunny CDN (`cdn.dongphugia.com.vn`) |
 | **Auth** | HMAC-SHA256 cookie (Admin only) |
-| **Deploy** | Vercel |
+| **Deploy** | AWS EC2/Coolify, immutable ARM64 image |
 
 ---
 
@@ -43,7 +43,7 @@ Website thương mại điện tử VLXD dành cho Đông Phú Gia — hỗ tr�
 
 ```bash
 # 1. Cài đặt dependencies
-npm install
+npm ci
 
 # 2. Cấu hình môi trường
 cp .env.example .env
@@ -94,7 +94,9 @@ npx tsc --noEmit
 npm run start
 ```
 
-**Deploy lên Vercel:** Push code lên `main` branch, Vercel tự động deploy.
+Merge vào `main` không tự động deploy production. Rollout AWS/Coolify cần PM
+window, exact immutable ARM64 image, backup và rollback gates theo
+[`docs/WORKFLOW-WITH-CODEX.md`](docs/WORKFLOW-WITH-CODEX.md).
 
 ---
 
@@ -157,5 +159,5 @@ Truy cập: `/admin` → Đăng nhập bằng `ADMIN_PASSWORD`
 
 ## Liên Hệ & Hỗ Trợ
 
-- **Website:** [dongphugia.com.vn](https://dongphugia.com.vn)
+- **Website:** [www.dongphugia.vn](https://www.dongphugia.vn)
 - **Email:** info@dongphugia.com.vn
