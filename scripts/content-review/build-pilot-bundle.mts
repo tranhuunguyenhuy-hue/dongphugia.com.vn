@@ -267,10 +267,66 @@ function buildAfterHtml(row: ActualProductRow): { html: string; requiredFacts: s
     const heading = row.name.toLocaleLowerCase().includes(row.sku.toLocaleLowerCase())
         ? row.name
         : `${row.name} — mã ${row.sku}`
-    const embeddedHtml = extractEmbeddedImageUrls(row.descriptionHtml).map((url, index) =>
-        `<figure><img src="${escapeHtml(url)}" alt="${escapeHtml(`${row.name} - hình ${index + 1}`)}"></figure>`,
-    ).join('')
-    const raw = [
+    const embeddedUrls = extractEmbeddedImageUrls(row.descriptionHtml)
+    const figure = (url: string, sourceId: string, alt: string) =>
+        `<figure data-media-source-id="${sourceId}"><img src="${escapeHtml(url)}" alt="${escapeHtml(alt)}"></figure>`
+    const replacement = (sourceId: string, label: string) =>
+        `<figure><span>[[MEDIA:${sourceId}]] ${escapeHtml(label)} — cần nguồn hình ảnh chính thức</span></figure>`
+    const checkpointHtml: Record<string, string> = {
+        'SFV-900SX': [
+            `<h2>${escapeHtml(heading)}</h2>`,
+            `<p>${escapeHtml(narrative.intro)}</p>`,
+            figure(row.imageMainUrl || '', 'main', `${row.name} — tổng quan sản phẩm`),
+            '<h3>Khi chậu rửa cần linh hoạt hơn</h3>',
+            `<p>${escapeHtml(narrative.paragraphs[0] || '')}</p>`,
+            figure(embeddedUrls[0] || '', 'embedded:0', `${row.name} — tính năng dây rút`),
+            '<h3>Thao tác hằng ngày và bề mặt</h3>',
+            `<p>${escapeHtml(narrative.paragraphs[1] || '')}</p>`,
+            figure(embeddedUrls[1] || '', 'embedded:1', `${row.name} — chi tiết vận hành`),
+            '<h3>Kiểm tra trước khi chốt</h3>',
+            `<p>${escapeHtml(narrative.paragraphs[2] || '')}</p>`,
+            figure(embeddedUrls[2] || '', 'embedded:2', `${row.name} — kích thước hoặc lắp đặt`),
+            `<p>${escapeHtml(narrative.guidance)}</p>`,
+        ].filter(Boolean).join(''),
+        MT5140: [
+            `<h2>${escapeHtml(heading)}</h2>`,
+            '<h3>Một lựa chọn cho góc thư giãn</h3>',
+            `<p>${escapeHtml(narrative.intro)}</p>`,
+            replacement('main', 'Ảnh tổng quan Caesar MT5140'),
+            '<h3>Trải nghiệm sử dụng cần hình dung trước</h3>',
+            `<p>${escapeHtml(narrative.paragraphs[1] || '')}</p>`,
+            '<h3>Đặt vừa không gian rồi mới chọn tính năng</h3>',
+            `<p>${escapeHtml(narrative.paragraphs[0] || '')}</p>`,
+            `<p>${escapeHtml(narrative.paragraphs[2] || '')}</p>`,
+            replacement('gallery:156235', 'Ảnh hoặc bản vẽ lắp đặt Caesar MT5140'),
+            `<p><strong>Điểm cần xác nhận với tư vấn viên:</strong> ${escapeHtml(narrative.guidance)}</p>`,
+        ].join(''),
+        V93: [
+            `<h2>${escapeHtml(heading)}</h2>`,
+            `<p>${escapeHtml(narrative.intro)}</p>`,
+            replacement('main', 'Ảnh sản phẩm Viglacera V93'),
+            '<h3>Tiện ích điện tử phục vụ thói quen hằng ngày</h3>',
+            `<p>${escapeHtml(narrative.paragraphs[0] || '')}</p>`,
+            '<h3>Ưu tiên an toàn khi chuẩn bị công trình</h3>',
+            `<p>${escapeHtml(narrative.paragraphs[2] || '')}</p>`,
+            replacement('embedded:0', 'Bản vẽ kỹ thuật Viglacera V93'),
+            '<h3>Chăm sóc và vận hành</h3>',
+            `<p>${escapeHtml(narrative.paragraphs[1] || '')}</p>`,
+            `<p>${escapeHtml(narrative.guidance)}</p>`,
+        ].join(''),
+        'A-SFV1013SX-1-1': [
+            `<h2>${escapeHtml(heading)}</h2>`,
+            '<p><strong>Phụ kiện đúng mã trước khi thay:</strong> ' + escapeHtml(narrative.intro) + '</p>',
+            '<h3>1. Đối chiếu bộ vòi đang dùng</h3>',
+            `<p>${escapeHtml(narrative.paragraphs[0] || '')}</p>`,
+            replacement('main', 'Ảnh đối chiếu đầu vòi INAX A-SFV1013SX-1-1'),
+            '<h3>2. Kiểm tra trước khi tháo lắp</h3>',
+            `<p>${escapeHtml(narrative.paragraphs[1] || '')}</p>`,
+            `<p>${escapeHtml(narrative.guidance)}</p>`,
+        ].join(''),
+    }
+    const embeddedHtml = embeddedUrls.map((url, index) => figure(url, `embedded:${index}`, `${row.name} - hình ${index + 1}`)).join('')
+    const raw = checkpointHtml[row.sku] || [
         `<h2>${escapeHtml(heading)}</h2>`,
         `<p>${escapeHtml(narrative.intro)}</p>`,
         ...narrative.paragraphs.map(paragraph => `<p>${escapeHtml(paragraph)}</p>`),

@@ -63,6 +63,28 @@ describe('LEO-489 editorial content audit', () => {
         expect(metrics.flags).toContain('technical_table_dump')
     })
 
+    it('keeps the four editorial checkpoint SKUs structurally distinct and places only safe media in context', () => {
+        const model = committedModel()
+        const checkpointSkus = ['SFV-900SX', 'MT5140', 'V93', 'A-SFV1013SX-1-1']
+        const structures = new Set<string>()
+        for (const sku of checkpointSkus) {
+            const product = model.products.find(item => item.sku === sku)
+            expect(product).toBeDefined()
+            const afterHtml = String(product?.afterHtml)
+            expect(afterHtml).not.toMatch(/Gợi ý chọn, lắp đặt và sử dụng/i)
+            const headings = [...afterHtml.matchAll(/<h3>([^<]+)<\/h3>/g)].map(match => match[1]).join(' | ')
+            structures.add(headings)
+            const firstFigure = afterHtml.indexOf('<figure')
+            expect(firstFigure).toBeGreaterThan(-1)
+            expect(firstFigure).toBeLessThan(afterHtml.lastIndexOf('</p>'))
+            const media = product?.media as Array<{ fingerprint: string; classification: { action: string } }>
+            for (const item of media.filter(item => item.classification.action.startsWith('REMOVE_'))) {
+                expect(afterHtml).not.toContain(item.fingerprint)
+            }
+        }
+        expect(structures.size).toBe(4)
+    })
+
     it('keeps the committed artifact sanitized and offline-only', () => {
         const html = fs.readFileSync(path.join(process.cwd(), 'docs/review-bundles/leo-489-pilot-dashboard.html'), 'utf8')
         expect(html).not.toMatch(/cdn\.hita\.com\.vn|cdn\.dongphugia\.com\.vn|www\.dongphugia\.vn/i)

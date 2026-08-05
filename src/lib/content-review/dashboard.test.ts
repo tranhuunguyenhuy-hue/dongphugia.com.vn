@@ -178,4 +178,16 @@ describe('LEO-489 offline dashboard', () => {
         expect(buildDeterministicReviewExport(model, stateA)).toBe(buildDeterministicReviewExport(model, stateB))
         expect(buildDeterministicReviewExport(model, stateA)).not.toMatch(/exportedAt|timestamp|https?:\/\//i)
     })
+
+    it('renders a separate media-first review surface with direct decisions and no automatic Hita fetch', () => {
+        const model = committedModel()
+        const privateHtml = renderDashboardHtml(model, 'private')
+        expect(privateHtml).toContain('Media Review')
+        expect(privateHtml).toContain('media-grid')
+        expect(privateHtml).toContain('Current → proposed')
+        expect(privateHtml).toContain('Open content / placement')
+        expect(privateHtml).toContain('media-card-decision')
+        expect(privateHtml).toContain('View Hita asset manually')
+        expect(privateHtml).not.toMatch(/<img[^>]+src="[^" ]*hita\.com\.vn/i)
+    })
 })
