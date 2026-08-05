@@ -1,5 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import * as cheerio from 'cheerio'
 import { describe, expect, it } from 'vitest'
 import { getEditorialQualityMetrics } from './content-quality'
 import { LEO_489_PILOT_MANIFEST } from './pilot-manifest'
@@ -9,6 +10,11 @@ function committedModel(): { products: Array<Record<string, unknown>>; manifestC
     const match = html.match(/const MODEL = (\{[\s\S]*?\});\nconst STORAGE_KEY/)
     if (!match) throw new Error('Committed dashboard model is missing')
     return JSON.parse(match[1]) as { products: Array<Record<string, unknown>>; manifestChecksum: string }
+}
+
+function topLevelStructure(html: string): string {
+    const document = cheerio.load(`<root>${html}</root>`, {}, false)
+    return document('root').children().toArray().map(node => node.tagName).join('>')
 }
 
 describe('LEO-489 editorial content audit', () => {
@@ -83,6 +89,40 @@ describe('LEO-489 editorial content audit', () => {
             }
         }
         expect(structures.size).toBe(4)
+    })
+
+    it('catches a universal closing and excessive structural concentration without a similarity gate', () => {
+        const model = committedModel()
+        const afterHtml = model.products.map(product => String(product.afterHtml))
+        expect(afterHtml.filter(html => /Gợi ý chọn, lắp đặt và sử dụng/i.test(html))).toHaveLength(0)
+
+        const structureCounts = new Map<string, number>()
+        for (const html of afterHtml) {
+            const signature = topLevelStructure(html)
+            structureCounts.set(signature, (structureCounts.get(signature) || 0) + 1)
+        }
+        expect(Math.max(...structureCounts.values())).toBeLessThanOrEqual(3)
+    })
+
+    it('keeps every REMOVE media reference out of all 20 After descriptions and links safe placements to media decisions', () => {
+        const model = committedModel()
+        for (const product of model.products) {
+            const afterHtml = String(product.afterHtml)
+            const media = product.media as Array<{ sourceId: string; fingerprint: string; classification: { action: string } }>
+            const bySourceId = new Map(media.map(item => [item.sourceId, item.classification.action]))
+            const byFingerprint = new Map(media.map(item => [item.fingerprint, item.classification.action]))
+            for (const item of media.filter(item => item.classification.action.startsWith('REMOVE_'))) {
+                expect(afterHtml).not.toContain(item.fingerprint)
+            }
+            const placedSourceIds = [...afterHtml.matchAll(/data-media-source-id="([^"]+)"/g)].map(match => match[1])
+            for (const sourceId of placedSourceIds) {
+                expect(bySourceId.get(sourceId)).not.toMatch(/^REMOVE_/)
+            }
+            const placedFingerprints = [...afterHtml.matchAll(/data-media-fingerprint="([a-f0-9]{64})"/g)].map(match => match[1])
+            for (const fingerprint of placedFingerprints) {
+                expect(byFingerprint.get(fingerprint)).not.toMatch(/^REMOVE_/)
+            }
+        }
     })
 
     it('keeps the committed artifact sanitized and offline-only', () => {

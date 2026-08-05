@@ -4,7 +4,7 @@ import { createRequire } from 'node:module'
 
 const require = createRequire(import.meta.url)
 const { cleanupProductHtml, extractEmbeddedImageUrls } = require('../../src/lib/content-review/cleanup.ts') as typeof import('../../src/lib/content-review/cleanup')
-const { createReviewImage, dedupeReviewImages } = require('../../src/lib/content-review/images.ts') as typeof import('../../src/lib/content-review/images')
+const { createReviewImage, dedupeReviewImages, isBunnyAsset } = require('../../src/lib/content-review/images.ts') as typeof import('../../src/lib/content-review/images')
 const { hashObject, sha256 } = require('../../src/lib/content-review/hash.ts') as typeof import('../../src/lib/content-review/hash')
 const {
     LEO_489_PILOT_MANIFEST,
@@ -272,7 +272,196 @@ function buildAfterHtml(row: ActualProductRow): { html: string; requiredFacts: s
         `<figure data-media-source-id="${sourceId}"><img src="${escapeHtml(url)}" alt="${escapeHtml(alt)}"></figure>`
     const replacement = (sourceId: string, label: string) =>
         `<figure><span>[[MEDIA:${sourceId}]] ${escapeHtml(label)} — cần nguồn hình ảnh chính thức</span></figure>`
+    const classifiedMedia = buildMedia(row).map(item => {
+        const image = createReviewImage(item.kind, item.url)
+        const host = image.policy === 'HITA_HOSTED_REVIEW' ? 'Hita' : image.policy === 'KEEP_EXISTING_BUNNY' ? 'Bunny CDN' : 'External'
+        return { item, image, host }
+    })
+    const classifications = classifyMediaReferences(classifiedMedia.map(({ item, image, host }) => ({
+        sku: row.sku,
+        kind: item.kind,
+        sourceId: item.sourceId,
+        fingerprint: image.fingerprint,
+        host,
+    })))
+    const classifiedBySourceId = new Map(classifiedMedia.map((entry, index) => [entry.item.sourceId, { ...entry, classification: classifications[index] }]))
+    const placement = (sourceId: string, label: string): string => {
+        const entry = classifiedBySourceId.get(sourceId)
+        if (!entry || entry.classification.action.startsWith('REMOVE_') || entry.classification.action === 'HUMAN_REVIEW') return ''
+        if (entry.classification.action === 'KEEP_VERIFIED' && isBunnyAsset(entry.item.url)) {
+            return figure(entry.item.url, sourceId, `${row.name} — ${label}`)
+        }
+        if (entry.classification.action === 'REPLACE_WITH_OFFICIAL') return replacement(sourceId, label)
+        return ''
+    }
     const checkpointHtml: Record<string, string> = {
+        M16004: [
+            `<h2>${escapeHtml(heading)}</h2>`,
+            `<p>${escapeHtml(narrative.intro)}</p>`,
+            placement('main', 'ảnh tổng quan bộ xả'),
+            '<h3>Dòng thoát nước dưới bồn</h3>',
+            `<p>${escapeHtml(narrative.paragraphs[0] || '')}</p>`,
+            '<h4>Đo và thử trước khi che khuất</h4>',
+            `<p>${escapeHtml(narrative.paragraphs[1] || '')}</p>`,
+          `<p>${escapeHtml(narrative.guidance)}</p>`,
+        ].filter(Boolean).join(''),
+        'AC-7110501': [
+            `<h2>${escapeHtml(heading)}</h2>`,
+            `<p><strong>Thao tác tại cụm xả:</strong> ${escapeHtml(narrative.intro)}</p>`,
+            placement('main', 'ảnh tổng quan AC-7110501'),
+            '<h3>Điều khiển nắp xả theo vị trí bồn</h3>',
+            `<p>${escapeHtml(narrative.paragraphs[0] || '')}</p>`,
+            '<h4>Đo chiều dài trước khi lắp</h4>',
+            `<p>${escapeHtml(narrative.paragraphs[1] || '')}</p>`,
+            placement('gallery:297789', 'ảnh cấu hình lắp đặt AC-7110501'),
+            `<p>${escapeHtml(narrative.guidance)}</p>`,
+        ].filter(Boolean).join(''),
+        'AC-7110400': [
+            `<h2>${escapeHtml(heading)}</h2>`,
+            `<p><strong>Từ nút điều khiển đến nắp xả:</strong> ${escapeHtml(narrative.intro)}</p>`,
+            placement('main', 'ảnh tổng quan AC-7110400'),
+            `<p>${escapeHtml(narrative.paragraphs[0] || '')}</p>`,
+            '<h3>Chọn theo bố trí bồn và đường ống</h3>',
+            `<p>${escapeHtml(narrative.paragraphs[1] || '')}</p>`,
+            placement('gallery:297788', 'ảnh vị trí kết nối AC-7110400'),
+            `<blockquote><p>${escapeHtml(narrative.paragraphs[2] || '')}</p></blockquote>`,
+            `<p>${escapeHtml(narrative.guidance)}</p>`,
+        ].filter(Boolean).join(''),
+        'WF-9089-CHROME': [
+            `<h2>${escapeHtml(heading)}</h2>`,
+            `<blockquote><p>${escapeHtml(narrative.intro)}</p></blockquote>`,
+            placement('main', 'ảnh tổng quan bộ sen'),
+            '<h3>Vùng nước và cảm giác tắm</h3>',
+            `<p>${escapeHtml(narrative.paragraphs[1] || '')}</p>`,
+            '<h4>Điều chỉnh nhiệt độ và bề mặt</h4>',
+            `<p>${escapeHtml(narrative.paragraphs[2] || '')}</p>`,
+            `<p>${escapeHtml(narrative.paragraphs[0] || '')}</p>`,
+            placement('gallery:291926', 'ảnh bát sen hoặc tay sen'),
+            `<p>${escapeHtml(narrative.guidance)}</p>`,
+        ].filter(Boolean).join(''),
+        AT1157: [
+            `<h2>${escapeHtml(heading)}</h2>`,
+            `<p>${escapeHtml(narrative.intro)}</p>`,
+            '<h3>Thân cầu dễ chăm sóc hằng ngày</h3>',
+            `<p>${escapeHtml(narrative.paragraphs[0] || '')}</p>`,
+            placement('main', 'ảnh tổng quan bồn cầu'),
+            `<p>${escapeHtml(narrative.paragraphs[1] || '')}</p>`,
+            '<h4>Đo tâm xả trước khi thay mới</h4>',
+            `<p>${escapeHtml(narrative.paragraphs[2] || '')}</p>`,
+            placement('embedded:0', 'bản vẽ hoặc hướng dẫn lắp đặt'),
+            `<p>${escapeHtml(narrative.guidance)}</p>`,
+        ].filter(Boolean).join(''),
+        'TBW07001A/TBV01407B/TBN01001B': [
+            `<h2>${escapeHtml(heading)}</h2>`,
+            `<p><strong>Bộ đồng bộ cho phòng tắm:</strong> ${escapeHtml(narrative.intro)}</p>`,
+            '<h4>Chuẩn bị phần âm tường</h4>',
+            `<p>${escapeHtml(narrative.paragraphs[0] || '')}</p>`,
+            placement('main', 'ảnh tổng quan bộ sen âm tường'),
+          `<p>${escapeHtml(narrative.paragraphs[1] || '')}</p>`,
+            `<p>${escapeHtml(narrative.guidance)}</p>`,
+        ].filter(Boolean).join(''),
+        SW6181HSG: [
+            `<h2>${escapeHtml(heading)}</h2>`,
+            `<p>${escapeHtml(narrative.intro)}</p>`,
+            placement('main', 'ảnh tổng quan bồn tiểu cảm ứng'),
+            '<h3>Giảm thao tác chạm tay</h3>',
+            `<p>${escapeHtml(narrative.paragraphs[0] || '')}</p>`,
+            `<blockquote><p>${escapeHtml(narrative.paragraphs[1] || '')}</p></blockquote>`,
+            '<h4>Chừa khoảng bảo trì quanh cảm biến</h4>',
+            `<p>${escapeHtml(narrative.paragraphs[2] || '')}</p>`,
+            `<p>${escapeHtml(narrative.paragraphs[3] || '')}</p>`,
+            placement('embedded:0', 'hình cảm biến hoặc lắp đặt'),
+            `<p>${escapeHtml(narrative.guidance)}</p>`,
+        ].filter(Boolean).join(''),
+        'AT-30H': [
+            `<h2>${escapeHtml(heading)}</h2>`,
+            `<p>${escapeHtml(narrative.intro)}</p>`,
+            '<h3>Chọn dung tích theo gia đình</h3>',
+            `<p>${escapeHtml(narrative.paragraphs[3] || '')}</p>`,
+            placement('main', 'ảnh tổng quan máy nước nóng'),
+            '<h4>Đưa thông tin điện nước cho thợ</h4>',
+            `<p>${escapeHtml(narrative.paragraphs[2] || '')}</p>`,
+            `<p>${escapeHtml(narrative.paragraphs[0] || '')}</p>`,
+            placement('gallery:108317', 'ảnh cấu hình máy nước nóng'),
+            `<blockquote><p>${escapeHtml(narrative.paragraphs[1] || '')}</p></blockquote>`,
+            `<p>${escapeHtml(narrative.guidance)}</p>`,
+        ].filter(Boolean).join(''),
+        'CS326DT10#XW': [
+            `<h2>${escapeHtml(heading)}</h2>`,
+            `<p>${escapeHtml(narrative.intro)}</p>`,
+            placement('main', 'ảnh tổng quan bàn cầu và nắp'),
+            '<h3>Bề mặt và thao tác hằng ngày</h3>',
+            `<p>${escapeHtml(narrative.paragraphs[0] || '')}</p>`,
+            `<p>${escapeHtml(narrative.paragraphs[1] || '')}</p>`,
+            '<h4>Đối chiếu bộ sản phẩm với công trình</h4>',
+            `<p>${escapeHtml(narrative.paragraphs[2] || '')}</p>`,
+            placement('gallery:215809', 'ảnh cấu hình hoặc vị trí lắp đặt'),
+            `<blockquote><p>${escapeHtml(narrative.paragraphs[3] || '')}</p></blockquote>`,
+            `<p>${escapeHtml(narrative.paragraphs[4] || '')}</p>`,
+            `<p>${escapeHtml(narrative.guidance)}</p>`,
+        ].filter(Boolean).join(''),
+        TX707AC: [
+            `<h2>${escapeHtml(heading)}</h2>`,
+            `<p><strong>Phụ kiện cạnh lavabo:</strong> ${escapeHtml(narrative.intro)}</p>`,
+            '<h4>Phối chất liệu và khoảng đặt</h4>',
+            `<p>${escapeHtml(narrative.paragraphs[0] || '')}</p>`,
+            placement('main', 'ảnh tổng quan phụ kiện'),
+          `<blockquote><p>${escapeHtml(narrative.paragraphs[1] || '')}</p></blockquote>`,
+            `<p>${escapeHtml(narrative.guidance)}</p>`,
+        ].filter(Boolean).join(''),
+        'BFV-3003-1C': [
+            `<h2>${escapeHtml(heading)}</h2>`,
+            `<p>${escapeHtml(narrative.intro)}</p>`,
+            placement('main', 'ảnh tổng quan bộ vòi sen'),
+            '<h3>Điều chỉnh nước và tia phun</h3>',
+            `<p>${escapeHtml(narrative.paragraphs[0] || '')}</p>`,
+            `<blockquote><p>${escapeHtml(narrative.paragraphs[1] || '')}</p></blockquote>`,
+            placement('embedded:0', 'hình sản phẩm hoặc lắp đặt'),
+            '<h4>Kiểm tra trước khi lắp</h4>',
+            `<p>${escapeHtml(narrative.paragraphs[2] || '')}</p>`,
+            `<p>${escapeHtml(narrative.guidance)}</p>`,
+        ].filter(Boolean).join(''),
+        'INAX-255/VIZ-1': [
+            `<h2>${escapeHtml(heading)}</h2>`,
+            `<p><strong>Chọn bề mặt có nhịp:</strong> ${escapeHtml(narrative.intro)}</p>`,
+            placement('main', 'ảnh tổng quan bề mặt gạch'),
+            '<h3>Phối viên và đường ron</h3>',
+            `<p>${escapeHtml(narrative.paragraphs[0] || '')}</p>`,
+            `<p>${escapeHtml(narrative.paragraphs[1] || '')}</p>`,
+            placement('embedded:0', 'bản vẽ hoặc hướng dẫn thi công'),
+            '<h4>Dự toán và chăm sóc bề mặt</h4>',
+            `<p>${escapeHtml(narrative.paragraphs[2] || '')}</p>`,
+          `<p>${escapeHtml(narrative.guidance)}</p>`,
+        ].filter(Boolean).join(''),
+        'INAX-20B/CRB-1': [
+            `<h2>${escapeHtml(heading)}</h2>`,
+            `<p>${escapeHtml(narrative.intro)}</p>`,
+            '<h3>Tạo điểm nhấn từ viên nhỏ</h3>',
+            `<blockquote><p>${escapeHtml(narrative.paragraphs[0] || '')}</p></blockquote>`,
+            placement('main', 'ảnh tổng quan bề mặt đá sỏi'),
+            '<h4>Chọn keo và tính điều kiện sử dụng</h4>',
+            `<p>${escapeHtml(narrative.paragraphs[1] || '')}</p>`,
+            `<p>${escapeHtml(narrative.paragraphs[2] || '')}</p>`,
+            placement('embedded:0', 'bản vẽ hoặc hướng dẫn thi công'),
+            placement('embedded:1', 'hình chi tiết bề mặt'),
+            `<p>${escapeHtml(narrative.guidance)}</p>`,
+        ].filter(Boolean).join(''),
+        'EGR-V2SP/G3': [
+            `<h2>${escapeHtml(heading)}</h2>`,
+            `<p>${escapeHtml(narrative.intro)}</p>`,
+            '<h4>Ước lượng vật tư trước khi thi công</h4>',
+            `<p>${escapeHtml(narrative.paragraphs[0] || '')}</p>`,
+            placement('main', 'ảnh tổng quan keo dán gạch'),
+            `<blockquote><p>${escapeHtml(narrative.paragraphs[1] || '')}</p></blockquote>`,
+            `<p>${escapeHtml(narrative.guidance)}</p>`,
+        ].filter(Boolean).join(''),
+        '61-1361-VN': [
+            `<h2>${escapeHtml(heading)}</h2>`,
+            `<p>${escapeHtml(narrative.intro)}</p>`,
+            '<h5>Đối chiếu trước khi thay</h5>',
+            `<p>${escapeHtml(narrative.paragraphs[0] || '')}</p>`,
+            `<p>${escapeHtml(narrative.paragraphs[1] || '')} ${escapeHtml(narrative.guidance)} Hình inline chưa đặt vì các tham chiếu hiện có cần nguồn chính thức.</p>`,
+        ].filter(Boolean).join(''),
         'SFV-900SX': [
             `<h2>${escapeHtml(heading)}</h2>`,
             `<p>${escapeHtml(narrative.intro)}</p>`,
@@ -325,12 +514,12 @@ function buildAfterHtml(row: ActualProductRow): { html: string; requiredFacts: s
             `<p>${escapeHtml(narrative.guidance)}</p>`,
         ].join(''),
     }
-    const embeddedHtml = embeddedUrls.map((url, index) => figure(url, `embedded:${index}`, `${row.name} - hình ${index + 1}`)).join('')
+    const embeddedHtml = embeddedUrls.map((_url, index) => placement(`embedded:${index}`, `${row.name} — hình ${index + 1}`)).join('')
     const raw = checkpointHtml[row.sku] || [
         `<h2>${escapeHtml(heading)}</h2>`,
         `<p>${escapeHtml(narrative.intro)}</p>`,
         ...narrative.paragraphs.map(paragraph => `<p>${escapeHtml(paragraph)}</p>`),
-        `<p><strong>Gợi ý chọn, lắp đặt và sử dụng:</strong> ${escapeHtml(narrative.guidance)}</p>`,
+        `<p>${escapeHtml(narrative.guidance)}</p>`,
         embeddedHtml,
     ].join('')
     return { html: cleanupProductHtml(raw), requiredFacts }
