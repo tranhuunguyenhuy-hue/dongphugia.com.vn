@@ -1,6 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
+import { getEditorialQualityMetrics } from './content-quality'
 import { LEO_489_PILOT_MANIFEST } from './pilot-manifest'
 
 function committedModel(): { products: Array<Record<string, unknown>>; manifestChecksum: string } {
@@ -44,12 +45,22 @@ describe('LEO-489 editorial content audit', () => {
             expect(metrics.buyerBenefitSignals).toBeGreaterThanOrEqual(2)
             expect(metrics.technicalTableDump).toBe(false)
             expect(afterHtml.toLocaleLowerCase()).toContain('chính hãng')
+            expect(afterHtml).not.toMatch(/Thông tin nên đối chiếu|Thông tin đối chiếu/i)
             expect(metrics.flags.length === 0 || permittedSparseException).toBe(true)
             expect(product.editorialReview).toBe(permittedSparseException ? 'HUMAN_REVIEW' : 'PASS')
             if (permittedSparseException) expect(String(product.editorialReviewReason)).toMatch(/Sparse Before source/)
             expect(openings.has(metrics.repeatedOpeningKey)).toBe(false)
             openings.add(metrics.repeatedOpeningKey)
         }
+    })
+
+    it('detects dense label/value dumps inside paragraph markup', () => {
+        const metrics = getEditorialQualityMetrics(
+            '<p>Before text with enough context for the check.</p>',
+            '<p>Sản phẩm chính hãng phù hợp cho gia đình.</p><p><strong>Thông tin:</strong> SKU: A; Chất liệu: B; Kích thước: C; Bảo hành: D</p><p>Kiểm tra vị trí trước khi lắp đặt.</p>',
+        )
+        expect(metrics.technicalTableDump).toBe(true)
+        expect(metrics.flags).toContain('technical_table_dump')
     })
 
     it('keeps the committed artifact sanitized and offline-only', () => {

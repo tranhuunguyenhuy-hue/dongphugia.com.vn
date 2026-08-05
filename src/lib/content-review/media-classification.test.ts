@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { classifyMediaAsset, assertValidMediaClassification } from './media-classification'
+import { classifyMediaAsset, classifyMediaReferences, assertValidMediaClassification } from './media-classification'
 
 function classify(sku: string, sourceId: string, host: 'Bunny CDN' | 'Hita' = 'Bunny CDN', fingerprint = `fingerprint-${sourceId}`) {
     return classifyMediaAsset({ sku, kind: sourceId === 'main' ? 'main' : 'gallery', sourceId, host, fingerprint })
@@ -29,7 +29,17 @@ describe('LEO-489 media visual classification v2.1', () => {
         expect(unknown.action).toBe('REPLACE_WITH_OFFICIAL')
         expect(unknown.action).not.toBe('KEEP_VERIFIED')
         expect(classify('HITA-SKU', 'main', 'Hita').action).toBe('REPLACE_WITH_OFFICIAL')
+        expect(classify('INAX-255/VIZ-1', 'main').action).toBe('REPLACE_WITH_OFFICIAL')
         expect(() => assertValidMediaClassification({ ...unknown, action: 'KEEP_VERIFIED', origin: 'UNKNOWN', officialSourceVerification: 'NOT_VERIFIED' })).toThrow('KEEP_VERIFIED')
+    })
+
+    it('propagates every classification field from the first asset reference to duplicates', () => {
+        const classifications = classifyMediaReferences([
+            { sku: 'HITA-SKU', kind: 'main', sourceId: 'main', fingerprint: 'same-asset', host: 'Hita' },
+            { sku: 'HITA-SKU', kind: 'gallery', sourceId: 'gallery:1', fingerprint: 'same-asset', host: 'Hita' },
+        ])
+        expect(classifications[1]).toEqual(classifications[0])
+        expect(classifications[0]).toMatchObject({ action: 'REPLACE_WITH_OFFICIAL', origin: 'HITA_EXCLUSIVE', duplicateFingerprint: 'same-asset' })
     })
 
     it('does not use host alone to keep Bunny assets and does not request any media', () => {

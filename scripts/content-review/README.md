@@ -42,7 +42,7 @@ open docs/review-bundles/leo-489-pilot-dashboard.html
 The generator also runs the LEO-489 editorial audit. It checks all 20 After
 descriptions for 70–120% normalized Before length, at least three narrative
 paragraphs, buyer-benefit language, the natural phrase “chính hãng”, factual
-HTML without a technical-table dump, and deterministic output. Two sparse
+HTML without a technical-table or dense paragraph label/value dump, and deterministic output. Two sparse
 Before sources are intentionally shorter and appear in the bundle and
 dashboard as product-level `HUMAN_REVIEW` with a specific reason; do not pad
 them with unsupported claims.
@@ -62,6 +62,10 @@ assets, 10 Hita showroom removals, 5 household/installation removals, and
 official-source verification for the five official render/technical assets.
 The exact main reference is never proposed for removal without an official
 replacement action.
+The generated reference totals are deterministic and shared by the dashboard,
+bundle, export and tests: 0 HUMAN_REVIEW, 9 KEEP_VERIFIED, 25
+REMOVE_CONFIRMED_HITA, 16 REMOVE_UNVERIFIED_THIRD_PARTY, and 110
+REPLACE_WITH_OFFICIAL.
 
 The test verifies exact 20-product coverage, unchanged 160-media reference
 coverage, the SFV-900SX golden classification, no Hita links or automatic fetches

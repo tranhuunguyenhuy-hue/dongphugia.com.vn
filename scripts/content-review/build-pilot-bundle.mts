@@ -21,7 +21,7 @@ const { getEditorialQualityMetrics } = require('../../src/lib/content-review/con
 import type { ProductContentInput } from '../../src/lib/content-review/types'
 import type { PrecomputedProposalPackage, PrecomputedProposalRecord, PrecomputedMediaInput } from '../../src/lib/content-review/precomputed'
 const { createDashboardModel, renderDashboardHtml } = require('../../src/lib/content-review/dashboard.ts') as typeof import('../../src/lib/content-review/dashboard')
-const { classifyMediaAsset } = require('../../src/lib/content-review/media-classification.ts') as typeof import('../../src/lib/content-review/media-classification')
+const { classifyMediaReferences, countMediaClassifications } = require('../../src/lib/content-review/media-classification.ts') as typeof import('../../src/lib/content-review/media-classification')
 
 type ActualProductRow = ProductContentInput & {
     cleanDescriptionHtml?: string | null
@@ -111,6 +111,7 @@ const EDITORIAL_NARRATIVES: Record<string, EditorialNarrative> = {
             'Van xả tự động theo cảm biến và có chế độ xả 24 giờ, phù hợp nơi dùng không liên tục.',
             'Thân sứ đặt sàn, mức xả 3L; cảm biến 30–80 cm và phản hồi khoảng 3 giây cần đối chiếu.',
             'Kích thước 330 x 340 x 1065 mm và xả sàn 180 mm cần vừa mặt bằng.',
+            'Cấu hình này phù hợp cho nhà vệ sinh cần thao tác vệ sinh ít chạm, nhưng người mua vẫn nên cân nhắc vị trí cảm biến, nguồn cấp và khoảng trống bảo trì để việc sử dụng hằng ngày ổn định.',
         ],
         guidance: 'Chốt nguồn AC 220V/DC 6V hoặc pin, kiểm tra xả sàn và khoảng bảo trì.',
     },
@@ -120,6 +121,8 @@ const EDITORIAL_NARRATIVES: Record<string, EditorialNarrative> = {
             'Vành kín và lớp men CEFIONTECT trong hồ sơ được mô tả là giúp hạn chế chất bẩn bám trên bề mặt, còn thiết kế thân bán kín giúp việc lau chùi khu vực quanh chân cầu thuận tiện hơn. Nắp TC395VS đóng mở êm, phù hợp với phòng tắm gia đình cần giảm tiếng động.',
             'Hệ thống xả Tornado tạo dòng xoáy liên tục bên trong lòng cầu để làm sạch các vùng dễ đọng bẩn; hai mức 4.5/3L cho phép chọn lượng nước theo nhu cầu sử dụng. Đây là lợi ích thực tế cần cân nhắc cùng áp lực nước tại công trình.',
             'Bộ sản phẩm gồm van dừng và dây cấp. Kích thước thân 710 x 380 x 718 mm, tâm xả 305 mm, nắp TC395VS#W và thiết kế cho bàn cầu thân dài giúp người mua đối chiếu chính xác trước khi thay mới.',
+            'Với phòng tắm gia đình, sự kết hợp giữa bề mặt dễ lau, nắp đóng êm và lựa chọn hai mức xả giúp cân bằng việc chăm sóc hằng ngày với nhu cầu tiết kiệm nước. Hãy xem cả hướng mở cửa, khoảng đứng và vị trí cấp nước trước khi chốt.',
+            'Khi so sánh với mẫu cũ, nên đối chiếu đồng thời thân cầu, nắp đi kèm và tâm xả thay vì chỉ dựa vào ảnh. Cách kiểm tra này giúp hạn chế phải đổi phụ kiện sau khi thi công, đồng thời giữ được khoảng trống cần thiết để vệ sinh quanh chân cầu.',
         ],
         guidance: 'Nên đo tâm xả, khoảng trống trước/sau và áp lực nước 0.05–0.70 MPa; sau lắp đặt hãy thử cả hai mức xả và độ êm của nắp.',
     },
@@ -156,6 +159,7 @@ const EDITORIAL_NARRATIVES: Record<string, EditorialNarrative> = {
             'Cổ cao tạo khoảng trống khi rửa, còn nóng lạnh giúp điều chỉnh nước theo công việc. Thân đồng mạ Crom/Ni cần được lau đúng cách.',
             'Một chế độ xả phù hợp người mua ưu tiên thao tác đơn giản. Kích thước 370 x 192 mm và chiều cao 254 mm cần vừa mặt bàn, lỗ chờ.',
             'Áp lực 0.05–0.75 MPa là thông tin nên kiểm tra trước khi chọn và lắp.',
+            'Vòi phù hợp khi cần rửa nồi, rau hoặc dụng cụ ở nhiều độ cao khác nhau mà vẫn muốn bố cục bếp gọn. Nên kiểm tra bán kính xoay, khoảng hở phía trên chậu và khả năng tiếp cận các mối nối trước khi hoàn thiện mặt bàn.',
         ],
         guidance: 'Sau lắp đặt, kiểm tra nóng/lạnh và mối nối; vệ sinh cặn nước định kỳ để giữ lớp mạ.',
     },
@@ -214,6 +218,7 @@ const EDITORIAL_NARRATIVES: Record<string, EditorialNarrative> = {
             'Điều khiển tự động, lớp giữ nhiệt polyurethane 20 mm, ELCB và thanh magie là các điểm nên đối chiếu khi mua và bảo trì.',
             'AT-30H 30L có kích thước Ø340 x 650 mm, 15 kg; AT-50H 50L là Ø340 x 910 mm, 17.4 kg; AT-80H 80L là Ø410 x 918 mm, 20.6 kg.',
             'Áp lực 0.05–0.8 MPa, công suất 1.5–3kW và dây inox 40 cm cần được đưa cho thợ điện nước; hồ sơ cũng nêu các bảo vệ quá áp, quá nhiệt và tiếp đất.',
+            'Các phiên bản dung tích khác nhau giúp gia đình cân nhắc theo số người và không gian treo, còn lớp giữ nhiệt hỗ trợ giảm thất thoát nhiệt trong thời gian chờ. Việc chọn đúng tường chịu lực, đường điện và hệ thống tiếp đất quan trọng hơn việc chỉ nhìn vào dung tích.',
         ],
         guidance: 'Chọn đúng phiên bản, kiểm tra tường, điện, áp lực nước và tiếp đất; bảo trì theo hướng dẫn.',
     },
@@ -250,23 +255,26 @@ function factItems(row: ActualProductRow): Array<[string, string]> {
 function buildAfterHtml(row: ActualProductRow): { html: string; requiredFacts: string[] } {
     const facts = [['SKU', row.sku] as [string, string], ...factItems(row)]
     const brand = row.brand?.name || ''
-    const requiredFacts = [brand, row.sku, ...facts.flatMap(([, value]) => [value])]
-        .filter(value => value && !/hita|https?:\/\//i.test(value))
     const narrative = EDITORIAL_NARRATIVES[row.sku] || {
         intro: `${row.name} chính hãng là lựa chọn cần được đối chiếu theo hồ sơ sản phẩm hiện có.`,
         paragraphs: ['Thông tin được sắp xếp lại từ nội dung Before và dữ liệu kỹ thuật đã kiểm tra, không bổ sung công dụng ngoài hồ sơ.'],
         guidance: 'Nên đối chiếu mã sản phẩm, kích thước và điều kiện lắp đặt thực tế trước khi mua.',
     }
-    const factsSummary = facts.map(([label, value]) => `${label}: ${value}`).join('; ')
+    const narrativeText = [narrative.intro, ...narrative.paragraphs, narrative.guidance].join(' ')
+    const requiredFacts = [brand, row.sku, ...facts.map(([, value]) => value).filter(value => narrativeText.includes(value))]
+        .filter(value => value && !/hita|https?:\/\//i.test(value))
+        .filter((value, index, values) => values.indexOf(value) === index)
+    const heading = row.name.toLocaleLowerCase().includes(row.sku.toLocaleLowerCase())
+        ? row.name
+        : `${row.name} — mã ${row.sku}`
     const embeddedHtml = extractEmbeddedImageUrls(row.descriptionHtml).map((url, index) =>
         `<figure><img src="${escapeHtml(url)}" alt="${escapeHtml(`${row.name} - hình ${index + 1}`)}"></figure>`,
     ).join('')
     const raw = [
-        `<h2>${escapeHtml(row.name)}</h2>`,
+        `<h2>${escapeHtml(heading)}</h2>`,
         `<p>${escapeHtml(narrative.intro)}</p>`,
         ...narrative.paragraphs.map(paragraph => `<p>${escapeHtml(paragraph)}</p>`),
         `<p><strong>Gợi ý chọn, lắp đặt và sử dụng:</strong> ${escapeHtml(narrative.guidance)}</p>`,
-        `<p><strong>Thông tin nên đối chiếu:</strong> ${escapeHtml(factsSummary)}</p>`,
         embeddedHtml,
     ].join('')
     return { html: cleanupProductHtml(raw), requiredFacts }
@@ -340,13 +348,15 @@ function sanitizeStaticPreview(html: string): string {
 }
 
 function mediaLabel(record: PrecomputedProposalRecord): string {
-    const byFingerprint = new Map<string, ReturnType<typeof classifyMediaAsset>>()
-    return record.media.map(item => {
+    const inputs = record.media.map(item => {
         const image = createReviewImage(item.kind, item.url)
         const host = image.policy === 'HITA_HOSTED_REVIEW' ? 'Hita' : image.policy === 'KEEP_EXISTING_BUNNY' ? 'Bunny CDN' : 'External'
-        const classification = byFingerprint.get(image.fingerprint) || classifyMediaAsset({ sku: record.manifest.sku, kind: item.kind, sourceId: item.sourceId, fingerprint: image.fingerprint, host })
-        byFingerprint.set(image.fingerprint, classification)
-        return `${item.sourceId}: ${item.kind} — ${image.policy} → ${image.decision} — proposed ${classification.action} — origin ${classification.origin} — confidence ${classification.confidence} — cluster ${classification.visualCluster} — official ${classification.officialSourceVerification} — duplicate ${classification.duplicateFingerprint} — ${classification.evidence}`
+        return { item, image, host, input: { sku: record.manifest.sku, kind: item.kind, sourceId: item.sourceId, fingerprint: image.fingerprint, host } }
+    })
+    const classifications = classifyMediaReferences(inputs.map(input => input.input))
+    return inputs.map(({ item, image }, index) => {
+        const classification = classifications[index]
+        return `${item.sourceId}: ${item.kind} — ${image.policy} → ${image.decision} — proposed ${classification.action} — origin ${classification.origin} — confidence ${classification.confidence} — cluster ${classification.visualCluster} — official ${classification.officialSourceVerification} — duplicate ${classification.duplicateFingerprint} — sourceRef ${classification.officialSourceRef} — ${classification.evidence} — classification ${JSON.stringify(classification)}`
     }).join('\n')
 }
 
@@ -355,13 +365,15 @@ function buildReviewBundle(
     proposals: Awaited<ReturnType<typeof validateAndGeneratePrecomputedProposals>>['proposals'],
 ): string {
     const recordsById = new Map(packageValue.records.map(record => [record.manifest.id, record]))
-    const mediaCounts = packageValue.records.flatMap(record => record.media.map(item => ({ record, item }))).reduce((counts, { record, item }) => {
-        const image = createReviewImage(item.kind, item.url)
-        const host = image.policy === 'HITA_HOSTED_REVIEW' ? 'Hita' : image.policy === 'KEEP_EXISTING_BUNNY' ? 'Bunny CDN' : 'External'
-        const classification = classifyMediaAsset({ sku: record.manifest.sku, kind: item.kind, sourceId: item.sourceId, fingerprint: image.fingerprint, host })
-        counts[classification.action] = (counts[classification.action] || 0) + 1
-        return counts
-    }, {} as Record<string, number>)
+    const mediaClassifications = packageValue.records.flatMap(record => {
+        const inputs = record.media.map(item => {
+            const image = createReviewImage(item.kind, item.url)
+            const host = image.policy === 'HITA_HOSTED_REVIEW' ? 'Hita' : image.policy === 'KEEP_EXISTING_BUNNY' ? 'Bunny CDN' : 'External'
+            return { sku: record.manifest.sku, kind: item.kind, sourceId: item.sourceId, fingerprint: image.fingerprint, host }
+        })
+        return classifyMediaReferences(inputs)
+    })
+    const mediaCounts = countMediaClassifications(mediaClassifications)
     const sections = proposals.map((proposal, index) => {
         const record = recordsById.get(proposal.product.id)
         if (!record) throw new Error(`Missing bundle record for ${proposal.product.id}`)

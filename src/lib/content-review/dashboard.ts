@@ -2,7 +2,7 @@ import { cleanupProductHtml } from './cleanup'
 import { createReviewImage, isBunnyAsset, isHitaHostedAsset, normalizeImageUrl } from './images'
 import { sha256, stableStringify } from './hash'
 import { getEditorialQualityMetrics } from './content-quality'
-import { assertValidMediaClassification, classifyMediaAsset, type MediaClassification } from './media-classification'
+import { classifyMediaReferences, type MediaClassification, type MediaHost } from './media-classification'
 import type { PrecomputedProposalPackage, PrecomputedProposalRecord } from './precomputed'
 import type { ContentReviewProposal } from './types'
 
@@ -14,7 +14,7 @@ export interface DashboardMedia {
     fingerprint: string
     policy: string
     decision: string
-    host: 'Bunny CDN' | 'Hita' | 'External'
+    host: MediaHost
     urlRedacted: string
     url?: string
     altText?: string
@@ -132,19 +132,25 @@ function mediaRisk(media: DashboardMedia[]): DashboardProduct['mediaRisk'] {
 }
 
 function createDashboardMedia(record: PrecomputedProposalRecord): DashboardMedia[] {
-    const byFingerprint = new Map<string, MediaClassification>()
-    return record.media.map(item => {
+    const inputs = record.media.map(item => {
         const reviewImage = createReviewImage(item.kind, item.url)
         const host = hostForUrl(item.url)
-        const classification = byFingerprint.get(reviewImage.fingerprint) || classifyMediaAsset({
-            sku: record.manifest.sku,
-            kind: item.kind,
-            sourceId: item.sourceId,
-            fingerprint: reviewImage.fingerprint,
+        return {
+            item,
+            reviewImage,
             host,
-        })
-        assertValidMediaClassification(classification)
-        byFingerprint.set(reviewImage.fingerprint, classification)
+            classificationInput: {
+                sku: record.manifest.sku,
+                kind: item.kind,
+                sourceId: item.sourceId,
+                fingerprint: reviewImage.fingerprint,
+                host,
+            },
+        }
+    })
+    const classifications = classifyMediaReferences(inputs.map(input => input.classificationInput))
+    return inputs.map(({ item, reviewImage, host }, index) => {
+        const classification = classifications[index]
         return {
             kind: item.kind,
             sourceId: item.sourceId,

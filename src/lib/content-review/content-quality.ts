@@ -28,6 +28,12 @@ function openingKey(html: string): string {
     return firstParagraph.slice(0, 100).toLocaleLowerCase()
 }
 
+function denseLabelValuePairs(text: string): number {
+    const normalized = text.replace(/\s+/g, ' ').trim()
+    const matches = normalized.match(/(?:^|[;|•·])\s*[^:;|•·]{2,48}:\s*[^;|•·]+/g) || []
+    return matches.length
+}
+
 export function getEditorialQualityMetrics(beforeHtml: string, afterHtml: string): EditorialQualityMetrics {
     const beforeText = visibleText(beforeHtml)
     const afterText = visibleText(afterHtml)
@@ -35,8 +41,11 @@ export function getEditorialQualityMetrics(beforeHtml: string, afterHtml: string
     const ratio = beforeText.length ? afterText.length / beforeText.length : 0
     const paragraphCount = cheerio.load(afterHtml || '', {}, false)('p').length
     const buyerBenefitSignals = BUYER_BENEFIT_SIGNALS.filter(signal => lowerAfter.includes(signal)).length
+    const document = cheerio.load(afterHtml || '', {}, false)
+    const paragraphs = document('p').toArray().map(node => document(node).text())
     const technicalTableDump = cheerio.load(afterHtml || '', {}, false)('table').length > 0
         || (cheerio.load(afterHtml || '', {}, false)('ul').length > 0 && paragraphCount < 3)
+        || paragraphs.some(paragraph => denseLabelValuePairs(paragraph) >= 3)
     const flags: string[] = []
     const shortSourceException = beforeText.length < 260
     if (ratio < 0.7 || ratio > 1.2) flags.push(`length_ratio_out_of_range:${ratio.toFixed(3)}`)

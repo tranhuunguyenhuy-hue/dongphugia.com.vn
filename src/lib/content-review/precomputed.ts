@@ -111,16 +111,6 @@ function assertMediaInput(media: PrecomputedMediaInput[]): void {
     }
 }
 
-function structuredFactValues(input: ProductContentInput): string[] {
-    return (input.structuredFacts || []).flatMap(fact => [
-        fact.valueText,
-        fact.valueNumber,
-        fact.rawValue,
-        typeof fact.valueJson === 'string' || typeof fact.valueJson === 'number' ? String(fact.valueJson) : undefined,
-        fact.optionValue,
-    ]).filter((value): value is string => Boolean(value?.trim()))
-}
-
 function expectedMediaDecision(media: PrecomputedMediaInput) {
     const image = createReviewImage(media.kind, media.url)
     return { policy: image.policy, decision: image.decision }
@@ -147,7 +137,7 @@ function validateRecord(record: PrecomputedProposalRecord, manifest: PilotManife
     if (record.generatedHtml.match(/<p\b/gi)?.length === 1 && !record.generatedHtml.includes('<ul')) {
         throw new Error(`Precomputed after HTML is too synthetic for product ${manifest.id}`)
     }
-    assertSafeGeneratedHtml(record.generatedHtml, [...record.requiredFacts, ...structuredFactValues(record.input)])
+    assertSafeGeneratedHtml(record.generatedHtml, record.requiredFacts)
     assertMediaInput(record.media)
     const imageInput = dedupeReviewImages([
         ...(record.input.imageMainUrl ? [createReviewImage('main', record.input.imageMainUrl)] : []),
@@ -271,7 +261,7 @@ export async function validateAndGeneratePrecomputedProposals(value: unknown): P
             || proposal.generation.provenance?.afterHash !== record.provenance.afterDescriptionHash) {
             throw new Error(`Generated proposal identity/provenance mismatch for product ${record.manifest.id}`)
         }
-        assertSafeGeneratedHtml(proposal.after.descriptionHtml, [...record.requiredFacts, ...structuredFactValues(record.input)])
+        assertSafeGeneratedHtml(proposal.after.descriptionHtml, record.requiredFacts)
         for (const image of proposal.after.images) {
             if (image.policy === 'HITA_HOSTED_REVIEW' && image.decision !== 'HUMAN_REVIEW') {
                 throw new Error(`Generated Hita-hosted media is not gated for product ${record.manifest.id}`)

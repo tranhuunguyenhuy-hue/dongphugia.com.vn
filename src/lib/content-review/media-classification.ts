@@ -1,5 +1,3 @@
-import type { DashboardMedia } from './dashboard'
-
 export const MEDIA_ORIGINS = [
     'OFFICIAL_MANUFACTURER',
     'HITA_EXCLUSIVE',
@@ -19,6 +17,7 @@ export type MediaOrigin = typeof MEDIA_ORIGINS[number]
 export type MediaAction = typeof MEDIA_ACTIONS[number]
 export type MediaConfidence = 'HIGH' | 'MEDIUM' | 'LOW'
 export type OfficialSourceVerification = 'VERIFIED' | 'NOT_VERIFIED' | 'NOT_APPLICABLE'
+export type MediaHost = 'Bunny CDN' | 'Hita' | 'External'
 
 export interface MediaClassification {
     origin: MediaOrigin
@@ -31,13 +30,19 @@ export interface MediaClassification {
     officialSourceRef: string
 }
 
-type ClassificationInput = Pick<DashboardMedia, 'kind' | 'sourceId' | 'fingerprint' | 'host'> & { sku: string }
+export interface MediaClassificationInput {
+    sku: string
+    kind: 'main' | 'gallery' | 'embedded'
+    sourceId: string
+    fingerprint: string
+    host: MediaHost
+}
 
 const officialRefs: Record<string, string> = {
     'SFV-900SX': 'INAX official SFV-900SX product page and technical files; URL redacted',
 }
 
-function replacement(sku: string, input: ClassificationInput, reason: string, cluster: string): MediaClassification {
+function replacement(sku: string, input: MediaClassificationInput, reason: string, cluster: string): MediaClassification {
     return {
         origin: 'UNKNOWN',
         action: 'REPLACE_WITH_OFFICIAL',
@@ -50,7 +55,9 @@ function replacement(sku: string, input: ClassificationInput, reason: string, cl
     }
 }
 
-function verified(sku: string, input: ClassificationInput, reason: string, cluster: string): MediaClassification {
+function verified(sku: string, input: MediaClassificationInput, reason: string, cluster: string): MediaClassification {
+    const officialSourceRef = officialRefs[sku]
+    if (!officialSourceRef) return replacement(sku, input, 'Visual asset may resemble a manufacturer asset, but no exact durable official-source match is encoded in the approved evidence set.', `${sku.toLocaleLowerCase()}-unverified`)
     return {
         origin: 'OFFICIAL_MANUFACTURER',
         action: 'KEEP_VERIFIED',
@@ -59,11 +66,11 @@ function verified(sku: string, input: ClassificationInput, reason: string, clust
         visualCluster: cluster,
         duplicateFingerprint: input.fingerprint,
         officialSourceVerification: 'VERIFIED',
-        officialSourceRef: officialRefs[sku] || `Official ${sku} product source/catalogue match; URL redacted`,
+        officialSourceRef,
     }
 }
 
-function removeHita(input: ClassificationInput, evidence: string, cluster: string): MediaClassification {
+function removeHita(input: MediaClassificationInput, evidence: string, cluster: string): MediaClassification {
     return {
         origin: 'HITA_EXCLUSIVE',
         action: 'REMOVE_CONFIRMED_HITA',
@@ -76,7 +83,7 @@ function removeHita(input: ClassificationInput, evidence: string, cluster: strin
     }
 }
 
-function removeThirdParty(input: ClassificationInput, evidence: string, cluster: string): MediaClassification {
+function removeThirdParty(input: MediaClassificationInput, evidence: string, cluster: string): MediaClassification {
     return {
         origin: 'UNVERIFIED_THIRD_PARTY',
         action: 'REMOVE_UNVERIFIED_THIRD_PARTY',
@@ -89,7 +96,7 @@ function removeThirdParty(input: ClassificationInput, evidence: string, cluster:
     }
 }
 
-function replaceHitaMain(input: ClassificationInput): MediaClassification {
+function replaceHitaMain(input: MediaClassificationInput): MediaClassification {
     return {
         origin: 'HITA_EXCLUSIVE',
         action: 'REPLACE_WITH_OFFICIAL',
@@ -107,7 +114,7 @@ function replaceHitaMain(input: ClassificationInput): MediaClassification {
  * this map: duplicate fingerprints are computed from the existing normalized
  * manifest URL and the same result is propagated to every reference.
  */
-export function classifyMediaAsset(input: ClassificationInput): MediaClassification {
+export function classifyMediaAsset(input: MediaClassificationInput): MediaClassification {
     if (input.host === 'Hita') {
         if (input.kind === 'main') return replaceHitaMain(input)
         return removeHita(input, 'Exact stored Hita-hosted provenance; source is not auto-loaded in either dashboard.', 'hita-source')
@@ -133,10 +140,6 @@ export function classifyMediaAsset(input: ClassificationInput): MediaClassificat
             : removeHita(input, 'Visual showroom display cluster; host is not used as the sole evidence.', 'sfv802s-showroom')
     }
 
-    if (input.sku === 'INAX-255/VIZ-1' && input.sourceId === 'main') {
-        return verified(input.sku, input, 'Visual official product colour-swatch sheet with INAX model labels; matches the manufacturer product family.', 'inax255-official-swatch')
-    }
-
     if (input.sku === 'INAX-20B/CRB-1' || input.sku === 'INAX-255/VIZ-1') {
         return replacement(input.sku, input, 'Visual product/lifestyle asset observed, but the exact manufacturer source or usage rights are not proven by this stored reference.', `${input.sku.toLocaleLowerCase()}-unverified`)
     }
@@ -156,6 +159,25 @@ export function classifyMediaAsset(input: ClassificationInput): MediaClassificat
     return replacement(input.sku, input, 'Visual asset was observed, but exact manufacturer ownership and documented rights are not proven; use an official alternative.', `${input.sku.toLocaleLowerCase()}-unverified`)
 }
 
+/** Apply the first-seen asset decision to every duplicate reference. */
+export function classifyMediaReferences(inputs: MediaClassificationInput[]): MediaClassification[] {
+    const byFingerprint = new Map<string, MediaClassification>()
+    return inputs.map(input => {
+        const existing = byFingerprint.get(input.fingerprint)
+        if (existing) return existing
+        const classification = classifyMediaAsset(input)
+        assertValidMediaClassification(classification)
+        byFingerprint.set(input.fingerprint, classification)
+        return classification
+    })
+}
+
+export function countMediaClassifications(classifications: MediaClassification[]): Record<MediaAction, number> {
+    const counts = Object.fromEntries(MEDIA_ACTIONS.map(action => [action, 0])) as Record<MediaAction, number>
+    for (const classification of classifications) counts[classification.action] += 1
+    return counts
+}
+
 export function assertValidMediaClassification(classification: MediaClassification): void {
     if (!MEDIA_ORIGINS.includes(classification.origin) || !MEDIA_ACTIONS.includes(classification.action)) {
         throw new Error('Invalid media classification enum')
@@ -164,7 +186,9 @@ export function assertValidMediaClassification(classification: MediaClassificati
         throw new Error('Media classification evidence is incomplete')
     }
     if (classification.action === 'KEEP_VERIFIED'
-        && (classification.origin !== 'OFFICIAL_MANUFACTURER' || classification.officialSourceVerification !== 'VERIFIED')) {
+        && (classification.origin !== 'OFFICIAL_MANUFACTURER'
+            || classification.officialSourceVerification !== 'VERIFIED'
+            || !/^INAX official SFV-900SX product page and technical files; URL redacted$/.test(classification.officialSourceRef))) {
         throw new Error('KEEP_VERIFIED requires official manufacturer verification')
     }
 }
