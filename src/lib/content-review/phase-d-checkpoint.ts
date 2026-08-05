@@ -320,7 +320,7 @@ function selectWholeSentences(sentences: string[], target: number): string[] {
 
 function makeParagraphs(source: PhaseDSourceProduct, family: string, structure: { headings: string[] }, sentences: string[], facts: string[], beforeLength: number): string[] {
     const context = familyContext(family)
-    const targetEvidence = Math.max(180, Math.floor(beforeLength * (beforeLength < 800 ? 0.35 : beforeLength < 1200 ? 0.55 : 0.82)))
+    const targetEvidence = Math.max(180, Math.floor(beforeLength * (beforeLength < 800 ? 0.35 : beforeLength < 1200 ? 0.55 : 0.78)))
     const evidence = selectWholeSentences(sentences, targetEvidence)
     const factText = facts.slice(0, 3).map(fact => fact.replaceAll(':', ' là ')).join('; ')
     const closingFact = facts.at(-1)?.replaceAll(':', ' là ')
@@ -332,7 +332,7 @@ function makeParagraphs(source: PhaseDSourceProduct, family: string, structure: 
             `Đặt chi tiết này cạnh ${context.use} để chọn đúng một sản phẩm chính hãng.`,
             factText && paragraphIndex === 1 ? `Dữ liệu liên quan gồm ${factText}; dùng chúng để chuẩn bị.` : `Nên đối chiếu kích thước và điểm cấp thoát nước.`,
             `Khi lắp, để khoảng trống và tài liệu đi kèm làm căn cứ.`,
-            `Sau khi dùng, ${context.care}; giữ mã nếu cần thay thế.${paragraphIndex === structure.headings.length - 1 ? ` Đối chiếu thêm mục “${structure.headings[paragraphIndex]}” khi quay lại hồ sơ. ${closingFact ? `Căn cứ cuối: ${closingFact}.` : `Căn cứ cuối theo hồ sơ sản phẩm ${source.id}.`}` : ''}`
+            `Sau khi dùng, ${context.care}; giữ mã nếu cần thay thế.${paragraphIndex === structure.headings.length - 1 ? ` Đối chiếu “${structure.headings[paragraphIndex]}” khi quay lại. ${closingFact ? `Căn cứ cuối: ${closingFact}.` : `Căn cứ cuối theo hồ sơ ${source.id}.`}` : ''}`
         ]
         return `${sentence.replaceAll(':', ' — ')} ${additions[paragraphIndex % additions.length]}`
     })
