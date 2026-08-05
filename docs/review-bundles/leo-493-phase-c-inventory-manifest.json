@@ -5,7 +5,7 @@
   "policyHash": "9e93c0f06c5eb8307d528372070c50e868c7a62fd5cc9008492ae6bcead0fa88",
   "snapshotHash": "97cd93da438bbf3db826b0dd679b412ab1afefcbe772220c972b935c25acd665",
   "proposalHash": null,
-  "sourceCommit": "b8b586fbc79ebf7ad9e453191920c93e94a4dd40",
+  "sourceCommit": "808a2f28ec63815c5688c428aaeb16b84afab979",
   "bindingStatus": "INVENTORY_ONLY_NO_PROPOSAL",
   "selectionAlgorithm": "all_active_products_is_active_true_sorted_by_id; no 200-300 cap; no gate relaxation",
   "sanitization": "ids/raw SKUs/labels/classifications/hashes/fingerprints only; no raw HTML or live media URLs",
@@ -170328,5 +170328,5 @@
       ]
     }
   ],
-  "manifestChecksum": "51e094db3d0e81ca8e111bb8d9bab4b940ee3931bbdedd6c82abbde90c233acf"
+  "manifestChecksum": "bcd7b26fae9db55090364192534c2fdc260e74227b1028e353db2f23bf9d36ed"
 }

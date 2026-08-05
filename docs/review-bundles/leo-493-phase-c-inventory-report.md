@@ -1,9 +1,9 @@
 # LEO-493 Phase C v3.2 — Active product inventory and gating
 
-- Source commit at generation: `b8b586fbc79ebf7ad9e453191920c93e94a4dd40`
+- Source commit at generation: `808a2f28ec63815c5688c428aaeb16b84afab979`
 - Policy hash: `9e93c0f06c5eb8307d528372070c50e868c7a62fd5cc9008492ae6bcead0fa88`
 - Snapshot hash: `97cd93da438bbf3db826b0dd679b412ab1afefcbe772220c972b935c25acd665`
-- Manifest checksum: `1a5a3a730c92e82d42e9fa61f07bf59e3b567397982b8df064c486ff9c0d610f`
+- Manifest checksum: `bcd7b26fae9db55090364192534c2fdc260e74227b1028e353db2f23bf9d36ed`
 - Binding: `INVENTORY_ONLY_NO_PROPOSAL` — no scaled prose generated in Phase C inventory turn.
 - Scope: every active `products.is_active = true` row from the canonical production runtime, read-only; no production write.
 
