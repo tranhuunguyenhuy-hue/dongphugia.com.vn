@@ -1,6 +1,7 @@
 import { cleanupProductHtml } from './cleanup'
 import { createReviewImage, isBunnyAsset, isHitaHostedAsset, normalizeImageUrl } from './images'
 import { sha256, stableStringify } from './hash'
+import { getEditorialQualityMetrics } from './content-quality'
 import type { PrecomputedProposalPackage, PrecomputedProposalRecord } from './precomputed'
 import type { ContentReviewProposal } from './types'
 
@@ -28,6 +29,19 @@ export interface DashboardProduct {
     categorySlug: string
     mediaRisk: 'HITA_HOSTED' | 'BUNNY_ONLY' | 'MIXED'
     manifestMediaClass: string
+    editorialReview: 'PASS' | 'HUMAN_REVIEW'
+    editorialReviewReason: string | null
+    editorialQuality: {
+        beforeCharacters: number
+        afterCharacters: number
+        ratio: number
+        paragraphCount: number
+        buyerBenefitSignals: number
+        technicalTableDump: boolean
+        repeatedOpeningKey: string
+        shortSourceException: boolean
+        flags: string[]
+    }
     beforeHtml: string
     afterHtml: string
     previewHtml: string
@@ -147,6 +161,7 @@ export function createDashboardModel(
         .map(proposal => {
             const record = recordForProposal(packageValue, proposal)
             const media = createDashboardMedia(record)
+            const editorialQuality = getEditorialQualityMetrics(proposal.before.descriptionHtml, proposal.after.descriptionHtml)
             return {
                 id: proposal.product.id,
                 sku: proposal.product.sku,
@@ -157,6 +172,9 @@ export function createDashboardModel(
                 categorySlug: record.input.category?.slug || 'uncategorized',
                 mediaRisk: mediaRisk(media),
                 manifestMediaClass: record.manifest.mediaClass,
+                editorialReview: editorialQuality.editorialReview,
+                editorialReviewReason: editorialQuality.editorialReviewReason,
+                editorialQuality,
                 beforeHtml: sanitizeHtmlForDashboard(proposal.before.descriptionHtml, media, visibility),
                 afterHtml: sanitizeHtmlForDashboard(proposal.after.descriptionHtml, media, visibility),
                 previewHtml: sanitizeHtmlForDashboard(proposal.after.descriptionHtml, media, visibility),
@@ -243,7 +261,7 @@ function renderList(products) { $("product-list").innerHTML = products.length ? 
 function diffHtml(product) { if (!product.diff) return '<div class="subtle">No diff telemetry.</div>'; const before = product.beforeHtml.replace(/<[^>]+>/g, " ").replace(/\\s+/g," ").trim(); const after = product.afterHtml.replace(/<[^>]+>/g, " ").replace(/\\s+/g," ").trim(); return '<div class="subtle">Algorithm: ' + esc(product.diff.algorithm) + ' · +' + product.diff.addedCharacters + ' / -' + product.diff.removedCharacters + ' characters · common prefix ' + product.diff.commonPrefixCharacters + ' · common suffix ' + product.diff.commonSuffixCharacters + '</div><pre class="diff"><span class="minus">- ' + esc(before) + '</span>\\n<span class="plus">+ ' + esc(after) + '</span></pre>'; }
 function renderMediaPreview(product, media) { const decision = imageDecision(product, media); if (MODEL.privateMedia && media.host === "Bunny CDN" && media.url) return '<span class="media-view bunny-view" data-product-id="' + product.id + '" data-source-id="' + esc(media.sourceId) + '"></span>'; if (MODEL.privateMedia && media.host === "Hita") return '<button class="media-view hita-view" data-product-id="' + product.id + '" data-source-id="' + esc(media.sourceId) + '">View Hita asset manually</button><span class="media-warning">Warning: Hita-hosted; no request is made until this explicit click.</span>'; return '<span class="media-view">' + (media.host === "Hita" ? 'Hita asset URL withheld; explicit view is available only in the ignored private dashboard.' : 'Preview redacted in committed dashboard.') + '</span>'; }
 function renderDetail(product) { if (!product) { $("detail").innerHTML = '<div class="empty">Select a product.</div>'; return; } const productSelect = '<select id="product-decision"><option>PENDING</option><option>KEEP</option><option>HUMAN_REVIEW</option><option>REJECT</option></select>'; $("detail").innerHTML = '<div class="detail-head"><div><div class="eyebrow">Product ' + product.id + '</div><h2>' + esc(product.name) + '</h2><div class="subtle">SKU ' + esc(product.sku) + ' · ' + esc(product.brand) + ' · ' + esc(product.category) + '</div><div class="meta">' + badge(product.mediaRisk) + ' ' + badge(product.manifestMediaClass) + '</div></div><label>Product decision' + productSelect + '</label></div><div class="content-grid"><section class="content-box"><h3>Before</h3><div class="rendered">' + product.beforeHtml + '</div></section><section class="content-box"><h3>After</h3><div class="rendered">' + product.afterHtml + '</div></section><section class="content-box full"><h3>Deterministic Diff</h3>' + diffHtml(product) + '</section><section class="content-box full"><h3>Rendered sanitized Preview</h3><div class="rendered">' + product.previewHtml + '</div><p class="subtle">Preview is sanitized and media-gated; it does not apply changes or write remotely.</p></section><section class="content-box full"><h3>Complete media manifest (' + product.media.length + ')</h3><table class="manifest"><thead><tr><th>Kind / source</th><th>Host / risk</th><th>Fingerprint</th><th>Decision</th><th>Preview</th></tr></thead><tbody>' + product.media.map((media) => '<tr><td><strong>' + esc(media.kind) + '</strong><br><code>' + esc(media.sourceId) + '</code></td><td>' + badge(media.host) + '<br><span class="subtle">' + esc(media.policy) + '</span></td><td><code>' + esc(media.fingerprint) + '</code><br><span class="subtle">' + esc(media.urlRedacted) + '</span></td><td><select class="image-decision" data-product-id="' + product.id + '" data-source-id="' + esc(media.sourceId) + '"><option>KEEP</option><option>HUMAN_REVIEW</option><option>REMOVE</option><option>REPLACE</option></select></td><td>' + renderMediaPreview(product, media) + '</td></tr>').join("") + '</tbody></table></section><details class="content-box full"><summary>Factual / provenance indicators</summary><p class="subtle">Source: ' + esc(product.provenance.source) + '</p><p class="subtle">Source record: <code>' + esc(product.provenance.sourceRecordHash) + '</code></p><p class="subtle">Input: <code>' + esc(product.provenance.inputHash) + '</code></p><p class="subtle">Before: <code>' + esc(product.provenance.beforeDescriptionHash) + '</code> · After: <code>' + esc(product.provenance.afterDescriptionHash) + '</code></p><p class="subtle">Facts: <code>' + esc(product.provenance.factsHash) + '</code> · Media inventory: <code>' + esc(product.provenance.mediaInventoryHash) + '</code></p></details></div>'; $("product-decision").value = productDecision(product); document.querySelectorAll(".image-decision").forEach((element) => { const key = element.dataset.productId + ":" + element.dataset.sourceId; element.value = state.images[key] || product.media.find((media) => media.sourceId === element.dataset.sourceId)?.decision || "HUMAN_REVIEW"; element.addEventListener("change", () => { state.images[key] = element.value; persist(); render(); }); }); $("product-decision").addEventListener("change", (event) => { state.products[String(product.id)] = event.target.value; persist(); render(); }); document.querySelectorAll(".bunny-view").forEach((holder) => { const media = product.media.find((item) => item.sourceId === holder.dataset.sourceId); if (!media?.url) return; const image = document.createElement("img"); image.src = media.url; image.alt = media.sourceId; image.loading = "lazy"; image.referrerPolicy = "no-referrer"; holder.appendChild(image); }); document.querySelectorAll(".hita-view").forEach((button) => button.addEventListener("click", () => { const media = product.media.find((item) => item.sourceId === button.dataset.sourceId); if (!media?.url || !window.confirm("Hita-hosted media will be fetched only now. Continue for this single asset?")) return; const image = document.createElement("img"); image.src = media.url; image.alt = media.sourceId; image.loading = "lazy"; image.referrerPolicy = "no-referrer"; button.replaceWith(image); })); }
-function render() { const products = filteredProducts(); renderStats(products.length); renderList(products); const selected = products.find((product) => product.id === selectedId) || products[0]; if (selected) selectedId = selected.id; renderDetail(selected); }
+function render() { const products = filteredProducts(); renderStats(products.length); renderList(products); const selected = products.find((product) => product.id === selectedId) || products[0]; if (selected) selectedId = selected.id; renderDetail(selected); if (selected && selected.editorialReview === "HUMAN_REVIEW") { const notice = document.createElement("p"); notice.className = "media-warning"; notice.innerHTML = "<strong>Editorial HUMAN_REVIEW:</strong> " + esc(selected.editorialReviewReason); document.querySelector("#detail .detail-head > div")?.appendChild(notice); } }
 function downloadExport() { const payload = { schemaVersion: 1, dashboard: MODEL.dashboard, packageHash: MODEL.packageHash, manifestChecksum: MODEL.manifestChecksum, products: MODEL.products.map((product) => ({ productId: product.id, sku: product.sku, decision: productDecision(product), images: product.media.map((media) => ({ kind: media.kind, sourceId: media.sourceId, fingerprint: media.fingerprint, decision: imageDecision(product,media) })) })).sort((a,b) => a.productId-b.productId) }; const stable = (value) => Array.isArray(value) ? value.map(stable) : value && typeof value === "object" ? Object.fromEntries(Object.entries(value).sort(([a],[b]) => a.localeCompare(b)).map(([key,nested]) => [key,stable(nested)])) : value; const content = JSON.stringify(stable(payload), null, 2) + "\\n"; const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([content], {type:"application/json"})); link.download = "leo-489-review-decisions.json"; link.click(); setTimeout(() => URL.revokeObjectURL(link.href), 0); }
 function resetDecisions() { if (!window.confirm("Clear local review decisions for this package?")) return; state.products = {}; state.images = {}; persist(); render(); }
 addOptions("brand", values("brand"), "All brands"); addOptions("category", values("category"), "All categories"); addOptions("risk", values("mediaRisk"), "All media risk"); ["search","brand","category","status","risk"].forEach((id) => $(id).addEventListener("input", render)); $("export").addEventListener("click", downloadExport); $("reset").addEventListener("click", resetDecisions); document.addEventListener("click", (event) => { const button = event.target.closest("[data-product-id]"); if (button && button.classList.contains("product-card")) { selectedId = Number(button.dataset.productId); render(); } }); render();

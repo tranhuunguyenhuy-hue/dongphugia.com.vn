@@ -39,6 +39,27 @@ npx tsx scripts/content-review/build-pilot-bundle.mts
 open docs/review-bundles/leo-489-pilot-dashboard.html
 ```
 
+The generator also runs the LEO-489 editorial audit. It checks all 20 After
+descriptions for 70–120% normalized Before length, at least three narrative
+paragraphs, buyer-benefit language, the natural phrase “chính hãng”, factual
+HTML without a technical-table dump, and deterministic output. Two sparse
+Before sources are intentionally shorter and appear in the bundle and
+dashboard as product-level `HUMAN_REVIEW` with a specific reason; do not pad
+them with unsupported claims.
+
+Run the focused audit after generation:
+
+```bash
+npx vitest run src/lib/content-review/content-quality.test.ts src/lib/content-review/dashboard.test.ts
+```
+
+The test verifies exact 20-product coverage, unchanged 160-media counts
+(13 Hita `HUMAN_REVIEW`, 147 Bunny `KEEP`), no Hita links or automatic fetches
+in the committed artifact, no server/database/analytics code, and unique
+buyer-oriented openings. Inspect every Before/After pair in the dashboard and
+the per-product editorial-quality lines in
+`docs/review-bundles/leo-489-pilot-review.md` before handoff.
+
 The dashboard contains exactly the 20 package products, review progress,
 HUMAN_REVIEW/KEEP media counts, search and filters, Before/After/deterministic
 Diff, sanitized Preview, provenance indicators, and the complete main/gallery/
