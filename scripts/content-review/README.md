@@ -29,6 +29,40 @@ npx tsx scripts/content-review/build-pilot-bundle.mts
 npx tsx scripts/content-review/ingest-precomputed.mts
 ```
 
+### Offline interactive dashboard
+
+After the package exists, generate the sanitized dashboard committed for PR
+review:
+
+```bash
+npx tsx scripts/content-review/build-pilot-bundle.mts
+open docs/review-bundles/leo-489-pilot-dashboard.html
+```
+
+The dashboard contains exactly the 20 package products, review progress,
+HUMAN_REVIEW/KEEP media counts, search and filters, Before/After/deterministic
+Diff, sanitized Preview, provenance indicators, and the complete main/gallery/
+embedded manifest. Product and image decisions stay in browser `localStorage`;
+the **Export deterministic JSON** button produces a sorted review-decision file.
+There is no server, database, CDN, analytics, crawler, bulk fetch, media
+download or media-copy action in this dashboard. The committed dashboard
+redacts all live media URLs and does not auto-load any media.
+
+For private, local-only visual review of existing Bunny media, generate the
+ignored variant:
+
+```bash
+npx tsx scripts/content-review/build-pilot-bundle.mts --private
+open scripts/content-review/private/leo-489-pilot-dashboard.html
+```
+
+The private variant is never committed. Bunny images may render read-only with
+lazy loading. Hita-hosted media have no `src`, background, prefetch, or other
+automatic request; each requires an explicit single-asset click and displays a
+warning first. Do not crawl, bulk fetch, download, cache, copy, or rehost Hita
+assets. Re-run the generator whenever the private package changes; generated
+HTML is deterministic for the same package and mode.
+
 The ingestion command is validation-only. It checks the approved manifest
 checksum and entry identities, inventory/proposal hashes, before/after
 provenance, required facts, deterministic sanitized HTML, complete actual

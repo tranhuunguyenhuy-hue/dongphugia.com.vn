@@ -19,6 +19,7 @@ const {
 } = require('../../src/lib/content-review/precomputed.ts') as typeof import('../../src/lib/content-review/precomputed')
 import type { ProductContentInput } from '../../src/lib/content-review/types'
 import type { PrecomputedProposalPackage, PrecomputedProposalRecord, PrecomputedMediaInput } from '../../src/lib/content-review/precomputed'
+const { createDashboardModel, renderDashboardHtml } = require('../../src/lib/content-review/dashboard.ts') as typeof import('../../src/lib/content-review/dashboard')
 
 type ActualProductRow = ProductContentInput & {
     cleanDescriptionHtml?: string | null
@@ -262,6 +263,10 @@ async function main() {
         || path.join(process.cwd(), 'scripts/content-review/private/leo-489-actual-products.json')
     const packagePath = path.join(process.cwd(), 'scripts/content-review/private/leo-489-pilot-package.json')
     const bundlePath = path.join(process.cwd(), 'docs/review-bundles/leo-489-pilot-review.md')
+    const privateDashboard = process.argv.includes('--private')
+    const dashboardPath = privateDashboard
+        ? path.join(process.cwd(), 'scripts/content-review/private/leo-489-pilot-dashboard.html')
+        : path.join(process.cwd(), 'docs/review-bundles/leo-489-pilot-dashboard.html')
     const rawRows = JSON.parse(await fs.readFile(inputPath, 'utf8')) as ActualProductRow[]
     const rowsById = new Map(rawRows.map(row => [row.id, row]))
     if (rawRows.length !== LEO_489_PILOT_MANIFEST.length || rowsById.size !== LEO_489_PILOT_MANIFEST.length) {
@@ -286,6 +291,9 @@ async function main() {
     const validation = await validateAndGeneratePrecomputedProposals(packageValue)
     await fs.mkdir(path.dirname(bundlePath), { recursive: true })
     await fs.writeFile(bundlePath, buildReviewBundle(packageValue, validation.proposals), 'utf8')
+    const dashboard = createDashboardModel(packageValue, validation.proposals, privateDashboard ? 'private' : 'public')
+    await fs.mkdir(path.dirname(dashboardPath), { recursive: true })
+    await fs.writeFile(dashboardPath, renderDashboardHtml(dashboard, privateDashboard ? 'private' : 'public'), 'utf8')
     const packageSha256 = require('node:crypto').createHash('sha256').update(JSON.stringify(packageValue, null, 2) + '\n').digest('hex') as string
     console.log(JSON.stringify({
         products: validation.proposals.length,
@@ -294,6 +302,7 @@ async function main() {
         packageHash: packageValue.packageHash,
         packageSha256,
         bundlePath: 'docs/review-bundles/leo-489-pilot-review.md',
+        dashboardPath: privateDashboard ? 'scripts/content-review/private/leo-489-pilot-dashboard.html' : 'docs/review-bundles/leo-489-pilot-dashboard.html',
         mode: 'precomputed',
         validation: 'PASS',
         actualMediaItems: records.reduce((sum, record) => sum + record.actualInventory.totalCount, 0),
