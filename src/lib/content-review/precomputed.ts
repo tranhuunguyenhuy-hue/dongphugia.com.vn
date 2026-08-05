@@ -50,6 +50,9 @@ export interface PrecomputedProposalPackage {
     manifestChecksum: typeof LEO_489_PILOT_MANIFEST_CHECKSUM
     inventoryExportHash: string
     manifestEntryHash: string
+    policyHash: string
+    snapshotHash: string
+    sourceCommit: string
     records: PrecomputedProposalRecord[]
     packageHash: string
 }
@@ -67,6 +70,9 @@ function packageHashPayload(value: Omit<PrecomputedProposalPackage, 'packageHash
         manifestChecksum: value.manifestChecksum,
         inventoryExportHash: value.inventoryExportHash,
         manifestEntryHash: value.manifestEntryHash,
+        policyHash: value.policyHash,
+        snapshotHash: value.snapshotHash,
+        sourceCommit: value.sourceCommit,
         records: value.records,
     }
 }
@@ -197,7 +203,10 @@ export function validatePrecomputedPackage(value: unknown): PrecomputedProposalP
     const packageValue = value as PrecomputedProposalPackage
     if (packageValue.schemaVersion !== PRECOMPUTED_PACKAGE_SCHEMA_VERSION
         || packageValue.source !== PRECOMPUTED_PACKAGE_SOURCE
-        || packageValue.manifestChecksum !== LEO_489_PILOT_MANIFEST_CHECKSUM) {
+        || packageValue.manifestChecksum !== LEO_489_PILOT_MANIFEST_CHECKSUM
+        || !packageValue.policyHash
+        || !packageValue.snapshotHash
+        || !packageValue.sourceCommit) {
         throw new Error('Unsupported precomputed proposal package')
     }
     if (!Array.isArray(packageValue.records)) throw new Error('Precomputed package records are missing')

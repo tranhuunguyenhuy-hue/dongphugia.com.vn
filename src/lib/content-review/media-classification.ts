@@ -6,10 +6,10 @@ export const MEDIA_ORIGINS = [
 ] as const
 
 export const MEDIA_ACTIONS = [
-    'KEEP_VERIFIED',
-    'REMOVE_CONFIRMED_HITA',
-    'REMOVE_UNVERIFIED_THIRD_PARTY',
-    'REPLACE_WITH_OFFICIAL',
+    'KEEP_PRODUCT',
+    'KEEP_TECHNICAL',
+    'KEEP_TEMPORARY',
+    'REMOVE_HITA_SHOWROOM',
     'HUMAN_REVIEW',
 ] as const
 
@@ -19,9 +19,18 @@ export type MediaConfidence = 'HIGH' | 'MEDIUM' | 'LOW'
 export type OfficialSourceVerification = 'VERIFIED' | 'NOT_VERIFIED' | 'NOT_APPLICABLE'
 export type MediaHost = 'Bunny CDN' | 'Hita' | 'External'
 
+export const MEDIA_ACTION_LABELS: Record<MediaAction, string> = {
+    KEEP_PRODUCT: 'GIỮ — Hình sản phẩm',
+    KEEP_TECHNICAL: 'GIỮ — Bản vẽ/HDSD',
+    KEEP_TEMPORARY: 'GIỮ TẠM — Chưa chứng minh nguồn, không phải showroom Hita',
+    REMOVE_HITA_SHOWROOM: 'XOÁ — Showroom/cửa hàng Hita',
+    HUMAN_REVIEW: 'CẦN XEM',
+}
+
 export interface MediaClassification {
     origin: MediaOrigin
     action: MediaAction
+    label: string
     confidence: MediaConfidence
     evidence: string
     visualCluster: string
@@ -42,121 +51,99 @@ const officialRefs: Record<string, string> = {
     'SFV-900SX': 'INAX official SFV-900SX product page and technical files; URL redacted',
 }
 
-function replacement(sku: string, input: MediaClassificationInput, reason: string, cluster: string): MediaClassification {
+function retained(
+    input: MediaClassificationInput,
+    action: Exclude<MediaAction, 'REMOVE_HITA_SHOWROOM' | 'HUMAN_REVIEW'>,
+    evidence: string,
+    cluster: string,
+    origin: MediaOrigin = 'UNKNOWN',
+): MediaClassification {
+    const officialSourceRef = officialRefs[input.sku] && input.sku === 'SFV-900SX'
+        ? officialRefs[input.sku]
+        : 'No official-source verification performed; existing asset retained with residual copyright risk.'
     return {
-        origin: 'UNKNOWN',
-        action: 'REPLACE_WITH_OFFICIAL',
-        confidence: 'MEDIUM',
-        evidence: reason,
+        origin,
+        action,
+        label: MEDIA_ACTION_LABELS[action],
+        confidence: action === 'KEEP_TEMPORARY' ? 'MEDIUM' : 'HIGH',
+        evidence,
         visualCluster: cluster,
         duplicateFingerprint: input.fingerprint,
-        officialSourceVerification: 'NOT_VERIFIED',
-        officialSourceRef: `Manufacturer source required for ${sku}; exact URL redacted`,
-    }
-}
-
-function verified(sku: string, input: MediaClassificationInput, reason: string, cluster: string): MediaClassification {
-    const officialSourceRef = officialRefs[sku]
-    if (!officialSourceRef) return replacement(sku, input, 'Visual asset may resemble a manufacturer asset, but no exact durable official-source match is encoded in the approved evidence set.', `${sku.toLocaleLowerCase()}-unverified`)
-    return {
-        origin: 'OFFICIAL_MANUFACTURER',
-        action: 'KEEP_VERIFIED',
-        confidence: 'HIGH',
-        evidence: reason,
-        visualCluster: cluster,
-        duplicateFingerprint: input.fingerprint,
-        officialSourceVerification: 'VERIFIED',
+        officialSourceVerification: officialRefs[input.sku] ? 'VERIFIED' : 'NOT_VERIFIED',
         officialSourceRef,
     }
 }
 
-function removeHita(input: MediaClassificationInput, evidence: string, cluster: string): MediaClassification {
+function removeHitaShowroom(input: MediaClassificationInput, evidence: string, cluster: string): MediaClassification {
     return {
         origin: 'HITA_EXCLUSIVE',
-        action: 'REMOVE_CONFIRMED_HITA',
+        action: 'REMOVE_HITA_SHOWROOM',
+        label: MEDIA_ACTION_LABELS.REMOVE_HITA_SHOWROOM,
         confidence: 'HIGH',
         evidence,
         visualCluster: cluster,
         duplicateFingerprint: input.fingerprint,
         officialSourceVerification: 'NOT_APPLICABLE',
-        officialSourceRef: 'Not applicable: confirmed Hita source/cluster',
+        officialSourceRef: 'Not applicable: visually confirmed Hita showroom/store/display photo',
     }
 }
 
-function removeThirdParty(input: MediaClassificationInput, evidence: string, cluster: string): MediaClassification {
+function needsHumanReview(input: MediaClassificationInput): MediaClassification {
     return {
-        origin: 'UNVERIFIED_THIRD_PARTY',
-        action: 'REMOVE_UNVERIFIED_THIRD_PARTY',
-        confidence: 'HIGH',
-        evidence,
-        visualCluster: cluster,
+        origin: 'UNKNOWN',
+        action: 'HUMAN_REVIEW',
+        label: MEDIA_ACTION_LABELS.HUMAN_REVIEW,
+        confidence: 'LOW',
+        evidence: 'Visual role or provenance is genuinely unclear from the approved offline evidence.',
+        visualCluster: `${input.sku.toLocaleLowerCase()}-unclear`,
         duplicateFingerprint: input.fingerprint,
-        officialSourceVerification: 'NOT_VERIFIED',
-        officialSourceRef: 'No rights evidence in approved pilot package',
+        officialSourceVerification: 'NOT_APPLICABLE',
+        officialSourceRef: 'Manual visual review required; no remote fetch performed',
     }
 }
 
-function replaceHitaMain(input: MediaClassificationInput): MediaClassification {
-    return {
-        origin: 'HITA_EXCLUSIVE',
-        action: 'REPLACE_WITH_OFFICIAL',
-        confidence: 'HIGH',
-        evidence: 'Main reference is confirmed Hita-hosted; replace it with a verified official manufacturer asset so the product retains a valid main image.',
-        visualCluster: 'hita-main-replacement',
-        duplicateFingerprint: input.fingerprint,
-        officialSourceVerification: 'NOT_VERIFIED',
-        officialSourceRef: `Manufacturer source required for ${input.sku}; exact URL redacted`,
-    }
+function isConfirmedHitaShowroom(input: MediaClassificationInput): boolean {
+    if (input.sku === 'SFV-900SX') return /^gallery:31087[1-9]$|^gallery:310880$/.test(input.sourceId)
+    if (input.sku === 'CS326DT10#XW') return /^gallery:21580[1-8]$/.test(input.sourceId)
+    if (input.sku === 'SFV-802S') return /^gallery:31097[45]$/.test(input.sourceId)
+    return input.sku === 'WF-9089-CHROME' && input.sourceId === 'gallery:291927'
+}
+
+function isKnownUnverifiedNonShowroom(input: MediaClassificationInput): boolean {
+    if (input.sku === 'SFV-900SX') return /^gallery:31088[5-9]$/.test(input.sourceId)
+    if (input.sku === 'SFV-802S') return /^gallery:31097[6-9]$/.test(input.sourceId)
+    if (input.sku === 'TX707AC') return input.sourceId !== 'main'
+    return input.sku === 'INAX-20B/CRB-1' || input.sku === 'INAX-255/VIZ-1'
 }
 
 /**
- * Asset-first, redacted pilot evidence map.  The exact source URL never enters
- * this map: duplicate fingerprints are computed from the existing normalized
- * manifest URL and the same result is propagated to every reference.
+ * Offline, visual-role-first policy for the PM timebox. Host alone never
+ * removes an asset: only the explicit showroom/display clusters below do.
  */
 export function classifyMediaAsset(input: MediaClassificationInput): MediaClassification {
+    if (isConfirmedHitaShowroom(input)) {
+        return removeHitaShowroom(input, 'Visual store/showroom/display-photo cluster confirmed as Hita; remove only this reference.', `${input.sku.toLocaleLowerCase()}-hita-showroom`)
+    }
+
+    if (input.host === 'External') return needsHumanReview(input)
+
+    if (isKnownUnverifiedNonShowroom(input)) {
+        return retained(input, 'KEEP_TEMPORARY', 'Non-showroom household, lifestyle, installation or unverified visual retained for this timebox with residual copyright risk.', `${input.sku.toLocaleLowerCase()}-non-showroom-risk`)
+    }
+
+    if (input.sku === 'SFV-900SX' && (input.sourceId === 'main' || /^gallery:31087[0]$|^gallery:31088[1-4]$/.test(input.sourceId))) {
+        return retained(input, 'KEEP_PRODUCT', 'Product render, packshot or technical product asset matches the approved INAX SFV-900SX evidence.', 'sfv900sx-product-approved', 'OFFICIAL_MANUFACTURER')
+    }
+
+    if (input.kind === 'embedded') {
+        return retained(input, 'KEEP_TECHNICAL', 'Existing embedded description asset is retained as a diagram, technical drawing or instruction reference; no new asset was added.', `${input.sku.toLocaleLowerCase()}-embedded-technical`, input.host === 'Hita' ? 'HITA_EXCLUSIVE' : 'UNKNOWN')
+    }
+
     if (input.host === 'Hita') {
-        if (input.kind === 'main') return replaceHitaMain(input)
-        return removeHita(input, 'Exact stored Hita-hosted provenance; source is not auto-loaded in either dashboard.', 'hita-source')
+        return retained(input, 'KEEP_TEMPORARY', 'Existing Hita-hosted product reference is retained because it is not a confirmed showroom/display photo; residual copyright risk remains.', `${input.sku.toLocaleLowerCase()}-hita-product`, 'HITA_EXCLUSIVE')
     }
 
-    if (input.sku === 'SFV-900SX') {
-        const showroom = /^gallery:31087[1-9]$|^gallery:310880$/.test(input.sourceId)
-        const household = /^gallery:31088[5-9]$/.test(input.sourceId)
-        const official = input.sourceId === 'main' || /^gallery:31087[0]$|^gallery:31088[1-4]$/.test(input.sourceId)
-        if (showroom) return removeHita(input, 'Visual showroom/display-photo cluster; PM golden case identifies these ten exact assets as Hita showroom photographs.', 'sfv900sx-hita-showroom')
-        if (household) return removeThirdParty(input, 'Visual household/installation scene; no documented image rights in the pilot evidence.', 'sfv900sx-household-install')
-        if (official) return verified('SFV-900SX', input, 'Visual product render, technical drawing or instruction asset matches the official INAX SFV-900SX source.', 'sfv900sx-official-packshot-tech')
-    }
-
-    if (input.sku === 'CS326DT10#XW' && /^gallery:21580[1-8]$/.test(input.sourceId)) {
-        return removeHita(input, 'Visual showroom/display-photo cluster with TOTO product display context; no rights evidence for this stored reference.', 'cs326dt10-showroom')
-    }
-
-    if (input.sku === 'SFV-802S' && /^gallery:31097[4-9]$/.test(input.sourceId)) {
-        const household = /^gallery:31097[6-9]$/.test(input.sourceId)
-        return household
-            ? removeThirdParty(input, 'Visual household/installation photo; no documented image rights in the pilot evidence.', 'sfv802s-household-install')
-            : removeHita(input, 'Visual showroom display cluster; host is not used as the sole evidence.', 'sfv802s-showroom')
-    }
-
-    if (input.sku === 'INAX-20B/CRB-1' || input.sku === 'INAX-255/VIZ-1') {
-        return replacement(input.sku, input, 'Visual product/lifestyle asset observed, but the exact manufacturer source or usage rights are not proven by this stored reference.', `${input.sku.toLocaleLowerCase()}-unverified`)
-    }
-
-    if (input.sku === 'TX707AC' && input.sourceId !== 'main') {
-        return removeThirdParty(input, 'Visual accessory/household capture does not prove official ownership or rights for this product reference.', 'tx707ac-unverified-accessory')
-    }
-
-    if (input.sku === 'SFV-802S' && input.sourceId === 'main') {
-        return replacement(input.sku, input, 'Main visual is a product packshot but the exact official-source match is not encoded in the approved evidence set.', 'sfv802s-main-replacement')
-    }
-
-    if (input.kind === 'main') {
-        return replacement(input.sku, input, 'Main asset is retained only as a proposal for official replacement until the exact manufacturer source is verified.', `${input.sku.toLocaleLowerCase()}-main-replacement`)
-    }
-
-    return replacement(input.sku, input, 'Visual asset was observed, but exact manufacturer ownership and documented rights are not proven; use an official alternative.', `${input.sku.toLocaleLowerCase()}-unverified`)
+    return retained(input, 'KEEP_PRODUCT', 'Existing product packshot or render is retained; no official-image search or replacement was performed.', `${input.sku.toLocaleLowerCase()}-product`)
 }
 
 /** Apply the first-seen asset decision to every duplicate reference. */
@@ -182,13 +169,16 @@ export function assertValidMediaClassification(classification: MediaClassificati
     if (!MEDIA_ORIGINS.includes(classification.origin) || !MEDIA_ACTIONS.includes(classification.action)) {
         throw new Error('Invalid media classification enum')
     }
+    if (classification.label !== MEDIA_ACTION_LABELS[classification.action]) {
+        throw new Error('Media classification label does not match action')
+    }
     if (!classification.duplicateFingerprint || !classification.visualCluster || !classification.evidence) {
         throw new Error('Media classification evidence is incomplete')
     }
-    if (classification.action === 'KEEP_VERIFIED'
-        && (classification.origin !== 'OFFICIAL_MANUFACTURER'
-            || classification.officialSourceVerification !== 'VERIFIED'
-            || !/^INAX official SFV-900SX product page and technical files; URL redacted$/.test(classification.officialSourceRef))) {
-        throw new Error('KEEP_VERIFIED requires official manufacturer verification')
+    if (classification.action === 'REMOVE_HITA_SHOWROOM' && classification.origin !== 'HITA_EXCLUSIVE') {
+        throw new Error('Hita showroom removal requires HITA_EXCLUSIVE origin')
+    }
+    if (classification.action === 'HUMAN_REVIEW' && classification.confidence !== 'LOW') {
+        throw new Error('CẦN XEM must remain low-confidence')
     }
 }

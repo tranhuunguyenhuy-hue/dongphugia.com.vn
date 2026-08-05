@@ -4,7 +4,7 @@ import { createRequire } from 'node:module'
 
 const require = createRequire(import.meta.url)
 const { cleanupProductHtml, extractEmbeddedImageUrls } = require('../../src/lib/content-review/cleanup.ts') as typeof import('../../src/lib/content-review/cleanup')
-const { createReviewImage, dedupeReviewImages, isBunnyAsset } = require('../../src/lib/content-review/images.ts') as typeof import('../../src/lib/content-review/images')
+const { createReviewImage, dedupeReviewImages } = require('../../src/lib/content-review/images.ts') as typeof import('../../src/lib/content-review/images')
 const { hashObject, sha256 } = require('../../src/lib/content-review/hash.ts') as typeof import('../../src/lib/content-review/hash')
 const {
     LEO_489_PILOT_MANIFEST,
@@ -22,6 +22,7 @@ import type { ProductContentInput } from '../../src/lib/content-review/types'
 import type { PrecomputedProposalPackage, PrecomputedProposalRecord, PrecomputedMediaInput } from '../../src/lib/content-review/precomputed'
 const { createDashboardModel, renderDashboardHtml } = require('../../src/lib/content-review/dashboard.ts') as typeof import('../../src/lib/content-review/dashboard')
 const { classifyMediaReferences, countMediaClassifications } = require('../../src/lib/content-review/media-classification.ts') as typeof import('../../src/lib/content-review/media-classification')
+const { POLICY_HASH } = require('../../src/lib/content-review/policy-contract.ts') as typeof import('../../src/lib/content-review/policy-contract')
 
 type ActualProductRow = ProductContentInput & {
     cleanDescriptionHtml?: string | null
@@ -270,8 +271,6 @@ function buildAfterHtml(row: ActualProductRow): { html: string; requiredFacts: s
     const embeddedUrls = extractEmbeddedImageUrls(row.descriptionHtml)
     const figure = (url: string, sourceId: string, alt: string) =>
         `<figure data-media-source-id="${sourceId}"><img src="${escapeHtml(url)}" alt="${escapeHtml(alt)}"></figure>`
-    const replacement = (sourceId: string, label: string) =>
-        `<figure><span>[[MEDIA:${sourceId}]] ${escapeHtml(label)} — cần nguồn hình ảnh chính thức</span></figure>`
     const classifiedMedia = buildMedia(row).map(item => {
         const image = createReviewImage(item.kind, item.url)
         const host = image.policy === 'HITA_HOSTED_REVIEW' ? 'Hita' : image.policy === 'KEEP_EXISTING_BUNNY' ? 'Bunny CDN' : 'External'
@@ -288,10 +287,9 @@ function buildAfterHtml(row: ActualProductRow): { html: string; requiredFacts: s
     const placement = (sourceId: string, label: string): string => {
         const entry = classifiedBySourceId.get(sourceId)
         if (!entry || entry.classification.action.startsWith('REMOVE_') || entry.classification.action === 'HUMAN_REVIEW') return ''
-        if (entry.classification.action === 'KEEP_VERIFIED' && isBunnyAsset(entry.item.url)) {
+        if (entry.classification.action.startsWith('KEEP_')) {
             return figure(entry.item.url, sourceId, `${row.name} — ${label}`)
         }
-        if (entry.classification.action === 'REPLACE_WITH_OFFICIAL') return replacement(sourceId, label)
         return ''
     }
     const checkpointHtml: Record<string, string> = {
@@ -396,6 +394,7 @@ function buildAfterHtml(row: ActualProductRow): { html: string; requiredFacts: s
             '<h4>Đối chiếu bộ sản phẩm với công trình</h4>',
             `<p>${escapeHtml(narrative.paragraphs[2] || '')}</p>`,
             placement('gallery:215809', 'ảnh cấu hình hoặc vị trí lắp đặt'),
+            placement('embedded:0', 'hình chi tiết hoặc lắp đặt'),
             `<blockquote><p>${escapeHtml(narrative.paragraphs[3] || '')}</p></blockquote>`,
             `<p>${escapeHtml(narrative.paragraphs[4] || '')}</p>`,
             `<p>${escapeHtml(narrative.guidance)}</p>`,
@@ -407,6 +406,7 @@ function buildAfterHtml(row: ActualProductRow): { html: string; requiredFacts: s
             `<p>${escapeHtml(narrative.paragraphs[0] || '')}</p>`,
             placement('main', 'ảnh tổng quan phụ kiện'),
           `<blockquote><p>${escapeHtml(narrative.paragraphs[1] || '')}</p></blockquote>`,
+            placement('embedded:0', 'hình chi tiết phụ kiện'),
             `<p>${escapeHtml(narrative.guidance)}</p>`,
         ].filter(Boolean).join(''),
         'BFV-3003-1C': [
@@ -429,6 +429,7 @@ function buildAfterHtml(row: ActualProductRow): { html: string; requiredFacts: s
             `<p>${escapeHtml(narrative.paragraphs[0] || '')}</p>`,
             `<p>${escapeHtml(narrative.paragraphs[1] || '')}</p>`,
             placement('embedded:0', 'bản vẽ hoặc hướng dẫn thi công'),
+            placement('embedded:1', 'hình chi tiết bề mặt'),
             '<h4>Dự toán và chăm sóc bề mặt</h4>',
             `<p>${escapeHtml(narrative.paragraphs[2] || '')}</p>`,
           `<p>${escapeHtml(narrative.guidance)}</p>`,
@@ -481,24 +482,27 @@ function buildAfterHtml(row: ActualProductRow): { html: string; requiredFacts: s
             `<h2>${escapeHtml(heading)}</h2>`,
             '<h3>Một lựa chọn cho góc thư giãn</h3>',
             `<p>${escapeHtml(narrative.intro)}</p>`,
-            replacement('main', 'Ảnh tổng quan Caesar MT5140'),
+            placement('main', 'Ảnh tổng quan Caesar MT5140'),
             '<h3>Trải nghiệm sử dụng cần hình dung trước</h3>',
             `<p>${escapeHtml(narrative.paragraphs[1] || '')}</p>`,
+            placement('embedded:0', 'Hình trải nghiệm Caesar MT5140'),
             '<h3>Đặt vừa không gian rồi mới chọn tính năng</h3>',
             `<p>${escapeHtml(narrative.paragraphs[0] || '')}</p>`,
+            placement('embedded:1', 'Hình bố trí Caesar MT5140'),
             `<p>${escapeHtml(narrative.paragraphs[2] || '')}</p>`,
-            replacement('gallery:156235', 'Ảnh hoặc bản vẽ lắp đặt Caesar MT5140'),
+            placement('gallery:156235', 'Ảnh hoặc bản vẽ lắp đặt Caesar MT5140'),
+            placement('embedded:2', 'Hình hướng dẫn Caesar MT5140'),
             `<p><strong>Điểm cần xác nhận với tư vấn viên:</strong> ${escapeHtml(narrative.guidance)}</p>`,
         ].join(''),
         V93: [
             `<h2>${escapeHtml(heading)}</h2>`,
             `<p>${escapeHtml(narrative.intro)}</p>`,
-            replacement('main', 'Ảnh sản phẩm Viglacera V93'),
+            placement('main', 'Ảnh sản phẩm Viglacera V93'),
             '<h3>Tiện ích điện tử phục vụ thói quen hằng ngày</h3>',
             `<p>${escapeHtml(narrative.paragraphs[0] || '')}</p>`,
             '<h3>Ưu tiên an toàn khi chuẩn bị công trình</h3>',
             `<p>${escapeHtml(narrative.paragraphs[2] || '')}</p>`,
-            replacement('embedded:0', 'Bản vẽ kỹ thuật Viglacera V93'),
+            placement('embedded:0', 'Bản vẽ kỹ thuật Viglacera V93'),
             '<h3>Chăm sóc và vận hành</h3>',
             `<p>${escapeHtml(narrative.paragraphs[1] || '')}</p>`,
             `<p>${escapeHtml(narrative.guidance)}</p>`,
@@ -508,7 +512,7 @@ function buildAfterHtml(row: ActualProductRow): { html: string; requiredFacts: s
             '<p><strong>Phụ kiện đúng mã trước khi thay:</strong> ' + escapeHtml(narrative.intro) + '</p>',
             '<h3>1. Đối chiếu bộ vòi đang dùng</h3>',
             `<p>${escapeHtml(narrative.paragraphs[0] || '')}</p>`,
-            replacement('main', 'Ảnh đối chiếu đầu vòi INAX A-SFV1013SX-1-1'),
+            placement('main', 'Ảnh đối chiếu đầu vòi INAX A-SFV1013SX-1-1'),
             '<h3>2. Kiểm tra trước khi tháo lắp</h3>',
             `<p>${escapeHtml(narrative.paragraphs[1] || '')}</p>`,
             `<p>${escapeHtml(narrative.guidance)}</p>`,
@@ -673,12 +677,15 @@ function buildReviewBundle(
         'Sanitized static review bundle generated from the exact read-only AWS PostgreSQL export. It includes actual product identity/category, sanitized Before, worker-authored After, deterministic diff/provenance, and exact per-image decisions identified by source ID and fingerprint. Hita-hosted media are classified without fetching or copying; URLs are redacted in this committed bundle.',
         '',
         `- Manifest checksum: \`${packageValue.manifestChecksum}\``,
+        `- Policy v3.1 hash: \`${packageValue.policyHash}\``,
+        `- Canonical snapshot hash: \`${packageValue.snapshotHash}\``,
+        `- Snapshot source commit: \`${packageValue.sourceCommit}\``,
         `- Read-only inventory export hash: \`${packageValue.inventoryExportHash}\``,
         `- Manifest entry hash: \`${packageValue.manifestEntryHash}\``,
         `- Package hash: \`${packageValue.packageHash}\``,
         `- Products: ${proposals.length}`,
         `- Total actual media items: ${packageValue.records.reduce((sum, record) => sum + record.actualInventory.totalCount, 0)}`,
-        `- Media v2.1 proposed actions: ${Object.entries(mediaCounts).sort(([left], [right]) => left.localeCompare(right)).map(([action, count]) => `${count} ${action}`).join('; ')}`,
+        `- Media v3.1 proposed labels: ${Object.entries(mediaCounts).sort(([left], [right]) => left.localeCompare(right)).map(([action, count]) => `${count} ${action}`).join('; ')}`,
         `- Proposal mode: \`precomputed\``,
         '',
         sections,
@@ -695,6 +702,11 @@ async function main() {
         ? path.join(process.cwd(), 'scripts/content-review/private/leo-489-pilot-dashboard.html')
         : path.join(process.cwd(), 'docs/review-bundles/leo-489-pilot-dashboard.html')
     const rawRows = JSON.parse(await fs.readFile(inputPath, 'utf8')) as ActualProductRow[]
+    const pipelineManifestPath = path.join(process.cwd(), 'docs/review-bundles/leo-493-pipeline-v3-1-manifest.json')
+    const pipelineManifest = JSON.parse(await fs.readFile(pipelineManifestPath, 'utf8')) as { policyHash: string; snapshotHash: string; sourceCommit: string; counts?: { products?: number } }
+    if (pipelineManifest.policyHash !== POLICY_HASH || !pipelineManifest.snapshotHash || !pipelineManifest.sourceCommit || pipelineManifest.counts?.products !== 240) {
+        throw new Error('Pipeline v3.1 manifest binding is stale or incomplete')
+    }
     const rowsById = new Map(rawRows.map(row => [row.id, row]))
     if (rawRows.length !== LEO_489_PILOT_MANIFEST.length || rowsById.size !== LEO_489_PILOT_MANIFEST.length) {
         throw new Error('Actual read-only export must contain exactly 20 unique manifest products')
@@ -718,6 +730,9 @@ async function main() {
         manifestChecksum: LEO_489_PILOT_MANIFEST_CHECKSUM,
         inventoryExportHash: hashObject([...rawRows].sort((left, right) => left.id - right.id)),
         manifestEntryHash: pilotManifestEntryHash(),
+        policyHash: pipelineManifest.policyHash,
+        snapshotHash: pipelineManifest.snapshotHash,
+        sourceCommit: pipelineManifest.sourceCommit,
         records,
     }
     const packageValue: PrecomputedProposalPackage = { ...withoutHash, packageHash: calculatePrecomputedPackageHash(withoutHash) }

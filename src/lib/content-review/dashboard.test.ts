@@ -33,10 +33,10 @@ function bundleClassifications(): Array<{ sku: string; sourceId: string; classif
 
 function actionCounts(values: Array<{ action: string }>): Record<string, number> {
     const counts: Record<string, number> = {
-        KEEP_VERIFIED: 0,
-        REMOVE_CONFIRMED_HITA: 0,
-        REMOVE_UNVERIFIED_THIRD_PARTY: 0,
-        REPLACE_WITH_OFFICIAL: 0,
+        KEEP_PRODUCT: 0,
+        KEEP_TECHNICAL: 0,
+        KEEP_TEMPORARY: 0,
+        REMOVE_HITA_SHOWROOM: 0,
         HUMAN_REVIEW: 0,
     }
     for (const value of values) counts[value.action] = (counts[value.action] || 0) + 1
@@ -72,7 +72,7 @@ function fixturePackage(): { packageValue: PrecomputedProposalPackage; proposals
         }
         return { manifest: entry, input, requiredFacts: [entry.sku], generatedHtml, media, actualInventory: { mainCount: 1, galleryCount: 0, embeddedCount: 1, totalCount: 1 }, provenance }
     })
-    const withoutHash = { schemaVersion: 1 as const, source: 'hita_cleanup_v1' as const, manifestChecksum: LEO_489_PILOT_MANIFEST_CHECKSUM, inventoryExportHash: hashObject(records), manifestEntryHash: pilotManifestEntryHash(), records }
+    const withoutHash = { schemaVersion: 1 as const, source: 'hita_cleanup_v1' as const, manifestChecksum: LEO_489_PILOT_MANIFEST_CHECKSUM, inventoryExportHash: hashObject(records), manifestEntryHash: pilotManifestEntryHash(), policyHash: 'policy-fixture', snapshotHash: 'snapshot-fixture', sourceCommit: 'commit-fixture', records }
     const packageValue = { ...withoutHash, packageHash: hashObject(withoutHash) } as PrecomputedProposalPackage
     const proposals = records.map((record) => ({
         schemaVersion: 1 as const, source: 'hita_cleanup_v1' as const, proposalId: String(record.input.id), product: { id: record.input.id, sku: record.input.sku, name: record.input.name }, version: 1, baseHash: 'base', proposalHash: 'proposal', generation: { adapter: 'test', mode: 'precomputed' as const, cleanupVersion: 'deterministic_html_v1' as const }, workflow: { paused: false }, before: { descriptionHtml: record.input.descriptionHtml, images: [] }, after: { descriptionHtml: record.generatedHtml, images: [] }, audit: { beforeDescriptionHash: record.provenance.beforeDescriptionHash, afterDescriptionHash: record.provenance.afterDescriptionHash, diff: { algorithm: 'deterministic_char_window_v1' as const, changed: true, addedCharacters: 10, removedCharacters: 4, commonPrefixCharacters: 2, commonSuffixCharacters: 3 } },
@@ -103,7 +103,7 @@ describe('LEO-489 offline dashboard', () => {
 
     it('keeps the committed artifact sanitized and free of raw input payload fields', () => {
         const artifact = fs.readFileSync(path.join(process.cwd(), 'docs/review-bundles/leo-489-pilot-dashboard.html'), 'utf8')
-        expect(artifact).toContain('LEO-489 Pilot Review Dashboard')
+        expect(artifact).toContain('LEO-489 Media Review')
         expect(artifact).not.toMatch(/https?:\/\/[^\s"'<>]+/i)
         expect(artifact).not.toMatch(/cdn\.hita\.com\.vn|cdn\.dongphugia\.com\.vn|www\.dongphugia\.vn/i)
         expect(artifact).not.toMatch(/DATABASE_URL|DIRECT_URL|BUNNY_STORAGE_API_KEY|structuredFacts|imageMainUrl|galleryImages|sourceUrl|rawValue/i)
@@ -117,16 +117,16 @@ describe('LEO-489 offline dashboard', () => {
         const golden = bundle.slice(bundle.indexOf('## 14.'), bundle.indexOf('## 15.'))
         const goldenEntries = bundleClassifications().filter(entry => entry.sku === 'SFV-900SX')
         expect(goldenEntries).toHaveLength(24)
-        expect(goldenEntries.filter(entry => entry.classification.action === 'REMOVE_CONFIRMED_HITA')).toHaveLength(10)
-        expect(goldenEntries.filter(entry => entry.classification.action === 'REMOVE_UNVERIFIED_THIRD_PARTY')).toHaveLength(5)
-        expect(golden).toContain('main: main — KEEP_EXISTING_BUNNY → KEEP — proposed KEEP_VERIFIED')
-        expect(golden).not.toMatch(/gallery:310885:[^\n]+proposed KEEP_VERIFIED/)
+        expect(goldenEntries.filter(entry => entry.classification.action === 'REMOVE_HITA_SHOWROOM')).toHaveLength(10)
+        expect(goldenEntries.filter(entry => entry.classification.action === 'KEEP_TEMPORARY')).toHaveLength(5)
+        expect(golden).toContain('main: main — KEEP_EXISTING_BUNNY → KEEP — proposed KEEP_PRODUCT')
+        expect(golden).toMatch(/gallery:310885:[^\n]+proposed KEEP_TEMPORARY/)
     })
 
     it('keeps dashboard, bundle, export, duplicate propagation and totals exactly aligned', () => {
         const model = committedModel()
         const modelMedia = model.products.flatMap(product => product.media.map(media => ({ sku: product.sku, media })))
-        const expectedCounts = { KEEP_VERIFIED: 9, REMOVE_CONFIRMED_HITA: 25, REMOVE_UNVERIFIED_THIRD_PARTY: 16, REPLACE_WITH_OFFICIAL: 110, HUMAN_REVIEW: 0 }
+        const expectedCounts = { KEEP_PRODUCT: 63, KEEP_TECHNICAL: 5, KEEP_TEMPORARY: 70, REMOVE_HITA_SHOWROOM: 22, HUMAN_REVIEW: 0 }
         expect(model.products).toHaveLength(20)
         expect(modelMedia).toHaveLength(160)
         expect(actionCounts(modelMedia.map(({ media }) => media.classification))).toEqual(expectedCounts)
@@ -134,12 +134,12 @@ describe('LEO-489 offline dashboard', () => {
         const bundle = bundleClassifications()
         expect(bundle).toHaveLength(160)
         expect(actionCounts(bundle.map(entry => ({ action: String(entry.classification.action) })))).toEqual(expectedCounts)
-        const header = fs.readFileSync(path.join(process.cwd(), 'docs/review-bundles/leo-489-pilot-review.md'), 'utf8').match(/Media v2\.1 proposed actions: ([^\n]+)/)?.[1]
+        const header = fs.readFileSync(path.join(process.cwd(), 'docs/review-bundles/leo-489-pilot-review.md'), 'utf8').match(/Media v3\.1 proposed labels: ([^\n]+)/)?.[1]
         expect(header).toContain('0 HUMAN_REVIEW')
-        expect(header).toContain('9 KEEP_VERIFIED')
-        expect(header).toContain('25 REMOVE_CONFIRMED_HITA')
-        expect(header).toContain('16 REMOVE_UNVERIFIED_THIRD_PARTY')
-        expect(header).toContain('110 REPLACE_WITH_OFFICIAL')
+        expect(header).toContain('63 KEEP_PRODUCT')
+        expect(header).toContain('5 KEEP_TECHNICAL')
+        expect(header).toContain('70 KEEP_TEMPORARY')
+        expect(header).toContain('22 REMOVE_HITA_SHOWROOM')
 
         const exported = JSON.parse(buildDeterministicReviewExport(model)) as { products: Array<{ sku: string; images: Array<{ sourceId: string; fingerprint: string; classification: Record<string, unknown> }> }> }
         const bundleByReference = new Map(bundle.map(entry => [`${entry.sku}:${entry.sourceId}`, entry.classification]))
@@ -164,7 +164,7 @@ describe('LEO-489 offline dashboard', () => {
         const model = createDashboardModel(packageValue, proposals, 'private')
         const mainActions = model.products.map((product) => product.media.find((media) => media.kind === 'main')?.classification.action)
         expect(mainActions).toHaveLength(20)
-        expect(mainActions.every((action) => action === 'KEEP_VERIFIED' || action === 'REPLACE_WITH_OFFICIAL')).toBe(true)
+        expect(mainActions.every((action) => action?.startsWith('KEEP_'))).toBe(true)
     })
 
     it('keeps Hita unloaded in private mode and only exposes deterministic local exports', () => {
@@ -179,17 +179,25 @@ describe('LEO-489 offline dashboard', () => {
         expect(buildDeterministicReviewExport(model, stateA)).not.toMatch(/exportedAt|timestamp|https?:\/\//i)
     })
 
+    it('blocks deterministic export when the policy or snapshot binding is stale', () => {
+        const model = committedModel()
+        const stale = { ...model, bindingStatus: 'STALE' as const }
+        expect(renderDashboardHtml(stale, 'public')).toContain('Binding: <strong>STALE</strong>')
+        expect(() => buildDeterministicReviewExport(stale)).toThrow(/stale|incomplete/i)
+    })
+
     it('renders a separate media-first review surface with direct decisions and no automatic Hita fetch', () => {
         const model = committedModel()
         const privateHtml = renderDashboardHtml(model, 'private')
         expect(privateHtml).toContain('Media Review')
         expect(privateHtml).toContain('media-grid')
         expect(privateHtml).toContain('Current → proposed')
-        expect(privateHtml).toContain('Open content / placement')
+        expect(privateHtml).toContain('Mở Content / placement')
         expect(privateHtml).toContain('media-card-decision')
-        expect(privateHtml).toContain('View Hita asset manually')
-        expect(privateHtml).toContain('item.classification.action === filter.action')
-        expect(privateHtml).toContain('item.classification.origin === filter.origin')
+        expect(privateHtml).toContain('Xem thủ công ảnh Hita')
+        expect(privateHtml).toContain('Chi tiết kỹ thuật')
+        expect(privateHtml).toContain('Tổng ảnh')
+        expect(privateHtml).toContain("showView('media')")
         expect(privateHtml).not.toMatch(/<img[^>]+src="[^" ]*hita\.com\.vn/i)
     })
 })

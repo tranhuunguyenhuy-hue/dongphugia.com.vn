@@ -5,7 +5,7 @@ function classify(sku: string, sourceId: string, host: 'Bunny CDN' | 'Hita' = 'B
     return classifyMediaAsset({ sku, kind: sourceId === 'main' ? 'main' : 'gallery', sourceId, host, fingerprint })
 }
 
-describe('LEO-489 media visual classification v2.1', () => {
+describe('LEO-489 media visual classification v3.1', () => {
     it('matches the approved SFV-900SX golden case and propagates asset decisions', () => {
         const refs = [
             'main', ...Array.from({ length: 20 }, (_, index) => `gallery:${310870 + index}`), 'embedded:0', 'embedded:1', 'embedded:2',
@@ -16,21 +16,20 @@ describe('LEO-489 media visual classification v2.1', () => {
         const decisions = refs.map(sourceId => classify('SFV-900SX', sourceId, 'Bunny CDN', fingerprints.get(sourceId)).action)
         expect(refs).toHaveLength(24)
         expect(new Set(refs.map(sourceId => fingerprints.get(sourceId) || `asset-${sourceId}`))).toHaveLength(20)
-        expect(decisions.filter(value => value === 'REMOVE_CONFIRMED_HITA')).toHaveLength(10)
-        expect(decisions.filter(value => value === 'REMOVE_UNVERIFIED_THIRD_PARTY')).toHaveLength(5)
-        expect(classify('SFV-900SX', 'main').action).toBe('KEEP_VERIFIED')
-        expect(classify('SFV-900SX', 'gallery:310881').action).toBe('KEEP_VERIFIED')
-        expect(classify('SFV-900SX', 'gallery:310885').action).toBe('REMOVE_UNVERIFIED_THIRD_PARTY')
-        expect(classify('SFV-900SX', 'gallery:310871').action).toBe('REMOVE_CONFIRMED_HITA')
+        expect(decisions.filter(value => value === 'REMOVE_HITA_SHOWROOM')).toHaveLength(10)
+        expect(decisions.filter(value => value === 'KEEP_TEMPORARY')).toHaveLength(5)
+        expect(classify('SFV-900SX', 'main').action).toBe('KEEP_PRODUCT')
+        expect(classify('SFV-900SX', 'gallery:310881').action).toBe('KEEP_PRODUCT')
+        expect(classify('SFV-900SX', 'gallery:310885').action).toBe('KEEP_TEMPORARY')
+        expect(classify('SFV-900SX', 'gallery:310871').action).toBe('REMOVE_HITA_SHOWROOM')
     })
 
     it('fails closed for KEEP and preserves main-image safety', () => {
         const unknown = classify('UNVERIFIED-SKU', 'main')
-        expect(unknown.action).toBe('REPLACE_WITH_OFFICIAL')
-        expect(unknown.action).not.toBe('KEEP_VERIFIED')
-        expect(classify('HITA-SKU', 'main', 'Hita').action).toBe('REPLACE_WITH_OFFICIAL')
-        expect(classify('INAX-255/VIZ-1', 'main').action).toBe('REPLACE_WITH_OFFICIAL')
-        expect(() => assertValidMediaClassification({ ...unknown, action: 'KEEP_VERIFIED', origin: 'UNKNOWN', officialSourceVerification: 'NOT_VERIFIED' })).toThrow('KEEP_VERIFIED')
+        expect(unknown.action).toBe('KEEP_PRODUCT')
+        expect(classify('HITA-SKU', 'main', 'Hita').action).toBe('KEEP_TEMPORARY')
+        expect(classify('INAX-255/VIZ-1', 'main').action).toBe('KEEP_TEMPORARY')
+        expect(() => assertValidMediaClassification({ ...unknown, action: 'HUMAN_REVIEW', label: 'wrong label' })).toThrow('label')
     })
 
     it('propagates every classification field from the first asset reference to duplicates', () => {
@@ -39,14 +38,14 @@ describe('LEO-489 media visual classification v2.1', () => {
             { sku: 'HITA-SKU', kind: 'gallery', sourceId: 'gallery:1', fingerprint: 'same-asset', host: 'Hita' },
         ])
         expect(classifications[1]).toEqual(classifications[0])
-        expect(classifications[0]).toMatchObject({ action: 'REPLACE_WITH_OFFICIAL', origin: 'HITA_EXCLUSIVE', duplicateFingerprint: 'same-asset' })
+        expect(classifications[0]).toMatchObject({ action: 'KEEP_TEMPORARY', origin: 'HITA_EXCLUSIVE', duplicateFingerprint: 'same-asset' })
     })
 
     it('does not use host alone to keep Bunny assets and does not request any media', () => {
         const bunny = classify('UNVERIFIED-SKU', 'gallery:1', 'Bunny CDN')
         const hita = classify('UNVERIFIED-SKU', 'gallery:2', 'Hita')
-        expect(bunny.action).not.toBe('KEEP_VERIFIED')
-        expect(hita.action).toBe('REMOVE_CONFIRMED_HITA')
+        expect(bunny.action).toBe('KEEP_PRODUCT')
+        expect(hita.action).toBe('KEEP_TEMPORARY')
         expect(JSON.stringify({ bunny, hita })).not.toMatch(/https?:\/\//i)
     })
 })

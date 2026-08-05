@@ -78,6 +78,9 @@ function createFixturePackage(): PrecomputedProposalPackage {
         manifestChecksum: LEO_489_PILOT_MANIFEST_CHECKSUM,
         inventoryExportHash: hashObject(records.map(record => record.provenance.sourceRecordHash)),
         manifestEntryHash: pilotManifestEntryHash(),
+        policyHash: 'policy-fixture',
+        snapshotHash: 'snapshot-fixture',
+        sourceCommit: 'commit-fixture',
         records,
     }
     return { ...withoutHash, packageHash: calculatePrecomputedPackageHash(withoutHash) }
