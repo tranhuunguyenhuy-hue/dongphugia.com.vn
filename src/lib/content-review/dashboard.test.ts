@@ -188,6 +188,8 @@ describe('LEO-489 offline dashboard', () => {
         expect(privateHtml).toContain('Open content / placement')
         expect(privateHtml).toContain('media-card-decision')
         expect(privateHtml).toContain('View Hita asset manually')
+        expect(privateHtml).toContain('item.classification.action === filter.action')
+        expect(privateHtml).toContain('item.classification.origin === filter.origin')
         expect(privateHtml).not.toMatch(/<img[^>]+src="[^" ]*hita\.com\.vn/i)
     })
 })
