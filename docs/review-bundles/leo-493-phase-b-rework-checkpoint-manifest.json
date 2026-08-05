@@ -1,0 +1,357 @@
+{
+  "schemaVersion": 1,
+  "source": "leo_493_phase_b_rework_checkpoint_v1",
+  "binding": {
+    "policyHash": "9e93c0f06c5eb8307d528372070c50e868c7a62fd5cc9008492ae6bcead0fa88",
+    "snapshotHash": "0d95b89d30332bd054c51446f32987c347eee47ea3d0e9761836dc57e29e87f7",
+    "proposalHash": "1846c27dd51638d01731179a2420d574ee09e49e3536b0c0b3cdfebf9beb73c7",
+    "packageHash": "9896a6be16c879763491ee9f7a857c416103491cd8196d1e86360dde87048344",
+    "sourceCommit": "296a950e0e41aa784d123dd5b46416ca82344dae"
+  },
+  "selection": {
+    "algorithm": "sort by immutable id; 20 lowest sanitary rows plus accepted overlap 61-1361-VN; 2 lowest other kitchen rows; exact tile 355SD/CMG-1B; dedupe raw SKU; sort final by id",
+    "checkpointSize": 24,
+    "categoryQuotas": {
+      "thiet-bi-ve-sinh": 20,
+      "thiet-bi-bep": 3,
+      "gach-op-lat": 1
+    },
+    "selectedSkus": [
+      "0014068-WC",
+      "2375-VN",
+      "2531-VN",
+      "355SD/CMG-1B",
+      "61-1361-VN",
+      "A-016V",
+      "A-017V",
+      "A-1008VS-3/BW1",
+      "A-10251-VN",
+      "A-10254-VN",
+      "A-10260-VN",
+      "A-10261-VN",
+      "A-10264-10-VN",
+      "A-10264-VN",
+      "A-10286-VN",
+      "A-10287-VN",
+      "A-10360-VN",
+      "A-10458-VN",
+      "A-10504-VN",
+      "A-10505-VN",
+      "A-10508-VN",
+      "A-2700VS-3",
+      "A-325PL",
+      "A-325PS"
+    ]
+  },
+  "officialStatusEvidence": {
+    "source": "LEO-492",
+    "sampleChecksum": "1a7095eac86b7cdb2f9034aa9cf6d3a949eb128a18be38baf5f7dae75dde8c68",
+    "activeCurrentCount": 1,
+    "strictVariantConflictCount": 1,
+    "reviewCount": 28,
+    "decision": "NO_GO_BLIND_OFFICIAL_STATUS_EXTENSION",
+    "rowStatusClaimed": false
+  },
+  "counts": {
+    "products": 24,
+    "media": 118,
+    "byBrand": {
+      "inax": 24
+    },
+    "byCategory": {
+      "thiet-bi-ve-sinh": 20,
+      "thiet-bi-bep": 3,
+      "gach-op-lat": 1
+    },
+    "byMediaAction": {
+      "KEEP_PRODUCT": 46,
+      "KEEP_TEMPORARY": 72
+    },
+    "byMediaConfidence": {
+      "HIGH": 46,
+      "LOW": 70,
+      "MEDIUM": 2
+    },
+    "byEditorialStatus": {
+      "HUMAN_REVIEWED_PASS": 24
+    },
+    "byHoldoutStatus": {
+      "MANUALLY_REVIEWED": 24
+    },
+    "manuallyReviewedProducts": 24,
+    "manuallyReviewedMedia": 24,
+    "pendingVisualMedia": 70,
+    "blocked": 0
+  },
+  "manualHoldout": [
+    {
+      "sku": "0014068-WC",
+      "sourceId": "gallery:309625",
+      "fingerprint": "c9166146f5becb5bb382fbba3d3f1b725893d632351d62b99dc9a3531e46785a",
+      "visualLabel": "KEEP_PRODUCT",
+      "confidence": "HIGH",
+      "baselineAction": "KEEP_PRODUCT",
+      "baselineMatchesManual": true,
+      "evidence": "Quan sát trực tiếp asset Bunny: packshot/render sản phẩm nhìn rõ trên nền sạch, không thấy showroom/cửa hàng/display photo; đủ bằng chứng hình ảnh sản phẩm để giữ.",
+      "reviewer": "worker-019fd0c7-fab8-7170-96af-d9d9a46f1519"
+    },
+    {
+      "sku": "2375-VN",
+      "sourceId": "gallery:310579",
+      "fingerprint": "ac0e9ab85793a91bdd0f6d4e687433f88b79d60df948f878f73a2626d2df4783",
+      "visualLabel": "KEEP_PRODUCT",
+      "confidence": "HIGH",
+      "baselineAction": "KEEP_PRODUCT",
+      "baselineMatchesManual": true,
+      "evidence": "Quan sát trực tiếp asset Bunny: packshot/render sản phẩm nhìn rõ trên nền sạch, không thấy showroom/cửa hàng/display photo; đủ bằng chứng hình ảnh sản phẩm để giữ.",
+      "reviewer": "worker-019fd0c7-fab8-7170-96af-d9d9a46f1519"
+    },
+    {
+      "sku": "2531-VN",
+      "sourceId": "gallery:310591",
+      "fingerprint": "1d838f722e6508f93cc8820118d216c385ed26bf05aa48b0da728a01caa0fc19",
+      "visualLabel": "KEEP_PRODUCT",
+      "confidence": "HIGH",
+      "baselineAction": "KEEP_PRODUCT",
+      "baselineMatchesManual": true,
+      "evidence": "Quan sát trực tiếp asset Bunny: packshot/render sản phẩm nhìn rõ trên nền sạch, không thấy showroom/cửa hàng/display photo; đủ bằng chứng hình ảnh sản phẩm để giữ.",
+      "reviewer": "worker-019fd0c7-fab8-7170-96af-d9d9a46f1519"
+    },
+    {
+      "sku": "355SD/CMG-1B",
+      "sourceId": "gallery:306862",
+      "fingerprint": "0b1bb1e7ff13efd64839e8d453498c63bdb44e8fb740c73230f42516f4f0181e",
+      "visualLabel": "KEEP_TEMPORARY",
+      "confidence": "MEDIUM",
+      "baselineAction": "KEEP_PRODUCT",
+      "baselineMatchesManual": false,
+      "evidence": "Quan sát trực tiếp asset Bunny: bảng mẫu màu/gạch nhìn rõ, không phải ảnh showroom/cửa hàng; đây không phải packshot/render riêng của sản phẩm nên giữ tạm, không nâng thành GIỮ — Hình sản phẩm.",
+      "reviewer": "worker-019fd0c7-fab8-7170-96af-d9d9a46f1519"
+    },
+    {
+      "sku": "61-1361-VN",
+      "sourceId": "gallery:305736",
+      "fingerprint": "a759a50896ad00110cc10f11e59f31c919c0db46e05c6f1dd7423ab95fc8ea70",
+      "visualLabel": "KEEP_PRODUCT",
+      "confidence": "HIGH",
+      "baselineAction": "KEEP_PRODUCT",
+      "baselineMatchesManual": true,
+      "evidence": "Quan sát trực tiếp asset Bunny: packshot/render sản phẩm nhìn rõ trên nền sạch, không thấy showroom/cửa hàng/display photo; đủ bằng chứng hình ảnh sản phẩm để giữ.",
+      "reviewer": "worker-019fd0c7-fab8-7170-96af-d9d9a46f1519"
+    },
+    {
+      "sku": "A-016V",
+      "sourceId": "gallery:309760",
+      "fingerprint": "d061cb581f1fcffabb3840388e0689741fb739bbf34087694c3a0e095a411236",
+      "visualLabel": "KEEP_PRODUCT",
+      "confidence": "HIGH",
+      "baselineAction": "KEEP_PRODUCT",
+      "baselineMatchesManual": true,
+      "evidence": "Quan sát trực tiếp asset Bunny: packshot/render sản phẩm nhìn rõ trên nền sạch, không thấy showroom/cửa hàng/display photo; đủ bằng chứng hình ảnh sản phẩm để giữ.",
+      "reviewer": "worker-019fd0c7-fab8-7170-96af-d9d9a46f1519"
+    },
+    {
+      "sku": "A-017V",
+      "sourceId": "gallery:309769",
+      "fingerprint": "82d78232b705336ae82cabf9c5c95dfc3d80f69593564f1d3392d4b2c93f5664",
+      "visualLabel": "KEEP_PRODUCT",
+      "confidence": "HIGH",
+      "baselineAction": "KEEP_PRODUCT",
+      "baselineMatchesManual": true,
+      "evidence": "Quan sát trực tiếp asset Bunny: packshot/render sản phẩm nhìn rõ trên nền sạch, không thấy showroom/cửa hàng/display photo; đủ bằng chứng hình ảnh sản phẩm để giữ.",
+      "reviewer": "worker-019fd0c7-fab8-7170-96af-d9d9a46f1519"
+    },
+    {
+      "sku": "A-1008VS-3/BW1",
+      "sourceId": "gallery:305610",
+      "fingerprint": "f9768d70f384dfb15d54a58dbd77fdee348e040f5aa3dfdf9afd0d2eff788215",
+      "visualLabel": "KEEP_PRODUCT",
+      "confidence": "HIGH",
+      "baselineAction": "KEEP_PRODUCT",
+      "baselineMatchesManual": true,
+      "evidence": "Quan sát trực tiếp asset Bunny: packshot/render sản phẩm nhìn rõ trên nền sạch, không thấy showroom/cửa hàng/display photo; đủ bằng chứng hình ảnh sản phẩm để giữ.",
+      "reviewer": "worker-019fd0c7-fab8-7170-96af-d9d9a46f1519"
+    },
+    {
+      "sku": "A-10251-VN",
+      "sourceId": "gallery:310719",
+      "fingerprint": "4e32d9bce9cd6eeb3531a03688c4e08043e79fb1ffdc86d52779e68de2fcd87d",
+      "visualLabel": "KEEP_PRODUCT",
+      "confidence": "HIGH",
+      "baselineAction": "KEEP_PRODUCT",
+      "baselineMatchesManual": true,
+      "evidence": "Quan sát trực tiếp asset Bunny: packshot/render sản phẩm nhìn rõ trên nền sạch, không thấy showroom/cửa hàng/display photo; đủ bằng chứng hình ảnh sản phẩm để giữ.",
+      "reviewer": "worker-019fd0c7-fab8-7170-96af-d9d9a46f1519"
+    },
+    {
+      "sku": "A-10254-VN",
+      "sourceId": "gallery:309253",
+      "fingerprint": "f70d393f821ba8cd3d1027e72f0f22d3861005ae777bc3a005a52c080134d5c4",
+      "visualLabel": "KEEP_PRODUCT",
+      "confidence": "HIGH",
+      "baselineAction": "KEEP_PRODUCT",
+      "baselineMatchesManual": true,
+      "evidence": "Quan sát trực tiếp asset Bunny: packshot/render sản phẩm nhìn rõ trên nền sạch, không thấy showroom/cửa hàng/display photo; đủ bằng chứng hình ảnh sản phẩm để giữ.",
+      "reviewer": "worker-019fd0c7-fab8-7170-96af-d9d9a46f1519"
+    },
+    {
+      "sku": "A-10260-VN",
+      "sourceId": "gallery:310731",
+      "fingerprint": "206c71a12b57f7315146f3df1ed978e9d3d167e6c22af4b0181ef0408aeaebbd",
+      "visualLabel": "KEEP_PRODUCT",
+      "confidence": "HIGH",
+      "baselineAction": "KEEP_PRODUCT",
+      "baselineMatchesManual": true,
+      "evidence": "Quan sát trực tiếp asset Bunny: packshot/render sản phẩm nhìn rõ trên nền sạch, không thấy showroom/cửa hàng/display photo; đủ bằng chứng hình ảnh sản phẩm để giữ.",
+      "reviewer": "worker-019fd0c7-fab8-7170-96af-d9d9a46f1519"
+    },
+    {
+      "sku": "A-10261-VN",
+      "sourceId": "gallery:309262",
+      "fingerprint": "53a5a220f44789f2bf2c1cb4559d106ea124bb34a3b66c5102c09bf6fedcc071",
+      "visualLabel": "KEEP_PRODUCT",
+      "confidence": "HIGH",
+      "baselineAction": "KEEP_PRODUCT",
+      "baselineMatchesManual": true,
+      "evidence": "Quan sát trực tiếp asset Bunny: packshot/render sản phẩm nhìn rõ trên nền sạch, không thấy showroom/cửa hàng/display photo; đủ bằng chứng hình ảnh sản phẩm để giữ.",
+      "reviewer": "worker-019fd0c7-fab8-7170-96af-d9d9a46f1519"
+    },
+    {
+      "sku": "A-10264-10-VN",
+      "sourceId": "gallery:305721",
+      "fingerprint": "ddfeb2ee79e97ff2ca5e4e34415f658fe7d701ee1111633056c6228b997c0415",
+      "visualLabel": "KEEP_PRODUCT",
+      "confidence": "HIGH",
+      "baselineAction": "KEEP_PRODUCT",
+      "baselineMatchesManual": true,
+      "evidence": "Quan sát trực tiếp asset Bunny: packshot/render sản phẩm nhìn rõ trên nền sạch, không thấy showroom/cửa hàng/display photo; đủ bằng chứng hình ảnh sản phẩm để giữ.",
+      "reviewer": "worker-019fd0c7-fab8-7170-96af-d9d9a46f1519"
+    },
+    {
+      "sku": "A-10264-VN",
+      "sourceId": "gallery:305723",
+      "fingerprint": "14b1b0de5e20ad0c09d014481f469a09131fef95290293388ef62e5d72554aa1",
+      "visualLabel": "KEEP_PRODUCT",
+      "confidence": "HIGH",
+      "baselineAction": "KEEP_PRODUCT",
+      "baselineMatchesManual": true,
+      "evidence": "Quan sát trực tiếp asset Bunny: packshot/render sản phẩm nhìn rõ trên nền sạch, không thấy showroom/cửa hàng/display photo; đủ bằng chứng hình ảnh sản phẩm để giữ.",
+      "reviewer": "worker-019fd0c7-fab8-7170-96af-d9d9a46f1519"
+    },
+    {
+      "sku": "A-10286-VN",
+      "sourceId": "gallery:305862",
+      "fingerprint": "cbd66e8bad5a295ed4a3b94791ab1309ae2767cd328bfee1a565b7fceba10e72",
+      "visualLabel": "KEEP_PRODUCT",
+      "confidence": "HIGH",
+      "baselineAction": "KEEP_PRODUCT",
+      "baselineMatchesManual": true,
+      "evidence": "Quan sát trực tiếp asset Bunny: packshot/render sản phẩm nhìn rõ trên nền sạch, không thấy showroom/cửa hàng/display photo; đủ bằng chứng hình ảnh sản phẩm để giữ.",
+      "reviewer": "worker-019fd0c7-fab8-7170-96af-d9d9a46f1519"
+    },
+    {
+      "sku": "A-10287-VN",
+      "sourceId": "gallery:305868",
+      "fingerprint": "f43f2ac78a7dea0bcd25e4012b8ce04e08ee31dd9be285d70a9f9cf6f011d02b",
+      "visualLabel": "KEEP_PRODUCT",
+      "confidence": "HIGH",
+      "baselineAction": "KEEP_PRODUCT",
+      "baselineMatchesManual": true,
+      "evidence": "Quan sát trực tiếp asset Bunny: packshot/render sản phẩm nhìn rõ trên nền sạch, không thấy showroom/cửa hàng/display photo; đủ bằng chứng hình ảnh sản phẩm để giữ.",
+      "reviewer": "worker-019fd0c7-fab8-7170-96af-d9d9a46f1519"
+    },
+    {
+      "sku": "A-10360-VN",
+      "sourceId": "gallery:305724",
+      "fingerprint": "c2ea4250f7be61587199fbabbcdc5f2c47d19480c5590519a9c18b25ba093d6d",
+      "visualLabel": "KEEP_PRODUCT",
+      "confidence": "HIGH",
+      "baselineAction": "KEEP_PRODUCT",
+      "baselineMatchesManual": true,
+      "evidence": "Quan sát trực tiếp asset Bunny: packshot/render sản phẩm nhìn rõ trên nền sạch, không thấy showroom/cửa hàng/display photo; đủ bằng chứng hình ảnh sản phẩm để giữ.",
+      "reviewer": "worker-019fd0c7-fab8-7170-96af-d9d9a46f1519"
+    },
+    {
+      "sku": "A-10458-VN",
+      "sourceId": "gallery:305689",
+      "fingerprint": "9f1da22790b6bc5b5a61e9a055428b852769ff6dae95f49aee18749943081e62",
+      "visualLabel": "KEEP_PRODUCT",
+      "confidence": "HIGH",
+      "baselineAction": "KEEP_PRODUCT",
+      "baselineMatchesManual": true,
+      "evidence": "Quan sát trực tiếp asset Bunny: packshot/render sản phẩm nhìn rõ trên nền sạch, không thấy showroom/cửa hàng/display photo; đủ bằng chứng hình ảnh sản phẩm để giữ.",
+      "reviewer": "worker-019fd0c7-fab8-7170-96af-d9d9a46f1519"
+    },
+    {
+      "sku": "A-10504-VN",
+      "sourceId": "gallery:305679",
+      "fingerprint": "e6eaed454eaec932ddf483b86bc46285226658082a3feafe25013f7e4b97a220",
+      "visualLabel": "KEEP_PRODUCT",
+      "confidence": "HIGH",
+      "baselineAction": "KEEP_PRODUCT",
+      "baselineMatchesManual": true,
+      "evidence": "Quan sát trực tiếp asset Bunny: packshot/render sản phẩm nhìn rõ trên nền sạch, không thấy showroom/cửa hàng/display photo; đủ bằng chứng hình ảnh sản phẩm để giữ.",
+      "reviewer": "worker-019fd0c7-fab8-7170-96af-d9d9a46f1519"
+    },
+    {
+      "sku": "A-10505-VN",
+      "sourceId": "gallery:308971",
+      "fingerprint": "9ce32a89447b0e68fbb63e147d78c78d0a50fac9f443acd660985a0b519975d9",
+      "visualLabel": "KEEP_PRODUCT",
+      "confidence": "HIGH",
+      "baselineAction": "KEEP_PRODUCT",
+      "baselineMatchesManual": true,
+      "evidence": "Quan sát trực tiếp asset Bunny: packshot/render sản phẩm nhìn rõ trên nền sạch, không thấy showroom/cửa hàng/display photo; đủ bằng chứng hình ảnh sản phẩm để giữ.",
+      "reviewer": "worker-019fd0c7-fab8-7170-96af-d9d9a46f1519"
+    },
+    {
+      "sku": "A-10508-VN",
+      "sourceId": "gallery:305869",
+      "fingerprint": "63b60ca1d46378e3c92b56594bc1d313c5879761c1d1e8072d279af8c1fa7ac5",
+      "visualLabel": "KEEP_PRODUCT",
+      "confidence": "HIGH",
+      "baselineAction": "KEEP_PRODUCT",
+      "baselineMatchesManual": true,
+      "evidence": "Quan sát trực tiếp asset Bunny: packshot/render sản phẩm nhìn rõ trên nền sạch, không thấy showroom/cửa hàng/display photo; đủ bằng chứng hình ảnh sản phẩm để giữ.",
+      "reviewer": "worker-019fd0c7-fab8-7170-96af-d9d9a46f1519"
+    },
+    {
+      "sku": "A-2700VS-3",
+      "sourceId": "gallery:305617",
+      "fingerprint": "c639b07f28fca4d28774668924b7dfb5708efe3a36a4e65e2390f31ddd74bee2",
+      "visualLabel": "KEEP_PRODUCT",
+      "confidence": "HIGH",
+      "baselineAction": "KEEP_PRODUCT",
+      "baselineMatchesManual": true,
+      "evidence": "Quan sát trực tiếp asset Bunny: packshot/render sản phẩm nhìn rõ trên nền sạch, không thấy showroom/cửa hàng/display photo; đủ bằng chứng hình ảnh sản phẩm để giữ.",
+      "reviewer": "worker-019fd0c7-fab8-7170-96af-d9d9a46f1519"
+    },
+    {
+      "sku": "A-325PL",
+      "sourceId": "gallery:309709",
+      "fingerprint": "2a9e21b5581e6d3a7ee5c11ad5e426cc7138d7377ef17a4837daf0b7855f1b61",
+      "visualLabel": "KEEP_PRODUCT",
+      "confidence": "HIGH",
+      "baselineAction": "KEEP_PRODUCT",
+      "baselineMatchesManual": true,
+      "evidence": "Quan sát trực tiếp asset Bunny: packshot/render sản phẩm nhìn rõ trên nền sạch, không thấy showroom/cửa hàng/display photo; đủ bằng chứng hình ảnh sản phẩm để giữ.",
+      "reviewer": "worker-019fd0c7-fab8-7170-96af-d9d9a46f1519"
+    },
+    {
+      "sku": "A-325PS",
+      "sourceId": "gallery:309725",
+      "fingerprint": "a1cef86c6f78ee33f4d10ba99c92e33c2cee5a6b27b8e593a94725324b8b8848",
+      "visualLabel": "KEEP_PRODUCT",
+      "confidence": "HIGH",
+      "baselineAction": "KEEP_PRODUCT",
+      "baselineMatchesManual": true,
+      "evidence": "Quan sát trực tiếp asset Bunny: packshot/render sản phẩm nhìn rõ trên nền sạch, không thấy showroom/cửa hàng/display photo; đủ bằng chứng hình ảnh sản phẩm để giữ.",
+      "reviewer": "worker-019fd0c7-fab8-7170-96af-d9d9a46f1519"
+    }
+  ],
+  "artifacts": {
+    "dashboardSha256": "b94e6833261b83612bc3a2f3621cbf7fe3baac0f3c238207e72e4f40f5d1a803",
+    "reportSha256": "50a3cf1307a1239b6cf4002b97342f99182af5d89c3195b1e0956a4fad652a9d"
+  },
+  "policy": "Phase B rework checkpoint only. Pending products/media outside this 24-product set are not represented or silently promoted."
+}
