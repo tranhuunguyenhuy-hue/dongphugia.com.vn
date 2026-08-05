@@ -20,6 +20,7 @@
     "check:canonical-rollout": "tsx scripts/db/check-canonical-rollout.mts",
     "postinstall": "prisma generate",
     "test": "vitest run",
+    "content:verify-phase-d": "tsx scripts/content-review/verify-phase-d-checkpoint-binding.mts",
     "test:media": "vitest run src/lib/media src/app/api/upload-image",
     "test:homepage": "playwright test --config=playwright.homepage.config.ts",
     "perf:lighthouse": "lhci autorun",

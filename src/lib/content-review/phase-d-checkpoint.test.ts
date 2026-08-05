@@ -30,7 +30,17 @@ describe('Phase D checkpoint generation', () => {
         expect(record.media.filter(item => item.kind === 'embedded')).toHaveLength(1)
         expect(record.media.find(item => item.kind === 'embedded')?.placement).toBe('AFTER_INLINE')
         expect(record.generatedHtml).not.toMatch(/REPLACE_WITH_OFFICIAL|hita\.com\.vn/i)
+        expect(record.generatedHtml).not.toMatch(/\.\.\.|…/u)
         expect(record.editorial.ratio).toBeGreaterThan(0)
         expect(record.editorialStatus).toBe('HUMAN_REVIEW')
+    })
+
+    it('filters unsupported commercial source claims without removing the buyer positioning', () => {
+        const candidate = source()
+        candidate.description = '<p>Giá bán và chiết khấu cần được xác nhận riêng.</p><p>Thiết kế phù hợp không gian phòng tắm gia đình.</p>'
+        const [record] = buildPhaseDRecords([candidate], [cohort()], 'worker-test')
+        expect(record.removedUnsupportedClaimCount).toBe(1)
+        expect(record.generatedHtml).toContain('chính hãng')
+        expect(record.generatedHtml).not.toMatch(/giá bán|chiết khấu/iu)
     })
 })
