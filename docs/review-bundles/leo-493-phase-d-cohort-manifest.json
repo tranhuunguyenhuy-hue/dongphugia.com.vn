@@ -1,0 +1,4634 @@
+{
+  "schemaVersion": 1,
+  "artifact": "leo-493-phase-d-cohort",
+  "contractVersion": "3.1",
+  "policyHash": "9e93c0f06c5eb8307d528372070c50e868c7a62fd5cc9008492ae6bcead0fa88",
+  "snapshotHash": "97cd93da438bbf3db826b0dd679b412ab1afefcbe772220c972b935c25acd665",
+  "proposalHash": null,
+  "sourceCommit": "2cc23c88798853b7f7d4faf710922073d7d26767",
+  "bindingStatus": "COHORT_ONLY_NO_PROPOSAL",
+  "selectionAlgorithm": "rewrite_important_only; unique_description_hash_groups_first; richer_visible_length_then_embedded_count; brand_coverage_priority; global_brand_cap_45_percent_when_qualified_alternatives_exist; deterministic_sku_id_tiebreak",
+  "familyQuotas": {
+    "TOILET": 120,
+    "LAVABO": 55,
+    "BATHTUB": 30,
+    "TOILET_SEAT": 17,
+    "URINAL": 18
+  },
+  "checkpointQuotas": {
+    "TOILET": 15,
+    "LAVABO": 7,
+    "BATHTUB": 4,
+    "TOILET_SEAT": 2,
+    "URINAL": 2
+  },
+  "cohortHash": "2e4614b6e6c63b336d2c075686a5d84a1fcddda99a32acdcc24e77b214ff345e",
+  "checkpointHash": "92f9334e9c4e18a6162704fc2635154d9ec7626f51fbb7f8de5f386e54bd1ba1",
+  "counts": {
+    "cohort": 240,
+    "checkpoint": 30,
+    "eligibleRewriteImportant": 905
+  },
+  "cohortBrandCounts": {
+    "atmor": 3,
+    "caesar": 13,
+    "duravit": 1,
+    "inax": 55,
+    "moen": 4,
+    "toto": 108,
+    "viglacera": 56
+  },
+  "cohortFamilyCounts": {
+    "BATHTUB": 30,
+    "LAVABO": 55,
+    "TOILET": 120,
+    "TOILET_SEAT": 17,
+    "URINAL": 18
+  },
+  "checkpointBrandCounts": {
+    "atmor": 1,
+    "caesar": 1,
+    "duravit": 1,
+    "inax": 4,
+    "moen": 2,
+    "toto": 13,
+    "viglacera": 8
+  },
+  "checkpointFamilyCounts": {
+    "BATHTUB": 4,
+    "LAVABO": 7,
+    "TOILET": 15,
+    "TOILET_SEAT": 2,
+    "URINAL": 2
+  },
+  "products": [
+    {
+      "id": 261,
+      "sku": "AC-618VN/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:55:29.632Z",
+      "descriptionHash": "26cb6642d6e62216908fe1bef0fa0557c943ac3ef29bf2f7732420f4bb95ff05",
+      "visibleLength": 4153,
+      "embeddedCount": 12,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 262,
+      "sku": "AC-959VAN/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:45:37.538Z",
+      "descriptionHash": "e23e42beee8e388e8db02d934aee594e8bd577d17043ae380e685768932c04db",
+      "visibleLength": 2510,
+      "embeddedCount": 5,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 271,
+      "sku": "AC-969VN/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:45:37.499Z",
+      "descriptionHash": "1cf6ab37cac6698c0d01a762a54edd56704825f5c444d711fd390bf410c88100",
+      "visibleLength": 3994,
+      "embeddedCount": 5,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 275,
+      "sku": "AC-1052VN/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:45:27.878Z",
+      "descriptionHash": "2bf52039c6a319cbab33dd0e2e6104d3fc10adc4a738acec51563dc6b50b0554",
+      "visibleLength": 2728,
+      "embeddedCount": 8,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 288,
+      "sku": "MBV-1700/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "cbea91bca2703183f101cae933d1106a5634bb2f1b79fac6c0ed190c172dcbb2",
+      "visibleLength": 951,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "BATHTUB",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 289,
+      "sku": "MBV-1500/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "554f34911554368e8d9c71c6afc8d9c07a1b410a4260731b67e53a8daee7503b",
+      "visibleLength": 1275,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "BATHTUB",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 292,
+      "sku": "FBV-1502SL/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "6521e38c84ea06ce4ad7a2a92694ad8eaf2e2e6c8cb88e7960955bcc80d592ba",
+      "visibleLength": 911,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "BATHTUB",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 293,
+      "sku": "FBV-1702SL/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "329070f1ca0e29d6ce29793ae11634da476490d81fafb2e4b2a50965dba5fd01",
+      "visibleLength": 1186,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "BATHTUB",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 294,
+      "sku": "FBV-1502SR/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "37dd1fd34ca9004236d08522454c8739f5281d6e5e80ed45071a4bb6e05d78a2",
+      "visibleLength": 1028,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "BATHTUB",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 295,
+      "sku": "FBV-1702SR/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "23b499884bd4dc1cd4cc6b6d9126e9b59b6a2a0b647997bf5c82c06ea61b6d41",
+      "visibleLength": 988,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "BATHTUB",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 296,
+      "sku": "BF-1757V/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:52:11.419Z",
+      "descriptionHash": "e184dfba8b35567531ed112e3fbcc01c7320dcfc8650ccf2cbf60b3594a1307d",
+      "visibleLength": 706,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "BATHTUB",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 298,
+      "sku": "BF-1858V/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:55:58.510Z",
+      "descriptionHash": "f44965ebe09dfcc29b283a80ae17144507cc7373da14f5f22db2cccf86a12c71",
+      "visibleLength": 717,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "BATHTUB",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 300,
+      "sku": "U-411V/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "640d597245b238983b426074ad4bce5688514c3bedf09926651e5aef3b2dc564",
+      "visibleLength": 662,
+      "embeddedCount": 2,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "URINAL",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 301,
+      "sku": "U-431VR/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "186517934f77d40025d5a9320bc2de10f394006288f0b4a35cf6474e8fd85df4",
+      "visibleLength": 570,
+      "embeddedCount": 2,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "URINAL",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 507,
+      "sku": "AU-431VR/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:56:05.559Z",
+      "descriptionHash": "9ac0d53e88b987528c0d1a1577542f3e0ec05cf151ae8dc1aae6ce405b6ed7e5",
+      "visibleLength": 885,
+      "embeddedCount": 2,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "URINAL",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 508,
+      "sku": "AFU-600VAC/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:55:59.160Z",
+      "descriptionHash": "968368ba9ff14f94fce2d42cf25a9ff020eb82e8199b001622ee1c164e3dcc83",
+      "visibleLength": 1368,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "URINAL",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 509,
+      "sku": "AFU-600VDC/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:56:01.713Z",
+      "descriptionHash": "dc4ad29cf8528e6d1ba931edfbf8a3d91eda3e2163300ecda2f7ffb38c2a7ef0",
+      "visibleLength": 1187,
+      "embeddedCount": 2,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "URINAL",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 660,
+      "sku": "UT508T#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "8ef40cde1457e53c3b6b931f81ce1acaf09ee818be76546003f8ad30ef84e42d",
+      "visibleLength": 795,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "URINAL",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 679,
+      "sku": "CS945DNT3#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "ae776e88adf5daa2929c73494562aca18558150fee818e6ad9714f843fb43a68",
+      "visibleLength": 2490,
+      "embeddedCount": 3,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 688,
+      "sku": "CS767CRW12#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "a37de9e10f06dc298db36be97cd2e0612b8851d963b77de00edb380a796fde12",
+      "visibleLength": 3625,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 689,
+      "sku": "CS767RW11#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "08cc8e14c247fcf5db5314273ecdcfe8c4eebdefd3f472ad24a8646da66a16b7",
+      "visibleLength": 3542,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 691,
+      "sku": "CS767RE2#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "17e7122d6ee042c84f1c27c8e98c5471a133e1cfadb0569db1caeb2d5fa83f84",
+      "visibleLength": 2541,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 693,
+      "sku": "CS989VT#NW1/TCF9788WZ#NW1/T53P100VR",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "fd913561e061865ef42a5f04a0406c7c2c4762ec660bc7ebfe7c13891cf4ed62",
+      "visibleLength": 4610,
+      "embeddedCount": 8,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 694,
+      "sku": "CS988VT#NW1/TCF9575Z#NW1/T53P100VR",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "1aceed7cd44ba0566ddf52002d9d574bc60019a939b8390d0041530903bb1bd9",
+      "visibleLength": 3879,
+      "embeddedCount": 3,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 696,
+      "sku": "C971#XW/TCF9433A#NW1",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "7b6dc7d19e20af7b757a2f212f79500afbce58bf1b33d335111ea738d8c63e7e",
+      "visibleLength": 2959,
+      "embeddedCount": 3,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 754,
+      "sku": "CW822REA#W/TCF24460AAA#NW1/WH172AT/TCA465/MB175M#S",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "5d278f7b6447421185b660452ce4edceacb6e5367692f84c8b2eac815da37872",
+      "visibleLength": 5542,
+      "embeddedCount": 3,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 756,
+      "sku": "CW812REA#W/TCF24460AAA#NW1/WH172AT/TCA465/MB176G#W",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "07a824e18338072438cdac3460c909c67903ecc30f8b46c4c7d6c5c13fe056d7",
+      "visibleLength": 5236,
+      "embeddedCount": 2,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 774,
+      "sku": "TCW07S#W",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "707470085442bfd865b156e0b13918ad70c0931cf79eb2349ba120c975549e0f",
+      "visibleLength": 1380,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET_SEAT",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 776,
+      "sku": "TCW09S#W",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "625d91dd93a35e4f2b4cd78f06b95de4043a840d524d64efaa3acd9ab995d547",
+      "visibleLength": 1391,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET_SEAT",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 977,
+      "sku": "MT212",
+      "brand": "caesar",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "fb9512d6b2b1bf09a33adc99f0b6a2938baf7855d8f100439246aab29fbd8030",
+      "visibleLength": 914,
+      "embeddedCount": 2,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "BATHTUB",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 1198,
+      "sku": "TC393VS#W",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "31b7b4393f913dfd2934f803abd827557b3ea46041ba72780574d5fa5d7fc2b6",
+      "visibleLength": 829,
+      "embeddedCount": 2,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET_SEAT",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 1199,
+      "sku": "TC385VS#W",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "fe929c938e2bfb47bc0a191989b870fa9c91ea9177b6d309a85312eb362da88a",
+      "visibleLength": 1948,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET_SEAT",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 1205,
+      "sku": "TC600VS#W",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "926159a2a0b078bcd4a298bc7f3235ce0fd59fecb716336088f9bf4724ea7932",
+      "visibleLength": 1154,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET_SEAT",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 1218,
+      "sku": "TC395VS#W",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "1f347d72bfeb7cf4237f77a5c813cfc87a86f6635a871619fc737131317fe9c2",
+      "visibleLength": 643,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET_SEAT",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 1244,
+      "sku": "MS889CDRW12#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "9ce6a6bd6e89ae4a55655dbbbaf006168a7d01269716a616e188401431b74c94",
+      "visibleLength": 3444,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 1245,
+      "sku": "CS769CDRW12#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "3cbee20166a49881351f29d698dd95f275a970bcb416812df6c75b833ab3ccf5",
+      "visibleLength": 3655,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 1246,
+      "sku": "MS889DRW11#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "204719ea57d1066d35007335ce69ad2d6ac8067c51e7d24dd690d5398ea4f00b",
+      "visibleLength": 3588,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 1247,
+      "sku": "MS887RW11#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "f0ee8ec1b9e6b81da23dac7426612b8c345f6392bd86b599f63d8fdeba5fe89d",
+      "visibleLength": 3409,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 1248,
+      "sku": "CS769DRW11#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "ba70409f81fdd2bd3058893d2d037d365a4502b69364335dabe05d15cb319a0e",
+      "visibleLength": 3572,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 1249,
+      "sku": "CS838CDW12#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "3574d6e45cb66832a44a2e274ca53f0451cfd3099e613e494e43b0fb50904ad5",
+      "visibleLength": 3651,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 1250,
+      "sku": "CS838DW11#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "7af6635a4b213bdee3eb5b9ad8e0d5aeb641e82061e33a375a9550ca61b5d738",
+      "visibleLength": 3568,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 1251,
+      "sku": "MS889DRW14#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "224dd5135418da2403a9bbaaecf86dc19953e0fc4b42003084b09faa4770f3ca",
+      "visibleLength": 2815,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 1252,
+      "sku": "AC-G216VN/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:55:32.641Z",
+      "descriptionHash": "44acc0393cadc431dbc9a4e7082e8d1de23b00d86f12dfe8b6d9f8f3dc507eb7",
+      "visibleLength": 5695,
+      "embeddedCount": 15,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 1274,
+      "sku": "CS769DRE4#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "fccfb1619756b7cda906f1a232252c89331855cafc8f252a896e0191f537065d",
+      "visibleLength": 2789,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 1275,
+      "sku": "CS838DE2#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "925afd30d69843811139591335fce7864ab06dca547dc841a8e309f99e3cda43",
+      "visibleLength": 2618,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 1276,
+      "sku": "CS838DE4#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "ee8dc82cf439a66bb3c8d1a93658766341c1926d6d6bfe7e00b61b070f91062b",
+      "visibleLength": 2630,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 1291,
+      "sku": "TCF4911EZ#NW1",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "6a1d9872c0cf514052939bf072f4e7ae271816679c87a45d44ccfb9a9ba65e89",
+      "visibleLength": 4294,
+      "embeddedCount": 9,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 1292,
+      "sku": "TCF34320GAA#NW1",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "aa7e80a8eaf778b6d934e5801114715607831d433b61cd1fecb36ebc91fd222b",
+      "visibleLength": 1265,
+      "embeddedCount": 5,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET_SEAT",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 1293,
+      "sku": "TCF34570GAA#NW1",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "f9559f1302809e5da35dee830fdb2325e0a299fc698089ed75fc826b60c03efa",
+      "visibleLength": 3511,
+      "embeddedCount": 5,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET_SEAT",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 1294,
+      "sku": "TCF24460AAA#NW1",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "9d423db7393332d79c001340e1644a2c03053dbc5dd05906b54d4764facc3f48",
+      "visibleLength": 1918,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET_SEAT",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 1295,
+      "sku": "TCF24410AAA#NW1",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "23b233ba049a8d7d9e600e3d379629ed864dd007f8d632d98a45c2199b033d90",
+      "visibleLength": 1100,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET_SEAT",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 1296,
+      "sku": "TCF33320GAA#NW1",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "775ca9e9421157a04cea977fa6a2c8f8cd92a897106e5d070f483cd47cddac09",
+      "visibleLength": 2069,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET_SEAT",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 1297,
+      "sku": "TCF33370GAA#NW1",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "8549ededca313ddf5ccd06814e9838fb79b41bae6b2377a967fb21710cc963d5",
+      "visibleLength": 1841,
+      "embeddedCount": 2,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET_SEAT",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 1298,
+      "sku": "TCF23460AAA#NW1",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "ae9414c18d0892a0f7aaccb21c5a8ba42600c063a312d02548599daaa93e8800",
+      "visibleLength": 1189,
+      "embeddedCount": 2,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET_SEAT",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 1299,
+      "sku": "TCF23410AAA#NW1",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "c83a4d5cd448f2882e8a84ad6d184298719cb24fffa0199d5d401b1ba581345c",
+      "visibleLength": 1750,
+      "embeddedCount": 2,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET_SEAT",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 1390,
+      "sku": "MT6480",
+      "brand": "caesar",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "d73c04786544b2cddf969a981ce2a91454fff646d060cd1c4e9ffbfc0d8fc16a",
+      "visibleLength": 599,
+      "embeddedCount": 2,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "BATHTUB",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 1394,
+      "sku": "MT0150",
+      "brand": "caesar",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "200407aabf253d299bbdf88031148c5e9d92cdd01d17799a1a186aea045112e0",
+      "visibleLength": 1087,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "BATHTUB",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": true
+    },
+    {
+      "id": 1398,
+      "sku": "MT0350",
+      "brand": "caesar",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "ad62e1c2b9db77d8ebac2101522267e47ce4e18ab81204615e0d554a341d43d2",
+      "visibleLength": 988,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "BATHTUB",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 1399,
+      "sku": "AT5120A",
+      "brand": "caesar",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "4775db234b62b1b20485014430b990d6776f6cd64235f5b32197af33200d6c45",
+      "visibleLength": 928,
+      "embeddedCount": 2,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "BATHTUB",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 1400,
+      "sku": "AT5140A",
+      "brand": "caesar",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "f61819553cb602597ec6a4cedb9238a3e72dfc691a4b603f1ed07d28d087cf1f",
+      "visibleLength": 962,
+      "embeddedCount": 2,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "BATHTUB",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 1402,
+      "sku": "MT5120A",
+      "brand": "caesar",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "b7f88317de7f255236c25cb692177784041babb9682f6928f399013f524a4ad3",
+      "visibleLength": 909,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "BATHTUB",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 1405,
+      "sku": "MT5140A",
+      "brand": "caesar",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "94d9f4c891c9b489a836709d30368f34a289b0f0e7004b5d1302cc2085c7e4b3",
+      "visibleLength": 1007,
+      "embeddedCount": 2,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "BATHTUB",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 1411,
+      "sku": "MT0440",
+      "brand": "caesar",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "ec01a25fceb3e6b5102ecb06e8a43056c59d308e480f497724fad203396ee5d3",
+      "visibleLength": 943,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "BATHTUB",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 1413,
+      "sku": "MT211L(R)A",
+      "brand": "caesar",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "1b1d6bd6c266123e242da63baf2932f4a36107a125c20566d7a710073e3cb11d",
+      "visibleLength": 1045,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "BATHTUB",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 1414,
+      "sku": "MT211L(R)AS",
+      "brand": "caesar",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "15bb1beae1bb1edb0cf9d7bb92e8285b03e7587d2506cf1726d8fabe80189adb",
+      "visibleLength": 1007,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "BATHTUB",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 1549,
+      "sku": "MT7520S",
+      "brand": "caesar",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "bf1db45d79b0baa10d4f9efd346638a642c46aa3cc114ecfe992b1ec64fedd6f",
+      "visibleLength": 987,
+      "embeddedCount": 2,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "BATHTUB",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 1594,
+      "sku": "TCF34461GAA#NW1",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "d81b235591a6f531c67c7d810440ddc5c3d5bbdbf806d66da131b8aeb7788e9c",
+      "visibleLength": 2099,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET_SEAT",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": true
+    },
+    {
+      "id": 1595,
+      "sku": "PJYD2200PWE#GW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-17T18:01:03.927Z",
+      "descriptionHash": "1cec8f80e276df8040e4e5607814957ca06e87e3af551fb88e850b64e201eee1",
+      "visibleLength": 1203,
+      "embeddedCount": 2,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "BATHTUB",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 1700,
+      "sku": "VB5",
+      "brand": "viglacera",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "aac47b0d9c6ac2de0dcf466cdcec50d5a5af6ae388663ce046c86b6113b5a4f0",
+      "visibleLength": 826,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "URINAL",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 1701,
+      "sku": "VB3",
+      "brand": "viglacera",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "f74d95a414a7944ba3af9a028289b750c78df4e3c4b2e2c5e7b8498ac42babce",
+      "visibleLength": 1079,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "URINAL",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 3551,
+      "sku": "TT1",
+      "brand": "viglacera",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "9ab318ab74b802d0c0018a92118554d1eb30d59036c48836ff0d4a13e3d7df00",
+      "visibleLength": 694,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "URINAL",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 3552,
+      "sku": "TT5",
+      "brand": "viglacera",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "04e0c84d51e21c545e8ce5c8de673c52633de57d2930a21f82bef51c29fe8e9a",
+      "visibleLength": 759,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "URINAL",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 3555,
+      "sku": "TD4",
+      "brand": "viglacera",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "65ced30010346370f37282d6621223344ebf5bec4709d6b7e3f42df151cf1dfa",
+      "visibleLength": 791,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "URINAL",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 3556,
+      "sku": "BS604",
+      "brand": "viglacera",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "ee6be3b8bdc9cb9e4e2f29287707212e340b541c31a8293bfee8bacec298bf12",
+      "visibleLength": 900,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "URINAL",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 3568,
+      "sku": "T2-BONTIEU",
+      "brand": "viglacera",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "e829a254a380af75033989b089c901174b3c1225911eb85cc9b2f8b83a55da31",
+      "visibleLength": 634,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "URINAL",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 3569,
+      "sku": "AT6009",
+      "brand": "atmor",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "385fc0bc4cf5166a41ea4edbebc1da12ee1f64a5b8eaa1fda82530923f973535",
+      "visibleLength": 552,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "URINAL",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 3570,
+      "sku": "AT6014",
+      "brand": "atmor",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "ce639cfe21dbb5a03bfb2943655fa9605e9410acf8853457821399df72105385",
+      "visibleLength": 501,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "URINAL",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 3610,
+      "sku": "AT2155W+AT200-G2",
+      "brand": "atmor",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "cc181c1fcc381cc59985ad6064694682108f455cf9bd086ad778dd52136473b8",
+      "visibleLength": 1704,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES",
+        "BRAND_COVERAGE"
+      ],
+      "checkpoint": true
+    },
+    {
+      "id": 3899,
+      "sku": "SW2070",
+      "brand": "moen",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "3c565062ed944df21f60d0e7c2de06a30fc6d05020cee246305b0b5be34509c4",
+      "visibleLength": 981,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET_SEAT",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 3900,
+      "sku": "SW2221",
+      "brand": "moen",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "db66a5387c6750011c99ee8bb5b5bdb2f7b2c3c1f542ad94fddf758c0602aba5",
+      "visibleLength": 989,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET_SEAT",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": true
+    },
+    {
+      "id": 3901,
+      "sku": "SW6181HSG",
+      "brand": "moen",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-03T19:48:57.416Z",
+      "descriptionHash": "13acc21a150c9f21f3a875bbccaa550d4f409c19b77ea021177913985ffa5378",
+      "visibleLength": 728,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "URINAL",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 4260,
+      "sku": "2173010001+0020290000+0014160000",
+      "brand": "duravit",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "d252d926d20123bf21ae587dfbd165142a04bc79ecc8ddf7f6def36590a55697",
+      "visibleLength": 1126,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES",
+        "BRAND_COVERAGE"
+      ],
+      "checkpoint": true
+    },
+    {
+      "id": 5541,
+      "sku": "CS769DRT3#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "714291fc306b55d1de4c9a9f3269f1bc2bb16284ab264d8a4d713cf65664f8b1",
+      "visibleLength": 2319,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 5561,
+      "sku": "CS948DT3#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "6c54c7904ce66a232b72cfedecc259f3f2bf35d5141e137171635906d066bc3f",
+      "visibleLength": 2593,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 5567,
+      "sku": "CS948DE2#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "7750952869abcc1ad62e08da1035d86b45c7b822ecedd5c6515c1f68dbbbd025",
+      "visibleLength": 2499,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 5569,
+      "sku": "MS887CRW15#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "3a1499232e8e86e5b8f6cd3b2a3ebe3f888288ccc3b0b01db401a54ccbdd09c4",
+      "visibleLength": 2906,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 5570,
+      "sku": "MS855CDW15#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "2e39494169591e907e048259f69d6f091d256ea4cae428307b92f9f9b44ba008",
+      "visibleLength": 3341,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 5571,
+      "sku": "MS885DW14#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "d38b4970af6f3efcf5f1fe444986036180a207014e27cd7119f7b5795cce94d8",
+      "visibleLength": 3048,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 5572,
+      "sku": "MS889CDRW15#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "8f00f22816a99001900ab1171a36ee755459a3b256338b8dc306725edaa47756",
+      "visibleLength": 2916,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 5573,
+      "sku": "MS887RW14#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "323cf7f96104056cb61883601643b629f2b32d847182ae258a544ed64fed03f6",
+      "visibleLength": 2805,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 5574,
+      "sku": "MS855DW14#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "4c47b37d6612bff0de1df790fde8d8b8304fe4a79e3d5a08f893549629f3b6f0",
+      "visibleLength": 2759,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 5575,
+      "sku": "CS838DW14#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "26e21ab1f1ba1c3ccb0fa9c7db9c402cac2aa16a5f5d337ed4c618becad9766d",
+      "visibleLength": 2802,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 5576,
+      "sku": "CS838CDW15#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "e635413e5bd9f1d9cf25e0b1075373b9e5ff353b2a331206de446cd926360b27",
+      "visibleLength": 2903,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 5577,
+      "sku": "CS948CDW15#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "db9404daa5ae41a1dfee3016c6ec350445b11b7897ebbf46193742068990ff40",
+      "visibleLength": 3350,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": true
+    },
+    {
+      "id": 5578,
+      "sku": "CS948DW14#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "2dbd78149cfcefa3e0b7ab8fcd4767cc21bb6692e9e350a292139e6b357f796b",
+      "visibleLength": 2831,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 5579,
+      "sku": "MS885CDW15#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "155060c62ece11ad7790d48b619c04fbedd61d5e0c32ceebae5b88fb8ea83b5f",
+      "visibleLength": 2904,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 5580,
+      "sku": "CS986GW14#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "ea3ebafc52c52d6bf88e28314796fc5dfa1376cf56fa32a82e53a374dd36f982",
+      "visibleLength": 2800,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 5581,
+      "sku": "CS769CDRW15#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "135e80257e94557f6f20f5001cc11def0263b2277385b8d405003817ef11f0e2",
+      "visibleLength": 2907,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 5582,
+      "sku": "CS767CRW15#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "ed3f7abeb83079c6e8c75ef9dfe648abc10c40a138ae9c33bcf61082a5b244be",
+      "visibleLength": 3933,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": true
+    },
+    {
+      "id": 5583,
+      "sku": "CS769DRW14#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "0b67cf2e57b1a3820e6ae339fa33d76e4e7c1551bbb7acaf1151777dc7341f84",
+      "visibleLength": 2806,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 5584,
+      "sku": "CS986CGW15#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "0edac452003511fd56b4a18bd7b24037661185607b68735c44437ffa74b23ff2",
+      "visibleLength": 3432,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": true
+    },
+    {
+      "id": 5585,
+      "sku": "CS735DW14#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "d44d739ea0f2e9c1ee382c4389ee445c8ebaad22065d0e354ea0faf1db656887",
+      "visibleLength": 3058,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 5586,
+      "sku": "CS767RW14#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "e15225e8f8162c92cd626e621e4538ec246176f45edcafa9abbc358bcdd38562",
+      "visibleLength": 2797,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 5620,
+      "sku": "MS188VKW14#XW/T53P100VR",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "6810800d6af1577774180ccd9c7f1f099769ffe35b1d67001adb43a3422562bd",
+      "visibleLength": 2779,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 5621,
+      "sku": "MS188VKW16#XW/T53P100VR",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "e29575a40ffd0ad94e38001811df638ba466f1ff179a935abf34f80604170ffe",
+      "visibleLength": 3037,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 5622,
+      "sku": "MS885CDW17#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "cdb3e0301fd6eb89ca796384e21efe3612af4a5d312c10f62b4e8768f15808c8",
+      "visibleLength": 3840,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": true
+    },
+    {
+      "id": 5623,
+      "sku": "MS889DRW16#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "f5968e42b20f0e428eedcd36633f64c7f2d0b66028c34757b3dc715ca3efef8f",
+      "visibleLength": 3106,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 5625,
+      "sku": "MS887RW16#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "fdfd4082646c10378763289f666a9802b6ab858489cfc0a7df12d566b6bc9cf7",
+      "visibleLength": 2910,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 5626,
+      "sku": "MS885DW16#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "a22107a832d3b8e01d80e67e6ef91a90a22d4348749530fec810b4b62b266525",
+      "visibleLength": 3339,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 5627,
+      "sku": "MS855DW16#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "f438a89855a16bcc9876322813e58557895b1af7e5cad4141fdd5e4ef4269aae",
+      "visibleLength": 3412,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": true
+    },
+    {
+      "id": 5628,
+      "sku": "CS986GW16#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "bbb58e269765a4ee035bd5be02592abbe1c76635dc04876aebeaf385be27c583",
+      "visibleLength": 3605,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": true
+    },
+    {
+      "id": 5629,
+      "sku": "CS769DRW16#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "d31839222c2c8281f7bbb5eea997ba78716dc501510a73fff161a1e16e10061e",
+      "visibleLength": 3355,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 5630,
+      "sku": "CS767RW16#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "272c193d077273c53bfa9eecafdf6128ac727d37fde7096e0e7478844e9bc5b0",
+      "visibleLength": 3224,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 5631,
+      "sku": "CS838DW16#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "d143e602319ac8c83defc52a25ad4d89ec63ea7c1b07056f04d23a9efa45f903",
+      "visibleLength": 4190,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": true
+    },
+    {
+      "id": 5632,
+      "sku": "CS948DW16#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "43eecb48bcce9dfb617b35c2cf60a6ce5e154f2cb332176079d9f41841b5e3ab",
+      "visibleLength": 3153,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 5633,
+      "sku": "CS948CDW17#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "706866340d8e9f38bb80d3e0915e82b49f971c92e81f89be5514f1f8b1012201",
+      "visibleLength": 3249,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 5634,
+      "sku": "CS838CDW17#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "df60ba99cae2f5005e3ed3b0379cfccfbcb3682a8e16da953e51b3d70970e9aa",
+      "visibleLength": 3378,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 5635,
+      "sku": "CS767CRW17#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "6faf6677341c9991ba133c8e2c92256d3277f36241c77fa1a95279f1354c86f0",
+      "visibleLength": 3476,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": true
+    },
+    {
+      "id": 5636,
+      "sku": "CS769CDRW17#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "ae55a3905e621ff0fda58b17f0b7eae84ecb013fc6c47aaf7c66f7307c41d37f",
+      "visibleLength": 3225,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 5637,
+      "sku": "CS986CGW17#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "327a98e4b7faa0468d25842eaea1678f2e945d1dea6be00b0de8edacdd31d7e1",
+      "visibleLength": 3219,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 5638,
+      "sku": "MS855CDW17#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "aded24d348dd93129e207d929c7e5b9d5e4083d38e306c01405e62b81a0c8807",
+      "visibleLength": 3378,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 5639,
+      "sku": "MS887CRW17#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "8763e08eef76a004b43b38e5f4423676f24b35fdea7e72bb459693cea54138e5",
+      "visibleLength": 3495,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": true
+    },
+    {
+      "id": 5640,
+      "sku": "MS889CDRW17#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "f4507c2b7bab17a402f5bba51790a9c36d9638128f394118701b667a58b89537",
+      "visibleLength": 3234,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 5642,
+      "sku": "MS823DRE4#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "18bc7a9b5d0f7062433dceba479a50bcba208494e303a5c47d4c71e5caca5c9f",
+      "visibleLength": 2547,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 5645,
+      "sku": "MS625DT2#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "8797bc4fb5a19158325ac369f7f378a70157905ae773037cccb7a6ce6531021d",
+      "visibleLength": 2893,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 5659,
+      "sku": "MS625DW16#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "a5c488e2d547bf5473a99565d4efd89a721b7499ab3258233190fa5a7022ddbd",
+      "visibleLength": 4341,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES",
+        "BRAND_COVERAGE"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 5660,
+      "sku": "MS625CDW15#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "f1764c5982aac4f546cb2e5624780931c38f449a6350295caebaa04cdf2eb3d4",
+      "visibleLength": 3913,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 5661,
+      "sku": "MS625DW14#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "9edff07c8947246325847a07282940432bde758d8ff8bd5ba94f14b3d87549c3",
+      "visibleLength": 3850,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 5663,
+      "sku": "CS302DW14#W",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "ddc93815ed68edb87e5172eadf4a7512b5988658f85ee486cae2404ed88f6fec",
+      "visibleLength": 4269,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 5674,
+      "sku": "CS326DE4#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "57050d53ca010173f6292b1296ff6f4c90e32e101fa7087555cd1c1c01d03303",
+      "visibleLength": 3778,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 5768,
+      "sku": "MS625CDW25#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "21ae1068b60022a8ca911ae53c21e73e2b25f08a1cc208c4f272c37ed6a24617",
+      "visibleLength": 3703,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 5769,
+      "sku": "MS889CDRW25#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "5124fea08cc39ea851612c7cc6f86e2310f22e35618be5241a96814989a12090",
+      "visibleLength": 3657,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 5770,
+      "sku": "MS625CDW24#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "b176aec5a59f0c0944874f20a667bee0cd3acd80770917fefd1a51620df8c9d9",
+      "visibleLength": 3775,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 5772,
+      "sku": "MS885CDW24#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "696a17620bd0a949891112c7a7727989ce7c8513cb1e849e4d8d82ea1d601226",
+      "visibleLength": 3717,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 5790,
+      "sku": "CS769DRW24#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "98316e56d26643d38c395618d2e20413c298efbee70c5ee8e53d54aa3e5152ac",
+      "visibleLength": 3647,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 5792,
+      "sku": "MS625DW24#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "4ad75efdc2193da26cdcc23855eb85a07e71d22bd293c5547cdcd3eadf431352",
+      "visibleLength": 3698,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 5794,
+      "sku": "MS885DW24#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "eb160cca7f66574605552e1c2de3424d9e9bb2994f7d50db42f8af21f20bc8fa",
+      "visibleLength": 3686,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 5795,
+      "sku": "MS887RW24#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "f18357ee3cbddc4bce0aec6ada79be067230661b3a91a6b569365e6f8c5e23f0",
+      "visibleLength": 3686,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 5796,
+      "sku": "MS889DRW24#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "daeb0933210d5f8c9fd16de7d5daf336e02ffff741ecca7c63960cb34aa6f45f",
+      "visibleLength": 3668,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 5812,
+      "sku": "MS625DW25#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "40b6dcd3828c57f1e782dfc7505f73a8715ecfe23380f24fddecc44f762858d4",
+      "visibleLength": 3648,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 5853,
+      "sku": "CS948CDW12#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "90cc5bcdc663a02c3affa73ed9cf7887c4a42c082f93be2abfc4b7f678043ddc",
+      "visibleLength": 3689,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 5854,
+      "sku": "CS735DW11#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "b07fe53699f3162e6f34785ba8e6869e2316fe6de5aae548dec98b3d1b9b5646",
+      "visibleLength": 3881,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 5861,
+      "sku": "MS625CDW12#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "78d2960fc6df1bf2ac4e820f891a5a626e6c923035e5f71cd92ca5e01208482f",
+      "visibleLength": 3725,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 5935,
+      "sku": "LW895JW/F#W",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-17T18:02:11.795Z",
+      "descriptionHash": "837c0e5adc6e983b1903cf25db9cebe75e5a4594835154367e3344d30da9124d",
+      "visibleLength": 1776,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "LAVABO",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": true
+    },
+    {
+      "id": 5938,
+      "sku": "LT1615C#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "23749eeefdfd519279a9d3e62df29eab53ce105b7bece61dbf51dde1022f0ea5",
+      "visibleLength": 1558,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "LAVABO",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 5954,
+      "sku": "LT1717#XW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "8fb7ff5e45a45be5df4977738a5a4a2b8f13d4576daa8eb3a878be33e9e8d8ba",
+      "visibleLength": 1778,
+      "embeddedCount": 2,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "LAVABO",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": true
+    },
+    {
+      "id": 7187,
+      "sku": "PAY1515VC#W",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "8da4d466cb9a445e26e67f07b4aca6c9c6788d67887b29a0b7ac8b0b80d80d19",
+      "visibleLength": 1435,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "BATHTUB",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 7227,
+      "sku": "PJY1734HPWEN#MW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-17T18:02:16.807Z",
+      "descriptionHash": "3eeba696bf43757203437f45d0927a9d2290bf21f18f048ccd3b92e6d01bf895",
+      "visibleLength": 1800,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "BATHTUB",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 7232,
+      "sku": "PJY1724WPWEN#MW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-17T17:59:24.901Z",
+      "descriptionHash": "62c0c6d96b4d9ff6da3985f7e758acef37cf9ffb441fcd527c2f10054032d56b",
+      "visibleLength": 2050,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "BATHTUB",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 7233,
+      "sku": "PJY1724WHPWEN#GW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-17T18:01:20.831Z",
+      "descriptionHash": "d23d576680d8a999dafee679df242119d75b01dcd7aa847b12db3f7015d88a1e",
+      "visibleLength": 724,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "BATHTUB",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 7234,
+      "sku": "PJY1744WHPWEN#GW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-17T17:59:21.954Z",
+      "descriptionHash": "67c54e99244cf57f619951af80a44edeace72735f22657c653bfb039137a87ac",
+      "visibleLength": 1030,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "BATHTUB",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 7267,
+      "sku": "PJY1744WHPWEN#MW",
+      "brand": "toto",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-17T18:00:10.704Z",
+      "descriptionHash": "e77c36d91ffe764ac02f1ec4acfc0b98c57ddd6d185bab9654d66c3416f4a32c",
+      "visibleLength": 2103,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "BATHTUB",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": true
+    },
+    {
+      "id": 7462,
+      "sku": "AL-300V/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:56:52.171Z",
+      "descriptionHash": "fb16816095f7d22cf3a45d6327947927cacab7a857ac34b2e4748e062b7a8f17",
+      "visibleLength": 2809,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "LAVABO",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": true
+    },
+    {
+      "id": 7465,
+      "sku": "AL-293VEC/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "49de352ca0aaa5c608fbca286a42d47f99bdc87fd73a7822600c24e4e9c8290a",
+      "visibleLength": 2412,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "LAVABO",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": true
+    },
+    {
+      "id": 7471,
+      "sku": "AU-417V/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:56:03.883Z",
+      "descriptionHash": "5fdd58bdd45830cbc9a818bf82b6cde45f203970256184a6f03e6b73a40c7bed",
+      "visibleLength": 940,
+      "embeddedCount": 2,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "URINAL",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": true
+    },
+    {
+      "id": 7513,
+      "sku": "MSBV-1800N/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "2b9422b23cfc74120ee93a05b1c80998fe2b35317825a3af15b43d994a1405e6",
+      "visibleLength": 937,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "BATHTUB",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 7577,
+      "sku": "AC-902VN/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T16:04:02.998Z",
+      "descriptionHash": "99f1be9dbb419b97943b44326c75c5b8451c1a706fba59a6099ecc28f1850f7b",
+      "visibleLength": 3556,
+      "embeddedCount": 13,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES",
+        "BRAND_COVERAGE"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 7578,
+      "sku": "AC-602VN/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:51:46.320Z",
+      "descriptionHash": "a260e00c6186d002e02327763358ee98eb54ca9573487267ddf5fe177192210e",
+      "visibleLength": 2559,
+      "embeddedCount": 12,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 7590,
+      "sku": "AC-919VRN/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:45:37.059Z",
+      "descriptionHash": "d7c285aca21274882b1a71a4303a54aa6799fc0cc3e0c189d90aa1eca82299dc",
+      "visibleLength": 3279,
+      "embeddedCount": 5,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 7605,
+      "sku": "AC-918R+CW-H17VN/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:47:32.018Z",
+      "descriptionHash": "7aaa245092c0d57541dfcec49882be0f1780c7137798bb04fcf6dcfbcb75983f",
+      "visibleLength": 2226,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 7610,
+      "sku": "AC-991R+CW-H18VN/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:48:15.758Z",
+      "descriptionHash": "70227f8ddc521cb1275453435e41522afad94be7253a45d962bfe99b3dc9c863",
+      "visibleLength": 2228,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 7617,
+      "sku": "AC-1032+CW-KB22AVN/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:46:11.545Z",
+      "descriptionHash": "930ca88b85ab8c23fee87e8691ffda18b6d96e8fe5d2b395a0da7ca5bab39675",
+      "visibleLength": 2221,
+      "embeddedCount": 2,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 7624,
+      "sku": "AC-991R+CW-KA22AVN/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:48:18.428Z",
+      "descriptionHash": "a95cfad0b2521d54f4ea7134d026107c70adafabd437efce030556f7ded46fd2",
+      "visibleLength": 2240,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 7628,
+      "sku": "AC-918R+CW-H18VN/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:47:33.259Z",
+      "descriptionHash": "ac450ef8fae3e2558720b79921ff24497e671d7294f85ac946bfc8fd00df222d",
+      "visibleLength": 2244,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 7640,
+      "sku": "AC-991R+CW-H17VN/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:48:15.233Z",
+      "descriptionHash": "191f2314cabe9c33926dc9ae89710c311946745a59709d11f3027c4ad3c1b446",
+      "visibleLength": 2250,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 7641,
+      "sku": "AC-991R+CW-KB22AVN/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:48:19.091Z",
+      "descriptionHash": "84c7c6fab6c994a5fb541ebc3de19eda54ced471da233bccf06b7fe90a85877d",
+      "visibleLength": 2256,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 7644,
+      "sku": "AC-918R+CW-KA22AVN/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:47:40.120Z",
+      "descriptionHash": "ce27280d0c55807de9c796e12072e3534fb593b6efc58f6371f3cc61db3c97d5",
+      "visibleLength": 2237,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 7645,
+      "sku": "AC-918R+CW-KB22AVN/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:47:40.073Z",
+      "descriptionHash": "1bfabba976c23b67dd377d912da0c81fc7ab5b91f26bb43af80f6864be4ae80d",
+      "visibleLength": 2233,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 7653,
+      "sku": "AC-700A+CW-KA22AVN/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:50:21.767Z",
+      "descriptionHash": "5d36655ea3786b43ca168031762b5567cdece1400f0a6bf10b203556a149e7d3",
+      "visibleLength": 2302,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 7656,
+      "sku": "AC-700A+CW-H18VN/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:50:21.630Z",
+      "descriptionHash": "0a69e1aa808675393b44a8c38d1b9d91c3a5eed8ad7d1eb9886e72a988a559d5",
+      "visibleLength": 2293,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 7658,
+      "sku": "AC-700A+CW-KB22AVN/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:50:22.079Z",
+      "descriptionHash": "cbf5b99ebbdfe39291cd5c0ae54718331bad7a006ca9682907d874a29df7c4fa",
+      "visibleLength": 2283,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 7665,
+      "sku": "AC-700A+CW-H17VN/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:50:19.203Z",
+      "descriptionHash": "88981afc2b4c52cac93424c2dea3d5b2e4ffd12bac5e5012539334ece0f0846f",
+      "visibleLength": 2241,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 7803,
+      "sku": "AC-989VN/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:45:44.047Z",
+      "descriptionHash": "487f0a93c2dafdb48b12f5b740fe6a023f0ae5c1032f927c95252bd9d43b7de3",
+      "visibleLength": 3528,
+      "embeddedCount": 7,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 9228,
+      "sku": "AL-369V/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:57:14.241Z",
+      "descriptionHash": "c9c8a5a948d07e5e5eb9f7a644d4c761b6675e251b80df2e95c03acbb31a68c9",
+      "visibleLength": 671,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "LAVABO",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 9229,
+      "sku": "AL-286VFC/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:57:12.573Z",
+      "descriptionHash": "952bcaf66544685e771b84f293bba6c3757b59f993ed16e8ca042630cad45c2f",
+      "visibleLength": 652,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "LAVABO",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 9230,
+      "sku": "AL-638V/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:57:18.373Z",
+      "descriptionHash": "3ab729def30f59261b343b2c7a63bafc1bd65a4a36d267057b598c3b4e4470ea",
+      "visibleLength": 737,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "LAVABO",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 9237,
+      "sku": "AL-682V/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:57:22.159Z",
+      "descriptionHash": "ec8e29e75c9ff80d9e9c21efdbd90c2f38a75f0b2c06bed34c04dddbdcef0967",
+      "visibleLength": 696,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "LAVABO",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 9238,
+      "sku": "AL-622V/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:57:16.951Z",
+      "descriptionHash": "9bdbd4f302a18aba50451f8621eac3652578a6a65e912b07f2e506043c523c12",
+      "visibleLength": 696,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "LAVABO",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 9241,
+      "sku": "AL-692VFC/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:57:24.532Z",
+      "descriptionHash": "36b9e777ef93b7a05913d75d110ac6d255228ec9f1266baaac6aa818b6486425",
+      "visibleLength": 685,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "LAVABO",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 9242,
+      "sku": "AL-662VFC/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:57:20.938Z",
+      "descriptionHash": "5e36eb45eaaa201c593745a0b41637ae5a18508d83eeab79ced32a4eb1cbcd08",
+      "visibleLength": 685,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "LAVABO",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 9254,
+      "sku": "AC-909VRN/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:45:27.654Z",
+      "descriptionHash": "463bdfd5366fe6805b8738e78cf06d9164994d502c3af162eddb09ce9b4508de",
+      "visibleLength": 3186,
+      "embeddedCount": 5,
+      "mediaRisk": "MIXED",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 9255,
+      "sku": "AC-909VRN-1/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:45:27.508Z",
+      "descriptionHash": "e284267404ece9cb77cee66a3108242bb577d18c1345fd7e59a9ae3736989368",
+      "visibleLength": 2917,
+      "embeddedCount": 3,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 9316,
+      "sku": "AL-300V",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "b377889e5e560d326878c5055ffad14d5e5c365d34d9f57b2907a0060fcb53cd",
+      "visibleLength": 2809,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "LAVABO",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": true
+    },
+    {
+      "id": 10036,
+      "sku": "AC-909R+CW-KA22AVN/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:58:12.108Z",
+      "descriptionHash": "aa220ad2c8c2f506fb68cdeb029d8e1ad7c4959df9b61e229811a02c2773649a",
+      "visibleLength": 4903,
+      "embeddedCount": 5,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 10056,
+      "sku": "AC-909R+CW-S32VN/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:55:49.827Z",
+      "descriptionHash": "f04c560b14ac5d0f563984da775589a164afbc65cfb57f61bb71d0c58abae575",
+      "visibleLength": 2419,
+      "embeddedCount": 3,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 11849,
+      "sku": "AC-710A+CW-KB22AVN/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:50:30.340Z",
+      "descriptionHash": "fd1f72410d632ab69771ea8d763b579c63592e64d114ce6828c1ecf566b57dcf",
+      "visibleLength": 2292,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 11850,
+      "sku": "AC-710A+CW-H17VN/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:50:22.818Z",
+      "descriptionHash": "2de31e393f4fdc5ed51587a4d7312509614995b380b1f62ea51cc789ff7595ef",
+      "visibleLength": 2232,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 11853,
+      "sku": "AC-710A+CW-KA22AVN/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:50:27.864Z",
+      "descriptionHash": "376027649d0710ae2a30a90d2cbc5e910a8e8c24e9278c76549078dfe305b0ee",
+      "visibleLength": 2300,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 11856,
+      "sku": "AC-710A+CW-H18VN/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:50:26.204Z",
+      "descriptionHash": "7d921a049ae38d2b80104bc215d2beef2bbb7182afab47370ecc31b67eb8026e",
+      "visibleLength": 2310,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 21122,
+      "sku": "C1353",
+      "brand": "caesar",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "bc8e7d111ecb9ee0443ce06b50227b83659751eaf4fec1a75db6a893ed66141f",
+      "visibleLength": 1191,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES",
+        "BRAND_COVERAGE"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 26231,
+      "sku": "VB50",
+      "brand": "viglacera",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "eddb925bef957fa04d9dcc42bcd087d102f86578069439357af1325a91eca1cc",
+      "visibleLength": 998,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "URINAL",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": true
+    },
+    {
+      "id": 26432,
+      "sku": "P522(P.23.321)",
+      "brand": "viglacera",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "87eed04c913ba4daf470932bd02f4ceb1f5027b73b418026f882a13c075f2ac2",
+      "visibleLength": 685,
+      "embeddedCount": 2,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "LAVABO",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 26433,
+      "sku": "P523(P.23.350)",
+      "brand": "viglacera",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "9a20318dd375eb28bfee45c2786062455cb7a19cea439fe93d3d25adc0448363",
+      "visibleLength": 703,
+      "embeddedCount": 2,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "LAVABO",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 26434,
+      "sku": "P526(P.21.450)",
+      "brand": "viglacera",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "24cc225c534ea3a0bce95ea7ba16816720afc2fcae48e4c46cfa896921a06f46",
+      "visibleLength": 1650,
+      "embeddedCount": 4,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "LAVABO",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 26435,
+      "sku": "P.21.140",
+      "brand": "viglacera",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "f296926351a77761854f7f1b685a2034ddae2cdb824ccbe7a32311aa714ccaab",
+      "visibleLength": 2352,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "LAVABO",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": true
+    },
+    {
+      "id": 26436,
+      "sku": "P525(P.21.150)",
+      "brand": "viglacera",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "b1e35b1d4c19a5226976c891154a8c44678842ab57ab6cf5a443e930ff812d2e",
+      "visibleLength": 2352,
+      "embeddedCount": 4,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "LAVABO",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": true
+    },
+    {
+      "id": 26437,
+      "sku": "P.23.320",
+      "brand": "viglacera",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "d50a2149740233ec2eb516c1773e14d4c467fa9d00b70b4765933e49829cecf1",
+      "visibleLength": 689,
+      "embeddedCount": 3,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "LAVABO",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 26438,
+      "sku": "P.22.690",
+      "brand": "viglacera",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "e26f3dff65b65a09e5fcbcf79aea5773f549b5b6faf220072229f80219543006",
+      "visibleLength": 1123,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "LAVABO",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 26439,
+      "sku": "P.22.680",
+      "brand": "viglacera",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "83aa4ce29344d89ac847414c2f726fc2eeb570bd5aa16c5454a6531818f1beeb",
+      "visibleLength": 1111,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "LAVABO",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 26440,
+      "sku": "P458(P.61.356)",
+      "brand": "viglacera",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "07ddc1427500495e8103750249818d4ff0c9e57325011cede1b20342b85a4a80",
+      "visibleLength": 774,
+      "embeddedCount": 3,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "BATHTUB",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": true
+    },
+    {
+      "id": 26441,
+      "sku": "P.22.700",
+      "brand": "viglacera",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "68f696dac8c09377cc848be8c88b0c4cd59e78a9d23ede493d575d9c51171573",
+      "visibleLength": 1176,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "LAVABO",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 26442,
+      "sku": "P457(P.61.350)",
+      "brand": "viglacera",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "4da1e6e38c786dfee8268b69c296809bee1c8b5c96a36b84c430dfc009662ced",
+      "visibleLength": 623,
+      "embeddedCount": 3,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "BATHTUB",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": true
+    },
+    {
+      "id": 26443,
+      "sku": "P.11.350",
+      "brand": "viglacera",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "71ee2e03fd592943f5bdae4ab3c5020d0de61fc41fd027e67a7fa29d0ba49b08",
+      "visibleLength": 4623,
+      "embeddedCount": 4,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": true
+    },
+    {
+      "id": 26444,
+      "sku": "P.11.321",
+      "brand": "viglacera",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "fc5e871d847b7aa86ce3d1d65635656f525569336352eb4498da3f034439cec1",
+      "visibleLength": 4605,
+      "embeddedCount": 4,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": true
+    },
+    {
+      "id": 26445,
+      "sku": "P.11.320",
+      "brand": "viglacera",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "63d834a4adfce127f8f15271c3473c77195753a177d4949899937f9cf6e01f17",
+      "visibleLength": 4598,
+      "embeddedCount": 4,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": true
+    },
+    {
+      "id": 26509,
+      "sku": "NY54-9GP01",
+      "brand": "viglacera",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "833ecb32e2171c77286ebd2c8daedfd89dfbc78d66950c19c4497c05e607c23c",
+      "visibleLength": 962,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "LAVABO",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 26510,
+      "sku": "NY53-9GP01",
+      "brand": "viglacera",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "48a6a3bd128390bc26743e9cc4d04fe981b4d1bac1970acc6cc93b3b34f579e3",
+      "visibleLength": 939,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "LAVABO",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 26511,
+      "sku": "SH52-9GP01",
+      "brand": "viglacera",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "ef9dfefb4c38033440729be58ab0954fe7276e866268fa6b6826e311e49403b4",
+      "visibleLength": 990,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "LAVABO",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 26512,
+      "sku": "SH51-9GP01",
+      "brand": "viglacera",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "518042d3da1fa5b03fef99670bab3566ea0b1e2077456bd258ca48058a0a5192",
+      "visibleLength": 955,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "LAVABO",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 26513,
+      "sku": "SH52-9GP02",
+      "brand": "viglacera",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "9016b9ff553c07e4ff0f593aa827103c311e2b3568b2fe759cc4efd27b3fa2bf",
+      "visibleLength": 1021,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "LAVABO",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 26514,
+      "sku": "UA1-9GP01",
+      "brand": "viglacera",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "8d7cdee6cb860aaaeba1bb503afba9ec2b4c9600ee8f34f5869b60290b78a72f",
+      "visibleLength": 974,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "LAVABO",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 26515,
+      "sku": "UA3-9GP01",
+      "brand": "viglacera",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "38c467f8faeb87c75691af598e763dbcf6c58a18efb9079a0a0d2cfe9f0ec526",
+      "visibleLength": 1012,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "LAVABO",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 26516,
+      "sku": "UA2-9GP01",
+      "brand": "viglacera",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "0448667ef082aa22f5ffd383e4c9c057bf064f7bc7e54d1e14e5419db6254c25",
+      "visibleLength": 966,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "LAVABO",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 26517,
+      "sku": "US10-9GP05",
+      "brand": "viglacera",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "3aaf8d08cdd188c82f368fd0cd6f55279e723a39979cb54391b22e75d4fe880a",
+      "visibleLength": 992,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "LAVABO",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 26518,
+      "sku": "US7-9GP01",
+      "brand": "viglacera",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "31fddb191725a20d4bdd739c9a04147cc7a6ef48ebb32641b88ea2b2a5d53b52",
+      "visibleLength": 994,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "LAVABO",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 26519,
+      "sku": "US6-9GP01",
+      "brand": "viglacera",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "93636999d261da103241ac0bd1682a029c3781fff31caae0c875fc3adde78887",
+      "visibleLength": 964,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "LAVABO",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 26520,
+      "sku": "US8-9GP06",
+      "brand": "viglacera",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "f1adab6beb89a326275ce56dbdff02db92f9889737e5e8e5df213d5613343ab8",
+      "visibleLength": 984,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "LAVABO",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 26521,
+      "sku": "VA1-9GP01",
+      "brand": "viglacera",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "4017d6f1e2a55309990853da06c86b9d7899f6282af4a3e9f04f2b0ac5aead52",
+      "visibleLength": 986,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "LAVABO",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 26522,
+      "sku": "VA3-9GP03",
+      "brand": "viglacera",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "1f01414c92cd73bd70686069e9120e1fe4d8c9f214f87ba6454295916e624fd1",
+      "visibleLength": 959,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "LAVABO",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 26523,
+      "sku": "VA5-9GP01",
+      "brand": "viglacera",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "9a370fc832efb74988c295fa90e1b51b17298ea7b2f375bbb02e9bfce80f3f54",
+      "visibleLength": 945,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "LAVABO",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 26524,
+      "sku": "VA3-9GP01",
+      "brand": "viglacera",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "aac6daf045abe0cd9ab1e4909fc3e7ce193d015fbd570932297325322882437b",
+      "visibleLength": 945,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "LAVABO",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 26525,
+      "sku": "NY51-9GP01",
+      "brand": "viglacera",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "0587ac45ac50ce2e04ee212700aca61b9b2f188a30f1873daf7864e8e2e825ad",
+      "visibleLength": 972,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "LAVABO",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 26526,
+      "sku": "NY52-9GP01",
+      "brand": "viglacera",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "58e6eab7d56debec504e71ac267db30dd9d7e6ec7f8397cc8bc1e2cc897f1bdc",
+      "visibleLength": 983,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "LAVABO",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 26527,
+      "sku": "FL56-9GP03",
+      "brand": "viglacera",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "e9a9d40b29063341b4c548cb67433c327de11683ac706d3e1bdf16d11e1b5ad8",
+      "visibleLength": 985,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "LAVABO",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 26528,
+      "sku": "FL52-9GP03",
+      "brand": "viglacera",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "a90bb05b04b5b049cbfb44008c53b17bab1cd41f0dae4621380acfe6d361006c",
+      "visibleLength": 1007,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "LAVABO",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 26529,
+      "sku": "FL51-9GP01",
+      "brand": "viglacera",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "0950a9ab6aebca9fd1dec3ee84bec74c4fe98df585a9fc73b402551f6ea742ab",
+      "visibleLength": 961,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "LAVABO",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 26530,
+      "sku": "FL52-9GP02",
+      "brand": "viglacera",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "84f96fceaaac7a25ee920104c696090c98767178eb33020c3c066f67d567c53d",
+      "visibleLength": 960,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "LAVABO",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 26531,
+      "sku": "CL53-9GP01",
+      "brand": "viglacera",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "ab3fcb1da2828dfda24d906ec7ea2edb3054ebfce775e32d1c8ed0b390dd238c",
+      "visibleLength": 962,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "LAVABO",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 26532,
+      "sku": "DNI-S01P",
+      "brand": "viglacera",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "78f0cd2b5db34c7cb0f5ebcdaeeac786b5ea54d34043858c8a7ef93cae3c6606",
+      "visibleLength": 988,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "LAVABO",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 26533,
+      "sku": "CL52-9GP01",
+      "brand": "viglacera",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "a512cb9961e43c204f01e244613bea64259a837166d87f7f8945f50e18584c7e",
+      "visibleLength": 960,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "LAVABO",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 26541,
+      "sku": "VA6-9GP01",
+      "brand": "viglacera",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "6adba80b82417138dc3c7c07f8f67ecd9ce6a2b4376937a1f47fe76b729f012e",
+      "visibleLength": 980,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "LAVABO",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 26542,
+      "sku": "VA7-9GP02",
+      "brand": "viglacera",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "adabb4ac23d54cf8e7ee9fb9b3136baeedf42b9b7d516b53f429b1d81f6e917b",
+      "visibleLength": 944,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "LAVABO",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 26543,
+      "sku": "VA7-9GP04",
+      "brand": "viglacera",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "035d3b0e5f71897b6e5e3ab8f8e275cad8a0903a39ae1688e3d13575e16e6504",
+      "visibleLength": 992,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "LAVABO",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 26544,
+      "sku": "VI11-9GP01",
+      "brand": "viglacera",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "d5b379ffe755f7c2e669b1e56edc46ce909951e5503e8f1f81bd580d5c793e4b",
+      "visibleLength": 988,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "LAVABO",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 26545,
+      "sku": "VI15-9GP01",
+      "brand": "viglacera",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "3784c6308ddb54e1560ce512e56e84848fa6601f300cbe251fa63d7aeae62a80",
+      "visibleLength": 945,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "LAVABO",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 26546,
+      "sku": "VI9-9GP03",
+      "brand": "viglacera",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "fcdd31136664a2bfe9b9a501282c4e80680cfeb0c925f6bd40a0bd5c0130659f",
+      "visibleLength": 979,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "LAVABO",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 26548,
+      "sku": "VI6-9GP01",
+      "brand": "viglacera",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "40d3251c6cd1ac12f744737028da1eb728c539e2bb6599a31b4994b8490d12c1",
+      "visibleLength": 964,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "LAVABO",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 26549,
+      "sku": "VI7-9GP03",
+      "brand": "viglacera",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "7f7dd70a3aa0e4e97eb5ebc4e33581a1ef1e149f0587e0c8ac7312f4297f5552",
+      "visibleLength": 982,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "LAVABO",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 26569,
+      "sku": "V715",
+      "brand": "viglacera",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-02T10:41:51.291Z",
+      "descriptionHash": "ae23a08e841257a0bf55fcf57b54d1bcf04b2170ec5fe01d184df43c37230504",
+      "visibleLength": 1033,
+      "embeddedCount": 1,
+      "mediaRisk": "BUNNY_ONLY",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES",
+        "BRAND_COVERAGE"
+      ],
+      "checkpoint": false
+    },
+    {
+      "id": 27785,
+      "sku": "SW0112C",
+      "brand": "moen",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-03T19:48:43.465Z",
+      "descriptionHash": "45fdd76ef257a02fa0f812ce9e4b50beaf2141e934070e4ac42401fbf4ec816b",
+      "visibleLength": 1013,
+      "embeddedCount": 1,
+      "mediaRisk": "MIXED",
+      "family": "TOILET",
+      "selectionReasons": [
+        "FAMILY_QUOTA",
+        "UNIQUE_DESCRIPTION_HASH",
+        "SOURCE_EVIDENCE_VISIBLE_LENGTH",
+        "SOURCE_EVIDENCE_EMBEDDED_IMAGES",
+        "BRAND_COVERAGE"
+      ],
+      "checkpoint": true
+    }
+  ],
+  "manifestChecksum": "75e1027478f04ea6e3b22b6345eeeb0e744ae1a65f1de0c3671d325a943a8bd5"
+}
