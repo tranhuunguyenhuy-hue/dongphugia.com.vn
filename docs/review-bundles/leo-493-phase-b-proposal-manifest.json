@@ -1,0 +1,4682 @@
+{
+  "schemaVersion": 1,
+  "source": "leo_493_phase_b_offline_v1",
+  "policyHash": "9e93c0f06c5eb8307d528372070c50e868c7a62fd5cc9008492ae6bcead0fa88",
+  "snapshotHash": "0d95b89d30332bd054c51446f32987c347eee47ea3d0e9761836dc57e29e87f7",
+  "proposalHash": "bbe29e457d126e991043b45102f3327f24b19597084789efd9f965906a039570",
+  "packageHash": "36d10c5b389de5b75e07b260f9a455780f143c772634fb98f8e599444a446c03",
+  "sourceCommit": "269198c3a39b9f48179cf16b6a478833cbcfec99",
+  "counts": {
+    "products": 240,
+    "media": 562,
+    "byBrand": {
+      "inax": 240
+    },
+    "byCategory": {
+      "thiet-bi-ve-sinh": 224,
+      "thiet-bi-bep": 14,
+      "gach-op-lat": 2
+    },
+    "byRisk": {
+      "BUNNY_ONLY": 240
+    },
+    "byMediaAction": {
+      "KEEP_PRODUCT": 561,
+      "KEEP_TECHNICAL": 1
+    },
+    "byEditorialReview": {
+      "PASS": 125,
+      "HUMAN_REVIEW": 115
+    },
+    "holdout": 24,
+    "blocked": 209
+  },
+  "holdout": {
+    "total": 24,
+    "humanLabeledAcceptedRegression": 1,
+    "pendingHumanLabel": 23
+  },
+  "acceptedRegression": [
+    {
+      "id": 9123,
+      "sku": "61-1361-VN",
+      "afterDescriptionHash": "383bdf03230e9eaa71fa2acc60ebc372c9011eea1f4d6bc5050931207dc40d7a",
+      "sourcePackageHash": "4001dd7eec2bfdbeb2c24d96b4fc2b5e2b99c0d1ae9dd866136d6f073e6b768a",
+      "inSnapshot": true
+    },
+    {
+      "id": 9135,
+      "sku": "A-SFV1013SX-1-1",
+      "afterDescriptionHash": "b7f0f67d112449f11c94f8ea96ea4ea0127e76f39671b94e27d03723232e0e2e",
+      "sourcePackageHash": "4001dd7eec2bfdbeb2c24d96b4fc2b5e2b99c0d1ae9dd866136d6f073e6b768a",
+      "inSnapshot": false
+    },
+    {
+      "id": 2706,
+      "sku": "AC-7110400",
+      "afterDescriptionHash": "487d253d6b02ae0479c24114f1661573573b63f63b007ee2b08e17132389de0f",
+      "sourcePackageHash": "4001dd7eec2bfdbeb2c24d96b4fc2b5e2b99c0d1ae9dd866136d6f073e6b768a",
+      "inSnapshot": false
+    },
+    {
+      "id": 2705,
+      "sku": "AC-7110501",
+      "afterDescriptionHash": "e23d424664e21b7ffd7c50a3d3b81ee94b3b264afa595eb0e5fd61e60ba14d8a",
+      "sourcePackageHash": "4001dd7eec2bfdbeb2c24d96b4fc2b5e2b99c0d1ae9dd866136d6f073e6b768a",
+      "inSnapshot": false
+    },
+    {
+      "id": 5343,
+      "sku": "AT-30H",
+      "afterDescriptionHash": "bfa4737dfae714d40adcd50934ff5936e63f795287d6a4747b5e0aa4f1750903",
+      "sourcePackageHash": "4001dd7eec2bfdbeb2c24d96b4fc2b5e2b99c0d1ae9dd866136d6f073e6b768a",
+      "inSnapshot": false
+    },
+    {
+      "id": 1833,
+      "sku": "AT1157",
+      "afterDescriptionHash": "39024230ced8a71464d3830f11498584f9da144141ea3ae1d681a7713dc2c54f",
+      "sourcePackageHash": "4001dd7eec2bfdbeb2c24d96b4fc2b5e2b99c0d1ae9dd866136d6f073e6b768a",
+      "inSnapshot": false
+    },
+    {
+      "id": 7597,
+      "sku": "BFV-3003-1C",
+      "afterDescriptionHash": "18b558e6f61c84f0d140a09b84ff505402dd88879cf1f6c04565e41c19def635",
+      "sourcePackageHash": "4001dd7eec2bfdbeb2c24d96b4fc2b5e2b99c0d1ae9dd866136d6f073e6b768a",
+      "inSnapshot": false
+    },
+    {
+      "id": 5653,
+      "sku": "CS326DT10#XW",
+      "afterDescriptionHash": "5232f30b0f98bad30cce26d70d5e3f7bcabfa7e127d1bb9b4dedc1aa3824588d",
+      "sourcePackageHash": "4001dd7eec2bfdbeb2c24d96b4fc2b5e2b99c0d1ae9dd866136d6f073e6b768a",
+      "inSnapshot": false
+    },
+    {
+      "id": 7868,
+      "sku": "EGR-V2SP/G3",
+      "afterDescriptionHash": "8f660b6614613281b7296afc7282abc76e3a0d0b96368a00aae90c5c2d405fe3",
+      "sourcePackageHash": "4001dd7eec2bfdbeb2c24d96b4fc2b5e2b99c0d1ae9dd866136d6f073e6b768a",
+      "inSnapshot": false
+    },
+    {
+      "id": 7862,
+      "sku": "INAX-20B/CRB-1",
+      "afterDescriptionHash": "2a65c21736be25fbfeaf3eaeed3c23c3c14ca8805e8849fc515b06b23eeba446",
+      "sourcePackageHash": "4001dd7eec2bfdbeb2c24d96b4fc2b5e2b99c0d1ae9dd866136d6f073e6b768a",
+      "inSnapshot": false
+    },
+    {
+      "id": 7859,
+      "sku": "INAX-255/VIZ-1",
+      "afterDescriptionHash": "f78e0ee02218fe913733c8f2f74917db21f339cd8542c27dcea8705ec60fdfd9",
+      "sourcePackageHash": "4001dd7eec2bfdbeb2c24d96b4fc2b5e2b99c0d1ae9dd866136d6f073e6b768a",
+      "inSnapshot": false
+    },
+    {
+      "id": 2698,
+      "sku": "M16004",
+      "afterDescriptionHash": "85b6994e85f1c307dfa90bfabca2c4a4a7e997c275355931be5c1cc82070fac2",
+      "sourcePackageHash": "4001dd7eec2bfdbeb2c24d96b4fc2b5e2b99c0d1ae9dd866136d6f073e6b768a",
+      "inSnapshot": false
+    },
+    {
+      "id": 1406,
+      "sku": "MT5140",
+      "afterDescriptionHash": "45ede6566e80d2b70de21926d9c03df4ad1f16d21a0c94916b1400e408bd14a4",
+      "sourcePackageHash": "4001dd7eec2bfdbeb2c24d96b4fc2b5e2b99c0d1ae9dd866136d6f073e6b768a",
+      "inSnapshot": false
+    },
+    {
+      "id": 308,
+      "sku": "SFV-802S",
+      "afterDescriptionHash": "01d7f2f248a2d56badeccd7b5ae50cf6928505d833868c75b1f904883b94d6bd",
+      "sourcePackageHash": "4001dd7eec2bfdbeb2c24d96b4fc2b5e2b99c0d1ae9dd866136d6f073e6b768a",
+      "inSnapshot": false
+    },
+    {
+      "id": 317,
+      "sku": "SFV-900SX",
+      "afterDescriptionHash": "04c4abf7990e4303eae21a46ce29527b4dd0828e42b2ab0ad8cd2edf36ca19e7",
+      "sourcePackageHash": "4001dd7eec2bfdbeb2c24d96b4fc2b5e2b99c0d1ae9dd866136d6f073e6b768a",
+      "inSnapshot": false
+    },
+    {
+      "id": 3901,
+      "sku": "SW6181HSG",
+      "afterDescriptionHash": "46f9c80448648056865855295ed5ec1f0e8b24dc383c014155e4fb152b101517",
+      "sourcePackageHash": "4001dd7eec2bfdbeb2c24d96b4fc2b5e2b99c0d1ae9dd866136d6f073e6b768a",
+      "inSnapshot": false
+    },
+    {
+      "id": 2666,
+      "sku": "TBW07001A/TBV01407B/TBN01001B",
+      "afterDescriptionHash": "459e65a61bd6a29a695e25652755060ff09b047fd0817b2592d282fefc82b6ae",
+      "sourcePackageHash": "4001dd7eec2bfdbeb2c24d96b4fc2b5e2b99c0d1ae9dd866136d6f073e6b768a",
+      "inSnapshot": false
+    },
+    {
+      "id": 7376,
+      "sku": "TX707AC",
+      "afterDescriptionHash": "ecc93fe05c254a405dac098f4f21722653d78355d9b1fb8db83ae4b3e0619856",
+      "sourcePackageHash": "4001dd7eec2bfdbeb2c24d96b4fc2b5e2b99c0d1ae9dd866136d6f073e6b768a",
+      "inSnapshot": false
+    },
+    {
+      "id": 26395,
+      "sku": "V93",
+      "afterDescriptionHash": "fe869bc55164e5e2fdb74609a9ebef64f4d17f4163f3bdcdeefb3ebd43a01295",
+      "sourcePackageHash": "4001dd7eec2bfdbeb2c24d96b4fc2b5e2b99c0d1ae9dd866136d6f073e6b768a",
+      "inSnapshot": false
+    },
+    {
+      "id": 2368,
+      "sku": "WF-9089-CHROME",
+      "afterDescriptionHash": "d86457da90398c8289707b0fd89162f51e0a5737e3f4050d43682df83bc314fa",
+      "sourcePackageHash": "4001dd7eec2bfdbeb2c24d96b4fc2b5e2b99c0d1ae9dd866136d6f073e6b768a",
+      "inSnapshot": false
+    }
+  ],
+  "products": [
+    {
+      "id": 535,
+      "sku": "0014068-WC",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:09:56.599Z",
+      "beforeDescriptionHash": "021051b49e59203e692b4669a2e4bd6b7f7dbf72b2348bafd34677a07b690267",
+      "afterDescriptionHash": "8e0e75ce4e51b1851e507f6ca5faabf11756335b51e4f865fe7450ac7ca7c100",
+      "mediaInventoryHash": "1a0b079cd3b97cf938cab76b4b62a839d9b1392c8f43ccc4d195883eb3caa83a",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [],
+      "holdout": true
+    },
+    {
+      "id": 536,
+      "sku": "A-325PS",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:11:06.256Z",
+      "beforeDescriptionHash": "711cbf6cf4536f4bbd85b899e85d408267ca7aba9606a2de22a8f2075f4bf578",
+      "afterDescriptionHash": "f3003c5139258beb2b01f651e6bcf30b11a3edc3e6cccea8874371f34db03b8d",
+      "mediaInventoryHash": "b3187ffd5b9b1a5dbe266a29537a940b8dd34ae4434dc4a4f603567bb1718551",
+      "mediaCount": 14,
+      "mediaActions": {
+        "KEEP_PRODUCT": 14
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [],
+      "holdout": true
+    },
+    {
+      "id": 537,
+      "sku": "A-325PL",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:11:05.571Z",
+      "beforeDescriptionHash": "69526efd93d243b6b606e262e540bdd5616f75a139616fcdd0e19bc6852df2bc",
+      "afterDescriptionHash": "a73672aa72db46282d8cc97e1cbb395521eddde7113b9f06908e195f8ff5bdba",
+      "mediaInventoryHash": "7cb7d20b550685d32c717a2a151f2bd8936c68e62894afcef8b9677a60b73b92",
+      "mediaCount": 6,
+      "mediaActions": {
+        "KEEP_PRODUCT": 6
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [],
+      "holdout": true
+    },
+    {
+      "id": 540,
+      "sku": "A-016V",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:11:23.123Z",
+      "beforeDescriptionHash": "c15da462b8d66815cddbdcc07bc50a25ad864eead4f58b35fe9186207176a106",
+      "afterDescriptionHash": "be622178197efd73883a91a9b65ed08a06b8483ca809d18482837c6cb3cf90dc",
+      "mediaInventoryHash": "afe8fd80ac7daa2b4be40e04b30fc766afb1269f96f92c0c5a358c6fd0025ff7",
+      "mediaCount": 10,
+      "mediaActions": {
+        "KEEP_PRODUCT": 10
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [],
+      "holdout": true
+    },
+    {
+      "id": 546,
+      "sku": "A-10251-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:18:35.705Z",
+      "beforeDescriptionHash": "7eba39ad40830f46b822d95b9ac0d9fb9b62d0b46ae8e940934ecf061381df00",
+      "afterDescriptionHash": "4dd6f3631838ad76c528e1575e5d2eaaeacc564047124b70bbfa48d845ab73eb",
+      "mediaInventoryHash": "7f6493c8d9361e27cfe78a189cc482b95c0a6f726e92ee2c292c0f442c7b0a3b",
+      "mediaCount": 7,
+      "mediaActions": {
+        "KEEP_PRODUCT": 7
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": true
+    },
+    {
+      "id": 547,
+      "sku": "A-10261-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:07:57.154Z",
+      "beforeDescriptionHash": "55d6f9f1def117da1b7bb1f748041c1eecbb684dc100728845e0b70ce90c7b8f",
+      "afterDescriptionHash": "1f02a34e78d14478daa779afdad8a4d4e2433349cff71492da715201db3bd5b1",
+      "mediaInventoryHash": "0866a02475c19e27cd7e4fcab753363afd78b5f287fb2ab46be87d77c25e9f5d",
+      "mediaCount": 13,
+      "mediaActions": {
+        "KEEP_PRODUCT": 13
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [],
+      "holdout": true
+    },
+    {
+      "id": 550,
+      "sku": "A-017V",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:11:23.369Z",
+      "beforeDescriptionHash": "8d3b74710a939f6687d9577674b25bfe09654bb2dc78b59cf2021c739d80ceda",
+      "afterDescriptionHash": "9d42c9343e7f5708a110d7da5a525484f1916c47879890cdaf801262a32c6b05",
+      "mediaInventoryHash": "4cb5580c965b57e539e7d66438273d9e5824f835c5ee72a2c226bcbbfce5030a",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": true
+    },
+    {
+      "id": 551,
+      "sku": "A-10254-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:07:50.441Z",
+      "beforeDescriptionHash": "09cca40fb52d814e362140e931a1840df2af94a2920e0d1c1cf8830893736fac",
+      "afterDescriptionHash": "067072c22c195203136caa909ac86b6363fc4aa4e4dd589940339ea72b9b439f",
+      "mediaInventoryHash": "04b24bc210cae1d85f7c2e7c5b8a8c5319b87a5138d54033242ae8a95787e0d9",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": true
+    },
+    {
+      "id": 552,
+      "sku": "A-10260-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:18:41.866Z",
+      "beforeDescriptionHash": "c23c4756d29ced11fecee9084b53fec00900ed2ea7b5f98db9e4c523c5e25d60",
+      "afterDescriptionHash": "5593414a18d8dcb03f705f23ea8b8eb5eb49c46b2fb8ed9ce0260649e1fa552c",
+      "mediaInventoryHash": "b8115dc25e0c34c57ceb74c5d4bef6a73f2a7033e2891cdaafe8b2b19debd66c",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [],
+      "holdout": true
+    },
+    {
+      "id": 553,
+      "sku": "A-10264-10-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:59:07.842Z",
+      "beforeDescriptionHash": "9e329d6d4f32bf2d5093d4a018e277b71d57775a9d1cde93588b0b7344a71e95",
+      "afterDescriptionHash": "9dd7aba50ef19845370d54cd43e55162ca15e4b4db0b627b915def7889d577b2",
+      "mediaInventoryHash": "070dc24af842f04c6d4e8b60b742f8569966da3b379b050988bd5f102a53a4f3",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": true
+    },
+    {
+      "id": 554,
+      "sku": "A-10264-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:59:08.349Z",
+      "beforeDescriptionHash": "5950bc2d6560c125dc63097056442fec0e6f73c1569b696a588428ac50a1da83",
+      "afterDescriptionHash": "f4147ee1806a38d23d619719d72475a6ab9b5f29b07fad1f9f05d5830517886f",
+      "mediaInventoryHash": "6e0577eb58c11fb616a81384e97fc3aa8c4ce56a969aea1a0ca1219450ccbb3d",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": true
+    },
+    {
+      "id": 3859,
+      "sku": "A-1008VS-3/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:57:53.168Z",
+      "beforeDescriptionHash": "f6099a1cbdce51b03eb92cf20583c41622df81a3dc15c963d2e1e3a130bc80cb",
+      "afterDescriptionHash": "d21ec600559b543a19b922ae2b7de250bc1ce486e49fbc997bfb88af2833fb66",
+      "mediaInventoryHash": "952bd5e1074bd011c9a11c702b2b9cabbb1d47da6fffd3c40eccee2c34ec6241",
+      "mediaCount": 7,
+      "mediaActions": {
+        "KEEP_PRODUCT": 7
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": true
+    },
+    {
+      "id": 3860,
+      "sku": "A-2700VS-3",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:57:55.148Z",
+      "beforeDescriptionHash": "96933a39c4f29615331ce1bd4d4fcbb28f9bf79ba467c1dbc76583dad690ff62",
+      "afterDescriptionHash": "14dde04349de3ed605d443d075414d3cd757099ee86aaccf74c8c6c4a1647194",
+      "mediaInventoryHash": "2bfca9a40cb1bbcac58608ba9287ede3b60dca12dfba552e700f9559c6c67884",
+      "mediaCount": 6,
+      "mediaActions": {
+        "KEEP_PRODUCT": 6
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": true
+    },
+    {
+      "id": 5275,
+      "sku": "2375-VN",
+      "brand": "inax",
+      "category": "thiet-bi-bep",
+      "updatedAt": "2026-07-07T08:17:00.253Z",
+      "beforeDescriptionHash": "53e05f99088bd4af167d24f548addb312fdc4c57d5e3dfbb354e9da073dd9638",
+      "afterDescriptionHash": "aa0a4db8e1ff96f2f325c7ae3fdbd0bd157bdd92a8b2cadfbfe745570ad825aa",
+      "mediaInventoryHash": "37fd90cae4505216f9fd4072e8ed77d6456d0ffb884113acc45c953eee12d952",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": true
+    },
+    {
+      "id": 5276,
+      "sku": "2531-VN",
+      "brand": "inax",
+      "category": "thiet-bi-bep",
+      "updatedAt": "2026-07-07T08:17:08.861Z",
+      "beforeDescriptionHash": "815b253f8f02ad53529455ae1db0d2ccade7965a329f016a8744b91d82e422e9",
+      "afterDescriptionHash": "8f4f9da379231b1f3d2411a170e5d17a6740f92c37021319e34346da359df16f",
+      "mediaInventoryHash": "3e16f908c585bda9563d3c4c990c52c3a9a2db2ba2d407279b8f6529eb8fc564",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": true
+    },
+    {
+      "id": 5277,
+      "sku": "2547-VN",
+      "brand": "inax",
+      "category": "thiet-bi-bep",
+      "updatedAt": "2026-07-07T08:17:12.842Z",
+      "beforeDescriptionHash": "e621c79f5944e73c9062fd67d3c6e12e6159fbc9de20f031a898687d67bf49fd",
+      "afterDescriptionHash": "9e05f687bb261f291be1b201c8ca3fd25744ce2a454bd9b49413c558f250e458",
+      "mediaInventoryHash": "5658e29a00c46ab1866c83a8b6dba044d39697fb0d99ca1fccb27856aa85f1f3",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": true
+    },
+    {
+      "id": 5278,
+      "sku": "2550-VN",
+      "brand": "inax",
+      "category": "thiet-bi-bep",
+      "updatedAt": "2026-07-07T08:17:14.825Z",
+      "beforeDescriptionHash": "71a6c4b0177a4247fb8b170ecda60c75fb458e33cd1a3537b3b12bd951b46fea",
+      "afterDescriptionHash": "576f2d84d0734e39872f284be621af82262d3d27f93ac2386276c2f1a94258c0",
+      "mediaInventoryHash": "39c0cd41ea3e70232d94de242de924d91751a72df471425068459fe17f07b410",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": true
+    },
+    {
+      "id": 5282,
+      "sku": "37-1539-VN",
+      "brand": "inax",
+      "category": "thiet-bi-bep",
+      "updatedAt": "2026-07-07T07:59:51.190Z",
+      "beforeDescriptionHash": "c41d2832c2b0501bb36d98c72ea5edaaca2813b011d0a66910de7b6fce0a2cd4",
+      "afterDescriptionHash": "0384f8720298cc3eedc343481dedf54eb229002fb3f4f14c77ad4d342452706a",
+      "mediaInventoryHash": "6d14745ab3e5618f7948f37df9240083e60642dadc5dbd399cd420552cda623e",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": true
+    },
+    {
+      "id": 5284,
+      "sku": "43-2705-VN",
+      "brand": "inax",
+      "category": "thiet-bi-bep",
+      "updatedAt": "2026-07-07T08:10:52.580Z",
+      "beforeDescriptionHash": "04780b8a7c2a64665eb65d8c3438dcc3481507ed3529ed62ffa4aa8700613c0b",
+      "afterDescriptionHash": "4c1d7dbbd5f70847e7d21b0d6565d750c4d15734b043c14e6e72bbd84b187b0e",
+      "mediaInventoryHash": "26811956c9da5261f007bff1de074fd1946df50d484df8f087ce7a202973973c",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": true
+    },
+    {
+      "id": 5285,
+      "sku": "43-3069-VN",
+      "brand": "inax",
+      "category": "thiet-bi-bep",
+      "updatedAt": "2026-07-07T08:11:18.576Z",
+      "beforeDescriptionHash": "ea22365aab89e546a1283ec7f4cbd6b10700057bc7a00d2e8ecb53ffd6130421",
+      "afterDescriptionHash": "994f78d61cc086f7ea475c470cb21be1a67f3d6acc8f8eaec1e1d3d0b574e3f7",
+      "mediaInventoryHash": "7edb5c614a4cc8ad9941dec9058543f63b7dd0dc487b376b4ef56ec3e27bf029",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": true
+    },
+    {
+      "id": 5288,
+      "sku": "61-1233-1-VN",
+      "brand": "inax",
+      "category": "thiet-bi-bep",
+      "updatedAt": "2026-07-07T08:13:26.882Z",
+      "beforeDescriptionHash": "0d0ad03d61641f2a5ced93e9adcf7dc55f83c139552bdad8b59d715fcec5ae1a",
+      "afterDescriptionHash": "ce5d100954e5ed893cd75bf006f8d2b0b629aa49f2b3c7ef06b640274d58cb62",
+      "mediaInventoryHash": "7432ed46ac16eac0b8925dfea335ce09e33ec69b3c80c7933408e5b55b8bef9a",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": true
+    },
+    {
+      "id": 7821,
+      "sku": "47/POL-B1",
+      "brand": "inax",
+      "category": "gach-op-lat",
+      "updatedAt": "2026-07-09T08:40:23.801Z",
+      "beforeDescriptionHash": "a3fc94cdff981e2ba34cd738be3a0c87f503293028038ff49d6a04deccc80e98",
+      "afterDescriptionHash": "136ead138b67c9f020fd7f28bd8af4b77caa262ae2851a8c039635be447b14e3",
+      "mediaInventoryHash": "8270a1911dd96d0d3a29ec29a651839e09d4199856355a90bc1f01c6147b5692",
+      "mediaCount": 14,
+      "mediaActions": {
+        "KEEP_PRODUCT": 14
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [],
+      "holdout": true
+    },
+    {
+      "id": 7854,
+      "sku": "355SD/CMG-1B",
+      "brand": "inax",
+      "category": "gach-op-lat",
+      "updatedAt": "2026-07-09T08:40:23.801Z",
+      "beforeDescriptionHash": "35679825cd15105915f06c867ecf7c5404cbe617ac307c801c22a8225a7755e7",
+      "afterDescriptionHash": "79e12bf16cede9a268aed4b18ead1effab268872771bc1352962e176a7982bbd",
+      "mediaInventoryHash": "16333aa960d21b24eb210dfddd16e8d88666b2c5e7059ae41c0c98fbc08cafcc",
+      "mediaCount": 23,
+      "mediaActions": {
+        "KEEP_PRODUCT": 22,
+        "KEEP_TECHNICAL": 1
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [],
+      "holdout": true
+    },
+    {
+      "id": 7908,
+      "sku": "A-10287-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:00:57.555Z",
+      "beforeDescriptionHash": "92f06a52bd4d3c89b41ec574927671ba8ca871151d9125139e0dbd95448ab553",
+      "afterDescriptionHash": "1045db05954ec0ccd194120cd64bfe55ca3823ed2ad8e724ead5fec53e6654b5",
+      "mediaInventoryHash": "598a3fac1326d5a7ba5fbef26fa7b852042157fb3170b4ff3b1d0e0fd6b533b3",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 7910,
+      "sku": "A-10286-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:00:54.254Z",
+      "beforeDescriptionHash": "e0b0d77ce391d61661b925dd7552515d193e0aaebc1525ec1d9cdca1180735bc",
+      "afterDescriptionHash": "5952ab2f2f1de8dba16edd5bc6ce2355678da356b1ae8d69dc9df4bceb4e8352",
+      "mediaInventoryHash": "0dbf1be227fd4cc0c56b017b4391bcd48b9c1054e5de8abbf2d95397d15de60e",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 7911,
+      "sku": "A-10360-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:59:08.862Z",
+      "beforeDescriptionHash": "84b909073bdca8a019d94a49f8e270e17a0b369bb8952ae28a029c3d10026ec9",
+      "afterDescriptionHash": "ee2a58656e749b30261a433c4416ae8d0b3a5a485c5bf8e04fe3b81b3ae7f615",
+      "mediaInventoryHash": "9390e7ddf85ad7bb872c9376389d729b6b998c101c81896fd427cb6732a0e447",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 7912,
+      "sku": "A-10458-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:58:42.599Z",
+      "beforeDescriptionHash": "0d48874bed2e4855e21463f93906db006576d17c4b32575b9ecd91b6f786733c",
+      "afterDescriptionHash": "371c2c1220be97fb59085fe1a6823bd55c0e0e0a12455f24aef8747ab303b5c2",
+      "mediaInventoryHash": "d4cc78cd49011469d56d449d6283057f388f6ad1bc77f347aad64ddc569a1ede",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [],
+      "holdout": false
+    },
+    {
+      "id": 7913,
+      "sku": "A-10504-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:58:35.309Z",
+      "beforeDescriptionHash": "ebe289c9d1d951f772f425d17aede3656b1fabcbfd4cc1d1c7cb470af4017939",
+      "afterDescriptionHash": "8cfdfbda34119c526c5430c0173d9625f44c26db3eabf9185824251b68198f3c",
+      "mediaInventoryHash": "3063920f32812e8963e56b7b615c7f3f391927b715cf9740c9a27a6f808407e9",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 7914,
+      "sku": "A-10505-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:05:51.705Z",
+      "beforeDescriptionHash": "c1c31b73b8d0607b04336f4b25314f6f1f9c8136e6c2aec357ee062d1d176524",
+      "afterDescriptionHash": "1dd5a8692d49face66bdad4fca68491c085abe71c721d39c487a62b1362c0f23",
+      "mediaInventoryHash": "90fe6c479f68be86a7e6fa779691d95e1976f0f8dbb27108acc962e196729ab9",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [],
+      "holdout": false
+    },
+    {
+      "id": 7916,
+      "sku": "A-10508-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:00:57.631Z",
+      "beforeDescriptionHash": "2cc473922ed3b94320e1f9eb5e7e0997ca975893b26a400144e04c929a005beb",
+      "afterDescriptionHash": "33600851622c4f3f9f95712a4d42d167fd7922113faaf860d8b09d38a15bacdd",
+      "mediaInventoryHash": "c8303937bdd96f8921195bac7e20254b0aa0839059af71f80eb4b28966e20030",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 7917,
+      "sku": "A-10657-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:00:54.825Z",
+      "beforeDescriptionHash": "8c4dcca5374467ec32d6cfd0b4dd950760c865b3536cd93d441bd14160bc3fa8",
+      "afterDescriptionHash": "24299ba38ae9d082cc1c714f5ac80e12b0cf661c193b67babdc45321ca3f9d8f",
+      "mediaInventoryHash": "733938bc46172473476526dc9c1a79b444d01b28a4626ab0d02928c8f45942ff",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 7918,
+      "sku": "A-10712-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:07:51.162Z",
+      "beforeDescriptionHash": "582f6727a99ed5f227b192b677d42882b0bcf34bbe9e0a12b1b7289b0380bc4b",
+      "afterDescriptionHash": "34808dc1dec2dfabb313402421c5cdf28c2765617cabae8df6a52cb5acf03031",
+      "mediaInventoryHash": "4e26e186fb53fedf57e31b5fc020caeaaaa3c09d0f120f56476ab8b5599fc892",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 7920,
+      "sku": "A-10919-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:01:00.940Z",
+      "beforeDescriptionHash": "c7551afa88953334909249560ff0d548cbf972ffa2055a3506e3618dc8d6f82a",
+      "afterDescriptionHash": "8e8aa88483771c5ac8a307e27eb478f88be170f04a94be00b671f11d5d750cd7",
+      "mediaInventoryHash": "ab3b5531a68daee187a5f562e4b12f28f9d4b586fc35f3d162c2fb2a8ba51728",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 7922,
+      "sku": "A-10920-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:00:55.796Z",
+      "beforeDescriptionHash": "f85d158fb2a36be0de439df00283bad7c0c75e5c605d3182f919c41477fbbd9d",
+      "afterDescriptionHash": "218d87f19eb8ca7f034d6f364e99388c9c2b8ea0a2e8a4e2243e356ffe42178c",
+      "mediaInventoryHash": "3422ba5854d886fd867dac59da4255c8e33aafb76d9d2692348b43ebdd288c76",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 7931,
+      "sku": "6817-11-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:59:00.926Z",
+      "beforeDescriptionHash": "e57d58b5d8b6a153e48ad33ef9a070f592ee8e39084ac94e910cd0d3036cb47f",
+      "afterDescriptionHash": "56636bb9a27f0ba29e07be160eb400dbb9348de07fd3eb7e4cfc8838c90f0368",
+      "mediaInventoryHash": "5bfda1d6c6cad56553f90d4993501fac8a051db0beac6c7010ed8fcfd6c13eaf",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [],
+      "holdout": false
+    },
+    {
+      "id": 7932,
+      "sku": "6823-11-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:59:01.445Z",
+      "beforeDescriptionHash": "60165caa2a2319d68efacf9cf1a6bc14c6dd2725ba46c657b0c8926981c1b5de",
+      "afterDescriptionHash": "f18f1ee330d749b8fecf7e36c590f741d2eede1a7a22886bd7fc7a59066bb6c6",
+      "mediaInventoryHash": "cb4b6d10a126c476e22cc57e6901df218657e149f5aaccf6658794bfaac79dc9",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 7933,
+      "sku": "6823",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:59:01.899Z",
+      "beforeDescriptionHash": "643bd6210edfb8c84455d4b21f7e08d7ee6e40ba848d7857aafc0ca2b21eb8e9",
+      "afterDescriptionHash": "a90b8394e690e35952b1ce9f422f80f6f2145baa01fb17f5cc42e70689970aa1",
+      "mediaInventoryHash": "e1e80dd0e2e3027beed7402cabe6c57851cca3d0d4c8d8be87f86fa98959e4c2",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 7938,
+      "sku": "6856-2-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:11:24.801Z",
+      "beforeDescriptionHash": "f59192e5afb6d174cf67910fcda48cef9114e892f6ad1275c3a578f8ac428e77",
+      "afterDescriptionHash": "a8f29d485f5ba99024bb7fc27dd2b367a4f297e71088e8ebac97ad6cf8898702",
+      "mediaInventoryHash": "d0f944a34df442eb81ba346f0f4a50c5dd365458ee0c5542e9d5a2ab4548c654",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 7939,
+      "sku": "6856-3-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:11:25.171Z",
+      "beforeDescriptionHash": "14e1796af3ce5f067c009fcb8d5e392d58765977e800b0dac8ace81e4c42decf",
+      "afterDescriptionHash": "5c893a59f8e5c7d9c9ccd6d5007f388a5786e623cb6bf6be92bd5bdb4d2b277a",
+      "mediaInventoryHash": "21465b225a3c8cec1ded45ff347ad8a8d322912757297bb3977defd1afffd338",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 7964,
+      "sku": "14-1835-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:19:41.385Z",
+      "beforeDescriptionHash": "c1fcf096232ba92e7ab188e9f2678d8eb5347dc43fa4e17dbc7ed0a9e60005de",
+      "afterDescriptionHash": "d8f0338e1df32e41d62feea06efe0ea8375f674755903c39b41ae589a47c75dc",
+      "mediaInventoryHash": "a2ee7075b93cec1150ca07c10d79bdeb74f6f106b47db843aeea7270654fb438",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 7971,
+      "sku": "18-1005-10-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:08:42.720Z",
+      "beforeDescriptionHash": "2c191e6277d2d2448c0ac79a3ffafae4769810a0dc7a8fca8905d6091b69ae40",
+      "afterDescriptionHash": "d70d285c31c5021da43e509b6cab5916b35c08397d875734e1b68a9f292a0534",
+      "mediaInventoryHash": "81ae9f2bff60f1bf4bc108ff1ec92a2f1959c4e3375eefe97d21b881a4e0dd82",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [],
+      "holdout": false
+    },
+    {
+      "id": 7972,
+      "sku": "18C-015",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:08:42.796Z",
+      "beforeDescriptionHash": "d341bc7acacb2eafbb2444d0a90a339bd4021ef5a3f395295f236af4a636a268",
+      "afterDescriptionHash": "4e3c379e5359ce58c2d8d158482d5ac7a3a7b5903b93ac8da03113597357cb22",
+      "mediaInventoryHash": "e22c0bed6e626a821c31c03f87c110228ddb6611c2238ab9d51d2d9197a94264",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 7973,
+      "sku": "25C-013",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:07:45.047Z",
+      "beforeDescriptionHash": "b6462a6da630b9f949ace3d4ea89d4a2049699aa5a7f4e295737e9eda5a8360c",
+      "afterDescriptionHash": "995df86d39fbcbfe1a6db561d2e205c6f43115df9235619026d78a45ef8c92f6",
+      "mediaInventoryHash": "cbcf9e4fbf339d619c3bb8918ce4d2d9aa10a78a93eccf4d2b58018381fb242c",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 7974,
+      "sku": "25C-022",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:07:50.735Z",
+      "beforeDescriptionHash": "d4ef9e7bc96153fa582007a375b6ede65a22093b4c96fb5f23140f4b506ed886",
+      "afterDescriptionHash": "b6af98812d92e1816345790ff268ceb9424f788d8755bca146aca551eaa5a783",
+      "mediaInventoryHash": "f26bbfec27969619ab1ed448ea347d27b25653bcca7e235c9e6b4fdb0e92d250",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 7975,
+      "sku": "30-1384-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:06:37.456Z",
+      "beforeDescriptionHash": "43bc997ca12ebb85c1e147ab9a644f00c22b773b9d17ca1a7dc62d1b0ff520e5",
+      "afterDescriptionHash": "e9ab2a5ed6fc699ca1ac94d753b234804ebfbd4ff05fe0f2cd9d8ad853c1c7f2",
+      "mediaInventoryHash": "73aec3ddf2e7e8b46a0c77e6404f5f2edb1bc8fc6c6d08d3edffd8ee950eca1a",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [],
+      "holdout": false
+    },
+    {
+      "id": 7977,
+      "sku": "30-41",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:10:26.829Z",
+      "beforeDescriptionHash": "5494607c61bc5ac0cc887f5b6b5dceefce02dcf6b8ace135bdbe006e64245919",
+      "afterDescriptionHash": "c5a3e98bf634fff6936b9393c739355488f4280a40ab1ed9cd7783878c618374",
+      "mediaInventoryHash": "d0b3fac5975c6dfbba35e086e55d3ed1e68b2fe867342d78c13839661f9b4e04",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 7984,
+      "sku": "41C-011",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:10:34.111Z",
+      "beforeDescriptionHash": "8392b761ed6195252bc0780428d8945bf6b52569bee3cbb34b8e83492edcaa12",
+      "afterDescriptionHash": "968b89eff7ce59f52706ae1d7b184a5299ef66a94f3cbb915fefe4cccc026afd",
+      "mediaInventoryHash": "918e483cd6685747d2d9f1c7af625f4ca1d9d0f8b50c1499ae3b888fbd66d46f",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 7986,
+      "sku": "43C-008-INAX",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:59:39.373Z",
+      "beforeDescriptionHash": "36ccad6dfe2ddd2de2862187ce73a9a66e671e02b95a571cc9fa39fc0d8b4f2c",
+      "afterDescriptionHash": "5424bea064c9533232c1da45b26f60d37025b923871d70ea0b05a873ee4c4fc3",
+      "mediaInventoryHash": "c403a50ae7d8d9efd2d9fae67a9193fdc08d33f46715ab31b20567aaf836b872",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 7993,
+      "sku": "3170001005",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:53:40.592Z",
+      "beforeDescriptionHash": "2a8af4f41f7bdb272e93c4d7bd00175f0aef7a10132f3e9f3d1e05b018b14b0a",
+      "afterDescriptionHash": "9f5fbdae20bc89785794d091031e5329e596168ff341924f05455de67c359f10",
+      "mediaInventoryHash": "2ec3b564ccb99de82c26b32064acbe38efc4cc3c20f5fda2ceb46f77e6c024eb",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8000,
+      "sku": "351C-1014D",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:07:30.032Z",
+      "beforeDescriptionHash": "f05cab489a23ec2bf04019a7d067cfabec3c88866756e50db42f36c7d8202c76",
+      "afterDescriptionHash": "13db138262e688cd051eff61b4821bc8dc03bfcf66f9bc80bea26d3aa2441bd7",
+      "mediaInventoryHash": "d169effa45f7eed5fa452cf029a19eae70a98378cc71ef075f854bcbebaf90ab",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8001,
+      "sku": "351C-1016C",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:07:37.304Z",
+      "beforeDescriptionHash": "72682f282ec8ca8bf575be8fe36a9c2d5c04d1c19ec22cc8e82ff948094640ed",
+      "afterDescriptionHash": "e3eafc2846d5cced424bb6ea8c409fd5dfe8b91e0a8bea3adaca8d49fcfcc65b",
+      "mediaInventoryHash": "8965a164b82c84382efb29fa1adad44ac7df2c8bb89c2949f9e22dbfee706f47",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8003,
+      "sku": "351C-1027A",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:07:24.289Z",
+      "beforeDescriptionHash": "8eeb9777f8ca3bb867ab861cfdf5fc09dfc154a159f07855b64c265f4b0f600b",
+      "afterDescriptionHash": "b1404bd19553f94f47bcc08f629f522898a18bfe1cb3b4545763d5d0b94e932f",
+      "mediaInventoryHash": "e653b227b97a23e5e4a2d2faf392a49633bd9212349b425da17bb24d4b33f313",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8018,
+      "sku": "A-1008-2",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:09:59.922Z",
+      "beforeDescriptionHash": "6bcdc623abb3c976d69d39e27103901fecaeb24a1638e2528b80979b7e544ee0",
+      "afterDescriptionHash": "12f5d6822235dbf7617d89ea82dedbea5bd459c0018276b8b17afeb5ad29fc34",
+      "mediaInventoryHash": "f053fcc2df8cd7fd4b01c7a60b97ba58d21756e4447353c00d6861a72d5cfd76",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8019,
+      "sku": "A-1008VS-1/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:54:15.838Z",
+      "beforeDescriptionHash": "fd6d2d6d1e79475b327089b0bc959d8a038dd17106e3666724aef7efd2c83672",
+      "afterDescriptionHash": "c96d0d287edc40f6c1cca0ff5653be02f77e6e323f73cf52125e6ed895294bf6",
+      "mediaInventoryHash": "f20bfc3f72d2a16b3199016103d9db96e745254834ff3fc9cb47b36ded0ab1fb",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8020,
+      "sku": "A-1008VS-2/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:09:02.567Z",
+      "beforeDescriptionHash": "36c646e995074c5210179ffa43d2977b85aaebfdaf871441dee2c1f3b86ae307",
+      "afterDescriptionHash": "cac3004ef08d11347c8031f69e64c8241c6f1927bb1f1ffbe3510f4740e0eb77",
+      "mediaInventoryHash": "5a4e43f7c7bdc25caacd28919555d61caa953169a3fb79a46509a40f43a2fc78",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8021,
+      "sku": "A-1008VS-5/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:19:31.327Z",
+      "beforeDescriptionHash": "d971e9950b4db6789f5a59b6b183976769d1449c084b3349d4ce3bd44b65bd52",
+      "afterDescriptionHash": "9cd5fb8338c0b71b0b38d7db035be4430a021162b918f4a3ca304c868c0b327f",
+      "mediaInventoryHash": "d44e9c5518cc37c5e266db8d0ab6e3694db14c0920bfd0aead713737d5507e6b",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8022,
+      "sku": "A-1008VS-6/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:01:31.189Z",
+      "beforeDescriptionHash": "5e6045255d23b9a27695776274bb79511ef14035ecdd68c6329523cf3e3687a7",
+      "afterDescriptionHash": "bf32ebdfe92eb992393aa518da6617dd3ee26fd77fa3f4763d5af3f3c341fd4a",
+      "mediaInventoryHash": "788cba2f0f569b593812ea52b09fa377ed4233ec99501e3a700806651d065f49",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [],
+      "holdout": false
+    },
+    {
+      "id": 8023,
+      "sku": "A-1017-2",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:13:56.061Z",
+      "beforeDescriptionHash": "367b003d5796dcf7f7b6eab70928fbcfdee7bf556907a44eff7b39a73ee9d26a",
+      "afterDescriptionHash": "f672352db1da12e953e9dd7820e9a32c416abf303230e1b0fcb6bc59a6faeab6",
+      "mediaInventoryHash": "41fa85d979d8bd7e8af4d85272be72d1d4fe4f87f9150afed7cc04380472fca7",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8024,
+      "sku": "A-1032VAS-2",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:10:00.054Z",
+      "beforeDescriptionHash": "fb9b2bd42cd378b72bd5cd300dfde82950c4bacd5476cdfdf690954a53fb1c9f",
+      "afterDescriptionHash": "e5f35ef1c80467eaab02e5ed09215e6bb8d433c2cf8985adf57a11da59950d78",
+      "mediaInventoryHash": "420cf3ea95513a5a7ff2a25506bb00cc17323adbaa60d9085748bc4d590cf5d0",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8025,
+      "sku": "A-1032VS-1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:09:03.679Z",
+      "beforeDescriptionHash": "372613c4c9fe6b1515c961ad2e72c2f4e2ce6605cda3e53870293332b815a0f5",
+      "afterDescriptionHash": "13e79c91e939313c94e590defdecd4f1d8ada9ce157101cd171a9f7b13b63657",
+      "mediaInventoryHash": "8c4121ae24b6f141aa17fa71037fa3c3a7e8e4236874c721c9b27649b1fb8534",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8026,
+      "sku": "A-1032VS-2",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:54:18.196Z",
+      "beforeDescriptionHash": "9ddac5e3c6dee4065c681a57788ee13135dcfcad1164997f622c825fc2d2a81c",
+      "afterDescriptionHash": "053e4df1af1775aa420e985f3f674a43cf166af59d7e27c746d169216d74b949",
+      "mediaInventoryHash": "7662c75035d67ed9afe88f56a47a9386bed5a6f02f881e11e58edbd0834c3f53",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8027,
+      "sku": "A-1032VS-3",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:57:54.834Z",
+      "beforeDescriptionHash": "01e296837b4fa09f9632b15dd18d2c00a2605d8857525af799a3318b3fee6c7f",
+      "afterDescriptionHash": "f90bae5a888e23a162e840b34857c9288609ff251ffb11211d11ab10e5e57ccb",
+      "mediaInventoryHash": "1910450a4644328df5f87f1a72fd07822743d8671e19114b39dac900884e97ad",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8028,
+      "sku": "A-1032VS-4",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:55:21.957Z",
+      "beforeDescriptionHash": "1c0c4aa0f5ae32f9b68d56315c4c4d2daadc3a29a6e7b86cee6fb6eba207c036",
+      "afterDescriptionHash": "c9c5fe6302437ad9b12cb6d4d79716479075b4362c69efa52503259fc53313d8",
+      "mediaInventoryHash": "1e7ab1f3a0fe8d515b1e4c5a1097efe511a86e9f292b94394880356e3dae1ba3",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8029,
+      "sku": "A-1032VS-5",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:01:44.368Z",
+      "beforeDescriptionHash": "8cf37d7273f09153df7b3af5c4b7ace08383caa780a2dc1cc0e0b91f4f9228c4",
+      "afterDescriptionHash": "fef6a46ced7b140995ec21a9e833783fa31dd0daf27e7ae1fd38a22f67d1c6c5",
+      "mediaInventoryHash": "5484a1ecfaf40eef877a65085ab801c1a4376e4cbd751f4f07909a13de09fbde",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8030,
+      "sku": "A-1032VS-6",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:01:37.621Z",
+      "beforeDescriptionHash": "abd139e1c3574be6983a979ff189540b17a559bf67761d729aa1188d4269c7ec",
+      "afterDescriptionHash": "49cf445ef63fe68ccd1189a86824d0f9b12cb638b0f13d663bab8db5cb588ef1",
+      "mediaInventoryHash": "d0460c0fb63efabf51bf62017a914da5fd0c558a47232565385831aa27bee283",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8031,
+      "sku": "A-1035-2",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:10:01.299Z",
+      "beforeDescriptionHash": "37a4695aca365fb868eeb21f82a2ff38ba0068464ea298744eae5ada3ad2cf34",
+      "afterDescriptionHash": "484b1e8346d2f61e799093f0a302ffbfa0cac39f2f0a95e6a2894e7c4f7edaf0",
+      "mediaInventoryHash": "02d2ab928471f374fff4b8d635d3c537976ea14d7fb16588d0702cecfd7ee66d",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8032,
+      "sku": "A-1052-2",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:10:01.922Z",
+      "beforeDescriptionHash": "39d7fc8f0c501a71a364ed04c151c385236d14779b870ec1f9c7fd74a2348d87",
+      "afterDescriptionHash": "94cbc9766db55e498458cc02094d68211e8d1480e22ef422fc78973efd138bc3",
+      "mediaInventoryHash": "f79bf80bc11bd4a84048aa5ceb1fe54ffdc53be2c797abb206d3ffee70defe81",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8033,
+      "sku": "A-2700-2",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:13:57.085Z",
+      "beforeDescriptionHash": "1dbe098b468055f86d15a0388499d8f8ed6b491138b4273af25327d535f6908c",
+      "afterDescriptionHash": "38b19ee1da49133b7c2401e443c2f1e1c47d2a911051355af50c269c4c7b64d3",
+      "mediaInventoryHash": "991db663776f2e16b4946a93bd43792f2d3eaf7f3aa870e8d01ea134bd9c8252",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8034,
+      "sku": "A-2700VS-1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:54:18.855Z",
+      "beforeDescriptionHash": "d60af2de0e1c3de9e8bf1b6a76908751f8fd67d2709edaacb897719a7830cd5d",
+      "afterDescriptionHash": "4fbf1e8d837fa4fe8ca141b50cc839730c7b2ec2b132c0cd3364aa0eb18847d9",
+      "mediaInventoryHash": "1cfc59306312e4ecd1a6cc0cc0fb357082e9d9e16a129864b78df1d28859c61e",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8035,
+      "sku": "A-2700VS-2",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:09:04.229Z",
+      "beforeDescriptionHash": "4fc44873abc9860a4d306f8f687e3bb41cf34b5dc0816664ec01f8012c8e005b",
+      "afterDescriptionHash": "1b7dcfa6eaec5fde5d5dc0ed8d0e824ca77d142532574b5a440ad866a559fede",
+      "mediaInventoryHash": "f7071e1391dac7c548eac275db7d4a857493080cd0759bbee2e89f0eb08327d0",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8036,
+      "sku": "A-2700VS-6",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:01:44.489Z",
+      "beforeDescriptionHash": "409f4de2a2553307a7f536e0650320a3dead7021ed4ea63442f8a72148cd7e57",
+      "afterDescriptionHash": "9f3e8dd89ce85681281938661436b1ce23fb838c972b292ac2cbc250ed8df18a",
+      "mediaInventoryHash": "158477ef0d6898a172fd647000ff19a3ec4cf9c33a089fcc0c0bf52db9de3a32",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8037,
+      "sku": "A-2700VS-5",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:01:37.845Z",
+      "beforeDescriptionHash": "dfe43ed6ca406c56a5122eb2289b64b7ef91518ea902701641f816311025d909",
+      "afterDescriptionHash": "be54713591a97411cd46aed139dcbb785f000d2e5c07544d8cbf94dfcc7dc7a3",
+      "mediaInventoryHash": "bb02e89767e185dffb2bbcbc9528a0b8d539538c75fdae98e7aaf218c4ec44f4",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8038,
+      "sku": "A-3003VS-2/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:09:05.297Z",
+      "beforeDescriptionHash": "61ddaa0b9e9ca4a19d352ef715eb1c3a55e8c17754ae3756d6bba95eea8bffc3",
+      "afterDescriptionHash": "a801710d9bc97735a27ce2404582985e7a5c4aa405f7c5b0e8e68ea360f721a9",
+      "mediaInventoryHash": "c90a0b647f596214ae4dfd410e4473c9496645633c59f2bf3371d9395c19059c",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8039,
+      "sku": "A-3003VS-1/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:54:19.264Z",
+      "beforeDescriptionHash": "f868aea9ed3458ba6c5dfa8a611d3b7d7fbfac62d32a44ec974035b4b61ae303",
+      "afterDescriptionHash": "3efa373f5047e6b012005a4ac1156bae31a9ad4178c53df50940c0cb383000ed",
+      "mediaInventoryHash": "0c9032c6e4f389e59005fac1d355aa80f2eac9a03744cb1b04283d357b2b3c9a",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [],
+      "holdout": false
+    },
+    {
+      "id": 8040,
+      "sku": "A-3003VS-5/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:01:37.892Z",
+      "beforeDescriptionHash": "9903db69337e9e8385ca96414e580acb8cd0228deb30090864892e3ba335d8bd",
+      "afterDescriptionHash": "11abf662a60912812a3184099a405525c41e4f7ef4926319af53a0bf1e22eeee",
+      "mediaInventoryHash": "b2f971f34b3146c4f6a364db2cec76e855617b42cd37641d1c7652d587e96752",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [],
+      "holdout": false
+    },
+    {
+      "id": 8041,
+      "sku": "A-3003VS-3/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:57:55.327Z",
+      "beforeDescriptionHash": "6b123a6d30c18c26fcac4dd298769f9324fd9e4ab3f3a4c3a9b00fe988a83d3e",
+      "afterDescriptionHash": "9d4da7b61ea570b6b7badd7bd9ddab9d83f37857f0330b556d3183e8157c8d40",
+      "mediaInventoryHash": "b70282b7932ff29d92776da57bd493dbe0b95dd77a0dd3c672ef082236ba3669",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [],
+      "holdout": false
+    },
+    {
+      "id": 8042,
+      "sku": "A-306VAS-2",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:10:02.569Z",
+      "beforeDescriptionHash": "cb9d6b109f37b81edd4d0836c9e981323da4b8776619ef99e06980f3097556e7",
+      "afterDescriptionHash": "cc0901a3fb127ef599a4840a5911d18efc868d5279cf8d17ec87fb8ddb32fc1f",
+      "mediaInventoryHash": "7f8eb8afc54c181a85cb73a94fe0b6c459f0d0a71d0681d1b6a81e6e1b32b411",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8043,
+      "sku": "A-3003VS-6/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:01:44.540Z",
+      "beforeDescriptionHash": "7eaf18e7ca9e1f4ff853319e0811ed2aabc12c75e3d3dbd16c6b431c6e271079",
+      "afterDescriptionHash": "619ea04099eccee90c98d7d46b9f55d17c1684ee0412b281514c17aa218275ab",
+      "mediaInventoryHash": "cf4074c7b38921335c22156ecb79c08f18d69c3bc1f7469615e4d3f15679de87",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [],
+      "holdout": false
+    },
+    {
+      "id": 8044,
+      "sku": "A-3170001011",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:54:49.716Z",
+      "beforeDescriptionHash": "1bda76d027676442a71352e0a861c164e4c311300de72523d4582048385fdf43",
+      "afterDescriptionHash": "7d3d6d7d1a73e3a2561e4d67b6e534ec3ab550523914b1e60f0b8200b58648dc",
+      "mediaInventoryHash": "5524f11274d3ecda00891bdcebd7dce0b0ac4db42164502f36b747a10c50f7f0",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8045,
+      "sku": "A-37-1-BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:09:07.133Z",
+      "beforeDescriptionHash": "5b42052bd798b097fdaf62c232c3a8dc0c8ce6ecfc2b9027b72051eb669e4793",
+      "afterDescriptionHash": "e60790cb67002c4d44928790826996457ad7fa335889f3a34e6166257072b5c5",
+      "mediaInventoryHash": "8848ee3c333d78621cd850841b2069d98da1e78f7d2ed87cd7422dd2dbea40ac",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8047,
+      "sku": "A-37-2-BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:54:19.920Z",
+      "beforeDescriptionHash": "e217ca79274f5e287cd09ea648aebc343b5eff01b555c571e6ef418b913edf8a",
+      "afterDescriptionHash": "5892fefb536f286993dea1d62b8f87451a014a104293b018c1637adf56d47232",
+      "mediaInventoryHash": "8d353d236bde947ab9bf6d9d458ecd64f4631a98e75990a2d8c17283937c7f26",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8048,
+      "sku": "A-37-3-SG9",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:58:05.686Z",
+      "beforeDescriptionHash": "a6f8655da5648bcc093d6ffa6e773b6be0e76a93196768ff67a4e8d26e7972be",
+      "afterDescriptionHash": "693da8d1a9828c36d819075c25931b35ec4da6c3098071461866745b907edd9a",
+      "mediaInventoryHash": "faae39f2796d134bc1b3e5f285354d04c0436b916a638fbc6eee480c5248a3d3",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [],
+      "holdout": false
+    },
+    {
+      "id": 8049,
+      "sku": "37-1462-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:59:50.176Z",
+      "beforeDescriptionHash": "899857b85fa9fc2b859807b18efd73d2c9873f6c3fd8410c04b2301176835d23",
+      "afterDescriptionHash": "307cc6f641147e1ea808234dc1e6f2192778efcdf22c5c36dedd7974803e694c",
+      "mediaInventoryHash": "799dfb7d09831f962087d032b38599323aca11f19abfd639f9c78fb2c4eb6c86",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [],
+      "holdout": false
+    },
+    {
+      "id": 8050,
+      "sku": "37-1463-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:59:50.641Z",
+      "beforeDescriptionHash": "03de12902517a6ddab8ca1bdde31f05aeeefadb53ac0192ebd0840372269d154",
+      "afterDescriptionHash": "8c5bd66d21ed07ca2fb8a1839be82a9e3e02926fa7f99d7b1f8f881eba06d7f8",
+      "mediaInventoryHash": "3d6d4064a6181a9319fc65ad33dae61b96b414b46a5d484c6e3882f4481b280e",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8052,
+      "sku": "37-1540-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:59:52.442Z",
+      "beforeDescriptionHash": "1a4be42f8849bee242dbff812c789903182c70aa3f546ce84b076af30984da8a",
+      "afterDescriptionHash": "c6f243afa8979870c525d23e8fec543785e947ac49426a97a9920aee5a3a3a85",
+      "mediaInventoryHash": "1b10d85b6f93f6277814975075ddbe62428890221b5f59a5ea682e6299cb758a",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8054,
+      "sku": "37-213-V",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:59:57.350Z",
+      "beforeDescriptionHash": "6ea5ab338226c99a863d24181c6c839fe6973c133e3ba69278f2b9f16985fd73",
+      "afterDescriptionHash": "c3f0f111d1c260119425ad4fc2d71254b7b46dee5b5f758056b4b7e9c14b0eb8",
+      "mediaInventoryHash": "0f7b1bf483384eeb70b523680621a1aa4f9182ea921084d16640032dbbee7cec",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8055,
+      "sku": "41-1423-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:02:14.509Z",
+      "beforeDescriptionHash": "7d16d92eadb7e26c1360fd79a1ca0bf2f52c2576147e3afdbe0097b9e349ef15",
+      "afterDescriptionHash": "fcc64c933867b9ec6ee55f6dcf193df3bdf71ccde5fa7feef3486ca77a9c11c4",
+      "mediaInventoryHash": "a553123e406c2328bdddc056c835946087e8645950ae7e751634a579aeb54428",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8058,
+      "sku": "41-1480-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:56:10.560Z",
+      "beforeDescriptionHash": "2e664e0a013875feaa5bbfe59dda12ce3a35cc4f1165bc4d18e5b90d41248835",
+      "afterDescriptionHash": "27f8a338eab75c7b83d3392e88855c385938c8410a788eeb4c7fee27c4b721f5",
+      "mediaInventoryHash": "d15994fd4b7d12b85f73013117673864bbd8747e64f997f35bf68dcbc48d3c08",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8068,
+      "sku": "43-28",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:07:44.318Z",
+      "beforeDescriptionHash": "8ecec3c9759826a9a9ff1faaafeaf7a166e4952e734edf842e7eb1f762b1956b",
+      "afterDescriptionHash": "2462be915e4f9fa1e3ad5fe48ffd43a6c7974e1cf60965d043ab6d892346ec24",
+      "mediaInventoryHash": "09b46014e38fd326f2e6367331dce7989371a4046aecb17f360203405de31b0d",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8073,
+      "sku": "50-3281-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:05:27.278Z",
+      "beforeDescriptionHash": "b70ed6f677df3b33c4d2273d0d24c5f5ad14cfad57d11b3e87b4a0a65dea5006",
+      "afterDescriptionHash": "52961a3e8bc5815e217623d13ee835d11c3d0a38372b210d90d33af368c5a652",
+      "mediaInventoryHash": "746c4f5579f73df61e19603d16cfd2e1d2b238832d840fd868a4ae960a881c55",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8075,
+      "sku": "61-1207-2-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:13:24.211Z",
+      "beforeDescriptionHash": "5a23bd95a01e192c728e9d898e77223b11e8617fa50793e4f00a25e98ce7fe51",
+      "afterDescriptionHash": "e0db3bbc4dddc43160adf52e486448f75f32207c231b638e307239a21586e47c",
+      "mediaInventoryHash": "9faebaef1c5b789a178991f9c083a4993c48f93f3bcf383195347d324d07b254",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8076,
+      "sku": "61-1208-1-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:13:25.027Z",
+      "beforeDescriptionHash": "4a78fa0ec7c25f4f012bc2437a562fa35f5389b421b7b8479494bf1de5810de9",
+      "afterDescriptionHash": "f76d742ed0d616000186a96b0621158be1ecaaff0c6b2d990165b697691585f1",
+      "mediaInventoryHash": "079fab62b22a7095fab68ac9c01253380290886a379c0f95e5cb3550c2f68248",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8077,
+      "sku": "61-1230-1-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:13:25.853Z",
+      "beforeDescriptionHash": "16c23711b84b6267312ca58cfc04eaf6c4b259f6450a1e5424823ed3bd22a288",
+      "afterDescriptionHash": "4084bb4802f7f146ab7e41024a7e0554287a7f6f995012cf01fe0bb63852d81d",
+      "mediaInventoryHash": "8e147d2b1603475e1159bb5e4307d99d4370ca0022d5331f338637089dd3172e",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8078,
+      "sku": "61-1263-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:13:49.444Z",
+      "beforeDescriptionHash": "00e03b1f2c2aed8fc41c5ab392d9048178abba7ed336d170e72ab645589c8fe0",
+      "afterDescriptionHash": "32ff5b2122a8c97a38af1a096a6d5229e69256b28e340213f6f836a0920dc184",
+      "mediaInventoryHash": "da9c36e7ef182ff1bf496a048e0cd44d97746d8346d48767c12317d5dfc2c46e",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8079,
+      "sku": "61-1267-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:13:49.353Z",
+      "beforeDescriptionHash": "aaa1d614c67bfe009952b3592d28731bb0b3767935c76d2cca40b31ca5eb6af2",
+      "afterDescriptionHash": "05fceff1adb72b6b1a04157701114083fac433b6fee75430a1ff7b598c99e7f7",
+      "mediaInventoryHash": "e76b0f21777a69b0a889a2e62ca323394d4deff366e023483d89fc8cbf5a52b8",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8080,
+      "sku": "61-1283-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:13:50.405Z",
+      "beforeDescriptionHash": "4cc5bc4fbeaaa7f03c26dd5d033f914b5a7e0818d0e4d33fe865f976e7f43b5e",
+      "afterDescriptionHash": "dca9af220b9f4b852334fd9bc09d34c8400be8a4944db913b76be7bbdbb222a6",
+      "mediaInventoryHash": "1bd8dd1be29aee9e1f73fed800c5e033dbcd251722ecdf46f60f578345b65e67",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8081,
+      "sku": "61-1299-1-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:13:51.832Z",
+      "beforeDescriptionHash": "89b9459f4a6db02d9d44b51ecb8b0983c2f5d93ba8d329931bbeecde7ed22ab0",
+      "afterDescriptionHash": "6dcde01a3dd437557474058dd501b6c68667041858fae50d0ee0f968bd4aae2a",
+      "mediaInventoryHash": "286164737ba661e73d4d119363c782b223e3e06071d8948b3438de6ae0762e64",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8082,
+      "sku": "61-1306-1-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:13:52.254Z",
+      "beforeDescriptionHash": "5e21cc8524afe9093e4bb36e9bb3948751a0f0eef509709dc5925cee2a6b7b0c",
+      "afterDescriptionHash": "b6cb30c5875a63a2634a8f69e68a2abcd7371fdefc64f5fe35bfe3ed73144e7b",
+      "mediaInventoryHash": "aaad2b5a183513cca75bdbd0fcf20b1b20ca1264e3b4a64bfefb4a9d7ded2dee",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8083,
+      "sku": "61-1325-1-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:13:53.290Z",
+      "beforeDescriptionHash": "449e01074e872a32416498ab4cf1de7d90761571f21012146d86bd07b88201a4",
+      "afterDescriptionHash": "00765b143aef963de1a47f7d49e96d25813bcb714a59e68b9babb56f661836fb",
+      "mediaInventoryHash": "6aa26a6f07eb51dc5749558883ce25eff3f082eeeb8b6cc2bec1023c046ad38a",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8084,
+      "sku": "61-1385-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:13:30.360Z",
+      "beforeDescriptionHash": "bbf80e29cb80b22500f03305bb15605109ddbb22fcd22786e63630530ae54e9f",
+      "afterDescriptionHash": "c3dadec4aafaca787637e98449bd28cec18c8c2b40c6efd22a05f43220153fce",
+      "mediaInventoryHash": "dff99b7f5cfff0f7b14045836c5556cd93e5669db3dae3168206699a8ebc30ca",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [],
+      "holdout": false
+    },
+    {
+      "id": 8085,
+      "sku": "61-1410-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:13:33.095Z",
+      "beforeDescriptionHash": "27e0a269d89c311b6be843b4dfda4d4f905716773f45de71e9fb96f7f6eb79f7",
+      "afterDescriptionHash": "278b6de224a50a199a20100c891e087e2783dd6178b44247f5a727b74f37e329",
+      "mediaInventoryHash": "be7f83d69ae4bd829b511d63a0fd1cbd97dc3a7173653d6329acad2e435970ee",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8086,
+      "sku": "61-1414-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:13:36.059Z",
+      "beforeDescriptionHash": "8a46a960caddda270128e133cd2feb1d4894357af904a14bec921094ba05b1ae",
+      "afterDescriptionHash": "167e3d9010be142e3fa5ee63349884ffb670ec82bf7f1573d3826faabf9fee45",
+      "mediaInventoryHash": "710a0709fcae4fe33949a1404400e518bedba818464700a82302e8182606dc09",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [],
+      "holdout": false
+    },
+    {
+      "id": 8087,
+      "sku": "61-1419-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:13:36.420Z",
+      "beforeDescriptionHash": "e080d0f2d3a7861f4d17a1ff0fe2d8eb081555fb4d05fe9db1084468bc3f8d06",
+      "afterDescriptionHash": "84efb8c5baed356aab1cb95da8aedab3cf3ffdf973b65846c6b9c2eb062b6b44",
+      "mediaInventoryHash": "2c71decd6378ec18f30b49542339f491b5cbcf232b66ddeb84d51a4948d3fe9c",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8088,
+      "sku": "61-15-V",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:13:54.387Z",
+      "beforeDescriptionHash": "ee625fe29d7a7fd2b2a55c6b2119586e79757ed0e24140f09013274753b5e27c",
+      "afterDescriptionHash": "52fac4431887968e012c9eaeb854893448d33d0da273d80fa0844c8f87eb35b2",
+      "mediaInventoryHash": "000755787cfbede3f0d92bceb203a1b6321157078c5329ea9308f8e4cc42ea33",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8089,
+      "sku": "61-23-2-V",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:59:20.032Z",
+      "beforeDescriptionHash": "3f29938c5e7038e96dfa79298b9e4d71719c791e97461995ca2c0b528a134eff",
+      "afterDescriptionHash": "0e0ec272ee909cd593d1fa7c40ef8cc69025ed70307e8c1451961f9f469432e0",
+      "mediaInventoryHash": "b94bbc19c46322aa8f87318fb8510f3b4f8e4440c439953f9c9c57a97432b903",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8090,
+      "sku": "61-23-V",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:13:55.171Z",
+      "beforeDescriptionHash": "a0520c9ee5752505395c84dd53b827b593f6814750f70b42a80896e88cd76424",
+      "afterDescriptionHash": "45dbfbb9c65de53580be6684c7c8c31d45db144373de1e043992fef36ebbce1e",
+      "mediaInventoryHash": "7e8ed2c079aa4238d47dd9c880eaae057a5536e75c7faa299c9f8cc1266cbc1c",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8091,
+      "sku": "61C-081-INAX",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:13:36.487Z",
+      "beforeDescriptionHash": "530da0e887073e59df60e26e07fe413c4c44ad1809b6550e0c16d8e72cea37cb",
+      "afterDescriptionHash": "2831c1302a7063756d942c3cbd5ded62b6932612fa96a5442bd6e1150d948d0c",
+      "mediaInventoryHash": "d0ae1f98a98a5c069c0752fbefbb3e7be45c667163a4de00622bb00805616e79",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8092,
+      "sku": "61C-085-10-INAX",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:13:55.491Z",
+      "beforeDescriptionHash": "40c717552273b3f0b5f8e58dd5c4faa0601395cd17797c41a964d55f0f0fafb2",
+      "afterDescriptionHash": "280ee0436b4aeeee06cd574847d0893e759c12ff8f687615b0adaae106d22d90",
+      "mediaInventoryHash": "a2722a488b6c247f804865b0b9d43fa6bb1e30039dcc744f7dbfebf5710ece16",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8095,
+      "sku": "65-63",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:11:19.118Z",
+      "beforeDescriptionHash": "24c536d2ede071d0c9205eb38c893058512204867551d5426d210535d20f14a7",
+      "afterDescriptionHash": "3cf24dd110dfc147bdc5c1a28c916e3543cfe3fc9e99a2cb22f374296709a1a3",
+      "mediaInventoryHash": "0b5b187a19c3e4c40e2bf6569f9d5cc254a5294875ad0816d3e855c7a110f8a7",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8096,
+      "sku": "70-03",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:10:26.833Z",
+      "beforeDescriptionHash": "185068af99c834c81d2a8cdeee3fb8bdb234b91ce27d208ea649b8d0e1065780",
+      "afterDescriptionHash": "e1ab43314b8ae002e9b387610b8f6dcddf8ca48bf472f3ef0d38ea22468b451f",
+      "mediaInventoryHash": "5876fc8c101129c37d0bd653e3fe31724bf900a5b2a47e73258534db2205698f",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8109,
+      "sku": "A-37-3/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:58:06.241Z",
+      "beforeDescriptionHash": "073002d3eaeeab7ab89ad4166521c2466d819c887b443127ddd388962e5abb4c",
+      "afterDescriptionHash": "712c39e292dbcc9b0296c93b98c421a0409b719efde58a60a232a493a1d47c1c",
+      "mediaInventoryHash": "bf38c291c764409c3410d9af66de224cae2c18fcb4fe72485abffef6847132df",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [],
+      "holdout": false
+    },
+    {
+      "id": 8111,
+      "sku": "A-37VS-1-BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:09:08.309Z",
+      "beforeDescriptionHash": "5c2ecf026cb09d61927b513ee33538b39452977be6401df6e5be0868852ef714",
+      "afterDescriptionHash": "d455a96c2d0fa53aade6e2d3187d7a74f53419ce09b999a7229fed207f5c7e2b",
+      "mediaInventoryHash": "b6da7657d57189b442cbbdaa6eb19f88733f429193141b10a35ac6f2574a3b5d",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8174,
+      "sku": "051-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:16:49.635Z",
+      "beforeDescriptionHash": "f9a419ada8c6d390372c9214800ad602230e11d1aa4a8c89c8a262d1bc617a7a",
+      "afterDescriptionHash": "d5e23da79467ffd4a10ab9efd7a65d45fcf31a1c2fb579aa1a3e59616519a63a",
+      "mediaInventoryHash": "7382665be08304b071b7ee699b8c9e164566473c7ae456b3bd21a5454f561234",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8176,
+      "sku": "054-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:16:50.186Z",
+      "beforeDescriptionHash": "9d479a81241fa28b6c13c51371807b8a775fc601c3a3c0c450668a6163dd01a8",
+      "afterDescriptionHash": "1d90683b865bff30254b6cbe31eab3c026531e5729749be3ffbbcbe96892f1e0",
+      "mediaInventoryHash": "40357e4c7a8f023878d9f5721bda49b2cd40fa79ccf002614dc4a6a36da00cb3",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8177,
+      "sku": "2290-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:16:51.277Z",
+      "beforeDescriptionHash": "996160eeb36d41a8e364d6247c0f714bf8e63e13e2b4a248f601776252e134a8",
+      "afterDescriptionHash": "057de07d7bf1c1aef469ab08fc5ad1389e091f3587d5567e591a52cee0177dd5",
+      "mediaInventoryHash": "0972ced6f1173be1410e55fa3437fbb1682ee9a00f733bebfc04a98d51c35be7",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8178,
+      "sku": "2292-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:16:52.155Z",
+      "beforeDescriptionHash": "022bc1bba4d3c382ca016d9edb96fe0961285e13f434ead9f43a128ad3592611",
+      "afterDescriptionHash": "e40cda327e644feb45f90ce9c1025c121db44534e72ec72df7b6d45f1869fc8c",
+      "mediaInventoryHash": "c392456768d130505865485d74427ca420119f0b25eace86cde3b8f11a008c66",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8180,
+      "sku": "2331-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:16:54.512Z",
+      "beforeDescriptionHash": "5ee85c54a957c0569417dbf8eba14d90fb58405daceaa942d97178b713d7d0fd",
+      "afterDescriptionHash": "26088df36675bcc3006c5b4de04e8be1d3963261147403856a694e80515e7b29",
+      "mediaInventoryHash": "7d873e14dfdbf73226cfa7e31878fe502c4a971d6645047bf0c6ba1a0100d905",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8181,
+      "sku": "2332-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:16:55.723Z",
+      "beforeDescriptionHash": "1150a84bcb49d0851447cf13272059180bc6e3a795ab6b416156f38d3acad4b3",
+      "afterDescriptionHash": "8574c0614a0acd922182639ad6d467bf5613b64b1a60bf5a63ece3ab85d2d286",
+      "mediaInventoryHash": "992e85a1698bffe1df7de006ba10a5da6eee4a953f491da9204c82a1d780b4b1",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8182,
+      "sku": "2333-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:16:56.136Z",
+      "beforeDescriptionHash": "24187a172edd937d820e09adf5d376723d151cdb1cb4041fb24a137ede07fac1",
+      "afterDescriptionHash": "01ed41b92ca669d01efdc49cd3e7c77ec3e52eb3608a9ef028a3ba07da646499",
+      "mediaInventoryHash": "5ebad52091eea2137ec766f0324042e125d1b4141ff0944977dd809ebd815207",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8184,
+      "sku": "2395-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:17:00.466Z",
+      "beforeDescriptionHash": "25264506af74aa7004aaee5b3448df86b63c0b0d0fe96912c8e1c37a128a41c0",
+      "afterDescriptionHash": "a0d7d210098ffec0002cff4a814afec57a093143d208a3f659eef005a9accdc8",
+      "mediaInventoryHash": "ca1757c59d2f59dfc2b8f3d593f2076dd92af8fab59afdf965cb3984f369acd9",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8185,
+      "sku": "2397-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:17:01.893Z",
+      "beforeDescriptionHash": "af053552237b3877bc54e6f4928255e9d1f871584621a4769aef5d2f5eca5298",
+      "afterDescriptionHash": "3c01f97444d08060cdf59a478029677a26e2cb595cb8e72a0e3d0cbdcb3e77dc",
+      "mediaInventoryHash": "10c0cc0bc01ded97d9de3feddb8dc5feb166f84b2c458681be14bf897b9cf6c0",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8186,
+      "sku": "2399-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:17:02.257Z",
+      "beforeDescriptionHash": "75f227e2b2e1d27292a333e02150dba66f0686b005446a433199fd4ee8bd3534",
+      "afterDescriptionHash": "bd6064c32908dd4c22fd7ce7a776941bb027ee24eaeb4f20f3ed55a911b71bd3",
+      "mediaInventoryHash": "b6ad488c99e9dfa406ea436fc4da97979b3c2eb2c09dc8155be5307662917977",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8187,
+      "sku": "2419-1-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:17:02.934Z",
+      "beforeDescriptionHash": "fed5482cad5b4813ec7b7acdf4b41bd007f2e73085ab855a8c5b5be175cae523",
+      "afterDescriptionHash": "40921b144ed2e4a45afd85c398acc8a67ce592ac0704a2d96cbaeb4e391c6668",
+      "mediaInventoryHash": "7b126cfb00dc6e3357809da5a0b05041d5806ff0dc8510cdbb9c697007dd0700",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8188,
+      "sku": "2453-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:17:03.990Z",
+      "beforeDescriptionHash": "2aa939f7125e368d47329dbaa0eb42cc3e8bd8eba9b7a5039715395eceb26ff0",
+      "afterDescriptionHash": "ead732add279be2c251b0a232c204af6c5d464b65b81550f9957376396da9549",
+      "mediaInventoryHash": "c8f76bbb89342deb5638e812ac7efcb63308fa8c1ccd3b7508a1b91cce3aea2e",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8190,
+      "sku": "2543-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:17:10.073Z",
+      "beforeDescriptionHash": "1283f82d108242b650d6f6b8150cab3352c8c7611b4b0e78b7a860042ee6860e",
+      "afterDescriptionHash": "2cee7d4910de95c5f35f3ff42d8817cad278ef3d671fcefd20e024f0eb148d69",
+      "mediaInventoryHash": "0e70d354012cd841baa64cf47e3a2a7885370031371f9ba4633850889ee6906b",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8191,
+      "sku": "2477-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:17:06.357Z",
+      "beforeDescriptionHash": "3f8e693764092a0bdd214353673ad896d0a8d8686d139e02a77f440bf916d8bb",
+      "afterDescriptionHash": "4b2de76277d974372f1ca1325282d9e161471d79f4dfb2f3c6f2cf288e0c6aa7",
+      "mediaInventoryHash": "7950a08fbd91f739b397c9fe169f3b5c1e9b27eda0090365138f3a65b23a21ca",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8192,
+      "sku": "2478-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:17:06.542Z",
+      "beforeDescriptionHash": "7fa1a89ca13f0f5bcf2da248b8ef367e078b481226ca164fbfa7d0772698318f",
+      "afterDescriptionHash": "021db7cf11364e33c4513e6b9d04bf567cd5b58e806cf69049f2af81e1c9b653",
+      "mediaInventoryHash": "3d0ce90e26bda8c2d6e3748fe269cd3c853cb822c7f4ad9f5a972c487bab21a9",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8193,
+      "sku": "2544-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:17:10.573Z",
+      "beforeDescriptionHash": "f3bffd4e5eec23d93d88627c90f528e0e3a386932da58ea7ffa8f0d799ca18bc",
+      "afterDescriptionHash": "ebf8c919d418355d8069c3eeb801a28abf914786e26bfbc8f169ca566c49630c",
+      "mediaInventoryHash": "0f23bb741d45ec18429ea4fd7f1d4b2f71d391b3eb755dde6e19e9e78ac985d6",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8194,
+      "sku": "2555-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:17:14.938Z",
+      "beforeDescriptionHash": "491b03f6df99c1548836ea79bf15c9f473c5dd9b18611fa3aa0e944bf45a6f7a",
+      "afterDescriptionHash": "84447c10976c31166ab69ac4532f756de4338f6249b5a28ad77ba3f297e3bd23",
+      "mediaInventoryHash": "b14645a90933ce7087115fbad48bd60eddbd9c076334bb2b95e6445981117949",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8195,
+      "sku": "2546-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:17:12.759Z",
+      "beforeDescriptionHash": "ba7fa24aa5f5059d6bf16b268a1241bd9c25378ebb52358167ed4d6f27193aa2",
+      "afterDescriptionHash": "55a20d6c32774d642fb9ff3ebd93ea56ca61995d1ba7081d52b9936b0b04aa6e",
+      "mediaInventoryHash": "6aac2ac3dcf9ba16472e97bc49b63b64b5de3856c3be6a2a2d76dbcdab7d97fc",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8196,
+      "sku": "2556-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:17:16.325Z",
+      "beforeDescriptionHash": "bf503422bb85761fff88ce31e0ae4382f204b4f7efbbd82df906b90a720e3b9e",
+      "afterDescriptionHash": "6b04cc79332efe50363016de64455380ba7e2aa51db2d74fbca81eb24b532883",
+      "mediaInventoryHash": "3fc3f2f1fec518f85bbfa04bf5ac8a6705cc1d941daf3ef052cee916d6a482d4",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8197,
+      "sku": "2581-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:17:20.401Z",
+      "beforeDescriptionHash": "2baafedd53b402527414c95bf03d55ee6552890c9a4d0e89db370a682407fd0e",
+      "afterDescriptionHash": "ac0420fba8271fcf12d646065a2f7a52824368097767b3c43cd3bf6696783fb4",
+      "mediaInventoryHash": "e66181dd6b2cb424714f2baf1d0c2a8e0d7d13a0d6e94dcd2f4e79debc2f1829",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8200,
+      "sku": "2593-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:17:25.944Z",
+      "beforeDescriptionHash": "c952969959a938d935b7d03e1f5108ac67aa4bbdff0061de6e638e2765b07902",
+      "afterDescriptionHash": "bc6b3d05e4cf5183af1c4c95bb14fd74c80560c8b6325f1488a29b3d2c3a637a",
+      "mediaInventoryHash": "c1fe375db82fab2d875045c4611bd5d85ecba8f4a6271e9086f7ab9d9011176a",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8339,
+      "sku": "201C-1007/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:09:39.488Z",
+      "beforeDescriptionHash": "8c2fab89d1e8b5bcae8a1e42f6c5942c9a23276d9c200944452b1e5bdd5d871f",
+      "afterDescriptionHash": "5bd637de05184534a1c1b329ebd78951f46b459278b256e19e6ac282c0c6a72e",
+      "mediaInventoryHash": "a58c1d5dddea8408cfb4d281813d1a13ae9101f394c64b7d5103eac06bb9fabe",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8340,
+      "sku": "311C-1004/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:54:32.341Z",
+      "beforeDescriptionHash": "84fc70a8a0ee3b73517d8bbf28a06de9ee24b7e1ad14be862c5709fb550a4544",
+      "afterDescriptionHash": "e3d516ed1fe7017645537e4ff31d6769763f3498c508d66d2750a1f2f239778f",
+      "mediaInventoryHash": "73671fce1e37efc589b97090dfc606ffc9d10b31ade88415739b26cb2e0503d3",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8341,
+      "sku": "322C-1004",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:00:37.107Z",
+      "beforeDescriptionHash": "1c4bdb2148a914fffd7a5eadb5ec28f6306610da7393ab89dca28ea14f27ceca",
+      "afterDescriptionHash": "c09d63767eac6a0bd59e9df991fc5de2b3468355fd5db5792731a782b38be01f",
+      "mediaInventoryHash": "92a270a15e92990aab4413365b9f2dc7dcb132c69ae1918d66527508ab151d17",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8342,
+      "sku": "331-1035-1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:06:30.601Z",
+      "beforeDescriptionHash": "7a2a7a1945934582e868ea9a8d43d8849a8fd88f43bb32d7cb5973a2519b76e1",
+      "afterDescriptionHash": "ddf6c64a4dc5191d02b5c47043f5375c4512242144a76cf7e2d86761daa99780",
+      "mediaInventoryHash": "afa664568d63815fd884e6c411ec183428e52f5325a2ffcec26af3dc5f435fa3",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8343,
+      "sku": "341-1044",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:58:30.927Z",
+      "beforeDescriptionHash": "3fe834896706702dd5a42bf5a4df5a4b27941f9c16c66277862bc6566e3bb212",
+      "afterDescriptionHash": "f5a030451f23d14a229aca02a872dac4ba89ab9546eaa722fea5e847a1df0711",
+      "mediaInventoryHash": "27a271378051e88bc1a689e290928006c42f808d152d8d6c03ecf3a0a8151c91",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8344,
+      "sku": "343C-1003",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:17:56.533Z",
+      "beforeDescriptionHash": "18f30a3329decd3d02faeaa3f32522bb16c4d35c4e62d9cc8bcdd059657ef26e",
+      "afterDescriptionHash": "6b32d4a27f525f24a82dce1aa9ed51837187acf9b7396866d2e5450bc3412e82",
+      "mediaInventoryHash": "cd49e4b5dd1ff7034ea808bfba9b40ec08ee38726237576cc4dbf569da6911ac",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8345,
+      "sku": "351C-10125",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:54:05.973Z",
+      "beforeDescriptionHash": "3f63816948e75aa305c3592046a4bd657f4801a2c75b64bb89bc0ece157bf752",
+      "afterDescriptionHash": "f7e987cb39858903797918c31a646c9e624a5a2d90f7f6da0010edd9ac1d26fd",
+      "mediaInventoryHash": "3a38e20479d2437a8a93fc66b582f16294c07d53fa8d03b721f1eb665005b6c1",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8349,
+      "sku": "352C-1034",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:01:04.569Z",
+      "beforeDescriptionHash": "cd8c32c9651f9e35adbd404ee61b4d6725a031f2d9f616ab7a13b91bb74a531e",
+      "afterDescriptionHash": "ece529389efc2496fcb979bc55bcb18e1781dd0ea1617bd5358282586b24f27c",
+      "mediaInventoryHash": "6567d4528cf7e55802057d3366f33464728ceb8e660753299ace1fef3db940ee",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8350,
+      "sku": "352C-1040",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:01:04.688Z",
+      "beforeDescriptionHash": "ba8d4e0050c30415d9a5bd3561f53af07f6fccc00d10b903f2cfa4637a350613",
+      "afterDescriptionHash": "83b15b0007f6cf091c555a3ac42499f3dc0ab4b02d3ea50acfbe54bc4b8421b9",
+      "mediaInventoryHash": "e4cf4050fff8e943bab3e5e403d63b720f045fab9a9e5bb3551967260984d31c",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8351,
+      "sku": "355C-1004",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:56:17.258Z",
+      "beforeDescriptionHash": "01f21536212edfbf6704ea78a0be38d90dfd9e2be66ee76ca6d232abc9aa6d5e",
+      "afterDescriptionHash": "5f9045142847e706883e9b03361f6045c1a3204d3def6dd219a899a8b0f8abbe",
+      "mediaInventoryHash": "12a9a8d4910d877c5053d86eb8fe00c850111af55139e20703b70ce9d2c9e87c",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8352,
+      "sku": "371C-1004",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:59:15.464Z",
+      "beforeDescriptionHash": "998bfbb183bf4bd0529fce92a142b23695d4b96639a43dc9aca85b9d4cbe7e0d",
+      "afterDescriptionHash": "ea635d5823d04639f4c431d19ac4546e1d317e5e3ef0df98b52b7c1683799388",
+      "mediaInventoryHash": "31d0f4a8efb96061aaaaa1175132e43e2e4be86ca877a8cdf5ed2d78f33b1f5e",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8353,
+      "sku": "72-1229",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:06:32.619Z",
+      "beforeDescriptionHash": "7ebca997fcd0cc7167b0a752846a40474ee915843d99a932921fd14a63093c91",
+      "afterDescriptionHash": "b7a0c774f9973b7871b7144a6854676e38afc97fb12cb29e79136021fbb10a51",
+      "mediaInventoryHash": "ce7cc54bd55163f3dbe9b22fdbcd3aba66afd43284c5e2a2b3371984eaa39116",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8416,
+      "sku": "A-1135-1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:18:01.979Z",
+      "beforeDescriptionHash": "1777b1edf135912fa92c85b6324402b7616608320f675c935dc0534f1eef40aa",
+      "afterDescriptionHash": "a3b21d92b1452fd2661faed71de773b3b6bf18d0a464a3b62f351ef611d3a3da",
+      "mediaInventoryHash": "76a9ec8094601209f33a3bf178da491c0275ea679846b0c9dd2745240391adb0",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8418,
+      "sku": "A-1032VAS-1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:17:56.697Z",
+      "beforeDescriptionHash": "dd5af89ed03539c9a5d91c1b90cd9abe3d6f6a285bb4aa779a14033fb2e160f3",
+      "afterDescriptionHash": "d89614b6bb7928adcd52fd2fe640ed2be7e622136487c516a8f766ad856f9247",
+      "mediaInventoryHash": "fcf70afe58e8dae7c6c2ade106cf8e21df32b81202186d6185cdf97cac844406",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8450,
+      "sku": "0324242-WO-C",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:11:21.920Z",
+      "beforeDescriptionHash": "6cd08618b7f5958e4fa48b0b367f68d0d6720e78907ecee2ca3bdff63d523d56",
+      "afterDescriptionHash": "a898c8d944e3026c6931bbfa1416e09497935e967a20cd5d9593d5338ad5f79c",
+      "mediaInventoryHash": "d6366b2956d67e76742d23c45526a1cf694cbbde318671ace0afd11675ec6345",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8454,
+      "sku": "16-1311-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:08:17.728Z",
+      "beforeDescriptionHash": "94537eada5607dc5ed529c6763c857f1033f2e0624534b717165a440aacf98c5",
+      "afterDescriptionHash": "61787c93fb168a2f1adf9244e9248374062197b1ad986bf36a87c4bb919cc57b",
+      "mediaInventoryHash": "c88659ce605f873051d2c81fadba5d5de3a18a1927c6af85ff892b490de0d36e",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8456,
+      "sku": "18-1239-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:21:59.472Z",
+      "beforeDescriptionHash": "58c671c850445249cbd6ced1e6a317c14e3a9336e1911195e31cd2625d0d2b57",
+      "afterDescriptionHash": "3cb02bb96cbee6bc3db6d7475a39918de016d1d00b0ea7157e443427f7180ac2",
+      "mediaInventoryHash": "c23d6432358aba33ad9baa14a62316830f74da9e79a0bcaa970e719df797f393",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8457,
+      "sku": "18-1347-2-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:21:59.516Z",
+      "beforeDescriptionHash": "6c6b54804afa39191693c51becf31ed399375be50f27117b431dcbe1168cb12d",
+      "afterDescriptionHash": "2ce458705c36475bd7befcb4d8bf4030b2a4a63706f387ce84981a47f4ed04d9",
+      "mediaInventoryHash": "fa707ab00067dac8d88e6616bf105363b333cb1fbb21aa65f814d9f68080f3f5",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [],
+      "holdout": false
+    },
+    {
+      "id": 8459,
+      "sku": "18-1347-HK",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:07:38.112Z",
+      "beforeDescriptionHash": "7f52b05b70ef78ec2efe84c9ac10c4cc21f5e36555a66fcb2c339ab38e3b54c6",
+      "afterDescriptionHash": "fa5b38a8b5c454db7cf7992dfaea59b43f30cec2812aa73321df73d0667f3823",
+      "mediaInventoryHash": "88bc62357e2ac8a740a55fdbe74f4bf505882bf4e19290839f223aab7ac5581c",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8460,
+      "sku": "18-419",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:21:59.920Z",
+      "beforeDescriptionHash": "54c2d33524a9f300a123fcee13ddb2ba364cd1ec15f9c94e9aeb1f198b7f134f",
+      "afterDescriptionHash": "5d4f7c8bccb0f0110cf34bf1a457330d52659ca4554c5398143e1bfd37a6deb8",
+      "mediaInventoryHash": "a2a0f9b1b1281510995f13ea7da6e3e4a09206733a359cc427608ac1e655ee6a",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8461,
+      "sku": "22-1009-1-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:56:36.365Z",
+      "beforeDescriptionHash": "8b9ad3189d153c35eeec523720d55a21402d72b6036350a10c6a7f458ea5b53d",
+      "afterDescriptionHash": "2db60bf8f432076e57aeb07b3ff099ec00725d6b00d23366799a15026a5398bb",
+      "mediaInventoryHash": "8878527bd8f54654d52376b53d9697ad2cec573cae8f5f9f8aa027e5b35e867d",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8462,
+      "sku": "18C-022",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:22:00.868Z",
+      "beforeDescriptionHash": "aebfbaecf05e2626f5412ca8e9750af8ec2f03528dab47dcc24118e90d3d3701",
+      "afterDescriptionHash": "d9ad99bb69e89893b3e0cf6e576f4cc570eb908c3916446118bc7f695f585657",
+      "mediaInventoryHash": "a97b16e09b771ac36340ce0dba8c60fd2c5aabc2400a636f4a12845dca24be00",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8464,
+      "sku": "25C-010",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:07:44.435Z",
+      "beforeDescriptionHash": "c81e7fb9d82896fe0df7e737ae004ecf7963238021a81e4c6a767d6a7286435b",
+      "afterDescriptionHash": "f094ff40136a31d9a2ccb3b45045f42ab16b55a0d29f35e9e3e49f7a12b33ac6",
+      "mediaInventoryHash": "f9feff74250abbf8bc343bb88cd0173c694073364aedb272644a49eae7a7ffda",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8473,
+      "sku": "A-10046-VN",
+      "brand": "inax",
+      "category": "thiet-bi-bep",
+      "updatedAt": "2026-07-07T08:11:16.978Z",
+      "beforeDescriptionHash": "294abc6f0d767b593cd1aaa345d6edefc29fb2724550e18ba4bfa6feb97bba12",
+      "afterDescriptionHash": "c8d198e96690aa862b8f2aec573108bf1629988afb8faaf9f9e341260aa78842",
+      "mediaInventoryHash": "2e1de0baf85b7eec08ee69ecca8ca4466f8da24fd4b17b7bda6b5f9d0f1092dd",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8474,
+      "sku": "A-10163-VN",
+      "brand": "inax",
+      "category": "thiet-bi-bep",
+      "updatedAt": "2026-07-07T07:58:42.062Z",
+      "beforeDescriptionHash": "c3fbde3f57bb1ecd276dfe6110cb762cf29d0232ab94adbc3971a119fc05367f",
+      "afterDescriptionHash": "dc9ff7e0ba8117696b0b6268c89e66bd913085e793fab756688a150fdceb934c",
+      "mediaInventoryHash": "2a890195a4e6787fff1e7df5d2b01270b4e95be72d6c9a0349550fa71af9413a",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8485,
+      "sku": "1720",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T12:47:03.918Z",
+      "beforeDescriptionHash": "32f8217d75e339193aee5567bd0ec502cce8953e891eb2ba0968263c41e98102",
+      "afterDescriptionHash": "755b8bc9d5b650f54f3e7f9bf4d53d523890786d8bdac4d14f74fed218fa62dd",
+      "mediaInventoryHash": "6a645b525369e6a82a6cdbb224ab15b4c28a46b257a6c62f6aafc5d74185a63e",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8503,
+      "sku": "2297-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:16:53.999Z",
+      "beforeDescriptionHash": "d1882c4807fdff796ecc29e89f914a48eb8ef9d212026ac610f82b1632b925c3",
+      "afterDescriptionHash": "3241674cb1144b31c09ef16bb8187263e23a1a3083b35df366ef19c5e6b79e4d",
+      "mediaInventoryHash": "1d614c0ace693816fab9b1ceba56adbd67e6e326f260f051bf7a8cae496f4c5b",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8504,
+      "sku": "2334-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:16:56.704Z",
+      "beforeDescriptionHash": "5a917daaab82eda54717e7e2ea75c268ac49418e9e1fa91338764792e51c46ab",
+      "afterDescriptionHash": "7daaa51b8e6d49f1ba2ca1f73ffab2fe264d5eb651c4df7771821fb82877a236",
+      "mediaInventoryHash": "47f42dada3f49784522851722d48c594ca646914d700c217ea322555c1fb88bf",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8506,
+      "sku": "2400-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:16:19.150Z",
+      "beforeDescriptionHash": "10a798140c0ce82462d85a528cc63ab0fa690236b0468f02954daee4a429932a",
+      "afterDescriptionHash": "a52e3af6df708a1dd46acd5a99a9fd2f2eae011cb0d74eb8a496345920d1ed96",
+      "mediaInventoryHash": "ada55a03be7b56a0c11264c41697698dcb0de50250f48fff51936f8713560c8c",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8507,
+      "sku": "2479-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:17:08.205Z",
+      "beforeDescriptionHash": "15cc56fb8d13606c408aae75aad60027aebc03abedfc90560e2332c09753e245",
+      "afterDescriptionHash": "513f93e6f9d79c06075f90503f96c306d6b8d35f4aace54f94c978e0a0813dbb",
+      "mediaInventoryHash": "0b5c9344013c3c29e7068f83dc8e97f785f562cdc36412165df333b0013a46cd",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8508,
+      "sku": "2545-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:17:12.997Z",
+      "beforeDescriptionHash": "98ad3d18108f4a58e85ec9cab63ff47ce438688fa6431e4620777959699c911a",
+      "afterDescriptionHash": "b8ecd04f9536d8d4f9dd3a4f8c2e5919dec118dbd3c8a156edc556fc23dcaf8a",
+      "mediaInventoryHash": "f90118efcc162cb68554e8d617a6223d6450b7882f0ec66f6fa18530769dffa5",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8509,
+      "sku": "2513-1-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:17:08.694Z",
+      "beforeDescriptionHash": "89549f37467c666ffc9f2580a0dff3d2fb80c0115760dca7901df48ac9e5fb0b",
+      "afterDescriptionHash": "cf30ce08e53d939b122d15b2fec9b52f477c9a747f18cbce83cbdec2867fb27e",
+      "mediaInventoryHash": "f6f60387fdd8feb6191cc4ea0a464f5b4576c3ab06d3c3872ba32874cb91e54b",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8572,
+      "sku": "A12921VC",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:16:45.219Z",
+      "beforeDescriptionHash": "0e431cf49b18625e35ff00bff1d1fc6083cf1e6c953e4dd803fa8e621accb951",
+      "afterDescriptionHash": "ffd085aac0c53190f09a5d4c618a2d8f9596475c98972baca54cf2855d579031",
+      "mediaInventoryHash": "154814c9a9c0042ec580c70283153e840d4b30181698f49ff54cc7eea5cf242b",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8574,
+      "sku": "A29211-1C",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:14:19.022Z",
+      "beforeDescriptionHash": "1812a75fc6c7902f5da90555aee7fc949c9e069cf2729b7e00cc90f29d23361f",
+      "afterDescriptionHash": "fc784a1a551615cca68e65a462fc9e8a93b32fed75195c1a116d5008a68593da",
+      "mediaInventoryHash": "aeb7cbfc4dd3fe2932066c39d1fb9754263b3700f8c1953ebec26a9937621d2d",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8590,
+      "sku": "A12923VC",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:16:46.150Z",
+      "beforeDescriptionHash": "5c98cce7c5d784fdd6d46dfb93e1a29ec1ff8ae7d15d746611ad54e5b177b47b",
+      "afterDescriptionHash": "3c9cd1729b237d3ecb716f58e250995852de3b97f1ea1d0555bd18d908773d19",
+      "mediaInventoryHash": "7bd639dfca92a1be6eb477722e35500b8723fd035c807ff541bf9fdd91cf1377",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8591,
+      "sku": "A24084",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:21:56.863Z",
+      "beforeDescriptionHash": "8ec1914a7894c1a165329208809db71153f917714225e5b29308477bed725a3a",
+      "afterDescriptionHash": "43e7c264bb8a0c96c00eddb3cd4cde852247d07812ab781f6e52e17f54c2d448",
+      "mediaInventoryHash": "7b58988eea30c6dd87a7ba90644fe54fa2a7b3f9d2a71ce00349a01072876f87",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8592,
+      "sku": "A24223",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:21:57.241Z",
+      "beforeDescriptionHash": "1ad298b04c4b3c2e495deead66d1aac60aec4909d24ef40ba5659bfd7d0fd8ed",
+      "afterDescriptionHash": "d6045c6b05c331cecf660be33f5180b4ad00a539b685872765fca3e0607ba602",
+      "mediaInventoryHash": "127fd08dac679b8ed70cedd51f61f98e338552b022aa51554809de59cafeb1c8",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8618,
+      "sku": "A-10199-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:10:53.967Z",
+      "beforeDescriptionHash": "94decab1259ce22fefb6ed06a3eb081d95bb79c52f16d2d3c3ecb5e267807022",
+      "afterDescriptionHash": "32b6c7c9c1de01421a94a4f2bac4211b9ebfc52a0ab494ea7a21cb1e1a1d626b",
+      "mediaInventoryHash": "125fbf6b71669df98a539720f8103e8e9c90ae41111dd3ee5576fb664f0fd8d4",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8619,
+      "sku": "A-10200-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:10:54.537Z",
+      "beforeDescriptionHash": "21a0d55972618f3e7523c0bcb9ec26ad460bd78896ecbf060c55db8cbfe33d8d",
+      "afterDescriptionHash": "042f5f687905c4d92cbdb18f318fd791a627efed747bf22c46f881289f2f2f2b",
+      "mediaInventoryHash": "d4720ae8a5c3c43d59b1d45a4dbb05b4d6a531f210c83f053b6c9b05aa440652",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8620,
+      "sku": "A-10205-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:09:45.415Z",
+      "beforeDescriptionHash": "e8845bb56262314298439e94f0e9f291ce2641d261777e5122acabdafb3b22b9",
+      "afterDescriptionHash": "b2a0e3b20cdeb190e46147bb862e3b577e679cf792e0faa00225283cd3462e25",
+      "mediaInventoryHash": "b06cd74f4a37e3a802683592d5f6356cd04ba0e22f3d515c9c209a794798a511",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8640,
+      "sku": "2459-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:16:19.708Z",
+      "beforeDescriptionHash": "31cd352433eb20d5a4cda7b5b1aad39ee8f310eb649fc892623b4fe290306543",
+      "afterDescriptionHash": "fdaa230cea2d7966cc0d326e3c76585e89bccd1db505fb053ff83a68bc146677",
+      "mediaInventoryHash": "a1dce86ce58ea258aeb0eae436b3625bf1e4bcc7e2184a0c8a3a6588b8575322",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8662,
+      "sku": "2455-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:17:06.622Z",
+      "beforeDescriptionHash": "19c9ef2e1f7a9d050665dbaccf1737f421d9fb2b99fa0c9f66d75effb53c6f2e",
+      "afterDescriptionHash": "cf305c25d913445601b17f3169f1bfe530f9ac0748ca45772c3d8fab41ba1845",
+      "mediaInventoryHash": "7a3def1bb9c07923d1f2d3e9998f15c63676ef630ec5691d0cb87e860126cc8f",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8663,
+      "sku": "2591-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:17:26.003Z",
+      "beforeDescriptionHash": "d4605282e49724bdf503c43ce3d2b2c82778f07f4ad1e5ab287c3804baa2a260",
+      "afterDescriptionHash": "7dc59ac3ed93608c9d6d7bd94f16ddc39451cbf90de347b6b654720b8a571a7f",
+      "mediaInventoryHash": "77cfda2eec2cce511fd505b3783f76ed227e3de7c5ae4dd5817833cacf6dd1ef",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8664,
+      "sku": "A-10267-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:18:22.173Z",
+      "beforeDescriptionHash": "c314dc1ebe61400a8725774eb8733e1a80bfd3a8960dc828758e0acafc028517",
+      "afterDescriptionHash": "6ee3cfa849af92943d677a30cb5c0d08cf6c94df218ecfeef18e37ce7c536e58",
+      "mediaInventoryHash": "9e4d2efb5e183b9c0ead0f32c71742e5e84e0f19b6639c55c15f92f257ffc2f2",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [],
+      "holdout": false
+    },
+    {
+      "id": 8684,
+      "sku": "61-1253-1-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:13:27.536Z",
+      "beforeDescriptionHash": "6e398a226da501aba2bc77b2e50e613513f03345a49058cbd41525c1d2177d91",
+      "afterDescriptionHash": "06082d04bd8a571000365025b2ac513e1c2af7502c38542dce7a74f2da51fb50",
+      "mediaInventoryHash": "ea0f974fb8179ada92ec402be7546ae201ed111fae3fba722808ad9a262ba38d",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8687,
+      "sku": "61-1412-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:13:34.252Z",
+      "beforeDescriptionHash": "1d77ab25d3bdcdb6c696d90c3c96ae3314ee294676f201586f239f9c90185b03",
+      "afterDescriptionHash": "42eed015f4f1ea745d26c42a82bc3681cd85306cb8a5faf37a97bcc9bedb4b49",
+      "mediaInventoryHash": "6ca3ce833e93bf37f8a48589db69fd0cd0818bc25e8324cd260fd9202978cb71",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8688,
+      "sku": "A-1720 & 50-240",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-06T07:01:13.600Z",
+      "beforeDescriptionHash": "32f8217d75e339193aee5567bd0ec502cce8953e891eb2ba0968263c41e98102",
+      "afterDescriptionHash": "682d9b0b4b51e0b918dae4963d272168a1e141943b0cdef6f4edc39fe97f8063",
+      "mediaInventoryHash": "754d88aea974aa7b7330f9b1af4f1d0300f5f68950f6e5f74836b89792cd418c",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8782,
+      "sku": "9137-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:14:01.754Z",
+      "beforeDescriptionHash": "3c38629b648e7dd0fa27d1cc2dd56946365cfb18c5fc715e9f010abfd474db67",
+      "afterDescriptionHash": "a1a667fa59a59df9fdbce87dbf2ccef13bb880a19acdf48cc06f173145bf8d9b",
+      "mediaInventoryHash": "0459107fcebc16fe969b1521a7766f8808116c3c4c69765ff29f0d54c930e59b",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8814,
+      "sku": "A-10265-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:59:33.052Z",
+      "beforeDescriptionHash": "6b75425072fde21cc0790cb0fa51cd5ced673b9759c7cd18853082b96662a380",
+      "afterDescriptionHash": "a15061f7947af911efdf05701c9d700deadde58047b70bcf24eb2e8a51d67cdf",
+      "mediaInventoryHash": "417ee9946a58de1fcf88dd110383eed1d27baee7cfeac4a0b5c1029cb274e7d7",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [],
+      "holdout": false
+    },
+    {
+      "id": 8815,
+      "sku": "A-10266-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:18:35.705Z",
+      "beforeDescriptionHash": "6ac2c74c1e81ec64317025a4d9a8c297d8439be39e8af5994c70ff5472783d7c",
+      "afterDescriptionHash": "8a6155aa7a261149231202e4069951fadee92413f7a2addbd899b06060027356",
+      "mediaInventoryHash": "ff45e24205731b974de906fb16b208d10986e7f47583f3db347015c3757b0913",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [],
+      "holdout": false
+    },
+    {
+      "id": 8818,
+      "sku": "A-10506-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:07:51.571Z",
+      "beforeDescriptionHash": "9d77109e6144f7b69d4eaa3d25ebb9bb036cf81547d8900fa723f87e224e9069",
+      "afterDescriptionHash": "36eed967b8a901aeea55009b63a63100e23027ccfc6d1edfac784aa34c0d7572",
+      "mediaInventoryHash": "948859545a13d8992e4fba08e34a01a544379239816fddda9dda984a952d9044",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8819,
+      "sku": "A-10329-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:18:22.486Z",
+      "beforeDescriptionHash": "abb68b0da1d199668f47a5f205f893c3ab4e2ddc55e7a42bbaf61ecf307026ac",
+      "afterDescriptionHash": "4f8d6fad896df09113374f6b70526d7656b6e53aec79d36460466148eeb99b74",
+      "mediaInventoryHash": "1518cd2c2245362d4b25707d8e23209ad9bc20b8622dba2695b2b68b57911fff",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8820,
+      "sku": "A-10686-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:58:36.243Z",
+      "beforeDescriptionHash": "89b654d91bbc6349d3a7a32682a8e4f2d70f9521cd50d27fce9566ee0feff26a",
+      "afterDescriptionHash": "68959508412ca3f08bc0c97a987d654f9b096d20c09e9c1e94883a006bad9415",
+      "mediaInventoryHash": "b52fd48a40486f5d4e024c6bb93d5da5c7ec700e19630a4ec3bfd5c322000e1e",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8822,
+      "sku": "A-10688-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:18:22.851Z",
+      "beforeDescriptionHash": "8db387cef8a053cbbfc30f01619423cfeac21fbc3a518de1cf0144ed579f8d6f",
+      "afterDescriptionHash": "3f2626148e13dcbda9e623efe614a357b7d75214bb14a527583e658b7cfda8a8",
+      "mediaInventoryHash": "cbe70553ad4c525ef1b88ee5195cd385c956ed95e0b0ae5c8218dea00ab039c4",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8823,
+      "sku": "A-10689-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:06:17.354Z",
+      "beforeDescriptionHash": "d654ef13d4d772ef3fdae95b083575c64b7a3b4f565fedc0f0fe1ca3ccf4830d",
+      "afterDescriptionHash": "9cd7f6c439f8c07db046c2156d15f35510e19f07441cacfcaaa9b8baab80aa42",
+      "mediaInventoryHash": "da462e3c9c229fdcfc9e59aafdfeb0257590d84bfb83fbaa7a5eedf9fc5ac3f4",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8824,
+      "sku": "A-10690-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:59:19.712Z",
+      "beforeDescriptionHash": "a194a631676d0a01d6da251dde721207550c02287d990dc2c79d596356ba058d",
+      "afterDescriptionHash": "1671a2e428073eb358a4c5757dc94a9e7afcca5d445e8e3bae6acdacc3534844",
+      "mediaInventoryHash": "f2804080cbd5417f666accbdc7c81ca3f30081fae63c7e827cd92cda59747523",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8825,
+      "sku": "A-10691-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:54:13.366Z",
+      "beforeDescriptionHash": "6dc4c829da7a96e0d3c43dec6581808d0f4512293ff6eeef7f44c600c571161c",
+      "afterDescriptionHash": "84a18b9ce976b1abfada2379aeff3fc36039855b7af7d6ceef24ad9cefed0cf4",
+      "mediaInventoryHash": "891ca163c3322ccb5d8bb1244906f3c4efbc2105ec02651bfcb0f36c3910bded",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8826,
+      "sku": "A-10692-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:01:16.717Z",
+      "beforeDescriptionHash": "0466421f2be4cb07b305aa4b57921491d9cec03722e30ab4470e694f9a2d6668",
+      "afterDescriptionHash": "aa2496388b59d243a43e9191bb59a86c3ad117f9c0b391cd19abafa5b752daab",
+      "mediaInventoryHash": "bc1bb90661d0f316e86cf64139be6da4964612cd060a0e8f7f87f3f40afecc0f",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8827,
+      "sku": "A-10743-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:01:52.368Z",
+      "beforeDescriptionHash": "735686661261662114ea88df7d0aff9dda2133a84f08f04c4ea8f2539e8d1a56",
+      "afterDescriptionHash": "9f0c3cb50fd5399fce786ea94d4b5591e600f045a3962f92d67262cc7c3a85c2",
+      "mediaInventoryHash": "2d9299782c21a4a3b4832db5f393cc3e29e9cf8249e0a1361ef39a7577340c53",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8828,
+      "sku": "A-10765-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:17:55.436Z",
+      "beforeDescriptionHash": "40832944b5042b87000099cd149cfd4c1d83e4f187210967cc870573029a657d",
+      "afterDescriptionHash": "fa0be7079cfe1f1dc3aaffafdc95d4e2df52d8ea3dc44e5d92514d2384794891",
+      "mediaInventoryHash": "3775e02a3f1f81f30ada313b0e12aa510f1565c8db80dce6f29a224d53f8674c",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8829,
+      "sku": "A-11134-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:01:16.845Z",
+      "beforeDescriptionHash": "92f017a8706fa7de5e44dd6d7b431e5420baab3a93c2ba2e0f32ddd78e4798fe",
+      "afterDescriptionHash": "d763ccd7b42183c9213e1761d3fc0a4919ce97df6610d3a4110f10ade72311ef",
+      "mediaInventoryHash": "8891a83b368ba46cbc119a291028d3e1d61bf19c20ebd9b3059c4713a8d23390",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [],
+      "holdout": false
+    },
+    {
+      "id": 8831,
+      "sku": "6821-1-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:59:01.501Z",
+      "beforeDescriptionHash": "49dece324ca518b6100c769e93ff04c25aa7e93ffae6004024083414f6d88943",
+      "afterDescriptionHash": "5a07ebe1d98b1af5d8eb2324501a06ca06567c66f9e98b8e2c845dadc132caeb",
+      "mediaInventoryHash": "8ab5d22079425399fa0d539ab62fa04be9ec5c570100447ddb38bd0880811279",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8833,
+      "sku": "7143-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:59:20.710Z",
+      "beforeDescriptionHash": "df61481d210d4ffdf7dc22cddcf4a548d68b29eebcc04cf7e6dae33884c65df4",
+      "afterDescriptionHash": "4e5b9aa13074a867128aa9f6aaaa2d5e33bd0698f870cc96f148f9436f2ae782",
+      "mediaInventoryHash": "1acbcd0c95d6b04272f7cb2eaa70ee757f550c7f5253e8e8cc9934d55ca28826",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8849,
+      "sku": "A-10202-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:10:56.143Z",
+      "beforeDescriptionHash": "b1fb25187cdc074ab37b642023cc75cbf5731beec7310fd73f629d6678836a52",
+      "afterDescriptionHash": "4c74b3ea9c93093c5117d419de3f2ede3fab32f2b7ff9be32660dee5ba29ffd0",
+      "mediaInventoryHash": "c2f72b7135e435d0d4494db2d407762c00e9531e8b80c75aec9197c14d6ead11",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8851,
+      "sku": "A-10252-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:14:24.263Z",
+      "beforeDescriptionHash": "426680836c9ad14d72c5d606144777f69f9860cb90ab2eda26b3a6a5f8234930",
+      "afterDescriptionHash": "ed2a252d9dae3af2fc5a1a89b79c078d099f50e04f7fac93cfe81d5a0ffc127c",
+      "mediaInventoryHash": "7d474fa3e15973a0ab2e1b11913de04e99772224c5632fa5eeb2d30e4515bac3",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8853,
+      "sku": "A-10253-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:01:51.488Z",
+      "beforeDescriptionHash": "fd254833f9e856e6a48232e81ad5b65da8efc3d43f640dd2476fa0e63334c0f4",
+      "afterDescriptionHash": "1ce265e21bb10bbed1480a7c8b9caadc434b9e060452d797f4e2908b2062120e",
+      "mediaInventoryHash": "a74ba0161677d8a3d46a1ea9a31702f0e374315494430aa27e509021407da89e",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8854,
+      "sku": "A-10259-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:14:25.658Z",
+      "beforeDescriptionHash": "d14f72d14bbd2818b9e23d843860b95c8485014133cc0a9b1f98bd78f707c15b",
+      "afterDescriptionHash": "5e81900878ee0f093ae15c53ba1a3f35c624bf8a800f38175a3d19066b375eb8",
+      "mediaInventoryHash": "cf6055ee9daa51a74337a89179e8f88cecd8460dfac623a90cd66b80b876cfa7",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8856,
+      "sku": "A-3023",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:18:28.907Z",
+      "beforeDescriptionHash": "5d17e70b52b26b50aa121ed7de8443819bc5b05d65c26c2bd6cf1dd121d79f94",
+      "afterDescriptionHash": "2cd1f57149d755c9b37240ec38e8cdc805f7684c58b9d4a349a334b8459d0321",
+      "mediaInventoryHash": "83aee8f7299984afaca45cd0ea20b69f63ca3aa997edbd75c7be59cdf6cc84f2",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8869,
+      "sku": "25C-012-V",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:00:23.420Z",
+      "beforeDescriptionHash": "f508737d15b1aa4ad5c2ad962cf5ed02221daeaff564ab7119bfe051985bc534",
+      "afterDescriptionHash": "580075e2b97846f98cf5fd3164c0556c555b8e6a25052c893968808f06c2008d",
+      "mediaInventoryHash": "aaf91cd6a3e2fa8a6342d0faf1296d1b28540ed88c96b1a9d197bc6373913960",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8874,
+      "sku": "8583",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:13:19.648Z",
+      "beforeDescriptionHash": "05b9b1d528914417c3bb75fc34d1674cdd50009c3939b69535a564271209e1fe",
+      "afterDescriptionHash": "8ec7861baf94eb817cde3980e83e6b22901206fe6978b7030798b2e31dd9bed5",
+      "mediaInventoryHash": "5da6f497ff08ac61b233a973b450ee123079dac358c44c4ec521dd32f67424ab",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8875,
+      "sku": "8668",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:55:22.593Z",
+      "beforeDescriptionHash": "279b49c5ed051ead706cb755b1cec611fb24a09e0859569bfe2417e8d5082879",
+      "afterDescriptionHash": "5f4cdf4fbb08d017e29955c2a243a803f7997b7f8b708976a645535fc7a3c3b0",
+      "mediaInventoryHash": "1500a0d7ed4059213c97c1327020c3df9a21505e8fdce07526309b846426014f",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8877,
+      "sku": "75-2979/BW1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:00:09.887Z",
+      "beforeDescriptionHash": "f42f8cb288b2cd2132cfe069a715450bda96ef488042eea249ab0eff54aca96a",
+      "afterDescriptionHash": "a8333f5c7417e9a01abd48399dc1972bd56c3c72127d685c16666fab57e7aafc",
+      "mediaInventoryHash": "eba1f1d693f0d6135af6cf2b79d9b6f7fc037c867559ca745cdf3ed8cf4ead25",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8878,
+      "sku": "A-3313",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:07:23.928Z",
+      "beforeDescriptionHash": "ac0af56f7e23c07cdaa7bdc259cf81645614655398cea8248431992d4fc33330",
+      "afterDescriptionHash": "6aadc514fd0255db09ab26faf2fc151228f58459ca3c9304fda92c47d366119b",
+      "mediaInventoryHash": "d08ee4e569a658d5d8859db66f65e7e6e112c43f2f75a2d70f3e6cf58f9a910d",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8892,
+      "sku": "34-1478",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:06:36.679Z",
+      "beforeDescriptionHash": "b9e8eeb5c6ba7f660efc41774736c8f12890bc05a1092dd122cac757030a3cfb",
+      "afterDescriptionHash": "1641db8c33de534322f4319f4470bf7ee8b5a98ab4307f773a4ff02d707398bb",
+      "mediaInventoryHash": "aeb1f4515616ab5db10604b9c57d4baed55e542ed08b16666d7a144d51dfa26f",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8893,
+      "sku": "36-1344",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:13:11.462Z",
+      "beforeDescriptionHash": "49d58a8a16e562b3bc3dfae18d67a613350ee6cd000c95ab9e4241a9e0331f49",
+      "afterDescriptionHash": "a8683b0ab6b1729daa43d4fad20a3d044fa7fc66e6223dcea203407e069c315c",
+      "mediaInventoryHash": "bddaa309f7fbcc3f4663e7a1a734fc41764a355e5cc03c0fe06d1dc3019e6c02",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8922,
+      "sku": "61-1364-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:13:30.045Z",
+      "beforeDescriptionHash": "3b934f51f66b122c03524cdf4172cc1608f9c743b8a9568bd16055cd51ce559e",
+      "afterDescriptionHash": "b86b635075c6c8d477f7fb3ff6fcccba1f600cc6cef1d587b50a7f2e8f121f68",
+      "mediaInventoryHash": "9175a7c78a49dbc19af37d6c26878f71f565f0cc46bbec66e9739312eca938ba",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8952,
+      "sku": "61-1386-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:13:23.411Z",
+      "beforeDescriptionHash": "b4d49e95ec22d6d48d6ce02e87a8c220a263bb76a9404684fcc9cde8c4bb4760",
+      "afterDescriptionHash": "d6209352aeddb004ca45bdea6177def0919f665f0d9ea55078b7538035a58f94",
+      "mediaInventoryHash": "0454e6eb26f6d9a0cf830cf1b6d1c222448cc38eb4ff82dba0944ddf49c72ab2",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [],
+      "holdout": false
+    },
+    {
+      "id": 8953,
+      "sku": "A-1052-3",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:18:56.837Z",
+      "beforeDescriptionHash": "e06b65d272fbc7d87542f1591667702b945eb8851bb152fa0e58d1d961f5db7c",
+      "afterDescriptionHash": "5c7c57499fa3df372aa6a23e1533b115d09b67274bfd4d81b939e35c10aadaeb",
+      "mediaInventoryHash": "369be0ff15b8706170102f3c626ac69a602106fb1455b957549dc9d0ddc63c11",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8954,
+      "sku": "A-1135-3",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:18:58.621Z",
+      "beforeDescriptionHash": "a4689282b53dbc191ea9bab472ab40cadc6cce54a7bc9b168bc84b8fdce808b2",
+      "afterDescriptionHash": "d8fe01db8dd6221524c63006daae1143df76cc0390c1a8a5982afb0cfae09814",
+      "mediaInventoryHash": "12eada303811562eabf32e4aa50939b1f18e3fbe50b5a4da6660fe691d512ca8",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8955,
+      "sku": "A-2700-3",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:18:58.808Z",
+      "beforeDescriptionHash": "7d35234685ceea81de1b156fbf40db0fc5147eb6281bdfc7bc770036c9c222f4",
+      "afterDescriptionHash": "515bf5c9c577ec4baeac7ccd5812d410b85a73329c37cc56e049d4ea5b377cc2",
+      "mediaInventoryHash": "af4217663312b55ab5fe243d4361bf92d86b160ed7f152cd57f13a6f8d30566f",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8956,
+      "sku": "A-306VAS-3",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:19:00.683Z",
+      "beforeDescriptionHash": "7001802c767ea1e3763fd9da7cb37198f846922b26a468dbf592bc860c055da9",
+      "afterDescriptionHash": "4d7c9e53bcb24518a01fbd003cc28fafbc9bcd9f78ff46430a0ac16d44696c95",
+      "mediaInventoryHash": "a87d3966ffcd88af9e6023fe4fa2eaaeccb4775a5641387012ddf05ce9419fd5",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8964,
+      "sku": "A-1035-3",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:18:56.511Z",
+      "beforeDescriptionHash": "64c1cb27b90f0b189246a2cce2f7f2a9129004f29589197fd817c25ec42d3c22",
+      "afterDescriptionHash": "eb98e745963c754570bd2ee77b92ed8b7086488c9c3ca7a1a148e4af3255406a",
+      "mediaInventoryHash": "889eb9d59cb5bdbbe72f6d550e4bf57da4471f2a3610aec2044c5ea0f3427ba6",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8970,
+      "sku": "A-1035-1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:17:56.720Z",
+      "beforeDescriptionHash": "5505441814a06bdf206abb6abe8b4ecdcf5cc876781db78947f0daa7c6388628",
+      "afterDescriptionHash": "b4fed6a13ff637aca81d8277360ee605ca844eec610b6514f931f460c023051c",
+      "mediaInventoryHash": "469f959707e8bee48a91bc4e3fdeabdbb6e2cf35d82a61208df721d0c791390a",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8973,
+      "sku": "A-10047-VN",
+      "brand": "inax",
+      "category": "thiet-bi-bep",
+      "updatedAt": "2026-07-07T08:11:17.219Z",
+      "beforeDescriptionHash": "57ee7cd757271624d73f4568d9538d82160a7147df63a44da2ba7d0572f01f95",
+      "afterDescriptionHash": "0bdb527025d070628b08a0f3e1fd12f2200fba609e6957e9ac3be0aacd415553",
+      "mediaInventoryHash": "0b8419cfee1189f0336fe78c07f7dc03c0d840054d0d158a30bac65b51008007",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 8982,
+      "sku": "A-306VAS-1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:18:02.333Z",
+      "beforeDescriptionHash": "f319d296e70a6f813f7aec3580193220eb695eccd359856636cecc44617da82e",
+      "afterDescriptionHash": "d122febedab1bbe0536bd54742c80f2e6ecc2d437a6ef4a2d5c473a1b6992a8b",
+      "mediaInventoryHash": "203fadd596de9a05a8a709cc62b261a22478be3875a3d83584fe505678e3ea75",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 9073,
+      "sku": "61-1413-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:13:35.503Z",
+      "beforeDescriptionHash": "a84c6eaf8b570de38999d9da9d44a8caed81be7fb665a9792c713f4d5c679e9b",
+      "afterDescriptionHash": "f03d17318374eedf6f36b2074af337d6b259ec6f3546420c3ba5a14d8b194890",
+      "mediaInventoryHash": "7ef9b314548ba0e8d366a2d3412109240d2275a88848ab110be8d57e06ab03a9",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 9086,
+      "sku": "A-1052-1",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:18:01.938Z",
+      "beforeDescriptionHash": "119d345502f2cbc384d90fc3f8af9244bf0c5cb5d84b8b5293c087005a125157",
+      "afterDescriptionHash": "f3e102ce4e0a4409613bb98858c98cd1cd7d07dd5136a01d6001120bb0ad5215",
+      "mediaInventoryHash": "c0094ea230fc4c89398da6a70370953a6047c92ccfe47d5cea17e2945ee0b6f0",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 9121,
+      "sku": "8298-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:14:01.047Z",
+      "beforeDescriptionHash": "6410050181c516d0d065c466a0a75cb797164524183bc7f8932fb270fdcbea75",
+      "afterDescriptionHash": "58c296b8285744dfb6e7b5211b960c094c0096d4687a3154c5612c1013882bf9",
+      "mediaInventoryHash": "f4a970d673ae8a75514b0149d28ba129e41186ec0057bb48cc8f0be44baa85f1",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 9122,
+      "sku": "7563-VN",
+      "brand": "inax",
+      "category": "thiet-bi-bep",
+      "updatedAt": "2026-07-07T07:59:20.528Z",
+      "beforeDescriptionHash": "d19b02bc0baed51c8b127ddb1f7ca45fb05cfd0fa5fdaac2c7e0abab7da93a60",
+      "afterDescriptionHash": "441c7b1c370d33dfe62396f493d1c65cd7fa889d6ab1d20d2e09a5972b769f3a",
+      "mediaInventoryHash": "cfe0a90aea561f80f6e47999b097785cc0c2ac6682925dd1dacb3738f05d393d",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 9123,
+      "sku": "61-1361-VN",
+      "brand": "inax",
+      "category": "thiet-bi-bep",
+      "updatedAt": "2026-07-07T07:59:19.862Z",
+      "beforeDescriptionHash": "5b99eb261b6cbe05f333c156a8e76d2b644cb1c7fd3d1e3b77ff8de86644521a",
+      "afterDescriptionHash": "633be9c0b6d8b23f2fd87c30bbf3d107c4a061eed90fec8643dd24c0d55c70b7",
+      "mediaInventoryHash": "148abb3bc753a01ba0c34df48d7ac057cca293df8d7fd37cce187fc7ef49d1b6",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": true
+    },
+    {
+      "id": 9140,
+      "sku": "2336-VN",
+      "brand": "inax",
+      "category": "thiet-bi-bep",
+      "updatedAt": "2026-07-07T08:16:58.234Z",
+      "beforeDescriptionHash": "3854d514b1998a46b902dc2dc86d4237626978c95cc9a08311e897095ad214ce",
+      "afterDescriptionHash": "c0f93e206c303e95285e89db4247d0aac25fe2bd945a947c12892bf3cc53317e",
+      "mediaInventoryHash": "a0b40664c14bfe8b21d9dd3664d5953a5151c64c1a3b3907ef8ea20339a3ceb3",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 9143,
+      "sku": "18-02-1-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:22:02.914Z",
+      "beforeDescriptionHash": "e13313554e2259531f9eaf599f82a0b28562ce9507088b16954e13acac20e968",
+      "afterDescriptionHash": "a723f78d400f129ed3aaff2469210e39393777a6e709002905d82186d1b54661",
+      "mediaInventoryHash": "38ed2e7bf3aee44814aa03b079d9f9d7d9c2748e7a0736fa8e40604f792055ed",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 9144,
+      "sku": "25C-017",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:07:49.369Z",
+      "beforeDescriptionHash": "b80ce6d13f9ca73bbca82508ce104c8177ec11512b8f4066e830c1e4725e12e1",
+      "afterDescriptionHash": "d64ee80d3de67b942c593665b533c3f0f89fd073cdf7251c5a933ad7b6065090",
+      "mediaInventoryHash": "8361f40db9dbd4448d09bcf0ee0d08d4ed3ec5c3e49ef523e096901ba1f67a12",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 9145,
+      "sku": "27-100-V",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:17:48.741Z",
+      "beforeDescriptionHash": "53d9aa6fe696bd4c758576608a4def45f9ebc677ac57aafb12265c7c4bec39ac",
+      "afterDescriptionHash": "5f1a6e5729fca54be1928fa7f54a5f7d55757ee349472cf71a4373389935c43d",
+      "mediaInventoryHash": "001f3ef78feb636bba1240649f09c37e56ce4c45653f4fb0e8fced524f373a24",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 9146,
+      "sku": "25C-021",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:07:49.767Z",
+      "beforeDescriptionHash": "83a3c42d4040f0b909da31503bb8a34ca557c1d00430ab7d4a3366c4a922e07b",
+      "afterDescriptionHash": "81446c519c1f3b2fb5e9cfd6cd99d8bb990cd834a93e256c6ff4ce2b25268bbe",
+      "mediaInventoryHash": "91c32cd0917e96bbf4829f83a46e3fb0eddf71c64d2627576f5bff3747416304",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 9147,
+      "sku": "27-19",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:17:48.954Z",
+      "beforeDescriptionHash": "ab69e3162c19a4115a2bc5fe38ade81dfc989af2fd7e0d974aa37d9a8b38ec01",
+      "afterDescriptionHash": "9fa6015fcc7e0ec5104e5a5b5d7a2a78f7a3baf9ada20468d12d3a7001cc9829",
+      "mediaInventoryHash": "89f527f061e7538c1b1c225429f289af9aea977a504a2105ff2b32e1594d3513",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 9150,
+      "sku": "37-1312-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T07:59:46.542Z",
+      "beforeDescriptionHash": "9543031a7f439b61bd8a543c0675ae61e2a3fd0676288b19128b2e758bd92c1c",
+      "afterDescriptionHash": "66621823d86bbc1c1d873ac50cba475c694c510e2fb0da6cbad5f54e6611b1c3",
+      "mediaInventoryHash": "d08ab6146da8a0ef51a1b7c5a1721f11fd38e98220b55516b09ab3d0a0816fb1",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [],
+      "holdout": false
+    },
+    {
+      "id": 9189,
+      "sku": "A-1032VAS-3",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:18:56.420Z",
+      "beforeDescriptionHash": "d478ea61fe661cec3e62fd45409a6f774d9de551b273ab8ad2b4ab964aabd03b",
+      "afterDescriptionHash": "7aa5615d69cfb7875bb11926eab0bd80e3780b8a0694329d1e6336c5f08ccbac",
+      "mediaInventoryHash": "6abaa6dcec4ff01d8ab88be1350845e10b033255511e12ae2ca2474d0faed16b",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 9204,
+      "sku": "61-1345-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:13:21.046Z",
+      "beforeDescriptionHash": "4be344d7060e63833769e11d85eab3ae21738902ae18800b3fdc7d5c6d235b3a",
+      "afterDescriptionHash": "7c033f09ca84f3fb4e68e0a5cc0a89cea40ac39f5d53365fde2946549c575151",
+      "mediaInventoryHash": "538336e123f0717c67393ff178a4bfd2f65029302da839d4bec33d1c969b111d",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 9206,
+      "sku": "61-1388-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:13:22.169Z",
+      "beforeDescriptionHash": "121b86657da54c50257fb0189e257c8a89bdb30e36581ce25f2c416e9ecd4bc5",
+      "afterDescriptionHash": "c7bd0d4df252185d98e4631072bbaf49eb5504174bfc6b9e8822fae4c3353b02",
+      "mediaInventoryHash": "ca149d247fcb01c6914daaf88939341ecb3a15516c98508f436b85f14c1beeec",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [],
+      "holdout": false
+    },
+    {
+      "id": 9210,
+      "sku": "A-10164-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:12:14.645Z",
+      "beforeDescriptionHash": "7fa0345187ae3261a538dccccc86639a1a6d93dd1c68811c0afaaf6093491419",
+      "afterDescriptionHash": "1e1ab0b65efd34fc154012dc09b328e7f27fc8347c2f5e63b60afc81f73499f9",
+      "mediaInventoryHash": "0ce4a99df19f7d0f95573008ba5bfef064c0a73e42e6e1d912b1bcf2040cb618",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 9211,
+      "sku": "A-10165-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:12:15.366Z",
+      "beforeDescriptionHash": "2a96f798c07e0e3476993b1581d20781f910d35ad24495c84e7d9442d74bacb9",
+      "afterDescriptionHash": "81699b06c9eaea54f7c68afbe65d0abec3a35d2c2af0dc2e62b014845bf0ec5e",
+      "mediaInventoryHash": "8adab57c08f236c20acb104339d6a2186daf5dca90e32a1e4002b900defde59d",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 9212,
+      "sku": "A-10201-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:09:53.361Z",
+      "beforeDescriptionHash": "629edd7c2bc2de019f8701082368f902d0b5d2dcd0b5377059ffa4dcb1787a69",
+      "afterDescriptionHash": "3e95f10b556c3f9b6c9e98606aa91b4b16e85db7bc8dd691bf97bc639dd196ea",
+      "mediaInventoryHash": "ae2b23bb0c695384583bab34fda8105d097cc004669bc216ddcdd95a5aad98b3",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 9220,
+      "sku": "61-1382-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:13:30.297Z",
+      "beforeDescriptionHash": "9276e5592c69387e0627813a1c93ce12fb5dfc057d9607ef4096493cf898bdf4",
+      "afterDescriptionHash": "2d2ce68f13555e32f48f296b8e4abd3021c9ae4d60cf00d4809056b708e810a8",
+      "mediaInventoryHash": "23feef528784ac1985f7afeec1a0d6acd2e221f50ca2e20a059622c5c68dd18f",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 9222,
+      "sku": "2557-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T12:47:03.532Z",
+      "beforeDescriptionHash": "a18e90f5994d58422e6a142075168692184ee68e6e83edd7dabb739686e99d63",
+      "afterDescriptionHash": "35dba6ef34e0c8804e622fe2dba01f161bd77e530b55b9ff2e82b398ad9515ee",
+      "mediaInventoryHash": "1fd849a868975cce46124aec13bf105f6a9585941a3472555a6977876fab5b56",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "PASS",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 9240,
+      "sku": "A-11829-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:11:00.034Z",
+      "beforeDescriptionHash": "685db279c8b871138084ab7823a08a1df7abd86c6723bdf841b9ecdbff494f4c",
+      "afterDescriptionHash": "47e7f481909178fb84b39364fe34e2e6a75fe921b8ec0615a59a3a3c54cbfc88",
+      "mediaInventoryHash": "71ecbc6489c4b41ddf8ed76be3daa47e285826634ede5db111353c519970d2f3",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    },
+    {
+      "id": 9243,
+      "sku": "A-11828-VN",
+      "brand": "inax",
+      "category": "thiet-bi-ve-sinh",
+      "updatedAt": "2026-07-07T08:10:59.359Z",
+      "beforeDescriptionHash": "ebe061094041f650b45efd17b4a1d85dc48ac574f238404619bd25b4a7d458a6",
+      "afterDescriptionHash": "5af81f4c279f35f5ba12ff8c9718545b6bac23c00dd55477552af1d03fc53782",
+      "mediaInventoryHash": "b8b778dd1792768f4041fcdc3236aee898e47a1ac485da3af347390144b7abe5",
+      "mediaCount": 2,
+      "mediaActions": {
+        "KEEP_PRODUCT": 2
+      },
+      "editorialReview": "HUMAN_REVIEW",
+      "blockedReasons": [
+        "SPARSE_SOURCE_REQUIRES_HUMAN_REVIEW"
+      ],
+      "holdout": false
+    }
+  ]
+}
