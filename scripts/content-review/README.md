@@ -50,21 +50,35 @@ them with unsupported claims.
 Run the focused audit after generation:
 
 ```bash
-npx vitest run src/lib/content-review/content-quality.test.ts src/lib/content-review/dashboard.test.ts
+npx vitest run src/lib/content-review/content-quality.test.ts src/lib/content-review/dashboard.test.ts src/lib/content-review/media-classification.test.ts
 ```
 
-The test verifies exact 20-product coverage, unchanged 160-media counts
-(13 Hita `HUMAN_REVIEW`, 147 Bunny `KEEP`), no Hita links or automatic fetches
+The media review is asset-first. Every one of the 160 actual references has a
+redacted origin, proposed action, confidence, visual-cluster reason, duplicate
+fingerprint, and official-source verification indicator. Duplicate
+main/gallery/embedded references inherit the same asset classification. The
+approved SFV-900SX golden case is a regression: 24 references / 20 unique
+assets, 10 Hita showroom removals, 5 household/installation removals, and
+official-source verification for the five official render/technical assets.
+The exact main reference is never proposed for removal without an official
+replacement action.
+
+The test verifies exact 20-product coverage, unchanged 160-media reference
+coverage, the SFV-900SX golden classification, no Hita links or automatic fetches
 in the committed artifact, no server/database/analytics code, and unique
 buyer-oriented openings. Inspect every Before/After pair in the dashboard and
 the per-product editorial-quality lines in
 `docs/review-bundles/leo-489-pilot-review.md` before handoff.
 
 The dashboard contains exactly the 20 package products, review progress,
-HUMAN_REVIEW/KEEP media counts, search and filters, Before/After/deterministic
-Diff, sanitized Preview, provenance indicators, and the complete main/gallery/
-embedded manifest. Product and image decisions stay in browser `localStorage`;
-the **Export deterministic JSON** button produces a sorted review-decision file.
+HUMAN_REVIEW/KEEP media counts, search and filters for SKU/name/brand/category,
+review status, media risk, origin, and proposed action; Before/After/
+deterministic Diff; sanitized Preview; provenance indicators; and the complete
+main/gallery/embedded manifest. The manifest shows thumbnail state, origin,
+action, confidence, evidence, cluster, duplicate fingerprint, and source
+verification. Product and image decisions stay in browser `localStorage`; the
+**Export deterministic JSON** button produces a sorted review-decision file
+with the base classification and local decision for every image.
 There is no server, database, CDN, analytics, crawler, bulk fetch, media
 download or media-copy action in this dashboard. The committed dashboard
 redacts all live media URLs and does not auto-load any media.

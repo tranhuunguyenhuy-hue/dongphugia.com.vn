@@ -74,6 +74,25 @@ describe('LEO-489 offline dashboard', () => {
         expect(artifact).not.toMatch(/<script\b[^>]*src=|<img\b[^>]*src=/i)
     })
 
+    it('keeps exact 160-reference classification coverage and the golden case out of all-Bunny-KEEP state', () => {
+        const bundle = fs.readFileSync(path.join(process.cwd(), 'docs/review-bundles/leo-489-pilot-review.md'), 'utf8')
+        const classified = bundle.match(/— proposed [A-Z_]+ — origin [A-Z_]+ — confidence (?:HIGH|MEDIUM|LOW) — cluster [^—]+ — official (?:VERIFIED|NOT_VERIFIED|NOT_APPLICABLE) — duplicate [a-f0-9]{64} —/g) || []
+        expect(classified).toHaveLength(160)
+        const golden = bundle.slice(bundle.indexOf('## 14.'), bundle.indexOf('## 15.'))
+        expect(golden.match(/REMOVE_CONFIRMED_HITA/g)?.length).toBe(10)
+        expect(golden.match(/REMOVE_UNVERIFIED_THIRD_PARTY/g)?.length).toBe(5)
+        expect(golden).toContain('main: main — KEEP_EXISTING_BUNNY → KEEP — proposed KEEP_VERIFIED')
+        expect(golden).not.toMatch(/gallery:310885:[^\n]+proposed KEEP_VERIFIED/)
+    })
+
+    it('never classifies a main reference as a removal action', () => {
+        const { packageValue, proposals } = fixturePackage()
+        const model = createDashboardModel(packageValue, proposals, 'private')
+        const mainActions = model.products.map((product) => product.media.find((media) => media.kind === 'main')?.classification.action)
+        expect(mainActions).toHaveLength(20)
+        expect(mainActions.every((action) => action === 'KEEP_VERIFIED' || action === 'REPLACE_WITH_OFFICIAL')).toBe(true)
+    })
+
     it('keeps Hita unloaded in private mode and only exposes deterministic local exports', () => {
         const { packageValue, proposals } = fixturePackage()
         const model = createDashboardModel(packageValue, proposals, 'private')

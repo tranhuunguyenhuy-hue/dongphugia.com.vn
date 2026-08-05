@@ -21,6 +21,7 @@ const { getEditorialQualityMetrics } = require('../../src/lib/content-review/con
 import type { ProductContentInput } from '../../src/lib/content-review/types'
 import type { PrecomputedProposalPackage, PrecomputedProposalRecord, PrecomputedMediaInput } from '../../src/lib/content-review/precomputed'
 const { createDashboardModel, renderDashboardHtml } = require('../../src/lib/content-review/dashboard.ts') as typeof import('../../src/lib/content-review/dashboard')
+const { classifyMediaAsset } = require('../../src/lib/content-review/media-classification.ts') as typeof import('../../src/lib/content-review/media-classification')
 
 type ActualProductRow = ProductContentInput & {
     cleanDescriptionHtml?: string | null
@@ -339,9 +340,13 @@ function sanitizeStaticPreview(html: string): string {
 }
 
 function mediaLabel(record: PrecomputedProposalRecord): string {
+    const byFingerprint = new Map<string, ReturnType<typeof classifyMediaAsset>>()
     return record.media.map(item => {
         const image = createReviewImage(item.kind, item.url)
-        return `${item.sourceId}: ${item.kind} — ${image.policy} → ${image.decision} — fingerprint ${image.fingerprint}`
+        const host = image.policy === 'HITA_HOSTED_REVIEW' ? 'Hita' : image.policy === 'KEEP_EXISTING_BUNNY' ? 'Bunny CDN' : 'External'
+        const classification = byFingerprint.get(image.fingerprint) || classifyMediaAsset({ sku: record.manifest.sku, kind: item.kind, sourceId: item.sourceId, fingerprint: image.fingerprint, host })
+        byFingerprint.set(image.fingerprint, classification)
+        return `${item.sourceId}: ${item.kind} — ${image.policy} → ${image.decision} — proposed ${classification.action} — origin ${classification.origin} — confidence ${classification.confidence} — cluster ${classification.visualCluster} — official ${classification.officialSourceVerification} — duplicate ${classification.duplicateFingerprint} — ${classification.evidence}`
     }).join('\n')
 }
 
@@ -350,12 +355,13 @@ function buildReviewBundle(
     proposals: Awaited<ReturnType<typeof validateAndGeneratePrecomputedProposals>>['proposals'],
 ): string {
     const recordsById = new Map(packageValue.records.map(record => [record.manifest.id, record]))
-    const mediaCounts = packageValue.records.flatMap(record => record.media).reduce((counts, item) => {
+    const mediaCounts = packageValue.records.flatMap(record => record.media.map(item => ({ record, item }))).reduce((counts, { record, item }) => {
         const image = createReviewImage(item.kind, item.url)
-        if (image.decision === 'KEEP') counts.bunnyKeep += 1
-        if (image.decision === 'HUMAN_REVIEW') counts.humanReview += 1
+        const host = image.policy === 'HITA_HOSTED_REVIEW' ? 'Hita' : image.policy === 'KEEP_EXISTING_BUNNY' ? 'Bunny CDN' : 'External'
+        const classification = classifyMediaAsset({ sku: record.manifest.sku, kind: item.kind, sourceId: item.sourceId, fingerprint: image.fingerprint, host })
+        counts[classification.action] = (counts[classification.action] || 0) + 1
         return counts
-    }, { bunnyKeep: 0, humanReview: 0 })
+    }, {} as Record<string, number>)
     const sections = proposals.map((proposal, index) => {
         const record = recordsById.get(proposal.product.id)
         if (!record) throw new Error(`Missing bundle record for ${proposal.product.id}`)
@@ -415,7 +421,7 @@ function buildReviewBundle(
         `- Package hash: \`${packageValue.packageHash}\``,
         `- Products: ${proposals.length}`,
         `- Total actual media items: ${packageValue.records.reduce((sum, record) => sum + record.actualInventory.totalCount, 0)}`,
-        `- Media decisions: ${mediaCounts.humanReview} HUMAN_REVIEW; ${mediaCounts.bunnyKeep} KEEP_EXISTING_BUNNY/KEEP`,
+        `- Media v2.1 proposed actions: ${Object.entries(mediaCounts).sort(([left], [right]) => left.localeCompare(right)).map(([action, count]) => `${count} ${action}`).join('; ')}`,
         `- Proposal mode: \`precomputed\``,
         '',
         sections,
