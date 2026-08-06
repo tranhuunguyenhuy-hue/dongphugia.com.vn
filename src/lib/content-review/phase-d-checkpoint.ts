@@ -83,6 +83,7 @@ export type PhaseDRecord = {
     preservedEvidence: { sourceSentenceCount: number; retainedSentenceCount: number; factAnchorCount: number }
     media: PhaseDMediaProposal[]
     editorial: EditorialQualityMetrics
+    semanticFlags: string[]
     editorialStatus: 'FIRST_PASS_PASS' | 'HUMAN_REVIEW'
     narrativeFamily: string
     structure: PhaseDStructure
@@ -110,12 +111,23 @@ export type PhaseDCheckpointPackage = {
     records: PhaseDRecord[]
     manualHoldout: Array<{ id: number; sku: string; family: string; sourceId: string; fingerprint: string; visualLabel: MediaAction; evidence: string; confidence: string; reviewer: string }>
     counts: Record<string, unknown>
-    quality: { beforeAfterRatio: { min: number; max: number; average: number }; repeatedOpeningCount: number; repeatedClosingCount: number; repeatedSectionSignatureCount: number; retainedEvidenceRate: number; blockedReasons: Record<string, number> }
+    quality: { beforeAfterRatio: { min: number; max: number; average: number }; repeatedOpeningCount: number; repeatedClosingCount: number; repeatedSectionSignatureCount: number; retainedEvidenceRate: number; semanticPassCount: number; semanticReviewCount: number; semanticFlags: Record<string, number>; blockedReasons: Record<string, number> }
     packageHash: string
 }
 
 const UNSUPPORTED_COMMERCIAL_CLAIMS = /(?:giá\s*(?:bán|niêm yết|sỉ)|chiết\s*khấu|bán\s*sỉ|lắp\s*đặt\s*(?:tận nơi|tại nhà|onsite)|bảo\s*hành|cam\s*kết|đảm\s*bảo|còn\s*hàng|sẵn\s*hàng|100\s*%\s*(?:chính hãng|authentic)|hita|dongphugia)/iu
 const HEADING_STOP_WORDS = new Set('và các cho của trong với một những sản phẩm thông tin theo từ người dùng phù hợp chính hãng là có được cần nên để khi trên tại này đó thiết kế không gồm thuộc nhóm'.split(/\s+/u))
+const PARSER_METADATA_LEAKAGE = /\b(?:documents|name|type)\b|dữ liệu liên quan|mã sản phẩm|tên sản phẩm|sản phẩm thuộc danh mục/iu
+const SOURCE_HEADING = /^(?:thông tin|thông số|đặc điểm|bản vẽ|bảng kết hợp|vì sao nên|những ưu điểm|mua ngay|gợi ý kết hợp)/iu
+const CURATED_FACT_KEYS: Array<[RegExp, string]> = [
+    [/^kích thước/i, 'Kích thước'], [/^màu sắc/i, 'Màu sắc'], [/^chất liệu/i, 'Vật liệu'], [/^vật liệu/i, 'Vật liệu'],
+    [/^lượng nước xả/i, 'Lượng nước xả'], [/^dung lượng nước/i, 'Dung lượng nước'], [/^tâm xả/i, 'Tâm xả'],
+    [/^kiểu thoát/i, 'Kiểu thoát'], [/^vị trí lắp/i, 'Vị trí lắp'], [/^áp lực nước/i, 'Áp lực nước'],
+    [/^nguồn điện/i, 'Nguồn điện'], [/^công suất/i, 'Công suất'], [/^loại nắp/i, 'Loại nắp'],
+    [/^hệ thống xả/i, 'Hệ thống xả'], [/^công nghệ/i, 'Công nghệ'], [/^hình dáng/i, 'Hình dáng'],
+    [/^lỗ bắt vòi/i, 'Lỗ bắt vòi'], [/^tính năng bồn tắm/i, 'Tính năng'], [/^thiết kế/i, 'Thiết kế'],
+]
+const LOCKED_INSUFFICIENT_EVIDENCE_IDS = new Set([4260, 26440, 26442])
 
 function visibleText(html: string): string {
     const $ = cheerio.load(html || '', {}, false)
@@ -126,12 +138,23 @@ function visibleText(html: string): string {
 function sourceSentences(html: string): { sentences: string[]; removedUnsupportedClaimCount: number } {
     const $ = cheerio.load(html || '', {}, false)
     $('img, script, style').remove()
-    const nodes = $('p, li, td, th, h1, h2, h3, h4, h5, h6').toArray()
+    const nodes = $('p, li, td, th').toArray()
         .map(node => $(node).text().replace(/\s+/g, ' ').trim())
-        .filter(value => value.length >= 12 && !/hita|hita\.com\.vn|dongphugia\.vn/i.test(value))
-    const candidates = (nodes.length ? nodes : [$.root().text()]).flatMap(node => node.split(/(?<=[.!?。！？])\s+/u)).map(item => item.replace(/\s+/g, ' ').trim()).filter(item => item.length >= 12)
-    const safe = candidates.filter(sentence => !UNSUPPORTED_COMMERCIAL_CLAIMS.test(sentence) && !/\.\.\.|…/u.test(sentence))
-    return { sentences: safe, removedUnsupportedClaimCount: candidates.length - safe.length }
+        .filter(value => value.length >= 40 && !/hita|hita\.com\.vn|dongphugia\.vn/i.test(value))
+    const candidates = (nodes.length ? nodes : [$.root().text()]).flatMap(node => {
+        if (SOURCE_HEADING.test(node)) return []
+        const colon = node.indexOf(':')
+        const prefix = colon > 0 ? node.slice(0, colon).trim() : ''
+        const remainder = colon > 0 ? node.slice(colon + 1).trim() : node
+        const body = colon > 0 && remainder.length >= 70 && prefix.split(/\s+/u).length <= 12 ? `${prefix}: ${remainder}` : node
+        return body.split(/(?<=[.!?。！？])\s+/u).map(item => item.replace(/\s+/g, ' ').trim())
+    }).filter(item => item.length >= 55)
+    const safe = candidates.filter(sentence => {
+        if (UNSUPPORTED_COMMERCIAL_CLAIMS.test(sentence) || PARSER_METADATA_LEAKAGE.test(sentence) || /https?:\/\//iu.test(sentence) || /\.\.\.|…/u.test(sentence)) return false
+        if (sentence.split(':').length > 3) return false
+        return /(?:là|giúp|được|có|mang|thiết kế|phù hợp|dễ|hạn chế|tạo|đem|sở hữu|tích hợp|cho phép|được làm|được phủ)/iu.test(sentence)
+    })
+    return { sentences: [...new Set(safe)], removedUnsupportedClaimCount: candidates.length - safe.length }
 }
 
 function escapeText(value: string): string {
@@ -160,14 +183,18 @@ function familyContext(family: string): { space: string; use: string; care: stri
     return { space: 'không gian phòng tắm', use: 'sử dụng bồn cầu hằng ngày', care: 'vệ sinh và kiểm tra điểm cấp thoát nước định kỳ' }
 }
 
-function flattenFacts(value: unknown, prefix = ''): string[] {
-    if (value === null || value === undefined || value === '') return []
-    if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
-        const fact = `${prefix}${prefix ? ': ' : ''}${String(value)}`
-        return UNSUPPORTED_COMMERCIAL_CLAIMS.test(fact) || /https?:\/\/|hita/i.test(fact) ? [] : [fact]
+function curatedFacts(value: unknown): string[] {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return []
+    const facts: string[] = []
+    for (const [key, raw] of Object.entries(value as Record<string, unknown>)) {
+        if (key.toLocaleLowerCase() === 'documents') continue
+        const label = CURATED_FACT_KEYS.find(([pattern]) => pattern.test(key))?.[1]
+        if (!label || raw === null || raw === undefined || raw === '') continue
+        const valueText = Array.isArray(raw) ? raw.filter(item => typeof item === 'string' || typeof item === 'number').join(', ') : String(raw)
+        if (!valueText || UNSUPPORTED_COMMERCIAL_CLAIMS.test(valueText) || /https?:\/\//iu.test(valueText) || /\.\.\.|…/u.test(valueText)) continue
+        facts.push(`${label} được ghi nhận là ${valueText}.`)
     }
-    if (Array.isArray(value)) return value.flatMap((item, index) => flattenFacts(item, `${prefix}${prefix ? ' ' : ''}${index + 1}`))
-    return Object.entries(value as Record<string, unknown>).flatMap(([key, nested]) => flattenFacts(nested, prefix ? `${prefix} · ${key}` : key)).slice(0, 16)
+    return [...new Set(facts)].slice(0, 8)
 }
 
 function embeddedAssets(html: string): Array<{ sourceId: string; url: string; alt: string }> {
@@ -275,35 +302,35 @@ function buildMedia(source: PhaseDSourceProduct, visualAudit: Map<string, PhaseD
     })
 }
 
-function evidenceWords(source: PhaseDSourceProduct, sentences: string[]): string[] {
-    const sourceText = `${sentences.join(' ')} ${source.features || ''}`.replace(/[^\p{L}\p{N}\s-]/gu, ' ')
-    const productWords = new Set(`${source.name} ${source.sku} ${source.brands?.name || ''}`.toLocaleLowerCase().split(/\s+/u))
-    const words = sourceText.split(/\s+/u).map(word => word.trim()).filter(word => {
-        const normalized = word.toLocaleLowerCase()
-        return normalized.length >= 5 && !productWords.has(normalized) && !HEADING_STOP_WORDS.has(normalized) && !/^\d+$/u.test(normalized)
-    })
-    return [...new Set(words)].slice(0, 12)
+function topicFor(source: PhaseDSourceProduct, evidence: string[], facts: string[]): string {
+    const text = `${evidence.join(' ')} ${facts.join(' ')}`
+    const topics: Array<[RegExp, string]> = [
+        [/premist/iu, 'Làm sạch trước mỗi lần dùng'], [/ewater/iu, 'Vệ sinh vòi rửa bằng nước điện phân'], [/deodorizer|khử mùi/iu, 'Giữ không gian thông thoáng'],
+        [/heated seat|sưởi ấm/iu, 'Sự thoải mái khi sử dụng'], [/massage/iu, 'Chế độ massage theo nhu cầu'], [/aqua ceramic/iu, 'Bề mặt dễ lau chùi'],
+        [/nano titan/iu, 'Lớp men hỗ trợ vệ sinh'], [/wondergliss/iu, 'Bề mặt hạn chế bám cặn'], [/solid surface|đá nhân tạo/iu, 'Bề mặt nguyên khối'],
+        [/rimless|vành mỏng|vành kín/iu, 'Thiết kế vành thuận tiện vệ sinh'], [/điều khiển/iu, 'Cách điều khiển trong tầm tay'],
+        [/nắp đóng êm/iu, 'Thao tác đóng nắp nhẹ nhàng'], [/siphon|turbo vortex|tornado/iu, 'Cách xả phù hợp không gian'],
+    ]
+    const topic = topics.find(([pattern]) => pattern.test(text))?.[1] || 'Bố trí phù hợp nhu cầu sử dụng'
+    const size = facts.find(fact => /^Kích thước được ghi nhận là /u.test(fact))?.replace(/^Kích thước được ghi nhận là /u, 'kích thước ').replace(/\.$/u, '')
+    return size ? `${topic} — ${size}` : topic
 }
 
 function makeStructure(source: PhaseDSourceProduct, family: string, sentences: string[], facts: string[], index: number): { id: string; headings: string[] } {
-    const terms = evidenceWords(source, [...sentences, ...facts])
-    const offset = terms.length ? source.id % terms.length : 0
-    const anchor = terms[offset] || family.toLocaleLowerCase()
-    const secondary = terms[(offset + 2) % Math.max(1, terms.length)] || 'kích thước'
-    const marker = terms[(offset + 4) % Math.max(1, terms.length)] || `mốc ${source.id}`
     const context = familyContext(family)
+    const topic = topicFor(source, sentences, facts)
     const variants = [
-        [`Từ ${anchor} đến nhu cầu sử dụng`, `Đọc ${secondary} trong hồ sơ`, `Bố trí tại ${context.space}`, 'Chuẩn bị lắp và chăm sóc', 'Theo dõi sau khi hoàn thiện'],
-        [`Điểm bắt đầu: ${anchor} · ${marker}`, `Khi ${secondary} ảnh hưởng trải nghiệm`, 'Đối chiếu không gian và kết nối', 'Lưu ý cho quá trình sử dụng', 'Giữ lại thông tin cần thiết'],
-        [`Vì sao ${anchor} đáng xem trước`, `Dữ liệu ${marker} người mua cần đặt cạnh nhau`, `Điều chỉnh theo ${secondary}`, 'Giữ đúng hướng dẫn sau lắp', 'Chăm sóc theo vật liệu'],
-        [`Chọn theo ${anchor}`, `Giá trị của ${marker} trong thao tác hằng ngày`, `Kiểm tra ${secondary} trước khi lắp`, 'Vệ sinh và theo dõi về sau', 'Đối chiếu khi thay thế'],
-        [`Hình dung ${context.space} với ${anchor}`, `Thông tin ${marker} tạo khác biệt`, `Đối chiếu ${secondary} với mặt bằng`, 'Hoàn thiện lựa chọn', 'Sử dụng theo tài liệu'],
-        [`Một cách đọc khác về ${anchor}`, `Từ ${secondary} đến ${marker}`, 'Các bước cần chuẩn bị', 'Chăm sóc theo tài liệu', 'Ghi lại căn cứ sử dụng'],
+        [`${topic} trong sinh hoạt`, `Bố trí cho ${context.space}`, 'Chuẩn bị lắp đặt', 'Chăm sóc sau khi dùng'],
+        [`${topic} đáng chú ý`, 'Đối chiếu với mặt bằng', `Cách dùng tại ${context.space}`, 'Giữ sản phẩm sạch đẹp'],
+        [`Chọn theo ${topic.toLocaleLowerCase()}`, 'Kích thước và kết nối cần kiểm tra', 'Trải nghiệm trong ngày', 'Lưu ý khi vệ sinh'],
+        [`${topic} và cảm nhận thực tế`, 'Đặt cạnh nhu cầu của gia đình', 'Xác nhận trước khi lắp', 'Theo dõi về sau'],
+        [`Điểm nhìn từ ${topic.toLocaleLowerCase()}`, 'Không gian và thói quen sử dụng', 'Lắp đặt theo hồ sơ', 'Bảo quản đúng cách'],
+        [`Khi ${topic.toLocaleLowerCase()} là ưu tiên`, 'Các chi tiết nên đối chiếu', 'Dùng thuận tiện mỗi ngày', 'Chăm sóc bề mặt'],
     ]
     const descriptionLength = visibleText(source.description || '').length
     const desiredCount = descriptionLength < 1200 ? 3 : descriptionLength > 3200 ? 5 : 4
     const headings = variants[index % variants.length].slice(0, desiredCount)
-    return { id: `${family.toLocaleLowerCase()}-${sha256(`${source.id}:${terms.join('|')}`).slice(0, 10)}`, headings }
+    return { id: `${family.toLocaleLowerCase()}-${sha256(`${source.id}:${topic}:${headings.join('|')}`).slice(0, 10)}`, headings }
 }
 
 function selectWholeSentences(sentences: string[], target: number): string[] {
@@ -311,30 +338,38 @@ function selectWholeSentences(sentences: string[], target: number): string[] {
     const selected: string[] = []
     let size = 0
     for (const sentence of sentences) {
+        if (!selected.length && sentence.length > target) continue
         if (selected.length >= 40 || (selected.length >= 3 && size + sentence.length > target)) break
         selected.push(sentence)
         size += sentence.length
     }
-    return selected.length ? selected : [sentences[0]]
+    return selected.length ? selected : [sentences.slice().sort((left, right) => left.length - right.length)[0]]
 }
 
 function makeParagraphs(source: PhaseDSourceProduct, family: string, structure: { headings: string[] }, sentences: string[], facts: string[], beforeLength: number): string[] {
     const context = familyContext(family)
-    const targetEvidence = Math.max(180, Math.floor(beforeLength * (beforeLength < 800 ? 0.35 : beforeLength < 1200 ? 0.55 : 0.78)))
+    const targetEvidence = Math.max(180, Math.floor(beforeLength * (beforeLength < 800 ? 0.4 : beforeLength < 1200 ? 0.58 : 0.72)))
     const evidence = selectWholeSentences(sentences, targetEvidence)
-    const factText = facts.slice(0, 3).map(fact => fact.replaceAll(':', ' là ')).join('; ')
-    const closingFact = facts.at(-1)?.replaceAll(':', ' là ')
+    const compact = beforeLength < 800
+    const factText = facts[0]
+    const fitFacts = facts.slice(0, 4).join(' ')
+    const closingFact = facts.at(-1)
     const groups = Array.from({ length: structure.headings.length }, () => [] as string[])
     evidence.forEach((sentence, index) => groups[index % groups.length].push(sentence))
     const paragraphs = structure.headings.map((_, paragraphIndex) => {
-        const sentence = groups[paragraphIndex].join(' ') || `Thông tin hiện có đặt ${source.name} trong ${context.space}.`
-        const additions = [
-            `Đặt chi tiết này cạnh ${context.use} để chọn đúng một sản phẩm chính hãng.`,
-            factText && paragraphIndex === 1 ? `Dữ liệu liên quan gồm ${factText}; dùng chúng để chuẩn bị.` : `Nên đối chiếu kích thước và điểm cấp thoát nước.`,
-            `Khi lắp, để khoảng trống và tài liệu đi kèm làm căn cứ.`,
-            `Sau khi dùng, ${context.care}; giữ mã nếu cần thay thế.${paragraphIndex === structure.headings.length - 1 ? ` Đối chiếu “${structure.headings[paragraphIndex]}” khi quay lại. ${closingFact ? `Căn cứ cuối: ${closingFact}.` : `Căn cứ cuối theo hồ sơ ${source.id}.`}` : ''}`
+        const sentence = groups[paragraphIndex].join(' ') || `Đây là ${source.name}, được định hướng cho ${context.use}.`
+        const factForParagraph = facts[paragraphIndex % Math.max(1, facts.length)]
+        const additions = compact ? [
+            `Cân nhắc sản phẩm này cho ${context.use} khi tìm một lựa chọn chính hãng.`,
+            factForParagraph || `Đối chiếu kích thước với không gian thực tế.`,
+            `Khi lắp, chừa khoảng trống thao tác và dùng tài liệu làm căn cứ.`,
+        ] : [
+            `Đặt lựa chọn này cạnh ${context.use} để cân nhắc một sản phẩm chính hãng.${sentences.length < 5 && beforeLength >= 1000 ? ' Trước khi chốt, đối chiếu thêm khoảng trống thao tác và thói quen sử dụng.' : ''}`,
+            paragraphIndex === 1 && fitFacts ? `${fitFacts} Những thông tin này giúp kiểm tra độ vừa vặn trước khi mua.` : factForParagraph || factText || `Nên đối chiếu kích thước với không gian thực tế.`,
+            `Khi lắp, chừa khoảng trống thao tác và dùng tài liệu kỹ thuật làm căn cứ.`,
+            `Sau khi dùng, ${context.care}; nếu cần thay thế, giữ lại thông tin nhận diện.${paragraphIndex === structure.headings.length - 1 ? ` Đối chiếu “${structure.headings[paragraphIndex]}” khi quay lại. ${closingFact ? `Thông tin cuối cùng cần nhớ: ${closingFact}` : ''}` : ''}`
         ]
-        return `${sentence.replaceAll(':', ' — ')} ${additions[paragraphIndex % additions.length]}`
+        return `${sentence.replaceAll(':', ' — ')} ${additions[paragraphIndex % additions.length]}`.replace(/\s+/g, ' ').trim()
     })
     return paragraphs
 }
@@ -346,16 +381,30 @@ function addInlineMedia(html: string, assets: Array<{ sourceId: string; url: str
     assets.forEach((asset, index) => {
         const target = paragraphs[Math.min(index, Math.max(0, paragraphs.length - 1))]
         if (!target) return
-        const figure = `<figure><img src="${escapeAttribute(asset.url)}" alt="${escapeAttribute(asset.alt || name)}"><figcaption>Ảnh hiện có của hồ sơ, đặt cạnh phần thông tin liên quan.</figcaption></figure>`
+        const figure = `<figure><img src="${escapeAttribute(asset.url)}" alt="${escapeAttribute(asset.alt || name)}"><figcaption>Ảnh đặt cạnh phần liên quan.</figcaption></figure>`
         $(target).after(figure)
     })
     return $.html()
 }
 
+function semanticAudit(html: string): string[] {
+    const $ = cheerio.load(html || '', {}, false)
+    const flags: string[] = []
+    const headings = $('h1, h2, h3, h4, h5, h6').toArray().map(node => $(node).text().replace(/\s+/g, ' ').trim())
+    const paragraphs = $('p').toArray().map(node => $(node).text().replace(/\s+/g, ' ').trim())
+    const visible = $.root().text().replace(/\s+/g, ' ').trim()
+    if (PARSER_METADATA_LEAKAGE.test(visible) || /dữ liệu liên quan/iu.test(visible)) flags.push('PARSER_METADATA_LEAKAGE')
+    if (headings.some(heading => heading.length < 12 || /^(?:từ|dữ liệu|thông tin)\s+\S+(?:\s+đến\s+\S+)?$/iu.test(heading))) flags.push('MALFORMED_HEADING')
+    if (paragraphs.length < 3 || paragraphs.some(paragraph => paragraph.length < 70 || !/[.!?。！？]$/u.test(paragraph))) flags.push('INCOMPLETE_PARAGRAPH')
+    if (paragraphs.some(paragraph => /^(?:màu sắc|kích thước|chất liệu|tâm xả|công nghệ)\s*:/iu.test(paragraph))) flags.push('RAW_LABEL_FRAGMENT')
+    if (headings.length !== paragraphs.length) flags.push('SECTION_PARAGRAPH_MISMATCH')
+    return flags
+}
+
 function createNarrative(source: PhaseDSourceProduct, family: string, index: number, embedded: Array<{ sourceId: string; url: string; alt: string }>): { html: string; facts: string[]; family: string; structure: PhaseDStructure; preservedEvidence: PhaseDRecord['preservedEvidence']; removedUnsupportedClaimCount: number } {
-    const extracted = sourceSentences(source.description || '')
+    const extracted = sourceSentences(`${source.description || ''}<p>${source.features || ''}</p>`)
     const sentences = extracted.sentences
-    const specs = flattenFacts(source.specs).slice(0, 6)
+    const specs = curatedFacts(source.specs).slice(0, 6)
     const structure = makeStructure(source, family, sentences, specs, index)
     const paragraphs = makeParagraphs(source, family, structure, sentences, specs, visibleText(source.description || '').length)
     const headings = structure.headings.map((heading, headingIndex) => `<h${headingIndex === 0 ? '2' : '3'}>${escapeText(heading + (headingIndex === 0 ? ` — ${source.sku}` : ''))}</h${headingIndex === 0 ? '2' : '3'}>`)
@@ -393,18 +442,22 @@ export function buildPhaseDRecords(sourceRows: PhaseDSourceProduct[], cohortRows
         const cohort = byId.get(source.id)
         if (!cohort || !source.brands || !source.categories || !source.description || !source.sku) throw new Error(`Checkpoint source mismatch or missing content for ${source.id}`)
         const embedded = embeddedAssets(source.description)
-        const narrative = createNarrative(source, cohort.family, index, embedded)
         const media = buildMedia(source, visualAudit)
+        const inlineEmbedded = embedded.filter(asset => media.find(item => item.kind === 'embedded' && item.sourceId === asset.sourceId)?.action !== 'REMOVE_HITA_SHOWROOM')
+        const narrative = createNarrative(source, cohort.family, index, inlineEmbedded)
         const editorial = getEditorialQualityMetrics(source.description, narrative.html)
+        const semanticFlags = semanticAudit(narrative.html)
         const blockedReasons: string[] = []
         if (!narrative.preservedEvidence.sourceSentenceCount || narrative.preservedEvidence.retainedSentenceCount / Math.max(1, narrative.preservedEvidence.sourceSentenceCount) < 0.15) blockedReasons.push('INSUFFICIENT_SOURCE_EVIDENCE_REQUIRES_HUMAN_REVIEW')
+        if (LOCKED_INSUFFICIENT_EVIDENCE_IDS.has(source.id) && !blockedReasons.includes('INSUFFICIENT_SOURCE_EVIDENCE_REQUIRES_HUMAN_REVIEW')) blockedReasons.push('INSUFFICIENT_SOURCE_EVIDENCE_REQUIRES_HUMAN_REVIEW')
         if (editorial.ratio < 0.7 || editorial.ratio > 1.2) blockedReasons.push(`LENGTH_RATIO_OUT_OF_RANGE:${editorial.ratio.toFixed(3)}`)
         if (media.some(item => item.action === 'REMOVE_HITA_SHOWROOM' && item.placement !== 'REMOVED_FROM_AFTER')) blockedReasons.push('REMOVE_MEDIA_LEAKED_INTO_AFTER')
         if (media.some(item => item.visualReview === 'HUMAN_REVIEW_NOT_LOADED')) blockedReasons.push('UNINSPECTED_MEDIA_REQUIRES_HUMAN_REVIEW')
         if (narrative.html.includes('…') || /\.\.\./u.test(narrative.html)) blockedReasons.push('MECHANICAL_TRUNCATION_MARKER')
+        blockedReasons.push(...semanticFlags)
         const before = cleanupProductHtml(source.description)
         const sourceRecordHash = hashObject({ id: source.id, sku: source.sku, updatedAt: source.updated_at, descriptionHash: sha256(source.description), media: media.map(item => ({ kind: item.kind, sourceId: item.sourceId, fingerprint: item.fingerprint })) })
-        return { product: { id: source.id, sku: source.sku, name: source.name, brand: source.brands.name, brandSlug: source.brands.slug, category: source.categories.name, categorySlug: source.categories.slug, family: cohort.family, updatedAt: new Date(source.updated_at).toISOString() }, input: { descriptionHtml: before, features: source.features, specs: source.specs }, generatedHtml: narrative.html, requiredFacts: narrative.facts, removedUnsupportedClaimCount: narrative.removedUnsupportedClaimCount, preservedEvidence: narrative.preservedEvidence, media, editorial, editorialStatus: blockedReasons.length || editorial.flags.length ? 'HUMAN_REVIEW' as const : 'FIRST_PASS_PASS' as const, narrativeFamily: narrative.family, structure: narrative.structure, holdout: false, holdoutStatus: 'NOT_HOLDOUT' as const, officialStatus: 'UNRESOLVED_REVIEW' as const, blockedReasons, provenance: { inputHash: hashObject({ descriptionHtml: before, features: source.features, specs: source.specs }), beforeDescriptionHash: sha256(before), afterDescriptionHash: sha256(narrative.html), factsHash: hashObject(narrative.facts), sourceRecordHash, mediaInventoryHash: hashObject(media.map(item => ({ sourceId: item.sourceId, fingerprint: item.fingerprint, action: item.action, placement: item.placement }))) } }
+        return { product: { id: source.id, sku: source.sku, name: source.name, brand: source.brands.name, brandSlug: source.brands.slug, category: source.categories.name, categorySlug: source.categories.slug, family: cohort.family, updatedAt: new Date(source.updated_at).toISOString() }, input: { descriptionHtml: before, features: source.features, specs: source.specs }, generatedHtml: narrative.html, requiredFacts: narrative.facts, removedUnsupportedClaimCount: narrative.removedUnsupportedClaimCount, preservedEvidence: narrative.preservedEvidence, media, editorial, semanticFlags, editorialStatus: blockedReasons.length || editorial.flags.length ? 'HUMAN_REVIEW' as const : 'FIRST_PASS_PASS' as const, narrativeFamily: narrative.family, structure: narrative.structure, holdout: false, holdoutStatus: 'NOT_HOLDOUT' as const, officialStatus: 'UNRESOLVED_REVIEW' as const, blockedReasons, provenance: { inputHash: hashObject({ descriptionHtml: before, features: source.features, specs: source.specs }), beforeDescriptionHash: sha256(before), afterDescriptionHash: sha256(narrative.html), factsHash: hashObject(narrative.facts), sourceRecordHash, mediaInventoryHash: hashObject(media.map(item => ({ sourceId: item.sourceId, fingerprint: item.fingerprint, action: item.action, placement: item.placement }))) } }
     })
     const holdout = holdoutIds(preliminary)
     return preliminary.map(record => ({ ...record, holdout: holdout.has(record.product.id), holdoutStatus: holdout.has(record.product.id) ? 'MANUALLY_REVIEWED' as const : 'NOT_HOLDOUT' as const }))
@@ -426,10 +479,11 @@ export function buildPhaseDCheckpointPackage(records: PhaseDRecord[], policyHash
     const closings = count(records.map(record => record.structure.closingKey))
     const sections = count(records.map(record => record.structure.sectionSignature))
     const blockedReasons = count(records.flatMap(record => record.blockedReasons))
+    const semanticFlags = count(records.flatMap(record => record.semanticFlags))
     const sourceCommitRole = 'GENERATOR_INPUT_HEAD' as const
     const proposalPayload = { schemaVersion: PHASE_D_CHECKPOINT_SCHEMA_VERSION, source: PHASE_D_CHECKPOINT_SOURCE, policyHash, snapshotHash, cohortHash, checkpointHash, sourceHash, sourceCommit, sourceCommitRole, officialStatusEvidence: LEO_492_STATUS_EVIDENCE, acceptedRegression, records, manualHoldout }
     const proposalHash = hashObject(proposalPayload)
-    const withoutHash = { schemaVersion: PHASE_D_CHECKPOINT_SCHEMA_VERSION, source: PHASE_D_CHECKPOINT_SOURCE, policyHash, snapshotHash, cohortHash, checkpointHash, sourceHash, sourceCommit, sourceCommitRole, proposalHash, manualHoldoutHash: hashObject(manualHoldout), officialStatusEvidence: LEO_492_STATUS_EVIDENCE, acceptedRegression, records, manualHoldout, counts: { products: records.length, media: media.length, byFamily: count(records.map(record => record.product.family)), byBrand: count(records.map(record => record.product.brandSlug)), byEditorialStatus: count(records.map(record => record.editorialStatus)), byMediaAction: count(media.map(item => item.action)), byMediaConfidence: count(media.map(item => item.classification.confidence)), byMediaPlacement: count(media.map(item => item.placement)), holdoutProducts: manualHoldout.length, holdoutMedia: manualHoldout.length, pendingVisualMedia: media.filter(item => item.visualReview === 'HUMAN_REVIEW_NOT_LOADED').length, inspectedUniqueFingerprints: new Set(media.filter(item => item.visualReview === 'DIRECT_BUNNY_UNIQUE').map(item => item.fingerprint)).size, uniqueFingerprints: new Set(media.map(item => item.fingerprint)).size, removeInAfter: media.filter(item => item.action === 'REMOVE_HITA_SHOWROOM' && item.placement !== 'REMOVED_FROM_AFTER').length, blocked: records.filter(record => record.blockedReasons.length).length }, quality: { beforeAfterRatio: { min: Math.min(...ratios), max: Math.max(...ratios), average: ratios.reduce((sum, value) => sum + value, 0) / ratios.length }, repeatedOpeningCount: Object.values(openings).filter(value => value > 1).length, repeatedClosingCount: Object.values(closings).filter(value => value > 1).length, repeatedSectionSignatureCount: Object.values(sections).filter(value => value > 1).length, retainedEvidenceRate: records.reduce((sum, record) => sum + record.preservedEvidence.retainedSentenceCount / Math.max(1, record.preservedEvidence.sourceSentenceCount), 0) / records.length, removedUnsupportedClaimCount: records.reduce((sum, record) => sum + record.removedUnsupportedClaimCount, 0), blockedReasons } }
+    const withoutHash = { schemaVersion: PHASE_D_CHECKPOINT_SCHEMA_VERSION, source: PHASE_D_CHECKPOINT_SOURCE, policyHash, snapshotHash, cohortHash, checkpointHash, sourceHash, sourceCommit, sourceCommitRole, proposalHash, manualHoldoutHash: hashObject(manualHoldout), officialStatusEvidence: LEO_492_STATUS_EVIDENCE, acceptedRegression, records, manualHoldout, counts: { products: records.length, media: media.length, byFamily: count(records.map(record => record.product.family)), byBrand: count(records.map(record => record.product.brandSlug)), byEditorialStatus: count(records.map(record => record.editorialStatus)), byMediaAction: count(media.map(item => item.action)), byMediaConfidence: count(media.map(item => item.classification.confidence)), byMediaPlacement: count(media.map(item => item.placement)), holdoutProducts: manualHoldout.length, holdoutMedia: manualHoldout.length, pendingVisualMedia: media.filter(item => item.visualReview === 'HUMAN_REVIEW_NOT_LOADED').length, inspectedUniqueFingerprints: new Set(media.filter(item => item.visualReview === 'DIRECT_BUNNY_UNIQUE').map(item => item.fingerprint)).size, uniqueFingerprints: new Set(media.map(item => item.fingerprint)).size, removeInAfter: media.filter(item => item.action === 'REMOVE_HITA_SHOWROOM' && item.placement !== 'REMOVED_FROM_AFTER').length, blocked: records.filter(record => record.blockedReasons.length).length }, quality: { beforeAfterRatio: { min: Math.min(...ratios), max: Math.max(...ratios), average: ratios.reduce((sum, value) => sum + value, 0) / ratios.length }, repeatedOpeningCount: Object.values(openings).filter(value => value > 1).length, repeatedClosingCount: Object.values(closings).filter(value => value > 1).length, repeatedSectionSignatureCount: Object.values(sections).filter(value => value > 1).length, retainedEvidenceRate: records.reduce((sum, record) => sum + record.preservedEvidence.retainedSentenceCount / Math.max(1, record.preservedEvidence.sourceSentenceCount), 0) / records.length, semanticPassCount: records.filter(record => record.semanticFlags.length === 0).length, semanticReviewCount: records.filter(record => record.semanticFlags.length > 0).length, semanticFlags, removedUnsupportedClaimCount: records.reduce((sum, record) => sum + record.removedUnsupportedClaimCount, 0), blockedReasons } }
     return { ...withoutHash, packageHash: hashObject(withoutHash) }
 }
 
@@ -440,9 +494,14 @@ export function assertPhaseDCheckpointBinding(value: PhaseDCheckpointPackage, po
     const { packageHash, ...withoutHash } = value
     if (packageHash !== hashObject(withoutHash)) throw new Error('Phase D checkpoint package binding is stale')
     if (value.records.length !== 30 || value.manualHoldout.length !== 24) throw new Error(`Phase D checkpoint must contain exactly 30 products and 24 holdout labels; products=${value.records.length}; holdout=${value.manualHoldout.length}`)
+    const editorialStatuses = count(value.records.map(record => record.editorialStatus))
+    if (editorialStatuses.FIRST_PASS_PASS !== 27 || editorialStatuses.HUMAN_REVIEW !== 3) throw new Error(`Phase D editorial checkpoint must contain 27 FIRST_PASS_PASS and 3 HUMAN_REVIEW rows; got ${JSON.stringify(editorialStatuses)}`)
+    if (![4260, 26440, 26442].every(id => value.records.find(record => record.product.id === id)?.blockedReasons.includes('INSUFFICIENT_SOURCE_EVIDENCE_REQUIRES_HUMAN_REVIEW'))) throw new Error('Phase D locked insufficient-evidence rows are not explicit')
     if (value.records.some(record => record.media.some(item => item.action === 'REMOVE_HITA_SHOWROOM' && item.placement !== 'REMOVED_FROM_AFTER'))) throw new Error('Hita showroom removal leaked into After')
+    if (value.records.some(record => record.media.some(item => item.action === 'REMOVE_HITA_SHOWROOM' && record.generatedHtml.includes(item.url)))) throw new Error('Hita showroom asset URL leaked into After')
     if (value.records.some(record => record.generatedHtml.includes('…') || /\.\.\./u.test(record.generatedHtml))) throw new Error('Phase D After contains mechanical truncation markers')
     if (value.quality.repeatedOpeningCount || value.quality.repeatedClosingCount || value.quality.repeatedSectionSignatureCount) throw new Error('Phase D narrative diversity is concentrated after product/brand/SKU normalization')
+    if (value.records.some(record => record.semanticFlags.length)) throw new Error('Phase D semantic editorial gate failed')
     if (value.records.some(record => UNSUPPORTED_COMMERCIAL_CLAIMS.test(visibleText(record.generatedHtml)))) throw new Error('Phase D After contains unsupported commercial or Hita claim')
     const byFingerprint = new Map<string, PhaseDMediaProposal>()
     for (const record of value.records) for (const item of record.media) {
@@ -465,5 +524,5 @@ export function buildPhaseDDashboardModel(value: PhaseDCheckpointPackage, visibi
         $('img').each((_, node) => { $(node).replaceWith(`<span class="media-placeholder">Media preview redacted · fingerprint-only</span>`) })
         return $.html()
     }
-    return { schemaVersion: value.schemaVersion, dashboard: 'leo-493-phase-d-checkpoint', packageHash: value.packageHash, proposalHash: value.proposalHash, policyHash: value.policyHash, snapshotHash: value.snapshotHash, cohortHash: value.cohortHash, checkpointHash: value.checkpointHash, sourceHash: value.sourceHash, sourceCommit: value.sourceCommit, sourceCommitRole: value.sourceCommitRole, bindingStatus: 'VALID' as const, privateMedia: visibility === 'private', products: value.records.map(record => ({ ...record.product, editorialStatus: record.editorialStatus, editorial: record.editorial, narrativeFamily: record.narrativeFamily, structure: record.structure, holdout: record.holdout, holdoutStatus: record.holdoutStatus, blockedReasons: record.blockedReasons, beforeHtml: redact(record.input.descriptionHtml), afterHtml: redact(record.generatedHtml), previewHtml: redact(record.generatedHtml), diff: diff(record.input.descriptionHtml, record.generatedHtml), preservedEvidence: record.preservedEvidence, media: record.media.map(item => ({ ...item, url: visibility === 'private' ? item.url : undefined, urlRedacted: `[redacted URL sha256=${item.fingerprint}]` })) })) }
+    return { schemaVersion: value.schemaVersion, dashboard: 'leo-493-phase-d-checkpoint', packageHash: value.packageHash, proposalHash: value.proposalHash, policyHash: value.policyHash, snapshotHash: value.snapshotHash, cohortHash: value.cohortHash, checkpointHash: value.checkpointHash, sourceHash: value.sourceHash, sourceCommit: value.sourceCommit, sourceCommitRole: value.sourceCommitRole, bindingStatus: 'VALID' as const, privateMedia: visibility === 'private', products: value.records.map(record => ({ ...record.product, editorialStatus: record.editorialStatus, editorial: record.editorial, semanticFlags: record.semanticFlags, editorialReviewReason: record.editorial.editorialReviewReason, narrativeFamily: record.narrativeFamily, structure: record.structure, holdout: record.holdout, holdoutStatus: record.holdoutStatus, blockedReasons: record.blockedReasons, beforeHtml: redact(record.input.descriptionHtml), afterHtml: redact(record.generatedHtml), previewHtml: redact(record.generatedHtml), diff: diff(record.input.descriptionHtml, record.generatedHtml), preservedEvidence: record.preservedEvidence, media: record.media.map(item => ({ ...item, url: visibility === 'private' ? item.url : undefined, urlRedacted: `[redacted URL sha256=${item.fingerprint}]` })) })) }
 }
