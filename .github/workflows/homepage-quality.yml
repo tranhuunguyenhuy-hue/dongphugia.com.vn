@@ -99,6 +99,14 @@ jobs:
                 WHERE sku LIKE 'STG-DEMO-%';
               "
 
+          docker run --rm --network "$POSTGRES_NETWORK" \
+            -e PGPASSWORD=dpg_homepage_test_password \
+            -v "$PWD/docs/deploy/staging-db-bootstrap:/bootstrap:ro" \
+            postgres:16.10-bookworm@sha256:38471f330eb885e04de130b768d6db4e10469e2311879c7e5c699f6d2d8a1c74 \
+            psql --set=ON_ERROR_STOP=1 --single-transaction \
+              -h postgres -U dpg_homepage_test -d dpg_homepage_test \
+              --file=/bootstrap/003_homepage_quality_fixture.sql
+
       - run: npm ci
 
       - run: npx playwright install --with-deps chromium

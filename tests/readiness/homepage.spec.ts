@@ -106,15 +106,33 @@ test.describe('homepage technical readiness', () => {
 
         const grid = page.getByTestId('home-products-thiet-bi-ve-sinh')
         const cards = grid.locator(':scope > a')
-        const cardCount = await cards.count()
-        test.skip(
-            cardCount < 12,
-            'The synthetic CI fixture intentionally seeds fewer than twelve sanitary products; production/staging data must exercise the exact twelve-card assertion.',
-        )
         await expect(cards).toHaveCount(12)
 
         const hrefs = await cards.evaluateAll((links) => links.map((link) => link.getAttribute('href')))
         expect(hrefs.every((href) => href?.startsWith('/thiet-bi-ve-sinh/'))).toBe(true)
         expect(new Set(hrefs).size).toBe(12)
+
+        const priorityRepresentativeHrefs = [
+            '/thiet-bi-ve-sinh/bon-cau/hq-tbvs-toilet-representative',
+            '/thiet-bi-ve-sinh/lavabo/hq-tbvs-lavabo-representative',
+            '/thiet-bi-ve-sinh/bon-tam/hq-tbvs-bathtub-representative',
+            '/thiet-bi-ve-sinh/sen-tam/hq-tbvs-shower-representative',
+        ]
+        const fallbackHrefs = [
+            '/thiet-bi-ve-sinh/chau-rua/hq-tbvs-fallback-one',
+            '/thiet-bi-ve-sinh/chau-rua/hq-tbvs-fallback-two',
+        ]
+
+        for (const href of priorityRepresentativeHrefs) {
+            expect(hrefs).toContain(href)
+        }
+        for (const href of fallbackHrefs) {
+            expect(hrefs).toContain(href)
+        }
+        expect(Math.max(...priorityRepresentativeHrefs.map((href) => hrefs.indexOf(href))))
+            .toBeLessThan(Math.min(...fallbackHrefs.map((href) => hrefs.indexOf(href))))
+
+        expect(hrefs).not.toContain('/thiet-bi-ve-sinh/bon-cau/hq-tbvs-toilet-variant-a')
+        expect(hrefs).not.toContain('/thiet-bi-ve-sinh/phu-kien/hq-tbvs-accessory-control')
     })
 })
