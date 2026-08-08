@@ -99,6 +99,7 @@ describe('homepage sanitary product ranking', () => {
         expect(serialized).toContain('product_taxon_assignments')
         expect(serialized).toContain('canonical_path')
         expect(serialized).toContain('-phu-kien-')
+        expect(serialized).toContain('"not":null')
     })
 
     it('uses deterministic featured, sort order, created-at, then id tie-breakers', () => {

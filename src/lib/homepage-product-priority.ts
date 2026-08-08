@@ -200,8 +200,21 @@ export function buildHomepageNonAccessoryWhere(): Prisma.productsWhereInput {
             { contains: `/${marker}/`, mode: 'insensitive' },
         ]
         return [
-            { OR: slug.map((filter) => ({ product_type: filter })) },
-            { OR: slug.map((filter) => ({ product_sub_type: filter })) },
+            // Nullable legacy text fields must be guarded explicitly. Without
+            // this, SQL's NOT (NULL LIKE ...) evaluates to NULL and wrongly
+            // drops otherwise public products that have no legacy text value.
+            {
+                AND: [
+                    { product_type: { not: null } },
+                    { OR: slug.map((filter) => ({ product_type: filter })) },
+                ],
+            },
+            {
+                AND: [
+                    { product_sub_type: { not: null } },
+                    { OR: slug.map((filter) => ({ product_sub_type: filter })) },
+                ],
+            },
             { OR: slug.map((filter) => ({ subcategories: { slug: filter } })) },
             { OR: slug.map((filter) => ({ product_types: { slug: filter } })) },
             { OR: slug.map((filter) => ({ product_sub_types: { slug: filter } })) },
