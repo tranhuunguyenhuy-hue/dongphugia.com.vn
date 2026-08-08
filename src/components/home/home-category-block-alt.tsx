@@ -101,7 +101,10 @@ export function HomeCategoryBlockAlt({
             )}
 
             {categoryData.products.length > 0 ? (
-                <div className="grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-5 lg:grid-cols-5">
+                <div
+                    className="grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-5 lg:grid-cols-5"
+                    data-testid={`home-products-${categoryData.id}`}
+                >
                     {categoryData.products.map((product) => (
                         <ProductCard
                             key={product.id}

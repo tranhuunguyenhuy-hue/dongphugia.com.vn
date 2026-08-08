@@ -1206,13 +1206,26 @@ export const getProductComponents = unstable_cache(
 
 // ─── CACHED: FEATURED PRODUCTS (per category) ────────────────────────────────
 
+import {
+    buildHomepageSanitaryWhere,
+    buildHomepageNonAccessoryWhere,
+    rankHomepageSanitaryProducts,
+} from '@/lib/homepage-product-priority'
+
 export const getFeaturedProductsByCategorySlug = unstable_cache(
     async (categorySlug: string, brandSlugs?: string | string[] | null, subcategorySlug?: string | null, skip = 0, take = 20) => {
+        const featuredAnd: Prisma.productsWhereInput[] = [
+            buildPublicListingVisibilityWhere(),
+            buildHomepageNonAccessoryWhere(),
+        ]
         const whereClause: Prisma.productsWhereInput = {
             is_active: true,
             is_home_featured: true,
-            NOT: { product_types: { slug: { contains: 'phu-kien' } } },
-            categories: { slug: categorySlug },
+            AND: featuredAnd,
+            OR: [
+                { categories: { slug: categorySlug } },
+                getCategoryRootFilter(categorySlug),
+            ],
         }
         
         if (brandSlugs) {
@@ -1223,14 +1236,14 @@ export const getFeaturedProductsByCategorySlug = unstable_cache(
         }
         
         if (subcategorySlug) {
-            whereClause.AND = [
+            featuredAnd.push(
                 {
                     OR: [
                         { subcategories: { slug: subcategorySlug } },
                         getTaxonomyLeafFilter([subcategorySlug]),
                     ],
                 },
-            ]
+            )
         }
 
         const [products, total] = await Promise.all([
@@ -1274,8 +1287,87 @@ export const getFeaturedProductsByCategorySlug = unstable_cache(
             total
         }
     },
-    ['featured-products'],
-    { revalidate: 3600, tags: ['products', 'featured-products'] }
+    ['featured-products-v2-public-non-accessory'],
+    { revalidate: 3600, tags: ['products', 'featured-products', 'homepage-products-v2'] }
+)
+
+// ─── CACHED: SANITARY HOMEPAGE PRODUCTS ─────────────────────────────────────
+
+export const getHomepageSanitaryProducts = unstable_cache(
+    async (take = 12) => {
+        // Phase one intentionally carries only ranking and taxonomy fields. A
+        // homepage request must not hydrate every public sanitary product's
+        // card relations merely to decide which twelve variant families win.
+        const rankingCandidates = await prisma.products.findMany({
+            where: buildHomepageSanitaryWhere(),
+            orderBy: [
+                { is_featured: 'desc' },
+                { sort_order: 'desc' },
+                { created_at: 'desc' },
+                { id: 'asc' },
+            ],
+            select: {
+                id: true,
+                is_featured: true,
+                sort_order: true,
+                created_at: true,
+                variant_group: true,
+                product_type: true,
+                product_sub_type: true,
+                subcategories: { select: { slug: true } },
+                secondary_subcategories: { select: { subcategories: { select: { slug: true } } } },
+                product_types: { select: { slug: true } },
+                product_sub_types: { select: { slug: true } },
+                product_taxon_assignments: {
+                    select: {
+                        catalog_taxons: { select: { slug: true, canonical_path: true } },
+                    },
+                },
+            },
+        })
+
+        const selectedIds = rankHomepageSanitaryProducts(rankingCandidates, take).map((product) => product.id)
+        if (selectedIds.length === 0) return { products: [], total: 0 }
+
+        // Phase two is bounded by `take`: load visual/card fields only for the
+        // selected representatives, then restore the deterministic rank order.
+        const cards = await prisma.products.findMany({
+            where: { id: { in: selectedIds } },
+            take: selectedIds.length,
+            select: {
+                id: true,
+                name: true,
+                display_name: true,
+                sku: true,
+                slug: true,
+                price: true,
+                original_price: true,
+                online_discount_amount: true,
+                price_display: true,
+                image_main_url: true,
+                is_featured: true,
+                is_promotion: true,
+                stock_status: true,
+                categories: { select: { slug: true } },
+                subcategories: { select: { name: true, slug: true } },
+                brands: { select: { name: true, slug: true } },
+                colors: { select: { name: true, hex_code: true, slug: true } },
+                product_taxon_assignments: primaryTaxonAssignmentSelect,
+                product_feature_values: { select: { product_features: { select: { name: true, icon_name: true } } } },
+            },
+        })
+        const cardsById = new Map(cards.map((product) => [product.id, product]))
+
+        return {
+            products: selectedIds.flatMap((id) => {
+                const card = cardsById.get(id)
+                return card ? [serializeProductListItem(card)] : []
+            }),
+            total: rankingCandidates.length,
+        }
+    },
+    ['homepage-sanitary-products-v2'],
+    { revalidate: 3600, tags: ['products', 'featured-products', 'homepage-products-v2'] },
 )
 
 

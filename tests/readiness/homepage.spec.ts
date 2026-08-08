@@ -97,4 +97,16 @@ test.describe('homepage technical readiness', () => {
         expect(campaignRequests).toHaveLength(1)
         expect(campaignRequests[0]).toContain('/banners/banner-kitchen.jpg')
     })
+
+    test('shows twelve public sanitary product cards with canonical, unique links', async ({ page }) => {
+        await page.goto('/', { waitUntil: 'networkidle' })
+
+        const grid = page.getByTestId('home-products-thiet-bi-ve-sinh')
+        const cards = grid.locator(':scope > a')
+        await expect(cards).toHaveCount(12)
+
+        const hrefs = await cards.evaluateAll((links) => links.map((link) => link.getAttribute('href')))
+        expect(hrefs.every((href) => href?.startsWith('/thiet-bi-ve-sinh/'))).toBe(true)
+        expect(new Set(hrefs).size).toBe(12)
+    })
 })

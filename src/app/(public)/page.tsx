@@ -7,7 +7,7 @@ import { BrandSlider } from "@/components/home/brand-slider"
 import { BlogSection } from "@/components/home/blog-section"
 import { HomeCategoryBlockAlt } from "@/components/home/home-category-block-alt"
 import { LazyContactSection } from "@/components/home/lazy-contact-section"
-import { getFeaturedProductsByCategorySlug } from "@/lib/public-api-products"
+import { getFeaturedProductsByCategorySlug, getHomepageSanitaryProducts } from "@/lib/public-api-products"
 import { getHomepageBanners } from "@/lib/homepage-data"
 import prisma from "@/lib/prisma"
 
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
 
 const getHomepageContentData = unstable_cache(
     async () => Promise.all([
-        getFeaturedProductsByCategorySlug('thiet-bi-ve-sinh', ['toto', 'inax'], null, 0, 3),
+        getHomepageSanitaryProducts(12),
         getFeaturedProductsByCategorySlug('thiet-bi-bep', null, null, 0, 3),
         getFeaturedProductsByCategorySlug('gach-op-lat', null, null, 0, 3),
         getFeaturedProductsByCategorySlug('vat-lieu-nuoc', null, null, 0, 3),
@@ -56,8 +56,8 @@ const getHomepageContentData = unstable_cache(
             select: { name: true, slug: true }
         })
     ]),
-    ['homepage-content-data-v1'],
-    { revalidate: 3600, tags: ['homepage'] }
+    ['homepage-content-data-v2-priority-sanitary-products'],
+    { revalidate: 3600, tags: ['homepage', 'homepage-products-v2'] }
 )
 
 async function HomepageContentSections() {
