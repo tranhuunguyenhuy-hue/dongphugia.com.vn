@@ -83,8 +83,8 @@ test.describe('homepage technical readiness', () => {
         const campaignRequests: string[] = []
         page.on('request', (request) => {
             if (
-                request.url().includes('/api/homepage-hero')
-                || request.url().includes('/banners/banner-kitchen')
+                request.url().includes('/api/homepage-hero?width=720')
+                || request.url().includes('/banners/banner-kitchen.hero.w720.webp')
             ) {
                 campaignRequests.push(request.url())
             }
@@ -98,7 +98,9 @@ test.describe('homepage technical readiness', () => {
             page.getByText('Xem ưu đãi hiện tại', { exact: true }),
         ).toHaveCount(0)
         expect(campaignRequests).toHaveLength(1)
-        expect(campaignRequests[0]).toMatch(/\/api\/homepage-hero|\/banners\/banner-kitchen/)
+        expect(campaignRequests[0]).toMatch(
+            /\/api\/homepage-hero\?width=720|\/banners\/banner-kitchen\.hero\.w720\.webp/,
+        )
     })
 
     test('shows twelve public sanitary product cards with canonical, unique links', async ({ page }) => {
