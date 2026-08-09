@@ -176,7 +176,9 @@ Database and storage:
    it stopped if no previous digest exists.
 3. Preserve PostgreSQL and its volumes; do not drop/reset data without a
    separate reviewed action.
-4. Confirm production remains on Vercel and its current production database.
+4. Confirm the reviewed AWS EC2/Coolify production runtime and AWS PostgreSQL
+   remain unchanged. Vercel is disconnected legacy context, not a rollback
+   target.
 5. Preserve redacted logs, resource metrics, digest, deployment ID and rollback
    timestamps in the evidence ledger.
 

@@ -15,11 +15,17 @@ COPY . .
 ARG NEXT_PUBLIC_SITE_URL
 ARG NEXT_PUBLIC_GTM_ID
 ARG BUNNY_CDN_HOSTNAME
+ARG DPG_SOURCE_REVISION
+ARG DPG_BUILD_RUN_ID
+ARG DPG_STAGING_PREVIEW=false
 
 ENV NODE_ENV=production \
     NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL} \
     NEXT_PUBLIC_GTM_ID=${NEXT_PUBLIC_GTM_ID} \
     BUNNY_CDN_HOSTNAME=${BUNNY_CDN_HOSTNAME} \
+    DPG_SOURCE_REVISION=${DPG_SOURCE_REVISION} \
+    DPG_BUILD_RUN_ID=${DPG_BUILD_RUN_ID} \
+    DPG_STAGING_PREVIEW=${DPG_STAGING_PREVIEW} \
     DATABASE_URL=postgresql://dpg_build_unreachable:dpg_build_unreachable@127.0.0.1:1/dpg_build_unreachable \
     DIRECT_URL=postgresql://dpg_build_unreachable:dpg_build_unreachable@127.0.0.1:1/dpg_build_unreachable
 
@@ -29,10 +35,17 @@ RUN npx prisma generate && \
 FROM node:24-alpine AS runner
 WORKDIR /app
 
+ARG DPG_SOURCE_REVISION
+ARG DPG_BUILD_RUN_ID
+ARG DPG_STAGING_PREVIEW=false
+
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
     PORT=3000 \
-    HOSTNAME=0.0.0.0
+    HOSTNAME=0.0.0.0 \
+    DPG_SOURCE_REVISION=${DPG_SOURCE_REVISION} \
+    DPG_BUILD_RUN_ID=${DPG_BUILD_RUN_ID} \
+    DPG_STAGING_PREVIEW=${DPG_STAGING_PREVIEW}
 
 RUN apk add --no-cache libc6-compat openssl && \
     rm -rf /usr/local/lib/node_modules/npm && \

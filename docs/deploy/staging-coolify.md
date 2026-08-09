@@ -1,211 +1,133 @@
-# Staging deploy via Coolify
+# Exact-commit Coolify staging preview
 
-This document tracks the staging deployment path for the AWS/Coolify migration.
+This runbook defines the LEO-495 preview path for the existing staging
+application only:
 
-## Build artefact
+`open PR head → required checks → native ARM64 digest → protected manual gate →
+Coolify staging deploy → runtime/dataset/browser evidence`.
 
-- Registry: GHCR
-- Image: `ghcr.io/tranhuunguyenhuy-hue/dongphugia-web`
+It does not authorize a merge, production deployment, production database
+access, DNS, Bunny, Vercel, AWS resource, IAM, Security Group, or traffic
+mutation. Production remains the reviewed AWS EC2/Coolify runtime with AWS
+PostgreSQL. Vercel is disconnected legacy context and is never a staging or
+production rollback target.
+
+## Fixed staging scope
+
+- Workflow: `.github/workflows/staging-ghcr.yml`
+- Registry: `ghcr.io/tranhuunguyenhuy-hue/dongphugia-web`
 - Platform: `linux/arm64`
-- Build workflow: `.github/workflows/staging-ghcr.yml`
-- Runtime target: Coolify on AWS EC2 `t4g.small` in `ap-southeast-1`
+- Existing resource name: `dongphugia-web-staging`
+- URL: `https://dongphugia-staging.47-131-92-97.sslip.io`
+- Database: existing internal-only staging PostgreSQL with synthetic
+  `STG-DEMO-*` data
+- Deployment concurrency: one global `dongphugia-staging-preview` owner
 
-The workflow uses the repository `GITHUB_TOKEN` with the minimum required GitHub
-permissions:
+The workflow is `workflow_dispatch` only. It never deploys on push. Dispatch
+requires an open PR number and its exact 40-character head SHA.
 
-- `contents: read`
-- `packages: write`
+## Source and image gates
 
-Database connection strings are passed to Docker BuildKit as build secrets for
-`next build`; they are not written to the repository and should not be embedded
-as Docker build args.
+Before building, the workflow reads the applicable `main` ruleset and requires:
 
-## Required GitHub Actions variables
+1. the PR is open, targets `main`, and belongs to the canonical repository;
+2. the supplied SHA is exactly the current PR head;
+3. every required status check is successful for that exact SHA;
+4. checkout resolves to that SHA with no branch-name fallback.
 
-These values are not secrets, but they affect the built Next.js client/runtime.
+The image gate then requires one native `linux/arm64` manifest, an exact source
+revision label, registry digest verification, non-empty SBOM and provenance
+attestations, Trivy HIGH/CRITICAL `0/0`, and a synthetic ephemeral-database
+runtime smoke. The unique SHA tag is only a build lookup; deployment and
+acceptance use `repo@sha256:<digest>`. `latest` is forbidden.
 
-| Name | Purpose |
+## Protected GitHub environment
+
+The deploy job uses the GitHub environment `staging`. A PM reviewer gate and
+disabled administrator bypass are required before any runner receives the
+staging credential.
+
+Non-secret environment variables:
+
+| Name | Contract |
 | --- | --- |
-| `STAGING_SITE_URL` | Temporary staging URL, not `dongphugia.vn` |
-| `STAGING_NEXT_PUBLIC_GTM_ID` | Optional staging GTM ID; may be blank |
-| `STAGING_BUNNY_CDN_HOSTNAME` | Bunny CDN hostname |
+| `COOLIFY_API_URL` | HTTPS Coolify control-plane origin reachable by the GitHub-hosted runner |
+| `COOLIFY_STAGING_APPLICATION_UUID` | Exact UUID from a fresh read-only inventory of `dongphugia-web-staging` |
+| `STAGING_SITE_URL` | Exact staging URL above (workflow also pins this value) |
+| `STAGING_BUNNY_CDN_HOSTNAME` | `cdn.dongphugia.com.vn` compatibility hostname |
 
-## Required GitHub Actions secrets
+Protected environment secret name:
 
-| Name | Purpose |
+| Name | Contract |
 | --- | --- |
-| `STAGING_DATABASE_URL` | Self-hosted staging PostgreSQL URL for app runtime/build |
-| `STAGING_DIRECT_URL` | Self-hosted staging PostgreSQL direct URL for Prisma; may match runtime URL |
+| `COOLIFY_API_TOKEN` | Staging-scoped token entered by the human directly in GitHub UI |
 
-The workflow intentionally fails before Docker build if any required key is
-missing, or if `STAGING_SITE_URL` uses the production domain.
+Never paste, read back, print, log, or transmit the token value. Missing
+reviewer protection, URL, application UUID, or token is a stop condition, not a
+reason to bypass the gate. The historical localhost tunnel at
+`127.0.0.1:18000` is useful for human read-only inventory but is not reachable
+from a GitHub-hosted runner and must not be configured as `COOLIFY_API_URL`.
 
-## Required Coolify runtime environment variables
+## Exact-digest deployment
 
-Enter these through Coolify only. Do not commit values to the repository.
+After environment approval, the deploy client:
 
-| Name | Notes |
-| --- | --- |
-| `DATABASE_URL` | Self-hosted staging PostgreSQL URL |
-| `DIRECT_URL` | Self-hosted staging PostgreSQL direct URL |
-| `AUTH_SECRET` | Application auth secret |
-| `ADMIN_PASSWORD` | Existing admin password model uses this in the current codebase |
-| `NEXT_PUBLIC_SITE_URL` | Temporary staging URL, not production domain |
-| `NEXT_PUBLIC_GTM_ID` | Optional |
-| `BUNNY_CDN_HOSTNAME` | Bunny CDN hostname |
-| `BUNNY_STORAGE_ZONE_NAME` | Required for upload/image admin flows |
-| `BUNNY_STORAGE_API_KEY` | Required for upload/image admin flows; secret |
-| `BUNNY_STORAGE_HOSTNAME` | Bunny storage endpoint |
-| `REVALIDATION_SECRET` | Existing app env key |
-| `WRITE_FREEZE_MODE` | Optional cutover guard. Leave unset/false unless a future migration gate approves a write freeze. |
+1. reads the existing application through the official Coolify API;
+2. rejects a different UUID/name/domain, non-Docker-image resource, enabled
+   auto-deploy, production hostname, or mutable previous tag;
+3. records the previous immutable digest and application state;
+4. patches only the Docker image name/tag to Coolify's digest form
+   `sha256-<64 hex>` and keeps auto-deploy disabled;
+5. queues one deployment and waits for a successful terminal state;
+6. re-reads the application and requires the exact candidate digest in running
+   state;
+7. requires `/api/revision` to report the accepted PR SHA and
+   `/api/staging-identity` to pass.
 
-## Temporary staging domain
+No runtime environment value, database row, raw Coolify response, or deployment
+log is copied into workflow output or artifacts.
 
-Do not use or change `dongphugia.vn` / production traffic for staging.
+## Database isolation proof
 
-Recommended temporary domain for the current EIP:
+`/api/staging-identity` exists only when both the staging build marker and exact
+staging site URL are present. It performs read-only aggregates and returns:
 
-`https://dongphugia-staging.47-131-92-97.sslip.io`
+- a SHA-256 fingerprint of database/server identity, never the underlying
+  database name, address, port, or connection URL;
+- expected public table count;
+- `STG-DEMO-*` and canonical-category aggregate counts;
+- one combined sensitive-table row count.
 
-This avoids Mắt Bão/Cloudflare/DNS changes while still routing to the staging
-EC2 public IP. Public access remains limited by the AWS Security Group and
-Coolify proxy.
+Acceptance requires `46` tables, `3` synthetic products, all `3` in canonical
+staging categories, and `0` rows across admin, session, customer, order, and
+quote tables. Any mismatch fails closed. The workflow never writes, resets,
+drops, seeds, or migrates the staging database.
 
-## Coolify resource shape
+## Browser and route evidence
 
-- Project: `dongphugia-staging`
-- Environment: `staging`
-- Resource type: Docker image
-- Image: `ghcr.io/tranhuunguyenhuy-hue/dongphugia-web@sha256:73403c56bdc52d8c9d5a01081195de99f2a95945572fc520c292f511ec276046`
-- Application port: `3000`
-- Container liveness check: `GET /` inside the container
-- Build server: disabled
-- Server: existing localhost/local Docker server only
-- Existing Coolify server UUID: `npti3h3r47l9v1potlf7kkdh`
-- Existing Docker destination UUID: `dm45dwx34qrb8gj5cstjymeo`
-- Temporary domain: `https://dongphugia-staging.47-131-92-97.sslip.io`
+Mandatory public acceptance covers HTTPS health, home, category, synthetic
+product, search, robots, sitemap, admin login, and unauthenticated admin
+redirect. Desktop `1440×1000` and mobile `390×844` Playwright runs require
+`STG-DEMO` markers, the exact candidate revision, the database-isolation proof,
+and no production canonical URL, Vercel, or Supabase indicator.
 
-## Coolify API sequence
+The 14-day evidence artifact contains:
 
-Use an admin-created Coolify API token through `Authorization: Bearer <token>`.
-Do not create an API token by editing the database directly.
+- `candidate-source.json` bound to PR/SHA/required checks;
+- `candidate-manifest.json` bound to workflow run, digest, SBOM, provenance,
+  Trivy, deployment, previous/running/rollback digest, and DB fingerprint;
+- `route-report.json`;
+- desktop/mobile screenshots, traces, and HTML report.
 
-1. Create the project:
+## One-time rollback
 
-   `POST /api/v1/projects`
+If deployment or any mandatory post-deploy gate fails after mutation begins,
+the workflow claims the rollback attempt before calling Coolify, restores the
+recorded previous digest once, waits for a successful deployment, and verifies
+running state plus `/api/health`. A second attempt is rejected. PostgreSQL and
+its volumes are preserved.
 
-   ```json
-   {
-     "name": "dongphugia-staging",
-     "description": "Dong Phu Gia staging deployment on AWS/Coolify"
-   }
-   ```
-
-2. Create the environment:
-
-   `POST /api/v1/projects/{project_uuid}/environments`
-
-   ```json
-   {
-     "name": "staging"
-   }
-   ```
-
-3. Create the Docker image application:
-
-   `POST /api/v1/applications/dockerimage`
-
-   ```json
-   {
-     "project_uuid": "<project_uuid>",
-     "environment_uuid": "<environment_uuid>",
-     "server_uuid": "npti3h3r47l9v1potlf7kkdh",
-     "destination_uuid": "dm45dwx34qrb8gj5cstjymeo",
-     "name": "dongphugia-web-staging",
-     "docker_registry_image_name": "ghcr.io/tranhuunguyenhuy-hue/dongphugia-web",
-    "docker_registry_image_tag": "staging-f3b5b6816654b38edc159e1702caed37deaf8555",
-     "ports_exposes": "3000",
-     "domains": "https://dongphugia-staging.47-131-92-97.sslip.io",
-     "is_force_https_enabled": true,
-     "use_build_server": false,
-     "instant_deploy": false
-   }
-   ```
-
-4. Add runtime environment variables:
-
-   `PATCH /api/v1/applications/{application_uuid}/envs/bulk`
-
-   Use `is_runtime=true` and `is_buildtime=false` for the runtime-only Docker
-   image resource. Do not echo values in logs.
-
-5. Deploy only after the GHCR image exists and all runtime environment variables
-   are present:
-
-   `POST /api/v1/applications/{application_uuid}/deploy`
-
-The API resource must resolve to the exact digest above before deployment. The
-workflow tag is only a lookup convenience; do not use `staging-latest` or any
-other mutable alias as the deployment acceptance value.
-
-## Pre-deploy gates
-
-- Security P0 fixes must be included in the deployed branch/image before go-live.
-- The hardening candidate already contains the reviewed security patch as
-  content-equivalent commit `eb3d732` in its source ancestry. The reviewed
-  security worktree commit is `54f161a`; a no-content-difference and
-  `git diff --check` comparison was recorded before this document was updated.
-- The candidate therefore includes the bounded `/api/health` response,
-  fail-closed revalidation endpoint, authorization guards, published-blog
-  filtering, and rich-HTML sanitization. Still run the full candidate checks,
-  ARM64 image verification, and staging smoke before any registry push or
-  Coolify deployment.
-- The current production image remains unchanged until a fresh PM-approved
-  production window and all launch gates pass.
-- Do not create a new EC2/server.
-- Do not create a new Coolify admin.
-- Do not enable Coolify Build Server.
-- Do not open public `22`, `6001`, `6002`, or `8000`.
-- Do not change `dongphugia.vn`, Cloudflare, or production traffic.
-
-## Security validation record
-
-The reviewed security worktree remains available at
-`/Users/m-ac/Projects/dongphugia-security-fixes` on branch
-`codex/security-production-blockers` for audit comparison. Its reviewed patch
-is already represented in this candidate's source ancestry as `eb3d732`; do
-not cherry-pick the equivalent patch a second time.
-
-The integrated changes cover:
-
-- `/api/health` no longer exposes counts, region, environment flags, DB URL
-  prefixes, or raw error details, and returns `503` on unhealthy DB checks.
-- `/api/admin/revalidate` is POST-only, fails closed when the secret is missing,
-  accepts `REVALIDATE_SECRET` or `REVALIDATION_SECRET`, validates tags, and does
-  not mutate on GET.
-- Admin/server actions enforce permissions before blog, product, partner,
-  project, and order mutations.
-- Sale-only users are restricted to assigned orders.
-- Public blog detail lookup only returns published posts whose `published_at` is
-  not in the future.
-- Stored rich HTML is sanitized before rendering product/blog HTML.
-
-The candidate must retain the following validation gates:
-
-- targeted security tests: 5 files passed, 13 tests passed;
-- `npm run typecheck`: passed;
-- full `npm run check`, production build, immutable `linux/arm64` image
-  inspection, and bounded staging smoke.
-
-Local candidate validation record (2026-08-03):
-
-- source: `codex/post-launch-hardening` at `3730086`;
-- local image: `dpg-post-launch-hardening:3730086-node24`;
-- manifest digest: `sha256:696b3c707aa724c725164756a112833c4b962e74e5a4e97f58346ebe5d83f9a4`;
-- platform: `linux/arm64`;
-- runtime user: `nextjs` (UID 100, GID 101);
-- runtime: Node `v24.18.1` (matches the package engine);
-- image healthcheck: present for `GET /` on port 3000;
-- no registry push, Coolify deploy, DNS change, or production data mutation was
-  performed by this validation. The runner image intentionally omits npm and
-  npx after build.
+If rollback verification fails, staging is considered unavailable and requires
+operator action. Do not retry blindly, change AWS ingress, expose Coolify, or
+use Vercel. Source rollback is limited to closing or reverting the unmerged PR;
+it has no production effect.
