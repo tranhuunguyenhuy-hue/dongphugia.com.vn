@@ -41,6 +41,15 @@ attestations, Trivy HIGH/CRITICAL `0/0`, and a synthetic ephemeral-database
 runtime smoke. The unique SHA tag is only a build lookup; deployment and
 acceptance use `repo@sha256:<digest>`. `latest` is forbidden.
 
+The raw Trivy JSON remains runner-local. Before enforcing the zero gate, the
+workflow always writes and uploads a deterministic sanitized summary containing
+the candidate SHA/digest, scan status, aggregate HIGH/CRITICAL counts, and only
+component, advisory, package, installed-version, and fixed-version fields.
+URLs, titles, metadata, environment values, logs, and database data are never
+copied into evidence. Missing or invalid evidence fails closed. The separate
+`npm audit --omit=dev` check covers application dependencies; image Trivy also
+covers OS/base-layer findings.
+
 ## Protected GitHub environment
 
 The deploy job uses the GitHub environment `staging`. A PM reviewer gate and

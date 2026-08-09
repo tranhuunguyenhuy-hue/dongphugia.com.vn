@@ -222,13 +222,34 @@ jobs:
           ignore-unfixed: false
           exit-code: '0'
 
+      - name: Write sanitized Trivy summary
+        if: always()
+        env:
+          TRIVY_RESULT_PATH: /tmp/trivy-results.json
+          TRIVY_SUMMARY_PATH: artifacts/staging-preview/trivy-summary.json
+          CANDIDATE_SHA: ${{ needs.candidate.outputs.head_sha }}
+          CANDIDATE_DIGEST: ${{ steps.build.outputs.digest }}
+        run: node scripts/staging-preview/write-trivy-summary.mjs
+
+      - name: Upload sanitized Trivy summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: staging-trivy-${{ needs.candidate.outputs.head_sha }}
+          path: artifacts/staging-preview/trivy-summary.json
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Enforce Trivy HIGH and CRITICAL zero
+        if: always()
         shell: bash
         run: |
           set -euo pipefail
-          test -s /tmp/trivy-results.json
-          high_count="$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "HIGH")] | length' /tmp/trivy-results.json)"
-          critical_count="$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "CRITICAL")] | length' /tmp/trivy-results.json)"
+          summary_path="artifacts/staging-preview/trivy-summary.json"
+          test -s "$summary_path"
+          test "$(jq -r '.scanStatus' "$summary_path")" = "complete"
+          high_count="$(jq -r '.counts.high // -1' "$summary_path")"
+          critical_count="$(jq -r '.counts.critical // -1' "$summary_path")"
           test "$high_count" = "0"
           test "$critical_count" = "0"
 

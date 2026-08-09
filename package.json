@@ -64,7 +64,7 @@
     "cmdk": "^1.1.1",
     "date-fns": "^4.1.0",
     "lucide-react": "^0.563.0",
-    "nanoid": "^5.1.9",
+    "nanoid": "^5.1.16",
     "next": "^16.2.12",
     "next-themes": "^0.4.6",
     "radix-ui": "^1.4.3",
@@ -120,9 +120,12 @@
     "form-data": "4.0.6",
     "linkify-it": "5.0.2",
     "markdown-it": "14.3.0",
-    "postcss": "8.5.19",
+    "postcss": {
+      ".": "8.5.19",
+      "nanoid": "3.3.18"
+    },
     "sharp": "0.35.3",
-    "undici": "7.28.0",
+    "undici": "7.29.0",
     "ws": "8.21.0"
   }
 }

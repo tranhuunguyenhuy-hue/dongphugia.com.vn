@@ -6,6 +6,7 @@ export const IMAGE_NAME = 'ghcr.io/tranhuunguyenhuy-hue/dongphugia-web'
 
 const SHA_PATTERN = /^[0-9a-f]{40}$/
 const DIGEST_PATTERN = /^sha256:[0-9a-f]{64}$/
+const TRIVY_SAFE_VALUE_PATTERN = /^[A-Za-z0-9@][A-Za-z0-9@._:+/~<>*,-]{0,255}$/
 
 export function assertSha(value, label = 'commit SHA') {
     if (!SHA_PATTERN.test(value ?? '')) {
@@ -69,6 +70,126 @@ export function assertPublicHealth(health) {
 
 export function sha256(value) {
     return createHash('sha256').update(value).digest('hex')
+}
+
+function trivySummaryBase(candidateSha, candidateDigest) {
+    return {
+        schemaVersion: 1,
+        candidateSha: SHA_PATTERN.test(candidateSha ?? '') ? candidateSha : null,
+        candidateDigest: DIGEST_PATTERN.test(candidateDigest ?? '') ? candidateDigest : null,
+    }
+}
+
+function safeTrivyValue(value) {
+    return typeof value === 'string'
+        && !value.includes('://')
+        && !/(?:DATABASE_URL|DIRECT_URL|COOLIFY_|GITHUB_TOKEN|API_TOKEN|SECRET|PASSWORD)/i.test(value)
+        && TRIVY_SAFE_VALUE_PATTERN.test(value)
+        ? value
+        : null
+}
+
+function invalidTrivySummary(base, errorCode) {
+    return {
+        ...base,
+        scanStatus: 'invalid',
+        errorCode,
+        counts: { high: null, critical: null },
+        findings: [],
+    }
+}
+
+/**
+ * Reduce Trivy's raw JSON to deterministic, non-sensitive evidence. Never
+ * copy artifact names, URLs, titles, metadata, logs, or arbitrary fields.
+ */
+export function sanitizeTrivyReport(report, { candidateSha, candidateDigest } = {}) {
+    const base = trivySummaryBase(candidateSha, candidateDigest)
+    if (!base.candidateSha || !base.candidateDigest) {
+        return invalidTrivySummary(base, 'invalid-candidate-identity')
+    }
+    if (!report || !Array.isArray(report.Results)) {
+        return {
+            ...base,
+            scanStatus: 'unavailable',
+            errorCode: 'trivy-report-unavailable',
+            counts: { high: null, critical: null },
+            findings: [],
+        }
+    }
+
+    const findings = []
+    for (const result of report.Results) {
+        if (!result || typeof result !== 'object') {
+            return invalidTrivySummary(base, 'unsafe-finding-shape')
+        }
+        const vulnerabilities = result.Vulnerabilities ?? []
+        if (!Array.isArray(vulnerabilities)) {
+            return invalidTrivySummary(base, 'unsafe-finding-shape')
+        }
+        const component = result.Class === 'os-pkgs'
+            ? 'os'
+            : result.Class === 'lang-pkgs'
+                ? 'app'
+                : 'other'
+
+        for (const vulnerability of vulnerabilities) {
+            if (!vulnerability || typeof vulnerability !== 'object') {
+                return invalidTrivySummary(base, 'unsafe-finding-shape')
+            }
+            const severity = vulnerability.Severity
+            if (severity !== 'HIGH' && severity !== 'CRITICAL') continue
+
+            const advisory = safeTrivyValue(vulnerability.VulnerabilityID)
+            const packageName = safeTrivyValue(vulnerability.PkgName)
+            const installedVersion = safeTrivyValue(vulnerability.InstalledVersion)
+            const fixedVersion = vulnerability.FixedVersion == null || vulnerability.FixedVersion === ''
+                ? null
+                : safeTrivyValue(vulnerability.FixedVersion)
+            if (!advisory || !packageName || !installedVersion || (vulnerability.FixedVersion && !fixedVersion)) {
+                return invalidTrivySummary(base, 'unsafe-finding-field')
+            }
+            findings.push({
+                severity,
+                component,
+                advisory,
+                package: packageName,
+                installedVersion,
+                fixedVersion,
+            })
+        }
+    }
+
+    findings.sort((left, right) => {
+        const leftKey = `${left.severity}|${left.component}|${left.advisory}|${left.package}|${left.installedVersion}|${left.fixedVersion ?? ''}`
+        const rightKey = `${right.severity}|${right.component}|${right.advisory}|${right.package}|${right.installedVersion}|${right.fixedVersion ?? ''}`
+        return leftKey < rightKey ? -1 : leftKey > rightKey ? 1 : 0
+    })
+
+    return {
+        ...base,
+        scanStatus: 'complete',
+        errorCode: null,
+        counts: {
+            high: findings.filter((finding) => finding.severity === 'HIGH').length,
+            critical: findings.filter((finding) => finding.severity === 'CRITICAL').length,
+        },
+        findings,
+    }
+}
+
+export function assertTrivyZero(summary) {
+    if (
+        summary?.scanStatus !== 'complete'
+        || !Number.isInteger(summary.counts?.high)
+        || !Number.isInteger(summary.counts?.critical)
+    ) {
+        throw new Error('Sanitized Trivy evidence is unavailable or invalid.')
+    }
+    if (summary.counts.high !== 0 || summary.counts.critical !== 0) {
+        throw new Error('Sanitized Trivy HIGH/CRITICAL gate failed.')
+    }
+    return true
 }
 
 export function claimRollback(state) {
