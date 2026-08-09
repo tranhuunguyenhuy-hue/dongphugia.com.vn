@@ -75,13 +75,19 @@ After environment approval, the deploy client:
 1. reads the existing application through the official Coolify API;
 2. rejects a different UUID/name/domain, non-Docker-image resource, enabled
    auto-deploy, production hostname, or mutable previous tag;
-3. records the previous immutable digest and application state;
-4. patches only the Docker image name/tag to Coolify's digest form
-   `sha256-<64 hex>` and keeps auto-deploy disabled;
-5. queues one deployment and waits for a successful terminal state;
-6. re-reads the application and requires the exact candidate digest in running
-   state;
-7. requires `/api/revision` to report the accepted PR SHA and
+3. requires the current application status to be exactly `running:healthy` and
+   the public staging `/api/health` endpoint to return `{ "ok": true }` before
+   accepting the previous digest as a rollback target;
+4. records the previous immutable digest and application state;
+5. patches only Coolify's native immutable image fields:
+   `docker_registry_image_name: repo@sha256` and
+   `docker_registry_image_tag: <64 hex digest>`. This resolves to
+   `repo@sha256:<digest>`; it is not a pushed or invented registry tag. Auto-
+   deploy remains disabled;
+6. queues one deployment and waits for a successful terminal state;
+7. re-reads the application and requires the exact candidate digest in
+   `running:healthy` state;
+8. requires `/api/revision` to report the accepted PR SHA and
    `/api/staging-identity` to pass.
 
 No runtime environment value, database row, raw Coolify response, or deployment

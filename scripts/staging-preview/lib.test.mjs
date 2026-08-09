@@ -2,10 +2,12 @@ import { describe, expect, it } from 'vitest'
 import {
     IMAGE_NAME,
     STAGING_URL,
+    assertPublicHealth,
+    assertRunningHealthyStatus,
     assertStagingUrl,
     claimRollback,
+    coolifyDigestPayload,
     coolifyImageDigest,
-    digestToCoolifyTag,
     requiredCheckContexts,
     validateCandidate,
 } from './lib.mjs'
@@ -77,11 +79,50 @@ describe('staging preview candidate gates', () => {
         expect(() => requiredCheckContexts([])).toThrow('No required status checks')
     })
 
-    it('normalizes only immutable Coolify digest forms', () => {
-        expect(digestToCoolifyTag(digest)).toBe(`sha256-${'b'.repeat(64)}`)
-        expect(coolifyImageDigest(IMAGE_NAME, `sha256-${'b'.repeat(64)}`)).toBe(digest)
-        expect(coolifyImageDigest(`${IMAGE_NAME}@sha256`, 'b'.repeat(64))).toBe(digest)
+    it('serializes candidate and rollback payloads as the exact immutable image reference', () => {
+        const rollbackDigest = `sha256:${'c'.repeat(64)}`
+        const expectedCandidatePayload = {
+            docker_registry_image_name: `${IMAGE_NAME}@sha256`,
+            docker_registry_image_tag: 'b'.repeat(64),
+            is_auto_deploy_enabled: false,
+        }
+        const expectedRollbackPayload = {
+            ...expectedCandidatePayload,
+            docker_registry_image_tag: 'c'.repeat(64),
+        }
+        const candidatePayload = coolifyDigestPayload(digest)
+        const rollbackPayload = coolifyDigestPayload(rollbackDigest)
+
+        expect(candidatePayload).toEqual(expectedCandidatePayload)
+        expect(rollbackPayload).toEqual(expectedRollbackPayload)
+        expect(coolifyImageDigest(
+            candidatePayload.docker_registry_image_name,
+            candidatePayload.docker_registry_image_tag,
+        )).toBe(digest)
+        expect(coolifyImageDigest(
+            rollbackPayload.docker_registry_image_name,
+            rollbackPayload.docker_registry_image_tag,
+        )).toBe(rollbackDigest)
+    })
+
+    it('rejects mutable tags and invented digest-tag serialization', () => {
+        expect(() => coolifyImageDigest(IMAGE_NAME, `sha256-${'b'.repeat(64)}`)).toThrow('not pinned')
         expect(() => coolifyImageDigest(IMAGE_NAME, 'latest')).toThrow('not pinned')
+        expect(() => coolifyImageDigest(`${IMAGE_NAME}@sha256`, 'latest')).toThrow('not pinned')
+        expect(() => coolifyDigestPayload('latest')).toThrow('immutable sha256 digest')
+    })
+
+    it('fails closed unless Coolify reports running and healthy', () => {
+        expect(assertRunningHealthyStatus('running:healthy')).toBe('running:healthy')
+        expect(() => assertRunningHealthyStatus('running:unknown')).toThrow('running and healthy')
+        expect(() => assertRunningHealthyStatus('exited')).toThrow('running and healthy')
+        expect(() => assertRunningHealthyStatus(undefined)).toThrow('running and healthy')
+    })
+
+    it('fails closed when the public staging health endpoint is unsuccessful', () => {
+        expect(assertPublicHealth({ ok: true })).toBe(true)
+        expect(() => assertPublicHealth({ ok: false })).toThrow('health endpoint')
+        expect(() => assertPublicHealth({})).toThrow('health endpoint')
     })
 
     it('rejects every production, Vercel, and lookalike staging target', () => {

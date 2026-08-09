@@ -29,20 +29,42 @@ export function assertStagingUrl(value) {
     return STAGING_URL
 }
 
-export function digestToCoolifyTag(digest) {
-    return assertDigest(digest).replace(':', '-')
-}
-
 export function coolifyImageDigest(imageName, imageTag) {
-    if (imageName === IMAGE_NAME && /^sha256-[0-9a-f]{64}$/.test(imageTag ?? '')) {
-        return imageTag.replace('-', ':')
-    }
-
     if (imageName === `${IMAGE_NAME}@sha256` && /^[0-9a-f]{64}$/.test(imageTag ?? '')) {
         return `sha256:${imageTag}`
     }
 
     throw new Error('Coolify application is not pinned to an accepted immutable image digest.')
+}
+
+/**
+ * Coolify stores a digest image as two fields: the image name ends with the
+ * `@sha256` marker and the tag field contains the raw 64-character digest.
+ * This is the representation produced by Coolify when it parses an
+ * `image@sha256:<digest>` reference. It is not a registry tag and must never
+ * be replaced with a mutable tag or an invented `sha256-...` tag.
+ */
+export function coolifyDigestPayload(digest) {
+    const normalizedDigest = assertDigest(digest)
+    return {
+        docker_registry_image_name: `${IMAGE_NAME}@sha256`,
+        docker_registry_image_tag: normalizedDigest.slice('sha256:'.length),
+        is_auto_deploy_enabled: false,
+    }
+}
+
+export function assertRunningHealthyStatus(status) {
+    if (String(status ?? '').toLowerCase() !== 'running:healthy') {
+        throw new Error('Coolify staging application must be running and healthy before deployment.')
+    }
+    return 'running:healthy'
+}
+
+export function assertPublicHealth(health) {
+    if (health?.ok !== true) {
+        throw new Error('Public staging health endpoint did not report success before deployment.')
+    }
+    return true
 }
 
 export function sha256(value) {

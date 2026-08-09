@@ -3,15 +3,16 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname } from 'node:path'
 import {
-    IMAGE_NAME,
     STAGING_HOST,
     STAGING_URL,
     assertDigest,
     assertSha,
     assertStagingUrl,
+    assertPublicHealth,
+    assertRunningHealthyStatus,
     claimRollback,
     coolifyImageDigest,
-    digestToCoolifyTag,
+    coolifyDigestPayload,
     stableJson,
 } from './lib.mjs'
 
@@ -127,9 +128,7 @@ async function patchDigest(digest) {
     await coolify(`/applications/${encodeURIComponent(applicationUuid)}`, {
         method: 'PATCH',
         body: JSON.stringify({
-            docker_registry_image_name: IMAGE_NAME,
-            docker_registry_image_tag: digestToCoolifyTag(digest),
-            is_auto_deploy_enabled: false,
+            ...coolifyDigestPayload(digest),
         }),
     })
 }
@@ -148,12 +147,16 @@ async function fetchPublicJson(path) {
 if (command === 'preflight') {
     const application = await coolify(`/applications/${encodeURIComponent(applicationUuid)}`)
     const previousDigest = validateApplication(application)
+    const previousStatus = assertRunningHealthyStatus(application.status)
+    const publicHealth = await fetchPublicJson('/api/health')
+    assertPublicHealth(publicHealth)
     const state = {
         schemaVersion: 1,
         applicationUuid,
         stagingUrl,
         previousDigest,
-        previousStatus: String(application.status ?? 'unknown'),
+        previousStatus,
+        previousPublicHealth: 'ok',
         mutationStarted: false,
         rollbackAttempted: false,
     }
@@ -169,6 +172,9 @@ if (command === 'deploy') {
     if (validateApplication(before) !== state.previousDigest || state.mutationStarted) {
         throw new Error('Coolify staging state drifted after preflight.')
     }
+    assertRunningHealthyStatus(before.status)
+    const preDeployHealth = await fetchPublicJson('/api/health')
+    assertPublicHealth(preDeployHealth)
 
     state.mutationStarted = true
     state.candidateDigest = digest
@@ -182,7 +188,7 @@ if (command === 'deploy') {
 
     const after = await coolify(`/applications/${encodeURIComponent(applicationUuid)}`)
     const configuredRunningDigest = validateApplication(after)
-    if (configuredRunningDigest !== digest || !String(after.status ?? '').toLowerCase().includes('running')) {
+    if (configuredRunningDigest !== digest || assertRunningHealthyStatus(after.status) !== 'running:healthy') {
         throw new Error('Coolify did not report the exact candidate digest as running.')
     }
 
@@ -221,16 +227,11 @@ if (command === 'rollback') {
 
     const application = await coolify(`/applications/${encodeURIComponent(applicationUuid)}`)
     const runningDigest = validateApplication(application)
-    if (runningDigest !== previousDigest || !String(application.status ?? '').toLowerCase().includes('running')) {
+    if (runningDigest !== previousDigest || assertRunningHealthyStatus(application.status) !== 'running:healthy') {
         throw new Error('Rollback verification did not restore the previous running digest.')
     }
-    const health = await fetch(`${stagingUrl}/api/health`, {
-        redirect: 'manual',
-        signal: AbortSignal.timeout(20_000),
-    })
-    if (!health.ok) {
-        throw new Error(`Rollback health verification returned ${health.status}.`)
-    }
+    const health = await fetchPublicJson('/api/health')
+    assertPublicHealth(health)
 
     state.rollbackVerified = true
     state.runningDigest = previousDigest
