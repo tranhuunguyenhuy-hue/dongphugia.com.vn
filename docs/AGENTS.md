@@ -94,7 +94,8 @@ admin/{entity}/
 
 ## Critical Conventions
 
-**Tailwind v4:** Config ONLY in `src/app/globals.css @theme`. Brand primary `#16a34a`. NO `tailwind.config.js`. NO edit `@source` lines.
+**Tailwind v4:** Config ONLY in `src/app/globals.css @theme`. Brand primary
+`brand-500` is `#2D90AF`. NO `tailwind.config.js`. NO edit `@source` lines.
 
 **shadcn/ui:** Admin pages ONLY. NEVER import `@/components/ui/` trong `(public)/` pages.
 
