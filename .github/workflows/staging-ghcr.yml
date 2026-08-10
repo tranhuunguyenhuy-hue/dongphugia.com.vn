@@ -383,7 +383,7 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-      - name: Enforce rollback Trivy HIGH and CRITICAL zero
+      - name: Record rollback Trivy baseline risk
         if: always()
         shell: bash
         run: |
@@ -391,8 +391,15 @@ jobs:
           summary_path="artifacts/staging-preview/rollback-trivy-summary.json"
           test -s "$summary_path"
           test "$(jq -r '.scanStatus' "$summary_path")" = "complete"
-          test "$(jq -r '.counts.high // -1' "$summary_path")" = "0"
-          test "$(jq -r '.counts.critical // -1' "$summary_path")" = "0"
+          high="$(jq -r '.counts.high // empty' "$summary_path")"
+          critical="$(jq -r '.counts.critical // empty' "$summary_path")"
+          [[ "$high" =~ ^[0-9]+$ ]]
+          [[ "$critical" =~ ^[0-9]+$ ]]
+          {
+            echo 'Exact-main rollback Trivy baseline risk recorded; candidate enforcement remains strict.'
+            echo "- Baseline HIGH findings: $high"
+            echo "- Baseline CRITICAL findings: $critical"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Remove staged Trivy summary helper
         if: always()

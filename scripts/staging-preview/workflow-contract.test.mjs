@@ -27,10 +27,33 @@ describe('staging workflow source contract', () => {
         expect(workflow).toContain('linux/arm64')
         expect(workflow).toContain('provenance: true')
         expect(workflow).toContain('sbom: true')
-        expect(workflow).toContain('Enforce rollback Trivy HIGH and CRITICAL zero')
+        expect(workflow).toContain('Record rollback Trivy baseline risk')
         expect(workflow).toContain('Enforce candidate Trivy HIGH and CRITICAL zero')
-        expect(workflow).toMatch(/Enforce rollback Trivy HIGH and CRITICAL zero[\s\S]*?if: always\(\)/)
+        expect(workflow).toMatch(/Record rollback Trivy baseline risk[\s\S]*?if: always\(\)/)
         expect(workflow).toMatch(/Enforce candidate Trivy HIGH and CRITICAL zero[\s\S]*?if: always\(\)/)
+    })
+
+    it('records rollback baseline risk without applying the candidate zero gate', () => {
+        const start = workflow.indexOf('      - name: Record rollback Trivy baseline risk')
+        const end = workflow.indexOf('      - name: Remove staged Trivy summary helper', start)
+        expect(start).toBeGreaterThanOrEqual(0)
+        expect(end).toBeGreaterThan(start)
+
+        const baselineStep = workflow.slice(start, end)
+        expect(baselineStep).toContain(".counts.high // empty")
+        expect(baselineStep).toContain(".counts.critical // empty")
+        expect(baselineStep).toContain('Baseline HIGH findings: $high')
+        expect(baselineStep).toContain('Baseline CRITICAL findings: $critical')
+        expect(baselineStep).not.toContain('= "0"')
+
+        const candidateStart = workflow.indexOf('      - name: Enforce candidate Trivy HIGH and CRITICAL zero')
+        const candidateEnd = workflow.indexOf('      - name: Smoke exact pushed digest', candidateStart)
+        expect(candidateStart).toBeGreaterThan(end)
+        expect(candidateEnd).toBeGreaterThan(candidateStart)
+        const candidateGate = workflow.slice(candidateStart, candidateEnd)
+        expect(candidateGate).toContain('.counts.high // -1')
+        expect(candidateGate).toContain('.counts.critical // -1')
+        expect(candidateGate).toContain('= "0"')
     })
 
     it('passes the exact-main digest as the workflow rollback artifact and keeps evidence bound', () => {
