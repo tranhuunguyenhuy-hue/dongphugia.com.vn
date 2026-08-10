@@ -84,12 +84,11 @@ jobs:
           retention-days: 14
 
   build:
-    name: Build and verify native linux/arm64 digest
+    name: Build and verify native linux/arm64 images
     needs: candidate
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 45
     outputs:
-      digest: ${{ steps.build.outputs.digest }}
       candidate_digest: ${{ steps.build.outputs.digest }}
       rollback_digest: ${{ steps.rollback_build.outputs.digest }}
       rollback_sha: ${{ needs.candidate.outputs.main_sha }}
@@ -191,9 +190,7 @@ jobs:
             output="$(docker buildx imagetools inspect "$1" 2>&1)"
             status=$?
             set -e
-            if [ "$status" -eq 0 ]; then
-              exit 1
-            fi
+            if [ "$status" -eq 0 ]; then exit 1; fi
             case "$output" in
               *"no such manifest"*|*"MANIFEST_UNKNOWN"*|*"manifest unknown"*) ;;
               *) exit 1 ;;
@@ -356,7 +353,6 @@ jobs:
           test "$(docker image inspect "$IMAGE_REF" --format '{{.Architecture}}')" = "arm64"
           test "$(docker image inspect "$IMAGE_REF" --format '{{index .Config.Labels "org.opencontainers.image.revision"}}')" = "$EXPECTED_SHA"
           test "$(docker image inspect "$IMAGE_REF" --format '{{index .Config.Labels "io.dongphugia.recovery.provenance"}}')" = "exact-pr-head"
-
           docker buildx imagetools inspect "$IMAGE_REF" --raw > /tmp/image-manifest.json
           test "$(jq '[.manifests[] | select(.platform.os != "unknown")] | length' /tmp/image-manifest.json)" = "1"
           test "$(jq '[.manifests[] | select(.platform.os == "linux" and .platform.architecture == "arm64")] | length' /tmp/image-manifest.json)" = "1"
@@ -370,7 +366,7 @@ jobs:
           echo "sbom_sections=$sbom_sections" >> "$GITHUB_OUTPUT"
           echo "provenance_sections=$provenance_sections" >> "$GITHUB_OUTPUT"
 
-      - name: Scan exact digest for HIGH and CRITICAL vulnerabilities
+      - name: Scan exact candidate digest for HIGH and CRITICAL vulnerabilities
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: ${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
@@ -380,7 +376,7 @@ jobs:
           ignore-unfixed: false
           exit-code: '0'
 
-      - name: Write sanitized Trivy summary
+      - name: Write sanitized candidate Trivy summary
         if: always()
         env:
           TRIVY_RESULT_PATH: /tmp/trivy-results.json
@@ -390,7 +386,7 @@ jobs:
           IMAGE_ROLE: exact-pr-head
         run: node scripts/staging-preview/write-trivy-summary.mjs
 
-      - name: Upload sanitized Trivy summary
+      - name: Upload sanitized candidate Trivy summary
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -399,7 +395,7 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-      - name: Enforce Trivy HIGH and CRITICAL zero
+      - name: Enforce candidate Trivy HIGH and CRITICAL zero
         if: always()
         shell: bash
         run: |
@@ -407,12 +403,10 @@ jobs:
           summary_path="artifacts/staging-preview/trivy-summary.json"
           test -s "$summary_path"
           test "$(jq -r '.scanStatus' "$summary_path")" = "complete"
-          high_count="$(jq -r '.counts.high // -1' "$summary_path")"
-          critical_count="$(jq -r '.counts.critical // -1' "$summary_path")"
-          test "$high_count" = "0"
-          test "$critical_count" = "0"
+          test "$(jq -r '.counts.high // -1' "$summary_path")" = "0"
+          test "$(jq -r '.counts.critical // -1' "$summary_path")" = "0"
 
-      - name: Smoke exact pushed digest against synthetic database
+      - name: Smoke exact pushed digest against ephemeral build database
         shell: bash
         env:
           IMAGE_REF: ${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
@@ -430,7 +424,6 @@ jobs:
             -e NEXT_PUBLIC_SITE_URL="$STAGING_SITE_URL" \
             -e BUNNY_CDN_HOSTNAME="$STAGING_BUNNY_CDN_HOSTNAME" \
             "$IMAGE_REF"
-
           smoke_ip="$(docker inspect dpg-staging-image-smoke --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}')"
           for _ in $(seq 1 40); do
             health_status="$(curl -sS -o /tmp/health.json -w '%{http_code}' "http://$smoke_ip:3000/api/health" || true)"
@@ -442,7 +435,6 @@ jobs:
           test "$(curl -sS -o /dev/null -w '%{http_code}' "http://$smoke_ip:3000/")" = "200"
           test "$(curl -sS -o /tmp/revision.json -w '%{http_code}' "http://$smoke_ip:3000/api/revision")" = "200"
           test "$(jq -r .sourceRevision /tmp/revision.json)" = "${{ needs.candidate.outputs.head_sha }}"
-
           for _ in $(seq 1 40); do
             container_health="$(docker inspect dpg-staging-image-smoke --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}')"
             [ "$container_health" = "healthy" ] && break
@@ -458,8 +450,9 @@ jobs:
           name: staging-candidate-source-${{ needs.candidate.outputs.head_sha }}
           path: artifacts/staging-preview
 
-      - name: Write pre-deploy candidate manifest
+      - name: Write deterministic candidate manifest
         env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
           PREVIEW_PR_NUMBER: ${{ needs.candidate.outputs.pr_number }}
           CANDIDATE_SHA: ${{ needs.candidate.outputs.head_sha }}
           CANDIDATE_DIGEST: ${{ steps.build.outputs.digest }}
@@ -467,7 +460,17 @@ jobs:
           ROLLBACK_SHA: ${{ needs.candidate.outputs.main_sha }}
         run: node scripts/staging-preview/write-manifest.mjs
 
-      - name: Upload immutable candidate evidence
+      - name: Write private manual Coolify operator handoff
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PREVIEW_PR_NUMBER: ${{ needs.candidate.outputs.pr_number }}
+          CANDIDATE_SHA: ${{ needs.candidate.outputs.head_sha }}
+          CANDIDATE_DIGEST: ${{ steps.build.outputs.digest }}
+          ROLLBACK_DIGEST: ${{ steps.rollback_build.outputs.digest }}
+          ROLLBACK_SHA: ${{ needs.candidate.outputs.main_sha }}
+        run: node scripts/staging-preview/write-operator-handoff.mjs
+
+      - name: Upload immutable candidate manifest and operator handoff
         uses: actions/upload-artifact@v4
         with:
           name: staging-candidate-${{ needs.candidate.outputs.head_sha }}
@@ -475,164 +478,24 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-      - name: Build summary
+      - name: Build summary and stop before private Coolify deployment
         env:
           DIGEST: ${{ steps.build.outputs.digest }}
           HEAD_SHA: ${{ needs.candidate.outputs.head_sha }}
+          ROLLBACK_DIGEST: ${{ steps.rollback_build.outputs.digest }}
+          ROLLBACK_SHA: ${{ needs.candidate.outputs.main_sha }}
         run: |
           {
-            echo "### Exact staging candidate"
+            echo "### Exact staging candidate — manual gate pending"
             echo
             echo "- PR: #${{ needs.candidate.outputs.pr_number }}"
             echo "- Commit: \`$HEAD_SHA\`"
-            echo "- Digest: \`$DIGEST\`"
+            echo "- Candidate digest: \`$DIGEST\`"
+            echo "- Exact-main rollback image: \`$ROLLBACK_SHA\` / \`$ROLLBACK_DIGEST\`"
             echo "- Platform: \`linux/arm64\`"
             echo "- SBOM/provenance: verified"
             echo "- Trivy HIGH/CRITICAL: \`0/0\`"
             echo
-            echo "### Exact-main rollback image"
-            echo
-            echo "- Commit: \`${{ needs.candidate.outputs.main_sha }}\`"
-            echo "- Digest: \`${{ steps.rollback_build.outputs.digest }}\`"
-            echo "- Provenance: \`canonical-source-baseline\` (legacy image equivalence not claimed)"
-            echo "- Platform: \`linux/arm64\`"
-            echo "- SBOM/provenance: verified"
-            echo "- Trivy HIGH/CRITICAL: \`0/0\`"
+            echo "The workflow stops here. A Coordinator/PM operator must use the private Coolify UI procedure in operator-handoff.md."
+            echo "No GitHub-hosted runner receives Coolify credentials or calls the Coolify control plane."
           } >> "$GITHUB_STEP_SUMMARY"
-
-  deploy:
-    name: Protected staging deploy and acceptance
-    needs: [candidate, build]
-    runs-on: ubuntu-24.04
-    timeout-minutes: 35
-    environment:
-      name: staging
-      url: https://dongphugia-staging.47-131-92-97.sslip.io
-    permissions:
-      actions: read
-      contents: read
-      packages: read
-    steps:
-      - name: Checkout exact accepted head
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ needs.candidate.outputs.head_sha }}
-          persist-credentials: false
-
-      - name: Download candidate evidence
-        uses: actions/download-artifact@v4
-        with:
-          name: staging-candidate-${{ needs.candidate.outputs.head_sha }}
-          path: artifacts/staging-preview
-
-      - name: Validate protected deploy configuration
-        shell: bash
-        env:
-          COOLIFY_API_URL: ${{ vars.COOLIFY_API_URL }}
-          COOLIFY_STAGING_APPLICATION_UUID: ${{ vars.COOLIFY_STAGING_APPLICATION_UUID }}
-          COOLIFY_API_TOKEN: ${{ secrets.COOLIFY_API_TOKEN }}
-        run: |
-          set -euo pipefail
-          missing=()
-          [ -n "$COOLIFY_API_URL" ] || missing+=(COOLIFY_API_URL)
-          [ -n "$COOLIFY_STAGING_APPLICATION_UUID" ] || missing+=(COOLIFY_STAGING_APPLICATION_UUID)
-          [ -n "$COOLIFY_API_TOKEN" ] || missing+=(COOLIFY_API_TOKEN)
-          if [ "${#missing[@]}" -gt 0 ]; then
-            printf 'Missing protected staging configuration names:\n'
-            printf -- '- %s\n' "${missing[@]}"
-            exit 1
-          fi
-          test "$STAGING_SITE_URL" = "https://dongphugia-staging.47-131-92-97.sslip.io"
-
-      - name: Install acceptance dependencies before mutation
-        run: |
-          npm ci --ignore-scripts
-          npx playwright install --with-deps chromium
-
-      - name: Capture immutable previous staging state
-        id: preflight
-        env:
-          COOLIFY_API_URL: ${{ vars.COOLIFY_API_URL }}
-          COOLIFY_STAGING_APPLICATION_UUID: ${{ vars.COOLIFY_STAGING_APPLICATION_UUID }}
-          COOLIFY_API_TOKEN: ${{ secrets.COOLIFY_API_TOKEN }}
-          ROLLBACK_DIGEST: ${{ needs.build.outputs.rollback_digest }}
-          ROLLBACK_SHA: ${{ needs.build.outputs.rollback_sha }}
-        run: node scripts/staging-preview/coolify.mjs preflight
-
-      - name: Deploy and verify exact candidate digest
-        id: deploy_candidate
-        continue-on-error: true
-        env:
-          COOLIFY_API_URL: ${{ vars.COOLIFY_API_URL }}
-          COOLIFY_STAGING_APPLICATION_UUID: ${{ vars.COOLIFY_STAGING_APPLICATION_UUID }}
-          COOLIFY_API_TOKEN: ${{ secrets.COOLIFY_API_TOKEN }}
-          CANDIDATE_DIGEST: ${{ needs.build.outputs.digest }}
-          CANDIDATE_SHA: ${{ needs.candidate.outputs.head_sha }}
-        run: node scripts/staging-preview/coolify.mjs deploy
-
-      - name: Verify critical staging routes
-        id: routes
-        if: steps.deploy_candidate.outcome == 'success'
-        continue-on-error: true
-        env:
-          CANDIDATE_SHA: ${{ needs.candidate.outputs.head_sha }}
-        run: node scripts/staging-preview/route-report.mjs
-
-      - name: Run desktop and mobile Playwright acceptance
-        id: browser
-        if: steps.deploy_candidate.outcome == 'success' && steps.routes.outcome == 'success'
-        continue-on-error: true
-        env:
-          CANDIDATE_SHA: ${{ needs.candidate.outputs.head_sha }}
-        run: npm run test:staging-preview
-
-      - name: Roll back once after any mandatory post-deploy failure
-        id: rollback
-        if: >-
-          always() && steps.preflight.outcome == 'success' &&
-          (steps.deploy_candidate.outcome != 'success' ||
-           steps.routes.outcome != 'success' ||
-           steps.browser.outcome != 'success')
-        env:
-          COOLIFY_API_URL: ${{ vars.COOLIFY_API_URL }}
-          COOLIFY_STAGING_APPLICATION_UUID: ${{ vars.COOLIFY_STAGING_APPLICATION_UUID }}
-          COOLIFY_API_TOKEN: ${{ secrets.COOLIFY_API_TOKEN }}
-          ROLLBACK_DIGEST: ${{ needs.build.outputs.rollback_digest }}
-          ROLLBACK_SHA: ${{ needs.build.outputs.rollback_sha }}
-        run: node scripts/staging-preview/coolify.mjs rollback
-
-      - name: Write final candidate and deployment manifest
-        if: always()
-        env:
-          PREVIEW_PR_NUMBER: ${{ needs.candidate.outputs.pr_number }}
-          CANDIDATE_SHA: ${{ needs.candidate.outputs.head_sha }}
-          CANDIDATE_DIGEST: ${{ needs.build.outputs.digest }}
-          ROLLBACK_DIGEST: ${{ needs.build.outputs.rollback_digest }}
-          ROLLBACK_SHA: ${{ needs.build.outputs.rollback_sha }}
-          BROWSER_ACCEPTANCE: ${{ steps.browser.outcome == 'success' && 'passed' || 'failed' }}
-        run: node scripts/staging-preview/write-manifest.mjs
-
-      - name: Upload staging acceptance evidence
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: staging-acceptance-${{ needs.candidate.outputs.head_sha }}
-          path: artifacts/staging-preview
-          if-no-files-found: error
-          retention-days: 14
-
-      - name: Enforce final staging result
-        if: always()
-        shell: bash
-        env:
-          DEPLOY_OUTCOME: ${{ steps.deploy_candidate.outcome }}
-          ROUTES_OUTCOME: ${{ steps.routes.outcome }}
-          BROWSER_OUTCOME: ${{ steps.browser.outcome }}
-          ROLLBACK_OUTCOME: ${{ steps.rollback.outcome }}
-        run: |
-          set -euo pipefail
-          if [ "$DEPLOY_OUTCOME" != "success" ] || [ "$ROUTES_OUTCOME" != "success" ] || [ "$BROWSER_OUTCOME" != "success" ]; then
-            echo "Mandatory staging acceptance failed; bounded rollback outcome: $ROLLBACK_OUTCOME."
-            exit 1
-          fi
-          echo "Exact candidate digest, database isolation, routes, desktop, and mobile acceptance passed."

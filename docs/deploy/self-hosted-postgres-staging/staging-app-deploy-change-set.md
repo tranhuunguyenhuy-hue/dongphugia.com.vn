@@ -1,186 +1,75 @@
-# Staging application deploy change set
+# Staging application deploy change set — private UI only
 
-Status: local deployment package. This document does not authorize production
-DNS, traffic, data migration, AWS, Security Group, IAM, or Vercel mutations.
+Status: operator checklist for the LEO-495 manual staging gate. The GitHub
+workflow publishes and verifies immutable image artifacts only; it does not
+call Coolify or deploy staging.
 
-## Accepted immutable image
+This change set does not authorize production DNS, traffic, data migration,
+AWS, Security Group, IAM, Vercel, Bunny, or database mutation. Production is
+the reviewed AWS EC2/Coolify runtime with AWS PostgreSQL. Vercel is disconnected
+legacy context and is never a rollback target.
 
-| Field | Accepted value |
+## Candidate package supplied by the workflow
+
+Copy these values from the matching `operator-handoff.md` and
+`candidate-manifest.json`; do not invent or substitute values:
+
+| Field | Operator-recorded value |
 | --- | --- |
-| Registry | `ghcr.io/tranhuunguyenhuy-hue/dongphugia-web` |
-| Source revision | `f3b5b6816654b38edc159e1702caed37deaf8555` |
-| Immutable digest | `sha256:73403c56bdc52d8c9d5a01081195de99f2a95945572fc520c292f511ec276046` |
+| PR / exact source SHA | `#<open-pr> / <40-hex SHA>` |
+| Candidate image | `ghcr.io/tranhuunguyenhuy-hue/dongphugia-web@sha256:<64 hex>` |
+| Exact-main image | `ghcr.io/tranhuunguyenhuy-hue/dongphugia-web@sha256:<64 hex>` |
 | Platform | `linux/arm64` |
+| SBOM / provenance | verified for both images |
+| Trivy HIGH / CRITICAL | `0 / 0` for both images |
 
-Coolify must deploy the image by digest, not a mutable tag alias or branch tag:
-
-```text
-ghcr.io/tranhuunguyenhuy-hue/dongphugia-web@sha256:73403c56bdc52d8c9d5a01081195de99f2a95945572fc520c292f511ec276046
-```
-
-Candidate evidence: GitHub Actions run
-`https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/actions/runs/30802230359`.
-The registry verified one `linux/arm64` manifest, one SBOM section, one
-provenance section, Trivy HIGH/CRITICAL `0/0`, and pushed-digest smoke with
-health/home `200`, healthy container and restart count `0`.
-
-The accepted build used native ARM64, produced registry SBOM/provenance, passed
-the security threshold of zero HIGH and zero CRITICAL findings, and passed the
-ephemeral-database runtime smoke gate. Preserve the workflow run URL and raw
-evidence in `cutover-evidence-ledger.md` before production approval.
+The exact-main image is labeled `canonical-source-baseline` and is not claimed
+to be byte-identical to the legacy staging image. Before any UI change, record
+the actual current staging digest separately. That recorded digest—not a
+mutable tag and not an unproven legacy reference—is the one-time manual
+rollback target for this change set.
 
 ## Existing staging foundation
 
-- AWS account: `503344933326`
-- Region: `ap-southeast-1`
-- Existing EC2 instance: `i-011fe10948e0a8c15`, architecture `aarch64`
-- Existing EIP: `47.131.92.97`
-- Existing Coolify project/environment: `dongphugia-staging` / `staging`
-- Existing internal Docker network: `dongphugia-staging-backend`
-- Existing PostgreSQL alias: full Coolify container alias on the shared staging
-  network (the short alias did not resolve from the application network)
-- PostgreSQL is internal-only; no host/public port `5432`
-- AWS public ingress remains `80/tcp` and `443/tcp` only
+- Existing Coolify staging application only: `dongphugia-web-staging`
+- Public staging URL: `https://dongphugia-staging.47-131-92-97.sslip.io`
+- Container port: `3000` behind the existing HTTPS proxy
+- PostgreSQL: existing internal-only staging service; no public database port
+- Platform: `linux/arm64`
 
-No new AWS resource is required by this application change set.
+Do not create a second application, publish a direct app or database port,
+change the internal network, alter runtime values, or change domains/traffic.
 
-## Coolify application specification
+## Private UI sequence
 
-| Setting | Value |
-| --- | --- |
-| Resource name | `dongphugia-web-staging` |
-| Server | Existing localhost Docker server |
-| Build server | Disabled |
-| Image | Accepted digest above |
-| Container port | `3000` |
-| Direct host port | None |
-| Proxy | Existing Coolify proxy over `80/443` |
-| Temporary URL | `https://dongphugia-staging.47-131-92-97.sslip.io` |
-| Force HTTPS | Enabled |
-| Internal network | `dongphugia-staging-backend` |
-| Replicas | `1` |
-| Restart policy | `unless-stopped` |
-| Memory hard limit | `512 MiB` |
-| Memory plus swap ceiling | `768 MiB` |
-| CPU limit | `0.75 CPU` |
+1. Open the existing Coolify UI through the approved private operator path.
+2. Confirm the application name and staging hostname, then confirm the app is
+   running and healthy.
+3. Record its current immutable `repo@sha256:<64 hex>` image digest before any
+   change. If it is missing, mutable, unhealthy, or ambiguous, stop.
+4. Change only the image to the exact candidate digest. Coolify's native image
+   fields are the repository ending in `@sha256` and the raw 64-hex digest;
+   `sha256-<digest>` is never a valid replacement tag. Keep auto-deploy off.
+5. Deploy once from the UI and verify running digest, health, `/api/health`,
+   and `/api/revision` against the candidate SHA.
+6. Verify `/api/staging-identity` using only its SHA-256 fingerprint and safe
+   aggregates: 46 tables, 3 synthetic products, 3 canonical synthetic
+   products, and 0 sensitive rows. Never copy connection values or rows.
+7. Run the public route report plus desktop/mobile Playwright acceptance after
+   the manual deploy. Do not run a synthetic localhost preview.
+8. If any mandatory check fails after mutation begins, switch back once to the
+   digest recorded in step 3, verify health, and preserve PostgreSQL and its
+   volumes. Do not reset, drop, seed, migrate, or retry.
 
-Do not use host networking. The app joins only the Coolify proxy network needed
-for HTTP routing and `dongphugia-staging-backend` for database traffic. Do not
-publish `3000`, `5432`, `6001`, `6002`, `8000`, or `22` directly.
+## Evidence ledger
 
-## Runtime environment contract
+Retain only sanitized evidence bound to the PR, exact source SHA, workflow run,
+candidate digest, recorded previous digest, running digest, aggregate database
+fingerprint result, route report, screenshots/traces, and deployment/rollback
+timestamps. Keep credentials, environment values, connection URLs, raw logs,
+database rows, PII, and unapproved control-plane identifiers out of the ledger.
 
-Names only. Values must be entered through the approved Coolify secret/operator
-mechanism and must not appear in Git, screenshots, command logs, or reports.
-
-Required:
-
-- `DATABASE_URL`
-- `DIRECT_URL`
-- `NEXT_PUBLIC_SITE_URL`
-- `BUNNY_CDN_HOSTNAME`
-- `BUNNY_STORAGE_ZONE_NAME`
-- `BUNNY_STORAGE_API_KEY`
-- `BUNNY_STORAGE_HOSTNAME`
-- `REVALIDATION_SECRET`
-- `WRITE_FREEZE_MODE`
-
-Optional or compatibility:
-
-- `REVALIDATE_SECRET` - compatibility alias; if supplied, use the same
-  staging-only value as `REVALIDATION_SECRET`
-- `SESSION_HOURS` - defaults to `8`
-- `NEXT_PUBLIC_GTM_ID` - blank is acceptable for staging
-- `MAIN_SITE_URL` - only if cross-site revalidation is intentionally enabled
-- `MAINTENANCE_MODE` - operational visitor maintenance page; it does not replace
-  `WRITE_FREEZE_MODE`
-
-`NEXT_PUBLIC_SITE_URL` must equal the temporary staging URL. `DATABASE_URL` and
-`DIRECT_URL` must use the full internal Coolify PostgreSQL alias on port `5432`.
-Do not set
-Supabase public variables, production database URLs, `ADMIN_PASSWORD`, or other
-seed credentials on the application.
-
-## Pre-deploy stop conditions
-
-Stop before deployment if any condition is true:
-
-- image digest, platform, source revision, SBOM/provenance, or scan evidence is
-  missing or differs from the accepted values;
-- host available memory is below `700 MiB`, swap use exceeds `512 MiB`, or root
-  disk free is below `24 GiB`;
-- PostgreSQL is not healthy, has restarted unexpectedly, or publishes `5432`;
-- the app cannot join `dongphugia-staging-backend`;
-- AWS ingress differs from `80/443` only;
-- a required runtime variable name is absent;
-- any runtime value points at production data or Supabase production;
-- production DNS, Vercel configuration, or traffic would be changed.
-
-## Deployment sequence
-
-1. Record pre-deploy host, PostgreSQL, Coolify, network, Security Group, and
-   backup state in the evidence ledger.
-2. Create or update the Coolify application using the immutable digest.
-3. Attach the application to `dongphugia-staging-backend` without publishing a
-   direct host port.
-4. Enter staging-only runtime values using the secure operator mechanism.
-5. Keep `WRITE_FREEZE_MODE=true` through migration rehearsal; unfreeze only for
-   an explicitly approved synthetic write test.
-6. Deploy once and follow the deployment to a terminal state.
-7. On failure, collect redacted events/log categories and stop. Do not retry
-   blindly or change the Security Group for debugging.
-
-## Staging acceptance
-
-Image and container:
-
-- actual running digest matches the accepted digest;
-- platform is `linux/arm64`;
-- container reaches `healthy` and remains running;
-- restart count remains `0` during the observation window;
-- CPU, memory, swap, disk and inode use remain inside the stop thresholds.
-
-Network and security:
-
-- HTTPS temporary URL is valid;
-- no direct host port is published by the app;
-- PostgreSQL resolves and accepts TCP only through the internal network;
-- no public `22`, `3000`, `5432`, `6001`, `6002`, or `8000`;
-- health and application logs expose no secrets, connection strings, raw DB
-  errors, row counts, AWS region, or stack details.
-
-Application:
-
-- `GET /` returns `200`;
-- `GET /api/health` returns `200` with its safe response contract;
-- catalogue, product, blog, search, sitemap and canonical metadata render;
-- synthetic `STG-DEMO-*` content renders without production records;
-- admin login page renders without creating an account;
-- revalidation `GET` returns `405` and performs no mutation;
-- write-freeze rehearsal blocks public and admin mutation paths with the
-  expected safe response, then is disabled for normal staging use.
-
-Database and storage:
-
-- schema/reconciliation counts match the reviewed bootstrap evidence;
-- no production customer, order, quote, session, or credential data exists;
-- Bunny reads work and an approved synthetic upload/delete test passes without
-  leaking the storage credential;
-- legacy Supabase media URLs, if present, remain renderable through the explicit
-  compatibility hostname in `next.config.ts`.
-
-## Staging rollback
-
-1. Stop routing the temporary staging hostname to the failed application.
-2. Roll back the Coolify application to the previous accepted digest, or leave
-   it stopped if no previous digest exists.
-3. Preserve PostgreSQL and its volumes; do not drop/reset data without a
-   separate reviewed action.
-4. Confirm the reviewed AWS EC2/Coolify production runtime and AWS PostgreSQL
-   remain unchanged. Vercel is disconnected legacy context, not a rollback
-   target.
-5. Preserve redacted logs, resource metrics, digest, deployment ID and rollback
-   timestamps in the evidence ledger.
-
-Production migration and traffic change are governed only by
-`production-cutover-runbook.md`.
+The workflow's manifest remains `private-manual-gated` until the operator has
+completed this procedure and PM has reviewed the evidence. A blocked or failed
+manual gate leaves staging unchanged or restored to the recorded digest and
+requires a fresh approval; it never authorizes production action.

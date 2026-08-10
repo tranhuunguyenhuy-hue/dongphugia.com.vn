@@ -1,160 +1,126 @@
-# Exact-commit Coolify staging preview
+# Exact-commit staging preview — private Coolify UI gate
 
-This runbook defines the LEO-495 preview path for the existing staging
-application only:
+This runbook is the LEO-495 staging path for the existing staging application:
 
-`open PR head → required checks → exact-main rollback + PR-head native ARM64
-digests → protected manual gate → Coolify staging deploy →
-runtime/dataset/browser evidence`.
+`open PR head → required checks → exact-main rollback image + PR-head candidate
+image → immutable evidence → private Coolify UI gate → running-digest,
+database-isolation and browser acceptance`
 
-It does not authorize a merge, production deployment, production database
+The GitHub workflow is a source/image gate only. It builds and verifies images,
+writes a manifest and operator handoff, then stops before any Coolify API or
+deployment call. No Coolify credential, control-plane URL, application UUID,
+GitHub Environment secret, or public control-plane endpoint is needed by the
+workflow. The Coordinator/PM operator performs the private UI steps below.
+
+This procedure never authorizes a merge, production deployment or database
 access, DNS, Bunny, Vercel, AWS resource, IAM, Security Group, or traffic
 mutation. Production remains the reviewed AWS EC2/Coolify runtime with AWS
-PostgreSQL. Vercel is disconnected legacy context and is never a staging or
-production rollback target.
+PostgreSQL. Vercel is disconnected legacy context and is never a rollback
+target.
 
 ## Fixed staging scope
 
 - Workflow: `.github/workflows/staging-ghcr.yml`
 - Registry: `ghcr.io/tranhuunguyenhuy-hue/dongphugia-web`
 - Platform: `linux/arm64`
-- Existing resource name: `dongphugia-web-staging`
-- URL: `https://dongphugia-staging.47-131-92-97.sslip.io`
-- Database: existing internal-only staging PostgreSQL with synthetic
-  `STG-DEMO-*` data
-- Deployment concurrency: one global `dongphugia-staging-preview` owner
+- Existing application: `dongphugia-web-staging`
+- Public staging URL: `https://dongphugia-staging.47-131-92-97.sslip.io`
+- Database: existing internal-only staging PostgreSQL with synthetic `STG-DEMO-*`
+  data
+- Concurrency: one global `dongphugia-staging-preview` workflow owner
 
-The workflow is `workflow_dispatch` only. It never deploys on push. Dispatch
-requires an open PR number and its exact 40-character head SHA.
+The workflow is `workflow_dispatch` only. Dispatch requires an open PR number
+and its exact 40-character head SHA. A push or pull-request event cannot deploy
+or publish a staging candidate.
 
-## Source and image gates
+## Automated source and image gates
 
-Before building, the workflow reads the applicable `main` ruleset and requires:
+The workflow fails closed unless:
 
-1. the PR is open, targets `main`, and belongs to the canonical repository;
-2. the supplied SHA is exactly the current PR head;
-3. every required status check is successful for that exact SHA;
-4. checkout resolves to that SHA with no branch-name fallback.
+1. the supplied PR is open, targets `main`, belongs to the canonical repository,
+   and still has the supplied head SHA;
+2. every required protected-branch check is successful for that exact SHA;
+3. `origin/main` resolves to a 40-character SHA and the rollback checkout is
+   exactly that commit;
+4. both images are built natively for `linux/arm64` with the job-scoped
+   `GITHUB_TOKEN`, never with a PAT or provider credential;
+5. each unique run-scoped tag is absent before push, the pushed digest is
+   remotely pullable, and the source revision label is exact;
+6. each image has non-empty registry SBOM/provenance evidence and Trivy
+   HIGH/CRITICAL `0/0`;
+7. the candidate passes the safe ephemeral build-database smoke. This is an
+   image health check only, not a staging deployment or localhost preview.
 
-The image gate builds two native `linux/arm64` manifests with the job-scoped
-`GITHUB_TOKEN`: an exact `origin/main` image used only as the bounded rollback
-target, and an exact PR-head candidate. Each requires an exact source revision
-label, registry digest verification, remote pullability, non-empty SBOM and
-provenance attestations, and Trivy HIGH/CRITICAL `0/0`. The PR candidate also
-passes the synthetic ephemeral-database runtime smoke. Unique run-scoped tags
-are only build lookups; deployment and acceptance use
-`repo@sha256:<digest>`. `latest` is forbidden.
+The exact-main image is labeled `canonical-source-baseline`. It is a
+workflow-built rollback artifact and is **not** claimed to be byte-identical to
+the legacy image that happened to be running in staging. The operator must
+record the actual current staging digest before changing the UI; that recorded
+digest is the only one-time manual rollback target for the UI operation.
 
-The exact-main image is a canonical-source baseline recovery image. It is not
-claimed to be byte-identical to the legacy image that happened to be running
-in staging before preflight. The legacy image reference is retained only as a
-non-secret drift fingerprint; it is never a rollback target. There is no PAT,
-device-auth, or live-image recovery/push route.
+The raw Trivy report stays on the runner. The workflow uploads only the
+deterministic sanitized summaries with aggregate counts and safe advisory,
+package, installed-version, and fixed-version fields. No URLs, titles,
+environment values, credentials, logs, or database data are copied into the
+manifest or handoff.
 
-The raw Trivy JSON remains runner-local. Before enforcing the zero gate, the
-workflow always writes and uploads a deterministic sanitized summary containing
-the candidate SHA/digest, scan status, aggregate HIGH/CRITICAL counts, and only
-component, advisory, package, installed-version, and fixed-version fields.
-URLs, titles, metadata, environment values, logs, and database data are never
-copied into evidence. Missing or invalid evidence fails closed. The separate
-`npm audit --omit=dev` check covers application dependencies; image Trivy also
-covers OS/base-layer findings.
+## Generated artifacts
 
-## Protected GitHub environment
+The candidate artifact contains:
 
-The deploy job uses the GitHub environment `staging`. A PM reviewer gate and
-disabled administrator bypass are required before any runner receives the
-staging credential.
+- `candidate-source.json` — PR/head and required-check binding;
+- `candidate-manifest.json` — candidate and exact-main immutable image refs,
+  digests, source SHAs, platform, SBOM/provenance/Trivy gates, and the explicit
+  `private-manual-gated` staging state;
+- `operator-handoff.md` — the exact digest values and the UI-only procedure;
+- sanitized candidate and rollback Trivy summaries.
 
-Non-secret environment variables:
+The manifest intentionally records runtime acceptance as operator-pending. It
+must not be edited to claim a deployment, running digest, database fingerprint,
+route result, screenshot, or rollback that has not happened.
 
-| Name | Contract |
-| --- | --- |
-| `COOLIFY_API_URL` | HTTPS Coolify control-plane origin reachable by the GitHub-hosted runner |
-| `COOLIFY_STAGING_APPLICATION_UUID` | Exact UUID from a fresh read-only inventory of `dongphugia-web-staging` |
-| `STAGING_SITE_URL` | Exact staging URL above (workflow also pins this value) |
-| `STAGING_BUNNY_CDN_HOSTNAME` | `cdn.dongphugia.com.vn` compatibility hostname |
+## Private Coolify UI procedure
 
-Protected environment secret name:
+Use the already approved private, authenticated Coolify UI path. Do not expose
+the control plane publicly and do not configure a GitHub-hosted runner.
 
-| Name | Contract |
-| --- | --- |
-| `COOLIFY_API_TOKEN` | Staging-scoped token entered by the human directly in GitHub UI |
+1. Open the existing staging application and confirm its public hostname is
+   exactly `https://dongphugia-staging.47-131-92-97.sslip.io`. Stop on any
+   application, domain, database, volume, network, or environment mismatch.
+2. Confirm the app is running and healthy. Record the currently running image
+   as `ghcr.io/tranhuunguyenhuy-hue/dongphugia-web@sha256:<64 hex>`. A mutable
+   tag, missing digest, unhealthy app, or unknown current digest is a hard stop.
+3. Change only the image reference to the candidate digest in
+   `operator-handoff.md`. Coolify's native fields are the repository ending in
+   `@sha256` and the raw 64-hex digest. Never create a `sha256-…` registry tag,
+   use `latest`, or modify runtime values, domains, volumes, networks, database
+   settings, or traffic. Keep auto-deploy disabled.
+4. Deploy from the private UI once. Verify the running digest equals the exact
+   candidate digest, the app is healthy, `GET /api/health` succeeds, and
+   `GET /api/revision` reports the candidate SHA.
+5. Verify `GET /api/staging-identity` and retain only its non-secret fingerprint
+   and aggregate evidence: 46 tables, 3 synthetic products, 3 canonical
+   synthetic products, and 0 sensitive rows. Never retain database names,
+   hosts, ports, connection URLs, rows, or raw logs.
+6. After the digest and isolation gates pass, run `node
+   scripts/staging-preview/route-report.mjs` and `npm run test:staging-preview`
+   with the public staging URL and candidate SHA. These are the only route,
+   desktop, and mobile acceptance checks. Do not run a synthetic localhost
+   preview.
+7. If any mandatory check fails after the UI deploy begins, switch back once to
+   the digest recorded in step 2 and verify health and running state. Preserve
+   PostgreSQL and its volumes. Do not retry, reset, drop, seed, or migrate the
+   database, and do not substitute the exact-main artifact for an unrecorded
+   current digest.
 
-Never paste, read back, print, log, or transmit the token value. Missing
-reviewer protection, URL, application UUID, or token is a stop condition, not a
-reason to bypass the gate. The historical localhost tunnel at
-`127.0.0.1:18000` is useful for human read-only inventory but is not reachable
-from a GitHub-hosted runner and must not be configured as `COOLIFY_API_URL`.
+## Evidence and closeout
 
-## Exact-digest deployment
+The operator handoff must be updated only with sanitized evidence bound to the
+PR, exact SHA, workflow run, candidate digest, recorded previous digest,
+running digest, aggregate database-isolation result, route report,
+desktop/mobile screenshots and traces, and UI deployment/rollback timestamps.
 
-After environment approval, the deploy client:
-
-1. reads the existing application through the official Coolify API;
-2. rejects a different UUID/name/domain, non-Docker-image resource, enabled
-   auto-deploy, production hostname, or mutable previous tag;
-3. requires the current application status to be exactly `running:healthy` and
-   the public staging `/api/health` endpoint to return `{ "ok": true }` before
-   accepting the prebuilt exact-main digest as the rollback target;
-4. records a non-secret fingerprint of the legacy image reference and the
-   exact-main rollback digest/SHA;
-5. patches only Coolify's native immutable image fields:
-   `docker_registry_image_name: repo@sha256` and
-   `docker_registry_image_tag: <64 hex digest>`. This resolves to
-   `repo@sha256:<digest>`; it is not a pushed or invented registry tag. Auto-
-   deploy remains disabled;
-6. queues one deployment and waits for a successful terminal state;
-7. re-reads the application and requires the exact candidate digest in
-   `running:healthy` state;
-8. requires `/api/revision` to report the accepted PR SHA and
-   `/api/staging-identity` to pass.
-
-No runtime environment value, database row, raw Coolify response, or deployment
-log is copied into workflow output or artifacts.
-
-## Database isolation proof
-
-`/api/staging-identity` exists only when both the staging build marker and exact
-staging site URL are present. It performs read-only aggregates and returns:
-
-- a SHA-256 fingerprint of database/server identity, never the underlying
-  database name, address, port, or connection URL;
-- expected public table count;
-- `STG-DEMO-*` and canonical-category aggregate counts;
-- one combined sensitive-table row count.
-
-Acceptance requires `46` tables, `3` synthetic products, all `3` in canonical
-staging categories, and `0` rows across admin, session, customer, order, and
-quote tables. Any mismatch fails closed. The workflow never writes, resets,
-drops, seeds, or migrates the staging database.
-
-## Browser and route evidence
-
-Mandatory public acceptance covers HTTPS health, home, category, synthetic
-product, search, robots, sitemap, admin login, and unauthenticated admin
-redirect. Desktop `1440×1000` and mobile `390×844` Playwright runs require
-`STG-DEMO` markers, the exact candidate revision, the database-isolation proof,
-and no production canonical URL, Vercel, or Supabase indicator.
-
-The 14-day evidence artifact contains:
-
-- `candidate-source.json` bound to PR/SHA/required checks;
-- `candidate-manifest.json` bound to workflow run, digest, SBOM, provenance,
-  Trivy, deployment, previous/running/rollback digest, and DB fingerprint;
-- `route-report.json`;
-- desktop/mobile screenshots, traces, and HTML report.
-
-## One-time rollback
-
-If deployment or any mandatory post-deploy gate fails after mutation begins,
-the workflow claims the rollback attempt before calling Coolify, restores the
-newly built exact-main rollback digest once, waits for a successful deployment,
-and verifies running state, the exact main source revision, plus
-`/api/health`. A second attempt is rejected. PostgreSQL and its volumes are
-preserved.
-
-If rollback verification fails, staging is considered unavailable and requires
-operator action. Do not retry blindly, change AWS ingress, expose Coolify, or
-use Vercel. Source rollback is limited to closing or reverting the unmerged PR;
-it has no production effect.
+Never write credentials, environment values, connection URLs, raw logs,
+database rows, PII, or unapproved Coolify identifiers into artifacts, comments,
+or PR text. Report staging and source ownership explicitly as RELEASED when the
+manual gate is complete or blocked. The workflow remains unconsumed until a
+separate PM approval authorizes the private staging validation.

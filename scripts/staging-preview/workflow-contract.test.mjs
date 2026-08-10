@@ -12,6 +12,9 @@ describe('staging workflow source contract', () => {
         expect(workflow).toMatch(/candidate:[\s\S]*?pull-requests: read/)
         expect(workflow).not.toMatch(/\bPAT\b/)
         expect(workflow).not.toContain('staging-recovery')
+        expect(workflow).not.toMatch(/COOLIFY_API|COOLIFY_STAGING|COOLIFY_API_TOKEN/)
+        expect(workflow).not.toContain('environment:')
+        expect(workflow).not.toContain('coolify.mjs')
     })
 
     it('builds exact-main rollback and exact-head candidate images with immutable gates', () => {
@@ -25,14 +28,23 @@ describe('staging workflow source contract', () => {
         expect(workflow).toContain('provenance: true')
         expect(workflow).toContain('sbom: true')
         expect(workflow).toContain('Enforce rollback Trivy HIGH and CRITICAL zero')
-        expect(workflow).toContain('Enforce Trivy HIGH and CRITICAL zero')
+        expect(workflow).toContain('Enforce candidate Trivy HIGH and CRITICAL zero')
+        expect(workflow).toMatch(/Enforce rollback Trivy HIGH and CRITICAL zero[\s\S]*?if: always\(\)/)
+        expect(workflow).toMatch(/Enforce candidate Trivy HIGH and CRITICAL zero[\s\S]*?if: always\(\)/)
     })
 
-    it('passes the main digest as the only rollback target and keeps evidence bound', () => {
+    it('passes the exact-main digest as the workflow rollback artifact and keeps evidence bound', () => {
         expect(workflow).toContain('rollback_digest: ${{ steps.rollback_build.outputs.digest }}')
-        expect(workflow).toContain('ROLLBACK_DIGEST: ${{ needs.build.outputs.rollback_digest }}')
-        expect(workflow).toContain('ROLLBACK_SHA: ${{ needs.build.outputs.rollback_sha }}')
         expect(workflow).toContain('rollback-trivy-summary.json')
-        expect(workflow).toContain('Write pre-deploy candidate manifest')
+        expect(workflow).toContain('Write deterministic candidate manifest')
+        expect(workflow).toContain('Write private manual Coolify operator handoff')
+        expect(workflow).toContain('operator-handoff.md')
+    })
+
+    it('stops before private Coolify UI work and never runs deployment acceptance on the runner', () => {
+        expect(workflow).toContain('stop before private Coolify deployment')
+        expect(workflow).not.toContain('Protected staging deploy and acceptance')
+        expect(workflow).not.toContain('actions/upload-artifact@v4\n        with:\n          name: staging-acceptance')
+        expect(workflow).not.toContain('COOLIFY')
     })
 })
