@@ -1,6 +1,7 @@
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { Suspense } from "react"
+import { preload } from "react-dom"
 import { getPublicProducts, getAvailableFiltersBySubcategory, getProductTypeFiltersBySubcategory, getSubcategorySpecFilters, getListingRuntimeConfig } from "@/lib/public-api-products"
 import prisma from "@/lib/prisma"
 import { ProductCard } from "@/components/ui/product-card"
@@ -13,7 +14,12 @@ import { ProductTypeFilter } from "@/components/category/product-type-filter"
 import { ActiveSpecFilterChips, SpecFilterDef } from "@/components/category/subcategory-spec-filter"
 import { SubcategoryIconGrid } from "@/components/category/subcategory-icon-grid"
 import { buildPublicListingVisibilityWhere } from "@/lib/public-product-visibility"
-import { shouldPrioritizeListingCard } from "@/lib/listing-image-priority"
+import {
+    getAboveFoldListingImageSources,
+    LISTING_PRODUCT_IMAGE_SIZES,
+    shouldPrioritizeListingCard,
+} from "@/lib/listing-image-priority"
+import { createResponsiveSrcSet } from "@/lib/media/media-profiles"
 import { ChevronRight, Home } from "lucide-react"
 import Link from "next/link"
 
@@ -136,6 +142,15 @@ export default async function ThietBiVeSinhSubPage({ params, searchParams }: Pag
     availableFilters.materials.forEach(f => filterDict[f.slug] = f.name)
     availableFilters.origins.forEach(f => filterDict[f.slug] = f.name)
     availableFilters.colors?.forEach(f => filterDict[f.slug] = f.name)
+
+    for (const source of getAboveFoldListingImageSources(products)) {
+        preload(source, {
+            as: "image",
+            imageSrcSet: createResponsiveSrcSet(source, "product"),
+            imageSizes: LISTING_PRODUCT_IMAGE_SIZES,
+            fetchPriority: "high",
+        })
+    }
 
     return (
         <main className="max-w-[1380px] mx-auto px-4 sm:px-5 lg:px-8">
