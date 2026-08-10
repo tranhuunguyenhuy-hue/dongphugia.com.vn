@@ -151,4 +151,18 @@ describe('sanitized Trivy evidence', () => {
         const failing = sanitizeTrivyReport(reportFixture(), { candidateSha, candidateDigest })
         expect(() => assertTrivyZero(failing)).toThrow('gate failed')
     })
+
+    it('keeps rollback evidence distinguishable while preserving sanitized fields on failure', () => {
+        const summary = sanitizeTrivyReport(reportFixture(), {
+            candidateSha,
+            candidateDigest,
+            imageRole: 'exact-main-rollback',
+        })
+        expect(summary.imageRole).toBe('exact-main-rollback')
+        expect(summary.counts).toEqual({ high: 1, critical: 1 })
+        const serialized = JSON.stringify(summary)
+        expect(serialized).not.toContain('DATABASE_URL')
+        expect(serialized).not.toContain('https://')
+        expect(() => assertTrivyZero(summary)).toThrow('gate failed')
+    })
 })

@@ -13,6 +13,8 @@ import {
     claimRollback,
     coolifyImageDigest,
     coolifyDigestPayload,
+    imageReferenceFingerprint,
+    selectRollbackTarget,
     stableJson,
 } from './lib.mjs'
 
@@ -22,6 +24,8 @@ const apiToken = process.env.COOLIFY_API_TOKEN
 const applicationUuid = process.env.COOLIFY_STAGING_APPLICATION_UUID
 const candidateDigest = process.env.CANDIDATE_DIGEST
 const candidateSha = process.env.CANDIDATE_SHA
+const rollbackDigest = process.env.ROLLBACK_DIGEST
+const rollbackSha = process.env.ROLLBACK_SHA
 const stagingUrl = assertStagingUrl(process.env.STAGING_SITE_URL ?? STAGING_URL)
 const statePath = process.env.DEPLOYMENT_STATE_PATH ?? 'artifacts/staging-preview/deployment-state.json'
 const timeoutMs = 15 * 60 * 1000
@@ -81,10 +85,24 @@ function validateApplication(application) {
         throw new Error('Coolify staging auto-deploy must be disabled.')
     }
 
-    return coolifyImageDigest(
-        application.docker_registry_image_name,
-        application.docker_registry_image_tag,
-    )
+    let configuredDigest = null
+    try {
+        configuredDigest = coolifyImageDigest(
+            application.docker_registry_image_name,
+            application.docker_registry_image_tag,
+        )
+    } catch {
+        // The legacy staging reference is recorded only as a fingerprint. It
+        // is never accepted as a rollback target.
+    }
+
+    return {
+        imageFingerprint: imageReferenceFingerprint(
+            application.docker_registry_image_name,
+            application.docker_registry_image_tag,
+        ),
+        configuredDigest,
+    }
 }
 
 async function writeState(state) {
@@ -145,8 +163,9 @@ async function fetchPublicJson(path) {
 }
 
 if (command === 'preflight') {
+    const target = selectRollbackTarget({ rollbackDigest, rollbackSha })
     const application = await coolify(`/applications/${encodeURIComponent(applicationUuid)}`)
-    const previousDigest = validateApplication(application)
+    const identity = validateApplication(application)
     const previousStatus = assertRunningHealthyStatus(application.status)
     const publicHealth = await fetchPublicJson('/api/health')
     assertPublicHealth(publicHealth)
@@ -154,14 +173,17 @@ if (command === 'preflight') {
         schemaVersion: 1,
         applicationUuid,
         stagingUrl,
-        previousDigest,
+        legacyImageFingerprint: identity.imageFingerprint,
+        previousDigest: identity.configuredDigest,
+        rollbackDigest: target.digest,
+        rollbackSha: target.sha,
         previousStatus,
         previousPublicHealth: 'ok',
         mutationStarted: false,
         rollbackAttempted: false,
     }
     await writeState(state)
-    console.log(`Coolify staging preflight accepted immutable previous digest ${previousDigest}.`)
+    console.log('Coolify staging preflight accepted a running healthy application and public health.')
 }
 
 if (command === 'deploy') {
@@ -169,7 +191,7 @@ if (command === 'deploy') {
     const sha = assertSha(candidateSha, 'Candidate SHA')
     const state = await readState()
     const before = await coolify(`/applications/${encodeURIComponent(applicationUuid)}`)
-    if (validateApplication(before) !== state.previousDigest || state.mutationStarted) {
+    if (validateApplication(before).imageFingerprint !== state.legacyImageFingerprint || state.mutationStarted) {
         throw new Error('Coolify staging state drifted after preflight.')
     }
     assertRunningHealthyStatus(before.status)
@@ -187,7 +209,7 @@ if (command === 'deploy') {
     state.candidateDeploymentStatus = await waitForDeployment(deploymentUuid)
 
     const after = await coolify(`/applications/${encodeURIComponent(applicationUuid)}`)
-    const configuredRunningDigest = validateApplication(after)
+    const configuredRunningDigest = validateApplication(after).configuredDigest
     if (configuredRunningDigest !== digest || assertRunningHealthyStatus(after.status) !== 'running:healthy') {
         throw new Error('Coolify did not report the exact candidate digest as running.')
     }
@@ -217,24 +239,29 @@ if (command === 'rollback') {
         process.exit(0)
     }
     const state = selection.state
-    const previousDigest = assertDigest(state.previousDigest, 'Previous staging digest')
+    const target = selectRollbackTarget(state)
     await writeState(state)
-    await patchDigest(previousDigest)
+    await patchDigest(target.digest)
     const rollbackDeploymentUuid = await queueDeployment()
     state.rollbackDeploymentUuid = rollbackDeploymentUuid
     await writeState(state)
     state.rollbackDeploymentStatus = await waitForDeployment(rollbackDeploymentUuid)
 
     const application = await coolify(`/applications/${encodeURIComponent(applicationUuid)}`)
-    const runningDigest = validateApplication(application)
-    if (runningDigest !== previousDigest || assertRunningHealthyStatus(application.status) !== 'running:healthy') {
-        throw new Error('Rollback verification did not restore the previous running digest.')
+    const runningDigest = validateApplication(application).configuredDigest
+    if (runningDigest !== target.digest || assertRunningHealthyStatus(application.status) !== 'running:healthy') {
+        throw new Error('Rollback verification did not restore the workflow-built rollback digest.')
     }
     const health = await fetchPublicJson('/api/health')
     assertPublicHealth(health)
+    const revision = await fetchPublicJson('/api/revision')
+    if (revision.sourceRevision !== target.sha || revision.stagingPreview !== true) {
+        throw new Error('Rollback runtime revision does not match the exact main rollback SHA.')
+    }
 
     state.rollbackVerified = true
-    state.runningDigest = previousDigest
+    state.runningDigest = target.digest
+    state.rollbackRuntimeRevision = revision.sourceRevision
     await writeState(state)
-    console.log(`One-time rollback ${rollbackDeploymentUuid} restored ${previousDigest} and passed health verification.`)
+    console.log(`One-time rollback ${rollbackDeploymentUuid} restored the workflow-built main image and passed health verification.`)
 }

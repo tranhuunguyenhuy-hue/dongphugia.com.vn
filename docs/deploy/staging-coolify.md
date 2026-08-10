@@ -3,8 +3,9 @@
 This runbook defines the LEO-495 preview path for the existing staging
 application only:
 
-`open PR head → required checks → native ARM64 digest → protected manual gate →
-Coolify staging deploy → runtime/dataset/browser evidence`.
+`open PR head → required checks → exact-main rollback + PR-head native ARM64
+digests → protected manual gate → Coolify staging deploy →
+runtime/dataset/browser evidence`.
 
 It does not authorize a merge, production deployment, production database
 access, DNS, Bunny, Vercel, AWS resource, IAM, Security Group, or traffic
@@ -35,11 +36,20 @@ Before building, the workflow reads the applicable `main` ruleset and requires:
 3. every required status check is successful for that exact SHA;
 4. checkout resolves to that SHA with no branch-name fallback.
 
-The image gate then requires one native `linux/arm64` manifest, an exact source
-revision label, registry digest verification, non-empty SBOM and provenance
-attestations, Trivy HIGH/CRITICAL `0/0`, and a synthetic ephemeral-database
-runtime smoke. The unique SHA tag is only a build lookup; deployment and
-acceptance use `repo@sha256:<digest>`. `latest` is forbidden.
+The image gate builds two native `linux/arm64` manifests with the job-scoped
+`GITHUB_TOKEN`: an exact `origin/main` image used only as the bounded rollback
+target, and an exact PR-head candidate. Each requires an exact source revision
+label, registry digest verification, remote pullability, non-empty SBOM and
+provenance attestations, and Trivy HIGH/CRITICAL `0/0`. The PR candidate also
+passes the synthetic ephemeral-database runtime smoke. Unique run-scoped tags
+are only build lookups; deployment and acceptance use
+`repo@sha256:<digest>`. `latest` is forbidden.
+
+The exact-main image is a canonical-source baseline recovery image. It is not
+claimed to be byte-identical to the legacy image that happened to be running
+in staging before preflight. The legacy image reference is retained only as a
+non-secret drift fingerprint; it is never a rollback target. There is no PAT,
+device-auth, or live-image recovery/push route.
 
 The raw Trivy JSON remains runner-local. Before enforcing the zero gate, the
 workflow always writes and uploads a deterministic sanitized summary containing
@@ -86,8 +96,9 @@ After environment approval, the deploy client:
    auto-deploy, production hostname, or mutable previous tag;
 3. requires the current application status to be exactly `running:healthy` and
    the public staging `/api/health` endpoint to return `{ "ok": true }` before
-   accepting the previous digest as a rollback target;
-4. records the previous immutable digest and application state;
+   accepting the prebuilt exact-main digest as the rollback target;
+4. records a non-secret fingerprint of the legacy image reference and the
+   exact-main rollback digest/SHA;
 5. patches only Coolify's native immutable image fields:
    `docker_registry_image_name: repo@sha256` and
    `docker_registry_image_tag: <64 hex digest>`. This resolves to
@@ -138,9 +149,10 @@ The 14-day evidence artifact contains:
 
 If deployment or any mandatory post-deploy gate fails after mutation begins,
 the workflow claims the rollback attempt before calling Coolify, restores the
-recorded previous digest once, waits for a successful deployment, and verifies
-running state plus `/api/health`. A second attempt is rejected. PostgreSQL and
-its volumes are preserved.
+newly built exact-main rollback digest once, waits for a successful deployment,
+and verifies running state, the exact main source revision, plus
+`/api/health`. A second attempt is rejected. PostgreSQL and its volumes are
+preserved.
 
 If rollback verification fails, staging is considered unavailable and requires
 operator action. Do not retry blindly, change AWS ingress, expose Coolify, or

@@ -16,6 +16,8 @@ const outputPath = process.env.CANDIDATE_MANIFEST_PATH ?? 'artifacts/staging-pre
 const source = await optionalJson(process.env.CANDIDATE_SOURCE_PATH ?? 'artifacts/staging-preview/candidate-source.json')
 const deployment = await optionalJson(process.env.DEPLOYMENT_STATE_PATH ?? 'artifacts/staging-preview/deployment-state.json')
 const routeReport = await optionalJson(process.env.ROUTE_REPORT_PATH ?? 'artifacts/staging-preview/route-report.json')
+const rollbackDigest = process.env.ROLLBACK_DIGEST ? assertDigest(process.env.ROLLBACK_DIGEST, 'Rollback digest') : null
+const rollbackSha = process.env.ROLLBACK_SHA ? assertSha(process.env.ROLLBACK_SHA, 'Rollback SHA') : null
 
 const manifest = {
     schemaVersion: 1,
@@ -32,16 +34,31 @@ const manifest = {
     sbomVerified: true,
     provenanceVerified: true,
     trivy: { high: 0, critical: 0 },
+    rollback: rollbackDigest && rollbackSha ? {
+        image: `${process.env.IMAGE_NAME}@${rollbackDigest}`,
+        digest: rollbackDigest,
+        sourceSha: rollbackSha,
+        platform: 'linux/arm64',
+        provenance: 'canonical-source-baseline',
+        legacyEquivalence: 'not-claimed',
+        sbomVerified: true,
+        provenanceVerified: true,
+        trivy: { high: 0, critical: 0 },
+    } : null,
     staging: deployment ? {
         applicationUuid: deployment.applicationUuid,
         deploymentUuid: deployment.candidateDeploymentUuid ?? null,
-        previousDigest: deployment.previousDigest,
+        previousDigest: deployment.previousDigest ?? null,
+        legacyImageFingerprint: deployment.legacyImageFingerprint ?? null,
+        rollbackDigest: deployment.rollbackDigest ?? rollbackDigest,
+        rollbackSha: deployment.rollbackSha ?? rollbackSha,
         runningDigest: deployment.runningDigest ?? null,
         databaseFingerprintSha256: deployment.databaseFingerprintSha256 ?? null,
         databaseIsolation: deployment.databaseIsolation ?? 'not-completed',
         rollbackAttempted: deployment.rollbackAttempted,
         rollbackDeploymentUuid: deployment.rollbackDeploymentUuid ?? null,
         rollbackVerified: deployment.rollbackVerified ?? false,
+        rollbackRuntimeRevision: deployment.rollbackRuntimeRevision ?? null,
     } : null,
     acceptance: routeReport ? {
         routeCount: routeReport.routes.length,

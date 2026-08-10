@@ -17,6 +17,7 @@ try {
 const summary = sanitizeTrivyReport(report, {
     candidateSha: process.env.CANDIDATE_SHA,
     candidateDigest: process.env.CANDIDATE_DIGEST,
+    imageRole: process.env.IMAGE_ROLE,
 })
 
 await mkdir(dirname(outputPath), { recursive: true })

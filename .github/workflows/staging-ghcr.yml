@@ -13,11 +13,7 @@ on:
         type: string
 
 permissions:
-  actions: read
-  checks: read
   contents: read
-  packages: write
-  pull-requests: read
 
 concurrency:
   group: dongphugia-staging-preview
@@ -36,9 +32,15 @@ jobs:
     name: Bind exact open PR and required checks
     runs-on: ubuntu-24.04
     timeout-minutes: 5
+    permissions:
+      actions: read
+      checks: read
+      contents: read
+      pull-requests: read
     outputs:
       head_sha: ${{ steps.identity.outputs.head_sha }}
       pr_number: ${{ steps.identity.outputs.pr_number }}
+      main_sha: ${{ steps.main.outputs.main_sha }}
     steps:
       - name: Checkout workflow source
         uses: actions/checkout@v4
@@ -64,6 +66,15 @@ jobs:
           echo "head_sha=$PREVIEW_HEAD_SHA" >> "$GITHUB_OUTPUT"
           echo "pr_number=$PREVIEW_PR_NUMBER" >> "$GITHUB_OUTPUT"
 
+      - name: Resolve exact origin main rollback source
+        id: main
+        shell: bash
+        run: |
+          set -euo pipefail
+          main_sha="$(git ls-remote origin refs/heads/main | awk 'NF {print $1; exit}')"
+          [[ "$main_sha" =~ ^[0-9a-f]{40}$ ]]
+          echo "main_sha=$main_sha" >> "$GITHUB_OUTPUT"
+
       - name: Upload candidate source gate
         uses: actions/upload-artifact@v4
         with:
@@ -79,6 +90,13 @@ jobs:
     timeout-minutes: 45
     outputs:
       digest: ${{ steps.build.outputs.digest }}
+      candidate_digest: ${{ steps.build.outputs.digest }}
+      rollback_digest: ${{ steps.rollback_build.outputs.digest }}
+      rollback_sha: ${{ needs.candidate.outputs.main_sha }}
+    permissions:
+      actions: read
+      contents: read
+      packages: write
     services:
       postgres:
         image: postgres:16.10-bookworm@sha256:38471f330eb885e04de130b768d6db4e10469e2311879c7e5c699f6d2d8a1c74
@@ -161,6 +179,144 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ github.token }}
 
+      - name: Verify recovery tags are absent
+        shell: bash
+        env:
+          ROLLBACK_TAG: ${{ env.IMAGE_NAME }}:staging-rollback-${{ needs.candidate.outputs.main_sha }}-${{ github.run_id }}
+          CANDIDATE_TAG: ${{ env.IMAGE_NAME }}:staging-${{ needs.candidate.outputs.head_sha }}-${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          check_absent() {
+            set +e
+            output="$(docker buildx imagetools inspect "$1" 2>&1)"
+            status=$?
+            set -e
+            if [ "$status" -eq 0 ]; then
+              exit 1
+            fi
+            case "$output" in
+              *"no such manifest"*|*"MANIFEST_UNKNOWN"*|*"manifest unknown"*) ;;
+              *) exit 1 ;;
+            esac
+          }
+          check_absent "$ROLLBACK_TAG"
+          check_absent "$CANDIDATE_TAG"
+
+      - name: Checkout exact origin main rollback source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.candidate.outputs.main_sha }}
+          persist-credentials: false
+
+      - name: Prove exact main rollback checkout
+        shell: bash
+        env:
+          EXPECTED_MAIN_SHA: ${{ needs.candidate.outputs.main_sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXPECTED_MAIN_SHA"
+          test "$(git ls-remote origin refs/heads/main | awk 'NF {print $1; exit}')" = "$EXPECTED_MAIN_SHA"
+
+      - name: Build and push exact main rollback image
+        id: rollback_build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/arm64
+          push: true
+          provenance: true
+          sbom: true
+          tags: ${{ env.IMAGE_NAME }}:staging-rollback-${{ needs.candidate.outputs.main_sha }}-${{ github.run_id }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ needs.candidate.outputs.main_sha }}
+            org.opencontainers.image.version=staging-rollback-${{ needs.candidate.outputs.main_sha }}-${{ github.run_id }}
+            io.dongphugia.recovery.provenance=canonical-source-baseline
+            io.dongphugia.recovery.legacy-equivalence=not-claimed
+          build-args: |
+            NEXT_PUBLIC_SITE_URL=${{ env.STAGING_SITE_URL }}
+            NEXT_PUBLIC_GTM_ID=
+            BUNNY_CDN_HOSTNAME=${{ env.STAGING_BUNNY_CDN_HOSTNAME }}
+            DPG_SOURCE_REVISION=${{ needs.candidate.outputs.main_sha }}
+            DPG_BUILD_RUN_ID=${{ github.run_id }}
+            DPG_STAGING_PREVIEW=true
+
+      - name: Verify exact main rollback digest, platform, SBOM, and provenance
+        shell: bash
+        env:
+          IMAGE_REF: ${{ env.IMAGE_NAME }}@${{ steps.rollback_build.outputs.digest }}
+          EXPECTED_DIGEST: ${{ steps.rollback_build.outputs.digest }}
+          EXPECTED_SHA: ${{ needs.candidate.outputs.main_sha }}
+        run: |
+          set -euo pipefail
+          [[ "$EXPECTED_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]
+          docker pull "$IMAGE_REF" >/dev/null
+          test "$(docker image inspect "$IMAGE_REF" --format '{{index .RepoDigests 0}}' | sed 's/^.*@//')" = "$EXPECTED_DIGEST"
+          test "$(docker image inspect "$IMAGE_REF" --format '{{.Architecture}}')" = "arm64"
+          test "$(docker image inspect "$IMAGE_REF" --format '{{index .Config.Labels "org.opencontainers.image.revision"}}')" = "$EXPECTED_SHA"
+          test "$(docker image inspect "$IMAGE_REF" --format '{{index .Config.Labels "io.dongphugia.recovery.provenance"}}')" = "canonical-source-baseline"
+          docker buildx imagetools inspect "$IMAGE_REF" --raw > /tmp/rollback-image-manifest.json
+          test "$(jq '[.manifests[] | select(.platform.os != "unknown")] | length' /tmp/rollback-image-manifest.json)" = "1"
+          test "$(jq '[.manifests[] | select(.platform.os == "linux" and .platform.architecture == "arm64")] | length' /tmp/rollback-image-manifest.json)" = "1"
+          test "$(jq '[.manifests[] | select(.platform.os != "unknown") | select(.platform.os != "linux" or .platform.architecture != "arm64")] | length' /tmp/rollback-image-manifest.json)" = "0"
+          docker buildx imagetools inspect "$IMAGE_REF" --format '{{json .SBOM}}' > /tmp/rollback-image-sbom.json
+          docker buildx imagetools inspect "$IMAGE_REF" --format '{{json .Provenance}}' > /tmp/rollback-image-provenance.json
+          test "$(jq 'if type == "object" then length else 0 end' /tmp/rollback-image-sbom.json)" -gt 0
+          test "$(jq 'if type == "object" then length else 0 end' /tmp/rollback-image-provenance.json)" -gt 0
+
+      - name: Scan exact main rollback digest for HIGH and CRITICAL vulnerabilities
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: ${{ env.IMAGE_NAME }}@${{ steps.rollback_build.outputs.digest }}
+          format: json
+          output: /tmp/trivy-rollback-results.json
+          severity: HIGH,CRITICAL
+          ignore-unfixed: false
+          exit-code: '0'
+
+      - name: Write sanitized rollback Trivy summary
+        if: always()
+        env:
+          TRIVY_RESULT_PATH: /tmp/trivy-rollback-results.json
+          TRIVY_SUMMARY_PATH: artifacts/staging-preview/rollback-trivy-summary.json
+          CANDIDATE_SHA: ${{ needs.candidate.outputs.main_sha }}
+          CANDIDATE_DIGEST: ${{ steps.rollback_build.outputs.digest }}
+          IMAGE_ROLE: exact-main-rollback
+        run: node scripts/staging-preview/write-trivy-summary.mjs
+
+      - name: Upload sanitized rollback Trivy summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: staging-rollback-trivy-${{ needs.candidate.outputs.main_sha }}
+          path: artifacts/staging-preview/rollback-trivy-summary.json
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Enforce rollback Trivy HIGH and CRITICAL zero
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          summary_path="artifacts/staging-preview/rollback-trivy-summary.json"
+          test -s "$summary_path"
+          test "$(jq -r '.scanStatus' "$summary_path")" = "complete"
+          test "$(jq -r '.counts.high // -1' "$summary_path")" = "0"
+          test "$(jq -r '.counts.critical // -1' "$summary_path")" = "0"
+
+      - name: Checkout exact accepted candidate head for candidate image
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.candidate.outputs.head_sha }}
+          persist-credentials: false
+
+      - name: Prove candidate checkout has not drifted
+        shell: bash
+        env:
+          EXPECTED_SHA: ${{ needs.candidate.outputs.head_sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+
       - name: Build and push exact candidate
         id: build
         uses: docker/build-push-action@v6
@@ -171,11 +327,12 @@ jobs:
           push: true
           provenance: true
           sbom: true
-          tags: ${{ env.IMAGE_NAME }}:staging-${{ needs.candidate.outputs.head_sha }}
+          tags: ${{ env.IMAGE_NAME }}:staging-${{ needs.candidate.outputs.head_sha }}-${{ github.run_id }}
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
             org.opencontainers.image.revision=${{ needs.candidate.outputs.head_sha }}
-            org.opencontainers.image.version=staging-${{ needs.candidate.outputs.head_sha }}
+            org.opencontainers.image.version=staging-${{ needs.candidate.outputs.head_sha }}-${{ github.run_id }}
+            io.dongphugia.recovery.provenance=exact-pr-head
           build-args: |
             NEXT_PUBLIC_SITE_URL=${{ env.STAGING_SITE_URL }}
             NEXT_PUBLIC_GTM_ID=
@@ -198,6 +355,7 @@ jobs:
           test "$(docker image inspect "$IMAGE_REF" --format '{{index .RepoDigests 0}}' | sed 's/^.*@//')" = "$EXPECTED_DIGEST"
           test "$(docker image inspect "$IMAGE_REF" --format '{{.Architecture}}')" = "arm64"
           test "$(docker image inspect "$IMAGE_REF" --format '{{index .Config.Labels "org.opencontainers.image.revision"}}')" = "$EXPECTED_SHA"
+          test "$(docker image inspect "$IMAGE_REF" --format '{{index .Config.Labels "io.dongphugia.recovery.provenance"}}')" = "exact-pr-head"
 
           docker buildx imagetools inspect "$IMAGE_REF" --raw > /tmp/image-manifest.json
           test "$(jq '[.manifests[] | select(.platform.os != "unknown")] | length' /tmp/image-manifest.json)" = "1"
@@ -229,6 +387,7 @@ jobs:
           TRIVY_SUMMARY_PATH: artifacts/staging-preview/trivy-summary.json
           CANDIDATE_SHA: ${{ needs.candidate.outputs.head_sha }}
           CANDIDATE_DIGEST: ${{ steps.build.outputs.digest }}
+          IMAGE_ROLE: exact-pr-head
         run: node scripts/staging-preview/write-trivy-summary.mjs
 
       - name: Upload sanitized Trivy summary
@@ -304,6 +463,8 @@ jobs:
           PREVIEW_PR_NUMBER: ${{ needs.candidate.outputs.pr_number }}
           CANDIDATE_SHA: ${{ needs.candidate.outputs.head_sha }}
           CANDIDATE_DIGEST: ${{ steps.build.outputs.digest }}
+          ROLLBACK_DIGEST: ${{ steps.rollback_build.outputs.digest }}
+          ROLLBACK_SHA: ${{ needs.candidate.outputs.main_sha }}
         run: node scripts/staging-preview/write-manifest.mjs
 
       - name: Upload immutable candidate evidence
@@ -325,6 +486,15 @@ jobs:
             echo "- PR: #${{ needs.candidate.outputs.pr_number }}"
             echo "- Commit: \`$HEAD_SHA\`"
             echo "- Digest: \`$DIGEST\`"
+            echo "- Platform: \`linux/arm64\`"
+            echo "- SBOM/provenance: verified"
+            echo "- Trivy HIGH/CRITICAL: \`0/0\`"
+            echo
+            echo "### Exact-main rollback image"
+            echo
+            echo "- Commit: \`${{ needs.candidate.outputs.main_sha }}\`"
+            echo "- Digest: \`${{ steps.rollback_build.outputs.digest }}\`"
+            echo "- Provenance: \`canonical-source-baseline\` (legacy image equivalence not claimed)"
             echo "- Platform: \`linux/arm64\`"
             echo "- SBOM/provenance: verified"
             echo "- Trivy HIGH/CRITICAL: \`0/0\`"
@@ -385,6 +555,8 @@ jobs:
           COOLIFY_API_URL: ${{ vars.COOLIFY_API_URL }}
           COOLIFY_STAGING_APPLICATION_UUID: ${{ vars.COOLIFY_STAGING_APPLICATION_UUID }}
           COOLIFY_API_TOKEN: ${{ secrets.COOLIFY_API_TOKEN }}
+          ROLLBACK_DIGEST: ${{ needs.build.outputs.rollback_digest }}
+          ROLLBACK_SHA: ${{ needs.build.outputs.rollback_sha }}
         run: node scripts/staging-preview/coolify.mjs preflight
 
       - name: Deploy and verify exact candidate digest
@@ -425,6 +597,8 @@ jobs:
           COOLIFY_API_URL: ${{ vars.COOLIFY_API_URL }}
           COOLIFY_STAGING_APPLICATION_UUID: ${{ vars.COOLIFY_STAGING_APPLICATION_UUID }}
           COOLIFY_API_TOKEN: ${{ secrets.COOLIFY_API_TOKEN }}
+          ROLLBACK_DIGEST: ${{ needs.build.outputs.rollback_digest }}
+          ROLLBACK_SHA: ${{ needs.build.outputs.rollback_sha }}
         run: node scripts/staging-preview/coolify.mjs rollback
 
       - name: Write final candidate and deployment manifest
@@ -433,6 +607,8 @@ jobs:
           PREVIEW_PR_NUMBER: ${{ needs.candidate.outputs.pr_number }}
           CANDIDATE_SHA: ${{ needs.candidate.outputs.head_sha }}
           CANDIDATE_DIGEST: ${{ needs.build.outputs.digest }}
+          ROLLBACK_DIGEST: ${{ needs.build.outputs.rollback_digest }}
+          ROLLBACK_SHA: ${{ needs.build.outputs.rollback_sha }}
           BROWSER_ACCEPTANCE: ${{ steps.browser.outcome == 'success' && 'passed' || 'failed' }}
         run: node scripts/staging-preview/write-manifest.mjs
 

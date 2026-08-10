@@ -8,7 +8,9 @@ import {
     claimRollback,
     coolifyDigestPayload,
     coolifyImageDigest,
+    imageReferenceFingerprint,
     requiredCheckContexts,
+    selectRollbackTarget,
     validateCandidate,
 } from './lib.mjs'
 
@@ -139,5 +141,28 @@ describe('staging preview candidate gates', () => {
             state: { mutationStarted: true, rollbackAttempted: true },
         })
         expect(() => claimRollback({ mutationStarted: true, rollbackAttempted: true })).toThrow('second attempt')
+    })
+
+    it('selects only the workflow-built rollback digest, never a legacy previous digest', () => {
+        const rollbackSha = 'd'.repeat(40)
+        const rollbackDigest = `sha256:${'e'.repeat(64)}`
+        expect(selectRollbackTarget({
+            previousDigest: `sha256:${'f'.repeat(64)}`,
+            rollbackDigest,
+            rollbackSha,
+        })).toEqual({ digest: rollbackDigest, sha: rollbackSha })
+        expect(() => selectRollbackTarget({
+            previousDigest: `sha256:${'f'.repeat(64)}`,
+            rollbackSha,
+        })).toThrow('Rollback digest')
+    })
+
+    it('fingerprints image fields without exposing the legacy reference', () => {
+        const first = imageReferenceFingerprint(IMAGE_NAME, 'legacy-build')
+        const second = imageReferenceFingerprint(IMAGE_NAME, 'legacy-build-2')
+        expect(first).toMatch(/^[0-9a-f]{64}$/)
+        expect(second).toMatch(/^[0-9a-f]{64}$/)
+        expect(first).not.toBe(second)
+        expect(first).not.toContain('legacy-build')
     })
 })

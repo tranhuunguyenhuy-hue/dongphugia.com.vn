@@ -72,11 +72,26 @@ export function sha256(value) {
     return createHash('sha256').update(value).digest('hex')
 }
 
-function trivySummaryBase(candidateSha, candidateDigest) {
+export function imageReferenceFingerprint(imageName, imageTag) {
+    if (typeof imageName !== 'string' || typeof imageTag !== 'string' || !imageName || !imageTag) {
+        throw new Error('Coolify image reference is required for drift detection.')
+    }
+    return sha256(`${imageName}\u0000${imageTag}`)
+}
+
+export function selectRollbackTarget(state) {
+    return {
+        digest: assertDigest(state?.rollbackDigest, 'Rollback digest'),
+        sha: assertSha(state?.rollbackSha, 'Rollback source SHA'),
+    }
+}
+
+function trivySummaryBase(candidateSha, candidateDigest, imageRole) {
     return {
         schemaVersion: 1,
         candidateSha: SHA_PATTERN.test(candidateSha ?? '') ? candidateSha : null,
         candidateDigest: DIGEST_PATTERN.test(candidateDigest ?? '') ? candidateDigest : null,
+        ...(imageRole ? { imageRole } : {}),
     }
 }
 
@@ -103,8 +118,8 @@ function invalidTrivySummary(base, errorCode) {
  * Reduce Trivy's raw JSON to deterministic, non-sensitive evidence. Never
  * copy artifact names, URLs, titles, metadata, logs, or arbitrary fields.
  */
-export function sanitizeTrivyReport(report, { candidateSha, candidateDigest } = {}) {
-    const base = trivySummaryBase(candidateSha, candidateDigest)
+export function sanitizeTrivyReport(report, { candidateSha, candidateDigest, imageRole } = {}) {
+    const base = trivySummaryBase(candidateSha, candidateDigest, imageRole)
     if (!base.candidateSha || !base.candidateDigest) {
         return invalidTrivySummary(base, 'invalid-candidate-identity')
     }
