@@ -1,6 +1,6 @@
 'use client'
 
-import React, { Suspense } from 'react'
+import React, { lazy, Suspense, useState } from 'react'
 import { SlidersHorizontal, X } from 'lucide-react'
 import {
   Sheet,
@@ -11,11 +11,17 @@ import {
   SheetDescription,
   SheetTrigger,
 } from '@/components/ui/sheet'
-import { AdvancedSidebarFilter, AvailableFiltersData } from './advanced-sidebar-filter'
+import type { AvailableFiltersData } from './advanced-sidebar-filter'
 import type { SpecFilterDef } from './subcategory-spec-filter'
 import { useSearchParams } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import type { ListingRuntimeConfig } from '@/lib/public-api-products'
+
+const LazyAdvancedSidebarFilter = lazy(() =>
+    import('./advanced-sidebar-filter').then((module) => ({
+        default: module.AdvancedSidebarFilter,
+    })),
+)
 
 // ── Filter count badge (needs Suspense boundary) ────────────────────────────────
 function FilterCount({ runtimeConfig }: { runtimeConfig?: ListingRuntimeConfig }) {
@@ -50,8 +56,10 @@ export function CategoryMobileFilter({
     runtimeConfig,
     hideColorFilter = false,
 }: CategoryMobileFilterProps) {
+    const [open, setOpen] = useState(false)
+
     return (
-        <Sheet>
+        <Sheet open={open} onOpenChange={setOpen}>
             {/* ── Trigger — ghost-style matching sort-by button ── */}
             <SheetTrigger asChild>
                 <button
@@ -107,14 +115,18 @@ export function CategoryMobileFilter({
 
                 {/* ── Scrollable filter content ── */}
                 <div className="flex-1 overflow-y-auto min-h-0 overscroll-contain">
-                    <AdvancedSidebarFilter
-                        availableFilters={availableFilters}
-                        runtimeConfig={runtimeConfig}
-                        hideTitle={true}
-                        hideSubcategoryFilter={true}
-                        hideColorFilter={hideColorFilter}
-                        specFilters={specFilters}
-                    />
+                    {open ? (
+                        <Suspense fallback={<div className="h-64 bg-neutral-50 animate-pulse" aria-label="Đang tải bộ lọc" />}>
+                            <LazyAdvancedSidebarFilter
+                                availableFilters={availableFilters}
+                                runtimeConfig={runtimeConfig}
+                                hideTitle={true}
+                                hideSubcategoryFilter={true}
+                                hideColorFilter={hideColorFilter}
+                                specFilters={specFilters}
+                            />
+                        </Suspense>
+                    ) : null}
                 </div>
 
                 {/* ── Sticky footer — apply & clear ── */}
