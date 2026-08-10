@@ -59,7 +59,10 @@ test.describe('synthetic public route acceptance', () => {
             await expect(page, route).toHaveTitle(/.+/)
             await expect(page.locator('body'), route).not.toContainText('Application error')
 
-            const canonical = await page.locator('link[rel="canonical"]').getAttribute('href')
+            const canonicalLink = page.locator('link[rel="canonical"]').first()
+            const canonical = (await canonicalLink.count()) > 0
+                ? await canonicalLink.getAttribute('href')
+                : null
             if (canonical) {
                 expect(canonical, route).not.toContain('dongphugia.com.vn')
                 expect(canonical, route).not.toContain('sslip.io')
