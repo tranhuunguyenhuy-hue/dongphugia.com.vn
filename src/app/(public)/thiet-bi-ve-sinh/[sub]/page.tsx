@@ -12,7 +12,7 @@ import { CategoryMobileFilter } from "@/components/category/category-mobile-filt
 import { CategorySort } from "@/components/category/category-sort"
 import { ProductTypeFilter } from "@/components/category/product-type-filter"
 import { ActiveSpecFilterChips, SpecFilterDef } from "@/components/category/subcategory-spec-filter"
-import { SubcategoryIconGrid } from "@/components/category/subcategory-icon-grid"
+import { StaticSubcategoryNavigation } from "@/components/category/static-subcategory-navigation"
 import { buildPublicListingVisibilityWhere } from "@/lib/public-product-visibility"
 import {
     getAboveFoldListingImageSources,
@@ -20,6 +20,7 @@ import {
     shouldPrioritizeListingCard,
 } from "@/lib/listing-image-priority"
 import { createResponsiveSrcSet } from "@/lib/media/media-profiles"
+import { hasActiveListingFilterParams } from "@/lib/listing-client-boundaries"
 import { ChevronRight, Home } from "lucide-react"
 import Link from "next/link"
 
@@ -74,6 +75,7 @@ export default async function ThietBiVeSinhSubPage({ params, searchParams }: Pag
     const activeProductSubType = sp.subtype
     const isNew = sp.is_new === 'true'
     const isFeatured = sp.is_featured === 'true'
+    const hasActiveFilterParams = hasActiveListingFilterParams(sp)
     const listingRuntimeConfig = getListingRuntimeConfig(CATEGORY_SLUG, sub)
 
     let price_min: number | undefined
@@ -186,7 +188,7 @@ export default async function ThietBiVeSinhSubPage({ params, searchParams }: Pag
                     </h1>
 
                     {/* Subcategory icon grid */}
-                    <SubcategoryIconGrid
+                    <StaticSubcategoryNavigation
                         subcategories={allSubcategories}
                         basePath={BASE_PATH}
                         activeSlug={sub}
@@ -224,9 +226,11 @@ export default async function ThietBiVeSinhSubPage({ params, searchParams }: Pag
                             </Suspense>
                         )}
 
-                        <Suspense>
-                            <ActiveFilters filterDict={filterDict} excludeKeys={["sub"]} />
-                        </Suspense>
+                        {hasActiveFilterParams ? (
+                            <Suspense>
+                                <ActiveFilters filterDict={filterDict} excludeKeys={["sub"]} />
+                            </Suspense>
+                        ) : null}
                     </div>
 
                     {products.length > 0 ? (
