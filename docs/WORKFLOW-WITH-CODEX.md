@@ -1,148 +1,46 @@
-# Quy trình làm việc giữa PM và Codex
+# Dongphugia delivery workflow
 
-## Mục tiêu
+The canonical checkout is `/Users/m-ac/Projects/dongphugia`; GitHub default is
+protected `main`; production is `https://www.dongphugia.vn`.
 
-Mọi phiên Codex dùng cùng một repository, cùng một working copy và cùng quy
-trình Git. Production AWS không thay đổi chỉ vì source được merge.
+## Normal source task
 
-## Một nguồn duy nhất
+1. Read root `AGENTS.md` and `docs/AGENTS.md`; verify `pwd`, branch, clean
+   worktree, `origin/main` and open PRs.
+2. Create one short-lived `codex/<task>` branch from updated `main`.
+3. Keep one mutation owner, edit only task-owned files, then run focused checks
+   followed by lint, typecheck, tests and build.
+4. Push one PR, wait for required CI and record commit, scope, validation,
+   blocker and next action in Linear/GitHub.
+5. Merge only through protected `main` after PM approval; clean the task branch
+   only after merge.
 
-- Working copy: `/Users/m-ac/Projects/dongphugia`
-- GitHub: `tranhuunguyenhuy-hue/dongphugia.com.vn`
-- Branch chuẩn: protected `main`
-- Production: `https://www.dongphugia.vn`
+## Deployment gates
 
-Không giao việc trong các folder quarantine, checkout cũ hoặc repository đã
-archive. Nếu `pwd` khác folder chuẩn, Codex phải dừng trước mutation.
+Source merge does not deploy production. Each candidate uses:
 
-## Vai trò
+`source commit → CI image/digest → staging validation → PM review → merge → production rollout`
 
-| Vai trò | Trách nhiệm |
-|---|---|
-| PM | Đưa mục tiêu, phạm vi, ưu tiên, acceptance criteria và quyền production |
-| Codex | Kiểm tra context, lập kế hoạch, implement, test, PR, báo cáo và cleanup branch |
-| GitHub | Lưu source chuẩn, chạy CI và bảo vệ `main` |
-| AWS/Coolify | Runtime production; chỉ thay đổi trong PM window đã duyệt |
+Staging validation, merge and production rollout are independent approval
+events. Production requires an exact Asia/Ho_Chi_Minh maintenance window,
+runtime digest, backup/rollback evidence and explicit approval. Never imply a
+database, DNS, Bunny, Vercel, AWS or traffic change from a source task.
 
-## Mẫu giao việc thông thường
+## Phase 1 limits
 
-PM có thể gửi ngắn gọn:
+LEO-496 owns Website Stability & Google Index Readiness. Use one persistent
+worker and one PR; do not create dashboards, research threads or additional
+issues for minor work. Stop after Phase 1 technical acceptance; Phase 2 work is
+deferred.
 
-```text
-TASK: <mục tiêu>
-SCOPE: <phần được phép thay đổi>
-OUT OF SCOPE: <phần không được đụng tới>
-ACCEPTANCE: <điều kiện hoàn thành>
-PRODUCTION MUTATION: Not approved
-```
+## Safe cleanup
 
-Nếu thiếu chi tiết nhưng không làm thay đổi đáng kể phạm vi, Codex tự đưa ra
-giả định an toàn và tiếp tục. Chỉ hỏi PM khi lựa chọn có thể làm thay đổi sản
-phẩm, dữ liệu, chi phí hoặc production.
+Prefer Git-tracked deletion or quarantine with a retention date. Never reset,
+clean, stash or delete unrelated user work. The 04/08/2026 consolidation
+quarantine cannot be permanently removed before 18/08/2026 without fresh PM
+approval.
 
-## Vòng đời một nhiệm vụ
+## Secrets
 
-### 1. Preflight
-
-Codex phải:
-
-1. Xác nhận đúng folder chuẩn.
-2. Đọc `AGENTS.md` và tài liệu liên quan.
-3. Kiểm tra `git status`, `main`, open PR và CI gần nhất.
-4. Bảo toàn mọi thay đổi không thuộc nhiệm vụ.
-5. Xác nhận không có mutation owner cạnh tranh.
-
-### 2. Branch
-
-```bash
-git switch main
-git pull --ff-only origin main
-git switch -c codex/<task-name>
-```
-
-Chỉ một branch active cho một nhiệm vụ. Không dùng branch lịch sử làm nền.
-
-### 3. Implement
-
-- Thay đổi nhỏ nhất đáp ứng acceptance criteria.
-- Không tự mở rộng sang production, DNS, database hay hạ tầng.
-- Cập nhật tests và tài liệu khi behavior hoặc quy trình thay đổi.
-- Gửi commentary ngắn sau mỗi phase có ý nghĩa.
-
-### 4. Validate
-
-Baseline:
-
-```bash
-npm run lint
-npm run typecheck
-npm test
-npm run build
-```
-
-Tùy phạm vi, bổ sung browser smoke, monitoring verifier, ARM64 image,
-PostgreSQL verify-full, security scan hoặc performance gate.
-
-### 5. Pull request
-
-- Commit chỉ các file thuộc nhiệm vụ.
-- Push branch `codex/*`.
-- Mở PR với scope, risk, tests, rollout và rollback.
-- Chờ required CI PASS.
-- Không bypass protected `main` và không force-push.
-
-### 6. Closeout
-
-Sau merge:
-
-1. Xóa remote task branch.
-2. Chuyển local checkout về `main` và fast-forward.
-3. Xác nhận `git status` sạch.
-4. Báo commit/PR, checks, ảnh hưởng production và việc còn lại.
-
-## Nhiệm vụ production
-
-Production mutation cần thêm block phê duyệt:
-
-```text
-PM WINDOW: YYYY-MM-DD HH:MM - YYYY-MM-DD HH:MM Asia/Ho_Chi_Minh
-AWS AUTH/QUOTA: READY
-APPLICATION ROLLOUT: Approved / Not approved
-DATABASE MUTATION: Approved / Not approved
-DNS MUTATION: Approved / Not approved
-READ-ONLY LOAD/SOAK: Approved / Not approved
-ROLLBACK: Required
-```
-
-Codex phải thực hiện backup/checksum/private copy, preflight, dark acceptance,
-rollback proof và post-switch acceptance tương ứng với phạm vi đã duyệt. Khi
-window hết hoặc mandatory gate fail, dừng mutation và đưa hệ thống về trạng
-thái an toàn.
-
-## Quy tắc nhiều phiên Codex
-
-- Chỉ một phiên được giữ mutation ownership.
-- Phiên khác chỉ được read-only hoặc chờ.
-- Không có hai phiên cùng sửa một branch hoặc một working copy.
-- Không tạo thêm folder `dongphugia-*` cho công việc thông thường.
-- Công việc song song thật sự cần PM duyệt worktree tạm, owner và cleanup time.
-
-## Definition of done
-
-Một nhiệm vụ chỉ hoàn thành khi:
-
-- Acceptance criteria PASS.
-- Tests phù hợp PASS.
-- PR merge vào protected `main`.
-- Remote task branch đã xóa.
-- Local working copy trở về clean `main`.
-- Production được ghi rõ là unchanged hoặc acceptance PASS.
-- Blocker/deferred work được ghi rõ, không bị trình bày như đã hoàn thành.
-
-## Trạng thái hiện hành
-
-- `.vn` là production AWS duy nhất.
-- AWS PostgreSQL là production database duy nhất.
-- Vercel Git Integration đã ngắt; `.com.vn` không phục vụ website.
-- LCP `<=2500 ms` là backlog tối ưu, không chặn phát triển tính năng.
-- Material cũ đang ở hidden quarantine đến 2026-08-18.
+Never print credentials, environment values, URLs containing credentials,
+tokens, MFA or OTP. Human authentication is entered only in provider UI.
