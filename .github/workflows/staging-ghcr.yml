@@ -189,30 +189,83 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Use the OCI Distribution API so a missing tag is identified by its
-          # status code. Response bodies and client diagnostics stay discarded;
-          # every response other than a definitive 404 fails closed.
-          check_absent() {
-            local image_ref="$1"
-            local tag="${image_ref##*:}"
+          # Use the authenticated GitHub Packages REST API. Response bodies and
+          # headers stay in an ephemeral directory; only a definitive 404 or a
+          # complete paginated 200 response can prove tag absence.
+          [[ "$GITHUB_REPOSITORY" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]] || exit 1
+          [[ "$PACKAGE_OWNER" =~ ^[A-Za-z0-9_.-]+$ ]] || exit 1
+          [[ "$PACKAGE_NAME" =~ ^[A-Za-z0-9_.-]+$ ]] || exit 1
+          temporary_api_dir="$(mktemp -d)"
+          trap 'rm -rf "$temporary_api_dir"' EXIT
+
+          api_get() {
+            local url="$1"
+            local body_path="$2"
+            local headers_path="$3"
             local status
-            [[ "$PACKAGE_OWNER" =~ ^[A-Za-z0-9_.-]+$ ]] || return 1
-            [[ "$image_ref" == "ghcr.io/${PACKAGE_OWNER}/${PACKAGE_NAME}:$tag" ]] || return 1
-            [[ "$tag" =~ ^(staging-rollback|staging)-[0-9a-f]{40}-[0-9]+$ ]] || return 1
-            if ! status="$(curl --silent --output /dev/null --write-out '%{http_code}' \
-              --request HEAD \
+            if ! status="$(curl --silent --output "$body_path" --dump-header "$headers_path" \
+              --write-out '%{http_code}' \
+              --request GET \
               --connect-timeout 15 \
               --max-time 30 \
               --header "Authorization: Bearer ${GITHUB_TOKEN}" \
-              --header 'Accept: application/vnd.docker.distribution.manifest.v2+json' \
-              "https://ghcr.io/v2/${PACKAGE_OWNER}/${PACKAGE_NAME}/manifests/$tag" 2>/dev/null)"; then
+              --header 'Accept: application/vnd.github+json' \
+              --header 'X-GitHub-Api-Version: 2022-11-28' \
+              "$url" 2>/dev/null)"; then
               status=000
             fi
-            case "$status" in
-              404) return 0 ;;
-              2??|401|403) return 1 ;;
-              *) return 1 ;;
-            esac
+            [[ "$status" =~ ^[0-9]{3}$ ]] || status=000
+            printf '%s' "$status"
+          }
+
+          repository_body="$temporary_api_dir/repository.json"
+          repository_headers="$temporary_api_dir/repository.headers"
+          repository_status="$(api_get "https://api.github.com/repos/${GITHUB_REPOSITORY}" "$repository_body" "$repository_headers")"
+          [[ "$repository_status" = "200" ]] || exit 1
+          owner_type="$(jq -er '.owner.type | select(. == "Organization" or . == "User")' "$repository_body" 2>/dev/null)" || exit 1
+          owner_login="$(jq -er '.owner.login | select(type == "string")' "$repository_body" 2>/dev/null)" || exit 1
+          [[ "${owner_login,,}" = "${PACKAGE_OWNER,,}" ]] || exit 1
+          case "$owner_type" in
+            Organization) versions_endpoint="https://api.github.com/orgs/${PACKAGE_OWNER}/packages/container/${PACKAGE_NAME}/versions" ;;
+            User) versions_endpoint="https://api.github.com/users/${PACKAGE_OWNER}/packages/container/${PACKAGE_NAME}/versions" ;;
+            *) exit 1 ;;
+          esac
+
+          check_absent() {
+            local image_ref="$1"
+            local tag="${image_ref##*:}"
+            local page=1
+            local page_count
+            local page_body
+            local page_headers
+            local status
+            [[ "$image_ref" == "ghcr.io/${PACKAGE_OWNER}/${PACKAGE_NAME}:$tag" ]] || return 1
+            [[ "$tag" =~ ^(staging-rollback|staging)-[0-9a-f]{40}-[0-9]+$ ]] || return 1
+            while :; do
+              page_body="$temporary_api_dir/versions.json"
+              page_headers="$temporary_api_dir/versions.headers"
+              status="$(api_get "${versions_endpoint}?per_page=100&page=${page}" "$page_body" "$page_headers")"
+              case "$status" in
+                404) [[ "$page" -eq 1 ]] && return 0 || return 1 ;;
+                200) ;;
+                401|403|429) return 1 ;;
+                *) return 1 ;;
+              esac
+              jq -e 'type == "array" and all(.[]; type == "object" and (.metadata | type == "object") and (.metadata.container | type == "object") and (.metadata.container.tags | type == "array") and all(.metadata.container.tags[]; type == "string"))' "$page_body" >/dev/null 2>&1 || return 1
+              if jq -e --arg wanted "$tag" 'any(.[]; any(.metadata.container.tags[]; . == $wanted))' "$page_body" >/dev/null 2>&1; then
+                return 1
+              fi
+              page_count="$(jq -er 'length' "$page_body" 2>/dev/null)" || return 1
+              [[ "$page_count" =~ ^[0-9]+$ ]] || return 1
+              if grep -Fqi 'rel="next"' "$page_headers"; then
+                [[ "$page_count" -eq 100 ]] || return 1
+                ((page += 1))
+                ((page <= 100)) || return 1
+              else
+                [[ "$page_count" -lt 100 ]] || return 1
+                return 0
+              fi
+            done
           }
           check_absent "$ROLLBACK_TAG"
           check_absent "$CANDIDATE_TAG"

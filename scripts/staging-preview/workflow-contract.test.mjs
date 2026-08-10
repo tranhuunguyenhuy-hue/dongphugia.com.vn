@@ -41,7 +41,7 @@ describe('staging workflow source contract', () => {
         expect(workflow).toContain('operator-handoff.md')
     })
 
-    it('proves recovery tags are missing with a registry status code and fails closed', () => {
+    it('proves recovery tags are missing with the GitHub Packages API and fails closed', () => {
         const start = workflow.indexOf('      - name: Verify recovery tags are absent')
         const end = workflow.indexOf('      - name: Checkout exact origin main rollback source', start)
         expect(start).toBeGreaterThanOrEqual(0)
@@ -49,14 +49,22 @@ describe('staging workflow source contract', () => {
         const guard = workflow.slice(start, end)
 
         expect(guard).toContain('GITHUB_TOKEN: ${{ github.token }}')
-        expect(guard).toContain('https://ghcr.io/v2/')
+        expect(guard).toContain('https://api.github.com/repos/')
+        expect(guard).toContain('/packages/container/')
         expect(guard).toContain("--write-out '%{http_code}'")
         expect(guard).toContain('404)')
-        expect(guard).toMatch(/2\?\?\|401\|403\)/)
+        expect(guard).toContain('200)')
+        expect(guard).toContain('401|403|429)')
+        expect(guard).toContain('rel="next"')
+        expect(guard).toContain('*) return 1')
+        expect(guard).not.toContain('https://ghcr.io/v2/')
+        expect(guard).not.toContain('application/vnd.docker')
+        expect(guard).not.toContain('--request HEAD')
         expect(guard).not.toContain('docker buildx imagetools inspect')
         expect(guard).not.toContain('no such manifest')
         expect(guard).not.toContain('MANIFEST_UNKNOWN')
         expect(guard).not.toContain('manifest unknown')
+        expect(workflow).not.toContain('https://ghcr.io/v2/')
     })
 
     it('stops before private Coolify UI work and never runs deployment acceptance on the runner', () => {
