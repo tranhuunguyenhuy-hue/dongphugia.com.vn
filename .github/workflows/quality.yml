@@ -18,6 +18,8 @@ jobs:
     name: quality
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      DEPLOY_TARGET: local
 
     steps:
       - name: Checkout repository

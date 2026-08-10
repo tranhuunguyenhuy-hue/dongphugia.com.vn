@@ -30,6 +30,7 @@ jobs:
       DATABASE_URL: postgresql://dpg_homepage_test:dpg_homepage_test_password@127.0.0.1:5432/dpg_homepage_test
       DIRECT_URL: postgresql://dpg_homepage_test:dpg_homepage_test_password@127.0.0.1:5432/dpg_homepage_test
       NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      DEPLOY_TARGET: local
       BUNNY_CDN_HOSTNAME: cdn.dongphugia.com.vn
 
     steps:

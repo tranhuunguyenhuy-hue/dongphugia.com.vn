@@ -1,3 +1,6 @@
+'use client'
+
+import { useState } from 'react'
 import { cn } from '@/lib/utils'
 
 const STATIC_BRAND_SLUGS = new Set([
@@ -43,7 +46,9 @@ export function BrandLogo({
     className,
     decorative = false,
 }: BrandLogoProps) {
-    if (!STATIC_BRAND_SLUGS.has(slug)) {
+    const [imageUnavailable, setImageUnavailable] = useState(false)
+
+    if (!STATIC_BRAND_SLUGS.has(slug) || imageUnavailable) {
         return (
             <span
                 className={cn(
@@ -67,6 +72,7 @@ export function BrandLogo({
             loading="lazy"
             width={100}
             height={50}
+            onError={() => setImageUnavailable(true)}
         />
     )
 }

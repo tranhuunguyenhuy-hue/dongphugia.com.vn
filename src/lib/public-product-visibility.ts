@@ -2,6 +2,8 @@ import { Prisma } from '@prisma/client'
 
 export function buildPublicPdpVisibilityWhere(): Prisma.productsWhereInput {
     return {
+        is_active: true,
+        stock_status: { not: 'discontinued' },
         publication_status: 'public',
         pdp_visibility: 'public',
     }

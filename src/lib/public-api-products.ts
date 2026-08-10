@@ -425,7 +425,7 @@ export async function getPublicProducts(filters: ProductFilters = {}) {
     }
 
     const where: Prisma.productsWhereInput = {
-        ...(search ? buildPublicSearchVisibilityWhere() : { is_active: true }),
+        ...(search ? buildPublicSearchVisibilityWhere() : buildPublicListingVisibilityWhere()),
         ...(AND.length > 0 ? { AND } : {}),
         ...(category_slug && {
             OR: [

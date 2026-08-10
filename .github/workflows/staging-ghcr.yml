@@ -164,6 +164,7 @@ jobs:
             org.opencontainers.image.version=${{ steps.meta.outputs.tag }}
           build-args: |
             NEXT_PUBLIC_SITE_URL=${{ vars.STAGING_SITE_URL || env.DEFAULT_STAGING_SITE_URL }}
+            DEPLOY_TARGET=staging
             NEXT_PUBLIC_GTM_ID=${{ vars.STAGING_NEXT_PUBLIC_GTM_ID }}
             BUNNY_CDN_HOSTNAME=${{ vars.STAGING_BUNNY_CDN_HOSTNAME || env.DEFAULT_BUNNY_CDN_HOSTNAME }}
 
@@ -256,6 +257,7 @@ jobs:
             -e DATABASE_URL="$BUILD_DATABASE_URL" \
             -e DIRECT_URL="$BUILD_DATABASE_URL" \
             -e NEXT_PUBLIC_SITE_URL="$STAGING_SITE_URL" \
+            -e DEPLOY_TARGET=staging \
             -e BUNNY_CDN_HOSTNAME="$STAGING_BUNNY_CDN_HOSTNAME" \
             "$IMAGE_REF"
 
