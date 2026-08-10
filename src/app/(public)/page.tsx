@@ -10,6 +10,7 @@ import { LazyContactSection } from "@/components/home/lazy-contact-section"
 import { getFeaturedProductsByCategorySlug } from "@/lib/public-api-products"
 import { getHomepageBanners } from "@/lib/homepage-data"
 import prisma from "@/lib/prisma"
+import { buildPublicListingVisibilityWhere } from "@/lib/public-product-visibility"
 
 export const revalidate = 3600
 
@@ -31,31 +32,43 @@ export const metadata: Metadata = {
 }
 
 const getHomepageContentData = unstable_cache(
-    async () => Promise.all([
-        getFeaturedProductsByCategorySlug('thiet-bi-ve-sinh', ['toto', 'inax'], null, 0, 3),
-        getFeaturedProductsByCategorySlug('thiet-bi-bep', null, null, 0, 3),
-        getFeaturedProductsByCategorySlug('gach-op-lat', null, null, 0, 3),
-        getFeaturedProductsByCategorySlug('vat-lieu-nuoc', null, null, 0, 3),
-        prisma.brands.findMany({
-            where: { products: { some: { categories: { slug: 'thiet-bi-ve-sinh' } } } },
-            select: { name: true, slug: true }
-        }),
-        prisma.subcategories.findMany({
-            where: { categories: { slug: 'thiet-bi-ve-sinh' } },
-            select: { name: true, slug: true }
-        }),
-        prisma.subcategories.findMany({
-            where: {
-                categories: { slug: 'thiet-bi-bep' },
-                slug: { notIn: ['thiet-bi-bep-khac'] }
-            },
-            select: { name: true, slug: true }
-        }),
-        prisma.brands.findMany({
-            where: { products: { some: { categories: { slug: 'thiet-bi-bep' } } } },
-            select: { name: true, slug: true }
-        })
-    ]),
+    async () => {
+        const publicTbvsProducts = {
+            ...buildPublicListingVisibilityWhere(),
+            categories: { slug: 'thiet-bi-ve-sinh' },
+        }
+        const publicKitchenProducts = {
+            ...buildPublicListingVisibilityWhere(),
+            categories: { slug: 'thiet-bi-bep' },
+        }
+
+        return Promise.all([
+            getFeaturedProductsByCategorySlug('thiet-bi-ve-sinh', ['toto', 'inax'], null, 0, 3),
+            getFeaturedProductsByCategorySlug('thiet-bi-bep', null, null, 0, 3),
+            getFeaturedProductsByCategorySlug('gach-op-lat', null, null, 0, 3),
+            getFeaturedProductsByCategorySlug('vat-lieu-nuoc', null, null, 0, 3),
+            prisma.brands.findMany({
+                where: { products: { some: publicTbvsProducts } },
+                select: { name: true, slug: true }
+            }),
+            prisma.subcategories.findMany({
+                where: { categories: { slug: 'thiet-bi-ve-sinh' }, products: { some: publicTbvsProducts } },
+                select: { name: true, slug: true }
+            }),
+            prisma.subcategories.findMany({
+                where: {
+                    categories: { slug: 'thiet-bi-bep' },
+                    slug: { notIn: ['thiet-bi-bep-khac'] },
+                    products: { some: publicKitchenProducts },
+                },
+                select: { name: true, slug: true }
+            }),
+            prisma.brands.findMany({
+                where: { products: { some: publicKitchenProducts } },
+                select: { name: true, slug: true }
+            })
+        ])
+    },
     ['homepage-content-data-v1'],
     { revalidate: 3600, tags: ['homepage'] }
 )

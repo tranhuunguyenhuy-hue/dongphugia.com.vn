@@ -534,35 +534,38 @@ export async function getPublicProducts(filters: ProductFilters = {}) {
 
 export const getAvailableFilters = unstable_cache(
     async (categorySlug: string) => {
-        // Query to get all subcategories, brands, materials, origins, features that are connected to an active product in this category.
+        const categoryProductWhere: Prisma.productsWhereInput = {
+            ...buildPublicListingVisibilityWhere(),
+            categories: { slug: categorySlug },
+        }
 
         const [subcategories, brands, materials, origins, features, colors] = await Promise.all([
             prisma.subcategories.findMany({
-                where: { products: { some: { is_active: true, categories: { slug: categorySlug } } }, is_active: true },
+                where: { products: { some: categoryProductWhere }, is_active: true },
                 select: { name: true, slug: true, icon_name: true },
                 orderBy: { sort_order: 'asc' }
             }),
             prisma.brands.findMany({
-                where: { products: { some: { is_active: true, categories: { slug: categorySlug } } }, is_active: true },
+                where: { products: { some: categoryProductWhere }, is_active: true },
                 select: { name: true, slug: true, logo_url: true },
                 orderBy: { sort_order: 'asc' }
             }),
             prisma.materials.findMany({
-                where: { products: { some: { is_active: true, categories: { slug: categorySlug } } } },
+                where: { products: { some: categoryProductWhere } },
                 select: { name: true, slug: true },
                 orderBy: { sort_order: 'asc' }
             }),
             prisma.origins.findMany({
-                where: { products: { some: { is_active: true, categories: { slug: categorySlug } } } },
+                where: { products: { some: categoryProductWhere } },
                 select: { name: true, slug: true }
             }),
             prisma.product_features.findMany({
-                where: { product_feature_values: { some: { products: { is_active: true, categories: { slug: categorySlug } } } } },
+                where: { product_feature_values: { some: { products: categoryProductWhere } } },
                 select: { name: true, slug: true, icon_name: true },
                 orderBy: { sort_order: 'asc' }
             }),
             prisma.colors.findMany({
-                where: { products: { some: { is_active: true, categories: { slug: categorySlug } } } },
+                where: { products: { some: categoryProductWhere } },
                 select: { name: true, slug: true, hex_code: true }
             })
         ])
@@ -595,7 +598,7 @@ export const getAvailableFiltersBySubcategory = unstable_cache(
         })
 
         const productWhere: Prisma.productsWhereInput = {
-            is_active: true,
+            ...buildPublicListingVisibilityWhere(),
             ...(productType ? { product_types: { slug: productType } } : {}),
             ...(listingLeaf?.source === 'taxonomy'
                 ? getTaxonomyLeafFilter([subcategorySlug])
@@ -641,7 +644,7 @@ export const getAvailableFiltersBySubcategory = unstable_cache(
     { revalidate: 3600, tags: ['products', 'filters'] }
 )
 
-const PUBLIC_LISTING_PRODUCT_WHERE: Prisma.productsWhereInput = buildPublicListingVisibilityWhere()
+export const PUBLIC_LISTING_PRODUCT_WHERE: Prisma.productsWhereInput = buildPublicListingVisibilityWhere()
 
 function mapLegacyListingLeaf(
     leaf: {
@@ -823,7 +826,7 @@ export const getProductTypeFiltersBySubcategory = unstable_cache(
             where: {
                 subcategory_id: subcategoryId,
                 is_active: true,
-                products: { some: { is_active: true } },
+                products: { some: PUBLIC_LISTING_PRODUCT_WHERE },
             },
             orderBy: [{ sort_order: 'asc' }, { name: 'asc' }],
             select: {
@@ -832,7 +835,7 @@ export const getProductTypeFiltersBySubcategory = unstable_cache(
                 product_sub_types: {
                     where: {
                         is_active: true,
-                        products: { some: { is_active: true } },
+                        products: { some: PUBLIC_LISTING_PRODUCT_WHERE },
                     },
                     orderBy: [{ sort_order: 'asc' }, { name: 'asc' }],
                     select: { slug: true, name: true },
@@ -1034,12 +1037,11 @@ export const getVariantSiblings = unstable_cache(
     async (variantGroup: string, currentProductId: number): Promise<VariantSibling[]> => {
         if (!variantGroup) return []
 
-        // Include both active and inactive siblings so the UI can render stub swatches
-        // for colour variants that exist but are not yet available (is_active=false)
         const siblings = await prisma.products.findMany({
             where: {
                 variant_group: variantGroup,
                 id: { not: currentProductId },
+                ...buildPublicPdpVisibilityWhere(),
             },
             orderBy: [{ is_active: 'desc' }, { price: 'desc' }, { sku: 'asc' }],
             select: {
@@ -1132,6 +1134,10 @@ export async function getVariantSelectionData(variantGroup: string, currentProdu
             join categories c on c.id = p.category_id
             left join subcategories s on s.id = p.subcategory_id
             where p.variant_group = ${variantGroup}
+              and p.is_active = true
+              and p.stock_status <> 'discontinued'
+              and p.publication_status = 'public'
+              and p.pdp_visibility = 'public'
             order by p.is_active desc, p.price desc nulls last, p.sku asc
         `,
     ])
@@ -1170,7 +1176,11 @@ export async function getVariantSelectionData(variantGroup: string, currentProdu
 export const getProductComponents = unstable_cache(
     async (productId: number) => {
         const rels = await prisma.product_relationships.findMany({
-            where: { parent_id: productId, relationship_type: 'component' },
+            where: {
+                parent_id: productId,
+                relationship_type: 'component',
+                child: { is: buildPublicPdpVisibilityWhere() },
+            },
             orderBy: { sort_order: 'asc' },
             select: {
                 id: true,
@@ -1209,7 +1219,7 @@ export const getProductComponents = unstable_cache(
 export const getFeaturedProductsByCategorySlug = unstable_cache(
     async (categorySlug: string, brandSlugs?: string | string[] | null, subcategorySlug?: string | null, skip = 0, take = 20) => {
         const whereClause: Prisma.productsWhereInput = {
-            is_active: true,
+            ...buildPublicListingVisibilityWhere(),
             is_home_featured: true,
             NOT: { product_types: { slug: { contains: 'phu-kien' } } },
             categories: { slug: categorySlug },
@@ -1289,7 +1299,7 @@ export const getTopProductsPerBrand = unstable_cache(
             brandSlugs.map(brandSlug =>
                 prisma.products.findMany({
                     where: {
-                        is_active: true,
+                        ...buildPublicListingVisibilityWhere(),
                         OR: [{ is_master: true }, { is_featured: true }, { sort_order: { gt: 0 } }],
                         is_featured: true,          // only admin-selected featured products
                         NOT: { product_types: { slug: { contains: 'phu-kien' } } },
@@ -1344,7 +1354,7 @@ export const getTopProductsPerBrand = unstable_cache(
 export const getNewArrivals = unstable_cache(
     async (limit = 12) => {
         const products = await prisma.products.findMany({
-            where: { is_active: true, is_promotion: true },
+            where: { ...buildPublicListingVisibilityWhere(), is_promotion: true },
             orderBy: { created_at: 'desc' },
             take: limit,
             select: {
@@ -1374,7 +1384,7 @@ export const getNewArrivals = unstable_cache(
 export const getHomeFeaturedProducts = unstable_cache(
     async (limit = 15) => {
         const products = await prisma.products.findMany({
-            where: { is_active: true, is_home_featured: true },
+            where: { ...buildPublicListingVisibilityWhere(), is_home_featured: true },
             orderBy: [{ sort_order: 'desc' }, { created_at: 'desc' }],
             take: limit,
             select: {
@@ -1596,7 +1606,7 @@ async function _getCompatibleLids(brandId: number | null, limit = 6): Promise<Co
             where: {
                 subcategory_id: SUB_NAP_BON_CAU,
                 brand_id: brandId,
-                is_active: true,
+                ...buildPublicListingVisibilityWhere(),
             },
             select: lidSelect,
             orderBy: [{ is_promotion: 'desc' }, { sort_order: 'asc' }],
@@ -1607,7 +1617,7 @@ async function _getCompatibleLids(brandId: number | null, limit = 6): Promise<Co
 
     // 2. Fallback: top nắp bán chạy bất kể brand
     return prisma.products.findMany({
-        where: { subcategory_id: SUB_NAP_BON_CAU, is_active: true },
+        where: { subcategory_id: SUB_NAP_BON_CAU, ...buildPublicListingVisibilityWhere() },
         select: lidSelect,
         orderBy: [{ is_promotion: 'desc' }, { sort_order: 'asc' }],
         take: limit,
