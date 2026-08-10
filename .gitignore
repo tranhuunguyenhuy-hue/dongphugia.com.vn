@@ -1,166 +1,42 @@
-# Dependencies
+# Dependencies and builds
 /node_modules
-/.pnp
-.pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
-
-# Testing
-/coverage
-/test-results/
-/.lighthouseci/
-
-# Next.js
-/.next/
-/out/
-
-# Production
+/.next
+/out
 /build
-
-# Misc
-.DS_Store
-*.pem
-Thumbs.db
-
-# Debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
-
-# Environment variables
-.env
-.env*.local
-
-# Vercel
-.vercel
-
-# TypeScript
+/coverage
+/test-results
+/.lighthouseci
 *.tsbuildinfo
 next-env.d.ts
 
-# Prisma
-/src/generated/prisma
+# Secrets and local databases
+.env
+.env*.local
+*.pem
 prisma/dev.db
 prisma/dev.db-journal
-
-# SQLite database (local dev only)
 *.db
 *.db-journal
 
-# IDE
-.vscode/
-.idea/
+# Generated files and uploads
+/public/uploads
+/scripts/output
+/exports
+/output
+/scratch
+/backups
 
-# OS files
+# Local tooling
 .DS_Store
 Thumbs.db
-
-# Uploaded content (dynamic, not version-controlled)
-/public/uploads/
-
-# Old/Temp folders
-/building-materials-web/
-cleanup.js
-
-# Agent config (Antigravity IDE) — large workspace, not version-controlled
+.vscode/
+.idea/
 .agent/
-
-# Claude Code worktrees & plans (local only)
 .claude/
-
-# Manager sub-project (separate repo)
-manager/
-
-# .ai/ folder is intentionally tracked — shared docs for Claude Code & Antigravity
-# .ai/
-
-# Local cache directories (DO NOT UPLOAD)
-.mnt-cache/
-.npm-cache/
-dongphugia-web/
-
-# Temporary scripts output
-scripts/brands/*.txt
-scripts/brands/*.json
-
-# Backups (local only)
-backups/
-
-# Scratch & export scripts output
-scripts/scratch/
-scripts/output/
-scripts/export-products.mts
-
-# AI IDE tool config folders (accumulated from various coding assistants — local only)
-# NOTE: .agent/ .claude/ .vscode/ .idea/ are already covered above
-.adal/
-.agents/
-.augment/
-.bob/
-.codebuddy/
-.commandcode/
-.continue/
-.cortex/
-.crush/
-.factory/
-.goose/
-.iflow/
-.junie/
-.kilocode/
-.kiro/
-.kode/
-.mcpjam/
-.mux/
-.neovate/
-.openhands/
-.pi/
-.pochi/
-.qoder/
-.qwen/
-.roo/
-.trae/
-.vibe/
-.windsurf/
-.zencoder/
-
-# AI agent config files at root (internal only, not for client)
-CLAUDE.md
-GEMINI.md
-
-# Skills workspace (Antigravity internal)
-skills/
-skills-lock.json
-
-# Internal audit reports (keep locally, not for client repo)
-DB-AUDIT-REPORT.md
-ERRORS.md
-UI-UX-Audit-Report-DongPhuGia.docx
-
-# PM internal notes (outdated, local only)
 .ai/
-
-# Scripts: data dumps and pipeline output (generated, not source)
-scripts/db/*.log
-scripts/db/*.json
-scripts/product-import/*.json
-scripts/variant-pipeline/output/
-
-# Product exports
-exports/
-
-# Scratch workspace (temp scripts, logs — local only)
-scratch/
-output/
-ORIGINAL_REQUEST.md
-scripts/crawl-hita/output/
-
-# Keep the TOTO output directory available on fresh clones, but never track
-# generated crawler data.
-!scripts/crawl-toto/output/
-scripts/crawl-toto/output/*
-!scripts/crawl-toto/output/.gitkeep
-.env*
+.agents/
+.vercel/
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*

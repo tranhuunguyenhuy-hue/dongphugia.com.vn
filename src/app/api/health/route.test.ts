@@ -21,21 +21,14 @@ describe('GET /api/health', () => {
         prismaMocks.countCategories.mockResolvedValue(4)
     })
 
-    it('returns health metrics without environment details', async () => {
+    it('returns a bounded ready response without environment details', async () => {
         const response = await GET()
         const body = await response.json()
 
         expect(response.status).toBe(200)
-        expect(body).toMatchObject({
-            ok: true,
-            db: {
-                ok: true,
-            },
-        })
+        expect(body).toEqual({ ok: true })
         expect(body).not.toHaveProperty('env')
         expect(body).not.toHaveProperty('region')
-        expect(body.db).not.toHaveProperty('products')
-        expect(body.db).not.toHaveProperty('categories')
         expect(JSON.stringify(body)).not.toContain('DATABASE_URL')
         expect(JSON.stringify(body)).not.toContain('postgresql://')
     })
@@ -51,13 +44,7 @@ describe('GET /api/health', () => {
         const body = await response.json()
 
         expect(response.status).toBe(503)
-        expect(body).toMatchObject({
-            ok: false,
-            db: {
-                ok: false,
-                error: 'database_unavailable',
-            },
-        })
+        expect(body).toEqual({ ok: false, error: 'service_unavailable' })
         expect(JSON.stringify(body)).not.toContain('password')
         expect(consoleError).toHaveBeenCalledWith(expect.stringContaining('P1001'))
     })

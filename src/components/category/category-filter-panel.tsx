@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { BrandLogo } from '@/components/media/brand-logo'
 
 interface Brand { id: number; name: string; slug?: string }
 
@@ -82,9 +83,8 @@ function DualRangeSlider({
 }
 
 // ── Brand Tag with Logo ───────────────────────────────────────────────────────
-function BrandTag({ brand, active, onToggle }: { brand: Brand; active: boolean; onToggle: () => void }) {
+export function BrandTag({ brand, active, onToggle }: { brand: Brand; active: boolean; onToggle: () => void }) {
     const slug = brand.slug || brand.name.toLowerCase().replace(/\s+/g, '-')
-    const [imgFailed, setImgFailed] = useState(false)
 
     return (
         <button
@@ -100,24 +100,15 @@ function BrandTag({ brand, active, onToggle }: { brand: Brand; active: boolean; 
             `}
             title={brand.name}
         >
-            {/* Logo or text fallback */}
-            {!imgFailed ? (
-                <img
-                    src={`/images/brands/${slug}.png`}
-                    alt={brand.name}
-                    className={`h-[16px] max-w-[56px] object-contain transition-all duration-200 ${
-                        active ? 'opacity-100' : 'opacity-50 grayscale group-hover/tag:opacity-80 group-hover/tag:grayscale-0'
-                    }`}
-                    loading="lazy"
-                    onError={() => setImgFailed(true)}
-                />
-            ) : (
-                <span className={`text-[11px] font-semibold whitespace-nowrap transition-colors ${
-                    active ? 'text-[#2E7A96]' : 'text-neutral-500 group-hover/tag:text-neutral-700'
-                }`}>
-                    {brand.name}
-                </span>
-            )}
+            <BrandLogo
+                slug={slug}
+                name={brand.name}
+                className={`h-[16px] max-w-[56px] whitespace-nowrap transition-all duration-200 ${
+                    active
+                        ? 'text-[#2E7A96] opacity-100'
+                        : 'text-neutral-500 opacity-50 grayscale group-hover/tag:text-neutral-700 group-hover/tag:opacity-80 group-hover/tag:grayscale-0'
+                }`}
+            />
 
             {/* Active check indicator */}
             {active && (
@@ -197,6 +188,7 @@ export function CategoryFilterPanel({ brands }: CategoryFilterPanelProps) {
     const [advOpen, setAdvOpen] = useState(true)
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- synchronizes URL-driven filter state
         setLocalPrice(priceParam ? parsePriceParam(priceParam) : [PRICE_MIN, PRICE_MAX])
     }, [priceParam])
 

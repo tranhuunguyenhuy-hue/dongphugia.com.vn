@@ -21,7 +21,7 @@ describe('Footer Component', () => {
         expect(screen.getByText(/273–275 Phan Đình Phùng/i)).toBeInTheDocument()
         expect(screen.getByText('094 9349 949 - 094 5343 494')).toBeInTheDocument()
         expect(screen.getByText('0855 528 688')).toBeInTheDocument()
-        expect(screen.getByText('www.dongphugia.vn')).toBeInTheDocument()
+        expect(screen.getByText('http://localhost:3000')).toBeInTheDocument()
     })
 
     it('renders the copyright text', () => {

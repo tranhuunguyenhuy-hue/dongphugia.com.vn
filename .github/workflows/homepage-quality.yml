@@ -30,6 +30,7 @@ jobs:
       DATABASE_URL: postgresql://dpg_homepage_test:dpg_homepage_test_password@127.0.0.1:5432/dpg_homepage_test
       DIRECT_URL: postgresql://dpg_homepage_test:dpg_homepage_test_password@127.0.0.1:5432/dpg_homepage_test
       NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      DEPLOY_TARGET: local
       BUNNY_CDN_HOSTNAME: cdn.dongphugia.com.vn
 
     steps:
@@ -115,9 +116,8 @@ jobs:
           npm run prepare:standalone-assets
           npm run test:homepage
 
-      - name: Lighthouse diagnostics (post-launch performance)
-        continue-on-error: true
-        run: npm run perf:lighthouse
+      - name: Mobile toilet listing performance acceptance
+        run: npm run perf:lighthouse:toilet
 
       - name: Upload homepage performance diagnostics
         if: always()
@@ -125,7 +125,8 @@ jobs:
         with:
           name: homepage-performance-${{ github.sha }}
           path: |
-            scripts/output/lighthouse
+            scripts/output/lighthouse-toilet
+            .lighthouseci
             *.trace.json
             *.devtoolslog.json
           if-no-files-found: warn

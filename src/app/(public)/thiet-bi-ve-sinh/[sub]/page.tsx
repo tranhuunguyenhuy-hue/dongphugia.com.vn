@@ -1,18 +1,26 @@
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { Suspense } from "react"
+import { preload } from "react-dom"
 import { getPublicProducts, getAvailableFiltersBySubcategory, getProductTypeFiltersBySubcategory, getSubcategorySpecFilters, getListingRuntimeConfig } from "@/lib/public-api-products"
 import prisma from "@/lib/prisma"
 import { ProductCard } from "@/components/ui/product-card"
 import { ProductPagination } from "@/components/ui/product-pagination"
-import { AdvancedSidebarFilter } from "@/components/category/advanced-sidebar-filter"
+import { DesktopAdvancedSidebarFilter } from "@/components/category/desktop-advanced-sidebar-filter"
 import { ActiveFilters, ActiveFilterDict } from "@/components/category/active-filters"
 import { CategoryMobileFilter } from "@/components/category/category-mobile-filter"
 import { CategorySort } from "@/components/category/category-sort"
 import { ProductTypeFilter } from "@/components/category/product-type-filter"
 import { ActiveSpecFilterChips, SpecFilterDef } from "@/components/category/subcategory-spec-filter"
-import { SubcategoryIconGrid } from "@/components/category/subcategory-icon-grid"
+import { StaticSubcategoryNavigation } from "@/components/category/static-subcategory-navigation"
 import { buildPublicListingVisibilityWhere } from "@/lib/public-product-visibility"
+import {
+    getAboveFoldListingImageSources,
+    LISTING_PRODUCT_IMAGE_SIZES,
+    shouldPrioritizeListingCard,
+} from "@/lib/listing-image-priority"
+import { createResponsiveSrcSet } from "@/lib/media/media-profiles"
+import { hasActiveListingFilterParams } from "@/lib/listing-client-boundaries"
 import { ChevronRight, Home } from "lucide-react"
 import Link from "next/link"
 
@@ -21,7 +29,9 @@ export const revalidate = 10800
 const CATEGORY_SLUG = "thiet-bi-ve-sinh"
 const CATEGORY_NAME = "Thiết Bị Vệ Sinh"
 const BASE_PATH = "/thiet-bi-ve-sinh"
-const PAGE_SIZE = 24
+// Keep the initial public toilet listing within the mobile performance budget.
+// Pagination still receives the complete total from getPublicProducts.
+const PAGE_SIZE = 12
 const LISTING_PRODUCT_WHERE = buildPublicListingVisibilityWhere()
 
 interface PageProps {
@@ -67,6 +77,7 @@ export default async function ThietBiVeSinhSubPage({ params, searchParams }: Pag
     const activeProductSubType = sp.subtype
     const isNew = sp.is_new === 'true'
     const isFeatured = sp.is_featured === 'true'
+    const hasActiveFilterParams = hasActiveListingFilterParams(sp)
     const listingRuntimeConfig = getListingRuntimeConfig(CATEGORY_SLUG, sub)
 
     let price_min: number | undefined
@@ -136,6 +147,15 @@ export default async function ThietBiVeSinhSubPage({ params, searchParams }: Pag
     availableFilters.origins.forEach(f => filterDict[f.slug] = f.name)
     availableFilters.colors?.forEach(f => filterDict[f.slug] = f.name)
 
+    for (const source of getAboveFoldListingImageSources(products)) {
+        preload(source, {
+            as: "image",
+            imageSrcSet: createResponsiveSrcSet(source, "product"),
+            imageSizes: LISTING_PRODUCT_IMAGE_SIZES,
+            fetchPriority: "high",
+        })
+    }
+
     return (
         <main className="max-w-[1380px] mx-auto px-4 sm:px-5 lg:px-8">
             {/* Breadcrumb */}
@@ -153,7 +173,7 @@ export default async function ThietBiVeSinhSubPage({ params, searchParams }: Pag
                 {/* ── Sidebar: Desktop only. Mobile uses Sheet via CategoryMobileFilter ── */}
                 <aside className="hidden lg:flex w-[290px] flex-shrink-0 sticky top-24 scroll-sidebar flex-col gap-4">
                     <Suspense fallback={<div className="h-96 bg-neutral-100 animate-pulse rounded-lg" />}>
-                        <AdvancedSidebarFilter
+                        <DesktopAdvancedSidebarFilter
                             availableFilters={availableFilters}
                             runtimeConfig={listingRuntimeConfig}
                             hideSubcategoryFilter
@@ -170,7 +190,7 @@ export default async function ThietBiVeSinhSubPage({ params, searchParams }: Pag
                     </h1>
 
                     {/* Subcategory icon grid */}
-                    <SubcategoryIconGrid
+                    <StaticSubcategoryNavigation
                         subcategories={allSubcategories}
                         basePath={BASE_PATH}
                         activeSlug={sub}
@@ -208,9 +228,11 @@ export default async function ThietBiVeSinhSubPage({ params, searchParams }: Pag
                             </Suspense>
                         )}
 
-                        <Suspense>
-                            <ActiveFilters filterDict={filterDict} excludeKeys={["sub"]} />
-                        </Suspense>
+                        {hasActiveFilterParams ? (
+                            <Suspense>
+                                <ActiveFilters filterDict={filterDict} excludeKeys={["sub"]} />
+                            </Suspense>
+                        ) : null}
                     </div>
 
                     {products.length > 0 ? (
@@ -222,7 +244,7 @@ export default async function ThietBiVeSinhSubPage({ params, searchParams }: Pag
                                         product={{ ...product, subcategories: product.subcategories, brands: product.brands }}
                                         basePath={BASE_PATH}
                                         patternSlug={product.subcategories?.slug ?? "san-pham"}
-                                        priority={index === 0}
+                                        priority={shouldPrioritizeListingCard(index)}
                                         href={product.url}
                                     />
                                 ))}

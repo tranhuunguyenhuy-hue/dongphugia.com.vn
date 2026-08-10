@@ -4,7 +4,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { GoogleTagManager } from '@next/third-parties/google';
 import { JsonLd } from "@/components/seo/json-ld";
 import { buildOrganizationSchema } from "@/lib/seo/schema";
-import { getCanonicalSiteUrl } from "@/lib/site";
+import { getSiteRuntimeConfig } from "@/lib/site";
 import { WebVitalsReporter } from "@/components/analytics/web-vitals-reporter";
 import "./globals.css";
 
@@ -27,8 +27,10 @@ const playfairDisplay = Playfair_Display({
   preload: false,
 });
 
+const siteRuntime = getSiteRuntimeConfig();
+
 export const metadata: Metadata = {
-  metadataBase: new URL(getCanonicalSiteUrl()),
+  metadataBase: new URL(siteRuntime.siteUrl),
   title: {
     default: "Đông Phú Gia - Vật liệu xây dựng cao cấp tại Đà Lạt",
     template: "%s | Đông Phú Gia",
@@ -44,9 +46,9 @@ export const metadata: Metadata = {
     site: "@dongphugia",
   },
   robots: {
-    index: true,
-    follow: true,
-    googleBot: { index: true, follow: true },
+    index: siteRuntime.allowIndexing,
+    follow: siteRuntime.allowIndexing,
+    googleBot: { index: siteRuntime.allowIndexing, follow: siteRuntime.allowIndexing },
   },
 };
 
@@ -68,7 +70,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   const gtmId = process.env.NEXT_PUBLIC_GTM_ID;
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? getCanonicalSiteUrl();
+  const siteUrl = siteRuntime.siteUrl;
   const cdnHostname = process.env.BUNNY_CDN_HOSTNAME ?? "cdn.dongphugia.com.vn";
   const shouldPreconnectCdn = siteUrl.startsWith("https://") && cdnHostname;
   const cdnOrigin = shouldPreconnectCdn ? `https://${cdnHostname}` : null;

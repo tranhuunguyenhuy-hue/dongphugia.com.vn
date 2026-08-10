@@ -5,7 +5,7 @@ import { getPublicProducts, getAvailableFiltersBySubcategory, getListingRuntimeC
 import prisma from "@/lib/prisma"
 import { ProductCard } from "@/components/ui/product-card"
 import { ProductPagination } from "@/components/ui/product-pagination"
-import { AdvancedSidebarFilter } from "@/components/category/advanced-sidebar-filter"
+import { DesktopAdvancedSidebarFilter } from "@/components/category/desktop-advanced-sidebar-filter"
 import { ActiveFilters, ActiveFilterDict } from "@/components/category/active-filters"
 import { CategoryMobileFilter } from "@/components/category/category-mobile-filter"
 import { CategorySort } from "@/components/category/category-sort"
@@ -132,7 +132,7 @@ export default async function VatLieuNuocSubPage({ params, searchParams }: PageP
                 {/* ── Sidebar: Desktop only. Mobile uses Sheet via CategoryMobileFilter ── */}
                 <aside className="hidden lg:flex w-[290px] flex-shrink-0 sticky top-24 scroll-sidebar flex-col gap-4">
                     <Suspense fallback={<div className="h-96 bg-neutral-100 animate-pulse rounded-lg" />}>
-                        <AdvancedSidebarFilter
+                        <DesktopAdvancedSidebarFilter
                             availableFilters={availableFilters}
                             runtimeConfig={listingRuntimeConfig}
                             hideSubcategoryFilter
