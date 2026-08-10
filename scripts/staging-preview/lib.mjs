@@ -95,7 +95,7 @@ function trivySummaryBase(candidateSha, candidateDigest, imageRole) {
     }
 }
 
-function safeTrivyValue(value) {
+function allowlistedTrivyValue(value) {
     return typeof value === 'string'
         && !value.includes('://')
         && !/(?:DATABASE_URL|DIRECT_URL|COOLIFY_|GITHUB_TOKEN|API_TOKEN|SECRET|PASSWORD)/i.test(value)
@@ -104,12 +104,25 @@ function safeTrivyValue(value) {
         : null
 }
 
+function sanitizeTrivyField(fieldName, value, redactedFieldCounts, { optional = false } = {}) {
+    if (value == null || (optional && value === '')) {
+        return { value: null, redacted: false }
+    }
+    const safeValue = allowlistedTrivyValue(value)
+    if (safeValue) {
+        return { value: safeValue, redacted: false }
+    }
+    redactedFieldCounts[fieldName] = (redactedFieldCounts[fieldName] ?? 0) + 1
+    return { value: null, redacted: true }
+}
+
 function invalidTrivySummary(base, errorCode) {
     return {
         ...base,
         scanStatus: 'invalid',
         errorCode,
         counts: { high: null, critical: null },
+        redactedFieldCounts: {},
         findings: [],
     }
 }
@@ -129,11 +142,13 @@ export function sanitizeTrivyReport(report, { candidateSha, candidateDigest, ima
             scanStatus: 'unavailable',
             errorCode: 'trivy-report-unavailable',
             counts: { high: null, critical: null },
+            redactedFieldCounts: {},
             findings: [],
         }
     }
 
     const findings = []
+    const redactedFieldCounts = {}
     for (const result of report.Results) {
         if (!result || typeof result !== 'object') {
             return invalidTrivySummary(base, 'unsafe-finding-shape')
@@ -155,23 +170,26 @@ export function sanitizeTrivyReport(report, { candidateSha, candidateDigest, ima
             const severity = vulnerability.Severity
             if (severity !== 'HIGH' && severity !== 'CRITICAL') continue
 
-            const advisory = safeTrivyValue(vulnerability.VulnerabilityID)
-            const packageName = safeTrivyValue(vulnerability.PkgName)
-            const installedVersion = safeTrivyValue(vulnerability.InstalledVersion)
-            const fixedVersion = vulnerability.FixedVersion == null || vulnerability.FixedVersion === ''
-                ? null
-                : safeTrivyValue(vulnerability.FixedVersion)
-            if (!advisory || !packageName || !installedVersion || (vulnerability.FixedVersion && !fixedVersion)) {
-                return invalidTrivySummary(base, 'unsafe-finding-field')
-            }
-            findings.push({
+            const redactedFields = []
+            const advisory = sanitizeTrivyField('advisory', vulnerability.VulnerabilityID, redactedFieldCounts)
+            const packageName = sanitizeTrivyField('package', vulnerability.PkgName, redactedFieldCounts)
+            const installedVersion = sanitizeTrivyField('installedVersion', vulnerability.InstalledVersion, redactedFieldCounts)
+            const fixedVersion = sanitizeTrivyField('fixedVersion', vulnerability.FixedVersion, redactedFieldCounts, { optional: true })
+            if (advisory.redacted) redactedFields.push('advisory')
+            if (packageName.redacted) redactedFields.push('package')
+            if (installedVersion.redacted) redactedFields.push('installedVersion')
+            if (fixedVersion.redacted) redactedFields.push('fixedVersion')
+
+            const finding = {
                 severity,
                 component,
-                advisory,
-                package: packageName,
-                installedVersion,
-                fixedVersion,
-            })
+                advisory: advisory.value,
+                package: packageName.value,
+                installedVersion: installedVersion.value,
+                fixedVersion: fixedVersion.value,
+            }
+            if (redactedFields.length > 0) finding.redactedFields = redactedFields
+            findings.push(finding)
         }
     }
 
@@ -189,6 +207,7 @@ export function sanitizeTrivyReport(report, { candidateSha, candidateDigest, ima
             high: findings.filter((finding) => finding.severity === 'HIGH').length,
             critical: findings.filter((finding) => finding.severity === 'CRITICAL').length,
         },
+        redactedFieldCounts: Object.fromEntries(Object.entries(redactedFieldCounts).sort(([left], [right]) => left.localeCompare(right))),
         findings,
     }
 }

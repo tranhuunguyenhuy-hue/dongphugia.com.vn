@@ -56,6 +56,7 @@ describe('sanitized Trivy evidence', () => {
             scanStatus: 'complete',
             errorCode: null,
             counts: { high: 1, critical: 1 },
+            redactedFieldCounts: {},
             findings: [
                 {
                     severity: 'CRITICAL',
@@ -132,14 +133,14 @@ describe('sanitized Trivy evidence', () => {
         expect(summary.counts).toEqual({ high: 1, critical: 0 })
     })
 
-    it('rejects forbidden URL or secret-shaped finding fields fail-closed', () => {
+    it('redacts forbidden URL or secret-shaped finding fields without losing counts', () => {
         const summary = sanitizeTrivyReport({
             Results: [{
                 Class: 'lang-pkgs',
                 Vulnerabilities: [{
                     VulnerabilityID: 'GHSA-safe-test',
-                    PkgName: 'DATABASE_URL=postgresql://secret',
-                    InstalledVersion: '1.0.0',
+                    PkgName: 'https://secret.example/package',
+                    InstalledVersion: 'API_TOKEN=do-not-copy',
                     FixedVersion: '1.0.1',
                     Severity: 'HIGH',
                 }],
@@ -147,13 +148,51 @@ describe('sanitized Trivy evidence', () => {
         }, { candidateSha, candidateDigest })
 
         expect(summary).toMatchObject({
-            scanStatus: 'invalid',
-            errorCode: 'unsafe-finding-field',
-            counts: { high: null, critical: null },
-            findings: [],
+            scanStatus: 'complete',
+            errorCode: null,
+            counts: { high: 1, critical: 0 },
+            redactedFieldCounts: { installedVersion: 1, package: 1 },
+            findings: [{
+                severity: 'HIGH',
+                advisory: 'GHSA-safe-test',
+                package: null,
+                installedVersion: null,
+                fixedVersion: '1.0.1',
+                redactedFields: ['package', 'installedVersion'],
+            }],
         })
         expect(JSON.stringify(summary)).not.toContain('postgresql://')
         expect(JSON.stringify(summary)).not.toContain('DATABASE_URL')
+        expect(JSON.stringify(summary)).not.toContain('https://secret.example/package')
+        expect(JSON.stringify(summary)).not.toContain('API_TOKEN=do-not-copy')
+        expect(() => assertTrivyZero(summary)).toThrow('gate failed')
+    })
+
+    it('redacts non-allowlisted finding strings while retaining safe remediation fields', () => {
+        const summary = sanitizeTrivyReport({
+            Results: [{
+                Class: 'os-pkgs',
+                Vulnerabilities: [{
+                    VulnerabilityID: 'CVE-2026-0042',
+                    PkgName: 'package name with spaces',
+                    InstalledVersion: '1.2.3-r1',
+                    FixedVersion: '1.2.3-r2',
+                    Severity: 'CRITICAL',
+                }],
+            }],
+        }, { candidateSha, candidateDigest })
+
+        expect(summary.counts).toEqual({ high: 0, critical: 1 })
+        expect(summary.redactedFieldCounts).toEqual({ package: 1 })
+        expect(summary.findings[0]).toMatchObject({
+            advisory: 'CVE-2026-0042',
+            package: null,
+            installedVersion: '1.2.3-r1',
+            fixedVersion: '1.2.3-r2',
+            redactedFields: ['package'],
+        })
+        expect(JSON.stringify(summary)).not.toContain('package name with spaces')
+        expect(() => assertTrivyZero(summary)).toThrow('gate failed')
     })
 
     it('fails closed on nonzero counts and passes only an exact zero summary', () => {
