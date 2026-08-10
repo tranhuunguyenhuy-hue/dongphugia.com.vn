@@ -3,6 +3,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { ChevronDown } from 'lucide-react'
+import { BrandLogo } from '@/components/media/brand-logo'
 import type { SpecFilterDef } from './subcategory-spec-filter'
 import type { ListingRuntimeConfig } from '@/lib/public-api-products'
 
@@ -145,10 +146,9 @@ function CheckRow({
 }
 
 // ── Brand Tag Chip (logo-based) ────────────────────────────────────────────────
-function BrandTagChip({ slug, name, active, onClick }: {
+export function BrandTagChip({ slug, name, active, onClick }: {
     slug: string; name: string; active: boolean; onClick: () => void
 }) {
-    const [imgFailed, setImgFailed] = React.useState(false)
     return (
         <button
             type="button"
@@ -163,23 +163,15 @@ function BrandTagChip({ slug, name, active, onClick }: {
             `}
             title={name}
         >
-            {!imgFailed ? (
-                <img
-                    src={`/images/brands/${slug}.png`}
-                    alt={name}
-                    className={`h-[16px] max-w-[56px] object-contain transition-all duration-200 ${
-                        active ? 'opacity-100' : 'opacity-50 grayscale group-hover/tag:opacity-80 group-hover/tag:grayscale-0'
-                    }`}
-                    loading="lazy"
-                    onError={() => setImgFailed(true)}
-                />
-            ) : (
-                <span className={`text-[11px] font-semibold whitespace-nowrap transition-colors ${
-                    active ? 'text-[#2E7A96]' : 'text-neutral-500 group-hover/tag:text-neutral-700'
-                }`}>
-                    {name}
-                </span>
-            )}
+            <BrandLogo
+                slug={slug}
+                name={name}
+                className={`h-[16px] max-w-[56px] whitespace-nowrap transition-all duration-200 ${
+                    active
+                        ? 'text-[#2E7A96] opacity-100'
+                        : 'text-neutral-500 opacity-50 grayscale group-hover/tag:text-neutral-700 group-hover/tag:opacity-80 group-hover/tag:grayscale-0'
+                }`}
+            />
             {active && (
                 <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-[#2E7A96] flex items-center justify-center">
                     <svg className="w-2 h-2 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor">
@@ -341,6 +333,7 @@ export function AdvancedSidebarFilter({
     const isPriceActive = priceParam !== ''
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- synchronizes URL-driven filter state
         setLocalPrice(priceParam ? parsePriceParam(priceParam) : [PRICE_MIN, PRICE_MAX])
     }, [priceParam])
 
