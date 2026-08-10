@@ -41,6 +41,24 @@ describe('staging workflow source contract', () => {
         expect(workflow).toContain('operator-handoff.md')
     })
 
+    it('proves recovery tags are missing with a registry status code and fails closed', () => {
+        const start = workflow.indexOf('      - name: Verify recovery tags are absent')
+        const end = workflow.indexOf('      - name: Checkout exact origin main rollback source', start)
+        expect(start).toBeGreaterThanOrEqual(0)
+        expect(end).toBeGreaterThan(start)
+        const guard = workflow.slice(start, end)
+
+        expect(guard).toContain('GITHUB_TOKEN: ${{ github.token }}')
+        expect(guard).toContain('https://ghcr.io/v2/')
+        expect(guard).toContain("--write-out '%{http_code}'")
+        expect(guard).toContain('404)')
+        expect(guard).toMatch(/2\?\?\|401\|403\)/)
+        expect(guard).not.toContain('docker buildx imagetools inspect')
+        expect(guard).not.toContain('no such manifest')
+        expect(guard).not.toContain('MANIFEST_UNKNOWN')
+        expect(guard).not.toContain('manifest unknown')
+    })
+
     it('stops before private Coolify UI work and never runs deployment acceptance on the runner', () => {
         expect(workflow).toContain('stop before private Coolify deployment')
         expect(workflow).not.toContain('Protected staging deploy and acceptance')

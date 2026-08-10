@@ -181,19 +181,37 @@ jobs:
       - name: Verify recovery tags are absent
         shell: bash
         env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PACKAGE_OWNER: ${{ github.repository_owner }}
+          PACKAGE_NAME: dongphugia-web
           ROLLBACK_TAG: ${{ env.IMAGE_NAME }}:staging-rollback-${{ needs.candidate.outputs.main_sha }}-${{ github.run_id }}
           CANDIDATE_TAG: ${{ env.IMAGE_NAME }}:staging-${{ needs.candidate.outputs.head_sha }}-${{ github.run_id }}
         run: |
           set -euo pipefail
+
+          # Use the OCI Distribution API so a missing tag is identified by its
+          # status code. Response bodies and client diagnostics stay discarded;
+          # every response other than a definitive 404 fails closed.
           check_absent() {
-            set +e
-            output="$(docker buildx imagetools inspect "$1" 2>&1)"
-            status=$?
-            set -e
-            if [ "$status" -eq 0 ]; then exit 1; fi
-            case "$output" in
-              *"no such manifest"*|*"MANIFEST_UNKNOWN"*|*"manifest unknown"*) ;;
-              *) exit 1 ;;
+            local image_ref="$1"
+            local tag="${image_ref##*:}"
+            local status
+            [[ "$PACKAGE_OWNER" =~ ^[A-Za-z0-9_.-]+$ ]] || return 1
+            [[ "$image_ref" == "ghcr.io/${PACKAGE_OWNER}/${PACKAGE_NAME}:$tag" ]] || return 1
+            [[ "$tag" =~ ^(staging-rollback|staging)-[0-9a-f]{40}-[0-9]+$ ]] || return 1
+            if ! status="$(curl --silent --output /dev/null --write-out '%{http_code}' \
+              --request HEAD \
+              --connect-timeout 15 \
+              --max-time 30 \
+              --header "Authorization: Bearer ${GITHUB_TOKEN}" \
+              --header 'Accept: application/vnd.docker.distribution.manifest.v2+json' \
+              "https://ghcr.io/v2/${PACKAGE_OWNER}/${PACKAGE_NAME}/manifests/$tag" 2>/dev/null)"; then
+              status=000
+            fi
+            case "$status" in
+              404) return 0 ;;
+              2??|401|403) return 1 ;;
+              *) return 1 ;;
             esac
           }
           check_absent "$ROLLBACK_TAG"
