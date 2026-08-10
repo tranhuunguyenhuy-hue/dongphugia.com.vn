@@ -13,6 +13,7 @@ import { ProductTypeFilter } from "@/components/category/product-type-filter"
 import { ActiveSpecFilterChips, SpecFilterDef } from "@/components/category/subcategory-spec-filter"
 import { SubcategoryIconGrid } from "@/components/category/subcategory-icon-grid"
 import { buildPublicListingVisibilityWhere } from "@/lib/public-product-visibility"
+import { shouldPrioritizeListingCard } from "@/lib/listing-image-priority"
 import { ChevronRight, Home } from "lucide-react"
 import Link from "next/link"
 
@@ -222,7 +223,7 @@ export default async function ThietBiVeSinhSubPage({ params, searchParams }: Pag
                                         product={{ ...product, subcategories: product.subcategories, brands: product.brands }}
                                         basePath={BASE_PATH}
                                         patternSlug={product.subcategories?.slug ?? "san-pham"}
-                                        priority={index === 0}
+                                        priority={shouldPrioritizeListingCard(index)}
                                         href={product.url}
                                     />
                                 ))}
