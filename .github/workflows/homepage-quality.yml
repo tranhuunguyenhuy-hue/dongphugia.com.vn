@@ -116,9 +116,8 @@ jobs:
           npm run prepare:standalone-assets
           npm run test:homepage
 
-      - name: Lighthouse diagnostics (post-launch performance)
-        continue-on-error: true
-        run: npm run perf:lighthouse
+      - name: Mobile toilet listing performance acceptance
+        run: npm run perf:lighthouse:toilet
 
       - name: Upload homepage performance diagnostics
         if: always()
@@ -126,7 +125,8 @@ jobs:
         with:
           name: homepage-performance-${{ github.sha }}
           path: |
-            scripts/output/lighthouse
+            scripts/output/lighthouse-toilet
+            .lighthouseci
             *.trace.json
             *.devtoolslog.json
           if-no-files-found: warn

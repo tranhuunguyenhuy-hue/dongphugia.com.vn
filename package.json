@@ -23,6 +23,7 @@
     "test:media": "vitest run src/lib/media src/app/api/upload-image",
     "test:homepage": "playwright test --config=playwright.homepage.config.ts",
     "perf:lighthouse": "lhci autorun",
+    "perf:lighthouse:toilet": "lhci autorun --config=lighthouserc.toilet-listing.cjs && node scripts/quality/assert-lighthouse-toilet-median.mjs",
     "perf:lighthouse:production": "lhci autorun --config=lighthouserc.production.cjs",
     "monitor:probe": "node scripts/monitoring/https-probe.mjs",
     "monitor:verify-package": "node scripts/monitoring/verify-package.mjs",

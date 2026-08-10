@@ -53,7 +53,9 @@ SET
 INSERT INTO "categories" ("name", "slug", "description", "icon_name", "is_active", "sort_order", "seo_title", "seo_description")
 VALUES
   ('[STG-DEMO] Thiết bị vệ sinh', 'thiet-bi-ve-sinh', 'Synthetic staging category. Do not copy to production.', 'Bath', true, 10, '[STG-DEMO] Thiết bị vệ sinh', 'Synthetic staging category for smoke testing.'),
-  ('[STG-DEMO] Thiết bị bếp', 'thiet-bi-bep', 'Synthetic staging category. Do not copy to production.', 'ChefHat', true, 20, '[STG-DEMO] Thiết bị bếp', 'Synthetic staging category for smoke testing.')
+  ('[STG-DEMO] Thiết bị bếp', 'thiet-bi-bep', 'Synthetic staging category. Do not copy to production.', 'ChefHat', true, 20, '[STG-DEMO] Thiết bị bếp', 'Synthetic staging category for smoke testing.'),
+  ('[STG-DEMO] Vật liệu nước', 'vat-lieu-nuoc', 'Synthetic staging category. Do not copy to production.', 'Droplets', true, 30, '[STG-DEMO] Vật liệu nước', 'Synthetic staging category for smoke testing.'),
+  ('[STG-DEMO] Gạch ốp lát', 'gach-op-lat', 'Synthetic staging category. Do not copy to production.', 'Grid3X3', true, 40, '[STG-DEMO] Gạch ốp lát', 'Synthetic staging category for smoke testing.')
 ON CONFLICT ("slug") DO NOTHING;
 
 INSERT INTO "subcategories" ("category_id", "name", "slug", "description", "icon_name", "is_active", "sort_order", "seo_title", "seo_description")
@@ -211,6 +213,8 @@ FROM (
   VALUES
     ('STG-DEMO-TBVS-001', '[STG-DEMO] Bồn cầu smoke test', 'stg-demo-bon-cau-smoke-test', 'thiet-bi-ve-sinh', 'stg-demo-bon-cau', 'stg-demo-sanitary-brand', 'stg-demo-viet-nam', 'stg-demo-trang', 'stg-demo-su', 'stg-demo-bon-cau-mot-khoi', 'stg-demo-basic', 2500000.00, 'Synthetic product for staging smoke tests only.', 'Synthetic features only. Not production data.', '{"STG-DEMO Loại":"Bồn cầu","STG-DEMO Màu":"Trắng"}', 'https://placehold.co/800x800?text=STG-DEMO-TBVS-001', true, true, 30),
     ('STG-DEMO-TBVS-002', '[STG-DEMO] Sen tắm smoke test', 'stg-demo-sen-tam-smoke-test', 'thiet-bi-ve-sinh', 'stg-demo-sen-tam', 'stg-demo-sanitary-brand', 'stg-demo-viet-nam', 'stg-demo-xam', 'stg-demo-inox', 'stg-demo-sen-tam-cay', 'stg-demo-premium', 1800000.00, 'Synthetic product for staging smoke tests only.', 'Synthetic features only. Not production data.', '{"STG-DEMO Loại":"Sen tắm","STG-DEMO Màu":"Xám"}', 'https://placehold.co/800x800?text=STG-DEMO-TBVS-002', true, false, 20),
+    ('STG-DEMO-TBVS-003', '[STG-DEMO] Bồn cầu route smoke test A', 'stg-demo-bon-cau-route-a', 'thiet-bi-ve-sinh', 'stg-demo-bon-cau', 'stg-demo-sanitary-brand', 'stg-demo-viet-nam', 'stg-demo-trang', 'stg-demo-su', 'stg-demo-bon-cau-mot-khoi', 'stg-demo-basic', 2600000.00, 'Synthetic product for staging route tests only.', 'Synthetic features only. Not production data.', '{"STG-DEMO Loại":"Bồn cầu","STG-DEMO Màu":"Trắng"}', 'https://placehold.co/800x800?text=STG-DEMO-TBVS-003', false, false, 19),
+    ('STG-DEMO-TBVS-004', '[STG-DEMO] Bồn cầu route smoke test B', 'stg-demo-bon-cau-route-b', 'thiet-bi-ve-sinh', 'stg-demo-bon-cau', 'stg-demo-sanitary-brand', 'stg-demo-viet-nam', 'stg-demo-trang', 'stg-demo-su', 'stg-demo-bon-cau-mot-khoi', 'stg-demo-basic', 2700000.00, 'Synthetic product for staging route tests only.', 'Synthetic features only. Not production data.', '{"STG-DEMO Loại":"Bồn cầu","STG-DEMO Màu":"Trắng"}', 'https://placehold.co/800x800?text=STG-DEMO-TBVS-004', false, false, 18),
     ('STG-DEMO-BEP-001', '[STG-DEMO] Vòi bếp smoke test', 'stg-demo-voi-bep-smoke-test', 'thiet-bi-bep', 'stg-demo-voi-rua-chen', 'stg-demo-kitchen-brand', 'stg-demo-singapore', 'stg-demo-xam', 'stg-demo-inox', 'stg-demo-voi-bep', 'stg-demo-standard', 1200000.00, 'Synthetic product for staging smoke tests only.', 'Synthetic features only. Not production data.', '{"STG-DEMO Loại":"Vòi bếp","STG-DEMO Màu":"Xám"}', 'https://placehold.co/800x800?text=STG-DEMO-BEP-001', false, true, 10)
 ) AS v(
   "sku",
