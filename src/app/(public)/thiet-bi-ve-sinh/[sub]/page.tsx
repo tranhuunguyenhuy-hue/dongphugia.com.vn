@@ -29,7 +29,9 @@ export const revalidate = 10800
 const CATEGORY_SLUG = "thiet-bi-ve-sinh"
 const CATEGORY_NAME = "Thiết Bị Vệ Sinh"
 const BASE_PATH = "/thiet-bi-ve-sinh"
-const PAGE_SIZE = 24
+// Keep the initial public toilet listing within the mobile performance budget.
+// Pagination still receives the complete total from getPublicProducts.
+const PAGE_SIZE = 12
 const LISTING_PRODUCT_WHERE = buildPublicListingVisibilityWhere()
 
 interface PageProps {
