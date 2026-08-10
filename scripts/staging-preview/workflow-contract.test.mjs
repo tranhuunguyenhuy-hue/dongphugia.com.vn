@@ -41,6 +41,27 @@ describe('staging workflow source contract', () => {
         expect(workflow).toContain('operator-handoff.md')
     })
 
+    it('runs rollback summary generation from verified candidate helpers, not origin/main', () => {
+        const helperStart = workflow.indexOf('      - name: Stage verified Trivy summary helper from accepted head')
+        const mainCheckoutStart = workflow.indexOf('      - name: Checkout exact origin main rollback source')
+        const rollbackSummaryStart = workflow.indexOf('      - name: Write sanitized rollback Trivy summary')
+        const helperCleanupStart = workflow.indexOf('      - name: Remove staged Trivy summary helper')
+        expect(helperStart).toBeGreaterThanOrEqual(0)
+        expect(mainCheckoutStart).toBeGreaterThan(helperStart)
+        expect(rollbackSummaryStart).toBeGreaterThan(mainCheckoutStart)
+        expect(helperCleanupStart).toBeGreaterThan(rollbackSummaryStart)
+
+        const helperStage = workflow.slice(helperStart, mainCheckoutStart)
+        expect(helperStage).toContain('git rev-parse "$EXPECTED_SHA:$writer_path"')
+        expect(helperStage).toContain('git rev-parse "$EXPECTED_SHA:$library_path"')
+        expect(helperStage).toContain('git hash-object "$writer_path"')
+        expect(helperStage).toContain('TRIVY_HELPER_DIR=$helper_dir')
+
+        const rollbackSummary = workflow.slice(rollbackSummaryStart, helperCleanupStart)
+        expect(rollbackSummary).toContain('node "$TRIVY_HELPER_DIR/write-trivy-summary.mjs"')
+        expect(rollbackSummary).not.toContain('node scripts/staging-preview/write-trivy-summary.mjs')
+    })
+
     it('proves recovery tags are missing with the GitHub Packages API and fails closed', () => {
         const start = workflow.indexOf('      - name: Verify recovery tags are absent')
         const end = workflow.indexOf('      - name: Checkout exact origin main rollback source', start)

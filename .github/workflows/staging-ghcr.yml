@@ -129,6 +129,27 @@ jobs:
           esac
           case "$IMAGE_NAME" in *:latest|*@latest) exit 1 ;; esac
 
+      - name: Stage verified Trivy summary helper from accepted head
+        shell: bash
+        env:
+          EXPECTED_SHA: ${{ needs.candidate.outputs.head_sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          writer_path='scripts/staging-preview/write-trivy-summary.mjs'
+          library_path='scripts/staging-preview/lib.mjs'
+          writer_blob="$(git rev-parse "$EXPECTED_SHA:$writer_path")"
+          library_blob="$(git rev-parse "$EXPECTED_SHA:$library_path")"
+          test "$writer_blob" = "$(git hash-object "$writer_path")"
+          test "$library_blob" = "$(git hash-object "$library_path")"
+          test -s "$writer_path"
+          test -s "$library_path"
+          helper_dir="$RUNNER_TEMP/dpg-trivy-summary-helper"
+          rm -rf "$helper_dir"
+          mkdir -p "$helper_dir"
+          cp "$writer_path" "$library_path" "$helper_dir/"
+          echo "TRIVY_HELPER_DIR=$helper_dir" >> "$GITHUB_ENV"
+
       - name: Bootstrap ephemeral synthetic build database
         shell: bash
         env:
@@ -351,7 +372,7 @@ jobs:
           CANDIDATE_SHA: ${{ needs.candidate.outputs.main_sha }}
           CANDIDATE_DIGEST: ${{ steps.rollback_build.outputs.digest }}
           IMAGE_ROLE: exact-main-rollback
-        run: node scripts/staging-preview/write-trivy-summary.mjs
+        run: node "$TRIVY_HELPER_DIR/write-trivy-summary.mjs"
 
       - name: Upload sanitized rollback Trivy summary
         if: always()
@@ -372,6 +393,15 @@ jobs:
           test "$(jq -r '.scanStatus' "$summary_path")" = "complete"
           test "$(jq -r '.counts.high // -1' "$summary_path")" = "0"
           test "$(jq -r '.counts.critical // -1' "$summary_path")" = "0"
+
+      - name: Remove staged Trivy summary helper
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -n "${TRIVY_HELPER_DIR:-}" ]]; then
+            rm -rf "$TRIVY_HELPER_DIR"
+          fi
 
       - name: Checkout exact accepted candidate head for candidate image
         uses: actions/checkout@v4

@@ -102,6 +102,18 @@ describe('sanitized Trivy evidence', () => {
         expect(() => assertTrivyZero(summary)).toThrow('unavailable')
     })
 
+    it('fails closed on a malformed Trivy report shape', () => {
+        const summary = sanitizeTrivyReport({ Results: [{ Vulnerabilities: 'not-an-array' }] }, { candidateSha, candidateDigest })
+
+        expect(summary).toMatchObject({
+            scanStatus: 'invalid',
+            errorCode: 'unsafe-finding-shape',
+            counts: { high: null, critical: null },
+            findings: [],
+        })
+        expect(() => assertTrivyZero(summary)).toThrow('unavailable or invalid')
+    })
+
     it('keeps an explicit null fixed version without exposing raw fields', () => {
         const summary = sanitizeTrivyReport({
             Results: [{
