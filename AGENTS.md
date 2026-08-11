@@ -33,12 +33,13 @@ mutation ownership, merge authority, or production authority.
 
 ## Mandatory preflight
 
-Complete this before any mutation:
+Complete this before repository work, including read-only diagnosis or review:
 
 1. Confirm `pwd` is exactly `/Users/m-ac/Projects/dongphugia`.
 2. Run `git status --short --branch` and identify the intended branch.
 3. Read the scope document that matches the task:
-   - **Source, Git, issue, or PR work:** `docs/WORKFLOW-WITH-CODEX.md`.
+   - **Any repo-scoped Matt skill, source, Git, issue, or PR work:**
+     `docs/WORKFLOW-WITH-CODEX.md`.
    - **Application code, schema, or tests:** `docs/AGENTS.md`.
    - **Domain terms or architectural decisions:** `docs/agents/domain.md`, then
      the relevant `CONTEXT.md` and ADRs when they exist.

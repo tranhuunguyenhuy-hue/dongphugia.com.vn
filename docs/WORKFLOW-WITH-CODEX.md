@@ -99,7 +99,4 @@ Source delivery and production rollout are separate workflows:
 
 `source commit → CI image/digest → staging validation → PM review → merge → production rollout`
 
-Production requires a separate scope, exact Asia/Ho_Chi_Minh maintenance window,
-explicit rollout approval, reviewed immutable ARM64 digest, monitoring, fresh
-backup, verified rollback, and no-split-brain evidence. No source task implies a
-database, DNS, Bunny, Vercel, AWS runtime, or traffic change.
+Every production mutation must satisfy the production gates in root `AGENTS.md`.
