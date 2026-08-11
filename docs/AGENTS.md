@@ -1,273 +1,66 @@
-# Đông Phú Gia — Application reference
-
-**Updated:** 04/08/2026 | Live: www.dongphugia.vn | Deploy: AWS EC2/Coolify
-
-> `AGENTS.md` ở root chứa operating rules bắt buộc. File này giữ conventions
-> ứng dụng và gotchas chi tiết.
-
-> AI agent đọc `AGENTS.md` ở root trước, sau đó đọc file này khi làm application work.
-
----
-
-## Project
-
-E-commerce B2C, VLXD cao cấp Đà Lạt. Thanh toán offline. 4 categories:
-`/thiet-bi-ve-sinh` · `/thiet-bi-bep` · `/vat-lieu-nuoc` · `/gach-op-lat`
-
-Contact: 094 9349 949 · vlxd.dongphu@gmail.com
-
----
-
-## Tech Stack
-
-```
-Next.js App Router · React 19 · TypeScript
-Tailwind CSS v4 — @theme directive in globals.css (NO tailwind.config.js)
-shadcn/ui (Radix) · Prisma · AWS PostgreSQL · Zustand (cart)
-Bunny CDN compatibility · AWS EC2/Coolify immutable ARM64 deploy
-```
-
----
-
-## Team & Workflow
-
-| Role | Who | Scope |
-|------|-----|-------|
-| PM | Nguyen Huy | Goal, scope, acceptance và production approval |
-| Engineering | OpenAI Codex | Plan, implement, test, PR, closeout |
-
-Quy trình đầy đủ: [`docs/WORKFLOW-WITH-CODEX.md`](WORKFLOW-WITH-CODEX.md).
-Mỗi task dùng branch `codex/*`, PR và protected `main`. Merge Git không đồng
-nghĩa deploy production.
-
----
-
-## Session Start Checklist
-
-```
-□ 1. pwd phải là /Users/m-ac/Projects/dongphugia
-□ 2. Đọc AGENTS.md ở root và docs/WORKFLOW-WITH-CODEX.md
-□ 3. git status --short --branch
-□ 4. git switch main && git pull --ff-only origin main
-□ 5. Tạo branch codex/<task-name>; không commit trực tiếp main
-□ 6. npm ci khi dependencies chưa sẵn sàng
-□ 7. npm run lint && npm run typecheck && npm test trước PR
-```
-
----
-
-## Directory Structure
-
-```
-src/
-├── app/
-│   ├── (public)/           # Frontend pages
-│   │   ├── thiet-bi-ve-sinh/
-│   │   ├── thiet-bi-bep/
-│   │   ├── gach-op-lat/
-│   │   ├── vat-lieu-nuoc/
-│   │   ├── gio-hang/       # Cart
-│   │   ├── tim-kiem/       # Search
-│   │   └── blog/
-│   ├── admin/(dashboard)/  # CMS — auth protected, RBAC 3 roles
-│   └── api/                # search, orders, quote-requests, upload-image
-├── components/
-│   ├── ui/                 # shadcn/ui — ADMIN ONLY
-│   ├── layout/             # Header, Footer, FloatingContact
-│   ├── category/           # Listing, SmartFilter
-│   └── product/            # Gallery, DetailTabs, VariantSelector
-├── lib/                    # Server actions + utils
-└── config/site.ts          # Nav links, footer links
-```
-
-**Admin CRUD pattern (dùng `products/` làm reference):**
-```
-admin/{entity}/
-├── page.tsx                    # Server component — list + filter
-├── {entity}-form.tsx           # Client component — create + edit
-├── {entity}-delete-button.tsx  # Two-click delete
-├── new/page.tsx
-└── [id]/page.tsx
-```
-
----
-
-## Critical Conventions
-
-**Tailwind v4:** Config ONLY in `src/app/globals.css @theme`. Brand primary
-`brand-500` is `#2D90AF`. NO `tailwind.config.js`. NO edit `@source` lines.
-
-**shadcn/ui:** Admin pages ONLY. NEVER import `@/components/ui/` trong `(public)/` pages.
-
-**Next.js App Router:**
-- `params` và `searchParams` là Promise → phải `await`
-- Server Components fetch data · Client Components handle interactivity
-- `unstable_cache()` + `revalidateTag()` cho ISR
-
-**Server Actions:** NO `redirect()` trong programmatic call → return `{ success: true }`. `redirect()` chỉ OK trong login/logout. Always `revalidateTag()` sau mutation.
-
-**Database:** AWS PostgreSQL là production source duy nhất. Không chạy migration
-hoặc schema/data write trên production nếu chưa có PM window, backup, rollback
-và migration plan được duyệt. Sau schema sync phải chạy `npx prisma generate`.
-
-**Images:** Bunny CDN qua `/api/upload-image`. NEVER `public/uploads/`.
-
-**Metadata titles:** Plain string WITHOUT `| Đông Phú Gia` suffix — root layout template `"%s | Đông Phú Gia"` tự xử lý. Homepage dùng `{ absolute: "..." }`.
-
----
-
-## Database — 29 Models
-
-### Product
-| Model | Mô tả |
-|-------|--------|
-| `products` | 40+ fields, specs JSONB, search_vector FTS |
-| `categories` | 4 danh mục chính |
-| `subcategories` | Bồn cầu, sen tắm... |
-| `brands` | TOTO, INAX, Caesar... |
-| `product_images` | Gallery (main/gallery type) |
-| `product_relationships` | Combo/component/accessory |
-| `filter_definitions` | Bộ lọc động theo category (JSONB options) |
-| `colors`, `materials`, `origins` | Lookup tables |
-
-### Orders
-| Model | Mô tả |
-|-------|--------|
-| `orders` + `order_items` | Status: pending→received→confirmed→inventory_check→completed/cancelled |
-| `quote_requests` + `quote_items` | Status: pending→processing→quoted→accepted/rejected |
-| `customers` | CRM (unique by phone) |
-
-### Content
-`blog_posts`, `blog_categories`, `blog_tags`, `blog_post_tags`, `banners`, `partners`, `projects`, `redirects`
-
-### Admin
-`admin_users` (RBAC: admin/sale_manager/sale), `admin_sessions`, `audit_logs`
-
-### Key fields trong `products`
-```
-sku (unique), slug, category_id, subcategory_id, brand_id
-price, original_price, online_discount_amount, price_display
-is_master, variant_group    # Variant system
-is_featured, is_home_featured, is_promotion, is_combo
-specs (JSONB), search_vector (tsvector)
-image_main_url, product_images (relation)
-```
-
----
-
-## Development Commands
-
-```bash
-npm run dev           # localhost:3000
-npx tsc --noEmit      # TypeScript check — PHẢI pass trước commit
-npm run build         # Full build (cần DB connection)
-npm run lint          # ESLint
-
-# DB workflow
-npx prisma db pull    # Sync schema từ production
-npx prisma generate   # Regenerate Prisma Client (bắt buộc sau db pull)
-npx prisma studio     # Visual DB browser
-
-# Clean cache
-rm -rf .next && npm run dev
-```
-
----
-
-## Environment Variables
-
-```bash
-# Database
-DATABASE_URL=     # PostgreSQL runtime URL; never print or commit
-DIRECT_URL=       # Direct administrative URL; runtime secret only
-
-# Site
-NEXT_PUBLIC_SITE_URL=https://www.dongphugia.vn
-NEXT_PUBLIC_GTM_ID=
-
-# Bunny CDN
-BUNNY_STORAGE_ZONE_NAME=
-BUNNY_STORAGE_API_KEY=
-BUNNY_STORAGE_HOSTNAME=
-BUNNY_CDN_HOSTNAME=cdn.dongphugia.com.vn
-
-# Cache
-REVALIDATION_SECRET=
-REVALIDATE_SECRET=
-
-# Admin
-SESSION_HOURS=8
-MAINTENANCE_MODE=false
-```
-
----
-
-## Auth — Admin Panel
-
-- bcrypt (12 rounds) + SHA-256 session token → bảng `admin_sessions`
-- Cookie: `dpg-admin-session` (httpOnly, secure, sameSite=lax)
-- Guard: `src/app/admin/(dashboard)/layout.tsx`
-- RBAC: `admin` > `sale_manager` > `sale`
-
----
-
-## Hard Rules
-
-| Rule | Nếu vi phạm |
-|------|-------------|
-| Production mutation cần PM window và explicit approval | Block ngay |
-| Không commit trực tiếp hoặc force-push `main` | Block ngay |
-| `npx tsc --noEmit` phải pass trước commit | Block ngay |
-| Không xóa bảng/column DB khi chưa hỏi Tech Lead | Block ngay |
-| Không thay đổi auth flow khi chưa hỏi Tech Lead | Block ngay |
-| Không thêm major npm dependency khi chưa hỏi Tech Lead | Block ngay |
-| Required CI và protected `main` không được bypass | Block ngay |
-
----
-
-## Linear Issue Template
-
-```markdown
-## Context
-[Tại sao — business reason]
-
-## Scope
-[Làm gì. Không làm gì.]
-
-## Files cần sửa / tạo
-- src/...
-
-## Approach
-[Hướng implement cụ thể]
-
-## Acceptance criteria
-- [ ] ...
-
-## Gotchas
-[Pattern cần tránh, edge cases]
-```
-
----
-
-## Known Gotchas
-
-| Vấn đề | Fix |
-|--------|-----|
-| `NEXT_REDIRECT` trong server action | Return `{ success: true }`, client `router.push()` |
-| Prisma stale types sau schema change | `npx prisma generate` + restart dev |
-| `params` async error | `const { slug } = await params` |
-| Build WASM/Prisma error | Thêm đủ back-relations vào schema và regenerate client |
-| Ảnh không hiển thị | Thêm Bunny CDN vào `images.remotePatterns` |
-| Title trùng brand name | Xóa `\| Đông Phú Gia` khỏi page title string |
-| Branch diverge nhiều file | Cherry-pick thủ công từng file cần thiết, không merge nguyên branch |
-| `specs` null trong crawl import | `products.specs` là `JSONB NOT NULL` — dùng `product.specs \|\| {}`, không dùng `\|\| null` |
-| Crawl URL discovery include non-product pages | hita.com.vn product URLs có numeric ID ≥ 1000; category/service pages có ID < 1000 — filter trước khi crawl |
-| `thiet-bi-bep` dùng schema riêng | Bảng `bep_brands`, `bep_product_types`, `bep_subtypes` — không dùng `products`/`subcategories` |
-| MOEN/GROHE/ATMOR ảnh trên Bunny CDN | URL dạng `cdn.hita.com.vn/storage/` — `isProductImage()` phải support cả CDN domain này |
-| Image fallback quét nhầm upsell section | Template 3 fallback phải scope vào `.product-column-left` và filter `.section-buy-more` |
-| `4-import-db.js` NO IMAGE trên listing | `ProductCard` dùng `products.image_main_url` — script phải set field này trong upsert payload |
-
----
-
-> Cập nhật file này sau mỗi convention hoặc gotcha mới. Operating workflow nằm
-> trong `AGENTS.md` ở root và `docs/WORKFLOW-WITH-CODEX.md`.
+# Dongphugia application reference
+
+Read this file only for application code, schema, or test work. Root `AGENTS.md`
+owns operating safety; `docs/WORKFLOW-WITH-CODEX.md` owns delivery.
+
+## Product and stack
+
+Dongphugia is a B2C premium building-materials storefront for Da Lat with
+offline payment. Its four public categories are `thiet-bi-ve-sinh`,
+`thiet-bi-bep`, `vat-lieu-nuoc`, and `gach-op-lat`.
+
+The application uses Next.js App Router, React 19, TypeScript, Tailwind CSS v4,
+Prisma, AWS PostgreSQL, Zustand, and Bunny CDN-compatible media URLs.
+
+## Application conventions
+
+- **Tailwind v4:** configure theme values only in `src/app/globals.css` under
+  `@theme`. Brand primary `brand-500` is `#2D90AF`. Preserve `@source` lines and
+  do not introduce `tailwind.config.js`.
+- **Public UI:** `@/components/ui/` shadcn components are admin-only. Public
+  routes use the public component patterns.
+- **App Router:** `params` and `searchParams` are promises. Server Components
+  fetch data; Client Components own interactivity.
+- **Caching:** use `unstable_cache()` and `revalidateTag()` for ISR-backed data.
+- **Server Actions:** programmatic actions return a result such as
+  `{ success: true }`; redirect on the client. Redirect is reserved for
+  login/logout flows. Revalidate affected tags after mutation.
+- **Database:** AWS PostgreSQL is the production source of truth. An approved
+  schema sync is followed by `npx prisma generate`.
+- **Images:** upload through `/api/upload-image` and preserve Bunny CDN
+  compatibility. Runtime uploads do not live in `public/uploads/`.
+- **Metadata:** page titles omit the `| Đông Phú Gia` suffix because the root
+  layout template adds it. The homepage uses an absolute title.
+
+## Protected application areas
+
+- Production database schema or data mutation requires the production gates in
+  root `AGENTS.md` and a reviewed migration plan.
+- Dropping a table or column, changing the auth flow, or adding a major
+  production dependency requires explicit technical approval.
+- Admin authentication uses bcrypt plus hashed session tokens, the
+  `dpg-admin-session` secure HTTP-only cookie, and the dashboard layout guard.
+  Preserve the role order `admin > sale_manager > sale` unless auth changes are
+  explicitly in scope.
+
+## Known gotchas
+
+| Signal | Required response |
+| --- | --- |
+| `NEXT_REDIRECT` in a programmatic action | Return a result and navigate from the client. |
+| Prisma types are stale after schema work | Run `npx prisma generate` and restart the dev process. |
+| Async `params` error | Await `params` before reading route values. |
+| Prisma/WASM build relation error | Add all required back-relations, then regenerate the client. |
+| Bunny image does not render | Verify the CDN host is present in `images.remotePatterns`. |
+| Page title repeats the brand | Remove the brand suffix from the page title string. |
+| A branch contains a wide unrelated diff | Port only task-owned changes; do not merge the branch wholesale. |
+| Imported `specs` can be null | `products.specs` is non-null JSONB; use an empty object fallback. |
+| Crawl discovery includes service/category pages | Hita product URLs use numeric IDs at least 1000; filter lower IDs. |
+| Kitchen data uses the wrong taxonomy | `thiet-bi-bep` uses `bep_brands`, `bep_product_types`, and `bep_subtypes`. |
+| MOEN/GROHE/ATMOR media is rejected | Product-image validation supports `cdn.hita.com.vn/storage/`. |
+| Image fallback captures upsell media | Scope template-3 fallback to `.product-column-left` and exclude `.section-buy-more`. |
+| Listing imports show no image | Upserts must populate `products.image_main_url`, which `ProductCard` reads. |
+
+Keep this document for conventions the environment cannot reveal cheaply. Read
+scripts, configuration, Prisma schema, and directory layout directly instead of
+caching them here.

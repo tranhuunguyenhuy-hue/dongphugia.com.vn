@@ -34,7 +34,9 @@ Thumbs.db
 .agent/
 .claude/
 .ai/
-.agents/
+.agents/*
+!.agents/skills/
+!.agents/skills/**
 .vercel/
 node_modules/
 npm-debug.log*
