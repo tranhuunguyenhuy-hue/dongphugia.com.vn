@@ -13,7 +13,7 @@ use the dedicated synthetic PostgreSQL database.
 3. Verify `/api/health`, core public routes, representative mobile routes,
    metadata/robots/sitemap and synthetic database isolation.
 4. Record the commit, digest, validation result, previous digest and rollback
-   choice in the PR and Linear handoff.
+   choice in the PR and its linked GitHub Issue when one exists.
 
 ## Safety rules
 
