@@ -16,14 +16,11 @@ Use a safe temporary file for a multiline body when needed and remove it after
 the command completes. Never expose credentials, tokens, environment values, or
 PII in issue content or command output.
 
-## Skill behavior
+## Skill adapter
 
 - When a skill says **publish to the issue tracker**, create a GitHub Issue.
 - When a skill says **fetch the relevant ticket**, read the full GitHub Issue and
   its comments.
-- Small one-session tasks need no issue.
-- `$to-spec` publishes one issue for risky or multi-session work.
 - This repository does not install `triage` and does not use triage roles or a
   `ready-for-agent` label. Omit that label when upstream skill text requests it.
-- Pull requests are delivery and review surfaces, not incoming request queues.
 - Do not copy or synchronize task state to another tracker.

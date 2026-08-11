@@ -49,29 +49,15 @@ Complete this before any mutation:
 Preflight is complete only when the path, branch, relevant instructions, remote
 baseline, open mutations, and worktree ownership are known.
 
-## Task routing
+## Git guardrails
 
-- **Clear, small change:** work directly; no interview or issue is required.
-- **Unresolved product or design decisions:** use `$grill-with-docs`; Codex finds
-  facts and the PM makes decisions.
-- **Multi-session or risky change:** after alignment, use `$to-spec` to publish
-  one GitHub issue.
-- **Concrete approved spec or issue:** use `$implement` on a task branch.
-- **Hard bug or performance regression:** use `$diagnosing-bugs` and establish a
-  tight red-capable loop before a fix.
-- **Diff or PR review:** use `$code-review <fixed-point>`; its review agents stay
-  read-only.
+- Never commit or force-push directly to `main`.
+- One Primary Codex owns the task branch and stages only task-owned files.
+- PM approval is required for merge; merge authority never implies deployment
+  authority.
 
-## Git delivery
-
-- Mutations start from updated `main` on one `codex/<short-description>` branch.
-- Direct commits and force pushes to `main` are blocked.
-- Stage only task-owned files and run the checks required by
-  `docs/WORKFLOW-WITH-CODEX.md`.
-- Deliver one PR through protected `main`; required CI and PM approval remain
-  mandatory.
-- Delete the remote task branch and return the checkout to clean `main` only
-  after merge.
+The task-routing, branch, validation, review, and delivery process lives only in
+`docs/WORKFLOW-WITH-CODEX.md`.
 
 ## Agent skills
 
@@ -90,10 +76,14 @@ See `docs/agents/domain.md`.
 
 - A source change, PR, or merge is not a production deployment.
 - Production mutation requires an exact Asia/Ho_Chi_Minh window and explicit PM
-  rollout approval, plus revalidated AWS identity, immutable digest, monitoring,
-  backup, rollback, and no-split-brain state.
+  rollout approval, plus revalidated AWS identity, monitoring, and the accepted
+  Coolify control-plane path using a reviewed immutable ARM64 digest.
+- Production data or runtime changes require a fresh backup, checksum, private
+  copy, verified rollback readiness, and no-split-brain evidence.
 - DNS, production data, AWS runtime, traffic routing, Bunny, and Vercel changes
   are separate scopes and never implied by source work.
+- LCP optimization remains deferred and must pass staging gates before any
+  production promotion.
 - Load `aws-secrets-manager` before AWS credential or secret work. Keep
   credentials, environment values, connection URLs, tokens, OTPs, MFA, and PII
   out of model output. Use `asm-exec` and runtime-safe dynamic references; never

@@ -42,14 +42,27 @@ primary sources. The PM decides product trade-offs, scope, and acceptance.
 The happy path is complete only when the PR identifies scope, acceptance source,
 validation evidence, remaining blockers, and the next authorized action.
 
-## GitHub Issue policy
+## Pinned-skill compatibility
 
-- GitHub Issues is the only engineering tracker.
-- A small task may move from the conversation straight to a branch and PR.
-- `$to-spec` creates one issue for multi-session or risky work; minor follow-up
-  work stays in that issue or PR unless it is independently deliverable.
-- Pull requests are delivery and review surfaces, not incoming request queues.
-- GitHub Issues use no triage workflow or state labels.
+The files under `.agents/skills/` remain an exact upstream snapshot. These local
+rules resolve assumptions in that snapshot without silently modifying it:
+
+- `$to-spec` performs synthesis only after test seams are agreed. If a seam is
+  unresolved, return to `$grill-with-docs`; do not interview inside `$to-spec`.
+  Publish through `docs/agents/issue-tracker.md` without a triage label.
+- `$implement` uses `$tdd` for behavior changes at agreed seams. After each
+  red-green slice, run its focused test. Completion requires the affected-scope
+  validation below to exit successfully, `$code-review origin/main`, resolution
+  of accepted findings, and a task-branch commit.
+- `$diagnosing-bugs` must not collect or echo arbitrary error text. Before using
+  its HITL template, copy it to a task-owned path and replace free-form diagnostic
+  capture with a bounded, sanitized signal that contains no secret, URL,
+  environment value, token, metadata, or PII.
+- Interpret the upstream `/improve-codebase-architecture` handoff as the installed
+  `$codebase-design` skill.
+- Ignore setup-template sections for uninstalled skills such as `triage` and
+  `wayfinder`. The active tracker and domain configuration is only in
+  `docs/agents/`.
 
 ## Validation
 
