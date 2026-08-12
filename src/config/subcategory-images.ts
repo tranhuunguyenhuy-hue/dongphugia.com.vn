@@ -11,9 +11,9 @@ const BASE = '/images/assets-v2'
 
 export const SUBCATEGORY_IMAGES: Record<string, string | null> = {
     // ── Thiết Bị Vệ Sinh ─────────────────────────────────────────────────────
-    'bon-cau':              `${BASE}/thumb-toilet.png`,
+    'bon-cau':              `${BASE}/thumb-toilet.152w.webp`,
     'lavabo':               `${BASE}/thumb-lavabo.png`,
-    'sen-tam':              `${BASE}/thumb-shower.png`,
+    'sen-tam':              `${BASE}/thumb-shower.152w.webp`,
     'bon-tam':              `${BASE}/thumb-bathtub.png`,
     'phu-kien-phong-tam':   `${BASE}/thumb-accessories.png`,
     'voi-chau':             `${BASE}/thumb-lavabo-faucet.png`,
