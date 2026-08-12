@@ -4,7 +4,7 @@ import { connection } from 'next/server'
 import { notFound } from 'next/navigation'
 import { ChevronRight } from 'lucide-react'
 import { PostCard, BlogPost } from '@/components/blog/post-card'
-import { ProductPagination } from '@/components/ui/product-pagination'
+import { ListingPagination } from '@/components/category/listing-pagination'
 
 import { getBlogPosts, getBlogCategories, getPopularTags } from '@/lib/public-api-blog'
 import { isListingPageInRange, parseListingPage } from '@/lib/listing-pagination'
@@ -85,7 +85,7 @@ export default async function BlogPage({ searchParams }: {
                         </div>
                     </section>
 
-                    <ProductPagination totalPages={totalPages} currentPage={currentPage} />
+                    <ListingPagination totalPages={totalPages} currentPage={currentPage} />
                 </div>
 
                 {/* Sidebar (Right) */}

@@ -30,3 +30,12 @@ canonical destination. The registry contract is covered by `src/proxy.test.ts`.
 `scripts/output/`; it never overwrites the runtime registry. Each candidate
 must be manually verified as an equivalent replacement whose canonical URL
 returns HTTP 200 before it is copied to `src/data/product-redirect-map.json`.
+
+Revalidate every reviewed runtime destination against a deployed environment:
+
+```bash
+npm run seo:check-redirect-targets -- --base-url=https://www.dongphugia.vn
+```
+
+The check follows no redirects and fails unless every unique target returns
+exactly HTTP 200 with a canonical URL equal to the target URL.

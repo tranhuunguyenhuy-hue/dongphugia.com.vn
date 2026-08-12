@@ -3,7 +3,7 @@ import { notFound } from "next/navigation"
 import { Suspense } from "react"
 import { getPublicProducts, getAvailableFiltersBySubcategory, getPublicListingLeaf, getPublicListingLeaves, getListingRuntimeConfig } from "@/lib/public-api-products"
 import { ProductCard } from "@/components/ui/product-card"
-import { ProductPagination } from "@/components/ui/product-pagination"
+import { ListingPagination } from "@/components/category/listing-pagination"
 import { DesktopAdvancedSidebarFilter } from "@/components/category/desktop-advanced-sidebar-filter"
 import { ActiveFilters, ActiveFilterDict } from "@/components/category/active-filters"
 import { CategoryMobileFilter } from "@/components/category/category-mobile-filter"
@@ -174,7 +174,7 @@ export default async function GachOpLatSubPage({ params, searchParams }: PagePro
                                 ))}
                             </div>
                             <div className="mt-12">
-                                <Suspense><ProductPagination totalPages={totalPages} currentPage={currentPage} /></Suspense>
+                                <Suspense><ListingPagination totalPages={totalPages} currentPage={currentPage} /></Suspense>
                             </div>
                         </>
                     ) : (

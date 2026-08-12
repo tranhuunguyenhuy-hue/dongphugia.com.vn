@@ -15,7 +15,7 @@ describe('toilet listing pagination contract', () => {
         expect(toiletListingPage).toContain("{total.toLocaleString('vi-VN')}")
         expect(toiletListingPage).toContain('sản phẩm')
         expect(toiletListingPage).toContain(
-            '<ProductPagination totalPages={totalPages} currentPage={currentPage} />',
+            '<ListingPagination totalPages={totalPages} currentPage={currentPage} />',
         )
     })
 })

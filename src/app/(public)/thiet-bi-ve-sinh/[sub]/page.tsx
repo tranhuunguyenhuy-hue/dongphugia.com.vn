@@ -4,7 +4,7 @@ import { Suspense } from "react"
 import { preload } from "react-dom"
 import { getPublicProducts, getAvailableFiltersBySubcategory, getProductTypeFiltersBySubcategory, getSubcategorySpecFilters, getListingRuntimeConfig, getPublicListingLeaf, getPublicListingLeaves } from "@/lib/public-api-products"
 import { ProductCard } from "@/components/ui/product-card"
-import { ProductPagination } from "@/components/ui/product-pagination"
+import { ListingPagination } from "@/components/category/listing-pagination"
 import { DesktopAdvancedSidebarFilter } from "@/components/category/desktop-advanced-sidebar-filter"
 import { ActiveFilters, ActiveFilterDict } from "@/components/category/active-filters"
 import { CategoryMobileFilter } from "@/components/category/category-mobile-filter"
@@ -236,7 +236,7 @@ export default async function ThietBiVeSinhSubPage({ params, searchParams }: Pag
                                 ))}
                             </div>
                             <div className="mt-12">
-                                <Suspense><ProductPagination totalPages={totalPages} currentPage={currentPage} /></Suspense>
+                                <Suspense><ListingPagination totalPages={totalPages} currentPage={currentPage} /></Suspense>
                             </div>
                         </>
                     ) : (

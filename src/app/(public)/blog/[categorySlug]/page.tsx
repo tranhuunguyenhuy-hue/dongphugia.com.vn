@@ -2,7 +2,7 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import { ChevronRight } from 'lucide-react'
 import { PostCard, BlogPost } from '@/components/blog/post-card'
-import { ProductPagination } from '@/components/ui/product-pagination'
+import { ListingPagination } from '@/components/category/listing-pagination'
 
 import { getBlogPosts, getBlogCategories } from '@/lib/public-api-blog'
 import { canonicalUrl } from '@/lib/site'
@@ -91,7 +91,7 @@ export default async function BlogCategoryPage({ params, searchParams }: {
                     </div>
                 )}
 
-                <ProductPagination totalPages={totalPages} currentPage={currentPage} />
+                <ListingPagination totalPages={totalPages} currentPage={currentPage} />
             </div>
         </div>
     )

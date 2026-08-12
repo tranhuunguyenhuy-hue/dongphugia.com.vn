@@ -36,16 +36,16 @@ describe("public redirect boundary", () => {
 
   it("keeps a verified per-URL redirect direct and canonical", () => {
     const response = request(
-      "https://www.dongphugia.vn/thiet-bi-ve-sinh/chau-rua-chen/gio-dat-len-chau-rua-chen-moen-23701-10158",
+      "https://www.dongphugia.vn/thiet-bi-ve-sinh/may-nuoc-nong/may-nuoc-nong-gian-tiep-kieu-dung-atmor",
     )
 
     expect(response.status).toBe(301)
     expect(response.headers.get("location")).toBe(
-      "https://www.dongphugia.vn/thiet-bi-bep/chau-rua-chen/gio-dat-len-chau-rua-chen-moen-23701-10158",
+      "https://www.dongphugia.vn/vat-lieu-nuoc/may-nuoc-nong/may-nuoc-nong-gian-tiep-kieu-dung-atmor",
     )
   })
 
-  it("keeps every redirect direct, non-looping, and inside a real route namespace", () => {
+  it("keeps every reviewed redirect direct, non-looping, and inside a real route namespace", () => {
     const redirects = {
       ...productRedirects,
       ...taxonomyRedirects,
