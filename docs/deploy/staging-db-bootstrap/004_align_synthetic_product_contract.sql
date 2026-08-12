@@ -96,6 +96,12 @@ BEGIN
     "sale_price" = v."sale_price",
     "price_display" = v."price_display",
     "stock_status" = v."stock_status",
+    "is_active" = true,
+    "publication_status" = 'public',
+    "pdp_visibility" = 'public',
+    "search_visibility" = 'visible',
+    "seo_indexing" = 'index',
+    "sitemap_include" = true,
     "updated_at" = CURRENT_TIMESTAMP
   FROM (
     VALUES

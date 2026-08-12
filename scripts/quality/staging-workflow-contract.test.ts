@@ -51,6 +51,7 @@ describe("staging Product structured-data smoke", () => {
     expect(existingStagingRepair).toContain('"product_type_id" = pt."id"')
     expect(existingStagingRepair).toContain('"product_sub_type_id" = pst."id"')
     expect(existingStagingRepair).toContain('"sitemap_include" = true')
+    expect(existingStagingRepair.match(/"sitemap_include" = true/g)).toHaveLength(2)
   })
 
   it("keeps every active redirect destination represented by a synthetic staging fixture", () => {
