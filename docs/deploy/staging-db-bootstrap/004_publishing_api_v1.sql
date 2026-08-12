@@ -43,10 +43,8 @@ BEGIN
     AND contype = 'c'
     AND conname = 'blog_posts_status_check';
   IF legacy_definition IS NOT NULL THEN
-    IF legacy_definition NOT ILIKE '%draft%'
-      OR legacy_definition NOT ILIKE '%published%'
-      OR legacy_definition NOT ILIKE '%scheduled%'
-      OR legacy_definition ILIKE '%schedule_blocked%'
+    IF regexp_replace(lower(legacy_definition), '[[:space:]]+', '', 'g')
+      <> 'check(((status)::text=any((array[''draft''::character varying,''published''::character varying,''scheduled''::character varying])::text[])))'
     THEN
       RAISE EXCEPTION 'blog_posts_status_check does not match the expected legacy lifecycle';
     END IF;

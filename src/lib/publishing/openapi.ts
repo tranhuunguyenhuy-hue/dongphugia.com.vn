@@ -133,6 +133,21 @@ export const publishingOpenApi = {
                     'version',
                     'updated_at',
                     'content_html',
+                    'published_at',
+                    'scheduled_for',
+                    'scheduled_timezone',
+                    'schedule_blocked_code',
+                    'title',
+                    'slug',
+                    'excerpt',
+                    'category',
+                    'tags',
+                    'thumbnail_url',
+                    'cover_image_url',
+                    'seo_title',
+                    'seo_description',
+                    'reading_time',
+                    'byline',
                 ],
                 properties: {
                     external_id: { type: 'string', maxLength: 200 },
@@ -154,8 +169,8 @@ export const publishingOpenApi = {
                     slug: { type: 'string' },
                     excerpt: { type: 'string' },
                     content_html: { type: 'string' },
-                    category: { type: 'object' },
-                    tags: { type: 'array' },
+                    category: { $ref: '#/components/schemas/TaxonomyItem' },
+                    tags: { type: 'array', items: { $ref: '#/components/schemas/TaxonomyItem' } },
                     thumbnail_url: { type: ['string', 'null'], format: 'uri' },
                     cover_image_url: { type: ['string', 'null'], format: 'uri' },
                     seo_title: { type: ['string', 'null'] },
@@ -166,7 +181,7 @@ export const publishingOpenApi = {
             },
             PostSummary: {
                 type: 'object',
-                required: ['external_id', 'status', 'version', 'updated_at'],
+                required: ['external_id', 'status', 'version', 'updated_at', 'published_at', 'scheduled_for', 'scheduled_timezone', 'schedule_blocked_code'],
                 properties: {
                     external_id: { type: 'string', maxLength: 200 },
                     status: { enum: ['draft', 'scheduled', 'published', 'schedule_blocked'] },
@@ -182,8 +197,17 @@ export const publishingOpenApi = {
                 type: 'object',
                 required: ['categories', 'tags'],
                 properties: {
-                    categories: { type: 'array', items: { type: 'object' } },
-                    tags: { type: 'array', items: { type: 'object' } },
+                    categories: { type: 'array', items: { $ref: '#/components/schemas/TaxonomyItem' } },
+                    tags: { type: 'array', items: { $ref: '#/components/schemas/TaxonomyItem' } },
+                },
+            },
+            TaxonomyItem: {
+                type: 'object',
+                required: ['name', 'slug', 'description'],
+                properties: {
+                    name: { type: 'string' },
+                    slug: { type: 'string' },
+                    description: { type: ['string', 'null'] },
                 },
             },
             PostPage: {
@@ -201,7 +225,18 @@ export const publishingOpenApi = {
                     id: { type: 'string', format: 'uuid' },
                     purpose: { enum: ['thumbnail', 'cover', 'inline'] },
                     url: { type: 'string', format: 'uri' },
-                    variants: { type: 'array' },
+                    variants: { type: 'array', items: { $ref: '#/components/schemas/ManagedMediaVariant' } },
+                },
+            },
+            ManagedMediaVariant: {
+                type: 'object',
+                required: ['url', 'width', 'height', 'bytes', 'format'],
+                properties: {
+                    url: { type: 'string', format: 'uri' },
+                    width: { type: 'integer', minimum: 1 },
+                    height: { type: 'integer', minimum: 1 },
+                    bytes: { type: 'integer', minimum: 1 },
+                    format: { const: 'webp' },
                 },
             },
         },
@@ -226,12 +261,13 @@ export const publishingOpenApi = {
         '/media': {
             post: {
                 summary: 'Upload integration-owned Managed Media',
+                description: 'The request must include a valid Content-Length no greater than 5 MiB plus multipart overhead. Missing, malformed, or oversized lengths return 413 before multipart parsing.',
                 parameters: [
                     {
                         name: 'Idempotency-Key',
                         in: 'header',
                         required: true,
-                        schema: { type: 'string', minLength: 8, maxLength: 200 },
+                        schema: { type: 'string', minLength: 8, maxLength: 200, pattern: '^[\\x21-\\x7e]{8,200}$' },
                     },
                 ],
                 requestBody: {
@@ -297,7 +333,7 @@ export const publishingOpenApi = {
             put: {
                 summary: 'Create or conditionally update one Blog Post',
                 parameters: [
-                    { name: 'Idempotency-Key', in: 'header', required: true, schema: { type: 'string' } },
+                    { name: 'Idempotency-Key', in: 'header', required: true, schema: { type: 'string', minLength: 8, maxLength: 200, pattern: '^[\\x21-\\x7e]{8,200}$' } },
                     { name: 'If-None-Match', in: 'header', description: 'Required as `*` for creation; must not be combined with If-Match.', schema: { const: '*' } },
                     { name: 'If-Match', in: 'header', description: 'Required with the current ETag for update; must not be combined with If-None-Match.', schema: { type: 'string', pattern: '^"v[1-9][0-9]*"$' } },
                 ],

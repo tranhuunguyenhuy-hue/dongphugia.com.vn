@@ -134,7 +134,6 @@ export async function uploadPublishingMedia(input: {
                 environment: input.environment,
                 requiredCapabilities: ['media:write'],
                 clientIp: input.auth.clientIp,
-                now,
             })
             const existing =
                 await transaction.publishing_idempotency_records.findUnique({
@@ -246,7 +245,6 @@ export async function uploadPublishingMedia(input: {
             environment: input.environment,
             requiredCapabilities: ['media:write'],
             clientIp: input.auth.clientIp,
-            now,
         })
         await transaction.publishing_managed_media.update({
             where: { id: reservation.mediaId },

@@ -117,6 +117,7 @@ export async function runIdempotentJsonMutation<T extends Prisma.JsonObject>(
         transaction: PublishingTransaction,
         context: { keyHash: string; requestHash: string },
     ) => Promise<IdempotentMutationResult<T>>,
+    retryCount = 0,
 ): Promise<IdempotentMutationResult<T> & { replayed: boolean }> {
     const now = input.now ?? new Date()
     const keyHash = hashIdempotencyKey(input.key)
@@ -190,7 +191,18 @@ export async function runIdempotentJsonMutation<T extends Prisma.JsonObject>(
                     },
                 },
             })
-        if (!existing) throw error
+        if (!existing) {
+            if (retryCount >= 1) {
+                throw new PublishingApiError(
+                    409,
+                    'IDEMPOTENCY_IN_PROGRESS',
+                    'An operation with this Idempotency-Key is still resolving',
+                    undefined,
+                    2,
+                )
+            }
+            return runIdempotentJsonMutation(input, mutate, retryCount + 1)
+        }
         return {
             ...readIdempotencyReplay<T>(existing, requestHash, input.operation),
             replayed: true,

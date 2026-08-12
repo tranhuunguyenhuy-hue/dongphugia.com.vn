@@ -29,5 +29,24 @@ describe('Publishing OpenAPI contract', () => {
             expect(postResponses).toHaveProperty(String(status))
         }
         expect(publishingOpenApi.components.responses.RateLimited.headers).toHaveProperty('Retry-After')
+        expect(publishingOpenApi.paths['/posts/{external_id}'].put.parameters[0].schema).toMatchObject({
+            minLength: 8,
+            maxLength: 200,
+            pattern: '^[\\x21-\\x7e]{8,200}$',
+        })
+    })
+
+    it('describes every concrete public response item as required and typed', () => {
+        const post = publishingOpenApi.components.schemas.Post
+        expect(post.required).toEqual(expect.arrayContaining([
+            'category', 'tags', 'thumbnail_url', 'cover_image_url', 'byline',
+        ]))
+        expect(post.properties.category).toEqual({ $ref: '#/components/schemas/TaxonomyItem' })
+        expect(publishingOpenApi.components.schemas.TaxonomyItem.required).toEqual([
+            'name', 'slug', 'description',
+        ])
+        expect(publishingOpenApi.components.schemas.ManagedMediaVariant.required).toEqual([
+            'url', 'width', 'height', 'bytes', 'format',
+        ])
     })
 })

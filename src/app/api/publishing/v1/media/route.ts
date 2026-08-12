@@ -21,15 +21,30 @@ export async function POST(request: Request) {
                     'Content-Type must be multipart/form-data',
                 )
             }
-            const contentLength = Number(request.headers.get('content-length'))
-            if (Number.isFinite(contentLength) && contentLength > MAX_MULTIPART_BYTES) {
+            const contentLengthHeader = request.headers.get('content-length')
+            const contentLength = Number(contentLengthHeader)
+            if (
+                !contentLengthHeader
+                || !Number.isSafeInteger(contentLength)
+                || contentLength < 1
+                || contentLength > MAX_MULTIPART_BYTES
+            ) {
                 throw new PublishingApiError(
                     413,
                     'REQUEST_TOO_LARGE',
-                    'Managed Media request is too large',
+                    'Managed Media requires a bounded Content-Length',
                 )
             }
-            const formData = await request.formData()
+            let formData: FormData
+            try {
+                formData = await request.formData()
+            } catch {
+                throw new PublishingApiError(
+                    422,
+                    'MULTIPART_INVALID',
+                    'Managed Media request must contain valid multipart form data',
+                )
+            }
             const file = formData.get('file')
             const purposeValue = formData.get('purpose')
             const purpose = typeof purposeValue === 'string' ? purposeValue : null

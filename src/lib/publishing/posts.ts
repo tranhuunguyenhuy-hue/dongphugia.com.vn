@@ -120,9 +120,18 @@ function mapPostSummary(post: {
     }
 }
 
-function isPublishingUniqueConflict(error: unknown): boolean {
-    if (!error || typeof error !== 'object' || !('code' in error)) return false
-    return error.code === 'P2002'
+function publishingUniqueConflictTarget(error: unknown): string[] | null {
+    if (
+        !error
+        || typeof error !== 'object'
+        || !('code' in error)
+        || error.code !== 'P2002'
+        || !('meta' in error)
+        || !error.meta
+        || typeof error.meta !== 'object'
+        || !('target' in error.meta)
+    ) return null
+    return Array.isArray(error.meta.target) ? error.meta.target : null
 }
 
 function readinessError(error: PublicationReadinessError): {
@@ -492,7 +501,6 @@ export async function mutatePublishingPost(input: {
                     environment: input.config.environment,
                     requiredCapabilities,
                     clientIp: input.auth.clientIp,
-                    now,
                 })
 
                 if (current?.first_published_at) {
@@ -663,12 +671,23 @@ export async function mutatePublishingPost(input: {
             },
         )
     } catch (error) {
-        if (isPublishingUniqueConflict(error)) {
+        const target = publishingUniqueConflictTarget(error)
+        if (target?.includes('slug')) {
             throw new PublishingApiError(
                 409,
                 'SLUG_CONFLICT',
                 'Proposed slug is already in use',
                 [{ field: 'slug', code: 'SLUG_CONFLICT' }],
+            )
+        }
+        if (
+            target?.includes('publishing_identity_id')
+            && target.includes('external_id')
+        ) {
+            throw new PublishingApiError(
+                412,
+                'POST_ALREADY_EXISTS',
+                'External Post ID already exists for this Machine Identity',
             )
         }
         throw error
