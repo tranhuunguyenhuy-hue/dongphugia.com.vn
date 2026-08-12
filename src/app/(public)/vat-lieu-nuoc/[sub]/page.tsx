@@ -1,8 +1,7 @@
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { Suspense } from "react"
-import { getPublicProducts, getAvailableFiltersBySubcategory, getListingRuntimeConfig } from "@/lib/public-api-products"
-import prisma from "@/lib/prisma"
+import { getPublicProducts, getAvailableFiltersBySubcategory, getListingRuntimeConfig, getPublicListingLeaf, getPublicListingLeaves } from "@/lib/public-api-products"
 import { ProductCard } from "@/components/ui/product-card"
 import { ProductPagination } from "@/components/ui/product-pagination"
 import { DesktopAdvancedSidebarFilter } from "@/components/category/desktop-advanced-sidebar-filter"
@@ -10,7 +9,8 @@ import { ActiveFilters, ActiveFilterDict } from "@/components/category/active-fi
 import { CategoryMobileFilter } from "@/components/category/category-mobile-filter"
 import { CategorySort } from "@/components/category/category-sort"
 import { SubcategoryIconGrid } from "@/components/category/subcategory-icon-grid"
-import { buildPublicListingVisibilityWhere } from "@/lib/public-product-visibility"
+import { hasActiveListingFilterParams } from "@/lib/listing-client-boundaries"
+import { isListingPageInRange, parseListingPage } from "@/lib/listing-pagination"
 import { ChevronRight, Home } from "lucide-react"
 import Link from "next/link"
 
@@ -20,7 +20,6 @@ const CATEGORY_SLUG = "vat-lieu-nuoc"
 const CATEGORY_NAME = "Vật Liệu Nước"
 const BASE_PATH = "/vat-lieu-nuoc"
 const PAGE_SIZE = 24
-const LISTING_PRODUCT_WHERE = buildPublicListingVisibilityWhere()
 
 interface PageProps {
     params: Promise<{ sub: string }>
@@ -29,9 +28,7 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
     const { sub } = await params
-    const subcategory = await prisma.subcategories.findFirst({
-        where: { slug: sub, is_active: true },
-    })
+    const subcategory = await getPublicListingLeaf(CATEGORY_SLUG, sub)
     if (!subcategory) return { title: `${CATEGORY_NAME}` }
     return {
         title: `${subcategory.name} | ${CATEGORY_NAME}`,
@@ -49,12 +46,12 @@ export default async function VatLieuNuocSubPage({ params, searchParams }: PageP
     const { sub } = await params
     const sp = await searchParams
 
-    const subcategory = await prisma.subcategories.findFirst({
-        where: { slug: sub, is_active: true },
-    })
+    const subcategory = await getPublicListingLeaf(CATEGORY_SLUG, sub)
     if (!subcategory) notFound()
 
-    const currentPage = Math.max(1, parseInt(sp.page || "1"))
+    const currentPage = parseListingPage(sp.page)
+    if (currentPage === null) notFound()
+    const hasActiveFilterParams = hasActiveListingFilterParams(sp)
     const activeBrandSlugs = sp.brand
     const activeFeatureSlugs = sp.features
     const activeMaterialSlugs = sp.material
@@ -81,18 +78,7 @@ export default async function VatLieuNuocSubPage({ params, searchParams }: PageP
 
     const [availableFilters, allSubcategories, { products, totalPages, total }] = await Promise.all([
         getAvailableFiltersBySubcategory(sub, undefined, CATEGORY_SLUG),
-        prisma.subcategories.findMany({
-            where: { categories: { slug: CATEGORY_SLUG }, is_active: true },
-            orderBy: { sort_order: "asc" },
-            include: {
-                _count: {
-                    select: {
-                        products: { where: LISTING_PRODUCT_WHERE },
-                        secondary_product_subcategories: { where: { products: LISTING_PRODUCT_WHERE } },
-                    }
-                }
-            },
-        }),
+        getPublicListingLeaves(CATEGORY_SLUG),
         getPublicProducts({
             category_slug: CATEGORY_SLUG,
             subcategory_slugs: sub,
@@ -107,6 +93,8 @@ export default async function VatLieuNuocSubPage({ params, searchParams }: PageP
             page: currentPage, pageSize: PAGE_SIZE, sortBy, sortDir,
         }),
     ])
+
+    if (!isListingPageInRange(currentPage, totalPages) || (total === 0 && !hasActiveFilterParams)) notFound()
 
     const filterDict: ActiveFilterDict = {}
     availableFilters.brands.forEach(f => filterDict[f.slug] = f.name)

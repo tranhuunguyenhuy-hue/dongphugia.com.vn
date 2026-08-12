@@ -75,7 +75,7 @@ const renderMegaMenuContent = (cat: Category, data: MenuData | undefined) => {
                     <h3 className="text-[11px] font-bold text-stone-500 uppercase tracking-wider mb-4">Phân loại {cat.name.toLowerCase()}</h3>
                     <div className="grid grid-cols-2 gap-x-8 gap-y-3">
                         {data.subcategories.slice(0, 16).map((sub) => (
-                            <Link href={`/${cat.slug}?sub=${sub.slug}`} key={sub.id} className="text-[14px] font-medium text-stone-900 hover:text-brand-600 transition-colors py-1 flex items-center justify-between group">
+                            <Link href={`/${cat.slug}/${sub.slug}`} key={sub.id} className="text-[14px] font-medium text-stone-900 hover:text-brand-600 transition-colors py-1 flex items-center justify-between group">
                                 <span className="truncate pr-4 relative inline-block">
                                     {sub.name}
                                     <span className="absolute -bottom-0.5 left-0 w-0 h-[1.5px] bg-brand-500/30 transition-all duration-300 group-hover:w-full"></span>
@@ -216,7 +216,7 @@ export function MegaMenuHeader({ categories, menuData }: MegaMenuProps) {
                                         {data?.subcategories?.length ? (
                                             <div className="flex flex-col">
                                                 {data.subcategories.slice(0, 9).map(sub => (
-                                                    <Link key={sub.id} href={`/${cat.slug}?sub=${sub.slug}`} className="text-[14px] text-stone-900 hover:text-brand-600 font-normal transition-colors leading-[32px] block w-full truncate pr-4">
+                                                    <Link key={sub.id} href={`/${cat.slug}/${sub.slug}`} className="text-[14px] text-stone-900 hover:text-brand-600 font-normal transition-colors leading-[32px] block w-full truncate pr-4">
                                                         {sub.name}
                                                     </Link>
                                                 ))}

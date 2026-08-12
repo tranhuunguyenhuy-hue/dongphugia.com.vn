@@ -4,8 +4,10 @@ import { calculateOrderUnitPrice, getInstallationFee } from './order-pricing'
 describe('order pricing', () => {
     it('uses sale price before list price and applies the database discount', () => {
         expect(calculateOrderUnitPrice({
-            price: 1_000_000,
+            originalPrice: 1_000_000,
             salePrice: 900_000,
+            legacyPrice: null,
+            stockStatus: 'in_stock',
             onlineDiscountAmount: 50_000,
             installOption: 'none',
         })).toBe(850_000)
@@ -15,8 +17,10 @@ describe('order pricing', () => {
         expect(getInstallationFee('install')).toBe(200_000)
         expect(getInstallationFee('replace')).toBe(350_000)
         expect(calculateOrderUnitPrice({
-            price: 1_000_000,
+            originalPrice: 1_000_000,
             salePrice: null,
+            legacyPrice: null,
+            stockStatus: 'in_stock',
             onlineDiscountAmount: 50_000,
             installOption: 'install',
         })).toBe(1_150_000)
@@ -24,15 +28,30 @@ describe('order pricing', () => {
 
     it('rejects missing prices and invalid discounts', () => {
         expect(calculateOrderUnitPrice({
-            price: null,
+            originalPrice: null,
             salePrice: null,
+            legacyPrice: null,
+            stockStatus: 'in_stock',
             onlineDiscountAmount: 0,
             installOption: 'none',
         })).toBeNull()
         expect(calculateOrderUnitPrice({
-            price: 100_000,
+            originalPrice: 100_000,
             salePrice: null,
+            legacyPrice: null,
+            stockStatus: 'in_stock',
             onlineDiscountAmount: 150_000,
+            installOption: 'none',
+        })).toBeNull()
+    })
+
+    it('rejects an out-of-stock product even when it has a public price', () => {
+        expect(calculateOrderUnitPrice({
+            originalPrice: 1_000_000,
+            salePrice: null,
+            legacyPrice: null,
+            stockStatus: 'out_of_stock',
+            onlineDiscountAmount: 0,
             installOption: 'none',
         })).toBeNull()
     })

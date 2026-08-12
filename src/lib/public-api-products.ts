@@ -667,6 +667,12 @@ function mapLegacyListingLeaf(
     }
 }
 
+function hasLegacyListingProducts(leaf: {
+    _count: { products: number; secondary_product_subcategories: number }
+}) {
+    return leaf._count.products + leaf._count.secondary_product_subcategories > 0
+}
+
 export const getPublicListingLeaves = unstable_cache(
     async (categorySlug: string): Promise<PublicListingLeaf[]> => {
         const [legacyLeaves, taxonomyLeaves] = await Promise.all([
@@ -698,8 +704,10 @@ export const getPublicListingLeaves = unstable_cache(
             }),
         ])
 
+        const populatedLegacyLeaves = legacyLeaves.filter(hasLegacyListingProducts)
+
         if (taxonomyLeaves.length === 0) {
-            return legacyLeaves.map(mapLegacyListingLeaf)
+            return populatedLegacyLeaves.map(mapLegacyListingLeaf)
         }
 
         const taxonomyCounts = taxonomyLeaves.length
@@ -718,7 +726,7 @@ export const getPublicListingLeaves = unstable_cache(
             taxonomyCounts.map((entry) => [entry.taxon_id, entry._count.product_id])
         )
 
-        const legacyLeafMap = new Map(legacyLeaves.map((leaf) => [leaf.slug, leaf]))
+        const legacyLeafMap = new Map(populatedLegacyLeaves.map((leaf) => [leaf.slug, leaf]))
         const mergedLeaves: PublicListingLeaf[] = []
         const consumedLegacySlugs = new Set<string>()
 
@@ -751,7 +759,7 @@ export const getPublicListingLeaves = unstable_cache(
             if (matchingLegacyLeaf) consumedLegacySlugs.add(matchingLegacyLeaf.slug)
         }
 
-        const legacyOnlyLeaves = legacyLeaves
+        const legacyOnlyLeaves = populatedLegacyLeaves
             .filter((leaf) => !consumedLegacySlugs.has(leaf.slug))
             .map(mapLegacyListingLeaf)
 
@@ -775,7 +783,7 @@ export const getPublicListingLeaf = unstable_cache(
             },
         })
 
-        if (legacyLeaf) {
+        if (legacyLeaf && hasLegacyListingProducts(legacyLeaf)) {
             return mapLegacyListingLeaf(legacyLeaf)
         }
 

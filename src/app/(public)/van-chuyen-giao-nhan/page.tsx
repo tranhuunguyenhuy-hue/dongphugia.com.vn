@@ -3,6 +3,7 @@ import { Metadata } from 'next'
 export const metadata: Metadata = {
     title: 'Chính sách Vận chuyển & Giao nhận',
     description: 'Chính sách về vận chuyển và giao nhận hàng hóa tại Đông Phú Gia.',
+    alternates: { canonical: '/van-chuyen-giao-nhan' },
 }
 
 export default function DeliveryPolicyPage() {

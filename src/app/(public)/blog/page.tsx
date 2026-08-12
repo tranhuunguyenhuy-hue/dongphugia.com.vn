@@ -108,13 +108,12 @@ export default async function BlogPage() {
                         </h3>
                         <div className="flex flex-wrap gap-2">
                             {tags.map(tag => (
-                                <Link
+                                <span
                                     key={tag.slug}
-                                    href={`/blog/tag/${tag.slug}`}
-                                    className="bg-[#F5F9FB] text-[#516A74] hover:bg-[#2E7A96] hover:text-white px-3 py-1.5 rounded-lg text-sm transition-colors"
+                                    className="bg-[#F5F9FB] text-[#516A74] px-3 py-1.5 rounded-lg text-sm"
                                 >
                                     #{tag.name}
-                                </Link>
+                                </span>
                             ))}
                         </div>
                     </div>

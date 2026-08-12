@@ -39,6 +39,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         image_main_url: product.image_main_url,
         canonicalUrl: product.url || `${BASE_PATH}/${slug}`,
         categoryName: CATEGORY_NAME,
+        seoIndexing: product.seo_indexing,
     })
 }
 
@@ -110,6 +111,8 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
         name: product.name,
         price: currentPrice,
         original_price: currentOriginalPrice,
+        sale_price: toNullableNumber(product.sale_price),
+        list_price: toNullableNumber(product.list_price),
         online_discount_amount: onlineDiscountAmount,
         price_display: product.price_display,
         image_main_url: product.image_main_url,
@@ -133,6 +136,8 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
                 sku: product.sku,
                 image_main_url: product.image_main_url,
                 price: currentPrice,
+                original_price: currentOriginalPrice,
+                sale_price: toNullableNumber(product.sale_price),
                 stock_status: product.stock_status,
                 brands: product.brands,
                 slug: product.slug,
@@ -205,7 +210,7 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
                             </div>
 
                             {/* 2. Brand Badge */}
-                            {product.brands && <BrandBadge brand={product.brands as any} className="!h-7 !px-2.5 rounded-md border-stone-200/60 shadow-sm" />}
+                            {product.brands && <BrandBadge brand={product.brands} className="!h-7 !px-2.5 rounded-md border-stone-200/60 shadow-sm" />}
 
                             {/* 3-4. Variant-aware Color + SKU Pills */}
                             <ProductVariantMetaPills
@@ -234,7 +239,7 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
                             
                             {hasComponents && (
                                 <ProductComponentsSection
-                                    components={productComponents as any}
+                                    components={productComponents}
                                     basePath={canonicalBasePath}
                                 />
                             )}

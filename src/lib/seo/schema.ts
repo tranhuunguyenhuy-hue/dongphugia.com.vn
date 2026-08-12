@@ -14,7 +14,7 @@
 
 import { siteConfig } from "@/config/site"
 import { canonicalUrl, getCanonicalSiteUrl } from "@/lib/site"
-import { toNullableNumber } from "@/lib/seo/product-seo"
+import { resolveProductCommerce } from "@/lib/product-commerce"
 
 const BASE_URL = getCanonicalSiteUrl()
 
@@ -54,6 +54,7 @@ type ProductSchemaInput = {
   image_main_url?: string | null
   price?: number | null
   original_price?: number | null
+  sale_price?: number | null
   price_display?: string | null
   stock_status: string
   brands?: { name: string } | null
@@ -68,17 +69,14 @@ type ProductSchemaInput = {
  * Enables Google to show price, availability, and brand in search results.
  */
 export function buildProductSchema(product: ProductSchemaInput) {
-  const availability =
-    product.stock_status === "in_stock"
-      ? "https://schema.org/InStock"
-      : product.stock_status === "pre_order"
-      ? "https://schema.org/PreOrder"
-      : product.stock_status === "discontinued"
-      ? "https://schema.org/Discontinued"
-      : "https://schema.org/OutOfStock"
+  const commerce = resolveProductCommerce({
+    originalPrice: product.original_price,
+    salePrice: product.sale_price,
+    legacyPrice: product.price,
+    stockStatus: product.stock_status,
+  })
 
-  const normalizedPrice = toNullableNumber(product.price)
-  const hasPrice = normalizedPrice !== null && normalizedPrice > 0
+  if (commerce.priceMode === "CONTACT_FOR_QUOTE") return null
 
   const productUrl = product.urlPath
     ? canonicalUrl(product.urlPath)
@@ -95,24 +93,19 @@ export function buildProductSchema(product: ProductSchemaInput) {
       ? { "@type": "Brand", name: product.brands.name }
       : undefined,
     url: productUrl,
-    ...(hasPrice
-      ? {
-          offers: {
-            "@type": "Offer",
-            priceCurrency: "VND",
-            price: normalizedPrice,
-            priceValidUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-              .toISOString()
-              .split("T")[0],
-            availability,
-            url: productUrl,
-            seller: {
-              "@type": "Organization",
-              name: "Đông Phú Gia",
-            },
-          },
-        }
-      : {}),
+    offers: {
+      "@type": "Offer",
+      priceCurrency: "VND",
+      price: commerce.displayPrice,
+      availability: commerce.availability === "IN_STOCK"
+        ? "https://schema.org/InStock"
+        : "https://schema.org/OutOfStock",
+      url: productUrl,
+      seller: {
+        "@type": "Organization",
+        name: "Đông Phú Gia",
+      },
+    },
   }
 }
 

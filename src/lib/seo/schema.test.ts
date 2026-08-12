@@ -11,19 +11,44 @@ const product = {
 }
 
 describe("buildProductSchema", () => {
-  it("includes an Offer only when a valid price exists", () => {
-    const schema = buildProductSchema({ ...product, price: 1_250_000 })
+  it("emits Product + Offer with the canonical sale price when in stock", () => {
+    const schema = buildProductSchema({
+      ...product,
+      original_price: 1_250_000,
+      sale_price: 1_100_000,
+      price: null,
+    })
 
-    expect(schema.offers).toMatchObject({
+    expect(schema?.offers).toMatchObject({
       "@type": "Offer",
-      price: 1_250_000,
+      price: 1_100_000,
       priceCurrency: "VND",
+      availability: "https://schema.org/InStock",
+    })
+    expect(schema?.offers).not.toHaveProperty("priceValidUntil")
+  })
+
+  it("emits truthful OutOfStock availability for a priced product", () => {
+    const schema = buildProductSchema({
+      ...product,
+      original_price: 1_250_000,
+      sale_price: null,
+      price: null,
+      stock_status: "out_of_stock",
+    })
+
+    expect(schema?.offers).toMatchObject({
+      price: 1_250_000,
+      availability: "https://schema.org/OutOfStock",
     })
   })
 
-  it.each([null, 0, -1])("omits Offer for a non-sellable price: %s", (price) => {
-    const schema = buildProductSchema({ ...product, price })
-
-    expect(schema).not.toHaveProperty("offers")
+  it("omits Product rich-result markup for a quote-only product", () => {
+    expect(buildProductSchema({
+      ...product,
+      original_price: null,
+      sale_price: null,
+      price: null,
+    })).toBeNull()
   })
 })

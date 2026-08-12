@@ -58,7 +58,7 @@ export const NAV_PRODUCT_CATEGORIES = [
 ];
 
 export const NAV_MAIN_LINKS = [
-    { label: "Tin tức", href: "/tin-tuc" },
+    { label: "Tin tức", href: "/blog" },
 ];
 
 export const NAV_ABOUT_LINKS = [
@@ -71,7 +71,7 @@ export const NAV_FOOTER_ABOUT_LINKS = [
     { label: "Giới thiệu", href: "/ve-chung-toi" },
     { label: "Đối tác", href: "/doi-tac" },
     { label: "Dự án tiêu biểu", href: "/du-an" },
-    { label: "Tin tức & Sự kiện", href: "/tin-tuc" },
+    { label: "Tin tức & Sự kiện", href: "/blog" },
 ];
 
 export const NAV_FOOTER_LEGAL_LINKS = [

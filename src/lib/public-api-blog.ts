@@ -1,11 +1,20 @@
 import { cache } from 'react'
+import type { Prisma } from '@prisma/client'
 import prisma from '@/lib/prisma'
 
 const POSTS_PER_PAGE = 9
 
 export const getBlogCategories = cache(async () => {
     return prisma.blog_categories.findMany({
-        where: { is_active: true },
+        where: {
+            is_active: true,
+            blog_posts: {
+                some: {
+                    status: 'published',
+                    published_at: { lte: new Date() },
+                },
+            },
+        },
         orderBy: { sort_order: 'asc' },
     })
 })
@@ -19,7 +28,7 @@ export const getBlogPosts = cache(async (options: {
 } = {}) => {
     const { categorySlug, tagSlug, page = 1, limit = POSTS_PER_PAGE, featuredOnly } = options
 
-    const where: any = {
+    const where: Prisma.blog_postsWhereInput = {
         status: 'published',
         published_at: { lte: new Date() },
     }

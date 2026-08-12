@@ -1,4 +1,4 @@
-# Legacy URL inventory and redirect verification
+# Legacy URL inventory
 
 Build a deterministic candidate inventory from the existing redirect map. The
 command emits only aggregate counts to stdout; the URL file is an explicit
@@ -17,26 +17,11 @@ npm run seo:build-inventory -- \
   --output ./artifacts/legacy-web-urls.txt
 ```
 
-The generated inventory contains only HTTPS URLs for the two legacy web
+The generated inventory contains only HTTPS URLs for the two historical web
 hosts. `cdn.dongphugia.com.vn` is rejected by design and is never included.
 
-The verifier accepts one URL per line and emits only aggregate counts. It does
-not print URLs, response bodies, cookies or headers. It is intended for a
-reviewed export from Search Console, the existing redirect map and a bounded
-crawl.
-
-```sh
-npm run seo:verify-redirects -- ./artifacts/legacy-web-urls.txt
-```
-
-The expected future behavior is exactly one `308` from either web host:
-
-```text
-dongphugia.com.vn/*      -> https://www.dongphugia.vn/*
-www.dongphugia.com.vn/*  -> https://www.dongphugia.vn/*
-```
-
-The path and query string must be byte-for-byte preserved, the final target
-must be HTTPS `200`, and the redirect chain must contain no loop or extra hop.
-`cdn.dongphugia.com.vn` is intentionally excluded from this redirect policy;
-the Bunny CDN hostname must remain unchanged.
+This inventory is read-only audit input. The `.vn` site is an independent site,
+not the target of a whole-host migration from `.com.vn`; this repository must
+not verify or promise a blanket `.com.vn` to `.vn` redirect. A historical URL
+may redirect only when the reviewed per-URL registry has a genuinely equivalent
+canonical destination. The registry contract is covered by `src/proxy.test.ts`.

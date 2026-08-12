@@ -16,17 +16,48 @@
 import { NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
 import { getCanonicalSiteUrl } from "@/lib/site"
+import { sitemapUnavailable } from "@/lib/seo/sitemap-response"
+import { buildPublicSitemapVisibilityWhere } from "@/lib/public-product-visibility"
 
 export const revalidate = 86400 // 24 hours
 export const dynamic = "force-dynamic"
 
 export async function GET() {
-  const baseUrl = getCanonicalSiteUrl()
+  try {
+    const baseUrl = getCanonicalSiteUrl()
 
-  let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`
-  xml += `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`
+    const [subcategories, blogPosts] = await Promise.all([
+      prisma.subcategories.findMany({
+        where: {
+          is_active: true,
+          categories: { is_active: true },
+          products: { some: buildPublicSitemapVisibilityWhere() },
+        },
+        select: {
+          slug: true,
+          updated_at: true,
+          categories: { select: { slug: true } },
+        },
+        orderBy: { sort_order: "asc" },
+      }),
+      prisma.blog_posts.findMany({
+        where: {
+          status: "published",
+          published_at: { lte: new Date() },
+        },
+        select: {
+          slug: true,
+          updated_at: true,
+          blog_categories: { select: { slug: true } },
+        },
+        orderBy: { published_at: "desc" },
+      }),
+    ])
 
-  const addUrl = (
+    let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`
+    xml += `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`
+
+    const addUrl = (
     url: string,
     lastMod: string,
     changeFreq: string,
@@ -40,7 +71,7 @@ export async function GET() {
     xml += `  </url>\n`
   }
 
-  const now = new Date().toISOString()
+    const now = new Date().toISOString()
 
   // ── Core pages ──────────────────────────────────────────────────────────────
   addUrl(baseUrl, now, "daily", 1.0)
@@ -60,17 +91,6 @@ export async function GET() {
   addUrl(`${baseUrl}/doi-tac`, now, "monthly", 0.5)
   addUrl(`${baseUrl}/du-an`, now, "monthly", 0.5)
   // ── Dynamic subcategory pages (from DB) ─────────────────────────────────────
-  try {
-    const subcategories = await prisma.subcategories.findMany({
-      where: { is_active: true },
-      select: {
-        slug: true,
-        updated_at: true,
-        categories: { select: { slug: true } },
-      },
-      orderBy: { sort_order: "asc" },
-    })
-
     for (const sub of subcategories) {
       addUrl(
         `${baseUrl}/${sub.categories.slug}/${sub.slug}`,
@@ -79,25 +99,8 @@ export async function GET() {
         0.8
       )
     }
-  } catch (e) {
-    console.warn("[sitemap_static] Subcategory fetch error:", e)
-  }
 
   // ── Blog posts (from DB) ─────────────────────────────────────────────────────
-  try {
-    const blogPosts = await prisma.blog_posts.findMany({
-      where: {
-        status: "published",
-        published_at: { lte: new Date() },
-      },
-      select: {
-        slug: true,
-        updated_at: true,
-        blog_categories: { select: { slug: true } },
-      },
-      orderBy: { published_at: "desc" },
-    })
-
     for (const post of blogPosts) {
       if (post.blog_categories?.slug) {
         addUrl(
@@ -108,17 +111,17 @@ export async function GET() {
         )
       }
     }
-  } catch (e) {
-    console.warn("[sitemap_static] Blog posts fetch error:", e)
-  }
 
   xml += `</urlset>`
 
-  return new NextResponse(xml, {
-    headers: {
-      "Content-Type": "text/xml",
-      "Cache-Control":
-        "public, max-age=86400, s-maxage=86400, stale-while-revalidate",
-    },
-  })
+    return new NextResponse(xml, {
+      headers: {
+        "Content-Type": "text/xml",
+        "Cache-Control":
+          "public, max-age=86400, s-maxage=86400, stale-while-revalidate",
+      },
+    })
+  } catch {
+    return sitemapUnavailable("static")
+  }
 }

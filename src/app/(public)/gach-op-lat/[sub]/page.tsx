@@ -11,6 +11,8 @@ import { CategorySort } from "@/components/category/category-sort"
 import { SubcategoryIconGrid } from "@/components/category/subcategory-icon-grid"
 import { ChevronRight, Home } from "lucide-react"
 import Link from "next/link"
+import { hasActiveListingFilterParams } from "@/lib/listing-client-boundaries"
+import { isListingPageInRange, parseListingPage } from "@/lib/listing-pagination"
 
 export const revalidate = 10800
 
@@ -47,7 +49,9 @@ export default async function GachOpLatSubPage({ params, searchParams }: PagePro
     const subcategory = await getPublicListingLeaf(CATEGORY_SLUG, sub)
     if (!subcategory) notFound()
 
-    const currentPage = Math.max(1, parseInt(sp.page || "1"))
+    const currentPage = parseListingPage(sp.page)
+    if (currentPage === null) notFound()
+    const hasActiveFilterParams = hasActiveListingFilterParams(sp)
     const activeBrandSlugs = sp.brand
     const activeFeatureSlugs = sp.features
     const activeMaterialSlugs = sp.material
@@ -89,6 +93,8 @@ export default async function GachOpLatSubPage({ params, searchParams }: PagePro
             page: currentPage, pageSize: PAGE_SIZE, sortBy, sortDir,
         }),
     ])
+
+    if (!isListingPageInRange(currentPage, totalPages) || (total === 0 && !hasActiveFilterParams)) notFound()
 
     const filterDict: ActiveFilterDict = {}
     availableFilters.brands.forEach(f => filterDict[f.slug] = f.name)

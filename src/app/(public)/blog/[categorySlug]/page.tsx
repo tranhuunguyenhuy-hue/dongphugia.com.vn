@@ -5,6 +5,7 @@ import { PostCard, BlogPost } from '@/components/blog/post-card'
 
 import { getBlogPosts, getBlogCategories } from '@/lib/public-api-blog'
 import { canonicalUrl } from '@/lib/site'
+import { notFound } from 'next/navigation'
 
 export const revalidate = 3600
 
@@ -30,18 +31,12 @@ export default async function BlogCategoryPage({ params }: { params: Promise<{ c
     const categories = await getBlogCategories()
     const category = categories.find((c) => c.slug === categorySlug)
 
-    if (!category) {
-        return (
-            <div className="min-h-[50vh] flex flex-col items-center justify-center bg-white text-center px-5">
-                <h1 className="text-3xl font-bold text-[#192125] mb-4">Không tìm thấy chuyên mục</h1>
-                <Link href="/blog" className="text-[#2E7A96] font-medium hover:underline">Quay lại trang Blog</Link>
-            </div>
-        )
-    }
+    if (!category) notFound()
 
     // Filter posts from DB
     const { posts, totalPages } = await getBlogPosts({ categorySlug, limit: 12 })
     const categoryPosts = posts as unknown as BlogPost[]
+    if (categoryPosts.length === 0) notFound()
 
     return (
         <div className="bg-white min-h-screen">

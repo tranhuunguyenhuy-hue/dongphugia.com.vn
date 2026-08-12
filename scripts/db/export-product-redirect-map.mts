@@ -164,7 +164,9 @@ async function main() {
         }
       }
 
-      if (oldPath !== resolvedPath) {
+      // An unresolved destination is not evidence of an equivalent live product.
+      // Keep it in the audit report, but fail closed by omitting the redirect.
+      if (resolution !== 'unresolved_kept_original' && oldPath !== resolvedPath) {
         redirectMap.set(oldPath, resolvedPath)
       }
 

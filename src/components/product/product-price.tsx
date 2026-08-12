@@ -5,10 +5,12 @@ import { Sparkles, Gift, ShieldCheck, Award, Truck, Headphones } from 'lucide-re
 import { useState } from "react"
 import { ProductOptionsContext } from "./product-options-context"
 import { getInstallationFee, type InstallOption } from "@/lib/order-pricing"
+import { resolveProductCommerce } from "@/lib/product-commerce"
 
 interface ProductPriceProps {
     price: number | null | undefined
     originalPrice: number | null | undefined
+    salePrice?: number | null | undefined
     priceDisplay: string | null | undefined
     onlineDiscountAmount?: number | null | undefined
     stockStatus?: string | null | undefined
@@ -18,17 +20,23 @@ interface ProductPriceProps {
     children?: React.ReactNode
 }
 
-export function ProductPrice({ price, originalPrice, priceDisplay, onlineDiscountAmount, stockStatus, saleStatus, priceState, className, children }: ProductPriceProps) {
+export function ProductPrice({ price, originalPrice, salePrice, priceDisplay, onlineDiscountAmount, stockStatus, saleStatus, priceState, className, children }: ProductPriceProps) {
     const [installOption, setInstallOption] = useState<InstallOption>('none')
 
     const installationFee = getInstallationFee(installOption)
 
-    const numPrice = Number(price)
-    const numOriginal = Number(originalPrice)
+    const commerce = resolveProductCommerce({
+        originalPrice,
+        salePrice,
+        legacyPrice: price,
+        stockStatus,
+    })
+    const numPrice = commerce.displayPrice ?? 0
+    const numOriginal = commerce.originalPrice ?? 0
     const numOnlineDiscount = Number(onlineDiscountAmount)
-    const hasDiscount = numOriginal > 0 && numPrice > 0 && numOriginal > numPrice
+    const hasDiscount = commerce.salePrice !== null
     const normalizedSaleStatus = saleStatus || (stockStatus === 'discontinued' ? 'discontinued' : 'available')
-    const normalizedPriceState = priceState || (numPrice > 0 ? 'priced' : 'contact')
+    const normalizedPriceState = priceState || (commerce.priceMode === 'PUBLIC_PRICE' ? 'priced' : 'contact')
     const statusDisplay =
         normalizedSaleStatus === 'discontinued' || normalizedPriceState === 'discontinued' ? 'Ngừng kinh doanh' :
         normalizedSaleStatus === 'contact_for_price' || normalizedPriceState === 'contact' ? 'Liên hệ báo giá' :
@@ -36,7 +44,7 @@ export function ProductPrice({ price, originalPrice, priceDisplay, onlineDiscoun
         normalizedSaleStatus === 'coming_soon' || normalizedPriceState === 'coming_soon' ? 'Chuẩn bị mở bán' :
         normalizedSaleStatus === 'temporarily_unavailable' ? 'Tạm ngừng bán' :
         priceDisplay || 'Liên hệ báo giá'
-    const hasPublicPrice = normalizedPriceState === 'priced' && numPrice > 0
+    const hasPublicPrice = commerce.priceMode === 'PUBLIC_PRICE'
     const isDiscontinued = normalizedSaleStatus === 'discontinued' || normalizedPriceState === 'discontinued'
 
     const finalDisplayPrice = hasPublicPrice
@@ -86,7 +94,7 @@ export function ProductPrice({ price, originalPrice, priceDisplay, onlineDiscoun
                     )}
 
                     {/* Online Discount Sub-Card (Shopee-style Voucher) */}
-                    {!isDiscontinued && numOnlineDiscount > 0 && numPrice > 0 && (
+                    {!isDiscontinued && hasPublicPrice && numOnlineDiscount > 0 && (
                         <div className="mt-4 flex relative rounded-xl bg-orange-50/60 border border-orange-200">
                             
                             {/* Left Stub */}

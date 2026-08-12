@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { siteConfig } from "@/config/site";
 import { ViewItemTracker } from "@/components/tracking/view-item-tracker";
 import { trackGenerateLead } from "@/lib/tracking";
+import { resolveProductCommerce } from "@/lib/product-commerce";
 
 
 interface ProductCTAProps {
@@ -23,6 +24,7 @@ interface ProductCTAProps {
     price: number | null;
     priceDisplay?: string | null;
     originalPrice?: number | null;
+    salePrice?: number | null;
     imageUrl?: string | null;
     categorySlug: string;
     subcategorySlug?: string | null;
@@ -39,6 +41,7 @@ export function ProductCTA({
     productName,
     price,
     originalPrice,
+    salePrice,
     priceDisplay,
     imageUrl,
     categorySlug,
@@ -50,7 +53,15 @@ export function ProductCTA({
     priceState,
 }: ProductCTAProps) {
     const isDiscontinued = stockStatus === 'discontinued' || saleStatus === 'discontinued' || priceState === 'discontinued';
-    const hasPrice = price !== null && price > 0 && (!priceState || priceState === 'priced');
+    const commerce = resolveProductCommerce({
+        originalPrice,
+        salePrice,
+        legacyPrice: price,
+        stockStatus,
+    });
+    const hasPrice = commerce.priceMode === 'PUBLIC_PRICE';
+    const canPurchase = commerce.canAddToCart && !isDiscontinued;
+    const displayPrice = commerce.displayPrice;
     
     const productOptions = useProductOptions();
     const installOption = productOptions?.installOption || 'none';
@@ -64,7 +75,8 @@ export function ProductCTA({
     const addItem = useCartStore((s) => s.addItem);
 
     const handleAddToCart = () => {
-        const finalPrice = hasPrice && !isDiscontinued ? (price! - onlineDiscountAmount + installationFee) : undefined;
+        if (!canPurchase || displayPrice === null) return;
+        const finalPrice = displayPrice - onlineDiscountAmount + installationFee;
         
         addItem({
             productId,
@@ -73,7 +85,7 @@ export function ProductCTA({
             slug,
             categorySlug,
             subcategorySlug,
-            price,
+            price: displayPrice,
             priceDisplay: priceDisplay ?? null,
             imageUrl: imageUrl ?? null,
             brandName: brandName ?? null,
@@ -108,7 +120,7 @@ export function ProductCTA({
                     products: [
                         {
                             product_id: productId,
-                            quantity: hasPrice && !isDiscontinued ? quantity : 1,
+                            quantity: canPurchase ? quantity : 1,
                         }
                     ]
                 }),
@@ -144,7 +156,7 @@ export function ProductCTA({
         }
     };
 
-    const finalItemPrice = hasPrice && !isDiscontinued ? (price! - onlineDiscountAmount + installationFee) : 0;
+    const finalItemPrice = canPurchase && displayPrice !== null ? (displayPrice - onlineDiscountAmount + installationFee) : 0;
     const totalPrice = finalItemPrice * quantity;
 
     return (
@@ -152,7 +164,7 @@ export function ProductCTA({
             <ViewItemTracker item={{
                 item_id: productSku || productId.toString(),
                 item_name: productName,
-                price: price || 0,
+                price: displayPrice || 0,
                 item_category: categorySlug,
                 item_brand: brandName || undefined
             }} />
@@ -160,7 +172,7 @@ export function ProductCTA({
             {/* CTA Stack */}
             <div className="flex flex-col gap-2.5">
                 {/* Add to Cart — primary if has price */}
-                {hasPrice && !isDiscontinued && (
+                {canPurchase && (
                     <Button
                         onClick={handleAddToCart}
                         className="group w-full h-[52px] bg-gradient-to-r from-[#2E7A96] to-[#1e586e] hover:brightness-110 !text-white text-[16px] font-bold rounded-xl shadow-[0_12px_24px_-8px_rgba(46,122,150,0.4)] transition-all duration-300 gap-2 border-0"
@@ -343,7 +355,7 @@ export function ProductCTA({
 
             {/* Mobile Sticky Bottom Bar */}
             <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-stone-200 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:hidden z-[100] flex items-center justify-between gap-4 shadow-[0_-8px_30px_rgba(0,0,0,0.06)]">
-                {hasPrice && !isDiscontinued ? (
+                {canPurchase ? (
                     <div className="flex flex-col justify-center">
                         <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest leading-none mb-1">Tổng tạm tính</span>
                         <div className="flex items-end gap-1.5">
@@ -351,9 +363,9 @@ export function ProductCTA({
                         </div>
                         {(originalPrice || onlineDiscountAmount > 0) && (
                             <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                                {originalPrice && originalPrice > price! && (
+                                {commerce.originalPrice && commerce.salePrice !== null && (
                                     <span className="text-[11px] font-medium text-stone-400 line-through decoration-stone-300">
-                                        {formatPrice(originalPrice * quantity)}
+                                        {formatPrice(commerce.originalPrice * quantity)}
                                     </span>
                                 )}
                                 {onlineDiscountAmount > 0 && (
@@ -374,7 +386,7 @@ export function ProductCTA({
                 )}
                 
                 <div className="flex-1 max-w-[200px]">
-                    {hasPrice && !isDiscontinued ? (
+                    {canPurchase ? (
                         <Button
                             onClick={handleAddToCart}
                             className="w-full h-12 bg-gradient-to-r from-[#2E7A96] to-[#1e586e] hover:brightness-110 !text-white text-[15px] font-semibold rounded-xl shadow-[0_4px_14px_rgba(46,122,150,0.25)] transition-all duration-300 gap-2 border-0"
