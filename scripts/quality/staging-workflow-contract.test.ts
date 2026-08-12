@@ -43,6 +43,16 @@ describe("staging Product structured-data smoke", () => {
     expect(existingStagingRepair).toContain("Expected exactly twelve STG-DEMO redirect targets")
   })
 
+  it("upgrades the legacy kitchen fixture into the required Contact for Quote fixture", () => {
+    expect(existingStagingRepair).toContain("STG-DEMO-BEP-001")
+    expect(existingStagingRepair).toContain("STG-DEMO-TBVS-003")
+    expect(existingStagingRepair).toContain("Expected exactly one legacy staging fixture migration")
+    expect(existingStagingRepair).toContain('"brand_id" = b."id"')
+    expect(existingStagingRepair).toContain('"product_type_id" = pt."id"')
+    expect(existingStagingRepair).toContain('"product_sub_type_id" = pst."id"')
+    expect(existingStagingRepair).toContain('"sitemap_include" = true')
+  })
+
   it("keeps every active redirect destination represented by a synthetic staging fixture", () => {
     const destinations = Object.values(taxonomyRedirects)
     expect(destinations).toHaveLength(12)

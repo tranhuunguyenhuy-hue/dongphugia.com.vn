@@ -7,6 +7,80 @@
 -- - fails closed unless all fifteen expected synthetic fixtures validate;
 -- - run with psql --set=ON_ERROR_STOP=1 --single-transaction.
 
+-- Older staging seeds used STG-DEMO-BEP-001 as the third fixture. Preserve the
+-- three-fixture footprint by upgrading it in place before applying the current
+-- Product contract rather than inserting catalogue data or rerunning a seed.
+DO $$
+DECLARE
+  legacy_migration_count integer;
+  canonical_fixture_count integer;
+BEGIN
+  UPDATE "products" p
+  SET
+    "sku" = 'STG-DEMO-TBVS-003',
+    "name" = '[STG-DEMO] Bồn cầu route smoke test A',
+    "slug" = 'stg-demo-bon-cau-route-a',
+    "category_id" = c."id",
+    "subcategory_id" = s."id",
+    "brand_id" = b."id",
+    "origin_id" = o."id",
+    "color_id" = co."id",
+    "material_id" = m."id",
+    "product_type_id" = pt."id",
+    "product_sub_type_id" = pst."id",
+    "price" = NULL,
+    "original_price" = NULL,
+    "list_price" = NULL,
+    "sale_price" = NULL,
+    "price_display" = 'Liên hệ báo giá',
+    "description" = 'Synthetic product for staging route tests only.',
+    "features" = 'Synthetic features only. Not production data.',
+    "specs" = '{"STG-DEMO Loại":"Bồn cầu","STG-DEMO Màu":"Trắng"}'::jsonb,
+    "warranty_months" = 24,
+    "image_main_url" = 'https://placehold.co/800x800?text=STG-DEMO-TBVS-003',
+    "stock_status" = 'in_stock',
+    "is_active" = true,
+    "is_featured" = false,
+    "is_home_featured" = false,
+    "publication_status" = 'public',
+    "pdp_visibility" = 'public',
+    "listing_visibility" = 'default',
+    "search_visibility" = 'visible',
+    "listing_tier" = 1,
+    "listing_priority" = 19,
+    "data_quality_score" = 100,
+    "sale_status" = 'available',
+    "seo_indexing" = 'index',
+    "sitemap_include" = true,
+    "updated_at" = CURRENT_TIMESTAMP
+  FROM "categories" c
+  JOIN "subcategories" s
+    ON s."category_id" = c."id" AND s."slug" = 'stg-demo-bon-cau'
+  JOIN "brands" b ON b."slug" = 'stg-demo-sanitary-brand'
+  JOIN "origins" o ON o."slug" = 'stg-demo-viet-nam'
+  JOIN "colors" co ON co."slug" = 'stg-demo-trang'
+  JOIN "materials" m ON m."slug" = 'stg-demo-su'
+  JOIN "product_types" pt ON pt."subcategory_id" = s."id" AND pt."slug" = 'stg-demo-bon-cau-mot-khoi'
+  JOIN "product_sub_types" pst ON pst."product_type_id" = pt."id" AND pst."slug" = 'stg-demo-basic'
+  WHERE p."sku" = 'STG-DEMO-BEP-001'
+    AND c."slug" = 'thiet-bi-ve-sinh'
+    AND NOT EXISTS (
+      SELECT 1 FROM "products" WHERE "sku" = 'STG-DEMO-TBVS-003'
+    );
+
+  GET DIAGNOSTICS legacy_migration_count = ROW_COUNT;
+
+  SELECT count(*)
+  INTO canonical_fixture_count
+  FROM "products"
+  WHERE "sku" = 'STG-DEMO-TBVS-003';
+
+  IF canonical_fixture_count <> 1
+    OR legacy_migration_count > 1 THEN
+    RAISE EXCEPTION 'Expected exactly one legacy staging fixture migration when canonical Contact for Quote fixture is absent';
+  END IF;
+END $$;
+
 DO $$
 DECLARE
   updated_count integer;
