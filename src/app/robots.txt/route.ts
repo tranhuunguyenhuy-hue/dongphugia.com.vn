@@ -20,7 +20,6 @@ export function GET() {
             'Allow: /sitemap_product_*.xml',
             'Disallow: /api/',
             'Disallow: /admin/',
-            'Disallow: /_next/',
             'Disallow: /studio/',
             `Sitemap: ${site.siteUrl}/sitemap.xml`,
             '',

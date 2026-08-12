@@ -42,6 +42,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Install repository tools for source smoke gates
+        run: npm ci
+
       - name: Validate staging configuration
         shell: bash
         env:
@@ -107,7 +110,45 @@ jobs:
                 "select count(*) from products p join categories c on c.id = p.category_id where p.sku like 'STG-DEMO-%' and c.slug in ('thiet-bi-ve-sinh', 'thiet-bi-bep');"
           )"
 
-          if [ "$tables" != "46" ] || [ "$products" != "5" ] || [ "$canonical_products" != "5" ]; then
+          product_contract_fixtures="$(
+            docker run --rm --network "$BUILD_NETWORK" \
+              -e PGPASSWORD=dpg_staging_build_password \
+              "$POSTGRES_IMAGE" \
+              psql -h postgres -U dpg_staging_build -d dpg_staging_build -Atc \
+                "select concat_ws(':',
+                  count(*) filter (
+                    where sku = 'STG-DEMO-TBVS-001'
+                      and original_price > 0
+                      and sale_price is null
+                      and stock_status = 'in_stock'
+                  ),
+                  count(*) filter (
+                    where sku = 'STG-DEMO-TBVS-002'
+                      and original_price > 0
+                      and sale_price is null
+                      and stock_status = 'out_of_stock'
+                  ),
+                  count(*) filter (
+                    where sku = 'STG-DEMO-TBVS-003'
+                      and price is null
+                      and original_price is null
+                      and sale_price is null
+                  )
+                ) from products where sku like 'STG-DEMO-%';"
+          )"
+          redirect_target_products="$(
+            docker run --rm --network "$BUILD_NETWORK" \
+              -e PGPASSWORD=dpg_staging_build_password \
+              "$POSTGRES_IMAGE" \
+              psql -h postgres -U dpg_staging_build -d dpg_staging_build -Atc \
+                "select count(*) from products where sku like 'STG-DEMO-REDIRECT-%';"
+          )"
+
+          if [ "$tables" != "46" ] \
+            || [ "$products" != "17" ] \
+            || [ "$canonical_products" != "5" ] \
+            || [ "$redirect_target_products" != "12" ] \
+            || [ "$product_contract_fixtures" != "1:1:1" ]; then
             echo "Ephemeral build database bootstrap validation failed."
             exit 1
           fi
@@ -321,7 +362,13 @@ jobs:
 
           cleanup() {
             docker rm -f dpg-staging-image-smoke >/dev/null 2>&1 || true
-            rm -f /tmp/dpg-smoke.log /tmp/dpg-health.log /tmp/health.json
+            rm -f \
+              /tmp/dpg-smoke.log \
+              /tmp/dpg-health.log \
+              /tmp/health.json \
+              /tmp/product-in-stock.html \
+              /tmp/product-out-of-stock.html \
+              /tmp/product-quote-only.html
           }
           on_exit() {
             status=$?
@@ -350,6 +397,62 @@ jobs:
 
           homepage_status="$(curl -sS -o /dev/null -w '%{http_code}' "http://$smoke_ip:3000/" || true)"
           test "$homepage_status" = "200"
+
+          product_in_stock_status="$(curl -sS -o /tmp/product-in-stock.html -w '%{http_code}' \
+            "http://$smoke_ip:3000/thiet-bi-ve-sinh/stg-demo-bon-cau/stg-demo-bon-cau-smoke-test" || true)"
+          product_out_of_stock_status="$(curl -sS -o /tmp/product-out-of-stock.html -w '%{http_code}' \
+            "http://$smoke_ip:3000/thiet-bi-ve-sinh/stg-demo-sen-tam/stg-demo-sen-tam-smoke-test" || true)"
+          product_quote_only_status="$(curl -sS -o /tmp/product-quote-only.html -w '%{http_code}' \
+            "http://$smoke_ip:3000/thiet-bi-ve-sinh/stg-demo-bon-cau/stg-demo-bon-cau-route-a" || true)"
+
+          test "$product_in_stock_status" = "200"
+          test "$product_out_of_stock_status" = "200"
+          test "$product_quote_only_status" = "200"
+
+          npm run seo:check-redirect-targets -- \
+            --request-base-url="http://$smoke_ip:3000" \
+            --canonical-base-url="$STAGING_SITE_URL"
+
+          node <<'NODE'
+          const fs = require('fs')
+
+          const readJsonLd = (path) => {
+            const html = fs.readFileSync(path, 'utf8')
+            return [...html.matchAll(/<script[^>]+type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi)]
+              .flatMap((match) => {
+                try {
+                  const parsed = JSON.parse(match[1])
+                  return Array.isArray(parsed) ? parsed : [parsed]
+                } catch {
+                  return []
+                }
+              })
+          }
+
+          const findProduct = (path) => readJsonLd(path)
+            .find((entry) => entry?.['@type'] === 'Product')
+
+          const inStock = findProduct('/tmp/product-in-stock.html')
+          const outOfStock = findProduct('/tmp/product-out-of-stock.html')
+          const quoteOnly = findProduct('/tmp/product-quote-only.html')
+
+          if (
+            inStock?.offers?.['@type'] !== 'Offer'
+            || Number(inStock.offers.price) !== 2500000
+            || inStock.offers.priceCurrency !== 'VND'
+            || inStock.offers.availability !== 'https://schema.org/InStock'
+          ) process.exit(1)
+
+          if (
+            outOfStock?.offers?.['@type'] !== 'Offer'
+            || Number(outOfStock.offers.price) !== 1800000
+            || outOfStock.offers.priceCurrency !== 'VND'
+            || outOfStock.offers.availability !== 'https://schema.org/OutOfStock'
+          ) process.exit(1)
+
+          if (quoteOnly) process.exit(1)
+          console.log('Product JSON-LD smoke: passed')
+          NODE
 
           container_health=starting
           health_wait_started=$SECONDS
@@ -406,5 +509,5 @@ jobs:
             echo "- Provenance sections verified: \`${{ steps.verify.outputs.provenance_sections }}\`"
             echo "- Trivy HIGH findings: \`${{ steps.scan.outputs.high_count }}\`"
             echo "- Trivy CRITICAL findings: \`${{ steps.scan.outputs.critical_count }}\`"
-            echo "- Smoke test: \`GET /api/health\` and \`GET /\` passed"
+            echo "- Smoke test: health, homepage, and Product JSON-LD fixtures passed"
           } >> "$GITHUB_STEP_SUMMARY"

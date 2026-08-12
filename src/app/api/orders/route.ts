@@ -62,7 +62,9 @@ async function createAuthoritativeOrder(input: OrderRequest) {
                         name: true,
                         sku: true,
                         price: true,
+                        original_price: true,
                         sale_price: true,
+                        stock_status: true,
                         online_discount_amount: true,
                         is_active: true,
                         publication_status: true,
@@ -91,8 +93,10 @@ async function createAuthoritativeOrder(input: OrderRequest) {
 
                     const onlineDiscountAmount = Number(product.online_discount_amount ?? 0)
                     const unitPrice = calculateOrderUnitPrice({
-                        price: product.price === null ? null : Number(product.price),
+                        originalPrice: product.original_price === null ? null : Number(product.original_price),
                         salePrice: product.sale_price === null ? null : Number(product.sale_price),
+                        compatibilityPrice: product.price === null ? null : Number(product.price),
+                        stockStatus: product.stock_status,
                         onlineDiscountAmount,
                         installOption: item.installOption,
                     })

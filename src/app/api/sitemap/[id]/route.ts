@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { getCanonicalSiteUrl } from '@/lib/site';
 import { buildPublicSitemapVisibilityWhere } from '@/lib/public-product-visibility';
 import { getCanonicalProductPath, primaryTaxonAssignmentSelect } from '@/lib/taxonomy-paths';
+import { sitemapUnavailable } from '@/lib/seo/sitemap-response';
 
 export const revalidate = 86400; // 24 hours
 export const dynamic = 'force-dynamic';
@@ -20,26 +21,27 @@ export async function GET(
         return new NextResponse('Invalid sitemap ID', { status: 400 });
     }
 
-    const baseUrl = getCanonicalSiteUrl();
-    const skip = (id - 1) * PAGE_SIZE;
-    const where = buildPublicSitemapVisibilityWhere();
+    try {
+        const baseUrl = getCanonicalSiteUrl();
+        const skip = (id - 1) * PAGE_SIZE;
+        const where = buildPublicSitemapVisibilityWhere();
 
-    const products = await prisma.products.findMany({
-        where,
-        skip: skip,
-        take: PAGE_SIZE,
-        select: {
-            slug: true,
-            updated_at: true,
-            categories: { select: { slug: true } },
-            subcategories: { select: { slug: true } },
-            product_type: true,
-            product_taxon_assignments: primaryTaxonAssignmentSelect,
-        },
-        orderBy: { id: 'asc' }
-    });
+        const products = await prisma.products.findMany({
+            where,
+            skip: skip,
+            take: PAGE_SIZE,
+            select: {
+                slug: true,
+                updated_at: true,
+                categories: { select: { slug: true } },
+                subcategories: { select: { slug: true } },
+                product_type: true,
+                product_taxon_assignments: primaryTaxonAssignmentSelect,
+            },
+            orderBy: { id: 'asc' }
+        });
 
-    if (products.length === 0) {
+        if (products.length === 0) {
         // Return an empty urlset instead of 404 to avoid GSC errors for out-of-bounds sitemaps
         return new NextResponse(
             `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>`,
@@ -50,12 +52,12 @@ export async function GET(
                 }
             }
         );
-    }
+        }
 
-    let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
-    xml += `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
+        let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
+        xml += `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
 
-    products.forEach((product) => {
+        products.forEach((product) => {
         const canonical = getCanonicalProductPath(product);
 
         // Escape special characters in XML
@@ -76,14 +78,17 @@ export async function GET(
         xml += `    <changefreq>weekly</changefreq>\n`;
         xml += `    <priority>0.8</priority>\n`;
         xml += `  </url>\n`;
-    });
+        });
 
-    xml += `</urlset>`;
+        xml += `</urlset>`;
 
-    return new NextResponse(xml, {
-        headers: {
-            'Content-Type': 'text/xml',
-            'Cache-Control': 'public, max-age=86400, s-maxage=86400, stale-while-revalidate'
-        }
-    });
+        return new NextResponse(xml, {
+            headers: {
+                'Content-Type': 'text/xml',
+                'Cache-Control': 'public, max-age=86400, s-maxage=86400, stale-while-revalidate'
+            }
+        });
+    } catch {
+        return sitemapUnavailable(`product_${id}`);
+    }
 }

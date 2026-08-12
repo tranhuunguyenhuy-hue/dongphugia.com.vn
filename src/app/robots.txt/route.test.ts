@@ -13,6 +13,7 @@ describe('GET /robots.txt', () => {
         expect(body).toContain('Allow: /')
         expect(body).toContain('Sitemap: https://www.dongphugia.vn/sitemap.xml')
         expect(body).not.toContain('noindex')
+        expect(body).not.toContain('Disallow: /_next/')
     })
 
     it('blocks crawlers outside production', async () => {

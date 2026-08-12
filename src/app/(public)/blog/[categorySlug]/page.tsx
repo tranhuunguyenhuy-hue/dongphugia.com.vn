@@ -2,20 +2,31 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import { ChevronRight } from 'lucide-react'
 import { PostCard, BlogPost } from '@/components/blog/post-card'
+import { ListingPagination } from '@/components/category/listing-pagination'
 
 import { getBlogPosts, getBlogCategories } from '@/lib/public-api-blog'
 import { canonicalUrl } from '@/lib/site'
+import { notFound } from 'next/navigation'
+import { isListingPageInRange, parseListingPage } from '@/lib/listing-pagination'
 
 export const revalidate = 3600
 
-export async function generateMetadata({ params }: { params: Promise<{ categorySlug: string }> }): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: {
+    params: Promise<{ categorySlug: string }>
+    searchParams: Promise<{ page?: string }>
+}): Promise<Metadata> {
     const { categorySlug } = await params
+    const { page: rawPage } = await searchParams
+    const page = parseListingPage(rawPage)
+    if (page === null) return { title: 'Không tìm thấy chuyên mục', robots: { index: false, follow: false } }
     const categories = await getBlogCategories()
     const category = categories.find((c) => c.slug === categorySlug)
 
     if (!category) return { title: 'Không tìm thấy chuyên mục', robots: { index: false, follow: false } }
 
-    const url = canonicalUrl(`/blog/${categorySlug}`)
+    const url = canonicalUrl(page === 1
+        ? `/blog/${categorySlug}`
+        : `/blog/${categorySlug}?page=${page}`)
 
     return {
         title: `${category.name}`,
@@ -25,23 +36,23 @@ export async function generateMetadata({ params }: { params: Promise<{ categoryS
     }
 }
 
-export default async function BlogCategoryPage({ params }: { params: Promise<{ categorySlug: string }> }) {
+export default async function BlogCategoryPage({ params, searchParams }: {
+    params: Promise<{ categorySlug: string }>
+    searchParams: Promise<{ page?: string }>
+}) {
     const { categorySlug } = await params
+    const { page: rawPage } = await searchParams
+    const currentPage = parseListingPage(rawPage)
+    if (currentPage === null) notFound()
     const categories = await getBlogCategories()
     const category = categories.find((c) => c.slug === categorySlug)
 
-    if (!category) {
-        return (
-            <div className="min-h-[50vh] flex flex-col items-center justify-center bg-white text-center px-5">
-                <h1 className="text-3xl font-bold text-[#192125] mb-4">Không tìm thấy chuyên mục</h1>
-                <Link href="/blog" className="text-[#2E7A96] font-medium hover:underline">Quay lại trang Blog</Link>
-            </div>
-        )
-    }
+    if (!category) notFound()
 
     // Filter posts from DB
-    const { posts, totalPages } = await getBlogPosts({ categorySlug, limit: 12 })
+    const { posts, totalPages } = await getBlogPosts({ categorySlug, limit: 12, page: currentPage })
     const categoryPosts = posts as unknown as BlogPost[]
+    if (!isListingPageInRange(currentPage, totalPages) || categoryPosts.length === 0) notFound()
 
     return (
         <div className="bg-white min-h-screen">
@@ -80,22 +91,7 @@ export default async function BlogCategoryPage({ params }: { params: Promise<{ c
                     </div>
                 )}
 
-                {/* Pagination (Client-side would handle dynamic page params) */}
-                {totalPages > 1 && (
-                    <div className="flex justify-center mt-12">
-                        <nav className="flex items-center gap-2">
-                            <button className="w-10 h-10 rounded-xl bg-[#2E7A96] text-white flex items-center justify-center font-medium">
-                                1
-                            </button>
-                            {totalPages > 2 && <span className="text-[#88A3AE]">...</span>}
-                            {totalPages > 1 && (
-                                <button className="w-10 h-10 rounded-xl border border-[#E4EEF2] flex items-center justify-center text-[#6A8A97] hover:bg-[#F5F9FB] hover:text-[#2E7A96] transition-colors">
-                                    {totalPages}
-                                </button>
-                            )}
-                        </nav>
-                    </div>
-                )}
+                <ListingPagination totalPages={totalPages} currentPage={currentPage} />
             </div>
         </div>
     )

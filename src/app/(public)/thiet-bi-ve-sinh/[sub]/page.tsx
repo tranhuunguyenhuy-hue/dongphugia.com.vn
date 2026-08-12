@@ -2,10 +2,9 @@ import { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { Suspense } from "react"
 import { preload } from "react-dom"
-import { getPublicProducts, getAvailableFiltersBySubcategory, getProductTypeFiltersBySubcategory, getSubcategorySpecFilters, getListingRuntimeConfig } from "@/lib/public-api-products"
-import prisma from "@/lib/prisma"
+import { getPublicProducts, getAvailableFiltersBySubcategory, getProductTypeFiltersBySubcategory, getSubcategorySpecFilters, getListingRuntimeConfig, getPublicListingLeaf, getPublicListingLeaves } from "@/lib/public-api-products"
 import { ProductCard } from "@/components/ui/product-card"
-import { ProductPagination } from "@/components/ui/product-pagination"
+import { ListingPagination } from "@/components/category/listing-pagination"
 import { DesktopAdvancedSidebarFilter } from "@/components/category/desktop-advanced-sidebar-filter"
 import { ActiveFilters, ActiveFilterDict } from "@/components/category/active-filters"
 import { CategoryMobileFilter } from "@/components/category/category-mobile-filter"
@@ -13,7 +12,6 @@ import { CategorySort } from "@/components/category/category-sort"
 import { ProductTypeFilter } from "@/components/category/product-type-filter"
 import { ActiveSpecFilterChips, SpecFilterDef } from "@/components/category/subcategory-spec-filter"
 import { StaticSubcategoryNavigation } from "@/components/category/static-subcategory-navigation"
-import { buildPublicListingVisibilityWhere } from "@/lib/public-product-visibility"
 import {
     getAboveFoldListingImageSources,
     LISTING_PRODUCT_IMAGE_SIZES,
@@ -21,6 +19,7 @@ import {
 } from "@/lib/listing-image-priority"
 import { createResponsiveSrcSet } from "@/lib/media/media-profiles"
 import { hasActiveListingFilterParams } from "@/lib/listing-client-boundaries"
+import { isListingPageInRange, parseListingPage } from "@/lib/listing-pagination"
 import { ChevronRight, Home } from "lucide-react"
 import Link from "next/link"
 
@@ -32,7 +31,6 @@ const BASE_PATH = "/thiet-bi-ve-sinh"
 // Keep the initial public toilet listing within the mobile performance budget.
 // Pagination still receives the complete total from getPublicProducts.
 const PAGE_SIZE = 12
-const LISTING_PRODUCT_WHERE = buildPublicListingVisibilityWhere()
 
 interface PageProps {
     params: Promise<{ sub: string }>
@@ -41,9 +39,7 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
     const { sub } = await params
-    const subcategory = await prisma.subcategories.findFirst({
-        where: { slug: sub, is_active: true },
-    })
+    const subcategory = await getPublicListingLeaf(CATEGORY_SLUG, sub)
     if (!subcategory) return { title: `${CATEGORY_NAME}` }
     return {
         title: `${subcategory.name} | ${CATEGORY_NAME}`,
@@ -62,12 +58,11 @@ export default async function ThietBiVeSinhSubPage({ params, searchParams }: Pag
     const sp = await searchParams
 
     // Validate subcategory exists
-    const subcategory = await prisma.subcategories.findFirst({
-        where: { slug: sub, is_active: true },
-    })
+    const subcategory = await getPublicListingLeaf(CATEGORY_SLUG, sub)
     if (!subcategory) notFound()
 
-    const currentPage = Math.max(1, parseInt(sp.page || "1"))
+    const currentPage = parseListingPage(sp.page)
+    if (currentPage === null) notFound()
     const activeBrandSlugs = sp.brand
     const activeFeatureSlugs = sp.features
     const activeMaterialSlugs = sp.material
@@ -104,20 +99,9 @@ export default async function ThietBiVeSinhSubPage({ params, searchParams }: Pag
 
     const [availableFilters, specFilterDefs, productTypeFilters, allSubcategories, { products, totalPages, total }] = await Promise.all([
         getAvailableFiltersBySubcategory(sub, activeProductType, CATEGORY_SLUG),
-        getSubcategorySpecFilters(subcategory.id, CATEGORY_SLUG, sub),
-        listingRuntimeConfig.enableProductTypeTabs ? getProductTypeFiltersBySubcategory(subcategory.id) : Promise.resolve([]),
-        prisma.subcategories.findMany({
-            where: { categories: { slug: CATEGORY_SLUG }, is_active: true },
-            orderBy: { sort_order: "asc" },
-            include: {
-                _count: {
-                    select: {
-                        products: { where: LISTING_PRODUCT_WHERE },
-                        secondary_product_subcategories: { where: { products: LISTING_PRODUCT_WHERE } },
-                    }
-                }
-            },
-        }),
+        subcategory.id !== null ? getSubcategorySpecFilters(subcategory.id, CATEGORY_SLUG, sub) : Promise.resolve([]),
+        listingRuntimeConfig.enableProductTypeTabs && subcategory.id !== null ? getProductTypeFiltersBySubcategory(subcategory.id) : Promise.resolve([]),
+        getPublicListingLeaves(CATEGORY_SLUG),
         getPublicProducts({
             category_slug: CATEGORY_SLUG,
             subcategory_slugs: sub,
@@ -139,6 +123,8 @@ export default async function ThietBiVeSinhSubPage({ params, searchParams }: Pag
             sortDir,
         }),
     ])
+
+    if (!isListingPageInRange(currentPage, totalPages) || (total === 0 && !hasActiveFilterParams)) notFound()
 
     const filterDict: ActiveFilterDict = {}
     availableFilters.brands.forEach(f => filterDict[f.slug] = f.name)
@@ -250,7 +236,7 @@ export default async function ThietBiVeSinhSubPage({ params, searchParams }: Pag
                                 ))}
                             </div>
                             <div className="mt-12">
-                                <Suspense><ProductPagination totalPages={totalPages} currentPage={currentPage} /></Suspense>
+                                <Suspense><ListingPagination totalPages={totalPages} currentPage={currentPage} /></Suspense>
                             </div>
                         </>
                     ) : (

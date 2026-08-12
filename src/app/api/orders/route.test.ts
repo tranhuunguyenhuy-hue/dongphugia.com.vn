@@ -38,7 +38,9 @@ const availableProduct = {
     name: 'Tên từ database',
     sku: 'DB-SKU-101',
     price: 1_000_000,
+    original_price: 1_000_000,
     sale_price: 900_000,
+    stock_status: 'in_stock',
     online_discount_amount: 50_000,
     is_active: true,
     publication_status: 'public',
@@ -150,6 +152,7 @@ describe('POST /api/orders', () => {
         mocks.findProducts.mockResolvedValue([{
             ...availableProduct,
             price: null,
+            original_price: null,
             sale_price: null,
             online_discount_amount: null,
         }])

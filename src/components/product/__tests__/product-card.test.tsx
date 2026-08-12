@@ -83,4 +83,26 @@ describe('ProductCard', () => {
         expect(screen.getByText('Có trên tìm kiếm')).toBeInTheDocument()
         expect(screen.getByText('Liên hệ báo giá')).toBeInTheDocument()
     })
+
+    it('renders the same canonical sale price used by Product JSON-LD and orders', () => {
+        render(
+            <ProductCard
+                product={{
+                    name: 'Sản phẩm có giá bán chuẩn',
+                    slug: 'san-pham-co-gia-ban-chuan',
+                    price: 950_000,
+                    original_price: 1_000_000,
+                    sale_price: 900_000,
+                    price_display: null,
+                    stock_status: 'in_stock',
+                    is_featured: false,
+                    is_promotion: false,
+                    variant_options: [],
+                }}
+            />,
+        )
+
+        expect(screen.getByText(/900\.000/)).toBeInTheDocument()
+        expect(screen.queryByText(/950\.000/)).not.toBeInTheDocument()
+    })
 })

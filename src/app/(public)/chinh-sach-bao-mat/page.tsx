@@ -3,6 +3,7 @@ import { Metadata } from 'next'
 export const metadata: Metadata = {
     title: 'Chính sách Bảo mật Thông tin',
     description: 'Chính sách bảo vệ thông tin và quyền riêng tư của khách hàng tại Đông Phú Gia.',
+    alternates: { canonical: '/chinh-sach-bao-mat' },
 }
 
 export default function PrivacyPolicyPage() {

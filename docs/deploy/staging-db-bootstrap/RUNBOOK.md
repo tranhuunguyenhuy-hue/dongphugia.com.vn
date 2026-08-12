@@ -11,6 +11,8 @@ until a separate approval is given.
 - `002_seed_synthetic_stg_demo.sql` — idempotent synthetic seed data only.
 - `003_rehome_synthetic_stg_demo_to_canonical.sql` — bounded repair for an
   existing staging database created by the earlier seed revision.
+- `004_align_synthetic_product_contract.sql` — bounded Product contract repair
+  for the three staging fixtures used by runtime structured-data acceptance.
 - `RLS_FINDINGS.md` — read-only review of Supabase client/RPC usage and RLS
   implications.
 - `checksums.sha256` — SHA-256 checksums for review before any execution.
@@ -22,7 +24,8 @@ until a separate approval is given.
 - No admin account seed.
 - No customer, quote, order, session, password, key, or production content.
 - No connection strings committed to the repository.
-- No GitHub workflow, GHCR, Coolify, DNS, Cloudflare, or AWS changes.
+- Executing these SQL artefacts authorizes no GitHub workflow, GHCR, Coolify,
+  DNS, Cloudflare, or AWS mutation; each remains a separate approval gate.
 
 ## Preflight before future execution
 
@@ -90,6 +93,25 @@ products are attached to `thiet-bi-ve-sinh` or `thiet-bi-bep`, with no row or
 credential output. It must not be used against production or a database whose
 scope has not been revalidated.
 
+For an existing staging database whose synthetic products predate the Product
+contract fixtures or redirect-target fixtures, revalidate the same staging-only
+gates and run only the bounded repair:
+
+```bash
+psql \
+  --set=ON_ERROR_STOP=1 \
+  --single-transaction \
+  --file=docs/deploy/staging-db-bootstrap/004_align_synthetic_product_contract.sql \
+  "$STAGING_DIRECT_URL"
+```
+
+The repair aligns exactly `STG-DEMO-TBVS-001`, `STG-DEMO-TBVS-002`, and
+`STG-DEMO-TBVS-003`, then creates or aligns twelve
+`STG-DEMO-REDIRECT-*` targets below the staging-only
+`vat-lieu-nuoc/may-nuoc-nong` taxonomy. It fails and rolls back unless all
+fifteen synthetic fixtures validate. It must not be
+combined with a production or catalogue-wide data change.
+
 ## Post-execution checks for a future gate
 
 Run read-only checks against staging only:
@@ -97,6 +119,10 @@ Run read-only checks against staging only:
 - table count matches the reviewed bootstrap;
 - index and foreign-key counts match the reviewed bootstrap;
 - synthetic products exist with SKU prefix `STG-DEMO-`;
+- the synthetic Product contract matrix contains one priced in-stock product,
+  one priced out-of-stock product, and one Contact for Quote product;
+- twelve synthetic redirect targets exist below
+  `vat-lieu-nuoc/may-nuoc-nong` for the reviewed runtime redirect registry;
 - admin/user/order/customer/session tables are empty;
 - public app pages can read synthetic catalogue/blog data;
 - write flows are not exercised until runtime secrets and admin setup are

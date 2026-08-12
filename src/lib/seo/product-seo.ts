@@ -32,6 +32,7 @@ type ProductMetadataInput = {
   image_main_url?: string | null
   canonicalUrl: string
   categoryName: string
+  seoIndexing?: string | null
 }
 
 export function buildProductMetadata(input: ProductMetadataInput): Metadata {
@@ -45,6 +46,9 @@ export function buildProductMetadata(input: ProductMetadataInput): Metadata {
   return {
     title,
     description,
+    ...(input.seoIndexing === "noindex"
+      ? { robots: { index: false, follow: true } }
+      : {}),
     alternates: { canonical: input.canonicalUrl },
     openGraph: {
       title: input.name,

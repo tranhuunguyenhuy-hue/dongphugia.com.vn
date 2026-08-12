@@ -3,6 +3,7 @@ import { Metadata } from 'next'
 export const metadata: Metadata = {
     title: 'Thông tin về Giá',
     description: 'Chính sách và thông tin về giá bán các sản phẩm tại Đông Phú Gia.',
+    alternates: { canonical: '/thong-tin-gia' },
 }
 
 export default function PricingInfoPage() {
