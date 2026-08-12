@@ -4,7 +4,7 @@ export const publishingOpenApi = {
         title: 'Dongphugia Publishing API',
         version: '1.0.0',
         description:
-            'Internal, vendor-neutral API for authorized Publishing Agents. All mutation requests require Idempotency-Key. External HTTPS citation hosts are runtime-reviewed configuration, not a fixed OpenAPI enum.',
+            'Internal, vendor-neutral API for authorized Publishing Agents. All mutation requests require Idempotency-Key. Retrying the same key with the same payload for 30 days returns the stored safe response; a changed payload or an in-progress operation returns 409, and a stale Post Version returns 412. External HTTPS citation hosts are runtime-reviewed configuration, not a fixed OpenAPI enum.',
     },
     servers: [{ url: '/api/publishing/v1' }],
     security: [{ bearerAuth: [] }],
@@ -30,6 +30,7 @@ export const publishingOpenApi = {
             Unauthorized: { description: 'Credential missing, invalid, expired, or revoked', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
             Forbidden: { description: 'HTTPS, IP policy, identity, or capability denied', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
             Conflict: { description: 'Idempotency key is reused or still in progress', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+            NotFound: { description: 'The owned resource was not found', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
             PayloadTooLarge: { description: 'Request body exceeds its endpoint limit', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
             UnsupportedMediaType: { description: 'Content-Type is unsupported', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
             ValidationFailed: { description: 'Payload, safety, taxonomy, media, or readiness validation failed', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
@@ -297,8 +298,8 @@ export const publishingOpenApi = {
                 summary: 'Create or conditionally update one Blog Post',
                 parameters: [
                     { name: 'Idempotency-Key', in: 'header', required: true, schema: { type: 'string' } },
-                    { name: 'If-None-Match', in: 'header', schema: { const: '*' } },
-                    { name: 'If-Match', in: 'header', schema: { type: 'string', pattern: '^"v[1-9][0-9]*"$' } },
+                    { name: 'If-None-Match', in: 'header', description: 'Required as `*` for creation; must not be combined with If-Match.', schema: { const: '*' } },
+                    { name: 'If-Match', in: 'header', description: 'Required with the current ETag for update; must not be combined with If-None-Match.', schema: { type: 'string', pattern: '^"v[1-9][0-9]*"$' } },
                 ],
                 requestBody: {
                     required: true,
@@ -309,6 +310,7 @@ export const publishingOpenApi = {
                     201: { description: 'Created', headers: { ETag: { $ref: '#/components/headers/ETag' } }, content: { 'application/json': { schema: { $ref: '#/components/schemas/PostSummary' } } } },
                     401: { $ref: '#/components/responses/Unauthorized' },
                     403: { $ref: '#/components/responses/Forbidden' },
+                    404: { $ref: '#/components/responses/NotFound' },
                     409: { $ref: '#/components/responses/Conflict' },
                     412: { $ref: '#/components/responses/PreconditionFailed' },
                     413: { $ref: '#/components/responses/PayloadTooLarge' },

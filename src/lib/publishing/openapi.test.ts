@@ -25,7 +25,7 @@ describe('Publishing OpenAPI contract', () => {
         for (const status of [401, 403, 409, 413, 415, 422, 429, 500, 503]) {
             expect(mediaResponses).toHaveProperty(String(status))
         }
-        for (const status of [401, 403, 409, 412, 413, 415, 422, 428, 429, 500, 503]) {
+        for (const status of [401, 403, 404, 409, 412, 413, 415, 422, 428, 429, 500, 503]) {
             expect(postResponses).toHaveProperty(String(status))
         }
         expect(publishingOpenApi.components.responses.RateLimited.headers).toHaveProperty('Retry-After')
