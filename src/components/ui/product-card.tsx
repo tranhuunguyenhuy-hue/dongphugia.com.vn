@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { formatPrice, cn } from '@/lib/utils';
 import { siteConfig } from '@/config/site';
 import { getVariantDisplayColor } from '@/lib/variant-color-display';
-import { DeferredResponsiveMedia } from '@/components/media/deferred-responsive-media'; import { ResponsiveMedia } from '@/components/media/responsive-media';
+import { DeferredResponsiveMedia } from '@/components/media/deferred-responsive-media'; import { ResponsiveMedia } from '@/components/media/responsive-media'; import { resolveProductCommerce } from '@/lib/product-commerce';
 
 export interface ProductCardProps {
     product: any;
@@ -69,12 +69,17 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
         dimensionText = product.dimensions || specs.dimensions || specs.simDimensions || product.sizes?.label;
     }
     const sku = product.sku || product.product_code || product.code || '';
-    const isDiscontinued = product.stock_status === 'discontinued';
     const isInactive = product.is_active === false;
+    const commerce = resolveProductCommerce({
+        originalPrice: product.original_price ?? product.list_price,
+        salePrice: product.sale_price,
+        compatibilityPrice: product.price,
+        stockStatus: product.stock_status,
+    });
 
     let discountPercent = 0;
-    if (product.original_price && product.price && Number(product.original_price) > Number(product.price)) {
-        discountPercent = Math.round(((Number(product.original_price) - Number(product.price)) / Number(product.original_price)) * 100);
+    if (commerce.salePrice !== null && commerce.originalPrice !== null) {
+        discountPercent = Math.round(((commerce.originalPrice - commerce.salePrice) / commerce.originalPrice) * 100);
     }
 
     // Determine if product image should have margin (cutout/no-background)
@@ -91,7 +96,7 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
     let featuresList: string[] = [];
     if (Array.isArray(product.product_feature_values)) {
         featuresList = product.product_feature_values
-            .map((item: any) => item.product_features?.name)
+            .map((item: { product_features?: { name?: string | null } }) => item.product_features?.name)
             .filter(Boolean);
     }
 
@@ -157,13 +162,7 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
                 )}
                 
                 {/* Discount Flag Badge */}
-                {isDiscontinued ? (
-                    <div className="absolute top-4 left-0 z-20">
-                        <div className="bg-rose-100 text-rose-700 font-bold text-[11px] px-2.5 py-[4px] rounded-r-md shadow-sm border border-l-0 border-rose-200 tracking-wide">
-                            Ngừng KD
-                        </div>
-                    </div>
-                ) : isInactive ? (
+                {isInactive ? (
                     <div className="absolute top-4 left-0 z-20">
                         <div className="bg-stone-100 text-stone-700 font-bold text-[11px] px-2.5 py-[4px] rounded-r-md shadow-sm border border-l-0 border-stone-200 tracking-wide">
                             Có trên tìm kiếm
@@ -202,7 +201,6 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
                             {product.stock_status && (
                                 <span className={cn(
                                     "w-1.5 h-1.5 rounded-full",
-                                    product.stock_status === 'discontinued' ? "bg-rose-400" :
                                     isInactive ? "bg-amber-400" :
                                     product.stock_status === 'in_stock' ? "bg-emerald-500" :
                                     product.stock_status === 'out_of_stock' ? "bg-red-500" : "bg-neutral-300"
@@ -246,19 +244,15 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
 
                 {/* Price */}
                 <div className="flex flex-col gap-0.5 mt-1 border-t border-neutral-100 pt-3">
-                    {isDiscontinued ? (
-                        <span className="w-fit rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-[12px] font-bold text-rose-700">
-                            Ngừng kinh doanh
-                        </span>
-                    ) : showPrice && product.price ? (
+                    {showPrice && commerce.priceMode === 'PUBLIC_PRICE' ? (
                         <>
                             <div className="flex items-center gap-2 flex-wrap">
-                                <span className={`font-bold text-[17px] sm:text-[18px] tracking-tight ${product.original_price && Number(product.original_price) > Number(product.price) ? 'text-red-600' : 'text-brand-700'}`}>
-                                    {formatPrice(Number(product.price))}
+                                <span className={`font-bold text-[17px] sm:text-[18px] tracking-tight ${commerce.salePrice !== null ? 'text-red-600' : 'text-brand-700'}`}>
+                                    {formatPrice(commerce.displayPrice!)}
                                 </span>
-                                {product.original_price && Number(product.original_price) > Number(product.price) && (
+                                {commerce.salePrice !== null && commerce.originalPrice !== null && (
                                     <span className="font-medium text-[13px] text-neutral-600 line-through">
-                                        {formatPrice(Number(product.original_price))}
+                                        {formatPrice(commerce.originalPrice)}
                                     </span>
                                 )}
                             </div>

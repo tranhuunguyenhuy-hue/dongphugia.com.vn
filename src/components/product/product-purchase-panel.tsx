@@ -1,10 +1,10 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import type { VariantSibling } from '@/lib/public-api-products'
 import { ProductCTA } from '@/components/product/product-cta'
 import { ProductPrice } from '@/components/product/product-price'
-import { VariantPreview, VariantSelector } from '@/components/product/variant-selector'
+import { VariantPreview, VariantSelector } from '@/components/product/variant-selector'; import { resolveProductCommerce } from '@/lib/product-commerce'
 
 interface ProductPurchasePanelProps {
     product: any
@@ -15,6 +15,9 @@ interface ProductPurchasePanelProps {
     subcategorySlug?: string | null
 }
 
+const toClientMoney = (value: unknown) =>
+    value === null || value === undefined ? null : Number(value)
+
 export function ProductPurchasePanel({
     product,
     variantSiblings,
@@ -23,26 +26,25 @@ export function ProductPurchasePanel({
     categorySlug,
     subcategorySlug,
 }: ProductPurchasePanelProps) {
-    const [selectedVariant, setSelectedVariant] = useState<VariantPreview | null>(null)
-
-    useEffect(() => {
-        setSelectedVariant(null)
-    }, [product.id, product.sku])
+    const productKey = `${product.id}:${product.sku}`
+    const [selection, setSelection] = useState<{
+        productKey: string
+        variant: VariantPreview
+    } | null>(null)
+    const selectedVariant = selection?.productKey === productKey ? selection.variant : null
 
     const displayProduct = useMemo(() => {
         if (!selectedVariant) return product
-        const selectedSalePrice = selectedVariant.sale_price ?? selectedVariant.price
-        const selectedListPrice = selectedVariant.list_price ?? selectedVariant.original_price
         return {
             ...product,
             id: selectedVariant.id ?? product.id,
             sku: selectedVariant.sku,
             slug: selectedVariant.slug,
             name: selectedVariant.name,
-            price: selectedSalePrice,
-            original_price: selectedListPrice,
-            sale_price: selectedSalePrice,
-            list_price: selectedListPrice,
+            price: selectedVariant.price,
+            original_price: selectedVariant.original_price,
+            sale_price: selectedVariant.sale_price,
+            list_price: selectedVariant.list_price,
             online_discount_amount: selectedVariant.online_discount_amount ?? product.online_discount_amount,
             price_display: selectedVariant.price_display,
             image_main_url: selectedVariant.image_main_url,
@@ -53,10 +55,15 @@ export function ProductPurchasePanel({
         }
     }, [product, selectedVariant])
 
-    const currentSalePrice = product.sale_price ?? product.price
-    const currentListPrice = product.list_price ?? product.original_price
-    const displaySalePrice = displayProduct.sale_price ?? displayProduct.price
-    const displayListPrice = displayProduct.list_price ?? displayProduct.original_price
+    const currentCommerce = resolveProductCommerce({
+        originalPrice: product.original_price ?? product.list_price,
+        salePrice: product.sale_price,
+        compatibilityPrice: product.price,
+        stockStatus: product.stock_status,
+    })
+    const displayCompatibilityPrice = displayProduct.price
+    const displayOriginalPrice = displayProduct.original_price ?? displayProduct.list_price
+    const displaySalePrice = displayProduct.sale_price
 
     return (
         <>
@@ -67,14 +74,14 @@ export function ProductPurchasePanel({
                     currentName={product.name}
                     currentImageMainUrl={product.image_main_url}
                     currentPriceDisplay={product.price_display}
-                    currentPrice={currentSalePrice ? Number(currentSalePrice) : null}
-                    currentOriginalPrice={currentListPrice ? Number(currentListPrice) : null}
+                    currentPrice={currentCommerce.displayPrice}
+                    currentOriginalPrice={currentCommerce.originalPrice}
                     currentColor={product.colors}
                     currentStockStatus={product.stock_status}
                     currentVariantOptions={currentVariantOptions}
                     variantAxes={variantAxes}
                     selectedSku={displayProduct.sku}
-                    onPreviewVariant={setSelectedVariant}
+                    onPreviewVariant={(variant) => setSelection({ productKey, variant })}
                     variantType={product.variant_type}
                     variantLabel={product.variant_label}
                     variantGroup={product.variant_group}
@@ -85,20 +92,20 @@ export function ProductPurchasePanel({
             )}
 
             <ProductPrice
-                price={displaySalePrice ? Number(displaySalePrice) : null}
-                originalPrice={displayListPrice ? Number(displayListPrice) : null}
+                price={toClientMoney(displayCompatibilityPrice)}
+                originalPrice={toClientMoney(displayOriginalPrice)}
+                salePrice={toClientMoney(displaySalePrice)}
                 priceDisplay={displayProduct.price_display}
                 onlineDiscountAmount={displayProduct.online_discount_amount ? Number(displayProduct.online_discount_amount) : null}
                 stockStatus={displayProduct.stock_status}
-                saleStatus={displayProduct.sale_status}
-                priceState={displayProduct.price_state}
             >
                 <ProductCTA
                     productId={displayProduct.id}
                     productSku={displayProduct.sku}
                     productName={displayProduct.name}
-                    price={displaySalePrice ? Number(displaySalePrice) : null}
-                    originalPrice={displayListPrice ? Number(displayListPrice) : null}
+                    price={toClientMoney(displayCompatibilityPrice)}
+                    originalPrice={toClientMoney(displayOriginalPrice)}
+                    salePrice={toClientMoney(displaySalePrice)}
                     priceDisplay={displayProduct.price_display}
                     imageUrl={displayProduct.image_main_url || (product.product_images && product.product_images.length > 0 ? product.product_images[0].image_url : null)}
                     categorySlug={categorySlug}
@@ -106,8 +113,6 @@ export function ProductPurchasePanel({
                     brandName={product.brands?.name}
                     slug={displayProduct.slug}
                     stockStatus={displayProduct.stock_status}
-                    saleStatus={displayProduct.sale_status}
-                    priceState={displayProduct.price_state}
                 />
             </ProductPrice>
         </>

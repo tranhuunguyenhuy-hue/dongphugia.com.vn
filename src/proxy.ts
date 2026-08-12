@@ -6,16 +6,13 @@ import type { NextRequest } from "next/server";
 import redirectData from "@/data/product-redirect-map.json";
 import catalogTaxonomyRedirectData from "@/data/catalog-taxonomy-v2-redirect-map.json";
 
+const reviewedProductRedirects = redirectData as Record<string, string>;
 const redirectMap = new Map<string, string>([
-  ...Object.entries(redirectData),
+  ...Object.entries(reviewedProductRedirects),
   ...Object.entries(catalogTaxonomyRedirectData),
 ]);
 const CANONICAL_HOST = "www.dongphugia.vn";
-const LEGACY_HOSTS = new Set([
-  "dongphugia.vn",
-  "dongphugia.com.vn",
-  "www.dongphugia.com.vn",
-]);
+const CANONICALIZABLE_HOSTS = new Set(["dongphugia.vn"]);
 
 // ============================================================
 // PROXY: Maintenance Mode + Product Slug Redirects
@@ -42,7 +39,7 @@ export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const search = request.nextUrl.search || "";
 
-  if (LEGACY_HOSTS.has(request.nextUrl.hostname)) {
+  if (CANONICALIZABLE_HOSTS.has(request.nextUrl.hostname)) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.hostname = CANONICAL_HOST;
     redirectUrl.protocol = "https:";

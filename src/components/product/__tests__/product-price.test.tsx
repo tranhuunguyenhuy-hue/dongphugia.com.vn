@@ -32,4 +32,34 @@ describe('ProductPrice', () => {
 
         expect(screen.queryByText('Độc quyền đặt Online')).not.toBeInTheDocument()
     })
+
+    it('uses the shared sale-price projection instead of a competing compatibility field', () => {
+        render(
+            <ProductPrice
+                price={950_000}
+                originalPrice={1_000_000}
+                salePrice={900_000}
+                priceDisplay={null}
+                stockStatus="in_stock"
+            />
+        )
+
+        expect(screen.getByText(/900\.000/)).toBeInTheDocument()
+        expect(screen.queryByText(/950\.000/)).not.toBeInTheDocument()
+    })
+
+    it('fails an invalid sale price closed to the quote presentation', () => {
+        render(
+            <ProductPrice
+                price={950_000}
+                originalPrice={1_000_000}
+                salePrice={1_000_000}
+                priceDisplay="Liên hệ báo giá"
+                stockStatus="in_stock"
+            />
+        )
+
+        expect(screen.getByText('Liên hệ báo giá')).toBeInTheDocument()
+        expect(screen.queryByText(/950\.000/)).not.toBeInTheDocument()
+    })
 })

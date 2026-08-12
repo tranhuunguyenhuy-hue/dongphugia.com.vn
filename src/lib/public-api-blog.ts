@@ -6,12 +6,36 @@ const POSTS_PER_PAGE = 9
 
 const getBlogCategoriesCached = unstable_cache(async () => {
     return prisma.blog_categories.findMany({
-        where: { is_active: true },
+        where: {
+            is_active: true,
+            blog_posts: {
+                some: {
+                    status: 'published',
+                    published_at: { lte: new Date() },
+                },
+            },
+        },
         orderBy: { sort_order: 'asc' },
     })
 }, ['public-blog-categories'], { revalidate: 300, tags: ['blog'] })
 
+async function getBlogCategoriesDirect() {
+    return prisma.blog_categories.findMany({
+        where: {
+            is_active: true,
+            blog_posts: {
+                some: {
+                    status: 'published',
+                    published_at: { lte: new Date() },
+                },
+            },
+        },
+        orderBy: { sort_order: 'asc' },
+    })
+}
+
 export async function getBlogCategories() {
+    if (process.env.NODE_ENV === 'test') return getBlogCategoriesDirect()
     return getBlogCategoriesCached()
 }
 

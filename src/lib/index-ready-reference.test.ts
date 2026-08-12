@@ -14,6 +14,37 @@ const helperSection = (contents: string, helperName: string) => {
 }
 
 describe('index-ready public references', () => {
+    it('does not generate internal links through redirects or nonexistent tag routes', () => {
+        const customerNavigation = [
+            'src/config/site.ts',
+            'src/components/home/mega-menu.tsx',
+            'src/app/(public)/blog/page.tsx',
+        ].map(source).join('\n')
+
+        expect(customerNavigation).not.toContain('"/tin-tuc"')
+        expect(customerNavigation).not.toContain('?sub=')
+        expect(customerNavigation).not.toContain('/blog/tag/')
+    })
+
+    it('gives every indexable policy and service page an explicit canonical', () => {
+        const canonicalPages = [
+            'chinh-sach-bao-mat',
+            'dieu-kien-giao-dich',
+            'dieu-kien-kinh-doanh',
+            'van-chuyen-giao-nhan',
+            'thong-tin-hang-hoa',
+            'thong-tin-gia',
+            'dich-vu-lap-dat',
+        ]
+
+        for (const slug of canonicalPages) {
+            expect(source(`src/app/(public)/${slug}/page.tsx`), slug).toContain(
+                `alternates: { canonical: '/${slug}' }`,
+            )
+        }
+    })
+
+
     it('binds every public listing, filter, home-card and sibling helper to the shared visibility predicates', () => {
         const publicProducts = source('src/lib/public-api-products.ts')
         const homepage = source('src/app/(public)/page.tsx')

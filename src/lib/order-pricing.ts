@@ -1,3 +1,5 @@
+import { resolveProductCommerce } from './product-commerce'
+
 export type InstallOption = 'none' | 'install' | 'replace'
 
 export const INSTALLATION_FEES: Record<InstallOption, number> = {
@@ -11,23 +13,34 @@ export function getInstallationFee(option: InstallOption): number {
 }
 
 interface OrderUnitPriceInput {
-    price: number | null
+    originalPrice: number | null
     salePrice: number | null
+    compatibilityPrice: number | null
+    stockStatus: string | null
     onlineDiscountAmount: number | null
     installOption: InstallOption
 }
 
 export function calculateOrderUnitPrice({
-    price,
+    originalPrice,
     salePrice,
+    compatibilityPrice,
+    stockStatus,
     onlineDiscountAmount,
     installOption,
 }: OrderUnitPriceInput): number | null {
-    const authoritativePrice = salePrice ?? price
+    const commerce = resolveProductCommerce({
+        originalPrice,
+        salePrice,
+        compatibilityPrice,
+        stockStatus,
+    })
+    const authoritativePrice = commerce.displayPrice
     const discount = onlineDiscountAmount ?? 0
 
     if (
-        authoritativePrice === null
+        !commerce.canAddToCart
+        || authoritativePrice === null
         || !Number.isFinite(authoritativePrice)
         || authoritativePrice <= 0
         || !Number.isFinite(discount)

@@ -64,7 +64,8 @@ FROM (
   VALUES
     ('thiet-bi-ve-sinh', '[STG-DEMO] Bồn cầu', 'stg-demo-bon-cau', 'Synthetic staging subcategory.', 'Toilet', 10, '[STG-DEMO] Bồn cầu', 'Synthetic staging subcategory for smoke testing.'),
     ('thiet-bi-ve-sinh', '[STG-DEMO] Sen tắm', 'stg-demo-sen-tam', 'Synthetic staging subcategory.', 'ShowerHead', 20, '[STG-DEMO] Sen tắm', 'Synthetic staging subcategory for smoke testing.'),
-    ('thiet-bi-bep', '[STG-DEMO] Vòi rửa chén', 'stg-demo-voi-rua-chen', 'Synthetic staging subcategory.', 'Waves', 10, '[STG-DEMO] Vòi rửa chén', 'Synthetic staging subcategory for smoke testing.')
+    ('thiet-bi-bep', '[STG-DEMO] Vòi rửa chén', 'stg-demo-voi-rua-chen', 'Synthetic staging subcategory.', 'Waves', 10, '[STG-DEMO] Vòi rửa chén', 'Synthetic staging subcategory for smoke testing.'),
+    ('vat-lieu-nuoc', '[STG-DEMO] Máy nước nóng', 'may-nuoc-nong', 'Synthetic staging redirect-target subcategory.', 'Droplets', 10, '[STG-DEMO] Máy nước nóng', 'Synthetic staging redirect-target subcategory for smoke testing.')
 ) AS v("category_slug", "name", "slug", "description", "icon_name", "sort_order", "seo_title", "seo_description")
 JOIN "categories" c ON c."slug" = v."category_slug"
 ON CONFLICT ("category_id", "slug") DO UPDATE
@@ -95,7 +96,8 @@ FROM (
   VALUES
     ('thiet-bi-ve-sinh', 'stg-demo-bon-cau', 'stg-demo-bon-cau-mot-khoi', '[STG-DEMO] Bồn cầu một khối', 'Synthetic product type for staging.', 10),
     ('thiet-bi-ve-sinh', 'stg-demo-sen-tam', 'stg-demo-sen-tam-cay', '[STG-DEMO] Sen tắm cây', 'Synthetic product type for staging.', 20),
-    ('thiet-bi-bep', 'stg-demo-voi-rua-chen', 'stg-demo-voi-bep', '[STG-DEMO] Vòi bếp', 'Synthetic product type for staging.', 30)
+    ('thiet-bi-bep', 'stg-demo-voi-rua-chen', 'stg-demo-voi-bep', '[STG-DEMO] Vòi bếp', 'Synthetic product type for staging.', 30),
+    ('vat-lieu-nuoc', 'may-nuoc-nong', 'stg-demo-may-nuoc-nong', '[STG-DEMO] Máy nước nóng', 'Synthetic redirect target product type for staging.', 40)
 ) AS v("category_slug", "subcategory_slug", "slug", "name", "description", "sort_order")
 JOIN "categories" c ON c."slug" = v."category_slug"
 JOIN "subcategories" s ON s."slug" = v."subcategory_slug" AND s."category_id" = c."id"
@@ -113,7 +115,8 @@ FROM (
   VALUES
     ('thiet-bi-ve-sinh', 'stg-demo-bon-cau', 'stg-demo-bon-cau-mot-khoi', 'stg-demo-basic', '[STG-DEMO] Basic', 10),
     ('thiet-bi-ve-sinh', 'stg-demo-sen-tam', 'stg-demo-sen-tam-cay', 'stg-demo-premium', '[STG-DEMO] Premium', 20),
-    ('thiet-bi-bep', 'stg-demo-voi-rua-chen', 'stg-demo-voi-bep', 'stg-demo-standard', '[STG-DEMO] Standard', 30)
+    ('thiet-bi-bep', 'stg-demo-voi-rua-chen', 'stg-demo-voi-bep', 'stg-demo-standard', '[STG-DEMO] Standard', 30),
+    ('vat-lieu-nuoc', 'may-nuoc-nong', 'stg-demo-may-nuoc-nong', 'stg-demo-redirect-target', '[STG-DEMO] Redirect target', 40)
 ) AS v("category_slug", "subcategory_slug", "product_type_slug", "slug", "name", "sort_order")
 JOIN "categories" c ON c."slug" = v."category_slug"
 JOIN "subcategories" s ON s."slug" = v."subcategory_slug" AND s."category_id" = c."id"
@@ -137,6 +140,7 @@ INSERT INTO "products" (
   "product_type_id",
   "product_sub_type_id",
   "price",
+  "original_price",
   "price_display",
   "description",
   "features",
@@ -179,14 +183,15 @@ SELECT
   m."id",
   pt."id",
   pst."id",
-  v."price",
-  'Liên hệ báo giá',
+  v."compatibility_price",
+  v."original_price",
+  v."price_display",
   v."description",
   v."features",
   v."specs"::jsonb,
   24,
   v."image_main_url",
-  'in_stock',
+  v."stock_status",
   true,
   v."is_featured",
   v."is_home_featured",
@@ -198,8 +203,8 @@ SELECT
   v."listing_priority",
   'available',
   'known',
-  v."price",
-  v."price",
+  v."original_price",
+  v."sale_price",
   'stg-demo',
   'high',
   'sellable',
@@ -211,11 +216,11 @@ SELECT
   100
 FROM (
   VALUES
-    ('STG-DEMO-TBVS-001', '[STG-DEMO] Bồn cầu smoke test', 'stg-demo-bon-cau-smoke-test', 'thiet-bi-ve-sinh', 'stg-demo-bon-cau', 'stg-demo-sanitary-brand', 'stg-demo-viet-nam', 'stg-demo-trang', 'stg-demo-su', 'stg-demo-bon-cau-mot-khoi', 'stg-demo-basic', 2500000.00, 'Synthetic product for staging smoke tests only.', 'Synthetic features only. Not production data.', '{"STG-DEMO Loại":"Bồn cầu","STG-DEMO Màu":"Trắng"}', 'https://placehold.co/800x800?text=STG-DEMO-TBVS-001', true, true, 30),
-    ('STG-DEMO-TBVS-002', '[STG-DEMO] Sen tắm smoke test', 'stg-demo-sen-tam-smoke-test', 'thiet-bi-ve-sinh', 'stg-demo-sen-tam', 'stg-demo-sanitary-brand', 'stg-demo-viet-nam', 'stg-demo-xam', 'stg-demo-inox', 'stg-demo-sen-tam-cay', 'stg-demo-premium', 1800000.00, 'Synthetic product for staging smoke tests only.', 'Synthetic features only. Not production data.', '{"STG-DEMO Loại":"Sen tắm","STG-DEMO Màu":"Xám"}', 'https://placehold.co/800x800?text=STG-DEMO-TBVS-002', true, false, 20),
-    ('STG-DEMO-TBVS-003', '[STG-DEMO] Bồn cầu route smoke test A', 'stg-demo-bon-cau-route-a', 'thiet-bi-ve-sinh', 'stg-demo-bon-cau', 'stg-demo-sanitary-brand', 'stg-demo-viet-nam', 'stg-demo-trang', 'stg-demo-su', 'stg-demo-bon-cau-mot-khoi', 'stg-demo-basic', 2600000.00, 'Synthetic product for staging route tests only.', 'Synthetic features only. Not production data.', '{"STG-DEMO Loại":"Bồn cầu","STG-DEMO Màu":"Trắng"}', 'https://placehold.co/800x800?text=STG-DEMO-TBVS-003', false, false, 19),
-    ('STG-DEMO-TBVS-004', '[STG-DEMO] Bồn cầu route smoke test B', 'stg-demo-bon-cau-route-b', 'thiet-bi-ve-sinh', 'stg-demo-bon-cau', 'stg-demo-sanitary-brand', 'stg-demo-viet-nam', 'stg-demo-trang', 'stg-demo-su', 'stg-demo-bon-cau-mot-khoi', 'stg-demo-basic', 2700000.00, 'Synthetic product for staging route tests only.', 'Synthetic features only. Not production data.', '{"STG-DEMO Loại":"Bồn cầu","STG-DEMO Màu":"Trắng"}', 'https://placehold.co/800x800?text=STG-DEMO-TBVS-004', false, false, 18),
-    ('STG-DEMO-BEP-001', '[STG-DEMO] Vòi bếp smoke test', 'stg-demo-voi-bep-smoke-test', 'thiet-bi-bep', 'stg-demo-voi-rua-chen', 'stg-demo-kitchen-brand', 'stg-demo-singapore', 'stg-demo-xam', 'stg-demo-inox', 'stg-demo-voi-bep', 'stg-demo-standard', 1200000.00, 'Synthetic product for staging smoke tests only.', 'Synthetic features only. Not production data.', '{"STG-DEMO Loại":"Vòi bếp","STG-DEMO Màu":"Xám"}', 'https://placehold.co/800x800?text=STG-DEMO-BEP-001', false, true, 10)
+    ('STG-DEMO-TBVS-001', '[STG-DEMO] Bồn cầu smoke test', 'stg-demo-bon-cau-smoke-test', 'thiet-bi-ve-sinh', 'stg-demo-bon-cau', 'stg-demo-sanitary-brand', 'stg-demo-viet-nam', 'stg-demo-trang', 'stg-demo-su', 'stg-demo-bon-cau-mot-khoi', 'stg-demo-basic', 2500000.00, 2500000.00, NULL::numeric, 'in_stock', NULL, 'Synthetic product for staging smoke tests only.', 'Synthetic features only. Not production data.', '{"STG-DEMO Loại":"Bồn cầu","STG-DEMO Màu":"Trắng"}', 'https://placehold.co/800x800?text=STG-DEMO-TBVS-001', true, true, 30),
+    ('STG-DEMO-TBVS-002', '[STG-DEMO] Sen tắm smoke test', 'stg-demo-sen-tam-smoke-test', 'thiet-bi-ve-sinh', 'stg-demo-sen-tam', 'stg-demo-sanitary-brand', 'stg-demo-viet-nam', 'stg-demo-xam', 'stg-demo-inox', 'stg-demo-sen-tam-cay', 'stg-demo-premium', 1800000.00, 1800000.00, NULL, 'out_of_stock', NULL, 'Synthetic product for staging smoke tests only.', 'Synthetic features only. Not production data.', '{"STG-DEMO Loại":"Sen tắm","STG-DEMO Màu":"Xám"}', 'https://placehold.co/800x800?text=STG-DEMO-TBVS-002', true, false, 20),
+    ('STG-DEMO-TBVS-003', '[STG-DEMO] Bồn cầu route smoke test A', 'stg-demo-bon-cau-route-a', 'thiet-bi-ve-sinh', 'stg-demo-bon-cau', 'stg-demo-sanitary-brand', 'stg-demo-viet-nam', 'stg-demo-trang', 'stg-demo-su', 'stg-demo-bon-cau-mot-khoi', 'stg-demo-basic', NULL, NULL, NULL, 'in_stock', 'Liên hệ báo giá', 'Synthetic product for staging route tests only.', 'Synthetic features only. Not production data.', '{"STG-DEMO Loại":"Bồn cầu","STG-DEMO Màu":"Trắng"}', 'https://placehold.co/800x800?text=STG-DEMO-TBVS-003', false, false, 19),
+    ('STG-DEMO-TBVS-004', '[STG-DEMO] Bồn cầu route smoke test B', 'stg-demo-bon-cau-route-b', 'thiet-bi-ve-sinh', 'stg-demo-bon-cau', 'stg-demo-sanitary-brand', 'stg-demo-viet-nam', 'stg-demo-trang', 'stg-demo-su', 'stg-demo-bon-cau-mot-khoi', 'stg-demo-basic', 2700000.00, 2700000.00, NULL, 'in_stock', NULL, 'Synthetic product for staging route tests only.', 'Synthetic features only. Not production data.', '{"STG-DEMO Loại":"Bồn cầu","STG-DEMO Màu":"Trắng"}', 'https://placehold.co/800x800?text=STG-DEMO-TBVS-004', false, false, 18),
+    ('STG-DEMO-BEP-001', '[STG-DEMO] Vòi bếp smoke test', 'stg-demo-voi-bep-smoke-test', 'thiet-bi-bep', 'stg-demo-voi-rua-chen', 'stg-demo-kitchen-brand', 'stg-demo-singapore', 'stg-demo-xam', 'stg-demo-inox', 'stg-demo-voi-bep', 'stg-demo-standard', 1200000.00, 1200000.00, NULL, 'in_stock', NULL, 'Synthetic product for staging smoke tests only.', 'Synthetic features only. Not production data.', '{"STG-DEMO Loại":"Vòi bếp","STG-DEMO Màu":"Xám"}', 'https://placehold.co/800x800?text=STG-DEMO-BEP-001', false, true, 10)
 ) AS v(
   "sku",
   "name",
@@ -228,7 +233,11 @@ FROM (
   "material_slug",
   "product_type_slug",
   "product_sub_type_slug",
-  "price",
+  "compatibility_price",
+  "original_price",
+  "sale_price",
+  "stock_status",
+  "price_display",
   "description",
   "features",
   "specs",
@@ -258,6 +267,7 @@ SET
   "product_type_id" = EXCLUDED."product_type_id",
   "product_sub_type_id" = EXCLUDED."product_sub_type_id",
   "price" = EXCLUDED."price",
+  "original_price" = EXCLUDED."original_price",
   "price_display" = EXCLUDED."price_display",
   "description" = EXCLUDED."description",
   "features" = EXCLUDED."features",
@@ -287,6 +297,72 @@ SET
   "source_confidence" = EXCLUDED."source_confidence",
   "crawl_status" = EXCLUDED."crawl_status",
   "data_quality_score" = EXCLUDED."data_quality_score",
+  "updated_at" = CURRENT_TIMESTAMP;
+
+-- These 12 synthetic routes mirror every reviewed runtime redirect destination.
+-- They make the staging gate prove redirect -> terminal 200 -> matching canonical
+-- without querying production or copying production product data.
+INSERT INTO "products" (
+  "sku", "name", "slug", "category_id", "subcategory_id", "brand_id", "origin_id",
+  "color_id", "material_id", "product_type_id", "product_sub_type_id", "price",
+  "original_price", "price_display", "description", "features", "specs",
+  "image_main_url", "stock_status", "is_active", "publication_status",
+  "pdp_visibility", "listing_visibility", "search_visibility", "listing_tier",
+  "listing_priority", "data_quality_score", "sale_status", "price_state", "list_price",
+  "sale_price", "price_source", "price_confidence", "sellable_status", "seo_indexing",
+  "sitemap_include", "source_system", "source_confidence", "crawl_status"
+)
+SELECT
+  v."sku", '[STG-DEMO] Redirect target ' || v."sku", v."slug", c."id", s."id", b."id", o."id",
+  co."id", m."id", pt."id", pst."id", 1000000.00, 1000000.00, NULL,
+  'Synthetic redirect target for staging smoke tests only.',
+  'Synthetic features only. Not production data.',
+  '{"STG-DEMO Type":"Redirect target"}'::jsonb,
+  'https://placehold.co/800x800?text=' || v."sku", 'in_stock', true, 'public',
+  'public', 'default', 'visible', 1, 1, 100, 'available', 'known', 1000000.00,
+  NULL, 'stg-demo', 'high', 'sellable', 'index', false, 'stg-demo', 'high', 'fresh'
+FROM (
+  VALUES
+    ('STG-DEMO-REDIRECT-001', 'may-nuoc-nong-da-nang-ket-hop-gian-tiep-va-truc-tiep-atmor-inline'),
+    ('STG-DEMO-REDIRECT-002', 'may-nuoc-nong-gian-tiep-15l-atmor-at-15e'),
+    ('STG-DEMO-REDIRECT-003', 'may-nuoc-nong-gian-tiep-30l-atmor-at-30e'),
+    ('STG-DEMO-REDIRECT-004', 'may-nuoc-nong-gian-tiep-atmor-at-30h-at-50h-at-80h'),
+    ('STG-DEMO-REDIRECT-005', 'may-nuoc-nong-gian-tiep-dieu-khien-tu-xa-atmor-at-50hr-at-80hr'),
+    ('STG-DEMO-REDIRECT-006', 'may-nuoc-nong-gian-tiep-kieu-dung-atmor'),
+    ('STG-DEMO-REDIRECT-007', 'may-nuoc-nong-gian-tiep-kieu-ngang-atmor-at-30eh-at-50eh-at-80eh'),
+    ('STG-DEMO-REDIRECT-008', 'may-nuoc-nong-gian-tiep-kieu-ngang-atmor-at-30eht-at-50eht'),
+    ('STG-DEMO-REDIRECT-009', 'may-nuoc-nong-truc-tiep-5kw-atmor-lotus'),
+    ('STG-DEMO-REDIRECT-010', 'may-nuoc-nong-truc-tiep-5kw-atmor-new'),
+    ('STG-DEMO-REDIRECT-011', 'may-nuoc-nong-truc-tiep-sieu-mong-3-5kw-atmor-at-368e'),
+    ('STG-DEMO-REDIRECT-012', 'may-nuoc-nong-truc-tiep-sieu-mong-4-5kw-atmor-at-378ep')
+) AS v("sku", "slug")
+JOIN "categories" c ON c."slug" = 'vat-lieu-nuoc'
+JOIN "subcategories" s ON s."slug" = 'may-nuoc-nong' AND s."category_id" = c."id"
+JOIN "brands" b ON b."slug" = 'stg-demo-sanitary-brand'
+JOIN "origins" o ON o."slug" = 'stg-demo-viet-nam'
+JOIN "colors" co ON co."slug" = 'stg-demo-trang'
+JOIN "materials" m ON m."slug" = 'stg-demo-inox'
+JOIN "product_types" pt ON pt."slug" = 'stg-demo-may-nuoc-nong' AND pt."subcategory_id" = s."id"
+JOIN "product_sub_types" pst ON pst."slug" = 'stg-demo-redirect-target' AND pst."product_type_id" = pt."id"
+ON CONFLICT ("sku") DO UPDATE
+SET
+  "name" = EXCLUDED."name",
+  "slug" = EXCLUDED."slug",
+  "category_id" = EXCLUDED."category_id",
+  "subcategory_id" = EXCLUDED."subcategory_id",
+  "price" = EXCLUDED."price",
+  "original_price" = EXCLUDED."original_price",
+  "description" = EXCLUDED."description",
+  "image_main_url" = EXCLUDED."image_main_url",
+  "stock_status" = EXCLUDED."stock_status",
+  "is_active" = EXCLUDED."is_active",
+  "publication_status" = EXCLUDED."publication_status",
+  "pdp_visibility" = EXCLUDED."pdp_visibility",
+  "listing_visibility" = EXCLUDED."listing_visibility",
+  "search_visibility" = EXCLUDED."search_visibility",
+  "data_quality_score" = EXCLUDED."data_quality_score",
+  "seo_indexing" = EXCLUDED."seo_indexing",
+  "sitemap_include" = EXCLUDED."sitemap_include",
   "updated_at" = CURRENT_TIMESTAMP;
 
 INSERT INTO "filter_definitions" ("subcategory_id", "filter_key", "filter_label", "filter_type", "options", "sort_order", "is_active")

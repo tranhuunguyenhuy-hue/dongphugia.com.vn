@@ -39,6 +39,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         image_main_url: product.image_main_url,
         canonicalUrl: product.url || `${BASE_PATH}/${slug}`,
         categoryName: CATEGORY_NAME,
+        seoIndexing: product.seo_indexing,
     })
 }
 
@@ -99,6 +100,8 @@ export default async function ProductDetailPage({ params }: PageProps) {
                 sku: product.sku,
                 image_main_url: product.image_main_url,
                 price: currentPrice,
+                original_price: currentOriginalPrice,
+                sale_price: toNullableNumber(product.sale_price),
                 stock_status: product.stock_status,
                 brands: product.brands,
                 slug: product.slug,
@@ -171,7 +174,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
                             </div>
 
                             {/* 2. Brand Badge */}
-                            {product.brands && <BrandBadge brand={product.brands as any} className="!h-7 !px-2.5 rounded-md border-stone-200/60 shadow-sm" />}
+                            {product.brands && <BrandBadge brand={product.brands} className="!h-7 !px-2.5 rounded-md border-stone-200/60 shadow-sm" />}
 
                             {/* 3. Color Pill */}
                             {product.colors && (
@@ -218,8 +221,10 @@ export default async function ProductDetailPage({ params }: PageProps) {
                     <ProductPrice 
                         price={currentPrice}
                         originalPrice={currentOriginalPrice}
+                        salePrice={toNullableNumber(product.sale_price)}
                         priceDisplay={product.price_display}
                         onlineDiscountAmount={onlineDiscountAmount}
+                        stockStatus={product.stock_status}
                     >
                         <ProductCTA
                             productId={product.id}
@@ -227,7 +232,9 @@ export default async function ProductDetailPage({ params }: PageProps) {
                             productName={product.name}
                             price={currentPrice}
                             originalPrice={currentOriginalPrice}
+                            salePrice={toNullableNumber(product.sale_price)}
                             priceDisplay={product.price_display}
+                            stockStatus={product.stock_status}
                             imageUrl={product.image_main_url || (product.product_images && product.product_images.length > 0 ? product.product_images[0].image_url : null)}
                             categorySlug={canonicalCategorySlug}
                             subcategorySlug={canonicalSubcategorySlug ?? null}
