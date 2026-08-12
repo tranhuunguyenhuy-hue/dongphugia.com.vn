@@ -20,4 +20,10 @@ test-results
 
 # Project-local generated artefacts.
 docs
-scripts
+scripts/*
+
+# The production runner invokes the repository-owned one-shot scheduler with
+# node, so this single non-secret entrypoint must remain in the build context.
+!scripts/publishing/
+scripts/publishing/*
+!scripts/publishing/run-scheduler.mjs
