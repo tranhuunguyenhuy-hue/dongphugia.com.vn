@@ -26,6 +26,8 @@ describe("staging Product structured-data smoke", () => {
   )
 
   it("checks every reviewed runtime redirect against the isolated staging app", () => {
+    expect(workflow).toContain('name: Install repository tools for source smoke gates')
+    expect(workflow).toContain('run: npm ci')
     expect(workflow).toContain("npm run seo:check-redirect-targets --")
     expect(workflow).toContain('--request-base-url="http://$smoke_ip:3000"')
     expect(workflow).toContain('--canonical-base-url="$STAGING_SITE_URL"')
