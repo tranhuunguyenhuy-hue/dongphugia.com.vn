@@ -6,7 +6,7 @@ describe('order pricing', () => {
         expect(calculateOrderUnitPrice({
             originalPrice: 1_000_000,
             salePrice: 900_000,
-            legacyPrice: null,
+            compatibilityPrice: null,
             stockStatus: 'in_stock',
             onlineDiscountAmount: 50_000,
             installOption: 'none',
@@ -19,7 +19,7 @@ describe('order pricing', () => {
         expect(calculateOrderUnitPrice({
             originalPrice: 1_000_000,
             salePrice: null,
-            legacyPrice: null,
+            compatibilityPrice: null,
             stockStatus: 'in_stock',
             onlineDiscountAmount: 50_000,
             installOption: 'install',
@@ -30,7 +30,7 @@ describe('order pricing', () => {
         expect(calculateOrderUnitPrice({
             originalPrice: null,
             salePrice: null,
-            legacyPrice: null,
+            compatibilityPrice: null,
             stockStatus: 'in_stock',
             onlineDiscountAmount: 0,
             installOption: 'none',
@@ -38,7 +38,7 @@ describe('order pricing', () => {
         expect(calculateOrderUnitPrice({
             originalPrice: 100_000,
             salePrice: null,
-            legacyPrice: null,
+            compatibilityPrice: null,
             stockStatus: 'in_stock',
             onlineDiscountAmount: 150_000,
             installOption: 'none',
@@ -49,7 +49,7 @@ describe('order pricing', () => {
         expect(calculateOrderUnitPrice({
             originalPrice: 1_000_000,
             salePrice: null,
-            legacyPrice: null,
+            compatibilityPrice: null,
             stockStatus: 'out_of_stock',
             onlineDiscountAmount: 0,
             installOption: 'none',

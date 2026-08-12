@@ -31,8 +31,6 @@ interface ProductCTAProps {
     brandName?: string | null;
     slug: string;
     stockStatus?: string | null;
-    saleStatus?: string | null;
-    priceState?: string | null;
 }
 
 export function ProductCTA({
@@ -49,18 +47,15 @@ export function ProductCTA({
     brandName,
     slug,
     stockStatus,
-    saleStatus,
-    priceState,
 }: ProductCTAProps) {
-    const isDiscontinued = stockStatus === 'discontinued' || saleStatus === 'discontinued' || priceState === 'discontinued';
     const commerce = resolveProductCommerce({
         originalPrice,
         salePrice,
-        legacyPrice: price,
+        compatibilityPrice: price,
         stockStatus,
     });
     const hasPrice = commerce.priceMode === 'PUBLIC_PRICE';
-    const canPurchase = commerce.canAddToCart && !isDiscontinued;
+    const canPurchase = commerce.canAddToCart;
     const displayPrice = commerce.displayPrice;
     
     const productOptions = useProductOptions();
@@ -185,12 +180,7 @@ export function ProductCTA({
                 {/* Quote / Order Dialog */}
                 <Dialog open={isOpen} onOpenChange={(open) => { setIsOpen(open); if(open) trackGenerateLead('quote_cta'); }}>
                     <DialogTrigger asChild>
-                        {isDiscontinued ? (
-                            <Button className="group w-full h-[52px] bg-stone-800 hover:bg-stone-900 !text-white font-bold text-[16px] rounded-xl shadow-[0_12px_24px_-8px_rgba(28,25,23,0.35)] transition-all duration-300 gap-2 border-0">
-                                <MessageSquareText className="w-[20px] h-[20px] transition-transform duration-300 group-hover:translate-x-1" />
-                                Liên hệ tư vấn
-                            </Button>
-                        ) : hasPrice ? (
+                        {hasPrice ? (
                             <Button
                                 variant="outline"
                                 className="w-full h-[44px] border border-stone-300 text-stone-600 hover:bg-stone-50 hover:text-stone-800 font-medium text-[14px] rounded-[10px] gap-2 transition-all shadow-sm"
@@ -215,12 +205,10 @@ export function ProductCTA({
                                     <CheckCircle2 className="w-8 h-8 text-success-500" />
                                 </div>
                                 <DialogTitle className="text-2xl font-bold text-stone-900 mb-3 tracking-tight">
-                                    {isDiscontinued ? "Yêu cầu tư vấn đã được gửi!" : hasPrice ? "Yêu cầu báo giá đã được gửi!" : "Yêu cầu báo giá thành công!"}
+                                    {hasPrice ? "Yêu cầu báo giá đã được gửi!" : "Yêu cầu báo giá thành công!"}
                                 </DialogTitle>
                                 <DialogDescription className="text-[15px] text-stone-600 mb-8 leading-relaxed">
-                                    {isDiscontinued
-                                        ? "Nhân viên Đông Phú Gia sẽ liên hệ tư vấn mẫu thay thế phù hợp cho bạn."
-                                        : hasPrice
+                                    {hasPrice
                                         ? "Cảm ơn bạn đã lựa chọn Đông Phú Gia. Nhân viên của chúng tôi sẽ liên lạc xác nhận ngay."
                                         : "Nhân viên Đông Phú Gia đã nhận được yêu cầu và sẽ gọi điện tư vấn ngay cho bạn."}
                                 </DialogDescription>
@@ -379,8 +367,8 @@ export function ProductCTA({
                 ) : (
                     <div className="flex flex-col">
                         <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Tạm tính</span>
-                        <span className={`text-[18px] font-black tracking-tight leading-none mt-1 ${isDiscontinued ? 'text-rose-700' : 'text-[#2E7A96]'}`}>
-                            {isDiscontinued ? 'Ngừng kinh doanh' : 'Liên hệ'}
+                        <span className="text-[18px] font-black tracking-tight leading-none mt-1 text-[#2E7A96]">
+                            Liên hệ
                         </span>
                     </div>
                 )}
@@ -400,7 +388,7 @@ export function ProductCTA({
                             className="w-full h-12 bg-gradient-to-r from-[#2E7A96] to-[#1e586e] hover:brightness-110 !text-white text-[15px] font-semibold rounded-xl shadow-[0_4px_14px_rgba(46,122,150,0.25)] transition-all duration-300 gap-2 border-0"
                         >
                             <MessageSquareText className="w-[18px] h-[18px]" />
-                            {isDiscontinued ? 'Tư vấn' : 'Nhận báo giá'}
+                            Nhận báo giá
                         </Button>
                     )}
                 </div>

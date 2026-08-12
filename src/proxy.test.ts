@@ -30,6 +30,10 @@ describe("public redirect boundary", () => {
     expect(response.headers.get("x-middleware-next")).toBe("1")
   })
 
+  it("ships no generated product redirect without manual verification", () => {
+    expect(Object.keys(productRedirects)).toEqual([])
+  })
+
   it("keeps a verified per-URL redirect direct and canonical", () => {
     const response = request(
       "https://www.dongphugia.vn/thiet-bi-ve-sinh/chau-rua-chen/gio-dat-len-chau-rua-chen-moen-23701-10158",
@@ -53,6 +57,11 @@ describe("public redirect boundary", () => {
       expect(sources.has(destination), `${source} chains through ${destination}`).toBe(false)
       expect(destination, source).toMatch(/^\/(?:thiet-bi-ve-sinh|thiet-bi-bep|vat-lieu-nuoc|gach-op-lat)\//)
       expect(destination, source).not.toContain("/san-pham/")
+      expect(destination.split("/").at(-1), source).toBe(source.split("/").at(-1))
+
+      const terminal = request(`https://www.dongphugia.vn${destination}`)
+      expect(terminal.headers.get("location"), destination).toBeNull()
+      expect(terminal.headers.get("x-middleware-next"), destination).toBe("1")
     }
   })
 })

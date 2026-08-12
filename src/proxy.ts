@@ -6,8 +6,9 @@ import type { NextRequest } from "next/server";
 import redirectData from "@/data/product-redirect-map.json";
 import catalogTaxonomyRedirectData from "@/data/catalog-taxonomy-v2-redirect-map.json";
 
+const reviewedProductRedirects = redirectData as Record<string, string>;
 const redirectMap = new Map<string, string>([
-  ...Object.entries(redirectData),
+  ...Object.entries(reviewedProductRedirects),
   ...Object.entries(catalogTaxonomyRedirectData),
 ]);
 const CANONICAL_HOST = "www.dongphugia.vn";

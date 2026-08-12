@@ -72,7 +72,7 @@ export function buildProductSchema(product: ProductSchemaInput) {
   const commerce = resolveProductCommerce({
     originalPrice: product.original_price,
     salePrice: product.sale_price,
-    legacyPrice: product.price,
+    compatibilityPrice: product.price,
     stockStatus: product.stock_status,
   })
 

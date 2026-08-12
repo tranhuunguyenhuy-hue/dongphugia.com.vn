@@ -47,7 +47,7 @@ if (!connectionString) {
   process.exit(1)
 }
 
-const DATA_OUT = path.resolve(process.cwd(), 'src/data/product-redirect-map.json')
+const CANDIDATE_OUT = path.resolve(process.cwd(), 'scripts/output/product-redirect-map-candidates.json')
 const REPORT_OUT = path.resolve(process.cwd(), 'scripts/output/product-redirect-map-audit.json')
 const REPORT_MD_OUT = path.resolve(process.cwd(), 'scripts/output/product-redirect-map-audit.md')
 
@@ -226,9 +226,12 @@ async function main() {
       sampleCount: samples.length,
     }
 
-    await mkdir(path.dirname(DATA_OUT), { recursive: true })
+    await mkdir(path.dirname(CANDIDATE_OUT), { recursive: true })
     await mkdir(path.dirname(REPORT_OUT), { recursive: true })
-    await writeFile(DATA_OUT, `${JSON.stringify(redirectObject, null, 2)}\n`)
+    // Candidate generation is deliberately separated from the reviewed runtime registry.
+    // A human must verify equivalence and a canonical 200 target before copying an entry
+    // into src/data/product-redirect-map.json.
+    await writeFile(CANDIDATE_OUT, `${JSON.stringify(redirectObject, null, 2)}\n`)
     await writeFile(REPORT_OUT, `${JSON.stringify({ summary, samples }, null, 2)}\n`)
 
     const md = [

@@ -224,6 +224,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
                         salePrice={toNullableNumber(product.sale_price)}
                         priceDisplay={product.price_display}
                         onlineDiscountAmount={onlineDiscountAmount}
+                        stockStatus={product.stock_status}
                     >
                         <ProductCTA
                             productId={product.id}
@@ -233,6 +234,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
                             originalPrice={currentOriginalPrice}
                             salePrice={toNullableNumber(product.sale_price)}
                             priceDisplay={product.price_display}
+                            stockStatus={product.stock_status}
                             imageUrl={product.image_main_url || (product.product_images && product.product_images.length > 0 ? product.product_images[0].image_url : null)}
                             categorySlug={canonicalCategorySlug}
                             subcategorySlug={canonicalSubcategorySlug ?? null}

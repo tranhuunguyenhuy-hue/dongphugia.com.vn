@@ -33,7 +33,7 @@ describe('ProductPrice', () => {
         expect(screen.queryByText('Độc quyền đặt Online')).not.toBeInTheDocument()
     })
 
-    it('uses the shared sale-price projection instead of a competing legacy price', () => {
+    it('uses the shared sale-price projection instead of a competing compatibility field', () => {
         render(
             <ProductPrice
                 price={950_000}

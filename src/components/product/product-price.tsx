@@ -14,13 +14,11 @@ interface ProductPriceProps {
     priceDisplay: string | null | undefined
     onlineDiscountAmount?: number | null | undefined
     stockStatus?: string | null | undefined
-    saleStatus?: string | null | undefined
-    priceState?: string | null | undefined
     className?: string
     children?: React.ReactNode
 }
 
-export function ProductPrice({ price, originalPrice, salePrice, priceDisplay, onlineDiscountAmount, stockStatus, saleStatus, priceState, className, children }: ProductPriceProps) {
+export function ProductPrice({ price, originalPrice, salePrice, priceDisplay, onlineDiscountAmount, stockStatus, className, children }: ProductPriceProps) {
     const [installOption, setInstallOption] = useState<InstallOption>('none')
 
     const installationFee = getInstallationFee(installOption)
@@ -28,24 +26,15 @@ export function ProductPrice({ price, originalPrice, salePrice, priceDisplay, on
     const commerce = resolveProductCommerce({
         originalPrice,
         salePrice,
-        legacyPrice: price,
+        compatibilityPrice: price,
         stockStatus,
     })
     const numPrice = commerce.displayPrice ?? 0
     const numOriginal = commerce.originalPrice ?? 0
     const numOnlineDiscount = Number(onlineDiscountAmount)
     const hasDiscount = commerce.salePrice !== null
-    const normalizedSaleStatus = saleStatus || (stockStatus === 'discontinued' ? 'discontinued' : 'available')
-    const normalizedPriceState = priceState || (commerce.priceMode === 'PUBLIC_PRICE' ? 'priced' : 'contact')
-    const statusDisplay =
-        normalizedSaleStatus === 'discontinued' || normalizedPriceState === 'discontinued' ? 'Ngừng kinh doanh' :
-        normalizedSaleStatus === 'contact_for_price' || normalizedPriceState === 'contact' ? 'Liên hệ báo giá' :
-        normalizedSaleStatus === 'updating' || normalizedPriceState === 'updating' ? 'Đang cập nhật' :
-        normalizedSaleStatus === 'coming_soon' || normalizedPriceState === 'coming_soon' ? 'Chuẩn bị mở bán' :
-        normalizedSaleStatus === 'temporarily_unavailable' ? 'Tạm ngừng bán' :
-        priceDisplay || 'Liên hệ báo giá'
+    const statusDisplay = priceDisplay || 'Liên hệ báo giá'
     const hasPublicPrice = commerce.priceMode === 'PUBLIC_PRICE'
-    const isDiscontinued = normalizedSaleStatus === 'discontinued' || normalizedPriceState === 'discontinued'
 
     const finalDisplayPrice = hasPublicPrice
         ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(numPrice)
@@ -64,16 +53,7 @@ export function ProductPrice({ price, originalPrice, salePrice, priceDisplay, on
                     </h3>
                     
                     {/* Price Block */}
-                    {isDiscontinued ? (
-                        <div className="mt-1 flex flex-col gap-2">
-                            <div className="inline-flex w-fit items-center rounded-full border border-rose-200 bg-rose-50 px-3 py-1.5 text-sm font-bold text-rose-700">
-                                Ngừng kinh doanh
-                            </div>
-                            <p className="text-sm leading-relaxed text-stone-500">
-                                Sản phẩm này hiện không còn kinh doanh. Đông Phú Gia vẫn có thể tư vấn mẫu thay thế phù hợp.
-                            </p>
-                        </div>
-                    ) : hasDiscount ? (
+                    {hasDiscount ? (
                         <div className="flex items-center gap-3 flex-wrap mt-0.5">
                             <p className="text-[32px] font-black text-rose-600 tracking-tight leading-none">
                                 {finalDisplayPrice}
@@ -94,7 +74,7 @@ export function ProductPrice({ price, originalPrice, salePrice, priceDisplay, on
                     )}
 
                     {/* Online Discount Sub-Card (Shopee-style Voucher) */}
-                    {!isDiscontinued && hasPublicPrice && numOnlineDiscount > 0 && (
+                    {hasPublicPrice && numOnlineDiscount > 0 && (
                         <div className="mt-4 flex relative rounded-xl bg-orange-50/60 border border-orange-200">
                             
                             {/* Left Stub */}

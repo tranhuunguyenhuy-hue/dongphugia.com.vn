@@ -15,7 +15,7 @@ export function getInstallationFee(option: InstallOption): number {
 interface OrderUnitPriceInput {
     originalPrice: number | null
     salePrice: number | null
-    legacyPrice: number | null
+    compatibilityPrice: number | null
     stockStatus: string | null
     onlineDiscountAmount: number | null
     installOption: InstallOption
@@ -24,7 +24,7 @@ interface OrderUnitPriceInput {
 export function calculateOrderUnitPrice({
     originalPrice,
     salePrice,
-    legacyPrice,
+    compatibilityPrice,
     stockStatus,
     onlineDiscountAmount,
     installOption,
@@ -32,7 +32,7 @@ export function calculateOrderUnitPrice({
     const commerce = resolveProductCommerce({
         originalPrice,
         salePrice,
-        legacyPrice,
+        compatibilityPrice,
         stockStatus,
     })
     const authoritativePrice = commerce.displayPrice

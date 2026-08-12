@@ -6,7 +6,7 @@ export type ProductAvailability = "IN_STOCK" | "OUT_OF_STOCK"
 export type ProductCommerceInput = {
   originalPrice?: unknown
   salePrice?: unknown
-  legacyPrice?: unknown
+  compatibilityPrice?: unknown
   stockStatus?: string | null
 }
 
@@ -34,12 +34,12 @@ export function resolveProductCommerce(
   const availability = input.stockStatus === "in_stock" ? "IN_STOCK" : "OUT_OF_STOCK"
   const suppliedOriginal = toNullableNumber(input.originalPrice)
   const suppliedSale = toNullableNumber(input.salePrice)
-  const legacyPrice = toNullableNumber(input.legacyPrice)
+  const compatibilityPrice = toNullableNumber(input.compatibilityPrice)
 
   const originalPrice = suppliedOriginal && suppliedOriginal > 0
     ? suppliedOriginal
-    : legacyPrice && legacyPrice > 0
-      ? legacyPrice
+    : compatibilityPrice && compatibilityPrice > 0
+      ? compatibilityPrice
       : null
 
   if (originalPrice === null) return quoteOnly(availability)
@@ -51,10 +51,10 @@ export function resolveProductCommerce(
 
   const compatibilitySale = !hasExplicitSale
     && suppliedOriginal !== null
-    && legacyPrice !== null
-    && legacyPrice > 0
-    && legacyPrice < originalPrice
-      ? legacyPrice
+    && compatibilityPrice !== null
+    && compatibilityPrice > 0
+    && compatibilityPrice < originalPrice
+      ? compatibilityPrice
       : null
   const salePrice = hasExplicitSale ? suppliedSale : compatibilitySale
   const displayPrice = salePrice ?? originalPrice

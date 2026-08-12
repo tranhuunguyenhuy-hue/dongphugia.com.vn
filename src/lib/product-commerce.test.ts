@@ -6,7 +6,7 @@ describe("resolveProductCommerce", () => {
     expect(resolveProductCommerce({
       originalPrice: 1_250_000,
       salePrice: 1_100_000,
-      legacyPrice: null,
+      compatibilityPrice: null,
       stockStatus: "in_stock",
     })).toEqual({
       priceMode: "PUBLIC_PRICE",
@@ -22,7 +22,7 @@ describe("resolveProductCommerce", () => {
     expect(resolveProductCommerce({
       originalPrice: 1_250_000,
       salePrice: null,
-      legacyPrice: null,
+      compatibilityPrice: null,
       stockStatus: "out_of_stock",
     })).toMatchObject({
       priceMode: "PUBLIC_PRICE",
@@ -36,7 +36,7 @@ describe("resolveProductCommerce", () => {
     expect(resolveProductCommerce({
       originalPrice: 1_250_000,
       salePrice: null,
-      legacyPrice: 1_100_000,
+      compatibilityPrice: 1_100_000,
       stockStatus: "in_stock",
     })).toMatchObject({
       originalPrice: 1_250_000,
@@ -46,10 +46,10 @@ describe("resolveProductCommerce", () => {
   })
 
   it.each([
-    { originalPrice: null, salePrice: null, legacyPrice: null },
-    { originalPrice: 0, salePrice: null, legacyPrice: null },
-    { originalPrice: 1_000_000, salePrice: 1_000_000, legacyPrice: null },
-    { originalPrice: 1_000_000, salePrice: 1_200_000, legacyPrice: null },
+    { originalPrice: null, salePrice: null, compatibilityPrice: null },
+    { originalPrice: 0, salePrice: null, compatibilityPrice: null },
+    { originalPrice: 1_000_000, salePrice: 1_000_000, compatibilityPrice: null },
+    { originalPrice: 1_000_000, salePrice: 1_200_000, compatibilityPrice: null },
   ])("fails invalid commerce facts closed as quote-only: %o", (prices) => {
     expect(resolveProductCommerce({ ...prices, stockStatus: "in_stock" })).toEqual({
       priceMode: "CONTACT_FOR_QUOTE",

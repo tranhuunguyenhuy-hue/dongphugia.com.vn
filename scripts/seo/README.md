@@ -25,3 +25,8 @@ not the target of a whole-host migration from `.com.vn`; this repository must
 not verify or promise a blanket `.com.vn` to `.vn` redirect. A historical URL
 may redirect only when the reviewed per-URL registry has a genuinely equivalent
 canonical destination. The registry contract is covered by `src/proxy.test.ts`.
+
+`npm run generate:redirect-map` also writes candidates only under
+`scripts/output/`; it never overwrites the runtime registry. Each candidate
+must be manually verified as an equivalent replacement whose canonical URL
+returns HTTP 200 before it is copied to `src/data/product-redirect-map.json`.

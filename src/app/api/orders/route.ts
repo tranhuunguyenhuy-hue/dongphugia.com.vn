@@ -95,7 +95,7 @@ async function createAuthoritativeOrder(input: OrderRequest) {
                     const unitPrice = calculateOrderUnitPrice({
                         originalPrice: product.original_price === null ? null : Number(product.original_price),
                         salePrice: product.sale_price === null ? null : Number(product.sale_price),
-                        legacyPrice: product.price === null ? null : Number(product.price),
+                        compatibilityPrice: product.price === null ? null : Number(product.price),
                         stockStatus: product.stock_status,
                         onlineDiscountAmount,
                         installOption: item.installOption,

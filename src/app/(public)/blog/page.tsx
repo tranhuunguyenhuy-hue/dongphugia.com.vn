@@ -1,28 +1,47 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { connection } from 'next/server'
+import { notFound } from 'next/navigation'
 import { ChevronRight } from 'lucide-react'
 import { PostCard, BlogPost } from '@/components/blog/post-card'
+import { ProductPagination } from '@/components/ui/product-pagination'
 
 import { getBlogPosts, getBlogCategories, getPopularTags } from '@/lib/public-api-blog'
+import { isListingPageInRange, parseListingPage } from '@/lib/listing-pagination'
+import { canonicalUrl } from '@/lib/site'
 
 export const revalidate = 3600
 
-export const metadata: Metadata = {
-    title: 'Blog & Tin tức',
-    description: 'Cập nhật kiến thức, xu hướng thiết kế nội thất, hướng dẫn chọn vật liệu xây dựng và thông tin dự án mới nhất từ Đông Phú Gia Đà Lạt.',
-    alternates: { canonical: '/blog' },
-    openGraph: { url: '/blog' },
+export async function generateMetadata({ searchParams }: {
+    searchParams: Promise<{ page?: string }>
+}): Promise<Metadata> {
+    const { page: rawPage } = await searchParams
+    const page = parseListingPage(rawPage)
+    if (page === null) return { title: 'Blog & Tin tức', robots: { index: false, follow: false } }
+    const url = canonicalUrl(page === 1 ? '/blog' : `/blog?page=${page}`)
+
+    return {
+        title: 'Blog & Tin tức',
+        description: 'Cập nhật kiến thức, xu hướng thiết kế nội thất, hướng dẫn chọn vật liệu xây dựng và thông tin dự án mới nhất từ Đông Phú Gia Đà Lạt.',
+        alternates: { canonical: url },
+        openGraph: { url },
+    }
 }
 
-export default async function BlogPage() {
+export default async function BlogPage({ searchParams }: {
+    searchParams: Promise<{ page?: string }>
+}) {
     await connection()
+    const { page: rawPage } = await searchParams
+    const currentPage = parseListingPage(rawPage)
+    if (currentPage === null) notFound()
 
-    const [{ posts }, categories, tags] = await Promise.all([
-        getBlogPosts({ limit: 9 }),
+    const [{ posts, totalPages }, categories, tags] = await Promise.all([
+        getBlogPosts({ limit: 9, page: currentPage }),
         getBlogCategories(),
         getPopularTags(10)
     ])
+    if (!isListingPageInRange(currentPage, totalPages) || posts.length === 0) notFound()
 
     // Validate the array contains proper type (will be cast dynamically from DB)
     const featuredPost = posts[0] as unknown as BlogPost | undefined
@@ -66,12 +85,7 @@ export default async function BlogPage() {
                         </div>
                     </section>
 
-                    {/* Load More Button (Dummy) */}
-                    <div className="flex justify-center mt-4">
-                        <button className="px-6 py-3 rounded-xl border border-[#E4EEF2] text-[#516A74] font-medium hover:bg-[#F5F9FB] transition-colors press-effect">
-                            Xem thêm bài viết
-                        </button>
-                    </div>
+                    <ProductPagination totalPages={totalPages} currentPage={currentPage} />
                 </div>
 
                 {/* Sidebar (Right) */}
