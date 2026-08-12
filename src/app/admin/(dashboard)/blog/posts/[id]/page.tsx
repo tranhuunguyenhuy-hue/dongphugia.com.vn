@@ -20,7 +20,15 @@ export default async function EditBlogPostPage({ params }: PageProps) {
             },
         }),
         prisma.blog_categories.findMany({ where: { is_active: true }, orderBy: { sort_order: 'asc' } }),
-        prisma.blog_tags.findMany({ orderBy: { name: 'asc' } }),
+        prisma.blog_tags.findMany({
+            where: {
+                OR: [
+                    { is_active: true },
+                    { blog_post_tags: { some: { post_id: postId } } },
+                ],
+            },
+            orderBy: { name: 'asc' },
+        }),
     ])
 
     if (!post) notFound()

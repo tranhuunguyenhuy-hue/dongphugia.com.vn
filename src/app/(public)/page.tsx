@@ -12,7 +12,7 @@ import { getHomepageBanners } from "@/lib/homepage-data"
 import prisma from "@/lib/prisma"
 import { buildPublicListingVisibilityWhere } from "@/lib/public-product-visibility"
 
-export const revalidate = 3600
+export const revalidate = 300
 
 export const metadata: Metadata = {
     title: { absolute: "Đông Phú Gia - Vật liệu xây dựng cao cấp tại Đà Lạt" },

@@ -83,6 +83,7 @@ jobs:
               -U dpg_staging_build \
               -d dpg_staging_build \
               --file=/bootstrap/001_schema_from_prisma.sql \
+              --file=/bootstrap/004_publishing_api_v1.sql \
               --file=/bootstrap/002_seed_synthetic_stg_demo.sql
 
           tables="$(
@@ -107,7 +108,7 @@ jobs:
                 "select count(*) from products p join categories c on c.id = p.category_id where p.sku like 'STG-DEMO-%' and c.slug in ('thiet-bi-ve-sinh', 'thiet-bi-bep');"
           )"
 
-          if [ "$tables" != "46" ] || [ "$products" != "5" ] || [ "$canonical_products" != "5" ]; then
+          if [ "$tables" != "57" ] || [ "$products" != "5" ] || [ "$canonical_products" != "5" ]; then
             echo "Ephemeral build database bootstrap validation failed."
             exit 1
           fi
@@ -167,6 +168,7 @@ jobs:
             DEPLOY_TARGET=staging
             NEXT_PUBLIC_GTM_ID=${{ vars.STAGING_NEXT_PUBLIC_GTM_ID }}
             BUNNY_CDN_HOSTNAME=${{ vars.STAGING_BUNNY_CDN_HOSTNAME || env.DEFAULT_BUNNY_CDN_HOSTNAME }}
+            PUBLISHING_BUNNY_CDN_HOSTNAME=${{ vars.STAGING_PUBLISHING_BUNNY_CDN_HOSTNAME || vars.STAGING_BUNNY_CDN_HOSTNAME || env.DEFAULT_BUNNY_CDN_HOSTNAME }}
 
       - name: Verify image manifest and attestations
         id: verify

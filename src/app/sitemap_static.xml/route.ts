@@ -17,7 +17,7 @@ import { NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
 import { getCanonicalSiteUrl } from "@/lib/site"
 
-export const revalidate = 86400 // 24 hours
+export const revalidate = 300
 export const dynamic = "force-dynamic"
 
 export async function GET() {
@@ -118,7 +118,7 @@ export async function GET() {
     headers: {
       "Content-Type": "text/xml",
       "Cache-Control":
-        "public, max-age=86400, s-maxage=86400, stale-while-revalidate",
+        "public, max-age=300, s-maxage=300, must-revalidate",
     },
   })
 }

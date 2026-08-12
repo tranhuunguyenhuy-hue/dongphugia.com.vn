@@ -16,12 +16,14 @@ ARG NEXT_PUBLIC_SITE_URL
 ARG DEPLOY_TARGET
 ARG NEXT_PUBLIC_GTM_ID
 ARG BUNNY_CDN_HOSTNAME
+ARG PUBLISHING_BUNNY_CDN_HOSTNAME
 
 ENV NODE_ENV=production \
     NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL} \
     DEPLOY_TARGET=${DEPLOY_TARGET} \
     NEXT_PUBLIC_GTM_ID=${NEXT_PUBLIC_GTM_ID} \
     BUNNY_CDN_HOSTNAME=${BUNNY_CDN_HOSTNAME} \
+    PUBLISHING_BUNNY_CDN_HOSTNAME=${PUBLISHING_BUNNY_CDN_HOSTNAME} \
     DATABASE_URL=postgresql://dpg_build_unreachable:dpg_build_unreachable@127.0.0.1:1/dpg_build_unreachable \
     DIRECT_URL=postgresql://dpg_build_unreachable:dpg_build_unreachable@127.0.0.1:1/dpg_build_unreachable
 
@@ -34,6 +36,7 @@ WORKDIR /app
 ARG NEXT_PUBLIC_SITE_URL
 ARG DEPLOY_TARGET
 ARG BUNNY_CDN_HOSTNAME
+ARG PUBLISHING_BUNNY_CDN_HOSTNAME
 
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
@@ -41,7 +44,8 @@ ENV NODE_ENV=production \
     HOSTNAME=0.0.0.0 \
     NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL} \
     DEPLOY_TARGET=${DEPLOY_TARGET} \
-    BUNNY_CDN_HOSTNAME=${BUNNY_CDN_HOSTNAME}
+    BUNNY_CDN_HOSTNAME=${BUNNY_CDN_HOSTNAME} \
+    PUBLISHING_BUNNY_CDN_HOSTNAME=${PUBLISHING_BUNNY_CDN_HOSTNAME}
 
 RUN apk add --no-cache libc6-compat openssl && \
     rm -rf /usr/local/lib/node_modules/npm && \
@@ -52,6 +56,7 @@ RUN apk add --no-cache libc6-compat openssl && \
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/scripts/publishing/run-scheduler.mjs ./scripts/publishing/run-scheduler.mjs
 
 USER nextjs
 

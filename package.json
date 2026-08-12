@@ -28,6 +28,8 @@
     "monitor:probe": "node scripts/monitoring/https-probe.mjs",
     "monitor:verify-package": "node scripts/monitoring/verify-package.mjs",
     "monitor:test-sanitizer": "node scripts/monitoring/test-sanitizer.mjs",
+    "publishing:scheduler": "node scripts/publishing/run-scheduler.mjs",
+    "publishing:control": "tsx scripts/publishing/control.mts",
     "seo:build-inventory": "node scripts/seo/build-legacy-url-inventory.mjs",
     "seo:verify-redirects": "node scripts/seo/verify-redirect-safety.mjs",
     "prepare:standalone-assets": "node -e \"const fs=require('fs'); fs.cpSync('public','.next/standalone/public',{recursive:true}); fs.mkdirSync('.next/standalone/.next',{recursive:true}); fs.cpSync('.next/static','.next/standalone/.next/static',{recursive:true});\"",

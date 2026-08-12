@@ -11,6 +11,9 @@ until a separate approval is given.
 - `002_seed_synthetic_stg_demo.sql` — idempotent synthetic seed data only.
 - `003_rehome_synthetic_stg_demo_to_canonical.sql` — bounded repair for an
   existing staging database created by the earlier seed revision.
+- `004_publishing_api_v1.sql` — reviewed additive PostgreSQL schema for the
+  internal Publishing API v1. It initializes the Global Publishing Gate as
+  disabled and contains no Machine Identity, credential, or content seed.
 - `RLS_FINDINGS.md` — read-only review of Supabase client/RPC usage and RLS
   implications.
 - `checksums.sha256` — SHA-256 checksums for review before any execution.
@@ -64,6 +67,7 @@ psql \
   --set=ON_ERROR_STOP=1 \
   --single-transaction \
   --file=docs/deploy/staging-db-bootstrap/001_schema_from_prisma.sql \
+  --file=docs/deploy/staging-db-bootstrap/004_publishing_api_v1.sql \
   --file=docs/deploy/staging-db-bootstrap/002_seed_synthetic_stg_demo.sql \
   "$STAGING_DIRECT_URL"
 ```

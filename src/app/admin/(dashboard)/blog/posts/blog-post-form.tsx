@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition, useCallback, useEffect } from 'react'
+import { useState, useTransition, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBlogPost, updateBlogPost } from '@/lib/blog-actions'
 import { slugify } from '@/lib/utils'
@@ -15,9 +15,51 @@ import { RichTextEditor } from '@/components/ui/rich-text-editor'
 import Image from 'next/image'
 
 interface BlogPostFormProps {
-    post?: any
+    post?: CmsBlogPost
     categories: { id: number; name: string }[]
-    tags: { id: number; name: string; slug: string }[]
+    tags: { id: number; name: string; slug: string; is_active: boolean }[]
+}
+
+type CmsBlogPost = {
+    id: number
+    version: number
+    title: string
+    slug: string
+    excerpt: string | null
+    content: string
+    category_id: number
+    thumbnail_url: string | null
+    cover_image_url: string | null
+    seo_title: string | null
+    seo_description: string | null
+    seo_keywords: string | null
+    reading_time: number | null
+    status: string
+    author_name: string
+    is_featured: boolean
+    is_pinned: boolean
+    publishing_identity_id: string | null
+    blog_post_tags?: Array<{ tag_id: number }>
+    blog_categories?: { slug: string } | null
+}
+
+type BlogPostFormState = {
+    title: string
+    slug: string
+    excerpt: string
+    content: string
+    category_id: string
+    thumbnail_url: string
+    cover_image_url: string
+    seo_title: string
+    seo_description: string
+    seo_keywords: string
+    reading_time: string
+    status: 'draft' | 'published'
+    author_name: string
+    is_featured: boolean
+    is_pinned: boolean
+    tag_ids: number[]
 }
 
 // Calculate estimated reading time from HTML content
@@ -65,12 +107,16 @@ export function BlogPostForm({ post, categories, tags }: BlogPostFormProps) {
     const router = useRouter()
     const [isPending, startTransition] = useTransition()
     const isEdit = !!post
+    const agentScheduleLocked = Boolean(
+        post?.publishing_identity_id
+        && (post?.status === 'scheduled' || post?.status === 'schedule_blocked'),
+    )
     const [showSlug, setShowSlug] = useState(false) // slug hidden by default for marketing
     const [showSeoPreview, setShowSeoPreview] = useState(false)
 
-    const existingTagIds: number[] = post?.blog_post_tags?.map((pt: any) => pt.tag_id) ?? []
+    const existingTagIds = post?.blog_post_tags?.map((postTag) => postTag.tag_id) ?? []
 
-    const [form, setForm] = useState({
+    const [form, setForm] = useState<BlogPostFormState>({
         title: post?.title ?? '',
         slug: post?.slug ?? '',
         excerpt: post?.excerpt ?? '',
@@ -82,22 +128,17 @@ export function BlogPostForm({ post, categories, tags }: BlogPostFormProps) {
         seo_description: post?.seo_description ?? '',
         seo_keywords: post?.seo_keywords ?? '',
         reading_time: post?.reading_time?.toString() ?? '',
-        status: post?.status ?? 'draft',
-        author_name: post?.author_name ?? 'Đông Phú Gia',
+        status: post?.status === 'published' ? 'published' : 'draft',
+        author_name: post?.author_name ?? 'Ban Biên Tập Đông Phú Gia',
         is_featured: post?.is_featured ?? false,
         is_pinned: post?.is_pinned ?? false,
         tag_ids: existingTagIds,
     })
 
-    const set = (key: string, value: any) => setForm((prev) => ({ ...prev, [key]: value }))
-
-    // Auto-update reading time when content changes
-    useEffect(() => {
-        if (form.content) {
-            const rt = calcReadingTime(form.content)
-            setForm((prev) => ({ ...prev, reading_time: rt.toString() }))
-        }
-    }, [form.content])
+    const set = <Key extends keyof BlogPostFormState>(
+        key: Key,
+        value: BlogPostFormState[Key],
+    ) => setForm((previous) => ({ ...previous, [key]: value }))
 
     const toggleTag = (tagId: number) => {
         setForm((prev) => ({
@@ -120,11 +161,16 @@ export function BlogPostForm({ post, categories, tags }: BlogPostFormProps) {
 
     const onSubmit = (e: React.FormEvent) => {
         e.preventDefault()
+        if (agentScheduleLocked) {
+            toast.error('Bài do Publishing Agent lên lịch phải được hủy hoặc lên lịch lại qua Publishing API.')
+            return
+        }
         startTransition(async () => {
             const payload = {
                 ...form,
                 category_id: parseInt(form.category_id) || 0,
-                reading_time: form.reading_time ? parseInt(form.reading_time) : null,
+                reading_time: form.content ? calcReadingTime(form.content) : null,
+                ...(isEdit ? { version: post.version } : {}),
             }
             const result = isEdit
                 ? await updateBlogPost(post.id, payload)
@@ -321,11 +367,13 @@ export function BlogPostForm({ post, categories, tags }: BlogPostFormProps) {
                                 <select
                                     className={inputCls + ' pr-8'}
                                     value={form.status}
-                                    onChange={(e) => set('status', e.target.value)}
+                                    onChange={(e) => set(
+                                        'status',
+                                        e.target.value as BlogPostFormState['status'],
+                                    )}
                                 >
                                     <option value="draft">📝 Nháp</option>
                                     <option value="published">✅ Đã đăng</option>
-                                    <option value="scheduled">🕐 Lên lịch</option>
                                 </select>
                             </div>
                             {form.status === 'draft' && (
@@ -367,24 +415,24 @@ export function BlogPostForm({ post, categories, tags }: BlogPostFormProps) {
                                 <input
                                     type="number"
                                     className={inputCls}
-                                    value={form.reading_time}
-                                    onChange={(e) => set('reading_time', e.target.value)}
+                                    value={estReadingTime}
                                     min={1} max={60}
                                     placeholder="5"
+                                    readOnly
                                 />
                                 <span className="text-sm text-muted-foreground shrink-0">phút</span>
                             </div>
                         </div>
 
                         <div className="space-y-3 pt-1">
-                            {[
+                            {([
                                 { key: 'is_featured', label: '⭐ Bài viết nổi bật', desc: 'Hiển thị ở trang chủ' },
                                 { key: 'is_pinned', label: '📌 Ghim lên đầu', desc: 'Luôn hiện đầu danh sách' },
-                            ].map(({ key, label, desc }) => (
+                            ] as const).map(({ key, label, desc }) => (
                                 <label key={key} className="flex items-start gap-2.5 cursor-pointer group">
                                     <input
                                         type="checkbox"
-                                        checked={(form as any)[key]}
+                                        checked={form[key]}
                                         onChange={(e) => set(key, e.target.checked)}
                                         className="h-4 w-4 rounded border-gray-300 text-primary mt-0.5"
                                     />
@@ -417,12 +465,13 @@ export function BlogPostForm({ post, categories, tags }: BlogPostFormProps) {
                                         key={tag.id}
                                         type="button"
                                         onClick={() => toggleTag(tag.id)}
+                                        disabled={!tag.is_active && !form.tag_ids.includes(tag.id)}
                                         className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all ${form.tag_ids.includes(tag.id)
                                             ? 'bg-primary text-white shadow-sm'
-                                            : 'bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                                            : 'bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground disabled:opacity-50 disabled:cursor-not-allowed'
                                             }`}
                                     >
-                                        {form.tag_ids.includes(tag.id) ? '✓ ' : ''}{tag.name}
+                                        {form.tag_ids.includes(tag.id) ? '✓ ' : ''}{tag.name}{!tag.is_active ? ' (ngừng dùng)' : ''}
                                     </button>
                                 ))}
                             </div>
@@ -511,7 +560,7 @@ export function BlogPostForm({ post, categories, tags }: BlogPostFormProps) {
                         </Button>
                     )}
                     <Button type="button" variant="outline" onClick={() => router.back()}>Huỷ</Button>
-                    <Button type="submit" disabled={isPending} className="gap-2 min-w-[140px]">
+                    <Button type="submit" disabled={isPending || agentScheduleLocked} className="gap-2 min-w-[140px]">
                         {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                         {form.status === 'published' ? '✅ Đăng bài viết' : isEdit ? 'Cập nhật' : 'Lưu bài viết'}
                     </Button>

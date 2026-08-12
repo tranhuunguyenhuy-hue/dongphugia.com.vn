@@ -6,7 +6,7 @@ import { PostCard, BlogPost } from '@/components/blog/post-card'
 import { getBlogPosts, getBlogCategories } from '@/lib/public-api-blog'
 import { canonicalUrl } from '@/lib/site'
 
-export const revalidate = 3600
+export const revalidate = 300
 
 export async function generateMetadata({ params }: { params: Promise<{ categorySlug: string }> }): Promise<Metadata> {
     const { categorySlug } = await params

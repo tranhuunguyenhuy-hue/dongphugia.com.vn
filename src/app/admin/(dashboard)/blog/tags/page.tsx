@@ -3,6 +3,7 @@ import { TagsClient } from './tags-client'
 
 export default async function BlogTagsPage() {
     const tags = await prisma.blog_tags.findMany({
+        where: { is_active: true },
         orderBy: { name: 'asc' },
     })
 

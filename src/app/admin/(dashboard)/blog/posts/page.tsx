@@ -5,6 +5,7 @@ import prisma from '@/lib/prisma'
 import { Button } from '@/components/ui/button'
 import { BlogPostDeleteButton } from './blog-post-delete-button'
 import { format } from 'date-fns'
+import type { Prisma } from '@prisma/client'
 
 interface PageProps {
     searchParams: Promise<{ status?: string; category?: string }>
@@ -14,14 +15,19 @@ const statusConfig: Record<string, { label: string; cls: string; dot: string }> 
     published: { label: 'Đã đăng', cls: 'bg-green-50 text-green-700 border border-green-200', dot: 'bg-green-500' },
     draft: { label: 'Nháp', cls: 'bg-amber-50 text-amber-700 border border-amber-200', dot: 'bg-amber-400' },
     scheduled: { label: 'Lên lịch', cls: 'bg-blue-50 text-blue-700 border border-blue-200', dot: 'bg-blue-500' },
+    schedule_blocked: { label: 'Lịch bị chặn', cls: 'bg-red-50 text-red-700 border border-red-200', dot: 'bg-red-500' },
 }
 
 export default async function BlogPostsPage({ searchParams }: PageProps) {
     const { status, category } = await searchParams
 
-    const where: any = {}
-    if (status) where.status = status
-    if (category) where.category_id = parseInt(category)
+    const parsedCategory = category ? Number(category) : undefined
+    const where: Prisma.blog_postsWhereInput = {
+        ...(status ? { status } : {}),
+        ...(Number.isInteger(parsedCategory) && parsedCategory! > 0
+            ? { category_id: parsedCategory }
+            : {}),
+    }
 
     const [posts, categories, counts] = await Promise.all([
         prisma.blog_posts.findMany({
@@ -41,6 +47,7 @@ export default async function BlogPostsPage({ searchParams }: PageProps) {
         { label: '✅ Đã đăng', value: 'published', count: countMap['published'] ?? 0 },
         { label: '📝 Nháp', value: 'draft', count: countMap['draft'] ?? 0 },
         { label: '🕐 Lên lịch', value: 'scheduled', count: countMap['scheduled'] ?? 0 },
+        { label: '⛔ Lịch bị chặn', value: 'schedule_blocked', count: countMap['schedule_blocked'] ?? 0 },
     ]
 
     return (
@@ -175,7 +182,12 @@ export default async function BlogPostsPage({ searchParams }: PageProps) {
                                             <Eye className="h-3.5 w-3.5" />
                                         </a>
                                     )}
-                                    <BlogPostDeleteButton id={post.id} title={post.title} />
+                                    <BlogPostDeleteButton
+                                        id={post.id}
+                                        title={post.title}
+                                        version={post.version}
+                                        publishingOwned={Boolean(post.publishing_identity_id)}
+                                    />
                                 </div>
                             </div>
                         )

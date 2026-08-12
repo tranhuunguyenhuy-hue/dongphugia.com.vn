@@ -7,6 +7,7 @@ export interface BlogPost {
     title: string
     slug: string
     excerpt: string | null
+    thumbnail_url: string | null
     cover_image_url: string | null
     published_at: Date
     view_count: number
@@ -34,14 +35,15 @@ function formatDate(date: Date | string) {
 
 export function PostCard({ post, featured = false }: PostCardProps) {
     const postUrl = `/blog/${post.blog_categories.slug}/${post.slug}`
+    const listingImage = post.thumbnail_url || post.cover_image_url
 
     if (featured) {
         return (
             <div className="group relative rounded-2xl overflow-hidden bg-white shadow-sm border border-[#E4EEF2] card-hover flex flex-col md:flex-row">
                 <div className="relative w-full md:w-[60%] h-[300px] md:h-[400px] overflow-hidden bg-slate-100">
-                    {post.cover_image_url ? (
+                    {listingImage ? (
                         <Image
-                            src={post.cover_image_url}
+                            src={listingImage}
                             alt={post.title}
                             fill
                             className="object-cover transition-transform duration-500 group-hover:scale-105"
@@ -90,9 +92,9 @@ export function PostCard({ post, featured = false }: PostCardProps) {
     return (
         <div className="group flex flex-col bg-white rounded-2xl overflow-hidden border border-[#E4EEF2] card-hover shadow-sm h-full">
             <Link href={postUrl} className="relative w-full h-[220px] overflow-hidden bg-slate-100 block">
-                {post.cover_image_url ? (
+                {listingImage ? (
                     <Image
-                        src={post.cover_image_url}
+                        src={listingImage}
                         alt={post.title}
                         fill
                         className="object-cover transition-transform duration-500 group-hover:scale-105"
