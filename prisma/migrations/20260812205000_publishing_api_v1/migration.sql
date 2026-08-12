@@ -20,24 +20,38 @@ ALTER TABLE blog_tags
 ALTER TABLE blog_posts
   ALTER COLUMN author_name SET DEFAULT 'Ban Biên Tập Đông Phú Gia';
 
--- The old bootstrap used a named status check that excludes schedule_blocked.
--- Remove only checks on blog_posts whose expression includes the status column,
--- then replace it with the v1 lifecycle constraint.
+-- The legacy blog schema owns exactly this named lifecycle check. Never remove
+-- a different status invariant: an unexpected target schema must fail closed.
 DO $$
-DECLARE existing_constraint record;
+DECLARE legacy_definition text;
+DECLARE unexpected_constraint text;
 BEGIN
-  FOR existing_constraint IN
-    SELECT conname
-    FROM pg_constraint
-    WHERE conrelid = 'blog_posts'::regclass
-      AND contype = 'c'
-      AND pg_get_constraintdef(oid) LIKE '%status%'
-  LOOP
-    EXECUTE format(
-      'ALTER TABLE blog_posts DROP CONSTRAINT %I',
-      existing_constraint.conname
-    );
-  END LOOP;
+  SELECT conname INTO unexpected_constraint
+  FROM pg_constraint
+  WHERE conrelid = 'blog_posts'::regclass
+    AND contype = 'c'
+    AND conname <> 'blog_posts_status_check'
+    AND pg_get_constraintdef(oid) ILIKE '%status%'
+  LIMIT 1;
+  IF unexpected_constraint IS NOT NULL THEN
+    RAISE EXCEPTION 'unexpected blog_posts status constraint: %', unexpected_constraint;
+  END IF;
+
+  SELECT pg_get_constraintdef(oid) INTO legacy_definition
+  FROM pg_constraint
+  WHERE conrelid = 'blog_posts'::regclass
+    AND contype = 'c'
+    AND conname = 'blog_posts_status_check';
+  IF legacy_definition IS NOT NULL THEN
+    IF legacy_definition NOT ILIKE '%draft%'
+      OR legacy_definition NOT ILIKE '%published%'
+      OR legacy_definition NOT ILIKE '%scheduled%'
+      OR legacy_definition ILIKE '%schedule_blocked%'
+    THEN
+      RAISE EXCEPTION 'blog_posts_status_check does not match the expected legacy lifecycle';
+    END IF;
+    ALTER TABLE blog_posts DROP CONSTRAINT blog_posts_status_check;
+  END IF;
 END $$;
 
 ALTER TABLE blog_posts

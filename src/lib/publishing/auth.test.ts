@@ -53,9 +53,39 @@ describe('authenticatePublishingRequest', () => {
         )
 
         expect(context.identity.id).toBe('identity-id')
+        expect(context.clientIp).toBeNull()
         expect(repo.findCredentialByHash).toHaveBeenCalledWith(
             hashPublishingCredential(token),
         )
+    })
+
+    it('carries the validated trusted IP into a write context for boundary re-checking', async () => {
+        const repo = repository({
+            identity: {
+                id: 'identity-id',
+                sponsorUserId: 7,
+                active: true,
+                capabilities: new Set(['posts:write']),
+                allowedIpAddresses: new Set(['203.0.113.10']),
+            },
+        })
+
+        const context = await authenticatePublishingRequest(
+            new Request('https://www.dongphugia.vn/api/publishing/v1/posts', {
+                headers: {
+                    authorization: `Bearer ${token}`,
+                    'x-trusted-client-ip': '203.0.113.10',
+                },
+            }),
+            ['posts:write'],
+            {
+                repository: repo,
+                environment: 'staging',
+                trustedClientIpHeader: 'x-trusted-client-ip',
+            },
+        )
+
+        expect(context.clientIp).toBe('203.0.113.10')
     })
 
     it('returns the stable expired-credential error', async () => {

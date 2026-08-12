@@ -2,7 +2,11 @@ import { Prisma } from '@prisma/client'
 
 import prisma from '@/lib/prisma'
 
-import type { PublishingAuthContext } from './auth'
+import {
+    lockPublishingMutationAuthorization,
+    type PublishingAuthContext,
+    type PublishingCapability,
+} from './auth'
 import type { PublishingRuntimeConfig } from './config'
 import {
     normalizePostSlug,
@@ -22,6 +26,7 @@ import {
 } from './readiness'
 import { validateScheduledPublication } from './time'
 import { writePublishingAudit } from './audit'
+import { lockGlobalPublishingGate } from './authority'
 
 const MAX_SANITIZED_HTML_BYTES = 512 * 1024
 const EDITORIAL_BYLINE = 'Ban Biên Tập Đông Phú Gia'
@@ -70,41 +75,8 @@ export type PublishingPostSummary = {
 
 async function lockPublicationAuthority(
     transaction: PublishingTransaction,
-    identityId: string,
-): Promise<{ publishingEnabled: boolean; active: boolean; capabilities: ReadonlySet<string> }> {
-    // The control, identity and capability rows share a transaction boundary
-    // with the state transition. Control-plane changes take the same row locks,
-    // so publication is linearized either before or after a kill-switch change.
-    await transaction.$queryRaw`
-        SELECT id FROM publishing_global_controls WHERE id = 1 FOR UPDATE
-    `
-    await transaction.$queryRaw`
-        SELECT id FROM publishing_machine_identities WHERE id = ${identityId}::uuid FOR UPDATE
-    `
-    await transaction.$queryRaw`
-        SELECT capability FROM publishing_identity_capabilities
-        WHERE identity_id = ${identityId}::uuid FOR UPDATE
-    `
-    const [control, identity] = await Promise.all([
-        transaction.publishing_global_controls.findUnique({
-            where: { id: 1 },
-            select: { publishing_enabled: true },
-        }),
-        transaction.publishing_machine_identities.findUnique({
-            where: { id: identityId },
-            include: {
-                capabilities: {
-                    where: { revoked_at: null },
-                    select: { capability: true },
-                },
-            },
-        }),
-    ])
-    return {
-        publishingEnabled: control?.publishing_enabled ?? false,
-        active: identity?.is_active ?? false,
-        capabilities: new Set(identity?.capabilities.map(({ capability }) => capability)),
-    }
+): Promise<boolean> {
+    return lockGlobalPublishingGate(transaction)
 }
 
 function extractImageSourceCandidates(html: string): string[] {
@@ -311,24 +283,9 @@ function validateDraftHtml(
 }
 
 function requirePublicationAuthority(
-    authority: { publishingEnabled: boolean; active: boolean; capabilities: ReadonlySet<string> },
+    publishingEnabled: boolean,
 ) {
-    if (!authority.active) {
-        throw new PublishingApiError(
-            403,
-            'IDENTITY_DISABLED',
-            'Machine Identity is disabled',
-        )
-    }
-    if (!authority.capabilities.has('posts:publish')) {
-        throw new PublishingApiError(
-            403,
-            'CAPABILITY_REQUIRED',
-            'Machine Identity lacks posts:publish',
-            [{ field: 'capability', code: 'posts:publish' }],
-        )
-    }
-    if (!authority.publishingEnabled) {
+    if (!publishingEnabled) {
         throw new PublishingApiError(
             503,
             'PUBLISHING_GATE_CLOSED',
@@ -476,10 +433,6 @@ export async function mutatePublishingPost(input: {
                 now,
             },
             async (transaction, idempotency) => {
-                const authority = await lockPublicationAuthority(
-                    transaction,
-                    input.auth.identity.id,
-                )
                 const current = await loadOwnedPost(
                     transaction,
                     input.auth.identity.id,
@@ -523,6 +476,24 @@ export async function mutatePublishingPost(input: {
                 )
                 const currentIsLive = current?.status === 'published'
                 const currentIsScheduled = current?.status === 'scheduled'
+                const requiresPublication =
+                    input.mutation.publication.mode !== 'draft'
+                    || currentIsLive
+                    || currentIsScheduled
+                const requiredCapabilities: PublishingCapability[] = ['posts:write']
+                let publishingEnabled = false
+                if (requiresPublication) {
+                    publishingEnabled = await lockPublicationAuthority(transaction)
+                    requiredCapabilities.push('posts:publish')
+                }
+                await lockPublishingMutationAuthorization(transaction, {
+                    credentialId: input.auth.credentialId,
+                    identityId: input.auth.identity.id,
+                    environment: input.config.environment,
+                    requiredCapabilities,
+                    clientIp: input.auth.clientIp,
+                    now,
+                })
 
                 if (current?.first_published_at) {
                     if (slug !== current.slug) {
@@ -549,7 +520,7 @@ export async function mutatePublishingPost(input: {
                             'A live Blog Post can only be atomically replaced with publish_now',
                         )
                     }
-                    requirePublicationAuthority(authority)
+                    requirePublicationAuthority(publishingEnabled)
                 }
 
                 let status: PublishingPostStatus = 'draft'
@@ -558,13 +529,13 @@ export async function mutatePublishingPost(input: {
                 let publishedAt: Date | null = current?.published_at ?? null
                 let firstPublishedAt: Date | null = current?.first_published_at ?? null
                 if (input.mutation.publication.mode === 'publish_now') {
-                    requirePublicationAuthority(authority)
+                    requirePublicationAuthority(publishingEnabled)
                     readinessOrThrow(input.mutation, sanitizedHtml, taxonomy, media)
                     status = 'published'
                     publishedAt ??= now
                     firstPublishedAt ??= now
                 } else if (input.mutation.publication.mode === 'scheduled') {
-                    requirePublicationAuthority(authority)
+                    requirePublicationAuthority(publishingEnabled)
                     readinessOrThrow(input.mutation, sanitizedHtml, taxonomy, media)
                     const schedule = validateScheduledPublication(
                         {
@@ -578,16 +549,6 @@ export async function mutatePublishingPost(input: {
                     scheduledFor = schedule.scheduledFor
                     scheduledTimezone = schedule.scheduledTimezone
                     publishedAt = null
-                } else if (
-                    currentIsScheduled
-                    && !authority.capabilities.has('posts:publish')
-                ) {
-                    throw new PublishingApiError(
-                        403,
-                        'CAPABILITY_REQUIRED',
-                        'Machine Identity lacks posts:publish to cancel a schedule',
-                        [{ field: 'capability', code: 'posts:publish' }],
-                    )
                 }
 
                 const postData = {

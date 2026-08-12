@@ -122,6 +122,33 @@ function output(value: unknown): void {
     process.stdout.write(`${JSON.stringify(value)}\n`)
 }
 
+async function lockIdentityControlRows(
+    transaction: typeof prisma,
+    identityId: string,
+    options: { credentials?: boolean; capabilities?: boolean; ipAllowlist?: boolean } = {},
+) {
+    await transaction.$queryRaw`
+        SELECT id FROM publishing_machine_identities WHERE id = ${identityId}::uuid FOR UPDATE
+    `
+    if (options.credentials) {
+        await transaction.$queryRaw`
+            SELECT id FROM publishing_credentials WHERE identity_id = ${identityId}::uuid FOR UPDATE
+        `
+    }
+    if (options.capabilities) {
+        await transaction.$queryRaw`
+            SELECT capability FROM publishing_identity_capabilities
+            WHERE identity_id = ${identityId}::uuid FOR UPDATE
+        `
+    }
+    if (options.ipAllowlist) {
+        await transaction.$queryRaw`
+            SELECT ip_address FROM publishing_identity_ip_allowlist
+            WHERE identity_id = ${identityId}::uuid FOR UPDATE
+        `
+    }
+}
+
 async function createIdentity(flags: Flags) {
     requireConfirmedMutation(flags)
     const actorId = await requireAdminActor(flags)
@@ -171,6 +198,7 @@ async function setIdentityActive(flags: Flags, active: boolean) {
     })
     if (!identity) throw new ControlInputError('Machine Identity was not found')
     await prisma.$transaction(async (transaction) => {
+        await lockIdentityControlRows(transaction, identityId)
         await transaction.publishing_machine_identities.update({
             where: { id: identityId },
             data: {
@@ -206,6 +234,7 @@ async function setCapability(flags: Flags, grant: boolean) {
     if (!identity) throw new ControlInputError('Machine Identity was not found')
     const now = new Date()
     await prisma.$transaction(async (transaction) => {
+        await lockIdentityControlRows(transaction, identityId, { capabilities: true })
         if (grant) {
             await transaction.publishing_identity_capabilities.upsert({
                 where: { identity_id_capability: { identity_id: identityId, capability: selected } },
@@ -246,6 +275,7 @@ async function setIpAllowlist(flags: Flags, add: boolean) {
     if (!identity) throw new ControlInputError('Machine Identity was not found')
     const now = new Date()
     await prisma.$transaction(async (transaction) => {
+        await lockIdentityControlRows(transaction, identityId, { ipAllowlist: true })
         if (add) {
             await transaction.publishing_identity_ip_allowlist.upsert({
                 where: { identity_id_ip_address: { identity_id: identityId, ip_address: ip } },
@@ -281,6 +311,7 @@ async function issueCredential(flags: Flags, rotating = false) {
     const expiry = expiresAt(now, flags)
     const previousId = rotating ? uuid(flags, 'from-credential-id') : null
     const record = await prisma.$transaction(async (transaction) => {
+        await lockIdentityControlRows(transaction, identityId, { credentials: true })
         const identity = await transaction.publishing_machine_identities.findUnique({
             where: { id: identityId },
             select: { sponsor_user_id: true, is_active: true },
@@ -289,20 +320,28 @@ async function issueCredential(flags: Flags, rotating = false) {
         const activeCredentials = await transaction.publishing_credentials.findMany({
             where: {
                 identity_id: identityId,
-                environment: targetEnvironment,
                 revoked_at: null,
                 expires_at: { gt: now },
             },
-            select: { id: true, expires_at: true },
+            select: { id: true, expires_at: true, environment: true },
         })
-        if (!rotating && activeCredentials.length > 0) {
-            throw new ControlInputError('Use credential-rotate while an active credential exists')
+        const activeForEnvironment = activeCredentials.filter(
+            ({ environment }) => environment === targetEnvironment,
+        )
+        if (!rotating && activeForEnvironment.length > 0) {
+            throw new ControlInputError('Use credential-rotate while an active credential exists for this environment')
+        }
+        if (!rotating && activeCredentials.length >= 2) {
+            throw new ControlInputError('A Machine Identity can have at most two active credentials')
         }
         let previous: { id: string; expires_at: Date } | undefined
         if (rotating) {
-            previous = activeCredentials.find(({ id }) => id === previousId)
-            if (!previous || activeCredentials.length > 1) {
-                throw new ControlInputError('Rotation requires exactly one active source credential')
+            previous = activeForEnvironment.find(({ id }) => id === previousId)
+            if (!previous || activeForEnvironment.length !== 1) {
+                throw new ControlInputError('Rotation requires exactly one active source credential for this environment')
+            }
+            if (activeCredentials.length >= 2) {
+                throw new ControlInputError('A Machine Identity can have at most two active credentials')
             }
         }
         await transaction.publishing_credentials.create({
@@ -363,6 +402,7 @@ async function revokeCredential(flags: Flags) {
     })
     if (!credential) throw new ControlInputError('Publishing Credential was not found')
     await prisma.$transaction(async (transaction) => {
+        await lockIdentityControlRows(transaction, credential.identity_id, { credentials: true })
         await transaction.publishing_credentials.update({
             where: { id: credentialId },
             data: { revoked_at: now, revoke_reason: reason },
@@ -391,6 +431,9 @@ async function setGlobalGate(flags: Flags) {
     const expectedVersion = integer(flags, 'expected-version')
     const now = new Date()
     const result = await prisma.$transaction(async (transaction) => {
+        await transaction.$queryRaw`
+            SELECT id FROM publishing_global_controls WHERE id = 1 FOR UPDATE
+        `
         const updated = await transaction.publishing_global_controls.updateMany({
             where: { id: 1, version: expectedVersion },
             data: {
@@ -466,10 +509,48 @@ async function auditReport(flags: Flags) {
     })
 }
 
+async function schedulerReport(flags: Flags) {
+    const maxAgeSeconds = flags.get('max-age-seconds')
+        ? integer(flags, 'max-age-seconds')
+        : 120
+    const state = await prisma.publishing_scheduler_state.findUnique({
+        where: { id: 1 },
+        select: {
+            last_started_at: true,
+            last_completed_at: true,
+            last_success_at: true,
+            last_run_id: true,
+            last_result_code: true,
+            last_processed_count: true,
+            last_published_count: true,
+            last_blocked_count: true,
+        },
+    })
+    const now = Date.now()
+    const successAgeSeconds = state?.last_success_at
+        ? Math.floor((now - state.last_success_at.getTime()) / 1000)
+        : null
+    const healthy = successAgeSeconds !== null && successAgeSeconds <= maxAgeSeconds
+    output({
+        healthy,
+        max_age_seconds: maxAgeSeconds,
+        success_age_seconds: successAgeSeconds,
+        last_started_at: state?.last_started_at?.toISOString() ?? null,
+        last_completed_at: state?.last_completed_at?.toISOString() ?? null,
+        last_success_at: state?.last_success_at?.toISOString() ?? null,
+        last_run_id: state?.last_run_id ?? null,
+        last_result_code: state?.last_result_code ?? null,
+        last_processed_count: state?.last_processed_count ?? 0,
+        last_published_count: state?.last_published_count ?? 0,
+        last_blocked_count: state?.last_blocked_count ?? 0,
+    })
+    if (!healthy) process.exitCode = 1
+}
+
 function usage(): void {
     process.stderr.write([
         'Usage: npm run publishing:control -- <command> [flags]',
-        'Commands: identity-create, identity-disable, identity-enable, capability-grant, capability-revoke, ip-add, ip-remove, credential-issue, credential-rotate, credential-revoke, gate-set, expiry-report, audit-report',
+        'Commands: identity-create, identity-disable, identity-enable, capability-grant, capability-revoke, ip-add, ip-remove, credential-issue, credential-rotate, credential-revoke, gate-set, expiry-report, audit-report, scheduler-report',
         'Every mutation needs --actor-admin-id <id> --confirm yes.',
     ].join('\n') + '\n')
 }
@@ -495,6 +576,7 @@ async function main(): Promise<void> {
         case 'gate-set': return setGlobalGate(flags)
         case 'expiry-report': return expiryReport(flags)
         case 'audit-report': return auditReport(flags)
+        case 'scheduler-report': return schedulerReport(flags)
         default: throw new ControlInputError(`Unknown command: ${command}`)
     }
 }

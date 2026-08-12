@@ -9,6 +9,7 @@ import { sanitizePublishingHtml } from './html'
 import { validatePublicationReadiness } from './readiness'
 import { revalidatePublishingPublicSurfaces } from './revalidation'
 import { writePublishingAudit } from './audit'
+import { lockGlobalPublishingGate } from './authority'
 
 export type ScheduledPublicationAssessment = {
     globalGateEnabled: boolean
@@ -228,9 +229,7 @@ export async function runPublishingScheduler(input: {
             // Use the same lock order as Publishing mutation/control actions.
             // This makes a close/revoke/disable and a scheduler transition
             // mutually exclusive at the authority decision point.
-            await transaction.$queryRaw`
-                SELECT id FROM publishing_global_controls WHERE id = 1 FOR UPDATE
-            `
+            const globalGateEnabled = await lockGlobalPublishingGate(transaction)
             await transaction.$queryRaw`
                 SELECT id FROM publishing_machine_identities
                 WHERE id = ${candidate.publishing_identity_id}::uuid FOR UPDATE
@@ -239,44 +238,38 @@ export async function runPublishingScheduler(input: {
                 SELECT capability FROM publishing_identity_capabilities
                 WHERE identity_id = ${candidate.publishing_identity_id}::uuid FOR UPDATE
             `
-            const [post, control] = await Promise.all([
-                transaction.blog_posts.findUnique({
-                    where: { id: duePost.id },
-                    include: {
-                        blog_categories: { select: { is_active: true, slug: true } },
-                        blog_post_tags: {
-                            include: {
-                                blog_tags: { select: { is_active: true } },
-                            },
+            const post = await transaction.blog_posts.findUnique({
+                where: { id: duePost.id },
+                include: {
+                    blog_categories: { select: { is_active: true, slug: true } },
+                    blog_post_tags: {
+                        include: {
+                            blog_tags: { select: { is_active: true } },
                         },
-                        publishing_media: {
-                            include: {
-                                media: {
-                                    select: {
-                                        id: true,
-                                        identity_id: true,
-                                        purpose: true,
-                                        status: true,
-                                        primary_url: true,
-                                    },
-                                },
-                            },
-                        },
-                        publishing_identity: {
-                            include: {
-                                capabilities: {
-                                    where: { revoked_at: null },
-                                    select: { capability: true },
+                    },
+                    publishing_media: {
+                        include: {
+                            media: {
+                                select: {
+                                    id: true,
+                                    identity_id: true,
+                                    purpose: true,
+                                    status: true,
+                                    primary_url: true,
                                 },
                             },
                         },
                     },
-                }),
-                transaction.publishing_global_controls.findUnique({
-                    where: { id: 1 },
-                    select: { publishing_enabled: true },
-                }),
-            ])
+                    publishing_identity: {
+                        include: {
+                            capabilities: {
+                                where: { revoked_at: null },
+                                select: { capability: true },
+                            },
+                        },
+                    },
+                },
+            })
             if (
                 !post
                 || post.status !== 'scheduled'
@@ -301,7 +294,7 @@ export async function runPublishingScheduler(input: {
                 mediaReferencesValid: safety.mediaReferencesValid,
             })
             const decision = assessScheduledPublication({
-                globalGateEnabled: control?.publishing_enabled ?? false,
+                globalGateEnabled,
                 identityActive: post.publishing_identity.is_active,
                 hasPublishCapability: post.publishing_identity.capabilities.some(
                     ({ capability }) => capability === 'posts:publish',

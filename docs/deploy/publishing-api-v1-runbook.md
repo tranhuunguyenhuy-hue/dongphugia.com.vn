@@ -97,7 +97,9 @@ npm run publishing:control -- credential-revoke \
 
 Rotate before expiry. The command requires exactly one active source credential
 for that identity/environment and caps overlap at seven days; every credential
-still has a maximum 90-day lifetime from issue.
+still has a maximum 90-day lifetime from issue. A Machine Identity has at most
+two active credentials across both environments, so rotate only after an
+unneeded environment credential is revoked or expires.
 
 ```bash
 npm run publishing:control -- credential-rotate \
@@ -128,10 +130,30 @@ not stop normal human CMS writes.
 ## Scheduler
 
 The scheduler is repository-owned and one-shot. The accepted host/Coolify path
-must invoke it at least once per minute from the same environment and database:
+must invoke it at least once per minute from the same environment and database.
+For each staging or production application, create a Coolify **Scheduled Task**
+on that application with this exact configuration (the task executes in the
+application runtime; it is not a public HTTP cron):
+
+| Coolify field | Required value |
+| --- | --- |
+| Command | `node scripts/publishing/run-scheduler.mjs` |
+| Schedule | `* * * * *` (every minute) |
+| Environment | The same application environment and database as the Publishing API |
+| `PUBLISHING_SCHEDULER_URL` | The approved internal application URL; default `http://127.0.0.1:3000` only when the task can reach that listener |
+| `PUBLISHING_SCHEDULER_TOKEN` | A dedicated runtime secret, never logged or exposed to a Publishing Agent |
+| Notifications | Enable Coolify failure notification for the task in the operating alert channel |
+
+The image already includes `scripts/publishing/run-scheduler.mjs`; do not use
+`npm` or `npx` in the Coolify task. The runner has a 55-second request timeout
+and exits non-zero for an invocation failure, so Coolify records a failed task.
+Its only authenticated target is the private `/api/internal/publishing-scheduler`
+endpoint.
+
+The one-shot command is:
 
 ```bash
-npm run publishing:scheduler
+node scripts/publishing/run-scheduler.mjs
 ```
 
 The command calls the internal endpoint with `PUBLISHING_SCHEDULER_TOKEN`; do
@@ -151,7 +173,38 @@ After enabling the scheduler in staging, verify privately:
    recover a blocked post;
 4. `/`, `/blog`, the category, post page and sitemap reflect publication within
    five minutes; and
-5. `publishing_scheduler_state` heartbeat and minimized audit events exist.
+5. `publishing_scheduler_state` heartbeat and minimized audit events exist;
+   after three successful one-minute runs, this command must report
+   `healthy: true` and `success_age_seconds <= 120`:
+
+   ```bash
+   npm run publishing:control -- scheduler-report --max-age-seconds 120
+   ```
+
+6. Create a synthetic ready publication due in the next minute. Its post page,
+   `/`, `/blog`, category page, and sitemap must reflect the result within five
+   minutes of the declared time. Record the Coolify task history, scheduler
+   report, API response, and public checks as the staging SLA acceptance
+   evidence.
+
+Before this staging acceptance, run the PostgreSQL race harness only against a
+fresh **disposable** PostgreSQL database bootstrapped with the reviewed schema.
+It deliberately creates immutable audit evidence and is not for a shared
+staging database. Supply a synthetic active admin ID through the approved local
+environment mechanism; do not put a connection string or credential in shell
+history, CI logs, or this repository.
+
+```bash
+PUBLISHING_CONCURRENCY_TEST_CONFIRM=disposable \
+PUBLISHING_CONCURRENCY_TEST_DATABASE_URL=<disposable-postgresql-url> \
+PUBLISHING_TEST_SPONSOR_ADMIN_ID=<synthetic-active-admin-id> \
+npm run publishing:test-postgres-concurrency
+```
+
+The harness verifies concurrent credential issue/rotation (maximum two active
+credentials), credential revoke before the mutation boundary, capability revoke
+before publication authority, and Global Publishing Gate close before a public
+transition. Save only the PASS/fail result and sanitized timing evidence.
 
 ## Staging and rollout gates
 

@@ -3,6 +3,7 @@ import { createHash, randomBytes, randomUUID } from 'node:crypto'
 import prisma from '@/lib/prisma'
 
 import { PublishingApiError } from './errors'
+import type { PublishingTransaction } from './idempotency'
 
 export const PUBLISHING_CAPABILITIES = [
     'posts:write',
@@ -40,6 +41,116 @@ export type PublishingAuthRepository = {
 export type PublishingAuthContext = {
     credentialId: string
     identity: AuthenticatedMachineIdentity
+    /**
+     * The single trusted proxy value observed during authentication. Keeping it
+     * in the context lets a mutation re-check a subsequently changed IP policy
+     * without accepting a caller-controlled forwarding header.
+     */
+    clientIp: string | null
+}
+
+/**
+ * Re-check the authorization snapshot at the durable mutation boundary.
+ *
+ * Route authentication intentionally remains cheap and returns a snapshot for
+ * reads. Writes must call this while holding the Identity, Credential and
+ * capability rows so a control-plane revoke linearizes either before the
+ * mutation (it is rejected) or after its committed transition.
+ */
+export async function lockPublishingMutationAuthorization(
+    transaction: PublishingTransaction,
+    input: {
+        credentialId: string
+        identityId: string
+        environment: PublishingEnvironment
+        requiredCapabilities: readonly PublishingCapability[]
+        clientIp: string | null
+        now?: Date
+    },
+): Promise<AuthenticatedMachineIdentity> {
+    const now = input.now ?? new Date()
+    await transaction.$queryRaw`
+        SELECT id FROM publishing_machine_identities
+        WHERE id = ${input.identityId}::uuid FOR UPDATE
+    `
+    await transaction.$queryRaw`
+        SELECT id FROM publishing_credentials
+        WHERE id = ${input.credentialId}::uuid FOR UPDATE
+    `
+    await transaction.$queryRaw`
+        SELECT capability FROM publishing_identity_capabilities
+        WHERE identity_id = ${input.identityId}::uuid FOR UPDATE
+    `
+    await transaction.$queryRaw`
+        SELECT ip_address FROM publishing_identity_ip_allowlist
+        WHERE identity_id = ${input.identityId}::uuid FOR UPDATE
+    `
+
+    const credential = await transaction.publishing_credentials.findUnique({
+        where: { id: input.credentialId },
+        include: {
+            identity: {
+                include: {
+                    capabilities: {
+                        where: { revoked_at: null },
+                        select: { capability: true },
+                    },
+                    ip_allowlist: { select: { ip_address: true } },
+                },
+            },
+        },
+    })
+    if (
+        !credential
+        || credential.identity_id !== input.identityId
+        || credential.environment !== input.environment
+        || credential.revoked_at
+        || credential.expires_at.getTime() <= now.getTime()
+    ) {
+        throw new PublishingApiError(
+            401,
+            'CREDENTIAL_REVOKED',
+            'Publishing credential is no longer authorized',
+        )
+    }
+    if (!credential.identity.is_active) {
+        throw new PublishingApiError(403, 'IDENTITY_DISABLED', 'Machine Identity is disabled')
+    }
+    const allowedIpAddresses = new Set(
+        credential.identity.ip_allowlist.map(({ ip_address }) => ip_address),
+    )
+    if (
+        allowedIpAddresses.size > 0
+        && (!input.clientIp || !allowedIpAddresses.has(input.clientIp))
+    ) {
+        throw new PublishingApiError(
+            403,
+            'IP_NOT_ALLOWED',
+            'Request network is not allowed for this Machine Identity',
+        )
+    }
+
+    const capabilities = new Set(
+        credential.identity.capabilities.map(({ capability }) => capability),
+    )
+    const missing = input.requiredCapabilities.find(
+        (capability) => !capabilities.has(capability),
+    )
+    if (missing) {
+        throw new PublishingApiError(
+            403,
+            'CAPABILITY_REQUIRED',
+            'Machine Identity lacks a required capability',
+            [{ field: 'capability', code: missing }],
+        )
+    }
+    return {
+        id: credential.identity.id,
+        sponsorUserId: credential.identity.sponsor_user_id,
+        active: credential.identity.is_active,
+        capabilities,
+        allowedIpAddresses,
+    }
 }
 
 export function hashPublishingCredential(token: string): string {
@@ -188,11 +299,8 @@ export async function authenticatePublishingRequest(
         )
     }
 
+    const clientIp = extractClientIp(request, options.trustedClientIpHeader)
     if (credential.identity.allowedIpAddresses.size > 0) {
-        const clientIp = extractClientIp(
-            request,
-            options.trustedClientIpHeader,
-        )
         if (!clientIp || !credential.identity.allowedIpAddresses.has(clientIp)) {
             throw new PublishingApiError(
                 403,
@@ -221,5 +329,6 @@ export async function authenticatePublishingRequest(
     return {
         credentialId: credential.id,
         identity: credential.identity,
+        clientIp,
     }
 }

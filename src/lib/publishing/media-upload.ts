@@ -2,7 +2,12 @@ import { createHash, randomUUID } from 'node:crypto'
 
 import prisma from '@/lib/prisma'
 
-import type { PublishingAuthContext, PublishingEnvironment } from './auth'
+import {
+    lockPublishingMutationAuthorization,
+    type PublishingAuthContext,
+    type PublishingEnvironment,
+} from './auth'
+import { writePublishingAudit } from './audit'
 import { storePublishingImage } from './bunny-storage'
 import { PublishingApiError } from './errors'
 import {
@@ -99,6 +104,7 @@ export async function uploadPublishingMedia(input: {
     purpose: PublishingMediaPurpose
     declaredMime: string
     source: Buffer
+    requestId: string
     now?: Date
 }): Promise<{ status: number; body: MediaResponse; replayed: boolean }> {
     const now = input.now ?? new Date()
@@ -122,6 +128,14 @@ export async function uploadPublishingMedia(input: {
 
     const reserve = async (): Promise<Reservation> =>
         prisma.$transaction(async (transaction) => {
+            await lockPublishingMutationAuthorization(transaction, {
+                credentialId: input.auth.credentialId,
+                identityId: input.auth.identity.id,
+                environment: input.environment,
+                requiredCapabilities: ['media:write'],
+                clientIp: input.auth.clientIp,
+                now,
+            })
             const existing =
                 await transaction.publishing_idempotency_records.findUnique({
                     where: {
@@ -226,6 +240,14 @@ export async function uploadPublishingMedia(input: {
         variants: stored.variants,
     }
     await prisma.$transaction(async (transaction) => {
+        await lockPublishingMutationAuthorization(transaction, {
+            credentialId: input.auth.credentialId,
+            identityId: input.auth.identity.id,
+            environment: input.environment,
+            requiredCapabilities: ['media:write'],
+            clientIp: input.auth.clientIp,
+            now,
+        })
         await transaction.publishing_managed_media.update({
             where: { id: reservation.mediaId },
             data: {
@@ -254,6 +276,22 @@ export async function uploadPublishingMedia(input: {
                 },
                 completed_at: now,
             },
+        })
+        await writePublishingAudit(transaction, {
+            actorKind: 'machine',
+            identityId: input.auth.identity.id,
+            sponsorUserId: input.auth.identity.sponsorUserId,
+            action: 'media.uploaded',
+            requestId: input.requestId,
+            idempotencyKeyHash: keyHash,
+            changedFields: ['purpose', 'source_sha256', 'variants'],
+            metadata: {
+                media_id: response.id,
+                purpose: response.purpose,
+                source_sha256: binaryHash,
+                source_bytes: input.source.byteLength,
+            },
+            now,
         })
     })
     return { status: 201, body: response, replayed: false }

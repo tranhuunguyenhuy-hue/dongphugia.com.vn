@@ -12,7 +12,7 @@ export async function POST(request: Request) {
     return withAuthenticatedPublishingRoute(
         request,
         { requiredCapabilities: ['media:write'], bucket: 'media' },
-        async ({ auth, config }) => {
+        async ({ auth, config, requestId }) => {
             const contentType = request.headers.get('content-type') ?? ''
             if (!contentType.startsWith('multipart/form-data;')) {
                 throw new PublishingApiError(
@@ -55,6 +55,7 @@ export async function POST(request: Request) {
                 purpose,
                 declaredMime: file.type,
                 source,
+                requestId,
             })
             return publishingJson(result.body, { status: result.status })
         },

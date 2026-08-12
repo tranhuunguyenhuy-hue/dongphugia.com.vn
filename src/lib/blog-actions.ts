@@ -1,7 +1,7 @@
 'use server'
 
 import prisma from '@/lib/prisma'
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
 import { z } from 'zod'
 import { Prisma } from '@prisma/client'
 import { requirePermission } from '@/lib/auth/get-current-user'
@@ -103,6 +103,7 @@ export async function createBlogPost(data: unknown) {
 
         revalidatePath('/admin/blog/posts')
         revalidatePath('/blog')
+        revalidateTag('blog', { expire: 0 })
         return { success: true, id: post.id }
     } catch (err: unknown) {
         const freezeResult = toWriteFreezeActionResult(err)
@@ -342,6 +343,7 @@ export async function createBlogTag(data: unknown) {
             },
         })
         revalidatePath('/admin/blog/tags')
+        revalidateTag('blog', { expire: 0 })
         return { success: true, id: tag.id }
     } catch (err: unknown) {
         const freezeResult = toWriteFreezeActionResult(err)
@@ -360,6 +362,7 @@ export async function deleteBlogTag(id: number) {
             data: { is_active: false, updated_at: new Date() },
         })
         revalidatePath('/admin/blog/tags')
+        revalidateTag('blog', { expire: 0 })
         return { success: true }
     } catch (err: unknown) {
         const freezeResult = toWriteFreezeActionResult(err)
