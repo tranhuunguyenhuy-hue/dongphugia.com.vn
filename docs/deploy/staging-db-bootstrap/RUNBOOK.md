@@ -1,8 +1,8 @@
 # Staging database bootstrap runbook
 
-This change set prepares a PostgreSQL bootstrap for the Supabase project
-`dongphugia-staging`. It is intentionally local-only and must not be executed
-until a separate approval is given.
+This change set prepares a PostgreSQL bootstrap for the private staging
+database. It is intentionally local-only and must not be executed until a
+separate approval is given.
 
 ## Artefacts
 
@@ -14,13 +14,11 @@ until a separate approval is given.
 - `004_publishing_api_v1.sql` — reviewed additive PostgreSQL schema for the
   internal Publishing API v1. It initializes the Global Publishing Gate as
   disabled and contains no Machine Identity, credential, or content seed.
-- `RLS_FINDINGS.md` — read-only review of Supabase client/RPC usage and RLS
-  implications.
 - `checksums.sha256` — SHA-256 checksums for review before any execution.
 
 ## Strict scope
 
-- Staging Supabase only.
+- Staging PostgreSQL only.
 - No production database.
 - No admin account seed.
 - No customer, quote, order, session, password, key, or production content.
@@ -31,20 +29,19 @@ until a separate approval is given.
 
 Stop if any item fails.
 
-1. Confirm the Supabase project is the approved staging project:
-   - name: `dongphugia-staging`
-   - region: Singapore
-   - project ref: provided by PM for staging only
+1. Confirm the target is the PM-approved private staging PostgreSQL database
+   through the current control plane. Do not infer its provider or host from
+   this repository.
 2. Confirm `STAGING_DATABASE_URL` and `STAGING_DIRECT_URL` both point to that
-   staging project ref.
-3. Confirm neither connection string contains the production project ref.
+   same staging database.
+3. Confirm neither connection string targets the production database.
 4. Confirm the target database is empty enough for a first bootstrap:
    - no existing app tables in `public`;
    - no existing `_prisma_migrations` state that would conflict with this
      baseline;
    - no customer/order/admin/session data.
 5. Confirm checksums match `checksums.sha256`.
-6. Confirm the SQL files contain no connection strings, passwords, Supabase
+6. Confirm the SQL files contain no connection strings, passwords, provider
    keys, or service-role keys.
 7. Confirm the executor is using a direct staging database connection suitable
    for DDL.
@@ -124,11 +121,11 @@ approved execution model:
 2. Confirm again that the project ref is staging, not production.
 3. Confirm no non-synthetic data exists.
 4. For a dedicated empty staging DB, reset the `public` schema or recreate the
-   staging database from the Supabase dashboard/SQL editor using an approved
-   staging-only reset plan.
+   staging database through the approved database control plane using an
+   approved staging-only reset plan.
 5. Do not drop schemas or tables in any project whose ref is not the approved
    staging ref.
 
 Because this bootstrap is for a newly created staging database, rollback is
-intended to be destructive only within the empty staging project and only after
-explicit approval.
+intended to be destructive only within the empty staging database and only
+after explicit approval.
