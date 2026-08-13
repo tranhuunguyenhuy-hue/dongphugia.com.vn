@@ -85,7 +85,7 @@ describe("Publishing API v1 runtime grants artifact", () => {
       publishing_idempotency_records: ["DELETE", "INSERT", "SELECT", "UPDATE"],
       publishing_blog_post_media: ["DELETE", "INSERT", "SELECT"],
       publishing_scheduler_state: ["INSERT", "SELECT", "UPDATE"],
-      publishing_audit_events: ["INSERT"],
+      publishing_audit_events: ["INSERT", "SELECT"],
     })
 
     expect(grants).toContain("publishing_audit_events_id_seq")
