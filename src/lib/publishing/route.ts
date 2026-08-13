@@ -7,12 +7,14 @@ import { getPublishingRuntimeConfig, requirePublishingHttps } from './config'
 import type { PublishingRateBucket } from './rate-limit'
 import { consumePublishingRateLimit } from './rate-limit'
 import { withPublishingRoute } from './http'
+import { requireWritesAllowed } from '@/lib/write-freeze'
 
 export async function withAuthenticatedPublishingRoute(
     request: Request,
     options: {
         requiredCapabilities: readonly PublishingCapability[]
         bucket: PublishingRateBucket
+        mutation?: boolean
     },
     handler: (input: {
         requestId: string
@@ -31,6 +33,9 @@ export async function withAuthenticatedPublishingRoute(
                 trustedClientIpHeader: config.trustedClientIpHeader,
             },
         )
+        if (options.mutation) {
+            requireWritesAllowed('publishing.api.mutation')
+        }
         await consumePublishingRateLimit(auth.identity.id, options.bucket, config)
         return handler({ requestId, auth, config })
     })

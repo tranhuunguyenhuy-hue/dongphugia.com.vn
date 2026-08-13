@@ -11,7 +11,7 @@ const MAX_MULTIPART_BYTES = PUBLISHING_MEDIA_MAX_BYTES + 128 * 1024
 export async function POST(request: Request) {
     return withAuthenticatedPublishingRoute(
         request,
-        { requiredCapabilities: ['media:write'], bucket: 'media' },
+        { requiredCapabilities: ['media:write'], bucket: 'media', mutation: true },
         async ({ auth, config, requestId }) => {
             const contentType = request.headers.get('content-type') ?? ''
             if (!contentType.startsWith('multipart/form-data;')) {

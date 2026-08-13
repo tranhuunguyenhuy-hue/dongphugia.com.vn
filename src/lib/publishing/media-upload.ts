@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto'
 
 import prisma from '@/lib/prisma'
+import { requireWritesAllowed } from '@/lib/write-freeze'
 
 import {
     lockPublishingMutationAuthorization,
@@ -107,6 +108,7 @@ export async function uploadPublishingMedia(input: {
     requestId: string
     now?: Date
 }): Promise<{ status: number; body: MediaResponse; replayed: boolean }> {
+    requireWritesAllowed('publishing.media.upload')
     const now = input.now ?? new Date()
     const binaryHash = sourceHash(input.source)
     const requestHash = hashCanonicalJson({
@@ -116,6 +118,18 @@ export async function uploadPublishingMedia(input: {
         source_bytes: input.source.byteLength,
     })
     const keyHash = hashIdempotencyKey(input.idempotencyKey)
+    // Avoid spending native image-processing CPU for a credential that was
+    // revoked after route authentication. The reservation below rechecks again
+    // under the durable write transaction.
+    await prisma.$transaction((transaction) =>
+        lockPublishingMutationAuthorization(transaction, {
+            credentialId: input.auth.credentialId,
+            identityId: input.auth.identity.id,
+            environment: input.environment,
+            requiredCapabilities: ['media:write'],
+            clientIp: input.auth.clientIp,
+        }),
+    )
     const processed = await processPublishingImage(
         input.source,
         input.declaredMime,
@@ -135,6 +149,7 @@ export async function uploadPublishingMedia(input: {
                 requiredCapabilities: ['media:write'],
                 clientIp: input.auth.clientIp,
             })
+            requireWritesAllowed('publishing.media.reserve')
             const existing =
                 await transaction.publishing_idempotency_records.findUnique({
                     where: {
@@ -225,6 +240,7 @@ export async function uploadPublishingMedia(input: {
         return { status: 200, body: reservation.body, replayed: true }
     }
 
+    requireWritesAllowed('publishing.media.store')
     const stored = await storePublishingImage({
         environment: input.environment,
         identityId: input.auth.identity.id,
@@ -246,6 +262,7 @@ export async function uploadPublishingMedia(input: {
             requiredCapabilities: ['media:write'],
             clientIp: input.auth.clientIp,
         })
+        requireWritesAllowed('publishing.media.commit')
         await transaction.publishing_managed_media.update({
             where: { id: reservation.mediaId },
             data: {

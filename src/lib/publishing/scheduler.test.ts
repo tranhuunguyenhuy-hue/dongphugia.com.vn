@@ -1,6 +1,10 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 
-import { assessScheduledPublication } from './scheduler'
+import { assessScheduledPublication, runPublishingScheduler } from './scheduler'
+
+afterEach(() => {
+    delete process.env.WRITE_FREEZE_MODE
+})
 
 describe('assessScheduledPublication', () => {
     const ready = {
@@ -43,5 +47,27 @@ describe('assessScheduledPublication', () => {
                 ],
             }),
         ).toEqual({ kind: 'block', code: 'PUBLICATION_NOT_READY' })
+    })
+
+    it('does not start or mutate scheduled work while writes are frozen', async () => {
+        process.env.WRITE_FREEZE_MODE = 'true'
+
+        await expect(
+            runPublishingScheduler({
+                config: {
+                    environment: 'staging',
+                    externalLinkHostnames: new Set(),
+                    internalLinkHostnames: new Set(['www.dongphugia.vn']),
+                    jsonRateLimit: 60,
+                    mediaRateLimit: 20,
+                    rateLimitWindowSeconds: 60,
+                },
+            }),
+        ).resolves.toMatchObject({
+            result_code: 'WRITE_FREEZE_ACTIVE',
+            processed_count: 0,
+            published_count: 0,
+            blocked_count: 0,
+        })
     })
 })

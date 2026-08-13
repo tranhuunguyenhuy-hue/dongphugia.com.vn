@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client'
 
 import prisma from '@/lib/prisma'
+import { requireWritesAllowed } from '@/lib/write-freeze'
 
 import {
     lockPublishingMutationAuthorization,
@@ -425,6 +426,7 @@ export async function mutatePublishingPost(input: {
     config: PublishingRuntimeConfig
     now?: Date
 }): Promise<{ status: number; body: PublishingPostSummary; replayed: boolean }> {
+    requireWritesAllowed('publishing.posts.mutate')
     const now = input.now ?? new Date()
     const request = {
         external_id: input.externalId,
@@ -502,6 +504,7 @@ export async function mutatePublishingPost(input: {
                     requiredCapabilities,
                     clientIp: input.auth.clientIp,
                 })
+                requireWritesAllowed('publishing.posts.commit')
 
                 if (current?.first_published_at) {
                     if (slug !== current.slug) {

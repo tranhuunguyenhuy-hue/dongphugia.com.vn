@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 
 import prisma from '@/lib/prisma'
-import { isWriteFreezeEnabled } from '@/lib/write-freeze'
+import { isWriteFreezeEnabled, requireWritesAllowed } from '@/lib/write-freeze'
 
 import type { PublishingRuntimeConfig } from './config'
 import { isPublishingApiError } from './errors'
@@ -186,6 +186,7 @@ export async function runPublishingScheduler(input: {
         }
     }
 
+    requireWritesAllowed('publishing.scheduler.start')
     await prisma.publishing_scheduler_state.upsert({
         where: { id: 1 },
         create: {
@@ -310,6 +311,10 @@ export async function runPublishingScheduler(input: {
                 version: post.version,
                 scheduled_version: post.version,
             }
+            if (isWriteFreezeEnabled()) {
+                return { kind: 'frozen' as const }
+            }
+            requireWritesAllowed('publishing.scheduler.transition')
             if (decision.kind === 'publish') {
                 const updated = await transaction.blog_posts.updateMany({
                     where,
@@ -393,6 +398,17 @@ export async function runPublishingScheduler(input: {
             })
         } else if (outcome.kind === 'blocked') {
             blockedCount += 1
+        } else if (outcome.kind === 'frozen') {
+            for (const path of publishedPaths) {
+                revalidatePublishingPublicSurfaces(path)
+            }
+            return {
+                run_id: runId,
+                result_code: 'WRITE_FREEZE_ACTIVE',
+                processed_count: 0,
+                published_count: publishedCount,
+                blocked_count: blockedCount,
+            }
         }
     }
 
@@ -400,6 +416,7 @@ export async function runPublishingScheduler(input: {
         revalidatePublishingPublicSurfaces(path)
     }
 
+    requireWritesAllowed('publishing.scheduler.complete')
     await prisma.publishing_scheduler_state.update({
         where: { id: 1 },
         data: {

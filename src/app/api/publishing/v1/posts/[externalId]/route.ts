@@ -39,7 +39,7 @@ export async function GET(request: Request, context: RouteContext) {
 export async function PUT(request: Request, context: RouteContext) {
     return withAuthenticatedPublishingRoute(
         request,
-        { requiredCapabilities: ['posts:write'], bucket: 'json' },
+        { requiredCapabilities: ['posts:write'], bucket: 'json', mutation: true },
         async ({ auth, config, requestId }) => {
             const { externalId: rawExternalId } = await context.params
             const externalId = parseExternalPostId(rawExternalId)

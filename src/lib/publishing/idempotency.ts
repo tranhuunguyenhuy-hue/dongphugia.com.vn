@@ -3,6 +3,7 @@ import { createHash, randomUUID } from 'node:crypto'
 import { Prisma } from '@prisma/client'
 
 import prisma from '@/lib/prisma'
+import { requireWritesAllowed } from '@/lib/write-freeze'
 
 import { PublishingApiError } from './errors'
 
@@ -125,6 +126,10 @@ export async function runIdempotentJsonMutation<T extends Prisma.JsonObject>(
 
     try {
         return await prisma.$transaction(async (transaction) => {
+            // Idempotency records are durable writes. Check the cutover guard
+            // before even reserving a key so a frozen system has no partial
+            // Publishing API operation to recover later.
+            requireWritesAllowed(`publishing.${input.operation}.idempotency`)
             const existing =
                 await transaction.publishing_idempotency_records.findUnique({
                     where: {
