@@ -1,10 +1,24 @@
+const requestIdHeaders = {
+    'x-request-id': { $ref: '#/components/headers/RequestId' },
+} as const
+
+const retryableHeaders = {
+    ...requestIdHeaders,
+    'Retry-After': { $ref: '#/components/headers/RetryAfter' },
+} as const
+
+const postResponseHeaders = {
+    ETag: { $ref: '#/components/headers/ETag' },
+    ...requestIdHeaders,
+} as const
+
 export const publishingOpenApi = {
     openapi: '3.1.0',
     info: {
         title: 'Dongphugia Publishing API',
         version: '1.0.0',
         description:
-            'Internal, vendor-neutral API for authorized Publishing Agents. All mutation requests require Idempotency-Key. Retrying the same key with the same payload for 30 days returns the stored safe response; a changed payload or an in-progress operation returns 409, and a stale Post Version returns 412. External HTTPS citation hosts are runtime-reviewed configuration, not a fixed OpenAPI enum.',
+            'Internal, vendor-neutral API for authorized Publishing Agents in a restricted Đông Phú Gia pilot. All mutation requests require Idempotency-Key. Retrying the same key with the same payload for 30 days returns the stored safe response; a changed payload or an in-progress operation returns 409, and a stale Post Version returns 412. External HTTPS citation hosts are runtime-reviewed configuration, not a fixed OpenAPI enum. External customer access and self-service onboarding are outside v1.',
     },
     servers: [{ url: '/api/publishing/v1' }],
     security: [{ bearerAuth: [] }],
@@ -25,20 +39,24 @@ export const publishingOpenApi = {
                 description: 'Current Post Version, formatted as "v<N>".',
                 schema: { type: 'string', pattern: '^"v[1-9][0-9]*"$' },
             },
+            RetryAfter: {
+                description: 'Seconds to wait before retrying the request.',
+                schema: { type: 'integer', minimum: 1 },
+            },
         },
         responses: {
-            Unauthorized: { description: 'Credential missing, invalid, expired, or revoked', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
-            Forbidden: { description: 'HTTPS, IP policy, identity, or capability denied', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
-            Conflict: { description: 'Idempotency key is reused or still in progress', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
-            NotFound: { description: 'The owned resource was not found', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
-            PayloadTooLarge: { description: 'Request body exceeds its endpoint limit', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
-            UnsupportedMediaType: { description: 'Content-Type is unsupported', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
-            ValidationFailed: { description: 'Payload, safety, taxonomy, media, or readiness validation failed', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
-            PreconditionFailed: { description: 'Post version is stale or External Post ID already exists', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
-            PreconditionRequired: { description: 'Required If-Match or If-None-Match header is absent', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
-            RateLimited: { description: 'Per-Machine-Identity rate limit exceeded; retry after the Retry-After seconds', headers: { 'Retry-After': { schema: { type: 'integer', minimum: 1 } } }, content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
-            ServiceUnavailable: { description: 'Publishing configuration, Gate, write freeze, or storage is unavailable', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
-            InternalError: { description: 'Unexpected internal failure', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+            Unauthorized: { description: 'Credential missing, invalid, expired, or revoked', headers: requestIdHeaders, content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+            Forbidden: { description: 'HTTPS, IP policy, identity, or capability denied', headers: requestIdHeaders, content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+            Conflict: { description: 'Idempotency key is reused, still in progress, or a slug conflict occurs', headers: retryableHeaders, content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+            NotFound: { description: 'The owned resource was not found', headers: requestIdHeaders, content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+            PayloadTooLarge: { description: 'Request body exceeds its endpoint limit', headers: requestIdHeaders, content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+            UnsupportedMediaType: { description: 'Content-Type is unsupported', headers: requestIdHeaders, content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+            ValidationFailed: { description: 'Payload, safety, taxonomy, media, or readiness validation failed', headers: requestIdHeaders, content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+            PreconditionFailed: { description: 'Post version is stale or External Post ID already exists', headers: requestIdHeaders, content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+            PreconditionRequired: { description: 'Required If-Match or If-None-Match header is absent', headers: requestIdHeaders, content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+            RateLimited: { description: 'Per-Machine-Identity rate limit exceeded; retry after the Retry-After seconds', headers: retryableHeaders, content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+            ServiceUnavailable: { description: 'Publishing configuration, Gate, write freeze, or storage is unavailable', headers: retryableHeaders, content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+            InternalError: { description: 'Unexpected internal failure', headers: requestIdHeaders, content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
         },
         schemas: {
             Error: {
@@ -248,6 +266,7 @@ export const publishingOpenApi = {
                 responses: {
                     200: {
                         description: 'Active taxonomy',
+                        headers: requestIdHeaders,
                         content: { 'application/json': { schema: { $ref: '#/components/schemas/Taxonomy' } } },
                     },
                     401: { $ref: '#/components/responses/Unauthorized' },
@@ -261,7 +280,7 @@ export const publishingOpenApi = {
         '/media': {
             post: {
                 summary: 'Upload integration-owned Managed Media',
-                description: 'The request must include a valid Content-Length no greater than 5 MiB plus multipart overhead. Missing, malformed, or oversized lengths return 413 before multipart parsing.',
+                description: 'The request must include a valid Content-Length no greater than 5 MiB plus multipart overhead. Source files must be JPEG, PNG, or WebP and no larger than 40 megapixels. Missing, malformed, or oversized lengths return 413 before multipart parsing.',
                 parameters: [
                     {
                         name: 'Idempotency-Key',
@@ -286,8 +305,8 @@ export const publishingOpenApi = {
                     },
                 },
                 responses: {
-                    201: { description: 'Managed Media accepted', content: { 'application/json': { schema: { $ref: '#/components/schemas/ManagedMedia' } } } },
-                    200: { description: 'Idempotent replay', content: { 'application/json': { schema: { $ref: '#/components/schemas/ManagedMedia' } } } },
+                    201: { description: 'Managed Media accepted', headers: requestIdHeaders, content: { 'application/json': { schema: { $ref: '#/components/schemas/ManagedMedia' } } } },
+                    200: { description: 'Idempotent replay', headers: requestIdHeaders, content: { 'application/json': { schema: { $ref: '#/components/schemas/ManagedMedia' } } } },
                     401: { $ref: '#/components/responses/Unauthorized' },
                     403: { $ref: '#/components/responses/Forbidden' },
                     409: { $ref: '#/components/responses/Conflict' },
@@ -305,14 +324,14 @@ export const publishingOpenApi = {
             get: {
                 summary: 'List the calling Machine Identity’s Blog Posts',
                 parameters: [
-                    { name: 'limit', in: 'query', schema: { type: 'integer', default: 20, maximum: 100 } },
+                    { name: 'limit', in: 'query', schema: { type: 'integer', default: 20, minimum: 1, maximum: 100 } },
                     { name: 'cursor', in: 'query', schema: { type: 'string' } },
-                    { name: 'status', in: 'query', schema: { type: 'string' } },
+                    { name: 'status', in: 'query', schema: { type: 'string', enum: ['draft', 'scheduled', 'published', 'schedule_blocked'] } },
                     { name: 'updated_after', in: 'query', schema: { type: 'string', format: 'date-time' } },
                     { name: 'updated_before', in: 'query', schema: { type: 'string', format: 'date-time' } },
                 ],
                 responses: {
-                    200: { description: 'Page of owned posts', content: { 'application/json': { schema: { $ref: '#/components/schemas/PostPage' } } } },
+                    200: { description: 'Page of owned posts', headers: requestIdHeaders, content: { 'application/json': { schema: { $ref: '#/components/schemas/PostPage' } } } },
                     401: { $ref: '#/components/responses/Unauthorized' }, 403: { $ref: '#/components/responses/Forbidden' }, 422: { $ref: '#/components/responses/ValidationFailed' }, 429: { $ref: '#/components/responses/RateLimited' }, 503: { $ref: '#/components/responses/ServiceUnavailable' }, 500: { $ref: '#/components/responses/InternalError' },
                 },
             },
@@ -323,12 +342,12 @@ export const publishingOpenApi = {
                     name: 'external_id',
                     in: 'path',
                     required: true,
-                    schema: { type: 'string', maxLength: 200 },
+                    schema: { type: 'string', maxLength: 200, pattern: '^[A-Za-z0-9][A-Za-z0-9._~-]{0,199}$' },
                 },
             ],
             get: {
                 summary: 'Read one owned Blog Post',
-                responses: { 200: { description: 'Current post state', content: { 'application/json': { schema: { $ref: '#/components/schemas/Post' } } } }, 401: { $ref: '#/components/responses/Unauthorized' }, 403: { $ref: '#/components/responses/Forbidden' }, 404: { description: 'Post not found', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } }, 422: { $ref: '#/components/responses/ValidationFailed' }, 429: { $ref: '#/components/responses/RateLimited' }, 503: { $ref: '#/components/responses/ServiceUnavailable' }, 500: { $ref: '#/components/responses/InternalError' } },
+                responses: { 200: { description: 'Current post state', headers: postResponseHeaders, content: { 'application/json': { schema: { $ref: '#/components/schemas/Post' } } } }, 401: { $ref: '#/components/responses/Unauthorized' }, 403: { $ref: '#/components/responses/Forbidden' }, 404: { description: 'Post not found', headers: requestIdHeaders, content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } }, 422: { $ref: '#/components/responses/ValidationFailed' }, 429: { $ref: '#/components/responses/RateLimited' }, 503: { $ref: '#/components/responses/ServiceUnavailable' }, 500: { $ref: '#/components/responses/InternalError' } },
             },
             put: {
                 summary: 'Create or conditionally update one Blog Post',
@@ -342,8 +361,8 @@ export const publishingOpenApi = {
                     content: { 'application/json': { schema: { $ref: '#/components/schemas/PostMutation' } } },
                 },
                 responses: {
-                    200: { description: 'Updated or idempotent replay', headers: { ETag: { $ref: '#/components/headers/ETag' } }, content: { 'application/json': { schema: { $ref: '#/components/schemas/PostSummary' } } } },
-                    201: { description: 'Created', headers: { ETag: { $ref: '#/components/headers/ETag' } }, content: { 'application/json': { schema: { $ref: '#/components/schemas/PostSummary' } } } },
+                    200: { description: 'Updated or idempotent replay', headers: postResponseHeaders, content: { 'application/json': { schema: { $ref: '#/components/schemas/PostSummary' } } } },
+                    201: { description: 'Created', headers: postResponseHeaders, content: { 'application/json': { schema: { $ref: '#/components/schemas/PostSummary' } } } },
                     401: { $ref: '#/components/responses/Unauthorized' },
                     403: { $ref: '#/components/responses/Forbidden' },
                     404: { $ref: '#/components/responses/NotFound' },

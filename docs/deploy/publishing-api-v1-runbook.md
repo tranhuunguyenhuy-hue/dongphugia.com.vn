@@ -1,5 +1,8 @@
 # Publishing API v1 runbook
 
+For Agent integration examples and the internal pilot handoff, see the
+[Publishing API v1 integration guide](../integration/publishing-api-v1-integration-guide.vi.md).
+
 This runbook operates the internal, single-tenant Publishing API. It does not
 authorize a staging rollout, a production deployment, a database migration, or
 any Bunny configuration change. Those are separate PM approval gates.
