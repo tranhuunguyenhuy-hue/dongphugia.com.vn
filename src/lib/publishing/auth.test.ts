@@ -39,9 +39,9 @@ function repository(
 }
 
 describe('authenticatePublishingRequest', () => {
-    it('uses share locks for runtime authority reads so control-plane updates remain exclusive', () => {
+    it('uses key-share locks for runtime authority reads without update privilege', () => {
         const source = readFileSync(resolve(process.cwd(), 'src/lib/publishing/auth.ts'), 'utf8')
-        expect(source).toContain('FOR SHARE')
+        expect(source).toContain('FOR KEY SHARE')
         expect(source).not.toContain('FOR UPDATE')
     })
     it('authenticates one Machine Identity and checks required capabilities', async () => {
