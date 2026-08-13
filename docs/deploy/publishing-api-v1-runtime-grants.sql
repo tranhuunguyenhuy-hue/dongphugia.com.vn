@@ -56,7 +56,8 @@ CREATE TEMP TABLE publishing_expected_sequence_privileges (
 
 INSERT INTO publishing_expected_sequence_privileges (sequence_name, privilege_type)
 VALUES
-  ('publishing_audit_events_id_seq', 'USAGE');
+  ('publishing_audit_events_id_seq', 'USAGE'),
+  ('publishing_identity_ip_allowlist_id_seq', 'USAGE');
 
 -- Publishing v1 deliberately does not manage ACLs on the pre-existing CMS
 -- objects. They remain owned and administered by the CMS migration path. The
@@ -771,7 +772,8 @@ GRANT INSERT ON TABLE
 TO :"runtime_role";
 
 GRANT USAGE ON SEQUENCE
-  public.publishing_audit_events_id_seq
+  public.publishing_audit_events_id_seq,
+  public.publishing_identity_ip_allowlist_id_seq
 TO :"runtime_role";
 
 DO $$
