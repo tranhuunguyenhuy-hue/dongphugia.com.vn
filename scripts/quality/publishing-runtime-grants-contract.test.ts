@@ -89,7 +89,10 @@ describe("Publishing API v1 runtime grants artifact", () => {
     })
 
     expect(grants).toContain("publishing_audit_events_id_seq")
-    expect(grants).toContain("GRANT USAGE ON SEQUENCE")
+    expect(grants).toContain("publishing_identity_ip_allowlist_id_seq")
+    expect(grants).toMatch(
+      /GRANT USAGE ON SEQUENCE\s+public\.publishing_audit_events_id_seq,\s+public\.publishing_identity_ip_allowlist_id_seq\s+TO :"runtime_role";/,
+    )
     expect(grants).toContain("public.publishing_audit_events")
     expect(grants).not.toMatch(/ON TABLE\s+publishing_/)
     expect(grants).not.toMatch(/ON SEQUENCE\s+publishing_/)
