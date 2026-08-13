@@ -186,7 +186,7 @@ jobs:
             docker run --rm --network "$BUILD_NETWORK" \
               -e PGPASSWORD=dpg_staging_build_password \
               "$POSTGRES_IMAGE" \
-              psql -h postgres -U dpg_staging_build -d dpg_staging_build -Atc "
+              psql -q -h postgres -U dpg_staging_build -d dpg_staging_build -Atc "
                 INSERT INTO admin_users (email, name, password_hash, role, is_active, username)
                 VALUES (
                   'stg-publishing-harness@example.invalid',
