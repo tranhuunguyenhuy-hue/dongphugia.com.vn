@@ -147,8 +147,8 @@ type ArticleSchemaInput = {
   title: string
   excerpt?: string | null
   thumbnail_url?: string | null
-  published_at?: Date | null
-  updated_at: Date
+  published_at?: Date | string | null
+  updated_at: Date | string
   author_name: string
   slug: string
   blog_categories: { slug: string }
@@ -177,8 +177,8 @@ export function buildArticleSchema(post: ArticleSchemaInput) {
         url: `${BASE_URL}/images/Logo.png`,
       },
     },
-    datePublished: post.published_at?.toISOString(),
-    dateModified: post.updated_at.toISOString(),
+    datePublished: post.published_at ? new Date(post.published_at).toISOString() : undefined,
+    dateModified: new Date(post.updated_at).toISOString(),
     mainEntityOfPage: canonicalUrl(`/blog/${post.blog_categories.slug}/${post.slug}`),
   }
 }
