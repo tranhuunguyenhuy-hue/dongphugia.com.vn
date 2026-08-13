@@ -72,19 +72,19 @@ export async function lockPublishingMutationAuthorization(
     const now = input.now ?? new Date()
     await transaction.$queryRaw`
         SELECT id FROM publishing_machine_identities
-        WHERE id = ${input.identityId}::uuid FOR KEY SHARE
+        WHERE id = ${input.identityId}::uuid FOR SHARE
     `
     await transaction.$queryRaw`
         SELECT id FROM publishing_credentials
-        WHERE id = ${input.credentialId}::uuid FOR KEY SHARE
+        WHERE id = ${input.credentialId}::uuid FOR SHARE
     `
     await transaction.$queryRaw`
         SELECT capability FROM publishing_identity_capabilities
-        WHERE identity_id = ${input.identityId}::uuid FOR KEY SHARE
+        WHERE identity_id = ${input.identityId}::uuid FOR SHARE
     `
     await transaction.$queryRaw`
         SELECT ip_address FROM publishing_identity_ip_allowlist
-        WHERE identity_id = ${input.identityId}::uuid FOR KEY SHARE
+        WHERE identity_id = ${input.identityId}::uuid FOR SHARE
     `
 
     const credential = await transaction.publishing_credentials.findUnique({
