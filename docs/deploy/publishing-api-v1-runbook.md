@@ -197,6 +197,7 @@ history, CI logs, or this repository.
 ```bash
 PUBLISHING_CONCURRENCY_TEST_CONFIRM=disposable \
 PUBLISHING_CONCURRENCY_TEST_DATABASE_URL=<disposable-postgresql-url> \
+PUBLISHING_DATABASE_URL=<same-disposable-postgresql-url> \
 PUBLISHING_TEST_SPONSOR_ADMIN_ID=<synthetic-active-admin-id> \
 npm run publishing:test-postgres-concurrency
 ```
@@ -205,6 +206,15 @@ The harness verifies concurrent credential issue/rotation (maximum two active
 credentials), credential revoke before the mutation boundary, capability revoke
 before publication authority, and Global Publishing Gate close before a public
 transition. Save only the PASS/fail result and sanitized timing evidence.
+
+Before enabling the scheduler or Global Publishing Gate, run a dedicated-role
+smoke against the same disposable/staging PostgreSQL topology. It must connect
+with `PUBLISHING_DATABASE_URL` and prove the Publishing client can read active
+taxonomy, create/update a synthetic Draft, attach/recount a synthetic Blog Tag,
+run the scheduler heartbeat, and then clean up the synthetic fixture through
+the owner path. This is mandatory because legacy Blog tables may have RLS; ACL
+provisioning alone is not proof that the dedicated non-BYPASSRLS role can use
+the reviewed policies. Record only PASS/fail and sanitized timing evidence.
 
 ## Staging and rollout gates
 
@@ -244,33 +254,52 @@ immutable commit before execution. Do not use this recovery on staging or a
 clean database, and do not change ownership or grant DDL privileges to the
 application runtime role.
 
-## Production runtime grants after a separate-owner migration
+## Dedicated Publishing database runtime and grants
 
-When the approved production migration or recovery is executed by a database
-owner role that is distinct from the existing application runtime role, run the
-reviewed forward artifact
-`docs/deploy/publishing-api-v1-runtime-grants.sql` before invoking the
-Publishing API or scheduler. Verify
-`docs/deploy/publishing-api-v1-runtime-grants.sha256` from the immutable commit
-first, then supply the already-configured application database role only through
-the approved private execution path:
+The Publishing API and its scheduler use `PUBLISHING_DATABASE_URL`, not the
+CMS-wide `DATABASE_URL`. This keeps the CMS owner connection outside the
+Publishing Agent trust boundary and gives the runtime-grants artifact a distinct
+non-owner target role.
+
+Before private staging or production cutover, create that login once through
+`docs/deploy/publishing-api-v1-runtime-role.sql`, then run
+`publishing-api-v1-runtime-grants.sql` for the same role. The provisioning
+artifact accepts the role name and reads a SCRAM verifier only from the
+`PUBLISHING_RUNTIME_PASSWORD_VERIFIER` environment variable of the approved
+owner-only secret runner. Neither raw password nor verifier belongs in source,
+command history, output, or this runbook. It creates a fresh role only and
+grants the exact existing CMS surface needed by Publishing routes/scheduler—no
+ownership, role membership, schema `CREATE`, PUBLIC access, or destructive/DDL
+privilege.
+Verify `docs/deploy/publishing-api-v1-runtime-role.sha256` from the immutable
+commit before it is invoked.
+
+After that role exists, run the reviewed grants artifact through the approved
+owner/migration execution path before invoking the Publishing API or scheduler:
 
 ```bash
-psql -X -v ON_ERROR_STOP=1 -v runtime_role=<application-runtime-role> \
+psql -X -v ON_ERROR_STOP=1 \
+  -v runtime_role=<dedicated-publishing-runtime-role> \
   -f docs/deploy/publishing-api-v1-runtime-grants.sql
 ```
 
-The artifact is one transaction and fails closed unless the completed v1 schema
-has exactly the expected 11 Publishing tables, two identity sequences, and the
-reviewed append-only audit function/trigger; they must be owned by the migration
-role. The target must be a non-owner application login role with no
-role-membership path, no `CREATE` on the `public` schema, and no column-level
-Publishing ACL; none of the Publishing tables may enable or force row security.
-Its ACL state must be either empty or exactly the desired state from a prior
-successful run. Per-table DML is limited to operations used by the API, control
-plane, and scheduler; the immutable audit table receives only `SELECT`/`INSERT`,
-and the two sequences receive only `USAGE`/`SELECT`. The artifact never grants
-DDL, changes ownership, or grants audit update/delete/truncate. It pins a trusted
-transaction-local `search_path` and qualifies every persistent target with the
-`public` schema. Verify from the application runtime that the scheduler can
-update its heartbeat before enabling the Global Publishing Gate.
+Verify `docs/deploy/publishing-api-v1-runtime-grants.sha256` from the immutable
+commit first. The artifact is one transaction and fails closed unless the
+completed v1 schema has exactly the expected 11 Publishing tables, two identity
+sequences, and the reviewed append-only audit function/trigger owned by the
+migration role. The target must be the fresh non-owner login with no
+role-membership path, no `CREATE` on the `public` schema, no column-level
+Publishing ACL, and no Publishing-table row security. Its ACL state must be
+empty or exactly the desired state from a prior successful run. It grants only
+the Publishing data plane and scheduler surface: read-only authority/control
+tables, no control-plane mutation, immutable-audit `INSERT` only, and audit
+sequence `USAGE` only. The artifact never grants DDL, changes ownership, or
+grants audit update/delete/truncate. It pins a trusted transaction-local
+`search_path` and qualifies every persistent target with the `public` schema.
+
+Configure `PUBLISHING_DATABASE_URL` as an encrypted Coolify runtime secret and
+leave `DATABASE_URL` unchanged. A missing Publishing URL fails Publishing
+routes and the scheduler closed; it never falls back to the CMS owner connection
+outside tests. Before enabling the Global Publishing Gate, verify through the
+dedicated role both the mandatory legacy Blog-table smoke and a scheduler
+heartbeat.

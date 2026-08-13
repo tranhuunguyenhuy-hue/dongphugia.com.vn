@@ -1,5 +1,5 @@
 import { publishingJson } from '@/lib/publishing/http'
-import prisma from '@/lib/prisma'
+import prisma from '@/lib/publishing/database'
 import { withAuthenticatedPublishingRoute } from '@/lib/publishing/route'
 
 export const dynamic = 'force-dynamic'

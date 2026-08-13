@@ -2,7 +2,7 @@ import { createHash, randomUUID } from 'node:crypto'
 
 import { Prisma } from '@prisma/client'
 
-import prisma from '@/lib/prisma'
+import prisma from './database'
 import { requireWritesAllowed } from '@/lib/write-freeze'
 
 import { PublishingApiError } from './errors'

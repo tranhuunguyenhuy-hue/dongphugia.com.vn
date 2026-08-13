@@ -1,4 +1,4 @@
-import prisma from '@/lib/prisma'
+import prisma from './database'
 
 import type { PublishingRuntimeConfig } from './config'
 import { PublishingApiError } from './errors'

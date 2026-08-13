@@ -75,22 +75,21 @@ describe("Publishing API v1 runtime grants artifact", () => {
   it("grants only the Publishing runtime surface and preserves immutable audit rows", () => {
     const tableGrants = tableGrantMap()
     expect(Object.fromEntries(tableGrants)).toEqual({
-      publishing_machine_identities: ["INSERT", "SELECT", "UPDATE"],
-      publishing_identity_capabilities: ["INSERT", "SELECT", "UPDATE"],
-      publishing_credentials: ["INSERT", "SELECT", "UPDATE"],
+      publishing_machine_identities: ["SELECT"],
+      publishing_identity_capabilities: ["SELECT"],
+      publishing_credentials: ["SELECT"],
+      publishing_identity_ip_allowlist: ["SELECT"],
+      publishing_global_controls: ["SELECT"],
       publishing_managed_media: ["INSERT", "SELECT", "UPDATE"],
       publishing_rate_limit_windows: ["INSERT", "SELECT", "UPDATE"],
-      publishing_identity_ip_allowlist: ["DELETE", "INSERT", "SELECT", "UPDATE"],
       publishing_idempotency_records: ["DELETE", "INSERT", "SELECT", "UPDATE"],
       publishing_blog_post_media: ["DELETE", "INSERT", "SELECT"],
-      publishing_global_controls: ["SELECT", "UPDATE"],
       publishing_scheduler_state: ["INSERT", "SELECT", "UPDATE"],
-      publishing_audit_events: ["INSERT", "SELECT"],
+      publishing_audit_events: ["INSERT"],
     })
 
-    expect(grants).toContain("publishing_identity_ip_allowlist_id_seq")
     expect(grants).toContain("publishing_audit_events_id_seq")
-    expect(grants).toContain("GRANT USAGE, SELECT ON SEQUENCE")
+    expect(grants).toContain("GRANT USAGE ON SEQUENCE")
     expect(grants).toContain("public.publishing_audit_events")
     expect(grants).not.toMatch(/ON TABLE\s+publishing_/)
     expect(grants).not.toMatch(/ON SEQUENCE\s+publishing_/)
@@ -103,12 +102,11 @@ describe("Publishing API v1 runtime grants artifact", () => {
   it("requires the pre-existing CMS ACL surface without granting or changing it", () => {
     expect(grants).toContain("publishing_required_legacy_table_privileges")
     const legacyPrivilegeMap = [...grants.matchAll(
-      /\('(admin_users|blog_categories|blog_tags|blog_post_tags|blog_posts)', '(SELECT|INSERT|UPDATE|DELETE)'\)/g,
+      /\('(blog_categories|blog_tags|blog_post_tags|blog_posts)', '(SELECT|INSERT|UPDATE|DELETE)'\)/g,
     )]
       .map((match) => `${match[1]}:${match[2]}`)
       .sort()
     expect(legacyPrivilegeMap).toEqual([
-        "admin_users:SELECT",
         "blog_categories:SELECT",
         "blog_post_tags:DELETE",
         "blog_post_tags:INSERT",
@@ -117,8 +115,8 @@ describe("Publishing API v1 runtime grants artifact", () => {
         "blog_posts:SELECT",
         "blog_posts:UPDATE",
         "blog_tags:SELECT",
-        "blog_tags:UPDATE",
       ])
+    expect(grants).toContain("('blog_tags', 'post_count', 'UPDATE')")
     expect(grants).toContain("legacy_sequence.relname = 'blog_posts_id_seq'")
     expect(grants).toContain("privilege.grantee = target_role_oid")
     expect(grants).toContain("privilege.grantee = 0")

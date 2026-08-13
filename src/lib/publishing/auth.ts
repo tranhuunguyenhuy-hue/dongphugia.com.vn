@@ -1,6 +1,7 @@
 import { createHash, randomBytes, randomUUID } from 'node:crypto'
 
-import prisma from '@/lib/prisma'
+import prisma from './database'
+import { requireWritesAllowed } from '@/lib/write-freeze'
 
 import { PublishingApiError } from './errors'
 import type { PublishingTransaction } from './idempotency'
@@ -71,19 +72,19 @@ export async function lockPublishingMutationAuthorization(
     const now = input.now ?? new Date()
     await transaction.$queryRaw`
         SELECT id FROM publishing_machine_identities
-        WHERE id = ${input.identityId}::uuid FOR UPDATE
+        WHERE id = ${input.identityId}::uuid FOR SHARE
     `
     await transaction.$queryRaw`
         SELECT id FROM publishing_credentials
-        WHERE id = ${input.credentialId}::uuid FOR UPDATE
+        WHERE id = ${input.credentialId}::uuid FOR SHARE
     `
     await transaction.$queryRaw`
         SELECT capability FROM publishing_identity_capabilities
-        WHERE identity_id = ${input.identityId}::uuid FOR UPDATE
+        WHERE identity_id = ${input.identityId}::uuid FOR SHARE
     `
     await transaction.$queryRaw`
         SELECT ip_address FROM publishing_identity_ip_allowlist
-        WHERE identity_id = ${input.identityId}::uuid FOR UPDATE
+        WHERE identity_id = ${input.identityId}::uuid FOR SHARE
     `
 
     const credential = await transaction.publishing_credentials.findUnique({
@@ -237,18 +238,13 @@ export const prismaPublishingAuthRepository: PublishingAuthRepository = {
             },
         }
     },
-    async touchCredentialLastUsed(credentialId, now) {
-        const staleBefore = new Date(now.getTime() - 5 * 60 * 1000)
-        await prisma.publishing_credentials.updateMany({
-            where: {
-                id: credentialId,
-                OR: [
-                    { last_used_at: null },
-                    { last_used_at: { lt: staleBefore } },
-                ],
-            },
-            data: { last_used_at: now },
-        })
+    async touchCredentialLastUsed(credentialId, _now) {
+        requireWritesAllowed('publishing.auth.touch_credential_last_used')
+        await prisma.$executeRaw`
+            SELECT public.publishing_touch_credential_last_used(
+                ${credentialId}::uuid
+            )
+        `
     },
 }
 

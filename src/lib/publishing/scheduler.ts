@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 
-import prisma from '@/lib/prisma'
+import prisma from './database'
 import { isWriteFreezeEnabled, requireWritesAllowed } from '@/lib/write-freeze'
 
 import type { PublishingRuntimeConfig } from './config'
@@ -233,11 +233,11 @@ export async function runPublishingScheduler(input: {
             const globalGateEnabled = await lockGlobalPublishingGate(transaction)
             await transaction.$queryRaw`
                 SELECT id FROM publishing_machine_identities
-                WHERE id = ${candidate.publishing_identity_id}::uuid FOR UPDATE
+                WHERE id = ${candidate.publishing_identity_id}::uuid FOR SHARE
             `
             await transaction.$queryRaw`
                 SELECT capability FROM publishing_identity_capabilities
-                WHERE identity_id = ${candidate.publishing_identity_id}::uuid FOR UPDATE
+                WHERE identity_id = ${candidate.publishing_identity_id}::uuid FOR SHARE
             `
             const post = await transaction.blog_posts.findUnique({
                 where: { id: duePost.id },
