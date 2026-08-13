@@ -56,6 +56,7 @@ RUN apk add --no-cache libc6-compat openssl vips vips-cpp && \
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@img/sharp-libvips-linuxmusl-arm64/lib ./node_modules/@img/sharp-libvips-linuxmusl-arm64/lib
 COPY --from=builder --chown=nextjs:nodejs /app/scripts/publishing/run-scheduler.mjs ./scripts/publishing/run-scheduler.mjs
 
 USER nextjs
