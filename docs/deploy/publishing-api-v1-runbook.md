@@ -243,3 +243,34 @@ recovery target fails closed. Verify the committed SHA-256 manifest
 immutable commit before execution. Do not use this recovery on staging or a
 clean database, and do not change ownership or grant DDL privileges to the
 application runtime role.
+
+## Production runtime grants after a separate-owner migration
+
+When the approved production migration or recovery is executed by a database
+owner role that is distinct from the existing application runtime role, run the
+reviewed forward artifact
+`docs/deploy/publishing-api-v1-runtime-grants.sql` before invoking the
+Publishing API or scheduler. Verify
+`docs/deploy/publishing-api-v1-runtime-grants.sha256` from the immutable commit
+first, then supply the already-configured application database role only through
+the approved private execution path:
+
+```bash
+psql -X -v ON_ERROR_STOP=1 -v runtime_role=<application-runtime-role> \
+  -f docs/deploy/publishing-api-v1-runtime-grants.sql
+```
+
+The artifact is one transaction and fails closed unless the completed v1 schema
+has exactly the expected 11 Publishing tables, two identity sequences, and the
+reviewed append-only audit function/trigger; they must be owned by the migration
+role. The target must be a non-owner application login role with no
+role-membership path, no `CREATE` on the `public` schema, and no column-level
+Publishing ACL; none of the Publishing tables may enable or force row security.
+Its ACL state must be either empty or exactly the desired state from a prior
+successful run. Per-table DML is limited to operations used by the API, control
+plane, and scheduler; the immutable audit table receives only `SELECT`/`INSERT`,
+and the two sequences receive only `USAGE`/`SELECT`. The artifact never grants
+DDL, changes ownership, or grants audit update/delete/truncate. It pins a trusted
+transaction-local `search_path` and qualifies every persistent target with the
+`public` schema. Verify from the application runtime that the scheduler can
+update its heartbeat before enabling the Global Publishing Gate.
