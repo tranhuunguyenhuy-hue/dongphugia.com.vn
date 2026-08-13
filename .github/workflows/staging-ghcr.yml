@@ -14,6 +14,7 @@ concurrency:
 env:
   IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/dongphugia-web
   POSTGRES_IMAGE: postgres:16.10-bookworm@sha256:38471f330eb885e04de130b768d6db4e10469e2311879c7e5c699f6d2d8a1c74
+  PUBLISHING_ACCEPTANCE_NODE_IMAGE: node:24-bookworm@sha256:7e4b2953088599075c288871d109e23bc7a33384b96ca443a7cfb7b5c318b099
   BUILD_DATABASE_URL: postgresql://dpg_staging_build:dpg_staging_build_password@postgres:5432/dpg_staging_build
   DEFAULT_STAGING_SITE_URL: https://dongphugia-staging.47-131-92-97.sslip.io
   DEFAULT_BUNNY_CDN_HOSTNAME: cdn.dongphugia.com.vn
@@ -170,6 +171,48 @@ jobs:
           printf 'Runner architecture: %s\n' "$runner_arch"
           printf 'Docker architecture: %s\n' "$docker_arch"
           printf 'Node architecture: %s\n' "$node_arch"
+
+      # This is an owner-path control-plane race harness on the disposable CI
+      # database. Dedicated runtime-role/RLS and HTTP-route acceptance remain
+      # separate staging gates and must never be inferred from this step.
+      - name: Run disposable Publishing API authority-race harness
+        shell: bash
+        env:
+          BUILD_NETWORK: ${{ job.services.postgres.network }}
+        run: |
+          set -euo pipefail
+
+          sponsor_id="$(
+            docker run --rm --network "$BUILD_NETWORK" \
+              -e PGPASSWORD=dpg_staging_build_password \
+              "$POSTGRES_IMAGE" \
+              psql -h postgres -U dpg_staging_build -d dpg_staging_build -Atc "
+                INSERT INTO admin_users (email, name, password_hash, role, is_active, username)
+                VALUES (
+                  'stg-publishing-harness@example.invalid',
+                  'Staging Publishing Harness',
+                  'not-used-by-disposable-harness',
+                  'admin',
+                  true,
+                  'stg-publishing-harness'
+                )
+                ON CONFLICT (email) DO UPDATE
+                SET is_active = true
+                RETURNING id;
+              "
+          )"
+
+          test "$sponsor_id" -gt 0
+
+          docker run --rm --network "$BUILD_NETWORK" \
+            -v "$PWD:/workspace:ro" \
+            -w /workspace \
+            -e PUBLISHING_CONCURRENCY_TEST_CONFIRM=disposable \
+            -e PUBLISHING_CONCURRENCY_TEST_DATABASE_URL="$BUILD_DATABASE_URL" \
+            -e PUBLISHING_DATABASE_URL="$BUILD_DATABASE_URL" \
+            -e PUBLISHING_TEST_SPONSOR_ADMIN_ID="$sponsor_id" \
+            "$PUBLISHING_ACCEPTANCE_NODE_IMAGE" \
+            npm run publishing:test-postgres-concurrency
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3

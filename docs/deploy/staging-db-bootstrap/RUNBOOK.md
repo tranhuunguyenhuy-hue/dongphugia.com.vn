@@ -24,7 +24,11 @@ separate approval is given.
 
 - Staging PostgreSQL only.
 - No production database.
-- No admin account seed.
+- No admin account seed in the private staging database. The GitHub Actions
+  disposable build database may create one synthetic active sponsor row with an
+  unusable placeholder credential only for the isolated Publishing API
+  authority-race harness; it is discarded with that service container and is
+  never a staging or production account.
 - No customer, quote, order, session, password, key, or production content.
 - No connection strings committed to the repository.
 - Executing these SQL artefacts authorizes no GitHub workflow, GHCR, Coolify,
