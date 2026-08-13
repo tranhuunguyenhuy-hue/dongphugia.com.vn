@@ -9,7 +9,7 @@ export async function lockGlobalPublishingGate(
     transaction: PublishingTransaction,
 ): Promise<boolean> {
     await transaction.$queryRaw`
-        SELECT id FROM publishing_global_controls WHERE id = 1 FOR UPDATE
+        SELECT id FROM publishing_global_controls WHERE id = 1 FOR SHARE
     `
     const control = await transaction.publishing_global_controls.findUnique({
         where: { id: 1 },

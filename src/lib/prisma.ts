@@ -22,8 +22,12 @@ const RAW_WRITE_OPERATIONS = new Set([
     'runCommandRaw',
 ])
 
-const prismaClientSingleton = () => {
-    return new PrismaClient().$extends({
+export const createProtectedPrismaClient = (databaseUrl?: string) => {
+    const client = databaseUrl
+        ? new PrismaClient({ datasources: { db: { url: databaseUrl } } })
+        : new PrismaClient()
+
+    return client.$extends({
         query: {
             async $allOperations({ model, operation, query, args }) {
                 if (
@@ -40,10 +44,10 @@ const prismaClientSingleton = () => {
 }
 
 declare const globalThis: {
-    prismaGlobal: ReturnType<typeof prismaClientSingleton>;
+    prismaGlobal: ReturnType<typeof createProtectedPrismaClient>;
 } & typeof global;
 
-const prisma = globalThis.prismaGlobal ?? prismaClientSingleton()
+const prisma = globalThis.prismaGlobal ?? createProtectedPrismaClient()
 
 export default prisma
 

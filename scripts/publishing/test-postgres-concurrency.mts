@@ -26,6 +26,8 @@ if (
 
 // All application imports read the explicitly isolated test connection.
 process.env.DATABASE_URL = databaseUrl
+process.env.PUBLISHING_DATABASE_URL = databaseUrl
+process.env.NODE_ENV = 'test'
 const projectRequire = createRequire(import.meta.url)
 const prisma = projectRequire('../../src/lib/prisma.ts').default as typeof import('../../src/lib/prisma.ts').default
 const { lockPublishingMutationAuthorization } = projectRequire('../../src/lib/publishing/auth.ts') as typeof import('../../src/lib/publishing/auth.ts')

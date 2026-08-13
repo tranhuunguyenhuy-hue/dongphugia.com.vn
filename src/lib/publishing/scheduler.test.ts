@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it } from 'vitest'
 
 import { assessScheduledPublication, runPublishingScheduler } from './scheduler'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 
 afterEach(() => {
     delete process.env.WRITE_FREEZE_MODE
@@ -69,5 +71,11 @@ describe('assessScheduledPublication', () => {
             published_count: 0,
             blocked_count: 0,
         })
+    })
+
+    it('uses share locks for authority reads rather than control-plane update authority', () => {
+        const scheduler = readFileSync(resolve(process.cwd(), 'src/lib/publishing/scheduler.ts'), 'utf8')
+        expect(scheduler).toContain('FOR SHARE')
+        expect(scheduler).not.toContain('FOR UPDATE')
     })
 })

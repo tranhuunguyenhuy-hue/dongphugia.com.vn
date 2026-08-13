@@ -6,6 +6,8 @@ import {
     hashPublishingCredential,
     type PublishingAuthRepository,
 } from './auth'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 
 const token = 'dpgp_staging_abcd1234_test-secret-value'
 
@@ -37,6 +39,11 @@ function repository(
 }
 
 describe('authenticatePublishingRequest', () => {
+    it('uses share locks for runtime authority reads so control-plane updates remain exclusive', () => {
+        const source = readFileSync(resolve(process.cwd(), 'src/lib/publishing/auth.ts'), 'utf8')
+        expect(source).toContain('FOR SHARE')
+        expect(source).not.toContain('FOR UPDATE')
+    })
     it('authenticates one Machine Identity and checks required capabilities', async () => {
         const repo = repository()
 
@@ -112,6 +119,11 @@ describe('authenticatePublishingRequest', () => {
                 'Publishing credential has expired',
             ),
         )
+    })
+
+    it('keeps last-use telemetry behind the write-freeze guard', () => {
+        const source = readFileSync(resolve(process.cwd(), 'src/lib/publishing/auth.ts'), 'utf8')
+        expect(source).toContain("requireWritesAllowed('publishing.auth.touch_credential_last_used')")
     })
 
     it('denies a missing capability without treating the token as invalid', async () => {

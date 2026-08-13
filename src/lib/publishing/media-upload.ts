@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto'
 
-import prisma from '@/lib/prisma'
+import prisma from './database'
 import { requireWritesAllowed } from '@/lib/write-freeze'
 
 import {

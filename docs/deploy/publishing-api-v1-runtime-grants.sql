@@ -26,18 +26,9 @@ CREATE TEMP TABLE publishing_expected_table_privileges (
 INSERT INTO publishing_expected_table_privileges (table_name, privilege_type)
 VALUES
   ('publishing_machine_identities', 'SELECT'),
-  ('publishing_machine_identities', 'INSERT'),
-  ('publishing_machine_identities', 'UPDATE'),
   ('publishing_identity_capabilities', 'SELECT'),
-  ('publishing_identity_capabilities', 'INSERT'),
-  ('publishing_identity_capabilities', 'UPDATE'),
   ('publishing_credentials', 'SELECT'),
-  ('publishing_credentials', 'INSERT'),
-  ('publishing_credentials', 'UPDATE'),
   ('publishing_identity_ip_allowlist', 'SELECT'),
-  ('publishing_identity_ip_allowlist', 'INSERT'),
-  ('publishing_identity_ip_allowlist', 'UPDATE'),
-  ('publishing_identity_ip_allowlist', 'DELETE'),
   ('publishing_managed_media', 'SELECT'),
   ('publishing_managed_media', 'INSERT'),
   ('publishing_managed_media', 'UPDATE'),
@@ -52,11 +43,9 @@ VALUES
   ('publishing_rate_limit_windows', 'INSERT'),
   ('publishing_rate_limit_windows', 'UPDATE'),
   ('publishing_global_controls', 'SELECT'),
-  ('publishing_global_controls', 'UPDATE'),
   ('publishing_scheduler_state', 'SELECT'),
   ('publishing_scheduler_state', 'INSERT'),
   ('publishing_scheduler_state', 'UPDATE'),
-  ('publishing_audit_events', 'SELECT'),
   ('publishing_audit_events', 'INSERT');
 
 CREATE TEMP TABLE publishing_expected_sequence_privileges (
@@ -67,10 +56,7 @@ CREATE TEMP TABLE publishing_expected_sequence_privileges (
 
 INSERT INTO publishing_expected_sequence_privileges (sequence_name, privilege_type)
 VALUES
-  ('publishing_identity_ip_allowlist_id_seq', 'USAGE'),
-  ('publishing_identity_ip_allowlist_id_seq', 'SELECT'),
-  ('publishing_audit_events_id_seq', 'USAGE'),
-  ('publishing_audit_events_id_seq', 'SELECT');
+  ('publishing_audit_events_id_seq', 'USAGE');
 
 -- Publishing v1 deliberately does not manage ACLs on the pre-existing CMS
 -- objects. They remain owned and administered by the CMS migration path. The
@@ -85,16 +71,24 @@ CREATE TEMP TABLE publishing_required_legacy_table_privileges (
 
 INSERT INTO publishing_required_legacy_table_privileges (table_name, privilege_type)
 VALUES
-  ('admin_users', 'SELECT'),
   ('blog_categories', 'SELECT'),
   ('blog_tags', 'SELECT'),
-  ('blog_tags', 'UPDATE'),
   ('blog_post_tags', 'SELECT'),
   ('blog_post_tags', 'INSERT'),
   ('blog_post_tags', 'DELETE'),
   ('blog_posts', 'SELECT'),
   ('blog_posts', 'INSERT'),
   ('blog_posts', 'UPDATE');
+
+CREATE TEMP TABLE publishing_required_legacy_column_privileges (
+  table_name name NOT NULL,
+  column_name name NOT NULL,
+  privilege_type text NOT NULL,
+  PRIMARY KEY (table_name, column_name, privilege_type)
+) ON COMMIT DROP;
+
+INSERT INTO publishing_required_legacy_column_privileges (table_name, column_name, privilege_type)
+VALUES ('blog_tags', 'post_count', 'UPDATE');
 
 DO $$
 DECLARE
@@ -130,6 +124,7 @@ DECLARE
   table_effective_diff_count integer;
   sequence_effective_diff_count integer;
   missing_legacy_table_privilege_count integer;
+  missing_legacy_column_privilege_count integer;
   legacy_object_owner_count integer;
   public_legacy_table_privilege_count integer;
   grantable_legacy_table_privilege_count integer;
@@ -172,6 +167,25 @@ BEGIN
     WHERE legacy_namespace.nspname = 'public'
       AND legacy_table.relkind = 'r'
       AND legacy_table.relname = required.table_name
+      AND privilege.grantee = target_role_oid
+      AND privilege.privilege_type = required.privilege_type
+      AND NOT privilege.is_grantable
+  );
+
+  SELECT count(*) INTO missing_legacy_column_privilege_count
+  FROM publishing_required_legacy_column_privileges required
+  WHERE NOT EXISTS (
+    SELECT 1
+    FROM pg_attribute legacy_column
+    JOIN pg_class legacy_table ON legacy_table.oid = legacy_column.attrelid
+    JOIN pg_namespace legacy_namespace ON legacy_namespace.oid = legacy_table.relnamespace
+    CROSS JOIN LATERAL aclexplode(
+      coalesce(legacy_column.attacl, acldefault('c', legacy_table.relowner))
+    ) privilege
+    WHERE legacy_namespace.nspname = 'public'
+      AND legacy_table.relkind = 'r'
+      AND legacy_table.relname = required.table_name
+      AND legacy_column.attname = required.column_name
       AND privilege.grantee = target_role_oid
       AND privilege.privilege_type = required.privilege_type
       AND NOT privilege.is_grantable
@@ -292,6 +306,7 @@ BEGIN
     AND has_sequence_privilege(target_role, legacy_sequence.oid, checked.privilege_type);
 
   IF missing_legacy_table_privilege_count <> 0
+    OR missing_legacy_column_privilege_count <> 0
     OR missing_legacy_sequence_privilege_count <> 0
     OR legacy_object_owner_count <> 0
     OR public_legacy_table_privilege_count <> 0
@@ -726,16 +741,20 @@ BEGIN
   END IF;
 END $$;
 
-GRANT SELECT, INSERT, UPDATE ON TABLE
+GRANT SELECT ON TABLE
   public.publishing_machine_identities,
   public.publishing_identity_capabilities,
   public.publishing_credentials,
+  public.publishing_identity_ip_allowlist,
+  public.publishing_global_controls
+TO :"runtime_role";
+
+GRANT SELECT, INSERT, UPDATE ON TABLE
   public.publishing_managed_media,
   public.publishing_rate_limit_windows
 TO :"runtime_role";
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE
-  public.publishing_identity_ip_allowlist,
   public.publishing_idempotency_records
 TO :"runtime_role";
 
@@ -743,20 +762,15 @@ GRANT SELECT, INSERT, DELETE ON TABLE
   public.publishing_blog_post_media
 TO :"runtime_role";
 
-GRANT SELECT, UPDATE ON TABLE
-  public.publishing_global_controls
-TO :"runtime_role";
-
 GRANT SELECT, INSERT, UPDATE ON TABLE
   public.publishing_scheduler_state
 TO :"runtime_role";
 
-GRANT SELECT, INSERT ON TABLE
+GRANT INSERT ON TABLE
   public.publishing_audit_events
 TO :"runtime_role";
 
-GRANT USAGE, SELECT ON SEQUENCE
-  public.publishing_identity_ip_allowlist_id_seq,
+GRANT USAGE ON SEQUENCE
   public.publishing_audit_events_id_seq
 TO :"runtime_role";
 
