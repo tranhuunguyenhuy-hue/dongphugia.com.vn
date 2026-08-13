@@ -4,7 +4,7 @@ import { useState, useTransition } from 'react'
 import { createBlogTag, deleteBlogTag } from '@/lib/blog-actions'
 import { slugify } from '@/lib/utils'
 import { toast } from 'sonner'
-import { Plus, Trash2, Loader2, Tag } from 'lucide-react'
+import { Archive, Plus, Loader2, Tag } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 interface TagItem {
@@ -43,7 +43,7 @@ export function TagsClient({ initialTags }: { initialTags: TagItem[] }) {
             if (result?.message) {
                 toast.error(result.message)
             } else {
-                toast.success(`Đã xóa tag "${tagName}"`)
+                toast.success(`Đã ngừng dùng tag "${tagName}"`)
                 setTags((prev) => prev.filter((t) => t.id !== id))
             }
             setDeletingId(null)
@@ -111,7 +111,7 @@ export function TagsClient({ initialTags }: { initialTags: TagItem[] }) {
                                 >
                                     {isPending && deletingId === tag.id
                                         ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                        : <Trash2 className="h-3.5 w-3.5" />
+                                        : <Archive className="h-3.5 w-3.5" />
                                     }
                                 </Button>
                             </li>

@@ -2,11 +2,11 @@ import Link from 'next/link'
 import prisma from '@/lib/prisma'
 import { DeferredResponsiveMedia } from '@/components/media/deferred-responsive-media'
 
-export const revalidate = 3600
+export const revalidate = 300
 
 export async function BlogSection() {
     const posts = await prisma.blog_posts.findMany({
-        where: { status: 'published' },
+        where: { status: 'published', published_at: { lte: new Date() } },
         include: { blog_categories: true },
         orderBy: { created_at: 'desc' },
         take: 3
@@ -68,7 +68,7 @@ export async function BlogSection() {
                                 </div>
                                 <div className="flex flex-col gap-2">
                                     <p className="text-sm font-medium text-gray-500">
-                                        {dateFormatter.format(post.created_at)}
+                                        {dateFormatter.format(post.published_at ?? post.created_at)}
                                     </p>
                                     <h3 className="line-clamp-2 text-xl font-bold leading-tight text-[#192125] transition-colors group-hover:text-[#2E7A96]">
                                         {post.title}

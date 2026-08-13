@@ -1,10 +1,10 @@
-import { cache } from 'react'
+import { unstable_cache } from 'next/cache'
 import type { Prisma } from '@prisma/client'
 import prisma from '@/lib/prisma'
 
 const POSTS_PER_PAGE = 9
 
-export const getBlogCategories = cache(async () => {
+const getBlogCategoriesCached = unstable_cache(async () => {
     return prisma.blog_categories.findMany({
         where: {
             is_active: true,
@@ -17,15 +17,37 @@ export const getBlogCategories = cache(async () => {
         },
         orderBy: { sort_order: 'asc' },
     })
-})
+}, ['public-blog-categories'], { revalidate: 300, tags: ['blog'] })
 
-export const getBlogPosts = cache(async (options: {
+async function getBlogCategoriesDirect() {
+    return prisma.blog_categories.findMany({
+        where: {
+            is_active: true,
+            blog_posts: {
+                some: {
+                    status: 'published',
+                    published_at: { lte: new Date() },
+                },
+            },
+        },
+        orderBy: { sort_order: 'asc' },
+    })
+}
+
+export async function getBlogCategories() {
+    if (process.env.NODE_ENV === 'test') return getBlogCategoriesDirect()
+    return getBlogCategoriesCached()
+}
+
+type BlogPostOptions = {
     categorySlug?: string
     tagSlug?: string
     page?: number
     limit?: number
     featuredOnly?: boolean
-} = {}) => {
+}
+
+const getBlogPostsCached = unstable_cache(async (options: BlogPostOptions = {}) => {
     const { categorySlug, tagSlug, page = 1, limit = POSTS_PER_PAGE, featuredOnly } = options
 
     const where: Prisma.blog_postsWhereInput = {
@@ -72,9 +94,13 @@ export const getBlogPosts = cache(async (options: {
         totalPages: Math.ceil(total / limit),
         currentPage: page,
     }
-})
+}, ['public-blog-posts'], { revalidate: 300, tags: ['blog'] })
 
-export const getFeaturedBlogPosts = cache(async (limit = 1) => {
+export async function getBlogPosts(options: BlogPostOptions = {}) {
+    return getBlogPostsCached(options)
+}
+
+const getFeaturedBlogPostsCached = unstable_cache(async (limit = 1) => {
     return prisma.blog_posts.findMany({
         where: {
             status: 'published',
@@ -87,9 +113,13 @@ export const getFeaturedBlogPosts = cache(async (limit = 1) => {
         orderBy: { published_at: 'desc' },
         take: limit,
     })
-})
+}, ['public-featured-blog-posts'], { revalidate: 300, tags: ['blog'] })
 
-export const getBlogPostBySlug = cache(async (slug: string) => {
+export async function getFeaturedBlogPosts(limit = 1) {
+    return getFeaturedBlogPostsCached(limit)
+}
+
+const getBlogPostBySlugCached = unstable_cache(async (slug: string) => {
     return prisma.blog_posts.findFirst({
         where: {
             slug,
@@ -103,9 +133,32 @@ export const getBlogPostBySlug = cache(async (slug: string) => {
             },
         },
     })
-})
+}, ['public-blog-post-by-slug'], { revalidate: 300, tags: ['blog'] })
 
-export const getRelatedBlogPosts = cache(async (postId: number, categoryId: number, limit = 3) => {
+async function getBlogPostBySlugDirect(slug: string) {
+    return prisma.blog_posts.findFirst({
+        where: {
+            slug,
+            status: 'published',
+            published_at: { lte: new Date() },
+        },
+        include: {
+            blog_categories: { select: { id: true, name: true, slug: true } },
+            blog_post_tags: {
+                include: { blog_tags: { select: { name: true, slug: true } } },
+            },
+        },
+    })
+}
+
+export async function getBlogPostBySlug(slug: string) {
+    // Vitest does not install Next's incremental cache. Keep the database seam
+    // directly testable while production always uses the tagged ISR cache.
+    if (process.env.NODE_ENV === 'test') return getBlogPostBySlugDirect(slug)
+    return getBlogPostBySlugCached(slug)
+}
+
+const getRelatedBlogPostsCached = unstable_cache(async (postId: number, categoryId: number, limit = 3) => {
     return prisma.blog_posts.findMany({
         where: {
             id: { not: postId },
@@ -119,15 +172,23 @@ export const getRelatedBlogPosts = cache(async (postId: number, categoryId: numb
         orderBy: { published_at: 'desc' },
         take: limit,
     })
-})
+}, ['public-related-blog-posts'], { revalidate: 300, tags: ['blog'] })
 
-export const getPopularTags = cache(async (limit = 10) => {
+export async function getRelatedBlogPosts(postId: number, categoryId: number, limit = 3) {
+    return getRelatedBlogPostsCached(postId, categoryId, limit)
+}
+
+const getPopularTagsCached = unstable_cache(async (limit = 10) => {
     return prisma.blog_tags.findMany({
-        where: { post_count: { gt: 0 } },
+        where: { is_active: true, post_count: { gt: 0 } },
         orderBy: { post_count: 'desc' },
         take: limit,
     })
-})
+}, ['public-popular-blog-tags'], { revalidate: 300, tags: ['blog'] })
+
+export async function getPopularTags(limit = 10) {
+    return getPopularTagsCached(limit)
+}
 
 export async function incrementViewCount(slug: string) {
     try {

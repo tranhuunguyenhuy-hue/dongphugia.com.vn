@@ -4,7 +4,7 @@
 -- - idempotent inserts/updates;
 -- - no admin account;
 -- - no customer, quote, order, session, or production data;
--- - no secrets, passwords, Supabase keys, or connection strings.
+-- - no secrets, passwords, provider keys, or connection strings.
 --
 -- Execute only together with 001_schema_from_prisma.sql through the approved
 -- runbook command, which wraps both files in one psql --single-transaction

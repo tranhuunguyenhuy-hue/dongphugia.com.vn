@@ -10,7 +10,7 @@ import { getBlogPosts, getBlogCategories, getPopularTags } from '@/lib/public-ap
 import { isListingPageInRange, parseListingPage } from '@/lib/listing-pagination'
 import { canonicalUrl } from '@/lib/site'
 
-export const revalidate = 3600
+export const revalidate = 300
 
 export async function generateMetadata({ searchParams }: {
     searchParams: Promise<{ page?: string }>

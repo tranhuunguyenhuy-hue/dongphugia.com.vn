@@ -86,7 +86,9 @@ jobs:
               -U dpg_staging_build \
               -d dpg_staging_build \
               --file=/bootstrap/001_schema_from_prisma.sql \
-              --file=/bootstrap/002_seed_synthetic_stg_demo.sql
+              --file=/bootstrap/004_publishing_api_v1.sql \
+              --file=/bootstrap/002_seed_synthetic_stg_demo.sql \
+              --file=/bootstrap/004_align_synthetic_product_contract.sql
 
           tables="$(
             docker run --rm --network "$BUILD_NETWORK" \
@@ -144,7 +146,7 @@ jobs:
                 "select count(*) from products where sku like 'STG-DEMO-REDIRECT-%';"
           )"
 
-          if [ "$tables" != "46" ] \
+          if [ "$tables" != "57" ] \
             || [ "$products" != "17" ] \
             || [ "$canonical_products" != "5" ] \
             || [ "$redirect_target_products" != "12" ] \
@@ -208,6 +210,7 @@ jobs:
             DEPLOY_TARGET=staging
             NEXT_PUBLIC_GTM_ID=${{ vars.STAGING_NEXT_PUBLIC_GTM_ID }}
             BUNNY_CDN_HOSTNAME=${{ vars.STAGING_BUNNY_CDN_HOSTNAME || env.DEFAULT_BUNNY_CDN_HOSTNAME }}
+            PUBLISHING_BUNNY_CDN_HOSTNAME=${{ vars.STAGING_PUBLISHING_BUNNY_CDN_HOSTNAME || vars.STAGING_BUNNY_CDN_HOSTNAME || env.DEFAULT_BUNNY_CDN_HOSTNAME }}
 
       - name: Verify image manifest and attestations
         id: verify

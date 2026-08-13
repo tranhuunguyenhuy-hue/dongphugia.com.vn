@@ -54,6 +54,7 @@ jobs:
             psql --set=ON_ERROR_STOP=1 --single-transaction \
               -h postgres -U dpg_homepage_test -d dpg_homepage_test \
               --file=/bootstrap/001_schema_from_prisma.sql \
+              --file=/bootstrap/004_publishing_api_v1.sql \
               --file=/bootstrap/002_seed_synthetic_stg_demo.sql
 
           docker run --rm --network "$POSTGRES_NETWORK" \

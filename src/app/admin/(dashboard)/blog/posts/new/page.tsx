@@ -6,7 +6,7 @@ import { BlogPostForm } from '../blog-post-form'
 export default async function NewBlogPostPage() {
     const [categories, tags] = await Promise.all([
         prisma.blog_categories.findMany({ where: { is_active: true }, orderBy: { sort_order: 'asc' } }),
-        prisma.blog_tags.findMany({ orderBy: { name: 'asc' } }),
+        prisma.blog_tags.findMany({ where: { is_active: true }, orderBy: { name: 'asc' } }),
     ])
 
     return (

@@ -67,6 +67,7 @@ jobs:
             DEPLOY_TARGET=production
             NEXT_PUBLIC_SITE_URL=${{ env.PRODUCTION_SITE_URL }}
             BUNNY_CDN_HOSTNAME=${{ env.BUNNY_CDN_HOSTNAME }}
+            PUBLISHING_BUNNY_CDN_HOSTNAME=${{ vars.PRODUCTION_PUBLISHING_BUNNY_CDN_HOSTNAME || env.BUNNY_CDN_HOSTNAME }}
 
       - name: Verify pushed digest and source label
         shell: bash

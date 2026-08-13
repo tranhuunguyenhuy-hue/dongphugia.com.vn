@@ -309,35 +309,52 @@ model blog_post_tags {
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model blog_posts {
-  id              Int              @id @default(autoincrement())
-  title           String           @db.VarChar(300)
-  slug            String           @unique @db.VarChar(300)
-  excerpt         String?
-  content         String           @default("")
-  category_id     Int
-  thumbnail_url   String?
-  cover_image_url String?
-  seo_title       String?          @db.VarChar(200)
-  seo_description String?          @db.VarChar(500)
-  seo_keywords    String?          @db.VarChar(500)
-  reading_time    Int?
-  view_count      Int              @default(0)
-  status          String           @default("draft") @db.VarChar(20)
-  published_at    DateTime?        @db.Timestamptz(6)
-  author_name     String           @default("Đông Phú Gia") @db.VarChar(100)
-  author_avatar   String?
-  is_featured     Boolean          @default(false)
-  is_pinned       Boolean          @default(false)
-  created_at      DateTime         @default(now()) @db.Timestamptz(6)
-  updated_at      DateTime         @default(now()) @db.Timestamptz(6)
-  blog_post_tags  blog_post_tags[]
-  blog_categories blog_categories  @relation(fields: [category_id], references: [id], onUpdate: NoAction)
+  id                       Int                            @id @default(autoincrement())
+  title                    String                         @db.VarChar(300)
+  slug                     String                         @unique @db.VarChar(300)
+  excerpt                  String?
+  content                  String                         @default("")
+  category_id              Int
+  thumbnail_url            String?
+  cover_image_url          String?
+  seo_title                String?                        @db.VarChar(200)
+  seo_description          String?                        @db.VarChar(500)
+  seo_keywords             String?                        @db.VarChar(500)
+  reading_time             Int?
+  view_count               Int                            @default(0)
+  status                   String                         @default("draft") @db.VarChar(20)
+  published_at             DateTime?                      @db.Timestamptz(6)
+  author_name              String                         @default("Ban Biên Tập Đông Phú Gia") @db.VarChar(100)
+  author_avatar            String?
+  is_featured              Boolean                        @default(false)
+  is_pinned                Boolean                        @default(false)
+  created_at               DateTime                       @default(now()) @db.Timestamptz(6)
+  updated_at               DateTime                       @default(now()) @db.Timestamptz(6)
+  publishing_identity_id   String?                        @db.Uuid
+  external_id              String?                        @db.VarChar(200)
+  version                  Int                            @default(1)
+  first_published_at       DateTime?                      @db.Timestamptz(6)
+  scheduled_for            DateTime?                      @db.Timestamptz(6)
+  scheduled_timezone       String?                        @db.VarChar(100)
+  scheduled_version        Int?
+  schedule_blocked_code    String?                        @db.VarChar(100)
+  schedule_blocked_at      DateTime?                      @db.Timestamptz(6)
+  schedule_last_attempt_at DateTime?                      @db.Timestamptz(6)
+  blog_post_tags           blog_post_tags[]
+  blog_categories          blog_categories                @relation(fields: [category_id], references: [id], onUpdate: NoAction)
+  publishing_identity      publishing_machine_identities? @relation(fields: [publishing_identity_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  publishing_media         publishing_blog_post_media[]
+  publishing_audit_events  publishing_audit_events[]
 
+  @@unique([publishing_identity_id, external_id], map: "uq_blog_posts_publishing_external")
   @@index([category_id], map: "idx_blog_posts_category")
   @@index([is_featured], map: "idx_blog_posts_featured")
   @@index([published_at], map: "idx_blog_posts_published")
   @@index([slug], map: "idx_blog_posts_slug")
   @@index([status], map: "idx_blog_posts_status")
+  @@index([publishing_identity_id, updated_at(sort: Desc), id(sort: Desc)], map: "idx_blog_posts_publishing_list")
+  @@index([publishing_identity_id, status, updated_at(sort: Desc), id(sort: Desc)], map: "idx_blog_posts_publishing_status")
+  @@index([status, scheduled_for, id], map: "idx_blog_posts_scheduler")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -347,8 +364,12 @@ model blog_tags {
   slug           String           @unique @db.VarChar(50)
   description    String?
   post_count     Int              @default(0)
+  is_active      Boolean          @default(true)
   created_at     DateTime         @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime         @default(now()) @db.Timestamptz(6)
   blog_post_tags blog_post_tags[]
+
+  @@index([is_active, name], map: "idx_blog_tags_active_name")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -693,25 +714,211 @@ model product_secondary_subcategories {
 /// Admin users with role-based access control.
 /// Roles: admin | sale_manager | sale
 model admin_users {
-  id              Int              @id @default(autoincrement())
-  email           String           @unique @db.VarChar(200)
-  name            String           @db.VarChar(100)
-  password_hash   String           @db.VarChar(255)
-  role            String           @default("sale") @db.VarChar(20)
-  is_active       Boolean          @default(true)
-  avatar_url      String?          @db.VarChar(500)
-  last_login_at   DateTime?        @db.Timestamptz(6)
-  created_at      DateTime         @default(now()) @db.Timestamptz(6)
-  updated_at      DateTime         @default(now()) @db.Timestamptz(6)
-  username        String?          @unique @db.VarChar(100)
-  sessions        admin_sessions[]
-  audit_logs      audit_logs[]
-  orders_assigned orders[]         @relation("order_assigned_to")
-  quotes_assigned quote_requests[] @relation("quote_assigned_to")
+  id                              Int                             @id @default(autoincrement())
+  email                           String                          @unique @db.VarChar(200)
+  name                            String                          @db.VarChar(100)
+  password_hash                   String                          @db.VarChar(255)
+  role                            String                          @default("sale") @db.VarChar(20)
+  is_active                       Boolean                         @default(true)
+  avatar_url                      String?                         @db.VarChar(500)
+  last_login_at                   DateTime?                       @db.Timestamptz(6)
+  created_at                      DateTime                        @default(now()) @db.Timestamptz(6)
+  updated_at                      DateTime                        @default(now()) @db.Timestamptz(6)
+  username                        String?                         @unique @db.VarChar(100)
+  sessions                        admin_sessions[]
+  audit_logs                      audit_logs[]
+  publishing_sponsored_identities publishing_machine_identities[] @relation("publishing_identity_sponsor")
+  publishing_audit_events         publishing_audit_events[]       @relation("publishing_audit_admin_actor")
+  orders_assigned                 orders[]                        @relation("order_assigned_to")
+  quotes_assigned                 quote_requests[]                @relation("quote_assigned_to")
 
   @@index([email], map: "idx_admin_users_email")
   @@index([role], map: "idx_admin_users_role")
   @@index([is_active], map: "idx_admin_users_active")
+}
+
+/// Internal non-human identities authorized to use the Publishing API.
+model publishing_machine_identities {
+  id                  String                             @id @db.Uuid
+  name                String                             @unique @db.VarChar(120)
+  sponsor_user_id     Int
+  is_active           Boolean                            @default(true)
+  disabled_at         DateTime?                          @db.Timestamptz(6)
+  disabled_reason     String?                            @db.VarChar(300)
+  created_at          DateTime                           @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime                           @default(now()) @db.Timestamptz(6)
+  sponsor             admin_users                        @relation("publishing_identity_sponsor", fields: [sponsor_user_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  capabilities        publishing_identity_capabilities[]
+  credentials         publishing_credentials[]
+  ip_allowlist        publishing_identity_ip_allowlist[]
+  blog_posts          blog_posts[]
+  managed_media       publishing_managed_media[]
+  idempotency_records publishing_idempotency_records[]
+  rate_limit_windows  publishing_rate_limit_windows[]
+  audit_events        publishing_audit_events[]
+
+  @@index([sponsor_user_id], map: "idx_publishing_identities_sponsor")
+  @@index([is_active], map: "idx_publishing_identities_active")
+}
+
+model publishing_identity_capabilities {
+  identity_id String                        @db.Uuid
+  capability  String                        @db.VarChar(40)
+  granted_at  DateTime                      @default(now()) @db.Timestamptz(6)
+  revoked_at  DateTime?                     @db.Timestamptz(6)
+  identity    publishing_machine_identities @relation(fields: [identity_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([identity_id, capability])
+  @@index([capability, revoked_at], map: "idx_publishing_capabilities_active")
+}
+
+model publishing_credentials {
+  id                         String                        @id @db.Uuid
+  identity_id                String                        @db.Uuid
+  token_prefix               String                        @db.VarChar(32)
+  token_hash                 String                        @unique @db.Char(64)
+  environment                String                        @db.VarChar(20)
+  issued_at                  DateTime                      @default(now()) @db.Timestamptz(6)
+  expires_at                 DateTime                      @db.Timestamptz(6)
+  last_used_at               DateTime?                     @db.Timestamptz(6)
+  revoked_at                 DateTime?                     @db.Timestamptz(6)
+  revoke_reason              String?                       @db.VarChar(300)
+  rotated_from_credential_id String?                       @db.Uuid
+  identity                   publishing_machine_identities @relation(fields: [identity_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  rotated_from               publishing_credentials?       @relation("publishing_credential_rotation", fields: [rotated_from_credential_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  rotated_to                 publishing_credentials[]      @relation("publishing_credential_rotation")
+
+  @@index([identity_id, environment, expires_at], map: "idx_publishing_credentials_identity")
+  @@index([expires_at, revoked_at], map: "idx_publishing_credentials_expiry")
+}
+
+model publishing_identity_ip_allowlist {
+  id          Int                           @id @default(autoincrement())
+  identity_id String                        @db.Uuid
+  ip_address  String                        @db.VarChar(45)
+  created_at  DateTime                      @default(now()) @db.Timestamptz(6)
+  identity    publishing_machine_identities @relation(fields: [identity_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([identity_id, ip_address], map: "uq_publishing_identity_ip")
+}
+
+/// Minimal immutable media inventory used to prove ownership and readiness.
+model publishing_managed_media {
+  id            String                        @id @db.Uuid
+  identity_id   String                        @db.Uuid
+  purpose       String                        @db.VarChar(20)
+  status        String                        @default("processing") @db.VarChar(20)
+  source_mime   String                        @db.VarChar(50)
+  source_bytes  Int
+  source_sha256 String                        @db.Char(64)
+  source_width  Int?
+  source_height Int?
+  storage_path  String                        @unique @db.VarChar(500)
+  primary_url   String?                       @unique @db.VarChar(1000)
+  variants      Json?
+  created_at    DateTime                      @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime                      @default(now()) @db.Timestamptz(6)
+  identity      publishing_machine_identities @relation(fields: [identity_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  post_links    publishing_blog_post_media[]
+
+  @@index([identity_id, status], map: "idx_publishing_media_identity_status")
+  @@index([created_at], map: "idx_publishing_media_created")
+}
+
+model publishing_blog_post_media {
+  post_id    Int
+  media_id   String                   @db.Uuid
+  usage      String                   @db.VarChar(20)
+  created_at DateTime                 @default(now()) @db.Timestamptz(6)
+  post       blog_posts               @relation(fields: [post_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  media      publishing_managed_media @relation(fields: [media_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+
+  @@id([post_id, media_id, usage])
+  @@index([media_id], map: "idx_publishing_post_media_asset")
+  @@index([post_id, usage], map: "idx_publishing_post_media_usage")
+}
+
+model publishing_idempotency_records {
+  id              String                        @id @db.Uuid
+  identity_id     String                        @db.Uuid
+  key_hash        String                        @db.Char(64)
+  request_hash    String                        @db.Char(64)
+  operation       String                        @db.VarChar(80)
+  status          String                        @default("in_progress") @db.VarChar(20)
+  response_status Int?
+  safe_response   Json?
+  resource_type   String?                       @db.VarChar(40)
+  resource_id     String?                       @db.VarChar(200)
+  created_at      DateTime                      @default(now()) @db.Timestamptz(6)
+  completed_at    DateTime?                     @db.Timestamptz(6)
+  expires_at      DateTime                      @db.Timestamptz(6)
+  identity        publishing_machine_identities @relation(fields: [identity_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([identity_id, key_hash], map: "uq_publishing_idempotency_identity_key")
+  @@index([expires_at], map: "idx_publishing_idempotency_expiry")
+  @@index([resource_type, resource_id], map: "idx_publishing_idempotency_resource")
+}
+
+model publishing_rate_limit_windows {
+  identity_id   String                        @db.Uuid
+  bucket        String                        @db.VarChar(20)
+  window_start  DateTime                      @db.Timestamptz(6)
+  request_count Int                           @default(0)
+  updated_at    DateTime                      @default(now()) @db.Timestamptz(6)
+  identity      publishing_machine_identities @relation(fields: [identity_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([identity_id, bucket, window_start])
+  @@index([window_start], map: "idx_publishing_rate_window_cleanup")
+}
+
+model publishing_global_controls {
+  id                 Int      @id @default(1)
+  publishing_enabled Boolean  @default(false)
+  version            Int      @default(1)
+  updated_at         DateTime @default(now()) @db.Timestamptz(6)
+  updated_by_user_id Int?
+}
+
+model publishing_scheduler_state {
+  id                   Int       @id @default(1)
+  last_started_at      DateTime? @db.Timestamptz(6)
+  last_completed_at    DateTime? @db.Timestamptz(6)
+  last_success_at      DateTime? @db.Timestamptz(6)
+  last_run_id          String?   @db.Uuid
+  last_result_code     String?   @db.VarChar(80)
+  last_processed_count Int       @default(0)
+  last_published_count Int       @default(0)
+  last_blocked_count   Int       @default(0)
+  updated_at           DateTime  @default(now()) @db.Timestamptz(6)
+}
+
+model publishing_audit_events {
+  id                   BigInt                         @id @default(autoincrement())
+  actor_kind           String                         @db.VarChar(20)
+  identity_id          String?                        @db.Uuid
+  admin_actor_id       Int?
+  sponsor_user_id      Int?
+  action               String                         @db.VarChar(100)
+  post_id              Int?
+  external_id          String?                        @db.VarChar(200)
+  request_id           String?                        @db.Uuid
+  idempotency_key_hash String?                        @db.Char(64)
+  from_version         Int?
+  to_version           Int?
+  from_state           String?                        @db.VarChar(30)
+  to_state             String?                        @db.VarChar(30)
+  changed_fields       String[]                       @default([])
+  content_hash         String?                        @db.Char(64)
+  metadata             Json?
+  created_at           DateTime                       @default(now()) @db.Timestamptz(6)
+  identity             publishing_machine_identities? @relation(fields: [identity_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  admin_actor          admin_users?                   @relation("publishing_audit_admin_actor", fields: [admin_actor_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  post                 blog_posts?                    @relation(fields: [post_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+
+  @@index([created_at(sort: Desc)], map: "idx_publishing_audit_created")
+  @@index([identity_id, created_at(sort: Desc)], map: "idx_publishing_audit_identity")
+  @@index([post_id, created_at(sort: Desc)], map: "idx_publishing_audit_post")
+  @@index([request_id], map: "idx_publishing_audit_request")
 }
 
 /// Active sessions for admin users. One user can have multiple sessions (multi-device).

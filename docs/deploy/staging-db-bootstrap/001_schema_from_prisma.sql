@@ -2,7 +2,7 @@
 -- Generated from prisma/schema.prisma at commit 348f51a571749db8463b39b2d77cb2d42a751aaa
 -- Prisma CLI: 5.22.0
 -- Generation command: prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script
--- Scope: PostgreSQL schema bootstrap for an empty Supabase staging database only.
+-- Scope: PostgreSQL schema bootstrap for an empty private staging database only.
 -- Do not execute against production. Review runbook before use.
 
 -- CreateTable
@@ -1499,4 +1499,3 @@ ALTER TABLE "product_types" ADD CONSTRAINT "product_types_subcategory_id_fkey" F
 
 -- AddForeignKey
 ALTER TABLE "spec_options" ADD CONSTRAINT "spec_options_spec_definition_id_fkey" FOREIGN KEY ("spec_definition_id") REFERENCES "spec_definitions"("id") ON DELETE CASCADE ON UPDATE NO ACTION;
-

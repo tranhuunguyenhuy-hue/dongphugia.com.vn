@@ -11,7 +11,7 @@ import { sanitizeRichHtml } from '@/lib/html-sanitizer'
 
 import { getBlogPostBySlug, getRelatedBlogPosts } from '@/lib/public-api-blog'
 
-export const revalidate = 3600
+export const revalidate = 300
 
 export async function generateMetadata({ params }: { params: Promise<{ postSlug: string }> }) {
     const { postSlug } = await params
@@ -20,8 +20,8 @@ export async function generateMetadata({ params }: { params: Promise<{ postSlug:
     if (!post) return { title: 'Bài viết không tồn tại' }
 
     return {
-        title: `${post.title}`,
-        description: post.excerpt,
+        title: post.seo_title || post.title,
+        description: post.seo_description || post.excerpt,
         alternates: {
             canonical: canonicalUrl(`/blog/${post.blog_categories?.slug}/${post.slug}`),
         },
@@ -63,7 +63,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ categ
                 thumbnail_url: post.cover_image_url,
                 published_at: post.published_at,
                 updated_at: post.updated_at,
-                author_name: 'Đông Phú Gia',
+                author_name: 'Ban Biên Tập Đông Phú Gia',
                 slug: post.slug,
                 blog_categories: post.blog_categories,
             })} />

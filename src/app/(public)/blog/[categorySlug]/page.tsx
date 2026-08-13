@@ -9,7 +9,7 @@ import { canonicalUrl } from '@/lib/site'
 import { notFound } from 'next/navigation'
 import { isListingPageInRange, parseListingPage } from '@/lib/listing-pagination'
 
-export const revalidate = 3600
+export const revalidate = 300
 
 export async function generateMetadata({ params, searchParams }: {
     params: Promise<{ categorySlug: string }>
