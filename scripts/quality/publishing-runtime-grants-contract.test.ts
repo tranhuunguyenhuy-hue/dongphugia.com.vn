@@ -57,6 +57,7 @@ describe("Publishing API v1 runtime grants artifact", () => {
       "Publishing runtime grants found an unexpected Publishing sequence",
       "Publishing runtime grants require the migration role to own every Publishing sequence",
       "Publishing runtime role must exist, be a non-owner application login role, and differ from the migration role",
+      "Publishing runtime role requires safe direct existing CMS privileges without ownership, PUBLIC access, grant option, or DDL access",
       "Publishing runtime role must have no inherited or SET ROLE membership path",
       "Publishing runtime role must not have CREATE on the public schema",
       "Publishing runtime grants require no column-level Publishing ACLs",
@@ -97,5 +98,36 @@ describe("Publishing API v1 runtime grants artifact", () => {
     expect(grants).toContain("('UPDATE')) checked(privilege_type)")
     expect(grants).toContain("tgtype = 27")
     expect(grants).toContain("Exact desired state: safe idempotent rerun")
+  })
+
+  it("requires the pre-existing CMS ACL surface without granting or changing it", () => {
+    expect(grants).toContain("publishing_required_legacy_table_privileges")
+    const legacyPrivilegeMap = [...grants.matchAll(
+      /\('(admin_users|blog_categories|blog_tags|blog_post_tags|blog_posts)', '(SELECT|INSERT|UPDATE|DELETE)'\)/g,
+    )]
+      .map((match) => `${match[1]}:${match[2]}`)
+      .sort()
+    expect(legacyPrivilegeMap).toEqual([
+        "admin_users:SELECT",
+        "blog_categories:SELECT",
+        "blog_post_tags:DELETE",
+        "blog_post_tags:INSERT",
+        "blog_post_tags:SELECT",
+        "blog_posts:INSERT",
+        "blog_posts:SELECT",
+        "blog_posts:UPDATE",
+        "blog_tags:SELECT",
+        "blog_tags:UPDATE",
+      ])
+    expect(grants).toContain("legacy_sequence.relname = 'blog_posts_id_seq'")
+    expect(grants).toContain("privilege.grantee = target_role_oid")
+    expect(grants).toContain("privilege.grantee = 0")
+    expect(grants).toContain("NOT privilege.is_grantable")
+    expect(grants).toContain("privilege.is_grantable")
+    expect(grants).toContain("legacy_table.relowner = target_role_oid")
+    expect(grants).toContain("legacy_sequence.relowner = target_role_oid")
+    expect(grants).toContain("('TRUNCATE'), ('REFERENCES'), ('TRIGGER')")
+    expect(grants).toContain("(VALUES ('UPDATE')) checked(privilege_type)")
+    expect(grants).not.toMatch(/GRANT [^;]*\bblog_(?:categories|tags|post_tags|posts)\b/i)
   })
 })

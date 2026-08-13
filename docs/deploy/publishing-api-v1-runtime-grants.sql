@@ -72,6 +72,30 @@ VALUES
   ('publishing_audit_events_id_seq', 'USAGE'),
   ('publishing_audit_events_id_seq', 'SELECT');
 
+-- Publishing v1 deliberately does not manage ACLs on the pre-existing CMS
+-- objects. They remain owned and administered by the CMS migration path. The
+-- runtime nevertheless needs this exact existing surface, so assert it before
+-- touching Publishing ACLs rather than discovering a missing permission on a
+-- live API or scheduler request.
+CREATE TEMP TABLE publishing_required_legacy_table_privileges (
+  table_name name NOT NULL,
+  privilege_type text NOT NULL,
+  PRIMARY KEY (table_name, privilege_type)
+) ON COMMIT DROP;
+
+INSERT INTO publishing_required_legacy_table_privileges (table_name, privilege_type)
+VALUES
+  ('admin_users', 'SELECT'),
+  ('blog_categories', 'SELECT'),
+  ('blog_tags', 'SELECT'),
+  ('blog_tags', 'UPDATE'),
+  ('blog_post_tags', 'SELECT'),
+  ('blog_post_tags', 'INSERT'),
+  ('blog_post_tags', 'DELETE'),
+  ('blog_posts', 'SELECT'),
+  ('blog_posts', 'INSERT'),
+  ('blog_posts', 'UPDATE');
+
 DO $$
 DECLARE
   target_role name := current_setting('publishing.runtime_role')::name;
@@ -105,6 +129,15 @@ DECLARE
   sequence_effective_privilege_count integer;
   table_effective_diff_count integer;
   sequence_effective_diff_count integer;
+  missing_legacy_table_privilege_count integer;
+  legacy_object_owner_count integer;
+  public_legacy_table_privilege_count integer;
+  grantable_legacy_table_privilege_count integer;
+  unsafe_legacy_table_privilege_count integer;
+  missing_legacy_sequence_privilege_count integer;
+  public_legacy_sequence_privilege_count integer;
+  grantable_legacy_sequence_privilege_count integer;
+  unsafe_legacy_sequence_privilege_count integer;
 BEGIN
   SELECT oid INTO migration_role_oid
   FROM pg_roles
@@ -125,6 +158,150 @@ BEGIN
     OR NOT target_can_login
   THEN
     RAISE EXCEPTION 'Publishing runtime role must exist, be a non-owner application login role, and differ from the migration role';
+  END IF;
+
+  SELECT count(*) INTO missing_legacy_table_privilege_count
+  FROM publishing_required_legacy_table_privileges required
+  WHERE NOT EXISTS (
+    SELECT 1
+    FROM pg_class legacy_table
+    JOIN pg_namespace legacy_namespace ON legacy_namespace.oid = legacy_table.relnamespace
+    CROSS JOIN LATERAL aclexplode(
+      coalesce(legacy_table.relacl, acldefault('r', legacy_table.relowner))
+    ) privilege
+    WHERE legacy_namespace.nspname = 'public'
+      AND legacy_table.relkind = 'r'
+      AND legacy_table.relname = required.table_name
+      AND privilege.grantee = target_role_oid
+      AND privilege.privilege_type = required.privilege_type
+      AND NOT privilege.is_grantable
+  );
+
+  SELECT count(*) INTO legacy_object_owner_count
+  FROM (
+    SELECT legacy_table.oid
+    FROM pg_class legacy_table
+    JOIN pg_namespace legacy_namespace ON legacy_namespace.oid = legacy_table.relnamespace
+    WHERE legacy_namespace.nspname = 'public'
+      AND legacy_table.relkind = 'r'
+      AND legacy_table.relname IN (
+        SELECT table_name FROM publishing_required_legacy_table_privileges
+      )
+      AND legacy_table.relowner = target_role_oid
+    UNION ALL
+    SELECT legacy_sequence.oid
+    FROM pg_class legacy_sequence
+    JOIN pg_namespace legacy_namespace ON legacy_namespace.oid = legacy_sequence.relnamespace
+    WHERE legacy_namespace.nspname = 'public'
+      AND legacy_sequence.relkind = 'S'
+      AND legacy_sequence.relname = 'blog_posts_id_seq'
+      AND legacy_sequence.relowner = target_role_oid
+  ) owned_legacy_objects;
+
+  SELECT count(*) INTO public_legacy_table_privilege_count
+  FROM publishing_required_legacy_table_privileges required
+  WHERE EXISTS (
+    SELECT 1
+    FROM pg_class legacy_table
+    JOIN pg_namespace legacy_namespace ON legacy_namespace.oid = legacy_table.relnamespace
+    CROSS JOIN LATERAL aclexplode(
+      coalesce(legacy_table.relacl, acldefault('r', legacy_table.relowner))
+    ) privilege
+    WHERE legacy_namespace.nspname = 'public'
+      AND legacy_table.relkind = 'r'
+      AND legacy_table.relname = required.table_name
+      AND privilege.grantee = 0
+      AND privilege.privilege_type = required.privilege_type
+  );
+
+  SELECT count(*) INTO grantable_legacy_table_privilege_count
+  FROM pg_class legacy_table
+  JOIN pg_namespace legacy_namespace ON legacy_namespace.oid = legacy_table.relnamespace
+  CROSS JOIN LATERAL aclexplode(
+    coalesce(legacy_table.relacl, acldefault('r', legacy_table.relowner))
+  ) privilege
+  WHERE legacy_namespace.nspname = 'public'
+    AND legacy_table.relkind = 'r'
+    AND legacy_table.relname IN (
+      SELECT table_name FROM publishing_required_legacy_table_privileges
+    )
+    AND privilege.grantee = target_role_oid
+    AND privilege.is_grantable;
+
+  SELECT count(*) INTO unsafe_legacy_table_privilege_count
+  FROM pg_class legacy_table
+  JOIN pg_namespace legacy_namespace ON legacy_namespace.oid = legacy_table.relnamespace
+  CROSS JOIN (VALUES ('TRUNCATE'), ('REFERENCES'), ('TRIGGER')) checked(privilege_type)
+  WHERE legacy_namespace.nspname = 'public'
+    AND legacy_table.relkind = 'r'
+    AND legacy_table.relname IN (
+      SELECT table_name FROM publishing_required_legacy_table_privileges
+    )
+    AND has_table_privilege(target_role, legacy_table.oid, checked.privilege_type);
+
+  SELECT count(*) INTO missing_legacy_sequence_privilege_count
+  WHERE NOT EXISTS (
+    SELECT 1
+    FROM pg_class legacy_sequence
+    JOIN pg_namespace legacy_namespace ON legacy_namespace.oid = legacy_sequence.relnamespace
+    CROSS JOIN LATERAL aclexplode(
+      coalesce(legacy_sequence.relacl, acldefault('s', legacy_sequence.relowner))
+    ) privilege
+    WHERE legacy_namespace.nspname = 'public'
+      AND legacy_sequence.relkind = 'S'
+      AND legacy_sequence.relname = 'blog_posts_id_seq'
+      AND privilege.grantee = target_role_oid
+      AND privilege.privilege_type = 'USAGE'
+      AND NOT privilege.is_grantable
+  );
+
+  SELECT count(*) INTO public_legacy_sequence_privilege_count
+  WHERE EXISTS (
+    SELECT 1
+    FROM pg_class legacy_sequence
+    JOIN pg_namespace legacy_namespace ON legacy_namespace.oid = legacy_sequence.relnamespace
+    CROSS JOIN LATERAL aclexplode(
+      coalesce(legacy_sequence.relacl, acldefault('s', legacy_sequence.relowner))
+    ) privilege
+    WHERE legacy_namespace.nspname = 'public'
+      AND legacy_sequence.relkind = 'S'
+      AND legacy_sequence.relname = 'blog_posts_id_seq'
+      AND privilege.grantee = 0
+      AND privilege.privilege_type = 'USAGE'
+  );
+
+  SELECT count(*) INTO grantable_legacy_sequence_privilege_count
+  FROM pg_class legacy_sequence
+  JOIN pg_namespace legacy_namespace ON legacy_namespace.oid = legacy_sequence.relnamespace
+  CROSS JOIN LATERAL aclexplode(
+    coalesce(legacy_sequence.relacl, acldefault('s', legacy_sequence.relowner))
+  ) privilege
+  WHERE legacy_namespace.nspname = 'public'
+    AND legacy_sequence.relkind = 'S'
+    AND legacy_sequence.relname = 'blog_posts_id_seq'
+    AND privilege.grantee = target_role_oid
+    AND privilege.is_grantable;
+
+  SELECT count(*) INTO unsafe_legacy_sequence_privilege_count
+  FROM pg_class legacy_sequence
+  JOIN pg_namespace legacy_namespace ON legacy_namespace.oid = legacy_sequence.relnamespace
+  CROSS JOIN (VALUES ('UPDATE')) checked(privilege_type)
+  WHERE legacy_namespace.nspname = 'public'
+    AND legacy_sequence.relkind = 'S'
+    AND legacy_sequence.relname = 'blog_posts_id_seq'
+    AND has_sequence_privilege(target_role, legacy_sequence.oid, checked.privilege_type);
+
+  IF missing_legacy_table_privilege_count <> 0
+    OR missing_legacy_sequence_privilege_count <> 0
+    OR legacy_object_owner_count <> 0
+    OR public_legacy_table_privilege_count <> 0
+    OR public_legacy_sequence_privilege_count <> 0
+    OR grantable_legacy_table_privilege_count <> 0
+    OR grantable_legacy_sequence_privilege_count <> 0
+    OR unsafe_legacy_table_privilege_count <> 0
+    OR unsafe_legacy_sequence_privilege_count <> 0
+  THEN
+    RAISE EXCEPTION 'Publishing runtime role requires safe direct existing CMS privileges without ownership, PUBLIC access, grant option, or DDL access';
   END IF;
 
   WITH RECURSIVE reachable_roles(roleid) AS (
