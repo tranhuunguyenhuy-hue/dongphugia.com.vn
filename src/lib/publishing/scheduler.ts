@@ -233,11 +233,11 @@ export async function runPublishingScheduler(input: {
             const globalGateEnabled = await lockGlobalPublishingGate(transaction)
             await transaction.$queryRaw`
                 SELECT id FROM publishing_machine_identities
-                WHERE id = ${candidate.publishing_identity_id}::uuid FOR SHARE
+                WHERE id = ${candidate.publishing_identity_id}::uuid FOR KEY SHARE
             `
             await transaction.$queryRaw`
                 SELECT capability FROM publishing_identity_capabilities
-                WHERE identity_id = ${candidate.publishing_identity_id}::uuid FOR SHARE
+                WHERE identity_id = ${candidate.publishing_identity_id}::uuid FOR KEY SHARE
             `
             const post = await transaction.blog_posts.findUnique({
                 where: { id: duePost.id },
