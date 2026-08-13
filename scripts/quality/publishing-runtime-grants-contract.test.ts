@@ -1,0 +1,101 @@
+import { readFileSync } from "node:fs"
+import { createHash } from "node:crypto"
+import { resolve } from "node:path"
+import { describe, expect, it } from "vitest"
+
+const grants = readFileSync(
+  resolve(process.cwd(), "docs/deploy/publishing-api-v1-runtime-grants.sql"),
+  "utf8",
+)
+const manifest = readFileSync(
+  resolve(process.cwd(), "docs/deploy/publishing-api-v1-runtime-grants.sha256"),
+  "utf8",
+).trim()
+
+function tableGrantMap() {
+  const result = new Map<string, string[]>()
+  for (const match of grants.matchAll(
+    /GRANT ([A-Z, ]+) ON TABLE\s+([\s\S]*?)\s+TO :"runtime_role";/g,
+  )) {
+    const privileges = match[1].split(",").map((value) => value.trim()).sort()
+    const tables = match[2]
+      .split(",")
+      .map((value) => value.trim().replace(/^public\./, ""))
+    for (const table of tables) result.set(table, privileges)
+  }
+  return result
+}
+
+describe("Publishing API v1 runtime grants artifact", () => {
+  it("is an explicit, parameterized, atomic forward migration", () => {
+    expect(grants).toContain("\\if :{?runtime_role}")
+    expect(grants).toContain("\\set ON_ERROR_STOP on")
+    expect(grants).toContain("SELECT 1 / 0;")
+    expect(grants).not.toContain("\\quit")
+    expect(grants).toContain("SET LOCAL search_path = pg_catalog, public;")
+    expect(grants).toContain("BEGIN;")
+    expect(grants.trimEnd()).toMatch(/COMMIT;$/)
+    expect(grants).not.toContain("IF NOT EXISTS")
+    expect(grants).not.toContain("CREATE OR REPLACE")
+    expect(grants).not.toMatch(/\bALTER\s+OWNER\b/i)
+    expect(grants).not.toMatch(/\bGRANT\s+ALL\b/i)
+    expect(grants).not.toMatch(/\bTO\s+PUBLIC\b/i)
+  })
+
+  it("pins the reviewed deployment artifact", () => {
+    const digest = createHash("sha256").update(grants).digest("hex")
+    expect(manifest).toBe(`${digest}  publishing-api-v1-runtime-grants.sql`)
+  })
+
+  it("fails closed for an unexpected target, owner, or existing grant state", () => {
+    for (const guard of [
+      "Publishing runtime grants require --set=runtime_role=<application-runtime-role>",
+      "Publishing runtime grants require exactly 11 Publishing tables",
+      "Publishing runtime grants found an unexpected Publishing table",
+      "Publishing runtime grants require the migration role to own every Publishing table",
+      "Publishing runtime grants require exactly two Publishing identity sequences",
+      "Publishing runtime grants found an unexpected Publishing sequence",
+      "Publishing runtime grants require the migration role to own every Publishing sequence",
+      "Publishing runtime role must exist, be a non-owner application login role, and differ from the migration role",
+      "Publishing runtime role must have no inherited or SET ROLE membership path",
+      "Publishing runtime role must not have CREATE on the public schema",
+      "Publishing runtime grants require no column-level Publishing ACLs",
+      "Publishing runtime grants require no row security on Publishing tables",
+      "Publishing runtime grants require the reviewed immutable audit function",
+      "Publishing runtime grants require the reviewed enabled append-only audit trigger",
+      "Publishing runtime grants require no PUBLIC table or sequence grants",
+      "Publishing runtime grants require either zero privileges or the exact desired ACL state",
+      "Publishing runtime grants postcondition failed",
+    ]) {
+      expect(grants).toContain(guard)
+    }
+  })
+
+  it("grants only the Publishing runtime surface and preserves immutable audit rows", () => {
+    const tableGrants = tableGrantMap()
+    expect(Object.fromEntries(tableGrants)).toEqual({
+      publishing_machine_identities: ["INSERT", "SELECT", "UPDATE"],
+      publishing_identity_capabilities: ["INSERT", "SELECT", "UPDATE"],
+      publishing_credentials: ["INSERT", "SELECT", "UPDATE"],
+      publishing_managed_media: ["INSERT", "SELECT", "UPDATE"],
+      publishing_rate_limit_windows: ["INSERT", "SELECT", "UPDATE"],
+      publishing_identity_ip_allowlist: ["DELETE", "INSERT", "SELECT", "UPDATE"],
+      publishing_idempotency_records: ["DELETE", "INSERT", "SELECT", "UPDATE"],
+      publishing_blog_post_media: ["DELETE", "INSERT", "SELECT"],
+      publishing_global_controls: ["SELECT", "UPDATE"],
+      publishing_scheduler_state: ["INSERT", "SELECT", "UPDATE"],
+      publishing_audit_events: ["INSERT", "SELECT"],
+    })
+
+    expect(grants).toContain("publishing_identity_ip_allowlist_id_seq")
+    expect(grants).toContain("publishing_audit_events_id_seq")
+    expect(grants).toContain("GRANT USAGE, SELECT ON SEQUENCE")
+    expect(grants).toContain("public.publishing_audit_events")
+    expect(grants).not.toMatch(/ON TABLE\s+publishing_/)
+    expect(grants).not.toMatch(/ON SEQUENCE\s+publishing_/)
+    expect(grants).toContain("('TRUNCATE')")
+    expect(grants).toContain("('UPDATE')) checked(privilege_type)")
+    expect(grants).toContain("tgtype = 27")
+    expect(grants).toContain("Exact desired state: safe idempotent rerun")
+  })
+})
