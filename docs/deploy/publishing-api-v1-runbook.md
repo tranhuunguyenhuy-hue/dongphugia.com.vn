@@ -224,3 +224,22 @@ Production requires a new explicit PM approval for its execution window,
 backup/rollback evidence, immutable ARM64 candidate and current Coolify control
 plane path. This runbook intentionally contains no production secret or live
 control-plane command.
+
+## Bounded production recovery after the legacy-constraint stop
+
+If, and only if, the reviewed v1 migration stopped at its legacy
+`blog_posts_status_check` guard after committing the additive Blog Post and
+Blog Tag columns but before it created any `publishing_*` table, use the
+reviewed forward recovery migration:
+
+`docs/deploy/publishing-api-v1-production-recovery.sql`
+
+It is a `psql` deployment artifact, not a Prisma migration. In one transaction it
+checks the exact known partial schema, the reviewed editorial-byline default,
+and the exact legacy lifecycle constraint; it then completes the reviewed v1
+schema. Any table, column, constraint, default, or ownership state outside that
+recovery target fails closed. Verify the committed SHA-256 manifest
+`docs/deploy/publishing-api-v1-production-recovery.sha256` from the approved
+immutable commit before execution. Do not use this recovery on staging or a
+clean database, and do not change ownership or grant DDL privileges to the
+application runtime role.
