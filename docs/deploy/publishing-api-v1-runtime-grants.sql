@@ -46,6 +46,7 @@ VALUES
   ('publishing_scheduler_state', 'SELECT'),
   ('publishing_scheduler_state', 'INSERT'),
   ('publishing_scheduler_state', 'UPDATE'),
+  ('publishing_audit_events', 'SELECT'),
   ('publishing_audit_events', 'INSERT');
 
 CREATE TEMP TABLE publishing_expected_sequence_privileges (
@@ -767,7 +768,7 @@ GRANT SELECT, INSERT, UPDATE ON TABLE
   public.publishing_scheduler_state
 TO :"runtime_role";
 
-GRANT INSERT ON TABLE
+GRANT SELECT, INSERT ON TABLE
   public.publishing_audit_events
 TO :"runtime_role";
 
