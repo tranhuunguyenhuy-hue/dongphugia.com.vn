@@ -5,12 +5,20 @@ import type { PublishingTransaction } from './idempotency'
  * keep the transaction open through the transition, so a Gate close is
  * linearized before or after publication instead of racing alongside it.
  */
+export async function lockPublishingGlobalGateAuthority(
+    transaction: PublishingTransaction,
+): Promise<void> {
+    await transaction.$executeRaw`
+        SELECT pg_advisory_xact_lock(
+            hashtextextended('publishing.global-gate', 0)
+        )
+    `
+}
+
 export async function lockGlobalPublishingGate(
     transaction: PublishingTransaction,
 ): Promise<boolean> {
-    await transaction.$queryRaw`
-        SELECT id FROM publishing_global_controls WHERE id = 1 FOR SHARE
-    `
+    await lockPublishingGlobalGateAuthority(transaction)
     const control = await transaction.publishing_global_controls.findUnique({
         where: { id: 1 },
         select: { publishing_enabled: true },

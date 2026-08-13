@@ -6,8 +6,10 @@ const projectRequire = createRequire(import.meta.url)
 const prisma = projectRequire('../../src/lib/prisma.ts').default as typeof import('../../src/lib/prisma.ts').default
 const {
     generatePublishingCredential,
+    lockPublishingIdentityAuthority,
     PUBLISHING_CAPABILITIES,
 } = projectRequire('../../src/lib/publishing/auth.ts') as typeof import('../../src/lib/publishing/auth.ts')
+const { lockPublishingGlobalGateAuthority } = projectRequire('../../src/lib/publishing/authority.ts') as typeof import('../../src/lib/publishing/authority.ts')
 const { writePublishingAudit } = projectRequire('../../src/lib/publishing/audit.ts') as typeof import('../../src/lib/publishing/audit.ts')
 
 type PublishingCapability = 'posts:write' | 'posts:publish' | 'media:write'
@@ -127,11 +129,12 @@ async function lockIdentityControlRows(
     identityId: string,
     options: { credentials?: boolean; capabilities?: boolean; ipAllowlist?: boolean } = {},
 ) {
+    await lockPublishingIdentityAuthority(transaction, identityId)
     await transaction.$queryRaw`
         SELECT id FROM publishing_machine_identities WHERE id = ${identityId}::uuid FOR UPDATE
     `
     if (options.credentials) {
-        await transaction.$queryRaw`
+        await transaction.$executeRaw`
             SELECT id FROM publishing_credentials WHERE identity_id = ${identityId}::uuid FOR UPDATE
         `
     }
@@ -431,6 +434,7 @@ async function setGlobalGate(flags: Flags) {
     const expectedVersion = integer(flags, 'expected-version')
     const now = new Date()
     const result = await prisma.$transaction(async (transaction) => {
+        await lockPublishingGlobalGateAuthority(transaction)
         await transaction.$queryRaw`
             SELECT id FROM publishing_global_controls WHERE id = 1 FOR UPDATE
         `

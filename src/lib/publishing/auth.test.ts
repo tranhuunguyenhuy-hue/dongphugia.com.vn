@@ -39,9 +39,11 @@ function repository(
 }
 
 describe('authenticatePublishingRequest', () => {
-    it('uses share locks for runtime authority reads without update privilege', () => {
+    it('uses transaction advisory locks for authority reads without update privilege', () => {
         const source = readFileSync(resolve(process.cwd(), 'src/lib/publishing/auth.ts'), 'utf8')
-        expect(source).toContain('FOR SHARE')
+        expect(source).toContain('pg_advisory_xact_lock')
+        expect(source).toContain('publishing.identity.')
+        expect(source).not.toContain('FOR SHARE')
         expect(source).not.toContain('FOR KEY SHARE')
         expect(source).not.toContain('FOR UPDATE')
     })

@@ -10,6 +10,7 @@ import { validatePublicationReadiness } from './readiness'
 import { revalidatePublishingPublicSurfaces } from './revalidation'
 import { writePublishingAudit } from './audit'
 import { lockGlobalPublishingGate } from './authority'
+import { lockPublishingIdentityAuthority } from './auth'
 
 export type ScheduledPublicationAssessment = {
     globalGateEnabled: boolean
@@ -231,14 +232,10 @@ export async function runPublishingScheduler(input: {
             // This makes a close/revoke/disable and a scheduler transition
             // mutually exclusive at the authority decision point.
             const globalGateEnabled = await lockGlobalPublishingGate(transaction)
-            await transaction.$queryRaw`
-                SELECT id FROM publishing_machine_identities
-                WHERE id = ${candidate.publishing_identity_id}::uuid FOR SHARE
-            `
-            await transaction.$queryRaw`
-                SELECT capability FROM publishing_identity_capabilities
-                WHERE identity_id = ${candidate.publishing_identity_id}::uuid FOR SHARE
-            `
+            await lockPublishingIdentityAuthority(
+                transaction,
+                candidate.publishing_identity_id,
+            )
             const post = await transaction.blog_posts.findUnique({
                 where: { id: duePost.id },
                 include: {
