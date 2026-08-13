@@ -47,7 +47,7 @@ ENV NODE_ENV=production \
     BUNNY_CDN_HOSTNAME=${BUNNY_CDN_HOSTNAME} \
     PUBLISHING_BUNNY_CDN_HOSTNAME=${PUBLISHING_BUNNY_CDN_HOSTNAME}
 
-RUN apk add --no-cache libc6-compat openssl && \
+RUN apk add --no-cache libc6-compat openssl vips && \
     rm -rf /usr/local/lib/node_modules/npm && \
     rm -f /usr/local/bin/npm /usr/local/bin/npx && \
     addgroup -S nodejs && \
