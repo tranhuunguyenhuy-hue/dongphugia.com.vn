@@ -34,12 +34,12 @@ const EDITORIAL_BYLINE = 'Ban Biên Tập Đông Phú Gia'
 
 const PUBLISHING_POST_INCLUDE = Prisma.validator<Prisma.blog_postsInclude>()({
     blog_categories: {
-        select: { name: true, slug: true, is_active: true },
+        select: { name: true, slug: true, description: true, is_active: true },
     },
     blog_post_tags: {
         include: {
             blog_tags: {
-                select: { name: true, slug: true, is_active: true },
+                select: { name: true, slug: true, description: true, is_active: true },
             },
         },
     },
@@ -708,10 +708,12 @@ export function mapPublishingPost(post: StoredPost) {
         category: {
             name: post.blog_categories.name,
             slug: post.blog_categories.slug,
+            description: post.blog_categories.description,
         },
         tags: post.blog_post_tags.map(({ blog_tags }) => ({
             name: blog_tags.name,
             slug: blog_tags.slug,
+            description: blog_tags.description,
         })),
         thumbnail_url: post.thumbnail_url,
         cover_image_url: post.cover_image_url,
@@ -792,9 +794,11 @@ export async function listPublishingPosts(input: {
             schedule_blocked_code: true,
         },
     })
-    const next = posts.length > input.limit ? posts.pop() : undefined
+    const hasNextPage = posts.length > input.limit
+    const page = hasNextPage ? posts.slice(0, input.limit) : posts
+    const next = hasNextPage ? page[page.length - 1] : undefined
     return {
-        items: posts.map(mapPostSummary),
+        items: page.map(mapPostSummary),
         next_cursor: next
             ? Buffer.from(
                 JSON.stringify([next.updated_at.toISOString(), next.id]),

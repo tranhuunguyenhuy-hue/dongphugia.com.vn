@@ -49,4 +49,41 @@ describe('Publishing OpenAPI contract', () => {
             'url', 'width', 'height', 'bytes', 'format',
         ])
     })
+
+    it('documents response headers and stable list constraints', () => {
+        const getPost = publishingOpenApi.paths['/posts/{external_id}'].get
+        const putPost = publishingOpenApi.paths['/posts/{external_id}'].put
+        const listPosts = publishingOpenApi.paths['/posts'].get
+        const media = publishingOpenApi.paths['/media'].post
+
+        expect(getPost.responses[200].headers).toEqual({
+            ETag: { $ref: '#/components/headers/ETag' },
+            'x-request-id': { $ref: '#/components/headers/RequestId' },
+        })
+        expect(putPost.responses[200].headers).toEqual({
+            ETag: { $ref: '#/components/headers/ETag' },
+            'x-request-id': { $ref: '#/components/headers/RequestId' },
+        })
+        expect(listPosts.parameters[0].schema).toMatchObject({
+            type: 'integer',
+            minimum: 1,
+            maximum: 100,
+        })
+        expect(listPosts.parameters[2].schema).toEqual({
+            type: 'string',
+            enum: ['draft', 'scheduled', 'published', 'schedule_blocked'],
+        })
+        expect(publishingOpenApi.paths['/posts/{external_id}'].parameters[0].schema).toMatchObject({
+            pattern: '^[A-Za-z0-9][A-Za-z0-9._~-]{0,199}$',
+        })
+        expect(media.responses[409]).toEqual({
+            $ref: '#/components/responses/Conflict',
+        })
+        expect(publishingOpenApi.components.responses.Conflict.description).toContain(
+            'slug conflict',
+        )
+        expect(publishingOpenApi.components.responses.ServiceUnavailable.headers).toHaveProperty(
+            'Retry-After',
+        )
+    })
 })
