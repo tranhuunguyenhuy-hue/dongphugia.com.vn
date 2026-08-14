@@ -300,6 +300,28 @@ sequence `USAGE` only. The artifact never grants DDL, changes ownership, or
 grants audit update/delete/truncate. It pins a trusted transaction-local
 `search_path` and qualifies every persistent target with the `public` schema.
 
+On production databases where the four legacy CMS Blog tables already have row
+security enabled, apply the separately reviewed least-privilege bridge before
+runtime smoke:
+
+```bash
+psql -X -v ON_ERROR_STOP=1 \
+  -v runtime_role=<dedicated-publishing-runtime-role> \
+  -f docs/deploy/publishing-api-v1-production-legacy-rls.sql
+```
+
+Verify both production legacy-RLS SHA-256 manifests first. The forward artifact
+permits Category/Tag reads needed to recheck inactive taxonomy, all Tag-link
+reads needed to maintain the CMS-wide `post_count`, `post_count` writes already
+limited by the column ACL, and Tag-link mutations whose Blog Post has a non-null
+Publishing Identity. Blog Post reads/writes remain restricted to rows owned by
+a Publishing Identity. It never enables or disables RLS, grants ACLs, changes
+ownership, or permits deletion of a Blog Post. Keep the matching
+`publishing-api-v1-production-legacy-rls-rollback.sql` beside the fresh database
+backup; it removes exactly those nine policies and no data or grants. Do not run
+either artifact on staging unless its legacy CMS tables independently require
+the same reviewed RLS bridge.
+
 Configure `PUBLISHING_DATABASE_URL` as an encrypted Coolify runtime secret and
 leave `DATABASE_URL` unchanged. A missing Publishing URL fails Publishing
 routes and the scheduler closed; it never falls back to the CMS owner connection
