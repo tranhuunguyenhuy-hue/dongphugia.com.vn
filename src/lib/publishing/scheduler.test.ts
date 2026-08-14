@@ -73,9 +73,10 @@ describe('assessScheduledPublication', () => {
         })
     })
 
-    it('uses share locks for authority reads rather than control-plane update authority', () => {
+    it('uses identity advisory locks rather than control-plane update authority', () => {
         const scheduler = readFileSync(resolve(process.cwd(), 'src/lib/publishing/scheduler.ts'), 'utf8')
-        expect(scheduler).toContain('FOR SHARE')
+        expect(scheduler).toContain('lockPublishingIdentityAuthority')
+        expect(scheduler).not.toContain('FOR SHARE')
         expect(scheduler).not.toContain('FOR KEY SHARE')
         expect(scheduler).not.toContain('FOR UPDATE')
     })

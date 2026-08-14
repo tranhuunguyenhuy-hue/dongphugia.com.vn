@@ -146,6 +146,10 @@ async function main() {
         identityId,
         active[0].id,
         async (client) => {
+            await client.query(
+                "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))",
+                [`publishing.identity.${identityId}`],
+            )
             await client.query('SELECT id FROM publishing_machine_identities WHERE id = $1 FOR UPDATE', [identityId])
             await client.query('SELECT id FROM publishing_credentials WHERE id = $1 FOR UPDATE', [active[0].id])
             await client.query('UPDATE publishing_credentials SET revoked_at = now() WHERE id = $1', [active[0].id])
@@ -157,6 +161,10 @@ async function main() {
         identityId,
         active[1].id,
         async (client) => {
+            await client.query(
+                "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))",
+                [`publishing.identity.${identityId}`],
+            )
             await client.query('SELECT id FROM publishing_machine_identities WHERE id = $1 FOR UPDATE', [identityId])
             await client.query('SELECT capability FROM publishing_identity_capabilities WHERE identity_id = $1 FOR UPDATE', [identityId])
             await client.query("UPDATE publishing_identity_capabilities SET revoked_at = now() WHERE identity_id = $1 AND capability = 'posts:publish'", [identityId])
@@ -173,6 +181,9 @@ async function main() {
     await gateController.connect()
     try {
         await gateController.query('BEGIN')
+        await gateController.query(
+            "SELECT pg_advisory_xact_lock(hashtextextended('publishing.global-gate', 0))",
+        )
         await gateController.query('SELECT id FROM publishing_global_controls WHERE id = 1 FOR UPDATE')
         await gateController.query('UPDATE publishing_global_controls SET publishing_enabled = false WHERE id = 1')
         const mutation = prisma.$transaction(lockGlobalPublishingGate)

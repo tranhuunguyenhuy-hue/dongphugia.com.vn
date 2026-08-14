@@ -51,6 +51,21 @@ export type PublishingAuthContext = {
 }
 
 /**
+ * Serializes a runtime mutation with control-plane changes to one identity
+ * without granting the runtime role UPDATE on authorization tables.
+ */
+export async function lockPublishingIdentityAuthority(
+    transaction: PublishingTransaction,
+    identityId: string,
+): Promise<void> {
+    await transaction.$executeRaw`
+        SELECT pg_advisory_xact_lock(
+            hashtextextended(${`publishing.identity.${identityId}`}, 0)
+        )
+    `
+}
+
+/**
  * Re-check the authorization snapshot at the durable mutation boundary.
  *
  * Route authentication intentionally remains cheap and returns a snapshot for
@@ -70,22 +85,7 @@ export async function lockPublishingMutationAuthorization(
     },
 ): Promise<AuthenticatedMachineIdentity> {
     const now = input.now ?? new Date()
-    await transaction.$queryRaw`
-        SELECT id FROM publishing_machine_identities
-        WHERE id = ${input.identityId}::uuid FOR SHARE
-    `
-    await transaction.$queryRaw`
-        SELECT id FROM publishing_credentials
-        WHERE id = ${input.credentialId}::uuid FOR SHARE
-    `
-    await transaction.$queryRaw`
-        SELECT capability FROM publishing_identity_capabilities
-        WHERE identity_id = ${input.identityId}::uuid FOR SHARE
-    `
-    await transaction.$queryRaw`
-        SELECT ip_address FROM publishing_identity_ip_allowlist
-        WHERE identity_id = ${input.identityId}::uuid FOR SHARE
-    `
+    await lockPublishingIdentityAuthority(transaction, input.identityId)
 
     const credential = await transaction.publishing_credentials.findUnique({
         where: { id: input.credentialId },
