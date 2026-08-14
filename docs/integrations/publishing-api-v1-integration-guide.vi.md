@@ -1,9 +1,15 @@
-# Publishing API v1 — Integration Guide (Internal Pilot)
+# Publishing API v1 — Integration Guide
 
-Tài liệu này dành cho nhân viên Đông Phú Gia tích hợp một **Publishing Agent**
-(ví dụ AI Agent) để chuẩn bị, lưu, lên lịch và xuất bản **Blog Post**. API
-không nghiên cứu hoặc sinh nội dung; Agent chịu trách nhiệm phần đó, còn Đông
-Phú Gia chịu trách nhiệm xác thực, kiểm tra, lưu trữ, lập lịch và xuất bản.
+**Audience:** AI Agent developers, automation builders và Technical Owner.
+
+Tài liệu này giải thích cách kết nối một **Publishing Agent** (ví dụ AI Agent)
+với Publishing API v1 để chuẩn bị, lưu, lên lịch và xuất bản **Blog Post**. Người
+dùng tự tạo và quản lý Agent; API không nghiên cứu hoặc sinh nội dung. Đông Phú
+Gia cung cấp xác thực, kiểm tra, lưu trữ, lập lịch và khả năng xuất bản.
+
+Hướng dẫn này là tài liệu Platform/Technical. Chiến lược nội dung, SEO, prompt,
+nghiên cứu từ khóa và kế hoạch marketing thuộc đội Marketing/Content, không
+thuộc phạm vi API.
 
 > Phạm vi hiện tại là restricted pilot nội bộ. Đông Phú Gia cấp và thu hồi từng
 > **Machine Identity**; chưa có self-service onboarding, multi-tenancy hoặc
