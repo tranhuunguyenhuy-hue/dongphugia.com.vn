@@ -8,7 +8,8 @@ Only current runtime and Phase 1 documentation is kept with the application.
 - [Public sitemap map](SITEMAP.md)
 - [Coolify staging runbook](deploy/staging-coolify.md)
 - [Synthetic staging database bootstrap](deploy/staging-db-bootstrap/RUNBOOK.md)
-- [Publishing API v1 integration guide](integration/publishing-api-v1-integration-guide.vi.md)
+- [Publishing API v1 integration guide](integrations/publishing-api-v1-integration-guide.vi.md)
+- [AI Agent publishing operation guide](operations/ai-agent-publishing-operation-guide.vi.md)
 
 Historical crawl, content-review, migration and planning evidence is not active
 application documentation. It is recoverable from Git history or the approved
