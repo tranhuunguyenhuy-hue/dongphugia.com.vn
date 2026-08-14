@@ -10,6 +10,7 @@ Only current runtime and Phase 1 documentation is kept with the application.
 - [Synthetic staging database bootstrap](deploy/staging-db-bootstrap/RUNBOOK.md)
 - [Publishing API v1 integration guide](integrations/publishing-api-v1-integration-guide.vi.md)
 - [AI Agent publishing operation guide](operations/ai-agent-publishing-operation-guide.vi.md)
+- [AI Agent publishing operation guide — Word handoff](operations/ai-agent-publishing-operation-guide.vi.docx)
 
 Historical crawl, content-review, migration and planning evidence is not active
 application documentation. It is recoverable from Git history or the approved
