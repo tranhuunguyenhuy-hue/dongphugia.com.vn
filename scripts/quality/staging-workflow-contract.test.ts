@@ -70,5 +70,6 @@ describe('shared Production-data staging contract', () => {
         )
         expect(publishingRunbook).toContain('Shared-data Staging supersedes the legacy synthetic topology')
         expect(publishingRunbook).toContain('must remain write-frozen')
+        expect(publishingRunbook).not.toContain('either artifact on shared-data Staging unless')
     })
 })

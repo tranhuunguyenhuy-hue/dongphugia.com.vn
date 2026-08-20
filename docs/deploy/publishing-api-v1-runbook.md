@@ -320,8 +320,9 @@ a Publishing Identity. It never enables or disables RLS, grants ACLs, changes
 ownership, or permits deletion of a Blog Post. Keep the matching
 `publishing-api-v1-production-legacy-rls-rollback.sql` beside the fresh database
 backup; it removes exactly those nine policies and no data or grants. Do not run
-either artifact on shared-data Staging unless its legacy CMS tables independently require
-the same reviewed RLS bridge.
+either artifact on shared-data Staging. Any future shared-data exception is a
+new Production-data infrastructure mutation and requires its own Gate B plan
+and PM authorization.
 
 Configure `PUBLISHING_DATABASE_URL` as an encrypted Coolify runtime secret and
 leave `DATABASE_URL` unchanged. A missing Publishing URL fails Publishing
