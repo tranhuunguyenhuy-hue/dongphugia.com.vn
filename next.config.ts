@@ -4,6 +4,10 @@ const configuredPublishingCdn = process.env.PUBLISHING_BUNNY_CDN_HOSTNAME
   ?.trim()
   .toLowerCase()
 
+if (process.env.DEPLOY_TARGET === 'production' && !configuredPublishingCdn) {
+  throw new Error('PUBLISHING_BUNNY_CDN_HOSTNAME is required for production builds')
+}
+
 if (configuredPublishingCdn && !/^[a-z0-9.-]+$/.test(configuredPublishingCdn)) {
   throw new Error('PUBLISHING_BUNNY_CDN_HOSTNAME must be an exact hostname')
 }
