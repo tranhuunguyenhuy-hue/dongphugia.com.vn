@@ -41,13 +41,17 @@ describe('toWriteFreezeActionResult', () => {
         ).toBeNull()
     })
 
-    it('fails closed for a production candidate until the runtime explicitly enables writes', () => {
+    it('keeps an immutable candidate frozen outside the Production runtime', () => {
         vi.stubEnv('NODE_ENV', 'production')
         vi.stubEnv('DEPLOY_TARGET', 'production')
+        vi.stubEnv('RUNTIME_ROLE', 'staging')
 
         expect(isWriteFreezeEnabled()).toBe(true)
 
         vi.stubEnv('WRITE_FREEZE_MODE', 'false')
+        expect(isWriteFreezeEnabled()).toBe(true)
+
+        vi.stubEnv('RUNTIME_ROLE', 'production')
         expect(isWriteFreezeEnabled()).toBe(false)
     })
 })

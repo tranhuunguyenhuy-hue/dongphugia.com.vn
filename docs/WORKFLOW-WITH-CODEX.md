@@ -97,7 +97,7 @@ reference, and discovery checks instead of an unrelated application build.
 
 Source delivery and production rollout are separate workflows:
 
-`source commit → one immutable Production Candidate digest → staging validation of that exact digest → PM review → merge → production rollout of that same digest`
+`source PR validation → Gate A merge → protected-main Production Candidate digest → Gate B staging validation of that exact digest → Gate C production rollout of that same digest`
 
 For the repository-wide shared-data staging architecture, the separate Staging
 runtime reads Production data/media but remains write-frozen and noindex by

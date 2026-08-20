@@ -28,9 +28,10 @@ external system.
 - Expected environmental differences are limited to runtime addressability,
   authentication, noindex/write-freeze guardrails and separately authorized
   side effects.
-- Gate A controls source merge, Gate B controls Staging data/media alignment,
-  and Gate C controls Production promotion. Old staging resources are retained
-  for rollback until separately approved for cleanup.
+- The executable order is source PR validation, Gate A merge, protected-main
+  Production Candidate build, Gate B Staging alignment/acceptance, then Gate C
+  Production promotion. Old staging resources are retained for rollback until
+  separately approved for cleanup.
 
 ## Related
 

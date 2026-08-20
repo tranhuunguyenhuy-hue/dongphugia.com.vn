@@ -8,6 +8,7 @@ describe('GET /robots.txt', () => {
         vi.stubEnv('DEPLOY_TARGET', 'production')
         vi.stubEnv('NEXT_PUBLIC_SITE_URL', 'https://www.dongphugia.vn')
         vi.stubEnv('PRODUCTION_INDEXING_ENABLED', 'true')
+        vi.stubEnv('RUNTIME_ROLE', 'production')
         const response = GET()
         const body = await response.text()
 

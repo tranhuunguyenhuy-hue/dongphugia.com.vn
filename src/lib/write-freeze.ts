@@ -1,3 +1,5 @@
+import { isProductionRuntime } from './runtime-role'
+
 /**
  * Server-side write-freeze guard for database cutover windows.
  *
@@ -23,7 +25,7 @@ export class WriteFreezeError extends Error {
 export function isWriteFreezeEnabled() {
     const configured = process.env[WRITE_FREEZE_ENV]
     if (configured === 'true') return true
-    if (configured === 'false') return false
+    if (configured === 'false') return !isProductionRuntime()
 
     // The immutable production candidate is first evaluated in the separate
     // Staging runtime. Treat an omitted runtime value as frozen there, rather

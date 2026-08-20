@@ -44,6 +44,11 @@ keeps it false. Its canonical/structured-data URLs can intentionally remain the
 Production URLs because the candidate is the Production artifact, but crawler
 access is disallowed by both robots and page metadata.
 
+`RUNTIME_ROLE` is the runtime-only role boundary: Staging must set `staging` and
+Production must set `production`. An omitted or invalid role fails closed:
+write thaw and indexing remain disabled. The immutable image never supplies
+this role at build time.
+
 | Operation class                                                               | Staging rule while sharing Production data/media                                                                     |
 | ----------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
 | Read/render public pages, APIs, sitemap, CDN media                            | Allowed as read-only acceptance.                                                                                     |
@@ -69,6 +74,7 @@ repository, Issue, PR, shell history, CI output, or chat.
 - `WRITE_FREEZE_MODE`: true, or omitted only when the candidate's documented
   fail-closed default is verified.
 - `PRODUCTION_INDEXING_ENABLED`: omitted or false.
+- `RUNTIME_ROLE`: staging.
 - Scheduler: disabled. Do not create or execute a task against shared data.
 
 No data migration, seed, reset, schema command, storage copy, CDN rewrite,

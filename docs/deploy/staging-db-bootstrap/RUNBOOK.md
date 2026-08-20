@@ -1,164 +1,41 @@
-# Staging database bootstrap runbook
+# Disposable CI database fixtures
 
-This change set prepares a PostgreSQL bootstrap for the private staging
-database. It is intentionally local-only and must not be executed until a
-separate approval is given.
+This is **not a Staging runtime runbook**. The repository-wide Staging runtime
+uses Production data/media under the shared-data architecture in
+[`../staging-coolify.md`](../staging-coolify.md). These SQL artifacts are
+disposable CI-test fixtures and must not be executed against Staging or
+Production.
 
-## Artefacts
+## Permitted use
 
-- `001_schema_from_prisma.sql` — schema generated from `prisma/schema.prisma`
-  at commit `348f51a571749db8463b39b2d77cb2d42a751aaa`.
-- `002_seed_synthetic_stg_demo.sql` — idempotent synthetic seed data only.
-- `003_rehome_synthetic_stg_demo_to_canonical.sql` — bounded repair for an
-  existing staging database created by the earlier seed revision.
-- `004_publishing_api_v1.sql` — reviewed additive PostgreSQL schema for the
-  internal Publishing API v1. It initializes the Global Publishing Gate as
-  disabled and contains no Machine Identity, credential, or content seed.
-- `004_align_synthetic_product_contract.sql` — bounded Product contract repair
-  for the three staging fixtures used by runtime structured-data acceptance.
-- `RLS_FINDINGS.md` — retained read-only historical review of legacy client/RPC
-  usage and row-level access implications; it is not a runtime dependency.
-- `checksums.sha256` — SHA-256 checksums for review before any execution.
+- An ephemeral PostgreSQL service created by a GitHub Actions job or an
+  explicitly disposable local test environment.
+- Focused schema, synthetic catalogue and Publishing authority-harness tests.
+- Automatic disposal with the test service when the job ends.
 
-## Strict scope
+## Prohibited use
 
-- Staging PostgreSQL only.
-- No production database.
-- No admin account seed in the private staging database. The GitHub Actions
-  disposable build database may create one synthetic active sponsor row with an
-  unusable placeholder credential only for the isolated Publishing API
-  authority-race harness; it is discarded with that service container and is
-  never a staging or production account.
-- No customer, quote, order, session, password, key, or production content.
-- No connection strings committed to the repository.
-- Executing these SQL artefacts authorizes no GitHub workflow, GHCR, Coolify,
-  DNS, Cloudflare, or AWS mutation; each remains a separate approval gate.
+- Coolify Staging, Production, any shared database, backup, restore, or
+  migration path.
+- Runtime acceptance, customer-facing validation, media upload, scheduler,
+  Global Publishing Gate, credential issuance, or any side effect.
+- Manual reset, repair, rehome, or seed operation outside a disposable test
+  container.
 
-## Preflight before future execution
+## Artifacts
 
-Stop if any item fails.
+- `001_schema_from_prisma.sql` — schema fixture generated from the reviewed
+  Prisma schema snapshot.
+- `002_seed_synthetic_stg_demo.sql` — synthetic catalogue fixture only.
+- `003_rehome_synthetic_stg_demo_to_canonical.sql` and
+  `004_align_synthetic_product_contract.sql` — retained compatibility fixtures
+  for historical disposable tests.
+- `004_publishing_api_v1.sql` — Publishing API schema fixture with the Global
+  Publishing Gate initially disabled.
+- `checksums.sha256` — integrity manifest for review of fixture changes.
 
-1. Confirm the target is the PM-approved private staging PostgreSQL database
-   through the current control plane. Do not infer its provider or host from
-   this repository.
-2. Confirm `STAGING_DATABASE_URL` and `STAGING_DIRECT_URL` both point to that
-   same staging database.
-3. Confirm neither connection string targets the production database.
-4. Confirm the target database is empty enough for a first bootstrap:
-   - no existing app tables in `public`;
-   - no existing `_prisma_migrations` state that would conflict with this
-     baseline;
-   - no customer/order/admin/session data.
-5. Confirm checksums match `checksums.sha256`.
-6. Confirm the SQL files contain no connection strings, passwords, provider
-   keys, or service-role keys.
-7. Confirm the executor is using a direct staging database connection suitable
-   for DDL.
-8. Confirm a staging-only rollback window is acceptable before any app deploy.
-
-## Recommended execution shape after separate approval
-
-Use `psql` with `ON_ERROR_STOP=1` and `--single-transaction` so the schema and
-seed files are one atomic unit. Any SQL error in either file must roll back the
-entire bootstrap.
-
-Do not use shell debug output (`set -x`). Do not print the connection string.
-Pass the approved staging connection string through a local secret mechanism
-chosen at execution time, not through a committed file or copied log.
-
-Recommended command shape:
-
-```bash
-psql \
-  --set=ON_ERROR_STOP=1 \
-  --single-transaction \
-  --file=docs/deploy/staging-db-bootstrap/001_schema_from_prisma.sql \
-  --file=docs/deploy/staging-db-bootstrap/004_publishing_api_v1.sql \
-  --file=docs/deploy/staging-db-bootstrap/002_seed_synthetic_stg_demo.sql \
-  --file=docs/deploy/staging-db-bootstrap/004_align_synthetic_product_contract.sql \
-  "$STAGING_DIRECT_URL"
-```
-
-The command shape above is for a future approved execution gate only. The
-`STAGING_DIRECT_URL` value must not be echoed, committed, or pasted into a
-report.
-
-For an already bootstrapped staging database, do not rerun the empty-database
-schema bootstrap. First confirm that the project is the approved staging
-project and that the only intended repair scope is the three fixed
-`STG-DEMO-*` SKUs. Then run only the repair file in one transaction:
-
-```bash
-psql \
-  --set=ON_ERROR_STOP=1 \
-  --single-transaction \
-  --file=docs/deploy/staging-db-bootstrap/003_rehome_synthetic_stg_demo_to_canonical.sql \
-  "$STAGING_DIRECT_URL"
-```
-
-The repair must be followed by aggregate checks proving three synthetic
-products are attached to `thiet-bi-ve-sinh` or `thiet-bi-bep`, with no row or
-credential output. It must not be used against production or a database whose
-scope has not been revalidated.
-
-For an existing staging database whose synthetic products predate the Product
-contract fixtures or redirect-target fixtures, revalidate the same staging-only
-gates and run only the bounded repair:
-
-```bash
-psql \
-  --set=ON_ERROR_STOP=1 \
-  --single-transaction \
-  --file=docs/deploy/staging-db-bootstrap/004_align_synthetic_product_contract.sql \
-  "$STAGING_DIRECT_URL"
-```
-
-The repair aligns exactly `STG-DEMO-TBVS-001`, `STG-DEMO-TBVS-002`, and
-`STG-DEMO-TBVS-003`, then creates or aligns twelve
-`STG-DEMO-REDIRECT-*` targets below the staging-only
-`vat-lieu-nuoc/may-nuoc-nong` taxonomy. It fails and rolls back unless all
-fifteen synthetic fixtures validate. It must not be
-combined with a production or catalogue-wide data change.
-
-## Post-execution checks for a future gate
-
-Run read-only checks against staging only:
-
-- table count matches the reviewed bootstrap;
-- index and foreign-key counts match the reviewed bootstrap;
-- synthetic products exist with SKU prefix `STG-DEMO-`;
-- the synthetic Product contract matrix contains one priced in-stock product,
-  one priced out-of-stock product, and one Contact for Quote product;
-- twelve synthetic redirect targets exist below
-  `vat-lieu-nuoc/may-nuoc-nong` for the reviewed runtime redirect registry;
-- admin/user/order/customer/session tables are empty;
-- public app pages can read synthetic catalogue/blog data;
-- write flows are not exercised until runtime secrets and admin setup are
-  separately approved.
-
-## Rollback plan
-
-Expected rollback if the approved `psql --single-transaction` execution fails:
-
-1. Do not retry blindly.
-2. Capture the first SQL error with secrets redacted.
-3. Confirm `psql` exited non-zero.
-4. Because `ON_ERROR_STOP=1` and `--single-transaction` are required, the entire
-   schema + seed bootstrap should have rolled back.
-5. Re-check that no app tables were created.
-
-If the bootstrap was partially committed by manual execution outside the
-approved execution model:
-
-1. Stop all staging app/database work.
-2. Confirm again that the project ref is staging, not production.
-3. Confirm no non-synthetic data exists.
-4. For a dedicated empty staging DB, reset the `public` schema or recreate the
-   staging database through the approved database control plane using an
-   approved staging-only reset plan.
-5. Do not drop schemas or tables in any project whose ref is not the approved
-   staging ref.
-
-Because this bootstrap is for a newly created staging database, rollback is
-intended to be destructive only within the empty staging database and only
-after explicit approval.
+The CI workflows mount these files into an isolated PostgreSQL container and
+verify expected aggregate fixture counts. Do not copy the prior direct-`psql`
+instructions from repository history into an operational runbook. Any future
+test-fixture change remains source work; any shared-data Staging mutation is
+subject to Issue #68 Gate B.

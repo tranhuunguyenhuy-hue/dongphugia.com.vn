@@ -7,6 +7,12 @@ This runbook operates the internal, single-tenant Publishing API. It does not
 authorize a staging rollout, a production deployment, a database migration, or
 any Bunny configuration change. Those are separate PM approval gates.
 
+> **Shared-data Staging supersedes the legacy synthetic topology.** Shared-data
+> Staging uses Production data/media for read-only candidate validation and
+> must remain write-frozen; do not issue Publishing credentials, run scheduler
+> acceptance, upload media, or use a staging-specific storage/CDN path there.
+> The synthetic material below is disposable CI-test infrastructure only.
+
 ## Safety invariants
 
 - Every Publishing Agent has its own Machine Identity, Integration Sponsor,
@@ -29,9 +35,8 @@ any Bunny configuration change. Those are separate PM approval gates.
 ## Configuration inventory
 
 Provide the following only through the approved runtime secret/configuration
-mechanism. Values in the two storage entries are separate for staging and
-production. Do not copy staging storage credentials or CDN hosts into
-production, or vice versa.
+mechanism. A shared-data Staging runtime uses the reviewed Production media
+configuration while write-frozen; it does not perform Publishing mutations.
 
 | Variable | Purpose | Secret |
 | --- | --- | --- |
@@ -56,10 +61,10 @@ URL.
 
 ## Control-plane commands
 
-Run these with a direct non-production database only during staging acceptance,
-or with the separately approved production database execution path. The command
-prints structured metadata, except the one-time `credential` returned by issue
-or rotate. Capture no plaintext credential in logs.
+Run these only against a disposable CI database or through the separately
+approved Production execution path. They are prohibited in shared-data Staging.
+The command prints structured metadata, except the one-time `credential`
+returned by issue or rotate. Capture no plaintext credential in logs.
 
 ```bash
 npm run publishing:control -- identity-create \
@@ -134,7 +139,7 @@ not stop normal human CMS writes.
 
 The scheduler is repository-owned and one-shot. The accepted host/Coolify path
 must invoke it at least once per minute from the same environment and database.
-For each staging or production application, create a Coolify **Scheduled Task**
+For the Production application only, create a Coolify **Scheduled Task**
 on that application with this exact configuration (the task executes in the
 application runtime; it is not a public HTTP cron):
 
@@ -167,7 +172,8 @@ Publication Readiness Gate. A missed execution catches up a still-valid due
 post. A failed recheck writes `schedule_blocked` with an audit event. A duplicate
 invocation uses conditional state/version writes, so it cannot publish twice.
 
-After enabling the scheduler in staging, verify privately:
+After enabling the scheduler in Production under its separately approved gate,
+verify privately:
 
 1. a due ready post becomes `published` once;
 2. revoked capability, closed Gate, stale version and inactive taxonomy each
@@ -187,10 +193,10 @@ After enabling the scheduler in staging, verify privately:
 6. Create a synthetic ready publication due in the next minute. Its post page,
    `/`, `/blog`, category page, and sitemap must reflect the result within five
    minutes of the declared time. Record the Coolify task history, scheduler
-   report, API response, and public checks as the staging SLA acceptance
+   report, API response, and public checks as the Production SLA acceptance
    evidence.
 
-Before this staging acceptance, run the PostgreSQL race harness only against a
+Before this Production acceptance, run the PostgreSQL race harness only against a
 fresh **disposable** PostgreSQL database bootstrapped with the reviewed schema.
 It deliberately creates immutable audit evidence and is not for a shared
 staging database. Supply a synthetic active admin ID through the approved local
@@ -211,7 +217,7 @@ before publication authority, and Global Publishing Gate close before a public
 transition. Save only the PASS/fail result and sanitized timing evidence.
 
 Before enabling the scheduler or Global Publishing Gate, run a dedicated-role
-smoke against the same disposable/staging PostgreSQL topology. It must connect
+smoke against the same disposable PostgreSQL topology. It must connect
 with `PUBLISHING_DATABASE_URL` and prove the Publishing client can read active
 taxonomy, create/update a synthetic Draft, attach/recount a synthetic Blog Tag,
 run the scheduler heartbeat, and then clean up the synthetic fixture through
@@ -219,24 +225,19 @@ the owner path. This is mandatory because legacy Blog tables may have RLS; ACL
 provisioning alone is not proof that the dedicated non-BYPASSRLS role can use
 the reviewed policies. Record only PASS/fail and sanitized timing evidence.
 
-## Staging and rollout gates
+## Shared-data Staging and rollout gates
 
-Before enabling the staging Gate:
+The repository-wide Staging architecture is defined in
+[`staging-coolify.md`](staging-coolify.md). Shared-data Staging must remain
+write-frozen with the scheduler disabled and the Global Publishing Gate closed.
+Do not apply a Publishing migration, configure an isolated staging Publishing
+CDN, issue a staging credential, or run synthetic Publishing acceptance there.
 
-1. Apply the reviewed additive migration
-   `prisma/migrations/20260812205000_publishing_api_v1/migration.sql` through
-   the approved staging DB path. Never use `prisma migrate` blindly: historic
-   migration metadata is not the PostgreSQL deployment authority here.
-2. Configure an isolated staging Publishing storage zone/CDN hostname and run
-   upload, post and scheduler acceptance with synthetic content only.
-3. Verify image CSP and remote image policy include the staging publishing CDN.
-4. Keep production Gate disabled. A staging success does not authorize a merge
-   or a production migration/deployment.
-
-Production requires a new explicit PM approval for its execution window,
-backup/rollback evidence, immutable ARM64 candidate and current Coolify control
-plane path. This runbook intentionally contains no production secret or live
-control-plane command.
+Use the reviewed SQL and synthetic harness only for disposable CI infrastructure.
+Production execution requires a separate explicit PM window, backup/rollback
+evidence, immutable candidate, Gate C approval, and the current control-plane
+path. This runbook intentionally contains no live credentials or deployment
+command.
 
 ## Bounded production recovery after the legacy-constraint stop
 
@@ -264,7 +265,7 @@ CMS-wide `DATABASE_URL`. This keeps the CMS owner connection outside the
 Publishing Agent trust boundary and gives the runtime-grants artifact a distinct
 non-owner target role.
 
-Before private staging or production cutover, create that login once through
+Before Production cutover, create that login once through
 `docs/deploy/publishing-api-v1-runtime-role.sql`, then run
 `publishing-api-v1-runtime-grants.sql` for the same role. The provisioning
 artifact accepts the role name and reads a SCRAM verifier only from the
@@ -319,7 +320,7 @@ a Publishing Identity. It never enables or disables RLS, grants ACLs, changes
 ownership, or permits deletion of a Blog Post. Keep the matching
 `publishing-api-v1-production-legacy-rls-rollback.sql` beside the fresh database
 backup; it removes exactly those nine policies and no data or grants. Do not run
-either artifact on staging unless its legacy CMS tables independently require
+either artifact on shared-data Staging unless its legacy CMS tables independently require
 the same reviewed RLS bridge.
 
 Configure `PUBLISHING_DATABASE_URL` as an encrypted Coolify runtime secret and

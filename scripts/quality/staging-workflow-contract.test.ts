@@ -15,6 +15,15 @@ const stagingRunbook = readFileSync(
     resolve(process.cwd(), 'docs/deploy/staging-coolify.md'),
     'utf8',
 )
+const docsIndex = readFileSync(resolve(process.cwd(), 'docs/README.md'), 'utf8')
+const disposableBootstrapRunbook = readFileSync(
+    resolve(process.cwd(), 'docs/deploy/staging-db-bootstrap/RUNBOOK.md'),
+    'utf8',
+)
+const publishingRunbook = readFileSync(
+    resolve(process.cwd(), 'docs/deploy/publishing-api-v1-runbook.md'),
+    'utf8',
+)
 
 describe('shared Production-data staging contract', () => {
     it('does not create a staging-only image or synthetic runtime', () => {
@@ -51,5 +60,15 @@ describe('shared Production-data staging contract', () => {
         expect(stagingRunbook).toContain(
             'does not authorize a Production deployment',
         )
+    })
+
+    it('fences legacy synthetic staging material as CI-only and superseded', () => {
+        expect(docsIndex).toContain('CI-only disposable database fixtures')
+        expect(disposableBootstrapRunbook).toContain('not a Staging runtime runbook')
+        expect(disposableBootstrapRunbook).toMatch(
+            /must not be executed against Staging or\s+Production/,
+        )
+        expect(publishingRunbook).toContain('Shared-data Staging supersedes the legacy synthetic topology')
+        expect(publishingRunbook).toContain('must remain write-frozen')
     })
 })

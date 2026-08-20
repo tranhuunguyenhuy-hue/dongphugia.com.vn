@@ -22,6 +22,7 @@ describe('canonical site URL', () => {
         vi.stubEnv('DEPLOY_TARGET', 'production')
         vi.stubEnv('NEXT_PUBLIC_SITE_URL', DEFAULT_CANONICAL_SITE_URL)
         vi.stubEnv('PRODUCTION_INDEXING_ENABLED', '')
+        vi.stubEnv('RUNTIME_ROLE', 'staging')
         expect(getSiteRuntimeConfig()).toEqual({
             target: 'production',
             siteUrl: DEFAULT_CANONICAL_SITE_URL,
@@ -29,6 +30,9 @@ describe('canonical site URL', () => {
         })
 
         vi.stubEnv('PRODUCTION_INDEXING_ENABLED', 'true')
+        expect(getSiteRuntimeConfig().allowIndexing).toBe(false)
+
+        vi.stubEnv('RUNTIME_ROLE', 'production')
         expect(getSiteRuntimeConfig().allowIndexing).toBe(true)
         expect(canonicalUrl('/blog')).toBe(`${DEFAULT_CANONICAL_SITE_URL}/blog`)
     })
