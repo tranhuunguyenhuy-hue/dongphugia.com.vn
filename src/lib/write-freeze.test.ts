@@ -54,4 +54,13 @@ describe('toWriteFreezeActionResult', () => {
         vi.stubEnv('RUNTIME_ROLE', 'production')
         expect(isWriteFreezeEnabled()).toBe(false)
     })
+
+    it('fails closed when a legacy staging target omits the runtime role', () => {
+        vi.stubEnv('NODE_ENV', 'production')
+        vi.stubEnv('DEPLOY_TARGET', 'staging')
+        vi.stubEnv('WRITE_FREEZE_MODE', '')
+        vi.stubEnv('RUNTIME_ROLE', '')
+
+        expect(isWriteFreezeEnabled()).toBe(true)
+    })
 })

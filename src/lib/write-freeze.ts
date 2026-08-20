@@ -27,13 +27,10 @@ export function isWriteFreezeEnabled() {
     if (configured === 'true') return true
     if (configured === 'false') return !isProductionRuntime()
 
-    // The immutable production candidate is first evaluated in the separate
-    // Staging runtime. Treat an omitted runtime value as frozen there, rather
-    // than allowing a configuration omission to write shared Production data.
-    return (
-        process.env.NODE_ENV === 'production' &&
-        process.env.DEPLOY_TARGET === 'production'
-    )
+    // Treat every production server runtime as frozen unless the explicit
+    // Production role above thaws it. This also protects a legacy Staging
+    // deployment that still overrides the candidate's build target.
+    return process.env.NODE_ENV === 'production'
 }
 
 export function requireWritesAllowed(operation: string) {
