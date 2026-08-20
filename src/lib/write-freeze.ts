@@ -21,7 +21,17 @@ export class WriteFreezeError extends Error {
 }
 
 export function isWriteFreezeEnabled() {
-    return process.env[WRITE_FREEZE_ENV] === 'true'
+    const configured = process.env[WRITE_FREEZE_ENV]
+    if (configured === 'true') return true
+    if (configured === 'false') return false
+
+    // The immutable production candidate is first evaluated in the separate
+    // Staging runtime. Treat an omitted runtime value as frozen there, rather
+    // than allowing a configuration omission to write shared Production data.
+    return (
+        process.env.NODE_ENV === 'production' &&
+        process.env.DEPLOY_TARGET === 'production'
+    )
 }
 
 export function requireWritesAllowed(operation: string) {
@@ -31,13 +41,13 @@ export function requireWritesAllowed(operation: string) {
 }
 
 export function isWriteFreezeError(error: unknown): error is WriteFreezeError {
-    return error instanceof WriteFreezeError
-        || (
-            error instanceof Error
-            && error.name === 'WriteFreezeError'
-            && 'code' in error
-            && error.code === WRITE_FREEZE_ERROR_CODE
-        )
+    return (
+        error instanceof WriteFreezeError ||
+        (error instanceof Error &&
+            error.name === 'WriteFreezeError' &&
+            'code' in error &&
+            error.code === WRITE_FREEZE_ERROR_CODE)
+    )
 }
 
 export function getWriteFreezeMessage() {

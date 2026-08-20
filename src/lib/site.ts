@@ -54,7 +54,10 @@ export function getSiteRuntimeConfig(): SiteRuntimeConfig {
   return {
     target,
     siteUrl,
-    allowIndexing: target === 'production',
+    // A Production Candidate is intentionally rendered in Staging first. The
+    // candidate is noindex until only the Production runtime opts in.
+    allowIndexing: target === 'production'
+      && process.env.PRODUCTION_INDEXING_ENABLED === 'true',
   }
 }
 

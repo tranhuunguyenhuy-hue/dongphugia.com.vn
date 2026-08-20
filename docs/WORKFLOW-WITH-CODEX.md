@@ -97,6 +97,11 @@ reference, and discovery checks instead of an unrelated application build.
 
 Source delivery and production rollout are separate workflows:
 
-`source commit → CI image/digest → staging validation → PM review → merge → production rollout`
+`source commit → one immutable Production Candidate digest → staging validation of that exact digest → PM review → merge → production rollout of that same digest`
+
+For the repository-wide shared-data staging architecture, the separate Staging
+runtime reads Production data/media but remains write-frozen and noindex by
+default. Its data/media alignment is a Gate B infrastructure mutation, not a
+source or candidate-build action; see `docs/deploy/staging-coolify.md`.
 
 Every production mutation must satisfy the production gates in root `AGENTS.md`.
