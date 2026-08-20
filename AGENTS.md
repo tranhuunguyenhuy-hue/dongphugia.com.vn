@@ -31,6 +31,12 @@ recovery operation.
 Skills define a workflow, not authority. A skill never expands task scope,
 mutation ownership, merge authority, or production authority.
 
+## Release-path routing
+
+Before every delivery task, read `docs/WORKFLOW-WITH-CODEX.md` and state the
+`FAST_PATH` or `FULL_PATH` classification it defines, with a brief reason. The
+default, triggers, and controls live only in that workflow.
+
 ## Mandatory preflight
 
 Complete this before repository work, including read-only diagnosis or review:
@@ -76,11 +82,14 @@ See `docs/agents/domain.md`.
 ## Production and secret gates
 
 - A source change, PR, or merge is not a production deployment.
-- Production mutation requires an exact Asia/Ho_Chi_Minh window and explicit PM
-  rollout approval, plus revalidated AWS identity, monitoring, and the accepted
-  Coolify control-plane path using a reviewed immutable ARM64 digest.
-- Production data or runtime changes require a fresh backup, checksum, private
-  copy, verified rollback readiness, and no-split-brain evidence.
+- Every Production rollout needs one explicit PM rollout approval, the exact
+  immutable candidate validated on Staging, and a known rollback target. The
+  applicable release path determines the remaining preflight and evidence.
+- `FULL_PATH` changes involving database schema, permissions, destructive data,
+  infrastructure, AWS/network/security, Coolify infrastructure, CDN/storage,
+  DNS, broad authentication/authorization, irreversible work, or difficult
+  rollback require the stricter controls defined in the workflow. Backup and
+  restore readiness is a release blocker only when that release risk needs it.
 - DNS, production data, AWS runtime, traffic routing, Bunny, and Vercel changes
   are separate scopes and never implied by source work.
 - LCP optimization remains deferred and must pass staging gates before any
