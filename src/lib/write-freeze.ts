@@ -1,3 +1,5 @@
+import { isProductionRuntime } from './runtime-role'
+
 /**
  * Server-side write-freeze guard for database cutover windows.
  *
@@ -21,7 +23,14 @@ export class WriteFreezeError extends Error {
 }
 
 export function isWriteFreezeEnabled() {
-    return process.env[WRITE_FREEZE_ENV] === 'true'
+    const configured = process.env[WRITE_FREEZE_ENV]
+    if (configured === 'true') return true
+    if (configured === 'false') return !isProductionRuntime()
+
+    // Treat every production server runtime as frozen unless the explicit
+    // Production role above thaws it. This also protects a legacy Staging
+    // deployment that still overrides the candidate's build target.
+    return process.env.NODE_ENV === 'production'
 }
 
 export function requireWritesAllowed(operation: string) {
@@ -31,13 +40,13 @@ export function requireWritesAllowed(operation: string) {
 }
 
 export function isWriteFreezeError(error: unknown): error is WriteFreezeError {
-    return error instanceof WriteFreezeError
-        || (
-            error instanceof Error
-            && error.name === 'WriteFreezeError'
-            && 'code' in error
-            && error.code === WRITE_FREEZE_ERROR_CODE
-        )
+    return (
+        error instanceof WriteFreezeError ||
+        (error instanceof Error &&
+            error.name === 'WriteFreezeError' &&
+            'code' in error &&
+            error.code === WRITE_FREEZE_ERROR_CODE)
+    )
 }
 
 export function getWriteFreezeMessage() {

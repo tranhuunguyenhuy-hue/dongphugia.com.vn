@@ -1,3 +1,5 @@
+import { isProductionRuntime } from './runtime-role'
+
 export const DEFAULT_CANONICAL_SITE_URL = 'https://www.dongphugia.vn'
 
 export type DeployTarget = 'local' | 'staging' | 'production'
@@ -54,7 +56,11 @@ export function getSiteRuntimeConfig(): SiteRuntimeConfig {
   return {
     target,
     siteUrl,
-    allowIndexing: target === 'production',
+    // A Production Candidate is intentionally rendered in Staging first. The
+    // candidate is noindex until only the Production runtime opts in.
+    allowIndexing: target === 'production'
+      && isProductionRuntime()
+      && process.env.PRODUCTION_INDEXING_ENABLED === 'true',
   }
 }
 

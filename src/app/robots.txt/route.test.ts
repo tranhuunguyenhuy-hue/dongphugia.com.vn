@@ -7,6 +7,8 @@ describe('GET /robots.txt', () => {
     it('advertises only the canonical production sitemap', async () => {
         vi.stubEnv('DEPLOY_TARGET', 'production')
         vi.stubEnv('NEXT_PUBLIC_SITE_URL', 'https://www.dongphugia.vn')
+        vi.stubEnv('PRODUCTION_INDEXING_ENABLED', 'true')
+        vi.stubEnv('RUNTIME_ROLE', 'production')
         const response = GET()
         const body = await response.text()
 
@@ -18,7 +20,10 @@ describe('GET /robots.txt', () => {
 
     it('blocks crawlers outside production', async () => {
         vi.stubEnv('DEPLOY_TARGET', 'staging')
-        vi.stubEnv('NEXT_PUBLIC_SITE_URL', 'https://dongphugia-staging.example.test')
+        vi.stubEnv(
+            'NEXT_PUBLIC_SITE_URL',
+            'https://dongphugia-staging.example.test',
+        )
         const response = GET()
         expect(await response.text()).toBe('User-agent: *\nDisallow: /\n')
     })
