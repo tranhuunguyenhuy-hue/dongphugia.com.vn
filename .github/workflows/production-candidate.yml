@@ -48,6 +48,15 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Require production Publishing CDN hostname
+        shell: bash
+        env:
+          PUBLISHING_BUNNY_CDN_HOSTNAME: ${{ vars.PRODUCTION_PUBLISHING_BUNNY_CDN_HOSTNAME }}
+        run: |
+          set -euo pipefail
+          test -n "$PUBLISHING_BUNNY_CDN_HOSTNAME"
+          [[ "$PUBLISHING_BUNNY_CDN_HOSTNAME" =~ ^[a-z0-9.-]+$ ]]
+
       - name: Build and push exact candidate
         id: build
         uses: docker/build-push-action@v6
@@ -67,7 +76,7 @@ jobs:
             DEPLOY_TARGET=production
             NEXT_PUBLIC_SITE_URL=${{ env.PRODUCTION_SITE_URL }}
             BUNNY_CDN_HOSTNAME=${{ env.BUNNY_CDN_HOSTNAME }}
-            PUBLISHING_BUNNY_CDN_HOSTNAME=${{ vars.PRODUCTION_PUBLISHING_BUNNY_CDN_HOSTNAME || env.BUNNY_CDN_HOSTNAME }}
+            PUBLISHING_BUNNY_CDN_HOSTNAME=${{ vars.PRODUCTION_PUBLISHING_BUNNY_CDN_HOSTNAME }}
 
       - name: Verify pushed digest and source label
         shell: bash
