@@ -12,10 +12,12 @@ runtime. GitHub Actions builds one immutable Production Candidate; that same
 digest is validated on Staging before it is eligible for separately approved
 Production promotion.
 
-Staging is not a disposable data sandbox. It uses fail-closed write freezing,
-noindex by default, disabled scheduler/side effects, and explicit PM gates for
-any operation that could affect Production data, media, cache, users or an
-external system.
+Staging is not a disposable data sandbox. It uses dedicated database-level
+read-only principals for its Production-data connections where technically
+feasible, fail-closed application write freezing as defense in depth, noindex
+by default, disabled scheduler/side effects, and explicit PM gates for any
+operation that could affect Production data, media, cache, users or an external
+system.
 
 ## Consequences
 
@@ -25,6 +27,9 @@ external system.
   mutable tag cannot prove Production Candidate acceptance.
 - CI fixtures remain disposable test infrastructure only; seed/reset/migration
   commands are prohibited against the shared runtime.
+- The current repository does not prove read-only Staging database principals
+  are configured. Provisioning and verifying them is an implementation item in
+  the risk-triggered Staging alignment plan, not a claim about current runtime.
 - Expected environmental differences are limited to runtime addressability,
   authentication, noindex/write-freeze guardrails and separately authorized
   side effects.
@@ -38,3 +43,4 @@ external system.
 - GitHub Issue #68
 - `docs/deploy/staging-coolify.md`
 - Issue #66 Managed Media acceptance
+- ADR 0011: risk-based release paths

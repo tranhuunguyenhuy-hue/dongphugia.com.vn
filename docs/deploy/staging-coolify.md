@@ -19,9 +19,12 @@ linked Issue.
 2. Coolify Staging selects that **same exact immutable Production Candidate
    digest**. A mutable tag and a staging-only build are never acceptance
    evidence.
-3. The Staging runtime is distinct from Production. Only its own runtime
-   configuration and selected digest change during Gate B; Production remains
-   untouched.
+3. The Staging runtime is distinct from Production. Gate B changes only its
+   runtime configuration and selected digest; the Production application
+   runtime, selected image, traffic, data, and media remain untouched. If the
+   shared-data setup needs a Production database read-only principal, its
+   provisioning and grants are a distinct, explicitly approved `FULL_PATH`
+   Production-database permission mutation, not a Staging-only action.
 4. The digest that passes complete Staging acceptance is the only digest that
    can be proposed at Gate C for Production. Do not rebuild it between gates.
 
@@ -30,6 +33,19 @@ source contract only. It does not build, push, deploy, or configure a staging
 image.
 
 ## Shared-data safety model
+
+The preferred primary database safety boundary is a dedicated database-level
+read-only principal for every Staging connection to Production data, including a
+separate Publishing database when one exists. Application write-freeze is
+defense in depth, not the only database boundary. The repository does not prove
+that the current Staging configuration uses those principals; provisioning,
+granting, verifying, and recording a rollback reference for them remain a
+`FULL_PATH` implementation item before shared-data Staging is enabled.
+
+If a Production-data connection cannot technically use its own read-only
+principal, do not silently rely on application write-freeze. Stop shared-data
+Staging enablement until an explicitly approved `FULL_PATH` exception defines
+the alternative database boundary and rollback plan.
 
 The application blocks all writes through the common Prisma client and guarded
 mutating routes when `WRITE_FREEZE_MODE` is true. A Production Candidate also
@@ -52,7 +68,7 @@ this role at build time.
 | Operation class                                                               | Staging rule while sharing Production data/media                                                                     |
 | ----------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
 | Read/render public pages, APIs, sitemap, CDN media                            | Allowed as read-only acceptance.                                                                                     |
-| Admin, checkout/order, quote, Publishing, uploads/deletes, cache revalidation | Blocked by write freeze.                                                                                             |
+| Admin, checkout/order, quote, Publishing, uploads/deletes, cache revalidation | Denied by the read-only database boundary where applicable and blocked by application write freeze.                    |
 | Scheduler, seed/reset, migrations, schema tooling, Global Publishing Gate     | Prohibited. Keep scheduler disabled and Gate closed.                                                                 |
 | Email, webhooks, search indexing, third-party callbacks, analytics            | Do not invoke during validation unless a separately approved, bounded procedure proves it is redirected or harmless. |
 | Any temporary thaw, destructive operation, media deletion, external effect    | Requires a new explicit PM authorization and immediate return to frozen state.                                       |
@@ -63,9 +79,13 @@ Configure values only in the approved Coolify runtime mechanism. Never place
 values, connection strings, tokens, host identifiers, or credentials in this
 repository, Issue, PR, shell history, CI output, or chat.
 
-- Main application data connection: the reviewed Production database/data path.
-- Publishing data connection: the reviewed Production Publishing database path;
-  it remains least-privilege and may be distinct from the CMS connection.
+- Main application data connection: the reviewed Production database/data path
+  using its dedicated database-level read-only Staging principal. Do not
+  substitute application write-freeze for this database boundary.
+- Publishing data connection: the reviewed Production Publishing database path
+  using its dedicated database-level read-only Staging principal when it is a
+  separate connection. Do not substitute application write-freeze for this
+  database boundary.
 - Catalogue and Publishing CDN/media: the reviewed Production hosts and storage
   scope used by the Production Candidate.
 - Publishing environment/storage boundary: Production, so the shared media
@@ -76,6 +96,9 @@ repository, Issue, PR, shell history, CI output, or chat.
 - `PRODUCTION_INDEXING_ENABLED`: omitted or false.
 - `RUNTIME_ROLE`: staging.
 - Scheduler: disabled. Do not create or execute a task against shared data.
+- Auto-deploy: disabled whenever deterministic candidate validation is required.
+  Select the reviewed immutable digest manually; do not let a later mutable
+  image replace the candidate under test.
 
 No data migration, seed, reset, schema command, storage copy, CDN rewrite,
 DNS/traffic change, or resource deletion is needed merely because Staging
@@ -83,12 +106,23 @@ starts reading Production data.
 
 ## Gate B preflight and reversible execution
 
+Shared-data Staging alignment is `FULL_PATH` work. Any required Production
+database-principal provisioning or grant is a distinct, explicitly approved
+Production-database permission mutation before the Staging binding; Gate B does
+not change the Production application runtime or traffic. The dedicated plan
+must be proportionate: restore rehearsal is a blocking gate only if this
+release changes schema, permissions in a way that needs restore for rollback,
+performs destructive data work, or otherwise depends on restore capability.
+Issue #70 remains operational hardening and disaster-recovery follow-up; it is
+not an automatic blocker for ordinary Fast Path releases.
+
 Before requesting Gate B approval, record sanitized `PASS`, `FAIL`, or
 `UNKNOWN` evidence for: current Staging and Production image state; selected
 candidate digest; application health; Production database health/capacity;
-backup and restore capability; Production media health; monitoring; runtime
-permission availability; side-effect guardrails; prior Staging digest and
-configuration rollback reference.
+dedicated read-only-principal availability and effective permissions;
+Production media health; monitoring; runtime side-effect guardrails; and prior
+Staging digest/configuration rollback reference. Add backup/restore evidence
+only when the approved Full Path risk plan requires it.
 
 After approval, change only the Staging runtime in this order:
 
@@ -96,8 +130,9 @@ After approval, change only the Staging runtime in this order:
    Publishing CDN contract.
 2. Preserve the prior Staging digest/configuration reference without printing
    sensitive values.
-3. Bind Staging to the selected digest plus the reviewed Production
-   data/media configuration, with write freeze and noindex active.
+3. Verify the dedicated Staging database principal is read-only and bind
+   Staging to the selected digest plus the reviewed Production data/media
+   configuration, with write freeze and noindex active.
 4. Deploy Staging once and stop if health, digest, guardrails, or monitoring is
    ambiguous.
 5. Run whole-site read-only acceptance. Do not deploy Production.
@@ -126,9 +161,9 @@ does not close #66's Production acceptance and does not authorize Gate C.
 
 ## Gate C handoff
 
-Before Production promotion, perform a fresh read-only preflight. Confirm the
-same digest that passed Staging, current Production health, database/CDN and
-backup state, monitoring, rollback target, deployment window, all Staging
-acceptance and Blog evidence, and the explicit Production runtime settings for
-write enablement and indexing. Ask for Gate C approval before any Production
-deployment or configuration change.
+Before Production promotion, confirm the same digest that passed Staging,
+current Production health, monitoring, rollback target, the applicable
+release-path acceptance, and the explicit Production runtime settings for write
+enablement and indexing. Add database/CDN/backup evidence when the approved
+Full Path risk plan requires it. Ask for the one Production rollout approval
+before any Production deployment or configuration change.
