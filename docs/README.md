@@ -1,10 +1,17 @@
 # Dongphugia documentation
 
-Only current runtime and Phase 1 documentation is kept with the application.
+## Active authority
 
-- [Application conventions](AGENTS.md)
-- [Codex workflow and FAST_PATH/STANDARD/HIGH_RISK release policy](WORKFLOW-WITH-CODEX.md)
-- [Production operations, incident follow-up, or project handoff: current operational baseline](ops/project-current-state.md)
+- Root [`AGENTS.md`](../AGENTS.md): always-on authority and safety contract.
+- [`WORKFLOW-WITH-CODEX.md`](WORKFLOW-WITH-CODEX.md): task routing, delivery,
+  review, and release paths.
+- [`AGENTS.md`](AGENTS.md): application conventions, read only for application
+  code, schema, or tests.
+- [`project-current-state.md`](ops/project-current-state.md): current operational
+  baseline for Production, incident follow-up, and handoff.
+
+## On-demand reference
+
 - [Design system](DESIGN_SYSTEM.md)
 - [Public sitemap map](SITEMAP.md)
 - [Coolify shared Production-data Staging runbook](deploy/staging-coolify.md)
@@ -12,6 +19,6 @@ Only current runtime and Phase 1 documentation is kept with the application.
 - [Publishing API v1 integration guide](integrations/publishing-api-v1-integration-guide.vi.md)
 - [AI Agent publishing operation guide](operations/ai-agent-publishing-operation-guide.vi.md)
 
-Historical crawl, content-review, migration and planning evidence is not active
-application documentation. It is recoverable from Git history or the approved
+Historical status, crawl, content-review, migration, and planning evidence is
+not workflow authority. It remains recoverable from Git history or approved
 quarantine where retention applies.

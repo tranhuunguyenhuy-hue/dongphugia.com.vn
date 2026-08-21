@@ -44,6 +44,7 @@ follow-up work must not resume them implicitly.
 - Issue #68 and shared-data migration.
 - Cloudflare or Vercel migration.
 - Coolify replacement.
+- LCP optimization and Production promotion.
 - Unrelated refactoring.
 
 ## Known Operational Notes
@@ -52,7 +53,12 @@ follow-up work must not resume them implicitly.
   completed deployment record alone is insufficient evidence.
 - Production acceptance must include the rendered browser result as well as
   health, HTTP, and CSP checks when image delivery is in scope.
+- The 2026-08-04 consolidation quarantine remains subject to retention and
+  requires fresh explicit approval before permanent deletion.
 
 ## Next Phase
 
-Repository cleanup, code-hygiene audit, and website-optimization preparation.
+The approved Phase 1 scope is source-only workflow-core optimization and stale
+authority cleanup. It does not authorize the separately deferred cleanup,
+code-hygiene audit, website optimization, Publishing documentation alignment,
+or any Production mutation.

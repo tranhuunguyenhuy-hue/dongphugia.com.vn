@@ -25,5 +25,7 @@ local divergence here rather than silently changing upstream behavior.
 Repository policy and compatibility rules in root `AGENTS.md` and
 `docs/WORKFLOW-WITH-CODEX.md` take precedence when an upstream skill assumes an
 uninstalled companion skill or conflicts with Dongphugia safety requirements.
+Installed skills are optional tools routed by that workflow, not mandatory
+pipeline stages.
 
 License: `LICENSE.mattpocock-skills`.

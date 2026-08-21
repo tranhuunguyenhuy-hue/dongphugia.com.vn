@@ -1,6 +1,6 @@
 # Dongphugia agent contract
 
-This repository is the single active source of truth for Dongphugia.
+This checkout is the single active source of truth for Dongphugia.
 
 ## Canonical context
 
@@ -9,123 +9,102 @@ This repository is the single active source of truth for Dongphugia.
 - Protected default branch: `main`
 - Production: `https://www.dongphugia.vn`
 - Runtime: AWS EC2/Coolify with reviewed immutable ARM64 images
-- Database: AWS PostgreSQL is the sole production database
+- Database: AWS PostgreSQL is the sole Production database
 - Media: Bunny CDN compatibility is required
 - Baseline tag: `canonical-aws-baseline-20260804`
 - Vercel Git integration is disconnected; `.com.vn` is unavailable
 
-Use this checkout only. Another clone, checkout, worktree, historical branch,
+Use only this checkout. Another clone, checkout, worktree, historical branch,
 Vercel deployment, or Supabase project requires explicit PM approval for a
 recovery operation.
 
-For Production operations, incident follow-up, or a project handoff, read
-`docs/ops/project-current-state.md` before acting.
+## Authority
 
-## Roles
+- **PM — Nguyen Huy:** owns outcome, product decisions, scope, acceptance,
+  merge approval, and every Production approval.
+- **Primary Codex:** is the sole mutation owner for the active task and may
+  explore, edit, validate, commit, push, and open its PR.
+- **Review agents:** are read-only. They do not edit, commit, push, merge,
+  deploy, or change external state.
 
-- **PM — Nguyen Huy:** owns outcome, product decisions, acceptance, merge
-  approval, and every production approval.
-- **Primary Codex:** the only mutation owner; explores, plans, edits, validates,
-  commits, pushes, and opens the task PR.
-- **Review agents:** read-only reviewers for the axis assigned by a selected
-  skill. They do not edit files, commit, push, merge, deploy, or change external
-  state.
+Skills are optional workflow tools. They never expand scope, mutation
+ownership, merge authority, or Production authority. The repository routing in
+`docs/WORKFLOW-WITH-CODEX.md` overrides default behavior in the pinned upstream
+skill snapshot.
 
-Skills define a workflow, not authority. A skill never expands task scope,
-mutation ownership, merge authority, or production authority.
+## Delivery routing
 
-## Release-path routing
+For every delivery task, follow `Request → Route → Preflight → Align → Execute
+→ Validate → Review → Deliver → Release` in
+`docs/WORKFLOW-WITH-CODEX.md`. State `FAST_PATH`, `STANDARD`, or `HIGH_RISK`
+with a brief reason before implementation. `FAST_PATH` is the default for
+small, bounded, low-risk work.
 
-Before every delivery task, read `docs/WORKFLOW-WITH-CODEX.md` and state the
-`FAST_PATH`, `STANDARD`, or `HIGH_RISK` classification it defines, with a
-brief reason. The default, triggers, and controls live only in that workflow.
+Read additional context only when its branch applies:
 
-## Mandatory preflight
+- Application code, schema, or tests: `docs/AGENTS.md`.
+- Domain terms or architectural decisions: `docs/agents/domain.md`, then the
+  relevant `CONTEXT.md` and ADRs.
+- Production operations, incident follow-up, or project handoff:
+  `docs/ops/project-current-state.md`.
 
-Complete this before repository work, including read-only diagnosis or review:
+## Safety preflight
 
-1. Confirm `pwd` is exactly `/Users/m-ac/Projects/dongphugia`.
-2. Run `git status --short --branch` and identify the intended branch.
-3. Read the scope document that matches the task:
-   - **Any repo-scoped Matt skill, source, Git, issue, or PR work:**
-     `docs/WORKFLOW-WITH-CODEX.md`.
-   - **Application code, schema, or tests:** `docs/AGENTS.md`.
-   - **Domain terms or architectural decisions:** `docs/agents/domain.md`, then
-     the relevant `CONTEXT.md` and ADRs when they exist.
-4. Inspect open PRs and the latest `origin/main` before changing files.
-5. Keep one mutation owner. A dirty worktree with unrelated user changes is a
-   stop condition: preserve it and do not stage, switch, clean, reset, or stash.
+Every task confirms the canonical path, current branch/worktree, applicable
+instructions, and mutation ownership. Add evidence in proportion to the route:
 
-Preflight is complete only when the path, branch, relevant instructions, remote
-baseline, open mutations, and worktree ownership are known.
+- **Read-only:** inspect remote, PR, or live state only when freshness affects
+  the requested conclusion.
+- **Source mutation:** before the first write, confirm a clean worktree, latest
+  `origin/main`, open PRs, intended task branch, and sole mutation ownership.
+- **Production or HIGH_RISK:** revalidate the exact target, identity,
+  authorization, monitoring, rollback, and every risk-specific gate immediately
+  before mutation.
+
+Unrelated dirty work is a stop condition. Preserve it; do not switch, stage,
+clean, reset, or stash around it.
 
 ## Git guardrails
 
 - Never commit or force-push directly to `main`.
-- One Primary Codex owns the task branch and stages only task-owned files.
-- PM approval is required for merge; merge authority never implies deployment
-  authority.
+- Create one `codex/<task>` branch immediately before the first task-owned file
+  write; the branch is an execution detail, not an approval gate.
+- Stage only task-owned files and open one PR for one deliverable or phase.
+- Required CI must pass. PM approval is required to merge through protected
+  `main`; merge authority never implies deployment authority.
 
-The task-routing, branch, validation, review, and delivery process lives only in
-`docs/WORKFLOW-WITH-CODEX.md`.
-
-## Agent skills
-
-### Issue tracker
-
-Engineering issues and specs live only in GitHub Issues. See
+Engineering issues and specs live only in GitHub Issues; see
 `docs/agents/issue-tracker.md`.
-
-### Domain docs
-
-This is a single-context repository: domain language lives in root
-`CONTEXT.md`, and durable decisions live in `docs/adr/`. Both are created lazily.
-See `docs/agents/domain.md`.
 
 ## Production and secret gates
 
-- A source change, PR, or merge is not a production deployment.
-- Production safety gates are proportional to the blast radius and persistence
-  characteristics of the change. The applicable release path determines the
-  required preflight and evidence.
-- **Runtime-only Production changes** include immutable application-container
-  deploys, CSP/header/config changes, and application-code rollouts that do not
-  mutate database/schema, storage, network/traffic, or other persistent state.
-  They require an explicit PM approval and Asia/Ho_Chi_Minh window; revalidated
-  identity; the correct Production application/control-plane; exact immutable
-  ARM64 digest and provenance; monitoring/health verification; a verified
-  runtime rollback path when the deployment mechanism has a recoverable target;
-  and post-deploy acceptance checks. If that mechanism has no recoverable target,
-  record the gap and obtain explicit PM acceptance of its residual risk. A
-  runtime-only change does not require fresh database backup, checksum, private
-  database copy, restore test, or database no-split-brain evidence.
-- A Shared-data Staging check may be deferred only under the strict conditions
-  in `docs/deploy/staging-coolify.md`: same-digest non-destructive evidence,
-  immediate mandatory Production acceptance, and no deferral of feasible
-  Staging checks.
-- **Persistent-state Production mutations** include database/schema/data writes,
-  storage migration, network/traffic architecture change, or infrastructure
-  mutation that can affect persistent state. When applicable to the affected
-  state, they require fresh backup, checksum, private copy, restore verification,
-  rollback readiness, and no-split-brain evidence in addition to their release
-  path controls.
-- **HIGH_RISK** changes involving database schema, permissions, destructive data,
-  infrastructure, AWS/network/security, Coolify infrastructure, CDN/storage,
-  DNS, broad authentication/authorization, irreversible work, or difficult
-  rollback require the stricter controls defined in the workflow.
-- DNS, production data, AWS runtime, traffic routing, Bunny, and Vercel changes
-  are separate scopes and never implied by source work.
-- LCP optimization remains deferred and must pass staging gates before any
-  production promotion.
-- Load `aws-secrets-manager` before AWS credential or secret work. Keep
-  credentials, environment values, connection URLs, tokens, OTPs, MFA, and PII
-  out of model output. Use `asm-exec` and runtime-safe dynamic references; never
-  call `get-secret-value` or `batch-get-secret-value`.
-- Human MFA and OTP entry happens only in the provider UI.
+- A source change, PR, or merge is not a Production deployment.
+- Promote only the immutable ARM64 digest validated on Staging; never rebuild a
+  different image between Staging and Production.
+- Runtime-only Production changes require explicit PM approval and an
+  Asia/Ho_Chi_Minh window; revalidated target and identity; exact digest and
+  provenance; monitoring and health; a verified rollback target when the
+  mechanism has one, or explicit acceptance of the documented residual risk;
+  and task-relevant post-deploy acceptance.
+- A Shared-data Staging check may be deferred only under
+  `docs/deploy/staging-coolify.md`: related same-digest non-destructive evidence
+  must pass, feasible checks remain required, and the deferred check becomes
+  immediate mandatory Production acceptance.
+- Persistent-state Production mutations require the `HIGH_RISK` controls
+  applicable to the affected state, including fresh backup, checksum, private
+  copy, restore verification, rollback readiness, and no-split-brain evidence.
+- Database, permissions, destructive data, AWS/network/security, Coolify
+  infrastructure, CDN/storage, DNS, broad authentication/authorization,
+  irreversible work, and difficult rollback are `HIGH_RISK` scopes.
+- DNS, Production data, AWS runtime, traffic, Bunny, and Vercel changes are
+  separate scopes and are never implied by source work.
+- For AWS credential or secret work, load `aws-secrets-manager`. Use `asm-exec`
+  and runtime-safe dynamic references; never call `get-secret-value` or
+  `batch-get-secret-value`. Keep credentials, environment values, connection
+  URLs, tokens, OTPs, MFA, and PII out of output. Human MFA/OTP entry occurs only
+  in the provider UI.
 
-## Cleanup gate
+## Cleanup
 
-Prefer recoverable quarantine and record exact paths plus retention dates.
-Preserve unrelated work. Permanent deletion of the 2026-08-04 consolidation
-quarantine is unauthorized before 2026-08-18 and still requires fresh explicit
-approval after that date.
+Preserve unrelated work and retention constraints. Prefer recoverable
+quarantine; permanent deletion requires fresh explicit approval.

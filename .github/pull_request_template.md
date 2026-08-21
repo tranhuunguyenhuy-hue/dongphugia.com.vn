@@ -2,11 +2,17 @@
 
 - What changed:
 - Why:
+- Release path: FAST_PATH / STANDARD / HIGH_RISK
 
 ## Scope
 
 - In scope:
 - Out of scope:
+
+## Acceptance
+
+- Acceptance source:
+- Done when:
 
 ## Risk
 
@@ -15,16 +21,21 @@
 
 ## Validation
 
-- [ ] Lint
-- [ ] Typecheck
-- [ ] Tests
-- [ ] Production build
-- [ ] Additional scope-specific checks documented
+- Focused commands and results:
+- Checks marked N/A with reason:
+- Required CI:
+
+## Review
+
+- Integrated FAST_PATH review or independent review evidence:
+- Findings resolved:
 
 ## Rollout and rollback
 
-- Deployment required: No / Yes with approved PM window
+- Production: No / separately approved later
+- Candidate and Staging evidence, when applicable:
 - Rollback:
+- Next authorized action:
 
 ## Checklist
 

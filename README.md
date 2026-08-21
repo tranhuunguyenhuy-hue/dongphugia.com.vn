@@ -20,6 +20,9 @@ commit hoặc in giá trị ra log.
 
 ## Validation
 
+Run only the commands applicable to the affected scope; required CI remains the
+merge gate:
+
 ```bash
 npm run lint
 npm run typecheck
@@ -29,9 +32,10 @@ npm run build
 
 ## Release gates
 
-Merge source không tự deploy. Staging validation, merge protected `main` và
-production rollout là ba approval riêng. Production chỉ phục vụ
-`https://www.dongphugia.vn`; xem [workflow](docs/WORKFLOW-WITH-CODEX.md) và
+Merge source không tự deploy. Routine FAST_PATH candidate/Staging validation
+không cần approval lặp lại; merge vào protected `main` và Production rollout
+vẫn cần PM approval riêng. Chỉ promote immutable digest đã được Staging kiểm
+tra; xem [workflow](docs/WORKFLOW-WITH-CODEX.md) và
 [staging runbook](docs/deploy/staging-coolify.md).
 
 ## Repository map
