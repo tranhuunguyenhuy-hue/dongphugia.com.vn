@@ -75,8 +75,10 @@ Use the following flow for an ordinary application change:
 8. Build or select one immutable ARM64 Production Candidate from that merged
    revision.
 9. Deploy that exact digest to the separate Staging runtime.
-10. Run focused smoke and acceptance checks relevant to the task, and confirm
-    the known Production rollback target.
+10. Run focused smoke and acceptance checks relevant to the task. Verify a
+    recoverable Production rollback target when the deployment mechanism has
+    one; otherwise record the gap and obtain explicit PM acceptance of its
+    residual risk.
 11. Obtain one explicit PM Production rollout approval.
 12. Promote the same immutable digest to Production; never rebuild an
     application image between Staging and Production.
@@ -108,7 +110,9 @@ Regardless of release path:
 1. Never commit directly to `main`.
 2. Required CI must pass.
 3. Staging validates the candidate before Production rollout.
-4. Production has a known rollback target.
+4. Production has a verified rollback target when its deployment mechanism has
+   a recoverable one; otherwise the rollout approval explicitly accepts the
+   documented residual risk.
 5. Database, destructive, and infrastructure changes receive stricter controls
    than ordinary application changes.
 6. Promote the same immutable candidate that Staging validated; do not rebuild

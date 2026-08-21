@@ -82,14 +82,30 @@ See `docs/agents/domain.md`.
 ## Production and secret gates
 
 - A source change, PR, or merge is not a production deployment.
-- Every Production rollout needs one explicit PM rollout approval, the exact
-  immutable candidate validated on Staging, and a known rollback target. The
-  applicable release path determines the remaining preflight and evidence.
+- Production safety gates are proportional to the blast radius and persistence
+  characteristics of the change. The applicable release path determines the
+  required preflight and evidence.
+- **Runtime-only Production changes** include immutable application-container
+  deploys, CSP/header/config changes, and application-code rollouts that do not
+  mutate database/schema, storage, network/traffic, or other persistent state.
+  They require an explicit PM approval and Asia/Ho_Chi_Minh window; revalidated
+  identity; the correct Production application/control-plane; exact immutable
+  ARM64 digest and provenance; monitoring/health verification; a verified
+  runtime rollback path when the deployment mechanism has a recoverable target;
+  and post-deploy acceptance checks. If that mechanism has no recoverable target,
+  record the gap and obtain explicit PM acceptance of its residual risk. A
+  runtime-only change does not require fresh database backup, checksum, private
+  database copy, restore test, or database no-split-brain evidence.
+- **Persistent-state Production mutations** include database/schema/data writes,
+  storage migration, network/traffic architecture change, or infrastructure
+  mutation that can affect persistent state. When applicable to the affected
+  state, they require fresh backup, checksum, private copy, restore verification,
+  rollback readiness, and no-split-brain evidence in addition to their release
+  path controls.
 - `FULL_PATH` changes involving database schema, permissions, destructive data,
   infrastructure, AWS/network/security, Coolify infrastructure, CDN/storage,
   DNS, broad authentication/authorization, irreversible work, or difficult
-  rollback require the stricter controls defined in the workflow. Backup and
-  restore readiness is a release blocker only when that release risk needs it.
+  rollback require the stricter controls defined in the workflow.
 - DNS, production data, AWS runtime, traffic routing, Bunny, and Vercel changes
   are separate scopes and never implied by source work.
 - LCP optimization remains deferred and must pass staging gates before any
