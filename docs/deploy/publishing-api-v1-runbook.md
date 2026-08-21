@@ -7,17 +7,12 @@ This runbook operates the internal, single-tenant Publishing API. It does not
 authorize a staging rollout, a production deployment, a database migration, or
 any Bunny configuration change. Those are separate PM approval gates.
 
-> **Shared-data Staging supersedes the legacy synthetic topology.** Shared-data
-> Staging uses Production data/media for read-only candidate validation and
-> must remain write-frozen; do not issue Publishing credentials, run scheduler
-> acceptance, upload media, or use a staging-specific storage/CDN path there.
-> The synthetic CI validation section below uses disposable test infrastructure
-> only.
-
 ## Authority and procedure map
 
-- ADR 0010 and [`staging-coolify.md`](staging-coolify.md) are authoritative for
-  Shared-data Staging. Staging is read-only/write-frozen for Publishing.
+- Shared-data Staging supersedes the legacy synthetic topology. ADR 0010 and
+  [`staging-coolify.md`](staging-coolify.md) are authoritative: Staging uses
+  Production data/media for read-only candidate validation.
+  It must remain write-frozen for Publishing.
 - The recurring procedures in this runbook operate approved Production
   integrations only.
 - Disposable synthetic checks run only in isolated CI/local test databases.
@@ -48,9 +43,13 @@ any Bunny configuration change. Those are separate PM approval gates.
 
 ## Configuration inventory
 
-Provide the following only through the approved runtime secret/configuration
-mechanism. A shared-data Staging runtime uses the reviewed Production media
-configuration while write-frozen; it does not perform Publishing mutations.
+The inventory below is for the approved Production Publishing runtime and must
+be provided only through its approved secret/configuration mechanism. A
+Shared-data Staging runtime may receive the reviewed non-secret Production
+host/CDN values needed to render existing media, but it does not receive
+`PUBLISHING_BUNNY_STORAGE_API_KEY`, `PUBLISHING_SCHEDULER_TOKEN`, a scheduler
+task, or any other Publishing write credential. Its separate runtime role and
+write freeze remain mandatory.
 
 | Variable | Purpose | Secret |
 | --- | --- | --- |
@@ -202,17 +201,6 @@ For recurring Production monitoring, verify privately:
 
 Do not create synthetic content as a recurring health check.
 
-### One-time Production launch acceptance
-
-This is not a recurring procedure and never runs on Shared-data Staging. Under
-a separately approved Production launch window, verify that a due ready post is
-published once; revoked capability, closed Gate, stale version and inactive
-taxonomy each produce the expected Schedule Block; and recovery requires a new
-scheduled mutation with the current ETag. If the approved launch plan includes
-a bounded synthetic ready publication, record its cleanup/retention decision,
-Coolify task history, scheduler report, API response and public checks. This
-section does not itself authorize that mutation.
-
 ## Disposable Publishing validation
 
 Before a separately approved Production launch acceptance, run the PostgreSQL
@@ -266,6 +254,17 @@ not part of recurring operations, are not a current rollout plan, and must
 never be used on Shared-data Staging. Before any use, a new scoped plan must
 revalidate the exact Production state, immutable source, rollback evidence and
 explicit PM authority.
+
+### One-time Production launch acceptance
+
+This inactive-by-default procedure never runs on Shared-data Staging. Under a
+separately approved Production launch window, verify that a due ready post is
+published once; revoked capability, closed Gate, stale version and inactive
+taxonomy each produce the expected Schedule Block; and recovery requires a new
+scheduled mutation with the current ETag. If the approved launch plan includes
+a bounded synthetic ready publication, record its cleanup/retention decision,
+Coolify task history, scheduler report, API response and public checks. This
+section does not itself authorize that mutation.
 
 ### Legacy-constraint recovery (historical stop condition only)
 

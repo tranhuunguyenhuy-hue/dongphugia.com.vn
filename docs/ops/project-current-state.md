@@ -60,5 +60,8 @@ follow-up work must not resume them implicitly.
 
 The core delivery workflow is risk-scoped: FAST_PATH is the default for small,
 low-risk work, while stronger review and release controls follow actual blast
-radius and persistence. Publishing documentation alignment remains a separate,
-deferred phase and is not authorized by this baseline.
+radius and persistence. Publishing documentation is aligned to ADR 0010 and
+`docs/deploy/staging-coolify.md`: Shared-data Staging is write-frozen validation,
+while approved integrations use the Production Publishing API/credential
+contract. This documentation baseline does not authorize credential, runtime,
+data, media, deployment, or infrastructure changes.
