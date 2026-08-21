@@ -56,9 +56,9 @@ follow-up work must not resume them implicitly.
 - The 2026-08-04 consolidation quarantine remains subject to retention and
   requires fresh explicit approval before permanent deletion.
 
-## Next Phase
+## Workflow Baseline
 
-The approved Phase 1 scope is source-only workflow-core optimization and stale
-authority cleanup. It does not authorize the separately deferred cleanup,
-code-hygiene audit, website optimization, Publishing documentation alignment,
-or any Production mutation.
+The core delivery workflow is risk-scoped: FAST_PATH is the default for small,
+low-risk work, while stronger review and release controls follow actual blast
+radius and persistence. Publishing documentation alignment remains a separate,
+deferred phase and is not authorized by this baseline.

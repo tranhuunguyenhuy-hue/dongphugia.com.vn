@@ -4,10 +4,8 @@ Engineering issues and specs for this repository live only in GitHub Issues.
 Use the `gh` CLI from the canonical checkout so it infers
 `tranhuunguyenhuy-hue/dongphugia.com.vn` from the remote.
 
-Issue creation thresholds live in `docs/WORKFLOW-WITH-CODEX.md`. Do not create
-an Issue merely because a task exists: clear one-session FAST_PATH work needs
-none. When a spec is needed, keep it bounded to outcome, acceptance, scope,
-risk, validation, and next authorized action.
+Issue creation thresholds and spec bounds live in the Execute stage of
+`docs/WORKFLOW-WITH-CODEX.md`; this file owns tracker mechanics only.
 
 ## Conventions
 

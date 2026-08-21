@@ -32,10 +32,8 @@ npm run build
 
 ## Release gates
 
-Merge source không tự deploy. Routine FAST_PATH candidate/Staging validation
-không cần approval lặp lại; merge vào protected `main` và Production rollout
-vẫn cần PM approval riêng. Chỉ promote immutable digest đã được Staging kiểm
-tra; xem [workflow](docs/WORKFLOW-WITH-CODEX.md) và
+Merge source không tự deploy. Quy trình approval, candidate, Staging và
+Production nằm trong [workflow](docs/WORKFLOW-WITH-CODEX.md) và
 [staging runbook](docs/deploy/staging-coolify.md).
 
 ## Repository map

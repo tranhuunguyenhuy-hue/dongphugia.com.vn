@@ -19,6 +19,9 @@ Production: no | separately approved later
 Codex finds repository and primary-source facts. The PM decides product
 trade-offs, scope, acceptance, merge, and Production approval.
 
+Request is complete when outcome, observable acceptance, and Production intent
+are recorded, or the unresolved decision is named for Align.
+
 ### 2. Route
 
 State one route and its reason before implementation. Escalate whenever
@@ -28,8 +31,9 @@ Preflight or Execute reveals a larger blast radius.
   operational risk and no persistent-state or authority mutation. Examples
   include documentation, CSP/headers, non-persistent configuration, and small
   UI/rendering fixes.
-- `STANDARD` covers meaningful API/runtime behavior, authentication, uploads,
-  schedulers, or application logic risk without destructive persistent-state
+- `STANDARD` covers meaningful API/runtime behavior, bounded authentication
+  behavior that does not change authority, uploads, schedulers, workflow safety
+  contracts, or application logic risk without destructive persistent-state
   migration.
 - `HIGH_RISK` covers database/schema/data mutation, permissions, destructive
   work, storage/network authority, infrastructure with plausible data loss or
@@ -37,6 +41,9 @@ Preflight or Execute reveals a larger blast radius.
 
 Choose from blast radius and persistence, not diff size. Source work does not
 authorize runtime mutation.
+
+Route is complete when the classification and reason are recorded; later
+evidence may only preserve or escalate it.
 
 ### 3. Preflight
 
@@ -62,6 +69,11 @@ architecture, or material risk decision remains unresolved.
 Align is read-only by default. Record glossary or ADR changes during Execute
 only after the PM confirms the decision and those files are in scope.
 
+Align is complete when the PM has resolved every material product,
+architecture, scope, acceptance, and risk decision, or each unresolved item is
+explicitly blocked or deferred. Defer every GRILL-generated file write until
+Execute.
+
 ### 5. Execute
 
 The Primary Codex is the sole mutation owner. For source work, create one
@@ -79,6 +91,9 @@ Implement the smallest change that satisfies acceptance. Use `$tdd`,
 `$diagnosing-bugs`, `$codebase-design`, or other skills only when their specific
 trigger applies; they are not default pipeline stages.
 
+Execute is complete when task-owned changes implement the recorded acceptance
+without entering an unapproved scope.
+
 ### 6. Validate
 
 Run the smallest sufficient validation set for the affected scope:
@@ -91,6 +106,9 @@ Run the smallest sufficient validation set for the affected scope:
 - Required CI remains the final merge gate.
 
 Record commands, results, and any justified `N/A` checks.
+
+Validate is complete when every route-required local check passes, or a concrete
+blocker and its evidence are recorded.
 
 ### 7. Review
 
@@ -107,6 +125,9 @@ Review effort follows risk:
   apply. Review agents remain read-only; the Primary resolves accepted findings
   and reruns affected checks.
 
+Review is complete when accepted findings are resolved and affected validation
+is rerun.
+
 ### 8. Deliver
 
 Commit only task-owned files, push one task branch, open one PR, and wait for
@@ -115,6 +136,9 @@ evidence, remaining risk, Production requirement, and next authorized action.
 
 PM approval is required to merge through protected `main`. A task with
 `Production: no` may finish at Deliver.
+
+Deliver is complete when the PR contains the required evidence and required CI
+passes; merge still waits for PM approval.
 
 ### 9. Release
 
@@ -127,14 +151,16 @@ repeated PM approval on `FAST_PATH`. Any Staging configuration, Production-data
 permission, or external-system mutation outside the established candidate path
 is a separately routed scope.
 
+Release is complete only after every applicable root `AGENTS.md` Production
+gate and task-specific post-deploy acceptance passes.
+
 ## Release paths
 
 ### FAST_PATH
 
 Use the core flow with focused validation and integrated review when the change
-is small and low risk. Required CI, PM merge approval, same-digest Staging and
-Production, rollback evidence, PM Production approval, and post-deploy
-acceptance remain mandatory when their stage applies.
+is small and low risk. Required CI, PM merge approval, and the root `AGENTS.md`
+Production gates remain mandatory when their stage applies.
 
 `FAST_PATH` does not automatically require a restore rehearsal, broad
 AWS/Coolify audit, backup/restore proof, exhaustive infrastructure review, a
@@ -155,20 +181,7 @@ architecture review, fresh backup, checksum, private copy, restore verification,
 rollback readiness, no-split-brain evidence, infrastructure preflight,
 additional approvals, staged migration/rollback, and broader acceptance.
 
-## Mandatory invariants
-
-1. Never commit directly to `main`; required CI and PM merge approval remain.
-2. A merge is not a deployment.
-3. Staging runs every legally and safely executable candidate check before
-   Production. Deferral follows `docs/deploy/staging-coolify.md` and becomes
-   immediate mandatory Production acceptance.
-4. Promote the same immutable digest validated on Staging; never rebuild between
-   Staging and Production.
-5. Verify a recoverable Production rollback target, or document the gap and
-   obtain explicit PM acceptance of the residual risk.
-6. Apply stricter controls to persistent-state, authority, destructive, and
-   infrastructure changes.
-7. Fail closed only when the failed invariant can materially harm Production.
+Mandatory Production safety invariants live only in root `AGENTS.md`.
 
 ## Pinned-skill routing
 
@@ -176,7 +189,7 @@ additional approvals, staged migration/rollback, and broader acceptance.
 control when its tools participate:
 
 - `$grill-with-docs` supports Align only when a material decision is unresolved;
-  it is not required for clear tasks and does not write files before alignment.
+  it is not required for clear tasks and follows Align's no-write boundary.
 - `$to-spec` is optional synthesis after alignment. Keep the Issue bounded to
   acceptance and risk; publish through `docs/agents/issue-tracker.md` without a
   triage label.
