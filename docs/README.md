@@ -3,8 +3,8 @@
 ## Active authority
 
 - Root [`AGENTS.md`](../AGENTS.md): always-on authority and safety contract.
-- [`WORKFLOW-WITH-CODEX.md`](WORKFLOW-WITH-CODEX.md): task routing, delivery,
-  review, and release paths.
+- [`WORKFLOW-WITH-CODEX.md`](WORKFLOW-WITH-CODEX.md): task routing,
+  FAST_PATH/STANDARD/HIGH_RISK delivery, review, and release paths.
 - [`AGENTS.md`](AGENTS.md): application conventions, read only for application
   code, schema, or tests.
 - [`project-current-state.md`](ops/project-current-state.md): current operational
