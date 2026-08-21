@@ -7,19 +7,28 @@ This runbook operates the internal, single-tenant Publishing API. It does not
 authorize a staging rollout, a production deployment, a database migration, or
 any Bunny configuration change. Those are separate PM approval gates.
 
-> **Shared-data Staging supersedes the legacy synthetic topology.** Shared-data
-> Staging uses Production data/media for read-only candidate validation and
-> must remain write-frozen; do not issue Publishing credentials, run scheduler
-> acceptance, upload media, or use a staging-specific storage/CDN path there.
-> The synthetic material below is disposable CI-test infrastructure only.
+## Authority and procedure map
+
+- Shared-data Staging supersedes the legacy synthetic topology. ADR 0010 and
+  [`staging-coolify.md`](staging-coolify.md) are authoritative: Staging uses
+  Production data/media for read-only candidate validation.
+  It must remain write-frozen for Publishing.
+- The recurring procedures in this runbook operate approved Production
+  integrations only.
+- Disposable synthetic checks run only in isolated CI/local test databases.
+- One-time Production provisioning and legacy recovery references at the end
+  are inactive by default and require their own current PM-approved plan.
 
 ## Safety invariants
 
 - Every Publishing Agent has its own Machine Identity, Integration Sponsor,
-  capabilities, and environment-bound credential. Never use an admin session,
-  shared key, or one credential for multiple integrations.
-- The Global Publishing Gate is disabled by the migration and stays disabled
-  until a staging acceptance record and explicit PM decision exist.
+  capabilities, and Production-bound credential. Never use an admin session,
+  shared key, or one credential for multiple integrations. Shared-data Staging
+  receives no Publishing credential.
+- The migration initializes the Global Publishing Gate as disabled; do not
+  treat that default as evidence of its current state. Opening the Gate requires
+  applicable read-only candidate evidence and an explicit Production decision.
+  Staging never opens the Gate.
 - `posts:write` alone cannot publish. Grant `posts:publish` only to an approved
   zero-touch Publishing Agent.
 - Credentials are opaque, shown by the control command once, and must never be
@@ -34,20 +43,24 @@ any Bunny configuration change. Those are separate PM approval gates.
 
 ## Configuration inventory
 
-Provide the following only through the approved runtime secret/configuration
-mechanism. A shared-data Staging runtime uses the reviewed Production media
-configuration while write-frozen; it does not perform Publishing mutations.
+The inventory below is for the approved Production Publishing runtime and must
+be provided only through its approved secret/configuration mechanism. A
+Shared-data Staging runtime may receive the reviewed non-secret Production
+host/CDN values needed to render existing media, but it does not receive
+`PUBLISHING_BUNNY_STORAGE_API_KEY`, `PUBLISHING_SCHEDULER_TOKEN`, a scheduler
+task, or any other Publishing write credential. Its separate runtime role and
+write freeze remain mandatory.
 
 | Variable | Purpose | Secret |
 | --- | --- | --- |
-| `PUBLISHING_ENVIRONMENT` | Exact `staging` or `production` boundary | No |
+| `PUBLISHING_ENVIRONMENT` | Publishing data/media boundary; shared-data Staging uses `production` while remaining frozen by its runtime role | No |
 | `PUBLISHING_EXTERNAL_LINK_HOSTNAMES` | Comma-separated, reviewed exact HTTPS citation hosts; no wildcard | No |
 | `PUBLISHING_JSON_RATE_LIMIT_MAX` | Per-Machine-Identity JSON limit | No |
 | `PUBLISHING_MEDIA_RATE_LIMIT_MAX` | Per-Machine-Identity media limit | No |
 | `PUBLISHING_RATE_LIMIT_WINDOW_SECONDS` | Durable rate-limit window | No |
 | `PUBLISHING_TRUSTED_PROTO_HEADER` | Proxy header trusted for HTTPS verification | No |
 | `PUBLISHING_TRUSTED_CLIENT_IP_HEADER` | Optional proxy header for IP policy | No |
-| `PUBLISHING_BUNNY_STORAGE_ENVIRONMENT` | Must exactly match `PUBLISHING_ENVIRONMENT` | No |
+| `PUBLISHING_BUNNY_STORAGE_ENVIRONMENT` | Must exactly match the Publishing data/media boundary | No |
 | `PUBLISHING_BUNNY_STORAGE_ZONE_NAME` | Publishing-only Bunny storage zone | No |
 | `PUBLISHING_BUNNY_STORAGE_HOSTNAME` | Exact Bunny storage API host | No |
 | `PUBLISHING_BUNNY_CDN_HOSTNAME` | Exact publishing CDN host; must be allowed by image CSP | No |
@@ -59,12 +72,12 @@ Adding a citation host is a reviewed configuration/source change. It is not a
 runtime wildcard or an OpenAPI enum. The Publishing API never fetches a cited
 URL.
 
-## Control-plane commands
+## Recurring Production control-plane operations
 
-Run these only against a disposable CI database or through the separately
-approved Production execution path. They are prohibited in shared-data Staging.
-The command prints structured metadata, except the one-time `credential`
-returned by issue or rotate. Capture no plaintext credential in logs.
+Run these through the separately approved Production execution path. They are
+prohibited in Shared-data Staging. The command prints structured metadata,
+except the one-time `credential` returned by issue or rotate. Capture no
+plaintext credential in logs.
 
 ```bash
 npm run publishing:control -- identity-create \
@@ -74,7 +87,7 @@ npm run publishing:control -- identity-create \
 
 npm run publishing:control -- credential-issue \
   --actor-admin-id <active-admin-id> --confirm yes \
-  --identity-id <machine-identity-uuid> --environment staging
+  --identity-id <machine-identity-uuid> --environment production
 ```
 
 Grant or revoke only the specific capability required:
@@ -103,11 +116,11 @@ npm run publishing:control -- credential-revoke \
   --credential-id <credential-uuid> --reason '<private-operational-reason>'
 ```
 
-Rotate before expiry. The command requires exactly one active source credential
-for that identity/environment and caps overlap at seven days; every credential
-still has a maximum 90-day lifetime from issue. A Machine Identity has at most
-two active credentials across both environments, so rotate only after an
-unneeded environment credential is revoked or expires.
+Rotate the Production credential before expiry. The command requires exactly
+one active source credential for that identity/environment and caps overlap at
+seven days; every credential still has a maximum 90-day lifetime from issue.
+The implementation may retain the historical two-environment limit, but that
+does not authorize issuing a Shared-data Staging credential.
 
 ```bash
 npm run publishing:control -- credential-rotate \
@@ -119,23 +132,25 @@ npm run publishing:control -- expiry-report --within-days 14
 npm run publishing:control -- audit-report --limit 50
 ```
 
-## Global Publishing Gate
+## Recurring Production Global Publishing Gate operation
 
 The Gate is optimistic-concurrency protected. Read the current version from the
 private operational database before changing it, then use that exact version.
-The migration creates `(enabled=false, version=1)`.
+The migration's `(enabled=false, version=1)` initial state is historical setup,
+not current-state evidence.
 
 ```bash
 npm run publishing:control -- gate-set \
   --actor-admin-id <active-admin-id> --confirm yes \
-  --enabled true --expected-version <current-version>
+  --enabled false --expected-version <current-version>
 ```
 
-Use `--enabled false` for the kill switch. It blocks Agent immediate publish,
-new scheduled publication, live replacement, and scheduler transitions; it does
-not stop normal human CMS writes.
+This is the recurring kill switch. It blocks Agent immediate publish, new
+scheduled publication, live replacement, and scheduler transitions; it does
+not stop normal human CMS writes. Re-opening with `--enabled true` is a
+separately approved Production launch/recovery action, not routine operation.
 
-## Scheduler
+## Recurring Production scheduler operation
 
 The scheduler is repository-owned and one-shot. The accepted host/Coolify path
 must invoke it at least once per minute from the same environment and database.
@@ -172,17 +187,11 @@ Publication Readiness Gate. A missed execution catches up a still-valid due
 post. A failed recheck writes `schedule_blocked` with an audit event. A duplicate
 invocation uses conditional state/version writes, so it cannot publish twice.
 
-After enabling the scheduler in Production under its separately approved gate,
-verify privately:
+For recurring Production monitoring, verify privately:
 
-1. a due ready post becomes `published` once;
-2. revoked capability, closed Gate, stale version and inactive taxonomy each
-   become a Schedule Block;
-3. resubmitting a scheduled mutation with the current ETag is required to
-   recover a blocked post;
-4. `/`, `/blog`, the category, post page and sitemap reflect publication within
-   five minutes; and
-5. `publishing_scheduler_state` heartbeat and minimized audit events exist;
+1. expected approved publications appear on `/`, `/blog`, the category, post
+   page and sitemap within five minutes; and
+2. `publishing_scheduler_state` heartbeat and minimized audit events exist;
    after three successful one-minute runs, this command must report
    `healthy: true` and `success_age_seconds <= 120`:
 
@@ -190,18 +199,16 @@ verify privately:
    npm run publishing:control -- scheduler-report --max-age-seconds 120
    ```
 
-6. Create a synthetic ready publication due in the next minute. Its post page,
-   `/`, `/blog`, category page, and sitemap must reflect the result within five
-   minutes of the declared time. Record the Coolify task history, scheduler
-   report, API response, and public checks as the Production SLA acceptance
-   evidence.
+Do not create synthetic content as a recurring health check.
 
-Before this Production acceptance, run the PostgreSQL race harness only against a
-fresh **disposable** PostgreSQL database bootstrapped with the reviewed schema.
-It deliberately creates immutable audit evidence and is not for a shared
-staging database. Supply a synthetic active admin ID through the approved local
-environment mechanism; do not put a connection string or credential in shell
-history, CI logs, or this repository.
+## Disposable Publishing validation
+
+Before a separately approved Production launch acceptance, run the PostgreSQL
+race harness only against a fresh **disposable** PostgreSQL database bootstrapped
+with the reviewed schema. It deliberately creates immutable audit evidence and
+is not for Shared-data Staging. Supply a synthetic active admin ID through the
+approved local environment mechanism; do not put a connection string or
+credential in shell history, CI logs, or this repository.
 
 ```bash
 PUBLISHING_CONCURRENCY_TEST_CONFIRM=disposable \
@@ -239,7 +246,27 @@ evidence, immutable candidate, Gate C approval, and the current control-plane
 path. This runbook intentionally contains no live credentials or deployment
 command.
 
-## Bounded production recovery after the legacy-constraint stop
+## Inactive one-time and legacy Production references
+
+The following sections are retained because their checksum-pinned artifacts
+remain in the repository and are covered by focused contract tests. They are
+not part of recurring operations, are not a current rollout plan, and must
+never be used on Shared-data Staging. Before any use, a new scoped plan must
+revalidate the exact Production state, immutable source, rollback evidence and
+explicit PM authority.
+
+### One-time Production launch acceptance
+
+This inactive-by-default procedure never runs on Shared-data Staging. Under a
+separately approved Production launch window, verify that a due ready post is
+published once; revoked capability, closed Gate, stale version and inactive
+taxonomy each produce the expected Schedule Block; and recovery requires a new
+scheduled mutation with the current ETag. If the approved launch plan includes
+a bounded synthetic ready publication, record its cleanup/retention decision,
+Coolify task history, scheduler report, API response and public checks. This
+section does not itself authorize that mutation.
+
+### Legacy-constraint recovery (historical stop condition only)
 
 If, and only if, the reviewed v1 migration stopped at its legacy
 `blog_posts_status_check` guard after committing the additive Blog Post and
@@ -254,11 +281,11 @@ and the exact legacy lifecycle constraint; it then completes the reviewed v1
 schema. Any table, column, constraint, default, or ownership state outside that
 recovery target fails closed. Verify the committed SHA-256 manifest
 `docs/deploy/publishing-api-v1-production-recovery.sha256` from the approved
-immutable commit before execution. Do not use this recovery on staging or a
-clean database, and do not change ownership or grant DDL privileges to the
-application runtime role.
+immutable commit before execution. Do not use this recovery on Shared-data
+Staging or a clean database, and do not change ownership or grant DDL privileges
+to the application runtime role.
 
-## Dedicated Publishing database runtime and grants
+### One-time dedicated Publishing database runtime and grants
 
 The Publishing API and its scheduler use `PUBLISHING_DATABASE_URL`, not the
 CMS-wide `DATABASE_URL`. This keeps the CMS owner connection outside the

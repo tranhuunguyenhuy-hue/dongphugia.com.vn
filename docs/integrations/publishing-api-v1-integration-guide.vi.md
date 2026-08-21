@@ -19,8 +19,6 @@ thuộc phạm vi API.
 
 - OpenAPI: `https://www.dongphugia.vn/api/publishing/v1/openapi.json`
 - Base URL production: `https://www.dongphugia.vn/api/publishing/v1`
-- Base URL staging: do người vận hành cung cấp trong buổi acceptance; không tự
-  suy ra từ production.
 - Xác thực: `Authorization: Bearer <publishing-credential>`.
 - Mọi request phải dùng HTTPS.
 - Agent pilot phải chạy từ fixed egress IP đã được allowlist cho Machine
@@ -32,9 +30,15 @@ Credential production được hiển thị đúng một lần khi cấp, hết 
 Huy. Khi cần dừng ngay, Integration Sponsor có thể disable Machine Identity,
 revoke credential hoặc revoke capability.
 
-Trong staging acceptance, hoặc trong một production window đã được PM phê duyệt,
-operator thêm fixed egress IP vào allowlist của Machine Identity qua control
-plane admin-only. Đây không phải lệnh cho Agent hoặc khách hàng tự chạy:
+Mọi ví dụ mutation trong hướng dẫn này chỉ dùng Production API/credential của
+integration đã được phê duyệt và trong phạm vi nội dung được giao. Shared-data
+Staging là môi trường validation write-frozen: không cấp Publishing credential,
+không upload Managed Media, không tạo/publish/schedule nội dung và không chạy
+synthetic Publishing acceptance tại đó.
+
+Trong một Production window đã được PM phê duyệt, operator thêm fixed egress IP
+vào allowlist của Machine Identity qua control plane admin-only. Đây không phải
+lệnh cho Agent hoặc khách hàng tự chạy:
 
 ```bash
 npm run publishing:control -- ip-add \
@@ -293,8 +297,9 @@ taxonomy, tắt Gate hoặc gọi scheduler nội bộ.
 Runbook vận hành: [`publishing-api-v1-runbook.md`](../deploy/publishing-api-v1-runbook.md).
 OpenAPI runtime: `/api/publishing/v1/openapi.json`.
 
-Production chỉ được coi là live sau khi Issue staging có sanitized evidence cho
-từng gate, production có preflight/backup/rollback và immutable candidate,
-canary draft + `publish_now` + scheduled publication đã PASS, rồi Gate mới được
-bật theo đúng thứ tự. Tài liệu này không cấp quyền production và không chứa
-production credential.
+Handoff hiện tại dùng Production API/credential theo contract đã được PM phê
+duyệt. Shared-data Staging chỉ cung cấp read-only candidate evidence theo
+[`staging-coolify.md`](../deploy/staging-coolify.md); các Publishing mutation
+không được chuyển sang Staging để acceptance. Mỗi integration, capability và
+Production operation vẫn phải nằm trong approval hiện hành. Tài liệu này không
+cấp quyền Production và không chứa Production credential.
