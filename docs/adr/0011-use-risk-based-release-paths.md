@@ -13,7 +13,7 @@ actual blast radius.
 
 ## Decision
 
-Use `FAST_PATH` by default for ordinary application changes. It requires a
+Use `FAST_PATH` for low-risk runtime-only application changes. It requires a
 task branch, focused validation plus applicable lint/typecheck, required CI, a
 merged immutable Production Candidate, Staging validation of that same digest,
 one Production rollout approval, Production smoke verification, and a verified
@@ -21,17 +21,27 @@ runtime rollback target when the deployment mechanism has a recoverable target.
 When it does not, the rollout approval records the gap and explicitly accepts
 the residual risk.
 
-Use `FULL_PATH` only for material database, destructive data, infrastructure,
-AWS/network/security, Coolify infrastructure, CDN/storage, DNS, broad
-authentication/authorization, irreversible, major security-sensitive, or
-difficult-rollback risks. Tailor additional controls—such as an Issue/spec,
-architecture review, backup/restore readiness, infrastructure preflight,
-staged migration/rollback plan, and broader acceptance—to the actual risk.
+Use `STANDARD` for meaningful API/runtime, authentication, upload, scheduler,
+or application-logic risk without a destructive persistent-state migration. It
+adds functional Staging validation and rollback readiness proportional to the
+actual risk.
+
+Use `HIGH_RISK` for database/schema/data mutation, destructive work,
+storage/network authority changes, infrastructure with plausible data loss or
+split-brain, and difficult rollback. Require fresh backup, checksum, private
+copy, restore verification, rollback readiness, and no-split-brain evidence
+when applicable to the affected persistent state.
 
 Every path preserves protected `main`, required CI, Staging-before-Production,
 and same-digest promotion. Verify a runtime rollback target when one is
 recoverable; otherwise record the residual risk in the Production approval.
 Fail closed only when a missing invariant could materially harm Production.
+
+Shared-data Staging remains write-frozen. A candidate check that cannot legally
+run there may be deferred only when related non-destructive evidence passes on
+the same digest and the check becomes immediate mandatory Production acceptance
+using existing Production data. This does not permit synthetic fixtures or
+skipping feasible Staging validation.
 
 ## Consequences
 

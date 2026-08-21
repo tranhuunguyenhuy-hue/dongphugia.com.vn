@@ -23,9 +23,9 @@ linked Issue.
    runtime configuration and selected digest; the Production application
    runtime, selected image, traffic, data, and media remain untouched. If the
    shared-data setup needs a Production database read-only principal, its
-   provisioning and grants are a distinct, explicitly approved `FULL_PATH`
+   provisioning and grants are a distinct, explicitly approved `HIGH_RISK`
    Production-database permission mutation, not a Staging-only action.
-4. The digest that passes complete Staging acceptance is the only digest that
+4. The digest that passes applicable Staging acceptance is the only digest that
    can be proposed at Gate C for Production. Do not rebuild it between gates.
 
 The repository workflow `.github/workflows/staging-ghcr.yml` validates this
@@ -40,11 +40,11 @@ separate Publishing database when one exists. Application write-freeze is
 defense in depth, not the only database boundary. The repository does not prove
 that the current Staging configuration uses those principals; provisioning,
 granting, verifying, and recording a rollback reference for them remain a
-`FULL_PATH` implementation item before shared-data Staging is enabled.
+`HIGH_RISK` implementation item before shared-data Staging is enabled.
 
 If a Production-data connection cannot technically use its own read-only
 principal, do not silently rely on application write-freeze. Stop shared-data
-Staging enablement until an explicitly approved `FULL_PATH` exception defines
+Staging enablement until an explicitly approved `HIGH_RISK` exception defines
 the alternative database boundary and rollback plan.
 
 The application blocks all writes through the common Prisma client and guarded
@@ -106,7 +106,7 @@ starts reading Production data.
 
 ## Gate B preflight and reversible execution
 
-Shared-data Staging alignment is `FULL_PATH` work. Any required Production
+Shared-data Staging alignment is `HIGH_RISK` work. Any required Production
 database-principal provisioning or grant is a distinct, explicitly approved
 Production-database permission mutation before the Staging binding; Gate B does
 not change the Production application runtime or traffic. The dedicated plan
@@ -122,7 +122,7 @@ candidate digest; application health; Production database health/capacity;
 dedicated read-only-principal availability and effective permissions;
 Production media health; monitoring; runtime side-effect guardrails; and prior
 Staging digest/configuration rollback reference. Add backup/restore evidence
-only when the approved Full Path risk plan requires it.
+only when the approved HIGH_RISK plan requires it.
 
 After approval, change only the Staging runtime in this order:
 
@@ -142,22 +142,57 @@ not mutate Production data/media, change traffic, or remove legacy resources.
 
 ## Staging acceptance
 
+Shared-data Staging is a validation environment, not a synthetic fixture
+environment. Run every non-destructive check that existing shared data permits.
+Do not create test data, media, uploads, or other side effects to make a check
+possible.
+
+### Deferred acceptance on write-frozen Staging
+
+Record a check as `NOT_APPLICABLE_ON_WRITE_FROZEN_STAGING` only when all of the
+following hold:
+
+1. Shared-data Staging policy prohibits the required mutation, or no suitable
+   existing shared-data fixture exists.
+2. Related non-destructive evidence has passed on the same immutable digest.
+3. The check is an immediate mandatory Production post-deploy acceptance using
+   existing Production data; a failure stops further mutation and is reported
+   with sanitized evidence.
+
+This is not a skip: feasible Staging checks remain required, and a deferred
+check never authorizes a different digest.
+
 Verify with sanitized evidence:
 
 - `/api/health`, expected immutable digest, no restart loop and monitoring;
 - same-data representative homepage, catalogue/product, Blog/Publishing,
   navigation/search, metadata, structured data, sitemap and public APIs;
 - Production CDN hostname, public DNS, direct object response, CSP `img-src`,
-  Next image policy, browser rendering and non-zero natural image dimensions;
+  Next image policy, browser rendering and non-zero natural image dimensions
+  when a suitable existing shared-data asset exists;
 - `robots.txt` and metadata are noindex, while expected differences such as
   Staging hostname/authentication/runtime-only metadata are explained;
 - write attempts are rejected without intentionally creating, deleting or
   changing any Production record; and
 - scheduler, Publishing Gate and other side-effect paths are still disabled.
 
-Once repository-wide acceptance passes, resume Issue #66's Blog Managed Media
-acceptance against representative published Posts. A successful Staging result
-does not close #66's Production acceptance and does not authorize Gate C.
+Complete every recorded immediate Production acceptance after rollout, including
+any deferred Managed Media direct-object and browser-rendering checks against an
+existing affected Production Blog Post. A successful Staging result does not
+close Production acceptance or authorize Gate C.
+
+### CSP-only Managed Media application
+
+For a CSP-only Blog Managed Media candidate with no suitable existing Staging
+asset, record direct Managed Media HTTP and browser rendering as
+`NOT_APPLICABLE_ON_WRITE_FROZEN_STAGING` only after the digest/provenance,
+health, Blog route, and CSP `img-src` evidence pass on Staging. Immediately
+after Production deployment, verify the same digest's `/api/health`, `/blog`,
+representative affected Blog Post, existing Managed Media HTTP 200 response, CSP
+allowance, and browser `complete=true` with non-zero `naturalWidth` and no CSP
+block. Verify the candidate scope contains no unrelated runtime behavior; for
+Issue #66, that includes excluding PR #69 runtime behavior. A failed check
+stops further mutation and is `BLOCKED` with sanitized evidence.
 
 ## Gate C handoff
 
@@ -165,5 +200,5 @@ Before Production promotion, confirm the same digest that passed Staging,
 current Production health, monitoring, rollback target, the applicable
 release-path acceptance, and the explicit Production runtime settings for write
 enablement and indexing. Add database/CDN/backup evidence when the approved
-Full Path risk plan requires it. Ask for the one Production rollout approval
+HIGH_RISK plan requires it. Ask for the one Production rollout approval
 before any Production deployment or configuration change.

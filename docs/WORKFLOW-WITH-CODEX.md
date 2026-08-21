@@ -8,19 +8,19 @@ owns application conventions.
 
 Before implementation, state one classification and its reason:
 
-- `FAST_PATH` is the default for ordinary application changes: UI/UX, CSS or
-  layout, content, SEO, image/rendering bugs, normal application bugs,
-  low-risk security patches, and non-destructive API behavior changes.
-- `FULL_PATH` is required when the actual blast radius includes a database
-  schema migration, database permissions, destructive data operation,
-  Production data mutation, infrastructure, AWS/network/security, Coolify
-  infrastructure, CDN/storage configuration, DNS, broad authentication or
-  authorization impact, irreversible migration, major security-sensitive
-  change, or difficult rollback.
+- `FAST_PATH` covers low-risk runtime-only work: CSP/headers, non-persistent
+  configuration, small UI/rendering fixes, and behavior that does not mutate
+  persistent state.
+- `STANDARD` covers API/runtime behavior, authentication, uploads, schedulers,
+  or application logic with meaningful operational risk but no destructive
+  persistent-state migration. It needs stronger functional Staging validation
+  and rollback readiness proportional to the concrete risk.
+- `HIGH_RISK` covers database/schema/data mutation, destructive work,
+  storage/network authority changes, infrastructure with plausible data loss or
+  split-brain, and difficult rollback.
 
-Choose from blast radius, not task size. When evidence does not show a
-`FULL_PATH` trigger, use `FAST_PATH`. A source change does not itself change
-runtime configuration or authorize a rollout.
+Choose from blast radius and persistence, not task size. A source change does
+not itself change runtime configuration or authorize a rollout.
 
 ## Request surface
 
@@ -44,7 +44,7 @@ primary sources. The PM decides product trade-offs, scope, and acceptance.
 3. **Align.** A clear small task proceeds directly. Use `$grill-with-docs` only
    when a product or architecture decision remains unresolved.
 4. **Specify when needed.** Small one-session work needs no Issue. Use a
-   dedicated Issue/spec for `FULL_PATH`, risky, or multi-session work.
+   dedicated Issue/spec for `STANDARD`, `HIGH_RISK`, risky, or multi-session work.
 5. **Implement.** The Primary Codex is the sole mutation owner. Use `$tdd` at
    pre-agreed public seams for behavior changes, one red-green slice at a time.
 6. **Validate.** Run focused tests and the applicable lint/typecheck before the
@@ -75,10 +75,14 @@ Use the following flow for an ordinary application change:
 8. Build or select one immutable ARM64 Production Candidate from that merged
    revision.
 9. Deploy that exact digest to the separate Staging runtime.
-10. Run focused smoke and acceptance checks relevant to the task. Verify a
-    recoverable Production rollback target when the deployment mechanism has
-    one; otherwise record the gap and obtain explicit PM acceptance of its
-    residual risk.
+10. Run focused non-destructive Staging smoke and acceptance checks relevant to
+    the task. Verify a recoverable Production rollback target when the
+    deployment mechanism has one; otherwise record the gap and obtain explicit
+    PM acceptance of its residual risk. A check blocked by Shared-data Staging
+    write-freeze may be recorded as
+    `NOT_APPLICABLE_ON_WRITE_FROZEN_STAGING` only under the Staging runbook's
+    strict deferral rule; it then becomes immediate mandatory Production
+    acceptance of this same digest.
 11. Obtain one explicit PM Production rollout approval.
 12. Promote the same immutable digest to Production; never rebuild an
     application image between Staging and Production.
@@ -92,16 +96,25 @@ mutation, or the Production rollout approval. A Fast Path does **not**
 automatically require a restore rehearsal, full AWS/Coolify audit, backup/restore
 proof, or exhaustive infrastructure review.
 
-## FULL_PATH: risk-triggered release path
+## STANDARD: operational-risk release path
 
-Use `FULL_PATH` when one or more routing triggers above materially apply. Add
-only the controls the concrete risk needs: a dedicated Issue/spec, architecture
-review, explicit backup/restore readiness, infrastructure preflight, additional
-approval gates, a staged migration and rollback plan, and broader acceptance
-testing. A difficult or irreversible rollback is itself a trigger.
+Use `STANDARD` for non-destructive changes whose runtime behavior is materially
+broader than Fast Path. Define focused functional Staging validation, monitoring,
+and runtime rollback readiness that match the actual operational risk. Escalate
+to `HIGH_RISK` when persistent state, authority, irreversibility, or difficult
+rollback enters scope.
 
-`FULL_PATH` does not mean every possible safety check. It is a tailored plan
-that fails closed for evidence whose absence could materially harm Production.
+## HIGH_RISK: persistent-state and authority release path
+
+Use `HIGH_RISK` when one or more routing triggers above materially apply. Add
+the controls the concrete risk needs: a dedicated Issue/spec, architecture
+review, fresh backup, checksum, private copy, restore verification, rollback
+readiness, no-split-brain evidence, infrastructure preflight, additional
+approval gates, a staged migration/rollback plan, and broader acceptance where
+applicable.
+
+`HIGH_RISK` is tailored to affected persistent state, but does not weaken its
+required recovery and authority controls.
 
 ## Mandatory invariants
 
@@ -109,7 +122,10 @@ Regardless of release path:
 
 1. Never commit directly to `main`.
 2. Required CI must pass.
-3. Staging validates the candidate before Production rollout.
+3. Staging validates every legally and safely executable candidate check before
+   Production rollout. A deferred write-frozen-Staging check follows the strict
+   rule in `docs/deploy/staging-coolify.md` and is mandatory immediate
+   Production acceptance.
 4. Production has a verified rollback target when its deployment mechanism has
    a recoverable one; otherwise the rollout approval explicitly accepts the
    documented residual risk.
@@ -186,7 +202,7 @@ Source delivery and production rollout remain separate:
 `source PR validation → merge → immutable Production Candidate → Staging validation of that exact digest → one approved Production promotion of that same digest`
 
 For the repository-wide shared-data Staging architecture, data/media alignment
-is `FULL_PATH` infrastructure work. The separate Staging runtime reads
+is `HIGH_RISK` infrastructure work. The separate Staging runtime reads
 Production data/media, remains write-frozen and noindex, and must use the
 preferred database-level read-only principal when technically feasible; see
 `docs/deploy/staging-coolify.md` and ADR 0010.
