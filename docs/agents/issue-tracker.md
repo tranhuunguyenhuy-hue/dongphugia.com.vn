@@ -4,6 +4,9 @@ Engineering issues and specs for this repository live only in GitHub Issues.
 Use the `gh` CLI from the canonical checkout so it infers
 `tranhuunguyenhuy-hue/dongphugia.com.vn` from the remote.
 
+Issue creation thresholds and spec bounds live in the Execute stage of
+`docs/WORKFLOW-WITH-CODEX.md`; this file owns tracker mechanics only.
+
 ## Conventions
 
 - **Create:** `gh issue create --title "..." --body-file <path>`.

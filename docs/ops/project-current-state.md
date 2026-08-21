@@ -44,6 +44,7 @@ follow-up work must not resume them implicitly.
 - Issue #68 and shared-data migration.
 - Cloudflare or Vercel migration.
 - Coolify replacement.
+- LCP optimization and Production promotion.
 - Unrelated refactoring.
 
 ## Known Operational Notes
@@ -52,7 +53,12 @@ follow-up work must not resume them implicitly.
   completed deployment record alone is insufficient evidence.
 - Production acceptance must include the rendered browser result as well as
   health, HTTP, and CSP checks when image delivery is in scope.
+- The 2026-08-04 consolidation quarantine remains subject to retention and
+  requires fresh explicit approval before permanent deletion.
 
-## Next Phase
+## Workflow Baseline
 
-Repository cleanup, code-hygiene audit, and website-optimization preparation.
+The core delivery workflow is risk-scoped: FAST_PATH is the default for small,
+low-risk work, while stronger review and release controls follow actual blast
+radius and persistence. Publishing documentation alignment remains a separate,
+deferred phase and is not authorized by this baseline.

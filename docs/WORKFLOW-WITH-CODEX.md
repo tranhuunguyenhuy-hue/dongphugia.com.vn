@@ -1,30 +1,14 @@
 # Dongphugia delivery workflow
 
-This is the authoritative release-path, source, GitHub Issue, and PR workflow.
-Root `AGENTS.md` owns the short always-on safety contract; `docs/AGENTS.md`
-owns application conventions.
+This is the single authority for task routing, source delivery, GitHub Issues,
+PRs, validation, review, and release paths. Root `AGENTS.md` owns always-on
+safety; `docs/AGENTS.md` owns application conventions.
 
-## Route the task first
+## Core flow
 
-Before implementation, state one classification and its reason:
+### 1. Request
 
-- `FAST_PATH` covers low-risk runtime-only work: CSP/headers, non-persistent
-  configuration, small UI/rendering fixes, and behavior that does not mutate
-  persistent state.
-- `STANDARD` covers API/runtime behavior, authentication, uploads, schedulers,
-  or application logic with meaningful operational risk but no destructive
-  persistent-state migration. It needs stronger functional Staging validation
-  and rollback readiness proportional to the concrete risk.
-- `HIGH_RISK` covers database/schema/data mutation, destructive work,
-  storage/network authority changes, infrastructure with plausible data loss or
-  split-brain, and difficult rollback.
-
-Choose from blast radius and persistence, not task size. A source change does
-not itself change runtime configuration or authorize a rollout.
-
-## Request surface
-
-A normal request can be short:
+A request may be short:
 
 ```text
 Outcome: <what should be true>
@@ -32,177 +16,208 @@ Done when: <observable acceptance>
 Production: no | separately approved later
 ```
 
-This format is helpful, not mandatory. Codex finds facts in the repository or
-primary sources. The PM decides product trade-offs, scope, and acceptance.
+Codex finds repository and primary-source facts. The PM decides product
+trade-offs, scope, acceptance, merge, and Production approval.
 
-## Source delivery: one request, one branch, one PR
+Request is complete when outcome, observable acceptance, and Production intent
+are recorded, or the unresolved decision is named for Align.
 
-1. **Preflight.** Complete root `AGENTS.md` preflight. Read `docs/AGENTS.md` only
-   when application code, schema, or tests are in scope.
-2. **Branch.** For a mutation task, fast-forward local `main` from `origin/main`
-   and create one `codex/<task>` branch before a file-writing skill runs.
-3. **Align.** A clear small task proceeds directly. Use `$grill-with-docs` only
-   when a product or architecture decision remains unresolved.
-4. **Specify when needed.** Small one-session work needs no Issue. Use a
-   dedicated Issue/spec for `STANDARD`, `HIGH_RISK`, risky, or multi-session work.
-5. **Implement.** The Primary Codex is the sole mutation owner. Use `$tdd` at
-   pre-agreed public seams for behavior changes, one red-green slice at a time.
-6. **Validate.** Run focused tests and the applicable lint/typecheck before the
-   PR; use the smallest sufficient validation set.
-7. **Review.** Run `$code-review origin/main`. Its Standards and Spec reviewers
-   report independently and remain read-only; the Primary Codex resolves accepted
-   findings and reruns affected checks.
-8. **Deliver.** Commit only on the task branch, push, open one PR, and wait for
-   required CI. PM approval is required to merge through protected `main`.
-9. **Release.** Follow the selected release path below. Do not treat a merge as
-   a deployment.
+### 2. Route
 
-The source-delivery portion is complete only when the PR identifies scope,
-acceptance source, validation evidence, remaining blockers, release-path
-classification, and the next authorized action.
+State one route and its reason before implementation. Escalate whenever
+Preflight or Execute reveals a larger blast radius.
 
-## FAST_PATH: default release path
+- `FAST_PATH` is the default for small, bounded, reversible changes with low
+  operational risk and no persistent-state or authority mutation. Examples
+  include documentation, CSP/headers, non-persistent configuration, and small
+  UI/rendering fixes.
+- `STANDARD` covers meaningful API/runtime behavior, bounded authentication
+  behavior that does not change authority, uploads, schedulers, workflow safety
+  contracts, or application logic risk without destructive persistent-state
+  migration.
+- `HIGH_RISK` covers database/schema/data mutation, permissions, destructive
+  work, storage/network authority, infrastructure with plausible data loss or
+  split-brain, irreversibility, and difficult rollback.
 
-Use the following flow for an ordinary application change:
+Choose from blast radius and persistence, not diff size. Source work does not
+authorize runtime mutation.
 
-1. Start from clean, latest `main`.
-2. Create the task branch.
-3. Implement the minimal change.
-4. Run focused tests plus the applicable lint/typecheck.
-5. Open a PR.
-6. Required CI must pass.
-7. Merge through protected `main` with PM merge approval.
-8. Build or select one immutable ARM64 Production Candidate from that merged
-   revision.
-9. Deploy that exact digest to the separate Staging runtime.
-10. Run focused non-destructive Staging smoke and acceptance checks relevant to
-    the task. Verify a recoverable Production rollback target when the
-    deployment mechanism has one; otherwise record the gap and obtain explicit
-    PM acceptance of its residual risk. A check blocked by Shared-data Staging
-    write-freeze may be recorded as
-    `NOT_APPLICABLE_ON_WRITE_FROZEN_STAGING` only under the Staging runbook's
-    strict deferral rule; it then becomes immediate mandatory Production
-    acceptance of this same digest.
-11. Obtain one explicit PM Production rollout approval.
-12. Promote the same immutable digest to Production; never rebuild an
-    application image between Staging and Production.
-13. Run Production post-deploy smoke verification.
-14. Close the task.
+Route is complete when the classification and reason are recorded. Reclassify
+when current evidence supports it, and always escalate when risk increases.
 
-Routine branch, test, PR, CI, candidate, and Staging actions in this path are
-already authorized by this workflow. Stop for an unresolved product or
-architecture decision, a newly discovered high-risk Production-impacting
-mutation, or the Production rollout approval. A Fast Path does **not**
-automatically require a restore rehearsal, full AWS/Coolify audit, backup/restore
-proof, or exhaustive infrastructure review.
+### 3. Preflight
 
-## STANDARD: operational-risk release path
+Start with the root `AGENTS.md` safety preflight, then add only the evidence the
+route and scope require:
 
-Use `STANDARD` for non-destructive changes whose runtime behavior is materially
-broader than Fast Path. Define focused functional Staging validation, monitoring,
-and runtime rollback readiness that match the actual operational risk. Escalate
-to `HIGH_RISK` when persistent state, authority, irreversibility, or difficult
-rollback enters scope.
+- Read-only work checks remote, PR, or live state only when freshness affects
+  the conclusion.
+- Source mutation checks latest `origin/main`, open PRs, worktree ownership, and
+  branch readiness before the first write.
+- Production and `HIGH_RISK` work revalidates target identity, authorization,
+  monitoring, rollback, and risk-specific gates immediately before mutation.
 
-## HIGH_RISK: persistent-state and authority release path
+Preflight is complete when the route is supported by current evidence and no
+unowned work or unresolved authority blocks the next action.
 
-Use `HIGH_RISK` when one or more routing triggers above materially apply. Add
-the controls the concrete risk needs: a dedicated Issue/spec, architecture
-review, fresh backup, checksum, private copy, restore verification, rollback
-readiness, no-split-brain evidence, infrastructure preflight, additional
-approval gates, a staged migration/rollback plan, and broader acceptance where
-applicable.
+### 4. Align
 
-`HIGH_RISK` is tailored to affected persistent state, but does not weaken its
-required recovery and authority controls.
+Confirm outcome, acceptance, scope, exclusions, and unresolved decisions. A
+clear task proceeds directly. Use `$grill-with-docs` only when a product,
+architecture, or material risk decision remains unresolved.
 
-## Mandatory invariants
+Align is read-only by default. Record glossary or ADR changes during Execute
+only after the PM confirms the decision and those files are in scope.
 
-Regardless of release path:
+Align is complete when the PM has resolved every material product,
+architecture, scope, acceptance, and risk decision, or each unresolved item is
+explicitly blocked or deferred. Defer every GRILL-generated file write until
+Execute.
 
-1. Never commit directly to `main`.
-2. Required CI must pass.
-3. Staging validates every legally and safely executable candidate check before
-   Production rollout. A deferred write-frozen-Staging check follows the strict
-   rule in `docs/deploy/staging-coolify.md` and is mandatory immediate
-   Production acceptance.
-4. Production has a verified rollback target when its deployment mechanism has
-   a recoverable one; otherwise the rollout approval explicitly accepts the
-   documented residual risk.
-5. Database, destructive, and infrastructure changes receive stricter controls
-   than ordinary application changes.
-6. Promote the same immutable candidate that Staging validated; do not rebuild
-   a different application image between those steps.
-7. Fail closed only when the failed invariant can materially harm Production.
+### 5. Execute
 
-## Pinned-skill compatibility
+The Primary Codex is the sole mutation owner. For source work, create one
+`codex/<task>` branch from clean, latest `main` immediately before the first
+write. Branch creation is an execution detail, not a separate user gate.
 
-The files under `.agents/skills/` remain an exact upstream snapshot. These local
-rules resolve assumptions in that snapshot without silently modifying it:
+Specify only when useful:
 
-- `$to-spec` performs synthesis only after test seams are agreed. If a seam is
-  unresolved, return to `$grill-with-docs`; do not interview inside `$to-spec`.
-  Publish through `docs/agents/issue-tracker.md` without a triage label.
-- `$implement` uses `$tdd` for behavior changes at agreed seams. After each
-  red-green slice, run its focused test. Completion requires the affected-scope
-  validation below to exit successfully, `$code-review origin/main`, resolution
-  of accepted findings, and a task-branch commit.
-- `$diagnosing-bugs` must not collect or echo arbitrary error text. Before using
-  its HITL template, copy it to a task-owned path and replace free-form diagnostic
-  capture with a bounded, sanitized signal that contains no secret, URL,
-  environment value, token, metadata, or PII.
-- Interpret the upstream `/improve-codebase-architecture` handoff as the installed
-  `$codebase-design` skill.
-- Ignore setup-template sections for uninstalled skills such as `triage` and
-  `wayfinder`. The active tracker and domain configuration is only in
-  `docs/agents/`.
+- A clear, one-session `FAST_PATH` task needs no Issue or formal spec.
+- Use a bounded GitHub Issue/spec when acceptance is unclear, the work is risky,
+  or independent phases need a durable handoff.
+- `HIGH_RISK` work requires a dedicated Issue/spec and risk plan.
 
-## Validation
+Implement the smallest change that satisfies acceptance. Use `$tdd`,
+`$diagnosing-bugs`, `$codebase-design`, or other skills only when their specific
+trigger applies; they are not default pipeline stages.
 
-Run focused tests first. For application source changes, run the applicable
-lint/typecheck before the PR. Required CI remains the final required check.
-Run the full local suite or build only when the affected scope, a release-path
-plan, or repository CI requires it:
+Execute is complete when task-owned changes implement the recorded acceptance
+without entering an unapproved scope.
 
-```bash
-npm run lint
-npm run typecheck
-npm test
-npm run build
-```
+### 6. Validate
 
-Run `npm ci` when dependencies are unavailable, the lockfile or dependencies
-changed, or a clean reproducible install is needed. Add browser, monitoring,
-container, database, performance, migration, or restore checks only when the
-affected scope requires them. Documentation- and skill-only changes use
-structural, reference, and discovery checks instead of an unrelated application
-build.
+Run the smallest sufficient validation set for the affected scope:
 
-## Efficient validation and scope control
+- Focused tests first; application source uses applicable lint/typecheck.
+- Run a full suite or build only when affected scope, dependencies, repository
+  CI, or the release plan requires it.
+- Documentation-only changes use structural, reference, discovery, and diff
+  checks instead of an unrelated application build.
+- Required CI remains the final merge gate.
 
-- Do not add a check merely because more safety could theoretically be achieved.
-  Stop when the acceptance criteria and applicable release path are satisfied.
-- Do not turn unrelated technical debt into a release blocker. Record it as
-  follow-up work when useful, without creating an Issue or PR unless the current
-  acceptance criteria require it.
-- Reuse previously proven infrastructure facts unless there is a concrete reason
-  they may have changed.
-- Avoid repeated expensive full-suite checks when focused validation plus
-  required CI provides sufficient evidence.
-- Optimize for fast customer delivery, low infrastructure cost, efficient Codex
-  quota use, and sufficient Production safety—not maximum theoretical pipeline
-  strictness.
-- **Cleanup:** quarantine is the default for untracked legacy material; preserve
-  unrelated work and retention constraints.
+Record commands, results, and any justified `N/A` checks.
 
-## Deployment
+Validate is complete only when every route-required local check passes. If a
+check is blocked, stop and report the blocker; validation remains incomplete.
 
-Source delivery and production rollout remain separate:
+### 7. Review
 
-`source PR validation → merge → immutable Production Candidate → Staging validation of that exact digest → one approved Production promotion of that same digest`
+Review effort follows risk:
 
-For the repository-wide shared-data Staging architecture, data/media alignment
-is `HIGH_RISK` infrastructure work. The separate Staging runtime reads
-Production data/media, remains write-frozen and noindex, and must use the
-preferred database-level read-only principal when technically feasible; see
-`docs/deploy/staging-coolify.md` and ADR 0010.
+- A small `FAST_PATH` change may combine review with Validation: inspect the
+  complete diff for scope, acceptance, documented standards, and unintended
+  behavior.
+- `STANDARD` uses independent review when behavior, API/auth, operational risk,
+  or diff breadth makes a second pass valuable.
+- `HIGH_RISK` requires independent Standards/Spec review plus the applicable
+  architecture and safety review.
+- Run `$code-review origin/main` whenever the PM requests it or these triggers
+  apply. Review agents remain read-only; the Primary resolves accepted findings
+  and reruns affected checks.
+
+Review is complete when accepted findings are resolved and affected validation
+is rerun.
+
+### 8. Deliver
+
+Commit only task-owned files, push one task branch, open one PR, and wait for
+required CI. The PR records scope, acceptance source, route, validation/review
+evidence, remaining risk, Production requirement, and next authorized action.
+
+PM approval is required to merge through protected `main`. A task with
+`Production: no` may finish at Deliver.
+
+Deliver is complete when the PR contains the required evidence and required CI
+passes; merge still waits for PM approval.
+
+### 9. Release
+
+Source delivery and Production rollout are separate:
+
+`source PR validation → merge → immutable ARM64 candidate → applicable Staging validation → PM Production approval → promote the same digest → Production acceptance`
+
+Routine candidate selection and legally safe Staging validation do not need
+repeated PM approval on `FAST_PATH`. Any Staging configuration, Production-data
+permission, or external-system mutation outside the established candidate path
+is a separately routed scope.
+
+Release is complete only after every applicable root `AGENTS.md` Production
+gate and task-specific post-deploy acceptance passes.
+
+## Release paths
+
+### FAST_PATH
+
+Use the core flow with focused validation and integrated review when the change
+is small and low risk. Required CI, PM merge approval, and the root `AGENTS.md`
+Production gates remain mandatory when their stage applies.
+
+`FAST_PATH` does not automatically require a restore rehearsal, broad
+AWS/Coolify audit, backup/restore proof, exhaustive infrastructure review, a
+formal spec, or independent review.
+
+### STANDARD
+
+Define focused functional Staging validation, monitoring, and runtime rollback
+readiness proportional to the concrete operational risk. Add a bounded Issue,
+independent review, or broader validation only when clarity, duration, behavior,
+or risk requires it. Escalate to `HIGH_RISK` when persistence, authority,
+irreversibility, or difficult rollback enters scope.
+
+### HIGH_RISK
+
+Use a dedicated Issue/spec and add the controls the affected state needs:
+architecture review, fresh backup, checksum, private copy, restore verification,
+rollback readiness, no-split-brain evidence, infrastructure preflight,
+additional approvals, staged migration/rollback, and broader acceptance.
+
+Mandatory Production safety invariants live only in root `AGENTS.md`.
+
+## Pinned-skill routing
+
+`.agents/skills/` is an unmodified upstream snapshot. These repository rules
+control when its tools participate:
+
+- `$grill-with-docs` supports Align only when a material decision is unresolved;
+  it is not required for clear tasks and follows Align's no-write boundary.
+- `$to-spec` is optional synthesis after alignment. Keep the Issue bounded to
+  acceptance and risk; publish through `docs/agents/issue-tracker.md` without a
+  triage label.
+- `$implement` is optional. Its upstream full-suite and mandatory-review steps
+  yield to this route's focused Validate and risk-based Review stages.
+- `$tdd` applies to behavior changes at an agreed public seam when test-first
+  work adds useful protection; it is not a documentation or mechanical-edit
+  gate.
+- `$diagnosing-bugs` is for hard bugs or performance regressions. Use a bounded,
+  sanitized signal and never collect secrets, URLs, environment values, tokens,
+  metadata, or PII.
+- `$code-review` runs on explicit request or the `STANDARD`/`HIGH_RISK` triggers
+  above, not automatically for every diff.
+- Interpret `/improve-codebase-architecture` as `$codebase-design`. Ignore
+  setup-template assumptions for uninstalled `triage` or `wayfinder`; active
+  tracker and domain configuration lives only in `docs/agents/`.
+
+## Scope control
+
+- Stop when acceptance and the selected route are satisfied.
+- Record unrelated technical debt as optional follow-up; do not turn it into a
+  blocker, Issue, or PR without current scope.
+- Reuse previously proven infrastructure facts unless concrete drift requires
+  revalidation.
+- Preserve unrelated work and retention constraints; quarantine is the default
+  for legacy material.
+- Optimize for delivery speed, low infrastructure cost, efficient Codex quota,
+  and sufficient Production safety.
+
+Repository-wide shared Production-data/media Staging alignment remains
+`HIGH_RISK`; see `docs/deploy/staging-coolify.md` and ADR 0010.
