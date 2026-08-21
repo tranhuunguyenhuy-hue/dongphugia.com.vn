@@ -4,6 +4,7 @@ Only current runtime and Phase 1 documentation is kept with the application.
 
 - [Application conventions](AGENTS.md)
 - [Codex workflow and FAST_PATH/STANDARD/HIGH_RISK release policy](WORKFLOW-WITH-CODEX.md)
+- [Production operations, incident follow-up, or project handoff: current operational baseline](ops/project-current-state.md)
 - [Design system](DESIGN_SYSTEM.md)
 - [Public sitemap map](SITEMAP.md)
 - [Coolify shared Production-data Staging runbook](deploy/staging-coolify.md)

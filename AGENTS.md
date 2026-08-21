@@ -18,6 +18,9 @@ Use this checkout only. Another clone, checkout, worktree, historical branch,
 Vercel deployment, or Supabase project requires explicit PM approval for a
 recovery operation.
 
+For Production operations, incident follow-up, or a project handoff, read
+`docs/ops/project-current-state.md` before acting.
+
 ## Roles
 
 - **PM — Nguyen Huy:** owns outcome, product decisions, acceptance, merge
