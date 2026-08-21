@@ -16,8 +16,10 @@ actual blast radius.
 Use `FAST_PATH` by default for ordinary application changes. It requires a
 task branch, focused validation plus applicable lint/typecheck, required CI, a
 merged immutable Production Candidate, Staging validation of that same digest,
-one Production rollout approval, Production smoke verification, and a known
-rollback target.
+one Production rollout approval, Production smoke verification, and a verified
+runtime rollback target when the deployment mechanism has a recoverable target.
+When it does not, the rollout approval records the gap and explicitly accepts
+the residual risk.
 
 Use `FULL_PATH` only for material database, destructive data, infrastructure,
 AWS/network/security, Coolify infrastructure, CDN/storage, DNS, broad
@@ -27,8 +29,9 @@ architecture review, backup/restore readiness, infrastructure preflight,
 staged migration/rollback plan, and broader acceptance—to the actual risk.
 
 Every path preserves protected `main`, required CI, Staging-before-Production,
-same-digest promotion, and a known Production rollback target. Fail closed only
-when a missing invariant could materially harm Production.
+and same-digest promotion. Verify a runtime rollback target when one is
+recoverable; otherwise record the residual risk in the Production approval.
+Fail closed only when a missing invariant could materially harm Production.
 
 ## Consequences
 
