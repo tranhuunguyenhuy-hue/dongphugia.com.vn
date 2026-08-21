@@ -42,8 +42,8 @@ Preflight or Execute reveals a larger blast radius.
 Choose from blast radius and persistence, not diff size. Source work does not
 authorize runtime mutation.
 
-Route is complete when the classification and reason are recorded; later
-evidence may only preserve or escalate it.
+Route is complete when the classification and reason are recorded. Reclassify
+when current evidence supports it, and always escalate when risk increases.
 
 ### 3. Preflight
 
@@ -107,8 +107,8 @@ Run the smallest sufficient validation set for the affected scope:
 
 Record commands, results, and any justified `N/A` checks.
 
-Validate is complete when every route-required local check passes, or a concrete
-blocker and its evidence are recorded.
+Validate is complete only when every route-required local check passes. If a
+check is blocked, stop and report the blocker; validation remains incomplete.
 
 ### 7. Review
 
