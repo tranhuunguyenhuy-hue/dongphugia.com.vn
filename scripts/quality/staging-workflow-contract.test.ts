@@ -62,8 +62,24 @@ describe('shared Production-data staging contract', () => {
         )
     })
 
+    it('defers only write-frozen checks that become immediate Production acceptance', () => {
+        expect(stagingRunbook).toContain(
+            'NOT_APPLICABLE_ON_WRITE_FROZEN_STAGING',
+        )
+        expect(stagingRunbook).toContain(
+            'Related non-destructive evidence has passed on the same immutable digest',
+        )
+        expect(stagingRunbook).toContain(
+            'immediate mandatory Production post-deploy acceptance',
+        )
+        expect(stagingRunbook).toContain('This is not a skip')
+        expect(stagingRunbook).toContain('CSP-only Managed Media application')
+        expect(stagingRunbook).toContain('non-zero `naturalWidth`')
+    })
+
     it('fences legacy synthetic staging material as CI-only and superseded', () => {
         expect(docsIndex).toContain('CI-only disposable database fixtures')
+        expect(docsIndex).toContain('FAST_PATH/STANDARD/HIGH_RISK')
         expect(disposableBootstrapRunbook).toContain('not a Staging runtime runbook')
         expect(disposableBootstrapRunbook).toMatch(
             /must not be executed against Staging or\s+Production/,

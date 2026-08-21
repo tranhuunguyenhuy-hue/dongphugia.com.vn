@@ -34,8 +34,8 @@ mutation ownership, merge authority, or production authority.
 ## Release-path routing
 
 Before every delivery task, read `docs/WORKFLOW-WITH-CODEX.md` and state the
-`FAST_PATH` or `FULL_PATH` classification it defines, with a brief reason. The
-default, triggers, and controls live only in that workflow.
+`FAST_PATH`, `STANDARD`, or `HIGH_RISK` classification it defines, with a
+brief reason. The default, triggers, and controls live only in that workflow.
 
 ## Mandatory preflight
 
@@ -96,13 +96,17 @@ See `docs/agents/domain.md`.
   record the gap and obtain explicit PM acceptance of its residual risk. A
   runtime-only change does not require fresh database backup, checksum, private
   database copy, restore test, or database no-split-brain evidence.
+- A Shared-data Staging check may be deferred only under the strict conditions
+  in `docs/deploy/staging-coolify.md`: same-digest non-destructive evidence,
+  immediate mandatory Production acceptance, and no deferral of feasible
+  Staging checks.
 - **Persistent-state Production mutations** include database/schema/data writes,
   storage migration, network/traffic architecture change, or infrastructure
   mutation that can affect persistent state. When applicable to the affected
   state, they require fresh backup, checksum, private copy, restore verification,
   rollback readiness, and no-split-brain evidence in addition to their release
   path controls.
-- `FULL_PATH` changes involving database schema, permissions, destructive data,
+- **HIGH_RISK** changes involving database schema, permissions, destructive data,
   infrastructure, AWS/network/security, Coolify infrastructure, CDN/storage,
   DNS, broad authentication/authorization, irreversible work, or difficult
   rollback require the stricter controls defined in the workflow.
