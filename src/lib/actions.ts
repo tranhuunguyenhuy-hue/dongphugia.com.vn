@@ -6,6 +6,7 @@ import { z } from "zod"
 import { requirePermission } from '@/lib/auth/get-current-user'
 import { toWriteFreezeActionResult } from '@/lib/write-freeze'
 import { buildQuoteItemSnapshot } from '@/lib/quote-snapshot'
+import { resolveProductVisibility } from '@/lib/public-product-visibility'
 
 // NOTE: Legacy product/collection/pattern-type actions removed in LEO-366.
 // Will be rebuilt as unified product actions in Phase 3.
@@ -172,13 +173,7 @@ export async function submitQuoteRequest(payload: QuoteCartPayload) {
             const snapshotAt = new Date()
             const quoteItems = products.map(item => {
                 const product = productsById.get(item.product_id)
-                if (
-                    !product
-                    || !product.is_active
-                    || product.publication_status !== 'public'
-                    || product.pdp_visibility !== 'public'
-                    || product.sellable_status !== 'sellable'
-                ) {
+                if (!product || !resolveProductVisibility(product).pdp) {
                     throw new Error('QUOTE_PRODUCT_UNAVAILABLE')
                 }
 

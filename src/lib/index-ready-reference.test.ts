@@ -55,6 +55,7 @@ describe('index-ready public references', () => {
         expect(helperSection(publicProducts, 'getVariantSiblings')).toContain('...buildPublicPdpVisibilityWhere(),')
         expect(helperSection(publicProducts, 'getVariantSelectionData')).toContain("and p.publication_status = 'public'")
         expect(helperSection(publicProducts, 'getVariantSelectionData')).toContain("and p.pdp_visibility = 'public'")
+        expect(helperSection(publicProducts, 'getVariantSelectionData')).toContain("and p.sellable_status = 'sellable'")
         for (const helperName of [
             'getFeaturedProductsByCategorySlug',
             'getTopProductsPerBrand',
