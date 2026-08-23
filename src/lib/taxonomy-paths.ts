@@ -1,8 +1,12 @@
+import type { Prisma } from '@prisma/client'
+
 type CatalogTaxonRef = {
   slug: string
   name: string
   canonical_path: string
   parent_id: number | null
+  is_active?: boolean
+  is_listing_enabled?: boolean
 }
 
 type ProductTaxonAssignmentRef = {
@@ -15,7 +19,7 @@ type ProductPathInput = {
   product_type?: string | null
   categories?: { slug: string; name?: string | null } | null
   subcategories?: { slug: string; name?: string | null } | null
-  product_taxon_assignments?: ProductTaxonAssignmentRef[]
+  product_taxon_assignments?: readonly ProductTaxonAssignmentRef[]
 }
 
 const ROOT_CATEGORY_NAMES: Record<string, string> = {
@@ -32,15 +36,30 @@ export type CanonicalProductPath = {
   subcategoryName: string | null
   canonicalTaxonomyPath: string | null
   usedTaxonomyPrimary: boolean
+  taxonomyDisposition: 'normalized_primary' | 'legacy_fallback' | 'manual_review'
+  taxonomyException: 'multiple_primary_assignments' | 'missing_primary_taxon' | 'inactive_primary_taxon' | 'invalid_canonical_path' | null
   urlPath: string
 }
 
-function getPrimaryTaxon(input: ProductPathInput) {
-  return (
-    input.product_taxon_assignments?.find(
-      (assignment) => assignment.is_primary && assignment.catalog_taxons
-    )?.catalog_taxons ?? null
-  )
+function getPrimaryTaxon(input: ProductPathInput): {
+  taxon: CatalogTaxonRef | null
+  exception: CanonicalProductPath['taxonomyException']
+} {
+  const primaryAssignments = input.product_taxon_assignments?.filter((assignment) => assignment.is_primary) ?? []
+
+  if (primaryAssignments.length === 0) return { taxon: null, exception: null }
+  if (primaryAssignments.length > 1) {
+    return { taxon: null, exception: 'multiple_primary_assignments' }
+  }
+
+  const taxon = primaryAssignments[0].catalog_taxons
+  if (!taxon) return { taxon: null, exception: 'missing_primary_taxon' }
+  if (taxon.is_active === false) return { taxon: null, exception: 'inactive_primary_taxon' }
+
+  const segments = taxon.canonical_path.split('/').filter(Boolean)
+  if (segments.length < 2) return { taxon: null, exception: 'invalid_canonical_path' }
+
+  return { taxon, exception: null }
 }
 
 function getLegacySubcategorySlug(input: ProductPathInput) {
@@ -51,7 +70,8 @@ function getLegacySubcategorySlug(input: ProductPathInput) {
 }
 
 export function getCanonicalProductPath(input: ProductPathInput): CanonicalProductPath {
-  const primaryTaxon = getPrimaryTaxon(input)
+  const primary = getPrimaryTaxon(input)
+  const primaryTaxon = primary.taxon
 
   if (primaryTaxon?.canonical_path) {
     const segments = primaryTaxon.canonical_path.split('/').filter(Boolean)
@@ -65,6 +85,8 @@ export function getCanonicalProductPath(input: ProductPathInput): CanonicalProdu
       subcategoryName: primaryTaxon.name ?? input.subcategories?.name ?? null,
       canonicalTaxonomyPath: primaryTaxon.canonical_path,
       usedTaxonomyPrimary: true,
+      taxonomyDisposition: 'normalized_primary',
+      taxonomyException: null,
       urlPath: `/${categorySlug}/${subcategorySlug}/${input.slug}`,
     }
   }
@@ -79,6 +101,8 @@ export function getCanonicalProductPath(input: ProductPathInput): CanonicalProdu
     subcategoryName: input.subcategories?.name ?? null,
     canonicalTaxonomyPath: null,
     usedTaxonomyPrimary: false,
+    taxonomyDisposition: primary.exception ? 'manual_review' : 'legacy_fallback',
+    taxonomyException: primary.exception,
     urlPath: `/${categorySlug}/${subcategorySlug}/${input.slug}`,
   }
 }
@@ -89,6 +113,7 @@ export function getCategoryRootFilter(categorySlug: string) {
       some: {
         is_primary: true,
         catalog_taxons: {
+          is_active: true,
           canonical_path: {
             startsWith: `${categorySlug}/`,
           },
@@ -104,6 +129,8 @@ export function getTaxonomyLeafFilter(slugs: string[]) {
       some: {
         is_primary: true,
         catalog_taxons: {
+          is_active: true,
+          is_listing_enabled: true,
           slug: { in: slugs },
         },
       },
@@ -111,9 +138,53 @@ export function getTaxonomyLeafFilter(slugs: string[]) {
   }
 }
 
+export function getTaxonomyPreferredCategoryFilter(categorySlug: string): Prisma.productsWhereInput {
+  return {
+    OR: [
+      getCategoryRootFilter(categorySlug),
+      {
+        AND: [
+          {
+            product_taxon_assignments: {
+              none: {
+                is_primary: true,
+                catalog_taxons: { is_active: true },
+              },
+            },
+          },
+          { categories: { slug: categorySlug } },
+        ],
+      },
+    ],
+  }
+}
+
+export function getTaxonomyPreferredLeafFilter(
+  slugs: string[],
+  legacyFilter: Prisma.productsWhereInput,
+): Prisma.productsWhereInput {
+  return {
+    OR: [
+      getTaxonomyLeafFilter(slugs),
+      {
+        AND: [
+          {
+            product_taxon_assignments: {
+              none: {
+                is_primary: true,
+                catalog_taxons: { is_active: true, is_listing_enabled: true },
+              },
+            },
+          },
+          legacyFilter,
+        ],
+      },
+    ],
+  }
+}
+
 export const primaryTaxonAssignmentSelect = {
   where: { is_primary: true },
-  take: 1,
   select: {
     is_primary: true,
     catalog_taxons: {
@@ -122,6 +193,8 @@ export const primaryTaxonAssignmentSelect = {
         name: true,
         canonical_path: true,
         parent_id: true,
+        is_active: true,
+        is_listing_enabled: true,
       },
     },
   },

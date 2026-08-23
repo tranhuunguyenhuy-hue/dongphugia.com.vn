@@ -12,8 +12,9 @@ import {
 } from '@/lib/catalog-ux-profiles'
 import {
     getCanonicalProductPath,
-    getCategoryRootFilter,
     getTaxonomyLeafFilter,
+    getTaxonomyPreferredCategoryFilter,
+    getTaxonomyPreferredLeafFilter,
     primaryTaxonAssignmentSelect,
 } from '@/lib/taxonomy-paths'
 
@@ -174,7 +175,7 @@ function serializeProductListItem<T extends {
     canonical_subcategory_slug: string
     canonical_taxonomy_path: string | null
 } {
-    return toPlainJson(serializeProductMoney(product as any)) as unknown as SerializedMoneyFields<T> & {
+    return toPlainJson(serializeProductMoney(product)) as unknown as SerializedMoneyFields<T> & {
         url: string
         canonical_category_slug: string
         canonical_subcategory_slug: string
@@ -192,7 +193,7 @@ function serializeProductDetail<T extends {
 
     // Normalize top-level money fields first, then strip any remaining Prisma/Decimal
     // instances from nested data before passing across the server -> client boundary.
-    return JSON.parse(JSON.stringify(serializeProductMoney(product as any))) as T & {
+    return JSON.parse(JSON.stringify(serializeProductMoney(product))) as T & {
         url: string
         canonical_category_slug: string
         canonical_subcategory_slug: string
@@ -289,12 +290,15 @@ export function getPdpDocuments(product: {
     if (!Array.isArray(legacyDocs)) return []
 
     return legacyDocs
-        .map((doc: any) => ({
-            name: String(doc?.name || doc?.title || 'Tài liệu').trim(),
-            url: String(doc?.url || '').trim(),
-            type: doc?.type || undefined,
-            size: doc?.size || 'Xem chi tiết',
-        }))
+        .map((doc: unknown) => {
+            const record = asPlainObject(doc)
+            return {
+                name: String(record.name || record.title || 'Tài liệu').trim(),
+                url: String(record.url || '').trim(),
+                type: record.type ? String(record.type) : undefined,
+                size: record.size ? String(record.size) : 'Xem chi tiết',
+            }
+        })
         .filter(doc => doc.url)
 }
 
@@ -381,11 +385,12 @@ export async function getPublicProducts(filters: ProductFilters = {}) {
     const subcatSlugs = subcategory_slugs ? toFilterArray(subcategory_slugs) : (subcategory_slug ? [subcategory_slug] : undefined)
     if (subcatSlugs) {
         AND.push({
-            OR: [
-                { subcategories: { slug: { in: subcatSlugs } } },
-                { secondary_subcategories: { some: { subcategories: { slug: { in: subcatSlugs } } } } },
-                getTaxonomyLeafFilter(subcatSlugs),
-            ]
+            ...getTaxonomyPreferredLeafFilter(subcatSlugs, {
+                OR: [
+                    { subcategories: { slug: { in: subcatSlugs } } },
+                    { secondary_subcategories: { some: { subcategories: { slug: { in: subcatSlugs } } } } },
+                ],
+            }),
         })
     }
 
@@ -427,12 +432,7 @@ export async function getPublicProducts(filters: ProductFilters = {}) {
     const where: Prisma.productsWhereInput = {
         ...(search ? buildPublicSearchVisibilityWhere() : buildPublicListingVisibilityWhere()),
         ...(AND.length > 0 ? { AND } : {}),
-        ...(category_slug && {
-            OR: [
-                { categories: { slug: category_slug } },
-                getCategoryRootFilter(category_slug),
-            ],
-        }),
+        ...(category_slug && getTaxonomyPreferredCategoryFilter(category_slug)),
         ...(brand_id && { brand_id }),
         ...(brand_slug && { brands: { slug: { in: toFilterArray(brand_slug) } } }),
         ...(color_id && { color_id }),
@@ -647,6 +647,15 @@ export const getAvailableFiltersBySubcategory = unstable_cache(
 )
 
 export const PUBLIC_LISTING_PRODUCT_WHERE: Prisma.productsWhereInput = buildPublicListingVisibilityWhere()
+export const LEGACY_LISTING_PRODUCT_WHERE: Prisma.productsWhereInput = {
+    ...PUBLIC_LISTING_PRODUCT_WHERE,
+    product_taxon_assignments: {
+        none: {
+            is_primary: true,
+            catalog_taxons: { is_active: true, is_listing_enabled: true },
+        },
+    },
+}
 
 function mapLegacyListingLeaf(
     leaf: {
@@ -684,8 +693,8 @@ export const getPublicListingLeaves = unstable_cache(
                 include: {
                     _count: {
                         select: {
-                            products: { where: PUBLIC_LISTING_PRODUCT_WHERE },
-                            secondary_product_subcategories: { where: { products: PUBLIC_LISTING_PRODUCT_WHERE } },
+                            products: { where: LEGACY_LISTING_PRODUCT_WHERE },
+                            secondary_product_subcategories: { where: { products: LEGACY_LISTING_PRODUCT_WHERE } },
                         },
                     },
                 },
@@ -778,8 +787,8 @@ export const getPublicListingLeaf = unstable_cache(
             include: {
                 _count: {
                     select: {
-                        products: { where: PUBLIC_LISTING_PRODUCT_WHERE },
-                        secondary_product_subcategories: { where: { products: PUBLIC_LISTING_PRODUCT_WHERE } },
+                        products: { where: LEGACY_LISTING_PRODUCT_WHERE },
+                        secondary_product_subcategories: { where: { products: LEGACY_LISTING_PRODUCT_WHERE } },
                     },
                 },
             },
@@ -970,10 +979,7 @@ async function _getPublicProductBySlug(categorySlug: string, slug: string) {
         where: {
             slug,
             ...buildPublicPdpVisibilityWhere(),
-            OR: [
-                { categories: { slug: categorySlug } },
-                getCategoryRootFilter(categorySlug),
-            ],
+            ...getTaxonomyPreferredCategoryFilter(categorySlug),
         },
         include: {
             categories: { select: { id: true, name: true, slug: true } },
@@ -1253,12 +1259,9 @@ export const getFeaturedProductsByCategorySlug = unstable_cache(
         
         if (subcategorySlug) {
             whereClause.AND = [
-                {
-                    OR: [
-                        { subcategories: { slug: subcategorySlug } },
-                        getTaxonomyLeafFilter([subcategorySlug]),
-                    ],
-                },
+                getTaxonomyPreferredLeafFilter([subcategorySlug], {
+                    subcategories: { slug: subcategorySlug },
+                }),
             ]
         }
 
@@ -1325,14 +1328,7 @@ export const getTopProductsPerBrand = unstable_cache(
                         is_featured: true,          // only admin-selected featured products
                         NOT: { product_types: { slug: { contains: 'phu-kien' } } },
                         brands: { slug: brandSlug },
-                        AND: [
-                            {
-                                OR: [
-                                    { categories: { slug: categorySlug } },
-                                    getCategoryRootFilter(categorySlug),
-                                ],
-                            },
-                        ],
+                        AND: [getTaxonomyPreferredCategoryFilter(categorySlug)],
                     },
                     orderBy: [{ sort_order: 'desc' }, { created_at: 'desc' }],
                     take: perBrand,
