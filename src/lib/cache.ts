@@ -88,3 +88,67 @@ export const getProductTypes = unstable_cache(
     ['product_types'],
     { revalidate: 3600, tags: ['product_types', 'products'] }
 )
+
+// Normalized catalog taxonomy used by the CMS and canonical public readers.
+export const getCatalogTaxons = unstable_cache(
+    async () => prisma.catalog_taxons.findMany({
+        where: { is_active: true },
+        orderBy: [{ depth: 'asc' }, { sort_order: 'asc' }, { name: 'asc' }],
+        select: {
+            id: true,
+            parent_id: true,
+            name: true,
+            slug: true,
+            canonical_path: true,
+            depth: true,
+            is_active: true,
+            is_listing_enabled: true,
+        },
+    }),
+    ['catalog_taxons'],
+    { revalidate: 3600, tags: ['catalog_taxons', 'products'] },
+)
+
+// Normalized Product Type/Subtype references for canonical Product editing.
+export const getNormalizedProductTypes = unstable_cache(
+    async () => prisma.product_types.findMany({
+        where: { is_active: true },
+        orderBy: [{ subcategory_id: 'asc' }, { sort_order: 'asc' }, { name: 'asc' }],
+        select: {
+            id: true,
+            subcategory_id: true,
+            slug: true,
+            name: true,
+            product_sub_types: {
+                where: { is_active: true },
+                orderBy: [{ sort_order: 'asc' }, { name: 'asc' }],
+                select: { id: true, product_type_id: true, slug: true, name: true },
+            },
+        },
+    }),
+    ['normalized_product_types'],
+    { revalidate: 3600, tags: ['product_types', 'products'] },
+)
+
+// Normalized specification definitions/options for Product Editor forms.
+export const getSpecDefinitions = unstable_cache(
+    async () => prisma.spec_definitions.findMany({
+        orderBy: [{ sort_order: 'asc' }, { label: 'asc' }],
+        select: {
+            id: true,
+            key: true,
+            label: true,
+            data_type: true,
+            unit: true,
+            is_filterable: true,
+            is_pdp_visible: true,
+            spec_options: {
+                where: { is_active: true },
+                orderBy: [{ sort_order: 'asc' }, { value: 'asc' }],
+                select: { id: true, value: true, slug: true },
+            },
+        },
+    }),
+    ['spec_definitions'],
+    { revalidate: 3600, tags: ['subcategory-spec-filters', 'products'] },
+)

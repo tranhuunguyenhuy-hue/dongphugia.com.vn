@@ -1,6 +1,6 @@
 import type { Prisma } from '@prisma/client'
 
-type CatalogTaxonRef = {
+export type CatalogTaxonRef = {
   slug: string
   name: string
   canonical_path: string
@@ -9,12 +9,12 @@ type CatalogTaxonRef = {
   is_listing_enabled?: boolean
 }
 
-type ProductTaxonAssignmentRef = {
+export type ProductTaxonAssignmentRef = {
   is_primary: boolean
   catalog_taxons: CatalogTaxonRef | null
 }
 
-type ProductPathInput = {
+export type ProductPathInput = {
   slug: string
   product_type?: string | null
   categories?: { slug: string; name?: string | null } | null
@@ -41,7 +41,7 @@ export type CanonicalProductPath = {
   urlPath: string
 }
 
-function getPrimaryTaxon(input: ProductPathInput): {
+export function getPrimaryTaxon(input: ProductPathInput): {
   taxon: CatalogTaxonRef | null
   exception: CanonicalProductPath['taxonomyException']
 } {

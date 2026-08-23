@@ -26,6 +26,7 @@ import { ProductRelationshipPicker } from './product-relationship-picker'
 import { ProductVariantManager } from '@/components/admin/products/product-variant-manager'
 import { QuickCreateProductModal } from './quick-create-product-modal'
 import { addProductRelationship, removeProductRelationship } from '@/lib/product-actions'
+import { NormalizedPimPanel } from './normalized-pim-panel'
 
 import {
   AlertDialog,
@@ -66,6 +67,8 @@ const formSchema = z.object({
     material_id: z.string().optional(),
     price: z.string().optional(),
     original_price: z.string().optional(),
+    list_price: z.string().optional(),
+    sale_price: z.string().optional(),
     online_discount_amount: z.string().optional(),
     price_display: z.string().optional(),
     description: z.string().optional(),
@@ -82,6 +85,17 @@ const formSchema = z.object({
     sort_order: z.string().optional(),
     product_type: z.string().optional(),
     product_sub_type: z.string().optional(),
+    product_type_id: z.string().optional(),
+    product_sub_type_id: z.string().optional(),
+    canonical_taxon_id: z.string().optional(),
+    secondary_taxon_ids: z.string().optional(),
+    publication_status: z.enum(['draft', 'public']).optional(),
+    pdp_visibility: z.enum(['public', 'hidden']).optional(),
+    listing_visibility: z.enum(['default', 'low_priority', 'hidden']).optional(),
+    search_visibility: z.enum(['visible', 'hidden']).optional(),
+    sellable_status: z.enum(['sellable', 'not_sellable', 'discontinued']).optional(),
+    seo_indexing: z.enum(['index', 'noindex']).optional(),
+    sitemap_include: z.boolean().optional(),
     source_url: z.string().optional(),
     hita_product_id: z.string().optional(),
     seo_title: z.string().optional(),
@@ -110,9 +124,35 @@ interface ProductTypeItem {
     product_sub_type: string | null;
 }
 
+interface CatalogTaxonItem {
+    id: number
+    parent_id: number | null
+    name: string
+    canonical_path: string
+    depth: number
+    is_listing_enabled: boolean
+}
+
+interface NormalizedProductTypeItem {
+    id: number
+    subcategory_id: number
+    name: string
+    product_sub_types: { id: number; product_type_id: number; name: string }[]
+}
+
+interface SpecDefinitionItem {
+    id: number
+    key: string
+    label: string
+    data_type: string
+    unit: string | null
+    spec_options: { id: number; value: string }[]
+}
+
 interface ProductFormProps {
     pageTitle: string
     pageSubtitle?: string
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     product?: any; // Full product data from getAdminProductById
     categories: LookupItem[]
     subcategories: SubcategoryItem[]
@@ -122,14 +162,18 @@ interface ProductFormProps {
     materials: LookupItem[]
     filterDefinitions?: FilterDefinitionItem[]
     productTypes?: ProductTypeItem[]
+    catalogTaxons?: CatalogTaxonItem[]
+    normalizedProductTypes?: NormalizedProductTypeItem[]
+    specDefinitions?: SpecDefinitionItem[]
 }
 
-export function ProductForm({ pageTitle, pageSubtitle, product, categories, subcategories, brands, origins, colors, materials, filterDefinitions = [], productTypes = [] }: ProductFormProps) {
+export function ProductForm({ pageTitle, pageSubtitle, product, categories, subcategories, brands, origins, colors, materials, filterDefinitions = [], productTypes = [], catalogTaxons = [], normalizedProductTypes = [], specDefinitions = [] }: ProductFormProps) {
     const router = useRouter()
     const [isPending, startTransition] = useTransition()
     const isEdit = !!product
 
     // Specs state is still separate as it's dynamic
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [specs, setSpecs] = useState<Record<string, any>>(
         typeof product?.specs === 'string' ? JSON.parse(product.specs) : product?.specs || {}
     )
@@ -149,6 +193,8 @@ export function ProductForm({ pageTitle, pageSubtitle, product, categories, subc
             material_id: product?.material_id?.toString() || '',
             price: product?.price?.toString() || '',
             original_price: product?.original_price?.toString() || '',
+            list_price: product?.list_price?.toString() || '',
+            sale_price: product?.sale_price?.toString() || '',
             online_discount_amount: product?.online_discount_amount?.toString() || '',
             price_display: product?.price_display || 'Liên hệ báo giá',
             description: product?.description || '',
@@ -165,6 +211,17 @@ export function ProductForm({ pageTitle, pageSubtitle, product, categories, subc
             sort_order: product?.sort_order?.toString() || '0',
             product_type: product?.product_type || '',
             product_sub_type: product?.product_sub_type || '',
+            product_type_id: product?.product_type_id?.toString() || '',
+            product_sub_type_id: product?.product_sub_type_id?.toString() || '',
+            canonical_taxon_id: product?.product_taxon_assignments?.find((assignment: { is_primary: boolean }) => assignment.is_primary)?.taxon_id?.toString() || '',
+            secondary_taxon_ids: product?.product_taxon_assignments?.filter((assignment: { is_primary: boolean }) => !assignment.is_primary).map((assignment: { taxon_id: number }) => assignment.taxon_id).join(',') || '',
+            publication_status: product?.publication_status || 'public',
+            pdp_visibility: product?.pdp_visibility || 'public',
+            listing_visibility: product?.listing_visibility || 'default',
+            search_visibility: product?.search_visibility || 'visible',
+            sellable_status: product?.sellable_status || 'sellable',
+            seo_indexing: product?.seo_indexing || 'index',
+            sitemap_include: product?.sitemap_include ?? true,
             source_url: product?.source_url || '',
             hita_product_id: product?.hita_product_id || '',
             seo_title: product?.seo_title || '',
@@ -177,6 +234,7 @@ export function ProductForm({ pageTitle, pageSubtitle, product, categories, subc
     const currentPrice = form.watch('price')
     const currentOriginalPrice = form.watch('original_price')
     const currentProductType = form.watch('product_type')
+    const normalizedTypeId = form.watch('product_type_id')
 
     const filteredSubcategories = useMemo(() => {
         if (!categoryId) return []
@@ -200,6 +258,9 @@ export function ProductForm({ pageTitle, pageSubtitle, product, categories, subc
             .map(t => t.product_sub_type as string)
         return Array.from(new Set(types)).sort()
     }, [subcategoryId, currentProductType, productTypes])
+
+    const normalizedTypesForSubcategory = useMemo(() => normalizedProductTypes.filter((type) => !subcategoryId || type.subcategory_id === Number(subcategoryId)), [normalizedProductTypes, subcategoryId])
+    const selectedNormalizedType = normalizedProductTypes.find((type) => String(type.id) === normalizedTypeId)
 
     const relevantFilters = useMemo(() => {
         const EXCLUDED_KEYS = ['brand', 'thuong-hieu', 'price', 'khoang-gia', 'origin', 'xuat-xu', 'color', 'mau-sac', 'material', 'chat-lieu']
@@ -257,6 +318,8 @@ export function ProductForm({ pageTitle, pageSubtitle, product, categories, subc
                 material_id: values.material_id ? Number(values.material_id) : null,
                 price: values.price ? Number(values.price) : null,
                 original_price: values.original_price ? Number(values.original_price) : null,
+                list_price: values.list_price ? Number(values.list_price) : null,
+                sale_price: values.sale_price ? Number(values.sale_price) : null,
                 online_discount_amount: values.online_discount_amount ? Number(values.online_discount_amount) : null,
                 warranty_months: values.warranty_months ? Number(values.warranty_months) : null,
                 sort_order: Number(values.sort_order) || 0,
@@ -264,6 +327,19 @@ export function ProductForm({ pageTitle, pageSubtitle, product, categories, subc
                 display_name: values.display_name || null,
                 product_type: values.product_type || null,
                 product_sub_type: values.product_sub_type || null,
+                product_type_id: values.product_type_id ? Number(values.product_type_id) : null,
+                product_sub_type_id: values.product_sub_type_id ? Number(values.product_sub_type_id) : null,
+                taxon_assignments: [
+                    ...(values.canonical_taxon_id ? [{ taxon_id: Number(values.canonical_taxon_id), is_primary: true, sort_order: 0 }] : []),
+                    ...(values.secondary_taxon_ids || '').split(',').map((value) => Number(value.trim())).filter((value) => Number.isInteger(value) && value > 0).map((taxon_id, index) => ({ taxon_id, is_primary: false, sort_order: index + 1 })),
+                ],
+                publication_status: values.publication_status,
+                pdp_visibility: values.pdp_visibility,
+                listing_visibility: values.listing_visibility,
+                search_visibility: values.search_visibility,
+                sellable_status: values.sellable_status,
+                seo_indexing: values.seo_indexing,
+                sitemap_include: values.sitemap_include,
                 source_url: values.source_url || null,
                 hita_product_id: values.hita_product_id || null,
                 seo_title: values.seo_title || null,
@@ -502,8 +578,63 @@ export function ProductForm({ pageTitle, pageSubtitle, product, categories, subc
                                                     </Select>
                                                     <FormMessage />
                                                 </FormItem>
+                                                )}
+                                            />
+                                        <FormField
+                                            control={form.control}
+                                            name="canonical_taxon_id"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Primary Taxon (canonical)</FormLabel>
+                                                    <Select onValueChange={field.onChange} value={field.value || undefined}>
+                                                        <FormControl><SelectTrigger><SelectValue placeholder="Chọn primary taxon" /></SelectTrigger></FormControl>
+                                                        <SelectContent>
+                                                            {catalogTaxons.filter((taxon) => taxon.is_listing_enabled).map((taxon) => <SelectItem key={taxon.id} value={taxon.id.toString()}>{'— '.repeat(taxon.depth)}{taxon.name} · {taxon.canonical_path}</SelectItem>)}
+                                                        </SelectContent>
+                                                    </Select>
+                                                    <FormDescription>Không tự động suy luận taxonomy; Product phải được gán rõ ràng hoặc giữ review.</FormDescription>
+                                                </FormItem>
                                             )}
                                         />
+                                        <FormField
+                                            control={form.control}
+                                            name="secondary_taxon_ids"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Secondary Taxon IDs</FormLabel>
+                                                    <FormControl><Input placeholder="VD: 12,18" {...field} /></FormControl>
+                                                    <FormDescription>Danh sách ID phân tách bằng dấu phẩy; không thay thế primary taxon.</FormDescription>
+                                                </FormItem>
+                                            )}
+                                        />
+                                        {normalizedTypesForSubcategory.length > 0 && <>
+                                            <FormField
+                                                control={form.control}
+                                                name="product_type_id"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Normalized Product Type</FormLabel>
+                                                        <Select onValueChange={(value) => { field.onChange(value); form.setValue('product_sub_type_id', '') }} value={field.value || undefined}>
+                                                            <FormControl><SelectTrigger><SelectValue placeholder="Chọn normalized type" /></SelectTrigger></FormControl>
+                                                            <SelectContent>{normalizedTypesForSubcategory.map((type) => <SelectItem key={type.id} value={type.id.toString()}>{type.name}</SelectItem>)}</SelectContent>
+                                                        </Select>
+                                                    </FormItem>
+                                                )}
+                                            />
+                                            {selectedNormalizedType && <FormField
+                                                control={form.control}
+                                                name="product_sub_type_id"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Normalized Product Subtype</FormLabel>
+                                                        <Select onValueChange={field.onChange} value={field.value || undefined}>
+                                                            <FormControl><SelectTrigger><SelectValue placeholder="Không chọn" /></SelectTrigger></FormControl>
+                                                            <SelectContent>{selectedNormalizedType.product_sub_types.map((subtype) => <SelectItem key={subtype.id} value={subtype.id.toString()}>{subtype.name}</SelectItem>)}</SelectContent>
+                                                        </Select>
+                                                    </FormItem>
+                                                )}
+                                            />}
+                                        </>}
                                     </div>
                                 )}
                             </CardContent>
@@ -627,9 +758,11 @@ export function ProductForm({ pageTitle, pageSubtitle, product, categories, subc
                                                                 </SelectTrigger>
                                                             </FormControl>
                                                             <SelectContent>
-                                                                <SelectItem value="in_stock">Còn hàng</SelectItem>
-                                                                <SelectItem value="out_of_stock">Hết hàng</SelectItem>
-                                                                <SelectItem value="preorder">Đặt trước</SelectItem>
+                                                                <SelectItem value="in_stock">InStock</SelectItem>
+                                                                <SelectItem value="pre_order">PreOrder</SelectItem>
+                                                                <SelectItem value="contact">QuoteOnly</SelectItem>
+                                                                <SelectItem value="discontinued">Discontinued</SelectItem>
+                                                                <SelectItem value="out_of_stock">Legacy: out_of_stock</SelectItem>
                                                             </SelectContent>
                                                         </Select>
                                                         <FormMessage />
@@ -764,6 +897,28 @@ export function ProductForm({ pageTitle, pageSubtitle, product, categories, subc
                                         />
                                         <FormField
                                             control={form.control}
+                                            name="list_price"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Canonical List Price</FormLabel>
+                                                    <FormControl><Input type="number" min={0} placeholder="Giá tham chiếu canonical" {...field} /></FormControl>
+                                                    <FormDescription>R5: giá tham chiếu; legacy price vẫn compatibility.</FormDescription>
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
+                                            name="sale_price"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Canonical Sale Price</FormLabel>
+                                                    <FormControl><Input type="number" min={0} placeholder="Giá bán canonical" {...field} /></FormControl>
+                                                    <FormDescription>Chỉ hợp lệ khi thấp hơn list price.</FormDescription>
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
                                             name="original_price"
                                             render={({ field }) => (
                                                 <FormItem>
@@ -847,6 +1002,18 @@ export function ProductForm({ pageTitle, pageSubtitle, product, categories, subc
                                                 </FormItem>
                                             )}
                                         />
+                                        <div className="md:col-span-3 border-t pt-4">
+                                            <p className="mb-3 text-sm font-semibold">Visibility projection</p>
+                                            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                                                <FormField control={form.control} name="publication_status" render={({ field }) => <FormItem><FormLabel>Publication</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="draft">Draft</SelectItem><SelectItem value="public">Public</SelectItem></SelectContent></Select></FormItem>} />
+                                                <FormField control={form.control} name="pdp_visibility" render={({ field }) => <FormItem><FormLabel>PDP</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="public">Public</SelectItem><SelectItem value="hidden">Hidden</SelectItem></SelectContent></Select></FormItem>} />
+                                                <FormField control={form.control} name="listing_visibility" render={({ field }) => <FormItem><FormLabel>Listing</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="default">Default</SelectItem><SelectItem value="low_priority">Low priority</SelectItem><SelectItem value="hidden">Hidden</SelectItem></SelectContent></Select></FormItem>} />
+                                                <FormField control={form.control} name="search_visibility" render={({ field }) => <FormItem><FormLabel>Search</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="visible">Visible</SelectItem><SelectItem value="hidden">Hidden</SelectItem></SelectContent></Select></FormItem>} />
+                                                <FormField control={form.control} name="sellable_status" render={({ field }) => <FormItem><FormLabel>Sellable status</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="sellable">Sellable</SelectItem><SelectItem value="not_sellable">Not sellable</SelectItem><SelectItem value="discontinued">Discontinued</SelectItem></SelectContent></Select></FormItem>} />
+                                                <FormField control={form.control} name="seo_indexing" render={({ field }) => <FormItem><FormLabel>SEO indexing</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="index">Index</SelectItem><SelectItem value="noindex">Noindex</SelectItem></SelectContent></Select></FormItem>} />
+                                                <FormField control={form.control} name="sitemap_include" render={({ field }) => <FormItem className="flex items-center gap-2 pt-7"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel>Include sitemap</FormLabel></FormItem>} />
+                                            </div>
+                                        </div>
                                     </CardContent>
                                 </Card>
                             </TabsContent>
@@ -902,6 +1069,12 @@ export function ProductForm({ pageTitle, pageSubtitle, product, categories, subc
 
                             {/* TAB 3: NÂNG CAO & THÔNG SỐ */}
                             <TabsContent value="advance" className="space-y-6 outline-none">
+                                <NormalizedPimPanel
+                                    productId={product?.id}
+                                    definitions={specDefinitions}
+                                    initialValues={product?.product_spec_values || []}
+                                    initialDocuments={product?.product_documents || []}
+                                />
                                 {/* Thông số Native */}
                                 <Card className="shadow-none rounded-xl overflow-hidden p-0 gap-0">
                                     <CardHeader className="bg-stone-100 border-b px-5 !py-3">

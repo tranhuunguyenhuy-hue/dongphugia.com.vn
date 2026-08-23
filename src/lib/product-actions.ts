@@ -6,6 +6,16 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { requirePermission } from '@/lib/auth/get-current-user'
 import { toWriteFreezeActionResult } from '@/lib/write-freeze'
+import { syncProductCanonicalFields } from '@/lib/pim-canonical'
+import { writePimAudit } from '@/lib/pim-audit'
+
+function errorMessage(error: unknown) {
+    return error instanceof Error ? error.message : 'Unknown error'
+}
+
+function hasInvalidCanonicalSalePrice(listPrice: number | null | undefined, salePrice: number | null | undefined) {
+    return salePrice != null && (listPrice == null || salePrice >= listPrice)
+}
 
 // ─── SCHEMAS ─────────────────────────────────────────────────────────────────
 
@@ -20,8 +30,10 @@ const productSchema = z.object({
     origin_id: z.coerce.number().int().positive().optional().nullable(),
     color_id: z.coerce.number().int().positive().optional().nullable(),
     material_id: z.coerce.number().int().positive().optional().nullable(),
-    price: z.coerce.number().positive().optional().nullable(),
+    price: z.coerce.number().nonnegative().optional().nullable(),
     original_price: z.coerce.number().positive().optional().nullable(),
+    list_price: z.coerce.number().positive().optional().nullable(),
+    sale_price: z.coerce.number().positive().optional().nullable(),
     online_discount_amount: z.coerce.number().min(0).optional().nullable(),
     price_display: z.string().max(50).optional().default('Liên hệ báo giá'),
     description: z.string().optional().nullable(),
@@ -40,6 +52,20 @@ const productSchema = z.object({
     sort_order: z.coerce.number().int().default(0),
     product_type: z.string().max(50).optional().nullable(),
     product_sub_type: z.string().max(50).optional().nullable(),
+    product_type_id: z.coerce.number().int().positive().optional().nullable(),
+    product_sub_type_id: z.coerce.number().int().positive().optional().nullable(),
+    taxon_assignments: z.array(z.object({
+        taxon_id: z.coerce.number().int().positive(),
+        is_primary: z.boolean().default(false),
+        sort_order: z.coerce.number().int().default(0),
+    })).max(20).optional(),
+    publication_status: z.enum(['draft', 'public']).optional(),
+    pdp_visibility: z.enum(['public', 'hidden']).optional(),
+    listing_visibility: z.enum(['default', 'low_priority', 'hidden']).optional(),
+    search_visibility: z.enum(['visible', 'hidden']).optional(),
+    sellable_status: z.enum(['sellable', 'not_sellable', 'discontinued']).optional(),
+    seo_indexing: z.enum(['index', 'noindex']).optional(),
+    sitemap_include: z.boolean().optional(),
     source_url: z.string().url().max(1000).optional().nullable().or(z.literal('')),
     hita_product_id: z.string().max(100).optional().nullable(),
     seo_title: z.string().max(200).optional().nullable(),
@@ -49,17 +75,20 @@ const productSchema = z.object({
 // ─── CREATE ──────────────────────────────────────────────────────────────────
 
 export async function createProduct(data: unknown) {
-    await requirePermission('products:write')
+    const actor = await requirePermission('products:write')
 
     const validated = productSchema.safeParse(data)
     if (!validated.success) {
         return { errors: validated.error.flatten().fieldErrors }
     }
     const d = validated.data
+    if (hasInvalidCanonicalSalePrice(d.list_price, d.sale_price)) {
+        return { success: false, error: 'Sale price phải nhỏ hơn list price' }
+    }
 
     // Validation: không cho is_active=true nếu thiếu price hoặc ảnh chính
     if (d.is_active === true) {
-        if (!d.price || d.price === 0)
+        if (d.stock_status !== 'contact' && !d.price && !d.list_price && !d.sale_price)
             return { success: false, error: 'Sản phẩm cần có giá trước khi kích hoạt' }
         if (!d.image_main_url || d.image_main_url.trim() === '')
             return { success: false, error: 'Sản phẩm cần có ảnh chính trước khi kích hoạt' }
@@ -79,6 +108,8 @@ export async function createProduct(data: unknown) {
             material_id: d.material_id || null,
             price: d.price ? d.price : null,
             original_price: d.original_price ? d.original_price : null,
+            list_price: d.list_price ? d.list_price : null,
+            sale_price: d.sale_price ? d.sale_price : null,
             online_discount_amount: d.online_discount_amount ? d.online_discount_amount : null,
             price_display: d.price_display || 'Liên hệ báo giá',
             description: d.description || null,
@@ -101,12 +132,29 @@ export async function createProduct(data: unknown) {
             hita_product_id: d.hita_product_id || null,
             seo_title: d.seo_title || null,
             seo_description: d.seo_description || null,
+            ...(d.publication_status !== undefined ? { publication_status: d.publication_status } : {}),
+            ...(d.pdp_visibility !== undefined ? { pdp_visibility: d.pdp_visibility } : {}),
+            ...(d.listing_visibility !== undefined ? { listing_visibility: d.listing_visibility } : {}),
+            ...(d.search_visibility !== undefined ? { search_visibility: d.search_visibility } : {}),
+            ...(d.sellable_status !== undefined ? { sellable_status: d.sellable_status } : {}),
+            ...(d.seo_indexing !== undefined ? { seo_indexing: d.seo_indexing } : {}),
+            ...(d.sitemap_include !== undefined ? { sitemap_include: d.sitemap_include } : {}),
         }
-        const product = await prisma.products.create({ data: createData })
+        const product = await prisma.$transaction(async (tx) => {
+            const created = await tx.products.create({ data: createData })
+            await syncProductCanonicalFields(tx, actor.id, created.id, {
+                brand_id: d.brand_id,
+                product_type_id: d.product_type_id,
+                product_sub_type_id: d.product_sub_type_id,
+                ...(d.taxon_assignments !== undefined ? { taxon_assignments: d.taxon_assignments } : {}),
+            })
+            await writePimAudit(tx, { userId: actor.id, action: 'pim.product_editor.created', entityType: 'product', entityId: created.id, changedFields: Object.keys(createData) })
+            return created
+        })
         revalidatePath('/admin/products')
         revalidatePath('/')
         return { success: true, id: product.id }
-    } catch (err: any) {
+    } catch (err: unknown) {
         const freezeResult = toWriteFreezeActionResult(err)
         if (freezeResult) return freezeResult
         const e = err as { code?: string; message?: string }
@@ -118,17 +166,20 @@ export async function createProduct(data: unknown) {
 // ─── UPDATE ──────────────────────────────────────────────────────────────────
 
 export async function updateProduct(id: number, data: unknown) {
-    await requirePermission('products:write')
+    const actor = await requirePermission('products:write')
 
     const validated = productSchema.safeParse(data)
     if (!validated.success) {
         return { errors: validated.error.flatten().fieldErrors }
     }
     const d = validated.data
+    if (hasInvalidCanonicalSalePrice(d.list_price, d.sale_price)) {
+        return { success: false, error: 'Sale price phải nhỏ hơn list price' }
+    }
 
     // Validation: không cho is_active=true nếu thiếu price hoặc ảnh chính
     if (d.is_active === true) {
-        if (!d.price || d.price === 0)
+        if (d.stock_status !== 'contact' && !d.price && !d.list_price && !d.sale_price)
             return { success: false, error: 'Sản phẩm cần có giá trước khi kích hoạt' }
         if (!d.image_main_url || d.image_main_url.trim() === '')
             return { success: false, error: 'Sản phẩm cần có ảnh chính trước khi kích hoạt' }
@@ -148,6 +199,8 @@ export async function updateProduct(id: number, data: unknown) {
             material_id: d.material_id || null,
             price: d.price ? d.price : null,
             original_price: d.original_price ? d.original_price : null,
+            list_price: d.list_price ? d.list_price : null,
+            sale_price: d.sale_price ? d.sale_price : null,
             online_discount_amount: d.online_discount_amount ? d.online_discount_amount : null,
             price_display: d.price_display || 'Liên hệ báo giá',
             description: d.description || null,
@@ -170,15 +223,31 @@ export async function updateProduct(id: number, data: unknown) {
             hita_product_id: d.hita_product_id || null,
             seo_title: d.seo_title || null,
             seo_description: d.seo_description || null,
+            ...(d.publication_status !== undefined ? { publication_status: d.publication_status } : {}),
+            ...(d.pdp_visibility !== undefined ? { pdp_visibility: d.pdp_visibility } : {}),
+            ...(d.listing_visibility !== undefined ? { listing_visibility: d.listing_visibility } : {}),
+            ...(d.search_visibility !== undefined ? { search_visibility: d.search_visibility } : {}),
+            ...(d.sellable_status !== undefined ? { sellable_status: d.sellable_status } : {}),
+            ...(d.seo_indexing !== undefined ? { seo_indexing: d.seo_indexing } : {}),
+            ...(d.sitemap_include !== undefined ? { sitemap_include: d.sitemap_include } : {}),
             updated_at: new Date(),
         }
-        await prisma.products.update({ where: { id }, data: updateData })
+        await prisma.$transaction(async (tx) => {
+            await tx.products.update({ where: { id }, data: updateData })
+            await syncProductCanonicalFields(tx, actor.id, id, {
+                brand_id: d.brand_id,
+                product_type_id: d.product_type_id,
+                product_sub_type_id: d.product_sub_type_id,
+                ...(d.taxon_assignments !== undefined ? { taxon_assignments: d.taxon_assignments } : {}),
+            })
+            await writePimAudit(tx, { userId: actor.id, action: 'pim.product_editor.updated', entityType: 'product', entityId: id, changedFields: Object.keys(updateData) })
+        })
         // Revalidate category listing + product detail
         revalidatePath('/admin/products')
         revalidatePath(`/admin/products/${id}`)
         revalidatePath('/')
         return { success: true }
-    } catch (err: any) {
+    } catch (err: unknown) {
         const freezeResult = toWriteFreezeActionResult(err)
         if (freezeResult) return freezeResult
         const e = err as { code?: string; message?: string }
@@ -197,10 +266,10 @@ export async function toggleProductFeatured(id: number, value: boolean) {
         revalidatePath('/admin/products')
         revalidatePath('/')
         return { success: true }
-    } catch (err: any) {
+    } catch (err: unknown) {
         const freezeResult = toWriteFreezeActionResult(err)
         if (freezeResult) return freezeResult
-        return { message: 'Lỗi cập nhật: ' + err.message }
+        return { message: 'Lỗi cập nhật: ' + errorMessage(err) }
     }
 }
 
@@ -223,10 +292,10 @@ export async function toggleProductActive(id: number, value: boolean) {
         await prisma.products.update({ where: { id }, data: { is_active: value, updated_at: new Date() } })
         revalidatePath('/admin/products')
         return { success: true }
-    } catch (err: any) {
+    } catch (err: unknown) {
         const freezeResult = toWriteFreezeActionResult(err)
         if (freezeResult) return freezeResult
-        return { message: 'Lỗi cập nhật: ' + err.message }
+        return { message: 'Lỗi cập nhật: ' + errorMessage(err) }
     }
 }
 
@@ -240,10 +309,10 @@ export async function deleteProduct(id: number) {
         revalidatePath('/admin/products')
         revalidatePath('/')
         return { success: true }
-    } catch (err: any) {
+    } catch (err: unknown) {
         const freezeResult = toWriteFreezeActionResult(err)
         if (freezeResult) return freezeResult
-        return { message: 'Lỗi xóa sản phẩm: ' + err.message }
+        return { message: 'Lỗi xóa sản phẩm: ' + errorMessage(err) }
     }
 }
 
@@ -257,10 +326,10 @@ export async function bulkDeleteProducts(ids: number[]) {
         revalidatePath('/admin/products')
         revalidatePath('/')
         return { success: true, count: result.count }
-    } catch (err: any) {
+    } catch (err: unknown) {
         const freezeResult = toWriteFreezeActionResult(err)
         if (freezeResult) return freezeResult
-        return { message: 'Lỗi xóa nhiều sản phẩm: ' + err.message }
+        return { message: 'Lỗi xóa nhiều sản phẩm: ' + errorMessage(err) }
     }
 }
 
@@ -274,10 +343,10 @@ export async function bulkToggleActive(ids: number[], value: boolean) {
         })
         revalidatePath('/admin/products')
         return { success: true, count: result.count }
-    } catch (err: any) {
+    } catch (err: unknown) {
         const freezeResult = toWriteFreezeActionResult(err)
         if (freezeResult) return freezeResult
-        return { message: 'Lỗi cập nhật trạng thái: ' + err.message }
+        return { message: 'Lỗi cập nhật trạng thái: ' + errorMessage(err) }
     }
 }
 
@@ -296,7 +365,7 @@ export async function addProductImage(productId: number, imageUrl: string, altTe
         const img = await prisma.product_images.create({ data: imgData })
         revalidatePath(`/admin/products/${productId}`)
         return { success: true, id: img.id }
-    } catch (err: any) {
+    } catch (err: unknown) {
         const freezeResult = toWriteFreezeActionResult(err)
         if (freezeResult) return freezeResult
         const e = err as { message?: string }
@@ -317,10 +386,10 @@ export async function addProductImages(productId: number, imageUrls: string[]) {
         await prisma.product_images.createMany({ data })
         revalidatePath(`/admin/products/${productId}`)
         return { success: true, count: imageUrls.length }
-    } catch (err: any) {
+    } catch (err: unknown) {
         const freezeResult = toWriteFreezeActionResult(err)
         if (freezeResult) return freezeResult
-        return { message: 'Lỗi thêm ảnh: ' + err.message }
+        return { message: 'Lỗi thêm ảnh: ' + errorMessage(err) }
     }
 }
 
@@ -331,10 +400,10 @@ export async function deleteProductImage(imageId: number, productId: number) {
         await prisma.product_images.delete({ where: { id: imageId } })
         revalidatePath(`/admin/products/${productId}`)
         return { success: true }
-    } catch (err: any) {
+    } catch (err: unknown) {
         const freezeResult = toWriteFreezeActionResult(err)
         if (freezeResult) return freezeResult
-        return { message: 'Lỗi xóa ảnh: ' + err.message }
+        return { message: 'Lỗi xóa ảnh: ' + errorMessage(err) }
     }
 }
 
@@ -350,10 +419,10 @@ export async function setProductThumbnail(productId: number, imageUrl: string) {
         revalidatePath('/admin/products')
         revalidatePath('/')
         return { success: true }
-    } catch (err: any) {
+    } catch (err: unknown) {
         const freezeResult = toWriteFreezeActionResult(err)
         if (freezeResult) return freezeResult
-        return { message: 'Lỗi đặt thumbnail: ' + err.message }
+        return { message: 'Lỗi đặt thumbnail: ' + errorMessage(err) }
     }
 }
 
@@ -371,10 +440,10 @@ export async function updateProductImageSortOrder(productId: number, imageIds: n
         await prisma.$transaction(updates)
         revalidatePath(`/admin/products/${productId}`)
         return { success: true }
-    } catch (err: any) {
+    } catch (err: unknown) {
         const freezeResult = toWriteFreezeActionResult(err)
         if (freezeResult) return freezeResult
-        return { message: 'Lỗi cập nhật thứ tự: ' + err.message }
+        return { message: 'Lỗi cập nhật thứ tự: ' + errorMessage(err) }
     }
 }
 
@@ -383,7 +452,7 @@ export async function searchProducts(query: string, excludeId?: number) {
     await requirePermission('products:read')
 
     try {
-        const whereClause: any = {
+        const whereClause: Prisma.productsWhereInput = {
             ...(excludeId ? { id: { not: excludeId } } : {})
         };
 
@@ -411,7 +480,7 @@ export async function searchProducts(query: string, excludeId?: number) {
             ...r,
             price: r.price ? Number(r.price) : null
         }));
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error("searchProducts error:", err);
         return [];
     }
@@ -437,10 +506,10 @@ export async function addProductRelationship(parentId: number, childId: number, 
         });
         revalidatePath(`/admin/products/${parentId}`);
         return { success: true };
-    } catch (err: any) {
+    } catch (err: unknown) {
         const freezeResult = toWriteFreezeActionResult(err)
         if (freezeResult) return freezeResult
-        return { message: 'Lỗi thêm sản phẩm liên kết: ' + err.message };
+        return { message: 'Lỗi thêm sản phẩm liên kết: ' + errorMessage(err) };
     }
 }
 
@@ -453,10 +522,10 @@ export async function removeProductRelationship(id: number, parentId: number) {
         });
         revalidatePath(`/admin/products/${parentId}`);
         return { success: true };
-    } catch (err: any) {
+    } catch (err: unknown) {
         const freezeResult = toWriteFreezeActionResult(err)
         if (freezeResult) return freezeResult
-        return { message: 'Lỗi xóa sản phẩm liên kết: ' + err.message };
+        return { message: 'Lỗi xóa sản phẩm liên kết: ' + errorMessage(err) };
     }
 }
 
@@ -486,7 +555,7 @@ export async function getProductVariants(variantGroup: string | null) {
             ...v,
             price: v.price ? Number(v.price) : null
         }));
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error('Error fetching variants:', err);
         return [];
     }
@@ -524,11 +593,11 @@ export async function linkVariant(currentProductId: number, targetProductId: num
 
         revalidatePath(`/admin/products/${currentProductId}`);
         return { success: true };
-    } catch (err: any) {
+    } catch (err: unknown) {
         const freezeResult = toWriteFreezeActionResult(err)
         if (freezeResult) return freezeResult
         console.error('Error linking variant:', err);
-        return { message: 'Lỗi khi liên kết biến thể: ' + err.message };
+        return { message: 'Lỗi khi liên kết biến thể: ' + errorMessage(err) };
     }
 }
 
@@ -543,11 +612,11 @@ export async function unlinkVariant(productId: number, currentProductId: number)
 
         revalidatePath(`/admin/products/${currentProductId}`);
         return { success: true };
-    } catch (err: any) {
+    } catch (err: unknown) {
         const freezeResult = toWriteFreezeActionResult(err)
         if (freezeResult) return freezeResult
         console.error('Error unlinking variant:', err);
-        return { message: 'Lỗi khi hủy liên kết biến thể: ' + err.message };
+        return { message: 'Lỗi khi hủy liên kết biến thể: ' + errorMessage(err) };
     }
 }
 

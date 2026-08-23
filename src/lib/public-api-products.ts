@@ -1534,6 +1534,17 @@ export async function getAdminProductById(id: number) {
             origins: { select: { id: true, name: true, slug: true } },
             colors: { select: { id: true, name: true, hex_code: true } },
             materials: { select: { id: true, name: true, slug: true } },
+            product_types: { select: { id: true, slug: true, name: true } },
+            product_sub_types: { select: { id: true, slug: true, name: true, product_type_id: true } },
+            product_taxon_assignments: {
+                orderBy: { sort_order: 'asc' },
+                include: { catalog_taxons: { select: { id: true, name: true, slug: true, canonical_path: true, is_active: true, is_listing_enabled: true } } },
+            },
+            product_spec_values: {
+                orderBy: { sort_order: 'asc' },
+                include: { spec_definitions: { select: { id: true, key: true, label: true, data_type: true, unit: true } }, spec_options: { select: { id: true, value: true } } },
+            },
+            product_documents: { orderBy: { sort_order: 'asc' } },
             product_images: { orderBy: [{ image_type: 'asc' }, { sort_order: 'asc' }] },
             product_feature_values: {
                 include: { product_features: true },
@@ -1577,8 +1588,14 @@ export async function getAdminProductById(id: number) {
             ...rel,
             child: rel.child ? { ...rel.child, price: rel.child.price ? Number(rel.child.price) : null } : null
         })),
-        price: p.price ? Number(p.price) : null, 
-        original_price: p.original_price ? Number(p.original_price) : null 
+        price: p.price ? Number(p.price) : null,
+        original_price: p.original_price ? Number(p.original_price) : null,
+        list_price: p.list_price ? Number(p.list_price) : null,
+        sale_price: p.sale_price ? Number(p.sale_price) : null,
+        product_spec_values: p.product_spec_values.map((value) => ({
+            ...value,
+            value_number: value.value_number ? Number(value.value_number) : null,
+        })),
     }
 }
 
