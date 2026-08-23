@@ -92,6 +92,7 @@ describe('ProductCard', () => {
                     slug: 'san-pham-co-gia-ban-chuan',
                     price: 950_000,
                     original_price: 1_000_000,
+                    list_price: 1_000_000,
                     sale_price: 900_000,
                     price_display: null,
                     stock_status: 'in_stock',

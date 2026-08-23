@@ -202,7 +202,9 @@ export default async function AdminDashboardPage() {
                                     <TableBody>
                                         {pendingQuotes.map((quote) => {
                                             const totalQty = quote.quote_items.reduce((sum, item) => sum + item.quantity, 0);
-                                            const firstProductName = quote.quote_items[0]?.products?.name || "N/A";
+                                            const firstQuoteItem = quote.quote_items[0];
+                                            const firstProductName = firstQuoteItem?.product_name_snapshot ||
+                                                (firstQuoteItem?.products?.name ? `${firstQuoteItem.products.name} (Legacy — live Product)` : "Sản phẩm không còn trong danh mục");
                                             const otherCount = quote.quote_items.length - 1;
                                             return (
                                                 <TableRow key={quote.id} className="hover:bg-slate-50/50 border-b border-slate-50 last:border-0 group cursor-pointer">

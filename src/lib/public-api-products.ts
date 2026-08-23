@@ -499,6 +499,8 @@ export async function getPublicProducts(filters: ProductFilters = {}) {
                 brand_id: true,
                 price: true,
                 original_price: true,
+                list_price: true,
+                sale_price: true,
                 online_discount_amount: true,
                 price_display: true,
                 image_main_url: true,
@@ -1059,6 +1061,8 @@ export const getVariantSiblings = unstable_cache(
                 slug: true,
                 price: true,
                 original_price: true,
+                list_price: true,
+                sale_price: true,
                 online_discount_amount: true,
                 price_display: true,
                 image_main_url: true,
@@ -1110,6 +1114,8 @@ export async function getVariantSelectionData(variantGroup: string, currentProdu
             slug: string
             price: unknown
             original_price: unknown
+            list_price: unknown
+            sale_price: unknown
             online_discount_amount: unknown
             price_display: string | null
             image_main_url: string | null
@@ -1128,6 +1134,8 @@ export async function getVariantSelectionData(variantGroup: string, currentProdu
                 p.slug,
                 p.price,
                 p.original_price,
+                p.list_price,
+                p.sale_price,
                 p.online_discount_amount,
                 p.price_display,
                 p.image_main_url,
@@ -1160,6 +1168,8 @@ export async function getVariantSelectionData(variantGroup: string, currentProdu
             slug: row.slug,
             price: row.price ? Number(row.price) : null,
             original_price: row.original_price ? Number(row.original_price) : null,
+            list_price: row.list_price ? Number(row.list_price) : null,
+            sale_price: row.sale_price ? Number(row.sale_price) : null,
             online_discount_amount: row.online_discount_amount ? Number(row.online_discount_amount) : null,
             price_display: row.price_display,
             image_main_url: row.image_main_url,
@@ -1269,6 +1279,8 @@ export const getFeaturedProductsByCategorySlug = unstable_cache(
                     slug: true,
                     price: true,
                 original_price: true,
+                list_price: true,
+                sale_price: true,
                 online_discount_amount: true,
                     price_display: true,
                     image_main_url: true,
@@ -1331,6 +1343,8 @@ export const getTopProductsPerBrand = unstable_cache(
                         slug: true,
                         price: true,
                 original_price: true,
+                list_price: true,
+                sale_price: true,
                 online_discount_amount: true,
                         price_display: true,
                         image_main_url: true,
@@ -1371,6 +1385,8 @@ export const getNewArrivals = unstable_cache(
                 slug: true,
                 price: true,
                 original_price: true,
+                list_price: true,
+                sale_price: true,
                 online_discount_amount: true,
                 price_display: true,
                 image_main_url: true,
@@ -1401,6 +1417,8 @@ export const getHomeFeaturedProducts = unstable_cache(
                 slug: true,
                 price: true,
                 original_price: true,
+                list_price: true,
+                sale_price: true,
                 online_discount_amount: true,
                 price_display: true,
                 image_main_url: true,

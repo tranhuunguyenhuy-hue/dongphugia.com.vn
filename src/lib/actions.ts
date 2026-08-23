@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache"
 import { z } from "zod"
 import { requirePermission } from '@/lib/auth/get-current-user'
 import { toWriteFreezeActionResult } from '@/lib/write-freeze'
+import { buildQuoteItemSnapshot } from '@/lib/quote-snapshot'
 
 // NOTE: Legacy product/collection/pattern-type actions removed in LEO-366.
 // Will be rebuilt as unified product actions in Phase 3.
@@ -18,7 +19,7 @@ const bannerSchema = z.object({
     sort_order: z.coerce.number().int().optional().default(0),
 })
 
-export async function createBanner(data: any) {
+export async function createBanner(data: unknown) {
     await requirePermission('blog:write')
     
     const validated = bannerSchema.safeParse(data)
@@ -47,7 +48,7 @@ export async function createBanner(data: any) {
     return { success: true }
 }
 
-export async function updateBanner(id: number, data: any) {
+export async function updateBanner(id: number, data: unknown) {
     await requirePermission('blog:write')
 
     const validated = bannerSchema.safeParse(data)
@@ -146,24 +147,72 @@ export async function submitQuoteRequest(payload: QuoteCartPayload) {
     const quoteNumber = `DPG-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.floor(1000 + Math.random() * 9000)}`
 
     try {
-        await prisma.quote_requests.create({
-            data: {
-                name,
-                phone,
-                email: email || null,
-                message: message || null,
-                quote_number: quoteNumber,
-                // Nested write: create quote_items only if products exist
-                ...(products.length > 0 && {
-                    quote_items: {
-                        create: products.map(p => ({
-                            product_id: p.product_id,
-                            quantity: p.quantity ?? 1,
-                            note: p.note ?? null,
-                        })),
+        await prisma.$transaction(async transaction => {
+            const sourceProducts = products.length > 0
+                ? await transaction.products.findMany({
+                    where: { id: { in: products.map(product => product.product_id) } },
+                    select: {
+                        id: true,
+                        sku: true,
+                        name: true,
+                        price: true,
+                        original_price: true,
+                        list_price: true,
+                        sale_price: true,
+                        stock_status: true,
+                        is_active: true,
+                        publication_status: true,
+                        pdp_visibility: true,
+                        sellable_status: true,
                     },
-                }),
-            },
+                })
+                : []
+
+            const productsById = new Map(sourceProducts.map(product => [product.id, product]))
+            const snapshotAt = new Date()
+            const quoteItems = products.map(item => {
+                const product = productsById.get(item.product_id)
+                if (
+                    !product
+                    || !product.is_active
+                    || product.publication_status !== 'public'
+                    || product.pdp_visibility !== 'public'
+                    || product.sellable_status !== 'sellable'
+                ) {
+                    throw new Error('QUOTE_PRODUCT_UNAVAILABLE')
+                }
+
+                const snapshot = buildQuoteItemSnapshot({
+                    id: product.id,
+                    sku: product.sku,
+                    name: product.name,
+                    compatibilityPrice: product.price,
+                    originalPrice: product.original_price,
+                    listPrice: product.list_price,
+                    salePrice: product.sale_price,
+                    stockStatus: product.stock_status,
+                }, snapshotAt)
+
+                if (!snapshot) throw new Error('QUOTE_PRODUCT_NOT_QUOTEABLE')
+
+                return {
+                    product_id: product.id,
+                    quantity: item.quantity ?? 1,
+                    note: item.note ?? null,
+                    ...snapshot,
+                }
+            })
+
+            await transaction.quote_requests.create({
+                data: {
+                    name,
+                    phone,
+                    email: email || null,
+                    message: message || null,
+                    quote_number: quoteNumber,
+                    ...(quoteItems.length > 0 && { quote_items: { create: quoteItems } }),
+                },
+            })
         })
     } catch (error) {
         const freezeResult = toWriteFreezeActionResult(error)

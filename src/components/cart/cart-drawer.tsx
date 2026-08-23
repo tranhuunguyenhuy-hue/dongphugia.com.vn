@@ -130,7 +130,7 @@ function CartItemRow({
                         <p className="text-[11px] text-sky-600 font-medium">+ Tháo dỡ & Lắp đặt: {formatPrice(item.installationFee || 0)}</p>
                     )}
                     {(item.onlineDiscountAmount || 0) > 0 && (
-                        <p className="text-[11px] text-emerald-600 font-medium">- Giảm Online: {formatPrice(item.onlineDiscountAmount || 0)}</p>
+                        <p className="text-[11px] text-emerald-600 font-medium">Ưu đãi online tham khảo: {formatPrice(item.onlineDiscountAmount || 0)}</p>
                     )}
                 </div>
 

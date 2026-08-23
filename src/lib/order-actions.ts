@@ -327,41 +327,32 @@ export async function createQuoteFromOrder(orderId: number) {
     
     if (!order) return { success: false, error: 'Không tìm thấy đơn hàng' }
 
-    try {
-        const quote = await prisma.quote_requests.create({
-            data: {
-                quote_number: `Q-${order.order_number}`,
-                name: order.customer_name,
-                phone: order.customer_phone,
-                email: order.customer_email || null,
-                message: `Tạo từ đơn hàng ${order.order_number}`,
-                status: 'resolved',
-                shipping_fee: order.shipping_fee,
-                quote_items: {
-                    create: order.order_items.map(item => ({
-                        product_id: item.product_id,
-                        admin_unit_price: item.unit_price,
-                        admin_quantity: item.quantity,
-                    }))
-                }
-            }
-        })
-        return { success: true, quoteId: quote.id }
-    } catch (err: any) {
-        const freezeResult = toWriteFreezeActionResult(err)
-        if (freezeResult) return freezeResult
-        return { success: false, error: err.message }
+    // R5 cannot derive historical commerce mode/Availability from the current
+    // order-line schema. Stop rather than fabricating snapshot facts or reading
+    // a mutable Product as the historical source.
+    return {
+        success: false,
+        error: 'Chưa thể chuyển đơn hàng thành báo giá: dòng đơn hàng chưa có commerce snapshot bất biến.',
     }
+
 }
 
 // ─── UPDATE ORDER DETAILS (Builder) ──────────────────────────────────────────
 
-export async function updateOrderData(orderId: number, data: any) {
+type OrderUpdateData = {
+    items?: Array<{ id: number; unit_price: number; quantity: number }>
+    vat_rate?: number
+    shipping_fee?: number
+    discount?: number
+    note?: string | null
+}
+
+export async function updateOrderData(orderId: number, data: OrderUpdateData) {
     await requirePermission('orders:edit')
 
     try {
         const items = data.items || []
-        const subtotal = items.reduce((acc: number, item: any) => {
+        const subtotal = items.reduce((acc: number, item) => {
             const price = item.unit_price ?? 0
             const qty = item.quantity ?? 1
             return acc + (price * qty)
@@ -400,11 +391,11 @@ export async function updateOrderData(orderId: number, data: any) {
 
         revalidatePath(`/admin/orders/${orderId}`)
         return { success: true }
-    } catch (error: any) {
+    } catch (error: unknown) {
         const freezeResult = toWriteFreezeActionResult(error)
         if (freezeResult) return freezeResult
         console.error('Failed to update order data:', error)
-        return { success: false, error: 'Lỗi server khi lưu đơn hàng: ' + error.message }
+        return { success: false, error: 'Lỗi server khi lưu đơn hàng: ' + (error instanceof Error ? error.message : String(error)) }
     }
 }
 
@@ -437,10 +428,10 @@ export async function assignOrder(orderId: number, userId: number | null) {
         revalidatePath('/admin/orders')
         revalidatePath(`/admin/orders/${orderId}`)
         return { success: true }
-    } catch (error: any) {
+    } catch (error: unknown) {
         const freezeResult = toWriteFreezeActionResult(error)
         if (freezeResult) return freezeResult
         console.error('Failed to assign order:', error)
-        return { success: false, error: 'Lỗi khi giao đơn hàng: ' + error.message }
+        return { success: false, error: 'Lỗi khi giao đơn hàng: ' + (error instanceof Error ? error.message : String(error)) }
     }
 }

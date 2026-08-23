@@ -39,6 +39,7 @@ const availableProduct = {
     sku: 'DB-SKU-101',
     price: 1_000_000,
     original_price: 1_000_000,
+    list_price: 1_000_000,
     sale_price: 900_000,
     stock_status: 'in_stock',
     online_discount_amount: 50_000,
@@ -93,21 +94,21 @@ describe('POST /api/orders', () => {
         expect(mocks.findProducts).toHaveBeenCalledTimes(1)
         expect(mocks.createOrder).toHaveBeenCalledWith({
             data: expect.objectContaining({
-                subtotal: 2_100_000,
-                total: 2_100_000,
+                subtotal: 2_200_000,
+                total: 2_200_000,
                 order_items: {
                     create: [{
                         product_id: 101,
-                        product_name: 'Tên từ database (Cần Lắp Đặt | Giảm Online 50000đ)',
+                        product_name: 'Tên từ database (Cần Lắp Đặt)',
                         product_sku: 'DB-SKU-101',
                         quantity: 2,
-                        unit_price: 1_050_000,
-                        total_price: 2_100_000,
+                        unit_price: 1_100_000,
+                        total_price: 2_200_000,
                     }],
                 },
             }),
         })
-        expect(body).toMatchObject({ success: true, total: 2_100_000 })
+        expect(body).toMatchObject({ success: true, total: 2_200_000 })
     })
 
     it('rejects invalid quantities before opening a transaction', async () => {
@@ -153,6 +154,7 @@ describe('POST /api/orders', () => {
             ...availableProduct,
             price: null,
             original_price: null,
+            list_price: null,
             sale_price: null,
             online_discount_amount: null,
         }])

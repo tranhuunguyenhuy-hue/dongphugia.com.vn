@@ -99,15 +99,15 @@ A catalogue product that passes the publication, taxonomy, content, image, price
 _Avoid_: Active product, SEO product
 
 **Public Price**:
-A real customer-visible price whose original price is positive and whose optional sale price is positive and lower than the original price. The displayed price is the sale price when present, otherwise the original price.
+A real customer-visible price backed by a positive canonical `list_price`; a valid positive `sale_price` lower than that list price is the canonical selling price, otherwise the canonical list price is displayed. Legacy `price` and `original_price` values are reference-only compatibility facts and cannot create a public selling price by themselves.
 _Avoid_: Offer price, effective price, legacy price
 
 **Contact for Quote**:
-A product price mode with no original or sale price; customers may request a quote but cannot add the product to the cart, and the page does not claim Product rich-result eligibility without real review data.
+A product price mode without a valid canonical selling price; customers may request a quote when the Availability is known and non-discontinued, but cannot add the product to the cart. The page does not claim Product rich-result eligibility without a public price.
 _Avoid_: Zero price, hidden price, discontinued
 
 **Availability**:
-The customer's current ability to buy a public-priced product, expressed as either `IN_STOCK` or `OUT_OF_STOCK`.
+The approved commerce vocabulary for a product's request-time state: `InStock`, `PreOrder`, `QuoteOnly`, or `Discontinued`. Legacy `out_of_stock` and unknown strings remain withheld exceptions until an explicit mapping is approved; Availability is not inferred from a missing price.
 _Avoid_: Lifecycle state, sale status
 
 **Catalogue Deletion**:

@@ -244,16 +244,23 @@ model quote_requests {
 }
 
 model quote_items {
-  id               Int            @id @default(autoincrement())
-  quote_id         Int
-  product_id       Int
-  quantity         Int            @default(1)
-  note             String?        @db.VarChar(500)
-  created_at       DateTime       @default(now()) @db.Timestamptz(6)
-  admin_quantity   Int?
-  admin_unit_price Decimal?       @db.Decimal(15, 2)
-  products         products       @relation(fields: [product_id], references: [id], onUpdate: NoAction)
-  quote_requests   quote_requests @relation(fields: [quote_id], references: [id], onDelete: Cascade)
+  id                     Int            @id @default(autoincrement())
+  quote_id               Int
+  product_id             Int?
+  quantity               Int            @default(1)
+  note                   String?        @db.VarChar(500)
+  created_at             DateTime       @default(now()) @db.Timestamptz(6)
+  admin_quantity         Int?
+  admin_unit_price       Decimal?       @db.Decimal(15, 2)
+  product_sku_snapshot   String?        @db.VarChar(100)
+  product_name_snapshot  String?        @db.VarChar(500)
+  commerce_mode_snapshot String?        @db.VarChar(30)
+  availability_snapshot  String?        @db.VarChar(20)
+  list_price_snapshot    Decimal?       @db.Decimal(15, 2)
+  sale_price_snapshot    Decimal?       @db.Decimal(15, 2)
+  snapshot_at            DateTime?      @db.Timestamptz(6)
+  products               products?      @relation(fields: [product_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  quote_requests         quote_requests @relation(fields: [quote_id], references: [id], onDelete: Cascade)
 
   @@index([quote_id], map: "idx_quote_items_quote")
   @@index([product_id], map: "idx_quote_items_product")

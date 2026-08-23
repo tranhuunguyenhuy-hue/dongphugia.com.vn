@@ -24,6 +24,7 @@ interface ProductCTAProps {
     price: number | null;
     priceDisplay?: string | null;
     originalPrice?: number | null;
+    listPrice?: number | null;
     salePrice?: number | null;
     imageUrl?: string | null;
     categorySlug: string;
@@ -39,6 +40,7 @@ export function ProductCTA({
     productName,
     price,
     originalPrice,
+    listPrice,
     salePrice,
     priceDisplay,
     imageUrl,
@@ -49,6 +51,7 @@ export function ProductCTA({
     stockStatus,
 }: ProductCTAProps) {
     const commerce = resolveProductCommerce({
+        listPrice,
         originalPrice,
         salePrice,
         compatibilityPrice: price,
@@ -71,7 +74,7 @@ export function ProductCTA({
 
     const handleAddToCart = () => {
         if (!canPurchase || displayPrice === null) return;
-        const finalPrice = displayPrice - onlineDiscountAmount + installationFee;
+        const finalPrice = displayPrice + installationFee;
         
         addItem({
             productId,
@@ -151,7 +154,7 @@ export function ProductCTA({
         }
     };
 
-    const finalItemPrice = canPurchase && displayPrice !== null ? (displayPrice - onlineDiscountAmount + installationFee) : 0;
+    const finalItemPrice = canPurchase && displayPrice !== null ? (displayPrice + installationFee) : 0;
     const totalPrice = finalItemPrice * quantity;
 
     return (
@@ -178,7 +181,7 @@ export function ProductCTA({
                 )}
 
                 {/* Quote / Order Dialog */}
-                <Dialog open={isOpen} onOpenChange={(open) => { setIsOpen(open); if(open) trackGenerateLead('quote_cta'); }}>
+                {commerce.canRequestQuote && <Dialog open={isOpen} onOpenChange={(open) => { setIsOpen(open); if(open) trackGenerateLead('quote_cta'); }}>
                     <DialogTrigger asChild>
                         {hasPrice ? (
                             <Button
@@ -310,7 +313,7 @@ export function ProductCTA({
                             </div>
                         )}
                     </DialogContent>
-                </Dialog>
+                </Dialog>}
             </div>
 
             <div className="mt-3 flex justify-center">
@@ -358,7 +361,7 @@ export function ProductCTA({
                                 )}
                                 {onlineDiscountAmount > 0 && (
                                     <span className="text-[10px] font-bold text-orange-600 bg-orange-50 px-1.5 py-[2px] rounded border border-orange-100">
-                                        - {formatPrice(onlineDiscountAmount * quantity)} Online
+                                        Ưu đãi online tham khảo: {formatPrice(onlineDiscountAmount * quantity)}
                                     </span>
                                 )}
                             </div>
@@ -382,7 +385,7 @@ export function ProductCTA({
                             <ShoppingBag className="w-[18px] h-[18px]" />
                             Thêm vào giỏ
                         </Button>
-                    ) : (
+                    ) : commerce.canRequestQuote ? (
                         <Button 
                             onClick={() => { setIsOpen(true); trackGenerateLead('quote_cta_mobile'); }}
                             className="w-full h-12 bg-gradient-to-r from-[#2E7A96] to-[#1e586e] hover:brightness-110 !text-white text-[15px] font-semibold rounded-xl shadow-[0_4px_14px_rgba(46,122,150,0.25)] transition-all duration-300 gap-2 border-0"
@@ -390,6 +393,8 @@ export function ProductCTA({
                             <MessageSquareText className="w-[18px] h-[18px]" />
                             Nhận báo giá
                         </Button>
+                    ) : (
+                        <span className="text-center text-xs font-medium text-stone-500">Không khả dụng</span>
                     )}
                 </div>
             </div>

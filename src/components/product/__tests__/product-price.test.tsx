@@ -8,8 +8,10 @@ describe('ProductPrice', () => {
             <ProductPrice
                 price={10_000_000}
                 originalPrice={12_000_000}
+                listPrice={12_000_000}
                 priceDisplay={null}
                 onlineDiscountAmount={500_000}
+                stockStatus="in_stock"
             />
         )
 
@@ -38,6 +40,7 @@ describe('ProductPrice', () => {
             <ProductPrice
                 price={950_000}
                 originalPrice={1_000_000}
+                listPrice={1_000_000}
                 salePrice={900_000}
                 priceDisplay={null}
                 stockStatus="in_stock"
@@ -53,6 +56,7 @@ describe('ProductPrice', () => {
             <ProductPrice
                 price={950_000}
                 originalPrice={1_000_000}
+                listPrice={1_000_000}
                 salePrice={1_000_000}
                 priceDisplay="Liên hệ báo giá"
                 stockStatus="in_stock"

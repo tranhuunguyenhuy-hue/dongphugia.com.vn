@@ -126,7 +126,10 @@ export default async function QuoteRequestsPage({ searchParams }: PageProps) {
                                     <TableCell className="text-sm">
                                     {q.quote_items && q.quote_items.length > 0 ? (
                             <span className="text-sm">
-                                {q.quote_items.map((qi: any) => qi.products?.name).filter(Boolean).join(', ')}
+                                {q.quote_items.map((qi: any) =>
+                                    qi.product_name_snapshot ||
+                                    (qi.products?.name ? `${qi.products.name} (Legacy — live Product)` : 'Sản phẩm không còn trong danh mục')
+                                ).join(', ')}
                                 {q.quote_items.length > 1 && (
                                     <span className="ml-1 text-xs text-muted-foreground">+{q.quote_items.length} SP</span>
                                 )}

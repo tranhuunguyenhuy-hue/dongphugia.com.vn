@@ -10,6 +10,7 @@ import { resolveProductCommerce } from "@/lib/product-commerce"
 interface ProductPriceProps {
     price: number | null | undefined
     originalPrice: number | null | undefined
+    listPrice?: number | null | undefined
     salePrice?: number | null | undefined
     priceDisplay: string | null | undefined
     onlineDiscountAmount?: number | null | undefined
@@ -18,12 +19,13 @@ interface ProductPriceProps {
     children?: React.ReactNode
 }
 
-export function ProductPrice({ price, originalPrice, salePrice, priceDisplay, onlineDiscountAmount, stockStatus, className, children }: ProductPriceProps) {
+export function ProductPrice({ price, originalPrice, listPrice, salePrice, priceDisplay, onlineDiscountAmount, stockStatus, className, children }: ProductPriceProps) {
     const [installOption, setInstallOption] = useState<InstallOption>('none')
 
     const installationFee = getInstallationFee(installOption)
 
     const commerce = resolveProductCommerce({
+        listPrice,
         originalPrice,
         salePrice,
         compatibilityPrice: price,
