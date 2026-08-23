@@ -71,7 +71,8 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
     const sku = product.sku || product.product_code || product.code || '';
     const isInactive = product.is_active === false;
     const commerce = resolveProductCommerce({
-        originalPrice: product.original_price ?? product.list_price,
+        listPrice: product.list_price,
+        originalPrice: product.original_price,
         salePrice: product.sale_price,
         compatibilityPrice: product.price,
         stockStatus: product.stock_status,

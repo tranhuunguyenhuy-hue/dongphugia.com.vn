@@ -161,13 +161,14 @@ export async function getPendingQuotes() {
       quote_items: {
         select: {
           quantity: true,
+          product_name_snapshot: true,
           products: {
             select: {
-              name: true
-            }
-          }
-        }
-      }
+              name: true,
+            },
+          },
+        },
+      },
     },
   })
   return quotes

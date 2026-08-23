@@ -101,6 +101,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
                 image_main_url: product.image_main_url,
                 price: currentPrice,
                 original_price: currentOriginalPrice,
+                list_price: toNullableNumber(product.list_price),
                 sale_price: toNullableNumber(product.sale_price),
                 stock_status: product.stock_status,
                 brands: product.brands,
@@ -221,6 +222,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
                     <ProductPrice 
                         price={currentPrice}
                         originalPrice={currentOriginalPrice}
+                        listPrice={toNullableNumber(product.list_price)}
                         salePrice={toNullableNumber(product.sale_price)}
                         priceDisplay={product.price_display}
                         onlineDiscountAmount={onlineDiscountAmount}
@@ -232,6 +234,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
                             productName={product.name}
                             price={currentPrice}
                             originalPrice={currentOriginalPrice}
+                            listPrice={toNullableNumber(product.list_price)}
                             salePrice={toNullableNumber(product.sale_price)}
                             priceDisplay={product.price_display}
                             stockStatus={product.stock_status}

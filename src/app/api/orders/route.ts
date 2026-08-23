@@ -34,16 +34,11 @@ function getPrismaErrorCode(error: unknown): string | undefined {
 function buildSnapshotName(
     productName: string,
     installOption: OrderRequest['items'][number]['installOption'],
-    onlineDiscountAmount: number,
 ): string {
     const options: string[] = []
 
     if (installOption === 'install') options.push('Cần Lắp Đặt')
     if (installOption === 'replace') options.push('Tháo dỡ & Lắp Đặt')
-    if (onlineDiscountAmount > 0) {
-        options.push(`Giảm Online ${Math.round(onlineDiscountAmount)}đ`)
-    }
-
     return options.length > 0
         ? `${productName} (${options.join(' | ')})`
         : productName
@@ -63,6 +58,7 @@ async function createAuthoritativeOrder(input: OrderRequest) {
                         sku: true,
                         price: true,
                         original_price: true,
+                        list_price: true,
                         sale_price: true,
                         stock_status: true,
                         online_discount_amount: true,
@@ -91,13 +87,12 @@ async function createAuthoritativeOrder(input: OrderRequest) {
                         )
                     }
 
-                    const onlineDiscountAmount = Number(product.online_discount_amount ?? 0)
                     const unitPrice = calculateOrderUnitPrice({
+                        listPrice: product.list_price === null ? null : Number(product.list_price),
                         originalPrice: product.original_price === null ? null : Number(product.original_price),
                         salePrice: product.sale_price === null ? null : Number(product.sale_price),
                         compatibilityPrice: product.price === null ? null : Number(product.price),
                         stockStatus: product.stock_status,
-                        onlineDiscountAmount,
                         installOption: item.installOption,
                     })
 
@@ -114,7 +109,6 @@ async function createAuthoritativeOrder(input: OrderRequest) {
                         product_name: buildSnapshotName(
                             product.name,
                             item.installOption,
-                            onlineDiscountAmount,
                         ).slice(0, 500),
                         product_sku: product.sku.slice(0, 100),
                         quantity: item.quantity,

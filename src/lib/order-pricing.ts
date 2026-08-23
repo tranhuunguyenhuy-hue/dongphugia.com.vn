@@ -13,43 +13,40 @@ export function getInstallationFee(option: InstallOption): number {
 }
 
 interface OrderUnitPriceInput {
+    listPrice?: number | null
     originalPrice: number | null
     salePrice: number | null
     compatibilityPrice: number | null
     stockStatus: string | null
-    onlineDiscountAmount: number | null
     installOption: InstallOption
 }
 
 export function calculateOrderUnitPrice({
+    listPrice,
     originalPrice,
     salePrice,
     compatibilityPrice,
     stockStatus,
-    onlineDiscountAmount,
     installOption,
 }: OrderUnitPriceInput): number | null {
     const commerce = resolveProductCommerce({
+        listPrice,
         originalPrice,
         salePrice,
         compatibilityPrice,
         stockStatus,
     })
     const authoritativePrice = commerce.displayPrice
-    const discount = onlineDiscountAmount ?? 0
 
     if (
         !commerce.canAddToCart
         || authoritativePrice === null
         || !Number.isFinite(authoritativePrice)
         || authoritativePrice <= 0
-        || !Number.isFinite(discount)
-        || discount < 0
-        || discount > authoritativePrice
     ) {
         return null
     }
 
-    const unitPrice = authoritativePrice - discount + getInstallationFee(installOption)
+    const unitPrice = authoritativePrice + getInstallationFee(installOption)
     return Math.round(unitPrice * 100) / 100
 }

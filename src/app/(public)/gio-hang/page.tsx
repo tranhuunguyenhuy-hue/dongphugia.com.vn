@@ -176,7 +176,7 @@ export default function CartPage() {
                                             <div className="text-[11px] text-neutral-400 pl-2">
                                                 {item.installOption === 'install' && <span>+ Lắp đặt</span>}
                                                 {item.installOption === 'replace' && <span>+ Tháo dỡ & Lắp đặt</span>}
-                                                {(item.onlineDiscountAmount || 0) > 0 && <span>, - Giảm Online</span>}
+                                                {(item.onlineDiscountAmount || 0) > 0 && <span>, có ưu đãi online tham khảo</span>}
                                             </div>
                                         )}
                                     </div>
@@ -333,7 +333,7 @@ function CartPageItem({ item, onRemove, onQtyChange }: {
                         <p className="text-[12px] text-sky-600 font-medium">+ Tháo dỡ & Lắp đặt: {formatPrice(item.installationFee || 0)}</p>
                     )}
                     {(item.onlineDiscountAmount || 0) > 0 && (
-                        <p className="text-[12px] text-emerald-600 font-medium">- Giảm Online: {formatPrice(item.onlineDiscountAmount || 0)}</p>
+                        <p className="text-[12px] text-emerald-600 font-medium">Ưu đãi online tham khảo: {formatPrice(item.onlineDiscountAmount || 0)}</p>
                     )}
                 </div>
 

@@ -54,6 +54,7 @@ type ProductSchemaInput = {
   image_main_url?: string | null
   price?: number | null
   original_price?: number | null
+  list_price?: number | null
   sale_price?: number | null
   price_display?: string | null
   stock_status: string
@@ -70,13 +71,19 @@ type ProductSchemaInput = {
  */
 export function buildProductSchema(product: ProductSchemaInput) {
   const commerce = resolveProductCommerce({
+    listPrice: product.list_price,
     originalPrice: product.original_price,
     salePrice: product.sale_price,
     compatibilityPrice: product.price,
     stockStatus: product.stock_status,
   })
 
-  if (commerce.priceMode === "CONTACT_FOR_QUOTE") return null
+  if (
+    commerce.priceMode === "CONTACT_FOR_QUOTE"
+    || commerce.availability === null
+    || commerce.availability === "Discontinued"
+    || commerce.availability === "QuoteOnly"
+  ) return null
 
   const productUrl = product.urlPath
     ? canonicalUrl(product.urlPath)
@@ -97,9 +104,9 @@ export function buildProductSchema(product: ProductSchemaInput) {
       "@type": "Offer",
       priceCurrency: "VND",
       price: commerce.displayPrice,
-      availability: commerce.availability === "IN_STOCK"
+      availability: commerce.availability === "InStock"
         ? "https://schema.org/InStock"
-        : "https://schema.org/OutOfStock",
+        : "https://schema.org/PreOrder",
       url: productUrl,
       seller: {
         "@type": "Organization",

@@ -22,6 +22,8 @@ interface SearchResult {
     slug: string
     price: number | null
     original_price?: number | null
+    list_price?: number | null
+    sale_price?: number | null
     online_discount_amount?: number | null
     price_display: string | null
     image_main_url: string | null
@@ -109,6 +111,8 @@ async function fetchSearchResults(q: string, page: number): Promise<SearchRespon
                     slug: true,
                     price: true,
                     original_price: true,
+                    list_price: true,
+                    sale_price: true,
                     online_discount_amount: true,
                     price_display: true,
                     image_main_url: true,
@@ -138,6 +142,8 @@ async function fetchSearchResults(q: string, page: number): Promise<SearchRespon
                 ...p,
                 price: p.price ? Number(p.price) : null,
                 original_price: p.original_price ? Number(p.original_price) : null,
+                list_price: p.list_price ? Number(p.list_price) : null,
+                sale_price: p.sale_price ? Number(p.sale_price) : null,
                 online_discount_amount: p.online_discount_amount ? Number(p.online_discount_amount) : null,
                 category_slug: canonical.categorySlug,
                 subcategory_slug: canonical.subcategorySlug,

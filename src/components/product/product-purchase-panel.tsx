@@ -56,13 +56,14 @@ export function ProductPurchasePanel({
     }, [product, selectedVariant])
 
     const currentCommerce = resolveProductCommerce({
-        originalPrice: product.original_price ?? product.list_price,
+        listPrice: product.list_price,
+        originalPrice: product.original_price,
         salePrice: product.sale_price,
         compatibilityPrice: product.price,
         stockStatus: product.stock_status,
     })
     const displayCompatibilityPrice = displayProduct.price
-    const displayOriginalPrice = displayProduct.original_price ?? displayProduct.list_price
+    const displayOriginalPrice = displayProduct.list_price ?? displayProduct.original_price
     const displaySalePrice = displayProduct.sale_price
 
     return (
@@ -94,6 +95,7 @@ export function ProductPurchasePanel({
             <ProductPrice
                 price={toClientMoney(displayCompatibilityPrice)}
                 originalPrice={toClientMoney(displayOriginalPrice)}
+                listPrice={toClientMoney(displayProduct.list_price)}
                 salePrice={toClientMoney(displaySalePrice)}
                 priceDisplay={displayProduct.price_display}
                 onlineDiscountAmount={displayProduct.online_discount_amount ? Number(displayProduct.online_discount_amount) : null}
@@ -105,6 +107,7 @@ export function ProductPurchasePanel({
                     productName={displayProduct.name}
                     price={toClientMoney(displayCompatibilityPrice)}
                     originalPrice={toClientMoney(displayOriginalPrice)}
+                    listPrice={toClientMoney(displayProduct.list_price)}
                     salePrice={toClientMoney(displaySalePrice)}
                     priceDisplay={displayProduct.price_display}
                     imageUrl={displayProduct.image_main_url || (product.product_images && product.product_images.length > 0 ? product.product_images[0].image_url : null)}

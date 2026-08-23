@@ -15,6 +15,7 @@ describe("buildProductSchema", () => {
     const schema = buildProductSchema({
       ...product,
       original_price: 1_250_000,
+      list_price: 1_250_000,
       sale_price: 1_100_000,
       price: null,
     })
@@ -28,19 +29,17 @@ describe("buildProductSchema", () => {
     expect(schema?.offers).not.toHaveProperty("priceValidUntil")
   })
 
-  it("emits truthful OutOfStock availability for a priced product", () => {
+  it("withholds structured data for an unmapped legacy availability", () => {
     const schema = buildProductSchema({
       ...product,
       original_price: 1_250_000,
+      list_price: 1_250_000,
       sale_price: null,
       price: null,
       stock_status: "out_of_stock",
     })
 
-    expect(schema?.offers).toMatchObject({
-      price: 1_250_000,
-      availability: "https://schema.org/OutOfStock",
-    })
+    expect(schema).toBeNull()
   })
 
   it("omits Product rich-result markup for a quote-only product", () => {

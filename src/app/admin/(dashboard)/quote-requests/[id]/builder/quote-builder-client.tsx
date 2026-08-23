@@ -14,20 +14,72 @@ import { Textarea } from '@/components/ui/textarea'
 import { ArrowLeft, Printer, Save, CheckCircle } from 'lucide-react'
 import { updateQuoteData, completeQuote } from './actions'
 
-export function QuoteBuilderClient({ quote }: { quote: any }) {
+type BuilderItem = {
+    id: number
+    name: string
+    sku: string
+    legacySnapshot: boolean
+    price: number
+    quantity: number
+    admin_unit_price: number
+    admin_quantity: number
+}
+
+type QuoteBuilderItem = {
+    id: number
+    quantity: number
+    product_name_snapshot: string | null
+    product_sku_snapshot: string | null
+    snapshot_at: string | null
+    list_price_snapshot: number | string | null
+    sale_price_snapshot: number | string | null
+    admin_unit_price: number | string | null
+    admin_quantity: number | null
+    products: {
+        name: string
+        sku: string
+        price: number | string | null
+        original_price: number | string | null
+    } | null
+}
+
+type QuoteBuilderQuote = {
+    id: number
+    quote_number: string | null
+    name: string
+    phone: string
+    email: string | null
+    vat_rate: number | null
+    shipping_fee: number | string | null
+    admin_notes: string | null
+    quote_items: QuoteBuilderItem[]
+    [key: string]: unknown
+}
+
+export function QuoteBuilderClient({ quote }: { quote: QuoteBuilderQuote }) {
     const router = useRouter()
     const printRef = useRef<HTMLDivElement>(null)
 
     // Format initial items to match our schema needs
-    const initialItems = quote.quote_items.map((qi: any) => ({
-        id: qi.id,
-        name: qi.products.name,
-        sku: qi.products.sku,
-        price: Number(qi.products.price || qi.products.original_price || 0),
-        quantity: qi.quantity,
-        admin_unit_price: qi.admin_unit_price ? Number(qi.admin_unit_price) : Number(qi.products.price || qi.products.original_price || 0),
-        admin_quantity: qi.admin_quantity || qi.quantity,
-    }))
+    const initialItems: BuilderItem[] = quote.quote_items.map((qi) => {
+        const legacySnapshot = !qi.snapshot_at
+        const snapshotPrice = qi.sale_price_snapshot ?? qi.list_price_snapshot
+        const legacyPrice = qi.products?.price ?? qi.products?.original_price
+        const quotePrice = legacySnapshot ? (snapshotPrice ?? legacyPrice ?? 0) : (snapshotPrice ?? 0)
+
+        return {
+            id: qi.id,
+            name: qi.product_name_snapshot || (legacySnapshot ? qi.products?.name : null) || 'Sản phẩm không còn trong danh mục',
+            sku: qi.product_sku_snapshot || (legacySnapshot ? qi.products?.sku : null) || '',
+            legacySnapshot,
+            price: Number(quotePrice),
+            quantity: qi.quantity,
+            admin_unit_price: qi.admin_unit_price !== null && qi.admin_unit_price !== undefined
+                ? Number(qi.admin_unit_price)
+                : Number(quotePrice),
+            admin_quantity: qi.admin_quantity || qi.quantity,
+        }
+    })
 
     const [items, setItems] = useState(initialItems)
     const [vatRate, setVatRate] = useState(quote.vat_rate || 10)
@@ -125,11 +177,14 @@ export function QuoteBuilderClient({ quote }: { quote: any }) {
                             <CardTitle className="text-base">Danh sách sản phẩm</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            {items.map((item: any, idx: number) => (
+                            {items.map((item, idx: number) => (
                                 <div key={item.id} className="p-4 border rounded-lg bg-slate-50 space-y-3">
                                     <div>
                                         <p className="font-medium text-sm line-clamp-1" title={item.name}>{item.name}</p>
                                         <p className="text-xs text-muted-foreground">Mã: {item.sku || '—'}</p>
+                                        {item.legacySnapshot && (
+                                            <p className="text-[11px] text-amber-700">Legacy: không có snapshot tại thời điểm gửi</p>
+                                        )}
                                     </div>
                                     <div className="flex gap-4 items-end">
                                         <div className="w-20">
