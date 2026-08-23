@@ -1152,6 +1152,7 @@ export async function getVariantSelectionData(variantGroup: string, currentProdu
             where p.variant_group = ${variantGroup}
               and p.is_active = true
               and p.stock_status <> 'discontinued'
+              and p.sellable_status = 'sellable'
               and p.publication_status = 'public'
               and p.pdp_visibility = 'public'
             order by p.is_active desc, p.price desc nulls last, p.sku asc

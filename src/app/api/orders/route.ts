@@ -7,6 +7,7 @@ import { ApiError, handleApiError } from '@/lib/api-error'
 import { logger } from '@/lib/logger'
 import { calculateOrderUnitPrice } from '@/lib/order-pricing'
 import { isWriteFreezeError } from '@/lib/write-freeze'
+import { resolveProductVisibility } from '@/lib/public-product-visibility'
 
 const MAX_ORDER_NUMBER_ATTEMPTS = 5
 
@@ -73,13 +74,7 @@ async function createAuthoritativeOrder(input: OrderRequest) {
                 const lineItems = input.items.map(item => {
                     const product = productsById.get(item.productId)
 
-                    if (
-                        !product
-                        || !product.is_active
-                        || product.publication_status !== 'public'
-                        || product.pdp_visibility !== 'public'
-                        || product.sellable_status !== 'sellable'
-                    ) {
+                    if (!product || !resolveProductVisibility(product).pdp) {
                         throw new ApiError(
                             400,
                             'Một hoặc nhiều sản phẩm không còn khả dụng để đặt hàng.',
