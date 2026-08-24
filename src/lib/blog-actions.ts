@@ -8,6 +8,7 @@ import { requirePermission } from '@/lib/auth/get-current-user'
 import { toWriteFreezeActionResult } from '@/lib/write-freeze'
 import { writePublishingAudit } from '@/lib/publishing/audit'
 import { revalidatePublishingPublicSurfaces } from '@/lib/publishing/revalidation'
+import { normalizeHumanBlogEditorialMedia } from '@/lib/publishing/blog-editorial-media'
 
 const blogPostSchema = z.object({
     title: z.string().min(1, 'Tiêu đề không được để trống'),
@@ -66,40 +67,47 @@ export async function createBlogPost(data: unknown) {
             ? new Date()
             : d.published_at ? new Date(d.published_at) : null
 
-        const post = await prisma.blog_posts.create({
-            data: {
-                title: d.title,
-                slug: d.slug,
-                excerpt: d.excerpt || null,
+        const post = await prisma.$transaction(async (transaction) => {
+            const media = await normalizeHumanBlogEditorialMedia(transaction as unknown as Prisma.TransactionClient, {
                 content: d.content,
-                category_id: d.category_id,
-                thumbnail_url: d.thumbnail_url || null,
-                cover_image_url: d.cover_image_url || null,
-                seo_title: d.seo_title || null,
-                seo_description: d.seo_description || null,
-                seo_keywords: d.seo_keywords || null,
-                reading_time: d.reading_time || null,
-                status: d.status,
-                published_at: publishedAt,
-                first_published_at: d.status === 'published' ? publishedAt : null,
-                author_name: d.author_name,
-                author_avatar: d.author_avatar || null,
-                is_featured: d.is_featured,
-                is_pinned: d.is_pinned,
-            },
-        })
-
-        if (d.tag_ids.length > 0) {
-            await prisma.blog_post_tags.createMany({
-                data: d.tag_ids.map((tagId) => ({ post_id: post.id, tag_id: tagId })),
-                skipDuplicates: true,
+                thumbnailUrl: d.thumbnail_url,
+                coverImageUrl: d.cover_image_url,
             })
-            // Update tag post counts
-            await prisma.$executeRawUnsafe(
-                `UPDATE blog_tags SET post_count = (SELECT COUNT(*) FROM blog_post_tags WHERE tag_id = blog_tags.id) WHERE id = ANY($1::int[])`,
-                d.tag_ids
-            )
-        }
+            const created = await transaction.blog_posts.create({
+                data: {
+                    title: d.title,
+                    slug: d.slug,
+                    excerpt: d.excerpt || null,
+                    content: media.content,
+                    category_id: d.category_id,
+                    thumbnail_url: media.thumbnailUrl,
+                    cover_image_url: media.coverImageUrl,
+                    seo_title: d.seo_title || null,
+                    seo_description: d.seo_description || null,
+                    seo_keywords: d.seo_keywords || null,
+                    reading_time: d.reading_time || null,
+                    status: d.status,
+                    published_at: publishedAt,
+                    first_published_at: d.status === 'published' ? publishedAt : null,
+                    author_name: d.author_name,
+                    author_avatar: d.author_avatar || null,
+                    is_featured: d.is_featured,
+                    is_pinned: d.is_pinned,
+                },
+            })
+
+            if (d.tag_ids.length > 0) {
+                await transaction.blog_post_tags.createMany({
+                    data: d.tag_ids.map((tagId) => ({ post_id: created.id, tag_id: tagId })),
+                    skipDuplicates: true,
+                })
+                await transaction.$executeRawUnsafe(
+                    `UPDATE blog_tags SET post_count = (SELECT COUNT(*) FROM blog_post_tags WHERE tag_id = blog_tags.id) WHERE id = ANY($1::int[])`,
+                    d.tag_ids,
+                )
+            }
+            return created
+        })
 
         revalidatePath('/admin/blog/posts')
         revalidatePath('/blog')
@@ -144,10 +152,14 @@ export async function updateBlogPost(id: number, data: unknown) {
         }
         if (
             existing.publishing_identity_id
-            && d.content !== existing.content
+            && (
+                d.content !== existing.content
+                || (d.thumbnail_url || null) !== existing.thumbnail_url
+                || (d.cover_image_url || null) !== existing.cover_image_url
+            )
         ) {
             return {
-                message: 'Nội dung của bài viết do Publishing Agent tạo chỉ được thay đổi qua Publishing API để giữ kiểm tra HTML và Managed Media.',
+                message: 'Nội dung hoặc ảnh của bài viết do Publishing Agent tạo chỉ được thay đổi qua Publishing API để giữ kiểm tra HTML và Managed Media.',
             }
         }
         const wasPublished = existing?.status === 'published'
@@ -156,16 +168,21 @@ export async function updateBlogPost(id: number, data: unknown) {
             : d.published_at ? new Date(d.published_at) : null
 
         const updated = await prisma.$transaction(async (transaction) => {
+            const media = await normalizeHumanBlogEditorialMedia(transaction as unknown as Prisma.TransactionClient, {
+                content: d.content,
+                thumbnailUrl: d.thumbnail_url,
+                coverImageUrl: d.cover_image_url,
+            })
             const write = await transaction.blog_posts.updateMany({
                 where: { id, version: d.version },
                 data: {
                     title: d.title,
                     slug: d.slug,
                     excerpt: d.excerpt || null,
-                    content: d.content,
+                    content: media.content,
                     category_id: d.category_id,
-                    thumbnail_url: d.thumbnail_url || null,
-                    cover_image_url: d.cover_image_url || null,
+                    thumbnail_url: media.thumbnailUrl,
+                    cover_image_url: media.coverImageUrl,
                     seo_title: d.seo_title || null,
                     seo_description: d.seo_description || null,
                     seo_keywords: d.seo_keywords || null,

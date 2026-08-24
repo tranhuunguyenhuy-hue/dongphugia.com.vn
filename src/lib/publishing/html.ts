@@ -32,13 +32,13 @@ const ALLOWED_TAGS = new Set([
 ])
 const ALLOWED_ATTRIBUTES: Record<string, ReadonlySet<string>> = {
     a: new Set(['href', 'title']),
-    img: new Set(['src', 'alt', 'title', 'width', 'height']),
+    img: new Set(['src', 'srcset', 'alt', 'title', 'width', 'height']),
     td: new Set(['colspan', 'rowspan']),
     th: new Set(['colspan', 'rowspan']),
 }
 const SANITIZED_ATTRIBUTES: Record<string, string[]> = {
     a: ['href', 'title', 'target', 'rel'],
-    img: ['src', 'alt', 'title', 'width', 'height', 'loading', 'decoding'],
+    img: ['src', 'srcset', 'alt', 'title', 'width', 'height', 'loading', 'decoding'],
     td: ['colspan', 'rowspan'],
     th: ['colspan', 'rowspan'],
 }
@@ -155,6 +155,15 @@ function normalizeImage(src: string, policy: PublishingHtmlPolicy): string {
     return normalized
 }
 
+function normalizeImageSrcset(srcset: string, policy: PublishingHtmlPolicy): string {
+    return srcset.split(',').map((candidate) => {
+        const parts = candidate.trim().split(/\s+/)
+        const source = parts.shift() ?? ''
+        const normalized = normalizeImage(source, policy)
+        return [normalized, ...parts].join(' ')
+    }).join(', ')
+}
+
 export function sanitizePublishingHtml(
     html: string,
     policy: PublishingHtmlPolicy,
@@ -183,6 +192,9 @@ export function sanitizePublishingHtml(
                 tagName: 'img',
                 attribs: {
                     src: normalizeImage(attributes.src ?? '', policy),
+                    ...(attributes.srcset
+                        ? { srcset: normalizeImageSrcset(attributes.srcset, policy) }
+                        : {}),
                     ...(attributes.alt ? { alt: attributes.alt } : {}),
                     ...(attributes.title ? { title: attributes.title } : {}),
                     ...(attributes.width ? { width: attributes.width } : {}),

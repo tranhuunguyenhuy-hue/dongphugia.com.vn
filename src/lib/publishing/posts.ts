@@ -94,6 +94,13 @@ function extractImageSourceCandidates(html: string): string[] {
         const source = match[1] ?? match[2] ?? match[3]
         if (source) sources.add(source)
     }
+    const srcsetPattern = /<img\b[^>]*\bsrcset\s*=\s*(?:"([^"]*)"|'([^']*)')/gi
+    for (const match of html.matchAll(srcsetPattern)) {
+        for (const candidate of (match[1] ?? match[2] ?? '').split(',')) {
+            const source = candidate.trim().split(/\s+/)[0]
+            if (source) sources.add(source)
+        }
+    }
     return [...sources]
 }
 
@@ -611,7 +618,10 @@ export async function mutatePublishingPost(input: {
                     schedule_blocked_code: null,
                     schedule_blocked_at: null,
                     schedule_last_attempt_at: null,
-                    author_name: EDITORIAL_BYLINE,
+                    // Media-only replacements must preserve the existing
+                    // editorial byline; new Publishing posts still use the
+                    // canonical default.
+                    author_name: current?.author_name ?? EDITORIAL_BYLINE,
                     updated_at: now,
                 }
 
