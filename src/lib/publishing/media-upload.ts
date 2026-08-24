@@ -20,6 +20,10 @@ import {
     processPublishingImage,
     type PublishingMediaPurpose,
 } from './media'
+import {
+    canonicalizePublishingMediaUrl,
+    canonicalizePublishingMediaVariants,
+} from './media-url'
 
 type MediaResponse = {
     id: string
@@ -29,6 +33,30 @@ type MediaResponse = {
 }
 
 const MEDIA_OPERATION = 'media.upload'
+
+function requireCanonicalMediaUrl(value: string | null | undefined): string {
+    const canonical = canonicalizePublishingMediaUrl(value)
+    if (!canonical) {
+        throw new PublishingApiError(
+            502,
+            'MEDIA_STORAGE_INVALID',
+            'Managed Media returned an unallowlisted URL',
+        )
+    }
+    return canonical
+}
+
+function requireCanonicalMediaVariants(variants: unknown) {
+    const canonical = canonicalizePublishingMediaVariants(variants)
+    if (!canonical) {
+        throw new PublishingApiError(
+            502,
+            'MEDIA_STORAGE_INVALID',
+            'Managed Media returned an invalid variant URL',
+        )
+    }
+    return canonical
+}
 
 function sourceHash(source: Buffer): string {
     return createHash('sha256').update(source).digest('hex')
@@ -93,8 +121,8 @@ function responseFromStoredMedia(media: {
     return {
         id: media.id,
         purpose: media.purpose,
-        url: media.primary_url,
-        variants: media.variants,
+        url: requireCanonicalMediaUrl(media.primary_url),
+        variants: requireCanonicalMediaVariants(media.variants),
     }
 }
 
@@ -251,8 +279,8 @@ export async function uploadPublishingMedia(input: {
     const response: MediaResponse = {
         id: reservation.mediaId,
         purpose: input.purpose,
-        url: stored.primaryUrl,
-        variants: stored.variants,
+        url: requireCanonicalMediaUrl(stored.primaryUrl),
+        variants: requireCanonicalMediaVariants(stored.variants),
     }
     await prisma.$transaction(async (transaction) => {
         await lockPublishingMutationAuthorization(transaction, {
@@ -268,8 +296,8 @@ export async function uploadPublishingMedia(input: {
             data: {
                 status: 'ready',
                 storage_path: stored.storagePath,
-                primary_url: stored.primaryUrl,
-                variants: stored.variants,
+                primary_url: response.url,
+                variants: response.variants as never,
                 updated_at: now,
             },
         })
