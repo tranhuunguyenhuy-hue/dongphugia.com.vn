@@ -1,7 +1,8 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
     WRITE_FREEZE_ERROR_CODE,
     WriteFreezeError,
+    isWriteFreezeEnabled,
     toWriteFreezeActionResult,
 } from './write-freeze'
 
@@ -28,5 +29,11 @@ describe('toWriteFreezeActionResult', () => {
 
     it('does not rewrite unrelated failures', () => {
         expect(toWriteFreezeActionResult(Object.assign(new Error('duplicate'), { code: 'P2002' }))).toBeNull()
+    })
+
+    it('enables the write freeze in explicit staging safety mode', () => {
+        vi.stubEnv('STAGING_SAFETY_MODE', 'true')
+
+        expect(isWriteFreezeEnabled()).toBe(true)
     })
 })

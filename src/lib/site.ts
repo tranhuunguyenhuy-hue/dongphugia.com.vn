@@ -8,6 +8,17 @@ export type SiteRuntimeConfig = {
   allowIndexing: boolean
 }
 
+/**
+ * Shared-data Staging may run the production-configured image for parity. The
+ * explicit safety mode keeps that image non-indexable without changing the
+ * Production default when the flag is absent.
+ */
+export const STAGING_SAFETY_MODE_ENV = 'STAGING_SAFETY_MODE'
+
+export function isStagingSafetyModeEnabled() {
+  return process.env[STAGING_SAFETY_MODE_ENV] === 'true'
+}
+
 function normalizeAbsoluteUrl(value: string) {
   const url = new URL(value)
   url.hash = ''
@@ -54,7 +65,7 @@ export function getSiteRuntimeConfig(): SiteRuntimeConfig {
   return {
     target,
     siteUrl,
-    allowIndexing: target === 'production',
+    allowIndexing: target === 'production' && !isStagingSafetyModeEnabled(),
   }
 }
 

@@ -5,6 +5,7 @@
  * because maintenance proxy rules bypass /api and /admin.
  */
 export const WRITE_FREEZE_ENV = 'WRITE_FREEZE_MODE'
+export const STAGING_SAFETY_MODE_ENV = 'STAGING_SAFETY_MODE'
 export const WRITE_FREEZE_ERROR_CODE = 'WRITE_FREEZE_ACTIVE'
 
 const WRITE_FREEZE_MESSAGE =
@@ -22,6 +23,7 @@ export class WriteFreezeError extends Error {
 
 export function isWriteFreezeEnabled() {
     return process.env[WRITE_FREEZE_ENV] === 'true'
+        || process.env[STAGING_SAFETY_MODE_ENV] === 'true'
 }
 
 export function requireWritesAllowed(operation: string) {

@@ -18,6 +18,10 @@ use the dedicated synthetic PostgreSQL database.
 ## Safety rules
 
 - Staging always uses `noindex` and never advertises the production hostname.
+- When Staging runs a production-configured candidate for parity, set
+  `STAGING_SAFETY_MODE=true` at build and runtime. This explicit Staging-only
+  guardrail forces `noindex` and the server-side write freeze; Production must
+  leave the flag unset.
 - Do not commit environment values or Coolify/GHCR credentials.
 - No production database, DNS, Bunny, Vercel, traffic or runtime mutation is
   implied by a staging validation.

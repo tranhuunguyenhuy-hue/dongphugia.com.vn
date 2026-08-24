@@ -46,6 +46,14 @@ describe('canonical site URL', () => {
         })
     })
 
+    it('disables indexing in explicit staging safety mode for production-configured images', () => {
+        vi.stubEnv('DEPLOY_TARGET', 'production')
+        vi.stubEnv('NEXT_PUBLIC_SITE_URL', DEFAULT_CANONICAL_SITE_URL)
+        vi.stubEnv('STAGING_SAFETY_MODE', 'true')
+
+        expect(getSiteRuntimeConfig().allowIndexing).toBe(false)
+    })
+
     it.each(['http://dongphugia-staging.example.test', 'https://www.dongphugia.vn', 'https://dongphugia.com.vn'])
     ('rejects an unsafe staging URL: %s', (siteUrl) => {
         vi.stubEnv('DEPLOY_TARGET', 'staging')
