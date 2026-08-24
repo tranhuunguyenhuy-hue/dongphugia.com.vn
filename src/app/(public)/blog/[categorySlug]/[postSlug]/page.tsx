@@ -8,6 +8,10 @@ import { JsonLd } from '@/components/seo/json-ld'
 import { buildArticleSchema, buildBreadcrumbSchema } from '@/lib/seo/schema'
 import { canonicalUrl } from '@/lib/site'
 import { sanitizeRichHtml } from '@/lib/html-sanitizer'
+import {
+    normalizePublishingMediaHtml,
+    normalizePublishingMediaUrl,
+} from '@/lib/publishing/media-url'
 
 import { getBlogPostBySlug, getRelatedBlogPosts } from '@/lib/public-api-blog'
 
@@ -30,7 +34,9 @@ export async function generateMetadata({ params }: { params: Promise<{ postSlug:
             description: post.excerpt || '',
             type: 'article',
             publishedTime: post.published_at ? new Date(post.published_at).toISOString() : undefined,
-            images: post.cover_image_url ? [{ url: post.cover_image_url }] : [],
+            images: post.cover_image_url
+                ? [{ url: normalizePublishingMediaUrl(post.cover_image_url) ?? post.cover_image_url }]
+                : [],
         }
     }
 }
@@ -46,9 +52,11 @@ export default async function BlogPostPage({ params }: { params: Promise<{ categ
     // The page title is the only H1. Legacy editor content may contain H1 tags,
     // so demote those headings before rendering and building the table of contents.
     const articleContent = sanitizeRichHtml(
-        (post.content || '')
-            .replace(/<h1(\s|>)/gi, '<h2$1')
-            .replace(/<\/h1>/gi, '</h2>')
+        normalizePublishingMediaHtml(
+            (post.content || '')
+                .replace(/<h1(\s|>)/gi, '<h2$1')
+                .replace(/<\/h1>/gi, '</h2>')
+        )
     )
 
     // Related posts from same category (excluding current)
@@ -60,7 +68,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ categ
             <JsonLd data={buildArticleSchema({
                 title: post.title,
                 excerpt: post.excerpt,
-                thumbnail_url: post.cover_image_url,
+                thumbnail_url: normalizePublishingMediaUrl(post.cover_image_url),
                 published_at: post.published_at,
                 updated_at: post.updated_at,
                 author_name: 'Ban Biên Tập Đông Phú Gia',
@@ -134,7 +142,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ categ
                             <div className="w-full h-[300px] md:h-[450px] relative rounded-2xl overflow-hidden mb-10 bg-slate-100">
                                 {post.cover_image_url ? (
                                     <Image
-                                        src={post.cover_image_url}
+                                        src={normalizePublishingMediaUrl(post.cover_image_url) ?? post.cover_image_url}
                                         alt={post.title}
                                         fill
                                         sizes="(max-width: 1024px) 100vw, 70vw"
