@@ -28,7 +28,10 @@ ENV NODE_ENV=production \
     DIRECT_URL=postgresql://dpg_build_unreachable:dpg_build_unreachable@127.0.0.1:1/dpg_build_unreachable
 
 RUN npx prisma generate && \
-    npm run build
+    npm run build && \
+    npx esbuild scripts/publishing/import-blog-editorial-media.mts \
+      --bundle --platform=node --format=esm --packages=external \
+      --outfile=/tmp/import-blog-editorial-media.mjs
 
 FROM node:24-alpine AS runner
 WORKDIR /app
@@ -58,6 +61,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@img/sharp-libvips-linuxmusl-arm64/lib ./node_modules/@img/sharp-libvips-linuxmusl-arm64/lib
 COPY --from=builder --chown=nextjs:nodejs /app/scripts/publishing/run-scheduler.mjs ./scripts/publishing/run-scheduler.mjs
+COPY --from=builder --chown=nextjs:nodejs /tmp/import-blog-editorial-media.mjs ./scripts/publishing/import-blog-editorial-media.mjs
 
 USER nextjs
 
