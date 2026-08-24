@@ -18,11 +18,14 @@ use the dedicated synthetic PostgreSQL database.
 ## Safety rules
 
 - Staging always uses `noindex` and never advertises the production hostname.
-- When Staging runs a production-configured candidate for parity, set
-  `STAGING_SAFETY_MODE=true` and a non-production `STAGING_SITE_URL` at build
-  and runtime. This explicit Staging-only guardrail forces `noindex`, uses the
-  Staging canonical URL, and enables the server-side write freeze; Production
-  must leave the flag unset.
+- When CI builds a Staging-target image, pass `STAGING_SAFETY_MODE=true` and a
+  non-production `STAGING_SITE_URL` at build and runtime. When Staging runs an
+  exact production-configured candidate for parity, set the same values at
+  runtime in Coolify; do not rebuild that candidate with Staging values, or it
+  would no longer be the immutable Production candidate under review. This
+  explicit Staging-only guardrail forces `noindex`, uses the Staging canonical
+  URL, and enables the server-side write freeze; Production must leave the flag
+  unset. Reject the candidate if its live metadata still advertises Production.
 - Do not commit environment values or Coolify/GHCR credentials.
 - No production database, DNS, Bunny, Vercel, traffic or runtime mutation is
   implied by a staging validation.
