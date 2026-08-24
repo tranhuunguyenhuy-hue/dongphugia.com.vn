@@ -1,8 +1,13 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+    canonicalizePublishingMediaHtml,
+    canonicalizePublishingMediaUrl,
+    canonicalizePublishingMediaVariants,
+    isPublishingMediaUrlAllowed,
     normalizePublishingMediaHtml,
     normalizePublishingMediaUrl,
+    normalizePublishingMediaVariants,
     publishingMediaUrlCandidates,
     publishingMediaUrlsMatch,
 } from './media-url'
@@ -42,10 +47,54 @@ describe('Publishing Managed Media URL compatibility', () => {
         expect(normalizePublishingMediaUrl('not a URL')).toBe('not a URL')
     })
 
+    it('rejects unknown Managed Media hosts at the Publishing boundary', () => {
+        expect(isPublishingMediaUrlAllowed('https://images.example.com/publishing/asset.webp'))
+            .toBe(false)
+        expect(canonicalizePublishingMediaUrl('https://images.example.com/publishing/asset.webp'))
+            .toBeNull()
+        expect(publishingMediaUrlCandidates('https://images.example.com/publishing/asset.webp'))
+            .toEqual([])
+        expect(publishingMediaUrlsMatch(
+            'https://images.example.com/publishing/asset.webp',
+            'https://images.example.com/publishing/asset.webp',
+        )).toBe(false)
+    })
+
     it('rewrites legacy URLs in sanitized article image markup', () => {
         expect(normalizePublishingMediaHtml(
             '<p>Text</p><img src="https://dpg-publishing-production.b-cdn.net/publishing/asset.webp" alt="Asset">',
         )).toContain('src="https://media.dongphugia.vn/publishing/asset.webp"')
+    })
+
+    it('removes unknown image hosts from API response HTML', () => {
+        expect(() => canonicalizePublishingMediaHtml(
+            '<img src="https://images.example.com/publishing/asset.webp">',
+        )).toThrow('Stored Blog Post contains an unallowlisted image URL')
+        expect(canonicalizePublishingMediaHtml(
+            '<img src="https://dpg-publishing-production.b-cdn.net/publishing/asset.webp">',
+        )).toBe('<img src="https://media.dongphugia.vn/publishing/asset.webp">')
+    })
+
+    it('canonicalizes legacy URLs in Managed Media variant responses', () => {
+        expect(normalizePublishingMediaVariants([
+            {
+                url: 'https://dpg-publishing-production.b-cdn.net/publishing/asset.webp',
+                width: 960,
+            },
+            { width: 320 },
+        ])).toEqual([
+            {
+                url: 'https://media.dongphugia.vn/publishing/asset.webp',
+                width: 960,
+            },
+            { width: 320 },
+        ])
+    })
+
+    it('fails closed for unknown Managed Media variant hosts', () => {
+        expect(canonicalizePublishingMediaVariants([
+            { url: 'https://images.example.com/publishing/asset.webp' },
+        ])).toBeNull()
     })
 
     it('returns raw and canonical candidates for legacy persisted media', () => {

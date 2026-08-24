@@ -17,8 +17,10 @@ import {
 import { PublishingApiError } from './errors'
 import { sanitizePublishingHtml } from './html'
 import {
+    canonicalizePublishingMediaHtml,
+    canonicalizePublishingMediaUrl,
+    isPublishingMediaUrlAllowed,
     normalizePublishingMediaHtml,
-    normalizePublishingMediaUrl,
     publishingMediaUrlCandidates,
 } from './media-url'
 import {
@@ -246,10 +248,24 @@ async function resolveManagedMedia(
         )
 
     const errors: { field: string; code: string }[] = []
-    if (input.thumbnail_media_id && (!thumbnail || thumbnail.purpose !== 'thumbnail')) {
+    if (
+        input.thumbnail_media_id
+        && (
+            !thumbnail
+            || thumbnail.purpose !== 'thumbnail'
+            || !isPublishingMediaUrlAllowed(thumbnail.primary_url)
+        )
+    ) {
         errors.push({ field: 'thumbnail_media_id', code: 'THUMBNAIL_MEDIA_INVALID' })
     }
-    if (input.cover_media_id && (!cover || cover.purpose !== 'cover')) {
+    if (
+        input.cover_media_id
+        && (
+            !cover
+            || cover.purpose !== 'cover'
+            || !isPublishingMediaUrlAllowed(cover.primary_url)
+        )
+    ) {
         errors.push({ field: 'cover_media_id', code: 'COVER_MEDIA_INVALID' })
     }
     if (inline.length !== imageSources.length || inline.some((item) => item.purpose !== 'inline')) {
@@ -578,12 +594,12 @@ export async function mutatePublishingPost(input: {
                     excerpt: input.mutation.excerpt || null,
                     content: sanitizedHtml,
                     category_id: taxonomy.category.id,
-                    thumbnail_url: normalizePublishingMediaUrl(
+                    thumbnail_url: canonicalizePublishingMediaUrl(
                         media.thumbnail?.primary_url,
-                    ) ?? null,
-                    cover_image_url: normalizePublishingMediaUrl(
+                    ),
+                    cover_image_url: canonicalizePublishingMediaUrl(
                         media.cover?.primary_url,
-                    ) ?? null,
+                    ),
                     seo_title: input.mutation.seo_title || null,
                     seo_description: input.mutation.seo_description || null,
                     reading_time: calculateReadingTime(sanitizedHtml),
@@ -718,7 +734,7 @@ export function mapPublishingPost(post: StoredPost) {
         title: post.title,
         slug: post.slug,
         excerpt: post.excerpt ?? '',
-        content_html: normalizePublishingMediaHtml(post.content),
+        content_html: canonicalizePublishingMediaHtml(post.content),
         category: {
             name: post.blog_categories.name,
             slug: post.blog_categories.slug,
@@ -729,8 +745,8 @@ export function mapPublishingPost(post: StoredPost) {
             slug: blog_tags.slug,
             description: blog_tags.description,
         })),
-        thumbnail_url: normalizePublishingMediaUrl(post.thumbnail_url),
-        cover_image_url: normalizePublishingMediaUrl(post.cover_image_url),
+        thumbnail_url: canonicalizePublishingMediaUrl(post.thumbnail_url),
+        cover_image_url: canonicalizePublishingMediaUrl(post.cover_image_url),
         seo_title: post.seo_title,
         seo_description: post.seo_description,
         reading_time: post.reading_time,

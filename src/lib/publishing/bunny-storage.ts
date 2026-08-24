@@ -1,5 +1,6 @@
 import type { PublishingEnvironment } from './auth'
 import { PublishingApiError } from './errors'
+import { getCanonicalPublishingCdnHostname } from './media-url'
 import type {
     PublishingMediaPurpose,
     PublishingProcessedImage,
@@ -62,7 +63,9 @@ function getConfig(environment: PublishingEnvironment): PublishingBunnyConfig {
         storageZone: requiredValue('PUBLISHING_BUNNY_STORAGE_ZONE_NAME'),
         apiKey: requiredValue('PUBLISHING_BUNNY_STORAGE_API_KEY'),
         storageHost: exactHostname('PUBLISHING_BUNNY_STORAGE_HOSTNAME'),
-        cdnHost: exactHostname('PUBLISHING_BUNNY_CDN_HOSTNAME'),
+        cdnHost: getCanonicalPublishingCdnHostname(
+            exactHostname('PUBLISHING_BUNNY_CDN_HOSTNAME'),
+        ),
     }
 }
 

@@ -57,7 +57,7 @@ describe('Publishing post listing', () => {
     })
 
     it('returns taxonomy descriptions on an owned post', () => {
-        const post = mapPublishingPost({
+        const post = mapPublishingPost(({
             external_id: 'post-1',
             status: 'draft',
             version: 1,
@@ -89,7 +89,7 @@ describe('Publishing post listing', () => {
             seo_title: null,
             seo_description: null,
             reading_time: null,
-        } as Parameters<typeof mapPublishingPost>[0])
+        } as unknown) as Parameters<typeof mapPublishingPost>[0])
 
         expect(post.category).toEqual({
             name: 'Knowledge',
@@ -111,5 +111,29 @@ describe('Publishing post listing', () => {
             'https://media.dongphugia.vn/publishing/cover.webp',
         )
         expect(post.content_html).not.toContain('dpg-publishing-staging.b-cdn.net')
+    })
+
+    it('does not return an unallowlisted thumbnail or cover URL', () => {
+        const post = mapPublishingPost(({
+            ...storedSummary(2, '2026-08-13T12:00:00.000Z'),
+            title: 'A post title',
+            slug: 'a-post-title',
+            excerpt: 'An excerpt',
+            content: '<p>Content</p>',
+            blog_categories: {
+                name: 'Knowledge',
+                slug: 'knowledge',
+                description: 'Approved category',
+            },
+            blog_post_tags: [],
+            thumbnail_url: 'https://images.example.com/publishing/thumbnail.webp',
+            cover_image_url: 'https://images.example.com/publishing/cover.webp',
+            seo_title: null,
+            seo_description: null,
+            reading_time: null,
+        } as unknown) as Parameters<typeof mapPublishingPost>[0])
+
+        expect(post.thumbnail_url).toBeNull()
+        expect(post.cover_image_url).toBeNull()
     })
 })
