@@ -6,6 +6,12 @@ import { isWriteFreezeEnabled, requireWritesAllowed } from '@/lib/write-freeze'
 import type { PublishingRuntimeConfig } from './config'
 import { isPublishingApiError } from './errors'
 import { sanitizePublishingHtml } from './html'
+import {
+    normalizePublishingMediaHtml,
+    normalizePublishingMediaUrl,
+    publishingMediaUrlCandidates,
+    publishingMediaUrlsMatch,
+} from './media-url'
 import { validatePublicationReadiness } from './readiness'
 import { revalidatePublishingPublicSurfaces } from './revalidation'
 import { writePublishingAudit } from './audit'
@@ -101,24 +107,24 @@ function verifyStoredSafety(
         ({ usage, media }) =>
             usage === 'thumbnail'
             && media.purpose === 'thumbnail'
-            && media.primary_url === post.thumbnail_url,
+            && publishingMediaUrlsMatch(media.primary_url, post.thumbnail_url),
     )
     const cover = linked.find(
         ({ usage, media }) =>
             usage === 'cover'
             && media.purpose === 'cover'
-            && media.primary_url === post.cover_image_url,
+            && publishingMediaUrlsMatch(media.primary_url, post.cover_image_url),
     )
     const inline = linked.filter(
         ({ usage, media }) => usage === 'inline' && media.purpose === 'inline',
     )
     const inlineUrls = new Set(
         inline
-            .map(({ media }) => media.primary_url)
-            .filter((url): url is string => Boolean(url)),
+            .flatMap(({ media }) => publishingMediaUrlCandidates(media.primary_url)),
     )
     const referencesValid = imageSources(post.content).every((source) =>
-        inlineUrls.has(source),
+        inlineUrls.has(source)
+        || inlineUrls.has(normalizePublishingMediaUrl(source) ?? source),
     )
     if (!referencesValid) {
         return {
@@ -130,12 +136,13 @@ function verifyStoredSafety(
     }
 
     try {
-        const sanitized = sanitizePublishingHtml(post.content, {
+        const canonicalContent = normalizePublishingMediaHtml(post.content)
+        const sanitized = sanitizePublishingHtml(canonicalContent, {
             externalLinkHostnames: config.externalLinkHostnames,
             internalLinkHostnames: config.internalLinkHostnames,
             managedImageUrls: inlineUrls,
         })
-        if (sanitized !== post.content) {
+        if (sanitized !== canonicalContent) {
             return {
                 code: 'CONTENT_HTML_NOT_CANONICAL',
                 thumbnailReady: Boolean(thumbnail),

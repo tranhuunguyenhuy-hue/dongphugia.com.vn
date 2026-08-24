@@ -54,7 +54,7 @@ describe('production Publishing CDN build config', () => {
     )
   })
 
-  it('allows a valid Publishing CDN host in Next image loading and CSP img-src', async () => {
+    it('canonicalizes a legacy Publishing CDN host in Next image loading and CSP img-src', async () => {
     const config = await loadNextConfigWithEnv({
       DEPLOY_TARGET: 'production',
       NEXT_PUBLIC_SITE_URL: 'https://www.dongphugia.vn',
@@ -63,7 +63,7 @@ describe('production Publishing CDN build config', () => {
 
     expect(config.images?.remotePatterns).toContainEqual({
       protocol: 'https',
-      hostname: 'dpg-publishing-production.b-cdn.net',
+      hostname: 'cdn.dongphugia.com.vn',
       pathname: '/publishing/**',
     })
 
@@ -77,6 +77,9 @@ describe('production Publishing CDN build config', () => {
     const imgSrc = csp?.split('; ').find((directive) => directive.startsWith('img-src '))
 
     expect(imgSrc?.split(/\s+/)).toContain(
+      'https://cdn.dongphugia.com.vn',
+    )
+    expect(imgSrc?.split(/\s+/)).not.toContain(
       'https://dpg-publishing-production.b-cdn.net',
     )
   })

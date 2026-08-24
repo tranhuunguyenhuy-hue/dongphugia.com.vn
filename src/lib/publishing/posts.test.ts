@@ -69,7 +69,7 @@ describe('Publishing post listing', () => {
             title: 'A post title',
             slug: 'a-post-title',
             excerpt: 'An excerpt',
-            content: '<p>Content</p>',
+            content: '<p>Content</p><img src="https://dpg-publishing-staging.b-cdn.net/publishing/asset.webp">',
             blog_categories: {
                 name: 'Knowledge',
                 slug: 'knowledge',
@@ -84,8 +84,8 @@ describe('Publishing post listing', () => {
                     },
                 },
             ],
-            thumbnail_url: null,
-            cover_image_url: null,
+            thumbnail_url: 'https://dpg-publishing-staging.b-cdn.net/publishing/thumbnail.webp',
+            cover_image_url: 'https://dpg-publishing-staging.b-cdn.net/publishing/cover.webp',
             seo_title: null,
             seo_description: null,
             reading_time: null,
@@ -101,5 +101,15 @@ describe('Publishing post listing', () => {
             slug: 'guides',
             description: 'Approved tag',
         }])
+        expect(post.content_html).toContain(
+            'https://cdn.dongphugia.com.vn/publishing/asset.webp',
+        )
+        expect(post.thumbnail_url).toBe(
+            'https://cdn.dongphugia.com.vn/publishing/thumbnail.webp',
+        )
+        expect(post.cover_image_url).toBe(
+            'https://cdn.dongphugia.com.vn/publishing/cover.webp',
+        )
+        expect(post.content_html).not.toContain('dpg-publishing-staging.b-cdn.net')
     })
 })

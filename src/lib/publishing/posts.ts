@@ -17,6 +17,11 @@ import {
 import { PublishingApiError } from './errors'
 import { sanitizePublishingHtml } from './html'
 import {
+    normalizePublishingMediaHtml,
+    normalizePublishingMediaUrl,
+    publishingMediaUrlCandidates,
+} from './media-url'
+import {
     hashCanonicalJson,
     runIdempotentJsonMutation,
     type PublishingTransaction,
@@ -194,6 +199,9 @@ async function resolveManagedMedia(
     inline: ReadyMedia[]
 }> {
     const imageSources = extractImageSourceCandidates(input.content_html)
+    const imageSourceCandidates = [
+        ...new Set(imageSources.flatMap(publishingMediaUrlCandidates)),
+    ]
     const ids = [input.thumbnail_media_id, input.cover_media_id].filter(
         (value): value is string => Boolean(value),
     )
@@ -203,8 +211,8 @@ async function resolveManagedMedia(
             status: 'ready',
             OR: [
                 ...(ids.length ? [{ id: { in: ids } }] : []),
-                ...(imageSources.length
-                    ? [{ primary_url: { in: imageSources } }]
+                ...(imageSourceCandidates.length
+                    ? [{ primary_url: { in: imageSourceCandidates } }]
                     : []),
             ],
         },
@@ -219,11 +227,10 @@ async function resolveManagedMedia(
     const byId = new Map(readyMedia.map((item) => [item.id, item]))
     const byUrl = new Map(
         readyMedia
-            .filter(
-                (item): item is ReadyMedia & { primary_url: string } =>
-                    Boolean(item.primary_url),
-            )
-            .map((item) => [item.primary_url, item]),
+            .flatMap((item) =>
+                publishingMediaUrlCandidates(item.primary_url)
+                    .map((url) => [url, item] as const),
+            ),
     )
     const thumbnail = input.thumbnail_media_id
         ? byId.get(input.thumbnail_media_id) ?? null
@@ -272,15 +279,18 @@ function validateDraftHtml(
     config: PublishingRuntimeConfig,
     media: { inline: ReadyMedia[] },
 ): string {
-    const sanitized = sanitizePublishingHtml(input.content_html, {
-        externalLinkHostnames: config.externalLinkHostnames,
-        internalLinkHostnames: config.internalLinkHostnames,
-        managedImageUrls: new Set(
-            media.inline
-                .map(({ primary_url }) => primary_url)
-                .filter((url): url is string => Boolean(url)),
-        ),
-    })
+    const sanitized = sanitizePublishingHtml(
+        normalizePublishingMediaHtml(input.content_html),
+        {
+            externalLinkHostnames: config.externalLinkHostnames,
+            internalLinkHostnames: config.internalLinkHostnames,
+            managedImageUrls: new Set(
+                media.inline.flatMap(({ primary_url }) =>
+                    publishingMediaUrlCandidates(primary_url),
+                ),
+            ),
+        },
+    )
     if (Buffer.byteLength(sanitized, 'utf8') > MAX_SANITIZED_HTML_BYTES) {
         throw new PublishingApiError(
             422,
@@ -568,8 +578,12 @@ export async function mutatePublishingPost(input: {
                     excerpt: input.mutation.excerpt || null,
                     content: sanitizedHtml,
                     category_id: taxonomy.category.id,
-                    thumbnail_url: media.thumbnail?.primary_url ?? null,
-                    cover_image_url: media.cover?.primary_url ?? null,
+                    thumbnail_url: normalizePublishingMediaUrl(
+                        media.thumbnail?.primary_url,
+                    ) ?? null,
+                    cover_image_url: normalizePublishingMediaUrl(
+                        media.cover?.primary_url,
+                    ) ?? null,
                     seo_title: input.mutation.seo_title || null,
                     seo_description: input.mutation.seo_description || null,
                     reading_time: calculateReadingTime(sanitizedHtml),
@@ -704,7 +718,7 @@ export function mapPublishingPost(post: StoredPost) {
         title: post.title,
         slug: post.slug,
         excerpt: post.excerpt ?? '',
-        content_html: post.content,
+        content_html: normalizePublishingMediaHtml(post.content),
         category: {
             name: post.blog_categories.name,
             slug: post.blog_categories.slug,
@@ -715,8 +729,8 @@ export function mapPublishingPost(post: StoredPost) {
             slug: blog_tags.slug,
             description: blog_tags.description,
         })),
-        thumbnail_url: post.thumbnail_url,
-        cover_image_url: post.cover_image_url,
+        thumbnail_url: normalizePublishingMediaUrl(post.thumbnail_url),
+        cover_image_url: normalizePublishingMediaUrl(post.cover_image_url),
         seo_title: post.seo_title,
         seo_description: post.seo_description,
         reading_time: post.reading_time,
