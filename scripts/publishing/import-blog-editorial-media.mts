@@ -138,6 +138,7 @@ async function downloadSource(source: string): Promise<{ bytes: Buffer; mime: st
                 headers: {
                     host: current.host,
                     accept: 'image/avif,image/webp,image/png,image/jpeg;q=0.9,*/*;q=0.1',
+                    'user-agent': 'Mozilla/5.0 (compatible; DongphugiaMediaImporter/1.0)',
                 },
                 lookup: (_hostname, _options, callback) => callback(null, resolved.address, resolved.family),
                 rejectUnauthorized: true,
