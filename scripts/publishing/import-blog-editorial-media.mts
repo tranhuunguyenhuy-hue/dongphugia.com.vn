@@ -34,6 +34,7 @@ import {
 
 const MAX_SOURCE_BYTES = 5 * 1024 * 1024
 const MAX_REDIRECTS = 3
+const SOURCE_REQUEST_TIMEOUT_MS = 15_000
 
 type Flags = Map<string, string>
 type Purpose = 'thumbnail' | 'cover' | 'inline'
@@ -140,6 +141,7 @@ async function downloadSource(source: string): Promise<{ bytes: Buffer; mime: st
                 },
                 lookup: (_hostname, _options, callback) => callback(null, resolved.address, resolved.family),
                 rejectUnauthorized: true,
+                timeout: SOURCE_REQUEST_TIMEOUT_MS,
             }, (res) => {
                 const headers = new Headers()
                 for (const [key, value] of Object.entries(res.headers)) {
@@ -149,6 +151,9 @@ async function downloadSource(source: string): Promise<{ bytes: Buffer; mime: st
                 resolveResponse({ status: res.statusCode ?? 0, headers, body: res as unknown as AsyncIterable<Buffer> })
             })
             request.on('error', reject)
+            request.setTimeout(SOURCE_REQUEST_TIMEOUT_MS, () => {
+                request.destroy(new Error('Source request timed out'))
+            })
             request.end()
         })
         if (response.status >= 300 && response.status < 400) {
