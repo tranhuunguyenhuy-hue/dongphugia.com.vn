@@ -30,7 +30,8 @@ ENV NODE_ENV=production \
 RUN npx prisma generate && \
     npm run build && \
     npx esbuild scripts/publishing/import-blog-editorial-media.mts \
-      --bundle --platform=node --format=esm --packages=external \
+      --bundle --platform=node --format=esm --packages=bundle \
+      --external:@prisma/client --external:sharp \
       --outfile=/tmp/import-blog-editorial-media.mjs
 
 FROM node:24-alpine AS runner
