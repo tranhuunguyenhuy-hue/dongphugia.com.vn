@@ -29,3 +29,4 @@ scripts/*
 !scripts/publishing/
 scripts/publishing/*
 !scripts/publishing/run-scheduler.mjs
+!scripts/publishing/import-blog-editorial-media.mts
