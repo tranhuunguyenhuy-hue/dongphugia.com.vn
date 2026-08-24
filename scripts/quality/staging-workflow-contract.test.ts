@@ -11,12 +11,25 @@ const workflow = readFileSync(
   resolve(process.cwd(), ".github/workflows/staging-ghcr.yml"),
   "utf8",
 )
+const dockerfile = readFileSync(
+  resolve(process.cwd(), "Dockerfile"),
+  "utf8",
+)
 const existingStagingRepair = readFileSync(
   resolve(process.cwd(), "docs/deploy/staging-db-bootstrap/004_align_synthetic_product_contract.sql"),
   "utf8",
 )
 
 describe("staging Product structured-data smoke", () => {
+  it("passes the explicit Staging safety guardrail at build and runtime", () => {
+    expect(dockerfile).toContain("ARG STAGING_SAFETY_MODE")
+    expect(dockerfile).toContain("ARG STAGING_SITE_URL")
+    expect(workflow).toContain("STAGING_SAFETY_MODE=true")
+    expect(workflow).toContain("STAGING_SITE_URL=${{ vars.STAGING_SITE_URL || env.DEFAULT_STAGING_SITE_URL }}")
+    expect(workflow).toContain("-e STAGING_SAFETY_MODE=true")
+    expect(workflow).toContain("-e STAGING_SITE_URL=\"$STAGING_SITE_URL\"")
+  })
+
   it.each(["in_stock", "out_of_stock", "quote_only"])(
     "requires the %s PDP fixture to return exact HTTP 200",
     (fixture) => {

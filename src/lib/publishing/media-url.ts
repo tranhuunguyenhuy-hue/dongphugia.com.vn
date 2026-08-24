@@ -25,12 +25,20 @@ function currentPublishingCdnHostname() {
     return getCanonicalPublishingCdnHostname()
 }
 
-function isManagedMediaPath(value: string) {
+function parsePublicUrl(value: string) {
     try {
-        return new URL(value).pathname.toLowerCase().startsWith('/publishing/')
+        return new URL(value)
     } catch {
-        return false
+        try {
+            return new URL(value, 'https://dpg-invalid-public-url.invalid')
+        } catch {
+            return null
+        }
     }
+}
+
+function isManagedMediaPath(value: string) {
+    return parsePublicUrl(value)?.pathname.toLowerCase().startsWith('/publishing/') ?? false
 }
 
 export function isPublishingMediaUrlAllowed(value: string | null | undefined) {

@@ -65,6 +65,8 @@ describe('Publishing Managed Media URL compatibility', () => {
     it('removes unknown hosts only when they use the reserved Managed Media path', () => {
         expect(normalizePublicPublishingMediaUrl('https://images.example.com/publishing/asset.webp'))
             .toBeNull()
+        expect(normalizePublicPublishingMediaUrl('//images.example.com/publishing/asset.webp'))
+            .toBeNull()
         expect(normalizePublicPublishingMediaUrl('https://images.example.com/editorial/asset.webp'))
             .toBe('https://images.example.com/editorial/asset.webp')
         expect(normalizePublicPublishingMediaHtml(
