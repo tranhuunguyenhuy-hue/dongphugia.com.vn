@@ -298,7 +298,7 @@ Runbook vận hành: [`publishing-api-v1-runbook.md`](../deploy/publishing-api-v
 OpenAPI runtime: `/api/publishing/v1/openapi.json`.
 
 Handoff hiện tại dùng Production API/credential theo contract đã được PM phê
-duyệt. Shared-data Staging chỉ cung cấp read-only candidate evidence theo
+duyệt. Dedicated-data Staging chỉ cung cấp read-only candidate evidence theo
 [`staging-coolify.md`](../deploy/staging-coolify.md); các Publishing mutation
 không được chuyển sang Staging để acceptance. Mỗi integration, capability và
 Production operation vẫn phải nằm trong approval hiện hành. Tài liệu này không

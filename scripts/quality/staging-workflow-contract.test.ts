@@ -11,6 +11,10 @@ const productionCandidate = readFileSync(
     resolve(process.cwd(), '.github/workflows/production-candidate.yml'),
     'utf8',
 )
+const stagingCandidate = readFileSync(
+    resolve(process.cwd(), '.github/workflows/staging-candidate.yml'),
+    'utf8',
+)
 const stagingRunbook = readFileSync(
     resolve(process.cwd(), 'docs/deploy/staging-coolify.md'),
     'utf8',
@@ -25,7 +29,7 @@ const publishingRunbook = readFileSync(
     'utf8',
 )
 
-describe('shared Production-data staging contract', () => {
+describe('dedicated Staging candidate contract', () => {
     it('does not create a staging-only image or synthetic runtime', () => {
         expect(stagingContract).toContain(
             'name: Verify staging production-candidate contract',
@@ -36,7 +40,7 @@ describe('shared Production-data staging contract', () => {
         expect(stagingContract).not.toContain('STAGING_BUNNY_CDN_HOSTNAME')
     })
 
-    it('keeps the protected-main Production Candidate as the only staging artifact', () => {
+    it('keeps the protected-main Production Candidate workflow production-targeted', () => {
         expect(productionCandidate).toContain(
             'test "$GITHUB_REF" = "refs/heads/main"',
         )
@@ -49,10 +53,24 @@ describe('shared Production-data staging contract', () => {
         )
     })
 
-    it('documents fail-closed staging writes and noindex behavior for the same candidate', () => {
-        expect(stagingRunbook).toMatch(
-            /same exact immutable Production Candidate\s+digest/,
+    it('builds a separate Staging target from an explicit source revision', () => {
+        expect(stagingCandidate).toContain('name: Build Staging-safe candidate')
+        expect(stagingCandidate).toContain('source_ref:')
+        expect(stagingCandidate).toContain('ref: ${{ inputs.source_ref }}')
+        expect(stagingCandidate).toContain('DEPLOY_TARGET=staging')
+        expect(stagingCandidate).toContain(
+            'NEXT_PUBLIC_SITE_URL=${{ inputs.staging_site_url }}',
         )
+        expect(stagingCandidate).toContain('platforms: linux/arm64')
+        expect(stagingCandidate).toContain('packages: write')
+        expect(stagingCandidate).toContain('STAGING_PUBLISHING_BUNNY_CDN_HOSTNAME')
+    })
+
+    it('documents fail-closed staging writes and noindex behavior for the same candidate', () => {
+        expect(stagingRunbook).toContain('Staging-safe build')
+    expect(stagingRunbook).toContain('dedicated Coolify PostgreSQL')
+    expect(stagingRunbook).toContain('dpg-staging-postgres')
+    expect(stagingRunbook).toContain('The Staging digest is never')
         expect(stagingRunbook).toContain('WRITE_FREEZE_MODE')
         expect(stagingRunbook).toContain('PRODUCTION_INDEXING_ENABLED')
         expect(stagingRunbook).toContain('Gate B')
@@ -84,8 +102,8 @@ describe('shared Production-data staging contract', () => {
         expect(disposableBootstrapRunbook).toMatch(
             /must not be executed against Staging or\s+Production/,
         )
-        expect(publishingRunbook).toContain('Shared-data Staging supersedes the legacy synthetic topology')
+        expect(publishingRunbook).toContain('Dedicated-data Staging supersedes the legacy synthetic topology')
         expect(publishingRunbook).toContain('must remain write-frozen')
-        expect(publishingRunbook).not.toContain('either artifact on shared-data Staging unless')
+        expect(publishingRunbook).not.toContain('either artifact on Dedicated-data Staging unless')
     })
 })

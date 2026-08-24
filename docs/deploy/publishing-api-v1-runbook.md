@@ -9,10 +9,10 @@ any Bunny configuration change. Those are separate PM approval gates.
 
 ## Authority and procedure map
 
-- Shared-data Staging supersedes the legacy synthetic topology. ADR 0010 and
+- Dedicated-data Staging supersedes the legacy synthetic topology. ADR 0010 and
   [`staging-coolify.md`](staging-coolify.md) are authoritative: Staging uses
-  Production data/media for read-only candidate validation.
-  It must remain write-frozen for Publishing.
+  its dedicated PostgreSQL service and reviewed CDN/media boundary for
+  read-only candidate validation. It must remain write-frozen for Publishing.
 - The recurring procedures in this runbook operate approved Production
   integrations only.
 - Disposable synthetic checks run only in isolated CI/local test databases.
@@ -23,8 +23,8 @@ any Bunny configuration change. Those are separate PM approval gates.
 
 - Every Publishing Agent has its own Machine Identity, Integration Sponsor,
   capabilities, and Production-bound credential. Never use an admin session,
-  shared key, or one credential for multiple integrations. Shared-data Staging
-  receives no Publishing credential.
+  shared key, or one credential for multiple integrations. Dedicated-data
+  Staging receives no Publishing write credential.
 - The migration initializes the Global Publishing Gate as disabled; do not
   treat that default as evidence of its current state. Opening the Gate requires
   applicable read-only candidate evidence and an explicit Production decision.
@@ -45,15 +45,15 @@ any Bunny configuration change. Those are separate PM approval gates.
 
 The inventory below is for the approved Production Publishing runtime and must
 be provided only through its approved secret/configuration mechanism. A
-Shared-data Staging runtime may receive the reviewed non-secret Production
-host/CDN values needed to render existing media, but it does not receive
+Dedicated-data Staging runtime may receive the reviewed non-secret CDN values
+needed to render approved media, but it does not receive
 `PUBLISHING_BUNNY_STORAGE_API_KEY`, `PUBLISHING_SCHEDULER_TOKEN`, a scheduler
 task, or any other Publishing write credential. Its separate runtime role and
 write freeze remain mandatory.
 
 | Variable | Purpose | Secret |
 | --- | --- | --- |
-| `PUBLISHING_ENVIRONMENT` | Publishing data/media boundary; shared-data Staging uses `production` while remaining frozen by its runtime role | No |
+| `PUBLISHING_ENVIRONMENT` | Publishing data/media boundary; Dedicated-data Staging uses `staging` while remaining frozen by its runtime role | No |
 | `PUBLISHING_EXTERNAL_LINK_HOSTNAMES` | Comma-separated, reviewed exact HTTPS citation hosts; no wildcard | No |
 | `PUBLISHING_JSON_RATE_LIMIT_MAX` | Per-Machine-Identity JSON limit | No |
 | `PUBLISHING_MEDIA_RATE_LIMIT_MAX` | Per-Machine-Identity media limit | No |
@@ -75,7 +75,7 @@ URL.
 ## Recurring Production control-plane operations
 
 Run these through the separately approved Production execution path. They are
-prohibited in Shared-data Staging. The command prints structured metadata,
+prohibited in Dedicated-data Staging. The command prints structured metadata,
 except the one-time `credential` returned by issue or rotate. Capture no
 plaintext credential in logs.
 
@@ -120,7 +120,7 @@ Rotate the Production credential before expiry. The command requires exactly
 one active source credential for that identity/environment and caps overlap at
 seven days; every credential still has a maximum 90-day lifetime from issue.
 The implementation may retain the historical two-environment limit, but that
-does not authorize issuing a Shared-data Staging credential.
+does not authorize issuing a Dedicated-data Staging credential.
 
 ```bash
 npm run publishing:control -- credential-rotate \
@@ -206,7 +206,7 @@ Do not create synthetic content as a recurring health check.
 Before a separately approved Production launch acceptance, run the PostgreSQL
 race harness only against a fresh **disposable** PostgreSQL database bootstrapped
 with the reviewed schema. It deliberately creates immutable audit evidence and
-is not for Shared-data Staging. Supply a synthetic active admin ID through the
+is not for Dedicated-data Staging. Supply a synthetic active admin ID through the
 approved local environment mechanism; do not put a connection string or
 credential in shell history, CI logs, or this repository.
 
@@ -232,13 +232,13 @@ the owner path. This is mandatory because legacy Blog tables may have RLS; ACL
 provisioning alone is not proof that the dedicated non-BYPASSRLS role can use
 the reviewed policies. Record only PASS/fail and sanitized timing evidence.
 
-## Shared-data Staging and rollout gates
+## Dedicated-data Staging and rollout gates
 
 The repository-wide Staging architecture is defined in
-[`staging-coolify.md`](staging-coolify.md). Shared-data Staging must remain
+[`staging-coolify.md`](staging-coolify.md). Dedicated-data Staging must remain
 write-frozen with the scheduler disabled and the Global Publishing Gate closed.
-Do not apply a Publishing migration, configure an isolated staging Publishing
-CDN, issue a staging credential, or run synthetic Publishing acceptance there.
+Do not apply a Publishing migration, issue a staging credential, or run
+synthetic Publishing acceptance there.
 
 Use the reviewed SQL and synthetic harness only for disposable CI infrastructure.
 Production execution requires a separate explicit PM window, backup/rollback
@@ -251,13 +251,13 @@ command.
 The following sections are retained because their checksum-pinned artifacts
 remain in the repository and are covered by focused contract tests. They are
 not part of recurring operations, are not a current rollout plan, and must
-never be used on Shared-data Staging. Before any use, a new scoped plan must
+never be used on Dedicated-data Staging. Before any use, a new scoped plan must
 revalidate the exact Production state, immutable source, rollback evidence and
 explicit PM authority.
 
 ### One-time Production launch acceptance
 
-This inactive-by-default procedure never runs on Shared-data Staging. Under a
+This inactive-by-default procedure never runs on Dedicated-data Staging. Under a
 separately approved Production launch window, verify that a due ready post is
 published once; revoked capability, closed Gate, stale version and inactive
 taxonomy each produce the expected Schedule Block; and recovery requires a new
@@ -347,9 +347,9 @@ a Publishing Identity. It never enables or disables RLS, grants ACLs, changes
 ownership, or permits deletion of a Blog Post. Keep the matching
 `publishing-api-v1-production-legacy-rls-rollback.sql` beside the fresh database
 backup; it removes exactly those nine policies and no data or grants. Do not run
-either artifact on shared-data Staging. Any future shared-data exception is a
-new Production-data infrastructure mutation and requires its own Gate B plan
-and PM authorization.
+either artifact on Dedicated-data Staging. Any future cross-environment data
+boundary exception is a new infrastructure mutation and requires its own Gate B
+plan and PM authorization.
 
 Configure `PUBLISHING_DATABASE_URL` as an encrypted Coolify runtime secret and
 leave `DATABASE_URL` unchanged. A missing Publishing URL fails Publishing

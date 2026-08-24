@@ -8,7 +8,7 @@ status: accepted
 
 This ADR remains the historical decision for the Publishing credential model.
 ADR 0010 supersedes only its original Shared-data Staging implication: the
-current Shared-data Staging runtime is write-frozen and receives no Publishing
+current Dedicated-data Staging runtime is write-frozen and receives no Publishing
 credential. Approved integrations use an environment-bound Production
 credential against the Production API contract. The Production rotation and
 revocation decision below remains active.
@@ -25,7 +25,7 @@ changing already published content or independently authorized schedules.
 
 ## Current authority
 
-- ADR 0010 defines the Shared-data Staging architecture.
+- ADR 0010 defines the Dedicated-data Staging architecture.
 - `docs/deploy/staging-coolify.md` defines its write-frozen operating rules.
 - `docs/deploy/publishing-api-v1-runbook.md` defines current Publishing
   operations.

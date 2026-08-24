@@ -219,5 +219,6 @@ control when its tools participate:
 - Optimize for delivery speed, low infrastructure cost, efficient Codex quota,
   and sufficient Production safety.
 
-Repository-wide shared Production-data/media Staging alignment remains
-`HIGH_RISK`; see `docs/deploy/staging-coolify.md` and ADR 0010.
+Repository-wide dedicated-data Staging alignment remains bounded release work;
+Production data/media or permission changes remain `HIGH_RISK`. See
+`docs/deploy/staging-coolify.md` and ADR 0010.

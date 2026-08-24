@@ -1,0 +1,125 @@
+name: Build Staging-safe candidate
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_ref:
+        description: Application source commit to build
+        required: true
+        default: main
+        type: string
+      staging_site_url:
+        description: HTTPS canonical URL baked into the Staging image
+        required: true
+        default: https://dongphugia-staging.47-131-92-97.sslip.io
+        type: string
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: staging-candidate-${{ inputs.source_ref }}
+  cancel-in-progress: false
+
+env:
+  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/dongphugia-web
+  BUNNY_CDN_HOSTNAME: cdn.dongphugia.com.vn
+
+jobs:
+  build:
+    name: Build and scan immutable linux/arm64 Staging candidate
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 40
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_ref }}
+          fetch-depth: 0
+
+      - name: Verify source and Staging URL contract
+        id: source
+        shell: bash
+        env:
+          STAGING_SITE_URL: ${{ inputs.staging_site_url }}
+        run: |
+          set -euo pipefail
+          source_revision="$(git rev-parse HEAD)"
+          [[ "$STAGING_SITE_URL" =~ ^https://[a-z0-9.-]+(/[a-z0-9._~:/?#\[\]@!$&'\(\)\*+,;=%-]*)?$ ]]
+          [[ "$STAGING_SITE_URL" != "https://www.dongphugia.vn" ]]
+          [[ "$STAGING_SITE_URL" != "https://dongphugia.vn" ]]
+          printf 'source_revision=%s\n' "$source_revision" >> "$GITHUB_OUTPUT"
+
+      - name: Verify native ARM64 build environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "$(uname -m)" in aarch64|arm64) ;; *) exit 1 ;; esac
+          case "$(docker info --format '{{.Architecture}}')" in aarch64|arm64) ;; *) exit 1 ;; esac
+          test "$(node -p 'process.arch')" = "arm64"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Require reviewed Publishing CDN hostname
+        shell: bash
+        env:
+          PUBLISHING_BUNNY_CDN_HOSTNAME: ${{ vars.STAGING_PUBLISHING_BUNNY_CDN_HOSTNAME || vars.PRODUCTION_PUBLISHING_BUNNY_CDN_HOSTNAME }}
+        run: |
+          set -euo pipefail
+          test -n "$PUBLISHING_BUNNY_CDN_HOSTNAME"
+          [[ "$PUBLISHING_BUNNY_CDN_HOSTNAME" =~ ^[a-z0-9.-]+$ ]]
+
+      - name: Build and push exact Staging candidate
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/arm64
+          push: true
+          provenance: true
+          sbom: true
+          tags: ${{ env.IMAGE_NAME }}:staging-candidate-${{ steps.source.outputs.source_revision }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ steps.source.outputs.source_revision }}
+            org.opencontainers.image.version=staging-candidate-${{ steps.source.outputs.source_revision }}
+          build-args: |
+            DEPLOY_TARGET=staging
+            NEXT_PUBLIC_SITE_URL=${{ inputs.staging_site_url }}
+            BUNNY_CDN_HOSTNAME=${{ env.BUNNY_CDN_HOSTNAME }}
+            PUBLISHING_BUNNY_CDN_HOSTNAME=${{ vars.STAGING_PUBLISHING_BUNNY_CDN_HOSTNAME || vars.PRODUCTION_PUBLISHING_BUNNY_CDN_HOSTNAME }}
+
+      - name: Verify pushed digest, architecture and source label
+        shell: bash
+        env:
+          IMAGE_REF: ${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
+          EXPECTED_DIGEST: ${{ steps.build.outputs.digest }}
+          EXPECTED_SOURCE: ${{ steps.source.outputs.source_revision }}
+        run: |
+          set -euo pipefail
+          docker pull "$IMAGE_REF" >/dev/null
+          actual_digest="$(docker image inspect "$IMAGE_REF" --format '{{index .RepoDigests 0}}' | sed 's/^.*@//')"
+          image_arch="$(docker image inspect "$IMAGE_REF" --format '{{.Architecture}}')"
+          source_revision="$(docker image inspect "$IMAGE_REF" --format '{{index .Config.Labels "org.opencontainers.image.revision"}}')"
+          test "$actual_digest" = "$EXPECTED_DIGEST"
+          test "$image_arch" = "arm64"
+          test "$source_revision" = "$EXPECTED_SOURCE"
+          printf 'Staging candidate digest verified: %s\n' "$actual_digest"
+
+      - name: Scan pushed digest
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: ${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
+          format: table
+          severity: HIGH,CRITICAL
+          ignore-unfixed: false
+          exit-code: '1'

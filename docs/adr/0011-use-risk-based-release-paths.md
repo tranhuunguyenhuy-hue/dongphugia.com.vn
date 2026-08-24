@@ -37,9 +37,9 @@ and same-digest promotion. Verify a runtime rollback target when one is
 recoverable; otherwise record the residual risk in the Production approval.
 Fail closed only when a missing invariant could materially harm Production.
 
-Shared-data Staging remains write-frozen. A candidate check that cannot legally
+Dedicated-data Staging remains write-frozen. A candidate check that cannot legally
 run there may be deferred only when related non-destructive evidence passes on
-the same digest and the check becomes immediate mandatory Production acceptance
+the same Staging digest and the check becomes immediate mandatory Production acceptance
 using existing Production data. This does not permit synthetic fixtures or
 skipping feasible Staging validation.
 

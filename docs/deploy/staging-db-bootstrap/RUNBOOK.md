@@ -37,5 +37,5 @@ Production.
 The CI workflows mount these files into an isolated PostgreSQL container and
 verify expected aggregate fixture counts. Do not copy the prior direct-`psql`
 instructions from repository history into an operational runbook. Any future
-test-fixture change remains source work; any shared-data Staging mutation is
+test-fixture change remains source work; any Dedicated-data Staging mutation is
 subject to Issue #68 Gate B.
