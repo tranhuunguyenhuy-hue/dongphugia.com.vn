@@ -83,6 +83,7 @@ const getNavConfig = (role: SessionUser['role'], pendingQuotes: number): NavGrou
                     children: [
                         { label: "Tất cả sản phẩm", href: "/admin/products", permission: "products:read" },
                         { label: "Danh mục", href: "/admin/categories", permission: "categories:read" },
+                        { label: "CMS/PIM Foundation", href: "/admin/pim", permission: "brands:read" },
                     ],
                 },
                 {

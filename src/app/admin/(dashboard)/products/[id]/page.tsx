@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ChevronLeft } from 'lucide-react'
 import { getAdminProductById } from '@/lib/public-api-products'
-import { getCategories, getSubcategories, getBrands, getOrigins, getColors, getMaterials, getFilterDefinitions, getProductTypes } from '@/lib/cache'
+import { getCategories, getSubcategories, getBrands, getOrigins, getColors, getMaterials, getFilterDefinitions, getProductTypes, getCatalogTaxons, getNormalizedProductTypes, getSpecDefinitions } from '@/lib/cache'
 import { ProductForm } from '../product-form'
 
 export const dynamic = 'force-dynamic'
@@ -17,7 +17,7 @@ export default async function EditProductPage({ params }: PageProps) {
 
     if (isNaN(productId)) notFound()
 
-    const [product, categories, subcategories, brands, origins, colors, materials, filterDefinitions, productTypes] = await Promise.all([
+    const [product, categories, subcategories, brands, origins, colors, materials, filterDefinitions, productTypes, catalogTaxons, normalizedProductTypes, specDefinitions] = await Promise.all([
         getAdminProductById(productId),
         getCategories(),
         getSubcategories(),
@@ -27,6 +27,9 @@ export default async function EditProductPage({ params }: PageProps) {
         getMaterials(),
         getFilterDefinitions(),
         getProductTypes(),
+        getCatalogTaxons(),
+        getNormalizedProductTypes(),
+        getSpecDefinitions(),
     ])
 
     if (!product) notFound()
@@ -45,6 +48,9 @@ export default async function EditProductPage({ params }: PageProps) {
                 materials={materials}
                 filterDefinitions={filterDefinitions}
                 productTypes={productTypes}
+                catalogTaxons={catalogTaxons}
+                normalizedProductTypes={normalizedProductTypes}
+                specDefinitions={specDefinitions}
             />
         </div>
     )
