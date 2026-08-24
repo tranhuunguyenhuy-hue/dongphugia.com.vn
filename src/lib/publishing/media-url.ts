@@ -2,7 +2,10 @@ const LEGACY_PUBLISHING_CDN_HOSTNAMES = new Set([
     'dpg-publishing-production.b-cdn.net',
     'dpg-publishing-staging.b-cdn.net',
 ])
-const DEFAULT_PUBLISHING_CDN_HOSTNAME = 'cdn.dongphugia.com.vn'
+// Dedicated Bunny custom hostname for Publishing Managed Media. Keeping this
+// separate from the product CDN prevents a valid Publishing object path from
+// being routed to the wrong storage zone when the runtime variable is absent.
+const DEFAULT_PUBLISHING_CDN_HOSTNAME = 'media.dongphugia.vn'
 
 export function getCanonicalPublishingCdnHostname(value = process.env.PUBLISHING_BUNNY_CDN_HOSTNAME) {
     const configured = value?.trim().toLowerCase()

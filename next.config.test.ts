@@ -63,7 +63,7 @@ describe('production Publishing CDN build config', () => {
 
     expect(config.images?.remotePatterns).toContainEqual({
       protocol: 'https',
-      hostname: 'cdn.dongphugia.com.vn',
+      hostname: 'media.dongphugia.vn',
       pathname: '/publishing/**',
     })
 
@@ -77,7 +77,7 @@ describe('production Publishing CDN build config', () => {
     const imgSrc = csp?.split('; ').find((directive) => directive.startsWith('img-src '))
 
     expect(imgSrc?.split(/\s+/)).toContain(
-      'https://cdn.dongphugia.com.vn',
+      'https://media.dongphugia.vn',
     )
     expect(imgSrc?.split(/\s+/)).not.toContain(
       'https://dpg-publishing-production.b-cdn.net',

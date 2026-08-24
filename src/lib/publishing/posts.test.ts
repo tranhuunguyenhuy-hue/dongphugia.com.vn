@@ -102,13 +102,13 @@ describe('Publishing post listing', () => {
             description: 'Approved tag',
         }])
         expect(post.content_html).toContain(
-            'https://cdn.dongphugia.com.vn/publishing/asset.webp',
+            'https://media.dongphugia.vn/publishing/asset.webp',
         )
         expect(post.thumbnail_url).toBe(
-            'https://cdn.dongphugia.com.vn/publishing/thumbnail.webp',
+            'https://media.dongphugia.vn/publishing/thumbnail.webp',
         )
         expect(post.cover_image_url).toBe(
-            'https://cdn.dongphugia.com.vn/publishing/cover.webp',
+            'https://media.dongphugia.vn/publishing/cover.webp',
         )
         expect(post.content_html).not.toContain('dpg-publishing-staging.b-cdn.net')
     })

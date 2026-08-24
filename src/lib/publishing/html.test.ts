@@ -71,7 +71,7 @@ describe('sanitizePublishingHtml', () => {
 
     it('keeps semantic editorial markup and normalizes managed images', () => {
         const mediaUrl =
-            'https://cdn.dongphugia.com.vn/publishing/agent/asset/inline.editorial.w960.webp'
+            'https://media.dongphugia.vn/publishing/agent/asset/inline.editorial.w960.webp'
 
         expect(
             sanitizePublishingHtml(
