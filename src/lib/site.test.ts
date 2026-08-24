@@ -50,8 +50,22 @@ describe('canonical site URL', () => {
         vi.stubEnv('DEPLOY_TARGET', 'production')
         vi.stubEnv('NEXT_PUBLIC_SITE_URL', DEFAULT_CANONICAL_SITE_URL)
         vi.stubEnv('STAGING_SAFETY_MODE', 'true')
+        vi.stubEnv('STAGING_SITE_URL', 'https://dongphugia-staging.example.test')
 
-        expect(getSiteRuntimeConfig().allowIndexing).toBe(false)
+        expect(getSiteRuntimeConfig()).toEqual({
+            target: 'production',
+            siteUrl: 'https://dongphugia-staging.example.test',
+            allowIndexing: false,
+        })
+    })
+
+    it('requires an explicit non-production site URL in staging safety mode', () => {
+        vi.stubEnv('DEPLOY_TARGET', 'production')
+        vi.stubEnv('NEXT_PUBLIC_SITE_URL', DEFAULT_CANONICAL_SITE_URL)
+        vi.stubEnv('STAGING_SAFETY_MODE', 'true')
+        vi.stubEnv('STAGING_SITE_URL', '')
+
+        expect(() => getSiteRuntimeConfig()).toThrow('STAGING_SAFETY_MODE requires STAGING_SITE_URL')
     })
 
     it.each(['http://dongphugia-staging.example.test', 'https://www.dongphugia.vn', 'https://dongphugia.com.vn'])

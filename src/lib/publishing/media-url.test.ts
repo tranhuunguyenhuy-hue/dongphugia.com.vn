@@ -8,6 +8,8 @@ import {
     normalizePublishingMediaHtml,
     normalizePublishingMediaUrl,
     normalizePublishingMediaVariants,
+    normalizePublicPublishingMediaHtml,
+    normalizePublicPublishingMediaUrl,
     publishingMediaUrlCandidates,
     publishingMediaUrlsMatch,
 } from './media-url'
@@ -58,6 +60,16 @@ describe('Publishing Managed Media URL compatibility', () => {
             'https://images.example.com/publishing/asset.webp',
             'https://images.example.com/publishing/asset.webp',
         )).toBe(false)
+    })
+
+    it('removes unknown hosts only when they use the reserved Managed Media path', () => {
+        expect(normalizePublicPublishingMediaUrl('https://images.example.com/publishing/asset.webp'))
+            .toBeNull()
+        expect(normalizePublicPublishingMediaUrl('https://images.example.com/editorial/asset.webp'))
+            .toBe('https://images.example.com/editorial/asset.webp')
+        expect(normalizePublicPublishingMediaHtml(
+            '<img src="https://images.example.com/publishing/asset.webp"><img src="https://images.example.com/editorial/asset.webp">',
+        )).toBe('<img src="https://images.example.com/editorial/asset.webp">')
     })
 
     it('rewrites legacy URLs in sanitized article image markup', () => {

@@ -14,6 +14,7 @@ export type SiteRuntimeConfig = {
  * Production default when the flag is absent.
  */
 export const STAGING_SAFETY_MODE_ENV = 'STAGING_SAFETY_MODE'
+export const STAGING_SITE_URL_ENV = 'STAGING_SITE_URL'
 
 export function isStagingSafetyModeEnabled() {
   return process.env[STAGING_SAFETY_MODE_ENV] === 'true'
@@ -59,13 +60,21 @@ function validateSiteUrl(target: DeployTarget, rawUrl: string) {
 
 export function getSiteRuntimeConfig(): SiteRuntimeConfig {
   const target = getDeployTarget()
-  const fallback = target === 'production' ? DEFAULT_CANONICAL_SITE_URL : 'http://localhost:3000'
-  const siteUrl = validateSiteUrl(target, process.env.NEXT_PUBLIC_SITE_URL?.trim() || fallback)
+  const safetyMode = isStagingSafetyModeEnabled()
+  const siteUrlTarget = safetyMode ? 'staging' : target
+  const configuredSiteUrl = safetyMode
+    ? process.env[STAGING_SITE_URL_ENV]?.trim()
+    : process.env.NEXT_PUBLIC_SITE_URL?.trim()
+  if (safetyMode && !configuredSiteUrl) {
+    throw new Error('STAGING_SAFETY_MODE requires STAGING_SITE_URL')
+  }
+  const fallback = siteUrlTarget === 'production' ? DEFAULT_CANONICAL_SITE_URL : 'http://localhost:3000'
+  const siteUrl = validateSiteUrl(siteUrlTarget, configuredSiteUrl || fallback)
 
   return {
     target,
     siteUrl,
-    allowIndexing: target === 'production' && !isStagingSafetyModeEnabled(),
+    allowIndexing: target === 'production' && !safetyMode,
   }
 }
 

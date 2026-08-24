@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import prisma from '@/lib/prisma'
 import { DeferredResponsiveMedia } from '@/components/media/deferred-responsive-media'
-import { normalizePublishingMediaUrl } from '@/lib/publishing/media-url'
+import { normalizePublicPublishingMediaUrl } from '@/lib/publishing/media-url'
 
 export const revalidate = 300
 
@@ -54,7 +54,7 @@ export async function BlogSection() {
                             >
                                 <div className="relative aspect-[4/3] overflow-hidden rounded-sm bg-neutral-200">
                                     <DeferredResponsiveMedia
-                                        src={normalizePublishingMediaUrl(post.thumbnail_url) || '/images/banner-1.editorial.w960.webp'}
+                                        src={normalizePublicPublishingMediaUrl(post.thumbnail_url) || '/images/banner-1.editorial.w960.webp'}
                                         alt={post.title}
                                         fill
                                         profile="editorial"

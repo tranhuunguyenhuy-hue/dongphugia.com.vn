@@ -25,6 +25,14 @@ function currentPublishingCdnHostname() {
     return getCanonicalPublishingCdnHostname()
 }
 
+function isManagedMediaPath(value: string) {
+    try {
+        return new URL(value).pathname.toLowerCase().startsWith('/publishing/')
+    } catch {
+        return false
+    }
+}
+
 export function isPublishingMediaUrlAllowed(value: string | null | undefined) {
     if (!value) return false
 
@@ -74,6 +82,17 @@ export function normalizePublishingMediaUrl(value: string | null | undefined) {
 }
 
 /**
+ * Normalize public Managed Media references while leaving deliberately
+ * external editorial images untouched. An unknown host using the reserved
+ * Managed Media path is removed from public output instead of being rendered.
+ */
+export function normalizePublicPublishingMediaUrl(value: string | null | undefined) {
+    if (!value) return null
+    if (isPublishingMediaUrlAllowed(value)) return normalizePublishingMediaUrl(value)
+    return isManagedMediaPath(value) ? null : value
+}
+
+/**
  * Return equivalent forms so canonical requests can resolve legacy persisted
  * media without requiring a database migration.
  */
@@ -117,6 +136,23 @@ export function normalizePublishingMediaHtml(html: string) {
             return `${prefix}${quote}${normalized ?? source}${quote}`
         },
     )
+}
+
+export function normalizePublicPublishingMediaHtml(html: string) {
+    return html.replace(/<img\b[^>]*>/gi, (tag) => {
+        const match = tag.match(
+            /\bsrc\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i,
+        )
+        if (!match) return tag
+
+        const source = match[1] ?? match[2] ?? match[3]
+        const normalized = normalizePublicPublishingMediaUrl(source)
+        if (normalized === null) return ''
+
+        const sourceOffset = match[0].lastIndexOf(source)
+        const sourceStart = (match.index ?? 0) + sourceOffset
+        return `${tag.slice(0, sourceStart)}${normalized}${tag.slice(sourceStart + source.length)}`
+    })
 }
 
 /**
