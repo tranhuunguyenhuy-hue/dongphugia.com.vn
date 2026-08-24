@@ -1,6 +1,6 @@
 # Blog editorial media importer
 
-The production image exposes `node scripts/publishing/import-blog-editorial-media.mjs`
+The production image exposes `node scripts/publishing/import-blog-editorial-media.cjs`
 as a private operator command for the approved Blog editorial media migration.
 It is dry-run by default, never deletes source objects, and writes only
 minimized JSONL inventory rows (post identifier, role, hostname and reference
@@ -29,11 +29,11 @@ review the sanitized aggregate and preserve the manifest. Apply one bounded
 batch at a time using the same path and an explicit admin/credential identity:
 
 ```text
-node scripts/publishing/import-blog-editorial-media.mjs \
+node scripts/publishing/import-blog-editorial-media.cjs \
   --manifest-path /var/backups/dongphugia/blog-media-<run>.jsonl \
   --limit 2
 
-node scripts/publishing/import-blog-editorial-media.mjs \
+node scripts/publishing/import-blog-editorial-media.cjs \
   --apply yes --confirm yes --environment production \
   --manifest-path /var/backups/dongphugia/blog-media-<run>.jsonl \
   --credential-id <approved-credential-uuid> \

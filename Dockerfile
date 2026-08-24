@@ -30,9 +30,10 @@ ENV NODE_ENV=production \
 RUN npx prisma generate && \
     npm run build && \
     npx esbuild scripts/publishing/import-blog-editorial-media.mts \
-      --bundle --platform=node --format=esm --packages=bundle \
+      --bundle --platform=node --packages=bundle \
       --external:@prisma/client --external:sharp \
-      --outfile=/tmp/import-blog-editorial-media.mjs
+      --format=cjs \
+      --outfile=/tmp/import-blog-editorial-media.cjs
 
 FROM node:24-alpine AS runner
 WORKDIR /app
@@ -62,7 +63,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@img/sharp-libvips-linuxmusl-arm64/lib ./node_modules/@img/sharp-libvips-linuxmusl-arm64/lib
 COPY --from=builder --chown=nextjs:nodejs /app/scripts/publishing/run-scheduler.mjs ./scripts/publishing/run-scheduler.mjs
-COPY --from=builder --chown=nextjs:nodejs /tmp/import-blog-editorial-media.mjs ./scripts/publishing/import-blog-editorial-media.mjs
+COPY --from=builder --chown=nextjs:nodejs /tmp/import-blog-editorial-media.cjs ./scripts/publishing/import-blog-editorial-media.cjs
 
 USER nextjs
 
