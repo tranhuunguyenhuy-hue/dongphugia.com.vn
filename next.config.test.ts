@@ -33,7 +33,18 @@ afterEach(() => {
 })
 
 describe('production Publishing CDN build config', () => {
-  it('allows the Publishing CDN host in Next image loading and CSP img-src', async () => {
+  it('fails a production build when the Publishing CDN hostname is missing', async () => {
+    await expect(
+      loadNextConfigWithEnv({
+        DEPLOY_TARGET: 'production',
+        NEXT_PUBLIC_SITE_URL: 'https://www.dongphugia.vn',
+      }),
+    ).rejects.toThrow(
+      'PUBLISHING_BUNNY_CDN_HOSTNAME is required for production builds',
+    )
+  })
+
+  it('canonicalizes a legacy Publishing CDN host in Next image loading and CSP img-src', async () => {
     const hostname = 'dpg-publishing-production.b-cdn.net'
     const config = await loadNextConfigWithEnv({
       DEPLOY_TARGET: 'production',
@@ -43,7 +54,7 @@ describe('production Publishing CDN build config', () => {
 
     expect(config.images?.remotePatterns).toContainEqual({
       protocol: 'https',
-      hostname,
+      hostname: 'cdn.dongphugia.com.vn',
       pathname: '/publishing/**',
     })
 
@@ -54,6 +65,11 @@ describe('production Publishing CDN build config', () => {
       ?.value
     const imgSrc = csp?.split('; ').find((directive) => directive.startsWith('img-src '))
 
-    expect(imgSrc?.split(/\s+/)).toContain(`https://${hostname}`)
+    expect(imgSrc?.split(/\s+/)).toContain(
+      'https://cdn.dongphugia.com.vn',
+    )
+    expect(imgSrc?.split(/\s+/)).not.toContain(
+      'https://dpg-publishing-production.b-cdn.net',
+    )
   })
 })

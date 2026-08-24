@@ -3,14 +3,34 @@ import { describe, expect, it } from 'vitest'
 import {
     normalizePublishingMediaHtml,
     normalizePublishingMediaUrl,
+    publishingMediaUrlCandidates,
+    publishingMediaUrlsMatch,
 } from './media-url'
 
 describe('Publishing Managed Media URL compatibility', () => {
-    it('maps the retired Production Bunny hostname to the current CDN', () => {
+    it('uses the configured non-legacy hostname as the canonical destination', () => {
+        const original = process.env.PUBLISHING_BUNNY_CDN_HOSTNAME
+        process.env.PUBLISHING_BUNNY_CDN_HOSTNAME = 'media.example.com'
+        try {
+            expect(normalizePublishingMediaUrl(
+                'https://dpg-publishing-production.b-cdn.net/publishing/asset.webp',
+            )).toBe('https://media.example.com/publishing/asset.webp')
+        } finally {
+            if (original === undefined) delete process.env.PUBLISHING_BUNNY_CDN_HOSTNAME
+            else process.env.PUBLISHING_BUNNY_CDN_HOSTNAME = original
+        }
+    })
+
+    it('maps retired Production and Staging Bunny hostnames to the current CDN', () => {
         expect(normalizePublishingMediaUrl(
             'https://dpg-publishing-production.b-cdn.net/publishing/identity/asset/cover.w1600.webp?width=1#hero',
         )).toBe(
             'https://cdn.dongphugia.com.vn/publishing/identity/asset/cover.w1600.webp?width=1#hero',
+        )
+        expect(normalizePublishingMediaUrl(
+            'https://dpg-publishing-staging.b-cdn.net/publishing/identity/asset/cover.w1600.webp',
+        )).toBe(
+            'https://cdn.dongphugia.com.vn/publishing/identity/asset/cover.w1600.webp',
         )
     })
 
@@ -26,5 +46,36 @@ describe('Publishing Managed Media URL compatibility', () => {
         expect(normalizePublishingMediaHtml(
             '<p>Text</p><img src="https://dpg-publishing-production.b-cdn.net/publishing/asset.webp" alt="Asset">',
         )).toContain('src="https://cdn.dongphugia.com.vn/publishing/asset.webp"')
+    })
+
+    it('returns raw and canonical candidates for legacy persisted media', () => {
+        expect(publishingMediaUrlCandidates(
+            'https://dpg-publishing-staging.b-cdn.net/publishing/asset.webp',
+        )).toEqual([
+            'https://dpg-publishing-staging.b-cdn.net/publishing/asset.webp',
+            'https://cdn.dongphugia.com.vn/publishing/asset.webp',
+            'https://dpg-publishing-production.b-cdn.net/publishing/asset.webp',
+        ])
+    })
+
+    it('treats a legacy and canonical URL as the same managed asset', () => {
+        expect(publishingMediaUrlsMatch(
+            'https://dpg-publishing-staging.b-cdn.net/publishing/asset.webp',
+            'https://cdn.dongphugia.com.vn/publishing/asset.webp',
+        )).toBe(true)
+        expect(publishingMediaUrlsMatch(
+            'https://cdn.dongphugia.com.vn/publishing/asset.webp',
+            'https://cdn.dongphugia.com.vn/publishing/other.webp',
+        )).toBe(false)
+    })
+
+    it('includes legacy aliases when a client submits a canonical URL', () => {
+        expect(publishingMediaUrlCandidates(
+            'https://cdn.dongphugia.com.vn/publishing/asset.webp',
+        )).toEqual([
+            'https://cdn.dongphugia.com.vn/publishing/asset.webp',
+            'https://dpg-publishing-production.b-cdn.net/publishing/asset.webp',
+            'https://dpg-publishing-staging.b-cdn.net/publishing/asset.webp',
+        ])
     })
 })
