@@ -128,7 +128,7 @@ async function downloadSource(source: string): Promise<{ bytes: Buffer; mime: st
     let current = new URL(source)
     for (let redirect = 0; redirect <= MAX_REDIRECTS; redirect += 1) {
         const resolved = await resolveSafeRemote(current)
-        const response = await new Promise<{ status: number; headers: Headers; body: AsyncIterable<Buffer> }>((resolveResponse, reject) => {
+        const response = await new Promise<{ status: number; ok: boolean; headers: Headers; body: AsyncIterable<Buffer> }>((resolveResponse, reject) => {
             const request = https.request({
                 hostname: resolved.address,
                 servername: current.hostname,
@@ -148,7 +148,8 @@ async function downloadSource(source: string): Promise<{ bytes: Buffer; mime: st
                     if (typeof value === 'string') headers.set(key, value)
                     else if (Array.isArray(value)) headers.set(key, value.join(', '))
                 }
-                resolveResponse({ status: res.statusCode ?? 0, headers, body: res as unknown as AsyncIterable<Buffer> })
+                const status = res.statusCode ?? 0
+                resolveResponse({ status, ok: status >= 200 && status < 300, headers, body: res as unknown as AsyncIterable<Buffer> })
             })
             request.on('error', reject)
             request.setTimeout(SOURCE_REQUEST_TIMEOUT_MS, () => {
