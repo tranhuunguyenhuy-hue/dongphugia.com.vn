@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { Calendar, Clock, ArrowRight } from 'lucide-react'
+import { normalizePublishingMediaUrl } from '@/lib/publishing/media-url'
 
 export interface BlogPost {
     id: number
@@ -35,7 +36,7 @@ function formatDate(date: Date | string) {
 
 export function PostCard({ post, featured = false }: PostCardProps) {
     const postUrl = `/blog/${post.blog_categories.slug}/${post.slug}`
-    const listingImage = post.thumbnail_url || post.cover_image_url
+    const listingImage = normalizePublishingMediaUrl(post.thumbnail_url || post.cover_image_url)
 
     if (featured) {
         return (
