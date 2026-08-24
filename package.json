@@ -30,6 +30,7 @@
     "monitor:test-sanitizer": "node scripts/monitoring/test-sanitizer.mjs",
     "publishing:scheduler": "node scripts/publishing/run-scheduler.mjs",
     "publishing:control": "tsx scripts/publishing/control.mts",
+    "publishing:import-blog-media": "tsx scripts/publishing/import-blog-editorial-media.mts",
     "publishing:test-postgres-concurrency": "tsx scripts/publishing/test-postgres-concurrency.mts",
     "seo:build-inventory": "node scripts/seo/build-legacy-url-inventory.mjs",
     "seo:check-redirect-targets": "tsx scripts/seo/check-redirect-targets.ts",

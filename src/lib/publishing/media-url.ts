@@ -110,11 +110,22 @@ export function publishingMediaUrlsMatch(
 }
 
 export function normalizePublishingMediaHtml(html: string) {
-    return html.replace(
+    const withSources = html.replace(
         /(<img\b[^>]*\bsrc\s*=\s*)(["'])([^"']+)\2/gi,
         (_match, prefix: string, quote: string, source: string) => {
             const normalized = normalizePublishingMediaUrl(source)
             return `${prefix}${quote}${normalized ?? source}${quote}`
+        },
+    )
+    return withSources.replace(
+        /(<img\b[^>]*\bsrcset\s*=\s*)(["'])([^"']+)\2/gi,
+        (_match, prefix: string, quote: string, srcset: string) => {
+            const normalized = srcset.split(',').map((candidate) => {
+                const parts = candidate.trim().split(/\s+/)
+                const source = parts.shift() ?? ''
+                return [normalizePublishingMediaUrl(source) ?? source, ...parts].join(' ')
+            }).join(', ')
+            return `${prefix}${quote}${normalized}${quote}`
         },
     )
 }
@@ -142,7 +153,26 @@ export function canonicalizePublishingMediaHtml(html: string) {
 
         const sourceOffset = match[0].lastIndexOf(source)
         const sourceStart = (match.index ?? 0) + sourceOffset
-        return `${tag.slice(0, sourceStart)}${canonical}${tag.slice(sourceStart + source.length)}`
+        const normalizedTag = `${tag.slice(0, sourceStart)}${canonical}${tag.slice(sourceStart + source.length)}`
+        return normalizedTag.replace(
+            /(<img\b[^>]*\bsrcset\s*=\s*)(["'])([^"']+)\2/gi,
+            (_match, prefix: string, quote: string, srcset: string) => {
+                const normalized = srcset.split(',').map((candidate) => {
+                    const parts = candidate.trim().split(/\s+/)
+                    const variantSource = parts.shift() ?? ''
+                    const variant = canonicalizePublishingMediaUrl(variantSource)
+                    if (!variant) {
+                        throw new PublishingApiError(
+                            500,
+                            'MEDIA_REFERENCE_INVALID',
+                            'Stored Blog Post contains an unallowlisted image variant URL',
+                        )
+                    }
+                    return [variant, ...parts].join(' ')
+                }).join(', ')
+                return `${prefix}${quote}${normalized}${quote}`
+            },
+        )
     })
 }
 
