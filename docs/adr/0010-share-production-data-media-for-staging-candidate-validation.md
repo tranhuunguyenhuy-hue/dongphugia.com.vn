@@ -2,7 +2,10 @@
 
 ## Status
 
-Accepted
+Superseded for database migration and deployment foundation by ADR 0013.
+
+The shared-data topology remains a historical/legacy operational reference;
+it is not a canonical migration or replay target for new delivery.
 
 ## Decision
 

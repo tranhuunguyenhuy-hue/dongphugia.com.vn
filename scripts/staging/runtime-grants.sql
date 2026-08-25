@@ -1,0 +1,10 @@
+\set ON_ERROR_STOP on
+
+GRANT CONNECT ON DATABASE dpg_isolated_staging TO dpg_staging_app;
+GRANT USAGE ON SCHEMA public TO dpg_staging_app;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO dpg_staging_app;
+GRANT USAGE, SELECT, UPDATE ON ALL SEQUENCES IN SCHEMA public TO dpg_staging_app;
+ALTER DEFAULT PRIVILEGES FOR ROLE dpg_staging_migrator IN SCHEMA public
+  GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO dpg_staging_app;
+ALTER DEFAULT PRIVILEGES FOR ROLE dpg_staging_migrator IN SCHEMA public
+  GRANT USAGE, SELECT, UPDATE ON SEQUENCES TO dpg_staging_app;
