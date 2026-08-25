@@ -1,6 +1,6 @@
 # PostgreSQL Migration Runner — HIGH_RISK Execution Specification
 
-**Status:** Approved for implementation planning; runner implementation not included in this task
+**Status:** Implemented; detailed deployment contract is ADR 0013
 **Owner:** Engineering/Deployment
 **Route:** HIGH_RISK
 **Production:** not authorized
@@ -8,9 +8,9 @@
 
 ## 1. Purpose and boundaries
 
-This specification turns the approved R0 direction into a bounded engineering
-contract. It does not create a migration, alter the Prisma schema, edit the
-SQLite-origin chain, run a migration, or adopt the baseline in Production.
+This specification records the approved R0 direction. The executable runner,
+canonical manifest/checksums and isolated Staging proof now live in the paths
+listed below. No Production adoption is authorized.
 
 The supported future path is PostgreSQL-only and must be independently
 reproducible. The existing `prisma/migrations` tree and
@@ -20,7 +20,7 @@ They are never loaded by the new runner.
 Explicit exclusions:
 
 - MS885 Family migration or any other application/schema migration;
-- Production or shared-data Staging execution;
+- Production or legacy shared-data Staging execution;
 - Production baseline adoption or `_prisma_migrations` reconciliation;
 - seed repair or seed execution;
 - automatic conversion of legacy data;
@@ -34,6 +34,7 @@ retired SQLite-origin tree:
 ```text
 db/postgres-migrations/
   0000_baseline_v1/
+    extensions.sql
     core.sql
     catalog-integrity.sql
     publishing-runtime.sql
@@ -41,6 +42,8 @@ db/postgres-migrations/
     migration.sql
   manifest.json
   checksums.sha256
+  schema-manifest.json
+  schema-drift-allowlist.json
 ```
 
 The exact directory and artifact names are part of the implementation
@@ -62,19 +65,20 @@ properties, layer, source evidence, and accepted exceptions.
 
 ## 3. Runner command contract
 
-The future runner exposes one explicit command:
+The runner exposes one explicit command:
 
 ```text
 npm run db:migrate:postgres -- \
-  --target disposable \
+  --target isolated-staging \
   --origin db/postgres-migrations \
   --manifest db/postgres-migrations/manifest.json
 ```
 
 Required command behavior:
 
-- `--target disposable` is mandatory for this task;
-- the runner rejects `production`, `staging`, shared URLs, and unknown targets;
+- `--target isolated-staging` is the canonical Staging command; disposable is
+  reserved for CI proof;
+- the runner rejects `production`, legacy shared URLs, and unknown targets;
 - the database URL is supplied through the approved runtime environment and is
   never printed or persisted;
 - the runner applies the declared baseline/candidate in deterministic order;
@@ -136,27 +140,27 @@ authorize shared-environment execution.
 
 ## 6. Required implementation artifacts
 
-The implementation task that follows this specification must provide:
+The implementation provides:
 
 - the dedicated PostgreSQL origin and Baseline v1 layer artifacts;
 - the sanitized manifest and checksum file;
 - the runner command and target guard;
 - provider/checksum validation tests;
 - deterministic two-database replay tests;
-- a disposable PostgreSQL execution script or workflow;
+- an isolated PostgreSQL execution script and protected-main workflow;
 - sanitized evidence output and cleanup verification;
 - a short operator runbook describing the no-Production boundary.
 
-The implementation must not modify `prisma/schema.prisma`, the SQLite-origin
+The implementation does not modify `prisma/schema.prisma`, the SQLite-origin
 migrations, `migration_lock.toml`, or Production configuration.
 
 ## 7. Rollback boundary
 
-Rollback for this task is disposable-only:
+Rollback for this task is isolated-target-only:
 
-- before or during replay failure, stop the runner and destroy the disposable
+- before or during replay failure, stop the runner and destroy the isolated
   database/container/volume;
-- after a replay, discard and recreate the disposable database from Baseline
+- after a replay, discard and recreate the isolated database from Baseline
   v1 rather than relying on an unreviewed down migration;
 - preserve sanitized logs and manifests for diagnosis;
 - do not alter Staging, Production, application state, or shared data.
@@ -167,10 +171,12 @@ does not provide that authorization.
 
 ## 8. Acceptance and ownership
 
-Engineering/Deployment owns the runner implementation and disposable
+Engineering/Deployment owns the runner implementation and isolated/disposable
 execution. Technical review owns manifest and structural comparison approval.
 PM owns scope and any later environment authorization.
 
-The implementation task is accepted only when the replay gate, negative tests,
-sanitized evidence, and cleanup criteria in this document all pass. Until then
-the status remains `NEEDS MIGRATION RUNNER VALIDATION`.
+The implementation task is accepted when the replay gate, negative tests,
+sanitized evidence, and cleanup criteria in this document pass. Current
+execution status is reported by
+`docs/deploy/isolated-staging-foundation.md`; Production remains unauthorized
+under the separate adoption contract.

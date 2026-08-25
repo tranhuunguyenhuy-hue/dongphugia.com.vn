@@ -1,5 +1,11 @@
 # Shared Production-data staging runbook
 
+> **LEGACY REFERENCE ONLY.** ADR 0013 makes isolated PostgreSQL Staging the
+> canonical migration/deployment path. Do not replay `db/postgres-migrations`
+> against this shared-data runtime, and do not use this runbook for new feature
+> threads. It is retained for historical Coolify operations and must remain
+> write-frozen.
+
 Staging is a separately addressable Coolify runtime for validating the same
 exact immutable Production Candidate digest that may later be promoted to
 Production. Staging and Production read the same Production database/data and
@@ -28,9 +34,9 @@ linked Issue.
 4. The digest that passes applicable Staging acceptance is the only digest that
    can be proposed at Gate C for Production. Do not rebuild it between gates.
 
-The repository workflow `.github/workflows/staging-ghcr.yml` validates this
-source contract only. It does not build, push, deploy, or configure a staging
-image.
+The repository workflow `.github/workflows/staging-ghcr.yml` is now the
+canonical isolated-Staging workflow. It does not target this legacy shared-data
+runtime.
 
 ## Shared-data safety model
 

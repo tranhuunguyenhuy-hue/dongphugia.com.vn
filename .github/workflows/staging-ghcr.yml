@@ -1,23 +1,43 @@
-name: Verify staging production-candidate contract
+name: Deploy candidate to isolated Staging
 
 on:
   workflow_dispatch:
+    inputs:
+      candidate_digest:
+        description: 'Immutable ARM64 digest from Build production candidate (sha256:...)'
+        required: true
+        type: string
 
 permissions:
   contents: read
+  packages: read
 
 concurrency:
-  group: staging-production-candidate-contract-${{ github.ref }}
+  group: isolated-staging-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  contract:
-    name: Verify source handoff contract without a staging image build
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
+  isolated-staging:
+    name: Replay PostgreSQL baseline and smoke exact candidate
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 45
 
     steps:
+      - name: Require protected main source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/main"
+
       - uses: actions/checkout@v4
+
+      - name: Verify native ARM64 runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "$(uname -m)" in aarch64|arm64) ;; *) exit 1 ;; esac
+          case "$(docker info --format '{{.Architecture}}')" in aarch64|arm64) ;; *) exit 1 ;; esac
+          test "$(node -p 'process.arch')" = "arm64"
 
       - uses: actions/setup-node@v4
         with:
@@ -27,10 +47,31 @@ jobs:
       - name: Install repository tools
         run: npm ci
 
-      - name: Verify immutable production-candidate staging contract
-        run: >-
-          npx vitest run
-          scripts/quality/staging-workflow-contract.test.ts
-          src/lib/write-freeze.test.ts
-          src/lib/site.test.ts
-          src/app/robots.txt/route.test.ts
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify immutable candidate provenance
+        shell: bash
+        env:
+          IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/dongphugia-web
+          IMAGE_DIGEST: ${{ inputs.candidate_digest }}
+        run: |
+          set -euo pipefail
+          [[ "$IMAGE_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]
+          image_ref="$IMAGE_NAME@$IMAGE_DIGEST"
+          docker pull "$image_ref" >/dev/null
+          actual_digest="$(docker image inspect "$image_ref" --format '{{index .RepoDigests 0}}' | sed 's/^.*@//')"
+          image_arch="$(docker image inspect "$image_ref" --format '{{.Architecture}}')"
+          source_revision="$(docker image inspect "$image_ref" --format '{{index .Config.Labels "org.opencontainers.image.revision"}}')"
+          test "$actual_digest" = "$IMAGE_DIGEST"
+          test "$image_arch" = "arm64"
+          test "$source_revision" = "$GITHUB_SHA"
+
+      - name: Run canonical isolated Staging path
+        env:
+          IMAGE_REF: ghcr.io/${{ github.repository_owner }}/dongphugia-web@${{ inputs.candidate_digest }}
+        run: npm run staging:isolated -- proof --image "$IMAGE_REF"

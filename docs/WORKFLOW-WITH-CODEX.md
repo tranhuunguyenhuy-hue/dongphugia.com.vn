@@ -219,5 +219,7 @@ control when its tools participate:
 - Optimize for delivery speed, low infrastructure cost, efficient Codex quota,
   and sufficient Production safety.
 
-Repository-wide shared Production-data/media Staging alignment remains
-`HIGH_RISK`; see `docs/deploy/staging-coolify.md` and ADR 0010.
+Database-backed candidate delivery uses the isolated PostgreSQL foundation in
+`docs/deploy/isolated-staging-foundation.md` and ADR 0013. The legacy shared
+Production-data/media runtime remains `HIGH_RISK` and historical only; see
+`docs/deploy/staging-coolify.md` and ADR 0010.

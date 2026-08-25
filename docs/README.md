@@ -14,7 +14,9 @@
 
 - [Design system](DESIGN_SYSTEM.md)
 - [Public sitemap map](SITEMAP.md)
-- [Coolify shared Production-data Staging runbook](deploy/staging-coolify.md)
+- [Isolated PostgreSQL Staging deployment foundation](deploy/isolated-staging-foundation.md)
+- [HIGH_RISK Production PostgreSQL adoption contract (not authorized)](deploy/postgresql-production-adoption-contract.md)
+- [Legacy Coolify shared Production-data Staging reference](deploy/staging-coolify.md)
 - [CI-only disposable database fixtures](deploy/staging-db-bootstrap/RUNBOOK.md)
 - [Publishing API v1 integration guide](integrations/publishing-api-v1-integration-guide.vi.md)
 - [AI Agent publishing operation guide](operations/ai-agent-publishing-operation-guide.vi.md)

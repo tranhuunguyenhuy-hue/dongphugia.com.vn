@@ -1,0 +1,34 @@
+{
+  "formatVersion": 2,
+  "origin": "postgresql",
+  "baseline": "v1",
+  "postgresImage": "postgres:16.10-bookworm@sha256:38471f330eb885e04de130b768d6db4e10469e2311879c7e5c699f6d2d8a1c74",
+  "postgresVersion": "16.10",
+  "checksumFile": "checksums.sha256",
+  "schemaManifest": "schema-manifest.json",
+  "driftAllowlist": "schema-drift-allowlist.json",
+  "layers": [
+    {
+      "name": "extensions",
+      "path": "0000_baseline_v1/extensions.sql"
+    },
+    {
+      "name": "core",
+      "path": "0000_baseline_v1/core.sql"
+    },
+    {
+      "name": "catalog-integrity",
+      "path": "0000_baseline_v1/catalog-integrity.sql"
+    },
+    {
+      "name": "publishing-runtime",
+      "path": "0000_baseline_v1/publishing-runtime.sql"
+    }
+  ],
+  "migrations": [],
+  "exceptions": [
+    "production-only runtime objects are compared and not adopted without a separate HIGH_RISK decision",
+    "SQLite-origin prisma/migrations and migration_lock.toml remain immutable historical evidence",
+    "post-R0 quote snapshot fields are not part of Baseline v1 and require a separately reviewed PostgreSQL migration"
+  ]
+}
