@@ -340,7 +340,10 @@ function expectMigrationRollback(target: ReturnType<typeof startTarget>, failure
     if (error instanceof Error && error.message.startsWith('ISOLATED_STAGING_FAILED:')) throw error
     const result = error as { stdout?: string; stderr?: string }
     const output = `${result.stdout ?? ''}${result.stderr ?? ''}`
-    if (!output.includes('postgresql_error:22012')) fail('migration failure was not reported with sanitized SQLSTATE')
+    if (!output.includes('postgresql_error:22012')) {
+      const observed = output.match(/MIGRATION_RUNNER_FAILED:[^\r\n]*/)?.[0] ?? 'no-sanitized-runner-error'
+      fail(`migration failure was not reported with sanitized SQLSTATE (${observed})`)
+    }
   }
   const tableCount = queryPsql(
     "SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND c.relname='deployment_pipeline_probe_failure';",

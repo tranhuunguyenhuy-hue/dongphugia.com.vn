@@ -125,3 +125,25 @@ _Avoid_: Live product reference
 **Indexable Listing Leaf**:
 An active category leaf under the requested parent that contains at least one Public Product and may therefore appear in navigation and sitemaps.
 _Avoid_: Empty category, cross-parent slug
+
+**Product Family**:
+A validated group of existing commercial Product leaves that are alternatives
+within one catalogue context. A Family does not create Products, combinations,
+or family-level price, SEO, visibility, or commerce state.
+_Avoid_: Series, Collection, category, subtype, bundle, SKU cluster
+
+**Variant Member**:
+An existing Product/PDP selected from a Product Family. Selection navigates to
+that Product's independent PDP; it is not a generated option or axis value.
+_Avoid_: Combination, option value, package component
+
+**Series/Collection**:
+Catalogue or merchandising context used to organize related Products; it is
+not a Product Family unless separate evidence validates alternative Product
+leaves.
+_Avoid_: Family, Product Type
+
+**Package/BOM**:
+An assembly or included-item relationship among Products or components. It is
+separate from Product Family membership and Variant selection.
+_Avoid_: Variant, Related Products
