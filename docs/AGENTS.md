@@ -38,8 +38,9 @@ selectors, or aggregate counts.
 
 ## Data, security, and media
 
-- AWS PostgreSQL is the Production source of truth. Schema or data change is
-  HIGH_RISK; read its ADR and migration procedure before proposing it.
+- AWS PostgreSQL is the Production source of truth. Schema or data change needs
+  dedicated validation, recovery, and approval controls; read its ADR and
+  migration procedure before proposing it.
 - An approved Prisma schema change is followed by `npx prisma generate`.
 - Preserve existing authorization, validation, CSP, cache, and error handling.
 - Admin auth uses bcrypt, hashed sessions, `dpg-admin-session`, and the role
@@ -61,7 +62,8 @@ selectors, or aggregate counts.
 ## Tests and documentation
 
 - Add or update focused tests when behavior changes.
-- Run focused checks first, then the route-required repository checks.
+- Run focused checks first, then the repository checks required by the scope and
+  recorded controls.
 - Record blocked or unrun checks as `UNKNOWN`; do not weaken a check to pass.
 - Put durable decisions in an ADR, procedures in a runbook, and dated verified
   facts in `ops/project-current-state.md`.

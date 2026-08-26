@@ -73,7 +73,7 @@ describe('isolated PostgreSQL Staging deployment foundation', () => {
         expect(isolatedRunbook).toContain('0001_pipeline_probe.sql')
     })
 
-    it('keeps Production adoption HIGH_RISK contract-only', () => {
+    it('keeps Production adoption contract-only', () => {
         expect(productionContract).toContain('NOT AUTHORIZED / contract only')
         expect(productionContract).toContain('select-only Production schema comparison')
         expect(productionContract).toContain('migration execution owner')
@@ -86,7 +86,7 @@ describe('isolated PostgreSQL Staging deployment foundation', () => {
         expect(stagingRunbook).toContain('Do not replay `db/postgres-migrations`')
         expect(docsIndex).toContain('CI-only disposable database fixtures')
         expect(docsIndex).toContain('Isolated PostgreSQL Staging deployment foundation')
-        expect(docsIndex).toContain('FAST_PATH/STANDARD/HIGH_RISK')
+        expect(docsIndex).toContain('one standard workflow and risk-proportionate')
         expect(disposableBootstrapRunbook).toContain('not a Staging runtime runbook')
         expect(disposableBootstrapRunbook).toMatch(
             /must not be executed against Staging or\s+Production/,

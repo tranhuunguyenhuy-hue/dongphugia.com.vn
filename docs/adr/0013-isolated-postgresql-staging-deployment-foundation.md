@@ -42,7 +42,7 @@ applied baseline or migration ledger cannot be adopted silently.
 ## Production boundary
 
 Production is not mutated by this ADR. Promotion requires the separate
-HIGH_RISK contract in `docs/deploy/postgresql-production-adoption-contract.md`:
+Production-adoption contract in `docs/deploy/postgresql-production-adoption-contract.md`:
 select-only schema comparison, baseline provenance/adoption decision, named
 migration owner, backup/restore and rollback boundary, and same immutable
 Staging-validated digest.

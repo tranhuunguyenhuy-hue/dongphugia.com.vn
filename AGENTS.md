@@ -48,7 +48,8 @@ source conflict rather than choosing silently.
 
 ## Scope and ownership
 
-Before mutation, record the outcome, exact target, exclusions, route,
+Before mutation, record the outcome, exact target, exclusions, risk-proportionate
+controls,
 acceptance evidence, rollback position, and mutation owner: `HELD`.
 
 - Preserve unrelated worktrees, branches, and dirty files.
@@ -62,12 +63,14 @@ acceptance evidence, rollback position, and mutation owner: `HELD`.
 
 Use:
 
-`Request → Route → Preflight → Align → Execute → Validate → Review → Deliver → Release`
+`Request → Preflight → Align → Execute → Validate → Review → Deliver → Release`
 
 - Align is read-only: settle scope, evidence, risk, and acceptance first.
-- `FAST_PATH` is the default for small, bounded, reversible work.
-- Escalate when persistent state, authority, shared environments, difficult
-  rollback, or material blast radius enters scope.
+- Use this one workflow for every task. Risk determines the depth of validation,
+  recovery evidence, and approval controls; it does not select a separate
+  release path.
+- Increase those controls when persistent state, authority, shared
+  environments, difficult rollback, or material blast radius enters scope.
 - The complete routing, delivery, review, and release rules live in
   `docs/WORKFLOW-WITH-CODEX.md`.
 
@@ -85,9 +88,9 @@ Use:
 - Never reveal secrets, tokens, credential URLs, environment values, PII, or
   database rows.
 
-Read the applicable ADR and deployment runbook before HIGH_RISK or
-release-related work. Shared-data Staging is HIGH_RISK and is write-frozen,
-noindex candidate validation only.
+Read the applicable ADR and deployment runbook before release-related or
+materially risky work. Shared-data Staging is historical only and remains
+write-frozen, noindex candidate-validation context.
 
 ## Documentation map
 

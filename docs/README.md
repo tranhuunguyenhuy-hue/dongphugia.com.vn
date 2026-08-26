@@ -34,8 +34,9 @@ not an authority document: verify it immediately before relying on it.
   canonical database-backed candidate path (ADR 0013).
 - `SUPPORTING` — [CI-only disposable database fixtures](deploy/staging-db-bootstrap/RUNBOOK.md):
   test fixtures, not a Staging runtime procedure.
-- `CURRENT` — [Release-path policy](WORKFLOW-WITH-CODEX.md#release-paths): the
-  FAST_PATH/STANDARD/HIGH_RISK definitions and controls.
+- `CURRENT` — [Workflow controls](WORKFLOW-WITH-CODEX.md#risk-proportionate-controls):
+  the one standard workflow and risk-proportionate validation, recovery, and
+  approval controls.
 - `SUPPORTING` — [Design system](DESIGN_SYSTEM.md): UI token and component
   design work.
 - `SUPPORTING` — [Public sitemap map](SITEMAP.md): crawl, sitemap, and public
@@ -47,6 +48,9 @@ not an authority document: verify it immediately before relying on it.
   and the [shared-data Coolify runbook](deploy/staging-coolify.md) preserve the
   former shared Production-data/media topology. They are not a new candidate,
   migration, deployment, or Publishing rollout path.
+- `SUPERSEDED` — [ADR 0011](adr/0011-use-risk-based-release-paths.md) records
+  the former named release-path model. The current workflow uses one lifecycle
+  with risk-proportionate controls instead.
 - `HISTORICAL` — release evidence, status snapshots, past plans, and retained
   recovery material are provenance, not current workflow authority.
 
