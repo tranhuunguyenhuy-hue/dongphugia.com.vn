@@ -73,7 +73,7 @@ describe('isolated PostgreSQL Staging deployment foundation', () => {
         expect(isolatedRunbook).toContain('0001_pipeline_probe.sql')
     })
 
-    it('keeps Production adoption HIGH_RISK contract-only', () => {
+    it('keeps Production adoption contract-only', () => {
         expect(productionContract).toContain('NOT AUTHORIZED / contract only')
         expect(productionContract).toContain('select-only Production schema comparison')
         expect(productionContract).toContain('migration execution owner')
@@ -86,19 +86,19 @@ describe('isolated PostgreSQL Staging deployment foundation', () => {
         expect(stagingRunbook).toContain('Do not replay `db/postgres-migrations`')
         expect(docsIndex).toContain('CI-only disposable database fixtures')
         expect(docsIndex).toContain('Isolated PostgreSQL Staging deployment foundation')
-        expect(docsIndex).toContain('FAST_PATH/STANDARD/HIGH_RISK')
+        expect(docsIndex).toContain('one standard workflow and risk-proportionate')
         expect(disposableBootstrapRunbook).toContain('not a Staging runtime runbook')
         expect(disposableBootstrapRunbook).toMatch(
             /must not be executed against Staging or\s+Production/,
         )
-        expect(publishingRunbook).toContain('Shared-data Staging supersedes the legacy synthetic topology')
+        expect(publishingRunbook).toContain('superseded historical')
         expect(publishingRunbook).toContain('must remain write-frozen')
         expect(publishingRunbook).not.toContain('either artifact on shared-data Staging unless')
     })
 
     it('records ADR 0013 as the superseding deployment decision', () => {
         expect(adr).toContain('Status')
-        expect(adr).toContain('Accepted; supersedes ADR 0010')
+        expect(adr).toContain('Accepted; canonical for database migration and candidate deployment')
         expect(adr).toContain('code → PostgreSQL migration → isolated Staging')
         expect(adr).toContain('Production is not mutated by this ADR')
     })

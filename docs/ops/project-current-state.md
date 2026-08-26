@@ -27,8 +27,8 @@ Bunny for managed media/CDN delivery.
   Production `img-src` CSP.
 - The isolated PostgreSQL Staging foundation is the canonical database-backed
   candidate path; see `deploy/isolated-staging-foundation.md` and ADR 0013.
-- The shared Production-data/media Staging path is legacy, HIGH_RISK, and
-  historical only; see `deploy/staging-coolify.md` and ADR 0010.
+- The shared Production-data/media Staging path is legacy and historical only;
+  see `deploy/staging-coolify.md` and ADR 0010.
 
 ## Deferred scopes
 

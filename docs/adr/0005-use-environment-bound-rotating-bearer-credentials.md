@@ -25,7 +25,9 @@ changing already published content or independently authorized schedules.
 
 ## Current authority
 
-- ADR 0010 defines the Shared-data Staging architecture.
-- `docs/deploy/staging-coolify.md` defines its write-frozen operating rules.
+- ADR 0013 defines the canonical isolated PostgreSQL Staging foundation.
+- ADR 0010 and `docs/deploy/staging-coolify.md` are superseded historical
+  references; their write-frozen constraints remain relevant only if legacy
+  resources are inspected under separately authorized recovery work.
 - `docs/deploy/publishing-api-v1-runbook.md` defines current Publishing
   operations.

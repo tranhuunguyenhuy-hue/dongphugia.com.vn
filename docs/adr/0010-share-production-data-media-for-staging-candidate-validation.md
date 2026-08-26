@@ -2,10 +2,11 @@
 
 ## Status
 
-Superseded for database migration and deployment foundation by ADR 0013.
-
-The shared-data topology remains a historical/legacy operational reference;
-it is not a canonical migration or replay target for new delivery.
+**Superseded — historical reference only.** ADR 0013 is the canonical isolated
+PostgreSQL Staging foundation for candidate deployment and database migration.
+The shared-data topology below is retained only to explain legacy Coolify
+resources and their safety boundaries. It is not a current runbook, a
+canonical candidate path, or a migration/replay target for new delivery.
 
 ## Decision
 

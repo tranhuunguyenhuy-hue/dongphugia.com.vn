@@ -1,10 +1,11 @@
 # Shared Production-data staging runbook
 
-> **LEGACY REFERENCE ONLY.** ADR 0013 makes isolated PostgreSQL Staging the
-> canonical migration/deployment path. Do not replay `db/postgres-migrations`
-> against this shared-data runtime, and do not use this runbook for new feature
-> threads. It is retained for historical Coolify operations and must remain
-> write-frozen.
+> **SUPERSEDED — LEGACY REFERENCE ONLY.** ADR 0013 and
+> [`isolated-staging-foundation.md`](isolated-staging-foundation.md) are the
+> canonical isolated PostgreSQL candidate path. Do not replay `db/postgres-migrations`
+> against this shared-data runtime or use this runbook
+> for new feature, candidate, or rollout threads. It is retained solely for
+> historical Coolify recovery context and must remain write-frozen.
 
 Staging is a separately addressable Coolify runtime for validating the same
 exact immutable Production Candidate digest that may later be promoted to

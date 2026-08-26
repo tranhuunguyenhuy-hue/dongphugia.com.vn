@@ -1,8 +1,9 @@
-# HIGH_RISK contract: Production PostgreSQL baseline adoption
+# Production PostgreSQL baseline-adoption contract
 
 Status: **NOT AUTHORIZED / contract only**. This document does not mutate,
 connect to, or compare against Production. PM approval and a separately
-scheduled HIGH_RISK operation are required before any Production command.
+scheduled operation with dedicated recovery and approval controls are required
+before any Production command.
 
 ## Required evidence before adoption
 

@@ -2,6 +2,11 @@
 
 ## Status
 
+**Superseded — historical reference only.** The current governance model uses
+one standard workflow with risk-proportionate validation, recovery, and approval
+controls; it does not select named release paths. This ADR is retained to
+preserve the prior decision and terminology.
+
 Accepted
 
 ## Context
@@ -59,5 +64,5 @@ skipping feasible Staging validation.
 ## Related
 
 - `docs/WORKFLOW-WITH-CODEX.md`
-- ADR 0010: shared Production data/media Staging validation
+- ADR 0010: superseded shared Production data/media Staging history
 - GitHub Issue #70: disaster-recovery hardening evidence

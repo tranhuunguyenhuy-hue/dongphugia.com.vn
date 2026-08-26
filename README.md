@@ -6,7 +6,9 @@ Website catalogue và báo giá của Đông Phú Gia.
 - Runtime: AWS EC2/Coolify với immutable ARM64 image
 - Database production duy nhất: AWS PostgreSQL
 - Media: Bunny CDN
-- Default branch: protected `main`
+- Default branch: `main`; repository policy requires PR, required CI, and PM
+  merge approval. Verify GitHub branch-protection enforcement live before
+  relying on it.
 
 ## Local development
 
@@ -34,7 +36,7 @@ npm run build
 
 Merge source không tự deploy. Quy trình approval, candidate, Staging và
 Production nằm trong [workflow](docs/WORKFLOW-WITH-CODEX.md) và
-[staging runbook](docs/deploy/staging-coolify.md).
+[isolated Staging foundation](docs/deploy/isolated-staging-foundation.md).
 
 ## Repository map
 
