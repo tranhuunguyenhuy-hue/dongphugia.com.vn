@@ -1,10 +1,11 @@
 # Disposable CI database fixtures
 
-This is **not a Staging runtime runbook**. The repository-wide Staging runtime
-uses Production data/media under the shared-data architecture in
-[`../staging-coolify.md`](../staging-coolify.md). These SQL artifacts are
-disposable CI-test fixtures and must not be executed against Staging or
-Production.
+This is **not a Staging runtime runbook**. The canonical repository-wide
+database-backed candidate path is the isolated PostgreSQL foundation in
+[`../isolated-staging-foundation.md`](../isolated-staging-foundation.md).
+ADR 0010 and [`../staging-coolify.md`](../staging-coolify.md) are superseded
+historical shared-data references. These SQL artifacts are disposable CI-test
+fixtures and must not be executed against Staging or Production.
 
 ## Permitted use
 
@@ -37,5 +38,5 @@ Production.
 The CI workflows mount these files into an isolated PostgreSQL container and
 verify expected aggregate fixture counts. Do not copy the prior direct-`psql`
 instructions from repository history into an operational runbook. Any future
-test-fixture change remains source work; any shared-data Staging mutation is
-subject to Issue #68 Gate B.
+test-fixture change remains source work. Any inspection or mutation of legacy
+shared-data resources is a separate, explicitly authorized HIGH_RISK scope.

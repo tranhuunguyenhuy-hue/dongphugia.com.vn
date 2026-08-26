@@ -91,14 +91,14 @@ describe('isolated PostgreSQL Staging deployment foundation', () => {
         expect(disposableBootstrapRunbook).toMatch(
             /must not be executed against Staging or\s+Production/,
         )
-        expect(publishingRunbook).toContain('Shared-data Staging supersedes the legacy synthetic topology')
+        expect(publishingRunbook).toContain('superseded historical')
         expect(publishingRunbook).toContain('must remain write-frozen')
         expect(publishingRunbook).not.toContain('either artifact on shared-data Staging unless')
     })
 
     it('records ADR 0013 as the superseding deployment decision', () => {
         expect(adr).toContain('Status')
-        expect(adr).toContain('Accepted; supersedes ADR 0010')
+        expect(adr).toContain('Accepted; canonical for database migration and candidate deployment')
         expect(adr).toContain('code → PostgreSQL migration → isolated Staging')
         expect(adr).toContain('Production is not mutated by this ADR')
     })

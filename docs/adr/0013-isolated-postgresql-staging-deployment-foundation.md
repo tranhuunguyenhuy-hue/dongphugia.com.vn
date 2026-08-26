@@ -2,7 +2,8 @@
 
 ## Status
 
-Accepted; supersedes ADR 0010 for database migration and candidate deployment.
+Accepted; canonical for database migration and candidate deployment. ADR 0010
+is superseded and retained as historical shared-data Staging context only.
 
 ## Decision
 

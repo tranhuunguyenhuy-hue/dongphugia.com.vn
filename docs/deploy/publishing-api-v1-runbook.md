@@ -9,10 +9,13 @@ any Bunny configuration change. Those are separate PM approval gates.
 
 ## Authority and procedure map
 
-- Shared-data Staging supersedes the legacy synthetic topology. ADR 0010 and
-  [`staging-coolify.md`](staging-coolify.md) are authoritative: Staging uses
-  Production data/media for read-only candidate validation.
-  It must remain write-frozen for Publishing.
+- ADR 0013 and
+  [`isolated-staging-foundation.md`](isolated-staging-foundation.md) are the
+  canonical database-backed candidate path. ADR 0010 and
+  [`staging-coolify.md`](staging-coolify.md) are superseded historical
+  references, not an operational Publishing rollout path. If legacy resources
+  are inspected under separately authorized recovery work, they must remain write-frozen
+  for Publishing and receive no Publishing credential.
 - The recurring procedures in this runbook operate approved Production
   integrations only.
 - Disposable synthetic checks run only in isolated CI/local test databases.

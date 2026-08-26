@@ -134,8 +134,10 @@ Commit only task-owned files, push one task branch, open one PR, and wait for
 required CI. The PR records scope, acceptance source, route, validation/review
 evidence, remaining risk, Production requirement, and next authorized action.
 
-PM approval is required to merge through protected `main`. A task with
-`Production: no` may finish at Deliver.
+Repository policy requires PM approval to merge to `main`. Required CI and PR
+review evidence remain merge gates. GitHub branch-protection enforcement is
+live control-plane state, not a documentation fact: verify it immediately
+before relying on it. A task with `Production: no` may finish at Deliver.
 
 Deliver is complete when the PR contains the required evidence and required CI
 passes; merge still waits for PM approval.

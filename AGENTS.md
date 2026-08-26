@@ -8,7 +8,7 @@ Keep it short. Read detailed guidance only when the current task needs it.
 ## Canonical context
 
 - Checkout: `/Users/m-ac/Projects/dongphugia`
-- Repository: `tranhuunguyenhuy-hue/dongphugia.com.vn`; protected branch: `main`
+- Repository: `tranhuunguyenhuy-hue/dongphugia.com.vn`; default branch: `main`
 - Production: `https://www.dongphugia.vn`
 - Runtime baseline: AWS EC2/Coolify, immutable ARM64 images, AWS PostgreSQL,
   and Bunny-compatible media
@@ -74,6 +74,10 @@ Use:
 ## Gates
 
 - Local validation, PR/CI, merge, Staging, and Production are separate gates.
+- Repository policy requires a task-owned PR, required CI, and PM merge
+  approval before `main`. GitHub branch-protection enforcement is live control-
+  plane state: verify it immediately before relying on it; do not claim that
+  documentation proves it is enabled.
 - A branch, green CI, merged PR, health check, or Staging proof is not evidence
   of Production.
 - Production requires explicit approval for the exact candidate and target.
