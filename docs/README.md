@@ -10,10 +10,17 @@ delivery path.
 
 - `CURRENT` — Root [`AGENTS.md`](../AGENTS.md): authority, safety, scope, and
   gates.
-- `CURRENT` — [`WORKFLOW-WITH-CODEX.md`](WORKFLOW-WITH-CODEX.md): routing,
-  source delivery, validation, review, PR, merge, Staging, and release path.
+- `CURRENT` — Linear V02 control plane: roadmap, active Issue outcome/scope/
+  acceptance, execution state, blockers, and work coordination.
+- `CURRENT` — [`WORKFLOW-WITH-CODEX.md`](WORKFLOW-WITH-CODEX.md): source
+  delivery, validation, review, PR, merge, Staging, and release path.
+- `CURRENT` — [`agents/issue-tracker.md`](agents/issue-tracker.md): Linear
+  execution-tracker adapter for Codex and repository skills.
 - `SUPPORTING` — [`AGENTS.md`](AGENTS.md): application conventions; read only
   for source work.
+
+Do not maintain a parallel GitHub-Issue task ledger for V02 work. GitHub remains
+canonical for code, Pull Requests, ADR/specs, CI, and technical evidence.
 
 Repository policy requires a task-owned PR, required CI, and PM approval before
 merge to `main`. GitHub branch-protection configuration is live enforcement,
@@ -51,8 +58,9 @@ not an authority document: verify it immediately before relying on it.
 - `SUPERSEDED` — [ADR 0011](adr/0011-use-risk-based-release-paths.md) records
   the former named release-path model. The current workflow uses one lifecycle
   with risk-proportionate controls instead.
-- `HISTORICAL` — release evidence, status snapshots, past plans, and retained
-  recovery material are provenance, not current workflow authority.
+- `HISTORICAL` — release evidence, status snapshots, past plans, retained
+  GitHub Issues, and recovery material are provenance, not current workflow
+  authority.
 
 ## ADR identifier register
 
