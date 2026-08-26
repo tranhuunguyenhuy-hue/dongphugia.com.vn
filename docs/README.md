@@ -18,6 +18,12 @@ to canonical owners; it is not a second workflow manual.
 - [Architecture decisions](adr/): hard-to-reverse technical and policy choices.
 - [Deployment procedures](deploy/): target-specific Staging and Production
   procedures. Read only the affected runbook.
+- [Isolated PostgreSQL Staging deployment foundation](deploy/isolated-staging-foundation.md):
+  canonical database-backed candidate path.
+- [CI-only disposable database fixtures](deploy/staging-db-bootstrap/RUNBOOK.md):
+  test fixtures, not a Staging runtime procedure.
+- [Release-path policy](WORKFLOW-WITH-CODEX.md#release-paths): the
+  FAST_PATH/STANDARD/HIGH_RISK definitions and controls.
 - [Design system](DESIGN_SYSTEM.md): UI token and component design work.
 - [Public sitemap map](SITEMAP.md): crawl, sitemap, and public URL work.
 
