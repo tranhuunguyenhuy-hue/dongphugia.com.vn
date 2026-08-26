@@ -2633,6 +2633,330 @@
     },
     {
       "kind": "table",
+      "identity": "public.product_families",
+      "properties": {
+        "relkind": "r",
+        "rls": false,
+        "forceRls": false,
+        "columns": [
+          {
+            "name": "id",
+            "type": "integer",
+            "nullable": false,
+            "default": null,
+            "identity": "d",
+            "generated": ""
+          },
+          {
+            "name": "family_key",
+            "type": "character varying(100)",
+            "nullable": false,
+            "default": null,
+            "identity": "",
+            "generated": ""
+          },
+          {
+            "name": "label",
+            "type": "character varying(200)",
+            "nullable": false,
+            "default": null,
+            "identity": "",
+            "generated": ""
+          },
+          {
+            "name": "source",
+            "type": "character varying(50)",
+            "nullable": false,
+            "default": "'manual'::character varying",
+            "identity": "",
+            "generated": ""
+          },
+          {
+            "name": "confidence",
+            "type": "character varying(20)",
+            "nullable": false,
+            "default": "'medium'::character varying",
+            "identity": "",
+            "generated": ""
+          },
+          {
+            "name": "created_at",
+            "type": "timestamp(6) with time zone",
+            "nullable": false,
+            "default": "now()",
+            "identity": "",
+            "generated": ""
+          },
+          {
+            "name": "updated_at",
+            "type": "timestamp(6) with time zone",
+            "nullable": false,
+            "default": "now()",
+            "identity": "",
+            "generated": ""
+          }
+        ]
+      }
+    },
+    {
+      "kind": "table",
+      "identity": "public.product_family_catalogue_gaps",
+      "properties": {
+        "relkind": "r",
+        "rls": false,
+        "forceRls": false,
+        "columns": [
+          {
+            "name": "id",
+            "type": "integer",
+            "nullable": false,
+            "default": null,
+            "identity": "d",
+            "generated": ""
+          },
+          {
+            "name": "family_id",
+            "type": "integer",
+            "nullable": false,
+            "default": null,
+            "identity": "",
+            "generated": ""
+          },
+          {
+            "name": "member_key",
+            "type": "character varying(100)",
+            "nullable": false,
+            "default": null,
+            "identity": "",
+            "generated": ""
+          },
+          {
+            "name": "gap_type",
+            "type": "character varying(50)",
+            "nullable": false,
+            "default": "'missing_product'::character varying",
+            "identity": "",
+            "generated": ""
+          },
+          {
+            "name": "status",
+            "type": "character varying(30)",
+            "nullable": false,
+            "default": "'open'::character varying",
+            "identity": "",
+            "generated": ""
+          },
+          {
+            "name": "source",
+            "type": "character varying(50)",
+            "nullable": false,
+            "default": "'manual'::character varying",
+            "identity": "",
+            "generated": ""
+          },
+          {
+            "name": "confidence",
+            "type": "character varying(20)",
+            "nullable": false,
+            "default": "'medium'::character varying",
+            "identity": "",
+            "generated": ""
+          },
+          {
+            "name": "note",
+            "type": "character varying(500)",
+            "nullable": true,
+            "default": null,
+            "identity": "",
+            "generated": ""
+          },
+          {
+            "name": "created_at",
+            "type": "timestamp(6) with time zone",
+            "nullable": false,
+            "default": "now()",
+            "identity": "",
+            "generated": ""
+          },
+          {
+            "name": "updated_at",
+            "type": "timestamp(6) with time zone",
+            "nullable": false,
+            "default": "now()",
+            "identity": "",
+            "generated": ""
+          }
+        ]
+      }
+    },
+    {
+      "kind": "table",
+      "identity": "public.product_family_configuration_groups",
+      "properties": {
+        "relkind": "r",
+        "rls": false,
+        "forceRls": false,
+        "columns": [
+          {
+            "name": "id",
+            "type": "integer",
+            "nullable": false,
+            "default": null,
+            "identity": "d",
+            "generated": ""
+          },
+          {
+            "name": "family_id",
+            "type": "integer",
+            "nullable": false,
+            "default": null,
+            "identity": "",
+            "generated": ""
+          },
+          {
+            "name": "group_key",
+            "type": "character varying(100)",
+            "nullable": false,
+            "default": null,
+            "identity": "",
+            "generated": ""
+          },
+          {
+            "name": "label",
+            "type": "character varying(200)",
+            "nullable": false,
+            "default": null,
+            "identity": "",
+            "generated": ""
+          },
+          {
+            "name": "sort_order",
+            "type": "integer",
+            "nullable": false,
+            "default": "0",
+            "identity": "",
+            "generated": ""
+          },
+          {
+            "name": "source",
+            "type": "character varying(50)",
+            "nullable": false,
+            "default": "'manual'::character varying",
+            "identity": "",
+            "generated": ""
+          },
+          {
+            "name": "confidence",
+            "type": "character varying(20)",
+            "nullable": false,
+            "default": "'medium'::character varying",
+            "identity": "",
+            "generated": ""
+          },
+          {
+            "name": "created_at",
+            "type": "timestamp(6) with time zone",
+            "nullable": false,
+            "default": "now()",
+            "identity": "",
+            "generated": ""
+          },
+          {
+            "name": "updated_at",
+            "type": "timestamp(6) with time zone",
+            "nullable": false,
+            "default": "now()",
+            "identity": "",
+            "generated": ""
+          }
+        ]
+      }
+    },
+    {
+      "kind": "table",
+      "identity": "public.product_family_memberships",
+      "properties": {
+        "relkind": "r",
+        "rls": false,
+        "forceRls": false,
+        "columns": [
+          {
+            "name": "id",
+            "type": "integer",
+            "nullable": false,
+            "default": null,
+            "identity": "d",
+            "generated": ""
+          },
+          {
+            "name": "family_id",
+            "type": "integer",
+            "nullable": false,
+            "default": null,
+            "identity": "",
+            "generated": ""
+          },
+          {
+            "name": "configuration_group_id",
+            "type": "integer",
+            "nullable": false,
+            "default": null,
+            "identity": "",
+            "generated": ""
+          },
+          {
+            "name": "product_id",
+            "type": "integer",
+            "nullable": false,
+            "default": null,
+            "identity": "",
+            "generated": ""
+          },
+          {
+            "name": "sort_order",
+            "type": "integer",
+            "nullable": false,
+            "default": "0",
+            "identity": "",
+            "generated": ""
+          },
+          {
+            "name": "source",
+            "type": "character varying(50)",
+            "nullable": false,
+            "default": "'manual'::character varying",
+            "identity": "",
+            "generated": ""
+          },
+          {
+            "name": "confidence",
+            "type": "character varying(20)",
+            "nullable": false,
+            "default": "'medium'::character varying",
+            "identity": "",
+            "generated": ""
+          },
+          {
+            "name": "created_at",
+            "type": "timestamp(6) with time zone",
+            "nullable": false,
+            "default": "now()",
+            "identity": "",
+            "generated": ""
+          },
+          {
+            "name": "updated_at",
+            "type": "timestamp(6) with time zone",
+            "nullable": false,
+            "default": "now()",
+            "identity": "",
+            "generated": ""
+          }
+        ]
+      }
+    },
+    {
+      "kind": "table",
       "identity": "public.product_feature_values",
       "properties": {
         "relkind": "r",
@@ -6010,6 +6334,54 @@
     },
     {
       "kind": "sequence",
+      "identity": "public.product_families_id_seq",
+      "properties": {
+        "start": "1",
+        "increment": "1",
+        "min": "1",
+        "max": "2147483647",
+        "cache": "1",
+        "cycle": false
+      }
+    },
+    {
+      "kind": "sequence",
+      "identity": "public.product_family_catalogue_gaps_id_seq",
+      "properties": {
+        "start": "1",
+        "increment": "1",
+        "min": "1",
+        "max": "2147483647",
+        "cache": "1",
+        "cycle": false
+      }
+    },
+    {
+      "kind": "sequence",
+      "identity": "public.product_family_configuration_groups_id_seq",
+      "properties": {
+        "start": "1",
+        "increment": "1",
+        "min": "1",
+        "max": "2147483647",
+        "cache": "1",
+        "cycle": false
+      }
+    },
+    {
+      "kind": "sequence",
+      "identity": "public.product_family_memberships_id_seq",
+      "properties": {
+        "start": "1",
+        "increment": "1",
+        "min": "1",
+        "max": "2147483647",
+        "cache": "1",
+        "cycle": false
+      }
+    },
+    {
+      "kind": "sequence",
       "identity": "public.product_feature_values_id_seq",
       "properties": {
         "start": "1",
@@ -7520,6 +7892,160 @@
       "identity": "public.product_documents.uq_product_documents_product_url",
       "properties": {
         "definition": "CREATE UNIQUE INDEX uq_product_documents_product_url ON public.product_documents USING btree (product_id, url)",
+        "unique": true,
+        "primary": false,
+        "valid": true,
+        "ready": true
+      }
+    },
+    {
+      "kind": "index",
+      "identity": "public.product_families.idx_product_families_source",
+      "properties": {
+        "definition": "CREATE INDEX idx_product_families_source ON public.product_families USING btree (source)",
+        "unique": false,
+        "primary": false,
+        "valid": true,
+        "ready": true
+      }
+    },
+    {
+      "kind": "index",
+      "identity": "public.product_families.product_families_family_key_key",
+      "properties": {
+        "definition": "CREATE UNIQUE INDEX product_families_family_key_key ON public.product_families USING btree (family_key)",
+        "unique": true,
+        "primary": false,
+        "valid": true,
+        "ready": true
+      }
+    },
+    {
+      "kind": "index",
+      "identity": "public.product_families.product_families_pkey",
+      "properties": {
+        "definition": "CREATE UNIQUE INDEX product_families_pkey ON public.product_families USING btree (id)",
+        "unique": true,
+        "primary": true,
+        "valid": true,
+        "ready": true
+      }
+    },
+    {
+      "kind": "index",
+      "identity": "public.product_family_catalogue_gaps.idx_product_family_catalogue_gaps_status",
+      "properties": {
+        "definition": "CREATE INDEX idx_product_family_catalogue_gaps_status ON public.product_family_catalogue_gaps USING btree (family_id, status)",
+        "unique": false,
+        "primary": false,
+        "valid": true,
+        "ready": true
+      }
+    },
+    {
+      "kind": "index",
+      "identity": "public.product_family_catalogue_gaps.product_family_catalogue_gaps_pkey",
+      "properties": {
+        "definition": "CREATE UNIQUE INDEX product_family_catalogue_gaps_pkey ON public.product_family_catalogue_gaps USING btree (id)",
+        "unique": true,
+        "primary": true,
+        "valid": true,
+        "ready": true
+      }
+    },
+    {
+      "kind": "index",
+      "identity": "public.product_family_catalogue_gaps.uq_product_family_catalogue_gaps_family_member",
+      "properties": {
+        "definition": "CREATE UNIQUE INDEX uq_product_family_catalogue_gaps_family_member ON public.product_family_catalogue_gaps USING btree (family_id, member_key)",
+        "unique": true,
+        "primary": false,
+        "valid": true,
+        "ready": true
+      }
+    },
+    {
+      "kind": "index",
+      "identity": "public.product_family_configuration_groups.idx_product_family_configuration_groups_order",
+      "properties": {
+        "definition": "CREATE INDEX idx_product_family_configuration_groups_order ON public.product_family_configuration_groups USING btree (family_id, sort_order)",
+        "unique": false,
+        "primary": false,
+        "valid": true,
+        "ready": true
+      }
+    },
+    {
+      "kind": "index",
+      "identity": "public.product_family_configuration_groups.product_family_configuration_groups_pkey",
+      "properties": {
+        "definition": "CREATE UNIQUE INDEX product_family_configuration_groups_pkey ON public.product_family_configuration_groups USING btree (id)",
+        "unique": true,
+        "primary": true,
+        "valid": true,
+        "ready": true
+      }
+    },
+    {
+      "kind": "index",
+      "identity": "public.product_family_configuration_groups.uq_product_family_configuration_groups_family_key",
+      "properties": {
+        "definition": "CREATE UNIQUE INDEX uq_product_family_configuration_groups_family_key ON public.product_family_configuration_groups USING btree (family_id, group_key)",
+        "unique": true,
+        "primary": false,
+        "valid": true,
+        "ready": true
+      }
+    },
+    {
+      "kind": "index",
+      "identity": "public.product_family_configuration_groups.uq_product_family_configuration_groups_id_family",
+      "properties": {
+        "definition": "CREATE UNIQUE INDEX uq_product_family_configuration_groups_id_family ON public.product_family_configuration_groups USING btree (id, family_id)",
+        "unique": true,
+        "primary": false,
+        "valid": true,
+        "ready": true
+      }
+    },
+    {
+      "kind": "index",
+      "identity": "public.product_family_memberships.idx_product_family_memberships_family_order",
+      "properties": {
+        "definition": "CREATE INDEX idx_product_family_memberships_family_order ON public.product_family_memberships USING btree (family_id, sort_order, product_id)",
+        "unique": false,
+        "primary": false,
+        "valid": true,
+        "ready": true
+      }
+    },
+    {
+      "kind": "index",
+      "identity": "public.product_family_memberships.idx_product_family_memberships_group_order",
+      "properties": {
+        "definition": "CREATE INDEX idx_product_family_memberships_group_order ON public.product_family_memberships USING btree (configuration_group_id, sort_order, product_id)",
+        "unique": false,
+        "primary": false,
+        "valid": true,
+        "ready": true
+      }
+    },
+    {
+      "kind": "index",
+      "identity": "public.product_family_memberships.product_family_memberships_pkey",
+      "properties": {
+        "definition": "CREATE UNIQUE INDEX product_family_memberships_pkey ON public.product_family_memberships USING btree (id)",
+        "unique": true,
+        "primary": true,
+        "valid": true,
+        "ready": true
+      }
+    },
+    {
+      "kind": "index",
+      "identity": "public.product_family_memberships.uq_product_family_memberships_family_product",
+      "properties": {
+        "definition": "CREATE UNIQUE INDEX uq_product_family_memberships_family_product ON public.product_family_memberships USING btree (family_id, product_id)",
         "unique": true,
         "primary": false,
         "valid": true,
@@ -9552,6 +10078,118 @@
       "properties": {
         "type": "f",
         "definition": "FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE"
+      }
+    },
+    {
+      "kind": "constraint",
+      "identity": "public.product_families.product_families_family_key_key",
+      "properties": {
+        "type": "u",
+        "definition": "UNIQUE (family_key)"
+      }
+    },
+    {
+      "kind": "constraint",
+      "identity": "public.product_families.product_families_pkey",
+      "properties": {
+        "type": "p",
+        "definition": "PRIMARY KEY (id)"
+      }
+    },
+    {
+      "kind": "constraint",
+      "identity": "public.product_family_catalogue_gaps.product_family_catalogue_gaps_family_fkey",
+      "properties": {
+        "type": "f",
+        "definition": "FOREIGN KEY (family_id) REFERENCES product_families(id) ON DELETE CASCADE"
+      }
+    },
+    {
+      "kind": "constraint",
+      "identity": "public.product_family_catalogue_gaps.product_family_catalogue_gaps_pkey",
+      "properties": {
+        "type": "p",
+        "definition": "PRIMARY KEY (id)"
+      }
+    },
+    {
+      "kind": "constraint",
+      "identity": "public.product_family_catalogue_gaps.uq_product_family_catalogue_gaps_family_member",
+      "properties": {
+        "type": "u",
+        "definition": "UNIQUE (family_id, member_key)"
+      }
+    },
+    {
+      "kind": "constraint",
+      "identity": "public.product_family_configuration_groups.product_family_configuration_groups_family_fkey",
+      "properties": {
+        "type": "f",
+        "definition": "FOREIGN KEY (family_id) REFERENCES product_families(id) ON DELETE CASCADE"
+      }
+    },
+    {
+      "kind": "constraint",
+      "identity": "public.product_family_configuration_groups.product_family_configuration_groups_pkey",
+      "properties": {
+        "type": "p",
+        "definition": "PRIMARY KEY (id)"
+      }
+    },
+    {
+      "kind": "constraint",
+      "identity": "public.product_family_configuration_groups.uq_product_family_configuration_groups_family_key",
+      "properties": {
+        "type": "u",
+        "definition": "UNIQUE (family_id, group_key)"
+      }
+    },
+    {
+      "kind": "constraint",
+      "identity": "public.product_family_configuration_groups.uq_product_family_configuration_groups_id_family",
+      "properties": {
+        "type": "u",
+        "definition": "UNIQUE (id, family_id)"
+      }
+    },
+    {
+      "kind": "constraint",
+      "identity": "public.product_family_memberships.product_family_memberships_configuration_group_fkey",
+      "properties": {
+        "type": "f",
+        "definition": "FOREIGN KEY (configuration_group_id, family_id) REFERENCES product_family_configuration_groups(id, family_id) ON DELETE CASCADE"
+      }
+    },
+    {
+      "kind": "constraint",
+      "identity": "public.product_family_memberships.product_family_memberships_family_fkey",
+      "properties": {
+        "type": "f",
+        "definition": "FOREIGN KEY (family_id) REFERENCES product_families(id) ON DELETE CASCADE"
+      }
+    },
+    {
+      "kind": "constraint",
+      "identity": "public.product_family_memberships.product_family_memberships_pkey",
+      "properties": {
+        "type": "p",
+        "definition": "PRIMARY KEY (id)"
+      }
+    },
+    {
+      "kind": "constraint",
+      "identity": "public.product_family_memberships.product_family_memberships_product_fkey",
+      "properties": {
+        "type": "f",
+        "definition": "FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE"
+      }
+    },
+    {
+      "kind": "constraint",
+      "identity": "public.product_family_memberships.uq_product_family_memberships_family_product",
+      "properties": {
+        "type": "u",
+        "definition": "UNIQUE (family_id, product_id)"
       }
     },
     {

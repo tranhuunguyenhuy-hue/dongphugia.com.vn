@@ -25,7 +25,12 @@
       "path": "0000_baseline_v1/publishing-runtime.sql"
     }
   ],
-  "migrations": [],
+  "migrations": [
+    {
+      "name": "ms885-normalized-family",
+      "path": "0001_ms885_normalized_family/migration.sql"
+    }
+  ],
   "exceptions": [
     "production-only runtime objects are compared and not adopted without a separate HIGH_RISK decision",
     "SQLite-origin prisma/migrations and migration_lock.toml remain immutable historical evidence",
