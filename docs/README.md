@@ -1,26 +1,33 @@
-# Dongphugia documentation
+# Dongphugia documentation map
 
-## Active authority
+Read the smallest set of sources that answers the active task. This map points
+to canonical owners; it is not a second workflow manual.
 
-- Root [`AGENTS.md`](../AGENTS.md): always-on authority and safety contract.
-- [`WORKFLOW-WITH-CODEX.md`](WORKFLOW-WITH-CODEX.md): task routing,
-  FAST_PATH/STANDARD/HIGH_RISK delivery, review, and release paths.
-- [`AGENTS.md`](AGENTS.md): application conventions, read only for application
-  code, schema, or tests.
-- [`project-current-state.md`](ops/project-current-state.md): current operational
-  baseline for Production, incident follow-up, and handoff.
+## Always applicable
 
-## On-demand reference
+- Root [`AGENTS.md`](../AGENTS.md): authority, safety, scope, and gates.
+- [`WORKFLOW-WITH-CODEX.md`](WORKFLOW-WITH-CODEX.md): routing, source delivery,
+  validation, review, PR, merge, Staging, and release path.
+- [`AGENTS.md`](AGENTS.md): application conventions; read only for source work.
 
-- [Design system](DESIGN_SYSTEM.md)
-- [Public sitemap map](SITEMAP.md)
-- [Isolated PostgreSQL Staging deployment foundation](deploy/isolated-staging-foundation.md)
-- [HIGH_RISK Production PostgreSQL adoption contract (not authorized)](deploy/postgresql-production-adoption-contract.md)
-- [Legacy Coolify shared Production-data Staging reference](deploy/staging-coolify.md)
-- [CI-only disposable database fixtures](deploy/staging-db-bootstrap/RUNBOOK.md)
-- [Publishing API v1 integration guide](integrations/publishing-api-v1-integration-guide.vi.md)
-- [AI Agent publishing operation guide](operations/ai-agent-publishing-operation-guide.vi.md)
+## Choose by task
 
-Historical status, crawl, content-review, migration, and planning evidence is
-not workflow authority. It remains recoverable from Git history or approved
-quarantine where retention applies.
+- [Current operational state](ops/project-current-state.md): dated Production
+  baseline, active deferrals, incident follow-up, and handoff.
+- [Domain context](../CONTEXT.md): canonical catalogue and publishing language.
+- [Architecture decisions](adr/): hard-to-reverse technical and policy choices.
+- [Deployment procedures](deploy/): target-specific Staging and Production
+  procedures. Read only the affected runbook.
+- [Design system](DESIGN_SYSTEM.md): UI token and component design work.
+- [Public sitemap map](SITEMAP.md): crawl, sitemap, and public URL work.
+
+## Publishing integration
+
+[Publishing API v1 integration guide](integrations/publishing-api-v1-integration-guide.vi.md)
+is the single human-readable technical integration guide. The Production OpenAPI
+document is its machine-readable contract. The [Publishing operation guide]
+(operations/ai-agent-publishing-operation-guide.vi.md) is for approved Content
+operators and does not authorize connection, credentials, or Platform changes.
+
+Historical status, crawl, planning, and rollout evidence is not workflow
+authority. Retain it in Git history or approved quarantine when required.

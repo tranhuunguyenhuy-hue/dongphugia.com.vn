@@ -1,66 +1,70 @@
-# Dongphugia application reference
+# Dongphugia application guide
 
-Read this file only for application code, schema, or test work. Root `AGENTS.md`
-owns operating safety; `docs/WORKFLOW-WITH-CODEX.md` owns delivery.
+Read this guide only for application code, schema, tests, UI, or media work.
+Root `AGENTS.md` owns authority and safety. `WORKFLOW-WITH-CODEX.md` owns
+delivery and release gates.
+
+## Before changing code
+
+Read the current Issue or authorized request, relevant source and adjacent
+tests, then the narrowest applicable ADR or domain definition. Read a runbook
+only when the change affects a runtime or deployment contract.
+
+Prefer established patterns. Do not add unrelated cleanup to a bounded fix.
 
 ## Product and stack
 
-Dongphugia is a B2C premium building-materials storefront for Da Lat with
-offline payment. Its four public categories are `thiet-bi-ve-sinh`,
-`thiet-bi-bep`, `vat-lieu-nuoc`, and `gach-op-lat`.
+Dongphugia is a B2C premium building-materials storefront with offline payment.
+It uses Next.js App Router, React 19, TypeScript, Tailwind CSS v4, Prisma, AWS
+PostgreSQL, Zustand, and Bunny-compatible media URLs.
 
-The application uses Next.js App Router, React 19, TypeScript, Tailwind CSS v4,
-Prisma, AWS PostgreSQL, Zustand, and Bunny CDN-compatible media URLs.
+Use the canonical product language in root `CONTEXT.md`; do not infer product
+families, packages/BOMs, or typed relationships from names, SKU prefixes,
+selectors, or aggregate counts.
 
 ## Application conventions
 
-- **Tailwind v4:** configure theme values only in `src/app/globals.css` under
-  `@theme`. Brand primary `brand-500` is `#2D90AF`. Preserve `@source` lines and
-  do not introduce `tailwind.config.js`.
-- **Public UI:** `@/components/ui/` shadcn components are admin-only. Public
-  routes use the public component patterns.
-- **App Router:** `params` and `searchParams` are promises. Server Components
-  fetch data; Client Components own interactivity.
-- **Caching:** use `unstable_cache()` and `revalidateTag()` for ISR-backed data.
-- **Server Actions:** programmatic actions return a result such as
-  `{ success: true }`; redirect on the client. Redirect is reserved for
-  login/logout flows. Revalidate affected tags after mutation.
-- **Database:** AWS PostgreSQL is the production source of truth. An approved
-  schema sync is followed by `npx prisma generate`.
-- **Images:** upload through `/api/upload-image` and preserve Bunny CDN
-  compatibility. Runtime uploads do not live in `public/uploads/`.
-- **Metadata:** page titles omit the `| Đông Phú Gia` suffix because the root
-  layout template adds it. The homepage uses an absolute title.
+- Configure Tailwind v4 theme values only in `src/app/globals.css` under
+  `@theme`; preserve `@source` lines and do not add `tailwind.config.js`.
+- `brand-500` is `#2D90AF`. Reuse tokens rather than near-duplicate values.
+- `@/components/ui/` shadcn components are admin-only; public routes use public
+  component patterns.
+- Server Components fetch data; Client Components own interactivity.
+- `params` and `searchParams` are promises and must be awaited.
+- Use `unstable_cache()` and `revalidateTag()` for ISR-backed data.
+- Programmatic Server Actions return a result; client code navigates. Redirect
+  is reserved for login/logout flows.
+- Validate input at boundaries and keep business rules in their domain module.
 
-## Protected application areas
+## Data, security, and media
 
-- Production database schema or data mutation requires the production gates in
-  root `AGENTS.md` and a reviewed migration plan.
-- Dropping a table or column, changing the auth flow, or adding a major
-  production dependency requires explicit technical approval.
-- Admin authentication uses bcrypt plus hashed session tokens, the
-  `dpg-admin-session` secure HTTP-only cookie, and the dashboard layout guard.
-  Preserve the role order `admin > sale_manager > sale` unless auth changes are
-  explicitly in scope.
+- AWS PostgreSQL is the Production source of truth. Schema or data change is
+  HIGH_RISK; read its ADR and migration procedure before proposing it.
+- An approved Prisma schema change is followed by `npx prisma generate`.
+- Preserve existing authorization, validation, CSP, cache, and error handling.
+- Admin auth uses bcrypt, hashed sessions, `dpg-admin-session`, and the role
+  order `admin > sale_manager > sale`; do not change it outside explicit scope.
+- Upload through `/api/upload-image`; runtime uploads do not live in
+  `public/uploads/`.
+- Preserve Bunny allowlisting in both the Next image policy and CSP when media
+  behavior changes.
 
-## Known gotchas
+## UI and metadata
 
-| Signal | Required response |
-| --- | --- |
-| `NEXT_REDIRECT` in a programmatic action | Return a result and navigate from the client. |
-| Prisma types are stale after schema work | Run `npx prisma generate` and restart the dev process. |
-| Async `params` error | Await `params` before reading route values. |
-| Prisma/WASM build relation error | Add all required back-relations, then regenerate the client. |
-| Bunny image does not render | Verify the CDN host is present in `images.remotePatterns`. |
-| Page title repeats the brand | Remove the brand suffix from the page title string. |
-| A branch contains a wide unrelated diff | Port only task-owned changes; do not merge the branch wholesale. |
-| Imported `specs` can be null | `products.specs` is non-null JSONB; use an empty object fallback. |
-| Crawl discovery includes service/category pages | Hita product URLs use numeric IDs at least 1000; filter lower IDs. |
-| Kitchen data uses the wrong taxonomy | `thiet-bi-bep` uses `bep_brands`, `bep_product_types`, and `bep_subtypes`. |
-| MOEN/GROHE/ATMOR media is rejected | Product-image validation supports `cdn.hita.com.vn/storage/`. |
-| Image fallback captures upsell media | Scope template-3 fallback to `.product-column-left` and exclude `.section-buy-more`. |
-| Listing imports show no image | Upserts must populate `products.image_main_url`, which `ProductCard` reads. |
+- Preserve semantic HTML, keyboard access, labels, focus treatment, localization,
+  and responsive behavior.
+- Page titles omit `| Đông Phú Gia`; the root layout template adds it. The
+  homepage title is absolute.
+- Validate rendered browser behavior for UI or media changes; compilation alone
+  is insufficient.
 
-Keep this document for conventions the environment cannot reveal cheaply. Read
-scripts, configuration, Prisma schema, and directory layout directly instead of
-caching them here.
+## Tests and documentation
+
+- Add or update focused tests when behavior changes.
+- Run focused checks first, then the route-required repository checks.
+- Record blocked or unrun checks as `UNKNOWN`; do not weaken a check to pass.
+- Put durable decisions in an ADR, procedures in a runbook, and dated verified
+  facts in `ops/project-current-state.md`.
+
+For handoff, report behavior changed, evidence, residual risk, and the next
+release gate. This file does not authorize release.

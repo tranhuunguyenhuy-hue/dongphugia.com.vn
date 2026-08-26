@@ -8,6 +8,8 @@ Identity, credential lifecycle và publishing capability; Platform không cung
 cấp hoặc quản lý AI Agent hay chiến lược marketing.
 
 - [Publishing API v1 Integration Guide](publishing-api-v1-integration-guide.vi.md)
-- [Authentication Guide](authentication-guide.vi.md)
-- [Publishing Workflow Guide](publishing-workflow-guide.vi.md)
-- [OpenAPI Reference](openapi-reference.vi.md)
+- [Production OpenAPI](https://www.dongphugia.vn/api/publishing/v1/openapi.json)
+
+The Integration Guide owns authentication, capability, publishing workflow, and
+human-readable API guidance. Production OpenAPI is the machine-readable API
+contract. Do not create short duplicate guides for those topics.
