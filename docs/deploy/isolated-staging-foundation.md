@@ -61,6 +61,17 @@ resource name exists without the label, the command stops and does not remove
 it. A migration error rolls back its transaction and leaves the target
 unpromotable until it is recreated.
 
+## MS885 normalized migration boundary
+
+The MS885 candidate creates only the normalized Family, generic configuration
+groups, and explicit Product membership relations. It does not rewrite legacy
+`variant_group` fields or Product/PDP commercial data. The approved
+`MS885DW4#XW` and `MS885DW18#XW` manufacturer members remain catalogue gaps when
+their Product rows are absent; the migration maps existing rows only and never
+fabricates those Products. If coverage or schema validation fails, discard and
+recreate the isolated target with `reset`; no down migration or shared-data
+repair is implied.
+
 ## Failure gates
 
 The runner fails closed for a non-PostgreSQL provider, SQLite/Prisma origin,

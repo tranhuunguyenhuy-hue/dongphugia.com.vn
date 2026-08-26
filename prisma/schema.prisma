@@ -141,6 +141,7 @@ model products {
   product_source_mappings                                          product_source_mappings[]
   product_spec_values                                              product_spec_values[]
   product_taxon_assignments                                        product_taxon_assignments[]
+  product_family_memberships                                       product_family_memberships[]
   brands                                                           brands?                           @relation(fields: [brand_id], references: [id], onUpdate: NoAction)
   canonical_product                                                products?                         @relation("products_canonical_product", fields: [canonical_product_id], references: [id], onUpdate: NoAction)
   canonical_children                                               products[]                        @relation("products_canonical_product")
@@ -1189,6 +1190,83 @@ model product_variant_groups {
 
   @@index([base_sku], map: "idx_product_variant_groups_base_sku")
   @@index([variant_type], map: "idx_product_variant_groups_type")
+}
+
+/// Canonical Product Family identity. This is separate from the legacy
+/// product_variant_groups/variant_group fields and owns no Product commerce
+/// or publication state.
+model product_families {
+  id                   Int                                   @id @default(autoincrement())
+  family_key           String                                @unique @db.VarChar(100)
+  label                String                                @db.VarChar(200)
+  source               String                                @default("manual") @db.VarChar(50)
+  confidence           String                                @default("medium") @db.VarChar(20)
+  created_at           DateTime                              @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime                              @default(now()) @db.Timestamptz(6)
+  configuration_groups product_family_configuration_groups[]
+  memberships          product_family_memberships[]
+  catalogue_gaps       product_family_catalogue_gaps[]
+
+  @@index([source], map: "idx_product_families_source")
+}
+
+/// A generic configuration grouping within one Product Family.
+model product_family_configuration_groups {
+  id          Int                          @id @default(autoincrement())
+  family_id   Int
+  group_key   String                       @db.VarChar(100)
+  label       String                       @db.VarChar(200)
+  sort_order  Int                          @default(0)
+  source      String                       @default("manual") @db.VarChar(50)
+  confidence  String                       @default("medium") @db.VarChar(20)
+  created_at  DateTime                     @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime                     @default(now()) @db.Timestamptz(6)
+  family      product_families             @relation(fields: [family_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  memberships product_family_memberships[]
+
+  @@unique([family_id, group_key], map: "uq_product_family_configuration_groups_family_key")
+  @@unique([id, family_id], map: "uq_product_family_configuration_groups_id_family")
+  @@index([family_id, sort_order], map: "idx_product_family_configuration_groups_order")
+}
+
+/// Explicit Product-to-Family configuration membership. Product identity and
+/// commercial/PDP fields remain owned by products.
+model product_family_memberships {
+  id                     Int                                 @id @default(autoincrement())
+  family_id              Int
+  configuration_group_id Int
+  product_id             Int
+  sort_order             Int                                 @default(0)
+  source                 String                              @default("manual") @db.VarChar(50)
+  confidence             String                              @default("medium") @db.VarChar(20)
+  created_at             DateTime                            @default(now()) @db.Timestamptz(6)
+  updated_at             DateTime                            @default(now()) @db.Timestamptz(6)
+  family                 product_families                    @relation(fields: [family_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  configuration_group    product_family_configuration_groups @relation(fields: [configuration_group_id, family_id], references: [id, family_id], onDelete: Cascade, onUpdate: NoAction)
+  product                products                            @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([family_id, product_id], map: "uq_product_family_memberships_family_product")
+  @@index([configuration_group_id, sort_order, product_id], map: "idx_product_family_memberships_group_order")
+  @@index([family_id, sort_order, product_id], map: "idx_product_family_memberships_family_order")
+}
+
+/// An explicit record for an approved Family member whose Product row is not
+/// present yet. This is not a Product surrogate and owns no commercial data.
+model product_family_catalogue_gaps {
+  id         Int              @id @default(autoincrement())
+  family_id  Int
+  member_key String           @db.VarChar(100)
+  gap_type   String           @default("missing_product") @db.VarChar(50)
+  status     String           @default("open") @db.VarChar(30)
+  source     String           @default("manual") @db.VarChar(50)
+  confidence String           @default("medium") @db.VarChar(20)
+  note       String?          @db.VarChar(500)
+  created_at DateTime         @default(now()) @db.Timestamptz(6)
+  updated_at DateTime         @default(now()) @db.Timestamptz(6)
+  family     product_families @relation(fields: [family_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([family_id, member_key], map: "uq_product_family_catalogue_gaps_family_member")
+  @@index([family_id, status], map: "idx_product_family_catalogue_gaps_status")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.

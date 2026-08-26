@@ -137,6 +137,18 @@ An existing Product/PDP selected from a Product Family. Selection navigates to
 that Product's independent PDP; it is not a generated option or axis value.
 _Avoid_: Combination, option value, package component
 
+**Configuration Group**:
+A normalized grouping of Variant Members within one Product Family based on an
+approved configuration distinction, such as cover behavior. It does not create
+Products, combinations, or Family-level commerce state.
+_Avoid_: Variant combination, option axis, package
+
+**Family Membership**:
+An explicit relation connecting an existing Product/PDP to one Product Family
+and one of that Family's Configuration Groups. The relation preserves the
+Product's independent identity and Product-owned commercial fields.
+_Avoid_: Legacy variant_group, generated variant, package item
+
 **Series/Collection**:
 Catalogue or merchandising context used to organize related Products; it is
 not a Product Family unless separate evidence validates alternative Product
