@@ -1,67 +1,45 @@
-# Project Current State
+# Project current state
 
-Last verified: 2026-08-21. This document records the active operational
-baseline for follow-up work; revalidate live state before any mutation.
+Last verified: 2026-08-21. This is a dated operational snapshot, not release
+authority. Revalidate live state immediately before any runtime mutation.
 
-## Production Status
+## Production baseline
 
-- Production application: `dongphugia-web-production-dark`
-- Current production immutable digest:
+- Application: `dongphugia-web-production-dark`
+- Immutable image digest:
   `sha256:5826df04c8b052b7c834a07ac956d54596537def964646dc2d3013c242dacf2c`
-- Provenance: `d7cd7dffac72894fd42359df58b9959c133280ef`
-- Status: healthy; the Blog Managed Media CSP incident is resolved.
+- Source provenance: `d7cd7dffac72894fd42359df58b9959c133280ef`
+- Observed status: healthy; Blog Managed Media CSP incident resolved.
 
-## Current Architecture
+## Runtime architecture
 
-- Next.js, React, Node.js, Prisma, and PostgreSQL.
-- GitHub → GitHub Actions → Docker ARM64 → GHCR → Coolify → AWS EC2.
-- Bunny provides managed media and CDN delivery.
+GitHub → GitHub Actions → Docker ARM64 → GHCR → Coolify → AWS EC2.
+The application uses Next.js, React, Node.js, Prisma, AWS PostgreSQL, and
+Bunny for managed media/CDN delivery.
 
-## Deployment Rules
+## Current constraints
 
-- Apply the authoritative [Production gates](../../AGENTS.md#production-and-secret-gates)
-  and [release-path policy](../WORKFLOW-WITH-CODEX.md) before every Production
-  mutation.
-- `FAST_PATH`, `STANDARD`, and `HIGH_RISK` definitions, including the stronger
-  controls for persistent-state changes, live in that release-path policy.
-- The resolved CSP-only incident was a `FAST_PATH` rollout. Classify each
-  follow-up independently under the authoritative policy.
+- Verify the actual running digest after a Coolify deployment; a completed
+  deployment record does not prove runtime identity.
+- Media-related acceptance includes rendered browser, health, HTTP, CSP, and
+  direct-host checks where applicable.
+- The publishing CDN hostname is required in both Next image allowlisting and
+  Production `img-src` CSP.
+- The isolated PostgreSQL Staging foundation is the canonical database-backed
+  candidate path; see `deploy/isolated-staging-foundation.md` and ADR 0013.
+- The shared Production-data/media Staging path is legacy, HIGH_RISK, and
+  historical only; see `deploy/staging-coolify.md` and ADR 0010.
 
-## Important Decisions
+## Deferred scopes
 
-- The current Production baseline is the CSP-only hotfix above; it excludes
-  PR #69 runtime behavior.
-- The Publishing CDN hostname is required in both the Next image allowlist and
-  the Production `img-src` CSP.
-- Platform migration decisions remain paused.
+Separate PM authorization is required before resuming:
 
-## Deferred Scopes
+- PR #69 investigation and Issue #68 shared-data migration.
+- Cloudflare or Vercel migration; Coolify replacement.
+- LCP optimization or Production promotion.
+- MS885, Phase 2 catalogue/PIM, and unrelated refactoring.
+- Permanent deletion of the 2026-08-04 consolidation quarantine.
 
-The following remain deferred and require separate PM authorization; routine
-follow-up work must not resume them implicitly.
-
-- PR #69 investigation.
-- Issue #68 and shared-data migration.
-- Cloudflare or Vercel migration.
-- Coolify replacement.
-- LCP optimization and Production promotion.
-- Unrelated refactoring.
-
-## Known Operational Notes
-
-- Verify the actual running runtime digest after a Coolify deployment; a
-  completed deployment record alone is insufficient evidence.
-- Production acceptance must include the rendered browser result as well as
-  health, HTTP, and CSP checks when image delivery is in scope.
-- The 2026-08-04 consolidation quarantine remains subject to retention and
-  requires fresh explicit approval before permanent deletion.
-
-## Workflow Baseline
-
-The core delivery workflow is risk-scoped: FAST_PATH is the default for small,
-low-risk work, while stronger review and release controls follow actual blast
-radius and persistence. Publishing documentation is aligned to ADR 0010 and
-`docs/deploy/staging-coolify.md`: Shared-data Staging is write-frozen validation,
-while approved integrations use the Production Publishing API/credential
-contract. This documentation baseline does not authorize credential, runtime,
-data, media, deployment, or infrastructure changes.
+For routing, approval, rollback, and Production gates, read root `AGENTS.md`,
+`WORKFLOW-WITH-CODEX.md`, and the affected runbook; do not treat this snapshot
+as a substitute.
