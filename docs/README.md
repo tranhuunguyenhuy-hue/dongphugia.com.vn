@@ -35,6 +35,9 @@ not an authority document: verify it immediately before relying on it.
 - `CURRENT` — [Canonical Migration Implementation Baseline](deploy/migration-implementation-baseline.md):
   locked migration target, candidate identity, approval matrix, rollback
   ownership, and seven-stage delivery sequence (LEO-533).
+- `CURRENT` — [Product/Family preservation contract](deploy/product-family-preservation-contract.md):
+  executable Product/Family schema, migration, relationship, and accepted
+  MS885 data-preservation checks (LEO-534).
 - `CURRENT` — [Migration free-tier and Owner-gate policy](deploy/migration-free-tier-policy.md):
   fail-closed budget preflight, provider-limit verification, and explicit
   Owner gates for later migration issues (LEO-532).
