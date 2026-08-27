@@ -41,6 +41,9 @@ not an authority document: verify it immediately before relying on it.
 - `CURRENT` — [Migration free-tier and Owner-gate policy](deploy/migration-free-tier-policy.md):
   fail-closed budget preflight, provider-limit verification, and explicit
   Owner gates for later migration issues (LEO-532).
+- `CURRENT` — [Public static build](deploy/public-static-build.md):
+  read-only build-time export, SEO/redirect output, inventory checks, and
+  Product/Family preservation gate (LEO-536).
 - `CURRENT` — [Dedicated isolated Staging EC2 IaC](../infra/dedicated-staging/README.md):
   dedicated-host topology and one-time source-safe clone capability (LEO-527).
 - `SUPPORTING` — [CI-only disposable database fixtures](deploy/staging-db-bootstrap/RUNBOOK.md):
