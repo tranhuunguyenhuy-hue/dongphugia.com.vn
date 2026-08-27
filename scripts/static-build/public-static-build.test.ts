@@ -8,10 +8,16 @@ import {
   EXPECTED_CANONICAL_PRODUCT_COUNT,
   STATIC_CONTENT_ROUTES,
   buildStaticArtifact,
+  validateStaticBuildInput,
   validateStaticArtifact,
   type StaticBuildInput,
   type StaticProduct,
 } from './public-static-build.mts'
+import {
+  canonicalMemberKeys,
+  existingMemberKeys,
+  groupKeyForMs885Member,
+} from '../quality/product-family-preservation-contract'
 
 function product(index: number, categoryIndex: number): StaticProduct {
   const [categorySlug, categoryName] = CATEGORY_ROOTS[categoryIndex]
@@ -36,6 +42,7 @@ function product(index: number, categoryIndex: number): StaticProduct {
     original_price: null,
     list_price: 1000000,
     sale_price: null,
+    brand_slug: index % 3 === 0 ? 'toto' : null,
     brand_name: index % 3 === 0 ? 'TOTO' : null,
     primary_taxons: [{
       slug: subcategorySlug,
@@ -78,6 +85,8 @@ describe('canonical public static build', () => {
       expect(new Set(result.productPaths).size).toBe(EXPECTED_CANONICAL_PRODUCT_COUNT)
       expect(checked.sitemapUrlCount).toBe(EXPECTED_CANONICAL_PRODUCT_COUNT)
       expect(result.redirects.some((redirect) => redirect.source === '/tin-tuc')).toBe(true)
+      expect(result.report.routes.brands).toBe(1)
+      await expect(readFile(path.join(output, 'thuong-hieu', 'toto', 'index.html'), 'utf8')).resolves.toContain('Sản phẩm 1')
       expect(result.inventory.fileCount).toBeGreaterThanOrEqual(STATIC_CONTENT_ROUTES.length + EXPECTED_CANONICAL_PRODUCT_COUNT)
       expect(result.inventory.fileCount).toBeLessThan(20_000)
       expect(result.inventory.largestFile.bytes).toBeLessThan(25 * 1024 * 1024)
@@ -96,12 +105,16 @@ describe('canonical public static build', () => {
         output,
         mode: 'preview',
         sourceIdentity: 'test fixture',
+        publishingCdnHostname: 'media.example.com',
       })
       await validateStaticArtifact(output, result.productPaths, 'preview')
       const html = await readFile(path.join(output, 'thiet-bi-ve-sinh', 'sub-0-0', 'product-1', 'index.html'), 'utf8')
       expect(html).toContain('noindex,nofollow')
       expect(html).toContain('https://cdn.dongphugia.com.vn/products/product-1.webp')
-      expect(await readFile(path.join(output, '_headers'), 'utf8')).toContain('X-Robots-Tag: noindex, nofollow')
+      const headers = await readFile(path.join(output, '_headers'), 'utf8')
+      expect(headers).toContain('X-Robots-Tag: noindex, nofollow')
+      expect(headers).toContain('https://media.example.com')
+      expect(headers).toContain('https://www.transparenttextures.com')
     } finally {
       await rm(output, { recursive: true, force: true })
     }
@@ -117,6 +130,9 @@ describe('canonical public static build', () => {
         title: 'Chọn thiết bị phù hợp',
         excerpt: 'Tư vấn lựa chọn thiết bị.',
         content: '<script>alert("blocked")</script><p>Nội dung sạch.</p>',
+        seo_title: 'Chọn thiết bị phù hợp | Đông Phú Gia',
+        seo_description: 'Tư vấn thiết bị.',
+        author_name: 'Ban Biên Tập Đông Phú Gia',
         cover_image_url: 'https://cdn.dongphugia.com.vn/blog/cover.webp',
         updated_at: '2026-08-28T00:00:00.000Z',
         published_at: '2026-08-27T00:00:00.000Z',
@@ -145,5 +161,20 @@ describe('canonical public static build', () => {
       mode: 'production',
       sourceIdentity: 'invalid fixture',
     })).rejects.toThrow('STATIC_BUILD_PRODUCT_COUNT_FAILED')
+  })
+
+  it('fails closed unless the build snapshot preserves the accepted MS885 Family contract', () => {
+    const data = buildInput()
+    data.preservationSnapshot = {
+      familyKey: 'toto:ms885',
+      canonicalMemberKeys: [...canonicalMemberKeys],
+      memberships: existingMemberKeys.map((memberKey) => ({
+        memberKey,
+        groupKey: groupKeyForMs885Member(memberKey)!,
+      })),
+      catalogueGapKeys: ['MS885DW4#XW', 'MS885DW18#XW'],
+      deferredOutsideFamily: ['MS885DE6#XW'],
+    }
+    expect(validateStaticBuildInput(data)).toHaveLength(EXPECTED_CANONICAL_PRODUCT_COUNT)
   })
 })

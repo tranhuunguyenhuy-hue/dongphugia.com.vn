@@ -75,12 +75,13 @@ export type StaticProduct = {
   category_name: string
   subcategory_slug: string | null
   subcategory_name: string | null
+  brand_slug: string | null
+  brand_name: string | null
   stock_status: string
   price: unknown
   original_price: unknown
   list_price: unknown
   sale_price: unknown
-  brand_name: string | null
   primary_taxons: Array<{
     slug: string
     name: string
@@ -91,6 +92,8 @@ export type StaticProduct = {
   }>
 }
 
+export type StaticBrand = { slug: string; name: string }
+
 export type StaticSubcategory = {
   category_slug: string
   category_name: string
@@ -98,18 +101,28 @@ export type StaticSubcategory = {
   name: string
 }
 
-export type StaticBlogCategory = { slug: string; name: string }
+export type StaticBlogCategory = {
+  slug: string
+  name: string
+  seo_title?: string | null
+  seo_description?: string | null
+}
 
 export type StaticBlogPost = {
   slug: string
   title: string
   excerpt: string | null
   content: string | null
+  seo_title: string | null
+  seo_description: string | null
+  author_name: string
   cover_image_url: string | null
   updated_at: Date | string
   published_at: Date | string | null
   category_slug: string
   category_name: string
+  category_seo_title?: string | null
+  category_seo_description?: string | null
 }
 
 export type StaticRedirect = { source: string; destination: string; status: number }
@@ -117,9 +130,17 @@ export type StaticRedirect = { source: string; destination: string; status: numb
 export type StaticBuildInput = {
   products: StaticProduct[]
   subcategories: StaticSubcategory[]
+  brands?: StaticBrand[]
   blogCategories?: StaticBlogCategory[]
   blogPosts?: StaticBlogPost[]
   redirects?: StaticRedirect[]
+  preservationSnapshot?: {
+    familyKey: string
+    canonicalMemberKeys: string[]
+    memberships: Array<{ memberKey: string; groupKey: string }>
+    catalogueGapKeys: string[]
+    deferredOutsideFamily: string[]
+  }
 }
 
 export type StaticArtifactInventory = {
@@ -132,6 +153,7 @@ export type StaticBuildOptions = {
   output: string
   mode: StaticBuildMode
   sourceIdentity: string
+  publishingCdnHostname?: string
 }
 
 function htmlEscape(value: string) {
@@ -235,7 +257,10 @@ function documentHtml(input: {
 }) {
   const canonical = new URL(input.routePath, `${STATIC_SITE_URL}/`).toString()
   const noindex = input.mode === 'preview' || input.noindex === true
-  return `<!doctype html>\n<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">\n<title>${htmlEscape(input.title)}</title>\n<meta name="description" content="${htmlEscape(input.description)}">\n<meta name="robots" content="${noindex ? 'noindex,nofollow' : 'index,follow'}">\n<link rel="canonical" href="${htmlEscape(canonical)}">\n<meta property="og:url" content="${htmlEscape(canonical)}">${input.imageUrl ? `\n<meta property="og:image" content="${htmlEscape(input.imageUrl)}">` : ''}${input.jsonLd ? `\n<script type="application/ld+json">${safeJson(input.jsonLd)}</script>` : ''}\n</head><body data-static-route="${htmlEscape(input.routePath)}"><main>${input.body}</main></body></html>\n`
+  const title = input.routePath === '/' || input.title.endsWith(' | Đông Phú Gia')
+    ? input.title
+    : `${input.title} | Đông Phú Gia`
+  return `<!doctype html>\n<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">\n<title>${htmlEscape(title)}</title>\n<meta name="description" content="${htmlEscape(input.description)}">\n<meta name="robots" content="${noindex ? 'noindex,nofollow' : 'index,follow'}">\n<link rel="canonical" href="${htmlEscape(canonical)}">\n<meta property="og:url" content="${htmlEscape(canonical)}">${input.imageUrl ? `\n<meta property="og:image" content="${htmlEscape(input.imageUrl)}">` : ''}${input.jsonLd ? `\n<script type="application/ld+json">${safeJson(input.jsonLd)}</script>` : ''}\n</head><body data-static-route="${htmlEscape(input.routePath)}"><main>${input.body}</main></body></html>\n`
 }
 
 function outputRelativePath(routePath: string) {
@@ -301,8 +326,7 @@ async function directoryInventory(root: string): Promise<StaticArtifactInventory
 
 function productLegacyPath(product: StaticProduct) {
   const subcategory = product.subcategory_slug
-    || product.product_type
-    || (product.category_slug === 'gach-op-lat' ? 'gach-op-lat' : 'all')
+    || 'all'
   return `/${product.category_slug}/${subcategory}/${product.slug}`
 }
 
@@ -325,6 +349,22 @@ function staticRedirects(input: StaticBuildInput, productPaths: Map<string, stri
   return [...redirects.values()].sort((a, b) => a.source.localeCompare(b.source))
 }
 
+function productLinks(products: StaticProduct[], predicate: (product: StaticProduct) => boolean) {
+  const links = products
+    .filter(predicate)
+    .map((product) => `<li><a href="${htmlEscape(canonicalProductPath(product))}">${htmlEscape(product.name)}</a></li>`)
+    .join('')
+  return `<ul>${links}</ul>`
+}
+
+function blogLinks(posts: StaticBlogPost[], predicate: (post: StaticBlogPost) => boolean) {
+  const links = posts
+    .filter(predicate)
+    .map((post) => `<li><a href="/blog/${htmlEscape(post.category_slug)}/${htmlEscape(post.slug)}">${htmlEscape(post.title)}</a></li>`)
+    .join('')
+  return `<ul>${links}</ul>`
+}
+
 export function validateStaticBuildInput(input: StaticBuildInput) {
   if (input.products.length !== EXPECTED_CANONICAL_PRODUCT_COUNT) {
     throw new Error(`STATIC_BUILD_PRODUCT_COUNT_FAILED: expected ${EXPECTED_CANONICAL_PRODUCT_COUNT}, received ${input.products.length}`)
@@ -336,6 +376,14 @@ export function validateStaticBuildInput(input: StaticBuildInput) {
   const categories = new Set(input.products.map((product) => product.category_slug))
   for (const [slug] of CATEGORY_ROOTS) {
     if (!categories.has(slug)) throw new Error(`STATIC_BUILD_CATEGORY_FAILED: missing ${slug}`)
+  }
+  const canonicalCategories = new Set(canonicalPaths.map((routePath) => routePath.split('/')[1]))
+  for (const [slug] of CATEGORY_ROOTS) {
+    if (!canonicalCategories.has(slug)) throw new Error(`STATIC_BUILD_CANONICAL_CATEGORY_FAILED: missing ${slug}`)
+  }
+  if (input.preservationSnapshot) {
+    const violations = preservation.validateMs885PreservationSnapshot(input.preservationSnapshot)
+    if (violations.length > 0) throw new Error(`STATIC_BUILD_PRESERVATION_FAILED: ${violations.join('; ')}`)
   }
   return canonicalPaths
 }
@@ -355,7 +403,12 @@ export async function buildStaticArtifact(input: StaticBuildInput, options: Stat
     const product = input.products[index]
     const canonicalPath = canonicalPaths[index]
     const productSchema = productStructuredData(product, canonicalPath)
-    productPathPairs.set(productLegacyPath(product), canonicalPath)
+    const legacyPath = productLegacyPath(product)
+    const existingCanonicalPath = productPathPairs.get(legacyPath)
+    if (existingCanonicalPath && existingCanonicalPath !== canonicalPath) {
+      throw new Error(`STATIC_BUILD_REDIRECT_COLLISION_FAILED: ${legacyPath}`)
+    }
+    productPathPairs.set(legacyPath, canonicalPath)
     await writeRoute(output, canonicalPath, documentHtml({
       mode: options.mode,
       routePath: canonicalPath,
@@ -374,7 +427,7 @@ export async function buildStaticArtifact(input: StaticBuildInput, options: Stat
           ],
         },
       ],
-      body: `<nav aria-label="Breadcrumb"><a href="/">Trang chủ</a> / <a href="/${htmlEscape(product.category_slug)}">${htmlEscape(product.category_name)}</a></nav><h1>${htmlEscape(product.name)}</h1>${product.image_main_url ? `<img src="${htmlEscape(product.image_main_url)}" alt="${htmlEscape(product.name)}">` : ''}`,
+      body: `<nav aria-label="Breadcrumb"><a href="/">Trang chủ</a> / <a href="/${htmlEscape(product.category_slug)}">${htmlEscape(product.category_name)}</a></nav><h1>${htmlEscape(product.name)}</h1>${product.image_main_url ? `<img src="${htmlEscape(product.image_main_url)}" alt="${htmlEscape(product.name)}">` : ''}${product.description ? `<div>${sanitizeRichHtml(product.description)}</div>` : ''}`,
     }), files)
   }
 
@@ -384,8 +437,39 @@ export async function buildStaticArtifact(input: StaticBuildInput, options: Stat
       routePath,
       title,
       description: `${title} - Đông Phú Gia`,
-      jsonLd: routePath === '/' ? { '@context': 'https://schema.org', '@type': 'LocalBusiness', name: 'Đông Phú Gia', url: STATIC_SITE_URL } : undefined,
-      body: `<h1>${htmlEscape(title)}</h1>`,
+      jsonLd: routePath === '/' ? [
+        {
+          '@context': 'https://schema.org',
+          '@type': 'Organization',
+          name: 'Đông Phú Gia',
+          url: STATIC_SITE_URL,
+          logo: `${STATIC_SITE_URL}/images/Logo.png`,
+          telephone: '0949349949',
+          email: 'vlxd.dongphu@gmail.com',
+          sameAs: ['https://facebook.com/dongphugia', 'https://zalo.me/0855528688'],
+        },
+        {
+          '@context': 'https://schema.org',
+          '@type': 'LocalBusiness',
+          name: 'Đông Phú Gia',
+          url: STATIC_SITE_URL,
+          logo: `${STATIC_SITE_URL}/images/Logo.png`,
+          telephone: '0949349949',
+          email: 'vlxd.dongphu@gmail.com',
+          address: {
+            '@type': 'PostalAddress',
+            streetAddress: '273–275 Phan Đình Phùng',
+            addressLocality: 'Đà Lạt',
+            addressRegion: 'Lâm Đồng',
+            addressCountry: 'VN',
+          },
+          openingHours: 'Mo-Su 07:30-17:00',
+          sameAs: ['https://facebook.com/dongphugia', 'https://zalo.me/0855528688'],
+        },
+      ] : undefined,
+      body: routePath === '/'
+        ? `<h1>${htmlEscape(title)}</h1><nav aria-label="Danh mục"><ul>${CATEGORY_ROOTS.map(([slug, name]) => `<li><a href="/${slug}">${htmlEscape(name)}</a></li>`).join('')}</ul></nav>${productLinks(input.products, () => true)}`
+        : `<h1>${htmlEscape(title)}</h1>`,
     }), files)
   }
 
@@ -396,7 +480,7 @@ export async function buildStaticArtifact(input: StaticBuildInput, options: Stat
       routePath: `/${slug}`,
       title: name,
       description: `${name} tại Đông Phú Gia`,
-      body: `<h1>${htmlEscape(name)}</h1><div data-static-listing="${slug}"></div>`,
+      body: `<h1>${htmlEscape(name)}</h1><div data-static-listing="${slug}">${productLinks(input.products, (product) => product.category_slug === slug)}</div>`,
     }), files)
   }
   for (const subcategory of input.subcategories) {
@@ -407,7 +491,21 @@ export async function buildStaticArtifact(input: StaticBuildInput, options: Stat
       routePath,
       title: subcategory.name,
       description: `${subcategory.name} - ${subcategory.category_name}`,
-      body: `<h1>${htmlEscape(subcategory.name)}</h1><div data-static-listing="${htmlEscape(routePath)}"></div>`,
+      body: `<h1>${htmlEscape(subcategory.name)}</h1><div data-static-listing="${htmlEscape(routePath)}">${productLinks(input.products, (product) => product.category_slug === subcategory.category_slug && product.subcategory_slug === subcategory.slug)}</div>`,
+    }), files)
+  }
+
+  const brands = input.brands ?? [...new Map(input.products
+    .filter((product) => product.brand_slug && product.brand_name)
+    .map((product) => [product.brand_slug!, { slug: product.brand_slug!, name: product.brand_name! }])).values()]
+  for (const brand of brands) {
+    const routePath = `/thuong-hieu/${brand.slug}`
+    await writeRoute(output, routePath, documentHtml({
+      mode: options.mode,
+      routePath,
+      title: brand.name,
+      description: `${brand.name} chính hãng tại Đông Phú Gia`,
+      body: `<h1>${htmlEscape(brand.name)}</h1>${productLinks(input.products, (product) => product.brand_slug === brand.slug)}`,
     }), files)
   }
 
@@ -418,16 +516,16 @@ export async function buildStaticArtifact(input: StaticBuildInput, options: Stat
     routePath: '/blog',
     title: 'Blog',
     description: 'Tin tức và tư vấn từ Đông Phú Gia',
-    body: '<h1>Blog</h1><div data-static-blog="index"></div>',
+    body: `<h1>Blog</h1>${blogLinks(blogPosts, () => true)}`,
   }), files)
   for (const category of blogCategories) {
     const routePath = `/blog/${category.slug}`
     await writeRoute(output, routePath, documentHtml({
       mode: options.mode,
       routePath,
-      title: category.name,
-      description: `${category.name} - Đông Phú Gia`,
-      body: `<h1>${htmlEscape(category.name)}</h1><div data-static-blog="${htmlEscape(category.slug)}"></div>`,
+      title: category.seo_title?.trim() || category.name,
+      description: category.seo_description?.trim() || `${category.name} - Đông Phú Gia`,
+      body: `<h1>${htmlEscape(category.name)}</h1>${blogLinks(blogPosts, (post) => post.category_slug === category.slug)}`,
     }), files)
   }
   for (const post of blogPosts) {
@@ -435,18 +533,37 @@ export async function buildStaticArtifact(input: StaticBuildInput, options: Stat
     await writeRoute(output, routePath, documentHtml({
       mode: options.mode,
       routePath,
-      title: post.title,
-      description: plainText(post.excerpt || post.content, post.title),
+      title: post.seo_title?.trim() || post.title,
+      description: plainText(post.seo_description || post.excerpt || post.content, post.title),
       imageUrl: post.cover_image_url,
-      jsonLd: {
-        '@context': 'https://schema.org',
-        '@type': 'Article',
-        headline: post.title,
-        description: plainText(post.excerpt || post.content, post.title),
-        datePublished: post.published_at ? new Date(post.published_at).toISOString() : undefined,
-        dateModified: new Date(post.updated_at).toISOString(),
-        mainEntityOfPage: new URL(routePath, `${STATIC_SITE_URL}/`).toString(),
-      },
+      jsonLd: [
+        {
+          '@context': 'https://schema.org',
+          '@type': 'Article',
+          headline: post.title,
+          description: plainText(post.seo_description || post.excerpt || post.content, post.title),
+          author: { '@type': 'Organization', name: post.author_name },
+          publisher: {
+            '@type': 'Organization',
+            name: 'Đông Phú Gia',
+            url: STATIC_SITE_URL,
+            logo: { '@type': 'ImageObject', url: `${STATIC_SITE_URL}/images/Logo.png` },
+          },
+          datePublished: post.published_at ? new Date(post.published_at).toISOString() : undefined,
+          dateModified: new Date(post.updated_at).toISOString(),
+          mainEntityOfPage: new URL(routePath, `${STATIC_SITE_URL}/`).toString(),
+        },
+        {
+          '@context': 'https://schema.org',
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'Trang chủ', item: STATIC_SITE_URL },
+            { '@type': 'ListItem', position: 2, name: 'Blog', item: `${STATIC_SITE_URL}/blog` },
+            { '@type': 'ListItem', position: 3, name: post.category_name, item: `${STATIC_SITE_URL}/blog/${post.category_slug}` },
+            { '@type': 'ListItem', position: 4, name: post.title, item: new URL(routePath, `${STATIC_SITE_URL}/`).toString() },
+          ],
+        },
+      ],
       body: `<article><h1>${htmlEscape(post.title)}</h1>${post.content ? `<div>${sanitizeRichHtml(post.content)}</div>` : ''}</article>`,
     }), files)
   }
@@ -476,6 +593,7 @@ export async function buildStaticArtifact(input: StaticBuildInput, options: Stat
     ...STATIC_CONTENT_ROUTES.map(([routePath]) => routePath),
     ...CATEGORY_ROOTS.map(([slug]) => `/${slug}`),
     ...input.subcategories.map((subcategory) => `/${subcategory.category_slug}/${subcategory.slug}`),
+    ...brands.map((brand) => `/thuong-hieu/${brand.slug}`),
     '/blog',
     ...blogCategories.map((category) => `/blog/${category.slug}`),
     ...blogPosts.map((post) => `/blog/${post.category_slug}/${post.slug}`),
@@ -491,8 +609,9 @@ export async function buildStaticArtifact(input: StaticBuildInput, options: Stat
   }, null, 2)}\n`, files)
   const robots = options.mode === 'preview'
     ? 'User-agent: *\nDisallow: /\n'
-    : `User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /admin/\nSitemap: ${STATIC_SITE_URL}/sitemap.xml\n`
+    : `User-agent: *\nAllow: /\nAllow: /sitemap.xml\nAllow: /sitemap_static.xml\nAllow: /sitemap_product_*.xml\nDisallow: /api/\nDisallow: /admin/\nDisallow: /studio/\nSitemap: ${STATIC_SITE_URL}/sitemap.xml\n`
   await writeUnique(output, 'robots.txt', robots, files)
+  const publishingCdnSource = options.publishingCdnHostname ? ` https://${options.publishingCdnHostname}` : ''
   await writeUnique(output, '_headers', [
     '/*',
     ...(options.mode === 'preview' ? ['  X-Robots-Tag: noindex, nofollow'] : []),
@@ -500,7 +619,7 @@ export async function buildStaticArtifact(input: StaticBuildInput, options: Stat
     '  X-Content-Type-Options: nosniff',
     '  Referrer-Policy: strict-origin-when-cross-origin',
     '  Permissions-Policy: camera=(), microphone=(), geolocation=(), interest-cohort=()',
-    '  Content-Security-Policy: default-src \'self\'; img-src \'self\' data: blob: https://cdn.dongphugia.com.vn https://cdn.hita.com.vn https://hita.com.vn https://tygjmrhandbffjllxveu.supabase.co https://vietceramics.com https://images.unsplash.com; script-src \'self\' \'unsafe-inline\'; style-src \'self\' \'unsafe-inline\'',
+    `  Content-Security-Policy: default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; form-action 'self'; img-src 'self' data: blob: https://cdn.dongphugia.com.vn${publishingCdnSource} https://cdn.hita.com.vn https://hita.com.vn https://tygjmrhandbffjllxveu.supabase.co https://vietceramics.com https://images.unsplash.com https://www.transparenttextures.com; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://www.google-analytics.com https://region1.google-analytics.com https://www.googletagmanager.com`,
     '  Strict-Transport-Security: max-age=31536000',
     '',
   ].join('\n'), files)
@@ -519,6 +638,7 @@ export async function buildStaticArtifact(input: StaticBuildInput, options: Stat
       products: input.products.length,
       blogCategories: blogCategories.length,
       blogPosts: blogPosts.length,
+      brands: brands.length,
       clientRuntimeShells: CLIENT_RUNTIME_SHELL_ROUTES.length,
     },
     seo: {
@@ -528,7 +648,7 @@ export async function buildStaticArtifact(input: StaticBuildInput, options: Stat
       productSitemapUrls: canonicalPaths.length,
       staticSitemapUrls: staticSitemapPaths.length,
       redirects: redirects.length,
-      robots: options.mode === 'preview' ? 'disallow-all' : 'allow-public-disallow-admin-api',
+      robots: options.mode === 'preview' ? 'disallow-all' : 'allow-public-disallow-admin-api-studio',
       canonicalBase: STATIC_SITE_URL,
       bunnyMediaPreserved: true,
     },
@@ -572,7 +692,18 @@ export async function validateStaticArtifact(output: string, productPaths: strin
   }
   const robots = await readFile(path.join(resolvedOutput, 'robots.txt'), 'utf8')
   if (mode === 'preview' && !robots.includes('Disallow: /')) throw new Error('STATIC_ARTIFACT_NOINDEX_FAILED')
-  if (mode === 'production' && !robots.includes(`Sitemap: ${STATIC_SITE_URL}/sitemap.xml`)) throw new Error('STATIC_ARTIFACT_ROBOTS_FAILED')
+  if (mode === 'production' && (!robots.includes(`Sitemap: ${STATIC_SITE_URL}/sitemap.xml`) || !robots.includes('Disallow: /studio/'))) {
+    throw new Error('STATIC_ARTIFACT_ROBOTS_FAILED')
+  }
+  for (const [routePath] of STATIC_CONTENT_ROUTES) {
+    await stat(path.join(resolvedOutput, outputRelativePath(routePath)))
+  }
+  for (const [slug] of CATEGORY_ROOTS) {
+    await stat(path.join(resolvedOutput, outputRelativePath(`/${slug}`)))
+  }
+  for (const routePath of CLIENT_RUNTIME_SHELL_ROUTES) {
+    await stat(path.join(resolvedOutput, outputRelativePath(routePath)))
+  }
   return { inventory, sitemapUrlCount: allSitemapUrls }
 }
 
@@ -609,7 +740,7 @@ async function readBuildInput(client: Client): Promise<StaticBuildInput> {
   const products = (await client.query<StaticProduct>(`SELECT p.id, p.slug, p.name, p.description, p.seo_title, p.seo_description,
     p.image_main_url, p.sku, p.updated_at, p.product_type, p.stock_status, p.price, p.original_price,
     p.list_price, p.sale_price, c.slug AS category_slug, c.name AS category_name,
-    s.slug AS subcategory_slug, s.name AS subcategory_name, b.name AS brand_name,
+    s.slug AS subcategory_slug, s.name AS subcategory_name, b.slug AS brand_slug, b.name AS brand_name,
     coalesce(tx.primary_taxons, '[]'::json) AS primary_taxons
     FROM products p JOIN categories c ON c.id = p.category_id
     LEFT JOIN subcategories s ON s.id = p.subcategory_id LEFT JOIN brands b ON b.id = p.brand_id
@@ -628,15 +759,63 @@ async function readBuildInput(client: Client): Promise<StaticBuildInput> {
       AND p.publication_status = 'public' AND p.pdp_visibility = 'public' AND p.sitemap_include = true
       AND p.seo_indexing <> 'noindex' ORDER BY c.slug, s.slug`)).rows
   const blogPosts = (await client.query<StaticBlogPost>(`SELECT p.slug, p.title, p.excerpt, p.content,
-    p.cover_image_url, p.updated_at, p.published_at, c.slug AS category_slug, c.name AS category_name
+    p.seo_title, p.seo_description, p.author_name, p.cover_image_url, p.updated_at, p.published_at,
+    c.slug AS category_slug, c.name AS category_name, c.seo_title AS category_seo_title,
+    c.seo_description AS category_seo_description
     FROM blog_posts p JOIN blog_categories c ON c.id = p.category_id
     WHERE p.status = 'published' AND p.published_at <= now() ORDER BY p.id`)).rows
-  const blogCategories = [...new Map(blogPosts.map((post) => [post.category_slug, { slug: post.category_slug, name: post.category_name }])).values()]
+  const blogCategories = [...new Map(blogPosts.map((post) => [post.category_slug, {
+    slug: post.category_slug,
+    name: post.category_name,
+    seo_title: post.category_seo_title,
+    seo_description: post.category_seo_description,
+  }])).values()]
+  const brands = [...new Map(products
+    .filter((product) => product.brand_slug && product.brand_name)
+    .map((product) => [product.brand_slug!, { slug: product.brand_slug!, name: product.brand_name! }])).values()]
+  const familyRows = (await client.query<{
+    family_key: string
+    member_key: string
+    group_key: string | null
+    catalogue_gap: boolean
+  }>(`SELECT family.family_key, product.sku AS member_key, configuration_group.group_key, false AS catalogue_gap
+      FROM product_family_memberships membership
+      JOIN product_families family ON family.id = membership.family_id
+      JOIN product_family_configuration_groups configuration_group
+        ON configuration_group.id = membership.configuration_group_id
+       AND configuration_group.family_id = membership.family_id
+      JOIN products product ON product.id = membership.product_id
+      WHERE family.family_key = 'toto:ms885'
+    UNION ALL
+    SELECT family.family_key, gap.member_key, NULL AS group_key, true AS catalogue_gap
+      FROM product_family_catalogue_gaps gap
+      JOIN product_families family ON family.id = gap.family_id
+      WHERE family.family_key = 'toto:ms885'
+    ORDER BY member_key`)).rows
+  const preservationSnapshot = {
+    familyKey: familyRows[0]?.family_key ?? '',
+    canonicalMemberKeys: familyRows.map((row) => row.member_key),
+    memberships: familyRows
+      .filter((row) => !row.catalogue_gap && row.group_key)
+      .map((row) => ({ memberKey: row.member_key, groupKey: row.group_key! })),
+    catalogueGapKeys: familyRows.filter((row) => row.catalogue_gap).map((row) => row.member_key),
+    deferredOutsideFamily: ['MS885DE6#XW'],
+  }
   const redirects = (await client.query<{ old_url: string; new_url: string; status_code: number | null }>(
     'SELECT old_url, new_url, status_code FROM redirects WHERE is_active = true ORDER BY old_url',
   )).rows.map((redirect) => ({ source: redirect.old_url, destination: redirect.new_url, status: redirect.status_code ?? 301 }))
   await client.query('COMMIT')
-  return { products, subcategories, blogCategories, blogPosts, redirects }
+  return { products, subcategories, brands, blogCategories, blogPosts, redirects, preservationSnapshot }
+}
+
+async function readCommittedRedirectMap(relativePath: string): Promise<StaticRedirect[]> {
+  const raw = JSON.parse(await readFile(path.resolve(process.cwd(), relativePath), 'utf8')) as Record<string, unknown>
+  return Object.entries(raw).map(([source, destination]) => {
+    if (!source.startsWith('/') || typeof destination !== 'string' || !destination.startsWith('/')) {
+      throw new Error(`STATIC_BUILD_REDIRECT_MAP_FAILED: ${relativePath}`)
+    }
+    return { source, destination, status: 301 }
+  })
 }
 
 async function main() {
@@ -649,7 +828,21 @@ async function main() {
   await client.connect()
   try {
     const input = await readBuildInput(client)
-    const result = await buildStaticArtifact(input, { output, mode, sourceIdentity: 'read-only PostgreSQL build snapshot' })
+    input.redirects = [
+      ...(input.redirects ?? []),
+      ...await readCommittedRedirectMap('src/data/product-redirect-map.json'),
+      ...await readCommittedRedirectMap('src/data/catalog-taxonomy-v2-redirect-map.json'),
+    ]
+    const publishingCdnHostname = process.env.PUBLISHING_BUNNY_CDN_HOSTNAME
+    if (!publishingCdnHostname || !/^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/i.test(publishingCdnHostname)) {
+      throw new Error('PUBLISHING_BUNNY_CDN_HOSTNAME must be an exact hostname')
+    }
+    const result = await buildStaticArtifact(input, {
+      output,
+      mode,
+      sourceIdentity: 'read-only PostgreSQL build snapshot',
+      publishingCdnHostname,
+    })
     await validateStaticArtifact(output, result.productPaths, mode)
     process.stdout.write(`${JSON.stringify({ ...result.inventory, canonicalProductCoverage: result.productPaths.length, output, mode })}\n`)
   } finally {
