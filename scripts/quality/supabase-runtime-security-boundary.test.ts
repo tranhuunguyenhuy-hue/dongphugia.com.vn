@@ -17,6 +17,13 @@ const controlRls = readFileSync(
   ),
   'utf8',
 )
+const loginBoundary = readFileSync(
+  resolve(
+    process.cwd(),
+    'supabase/migrations/20260827210019_leo539_login_and_fail_closed_writes.sql',
+  ),
+  'utf8',
+)
 const validation = readFileSync(
   resolve(process.cwd(), 'supabase/tests/leo539_security_boundary.sql'),
   'utf8',
@@ -26,6 +33,10 @@ const runbook = readFileSync(
   'utf8',
 )
 const docsIndex = readFileSync(resolve(process.cwd(), 'docs/README.md'), 'utf8')
+const currentState = readFileSync(
+  resolve(process.cwd(), 'docs/ops/project-current-state.md'),
+  'utf8',
+)
 
 describe('LEO-539 Supabase runtime security boundary', () => {
   it('locks the exact target and non-Production environment', () => {
@@ -40,11 +51,11 @@ describe('LEO-539 Supabase runtime security boundary', () => {
     ]) {
       expect(boundary).toContain(value)
     }
-    expect(runbook).toContain('tlmgudfhsyzayiazuugf')
+    expect(currentState).toContain('tlmgudfhsyzayiazuugf')
     expect(docsIndex).toContain('deploy/supabase-runtime-security-boundary.md')
   })
 
-  it('creates only secret-free NOLOGIN capability roles', () => {
+  it('creates secret-free capability roles and target-local login identities', () => {
     for (const role of ['dpg_migration', 'dpg_runtime', 'dpg_readonly']) {
       expect(boundary).toContain(`create role ${role}`)
     }
@@ -53,6 +64,21 @@ describe('LEO-539 Supabase runtime security boundary', () => {
     expect(boundary).not.toMatch(/\bpassword\b\s+/i)
     expect(boundary).not.toMatch(/postgres(?:ql)?:\/\//i)
     expect(boundary).not.toMatch(/service[_-]?role[_-]?key/i)
+
+    for (const role of [
+      'dpg_migration_login',
+      'dpg_runtime_login',
+      'dpg_readonly_login',
+    ]) {
+      expect(loginBoundary).toContain(`create role ${role} login password %L`)
+      expect(loginBoundary).toContain(`alter role ${role} set application_name`)
+    }
+    expect(loginBoundary.match(/gen_random_uuid\(\)/g)).toHaveLength(6)
+    expect(loginBoundary).toContain('grant dpg_migration to dpg_migration_login')
+    expect(loginBoundary).toContain('grant dpg_runtime to dpg_runtime_login')
+    expect(loginBoundary).toContain('grant dpg_readonly to dpg_readonly_login')
+    expect(loginBoundary).not.toMatch(/postgres(?:ql)?:\/\//i)
+    expect(loginBoundary).not.toMatch(/service[_-]?role[_-]?key/i)
   })
 
   it('keeps Data API and Auth configuration fail closed', () => {
@@ -90,5 +116,20 @@ describe('LEO-539 Supabase runtime security boundary', () => {
     expect(validation).toContain('cross-owner update assertion failed')
     expect(validation).toContain('auth.users')
     expect(validation).toContain('storage.objects')
+    expect(loginBoundary).toContain('revoke select, insert, update, delete on tables')
+    expect(loginBoundary).toContain('revoke select on tables from dpg_readonly')
+    expect(loginBoundary).toContain('create function dpg_control.enforce_free_tier_headroom()')
+    expect(loginBoundary).toContain('security definer')
+    expect(loginBoundary).toContain('set search_path = pg_catalog')
+    expect(loginBoundary).toContain('before insert or update')
+    for (const failure of [
+      'anonymous write unexpectedly succeeded',
+      'read-only write unexpectedly succeeded',
+      'migration-owner write unexpectedly succeeded',
+      'non-synthetic write unexpectedly succeeded',
+      'database hard stop unexpectedly succeeded',
+    ]) {
+      expect(validation).toContain(failure)
+    }
   })
 })
