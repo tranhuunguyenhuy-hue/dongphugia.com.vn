@@ -325,7 +325,8 @@ async function directoryInventory(root: string): Promise<StaticArtifactInventory
 }
 
 function productLegacyPaths(product: StaticProduct) {
-  const subcategories = [product.subcategory_slug, product.product_type]
+  if (product.subcategory_slug) return [`/${product.category_slug}/${product.subcategory_slug}/${product.slug}`]
+  const subcategories = [product.product_type]
     .filter((value): value is string => Boolean(value))
   if (product.category_slug === 'gach-op-lat') subcategories.push('gach-op-lat')
   subcategories.push('all')
