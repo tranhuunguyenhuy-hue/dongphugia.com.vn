@@ -10,7 +10,7 @@ const migrationPath = path.join(
 )
 
 const canonicalMembers = [
-  'MS885DE2#XW', 'MS885DE4#XW', 'MS885DE6#XW',
+  'MS885DE2#XW', 'MS885DE4#XW',
   'MS885DT2#XW', 'MS885DT3#XW', 'MS885DT8#XW',
   'MS885DW4#XW', 'MS885DW6#XW', 'MS885DW7#XW',
   'MS885DW11#XW', 'MS885DW14#XW', 'MS885DW16#XW',
@@ -46,12 +46,11 @@ describe('MS885 normalized PostgreSQL migration contract', () => {
     const members = rows.map(([, memberKey]) => memberKey)
     const groups = new Map(rows.map(([, memberKey, groupKey]) => [memberKey, groupKey]))
 
-    expect(rows).toHaveLength(21)
+    expect(rows).toHaveLength(20)
     expect(new Set(members)).toEqual(new Set(canonicalMembers))
     expect(groups).toEqual(new Map([
       ['MS885DE2#XW', 'ecowasher'],
       ['MS885DE4#XW', 'ecowasher'],
-      ['MS885DE6#XW', 'ecowasher'],
       ['MS885DT2#XW', 'soft-close'],
       ['MS885DT3#XW', 'soft-close'],
       ['MS885DT8#XW', 'soft-close'],
@@ -71,6 +70,10 @@ describe('MS885 normalized PostgreSQL migration contract', () => {
       ['MS885DW24#XW', 'electronic-washlet'],
       ['MS885DW25#XW', 'electronic-washlet'],
     ]))
+    expect([...groups.values()].filter((groupKey) => groupKey === 'ecowasher')).toHaveLength(2)
+    expect([...groups.values()].filter((groupKey) => groupKey === 'electronic-washlet')).toHaveLength(15)
+    expect([...groups.values()].filter((groupKey) => groupKey === 'soft-close')).toHaveLength(3)
+    expect(sql).toContain("('ecowasher', 2),\n        ('electronic-washlet', 13),\n        ('soft-close', 3)")
     expect(rows.filter(([, , , , gap]) => gap === 'true').map(([, memberKey]) => memberKey))
       .toEqual(['MS885DW4#XW', 'MS885DW18#XW'])
     expect(sql).toContain('MS885DW4#XW and MS885DW18#XW')
@@ -95,12 +98,12 @@ describe('MS885 normalized PostgreSQL migration contract', () => {
       const scalar = async (query: string) => Number((await client.query<{ count: number }>(query)).rows[0]?.count ?? 0)
       expect(await scalar("SELECT count(*)::int AS count FROM product_families WHERE family_key = 'toto:ms885'")).toBe(1)
       expect(await scalar("SELECT count(*)::int AS count FROM product_family_configuration_groups g JOIN product_families f ON f.id = g.family_id WHERE f.family_key = 'toto:ms885'")).toBe(3)
-      expect(await scalar("SELECT count(*)::int AS count FROM product_family_memberships m JOIN product_families f ON f.id = m.family_id WHERE f.family_key = 'toto:ms885'")).toBe(19)
+      expect(await scalar("SELECT count(*)::int AS count FROM product_family_memberships m JOIN product_families f ON f.id = m.family_id WHERE f.family_key = 'toto:ms885'")).toBe(18)
       expect(await scalar("SELECT count(*)::int AS count FROM product_family_catalogue_gaps g JOIN product_families f ON f.id = g.family_id WHERE f.family_key = 'toto:ms885' AND g.status = 'open'")).toBe(2)
       expect(await scalar("SELECT count(*)::int AS count FROM products WHERE sku LIKE 'MS885%' AND (variant_group IS NOT NULL OR variant_group_id IS NOT NULL)")).toBe(0)
       const groupCounts = await client.query<{ group_key: string; count: number }>("SELECT g.group_key, count(m.id)::int AS count FROM product_family_configuration_groups g JOIN product_families f ON f.id = g.family_id LEFT JOIN product_family_memberships m ON m.configuration_group_id = g.id WHERE f.family_key = 'toto:ms885' GROUP BY g.id, g.group_key, g.sort_order ORDER BY g.sort_order")
       expect(groupCounts.rows).toEqual([
-        { group_key: 'ecowasher', count: 3 },
+        { group_key: 'ecowasher', count: 2 },
         { group_key: 'electronic-washlet', count: 13 },
         { group_key: 'soft-close', count: 3 },
       ])

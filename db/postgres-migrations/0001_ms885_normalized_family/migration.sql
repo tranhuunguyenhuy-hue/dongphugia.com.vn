@@ -117,7 +117,7 @@ SET label = EXCLUDED.label,
     updated_at = now();
 
 -- Keep the approved canonical set in one session-local manifest. This avoids
--- repeating the 21-SKU set across the mapping and integrity checks.
+-- repeating the 20-SKU set across the mapping and integrity checks.
 CREATE TEMP TABLE IF NOT EXISTS ms885_approved_members (
   member_key varchar(100) PRIMARY KEY,
   group_key varchar(100) NOT NULL,
@@ -130,25 +130,24 @@ INSERT INTO ms885_approved_members (member_key, group_key, sort_order, catalogue
 VALUES
   ('MS885DE2#XW', 'ecowasher', 0, false),
   ('MS885DE4#XW', 'ecowasher', 1, false),
-  ('MS885DE6#XW', 'ecowasher', 2, false),
-  ('MS885DT2#XW', 'soft-close', 3, false),
-  ('MS885DT3#XW', 'soft-close', 4, false),
-  ('MS885DT8#XW', 'soft-close', 5, false),
-  ('MS885DW4#XW', 'electronic-washlet', 6, true),
-  ('MS885DW6#XW', 'electronic-washlet', 7, false),
-  ('MS885DW7#XW', 'electronic-washlet', 8, false),
-  ('MS885DW11#XW', 'electronic-washlet', 9, false),
-  ('MS885DW14#XW', 'electronic-washlet', 10, false),
-  ('MS885DW16#XW', 'electronic-washlet', 11, false),
-  ('MS885DW18#XW', 'electronic-washlet', 12, true),
-  ('MS885CDW12#XW', 'electronic-washlet', 13, false),
-  ('MS885CDW15#XW', 'electronic-washlet', 14, false),
-  ('MS885CDW17#XW', 'electronic-washlet', 15, false),
-  ('MS885CDW23#XW', 'electronic-washlet', 16, false),
-  ('MS885CDW24#XW', 'electronic-washlet', 17, false),
-  ('MS885CDW25#XW', 'electronic-washlet', 18, false),
-  ('MS885DW24#XW', 'electronic-washlet', 19, false),
-  ('MS885DW25#XW', 'electronic-washlet', 20, false);
+  ('MS885DT2#XW', 'soft-close', 2, false),
+  ('MS885DT3#XW', 'soft-close', 3, false),
+  ('MS885DT8#XW', 'soft-close', 4, false),
+  ('MS885DW4#XW', 'electronic-washlet', 5, true),
+  ('MS885DW6#XW', 'electronic-washlet', 6, false),
+  ('MS885DW7#XW', 'electronic-washlet', 7, false),
+  ('MS885DW11#XW', 'electronic-washlet', 8, false),
+  ('MS885DW14#XW', 'electronic-washlet', 9, false),
+  ('MS885DW16#XW', 'electronic-washlet', 10, false),
+  ('MS885DW18#XW', 'electronic-washlet', 11, true),
+  ('MS885CDW12#XW', 'electronic-washlet', 12, false),
+  ('MS885CDW15#XW', 'electronic-washlet', 13, false),
+  ('MS885CDW17#XW', 'electronic-washlet', 14, false),
+  ('MS885CDW23#XW', 'electronic-washlet', 15, false),
+  ('MS885CDW24#XW', 'electronic-washlet', 16, false),
+  ('MS885CDW25#XW', 'electronic-washlet', 17, false),
+  ('MS885DW24#XW', 'electronic-washlet', 18, false),
+  ('MS885DW25#XW', 'electronic-washlet', 19, false);
 
 -- Persist approved members with no Product row as explicit catalogue gaps.
 -- The gap row is not a Product surrogate and contains no commerce data.
@@ -281,7 +280,7 @@ BEGIN
   IF product_row_count <> 0 AND EXISTS (
     WITH expected_groups (group_key, expected_without_gaps) AS (
       VALUES
-        ('ecowasher', 3),
+        ('ecowasher', 2),
         ('electronic-washlet', 13),
         ('soft-close', 3)
     ),
