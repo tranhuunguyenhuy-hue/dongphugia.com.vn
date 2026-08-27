@@ -59,3 +59,38 @@ Separate PM authorization is required before resuming:
 For routing, approval, rollback, and Production gates, read root `AGENTS.md`,
 `WORKFLOW-WITH-CODEX.md`, and the affected runbook; do not treat this snapshot
 as a substitute.
+
+## LEO-539 isolated Supabase target evidence
+
+Verified 2026-08-28. This evidence is target-specific and does not change the
+Production runtime baseline above.
+
+- Organization: `pjouohhhwurycbqvhxzn`; plan `free` immediately before
+  creation; quoted project cost `USD 0/month`.
+- New target: `dongphugia-runtime`; ref `tlmgudfhsyzayiazuugf`; region
+  `ap-southeast-1`; status `ACTIVE_HEALTHY`; PostgreSQL 17.
+- Pre-creation inventory: one active legacy project and two inactive projects.
+  Creation required no pause, restore, deletion, replacement, or mutation of
+  an existing project. No existing project was changed.
+- Recorded migrations: `leo539_security_boundary`,
+  `leo539_control_rls_hardening`, and
+  `leo539_login_and_fail_closed_writes`.
+- Capability roles are `NOLOGIN`, `NOINHERIT`, non-superuser, non-creator,
+  non-replication, and `NOBYPASSRLS`. Each restricted target-local login is a
+  member of exactly one capability role; its generated credential was neither
+  returned nor retrieved.
+- Rollback-only SQL proved authenticated owner access, cross-owner isolation,
+  and denial of anonymous, read-only, non-synthetic, and migration-owner
+  writes. The projected 350 MiB guard failed closed as required.
+- Supabase security and performance advisors returned no findings after the
+  boundary was applied. Final evidence recorded Auth users `0`, Storage objects
+  `0`, probe rows `0`, public application tables `0`, and database size
+  `10,464,403` bytes (`WITHIN_BUDGET`).
+- Platform Postgres logs were available without a paid Log Drain. Repeating
+  provider-internal `realtime.subscription does not exist` entries were observed;
+  the Realtime relation was absent and Realtime is unused by LEO-539. Treat any
+  future application-facing recurrence as a stop and investigate separately;
+  LEO-539 did not mutate the provider-managed Realtime schema.
+- No Production database, credential, row, object, or derived data was accessed
+  or placed in this target. No GitHub, Cloudflare, DNS, AWS, traffic, cutover, or
+  legacy Supabase mutation occurred.

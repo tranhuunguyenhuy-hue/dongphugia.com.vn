@@ -41,6 +41,10 @@ not an authority document: verify it immediately before relying on it.
 - `CURRENT` — [Migration free-tier and Owner-gate policy](deploy/migration-free-tier-policy.md):
   fail-closed budget preflight, provider-limit verification, and explicit
   Owner gates for later migration issues (LEO-532).
+- `CURRENT` — [Supabase runtime security boundary](deploy/supabase-runtime-security-boundary.md):
+  isolated Free target identity, least-privilege roles, forced RLS/Auth
+  separation, Free-tier guards, secret-safe validation, and teardown boundary
+  (LEO-539).
 - `CURRENT` — [Public static build](deploy/public-static-build.md):
   read-only build-time export, SEO/redirect output, inventory checks, and
   Product/Family preservation gate (LEO-536).
