@@ -23,6 +23,11 @@ Parameters:
     Default: 10.42.20.0/24
     AllowedPattern: '^([0-9]{1,3}\.){3}[0-9]{1,3}/([0-9]|[1-2][0-9]|3[0-2])$'
     Description: New subnet CIDR must be unused inside the verified project VPC.
+  NatGatewaySubnetCidr:
+    Type: String
+    Default: 10.42.21.0/24
+    AllowedPattern: '^([0-9]{1,3}\.){3}[0-9]{1,3}/([0-9]|[1-2][0-9]|3[0-2])$'
+    Description: New public subnet CIDR for the single-AZ NAT Gateway; it must be unused inside the verified project VPC.
   InstanceType:
     Type: String
     Default: t4g.medium
@@ -92,6 +97,106 @@ Resources:
         - Key: SourceOfTruth
           Value: LEO-527
 
+  NatGatewaySubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VpcId
+      CidrBlock: !Ref NatGatewaySubnetCidr
+      AvailabilityZone: !Ref AvailabilityZone
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-nat-subnet'
+        - Key: Project
+          Value: dongphugia
+        - Key: Environment
+          Value: staging
+        - Key: Role
+          Value: isolated-staging-egress
+        - Key: Owner
+          Value: dongphugia
+        - Key: ManagedBy
+          Value: cloudformation
+        - Key: SourceOfTruth
+          Value: LEO-527
+
+  NatGatewayRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VpcId
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-nat-route-table'
+        - Key: Project
+          Value: dongphugia
+        - Key: Environment
+          Value: staging
+        - Key: Role
+          Value: isolated-staging-egress
+        - Key: Owner
+          Value: dongphugia
+        - Key: ManagedBy
+          Value: cloudformation
+        - Key: SourceOfTruth
+          Value: LEO-527
+
+  NatGatewayRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref NatGatewaySubnet
+      RouteTableId: !Ref NatGatewayRouteTable
+
+  NatGatewayDefaultRoute:
+    Type: AWS::EC2::Route
+    DependsOn: NatGateway
+    Properties:
+      RouteTableId: !Ref NatGatewayRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGatewayId
+
+  NatGatewayEip:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-nat-eip'
+        - Key: Project
+          Value: dongphugia
+        - Key: Environment
+          Value: staging
+        - Key: Role
+          Value: isolated-staging-egress
+        - Key: Owner
+          Value: dongphugia
+        - Key: ManagedBy
+          Value: cloudformation
+        - Key: SourceOfTruth
+          Value: LEO-527
+
+  NatGateway:
+    Type: AWS::EC2::NatGateway
+    DependsOn: NatGatewayRouteTableAssociation
+    Properties:
+      AllocationId: !GetAtt NatGatewayEip.AllocationId
+      SubnetId: !Ref NatGatewaySubnet
+      ConnectivityType: public
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-nat'
+        - Key: Project
+          Value: dongphugia
+        - Key: Environment
+          Value: staging
+        - Key: Role
+          Value: isolated-staging-egress
+        - Key: Owner
+          Value: dongphugia
+        - Key: ManagedBy
+          Value: cloudformation
+        - Key: SourceOfTruth
+          Value: LEO-527
+
   StagingRouteTable:
     Type: AWS::EC2::RouteTable
     Properties:
@@ -114,11 +219,13 @@ Resources:
 
   StagingDefaultRoute:
     Type: AWS::EC2::Route
-    DependsOn: StagingRouteTable
+    DependsOn:
+      - StagingRouteTable
+      - NatGateway
     Properties:
       RouteTableId: !Ref StagingRouteTable
       DestinationCidrBlock: 0.0.0.0/0
-      GatewayId: !Ref InternetGatewayId
+      NatGatewayId: !Ref NatGateway
 
   StagingSubnetRouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
@@ -429,6 +536,9 @@ Resources:
 
   StagingInstance:
     Type: AWS::EC2::Instance
+    DependsOn:
+      - StagingDefaultRoute
+      - StagingSubnetRouteTableAssociation
     Properties:
       LaunchTemplate:
         LaunchTemplateId: !Ref StagingLaunchTemplate
@@ -572,6 +682,9 @@ Outputs:
   SubnetId:
     Description: Dedicated Staging subnet.
     Value: !Ref StagingSubnet
+  NatGatewayId:
+    Description: Single-AZ NAT Gateway providing private Staging outbound connectivity.
+    Value: !Ref NatGateway
   SecurityGroupId:
     Description: Dedicated Staging-only security group with no PostgreSQL ingress.
     Value: !Ref StagingSecurityGroup

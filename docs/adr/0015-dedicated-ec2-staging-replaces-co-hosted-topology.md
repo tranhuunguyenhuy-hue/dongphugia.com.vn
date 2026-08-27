@@ -31,6 +31,12 @@ separate instance profile, encrypted EBS data volume, and the canonical
 Docker ownership marker. It runs only the isolated Staging PostgreSQL and app
 contract from `docs/deploy/isolated-staging-foundation.md`.
 
+The EC2 remains private: a separate public subnet contains one NAT Gateway and
+EIP, the public route targets the verified IGW, and the private Staging route
+targets that NAT Gateway. This supplies the required package, SSM, registry,
+backup-object, and HTTPS egress without placing the workload on a public
+subnet. No VPC endpoint or NAT instance is introduced.
+
 The management path is SSM-first. IMDSv2 is required, SSH is not opened,
 PostgreSQL is not public, and the instance profile contains no standing
 Production backup/database/application permissions. A one-time exact-object

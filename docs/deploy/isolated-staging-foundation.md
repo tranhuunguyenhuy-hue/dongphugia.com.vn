@@ -14,9 +14,11 @@ The canonical isolated target is provisioned by the dedicated EC2 foundation in
 co-host and is superseded as a Staging target; it remains untouched until the
 separate LEO-528 cleanup scope.
 
-The dedicated host contract is Staging-only: a new tagged subnet, security
+The dedicated host contract is Staging-only: a private tagged Staging subnet,
+a separate public egress subnet containing only one NAT Gateway, a security
 group, instance profile, encrypted EBS data volume, Docker network and Docker
-volume. The security group has no SSH, PostgreSQL, or Coolify-admin ingress.
+volume. The EC2 has no public IP; its default route targets the new NAT
+Gateway. The security group has no SSH, PostgreSQL, or Coolify-admin ingress.
 The instance role has only standing SSM/CloudWatch management permissions and
 no Production backup, database, application, or write capability. The one-time
 clone exception is an exact-object S3 read and is removed after restore.
@@ -26,7 +28,10 @@ through the private `postgres` network alias.
 The host must pass a bounded SSM RunCommand probe before setup continues. The
 host contract, database roles, marker, runtime guardrails, exact image
 provenance, and side-effect controls are attested on the host; a CloudFormation
-`CREATE_COMPLETE` event alone is not acceptance evidence.
+`CREATE_COMPLETE` event alone is not acceptance evidence. Before the probe,
+verify the NAT Gateway is `available` and both the public IGW route and private
+Staging route target the new NAT Gateway; if any route, VPC, AZ, or public-IP
+check differs, stop without host setup.
 
 ## Target identity
 

@@ -7,10 +7,14 @@ Production + legacy Staging co-host.
 
 ## Contract
 
-The stack creates only resources tagged `Environment=staging`,
-`Role=isolated-staging-only`, and `SourceOfTruth=LEO-527`:
+The stack creates only resources tagged `Environment=staging`, an explicit
+LEO-527 role (`isolated-staging-only` for the workload or
+`isolated-staging-egress` for its NAT path), and `SourceOfTruth=LEO-527`:
 
-- a new subnet and route table inside the already verified project VPC;
+- a private Staging subnet and a separate public egress subnet in the already
+  verified project VPC;
+- one single-AZ public NAT Gateway with one tagged EIP and its IGW-backed route;
+  the Staging subnet has no public IP and its default route targets this NAT;
 - a new Staging-only security group with HTTP/HTTPS ingress, no SSH, no
   PostgreSQL ingress, and no Coolify admin ingress;
 - a new ARM64 EC2 instance using IMDSv2, standard CPU credits, encrypted EBS,
@@ -27,12 +31,18 @@ Resources that support AWS tags carry the LEO-527 ownership tags; route
 associations, volume attachments, and the instance profile are owned through
 the named CloudFormation stack and have no independent Production target.
 
+NAT Gateway is the smallest general outbound path that covers the required
+`dnf`, SSM, GHCR, S3, and HTTPS traffic while keeping the EC2 private. No NAT
+instance or VPC endpoints are assumed. The public egress subnet contains only
+the NAT Gateway; no Staging workload is placed there.
+
 ## Apply gate
 
 Apply only the exact template from the merged LEO-527 PR, after revalidating
-the AWS account, region, VPC, unused subnet CIDR, and the Production host
-identity. Use a change set and pass live values as parameters; do not commit
-account, host, subnet, security-group, volume, EIP, or secret identifiers.
+the AWS account, region, VPC, IGW, unused private/public subnet CIDRs, and the
+Production host identity. Use a change set and pass live values as parameters;
+do not commit account, host, subnet, security-group, volume, EIP, or secret
+identifiers.
 
 The normal source gate is:
 
@@ -42,6 +52,12 @@ branch → commit → PR → required checks → review → PM merge approval �
 
 The stack name is `dongphugia-dedicated-staging`. `CAPABILITY_IAM` is required
 because the stack creates a new Staging-only role and instance profile.
+
+Before accepting the stack, verify `NatGateway` is `available`, the public NAT
+route targets the new NAT Gateway, the private Staging route targets that same
+NAT Gateway, both subnets are in the verified VPC/AZ, and the instance has no
+public IP. A CloudFormation success event without these route/target checks is
+not outbound-connectivity proof; any mismatch is fail-closed.
 
 ## Bounded clone capability
 
