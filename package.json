@@ -38,6 +38,8 @@
     "publishing:test-postgres-concurrency": "tsx scripts/publishing/test-postgres-concurrency.mts",
     "seo:build-inventory": "node scripts/seo/build-legacy-url-inventory.mjs",
     "seo:check-redirect-targets": "tsx scripts/seo/check-redirect-targets.ts",
+    "static:build": "tsx scripts/static-build/public-static-build.mts",
+    "static:check": "vitest run scripts/static-build/public-static-build.test.ts",
     "prepare:standalone-assets": "node -e \"const fs=require('fs'); fs.cpSync('public','.next/standalone/public',{recursive:true}); fs.mkdirSync('.next/standalone/.next',{recursive:true}); fs.cpSync('.next/static','.next/standalone/.next/static',{recursive:true});\"",
     "quality:homepage": "npm run test:media && npm run build && npm run prepare:standalone-assets && npm run test:homepage && npm run perf:lighthouse"
   },
