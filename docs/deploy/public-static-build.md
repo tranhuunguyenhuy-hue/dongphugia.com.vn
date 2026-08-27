@@ -56,3 +56,27 @@ the accepted historical regression baseline is 4,093 files and 7,559,256 bytes.
 Provider-plan facts remain subject to the LEO-532 current-plan verification
 gate. A passing local or PR artifact does not authorize Preview deployment,
 merge, Production, DNS, or traffic changes.
+
+## Migration PR CI and Preview gate
+
+`.github/workflows/migration-preview.yml` runs on every PR to `main` and is
+the required migration delivery gate. It runs lint, type-check, the full test
+suite, and the LEO-536 static contract checks. When an Owner has already
+authorized an exact read-only non-Production source, it builds the `preview`
+mode artifact, verifies the free-tier limits and every HTML/headers/robots
+noindex control, and emits a candidate tuple containing the source commit, PR,
+workflow run, artifact SHA-256, and migration manifest SHA-256.
+
+Cloudflare upload is separately gated by the existing Pages project contract.
+The workflow never creates a project, secret, binding, permission, security
+setting, DNS record, traffic route, or deployment deletion. The Owner must
+preconfigure `MIGRATION_PREVIEW_SOURCE_ENABLED=true`,
+`MIGRATION_PREVIEW_SOURCE_CONTRACT=read-only-non-production`,
+`CLOUDFLARE_PAGES_PREVIEW_ENABLED=true`, and the exact existing
+`CLOUDFLARE_PAGES_PREVIEW_PROJECT`, plus the existing read-only source,
+`CLOUDFLARE_ACCOUNT_ID`, and least-privilege Pages Edit
+`CLOUDFLARE_API_TOKEN` secrets. Missing gates produce
+`BLOCKED_BY_OWNER_GATE`; build, free-tier, identity, or deployed noindex
+failures fail the workflow and block the merge path. A successful deployment
+is checked at a `pr-<number>.<project>.pages.dev` alias for HTML
+`noindex,nofollow`, `X-Robots-Tag: noindex, nofollow`, and `Disallow: /`.

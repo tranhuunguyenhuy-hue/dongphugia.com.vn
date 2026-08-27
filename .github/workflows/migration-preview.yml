@@ -1,0 +1,320 @@
+name: Migration PR CI and Preview
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: migration-preview-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  required-ci:
+    name: Required migration CI
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      DEPLOY_TARGET: local
+
+    steps:
+      - name: Checkout exact PR revision
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type-check
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Build and check LEO-536 static artifact contract
+        run: npm run static:check
+
+  source-owner-gate:
+    name: Read-only Preview source Owner gate
+    needs: required-ci
+    if: always()
+    runs-on: ubuntu-latest
+    outputs:
+      authorized: ${{ steps.gate.outputs.authorized }}
+      result: ${{ steps.gate.outputs.result }}
+    steps:
+      - name: Require the pre-authorized non-Production source contract
+        id: gate
+        env:
+          SOURCE_ENABLED: ${{ vars.MIGRATION_PREVIEW_SOURCE_ENABLED }}
+          SOURCE_CONTRACT: ${{ vars.MIGRATION_PREVIEW_SOURCE_CONTRACT }}
+        run: |
+          set -euo pipefail
+          if [[ "${{ needs.required-ci.result }}" != "success" ]]; then
+            echo "authorized=false" >> "$GITHUB_OUTPUT"
+            echo "result=BLOCKED_BY_CI_FAILURE" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [[ "$SOURCE_ENABLED" == "true" && "$SOURCE_CONTRACT" == "read-only-non-production" ]]; then
+            echo "authorized=true" >> "$GITHUB_OUTPUT"
+            echo "result=AUTHORIZED" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "authorized=false" >> "$GITHUB_OUTPUT"
+          echo "result=BLOCKED_BY_OWNER_GATE" >> "$GITHUB_OUTPUT"
+          {
+            echo '### Preview source: BLOCKED_BY_OWNER_GATE'
+            echo 'Required existing Owner configuration: MIGRATION_PREVIEW_SOURCE_ENABLED=true, MIGRATION_PREVIEW_SOURCE_CONTRACT=read-only-non-production, and the exact read-only MIGRATION_PREVIEW_DATABASE_URL secret.'
+            echo 'No Production database, target write, credential creation, or data placement was attempted.'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  static-preview-artifact:
+    name: Build immutable noindex Preview artifact
+    needs: [required-ci, source-owner-gate]
+    if: needs.source-owner-gate.outputs.authorized == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      artifact_ready: ${{ steps.build.outputs.artifact_ready }}
+      artifact_sha256: ${{ steps.build.outputs.artifact_sha256 }}
+    steps:
+      - name: Checkout exact PR revision
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build the merged LEO-536 static artifact from the read-only source
+        id: build
+        env:
+          DATABASE_URL: ${{ secrets.MIGRATION_PREVIEW_DATABASE_URL }}
+          PUBLIC_STATIC_BUILD_READ_ONLY: 'true'
+          PUBLISHING_BUNNY_CDN_HOSTNAME: cdn.dongphugia.com.vn
+          OUTPUT: ${{ runner.temp }}/dongphugia-static-preview
+          EVIDENCE: ${{ runner.temp }}/dongphugia-preview-evidence/candidate-evidence.json
+        run: |
+          set -euo pipefail
+          if [[ -z "${DATABASE_URL:-}" ]]; then
+            echo "artifact_ready=false" >> "$GITHUB_OUTPUT"
+            echo "artifact_sha256=" >> "$GITHUB_OUTPUT"
+            {
+              echo '### Static artifact: BLOCKED_BY_OWNER_GATE'
+              echo 'The exact read-only MIGRATION_PREVIEW_DATABASE_URL secret is not configured; no build source was contacted.'
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          npm run static:build -- --mode=preview --output="$OUTPUT"
+          npm run static:verify-preview -- \
+            --output "$OUTPUT" \
+            --evidence "$EVIDENCE" \
+            --source-commit "$GITHUB_SHA" \
+            --pr-number "${{ github.event.pull_request.number || 0 }}" \
+            --workflow-run-id "$GITHUB_RUN_ID"
+          artifact_sha256="$(node -e "const fs=require('fs'); const x=JSON.parse(fs.readFileSync(process.env.EVIDENCE,'utf8')); process.stdout.write(x.candidate.artifactSha256)")"
+          echo "artifact_ready=true" >> "$GITHUB_OUTPUT"
+          echo "artifact_sha256=$artifact_sha256" >> "$GITHUB_OUTPUT"
+          {
+            echo '### Static artifact: PASS'
+            echo "- Candidate source: $GITHUB_SHA"
+            echo "- Artifact SHA-256: $artifact_sha256"
+            echo '- Free-tier and all-HTML noindex checks: PASS'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload immutable Preview artifact and evidence
+        if: steps.build.outputs.artifact_ready == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: dongphugia-preview-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/dongphugia-static-preview
+            ${{ runner.temp }}/dongphugia-preview-evidence
+          if-no-files-found: error
+          retention-days: 7
+
+  cloudflare-owner-gate:
+    name: Existing Cloudflare Preview Owner gate
+    needs: [required-ci, source-owner-gate, static-preview-artifact]
+    if: always()
+    runs-on: ubuntu-latest
+    outputs:
+      authorized: ${{ steps.gate.outputs.authorized }}
+      result: ${{ steps.gate.outputs.result }}
+    steps:
+      - name: Require an existing non-Production Pages project
+        id: gate
+        env:
+          PREVIEW_ENABLED: ${{ vars.CLOUDFLARE_PAGES_PREVIEW_ENABLED }}
+          PREVIEW_PROJECT: ${{ vars.CLOUDFLARE_PAGES_PREVIEW_PROJECT }}
+        run: |
+          set -euo pipefail
+          if [[ "${{ needs.required-ci.result }}" != "success" || "${{ needs.source-owner-gate.outputs.authorized }}" != "true" || "${{ needs.static-preview-artifact.result }}" != "success" ]]; then
+            echo "authorized=false" >> "$GITHUB_OUTPUT"
+            echo "result=BLOCKED_BY_CI_OR_SOURCE_GATE" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [[ "$PREVIEW_ENABLED" == "true" && "$PREVIEW_PROJECT" =~ ^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$ ]]; then
+            echo "authorized=true" >> "$GITHUB_OUTPUT"
+            echo "result=AUTHORIZED" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "authorized=false" >> "$GITHUB_OUTPUT"
+          echo "result=BLOCKED_BY_OWNER_GATE" >> "$GITHUB_OUTPUT"
+          {
+            echo '### Cloudflare Preview: BLOCKED_BY_OWNER_GATE'
+            echo 'Required existing Owner configuration: CLOUDFLARE_PAGES_PREVIEW_ENABLED=true and the exact existing non-Production CLOUDFLARE_PAGES_PREVIEW_PROJECT.'
+            echo 'This workflow never creates a Pages project, changes a binding, changes DNS/traffic, or deletes a deployment.'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  cloudflare-credential-gate:
+    name: Cloudflare credential Owner gate
+    needs: [cloudflare-owner-gate, static-preview-artifact]
+    if: needs.cloudflare-owner-gate.outputs.authorized == 'true' && needs.static-preview-artifact.outputs.artifact_ready == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      authorized: ${{ steps.gate.outputs.authorized }}
+      result: ${{ steps.gate.outputs.result }}
+    steps:
+      - name: Require existing least-privilege credentials
+        id: gate
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ -n "$CLOUDFLARE_ACCOUNT_ID" && -n "$CLOUDFLARE_API_TOKEN" ]]; then
+            echo "authorized=true" >> "$GITHUB_OUTPUT"
+            echo "result=AUTHORIZED" >> "$GITHUB_OUTPUT"
+          else
+            echo "authorized=false" >> "$GITHUB_OUTPUT"
+            echo "result=BLOCKED_BY_OWNER_GATE" >> "$GITHUB_OUTPUT"
+            {
+              echo '### Cloudflare credentials: BLOCKED_BY_OWNER_GATE'
+              echo 'Owner must provide existing CLOUDFLARE_ACCOUNT_ID and a least-privilege Pages Edit CLOUDFLARE_API_TOKEN; this workflow does not create or rotate either credential.'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  preview-deploy:
+    name: Publish noindex Cloudflare Preview
+    needs: [cloudflare-owner-gate, cloudflare-credential-gate, static-preview-artifact]
+    if: needs.cloudflare-owner-gate.outputs.authorized == 'true' && needs.cloudflare-credential-gate.outputs.authorized == 'true' && needs.static-preview-artifact.outputs.artifact_ready == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Download exact candidate artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dongphugia-preview-${{ github.sha }}
+          path: preview-package
+
+      - name: Verify candidate identity before deployment
+        id: identity
+        env:
+          EXPECTED_SHA: ${{ github.sha }}
+          EXPECTED_PR: ${{ github.event.pull_request.number || github.run_id }}
+          EXPECTED_RUN_ID: ${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          evidence="$(find preview-package -name candidate-evidence.json -type f -print -quit)"
+          test -n "$evidence"
+          node -e "const fs=require('fs'); const x=JSON.parse(fs.readFileSync(process.argv[1],'utf8')); if (x.candidate.sourceCommit !== process.env.EXPECTED_SHA || x.candidate.pullRequest !== Number(process.env.EXPECTED_PR) || x.candidate.workflowRunId !== process.env.EXPECTED_RUN_ID) process.exit(1)" "$evidence"
+          artifact_sha="$(node -e "const fs=require('fs'); const x=JSON.parse(fs.readFileSync(process.argv[1],'utf8')); process.stdout.write(x.candidate.artifactSha256)" "$evidence")"
+          if [[ "${#artifact_sha}" -ne 64 || "$artifact_sha" == *[!0-9a-f]* ]]; then
+            exit 1
+          fi
+          echo "artifact_sha=$artifact_sha" >> "$GITHUB_OUTPUT"
+
+      - name: Upload the exact candidate to the existing Pages Preview project
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: >-
+            pages deploy preview-package/dongphugia-static-preview
+            --project-name=${{ vars.CLOUDFLARE_PAGES_PREVIEW_PROJECT }}
+            --branch=pr-${{ github.event.pull_request.number || github.run_id }}
+            --commit-hash=${{ github.sha }}
+            --commit-message=LEO-535-preview-${{ github.sha }}
+
+      - name: Prove the deployed Preview is noindex and not Production
+        env:
+          PREVIEW_PROJECT: ${{ vars.CLOUDFLARE_PAGES_PREVIEW_PROJECT }}
+          PR_NUMBER: ${{ github.event.pull_request.number || github.run_id }}
+          ARTIFACT_SHA: ${{ steps.identity.outputs.artifact_sha }}
+        run: |
+          set -euo pipefail
+          preview_url="https://pr-${PR_NUMBER}.${PREVIEW_PROJECT}.pages.dev"
+          case "$preview_url" in
+            https://www.dongphugia.vn|https://dongphugia.vn) exit 1 ;;
+          esac
+          curl --fail --silent --show-error --retry 8 --retry-delay 3 -D "$RUNNER_TEMP/preview.headers" -o "$RUNNER_TEMP/preview.html" "$preview_url/"
+          curl --fail --silent --show-error --retry 8 --retry-delay 3 -o "$RUNNER_TEMP/preview.robots" "$preview_url/robots.txt"
+          grep -Eiq '^x-robots-tag:.*noindex, nofollow' "$RUNNER_TEMP/preview.headers"
+          grep -Eiq 'noindex,nofollow' "$RUNNER_TEMP/preview.html"
+          grep -Fq 'Disallow: /' "$RUNNER_TEMP/preview.robots"
+          {
+            echo '### Cloudflare Preview: PASS'
+            echo "- URL: $preview_url"
+            echo "- Candidate source: $GITHUB_SHA"
+            echo "- Artifact SHA-256: $ARTIFACT_SHA"
+            echo '- HTML meta, X-Robots-Tag, and robots.txt noindex controls: PASS'
+            echo '- Production traffic/DNS: unchanged'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  preview-gate:
+    name: Migration Preview gate
+    needs: [required-ci, source-owner-gate, static-preview-artifact, cloudflare-owner-gate, cloudflare-credential-gate, preview-deploy]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enforce CI and record the final Preview result
+        env:
+          CI_RESULT: ${{ needs.required-ci.result }}
+          SOURCE_RESULT: ${{ needs.source-owner-gate.outputs.result }}
+          ARTIFACT_RESULT: ${{ needs.static-preview-artifact.result }}
+          ARTIFACT_READY: ${{ needs.static-preview-artifact.outputs.artifact_ready }}
+          CLOUDFLARE_RESULT: ${{ needs.cloudflare-owner-gate.outputs.result }}
+          CREDENTIAL_RESULT: ${{ needs.cloudflare-credential-gate.outputs.result }}
+          DEPLOY_RESULT: ${{ needs.preview-deploy.result }}
+        run: |
+          set -euo pipefail
+          if [[ "$CI_RESULT" != "success" ]]; then
+            echo 'CI failure blocks the Preview/merge path.' >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          if [[ "$ARTIFACT_RESULT" == "failure" ]]; then
+            echo 'Static build/free-tier/noindex failure blocks the Preview/merge path.' >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          if [[ "$SOURCE_RESULT" != "AUTHORIZED" || "$ARTIFACT_READY" != "true" || "$CLOUDFLARE_RESULT" != "AUTHORIZED" || "$CREDENTIAL_RESULT" != "AUTHORIZED" ]]; then
+            {
+              echo '### Final Preview result: BLOCKED_BY_OWNER_GATE'
+              echo "- Source gate: ${SOURCE_RESULT:-UNKNOWN}"
+              echo "- Static artifact: ${ARTIFACT_READY:-UNKNOWN}"
+              echo "- Cloudflare gate: ${CLOUDFLARE_RESULT:-UNKNOWN}"
+              echo "- Credential gate: ${CREDENTIAL_RESULT:-UNKNOWN}"
+              echo '- Actual Cloudflare deployment: not attempted'
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          if [[ "$DEPLOY_RESULT" != "success" ]]; then
+            echo 'Cloudflare deployment or deployed noindex verification failed closed.' >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          echo '### Final Preview result: PASS' >> "$GITHUB_STEP_SUMMARY"
