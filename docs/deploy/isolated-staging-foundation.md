@@ -6,6 +6,28 @@ It is
 write-enabled only inside a disposable, label-owned PostgreSQL target and is
 never a Production access path.
 
+## Dedicated host boundary (LEO-527)
+
+The canonical isolated target is provisioned by the dedicated EC2 foundation in
+[`infra/dedicated-staging/`](../../infra/dedicated-staging/). The former
+`dongphugia-staging-foundation` EC2 host is the Production + legacy Staging
+co-host and is superseded as a Staging target; it remains untouched until the
+separate LEO-528 cleanup scope.
+
+The dedicated host contract is Staging-only: a new tagged subnet, security
+group, instance profile, encrypted EBS data volume, Docker network and Docker
+volume. The security group has no SSH, PostgreSQL, or Coolify-admin ingress.
+The instance role has only standing SSM/CloudWatch management permissions and
+no Production backup, database, application, or write capability. The one-time
+clone exception is an exact-object S3 read and is removed after restore.
+PostgreSQL is published only to host loopback and the application connects
+through the private `postgres` network alias.
+
+The host must pass a bounded SSM RunCommand probe before setup continues. The
+host contract, database roles, marker, runtime guardrails, exact image
+provenance, and side-effect controls are attested on the host; a CloudFormation
+`CREATE_COMPLETE` event alone is not acceptance evidence.
+
 ## Target identity
 
 - PostgreSQL image: `postgres:16.10-bookworm` pinned by the digest in
@@ -46,6 +68,17 @@ baseline replay, declared migration execution, app deployment, target
 identity attestation, `/api/health`, homepage and `robots.txt` noindex smoke,
 and exact schema-manifest comparison. It reports the candidate commit and
 image digest; it does not deploy Production.
+
+For a Production-derived dataset on the dedicated host, use the approved
+source-safe daily backup object and its checksum sidecar through the temporary
+exact-object `GetObject` capability described in
+[`infra/dedicated-staging/README.md`](../../infra/dedicated-staging/README.md).
+Restore only into the Staging-owned database, remove the temporary capability,
+and remove the transient dump after restore verification. A direct
+Production-database clone is allowed only after the LEO-523 principal's
+effective privileges are re-attested as read-only; a role name or secret
+description does not prove that boundary. No Production application/database
+content or permissions are changed by this path.
 
 ## Rebuild and rollback
 
