@@ -67,6 +67,15 @@ describe('dedicated Staging outbound network contract', () => {
         expect(privateRoute).not.toContain('\n      GatewayId:')
     })
 
+    it('keeps the IAM instance profile within the CloudFormation schema', () => {
+        const instanceProfile = resourceSection(
+            '  StagingInstanceProfile:',
+            '  StagingCloneReadPolicy:',
+        )
+        expect(instanceProfile).toContain('Roles:')
+        expect(instanceProfile).not.toContain('Tags:')
+    })
+
     it('orders the instance after both NAT routes are provisioned', () => {
         const instance = resourceSection(
             '  StagingInstance:',
