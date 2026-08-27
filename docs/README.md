@@ -32,6 +32,9 @@ not an authority document: verify it immediately before relying on it.
   Production procedures. Read only the affected current runbook.
 - `CURRENT` — [Isolated PostgreSQL Staging deployment foundation](deploy/isolated-staging-foundation.md):
   canonical database-backed candidate path (ADR 0013).
+- `CURRENT` — [Canonical Migration Implementation Baseline](deploy/migration-implementation-baseline.md):
+  locked migration target, candidate identity, approval matrix, rollback
+  ownership, and seven-stage delivery sequence (LEO-533).
 - `CURRENT` — [Dedicated isolated Staging EC2 IaC](../infra/dedicated-staging/README.md):
   dedicated-host topology and one-time source-safe clone capability (LEO-527).
 - `SUPPORTING` — [CI-only disposable database fixtures](deploy/staging-db-bootstrap/RUNBOOK.md):
