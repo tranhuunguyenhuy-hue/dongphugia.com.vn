@@ -78,6 +78,7 @@ describe('canonical public static build', () => {
         output,
         mode: 'production',
         sourceIdentity: 'test fixture matching accepted route cardinality',
+        publishingCdnHostname: 'media.example.com',
       })
       const checked = await validateStaticArtifact(output, result.productPaths, 'production')
       console.info('STATIC_BUILD_INVENTORY', JSON.stringify(result.inventory))
@@ -143,6 +144,7 @@ describe('canonical public static build', () => {
         output,
         mode: 'production',
         sourceIdentity: 'test Blog fixture',
+        publishingCdnHostname: 'media.example.com',
       })
       const html = await readFile(path.join(output, 'blog', 'tu-van', 'chon-thiet-bi', 'index.html'), 'utf8')
       expect(html).toContain('application/ld+json')
@@ -160,6 +162,7 @@ describe('canonical public static build', () => {
       output: path.join(os.tmpdir(), 'unused-static-build-output'),
       mode: 'production',
       sourceIdentity: 'invalid fixture',
+      publishingCdnHostname: 'media.example.com',
     })).rejects.toThrow('STATIC_BUILD_PRODUCT_COUNT_FAILED')
   })
 
@@ -177,4 +180,24 @@ describe('canonical public static build', () => {
     }
     expect(validateStaticBuildInput(data)).toHaveLength(EXPECTED_CANONICAL_PRODUCT_COUNT)
   })
+
+  it('keeps legacy Product redirect aliases when the subcategory is absent', async () => {
+    const output = await mkdtemp(path.join(os.tmpdir(), 'dongphugia-static-redirects-'))
+    try {
+      const data = buildInput()
+      data.products[0] = { ...data.products[0], subcategory_slug: null, product_type: 'legacy-type' }
+      const result = await buildStaticArtifact(data, {
+        output,
+        mode: 'production',
+        sourceIdentity: 'test redirect fixture',
+        publishingCdnHostname: 'media.example.com',
+      })
+      expect(result.redirects).toEqual(expect.arrayContaining([
+        expect.objectContaining({ source: '/thiet-bi-ve-sinh/legacy-type/product-1', status: 301 }),
+        expect.objectContaining({ source: '/thiet-bi-ve-sinh/all/product-1', status: 301 }),
+      ]))
+    } finally {
+      await rm(output, { recursive: true, force: true })
+    }
+  }, 30_000)
 })

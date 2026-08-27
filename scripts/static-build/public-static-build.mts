@@ -324,10 +324,12 @@ async function directoryInventory(root: string): Promise<StaticArtifactInventory
   }
 }
 
-function productLegacyPath(product: StaticProduct) {
-  const subcategory = product.subcategory_slug
-    || 'all'
-  return `/${product.category_slug}/${subcategory}/${product.slug}`
+function productLegacyPaths(product: StaticProduct) {
+  const subcategories = [product.subcategory_slug, product.product_type]
+    .filter((value): value is string => Boolean(value))
+  if (product.category_slug === 'gach-op-lat') subcategories.push('gach-op-lat')
+  subcategories.push('all')
+  return [...new Set(subcategories)].map((subcategory) => `/${product.category_slug}/${subcategory}/${product.slug}`)
 }
 
 function staticRedirects(input: StaticBuildInput, productPaths: Map<string, string>) {
@@ -392,6 +394,9 @@ export async function buildStaticArtifact(input: StaticBuildInput, options: Stat
   const startedAt = performance.now()
   const output = path.resolve(options.output)
   if (options.mode !== 'production' && options.mode !== 'preview') throw new Error('STATIC_BUILD_MODE_FAILED')
+  if (options.mode === 'production' && (!options.publishingCdnHostname || !isExactHostname(options.publishingCdnHostname))) {
+    throw new Error('PUBLISHING_BUNNY_CDN_HOSTNAME must be an exact hostname')
+  }
   assertSafeOutputDirectory(output)
   const canonicalPaths = validateStaticBuildInput(input)
   await rm(output, { recursive: true, force: true })
@@ -403,12 +408,13 @@ export async function buildStaticArtifact(input: StaticBuildInput, options: Stat
     const product = input.products[index]
     const canonicalPath = canonicalPaths[index]
     const productSchema = productStructuredData(product, canonicalPath)
-    const legacyPath = productLegacyPath(product)
-    const existingCanonicalPath = productPathPairs.get(legacyPath)
-    if (existingCanonicalPath && existingCanonicalPath !== canonicalPath) {
-      throw new Error(`STATIC_BUILD_REDIRECT_COLLISION_FAILED: ${legacyPath}`)
+    for (const legacyPath of productLegacyPaths(product)) {
+      const existingCanonicalPath = productPathPairs.get(legacyPath)
+      if (existingCanonicalPath && existingCanonicalPath !== canonicalPath) {
+        throw new Error(`STATIC_BUILD_REDIRECT_COLLISION_FAILED: ${legacyPath}`)
+      }
+      productPathPairs.set(legacyPath, canonicalPath)
     }
-    productPathPairs.set(legacyPath, canonicalPath)
     await writeRoute(output, canonicalPath, documentHtml({
       mode: options.mode,
       routePath: canonicalPath,
@@ -818,6 +824,10 @@ async function readCommittedRedirectMap(relativePath: string): Promise<StaticRed
   })
 }
 
+function isExactHostname(value: string) {
+  return /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/i.test(value)
+}
+
 async function main() {
   const { output, mode } = parseCli()
   if (process.env.PUBLIC_STATIC_BUILD_READ_ONLY !== 'true') throw new Error('PUBLIC_STATIC_BUILD_READ_ONLY=true is required')
@@ -834,7 +844,7 @@ async function main() {
       ...await readCommittedRedirectMap('src/data/catalog-taxonomy-v2-redirect-map.json'),
     ]
     const publishingCdnHostname = process.env.PUBLISHING_BUNNY_CDN_HOSTNAME
-    if (!publishingCdnHostname || !/^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/i.test(publishingCdnHostname)) {
+    if (!publishingCdnHostname || !isExactHostname(publishingCdnHostname)) {
       throw new Error('PUBLISHING_BUNNY_CDN_HOSTNAME must be an exact hostname')
     }
     const result = await buildStaticArtifact(input, {
