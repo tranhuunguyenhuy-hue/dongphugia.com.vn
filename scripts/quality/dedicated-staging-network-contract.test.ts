@@ -25,6 +25,12 @@ describe('dedicated Staging outbound network contract', () => {
         expect(template).toContain('MapPublicIpOnLaunch: false')
         expect(template).toContain('AssociatePublicIpAddress: false')
         expect(template).toContain('DependsOn:\n      - StagingDefaultRoute')
+        expect(template).not.toContain('\n  StagingElasticIp:')
+        expect(template).not.toContain('\n  StagingElasticIpAssociation:')
+        expect(template).not.toContain('\n  ElasticIpAddress:')
+        expect(template).not.toMatch(
+            /Type: AWS::EC2::EIPAssociation[\s\S]*?InstanceId: !Ref StagingInstance/,
+        )
 
         const publicRoute = resourceSection(
             '  NatGatewayDefaultRoute:',
@@ -44,7 +50,7 @@ describe('dedicated Staging outbound network contract', () => {
     it('orders the instance after the private route is provisioned', () => {
         const instance = resourceSection(
             '  StagingInstance:',
-            '  StagingElasticIp:',
+            '  StagingDataVolumeAttachment:',
         )
         expect(instance).toContain('StagingDefaultRoute')
         expect(instance).toContain('StagingSubnetRouteTableAssociation')

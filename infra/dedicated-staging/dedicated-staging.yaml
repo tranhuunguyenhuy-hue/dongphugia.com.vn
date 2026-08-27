@@ -559,32 +559,6 @@ Resources:
         - Key: SourceOfTruth
           Value: LEO-527
 
-  StagingElasticIp:
-    Type: AWS::EC2::EIP
-    Properties:
-      Domain: vpc
-      Tags:
-        - Key: Name
-          Value: !Sub '${AWS::StackName}-eip'
-        - Key: Project
-          Value: dongphugia
-        - Key: Environment
-          Value: staging
-        - Key: Role
-          Value: isolated-staging-only
-        - Key: Owner
-          Value: dongphugia
-        - Key: ManagedBy
-          Value: cloudformation
-        - Key: SourceOfTruth
-          Value: LEO-527
-
-  StagingElasticIpAssociation:
-    Type: AWS::EC2::EIPAssociation
-    Properties:
-      AllocationId: !GetAtt StagingElasticIp.AllocationId
-      InstanceId: !Ref StagingInstance
-
   StagingDataVolumeAttachment:
     Type: AWS::EC2::VolumeAttachment
     DependsOn: StagingInstance
@@ -691,9 +665,6 @@ Outputs:
   DataVolumeId:
     Description: Encrypted dedicated Staging data volume.
     Value: !Ref StagingDataVolume
-  ElasticIpAddress:
-    Description: Stable public address for bounded browser smoke; no DNS change is made by this stack.
-    Value: !Ref StagingElasticIp
   ManagementPath:
     Description: Required management path.
     Value: SSM-Session-Manager-and-RunCommand
