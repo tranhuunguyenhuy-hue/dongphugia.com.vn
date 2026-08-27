@@ -324,19 +324,6 @@ Resources:
     Properties:
       Roles:
         - !Ref StagingInstanceRole
-      Tags:
-        - Key: Project
-          Value: dongphugia
-        - Key: Environment
-          Value: staging
-        - Key: Role
-          Value: isolated-staging-only
-        - Key: Owner
-          Value: dongphugia
-        - Key: ManagedBy
-          Value: cloudformation
-        - Key: SourceOfTruth
-          Value: LEO-527
 
   StagingCloneReadPolicy:
     Type: AWS::IAM::Policy
