@@ -442,12 +442,13 @@ Resources:
             EOF
             systemctl enable --now amazon-ssm-agent
             data_volume_id='${StagingDataVolume}'
+            data_volume_serial="${!data_volume_id/-/}"
             data_device=''
             for attempt in $(seq 1 60); do
               for device in /dev/nvme*n1; do
                 [ -e "$device" ] || continue
                 serial="$(udevadm info --query=property --name="$device" 2>/dev/null | awk -F= '/^ID_SERIAL_SHORT=/{print $2}')"
-                if [ "$serial" = "$data_volume_id" ] || [ "$serial" = "${!data_volume_id#vol-}" ]; then
+                if [ "$serial" = "$data_volume_id" ] || [ "$serial" = "$data_volume_serial" ]; then
                   data_device="$device"
                   break
                 fi
@@ -457,7 +458,7 @@ Resources:
             done
             test -n "$data_device"
             if ! blkid "$data_device" >/dev/null 2>&1; then
-              mkfs.xfs -L dpg-isolated-staging "$data_device"
+              mkfs.xfs -L dpg-staging "$data_device"
             fi
             data_uuid="$(blkid -s UUID -o value "$data_device")"
             install -d -m 0750 /var/lib/dongphugia-staging

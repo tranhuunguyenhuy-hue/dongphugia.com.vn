@@ -93,6 +93,25 @@ describe('dedicated Staging outbound network contract', () => {
         expect(dependsOn).toContain('      - StagingSubnetRouteTableAssociation')
     })
 
+    it('normalizes the EBS NVMe serial before locating the dedicated data volume', () => {
+        const launchTemplate = resourceSection(
+            '  StagingLaunchTemplate:',
+            '  StagingInstance:',
+        )
+
+        expect(launchTemplate).toContain("data_volume_id='${StagingDataVolume}'")
+        expect(launchTemplate).toContain('data_volume_serial="${!data_volume_id/-/}"')
+        expect(launchTemplate).toContain('[ "$serial" = "$data_volume_serial" ]')
+        expect(launchTemplate).toContain('mkfs.xfs -L dpg-staging "$data_device"')
+        expect(launchTemplate).not.toContain('mkfs.xfs -L dpg-isolated-staging')
+
+        const renderedUserData = launchTemplate.replace(
+            /\$\{!([^}]+)\}/g,
+            (_, expression) => `\${${expression}}`,
+        )
+        expect(renderedUserData).toContain('data_volume_serial="${data_volume_id/-/}"')
+    })
+
     it('exposes browser smoke only through an SSM local port-forward', () => {
         expect(isolatedRunbook).toContain('AWS-StartPortForwardingSession')
         expect(isolatedRunbook).toContain('localPortNumber')
