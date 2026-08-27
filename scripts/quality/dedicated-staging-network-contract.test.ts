@@ -119,6 +119,8 @@ describe('dedicated Staging outbound network contract', () => {
         expect(isolatedRunbook).toContain('npm run test:homepage')
         expect(stagingRunner).toContain("'--publish', '127.0.0.1:3000:3000'")
         expect(stagingRunner).not.toContain("'--publish', '127.0.0.1::3000'")
+        expect(stagingRunner).toContain('https://dongphugia-staging.example.test')
+        expect(stagingRunner).not.toContain('isolated-staging.invalid')
         expect(browserConfig).toContain('STAGING_BROWSER_BASE_URL')
         expect(browserConfig).toContain('webServer: remoteBaseUrl ? undefined')
     })
