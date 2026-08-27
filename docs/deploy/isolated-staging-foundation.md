@@ -149,6 +149,23 @@ fabricates those Products. If coverage or schema validation fails, discard and
 recreate the isolated target with `reset`; no down migration or shared-data
 repair is implied.
 
+### LEO-529 migration-history correction
+
+The current owner-approved MS885 contract is 20 canonical members with group
+cardinality `2/15/3`; the current Production-derived snapshot has 18 existing
+memberships with current-row distribution `2/13/3`. The existing
+`0001_ms885_normalized_family/migration.sql` path and
+`migration:ms885-normalized-family` identity remain stable because the
+canonical isolated target was attested before execution with no normalized
+objects and no migration-ledger row. The source correction therefore updates
+that not-yet-applied artifact and its checksum rather than adding a second
+history entry.
+
+The runner validates every recorded ledger checksum before applying migration
+SQL. A target that already recorded the prior checksum must fail closed;
+operators must not edit the ledger or use a temporary manifest, and any
+recovery or corrective migration requires a separately reviewed scope.
+
 ## Failure gates
 
 The runner fails closed for a non-PostgreSQL provider, SQLite/Prisma origin,
