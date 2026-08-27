@@ -18,7 +18,9 @@ The dedicated host contract is Staging-only: a private tagged Staging subnet,
 a separate public egress subnet containing only one NAT Gateway, a security
 group, instance profile, encrypted EBS data volume, Docker network and Docker
 volume. The EC2 has no public IP; its default route targets the new NAT
-Gateway. The security group has no SSH, PostgreSQL, or Coolify-admin ingress.
+Gateway. The security group has no inbound ingress at all: no SSH, PostgreSQL,
+Coolify-admin, HTTP, or HTTPS. Browser smoke uses the SSM local port-forward
+below rather than a public frontend.
 The instance role has only standing SSM/CloudWatch management permissions and
 no Production backup, database, application, or write capability. The one-time
 clone exception is an exact-object S3 read and is removed after restore.
@@ -46,9 +48,10 @@ check differs, stop without host setup.
 - Migration role: `dpg_staging_migrator`; application role:
   `dpg_staging_app`.
 
-Names are fixed so preflight can refuse an unowned collision. Host ports are
-random and bound to loopback; the application uses the private `postgres`
-network alias and does not use Production credentials, data, schema or volume.
+Names are fixed so preflight can refuse an unowned collision. PostgreSQL is
+bound to a loopback-only random host port; the application is bound to
+`127.0.0.1:3000` for the SSM port-forward and uses the private `postgres`
+network alias. It does not use Production credentials, data, schema or volume.
 
 ## Canonical command
 
@@ -73,6 +76,34 @@ baseline replay, declared migration execution, app deployment, target
 identity attestation, `/api/health`, homepage and `robots.txt` noindex smoke,
 and exact schema-manifest comparison. It reports the candidate commit and
 image digest; it does not deploy Production.
+
+## Private browser smoke via SSM
+
+The dedicated workload has no public browser ingress. After the bounded SSM
+start-to-success probe and app health check pass, open a temporary local
+forward in one operator terminal:
+
+```sh
+aws ssm start-session \
+  --target "$STAGING_INSTANCE_ID" \
+  --document-name AWS-StartPortForwardingSession \
+  --parameters '{"portNumber":["3000"],"localPortNumber":["18000"]}'
+```
+
+The operator must have the Session Manager plugin installed. Keep the session
+open only for the smoke window. In a second terminal, execute the existing
+browser suite against the loopback endpoint; the config disables its local
+web-server when this bounded URL is supplied:
+
+```sh
+STAGING_BROWSER_BASE_URL=http://127.0.0.1:18000 npm run test:homepage
+```
+
+The same endpoint may be checked first with
+`curl --fail http://127.0.0.1:18000/api/health`. A non-loopback value is
+rejected by the Playwright config. Stop the SSM session after the smoke; no
+public IP, EIP association, ALB, DNS change, or inbound SG exception is part
+of this contract.
 
 For a Production-derived dataset on the dedicated host, use the approved
 source-safe daily backup object and its checksum sidecar through the temporary

@@ -7,6 +7,18 @@ const template = readFileSync(
     resolve(process.cwd(), 'infra/dedicated-staging/dedicated-staging.yaml'),
     'utf8',
 )
+const isolatedRunbook = readFileSync(
+    resolve(process.cwd(), 'docs/deploy/isolated-staging-foundation.md'),
+    'utf8',
+)
+const browserConfig = readFileSync(
+    resolve(process.cwd(), 'playwright.homepage.config.ts'),
+    'utf8',
+)
+const stagingRunner = readFileSync(
+    resolve(process.cwd(), 'scripts/staging/isolated-staging.ts'),
+    'utf8',
+)
 
 const resourceSection = (start: string, end: string) => {
     const startIndex = template.indexOf(start)
@@ -32,6 +44,15 @@ describe('dedicated Staging outbound network contract', () => {
             /Type: AWS::EC2::EIPAssociation[\s\S]*?InstanceId: !Ref StagingInstance/,
         )
 
+        const securityGroup = resourceSection(
+            '  StagingSecurityGroup:',
+            '  StagingInstanceRole:',
+        )
+        expect(securityGroup).not.toContain('SecurityGroupIngress:')
+        expect(securityGroup).not.toContain('Public HTTP')
+        expect(securityGroup).not.toContain('Public HTTPS')
+        expect(securityGroup).toContain('SecurityGroupEgress:')
+
         const publicRoute = resourceSection(
             '  NatGatewayDefaultRoute:',
             '  NatGatewayEip:',
@@ -54,5 +75,16 @@ describe('dedicated Staging outbound network contract', () => {
         )
         expect(instance).toContain('StagingDefaultRoute')
         expect(instance).toContain('StagingSubnetRouteTableAssociation')
+    })
+
+    it('exposes browser smoke only through an SSM local port-forward', () => {
+        expect(isolatedRunbook).toContain('AWS-StartPortForwardingSession')
+        expect(isolatedRunbook).toContain('localPortNumber')
+        expect(isolatedRunbook).toContain('STAGING_BROWSER_BASE_URL=http://127.0.0.1:18000')
+        expect(isolatedRunbook).toContain('npm run test:homepage')
+        expect(stagingRunner).toContain("'--publish', '127.0.0.1:3000:3000'")
+        expect(stagingRunner).not.toContain("'--publish', '127.0.0.1::3000'")
+        expect(browserConfig).toContain('STAGING_BROWSER_BASE_URL')
+        expect(browserConfig).toContain('webServer: remoteBaseUrl ? undefined')
     })
 })

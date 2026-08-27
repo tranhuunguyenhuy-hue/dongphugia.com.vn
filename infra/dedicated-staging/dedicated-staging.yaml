@@ -236,19 +236,8 @@ Resources:
   StagingSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Dedicated isolated Staging web ingress only; no SSH, PostgreSQL, Coolify admin, or Production ingress.
+      GroupDescription: Dedicated isolated Staging with no inbound ingress; browser smoke uses the SSM local port-forward.
       VpcId: !Ref VpcId
-      SecurityGroupIngress:
-        - Description: Public HTTP for direct Staging browser smoke only
-          IpProtocol: tcp
-          FromPort: 80
-          ToPort: 80
-          CidrIp: 0.0.0.0/0
-        - Description: Public HTTPS reserved for separately configured Staging TLS
-          IpProtocol: tcp
-          FromPort: 443
-          ToPort: 443
-          CidrIp: 0.0.0.0/0
       SecurityGroupEgress:
         - Description: DNS to the verified VPC resolver
           IpProtocol: udp

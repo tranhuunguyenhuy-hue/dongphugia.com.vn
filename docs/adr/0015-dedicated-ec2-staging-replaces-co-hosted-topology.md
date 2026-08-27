@@ -41,8 +41,9 @@ The management path is SSM-first. IMDSv2 is required, SSH is not opened,
 PostgreSQL is not public, and the instance profile contains no standing
 Production backup/database/application permissions. A one-time exact-object
 S3 read for the approved clone is removed immediately after restore. The
-security group permits the web ingress needed for bounded Staging browser
-smoke and protocol-level DNS/HTTP/HTTPS egress required for bootstrap and the
+security group has no inbound ingress. Browser smoke uses a temporary SSM
+port-forward from operator localhost to the app's host-loopback port 3000;
+protocol-level DNS/HTTP/HTTPS egress remains required for bootstrap and the
 approved source-safe clone path. Isolation additionally depends on no
 Production credentials, no database-port access, and runtime guardrails. No
 Production SG, route, EIP, volume, container, or DNS resource is changed by
@@ -74,7 +75,9 @@ permissions are not mutated.
 
 Provision the dedicated stack, prove SSM start-to-success, bootstrap the
 canonical contract, restore the representative dataset, deploy the exact
-immutable ARM64 candidate, and complete isolation/browser/side-effect checks.
+immutable ARM64 candidate, open the temporary SSM localhost port-forward,
+and complete isolation/browser/side-effect checks. Do not create public
+workload ingress to make browser smoke pass.
 Only then is the dedicated host canonical for downstream LEO-525 work.
 
 Rollback before handoff is limited to resources carrying the LEO-527 ownership

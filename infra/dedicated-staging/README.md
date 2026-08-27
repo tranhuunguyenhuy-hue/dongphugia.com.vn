@@ -15,8 +15,9 @@ LEO-527 role (`isolated-staging-only` for the workload or
   verified project VPC;
 - one single-AZ public NAT Gateway with one tagged EIP and its IGW-backed route;
   the Staging subnet has no public IP and its default route targets this NAT;
-- a new Staging-only security group with HTTP/HTTPS ingress, no SSH, no
-  PostgreSQL ingress, and no Coolify admin ingress;
+- a new Staging-only security group with no inbound ingress; browser smoke
+  uses the SSM local port-forward, with no SSH, PostgreSQL, Coolify admin,
+  HTTP, or HTTPS ingress;
 - a new ARM64 EC2 instance using IMDSv2, standard CPU credits, encrypted EBS,
   and a separate encrypted Docker data volume;
 - a new instance profile containing SSM and Staging-observation permissions,
@@ -97,6 +98,13 @@ contract. The operator then creates the canonical label-owned Docker network
 and volume through the fail-closed isolated-Staging procedure. The host must
 pass a bounded SSM RunCommand probe from start to success before any
 application or database setup continues.
+
+The application listens on host loopback `127.0.0.1:3000`. For browser smoke,
+open `AWS-StartPortForwardingSession` from the operator workstation with
+remote port `3000` and local port `18000`, then run
+`STAGING_BROWSER_BASE_URL=http://127.0.0.1:18000 npm run test:homepage`.
+This is the only browser-access path; do not add a public IP, EIP association,
+ALB, DNS record, or public 80/443 rule in this stack.
 
 On the host, provision only the canonical isolated contract from
 [`../../docs/deploy/isolated-staging-foundation.md`](../../docs/deploy/isolated-staging-foundation.md):

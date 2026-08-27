@@ -259,7 +259,7 @@ function deployApp(target: ReturnType<typeof startTarget>, image: string) {
     'run', '--detach', '--name', names.app,
     '--label', `${scopeLabel}=${scopeValue}`,
     '--network', names.network,
-    '--publish', '127.0.0.1::3000',
+    '--publish', '127.0.0.1:3000:3000',
     '--env', 'NODE_ENV=production', '--env', 'DEPLOY_TARGET=staging', '--env', 'RUNTIME_ROLE=staging',
     '--env', 'NEXT_PUBLIC_SITE_URL=https://isolated-staging.invalid',
     '--env', `DATABASE_URL=${dbUrl}`, '--env', `DIRECT_URL=${dbUrl}`, '--env', `PUBLISHING_DATABASE_URL=${dbUrl}`,
@@ -274,8 +274,7 @@ function deployApp(target: ReturnType<typeof startTarget>, image: string) {
     const value = env.find((entry) => entry.startsWith(key))
     if (value !== `${key}${dbUrl}`) fail(`application ${key.slice(0, -1)} does not point to isolated Staging`)
   }
-  const port = parsePort(docker(['port', names.app, '3000/tcp']))
-  return { port }
+  return { port: 3000 }
 }
 
 async function smoke(port: number) {
