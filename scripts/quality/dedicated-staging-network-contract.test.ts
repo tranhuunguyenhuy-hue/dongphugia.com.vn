@@ -36,7 +36,6 @@ describe('dedicated Staging outbound network contract', () => {
         expect(template).toContain('ConnectivityType: public')
         expect(template).toContain('MapPublicIpOnLaunch: false')
         expect(template).toContain('AssociatePublicIpAddress: false')
-        expect(template).toContain('DependsOn:\n      - StagingDefaultRoute')
         expect(template).not.toContain('\n  StagingElasticIp:')
         expect(template).not.toContain('\n  StagingElasticIpAssociation:')
         expect(template).not.toContain('\n  ElasticIpAddress:')
@@ -68,13 +67,21 @@ describe('dedicated Staging outbound network contract', () => {
         expect(privateRoute).not.toContain('\n      GatewayId:')
     })
 
-    it('orders the instance after the private route is provisioned', () => {
+    it('orders the instance after both NAT routes are provisioned', () => {
         const instance = resourceSection(
             '  StagingInstance:',
             '  StagingDataVolumeAttachment:',
         )
-        expect(instance).toContain('StagingDefaultRoute')
-        expect(instance).toContain('StagingSubnetRouteTableAssociation')
+        const dependsOnStart = instance.indexOf('    DependsOn:')
+        const propertiesStart = instance.indexOf('    Properties:')
+
+        expect(dependsOnStart).toBeGreaterThan(-1)
+        expect(propertiesStart).toBeGreaterThan(dependsOnStart)
+
+        const dependsOn = instance.slice(dependsOnStart, propertiesStart)
+        expect(dependsOn).toContain('      - NatGatewayDefaultRoute')
+        expect(dependsOn).toContain('      - StagingDefaultRoute')
+        expect(dependsOn).toContain('      - StagingSubnetRouteTableAssociation')
     })
 
     it('exposes browser smoke only through an SSM local port-forward', () => {

@@ -526,6 +526,7 @@ Resources:
   StagingInstance:
     Type: AWS::EC2::Instance
     DependsOn:
+      - NatGatewayDefaultRoute
       - StagingDefaultRoute
       - StagingSubnetRouteTableAssociation
     Properties:

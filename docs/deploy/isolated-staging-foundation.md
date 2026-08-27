@@ -35,6 +35,14 @@ verify the NAT Gateway is `available` and both the public IGW route and private
 Staging route target the new NAT Gateway; if any route, VPC, AZ, or public-IP
 check differs, stop without host setup.
 
+### Cost handoff before apply
+
+The approved dedicated topology has recurring network charges for one NAT
+Gateway (hourly plus per-GB processing) and one public IPv4/EIP on that NAT
+path. Normal EC2, EBS, and data-transfer charges remain applicable. Confirm
+current `ap-southeast-1` rates and expected traffic before the change set is
+applied; no other paid service is part of LEO-527.
+
 ## Target identity
 
 - PostgreSQL image: `postgres:16.10-bookworm` pinned by the digest in

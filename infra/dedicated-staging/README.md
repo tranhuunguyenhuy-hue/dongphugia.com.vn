@@ -37,6 +37,12 @@ NAT Gateway is the smallest general outbound path that covers the required
 instance or VPC endpoints are assumed. The public egress subnet contains only
 the NAT Gateway; no Staging workload is placed there.
 
+Cost handoff before AWS apply: this approved topology creates one recurring NAT
+Gateway hourly charge and per-GB data-processing charge, plus one recurring
+public IPv4/EIP hourly charge for the NAT path. Ordinary EC2, EBS, and data
+transfer charges also apply. Verify current `ap-southeast-1` rates and expected
+traffic in the change-set handoff; no additional paid service is in scope.
+
 ## Apply gate
 
 Apply only the exact template from the merged LEO-527 PR, after revalidating
