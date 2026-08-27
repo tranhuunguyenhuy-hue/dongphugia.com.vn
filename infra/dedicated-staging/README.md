@@ -15,13 +15,17 @@ The stack creates only resources tagged `Environment=staging`,
   PostgreSQL ingress, and no Coolify admin ingress;
 - a new ARM64 EC2 instance using IMDSv2, standard CPU credits, encrypted EBS,
   and a separate encrypted Docker data volume;
-- a new instance profile containing only SSM/CloudWatch managed policies, with
-  an optional exact-object clone read policy that is removed after restore; and
+- a new instance profile containing SSM and Staging-observation permissions,
+  with an optional exact-object clone read policy that is removed after
+  restore; and
 - status/CPU alarms without an SNS dependency by default.
 
 The stack does not alter the existing Production host, its security group,
 volume, containers, routes, EIP, IAM role, DNS, or database. The dedicated
 host has no Production database/application credentials in its instance role.
+Resources that support AWS tags carry the LEO-527 ownership tags; route
+associations, volume attachments, and the instance profile are owned through
+the named CloudFormation stack and have no independent Production target.
 
 ## Apply gate
 

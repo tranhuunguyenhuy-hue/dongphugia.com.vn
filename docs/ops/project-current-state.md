@@ -32,11 +32,11 @@ Bunny for managed media/CDN delivery.
 
 ## LEO-527 Staging topology transition
 
-As of 2026-08-27, the canonical architecture decision is:
+As of 2026-08-27, the approved architecture target is:
 
 - Production remains on its existing Production-owned host.
-- Canonical isolated Staging moves to a dedicated EC2 stack defined in
-  `infra/dedicated-staging/`.
+- Isolated Staging is intended to become canonical on a dedicated EC2 stack
+  defined in `infra/dedicated-staging/` after the LEO-527 acceptance gate.
 - The old Production + legacy Staging co-host is deprecated/superseded for
   Staging and is not cleaned up by LEO-527; residual cleanup belongs to LEO-528.
 

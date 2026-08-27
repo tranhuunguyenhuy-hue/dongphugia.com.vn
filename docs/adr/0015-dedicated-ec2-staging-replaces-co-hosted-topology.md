@@ -34,10 +34,13 @@ contract from `docs/deploy/isolated-staging-foundation.md`.
 The management path is SSM-first. IMDSv2 is required, SSH is not opened,
 PostgreSQL is not public, and the instance profile contains no standing
 Production backup/database/application permissions. A one-time exact-object
-S3 read for the approved clone is removed immediately after restore. The security group permits only the
-web ingress needed for bounded Staging browser smoke and outbound management,
-package, registry, and approved source-safe clone traffic. No Production SG,
-route, EIP, volume, container, or DNS resource is changed by this decision.
+S3 read for the approved clone is removed immediately after restore. The
+security group permits the web ingress needed for bounded Staging browser
+smoke and protocol-level DNS/HTTP/HTTPS egress required for bootstrap and the
+approved source-safe clone path. Isolation additionally depends on no
+Production credentials, no database-port access, and runtime guardrails. No
+Production SG, route, EIP, volume, container, or DNS resource is changed by
+this decision.
 
 ## Production-derived clone path
 

@@ -31,10 +31,11 @@ Huy. Khi cần dừng ngay, Integration Sponsor có thể disable Machine Identi
 revoke credential hoặc revoke capability.
 
 Mọi ví dụ mutation trong hướng dẫn này chỉ dùng Production API/credential của
-integration đã được phê duyệt và trong phạm vi nội dung được giao. Shared-data
-Staging là môi trường validation write-frozen: không cấp Publishing credential,
+integration đã được phê duyệt và trong phạm vi nội dung được giao. Dedicated
+isolated Staging là candidate write-frozen: không cấp Publishing credential,
 không upload Managed Media, không tạo/publish/schedule nội dung và không chạy
-synthetic Publishing acceptance tại đó.
+synthetic Publishing acceptance trước gate riêng. Shared-data Staging là
+topology lịch sử đã superseded và vẫn giữ các hạn chế này.
 
 Trong một Production window đã được PM phê duyệt, operator thêm fixed egress IP
 vào allowlist của Machine Identity qua control plane admin-only. Đây không phải
@@ -298,8 +299,10 @@ Runbook vận hành: [`publishing-api-v1-runbook.md`](../deploy/publishing-api-v
 OpenAPI runtime: `/api/publishing/v1/openapi.json`.
 
 Handoff hiện tại dùng Production API/credential theo contract đã được PM phê
-duyệt. Shared-data Staging chỉ cung cấp read-only candidate evidence theo
-[`staging-coolify.md`](../deploy/staging-coolify.md); các Publishing mutation
-không được chuyển sang Staging để acceptance. Mỗi integration, capability và
-Production operation vẫn phải nằm trong approval hiện hành. Tài liệu này không
-cấp quyền Production và không chứa Production credential.
+duyệt. Dedicated isolated Staging chỉ cung cấp candidate evidence theo
+[`isolated-staging-foundation.md`](../deploy/isolated-staging-foundation.md) và
+phải giữ write-freeze; shared-data Staging là topology lịch sử đã superseded.
+Các Publishing mutation không được chuyển sang Staging để acceptance. Mỗi
+integration, capability và Production operation vẫn phải nằm trong approval
+hiện hành. Tài liệu này không cấp quyền Production và không chứa Production
+credential.

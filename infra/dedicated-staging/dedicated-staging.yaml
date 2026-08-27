@@ -191,7 +191,6 @@ Resources:
             Action: sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
-        - arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy
       Tags:
         - Key: Project
           Value: dongphugia
@@ -206,11 +205,42 @@ Resources:
         - Key: SourceOfTruth
           Value: LEO-527
 
+  StagingObservationPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub '${AWS::StackName}-observation'
+      Roles:
+        - !Ref StagingInstanceRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: PublishStagingMetricsOnly
+            Effect: Allow
+            Action:
+              - cloudwatch:PutMetricData
+            Resource: '*'
+            Condition:
+              StringEquals:
+                cloudwatch:namespace: DongPhuGia/Staging
+
   StagingInstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties:
       Roles:
         - !Ref StagingInstanceRole
+      Tags:
+        - Key: Project
+          Value: dongphugia
+        - Key: Environment
+          Value: staging
+        - Key: Role
+          Value: isolated-staging-only
+        - Key: Owner
+          Value: dongphugia
+        - Key: ManagedBy
+          Value: cloudformation
+        - Key: SourceOfTruth
+          Value: LEO-527
 
   StagingCloneReadPolicy:
     Type: AWS::IAM::Policy
@@ -261,6 +291,21 @@ Resources:
     Type: AWS::EC2::LaunchTemplate
     Properties:
       LaunchTemplateName: !Sub '${AWS::StackName}-launch-template'
+      TagSpecifications:
+        - ResourceType: launch-template
+          Tags:
+            - Key: Project
+              Value: dongphugia
+            - Key: Environment
+              Value: staging
+            - Key: Role
+              Value: isolated-staging-only
+            - Key: Owner
+              Value: dongphugia
+            - Key: ManagedBy
+              Value: cloudformation
+            - Key: SourceOfTruth
+              Value: LEO-527
       LaunchTemplateData:
         ImageId: !Ref LatestAmiArm64
         InstanceType: !Ref InstanceType
@@ -293,7 +338,14 @@ Resources:
             set -Eeuo pipefail
             exec > >(tee -a /var/log/dongphugia-staging-bootstrap.log | logger -t dongphugia-staging-bootstrap -s 2>/dev/console) 2>&1
 
-            dnf install -y docker amazon-cloudwatch-agent xfsprogs
+            install_attempt=0
+            until dnf install -y docker amazon-cloudwatch-agent xfsprogs; do
+              install_attempt=$((install_attempt + 1))
+              if [ "$install_attempt" -ge 12 ]; then
+                exit 1
+              fi
+              sleep 10
+            done
             install -d -m 0755 /etc/docker
             cat >/etc/docker/daemon.json <<'EOF'
             {
@@ -340,6 +392,7 @@ Resources:
                 "run_as_user": "root"
               },
               "metrics": {
+                "namespace": "DongPhuGia/Staging",
                 "append_dimensions": {
                   "InstanceId": "${!aws:InstanceId}"
                 },
@@ -459,6 +512,12 @@ Resources:
           Value: dongphugia
         - Key: Environment
           Value: staging
+        - Key: Role
+          Value: isolated-staging-only
+        - Key: Owner
+          Value: dongphugia
+        - Key: ManagedBy
+          Value: cloudformation
         - Key: SourceOfTruth
           Value: LEO-527
 
@@ -491,6 +550,12 @@ Resources:
           Value: dongphugia
         - Key: Environment
           Value: staging
+        - Key: Role
+          Value: isolated-staging-only
+        - Key: Owner
+          Value: dongphugia
+        - Key: ManagedBy
+          Value: cloudformation
         - Key: SourceOfTruth
           Value: LEO-527
 

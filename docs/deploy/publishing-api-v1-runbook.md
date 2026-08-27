@@ -26,8 +26,9 @@ any Bunny configuration change. Those are separate PM approval gates.
 
 - Every Publishing Agent has its own Machine Identity, Integration Sponsor,
   capabilities, and Production-bound credential. Never use an admin session,
-  shared key, or one credential for multiple integrations. Shared-data Staging
-  receives no Publishing credential.
+  shared key, or one credential for multiple integrations. Dedicated isolated
+  Staging is write-frozen and receives no Publishing credential. Legacy
+  shared-data Staging is historical only and receives no credential either.
 - The migration initializes the Global Publishing Gate as disabled; do not
   treat that default as evidence of its current state. Opening the Gate requires
   applicable read-only candidate evidence and an explicit Production decision.
@@ -47,16 +48,16 @@ any Bunny configuration change. Those are separate PM approval gates.
 ## Configuration inventory
 
 The inventory below is for the approved Production Publishing runtime and must
-be provided only through its approved secret/configuration mechanism. A
-Shared-data Staging runtime may receive the reviewed non-secret Production
-host/CDN values needed to render existing media, but it does not receive
+be provided only through its approved secret/configuration mechanism. An
+isolated Staging runtime may receive only reviewed non-secret values needed
+for bounded candidate checks, but it does not receive
 `PUBLISHING_BUNNY_STORAGE_API_KEY`, `PUBLISHING_SCHEDULER_TOKEN`, a scheduler
 task, or any other Publishing write credential. Its separate runtime role and
 write freeze remain mandatory.
 
 | Variable | Purpose | Secret |
 | --- | --- | --- |
-| `PUBLISHING_ENVIRONMENT` | Publishing data/media boundary; shared-data Staging uses `production` while remaining frozen by its runtime role | No |
+| `PUBLISHING_ENVIRONMENT` | Publishing data/media boundary; isolated Staging must remain a non-Production candidate boundary | No |
 | `PUBLISHING_EXTERNAL_LINK_HOSTNAMES` | Comma-separated, reviewed exact HTTPS citation hosts; no wildcard | No |
 | `PUBLISHING_JSON_RATE_LIMIT_MAX` | Per-Machine-Identity JSON limit | No |
 | `PUBLISHING_MEDIA_RATE_LIMIT_MAX` | Per-Machine-Identity media limit | No |
@@ -78,7 +79,8 @@ URL.
 ## Recurring Production control-plane operations
 
 Run these through the separately approved Production execution path. They are
-prohibited in Shared-data Staging. The command prints structured metadata,
+prohibited in isolated Staging and in the legacy shared-data Staging path. The
+command prints structured metadata,
 except the one-time `credential` returned by issue or rotate. Capture no
 plaintext credential in logs.
 
@@ -235,13 +237,16 @@ the owner path. This is mandatory because legacy Blog tables may have RLS; ACL
 provisioning alone is not proof that the dedicated non-BYPASSRLS role can use
 the reviewed policies. Record only PASS/fail and sanitized timing evidence.
 
-## Shared-data Staging and rollout gates
+## Legacy shared-data Staging (superseded) and rollout gates
 
-The repository-wide Staging architecture is defined in
-[`staging-coolify.md`](staging-coolify.md). Shared-data Staging must remain
-write-frozen with the scheduler disabled and the Global Publishing Gate closed.
-Do not apply a Publishing migration, configure an isolated staging Publishing
-CDN, issue a staging credential, or run synthetic Publishing acceptance there.
+The canonical Staging architecture is defined in
+[`isolated-staging-foundation.md`](isolated-staging-foundation.md) and the
+dedicated-host IaC under `infra/dedicated-staging/`. The former shared-data
+Staging path in [`staging-coolify.md`](staging-coolify.md) is superseded and
+must remain write-frozen with the scheduler disabled and the Global Publishing
+Gate closed. Do not apply a Publishing migration, configure a Publishing CDN,
+issue a staging credential, or run synthetic Publishing acceptance on either
+legacy shared-data resources or the dedicated candidate before its own gate.
 
 Use the reviewed SQL and synthetic harness only for disposable CI infrastructure.
 Production execution requires a separate explicit PM window, backup/rollback
