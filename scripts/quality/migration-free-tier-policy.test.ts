@@ -45,6 +45,20 @@ describe('migration free-tier and Owner-gate policy', () => {
     }
   })
 
+  it('records the accepted freshness proof without weakening later remeasurement', () => {
+    for (const reference of [
+      'PUBLISH_TO_LIVE: PASS',
+      '1.473 seconds',
+      'workers.dev',
+      'HTTP 200',
+      '<=5 minute** contract passed as a feasibility proof',
+      'later implementation or cutover issues must remeasure freshness for their exact candidate and environment',
+      'a failed or missing exact-candidate measurement',
+    ]) {
+      expect(searchablePolicy).toContain(reference)
+    }
+  })
+
   it('requires fail-closed verification for mutable provider facts', () => {
     for (const requirement of [
       '`UNKNOWN`',
