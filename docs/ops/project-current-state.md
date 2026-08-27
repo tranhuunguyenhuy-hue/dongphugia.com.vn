@@ -30,6 +30,22 @@ Bunny for managed media/CDN delivery.
 - The shared Production-data/media Staging path is legacy and historical only;
   see `deploy/staging-coolify.md` and ADR 0010.
 
+## LEO-527 Staging topology transition
+
+As of 2026-08-27, the approved architecture target is:
+
+- Production remains on its existing Production-owned host.
+- Isolated Staging is intended to become canonical on a dedicated EC2 stack
+  defined in `infra/dedicated-staging/` after the LEO-527 acceptance gate.
+- The old Production + legacy Staging co-host is deprecated/superseded for
+  Staging and is not cleaned up by LEO-527; residual cleanup belongs to LEO-528.
+
+Runtime acceptance is recorded separately from this architecture source:
+dedicated EC2 identity, SSM start-to-success probe, contract attestation,
+Production-derived restore, exact candidate revision, and side-effect/isolation
+proof must all be freshly revalidated before downstream LEO-525 work. Until
+that evidence is recorded, dedicated-host runtime readiness is `UNKNOWN`.
+
 ## Deferred scopes
 
 Separate PM authorization is required before resuming:

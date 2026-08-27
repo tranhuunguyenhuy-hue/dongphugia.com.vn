@@ -7,11 +7,11 @@ status: accepted
 ## Partial supersession
 
 This ADR remains the historical decision for the Publishing credential model.
-ADR 0010 supersedes only its original Shared-data Staging implication: the
-current Shared-data Staging runtime is write-frozen and receives no Publishing
-credential. Approved integrations use an environment-bound Production
-credential against the Production API contract. The Production rotation and
-revocation decision below remains active.
+The dedicated isolated Staging foundation in ADR 0015 supersedes the former
+shared-data Staging topology. The legacy shared-data path remains write-frozen
+and receives no Publishing credential. Approved integrations use an
+environment-bound Production credential against the Production API contract.
+The Production rotation and revocation decision below remains active.
 
 ## Original decision
 

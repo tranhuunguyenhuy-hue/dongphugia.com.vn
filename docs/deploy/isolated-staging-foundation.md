@@ -6,6 +6,43 @@ It is
 write-enabled only inside a disposable, label-owned PostgreSQL target and is
 never a Production access path.
 
+## Dedicated host boundary (LEO-527)
+
+The canonical isolated target is provisioned by the dedicated EC2 foundation in
+[`infra/dedicated-staging/`](../../infra/dedicated-staging/). The former
+`dongphugia-staging-foundation` EC2 host is the Production + legacy Staging
+co-host and is superseded as a Staging target; it remains untouched until the
+separate LEO-528 cleanup scope.
+
+The dedicated host contract is Staging-only: a private tagged Staging subnet,
+a separate public egress subnet containing only one NAT Gateway, a security
+group, instance profile, encrypted EBS data volume, Docker network and Docker
+volume. The EC2 has no public IP; its default route targets the new NAT
+Gateway. The security group has no inbound ingress at all: no SSH, PostgreSQL,
+Coolify-admin, HTTP, or HTTPS. Browser smoke uses the SSM local port-forward
+below rather than a public frontend.
+The instance role has only standing SSM/CloudWatch management permissions and
+no Production backup, database, application, or write capability. The one-time
+clone exception is an exact-object S3 read and is removed after restore.
+PostgreSQL is published only to host loopback and the application connects
+through the private `postgres` network alias.
+
+The host must pass a bounded SSM RunCommand probe before setup continues. The
+host contract, database roles, marker, runtime guardrails, exact image
+provenance, and side-effect controls are attested on the host; a CloudFormation
+`CREATE_COMPLETE` event alone is not acceptance evidence. Before the probe,
+verify the NAT Gateway is `available` and both the public IGW route and private
+Staging route target the new NAT Gateway; if any route, VPC, AZ, or public-IP
+check differs, stop without host setup.
+
+### Cost handoff before apply
+
+The approved dedicated topology has recurring network charges for one NAT
+Gateway (hourly plus per-GB processing) and one public IPv4/EIP on that NAT
+path. Normal EC2, EBS, and data-transfer charges remain applicable. Confirm
+current `ap-southeast-1` rates and expected traffic before the change set is
+applied; no other paid service is part of LEO-527.
+
 ## Target identity
 
 - PostgreSQL image: `postgres:16.10-bookworm` pinned by the digest in
@@ -19,9 +56,10 @@ never a Production access path.
 - Migration role: `dpg_staging_migrator`; application role:
   `dpg_staging_app`.
 
-Names are fixed so preflight can refuse an unowned collision. Host ports are
-random and bound to loopback; the application uses the private `postgres`
-network alias and does not use Production credentials, data, schema or volume.
+Names are fixed so preflight can refuse an unowned collision. PostgreSQL is
+bound to a loopback-only random host port; the application is bound to
+`127.0.0.1:3000` for the SSM port-forward and uses the private `postgres`
+network alias. It does not use Production credentials, data, schema or volume.
 
 ## Canonical command
 
@@ -46,6 +84,45 @@ baseline replay, declared migration execution, app deployment, target
 identity attestation, `/api/health`, homepage and `robots.txt` noindex smoke,
 and exact schema-manifest comparison. It reports the candidate commit and
 image digest; it does not deploy Production.
+
+## Private browser smoke via SSM
+
+The dedicated workload has no public browser ingress. After the bounded SSM
+start-to-success probe and app health check pass, open a temporary local
+forward in one operator terminal:
+
+```sh
+aws ssm start-session \
+  --target "$STAGING_INSTANCE_ID" \
+  --document-name AWS-StartPortForwardingSession \
+  --parameters '{"portNumber":["3000"],"localPortNumber":["18000"]}'
+```
+
+The operator must have the Session Manager plugin installed. Keep the session
+open only for the smoke window. In a second terminal, execute the existing
+browser suite against the loopback endpoint; the config disables its local
+web-server when this bounded URL is supplied:
+
+```sh
+STAGING_BROWSER_BASE_URL=http://127.0.0.1:18000 npm run test:homepage
+```
+
+The same endpoint may be checked first with
+`curl --fail http://127.0.0.1:18000/api/health`. A non-loopback value is
+rejected by the Playwright config. Stop the SSM session after the smoke; no
+public IP, EIP association, ALB, DNS change, or inbound SG exception is part
+of this contract.
+
+For a Production-derived dataset on the dedicated host, use the approved
+source-safe daily backup object and its checksum sidecar through the temporary
+exact-object `GetObject` capability described in
+[`infra/dedicated-staging/README.md`](../../infra/dedicated-staging/README.md).
+Restore only into the Staging-owned database, remove the temporary capability,
+and remove the transient dump after restore verification. A direct
+Production-database clone is allowed only after the LEO-523 principal's
+effective privileges are re-attested as read-only; a role name or secret
+description does not prove that boundary. No Production application/database
+content or permissions are changed by this path.
 
 ## Rebuild and rollback
 

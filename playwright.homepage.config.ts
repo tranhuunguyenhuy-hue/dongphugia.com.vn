@@ -1,5 +1,10 @@
 import { defineConfig, devices } from '@playwright/test'
 
+const remoteBaseUrl = process.env.STAGING_BROWSER_BASE_URL
+if (remoteBaseUrl && !/^http:\/\/127\.0\.0\.1:\d+$/.test(remoteBaseUrl)) {
+    throw new Error('STAGING_BROWSER_BASE_URL must be a local HTTP port-forward URL')
+}
+
 export default defineConfig({
     testDir: './tests/readiness',
     fullyParallel: false,
@@ -9,7 +14,7 @@ export default defineConfig({
         open: 'never',
     }]],
     use: {
-        baseURL: 'http://localhost:3000',
+        baseURL: remoteBaseUrl ?? 'http://localhost:3000',
         trace: 'retain-on-failure',
         screenshot: 'only-on-failure',
     },
@@ -35,7 +40,7 @@ export default defineConfig({
             },
         },
     ],
-    webServer: {
+    webServer: remoteBaseUrl ? undefined : {
         command: 'node .next/standalone/server.js',
         url: 'http://localhost:3000',
         reuseExistingServer: true,

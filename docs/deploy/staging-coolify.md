@@ -1,6 +1,7 @@
 # Shared Production-data staging runbook
 
-> **SUPERSEDED — LEGACY REFERENCE ONLY.** ADR 0013 and
+> **SUPERSEDED — LEGACY REFERENCE ONLY.** LEO-527 replaces this former
+> Production + Staging co-host with a dedicated Staging EC2. ADR 0013 and
 > [`isolated-staging-foundation.md`](isolated-staging-foundation.md) are the
 > canonical isolated PostgreSQL candidate path. Do not replay `db/postgres-migrations`
 > against this shared-data runtime or use this runbook
