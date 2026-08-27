@@ -38,6 +38,9 @@
     "publishing:test-postgres-concurrency": "tsx scripts/publishing/test-postgres-concurrency.mts",
     "seo:build-inventory": "node scripts/seo/build-legacy-url-inventory.mjs",
     "seo:check-redirect-targets": "tsx scripts/seo/check-redirect-targets.ts",
+    "proof:leo531:public-static": "tsx scripts/proofs/leo531-public-static-proof.mts",
+    "proof:leo531:backend": "tsx scripts/proofs/leo531-backend-proof.mts",
+    "proof:leo531:media": "tsx scripts/proofs/leo531-media-proof.mts",
     "prepare:standalone-assets": "node -e \"const fs=require('fs'); fs.cpSync('public','.next/standalone/public',{recursive:true}); fs.mkdirSync('.next/standalone/.next',{recursive:true}); fs.cpSync('.next/static','.next/standalone/.next/static',{recursive:true});\"",
     "quality:homepage": "npm run test:media && npm run build && npm run prepare:standalone-assets && npm run test:homepage && npm run perf:lighthouse"
   },

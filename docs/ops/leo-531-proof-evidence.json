@@ -1,0 +1,118 @@
+{
+  "verifiedAt": "2026-08-27",
+  "sourceCommit": "dea46dba65a2c15634ce2cd13a0ab01d690c8a15",
+  "database": {
+    "sourcePostgresVersion": "17.6",
+    "sourceReadOnly": true,
+    "sourceTablesSelectable": 57,
+    "sourceTablesWithDml": 0,
+    "retainedTableManifests": 55,
+    "retainedTables": [
+      "admin_sessions", "admin_users", "audit_logs", "banners",
+      "blog_categories", "blog_post_tags", "blog_posts", "blog_tags",
+      "brands", "catalog_taxons", "categories", "colors", "crawl_runs",
+      "customers", "external_taxonomy_mappings", "filter_definitions",
+      "materials", "order_items", "orders", "origins", "partners",
+      "product_attribute_values", "product_descriptions", "product_documents",
+      "product_feature_values", "product_features", "product_images",
+      "product_package_items", "product_relationships",
+      "product_secondary_subcategories", "product_source_mappings",
+      "product_spec_values", "product_sub_types", "product_taxon_assignments",
+      "product_types", "product_variant_groups", "products", "projects",
+      "publishing_audit_events", "publishing_blog_post_media",
+      "publishing_credentials", "publishing_global_controls",
+      "publishing_idempotency_records", "publishing_identity_capabilities",
+      "publishing_identity_ip_allowlist", "publishing_machine_identities",
+      "publishing_managed_media", "publishing_rate_limit_windows",
+      "publishing_scheduler_state", "quote_items", "quote_requests",
+      "redirects", "spec_definitions", "spec_options", "subcategories"
+    ],
+    "retainedManifestSha256": "15f31a64ecf1663c918057ac1bde17b8e8c32dda31d31d1bfe6455963c293b6c",
+    "retainedManifestExactMatch": true,
+    "restoredBytesAfterFamilyReplay": 108181171,
+    "preferredCeilingBytes": 367001600,
+    "preferredCeilingHeadroomBytes": 258820429,
+    "archiveRowsInRuntime": {
+      "crawl_product_snapshots": 0,
+      "crawl_import_decisions": 0
+    },
+    "archiveRestore": {
+      "localPostgresVersion": 17,
+      "crawlTableArtifacts": 3,
+      "sourceCopyRows": {
+        "crawl_product_snapshots": 0,
+        "crawl_import_decisions": 0,
+        "crawl_runs": 0
+      },
+      "restoredRows": {
+        "crawl_product_snapshots": 0,
+        "crawl_import_decisions": 0,
+        "crawl_runs": 0
+      },
+      "binaryCopySha256": "62a74fd0e2d1e3a59b88b5b71c06ca8d43662c6787430c516b8e0bc28bbbda02",
+      "sourceRowCountsMatchRestore": true,
+      "externalArchiveExecuted": false
+    },
+    "familyReplay": {
+      "families": 1,
+      "configurationGroups": 3,
+      "memberships": 18,
+      "catalogueGaps": 2,
+      "productHashUnchanged": true
+    }
+  },
+  "publicStatic": {
+    "status": "PASS_WITH_CHANGES",
+    "scope": "artifact-size-and-route-generation-subproof-only",
+    "fullGateResolved": false,
+    "durationMs": 1395,
+    "generatedFiles": 4093,
+    "outputBytes": 7559256,
+    "products": 4033,
+    "canonicalProductPaths": 4033,
+    "duplicateProductPaths": 0,
+    "productSitemapFiles": 3,
+    "liveProductPathsUnchanged": 3871,
+    "liveProductPathsRedirected": 162,
+    "liveProductPathsMissing": 0,
+    "previewAllHtmlNoindex": true
+  },
+  "backendLocalOnly": {
+    "status": "NOT_RUN",
+    "publishingTables": 11,
+    "publishingPolicies": 9,
+    "idempotencyUniqueConstraints": 1,
+    "advisoryLockBlockedConcurrentHolder": true,
+    "advisoryLockAcquiredAfterRelease": true,
+    "duplicateIdempotencyRejected": true,
+    "representativeSearchRows": 8,
+    "representativeSearchDurationMs": 43.44,
+    "supabaseTargetExecuted": false
+  },
+  "mediaLocalOnly": {
+    "status": "NOT_RUN",
+    "sourceBytes": 4644352,
+    "sourceWidth": 2400,
+    "sourceHeight": 1800,
+    "webpVariants": 7,
+    "cloudflareImagesExecuted": false,
+    "bunnyWriteExecuted": false
+  },
+  "publishingFreshnessLocalOnly": {
+    "status": "NOT_RUN",
+    "databaseToLocalArtifactSeconds": 1,
+    "generatedFilesWithOneDisposableBlogPost": 4095,
+    "endToEndCloudflareExecuted": false
+  },
+  "devopsSimplification": {
+    "status": "NOT_RUN",
+    "targetDeploymentExecuted": false,
+    "previewRollbackObservationExecuted": false
+  },
+  "blockingConflict": {
+    "databaseBlogCategories": 0,
+    "databaseBlogPosts": 0,
+    "liveBlogUrls": 14,
+    "productionAppTargetMatchesAttestedDatabase": true
+  }
+}
