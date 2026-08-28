@@ -3,6 +3,9 @@ name: Encrypted runtime backup and restore rehearsal
 on:
   schedule:
     - cron: '17 2 * * *'
+  pull_request:
+    types: [synchronize]
+    branches: [main]
   workflow_dispatch:
     inputs:
       rehearse_restore:
@@ -24,7 +27,7 @@ env:
 jobs:
   backup:
     name: Encrypt and retain the runtime logical backup
-    if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/codex/leo-540-encrypted-backup-recovery')
+    if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/codex/leo-540-encrypted-backup-recovery') || (github.event_name == 'pull_request' && github.event.pull_request.number == 124 && github.event.pull_request.head.ref == 'codex/leo-540-encrypted-backup-recovery')
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     environment: runtime-backup
@@ -40,7 +43,8 @@ jobs:
           set -euo pipefail
           test "$GITHUB_REF" = "refs/heads/main" || \
             { test "$GITHUB_EVENT_NAME" = "workflow_dispatch" && \
-              test "$GITHUB_REF" = "refs/heads/codex/leo-540-encrypted-backup-recovery"; }
+              test "$GITHUB_REF" = "refs/heads/codex/leo-540-encrypted-backup-recovery"; } || \
+            test "$GITHUB_EVENT_NAME" = "pull_request"
 
       - name: Check out the exact scheduled revision
         uses: actions/checkout@v4
@@ -88,7 +92,7 @@ jobs:
   restore:
     name: Rehearse the encrypted backup in isolated PostgreSQL
     needs: backup
-    if: needs.backup.result == 'success' && (github.event_name == 'schedule' || inputs.rehearse_restore == true) && (github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/codex/leo-540-encrypted-backup-recovery'))
+    if: needs.backup.result == 'success' && (github.event_name == 'schedule' || inputs.rehearse_restore == true) && (github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/codex/leo-540-encrypted-backup-recovery') || (github.event_name == 'pull_request' && github.event.pull_request.number == 124 && github.event.pull_request.head.ref == 'codex/leo-540-encrypted-backup-recovery'))
     runs-on: ubuntu-24.04
     timeout-minutes: 35
     environment: runtime-backup
@@ -102,7 +106,8 @@ jobs:
           set -euo pipefail
           test "$GITHUB_REF" = "refs/heads/main" || \
             { test "$GITHUB_EVENT_NAME" = "workflow_dispatch" && \
-              test "$GITHUB_REF" = "refs/heads/codex/leo-540-encrypted-backup-recovery"; }
+              test "$GITHUB_REF" = "refs/heads/codex/leo-540-encrypted-backup-recovery"; } || \
+            test "$GITHUB_EVENT_NAME" = "pull_request"
 
       - name: Check out the exact scheduled revision
         uses: actions/checkout@v4
