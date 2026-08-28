@@ -45,6 +45,9 @@ not an authority document: verify it immediately before relying on it.
   isolated Free target identity, least-privilege roles, forced RLS/Auth
   separation, Free-tier guards, secret-safe validation, and teardown boundary
   (LEO-539).
+- `CURRENT` — [LEO-541 Supabase runtime API](deploy/supabase-runtime-api.md):
+  authenticated Edge-to-RPC order/quote contract, owner-bound RLS,
+  idempotency, advisory locks, rollback test, and static-render boundary.
 - `CURRENT` — [Runtime backup and recovery](deploy/runtime-backup-recovery.md):
   encrypted logical backup, checksum manifest, isolated restore rehearsal, and
   Product/Family/Blog recovery checks (LEO-540).

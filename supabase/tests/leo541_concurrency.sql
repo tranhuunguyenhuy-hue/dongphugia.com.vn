@@ -1,0 +1,14 @@
+-- LEO-541 concurrency/advisory-lock acceptance procedure.
+-- Execute the same authenticated update request concurrently from two
+-- sessions, using the same owner, order_id, patch, and Idempotency-Key. The
+-- second session must wait on the transaction advisory lock and return the
+-- exact committed replay response. A different patch with the same key must
+-- fail with IDEMPOTENCY_KEY_REUSED. Never run this against Production.
+--
+-- Required observable assertions after the two sessions complete:
+--   1. exactly one order state transition and one runtime_audit_events row;
+--   2. exactly one runtime_idempotency_records row;
+--   3. both responses are byte-for-byte equal;
+--   4. no lock timeout or partial order/item state.
+-- The implementation provides this with pg_advisory_xact_lock on the owner,
+-- resource, and idempotency-key dimensions.
