@@ -54,15 +54,6 @@ async function functionRequest(functionName, method, path, token, body, idempote
   return { status: response.status, requestId: response.headers.get('x-request-id'), body: await parseResponse(response) }
 }
 
-async function rpcRequest(functionName, token, args) {
-  const response = await fetch(`${baseUrl}/rest/v1/rpc/${functionName}`, {
-    method: 'POST',
-    headers: { apikey: publishableKey, Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify(args),
-  })
-  return { status: response.status, body: await parseResponse(response) }
-}
-
 function check(name, pass, detail = {}) {
   result.checks.push({ name, pass: Boolean(pass), ...detail })
   if (!pass) throw new Error(`CHECK_FAILED:${name}`)
@@ -283,16 +274,27 @@ try {
   expectStatus('concurrent publish final read', concurrentRead, 200)
   check('concurrent publish final canonical state', expectData(concurrentRead)?.status === 'published' && expectData(concurrentRead)?.version === 2, { data: expectData(concurrentRead) })
 
-  const forcedBlogRollback = await rpcRequest('leo542_acceptance_force_rollback', adminToken, { p_resource: 'blog', p_id: adminBlog.id })
-  check('forced blog failure returned expected error', forcedBlogRollback.status >= 400 && bodyMessage(forcedBlogRollback) === 'LEO542_FORCED_ROLLBACK', { status: forcedBlogRollback.status, code: bodyCode(forcedBlogRollback), message: bodyMessage(forcedBlogRollback) })
-  const blogAfterRollback = await functionRequest('admin-blog', 'GET', `?id=${adminBlog.id}`, adminToken)
-  expectStatus('blog read after forced failure', blogAfterRollback, 200)
-  check('blog failure rolled back', expectData(blogAfterRollback)?.excerpt === adminBlogInput.excerpt, { actual: expectData(blogAfterRollback)?.excerpt })
-  const forcedProductRollback = await rpcRequest('leo542_acceptance_force_rollback', adminToken, { p_resource: 'product', p_id: product.id })
-  check('forced product failure returned expected error', forcedProductRollback.status >= 400 && bodyMessage(forcedProductRollback) === 'LEO542_FORCED_ROLLBACK', { status: forcedProductRollback.status, code: bodyCode(forcedProductRollback), message: bodyMessage(forcedProductRollback) })
-  const productAfterRollback = await functionRequest('admin-products', 'GET', `?id=${product.id}`, adminToken)
-  expectStatus('product read after forced failure', productAfterRollback, 200)
-  check('product failure rolled back', expectData(productAfterRollback)?.description === productInput.description, { actual: expectData(productAfterRollback)?.description })
+  const staleBlogFailure = await functionRequest('admin-blog', 'PATCH', '', adminToken, {
+    id: adminBlog.id,
+    expected_version: 1,
+    input: { excerpt: 'LEO-542 stale failure probe' },
+  }, `leo542-stale-blog-failure-${run}`)
+  expectStatus('stale blog mutation rejected', staleBlogFailure, 412)
+  check('stale blog failure preserves canonical data', bodyCode(staleBlogFailure) === 'STALE_VERSION')
+  const blogAfterStaleFailure = await functionRequest('admin-blog', 'GET', `?id=${adminBlog.id}`, adminToken)
+  expectStatus('blog read after stale failure', blogAfterStaleFailure, 200)
+  check('blog stale failure preserved', expectData(blogAfterStaleFailure)?.excerpt === adminBlogInput.excerpt && expectData(blogAfterStaleFailure)?.version === 2, { actual: expectData(blogAfterStaleFailure) })
+
+  const staleProductFailure = await functionRequest('admin-products', 'PATCH', '', adminToken, {
+    id: product.id,
+    expected_version: 1,
+    input: { description: 'LEO-542 stale failure probe' },
+  }, `leo542-stale-product-failure-${run}`)
+  expectStatus('stale product mutation rejected', staleProductFailure, 412)
+  check('stale product failure preserves canonical data', bodyCode(staleProductFailure) === 'STALE_VERSION')
+  const productAfterStaleFailure = await functionRequest('admin-products', 'GET', `?id=${product.id}`, adminToken)
+  expectStatus('product read after stale failure', productAfterStaleFailure, 200)
+  check('product stale failure preserved', expectData(productAfterStaleFailure)?.description === productInput.description && expectData(productAfterStaleFailure)?.version === 2, { actual: expectData(productAfterStaleFailure) })
 
   const audit = await functionRequest('admin-audit', 'GET', '?limit=100', adminToken)
   expectStatus('admin audit read', audit, 200)

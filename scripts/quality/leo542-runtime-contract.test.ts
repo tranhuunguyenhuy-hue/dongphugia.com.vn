@@ -6,6 +6,8 @@ const root = process.cwd()
 const backupMigration = readFileSync(resolve(root, 'supabase/migrations/20260828183714_leo542_backup_coverage_prerequisite.sql'), 'utf8')
 const sequenceMigration = readFileSync(resolve(root, 'supabase/migrations/20260828184629_leo542_backup_sequence_coverage_prerequisite.sql'), 'utf8')
 const migration = readFileSync(resolve(root, 'supabase/migrations/20260828185021_leo542_admin_publishing_runtime.sql'), 'utf8')
+const helperCleanupMigration = readFileSync(resolve(root, 'supabase/migrations/20260828200632_leo542_remove_acceptance_rollback_helper.sql'), 'utf8')
+const acceptance = readFileSync(resolve(root, 'scripts/acceptance/leo542-runtime-acceptance.mjs'), 'utf8')
 const rollback = readFileSync(resolve(root, 'docs/deploy/leo542-admin-publishing-rollback.sql'), 'utf8')
 const config = readFileSync(resolve(root, 'supabase/config.toml'), 'utf8')
 const functions = ['admin-commerce','admin-content','admin-blog','admin-products','admin-audit','publishing-posts','publishing-media']
@@ -43,12 +45,20 @@ describe('LEO-542 Phase A security contract', () => {
     expect(migration).toContain('security invoker')
     expect(migration.match(/security definer/g)?.length).toBe(3)
     expect(migration).not.toMatch(/user_metadata|raw_user_meta_data/i)
+    for (const helper of ['leo542_actor_context', 'leo542_admin_can', 'leo542_machine_can']) {
+      expect(migration).toMatch(new RegExp(`create or replace function dpg_app\\.${helper}`))
+      expect(migration).toContain('set search_path = pg_catalog, dpg_app, auth')
+    }
+    expect(migration).not.toContain('leo542_acceptance_force_rollback')
+    expect(acceptance).not.toContain('leo542_acceptance_force_rollback')
   })
 
-  it('has no canonical delete RPC and a bounded non-destructive rollback', () => {
+  it('removes the acceptance helper and keeps a bounded non-destructive rollback', () => {
     expect(functions).not.toMatch(/method===['"]DELETE|method === ['"]DELETE/)
     expect(migration).not.toMatch(/delete from dpg_app\.(blog_posts|products|orders|quote_requests|customers)/i)
     expect(rollback).not.toMatch(/drop table|delete from|truncate|disable row level security/i)
-    expect(rollback).toContain('leo542_acceptance_force_rollback')
+    expect(rollback).not.toContain('leo542_acceptance_force_rollback')
+    expect(helperCleanupMigration).toContain("revoke execute on function public.leo542_acceptance_force_rollback(text, integer) from public, anon, authenticated, service_role")
+    expect(helperCleanupMigration).toContain("drop function public.leo542_acceptance_force_rollback(text, integer)")
   })
 })

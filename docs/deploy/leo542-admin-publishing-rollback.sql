@@ -21,7 +21,7 @@ revoke execute on function public.leo542_admin_commerce_list(text,integer,intege
  public.leo542_admin_content_snapshot(), public.leo542_admin_content_patch(text,integer,jsonb,text,uuid), public.leo542_admin_blog_list(integer,integer,text), public.leo542_admin_blog_get(integer), public.leo542_admin_blog_put(integer,integer,jsonb,text,uuid),
  public.leo542_admin_product_list(integer,integer,text), public.leo542_admin_product_get(integer), public.leo542_admin_product_put(integer,integer,jsonb,text,uuid), public.leo542_admin_audit_list(integer,integer),
  public.leo542_publishing_post_list(integer,integer,text), public.leo542_publishing_post_get(integer,text), public.leo542_publishing_post_put(integer,integer,jsonb,text,uuid),
- public.leo542_publishing_media_list(integer,integer), public.leo542_publishing_media_reference(integer,uuid,text,text,uuid), public.leo542_acceptance_force_rollback(text,integer)
+ public.leo542_publishing_media_list(integer,integer), public.leo542_publishing_media_reference(integer,uuid,text,text,uuid)
  from authenticated;
 
 do $$ declare r record; begin
@@ -52,7 +52,6 @@ drop function if exists public.leo542_publishing_post_get(integer,text);
 drop function if exists public.leo542_publishing_post_put(integer,integer,jsonb,text,uuid);
 drop function if exists public.leo542_publishing_media_list(integer,integer);
 drop function if exists public.leo542_publishing_media_reference(integer,uuid,text,text,uuid);
-drop function if exists public.leo542_acceptance_force_rollback(text,integer);
 drop function if exists dpg_app.leo542_machine_can(text);
 drop function if exists dpg_app.leo542_admin_can(text);
 drop function if exists dpg_app.leo542_actor_context();

@@ -617,32 +617,17 @@ begin
  update dpg_app.publishing_idempotency_records set status='completed',response_status=200,safe_response=v_result,completed_at=now() where id=v_id; return v_result;
 end $$;
 
--- Acceptance-only rollback probe: exact synthetic rows on the Preview target.
-create or replace function public.leo542_acceptance_force_rollback(p_resource text,p_id integer)
-returns void language plpgsql volatile security invoker set search_path=pg_catalog,dpg_app as $$
-begin
- if not dpg_app.leo542_admin_can('audit:read') then raise exception 'FORBIDDEN'; end if;
- if not exists(select 1 from dpg_control.target_contract where singleton and environment='preview' and production_writes_allowed=false) then raise exception 'LEO542_TARGET_CONTRACT_FAILED'; end if;
- if p_resource='blog' then
-  update dpg_app.blog_posts set excerpt='LEO542-ROLLBACK-PROBE',updated_at=now() where id=p_id and slug like 'leo542-%';
- elsif p_resource='product' then
-  update dpg_app.products set description='LEO542-ROLLBACK-PROBE',updated_at=now() where id=p_id and source_system='leo542-synthetic';
- else raise exception 'INVALID_RESOURCE'; end if;
- if not found then raise exception 'RESOURCE_NOT_FOUND'; end if;
- raise exception 'LEO542_FORCED_ROLLBACK';
-end $$;
-
 revoke all on function public.leo542_admin_commerce_list(text,integer,integer), public.leo542_admin_commerce_get(text,integer), public.leo542_admin_commerce_patch(text,integer,jsonb,text,uuid),
  public.leo542_admin_content_snapshot(), public.leo542_admin_content_patch(text,integer,jsonb,text,uuid), public.leo542_admin_blog_list(integer,integer,text), public.leo542_admin_blog_get(integer), public.leo542_admin_blog_put(integer,integer,jsonb,text,uuid),
  public.leo542_admin_product_list(integer,integer,text), public.leo542_admin_product_get(integer), public.leo542_admin_product_put(integer,integer,jsonb,text,uuid), public.leo542_admin_audit_list(integer,integer),
  public.leo542_publishing_post_list(integer,integer,text), public.leo542_publishing_post_get(integer,text), public.leo542_publishing_post_put(integer,integer,jsonb,text,uuid),
- public.leo542_publishing_media_list(integer,integer), public.leo542_publishing_media_reference(integer,uuid,text,text,uuid), public.leo542_acceptance_force_rollback(text,integer)
+ public.leo542_publishing_media_list(integer,integer), public.leo542_publishing_media_reference(integer,uuid,text,text,uuid)
  from public, anon, service_role;
 grant execute on function public.leo542_admin_commerce_list(text,integer,integer), public.leo542_admin_commerce_get(text,integer), public.leo542_admin_commerce_patch(text,integer,jsonb,text,uuid),
  public.leo542_admin_content_snapshot(), public.leo542_admin_content_patch(text,integer,jsonb,text,uuid), public.leo542_admin_blog_list(integer,integer,text), public.leo542_admin_blog_get(integer), public.leo542_admin_blog_put(integer,integer,jsonb,text,uuid),
  public.leo542_admin_product_list(integer,integer,text), public.leo542_admin_product_get(integer), public.leo542_admin_product_put(integer,integer,jsonb,text,uuid), public.leo542_admin_audit_list(integer,integer),
  public.leo542_publishing_post_list(integer,integer,text), public.leo542_publishing_post_get(integer,text), public.leo542_publishing_post_put(integer,integer,jsonb,text,uuid),
- public.leo542_publishing_media_list(integer,integer), public.leo542_publishing_media_reference(integer,uuid,text,text,uuid), public.leo542_acceptance_force_rollback(text,integer)
+ public.leo542_publishing_media_list(integer,integer), public.leo542_publishing_media_reference(integer,uuid,text,text,uuid)
  to authenticated;
 
 commit;
