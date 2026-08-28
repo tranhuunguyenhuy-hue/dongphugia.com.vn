@@ -107,11 +107,18 @@ async function attest() {
     if (transactionStarted) await client.query('ROLLBACK').catch(() => undefined)
     const message = error instanceof Error && error.message.startsWith('PREVIEW_SOURCE_')
       ? error.message
-      : 'PREVIEW_SOURCE_ATTESTATION_FAILED'
+      : `PREVIEW_SOURCE_ATTESTATION_FAILED:${getDatabaseErrorCode(error)}`
     throw new Error(message)
   } finally {
     await client.end().catch(() => undefined)
   }
+}
+
+function getDatabaseErrorCode(error: unknown) {
+  if (typeof error === 'object' && error !== null && 'code' in error && typeof error.code === 'string') {
+    return error.code
+  }
+  return 'UNKNOWN'
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) await attest()
