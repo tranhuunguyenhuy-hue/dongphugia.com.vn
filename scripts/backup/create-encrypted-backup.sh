@@ -45,13 +45,13 @@ fi
 
 target_contract="$tmp_dir/target-contract.txt"
 if ! psql "$DATABASE_URL" -X -q -A -t -v ON_ERROR_STOP=1 \
-  -c 'select 1' \
+  -c 'set role dpg_backup; select 1' \
   >"$tmp_dir/connection.status" 2>"$tmp_dir/connection.error"; then
   echo 'LEO540_BACKUP status=FAIL stage=connection reason=database_connection_failed'
   exit 1
 fi
 if ! psql "$DATABASE_URL" -X -q -A -t -v ON_ERROR_STOP=1 \
-  -c "select project_name || '|' || region || '|' || environment || '|' || data_class || '|' || production_data_allowed || '|' || production_credentials_allowed || '|' || production_writes_allowed || '|' || hard_database_ceiling_bytes || '|' || (current_user = 'dpg_backup' and session_user = 'dpg_backup_login' and current_setting('transaction_read_only') = 'on' and not exists (select 1 from pg_tables where schemaname = 'dpg_app' and not has_table_privilege(current_user, schemaname || '.' || tablename, 'SELECT'))) from dpg_control.target_contract where singleton" \
+  -c "set role dpg_backup; select project_name || '|' || region || '|' || environment || '|' || data_class || '|' || production_data_allowed || '|' || production_credentials_allowed || '|' || production_writes_allowed || '|' || hard_database_ceiling_bytes || '|' || (current_user = 'dpg_backup' and session_user = 'dpg_backup_login' and current_setting('transaction_read_only') = 'on' and not exists (select 1 from pg_tables where schemaname = 'dpg_app' and not has_table_privilege(current_user, schemaname || '.' || tablename, 'SELECT'))) from dpg_control.target_contract where singleton" \
   >"$target_contract" 2>"$tmp_dir/target-contract.error"; then
   reason='database_query_failed'
   if grep -Eqi 'permission denied|insufficient privilege' "$tmp_dir/target-contract.error"; then
@@ -70,7 +70,7 @@ if [[ "$(<"$target_contract")" != 'dongphugia-runtime|ap-southeast-1|preview|pro
 fi
 
 if ! psql "$DATABASE_URL" -X -q -A -t -v ON_ERROR_STOP=1 \
-  -c "select case when pg_database_size(current_database()) >= hard_database_ceiling_bytes then 'HARD_STOP' when pg_database_size(current_database()) >= 314572800 then 'ALERT_300_MIB' when pg_database_size(current_database()) >= 262144000 then 'ALERT_250_MIB' else 'WITHIN_BUDGET' end from dpg_control.target_contract where singleton" \
+  -c "set role dpg_backup; select case when pg_database_size(current_database()) >= hard_database_ceiling_bytes then 'HARD_STOP' when pg_database_size(current_database()) >= 314572800 then 'ALERT_300_MIB' when pg_database_size(current_database()) >= 262144000 then 'ALERT_250_MIB' else 'WITHIN_BUDGET' end from dpg_control.target_contract where singleton" \
   >"$tmp_dir/free-tier.status" 2>"$tmp_dir/free-tier.error"; then
   echo 'LEO540_BACKUP status=FAIL stage=free_tier_guard reason=database_query_failed'
   exit 1
@@ -82,7 +82,12 @@ fi
 
 manifest_raw="$tmp_dir/runtime-manifest.json"
 if ! psql "$DATABASE_URL" -X -q -A -t -v ON_ERROR_STOP=1 \
-  -f "$repo_root/scripts/backup/runtime-manifest.sql" \
+  -c "set role dpg_backup" \
+  >/dev/null 2>"$tmp_dir/manifest-role.error"; then
+  echo 'LEO540_BACKUP status=FAIL stage=manifest reason=backup_role_switch_failed'
+  exit 1
+fi
+if ! { printf 'set role dpg_backup;\n'; cat "$repo_root/scripts/backup/runtime-manifest.sql"; } | psql "$DATABASE_URL" -X -q -A -t -v ON_ERROR_STOP=1 \
   >"$manifest_raw" 2>"$tmp_dir/manifest.error"; then
   echo 'LEO540_BACKUP status=FAIL stage=manifest reason=manifest_query_failed'
   exit 1
@@ -96,7 +101,7 @@ plain_dump="$tmp_dir/runtime.dump"
 encrypted_dump="$output_dir/${backup_id}.dump.age"
 manifest="$output_dir/${backup_id}.manifest.json"
 checksums="$output_dir/${backup_id}.checksums.sha256"
-if ! pg_dump "$DATABASE_URL" --format=custom --no-owner --no-privileges --no-comments \
+if ! pg_dump "$DATABASE_URL" --role=dpg_backup --format=custom --no-owner --no-privileges --no-comments \
   --schema=dpg_app --schema=dpg_control --file="$plain_dump" \
   2>"$tmp_dir/pg_dump.error"; then
   echo 'LEO540_BACKUP status=FAIL stage=logical_dump reason=pg_dump_failed'
