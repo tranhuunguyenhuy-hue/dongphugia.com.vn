@@ -152,8 +152,14 @@ else
     reason='pg_dump_timeout_or_lock_failure'
   elif grep -Eqi 'connection|could not connect|server closed' "$tmp_dir/pg_dump.error"; then
     reason='pg_dump_connection_failed'
+  elif grep -Eqi 'query failed|query was' "$tmp_dir/pg_dump.error"; then
+    reason='pg_dump_query_failed'
+  elif grep -Eqi 'could not open|no space|disk full|write failed' "$tmp_dir/pg_dump.error"; then
+    reason='pg_dump_output_failed'
+  elif grep -Eqi 'server version|incompatible|unsupported' "$tmp_dir/pg_dump.error"; then
+    reason='pg_dump_version_incompatible'
   fi
-  sqlstate="$(awk '/SQL state:/{print $3; exit} /ERROR:/{for (field = 1; field <= NF; field++) if ($field != "ERROR:" && $field ~ /^[0-9A-Z]{5}:?$/) {gsub(/:/, "", $field); print $field; exit}}' "$tmp_dir/pg_dump.error")"
+  sqlstate="$(sed -nE 's/.*ERROR:[[:space:]]*([0-9A-Z]{5}).*/\1/p' "$tmp_dir/pg_dump.error" | head -n 1)"
   if [[ ! "$sqlstate" =~ ^[0-9A-Z]{5}$ ]]; then sqlstate='unknown'; fi
   echo "LEO540_BACKUP status=FAIL stage=logical_dump reason=$reason sqlstate=$sqlstate exit_code=$pg_dump_status"
   exit 1
