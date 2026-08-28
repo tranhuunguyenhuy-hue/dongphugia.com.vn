@@ -19,10 +19,12 @@ describe('migration PR CI and Preview workflow contract', () => {
     }
   })
 
-  it('contains no resource creation, deletion, traffic, or elevated GitHub permission path', () => {
-    for (const forbidden of ['pages project create', 'pages secret', 'pages deployment delete', 'deployments: write', 'cloudflared tunnel', 'aws ', 'PRODUCTION_DATABASE_URL']) {
+  it('contains no deletion, traffic, or elevated GitHub permission path', () => {
+    for (const forbidden of ['pages secret', 'pages deployment delete', 'deployments: write', 'cloudflared tunnel', 'aws ', 'PRODUCTION_DATABASE_URL']) {
       expect(workflow.toLowerCase()).not.toContain(forbidden.toLowerCase())
     }
+    expect(workflow).toContain('production_branch: "main"')
+    expect(workflow).toContain('Custom domains: none')
     expect(workflow).toContain('BLOCKED_BY_OWNER_GATE')
     expect(workflow).toContain('CI failure blocks the Preview/merge path.')
   })

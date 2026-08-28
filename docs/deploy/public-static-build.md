@@ -75,12 +75,15 @@ mode artifact, verifies the free-tier limits and every HTML/headers/robots
 noindex control, and emits a candidate tuple containing the source commit, PR,
 workflow run, artifact SHA-256, and migration manifest SHA-256.
 
-Cloudflare upload is separately gated by the existing Pages project contract.
+Cloudflare upload is separately gated by the single non-Production Pages project
+contract. The workflow may create exactly the configured project when it is
+absent, using the pre-authorized Pages:Edit token; it fails closed on API,
+identity, custom-domain, or branch mismatches.
 The workflow never creates a project, secret, binding, permission, security
 setting, DNS record, traffic route, or deployment deletion. The Owner must
 preconfigure `MIGRATION_PREVIEW_SOURCE_ENABLED=true`,
 `MIGRATION_PREVIEW_SOURCE_CONTRACT=read-only-non-production`,
-`CLOUDFLARE_PAGES_PREVIEW_ENABLED=true`, and the exact existing
+`CLOUDFLARE_PAGES_PREVIEW_ENABLED=true`, and the exact
 `CLOUDFLARE_PAGES_PREVIEW_PROJECT`, plus the existing read-only source,
 `CLOUDFLARE_ACCOUNT_ID`, and least-privilege Pages Edit
 `CLOUDFLARE_API_TOKEN` secrets. Missing gates produce

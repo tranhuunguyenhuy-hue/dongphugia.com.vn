@@ -248,7 +248,47 @@ jobs:
           fi
           echo "artifact_sha=$artifact_sha" >> "$GITHUB_OUTPUT"
 
-      - name: Upload the exact candidate to the existing Pages Preview project
+      - name: Ensure the single non-Production Pages Preview project
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          PREVIEW_PROJECT: ${{ vars.CLOUDFLARE_PAGES_PREVIEW_PROJECT }}
+        run: |
+          set -euo pipefail
+          projects_url="https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/pages/projects"
+          projects_json="$(curl --fail --silent --show-error \
+            --header "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+            --header 'Content-Type: application/json' \
+            "$projects_url")"
+          jq -e '.success == true' >/dev/null <<<"$projects_json"
+          matching_count="$(jq --arg name "$PREVIEW_PROJECT" '[.result[] | select(.name == $name)] | length' <<<"$projects_json")"
+          if [[ "$matching_count" == "0" ]]; then
+            create_body="$(jq -cn --arg name "$PREVIEW_PROJECT" '{name: $name, production_branch: "main"}')"
+            created_json="$(curl --fail --silent --show-error --request POST \
+              --header "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+              --header 'Content-Type: application/json' \
+              --data "$create_body" \
+              "$projects_url")"
+            jq -e --arg name "$PREVIEW_PROJECT" \
+              '.success == true and .result.name == $name and .result.production_branch == "main" and ((.result.domains // []) | length == 0)' \
+              >/dev/null <<<"$created_json"
+            project_json="$created_json"
+          elif [[ "$matching_count" == "1" ]]; then
+            project_json="$(jq --arg name "$PREVIEW_PROJECT" '.result[] | select(.name == $name)' <<<"$projects_json")"
+            jq -e '.production_branch == "main" and ((.domains // []) | length == 0)' >/dev/null <<<"$project_json"
+          else
+            echo "More than one Pages project matched the exact Preview name." >&2
+            exit 1
+          fi
+          {
+            echo '### Cloudflare Pages project: PASS'
+            echo "- Project: ${PREVIEW_PROJECT}"
+            echo '- Production branch: main'
+            echo '- Custom domains: none'
+            echo '- DNS/Production traffic: unchanged'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload the exact candidate to the Pages Preview project
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
