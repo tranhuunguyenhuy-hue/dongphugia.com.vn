@@ -51,7 +51,7 @@ if ! psql "$DATABASE_URL" -X -q -A -t -v ON_ERROR_STOP=1 \
   exit 1
 fi
 if ! psql "$DATABASE_URL" -X -q -A -t -v ON_ERROR_STOP=1 \
-  -c "set role dpg_backup; select project_name || '|' || region || '|' || environment || '|' || data_class || '|' || production_data_allowed || '|' || production_credentials_allowed || '|' || production_writes_allowed || '|' || hard_database_ceiling_bytes from dpg_control.target_contract where singleton" \
+  -c "set role dpg_backup; select count(*) from dpg_control.target_contract where singleton and project_name = 'dongphugia-runtime' and region = 'ap-southeast-1' and environment = 'preview' and data_class = 'production-derived-reduced-runtime' and production_data_allowed is true and production_credentials_allowed is false and production_writes_allowed is false and hard_database_ceiling_bytes = 367001600" \
   >"$target_contract" 2>"$tmp_dir/target-contract.error"; then
   reason='target_contract_select_failed'
   if grep -Eqi 'permission denied|insufficient privilege' "$tmp_dir/target-contract.error"; then
@@ -64,15 +64,8 @@ if ! psql "$DATABASE_URL" -X -q -A -t -v ON_ERROR_STOP=1 \
   echo "LEO540_BACKUP status=FAIL stage=target_attestation reason=$reason"
   exit 1
 fi
-if [[ "$(<"$target_contract")" != 'dongphugia-runtime|ap-southeast-1|preview|production-derived-reduced-runtime|t|f|f|367001600' ]]; then
-  target_checks="$tmp_dir/target-contract.checks"
-  if psql "$DATABASE_URL" -X -q -A -t -v ON_ERROR_STOP=1 \
-    -c "set role dpg_backup; select (project_name = 'dongphugia-runtime') || '|' || (region = 'ap-southeast-1') || '|' || (environment = 'preview') || '|' || (data_class = 'production-derived-reduced-runtime') || '|' || (production_data_allowed is true) || '|' || (production_credentials_allowed is false) || '|' || (production_writes_allowed is false) || '|' || (hard_database_ceiling_bytes = 367001600) from dpg_control.target_contract where singleton" \
-    >"$target_checks" 2>"$tmp_dir/target-checks.error"; then
-    echo "LEO540_BACKUP status=FAIL stage=target_attestation reason=target_contract_mismatch checks=$(<"$target_checks")"
-  else
-    echo 'LEO540_BACKUP status=FAIL stage=target_attestation reason=target_contract_mismatch checks_unavailable'
-  fi
+if [[ "$(<"$target_contract")" != '1' ]]; then
+  echo "LEO540_BACKUP status=FAIL stage=target_attestation reason=target_contract_mismatch checks=$(<"$target_contract")"
   exit 1
 fi
 
