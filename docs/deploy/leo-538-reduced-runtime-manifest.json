@@ -1,0 +1,233 @@
+{
+  "formatVersion": 1,
+  "issue": "LEO-538",
+  "target": {
+    "project": "dongphugia-runtime",
+    "region": "ap-southeast-1",
+    "schema": "dpg_app",
+    "preferredCeilingBytes": 367001600
+  },
+  "source": {
+    "identity": "approved Production source; resolved and attested only at execution time",
+    "accessPath": "approved dynamic AWS/SSM/asm-exec read-only boundary -> codex_production_readonly",
+    "readOnlyPrincipal": "codex_production_readonly",
+    "blogAccessPath": "approved existing AWS/SSM owner-side peer-authenticated read-only boundary",
+    "blogTransaction": "REPEATABLE READ READ ONLY DEFERRABLE with transaction-local row_security=off",
+    "credentials": "not persisted or returned",
+    "externalConfiguration": [
+      "LEO538_SOURCE_AWS_REGION",
+      "LEO538_SOURCE_SSM_INSTANCE_ID",
+      "LEO538_SOURCE_DATABASE",
+      "LEO538_SOURCE_READONLY_PRINCIPAL",
+      "LEO538_ASM_SECRET_REF",
+      "LEO538_SOURCE_LOCAL_PORT",
+      "LEO538_SOURCE_POSTGRES_CONTAINER",
+      "LEO538_SOURCE_POSTGRES_IMAGE"
+    ]
+  },
+  "blogOwnerSourceTables": [
+    "blog_categories",
+    "blog_posts",
+    "blog_tags",
+    "blog_post_tags",
+    "publishing_blog_post_media"
+  ],
+  "reconciliationOwnerSourceTables": [
+    "product_types",
+    "product_sub_types",
+    "product_variant_groups",
+    "spec_definitions",
+    "admin_users"
+  ],
+  "adminUsersProjection": {
+    "retainedColumns": [
+      "id",
+      "email",
+      "name",
+      "role",
+      "is_active",
+      "avatar_url",
+      "created_at",
+      "updated_at"
+    ],
+    "excludedColumns": [
+      "password_hash",
+      "last_login_at",
+      "username"
+    ],
+    "targetTransform": {
+      "password_hash": "fixed non-authenticating sentinel",
+      "last_login_at": "NULL",
+      "username": "NULL"
+    }
+  },
+  "retainedTables": [
+    "admin_users",
+    "banners",
+    "blog_categories",
+    "blog_post_tags",
+    "blog_posts",
+    "blog_tags",
+    "brands",
+    "catalog_taxons",
+    "categories",
+    "colors",
+    "customers",
+    "external_taxonomy_mappings",
+    "filter_definitions",
+    "materials",
+    "order_items",
+    "orders",
+    "origins",
+    "partners",
+    "product_attribute_values",
+    "product_descriptions",
+    "product_documents",
+    "product_feature_values",
+    "product_features",
+    "product_images",
+    "product_package_items",
+    "product_relationships",
+    "product_secondary_subcategories",
+    "product_source_mappings",
+    "product_spec_values",
+    "product_sub_types",
+    "product_taxon_assignments",
+    "product_types",
+    "product_variant_groups",
+    "products",
+    "projects",
+    "publishing_blog_post_media",
+    "publishing_global_controls",
+    "publishing_identity_capabilities",
+    "publishing_identity_ip_allowlist",
+    "publishing_machine_identities",
+    "publishing_managed_media",
+    "publishing_scheduler_state",
+    "quote_items",
+    "quote_requests",
+    "redirects",
+    "spec_definitions",
+    "spec_options",
+    "subcategories"
+  ],
+  "loadOrder": [
+    "colors",
+    "origins",
+    "materials",
+    "brands",
+    "categories",
+    "subcategories",
+    "product_types",
+    "product_sub_types",
+    "product_variant_groups",
+    "product_features",
+    "catalog_taxons",
+    "spec_definitions",
+    "spec_options",
+    "admin_users",
+    "customers",
+    "partners",
+    "projects",
+    "products",
+    "product_images",
+    "product_relationships",
+    "product_descriptions",
+    "product_documents",
+    "product_package_items",
+    "product_source_mappings",
+    "product_spec_values",
+    "product_feature_values",
+    "product_taxon_assignments",
+    "product_attribute_values",
+    "product_secondary_subcategories",
+    "external_taxonomy_mappings",
+    "filter_definitions",
+    "banners",
+    "blog_categories",
+    "publishing_machine_identities",
+    "publishing_identity_capabilities",
+    "publishing_identity_ip_allowlist",
+    "publishing_managed_media",
+    "blog_posts",
+    "blog_tags",
+    "blog_post_tags",
+    "publishing_blog_post_media",
+    "publishing_global_controls",
+    "publishing_scheduler_state",
+    "orders",
+    "order_items",
+    "quote_requests",
+    "quote_items",
+    "redirects"
+  ],
+  "familyTables": [
+    "product_families",
+    "product_family_configuration_groups",
+    "product_family_memberships",
+    "product_family_catalogue_gaps"
+  ],
+  "excludedTables": [
+    {
+      "table": "crawl_product_snapshots",
+      "dataClass": "crawl-history/archive",
+      "handling": "schema retained for reversible structural compatibility; zero runtime rows"
+    },
+    {
+      "table": "crawl_import_decisions",
+      "dataClass": "crawl-debug/archive",
+      "handling": "schema retained for reversible structural compatibility; zero runtime rows"
+    },
+    {
+      "table": "crawl_runs",
+      "dataClass": "crawl-history/archive",
+      "handling": "schema retained; historical runs remain in the Production backup/archive authority and restore with zero runtime rows"
+    },
+    {
+      "table": "audit_logs",
+      "dataClass": "operational-audit/archive",
+      "handling": "schema retained; historical audit rows remain in the Production backup/archive authority and restore with zero runtime rows"
+    },
+    {
+      "table": "publishing_audit_events",
+      "dataClass": "publishing-audit/archive",
+      "handling": "schema retained; historical publishing events remain in the Production backup/archive authority and restore with zero runtime rows"
+    },
+    {
+      "table": "publishing_idempotency_records",
+      "dataClass": "publishing-ephemeral",
+      "handling": "schema retained; expired/request-scoped records are regenerated by the target runtime and restore with zero rows"
+    },
+    {
+      "table": "publishing_rate_limit_windows",
+      "dataClass": "publishing-ephemeral",
+      "handling": "schema retained; process-local windows are regenerated by the target runtime and restore with zero rows"
+    },
+    {
+      "table": "admin_sessions",
+      "dataClass": "authentication-session",
+      "handling": "schema retained; Production session hashes are invalid in the isolated target and restore with zero rows"
+    },
+    {
+      "table": "publishing_credentials",
+      "dataClass": "credential-material",
+      "handling": "schema retained; Production credential hashes/prefixes are prohibited by the LEO-539 boundary and restore with zero rows"
+    }
+  ],
+  "selectionRules": [
+    "Retain authoritative current runtime rows and relationships only.",
+    "Preserve source primary keys and foreign-key relationships.",
+    "Do not fabricate Product rows for catalogue gaps.",
+    "Do not carry raw crawl snapshots, crawl import decisions, debug payloads, or archive history into runtime data.",
+    "Preserve the MS885 canonical member set, 18 memberships, two explicit gaps, and deferred MS885DE6#XW contract.",
+    "Recover the five authoritative Blog relations only from the approved Blog owner-side read-only snapshot; never substitute the RLS-limited 0/0 view.",
+    "Recover the five approved RLS-hidden reconciliation sources only from their approved owner-side read-only snapshot; admin_users uses the documented credential-excluding projection.",
+    "Never migrate Production credential material, active sessions, transient idempotency/rate windows, crawl history, or audit archives into the live target."
+  ],
+  "determinism": {
+    "rowOrder": "primary-key columns ascending, then all columns ascending for tables without a primary key",
+    "rowEncoding": "stable JSON with explicit bytea/bigint markers",
+    "tableHash": "sha256(stable JSON row stream)",
+    "rerun": "target rows are replaced inside dpg_app only, then sequences and integrity checks are rerun"
+  }
+}
