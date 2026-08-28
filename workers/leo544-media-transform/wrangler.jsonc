@@ -1,0 +1,16 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "dongphugia-media-transform",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-08-29",
+  "compatibility_flags": [
+    "streams_enable_constructors"
+  ],
+  "observability": {
+    "enabled": true
+  },
+  "workers_dev": false,
+  "images": {
+    "binding": "IMAGES"
+  }
+}
