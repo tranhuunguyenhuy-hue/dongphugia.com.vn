@@ -51,21 +51,32 @@ if ! psql "$DATABASE_URL" -X -q -A -t -v ON_ERROR_STOP=1 \
   exit 1
 fi
 if ! psql "$DATABASE_URL" -X -q -A -t -v ON_ERROR_STOP=1 \
-  -c "set role dpg_backup; select project_name || '|' || region || '|' || environment || '|' || data_class || '|' || production_data_allowed || '|' || production_credentials_allowed || '|' || production_writes_allowed || '|' || hard_database_ceiling_bytes || '|' || (current_user = 'dpg_backup' and session_user = 'dpg_backup_login' and current_setting('transaction_read_only') = 'on' and not exists (select 1 from pg_tables where schemaname = 'dpg_app' and not has_table_privilege(current_user, schemaname || '.' || tablename, 'SELECT'))) from dpg_control.target_contract where singleton" \
+  -c "set role dpg_backup; select project_name || '|' || region || '|' || environment || '|' || data_class || '|' || production_data_allowed || '|' || production_credentials_allowed || '|' || production_writes_allowed || '|' || hard_database_ceiling_bytes || '|' || (current_user = 'dpg_backup' and session_user = 'dpg_backup_login' and current_setting('transaction_read_only') = 'on') from dpg_control.target_contract where singleton" \
   >"$target_contract" 2>"$tmp_dir/target-contract.error"; then
-  reason='database_query_failed'
+  reason='target_contract_select_failed'
   if grep -Eqi 'permission denied|insufficient privilege' "$tmp_dir/target-contract.error"; then
     reason='target_attestation_permission_denied'
   elif grep -Eqi 'does not exist|undefined|undefined_function' "$tmp_dir/target-contract.error"; then
-    reason='target_attestation_relation_or_function_missing'
+    reason='target_contract_relation_or_function_missing'
   elif grep -Eqi 'syntax error|invalid input syntax' "$tmp_dir/target-contract.error"; then
-    reason='target_attestation_syntax_failed'
+    reason='target_contract_syntax_failed'
   fi
   echo "LEO540_BACKUP status=FAIL stage=target_attestation reason=$reason"
   exit 1
 fi
 if [[ "$(<"$target_contract")" != 'dongphugia-runtime|ap-southeast-1|preview|production-derived-reduced-runtime|t|f|f|367001600|t' ]]; then
   echo 'LEO540_BACKUP status=FAIL stage=target_attestation reason=target_contract_mismatch'
+  exit 1
+fi
+
+if ! psql "$DATABASE_URL" -X -q -A -t -v ON_ERROR_STOP=1 \
+  -c "set role dpg_backup; select not exists (select 1 from pg_tables where schemaname = 'dpg_app' and not has_table_privilege(current_user, schemaname || '.' || tablename, 'SELECT'))" \
+  >"$tmp_dir/table-select.status" 2>"$tmp_dir/table-select.error"; then
+  echo 'LEO540_BACKUP status=FAIL stage=target_attestation reason=table_select_attestation_failed'
+  exit 1
+fi
+if [[ "$(<"$tmp_dir/table-select.status")" != 't' ]]; then
+  echo 'LEO540_BACKUP status=FAIL stage=target_attestation reason=table_select_coverage_failed'
   exit 1
 fi
 
