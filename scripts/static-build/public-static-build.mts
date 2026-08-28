@@ -734,11 +734,13 @@ async function listFiles(root: string): Promise<string[]> {
 
 function parseCli() {
   const values = new Map<string, string>()
-  for (let index = 2; index < process.argv.length; index += 2) {
-    const key = process.argv[index]
-    const value = process.argv[index + 1]
-    if (!key?.startsWith('--') || !value) throw new Error(`Invalid argument: ${key ?? ''}`)
-    values.set(key.slice(2), value)
+  for (let index = 2; index < process.argv.length; index += 1) {
+    const argument = process.argv[index]
+    if (!argument?.startsWith('--')) throw new Error(`Invalid argument: ${argument ?? ''}`)
+    const [key, inlineValue] = argument.slice(2).split('=', 2)
+    const value = inlineValue ?? process.argv[++index]
+    if (!key || !value) throw new Error(`Invalid argument: ${argument}`)
+    values.set(key, value)
   }
   const output = path.resolve(values.get('output') || path.join(process.cwd(), 'scripts/output/public-static-build'))
   const mode = (values.get('mode') || 'production') as StaticBuildMode
