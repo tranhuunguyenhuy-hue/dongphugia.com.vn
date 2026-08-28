@@ -27,6 +27,15 @@ function containsProhibitedKey(value) {
   return Object.entries(value).some(([key, child]) => PROHIBITED_KEY.test(key) || containsProhibitedKey(child))
 }
 
+function violationCategory(violation) {
+  if (violation.includes('target')) return 'target'
+  if (violation.includes('schema')) return 'schema'
+  if (violation.includes('data')) return 'data'
+  if (violation.includes('sensitive')) return 'sensitivity'
+  if (violation.includes('manifest')) return 'manifest'
+  return 'contract'
+}
+
 export function validateRuntimeManifest(manifest) {
   const violations = []
   if (!manifest || typeof manifest !== 'object') return ['manifest is not an object']
@@ -64,7 +73,8 @@ async function main() {
     ? validateRuntimeManifest(expected)
     : compareRuntimeManifests(expected, JSON.parse(await readFile(actualPath, 'utf8')))
   if (violations.length > 0) {
-    process.stderr.write(`LEO540_MANIFEST status=FAIL violation_count=${violations.length}\n`)
+    const categories = [...new Set(violations.map(violationCategory))].sort().join(',')
+    process.stderr.write(`LEO540_MANIFEST status=FAIL violation_count=${violations.length} categories=${categories}\n`)
     process.exitCode = 1
     return
   }
