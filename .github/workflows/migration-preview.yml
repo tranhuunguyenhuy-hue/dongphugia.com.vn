@@ -154,7 +154,7 @@ jobs:
             ${{ runner.temp }}/dongphugia-static-preview
             ${{ runner.temp }}/dongphugia-preview-evidence
           if-no-files-found: error
-          retention-days: 7
+          retention-days: 90
 
   cloudflare-owner-gate:
     name: Existing Cloudflare Preview Owner gate
