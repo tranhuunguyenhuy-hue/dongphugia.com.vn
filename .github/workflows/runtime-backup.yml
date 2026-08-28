@@ -93,7 +93,7 @@ jobs:
   restore:
     name: Rehearse the encrypted backup in isolated PostgreSQL
     needs: backup
-    if: needs.backup.result == 'success' && (github.event_name == 'schedule' || inputs.rehearse_restore == true) && (github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/codex/leo-540-encrypted-backup-recovery') || (github.event_name == 'pull_request' && github.event.pull_request.number == 124 && github.event.pull_request.head.ref == 'codex/leo-540-encrypted-backup-recovery'))
+    if: needs.backup.result == 'success' && (github.event_name == 'schedule' || inputs.rehearse_restore == true || (github.event_name == 'pull_request' && github.event.pull_request.number == 124 && github.event.pull_request.head.ref == 'codex/leo-540-encrypted-backup-recovery')) && (github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/codex/leo-540-encrypted-backup-recovery') || (github.event_name == 'pull_request' && github.event.pull_request.number == 124 && github.event.pull_request.head.ref == 'codex/leo-540-encrypted-backup-recovery'))
     runs-on: ubuntu-24.04
     timeout-minutes: 35
     environment: runtime-backup
