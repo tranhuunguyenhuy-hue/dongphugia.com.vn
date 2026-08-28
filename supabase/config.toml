@@ -50,3 +50,24 @@ verify_jwt = true
 
 [functions.commerce-quotes]
 verify_jwt = true
+
+[functions.admin-audit]
+verify_jwt = true
+
+[functions.admin-blog]
+verify_jwt = true
+
+[functions.admin-commerce]
+verify_jwt = true
+
+[functions.admin-content]
+verify_jwt = true
+
+[functions.admin-products]
+verify_jwt = true
+
+[functions.publishing-media]
+verify_jwt = true
+
+[functions.publishing-posts]
+verify_jwt = true

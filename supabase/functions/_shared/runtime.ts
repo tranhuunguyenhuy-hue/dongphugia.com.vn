@@ -2,7 +2,7 @@ import { createClient, type SupabaseClient, type User } from 'npm:@supabase/supa
 
 export const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, idempotency-key',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, idempotency-key, if-match, x-request-id',
   'Access-Control-Allow-Methods': 'GET,POST,PATCH,DELETE,OPTIONS',
   'Cache-Control': 'no-store',
 }
@@ -83,6 +83,16 @@ export function integerParam(value: string | null, code: string): number {
   return parsed
 }
 
+export function optionalIntegerParam(value: string | null | undefined, code: string): number | null {
+  if (value === null || value === undefined || value === '') return null
+  return integerParam(value, code)
+}
+
+export function expectedVersion(request: Request, bodyValue?: unknown): number | null {
+  const raw = bodyValue ?? request.headers.get('If-Match')?.replace(/^W\//, '').replaceAll('"', '')
+  return raw === null || raw === undefined || raw === '' ? null : integerParam(String(raw), 'INVALID_EXPECTED_VERSION')
+}
+
 export function paginationParam(value: string | null, fallback: number, code: string, maximum: number): number {
   if (value === null) return fallback
   if (!/^\d+$/.test(value)) throw new RuntimeHttpError(400, code)
@@ -95,7 +105,7 @@ function rpcCode(error: RpcError): string {
   const message = typeof error.message === 'string' ? error.message : ''
   const known = [
     'UNAUTHORIZED', 'INVALID_', 'PRODUCT_', 'QUOTE_', 'IDEMPOTENCY_',
-    'ORDER_', 'RESOURCE_', 'FORBIDDEN',
+    'ORDER_', 'RESOURCE_', 'FORBIDDEN', 'STALE_', 'MEDIA_', 'PUBLISHING_', 'LEO542_',
   ]
   const code = known.find((prefix) => message.startsWith(prefix))
   return code ? message.slice(0, 80) : 'RUNTIME_OPERATION_FAILED'
@@ -106,7 +116,12 @@ export function rpcFailure(error: RpcError): RuntimeHttpError {
   const status = code === 'UNAUTHORIZED' ? 401
     : code === 'IDEMPOTENCY_KEY_REUSED' ? 409
       : code === 'IDEMPOTENCY_IN_PROGRESS' ? 409
-        : code.startsWith('INVALID_') || code.startsWith('PRODUCT_') || code.startsWith('QUOTE_') ? 400
+      : code === 'STALE_VERSION' ? 412
+        : code === 'PUBLISHING_DISABLED' ? 503
+          : code.startsWith('MEDIA_') ? 422
+            : code.startsWith('FORBIDDEN') ? 403
+              : code.startsWith('RESOURCE_') ? 404
+      : code.startsWith('INVALID_') || code.startsWith('PRODUCT_') || code.startsWith('QUOTE_') ? 400
           : 500
   return new RuntimeHttpError(status, code)
 }
