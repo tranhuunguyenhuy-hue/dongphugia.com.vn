@@ -110,6 +110,23 @@ if ! psql "$DATABASE_URL" -X -q -A -t -v ON_ERROR_STOP=1 \
   echo 'LEO540_BACKUP status=FAIL stage=manifest reason=backup_role_switch_failed'
   exit 1
 fi
+manifest_probe() {
+  local component="$1"
+  local query="$2"
+  if ! psql "$DATABASE_URL" -X -q -A -t -v ON_ERROR_STOP=1 \
+    -c "set role dpg_backup; $query" \
+    >"$tmp_dir/manifest-probe.status" 2>"$tmp_dir/manifest-probe.error"; then
+    echo "LEO540_BACKUP status=FAIL stage=manifest reason=manifest_${component}_failed"
+    exit 1
+  fi
+}
+manifest_probe 'table_catalog' "select count(*) from pg_class c join pg_namespace n on n.oid = c.relnamespace where n.nspname in ('dpg_app', 'dpg_control') and c.relkind in ('r', 'p')"
+manifest_probe 'index_catalog' "select count(*) from pg_indexes where schemaname in ('dpg_app', 'dpg_control')"
+manifest_probe 'constraint_catalog' "select count(*) from pg_constraint con join pg_class cls on cls.oid = con.conrelid join pg_namespace ns on ns.oid = cls.relnamespace where ns.nspname in ('dpg_app', 'dpg_control')"
+manifest_probe 'view_catalog' "select count(*) from pg_class c join pg_namespace n on n.oid = c.relnamespace where n.nspname in ('dpg_app', 'dpg_control') and c.relkind in ('v', 'm')"
+manifest_probe 'function_catalog' "select count(pg_get_functiondef(p.oid)) from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname in ('dpg_app', 'dpg_control')"
+manifest_probe 'trigger_catalog' "select count(pg_get_triggerdef(t.oid)) from pg_trigger t join pg_class c on c.oid = t.tgrelid join pg_namespace n on n.oid = c.relnamespace where not t.tgisinternal and n.nspname in ('dpg_app', 'dpg_control')"
+manifest_probe 'policy_catalog' "select count(pg_get_expr(p.polqual, p.polrelid)) from pg_policy p join pg_class c on c.oid = p.polrelid join pg_namespace n on n.oid = c.relnamespace where n.nspname in ('dpg_app', 'dpg_control')"
 if ! { printf 'set role dpg_backup;\n'; cat "$repo_root/scripts/backup/runtime-manifest.sql"; } | psql "$DATABASE_URL" -X -q -A -t -v ON_ERROR_STOP=1 \
   >"$manifest_raw" 2>"$tmp_dir/manifest.error"; then
   reason='manifest_query_failed'
