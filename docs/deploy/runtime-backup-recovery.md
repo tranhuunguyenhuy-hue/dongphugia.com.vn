@@ -17,7 +17,8 @@ the one-time pre-merge rehearsal). The backup job:
    `transaction_read_only=on` and SELECT coverage for every `dpg_app` table;
 2. checks the target contract's 350 MiB hard ceiling and 250/300 MiB alert
    thresholds, stopping unless the live size is `WITHIN_BUDGET`;
-3. runs `pg_dump` in custom logical format for only `dpg_app` and
+3. runs PostgreSQL 17.6 `pg_dump` with row-security enabled in custom logical
+   format for only `dpg_app` and
    `dpg_control`;
 4. creates the schema/data manifest from catalog metadata, row counts, and
    row hashes only;

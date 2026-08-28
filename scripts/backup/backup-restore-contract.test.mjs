@@ -12,6 +12,7 @@ const validationSql = readFileSync(resolve(root, 'scripts/backup/validate-runtim
 describe('LEO-540 backup and restore public contracts', () => {
   it('creates a logical encrypted archive from only the approved schemas', () => {
     expect(backup).toContain('--format=custom')
+    expect(backup).toContain('--enable-row-security')
     expect(backup).toContain('--schema=dpg_app --schema=dpg_control')
     expect(backup).toContain('age --encrypt --recipient "$AGE_RECIPIENT"')
     expect(backup).toContain('sha256sum')

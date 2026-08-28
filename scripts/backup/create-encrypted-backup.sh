@@ -141,7 +141,7 @@ encrypted_dump="$output_dir/${backup_id}.dump.age"
 manifest="$output_dir/${backup_id}.manifest.json"
 checksums="$output_dir/${backup_id}.checksums.sha256"
 if docker run --rm --network host --env DATABASE_URL "$postgres_image" \
-  sh -ceu 'pg_dump "$DATABASE_URL" --role=dpg_backup --format=custom --no-owner --no-privileges --no-comments --schema=dpg_app --schema=dpg_control' \
+  sh -ceu 'pg_dump "$DATABASE_URL" --role=dpg_backup --enable-row-security --format=custom --no-owner --no-privileges --no-comments --schema=dpg_app --schema=dpg_control' \
   >"$plain_dump" \
   2>"$tmp_dir/pg_dump.error"; then
   :
