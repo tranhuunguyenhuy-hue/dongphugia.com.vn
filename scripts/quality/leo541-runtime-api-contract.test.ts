@@ -3,7 +3,7 @@ import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 const root = process.cwd()
-const migration = readFileSync(resolve(root, 'supabase/migrations/20260828155459_leo541_runtime_api.sql'), 'utf8')
+const migration = readFileSync(resolve(root, 'supabase/migrations/20260828163113_leo541_runtime_api.sql'), 'utf8')
 const edgeShared = readFileSync(resolve(root, 'supabase/functions/_shared/runtime.ts'), 'utf8')
 const edgeOrders = readFileSync(resolve(root, 'supabase/functions/commerce-orders/index.ts'), 'utf8')
 const edgeQuotes = readFileSync(resolve(root, 'supabase/functions/commerce-quotes/index.ts'), 'utf8')

@@ -90,22 +90,29 @@ remain mandatory before applying the migration or rollback. No Production
 database, Production write target, Auth credential, DNS, AWS, Cloudflare
 routing, paid tier, or Production deployment action is part of LEO-541.
 
-## Isolated-target evidence (2026-08-28)
+## Isolated-target evidence (2026-08-29)
 
-Owner-authorized migration `leo541_runtime_api` was applied only to
-`dongphugia-runtime` in `ap-southeast-1`. `commerce-orders` and
-`commerce-quotes` were deployed at version 1 with JWT verification enabled.
-The rollback-wrapped SQL fixture passed owner-bound order/quote CRUD,
-idempotent replay, mismatched-key rejection, cross-owner denial, audit writes,
-invalid-write rollback, and the public-product read boundary. Direct anonymous
-HTTP requests to both Edge endpoints returned 401.
+The target classification was reconciled to the accepted LEO-538
+`production-derived-reduced-runtime` state. The Owner-approved migration was
+applied only to `dongphugia-runtime` in `ap-southeast-1`; the repository now
+uses the exact recorded migration filename
+`20260828163113_leo541_runtime_api.sql`. `commerce-orders` and
+`commerce-quotes` were deployed with JWT verification enabled.
 
-The target has zero Auth users. Creating an identity or retrieving/minting a
-credential was not authorized, so authenticated HTTP Edge-to-RPC acceptance is
-blocked. The connector serializes target SQL calls; all six mutating RPCs were
-verified live as invoker-only and containing `pg_advisory_xact_lock`, but a
-valid two-session RPC contention timing result is also blocked. Neither gate is
-recorded as PASS.
+Authenticated HTTP Edge-to-RPC and representative order/quote CRUD passed.
+Unauthenticated requests returned 401, and the sanitized RLS fixture passed
+cross-owner denial. Duplicate replay returned the committed response while a
+mismatched idempotency key was rejected. Two separate HTTP client processes
+completed the same concurrent mutation safely; live catalog inspection
+confirmed all six mutating RPCs are invoker-only and contain
+`pg_advisory_xact_lock`. Invalid HTTP input and the rollback-wrapped SQL
+fixture passed without partial writes.
+
+Exactly one temporary non-admin Auth identity was used for acceptance. Its
+session was globally revoked and the identity was deleted. Final counts were
+zero Auth users, identities, sessions, refresh tokens, temporary runtime rows,
+and Auth instances. No Auth configuration, role, credential, or Production
+mutation was performed.
 
 The static artifact regression passed and the LEO-541 contract adds no
 Supabase client or RPC import to `public-static-build.mts`. The existing static

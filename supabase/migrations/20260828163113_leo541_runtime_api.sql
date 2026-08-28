@@ -1,8 +1,8 @@
 -- LEO-541: authenticated order/quote backend for the isolated runtime.
 --
--- Apply only after the Owner authorizes the exact target, schema/RLS
--- expansion, and rollout gate. It deliberately creates no role, login,
--- credential, secret, auth setting, or Production connection.
+-- This migration is source-only until the Owner authorizes the exact target,
+-- schema/RLS expansion, and rollout gate. It deliberately creates no role,
+-- login, credential, secret, auth setting, or Production connection.
 
 do $target_preflight$
 begin
