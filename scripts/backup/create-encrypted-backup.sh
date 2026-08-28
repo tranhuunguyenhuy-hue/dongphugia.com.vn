@@ -133,7 +133,7 @@ manifest_probe 'function_config' "select count(md5(coalesce(array_to_string(p.pr
 manifest_probe 'trigger_catalog' "select count(pg_get_triggerdef(t.oid)) from pg_trigger t join pg_class c on c.oid = t.tgrelid join pg_namespace n on n.oid = c.relnamespace where not t.tgisinternal and n.nspname in ('dpg_app', 'dpg_control')"
 manifest_probe 'policy_catalog' "select count(pg_get_expr(p.polqual, p.polrelid)) from pg_policy p join pg_class c on c.oid = p.polrelid join pg_namespace n on n.oid = c.relnamespace where n.nspname in ('dpg_app', 'dpg_control')"
 manifest_probe 'policy_check' "select count(pg_get_expr(p.polwithcheck, p.polrelid)) from pg_policy p join pg_class c on c.oid = p.polrelid join pg_namespace n on n.oid = c.relnamespace where n.nspname in ('dpg_app', 'dpg_control')"
-if { printf 'set role dpg_backup;\n'; cat "$repo_root/scripts/backup/runtime-manifest.sql"; } | psql "$DATABASE_URL" -X -q -A -t -v ON_ERROR_STOP=1 \
+if { printf 'set role dpg_backup;\n'; cat "$repo_root/scripts/backup/runtime-manifest.sql"; } | psql "$DATABASE_URL" -X -q -A -t -v ON_ERROR_STOP=1 -v VERBOSITY=verbose \
   >"$manifest_raw" 2>"$tmp_dir/manifest.error"; then
   :
 else
@@ -148,7 +148,7 @@ else
   elif grep -Eqi 'syntax error|invalid input syntax' "$tmp_dir/manifest.error"; then
     reason='manifest_query_syntax_failed'
   fi
-  sqlstate="$(awk '/ERROR:/{for (field = 1; field <= NF; field++) if ($field != "ERROR:" && $field ~ /^[0-9A-Z]{5}:?$/) {gsub(/:/, "", $field); print $field; exit}}' "$tmp_dir/manifest.error")"
+  sqlstate="$(awk '/SQL state:/{print $3; exit} /ERROR:/{for (field = 1; field <= NF; field++) if ($field != "ERROR:" && $field ~ /^[0-9A-Z]{5}:?$/) {gsub(/:/, "", $field); print $field; exit}}' "$tmp_dir/manifest.error")"
   if [[ ! "$sqlstate" =~ ^[0-9A-Z]{5}$ ]]; then sqlstate='unknown'; fi
   echo "LEO540_BACKUP status=FAIL stage=manifest reason=$reason sqlstate=$sqlstate exit_code=$psql_status"
   exit 1
