@@ -29,6 +29,8 @@ function containsProhibitedKey(value) {
 
 function violationCategory(violation) {
   if (violation.includes('target')) return 'target'
+  if (violation.includes('data manifest entry')) return 'data_entry'
+  if (violation.includes('data manifest changed')) return 'data_changed'
   if (violation.includes('schema')) return 'schema'
   if (violation.includes('data')) return 'data'
   if (violation.includes('sensitive')) return 'sensitivity'
