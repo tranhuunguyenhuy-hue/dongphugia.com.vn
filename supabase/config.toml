@@ -44,3 +44,9 @@ enable_confirmations = true
 [auth.sms]
 enable_signup = false
 enable_confirmations = true
+
+[functions.commerce-orders]
+verify_jwt = true
+
+[functions.commerce-quotes]
+verify_jwt = true
