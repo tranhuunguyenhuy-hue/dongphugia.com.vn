@@ -33,6 +33,11 @@ export const CLOUDFLARE_PAGES_FREE_FILE_LIMIT = 20_000
 export const CLOUDFLARE_PAGES_FREE_MAX_FILE_BYTES = 25 * 1024 * 1024
 export const ACCEPTED_INVENTORY = { files: 4_093, bytes: 7_559_256 } as const
 
+function quoteIdentifier(value: string) {
+  if (!/^[a-z_][a-z0-9_]*$/i.test(value)) throw new Error('STATIC_BUILD_IDENTIFIER_FAILED')
+  return `"${value.replaceAll('"', '""')}"`
+}
+
 export const STATIC_CONTENT_ROUTES = [
   ['/', 'Đông Phú Gia - Vật liệu xây dựng cao cấp tại Đà Lạt'],
   ['/lien-he', 'Liên hệ'],
@@ -742,8 +747,13 @@ function parseCli() {
 }
 
 async function readBuildInput(client: Client): Promise<StaticBuildInput> {
+  const schema = process.env.PUBLIC_STATIC_BUILD_SCHEMA || 'public'
+  const role = process.env.PUBLIC_STATIC_BUILD_DB_ROLE
+  if (schema === 'dpg_app' && role !== 'dpg_readonly') throw new Error('STATIC_BUILD_TARGET_ROLE_FAILED')
+  if (role) await client.query(`SET ROLE ${quoteIdentifier(role)}`)
   await client.query('BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY')
   await client.query('SET LOCAL statement_timeout = 150000')
+  await client.query(`SET LOCAL search_path = ${quoteIdentifier(schema)}, public`)
   const products = (await client.query<StaticProduct>(`SELECT p.id, p.slug, p.name, p.description, p.seo_title, p.seo_description,
     p.image_main_url, p.sku, p.updated_at, p.product_type, p.stock_status, p.price, p.original_price,
     p.list_price, p.sale_price, c.slug AS category_slug, c.name AS category_name,

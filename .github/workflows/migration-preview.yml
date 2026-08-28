@@ -101,11 +101,19 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Attest the approved read-only Supabase Preview source
+        env:
+          DATABASE_URL: ${{ secrets.MIGRATION_PREVIEW_DATABASE_URL }}
+          PUBLIC_STATIC_BUILD_READ_ONLY: 'true'
+        run: npm run static:verify-preview-source
+
       - name: Build the merged LEO-536 static artifact from the read-only source
         id: build
         env:
           DATABASE_URL: ${{ secrets.MIGRATION_PREVIEW_DATABASE_URL }}
           PUBLIC_STATIC_BUILD_READ_ONLY: 'true'
+          PUBLIC_STATIC_BUILD_DB_ROLE: dpg_readonly
+          PUBLIC_STATIC_BUILD_SCHEMA: dpg_app
           PUBLISHING_BUNNY_CDN_HOSTNAME: cdn.dongphugia.com.vn
           OUTPUT: ${{ runner.temp }}/dongphugia-static-preview
           EVIDENCE: ${{ runner.temp }}/dongphugia-preview-evidence/candidate-evidence.json

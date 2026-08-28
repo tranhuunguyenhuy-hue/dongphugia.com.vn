@@ -8,7 +8,7 @@ const artifactContract = readFileSync(resolve(process.cwd(), 'scripts/static-bui
 
 describe('migration PR CI and Preview workflow contract', () => {
   it('runs required CI and consumes the merged static build contract', () => {
-    for (const marker of ['pull_request:', 'branches: [main]', 'npm run lint', 'npm run typecheck', 'npm test', 'npm run static:check', 'npm run static:build', 'PUBLIC_STATIC_BUILD_READ_ONLY', 'MIGRATION_PREVIEW_DATABASE_URL', 'actions/upload-artifact@v4']) {
+    for (const marker of ['pull_request:', 'branches: [main]', 'npm run lint', 'npm run typecheck', 'npm test', 'npm run static:check', 'npm run static:build', 'npm run static:verify-preview-source', 'PUBLIC_STATIC_BUILD_READ_ONLY', 'PUBLIC_STATIC_BUILD_DB_ROLE: dpg_readonly', 'PUBLIC_STATIC_BUILD_SCHEMA: dpg_app', 'MIGRATION_PREVIEW_DATABASE_URL', 'actions/upload-artifact@v4']) {
       expect(workflow).toContain(marker)
     }
   })
