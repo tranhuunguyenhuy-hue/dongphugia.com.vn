@@ -110,38 +110,6 @@ if ! psql "$DATABASE_URL" -X -q -A -t -v ON_ERROR_STOP=1 \
   echo 'LEO540_BACKUP status=FAIL stage=manifest reason=backup_role_switch_failed'
   exit 1
 fi
-manifest_probe() {
-  local component="$1"
-  local query="$2"
-  if ! psql "$DATABASE_URL" -X -q -A -t -v ON_ERROR_STOP=1 \
-    -c "set role dpg_backup; $query" \
-    >"$tmp_dir/manifest-probe.status" 2>"$tmp_dir/manifest-probe.error"; then
-    echo "LEO540_BACKUP status=FAIL stage=manifest reason=manifest_${component}_failed"
-    exit 1
-  fi
-}
-manifest_probe 'table_catalog' "select count(*) from pg_class c join pg_namespace n on n.oid = c.relnamespace where n.nspname in ('dpg_app', 'dpg_control') and c.relkind in ('r', 'p')"
-manifest_probe 'column_defaults' "select count(md5(pg_get_expr(ad.adbin, ad.adrelid))) from pg_attribute a join pg_attrdef ad on ad.adrelid = a.attrelid and ad.adnum = a.attnum where a.attnum > 0 and not a.attisdropped"
-manifest_probe 'index_catalog' "select count(*) from pg_indexes where schemaname in ('dpg_app', 'dpg_control')"
-manifest_probe 'index_definitions' "select count(md5(indexdef)) from pg_indexes where schemaname in ('dpg_app', 'dpg_control')"
-manifest_probe 'constraint_catalog' "select count(*) from pg_constraint con join pg_class cls on cls.oid = con.conrelid join pg_namespace ns on ns.oid = cls.relnamespace where ns.nspname in ('dpg_app', 'dpg_control')"
-manifest_probe 'constraint_definitions' "select count(md5(pg_get_constraintdef(con.oid))) from pg_constraint con join pg_class cls on cls.oid = con.conrelid join pg_namespace ns on ns.oid = cls.relnamespace where ns.nspname in ('dpg_app', 'dpg_control')"
-manifest_probe 'view_catalog' "select count(*) from pg_class c join pg_namespace n on n.oid = c.relnamespace where n.nspname in ('dpg_app', 'dpg_control') and c.relkind in ('v', 'm')"
-manifest_probe 'view_definitions' "select count(md5(pg_get_viewdef(c.oid, true))) from pg_class c join pg_namespace n on n.oid = c.relnamespace where n.nspname in ('dpg_app', 'dpg_control') and c.relkind in ('v', 'm')"
-manifest_probe 'function_catalog' "select count(pg_get_functiondef(p.oid)) from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname in ('dpg_app', 'dpg_control')"
-manifest_probe 'function_config' "select count(md5(coalesce(array_to_string(p.proconfig, E'\\n'), ''))) from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname in ('dpg_app', 'dpg_control')"
-manifest_probe 'trigger_catalog' "select count(pg_get_triggerdef(t.oid)) from pg_trigger t join pg_class c on c.oid = t.tgrelid join pg_namespace n on n.oid = c.relnamespace where not t.tgisinternal and n.nspname in ('dpg_app', 'dpg_control')"
-manifest_probe 'policy_catalog' "select count(pg_get_expr(p.polqual, p.polrelid)) from pg_policy p join pg_class c on c.oid = p.polrelid join pg_namespace n on n.oid = c.relnamespace where n.nspname in ('dpg_app', 'dpg_control')"
-manifest_probe 'policy_check' "select count(pg_get_expr(p.polwithcheck, p.polrelid)) from pg_policy p join pg_class c on c.oid = p.polrelid join pg_namespace n on n.oid = c.relnamespace where n.nspname in ('dpg_app', 'dpg_control')"
-manifest_probe 'data_manifest_catalog' "select count(*) from dpg_control.leo538_restore_manifest"
-manifest_probe 'data_manifest_aggregate' "select count(jsonb_build_object('tableName', table_name, 'rowCount', row_count, 'sha256', sha256, 'sourceAuthority', source_authority)) from dpg_control.leo538_restore_manifest"
-manifest_probe 'table_json' "select jsonb_agg(jsonb_build_object('identity', n.nspname || '.' || c.relname, 'rls', c.relrowsecurity, 'forceRls', c.relforcerowsecurity, 'columns', coalesce((select jsonb_agg(jsonb_build_object('name', a.attname, 'type', format_type(a.atttypid, a.atttypmod), 'nullable', not a.attnotnull, 'defaultMd5', case when ad.adbin is null then null else md5(pg_get_expr(ad.adbin, ad.adrelid)) end) order by a.attnum) from pg_attribute a left join pg_attrdef ad on ad.adrelid = a.attrelid and ad.adnum = a.attnum where a.attrelid = c.oid and a.attnum > 0 and not a.attisdropped), '[]'::jsonb)) order by n.nspname, c.relname) from pg_class c join pg_namespace n on n.oid = c.relnamespace where n.nspname in ('dpg_app', 'dpg_control') and c.relkind in ('r', 'p')"
-manifest_probe 'index_json' "select jsonb_agg(jsonb_build_object('identity', schemaname || '.' || tablename || '.' || indexname, 'definitionMd5', md5(indexdef)) order by schemaname, tablename, indexname) from pg_indexes where schemaname in ('dpg_app', 'dpg_control')"
-manifest_probe 'constraint_json' "select jsonb_agg(jsonb_build_object('identity', ns.nspname || '.' || cls.relname || '.' || con.conname, 'type', con.contype, 'definitionMd5', md5(pg_get_constraintdef(con.oid))) order by ns.nspname, cls.relname, con.conname) from pg_constraint con join pg_class cls on cls.oid = con.conrelid join pg_namespace ns on ns.oid = cls.relnamespace where ns.nspname in ('dpg_app', 'dpg_control')"
-manifest_probe 'view_json' "select jsonb_agg(jsonb_build_object('identity', n.nspname || '.' || c.relname, 'definitionMd5', md5(pg_get_viewdef(c.oid, true))) order by n.nspname, c.relname) from pg_class c join pg_namespace n on n.oid = c.relnamespace where n.nspname in ('dpg_app', 'dpg_control') and c.relkind in ('v', 'm')"
-manifest_probe 'function_json' "select jsonb_agg(jsonb_build_object('identity', n.nspname || '.' || p.proname || '(' || pg_get_function_identity_arguments(p.oid) || ')', 'definitionMd5', md5(pg_get_functiondef(p.oid)), 'language', l.lanname, 'volatility', p.provolatile, 'securityDefiner', p.prosecdef, 'configMd5', md5(coalesce(array_to_string(p.proconfig, E'\\n'), ''))) order by n.nspname, p.proname, pg_get_function_identity_arguments(p.oid)) from pg_proc p join pg_namespace n on n.oid = p.pronamespace join pg_language l on l.oid = p.prolang where n.nspname in ('dpg_app', 'dpg_control')"
-manifest_probe 'trigger_json' "select jsonb_agg(jsonb_build_object('identity', n.nspname || '.' || c.relname || '.' || t.tgname, 'definitionMd5', md5(pg_get_triggerdef(t.oid)), 'enabled', t.tgenabled) order by n.nspname, c.relname, t.tgname) from pg_trigger t join pg_class c on c.oid = t.tgrelid join pg_namespace n on n.oid = c.relnamespace where not t.tgisinternal and n.nspname in ('dpg_app', 'dpg_control')"
-manifest_probe 'policy_json' "select jsonb_agg(jsonb_build_object('identity', n.nspname || '.' || c.relname || '.' || p.polname, 'permissive', case when p.polpermissive then 'PERMISSIVE' else 'RESTRICTIVE' end, 'roles', array(select rolname from pg_roles where oid = any(p.polroles) order by rolname), 'command', p.polcmd, 'usingMd5', case when p.polqual is null then null else md5(pg_get_expr(p.polqual, p.polrelid)) end, 'checkMd5', case when p.polwithcheck is null then null else md5(pg_get_expr(p.polwithcheck, p.polrelid)) end) order by n.nspname, c.relname, p.polname) from pg_policy p join pg_class c on c.oid = p.polrelid join pg_namespace n on n.oid = c.relnamespace where n.nspname in ('dpg_app', 'dpg_control')"
 if { printf 'set role dpg_backup;\n'; cat "$repo_root/scripts/backup/runtime-manifest.sql"; } | psql "$DATABASE_URL" -X -q -A -t -v ON_ERROR_STOP=1 -v VERBOSITY=verbose \
   >"$manifest_raw" 2>"$tmp_dir/manifest.error"; then
   :

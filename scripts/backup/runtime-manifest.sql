@@ -120,4 +120,6 @@ SELECT jsonb_build_object(
     ) ORDER BY table_name)
     FROM dpg_control.leo538_restore_manifest
   ), '[]'::jsonb)
-)::text;
+  )::text
+  FROM table_objects, index_objects, constraint_objects, view_objects,
+       function_objects, trigger_objects, policy_objects;
