@@ -145,7 +145,9 @@ if ! { printf 'set role dpg_backup;\n'; cat "$repo_root/scripts/backup/runtime-m
   elif grep -Eqi 'syntax error|invalid input syntax' "$tmp_dir/manifest.error"; then
     reason='manifest_query_syntax_failed'
   fi
-  echo "LEO540_BACKUP status=FAIL stage=manifest reason=$reason"
+  sqlstate="$(awk '/ERROR:/{for (index = 1; index <= NF; index++) if ($index ~ /^[0-9A-Z]{5}:?$/) {gsub(/:/, "", $index); print $index; exit}}' "$tmp_dir/manifest.error")"
+  if [[ ! "$sqlstate" =~ ^[0-9A-Z]{5}$ ]]; then sqlstate='unknown'; fi
+  echo "LEO540_BACKUP status=FAIL stage=manifest reason=$reason sqlstate=$sqlstate"
   exit 1
 fi
 if ! node "$repo_root/scripts/backup/manifest-contract.mjs" validate "$manifest_raw" >/dev/null 2>"$tmp_dir/manifest-contract.error"; then
