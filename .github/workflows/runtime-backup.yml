@@ -2,7 +2,7 @@ name: Encrypted runtime backup and restore rehearsal
 
 on:
   schedule:
-    - cron: '17 2 * * *' # Daily encrypted backup.
+    - cron: '17 2 * * 1-6' # Monday-Saturday encrypted backup.
     - cron: '17 3 * * 0' # Weekly encrypted backup and isolated restore.
   workflow_dispatch:
     inputs:

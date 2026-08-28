@@ -8,12 +8,13 @@ PITR, or archive deletion.
 ## Design
 
 [`runtime-backup.yml`](../../.github/workflows/runtime-backup.yml) runs an
-encrypted backup daily at 02:17 UTC and runs the encrypted backup plus an
-isolated restore rehearsal weekly on Sunday at 03:17 UTC. The restore can also
-be manually dispatched from protected `main` before a major migration or
-cutover event. The one-time LEO-540 acceptance rehearsal ran before the final
-fail-closed main-only trigger was retained; the schedule is not active on
-`main` until this PR is approved and merged. The backup job:
+encrypted backup Monday through Saturday at 02:17 UTC and runs the encrypted
+backup plus an isolated restore rehearsal on Sunday at 03:17 UTC. This yields
+exactly one scheduled backup per calendar day and one automatic restore per
+week. The restore can also be manually dispatched from protected `main` before
+a major migration or cutover event. The one-time LEO-540 acceptance rehearsal
+ran before the final fail-closed main-only trigger was retained; the schedule
+is not active on `main` until this PR is approved and merged. The backup job:
 
 1. attests the exact `dongphugia-runtime` / `ap-southeast-1` Preview target and
    its `production-derived-reduced-runtime` contract, using the existing
@@ -73,7 +74,7 @@ The restore job downloads the artifact from the exact backup run, verifies both
 checksums before decryption, and decrypts into `/dev/shm`. It restores into a
 pinned PostgreSQL 17 container with:
 
-- daily backup runs do not invoke restore;
+- Monday-Saturday scheduled backup runs do not invoke restore;
 - the Sunday 03:17 UTC weekly schedule invokes restore after its backup; and
 - a protected manual dispatch can invoke restore before a major migration or
   cutover event.
