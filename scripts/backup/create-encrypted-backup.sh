@@ -112,7 +112,17 @@ if ! psql "$DATABASE_URL" -X -q -A -t -v ON_ERROR_STOP=1 \
 fi
 if ! { printf 'set role dpg_backup;\n'; cat "$repo_root/scripts/backup/runtime-manifest.sql"; } | psql "$DATABASE_URL" -X -q -A -t -v ON_ERROR_STOP=1 \
   >"$manifest_raw" 2>"$tmp_dir/manifest.error"; then
-  echo 'LEO540_BACKUP status=FAIL stage=manifest reason=manifest_query_failed'
+  reason='manifest_query_failed'
+  if grep -Eqi 'permission denied|insufficient privilege' "$tmp_dir/manifest.error"; then
+    reason='manifest_permission_denied'
+  elif grep -Eqi 'statement timeout|canceling statement' "$tmp_dir/manifest.error"; then
+    reason='manifest_query_timeout'
+  elif grep -Eqi 'does not exist|undefined|undefined_function' "$tmp_dir/manifest.error"; then
+    reason='manifest_catalog_or_function_missing'
+  elif grep -Eqi 'syntax error|invalid input syntax' "$tmp_dir/manifest.error"; then
+    reason='manifest_query_syntax_failed'
+  fi
+  echo "LEO540_BACKUP status=FAIL stage=manifest reason=$reason"
   exit 1
 fi
 if ! node "$repo_root/scripts/backup/manifest-contract.mjs" validate "$manifest_raw" >/dev/null 2>"$tmp_dir/manifest-contract.error"; then
