@@ -51,7 +51,7 @@ if ! psql "$DATABASE_URL" -X -q -A -t -v ON_ERROR_STOP=1 \
   exit 1
 fi
 if ! psql "$DATABASE_URL" -X -q -A -t -v ON_ERROR_STOP=1 \
-  -c "set role dpg_backup; select project_name || '|' || region || '|' || environment || '|' || data_class || '|' || production_data_allowed || '|' || production_credentials_allowed || '|' || production_writes_allowed || '|' || hard_database_ceiling_bytes || '|' || (current_user = 'dpg_backup' and session_user = 'dpg_backup_login' and current_setting('transaction_read_only') = 'on') from dpg_control.target_contract where singleton" \
+  -c "set role dpg_backup; select project_name || '|' || region || '|' || environment || '|' || data_class || '|' || production_data_allowed || '|' || production_credentials_allowed || '|' || production_writes_allowed || '|' || hard_database_ceiling_bytes from dpg_control.target_contract where singleton" \
   >"$target_contract" 2>"$tmp_dir/target-contract.error"; then
   reason='target_contract_select_failed'
   if grep -Eqi 'permission denied|insufficient privilege' "$tmp_dir/target-contract.error"; then
@@ -64,8 +64,20 @@ if ! psql "$DATABASE_URL" -X -q -A -t -v ON_ERROR_STOP=1 \
   echo "LEO540_BACKUP status=FAIL stage=target_attestation reason=$reason"
   exit 1
 fi
-if [[ "$(<"$target_contract")" != 'dongphugia-runtime|ap-southeast-1|preview|production-derived-reduced-runtime|t|f|f|367001600|t' ]]; then
+if [[ "$(<"$target_contract")" != 'dongphugia-runtime|ap-southeast-1|preview|production-derived-reduced-runtime|t|f|f|367001600' ]]; then
   echo 'LEO540_BACKUP status=FAIL stage=target_attestation reason=target_contract_mismatch'
+  exit 1
+fi
+
+role_attestation="$tmp_dir/role-attestation.txt"
+if ! psql "$DATABASE_URL" -X -q -A -t -v ON_ERROR_STOP=1 \
+  -c "set role dpg_backup; select current_user || '|' || session_user || '|' || current_setting('transaction_read_only')" \
+  >"$role_attestation" 2>"$tmp_dir/role-attestation.error"; then
+  echo 'LEO540_BACKUP status=FAIL stage=target_attestation reason=backup_role_attestation_failed'
+  exit 1
+fi
+if [[ "$(<"$role_attestation")" != 'dpg_backup|dpg_backup_login|on' ]]; then
+  echo "LEO540_BACKUP status=FAIL stage=target_attestation reason=backup_role_state_mismatch observed=$(<"$role_attestation")"
   exit 1
 fi
 
