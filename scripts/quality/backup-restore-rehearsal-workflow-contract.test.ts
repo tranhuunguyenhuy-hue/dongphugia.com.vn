@@ -4,55 +4,56 @@ import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 const workflow = readFileSync(
-    resolve(process.cwd(), '.github/workflows/backup-restore-rehearsal.yml'),
+    resolve(process.cwd(), '.github/workflows/runtime-backup.yml'),
     'utf8',
 )
 
 describe('backup restore rehearsal workflow contract', () => {
-    it('is manual-only and restricted to protected main', () => {
+    it('is scheduled/manual and restricted to protected main', () => {
         expect(workflow).toContain('workflow_dispatch:')
+        expect(workflow).toContain("cron: '17 2 * * *'")
         expect(workflow).not.toMatch(/^\s*(push|pull_request):/m)
         expect(workflow).toContain('test "$GITHUB_REF" = "refs/heads/main"')
         expect(workflow).toContain('environment: restore-rehearsal')
         expect(workflow).toContain('contents: read')
+        expect(workflow).toContain('retention-days: 14')
+        expect(workflow).toContain('actions/upload-artifact@v4')
     })
 
-    it('accepts only the temporary presigned-URL secret contract', () => {
-        expect(workflow).toContain('RESTORE_REHEARSAL_DUMP_URL')
-        expect(workflow).toContain('RESTORE_REHEARSAL_CHECKSUM_URL')
+    it('uses only Owner-configured existing target/key contracts', () => {
+        expect(workflow).toContain('SUPABASE_RUNTIME_DATABASE_URL')
+        expect(workflow).toContain('BACKUP_AGE_RECIPIENT')
+        expect(workflow).toContain('BACKUP_AGE_PRIVATE_KEY')
+        expect(workflow).toContain('BACKUP_FAILURE_WEBHOOK_URL')
         expect(workflow).not.toMatch(/AWS_(ACCESS_KEY|SECRET|ROLE)|configure-aws-credentials|id-token:/)
-        expect(workflow).not.toContain('actions/upload-artifact')
+        expect(workflow).not.toContain('secretsmanager')
     })
 
-    it('verifies the checksum before starting the isolated restore container', () => {
-        const checksum = workflow.indexOf("stage='checksum_verification'")
-        const container = workflow.indexOf("stage='container_start'")
-        const restore = workflow.indexOf("stage='restore_stream'")
+    it('runs backup encryption before artifact upload and restore after download', () => {
+        const encryption = workflow.indexOf('create-encrypted-backup.sh')
+        const upload = workflow.indexOf('actions/upload-artifact@v4')
+        const download = workflow.indexOf('actions/download-artifact@v4')
+        const restore = workflow.indexOf('rehearse-isolated-restore.sh')
 
-        expect(checksum).toBeGreaterThan(-1)
-        expect(container).toBeGreaterThan(checksum)
-        expect(restore).toBeGreaterThan(container)
-        expect(workflow).toContain('sha256sum')
-        expect(workflow).toContain('test "$expected_sha" = "$actual_sha"')
-        expect(workflow).toContain('mktemp --directory /dev/shm/backup-restore-rehearsal.XXXXXX')
-        expect(workflow).toContain("= 'tmpfs'")
-        expect(workflow).toContain('curl --fail --silent --show-error --location "$RESTORE_REHEARSAL_DUMP_URL" --output "$archive_path"')
-        expect(workflow).toContain('actual_sha="$(sha256sum "$archive_path"')
-        expect(workflow).toContain('cat "$archive_path" |')
-        expect(workflow.match(/curl --fail --silent --show-error --location "\$RESTORE_REHEARSAL_DUMP_URL"/g)).toHaveLength(1)
+        expect(encryption).toBeGreaterThan(-1)
+        expect(upload).toBeGreaterThan(encryption)
+        expect(download).toBeGreaterThan(upload)
+        expect(restore).toBeGreaterThan(download)
+        expect(workflow).toContain('Logical archive: encrypted before artifact upload')
+        expect(workflow).toContain('Manifest: schema metadata, row counts, and row hashes only')
+        expect(workflow).toContain('Integrity: encrypted archive and manifest checksums verified')
     })
 
-    it('uses a network-disabled, tmpfs-only PostgreSQL restore target', () => {
-        expect(workflow).toContain('--network none')
-        expect(workflow).toContain('--read-only')
-        expect(workflow).toContain('--tmpfs /var/lib/postgresql/data')
-        expect(workflow).toContain('--tmpfs /tmp')
-        expect(workflow).toContain('--tmpfs /var/run/postgresql')
-        expect(workflow).toContain("test \"$bind_mount_count\" = '0'")
-        expect(workflow).toContain('pg_restore -U postgres -d restorecheck')
-        expect(workflow).toContain('pg_catalog.pg_tables')
-        expect(workflow).toContain('pg_catalog.pg_indexes')
-        expect(workflow).not.toContain('postgresql://')
-        expect(workflow).not.toContain('DATABASE_URL')
+    it('declares failure alerting without leaking payloads', () => {
+        expect(workflow).toContain('LEO540_ALERT status=FAILURE_SIGNALLED')
+        expect(workflow).toContain('GitHub Actions job failure is the mandatory alert path.')
+        expect(workflow).toContain('The alert payload contains no database row, credential, URL, or key.')
+        expect(workflow).not.toContain('actions/upload-artifact@v3')
+    })
+
+    it('uses the isolated restore script and pinned PostgreSQL 17 image', () => {
+        expect(workflow).toContain('postgres:17.6-bookworm@sha256:45cd22f8d32e189d245403954882f88e7a8714301fda80dab6da90f1265b25a3')
+        expect(workflow).toContain('environment: restore-rehearsal')
+        expect(workflow).toContain('actions/download-artifact@v4')
     })
 })

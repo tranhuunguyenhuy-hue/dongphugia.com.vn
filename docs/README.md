@@ -45,6 +45,9 @@ not an authority document: verify it immediately before relying on it.
   isolated Free target identity, least-privilege roles, forced RLS/Auth
   separation, Free-tier guards, secret-safe validation, and teardown boundary
   (LEO-539).
+- `CURRENT` — [Runtime backup and recovery](deploy/runtime-backup-recovery.md):
+  encrypted logical backup, checksum manifest, isolated restore rehearsal, and
+  Product/Family/Blog recovery checks (LEO-540).
 - `CURRENT` — [Public static build](deploy/public-static-build.md):
   read-only build-time export, SEO/redirect output, inventory checks, and
   Product/Family preservation gate (LEO-536).

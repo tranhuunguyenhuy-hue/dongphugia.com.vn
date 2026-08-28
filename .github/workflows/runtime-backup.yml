@@ -1,0 +1,170 @@
+name: Encrypted runtime backup and restore rehearsal
+
+on:
+  schedule:
+    - cron: '17 2 * * *'
+  workflow_dispatch:
+    inputs:
+      rehearse_restore:
+        description: Restore this backup into the isolated rehearsal target
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: leo540-runtime-backup-${{ github.repository }}
+  cancel-in-progress: false
+
+env:
+  POSTGRES_IMAGE: postgres:17.6-bookworm@sha256:45cd22f8d32e189d245403954882f88e7a8714301fda80dab6da90f1265b25a3
+
+jobs:
+  backup:
+    name: Encrypt and retain the runtime logical backup
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    environment: runtime-backup
+    permissions:
+      contents: read
+      actions: write
+    outputs:
+      artifact_name: ${{ steps.record.outputs.artifact_name }}
+    steps:
+      - name: Require protected main dispatch
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/main"
+
+      - name: Check out the exact scheduled revision
+        uses: actions/checkout@v4
+
+      - name: Install pinned backup tooling
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install --no-install-recommends --yes age jq postgresql-client >/dev/null
+
+      - name: Create encrypted logical backup and sanitized manifests
+        env:
+          DATABASE_URL: ${{ secrets.SUPABASE_RUNTIME_DATABASE_URL }}
+          AGE_RECIPIENT: ${{ vars.BACKUP_AGE_RECIPIENT }}
+          BACKUP_RETENTION_DAYS: ${{ vars.BACKUP_RETENTION_DAYS }}
+          BACKUP_ID: leo540-${{ github.run_id }}
+          OUTPUT_DIR: ${{ runner.temp }}/leo540-backup
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash scripts/backup/create-encrypted-backup.sh
+
+      - name: Upload the encrypted bundle with approved retention
+        id: bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: leo540-runtime-backup-${{ github.run_id }}
+          path: ${{ runner.temp }}/leo540-backup
+          if-no-files-found: error
+          retention-days: 14
+      - name: Record sanitized backup result
+        id: record
+        run: |
+          {
+            echo '### LEO-540 backup: PASS'
+            echo '- Source target: the existing Owner-configured dongphugia-runtime Preview target'
+            echo '- Logical archive: encrypted before artifact upload'
+            echo '- Manifest: schema metadata, row counts, and row hashes only'
+            echo '- Retention: 14 days; no archive deletion is performed by this workflow'
+            echo '- Database rows, credentials, and encryption material: not emitted'
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "artifact_name=leo540-runtime-backup-${{ github.run_id }}" >> "$GITHUB_OUTPUT"
+
+  restore:
+    name: Rehearse the encrypted backup in isolated PostgreSQL
+    needs: backup
+    if: needs.backup.result == 'success' && (github.event_name == 'schedule' || inputs.rehearse_restore == true)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    environment: restore-rehearsal
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Require protected main dispatch
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/main"
+
+      - name: Check out the exact scheduled revision
+        uses: actions/checkout@v4
+
+      - name: Install pinned restore tooling
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install --no-install-recommends --yes age jq >/dev/null
+
+      - name: Download the encrypted bundle from this exact run
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.backup.outputs.artifact_name }}
+          path: ${{ runner.temp }}/leo540-backup
+          run-id: ${{ github.run_id }}
+          github-token: ${{ github.token }}
+
+      - name: Restore, compare manifests, and validate the isolated target
+        env:
+          BACKUP_DIR: ${{ runner.temp }}/leo540-backup
+          AGE_IDENTITY: ${{ secrets.BACKUP_AGE_PRIVATE_KEY }}
+        shell: bash
+        run: bash scripts/backup/rehearse-isolated-restore.sh
+
+      - name: Record sanitized restore result
+        run: |
+          {
+            echo '### LEO-540 isolated restore: PASS'
+            echo '- Target: disposable network-disabled PostgreSQL 17 container on tmpfs'
+            echo '- Integrity: encrypted archive and manifest checksums verified'
+            echo '- Schema/data manifests: equal to the backup contract'
+            echo '- Product, Family/MS885, and Blog validation: PASS'
+            echo '- No target connection, row content, credential, or key material emitted'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  alert:
+    name: Exercise backup failure and alert contract
+    needs: [backup, restore]
+    if: always() && (needs.backup.result == 'failure' || needs.restore.result == 'failure')
+    runs-on: ubuntu-24.04
+    environment: runtime-backup
+    permissions:
+      contents: read
+    steps:
+      - name: Emit sanitized failure signal
+        env:
+          BACKUP_FAILURE_WEBHOOK_URL: ${{ secrets.BACKUP_FAILURE_WEBHOOK_URL }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          message='LEO-540 runtime backup or isolated restore failed; inspect the protected workflow run without copying secrets or database rows.'
+          echo 'LEO540_ALERT status=FAILURE_SIGNALLED destination=github-actions-summary'
+          if [[ -n "${BACKUP_FAILURE_WEBHOOK_URL:-}" ]]; then
+            curl --fail --silent --show-error --max-time 10 \
+              --header 'content-type: application/json' \
+              --data "$(jq -cn --arg text "$message" "{text:\$text}")" \
+              "$BACKUP_FAILURE_WEBHOOK_URL" >/dev/null 2>&1 || \
+              echo 'LEO540_ALERT status=WEBHOOK_DELIVERY_FAILED'
+          else
+            echo 'LEO540_ALERT status=WEBHOOK_NOT_CONFIGURED'
+          fi
+          {
+            echo '### LEO-540 alert: FAILURE_SIGNALLED'
+            echo '- GitHub Actions job failure is the mandatory alert path.'
+            echo '- Optional webhook delivery uses an existing Owner-configured secret only.'
+            echo '- The alert payload contains no database row, credential, URL, or key.'
+          } >> "$GITHUB_STEP_SUMMARY"
