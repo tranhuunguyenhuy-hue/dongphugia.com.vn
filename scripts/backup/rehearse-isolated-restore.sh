@@ -146,8 +146,8 @@ if ! docker exec -i "$container_name" psql -U postgres -d postgres -X -q -A -t -
   exit 1
 fi
 node "$repo_root/scripts/backup/manifest-contract.mjs" compare "$manifest" "$actual_manifest" >/dev/null 2>"$tmp_dir/manifest-compare.error" || {
-  categories="$(sed -nE 's/.*categories=([a-z,]+).*/\1/p' "$tmp_dir/manifest-compare.error" | head -n 1)"
-  if [[ ! "$categories" =~ ^[a-z,]+$ ]]; then categories='unknown'; fi
+  categories="$(sed -nE 's/.*categories=([a-z_,]+).*/\1/p' "$tmp_dir/manifest-compare.error" | head -n 1)"
+  if [[ ! "$categories" =~ ^[a-z_,]+$ ]]; then categories='unknown'; fi
   echo "LEO540_RESTORE status=FAIL stage=manifest_comparison reason=manifest_mismatch categories=$categories"
   exit 1
 }

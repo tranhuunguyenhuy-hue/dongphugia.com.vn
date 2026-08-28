@@ -30,7 +30,10 @@ function containsProhibitedKey(value) {
 function violationCategory(violation) {
   if (violation.includes('target')) return 'target'
   if (violation.includes('data manifest entry')) return 'data_entry'
-  if (violation.includes('data manifest changed')) return 'data_changed'
+  if (violation.includes('data table set')) return 'data_tables'
+  if (violation.includes('data row counts')) return 'data_counts'
+  if (violation.includes('data row hashes')) return 'data_hashes'
+  if (violation.includes('data source authority')) return 'data_authority'
   if (violation.includes('schema')) return 'schema'
   if (violation.includes('data')) return 'data'
   if (violation.includes('sensitive')) return 'sensitivity'
@@ -63,7 +66,20 @@ export function compareRuntimeManifests(expected, actual) {
   if (violations.length > 0) return [...new Set(violations)]
   if (JSON.stringify(canonical(expected.target)) !== JSON.stringify(canonical(actual.target))) violations.push('target manifest changed')
   if (JSON.stringify(canonical(expected.schema)) !== JSON.stringify(canonical(actual.schema))) violations.push('schema manifest changed')
-  if (JSON.stringify(canonical(expected.data)) !== JSON.stringify(canonical(actual.data))) violations.push('data manifest changed')
+  if (expected.data.length !== actual.data.length
+    || new Set(expected.data.map((entry) => entry.tableName)).size !== new Set(actual.data.map((entry) => entry.tableName)).size
+    || expected.data.some((entry) => !actual.data.some((candidate) => candidate.tableName === entry.tableName))
+    || actual.data.some((entry) => !expected.data.some((candidate) => candidate.tableName === entry.tableName))) {
+    violations.push('data table set changed')
+  }
+  const actualDataByTable = new Map(actual.data.map((entry) => [entry.tableName, entry]))
+  for (const entry of expected.data) {
+    const actualEntry = actualDataByTable.get(entry.tableName)
+    if (!actualEntry) continue
+    if (entry.rowCount !== actualEntry.rowCount) violations.push('data row counts changed')
+    if (entry.sha256 !== actualEntry.sha256) violations.push('data row hashes changed')
+    if (entry.sourceAuthority !== actualEntry.sourceAuthority) violations.push('data source authority changed')
+  }
   return [...new Set(violations)]
 }
 

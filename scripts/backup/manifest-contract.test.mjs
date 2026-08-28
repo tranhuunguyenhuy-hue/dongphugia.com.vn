@@ -56,6 +56,6 @@ describe('LEO-540 runtime manifest contract', () => {
 
     expect(compareRuntimeManifests(expected, actual)).toEqual([])
     actual.data[0].rowCount = 2
-    expect(compareRuntimeManifests(expected, actual)).toEqual(['data manifest changed'])
+    expect(compareRuntimeManifests(expected, actual)).toEqual(['data row counts changed'])
   })
 })
