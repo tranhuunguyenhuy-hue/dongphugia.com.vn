@@ -23,6 +23,7 @@ describe('migration PR CI and Preview workflow contract', () => {
     for (const forbidden of ['pages secret', 'pages deployment delete', 'deployments: write', 'cloudflared tunnel', 'aws ', 'PRODUCTION_DATABASE_URL']) {
       expect(workflow.toLowerCase()).not.toContain(forbidden.toLowerCase())
     }
+    expect(workflow).toContain('pages project create')
     expect(workflow).toContain('--production-branch=main')
     expect(workflow).toContain('Custom domains: none')
     expect(workflow).toContain('BLOCKED_BY_OWNER_GATE')
