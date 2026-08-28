@@ -8,8 +8,10 @@ PITR, or archive deletion.
 ## Design
 
 [`runtime-backup.yml`](../../.github/workflows/runtime-backup.yml) runs daily at
-02:17 UTC and can be dispatched from protected `main` (or the task branch for
-the one-time pre-merge rehearsal). The backup job:
+02:17 UTC and can be manually dispatched from protected `main`. The one-time
+LEO-540 acceptance rehearsal ran before the final fail-closed main-only trigger
+was retained; the schedule is not active on `main` until this PR is approved
+and merged. The backup job:
 
 1. attests the exact `dongphugia-runtime` / `ap-southeast-1` Preview target and
    its `production-derived-reduced-runtime` contract, using the existing
@@ -54,10 +56,11 @@ administration capability.
 The approved source contract is 14 days and one encrypted artifact per run.
 The workflow does not delete old artifacts or configure a provider lifecycle
 rule. No paid storage, backup tier, PITR, overage, new bucket, or new external
-service is introduced by this source change. Before enabling the schedule, the
-Owner must verify that the repository’s existing Actions artifact allowance
-covers this retention and archive size; an unknown allowance or any paid
-requirement is `BLOCKED`, not an inferred pass.
+service is introduced by this source change. The current repository inventory
+is 46 artifacts / 368,552,993 bytes against the approved 500,000,000-byte
+budget; one measured backup artifact fits with 122,548,818 bytes remaining.
+Schedule activation remains subject to the same cost boundary and Owner merge
+decision.
 
 The database hard stop remains 350 MiB, with existing 250 MiB and 300 MiB
 alerts. The backup job stops unless the live target reports `WITHIN_BUDGET`.
@@ -124,10 +127,23 @@ credential rotation, paid fallback, or Production recovery.
 
 ## Current gate record
 
-- Source implementation: pending PR review.
-- Live scheduled backup: `UNKNOWN` until the Owner-configured target URL and
-  existing key/retention boundary are present.
-- Live isolated restore: `UNKNOWN` until a protected workflow run completes.
-- Actions artifact free/near-zero-cost allowance: `UNKNOWN` until revalidated
-  against the current repository plan/quota.
+- Source implementation: complete in open PR #124; exact-head CI is green.
+- Live encrypted logical backup: `PASS`, workflow run `33182413565`.
+- Checksum/integrity manifest: `PASS`.
+- Live isolated restore: `PASS`, workflow run `33182413565`, using the pinned
+  network-disabled/tmpfs-only PostgreSQL 17.6 rehearsal target.
+- Product validation: `PASS`.
+- Family/MS885 validation: `PASS`.
+- Blog validation: `PASS`.
+- Actions artifact free/near-zero-cost allowance: `PASS`; 46 artifacts totaling
+  368,552,993 bytes remain, below the approved 500,000,000-byte budget, with
+  one measured backup artifact fitting inside the remaining headroom.
+- Artifact preservation: `PASS`; 294 previously audited `SAFE_TO_DELETE`
+  artifacts were deleted, while all audited `MUST_KEEP` and `UNCERTAIN`
+  artifacts were retained. The complete per-artifact deletion manifest was not
+  retained; this one-time process deviation was ratified by the Owner.
 - Production database/write-target switch: not performed.
+- Production deployment, DNS/traffic cutover, paid PITR/storage, unrelated
+  credential/security mutation, and AWS retirement: not performed.
+- Schedule activation: fail-closed until Owner approval and merge; no
+  Production authorization is granted by this record.
