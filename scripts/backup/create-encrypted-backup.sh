@@ -65,7 +65,14 @@ if ! psql "$DATABASE_URL" -X -q -A -t -v ON_ERROR_STOP=1 \
   exit 1
 fi
 if [[ "$(<"$target_contract")" != 'dongphugia-runtime|ap-southeast-1|preview|production-derived-reduced-runtime|t|f|f|367001600' ]]; then
-  echo 'LEO540_BACKUP status=FAIL stage=target_attestation reason=target_contract_mismatch'
+  target_checks="$tmp_dir/target-contract.checks"
+  if psql "$DATABASE_URL" -X -q -A -t -v ON_ERROR_STOP=1 \
+    -c "set role dpg_backup; select (project_name = 'dongphugia-runtime') || '|' || (region = 'ap-southeast-1') || '|' || (environment = 'preview') || '|' || (data_class = 'production-derived-reduced-runtime') || '|' || (production_data_allowed is true) || '|' || (production_credentials_allowed is false) || '|' || (production_writes_allowed is false) || '|' || (hard_database_ceiling_bytes = 367001600) from dpg_control.target_contract where singleton" \
+    >"$target_checks" 2>"$tmp_dir/target-checks.error"; then
+    echo "LEO540_BACKUP status=FAIL stage=target_attestation reason=target_contract_mismatch checks=$(<"$target_checks")"
+  else
+    echo 'LEO540_BACKUP status=FAIL stage=target_attestation reason=target_contract_mismatch checks_unavailable'
+  fi
   exit 1
 fi
 
