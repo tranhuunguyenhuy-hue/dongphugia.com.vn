@@ -76,7 +76,7 @@ if ! psql "$DATABASE_URL" -X -q -A -t -v ON_ERROR_STOP=1 \
   echo 'LEO540_BACKUP status=FAIL stage=target_attestation reason=backup_role_attestation_failed'
   exit 1
 fi
-if [[ "$(<"$role_attestation")" != 't|t|t' ]]; then
+if [[ "$(<"$role_attestation")" != 'true|true|true' ]]; then
   echo "LEO540_BACKUP status=FAIL stage=target_attestation reason=backup_role_state_mismatch checks=$(<"$role_attestation")"
   exit 1
 fi
