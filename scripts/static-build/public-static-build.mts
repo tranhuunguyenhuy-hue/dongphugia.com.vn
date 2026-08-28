@@ -291,6 +291,7 @@ function assertSafeOutputDirectory(output: string) {
     path.resolve(process.cwd(), 'scripts/output'),
     path.resolve(tmpdir()),
     path.join(homedir(), '.codex', 'tmp'),
+    ...(process.env.RUNNER_TEMP ? [path.resolve(process.env.RUNNER_TEMP)] : []),
   ]
   const allowed = allowedRoots.some((root) => {
     const relative = path.relative(root, resolvedOutput)
