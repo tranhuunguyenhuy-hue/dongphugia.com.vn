@@ -268,7 +268,7 @@ jobs:
             echo "needs_create=true" >> "$GITHUB_OUTPUT"
           elif [[ "$project_http_code" == "200" ]]; then
             jq -e --arg name "$PREVIEW_PROJECT" \
-              '.success == true and .result.name == $name and .result.production_branch == "main" and ((.result.domains // []) | length == 0)' \
+              '.success == true and .result.name == $name and .result.production_branch == "main" and .result.subdomain == ($name + ".pages.dev") and ((.result.domains // []) | all(. == ($name + ".pages.dev")))' \
               >/dev/null <<<"$project_json"
             echo "needs_create=false" >> "$GITHUB_OUTPUT"
           else
@@ -305,7 +305,7 @@ jobs:
             exit 1
           fi
           jq -e --arg name "$PREVIEW_PROJECT" \
-            '.success == true and .result.name == $name and .result.production_branch == "main" and ((.result.domains // []) | length == 0)' \
+            '.success == true and .result.name == $name and .result.production_branch == "main" and .result.subdomain == ($name + ".pages.dev") and ((.result.domains // []) | all(. == ($name + ".pages.dev")))' \
             >/dev/null <<<"$project_json"
           {
             echo '### Cloudflare Pages project: PASS'
