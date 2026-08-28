@@ -11,7 +11,7 @@ WITH table_objects AS (
           'name', a.attname,
           'type', format_type(a.atttypid, a.atttypmod),
           'nullable', NOT a.attnotnull,
-          'default', pg_get_expr(ad.adbin, ad.adrelid)
+          'defaultMd5', CASE WHEN ad.adbin IS NULL THEN NULL ELSE md5(pg_get_expr(ad.adbin, ad.adrelid)) END
         ) ORDER BY a.attnum)
         FROM pg_attribute a
         LEFT JOIN pg_attrdef ad ON ad.adrelid = a.attrelid AND ad.adnum = a.attnum
@@ -25,7 +25,7 @@ WITH table_objects AS (
 ), index_objects AS (
   SELECT COALESCE(jsonb_agg(jsonb_build_object(
     'identity', schemaname || '.' || tablename || '.' || indexname,
-    'definition', indexdef
+    'definitionMd5', md5(indexdef)
   ) ORDER BY schemaname, tablename, indexname), '[]'::jsonb) AS value
   FROM pg_indexes
   WHERE schemaname IN ('dpg_app', 'dpg_control')
@@ -33,7 +33,7 @@ WITH table_objects AS (
   SELECT COALESCE(jsonb_agg(jsonb_build_object(
     'identity', ns.nspname || '.' || cls.relname || '.' || con.conname,
     'type', con.contype,
-    'definition', pg_get_constraintdef(con.oid)
+    'definitionMd5', md5(pg_get_constraintdef(con.oid))
   ) ORDER BY ns.nspname, cls.relname, con.conname), '[]'::jsonb) AS value
   FROM pg_constraint con
   JOIN pg_class cls ON cls.oid = con.conrelid
@@ -42,7 +42,7 @@ WITH table_objects AS (
 ), view_objects AS (
   SELECT COALESCE(jsonb_agg(jsonb_build_object(
     'identity', n.nspname || '.' || c.relname,
-    'definition', pg_get_viewdef(c.oid, true)
+    'definitionMd5', md5(pg_get_viewdef(c.oid, true))
   ) ORDER BY n.nspname, c.relname), '[]'::jsonb) AS value
   FROM pg_class c
   JOIN pg_namespace n ON n.oid = c.relnamespace
@@ -50,11 +50,11 @@ WITH table_objects AS (
 ), function_objects AS (
   SELECT COALESCE(jsonb_agg(jsonb_build_object(
     'identity', n.nspname || '.' || p.proname || '(' || pg_get_function_identity_arguments(p.oid) || ')',
-    'definition', pg_get_functiondef(p.oid),
+    'definitionMd5', md5(pg_get_functiondef(p.oid)),
     'language', l.lanname,
     'volatility', p.provolatile,
     'securityDefiner', p.prosecdef,
-    'config', COALESCE(p.proconfig, ARRAY[]::text[])
+    'configMd5', md5(COALESCE(array_to_string(p.proconfig, E'\n'), ''))
   ) ORDER BY n.nspname, p.proname, pg_get_function_identity_arguments(p.oid)), '[]'::jsonb) AS value
   FROM pg_proc p
   JOIN pg_namespace n ON n.oid = p.pronamespace
@@ -63,7 +63,7 @@ WITH table_objects AS (
 ), trigger_objects AS (
   SELECT COALESCE(jsonb_agg(jsonb_build_object(
     'identity', n.nspname || '.' || c.relname || '.' || t.tgname,
-    'definition', pg_get_triggerdef(t.oid),
+    'definitionMd5', md5(pg_get_triggerdef(t.oid)),
     'enabled', t.tgenabled
   ) ORDER BY n.nspname, c.relname, t.tgname), '[]'::jsonb) AS value
   FROM pg_trigger t
@@ -76,8 +76,8 @@ WITH table_objects AS (
     'permissive', CASE WHEN p.polpermissive THEN 'PERMISSIVE' ELSE 'RESTRICTIVE' END,
     'roles', ARRAY(SELECT rolname FROM pg_roles WHERE oid = ANY(p.polroles) ORDER BY rolname),
     'command', p.polcmd,
-    'using', pg_get_expr(p.polqual, p.polrelid),
-    'check', pg_get_expr(p.polwithcheck, p.polrelid)
+    'usingMd5', CASE WHEN p.polqual IS NULL THEN NULL ELSE md5(pg_get_expr(p.polqual, p.polrelid)) END,
+    'checkMd5', CASE WHEN p.polwithcheck IS NULL THEN NULL ELSE md5(pg_get_expr(p.polwithcheck, p.polrelid)) END
   ) ORDER BY n.nspname, c.relname, p.polname), '[]'::jsonb) AS value
   FROM pg_policy p
   JOIN pg_class c ON c.oid = p.polrelid

@@ -71,13 +71,13 @@ fi
 
 role_attestation="$tmp_dir/role-attestation.txt"
 if ! psql "$DATABASE_URL" -X -q -A -t -v ON_ERROR_STOP=1 \
-  -c "set role dpg_backup; select current_user || '|' || session_user || '|' || current_setting('transaction_read_only')" \
+  -c "set role dpg_backup; select (current_user = 'dpg_backup') || '|' || (session_user = 'dpg_backup_login') || '|' || (current_setting('transaction_read_only') = 'on')" \
   >"$role_attestation" 2>"$tmp_dir/role-attestation.error"; then
   echo 'LEO540_BACKUP status=FAIL stage=target_attestation reason=backup_role_attestation_failed'
   exit 1
 fi
-if [[ "$(<"$role_attestation")" != 'dpg_backup|dpg_backup_login|on' ]]; then
-  echo "LEO540_BACKUP status=FAIL stage=target_attestation reason=backup_role_state_mismatch observed=$(<"$role_attestation")"
+if [[ "$(<"$role_attestation")" != 't|t|t' ]]; then
+  echo "LEO540_BACKUP status=FAIL stage=target_attestation reason=backup_role_state_mismatch checks=$(<"$role_attestation")"
   exit 1
 fi
 
