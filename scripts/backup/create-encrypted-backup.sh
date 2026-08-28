@@ -7,6 +7,7 @@ set -euo pipefail
 output_dir="${OUTPUT_DIR:-backup-output}"
 backup_id="${BACKUP_ID:-leo540-$(date -u +%Y%m%dT%H%M%SZ)}"
 retention_days="${BACKUP_RETENTION_DAYS:-}"
+postgres_image="${POSTGRES_IMAGE:-postgres:17.6-bookworm@sha256:45cd22f8d32e189d245403954882f88e7a8714301fda80dab6da90f1265b25a3}"
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
 if [[ ! "$backup_id" =~ ^[A-Za-z0-9._-]+$ ]]; then
@@ -22,7 +23,7 @@ if [[ ! "$AGE_RECIPIENT" =~ ^age1[[:alnum:]]+$ ]]; then
   exit 1
 fi
 
-for command in age jq pg_dump psql sha256sum; do
+for command in age docker jq psql sha256sum; do
   command -v "$command" >/dev/null 2>&1 || {
     echo "LEO540_BACKUP status=FAIL stage=preflight reason=missing_${command}"
     exit 1
@@ -139,8 +140,9 @@ plain_dump="$tmp_dir/runtime.dump"
 encrypted_dump="$output_dir/${backup_id}.dump.age"
 manifest="$output_dir/${backup_id}.manifest.json"
 checksums="$output_dir/${backup_id}.checksums.sha256"
-if pg_dump "$DATABASE_URL" --role=dpg_backup --format=custom --no-owner --no-privileges --no-comments \
-  --schema=dpg_app --schema=dpg_control --file="$plain_dump" \
+if docker run --rm --network host --env DATABASE_URL "$postgres_image" \
+  sh -ceu 'pg_dump "$DATABASE_URL" --role=dpg_backup --format=custom --no-owner --no-privileges --no-comments --schema=dpg_app --schema=dpg_control' \
+  >"$plain_dump" \
   2>"$tmp_dir/pg_dump.error"; then
   :
 else
