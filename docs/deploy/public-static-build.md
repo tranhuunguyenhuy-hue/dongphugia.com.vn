@@ -77,10 +77,11 @@ workflow run, artifact SHA-256, and migration manifest SHA-256.
 
 Cloudflare upload is separately gated by the single non-Production Pages project
 contract. The workflow may create exactly the configured project when it is
-absent, using the pre-authorized Pages:Edit token; it fails closed on API,
-identity, custom-domain, or branch mismatches.
-The workflow never creates a project, secret, binding, permission, security
-setting, DNS record, traffic route, or deployment deletion. The Owner must
+absent, using the supported Wrangler `pages project create` command and the
+pre-authorized Pages:Edit token; it fails closed on API, identity,
+custom-domain, or branch mismatches.
+The workflow never creates a secret, binding, permission, security setting, DNS
+record, traffic route, or deployment deletion. The Owner must
 preconfigure `MIGRATION_PREVIEW_SOURCE_ENABLED=true`,
 `MIGRATION_PREVIEW_SOURCE_CONTRACT=read-only-non-production`,
 `CLOUDFLARE_PAGES_PREVIEW_ENABLED=true`, and the exact
