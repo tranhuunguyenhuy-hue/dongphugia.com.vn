@@ -28,7 +28,7 @@ for command in age jq pg_dump psql sha256sum; do
     exit 1
   }
 done
-export PGOPTIONS='-c role=dpg_readonly'
+export PGOPTIONS='-c role=dpg_backup'
 
 mkdir -p "$output_dir"
 output_dir="$(cd "$output_dir" && pwd)"
@@ -45,7 +45,7 @@ fi
 
 target_contract="$tmp_dir/target-contract.txt"
 if ! psql "$DATABASE_URL" -X -q -A -t -v ON_ERROR_STOP=1 \
-  -c "select project_name || '|' || region || '|' || environment || '|' || data_class || '|' || production_data_allowed || '|' || production_credentials_allowed || '|' || production_writes_allowed || '|' || hard_database_ceiling_bytes || '|' || (current_user = 'dpg_readonly' and session_user = 'dpg_readonly_login' and current_setting('transaction_read_only') = 'on' and not exists (select 1 from pg_tables where schemaname = 'dpg_app' and not has_table_privilege(current_user, schemaname || '.' || tablename, 'SELECT'))) from dpg_control.target_contract where singleton" \
+  -c "select project_name || '|' || region || '|' || environment || '|' || data_class || '|' || production_data_allowed || '|' || production_credentials_allowed || '|' || production_writes_allowed || '|' || hard_database_ceiling_bytes || '|' || (current_user = 'dpg_backup' and session_user = 'dpg_backup_login' and current_setting('transaction_read_only') = 'on' and not exists (select 1 from pg_tables where schemaname = 'dpg_app' and not has_table_privilege(current_user, schemaname || '.' || tablename, 'SELECT'))) from dpg_control.target_contract where singleton" \
   >"$target_contract" 2>"$tmp_dir/target-contract.error"; then
   echo 'LEO540_BACKUP status=FAIL stage=target_attestation reason=database_query_failed'
   exit 1
@@ -56,7 +56,7 @@ if [[ "$(<"$target_contract")" != 'dongphugia-runtime|ap-southeast-1|preview|pro
 fi
 
 if ! psql "$DATABASE_URL" -X -q -A -t -v ON_ERROR_STOP=1 \
-  -c "select status from dpg_control.free_tier_database_guard" \
+  -c "select case when pg_database_size(current_database()) >= hard_database_ceiling_bytes then 'HARD_STOP' when pg_database_size(current_database()) >= 314572800 then 'ALERT_300_MIB' when pg_database_size(current_database()) >= 262144000 then 'ALERT_250_MIB' else 'WITHIN_BUDGET' end from dpg_control.target_contract where singleton" \
   >"$tmp_dir/free-tier.status" 2>"$tmp_dir/free-tier.error"; then
   echo 'LEO540_BACKUP status=FAIL stage=free_tier_guard reason=database_query_failed'
   exit 1

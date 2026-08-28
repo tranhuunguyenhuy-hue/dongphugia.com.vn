@@ -14,7 +14,7 @@ describe('backup restore rehearsal workflow contract', () => {
         expect(workflow).toContain("cron: '17 2 * * *'")
         expect(workflow).not.toMatch(/^\s*(push|pull_request):/m)
         expect(workflow).toContain('test "$GITHUB_REF" = "refs/heads/main"')
-        expect(workflow).toContain('environment: restore-rehearsal')
+        expect(workflow).toContain('environment: runtime-backup')
         expect(workflow).toContain('contents: read')
         expect(workflow).toContain('retention-days: 14')
         expect(workflow).toContain('actions/upload-artifact@v4')
@@ -53,7 +53,7 @@ describe('backup restore rehearsal workflow contract', () => {
 
     it('uses the isolated restore script and pinned PostgreSQL 17 image', () => {
         expect(workflow).toContain('postgres:17.6-bookworm@sha256:45cd22f8d32e189d245403954882f88e7a8714301fda80dab6da90f1265b25a3')
-        expect(workflow).toContain('environment: restore-rehearsal')
+        expect(workflow).toContain('environment: runtime-backup')
         expect(workflow).toContain('actions/download-artifact@v4')
     })
 })

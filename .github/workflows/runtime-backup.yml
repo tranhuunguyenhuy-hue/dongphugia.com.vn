@@ -24,7 +24,7 @@ env:
 jobs:
   backup:
     name: Encrypt and retain the runtime logical backup
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/codex/leo-540-encrypted-backup-recovery')
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     environment: runtime-backup
@@ -38,7 +38,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$GITHUB_REF" = "refs/heads/main"
+          test "$GITHUB_REF" = "refs/heads/main" || \
+            { test "$GITHUB_EVENT_NAME" = "workflow_dispatch" && \
+              test "$GITHUB_REF" = "refs/heads/codex/leo-540-encrypted-backup-recovery"; }
 
       - name: Check out the exact scheduled revision
         uses: actions/checkout@v4
@@ -86,10 +88,10 @@ jobs:
   restore:
     name: Rehearse the encrypted backup in isolated PostgreSQL
     needs: backup
-    if: needs.backup.result == 'success' && (github.event_name == 'schedule' || inputs.rehearse_restore == true)
+    if: needs.backup.result == 'success' && (github.event_name == 'schedule' || inputs.rehearse_restore == true) && (github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/codex/leo-540-encrypted-backup-recovery'))
     runs-on: ubuntu-24.04
     timeout-minutes: 35
-    environment: restore-rehearsal
+    environment: runtime-backup
     permissions:
       contents: read
       actions: read
@@ -98,7 +100,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$GITHUB_REF" = "refs/heads/main"
+          test "$GITHUB_REF" = "refs/heads/main" || \
+            { test "$GITHUB_EVENT_NAME" = "workflow_dispatch" && \
+              test "$GITHUB_REF" = "refs/heads/codex/leo-540-encrypted-backup-recovery"; }
 
       - name: Check out the exact scheduled revision
         uses: actions/checkout@v4

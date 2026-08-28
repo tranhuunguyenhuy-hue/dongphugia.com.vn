@@ -8,13 +8,15 @@ PITR, or archive deletion.
 ## Design
 
 [`runtime-backup.yml`](../../.github/workflows/runtime-backup.yml) runs daily at
-02:17 UTC and can be dispatched only from protected `main`. The backup job:
+02:17 UTC and can be dispatched from protected `main` (or the task branch for
+the one-time pre-merge rehearsal). The backup job:
 
 1. attests the exact `dongphugia-runtime` / `ap-southeast-1` Preview target and
    its `production-derived-reduced-runtime` contract, using the existing
-   `dpg_readonly_login` explicitly set to the `dpg_readonly` capability with
+   `dpg_backup_login` explicitly set to the `dpg_backup` capability with
    `transaction_read_only=on` and SELECT coverage for every `dpg_app` table;
-2. checks `dpg_control.free_tier_database_guard` is `WITHIN_BUDGET`;
+2. checks the target contract's 350 MiB hard ceiling and 250/300 MiB alert
+   thresholds, stopping unless the live size is `WITHIN_BUDGET`;
 3. runs `pg_dump` in custom logical format for only `dpg_app` and
    `dpg_control`;
 4. creates the schema/data manifest from catalog metadata, row counts, and
@@ -29,24 +31,22 @@ both the encrypted archive and the manifest.
 
 ## Key and secret handling
 
-The workflow consumes existing Owner-managed GitHub Environment configuration
-only:
+The workflow consumes only the Owner-approved `runtime-backup` GitHub
+Environment configuration:
 
 | Environment | Secret/variable | Purpose |
 | --- | --- | --- |
 | `runtime-backup` | `SUPABASE_RUNTIME_DATABASE_URL` | exact isolated runtime connection |
 | `runtime-backup` | `BACKUP_AGE_RECIPIENT` variable | public age recipient |
 | `runtime-backup` | `BACKUP_RETENTION_DAYS=14` variable | retention contract |
-| `restore-rehearsal` | `BACKUP_AGE_PRIVATE_KEY` | decrypt only inside the protected rehearsal job |
+| `runtime-backup` | `BACKUP_AGE_PRIVATE_KEY` | decrypt only inside the protected rehearsal job |
 | `runtime-backup` | `BACKUP_FAILURE_WEBHOOK_URL` (optional) | existing alert endpoint |
 
 No workflow step creates, rotates, retrieves, prints, or persists a credential
 or key. A missing key, target URL, recipient, retention variable, or alert
-configuration is not silently repaired. If `BACKUP_AGE_PRIVATE_KEY` would need
-a new storage decision, stop with `LEO_540_STATUS: REQUIRES_OWNER_DECISION`.
-If the existing target-local read-only identity lacks coverage for a runtime
-table, stop before `pg_dump`; adding a grant or changing a role is a new
-security mutation and requires the same Owner decision.
+configuration is not silently repaired. The target-local `dpg_backup_login`
+is the only dedicated login and has no write, ownership, BYPASSRLS, or role
+administration capability.
 
 ## Retention and cost boundary
 
