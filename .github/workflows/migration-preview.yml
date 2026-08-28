@@ -316,6 +316,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload the exact candidate to the Pages Preview project
+        id: deploy
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -332,14 +333,18 @@ jobs:
           PREVIEW_PROJECT: ${{ vars.CLOUDFLARE_PAGES_PREVIEW_PROJECT }}
           PR_NUMBER: ${{ github.event.pull_request.number || github.run_id }}
           ARTIFACT_SHA: ${{ steps.identity.outputs.artifact_sha }}
+          DEPLOYMENT_URL: ${{ steps.deploy.outputs.deployment-url }}
+          PREVIEW_ALIAS_URL: ${{ steps.deploy.outputs.pages-deployment-alias-url }}
         run: |
           set -euo pipefail
-          preview_url="https://pr-${PR_NUMBER}.${PREVIEW_PROJECT}.pages.dev"
+          preview_url="${PREVIEW_ALIAS_URL:-${DEPLOYMENT_URL:-}}"
+          test -n "$preview_url"
           case "$preview_url" in
-            https://www.dongphugia.vn|https://dongphugia.vn) exit 1 ;;
+            https://*."${PREVIEW_PROJECT}".pages.dev) ;;
+            *) exit 1 ;;
           esac
-          curl --fail --silent --show-error --retry 8 --retry-delay 3 -D "$RUNNER_TEMP/preview.headers" -o "$RUNNER_TEMP/preview.html" "$preview_url/"
-          curl --fail --silent --show-error --retry 8 --retry-delay 3 -o "$RUNNER_TEMP/preview.robots" "$preview_url/robots.txt"
+          curl --fail --silent --show-error --retry-all-errors --retry 12 --retry-delay 5 --retry-max-time 120 -D "$RUNNER_TEMP/preview.headers" -o "$RUNNER_TEMP/preview.html" "$preview_url/"
+          curl --fail --silent --show-error --retry-all-errors --retry 12 --retry-delay 5 --retry-max-time 120 -o "$RUNNER_TEMP/preview.robots" "$preview_url/robots.txt"
           grep -Eiq '^x-robots-tag:.*noindex, nofollow' "$RUNNER_TEMP/preview.headers"
           grep -Eiq 'noindex,nofollow' "$RUNNER_TEMP/preview.html"
           grep -Fq 'Disallow: /' "$RUNNER_TEMP/preview.robots"
