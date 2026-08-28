@@ -1,0 +1,75 @@
+name: Merge-to-main Production promotion
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  resolve-preview-candidate:
+    name: Resolve merged PR Preview candidate
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    outputs:
+      run_id: ${{ steps.candidate.outputs.run_id }}
+      artifact_name: ${{ steps.candidate.outputs.artifact_name }}
+      artifact_sha256: ${{ steps.evidence.outputs.artifact_sha256 }}
+    steps:
+      - name: Find the successful Preview run for the exact PR head
+        id: candidate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          runs="$(gh api --paginate \
+            -H 'Accept: application/vnd.github+json' \
+            "/repos/${GITHUB_REPOSITORY}/actions/workflows/migration-preview.yml/runs?event=pull_request&status=completed&per_page=100" \
+            --jq '.workflow_runs[] | select(.head_sha == env.HEAD_SHA and .conclusion == "success") | [.id, .run_number] | @tsv')"
+          run_id="$(printf '%s\n' "$runs" | sort -rn | head -n1 | cut -f1)"
+          test -n "$run_id"
+          artifact_name="dongphugia-preview-${HEAD_SHA}"
+          gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}/artifacts" \
+            --jq '.artifacts[] | select(.expired == false) | .name' | grep -Fx "$artifact_name"
+          {
+            echo "run_id=$run_id"
+            echo "artifact_name=$artifact_name"
+          } >> "$GITHUB_OUTPUT"
+          {
+            echo '### Preview candidate resolved'
+            echo "- PR: #$PR_NUMBER"
+            echo "- Preview run: $run_id"
+            echo "- Artifact: $artifact_name"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Read the immutable artifact digest from Preview evidence
+        id: evidence
+        env:
+          RUN_ID: ${{ steps.candidate.outputs.run_id }}
+          ARTIFACT_NAME: ${{ steps.candidate.outputs.artifact_name }}
+        run: |
+          set -euo pipefail
+          mkdir candidate-evidence
+          gh run download "$RUN_ID" --name "$ARTIFACT_NAME" --dir candidate-evidence
+          evidence="$(find candidate-evidence -name candidate-evidence.json -type f -print -quit)"
+          test -n "$evidence"
+          digest="$(jq -r '.candidate.artifactSha256' "$evidence")"
+          [[ "$digest" =~ ^[0-9a-f]{64}$ ]]
+          echo "artifact_sha256=$digest" >> "$GITHUB_OUTPUT"
+
+  promote:
+    name: Call protected Production promotion
+    needs: resolve-preview-candidate
+    uses: ./.github/workflows/production-promotion.yml
+    with:
+      candidate_source_sha: ${{ github.event.pull_request.head.sha }}
+      candidate_pr_number: ${{ github.event.pull_request.number }}
+      preview_run_id: ${{ needs.resolve-preview-candidate.outputs.run_id }}
+      preview_artifact_name: ${{ needs.resolve-preview-candidate.outputs.artifact_name }}
+      artifact_sha256: ${{ needs.resolve-preview-candidate.outputs.artifact_sha256 }}
+      target_ref: main

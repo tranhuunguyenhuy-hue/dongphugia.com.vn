@@ -1,0 +1,215 @@
+name: Promote validated candidate to Cloudflare Production
+
+on:
+  workflow_call:
+    inputs:
+      candidate_source_sha:
+        description: Exact Preview PR-head SHA for the candidate.
+        required: true
+        type: string
+      candidate_pr_number:
+        description: Task-owned PR number recorded in Preview evidence.
+        required: true
+        type: string
+      preview_run_id:
+        description: Completed Preview workflow run containing the immutable artifact.
+        required: true
+        type: string
+      preview_artifact_name:
+        description: Exact uploaded Preview artifact name.
+        required: true
+        type: string
+      artifact_sha256:
+        description: Expected content digest from Preview evidence.
+        required: true
+        type: string
+      mode:
+        description: Promote the candidate or select a validated rollback candidate.
+        required: false
+        default: promote
+        type: string
+      target_ref:
+        description: Required merge target for the promotion.
+        required: false
+        default: main
+        type: string
+  workflow_dispatch:
+    inputs:
+      candidate_source_sha:
+        description: Exact Preview PR-head SHA for the candidate.
+        required: true
+        type: string
+      candidate_pr_number:
+        description: Task-owned PR number recorded in Preview evidence.
+        required: true
+        type: string
+      preview_run_id:
+        description: Completed Preview workflow run containing the immutable artifact.
+        required: true
+        type: string
+      preview_artifact_name:
+        description: Exact uploaded Preview artifact name.
+        required: true
+        type: string
+      artifact_sha256:
+        description: Expected content digest from Preview evidence.
+        required: true
+        type: string
+      mode:
+        description: Promote the candidate or select a validated rollback candidate.
+        required: false
+        default: promote
+        type: choice
+        options: [promote, rollback]
+      target_ref:
+        description: Required merge target for the promotion.
+        required: false
+        default: main
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: cloudflare-production-promotion
+  cancel-in-progress: false
+
+jobs:
+  production-enable-gate:
+    name: Production promotion enablement gate
+    runs-on: ubuntu-latest
+    outputs:
+      enabled: ${{ steps.gate.outputs.enabled }}
+    steps:
+      - name: Keep Production path disabled before cutover
+        id: gate
+        env:
+          PRODUCTION_PROMOTION_ENABLED: ${{ vars.PRODUCTION_PROMOTION_ENABLED }}
+        run: |
+          set -euo pipefail
+          if [[ "$PRODUCTION_PROMOTION_ENABLED" == "true" ]]; then
+            echo 'enabled=true' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo 'enabled=false' >> "$GITHUB_OUTPUT"
+          {
+            echo '### Production promotion: BLOCKED_BY_CUTOVER_OWNER_GATE'
+            echo 'PRODUCTION_PROMOTION_ENABLED is not true; no Production environment job or Cloudflare mutation was started.'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  production-promotion:
+    name: Promote exact immutable Cloudflare candidate
+    needs: production-enable-gate
+    if: needs.production-enable-gate.outputs.enabled == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+    timeout-minutes: 20
+    steps:
+      - name: Require main merge context and exact candidate inputs
+        env:
+          SOURCE_SHA: ${{ inputs.candidate_source_sha || github.event.inputs.candidate_source_sha }}
+          PR_NUMBER: ${{ inputs.candidate_pr_number || github.event.inputs.candidate_pr_number }}
+          PREVIEW_RUN_ID: ${{ inputs.preview_run_id || github.event.inputs.preview_run_id }}
+          ARTIFACT_NAME: ${{ inputs.preview_artifact_name || github.event.inputs.preview_artifact_name }}
+          ARTIFACT_SHA: ${{ inputs.artifact_sha256 || github.event.inputs.artifact_sha256 }}
+          MODE: ${{ inputs.mode || github.event.inputs.mode || 'promote' }}
+        run: |
+          set -euo pipefail
+          test "${{ inputs.target_ref || github.event.inputs.target_ref || 'main' }}" = "main"
+          [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$PR_NUMBER" =~ ^[0-9]+$ && "$PR_NUMBER" != 0 ]]
+          [[ "$PREVIEW_RUN_ID" =~ ^[0-9]+$ && "$PREVIEW_RUN_ID" != 0 ]]
+          [[ "$ARTIFACT_NAME" == dongphugia-preview-* ]]
+          [[ "$ARTIFACT_SHA" =~ ^[0-9a-f]{64}$ ]]
+          [[ "$MODE" == promote || "$MODE" == rollback ]]
+
+      - name: Download the exact Preview artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.preview_artifact_name || github.event.inputs.preview_artifact_name }}
+          run-id: ${{ inputs.preview_run_id || github.event.inputs.preview_run_id }}
+          github-token: ${{ github.token }}
+          path: candidate-package
+
+      - name: Verify candidate and runtime identity evidence
+        env:
+          EXPECTED_SOURCE_SHA: ${{ inputs.candidate_source_sha || github.event.inputs.candidate_source_sha }}
+          EXPECTED_PR: ${{ inputs.candidate_pr_number || github.event.inputs.candidate_pr_number }}
+          EXPECTED_RUN_ID: ${{ inputs.preview_run_id || github.event.inputs.preview_run_id }}
+          EXPECTED_ARTIFACT_SHA: ${{ inputs.artifact_sha256 || github.event.inputs.artifact_sha256 }}
+        run: |
+          set -euo pipefail
+          evidence="$(find candidate-package -name candidate-evidence.json -type f -print -quit)"
+          test -n "$evidence"
+          node - "$evidence" <<'NODE'
+          const fs = require('node:fs')
+          const evidence = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'))
+          const expected = {
+            sourceCommit: process.env.EXPECTED_SOURCE_SHA,
+            pullRequest: Number(process.env.EXPECTED_PR),
+            workflowRunId: process.env.EXPECTED_RUN_ID,
+            artifactSha256: process.env.EXPECTED_ARTIFACT_SHA,
+          }
+          for (const [key, value] of Object.entries(expected)) {
+            if (evidence.candidate?.[key] !== value) throw new Error(`CANDIDATE_IDENTITY_FAILED:${key}`)
+          }
+          if (evidence.contract !== 'dongphugia:static-preview-candidate:v1') throw new Error('CANDIDATE_CONTRACT_FAILED')
+          if (evidence.artifact?.mode !== 'preview') throw new Error('CANDIDATE_MODE_FAILED')
+          if (evidence.noindex?.htmlMeta !== true || evidence.noindex?.headers !== true || evidence.noindex?.robots !== true) throw new Error('CANDIDATE_NOINDEX_FAILED')
+          NODE
+          artifact_root="$(find candidate-package -type f -name static-build-report.json -print -quit | sed 's#/static-build-report.json$##')"
+          test -n "$artifact_root"
+          actual_sha="$(node - "$artifact_root" <<'NODE'
+          const fs = require('node:fs')
+          const path = require('node:path')
+          const crypto = require('node:crypto')
+          const root = path.resolve(process.argv[2])
+          const files = []
+          function walk(directory) {
+            for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+              const target = path.join(directory, entry.name)
+              if (entry.isDirectory()) walk(target)
+              else files.push(target)
+            }
+          }
+          walk(root)
+          files.sort((a, b) => path.relative(root, a).localeCompare(path.relative(root, b)))
+          const hash = crypto.createHash('sha256')
+          for (const file of files) {
+            hash.update(path.relative(root, file)); hash.update('\0')
+            hash.update(fs.readFileSync(file)); hash.update('\0')
+          }
+          process.stdout.write(hash.digest('hex'))
+          NODE
+          )"
+          test "$actual_sha" = "$EXPECTED_ARTIFACT_SHA"
+          {
+            echo '### Immutable candidate: PASS'
+            echo "- Source PR-head SHA: $EXPECTED_SOURCE_SHA"
+            echo "- Preview workflow run: $EXPECTED_RUN_ID"
+            echo "- Artifact SHA-256: $actual_sha"
+            echo '- Preview noindex and runtime identity evidence: PASS'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Promote the same artifact to Cloudflare Production
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: >-
+            pages deploy candidate-package/dongphugia-static-preview
+            --project-name=${{ vars.CLOUDFLARE_PAGES_PRODUCTION_PROJECT }}
+            --branch=main
+            --commit-hash=${{ inputs.candidate_source_sha || github.event.inputs.candidate_source_sha }}
+            --commit-message=LEO-537-${{ inputs.mode || github.event.inputs.mode || 'promote' }}-${{ inputs.candidate_source_sha || github.event.inputs.candidate_source_sha }}
+
+      - name: Record failure and rollback hook
+        if: failure()
+        run: |
+          {
+            echo '### Production promotion: FAILED_CLOSED'
+            echo 'No retry, traffic change, DNS change, or deletion was attempted.'
+            echo 'Rollback hook: rerun this protected workflow in rollback mode with a separately validated prior Preview artifact and its complete identity tuple.'
+          } >> "$GITHUB_STEP_SUMMARY"
