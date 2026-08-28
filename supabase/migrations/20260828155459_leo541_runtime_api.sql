@@ -1,11 +1,42 @@
 -- LEO-541: authenticated order/quote backend for the isolated runtime.
 --
--- This migration is source-only until the Owner authorizes the exact target,
--- schema/RLS expansion, and rollout gate. It deliberately creates no role,
--- login, credential, secret, auth setting, or Production connection.
+-- Apply only after the Owner authorizes the exact target, schema/RLS
+-- expansion, and rollout gate. It deliberately creates no role, login,
+-- credential, secret, auth setting, or Production connection.
+
+do $target_preflight$
+begin
+  if not exists (
+    select 1 from dpg_control.target_contract
+    where singleton
+      and project_name = 'dongphugia-runtime'
+      and region = 'ap-southeast-1'
+      and environment = 'preview'
+      and data_class = 'production-derived-reduced-runtime'
+      and production_data_allowed
+      and not production_credentials_allowed
+      and not production_writes_allowed
+      and hard_database_ceiling_bytes = 367001600
+      and pg_database_size(current_database()) <= hard_database_ceiling_bytes
+  ) then
+    raise exception 'LEO-541 target contract mismatch';
+  end if;
+
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'dpg_app' and table_name = 'orders' and column_name = 'owner_id'
+  ) or to_regclass('dpg_app.runtime_idempotency_records') is not null
+     or exists (
+       select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+       where n.nspname = 'public' and p.proname like 'runtime_order_%'
+     ) then
+    raise exception 'LEO-541 migration requires the exact pre-migration schema';
+  end if;
+end
+$target_preflight$;
 
 set role dpg_migration;
-set search_path = pg_catalog, dpg_app, extensions, public;
+set search_path = pg_catalog, dpg_app, public;
 
 -- Existing reduced-runtime rows without an authenticated owner remain hidden
 -- by the policies below. Nullable owner_id is intentional: it makes rollout
@@ -13,7 +44,6 @@ set search_path = pg_catalog, dpg_app, extensions, public;
 -- Production-derived data.
 alter table dpg_app.orders add column if not exists owner_id uuid;
 alter table dpg_app.quote_requests add column if not exists owner_id uuid;
-alter table dpg_app.customers add column if not exists owner_id uuid;
 
 -- The reduced runtime schema predates the immutable quote snapshot columns.
 alter table dpg_app.quote_items add column if not exists product_sku_snapshot varchar(100);
@@ -28,11 +58,8 @@ create index if not exists idx_orders_owner_created
   on dpg_app.orders (owner_id, created_at desc);
 create index if not exists idx_quote_requests_owner_created
   on dpg_app.quote_requests (owner_id, created_at desc);
-create index if not exists idx_customers_owner_phone
-  on dpg_app.customers (owner_id, phone);
 
 create table if not exists dpg_app.runtime_idempotency_records (
-  id uuid primary key default extensions.gen_random_uuid(),
   owner_id uuid not null,
   operation varchar(80) not null,
   key_hash char(64) not null,
@@ -44,7 +71,7 @@ create table if not exists dpg_app.runtime_idempotency_records (
   resource_id varchar(200) not null,
   created_at timestamptz not null default now(),
   expires_at timestamptz not null,
-  unique (owner_id, operation, key_hash)
+  primary key (owner_id, operation, key_hash)
 );
 
 create table if not exists dpg_app.runtime_audit_events (
@@ -77,12 +104,14 @@ alter table dpg_app.runtime_audit_events force row level security;
 -- explicit grants and owner-bound RLS; no service role or SECURITY DEFINER is
 -- used.
 revoke all on table dpg_app.orders, dpg_app.order_items,
-  dpg_app.quote_requests, dpg_app.quote_items, dpg_app.customers,
+  dpg_app.quote_requests, dpg_app.quote_items,
   dpg_app.runtime_idempotency_records, dpg_app.runtime_audit_events
-  from public, anon, authenticated, service_role, dpg_runtime, dpg_readonly;
+  from public, anon, authenticated, service_role;
+revoke all on table dpg_app.runtime_idempotency_records,
+  dpg_app.runtime_audit_events from dpg_runtime, dpg_readonly;
 grant select, insert, update, delete on table dpg_app.orders,
   dpg_app.order_items, dpg_app.quote_requests, dpg_app.quote_items,
-  dpg_app.customers, dpg_app.runtime_idempotency_records to authenticated;
+  dpg_app.runtime_idempotency_records to authenticated;
 grant insert on table dpg_app.runtime_audit_events to authenticated;
 grant select on table dpg_app.products to authenticated;
 grant usage, select on sequence dpg_app.orders_id_seq,
@@ -90,141 +119,123 @@ grant usage, select on sequence dpg_app.orders_id_seq,
   dpg_app.quote_items_id_seq, dpg_app.runtime_audit_events_id_seq
   to authenticated;
 
--- The existing LEO-538 read-all policy is not suitable for owner-bound
--- commerce rows. Backup access, where separately authorized, remains governed
--- by its existing dpg_backup policy.
-drop policy if exists leo538_runtime_select on dpg_app.orders;
-drop policy if exists leo538_runtime_select on dpg_app.order_items;
-drop policy if exists leo538_runtime_select on dpg_app.quote_requests;
-drop policy if exists leo538_runtime_select on dpg_app.quote_items;
-drop policy if exists leo538_runtime_select on dpg_app.customers;
+-- Existing LEO-538 and LEO-540 read-only capability policies are preserved.
+-- They are separate target-local operational roles and are not inherited by
+-- authenticated callers. The owner policies below add only the application
+-- access required by LEO-541.
 
 create policy leo541_orders_select_own on dpg_app.orders
   for select to authenticated
-  using (owner_id is not null and owner_id = (select auth.uid()));
+  using (owner_id is not null and owner_id = (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub')::uuid);
 create policy leo541_orders_insert_own on dpg_app.orders
   for insert to authenticated
-  with check (owner_id is not null and owner_id = (select auth.uid()));
+  with check (owner_id is not null and owner_id = (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub')::uuid);
 create policy leo541_orders_update_own on dpg_app.orders
   for update to authenticated
-  using (owner_id is not null and owner_id = (select auth.uid()))
-  with check (owner_id is not null and owner_id = (select auth.uid()));
+  using (owner_id is not null and owner_id = (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub')::uuid)
+  with check (owner_id is not null and owner_id = (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub')::uuid);
 create policy leo541_orders_delete_own on dpg_app.orders
   for delete to authenticated
-  using (owner_id is not null and owner_id = (select auth.uid()));
+  using (owner_id is not null and owner_id = (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub')::uuid);
 
 create policy leo541_order_items_select_own on dpg_app.order_items
   for select to authenticated
   using (exists (
     select 1 from dpg_app.orders o
     where o.id = order_items.order_id
-      and o.owner_id = (select auth.uid())
+      and o.owner_id = (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub')::uuid
   ));
 create policy leo541_order_items_insert_own on dpg_app.order_items
   for insert to authenticated
   with check (exists (
     select 1 from dpg_app.orders o
     where o.id = order_items.order_id
-      and o.owner_id = (select auth.uid())
+      and o.owner_id = (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub')::uuid
   ));
 create policy leo541_order_items_update_own on dpg_app.order_items
   for update to authenticated
   using (exists (
     select 1 from dpg_app.orders o
     where o.id = order_items.order_id
-      and o.owner_id = (select auth.uid())
+      and o.owner_id = (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub')::uuid
   ))
   with check (exists (
     select 1 from dpg_app.orders o
     where o.id = order_items.order_id
-      and o.owner_id = (select auth.uid())
+      and o.owner_id = (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub')::uuid
   ));
 create policy leo541_order_items_delete_own on dpg_app.order_items
   for delete to authenticated
   using (exists (
     select 1 from dpg_app.orders o
     where o.id = order_items.order_id
-      and o.owner_id = (select auth.uid())
+      and o.owner_id = (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub')::uuid
   ));
 
 create policy leo541_quotes_select_own on dpg_app.quote_requests
   for select to authenticated
-  using (owner_id is not null and owner_id = (select auth.uid()));
+  using (owner_id is not null and owner_id = (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub')::uuid);
 create policy leo541_quotes_insert_own on dpg_app.quote_requests
   for insert to authenticated
-  with check (owner_id is not null and owner_id = (select auth.uid()));
+  with check (owner_id is not null and owner_id = (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub')::uuid);
 create policy leo541_quotes_update_own on dpg_app.quote_requests
   for update to authenticated
-  using (owner_id is not null and owner_id = (select auth.uid()))
-  with check (owner_id is not null and owner_id = (select auth.uid()));
+  using (owner_id is not null and owner_id = (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub')::uuid)
+  with check (owner_id is not null and owner_id = (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub')::uuid);
 create policy leo541_quotes_delete_own on dpg_app.quote_requests
   for delete to authenticated
-  using (owner_id is not null and owner_id = (select auth.uid()));
+  using (owner_id is not null and owner_id = (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub')::uuid);
 
 create policy leo541_quote_items_select_own on dpg_app.quote_items
   for select to authenticated
   using (exists (
     select 1 from dpg_app.quote_requests q
     where q.id = quote_items.quote_id
-      and q.owner_id = (select auth.uid())
+      and q.owner_id = (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub')::uuid
   ));
 create policy leo541_quote_items_insert_own on dpg_app.quote_items
   for insert to authenticated
   with check (exists (
     select 1 from dpg_app.quote_requests q
     where q.id = quote_items.quote_id
-      and q.owner_id = (select auth.uid())
+      and q.owner_id = (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub')::uuid
   ));
 create policy leo541_quote_items_update_own on dpg_app.quote_items
   for update to authenticated
   using (exists (
     select 1 from dpg_app.quote_requests q
     where q.id = quote_items.quote_id
-      and q.owner_id = (select auth.uid())
+      and q.owner_id = (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub')::uuid
   ))
   with check (exists (
     select 1 from dpg_app.quote_requests q
     where q.id = quote_items.quote_id
-      and q.owner_id = (select auth.uid())
+      and q.owner_id = (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub')::uuid
   ));
 create policy leo541_quote_items_delete_own on dpg_app.quote_items
   for delete to authenticated
   using (exists (
     select 1 from dpg_app.quote_requests q
     where q.id = quote_items.quote_id
-      and q.owner_id = (select auth.uid())
+      and q.owner_id = (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub')::uuid
   ));
-
-create policy leo541_customers_select_own on dpg_app.customers
-  for select to authenticated
-  using (owner_id is not null and owner_id = (select auth.uid()));
-create policy leo541_customers_insert_own on dpg_app.customers
-  for insert to authenticated
-  with check (owner_id is not null and owner_id = (select auth.uid()));
-create policy leo541_customers_update_own on dpg_app.customers
-  for update to authenticated
-  using (owner_id is not null and owner_id = (select auth.uid()))
-  with check (owner_id is not null and owner_id = (select auth.uid()));
-create policy leo541_customers_delete_own on dpg_app.customers
-  for delete to authenticated
-  using (owner_id is not null and owner_id = (select auth.uid()));
 
 create policy leo541_idempotency_select_own on dpg_app.runtime_idempotency_records
   for select to authenticated
-  using (owner_id = (select auth.uid()));
+  using (owner_id = (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub')::uuid);
 create policy leo541_idempotency_insert_own on dpg_app.runtime_idempotency_records
   for insert to authenticated
-  with check (owner_id = (select auth.uid()));
+  with check (owner_id = (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub')::uuid);
 create policy leo541_idempotency_update_own on dpg_app.runtime_idempotency_records
   for update to authenticated
-  using (owner_id = (select auth.uid()))
-  with check (owner_id = (select auth.uid()));
+  using (owner_id = (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub')::uuid)
+  with check (owner_id = (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub')::uuid);
 create policy leo541_idempotency_delete_own on dpg_app.runtime_idempotency_records
   for delete to authenticated
-  using (owner_id = (select auth.uid()));
+  using (owner_id = (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub')::uuid);
 create policy leo541_audit_insert_own on dpg_app.runtime_audit_events
   for insert to authenticated
-  with check (owner_id = (select auth.uid()) and actor_id = (select auth.uid()));
+  with check (owner_id = (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub')::uuid and actor_id = (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub')::uuid);
 
 -- Authenticated callers may validate a product, but only the public commerce
 -- projection is visible. The RPCs return only immutable line snapshots.
@@ -243,9 +254,9 @@ language sql
 immutable
 strict
 security invoker
-set search_path = pg_catalog, extensions
+set search_path = pg_catalog
 as $$
-  select encode(extensions.digest(convert_to(value::text, 'UTF8'), 'sha256'), 'hex')::char(64)
+  select encode(sha256(convert_to(value::text, 'UTF8')), 'hex')::char(64)
 $$;
 
 create or replace function dpg_app.runtime_key_hash(value text)
@@ -254,15 +265,20 @@ language sql
 immutable
 strict
 security invoker
-set search_path = pg_catalog, extensions
+set search_path = pg_catalog
 as $$
-  select encode(extensions.digest(convert_to(value, 'UTF8'), 'sha256'), 'hex')::char(64)
+  select encode(sha256(convert_to(value, 'UTF8')), 'hex')::char(64)
 $$;
 
 revoke all on function dpg_app.runtime_hash(jsonb), dpg_app.runtime_key_hash(text)
   from public, anon, service_role;
 grant execute on function dpg_app.runtime_hash(jsonb), dpg_app.runtime_key_hash(text)
   to authenticated;
+
+-- The target migration role deliberately cannot create in public. The
+-- migration executor owns only the exact public invoker RPC allowlist below;
+-- no schema privilege is expanded.
+reset role;
 
 create or replace function public.runtime_order_create(
   p_input jsonb,
@@ -272,10 +288,10 @@ create or replace function public.runtime_order_create(
 returns jsonb
 language plpgsql
 security invoker
-set search_path = pg_catalog, dpg_app, extensions
+set search_path = pg_catalog, dpg_app
 as $$
 declare
-  v_owner uuid := auth.uid();
+  v_owner uuid := (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub')::uuid;
   v_request_hash char(64);
   v_key_hash char(64);
   v_existing dpg_app.runtime_idempotency_records%rowtype;
@@ -473,7 +489,7 @@ security invoker
 set search_path = pg_catalog, dpg_app
 as $$
 declare
-  v_owner uuid := auth.uid();
+  v_owner uuid := (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub')::uuid;
   v_order dpg_app.orders%rowtype;
   v_key_hash char(64);
   v_request_hash char(64);
@@ -543,7 +559,7 @@ create or replace function public.runtime_order_delete(
   p_request_id uuid default null
 )
 returns jsonb language plpgsql security invoker set search_path=pg_catalog,dpg_app as $$
-declare v_owner uuid:=auth.uid(); v_key_hash char(64); v_request_hash char(64); v_existing dpg_app.runtime_idempotency_records%rowtype; v_response jsonb; v_order dpg_app.orders%rowtype;
+declare v_owner uuid:=(nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub')::uuid; v_key_hash char(64); v_request_hash char(64); v_existing dpg_app.runtime_idempotency_records%rowtype; v_response jsonb; v_order dpg_app.orders%rowtype;
 begin
   if v_owner is null then raise exception 'UNAUTHORIZED'; end if;
   if p_idempotency_key is null or length(btrim(p_idempotency_key)) not between 8 and 200 then raise exception 'INVALID_IDEMPOTENCY_KEY'; end if;
@@ -574,7 +590,7 @@ security invoker
 set search_path = pg_catalog, dpg_app
 as $$
 declare
-  v_owner uuid := auth.uid();
+  v_owner uuid := (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub')::uuid;
   v_key_hash char(64); v_request_hash char(64); v_existing dpg_app.runtime_idempotency_records%rowtype;
   v_name text; v_phone text; v_email text; v_message text; v_item jsonb; v_product record;
   v_quote_id integer; v_quote_number varchar(30); v_snapshot_at timestamptz := now(); v_response jsonb;
@@ -652,7 +668,7 @@ $$;
 
 create or replace function public.runtime_quote_update(p_quote_id integer,p_patch jsonb,p_idempotency_key text,p_request_id uuid default null)
 returns jsonb language plpgsql security invoker set search_path=pg_catalog,dpg_app as $$
-declare v_owner uuid:=auth.uid(); v_quote dpg_app.quote_requests%rowtype; v_key_hash char(64); v_request_hash char(64); v_existing dpg_app.runtime_idempotency_records%rowtype; v_key text; v_status text; v_message text; v_response jsonb;
+declare v_owner uuid:=(nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub')::uuid; v_quote dpg_app.quote_requests%rowtype; v_key_hash char(64); v_request_hash char(64); v_existing dpg_app.runtime_idempotency_records%rowtype; v_key text; v_status text; v_message text; v_response jsonb;
 begin
   if v_owner is null then raise exception 'UNAUTHORIZED'; end if;
   if p_idempotency_key is null or length(btrim(p_idempotency_key)) not between 8 and 200 then raise exception 'INVALID_IDEMPOTENCY_KEY'; end if;
@@ -679,7 +695,7 @@ $$;
 
 create or replace function public.runtime_quote_delete(p_quote_id integer,p_idempotency_key text,p_request_id uuid default null)
 returns jsonb language plpgsql security invoker set search_path=pg_catalog,dpg_app as $$
-declare v_owner uuid:=auth.uid(); v_key_hash char(64); v_request_hash char(64); v_existing dpg_app.runtime_idempotency_records%rowtype; v_response jsonb; v_quote dpg_app.quote_requests%rowtype;
+declare v_owner uuid:=(nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub')::uuid; v_key_hash char(64); v_request_hash char(64); v_existing dpg_app.runtime_idempotency_records%rowtype; v_response jsonb; v_quote dpg_app.quote_requests%rowtype;
 begin
   if v_owner is null then raise exception 'UNAUTHORIZED'; end if;
   if p_idempotency_key is null or length(btrim(p_idempotency_key)) not between 8 and 200 then raise exception 'INVALID_IDEMPOTENCY_KEY'; end if;
@@ -716,6 +732,8 @@ grant execute on function public.runtime_order_create(jsonb,text,uuid),
   public.runtime_quote_list(integer,integer), public.runtime_quote_update(integer,jsonb,text,uuid),
   public.runtime_quote_delete(integer,text,uuid)
   to authenticated;
+
+set role dpg_migration;
 
 create trigger leo541_idempotency_free_tier_headroom
 after insert or update on dpg_app.runtime_idempotency_records

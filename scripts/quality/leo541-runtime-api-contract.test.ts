@@ -11,23 +11,41 @@ const sqlAcceptance = readFileSync(resolve(root, 'supabase/tests/leo541_runtime_
 const concurrencyAcceptance = readFileSync(resolve(root, 'supabase/tests/leo541_concurrency.sql'), 'utf8')
 const staticBuilder = readFileSync(resolve(root, 'scripts/static-build/public-static-build.mts'), 'utf8')
 const supabaseConfig = readFileSync(resolve(root, 'supabase/config.toml'), 'utf8')
+const rollback = readFileSync(resolve(root, 'docs/deploy/leo541-runtime-api-rollback.sql'), 'utf8')
 
 describe('LEO-541 authenticated Supabase runtime contract', () => {
   it('keeps the migration fail-closed and invoker-only', () => {
     expect(migration).toContain('set role dpg_migration')
     expect(migration).toContain('alter table dpg_app.orders add column if not exists owner_id uuid')
     expect(migration).toContain('alter table dpg_app.quote_requests add column if not exists owner_id uuid')
+    expect(migration).not.toContain('alter table dpg_app.customers add column')
+    expect(migration).not.toContain('drop policy if exists leo538_runtime_select')
+    expect(migration).not.toMatch(/from public, anon, authenticated, service_role, dpg_runtime, dpg_readonly/)
     expect(migration).toContain('enable row level security')
     expect(migration).toContain('force row level security')
-    expect(migration).toContain('(select auth.uid())')
+    expect(migration).toContain("current_setting('request.jwt.claims', true)")
+    expect(migration).not.toContain('auth.uid()')
     expect(migration).toContain('with check')
     expect(migration).toContain('pg_advisory_xact_lock')
-    expect(migration).toContain("extensions.digest(convert_to")
+    expect(migration).toContain("encode(sha256(convert_to")
+    expect(migration).not.toContain('extensions.gen_random_uuid()')
     expect(migration).toContain('security invoker')
     expect(migration).not.toMatch(/^\s*security definer\s*$/m)
     expect(migration).not.toMatch(/^\s*(create|alter) role\b/im)
     expect(migration).not.toMatch(/postgres(?:ql)?:\/\//i)
     expect(migration).not.toMatch(/service[_-]?role[_-]?key/i)
+  })
+
+  it('provides an exact fail-closed rollback without touching LEO-538 or LEO-540', () => {
+    expect(rollback).toContain("data_class = 'production-derived-reduced-runtime'")
+    expect(rollback).toContain('LEO-541 rollback blocked by committed runtime data')
+    expect(rollback).toContain('drop function public.runtime_order_create')
+    expect(rollback).toContain('drop function public.runtime_quote_create')
+    expect(rollback).toContain('drop policy leo541_products_select_public')
+    expect(rollback).toContain('drop table dpg_app.runtime_idempotency_records')
+    expect(rollback).toContain('alter table dpg_app.orders drop column owner_id')
+    expect(rollback).not.toMatch(/leo538_runtime_select|leo540_backup_select/)
+    expect(rollback).not.toMatch(/\b(create|alter) role\b/i)
   })
 
   it('exposes only authenticated Edge entry points and sanitized errors', () => {

@@ -18,6 +18,18 @@ end
 $$;
 reset role;
 
+set local role anon;
+do $$
+begin
+  begin
+    perform 1 from dpg_app.products limit 1;
+    raise exception 'LEO-541 anonymous product read unexpectedly succeeded';
+  exception when insufficient_privilege then null;
+  end;
+end
+$$;
+reset role;
+
 set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"11111111-1111-4111-8111-111111111111","role":"authenticated"}', true);
 
@@ -38,8 +50,14 @@ declare
 begin
   select min(id) into product_id from dpg_app.products
    where is_active and publication_status='public' and pdp_visibility='public'
-     and sellable_status='sellable' and stock_status in ('in_stock','pre_order','contact');
+     and sellable_status='sellable' and stock_status='in_stock'
+     and list_price is not null and list_price > 0
+     and (sale_price is null or (sale_price > 0 and sale_price < list_price));
   if product_id is null then raise exception 'LEO-541 synthetic product fixture unavailable'; end if;
+  if exists (
+    select 1 from dpg_app.products
+    where not (is_active and publication_status='public' and pdp_visibility='public' and sellable_status='sellable')
+  ) then raise exception 'LEO-541 public product boundary assertion failed'; end if;
 
   first_response := public.runtime_order_create(
     jsonb_build_object('customer_name','LEO-541 synthetic owner','customer_phone','0900000001',
@@ -72,12 +90,12 @@ begin
     'leo541-quote-create-1','eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee');
   if first_response <> replay_response then raise exception 'LEO-541 quote duplicate replay assertion failed'; end if;
   quote_id := (first_response->>'quote_id')::integer;
-  select count(*) into audit_count from dpg_app.runtime_audit_events a
-   where a.owner_id=v_owner_id and a.resource_id in (order_id::text, quote_id::text);
-  if audit_count < 3 then raise exception 'LEO-541 sanitized audit assertion failed'; end if;
+  if public.runtime_quote_get(quote_id) is null then raise exception 'LEO-541 quote owner read assertion failed'; end if;
+  perform public.runtime_quote_update(quote_id, '{"status":"contacted"}'::jsonb, 'leo541-quote-update-1', '12121212-1212-4212-8212-121212121212');
+  if (public.runtime_quote_get(quote_id)->>'status') <> 'contacted' then raise exception 'LEO-541 quote CRUD update assertion failed'; end if;
   select count(*) into idempotency_count from dpg_app.runtime_idempotency_records i
    where i.owner_id=v_owner_id and i.resource_id in (order_id::text, quote_id::text);
-  if idempotency_count < 3 then raise exception 'LEO-541 idempotency record assertion failed'; end if;
+  if idempotency_count < 4 then raise exception 'LEO-541 idempotency record assertion failed'; end if;
 
   perform set_config('request.jwt.claims', '{"sub":"22222222-2222-4222-8222-222222222222","role":"authenticated"}', true);
   other_response := public.runtime_order_get(order_id);
@@ -85,6 +103,9 @@ begin
   other_response := public.runtime_order_update(order_id, '{"status":"cancelled"}'::jsonb, 'leo541-cross-owner-1', 'ffffffff-ffff-4fff-8fff-ffffffffffff');
   if other_response is not null then raise exception 'LEO-541 cross-owner update unexpectedly succeeded'; end if;
   if public.runtime_quote_get(quote_id) is not null then raise exception 'LEO-541 cross-owner quote read unexpectedly succeeded'; end if;
+  if public.runtime_quote_update(quote_id, '{"status":"cancelled"}'::jsonb, 'leo541-cross-quote-1', '13131313-1313-4313-8313-131313131313') is not null then
+    raise exception 'LEO-541 cross-owner quote update unexpectedly succeeded';
+  end if;
 
   perform set_config('request.jwt.claims', jsonb_build_object('sub',v_owner_id::text,'role','authenticated')::text, true);
   if public.runtime_order_delete(order_id, 'leo541-order-delete-1', '99999999-9999-4999-8999-999999999999') is null then raise exception 'LEO-541 order delete assertion failed'; end if;
@@ -105,4 +126,14 @@ begin
 end
 $$;
 
+reset role;
+do $$
+begin
+  if (select count(*) from dpg_app.runtime_audit_events where owner_id='11111111-1111-4111-8111-111111111111') < 6 then
+    raise exception 'LEO-541 sanitized audit assertion failed';
+  end if;
+end
+$$;
+
+select jsonb_build_object('leo541_runtime_api','PASS') as sanitized_acceptance;
 rollback;
