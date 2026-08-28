@@ -2,7 +2,8 @@ name: Encrypted runtime backup and restore rehearsal
 
 on:
   schedule:
-    - cron: '17 2 * * *'
+    - cron: '17 2 * * *' # Daily encrypted backup.
+    - cron: '17 3 * * 0' # Weekly encrypted backup and isolated restore.
   workflow_dispatch:
     inputs:
       rehearse_restore:
@@ -86,7 +87,7 @@ jobs:
   restore:
     name: Rehearse the encrypted backup in isolated PostgreSQL
     needs: backup
-    if: needs.backup.result == 'success' && (github.event_name == 'schedule' || inputs.rehearse_restore == true) && github.ref == 'refs/heads/main'
+    if: needs.backup.result == 'success' && ((github.event_name == 'schedule' && github.event.schedule == '17 3 * * 0') || (github.event_name == 'workflow_dispatch' && inputs.rehearse_restore == true)) && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     timeout-minutes: 35
     environment: runtime-backup

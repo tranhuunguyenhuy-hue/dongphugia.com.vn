@@ -7,11 +7,13 @@ PITR, or archive deletion.
 
 ## Design
 
-[`runtime-backup.yml`](../../.github/workflows/runtime-backup.yml) runs daily at
-02:17 UTC and can be manually dispatched from protected `main`. The one-time
-LEO-540 acceptance rehearsal ran before the final fail-closed main-only trigger
-was retained; the schedule is not active on `main` until this PR is approved
-and merged. The backup job:
+[`runtime-backup.yml`](../../.github/workflows/runtime-backup.yml) runs an
+encrypted backup daily at 02:17 UTC and runs the encrypted backup plus an
+isolated restore rehearsal weekly on Sunday at 03:17 UTC. The restore can also
+be manually dispatched from protected `main` before a major migration or
+cutover event. The one-time LEO-540 acceptance rehearsal ran before the final
+fail-closed main-only trigger was retained; the schedule is not active on
+`main` until this PR is approved and merged. The backup job:
 
 1. attests the exact `dongphugia-runtime` / `ap-southeast-1` Preview target and
    its `production-derived-reduced-runtime` contract, using the existing
@@ -70,6 +72,11 @@ alerts. The backup job stops unless the live target reports `WITHIN_BUDGET`.
 The restore job downloads the artifact from the exact backup run, verifies both
 checksums before decryption, and decrypts into `/dev/shm`. It restores into a
 pinned PostgreSQL 17 container with:
+
+- daily backup runs do not invoke restore;
+- the Sunday 03:17 UTC weekly schedule invokes restore after its backup; and
+- a protected manual dispatch can invoke restore before a major migration or
+  cutover event.
 
 - `--network none`;
 - no bind mounts;
@@ -145,5 +152,6 @@ credential rotation, paid fallback, or Production recovery.
 - Production database/write-target switch: not performed.
 - Production deployment, DNS/traffic cutover, paid PITR/storage, unrelated
   credential/security mutation, and AWS retirement: not performed.
-- Schedule activation: fail-closed until Owner approval and merge; no
-  Production authorization is granted by this record.
+- Schedule activation: daily backup and weekly restore schedules remain
+  fail-closed until Owner approval and merge; no Production authorization is
+  granted by this record.

@@ -12,6 +12,9 @@ describe('backup restore rehearsal workflow contract', () => {
     it('is scheduled/manual and restricted to protected main', () => {
         expect(workflow).toContain('workflow_dispatch:')
         expect(workflow).toContain("cron: '17 2 * * *'")
+        expect(workflow).toContain("cron: '17 3 * * 0'")
+        expect(workflow).toContain("github.event.schedule == '17 3 * * 0'")
+        expect(workflow).toContain("github.event_name == 'workflow_dispatch' && inputs.rehearse_restore == true")
         expect(workflow).not.toMatch(/^\s*(push|pull_request):/m)
         expect(workflow).toContain('test "$GITHUB_REF" = "refs/heads/main"')
         expect(workflow).toContain('environment: runtime-backup')
