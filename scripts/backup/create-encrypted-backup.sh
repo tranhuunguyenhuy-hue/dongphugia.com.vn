@@ -139,10 +139,23 @@ plain_dump="$tmp_dir/runtime.dump"
 encrypted_dump="$output_dir/${backup_id}.dump.age"
 manifest="$output_dir/${backup_id}.manifest.json"
 checksums="$output_dir/${backup_id}.checksums.sha256"
-if ! pg_dump "$DATABASE_URL" --role=dpg_backup --format=custom --no-owner --no-privileges --no-comments \
+if pg_dump "$DATABASE_URL" --role=dpg_backup --format=custom --no-owner --no-privileges --no-comments \
   --schema=dpg_app --schema=dpg_control --file="$plain_dump" \
   2>"$tmp_dir/pg_dump.error"; then
-  echo 'LEO540_BACKUP status=FAIL stage=logical_dump reason=pg_dump_failed'
+  :
+else
+  pg_dump_status="$?"
+  reason='pg_dump_failed'
+  if grep -Eqi 'permission denied|insufficient privilege|must be owner' "$tmp_dir/pg_dump.error"; then
+    reason='pg_dump_permission_denied'
+  elif grep -Eqi 'timeout|canceling statement|could not obtain lock' "$tmp_dir/pg_dump.error"; then
+    reason='pg_dump_timeout_or_lock_failure'
+  elif grep -Eqi 'connection|could not connect|server closed' "$tmp_dir/pg_dump.error"; then
+    reason='pg_dump_connection_failed'
+  fi
+  sqlstate="$(awk '/SQL state:/{print $3; exit} /ERROR:/{for (field = 1; field <= NF; field++) if ($field != "ERROR:" && $field ~ /^[0-9A-Z]{5}:?$/) {gsub(/:/, "", $field); print $field; exit}}' "$tmp_dir/pg_dump.error")"
+  if [[ ! "$sqlstate" =~ ^[0-9A-Z]{5}$ ]]; then sqlstate='unknown'; fi
+  echo "LEO540_BACKUP status=FAIL stage=logical_dump reason=$reason sqlstate=$sqlstate exit_code=$pg_dump_status"
   exit 1
 fi
 if ! age --encrypt --recipient "$AGE_RECIPIENT" --output "$encrypted_dump" "$plain_dump" \
