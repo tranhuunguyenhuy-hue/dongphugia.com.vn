@@ -199,9 +199,3 @@ _Avoid_: Primary role, role hierarchy
 A deliberately public, narrowly validated operation that creates an Order or
 Quote Request without a Customer account or staff authority.
 _Avoid_: Anonymous staff access, public database write
-
-**Shareable Quote**:
-A read-only customer-facing projection of one negotiated Quote reached through
-a revocable high-entropy public token. It is not a Customer account or a Quote
-editing surface.
-_Avoid_: Public Quote ID, customer portal

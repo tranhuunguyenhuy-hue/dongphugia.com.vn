@@ -45,7 +45,7 @@ not an authority document: verify it immediately before relying on it.
   isolated Free target identity, least-privilege roles, forced RLS/Auth
   separation, Free-tier guards, secret-safe validation, and teardown boundary
   (LEO-539).
-- `PROPOSED` — [V1 Public/Admin/Auth and service seams](adr/0016-separate-v1-public-admin-auth-and-service-seams.md):
+- `PROPOSED` — [V1 Public/Admin/Auth and service seams](adr/0018-separate-v1-public-admin-auth-and-service-seams.md):
   LEO-559 application separation, staff Auth lifecycle, fixed multi-role
   capabilities, guest/staff contracts, and Supabase RLS/RPC/Edge routing.
 - `CURRENT` — [LEO-541 Supabase runtime API](deploy/supabase-runtime-api.md):

@@ -2,7 +2,7 @@
 status: proposed
 ---
 
-# ADR 0016: Separate V1 Public, Admin, Auth, and service seams
+# ADR 0018: Separate V1 Public, Admin, Auth, and service seams
 
 ## Context
 
@@ -162,8 +162,8 @@ records.
 | --- | --- | --- | --- | --- |
 | Product, price, availability, media/docs | R/C/U/P/A | R | R | R/C/U/P/A |
 | Family, Category, Brand, specs/filter metadata | R/C/U/P/A | R | R | R/C/U/P/A |
-| Orders and payment status | - | R/C/U/-/A | - | R/C/U/-/A |
-| Quote Requests | - | R/C/U/-/A | - | R/C/U/-/A |
+| Orders and payment status | - | R/-/U/-/A | - | R/-/U/-/A |
+| Quote Requests | - | R/-/-/-/- | - | R/-/-/-/- |
 | Negotiated Quotes, share Quote, Quote to Order | - | R/C/U/P/A | - | R/C/U/P/A |
 | Guide, Inspiration, Buying Guide, Landing Page | - | - | R/C/U/P/A | R/C/U/P/A |
 | Collections/editorial presentation | R | R | R/C/U/P/A | R/C/U/P/A |
@@ -172,14 +172,20 @@ records.
 
 The corresponding capability families are explicit:
 `catalogue.{read,create,update,publish,archive}`,
-`sales.order.{read,create,update,archive}`,
-`sales.quote_request.{read,create,update,archive}`,
+`sales.order.{read,lifecycle.update,payment.update,archive}`,
+`sales.quote_request.read`,
 `sales.quote.{read,create,update,publish,archive}`,
 `marketing.content.{read,create,update,publish,archive}`,
 `marketing.collection.{read,create,update,publish,archive}`,
 `admin.staff.{read,create,update,disable,assign_roles}`, and
 `admin.config.{read,create,update}`. Dashboard capabilities are scoped reads
 derived from the same module capabilities; Dashboard never grants authority.
+`sales.order.lifecycle.update` and `sales.order.payment.update` may change only
+their approved lifecycle/payment fields. They cannot rewrite Order commercial
+line snapshots. Order creation belongs exclusively to Guest Checkout or the
+atomic `Quote -> Order` operation. A Quote Request is the immutable submitted
+customer intent and requested-Product snapshot; Sales creates or updates the
+separate negotiated Quote rather than rewriting that request.
 
 ## E. Guest and staff service contract
 
@@ -189,7 +195,7 @@ derived from the same module capabilities; Dashboard never grants authority.
 | Guest | `quote_request_intake.create` | Create one Quote Request and immutable requested-Product snapshots | schema/size validation, public Product eligibility, rate limit/abuse control, idempotency, atomic request+lines, minimal receipt only |
 | Guest | `shareable_quote.read(token)` | Read one non-revoked, non-expired customer-safe negotiated Quote projection | high-entropy token stored hashed, no numeric-ID fallback, no list/search, rate limit, no internal notes/staff/customer leakage |
 | Staff | Catalogue/Marketing interfaces | Manage and directly publish authorized resources | current staff capability, RLS, readiness, version check, idempotency for mutations |
-| Staff | Sales interfaces | Manage Orders, payment state, Quotes, sharing, and Quote to Order | current staff capability, explicit state transitions, atomic snapshot-preserving transaction |
+| Staff | Sales interfaces | Read Quote Requests; manage Order lifecycle/payment state; create/negotiate/share/convert Quotes | current staff capability, immutable submitted and commercial snapshots, explicit state transitions, atomic snapshot-preserving Quote to Order transaction |
 | Staff | Staff Admin interface | Invite/disable Staff Users and assign fixed roles | explicit Admin capabilities, last-active-Admin invariant, trusted Auth Admin adapter |
 
 Guest endpoints accept no privileged browser credential. Prefer a narrow Edge
