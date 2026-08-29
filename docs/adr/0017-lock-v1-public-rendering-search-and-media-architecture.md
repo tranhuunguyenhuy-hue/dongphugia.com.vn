@@ -270,8 +270,15 @@ Cloudflare media origins; runtime Bunny Optimizer; semantic/vector Search.
 **LEO-563 — Public/Admin app and CI/Preview foundation**
 
 - Implement the Public Worker + Static Assets topology and keep Admin separate.
-- Run `vinext` compatibility, Worker CPU/bundle/subrequest, Supabase connectivity,
-  SSR metadata, cache-hit/miss, and 300-second freshness proofs in Preview.
+- `vinext` remains beta: it must pass the official compatibility check before
+  adoption.
+- Measure representative server-rendered cache-miss routes against every
+  applicable Workers Free limit, including the 10 ms CPU/request limit, as well
+  as bundle size, subrequests, Supabase connectivity, SSR metadata,
+  cache-hit/miss, and 300-second freshness in Preview.
+- A Free-limit failure must first optimize rendering/cache and re-measure. It
+  must not silently enable Workers Paid; if Paid remains required, stop before
+  mutation and return an explicit Owner cost gate with the measured shortfall.
 - If `vinext` fails, prove OpenNext against the same interface/topology; do not
   restore LEO-545 or broaden into catalogue/search implementation.
 - Port immutable-candidate and triple-noindex controls to isolated Worker
