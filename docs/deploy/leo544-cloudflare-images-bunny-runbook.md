@@ -14,18 +14,18 @@ POST /v1/media-transform/{identityId}/{assetId}/{variant}
 Content-Type: image/jpeg | image/png | image/webp
 Authorization: Bearer <future Owner-managed Preview secret>
 X-Source-SHA256: <64 lowercase hexadecimal characters>
-X-Source-Width: <attested integer>
-X-Source-Height: <attested integer>
 ```
 
 The request body is bounded by 5 MiB and is passed as a Web `ReadableStream`
-to `env.IMAGES.input(...)`. A tee computes SHA-256 on a bounded branch, and the
-digest must match the authenticated caller's attestation. The authenticated
-caller also attests source dimensions; the Worker rejects sources over the
-existing 40 megapixel limit before invoking delivery. The transformed WebP
-response body is streamed directly to the existing Bunny-compatible storage
-contract. No source bytes, Cloudflare response body, Bunny credential, or
-response secret is logged or persisted by this Worker.
+to the Cloudflare Images binding. Bounded tees feed the transform, the Images
+metadata parser, and SHA-256 calculation. The digest must match the
+authenticated caller's attestation; caller-provided dimensions are not used as
+security validation. `env.IMAGES.info(...)` independently supplies the source
+format and actual width/height, and the Worker rejects malformed metadata or
+sources over the existing 40 megapixel limit before delivery. The transformed
+WebP response body is streamed directly to the existing Bunny-compatible
+storage contract. No source bytes, Cloudflare response body, Bunny credential,
+or response secret is logged or persisted by this Worker.
 
 The stream validates the JPEG, PNG, or WebP file signature against the declared
 MIME type before the Images binding receives it. The Images binding remains the
@@ -37,21 +37,22 @@ The seven locked variants are the existing Publishing envelope:
 - `cover.w720`, `cover.w1280`, `cover.w1600`
 - `inline.w640`, `inline.w960`
 
-Object paths are deterministic and digest-addressed:
-`publishing/{identityId}/{assetId}/{sourceSha256}/{variant}.webp`. Repeating
-an exact request is an idempotent PUT to the same Bunny object; a different
-source digest cannot overwrite that object's path. Bunny delivery retries one
+Object paths preserve the existing Publishing contract:
+`publishing/{identityId}/{assetId}/{variant}.webp`. Bunny delivery retries one
 transient failure with the same path and a bounded 10-second attempt timeout.
 Errors are emitted as structured status/code events without request paths,
 source data, or credentials; Wrangler observability is enabled in the source
 config. The Worker does not delete an existing object after an ambiguous
 storage failure.
 
-The Worker uses `streams_enable_constructors`, requests metadata preservation,
-does not import Node APIs, Sharp, libvips, or the existing Next.js route, and
-does not change the public Managed Media URL contract. Inline variants
-intentionally omit a forced height because they preserve the source aspect
-ratio; the response reports `height` as `null` in that case.
+The Worker uses `streams_enable_constructors`, emits WebP through the current
+Images `output({ format: 'image/webp', quality })` contract, does not import
+Node APIs, Sharp, libvips, or the existing Next.js route, and does not change
+the public Managed Media URL contract. Inline variants intentionally omit a
+forced height because they preserve the source aspect ratio; the response
+reports the calculated output dimensions. Cloudflare Images does not preserve
+metadata for WebP output, so this source proof makes no metadata-preservation
+claim; a requirement to preserve such metadata needs a separate Owner decision.
 
 The source proof hard-codes the reviewed Bunny targets: `sg.storage.bunnycdn.com`
 for Preview storage and `media.dongphugia.vn` for the Publishing CDN. A
@@ -78,10 +79,11 @@ until reapproved.
 
 The focused Vitest suite uses mock Images and Bunny transports only. It proves
 stream input/output, the seven-variant limit, bounded source input, Preview
-environment fail-closed behavior, deterministic Bunny delivery paths, and the
-absence of a Production activation path. It is not evidence of a live
-Cloudflare binding, Bunny write, deployed Worker, Preview browser result, or
-current provider quota.
+environment fail-closed behavior, independent JPEG/PNG/WebP dimension
+validation including malformed and over-40MP metadata, deterministic Bunny
+delivery paths, and the absence of a Production activation path. It is not
+evidence of a live Cloudflare binding, Bunny write, deployed Worker, Preview
+browser result, or current provider quota.
 
 ## Rollback / recovery
 

@@ -15,21 +15,32 @@ export type ImageTransformOptions = {
     width: number
     height?: number
     fit: 'cover' | 'scale-down'
-    quality: number
-    format: 'webp'
-    metadata: 'none' | 'copyright' | 'keep'
+}
+
+export type ImageOutputOptions = {
+    format: 'image/webp'
+    quality?: number
+    anim?: boolean
+}
+
+export type ImageInfo = {
+    format: string
+    fileSize: number
+    width: number
+    height: number
 }
 
 export type ImageOutput = {
-    response(): Response
+    response(options?: { headers?: HeadersInit }): Response
 }
 
 export type ImageTransformer = {
     transform(options: ImageTransformOptions): ImageTransformer
-    output(): Promise<ImageOutput>
+    output(options: ImageOutputOptions): Promise<ImageOutput>
 }
 
 export type ImageBinding = {
+    info(input: ReadableStream<Uint8Array>): Promise<ImageInfo | { format: string }>
     input(input: ReadableStream<Uint8Array>): ImageTransformer
 }
 
@@ -270,10 +281,35 @@ function validatedSourceStream(
     }))
 }
 
-function authorize(request: Request, env: Leo544WorkerEnv) {
+async function constantTimeEqual(left: string, right: string) {
+    const encoder = new TextEncoder()
+    const [leftDigest, rightDigest] = await Promise.all([
+        crypto.subtle.digest('SHA-256', encoder.encode(left)),
+        crypto.subtle.digest('SHA-256', encoder.encode(right)),
+    ])
+    const leftBytes = new Uint8Array(leftDigest)
+    const rightBytes = new Uint8Array(rightDigest)
+    const timingSafeSubtle = crypto.subtle as SubtleCrypto & {
+        timingSafeEqual?: (a: BufferSource, b: BufferSource) => boolean
+    }
+    if (typeof timingSafeSubtle.timingSafeEqual === 'function') {
+        return timingSafeSubtle.timingSafeEqual(leftBytes, rightBytes)
+    }
+
+    let difference = 0
+    for (let index = 0; index < leftBytes.length; index += 1) {
+        difference |= leftBytes[index] ^ rightBytes[index]
+    }
+    return difference === 0
+}
+
+async function authorize(request: Request, env: Leo544WorkerEnv) {
     const configured = requiredEnv(env, 'MEDIA_TRANSFORM_AUTH_TOKEN')
     const supplied = request.headers.get('Authorization')
-    if (supplied !== `${AUTH_SCHEME}${configured}`) {
+    if (
+        !supplied
+        || !await constantTimeEqual(supplied, `${AUTH_SCHEME}${configured}`)
+    ) {
         throw new WorkerError(401, 'MEDIA_UNAUTHORIZED', 'Media transform is unauthorized')
     }
 }
@@ -313,10 +349,9 @@ function bunnyConfig(env: Leo544WorkerEnv) {
 function objectPath(
     identityId: string,
     assetId: string,
-    sourceHash: string,
     variant: MediaVariant,
 ) {
-    return `publishing/${identityId}/${assetId}/${sourceHash}/${variant.id}.webp`
+    return `publishing/${identityId}/${assetId}/${variant.id}.webp`
 }
 
 async function sha256(stream: ReadableStream<Uint8Array>) {
@@ -358,17 +393,54 @@ function requiredSha256(request: Request) {
     return value
 }
 
-function requiredDimension(request: Request, name: string) {
-    const raw = request.headers.get(name)
-    const value = raw ? Number(raw) : Number.NaN
-    if (!Number.isSafeInteger(value) || value < 1) {
+function validateSourceInfo(info: ImageInfo | { format: string }, contentType: string) {
+    const rawFormat = typeof info?.format === 'string' ? info.format.toLowerCase().trim() : ''
+    const normalizedFormat = rawFormat === 'jpg' || rawFormat === 'jpeg'
+        ? 'image/jpeg'
+        : rawFormat === 'png'
+            ? 'image/png'
+            : rawFormat === 'webp'
+                ? 'image/webp'
+                : rawFormat
+    if (
+        !info
+        || normalizedFormat !== contentType
+        || !('width' in info)
+        || !('height' in info)
+        || !Number.isSafeInteger(info.width)
+        || !Number.isSafeInteger(info.height)
+        || info.width < 1
+        || info.height < 1
+    ) {
         throw new WorkerError(
-            400,
-            'MEDIA_DIMENSIONS_REQUIRED',
-            'Attested source dimensions are required',
+            422,
+            'MEDIA_SOURCE_DIMENSIONS_INVALID',
+            'Cloudflare Images returned invalid source dimensions',
         )
     }
-    return value
+
+    if (info.width > Math.floor(MAX_SOURCE_PIXELS / info.height)) {
+        throw new WorkerError(
+            422,
+            'MEDIA_SOURCE_DIMENSIONS_TOO_LARGE',
+            'Media source dimensions exceed 40 megapixels',
+        )
+    }
+    return { width: info.width, height: info.height }
+}
+
+function outputDimensions(
+    source: { width: number; height: number },
+    variant: MediaVariant,
+) {
+    if (variant.height) {
+        return { width: variant.width, height: variant.height }
+    }
+    const width = Math.min(source.width, variant.width)
+    return {
+        width,
+        height: Math.max(1, Math.round(source.height * width / source.width)),
+    }
 }
 
 async function deliverToBunny(
@@ -424,7 +496,7 @@ export default {
                 )
             }
 
-            authorize(request, env)
+            await authorize(request, env)
             const target = parsePath(request)
             const contentType = request.headers.get('Content-Type')?.split(';')[0]?.trim().toLowerCase()
             if (!contentType || !ALLOWED_SOURCE_TYPES.has(contentType)) {
@@ -464,20 +536,12 @@ export default {
             }
             const config = bunnyConfig(env)
             const expectedSourceHash = requiredSha256(request)
-            const sourceWidth = requiredDimension(request, 'X-Source-Width')
-            const sourceHeight = requiredDimension(request, 'X-Source-Height')
-            if (sourceWidth > Math.floor(MAX_SOURCE_PIXELS / sourceHeight)) {
-                throw new WorkerError(
-                    422,
-                    'MEDIA_SOURCE_DIMENSIONS_TOO_LARGE',
-                    'Media source dimensions exceed 40 megapixels',
-                )
-            }
 
-            const [imagesInput, digestInput] = validatedSourceStream(
+            const [imagesInput, infoAndDigestInput] = validatedSourceStream(
                 boundedStream(request.body),
                 contentType,
             ).tee()
+            const [infoInput, digestInput] = infoAndDigestInput.tee()
 
             const transformedPromise = env.IMAGES
                 .input(imagesInput)
@@ -485,13 +549,21 @@ export default {
                     width: target.variant.width,
                     ...(target.variant.height ? { height: target.variant.height } : {}),
                     fit: target.variant.fit,
-                    quality: target.variant.quality,
-                    format: 'webp',
-                    metadata: 'keep',
                 })
-                .output()
-            const [transformed, actualSourceHash] = await Promise.all([
+                .output({ format: 'image/webp', quality: target.variant.quality })
+            const sourceInfoPromise = env.IMAGES.info(infoInput)
+                .then((info) => validateSourceInfo(info, contentType))
+                .catch((error) => {
+                    if (error instanceof WorkerError) throw error
+                    throw new WorkerError(
+                        422,
+                        'MEDIA_SOURCE_INVALID',
+                        'Cloudflare Images could not parse the source image',
+                    )
+                })
+            const [transformed, sourceInfo, actualSourceHash] = await Promise.all([
                 transformedPromise,
+                sourceInfoPromise,
                 sha256(digestInput),
             ])
             if (actualSourceHash !== expectedSourceHash) {
@@ -519,20 +591,20 @@ export default {
             const storagePath = objectPath(
                 target.identityId,
                 target.assetId,
-                actualSourceHash,
                 target.variant,
             )
             await deliverToBunny(config, storagePath, imageResponse.body)
+            const dimensions = outputDimensions(sourceInfo, target.variant)
 
             return json({
                 delivery: 'bunny',
                 format: 'webp',
-                height: target.variant.height ?? null,
+                height: dimensions.height,
                 path: storagePath,
                 purpose: target.variant.purpose,
                 url: `https://${config.cdnHost}/${storagePath}`,
                 variant: target.variant.id,
-                width: target.variant.width,
+                width: dimensions.width,
             }, 201)
         } catch (error) {
             if (error instanceof WorkerError) {

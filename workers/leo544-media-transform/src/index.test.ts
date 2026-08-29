@@ -3,11 +3,36 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import worker, {
     LEO544_MEDIA_VARIANTS,
     type ImageBinding,
+    type ImageInfo,
     type ImageTransformer,
     type Leo544WorkerEnv,
 } from './index'
 
 const AUTH_TOKEN = 'preview-only-test-token'
+const JPEG_SOURCE = Uint8Array.from([0xff, 0xd8, 0xff, 0xe0, 0, 0, 0, 0])
+const PNG_SOURCE = Uint8Array.from([
+    0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
+])
+const WEBP_SOURCE = new TextEncoder().encode('RIFF1234WEBPsource-bytes')
+const DEFAULT_WEBP_SOURCE = 'RIFF1234WEBPsource-bytes'
+
+async function digest(body: BodyInit) {
+    const bytes = new Uint8Array(await new Response(body).arrayBuffer())
+    const result = await crypto.subtle.digest('SHA-256', bytes)
+    return [...new Uint8Array(result)]
+        .map((byte) => byte.toString(16).padStart(2, '0'))
+        .join('')
+}
+
+function defaultInfo(overrides: Partial<ImageInfo> = {}): ImageInfo {
+    return {
+        format: 'image/webp',
+        fileSize: DEFAULT_WEBP_SOURCE.length,
+        width: 960,
+        height: 640,
+        ...overrides,
+    }
+}
 
 function env(overrides: Partial<Leo544WorkerEnv> = {}): Leo544WorkerEnv {
     const transformer: ImageTransformer = {
@@ -19,6 +44,7 @@ function env(overrides: Partial<Leo544WorkerEnv> = {}): Leo544WorkerEnv {
         }),
     }
     const defaultImages: ImageBinding = {
+        info: async () => defaultInfo(),
         input: () => transformer,
     }
     return {
@@ -33,9 +59,9 @@ function env(overrides: Partial<Leo544WorkerEnv> = {}): Leo544WorkerEnv {
     }
 }
 
-function request(
+async function request(
     variant = 'inline.w640',
-    body = 'RIFF1234WEBPsource-bytes',
+    body: BodyInit = DEFAULT_WEBP_SOURCE,
     headers: Record<string, string> = {},
 ) {
     return new Request(
@@ -46,21 +72,59 @@ function request(
             headers: {
                 Authorization: `Bearer ${AUTH_TOKEN}`,
                 'Content-Type': 'image/webp',
-                'X-Source-Height': '640',
-                'X-Source-SHA256': '3fc7b8ed7cec080d7571b4e5aca5cdb81c53ace86f63680594e0dde8f1c7f297',
-                'X-Source-Width': '960',
+                'X-Source-SHA256': await digest(body),
                 ...headers,
             },
         },
     )
 }
 
+function imagesWithInfo(info: ImageInfo | { format: string }): ImageBinding {
+    const transformer: ImageTransformer = {
+        transform: () => transformer,
+        output: async () => ({
+            response: () => new Response('webp-bytes', {
+                headers: { 'Content-Type': 'image/webp' },
+            }),
+        }),
+    }
+    return {
+        info: async () => info,
+        input: () => transformer,
+    }
+}
+
 describe('LEO-544 Cloudflare Images stream transform', () => {
     afterEach(() => vi.restoreAllMocks())
 
-    it('passes the request stream to Images and streams WebP output to Bunny', async () => {
+    it('passes the bounded source to Images and streams WebP output to Bunny', async () => {
         let input: ReadableStream<Uint8Array> | undefined
+        let infoInput: ReadableStream<Uint8Array> | undefined
         let transformOptions: unknown
+        let outputOptions: unknown
+        const images: ImageBinding = {
+            info: async (stream) => {
+                infoInput = stream
+                return defaultInfo()
+            },
+            input(stream) {
+                input = stream
+                return {
+                    transform(options: unknown) {
+                        transformOptions = options
+                        return this
+                    },
+                    output: async (options) => {
+                        outputOptions = options
+                        return {
+                            response: () => new Response('webp-bytes', {
+                                headers: { 'Content-Type': 'image/webp' },
+                            }),
+                        }
+                    },
+                }
+            },
+        }
         vi.spyOn(globalThis, 'fetch').mockImplementation(async (_input, init) => {
             expect(init?.method).toBe('PUT')
             expect(init?.headers).toMatchObject({
@@ -71,25 +135,9 @@ describe('LEO-544 Cloudflare Images stream transform', () => {
             expect(await new Response(init?.body).text()).toBe('webp-bytes')
             return new Response(null, { status: 201 })
         })
-        const images = {
-            input(stream: ReadableStream<Uint8Array>) {
-                input = stream
-                return {
-                    transform(options: unknown) {
-                        transformOptions = options
-                        return this
-                    },
-                    output: async () => ({
-                        response: () => new Response('webp-bytes', {
-                            headers: { 'Content-Type': 'image/webp' },
-                        }),
-                    }),
-                }
-            },
-        }
 
         const response = await worker.fetch(
-            request('thumbnail.w640'),
+            await request('thumbnail.w640'),
             env({ IMAGES: images }),
         )
 
@@ -98,36 +146,48 @@ describe('LEO-544 Cloudflare Images stream transform', () => {
             delivery: 'bunny',
             format: 'webp',
             height: 360,
-            path: 'publishing/identity-id/asset-id/3fc7b8ed7cec080d7571b4e5aca5cdb81c53ace86f63680594e0dde8f1c7f297/thumbnail.w640.webp',
+            path: 'publishing/identity-id/asset-id/thumbnail.w640.webp',
             purpose: 'thumbnail',
-            url: 'https://media.dongphugia.vn/publishing/identity-id/asset-id/3fc7b8ed7cec080d7571b4e5aca5cdb81c53ace86f63680594e0dde8f1c7f297/thumbnail.w640.webp',
+            url: 'https://media.dongphugia.vn/publishing/identity-id/asset-id/thumbnail.w640.webp',
             variant: 'thumbnail.w640',
             width: 640,
         })
         expect(input).toBeInstanceOf(ReadableStream)
+        expect(infoInput).toBeInstanceOf(ReadableStream)
         expect(await new Response(input).text()).toBe('RIFF1234WEBPsource-bytes')
-        expect(transformOptions).toEqual({
-            width: 640,
-            height: 360,
-            fit: 'cover',
-            quality: 80,
-            format: 'webp',
-            metadata: 'keep',
-        })
+        expect(transformOptions).toEqual({ width: 640, height: 360, fit: 'cover' })
+        expect(outputOptions).toEqual({ format: 'image/webp', quality: 80 })
     })
 
-    it('keeps the locked seven-variant envelope and preserves inline aspect ratio', async () => {
+    it('keeps the locked seven-variant envelope and calculates inline output dimensions', async () => {
         expect(LEO544_MEDIA_VARIANTS).toHaveLength(7)
         const inline = LEO544_MEDIA_VARIANTS.find(({ id }) => id === 'inline.w960')
         expect(inline).toMatchObject({ width: 960, fit: 'scale-down', quality: 80 })
         expect(inline?.height).toBeUndefined()
+
+        vi.spyOn(globalThis, 'fetch').mockImplementation(async (_input, init) => {
+            await new Response(init?.body).arrayBuffer()
+            return new Response(null, { status: 201 })
+        })
+        const req = await request('inline.w960')
+        const response = await worker.fetch(
+            req,
+            env({ IMAGES: imagesWithInfo(defaultInfo({ width: 1200, height: 800 })) }),
+        )
+        expect(response.status).toBe(201)
+        expect(await response.json()).toMatchObject({ width: 960, height: 640 })
     })
 
     it('fails closed before touching Images when the source is too large', async () => {
         const input = vi.fn()
         const response = await worker.fetch(
-            request('inline.w640', 'small', { 'Content-Length': '5242881' }),
-            env({ IMAGES: { input } }),
+            await request('inline.w640', 'small', { 'Content-Length': '5242881' }),
+            env({
+                IMAGES: {
+                    info: vi.fn(),
+                    input,
+                },
+            }),
         )
 
         expect(response.status).toBe(413)
@@ -137,7 +197,7 @@ describe('LEO-544 Cloudflare Images stream transform', () => {
 
     it('does not activate without the Preview-only Bunny contract', async () => {
         const response = await worker.fetch(
-            request(),
+            await request(),
             env({ PUBLISHING_BUNNY_STORAGE_ENVIRONMENT: 'production' }),
         )
 
@@ -145,19 +205,87 @@ describe('LEO-544 Cloudflare Images stream transform', () => {
         expect(await response.json()).toEqual({ error: 'MEDIA_ENVIRONMENT_NOT_ALLOWED' })
     })
 
-    it('rejects dimensions over the existing 40 megapixel limit', async () => {
+    it.each([
+        ['JPEG', 'image/jpeg', JPEG_SOURCE],
+        ['PNG', 'image/png', PNG_SOURCE],
+        ['WebP', 'image/webp', WEBP_SOURCE],
+    ] as const)('rejects a %s whose actual dimensions exceed 40MP', async (_name, contentType, body) => {
         const response = await worker.fetch(
-            request('inline.w640', 'small', {
-                'X-Source-Height': '201',
-                'X-Source-Width': '200000',
+            await request('inline.w640', body, { 'Content-Type': contentType }),
+            env({
+                IMAGES: imagesWithInfo({
+                    format: contentType,
+                    fileSize: body.byteLength,
+                    width: 8001,
+                    height: 5000,
+                }),
             }),
-            env(),
         )
 
         expect(response.status).toBe(422)
         expect(await response.json()).toEqual({
             error: 'MEDIA_SOURCE_DIMENSIONS_TOO_LARGE',
         })
+    })
+
+    it('rejects claimed dimensions smaller than the actual parsed dimensions', async () => {
+        const response = await worker.fetch(
+            await request('inline.w640', JPEG_SOURCE, {
+                'Content-Type': 'image/jpeg',
+                'X-Source-Width': '1',
+                'X-Source-Height': '1',
+            }),
+            env({
+                IMAGES: imagesWithInfo({
+                    format: 'image/jpeg',
+                    fileSize: JPEG_SOURCE.byteLength,
+                    width: 10000,
+                    height: 5000,
+                }),
+            }),
+        )
+
+        expect(response.status).toBe(422)
+        expect(await response.json()).toEqual({
+            error: 'MEDIA_SOURCE_DIMENSIONS_TOO_LARGE',
+        })
+    })
+
+    it('rejects malformed or incomplete dimension metadata', async () => {
+        const response = await worker.fetch(
+            await request(),
+            env({ IMAGES: imagesWithInfo({ format: 'image/webp', width: 0, height: 640 }) }),
+        )
+
+        expect(response.status).toBe(422)
+        expect(await response.json()).toEqual({
+            error: 'MEDIA_SOURCE_DIMENSIONS_INVALID',
+        })
+    })
+
+    it('accepts normal independently parsed JPEG, PNG, and WebP dimensions', async () => {
+        vi.spyOn(globalThis, 'fetch').mockImplementation(async (_input, init) => {
+            await new Response(init?.body).arrayBuffer()
+            return new Response(null, { status: 201 })
+        })
+        for (const [contentType, body] of [
+            ['image/jpeg', JPEG_SOURCE],
+            ['image/png', PNG_SOURCE],
+            ['image/webp', WEBP_SOURCE],
+        ] as const) {
+            const response = await worker.fetch(
+                await request('inline.w640', body, { 'Content-Type': contentType }),
+                env({
+                    IMAGES: imagesWithInfo({
+                        format: contentType,
+                        fileSize: body.byteLength,
+                        width: 1600,
+                        height: 900,
+                    }),
+                }),
+            )
+            expect(response.status).toBe(201)
+        }
     })
 
     it('retries a transient Bunny failure with the same immutable object path', async () => {
@@ -172,7 +300,7 @@ describe('LEO-544 Cloudflare Images stream transform', () => {
                 return new Response(null, { status: 201 })
             })
 
-        const response = await worker.fetch(request(), env())
+        const response = await worker.fetch(await request(), env())
 
         expect(response.status).toBe(201)
         expect(fetchMock).toHaveBeenCalledTimes(2)
