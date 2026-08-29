@@ -7,10 +7,6 @@ const workflow = readFileSync(
     resolve(process.cwd(), '.github/workflows/runtime-backup.yml'),
     'utf8',
 )
-const candidateExtractor = readFileSync(
-    resolve(process.cwd(), 'scripts/backup/extract-exact-candidate-sources.sh'),
-    'utf8',
-)
 
 describe('backup restore rehearsal workflow contract', () => {
     it('is scheduled/manual and restricted to protected main', () => {
@@ -44,14 +40,17 @@ describe('backup restore rehearsal workflow contract', () => {
         expect(workflow).toContain('needs: [preflight, backup]')
     })
 
-    it('loads candidate code only from the exact SHA allowlist, never candidate workflow YAML', () => {
+    it('keeps every protected executable trusted to main and never loads candidate code', () => {
         expect(workflow).toContain('ref: refs/heads/main')
-        expect(workflow).toContain('extract-exact-candidate-sources.sh')
+        expect(workflow).toContain('bash scripts/backup/create-encrypted-backup.sh')
+        expect(workflow).toContain('bash scripts/backup/rehearse-isolated-restore.sh')
         expect(workflow).toContain('exact-pr-artifact-identity.mjs')
-        expect(candidateExtractor).toContain('git -C "$repo_root" archive --format=tar "$candidate_sha" -- "${archive_paths[@]}"')
-        expect(candidateExtractor).toContain('scripts/backup/runtime-manifest.sql')
-        expect(candidateExtractor).toContain('workflow_yaml=not_loaded')
-        expect(candidateExtractor).not.toMatch(/git archive[\s\S]*\.github\/workflows/)
+        expect(workflow).not.toContain('git archive')
+        expect(workflow).not.toContain('extract-exact-candidate-sources.sh')
+        expect(workflow).not.toContain('CANDIDATE_SOURCE_ROOT')
+        expect(workflow).not.toContain('BACKUP_SOURCE_ROOT')
+        expect(workflow).not.toContain('RESTORE_SOURCE_ROOT')
+        expect(workflow).not.toMatch(/candidate.*(?:bash|node|\.sh|\.mjs)/i)
         expect(workflow).not.toContain('checkout@v4\n        with:\n          ref: ${{ inputs')
     })
 

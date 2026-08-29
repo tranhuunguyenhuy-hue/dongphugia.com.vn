@@ -138,17 +138,6 @@ jobs:
           ref: refs/heads/main
           persist-credentials: false
 
-      - name: Extract only the exact candidate rehearsal sources
-        if: needs.preflight.outputs.mode == 'exact-pr-head'
-        env:
-          CANDIDATE_SHA: ${{ needs.preflight.outputs.candidate_sha }}
-          CANDIDATE_SOURCE_ROOT: ${{ runner.temp }}/leo552-candidate
-        shell: bash
-        run: |
-          set -euo pipefail
-          git fetch --no-tags --depth=1 origin "$CANDIDATE_SHA" >/dev/null 2>&1
-          bash scripts/backup/extract-exact-candidate-sources.sh "$CANDIDATE_SHA" "$CANDIDATE_SOURCE_ROOT"
-
       - name: Install pinned backup tooling
         shell: bash
         run: |
@@ -163,15 +152,10 @@ jobs:
           BACKUP_RETENTION_DAYS: ${{ vars.BACKUP_RETENTION_DAYS }}
           BACKUP_ID: leo540-${{ github.run_id }}
           OUTPUT_DIR: ${{ runner.temp }}/leo540-backup
-          LEO552_SOURCE_MODE: ${{ needs.preflight.outputs.mode }}
-          BACKUP_SOURCE_ROOT: ${{ github.workspace }}
         shell: bash
         run: |
           set -euo pipefail
-          if [[ "$LEO552_SOURCE_MODE" == 'exact-pr-head' ]]; then
-            BACKUP_SOURCE_ROOT="$RUNNER_TEMP/leo552-candidate"
-          fi
-          bash "$BACKUP_SOURCE_ROOT/scripts/backup/create-encrypted-backup.sh"
+          bash scripts/backup/create-encrypted-backup.sh
 
       - name: Bind exact candidate identity into the artifact manifest
         if: needs.preflight.outputs.mode == 'exact-pr-head'
@@ -234,17 +218,6 @@ jobs:
           ref: refs/heads/main
           persist-credentials: false
 
-      - name: Extract only the exact candidate rehearsal sources
-        if: needs.preflight.outputs.mode == 'exact-pr-head'
-        env:
-          CANDIDATE_SHA: ${{ needs.preflight.outputs.candidate_sha }}
-          CANDIDATE_SOURCE_ROOT: ${{ runner.temp }}/leo552-candidate
-        shell: bash
-        run: |
-          set -euo pipefail
-          git fetch --no-tags --depth=1 origin "$CANDIDATE_SHA" >/dev/null 2>&1
-          bash scripts/backup/extract-exact-candidate-sources.sh "$CANDIDATE_SHA" "$CANDIDATE_SOURCE_ROOT"
-
       - name: Install pinned restore tooling
         shell: bash
         run: |
@@ -278,15 +251,10 @@ jobs:
         env:
           BACKUP_DIR: ${{ runner.temp }}/leo540-backup
           AGE_IDENTITY: ${{ secrets.BACKUP_AGE_PRIVATE_KEY }}
-          LEO552_SOURCE_MODE: ${{ needs.preflight.outputs.mode }}
-          RESTORE_SOURCE_ROOT: ${{ github.workspace }}
         shell: bash
         run: |
           set -euo pipefail
-          if [[ "$LEO552_SOURCE_MODE" == 'exact-pr-head' ]]; then
-            RESTORE_SOURCE_ROOT="$RUNNER_TEMP/leo552-candidate"
-          fi
-          bash "$RESTORE_SOURCE_ROOT/scripts/backup/rehearse-isolated-restore.sh"
+          bash scripts/backup/rehearse-isolated-restore.sh
 
       - name: Record sanitized restore result
         run: |

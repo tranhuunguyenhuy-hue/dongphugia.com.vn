@@ -154,10 +154,16 @@ node "$repo_root/scripts/backup/manifest-contract.mjs" compare "$manifest" "$act
 manifest_compared='true'
 
 stage='product_family_blog_validation'
-if ! docker exec -i "$container_name" psql -U postgres -d postgres -X -q -v ON_ERROR_STOP=1 \
+semantic_report="$tmp_dir/runtime-validation.json"
+if ! docker exec -i "$container_name" psql -U postgres -d postgres -X -q -A -t -v ON_ERROR_STOP=1 \
   -f - <"$repo_root/scripts/backup/validate-runtime.sql" \
-  >"$tmp_dir/runtime-validation.out" 2>"$tmp_dir/runtime-validation.error"; then
+  >"$semantic_report" 2>"$tmp_dir/runtime-validation.error"; then
   echo 'LEO540_RESTORE status=FAIL stage=product_family_blog_validation reason=validation_failed'
+  exit 1
+fi
+if ! node "$repo_root/scripts/backup/runtime-validation-contract.mjs" validate "$semantic_report" \
+  >/dev/null 2>"$tmp_dir/runtime-validation-contract.error"; then
+  echo 'LEO540_RESTORE status=FAIL stage=product_family_blog_validation reason=semantic_validation_failed'
   exit 1
 fi
 product_validation='PASS'

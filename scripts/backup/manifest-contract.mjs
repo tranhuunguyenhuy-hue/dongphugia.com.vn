@@ -12,6 +12,15 @@ export const EXPECTED_TARGET = {
 }
 
 const PROHIBITED_KEY = /password|secret|token|private.?key|database.?url|connection.?string|row.?data|payload|content|dump/i
+const RESTORE_COUNT_TABLES = [
+  'blog_categories',
+  'blog_post_tags',
+  'blog_posts',
+  'blog_tags',
+  'product_images',
+  'products',
+  'publishing_blog_post_media',
+]
 
 function canonical(value) {
   if (Array.isArray(value)) return value.map(canonical)
@@ -34,6 +43,7 @@ function violationCategory(violation) {
   if (violation.includes('data row counts')) return 'data_counts'
   if (violation.includes('data row hashes')) return 'data_hashes'
   if (violation.includes('data source authority')) return 'data_authority'
+  if (violation.includes('restore aggregate counts')) return 'restore_counts'
   if (violation.includes('schema')) return 'schema'
   if (violation.includes('data')) return 'data'
   if (violation.includes('sensitive')) return 'sensitivity'
@@ -44,7 +54,7 @@ function violationCategory(violation) {
 export function validateRuntimeManifest(manifest) {
   const violations = []
   if (!manifest || typeof manifest !== 'object') return ['manifest is not an object']
-  if (manifest.formatVersion !== 1) violations.push('manifest format changed')
+  if (manifest.formatVersion !== 2) violations.push('manifest format changed')
   if (manifest.target?.projectName !== EXPECTED_TARGET.projectName) violations.push('target project identity changed')
   if (JSON.stringify(canonical(manifest.target)) !== JSON.stringify(canonical(EXPECTED_TARGET))) {
     if (!violations.includes('target project identity changed')) violations.push('target project identity changed')
@@ -57,6 +67,16 @@ export function validateRuntimeManifest(manifest) {
       violations.push('data manifest entry is invalid')
       break
     }
+  }
+  if (!Array.isArray(manifest.restoreCounts)
+    || manifest.restoreCounts.length !== RESTORE_COUNT_TABLES.length
+    || new Set(manifest.restoreCounts.map((entry) => entry?.tableName)).size !== RESTORE_COUNT_TABLES.length
+    || RESTORE_COUNT_TABLES.some((tableName) => !manifest.restoreCounts.some((entry) => entry?.tableName === tableName))
+    || manifest.restoreCounts.some((entry) => !entry
+      || typeof entry.tableName !== 'string'
+      || !Number.isInteger(entry.rowCount)
+      || entry.rowCount < 0)) {
+    violations.push('restore aggregate counts are invalid')
   }
   return [...new Set(violations)]
 }
@@ -79,6 +99,10 @@ export function compareRuntimeManifests(expected, actual) {
     if (entry.rowCount !== actualEntry.rowCount) violations.push('data row counts changed')
     if (entry.sha256 !== actualEntry.sha256) violations.push('data row hashes changed')
     if (entry.sourceAuthority !== actualEntry.sourceAuthority) violations.push('data source authority changed')
+  }
+  const actualRestoreCounts = new Map(actual.restoreCounts.map((entry) => [entry.tableName, entry.rowCount]))
+  if (expected.restoreCounts.some((entry) => actualRestoreCounts.get(entry.tableName) !== entry.rowCount)) {
+    violations.push('restore aggregate counts changed')
   }
   return [...new Set(violations)]
 }

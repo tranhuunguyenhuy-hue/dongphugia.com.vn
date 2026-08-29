@@ -49,8 +49,21 @@ describe('LEO-540 backup and restore public contracts', () => {
     expect(manifestSql).not.toMatch(/SELECT\s+\*\s+FROM/i)
     expect(manifestSql).toContain("'rowCount'")
     expect(manifestSql).toContain("'sha256'")
-    expect(validationSql).toContain('LEO540_RUNTIME_VALIDATION status=PASS')
+    expect(manifestSql).toContain("'restoreCounts'")
+    for (const table of [
+      'products',
+      'product_images',
+      'blog_categories',
+      'blog_posts',
+      'blog_tags',
+      'blog_post_tags',
+      'publishing_blog_post_media',
+    ]) expect(manifestSql).toContain(`dpg_app.${table}`)
+    expect(restore).toContain('runtime-validation-contract.mjs" validate')
+    expect(restore).toContain('psql -U postgres -d postgres -X -q -A -t -v ON_ERROR_STOP=1')
     expect(validationSql).not.toContain('RAISE NOTICE')
     expect(validationSql).not.toContain('RAISE INFO')
+    expect(validationSql).not.toMatch(/product_count\s*<>\s*\d+/)
+    expect(validationSql).not.toMatch(/blog_post_count\s*<>\s*\d+/)
   })
 })

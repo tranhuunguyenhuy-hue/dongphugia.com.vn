@@ -46,13 +46,22 @@ same-repository head, the supplied SHA as the current head SHA, and a reachable
 candidate commit. Missing, stale, closed, foreign/fork, base-mismatched, or
 PR/SHA-mismatched input never starts a `runtime-backup` Environment job.
 
-The workflow definition and all control scripts are checked out from trusted
-`main`. For exact mode, candidate content is extracted with `git archive` into
-an isolated temporary directory using only the backup/restore scripts and SQL
-data-contract validators required by this rehearsal. Candidate `.github`
-workflow definitions and unrelated candidate files are never loaded or
-executed. The `runtime-backup` GitHub Environment and its required Owner review
-remain mandatory for the actual backup and restore jobs.
+The workflow definition and all executable control scripts are checked out
+from trusted `main`. Exact mode never fetches, archives, checks out, parses, or
+executes candidate workflow YAML, shell, SQL, or Node/JavaScript files. The
+candidate SHA is used only by the unprotected PR preflight and by the
+sanitized artifact identity binder/verifier. Backup creation always invokes
+the trusted-main `create-encrypted-backup.sh`; decryption, restore, manifest
+comparison, and semantic validation always invoke trusted-main controls. The
+`runtime-backup` GitHub Environment and its required Owner review remain
+mandatory for the actual backup and restore jobs.
+
+Manifest format v2 and the generic restore semantic contract are trusted-main
+controls in this delivery. They bind mutable restore aggregate counts to the
+exact encrypted backup and emit only aggregate validation results; they do not
+execute candidate code. The generic v2 changes in LEO-543/PR #127 therefore
+require later reconciliation after this control lands, while the LEO-543
+scheduler and migration changes remain separate.
 
 Before artifact upload, a trusted main-side binder adds a sanitized
 `artifactIdentity` object to the manifest containing the PR number, exact
@@ -126,16 +135,19 @@ backup timestamp.
 
 ## Product, Family/MS885, and Blog validation
 
-The restore acceptance SQL returns only a generic PASS or failure class:
+The restore acceptance SQL returns one sanitized aggregate JSON report, which
+the trusted-main `runtime-validation-contract.mjs` validates. It returns only
+PASS or a generic failure class at the workflow boundary:
 
-- Product table presence, the accepted 17,752 Product rows, 110,321 Product
-  images, and unique Product SKU identity are checked.
+- Product table presence and unique Product SKU identity are checked. Product,
+  image, Blog, and managed-media aggregate counts are recorded in manifest v2
+  and compared to the exact backup artifact, rather than hard-coding mutable
+  row totals in the semantic validator.
 - The Product Family contract requires `toto:ms885`, 18 memberships, the
   accepted 2/13/3 group distribution, exactly the two open gaps
   `MS885DW4#XW` and `MS885DW18#XW`, and no `MS885DE6#XW` membership.
-- Blog tables, the accepted 6/17/0/0/92 category/post/tag/post-tag/Managed
-  Media counts, and all post/category, post/tag, and post/Managed Media links
-  are checked for orphaned relations.
+- Blog tables and all post/category, post/tag, and post/Managed Media links are
+  checked for orphaned relations.
 
 The SQL does not print Product SKUs, Blog titles/content, URLs, or any other
 row. The canonical Product/Family contract remains
