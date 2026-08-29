@@ -23,6 +23,8 @@ jobs:
     steps:
       - name: Checkout exact PR revision
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -91,6 +93,8 @@ jobs:
     steps:
       - name: Checkout exact PR revision
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -132,7 +136,7 @@ jobs:
           npm run static:verify-preview -- \
             --output "$OUTPUT" \
             --evidence "$EVIDENCE" \
-            --source-commit "$GITHUB_SHA" \
+            --source-commit "${{ github.event.pull_request.head.sha || github.sha }}" \
             --pr-number "${{ github.event.pull_request.number || 0 }}" \
             --workflow-run-id "$GITHUB_RUN_ID"
           artifact_sha256="$(node -e "const fs=require('fs'); const x=JSON.parse(fs.readFileSync(process.env.EVIDENCE,'utf8')); process.stdout.write(x.candidate.artifactSha256)")"
@@ -140,7 +144,7 @@ jobs:
           echo "artifact_sha256=$artifact_sha256" >> "$GITHUB_OUTPUT"
           {
             echo '### Static artifact: PASS'
-            echo "- Candidate source: $GITHUB_SHA"
+            echo "- Candidate source: ${{ github.event.pull_request.head.sha || github.sha }}"
             echo "- Artifact SHA-256: $artifact_sha256"
             echo '- Free-tier and all-HTML noindex checks: PASS'
           } >> "$GITHUB_STEP_SUMMARY"
@@ -149,7 +153,7 @@ jobs:
         if: steps.build.outputs.artifact_ready == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: dongphugia-preview-${{ github.sha }}
+          name: dongphugia-preview-${{ github.event.pull_request.head.sha || github.sha }}
           path: |
             ${{ runner.temp }}/dongphugia-static-preview
             ${{ runner.temp }}/dongphugia-preview-evidence
@@ -228,13 +232,13 @@ jobs:
       - name: Download exact candidate artifact
         uses: actions/download-artifact@v4
         with:
-          name: dongphugia-preview-${{ github.sha }}
+          name: dongphugia-preview-${{ github.event.pull_request.head.sha || github.sha }}
           path: preview-package
 
       - name: Verify candidate identity before deployment
         id: identity
         env:
-          EXPECTED_SHA: ${{ github.sha }}
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           EXPECTED_PR: ${{ github.event.pull_request.number || github.run_id }}
           EXPECTED_RUN_ID: ${{ github.run_id }}
         run: |
@@ -265,26 +269,20 @@ jobs:
           project_http_code="${project_response##*$'\n'}"
           project_json="${project_response%$'\n'*}"
           if [[ "$project_http_code" == "404" ]]; then
-            echo "needs_create=true" >> "$GITHUB_OUTPUT"
+            {
+              echo '### Cloudflare Pages project: BLOCKED_BY_OWNER_GATE'
+              echo '- The configured Preview project does not already exist.'
+              echo '- This workflow never creates a Pages project, binding, DNS record, or traffic route.'
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
           elif [[ "$project_http_code" == "200" ]]; then
             jq -e --arg name "$PREVIEW_PROJECT" \
               '.success == true and .result.name == $name and .result.production_branch == "main" and .result.subdomain == ($name + ".pages.dev") and ((.result.domains // []) | all(. == ($name + ".pages.dev")))' \
               >/dev/null <<<"$project_json"
-            echo "needs_create=false" >> "$GITHUB_OUTPUT"
           else
             echo "$project_json" | jq -c '{success,errors,messages}' >&2
             exit 1
           fi
-
-      - name: Create the exact Pages project with Wrangler
-        if: steps.project_lookup.outputs.needs_create == 'true'
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: >-
-            pages project create ${{ vars.CLOUDFLARE_PAGES_PREVIEW_PROJECT }}
-            --production-branch=main
 
       - name: Validate the exact non-Production Pages project
         env:
@@ -325,8 +323,8 @@ jobs:
             pages deploy preview-package/dongphugia-static-preview
             --project-name=${{ vars.CLOUDFLARE_PAGES_PREVIEW_PROJECT }}
             --branch=pr-${{ github.event.pull_request.number || github.run_id }}
-            --commit-hash=${{ github.sha }}
-            --commit-message=LEO-535-preview-${{ github.sha }}
+            --commit-hash=${{ github.event.pull_request.head.sha || github.sha }}
+            --commit-message=LEO-535-preview-${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Prove the deployed Preview is noindex and not Production
         env:
@@ -351,7 +349,7 @@ jobs:
           {
             echo '### Cloudflare Preview: PASS'
             echo "- URL: $preview_url"
-            echo "- Candidate source: $GITHUB_SHA"
+            echo "- Candidate source: ${{ github.event.pull_request.head.sha || github.sha }}"
             echo "- Artifact SHA-256: $ARTIFACT_SHA"
             echo '- HTML meta, X-Robots-Tag, and robots.txt noindex controls: PASS'
             echo '- Production traffic/DNS: unchanged'

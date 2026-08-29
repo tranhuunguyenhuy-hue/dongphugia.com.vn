@@ -1,0 +1,38 @@
+{
+  "contract": "dongphugia:shadow-candidate:v1",
+  "environment": "preview",
+  "supabase": {
+    "project": "dongphugia-runtime",
+    "ref": "tlmgudfhsyzayiazuugf",
+    "region": "ap-southeast-1",
+    "schema": "dpg_app",
+    "migrationManifest": "db/postgres-migrations/checksums.sha256"
+  },
+  "sideEffects": {
+    "staticBuildSource": "read-only-non-production",
+    "productionWritesAllowed": false,
+    "syntheticWrites": "not-executed-by-candidate-assembly"
+  },
+  "runtime": {
+    "functions": [
+      "commerce-orders",
+      "commerce-quotes",
+      "admin-audit",
+      "admin-blog",
+      "admin-commerce",
+      "admin-content",
+      "admin-products"
+    ],
+    "auth": "JWT-required; RLS-enforced"
+  },
+  "rollback": {
+    "productionAuthority": "AWS EC2/Coolify and AWS PostgreSQL remain authoritative",
+    "trafficOrWriteTargetChange": "requires a separate Owner-approved M6 cutover"
+  },
+  "exclusions": [
+    "LEO-543 scheduler",
+    "LEO-553 scheduler bridge and Publishing parity",
+    "LEO-544 media upload or transform pipeline",
+    "new Blog Publishing automation"
+  ]
+}

@@ -8,13 +8,13 @@ const artifactContract = readFileSync(resolve(process.cwd(), 'scripts/static-bui
 
 describe('migration PR CI and Preview workflow contract', () => {
   it('runs required CI and consumes the merged static build contract', () => {
-    for (const marker of ['pull_request:', 'branches: [main]', 'npm run lint', 'npm run typecheck', 'npm test', 'npm run static:check', 'npm run static:build', 'npm run static:verify-preview-source', 'PUBLIC_STATIC_BUILD_READ_ONLY', 'PUBLIC_STATIC_BUILD_DB_ROLE: dpg_readonly', 'PUBLIC_STATIC_BUILD_SCHEMA: dpg_app', 'MIGRATION_PREVIEW_DATABASE_URL', 'actions/upload-artifact@v4']) {
+    for (const marker of ['pull_request:', 'branches: [main]', 'github.event.pull_request.head.sha || github.sha', 'npm run lint', 'npm run typecheck', 'npm test', 'npm run static:check', 'npm run static:build', 'npm run static:verify-preview-source', 'PUBLIC_STATIC_BUILD_READ_ONLY', 'PUBLIC_STATIC_BUILD_DB_ROLE: dpg_readonly', 'PUBLIC_STATIC_BUILD_SCHEMA: dpg_app', 'MIGRATION_PREVIEW_DATABASE_URL', 'actions/upload-artifact@v4']) {
       expect(workflow).toContain(marker)
     }
   })
 
   it('locks free-tier, immutable identity, and noindex checks', () => {
-    for (const marker of ['static:verify-preview', 'artifactSha256', 'sourceCommit', 'workflowRunId', 'migrationManifestSha256', 'CLOUDFLARE_PAGES_PREVIEW_ENABLED', 'CLOUDFLARE_PAGES_PREVIEW_PROJECT', 'noindex, nofollow', 'noindex,nofollow', 'Disallow: /', '20_000', '25 * 1024 * 1024']) {
+    for (const marker of ['static:verify-preview', 'artifactSha256', 'sourceCommit', 'workflowRunId', 'migrationManifestSha256', 'shadowContractSha256', 'CLOUDFLARE_PAGES_PREVIEW_ENABLED', 'CLOUDFLARE_PAGES_PREVIEW_PROJECT', 'noindex, nofollow', 'noindex,nofollow', 'Disallow: /', '20_000', '25 * 1024 * 1024']) {
       expect(`${workflow}\n${buildGuide}\n${artifactContract}`).toContain(marker)
     }
   })
@@ -23,8 +23,8 @@ describe('migration PR CI and Preview workflow contract', () => {
     for (const forbidden of ['pages secret', 'pages deployment delete', 'deployments: write', 'cloudflared tunnel', 'aws ', 'PRODUCTION_DATABASE_URL']) {
       expect(workflow.toLowerCase()).not.toContain(forbidden.toLowerCase())
     }
-    expect(workflow).toContain('pages project create')
-    expect(workflow).toContain('--production-branch=main')
+    expect(workflow).not.toContain('pages project create')
+    expect(workflow).toContain('configured Preview project does not already exist')
     expect(workflow).toContain('Custom domains: none')
     expect(workflow).toContain('BLOCKED_BY_OWNER_GATE')
     expect(workflow).toContain('CI failure blocks the Preview/merge path.')

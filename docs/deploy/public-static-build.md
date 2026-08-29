@@ -75,10 +75,9 @@ mode artifact, verifies the free-tier limits and every HTML/headers/robots
 noindex control, and emits a candidate tuple containing the source commit, PR,
 workflow run, artifact SHA-256, and migration manifest SHA-256.
 
-Cloudflare upload is separately gated by the single non-Production Pages project
-contract. The workflow may create exactly the configured project when it is
-absent, using the supported Wrangler `pages project create` command and the
-pre-authorized Pages:Edit token; it fails closed on API, identity,
+Cloudflare upload is separately gated by the single existing non-Production
+Pages project contract. The workflow fails closed when that configured project
+is absent; it never creates a project. It also fails closed on API, identity,
 custom-domain, or branch mismatches.
 The workflow never creates a secret, binding, permission, security setting, DNS
 record, traffic route, or deployment deletion. The Owner must

@@ -21,6 +21,16 @@ type CandidateEvidenceInput = {
   migrationManifestPath?: string
 }
 
+type ShadowCandidateContract = {
+  contract: string
+  environment: string
+  supabase: { project: string; ref: string; region: string; schema: string; migrationManifest: string }
+  sideEffects: { staticBuildSource: string; productionWritesAllowed: boolean; syntheticWrites: string }
+  runtime: { functions: string[]; auth: string }
+  rollback: { productionAuthority: string; trafficOrWriteTargetChange: string }
+  exclusions: string[]
+}
+
 async function listFiles(root: string) {
   const files: string[] = []
   const walk = async (directory: string) => {
@@ -65,10 +75,13 @@ export async function assertPreviewArtifact(output: string) {
   const report = JSON.parse(await readFile(path.join(root, 'static-build-report.json'), 'utf8')) as {
     contract?: string
     mode?: string
-    routes?: { products?: number }
+    routes?: { products?: number; blogPosts?: number }
+    seo?: { bunnyMediaPreserved?: boolean }
   }
   if (report.mode !== 'preview') throw new Error('PREVIEW_ARTIFACT_MODE_FAILED')
   if (report.routes?.products !== 4_033) throw new Error('PREVIEW_ARTIFACT_PRODUCT_COUNT_FAILED')
+  if (!report.routes?.blogPosts || report.routes.blogPosts < 1) throw new Error('PREVIEW_ARTIFACT_BLOG_PRESERVATION_FAILED')
+  if (report.seo?.bunnyMediaPreserved !== true) throw new Error('PREVIEW_ARTIFACT_BUNNY_PRESERVATION_FAILED')
 
   const checkedInventory = await inventory(root, files)
   if (checkedInventory.fileCount > PREVIEW_FILE_LIMIT) throw new Error('PREVIEW_ARTIFACT_FILE_LIMIT_FAILED')
@@ -87,12 +100,16 @@ export async function assertPreviewArtifact(output: string) {
       throw new Error(`PREVIEW_ARTIFACT_NOINDEX_FAILED: ${path.relative(root, file)}`)
     }
   }
+  const bunnyMediaReferenced = (await Promise.all(htmlFiles.map(async (file) => (await readFile(file, 'utf8')).includes('https://cdn.dongphugia.com.vn/')))).some(Boolean)
+  if (!bunnyMediaReferenced) throw new Error('PREVIEW_ARTIFACT_BUNNY_REFERENCE_FAILED')
 
   return {
     contract: report.contract ?? 'dongphugia:public-static-build:v1',
     inventory: checkedInventory,
     htmlFiles: htmlFiles.length,
     noindex: { htmlMeta: true, headers: true, robots: true },
+    blog: { staticPosts: report.routes.blogPosts },
+    media: { bunnyMediaPreserved: true, bunnyMediaReferenced: true },
   }
 }
 
@@ -107,6 +124,12 @@ export async function writeCandidateEvidence(input: CandidateEvidenceInput) {
   const migrationManifestSha256 = await readFile(migrationManifestPath)
     .then((value) => createHash('sha256').update(value).digest('hex'))
     .catch(() => null)
+  const shadowContractPath = path.resolve(process.cwd(), 'docs/deploy/leo-545-shadow-candidate-contract.json')
+  const shadowContractBytes = await readFile(shadowContractPath)
+  const shadow = JSON.parse(shadowContractBytes.toString('utf8')) as ShadowCandidateContract
+  if (shadow.contract !== 'dongphugia:shadow-candidate:v1' || shadow.environment !== 'preview' || shadow.supabase.project !== 'dongphugia-runtime' || shadow.sideEffects.staticBuildSource !== 'read-only-non-production' || shadow.sideEffects.productionWritesAllowed !== false || shadow.runtime.functions.length === 0) {
+    throw new Error('SHADOW_CANDIDATE_CONTRACT_FAILED')
+  }
   const evidence = {
     contract: PREVIEW_ARTIFACT_CONTRACT,
     candidate: {
@@ -115,9 +138,11 @@ export async function writeCandidateEvidence(input: CandidateEvidenceInput) {
       workflowRunId: input.workflowRunId,
       artifactSha256,
       migrationManifestSha256,
+      shadowContractSha256: createHash('sha256').update(shadowContractBytes).digest('hex'),
     },
-    artifact: { contract: contract.contract, mode: 'preview', ...contract.inventory, htmlFiles: contract.htmlFiles },
+    artifact: { contract: contract.contract, mode: 'preview', ...contract.inventory, htmlFiles: contract.htmlFiles, blog: contract.blog, media: contract.media },
     noindex: contract.noindex,
+    shadow,
   }
   await mkdir(path.dirname(path.resolve(input.evidencePath)), { recursive: true })
   await writeFile(path.resolve(input.evidencePath), `${JSON.stringify(evidence, null, 2)}\n`)
