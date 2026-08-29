@@ -1,6 +1,7 @@
-export const LEO553_GITHUB_DISPATCH_URL =
-  'https://api.github.com/repos/tranhuunguyenhuy-hue/dongphugia.com.vn/dispatches'
-export const LEO553_GITHUB_EVENT_TYPE = 'leo553-preview-refresh'
+export const LEO553_GITHUB_WORKFLOW_DISPATCH_URL =
+  'https://api.github.com/repos/tranhuunguyenhuy-hue/dongphugia.com.vn/actions/workflows/preview-publishing-refresh.yml/dispatches'
+export const LEO553_GITHUB_WORKFLOW_REF = 'main'
+export const LEO553_PUBLISHING_PARITY_APPROVED = false
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
@@ -59,4 +60,14 @@ export function schedulerResponse(result: Leo553BridgeResult, resultCode: string
     published_count: result.published_count,
     blocked_count: result.blocked_count,
   }
+}
+
+export function shouldDispatchPreviewRefresh(result: Leo553BridgeResult): boolean {
+  return result.refresh_required && result.published_count > 0
+}
+
+export function parseWorkflowDispatchRunId(value: unknown): number | null {
+  if (!value || typeof value !== 'object') return null
+  const runId = (value as Record<string, unknown>).workflow_run_id
+  return Number.isSafeInteger(runId) && Number(runId) > 0 ? Number(runId) : null
 }

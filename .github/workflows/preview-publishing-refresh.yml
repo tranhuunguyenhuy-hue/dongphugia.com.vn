@@ -1,8 +1,12 @@
 name: Trusted Preview publishing refresh
 
 on:
-  repository_dispatch:
-    types: [leo553-preview-refresh]
+  workflow_dispatch:
+    inputs:
+      refresh_id:
+        description: Sanitized LEO-553 refresh UUID
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -31,11 +35,11 @@ jobs:
         env:
           REFRESH_ENABLED: ${{ vars.LEO553_PREVIEW_REFRESH_ENABLED }}
           REFRESH_CONTRACT: ${{ vars.LEO553_PREVIEW_REFRESH_CONTRACT }}
-          REFRESH_ID: ${{ github.event.client_payload.refresh_id }}
+          REFRESH_ID: ${{ inputs.refresh_id }}
         shell: bash
         run: |
           set -euo pipefail
-          test "$GITHUB_EVENT_NAME" = 'repository_dispatch'
+          test "$GITHUB_EVENT_NAME" = 'workflow_dispatch'
           test "$GITHUB_REF" = 'refs/heads/main'
           control_sha="$(git rev-parse HEAD)"
           test "$control_sha" = "$GITHUB_SHA"

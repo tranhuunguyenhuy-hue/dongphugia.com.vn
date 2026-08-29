@@ -22,14 +22,17 @@ $$;
 create table dpg_control.leo553_scheduler_runs (
   run_id uuid primary key,
   slot_at timestamptz not null,
-  status text not null default 'running'
-    check (status in ('running', 'completed', 'blocked', 'failed')),
+  publishing_status text not null default 'running'
+    check (publishing_status in ('running', 'completed', 'blocked', 'failed')),
   result_code text,
   processed_count integer not null default 0 check (processed_count between 0 and 100),
   published_count integer not null default 0 check (published_count between 0 and 100),
   blocked_count integer not null default 0 check (blocked_count between 0 and 100),
-  refresh_status text not null default 'not_required'
-    check (refresh_status in ('not_required', 'pending', 'dispatching', 'dispatched', 'failed')),
+  refresh_transport_status text not null default 'not_required'
+    check (refresh_transport_status in ('not_required', 'pending', 'dispatching', 'accepted', 'failed')),
+  refresh_completion_status text not null default 'not_required'
+    check (refresh_completion_status in ('not_required', 'not_started', 'external_evidence_required')),
+  github_workflow_run_id bigint check (github_workflow_run_id > 0),
   refresh_error_code text,
   safe_response jsonb,
   created_at timestamptz not null default now(),
@@ -37,6 +40,13 @@ create table dpg_control.leo553_scheduler_runs (
   constraint leo553_scheduler_counts_bounded
     check (published_count + blocked_count <= processed_count)
 );
+
+comment on column dpg_control.leo553_scheduler_runs.publishing_status is
+  'Completion state of the bounded Publishing operation only, never Preview freshness proof.';
+comment on column dpg_control.leo553_scheduler_runs.refresh_transport_status is
+  'GitHub workflow dispatch transport state; accepted does not mean the workflow succeeded.';
+comment on column dpg_control.leo553_scheduler_runs.refresh_completion_status is
+  'Freshness completion remains external evidence until a separately approved authenticated callback exists.';
 
 alter table dpg_control.leo553_scheduler_runs owner to dpg_migration;
 alter table dpg_control.leo553_scheduler_runs enable row level security;
@@ -165,7 +175,7 @@ begin
   for update;
   if found then
     return v_existing.safe_response || jsonb_build_object(
-      'refresh_required', v_existing.refresh_status = 'pending'
+      'refresh_required', v_existing.refresh_transport_status = 'pending'
     );
   end if;
 
@@ -188,7 +198,7 @@ begin
       'blocked_count', 0
     );
     update dpg_control.leo553_scheduler_runs
-    set status = 'blocked', result_code = 'WRITE_FREEZE_ACTIVE',
+    set publishing_status = 'blocked', result_code = 'WRITE_FREEZE_ACTIVE',
         safe_response = v_response, updated_at = v_now
     where run_id = p_run_id;
     return v_response || jsonb_build_object('refresh_required', false);
@@ -355,10 +365,11 @@ begin
       updated_at = v_now
   where id = 1;
   update dpg_control.leo553_scheduler_runs
-  set status = 'completed', result_code = 'SUCCESS',
+  set publishing_status = 'completed', result_code = 'SUCCESS',
       processed_count = v_processed, published_count = v_published,
       blocked_count = v_blocked,
-      refresh_status = case when v_published > 0 then 'pending' else 'not_required' end,
+      refresh_transport_status = case when v_published > 0 then 'pending' else 'not_required' end,
+      refresh_completion_status = case when v_published > 0 then 'not_started' else 'not_required' end,
       safe_response = v_response, updated_at = v_now
   where run_id = p_run_id;
   return v_response || jsonb_build_object('refresh_required', v_published > 0);
@@ -394,16 +405,20 @@ begin
     raise exception 'UNAUTHORIZED';
   end if;
   update dpg_control.leo553_scheduler_runs
-  set refresh_status = 'dispatching', updated_at = clock_timestamp()
-  where run_id = p_run_id and refresh_status = 'pending' and published_count > 0;
+  set refresh_transport_status = 'dispatching', updated_at = clock_timestamp()
+  where run_id = p_run_id
+    and refresh_transport_status = 'pending'
+    and refresh_completion_status = 'not_started'
+    and published_count > 0;
   return found;
 end
 $$;
 
-create or replace function public.leo553_complete_preview_refresh(
+create or replace function public.leo553_record_preview_refresh_dispatch(
   p_run_id uuid,
   p_scheduler_token text,
-  p_succeeded boolean
+  p_accepted boolean,
+  p_workflow_run_id bigint
 )
 returns boolean
 language plpgsql
@@ -416,10 +431,17 @@ begin
     raise exception 'UNAUTHORIZED';
   end if;
   update dpg_control.leo553_scheduler_runs
-  set refresh_status = case when p_succeeded then 'dispatched' else 'failed' end,
-      refresh_error_code = case when p_succeeded then null else 'GITHUB_DISPATCH_FAILED' end,
+  set refresh_transport_status = case when p_accepted then 'accepted' else 'failed' end,
+      refresh_completion_status = case
+        when p_accepted then 'external_evidence_required'
+        else 'not_started'
+      end,
+      github_workflow_run_id = case when p_accepted then p_workflow_run_id else null end,
+      refresh_error_code = case when p_accepted then null else 'GITHUB_DISPATCH_FAILED' end,
       updated_at = clock_timestamp()
-  where run_id = p_run_id and refresh_status = 'dispatching';
+  where run_id = p_run_id
+    and refresh_transport_status = 'dispatching'
+    and ((p_accepted and p_workflow_run_id > 0) or not p_accepted);
   return found;
 end
 $$;
@@ -428,17 +450,17 @@ alter function dpg_control.leo553_scheduler_token_matches(text) owner to dpg_mig
 alter function dpg_control.leo553_scheduler_bridge_internal(uuid,timestamptz,text) owner to dpg_migration;
 alter function public.leo553_scheduler_bridge(uuid,timestamptz,text) owner to dpg_migration;
 alter function public.leo553_claim_preview_refresh(uuid,text) owner to dpg_migration;
-alter function public.leo553_complete_preview_refresh(uuid,text,boolean) owner to dpg_migration;
+alter function public.leo553_record_preview_refresh_dispatch(uuid,text,boolean,bigint) owner to dpg_migration;
 
 revoke all on function dpg_control.leo553_scheduler_token_matches(text),
   dpg_control.leo553_scheduler_bridge_internal(uuid,timestamptz,text),
   public.leo553_scheduler_bridge(uuid,timestamptz,text),
   public.leo553_claim_preview_refresh(uuid,text),
-  public.leo553_complete_preview_refresh(uuid,text,boolean)
+  public.leo553_record_preview_refresh_dispatch(uuid,text,boolean,bigint)
   from public, anon, authenticated, service_role, dpg_runtime, dpg_readonly;
 grant execute on function public.leo553_scheduler_bridge(uuid,timestamptz,text),
   public.leo553_claim_preview_refresh(uuid,text),
-  public.leo553_complete_preview_refresh(uuid,text,boolean)
+  public.leo553_record_preview_refresh_dispatch(uuid,text,boolean,bigint)
   to anon;
 
 commit;

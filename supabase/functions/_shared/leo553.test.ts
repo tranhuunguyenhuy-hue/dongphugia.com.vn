@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest'
 
 import {
-  LEO553_GITHUB_DISPATCH_URL,
-  LEO553_GITHUB_EVENT_TYPE,
+  LEO553_GITHUB_WORKFLOW_DISPATCH_URL,
+  LEO553_GITHUB_WORKFLOW_REF,
+  LEO553_PUBLISHING_PARITY_APPROVED,
   parseLeo553BridgeResult,
   parseLeo553Request,
+  parseWorkflowDispatchRunId,
   schedulerResponse,
+  shouldDispatchPreviewRefresh,
 } from './leo553'
 
 describe('LEO-553 scheduler bridge boundary', () => {
@@ -47,10 +50,32 @@ describe('LEO-553 scheduler bridge boundary', () => {
     })
   })
 
-  it('fixes repository and event type outside caller input', () => {
-    expect(LEO553_GITHUB_DISPATCH_URL).toBe(
-      'https://api.github.com/repos/tranhuunguyenhuy-hue/dongphugia.com.vn/dispatches',
+  it('dispatches only for an accepted publication change', () => {
+    expect(shouldDispatchPreviewRefresh({
+      result_code: 'SUCCESS', processed_count: 0, published_count: 0,
+      blocked_count: 0, refresh_required: false,
+    })).toBe(false)
+    expect(shouldDispatchPreviewRefresh({
+      result_code: 'SUCCESS', processed_count: 1, published_count: 1,
+      blocked_count: 0, refresh_required: true,
+    })).toBe(true)
+  })
+
+  it('fixes repository, workflow, and ref outside caller input', () => {
+    expect(LEO553_GITHUB_WORKFLOW_DISPATCH_URL).toBe(
+      'https://api.github.com/repos/tranhuunguyenhuy-hue/dongphugia.com.vn/actions/workflows/preview-publishing-refresh.yml/dispatches',
     )
-    expect(LEO553_GITHUB_EVENT_TYPE).toBe('leo553-preview-refresh')
+    expect(LEO553_GITHUB_WORKFLOW_REF).toBe('main')
+  })
+
+  it('accepts only a sanitized workflow run identity from GitHub', () => {
+    expect(parseWorkflowDispatchRunId({ workflow_run_id: 33249502023 })).toBe(33249502023)
+    expect(parseWorkflowDispatchRunId({ workflow_run_id: '33249502023' })).toBeNull()
+    expect(parseWorkflowDispatchRunId({ workflow_run_id: -1 })).toBeNull()
+    expect(parseWorkflowDispatchRunId({ html_url: 'https://example.invalid/secret' })).toBeNull()
+  })
+
+  it('keeps scheduler publication disabled until canonical parity is approved', () => {
+    expect(LEO553_PUBLISHING_PARITY_APPROVED).toBe(false)
   })
 })
