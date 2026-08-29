@@ -35,6 +35,35 @@ The artifact contains no plaintext dump. The manifest contains no row values,
 credentials, URLs, tokens, passwords, or key material. The checksum file covers
 both the encrypted archive and the manifest.
 
+## Protected exact-PR pre-merge rehearsal
+
+The same `runtime-backup.yml` workflow has a second, narrowly bounded manual
+mode for an Owner-approved open PR. The operator supplies both `pr_number` and
+`candidate_sha`, while dispatching the workflow from `main`. An unprotected
+preflight resolves the PR through GitHub and fails closed unless all of these
+facts match the current state: this repository, an open PR, base `main`, a
+same-repository head, the supplied SHA as the current head SHA, and a reachable
+candidate commit. Missing, stale, closed, foreign/fork, base-mismatched, or
+PR/SHA-mismatched input never starts a `runtime-backup` Environment job.
+
+The workflow definition and all control scripts are checked out from trusted
+`main`. For exact mode, candidate content is extracted with `git archive` into
+an isolated temporary directory using only the backup/restore scripts and SQL
+data-contract validators required by this rehearsal. Candidate `.github`
+workflow definitions and unrelated candidate files are never loaded or
+executed. The `runtime-backup` GitHub Environment and its required Owner review
+remain mandatory for the actual backup and restore jobs.
+
+Before artifact upload, a trusted main-side binder adds a sanitized
+`artifactIdentity` object to the manifest containing the PR number, exact
+candidate SHA, trusted workflow/main control SHA, workflow run ID, backup
+timestamp, and manifest version. It rewrites the existing checksum sidecar;
+the restore job verifies this identity before decrypting. Existing age
+encryption, checksum verification, PostgreSQL 17 network-disabled/tmpfs-only
+restore, manifest comparison, semantic validation, retention, and alert paths
+remain in force. Scheduled runs and legacy main-only manual dispatches use the
+original source path and inputs.
+
 ## Key and secret handling
 
 The workflow consumes only the Owner-approved `runtime-backup` GitHub

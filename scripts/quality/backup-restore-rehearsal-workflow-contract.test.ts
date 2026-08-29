@@ -7,6 +7,10 @@ const workflow = readFileSync(
     resolve(process.cwd(), '.github/workflows/runtime-backup.yml'),
     'utf8',
 )
+const candidateExtractor = readFileSync(
+    resolve(process.cwd(), 'scripts/backup/extract-exact-candidate-sources.sh'),
+    'utf8',
+)
 
 describe('backup restore rehearsal workflow contract', () => {
     it('is scheduled/manual and restricted to protected main', () => {
@@ -22,6 +26,33 @@ describe('backup restore rehearsal workflow contract', () => {
         expect(workflow).toContain('contents: read')
         expect(workflow).toContain('retention-days: 14')
         expect(workflow).toContain('actions/upload-artifact@v4')
+    })
+
+    it('keeps scheduled and legacy manual behavior while adding exact-head inputs', () => {
+        expect(workflow).toContain('pr_number:')
+        expect(workflow).toContain('candidate_sha:')
+        expect(workflow).toContain("mode=legacy-manual")
+        expect(workflow).toContain("mode=scheduled")
+        expect(workflow).toContain("github.event_name == 'schedule' && github.event.schedule == '17 3 * * 0'")
+        expect(workflow).toContain("github.event_name == 'workflow_dispatch' && inputs.rehearse_restore == true")
+        expect(workflow).toContain("test \"$GITHUB_REF\" = 'refs/heads/main'")
+    })
+
+    it('requires the protected Environment for backup, restore, and alert jobs', () => {
+        expect(workflow.match(/environment: runtime-backup/g)).toHaveLength(3)
+        expect(workflow).toContain('pull-requests: read')
+        expect(workflow).toContain('needs: [preflight, backup]')
+    })
+
+    it('loads candidate code only from the exact SHA allowlist, never candidate workflow YAML', () => {
+        expect(workflow).toContain('ref: refs/heads/main')
+        expect(workflow).toContain('extract-exact-candidate-sources.sh')
+        expect(workflow).toContain('exact-pr-artifact-identity.mjs')
+        expect(candidateExtractor).toContain('git -C "$repo_root" archive --format=tar "$candidate_sha" -- "${archive_paths[@]}"')
+        expect(candidateExtractor).toContain('scripts/backup/runtime-manifest.sql')
+        expect(candidateExtractor).toContain('workflow_yaml=not_loaded')
+        expect(candidateExtractor).not.toMatch(/git archive[\s\S]*\.github\/workflows/)
+        expect(workflow).not.toContain('checkout@v4\n        with:\n          ref: ${{ inputs')
     })
 
     it('uses only Owner-configured existing target/key contracts', () => {

@@ -11,6 +11,14 @@ on:
         required: true
         default: true
         type: boolean
+      pr_number:
+        description: Exact open PR number to validate before the protected rehearsal
+        required: false
+        type: string
+      candidate_sha:
+        description: Exact current head SHA of the open PR
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -23,9 +31,92 @@ env:
   POSTGRES_IMAGE: postgres:17.6-bookworm@sha256:45cd22f8d32e189d245403954882f88e7a8714301fda80dab6da90f1265b25a3
 
 jobs:
+  preflight:
+    name: Validate protected exact PR candidate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      mode: ${{ steps.mode.outputs.mode }}
+      pr_number: ${{ steps.mode.outputs.pr_number }}
+      candidate_sha: ${{ steps.mode.outputs.candidate_sha }}
+      control_sha: ${{ steps.mode.outputs.control_sha }}
+    steps:
+      - name: Require the trusted main workflow revision
+        uses: actions/checkout@v4
+        with:
+          ref: refs/heads/main
+          persist-credentials: false
+
+      - name: Resolve and validate the exact PR candidate
+        id: mode
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REF: ${{ github.ref }}
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          PR_NUMBER: ${{ inputs.pr_number }}
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+          REHEARSE_RESTORE: ${{ inputs.rehearse_restore }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = 'refs/heads/main'
+          control_sha="$(git rev-parse HEAD)"
+          test "$control_sha" = "$GITHUB_SHA"
+
+          if [[ "$GITHUB_EVENT_NAME" == 'schedule' ]]; then
+            test -z "$PR_NUMBER"
+            test -z "$CANDIDATE_SHA"
+            {
+              echo 'mode=scheduled'
+              echo 'pr_number='
+              echo 'candidate_sha='
+              echo "control_sha=$control_sha"
+            } >> "$GITHUB_OUTPUT"
+            echo 'LEO552_PREFLIGHT status=PASS mode=scheduled'
+            exit 0
+          fi
+
+          test "$GITHUB_EVENT_NAME" = 'workflow_dispatch'
+          if [[ -z "$PR_NUMBER" && -z "$CANDIDATE_SHA" ]]; then
+            {
+              echo 'mode=legacy-manual'
+              echo 'pr_number='
+              echo 'candidate_sha='
+              echo "control_sha=$control_sha"
+            } >> "$GITHUB_OUTPUT"
+            echo 'LEO552_PREFLIGHT status=PASS mode=legacy-manual'
+            exit 0
+          fi
+
+          test -n "$PR_NUMBER" && test -n "$CANDIDATE_SHA"
+          test "$REHEARSE_RESTORE" = 'true'
+          pr_json="$RUNNER_TEMP/leo552-pr.json"
+          gh api --method GET "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" >"$pr_json"
+          pr_head_sha="$(jq -r '.head.sha // empty' "$pr_json")"
+          candidate_reachable='false'
+          if [[ "$pr_head_sha" =~ ^[0-9a-f]{40}$ ]] \
+            && git fetch --no-tags --depth=1 origin "$pr_head_sha" >/dev/null 2>&1 \
+            && git merge-base --is-ancestor "$CANDIDATE_SHA" "$pr_head_sha"; then
+            candidate_reachable='true'
+          fi
+          node scripts/backup/exact-pr-preflight.mjs validate \
+            "$pr_json" "$GITHUB_REPOSITORY" "$PR_NUMBER" "$CANDIDATE_SHA" "$candidate_reachable"
+          {
+            echo 'mode=exact-pr-head'
+            echo "pr_number=$PR_NUMBER"
+            echo "candidate_sha=$CANDIDATE_SHA"
+            echo "control_sha=$control_sha"
+          } >> "$GITHUB_OUTPUT"
+
   backup:
     name: Encrypt and retain the runtime logical backup
-    if: github.ref == 'refs/heads/main'
+    needs: preflight
+    if: needs.preflight.result == 'success' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     environment: runtime-backup
@@ -41,8 +132,22 @@ jobs:
           set -euo pipefail
           test "$GITHUB_REF" = "refs/heads/main"
 
-      - name: Check out the exact scheduled revision
+      - name: Check out the trusted main control revision
         uses: actions/checkout@v4
+        with:
+          ref: refs/heads/main
+          persist-credentials: false
+
+      - name: Extract only the exact candidate rehearsal sources
+        if: needs.preflight.outputs.mode == 'exact-pr-head'
+        env:
+          CANDIDATE_SHA: ${{ needs.preflight.outputs.candidate_sha }}
+          CANDIDATE_SOURCE_ROOT: ${{ runner.temp }}/leo552-candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --depth=1 origin "$CANDIDATE_SHA" >/dev/null 2>&1
+          bash scripts/backup/extract-exact-candidate-sources.sh "$CANDIDATE_SHA" "$CANDIDATE_SOURCE_ROOT"
 
       - name: Install pinned backup tooling
         shell: bash
@@ -58,10 +163,29 @@ jobs:
           BACKUP_RETENTION_DAYS: ${{ vars.BACKUP_RETENTION_DAYS }}
           BACKUP_ID: leo540-${{ github.run_id }}
           OUTPUT_DIR: ${{ runner.temp }}/leo540-backup
+          LEO552_SOURCE_MODE: ${{ needs.preflight.outputs.mode }}
+          BACKUP_SOURCE_ROOT: ${{ github.workspace }}
         shell: bash
         run: |
           set -euo pipefail
-          bash scripts/backup/create-encrypted-backup.sh
+          if [[ "$LEO552_SOURCE_MODE" == 'exact-pr-head' ]]; then
+            BACKUP_SOURCE_ROOT="$RUNNER_TEMP/leo552-candidate"
+          fi
+          bash "$BACKUP_SOURCE_ROOT/scripts/backup/create-encrypted-backup.sh"
+
+      - name: Bind exact candidate identity into the artifact manifest
+        if: needs.preflight.outputs.mode == 'exact-pr-head'
+        env:
+          OUTPUT_DIR: ${{ runner.temp }}/leo540-backup
+          PR_NUMBER: ${{ needs.preflight.outputs.pr_number }}
+          CANDIDATE_SHA: ${{ needs.preflight.outputs.candidate_sha }}
+          CONTROL_SHA: ${{ needs.preflight.outputs.control_sha }}
+          WORKFLOW_RUN_ID: ${{ github.run_id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/backup/exact-pr-artifact-identity.mjs bind \
+            "$OUTPUT_DIR" "$PR_NUMBER" "$CANDIDATE_SHA" "$CONTROL_SHA" "$WORKFLOW_RUN_ID"
 
       - name: Upload the encrypted bundle with approved retention
         id: bundle
@@ -83,10 +207,13 @@ jobs:
             echo '- Database rows, credentials, and encryption material: not emitted'
           } >> "$GITHUB_STEP_SUMMARY"
           echo "artifact_name=leo540-runtime-backup-${{ github.run_id }}" >> "$GITHUB_OUTPUT"
+          if [[ '${{ needs.preflight.outputs.mode }}' == 'exact-pr-head' ]]; then
+            echo '- Exact candidate identity: PR number, candidate SHA, trusted main control SHA, run ID, timestamp, and manifest version are bound in the sanitized manifest.' >> "$GITHUB_STEP_SUMMARY"
+          fi
 
   restore:
     name: Rehearse the encrypted backup in isolated PostgreSQL
-    needs: backup
+    needs: [preflight, backup]
     if: needs.backup.result == 'success' && ((github.event_name == 'schedule' && github.event.schedule == '17 3 * * 0') || (github.event_name == 'workflow_dispatch' && inputs.rehearse_restore == true)) && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     timeout-minutes: 35
@@ -101,8 +228,22 @@ jobs:
           set -euo pipefail
           test "$GITHUB_REF" = "refs/heads/main"
 
-      - name: Check out the exact scheduled revision
+      - name: Check out the trusted main control revision
         uses: actions/checkout@v4
+        with:
+          ref: refs/heads/main
+          persist-credentials: false
+
+      - name: Extract only the exact candidate rehearsal sources
+        if: needs.preflight.outputs.mode == 'exact-pr-head'
+        env:
+          CANDIDATE_SHA: ${{ needs.preflight.outputs.candidate_sha }}
+          CANDIDATE_SOURCE_ROOT: ${{ runner.temp }}/leo552-candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --depth=1 origin "$CANDIDATE_SHA" >/dev/null 2>&1
+          bash scripts/backup/extract-exact-candidate-sources.sh "$CANDIDATE_SHA" "$CANDIDATE_SOURCE_ROOT"
 
       - name: Install pinned restore tooling
         shell: bash
@@ -119,12 +260,33 @@ jobs:
           run-id: ${{ github.run_id }}
           github-token: ${{ github.token }}
 
+      - name: Verify exact candidate artifact identity
+        if: needs.preflight.outputs.mode == 'exact-pr-head'
+        env:
+          BACKUP_DIR: ${{ runner.temp }}/leo540-backup
+          PR_NUMBER: ${{ needs.preflight.outputs.pr_number }}
+          CANDIDATE_SHA: ${{ needs.preflight.outputs.candidate_sha }}
+          CONTROL_SHA: ${{ needs.preflight.outputs.control_sha }}
+          WORKFLOW_RUN_ID: ${{ github.run_id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/backup/exact-pr-artifact-identity.mjs verify \
+            "$BACKUP_DIR" "$PR_NUMBER" "$CANDIDATE_SHA" "$CONTROL_SHA" "$WORKFLOW_RUN_ID"
+
       - name: Restore, compare manifests, and validate the isolated target
         env:
           BACKUP_DIR: ${{ runner.temp }}/leo540-backup
           AGE_IDENTITY: ${{ secrets.BACKUP_AGE_PRIVATE_KEY }}
+          LEO552_SOURCE_MODE: ${{ needs.preflight.outputs.mode }}
+          RESTORE_SOURCE_ROOT: ${{ github.workspace }}
         shell: bash
-        run: bash scripts/backup/rehearse-isolated-restore.sh
+        run: |
+          set -euo pipefail
+          if [[ "$LEO552_SOURCE_MODE" == 'exact-pr-head' ]]; then
+            RESTORE_SOURCE_ROOT="$RUNNER_TEMP/leo552-candidate"
+          fi
+          bash "$RESTORE_SOURCE_ROOT/scripts/backup/rehearse-isolated-restore.sh"
 
       - name: Record sanitized restore result
         run: |
@@ -139,7 +301,7 @@ jobs:
 
   alert:
     name: Exercise backup failure and alert contract
-    needs: [backup, restore]
+    needs: [preflight, backup, restore]
     if: always() && (needs.backup.result == 'failure' || needs.restore.result == 'failure')
     runs-on: ubuntu-24.04
     environment: runtime-backup
