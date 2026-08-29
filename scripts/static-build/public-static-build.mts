@@ -344,7 +344,11 @@ async function writeRoute(output: string, routePath: string, content: string, fi
 }
 
 async function emitStaticUiAssets(output: string, files: Set<string>) {
-  await cp(path.resolve(process.cwd(), 'public'), output, { recursive: true })
+  await cp(path.resolve(process.cwd(), 'public'), output, {
+    recursive: true,
+    // Route documents are generated below so every Preview HTML file has noindex controls.
+    filter: (source) => !source.endsWith('.html'),
+  })
   const globalsPath = path.resolve(process.cwd(), 'src/app/globals.css')
   const globals = await readFile(globalsPath, 'utf8')
   const compiled = await postcss([tailwindcss()]).process(globals, { from: globalsPath })
