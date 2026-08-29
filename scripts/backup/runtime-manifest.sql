@@ -83,9 +83,40 @@ WITH table_objects AS (
   JOIN pg_class c ON c.oid = p.polrelid
   JOIN pg_namespace n ON n.oid = c.relnamespace
   WHERE n.nspname IN ('dpg_app', 'dpg_control')
+), restore_count_objects AS (
+  SELECT jsonb_build_array(
+    jsonb_build_object(
+      'tableName', 'blog_categories',
+      'rowCount', (SELECT count(*) FROM dpg_app.blog_categories)
+    ),
+    jsonb_build_object(
+      'tableName', 'blog_post_tags',
+      'rowCount', (SELECT count(*) FROM dpg_app.blog_post_tags)
+    ),
+    jsonb_build_object(
+      'tableName', 'blog_posts',
+      'rowCount', (SELECT count(*) FROM dpg_app.blog_posts)
+    ),
+    jsonb_build_object(
+      'tableName', 'blog_tags',
+      'rowCount', (SELECT count(*) FROM dpg_app.blog_tags)
+    ),
+    jsonb_build_object(
+      'tableName', 'product_images',
+      'rowCount', (SELECT count(*) FROM dpg_app.product_images)
+    ),
+    jsonb_build_object(
+      'tableName', 'products',
+      'rowCount', (SELECT count(*) FROM dpg_app.products)
+    ),
+    jsonb_build_object(
+      'tableName', 'publishing_blog_post_media',
+      'rowCount', (SELECT count(*) FROM dpg_app.publishing_blog_post_media)
+    )
+  ) AS value
 )
 SELECT jsonb_build_object(
-  'formatVersion', 1,
+  'formatVersion', 2,
   'target', (
     SELECT jsonb_build_object(
       'projectName', project_name,
@@ -119,7 +150,8 @@ SELECT jsonb_build_object(
       'sourceAuthority', source_authority
     ) ORDER BY table_name)
     FROM dpg_control.leo538_restore_manifest
-  ), '[]'::jsonb)
+  ), '[]'::jsonb),
+  'restoreCounts', restore_count_objects.value
   )::text
   FROM table_objects, index_objects, constraint_objects, view_objects,
-       function_objects, trigger_objects, policy_objects;
+       function_objects, trigger_objects, policy_objects, restore_count_objects;

@@ -24,6 +24,36 @@ describe('backup restore rehearsal workflow contract', () => {
         expect(workflow).toContain('actions/upload-artifact@v4')
     })
 
+    it('keeps scheduled and legacy manual behavior while adding exact-head inputs', () => {
+        expect(workflow).toContain('pr_number:')
+        expect(workflow).toContain('candidate_sha:')
+        expect(workflow).toContain("mode=legacy-manual")
+        expect(workflow).toContain("mode=scheduled")
+        expect(workflow).toContain("github.event_name == 'schedule' && github.event.schedule == '17 3 * * 0'")
+        expect(workflow).toContain("github.event_name == 'workflow_dispatch' && inputs.rehearse_restore == true")
+        expect(workflow).toContain("test \"$GITHUB_REF\" = 'refs/heads/main'")
+    })
+
+    it('requires the protected Environment for backup, restore, and alert jobs', () => {
+        expect(workflow.match(/environment: runtime-backup/g)).toHaveLength(3)
+        expect(workflow).toContain('pull-requests: read')
+        expect(workflow).toContain('needs: [preflight, backup]')
+    })
+
+    it('keeps every protected executable trusted to main and never loads candidate code', () => {
+        expect(workflow).toContain('ref: refs/heads/main')
+        expect(workflow).toContain('bash scripts/backup/create-encrypted-backup.sh')
+        expect(workflow).toContain('bash scripts/backup/rehearse-isolated-restore.sh')
+        expect(workflow).toContain('exact-pr-artifact-identity.mjs')
+        expect(workflow).not.toContain('git archive')
+        expect(workflow).not.toContain('extract-exact-candidate-sources.sh')
+        expect(workflow).not.toContain('CANDIDATE_SOURCE_ROOT')
+        expect(workflow).not.toContain('BACKUP_SOURCE_ROOT')
+        expect(workflow).not.toContain('RESTORE_SOURCE_ROOT')
+        expect(workflow).not.toMatch(/candidate.*(?:bash|node|\.sh|\.mjs)/i)
+        expect(workflow).not.toContain('checkout@v4\n        with:\n          ref: ${{ inputs')
+    })
+
     it('uses only Owner-configured existing target/key contracts', () => {
         expect(workflow).toContain('SUPABASE_RUNTIME_DATABASE_URL')
         expect(workflow).toContain('BACKUP_AGE_RECIPIENT')

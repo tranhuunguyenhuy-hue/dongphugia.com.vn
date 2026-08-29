@@ -35,6 +35,44 @@ The artifact contains no plaintext dump. The manifest contains no row values,
 credentials, URLs, tokens, passwords, or key material. The checksum file covers
 both the encrypted archive and the manifest.
 
+## Protected exact-PR pre-merge rehearsal
+
+The same `runtime-backup.yml` workflow has a second, narrowly bounded manual
+mode for an Owner-approved open PR. The operator supplies both `pr_number` and
+`candidate_sha`, while dispatching the workflow from `main`. An unprotected
+preflight resolves the PR through GitHub and fails closed unless all of these
+facts match the current state: this repository, an open PR, base `main`, a
+same-repository head, the supplied SHA as the current head SHA, and a reachable
+candidate commit. Missing, stale, closed, foreign/fork, base-mismatched, or
+PR/SHA-mismatched input never starts a `runtime-backup` Environment job.
+
+The workflow definition and all executable control scripts are checked out
+from trusted `main`. Exact mode never fetches, archives, checks out, parses, or
+executes candidate workflow YAML, shell, SQL, or Node/JavaScript files. The
+candidate SHA is used only by the unprotected PR preflight and by the
+sanitized artifact identity binder/verifier. Backup creation always invokes
+the trusted-main `create-encrypted-backup.sh`; decryption, restore, manifest
+comparison, and semantic validation always invoke trusted-main controls. The
+`runtime-backup` GitHub Environment and its required Owner review remain
+mandatory for the actual backup and restore jobs.
+
+Manifest format v2 and the generic restore semantic contract are trusted-main
+controls in this delivery. They bind mutable restore aggregate counts to the
+exact encrypted backup and emit only aggregate validation results; they do not
+execute candidate code. The generic v2 changes in LEO-543/PR #127 therefore
+require later reconciliation after this control lands, while the LEO-543
+scheduler and migration changes remain separate.
+
+Before artifact upload, a trusted main-side binder adds a sanitized
+`artifactIdentity` object to the manifest containing the PR number, exact
+candidate SHA, trusted workflow/main control SHA, workflow run ID, backup
+timestamp, and manifest version. It rewrites the existing checksum sidecar;
+the restore job verifies this identity before decrypting. Existing age
+encryption, checksum verification, PostgreSQL 17 network-disabled/tmpfs-only
+restore, manifest comparison, semantic validation, retention, and alert paths
+remain in force. Scheduled runs and legacy main-only manual dispatches use the
+original source path and inputs.
+
 ## Key and secret handling
 
 The workflow consumes only the Owner-approved `runtime-backup` GitHub
@@ -97,16 +135,19 @@ backup timestamp.
 
 ## Product, Family/MS885, and Blog validation
 
-The restore acceptance SQL returns only a generic PASS or failure class:
+The restore acceptance SQL returns one sanitized aggregate JSON report, which
+the trusted-main `runtime-validation-contract.mjs` validates. It returns only
+PASS or a generic failure class at the workflow boundary:
 
-- Product table presence, the accepted 17,752 Product rows, 110,321 Product
-  images, and unique Product SKU identity are checked.
+- Product table presence and unique Product SKU identity are checked. Product,
+  image, Blog, and managed-media aggregate counts are recorded in manifest v2
+  and compared to the exact backup artifact, rather than hard-coding mutable
+  row totals in the semantic validator.
 - The Product Family contract requires `toto:ms885`, 18 memberships, the
   accepted 2/13/3 group distribution, exactly the two open gaps
   `MS885DW4#XW` and `MS885DW18#XW`, and no `MS885DE6#XW` membership.
-- Blog tables, the accepted 6/17/0/0/92 category/post/tag/post-tag/Managed
-  Media counts, and all post/category, post/tag, and post/Managed Media links
-  are checked for orphaned relations.
+- Blog tables and all post/category, post/tag, and post/Managed Media links are
+  checked for orphaned relations.
 
 The SQL does not print Product SKUs, Blog titles/content, URLs, or any other
 row. The canonical Product/Family contract remains
