@@ -1,0 +1,58 @@
+name: LEO-543 PostgreSQL acceptance
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/20260829100000_leo543_scheduler.sql'
+      - 'supabase/tests/leo543_scheduler.sql'
+      - 'scripts/db/leo543-postgres-acceptance.sh'
+      - '.github/workflows/leo543-postgres-acceptance.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: leo543-postgres-acceptance-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  postgres-17:
+    name: PostgreSQL 17 migration and privilege acceptance
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.head_ref, 'codex/leo-543-')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: leo543_acceptance
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d leo543_acceptance"
+          --health-interval 2s
+          --health-timeout 5s
+          --health-retries 20
+    steps:
+      - name: Checkout exact PR revision
+        uses: actions/checkout@v4
+
+      - name: Run actual LEO-543 migration and acceptance SQL
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/leo543_acceptance
+        run: bash scripts/db/leo543-postgres-acceptance.sh
+
+      - name: Record ephemeral teardown boundary
+        if: always()
+        run: |
+          {
+            echo '### LEO-543 PostgreSQL acceptance'
+            echo '- PostgreSQL engine: 17 ephemeral service'
+            echo '- Executed: actual migration and actual supabase/tests/leo543_scheduler.sql'
+            echo '- Optional pg_cron/pg_net/Vault: not installed or activated'
+            echo '- Teardown: GitHub Actions removes the job-scoped service container'
+          } >> "$GITHUB_STEP_SUMMARY"

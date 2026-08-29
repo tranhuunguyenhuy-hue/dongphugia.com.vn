@@ -11,6 +11,14 @@ const acceptance = readFileSync(
     resolve(root, 'supabase/tests/leo543_scheduler.sql'),
     'utf8',
 )
+const postgresAcceptance = readFileSync(
+    resolve(root, 'scripts/db/leo543-postgres-acceptance.sh'),
+    'utf8',
+)
+const postgresWorkflow = readFileSync(
+    resolve(root, '.github/workflows/leo543-postgres-acceptance.yml'),
+    'utf8',
+)
 
 describe('LEO-543 scheduler source contract', () => {
     it('keeps the isolated target and activation gates fail-closed', () => {
@@ -62,5 +70,17 @@ describe('LEO-543 scheduler source contract', () => {
         expect(acceptance).toContain("has_function_privilege('dpg_readonly', 'dpg_control.leo543_scheduler_tick()', 'EXECUTE')")
         expect(acceptance).not.toMatch(/select\s+.*decrypted_secret/i)
         expect(acceptance).not.toMatch(/insert into dpg_app\.|update dpg_app\.|delete from dpg_app\./i)
+    })
+
+    it('runs the actual migration and SQL acceptance against an ephemeral PostgreSQL 17 engine', () => {
+        expect(postgresWorkflow).toContain('image: postgres:17')
+        expect(postgresWorkflow).toContain('scripts/db/leo543-postgres-acceptance.sh')
+        expect(postgresWorkflow).toContain('startsWith(github.head_ref, \'codex/leo-543-\')')
+        expect(postgresWorkflow).not.toMatch(/supabase_apply_migration|supabase_execute_sql|wrangler deploy/i)
+        expect(postgresAcceptance).toContain('supabase/migrations/20260829100000_leo543_scheduler.sql')
+        expect(postgresAcceptance).toContain('supabase/tests/leo543_scheduler.sql')
+        expect(postgresAcceptance).toContain('create role')
+        expect(postgresAcceptance).toContain('target_contract')
+        expect(postgresAcceptance).not.toMatch(/vault|cron\.schedule|net\.http_post/i)
     })
 })
