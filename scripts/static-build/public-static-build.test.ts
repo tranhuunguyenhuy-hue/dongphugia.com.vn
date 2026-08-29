@@ -121,6 +121,7 @@ describe('canonical public static build', () => {
       const headers = await readFile(path.join(output, '_headers'), 'utf8')
       expect(headers).toContain('X-Robots-Tag: noindex, nofollow')
       expect(headers).toContain('https://media.example.com')
+      expect(headers).toContain('https://media.dongphugia.vn')
       expect(headers).toContain('https://www.transparenttextures.com')
       expect(html).toContain('data-static-ui="header"')
       expect(html).toContain('data-static-ui="footer"')
