@@ -371,8 +371,9 @@ function objectPath(
     assetId: string,
     variant: MediaVariant,
     sourceHash: string,
+    outputHash: string,
 ) {
-    return `publishing/${identityId}/${assetId}/${sourceHash}/${variant.id}.webp`
+    return `publishing/${identityId}/${assetId}/${sourceHash}/${outputHash}/${variant.id}.webp`
 }
 
 async function sha256(
@@ -659,15 +660,15 @@ export default {
             }
 
             const [deliveryBody, digestBody] = imageResponse.body.tee()
-            const outputDigestPromise = sha256(digestBody, MAX_EXISTING_OBJECT_BYTES)
+            const outputDigest = await sha256(digestBody, MAX_EXISTING_OBJECT_BYTES)
             const storagePath = objectPath(
                 target.identityId,
                 target.assetId,
                 target.variant,
                 actualSourceHash,
+                outputDigest,
             )
             const existingDigest = await existingObjectDigest(config, storagePath)
-            const outputDigest = await outputDigestPromise
             if (existingDigest !== null) {
                 await deliveryBody.cancel()
                 if (existingDigest !== outputDigest) {

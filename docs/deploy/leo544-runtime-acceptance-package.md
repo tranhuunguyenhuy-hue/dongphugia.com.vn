@@ -26,16 +26,17 @@ No public DNS or custom-domain change is proposed.
 | Storage zone | `PUBLISHING_BUNNY_STORAGE_ZONE_NAME` is blank in `.env.example`; tests use only `preview-zone`. | Exact existing Preview zone is `UNKNOWN`; do not invent or create one. |
 | CDN host | Source allowlist and runbook value: `media.dongphugia.vn`. | Proposed exact host only if Owner confirms it is acceptable for synthetic non-Production objects; no DNS change. |
 | Credential | `PUBLISHING_BUNNY_STORAGE_API_KEY` is referenced by name only; its existence/value was not inspected. | Existing credential reuse is `UNKNOWN`; no rotation or creation is proposed. |
-| Write prefix | The Worker now requires `identityId=leo544-acceptance`, a unique `assetId=run-<run-id>`, and inserts the computed source SHA-256 before the variant. | Exact synthetic-only prefix: `publishing/leo544-acceptance/run-<run-id>/<source-sha256>/{variant}.webp`. Never use a canonical identity or asset ID. |
+| Write prefix | The Worker now requires `identityId=leo544-acceptance`, a unique `assetId=run-<run-id>`, and inserts computed source and transformed-output SHA-256 values before the variant. | Exact synthetic-only prefix: `publishing/leo544-acceptance/run-<run-id>/<source-sha256>/<output-sha256>/{variant}.webp`. Never use a canonical identity or asset ID. |
 
 The Bunny HTTP API documents PUT upload, GET file reads, and an optional SHA-256
 `Checksum` header, but no create-only or conditional-write operation. The
-source therefore uses the computed source SHA-256 as a content-addressed path
-component, sends the transformed output checksum, and performs a bounded GET
-preflight. A matching existing object returns success without PUT; a different
-existing object fails closed. Concurrent identical requests may both observe a
-404 and PUT the same bytes to the same content-addressed path; concurrent
-different content cannot select the same path without a SHA-256 collision.
+source therefore uses computed source and transformed-output SHA-256 values as
+content-addressed path components, sends the transformed output checksum, and
+performs a bounded GET preflight. A matching existing object returns success
+without PUT; a different existing object fails closed. Concurrent identical
+requests may both observe a 404 and PUT the same bytes to the same
+content-addressed path; concurrent different output bytes cannot select the
+same path without a SHA-256 collision, including across Worker versions.
 
 ## 3. Credentials and secrets
 
@@ -70,10 +71,10 @@ Use real JPEG, PNG, and WebP files delivered as bounded
 | Input bound | A body over 5 MiB fails with `MEDIA_SOURCE_TOO_LARGE` before Images/Bunny delivery. |
 | Seven variants | The seven locked variants are each exercised; no eighth variant is accepted. |
 | WebP output | Output is `image/webp` and uses the reviewed output quality; no source bytes or credentials are logged. |
-| Path contract | Every output is under `publishing/leo544-acceptance/run-<run-id>/<source-sha256>/`; the CDN host remains unchanged and the path now explicitly carries content identity. |
+| Path contract | Every output is under `publishing/leo544-acceptance/run-<run-id>/<source-sha256>/<output-sha256>/`; the CDN host remains unchanged and the path explicitly carries source and output identity. |
 | Retry | A bounded transient 5xx/timeout test, if an Owner-approved Bunny fault-injection method exists, causes at most one retry with the same path and body. Without such a method, runtime retry proof is `UNKNOWN`; unit coverage remains the evidence. |
 | Duplicate/idempotent request | Repeating the same source/variant resolves to the same content-addressed path; an existing matching object succeeds without a second PUT. |
-| No overwrite | A bounded GET preflight hashes an existing object. Matching bytes succeed without PUT; different bytes return `MEDIA_STORAGE_CONFLICT`; no canonical identity is accepted. The content-addressed path is the race-safety primitive because different source bytes select different paths. |
+| No overwrite | A bounded GET preflight hashes an existing object. Matching bytes succeed without PUT; different bytes return `MEDIA_STORAGE_CONFLICT`; no canonical identity is accepted. Source and output content-addressing is the race-safety primitive because different output bytes select different paths. |
 | Failure isolation | Transform/digest/Bunny failure produces no database/reference update and no canonical-media change. A successfully written synthetic object may be orphaned and is handled only by the cleanup rule below. |
 | URL contract | Existing CDN host configuration and transform endpoint remain unchanged; this source-only acceptance contract uses a content-addressed synthetic path and never writes canonical media. No DNS or custom-domain action occurs. |
 | Usage measurement | Three formats × seven unique variants = at most 21 unique transformations for the matrix. `.info()` calls are free per the current Images binding documentation; measure the actual account usage before/after and stop if the approved allowance/cost boundary is exceeded. |
@@ -114,7 +115,7 @@ https://developers.cloudflare.com/images/optimization/binding/.
 > without retrieving or rotating them. Permit one reviewed Worker version,
 > `IMAGES` binding reuse, and a non-Production `workers.dev` mechanism only;
 > permit Bunny PUTs only under
-> `publishing/leo544-acceptance/run-<run-id>/<source-sha256>/` for synthetic JPEG/PNG/WebP
+> `publishing/leo544-acceptance/run-<run-id>/<source-sha256>/<output-sha256>/` for synthetic JPEG/PNG/WebP
 > fixtures. No new resource, credential, binding, custom domain, DNS change,
 > canonical media overwrite/deletion, database write, Production action, or
 > merge is authorized. Remove/rollback only the exact temporary Worker

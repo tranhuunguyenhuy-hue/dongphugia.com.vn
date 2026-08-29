@@ -167,9 +167,9 @@ describe('LEO-544 Cloudflare Images stream transform', () => {
             delivery: 'bunny',
             format: 'webp',
             height: 360,
-            path: `publishing/leo544-acceptance/run-test/${await digest(DEFAULT_WEBP_SOURCE)}/thumbnail.w640.webp`,
+            path: `publishing/leo544-acceptance/run-test/${await digest(DEFAULT_WEBP_SOURCE)}/${await digest('webp-bytes')}/thumbnail.w640.webp`,
             purpose: 'thumbnail',
-            url: `https://media.dongphugia.vn/publishing/leo544-acceptance/run-test/${await digest(DEFAULT_WEBP_SOURCE)}/thumbnail.w640.webp`,
+            url: `https://media.dongphugia.vn/publishing/leo544-acceptance/run-test/${await digest(DEFAULT_WEBP_SOURCE)}/${await digest('webp-bytes')}/thumbnail.w640.webp`,
             variant: 'thumbnail.w640',
             width: 640,
         })
