@@ -88,6 +88,12 @@ describe('canonical public static build', () => {
       expect(result.redirects.some((redirect) => redirect.source === '/tin-tuc')).toBe(true)
       expect(result.report.routes.brands).toBe(1)
       await expect(readFile(path.join(output, 'thuong-hieu', 'toto', 'index.html'), 'utf8')).resolves.toContain('Sản phẩm 1')
+      const productHtml = await readFile(path.join(output, 'thiet-bi-ve-sinh', 'sub-0-0', 'product-1', 'index.html'), 'utf8')
+      expect(productHtml).toContain('data-static-ui="application-shell"')
+      expect(productHtml).toContain('data-static-ui="product-detail"')
+      expect(productHtml).toContain('/assets/static-ui.css')
+      await expect(readFile(path.join(output, 'assets', 'static-ui.css'), 'utf8')).resolves.toContain('.dpg-static-header')
+      await expect(readFile(path.join(output, 'images', 'Logo.png'))).resolves.toBeDefined()
       expect(result.inventory.fileCount).toBeGreaterThanOrEqual(STATIC_CONTENT_ROUTES.length + EXPECTED_CANONICAL_PRODUCT_COUNT)
       expect(result.inventory.fileCount).toBeLessThan(20_000)
       expect(result.inventory.largestFile.bytes).toBeLessThan(25 * 1024 * 1024)
@@ -116,6 +122,8 @@ describe('canonical public static build', () => {
       expect(headers).toContain('X-Robots-Tag: noindex, nofollow')
       expect(headers).toContain('https://media.example.com')
       expect(headers).toContain('https://www.transparenttextures.com')
+      expect(html).toContain('data-static-ui="header"')
+      expect(html).toContain('data-static-ui="footer"')
     } finally {
       await rm(output, { recursive: true, force: true })
     }

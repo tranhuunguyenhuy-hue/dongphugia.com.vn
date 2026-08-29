@@ -77,11 +77,19 @@ export async function assertPreviewArtifact(output: string) {
     mode?: string
     routes?: { products?: number; blogPosts?: number }
     seo?: { bunnyMediaPreserved?: boolean }
+    ui?: { renderer?: string; stylesheet?: string; publicAssetsCopied?: boolean }
   }
   if (report.mode !== 'preview') throw new Error('PREVIEW_ARTIFACT_MODE_FAILED')
   if (report.routes?.products !== 4_033) throw new Error('PREVIEW_ARTIFACT_PRODUCT_COUNT_FAILED')
   if (!report.routes?.blogPosts || report.routes.blogPosts < 1) throw new Error('PREVIEW_ARTIFACT_BLOG_PRESERVATION_FAILED')
   if (report.seo?.bunnyMediaPreserved !== true) throw new Error('PREVIEW_ARTIFACT_BUNNY_PRESERVATION_FAILED')
+  if (report.ui?.renderer !== 'current-ui-static-adapter:v1' || report.ui.publicAssetsCopied !== true || report.ui.stylesheet !== '/assets/static-ui.css') {
+    throw new Error('PREVIEW_ARTIFACT_UI_REPORT_FAILED')
+  }
+  const stylesheetPath = path.join(root, report.ui.stylesheet.slice(1))
+  const stylesheet = await readFile(stylesheetPath, 'utf8').catch(() => null)
+  if (!stylesheet?.includes('.dpg-static-header')) throw new Error('PREVIEW_ARTIFACT_STYLESHEET_FAILED')
+  await stat(path.join(root, 'images', 'Logo.png')).catch(() => { throw new Error('PREVIEW_ARTIFACT_PUBLIC_ASSET_FAILED') })
 
   const checkedInventory = await inventory(root, files)
   if (checkedInventory.fileCount > PREVIEW_FILE_LIMIT) throw new Error('PREVIEW_ARTIFACT_FILE_LIMIT_FAILED')
@@ -94,12 +102,22 @@ export async function assertPreviewArtifact(output: string) {
 
   const htmlFiles = files.filter((file) => file.endsWith('.html'))
   if (htmlFiles.length === 0) throw new Error('PREVIEW_ARTIFACT_HTML_FAILED')
+  const layoutMarkers = new Set<string>()
   for (const file of htmlFiles) {
     const html = await readFile(file, 'utf8')
     if (!/<meta\s+name="robots"\s+content="noindex,nofollow"\s*\/?/i.test(html)) {
       throw new Error(`PREVIEW_ARTIFACT_NOINDEX_FAILED: ${path.relative(root, file)}`)
     }
+    if (!html.includes('data-static-ui="application-shell"') || !html.includes('data-static-ui="header"') || !html.includes('data-static-ui="footer"') || !html.includes('data-static-ui-asset="stylesheet"')) {
+      throw new Error(`PREVIEW_ARTIFACT_UI_LAYOUT_FAILED: ${path.relative(root, file)}`)
+    }
+    for (const marker of ['homepage-hero', 'category-listing', 'subcategory-listing', 'product-detail', 'brand-listing', 'blog-listing', 'blog-article']) {
+      if (html.includes(`data-static-ui="${marker}"`)) layoutMarkers.add(marker)
+    }
   }
+  const requiredLayoutMarkers = ['homepage-hero', 'category-listing', 'subcategory-listing', 'product-detail', 'brand-listing', 'blog-listing', 'blog-article']
+  if (requiredLayoutMarkers.some((marker) => !layoutMarkers.has(marker))) throw new Error('PREVIEW_ARTIFACT_REPRESENTATIVE_UI_FAILED')
+  if (!/@media\s*\(/.test(stylesheet)) throw new Error('PREVIEW_ARTIFACT_RESPONSIVE_STYLES_FAILED')
   const bunnyMediaReferenced = (await Promise.all(htmlFiles.map(async (file) => (await readFile(file, 'utf8')).includes('https://cdn.dongphugia.com.vn/')))).some(Boolean)
   if (!bunnyMediaReferenced) throw new Error('PREVIEW_ARTIFACT_BUNNY_REFERENCE_FAILED')
 
@@ -110,6 +128,7 @@ export async function assertPreviewArtifact(output: string) {
     noindex: { htmlMeta: true, headers: true, robots: true },
     blog: { staticPosts: report.routes.blogPosts },
     media: { bunnyMediaPreserved: true, bunnyMediaReferenced: true },
+    ui: { stylesheet: true, publicAssets: true, applicationShell: true, responsive: true, representativeMarkers: [...layoutMarkers].sort() },
   }
 }
 
@@ -140,7 +159,7 @@ export async function writeCandidateEvidence(input: CandidateEvidenceInput) {
       migrationManifestSha256,
       shadowContractSha256: createHash('sha256').update(shadowContractBytes).digest('hex'),
     },
-    artifact: { contract: contract.contract, mode: 'preview', ...contract.inventory, htmlFiles: contract.htmlFiles, blog: contract.blog, media: contract.media },
+    artifact: { contract: contract.contract, mode: 'preview', ...contract.inventory, htmlFiles: contract.htmlFiles, blog: contract.blog, media: contract.media, ui: contract.ui },
     noindex: contract.noindex,
     shadow,
   }

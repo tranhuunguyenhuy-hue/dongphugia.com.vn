@@ -1,8 +1,10 @@
-import { mkdir, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises'
+import { cp, mkdir, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { homedir, tmpdir } from 'node:os'
 import { performance } from 'node:perf_hooks'
 import { Client } from 'pg'
+import postcss from 'postcss'
+import tailwindcss from '@tailwindcss/postcss'
 import type { ProductTaxonAssignmentRef } from '../../src/lib/taxonomy-paths'
 
 const taxonomyImport = await import('../../src/lib/taxonomy-paths.ts')
@@ -18,6 +20,17 @@ const sanitizerModule = sanitizerImport as typeof sanitizerImport & {
 }
 const sanitizeRichHtml = sanitizerModule.sanitizeRichHtml ?? sanitizerModule.default?.sanitizeRichHtml
 if (!sanitizeRichHtml) throw new Error('STATIC_BUILD_SANITIZER_IMPORT_FAILED')
+const siteImport = await import('../../src/config/site.ts')
+const siteModule = siteImport as typeof siteImport & { default?: typeof siteImport }
+const siteConfig = siteModule.siteConfig ?? siteModule.default?.siteConfig
+const navigation = {
+  products: siteModule.NAV_PRODUCT_CATEGORIES ?? siteModule.default?.NAV_PRODUCT_CATEGORIES ?? [],
+  main: siteModule.NAV_MAIN_LINKS ?? siteModule.default?.NAV_MAIN_LINKS ?? [],
+  about: siteModule.NAV_ABOUT_LINKS ?? siteModule.default?.NAV_ABOUT_LINKS ?? [],
+  footerAbout: siteModule.NAV_FOOTER_ABOUT_LINKS ?? siteModule.default?.NAV_FOOTER_ABOUT_LINKS ?? [],
+  footerLegal: siteModule.NAV_FOOTER_LEGAL_LINKS ?? siteModule.default?.NAV_FOOTER_LEGAL_LINKS ?? [],
+}
+if (!siteConfig || navigation.products.length === 0) throw new Error('STATIC_BUILD_SITE_CONFIG_IMPORT_FAILED')
 const preservationImport = await import('../quality/product-family-preservation-contract.ts')
 const preservationModule = preservationImport as typeof preservationImport & {
   default?: typeof preservationImport
@@ -181,6 +194,24 @@ function safeJson(value: unknown) {
     .replaceAll('&', '\\u0026')
 }
 
+const STATIC_UI_STYLES = `
+/* Static adapter: composed from the current globals.css/Tailwind bundle and site config. */
+.dpg-static-shell{min-height:100vh;display:flex;flex-direction:column;background:#fff;color:#292524;font-family:"Be Vietnam Pro",Arial,sans-serif}.dpg-static-header{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid #e7e5e4}.dpg-static-container{width:min(1280px,100%);margin:0 auto;padding:0 24px}.dpg-static-nav{height:88px;display:flex;align-items:center;justify-content:space-between;gap:20px}.dpg-static-logo img{display:block;width:245px;max-width:42vw;height:auto}.dpg-static-menu{display:flex;align-items:center;gap:4px;list-style:none;margin:0;padding:0}.dpg-static-menu a,.dpg-static-action{display:inline-flex;align-items:center;padding:9px 16px;border-radius:999px;color:#44403c;font-size:15px;font-weight:500;text-decoration:none}.dpg-static-menu a:hover{background:#ecfeff;color:#25738e}.dpg-static-action{background:#225d73;color:#fff}.dpg-static-mobile-menu{display:none}.dpg-static-main{flex:1;padding:32px 0 72px}.dpg-static-breadcrumb{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 20px;color:#77716c;font-size:14px}.dpg-static-breadcrumb a{color:#57534e}.dpg-static-hero{overflow:hidden;border-radius:16px;background:#f5f5f4}.dpg-static-hero img{display:block;width:100%;aspect-ratio:16/6;object-fit:cover}.dpg-static-hero-copy{padding:28px}.dpg-static-eyebrow{color:#25738e;font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}.dpg-static-title{margin:8px 0 12px;font-family:"Playfair Display",Georgia,serif;font-size:clamp(30px,4vw,48px);line-height:1.15;color:#1c1917}.dpg-static-subtitle{max-width:720px;color:#57534e;font-size:16px;line-height:1.65}.dpg-static-section{margin-top:48px}.dpg-static-section-head{display:flex;align-items:end;justify-content:space-between;gap:16px;margin-bottom:20px}.dpg-static-section h2{margin:0;font-size:25px;line-height:1.3}.dpg-static-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:20px}.dpg-static-card{overflow:hidden;border:1px solid #e7e5e4;border-radius:12px;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.04);transition:transform .2s,box-shadow .2s}.dpg-static-card:hover{transform:translateY(-2px);box-shadow:0 10px 15px rgba(0,0,0,.09)}.dpg-static-card a{color:inherit;text-decoration:none}.dpg-static-card-media{display:grid;place-items:center;background:#fafaf9;aspect-ratio:1}.dpg-static-card-media img{width:100%;height:100%;object-fit:contain}.dpg-static-card-body{padding:14px}.dpg-static-card-label{color:#77716c;font-size:12px}.dpg-static-card-title{margin:6px 0 0;font-size:15px;line-height:1.45;font-weight:600}.dpg-static-price{margin-top:8px;color:#25738e;font-size:14px;font-weight:700}.dpg-static-listing{display:grid;grid-template-columns:230px minmax(0,1fr);gap:32px}.dpg-static-filter{border:1px solid #e7e5e4;border-radius:12px;padding:20px;height:max-content;background:#fafaf9}.dpg-static-filter h2{margin:0 0 14px;font-size:16px}.dpg-static-filter ul{display:grid;gap:10px;margin:0;padding:0;list-style:none}.dpg-static-filter a{color:#57534e;text-decoration:none;font-size:14px}.dpg-static-product{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:48px}.dpg-static-product-media{display:grid;place-items:center;min-height:380px;border:1px solid #e7e5e4;border-radius:16px;background:#fafaf9}.dpg-static-product-media img{max-width:100%;max-height:480px;object-fit:contain}.dpg-static-product-copy h1{margin:0 0 16px;font-size:32px;line-height:1.3}.dpg-static-product-copy .dpg-static-price{font-size:22px}.dpg-static-rich{margin-top:24px;color:#57534e;line-height:1.75}.dpg-static-rich img{max-width:100%;height:auto}.dpg-static-article{width:min(800px,100%);margin:0 auto}.dpg-static-article h1{font-family:"Playfair Display",Georgia,serif;font-size:clamp(30px,4vw,46px);line-height:1.2}.dpg-static-article-cover{width:100%;border-radius:16px;max-height:480px;object-fit:cover}.dpg-static-footer{background:#fafaf9;border-top:1px solid #e7e5e4;padding:64px 0 28px}.dpg-static-footer-grid{display:grid;grid-template-columns:1.4fr repeat(3,1fr);gap:40px}.dpg-static-footer img{width:184px;max-width:100%;height:auto}.dpg-static-footer h2{font-size:13px;letter-spacing:.12em;text-transform:uppercase}.dpg-static-footer ul{display:grid;gap:10px;list-style:none;margin:0;padding:0}.dpg-static-footer a,.dpg-static-footer p{color:#57534e;font-size:14px;line-height:1.6;text-decoration:none}.dpg-static-footer-bottom{margin-top:42px;padding-top:20px;border-top:1px solid #e7e5e4;color:#77716c;font-size:13px}@media(max-width:1023px){.dpg-static-menu,.dpg-static-action{display:none}.dpg-static-mobile-menu{display:inline-flex;color:#44403c;font-size:14px;text-decoration:none}.dpg-static-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.dpg-static-footer-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:700px){.dpg-static-container{padding:0 16px}.dpg-static-nav{height:72px}.dpg-static-main{padding:20px 0 48px}.dpg-static-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.dpg-static-listing,.dpg-static-product{grid-template-columns:1fr;gap:20px}.dpg-static-filter{display:none}.dpg-static-product-media{min-height:280px}.dpg-static-footer{padding-top:40px}.dpg-static-footer-grid{grid-template-columns:1fr;gap:28px}}
+`
+
+function navigationLinks(links: Array<{ label: string; href: string }>) {
+  return links.map((link) => `<li><a href="${htmlEscape(link.href)}">${htmlEscape(link.label)}</a></li>`).join('')
+}
+
+function staticHeader() {
+  return `<header class="dpg-static-header" data-static-ui="header"><div class="dpg-static-container"><div class="dpg-static-nav"><a class="dpg-static-logo" href="/" aria-label="Đông Phú Gia - Trang chủ"><img src="/images/Logo.png" width="245" height="48" alt="Đông Phú Gia"></a><nav aria-label="Menu chính"><ul class="dpg-static-menu">${navigationLinks(navigation.products)}${navigationLinks(navigation.about)}${navigationLinks(navigation.main)}</ul></nav><a class="dpg-static-action" href="/lien-he">Liên hệ</a><a class="dpg-static-mobile-menu" href="/tim-kiem">Tìm kiếm</a></div></div></header>`
+}
+
+function staticFooter() {
+  const contact = siteConfig.contact
+  return `<footer class="dpg-static-footer" data-static-ui="footer"><div class="dpg-static-container"><div class="dpg-static-footer-grid"><section><a href="/"><img src="/images/Logo.png" width="184" height="36" alt="Đông Phú Gia"></a><p>${htmlEscape(siteConfig.description)}</p></section><section><h2>Sản phẩm chính</h2><ul>${navigationLinks(navigation.products)}</ul></section><section><h2>Về chúng tôi</h2><ul>${navigationLinks(navigation.footerAbout)}</ul></section><section><h2>Liên hệ</h2><p>${htmlEscape(contact.fullAddress)}</p><p><a href="tel:${htmlEscape(contact.hotline)}">${htmlEscape(contact.hotlineLabel)}</a></p><p>${htmlEscape(contact.workingHours)}</p></section></div><div class="dpg-static-footer-bottom">© ${new Date().getFullYear()} ${htmlEscape(siteConfig.name)}. All rights reserved.</div></div></footer>`
+}
+
 function plainText(value: string | null | undefined, fallback: string) {
   const text = value?.replace(/<[^>]*>/g, ' ').replace(/&nbsp;/gi, ' ').replace(/\s+/g, ' ').trim()
   return (text || fallback).slice(0, 160)
@@ -265,7 +296,7 @@ function documentHtml(input: {
   const title = input.routePath === '/' || input.title.endsWith(' | Đông Phú Gia')
     ? input.title
     : `${input.title} | Đông Phú Gia`
-  return `<!doctype html>\n<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">\n<title>${htmlEscape(title)}</title>\n<meta name="description" content="${htmlEscape(input.description)}">\n<meta name="robots" content="${noindex ? 'noindex,nofollow' : 'index,follow'}">\n<link rel="canonical" href="${htmlEscape(canonical)}">\n<meta property="og:url" content="${htmlEscape(canonical)}">${input.imageUrl ? `\n<meta property="og:image" content="${htmlEscape(input.imageUrl)}">` : ''}${input.jsonLd ? `\n<script type="application/ld+json">${safeJson(input.jsonLd)}</script>` : ''}\n</head><body data-static-route="${htmlEscape(input.routePath)}"><main>${input.body}</main></body></html>\n`
+  return `<!doctype html>\n<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">\n<title>${htmlEscape(title)}</title>\n<meta name="description" content="${htmlEscape(input.description)}">\n<meta name="robots" content="${noindex ? 'noindex,nofollow' : 'index,follow'}">\n<link rel="canonical" href="${htmlEscape(canonical)}">\n<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="/assets/static-ui.css" data-static-ui-asset="stylesheet">\n<meta property="og:url" content="${htmlEscape(canonical)}">${input.imageUrl ? `\n<meta property="og:image" content="${htmlEscape(input.imageUrl)}">` : ''}${input.jsonLd ? `\n<script type="application/ld+json">${safeJson(input.jsonLd)}</script>` : ''}\n</head><body data-static-route="${htmlEscape(input.routePath)}"><div class="dpg-static-shell" data-static-ui="application-shell">${staticHeader()}<main id="main-content" class="dpg-static-main" data-static-ui="main">${input.body}</main>${staticFooter()}</div></body></html>\n`
 }
 
 function outputRelativePath(routePath: string) {
@@ -310,6 +341,14 @@ async function writeUnique(output: string, relativePath: string, content: string
 
 async function writeRoute(output: string, routePath: string, content: string, files: Set<string>) {
   await writeUnique(output, outputRelativePath(routePath), content, files)
+}
+
+async function emitStaticUiAssets(output: string, files: Set<string>) {
+  await cp(path.resolve(process.cwd(), 'public'), output, { recursive: true })
+  const globalsPath = path.resolve(process.cwd(), 'src/app/globals.css')
+  const globals = await readFile(globalsPath, 'utf8')
+  const compiled = await postcss([tailwindcss()]).process(globals, { from: globalsPath })
+  await writeUnique(output, 'assets/static-ui.css', `${compiled.css}\n${STATIC_UI_STYLES}\n`, files)
 }
 
 async function directoryInventory(root: string): Promise<StaticArtifactInventory> {
@@ -358,20 +397,12 @@ function staticRedirects(input: StaticBuildInput, productPaths: Map<string, stri
   return [...redirects.values()].sort((a, b) => a.source.localeCompare(b.source))
 }
 
-function productLinks(products: StaticProduct[], predicate: (product: StaticProduct) => boolean) {
-  const links = products
-    .filter(predicate)
-    .map((product) => `<li><a href="${htmlEscape(canonicalProductPath(product))}">${htmlEscape(product.name)}</a></li>`)
-    .join('')
-  return `<ul>${links}</ul>`
+function productCards(products: StaticProduct[], predicate: (product: StaticProduct) => boolean, limit = 12) {
+  return `<div class="dpg-static-grid" data-static-ui="product-grid">${products.filter(predicate).slice(0, limit).map((product) => `<article class="dpg-static-card" data-static-ui="product-card"><a href="${htmlEscape(canonicalProductPath(product))}"><div class="dpg-static-card-media">${product.image_main_url ? `<img src="${htmlEscape(product.image_main_url)}" alt="${htmlEscape(product.name)}" loading="lazy">` : `<img src="/images/product-placeholder.svg" alt="" loading="lazy">`}</div><div class="dpg-static-card-body"><div class="dpg-static-card-label">${htmlEscape(product.brand_name || product.category_name)}</div><h3 class="dpg-static-card-title">${htmlEscape(product.name)}</h3><div class="dpg-static-price">${asNumber(product.sale_price) || asNumber(product.list_price) ? 'Liên hệ báo giá' : 'Xem chi tiết'}</div></div></a></article>`).join('')}</div>`
 }
 
-function blogLinks(posts: StaticBlogPost[], predicate: (post: StaticBlogPost) => boolean) {
-  const links = posts
-    .filter(predicate)
-    .map((post) => `<li><a href="/blog/${htmlEscape(post.category_slug)}/${htmlEscape(post.slug)}">${htmlEscape(post.title)}</a></li>`)
-    .join('')
-  return `<ul>${links}</ul>`
+function blogCards(posts: StaticBlogPost[], predicate: (post: StaticBlogPost) => boolean, limit = 9) {
+  return `<div class="dpg-static-grid" data-static-ui="blog-grid">${posts.filter(predicate).slice(0, limit).map((post) => `<article class="dpg-static-card" data-static-ui="blog-card"><a href="/blog/${htmlEscape(post.category_slug)}/${htmlEscape(post.slug)}"><div class="dpg-static-card-media">${post.cover_image_url ? `<img src="${htmlEscape(post.cover_image_url)}" alt="${htmlEscape(post.title)}" loading="lazy">` : `<img src="/images/banner-1.editorial.w640.webp" alt="" loading="lazy">`}</div><div class="dpg-static-card-body"><div class="dpg-static-card-label">${htmlEscape(post.category_name)}</div><h3 class="dpg-static-card-title">${htmlEscape(post.title)}</h3></div></a></article>`).join('')}</div>`
 }
 
 export function validateStaticBuildInput(input: StaticBuildInput) {
@@ -410,6 +441,7 @@ export async function buildStaticArtifact(input: StaticBuildInput, options: Stat
   await mkdir(output, { recursive: true })
 
   const files = new Set<string>()
+  await emitStaticUiAssets(output, files)
   const productPathPairs = new Map<string, string>()
   for (let index = 0; index < input.products.length; index += 1) {
     const product = input.products[index]
@@ -440,7 +472,7 @@ export async function buildStaticArtifact(input: StaticBuildInput, options: Stat
           ],
         },
       ],
-      body: `<nav aria-label="Breadcrumb"><a href="/">Trang chủ</a> / <a href="/${htmlEscape(product.category_slug)}">${htmlEscape(product.category_name)}</a></nav><h1>${htmlEscape(product.name)}</h1>${product.image_main_url ? `<img src="${htmlEscape(product.image_main_url)}" alt="${htmlEscape(product.name)}">` : ''}${product.description ? `<div>${sanitizeRichHtml(product.description)}</div>` : ''}`,
+      body: `<div class="dpg-static-container"><nav class="dpg-static-breadcrumb" aria-label="Breadcrumb"><a href="/">Trang chủ</a><span>/</span><a href="/${htmlEscape(product.category_slug)}">${htmlEscape(product.category_name)}</a></nav><section class="dpg-static-product" data-static-ui="product-detail"><div class="dpg-static-product-media">${product.image_main_url ? `<img src="${htmlEscape(product.image_main_url)}" alt="${htmlEscape(product.name)}">` : `<img src="/images/product-placeholder.svg" alt="">`}</div><div class="dpg-static-product-copy"><div class="dpg-static-eyebrow">${htmlEscape(product.brand_name || product.category_name)}</div><h1>${htmlEscape(product.name)}</h1><div class="dpg-static-price">Liên hệ báo giá</div><a class="dpg-static-action" href="/lien-he">Nhận tư vấn</a><div class="dpg-static-rich">${product.description ? sanitizeRichHtml(product.description) : '<p>Thông tin sản phẩm chính hãng tại Đông Phú Gia.</p>'}</div></div></section></div>`,
     }), files)
   }
 
@@ -481,8 +513,8 @@ export async function buildStaticArtifact(input: StaticBuildInput, options: Stat
         },
       ] : undefined,
       body: routePath === '/'
-        ? `<h1>${htmlEscape(title)}</h1><nav aria-label="Danh mục"><ul>${CATEGORY_ROOTS.map(([slug, name]) => `<li><a href="/${slug}">${htmlEscape(name)}</a></li>`).join('')}</ul></nav>${productLinks(input.products, () => true)}`
-        : `<h1>${htmlEscape(title)}</h1>`,
+        ? `<div class="dpg-static-container"><section class="dpg-static-hero" data-static-ui="homepage-hero"><img src="/images/banner-1.jpg" alt="Không gian vật liệu xây dựng Đông Phú Gia"><div class="dpg-static-hero-copy"><div class="dpg-static-eyebrow">Đông Phú Gia</div><h1 class="dpg-static-title">${htmlEscape(title)}</h1><p class="dpg-static-subtitle">Vật liệu xây dựng cao cấp, uy tín, chính hãng tại Đà Lạt.</p></div></section><section class="dpg-static-section"><div class="dpg-static-section-head"><h2>Danh mục sản phẩm</h2></div>${productCards(input.products, () => true, 8)}</section></div>`
+        : `<div class="dpg-static-container"><div class="dpg-static-eyebrow">Đông Phú Gia</div><h1 class="dpg-static-title">${htmlEscape(title)}</h1><p class="dpg-static-subtitle">Thông tin và dịch vụ từ Đông Phú Gia.</p></div>`,
     }), files)
   }
 
@@ -493,7 +525,7 @@ export async function buildStaticArtifact(input: StaticBuildInput, options: Stat
       routePath: `/${slug}`,
       title: name,
       description: `${name} tại Đông Phú Gia`,
-      body: `<h1>${htmlEscape(name)}</h1><div data-static-listing="${slug}">${productLinks(input.products, (product) => product.category_slug === slug)}</div>`,
+      body: `<div class="dpg-static-container"><nav class="dpg-static-breadcrumb" aria-label="Breadcrumb"><a href="/">Trang chủ</a><span>/</span><span>${htmlEscape(name)}</span></nav><h1 class="dpg-static-title">${htmlEscape(name)}</h1><section class="dpg-static-listing" data-static-ui="category-listing"><aside class="dpg-static-filter"><h2>Danh mục</h2><ul>${CATEGORY_ROOTS.map(([categorySlug, categoryName]) => `<li><a href="/${categorySlug}">${htmlEscape(categoryName)}</a></li>`).join('')}</ul></aside>${productCards(input.products, (product) => product.category_slug === slug)}</section></div>`,
     }), files)
   }
   for (const subcategory of input.subcategories) {
@@ -504,7 +536,7 @@ export async function buildStaticArtifact(input: StaticBuildInput, options: Stat
       routePath,
       title: subcategory.name,
       description: `${subcategory.name} - ${subcategory.category_name}`,
-      body: `<h1>${htmlEscape(subcategory.name)}</h1><div data-static-listing="${htmlEscape(routePath)}">${productLinks(input.products, (product) => product.category_slug === subcategory.category_slug && product.subcategory_slug === subcategory.slug)}</div>`,
+      body: `<div class="dpg-static-container"><nav class="dpg-static-breadcrumb" aria-label="Breadcrumb"><a href="/">Trang chủ</a><span>/</span><a href="/${htmlEscape(subcategory.category_slug)}">${htmlEscape(subcategory.category_name)}</a><span>/</span><span>${htmlEscape(subcategory.name)}</span></nav><h1 class="dpg-static-title">${htmlEscape(subcategory.name)}</h1><section class="dpg-static-listing" data-static-ui="subcategory-listing"><aside class="dpg-static-filter"><h2>${htmlEscape(subcategory.category_name)}</h2><p>Chọn sản phẩm phù hợp cho không gian của bạn.</p></aside>${productCards(input.products, (product) => product.category_slug === subcategory.category_slug && product.subcategory_slug === subcategory.slug)}</section></div>`,
     }), files)
   }
 
@@ -518,7 +550,7 @@ export async function buildStaticArtifact(input: StaticBuildInput, options: Stat
       routePath,
       title: brand.name,
       description: `${brand.name} chính hãng tại Đông Phú Gia`,
-      body: `<h1>${htmlEscape(brand.name)}</h1>${productLinks(input.products, (product) => product.brand_slug === brand.slug)}`,
+      body: `<div class="dpg-static-container"><nav class="dpg-static-breadcrumb" aria-label="Breadcrumb"><a href="/">Trang chủ</a><span>/</span><span>Thương hiệu</span></nav><div class="dpg-static-eyebrow">Thương hiệu</div><h1 class="dpg-static-title">${htmlEscape(brand.name)}</h1><section data-static-ui="brand-listing">${productCards(input.products, (product) => product.brand_slug === brand.slug)}</section></div>`,
     }), files)
   }
 
@@ -529,7 +561,7 @@ export async function buildStaticArtifact(input: StaticBuildInput, options: Stat
     routePath: '/blog',
     title: 'Blog',
     description: 'Tin tức và tư vấn từ Đông Phú Gia',
-    body: `<h1>Blog</h1>${blogLinks(blogPosts, () => true)}`,
+    body: `<div class="dpg-static-container"><div class="dpg-static-eyebrow">Tin tức</div><h1 class="dpg-static-title">Blog</h1><section data-static-ui="blog-listing">${blogCards(blogPosts, () => true)}</section></div>`,
   }), files)
   for (const category of blogCategories) {
     const routePath = `/blog/${category.slug}`
@@ -538,7 +570,7 @@ export async function buildStaticArtifact(input: StaticBuildInput, options: Stat
       routePath,
       title: category.seo_title?.trim() || category.name,
       description: category.seo_description?.trim() || `${category.name} - Đông Phú Gia`,
-      body: `<h1>${htmlEscape(category.name)}</h1>${blogLinks(blogPosts, (post) => post.category_slug === category.slug)}`,
+      body: `<div class="dpg-static-container"><div class="dpg-static-eyebrow">Blog</div><h1 class="dpg-static-title">${htmlEscape(category.name)}</h1>${blogCards(blogPosts, (post) => post.category_slug === category.slug)}</div>`,
     }), files)
   }
   for (const post of blogPosts) {
@@ -577,7 +609,7 @@ export async function buildStaticArtifact(input: StaticBuildInput, options: Stat
           ],
         },
       ],
-      body: `<article><h1>${htmlEscape(post.title)}</h1>${post.content ? `<div>${sanitizeRichHtml(post.content)}</div>` : ''}</article>`,
+      body: `<div class="dpg-static-container"><article class="dpg-static-article" data-static-ui="blog-article"><nav class="dpg-static-breadcrumb" aria-label="Breadcrumb"><a href="/">Trang chủ</a><span>/</span><a href="/blog">Blog</a></nav><div class="dpg-static-eyebrow">${htmlEscape(post.category_name)}</div><h1>${htmlEscape(post.title)}</h1>${post.cover_image_url ? `<img class="dpg-static-article-cover" src="${htmlEscape(post.cover_image_url)}" alt="${htmlEscape(post.title)}">` : ''}<div class="dpg-static-rich">${post.content ? sanitizeRichHtml(post.content) : `<p>${htmlEscape(post.excerpt || '')}</p>`}</div></article></div>`,
     }), files)
   }
 
@@ -588,7 +620,7 @@ export async function buildStaticArtifact(input: StaticBuildInput, options: Stat
       title: routePath === '/tim-kiem' ? 'Tìm kiếm' : routePath === '/gio-hang' ? 'Giỏ hàng' : 'Đặt hàng thành công',
       description: 'Ứng dụng tương tác Đông Phú Gia',
       noindex: true,
-      body: '<div id="runtime-client-shell"></div>',
+      body: '<div class="dpg-static-container"><div id="runtime-client-shell" data-static-ui="client-shell"><h1 class="dpg-static-title">Ứng dụng Đông Phú Gia</h1><p class="dpg-static-subtitle">Trang tương tác tiếp tục sử dụng shell tĩnh an toàn của candidate.</p></div></div>',
     }), files)
   }
 
@@ -664,6 +696,12 @@ export async function buildStaticArtifact(input: StaticBuildInput, options: Stat
       robots: options.mode === 'preview' ? 'disallow-all' : 'allow-public-disallow-admin-api-studio',
       canonicalBase: STATIC_SITE_URL,
       bunnyMediaPreserved: true,
+    },
+    ui: {
+      renderer: 'current-ui-static-adapter:v1',
+      stylesheet: '/assets/static-ui.css',
+      publicAssetsCopied: true,
+      layoutMarkers: ['application-shell', 'header', 'main', 'footer', 'product-card'],
     },
     inventory: {
       generatedBeforeReport: beforeReport,
