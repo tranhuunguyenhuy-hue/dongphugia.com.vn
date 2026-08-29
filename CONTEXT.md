@@ -195,11 +195,10 @@ The Order payment projection `Unpaid`, `Partially Paid`, `Paid`, or `Refunded`,
 derived transactionally from manual COD or bank-transfer payment records.
 _Avoid_: Order status, payment method
 
-**Series/Collection**:
-Catalogue or merchandising context used to organize related Products; it is
-not a Product Family unless separate evidence validates alternative Product
-leaves.
-_Avoid_: Family, Product Type
+**Manufacturer Series (legacy/reference-only)**:
+A manufacturer-originated series label retained only as import or provenance
+evidence. It is not the canonical V1 Collection and is not a Product Family.
+_Avoid_: Collection, Family, Product Type
 
 **Package/BOM**:
 An assembly or included-item relationship among Products or components. It is
