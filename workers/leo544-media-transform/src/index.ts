@@ -2,7 +2,9 @@ const MAX_SOURCE_BYTES = 5 * 1024 * 1024
 const MAX_SOURCE_PIXELS = 40_000_000
 const MAX_BUNNY_ATTEMPTS = 2
 const BUNNY_TIMEOUT_MS = 10_000
+const MAX_EXISTING_OBJECT_BYTES = 16 * 1024 * 1024
 const AUTH_SCHEME = 'Bearer '
+const SYNTHETIC_IDENTITY_ID = 'leo544-acceptance'
 
 const APPROVED_PREVIEW_BUNNY_STORAGE_HOSTNAMES = new Set([
     'sg.storage.bunnycdn.com',
@@ -206,9 +208,27 @@ function parsePath(request: Request) {
         throw new WorkerError(400, 'MEDIA_PATH_INVALID', 'Media path is invalid')
     }
 
+    const safeIdentityId = safeSegment(identityId, 'identityId')
+    if (safeIdentityId !== SYNTHETIC_IDENTITY_ID) {
+        throw new WorkerError(
+            403,
+            'MEDIA_SYNTHETIC_SCOPE_REQUIRED',
+            'Media transform writes are limited to the synthetic acceptance prefix',
+        )
+    }
+
+    const safeAssetId = safeSegment(assetId, 'assetId')
+    if (!safeAssetId.startsWith('run-')) {
+        throw new WorkerError(
+            403,
+            'MEDIA_SYNTHETIC_SCOPE_REQUIRED',
+            'Media transform writes are limited to synthetic run assets',
+        )
+    }
+
     return {
-        identityId: safeSegment(identityId, 'identityId'),
-        assetId: safeSegment(assetId, 'assetId'),
+        identityId: safeIdentityId,
+        assetId: safeAssetId,
         variant: getVariant(variantId),
     }
 }
@@ -350,11 +370,15 @@ function objectPath(
     identityId: string,
     assetId: string,
     variant: MediaVariant,
+    sourceHash: string,
 ) {
-    return `publishing/${identityId}/${assetId}/${variant.id}.webp`
+    return `publishing/${identityId}/${assetId}/${sourceHash}/${variant.id}.webp`
 }
 
-async function sha256(stream: ReadableStream<Uint8Array>) {
+async function sha256(
+    stream: ReadableStream<Uint8Array>,
+    maxBytes?: number,
+) {
     const reader = stream.getReader()
     const chunks: Uint8Array[] = []
     let length = 0
@@ -362,6 +386,13 @@ async function sha256(stream: ReadableStream<Uint8Array>) {
         while (true) {
             const next = await reader.read()
             if (next.done) break
+            if (maxBytes !== undefined && length + next.value.byteLength > maxBytes) {
+                throw new WorkerError(
+                    409,
+                    'MEDIA_STORAGE_CONFLICT',
+                    'Existing media object is not a bounded immutable artifact',
+                )
+            }
             chunks.push(next.value)
             length += next.value.byteLength
         }
@@ -447,6 +478,7 @@ async function deliverToBunny(
     config: ReturnType<typeof bunnyConfig>,
     path: string,
     body: ReadableStream<Uint8Array>,
+    checksum: string,
 ) {
     let remaining = body
     for (let attempt = 1; attempt <= MAX_BUNNY_ATTEMPTS; attempt += 1) {
@@ -459,6 +491,7 @@ async function deliverToBunny(
                     headers: {
                         AccessKey: config.apiKey,
                         'Cache-Control': 'public, max-age=31536000, immutable',
+                        Checksum: checksum.toUpperCase(),
                         'Content-Type': 'image/webp',
                     },
                     body: attemptBody,
@@ -483,6 +516,43 @@ async function deliverToBunny(
         remaining = retryBody
     }
     throw new WorkerError(502, 'MEDIA_STORAGE_FAILED', 'Managed Media storage failed')
+}
+
+async function existingObjectDigest(
+    config: ReturnType<typeof bunnyConfig>,
+    path: string,
+) {
+    let response: Response
+    try {
+        response = await fetch(
+            `https://${config.storageHost}/${config.zone}/${path}`,
+            {
+                method: 'GET',
+                headers: { AccessKey: config.apiKey },
+                signal: AbortSignal.timeout(BUNNY_TIMEOUT_MS),
+            },
+        )
+    } catch {
+        throw new WorkerError(
+            502,
+            'MEDIA_STORAGE_PRECONDITION_FAILED',
+            'Media storage existence check failed',
+        )
+    }
+
+    if (response.status === 404) {
+        await response.body?.cancel()
+        return null
+    }
+    if (!response.ok || !response.body) {
+        await response.body?.cancel()
+        throw new WorkerError(
+            502,
+            'MEDIA_STORAGE_PRECONDITION_FAILED',
+            'Media storage existence check failed',
+        )
+    }
+    return sha256(response.body, MAX_EXISTING_OBJECT_BYTES)
 }
 
 export default {
@@ -588,12 +658,28 @@ export default {
                 )
             }
 
+            const [deliveryBody, digestBody] = imageResponse.body.tee()
+            const outputDigestPromise = sha256(digestBody, MAX_EXISTING_OBJECT_BYTES)
             const storagePath = objectPath(
                 target.identityId,
                 target.assetId,
                 target.variant,
+                actualSourceHash,
             )
-            await deliverToBunny(config, storagePath, imageResponse.body)
+            const existingDigest = await existingObjectDigest(config, storagePath)
+            const outputDigest = await outputDigestPromise
+            if (existingDigest !== null) {
+                await deliveryBody.cancel()
+                if (existingDigest !== outputDigest) {
+                    throw new WorkerError(
+                        409,
+                        'MEDIA_STORAGE_CONFLICT',
+                        'An immutable media object already exists with different bytes',
+                    )
+                }
+            } else {
+                await deliverToBunny(config, storagePath, deliveryBody, outputDigest)
+            }
             const dimensions = outputDimensions(sourceInfo, target.variant)
 
             return json({

@@ -59,13 +59,15 @@ function env(overrides: Partial<Leo544WorkerEnv> = {}): Leo544WorkerEnv {
     }
 }
 
-async function request(
+async function requestAtPath(
+    identityId: string,
+    assetId: string,
     variant = 'inline.w640',
     body: BodyInit = DEFAULT_WEBP_SOURCE,
     headers: Record<string, string> = {},
 ) {
     return new Request(
-        `https://worker.example/v1/media-transform/identity-id/asset-id/${variant}`,
+        `https://worker.example/v1/media-transform/${identityId}/${assetId}/${variant}`,
         {
             method: 'POST',
             body,
@@ -77,6 +79,23 @@ async function request(
             },
         },
     )
+}
+
+async function requestAt(
+    identityId: string,
+    variant = 'inline.w640',
+    body: BodyInit = DEFAULT_WEBP_SOURCE,
+    headers: Record<string, string> = {},
+) {
+    return requestAtPath(identityId, 'run-test', variant, body, headers)
+}
+
+async function request(
+    variant = 'inline.w640',
+    body: BodyInit = DEFAULT_WEBP_SOURCE,
+    headers: Record<string, string> = {},
+) {
+    return requestAt('leo544-acceptance', variant, body, headers)
 }
 
 function imagesWithInfo(info: ImageInfo | { format: string }): ImageBinding {
@@ -126,10 +145,12 @@ describe('LEO-544 Cloudflare Images stream transform', () => {
             },
         }
         vi.spyOn(globalThis, 'fetch').mockImplementation(async (_input, init) => {
+            if (init?.method === 'GET') return new Response(null, { status: 404 })
             expect(init?.method).toBe('PUT')
             expect(init?.headers).toMatchObject({
                 AccessKey: 'test-only-placeholder',
                 'Content-Type': 'image/webp',
+                Checksum: (await digest('webp-bytes')).toUpperCase(),
             })
             expect(init?.body).toBeInstanceOf(ReadableStream)
             expect(await new Response(init?.body).text()).toBe('webp-bytes')
@@ -146,9 +167,9 @@ describe('LEO-544 Cloudflare Images stream transform', () => {
             delivery: 'bunny',
             format: 'webp',
             height: 360,
-            path: 'publishing/identity-id/asset-id/thumbnail.w640.webp',
+            path: `publishing/leo544-acceptance/run-test/${await digest(DEFAULT_WEBP_SOURCE)}/thumbnail.w640.webp`,
             purpose: 'thumbnail',
-            url: 'https://media.dongphugia.vn/publishing/identity-id/asset-id/thumbnail.w640.webp',
+            url: `https://media.dongphugia.vn/publishing/leo544-acceptance/run-test/${await digest(DEFAULT_WEBP_SOURCE)}/thumbnail.w640.webp`,
             variant: 'thumbnail.w640',
             width: 640,
         })
@@ -166,6 +187,7 @@ describe('LEO-544 Cloudflare Images stream transform', () => {
         expect(inline?.height).toBeUndefined()
 
         vi.spyOn(globalThis, 'fetch').mockImplementation(async (_input, init) => {
+            if (init?.method === 'GET') return new Response(null, { status: 404 })
             await new Response(init?.body).arrayBuffer()
             return new Response(null, { status: 201 })
         })
@@ -265,6 +287,7 @@ describe('LEO-544 Cloudflare Images stream transform', () => {
 
     it('accepts normal independently parsed JPEG, PNG, and WebP dimensions', async () => {
         vi.spyOn(globalThis, 'fetch').mockImplementation(async (_input, init) => {
+            if (init?.method === 'GET') return new Response(null, { status: 404 })
             await new Response(init?.body).arrayBuffer()
             return new Response(null, { status: 201 })
         })
@@ -288,9 +311,84 @@ describe('LEO-544 Cloudflare Images stream transform', () => {
         }
     })
 
+    it('does not PUT when replaying the same immutable object', async () => {
+        const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async (_input, init) => {
+            expect(init?.method).toBe('GET')
+            return new Response('webp-bytes', { status: 200 })
+        })
+
+        const response = await worker.fetch(await request(), env())
+
+        expect(response.status).toBe(201)
+        expect(fetchMock).toHaveBeenCalledTimes(1)
+    })
+
+    it('fails closed when an existing path contains different bytes', async () => {
+        const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async (_input, init) => {
+            expect(init?.method).toBe('GET')
+            return new Response('different-bytes', { status: 200 })
+        })
+
+        const response = await worker.fetch(await request(), env())
+
+        expect(response.status).toBe(409)
+        expect(await response.json()).toEqual({ error: 'MEDIA_STORAGE_CONFLICT' })
+        expect(fetchMock).toHaveBeenCalledTimes(1)
+    })
+
+    it('keeps concurrent duplicate writes on the same content-addressed path and bytes', async () => {
+        const puts: Array<{ url: string; body: string; checksum: string }> = []
+        vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+            if (init?.method === 'GET') return new Response(null, { status: 404 })
+            const body = await new Response(init?.body).text()
+            puts.push({
+                url: String(input),
+                body,
+                checksum: String(new Headers(init?.headers).get('Checksum')),
+            })
+            return new Response(null, { status: 201 })
+        })
+
+        const [first, second] = await Promise.all([
+            worker.fetch(await request(), env()),
+            worker.fetch(await request(), env()),
+        ])
+
+        expect(first.status).toBe(201)
+        expect(second.status).toBe(201)
+        expect(puts).toHaveLength(2)
+        expect(puts[0]).toEqual(puts[1])
+        expect(puts[0]?.body).toBe('webp-bytes')
+    })
+
+    it('rejects canonical identities before any Bunny request', async () => {
+        const fetchMock = vi.spyOn(globalThis, 'fetch')
+        const response = await worker.fetch(
+            await requestAt('canonical-user'),
+            env(),
+        )
+
+        expect(response.status).toBe(403)
+        expect(await response.json()).toEqual({ error: 'MEDIA_SYNTHETIC_SCOPE_REQUIRED' })
+        expect(fetchMock).not.toHaveBeenCalled()
+    })
+
+    it('rejects non-run assets even inside the synthetic identity', async () => {
+        const fetchMock = vi.spyOn(globalThis, 'fetch')
+        const response = await worker.fetch(
+            await requestAtPath('leo544-acceptance', 'canonical-asset'),
+            env(),
+        )
+
+        expect(response.status).toBe(403)
+        expect(await response.json()).toEqual({ error: 'MEDIA_SYNTHETIC_SCOPE_REQUIRED' })
+        expect(fetchMock).not.toHaveBeenCalled()
+    })
+
     it('retries a transient Bunny failure with the same immutable object path', async () => {
         const bodies: string[] = []
         const fetchMock = vi.spyOn(globalThis, 'fetch')
+            .mockImplementationOnce(async (_input, init) => new Response(null, { status: 404 }))
             .mockImplementationOnce(async (_input, init) => {
                 bodies.push(await new Response(init?.body).text())
                 return new Response(null, { status: 503 })
@@ -303,8 +401,8 @@ describe('LEO-544 Cloudflare Images stream transform', () => {
         const response = await worker.fetch(await request(), env())
 
         expect(response.status).toBe(201)
-        expect(fetchMock).toHaveBeenCalledTimes(2)
-        expect(fetchMock.mock.calls[0]?.[0]).toBe(fetchMock.mock.calls[1]?.[0])
+        expect(fetchMock).toHaveBeenCalledTimes(3)
+        expect(fetchMock.mock.calls[1]?.[0]).toBe(fetchMock.mock.calls[2]?.[0])
         expect(bodies).toEqual(['webp-bytes', 'webp-bytes'])
     })
 })
