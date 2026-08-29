@@ -9,8 +9,8 @@ const SYNTHETIC_IDENTITY_ID = 'leo544-acceptance'
 const APPROVED_PREVIEW_BUNNY_STORAGE_HOSTNAMES = new Set([
     'sg.storage.bunnycdn.com',
 ])
-const APPROVED_PUBLISHING_CDN_HOSTNAMES = new Set([
-    'media.dongphugia.vn',
+const APPROVED_PREVIEW_PUBLISHING_CDN_HOSTNAMES = new Set([
+    'dpg-publishing-staging.b-cdn.net',
 ])
 
 export type ImageTransformOptions = {
@@ -356,7 +356,7 @@ function bunnyConfig(env: Leo544WorkerEnv) {
     const cdnHost = exactHostname(
         requiredEnv(env, 'PUBLISHING_BUNNY_CDN_HOSTNAME'),
         'CDN host',
-        APPROVED_PUBLISHING_CDN_HOSTNAMES,
+        APPROVED_PREVIEW_PUBLISHING_CDN_HOSTNAMES,
     )
     return {
         zone,

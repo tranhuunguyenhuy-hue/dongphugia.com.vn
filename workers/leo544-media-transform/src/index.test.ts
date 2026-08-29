@@ -54,7 +54,7 @@ function env(overrides: Partial<Leo544WorkerEnv> = {}): Leo544WorkerEnv {
         PUBLISHING_BUNNY_STORAGE_ZONE_NAME: 'preview-zone',
         PUBLISHING_BUNNY_STORAGE_API_KEY: 'test-only-placeholder',
         PUBLISHING_BUNNY_STORAGE_HOSTNAME: 'sg.storage.bunnycdn.com',
-        PUBLISHING_BUNNY_CDN_HOSTNAME: 'media.dongphugia.vn',
+        PUBLISHING_BUNNY_CDN_HOSTNAME: 'dpg-publishing-staging.b-cdn.net',
         ...overrides,
     }
 }
@@ -169,7 +169,7 @@ describe('LEO-544 Cloudflare Images stream transform', () => {
             height: 360,
             path: `publishing/leo544-acceptance/run-test/${await digest(DEFAULT_WEBP_SOURCE)}/${await digest('webp-bytes')}/thumbnail.w640.webp`,
             purpose: 'thumbnail',
-            url: `https://media.dongphugia.vn/publishing/leo544-acceptance/run-test/${await digest(DEFAULT_WEBP_SOURCE)}/${await digest('webp-bytes')}/thumbnail.w640.webp`,
+            url: `https://dpg-publishing-staging.b-cdn.net/publishing/leo544-acceptance/run-test/${await digest(DEFAULT_WEBP_SOURCE)}/${await digest('webp-bytes')}/thumbnail.w640.webp`,
             variant: 'thumbnail.w640',
             width: 640,
         })
@@ -225,6 +225,21 @@ describe('LEO-544 Cloudflare Images stream transform', () => {
 
         expect(response.status).toBe(403)
         expect(await response.json()).toEqual({ error: 'MEDIA_ENVIRONMENT_NOT_ALLOWED' })
+    })
+
+    it('rejects a Production Bunny CDN hostname before transforming', async () => {
+        const input = vi.fn()
+        const response = await worker.fetch(
+            await request(),
+            env({
+                IMAGES: { info: vi.fn(), input },
+                PUBLISHING_BUNNY_CDN_HOSTNAME: 'media.dongphugia.vn',
+            }),
+        )
+
+        expect(response.status).toBe(503)
+        expect(await response.json()).toEqual({ error: 'MEDIA_STORAGE_NOT_CONFIGURED' })
+        expect(input).not.toHaveBeenCalled()
     })
 
     it.each([

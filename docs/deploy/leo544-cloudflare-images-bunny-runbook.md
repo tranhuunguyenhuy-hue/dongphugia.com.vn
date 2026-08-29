@@ -37,9 +37,10 @@ The seven locked variants are the existing Publishing envelope:
 - `cover.w720`, `cover.w1280`, `cover.w1600`
 - `inline.w640`, `inline.w960`
 
-Object paths preserve the existing Publishing contract:
-`publishing/{identityId}/{assetId}/{variant}.webp`. Bunny delivery retries one
-transient failure with the same path and a bounded 10-second attempt timeout.
+Object paths use the reviewed synthetic, content-addressed contract:
+`publishing/leo544-acceptance/run-<run-id>/<source-sha256>/<output-sha256>/{variant}.webp`.
+Bunny delivery retries one transient failure with the same path and a bounded
+10-second attempt timeout.
 Errors are emitted as structured status/code events without request paths,
 source data, or credentials; Wrangler observability is enabled in the source
 config. The Worker does not delete an existing object after an ambiguous
@@ -55,7 +56,8 @@ metadata for WebP output, so this source proof makes no metadata-preservation
 claim; a requirement to preserve such metadata needs a separate Owner decision.
 
 The source proof hard-codes the reviewed Bunny targets: `sg.storage.bunnycdn.com`
-for Preview storage and `media.dongphugia.vn` for the Publishing CDN. A
+for Preview storage and `dpg-publishing-staging.b-cdn.net` for the Preview
+Publishing CDN. A
 different hostname is a configuration failure and requires a new reviewed
 Owner target decision.
 

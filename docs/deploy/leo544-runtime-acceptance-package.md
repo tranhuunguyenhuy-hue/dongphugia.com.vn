@@ -1,6 +1,6 @@
 # LEO-544 runtime acceptance package
 
-Status: `BLOCKED`. This is a least-privilege proposal only. It does not
+Status: `REQUIRES_OWNER_DECISION`. This is a least-privilege proposal only. It does not
 retrieve secret values, create or rotate credentials, deploy a Worker, change a
 Cloudflare binding/account setting, write Bunny, change DNS, or touch
 Production.
@@ -9,12 +9,13 @@ Production.
 
 | Item | Read-only evidence | Acceptance position |
 | --- | --- | --- |
-| Account | The repository contains only the `CLOUDFLARE_ACCOUNT_ID` secret name; the account ID value was not retrieved. | `UNKNOWN`; Owner must identify the exact account. |
+| Account | Read-only dashboard attestation: `d54f3402b9d112ab64d6135e0e3f1fb1` / `Tranhuunguyenhuy@gmail.com's Account`. | Exact account confirmed. |
 | Pages project | GitHub repository variable: `CLOUDFLARE_PAGES_PREVIEW_PROJECT=dongphugia-preview`. This is the existing static Preview project, not proof of a Worker target. | Do not use it as the Worker target without explicit Owner confirmation. |
-| Worker name | `workers/leo544-media-transform/wrangler.jsonc` declares `dongphugia-media-transform`. | Proposed exact Worker name: `dongphugia-media-transform`; live existence/ownership is `UNKNOWN`. Do not create a replacement Worker automatically. |
-| Images binding | The source config declares `images.binding=IMAGES`. | Source binding is present; live binding availability/reuse is `UNKNOWN` until the exact account/Worker is inspected by the Owner. |
+| Worker name | The dashboard lists no Workers or Pages projects; `workers/leo544-media-transform/wrangler.jsonc` declares `dongphugia-media-transform`. | The Worker does not exist. Creating exactly this non-Production Worker is an Owner mutation gate. |
+| Images binding | Official platform documentation supports raw request-body `ReadableStream` input and `.info()` metadata through a per-Worker `IMAGES` binding. There is no live Worker/binding on the account. | Platform capability is supported; account-specific runtime usability remains unproven until the bounded Preview deployment. |
 | Streams support | The source config declares `streams_enable_constructors`; local Wrangler dry-run passed. | Runtime support is not independently proven without deployment. Do not alter the compatibility flag. |
-| Route | Current config has `workers_dev=false` and no `routes`, `domains`, or custom domain. | Proposed mechanism is one non-Production `workers.dev` endpoint for the existing dedicated Worker, with no route and no custom domain. The generated account subdomain/URL is `UNKNOWN`; this is an Owner gate. |
+| Plan and usage | Dashboard attestation: Workers Free is current, 100,000 requests/day and 10 ms CPU/request; billable usage is `$0.00`. Images shows 0 unique transformations and no Cloudflare zones. Official pricing includes 5,000 unique transformations/month; `.info()` is free. | The proposed 21-transform matrix fits the documented free allowance. A live binding call remains the account-specific entitlement proof; stop on plan/checkout prompts or transformation billing errors. |
+| Route | Current config has `workers_dev=false` and no routes, domains, or custom domain. Account subdomain is `tranhuunguyenhuy.workers.dev`. | Owner package proposes enabling `workers.dev` only for `dongphugia-media-transform`, yielding `dongphugia-media-transform.tranhuunguyenhuy.workers.dev`; no zone, route, DNS, or custom domain. |
 
 No public DNS or custom-domain change is proposed.
 
@@ -23,9 +24,9 @@ No public DNS or custom-domain change is proposed.
 | Item | Read-only evidence | Acceptance position |
 | --- | --- | --- |
 | Storage API host | Source allowlist: `sg.storage.bunnycdn.com`. | Proposed exact host, subject to Owner revalidation as non-Production. |
-| Storage zone | `PUBLISHING_BUNNY_STORAGE_ZONE_NAME` is blank in `.env.example`; tests use only `preview-zone`. | Exact existing Preview zone is `UNKNOWN`; do not invent or create one. |
-| CDN host | Source allowlist and runbook value: `media.dongphugia.vn`. | Proposed exact host only if Owner confirms it is acceptable for synthetic non-Production objects; no DNS change. |
-| Credential | `PUBLISHING_BUNNY_STORAGE_API_KEY` is referenced by name only; its existence/value was not inspected. | Existing credential reuse is `UNKNOWN`; no rotation or creation is proposed. |
+| Storage zone | Exact zone behind the intended Pull Zone cannot be derived from repository/GitHub metadata. | `UNKNOWN`; do not invent or create one. Owner must attest its exact name and that it is non-Production/synthetic-safe. |
+| CDN host | GitHub staging variable and repository contract name `dpg-publishing-staging.b-cdn.net`; current public DNS lookup returns no address. | Intended Preview hostname is exact, but live Pull Zone availability is not proven. Do not change DNS. |
+| Credential | No Bunny storage credential name exists in repository, repository secrets, Preview secrets, or staging secrets. Provider-side storage-zone password status was not accessible read-only. | Reusable credential availability remains `UNKNOWN`; no value was retrieved and no rotation or creation is proposed. |
 | Write prefix | The Worker now requires `identityId=leo544-acceptance`, a unique `assetId=run-<run-id>`, and inserts computed source and transformed-output SHA-256 values before the variant. | Exact synthetic-only prefix: `publishing/leo544-acceptance/run-<run-id>/<source-sha256>/<output-sha256>/{variant}.webp`. Never use a canonical identity or asset ID. |
 
 The Bunny HTTP API documents PUT upload, GET file reads, and an optional SHA-256
@@ -44,16 +45,49 @@ Secret values must never appear in logs, evidence, PR text, or this package.
 
 | Name | Existing/new | Storage | Minimum privilege | Mutation required now |
 | --- | --- | --- | --- | --- |
-| `CLOUDFLARE_ACCOUNT_ID` | Existing status `UNKNOWN`; only secret name is visible. | GitHub Actions secret or approved Wrangler profile. | Identifier only; no data-plane privilege. | No. |
-| `CLOUDFLARE_API_TOKEN` | Existing status `UNKNOWN`; only secret name is visible. | GitHub Actions secret/Wrangler auth. | Exact-account Worker script deployment/edit for the named Worker; no DNS, Pages creation, account-admin, or secret-management permission. Owner must verify the provider permission mapping. | No. |
-| `MEDIA_TRANSFORM_AUTH_TOKEN` | Existing status `UNKNOWN`. | Cloudflare Worker Secret for the exact Worker. | Request bearer authentication only. | No; do not create/rotate. |
-| `PUBLISHING_BUNNY_STORAGE_API_KEY` | Existing status `UNKNOWN`. | Cloudflare Worker Secret for the exact Worker. | Write access limited to the exact synthetic acceptance zone/prefix; no account management or canonical-media deletion. | No; do not create/rotate. |
+| `CLOUDFLARE_ACCOUNT_ID` | Existing repository secret name; exact account independently attested in the dashboard. | GitHub Actions secret or approved Wrangler profile. | Identifier only; no data-plane privilege. | No. |
+| `CLOUDFLARE_API_TOKEN` | Existing repository secret name; provider scope is not exposed by GitHub. | GitHub Actions secret/Wrangler auth. | Exact-account Worker script deployment/edit for the named Worker; no DNS, Pages creation, account-admin, or unrelated secret-management permission. Scope must be verified before use. | No. |
+| `MEDIA_TRANSFORM_AUTH_TOKEN` | Not found in repository, Preview, or staging secret-name inventory. | Cloudflare Worker Secret for the exact Worker. | Request bearer authentication only, generated with at least 32 bytes of entropy and never reused in Production. | Yes, only after exact Owner approval. |
+| `PUBLISHING_BUNNY_STORAGE_API_KEY` | Existing status `UNKNOWN`. | Cloudflare Worker Secret for the exact Worker. | Bunny documents the Storage Zone password as the Storage API key; no prefix-scoped or method-scoped storage key is documented. Reuse is safe only if the exact zone is dedicated to synthetic Preview objects. Otherwise a dedicated Preview-only zone/password is a separate cost/resource/credential Owner gate. | No; do not create/rotate. |
 
 `PUBLISHING_BUNNY_STORAGE_ENVIRONMENT`,
 `PUBLISHING_BUNNY_STORAGE_ZONE_NAME`, `PUBLISHING_BUNNY_STORAGE_HOSTNAME`,
 and `PUBLISHING_BUNNY_CDN_HOSTNAME` are non-secret Worker variables, but their
 exact approved values still require Owner confirmation. No credential mutation
 is authorized by this package.
+
+## Exact bounded mutation sequence
+
+This sequence remains inactive until the exact Bunny zone and safely reusable
+zone password are attested by name/scope only.
+
+1. Bind the exact merged/reviewed PR #128 candidate SHA to the runtime record.
+2. Verify the existing Cloudflare deployment token has only the permissions
+   needed to create/update `dongphugia-media-transform` and its bindings on
+   account `d54f3402b9d112ab64d6135e0e3f1fb1`; stop on broader-account changes.
+3. Create exactly one Preview-only request-auth token, at least 32 bytes of
+   entropy, directly as Worker secret `MEDIA_TRANSFORM_AUTH_TOKEN`; never print
+   or persist its plaintext in CI/evidence.
+4. Create/deploy exactly `dongphugia-media-transform` with `IMAGES`,
+   `streams_enable_constructors`, the reviewed non-secret Preview variables,
+   the existing Bunny zone password as Worker secret
+   `PUBLISHING_BUNNY_STORAGE_API_KEY`, and workers.dev enabled. Do not add a
+   route, zone, custom domain, or DNS record.
+5. Run only the synthetic acceptance matrix below against
+   `dongphugia-media-transform.tranhuunguyenhuy.workers.dev` and
+   `publishing/leo544-acceptance/run-<run-id>/...`.
+6. Record sanitized status, dimensions, digests, exact synthetic paths, and
+   Images usage delta. Never record request-auth or Bunny secret values.
+7. On any security, entitlement, quota, or delivery failure, stop requests and
+   remove/disable only this Worker deployment; leave Bunny objects untouched
+   unless exact-path deletion receives separate approval.
+
+If no safely reusable Bunny zone password exists, this sequence stops before
+step 3. Bunny exposes the Storage Zone password as the Storage API key and does
+not document prefix- or method-scoped keys. The minimum alternative is a new
+dedicated synthetic-only Preview storage zone and its zone password, but that
+resource/cost/credential mutation is outside this package and requires a
+separate Owner decision.
 
 ## 4. Runtime acceptance matrix
 
@@ -109,11 +143,15 @@ https://developers.cloudflare.com/images/optimization/binding/.
 
 ## Owner approval text
 
-> APPROVED — run LEO-544 runtime acceptance only against the exact existing
-> non-Production Cloudflare account/Worker and exact existing Bunny Preview
-> zone identified in the preflight. Reuse existing least-privilege credentials
-> without retrieving or rotating them. Permit one reviewed Worker version,
-> `IMAGES` binding reuse, and a non-Production `workers.dev` mechanism only;
+> APPROVED — after confirming the exact Bunny Preview storage-zone name and
+> that its zone password is safely reusable for synthetic-only data, deploy
+> exact PR #128 candidate `<SHA>` to Cloudflare account
+> `d54f3402b9d112ab64d6135e0e3f1fb1` as the new non-Production Worker
+> `dongphugia-media-transform`. Permit its `IMAGES` binding, creation of exactly
+> one new Preview-only `MEDIA_TRANSFORM_AUTH_TOKEN` with at least 32 bytes of
+> entropy, reuse of the existing zone password only as
+> `PUBLISHING_BUNNY_STORAGE_API_KEY`, and the non-Production workers.dev endpoint
+> `dongphugia-media-transform.tranhuunguyenhuy.workers.dev` only;
 > permit Bunny PUTs only under
 > `publishing/leo544-acceptance/run-<run-id>/<source-sha256>/<output-sha256>/` for synthetic JPEG/PNG/WebP
 > fixtures. No new resource, credential, binding, custom domain, DNS change,
@@ -122,6 +160,7 @@ https://developers.cloudflare.com/images/optimization/binding/.
 > version if approved; delete synthetic Bunny objects only under a separate
 > exact-path approval.
 
-The approval is not active for this package because the exact account, live
-Worker/binding, route, Bunny zone, and existing credential status are not yet
-available as read-only evidence.
+The approval is not active for this package because the exact Bunny storage
+zone, live staging Pull Zone, and reusable zone-password status remain
+unavailable as read-only evidence. If a new zone or credential is required,
+that cost/resource/credential mutation needs separate exact Owner approval.
