@@ -204,3 +204,43 @@ _Avoid_: Collection, Family, Product Type
 An assembly or included-item relationship among Products or components. It is
 separate from Product Family membership and Variant selection.
 _Avoid_: Variant, Related Products
+
+## Staff access and application surfaces
+
+**Public Application**:
+The customer-facing Dongphugia application for catalogue discovery, guest
+commerce, content, and public Quote viewing. It does not contain staff
+administration or privileged staff operations.
+_Avoid_: Storefront Admin, customer portal
+
+**Admin Application**:
+The separate staff-only Dongphugia application for catalogue, Sales,
+Marketing, and staff administration. It is not a privileged mode of the Public
+Application.
+_Avoid_: Admin route group, back-office section
+
+**Staff User**:
+An internal person invited by an Admin to use the Admin Application. A Staff
+User is distinct from a Customer and may hold more than one Staff Role.
+_Avoid_: Customer account, admin account
+
+**Staff Role**:
+One of the fixed V1 responsibility sets `Product`, `Sales`, `Marketing`, or
+`Admin` assigned to a Staff User. Staff Roles are not user-defined.
+_Avoid_: Custom role, rank, single role
+
+**Capability**:
+A named staff authority such as catalogue publication or Quote management.
+Capabilities are fixed by V1 architecture and are not editable through the
+Admin Application.
+_Avoid_: Wildcard access, custom permission
+
+**Effective Permissions**:
+The union of all Capabilities granted by every Staff Role assigned to one
+active Staff User.
+_Avoid_: Primary role, role hierarchy
+
+**Guest Operation**:
+A deliberately public, narrowly validated operation that creates an Order or
+Quote Request without a Customer account or staff authority.
+_Avoid_: Anonymous staff access, public database write
