@@ -95,16 +95,16 @@ This context describes the product catalogue that Dongphugia publishes for custo
 ## Language
 
 **Public Product**:
-A catalogue product that passes the publication, taxonomy, content, image, price-mode, and availability checks required for public listings, product pages, internal links, and sitemaps.
+A V1 catalogue Product that passes the Category-specific publication, taxonomy, content, image, retail-price, provenance, and Availability gates required for public listings, PDPs, internal links, Search, and sitemaps.
 _Avoid_: Active product, SEO product
 
 **Public Price**:
-A real customer-visible price backed by a positive canonical `list_price`; a valid positive `sale_price` lower than that list price is the canonical selling price, otherwise the canonical list price is displayed. Legacy `price` and `original_price` values are reference-only compatibility facts and cannot create a public selling price by themselves.
-_Avoid_: Offer price, effective price, legacy price
+A positive Dongphugia-owned retail price required for every Public Product. Manufacturer list price/MSRP is optional reference information; legacy price fields and negotiated Quote prices cannot create or replace the Public Price.
+_Avoid_: Offer price, effective price, legacy price, quote price
 
 **Contact for Quote**:
-A product price mode without a valid canonical selling price; customers may request a quote when the Availability is known and non-discontinued, but cannot add the product to the cart. The page does not claim Product rich-result eligibility without a public price.
-_Avoid_: Zero price, hidden price, discontinued
+A customer action available from a Public Product with a Public Price; it begins the Quote flow and is not a price mode. A Product without a valid Public Price remains non-public in V1.
+_Avoid_: Zero price, hidden price, discontinued, price mode
 
 **Availability**:
 The approved commerce vocabulary for a product's request-time state: `InStock`, `PreOrder`, `QuoteOnly`, or `Discontinued`. Legacy `out_of_stock` and unknown strings remain withheld exceptions until an explicit mapping is approved; Availability is not inferred from a missing price.
@@ -144,10 +144,56 @@ Products, combinations, or Family-level commerce state.
 _Avoid_: Variant combination, option axis, package
 
 **Family Membership**:
-An explicit relation connecting an existing Product/PDP to one Product Family
-and one of that Family's Configuration Groups. The relation preserves the
-Product's independent identity and Product-owned commercial fields.
+An explicit relation connecting an existing Product/PDP to its optional single
+Product Family and, when meaningful, one Configuration Group. The relation
+preserves the Product's independent identity and Product-owned commercial
+fields.
 _Avoid_: Legacy variant_group, generated variant, package item
+
+**Category**:
+A node in the canonical four-sector catalogue tree. Every Public Product has
+one primary leaf Category; its ancestor Categories are derived from the tree.
+_Avoid_: Facet, Brand, Collection, secondary category
+
+**Brand**:
+The first-class manufacturer identity referenced by Products and represented by
+one public Brand page.
+_Avoid_: Product label, free-text manufacturer
+
+**Collection**:
+An ordered, manually curated group of Products with editorial presentation. It
+does not classify Products or evaluate membership rules.
+_Avoid_: Product Family, Category, dynamic collection
+
+**Technical Attribute**:
+A Category-governed, typed Product fact stored in one canonical unit or option
+vocabulary and usable for PDP specifications or filters.
+_Avoid_: Specs JSON, free-form filter, duplicated property
+
+**Content Entry**:
+A Guide, Inspiration, Buying Guide, or Landing Page composed from structured
+metadata and validated flexible blocks, with canonical catalogue references.
+_Avoid_: Blog-only post, copied Product data
+
+**Quote Request**:
+The immutable customer-submitted project context and requested Product-line
+snapshots that begin Sales negotiation.
+_Avoid_: Quote, Quote Cart, Order
+
+**Quote**:
+The Sales-negotiated commercial offer derived from one Quote Request, with
+shareable negotiated Product-line snapshots and a single conversion to Order.
+_Avoid_: Quote Request, retail Cart, invoice
+
+**Shareable Quote**:
+The read-only customer-facing projection of an issued Quote addressed by an
+opaque public-safe token.
+_Avoid_: Customer portal, editable Quote
+
+**Payment Status**:
+The Order payment projection `Unpaid`, `Partially Paid`, `Paid`, or `Refunded`,
+derived transactionally from manual COD or bank-transfer payment records.
+_Avoid_: Order status, payment method
 
 **Series/Collection**:
 Catalogue or merchandising context used to organize related Products; it is
