@@ -41,14 +41,25 @@ describe('LEO-543 scheduler source contract', () => {
         expect(migration).toContain("name = 'leo543_scheduler_token'")
         expect(migration).toContain('endpoint_url text')
         expect(migration).toContain('leo543_publishing_freshness')
+        expect(migration).toContain('leo543_publishing_freshness_rows')
+        expect(migration).toContain('limit least(greatest(coalesce(p_limit, 100), 1), 100)')
+        expect(migration).toContain('with (security_invoker = true)')
+        expect(migration).toMatch(
+            /from dpg_control\.leo543_scheduler_runs run\s+where run\.status = 'succeeded'/i,
+        )
         expect(migration).not.toContain('response_content')
         expect(migration).not.toContain("name = 'leo543_scheduler_url'")
         expect(migration).not.toMatch(/grant select on table dpg_control\.leo543_scheduler_config/i)
+        expect(migration).not.toMatch(/grant\s+(select|all)\s+on\s+table\s+dpg_control\.leo543_scheduler_runs\s+to\s+dpg_readonly/i)
     })
 
     it('keeps live acceptance non-mutating and secret-safe', () => {
         expect(acceptance).toContain('This test does not enable the scheduler')
         expect(acceptance).toContain('rollback;')
+        expect(acceptance).toContain('set local role dpg_readonly;')
+        expect(acceptance).toContain('raw scheduler table read unexpectedly succeeded')
+        expect(acceptance).toContain("has_table_privilege('dpg_readonly', 'dpg_control.leo543_scheduler_runs', 'INSERT')")
+        expect(acceptance).toContain("has_function_privilege('dpg_readonly', 'dpg_control.leo543_scheduler_tick()', 'EXECUTE')")
         expect(acceptance).not.toMatch(/select\s+.*decrypted_secret/i)
         expect(acceptance).not.toMatch(/insert into dpg_app\.|update dpg_app\.|delete from dpg_app\./i)
     })

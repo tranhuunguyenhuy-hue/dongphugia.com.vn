@@ -466,36 +466,66 @@ as $$
   where config.singleton and state.singleton
 $$;
 
+create or replace function dpg_control.leo543_publishing_freshness_rows(
+  p_limit integer default 100
+)
+returns table (
+  run_id uuid,
+  slot_at timestamptz,
+  completed_at timestamptz,
+  response_status integer,
+  result_code text,
+  freshness_seconds numeric(12, 3),
+  processed_count integer,
+  published_count integer,
+  blocked_count integer
+)
+language sql
+stable
+security definer
+set search_path = pg_catalog, dpg_control, extensions
+as $$
+  select
+    run.run_id,
+    run.slot_at,
+    run.completed_at,
+    run.response_status,
+    run.result_code,
+    run.freshness_seconds,
+    run.processed_count,
+    run.published_count,
+    run.blocked_count
+  from dpg_control.leo543_scheduler_runs run
+  where run.status = 'succeeded'
+  order by run.completed_at desc
+  limit least(greatest(coalesce(p_limit, 100), 1), 100)
+$$;
+
 create view dpg_control.leo543_publishing_freshness
 with (security_invoker = true)
 as
-select
-  run_id,
-  slot_at,
-  completed_at,
-  response_status,
-  result_code,
-  freshness_seconds,
-  processed_count,
-  published_count,
-  blocked_count
-from dpg_control.leo543_scheduler_runs
-where status = 'succeeded'
-order by completed_at desc;
+select *
+from dpg_control.leo543_publishing_freshness_rows(100);
 
 comment on view dpg_control.leo543_publishing_freshness is
   'Sanitized scheduler transport freshness. Public URL/browser freshness requires separate exact-candidate validation.';
 
 alter function dpg_control.leo543_scheduler_tick() owner to dpg_migration;
 alter function dpg_control.leo543_scheduler_report() owner to dpg_migration;
+alter function dpg_control.leo543_publishing_freshness_rows(integer) owner to dpg_migration;
 alter view dpg_control.leo543_publishing_freshness owner to dpg_migration;
 
 revoke all on function dpg_control.leo543_scheduler_tick()
   from public, anon, authenticated, service_role, dpg_runtime, dpg_readonly;
 revoke all on function dpg_control.leo543_scheduler_report()
   from public, anon, authenticated, service_role, dpg_runtime;
+revoke all on function dpg_control.leo543_publishing_freshness_rows(integer)
+  from public, anon, authenticated, service_role, dpg_runtime, dpg_readonly;
+revoke all on dpg_control.leo543_publishing_freshness
+  from public, anon, authenticated, service_role, dpg_runtime;
 grant execute on function dpg_control.leo543_scheduler_tick() to dpg_migration;
 grant execute on function dpg_control.leo543_scheduler_report() to dpg_readonly, dpg_migration;
+grant execute on function dpg_control.leo543_publishing_freshness_rows(integer) to dpg_readonly, dpg_migration;
 grant select on dpg_control.leo543_publishing_freshness to dpg_readonly;
 
 -- If pg_cron is already installed, keep the repository-owned job present but

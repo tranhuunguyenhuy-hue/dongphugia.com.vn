@@ -68,6 +68,12 @@ select dpg_control.leo543_scheduler_report();
 select * from dpg_control.leo543_publishing_freshness limit 20;
 ```
 
+The freshness view remains `security_invoker` and reads through the bounded
+`leo543_publishing_freshness_rows(integer)` function. That function is the only
+object in this contract allowed to read the raw scheduler ledger, and it caps
+the returned sanitized rows at 100. `dpg_readonly` has no direct scheduler-table
+privilege and cannot execute the scheduler tick function.
+
 Response bodies, URLs, Vault values, customer data, and database rows outside
 the bounded scheduler metrics are not part of the evidence record.
 

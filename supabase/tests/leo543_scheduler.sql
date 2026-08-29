@@ -84,4 +84,53 @@ reset role;
 
 select dpg_control.leo543_scheduler_report();
 
+set local role dpg_readonly;
+
+do $$
+declare
+  freshness_rows integer;
+begin
+  select count(*) into freshness_rows
+  from dpg_control.leo543_publishing_freshness;
+
+  if freshness_rows < 0 or freshness_rows > 100 then
+    raise exception 'LEO-543 sanitized freshness view bound failed';
+  end if;
+
+  if has_table_privilege('dpg_readonly', 'dpg_control.leo543_scheduler_runs', 'SELECT')
+     or has_table_privilege('dpg_readonly', 'dpg_control.leo543_scheduler_runs', 'INSERT')
+     or has_table_privilege('dpg_readonly', 'dpg_control.leo543_scheduler_runs', 'UPDATE')
+     or has_table_privilege('dpg_readonly', 'dpg_control.leo543_scheduler_runs', 'DELETE')
+     or has_table_privilege('dpg_readonly', 'dpg_control.leo543_scheduler_runs', 'TRUNCATE') then
+    raise exception 'LEO-543 raw scheduler table privilege unexpectedly exists';
+  end if;
+
+  if has_function_privilege(
+       'dpg_readonly',
+       'dpg_control.leo543_publishing_freshness_rows(integer)',
+       'EXECUTE'
+     ) is not true then
+    raise exception 'LEO-543 sanitized freshness function is not executable by dpg_readonly';
+  end if;
+
+  if has_function_privilege('dpg_readonly', 'dpg_control.leo543_scheduler_tick()', 'EXECUTE') then
+    raise exception 'LEO-543 scheduler mutation function is executable by dpg_readonly';
+  end if;
+end
+$$;
+
+do $$
+begin
+  begin
+    perform 1 from dpg_control.leo543_scheduler_runs;
+    raise exception 'LEO-543 raw scheduler table read unexpectedly succeeded';
+  exception
+    when insufficient_privilege then
+      null;
+  end;
+end
+$$;
+
+reset role;
+
 rollback;
