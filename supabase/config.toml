@@ -71,3 +71,6 @@ verify_jwt = true
 
 [functions.publishing-posts]
 verify_jwt = true
+
+[functions.publishing-scheduler]
+verify_jwt = false

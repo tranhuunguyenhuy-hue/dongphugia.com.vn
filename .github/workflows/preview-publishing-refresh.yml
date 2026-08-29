@@ -1,0 +1,203 @@
+name: Trusted Preview publishing refresh
+
+on:
+  repository_dispatch:
+    types: [leo553-preview-refresh]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: leo553-preview-refresh-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  trusted-main-gate:
+    name: Require trusted main and fixed Preview contract
+    runs-on: ubuntu-24.04
+    outputs:
+      authorized: ${{ steps.gate.outputs.authorized }}
+      control_sha: ${{ steps.gate.outputs.control_sha }}
+      refresh_id: ${{ steps.gate.outputs.refresh_id }}
+    steps:
+      - name: Check out trusted main control only
+        uses: actions/checkout@v4
+        with:
+          ref: refs/heads/main
+          persist-credentials: false
+
+      - name: Reject non-main, arbitrary input, or disabled refresh
+        id: gate
+        env:
+          REFRESH_ENABLED: ${{ vars.LEO553_PREVIEW_REFRESH_ENABLED }}
+          REFRESH_CONTRACT: ${{ vars.LEO553_PREVIEW_REFRESH_CONTRACT }}
+          REFRESH_ID: ${{ github.event.client_payload.refresh_id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_EVENT_NAME" = 'repository_dispatch'
+          test "$GITHUB_REF" = 'refs/heads/main'
+          control_sha="$(git rev-parse HEAD)"
+          test "$control_sha" = "$GITHUB_SHA"
+          if [[ ! "$REFRESH_ID" =~ ^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$ ]]; then
+            echo 'Invalid sanitized refresh identity.' >&2
+            exit 1
+          fi
+          {
+            echo "control_sha=$control_sha"
+            echo "refresh_id=$REFRESH_ID"
+          } >> "$GITHUB_OUTPUT"
+          if [[ "$REFRESH_ENABLED" != 'true' || "$REFRESH_CONTRACT" != 'trusted-main-fixed-preview' ]]; then
+            echo 'authorized=false' >> "$GITHUB_OUTPUT"
+            {
+              echo '### LEO-553 Preview refresh: BLOCKED_BY_OWNER_GATE'
+              echo '- Required configuration: LEO553_PREVIEW_REFRESH_ENABLED=true'
+              echo '- Required contract: trusted-main-fixed-preview'
+              echo '- No build, source read, deployment, DNS, or traffic mutation was attempted.'
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          echo 'authorized=true' >> "$GITHUB_OUTPUT"
+
+  refresh-preview:
+    name: Build and deploy fixed noindex Preview
+    needs: trusted-main-gate
+    if: needs.trusted-main-gate.outputs.authorized == 'true' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - name: Check out trusted main control only
+        uses: actions/checkout@v4
+        with:
+          ref: refs/heads/main
+          persist-credentials: false
+
+      - name: Re-attest trusted main identity
+        env:
+          CONTROL_SHA: ${{ needs.trusted-main-gate.outputs.control_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = 'refs/heads/main'
+          test "$(git rev-parse HEAD)" = "$CONTROL_SHA"
+          test "$CONTROL_SHA" = "$GITHUB_SHA"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install trusted dependencies
+        run: npm ci
+
+      - name: Attest the approved read-only Supabase Preview source
+        env:
+          DATABASE_URL: ${{ secrets.MIGRATION_PREVIEW_DATABASE_URL }}
+          PUBLIC_STATIC_BUILD_READ_ONLY: 'true'
+        run: npm run static:verify-preview-source
+
+      - name: Build and verify the canonical noindex artifact
+        env:
+          DATABASE_URL: ${{ secrets.MIGRATION_PREVIEW_DATABASE_URL }}
+          PUBLIC_STATIC_BUILD_READ_ONLY: 'true'
+          PUBLIC_STATIC_BUILD_DB_ROLE: dpg_readonly
+          PUBLIC_STATIC_BUILD_SCHEMA: dpg_app
+          PUBLISHING_BUNNY_CDN_HOSTNAME: cdn.dongphugia.com.vn
+          OUTPUT: ${{ runner.temp }}/dongphugia-static-preview
+          EVIDENCE: ${{ runner.temp }}/dongphugia-preview-evidence/candidate-evidence.json
+          CONTROL_SHA: ${{ needs.trusted-main-gate.outputs.control_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run static:build -- --mode=preview --output="$OUTPUT"
+          npm run static:verify-preview -- \
+            --output "$OUTPUT" \
+            --evidence "$EVIDENCE" \
+            --source-commit "$CONTROL_SHA" \
+            --pr-number 0 \
+            --workflow-run-id "$GITHUB_RUN_ID"
+
+      - name: Require the existing fixed Preview Pages project
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          PREVIEW_PROJECT: ${{ vars.CLOUDFLARE_PAGES_PREVIEW_PROJECT }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$PREVIEW_PROJECT" =~ ^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$ ]]
+          project_url="https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/pages/projects/${PREVIEW_PROJECT}"
+          response="$(curl --fail --silent --show-error \
+            --header "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+            --header 'Content-Type: application/json' \
+            "$project_url")"
+          jq -e --arg name "$PREVIEW_PROJECT" \
+            '.success == true and .result.name == $name and .result.production_branch == "main" and .result.subdomain == ($name + ".pages.dev") and ((.result.domains // []) | all(. == ($name + ".pages.dev")))' \
+            >/dev/null <<<"$response"
+
+      - name: Upload trusted artifact to the fixed stable Preview branch
+        id: deploy
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: >-
+            pages deploy ${{ runner.temp }}/dongphugia-static-preview
+            --project-name=${{ vars.CLOUDFLARE_PAGES_PREVIEW_PROJECT }}
+            --branch=publishing-refresh
+            --commit-hash=${{ needs.trusted-main-gate.outputs.control_sha }}
+            --commit-message=LEO-553-trusted-preview-refresh
+
+      - name: Prove the stable Preview remains noindex
+        env:
+          PREVIEW_PROJECT: ${{ vars.CLOUDFLARE_PAGES_PREVIEW_PROJECT }}
+          DEPLOYMENT_URL: ${{ steps.deploy.outputs.deployment-url }}
+          PREVIEW_ALIAS_URL: ${{ steps.deploy.outputs.pages-deployment-alias-url }}
+          REFRESH_ID: ${{ needs.trusted-main-gate.outputs.refresh_id }}
+          CONTROL_SHA: ${{ needs.trusted-main-gate.outputs.control_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected_url="https://publishing-refresh.${PREVIEW_PROJECT}.pages.dev"
+          preview_url="${PREVIEW_ALIAS_URL:-${DEPLOYMENT_URL:-}}"
+          test "$preview_url" = "$expected_url"
+          curl --fail --silent --show-error --retry-all-errors --retry 12 --retry-delay 5 \
+            --retry-max-time 120 -D "$RUNNER_TEMP/preview.headers" \
+            -o "$RUNNER_TEMP/preview.html" "$expected_url/"
+          curl --fail --silent --show-error --retry-all-errors --retry 12 --retry-delay 5 \
+            --retry-max-time 120 -o "$RUNNER_TEMP/preview.robots" "$expected_url/robots.txt"
+          grep -Eiq '^x-robots-tag:.*noindex, nofollow' "$RUNNER_TEMP/preview.headers"
+          grep -Eiq 'noindex,nofollow' "$RUNNER_TEMP/preview.html"
+          grep -Fq 'Disallow: /' "$RUNNER_TEMP/preview.robots"
+          {
+            echo '### LEO-553 trusted Preview refresh: PASS'
+            echo "- Refresh ID: $REFRESH_ID"
+            echo "- Trusted control SHA: $CONTROL_SHA"
+            echo "- Stable URL: $expected_url"
+            echo '- Static artifact, HTML, headers, and robots noindex controls: PASS'
+            echo '- Production, DNS, custom domain, and public traffic: unchanged'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  refresh-gate:
+    name: Trusted Preview refresh gate
+    needs: [trusted-main-gate, refresh-preview]
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Record sanitized result
+        env:
+          AUTHORIZED: ${{ needs.trusted-main-gate.outputs.authorized }}
+          REFRESH_RESULT: ${{ needs.refresh-preview.result }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$AUTHORIZED" != 'true' ]]; then
+            echo 'LEO553_REFRESH status=BLOCKED_BY_OWNER_GATE' >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          if [[ "$REFRESH_RESULT" != 'success' ]]; then
+            echo 'LEO553_REFRESH status=FAILED reason=TRUSTED_STATIC_REFRESH_FAILED' >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          echo 'LEO553_REFRESH status=PASS' >> "$GITHUB_STEP_SUMMARY"
