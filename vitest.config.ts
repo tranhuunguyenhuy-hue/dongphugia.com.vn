@@ -16,6 +16,13 @@ export default defineConfig({
             ),
         },
         // exclude next.js specific files
-        exclude: ['node_modules', '.next', 'tests/readiness/**'],
+        exclude: [
+            '**/node_modules/**',
+            '**/.next/**',
+            '**/dist/**',
+            '**/.worker-package/**',
+            '.artifacts/**',
+            'tests/readiness/**',
+        ],
     },
 })

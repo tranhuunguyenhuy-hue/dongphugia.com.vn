@@ -19,6 +19,18 @@ async function makeBuildOutput(files: Record<string, string>) {
   return root
 }
 
+async function makeRuntimeProof(application: 'public' | 'admin', sourceCommit: string) {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'dongphugia-leo563-proof-'))
+  const proofPath = path.join(root, 'runtime-proof.json')
+  await writeFile(proofPath, JSON.stringify({
+    contract: 'dongphugia:app-runtime-proof:v1',
+    application,
+    sourceCommit,
+    observation: { noindex: { htmlMeta: true, responseHeader: true, robotsDisallowAll: true } },
+  }), 'utf8')
+  return { root, proofPath }
+}
+
 describe('LEO-563 deterministic application artifacts', () => {
   const sourceCommit = '8b96aecb8c34cc46079f292369aa961d9e5c2020'
 
@@ -31,6 +43,16 @@ describe('LEO-563 deterministic application artifacts', () => {
       'required-server-files.json': 'machine-local',
       'trace-build/ignored': 'volatile',
       'types/ignored.d.ts': 'generated',
+      'worker-artifact-evidence.json': JSON.stringify({
+        contract: 'dongphugia:public-worker-artifact:v1',
+        sourceCommit,
+        adapter: { name: 'vinext', version: '1.0.0-beta.8', command: 'vinext build' },
+        packager: { name: 'wrangler', version: '4.127.1', command: 'wrangler deploy --dry-run' },
+        worker: { sha256: 'a'.repeat(64), fileCount: 1, totalBytes: 1, wranglerUploadKiB: 1, wranglerGzipKiB: 1 },
+        staticAssets: { sha256: 'b'.repeat(64), fileCount: 1, totalBytes: 1, largestFile: { path: 'asset.js', bytes: 1 } },
+        configSha256: 'c'.repeat(64),
+        freeLimits: { passed: true },
+      }),
     })
     const adminBuild = await makeBuildOutput({
       'server/app/page.js': 'admin-shell',
@@ -39,6 +61,8 @@ describe('LEO-563 deterministic application artifacts', () => {
       'trace/ignored': 'volatile',
     })
     const artifactRoot = await mkdtemp(path.join(os.tmpdir(), 'dongphugia-leo563-artifacts-'))
+    const publicProof = await makeRuntimeProof('public', sourceCommit)
+    const adminProof = await makeRuntimeProof('admin', sourceCommit)
 
     try {
       const publicManifest = await collectAppArtifact({
@@ -47,7 +71,7 @@ describe('LEO-563 deterministic application artifacts', () => {
         artifactRoot: path.join(artifactRoot, 'public'),
         sourceCommit,
         buildTarget: 'public-worker-static-assets',
-        previewNoindex: true,
+        runtimeProof: publicProof.proofPath,
       })
       const adminManifest = await collectAppArtifact({
         application: 'admin',
@@ -55,7 +79,7 @@ describe('LEO-563 deterministic application artifacts', () => {
         artifactRoot: path.join(artifactRoot, 'admin'),
         sourceCommit,
         buildTarget: 'admin-independent-private-runtime',
-        previewNoindex: true,
+        runtimeProof: adminProof.proofPath,
       })
 
       expect(publicManifest.artifactSha256).not.toBe(adminManifest.artifactSha256)
@@ -67,9 +91,15 @@ describe('LEO-563 deterministic application artifacts', () => {
       )
       expect(publicManifest.sourceCommit).toBe(sourceCommit)
       expect(publicManifest.preview.noindex).toEqual({ htmlMeta: true, headers: true, robots: true })
-      expect(JSON.parse(await readFile(path.join(artifactRoot, 'public', 'artifact-manifest.json'), 'utf8')).payload.fileCount).toBe(2)
+      expect(JSON.parse(await readFile(path.join(artifactRoot, 'public', 'artifact-manifest.json'), 'utf8')).payload.fileCount).toBeGreaterThan(2)
     } finally {
-      await Promise.all([rm(publicBuild, { recursive: true, force: true }), rm(adminBuild, { recursive: true, force: true }), rm(artifactRoot, { recursive: true, force: true })])
+      await Promise.all([
+        rm(publicBuild, { recursive: true, force: true }),
+        rm(adminBuild, { recursive: true, force: true }),
+        rm(artifactRoot, { recursive: true, force: true }),
+        rm(publicProof.root, { recursive: true, force: true }),
+        rm(adminProof.root, { recursive: true, force: true }),
+      ])
     }
   })
 })

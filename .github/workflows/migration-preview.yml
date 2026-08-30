@@ -96,11 +96,24 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install the independently locked Public Worker toolchain
+        run: npm ci --prefix apps/public
+
       - name: Lint
         run: npm run lint
 
       - name: Type-check
         run: npm run typecheck
+
+      - name: Type-check Public independently
+        run: npm run typecheck:public
+
+      - name: Check official vinext compatibility
+        working-directory: apps/public
+        run: npm exec -- vinext check
+
+      - name: Check Public Worker fail-closed contracts
+        run: npm run app:public-worker:check
 
       - name: Test
         run: npm test
@@ -139,24 +152,94 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build Public independently in noindex Preview mode
+      - name: Install the independently locked Public Worker toolchain
+        run: npm ci --prefix apps/public
+
+      - name: Build the Public Worker and Static Assets independently
         env:
           APP_ENV: preview
           APP_BUILD_TARGET: public
           APP_ORIGIN: https://public-preview.invalid
           PREVIEW_NOINDEX: 'true'
           BUILD_SOURCE_SHA: ${{ needs.repo-code-gate.outputs.source_sha }}
-        run: npm run build:public
+        run: npm run build:public-worker
+
+      - name: Prove deterministic Public Worker, Static Assets, and config identities
+        env:
+          APP_ENV: preview
+          APP_BUILD_TARGET: public
+          APP_ORIGIN: https://public-preview.invalid
+          PREVIEW_NOINDEX: 'true'
+          BUILD_SOURCE_SHA: ${{ needs.repo-code-gate.outputs.source_sha }}
+          FIRST_BUILD: ${{ runner.temp }}/public-worker-first
+          SECOND_BUILD: ${{ runner.temp }}/public-worker-second
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run app:assemble-public-worker -- \
+            --repository-root . \
+            --server-dir apps/public/dist/server \
+            --assets-dir apps/public/dist/client \
+            --output "$FIRST_BUILD" \
+            --source-sha "$SOURCE_SHA"
+          npm run build:public-worker
+          npm run app:assemble-public-worker -- \
+            --repository-root . \
+            --server-dir apps/public/dist/server \
+            --assets-dir apps/public/dist/client \
+            --output "$SECOND_BUILD" \
+            --source-sha "$SOURCE_SHA"
+          for selector in '.worker.sha256' '.staticAssets.sha256' '.configSha256'; do
+            first="$(jq -r "$selector" "$FIRST_BUILD/worker-artifact-evidence.json")"
+            second="$(jq -r "$selector" "$SECOND_BUILD/worker-artifact-evidence.json")"
+            test "$first" = "$second"
+          done
+
+      - name: Prove Public SSR, noindex, cache, and Preview isolation in workerd
+        env:
+          RUNTIME_PROOF: ${{ runner.temp }}/public-runtime-proof.json
+          WRANGLER_STATE: ${{ runner.temp }}/public-worker-state
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm --prefix apps/public run start:worker -- --persist-to "$WRANGLER_STATE" > "$RUNNER_TEMP/public-worker.log" 2>&1 &
+          worker_pid=$!
+          trap 'kill "$worker_pid" 2>/dev/null || true' EXIT
+          for _ in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:8787/api/health > /dev/null; then break; fi
+            if ! kill -0 "$worker_pid" 2>/dev/null; then cat "$RUNNER_TEMP/public-worker.log"; exit 1; fi
+            sleep 1
+          done
+          curl --fail --silent http://127.0.0.1:8787/api/health > /dev/null
+          npm run app:runtime-proof -- \
+            --application public \
+            --base-url http://127.0.0.1:8787 \
+            --source-sha "$SOURCE_SHA" \
+            --output "$RUNTIME_PROOF"
+          kill "$worker_pid"
+          wait "$worker_pid" || true
+          trap - EXIT
+
+      - name: Assemble and dry-run the deployable Public Worker candidate
+        env:
+          PUBLIC_DEPLOYABLE: ${{ runner.temp }}/public-worker-deployable
+        run: >-
+          npm run app:assemble-public-worker --
+          --repository-root .
+          --server-dir apps/public/dist/server
+          --assets-dir apps/public/dist/client
+          --output "$PUBLIC_DEPLOYABLE"
+          --source-sha "$SOURCE_SHA"
 
       - name: Collect the Public artifact identity
         run: >-
           npm run app:collect-artifact --
           --application public
-          --build-dir apps/public/.next
+          --build-dir "${{ runner.temp }}/public-worker-deployable"
           --artifact-root "$OUTPUT/public"
           --source-sha "$SOURCE_SHA"
           --build-target public-worker-static-assets
-          --preview true
+          --runtime-proof "${{ runner.temp }}/public-runtime-proof.json"
 
       - name: Build Admin independently in private noindex Preview mode
         env:
@@ -167,6 +250,30 @@ jobs:
           BUILD_SOURCE_SHA: ${{ needs.repo-code-gate.outputs.source_sha }}
         run: npm run build:admin
 
+      - name: Prove Admin noindex and private no-store in its independent runtime
+        env:
+          RUNTIME_PROOF: ${{ runner.temp }}/admin-runtime-proof.json
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm --prefix apps/admin run start -- --hostname 127.0.0.1 --port 8788 > "$RUNNER_TEMP/admin-runtime.log" 2>&1 &
+          admin_pid=$!
+          trap 'kill "$admin_pid" 2>/dev/null || true' EXIT
+          for _ in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:8788/api/health > /dev/null; then break; fi
+            if ! kill -0 "$admin_pid" 2>/dev/null; then cat "$RUNNER_TEMP/admin-runtime.log"; exit 1; fi
+            sleep 1
+          done
+          curl --fail --silent http://127.0.0.1:8788/api/health > /dev/null
+          npm run app:runtime-proof -- \
+            --application admin \
+            --base-url http://127.0.0.1:8788 \
+            --source-sha "$SOURCE_SHA" \
+            --output "$RUNTIME_PROOF"
+          kill "$admin_pid"
+          wait "$admin_pid" || true
+          trap - EXIT
+
       - name: Collect the Admin artifact identity
         run: >-
           npm run app:collect-artifact --
@@ -175,7 +282,7 @@ jobs:
           --artifact-root "$OUTPUT/admin"
           --source-sha "$SOURCE_SHA"
           --build-target admin-independent-private-runtime
-          --preview true
+          --runtime-proof "${{ runner.temp }}/admin-runtime-proof.json"
 
       - name: Create the complete immutable candidate evidence
         run: >-
@@ -185,6 +292,8 @@ jobs:
           --pr-number "$PR_NUMBER"
           --workflow-run-id "$WORKFLOW_RUN_ID"
           --lockfile package-lock.json
+          --public-lockfile apps/public/package-lock.json
+          --migration-manifest db/postgres-migrations/manifest.json
           --evidence "$OUTPUT/candidate-evidence.json"
 
       - name: Verify candidate identity before artifact publication
@@ -195,6 +304,8 @@ jobs:
           --pr-number "$PR_NUMBER"
           --workflow-run-id "$WORKFLOW_RUN_ID"
           --lockfile package-lock.json
+          --public-lockfile apps/public/package-lock.json
+          --migration-manifest db/postgres-migrations/manifest.json
           --evidence "$OUTPUT/candidate-evidence.json"
 
       - name: Record immutable candidate outputs
@@ -203,8 +314,14 @@ jobs:
           set -euo pipefail
           public_sha="$(jq -r '.applications.public.artifactSha256' "$OUTPUT/candidate-evidence.json")"
           admin_sha="$(jq -r '.applications.admin.artifactSha256' "$OUTPUT/candidate-evidence.json")"
+          worker_sha="$(jq -r '.candidate.publicWorkerSha256' "$OUTPUT/candidate-evidence.json")"
+          assets_sha="$(jq -r '.candidate.publicStaticAssetsSha256' "$OUTPUT/candidate-evidence.json")"
+          config_sha="$(jq -r '.candidate.publicConfigSha256' "$OUTPUT/candidate-evidence.json")"
           [[ "$public_sha" =~ ^[0-9a-f]{64}$ ]]
           [[ "$admin_sha" =~ ^[0-9a-f]{64}$ ]]
+          [[ "$worker_sha" =~ ^[0-9a-f]{64}$ ]]
+          [[ "$assets_sha" =~ ^[0-9a-f]{64}$ ]]
+          [[ "$config_sha" =~ ^[0-9a-f]{64}$ ]]
           test "$public_sha" != "$admin_sha"
           {
             echo 'artifact_ready=true'
@@ -216,8 +333,11 @@ jobs:
             echo "- Exact source SHA: $SOURCE_SHA"
             echo "- Public artifact SHA-256: $public_sha"
             echo "- Admin artifact SHA-256: $admin_sha"
+            echo "- Public Worker SHA-256: $worker_sha"
+            echo "- Public Static Assets SHA-256: $assets_sha"
+            echo "- Public deploy config SHA-256: $config_sha"
             echo '- Public/Admin build targets: independent'
-            echo '- Preview HTML/header/robots noindex posture: PASS'
+            echo '- Preview HTML/header/robots noindex posture: runtime-derived PASS'
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload the immutable Public/Admin candidate and evidence

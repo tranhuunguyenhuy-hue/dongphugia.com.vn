@@ -9,10 +9,13 @@ const APPLICATION_SOURCE_PREFIXES = {
 }
 
 const SHARED_BUILD_FILES = new Set([
+  '.github/workflows/migration-preview.yml',
   'package.json',
   'package-lock.json',
   'tsconfig.json',
 ])
+
+const ARTIFACT_FOUNDATION_PREFIX = 'scripts/app-foundation/'
 
 function isTestOrDocumentationPath(path) {
   const normalized = path.replaceAll('\\', '/')
@@ -29,6 +32,7 @@ function isTestOrDocumentationPath(path) {
 export function isMaterialApplicationPath(path) {
   const normalized = path.replaceAll('\\', '/')
   if (SHARED_BUILD_FILES.has(normalized)) return true
+  if (normalized.startsWith(ARTIFACT_FOUNDATION_PREFIX) && !isTestOrDocumentationPath(normalized)) return true
   if (isTestOrDocumentationPath(normalized)) return false
 
   return Object.values(APPLICATION_SOURCE_PREFIXES)
@@ -42,14 +46,17 @@ export function classifyChangedPaths(paths) {
     APPLICATION_SOURCE_PREFIXES.shared.some((prefix) => path.startsWith(prefix)),
   )
   const rootBuildChanged = materialPaths.some((path) => SHARED_BUILD_FILES.has(path))
+  const artifactFoundationChanged = materialPaths.some((path) => path.startsWith(ARTIFACT_FOUNDATION_PREFIX))
   const publicChanged =
     rootBuildChanged ||
+    artifactFoundationChanged ||
     sharedChanged ||
     materialPaths.some((path) =>
       APPLICATION_SOURCE_PREFIXES.public.some((prefix) => path.startsWith(prefix)),
     )
   const adminChanged =
     rootBuildChanged ||
+    artifactFoundationChanged ||
     sharedChanged ||
     materialPaths.some((path) =>
       APPLICATION_SOURCE_PREFIXES.admin.some((prefix) => path.startsWith(prefix)),

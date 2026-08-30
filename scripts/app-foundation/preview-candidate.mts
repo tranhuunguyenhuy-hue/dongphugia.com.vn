@@ -4,7 +4,6 @@ import path from 'node:path'
 
 import {
   APPLICATIONS,
-  PUBLIC_PREVIEW_NOINDEX,
   type ApplicationName,
 } from '../../packages/app-contracts/src/index'
 import {
@@ -23,6 +22,8 @@ type CandidateOptions = Readonly<{
   pullRequest: number
   workflowRunId: string
   lockfile: string
+  publicLockfile: string
+  migrationManifest: string
   evidencePath: string
 }>
 
@@ -97,6 +98,10 @@ export async function createPreviewCandidate(options: CandidateOptions) {
   const sourceCommit = requireSourceCommit(options.sourceCommit)
   const manifests = await getManifests({ ...options, sourceCommit })
   const lockfileSha256 = await sha256File(options.lockfile)
+  const publicLockfileSha256 = await sha256File(options.publicLockfile)
+  const migrationManifestSha256 = await sha256File(options.migrationManifest)
+  const publicWorker = manifests.public.publicWorker
+  if (!publicWorker) throw new Error('CANDIDATE_PUBLIC_WORKER_EVIDENCE_MISSING')
   const evidence = {
     contract: CANDIDATE_CONTRACT,
     candidate: {
@@ -105,17 +110,20 @@ export async function createPreviewCandidate(options: CandidateOptions) {
       workflowRunId: options.workflowRunId,
       buildTarget: 'public-worker-static-assets+admin-independent-runtime',
       lockfileSha256,
+      publicLockfileSha256,
+      migrationManifestSha256,
       publicArtifactSha256: manifests.public.artifactSha256,
       adminArtifactSha256: manifests.admin.artifactSha256,
+      publicWorkerSha256: publicWorker.worker.sha256,
+      publicStaticAssetsSha256: publicWorker.staticAssets.sha256,
+      publicConfigSha256: publicWorker.configSha256,
     },
     applications: manifests,
     noindex: {
-      htmlMeta: true,
-      headers: true,
-      robots: true,
-      htmlMetaValue: PUBLIC_PREVIEW_NOINDEX.htmlMeta,
-      responseHeaderValue: PUBLIC_PREVIEW_NOINDEX.responseHeader,
-      robotsDirective: PUBLIC_PREVIEW_NOINDEX.robotsDirective,
+      publicRuntimeProofSha256: manifests.public.runtimeProofSha256,
+      adminRuntimeProofSha256: manifests.admin.runtimeProofSha256,
+      public: manifests.public.preview.noindex,
+      admin: manifests.admin.preview.noindex,
     },
     publication: {
       mode: 'ci-only',
@@ -140,12 +148,12 @@ export async function verifyPreviewCandidate(
   if (evidence.candidate.workflowRunId !== expected.workflowRunId) throw new Error('CANDIDATE_RUN_FAILED')
   if (evidence.candidate.buildTarget !== 'public-worker-static-assets+admin-independent-runtime') throw new Error('CANDIDATE_BUILD_TARGET_FAILED')
   if (
-    !evidence.noindex.htmlMeta ||
-    !evidence.noindex.headers ||
-    !evidence.noindex.robots ||
-    evidence.noindex.htmlMetaValue !== PUBLIC_PREVIEW_NOINDEX.htmlMeta ||
-    evidence.noindex.responseHeaderValue !== PUBLIC_PREVIEW_NOINDEX.responseHeader ||
-    evidence.noindex.robotsDirective !== PUBLIC_PREVIEW_NOINDEX.robotsDirective
+    !evidence.noindex.public.htmlMeta ||
+    !evidence.noindex.public.headers ||
+    !evidence.noindex.public.robots ||
+    !evidence.noindex.admin.htmlMeta ||
+    !evidence.noindex.admin.headers ||
+    !evidence.noindex.admin.robots
   ) throw new Error('CANDIDATE_NOINDEX_FAILED')
   if (
     evidence.publication.mode !== 'ci-only' ||
@@ -158,8 +166,23 @@ export async function verifyPreviewCandidate(
   if (evidence.candidate.lockfileSha256 !== await sha256File(options.lockfile)) {
     throw new Error('CANDIDATE_LOCKFILE_FAILED')
   }
+  if (evidence.candidate.publicLockfileSha256 !== await sha256File(options.publicLockfile)) {
+    throw new Error('CANDIDATE_PUBLIC_LOCKFILE_FAILED')
+  }
+  if (evidence.candidate.migrationManifestSha256 !== await sha256File(options.migrationManifest)) {
+    throw new Error('CANDIDATE_MIGRATION_MANIFEST_FAILED')
+  }
   if (evidence.candidate.publicArtifactSha256 !== manifests.public.artifactSha256) throw new Error('CANDIDATE_PUBLIC_ARTIFACT_FAILED')
   if (evidence.candidate.adminArtifactSha256 !== manifests.admin.artifactSha256) throw new Error('CANDIDATE_ADMIN_ARTIFACT_FAILED')
+  if (evidence.noindex.publicRuntimeProofSha256 !== manifests.public.runtimeProofSha256) throw new Error('CANDIDATE_PUBLIC_RUNTIME_PROOF_FAILED')
+  if (evidence.noindex.adminRuntimeProofSha256 !== manifests.admin.runtimeProofSha256) throw new Error('CANDIDATE_ADMIN_RUNTIME_PROOF_FAILED')
+  const publicWorker = manifests.public.publicWorker
+  if (
+    !publicWorker ||
+    evidence.candidate.publicWorkerSha256 !== publicWorker.worker.sha256 ||
+    evidence.candidate.publicStaticAssetsSha256 !== publicWorker.staticAssets.sha256 ||
+    evidence.candidate.publicConfigSha256 !== publicWorker.configSha256
+  ) throw new Error('CANDIDATE_PUBLIC_WORKER_IDENTITY_FAILED')
   return evidence
 }
 
@@ -169,10 +192,12 @@ function optionsFromArgs(args: Record<string, string>): CandidateOptions {
   const pullRequest = Number(args['pr-number'] || 0)
   const workflowRunId = args['workflow-run-id'] || ''
   const lockfile = path.resolve(args.lockfile || 'package-lock.json')
+  const publicLockfile = path.resolve(args['public-lockfile'] || 'apps/public/package-lock.json')
+  const migrationManifest = path.resolve(args['migration-manifest'] || 'db/postgres-migrations/manifest.json')
   const evidencePath = path.resolve(args.evidence || path.join(artifactRoot, 'candidate-evidence.json'))
   if (!Number.isInteger(pullRequest) || pullRequest < 0) throw new Error('CANDIDATE_PR_INVALID')
   if (!workflowRunId) throw new Error('CANDIDATE_RUN_ID_MISSING')
-  return { artifactRoot, sourceCommit, pullRequest, workflowRunId, lockfile, evidencePath }
+  return { artifactRoot, sourceCommit, pullRequest, workflowRunId, lockfile, publicLockfile, migrationManifest, evidencePath }
 }
 
 async function main() {

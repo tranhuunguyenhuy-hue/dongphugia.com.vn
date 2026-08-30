@@ -75,12 +75,13 @@ base SHA. Only material changes under `apps/public`, `apps/admin`,
 `packages/app-contracts`, or the shared build manifests can produce the new
 application Preview candidate.
 
-For that predicate, CI builds Public and Admin independently, records each
-artifact SHA-256, binds both to the exact source SHA and lockfile digest, and
-verifies the candidate identity before uploading the CI artifact. The Public
-artifact carries the Worker-plus-Static-Assets runtime identity; Admin carries
-the independent private-runtime identity. Both Preview artifacts require the
-HTML, response-header, and `robots.txt` noindex contract.
+For that predicate, CI builds Public and Admin independently. Public uses the
+pinned `vinext` Worker adapter, packages Worker plus Static Assets with a
+Wrangler dry run, and proves byte-identical Worker/assets/config identities
+across two builds. The candidate binds both application identities to exact
+source SHA, root/Public lockfile digests, and migration-manifest digest before
+upload. HTML, response-header, and `robots.txt` noindex claims come from checks
+against the built runtimes rather than manifest constants.
 
 The former single-Pages publish/create path is intentionally not called. One
 existing Pages project cannot safely represent the separate Public Worker and

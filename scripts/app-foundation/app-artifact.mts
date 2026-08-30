@@ -14,7 +14,7 @@ type ArtifactOptions = Readonly<{
   artifactRoot: string
   sourceCommit: string
   buildTarget: string
-  previewNoindex: boolean
+  runtimeProof: string
 }>
 
 type ArtifactManifest = Readonly<{
@@ -33,6 +33,15 @@ type ArtifactManifest = Readonly<{
     }
   }
   payload: { fileCount: number; totalBytes: number }
+  runtimeProofSha256: string
+  publicWorker?: {
+    adapter: { name: string; version: string; command: string }
+    packager: { name: string; version: string; command: string }
+    worker: { sha256: string; fileCount: number; totalBytes: number; wranglerUploadKiB: number; wranglerGzipKiB: number }
+    staticAssets: { sha256: string; fileCount: number; totalBytes: number; largestFile: { path: string; bytes: number } }
+    configSha256: string
+    freeLimits: { passed: boolean }
+  }
   artifactSha256: string
 }>
 
@@ -162,7 +171,6 @@ export async function collectAppArtifact(options: ArtifactOptions): Promise<Arti
   if (!/^[0-9a-f]{40}$/.test(options.sourceCommit)) {
     throw new Error('ARTIFACT_SOURCE_COMMIT_INVALID')
   }
-  if (!options.previewNoindex) throw new Error('ARTIFACT_PREVIEW_NOINDEX_REQUIRED')
   if (!Object.hasOwn(APPLICATIONS, options.application)) throw new Error('ARTIFACT_APPLICATION_INVALID')
   if (options.buildTarget !== EXPECTED_BUILD_TARGETS[options.application]) {
     throw new Error('ARTIFACT_BUILD_TARGET_MISMATCH')
@@ -170,12 +178,48 @@ export async function collectAppArtifact(options: ArtifactOptions): Promise<Arti
 
   const buildStats = await stat(options.buildDir).catch(() => null)
   if (!buildStats?.isDirectory()) throw new Error('ARTIFACT_BUILD_OUTPUT_MISSING')
+  const runtimeProofText = await readFile(options.runtimeProof, 'utf8').catch(() => null)
+  if (!runtimeProofText) throw new Error('ARTIFACT_RUNTIME_PROOF_MISSING')
+  const runtimeProof = JSON.parse(runtimeProofText) as {
+    contract: string
+    application: ApplicationName
+    sourceCommit: string
+    observation: { noindex: { htmlMeta: boolean; responseHeader: boolean; robotsDisallowAll: boolean } }
+  }
+  if (runtimeProof.contract !== 'dongphugia:app-runtime-proof:v1') throw new Error('ARTIFACT_RUNTIME_PROOF_CONTRACT_FAILED')
+  if (runtimeProof.application !== options.application) throw new Error('ARTIFACT_RUNTIME_PROOF_APPLICATION_FAILED')
+  if (runtimeProof.sourceCommit !== options.sourceCommit) throw new Error('ARTIFACT_RUNTIME_PROOF_SOURCE_FAILED')
+  if (
+    !runtimeProof.observation.noindex.htmlMeta ||
+    !runtimeProof.observation.noindex.responseHeader ||
+    !runtimeProof.observation.noindex.robotsDisallowAll
+  ) throw new Error('ARTIFACT_RUNTIME_PROOF_NOINDEX_FAILED')
   assertSafeOutputPath(options.artifactRoot)
   assertArtifactsDoNotOverlap(options.buildDir, options.artifactRoot)
 
   await rm(options.artifactRoot, { recursive: true, force: true })
   await mkdir(path.join(options.artifactRoot, 'build'), { recursive: true })
   await copyTree(options.buildDir, path.join(options.artifactRoot, 'build'))
+  await mkdir(path.join(options.artifactRoot, 'evidence'), { recursive: true })
+  await writeFile(path.join(options.artifactRoot, 'evidence', 'runtime-proof.json'), runtimeProofText, 'utf8')
+
+  let publicWorker: ArtifactManifest['publicWorker']
+  if (options.application === 'public') {
+    const workerEvidence = JSON.parse(
+      await readFile(path.join(options.buildDir, 'worker-artifact-evidence.json'), 'utf8'),
+    ) as ArtifactManifest['publicWorker'] & { contract: string; sourceCommit: string }
+    if (workerEvidence.contract !== 'dongphugia:public-worker-artifact:v1') throw new Error('ARTIFACT_PUBLIC_WORKER_CONTRACT_FAILED')
+    if (workerEvidence.sourceCommit !== options.sourceCommit) throw new Error('ARTIFACT_PUBLIC_WORKER_SOURCE_FAILED')
+    if (!workerEvidence.freeLimits.passed) throw new Error('ARTIFACT_PUBLIC_WORKER_LIMIT_FAILED')
+    publicWorker = {
+      adapter: workerEvidence.adapter,
+      packager: workerEvidence.packager,
+      worker: workerEvidence.worker,
+      staticAssets: workerEvidence.staticAssets,
+      configSha256: workerEvidence.configSha256,
+      freeLimits: workerEvidence.freeLimits,
+    }
+  }
 
   const application = APPLICATIONS[options.application]
   const payload = await digestPayload(options.artifactRoot, options)
@@ -189,15 +233,17 @@ export async function collectAppArtifact(options: ArtifactOptions): Promise<Arti
     preview: {
       mode: 'preview',
       noindex: {
-        htmlMeta: true,
-        headers: true,
-        robots: true,
+        htmlMeta: runtimeProof.observation.noindex.htmlMeta,
+        headers: runtimeProof.observation.noindex.responseHeader,
+        robots: runtimeProof.observation.noindex.robotsDisallowAll,
       },
     },
     payload: {
       fileCount: payload.fileCount,
       totalBytes: payload.totalBytes,
     },
+    runtimeProofSha256: createHash('sha256').update(runtimeProofText).digest('hex'),
+    ...(publicWorker ? { publicWorker } : {}),
     artifactSha256: payload.artifactSha256,
   }
 
@@ -239,7 +285,7 @@ async function main() {
     artifactRoot: path.resolve(args['artifact-root'] || ''),
     sourceCommit: args['source-sha'] || '',
     buildTarget: args['build-target'] || '',
-    previewNoindex: args.preview === 'true',
+    runtimeProof: path.resolve(args['runtime-proof'] || ''),
   })
   process.stdout.write(`${JSON.stringify(manifest)}\n`)
 }

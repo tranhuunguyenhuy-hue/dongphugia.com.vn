@@ -1,6 +1,7 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
+    "types": ["@cloudflare/workers-types"],
     "paths": {
       "@/*": ["./src/*"],
       "@dpg/app-contracts": ["../../packages/app-contracts/src/index.ts"]
@@ -12,6 +13,8 @@
     "app/**/*.tsx",
     "src/**/*.ts",
     "src/**/*.tsx",
+    "vite.config.ts",
+    "worker.ts",
     "../../packages/app-contracts/src/**/*.ts",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts"

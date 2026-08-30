@@ -12,6 +12,8 @@ const contracts = readFileSync(resolve(root, 'packages/app-contracts/src/index.t
 const publicConfig = readFileSync(resolve(root, 'apps/public/next.config.ts'), 'utf8')
 const publicProxy = readFileSync(resolve(root, 'apps/public/proxy.ts'), 'utf8')
 const publicPage = readFileSync(resolve(root, 'apps/public/app/page.tsx'), 'utf8')
+const publicWorker = readFileSync(resolve(root, 'apps/public/worker.ts'), 'utf8')
+const publicWorkerPolicy = readFileSync(resolve(root, 'apps/public/src/worker-policy.ts'), 'utf8')
 const publicLayout = readFileSync(resolve(root, 'apps/public/app/layout.tsx'), 'utf8')
 const publicRobots = readFileSync(resolve(root, 'apps/public/app/robots.txt/route.ts'), 'utf8')
 const adminConfig = readFileSync(resolve(root, 'apps/admin/next.config.ts'), 'utf8')
@@ -65,11 +67,14 @@ describe('LEO-563 application foundation contract', () => {
   })
 
   it('locks route ownership, noindex, and cache/no-store baselines', () => {
-    expect(publicPage).toContain('export const revalidate = 300')
+    expect(publicPage).toContain("export const dynamic = 'force-dynamic'")
     expect(publicLayout).toContain('index: false')
     expect(publicConfig).toContain("X-Robots-Tag")
     expect(publicRobots).toContain('Disallow: /')
     expect(publicProxy).toContain('s-maxage=300')
+    expect(publicWorkerPolicy).toContain('public, max-age=${PUBLIC_EDGE_CACHE_SECONDS}, must-revalidate')
+    expect(publicWorker).toContain("caches.open('dongphugia-public-v1')")
+    expect(`${publicWorker}\n${publicWorkerPolicy}`).not.toContain('stale-while-revalidate')
     expect(adminConfig).toContain("Cache-Control', value: 'private, no-store'")
     expect(adminProxy).toContain("private, no-store")
     expect(adminConfig).toContain("X-Robots-Tag', value: 'noindex, nofollow'")
@@ -93,7 +98,7 @@ describe('LEO-563 application foundation contract', () => {
       'apps/admin/',
       'packages/app-contracts/',
       'app-preview-artifact:',
-      'npm run build:public',
+      'npm run build:public-worker',
       'npm run build:admin',
       'app:create-candidate',
       'app:verify-candidate',

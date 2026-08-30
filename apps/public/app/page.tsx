@@ -1,7 +1,7 @@
 import { APPLICATIONS } from '@dpg/app-contracts'
 
 export const runtime = 'edge'
-export const revalidate = 300
+export const dynamic = 'force-dynamic'
 
 export default function PublicFoundationPage() {
   return (

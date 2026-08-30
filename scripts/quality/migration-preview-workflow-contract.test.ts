@@ -26,7 +26,7 @@ describe('migration PR CI and Preview workflow contract', () => {
   it('builds both independent deployables and verifies immutable identities', () => {
     for (const marker of [
       'app-preview-artifact:',
-      'npm run build:public',
+      'npm run build:public-worker',
       'npm run build:admin',
       'app:collect-artifact',
       'app:create-candidate',
@@ -38,7 +38,7 @@ describe('migration PR CI and Preview workflow contract', () => {
       'noindex',
     ]) expect(`${workflow}\n${candidateScript}`).toContain(marker)
 
-    expect(buildGuide).toContain('artifact SHA-256')
+    expect(buildGuide).toContain('Worker/assets/config identities')
     expect(buildGuide).toContain('CI-only')
   })
 

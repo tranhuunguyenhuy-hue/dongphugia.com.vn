@@ -25,6 +25,9 @@ describe('LEO-563 repository-code Preview gate', () => {
     expect(isMaterialApplicationPath('apps/admin/next.config.ts')).toBe(true)
     expect(isMaterialApplicationPath('packages/app-contracts/src/index.ts')).toBe(true)
     expect(isMaterialApplicationPath('package-lock.json')).toBe(true)
+    expect(isMaterialApplicationPath('apps/public/package-lock.json')).toBe(true)
+    expect(isMaterialApplicationPath('scripts/app-foundation/runtime-proof.mts')).toBe(true)
+    expect(isMaterialApplicationPath('.github/workflows/migration-preview.yml')).toBe(true)
     expect(isMaterialApplicationPath('apps/public/README.md')).toBe(false)
 
     expect(classifyChangedPaths(['apps/public/app/page.tsx'])).toMatchObject({
