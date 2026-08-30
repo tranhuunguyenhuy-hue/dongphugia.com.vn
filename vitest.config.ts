@@ -10,6 +10,10 @@ export default defineConfig({
         setupFiles: ['./vitest.setup.ts'],
         alias: {
             '@': path.resolve(__dirname, './src'),
+            '@dpg/app-contracts': path.resolve(
+                __dirname,
+                './packages/app-contracts/src/index.ts',
+            ),
         },
         // exclude next.js specific files
         exclude: ['node_modules', '.next', 'tests/readiness/**'],

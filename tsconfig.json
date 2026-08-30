@@ -19,7 +19,8 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@dpg/app-contracts": ["./packages/app-contracts/src/index.ts"]
     }
   },
   "include": [

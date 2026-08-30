@@ -1,0 +1,11 @@
+import {
+  PUBLIC_EDGE_CACHE_SECONDS,
+  PUBLIC_PREVIEW_NOINDEX,
+} from '@dpg/app-contracts'
+
+export const PUBLIC_PAGE_REVALIDATE_SECONDS = PUBLIC_EDGE_CACHE_SECONDS
+export const PUBLIC_PAGE_CACHE_CONTROL =
+  `public, max-age=0, s-maxage=${PUBLIC_EDGE_CACHE_SECONDS}, must-revalidate`
+export const PUBLIC_PRIVATE_RESPONSE_CACHE_CONTROL = 'private, no-store'
+export const PUBLIC_PREVIEW_HTML_NOINDEX = PUBLIC_PREVIEW_NOINDEX.htmlMeta
+export const PUBLIC_PREVIEW_RESPONSE_NOINDEX = PUBLIC_PREVIEW_NOINDEX.responseHeader

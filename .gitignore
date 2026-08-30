@@ -1,6 +1,8 @@
 # Dependencies and builds
 /node_modules
 /.next
+/apps/*/.next
+/.artifacts
 /out
 /build
 /coverage

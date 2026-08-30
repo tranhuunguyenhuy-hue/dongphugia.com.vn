@@ -67,28 +67,27 @@ merge, Production, DNS, or traffic changes.
 
 ## Migration PR CI and Preview gate
 
-`.github/workflows/migration-preview.yml` runs on every PR to `main` and is
-the required migration delivery gate. It runs lint, type-check, the full test
-suite, and the LEO-536 static contract checks. When an Owner has already
-authorized an exact read-only non-Production source, it builds the `preview`
-mode artifact, verifies the free-tier limits and every HTML/headers/robots
-noindex control, and emits a candidate tuple containing the source commit, PR,
-workflow run, artifact SHA-256, and migration manifest SHA-256.
+`.github/workflows/migration-preview.yml` remains the required repository gate
+for every PR to `main`. It runs lint, type-check, the full test suite, and the
+LEO-536 static contract checks without publishing the legacy static artifact.
+The LEO-563 repository-code gate then compares the exact PR-head SHA with the
+base SHA. Only material changes under `apps/public`, `apps/admin`,
+`packages/app-contracts`, or the shared build manifests can produce the new
+application Preview candidate.
 
-Cloudflare upload is separately gated by the single non-Production Pages project
-contract. The workflow may create exactly the configured project when it is
-absent, using the supported Wrangler `pages project create` command and the
-pre-authorized Pages:Edit token; it fails closed on API, identity,
-custom-domain, or branch mismatches.
-The workflow never creates a secret, binding, permission, security setting, DNS
-record, traffic route, or deployment deletion. The Owner must
-preconfigure `MIGRATION_PREVIEW_SOURCE_ENABLED=true`,
-`MIGRATION_PREVIEW_SOURCE_CONTRACT=read-only-non-production`,
-`CLOUDFLARE_PAGES_PREVIEW_ENABLED=true`, and the exact
-`CLOUDFLARE_PAGES_PREVIEW_PROJECT`, plus the existing read-only source,
-`CLOUDFLARE_ACCOUNT_ID`, and least-privilege Pages Edit
-`CLOUDFLARE_API_TOKEN` secrets. Missing gates produce
-`BLOCKED_BY_OWNER_GATE`; build, free-tier, identity, or deployed noindex
-failures fail the workflow and block the merge path. A successful deployment
-is checked at a `pr-<number>.<project>.pages.dev` alias for HTML
-`noindex,nofollow`, `X-Robots-Tag: noindex, nofollow`, and `Disallow: /`.
+For that predicate, CI builds Public and Admin independently, records each
+artifact SHA-256, binds both to the exact source SHA and lockfile digest, and
+verifies the candidate identity before uploading the CI artifact. The Public
+artifact carries the Worker-plus-Static-Assets runtime identity; Admin carries
+the independent private-runtime identity. Both Preview artifacts require the
+HTML, response-header, and `robots.txt` noindex contract.
+
+The former single-Pages publish/create path is intentionally not called. One
+existing Pages project cannot safely represent the separate Public Worker and
+Admin deployables, and LEO-563 does not create or reconfigure a Cloudflare
+resource, credential, binding, custom domain, DNS record, or traffic route.
+Application candidates therefore remain CI-only until an Owner attests exact
+separate non-Production Preview resources and authorizes a later adapter.
+DB/import/docs-only changes end with `SKIPPED_UNRELATED_CHANGE` and cannot
+reach the candidate or Cloudflare path. Candidate build, identity, or noindex
+failures fail closed.

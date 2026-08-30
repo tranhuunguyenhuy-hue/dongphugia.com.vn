@@ -1,32 +1,72 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+
 import { describe, expect, it } from 'vitest'
 
 const workflow = readFileSync(resolve(process.cwd(), '.github/workflows/migration-preview.yml'), 'utf8')
 const buildGuide = readFileSync(resolve(process.cwd(), 'docs/deploy/public-static-build.md'), 'utf8')
-const artifactContract = readFileSync(resolve(process.cwd(), 'scripts/static-build/preview-artifact-contract.mts'), 'utf8')
+const changeGate = readFileSync(resolve(process.cwd(), 'scripts/app-foundation/preview-change-gate.mjs'), 'utf8')
+const candidateScript = readFileSync(resolve(process.cwd(), 'scripts/app-foundation/preview-candidate.mts'), 'utf8')
 
 describe('migration PR CI and Preview workflow contract', () => {
-  it('runs required CI and consumes the merged static build contract', () => {
-    for (const marker of ['pull_request:', 'branches: [main]', 'npm run lint', 'npm run typecheck', 'npm test', 'npm run static:check', 'npm run static:build', 'npm run static:verify-preview-source', 'PUBLIC_STATIC_BUILD_READ_ONLY', 'PUBLIC_STATIC_BUILD_DB_ROLE: dpg_readonly', 'PUBLIC_STATIC_BUILD_SCHEMA: dpg_app', 'MIGRATION_PREVIEW_DATABASE_URL', 'actions/upload-artifact@v4']) {
-      expect(workflow).toContain(marker)
-    }
+  it('runs required repository CI against the exact PR head', () => {
+    for (const marker of [
+      'pull_request:',
+      'branches: [main]',
+      'fetch-depth: 0',
+      'github.event.pull_request.head.sha || github.sha',
+      'npm run lint',
+      'npm run typecheck',
+      'npm test',
+      'npm run static:check',
+      'actions/upload-artifact@v4',
+    ]) expect(workflow).toContain(marker)
   })
 
-  it('locks free-tier, immutable identity, and noindex checks', () => {
-    for (const marker of ['static:verify-preview', 'artifactSha256', 'sourceCommit', 'workflowRunId', 'migrationManifestSha256', 'CLOUDFLARE_PAGES_PREVIEW_ENABLED', 'CLOUDFLARE_PAGES_PREVIEW_PROJECT', 'noindex, nofollow', 'noindex,nofollow', 'Disallow: /', '20_000', '25 * 1024 * 1024']) {
-      expect(`${workflow}\n${buildGuide}\n${artifactContract}`).toContain(marker)
-    }
+  it('builds both independent deployables and verifies immutable identities', () => {
+    for (const marker of [
+      'app-preview-artifact:',
+      'npm run build:public',
+      'npm run build:admin',
+      'app:collect-artifact',
+      'app:create-candidate',
+      'app:verify-candidate',
+      'sourceCommit',
+      'publicArtifactSha256',
+      'adminArtifactSha256',
+      'artifact_ready=true',
+      'noindex',
+    ]) expect(`${workflow}\n${candidateScript}`).toContain(marker)
+
+    expect(buildGuide).toContain('artifact SHA-256')
+    expect(buildGuide).toContain('CI-only')
   })
 
-  it('contains no deletion, traffic, or elevated GitHub permission path', () => {
-    for (const forbidden of ['pages secret', 'pages deployment delete', 'deployments: write', 'cloudflared tunnel', 'aws ', 'PRODUCTION_DATABASE_URL']) {
-      expect(workflow.toLowerCase()).not.toContain(forbidden.toLowerCase())
-    }
-    expect(workflow).toContain('pages project create')
-    expect(workflow).toContain('--production-branch=main')
-    expect(workflow).toContain('Custom domains: none')
+  it('skips unrelated changes before the candidate and external Preview path', () => {
+    for (const marker of [
+      'APPLICATION_SOURCE_PREFIXES',
+      'apps/public/',
+      'apps/admin/',
+      'packages/app-contracts/',
+      'preview_required',
+      'SKIPPED_UNRELATED_CHANGE',
+      'DB/import/docs-only changes cannot reach the application candidate or Cloudflare publication path.',
+    ]) expect(`${workflow}\n${changeGate}`).toContain(marker)
+  })
+
+  it('contains no Cloudflare publication, traffic, or elevated GitHub permission path', () => {
+    for (const forbidden of [
+      'pages project create',
+      'pages deploy',
+      'cloudflare/wrangler-action',
+      'CLOUDFLARE_API_TOKEN',
+      'deployments: write',
+      'PRODUCTION_DATABASE_URL',
+      'cloudflared tunnel',
+    ]) expect(workflow.toLowerCase()).not.toContain(forbidden.toLowerCase())
+
     expect(workflow).toContain('BLOCKED_BY_OWNER_GATE')
-    expect(workflow).toContain('CI failure blocks the Preview/merge path.')
+    expect(`${workflow}\n${candidateScript}`).toContain('productionCustomDomain:')
+    expect(`${workflow}\n${candidateScript}`).toContain('productionDnsOrTraffic:')
   })
 })
