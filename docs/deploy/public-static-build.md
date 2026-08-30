@@ -85,8 +85,10 @@ before upload. HTML, response-header, and `robots.txt` noindex claims come from
 checks against the built runtimes rather than manifest constants.
 
 The former single-Pages publish/create path is intentionally not called. CI may
-use existing Cloudflare secret references only in the fixed-GET, sanitized
-read-only discovery job. It cannot create, upload, deploy, or reconfigure a
+use the account ID and temporary dedicated
+`CLOUDFLARE_READONLY_DISCOVERY_TOKEN` references only in the fixed-GET,
+sanitized read-only discovery job. The deployment `CLOUDFLARE_API_TOKEN` is not
+available to that job. It cannot create, upload, deploy, or reconfigure a
 Cloudflare resource, credential, binding, custom domain, DNS record, or traffic
 route. The Public candidate includes a checksum-identified, Owner-gated config
 for `dongphugia-v1-public-preview`; it sets `workers_dev=false` and

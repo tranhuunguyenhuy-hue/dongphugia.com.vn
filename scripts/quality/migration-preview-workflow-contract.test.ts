@@ -69,7 +69,8 @@ describe('migration PR CI and Preview workflow contract', () => {
     ]) expect(workflow.toLowerCase()).not.toContain(forbidden.toLowerCase())
 
     expect(workflow.match(/secrets\.CLOUDFLARE_ACCOUNT_ID/g)).toHaveLength(1)
-    expect(workflow.match(/secrets\.CLOUDFLARE_API_TOKEN/g)).toHaveLength(1)
+    expect(workflow.match(/secrets\.CLOUDFLARE_READONLY_DISCOVERY_TOKEN/g)).toHaveLength(1)
+    expect(workflow).not.toContain('secrets.CLOUDFLARE_API_TOKEN')
     expect(workflow).toContain('cloudflare-readonly-discovery.mjs')
     expect(workflow).toContain('Mutating API methods and Wrangler publication: not invoked.')
     expect(cloudflareDiscovery).toContain("method: 'GET'")

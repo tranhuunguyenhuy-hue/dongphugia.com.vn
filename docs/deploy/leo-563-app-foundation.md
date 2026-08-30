@@ -3,8 +3,9 @@
 Status: source candidate complete; real isolated Public Worker Preview remains
 Owner-gated. This document records the Public/Admin and CI foundation. It
 authorizes no Supabase, Cloudflare resource/version/deployment, Bunny, AWS,
-DNS, IAM, credential, Production, or traffic mutation. CI may use existing
-secret references for sanitized read-only Cloudflare inventory only.
+DNS, IAM, Production, or traffic mutation. CI may perform sanitized read-only Cloudflare inventory
+only with the temporary, dedicated `CLOUDFLARE_READONLY_DISCOVERY_TOKEN`
+secret; the existing deployment token remains untouched.
 
 ## Repository structure
 
@@ -116,8 +117,12 @@ private/no-store. These observations are copied into the immutable artifact;
 booleans are not self-attested by the collector.
 
 Local credentials are not used. For a material app change, CI passes the
-existing `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN` secret references
-only to `cloudflare-readonly-discovery.mjs`. That script issues fixed `GET`
+existing `CLOUDFLARE_ACCOUNT_ID` and temporary, dedicated
+`CLOUDFLARE_READONLY_DISCOVERY_TOKEN` secret references only to
+`cloudflare-readonly-discovery.mjs`. The deployment
+`CLOUDFLARE_API_TOKEN` is deliberately unavailable to this job. The temporary
+token is account-restricted and grants only Workers Scripts Read, Billing Read,
+Zone Read, and Workers Routes Read. That script issues fixed `GET`
 requests for Worker scripts/settings/subdomains/domains/routes, Pages projects
 and domains, account Worker settings, and subscription labels. It emits only
 credential availability, resource names/types/status, public host associations,
