@@ -54,6 +54,9 @@ not an authority document: verify it immediately before relying on it.
 - `CURRENT` — [Runtime backup and recovery](deploy/runtime-backup-recovery.md):
   encrypted logical backup, checksum manifest, isolated restore rehearsal, and
   Product/Family/Blog recovery checks (LEO-540).
+- `SUPPORTING` — [LEO-560 isolated raw legacy source](deploy/leo-560-isolated-raw-legacy-source.md):
+  dated immutable source/destination identity, checksum, provenance, and
+  isolation evidence for the one-time raw migration input.
 - `CURRENT` — [Public static build](deploy/public-static-build.md):
   read-only build-time export, SEO/redirect output, inventory checks, and
   Product/Family preservation gate (LEO-536).
