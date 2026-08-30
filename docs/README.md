@@ -57,6 +57,9 @@ not an authority document: verify it immediately before relying on it.
 - `SUPPORTING` — [LEO-560 isolated raw legacy source](deploy/leo-560-isolated-raw-legacy-source.md):
   dated immutable source/destination identity, checksum, provenance, and
   isolation evidence for the one-time raw migration input.
+- `CURRENT` — [LEO-561 canonical V1 schema contract](deploy/leo-561-canonical-v1-schema.md):
+  private canonical catalogue/content/commerce/staff-role schema, deterministic
+  migration identity, invariant proof, and legacy compatibility disposition.
 - `CURRENT` — [Public static build](deploy/public-static-build.md):
   read-only build-time export, SEO/redirect output, inventory checks, and
   Product/Family preservation gate (LEO-536).
