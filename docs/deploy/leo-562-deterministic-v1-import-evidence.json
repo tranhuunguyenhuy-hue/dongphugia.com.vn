@@ -1,0 +1,105 @@
+{
+  "schemaVersion": 1,
+  "issue": "LEO-562",
+  "source": {
+    "bucket": "dongphugia-newprod-raw-503344933326-ap-southeast-1",
+    "key": "raw/legacy-production/2026-08-29/dongphugia-target-public-20260829T191902Z.dump",
+    "versionId": "CSyMYJz1glatK32aWl2K8pukzxzXl69c",
+    "sha256": "86db472b7fa2aed53d287ef1f4eb2c817320e4650fcbd9b56d53a71a39d6edf1",
+    "bytes": 88499596,
+    "postgresVersion": "17.6",
+    "publicTableCount": 57,
+    "rowCounts": {
+      "products": 17752,
+      "brands": 65,
+      "taxons": 35,
+      "specValues": 135311,
+      "productImages": 110321,
+      "productDocuments": 22872,
+      "blogPosts": 17,
+      "ignoredVariantGroups": 2016
+    }
+  },
+  "mapping": {
+    "codeChecksum": "337480529784793545cb3f8bd68967956423466f26335c5e88b2179aa15c815a",
+    "productMappingChecksum": "8fe003363a594a2592047cd9823f4c401b4f8c7f8b57d00a1d129edc02dce260",
+    "mediaMappingChecksum": "2971291209c199d558c42181a90a6fc1f9cc61493f2d2d8344e45520459a26b9",
+    "quarantineChecksum": "4887a01e3590527b83139d6ac8ba44f69510131d756e408323ea42b72dbbfa23",
+    "identity": { "exact": 17752, "ambiguous": 0, "modelDisposition": "exact-products.sku" },
+    "brand": { "exact": 17752, "ambiguous": 0 },
+    "categoryDisposition": { "primaryAssignment": 12082, "exactLegacyPath": 4255 },
+    "priceDisposition": {
+      "legacyHitaNotV1Authority": 9861,
+      "legacyManualNotV1Authority": 487,
+      "noExplicitDpgOwnedRetailPrice": 5989
+    },
+    "products": { "importedDraft": 16337, "publicationWithheld": 16337, "quarantined": 1415 },
+    "brands": 65,
+    "leafCategories": 31,
+    "attributes": {
+      "definitions": 235,
+      "options": 463,
+      "sourceValues": 135311,
+      "importedValues": 119436,
+      "quarantinedOrParentWithheldValues": 15875,
+      "reconciled": true
+    },
+    "mediaReferences": { "source": 150944, "mapped": 150944, "ready": 0, "canonicalAssetsInserted": 0 },
+    "content": { "source": 17, "imported": 0, "withheldUnsupported": 17 },
+    "ms885": { "families": 1, "groups": 3, "existingMemberships": 18, "catalogueGaps": 2, "deferredOutsideFamily": 1 },
+    "publishableBySector": {
+      "sanitary": { "imported": 15037, "publishable": 0 },
+      "tile": { "imported": 330, "publishable": 0 },
+      "water": { "imported": 182, "publishable": 0 },
+      "kitchen": { "imported": 788, "publishable": 0 }
+    },
+    "productReasonSummary": {
+      "IDENTITY_AMBIGUITY": 0,
+      "BRAND_AMBIGUITY": 0,
+      "CATEGORY_AMBIGUITY": 7,
+      "PRICE_MISSING_OR_AMBIGUOUS": 16337,
+      "PROVENANCE_INSUFFICIENT": 16337,
+      "MANUFACTURER_FACT_CONFLICT": 0,
+      "FAMILY_AMBIGUITY": 0,
+      "INVALID_TYPED_VALUE": 0,
+      "UNIT_NORMALIZATION_FAILURE": 0,
+      "MEDIA_READINESS_GAP": 16337,
+      "UNSUPPORTED_LEGACY_STRUCTURE": 1408,
+      "AVAILABILITY_NOT_PUBLISHABLE": 1590
+    }
+  },
+  "target": {
+    "counts": {
+      "products": 16337,
+      "provenance": 16337,
+      "families": 1,
+      "familyGroups": 3,
+      "familyMemberships": 18,
+      "attributeDefinitions": 235,
+      "attributeOptions": 463,
+      "attributePolicies": 509,
+      "attributeValues": 119436,
+      "media": 0,
+      "documents": 0,
+      "content": 0
+    },
+    "eligibilityFailures": {
+      "AVAILABILITY": 1590,
+      "PRIMARY_IMAGE": 16337,
+      "PROVENANCE": 16337,
+      "PUBLIC_PRICE": 16337,
+      "REQUIRED_ATTRIBUTES": 16337
+    },
+    "canonicalChecksum": "ad10fb1e31d19cb36aad9f90a94b98a44142263a2a9e9c90e5e9da633cacc706"
+  },
+  "replay": {
+    "matched": true,
+    "firstChecksum": "7e4cbb4983b7d09bbb5fc5d44ef3978218b1a7512152c9e36ea44440382bbbc5",
+    "secondChecksum": "7e4cbb4983b7d09bbb5fc5d44ef3978218b1a7512152c9e36ea44440382bbbc5"
+  },
+  "mutationBoundary": {
+    "sourceDatabase": "READ_ONLY_REPEATABLE_READ_DEFERRABLE",
+    "targetDatabase": "LOOPBACK_ONLY",
+    "remoteProductionMutation": false
+  }
+}

@@ -21,6 +21,7 @@
     "db:migrate:postgres": "tsx scripts/db/postgres-migration-runner.ts",
     "db:manifest:postgres": "tsx scripts/db/postgres-schema-manifest.ts",
     "db:verify-schema:postgres": "tsx scripts/db/postgres-schema-verify.ts",
+    "db:import:leo562": "tsx scripts/migration/leo562-import.ts",
     "staging:isolated": "tsx scripts/staging/isolated-staging.ts",
     "postinstall": "prisma generate",
     "test": "vitest run",
