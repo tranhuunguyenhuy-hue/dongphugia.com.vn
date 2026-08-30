@@ -493,7 +493,7 @@ create table dpg_v1.content_entries (
   constraint content_entries_title_check check (btrim(title) <> ''),
   constraint content_entries_slug_check check (slug ~ '^[a-z0-9]+(?:-[a-z0-9]+)*$'),
   constraint content_entries_route_check check (
-    (type = 'LANDING_PAGE' and route_path ~ '^/[a-z0-9][a-z0-9/-]*$')
+    (type = 'LANDING_PAGE' and route_path is not null and route_path ~ '^/[a-z0-9][a-z0-9/-]*$')
     or (type <> 'LANDING_PAGE' and route_path is null)
   ),
   constraint content_entries_landing_route_reserved_check check (

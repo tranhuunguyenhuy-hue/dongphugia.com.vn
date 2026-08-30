@@ -251,6 +251,12 @@ do $$
 begin
   begin
     insert into dpg_v1.content_entries (type, title, slug, route_path)
+    values ('LANDING_PAGE', 'Missing Landing Page Route', 'missing-landing-page-route', null);
+    raise exception 'Landing Page without route unexpectedly succeeded';
+  exception when check_violation then null;
+  end;
+  begin
+    insert into dpg_v1.content_entries (type, title, slug, route_path)
     values ('LANDING_PAGE', 'Reserved Product Route', 'reserved-product-route', '/san-pham');
     raise exception 'reserved Landing Page route unexpectedly succeeded';
   exception when check_violation then null;
@@ -259,6 +265,12 @@ begin
     insert into dpg_v1.content_entries (type, title, slug, route_path)
     values ('LANDING_PAGE', 'Reserved Product Subtree', 'reserved-product-subtree', '/san-pham/synthetic');
     raise exception 'reserved Landing Page subtree unexpectedly succeeded';
+  exception when check_violation then null;
+  end;
+  begin
+    insert into dpg_v1.content_entries (type, title, slug, route_path)
+    values ('BUYING_GUIDE', 'Non-Landing Content Route', 'non-landing-content-route', '/not-a-landing-page');
+    raise exception 'non-Landing Page route unexpectedly succeeded';
   exception when check_violation then null;
   end;
 end

@@ -37,9 +37,9 @@ raw data, and changes or deletes no legacy table.
   typed technical documents in the separate `product_documents` relation.
 - Content: one typed `content_entries` aggregate, ordered closed-vocabulary
   blocks with validated JSON payloads, and normalized Product/Category/Brand
-  references. Landing Page routes are syntax-checked, unique, and reject the
-  fixed V1 route namespaces; application-level route allowlisting remains a
-  later Content service concern.
+  references. Landing Pages require a non-null syntax-valid unique route and
+  reject the fixed V1 route namespaces; non-Landing Content has no route.
+  Application-level route allowlisting remains a later Content service concern.
 - Commerce: immutable Quote Request snapshots; a separate negotiated Quote;
   token-hash-only sharing; immutable retail/converted Order snapshots; manual
   payment transactions and projected payment status; advisory-lock plus

@@ -43,6 +43,7 @@ describe('LEO-561 canonical V1 schema contract', () => {
     expect(sql).toContain('product_attribute_values_official_verified_provenance_check')
     expect(sql).toContain("quality not in ('official', 'verified') or source_provenance_id is not null")
     expect(sql).toContain('content_entries_landing_route_reserved_check')
+    expect(sql).toContain('type = \'LANDING_PAGE\' and route_path is not null')
     expect(sql).toContain("'/san-pham'")
     expect(sql).toContain("'^/(?:tim-kiem|danh-muc|thuong-hieu|san-pham")
     const productsDefinition = sql.split('create table dpg_v1.products (')[1]?.split('\n);')[0] ?? ''
