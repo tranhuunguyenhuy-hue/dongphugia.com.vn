@@ -26,7 +26,9 @@ raw data, and changes or deletes no legacy table.
   publication-eligibility projection.
 - Typed specifications: reusable definitions/options, leaf-Category policy,
   exactly one scalar typed representation or ordered multi-enum option rows,
-  and database checks/triggers for type, range, option, and Category integrity.
+  and database checks/triggers for type, range, option, Category integrity, and
+  same-Product source provenance. Official/verified facts always name a source;
+  deep sanitary requirements additionally require official manufacturer evidence.
 - Price and availability: Product-owned positive VND retail price for every
   published Product and indicative availability only; no inventory or
   promotion model.
@@ -35,7 +37,9 @@ raw data, and changes or deletes no legacy table.
   typed technical documents in the separate `product_documents` relation.
 - Content: one typed `content_entries` aggregate, ordered closed-vocabulary
   blocks with validated JSON payloads, and normalized Product/Category/Brand
-  references.
+  references. Landing Page routes are syntax-checked, unique, and reject the
+  fixed V1 route namespaces; application-level route allowlisting remains a
+  later Content service concern.
 - Commerce: immutable Quote Request snapshots; a separate negotiated Quote;
   token-hash-only sharing; immutable retail/converted Order snapshots; manual
   payment transactions and projected payment status; advisory-lock plus

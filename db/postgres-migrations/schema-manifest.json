@@ -15851,6 +15851,14 @@
     },
     {
       "kind": "constraint",
+      "identity": "dpg_v1.content_entries.content_entries_landing_route_reserved_check",
+      "properties": {
+        "type": "c",
+        "definition": "CHECK (((type <> 'LANDING_PAGE'::dpg_v1.content_type) OR ((route_path <> ALL (ARRAY['/'::text, '/tim-kiem'::text, '/danh-muc'::text, '/thuong-hieu'::text, '/san-pham'::text, '/bo-suu-tap'::text, '/yeu-thich'::text, '/gio-hang'::text, '/thanh-toan'::text, '/dat-hang'::text, '/bao-gia'::text, '/cam-nang'::text, '/showroom'::text, '/ho-tro'::text])) AND (route_path !~ '^/(?:tim-kiem|danh-muc|thuong-hieu|san-pham|bo-suu-tap|yeu-thich|gio-hang|thanh-toan|dat-hang|bao-gia|cam-nang|showroom|ho-tro)(?:/|$)'::text))))"
+      }
+    },
+    {
+      "kind": "constraint",
       "identity": "dpg_v1.content_entries.content_entries_pkey",
       "properties": {
         "type": "p",
@@ -16303,6 +16311,14 @@
       "properties": {
         "type": "u",
         "definition": "UNIQUE (id, attribute_definition_id)"
+      }
+    },
+    {
+      "kind": "constraint",
+      "identity": "dpg_v1.product_attribute_values.product_attribute_values_official_verified_provenance_check",
+      "properties": {
+        "type": "c",
+        "definition": "CHECK (((quality <> ALL (ARRAY['official'::dpg_v1.source_quality, 'verified'::dpg_v1.source_quality])) OR (source_provenance_id IS NOT NULL)))"
       }
     },
     {
@@ -17923,7 +17939,7 @@
       "kind": "function",
       "identity": "dpg_v1.product_publication_failures(p_product_id uuid)",
       "properties": {
-        "definition": "CREATE OR REPLACE FUNCTION dpg_v1.product_publication_failures(p_product_id uuid)\n RETURNS text[]\n LANGUAGE sql\n STABLE\n SET search_path TO 'pg_catalog', 'dpg_v1'\nAS $function$\n  select array_remove(array[\n    case when p.brand_id is null or not b.is_active then 'BRAND' end,\n    case when p.primary_category_id is null or not c.is_active or not c.is_leaf then 'PRIMARY_LEAF_CATEGORY' end,\n    case when p.retail_price is null or p.retail_price <= 0 then 'PUBLIC_PRICE' end,\n    case when p.availability = 'DISCONTINUED' then 'AVAILABILITY' end,\n    case when p.unresolved_critical_conflict then 'CRITICAL_CONFLICT' end,\n    case when not exists (\n      select 1 from dpg_v1.product_media pm join dpg_v1.media_assets ma on ma.id = pm.media_asset_id\n      where pm.product_id = p.id and pm.role = 'PRIMARY' and ma.kind = 'IMAGE' and ma.state = 'READY'\n    ) then 'PRIMARY_IMAGE' end,\n    case when not exists (\n      select 1 from dpg_v1.product_source_provenance sp\n      where sp.product_id = p.id and sp.quality in ('official', 'verified')\n    ) then 'PROVENANCE' end,\n    case when exists (\n      select 1 from dpg_v1.category_attribute_policies cap\n      where cap.category_id = p.primary_category_id and cap.requirement_tier <> 'none'\n        and not exists (\n          select 1 from dpg_v1.product_attribute_values pav\n          where pav.product_id = p.id and pav.attribute_definition_id = cap.attribute_definition_id\n            and pav.quality in ('official', 'verified')\n            and (exists (\n              select 1 from dpg_v1.attribute_definitions ad\n              where ad.id = pav.attribute_definition_id and ad.value_type <> 'multi_enum'\n            ) or exists (\n              select 1 from dpg_v1.product_attribute_multi_options pamo\n              where pamo.product_attribute_value_id = pav.id\n            ))\n        )\n    ) then 'REQUIRED_ATTRIBUTES' end\n  ], null)\n  from dpg_v1.products p\n  left join dpg_v1.brands b on b.id = p.brand_id\n  left join dpg_v1.categories c on c.id = p.primary_category_id\n  where p.id = p_product_id\n$function$\n",
+        "definition": "CREATE OR REPLACE FUNCTION dpg_v1.product_publication_failures(p_product_id uuid)\n RETURNS text[]\n LANGUAGE sql\n STABLE\n SET search_path TO 'pg_catalog', 'dpg_v1'\nAS $function$\n  select array_remove(array[\n    case when p.brand_id is null or not b.is_active then 'BRAND' end,\n    case when p.primary_category_id is null or not c.is_active or not c.is_leaf then 'PRIMARY_LEAF_CATEGORY' end,\n    case when p.retail_price is null or p.retail_price <= 0 then 'PUBLIC_PRICE' end,\n    case when p.availability = 'DISCONTINUED' then 'AVAILABILITY' end,\n    case when p.unresolved_critical_conflict then 'CRITICAL_CONFLICT' end,\n    case when not exists (\n      select 1 from dpg_v1.product_media pm join dpg_v1.media_assets ma on ma.id = pm.media_asset_id\n      where pm.product_id = p.id and pm.role = 'PRIMARY' and ma.kind = 'IMAGE' and ma.state = 'READY'\n    ) then 'PRIMARY_IMAGE' end,\n    case when not exists (\n      select 1 from dpg_v1.product_source_provenance sp\n      where sp.product_id = p.id\n        and (\n          (c.sector = 'sanitary' and sp.source_kind = 'manufacturer' and sp.quality = 'official')\n          or (c.sector <> 'sanitary' and sp.quality in ('official', 'verified'))\n        )\n    ) then 'PROVENANCE' end,\n    case when exists (\n      select 1 from dpg_v1.category_attribute_policies cap\n      where cap.category_id = p.primary_category_id and cap.requirement_tier <> 'none'\n        and not exists (\n          select 1 from dpg_v1.product_attribute_values pav\n          where pav.product_id = p.id and pav.attribute_definition_id = cap.attribute_definition_id\n            and pav.quality in ('official', 'verified')\n            and exists (\n              select 1 from dpg_v1.product_source_provenance sp\n              where sp.id = pav.source_provenance_id and sp.product_id = p.id\n                and (\n                  (c.sector <> 'sanitary' or cap.requirement_tier <> 'deep')\n                  or (pav.quality = 'official' and sp.source_kind = 'manufacturer' and sp.quality = 'official')\n                )\n            )\n            and (exists (\n              select 1 from dpg_v1.attribute_definitions ad\n              where ad.id = pav.attribute_definition_id and ad.value_type <> 'multi_enum'\n            ) or exists (\n              select 1 from dpg_v1.product_attribute_multi_options pamo\n              where pamo.product_attribute_value_id = pav.id\n            ))\n        )\n    ) then 'REQUIRED_ATTRIBUTES' end\n  ], null)\n  from dpg_v1.products p\n  left join dpg_v1.brands b on b.id = p.brand_id\n  left join dpg_v1.categories c on c.id = p.primary_category_id\n  where p.id = p_product_id\n$function$\n",
         "language": "sql",
         "volatility": "s",
         "securityDefiner": false,

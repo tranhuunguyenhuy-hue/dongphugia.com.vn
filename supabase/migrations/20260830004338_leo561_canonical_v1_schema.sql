@@ -399,6 +399,9 @@ create table dpg_v1.product_attribute_values (
   constraint product_attribute_values_provenance_fkey
     foreign key (source_provenance_id, product_id)
     references dpg_v1.product_source_provenance(id, product_id) on delete restrict,
+  constraint product_attribute_values_official_verified_provenance_check check (
+    quality not in ('official', 'verified') or source_provenance_id is not null
+  ),
   unique (product_id, attribute_definition_id),
   unique (id, attribute_definition_id)
 );
@@ -492,6 +495,17 @@ create table dpg_v1.content_entries (
   constraint content_entries_route_check check (
     (type = 'LANDING_PAGE' and route_path ~ '^/[a-z0-9][a-z0-9/-]*$')
     or (type <> 'LANDING_PAGE' and route_path is null)
+  ),
+  constraint content_entries_landing_route_reserved_check check (
+    type <> 'LANDING_PAGE'
+    or (
+      route_path not in (
+        '/', '/tim-kiem', '/danh-muc', '/thuong-hieu', '/san-pham', '/bo-suu-tap',
+        '/yeu-thich', '/gio-hang', '/thanh-toan', '/dat-hang', '/bao-gia', '/cam-nang',
+        '/showroom', '/ho-tro'
+      )
+      and route_path !~ '^/(?:tim-kiem|danh-muc|thuong-hieu|san-pham|bo-suu-tap|yeu-thich|gio-hang|thanh-toan|dat-hang|bao-gia|cam-nang|showroom|ho-tro)(?:/|$)'
+    )
   ),
   constraint content_entries_version_check check (version > 0),
   constraint content_entries_published_at_check check (
@@ -1061,7 +1075,11 @@ as $$
     ) then 'PRIMARY_IMAGE' end,
     case when not exists (
       select 1 from dpg_v1.product_source_provenance sp
-      where sp.product_id = p.id and sp.quality in ('official', 'verified')
+      where sp.product_id = p.id
+        and (
+          (c.sector = 'sanitary' and sp.source_kind = 'manufacturer' and sp.quality = 'official')
+          or (c.sector <> 'sanitary' and sp.quality in ('official', 'verified'))
+        )
     ) then 'PROVENANCE' end,
     case when exists (
       select 1 from dpg_v1.category_attribute_policies cap
@@ -1070,6 +1088,14 @@ as $$
           select 1 from dpg_v1.product_attribute_values pav
           where pav.product_id = p.id and pav.attribute_definition_id = cap.attribute_definition_id
             and pav.quality in ('official', 'verified')
+            and exists (
+              select 1 from dpg_v1.product_source_provenance sp
+              where sp.id = pav.source_provenance_id and sp.product_id = p.id
+                and (
+                  (c.sector <> 'sanitary' or cap.requirement_tier <> 'deep')
+                  or (pav.quality = 'official' and sp.source_kind = 'manufacturer' and sp.quality = 'official')
+                )
+            )
             and (exists (
               select 1 from dpg_v1.attribute_definitions ad
               where ad.id = pav.attribute_definition_id and ad.value_type <> 'multi_enum'

@@ -40,6 +40,11 @@ describe('LEO-561 canonical V1 schema contract', () => {
     expect(sql).toContain('create table dpg_v1.quotes')
     expect(sql).toContain('create function dpg_v1.convert_quote_to_order')
     expect(sql).toContain("create type dpg_v1.staff_role as enum ('Product', 'Sales', 'Marketing', 'Admin')")
+    expect(sql).toContain('product_attribute_values_official_verified_provenance_check')
+    expect(sql).toContain("quality not in ('official', 'verified') or source_provenance_id is not null")
+    expect(sql).toContain('content_entries_landing_route_reserved_check')
+    expect(sql).toContain("'/san-pham'")
+    expect(sql).toContain("'^/(?:tim-kiem|danh-muc|thuong-hieu|san-pham")
     const productsDefinition = sql.split('create table dpg_v1.products (')[1]?.split('\n);')[0] ?? ''
     expect(productsDefinition).not.toMatch(/\b(specs|variant_group|variant_group_id|is_master|price_display|original_price)\b/)
     const familyDefinition = sql.split('create table dpg_v1.product_families (')[1]?.split('\n);')[0] ?? ''

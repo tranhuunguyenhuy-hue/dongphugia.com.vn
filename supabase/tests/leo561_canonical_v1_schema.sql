@@ -100,18 +100,56 @@ insert into dpg_v1.category_attribute_policies (
   ('11000000-0000-4000-8000-000000000002', '17000000-0000-4000-8000-000000000001', 0, true, 0, 'deep'),
   ('11000000-0000-4000-8000-000000000002', '17000000-0000-4000-8000-000000000002', 1, true, 1, 'none'),
   ('11000000-0000-4000-8000-000000000002', '17000000-0000-4000-8000-000000000003', 2, true, 2, 'none');
+insert into dpg_v1.product_source_provenance (
+  id, product_id, source_kind, source_reference, quality, captured_at
+) values
+  ('17300000-0000-4000-8000-000000000001', '14000000-0000-4000-8000-000000000001', 'manufacturer', 'synthetic:manufacturer:p1', 'official', clock_timestamp()),
+  ('17300000-0000-4000-8000-000000000002', '14000000-0000-4000-8000-000000000002', 'manufacturer', 'synthetic:manufacturer:p2', 'official', clock_timestamp()),
+  ('17300000-0000-4000-8000-000000000003', '14000000-0000-4000-8000-000000000002', 'catalogue', 'synthetic:catalogue:p2', 'verified', clock_timestamp());
 insert into dpg_v1.product_attribute_values (
-  id, product_id, attribute_definition_id, number_value, quality
-) values ('17200000-0000-4000-8000-000000000001', '14000000-0000-4000-8000-000000000001', '17000000-0000-4000-8000-000000000001', 700, 'official');
+  id, product_id, attribute_definition_id, number_value, quality, source_provenance_id
+) values ('17200000-0000-4000-8000-000000000001', '14000000-0000-4000-8000-000000000001', '17000000-0000-4000-8000-000000000001', 700, 'official', '17300000-0000-4000-8000-000000000001');
 insert into dpg_v1.product_attribute_values (
-  id, product_id, attribute_definition_id, option_id, quality
-) values ('17200000-0000-4000-8000-000000000002', '14000000-0000-4000-8000-000000000001', '17000000-0000-4000-8000-000000000002', '17100000-0000-4000-8000-000000000001', 'verified');
+  id, product_id, attribute_definition_id, option_id, quality, source_provenance_id
+) values ('17200000-0000-4000-8000-000000000002', '14000000-0000-4000-8000-000000000001', '17000000-0000-4000-8000-000000000002', '17100000-0000-4000-8000-000000000001', 'verified', '17300000-0000-4000-8000-000000000001');
 insert into dpg_v1.product_attribute_values (
-  id, product_id, attribute_definition_id, quality
-) values ('17200000-0000-4000-8000-000000000003', '14000000-0000-4000-8000-000000000001', '17000000-0000-4000-8000-000000000003', 'verified');
+  id, product_id, attribute_definition_id, quality, source_provenance_id
+) values ('17200000-0000-4000-8000-000000000003', '14000000-0000-4000-8000-000000000001', '17000000-0000-4000-8000-000000000003', 'verified', '17300000-0000-4000-8000-000000000001');
 insert into dpg_v1.product_attribute_multi_options (product_attribute_value_id, attribute_definition_id, option_id, sort_order) values
   ('17200000-0000-4000-8000-000000000003', '17000000-0000-4000-8000-000000000003', '17100000-0000-4000-8000-000000000002', 0),
   ('17200000-0000-4000-8000-000000000003', '17000000-0000-4000-8000-000000000003', '17100000-0000-4000-8000-000000000003', 1);
+
+-- Official and verified facts are Product-bound evidence, not unbound quality labels.
+do $$
+begin
+  begin
+    insert into dpg_v1.product_attribute_values (
+      product_id, attribute_definition_id, number_value, quality
+    ) values (
+      '14000000-0000-4000-8000-000000000002', '17000000-0000-4000-8000-000000000001', 650, 'official'
+    );
+    raise exception 'official fact without provenance unexpectedly succeeded';
+  exception when check_violation then null;
+  end;
+  begin
+    insert into dpg_v1.product_attribute_values (
+      product_id, attribute_definition_id, number_value, quality, source_provenance_id
+    ) values (
+      '14000000-0000-4000-8000-000000000002', '17000000-0000-4000-8000-000000000001', 650, 'official',
+      '17300000-0000-4000-8000-000000000001'
+    );
+    raise exception 'cross-Product provenance unexpectedly succeeded';
+  exception when foreign_key_violation then null;
+  end;
+end
+$$;
+
+insert into dpg_v1.product_attribute_values (
+  id, product_id, attribute_definition_id, number_value, quality, source_provenance_id
+) values (
+  '17200000-0000-4000-8000-000000000004', '14000000-0000-4000-8000-000000000002',
+  '17000000-0000-4000-8000-000000000001', 650, 'verified', '17300000-0000-4000-8000-000000000003'
+);
 
 do $$
 begin
@@ -134,11 +172,10 @@ $$;
 
 insert into dpg_v1.product_media (product_id, media_asset_id, role, sort_order, alt_text) values
   ('14000000-0000-4000-8000-000000000001', '13000000-0000-4000-8000-000000000001', 'PRIMARY', 0, 'Synthetic primary'),
-  ('14000000-0000-4000-8000-000000000001', '13000000-0000-4000-8000-000000000002', 'GALLERY', 0, 'Synthetic gallery');
+  ('14000000-0000-4000-8000-000000000001', '13000000-0000-4000-8000-000000000002', 'GALLERY', 0, 'Synthetic gallery'),
+  ('14000000-0000-4000-8000-000000000002', '13000000-0000-4000-8000-000000000001', 'PRIMARY', 0, 'Synthetic second primary');
 insert into dpg_v1.product_documents (product_id, media_asset_id, document_type, title, sort_order)
 values ('14000000-0000-4000-8000-000000000001', '13000000-0000-4000-8000-000000000003', 'TECHNICAL_SHEET', 'Synthetic technical sheet', 0);
-insert into dpg_v1.product_source_provenance (product_id, source_kind, source_reference, quality, captured_at)
-values ('14000000-0000-4000-8000-000000000001', 'manufacturer', 'synthetic:manufacturer:p1', 'official', clock_timestamp());
 
 do $$
 begin
@@ -156,6 +193,30 @@ begin
     select 1 from dpg_v1.product_documents pd join dpg_v1.media_assets ma on ma.id = pd.media_asset_id
     where ma.kind <> 'DOCUMENT'
   ) then raise exception 'image entered technical documents'; end if;
+end
+$$;
+
+-- Deep sanitary facts require official manufacturer evidence, not merely a verified catalogue fact.
+do $$
+begin
+  if (select eligible from dpg_v1.product_publication_eligibility where product_id = '14000000-0000-4000-8000-000000000002') then
+    raise exception 'sanitary deep Product passed with insufficient fact evidence';
+  end if;
+  if not exists (
+    select 1
+    from unnest((
+      select failures from dpg_v1.product_publication_eligibility where product_id = '14000000-0000-4000-8000-000000000002'
+    )) as failure(code)
+    where code = 'REQUIRED_ATTRIBUTES'
+  ) then
+    raise exception 'sanitary deep weak fact did not fail required attributes';
+  end if;
+  update dpg_v1.product_attribute_values
+    set quality = 'official', source_provenance_id = '17300000-0000-4000-8000-000000000002'
+  where id = '17200000-0000-4000-8000-000000000004';
+  if not (select eligible from dpg_v1.product_publication_eligibility where product_id = '14000000-0000-4000-8000-000000000002') then
+    raise exception 'correctly provenanced sanitary deep fact did not pass';
+  end if;
 end
 $$;
 
@@ -181,6 +242,41 @@ begin
     raise exception 'published Product without price unexpectedly succeeded';
   exception when others then
     if sqlerrm = 'published Product without price unexpectedly succeeded' then raise; end if;
+  end;
+end
+$$;
+
+-- Landing Pages cannot take over fixed V1 route namespaces.
+do $$
+begin
+  begin
+    insert into dpg_v1.content_entries (type, title, slug, route_path)
+    values ('LANDING_PAGE', 'Reserved Product Route', 'reserved-product-route', '/san-pham');
+    raise exception 'reserved Landing Page route unexpectedly succeeded';
+  exception when check_violation then null;
+  end;
+  begin
+    insert into dpg_v1.content_entries (type, title, slug, route_path)
+    values ('LANDING_PAGE', 'Reserved Product Subtree', 'reserved-product-subtree', '/san-pham/synthetic');
+    raise exception 'reserved Landing Page subtree unexpectedly succeeded';
+  exception when check_violation then null;
+  end;
+end
+$$;
+
+insert into dpg_v1.content_entries (id, type, title, slug, route_path)
+values ('18000000-0000-4000-8000-000000000004', 'LANDING_PAGE', 'Synthetic Landing Page', 'synthetic-landing-page', '/khuyen-mai');
+do $$
+begin
+  if not exists (
+    select 1 from dpg_v1.content_entries
+    where id = '18000000-0000-4000-8000-000000000004' and route_path = '/khuyen-mai'
+  ) then raise exception 'approved non-reserved Landing Page route failed'; end if;
+  begin
+    insert into dpg_v1.content_entries (type, title, slug, route_path)
+    values ('LANDING_PAGE', 'Duplicate Landing Page', 'duplicate-landing-page', '/khuyen-mai');
+    raise exception 'duplicate Landing Page route unexpectedly succeeded';
+  exception when unique_violation then null;
   end;
 end
 $$;
