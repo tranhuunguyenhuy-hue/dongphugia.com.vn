@@ -29,11 +29,16 @@
     {
       "name": "ms885-normalized-family",
       "path": "0001_ms885_normalized_family/migration.sql"
+    },
+    {
+      "name": "leo561-canonical-v1-schema",
+      "path": "0002_leo561_canonical_v1_schema/migration.sql"
     }
   ],
   "exceptions": [
     "production-only runtime objects are compared and not adopted without a separate HIGH_RISK decision",
     "SQLite-origin prisma/migrations and migration_lock.toml remain immutable historical evidence",
-    "post-R0 quote snapshot fields are not part of Baseline v1 and require a separately reviewed PostgreSQL migration"
+    "post-R0 quote snapshot fields are not part of Baseline v1 and require a separately reviewed PostgreSQL migration",
+    "legacy public tables remain migration evidence; dpg_v1 is the only canonical V1 authority"
   ]
 }

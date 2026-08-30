@@ -17,8 +17,23 @@ jobs:
     name: Required migration CI
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:17.6-bookworm@sha256:45cd22f8d32e189d245403954882f88e7a8714301fda80dab6da90f1265b25a3
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: leo561-ci-local-only
+          POSTGRES_DB: leo561_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d leo561_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     env:
       DEPLOY_TARGET: local
+      LEO561_SCHEMA_TEST_URL: postgresql://postgres:leo561-ci-local-only@127.0.0.1:5432/leo561_ci
 
     steps:
       - name: Checkout exact PR revision

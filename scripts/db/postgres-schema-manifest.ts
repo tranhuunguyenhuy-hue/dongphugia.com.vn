@@ -35,8 +35,8 @@ async function main() {
     const schemas = await client.query<{ schema: string }>(`
       SELECT nspname AS schema
       FROM pg_namespace
-      WHERE nspname IN ('public', 'extensions')
-      ORDER BY nspname
+      WHERE nspname IN ('public', 'extensions', 'dpg_v1')
+      ORDER BY CASE WHEN nspname = 'dpg_v1' THEN 1 ELSE 0 END, nspname
     `)
     for (const row of schemas.rows) objects.push({ kind: 'schema', identity: row.schema, properties: {} })
 
@@ -69,10 +69,10 @@ async function main() {
       JOIN pg_namespace n ON n.oid = c.relnamespace
       LEFT JOIN pg_attribute a ON a.attrelid = c.oid
       LEFT JOIN pg_attrdef ad ON ad.adrelid = c.oid AND ad.adnum = a.attnum
-      WHERE n.nspname IN ('public', 'extensions')
+      WHERE n.nspname IN ('public', 'extensions', 'dpg_v1')
         AND c.relkind IN ('r', 'p')
       GROUP BY n.nspname, c.relname, c.relkind, c.relrowsecurity, c.relforcerowsecurity
-      ORDER BY n.nspname, c.relname
+      ORDER BY CASE WHEN n.nspname = 'dpg_v1' THEN 1 ELSE 0 END, n.nspname, c.relname
     `)
     for (const row of tables.rows) objects.push({
       kind: 'table',
@@ -87,8 +87,8 @@ async function main() {
              increment_by::text, min_value::text, max_value::text,
              cache_size::text, cycle
       FROM pg_sequences
-      WHERE schemaname IN ('public', 'extensions')
-      ORDER BY schemaname, sequencename
+      WHERE schemaname IN ('public', 'extensions', 'dpg_v1')
+      ORDER BY CASE WHEN schemaname = 'dpg_v1' THEN 1 ELSE 0 END, schemaname, sequencename
     `)
     for (const row of sequences.rows) objects.push({
       kind: 'sequence',
@@ -106,8 +106,8 @@ async function main() {
              indexdef AS definition, indexdef LIKE '% UNIQUE INDEX %' AS is_unique,
              indexname LIKE '%_pkey' AS is_primary, true AS valid, true AS ready
       FROM pg_indexes
-      WHERE schemaname IN ('public', 'extensions')
-      ORDER BY schemaname, tablename, indexname
+      WHERE schemaname IN ('public', 'extensions', 'dpg_v1')
+      ORDER BY CASE WHEN schemaname = 'dpg_v1' THEN 1 ELSE 0 END, schemaname, tablename, indexname
     `)
     for (const row of indexes.rows) objects.push({
       kind: 'index',
@@ -121,8 +121,8 @@ async function main() {
       FROM pg_constraint con
       JOIN pg_class cls ON cls.oid = con.conrelid
       JOIN pg_namespace ns ON ns.oid = cls.relnamespace
-      WHERE ns.nspname IN ('public', 'extensions')
-      ORDER BY ns.nspname, cls.relname, con.conname
+      WHERE ns.nspname IN ('public', 'extensions', 'dpg_v1')
+      ORDER BY CASE WHEN ns.nspname = 'dpg_v1' THEN 1 ELSE 0 END, ns.nspname, cls.relname, con.conname
     `)
     for (const row of constraints.rows) objects.push({
       kind: 'constraint',
@@ -133,8 +133,8 @@ async function main() {
     const views = await client.query<{ schema: string; name: string; definition: string }>(`
       SELECT n.nspname AS schema, c.relname AS name, pg_get_viewdef(c.oid, true) AS definition
       FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
-      WHERE n.nspname IN ('public', 'extensions') AND c.relkind IN ('v', 'm')
-      ORDER BY n.nspname, c.relname
+      WHERE n.nspname IN ('public', 'extensions', 'dpg_v1') AND c.relkind IN ('v', 'm')
+      ORDER BY CASE WHEN n.nspname = 'dpg_v1' THEN 1 ELSE 0 END, n.nspname, c.relname
     `)
     for (const row of views.rows) objects.push({ kind: 'view', identity: `${row.schema}.${row.name}`, properties: { definition: row.definition } })
 
@@ -150,8 +150,8 @@ async function main() {
       FROM pg_proc p
       JOIN pg_namespace n ON n.oid = p.pronamespace
       JOIN pg_language l ON l.oid = p.prolang
-      WHERE n.nspname IN ('public', 'extensions')
-      ORDER BY n.nspname, p.proname, args
+      WHERE n.nspname IN ('public', 'extensions', 'dpg_v1')
+      ORDER BY CASE WHEN n.nspname = 'dpg_v1' THEN 1 ELSE 0 END, n.nspname, p.proname, args
     `)
     for (const row of functions.rows) objects.push({
       kind: 'function',
@@ -168,8 +168,8 @@ async function main() {
       FROM pg_trigger t
       JOIN pg_class c ON c.oid = t.tgrelid
       JOIN pg_namespace n ON n.oid = c.relnamespace
-      WHERE NOT t.tgisinternal AND n.nspname IN ('public', 'extensions')
-      ORDER BY n.nspname, c.relname, t.tgname
+      WHERE NOT t.tgisinternal AND n.nspname IN ('public', 'extensions', 'dpg_v1')
+      ORDER BY CASE WHEN n.nspname = 'dpg_v1' THEN 1 ELSE 0 END, n.nspname, c.relname, t.tgname
     `)
     for (const row of triggers.rows) objects.push({
       kind: 'trigger',
@@ -186,8 +186,8 @@ async function main() {
       FROM pg_policy p
       JOIN pg_class c ON c.oid = p.polrelid
       JOIN pg_namespace n ON n.oid = c.relnamespace
-      WHERE n.nspname IN ('public', 'extensions')
-      ORDER BY n.nspname, c.relname, p.polname
+      WHERE n.nspname IN ('public', 'extensions', 'dpg_v1')
+      ORDER BY CASE WHEN n.nspname = 'dpg_v1' THEN 1 ELSE 0 END, n.nspname, c.relname, p.polname
     `)
     for (const row of policies.rows) objects.push({
       kind: 'policy',
