@@ -78,10 +78,11 @@ application Preview candidate.
 For that predicate, CI builds Public and Admin independently. Public uses the
 pinned `vinext` Worker adapter, packages Worker plus Static Assets with a
 Wrangler dry run, and proves byte-identical Worker/assets/config identities
-across two builds. The candidate binds both application identities to exact
-source SHA, root/Public lockfile digests, and migration-manifest digest before
-upload. HTML, response-header, and `robots.txt` noindex claims come from checks
-against the built runtimes rather than manifest constants.
+across two builds. Admin is also rebuilt and recollected to prove an identical
+application artifact identity. The candidate binds both application identities
+to exact source SHA, root/Public lockfile digests, and migration-manifest digest
+before upload. HTML, response-header, and `robots.txt` noindex claims come from
+checks against the built runtimes rather than manifest constants.
 
 The former single-Pages publish/create path is intentionally not called. One
 existing Pages project cannot safely represent the separate Public Worker and

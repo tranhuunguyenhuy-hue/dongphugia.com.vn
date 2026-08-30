@@ -93,9 +93,11 @@ non-Production placeholder origin, and `PREVIEW_NOINDEX=true`.
 The official `vinext check` must pass before build. The Public candidate is an
 actual Wrangler-dry-run deployable containing a Worker and Static Assets, not a
 raw `.next` directory. CI builds it twice and requires identical Worker, Static
-Assets, and config SHA-256 values. Machine paths and build-only entropy are
-canonicalized; deterministic build entropy is source-derived only because the
-Worker rejects all Preview/draft/revalidation control surfaces in this issue.
+Assets, and config SHA-256 values. CI also rebuilds and recollects Admin and
+requires its application artifact SHA-256 to remain identical. Machine paths
+and build-only entropy are canonicalized; deterministic build entropy is
+source-derived only because the Worker rejects all Preview/draft/revalidation
+control surfaces in this issue.
 
 Each application artifact identity is a SHA-256 over sorted payload paths and
 bytes, namespaced by application, exact source commit, and build target. The

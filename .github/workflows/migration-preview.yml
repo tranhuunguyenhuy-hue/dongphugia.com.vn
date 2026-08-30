@@ -284,6 +284,30 @@ jobs:
           --build-target admin-independent-private-runtime
           --runtime-proof "${{ runner.temp }}/admin-runtime-proof.json"
 
+      - name: Prove deterministic Admin artifact identity
+        env:
+          APP_ENV: preview
+          APP_BUILD_TARGET: admin
+          APP_ORIGIN: https://admin-preview.invalid
+          PREVIEW_NOINDEX: 'true'
+          BUILD_SOURCE_SHA: ${{ needs.repo-code-gate.outputs.source_sha }}
+          ADMIN_SECOND: ${{ runner.temp }}/admin-artifact-second
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run build:admin
+          npm run app:collect-artifact -- \
+            --application admin \
+            --build-dir apps/admin/.next \
+            --artifact-root "$ADMIN_SECOND" \
+            --source-sha "$SOURCE_SHA" \
+            --build-target admin-independent-private-runtime \
+            --runtime-proof "${{ runner.temp }}/admin-runtime-proof.json"
+          first="$(jq -r '.artifactSha256' "$OUTPUT/admin/artifact-manifest.json")"
+          second="$(jq -r '.artifactSha256' "$ADMIN_SECOND/artifact-manifest.json")"
+          [[ "$first" =~ ^[0-9a-f]{64}$ ]]
+          test "$first" = "$second"
+
       - name: Create the complete immutable candidate evidence
         run: >-
           npm run app:create-candidate --

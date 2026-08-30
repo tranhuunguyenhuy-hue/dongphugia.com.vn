@@ -31,6 +31,7 @@ describe('migration PR CI and Preview workflow contract', () => {
       'app:collect-artifact',
       'app:create-candidate',
       'app:verify-candidate',
+      'Prove deterministic Admin artifact identity',
       'sourceCommit',
       'publicArtifactSha256',
       'adminArtifactSha256',
