@@ -119,7 +119,7 @@ jobs:
       public_artifact_sha256: ${{ steps.record.outputs.public_artifact_sha256 }}
       admin_artifact_sha256: ${{ steps.record.outputs.admin_artifact_sha256 }}
     env:
-      OUTPUT: ${{ runner.temp }}/dongphugia-app-preview
+      OUTPUT: ${{ github.workspace }}/.artifacts/dongphugia-app-preview
       SOURCE_SHA: ${{ needs.repo-code-gate.outputs.source_sha }}
       PR_NUMBER: ${{ github.event.pull_request.number || 0 }}
       WORKFLOW_RUN_ID: ${{ github.run_id }}
@@ -206,9 +206,11 @@ jobs:
           [[ "$public_sha" =~ ^[0-9a-f]{64}$ ]]
           [[ "$admin_sha" =~ ^[0-9a-f]{64}$ ]]
           test "$public_sha" != "$admin_sha"
-          echo 'artifact_ready=true' >> "$GITHUB_OUTPUT"
-          echo "public_artifact_sha256=$public_sha" >> "$GITHUB_OUTPUT"
-          echo "admin_artifact_sha256=$admin_sha" >> "$GITHUB_OUTPUT"
+          {
+            echo 'artifact_ready=true'
+            echo "public_artifact_sha256=$public_sha"
+            echo "admin_artifact_sha256=$admin_sha"
+          } >> "$GITHUB_OUTPUT"
           {
             echo '### New Production application candidate: PASS'
             echo "- Exact source SHA: $SOURCE_SHA"
