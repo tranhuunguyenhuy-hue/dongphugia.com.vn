@@ -117,6 +117,7 @@ export async function createPreviewCandidate(options: CandidateOptions) {
       publicWorkerSha256: publicWorker.worker.sha256,
       publicStaticAssetsSha256: publicWorker.staticAssets.sha256,
       publicConfigSha256: publicWorker.configSha256,
+      publicPreviewConfigSha256: publicWorker.previewConfig.sha256,
     },
     applications: manifests,
     noindex: {
@@ -181,7 +182,8 @@ export async function verifyPreviewCandidate(
     !publicWorker ||
     evidence.candidate.publicWorkerSha256 !== publicWorker.worker.sha256 ||
     evidence.candidate.publicStaticAssetsSha256 !== publicWorker.staticAssets.sha256 ||
-    evidence.candidate.publicConfigSha256 !== publicWorker.configSha256
+    evidence.candidate.publicConfigSha256 !== publicWorker.configSha256 ||
+    evidence.candidate.publicPreviewConfigSha256 !== publicWorker.previewConfig.sha256
   ) throw new Error('CANDIDATE_PUBLIC_WORKER_IDENTITY_FAILED')
   return evidence
 }

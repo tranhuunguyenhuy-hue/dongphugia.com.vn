@@ -1,9 +1,10 @@
 # LEO-563 New Production application foundation
 
-Status: source candidate complete; real Preview remains Owner-gated. This
-document records the repository-only Public/Admin and CI foundation. It
-authorizes no Supabase, Cloudflare, Bunny, AWS, DNS, IAM, credential,
-Production, or traffic mutation. It performs no Cloudflare publication.
+Status: source candidate complete; real isolated Public Worker Preview remains
+Owner-gated. This document records the Public/Admin and CI foundation. It
+authorizes no Supabase, Cloudflare resource/version/deployment, Bunny, AWS,
+DNS, IAM, credential, Production, or traffic mutation. CI may use existing
+secret references for sanitized read-only Cloudflare inventory only.
 
 ## Repository structure
 
@@ -114,17 +115,46 @@ Production-host rejection. Admin runtime proof requires SSR/noindex and
 private/no-store. These observations are copied into the immutable artifact;
 booleans are not self-attested by the collector.
 
-Read-only local discovery on 2026-08-30 found no Cloudflare environment token,
-account ID, or authenticated Wrangler session. Existing Worker names, types,
-domains, bindings, plan, Production association, and Public/Admin isolation are
-therefore `UNKNOWN`; no login or credential retrieval was attempted. The
-Cloudflare gate records `BLOCKED_BY_OWNER_GATE` for a material app change and
-performs no API call. The minimum Owner decision is to identify or authorize an
-isolated non-Production Public Worker target and a separate Admin Preview
-target, confirm their plan/cost and no-Production-domain/DNS contract, and
-authorize exact artifact publication plus non-Production Supabase binding for
-runtime acceptance. No resource is created here. The candidate remains CI-only;
-Production custom domains, DNS, traffic, and Legacy Production are untouched.
+Local credentials are not used. For a material app change, CI passes the
+existing `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN` secret references
+only to `cloudflare-readonly-discovery.mjs`. That script issues fixed `GET`
+requests for Worker scripts/settings/subdomains/domains/routes, Pages projects
+and domains, account Worker settings, and subscription labels. It emits only
+credential availability, resource names/types/status, public host associations,
+HTTP status/error codes, and suitability; account/zone IDs, tokens, provider
+error text, credentials, and raw responses are never emitted. Missing secrets
+or read permissions remain explicit and fail suitability closed.
+
+The assembled immutable Public artifact contains two configs. `wrangler.json`
+remains detached with `workers_dev=false` and `preview_urls=false`.
+`wrangler.preview.json` is an Owner-gated allowlist for exactly
+`dongphugia-v1-public-preview`, with `workers_dev=false`,
+`preview_urls=true`, no routes/custom domains, no database/provider bindings,
+Preview-only public environment values, and mandatory noindex. CI validates
+both configs with Wrangler dry runs and records the Preview-config checksum,
+but contains no Wrangler upload/deploy invocation.
+Until the Owner gate is approved, both deployables and the prepared Public
+Preview config remain CI-only artifacts.
+
+If discovery proves no suitable isolated Worker, the proposed—not authorized—
+resource contract is Cloudflare Workers Free, no Paid enablement, no custom
+domain, no `dongphugia.vn` route, no Production binding or credential, no DNS
+mutation, `workers_dev=false`, and `preview_urls=true`. After a separate exact
+Owner approval, the intended immutable publication command from the candidate
+directory is:
+
+```sh
+wrangler versions upload --config wrangler.preview.json --preview-alias pr-138
+```
+
+This uploads a version and creates only its version/alias Preview URL under
+`workers.dev`; it is not present in executable CI and is not run by LEO-563
+before approval. The Cloudflare gate remains `BLOCKED_BY_OWNER_GATE`. Admin
+external Preview is explicitly not an LEO-563 blocker and no Admin Cloudflare
+resource is created or mutated. Canonical V1 Supabase connectivity is deferred
+to LEO-564; LEO-563 does not bind the legacy/reduced-runtime Supabase target.
+Production custom domains, DNS, traffic, and Legacy Production remain
+untouched.
 
 The existing merge/promotion workflows remain the historical single-artifact
 Production path and are intentionally not wired to these new application
@@ -137,6 +167,9 @@ traffic remain separate future scope and are not authorized here.
 - LEO-565: Bunny media, Cloudflare transform, recovery, and provider targets.
 - LEO-566, LEO-567, LEO-568, LEO-569, LEO-571, and LEO-572: catalogue,
   commerce, search, filters, Quote, and Admin feature UI/behavior.
-- Real Cloudflare Preview publication, deployed CPU/origin/subrequest
-  observation, and non-Production Supabase connectivity: Owner-gated after an
-  exact isolated resource/cost/binding decision.
+- Real isolated Public Cloudflare Worker Preview publication and deployed
+  CPU/origin/subrequest observation: Owner-gated after exact resource and
+  Workers Free approval.
+- Canonical V1 Supabase connectivity: LEO-564.
+- Admin external Preview: downstream Admin/Auth delivery; not an LEO-563
+  blocker.

@@ -40,6 +40,14 @@ type ArtifactManifest = Readonly<{
     worker: { sha256: string; fileCount: number; totalBytes: number; wranglerUploadKiB: number; wranglerGzipKiB: number }
     staticAssets: { sha256: string; fileCount: number; totalBytes: number; largestFile: { path: string; bytes: number } }
     configSha256: string
+    previewConfig: {
+      workerName: string
+      previewAlias: string
+      workersDev: false
+      previewUrls: true
+      sha256: string
+      activation: 'owner-gated'
+    }
     freeLimits: { passed: boolean }
   }
   artifactSha256: string
@@ -217,6 +225,7 @@ export async function collectAppArtifact(options: ArtifactOptions): Promise<Arti
       worker: workerEvidence.worker,
       staticAssets: workerEvidence.staticAssets,
       configSha256: workerEvidence.configSha256,
+      previewConfig: workerEvidence.previewConfig,
       freeLimits: workerEvidence.freeLimits,
     }
   }

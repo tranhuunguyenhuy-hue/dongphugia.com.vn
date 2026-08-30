@@ -114,17 +114,23 @@ describe('LEO-563 application foundation contract', () => {
       'pages project create',
       'pages deploy',
       'cloudflare/wrangler-action',
-      'CLOUDFLARE_API_TOKEN',
+      'wrangler versions upload',
+      'wrangler deploy',
       'deployments: write',
       'PRODUCTION_DATABASE_URL',
     ]) expect(workflow.toLowerCase()).not.toContain(forbidden.toLowerCase())
+
+    expect(workflow.match(/secrets\.CLOUDFLARE_ACCOUNT_ID/g)).toHaveLength(1)
+    expect(workflow.match(/secrets\.CLOUDFLARE_API_TOKEN/g)).toHaveLength(1)
+    expect(workflow).toContain('cloudflare-readonly-discovery.mjs')
   })
 
   it('records the CI-only external Preview decision and deferred feature work', () => {
     for (const marker of [
       'CI-only',
       'no Supabase',
-      'no Cloudflare',
+      'sanitized read-only Cloudflare inventory',
+      'Cloudflare resource/version/deployment',
       'LEO-564',
       'LEO-565',
       'LEO-566',

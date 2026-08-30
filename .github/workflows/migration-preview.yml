@@ -189,7 +189,7 @@ jobs:
             --assets-dir apps/public/dist/client \
             --output "$SECOND_BUILD" \
             --source-sha "$SOURCE_SHA"
-          for selector in '.worker.sha256' '.staticAssets.sha256' '.configSha256'; do
+          for selector in '.worker.sha256' '.staticAssets.sha256' '.configSha256' '.previewConfig.sha256'; do
             first="$(jq -r "$selector" "$FIRST_BUILD/worker-artifact-evidence.json")"
             second="$(jq -r "$selector" "$SECOND_BUILD/worker-artifact-evidence.json")"
             test "$first" = "$second"
@@ -341,11 +341,13 @@ jobs:
           worker_sha="$(jq -r '.candidate.publicWorkerSha256' "$OUTPUT/candidate-evidence.json")"
           assets_sha="$(jq -r '.candidate.publicStaticAssetsSha256' "$OUTPUT/candidate-evidence.json")"
           config_sha="$(jq -r '.candidate.publicConfigSha256' "$OUTPUT/candidate-evidence.json")"
+          preview_config_sha="$(jq -r '.candidate.publicPreviewConfigSha256' "$OUTPUT/candidate-evidence.json")"
           [[ "$public_sha" =~ ^[0-9a-f]{64}$ ]]
           [[ "$admin_sha" =~ ^[0-9a-f]{64}$ ]]
           [[ "$worker_sha" =~ ^[0-9a-f]{64}$ ]]
           [[ "$assets_sha" =~ ^[0-9a-f]{64}$ ]]
           [[ "$config_sha" =~ ^[0-9a-f]{64}$ ]]
+          [[ "$preview_config_sha" =~ ^[0-9a-f]{64}$ ]]
           test "$public_sha" != "$admin_sha"
           {
             echo 'artifact_ready=true'
@@ -360,6 +362,7 @@ jobs:
             echo "- Public Worker SHA-256: $worker_sha"
             echo "- Public Static Assets SHA-256: $assets_sha"
             echo "- Public deploy config SHA-256: $config_sha"
+            echo "- Owner-gated Public Preview config SHA-256: $preview_config_sha"
             echo '- Public/Admin build targets: independent'
             echo '- Preview HTML/header/robots noindex posture: runtime-derived PASS'
           } >> "$GITHUB_STEP_SUMMARY"
@@ -372,9 +375,75 @@ jobs:
           if-no-files-found: error
           retention-days: 90
 
+  cloudflare-readonly-discovery:
+    name: Discover existing Cloudflare Preview resources read-only
+    needs: [repo-code-gate, required-ci, app-preview-artifact]
+    if: needs.repo-code-gate.outputs.preview_required == 'true' && needs.required-ci.result == 'success' && needs.app-preview-artifact.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      result: ${{ steps.record.outputs.result }}
+    steps:
+      - name: Checkout the exact PR-head discovery implementation
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.repo-code-gate.outputs.source_sha }}
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Inventory Cloudflare resources with read-only API calls
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          DISCOVERY_OUTPUT: ${{ runner.temp }}/cloudflare-readonly-discovery.json
+        run: >-
+          node scripts/app-foundation/cloudflare-readonly-discovery.mjs
+          --output "$DISCOVERY_OUTPUT"
+          --source-sha "${{ needs.repo-code-gate.outputs.source_sha }}"
+
+      - name: Record sanitized discovery disposition
+        id: record
+        env:
+          DISCOVERY_OUTPUT: ${{ runner.temp }}/cloudflare-readonly-discovery.json
+        shell: bash
+        run: |
+          set -euo pipefail
+          account_state="$(jq -r '.credentials.accountId' "$DISCOVERY_OUTPUT")"
+          token_state="$(jq -r '.credentials.apiToken' "$DISCOVERY_OUTPUT")"
+          if [[ "$account_state" != "AVAILABLE" || "$token_state" != "AVAILABLE" ]]; then
+            result='CREDENTIALS_UNAVAILABLE'
+          elif jq -e '[.calls[] | select(.label == "workers.scripts.list" or .label == "workers.domains.list" or .label == "workers.routes.list.dongphugia.vn" or .label == "pages.projects.list") | .status] | length == 4 and all(. == "READ_OK")' "$DISCOVERY_OUTPUT" >/dev/null; then
+            result='READ_COMPLETE'
+          else
+            result='READ_PERMISSION_INCOMPLETE'
+          fi
+          echo "result=$result" >> "$GITHUB_OUTPUT"
+          {
+            echo "### Cloudflare read-only discovery: $result"
+            echo "- Account ID secret reference: $account_state"
+            echo "- API token secret reference: $token_state"
+            echo "- Existing Workers: $(jq -r '[.workers[].name] | if length == 0 then "NONE_DISCOVERED" else join(", ") end' "$DISCOVERY_OUTPUT")"
+            echo "- Existing Pages projects: $(jq -r '[.pagesProjects[].name] | if length == 0 then "NONE_DISCOVERED" else join(", ") end' "$DISCOVERY_OUTPUT")"
+            echo "- Suitable isolated Public Worker: $(jq -r '.suitableIsolatedPublicWorker // "NONE_PROVEN"' "$DISCOVERY_OUTPUT")"
+            echo "- Workers Free confirmed: $(jq -r '.workersPlan.freeConfirmed' "$DISCOVERY_OUTPUT")"
+            echo '- Mutating API methods and Wrangler publication: not invoked.'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload sanitized read-only discovery evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: cloudflare-readonly-discovery-${{ needs.repo-code-gate.outputs.source_sha }}
+          path: ${{ runner.temp }}/cloudflare-readonly-discovery.json
+          if-no-files-found: error
+          retention-days: 30
+
   cloudflare-preview-gate:
     name: Existing Cloudflare Preview owner gate
-    needs: [repo-code-gate, required-ci, app-preview-artifact]
+    needs: [repo-code-gate, required-ci, app-preview-artifact, cloudflare-readonly-discovery]
     if: always()
     outputs:
       result: ${{ steps.gate.outputs.result }}
@@ -388,6 +457,7 @@ jobs:
           PREVIEW_REQUIRED: ${{ needs.repo-code-gate.outputs.preview_required }}
           ARTIFACT_RESULT: ${{ needs.app-preview-artifact.result }}
           ARTIFACT_READY: ${{ needs.app-preview-artifact.outputs.artifact_ready }}
+          DISCOVERY_RESULT: ${{ needs.cloudflare-readonly-discovery.outputs.result }}
         shell: bash
         run: |
           set -euo pipefail
@@ -405,12 +475,18 @@ jobs:
             echo 'result=BLOCKED_BY_ARTIFACT_FAILURE' >> "$GITHUB_OUTPUT"
             exit 0
           fi
+          if [[ "$DISCOVERY_RESULT" != "READ_COMPLETE" && "$DISCOVERY_RESULT" != "READ_PERMISSION_INCOMPLETE" && "$DISCOVERY_RESULT" != "CREDENTIALS_UNAVAILABLE" ]]; then
+            echo 'result=BLOCKED_BY_DISCOVERY_FAILURE' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           echo 'result=BLOCKED_BY_OWNER_GATE' >> "$GITHUB_OUTPUT"
           {
             echo '### Cloudflare Preview: BLOCKED_BY_OWNER_GATE'
-            echo '- The existing single Pages Preview path is not used for the independent Public Worker and Admin artifacts.'
-            echo '- No Cloudflare API, credential, project, binding, custom-domain, DNS, or traffic call was attempted.'
-            echo '- Owner decision required: attest exact existing non-Production Preview resources for each deployable before a later adapter can publish.'
+            echo "- Read-only discovery result: $DISCOVERY_RESULT"
+            echo '- Admin external Preview is deferred and is not an LEO-563 blocker.'
+            echo '- Supabase connectivity is deferred to LEO-564; no legacy runtime is bound.'
+            echo '- No Cloudflare resource/version/deployment, binding, custom-domain, DNS, or traffic mutation was attempted.'
+            echo '- Owner decision required: approve the exact isolated Public Preview Worker resource and immutable version-upload contract after reviewing sanitized discovery.'
           } >> "$GITHUB_STEP_SUMMARY"
 
   preview-gate:
@@ -452,6 +528,8 @@ jobs:
           {
             echo '### Final Preview result: BLOCKED_BY_OWNER_GATE'
             echo '- Public/Admin artifacts: built, separately identified, and uploaded as CI-only evidence.'
-            echo '- Cloudflare publication: not attempted until exact separate non-Production resources are owner-attested.'
+            echo '- Cloudflare publication: not attempted until the exact isolated Public Preview Worker contract is owner-approved.'
+            echo '- Admin external Preview: downstream scope and not an LEO-563 blocker.'
+            echo '- Supabase connectivity: deferred to LEO-564.'
             echo '- Production custom domain/DNS/traffic: unchanged.'
           } >> "$GITHUB_STEP_SUMMARY"

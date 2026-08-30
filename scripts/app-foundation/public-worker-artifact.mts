@@ -47,10 +47,10 @@ async function digestDirectory(root: string, include: (relativePath: string) => 
   return { sha256: hash.digest('hex'), fileCount: files.length, totalBytes, largestFile }
 }
 
-async function runWranglerDryRun(repositoryRoot: string, artifactRoot: string) {
+async function runWranglerDryRun(repositoryRoot: string, artifactRoot: string, config = 'wrangler.json') {
   const wrangler = path.join(repositoryRoot, 'apps', 'public', 'node_modules', 'wrangler', 'bin', 'wrangler.js')
   const output = await new Promise<string>((resolve, reject) => {
-    const child = spawn(process.execPath, [wrangler, 'deploy', '--dry-run', '--config', 'wrangler.json'], {
+    const child = spawn(process.execPath, [wrangler, 'deploy', '--dry-run', '--config', config], {
       cwd: artifactRoot,
       env: { ...process.env, NO_COLOR: '1' },
     })
@@ -92,10 +92,36 @@ async function main() {
   const configText = `${JSON.stringify(generatedConfig, null, 2)}\n`
   await writeFile(path.join(outputDir, 'wrangler.json'), configText, 'utf8')
 
+  const previewConfig = {
+    name: 'dongphugia-v1-public-preview',
+    compatibility_date: generatedConfig.compatibility_date,
+    compatibility_flags: generatedConfig.compatibility_flags,
+    main: 'worker/index.js',
+    workers_dev: false,
+    preview_urls: true,
+    assets: {
+      directory: 'assets',
+      not_found_handling: 'none',
+      binding: 'ASSETS',
+    },
+    vars: {
+      APP_ENV: 'preview',
+      APP_BUILD_TARGET: 'public',
+      APP_ORIGIN: 'https://public-preview.invalid',
+      PREVIEW_NOINDEX: 'true',
+    },
+    no_bundle: true,
+    rules: [{ type: 'ESModule', globs: ['**/*.js', '**/*.mjs'] }],
+  }
+  const previewConfigText = `${JSON.stringify(previewConfig, null, 2)}\n`
+  await writeFile(path.join(outputDir, 'wrangler.preview.json'), previewConfigText, 'utf8')
+
   const worker = await digestDirectory(path.join(outputDir, 'worker'))
   const assets = await digestDirectory(path.join(outputDir, 'assets'))
   const configSha256 = createHash('sha256').update(configText).digest('hex')
+  const previewConfigSha256 = createHash('sha256').update(previewConfigText).digest('hex')
   const dryRun = await runWranglerDryRun(repositoryRoot, outputDir)
+  await runWranglerDryRun(repositoryRoot, outputDir, 'wrangler.preview.json')
 
   if (dryRun.gzipKiB > FREE_WORKER_GZIP_LIMIT_KIB) throw new Error('PUBLIC_WORKER_FREE_GZIP_LIMIT_EXCEEDED')
   if (assets.fileCount > FREE_STATIC_ASSET_LIMIT) throw new Error('PUBLIC_WORKER_FREE_ASSET_COUNT_EXCEEDED')
@@ -109,6 +135,14 @@ async function main() {
     worker: { ...worker, wranglerUploadKiB: dryRun.uploadKiB, wranglerGzipKiB: dryRun.gzipKiB },
     staticAssets: assets,
     configSha256,
+    previewConfig: {
+      workerName: previewConfig.name,
+      previewAlias: 'pr-138',
+      workersDev: previewConfig.workers_dev,
+      previewUrls: previewConfig.preview_urls,
+      sha256: previewConfigSha256,
+      activation: 'owner-gated',
+    },
     freeLimits: {
       workerGzipKiB: FREE_WORKER_GZIP_LIMIT_KIB,
       staticAssetFiles: FREE_STATIC_ASSET_LIMIT,

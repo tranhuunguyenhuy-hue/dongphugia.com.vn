@@ -84,12 +84,16 @@ to exact source SHA, root/Public lockfile digests, and migration-manifest digest
 before upload. HTML, response-header, and `robots.txt` noindex claims come from
 checks against the built runtimes rather than manifest constants.
 
-The former single-Pages publish/create path is intentionally not called. One
-existing Pages project cannot safely represent the separate Public Worker and
-Admin deployables, and LEO-563 does not create or reconfigure a Cloudflare
-resource, credential, binding, custom domain, DNS record, or traffic route.
-Application candidates therefore remain CI-only until an Owner attests exact
-separate non-Production Preview resources and authorizes a later adapter.
-DB/import/docs-only changes end with `SKIPPED_UNRELATED_CHANGE` and cannot
-reach the candidate or Cloudflare path. Candidate build, identity, or noindex
-failures fail closed.
+The former single-Pages publish/create path is intentionally not called. CI may
+use existing Cloudflare secret references only in the fixed-GET, sanitized
+read-only discovery job. It cannot create, upload, deploy, or reconfigure a
+Cloudflare resource, credential, binding, custom domain, DNS record, or traffic
+route. The Public candidate includes a checksum-identified, Owner-gated config
+for `dongphugia-v1-public-preview`; it sets `workers_dev=false` and
+`preview_urls=true` with no route/custom domain/Production binding. Admin
+external Preview is downstream scope, and canonical Supabase connectivity is
+deferred to LEO-564. DB/import/docs-only changes end with
+`SKIPPED_UNRELATED_CHANGE` and cannot reach the candidate or Cloudflare path.
+Candidate build, identity, noindex, or discovery-execution failures fail
+closed.
+Until that Owner gate is approved, the deployable candidate remains CI-only.

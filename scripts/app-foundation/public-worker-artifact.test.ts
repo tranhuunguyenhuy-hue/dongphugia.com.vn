@@ -30,6 +30,27 @@ describe('LEO-563 Public Worker artifact contract', () => {
     expect(configText).not.toMatch(/api[_-]?token|service[_-]?role|custom[_-]?domain|dns/i)
   })
 
+  it('generates an owner-gated Preview-only Worker config from a fixed allowlist', async () => {
+    const source = await readFile(path.join(repositoryRoot, 'scripts/app-foundation/public-worker-artifact.mts'), 'utf8')
+    for (const marker of [
+      "name: 'dongphugia-v1-public-preview'",
+      'workers_dev: false',
+      'preview_urls: true',
+      "previewAlias: 'pr-138'",
+      "activation: 'owner-gated'",
+      "'wrangler.preview.json'",
+    ]) expect(source).toContain(marker)
+    for (const forbidden of [
+      'routes:',
+      'route:',
+      'custom_domains:',
+      'www.dongphugia.vn',
+      'admin.dongphugia.vn',
+      'service_role',
+      'database_url',
+    ]) expect(source.toLowerCase()).not.toContain(forbidden.toLowerCase())
+  })
+
   it('uses a hard 300-second cache window without unbounded stale serving', async () => {
     const workerSource = await readFile(path.join(repositoryRoot, 'apps/public/src/worker-policy.ts'), 'utf8')
     const workerEntry = await readFile(path.join(repositoryRoot, 'apps/public/worker.ts'), 'utf8')
