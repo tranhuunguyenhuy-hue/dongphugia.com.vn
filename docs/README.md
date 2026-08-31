@@ -63,6 +63,9 @@ not an authority document: verify it immediately before relying on it.
 - `CURRENT` — [LEO-562 deterministic Legacy-to-V1 import](deploy/leo-562-deterministic-v1-import.md):
   local-only source mapping, normalization, quarantine, publish-quality,
   reconciliation, and deterministic replay evidence.
+- `CURRENT` — [LEO-563 New Production application foundation](deploy/leo-563-app-foundation.md):
+  separate Public/Admin deployables, pure app contracts, environment/cache
+  boundaries, and fail-closed CI candidate gating.
 - `CURRENT` — [Public static build](deploy/public-static-build.md):
   read-only build-time export, SEO/redirect output, inventory checks, and
   Product/Family preservation gate (LEO-536).

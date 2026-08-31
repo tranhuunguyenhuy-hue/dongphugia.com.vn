@@ -1,0 +1,8 @@
+# Keep both version and alias workers.dev Preview URLs non-indexable without
+# attaching this Preview-only rule to a future Public custom domain.
+https://:version.:subdomain.workers.dev/*
+  X-Robots-Tag: noindex, nofollow
+
+# Preserve vinext's immutable cache policy for content-hashed client assets.
+/_next/static/*
+  Cache-Control: public, max-age=31536000, immutable

@@ -19,7 +19,8 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@dpg/app-contracts": ["./packages/app-contracts/src/index.ts"]
     }
   },
   "include": [
@@ -30,5 +31,5 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules", "backups", "docs/archive", "prisma", "scripts", "src/scripts", "supabase/functions"]
+  "exclude": ["node_modules", "backups", "docs/archive", "prisma", "scripts", "src/scripts", "supabase/functions", "apps/public"]
 }

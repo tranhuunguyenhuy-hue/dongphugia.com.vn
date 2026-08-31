@@ -67,28 +67,35 @@ merge, Production, DNS, or traffic changes.
 
 ## Migration PR CI and Preview gate
 
-`.github/workflows/migration-preview.yml` runs on every PR to `main` and is
-the required migration delivery gate. It runs lint, type-check, the full test
-suite, and the LEO-536 static contract checks. When an Owner has already
-authorized an exact read-only non-Production source, it builds the `preview`
-mode artifact, verifies the free-tier limits and every HTML/headers/robots
-noindex control, and emits a candidate tuple containing the source commit, PR,
-workflow run, artifact SHA-256, and migration manifest SHA-256.
+`.github/workflows/migration-preview.yml` remains the required repository gate
+for every PR to `main`. It runs lint, type-check, the full test suite, and the
+LEO-536 static contract checks without publishing the legacy static artifact.
+The LEO-563 repository-code gate then compares the exact PR-head SHA with the
+base SHA. Only material changes under `apps/public`, `apps/admin`,
+`packages/app-contracts`, or the shared build manifests can produce the new
+application Preview candidate.
 
-Cloudflare upload is separately gated by the single non-Production Pages project
-contract. The workflow may create exactly the configured project when it is
-absent, using the supported Wrangler `pages project create` command and the
-pre-authorized Pages:Edit token; it fails closed on API, identity,
-custom-domain, or branch mismatches.
-The workflow never creates a secret, binding, permission, security setting, DNS
-record, traffic route, or deployment deletion. The Owner must
-preconfigure `MIGRATION_PREVIEW_SOURCE_ENABLED=true`,
-`MIGRATION_PREVIEW_SOURCE_CONTRACT=read-only-non-production`,
-`CLOUDFLARE_PAGES_PREVIEW_ENABLED=true`, and the exact
-`CLOUDFLARE_PAGES_PREVIEW_PROJECT`, plus the existing read-only source,
-`CLOUDFLARE_ACCOUNT_ID`, and least-privilege Pages Edit
-`CLOUDFLARE_API_TOKEN` secrets. Missing gates produce
-`BLOCKED_BY_OWNER_GATE`; build, free-tier, identity, or deployed noindex
-failures fail the workflow and block the merge path. A successful deployment
-is checked at a `pr-<number>.<project>.pages.dev` alias for HTML
-`noindex,nofollow`, `X-Robots-Tag: noindex, nofollow`, and `Disallow: /`.
+For that predicate, CI builds Public and Admin independently. Public uses the
+pinned `vinext` Worker adapter, packages Worker plus Static Assets with a
+Wrangler dry run, and proves byte-identical Worker/assets/config identities
+across two builds. Admin is also rebuilt and recollected to prove an identical
+application artifact identity. The candidate binds both application identities
+to exact source SHA, root/Public lockfile digests, and migration-manifest digest
+before upload. HTML, response-header, and `robots.txt` noindex claims come from
+checks against the built runtimes rather than manifest constants.
+
+The former single-Pages publish/create path is intentionally not called. CI may
+use the account ID and temporary dedicated
+`CLOUDFLARE_READONLY_DISCOVERY_TOKEN` references only in the fixed-GET,
+sanitized read-only discovery job. The deployment `CLOUDFLARE_API_TOKEN` is not
+available to that job. It cannot create, upload, deploy, or reconfigure a
+Cloudflare resource, credential, binding, custom domain, DNS record, or traffic
+route. The Public candidate includes a checksum-identified, Owner-gated config
+for `dongphugia-v1-public-preview`; it sets `workers_dev=false` and
+`preview_urls=true` with no route/custom domain/Production binding. Admin
+external Preview is downstream scope, and canonical Supabase connectivity is
+deferred to LEO-564. DB/import/docs-only changes end with
+`SKIPPED_UNRELATED_CHANGE` and cannot reach the candidate or Cloudflare path.
+Candidate build, identity, noindex, or discovery-execution failures fail
+closed.
+Until that Owner gate is approved, the deployable candidate remains CI-only.
