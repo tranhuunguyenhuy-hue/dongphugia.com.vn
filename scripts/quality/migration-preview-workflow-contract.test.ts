@@ -46,6 +46,15 @@ describe('migration PR CI and Preview workflow contract', () => {
     expect(buildGuide).toContain('CI-only')
   })
 
+  it('preserves hidden files when transporting the immutable candidate', () => {
+    const candidateUploadStart = workflow.indexOf('name: Upload the immutable Public/Admin candidate and evidence')
+    const candidateUploadEnd = workflow.indexOf('\n\n  cloudflare-readonly-discovery:', candidateUploadStart)
+    const candidateUpload = workflow.slice(candidateUploadStart, candidateUploadEnd)
+
+    expect(candidateUpload).toContain('uses: actions/upload-artifact@v4')
+    expect(candidateUpload).toContain('include-hidden-files: true')
+  })
+
   it('skips unrelated changes before the candidate and external Preview path', () => {
     for (const marker of [
       'APPLICATION_SOURCE_PREFIXES',

@@ -417,6 +417,7 @@ jobs:
         with:
           name: dongphugia-app-preview-${{ needs.repo-code-gate.outputs.source_sha }}
           path: ${{ env.OUTPUT }}
+          include-hidden-files: true
           if-no-files-found: error
           retention-days: 90
 
