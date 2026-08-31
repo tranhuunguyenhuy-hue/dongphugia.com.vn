@@ -37,6 +37,8 @@ describe('LEO-563 Cloudflare read-only discovery', () => {
       if (url.includes('/zones?')) return response([{ id: 'zone-secret-id' }])
       if (url.includes('/workers/routes')) return response([{ script: 'routed-preview', pattern: 'dongphugia.vn/*' }])
       if (url.endsWith('/subdomain')) return response({ enabled: false, previews_enabled: true })
+      if (url.endsWith('/versions')) return response({ items: [{ id: '11111111-1111-1111-1111-111111111111', created_on: '2026-08-31T00:00:00.000Z', number: 1 }] })
+      if (url.endsWith('/deployments')) return response({ deployments: [{ id: '22222222-2222-2222-2222-222222222222', strategy: 'percentage', versions: [{ version_id: '11111111-1111-1111-1111-111111111111', percentage: 100 }] }] })
       if (url.includes('/settings')) {
         return response(url.includes('bound-preview') ? { bindings: [{ name: 'DB', type: 'd1' }] } : { bindings: [] })
       }
@@ -55,6 +57,14 @@ describe('LEO-563 Cloudflare read-only discovery', () => {
     expect(report.suitableIsolatedPublicWorker).toBe('safe-preview')
     expect(report.createNewResourceRequired).toBe(false)
     expect(report.workersPlan.freeConfirmed).toBe(true)
+    expect(report.workers.find((worker) => worker.name === 'safe-preview')?.versions).toEqual(expect.objectContaining({
+      status: 'READ_OK',
+      versionIds: ['11111111-1111-1111-1111-111111111111'],
+    }))
+    expect(report.workers.find((worker) => worker.name === 'safe-preview')?.deployments).toEqual(expect.objectContaining({
+      status: 'READ_OK',
+      deploymentIds: ['22222222-2222-2222-2222-222222222222'],
+    }))
     expect(report.productionAssociation).toBe('PRESENT_ON_ACCOUNT_RESOURCES')
     expect(report.sourceCommit).toBe('4c1f0d801781bc988f99519335827cc671d07310')
     const serialized = JSON.stringify(report)
@@ -77,5 +87,28 @@ describe('LEO-563 Cloudflare read-only discovery', () => {
     expect(report.createNewResourceRequired).toBeNull()
     expect(report.productionAssociation).toBe('UNKNOWN')
     expect(report.calls).toContainEqual(expect.objectContaining({ label: 'workers.domains.list', status: 'READ_DENIED' }))
+  })
+
+  it('records malformed version/deployment state without treating it as safe', async () => {
+    const fetchImpl = async (url: string) => {
+      if (url.endsWith('/workers/scripts')) return response([{ id: 'safe-preview' }])
+      if (url.endsWith('/workers/domains')) return response([])
+      if (url.includes('/subscriptions')) return response([{ rate_plan: { public_name: 'Workers Free' } }])
+      if (url.includes('/account-settings')) return response({ default_usage_model: 'standard' })
+      if (url.includes('/zones?')) return response([])
+      if (url.endsWith('/subdomain')) return response({ enabled: false, previews_enabled: true })
+      if (url.endsWith('/versions')) return response({ items: [{ id: 'not-a-version-id' }] })
+      if (url.endsWith('/deployments')) return response({ deployments: [{ id: 'not-a-deployment-id', strategy: 'percentage', versions: [] }] })
+      if (url.includes('/settings')) return response({ bindings: [] })
+      if (url.endsWith('/pages/projects')) return response([])
+      throw new Error(`Unexpected test URL: ${url}`)
+    }
+
+    const report = await runDiscovery({ accountId: 'account', apiToken: 'token', fetchImpl })
+    const worker = report.workers[0]
+    expect(worker.versions.status).toBe('INVALID')
+    expect(worker.deployments.status).toBe('INVALID')
+    expect(report.suitableIsolatedPublicWorker).toBeNull()
+    expect(report.createNewResourceRequired).toBeNull()
   })
 })

@@ -169,6 +169,10 @@ describe('migration PR CI and Preview workflow contract', () => {
     expect(workflow).toContain('cloudflare-readonly-discovery.mjs')
     expect(workflow).toContain('Mutating API methods and Wrangler publication: not invoked.')
     expect(cloudflareDiscovery).toContain("method: 'GET'")
+    expect(cloudflareDiscovery).toContain('workers.versions.list:')
+    expect(cloudflareDiscovery).toContain('workers.deployments.list:')
+    expect(cloudflareDiscovery).toContain('versionIds')
+    expect(cloudflareDiscovery).toContain('deploymentIds')
     for (const forbiddenMethod of ["method: 'POST'", "method: 'PUT'", "method: 'PATCH'", "method: 'DELETE'"]) {
       expect(cloudflareDiscovery).not.toContain(forbiddenMethod)
     }

@@ -10,6 +10,7 @@ const PRODUCTION_HOSTNAMES = new Set([
 ])
 const NON_PRODUCTION_NAME = /(^|[-_.])(preview|staging|stage|test|dev|shadow|candidate)([-_.]|$)/i
 const SAFE_BINDING_TYPES = new Set(['assets'])
+const REMOTE_ID_PATTERN = /^[0-9a-f-]{32,64}$/i
 
 function credentialState(value) {
   return value ? 'AVAILABLE' : 'UNAVAILABLE'
@@ -49,6 +50,62 @@ function sanitizeBindings(settings) {
 
 function asArray(value) {
   return Array.isArray(value) ? value : []
+}
+
+function safeRemoteId(value) {
+  return typeof value === 'string' && REMOTE_ID_PATTERN.test(value) ? value : null
+}
+
+function sanitizeVersionInventory(versions) {
+  if (!Array.isArray(versions?.items)) {
+    return { status: 'UNKNOWN', versionIds: null, versions: null }
+  }
+  const entries = versions.items.map((version) => ({
+    id: safeRemoteId(version?.id),
+    createdOn: typeof version?.created_on === 'string' ? version.created_on : null,
+    number: Number.isInteger(version?.number) ? version.number : null,
+  })).sort((left, right) => String(left.id).localeCompare(String(right.id)))
+  const valid = entries.every((entry) => entry.id !== null)
+  return {
+    status: valid ? 'READ_OK' : 'INVALID',
+    versionIds: valid ? entries.map((entry) => entry.id) : null,
+    versions: entries,
+  }
+}
+
+function sanitizeDeploymentInventory(deployments) {
+  if (!Array.isArray(deployments?.deployments)) {
+    return { status: 'UNKNOWN', deploymentIds: null, deployments: null }
+  }
+  const entries = deployments.deployments.map((deployment) => ({
+    id: safeRemoteId(deployment?.id),
+    strategy: typeof deployment?.strategy === 'string' ? deployment.strategy : null,
+    versions: Array.isArray(deployment?.versions)
+      ? deployment.versions.map((version) => ({
+        versionId: safeRemoteId(version?.version_id),
+        percentage: typeof version?.percentage === 'number' && Number.isFinite(version.percentage)
+          ? version.percentage
+          : null,
+      })).sort((left, right) => String(left.versionId).localeCompare(String(right.versionId)))
+      : null,
+  })).sort((left, right) => String(left.id).localeCompare(String(right.id)))
+  const valid = entries.every((entry) => (
+    entry.id !== null &&
+    entry.strategy === 'percentage' &&
+    Array.isArray(entry.versions) &&
+    entry.versions.length > 0 &&
+    entry.versions.every((version) => (
+      version.versionId !== null &&
+      typeof version.percentage === 'number' &&
+      version.percentage >= 0 &&
+      version.percentage <= 100
+    ))
+  ))
+  return {
+    status: valid ? 'READ_OK' : 'INVALID',
+    deploymentIds: valid ? entries.map((entry) => entry.id) : null,
+    deployments: entries,
+  }
 }
 
 function planLabels(subscriptions) {
@@ -139,13 +196,17 @@ export async function runDiscovery({ accountId, apiToken, sourceCommit = null, f
   for (const script of asArray(scripts)) {
     if (typeof script?.id !== 'string') continue
     const workerName = script.id
-    const [subdomain, settings] = await Promise.all([
+    const [subdomain, settings, versions, deployments] = await Promise.all([
       get(`workers.subdomain.get:${workerName}`, `/accounts/${accountId}/workers/scripts/${encodeURIComponent(workerName)}/subdomain`),
       get(`workers.settings.get:${workerName}`, `/accounts/${accountId}/workers/scripts/${encodeURIComponent(workerName)}/settings`),
+      get(`workers.versions.list:${workerName}`, `/accounts/${accountId}/workers/scripts/${encodeURIComponent(workerName)}/versions`),
+      get(`workers.deployments.list:${workerName}`, `/accounts/${accountId}/workers/scripts/${encodeURIComponent(workerName)}/deployments`),
     ])
     const customDomains = (domainsByWorker.get(workerName) ?? []).sort()
     const workerRoutes = (routesByWorker.get(workerName) ?? []).sort()
     const bindings = sanitizeBindings(settings)
+    const versionInventory = sanitizeVersionInventory(versions)
+    const deploymentInventory = sanitizeDeploymentInventory(deployments)
     const association = [...customDomains, ...workerRoutes].some(isProductionAssociation)
     report.workers.push({
       name: workerName,
@@ -156,6 +217,8 @@ export async function runDiscovery({ accountId, apiToken, sourceCommit = null, f
       routes: workerRoutes,
       bindings,
       productionAssociation: association,
+      versions: versionInventory,
+      deployments: deploymentInventory,
     })
   }
   report.workers.sort((left, right) => left.name.localeCompare(right.name))
@@ -197,7 +260,11 @@ export async function runDiscovery({ accountId, apiToken, sourceCommit = null, f
     'pages.projects.list',
   ].every((label) => calls.some((call) => call.label === label && call.status === 'READ_OK'))
 
-  const suitable = discoveryComplete
+  const completeVersionDeploymentInventory = discoveryComplete && report.workers.every((worker) => (
+    worker.versions.status === 'READ_OK' && worker.deployments.status === 'READ_OK'
+  ))
+
+  const suitable = completeVersionDeploymentInventory
     ? report.workers.find((worker) => (
       worker.clearlyNonProduction &&
       worker.workersDevEnabled === false &&
@@ -205,13 +272,15 @@ export async function runDiscovery({ accountId, apiToken, sourceCommit = null, f
       worker.customDomains.length === 0 &&
       worker.routes.length === 0 &&
       worker.bindings.every((binding) => SAFE_BINDING_TYPES.has(binding.type)) &&
+      worker.versions.status === 'READ_OK' &&
+      worker.deployments.status === 'READ_OK' &&
       !worker.productionAssociation
     ))
     : null
 
   report.suitableIsolatedPublicWorker = suitable?.name ?? null
-  report.createNewResourceRequired = discoveryComplete ? !suitable : null
-  report.productionAssociation = discoveryComplete
+  report.createNewResourceRequired = completeVersionDeploymentInventory ? !suitable : null
+  report.productionAssociation = completeVersionDeploymentInventory
     ? (report.workers.some((worker) => worker.productionAssociation) || report.pagesProjects.some((project) => project.productionAssociation)
       ? 'PRESENT_ON_ACCOUNT_RESOURCES'
       : 'NONE_DISCOVERED')
