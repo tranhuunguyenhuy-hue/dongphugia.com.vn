@@ -24,7 +24,6 @@ function validConfig() {
     },
     no_bundle: true,
     rules: [{ type: 'ESModule', globs: ['**/*.js', '**/*.mjs'] }],
-    limits: { subrequests: 50 },
   }
 }
 
@@ -37,7 +36,6 @@ describe('LEO-563 Cloudflare Preview publication gate', () => {
       previewUrls: true,
       routes: [],
       customDomains: [],
-      limits: { subrequests: 50 },
     })
   })
 
@@ -46,17 +44,17 @@ describe('LEO-563 Cloudflare Preview publication gate', () => {
     ['custom domain', { custom_domains: ['www.dongphugia.vn'] }],
     ['secret binding', { vars: { ...validConfig().vars, DATABASE_URL: 'forbidden' } }],
     ['workers.dev production endpoint', { workers_dev: true }],
-    ['unsupported explicit CPU limit', { limits: { cpu_ms: 10, subrequests: 50 } }],
-    ['subrequest limit outside Free plan', { limits: { subrequests: 51 } }],
   ])('rejects %s configuration', (_label, change) => {
     expect(() => validatePreviewConfig({ ...validConfig(), ...change })).toThrow(/LEO563_PREVIEW_/)
   })
 
-  it('rejects an explicit CPU limit even when the value matches the Free ceiling', () => {
-    expect(() => validatePreviewConfig({
-      ...validConfig(),
-      limits: { cpu_ms: 10, subrequests: 50 },
-    })).toThrow('LEO563_PREVIEW_EXPLICIT_CPU_LIMIT_FORBIDDEN')
+  it.each([
+    ['null limits block', null],
+    ['empty limits block', {}],
+    ['provider-matching subrequest limit', { subrequests: 50 }],
+    ['explicit CPU limit', { cpu_ms: 10 }],
+  ])('rejects any explicit Free Preview limits block: %s', (_label, limits) => {
+    expect(() => validatePreviewConfig({ ...validConfig(), limits })).toThrow('LEO563_PREVIEW_EXPLICIT_LIMITS_FORBIDDEN')
   })
 
   it('records only the immutable version and aliased workers.dev URLs', () => {

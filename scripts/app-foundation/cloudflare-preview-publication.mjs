@@ -9,7 +9,6 @@ const PULL_REQUEST = 138
 const FREE_WORKER_GZIP_LIMIT_KIB = 3 * 1024
 const FREE_STATIC_ASSET_LIMIT = 20_000
 const STATIC_ASSET_FILE_LIMIT_BYTES = 25 * 1024 * 1024
-const PREVIEW_SUBREQUEST_LIMIT = 50
 const PRODUCTION_HOST_PATTERN = /(^|[/:.])(?:www\.|admin\.)?dongphugia\.vn(?:[/:]|$)/i
 const SECRET_LIKE_PATTERN = /(SERVICE_ROLE|AUTH_ADMIN|ADMIN_SESSION|SECRET|PASSWORD|DATABASE_URL|DIRECT_URL|PRIVATE_KEY|CREDENTIAL|CLOUDFLARE_API_TOKEN|BUNNY_API_KEY)/i
 const ALLOWED_CONFIG_KEYS = new Set([
@@ -23,7 +22,6 @@ const ALLOWED_CONFIG_KEYS = new Set([
   'vars',
   'no_bundle',
   'rules',
-  'limits',
 ])
 
 function parseArgs(argv) {
@@ -91,6 +89,7 @@ async function digestDirectory(root) {
 
 export function validatePreviewConfig(configValue) {
   const config = requirePlainObject(configValue, 'CONFIG')
+  if (Object.hasOwn(config, 'limits')) throw new Error('LEO563_PREVIEW_EXPLICIT_LIMITS_FORBIDDEN')
   for (const key of Object.keys(config)) {
     if (!ALLOWED_CONFIG_KEYS.has(key)) throw new Error(`LEO563_PREVIEW_CONFIG_KEY_FORBIDDEN:${key}`)
   }
@@ -130,12 +129,6 @@ export function validatePreviewConfig(configValue) {
     throw new Error('LEO563_PREVIEW_SECRET_LIKE_VAR_FORBIDDEN')
   }
 
-  const limits = requirePlainObject(config.limits, 'LIMITS')
-  if (Object.hasOwn(limits, 'cpu_ms')) throw new Error('LEO563_PREVIEW_EXPLICIT_CPU_LIMIT_FORBIDDEN')
-  if (!equalKeys(limits, ['subrequests']) || limits.subrequests !== PREVIEW_SUBREQUEST_LIMIT) {
-    throw new Error('LEO563_PREVIEW_FREE_LIMITS_FAILED')
-  }
-
   const serialized = JSON.stringify(config)
   if (PRODUCTION_HOST_PATTERN.test(serialized)) throw new Error('LEO563_PREVIEW_PRODUCTION_HOST_FORBIDDEN')
   if (/\b(?:route|routes|custom_domains|triggers|services|d1_databases|kv_namespaces|r2_buckets|hyperdrive|durable_objects|secrets)\b/i.test(serialized)) {
@@ -150,7 +143,6 @@ export function validatePreviewConfig(configValue) {
     routes: [],
     customDomains: [],
     bindings: [{ name: 'ASSETS', type: 'assets' }],
-    limits: { subrequests: PREVIEW_SUBREQUEST_LIMIT },
   }
 }
 
@@ -508,6 +500,5 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
 
 export {
   PREVIEW_ALIAS,
-  PREVIEW_SUBREQUEST_LIMIT,
   WORKER_NAME,
 }

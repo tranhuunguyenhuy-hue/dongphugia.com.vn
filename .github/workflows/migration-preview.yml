@@ -566,6 +566,7 @@ jobs:
           --output "$EVIDENCE_DIR/remote-preflight.json"
 
       - name: Bootstrap the absent Worker or reconcile the verified incomplete Worker
+        id: bootstrap_write
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_LEO563_PREVIEW_TOKEN }}
@@ -573,6 +574,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          echo 'write_attempted=false' >> "$GITHUB_OUTPUT"
           remote_state="$(jq -r '.state' "$EVIDENCE_DIR/remote-preflight.json")"
           test "$(jq -r '.reconciliationAllowed' "$EVIDENCE_DIR/remote-preflight.json")" = 'true'
           test -n "$CLOUDFLARE_ACCOUNT_ID"
@@ -582,6 +584,7 @@ jobs:
               test "$(jq -r '.workerAbsent' "$EVIDENCE_DIR/remote-preflight.json")" = 'true'
               test "$(jq -r '.bootstrapRequired' "$EVIDENCE_DIR/remote-preflight.json")" = 'true'
               cd "$ARTIFACT_ROOT/public/build"
+              echo 'write_attempted=true' >> "$GITHUB_OUTPUT"
               node "$WRANGLER_BIN" deploy \
                 --strict \
                 --config wrangler.preview.json \
@@ -600,6 +603,7 @@ jobs:
           esac
 
       - name: Upload one immutable Worker version with the PR #138 Preview alias
+        id: version_upload
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_LEO563_PREVIEW_TOKEN }}
@@ -607,9 +611,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          echo 'write_attempted=false' >> "$GITHUB_OUTPUT"
           test -n "$CLOUDFLARE_ACCOUNT_ID"
           test -n "$CLOUDFLARE_API_TOKEN"
           cd "$ARTIFACT_ROOT/public/build"
+          echo 'write_attempted=true' >> "$GITHUB_OUTPUT"
           node "$WRANGLER_BIN" versions upload \
             --strict \
             --config wrangler.preview.json \
@@ -668,11 +674,22 @@ jobs:
             echo "- Worker version ID: $version_id"
             echo '- Preview alias: pr-138'
             echo "- Preview URL: $preview_url"
-            echo '- Workers Free plan CPU 10 ms and 50 subrequest ceilings: confirmed by plan; no explicit CPU limit configured'
+            echo '- Workers Free CPU/subrequest ceilings: provider-enforced; no explicit limits configured'
             echo '- Real SSR, health, HTML/header/robots noindex, MISS/HIT/bypass, and 300-second freshness: PASS'
             echo '- Preview URL CPU measurement: PROVIDER_LIMITATION; Preview URL logs/tail/Logpush are unavailable.'
             echo '- Custom domains/routes/Production binding/DNS/traffic: NONE'
           } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Inspect the Worker state after a failed Cloudflare write
+        if: ${{ failure() && (steps.bootstrap_write.outputs.write_attempted == 'true' || steps.version_upload.outputs.write_attempted == 'true') }}
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_LEO563_PREVIEW_TOKEN }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$EVIDENCE_DIR"
+          npm run app:preview-publication -- inspect-resource-state \
+            --output "$EVIDENCE_DIR/post-failure-remote-state.json"
 
       - name: Upload sanitized immutable Preview evidence
         if: always()
@@ -685,6 +702,7 @@ jobs:
             ${{ env.EVIDENCE_DIR }}/upload-evidence.json
             ${{ env.EVIDENCE_DIR }}/resource-proof.json
             ${{ env.EVIDENCE_DIR }}/runtime-proof.json
+            ${{ env.EVIDENCE_DIR }}/post-failure-remote-state.json
           if-no-files-found: warn
           retention-days: 90
 

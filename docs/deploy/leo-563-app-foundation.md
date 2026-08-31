@@ -1,8 +1,8 @@
 # LEO-563 New Production application foundation
 
-Status: source candidate complete; one real isolated Public Worker Preview is
-Owner-approved through the exact PR #138 one-shot gate described below. This
-document records the Public/Admin and CI foundation. It authorizes no Supabase,
+Status: source/CI foundation fix complete; Preview publication remains pending
+a new Owner approval for the exact PR #138 head. This document records the
+Public/Admin and CI foundation. It authorizes no Supabase,
 Bunny, AWS, DNS, IAM, custom domain, route, Production deployment, or traffic
 mutation. The existing Cloudflare deployment token remains untouched.
 
@@ -134,7 +134,10 @@ Preview config allowlist and Workers Free limits, executes a Wrangler dry run,
 and proves by GET-only inspection that the exact Worker is either absent or the
 known empty incomplete record left by a failed first bootstrap. An active
 deployment, version, route, domain, binding, or enabled workers.dev endpoint is
-rejected before publication.
+rejected before publication. Each bootstrap/version step records whether a
+Cloudflare write was attempted; if a write-path step fails, the same
+GET-only state inspection runs before sanitized evidence is uploaded, and its
+failure keeps the publication job fail-closed.
 
 The assembled immutable Public artifact contains two configs. `wrangler.json`
 remains detached with `workers_dev=false` and `preview_urls=false`.
@@ -142,9 +145,9 @@ remains detached with `workers_dev=false` and `preview_urls=false`.
 `dongphugia-v1-public-preview`, with `workers_dev=false`,
 `preview_urls=true`, no routes/custom domains, no database/provider bindings,
 Preview-only public environment values, mandatory noindex, the provider's
-Workers Free CPU ceiling, and an explicit 50-subrequest ceiling. The config does
-not set `cpu_ms`, because Cloudflare rejects that setting on the confirmed Free
-plan. Static tests reject any Production
+Workers Free CPU and subrequest ceilings. It contains no explicit `limits`
+block, `cpu_ms`, or `subrequests` setting; those limits are left to Cloudflare's
+provider-enforced Free plan. Static tests reject any Production
 hostname, route, custom domain, trigger, service, database, storage, secret, or
 unapproved binding. CI validates both configs with Wrangler dry runs and records
 the Preview-config checksum.

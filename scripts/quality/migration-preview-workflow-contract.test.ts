@@ -80,6 +80,28 @@ describe('migration PR CI and Preview workflow contract', () => {
     ]) expect(bootstrapStep).toContain(marker)
   })
 
+  it('records a write attempt and inspects remote state after a failed Cloudflare write', () => {
+    const bootstrapStart = workflow.indexOf('name: Bootstrap the absent Worker or reconcile the verified incomplete Worker')
+    const versionUploadStart = workflow.indexOf('name: Upload one immutable Worker version with the PR #138 Preview alias')
+    const postFailureStart = workflow.indexOf('name: Inspect the Worker state after a failed Cloudflare write')
+    const postFailureEnd = workflow.indexOf('\n\n      - name:', postFailureStart)
+    const postFailureStep = workflow.slice(postFailureStart, postFailureEnd)
+
+    expect(bootstrapStart).toBeGreaterThanOrEqual(0)
+    expect(versionUploadStart).toBeGreaterThan(bootstrapStart)
+    expect(postFailureStart).toBeGreaterThan(versionUploadStart)
+    expect(workflow).toContain('id: bootstrap_write')
+    expect(workflow).toContain('id: version_upload')
+    expect(workflow).toContain('write_attempted=true')
+    expect(workflow).toContain("steps.bootstrap_write.outputs.write_attempted == 'true'")
+    expect(workflow).toContain("steps.version_upload.outputs.write_attempted == 'true'")
+    expect(postFailureStep).toContain('failure()')
+    expect(postFailureStep).toContain('inspect-resource-state')
+    expect(postFailureStep).toContain('post-failure-remote-state.json')
+    expect(postFailureStep).toContain('CLOUDFLARE_LEO563_PREVIEW_TOKEN')
+    expect(workflow).toContain('${{ env.EVIDENCE_DIR }}/post-failure-remote-state.json')
+  })
+
   it('skips unrelated changes before the candidate and external Preview path', () => {
     for (const marker of [
       'APPLICATION_SOURCE_PREFIXES',
@@ -119,7 +141,7 @@ describe('migration PR CI and Preview workflow contract', () => {
     ]) expect(workflow).toContain(marker)
 
     expect(workflow.match(/versions upload/g)).toHaveLength(2)
-    expect(workflow.match(/secrets\.CLOUDFLARE_LEO563_PREVIEW_TOKEN/g)).toHaveLength(4)
+    expect(workflow.match(/secrets\.CLOUDFLARE_LEO563_PREVIEW_TOKEN/g)).toHaveLength(5)
     expect(workflow.match(/secrets\.CLOUDFLARE_READONLY_DISCOVERY_TOKEN/g)).toHaveLength(1)
     expect(workflow).not.toContain('secrets.CLOUDFLARE_API_TOKEN')
     expect(workflow).toContain('cloudflare-readonly-discovery.mjs')
@@ -137,8 +159,8 @@ describe('migration PR CI and Preview workflow contract', () => {
       "const PREVIEW_ALIAS = 'pr-138'",
       'config.workers_dev !== false',
       'config.preview_urls !== true',
-      'PREVIEW_SUBREQUEST_LIMIT = 50',
-      'LEO563_PREVIEW_EXPLICIT_CPU_LIMIT_FORBIDDEN',
+      "Object.hasOwn(config, 'limits')",
+      'LEO563_PREVIEW_EXPLICIT_LIMITS_FORBIDDEN',
       'LEO563_PREVIEW_REMOTE_ACTIVE_DEPLOYMENT_FORBIDDEN',
       'LEO563_PREVIEW_PRODUCTION_HOST_FORBIDDEN',
       'LEO563_PREVIEW_REMOTE_BINDING_OR_ROUTE_FORBIDDEN',
