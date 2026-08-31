@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
-  assertRemoteResourceAbsent,
+  inspectRemoteResourceState,
   inspectPublishedResource,
   parseWranglerUpload,
   validatePreviewConfig,
@@ -24,7 +24,7 @@ function validConfig() {
     },
     no_bundle: true,
     rules: [{ type: 'ESModule', globs: ['**/*.js', '**/*.mjs'] }],
-    limits: { cpu_ms: 10, subrequests: 50 },
+    limits: { subrequests: 50 },
   }
 }
 
@@ -37,7 +37,7 @@ describe('LEO-563 Cloudflare Preview publication gate', () => {
       previewUrls: true,
       routes: [],
       customDomains: [],
-      limits: { cpuMs: 10, subrequests: 50 },
+      limits: { subrequests: 50 },
     })
   })
 
@@ -46,9 +46,17 @@ describe('LEO-563 Cloudflare Preview publication gate', () => {
     ['custom domain', { custom_domains: ['www.dongphugia.vn'] }],
     ['secret binding', { vars: { ...validConfig().vars, DATABASE_URL: 'forbidden' } }],
     ['workers.dev production endpoint', { workers_dev: true }],
-    ['paid-limit assumption', { limits: { cpu_ms: 11, subrequests: 51 } }],
+    ['unsupported explicit CPU limit', { limits: { cpu_ms: 10, subrequests: 50 } }],
+    ['subrequest limit outside Free plan', { limits: { subrequests: 51 } }],
   ])('rejects %s configuration', (_label, change) => {
     expect(() => validatePreviewConfig({ ...validConfig(), ...change })).toThrow(/LEO563_PREVIEW_/)
+  })
+
+  it('rejects an explicit CPU limit even when the value matches the Free ceiling', () => {
+    expect(() => validatePreviewConfig({
+      ...validConfig(),
+      limits: { cpu_ms: 10, subrequests: 50 },
+    })).toThrow('LEO563_PREVIEW_EXPLICIT_CPU_LIMIT_FORBIDDEN')
   })
 
   it('records only the immutable version and aliased workers.dev URLs', () => {
@@ -98,18 +106,116 @@ describe('LEO-563 Cloudflare Preview publication gate', () => {
     expect(requests.every(({ method }) => method === 'GET')).toBe(true)
   })
 
-  it('requires the exact Worker and its custom-domain set to be absent before creation', async () => {
+  it('classifies an absent Worker as safe for first deployment', async () => {
     const requests: string[] = []
     const fetchImpl = async (input: URL | RequestInfo, init?: RequestInit) => {
       expect(init?.method).toBe('GET')
       requests.push(String(input))
       return Response.json({ success: true, result: [] })
     }
-    await expect(assertRemoteResourceAbsent({ accountId: 'synthetic-account', apiToken: 'synthetic-token', fetchImpl })).resolves.toMatchObject({
+    await expect(inspectRemoteResourceState({ accountId: 'synthetic-account', apiToken: 'synthetic-token', fetchImpl })).resolves.toMatchObject({
       workerName: 'dongphugia-v1-public-preview',
+      state: 'ABSENT',
       workerAbsent: true,
+      bootstrapRequired: true,
+      reconciliationAllowed: true,
       customDomains: [],
     })
     expect(requests).toHaveLength(2)
+  })
+
+  it('classifies the known empty Worker as safe for immutable version reconciliation', async () => {
+    const requests: string[] = []
+    const fetchImpl = async (input: URL | RequestInfo, init?: RequestInit) => {
+      const url = String(input)
+      requests.push(url)
+      expect(init?.method).toBe('GET')
+      const result = url.endsWith('/scripts')
+        ? [{ id: 'dongphugia-v1-public-preview', routes: [] }]
+        : url.includes('/workers/domains?')
+          ? []
+          : url.endsWith('/subdomain')
+            ? { enabled: false, previews_enabled: false }
+            : url.endsWith('/settings')
+              ? { bindings: [] }
+              : url.endsWith('/versions')
+                ? { items: [] }
+                : url.endsWith('/deployments')
+                  ? { deployments: [] }
+                  : null
+      return Response.json({ success: true, result })
+    }
+
+    await expect(inspectRemoteResourceState({ accountId: 'synthetic-account', apiToken: 'synthetic-token', fetchImpl })).resolves.toMatchObject({
+      workerName: 'dongphugia-v1-public-preview',
+      state: 'INCOMPLETE',
+      workerAbsent: false,
+      bootstrapRequired: false,
+      reconciliationAllowed: true,
+      activeDeployment: false,
+      versionCount: 0,
+      customDomains: [],
+      workerRoutes: [],
+      bindings: [],
+    })
+    expect(requests).toHaveLength(6)
+  })
+
+  it.each([
+    ['active deployment', { deployments: { deployments: [{ id: 'deployment-id' }] } }],
+    ['existing version', { versions: { items: [{ id: 'version-id' }] } }],
+    ['route', { script: { id: 'dongphugia-v1-public-preview', routes: [{ id: 'route-id', pattern: 'example.com/*', script: 'dongphugia-v1-public-preview' }] } }],
+    ['binding', { settings: { bindings: [{ name: 'DATABASE_URL', type: 'plain_text' }] } }],
+  ])('rejects an incomplete-state reconciliation when it has an unexpected %s', async (_label, override) => {
+    const fetchImpl = async (input: URL | RequestInfo) => {
+      const url = String(input)
+      const script = override.script ?? { id: 'dongphugia-v1-public-preview', routes: [] }
+      const result = url.endsWith('/scripts')
+        ? [script]
+        : url.includes('/workers/domains?')
+          ? []
+          : url.endsWith('/subdomain')
+            ? { enabled: false, previews_enabled: false }
+            : url.endsWith('/settings')
+              ? (override.settings ?? { bindings: [] })
+              : url.endsWith('/versions')
+                ? (override.versions ?? { items: [] })
+                : url.endsWith('/deployments')
+                  ? (override.deployments ?? { deployments: [] })
+                  : null
+      return Response.json({ success: true, result })
+    }
+
+    await expect(inspectRemoteResourceState({
+      accountId: 'synthetic-account',
+      apiToken: 'synthetic-token',
+      fetchImpl,
+    })).rejects.toThrow('LEO563_PREVIEW_REMOTE_')
+  })
+
+  it('fails closed when an existing Worker does not expose complete empty-state evidence', async () => {
+    const fetchImpl = async (input: URL | RequestInfo) => {
+      const url = String(input)
+      const result = url.endsWith('/scripts')
+        ? [{ id: 'dongphugia-v1-public-preview', routes: [] }]
+        : url.includes('/workers/domains?')
+          ? []
+          : url.endsWith('/subdomain')
+            ? { enabled: false, previews_enabled: false }
+            : url.endsWith('/settings')
+              ? null
+              : url.endsWith('/versions')
+                ? { items: [] }
+                : url.endsWith('/deployments')
+                  ? { deployments: [] }
+                  : null
+      return Response.json({ success: true, result })
+    }
+
+    await expect(inspectRemoteResourceState({
+      accountId: 'synthetic-account',
+      apiToken: 'synthetic-token',
+      fetchImpl,
+    })).rejects.toThrow('LEO563_PREVIEW_REMOTE_SETTINGS_STATE_UNKNOWN')
   })
 })

@@ -100,7 +100,6 @@ async function main() {
     workers_dev: false,
     preview_urls: true,
     limits: {
-      cpu_ms: 10,
       subrequests: 50,
     },
     assets: {

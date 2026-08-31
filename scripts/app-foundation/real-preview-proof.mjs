@@ -141,9 +141,9 @@ export async function verifyRealPreview({ baseUrl, sourceSha, fetchImpl = fetch,
         staleServing: false,
       },
       limits: {
-        cpuMsConfiguredMaximum: 10,
-        subrequestsConfiguredMaximum: 50,
-        testedRequestsCompletedWithinLimits: true,
+        cpuMsPlanMaximum: 10,
+        subrequestsPlanMaximum: 50,
+        testedRequestsCompletedWithinPlanLimits: true,
       },
       cpuObservability: {
         status: 'PROVIDER_LIMITATION',

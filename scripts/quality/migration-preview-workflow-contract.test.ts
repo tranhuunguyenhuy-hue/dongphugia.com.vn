@@ -55,18 +55,23 @@ describe('migration PR CI and Preview workflow contract', () => {
     expect(candidateUpload).toContain('include-hidden-files: true')
   })
 
-  it('bootstraps an absent Worker from the verified candidate before version upload', () => {
-    const absentCheckStart = workflow.indexOf('name: Prove the exact Worker does not already exist before creation')
-    const bootstrapStart = workflow.indexOf('name: Bootstrap the absent Worker from the verified candidate')
+  it('bootstraps only an absent Worker and reconciles the verified incomplete state before version upload', () => {
+    const stateCheckStart = workflow.indexOf('name: Inspect the current Worker state before publication')
+    const bootstrapStart = workflow.indexOf('name: Bootstrap the absent Worker or reconcile the verified incomplete Worker')
     const versionUploadStart = workflow.indexOf('name: Upload one immutable Worker version with the PR #138 Preview alias')
+    const stateCheckEnd = workflow.indexOf('\n\n      - name:', stateCheckStart)
+    const stateCheckStep = workflow.slice(stateCheckStart, stateCheckEnd)
     const bootstrapEnd = workflow.indexOf('\n\n      - name:', bootstrapStart)
     const bootstrapStep = workflow.slice(bootstrapStart, bootstrapEnd)
 
-    expect(absentCheckStart).toBeGreaterThanOrEqual(0)
-    expect(bootstrapStart).toBeGreaterThan(absentCheckStart)
+    expect(stateCheckStart).toBeGreaterThanOrEqual(0)
+    expect(bootstrapStart).toBeGreaterThan(stateCheckStart)
     expect(versionUploadStart).toBeGreaterThan(bootstrapStart)
+    expect(stateCheckStep).toContain('inspect-resource-state')
     for (const marker of [
-      'test "$(jq -r \'.workerAbsent\' "$EVIDENCE_DIR/remote-preflight.json")" = \'true\'',
+      'ABSENT',
+      'INCOMPLETE',
+      'reconciliationAllowed',
       'node "$WRANGLER_BIN" deploy',
       '--strict',
       '--config wrangler.preview.json',
@@ -132,8 +137,9 @@ describe('migration PR CI and Preview workflow contract', () => {
       "const PREVIEW_ALIAS = 'pr-138'",
       'config.workers_dev !== false',
       'config.preview_urls !== true',
-      'PREVIEW_CPU_LIMIT_MS = 10',
       'PREVIEW_SUBREQUEST_LIMIT = 50',
+      'LEO563_PREVIEW_EXPLICIT_CPU_LIMIT_FORBIDDEN',
+      'LEO563_PREVIEW_REMOTE_ACTIVE_DEPLOYMENT_FORBIDDEN',
       'LEO563_PREVIEW_PRODUCTION_HOST_FORBIDDEN',
       'LEO563_PREVIEW_REMOTE_BINDING_OR_ROUTE_FORBIDDEN',
     ]) expect(previewPublication).toContain(marker)

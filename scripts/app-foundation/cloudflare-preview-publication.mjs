@@ -9,7 +9,6 @@ const PULL_REQUEST = 138
 const FREE_WORKER_GZIP_LIMIT_KIB = 3 * 1024
 const FREE_STATIC_ASSET_LIMIT = 20_000
 const STATIC_ASSET_FILE_LIMIT_BYTES = 25 * 1024 * 1024
-const PREVIEW_CPU_LIMIT_MS = 10
 const PREVIEW_SUBREQUEST_LIMIT = 50
 const PRODUCTION_HOST_PATTERN = /(^|[/:.])(?:www\.|admin\.)?dongphugia\.vn(?:[/:]|$)/i
 const SECRET_LIKE_PATTERN = /(SERVICE_ROLE|AUTH_ADMIN|ADMIN_SESSION|SECRET|PASSWORD|DATABASE_URL|DIRECT_URL|PRIVATE_KEY|CREDENTIAL|CLOUDFLARE_API_TOKEN|BUNNY_API_KEY)/i
@@ -132,8 +131,8 @@ export function validatePreviewConfig(configValue) {
   }
 
   const limits = requirePlainObject(config.limits, 'LIMITS')
-  if (!equalKeys(limits, ['cpu_ms', 'subrequests'])) throw new Error('LEO563_PREVIEW_LIMIT_KEYS_FAILED')
-  if (limits.cpu_ms !== PREVIEW_CPU_LIMIT_MS || limits.subrequests !== PREVIEW_SUBREQUEST_LIMIT) {
+  if (Object.hasOwn(limits, 'cpu_ms')) throw new Error('LEO563_PREVIEW_EXPLICIT_CPU_LIMIT_FORBIDDEN')
+  if (!equalKeys(limits, ['subrequests']) || limits.subrequests !== PREVIEW_SUBREQUEST_LIMIT) {
     throw new Error('LEO563_PREVIEW_FREE_LIMITS_FAILED')
   }
 
@@ -151,7 +150,7 @@ export function validatePreviewConfig(configValue) {
     routes: [],
     customDomains: [],
     bindings: [{ name: 'ASSETS', type: 'assets' }],
-    limits: { cpuMs: PREVIEW_CPU_LIMIT_MS, subrequests: PREVIEW_SUBREQUEST_LIMIT },
+    limits: { subrequests: PREVIEW_SUBREQUEST_LIMIT },
   }
 }
 
@@ -254,7 +253,41 @@ function providerErrorCodes(body) {
   return body.errors.map((error) => Number(error?.code)).filter(Number.isInteger)
 }
 
-export async function assertRemoteResourceAbsent({ accountId, apiToken, fetchImpl = fetch }) {
+function normalizeOptionalList(value, errorCode) {
+  if (value === undefined || value === null) return []
+  if (!Array.isArray(value)) throw new Error(errorCode)
+  return value
+}
+
+function collectWorkerRoutes(worker) {
+  // Cloudflare's ScriptListResponse documents routes as optional; an omitted
+  // optional association is the provider's empty-route representation.
+  return normalizeOptionalList(worker?.routes, 'LEO563_PREVIEW_REMOTE_ROUTE_STATE_UNKNOWN')
+}
+
+function collectWorkerBindings(settings) {
+  // The settings object is required; its documented optional bindings field
+  // may be omitted/null to represent no attached binding.
+  if (!settings || typeof settings !== 'object' || Array.isArray(settings)) {
+    throw new Error('LEO563_PREVIEW_REMOTE_SETTINGS_STATE_UNKNOWN')
+  }
+  return normalizeOptionalList(settings?.bindings, 'LEO563_PREVIEW_REMOTE_BINDING_STATE_UNKNOWN').map((binding) => ({
+    name: typeof binding?.name === 'string' ? binding.name : 'UNKNOWN',
+    type: typeof binding?.type === 'string' ? binding.type : 'UNKNOWN',
+  }))
+}
+
+function collectWorkerCustomDomains(domains) {
+  const customDomains = []
+  for (const domain of domains) {
+    if (domain?.service !== WORKER_NAME) continue
+    if (typeof domain?.hostname !== 'string') throw new Error('LEO563_PREVIEW_REMOTE_DOMAIN_STATE_UNKNOWN')
+    customDomains.push(domain.hostname)
+  }
+  return customDomains.sort()
+}
+
+export async function inspectRemoteResourceState({ accountId, apiToken, fetchImpl = fetch }) {
   if (!accountId || !apiToken) throw new Error('LEO563_PREVIEW_REMOTE_PREFLIGHT_CREDENTIALS_MISSING')
   const calls = []
   const headers = { Authorization: `Bearer ${apiToken}`, 'Content-Type': 'application/json' }
@@ -274,17 +307,71 @@ export async function assertRemoteResourceAbsent({ accountId, apiToken, fetchImp
     get('workers.scripts.list', `/accounts/${accountId}/workers/scripts`),
     get('workers.domains.list', `/accounts/${accountId}/workers/domains?service=${encodeURIComponent(WORKER_NAME)}`),
   ])
-  const existingWorker = Array.isArray(scripts) && scripts.some((script) => script?.id === WORKER_NAME)
-  const customDomains = Array.isArray(domains)
-    ? domains.filter((domain) => domain?.service === WORKER_NAME).map((domain) => domain?.hostname).filter((value) => typeof value === 'string')
-    : []
-  if (existingWorker) throw new Error('LEO563_PREVIEW_REMOTE_WORKER_ALREADY_EXISTS')
+  if (!Array.isArray(scripts)) throw new Error('LEO563_PREVIEW_REMOTE_SCRIPTS_STATE_UNKNOWN')
+  if (!Array.isArray(domains)) throw new Error('LEO563_PREVIEW_REMOTE_DOMAINS_STATE_UNKNOWN')
+  const worker = scripts.find((script) => script?.id === WORKER_NAME)
+  const customDomains = collectWorkerCustomDomains(domains)
   if (customDomains.length) throw new Error('LEO563_PREVIEW_REMOTE_DOMAIN_ALREADY_EXISTS')
+
+  if (!worker) {
+    return {
+      contract: 'dongphugia:cloudflare-preview-remote-preflight:v2',
+      workerName: WORKER_NAME,
+      state: 'ABSENT',
+      workerAbsent: true,
+      bootstrapRequired: true,
+      reconciliationAllowed: true,
+      activeDeployment: false,
+      versionCount: 0,
+      customDomains: [],
+      workerRoutes: [],
+      bindings: [],
+      calls,
+    }
+  }
+
+  const encodedWorker = encodeURIComponent(WORKER_NAME)
+  const [subdomain, settings, versions, deployments] = await Promise.all([
+    get('workers.subdomain.get', `/accounts/${accountId}/workers/scripts/${encodedWorker}/subdomain`),
+    get('workers.settings.get', `/accounts/${accountId}/workers/scripts/${encodedWorker}/settings`),
+    get('workers.versions.list', `/accounts/${accountId}/workers/scripts/${encodedWorker}/versions`),
+    get('workers.deployments.list', `/accounts/${accountId}/workers/scripts/${encodedWorker}/deployments`),
+  ])
+  if (
+    !subdomain ||
+    typeof subdomain.enabled !== 'boolean' ||
+    typeof subdomain.previews_enabled !== 'boolean'
+  ) throw new Error('LEO563_PREVIEW_REMOTE_SUBDOMAIN_STATE_UNKNOWN')
+  const workerRoutes = collectWorkerRoutes(worker)
+  const bindings = collectWorkerBindings(settings)
+  if (!Array.isArray(versions?.items)) throw new Error('LEO563_PREVIEW_REMOTE_VERSION_STATE_UNKNOWN')
+  if (!Array.isArray(deployments?.deployments)) throw new Error('LEO563_PREVIEW_REMOTE_DEPLOYMENT_STATE_UNKNOWN')
+  const versionItems = versions.items
+  const deploymentItems = deployments.deployments
+
+  if (workerRoutes.length) throw new Error('LEO563_PREVIEW_REMOTE_ROUTE_STATE_FORBIDDEN')
+  if (deploymentItems.length) throw new Error('LEO563_PREVIEW_REMOTE_ACTIVE_DEPLOYMENT_FORBIDDEN')
+  if (versionItems.length) throw new Error('LEO563_PREVIEW_REMOTE_VERSION_STATE_FORBIDDEN')
+  if (bindings.length) throw new Error('LEO563_PREVIEW_REMOTE_BINDING_STATE_FORBIDDEN')
+  if (subdomain.enabled !== false) throw new Error('LEO563_PREVIEW_REMOTE_ACTIVE_SUBDOMAIN_FORBIDDEN')
+  if (subdomain.previews_enabled !== false) throw new Error('LEO563_PREVIEW_REMOTE_PREVIEW_URL_STATE_FORBIDDEN')
+
   return {
-    contract: 'dongphugia:cloudflare-preview-remote-preflight:v1',
+    contract: 'dongphugia:cloudflare-preview-remote-preflight:v2',
     workerName: WORKER_NAME,
-    workerAbsent: true,
-    customDomains: [],
+    state: 'INCOMPLETE',
+    workerAbsent: false,
+    bootstrapRequired: false,
+    reconciliationAllowed: true,
+    activeDeployment: false,
+    versionCount: 0,
+    customDomains,
+    workerRoutes,
+    bindings,
+    subdomain: {
+      workersDevEnabled: subdomain.enabled,
+      previewUrlsEnabled: subdomain.previews_enabled,
+    },
     calls,
   }
 }
@@ -400,13 +487,13 @@ async function main() {
     process.stdout.write(`${JSON.stringify({ workerName: evidence.workerName, workerVersionId: evidence.workerVersionId, customDomains: evidence.customDomains, bindings: evidence.bindings })}\n`)
     return
   }
-  if (mode === 'assert-resource-absent') {
-    const evidence = await assertRemoteResourceAbsent({
+  if (mode === 'inspect-resource-state') {
+    const evidence = await inspectRemoteResourceState({
       accountId: process.env.CLOUDFLARE_ACCOUNT_ID,
       apiToken: process.env.CLOUDFLARE_API_TOKEN,
     })
     await writeFile(path.resolve(args.output || ''), `${JSON.stringify(evidence, null, 2)}\n`, { mode: 0o600 })
-    process.stdout.write(`${JSON.stringify({ workerName: evidence.workerName, workerAbsent: evidence.workerAbsent, customDomains: evidence.customDomains })}\n`)
+    process.stdout.write(`${JSON.stringify({ workerName: evidence.workerName, state: evidence.state, reconciliationAllowed: evidence.reconciliationAllowed, customDomains: evidence.customDomains })}\n`)
     return
   }
   throw new Error('LEO563_PREVIEW_PUBLICATION_MODE_INVALID')
@@ -421,7 +508,6 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
 
 export {
   PREVIEW_ALIAS,
-  PREVIEW_CPU_LIMIT_MS,
   PREVIEW_SUBREQUEST_LIMIT,
   WORKER_NAME,
 }

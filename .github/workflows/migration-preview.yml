@@ -557,15 +557,15 @@ jobs:
             --config wrangler.preview.json \
             --preview-alias pr-138
 
-      - name: Prove the exact Worker does not already exist before creation
+      - name: Inspect the current Worker state before publication
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_LEO563_PREVIEW_TOKEN }}
         run: >-
-          npm run app:preview-publication -- assert-resource-absent
+          npm run app:preview-publication -- inspect-resource-state
           --output "$EVIDENCE_DIR/remote-preflight.json"
 
-      - name: Bootstrap the absent Worker from the verified candidate
+      - name: Bootstrap the absent Worker or reconcile the verified incomplete Worker
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_LEO563_PREVIEW_TOKEN }}
@@ -573,15 +573,31 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(jq -r '.workerAbsent' "$EVIDENCE_DIR/remote-preflight.json")" = 'true'
+          remote_state="$(jq -r '.state' "$EVIDENCE_DIR/remote-preflight.json")"
+          test "$(jq -r '.reconciliationAllowed' "$EVIDENCE_DIR/remote-preflight.json")" = 'true'
           test -n "$CLOUDFLARE_ACCOUNT_ID"
           test -n "$CLOUDFLARE_API_TOKEN"
-          cd "$ARTIFACT_ROOT/public/build"
-          node "$WRANGLER_BIN" deploy \
-            --strict \
-            --config wrangler.preview.json \
-            --message "LEO-563 PR #138 bootstrap source $SOURCE_SHA" \
-            2>&1 | tee "$EVIDENCE_DIR/bootstrap-deploy.log"
+          case "$remote_state" in
+            ABSENT)
+              test "$(jq -r '.workerAbsent' "$EVIDENCE_DIR/remote-preflight.json")" = 'true'
+              test "$(jq -r '.bootstrapRequired' "$EVIDENCE_DIR/remote-preflight.json")" = 'true'
+              cd "$ARTIFACT_ROOT/public/build"
+              node "$WRANGLER_BIN" deploy \
+                --strict \
+                --config wrangler.preview.json \
+                --message "LEO-563 PR #138 bootstrap source $SOURCE_SHA" \
+                2>&1 | tee "$EVIDENCE_DIR/bootstrap-deploy.log"
+              ;;
+            INCOMPLETE)
+              test "$(jq -r '.workerAbsent' "$EVIDENCE_DIR/remote-preflight.json")" = 'false'
+              test "$(jq -r '.bootstrapRequired' "$EVIDENCE_DIR/remote-preflight.json")" = 'false'
+              echo 'Verified empty Worker record found; bootstrap is skipped and immutable version upload will reconcile it.'
+              ;;
+            *)
+              echo "Unexpected Worker preflight state: $remote_state" >&2
+              exit 1
+              ;;
+          esac
 
       - name: Upload one immutable Worker version with the PR #138 Preview alias
         env:
@@ -652,7 +668,7 @@ jobs:
             echo "- Worker version ID: $version_id"
             echo '- Preview alias: pr-138'
             echo "- Preview URL: $preview_url"
-            echo '- Workers Free plan and hard 10 ms CPU / 50 subrequest limits: confirmed'
+            echo '- Workers Free plan CPU 10 ms and 50 subrequest ceilings: confirmed by plan; no explicit CPU limit configured'
             echo '- Real SSR, health, HTML/header/robots noindex, MISS/HIT/bypass, and 300-second freshness: PASS'
             echo '- Preview URL CPU measurement: PROVIDER_LIMITATION; Preview URL logs/tail/Logpush are unavailable.'
             echo '- Custom domains/routes/Production binding/DNS/traffic: NONE'

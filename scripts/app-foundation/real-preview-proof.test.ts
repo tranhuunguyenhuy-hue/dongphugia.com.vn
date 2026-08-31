@@ -62,6 +62,11 @@ describe('LEO-563 real Public Preview proof', () => {
       edgeMaxAgeSeconds: 300,
       staleServing: false,
     })
+    expect(proof.observations.limits).toEqual({
+      cpuMsPlanMaximum: 10,
+      subrequestsPlanMaximum: 50,
+      testedRequestsCompletedWithinPlanLimits: true,
+    })
     expect(proof.observations.cpuObservability.status).toBe('PROVIDER_LIMITATION')
   })
 })

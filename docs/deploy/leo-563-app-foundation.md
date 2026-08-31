@@ -131,15 +131,20 @@ the explicit approved 40-character source SHA, an open PR #138 targeting
 `main`, and an exact match to the current PR head. It then downloads the
 same-run candidate, recomputes its complete immutable identity, validates the
 Preview config allowlist and Workers Free limits, executes a Wrangler dry run,
-and proves by GET-only inspection that the exact Worker does not already exist.
+and proves by GET-only inspection that the exact Worker is either absent or the
+known empty incomplete record left by a failed first bootstrap. An active
+deployment, version, route, domain, binding, or enabled workers.dev endpoint is
+rejected before publication.
 
 The assembled immutable Public artifact contains two configs. `wrangler.json`
 remains detached with `workers_dev=false` and `preview_urls=false`.
 `wrangler.preview.json` is a fail-closed allowlist for exactly
 `dongphugia-v1-public-preview`, with `workers_dev=false`,
 `preview_urls=true`, no routes/custom domains, no database/provider bindings,
-Preview-only public environment values, mandatory noindex, and explicit Workers
-Free ceilings of 10 ms CPU and 50 subrequests. Static tests reject any Production
+Preview-only public environment values, mandatory noindex, the provider's
+Workers Free CPU ceiling, and an explicit 50-subrequest ceiling. The config does
+not set `cpu_ms`, because Cloudflare rejects that setting on the confirmed Free
+plan. Static tests reject any Production
 hostname, route, custom domain, trigger, service, database, storage, secret, or
 unapproved binding. CI validates both configs with Wrangler dry runs and records
 the Preview-config checksum.
@@ -162,7 +167,8 @@ query, and API bypass; exact source-SHA response identity; and the hard
 300-second edge freshness policy. Cloudflare does not expose Workers Logs,
 Wrangler tail, or Logpush for Preview URLs, so per-request CPU observation is
 reported as `CPU_OBSERVABILITY: PROVIDER_LIMITATION`; the 10 ms Free ceiling is
-still enforced in config and successful requests prove execution within it.
+provider-enforced, not configured through `cpu_ms`, and successful requests
+prove execution within the plan ceiling.
 
 Admin external Preview is explicitly not an LEO-563 blocker and no Admin
 Cloudflare resource is created or mutated. Canonical V1 Supabase connectivity
