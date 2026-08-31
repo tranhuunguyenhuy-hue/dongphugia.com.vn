@@ -8,6 +8,8 @@ const buildGuide = readFileSync(resolve(process.cwd(), 'docs/deploy/public-stati
 const changeGate = readFileSync(resolve(process.cwd(), 'scripts/app-foundation/preview-change-gate.mjs'), 'utf8')
 const candidateScript = readFileSync(resolve(process.cwd(), 'scripts/app-foundation/preview-candidate.mts'), 'utf8')
 const cloudflareDiscovery = readFileSync(resolve(process.cwd(), 'scripts/app-foundation/cloudflare-readonly-discovery.mjs'), 'utf8')
+const previewPublication = readFileSync(resolve(process.cwd(), 'scripts/app-foundation/cloudflare-preview-publication.mjs'), 'utf8')
+const realPreviewProof = readFileSync(resolve(process.cwd(), 'scripts/app-foundation/real-preview-proof.mjs'), 'utf8')
 
 describe('migration PR CI and Preview workflow contract', () => {
   it('runs required repository CI against the exact PR head', () => {
@@ -56,19 +58,34 @@ describe('migration PR CI and Preview workflow contract', () => {
     ]) expect(`${workflow}\n${changeGate}`).toContain(marker)
   })
 
-  it('limits Cloudflare access to sanitized read-only discovery and contains no publication or traffic path', () => {
+  it('limits publication to the exact Owner-approved immutable Worker Preview path', () => {
     for (const forbidden of [
       'pages project create',
       'pages deploy',
       'cloudflare/wrangler-action',
-      'wrangler versions upload',
       'wrangler deploy',
       'deployments: write',
       'PRODUCTION_DATABASE_URL',
       'cloudflared tunnel',
     ]) expect(workflow.toLowerCase()).not.toContain(forbidden.toLowerCase())
 
-    expect(workflow.match(/secrets\.CLOUDFLARE_ACCOUNT_ID/g)).toHaveLength(1)
+    for (const marker of [
+      'publish_leo563_public_preview',
+      'approved_source_sha',
+      "refs/heads/codex/leo-563-public-admin-ci-foundation",
+      'pulls/138',
+      'test "$SOURCE_SHA" = "$APPROVED_SOURCE_SHA"',
+      'Re-verify the complete candidate identity before any Cloudflare mutation',
+      'npm run app:verify-candidate',
+      'npm run app:preview-publication -- preflight',
+      'versions upload',
+      '--preview-alias pr-138',
+      'REAL_PUBLIC_PREVIEW_PASS',
+      'CLOUDFLARE_LEO563_PREVIEW_TOKEN',
+    ]) expect(workflow).toContain(marker)
+
+    expect(workflow.match(/versions upload/g)).toHaveLength(2)
+    expect(workflow.match(/secrets\.CLOUDFLARE_LEO563_PREVIEW_TOKEN/g)).toHaveLength(3)
     expect(workflow.match(/secrets\.CLOUDFLARE_READONLY_DISCOVERY_TOKEN/g)).toHaveLength(1)
     expect(workflow).not.toContain('secrets.CLOUDFLARE_API_TOKEN')
     expect(workflow).toContain('cloudflare-readonly-discovery.mjs')
@@ -80,5 +97,17 @@ describe('migration PR CI and Preview workflow contract', () => {
     expect(workflow).toContain('BLOCKED_BY_OWNER_GATE')
     expect(`${workflow}\n${candidateScript}`).toContain('productionCustomDomain:')
     expect(`${workflow}\n${candidateScript}`).toContain('productionDnsOrTraffic:')
+
+    for (const marker of [
+      "const WORKER_NAME = 'dongphugia-v1-public-preview'",
+      "const PREVIEW_ALIAS = 'pr-138'",
+      'config.workers_dev !== false',
+      'config.preview_urls !== true',
+      'PREVIEW_CPU_LIMIT_MS = 10',
+      'PREVIEW_SUBREQUEST_LIMIT = 50',
+      'LEO563_PREVIEW_PRODUCTION_HOST_FORBIDDEN',
+      'LEO563_PREVIEW_REMOTE_BINDING_OR_ROUTE_FORBIDDEN',
+    ]) expect(previewPublication).toContain(marker)
+    expect(realPreviewProof).toContain("!url.hostname.endsWith('.workers.dev')")
   })
 })

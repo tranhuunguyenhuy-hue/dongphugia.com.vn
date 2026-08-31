@@ -36,6 +36,8 @@ describe('LEO-563 Public Worker artifact contract', () => {
       "name: 'dongphugia-v1-public-preview'",
       'workers_dev: false',
       'preview_urls: true',
+      'cpu_ms: 10',
+      'subrequests: 50',
       "previewAlias: 'pr-138'",
       "activation: 'owner-gated'",
       "'wrangler.preview.json'",
@@ -57,6 +59,7 @@ describe('LEO-563 Public Worker artifact contract', () => {
     const viteConfig = await readFile(path.join(repositoryRoot, 'apps/public/vite.config.ts'), 'utf8')
     expect(workerSource).toContain('PUBLIC_EDGE_CACHE_SECONDS')
     expect(workerSource).toContain('must-revalidate')
+    expect(workerEntry).toContain('X-DPG-Source-SHA')
     expect(`${workerSource}\n${workerEntry}\n${viteConfig}`).not.toContain('stale-while-revalidate')
     expect(viteConfig).not.toContain('cdnAdapter')
   })

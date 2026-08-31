@@ -15,6 +15,8 @@ import {
 
 declare const __DPG_BUILD_SOURCE_SHA__: string
 
+const sourceIdentityHeader = { 'X-DPG-Source-SHA': __DPG_BUILD_SOURCE_SHA__ }
+
 export default {
   async fetch(
     request: Request,
@@ -45,6 +47,7 @@ export default {
       const cached = await workerCache.match(cacheKey)
       if (cached) {
         return withHeaders(cached, {
+          ...sourceIdentityHeader,
           'Cache-Control': PUBLIC_BROWSER_CACHE_CONTROL,
           'CDN-Cache-Control': PUBLIC_EDGE_CACHE_CONTROL,
           'X-DPG-Cache': 'HIT',
@@ -56,6 +59,7 @@ export default {
     const rendered = await vinextHandler.fetch(request, environment, context)
     if (!cacheKey || !isCacheableResponse(rendered)) {
       return withHeaders(rendered, {
+        ...sourceIdentityHeader,
         'Cache-Control': PRIVATE_CACHE_CONTROL,
         'X-DPG-Cache': 'BYPASS',
         'X-Robots-Tag': 'noindex, nofollow',
@@ -63,6 +67,7 @@ export default {
     }
 
     const stored = withHeaders(rendered.clone(), {
+      ...sourceIdentityHeader,
       'Cache-Control': PUBLIC_EDGE_CACHE_CONTROL,
       'X-DPG-Cache': 'STORED',
       'X-Robots-Tag': 'noindex, nofollow',
@@ -70,6 +75,7 @@ export default {
     context.waitUntil(workerCache!.put(cacheKey, stored))
 
     return withHeaders(rendered, {
+      ...sourceIdentityHeader,
       'Cache-Control': PUBLIC_BROWSER_CACHE_CONTROL,
       'CDN-Cache-Control': PUBLIC_EDGE_CACHE_CONTROL,
       'X-DPG-Cache': 'MISS',

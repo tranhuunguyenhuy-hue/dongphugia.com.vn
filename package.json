@@ -54,6 +54,8 @@
     "app:verify-candidate": "tsx scripts/app-foundation/preview-candidate.mts verify",
     "app:runtime-proof": "tsx scripts/app-foundation/runtime-proof.mts",
     "app:assemble-public-worker": "tsx scripts/app-foundation/public-worker-artifact.mts",
+    "app:preview-publication": "node scripts/app-foundation/cloudflare-preview-publication.mjs",
+    "app:real-preview-proof": "node scripts/app-foundation/real-preview-proof.mjs",
     "app:foundation:check": "vitest run scripts/app-foundation apps/public/src apps/admin/src packages/app-contracts",
     "app:public-worker:check": "vitest run apps/public/src/worker-policy.test.ts scripts/app-foundation/public-worker-artifact.test.ts",
     "prepare:standalone-assets": "node -e \"const fs=require('fs'); fs.cpSync('public','.next/standalone/public',{recursive:true}); fs.mkdirSync('.next/standalone/.next',{recursive:true}); fs.cpSync('.next/static','.next/standalone/.next/static',{recursive:true});\"",

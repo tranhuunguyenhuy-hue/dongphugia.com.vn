@@ -4,6 +4,16 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      publish_leo563_public_preview:
+        description: Upload the exact verified PR #138 candidate as one isolated Worker Preview version
+        required: true
+        default: false
+        type: boolean
+      approved_source_sha:
+        description: Exact 40-character PR #138 head SHA approved for the Preview upload
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -22,6 +32,8 @@ jobs:
       public_changed: ${{ steps.detect.outputs.public_changed }}
       admin_changed: ${{ steps.detect.outputs.admin_changed }}
       preview_required: ${{ steps.detect.outputs.preview_required }}
+      owner_approved_upload: ${{ steps.detect.outputs.owner_approved_upload }}
+      pull_request_number: ${{ steps.detect.outputs.pull_request_number }}
     steps:
       - name: Checkout the complete candidate history
         uses: actions/checkout@v4
@@ -35,15 +47,44 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          GITHUB_REF_VALUE: ${{ github.ref }}
+          MANUAL_UPLOAD: ${{ inputs.publish_leo563_public_preview || false }}
+          APPROVED_SOURCE_SHA: ${{ inputs.approved_source_sha || '' }}
+          REPOSITORY: ${{ github.repository }}
+          GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
+          if [[ "$EVENT_NAME" == "workflow_dispatch" && "$MANUAL_UPLOAD" == "true" ]]; then
+            [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]
+            [[ "$APPROVED_SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]
+            test "$GITHUB_REF_VALUE" = 'refs/heads/codex/leo-563-public-admin-ci-foundation'
+            test "$SOURCE_SHA" = "$APPROVED_SOURCE_SHA"
+            pr_json="$(gh api "repos/$REPOSITORY/pulls/138")"
+            test "$(jq -r '.state' <<< "$pr_json")" = 'open'
+            test "$(jq -r '.base.ref' <<< "$pr_json")" = 'main'
+            test "$(jq -r '.head.ref' <<< "$pr_json")" = 'codex/leo-563-public-admin-ci-foundation'
+            test "$(jq -r '.head.sha' <<< "$pr_json")" = "$SOURCE_SHA"
+            {
+              echo "source_sha=$SOURCE_SHA"
+              echo 'public_changed=true'
+              echo 'admin_changed=true'
+              echo 'preview_required=true'
+              echo 'owner_approved_upload=true'
+              echo 'pull_request_number=138'
+              echo 'reason=OWNER_APPROVED_EXACT_PR_138_PREVIEW_UPLOAD'
+            } >> "$GITHUB_OUTPUT"
+            echo 'LEO563_REPO_CODE_GATE status=OWNER_APPROVED_EXACT_PR_138_PREVIEW_UPLOAD'
+            exit 0
+          fi
           if [[ "$EVENT_NAME" != "pull_request" ]]; then
             {
               echo "source_sha=$SOURCE_SHA"
               echo 'public_changed=false'
               echo 'admin_changed=false'
               echo 'preview_required=false'
+              echo 'owner_approved_upload=false'
+              echo 'pull_request_number=0'
               echo 'reason=MANUAL_RUN_REQUIRES_EXACT_PR_DIFF'
             } >> "$GITHUB_OUTPUT"
             echo 'LEO563_REPO_CODE_GATE status=SKIPPED_MANUAL_RUN'
@@ -56,6 +97,8 @@ jobs:
             --head "$SOURCE_SHA" \
             --output "$GITHUB_OUTPUT"
           echo 'reason=EXACT_PR_HEAD_DIFF' >> "$GITHUB_OUTPUT"
+          echo 'owner_approved_upload=false' >> "$GITHUB_OUTPUT"
+          echo 'pull_request_number=${{ github.event.pull_request.number }}' >> "$GITHUB_OUTPUT"
 
   required-ci:
     name: Required repository CI
@@ -134,7 +177,7 @@ jobs:
     env:
       OUTPUT: ${{ github.workspace }}/.artifacts/dongphugia-app-preview
       SOURCE_SHA: ${{ needs.repo-code-gate.outputs.source_sha }}
-      PR_NUMBER: ${{ github.event.pull_request.number || 0 }}
+      PR_NUMBER: ${{ needs.repo-code-gate.outputs.pull_request_number }}
       WORKFLOW_RUN_ID: ${{ github.run_id }}
     steps:
       - name: Checkout the exact PR-head revision
@@ -378,7 +421,7 @@ jobs:
   cloudflare-readonly-discovery:
     name: Discover existing Cloudflare Preview resources read-only
     needs: [repo-code-gate, required-ci, app-preview-artifact]
-    if: needs.repo-code-gate.outputs.preview_required == 'true' && needs.required-ci.result == 'success' && needs.app-preview-artifact.result == 'success'
+    if: needs.repo-code-gate.outputs.preview_required == 'true' && needs.repo-code-gate.outputs.owner_approved_upload != 'true' && needs.required-ci.result == 'success' && needs.app-preview-artifact.result == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     outputs:
@@ -441,9 +484,176 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+  cloudflare-preview-upload:
+    name: Upload and verify the Owner-approved isolated Public Worker Preview
+    needs: [repo-code-gate, required-ci, app-preview-artifact]
+    if: needs.repo-code-gate.outputs.owner_approved_upload == 'true' && needs.repo-code-gate.outputs.preview_required == 'true' && needs.required-ci.result == 'success' && needs.app-preview-artifact.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    outputs:
+      result: ${{ steps.record.outputs.result }}
+      worker_version_id: ${{ steps.record.outputs.worker_version_id }}
+      preview_url: ${{ steps.record.outputs.preview_url }}
+    env:
+      SOURCE_SHA: ${{ needs.repo-code-gate.outputs.source_sha }}
+      PR_NUMBER: ${{ needs.repo-code-gate.outputs.pull_request_number }}
+      WORKFLOW_RUN_ID: ${{ github.run_id }}
+      ARTIFACT_ROOT: ${{ runner.temp }}/dongphugia-app-preview
+      EVIDENCE_DIR: ${{ runner.temp }}/leo563-public-preview-evidence
+      WRANGLER_BIN: ${{ github.workspace }}/apps/public/node_modules/wrangler/bin/wrangler.js
+    steps:
+      - name: Checkout the exact Owner-approved PR-head revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.repo-code-gate.outputs.source_sha }}
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install candidate verification and pinned Wrangler toolchains
+        run: |
+          npm ci
+          npm ci --prefix apps/public
+
+      - name: Download the immutable exact-head candidate from this workflow run
+        uses: actions/download-artifact@v4
+        with:
+          name: dongphugia-app-preview-${{ needs.repo-code-gate.outputs.source_sha }}
+          path: ${{ env.ARTIFACT_ROOT }}
+
+      - name: Re-verify the complete candidate identity before any Cloudflare mutation
+        run: >-
+          npm run app:verify-candidate --
+          --artifact-root "$ARTIFACT_ROOT"
+          --source-sha "$SOURCE_SHA"
+          --pr-number "$PR_NUMBER"
+          --workflow-run-id "$WORKFLOW_RUN_ID"
+          --lockfile package-lock.json
+          --public-lockfile apps/public/package-lock.json
+          --migration-manifest db/postgres-migrations/manifest.json
+          --evidence "$ARTIFACT_ROOT/candidate-evidence.json"
+
+      - name: Prove Worker identity, Free limits, Preview-only config, and Production isolation
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$EVIDENCE_DIR"
+          npm run app:preview-publication -- preflight \
+            --artifact-root "$ARTIFACT_ROOT" \
+            --source-sha "$SOURCE_SHA" \
+            --workflow-run-id "$WORKFLOW_RUN_ID" \
+            --output "$EVIDENCE_DIR/publication-preflight.json"
+          cd "$ARTIFACT_ROOT/public/build"
+          node "$WRANGLER_BIN" versions upload \
+            --dry-run \
+            --strict \
+            --config wrangler.preview.json \
+            --preview-alias pr-138
+
+      - name: Prove the exact Worker does not already exist before creation
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_LEO563_PREVIEW_TOKEN }}
+        run: >-
+          npm run app:preview-publication -- assert-resource-absent
+          --output "$EVIDENCE_DIR/remote-preflight.json"
+
+      - name: Upload one immutable Worker version with the PR #138 Preview alias
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_LEO563_PREVIEW_TOKEN }}
+          WRANGLER_SEND_METRICS: 'false'
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          test -n "$CLOUDFLARE_API_TOKEN"
+          cd "$ARTIFACT_ROOT/public/build"
+          node "$WRANGLER_BIN" versions upload \
+            --strict \
+            --config wrangler.preview.json \
+            --preview-alias pr-138 \
+            --tag "leo563-${SOURCE_SHA:0:12}" \
+            --message "LEO-563 PR #138 source $SOURCE_SHA" \
+            2>&1 | tee "$EVIDENCE_DIR/wrangler-upload.log"
+
+      - name: Record the immutable version and workers.dev Preview identity
+        run: >-
+          npm run app:preview-publication -- record-upload
+          --input "$EVIDENCE_DIR/wrangler-upload.log"
+          --preflight "$EVIDENCE_DIR/publication-preflight.json"
+          --source-sha "$SOURCE_SHA"
+          --output "$EVIDENCE_DIR/upload-evidence.json"
+
+      - name: Inspect the created Worker with sanitized GET-only calls
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_LEO563_PREVIEW_TOKEN }}
+        run: >-
+          npm run app:preview-publication -- inspect-resource
+          --upload "$EVIDENCE_DIR/upload-evidence.json"
+          --output "$EVIDENCE_DIR/resource-proof.json"
+
+      - name: Prove real HTTPS SSR, noindex, cache, health, robots, and source identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          preview_url="$(jq -r '.previewUrl' "$EVIDENCE_DIR/upload-evidence.json")"
+          npm run app:real-preview-proof -- \
+            --url "$preview_url" \
+            --source-sha "$SOURCE_SHA" \
+            --output "$EVIDENCE_DIR/runtime-proof.json"
+
+      - name: Record the accepted real Public Preview result
+        id: record
+        shell: bash
+        run: |
+          set -euo pipefail
+          version_id="$(jq -r '.workerVersionId' "$EVIDENCE_DIR/upload-evidence.json")"
+          preview_url="$(jq -r '.previewUrl' "$EVIDENCE_DIR/upload-evidence.json")"
+          test "$(jq -r '.sourceCommit' "$EVIDENCE_DIR/runtime-proof.json")" = "$SOURCE_SHA"
+          test "$(jq -r '.observations.cache.first' "$EVIDENCE_DIR/runtime-proof.json")" = 'MISS'
+          test "$(jq -r '.observations.cache.subsequent' "$EVIDENCE_DIR/runtime-proof.json")" = 'HIT'
+          test "$(jq -r '.customDomains | length' "$EVIDENCE_DIR/resource-proof.json")" = '0'
+          {
+            echo 'result=REAL_PUBLIC_PREVIEW_PASS'
+            echo "worker_version_id=$version_id"
+            echo "preview_url=$preview_url"
+          } >> "$GITHUB_OUTPUT"
+          {
+            echo '### LEO-563 isolated Public Worker Preview: PASS'
+            echo "- Exact source SHA: $SOURCE_SHA"
+            echo '- Worker: dongphugia-v1-public-preview'
+            echo "- Worker version ID: $version_id"
+            echo '- Preview alias: pr-138'
+            echo "- Preview URL: $preview_url"
+            echo '- Workers Free plan and hard 10 ms CPU / 50 subrequest limits: confirmed'
+            echo '- Real SSR, health, HTML/header/robots noindex, MISS/HIT/bypass, and 300-second freshness: PASS'
+            echo '- Preview URL CPU measurement: PROVIDER_LIMITATION; Preview URL logs/tail/Logpush are unavailable.'
+            echo '- Custom domains/routes/Production binding/DNS/traffic: NONE'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload sanitized immutable Preview evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: leo563-real-public-preview-${{ needs.repo-code-gate.outputs.source_sha }}
+          path: |
+            ${{ env.EVIDENCE_DIR }}/publication-preflight.json
+            ${{ env.EVIDENCE_DIR }}/remote-preflight.json
+            ${{ env.EVIDENCE_DIR }}/upload-evidence.json
+            ${{ env.EVIDENCE_DIR }}/resource-proof.json
+            ${{ env.EVIDENCE_DIR }}/runtime-proof.json
+          if-no-files-found: warn
+          retention-days: 90
+
   cloudflare-preview-gate:
     name: Existing Cloudflare Preview owner gate
-    needs: [repo-code-gate, required-ci, app-preview-artifact, cloudflare-readonly-discovery]
+    needs: [repo-code-gate, required-ci, app-preview-artifact, cloudflare-readonly-discovery, cloudflare-preview-upload]
     if: always()
     outputs:
       result: ${{ steps.gate.outputs.result }}
@@ -458,6 +668,9 @@ jobs:
           ARTIFACT_RESULT: ${{ needs.app-preview-artifact.result }}
           ARTIFACT_READY: ${{ needs.app-preview-artifact.outputs.artifact_ready }}
           DISCOVERY_RESULT: ${{ needs.cloudflare-readonly-discovery.outputs.result }}
+          OWNER_APPROVED_UPLOAD: ${{ needs.repo-code-gate.outputs.owner_approved_upload }}
+          UPLOAD_JOB_RESULT: ${{ needs.cloudflare-preview-upload.result }}
+          UPLOAD_RESULT: ${{ needs.cloudflare-preview-upload.outputs.result }}
         shell: bash
         run: |
           set -euo pipefail
@@ -473,6 +686,19 @@ jobs:
           fi
           if [[ "$ARTIFACT_RESULT" == "failure" || "$ARTIFACT_READY" != "true" ]]; then
             echo 'result=BLOCKED_BY_ARTIFACT_FAILURE' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [[ "$OWNER_APPROVED_UPLOAD" == "true" ]]; then
+            if [[ "$UPLOAD_JOB_RESULT" != "success" || "$UPLOAD_RESULT" != "REAL_PUBLIC_PREVIEW_PASS" ]]; then
+              echo 'result=BLOCKED_BY_REAL_PREVIEW_FAILURE' >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            echo 'result=REAL_PUBLIC_PREVIEW_PASS' >> "$GITHUB_OUTPUT"
+            {
+              echo '### Cloudflare Preview: REAL_PUBLIC_PREVIEW_PASS'
+              echo '- One immutable version was uploaded to dongphugia-v1-public-preview with alias pr-138.'
+              echo '- No Production deployment, custom domain, route, DNS, traffic, or paid-plan mutation was performed.'
+            } >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
           if [[ "$DISCOVERY_RESULT" != "READ_COMPLETE" && "$DISCOVERY_RESULT" != "READ_PERMISSION_INCOMPLETE" && "$DISCOVERY_RESULT" != "CREDENTIALS_UNAVAILABLE" ]]; then
@@ -503,6 +729,7 @@ jobs:
           ARTIFACT_RESULT: ${{ needs.app-preview-artifact.result }}
           ARTIFACT_READY: ${{ needs.app-preview-artifact.outputs.artifact_ready }}
           CLOUDFLARE_RESULT: ${{ needs.cloudflare-preview-gate.outputs.result }}
+          OWNER_APPROVED_UPLOAD: ${{ needs.repo-code-gate.outputs.owner_approved_upload }}
         shell: bash
         run: |
           set -euo pipefail
@@ -520,6 +747,21 @@ jobs:
           if [[ "$ARTIFACT_RESULT" == "failure" || "$ARTIFACT_READY" != "true" ]]; then
             echo 'Application candidate build or identity verification failed closed.' >> "$GITHUB_STEP_SUMMARY"
             exit 1
+          fi
+          if [[ "$OWNER_APPROVED_UPLOAD" == "true" ]]; then
+            if [[ "$CLOUDFLARE_RESULT" != "REAL_PUBLIC_PREVIEW_PASS" ]]; then
+              echo 'Owner-approved real Public Preview failed closed.' >> "$GITHUB_STEP_SUMMARY"
+              exit 1
+            fi
+            {
+              echo '### Final Preview result: REAL_PUBLIC_PREVIEW_PASS'
+              echo '- Exact-head Public/Admin candidate verification: PASS'
+              echo '- Isolated Public Worker version/alias Preview and real HTTPS acceptance: PASS'
+              echo '- Admin external Preview: downstream scope and not an LEO-563 blocker.'
+              echo '- Supabase connectivity: deferred to LEO-564.'
+              echo '- Production custom domain/DNS/traffic: unchanged.'
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
           fi
           if [[ "$CLOUDFLARE_RESULT" != "BLOCKED_BY_OWNER_GATE" ]]; then
             echo 'Unexpected external Preview state; fail closed.' >> "$GITHUB_STEP_SUMMARY"
