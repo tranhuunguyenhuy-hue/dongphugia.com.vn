@@ -351,6 +351,39 @@ describe('LEO-563 Cloudflare Preview publication gate', () => {
     })
   })
 
+  it('accepts the proven bootstrap plus immutable version history', async () => {
+    const evidence = managedPublicationEvidence()
+    const bootstrapVersionId = 'd4658ffa-2fcd-465b-bae7-7967bb1c7f78'
+    const deploymentId = '6e7022d5-5f4d-4f51-8ab3-01850503a711'
+    const managedPublication = validateManagedPublicationEvidence({
+      publicationPreflight: evidence.publicationPreflight,
+      uploadEvidence: evidence.uploadEvidence,
+      resourceProof: evidence.resourceProof,
+      expectedWorkflowRunId: evidence.publicationPreflight.workflowRunId,
+      bootstrapVersionId,
+    })
+
+    await expect(inspectRemoteResourceState({
+      accountId: 'synthetic-account',
+      apiToken: 'synthetic-token',
+      managedPublication,
+      fetchImpl: managedRemoteFetch({
+        workerVersionId: evidence.workerVersionId,
+        deploymentId,
+        deploymentVersionId: bootstrapVersionId,
+        versions: [{ id: bootstrapVersionId }, { id: evidence.workerVersionId }],
+      }),
+    })).resolves.toMatchObject({
+      state: 'MANAGED_ACTIVE_PREVIEW',
+      versionIds: [bootstrapVersionId, evidence.workerVersionId].sort(),
+      deploymentIds: [deploymentId],
+      managedPublication: {
+        bootstrapVersionId,
+        priorVersionIds: [bootstrapVersionId, evidence.workerVersionId].sort(),
+      },
+    })
+  })
+
   it('accepts a new immutable version without replacing the managed active deployment', async () => {
     const evidence = managedPublicationEvidence()
     const managedPublication = validateManagedPublicationEvidence({

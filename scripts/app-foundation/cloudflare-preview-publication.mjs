@@ -391,9 +391,18 @@ function normalizeManagedPublicationProof(proof) {
   ) throw new Error('LEO563_PREVIEW_MANAGED_EVIDENCE_INVALID')
 
   const workerVersionId = requireManagedVersionId(proof.workerVersionId)
+  const bootstrapVersionId = proof.bootstrapVersionId === undefined || proof.bootstrapVersionId === null
+    ? null
+    : requireManagedVersionId(proof.bootstrapVersionId, 'LEO563_PREVIEW_MANAGED_EVIDENCE_BOOTSTRAP_VERSION_INVALID')
+  if (bootstrapVersionId === workerVersionId) {
+    throw new Error('LEO563_PREVIEW_MANAGED_EVIDENCE_BOOTSTRAP_VERSION_INVALID')
+  }
   const priorVersionIds = proof.priorVersionIds?.map((value) => requireManagedVersionId(value))
   if (!Array.isArray(priorVersionIds) || priorVersionIds.length === 0 || !priorVersionIds.includes(workerVersionId)) {
     throw new Error('LEO563_PREVIEW_MANAGED_EVIDENCE_VERSION_STATE_INVALID')
+  }
+  if (bootstrapVersionId && !priorVersionIds.includes(bootstrapVersionId)) {
+    throw new Error('LEO563_PREVIEW_MANAGED_EVIDENCE_BOOTSTRAP_VERSION_INVALID')
   }
   priorVersionIds.sort()
 
@@ -437,6 +446,7 @@ function normalizeManagedPublicationProof(proof) {
     workerName: WORKER_NAME,
     previewAlias: PREVIEW_ALIAS,
     workerVersionId,
+    bootstrapVersionId,
     workersDev: false,
     previewUrls: true,
     customDomains: [],
@@ -454,7 +464,7 @@ function normalizeManagedPublicationProof(proof) {
   }
 }
 
-export function validateManagedPublicationEvidence({ publicationPreflight, uploadEvidence, resourceProof, expectedWorkflowRunId = null }) {
+export function validateManagedPublicationEvidence({ publicationPreflight, uploadEvidence, resourceProof, expectedWorkflowRunId = null, bootstrapVersionId: expectedBootstrapVersionId = null }) {
   if (
     publicationPreflight?.contract !== 'dongphugia:cloudflare-preview-publication-preflight:v1' ||
     uploadEvidence?.contract !== 'dongphugia:cloudflare-preview-upload:v1' ||
@@ -516,6 +526,19 @@ export function validateManagedPublicationEvidence({ publicationPreflight, uploa
     throw new Error('LEO563_PREVIEW_MANAGED_EVIDENCE_BINDING_STATE_INVALID')
   }
 
+  const resourceBootstrapVersionId = resourceProof.bootstrapVersionId === undefined || resourceProof.bootstrapVersionId === null
+    ? null
+    : requireManagedVersionId(resourceProof.bootstrapVersionId, 'LEO563_PREVIEW_MANAGED_EVIDENCE_BOOTSTRAP_VERSION_INVALID')
+  const bootstrapVersionId = expectedBootstrapVersionId === null
+    ? resourceBootstrapVersionId
+    : requireManagedVersionId(expectedBootstrapVersionId, 'LEO563_PREVIEW_MANAGED_EVIDENCE_BOOTSTRAP_VERSION_INVALID')
+  if (resourceBootstrapVersionId !== null && bootstrapVersionId !== resourceBootstrapVersionId) {
+    throw new Error('LEO563_PREVIEW_MANAGED_EVIDENCE_BOOTSTRAP_VERSION_INVALID')
+  }
+  if (bootstrapVersionId === workerVersionId) {
+    throw new Error('LEO563_PREVIEW_MANAGED_EVIDENCE_BOOTSTRAP_VERSION_INVALID')
+  }
+
   let priorVersionIds = [workerVersionId]
   let priorDeployments = null
   let deploymentIdentityBasis = 'prior-version-evidence'
@@ -535,6 +558,7 @@ export function validateManagedPublicationEvidence({ publicationPreflight, uploa
     }
     deploymentIdentityBasis = 'prior-resource-proof'
   }
+  if (bootstrapVersionId) priorVersionIds = [...new Set([...priorVersionIds, bootstrapVersionId])]
 
   return normalizeManagedPublicationProof({
     contract: 'dongphugia:cloudflare-managed-preview-evidence:v1',
@@ -544,6 +568,7 @@ export function validateManagedPublicationEvidence({ publicationPreflight, uploa
     workerName: WORKER_NAME,
     previewAlias: PREVIEW_ALIAS,
     workerVersionId,
+    bootstrapVersionId,
     workersDev: false,
     previewUrls: true,
     customDomains: [],
@@ -576,9 +601,10 @@ function assertManagedActiveState({ versionIds, deploymentRecords, managedPublic
     throw new Error('LEO563_PREVIEW_MANAGED_DEPLOYMENT_STATE_UNEXPECTED')
   }
   const deployment = deploymentRecords[0]
+  const activeVersionId = managedPublication.bootstrapVersionId ?? managedPublication.workerVersionId
   if (
     deployment.versions.length !== 1 ||
-    deployment.versions[0].versionId !== managedPublication.workerVersionId ||
+    deployment.versions[0].versionId !== activeVersionId ||
     deployment.versions[0].percentage !== 100
   ) throw new Error('LEO563_PREVIEW_MANAGED_DEPLOYMENT_STATE_UNEXPECTED')
 }
@@ -1044,6 +1070,7 @@ async function main() {
       uploadEvidence: JSON.parse(await readFile(path.resolve(args.upload || ''), 'utf8')),
       resourceProof: JSON.parse(await readFile(path.resolve(args['resource-proof'] || ''), 'utf8')),
       expectedWorkflowRunId: args['expected-workflow-run-id'] ?? null,
+      bootstrapVersionId: args['bootstrap-version-id'] ?? null,
     })
     await writeFile(path.resolve(args.output || ''), `${JSON.stringify(evidence, null, 2)}\n`, { mode: 0o600 })
     process.stdout.write(JSON.stringify({

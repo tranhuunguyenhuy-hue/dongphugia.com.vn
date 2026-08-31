@@ -111,12 +111,14 @@ describe('migration PR CI and Preview workflow contract', () => {
     for (const marker of [
       'managed_preview_run_id',
       'managed_preview_source_sha',
+      'managed_preview_bootstrap_version_id',
       'actions: read',
       'Download the exact prior LEO-563 Preview evidence for managed-state preflight',
       'run-id: ${{ needs.repo-code-gate.outputs.managed_preview_run_id }}',
       'name: leo563-real-public-preview-${{ needs.repo-code-gate.outputs.managed_preview_source_sha }}',
       'validate-managed-publication',
       '--managed-publication-proof "$EVIDENCE_DIR/managed-publication-proof.json"',
+      '--bootstrap-version-id',
     ]) expect(workflow).toContain(marker)
 
     expect(workflow).toContain('MANAGED_PREVIEW_RUN_ID')

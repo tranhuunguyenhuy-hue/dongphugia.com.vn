@@ -151,6 +151,14 @@ identity, or any unexpected version/deployment, keeps the job fail-closed. A
 write-path failure without an exact publication evidence record continues to
 use the pre-publication empty-state contract.
 
+For the original LEO-563 run whose v1 resource proof predates version/deployment
+inventory, the Owner-approved managed workflow may supply the exact bootstrap
+version ID separately. The proof then requires the complete remote version set
+to contain that bootstrap version and the immutable Preview version, with one
+100%-percentage deployment targeting the bootstrap version. This supplements,
+but does not replace, the exact prior workflow-run/source evidence and remains
+fail-closed on any additional or mismatched version/deployment.
+
 The assembled immutable Public artifact contains two configs. `wrangler.json`
 remains detached with `workers_dev=false` and `preview_urls=false`.
 `wrangler.preview.json` is a fail-closed allowlist for exactly

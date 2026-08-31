@@ -22,6 +22,10 @@ on:
         description: Exact source SHA of the prior LEO-563 managed Preview evidence artifact
         required: false
         type: string
+      managed_preview_bootstrap_version_id:
+        description: Exact bootstrap version ID recorded by the prior LEO-563 publication run
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -45,6 +49,7 @@ jobs:
       pull_request_number: ${{ steps.detect.outputs.pull_request_number }}
       managed_preview_run_id: ${{ steps.detect.outputs.managed_preview_run_id }}
       managed_preview_source_sha: ${{ steps.detect.outputs.managed_preview_source_sha }}
+      managed_preview_bootstrap_version_id: ${{ steps.detect.outputs.managed_preview_bootstrap_version_id }}
     steps:
       - name: Checkout the complete candidate history
         uses: actions/checkout@v4
@@ -63,6 +68,7 @@ jobs:
           APPROVED_SOURCE_SHA: ${{ inputs.approved_source_sha || '' }}
           MANAGED_PREVIEW_RUN_ID: ${{ inputs.managed_preview_run_id || '' }}
           MANAGED_PREVIEW_SOURCE_SHA: ${{ inputs.managed_preview_source_sha || '' }}
+          MANAGED_PREVIEW_BOOTSTRAP_VERSION_ID: ${{ inputs.managed_preview_bootstrap_version_id || '' }}
           REPOSITORY: ${{ github.repository }}
           GH_TOKEN: ${{ github.token }}
         shell: bash
@@ -76,6 +82,9 @@ jobs:
             if [[ -n "$MANAGED_PREVIEW_RUN_ID" || -n "$MANAGED_PREVIEW_SOURCE_SHA" ]]; then
               [[ "$MANAGED_PREVIEW_RUN_ID" =~ ^[0-9]+$ ]]
               [[ "$MANAGED_PREVIEW_SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]
+            fi
+            if [[ -n "$MANAGED_PREVIEW_BOOTSTRAP_VERSION_ID" ]]; then
+              [[ "$MANAGED_PREVIEW_BOOTSTRAP_VERSION_ID" =~ ^[0-9a-f-]{32,64}$ ]]
             fi
             pr_json="$(gh api "repos/$REPOSITORY/pulls/138")"
             test "$(jq -r '.state' <<< "$pr_json")" = 'open'
@@ -91,6 +100,7 @@ jobs:
               echo 'pull_request_number=138'
               echo "managed_preview_run_id=$MANAGED_PREVIEW_RUN_ID"
               echo "managed_preview_source_sha=$MANAGED_PREVIEW_SOURCE_SHA"
+              echo "managed_preview_bootstrap_version_id=$MANAGED_PREVIEW_BOOTSTRAP_VERSION_ID"
               echo 'reason=OWNER_APPROVED_EXACT_PR_138_PREVIEW_UPLOAD'
             } >> "$GITHUB_OUTPUT"
             echo 'LEO563_REPO_CODE_GATE status=OWNER_APPROVED_EXACT_PR_138_PREVIEW_UPLOAD'
@@ -106,6 +116,7 @@ jobs:
               echo 'pull_request_number=0'
               echo 'managed_preview_run_id='
               echo 'managed_preview_source_sha='
+              echo 'managed_preview_bootstrap_version_id='
               echo 'reason=MANUAL_RUN_REQUIRES_EXACT_PR_DIFF'
             } >> "$GITHUB_OUTPUT"
             echo 'LEO563_REPO_CODE_GATE status=SKIPPED_MANUAL_RUN'
@@ -123,6 +134,7 @@ jobs:
             echo 'pull_request_number=${{ github.event.pull_request.number }}'
             echo 'managed_preview_run_id='
             echo 'managed_preview_source_sha='
+            echo 'managed_preview_bootstrap_version_id='
           } >> "$GITHUB_OUTPUT"
 
   required-ci:
@@ -596,12 +608,18 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          npm run app:preview-publication -- validate-managed-publication \
-            --publication-preflight "$MANAGED_EVIDENCE_ROOT/publication-preflight.json" \
-            --upload "$MANAGED_EVIDENCE_ROOT/upload-evidence.json" \
-            --resource-proof "$MANAGED_EVIDENCE_ROOT/resource-proof.json" \
-            --expected-workflow-run-id "${{ needs.repo-code-gate.outputs.managed_preview_run_id }}" \
-            --output "$EVIDENCE_DIR/managed-publication-proof.json"
+          managed_args=(
+            validate-managed-publication
+            --publication-preflight "$MANAGED_EVIDENCE_ROOT/publication-preflight.json"
+            --upload "$MANAGED_EVIDENCE_ROOT/upload-evidence.json"
+            --resource-proof "$MANAGED_EVIDENCE_ROOT/resource-proof.json"
+            --expected-workflow-run-id "${{ needs.repo-code-gate.outputs.managed_preview_run_id }}"
+          )
+          if [[ -n "${{ needs.repo-code-gate.outputs.managed_preview_bootstrap_version_id }}" ]]; then
+            managed_args+=(--bootstrap-version-id "${{ needs.repo-code-gate.outputs.managed_preview_bootstrap_version_id }}")
+          fi
+          managed_args+=(--output "$EVIDENCE_DIR/managed-publication-proof.json")
+          npm run app:preview-publication -- "${managed_args[@]}"
 
       - name: Inspect the current Worker state before publication
         env:
