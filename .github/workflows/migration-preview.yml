@@ -96,9 +96,11 @@ jobs:
             --base "$BASE_SHA" \
             --head "$SOURCE_SHA" \
             --output "$GITHUB_OUTPUT"
-          echo 'reason=EXACT_PR_HEAD_DIFF' >> "$GITHUB_OUTPUT"
-          echo 'owner_approved_upload=false' >> "$GITHUB_OUTPUT"
-          echo 'pull_request_number=${{ github.event.pull_request.number }}' >> "$GITHUB_OUTPUT"
+          {
+            echo 'reason=EXACT_PR_HEAD_DIFF'
+            echo 'owner_approved_upload=false'
+            echo 'pull_request_number=${{ github.event.pull_request.number }}'
+          } >> "$GITHUB_OUTPUT"
 
   required-ci:
     name: Required repository CI
@@ -498,8 +500,8 @@ jobs:
       SOURCE_SHA: ${{ needs.repo-code-gate.outputs.source_sha }}
       PR_NUMBER: ${{ needs.repo-code-gate.outputs.pull_request_number }}
       WORKFLOW_RUN_ID: ${{ github.run_id }}
-      ARTIFACT_ROOT: ${{ runner.temp }}/dongphugia-app-preview
-      EVIDENCE_DIR: ${{ runner.temp }}/leo563-public-preview-evidence
+      ARTIFACT_ROOT: ${{ github.workspace }}/.artifacts/dongphugia-app-preview-download
+      EVIDENCE_DIR: ${{ github.workspace }}/.artifacts/leo563-public-preview-evidence
       WRANGLER_BIN: ${{ github.workspace }}/apps/public/node_modules/wrangler/bin/wrangler.js
     steps:
       - name: Checkout the exact Owner-approved PR-head revision
