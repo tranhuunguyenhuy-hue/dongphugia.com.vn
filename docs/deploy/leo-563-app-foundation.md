@@ -109,15 +109,17 @@ noindex proofs. CI verifies the exact manifest and recomputes all identities
 before upload.
 
 Runtime proof runs the built Public candidate under local `workerd` and requires
-representative SSR metadata, HTML robots meta, `X-Robots-Tag`, `robots.txt`
-`Disallow: /`, MISS then HIT, cookie/query bypass, 300-second policy, and
-Production-host rejection. Admin runtime proof requires SSR/noindex and
-private/no-store. The Public Worker and workers.dev-only `_headers` transport
-rule apply the exact `X-Robots-Tag: noindex, nofollow` value to every required
-Preview response; the real proof checks the root MISS/HIT, query/cookie
-bypass, health, and robots responses individually. These observations are
-copied into the immutable artifact; booleans are not self-attested by the
-collector.
+representative SSR metadata, HTML robots meta, an HTTP `X-Robots-Tag` containing
+`noindex`, `robots.txt` `Disallow: /`, MISS then HIT, cookie/query bypass,
+300-second policy, and Production-host rejection. Admin runtime proof requires
+SSR/noindex and private/no-store. The Public Worker and workers.dev-only
+`_headers` transport rule continue to emit the source/artifact value
+`X-Robots-Tag: noindex, nofollow`; the Real Preview proof accepts the observed
+workers.dev header when it contains the `noindex` directive, while separately
+requiring HTML `noindex, nofollow` and `robots.txt` `Disallow: /`. It checks the
+root MISS/HIT, query/cookie bypass, health, and robots responses individually.
+These observations are copied into the immutable artifact; booleans are not
+self-attested by the collector.
 
 Local credentials are not used. Ordinary material app PR runs pass the existing
 `CLOUDFLARE_ACCOUNT_ID` and temporary, dedicated
@@ -184,10 +186,11 @@ under `workers.dev`; it does not deploy a version to Production or attach a
 route/domain. After upload, CI uses sanitized GET-only calls to verify the exact
 version, `workers_dev=false`, `preview_urls=true`, zero custom domains, and only
 the Static Assets plus four approved plain-text Preview bindings. Real HTTPS
-proof requires `/`, `/api/health`, and `/robots.txt`; SSR metadata; HTML,
-response-header, and robots noindex; first MISS and subsequent HIT; cookie,
-query, and API bypass; exact source-SHA response identity; and the hard
-300-second edge freshness policy. Cloudflare does not expose Workers Logs,
+proof requires `/`, `/api/health`, and `/robots.txt`; SSR metadata; HTML
+`noindex, nofollow`; an HTTP response header containing `noindex`; robots
+`Disallow: /`; first MISS and subsequent HIT; cookie, query, and API bypass;
+exact source-SHA response identity; and the hard 300-second edge freshness
+policy. Cloudflare does not expose Workers Logs,
 Wrangler tail, or Logpush for Preview URLs, so per-request CPU observation is
 reported as `CPU_OBSERVABILITY: PROVIDER_LIMITATION`; the 10 ms Free ceiling is
 provider-enforced, not configured through `cpu_ms`, and successful requests

@@ -199,5 +199,8 @@ describe('migration PR CI and Preview workflow contract', () => {
       'LEO563_PREVIEW_REMOTE_BINDING_OR_ROUTE_FORBIDDEN',
     ]) expect(previewPublication).toContain(marker)
     expect(realPreviewProof).toContain("!url.hostname.endsWith('.workers.dev')")
+    expect(realPreviewProof).toContain("contract: 'dongphugia:real-public-preview-proof:v2'")
+    expect(realPreviewProof).toContain('directives.includes(PREVIEW_ROBOTS_REQUIRED_DIRECTIVE)')
+    expect(realPreviewProof).not.toContain('PREVIEW_ROBOTS_HEADER)')
   })
 })

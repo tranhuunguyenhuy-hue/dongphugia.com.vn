@@ -16,7 +16,7 @@ describe('LEO-563 real Public Preview proof', () => {
     expect(() => validatePreviewUrl('https://other-worker.example.workers.dev')).toThrow('LEO563_REAL_PREVIEW_URL_INVALID')
   })
 
-  it('proves SSR, noindex, MISS/HIT, bypass, health, robots, and hard freshness', async () => {
+  it('accepts the provider workers.dev noindex header with full HTML and robots controls', async () => {
     let rootCount = 0
     const fetchImpl = async (input: URL | RequestInfo, init?: RequestInit) => {
       const url = new URL(String(input))
@@ -25,21 +25,21 @@ describe('LEO-563 real Public Preview proof', () => {
           'Content-Type': 'application/json',
           'Cache-Control': 'private, no-store',
           'X-DPG-Cache': 'BYPASS',
-          'X-Robots-Tag': 'noindex, nofollow',
+          'X-Robots-Tag': 'noindex',
         })
       }
       if (url.pathname === '/robots.txt') {
         return response('User-agent: *\nDisallow: /\n', {
           'Cache-Control': 'private, no-store',
           'X-DPG-Cache': 'BYPASS',
-          'X-Robots-Tag': 'noindex, nofollow',
+          'X-Robots-Tag': 'noindex',
         })
       }
       if (url.search || new Headers(init?.headers).has('cookie')) {
         return response('<html></html>', {
           'Cache-Control': 'private, no-store',
           'X-DPG-Cache': 'BYPASS',
-          'X-Robots-Tag': 'noindex, nofollow',
+          'X-Robots-Tag': 'noindex',
         })
       }
       rootCount += 1
@@ -48,11 +48,12 @@ describe('LEO-563 real Public Preview proof', () => {
         'Cache-Control': 'public, max-age=0, must-revalidate',
         'CDN-Cache-Control': 'public, max-age=300, must-revalidate',
         'X-DPG-Cache': rootCount === 1 ? 'MISS' : 'HIT',
-        'X-Robots-Tag': 'noindex, nofollow',
+        'X-Robots-Tag': 'noindex',
       })
     }
 
     const proof = await verifyRealPreview({ baseUrl, sourceSha, fetchImpl })
+    expect(proof.contract).toBe('dongphugia:real-public-preview-proof:v2')
     expect(proof.observations.cache).toMatchObject({
       first: 'MISS',
       subsequent: 'HIT',
@@ -70,7 +71,7 @@ describe('LEO-563 real Public Preview proof', () => {
     expect(proof.observations.cpuObservability.status).toBe('PROVIDER_LIMITATION')
   })
 
-  it('rejects a required Preview response that loses the exact robots header', async () => {
+  it('rejects a required Preview response that loses the noindex directive', async () => {
     let rootCount = 0
     const fetchImpl = async (input: URL | RequestInfo, init?: RequestInit) => {
       const url = new URL(String(input))
@@ -78,6 +79,7 @@ describe('LEO-563 real Public Preview proof', () => {
         return response(JSON.stringify({ application: 'public', status: 'ok' }), {
           'Cache-Control': 'private, no-store',
           'X-DPG-Cache': 'BYPASS',
+          'X-Robots-Tag': 'nofollow',
         })
       }
       if (url.pathname === '/robots.txt') {

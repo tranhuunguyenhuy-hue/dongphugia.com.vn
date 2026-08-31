@@ -6,7 +6,7 @@ const PREVIEW_ALIAS = 'pr-138'
 const BROWSER_CACHE_CONTROL = 'public, max-age=0, must-revalidate'
 const EDGE_CACHE_CONTROL = 'public, max-age=300, must-revalidate'
 const PRIVATE_CACHE_CONTROL = 'private, no-store'
-const PREVIEW_ROBOTS_HEADER = 'noindex, nofollow'
+const PREVIEW_ROBOTS_REQUIRED_DIRECTIVE = 'noindex'
 
 function parseArgs(argv) {
   const args = {}
@@ -51,7 +51,12 @@ function assertSource(response, sourceCommit, label) {
 }
 
 function assertPreviewRobots(response) {
-  if (header(response, 'X-Robots-Tag').toLowerCase() !== PREVIEW_ROBOTS_HEADER) {
+  const directives = header(response, 'X-Robots-Tag')
+    .toLowerCase()
+    .split(',')
+    .map((directive) => directive.trim())
+    .filter(Boolean)
+  if (!directives.includes(PREVIEW_ROBOTS_REQUIRED_DIRECTIVE)) {
     throw new Error('LEO563_REAL_PREVIEW_X_ROBOTS_FAILED')
   }
 }
@@ -133,7 +138,7 @@ export async function verifyRealPreview({ baseUrl, sourceSha, fetchImpl = fetch,
   assertSource(robots, sourceCommit, 'robots')
 
   return {
-    contract: 'dongphugia:real-public-preview-proof:v1',
+    contract: 'dongphugia:real-public-preview-proof:v2',
     sourceCommit,
     workerName: WORKER_NAME,
     previewAlias: PREVIEW_ALIAS,
