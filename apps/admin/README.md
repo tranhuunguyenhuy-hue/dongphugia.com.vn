@@ -4,8 +4,9 @@ This is the independent New Production staff-only deployable for
 `https://admin.dongphugia.vn`.
 
 The shell intentionally contains no legacy `/admin` implementation, Public
-runtime, Public cookie, direct database adapter, or Supabase Auth lifecycle.
-LEO-564 owns Auth/RLS/service interfaces and LEO-572 owns the approved Admin
+runtime, Public cookie, direct database adapter, or Admin feature UI. LEO-564
+owns the minimal Supabase Auth SSR lifecycle, RLS/service interfaces, and the
+narrow backend-only Auth Admin adapter. LEO-572 owns the approved Admin
 feature UI.
 
 Build it from the repository root with `npm run build:admin`. The root lockfile

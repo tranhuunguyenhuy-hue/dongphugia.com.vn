@@ -4,23 +4,6 @@ const ADMIN_BROWSER_ENV_KEYS = new Set([
   'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY',
 ])
 
-const PRIVILEGED_ENV_NAMES = [
-  'DATABASE_URL',
-  'DIRECT_URL',
-  'SUPABASE_SERVICE_ROLE_KEY',
-  'SUPABASE_SECRET_KEY',
-  'SUPABASE_AUTH_ADMIN_KEY',
-  'AUTH_ADMIN_KEY',
-  'AUTH_SECRET',
-  'ADMIN_SESSION_SECRET',
-  'PUBLISHING_TOKEN',
-  'PUBLISHING_SCHEDULER_TOKEN',
-  'CLOUDFLARE_API_TOKEN',
-  'BUNNY_API_KEY',
-  'BUNNY_STORAGE_API_KEY',
-  'MIGRATION_PREVIEW_DATABASE_URL',
-] as const
-
 const PRIVILEGED_ENV_PATTERN =
   /(SERVICE_ROLE|SECRET|AUTH_ADMIN|PASSWORD|DATABASE|PRIVATE_KEY|CREDENTIAL)/i
 
@@ -48,12 +31,6 @@ function assertBrowserEnvironmentIsApproved(
 
     if (!ADMIN_BROWSER_ENV_KEYS.has(name)) {
       throw new Error(`ADMIN_BROWSER_ENV_NOT_ALLOWLISTED:${name}`)
-    }
-  }
-
-  for (const name of PRIVILEGED_ENV_NAMES) {
-    if (valueOf(environment, name)) {
-      throw new Error(`ADMIN_PRIVILEGED_ENV_FORBIDDEN:${name}`)
     }
   }
 }
@@ -129,4 +106,39 @@ export function getAdminAppEnvironment(
     noindex: true,
     buildTarget: 'admin',
   }
+}
+
+export type AdminSupabasePublicConfig = Readonly<{
+  url: string
+  publishableKey: string
+}>
+
+export function getAdminSupabasePublicConfig(
+  source: Record<string, string | undefined> = process.env,
+): AdminSupabasePublicConfig {
+  const url = valueOf(source, 'NEXT_PUBLIC_SUPABASE_URL')
+  const publishableKey = valueOf(source, 'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY')
+  if (!url) throw new Error('ADMIN_SUPABASE_URL_REQUIRED')
+  if (!publishableKey) throw new Error('ADMIN_SUPABASE_PUBLISHABLE_KEY_REQUIRED')
+
+  let parsed: URL
+  try {
+    parsed = new URL(url)
+  } catch {
+    throw new Error('ADMIN_SUPABASE_URL_INVALID')
+  }
+  if (
+    !['http:', 'https:'].includes(parsed.protocol) ||
+    parsed.pathname !== '/' ||
+    parsed.username ||
+    parsed.password ||
+    parsed.search ||
+    parsed.hash
+  ) {
+    throw new Error('ADMIN_SUPABASE_URL_INVALID')
+  }
+  if (parsed.protocol === 'http:' && !['localhost', '127.0.0.1'].includes(parsed.hostname)) {
+    throw new Error('ADMIN_SUPABASE_URL_MUST_USE_HTTPS')
+  }
+  return { url: url.replace(/\/$/, ''), publishableKey }
 }

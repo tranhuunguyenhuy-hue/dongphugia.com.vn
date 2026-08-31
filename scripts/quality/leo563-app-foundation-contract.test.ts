@@ -20,6 +20,7 @@ const publicLayout = readFileSync(resolve(root, 'apps/public/app/layout.tsx'), '
 const publicRobots = readFileSync(resolve(root, 'apps/public/app/robots.txt/route.ts'), 'utf8')
 const adminConfig = readFileSync(resolve(root, 'apps/admin/next.config.ts'), 'utf8')
 const adminProxy = readFileSync(resolve(root, 'apps/admin/proxy.ts'), 'utf8')
+const adminSessionProxy = readFileSync(resolve(root, 'apps/admin/src/supabase/proxy.ts'), 'utf8')
 const adminLayout = readFileSync(resolve(root, 'apps/admin/app/layout.tsx'), 'utf8')
 
 function filesUnder(directory: string): string[] {
@@ -60,7 +61,7 @@ describe('LEO-563 application foundation contract', () => {
       expect.stringMatching(/apps\/admin|admin-auth|admin-session|supabase|service.role|prisma|\bpg\b|database/i),
     ]))
     expect(sourceImports(resolve(root, 'apps/admin'))).not.toEqual(expect.arrayContaining([
-      expect.stringMatching(/apps\/public|public-cookie|src\/lib\/prisma|src\/lib\/auth|supabase|service.role|prisma|\bpg\b|database/i),
+      expect.stringMatching(/apps\/public|public-cookie|src\/lib\/prisma|src\/lib\/auth|service.role|prisma|\bpg\b|database/i),
     ]))
     expect(readFileSync(resolve(root, 'apps/public/app/layout.tsx'), 'utf8')).toContain("runtime = 'edge'")
     expect(readFileSync(resolve(root, 'apps/admin/app/layout.tsx'), 'utf8')).toContain("runtime = 'nodejs'")
@@ -78,7 +79,7 @@ describe('LEO-563 application foundation contract', () => {
     expect(publicWorker).toContain("caches.open('dongphugia-public-v1')")
     expect(`${publicWorker}\n${publicWorkerPolicy}`).not.toContain('stale-while-revalidate')
     expect(adminConfig).toContain("Cache-Control', value: 'private, no-store'")
-    expect(adminProxy).toContain("private, no-store")
+    expect(`${adminProxy}\n${adminSessionProxy}`).toContain("private, no-store")
     expect(adminConfig).toContain("X-Robots-Tag', value: 'noindex, nofollow'")
     expect(adminLayout).toContain('index: false')
   })
