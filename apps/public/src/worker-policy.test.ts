@@ -7,6 +7,7 @@ import {
   isCacheableResponse,
   isForbiddenInternalControlRequest,
   PUBLIC_EDGE_CACHE_CONTROL,
+  PUBLIC_PREVIEW_ROBOTS_HEADER,
 } from './worker-policy'
 
 const sourceCommit = '8b96aecb8c34cc46079f292369aa961d9e5c2020'
@@ -18,6 +19,10 @@ const previewEnvironment = {
 }
 
 describe('Public Worker fail-closed policy', () => {
+  it('requires the exact Preview robots response header contract', () => {
+    expect(PUBLIC_PREVIEW_ROBOTS_HEADER).toBe('noindex, nofollow')
+  })
+
   it('rejects Production hosts and invalid Preview posture', () => {
     expect(() => assertPreviewRuntime(new Request('https://www.dongphugia.vn/'), previewEnvironment)).toThrow('PUBLIC_WORKER_PREVIEW_PRODUCTION_HOST_FORBIDDEN')
     expect(() => assertPreviewRuntime(new Request('https://preview.invalid/'), { ...previewEnvironment, PREVIEW_NOINDEX: 'false' })).toThrow('PUBLIC_WORKER_PREVIEW_CONFIGURATION_REQUIRED')

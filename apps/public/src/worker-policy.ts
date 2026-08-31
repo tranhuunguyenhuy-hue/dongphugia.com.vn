@@ -25,6 +25,7 @@ const PRIVILEGED_RUNTIME_BINDING_PATTERN =
 export const PRIVATE_CACHE_CONTROL = 'private, no-store'
 export const PUBLIC_BROWSER_CACHE_CONTROL = 'public, max-age=0, must-revalidate'
 export const PUBLIC_EDGE_CACHE_CONTROL = `public, max-age=${PUBLIC_EDGE_CACHE_SECONDS}, must-revalidate`
+export const PUBLIC_PREVIEW_ROBOTS_HEADER = 'noindex, nofollow'
 
 export function assertPreviewRuntime(request: Request, environment: PublicWorkerEnvironment) {
   const hostname = new URL(request.url).hostname.toLowerCase()

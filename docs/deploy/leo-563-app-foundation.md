@@ -112,8 +112,12 @@ Runtime proof runs the built Public candidate under local `workerd` and requires
 representative SSR metadata, HTML robots meta, `X-Robots-Tag`, `robots.txt`
 `Disallow: /`, MISS then HIT, cookie/query bypass, 300-second policy, and
 Production-host rejection. Admin runtime proof requires SSR/noindex and
-private/no-store. These observations are copied into the immutable artifact;
-booleans are not self-attested by the collector.
+private/no-store. The Public Worker and workers.dev-only `_headers` transport
+rule apply the exact `X-Robots-Tag: noindex, nofollow` value to every required
+Preview response; the real proof checks the root MISS/HIT, query/cookie
+bypass, health, and robots responses individually. These observations are
+copied into the immutable artifact; booleans are not self-attested by the
+collector.
 
 Local credentials are not used. Ordinary material app PR runs pass the existing
 `CLOUDFLARE_ACCOUNT_ID` and temporary, dedicated
@@ -135,9 +139,12 @@ and proves by GET-only inspection that the exact Worker is either absent or the
 known empty incomplete record left by a failed first bootstrap. An active
 deployment, version, route, domain, binding, or enabled workers.dev endpoint is
 rejected before publication. Each bootstrap/version step records whether a
-Cloudflare write was attempted; if a write-path step fails, the same
-GET-only state inspection runs before sanitized evidence is uploaded, and its
-failure keeps the publication job fail-closed.
+Cloudflare write was attempted. If a later runtime gate fails after the
+publication evidence exists, the same GET-only inspection may record only the
+exact Worker, version IDs, and deployment records captured by that approved
+attempt; a missing or changed identity, or any unexpected version/deployment,
+keeps the job fail-closed. A write-path failure without an exact publication
+evidence record continues to use the pre-publication empty-state contract.
 
 The assembled immutable Public artifact contains two configs. `wrangler.json`
 remains detached with `workers_dev=false` and `preview_urls=false`.

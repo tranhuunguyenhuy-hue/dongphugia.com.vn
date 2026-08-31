@@ -54,6 +54,14 @@ describe('LEO-563 Public Worker artifact contract', () => {
     ]) expect(source.toLowerCase()).not.toContain(forbidden.toLowerCase())
   })
 
+  it('carries the exact robots header through the workers.dev Preview asset transport only', async () => {
+    const headers = await readFile(path.join(repositoryRoot, 'apps/public/public/_headers'), 'utf8')
+    expect(headers).toContain('https://:version.:subdomain.workers.dev/*')
+    expect(headers).toContain('X-Robots-Tag: noindex, nofollow')
+    expect(headers).toContain('/_next/static/*')
+    expect(headers).not.toContain('dongphugia.vn')
+  })
+
   it('uses a hard 300-second cache window without unbounded stale serving', async () => {
     const workerSource = await readFile(path.join(repositoryRoot, 'apps/public/src/worker-policy.ts'), 'utf8')
     const workerEntry = await readFile(path.join(repositoryRoot, 'apps/public/worker.ts'), 'utf8')

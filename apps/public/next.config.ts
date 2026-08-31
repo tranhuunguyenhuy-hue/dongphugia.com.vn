@@ -1,6 +1,7 @@
 import type { NextConfig } from 'next'
 
 import { getPublicAppEnvironment } from './src/config/env'
+import { PUBLIC_PREVIEW_ROBOTS_HEADER } from './src/worker-policy'
 
 const appEnvironment = getPublicAppEnvironment()
 
@@ -8,7 +9,7 @@ const securityHeaders = [
   { key: 'X-Content-Type-Options', value: 'nosniff' },
   { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
   ...(appEnvironment.previewNoindex
-    ? [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }]
+    ? [{ key: 'X-Robots-Tag', value: PUBLIC_PREVIEW_ROBOTS_HEADER }]
     : []),
 ]
 

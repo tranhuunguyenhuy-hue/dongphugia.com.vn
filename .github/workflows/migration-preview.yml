@@ -632,13 +632,15 @@ jobs:
           --source-sha "$SOURCE_SHA"
           --output "$EVIDENCE_DIR/upload-evidence.json"
 
-      - name: Inspect the created Worker with sanitized GET-only calls
+      - name: Inspect the created Worker and publication-attempt state with sanitized GET-only calls
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_LEO563_PREVIEW_TOKEN }}
         run: >-
           npm run app:preview-publication -- inspect-resource
           --upload "$EVIDENCE_DIR/upload-evidence.json"
+          --preflight "$EVIDENCE_DIR/remote-preflight.json"
+          --bootstrap-log "$EVIDENCE_DIR/bootstrap-deploy.log"
           --output "$EVIDENCE_DIR/resource-proof.json"
 
       - name: Prove real HTTPS SSR, noindex, cache, health, robots, and source identity
@@ -680,7 +682,7 @@ jobs:
             echo '- Custom domains/routes/Production binding/DNS/traffic: NONE'
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Inspect the Worker state after a failed Cloudflare write
+      - name: Inspect the Worker state after a failed publication or runtime gate
         if: ${{ failure() && (steps.bootstrap_write.outputs.write_attempted == 'true' || steps.version_upload.outputs.write_attempted == 'true') }}
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -688,8 +690,14 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "$EVIDENCE_DIR"
-          npm run app:preview-publication -- inspect-resource-state \
-            --output "$EVIDENCE_DIR/post-failure-remote-state.json"
+          state_args=(--output "$EVIDENCE_DIR/post-failure-remote-state.json")
+          if [[ -f "$EVIDENCE_DIR/resource-proof.json" && -f "$EVIDENCE_DIR/upload-evidence.json" ]]; then
+            state_args+=(
+              --expected-resource-proof "$EVIDENCE_DIR/resource-proof.json"
+              --upload "$EVIDENCE_DIR/upload-evidence.json"
+            )
+          fi
+          npm run app:preview-publication -- inspect-resource-state "${state_args[@]}"
 
       - name: Upload sanitized immutable Preview evidence
         if: always()

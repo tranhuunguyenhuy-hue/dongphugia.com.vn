@@ -69,4 +69,43 @@ describe('LEO-563 real Public Preview proof', () => {
     })
     expect(proof.observations.cpuObservability.status).toBe('PROVIDER_LIMITATION')
   })
+
+  it('rejects a required Preview response that loses the exact robots header', async () => {
+    let rootCount = 0
+    const fetchImpl = async (input: URL | RequestInfo, init?: RequestInit) => {
+      const url = new URL(String(input))
+      if (url.pathname === '/api/health') {
+        return response(JSON.stringify({ application: 'public', status: 'ok' }), {
+          'Cache-Control': 'private, no-store',
+          'X-DPG-Cache': 'BYPASS',
+        })
+      }
+      if (url.pathname === '/robots.txt') {
+        return response('User-agent: *\nDisallow: /\n', {
+          'Cache-Control': 'private, no-store',
+          'X-DPG-Cache': 'BYPASS',
+          'X-Robots-Tag': 'noindex, nofollow',
+        })
+      }
+      if (url.search || new Headers(init?.headers).has('cookie')) {
+        return response('<html></html>', {
+          'Cache-Control': 'private, no-store',
+          'X-DPG-Cache': 'BYPASS',
+          'X-Robots-Tag': 'noindex, nofollow',
+        })
+      }
+      rootCount += 1
+      return response('<html><head><title>Dong Phu Gia Public Application</title><meta name="robots" content="noindex,nofollow"></head></html>', {
+        'Content-Type': 'text/html',
+        'Cache-Control': 'public, max-age=0, must-revalidate',
+        'CDN-Cache-Control': 'public, max-age=300, must-revalidate',
+        'X-DPG-Cache': rootCount === 1 ? 'MISS' : 'HIT',
+        'X-Robots-Tag': 'noindex, nofollow',
+      })
+    }
+
+    await expect(verifyRealPreview({ baseUrl, sourceSha, fetchImpl, hitAttempts: 1 })).rejects.toThrow(
+      'LEO563_REAL_PREVIEW_X_ROBOTS_FAILED',
+    )
+  })
 })

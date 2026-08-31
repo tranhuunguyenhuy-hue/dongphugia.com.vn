@@ -9,6 +9,7 @@ import {
   PRIVATE_CACHE_CONTROL,
   PUBLIC_BROWSER_CACHE_CONTROL,
   PUBLIC_EDGE_CACHE_CONTROL,
+  PUBLIC_PREVIEW_ROBOTS_HEADER,
   type PublicWorkerEnvironment,
   withHeaders,
 } from './src/worker-policy'
@@ -28,14 +29,20 @@ export default {
     } catch {
       return new Response('Preview configuration rejected.', {
         status: 503,
-        headers: { 'Cache-Control': PRIVATE_CACHE_CONTROL },
+        headers: {
+          'Cache-Control': PRIVATE_CACHE_CONTROL,
+          'X-Robots-Tag': PUBLIC_PREVIEW_ROBOTS_HEADER,
+        },
       })
     }
 
     if (isForbiddenInternalControlRequest(request)) {
       return new Response('Not found.', {
         status: 404,
-        headers: { 'Cache-Control': PRIVATE_CACHE_CONTROL },
+        headers: {
+          'Cache-Control': PRIVATE_CACHE_CONTROL,
+          'X-Robots-Tag': PUBLIC_PREVIEW_ROBOTS_HEADER,
+        },
       })
     }
 
@@ -51,7 +58,7 @@ export default {
           'Cache-Control': PUBLIC_BROWSER_CACHE_CONTROL,
           'CDN-Cache-Control': PUBLIC_EDGE_CACHE_CONTROL,
           'X-DPG-Cache': 'HIT',
-          'X-Robots-Tag': 'noindex, nofollow',
+          'X-Robots-Tag': PUBLIC_PREVIEW_ROBOTS_HEADER,
         })
       }
     }
@@ -62,7 +69,7 @@ export default {
         ...sourceIdentityHeader,
         'Cache-Control': PRIVATE_CACHE_CONTROL,
         'X-DPG-Cache': 'BYPASS',
-        'X-Robots-Tag': 'noindex, nofollow',
+        'X-Robots-Tag': PUBLIC_PREVIEW_ROBOTS_HEADER,
       })
     }
 
@@ -70,7 +77,7 @@ export default {
       ...sourceIdentityHeader,
       'Cache-Control': PUBLIC_EDGE_CACHE_CONTROL,
       'X-DPG-Cache': 'STORED',
-      'X-Robots-Tag': 'noindex, nofollow',
+      'X-Robots-Tag': PUBLIC_PREVIEW_ROBOTS_HEADER,
     })
     context.waitUntil(workerCache!.put(cacheKey, stored))
 
@@ -79,7 +86,7 @@ export default {
       'Cache-Control': PUBLIC_BROWSER_CACHE_CONTROL,
       'CDN-Cache-Control': PUBLIC_EDGE_CACHE_CONTROL,
       'X-DPG-Cache': 'MISS',
-      'X-Robots-Tag': 'noindex, nofollow',
+      'X-Robots-Tag': PUBLIC_PREVIEW_ROBOTS_HEADER,
     })
   },
 }

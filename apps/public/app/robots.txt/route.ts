@@ -1,4 +1,5 @@
 import { getPublicAppEnvironment } from '../../src/config/env'
+import { PUBLIC_PREVIEW_ROBOTS_HEADER } from '../../src/worker-policy'
 
 export const runtime = 'edge'
 
@@ -15,7 +16,7 @@ export function GET() {
         : 'public, max-age=0, s-maxage=300, must-revalidate',
       'Content-Type': 'text/plain; charset=utf-8',
       ...(appEnvironment.previewNoindex
-        ? { 'X-Robots-Tag': 'noindex, nofollow' }
+        ? { 'X-Robots-Tag': PUBLIC_PREVIEW_ROBOTS_HEADER }
         : {}),
     },
   })

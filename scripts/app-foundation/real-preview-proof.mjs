@@ -6,6 +6,7 @@ const PREVIEW_ALIAS = 'pr-138'
 const BROWSER_CACHE_CONTROL = 'public, max-age=0, must-revalidate'
 const EDGE_CACHE_CONTROL = 'public, max-age=300, must-revalidate'
 const PRIVATE_CACHE_CONTROL = 'private, no-store'
+const PREVIEW_ROBOTS_HEADER = 'noindex, nofollow'
 
 function parseArgs(argv) {
   const args = {}
@@ -49,6 +50,12 @@ function assertSource(response, sourceCommit, label) {
   }
 }
 
+function assertPreviewRobots(response) {
+  if (header(response, 'X-Robots-Tag').toLowerCase() !== PREVIEW_ROBOTS_HEADER) {
+    throw new Error('LEO563_REAL_PREVIEW_X_ROBOTS_FAILED')
+  }
+}
+
 async function request(fetchImpl, url, init = {}) {
   return fetchImpl(url, { ...init, redirect: 'error' })
 }
@@ -63,7 +70,7 @@ export async function verifyRealPreview({ baseUrl, sourceSha, fetchImpl = fetch,
   if (header(first, 'X-DPG-Cache') !== 'MISS') throw new Error('LEO563_REAL_PREVIEW_FIRST_CACHE_FAILED')
   if (header(first, 'Cache-Control') !== BROWSER_CACHE_CONTROL) throw new Error('LEO563_REAL_PREVIEW_BROWSER_CACHE_FAILED')
   if (header(first, 'CDN-Cache-Control') !== EDGE_CACHE_CONTROL) throw new Error('LEO563_REAL_PREVIEW_EDGE_CACHE_FAILED')
-  if (header(first, 'X-Robots-Tag').toLowerCase() !== 'noindex, nofollow') throw new Error('LEO563_REAL_PREVIEW_X_ROBOTS_FAILED')
+  assertPreviewRobots(first)
   if (!/<meta[^>]+name=["']robots["'][^>]+content=["'][^"']*noindex[^"']*nofollow/i.test(html)) {
     throw new Error('LEO563_REAL_PREVIEW_HTML_NOINDEX_FAILED')
   }
@@ -86,18 +93,21 @@ export async function verifyRealPreview({ baseUrl, sourceSha, fetchImpl = fetch,
   if (hit.status !== 200 || header(hit, 'CDN-Cache-Control') !== EDGE_CACHE_CONTROL) {
     throw new Error('LEO563_REAL_PREVIEW_CACHE_HIT_POLICY_FAILED')
   }
+  assertPreviewRobots(hit)
   assertSource(hit, sourceCommit, 'root-hit')
 
   const query = await request(fetchImpl, new URL('/?leo563=1', previewUrl))
   if (query.status !== 200 || header(query, 'X-DPG-Cache') !== 'BYPASS' || header(query, 'Cache-Control') !== PRIVATE_CACHE_CONTROL) {
     throw new Error('LEO563_REAL_PREVIEW_QUERY_BYPASS_FAILED')
   }
+  assertPreviewRobots(query)
   assertSource(query, sourceCommit, 'query')
 
   const cookie = await request(fetchImpl, previewUrl, { headers: { Cookie: 'leo563-preview=1' } })
   if (cookie.status !== 200 || header(cookie, 'X-DPG-Cache') !== 'BYPASS' || header(cookie, 'Cache-Control') !== PRIVATE_CACHE_CONTROL) {
     throw new Error('LEO563_REAL_PREVIEW_COOKIE_BYPASS_FAILED')
   }
+  assertPreviewRobots(cookie)
   assertSource(cookie, sourceCommit, 'cookie')
 
   const health = await request(fetchImpl, new URL('/api/health', previewUrl))
@@ -109,6 +119,7 @@ export async function verifyRealPreview({ baseUrl, sourceSha, fetchImpl = fetch,
     header(health, 'X-DPG-Cache') !== 'BYPASS' ||
     header(health, 'Cache-Control') !== PRIVATE_CACHE_CONTROL
   ) throw new Error('LEO563_REAL_PREVIEW_HEALTH_FAILED')
+  assertPreviewRobots(health)
   assertSource(health, sourceCommit, 'health')
 
   const robots = await request(fetchImpl, new URL('/robots.txt', previewUrl))
@@ -116,9 +127,9 @@ export async function verifyRealPreview({ baseUrl, sourceSha, fetchImpl = fetch,
   if (
     robots.status !== 200 ||
     !/^User-agent: \*\nDisallow: \/\n$/m.test(robotsBody) ||
-    header(robots, 'X-Robots-Tag').toLowerCase() !== 'noindex, nofollow' ||
     header(robots, 'Cache-Control') !== PRIVATE_CACHE_CONTROL
   ) throw new Error('LEO563_REAL_PREVIEW_ROBOTS_FAILED')
+  assertPreviewRobots(robots)
   assertSource(robots, sourceCommit, 'robots')
 
   return {
