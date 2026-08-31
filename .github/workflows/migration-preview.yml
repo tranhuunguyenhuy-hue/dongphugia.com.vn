@@ -14,9 +14,18 @@ on:
         description: Exact 40-character PR #138 head SHA approved for the Preview upload
         required: false
         type: string
+      managed_preview_run_id:
+        description: Exact prior LEO-563 workflow run containing the managed Preview evidence artifact
+        required: false
+        type: string
+      managed_preview_source_sha:
+        description: Exact source SHA of the prior LEO-563 managed Preview evidence artifact
+        required: false
+        type: string
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: migration-preview-${{ github.event.pull_request.number || github.ref }}
@@ -34,6 +43,8 @@ jobs:
       preview_required: ${{ steps.detect.outputs.preview_required }}
       owner_approved_upload: ${{ steps.detect.outputs.owner_approved_upload }}
       pull_request_number: ${{ steps.detect.outputs.pull_request_number }}
+      managed_preview_run_id: ${{ steps.detect.outputs.managed_preview_run_id }}
+      managed_preview_source_sha: ${{ steps.detect.outputs.managed_preview_source_sha }}
     steps:
       - name: Checkout the complete candidate history
         uses: actions/checkout@v4
@@ -50,6 +61,8 @@ jobs:
           GITHUB_REF_VALUE: ${{ github.ref }}
           MANUAL_UPLOAD: ${{ inputs.publish_leo563_public_preview || false }}
           APPROVED_SOURCE_SHA: ${{ inputs.approved_source_sha || '' }}
+          MANAGED_PREVIEW_RUN_ID: ${{ inputs.managed_preview_run_id || '' }}
+          MANAGED_PREVIEW_SOURCE_SHA: ${{ inputs.managed_preview_source_sha || '' }}
           REPOSITORY: ${{ github.repository }}
           GH_TOKEN: ${{ github.token }}
         shell: bash
@@ -60,6 +73,10 @@ jobs:
             [[ "$APPROVED_SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]
             test "$GITHUB_REF_VALUE" = 'refs/heads/codex/leo-563-public-admin-ci-foundation'
             test "$SOURCE_SHA" = "$APPROVED_SOURCE_SHA"
+            if [[ -n "$MANAGED_PREVIEW_RUN_ID" || -n "$MANAGED_PREVIEW_SOURCE_SHA" ]]; then
+              [[ "$MANAGED_PREVIEW_RUN_ID" =~ ^[0-9]+$ ]]
+              [[ "$MANAGED_PREVIEW_SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]
+            fi
             pr_json="$(gh api "repos/$REPOSITORY/pulls/138")"
             test "$(jq -r '.state' <<< "$pr_json")" = 'open'
             test "$(jq -r '.base.ref' <<< "$pr_json")" = 'main'
@@ -72,6 +89,8 @@ jobs:
               echo 'preview_required=true'
               echo 'owner_approved_upload=true'
               echo 'pull_request_number=138'
+              echo "managed_preview_run_id=$MANAGED_PREVIEW_RUN_ID"
+              echo "managed_preview_source_sha=$MANAGED_PREVIEW_SOURCE_SHA"
               echo 'reason=OWNER_APPROVED_EXACT_PR_138_PREVIEW_UPLOAD'
             } >> "$GITHUB_OUTPUT"
             echo 'LEO563_REPO_CODE_GATE status=OWNER_APPROVED_EXACT_PR_138_PREVIEW_UPLOAD'
@@ -85,6 +104,8 @@ jobs:
               echo 'preview_required=false'
               echo 'owner_approved_upload=false'
               echo 'pull_request_number=0'
+              echo 'managed_preview_run_id='
+              echo 'managed_preview_source_sha='
               echo 'reason=MANUAL_RUN_REQUIRES_EXACT_PR_DIFF'
             } >> "$GITHUB_OUTPUT"
             echo 'LEO563_REPO_CODE_GATE status=SKIPPED_MANUAL_RUN'
@@ -100,6 +121,8 @@ jobs:
             echo 'reason=EXACT_PR_HEAD_DIFF'
             echo 'owner_approved_upload=false'
             echo 'pull_request_number=${{ github.event.pull_request.number }}'
+            echo 'managed_preview_run_id='
+            echo 'managed_preview_source_sha='
           } >> "$GITHUB_OUTPUT"
 
   required-ci:
@@ -503,6 +526,7 @@ jobs:
       WORKFLOW_RUN_ID: ${{ github.run_id }}
       ARTIFACT_ROOT: ${{ github.workspace }}/.artifacts/dongphugia-app-preview-download
       EVIDENCE_DIR: ${{ github.workspace }}/.artifacts/leo563-public-preview-evidence
+      MANAGED_EVIDENCE_ROOT: ${{ github.workspace }}/.artifacts/leo563-prior-managed-preview-evidence
       WRANGLER_BIN: ${{ github.workspace }}/apps/public/node_modules/wrangler/bin/wrangler.js
     steps:
       - name: Checkout the exact Owner-approved PR-head revision
@@ -527,6 +551,16 @@ jobs:
         with:
           name: dongphugia-app-preview-${{ needs.repo-code-gate.outputs.source_sha }}
           path: ${{ env.ARTIFACT_ROOT }}
+
+      - name: Download the exact prior LEO-563 Preview evidence for managed-state preflight
+        if: ${{ needs.repo-code-gate.outputs.managed_preview_run_id != '' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: leo563-real-public-preview-${{ needs.repo-code-gate.outputs.managed_preview_source_sha }}
+          path: ${{ env.MANAGED_EVIDENCE_ROOT }}
+          run-id: ${{ needs.repo-code-gate.outputs.managed_preview_run_id }}
+          repository: ${{ github.repository }}
+          github-token: ${{ github.token }}
 
       - name: Re-verify the complete candidate identity before any Cloudflare mutation
         run: >-
@@ -557,15 +591,32 @@ jobs:
             --config wrangler.preview.json \
             --preview-alias pr-138
 
+      - name: Validate the exact prior LEO-563 evidence for managed Preview reuse
+        if: ${{ needs.repo-code-gate.outputs.managed_preview_run_id != '' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run app:preview-publication -- validate-managed-publication \
+            --publication-preflight "$MANAGED_EVIDENCE_ROOT/publication-preflight.json" \
+            --upload "$MANAGED_EVIDENCE_ROOT/upload-evidence.json" \
+            --resource-proof "$MANAGED_EVIDENCE_ROOT/resource-proof.json" \
+            --expected-workflow-run-id "${{ needs.repo-code-gate.outputs.managed_preview_run_id }}" \
+            --output "$EVIDENCE_DIR/managed-publication-proof.json"
+
       - name: Inspect the current Worker state before publication
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_LEO563_PREVIEW_TOKEN }}
-        run: >-
-          npm run app:preview-publication -- inspect-resource-state
-          --output "$EVIDENCE_DIR/remote-preflight.json"
+        shell: bash
+        run: |
+          set -euo pipefail
+          state_args=(--output "$EVIDENCE_DIR/remote-preflight.json")
+          if [[ -f "$EVIDENCE_DIR/managed-publication-proof.json" ]]; then
+            state_args+=(--managed-publication-proof "$EVIDENCE_DIR/managed-publication-proof.json")
+          fi
+          npm run app:preview-publication -- inspect-resource-state "${state_args[@]}"
 
-      - name: Bootstrap the absent Worker or reconcile the verified incomplete Worker
+      - name: Bootstrap absent, reconcile incomplete, or reuse managed active Preview
         id: bootstrap_write
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -595,6 +646,12 @@ jobs:
               test "$(jq -r '.workerAbsent' "$EVIDENCE_DIR/remote-preflight.json")" = 'false'
               test "$(jq -r '.bootstrapRequired' "$EVIDENCE_DIR/remote-preflight.json")" = 'false'
               echo 'Verified empty Worker record found; bootstrap is skipped and immutable version upload will reconcile it.'
+              ;;
+            MANAGED_ACTIVE_PREVIEW)
+              test "$(jq -r '.workerAbsent' "$EVIDENCE_DIR/remote-preflight.json")" = 'false'
+              test "$(jq -r '.bootstrapRequired' "$EVIDENCE_DIR/remote-preflight.json")" = 'false'
+              test "$(jq -r '.activeDeployment' "$EVIDENCE_DIR/remote-preflight.json")" = 'true'
+              echo 'Verified managed active Preview found; bootstrap and deployment replacement are skipped and immutable version upload will preserve the active deployment.'
               ;;
             *)
               echo "Unexpected Worker preflight state: $remote_state" >&2
@@ -706,6 +763,7 @@ jobs:
           name: leo563-real-public-preview-${{ needs.repo-code-gate.outputs.source_sha }}
           path: |
             ${{ env.EVIDENCE_DIR }}/publication-preflight.json
+            ${{ env.EVIDENCE_DIR }}/managed-publication-proof.json
             ${{ env.EVIDENCE_DIR }}/remote-preflight.json
             ${{ env.EVIDENCE_DIR }}/upload-evidence.json
             ${{ env.EVIDENCE_DIR }}/resource-proof.json

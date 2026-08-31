@@ -11,6 +11,8 @@ const FREE_STATIC_ASSET_LIMIT = 20_000
 const STATIC_ASSET_FILE_LIMIT_BYTES = 25 * 1024 * 1024
 const PRODUCTION_HOST_PATTERN = /(^|[/:.])(?:www\.|admin\.)?dongphugia\.vn(?:[/:]|$)/i
 const SECRET_LIKE_PATTERN = /(SERVICE_ROLE|AUTH_ADMIN|ADMIN_SESSION|SECRET|PASSWORD|DATABASE_URL|DIRECT_URL|PRIVATE_KEY|CREDENTIAL|CLOUDFLARE_API_TOKEN|BUNNY_API_KEY)/i
+const VERSION_ID_PATTERN = /^[0-9a-f-]{32,64}$/i
+const SHA256_PATTERN = /^[0-9a-f]{64}$/i
 const ALLOWED_CONFIG_KEYS = new Set([
   'name',
   'compatibility_date',
@@ -331,23 +333,324 @@ function assertSafePublishedBindings(bindings) {
   }
 }
 
+function requireManagedVersionId(value, errorCode = 'LEO563_PREVIEW_MANAGED_EVIDENCE_VERSION_INVALID') {
+  if (typeof value !== 'string' || !VERSION_ID_PATTERN.test(value)) throw new Error(errorCode)
+  return value
+}
+
+function requireManagedSha256(value, errorCode = 'LEO563_PREVIEW_MANAGED_EVIDENCE_DIGEST_INVALID') {
+  if (typeof value !== 'string' || !SHA256_PATTERN.test(value)) throw new Error(errorCode)
+  return value
+}
+
+function requireManagedWorkersDevUrl(value, label) {
+  if (typeof value !== 'string') throw new Error(`LEO563_PREVIEW_MANAGED_EVIDENCE_${label}_URL_INVALID`)
+  try {
+    const url = new URL(value)
+    if (url.protocol !== 'https:' || !url.hostname.endsWith('.workers.dev') || url.pathname !== '/' || url.search || url.hash) {
+      throw new Error('invalid')
+    }
+  } catch {
+    throw new Error(`LEO563_PREVIEW_MANAGED_EVIDENCE_${label}_URL_INVALID`)
+  }
+  return value
+}
+
+function normalizeManagedDeployments(value, errorCode = 'LEO563_PREVIEW_MANAGED_EVIDENCE_DEPLOYMENT_INVALID') {
+  if (value === null) return null
+  if (!Array.isArray(value)) throw new Error(errorCode)
+  const deployments = value.map((deployment) => ({
+    id: deployment?.id,
+    strategy: deployment?.strategy,
+    versions: Array.isArray(deployment?.versions)
+      ? deployment.versions.map((version) => ({
+        version_id: version?.versionId ?? version?.version_id,
+        percentage: version?.percentage,
+      }))
+      : deployment?.versions,
+  }))
+  return collectRemoteDeployments({ deployments }, errorCode)
+}
+
+function normalizeManagedPublicationProof(proof) {
+  if (
+    !proof ||
+    proof.contract !== 'dongphugia:cloudflare-managed-preview-evidence:v1' ||
+    proof.workerName !== WORKER_NAME ||
+    typeof proof.sourceCommit !== 'string' ||
+    !/^[0-9a-f]{40}$/.test(proof.sourceCommit) ||
+    proof.pullRequest !== PULL_REQUEST ||
+    typeof proof.workflowRunId !== 'string' ||
+    !/^\d+$/.test(proof.workflowRunId) ||
+    proof.previewAlias !== PREVIEW_ALIAS ||
+    proof.workersDev !== false ||
+    proof.previewUrls !== true ||
+    !Array.isArray(proof.customDomains) || proof.customDomains.length !== 0 ||
+    !Array.isArray(proof.workerRoutes) || proof.workerRoutes.length !== 0 ||
+    proof.productionAssociation !== false
+  ) throw new Error('LEO563_PREVIEW_MANAGED_EVIDENCE_INVALID')
+
+  const workerVersionId = requireManagedVersionId(proof.workerVersionId)
+  const priorVersionIds = proof.priorVersionIds?.map((value) => requireManagedVersionId(value))
+  if (!Array.isArray(priorVersionIds) || priorVersionIds.length === 0 || !priorVersionIds.includes(workerVersionId)) {
+    throw new Error('LEO563_PREVIEW_MANAGED_EVIDENCE_VERSION_STATE_INVALID')
+  }
+  priorVersionIds.sort()
+
+  const priorDeployments = normalizeManagedDeployments(proof.priorDeployments)
+  if (priorDeployments !== null && priorDeployments.length === 0) {
+    throw new Error('LEO563_PREVIEW_MANAGED_EVIDENCE_DEPLOYMENT_STATE_INVALID')
+  }
+  const priorDeploymentIds = proof.priorDeploymentIds === null
+    ? null
+    : proof.priorDeploymentIds?.map((value) => requireManagedVersionId(value, 'LEO563_PREVIEW_MANAGED_EVIDENCE_DEPLOYMENT_ID_INVALID'))
+  if (priorDeploymentIds !== null && !Array.isArray(priorDeploymentIds)) {
+    throw new Error('LEO563_PREVIEW_MANAGED_EVIDENCE_DEPLOYMENT_ID_INVALID')
+  }
+  if (priorDeployments !== null && !sameJson(priorDeploymentIds, remoteDeploymentIds(priorDeployments))) {
+    throw new Error('LEO563_PREVIEW_MANAGED_EVIDENCE_DEPLOYMENT_ID_INVALID')
+  }
+  if (
+    priorDeployments === null && proof.deploymentIdentityBasis !== 'prior-version-evidence' ||
+    priorDeployments !== null && proof.deploymentIdentityBasis !== 'prior-resource-proof'
+  ) throw new Error('LEO563_PREVIEW_MANAGED_EVIDENCE_DEPLOYMENT_BASIS_INVALID')
+
+  const bindings = Array.isArray(proof.bindings)
+    ? proof.bindings.map((binding) => ({ name: binding?.name, type: binding?.type }))
+    : null
+  if (!bindings) throw new Error('LEO563_PREVIEW_MANAGED_EVIDENCE_BINDING_STATE_INVALID')
+  try {
+    assertSafePublishedBindings(bindings)
+  } catch {
+    throw new Error('LEO563_PREVIEW_MANAGED_EVIDENCE_BINDING_STATE_INVALID')
+  }
+
+  for (const field of ['publicArtifactSha256', 'workerArtifactSha256', 'staticAssetsSha256', 'previewConfigSha256']) {
+    requireManagedSha256(proof[field])
+  }
+
+  return {
+    contract: 'dongphugia:cloudflare-managed-preview-evidence:v1',
+    sourceCommit: proof.sourceCommit,
+    pullRequest: PULL_REQUEST,
+    workflowRunId: proof.workflowRunId,
+    workerName: WORKER_NAME,
+    previewAlias: PREVIEW_ALIAS,
+    workerVersionId,
+    workersDev: false,
+    previewUrls: true,
+    customDomains: [],
+    workerRoutes: [],
+    productionAssociation: false,
+    priorVersionIds,
+    priorDeployments,
+    priorDeploymentIds,
+    deploymentIdentityBasis: proof.deploymentIdentityBasis,
+    publicArtifactSha256: proof.publicArtifactSha256,
+    workerArtifactSha256: proof.workerArtifactSha256,
+    staticAssetsSha256: proof.staticAssetsSha256,
+    previewConfigSha256: proof.previewConfigSha256,
+    bindings,
+  }
+}
+
+export function validateManagedPublicationEvidence({ publicationPreflight, uploadEvidence, resourceProof, expectedWorkflowRunId = null }) {
+  if (
+    publicationPreflight?.contract !== 'dongphugia:cloudflare-preview-publication-preflight:v1' ||
+    uploadEvidence?.contract !== 'dongphugia:cloudflare-preview-upload:v1' ||
+    !['dongphugia:cloudflare-preview-resource-proof:v1', 'dongphugia:cloudflare-preview-resource-proof:v2'].includes(resourceProof?.contract)
+  ) throw new Error('LEO563_PREVIEW_MANAGED_EVIDENCE_CONTRACT_INVALID')
+
+  const sourceCommit = publicationPreflight.sourceCommit
+  if (
+    typeof sourceCommit !== 'string' ||
+    !/^[0-9a-f]{40}$/.test(sourceCommit) ||
+    uploadEvidence.sourceCommit !== sourceCommit ||
+    publicationPreflight.pullRequest !== PULL_REQUEST ||
+    uploadEvidence.pullRequest !== PULL_REQUEST ||
+    (expectedWorkflowRunId !== null && String(publicationPreflight.workflowRunId) !== String(expectedWorkflowRunId))
+  ) throw new Error('LEO563_PREVIEW_MANAGED_EVIDENCE_SOURCE_FAILED')
+
+  for (const evidence of [publicationPreflight, uploadEvidence, resourceProof]) {
+    if (evidence.workerName !== WORKER_NAME) throw new Error('LEO563_PREVIEW_MANAGED_EVIDENCE_WORKER_IDENTITY_FAILED')
+  }
+  if (
+    publicationPreflight.previewAlias !== PREVIEW_ALIAS ||
+    uploadEvidence.previewAlias !== PREVIEW_ALIAS ||
+    publicationPreflight.workersDev !== false ||
+    publicationPreflight.previewUrls !== true ||
+    uploadEvidence.productionDeployment !== 'not-performed' ||
+    uploadEvidence.productionDnsOrTraffic !== 'unchanged' ||
+    publicationPreflight.productionSupabase !== 'not-bound' ||
+    publicationPreflight.productionDnsOrTraffic !== 'unchanged-before-upload' ||
+    !Array.isArray(publicationPreflight.routes) || publicationPreflight.routes.length !== 0 ||
+    !Array.isArray(publicationPreflight.customDomains) || publicationPreflight.customDomains.length !== 0 ||
+    !Array.isArray(resourceProof.customDomains) || resourceProof.customDomains.length !== 0 ||
+    !Array.isArray(resourceProof.workerRoutes) || resourceProof.workerRoutes.length !== 0 ||
+    resourceProof.workersDev !== false ||
+    resourceProof.previewUrls !== true ||
+    resourceProof.productionAssociation !== false
+  ) throw new Error('LEO563_PREVIEW_MANAGED_EVIDENCE_ISOLATION_FAILED')
+
+  const workerVersionId = requireManagedVersionId(uploadEvidence.workerVersionId)
+  if (resourceProof.workerVersionId !== workerVersionId) {
+    throw new Error('LEO563_PREVIEW_MANAGED_EVIDENCE_VERSION_IDENTITY_FAILED')
+  }
+  requireManagedWorkersDevUrl(uploadEvidence.previewUrl, 'PREVIEW')
+  requireManagedWorkersDevUrl(uploadEvidence.versionPreviewUrl, 'VERSION_PREVIEW')
+
+  const digestFields = ['publicArtifactSha256', 'workerArtifactSha256', 'staticAssetsSha256', 'previewConfigSha256']
+  for (const field of digestFields) {
+    const preflightDigest = requireManagedSha256(publicationPreflight[field])
+    const uploadDigest = requireManagedSha256(uploadEvidence[field])
+    if (preflightDigest !== uploadDigest) throw new Error('LEO563_PREVIEW_MANAGED_EVIDENCE_DIGEST_MISMATCH')
+  }
+
+  const bindings = Array.isArray(resourceProof.bindings)
+    ? resourceProof.bindings.map((binding) => ({ name: binding?.name, type: binding?.type }))
+    : null
+  if (!bindings) throw new Error('LEO563_PREVIEW_MANAGED_EVIDENCE_BINDING_STATE_INVALID')
+  try {
+    assertSafePublishedBindings(bindings)
+  } catch {
+    throw new Error('LEO563_PREVIEW_MANAGED_EVIDENCE_BINDING_STATE_INVALID')
+  }
+
+  let priorVersionIds = [workerVersionId]
+  let priorDeployments = null
+  let deploymentIdentityBasis = 'prior-version-evidence'
+  if (resourceProof.contract === 'dongphugia:cloudflare-preview-resource-proof:v2') {
+    priorVersionIds = collectRemoteVersionIds(
+      { items: resourceProof.versionIds?.map((id) => ({ id })) },
+      'LEO563_PREVIEW_MANAGED_EVIDENCE_VERSION_STATE_INVALID',
+    )
+    if (!priorVersionIds.includes(workerVersionId)) throw new Error('LEO563_PREVIEW_MANAGED_EVIDENCE_VERSION_IDENTITY_FAILED')
+    priorDeployments = normalizeManagedDeployments(
+      resourceProof.deployments,
+      'LEO563_PREVIEW_MANAGED_EVIDENCE_DEPLOYMENT_STATE_INVALID',
+    )
+    if (!priorDeployments?.length) throw new Error('LEO563_PREVIEW_MANAGED_EVIDENCE_DEPLOYMENT_STATE_INVALID')
+    if (!sameJson(resourceProof.deploymentIds, remoteDeploymentIds(priorDeployments))) {
+      throw new Error('LEO563_PREVIEW_MANAGED_EVIDENCE_DEPLOYMENT_ID_INVALID')
+    }
+    deploymentIdentityBasis = 'prior-resource-proof'
+  }
+
+  return normalizeManagedPublicationProof({
+    contract: 'dongphugia:cloudflare-managed-preview-evidence:v1',
+    sourceCommit,
+    pullRequest: PULL_REQUEST,
+    workflowRunId: String(publicationPreflight.workflowRunId),
+    workerName: WORKER_NAME,
+    previewAlias: PREVIEW_ALIAS,
+    workerVersionId,
+    workersDev: false,
+    previewUrls: true,
+    customDomains: [],
+    workerRoutes: [],
+    productionAssociation: false,
+    priorVersionIds,
+    priorDeployments,
+    priorDeploymentIds: priorDeployments ? remoteDeploymentIds(priorDeployments) : null,
+    deploymentIdentityBasis,
+    publicArtifactSha256: publicationPreflight.publicArtifactSha256,
+    workerArtifactSha256: publicationPreflight.workerArtifactSha256,
+    staticAssetsSha256: publicationPreflight.staticAssetsSha256,
+    previewConfigSha256: publicationPreflight.previewConfigSha256,
+    bindings,
+  })
+}
+
+function assertManagedActiveState({ versionIds, deploymentRecords, managedPublication }) {
+  if (!sameJson(versionIds, managedPublication.priorVersionIds)) {
+    throw new Error('LEO563_PREVIEW_MANAGED_VERSION_STATE_UNEXPECTED')
+  }
+  if (managedPublication.priorDeployments !== null) {
+    if (!sameJson(deploymentRecords, managedPublication.priorDeployments)) {
+      throw new Error('LEO563_PREVIEW_MANAGED_DEPLOYMENT_STATE_UNEXPECTED')
+    }
+    return
+  }
+
+  if (deploymentRecords.length !== 1) {
+    throw new Error('LEO563_PREVIEW_MANAGED_DEPLOYMENT_STATE_UNEXPECTED')
+  }
+  const deployment = deploymentRecords[0]
+  if (
+    deployment.versions.length !== 1 ||
+    deployment.versions[0].versionId !== managedPublication.workerVersionId ||
+    deployment.versions[0].percentage !== 100
+  ) throw new Error('LEO563_PREVIEW_MANAGED_DEPLOYMENT_STATE_UNEXPECTED')
+}
+
 function normalizePrePublicationState(state) {
-  if (!state || state.workerName !== WORKER_NAME || !['ABSENT', 'INCOMPLETE'].includes(state.state)) {
+  if (!state || state.workerName !== WORKER_NAME || !['ABSENT', 'INCOMPLETE', 'MANAGED_ACTIVE_PREVIEW'].includes(state.state)) {
     throw new Error('LEO563_PREVIEW_PUBLICATION_BASELINE_UNKNOWN')
   }
   if (
     state.reconciliationAllowed !== true ||
     state.workerAbsent !== (state.state === 'ABSENT') ||
     state.bootstrapRequired !== (state.state === 'ABSENT') ||
-    state.activeDeployment !== false ||
-    state.versionCount !== 0 ||
     !Array.isArray(state.customDomains) || state.customDomains.length !== 0 ||
     !Array.isArray(state.workerRoutes) || state.workerRoutes.length !== 0 ||
-    !Array.isArray(state.bindings) || state.bindings.length !== 0 ||
-    !Array.isArray(state.versionIds) || state.versionIds.length !== 0 ||
-    !Array.isArray(state.deployments) || state.deployments.length !== 0
+    !Array.isArray(state.bindings) ||
+    !Array.isArray(state.versionIds) ||
+    !Array.isArray(state.deployments) ||
+    !Array.isArray(state.deploymentIds) ||
+    state.versionCount !== state.versionIds.length ||
+    !sameJson(state.deploymentIds, remoteDeploymentIds(state.deployments))
   ) throw new Error('LEO563_PREVIEW_PUBLICATION_BASELINE_UNSAFE')
-  return { state: state.state, versionIds: [], deployments: [] }
+
+  if (state.state === 'MANAGED_ACTIVE_PREVIEW') {
+    const managedPublication = normalizeManagedPublicationProof(state.managedPublication)
+    if (
+      state.workerAbsent !== false ||
+      state.bootstrapRequired !== false ||
+      state.activeDeployment !== true ||
+      state.versionIds.length === 0 ||
+      state.deployments.length === 0
+    ) throw new Error('LEO563_PREVIEW_PUBLICATION_BASELINE_UNSAFE')
+    try {
+      assertSafePublishedBindings(state.bindings)
+      assertManagedActiveState({
+        versionIds: [...state.versionIds].sort(),
+        deploymentRecords: state.deployments,
+        managedPublication,
+      })
+    } catch (error) {
+      if (error instanceof Error && error.message.startsWith('LEO563_PREVIEW_MANAGED_')) throw error
+      throw new Error('LEO563_PREVIEW_PUBLICATION_BASELINE_UNSAFE')
+    }
+    return {
+      state: state.state,
+      versionIds: [...state.versionIds].sort(),
+      deployments: state.deployments,
+      deploymentIds: [...state.deploymentIds],
+      activeDeployment: true,
+      bindings: state.bindings,
+      customDomains: [...state.customDomains],
+      workerRoutes: [...state.workerRoutes],
+      managedPublication,
+    }
+  }
+
+  if (
+    state.activeDeployment !== false ||
+    state.versionIds.length !== 0 ||
+    state.deployments.length !== 0 ||
+    state.deploymentIds.length !== 0 ||
+    state.bindings.length !== 0
+  ) throw new Error('LEO563_PREVIEW_PUBLICATION_BASELINE_UNSAFE')
+  return {
+    state: state.state,
+    versionIds: [],
+    deployments: [],
+    deploymentIds: [],
+    activeDeployment: false,
+    bindings: [],
+    customDomains: [...state.customDomains],
+    workerRoutes: [...state.workerRoutes],
+  }
 }
 
 function normalizeExpectedPublication(proof) {
@@ -386,7 +689,13 @@ function normalizeExpectedPublication(proof) {
     throw new Error('LEO563_PREVIEW_POST_FAILURE_EXPECTED_PROOF_INVALID')
   }
   const baseline = normalizePrePublicationState(proof.publicationBaseline)
-  if (baseline.state === 'INCOMPLETE' && normalizedDeployments.length !== 0) {
+  if (baseline.state === 'MANAGED_ACTIVE_PREVIEW') {
+    const expectedVersionIds = [...new Set([...baseline.versionIds, proof.workerVersionId])].sort()
+    if (!sameJson(versionIds, expectedVersionIds)) throw new Error('LEO563_PREVIEW_POST_FAILURE_EXPECTED_PROOF_INVALID')
+    if (!sameJson(normalizedDeployments, baseline.deployments)) {
+      throw new Error('LEO563_PREVIEW_POST_FAILURE_EXPECTED_PROOF_INVALID')
+    }
+  } else if (baseline.state === 'INCOMPLETE' && normalizedDeployments.length !== 0) {
     throw new Error('LEO563_PREVIEW_POST_FAILURE_EXPECTED_PROOF_INVALID')
   }
   if (
@@ -396,15 +705,23 @@ function normalizeExpectedPublication(proof) {
     !Array.isArray(proof.workerRoutes) || proof.workerRoutes.length !== 0 ||
     proof.productionAssociation !== false
   ) throw new Error('LEO563_PREVIEW_POST_FAILURE_EXPECTED_PROOF_INVALID')
-  return { workerVersionId: proof.workerVersionId, versionIds, deployments: normalizedDeployments }
+  const bootstrapVersionId = proof.bootstrapVersionId === undefined || proof.bootstrapVersionId === null
+    ? null
+    : requireManagedVersionId(proof.bootstrapVersionId, 'LEO563_PREVIEW_POST_FAILURE_EXPECTED_PROOF_INVALID')
+  if (bootstrapVersionId && baseline.state !== 'ABSENT') {
+    throw new Error('LEO563_PREVIEW_POST_FAILURE_EXPECTED_PROOF_INVALID')
+  }
+  return { workerVersionId: proof.workerVersionId, versionIds, deployments: normalizedDeployments, baseline, bootstrapVersionId }
 }
 
 function sameJson(left, right) {
   return JSON.stringify(left) === JSON.stringify(right)
 }
 
-export async function inspectRemoteResourceState({ accountId, apiToken, expectedPublication = null, fetchImpl = fetch }) {
+export async function inspectRemoteResourceState({ accountId, apiToken, expectedPublication = null, managedPublication = null, fetchImpl = fetch }) {
   if (!accountId || !apiToken) throw new Error('LEO563_PREVIEW_REMOTE_PREFLIGHT_CREDENTIALS_MISSING')
+  if (expectedPublication && managedPublication) throw new Error('LEO563_PREVIEW_REMOTE_PREFLIGHT_MODES_CONFLICT')
+  const managed = managedPublication ? normalizeManagedPublicationProof(managedPublication) : null
   const calls = []
   const headers = { Authorization: `Bearer ${apiToken}`, 'Content-Type': 'application/json' }
   async function get(label, pathname) {
@@ -431,6 +748,7 @@ export async function inspectRemoteResourceState({ accountId, apiToken, expected
 
   if (!worker) {
     if (expectedPublication) throw new Error('LEO563_PREVIEW_POST_FAILURE_WORKER_MISSING')
+    if (managed) throw new Error('LEO563_PREVIEW_MANAGED_WORKER_MISSING')
     return {
       contract: 'dongphugia:cloudflare-preview-remote-preflight:v2',
       workerName: WORKER_NAME,
@@ -468,6 +786,43 @@ export async function inspectRemoteResourceState({ accountId, apiToken, expected
   const deploymentRecords = collectRemoteDeployments(deployments)
 
   if (workerRoutes.length) throw new Error('LEO563_PREVIEW_REMOTE_ROUTE_STATE_FORBIDDEN')
+  if (managed) {
+    if (subdomain.enabled !== false || subdomain.previews_enabled !== true) {
+      throw new Error('LEO563_PREVIEW_MANAGED_SUBDOMAIN_STATE_UNEXPECTED')
+    }
+    try {
+      assertSafePublishedBindings(bindings)
+    } catch {
+      throw new Error('LEO563_PREVIEW_MANAGED_BINDING_STATE_UNEXPECTED')
+    }
+    assertManagedActiveState({
+      versionIds,
+      deploymentRecords,
+      managedPublication: managed,
+    })
+    return {
+      contract: 'dongphugia:cloudflare-preview-remote-preflight:v2',
+      workerName: WORKER_NAME,
+      state: 'MANAGED_ACTIVE_PREVIEW',
+      workerAbsent: false,
+      bootstrapRequired: false,
+      reconciliationAllowed: true,
+      activeDeployment: true,
+      versionCount: versionIds.length,
+      versionIds,
+      deployments: deploymentRecords,
+      deploymentIds: remoteDeploymentIds(deploymentRecords),
+      customDomains,
+      workerRoutes,
+      bindings,
+      subdomain: {
+        workersDevEnabled: subdomain.enabled,
+        previewUrlsEnabled: subdomain.previews_enabled,
+      },
+      managedPublication: managed,
+      calls,
+    }
+  }
   if (!expectedPublication) {
     if (deploymentRecords.length) throw new Error('LEO563_PREVIEW_REMOTE_ACTIVE_DEPLOYMENT_FORBIDDEN')
     if (versionIds.length) throw new Error('LEO563_PREVIEW_REMOTE_VERSION_STATE_FORBIDDEN')
@@ -541,7 +896,7 @@ export async function inspectPublishedResource({ accountId, apiToken, versionId,
     throw new Error('LEO563_PREVIEW_INSPECTION_BOOTSTRAP_VERSION_INVALID')
   }
   const baseline = beforeState ? normalizePrePublicationState(beforeState) : null
-  if (baseline?.state === 'INCOMPLETE' && bootstrapVersionId) {
+  if (baseline && baseline.state !== 'ABSENT' && bootstrapVersionId) {
     throw new Error('LEO563_PREVIEW_INSPECTION_UNEXPECTED_BOOTSTRAP_VERSION')
   }
   const calls = []
@@ -589,12 +944,20 @@ export async function inspectPublishedResource({ accountId, apiToken, versionId,
   assertSafePublishedBindings(bindings)
   const versionIds = collectRemoteVersionIds(versions, 'LEO563_PREVIEW_INSPECTION_VERSION_STATE_UNKNOWN')
   const deploymentRecords = collectRemoteDeployments(deployments, 'LEO563_PREVIEW_INSPECTION_DEPLOYMENT_STATE_UNKNOWN')
-  const allowedVersionIds = new Set([versionId, ...(bootstrapVersionId ? [bootstrapVersionId] : [])])
-  if (!versionIds.includes(versionId) || versionIds.some((value) => !allowedVersionIds.has(value))) {
+  const allowedVersionIds = new Set([
+    versionId,
+    ...(bootstrapVersionId ? [bootstrapVersionId] : []),
+    ...(baseline?.versionIds ?? []),
+  ])
+  const expectedVersionIds = [...allowedVersionIds].sort()
+  if (!sameJson(versionIds, expectedVersionIds)) {
     throw new Error('LEO563_PREVIEW_INSPECTION_VERSION_STATE_UNEXPECTED')
   }
   if (deploymentRecords.some((deployment) => deployment.versions.some((entry) => !allowedVersionIds.has(entry.versionId)))) {
     throw new Error('LEO563_PREVIEW_INSPECTION_DEPLOYMENT_STATE_UNEXPECTED')
+  }
+  if (baseline?.state === 'MANAGED_ACTIVE_PREVIEW' && !sameJson(deploymentRecords, baseline.deployments)) {
+    throw new Error('LEO563_PREVIEW_INSPECTION_MANAGED_DEPLOYMENT_CHANGED')
   }
   if (baseline?.state === 'INCOMPLETE' && deploymentRecords.length !== 0) {
     throw new Error('LEO563_PREVIEW_INSPECTION_ACTIVE_DEPLOYMENT_UNEXPECTED')
@@ -616,6 +979,7 @@ export async function inspectPublishedResource({ accountId, apiToken, versionId,
     versionIds,
     deployments: deploymentRecords,
     deploymentIds: remoteDeploymentIds(deploymentRecords),
+    bootstrapVersionId,
     publicationBaseline: baseline
       ? {
         workerName: WORKER_NAME,
@@ -623,13 +987,15 @@ export async function inspectPublishedResource({ accountId, apiToken, versionId,
         workerAbsent: baseline.state === 'ABSENT',
         bootstrapRequired: baseline.state === 'ABSENT',
         reconciliationAllowed: true,
-        activeDeployment: false,
-        versionCount: 0,
+        activeDeployment: baseline.activeDeployment,
+        versionCount: baseline.versionIds.length,
         versionIds: baseline.versionIds,
         deployments: baseline.deployments,
-        customDomains: [],
-        workerRoutes: [],
-        bindings: [],
+        deploymentIds: baseline.deploymentIds,
+        customDomains: baseline.customDomains,
+        workerRoutes: baseline.workerRoutes,
+        bindings: baseline.bindings,
+        ...(baseline.managedPublication ? { managedPublication: baseline.managedPublication } : {}),
       }
       : null,
     productionAssociation: false,
@@ -672,6 +1038,22 @@ async function main() {
     process.stdout.write(`${JSON.stringify({ workerVersionId: evidence.workerVersionId, previewUrl: evidence.previewUrl })}\n`)
     return
   }
+  if (mode === 'validate-managed-publication') {
+    const evidence = validateManagedPublicationEvidence({
+      publicationPreflight: JSON.parse(await readFile(path.resolve(args['publication-preflight'] || ''), 'utf8')),
+      uploadEvidence: JSON.parse(await readFile(path.resolve(args.upload || ''), 'utf8')),
+      resourceProof: JSON.parse(await readFile(path.resolve(args['resource-proof'] || ''), 'utf8')),
+      expectedWorkflowRunId: args['expected-workflow-run-id'] ?? null,
+    })
+    await writeFile(path.resolve(args.output || ''), `${JSON.stringify(evidence, null, 2)}\n`, { mode: 0o600 })
+    process.stdout.write(JSON.stringify({
+      workerName: evidence.workerName,
+      sourceCommit: evidence.sourceCommit,
+      workerVersionId: evidence.workerVersionId,
+      deploymentIdentityBasis: evidence.deploymentIdentityBasis,
+    }) + '\n')
+    return
+  }
   if (mode === 'inspect-resource') {
     const upload = JSON.parse(await readFile(path.resolve(args.upload || ''), 'utf8'))
     const beforeState = JSON.parse(await readFile(path.resolve(args.preflight || ''), 'utf8'))
@@ -695,6 +1077,9 @@ async function main() {
     const expectedProof = args['expected-resource-proof']
       ? JSON.parse(await readFile(path.resolve(args['expected-resource-proof']), 'utf8'))
       : null
+    const managedPublication = args['managed-publication-proof']
+      ? JSON.parse(await readFile(path.resolve(args['managed-publication-proof']), 'utf8'))
+      : null
     if (expectedProof && args.upload) {
       const upload = JSON.parse(await readFile(path.resolve(args.upload), 'utf8'))
       if (upload.workerName !== WORKER_NAME || upload.workerVersionId !== expectedProof.workerVersionId) {
@@ -705,6 +1090,7 @@ async function main() {
       accountId: process.env.CLOUDFLARE_ACCOUNT_ID,
       apiToken: process.env.CLOUDFLARE_API_TOKEN,
       expectedPublication: expectedProof,
+      managedPublication,
     })
     await writeFile(path.resolve(args.output || ''), `${JSON.stringify(evidence, null, 2)}\n`, { mode: 0o600 })
     process.stdout.write(`${JSON.stringify({ workerName: evidence.workerName, state: evidence.state, reconciliationAllowed: evidence.reconciliationAllowed, customDomains: evidence.customDomains })}\n`)

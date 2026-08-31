@@ -55,9 +55,9 @@ describe('migration PR CI and Preview workflow contract', () => {
     expect(candidateUpload).toContain('include-hidden-files: true')
   })
 
-  it('bootstraps only an absent Worker and reconciles the verified incomplete state before version upload', () => {
+  it('bootstraps only an absent Worker, reconciles incomplete state, or reuses a verified managed Preview before version upload', () => {
     const stateCheckStart = workflow.indexOf('name: Inspect the current Worker state before publication')
-    const bootstrapStart = workflow.indexOf('name: Bootstrap the absent Worker or reconcile the verified incomplete Worker')
+    const bootstrapStart = workflow.indexOf('name: Bootstrap absent, reconcile incomplete, or reuse managed active Preview')
     const versionUploadStart = workflow.indexOf('name: Upload one immutable Worker version with the PR #138 Preview alias')
     const stateCheckEnd = workflow.indexOf('\n\n      - name:', stateCheckStart)
     const stateCheckStep = workflow.slice(stateCheckStart, stateCheckEnd)
@@ -71,6 +71,7 @@ describe('migration PR CI and Preview workflow contract', () => {
     for (const marker of [
       'ABSENT',
       'INCOMPLETE',
+      'MANAGED_ACTIVE_PREVIEW',
       'reconciliationAllowed',
       'node "$WRANGLER_BIN" deploy',
       '--strict',
@@ -81,7 +82,7 @@ describe('migration PR CI and Preview workflow contract', () => {
   })
 
   it('records a write attempt and distinguishes pre-publication from current-attempt failure inspection', () => {
-    const bootstrapStart = workflow.indexOf('name: Bootstrap the absent Worker or reconcile the verified incomplete Worker')
+    const bootstrapStart = workflow.indexOf('name: Bootstrap absent, reconcile incomplete, or reuse managed active Preview')
     const versionUploadStart = workflow.indexOf('name: Upload one immutable Worker version with the PR #138 Preview alias')
     const postFailureStart = workflow.indexOf('name: Inspect the Worker state after a failed publication or runtime gate')
     const postFailureEnd = workflow.indexOf('\n\n      - name:', postFailureStart)
@@ -104,6 +105,23 @@ describe('migration PR CI and Preview workflow contract', () => {
     expect(workflow).toContain('${{ env.EVIDENCE_DIR }}/post-failure-remote-state.json')
     expect(workflow).toContain('--preflight "$EVIDENCE_DIR/remote-preflight.json"')
     expect(workflow).toContain('--bootstrap-log "$EVIDENCE_DIR/bootstrap-deploy.log"')
+  })
+
+  it('requires an exact prior LEO-563 evidence artifact before managed Preview reuse', () => {
+    for (const marker of [
+      'managed_preview_run_id',
+      'managed_preview_source_sha',
+      'actions: read',
+      'Download the exact prior LEO-563 Preview evidence for managed-state preflight',
+      'run-id: ${{ needs.repo-code-gate.outputs.managed_preview_run_id }}',
+      'name: leo563-real-public-preview-${{ needs.repo-code-gate.outputs.managed_preview_source_sha }}',
+      'validate-managed-publication',
+      '--managed-publication-proof "$EVIDENCE_DIR/managed-publication-proof.json"',
+    ]) expect(workflow).toContain(marker)
+
+    expect(workflow).toContain('MANAGED_PREVIEW_RUN_ID')
+    expect(workflow).toContain('MANAGED_PREVIEW_SOURCE_SHA')
+    expect(workflow).toContain('managed-publication-proof.json')
   })
 
   it('skips unrelated changes before the candidate and external Preview path', () => {
@@ -166,6 +184,9 @@ describe('migration PR CI and Preview workflow contract', () => {
       "Object.hasOwn(config, 'limits')",
       'LEO563_PREVIEW_EXPLICIT_LIMITS_FORBIDDEN',
       'LEO563_PREVIEW_REMOTE_ACTIVE_DEPLOYMENT_FORBIDDEN',
+      'LEO563_PREVIEW_MANAGED_VERSION_STATE_UNEXPECTED',
+      'LEO563_PREVIEW_MANAGED_DEPLOYMENT_STATE_UNEXPECTED',
+      'LEO563_PREVIEW_MANAGED_EVIDENCE_SOURCE_FAILED',
       'LEO563_PREVIEW_POST_FAILURE_VERSION_STATE_UNEXPECTED',
       'LEO563_PREVIEW_POST_FAILURE_DEPLOYMENT_STATE_UNEXPECTED',
       'LEO563_PREVIEW_PRODUCTION_HOST_FORBIDDEN',

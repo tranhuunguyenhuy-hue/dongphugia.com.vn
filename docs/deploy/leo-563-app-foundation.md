@@ -135,16 +135,21 @@ the explicit approved 40-character source SHA, an open PR #138 targeting
 `main`, and an exact match to the current PR head. It then downloads the
 same-run candidate, recomputes its complete immutable identity, validates the
 Preview config allowlist and Workers Free limits, executes a Wrangler dry run,
-and proves by GET-only inspection that the exact Worker is either absent or the
-known empty incomplete record left by a failed first bootstrap. An active
-deployment, version, route, domain, binding, or enabled workers.dev endpoint is
-rejected before publication. Each bootstrap/version step records whether a
-Cloudflare write was attempted. If a later runtime gate fails after the
-publication evidence exists, the same GET-only inspection may record only the
-exact Worker, version IDs, and deployment records captured by that approved
-attempt; a missing or changed identity, or any unexpected version/deployment,
-keeps the job fail-closed. A write-path failure without an exact publication
-evidence record continues to use the pre-publication empty-state contract.
+and proves by GET-only inspection that the exact Worker is either absent, the
+known empty incomplete record left by a failed first bootstrap, or a managed
+active Preview whose exact prior LEO-563 evidence artifact was explicitly
+identified by the Owner-approved workflow inputs. An active deployment without
+that prior evidence, or any unexpected version, route, domain, binding, or
+enabled workers.dev endpoint, is rejected before publication. A managed active
+Preview is never bootstrapped, deleted, deployed, or replaced; the workflow
+only uploads the next immutable version and preserves the existing active
+deployment. Each bootstrap/version step records whether a Cloudflare write was
+attempted. If a later runtime gate fails after the publication evidence exists,
+the same GET-only inspection may record only the exact Worker, version IDs, and
+deployment records captured by that approved attempt; a missing or changed
+identity, or any unexpected version/deployment, keeps the job fail-closed. A
+write-path failure without an exact publication evidence record continues to
+use the pre-publication empty-state contract.
 
 The assembled immutable Public artifact contains two configs. `wrangler.json`
 remains detached with `workers_dev=false` and `preview_urls=false`.
