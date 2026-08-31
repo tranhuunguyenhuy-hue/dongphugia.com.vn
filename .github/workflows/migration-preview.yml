@@ -565,6 +565,24 @@ jobs:
           npm run app:preview-publication -- assert-resource-absent
           --output "$EVIDENCE_DIR/remote-preflight.json"
 
+      - name: Bootstrap the absent Worker from the verified candidate
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_LEO563_PREVIEW_TOKEN }}
+          WRANGLER_SEND_METRICS: 'false'
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(jq -r '.workerAbsent' "$EVIDENCE_DIR/remote-preflight.json")" = 'true'
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          test -n "$CLOUDFLARE_API_TOKEN"
+          cd "$ARTIFACT_ROOT/public/build"
+          node "$WRANGLER_BIN" deploy \
+            --strict \
+            --config wrangler.preview.json \
+            --message "LEO-563 PR #138 bootstrap source $SOURCE_SHA" \
+            2>&1 | tee "$EVIDENCE_DIR/bootstrap-deploy.log"
+
       - name: Upload one immutable Worker version with the PR #138 Preview alias
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

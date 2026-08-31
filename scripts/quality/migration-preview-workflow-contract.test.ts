@@ -55,6 +55,26 @@ describe('migration PR CI and Preview workflow contract', () => {
     expect(candidateUpload).toContain('include-hidden-files: true')
   })
 
+  it('bootstraps an absent Worker from the verified candidate before version upload', () => {
+    const absentCheckStart = workflow.indexOf('name: Prove the exact Worker does not already exist before creation')
+    const bootstrapStart = workflow.indexOf('name: Bootstrap the absent Worker from the verified candidate')
+    const versionUploadStart = workflow.indexOf('name: Upload one immutable Worker version with the PR #138 Preview alias')
+    const bootstrapEnd = workflow.indexOf('\n\n      - name:', bootstrapStart)
+    const bootstrapStep = workflow.slice(bootstrapStart, bootstrapEnd)
+
+    expect(absentCheckStart).toBeGreaterThanOrEqual(0)
+    expect(bootstrapStart).toBeGreaterThan(absentCheckStart)
+    expect(versionUploadStart).toBeGreaterThan(bootstrapStart)
+    for (const marker of [
+      'test "$(jq -r \'.workerAbsent\' "$EVIDENCE_DIR/remote-preflight.json")" = \'true\'',
+      'node "$WRANGLER_BIN" deploy',
+      '--strict',
+      '--config wrangler.preview.json',
+      'bootstrap source $SOURCE_SHA',
+      'CLOUDFLARE_LEO563_PREVIEW_TOKEN',
+    ]) expect(bootstrapStep).toContain(marker)
+  })
+
   it('skips unrelated changes before the candidate and external Preview path', () => {
     for (const marker of [
       'APPLICATION_SOURCE_PREFIXES',
@@ -94,7 +114,7 @@ describe('migration PR CI and Preview workflow contract', () => {
     ]) expect(workflow).toContain(marker)
 
     expect(workflow.match(/versions upload/g)).toHaveLength(2)
-    expect(workflow.match(/secrets\.CLOUDFLARE_LEO563_PREVIEW_TOKEN/g)).toHaveLength(3)
+    expect(workflow.match(/secrets\.CLOUDFLARE_LEO563_PREVIEW_TOKEN/g)).toHaveLength(4)
     expect(workflow.match(/secrets\.CLOUDFLARE_READONLY_DISCOVERY_TOKEN/g)).toHaveLength(1)
     expect(workflow).not.toContain('secrets.CLOUDFLARE_API_TOKEN')
     expect(workflow).toContain('cloudflare-readonly-discovery.mjs')
