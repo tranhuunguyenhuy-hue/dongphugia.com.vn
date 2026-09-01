@@ -2,13 +2,9 @@ import { createHash } from 'node:crypto'
 
 import sharp, { type Metadata } from 'sharp'
 
-export const PRODUCT_V1_PROFILE = Object.freeze({
-    version: 'product-v1',
-    format: 'webp',
-    widths: Object.freeze([320, 640, 1280]),
-    quality: 82,
-    withoutEnlargement: true,
-})
+import { PRODUCT_V1_PROFILE } from './profile'
+
+export { PRODUCT_V1_PROFILE } from './profile'
 
 export const MAX_MEDIA_BYTES = 5 * 1024 * 1024
 export const MAX_IMAGE_PIXELS = 40_000_000

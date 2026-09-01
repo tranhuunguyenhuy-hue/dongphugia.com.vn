@@ -171,12 +171,17 @@ describe('LEO-565 V1 media foundation', () => {
     it('uses Cloudflare Images only as an injected upload-time transform', async () => {
         const input = await samplePng(500, 250)
         const binding = {
-            info: async () => ({ width: 500, height: 250, format: 'png' }),
-            input: (bytes: Uint8Array) => ({
+            info: async (stream: ReadableStream<Uint8Array>) => {
+                const metadata = await sharp(
+                    Buffer.from(await new Response(stream).arrayBuffer()),
+                ).metadata()
+                return { width: metadata.width, height: metadata.height, format: 'png' }
+            },
+            input: (stream: ReadableStream<Uint8Array>) => ({
                 transform: ({ width }: { width: number; fit: 'scale-down' }) => ({
-                    output: () => ({
+                    output: async () => ({
                         response: async () => new Response(
-                            await sharp(bytes)
+                            await sharp(Buffer.from(await new Response(stream).arrayBuffer()))
                                 .resize({ width, withoutEnlargement: true })
                                 .webp({ quality: 70, effort: 6 })
                                 .toBuffer(),
@@ -207,12 +212,17 @@ describe('LEO-565 V1 media foundation', () => {
         const input = await samplePng(1600, 800)
         const offline = await processProductV1Media(input, 'IMAGE', 'image/png')
         const binding = {
-            info: async () => ({ width: 1600, height: 800, format: 'png' }),
-            input: (bytes: Uint8Array) => ({
+            info: async (stream: ReadableStream<Uint8Array>) => {
+                const metadata = await sharp(
+                    Buffer.from(await new Response(stream).arrayBuffer()),
+                ).metadata()
+                return { width: metadata.width, height: metadata.height, format: 'png' }
+            },
+            input: (stream: ReadableStream<Uint8Array>) => ({
                 transform: ({ width }: { width: number; fit: 'scale-down' }) => ({
-                    output: () => ({
+                    output: async () => ({
                         response: async () => new Response(
-                            await sharp(bytes)
+                            await sharp(Buffer.from(await new Response(stream).arrayBuffer()))
                                 .resize({ width, withoutEnlargement: true })
                                 .webp({ quality: 70, effort: 6 })
                                 .toBuffer(),

@@ -20,6 +20,10 @@ const migrationPath = path.join(root, 'supabase/migrations/20260901170000_leo565
 const canonicalMigrationPath = path.join(root, 'supabase/migrations/20260830004338_leo561_canonical_v1_schema.sql')
 const authMigrationPath = path.join(root, 'supabase/migrations/20260831173342_leo564_v1_auth_rls_services.sql')
 const acceptancePath = path.join(root, 'supabase/tests/leo565_media_foundation.sql')
+const profilePath = path.join(root, 'src/lib/media/v1/profile.ts')
+const rpcPath = path.join(root, 'src/lib/media/v1/rpc.ts')
+const mediaWorkerPath = path.join(root, 'apps/media-preview/worker.ts')
+const mediaWorkerConfigPath = path.join(root, 'apps/media-preview/wrangler.jsonc')
 const integrationUrl = process.env.LEO565_SCHEMA_TEST_URL
 
 function isLoopbackConnection(value: string) {
@@ -212,10 +216,12 @@ async function runGeneratedSqlPayloadFlow(client: Client): Promise<void> {
 
 describe('LEO-565 V1 media and recovery foundation contract', () => {
     it('locks provider-neutral media contracts and server-only provider adapters', async () => {
-        const [contract, processor, provider, bunny, cloudflare, cli, packageJson, migration, backup, manifest, validation, acceptance] = await Promise.all([
+        const [contract, processor, provider, profile, rpc, bunny, cloudflare, cli, packageJson, migration, backup, manifest, validation, acceptance, mediaWorker, mediaWorkerConfig] = await Promise.all([
             readFile(path.join(root, 'src/lib/media/v1/contract.ts'), 'utf8'),
             readFile(path.join(root, 'src/lib/media/v1/processor.ts'), 'utf8'),
             readFile(path.join(root, 'src/lib/media/v1/provider.ts'), 'utf8'),
+            readFile(profilePath, 'utf8'),
+            readFile(rpcPath, 'utf8'),
             readFile(path.join(root, 'src/lib/media/v1/bunny-store.ts'), 'utf8'),
             readFile(path.join(root, 'src/lib/media/v1/cloudflare-images.ts'), 'utf8'),
             readFile(path.join(root, 'scripts/media/process-product-v1.mts'), 'utf8'),
@@ -225,11 +231,13 @@ describe('LEO-565 V1 media and recovery foundation contract', () => {
             readFile(path.join(root, 'scripts/backup/runtime-manifest.sql'), 'utf8'),
             readFile(path.join(root, 'scripts/backup/validate-runtime.sql'), 'utf8'),
             readFile(acceptancePath, 'utf8'),
+            readFile(mediaWorkerPath, 'utf8'),
+            readFile(mediaWorkerConfigPath, 'utf8'),
         ])
 
-        expect(contract).toContain("version: 'product-v1'")
-        expect(contract).toContain('widths: Object.freeze([320, 640, 1280])')
-        expect(contract).toContain('withoutEnlargement: true')
+        expect(profile).toContain("version: 'product-v1'")
+        expect(profile).toContain('widths: Object.freeze([320, 640, 1280])')
+        expect(profile).toContain('withoutEnlargement: true')
         expect(contract).toContain('MAX_VARIANTS = 3')
         expect(contract).toContain('MAX_MEDIA_BYTES = 5 * 1024 * 1024')
         expect(contract).toContain('PDF_SIGNATURE_INVALID')
@@ -239,10 +247,14 @@ describe('LEO-565 V1 media and recovery foundation contract', () => {
         expect(processor).toContain('variants: []')
         expect(provider).toContain('MEDIA_STORAGE_CONFLICT')
         expect(provider).toContain('MEDIA_PROVIDER_WRITE_AMBIGUOUS')
-        expect(provider).toContain('serializeMediaObject')
-        expect(provider).toContain("profile_version: 'product-v1'")
-        expect(provider).toContain("keyField: 'key'")
-        expect(provider).toContain("keyField: 'delivery_object_key'")
+        expect(provider).toContain('serializeMediaRegistrationInput')
+        expect(provider).toContain('serializeProviderVerificationInput')
+        expect(rpc).toContain('serializeRpcMediaObject')
+        expect(rpc).toContain('byte_size')
+        expect(rpc).toContain('mime_type')
+        expect(rpc).toContain('profile_version: variant.profileVersion')
+        expect(rpc).toContain("keyField: 'key'")
+        expect(rpc).toContain("keyField: 'delivery_object_key'")
         expect(provider).not.toMatch(/(?:\.delete|\.remove|delete\(|prefix\s*\()/i)
         expect(bunny).toContain("import 'server-only'")
         expect(bunny).toContain('AccessKey')
@@ -254,6 +266,20 @@ describe('LEO-565 V1 media and recovery foundation contract', () => {
         expect(cloudflare).not.toMatch(/api.?key|token|secret/i)
         expect(cli).toContain('processProductV1Media')
         expect(cli).not.toMatch(/Bunny|Cloudflare|fetch\(/i)
+        expect(mediaWorker).toContain('MEDIA_TRANSFORM_AUTH_TOKEN')
+        expect(mediaWorker).toContain("env.APP_ENV !== 'preview'")
+        expect(mediaWorker).toContain('IMAGES')
+        expect(mediaWorker).not.toMatch(/BUNNY|SUPABASE|DATABASE_URL|SERVICE_ROLE/i)
+        const workerConfig = JSON.parse(mediaWorkerConfig)
+        expect(workerConfig).toMatchObject({
+            name: 'dongphugia-v1-media-preview',
+            workers_dev: false,
+            preview_urls: true,
+            images: { binding: 'IMAGES' },
+            vars: { APP_ENV: 'preview', PREVIEW_NOINDEX: 'true' },
+        })
+        expect(workerConfig.routes).toBeUndefined()
+        expect(workerConfig.domains).toBeUndefined()
         expect(JSON.parse(packageJson).scripts['media:process:product-v1']).toBe('tsx scripts/media/process-product-v1.mts')
 
         expect(migration).toContain('create table dpg_v1.media_variants')

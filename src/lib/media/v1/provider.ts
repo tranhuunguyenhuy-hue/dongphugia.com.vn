@@ -7,6 +7,14 @@ import {
     assertObjectKeyMatchesSha256,
 } from './contract'
 import type { ProductV1MediaBundle, ProcessedMediaObject } from './processor'
+import {
+    serializeMediaRegistrationInput,
+    serializeProviderVerificationInput,
+    type MediaObjectProof,
+    type MediaRegistrationRpcInput,
+    type MediaRegistrationVariantInput,
+    type ProviderVerificationRpcInput,
+} from './rpc'
 
 export type ProviderObject = {
     key: string
@@ -40,93 +48,14 @@ export class MediaProviderError extends Error {
 
 export type ProviderVerification = {
     provider: 'bunny'
-    key: string
-    sha256: string
-    byteSize: number
-    mimeType: string
-}
+} & MediaObjectProof
 
-type RpcMediaObjectBase = Readonly<{
-    sha256: string
-    byte_size: number
-    mime_type: string
-}>
+export type { MediaRegistrationRpcInput, ProviderVerificationRpcInput }
 
-type RpcMediaObject = RpcMediaObjectBase & Readonly<{
-    key: string
-}>
-
-type RpcVariantObject = RpcMediaObjectBase & Readonly<{
-    delivery_object_key: string
-}>
-
-type MediaRegistrationRpcCommon = Readonly<{
-    original_object_key: string
-    delivery_object_key: string
-    sha256: string
-    mime_type: string
-    byte_size: number
-    provenance: 'upload:bunny-v1'
-}>
-
-type MediaRegistrationVariantRpcInput = RpcVariantObject & Readonly<{
-    target_width_px: number
-    width_px: number
-    height_px: number
-    profile_version: 'product-v1'
-}>
-
-export type MediaRegistrationRpcInput = MediaRegistrationRpcCommon & (
-    Readonly<{
-        kind: 'IMAGE'
-        profile_version: 'product-v1'
-        width_px: number
-        height_px: number
-        variants: ReadonlyArray<MediaRegistrationVariantRpcInput>
-    }>
-    | Readonly<{
-        kind: 'DOCUMENT'
-        profile_version: null
-        width_px: null
-        height_px: null
-        variants: readonly []
-    }>
-)
-
-export type ProviderVerificationRpcInput = Readonly<{
-    provider: 'bunny'
-    original: RpcMediaObject
-    delivery: ReadonlyArray<RpcMediaObject>
-}>
-
-type RpcObjectKeyField = 'key' | 'delivery_object_key'
-type MediaObjectProof = Pick<ProviderVerification, 'key' | 'sha256' | 'byteSize' | 'mimeType'>
-
-function serializeMediaObject(
-    object: MediaObjectProof,
-    keyField: 'key',
-): RpcMediaObject
-function serializeMediaObject(
-    object: MediaObjectProof,
-    keyField: 'delivery_object_key',
-): RpcVariantObject
-function serializeMediaObject(
-    object: MediaObjectProof,
-    keyField: RpcObjectKeyField,
-): RpcMediaObject | RpcVariantObject {
-    const common = {
-        sha256: object.sha256,
-        byte_size: object.byteSize,
-        mime_type: object.mimeType,
-    }
-    return keyField === 'key'
-        ? { key: object.key, ...common }
-        : { delivery_object_key: object.key, ...common }
-}
-
-function serializeMediaRegistrationVariant(
+function mediaRegistrationVariantInput(
     variant: ProcessedMediaObject,
-): MediaRegistrationVariantRpcInput {
+    profileVersion: 'product-v1',
+): MediaRegistrationVariantInput {
     if (
         !variant.targetWidthPx
         || variant.widthPx === null
@@ -135,11 +64,14 @@ function serializeMediaRegistrationVariant(
         throw new MediaProviderError('MEDIA_VARIANT_TARGET_MISSING')
     }
     return {
-        target_width_px: variant.targetWidthPx,
-        width_px: variant.widthPx,
-        height_px: variant.heightPx,
-        ...serializeMediaObject(variant, 'delivery_object_key'),
-        profile_version: 'product-v1',
+        key: variant.key,
+        sha256: variant.sha256,
+        byteSize: variant.byteSize,
+        mimeType: variant.mimeType,
+        targetWidthPx: variant.targetWidthPx,
+        widthPx: variant.widthPx,
+        heightPx: variant.heightPx,
+        profileVersion,
     }
 }
 
@@ -251,40 +183,43 @@ export async function storeAndVerifyProductV1Bundle(
 }
 
 export function mediaRegistrationInput(bundle: ProductV1MediaBundle): MediaRegistrationRpcInput {
-    const common: MediaRegistrationRpcCommon = {
-        original_object_key: bundle.original.key,
-        delivery_object_key: bundle.primaryVariant.key,
-        sha256: bundle.source.sha256,
-        mime_type: bundle.source.mimeType,
-        byte_size: bundle.source.byteSize,
-        provenance: 'upload:bunny-v1',
-    }
     if (bundle.kind === 'IMAGE') {
-        return {
+        return serializeMediaRegistrationInput({
             kind: 'IMAGE',
-            ...common,
-            profile_version: bundle.profileVersion,
-            width_px: bundle.source.widthPx,
-            height_px: bundle.source.heightPx,
-            variants: bundle.variants.map(serializeMediaRegistrationVariant),
-        }
+            original: bundle.original,
+            primary: bundle.primaryVariant,
+            source: {
+                sha256: bundle.source.sha256,
+                mimeType: bundle.source.mimeType,
+                byteSize: bundle.source.byteSize,
+                widthPx: bundle.source.widthPx,
+                heightPx: bundle.source.heightPx,
+            },
+            profileVersion: bundle.profileVersion,
+            variants: bundle.variants.map((variant) => mediaRegistrationVariantInput(
+                variant,
+                bundle.profileVersion,
+            )),
+        })
     }
-    return {
+    return serializeMediaRegistrationInput({
         kind: 'DOCUMENT',
-        ...common,
-        profile_version: null,
-        width_px: null,
-        height_px: null,
-        variants: [],
-    }
+        original: bundle.original,
+        primary: bundle.primaryVariant,
+        source: {
+            sha256: bundle.source.sha256,
+            mimeType: bundle.source.mimeType,
+            byteSize: bundle.source.byteSize,
+        },
+    })
 }
 
 export function providerVerificationInput(
     verification: BundleProviderVerification,
 ): ProviderVerificationRpcInput {
-    return {
+    return serializeProviderVerificationInput({
         provider: verification.provider,
-        original: serializeMediaObject(verification.original, 'key'),
-        delivery: verification.delivery.map((object) => serializeMediaObject(object, 'key')),
-    }
+        original: verification.original,
+        delivery: verification.delivery,
+    })
 }

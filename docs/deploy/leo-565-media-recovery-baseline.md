@@ -1,11 +1,10 @@
 # LEO-565 media and recovery baseline
 
-Status: Round 1 V2 source/local implementation and authenticated Bunny and
-Cloudflare read-only reconciliation are complete. The Remote Preview Owner
-Gate is not approved by this document. This dated discovery snapshot does not
-authorize a provider write, remote schema or privilege change, Preview
-publication, Production change, DNS/traffic change, paid-plan change, legacy
-cleanup, or bulk media migration.
+Status: Round 2 Owner-approved Preview execution is complete. Source, local,
+remote synthetic acceptance, and sanitized provider evidence are recorded
+below. This document does not authorize PR merge, Production, DNS/traffic,
+legacy cleanup, bulk media migration, or any further provider/schema/privilege
+mutation.
 
 ## Authority and boundary
 
@@ -15,8 +14,9 @@ LEO-564. LEO-540/552 and canceled LEO-544 are implementation references only.
 The existing Production UI and legacy Publishing Bunny implementation are not
 V1 media authority.
 
-Round 1 adds source contracts and a Supabase migration only. It does not apply
-that migration to the remote `dongphugia-runtime` project.
+The Round 1 source/local section below is historical. The Round 2 execution
+section supersedes its proposed resource names and records the exact approved
+Preview resources and evidence.
 
 ## V1 media contract
 
@@ -49,11 +49,10 @@ The offline command `npm run media:process:product-v1 -- --input <file>
 --kind IMAGE|DOCUMENT --mime <mime>` uses the same validation, profile, key,
 checksum, and deterministic processing contracts without provider calls.
 
-## Read-only discovery snapshot — 2026-09-01
+## Historical Round 1 read-only discovery snapshot — 2026-09-01
 
-The following states are evidence for the next gate, not durable provider
-authority. Revalidate exact identity, scope, price, and exclusions immediately
-before any Round 2 mutation.
+The following states were evidence for the former gate and are retained for
+history only. They are not current Round 2 resource recommendations.
 
 | Area | Read-only result | Disposition |
 | --- | --- | --- |
@@ -69,14 +68,144 @@ before any Round 2 mutation.
 | Current legacy media | `dpg_app.product_images` and managed/publishing media remain legacy evidence | No bulk migration, cleanup, deletion, or overwrite was performed |
 | Current `dpg_backup` | Read-only role is non-superuser/non-createdb/non-createrole/non-replication/non-BYPASSRLS; current remote SELECT coverage includes dpg_app/dpg_control but not dpg_v1 | Round 1 extends source backup controls to dpg_app + dpg_v1 + dpg_control and grants only explicit V1 SELECT after the later remote gate |
 
-The dashboard inventory is read-only evidence and must be revalidated against
-the exact target, scope, price, and exclusions immediately before any Round 2
-mutation. Public Bunny API documentation describes the account-scoped Storage
+The historical dashboard inventory is retained for reconciliation context.
+Public Bunny API documentation describes the account-scoped Storage
 Zone and Pull Zone surfaces but does not replace the dashboard evidence: [List
 Storage Zones](https://bunny.net/docs/api-reference/core/storage-zone/list-storage-zones)
 and [List Pull Zones](https://bunny.net/docs/api-reference/core/pull-zone/list-pull-zones).
-No provider, billing, DNS, traffic, credential, or Supabase remote state was
-mutated during this discovery.
+The historical discovery itself did not mutate provider, billing, DNS, traffic,
+credential, or Supabase remote state.
+
+## Round 2 Owner-approved Preview execution evidence — 2026-09-01
+
+The following is the current, exact-scope evidence. All writes listed here
+were limited to the Owner-approved Preview resources and synthetic/sample
+media. No Production, DNS, custom domain, legacy resource, or bulk media
+operation was performed.
+
+### Bunny
+
+- `dpg-v1-preview-originals`: Storage Zone `1804337`, Standard, main region
+  Frankfurt, Germany, no replica regions, no Pull Zone, and no custom
+  hostname. It contains only the bounded synthetic private-original proof
+  under `private/originals/v1/`.
+- `dpg-v1-preview-delivery`: Storage Zone `1804338`, Standard, main region
+  Frankfurt, Germany, no replica regions, and no custom hostname. Pull Zone
+  `dpg-v1-preview-delivery` is `6457247`, backed by that Storage Zone, with
+  the sole default delivery hostname
+  `dpg-v1-preview-delivery.b-cdn.net`.
+- The dedicated delivery Pull Zone has no custom domain, no custom hostname,
+  and no Bunny Optimizer. The four pre-existing legacy zones and their Pull
+  Zones were not reused, repointed, deleted, or purged. No
+  `dpg-leo565-preview-*` resource exists.
+- Synthetic private original evidence includes an image at
+  `private/originals/v1/ee/<source-sha>/source.png` (1,600x900, 21,705
+  bytes) and a PDF at `private/originals/v1/eb/<pdf-sha>/document.pdf`
+  (65 bytes). Synthetic public image variants are the three locked
+  `product-v1` widths (320/640/1280); the PDF delivery object is under
+  `public/documents/v1/<pdf-sha>/document.pdf`. The exact SHA values are
+  recorded in the sanitized acceptance output and tests, not in credentials
+  or URLs.
+- Direct unauthenticated public delivery returned HTTP 200 with the expected
+  `image/webp` and `application/pdf` content types and verified bytes. A
+  second synthetic private `input.png` test object remains in the originals
+  zone; it is an intentionally retained non-production fixture because no
+  destructive cleanup was authorized.
+- Bunny dashboard evidence identifies the signed-in account and exposes
+  zone-scoped `Access Key`, `Password`, and `Read-only password` fields. Only
+  backend-only zone-scoped write/read access for the two dedicated zones and
+  separate read-only verification access are in scope; values were never
+  inspected, logged, committed, or reported. The repository's legacy
+  Publishing credential names remain unchanged and are not used for V1.
+- Current Bunny dashboard billing shows September usage of `$0.03` (Storage
+  `$0.03`, CDN `<$0.01`), 24 MB bandwidth, and account balance `$2.90`;
+  auto-recharge was already enabled. No plan upgrade or new fixed commitment
+  was accepted. The exact Round 2 cost implication is usage-based storage and
+  CDN traffic only; no replica or Optimizer charge was introduced. See
+  [Bunny Storage pricing](https://bunny.net/pricing/storage/) and [Bunny CDN
+  pricing](https://bunny.net/pricing/cdn/).
+
+### Cloudflare
+
+- The authenticated account is the existing Tranhuunguyenhuy account. The
+  active subscription rows are `Workers Free` and `Images Stream Basic`
+  (through 2026-09-27). Billable usage currently shows `$0.00`, with no usage
+  data charge in the current observation window.
+- Hosted Images shows `Images stored: Not applicable in your plan`; no hosted
+  Images storage was enabled. Images Transformations has no configured zone
+  and no observed unique transformation usage in the dashboard/API evidence.
+- The only Worker resources surfaced for this account are
+  `dongphugia-v1-public-preview` and the dedicated
+  `dongphugia-v1-media-preview`. The existing public-preview Worker was not
+  modified. The new Worker is available at
+  `dongphugia-v1-media-preview.tranhuunguyenhuy.workers.dev`, with the
+  reviewed backend-only secret authorization and exactly these bindings/config
+  names: `IMAGES` (Images), `MEDIA_TRANSFORM_AUTH_TOKEN` (secret), `APP_ENV`
+  (`preview`), and `PREVIEW_NOINDEX` (`true`). Secret values are not present
+  in source, logs, PR evidence, or this document.
+- The new Worker has no custom domain and no route. The source configuration
+  enables workers.dev preview URLs and contains no Production route or DNS
+  change. A new Preview Worker/binding was required because the existing
+  public-preview Worker had no IMAGES binding; no binding was added to it.
+- Cloudflare cost implication is `$0` fixed expansion and `$0` observed
+  billable usage: no Workers Paid/Images hosted-storage upgrade, fixed
+  commitment, or paid feature was enabled. The accepted synthetic transform
+  stays within the documented free unique-transform allowance; any future
+  overage would be usage-priced and requires a separate gate. See
+  [Cloudflare Images binding](https://developers.cloudflare.com/images/optimization/binding/)
+  and [Cloudflare Images pricing](https://developers.cloudflare.com/images/pricing/).
+
+### Supabase and recovery
+
+- Exact target: project `dongphugia-runtime`, ref
+  `tlmgudfhsyzayiazuugf`, PostgreSQL 17.6 in `ap-southeast-1`. Migration
+  `leo565_media_foundation` is applied at remote version
+  `20260901150135`; the applied source SHA-256 is
+  `5576217f4b217b1b6ec6250f14fd4f67166da8746b75171bbcb616324809a3ea`.
+- `dpg_backup` remains a non-login, non-superuser, non-createdb,
+  non-createrole, non-BYPASSRLS role. Sanitized privilege evidence is
+  SELECT-only for the reviewed V1 recovery surface: `dpg_app` 64 tables,
+  `dpg_v1` 36 tables, and `dpg_control` 2 tables; zero write privileges were
+  observed. No unrelated Auth, legacy schema, project, or credential change
+  was made.
+- The existing LEO-540/552 recovery system was extended rather than replaced.
+  The disposable PostgreSQL 17 rehearsal passed age encryption, SHA-256
+  verification, sanitized manifest generation, isolated restore, and semantic
+  validation for `dpg_app + dpg_v1 + dpg_control`, including Product/Family,
+  media/variants, staff, and commerce state. Exact-SHA dispatch, 14-day
+  retention, tmpfs plaintext controls, and secret/row-safe evidence remain in
+  force. The local macOS harness used compatibility wrappers only for missing
+  host `psql`/`findmnt`; the source scripts retain the native tmpfs guard and
+  the isolated restore database used tmpfs and no network.
+
+### Synthetic acceptance
+
+The same generated TypeScript payloads were sent through
+`catalogue_media_register` and `catalogue_media_mark_ready`; no replacement
+JSON was used. The resulting sanitized remote transaction rolled back its
+fixtures after acceptance.
+
+| Acceptance | Result |
+| --- | --- |
+| image validation, Cloudflare transform, Bunny original/variants, registration, provider verification, READY | PASS |
+| Product PRIMARY and GALLERY attachment | PASS |
+| MIME spoof, malformed, oversized, invalid image, and upscale denial | PASS |
+| duplicate/replay determinism | PASS |
+| output-SHA immutable-key conflict protection across offline/Cloudflare pipelines | PASS |
+| valid PDF original/delivery, READY, and technical-document attachment | PASS |
+| invalid PDF and arbitrary external media URL denial | PASS |
+| public Bunny image/PDF HTTP delivery | PASS |
+| browser privileged-secret count | 0 |
+| encrypted V1 backup, checksum, manifest, PG17 isolated restore, semantic match | PASS |
+| deterministic regeneration from private original and locked `product-v1` profile | PASS |
+| silent paid-plan enablement | NONE OBSERVED |
+
+The immutable delivery identity is
+`profile-version + source SHA + target width + generated output SHA` for
+images. The cross-pipeline test deliberately emits different valid WebP bytes
+from offline and Cloudflare paths, then proves their keys remain distinct and
+neither path overwrites the other. Sharp/Cloudflare byte equivalence is not
+assumed.
 
 ## Recovery extension
 
@@ -95,25 +224,15 @@ Recovery validation checks the output-SHA-bearing image key contract and the
 source/output relationship; it does not claim Sharp and Cloudflare Images
 produce byte-identical WebP output.
 
-## Exact Round 2 Preview mutation set — Owner gate required
+## Round 2 mutation boundary — executed; no further mutation
 
-Only after an unchanged-scope Owner approval and fresh preflight may Round 2:
+The approved Round 2 mutation set was executed exactly once against the
+dedicated Preview resources recorded above: the reviewed Supabase migration
+and minimum V1 backup privileges, the two Frankfurt Bunny Storage Zones and
+one delivery Pull Zone, and the dedicated Cloudflare Preview transform Worker
+with its IMAGES binding. Only synthetic/sample bytes were used for acceptance.
 
-1. apply the reviewed LEO-565 Supabase migration to the exact
-   `dongphugia-runtime` Preview target, including explicit V1 `dpg_backup`
-   SELECT-only privileges;
-2. either obtain explicit isolation attestation for `dpg-publishing-production-r2`
-   as a public-delivery-only Preview candidate (while creating a separate
-   private-original boundary), or create the exact dedicated Bunny
-   `dpg-leo565-preview-originals` and `dpg-leo565-preview-delivery` shape above;
-   issue minimum scoped backend-only credentials, write synthetic bounded bytes,
-   and verify by read-after-write without touching legacy resources;
-3. configure one reviewed Preview-only Cloudflare Images transform Worker with
-   an `IMAGES` binding and backend authorization seam, with `workers.dev`/noindex
-   isolation only; do not broaden `dongphugia-v1-public-preview`; and
-4. run the synthetic end-to-end provider verification and sanitized recovery
-   evidence against those exact resources.
-
-Round 2 excludes Production, custom DNS, traffic, paid-plan changes, Bunny
-Optimizer, Cloudflare Production, Supabase Storage as canonical authority,
-legacy media migration/cleanup, and Admin/PDP/editor media UI.
+The remaining boundary is closed. Do not merge PR #140, touch Production,
+custom DNS, traffic, legacy Bunny/Supabase resources, hosted Images storage,
+Bunny Optimizer, or bulk media. Any additional provider/schema/privilege
+mutation requires a fresh explicit gate.

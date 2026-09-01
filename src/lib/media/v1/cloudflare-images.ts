@@ -16,14 +16,20 @@ import type { ProcessedMediaObject } from './processor'
  * carry a credential and has no storage or delivery responsibility.
  */
 export type CloudflareImagesBinding = {
-    info(input: Uint8Array): Promise<{ width?: number; height?: number; format?: string }>
-    input(input: Uint8Array): {
+    info(input: ReadableStream<Uint8Array>): Promise<{ width?: number; height?: number; format?: string }>
+    input(input: ReadableStream<Uint8Array>): {
         transform(options: { width: number; fit: 'scale-down' }): {
-            output(options: { format: 'image/webp'; quality: number }): {
+            output(options: { format: 'image/webp'; quality: number }): Promise<{
                 response(): Response | Promise<Response>
-            }
+            }>
         }
     }
+}
+
+function imageStream(bytes: Uint8Array): ReadableStream<Uint8Array> {
+    const stream = new Response(bytes as unknown as BodyInit).body
+    if (!stream) throw new MediaContractError('MEDIA_STREAM_UNAVAILABLE')
+    return stream
 }
 
 async function responseBytes(response: Response): Promise<Buffer> {
@@ -67,7 +73,7 @@ export async function transformProductV1WithCloudflareImages(
     const source = await validateImageSource(input, declaredMime)
     let providerInfo: { width?: number; height?: number; format?: string }
     try {
-        providerInfo = await binding.info(source.bytes)
+        providerInfo = await binding.info(imageStream(source.bytes))
     } catch {
         throw new MediaContractError('CLOUDFLARE_IMAGES_INFO_FAILED')
     }
@@ -85,14 +91,14 @@ export async function transformProductV1WithCloudflareImages(
     for (const targetWidthPx of imageVariantTargets(source.widthPx)) {
         let response: Response
         try {
-            response = await binding
-                .input(source.bytes)
+            const transformed = await binding
+                .input(imageStream(source.bytes))
                 .transform({ width: targetWidthPx, fit: 'scale-down' })
                 .output({
                     format: 'image/webp',
                     quality: PRODUCT_V1_PROFILE.quality,
                 })
-                .response()
+            response = await transformed.response()
         } catch {
             throw new MediaContractError('CLOUDFLARE_IMAGES_TRANSFORM_FAILED')
         }

@@ -1,4 +1,7 @@
-import { PUBLIC_EDGE_CACHE_SECONDS } from '@dpg/app-contracts'
+// next.config.ts loads this module while Next compiles the config itself, before
+// TypeScript path aliases are available. Keep this boundary runtime-resolvable
+// without changing the public app's package alias contract elsewhere.
+import { PUBLIC_EDGE_CACHE_SECONDS } from '../../../packages/app-contracts/src/index'
 
 export type PublicWorkerEnvironment = Readonly<{
   APP_ENV: string
