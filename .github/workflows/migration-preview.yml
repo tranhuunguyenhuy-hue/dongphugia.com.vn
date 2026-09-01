@@ -328,11 +328,15 @@ jobs:
           APP_ORIGIN: https://admin-preview.invalid
           PREVIEW_NOINDEX: 'true'
           BUILD_SOURCE_SHA: ${{ needs.repo-code-gate.outputs.source_sha }}
+          NEXT_PUBLIC_SUPABASE_URL: https://supabase.invalid
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_preview_runtime_test
         run: npm run build:admin
 
       - name: Prove Admin noindex and private no-store in its independent runtime
         env:
           RUNTIME_PROOF: ${{ runner.temp }}/admin-runtime-proof.json
+          NEXT_PUBLIC_SUPABASE_URL: https://supabase.invalid
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_preview_runtime_test
         shell: bash
         run: |
           set -euo pipefail
@@ -372,6 +376,8 @@ jobs:
           PREVIEW_NOINDEX: 'true'
           BUILD_SOURCE_SHA: ${{ needs.repo-code-gate.outputs.source_sha }}
           ADMIN_SECOND: ${{ runner.temp }}/admin-artifact-second
+          NEXT_PUBLIC_SUPABASE_URL: https://supabase.invalid
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_preview_runtime_test
         shell: bash
         run: |
           set -euo pipefail
