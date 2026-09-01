@@ -5,7 +5,7 @@ project_id = "dongphugia"
 [api]
 enabled = true
 port = 54321
-schemas = ["public", "graphql_public"]
+schemas = ["public", "graphql_public", "dpg_v1_api"]
 extra_search_path = ["public", "extensions"]
 max_rows = 1000
 auto_expose_new_tables = false
@@ -26,7 +26,13 @@ sql_paths = []
 [auth]
 enabled = true
 site_url = "http://127.0.0.1:3000"
-additional_redirect_urls = ["http://127.0.0.1:3000"]
+additional_redirect_urls = [
+  "http://127.0.0.1:3000",
+  "http://localhost:3001",
+  "http://localhost:3001/auth/callback",
+  "http://localhost:3001/auth/confirm",
+  "http://localhost:3001/reset-password"
+]
 jwt_expiry = 3600
 enable_refresh_token_rotation = true
 refresh_token_reuse_interval = 10

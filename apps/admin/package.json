@@ -2,6 +2,11 @@
   "name": "@dongphugia/admin-app",
   "version": "0.1.0",
   "private": true,
+  "dependencies": {
+    "@supabase/ssr": "0.12.5",
+    "@supabase/supabase-js": "2.112.4",
+    "server-only": "0.0.1"
+  },
   "scripts": {
     "build": "next build",
     "dev": "next dev",

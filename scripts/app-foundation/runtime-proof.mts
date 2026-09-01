@@ -128,11 +128,24 @@ async function collectPublicProof(baseUrl: URL) {
 }
 
 async function collectAdminProof(baseUrl: URL) {
-  const home = await fetch(new URL('/', baseUrl))
-  const html = await responseBody(home)
-  assertNoindexHtml(html)
+  const home = await fetch(new URL('/', baseUrl), { redirect: 'manual' })
+  if (home.status !== 307) {
+    throw new Error(`RUNTIME_PROOF_AUTH_REDIRECT_FAILED:${home.status}`)
+  }
   requireHeader(home, 'x-robots-tag', 'noindex, nofollow')
   requireHeader(home, 'cache-control', 'private, no-store')
+  const loginLocation = home.headers.get('location')
+  if (!loginLocation) throw new Error('RUNTIME_PROOF_AUTH_LOCATION_MISSING')
+  const loginUrl = new URL(loginLocation, baseUrl)
+  if (loginUrl.pathname !== '/login' || loginUrl.searchParams.get('next') !== '/') {
+    throw new Error('RUNTIME_PROOF_AUTH_LOCATION_FAILED')
+  }
+
+  const login = await fetch(loginUrl)
+  const html = await responseBody(login)
+  assertNoindexHtml(html)
+  requireHeader(login, 'x-robots-tag', 'noindex, nofollow')
+  requireHeader(login, 'cache-control', 'private, no-store')
 
   const robots = await fetch(new URL('/robots.txt', baseUrl))
   const robotsBody = await responseBody(robots)
@@ -142,7 +155,12 @@ async function collectAdminProof(baseUrl: URL) {
 
   return {
     runtime: 'next-node-local',
-    ssr: { status: home.status, htmlSha256: sha256(html), metadata: true },
+    ssr: { status: login.status, htmlSha256: sha256(html), metadata: true },
+    auth: {
+      protectedPath: '/',
+      unauthenticatedStatus: home.status,
+      loginStatus: login.status,
+    },
     noindex: { htmlMeta: true, responseHeader: true, robotsDisallowAll: true },
     cache: { policy: 'private, no-store' },
   } as const

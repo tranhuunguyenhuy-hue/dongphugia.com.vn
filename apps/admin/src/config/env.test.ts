@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
 
-import { getAdminAppEnvironment } from './env'
+import {
+  getAdminAppEnvironment,
+  getAdminSupabasePublicConfig,
+} from './env'
 
 describe('Admin application environment contract', () => {
   it('keeps the private noindex posture in every environment', () => {
@@ -70,5 +73,24 @@ describe('Admin application environment contract', () => {
         NEXT_PUBLIC_STAFF_TOKEN: 'test-only',
       }),
     ).toThrow('ADMIN_BROWSER_ENV_NOT_ALLOWLISTED')
+  })
+
+  it('keeps server-only Auth Admin authority out of the browser allowlist', () => {
+    expect(
+      getAdminAppEnvironment({
+        APP_ENV: 'preview',
+        APP_ORIGIN: 'https://admin-preview.invalid',
+        PREVIEW_NOINDEX: 'true',
+        SUPABASE_SECRET_KEY: 'sb_secret_server-only-test',
+      }).application,
+    ).toBe('admin')
+
+    expect(getAdminSupabasePublicConfig({
+      NEXT_PUBLIC_SUPABASE_URL: 'https://supabase.invalid',
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_test',
+    })).toEqual({
+      url: 'https://supabase.invalid',
+      publishableKey: 'sb_publishable_test',
+    })
   })
 })

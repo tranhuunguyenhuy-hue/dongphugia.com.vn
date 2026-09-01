@@ -26,6 +26,11 @@ export const PUBLIC_ROUTE_OWNERSHIP = [
 export const ADMIN_ROUTE_OWNERSHIP = [
   { path: '/', owner: 'admin', purpose: 'application-shell' },
   { path: '/login', owner: 'admin', purpose: 'staff-auth-shell' },
+  { path: '/forgot-password', owner: 'admin', purpose: 'staff-auth-shell' },
+  { path: '/reset-password', owner: 'admin', purpose: 'staff-auth-shell' },
+  { path: '/auth/callback', owner: 'admin', purpose: 'staff-auth-shell' },
+  { path: '/auth/confirm', owner: 'admin', purpose: 'staff-auth-shell' },
+  { path: '/auth/logout', owner: 'admin', purpose: 'staff-auth-shell' },
   { path: '/robots.txt', owner: 'admin', purpose: 'crawler-policy' },
   { path: '/api/health', owner: 'admin', purpose: 'runtime-probe' },
 ] as const
