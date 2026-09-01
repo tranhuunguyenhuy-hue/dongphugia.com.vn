@@ -19,12 +19,12 @@ is not active on `main` until this PR is approved and merged. The backup job:
 1. attests the exact `dongphugia-runtime` / `ap-southeast-1` Preview target and
    its `production-derived-reduced-runtime` contract, using the existing
    `dpg_backup_login` explicitly set to the `dpg_backup` capability with
-   `transaction_read_only=on` and SELECT coverage for every `dpg_app` table;
+   `transaction_read_only=on` and SELECT coverage for every table in
+   `dpg_app`, `dpg_v1`, and `dpg_control`;
 2. checks the target contract's 350 MiB hard ceiling and 250/300 MiB alert
    thresholds, stopping unless the live size is `WITHIN_BUDGET`;
 3. runs PostgreSQL 17.6 `pg_dump` with row-security enabled in custom logical
-   format for only `dpg_app` and
-   `dpg_control`;
+   format for only `dpg_app`, `dpg_v1`, and `dpg_control`;
 4. creates the schema/data manifest from catalog metadata, row counts, and
    row hashes only;
 5. encrypts the dump with `age` before it leaves a tmpfs workspace; and
@@ -133,7 +133,7 @@ The comparison requires exact target, schema, and data manifests; it ignores
 only runtime metadata that is expected to differ, such as database size and
 backup timestamp.
 
-## Product, Family/MS885, and Blog validation
+## Product, Family/MS885, Blog, and V1 validation
 
 The restore acceptance SQL returns one sanitized aggregate JSON report, which
 the trusted-main `runtime-validation-contract.mjs` validates. It returns only
@@ -148,6 +148,14 @@ PASS or a generic failure class at the workflow boundary:
   `MS885DW4#XW` and `MS885DW18#XW`, and no `MS885DE6#XW` membership.
 - Blog tables and all post/category, post/tag, and post/Managed Media links are
   checked for orphaned relations.
+- Canonical V1 Product/Family/media/staff/commerce tables are included in the
+  manifest. The semantic report checks required V1 tables, content-addressed
+  media keys, READY/provider-verification state, Product PRIMARY media,
+  READY image variant count/profile/no-upscale invariants, media-reference
+  integrity, staff counts, and commerce counts without emitting row values.
+- V1 media bytes are not placed in the database backup authority. The backup
+  protects the Supabase metadata and references; Bunny byte recovery remains a
+  later exact-resource Owner gate and is never inferred from a database row.
 
 The SQL does not print Product SKUs, Blog titles/content, URLs, or any other
 row. The canonical Product/Family contract remains

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { compareRuntimeManifests } from './manifest-contract.mjs'
+import { CANONICAL_V1_RESTORE_COUNT_TABLES, RESTORE_COUNT_TABLES } from './manifest-contract.mjs'
 import { validateRuntimeSemantics } from './runtime-validation-contract.mjs'
 
 const semanticReport = () => ({
@@ -14,6 +15,24 @@ const semanticReport = () => ({
   ms885UnexpectedOpenGapCount: 0,
   ms885BadMembershipCount: 0,
   ms885ExcludedMembershipCount: 0,
+  v1MediaAssetCount: 0,
+  v1MediaVariantCount: 0,
+  v1PendingMediaCount: 0,
+  v1ReadyMediaCount: 0,
+  v1TombstonedMediaCount: 0,
+  v1ProductCount: 0,
+  v1ProductFamilyCount: 0,
+  v1FamilyMembershipCount: 0,
+  v1StaffUserCount: 0,
+  v1StaffRoleCount: 0,
+  v1QuoteCount: 0,
+  v1OrderCount: 0,
+  v1PaymentTransactionCount: 0,
+  v1OrphanMediaReferenceCount: 0,
+  v1MediaKeyViolationCount: 0,
+  v1PrimaryMediaViolationCount: 0,
+  v1ReadyWithoutProviderVerificationCount: 0,
+  v1ReadyImageVariantViolationCount: 0,
 })
 
 const manifest = () => ({
@@ -29,7 +48,7 @@ const manifest = () => ({
     hardDatabaseCeilingBytes: 367001600,
   },
   schema: {
-    schemas: ['dpg_app', 'dpg_control'],
+    schemas: ['dpg_app', 'dpg_v1', 'dpg_control'],
     tables: [],
     indexes: [],
     constraints: [],
@@ -40,14 +59,10 @@ const manifest = () => ({
   },
   data: [],
   restoreCounts: [
-    { tableName: 'blog_categories', rowCount: 6 },
-    { tableName: 'blog_post_tags', rowCount: 0 },
-    { tableName: 'blog_posts', rowCount: 26 },
-    { tableName: 'blog_tags', rowCount: 0 },
-    { tableName: 'product_images', rowCount: 110321 },
-    { tableName: 'products', rowCount: 17755 },
-    { tableName: 'publishing_blog_post_media', rowCount: 95 },
+    ...RESTORE_COUNT_TABLES.map((tableName) => ({ tableName, rowCount: 0 })),
   ],
+  canonicalV1RestoreCounts: CANONICAL_V1_RESTORE_COUNT_TABLES
+    .map((tableName) => ({ tableName, rowCount: 0 })),
 })
 
 describe('LEO-540 restored runtime semantic contract', () => {

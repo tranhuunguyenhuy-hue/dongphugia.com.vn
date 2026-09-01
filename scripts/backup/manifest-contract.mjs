@@ -12,7 +12,7 @@ export const EXPECTED_TARGET = {
 }
 
 const PROHIBITED_KEY = /password|secret|token|private.?key|database.?url|connection.?string|row.?data|payload|content|dump/i
-const RESTORE_COUNT_TABLES = [
+export const RESTORE_COUNT_TABLES = [
   'blog_categories',
   'blog_post_tags',
   'blog_posts',
@@ -21,6 +21,45 @@ const RESTORE_COUNT_TABLES = [
   'products',
   'publishing_blog_post_media',
 ]
+export const CANONICAL_V1_RESTORE_COUNT_TABLES = [
+  'dpg_v1.staff_users',
+  'dpg_v1.staff_user_roles',
+  'dpg_v1.role_capabilities',
+  'dpg_v1.media_assets',
+  'dpg_v1.media_variants',
+  'dpg_v1.brands',
+  'dpg_v1.categories',
+  'dpg_v1.product_families',
+  'dpg_v1.product_family_configuration_groups',
+  'dpg_v1.products',
+  'dpg_v1.product_family_memberships',
+  'dpg_v1.product_source_provenance',
+  'dpg_v1.collections',
+  'dpg_v1.collection_products',
+  'dpg_v1.attribute_definitions',
+  'dpg_v1.attribute_options',
+  'dpg_v1.category_attribute_policies',
+  'dpg_v1.product_attribute_values',
+  'dpg_v1.product_attribute_multi_options',
+  'dpg_v1.product_media',
+  'dpg_v1.product_documents',
+  'dpg_v1.content_entries',
+  'dpg_v1.content_blocks',
+  'dpg_v1.content_product_references',
+  'dpg_v1.content_category_references',
+  'dpg_v1.content_brand_references',
+  'dpg_v1.quote_requests',
+  'dpg_v1.quote_request_lines',
+  'dpg_v1.quotes',
+  'dpg_v1.quote_lines',
+  'dpg_v1.quote_shares',
+  'dpg_v1.orders',
+  'dpg_v1.order_lines',
+  'dpg_v1.payment_transactions',
+  'dpg_v1.commerce_idempotency_records',
+  'dpg_v1.service_idempotency_records',
+]
+const EXPECTED_SCHEMA_NAMES = ['dpg_app', 'dpg_v1', 'dpg_control']
 
 function canonical(value) {
   if (Array.isArray(value)) return value.map(canonical)
@@ -60,6 +99,10 @@ export function validateRuntimeManifest(manifest) {
     if (!violations.includes('target project identity changed')) violations.push('target project identity changed')
   }
   if (!manifest.schema || !Array.isArray(manifest.data)) violations.push('schema or data manifest is missing')
+  if (JSON.stringify([...new Set(manifest.schema?.schemas ?? [])].sort())
+    !== JSON.stringify([...EXPECTED_SCHEMA_NAMES].sort())) {
+    violations.push('schema manifest changed')
+  }
   if (containsProhibitedKey(manifest)) violations.push('manifest contains a prohibited sensitive field')
   for (const entry of manifest.data ?? []) {
     if (!entry || typeof entry.tableName !== 'string' || !Number.isInteger(entry.rowCount) || entry.rowCount < 0
@@ -77,6 +120,19 @@ export function validateRuntimeManifest(manifest) {
       || !Number.isInteger(entry.rowCount)
       || entry.rowCount < 0)) {
     violations.push('restore aggregate counts are invalid')
+  }
+  if (!Array.isArray(manifest.canonicalV1RestoreCounts)
+    || manifest.canonicalV1RestoreCounts.length !== CANONICAL_V1_RESTORE_COUNT_TABLES.length
+    || new Set(manifest.canonicalV1RestoreCounts.map((entry) => entry?.tableName)).size
+      !== CANONICAL_V1_RESTORE_COUNT_TABLES.length
+    || CANONICAL_V1_RESTORE_COUNT_TABLES.some((tableName) => !manifest.canonicalV1RestoreCounts.some(
+      (entry) => entry?.tableName === tableName,
+    ))
+    || manifest.canonicalV1RestoreCounts.some((entry) => !entry
+      || typeof entry.tableName !== 'string'
+      || !Number.isInteger(entry.rowCount)
+      || entry.rowCount < 0)) {
+    violations.push('canonical V1 restore aggregate counts are invalid')
   }
   return [...new Set(violations)]
 }
@@ -103,6 +159,14 @@ export function compareRuntimeManifests(expected, actual) {
   const actualRestoreCounts = new Map(actual.restoreCounts.map((entry) => [entry.tableName, entry.rowCount]))
   if (expected.restoreCounts.some((entry) => actualRestoreCounts.get(entry.tableName) !== entry.rowCount)) {
     violations.push('restore aggregate counts changed')
+  }
+  const actualCanonicalV1RestoreCounts = new Map(
+    actual.canonicalV1RestoreCounts.map((entry) => [entry.tableName, entry.rowCount]),
+  )
+  if (expected.canonicalV1RestoreCounts.some(
+    (entry) => actualCanonicalV1RestoreCounts.get(entry.tableName) !== entry.rowCount,
+  )) {
+    violations.push('canonical V1 restore aggregate counts changed')
   }
   return [...new Set(violations)]
 }

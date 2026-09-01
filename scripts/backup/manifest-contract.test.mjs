@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  CANONICAL_V1_RESTORE_COUNT_TABLES,
   compareRuntimeManifests,
+  RESTORE_COUNT_TABLES,
   validateRuntimeManifest,
 } from './manifest-contract.mjs'
 
@@ -17,7 +19,7 @@ const target = {
 }
 
 const schema = {
-  schemas: ['dpg_app', 'dpg_control'],
+  schemas: ['dpg_app', 'dpg_v1', 'dpg_control'],
   tables: [{ identity: 'dpg_app.products', columns: [{ name: 'id', type: 'integer' }] }],
   indexes: [],
   constraints: [],
@@ -31,15 +33,19 @@ const data = [
   { tableName: 'products', rowCount: 1, sha256: 'a'.repeat(64), sourceAuthority: 'codex_production_readonly' },
 ]
 
-const restoreCounts = [
-  { tableName: 'blog_categories', rowCount: 6 },
-  { tableName: 'blog_post_tags', rowCount: 0 },
-  { tableName: 'blog_posts', rowCount: 26 },
-  { tableName: 'blog_tags', rowCount: 0 },
-  { tableName: 'product_images', rowCount: 110321 },
-  { tableName: 'products', rowCount: 17755 },
-  { tableName: 'publishing_blog_post_media', rowCount: 95 },
-]
+const restoreCounts = RESTORE_COUNT_TABLES.map((tableName) => ({
+  tableName,
+  rowCount: tableName === 'blog_categories' ? 6
+    : tableName === 'blog_posts' ? 26
+      : tableName === 'product_images' ? 110321
+        : tableName === 'publishing_blog_post_media' ? 95
+          : tableName === 'products' ? 17755
+            : 0,
+}))
+const canonicalV1RestoreCounts = CANONICAL_V1_RESTORE_COUNT_TABLES.map((tableName) => ({
+  tableName,
+  rowCount: 0,
+}))
 
 const valid = () => ({
   formatVersion: 2,
@@ -47,6 +53,7 @@ const valid = () => ({
   schema: structuredClone(schema),
   data: structuredClone(data),
   restoreCounts: structuredClone(restoreCounts),
+  canonicalV1RestoreCounts: structuredClone(canonicalV1RestoreCounts),
 })
 
 describe('LEO-540 runtime manifest contract', () => {

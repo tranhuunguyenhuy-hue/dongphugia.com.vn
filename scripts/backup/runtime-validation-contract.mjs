@@ -11,7 +11,25 @@ const REPORT_KEYS = [
   'ms885OpenGapCount',
   'ms885UnexpectedOpenGapCount',
   'requiredTablesPresent',
-]
+  'v1FamilyMembershipCount',
+  'v1MediaAssetCount',
+  'v1MediaKeyViolationCount',
+  'v1MediaVariantCount',
+  'v1OrderCount',
+  'v1OrphanMediaReferenceCount',
+  'v1PendingMediaCount',
+  'v1PaymentTransactionCount',
+  'v1PrimaryMediaViolationCount',
+  'v1ProductCount',
+  'v1ProductFamilyCount',
+  'v1ReadyImageVariantViolationCount',
+  'v1ReadyMediaCount',
+  'v1ReadyWithoutProviderVerificationCount',
+  'v1StaffRoleCount',
+  'v1StaffUserCount',
+  'v1QuoteCount',
+  'v1TombstonedMediaCount',
+].sort()
 
 export function validateRuntimeSemantics(report) {
   if (!report || typeof report !== 'object' || Array.isArray(report)) {
@@ -41,6 +59,21 @@ export function validateRuntimeSemantics(report) {
   }
   if (report.ms885ExcludedMembershipCount !== 0) {
     violations.push('MS885 excluded member invariant failed')
+  }
+  if (report.v1OrphanMediaReferenceCount !== 0) {
+    violations.push('V1 media reference invariant failed')
+  }
+  if (report.v1MediaKeyViolationCount !== 0) {
+    violations.push('V1 media key invariant failed')
+  }
+  if (report.v1PrimaryMediaViolationCount !== 0) {
+    violations.push('V1 primary media invariant failed')
+  }
+  if (report.v1ReadyWithoutProviderVerificationCount !== 0) {
+    violations.push('V1 provider verification invariant failed')
+  }
+  if (report.v1ReadyImageVariantViolationCount !== 0) {
+    violations.push('V1 image variant invariant failed')
   }
   return violations
 }
