@@ -69,6 +69,25 @@ insert into dpg_v1.staff_user_roles (auth_user_id, role) values
   ('eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee', 'Product'),
   ('ffffffff-ffff-4fff-8fff-ffffffffffff', 'Admin');
 
+-- Keep the last-active-Admin assertion deterministic when this rollback-only
+-- harness runs against a Preview database that has a real synthetic Admin.
+update dpg_v1.staff_users su
+set status = 'disabled'
+where su.auth_user_id not in (
+    'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+    'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+    'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+    'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+    'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
+    'ffffffff-ffff-4fff-8fff-ffffffffffff'
+  )
+  and su.status = 'active'
+  and exists (
+    select 1
+    from dpg_v1.staff_user_roles sur
+    where sur.auth_user_id = su.auth_user_id and sur.role = 'Admin'
+  );
+
 insert into dpg_v1.brands (id, name, slug) values
   ('52000000-0000-4000-8000-000000000001', 'LEO-564 Synthetic Brand', 'leo-564-synthetic-brand');
 
@@ -144,6 +163,17 @@ begin
   if not dpg_v1_api.staff_can('marketing.content.publish')
      or dpg_v1_api.staff_can('catalogue.publish') then
     raise exception 'LEO-564 Marketing least-privilege assertion failed';
+  end if;
+end
+$$;
+
+select set_config('request.jwt.claim.sub', '99999999-9999-4999-8999-999999999999', true);
+do $$
+declare context jsonb;
+begin
+  select dpg_v1_api.staff_context() into context;
+  if context <> '{}'::jsonb or dpg_v1_api.staff_can('catalogue.read') then
+    raise exception 'LEO-564 unmapped identity did not fail closed';
   end if;
 end
 $$;
@@ -337,6 +367,33 @@ begin
   ) then
     raise exception 'LEO-564 invalid guest Order left a reservation';
   end if;
+end
+$$;
+
+-- Missing `items` must not fall through PostgreSQL's NULL boolean semantics.
+do $$
+begin
+  begin
+    perform dpg_v1_api.order_intake_create(
+      jsonb_build_object(
+        'customer', jsonb_build_object('name', 'Invalid Guest', 'phone', '0900000005'),
+        'shipping', jsonb_build_object('address', 'Invalid address')
+      ), 'leo564-guest-order-missing-items'
+    );
+    raise exception 'LEO-564 missing-items Order unexpectedly succeeded';
+  exception when others then
+    if sqlerrm <> 'INVALID_ORDER_INPUT' then raise; end if;
+  end;
+  begin
+    perform dpg_v1_api.quote_request_intake_create(
+      jsonb_build_object(
+        'customer', jsonb_build_object('name', 'Invalid Quote Guest', 'phone', '0900000006')
+      ), 'leo564-guest-quote-missing-items'
+    );
+    raise exception 'LEO-564 missing-items Quote unexpectedly succeeded';
+  exception when others then
+    if sqlerrm <> 'INVALID_QUOTE_REQUEST_INPUT' then raise; end if;
+  end;
 end
 $$;
 
