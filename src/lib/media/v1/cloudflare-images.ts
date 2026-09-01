@@ -110,7 +110,7 @@ export async function transformProductV1WithCloudflareImages(
             throw new MediaContractError('CLOUDFLARE_IMAGES_UPSCALE_REJECTED')
         }
         variants.push({
-            key: publicImageObjectKey(source.sha256, targetWidthPx),
+            key: publicImageObjectKey(source.sha256, targetWidthPx, validated.sha256),
             bytes,
             sha256: validated.sha256,
             byteSize: bytes.byteLength,

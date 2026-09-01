@@ -218,12 +218,17 @@ export function privateOriginalObjectKey(media: ValidatedMedia): string {
     return `private/originals/v1/${media.sha256.slice(0, 2)}/${media.sha256}/source.${media.extension}`
 }
 
-export function publicImageObjectKey(sha256: string, targetWidthPx: number): string {
-    assertSha256(sha256)
+export function publicImageObjectKey(
+    sourceSha256: string,
+    targetWidthPx: number,
+    outputSha256: string,
+): string {
+    assertSha256(sourceSha256)
+    assertSha256(outputSha256)
     if (!PRODUCT_V1_PROFILE.widths.includes(targetWidthPx as never)) {
         throw new MediaContractError('MEDIA_PROFILE_WIDTH_UNSUPPORTED')
     }
-    return `public/images/${PRODUCT_V1_PROFILE.version}/${sha256}/w${targetWidthPx}.webp`
+    return `public/images/${PRODUCT_V1_PROFILE.version}/${sourceSha256}/w${targetWidthPx}-${outputSha256}.webp`
 }
 
 export function publicPdfObjectKey(sha256: string): string {
@@ -253,7 +258,7 @@ export function assertGeneratedObjectKey(value: string): string {
         /^private\/originals\/v1\/([a-f0-9]{2})\/([a-f0-9]{64})\/source\.(jpg|png|webp|pdf)$/,
     )
     const publicImageMatch = value.match(
-        /^public\/images\/product-v1\/([a-f0-9]{64})\/w(320|640|1280)\.webp$/,
+        /^public\/images\/product-v1\/([a-f0-9]{64})\/w(320|640|1280)-([a-f0-9]{64})\.webp$/,
     )
     const publicPdfMatch = value.match(
         /^public\/documents\/v1\/([a-f0-9]{64})\/document\.pdf$/,
@@ -265,6 +270,28 @@ export function assertGeneratedObjectKey(value: string): string {
         throw new MediaContractError('MEDIA_OBJECT_KEY_INVALID')
     }
     return value
+}
+
+export function assertObjectKeyMatchesSha256(
+    key: string,
+    sha256: string,
+): string {
+    assertGeneratedObjectKey(key)
+    assertSha256(sha256)
+    const privateMatch = key.match(
+        /^private\/originals\/v1\/[a-f0-9]{2}\/([a-f0-9]{64})\/source\.(jpg|png|webp|pdf)$/,
+    )
+    const publicImageMatch = key.match(
+        /^public\/images\/product-v1\/[a-f0-9]{64}\/w(?:320|640|1280)-([a-f0-9]{64})\.webp$/,
+    )
+    const publicPdfMatch = key.match(
+        /^public\/documents\/v1\/([a-f0-9]{64})\/document\.pdf$/,
+    )
+    const embeddedSha256 = privateMatch?.[1] ?? publicImageMatch?.[1] ?? publicPdfMatch?.[1]
+    if (embeddedSha256 !== sha256) {
+        throw new MediaContractError('MEDIA_OBJECT_KEY_SHA256_MISMATCH')
+    }
+    return key
 }
 
 export function assertPublicDeliveryHostname(value: string): string {

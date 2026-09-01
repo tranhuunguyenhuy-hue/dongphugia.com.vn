@@ -107,7 +107,7 @@ async function makeImageVariant(
     }
 
     return {
-        key: publicImageObjectKey(source.sha256, targetWidthPx),
+        key: publicImageObjectKey(source.sha256, targetWidthPx, validated.sha256),
         bytes: output.data,
         sha256: validated.sha256,
         byteSize: output.data.byteLength,

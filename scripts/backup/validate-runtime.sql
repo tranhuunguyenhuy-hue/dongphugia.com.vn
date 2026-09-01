@@ -122,7 +122,7 @@ WITH required_tables(identity) AS (
         end
       AND asset.delivery_object_key ~ (
         '^public/images/product-v1/' || btrim(asset.sha256)
-        || '/w(320|640|1280)\.webp$'
+        || '/w(320|640|1280)-[0-9a-f]{64}\.webp$'
       )
     )
     OR (
@@ -179,7 +179,10 @@ WITH required_tables(identity) AS (
         WHERE variant.media_asset_id = asset.id
           AND (variant.profile_version <> 'product-v1'
             OR variant.mime_type <> 'image/webp'
-            OR variant.width_px > variant.target_width_px)
+            OR variant.width_px > variant.target_width_px
+            OR variant.delivery_object_key <> 'public/images/product-v1/'
+              || btrim(asset.sha256) || '/w' || variant.target_width_px
+              || '-' || btrim(variant.sha256) || '.webp')
       )
     )
 )

@@ -102,7 +102,7 @@ do $$
 declare
   source_sha constant text := repeat('e', 64);
   original_key constant text := 'private/originals/v1/ee/' || repeat('e', 64) || '/source.png';
-  primary_key constant text := 'public/images/product-v1/' || repeat('e', 64) || '/w1280.webp';
+  primary_key constant text := 'public/images/product-v1/' || repeat('e', 64) || '/w1280-' || repeat('3', 64) || '.webp';
   registered jsonb;
   replayed jsonb;
   ready jsonb;
@@ -123,13 +123,13 @@ begin
       'variants', jsonb_build_array(
         jsonb_build_object(
           'target_width_px', 320, 'width_px', 320, 'height_px', 160,
-          'delivery_object_key', 'public/images/product-v1/' || source_sha || '/w320.webp',
+          'delivery_object_key', 'public/images/product-v1/' || source_sha || '/w320-' || repeat('1', 64) || '.webp',
           'sha256', repeat('1', 64), 'byte_size', 512,
           'mime_type', 'image/webp', 'profile_version', 'product-v1'
         ),
         jsonb_build_object(
           'target_width_px', 640, 'width_px', 640, 'height_px', 320,
-          'delivery_object_key', 'public/images/product-v1/' || source_sha || '/w640.webp',
+          'delivery_object_key', 'public/images/product-v1/' || source_sha || '/w640-' || repeat('2', 64) || '.webp',
           'sha256', repeat('2', 64), 'byte_size', 768,
           'mime_type', 'image/webp', 'profile_version', 'product-v1'
         ),
@@ -164,13 +164,13 @@ begin
       'variants', jsonb_build_array(
         jsonb_build_object(
           'target_width_px', 320, 'width_px', 320, 'height_px', 160,
-          'delivery_object_key', 'public/images/product-v1/' || source_sha || '/w320.webp',
+          'delivery_object_key', 'public/images/product-v1/' || source_sha || '/w320-' || repeat('1', 64) || '.webp',
           'sha256', repeat('1', 64), 'byte_size', 512,
           'mime_type', 'image/webp', 'profile_version', 'product-v1'
         ),
         jsonb_build_object(
           'target_width_px', 640, 'width_px', 640, 'height_px', 320,
-          'delivery_object_key', 'public/images/product-v1/' || source_sha || '/w640.webp',
+          'delivery_object_key', 'public/images/product-v1/' || source_sha || '/w640-' || repeat('2', 64) || '.webp',
           'sha256', repeat('2', 64), 'byte_size', 768,
           'mime_type', 'image/webp', 'profile_version', 'product-v1'
         ),
@@ -223,11 +223,11 @@ begin
       ),
       'delivery', jsonb_build_array(
         jsonb_build_object(
-          'key', 'public/images/product-v1/' || source_sha || '/w320.webp',
+          'key', 'public/images/product-v1/' || source_sha || '/w320-' || repeat('1', 64) || '.webp',
           'sha256', repeat('1', 64), 'byte_size', 512, 'mime_type', 'image/webp'
         ),
         jsonb_build_object(
-          'key', 'public/images/product-v1/' || source_sha || '/w640.webp',
+          'key', 'public/images/product-v1/' || source_sha || '/w640-' || repeat('2', 64) || '.webp',
           'sha256', repeat('2', 64), 'byte_size', 768, 'mime_type', 'image/webp'
         ),
         jsonb_build_object(
@@ -254,6 +254,98 @@ begin
   )->>'role') <> 'PRIMARY' then
     raise exception 'LEO-565 Product PRIMARY attachment failed';
   end if;
+
+  insert into dpg_v1.media_assets (
+    id, kind, original_object_key, delivery_object_key, profile_version,
+    sha256, mime_type, byte_size, width_px, height_px, provenance, state
+  ) values (
+    '65000000-0000-4000-8000-000000000006', 'IMAGE',
+    'private/originals/v1/aa/' || repeat('a', 64) || '/source.png',
+    'public/images/product-v1/' || repeat('a', 64) || '/w320-' || repeat('b', 64) || '.webp',
+    'product-v1', repeat('a', 64), 'image/png', 1024, 200, 100,
+    'synthetic:leo565:pending-image', 'PENDING'
+  );
+  insert into dpg_v1.media_assets (
+    id, kind, original_object_key, delivery_object_key, profile_version,
+    sha256, mime_type, byte_size, width_px, height_px, provenance, state,
+    provider_name, provider_verified_at
+  ) values (
+    '65000000-0000-0000-8000-000000000007', 'DOCUMENT',
+    'private/originals/v1/cc/' || repeat('c', 64) || '/source.pdf',
+    'public/documents/v1/' || repeat('c', 64) || '/document.pdf',
+    null, repeat('c', 64), 'application/pdf', 1024, null, null,
+    'synthetic:leo565:ready-document', 'READY', 'bunny', clock_timestamp()
+  );
+  insert into dpg_v1.media_assets (
+    id, kind, original_object_key, delivery_object_key, profile_version,
+    sha256, mime_type, byte_size, width_px, height_px, provenance, state
+  ) values (
+    '65000000-0000-0000-8000-000000000008', 'IMAGE',
+    'private/originals/v1/dd/' || repeat('d', 64) || '/source.png',
+    'public/images/product-v1/' || repeat('d', 64) || '/w320-' || repeat('e', 64) || '.webp',
+    'product-v1', repeat('d', 64), 'image/png', 1024, 200, 100,
+    'synthetic:leo565:tombstoned-image', 'TOMBSTONED'
+  );
+
+  begin
+    perform dpg_v1_api.catalogue_product_media_attach(
+      '65000000-0000-4000-8000-000000000004',
+      '65000000-0000-4000-8000-000000000006',
+      'GALLERY', 1, 'Pending image must be denied',
+      'leo565-media-deny-pending-image'
+    );
+    raise exception 'LEO-565 pending image attachment unexpectedly succeeded';
+  exception when others then
+    if sqlerrm <> 'PRODUCT_MEDIA_REQUIRES_READY_IMAGE' then raise; end if;
+  end;
+
+  begin
+    perform dpg_v1_api.catalogue_product_media_attach(
+      '65000000-0000-4000-8000-000000000004',
+      '65000000-0000-0000-8000-000000000007',
+      'PRIMARY', 0, 'Document must be denied as Product PRIMARY',
+      'leo565-media-deny-document-primary'
+    );
+    raise exception 'LEO-565 document Product PRIMARY attachment unexpectedly succeeded';
+  exception when others then
+    if sqlerrm <> 'PRODUCT_MEDIA_REQUIRES_READY_IMAGE' then raise; end if;
+  end;
+
+  begin
+    perform dpg_v1_api.catalogue_product_media_attach(
+      '65000000-0000-4000-8000-000000000004',
+      '65000000-0000-0000-8000-000000000007',
+      'GALLERY', 1, 'Document must be denied as Product GALLERY',
+      'leo565-media-deny-document-gallery'
+    );
+    raise exception 'LEO-565 document Product GALLERY attachment unexpectedly succeeded';
+  exception when others then
+    if sqlerrm <> 'PRODUCT_MEDIA_REQUIRES_READY_IMAGE' then raise; end if;
+  end;
+
+  begin
+    perform dpg_v1_api.catalogue_product_document_attach(
+      '65000000-0000-4000-8000-000000000004',
+      media_id,
+      'TECHNICAL_SHEET', 'Image must be denied as technical document', 0, true,
+      'leo565-media-deny-image-document'
+    );
+    raise exception 'LEO-565 image technical document attachment unexpectedly succeeded';
+  exception when others then
+    if sqlerrm <> 'PRODUCT_DOCUMENT_REQUIRES_READY_DOCUMENT' then raise; end if;
+  end;
+
+  begin
+    perform dpg_v1_api.catalogue_product_media_attach(
+      '65000000-0000-4000-8000-000000000004',
+      '65000000-0000-0000-8000-000000000008',
+      'PRIMARY', 0, 'Tombstoned image must be denied',
+      'leo565-media-deny-tombstoned-image'
+    );
+    raise exception 'LEO-565 tombstoned image attachment unexpectedly succeeded';
+  exception when others then
+    if sqlerrm <> 'PRODUCT_MEDIA_REQUIRES_READY_IMAGE' then raise; end if;
+  end;
 
   begin
     update dpg_v1.media_assets
@@ -295,7 +387,7 @@ reset role;
 set local role dpg_backup;
 do $$
 begin
-  if (select count(*) from dpg_v1.media_assets) <> 1
+  if (select count(*) from dpg_v1.media_assets) <> 4
      or (select count(*) from dpg_v1.media_variants) <> 3 then
     raise exception 'LEO-565 dpg_backup V1 read coverage failed';
   end if;

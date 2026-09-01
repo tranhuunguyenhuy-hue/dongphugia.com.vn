@@ -1,10 +1,11 @@
 # LEO-565 media and recovery baseline
 
-Status: Round 1 source/local implementation ready for the Remote Preview Owner
-Gate. This document records a dated read-only discovery snapshot and does not
-authorize a provider write, remote schema or privilege change, Preview
-publication, Production change, DNS/traffic change, paid-plan change, legacy
-cleanup, or bulk media migration.
+Status: Round 1 V2 source/local implementation is complete, but the Remote
+Preview Owner Gate remains blocked by missing authenticated Bunny and
+Cloudflare read-only inventory. This document records a dated discovery
+snapshot and does not authorize a provider write, remote schema or privilege
+change, Preview publication, Production change, DNS/traffic change, paid-plan
+change, legacy cleanup, or bulk media migration.
 
 ## Authority and boundary
 
@@ -23,10 +24,13 @@ that migration to the remote `dongphugia-runtime` project.
   Preview gate. Supabase stores metadata, immutable object keys, checksums,
   MIME, dimensions, profile, provenance, and readiness state.
 - Original bytes use a private, content-addressed key under
-  `private/originals/v1/<prefix>/<sha256>/source.<ext>`. Delivery objects use
-  content-addressed/versioned keys under `public/images/product-v1/` or
-  `public/documents/v1/`; public keys are never overwritten and no prefix
-  deletion operation exists in the adapter.
+  `private/originals/v1/<prefix>/<sha256>/source.<ext>`. Image delivery
+  objects use `public/images/product-v1/<source-sha256>/w<target-width>-<output-sha256>.webp`;
+  PDF delivery objects use `public/documents/v1/<sha256>/document.pdf`.
+  Public keys retain profile/source/target identity and include the generated
+  output SHA, so distinct approved transformers cannot collide merely by
+  emitting different valid bytes. Public keys are never overwritten and no
+  prefix deletion operation exists in the adapter.
 - `product-v1` is locked to WebP quality 82 and widths 320, 640, and 1280,
   with no enlargement and at most three variants. A source smaller than the
   first target receives one actual-size-or-smaller `w320` variant.
@@ -53,18 +57,21 @@ before any Round 2 mutation.
 
 | Area | Read-only result | Disposition |
 | --- | --- | --- |
-| Bunny Storage Zones, regions, Pull Zones, hostnames, credential scope | `UNKNOWN`; no authenticated Bunny discovery connector/credential was available | Do not reuse a production or legacy resource; obtain an exact Owner-attested resource set in Round 2 |
+| Bunny account, Storage Zones, regions, Pull Zones, delivery hostnames, credential scope | `BUNNY_SIGN_IN_REQUIRED`; no authenticated Bunny discovery connector/credential was available, so exact account resources, regions, hostnames, credential names/scopes, and commitment remain `UNKNOWN` | Do not reuse a production or legacy resource; obtain authenticated read-only inventory before the Owner Gate |
 | Existing public Bunny hostnames | `cdn.dongphugia.com.vn` resolves to `dpg-products.b-cdn.net`; `media.dongphugia.vn` resolves to `dpg-publishing-production.b-cdn.net`; both public probes returned 404 at root | Production/legacy evidence only; no safe isolated V1 Preview reuse proven |
 | Bunny staging candidate | `dpg-publishing-staging.b-cdn.net` did not resolve | Not a reuse candidate until separately attested |
-| Bunny account cost/commitment | Account-specific state `UNKNOWN`; no commitment or plan was mutated | Public pricing indicates Standard Storage has a USD 1 monthly minimum and pay-as-you-go rates; CDN rates vary by region. Confirm the account quote at the Owner gate |
-| Cloudflare Images plan/usage | `UNKNOWN`; authenticated read-only API discovery was rejected | No Images binding, plan, usage, or billing claim is a pass |
-| Cloudflare media Workers/bindings | `UNKNOWN` for live account state; repository contains only named secret/variable references | Existing LEO-563 app Preview resources are not a V1 media seam; no safe reuse proven |
+| Bunny account cost/commitment | `BUNNY_SIGN_IN_REQUIRED`; account-specific commitment, plan, and current usage are `UNKNOWN` | No Bunny plan or paid resource was mutated; confirm the account quote at the Owner Gate |
+| Cloudflare account, Images plan/usage, billing, media Workers/bindings | `CLOUDFLARE_SIGN_IN_REQUIRED`; authenticated account-level GET discovery returned `10000 Authentication error`, so live account, Images, billing, Worker, and binding state are `UNKNOWN` | No Images/Workers resource is a proven reuse candidate; determine whether a new Preview-only Worker/binding is needed only after authenticated read-only discovery |
 | Supabase `dongphugia-runtime` | Read-only target identity is `ap-southeast-1`, PostgreSQL 17.6; LEO-565 is absent remotely | `dpg_v1` media state is empty; legacy media remains unmigrated |
 | Current legacy media | `dpg_app.product_images` and managed/publishing media remain legacy evidence | No bulk migration, cleanup, deletion, or overwrite was performed |
 | Current `dpg_backup` | Read-only role is non-superuser/non-createdb/non-createrole/non-replication/non-BYPASSRLS; current remote SELECT coverage includes dpg_app/dpg_control but not dpg_v1 | Round 1 extends source backup controls to dpg_app + dpg_v1 + dpg_control and grants only explicit V1 SELECT after the later remote gate |
 
-Public Bunny pricing references used for the cost boundary: [Storage
-pricing](https://bunny.net/pricing/storage/) and [Bunny pricing](https://bunny.net/pricing/).
+Public Bunny documentation confirms that Storage Zone and Pull Zone inventory
+are account-scoped API surfaces, but it does not substitute for the missing
+authenticated account evidence: [List Storage Zones](https://bunny.net/docs/api-reference/core/storage-zone/list-storage-zones),
+[List Pull Zones](https://bunny.net/docs/api-reference/core/pull-zone/list-pull-zones),
+and [Storage pricing](https://bunny.net/pricing/storage/). Account-specific
+cost/commitment remains `UNKNOWN`; no plan or resource was mutated.
 
 ## Recovery extension
 
@@ -79,6 +86,9 @@ workflow output. V1 manifests contain aggregate row counts and row hashes;
 restore validation covers Product, Product Family, media/variant readiness and
 keys, staff, and commerce state. A synthetic proof deterministically regenerates
 the public image variants from a private original and the locked profile.
+Recovery validation checks the output-SHA-bearing image key contract and the
+source/output relationship; it does not claim Sharp and Cloudflare Images
+produce byte-identical WebP output.
 
 ## Exact Round 2 Preview mutation set — Owner gate required
 

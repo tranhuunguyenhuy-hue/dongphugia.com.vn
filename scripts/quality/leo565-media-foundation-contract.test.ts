@@ -1,7 +1,19 @@
 import { readFile } from 'node:fs/promises'
+import { createHash } from 'node:crypto'
 import path from 'node:path'
 import { Client } from 'pg'
+import sharp from 'sharp'
 import { describe, expect, it } from 'vitest'
+
+import { processProductV1Media } from '../../src/lib/media/v1/processor'
+import {
+    MediaObjectNotFoundError,
+    mediaRegistrationInput,
+    providerVerificationInput,
+    storeAndVerifyProductV1Bundle,
+    type ImmutableMediaObjectStore,
+    type ProviderObject,
+} from '../../src/lib/media/v1/provider'
 
 const root = process.cwd()
 const migrationPath = path.join(root, 'supabase/migrations/20260901170000_leo565_media_foundation.sql')
@@ -55,6 +67,149 @@ async function bootstrapDisposableDatabase(client: Client) {
     await client.query('grant usage on schema auth, extensions to anon, authenticated')
 }
 
+class DisposableMediaStore implements ImmutableMediaObjectStore {
+    readonly objects = new Map<string, { bytes: Buffer; mimeType: string }>()
+
+    async put(object: { key: string; bytes: Buffer; mimeType: string }): Promise<void> {
+        this.objects.set(object.key, {
+            bytes: Buffer.from(object.bytes),
+            mimeType: object.mimeType,
+        })
+    }
+
+    async read(key: string, maxBytes = 5 * 1024 * 1024): Promise<ProviderObject> {
+        const object = this.objects.get(key)
+        if (!object) throw new MediaObjectNotFoundError()
+        if (object.bytes.byteLength > maxBytes) throw new Error('synthetic bound exceeded')
+        const hash = createHash('sha256').update(object.bytes).digest('hex')
+        return {
+            key,
+            bytes: object.bytes,
+            sha256: hash,
+            byteSize: object.bytes.byteLength,
+            mimeType: object.mimeType,
+        }
+    }
+}
+
+async function runGeneratedSqlPayloadFlow(client: Client): Promise<void> {
+    const input = await sharp({
+        create: {
+            width: 1600,
+            height: 800,
+            channels: 4,
+            background: { r: 36, g: 116, b: 142, alpha: 1 },
+        },
+    }).png().toBuffer()
+    const bundle = await processProductV1Media(input, 'IMAGE', 'image/png')
+    const registration = mediaRegistrationInput(bundle)
+    expect(Object.keys(registration).sort()).toEqual([
+        'byte_size',
+        'delivery_object_key',
+        'height_px',
+        'kind',
+        'mime_type',
+        'original_object_key',
+        'profile_version',
+        'provenance',
+        'sha256',
+        'variants',
+        'width_px',
+    ])
+    expect(registration).toMatchObject({
+        kind: 'IMAGE',
+        original_object_key: bundle.original.key,
+        delivery_object_key: bundle.primaryVariant.key,
+        profile_version: bundle.profileVersion,
+        sha256: bundle.source.sha256,
+        mime_type: bundle.source.mimeType,
+        byte_size: bundle.source.byteSize,
+        width_px: bundle.source.widthPx,
+        height_px: bundle.source.heightPx,
+        provenance: 'upload:bunny-v1',
+    })
+    expect(registration.variants.every((variant) => variant.profile_version === 'product-v1')).toBe(true)
+    expect(Object.keys(registration.variants[0] ?? {}).sort()).toEqual([
+        'byte_size',
+        'delivery_object_key',
+        'height_px',
+        'mime_type',
+        'profile_version',
+        'sha256',
+        'target_width_px',
+        'width_px',
+    ])
+
+    const stores = {
+        originals: new DisposableMediaStore(),
+        delivery: new DisposableMediaStore(),
+    }
+    const verification = await storeAndVerifyProductV1Bundle(bundle, stores)
+    const providerVerification = providerVerificationInput(verification)
+    expect(Object.keys(providerVerification).sort()).toEqual(['delivery', 'original', 'provider'])
+    expect(providerVerification.provider).toBe('bunny')
+    expect(Object.keys(providerVerification.original).sort()).toEqual([
+        'byte_size',
+        'key',
+        'mime_type',
+        'sha256',
+    ])
+    expect(providerVerification.delivery.every((object) => Object.keys(object).sort().join(',') === 'byte_size,key,mime_type,sha256')).toBe(true)
+
+    await client.query('begin')
+    try {
+        await client.query(`
+          insert into dpg_v1.staff_users (auth_user_id, email, display_name, status)
+          values ('66000000-0000-4000-8000-000000000001', 'leo565-generated@example.invalid', 'LEO-565 Generated Staff', 'active');
+          insert into dpg_v1.staff_user_roles (auth_user_id, role)
+          values ('66000000-0000-4000-8000-000000000001', 'Product');
+          insert into dpg_v1.brands (id, name, slug)
+          values ('66000000-0000-4000-8000-000000000002', 'LEO-565 Generated Brand', 'leo-565-generated-brand');
+          insert into dpg_v1.categories (id, parent_id, sector, name, slug, is_leaf, sort_order)
+          values ('66000000-0000-4000-8000-000000000003', '10000000-0000-4000-8000-000000000004', 'kitchen', 'LEO-565 Generated Category', 'leo-565-generated-category', true, 0);
+          insert into dpg_v1.products (id, sku, model, name, slug, brand_id, primary_category_id, retail_price, availability, status)
+          values ('66000000-0000-4000-8000-000000000004', 'LEO565-GENERATED-P1', 'LEO565-GENERATED-M1', 'LEO-565 Generated Product', 'leo-565-generated-product', '66000000-0000-4000-8000-000000000002', '66000000-0000-4000-8000-000000000003', 125000, 'IN_STOCK', 'DRAFT');
+          insert into dpg_v1.product_source_provenance (id, product_id, source_kind, source_reference, quality, captured_at)
+          values ('66000000-0000-4000-8000-000000000005', '66000000-0000-4000-8000-000000000004', 'manufacturer', 'synthetic:leo565:generated', 'official', clock_timestamp());
+        `)
+        await client.query('set local role authenticated')
+        await client.query(
+            "select set_config('request.jwt.claim.sub', '66000000-0000-4000-8000-000000000001', true)",
+        )
+
+        const registeredResult = await client.query<{ result: unknown }>(
+            'select dpg_v1_api.catalogue_media_register($1::jsonb, $2::text) as result',
+            [JSON.stringify(registration), 'leo565-generated-media-register'],
+        )
+        const registered = registeredResult.rows[0]?.result
+        if (!registered || typeof registered !== 'object' || !('media_asset_id' in registered)) {
+            throw new Error('LEO565_GENERATED_REGISTER_RESPONSE_INVALID')
+        }
+        const mediaId = (registered as { media_asset_id?: unknown }).media_asset_id
+        if (typeof mediaId !== 'string') throw new Error('LEO565_GENERATED_MEDIA_ID_INVALID')
+
+        const readyResult = await client.query<{ result: unknown }>(
+            'select dpg_v1_api.catalogue_media_mark_ready($1::uuid, $2::jsonb, $3::text) as result',
+            [mediaId, JSON.stringify(providerVerification), 'leo565-generated-media-ready'],
+        )
+        const ready = readyResult.rows[0]?.result
+        if (!ready || typeof ready !== 'object' || !('state' in ready) || ready.state !== 'READY') {
+            throw new Error('LEO565_GENERATED_READY_RESPONSE_INVALID')
+        }
+        const stateResult = await client.query<{ state: string; variant_count: string }>(
+            `select asset.state, count(variant.id)::text as variant_count
+             from dpg_v1.media_assets asset
+             left join dpg_v1.media_variants variant on variant.media_asset_id = asset.id
+             where asset.id = $1
+             group by asset.id, asset.state`,
+            [mediaId],
+        )
+        expect(stateResult.rows[0]).toMatchObject({ state: 'READY', variant_count: '3' })
+    } finally {
+        await client.query('rollback')
+    }
+}
+
 describe('LEO-565 V1 media and recovery foundation contract', () => {
     it('locks provider-neutral media contracts and server-only provider adapters', async () => {
         const [contract, processor, provider, bunny, cloudflare, cli, packageJson, migration, backup, manifest, validation, acceptance] = await Promise.all([
@@ -84,6 +239,10 @@ describe('LEO-565 V1 media and recovery foundation contract', () => {
         expect(processor).toContain('variants: []')
         expect(provider).toContain('MEDIA_STORAGE_CONFLICT')
         expect(provider).toContain('MEDIA_PROVIDER_WRITE_AMBIGUOUS')
+        expect(provider).toContain('serializeMediaObject')
+        expect(provider).toContain("profile_version: 'product-v1'")
+        expect(provider).toContain("keyField: 'key'")
+        expect(provider).toContain("keyField: 'delivery_object_key'")
         expect(provider).not.toMatch(/(?:\.delete|\.remove|delete\(|prefix\s*\()/i)
         expect(bunny).toContain("import 'server-only'")
         expect(bunny).toContain('AccessKey')
@@ -101,6 +260,9 @@ describe('LEO-565 V1 media and recovery foundation contract', () => {
         expect(migration).toContain("provider_name = 'bunny'")
         expect(migration).toContain('MEDIA_ASSET_READY_REQUIRES_PROVIDER_VERIFICATION')
         expect(migration).toContain('MEDIA_ASSET_IDENTITY_IMMUTABLE')
+        expect(migration).toContain("'-' || btrim(variant.sha256) || '.webp'")
+        expect(migration).toContain('PRODUCT_MEDIA_REQUIRES_READY_IMAGE')
+        expect(migration).toContain('PRODUCT_DOCUMENT_REQUIRES_READY_DOCUMENT')
         expect(migration).toContain('catalogue_media_register')
         expect(migration).toContain('catalogue_media_mark_ready')
         expect(migration).toContain('catalogue_product_media_attach')
@@ -121,6 +283,9 @@ describe('LEO-565 V1 media and recovery foundation contract', () => {
         expect(validation).toContain('v1ReadyWithoutProviderVerificationCount')
         expect(validation).toContain('v1ReadyImageVariantViolationCount')
         expect(acceptance).toContain('leo565_media_foundation')
+        expect(acceptance).toContain('pending image attachment unexpectedly succeeded')
+        expect(acceptance).toContain('document Product GALLERY attachment unexpectedly succeeded')
+        expect(acceptance).toContain('tombstoned image attachment unexpectedly succeeded')
     })
 
     it('keeps LEO-561 and LEO-564 as the canonical upstream authorities', async () => {
@@ -147,6 +312,7 @@ describe('LEO-565 V1 media and recovery foundation contract', () => {
             await client.query(await readFile(canonicalMigrationPath, 'utf8'))
             await client.query(await readFile(authMigrationPath, 'utf8'))
             await client.query(await readFile(migrationPath, 'utf8'))
+            await runGeneratedSqlPayloadFlow(client)
             const acceptance = (await readFile(acceptancePath, 'utf8')).replace(/^\\set[^\n]*\n/, '')
             await client.query(acceptance)
         } finally {

@@ -22,7 +22,7 @@ alter table dpg_v1.media_assets
         kind = 'IMAGE'
         and profile_version = 'product-v1'
         and original_object_key ~ '^private/originals/v1/[0-9a-f]{2}/[0-9a-f]{64}/source\.(jpg|png|webp)$'
-        and delivery_object_key ~ '^public/images/product-v1/[0-9a-f]{64}/w(320|640|1280)\.webp$'
+        and delivery_object_key ~ '^public/images/product-v1/[0-9a-f]{64}/w(320|640|1280)-[0-9a-f]{64}\.webp$'
         and original_object_key = 'private/originals/v1/'
           || left(btrim(sha256), 2) || '/' || btrim(sha256)
           || '/source.' || case mime_type
@@ -30,9 +30,10 @@ alter table dpg_v1.media_assets
             when 'image/png' then 'png'
             when 'image/webp' then 'webp'
           end
-        and delivery_object_key = 'public/images/product-v1/'
-          || btrim(sha256) || '/w' || regexp_replace(delivery_object_key, '^.*/w([0-9]+)\.webp$', '\1')
-          || '.webp'
+        and delivery_object_key ~ (
+          '^public/images/product-v1/' || btrim(sha256)
+          || '/w(320|640|1280)-[0-9a-f]{64}\.webp$'
+        )
       )
       or (
         kind = 'DOCUMENT'
@@ -74,7 +75,7 @@ create table dpg_v1.media_variants (
   constraint leo565_media_variants_mime_check check (mime_type = 'image/webp'),
   constraint leo565_media_variants_profile_check check (profile_version = 'product-v1'),
   constraint leo565_media_variants_key_check check (
-    delivery_object_key ~ '^public/images/product-v1/[0-9a-f]{64}/w(320|640|1280)\.webp$'
+    delivery_object_key ~ '^public/images/product-v1/[0-9a-f]{64}/w(320|640|1280)-[0-9a-f]{64}\.webp$'
     and delivery_object_key !~ '^[a-z][a-z0-9+.-]*://'
   ),
   unique (media_asset_id, target_width_px),
@@ -127,6 +128,9 @@ begin
         select 1 from dpg_v1.media_variants variant
         where variant.media_asset_id = new.id
           and variant.delivery_object_key = new.delivery_object_key
+          and variant.delivery_object_key = 'public/images/product-v1/'
+            || btrim(new.sha256) || '/w' || variant.target_width_px
+            || '-' || btrim(variant.sha256) || '.webp'
       ) then
         raise exception 'MEDIA_ASSET_READY_PRIMARY_VARIANT_MISSING';
       end if;
@@ -182,7 +186,8 @@ begin
     raise exception 'MEDIA_VARIANT_UPSCALE_REJECTED';
   end if;
   if new.delivery_object_key <> 'public/images/product-v1/'
-       || btrim(asset_sha) || '/w' || new.target_width_px || '.webp' then
+       || btrim(asset_sha) || '/w' || new.target_width_px
+       || '-' || btrim(new.sha256) || '.webp' then
     raise exception 'MEDIA_VARIANT_KEY_NOT_CONTENT_ADDRESSED';
   end if;
   if asset_state in ('READY', 'TOMBSTONED') then
@@ -459,9 +464,12 @@ begin
     raise exception 'INVALID_MEDIA_INPUT';
   end if;
   if p_input->>'kind' = 'IMAGE' then
-    if p_input->>'profile_version' <> 'product-v1'
+    if p_input->>'profile_version' is distinct from 'product-v1'
+       or p_input->>'mime_type' is null
        or p_input->>'mime_type' not in ('image/jpeg', 'image/png', 'image/webp')
+       or p_input->>'width_px' is null
        or p_input->>'width_px' !~ '^[1-9][0-9]*$'
+       or p_input->>'height_px' is null
        or p_input->>'height_px' !~ '^[1-9][0-9]*$'
        or jsonb_array_length(p_input->'variants') not between 1 and 3 then
       raise exception 'INVALID_MEDIA_INPUT';
@@ -556,6 +564,9 @@ begin
            from dpg_v1.media_variants max_variant
            where max_variant.media_asset_id = media_id
          )
+         and variant.delivery_object_key = 'public/images/product-v1/'
+           || btrim(p_input->>'sha256') || '/w' || variant.target_width_px
+           || '-' || btrim(variant.sha256) || '.webp'
      ) then
     raise exception 'MEDIA_PRIMARY_VARIANT_INVALID';
   end if;
@@ -660,6 +671,15 @@ begin
   if p_role = 'PRIMARY' and p_sort_order <> 0 then
     raise exception 'INVALID_PRODUCT_MEDIA_ORDER';
   end if;
+  if not exists (
+    select 1
+    from dpg_v1.media_assets asset
+    where asset.id = p_media_asset_id
+      and asset.kind = 'IMAGE'
+      and asset.state = 'READY'
+  ) then
+    raise exception 'PRODUCT_MEDIA_REQUIRES_READY_IMAGE';
+  end if;
   request_hash := dpg_v1.sha256_json(jsonb_build_object(
     'product_id', p_product_id, 'media_asset_id', p_media_asset_id,
     'role', p_role, 'sort_order', p_sort_order, 'alt_text', btrim(p_alt_text)
@@ -723,6 +743,15 @@ begin
      or nullif(btrim(p_title), '') is null
      or p_sort_order is null or p_sort_order < 0 then
     raise exception 'INVALID_PRODUCT_DOCUMENT_INPUT';
+  end if;
+  if not exists (
+    select 1
+    from dpg_v1.media_assets asset
+    where asset.id = p_media_asset_id
+      and asset.kind = 'DOCUMENT'
+      and asset.state = 'READY'
+  ) then
+    raise exception 'PRODUCT_DOCUMENT_REQUIRES_READY_DOCUMENT';
   end if;
   request_hash := dpg_v1.sha256_json(jsonb_build_object(
     'product_id', p_product_id, 'media_asset_id', p_media_asset_id,
