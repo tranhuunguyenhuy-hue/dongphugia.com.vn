@@ -83,7 +83,7 @@ if [[ "$(<"$role_attestation")" != 'true|true|true' ]]; then
 fi
 
 if ! psql "$DATABASE_URL" -X -q -A -t -v ON_ERROR_STOP=1 \
-  -c "set role dpg_backup; select not exists (select 1 from pg_tables where schemaname = 'dpg_app' and not has_table_privilege(current_user, schemaname || '.' || tablename, 'SELECT'))" \
+  -c "set role dpg_backup; select has_schema_privilege(current_user, 'dpg_v1', 'USAGE') and not exists (select 1 from pg_tables where schemaname in ('dpg_app', 'dpg_v1', 'dpg_control') and not has_table_privilege(current_user, schemaname || '.' || tablename, 'SELECT'))" \
   >"$tmp_dir/table-select.status" 2>"$tmp_dir/table-select.error"; then
   echo 'LEO540_BACKUP status=FAIL stage=target_attestation reason=table_select_attestation_failed'
   exit 1
@@ -141,7 +141,7 @@ encrypted_dump="$output_dir/${backup_id}.dump.age"
 manifest="$output_dir/${backup_id}.manifest.json"
 checksums="$output_dir/${backup_id}.checksums.sha256"
 if docker run --rm --network host --env DATABASE_URL "$postgres_image" \
-  sh -ceu 'pg_dump "$DATABASE_URL" --role=dpg_backup --enable-row-security --format=custom --no-owner --no-privileges --no-comments --schema=dpg_app --schema=dpg_control' \
+  sh -ceu 'pg_dump "$DATABASE_URL" --role=dpg_backup --enable-row-security --format=custom --no-owner --no-privileges --no-comments --schema=dpg_app --schema=dpg_v1 --schema=dpg_control' \
   >"$plain_dump" \
   2>"$tmp_dir/pg_dump.error"; then
   :
@@ -187,5 +187,5 @@ manifest_sha="$(sha256sum "$manifest" | awk '{ print $1 }')"
   printf '%s  %s\n' "$manifest_sha" "$(basename "$manifest")"
 } >"$checksums"
 
-printf 'LEO540_BACKUP status=PASS backup_id=%s archive_bytes=%s retention_days=14 encrypted=true manifest=PASS checksum=PASS\n' \
+printf 'LEO540_BACKUP status=PASS backup_id=%s archive_bytes=%s schemas=dpg_app+dpg_v1+dpg_control retention_days=14 encrypted=true manifest=PASS checksum=PASS\n' \
   "$backup_id" "$(wc -c <"$encrypted_dump" | tr -d ' ')"

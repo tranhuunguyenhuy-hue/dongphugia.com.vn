@@ -185,8 +185,9 @@ jobs:
           {
             echo '### LEO-540 backup: PASS'
             echo '- Source target: the existing Owner-configured dongphugia-runtime Preview target'
+            echo '- Coverage: dpg_app, dpg_v1, and dpg_control; V1 Product/Family/media/staff/commerce state is included'
             echo '- Logical archive: encrypted before artifact upload'
-            echo '- Manifest: schema metadata, row counts, and row hashes only'
+            echo '- Manifest: schema metadata, row counts, and row hashes only; no row payloads'
             echo '- Retention: 14 days; no archive deletion is performed by this workflow'
             echo '- Database rows, credentials, and encryption material: not emitted'
           } >> "$GITHUB_STEP_SUMMARY"

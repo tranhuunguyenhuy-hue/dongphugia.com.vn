@@ -31,6 +31,8 @@
     "postinstall": "prisma generate",
     "test": "vitest run",
     "test:media": "vitest run src/lib/media src/app/api/upload-image",
+    "media:process:product-v1": "tsx scripts/media/process-product-v1.mts",
+    "test:media-preview": "vitest run apps/media-preview",
     "test:homepage": "playwright test --config=playwright.homepage.config.ts",
     "perf:lighthouse": "lhci autorun",
     "perf:lighthouse:toilet": "lhci autorun --config=lighthouserc.toilet-listing.cjs && node scripts/quality/assert-lighthouse-toilet-median.mjs",

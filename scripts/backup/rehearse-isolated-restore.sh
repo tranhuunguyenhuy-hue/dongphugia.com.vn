@@ -16,6 +16,7 @@ manifest_compared='false'
 product_validation='UNKNOWN'
 family_validation='UNKNOWN'
 blog_validation='UNKNOWN'
+v1_validation='UNKNOWN'
 container_started='false'
 
 cleanup() {
@@ -23,9 +24,9 @@ cleanup() {
     docker rm --force "$container_name" >/dev/null 2>&1 || true
   fi
   rm -rf "$tmp_dir"
-  printf 'LEO540_RESTORE status=%s stage=%s checksum=%s isolated=%s manifest=%s product=%s family_ms885=%s blog=%s\n' \
+  printf 'LEO540_RESTORE status=%s stage=%s checksum=%s isolated=%s manifest=%s product=%s family_ms885=%s blog=%s v1_product_family_media_staff_commerce=%s\n' \
     "$result" "$stage" "$checksum_verified" "$network_isolated" "$manifest_compared" \
-    "$product_validation" "$family_validation" "$blog_validation"
+    "$product_validation" "$family_validation" "$blog_validation" "$v1_validation"
 }
 trap cleanup EXIT
 
@@ -153,7 +154,7 @@ node "$repo_root/scripts/backup/manifest-contract.mjs" compare "$manifest" "$act
 }
 manifest_compared='true'
 
-stage='product_family_blog_validation'
+stage='product_family_media_staff_commerce_validation'
 semantic_report="$tmp_dir/runtime-validation.json"
 if ! docker exec -i "$container_name" psql -U postgres -d postgres -X -q -A -t -v ON_ERROR_STOP=1 \
   -f - <"$repo_root/scripts/backup/validate-runtime.sql" \
@@ -169,5 +170,6 @@ fi
 product_validation='PASS'
 family_validation='PASS'
 blog_validation='PASS'
+v1_validation='PASS'
 result='PASS'
 stage='complete'

@@ -1,0 +1,225 @@
+import { createHash } from 'node:crypto'
+
+import {
+    MAX_MEDIA_BYTES,
+    MAX_PROVIDER_ATTEMPTS,
+    assertGeneratedObjectKey,
+    assertObjectKeyMatchesSha256,
+} from './contract'
+import type { ProductV1MediaBundle, ProcessedMediaObject } from './processor'
+import {
+    serializeMediaRegistrationInput,
+    serializeProviderVerificationInput,
+    type MediaObjectProof,
+    type MediaRegistrationRpcInput,
+    type MediaRegistrationVariantInput,
+    type ProviderVerificationRpcInput,
+} from './rpc'
+
+export type ProviderObject = {
+    key: string
+    bytes: Buffer
+    sha256: string
+    byteSize: number
+    mimeType: string
+}
+
+export interface ImmutableMediaObjectStore {
+    put(object: Pick<ProcessedMediaObject, 'key' | 'bytes' | 'mimeType'>): Promise<void>
+    read(key: string, maxBytes?: number): Promise<ProviderObject>
+}
+
+export class MediaObjectNotFoundError extends Error {
+    constructor() {
+        super('MEDIA_PROVIDER_OBJECT_NOT_FOUND')
+        this.name = 'MediaObjectNotFoundError'
+    }
+}
+
+export class MediaProviderError extends Error {
+    readonly code: string
+
+    constructor(code: string) {
+        super(code)
+        this.name = 'MediaProviderError'
+        this.code = code
+    }
+}
+
+export type ProviderVerification = {
+    provider: 'bunny'
+} & MediaObjectProof
+
+export type { MediaRegistrationRpcInput, ProviderVerificationRpcInput }
+
+function mediaRegistrationVariantInput(
+    variant: ProcessedMediaObject,
+    profileVersion: 'product-v1',
+): MediaRegistrationVariantInput {
+    if (
+        !variant.targetWidthPx
+        || variant.widthPx === null
+        || variant.heightPx === null
+    ) {
+        throw new MediaProviderError('MEDIA_VARIANT_TARGET_MISSING')
+    }
+    return {
+        key: variant.key,
+        sha256: variant.sha256,
+        byteSize: variant.byteSize,
+        mimeType: variant.mimeType,
+        targetWidthPx: variant.targetWidthPx,
+        widthPx: variant.widthPx,
+        heightPx: variant.heightPx,
+        profileVersion,
+    }
+}
+
+function digest(bytes: Uint8Array): string {
+    return createHash('sha256').update(bytes).digest('hex')
+}
+
+function isNotFound(error: unknown): boolean {
+    return error instanceof MediaObjectNotFoundError
+}
+
+function sameObject(
+    expected: Pick<ProcessedMediaObject, 'key' | 'sha256' | 'byteSize' | 'mimeType'>,
+    actual: ProviderObject,
+): boolean {
+    return actual.key === expected.key
+        && actual.sha256 === expected.sha256
+        && actual.byteSize === expected.byteSize
+        && actual.mimeType.toLowerCase().split(';', 1)[0] === expected.mimeType
+}
+
+async function verifyExisting(
+    store: ImmutableMediaObjectStore,
+    expected: ProcessedMediaObject,
+): Promise<ProviderVerification | null> {
+    try {
+        assertObjectKeyMatchesSha256(expected.key, expected.sha256)
+        const actual = await store.read(expected.key, Math.max(expected.byteSize, MAX_MEDIA_BYTES))
+        if (!sameObject(expected, actual)) {
+            throw new MediaProviderError('MEDIA_STORAGE_CONFLICT')
+        }
+        return {
+            provider: 'bunny',
+            key: expected.key,
+            sha256: actual.sha256,
+            byteSize: actual.byteSize,
+            mimeType: actual.mimeType.toLowerCase().split(';', 1)[0] ?? actual.mimeType,
+        }
+    } catch (error) {
+        if (isNotFound(error)) return null
+        if (error instanceof MediaProviderError) throw error
+        throw new MediaProviderError('MEDIA_PROVIDER_READ_FAILED')
+    }
+}
+
+/**
+ * Bunny does not provide a create-only primitive in this adapter. A bounded
+ * read-before-write and read-after-write reconciliation makes a retry safe:
+ * an identical object is accepted, while a different object is a conflict.
+ * There is intentionally no delete or prefix operation here.
+ */
+export async function ensureImmutableObject(
+    store: ImmutableMediaObjectStore,
+    expected: ProcessedMediaObject,
+): Promise<ProviderVerification> {
+    assertGeneratedObjectKey(expected.key)
+    assertObjectKeyMatchesSha256(expected.key, expected.sha256)
+    if (
+        expected.byteSize !== expected.bytes.byteLength
+        || expected.byteSize <= 0
+        || expected.byteSize > MAX_MEDIA_BYTES
+        || digest(expected.bytes) !== expected.sha256
+    ) {
+        throw new MediaProviderError('MEDIA_PROVIDER_OBJECT_INVALID')
+    }
+    for (let attempt = 0; attempt < MAX_PROVIDER_ATTEMPTS; attempt += 1) {
+        const existing = await verifyExisting(store, expected)
+        if (existing) return existing
+
+        let putError: unknown
+        try {
+            await store.put(expected)
+        } catch (error) {
+            putError = error
+        }
+
+        const reconciled = await verifyExisting(store, expected)
+        if (reconciled) return reconciled
+        if (attempt === MAX_PROVIDER_ATTEMPTS - 1) {
+            if (putError) throw new MediaProviderError('MEDIA_PROVIDER_WRITE_AMBIGUOUS')
+            throw new MediaProviderError('MEDIA_PROVIDER_VERIFICATION_FAILED')
+        }
+    }
+    throw new MediaProviderError('MEDIA_PROVIDER_VERIFICATION_FAILED')
+}
+
+export type BundleProviderVerification = {
+    provider: 'bunny'
+    original: ProviderVerification
+    delivery: ProviderVerification[]
+}
+
+export async function storeAndVerifyProductV1Bundle(
+    bundle: ProductV1MediaBundle,
+    stores: { originals: ImmutableMediaObjectStore; delivery: ImmutableMediaObjectStore },
+): Promise<BundleProviderVerification> {
+    const original = await ensureImmutableObject(stores.originals, bundle.original)
+    const deliveryObjects = bundle.kind === 'IMAGE'
+        ? bundle.variants
+        : [bundle.primaryVariant]
+    const delivery: ProviderVerification[] = []
+    for (const object of deliveryObjects) {
+        delivery.push(await ensureImmutableObject(stores.delivery, object))
+    }
+    if (delivery.length === 0) {
+        throw new MediaProviderError('MEDIA_PROVIDER_DELIVERY_EMPTY')
+    }
+    return { provider: 'bunny', original, delivery }
+}
+
+export function mediaRegistrationInput(bundle: ProductV1MediaBundle): MediaRegistrationRpcInput {
+    if (bundle.kind === 'IMAGE') {
+        return serializeMediaRegistrationInput({
+            kind: 'IMAGE',
+            original: bundle.original,
+            primary: bundle.primaryVariant,
+            source: {
+                sha256: bundle.source.sha256,
+                mimeType: bundle.source.mimeType,
+                byteSize: bundle.source.byteSize,
+                widthPx: bundle.source.widthPx,
+                heightPx: bundle.source.heightPx,
+            },
+            profileVersion: bundle.profileVersion,
+            variants: bundle.variants.map((variant) => mediaRegistrationVariantInput(
+                variant,
+                bundle.profileVersion,
+            )),
+        })
+    }
+    return serializeMediaRegistrationInput({
+        kind: 'DOCUMENT',
+        original: bundle.original,
+        primary: bundle.primaryVariant,
+        source: {
+            sha256: bundle.source.sha256,
+            mimeType: bundle.source.mimeType,
+            byteSize: bundle.source.byteSize,
+        },
+    })
+}
+
+export function providerVerificationInput(
+    verification: BundleProviderVerification,
+): ProviderVerificationRpcInput {
+    return serializeProviderVerificationInput({
+        provider: verification.provider,
+        original: verification.original,
+        delivery: verification.delivery,
+    })
+}

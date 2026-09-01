@@ -13,7 +13,8 @@ describe('LEO-540 backup and restore public contracts', () => {
   it('creates a logical encrypted archive from only the approved schemas', () => {
     expect(backup).toContain('--format=custom')
     expect(backup).toContain('--enable-row-security')
-    expect(backup).toContain('--schema=dpg_app --schema=dpg_control')
+    expect(backup).toContain('--schema=dpg_app --schema=dpg_v1 --schema=dpg_control')
+    expect(backup).toContain("has_schema_privilege(current_user, 'dpg_v1', 'USAGE')")
     expect(backup).toContain('age --encrypt --recipient "$AGE_RECIPIENT"')
     expect(backup).toContain('sha256sum')
     expect(backup).toContain('plaintext_workspace_not_tmpfs')
@@ -50,6 +51,7 @@ describe('LEO-540 backup and restore public contracts', () => {
     expect(manifestSql).toContain("'rowCount'")
     expect(manifestSql).toContain("'sha256'")
     expect(manifestSql).toContain("'restoreCounts'")
+    expect(manifestSql).toContain("'canonicalV1RestoreCounts'")
     for (const table of [
       'products',
       'product_images',
@@ -59,6 +61,17 @@ describe('LEO-540 backup and restore public contracts', () => {
       'blog_post_tags',
       'publishing_blog_post_media',
     ]) expect(manifestSql).toContain(`dpg_app.${table}`)
+    for (const table of [
+      'staff_users',
+      'media_assets',
+      'media_variants',
+      'products',
+      'product_families',
+      'product_family_memberships',
+      'quotes',
+      'orders',
+      'payment_transactions',
+    ]) expect(manifestSql).toContain('dpg_v1.' + table)
     expect(restore).toContain('runtime-validation-contract.mjs" validate')
     expect(restore).toContain('psql -U postgres -d postgres -X -q -A -t -v ON_ERROR_STOP=1')
     expect(validationSql).not.toContain('RAISE NOTICE')
