@@ -22,7 +22,7 @@ function repository(
         findCredentialByHash: vi.fn().mockResolvedValue({
             id: 'credential-id',
             environment: 'staging',
-            expiresAt: new Date('2026-09-01T00:00:00.000Z'),
+            expiresAt: new Date('2099-09-01T00:00:00.000Z'),
             revokedAt: null,
             lastUsedAt: null,
             identity: {
