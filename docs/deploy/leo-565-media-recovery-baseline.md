@@ -137,15 +137,17 @@ operation was performed.
 - The only Worker resources surfaced for this account are
   `dongphugia-v1-public-preview` and the dedicated
   `dongphugia-v1-media-preview`. The existing public-preview Worker was not
-  modified. The new Worker is available at
-  `dongphugia-v1-media-preview.tranhuunguyenhuy.workers.dev`, with the
-  reviewed backend-only secret authorization and exactly these bindings/config
-  names: `IMAGES` (Images), `MEDIA_TRANSFORM_AUTH_TOKEN` (secret), `APP_ENV`
+  modified. The active versioned Preview host is
+  `162480f5-dongphugia-v1-media-preview.tranhuunguyenhuy.workers.dev`; the
+  base production workers.dev URL is disabled. The Worker has the reviewed
+  backend-only secret authorization and exactly these bindings/config names:
+  `IMAGES` (Images), `MEDIA_TRANSFORM_AUTH_TOKEN` (secret), `APP_ENV`
   (`preview`), and `PREVIEW_NOINDEX` (`true`). Secret values are not present
   in source, logs, PR evidence, or this document.
 - The new Worker has no custom domain and no route. The source configuration
   enables workers.dev preview URLs and contains no Production route or DNS
-  change. A new Preview Worker/binding was required because the existing
+  change; the dashboard has Preview URLs enabled and the production workers.dev
+  URL disabled. A new Preview Worker/binding was required because the existing
   public-preview Worker had no IMAGES binding; no binding was added to it.
 - Cloudflare cost implication is `$0` fixed expansion and `$0` observed
   billable usage: no Workers Paid/Images hosted-storage upgrade, fixed
