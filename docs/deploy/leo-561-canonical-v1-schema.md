@@ -1,5 +1,7 @@
 # LEO-561 canonical V1 schema contract
 
+> **Current-authority note — 05/09/2026:** this document describes the LEO-561 implemented baseline and remains useful as historical schema evidence. Some product/commerce clauses have since been superseded by Owner-approved design contracts and must **not** be implemented from this document alone. In particular, use ADR 0017 + `docs/internal/v1-pdp-family-system-implementation-handoff.md` for the standardized Family/Colour/`retailer_package` model, ADR 0020 for current pricing fields, and ADR 0021 + `docs/internal/v1-retail-order-implementation-handoff.md` for pending shipping/install fees and staff-confirmed Retail Order totals. Historical migrations are not rewritten here; additive amendments are prepared only after global `V1 WIREFRAME APPROVED / FROZEN`.
+
 Status: source implementation for review. This document does not authorize a
 Supabase push, data import, Staging/Production mutation, application rollout,
 merge, or LEO-562/564 execution.
@@ -78,14 +80,3 @@ adding compatibility columns or reviving a second authority.
 
 The focused integration proof applies the migration to an empty PostgreSQL
 17.6 database, runs synthetic rollback-wrapped invariants, then uses two
-independent connections to race the same Quote conversion. The deterministic
-runner manifest is separately replayed and captured against pinned PostgreSQL
-16.10. No remote database is used.
-
-The proof covers clean apply, manifest/checksum identity, Product independence,
-optional two-Product Family grouping, primary leaf Category, ordered
-Collections, typed attributes, positive public price, media/document
-separation, canonical Content references, immutable Order/Quote snapshots,
-Quote Request separation, Quote conversion replay/concurrency, manual payment
-projection, fixed multi-role assignment, fail-closed RLS prerequisites, and
-absence of legacy authority columns.
