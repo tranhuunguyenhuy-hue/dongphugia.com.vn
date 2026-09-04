@@ -10,6 +10,7 @@ runbook và database artifacts vẫn nằm tại thư mục chuyên dụng hiệ
 
 - [V1 Wireframe Freeze / Implementation Index](./v1-wireframe-freeze-implementation-index.md)
 - [V1 PDP + Family System — implementation handoff](./v1-pdp-family-system-implementation-handoff.md)
+- [V1 Family Admin ↔ Public PDP Selector — implementation handoff](./v1-family-admin-pdp-selector-linkage.md)
 - [V1 Retail Order — implementation handoff](./v1-retail-order-implementation-handoff.md)
 - [V1 Quote — implementation handoff](./v1-quote-implementation-handoff.md)
 - [V1 Content + Showroom + Support + Contact Request — implementation handoff](./v1-content-contact-implementation-handoff.md)
