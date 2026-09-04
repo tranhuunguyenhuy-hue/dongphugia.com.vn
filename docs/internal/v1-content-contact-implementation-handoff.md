@@ -1,31 +1,35 @@
 # V1 Content + Showroom + Support + Contact Request — Implementation Handoff
 
-**Status:** Complete implementation contract prepared from launch-critical wireframes; coding blocked until global wireframe freeze  
+**Status:** Owner-review candidate; implementation blocked until global wireframe freeze  
 **Date:** 2026-09-05  
 **Audience:** Codex, maintainers, Product/Technical Owner  
 **Figma:** `Dong Phu Gia V1 — LEO-579 Mobile Wireframes` (`LbiwIXMaip9LJ5jIauMNof`)  
-**Figma section:** `08 — CONTENT / SHOWROOM / SUPPORT` (`920:2`)  
-**Linear:** LEO-573, LEO-581
+**Public section:** `08 — CONTENT / SHOWROOM / SUPPORT` (`920:2`)  
+**Admin authority:** page `02 — ADMIN — Operational Wireframes` (`31:11`)  
+**Linear:** LEO-573, LEO-581, LEO-572
 
 > [!IMPORTANT]
-> Do not implement until the Owner explicitly says **`V1 WIREFRAME APPROVED / FROZEN`** after 100% launch-critical Public + Admin wireframes are approved.
+> Do **not** implement until 100% launch-critical Public + Admin wireframes are Owner-approved and the Owner explicitly says **`V1 WIREFRAME APPROVED / FROZEN`**.
+>
+> The current Content/Showroom/Support Desktop + Mobile frames are structurally QA-clean and ready for Owner review, not approved/frozen yet.
 
 ## 1. Scope
 
 This handoff covers:
 
 - Content Hub `/cam-nang`;
-- Guide detail;
-- Inspiration detail;
-- Buying Guide detail;
-- flexible Landing Page;
+- Guide detail `/cam-nang/huong-dan/{slug}`;
+- Inspiration detail `/cam-nang/cam-hung/{slug}`;
+- Buying Guide detail `/cam-nang/tu-van-mua/{slug}`;
+- flexible Landing Page route owned by a Content record;
 - Showroom / Contact `/showroom`;
 - generic Support `/ho-tro/{slug}`;
-- Public Contact Request intake and Admin CSKH queue boundary.
+- Public Contact Request intake;
+- Admin Marketing Content/Campaign and Customer Care continuity.
 
-It does not restore legacy Blog-only CMS authority.
+It does not restore Blog-only CMS authority or create a generic page-builder/runtime-code system.
 
-## 2. Figma authority
+## 2. Current Figma authority
 
 Desktop:
 
@@ -49,22 +53,32 @@ Mobile:
 - `920:380` — M21B Contact submitted.
 - `920:393` — M22 Support Page.
 
+All 16 current frames have passed structural QA for missing fonts, root-boundary overflow and frame overlap.
+
+Admin continuity:
+
+- `31:889` — A22 Content List.
+- `31:899` — A23 Content Editor.
+- `933:2` — A24 Campaign List.
+- `933:139` — A25 Campaign Editor.
+- `934:2` — A29 Consultation Requests.
+
 ## 3. Canonical Content types
 
-V1 public/editorial types:
+V1 types:
 
 - `GUIDE`;
 - `INSPIRATION`;
 - `BUYING_GUIDE`;
 - `LANDING_PAGE`.
 
-Content Hub aggregates published editorial entries. It is not a Product catalogue substitute.
+Content Hub aggregates published editorial entries and presents the three editorial families Guide / Inspiration / Buying Guide. It is not a Product catalogue substitute.
 
-Landing Page owns its route through the content record/configuration. This does not authorize arbitrary legacy-route inheritance.
+Landing Page owns its route through the Content record/configuration. This does not authorize arbitrary legacy route inheritance.
 
-## 4. Flexible content block contract
+## 4. Flexible block contract
 
-Content entries use ordered typed blocks. Exact storage can follow the canonical V1 schema, but implementation must support reusable validated block types such as:
+Content uses ordered typed blocks with a closed/validated vocabulary. Reusable blocks may include:
 
 - heading;
 - paragraph/rich text within approved sanitation rules;
@@ -73,127 +87,113 @@ Content entries use ordered typed blocks. Exact storage can follow the canonical
 - Product reference;
 - Category reference;
 - Brand reference;
-- manually ordered Product group/reference block;
+- manually ordered Product-reference group;
 - CTA;
-- simple layout/grouping metadata where needed.
+- simple approved layout/grouping metadata.
 
-Block payload must use a closed/validated vocabulary. Do not accept arbitrary executable page-builder code.
+Do not store executable code/arbitrary JSX/HTML page-builder logic in Content blocks.
 
-## 5. Canonical data references
+## 5. Canonical references
 
-Editorial content may reference canonical:
+Editorial content may reference canonical Product, Category and Brand records.
 
-- Product;
-- Category;
-- Brand.
+**Do not copy commerce truth into Content JSON.**
 
-Important rule: **do not copy commerce truth into content records**.
+Product references obtain current public-safe canonical data at render time, including price/availability/media where appropriate.
 
-At render time, Product references obtain current public-safe data from canonical Product sources, including price/availability/media where appropriate.
+Marketing may control presentation such as editorial heading/copy/media crop/CTA/order, but does not create independent SKU/price/category/availability truth.
 
-Marketing may override editorial presentation fields such as:
+## 6. Content publication
 
-- block heading;
-- editorial copy;
-- image/crop;
-- CTA label/context;
-- ordering.
+Authorized Marketing/Admin roles may publish directly according to fixed permissions.
 
-Marketing must not create an independent copy of canonical SKU, Product price, category truth or stock truth inside content JSON.
+Support at minimum:
 
-## 6. Content publishing
-
-Authorized Marketing/Admin roles may publish directly according to fixed role permissions.
-
-Need at minimum:
-
-- draft/published/archive or equivalent existing states;
+- draft/published/archive or canonical equivalent;
 - slug/route validation;
-- publication readiness checks;
+- publication readiness;
 - timestamps;
-- safe preview/draft editing;
-- deterministic public rendering.
+- preview/draft editing;
+- deterministic Public rendering.
 
-Do not build a heavyweight editorial approval workflow unless separately approved.
+No heavyweight editorial approval workflow is added in V1.
 
-## 7. Campaign boundary
+## 7. Content Hub and detail pages
 
-Campaign is part of Marketing merchandising but remains **separate from Content type and separate from Collection**.
-
-Campaign supports:
-
-- name;
-- banner/media;
-- manually ordered Product membership;
-- Homepage placement;
-- publish/archive state;
-- optional start/end display timing if canonical design supports it.
-
-Campaign is not:
-
-- manufacturer Collection;
-- pricing engine;
-- coupon/voucher engine;
-- promotion-rule engine;
-- automatic recommendation system.
-
-Homepage Campaign Product references use canonical Product data.
-
-## 8. Content Hub behavior
-
-`/cam-nang` should support:
+`/cam-nang` supports:
 
 - featured editorial item;
-- browsing by the three editorial families Guide / Inspiration / Buying Guide;
-- latest/relevant published content;
-- standard SEO metadata;
-- responsive cards.
+- navigation/browsing across Guide / Inspiration / Buying Guide;
+- latest published entries;
+- responsive cards;
+- normal SEO/internal-linking hooks.
 
-No new taxonomy system is required beyond what is useful for Content V1.
+Detail pages share one reusable rendering shell while preserving type/route identity.
 
-## 9. Detail page behavior
-
-All editorial detail pages share a reusable rendering shell while preserving type-specific route family and label.
-
-Requirements:
+Required detail concepts:
 
 - title;
 - type;
 - publication/update metadata;
-- hero/media optional;
+- optional hero/media;
 - ordered flexible blocks;
-- canonical Product/Category/Brand references;
-- related content optional;
-- SEO metadata / structured internal linking where defined by SEO implementation.
+- canonical references;
+- optional related Content;
+- SEO metadata/internal linking according to the later SEO implementation contract.
 
-## 10. Landing Page behavior
+## 8. Landing Page
 
-Landing Page uses the same safe block architecture but allows a more campaign/SEO-oriented layout.
+Landing Page uses the same safe block architecture with more flexible editorial/SEO composition.
 
 It may include:
 
-- editorial hero;
-- media;
-- category/brand/Product references;
+- hero/media;
+- editorial content;
+- Product/Category/Brand references;
 - manually ordered Product groups;
-- Contact Request CTA;
-- other approved reusable blocks.
+- approved CTA including consultation/contact entry points.
 
-Landing Page must not embed commerce business logic in content JSON.
+It must not embed Product pricing/business logic into Content blocks.
 
-## 11. Showroom / Contact
+## 9. Campaign boundary
 
-Public route `/showroom` includes canonical configured business information such as:
+Campaign is a separate Marketing merchandising domain, not a Content type and not Collection.
 
-- address;
+Current V1 Campaign scope, reflected in Admin A24/A25:
+
+- internal Campaign identity;
+- banner/media;
+- manually selected ordered canonical Products;
+- Homepage placement;
+- `Draft / Published / Archived` state;
+- Homepage preview/publish/archive.
+
+Current wireframes do **not** introduce a Campaign scheduling engine or standalone Public Campaign route.
+
+Campaign is explicitly not:
+
+- manufacturer Collection;
+- coupon/voucher engine;
+- promotion/pricing-rules engine;
+- automatic recommendation system.
+
+Homepage Campaign Product cards always read canonical Product commerce truth.
+
+## 10. Showroom / Contact
+
+Public `/showroom` presents business information and a direct consultation path.
+
+Public concepts:
+
+- showroom identity/address;
 - opening hours;
-- hotline/Zalo/contact methods;
-- map/directions link;
+- supported contact methods;
+- directions/map action;
 - consultation form.
 
-Showroom operational details should come from managed configuration/content, not duplicated hard-coded strings across components.
+Operational business information must come from an intentional managed source/content configuration, not duplicated magic strings across many Public components. Do not create an appointment-booking engine.
 
-## 12. Contact Request domain
+## 11. Contact Request domain
 
 Contact Request is a dedicated domain distinct from Quote Request.
 
@@ -210,105 +210,110 @@ Optional:
 
 System-generated:
 
-- source page/entry point;
+- source page / entry point;
 - created timestamp;
-- safe request metadata needed for abuse/rate-limit controls.
+- safe request metadata needed for validation/rate limiting.
 
-Guest create-only. No customer account dependency.
+Guest create-only; no customer account dependency.
 
-Initial status:
+Initial state: `NEW`.
 
-- `NEW`.
+Admin Customer Care lifecycle:
 
-Admin CSKH statuses:
+`NEW → CONTACTED → CLOSED`
 
-- `NEW`;
-- `CONTACTED`;
-- `CLOSED`.
+A29 exposes only the small operational actions needed to inspect and update that queue.
 
-Keep the queue operationally small.
-
-Explicit exclusions:
+Explicitly no:
 
 - CRM;
 - assignment engine;
 - lead scoring;
-- automated campaigns;
 - notification center;
-- customer profiles.
+- marketing automation;
+- customer profile/account dependency.
 
-## 13. Contact Request submission UX
+## 12. Contact Request submission UX
 
-After successful submission, public UI shows:
+Successful submission communicates:
 
-- request reference if intended by service/public response;
-- received state;
-- expectation that CSKH will contact customer;
+- request received;
+- expectation that CSKH will contact the customer;
 - no Quote or Order implication.
 
-Network retry should be safe. If idempotency is not already available for Contact Request create, implementation should use a pragmatic duplicate-prevention boundary consistent with existing service architecture.
+If the service returns a public-safe reference it may be shown; otherwise the UI does not invent one.
 
-## 14. Support Page
+Validation/retry preserves entered data. Creation should use pragmatic duplicate-prevention/idempotency consistent with existing service architecture.
+
+## 13. Support Page
 
 Generic route:
 
 `/ho-tro/{slug}`
 
-It covers simple support/legal/commerce information such as:
+Covers simple static/content information such as:
 
-- shipping policy;
+- shipping information/policy;
 - payment information;
 - warranty;
 - returns;
-- buying guidance.
+- buying/support guidance.
 
-This page type is content/static information only. It does not create:
+This page type does not create service commerce, appointment booking, logistics workflow or a ticketing platform.
 
-- service-commerce;
-- appointment booking;
-- logistics engine;
-- ticketing platform.
+## 14. Public/Admin continuity
 
-## 15. Responsive contract
+Public Content is operated by Admin A22/A23 using the same four Content types and canonical references.
 
-Desktop/Mobile share one content/data contract.
+Public Campaign placements are operated by A24/A25 and consume canonical Product data.
 
-Mobile may simplify layout and table-of-content presentation but must preserve:
+Public consultation forms create Contact Requests consumed by A29. A29 does not consume Quote Requests.
 
-- type identity;
+These are separate domains even when they share customer contact information.
+
+## 15. Responsive Public contract
+
+Desktop and Mobile share one Content/Contact data model.
+
+Mobile may simplify layout but preserves:
+
+- Content type identity;
 - block ordering;
-- canonical reference semantics;
+- canonical-reference semantics;
 - CTA meaning;
-- Contact Request fields/status expectation.
+- Contact Request fields/source/status expectation;
+- Showroom business-information meaning.
 
-## 16. Acceptance criteria
+## 16. Acceptance criteria after global freeze
 
-Post-freeze implementation must prove:
+Implementation must prove:
 
-1. all four Content types render through validated flexible blocks;
-2. canonical Product/Category/Brand references do not copy business truth;
-3. Product references reflect canonical public commerce data;
-4. unpublished content is not publicly exposed;
-5. Landing routes are controlled and collision-safe;
-6. Campaign remains separate from Collection and pricing rules;
-7. Contact Request is separate from Quote Request;
-8. Contact Request captures name/phone/source/timestamp;
-9. Admin can filter/update `NEW / CONTACTED / CLOSED`;
-10. no CRM/assignment/scoring scope appears;
-11. Showroom details are managed, not duplicated magic strings;
-12. Support page is generic and does not create service commerce;
-13. Desktop/Mobile use the same content/state model.
+1. all four Content types render through validated ordered flexible blocks;
+2. Product/Category/Brand references do not copy business truth;
+3. referenced Product cards reflect canonical Public commerce data;
+4. unpublished Content is not publicly exposed;
+5. Landing routes are collision-safe and controlled;
+6. Campaign is Homepage merchandising only, separate from Collection and pricing rules;
+7. Campaign does not override Product prices;
+8. Contact Request is separate from Quote Request;
+9. Contact Request captures required name/phone plus source/timestamp;
+10. Admin can inspect/update `NEW / CONTACTED / CLOSED` only within the small CSKH workflow;
+11. no CRM/assignment/scoring scope appears;
+12. Showroom information is intentionally managed rather than duplicated across components;
+13. Support remains a generic content/static page;
+14. Desktop/Mobile share the same domain semantics.
 
-## 17. Codex implementation sequence after freeze
+## 17. Codex sequence after global freeze
 
-1. Read final Figma + this handoff + canonical schema/content docs.
-2. Audit existing content/blog/contact code read-only against the contract.
-3. Identify reusable pieces vs legacy Blog-only assumptions.
-4. Propose exact schema/service/API/UI deltas.
-5. Owner approves deltas.
-6. Implement validated Content domain + rendering first.
-7. Implement Marketing Content editor and publishing.
+1. Read final Figma + this handoff + master index + canonical schema/content docs.
+2. Audit existing content/blog/contact code read-only.
+3. Identify reusable pieces vs stale Blog-only assumptions.
+4. Report exact schema/service/API/Public/Admin/test deltas.
+5. Coordinator/Owner approves material deltas.
+6. Implement validated Content domain/rendering.
+7. Implement Marketing Content editor/publishing.
 8. Implement Campaign merchandising.
-9. Implement Showroom/Support and managed configuration bindings.
-10. Implement Contact Request public intake + Admin CSKH queue.
+9. Implement Showroom/Support binding to intentional managed data/content.
+10. Implement Contact Request intake + A29 Customer Care queue.
 11. Add contract/E2E tests.
+12. Do not widen scope.
