@@ -44,6 +44,37 @@ A retailer-created package is a valid Configuration target. It is composed from 
 
 Configuration Group is optional and exists only to organize large Families such as MS885 seat types. UI counts are derived from current public/selectable Configurations, not catalogue-expected models.
 
+## Family membership vs Public selector Configuration
+
+`product_family_membership` and Public Family-selector Configuration are related but **not the same concept**.
+
+- Membership means a canonical manufacturer Product belongs to a Family for catalogue organization and validation.
+- Membership alone must **not** render a Public PDP selector card.
+- A Public selector card exists only when an explicit Configuration targets that Product/package and the Configuration is public/selectable.
+- Runtime Family selector reads the ordered Configuration model, not the membership table directly.
+- Package component references never become Family members merely because a `retailer_package` uses them.
+
+This distinction is required so Admin cannot accidentally publish a selector choice merely by assigning a Product to a Family.
+
+## Admin → Public selector operational contract
+
+The canonical Admin Family editor must expose the fields that directly determine the approved PDP Family Selector:
+
+- Family membership separately from selector Configurations;
+- optional `configuration_group_id`;
+- `selector_label`;
+- `target_kind`;
+- target Product/package;
+- thumbnail;
+- deterministic ordering/reorder behavior;
+- public state;
+- selectable state;
+- a Public PDP selector preview/linkage that makes the resulting selector card understandable before publish.
+
+For a `manufacturer_product` target, Product sellable colour options remain Product-owned and may be managed through the Product colour/sellable-option UI.
+
+For a `retailer_package` target, any package-level colour choice must be **explicitly mapped** for that package/Configuration. Do not infer package colours automatically from component Product colours. A package colour mapping must never be implemented by reusing another Product's colour editor as if the package were that Product.
+
 ## Schema consequences
 
 After the global V1 wireframe freeze, schema work must add a unified Configuration entity that can target Product or retailer package, plus canonical colour/sellable options and retailer package composition. Product media must support colour-option mapping. Product identifier aliases are required for manufacturer/legacy code lineages without duplicating Products.
@@ -51,6 +82,10 @@ After the global V1 wireframe freeze, schema work must add a unified Configurati
 The detailed implementation contract is:
 
 `docs/internal/v1-pdp-family-system-implementation-handoff.md`
+
+Admin-specific mapping is additionally documented in:
+
+`docs/internal/v1-family-admin-pdp-selector-linkage.md`
 
 ## Superseded clauses from ADR 0016
 
