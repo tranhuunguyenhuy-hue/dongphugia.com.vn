@@ -80,3 +80,14 @@ adding compatibility columns or reviving a second authority.
 
 The focused integration proof applies the migration to an empty PostgreSQL
 17.6 database, runs synthetic rollback-wrapped invariants, then uses two
+independent connections to race the same Quote conversion. The deterministic
+runner manifest is separately replayed and captured against pinned PostgreSQL
+16.10. No remote database is used.
+
+The proof covers clean apply, manifest/checksum identity, Product independence,
+optional two-Product Family grouping, primary leaf Category, ordered
+Collections, typed attributes, positive public price, media/document
+separation, canonical Content references, immutable Order/Quote snapshots,
+Quote Request separation, Quote conversion replay/concurrency, manual payment
+projection, fixed multi-role assignment, fail-closed RLS prerequisites, and
+absence of legacy authority columns.
