@@ -1,93 +1,91 @@
-# LEO-561 canonical V1 schema contract
+# LEO-561 canonical V1 schema contract — historical implemented baseline
 
-> **Current-authority note — 05/09/2026:** this document describes the LEO-561 implemented baseline and remains useful as historical schema evidence. Some product/commerce clauses have since been superseded by Owner-approved design contracts and must **not** be implemented from this document alone. In particular, use ADR 0017 + `docs/internal/v1-pdp-family-system-implementation-handoff.md` for the standardized Family/Colour/`retailer_package` model, ADR 0020 for current pricing fields, and ADR 0021 + `docs/internal/v1-retail-order-implementation-handoff.md` for pending shipping/install fees and staff-confirmed Retail Order totals. Historical migrations are not rewritten here; additive amendments are prepared only after global `V1 WIREFRAME APPROVED / FROZEN`.
+**Status:** Historical M1 baseline implemented by LEO-561. **Not current Product/Dòng selector authority.**  
+**Current Product/Dòng authority:** ADR 0022 + `docs/internal/v1-product-line-axis-option-m0-m2-impact-audit.md`  
+**Implementation gate:** `V1 WIREFRAME APPROVED / FROZEN`
 
-Status: source implementation for review. This document does not authorize a
-Supabase push, data import, Staging/Production mutation, application rollout,
-merge, or LEO-562/564 execution.
+## Why this file now exists as historical evidence
 
-## Authority and migration identity
+LEO-561 completed the first isolated `dpg_v1` canonical schema before the final Owner-approved PDP/Admin selection model was known. Its migration remains valid historical evidence and must not be rewritten or deleted.
 
-`dpg_v1` is the only canonical V1 schema. Existing `dpg_app`, `public`, Prisma,
-and SQLite-origin structures remain migration evidence only. The canonical DDL
-is byte-for-byte identical in:
+The immutable baseline DDL remains in:
 
-- `supabase/migrations/20260830004338_leo561_canonical_v1_schema.sql` for the
-  Supabase migration chain; and
-- `db/postgres-migrations/0002_leo561_canonical_v1_schema/migration.sql` for the
-  deterministic manifest/checksum runner.
+- `supabase/migrations/20260830004338_leo561_canonical_v1_schema.sql`;
+- `db/postgres-migrations/0002_leo561_canonical_v1_schema/migration.sql`.
 
-The migration is additive. It creates no Production data, imports no LEO-560
-raw data, and changes or deletes no legacy table.
+Those files prove what M1 actually implemented. Future architecture changes must be additive/corrective migrations after the global wireframe freeze.
 
-## Canonical boundaries
+## Baseline concepts that remain current
 
-- Catalogue: `brands`, one Category tree with four migration-owned sector
-  roots, `products`, optional Product Family/configuration membership, ordered
-  manual Collections, Product-level provenance, and one database-backed
-  publication-eligibility projection.
-- Typed specifications: reusable definitions/options, leaf-Category policy,
-  exactly one scalar typed representation or ordered multi-enum option rows,
-  and database checks/triggers for type, range, option, Category integrity, and
-  same-Product source provenance. Official/verified facts always name a source;
-  deep sanitary requirements additionally require official manufacturer evidence.
-- Price and availability: Product-owned positive VND retail price for every
-  published Product and indicative availability only; no inventory or
-  promotion model.
-- Media and documents: content-addressed Bunny object/profile metadata in
-  `media_assets`; one primary image plus ordered gallery in `product_media`;
-  typed technical documents in the separate `product_documents` relation.
-- Content: one typed `content_entries` aggregate, ordered closed-vocabulary
-  blocks with validated JSON payloads, and normalized Product/Category/Brand
-  references. Landing Pages require a non-null syntax-valid unique route and
-  reject the fixed V1 route namespaces; non-Landing Content has no route.
-  Application-level route allowlisting remains a later Content service concern.
-- Commerce: immutable Quote Request snapshots; a separate negotiated Quote;
-  token-hash-only sharing; immutable retail/converted Order snapshots; manual
-  payment transactions and projected payment status; advisory-lock plus
-  idempotency-key Quote conversion with one Order per Quote.
-- Staff boundary: active/invited/disabled Staff Users, fixed
-  Product/Sales/Marketing/Admin role assignments, and the fixed-role capability
-  configuration relation. Auth integration, capability rows/helpers, grants,
-  RLS policies, and services remain LEO-564 scope.
+The LEO-561 foundation still contributes valid V1 architecture:
 
-All canonical tables have RLS enabled and forced with no application policies
-or grants in LEO-561. This is a fail-closed schema prerequisite, not a complete
-authorization implementation.
+- `dpg_v1` is the canonical V1 data authority;
+- legacy `public`/Prisma/SQLite structures are migration evidence only;
+- one manufacturer model = one canonical Product = one canonical PDP;
+- Product has one Brand and one primary Category reference;
+- Product belongs to zero or one related-product grouping;
+- provenance/quarantine rules protect manufacturer facts;
+- typed catalogue/spec structures and canonical Content/Commerce domains remain baseline architecture where not superseded;
+- Quote/Order data is snapshot-oriented and later catalogue changes must not rewrite historical transactions.
 
-## Legacy compatibility disposition
+## Product/Dòng clauses that are superseded
 
-| Legacy evidence | Disposition in V1 | Reason |
-| --- | --- | --- |
-| Product SKU/model/name/slug, Brand and validated Product source evidence | Preserve as canonical after LEO-562 mapping | Stable Product identity and provenance |
-| Approved Product/Family/configuration membership and MS885 gaps | Preserve as canonical after explicit mapping | Maintains the LEO-534 real-Product and no-fabrication contract |
-| Legacy primary image/gallery and technical document metadata | Preserve temporarily as migration input | Must map to content-addressed Bunny references and readiness metadata |
-| `categories`, `subcategories`, `product_types`, `catalog_taxons`, multiple taxon assignments | Deprecate as runtime authority | One canonical Category tree and one Product primary leaf replace parallel taxonomies |
-| `products.specs`, legacy spec/filter/value tables | Deprecate as runtime authority | One typed definition/policy/value model is canonical |
-| `variant_group`, `variant_group_id`, `variant_options`, `is_master` | Intentionally not carried forward | They cannot define Product identity or infer Family membership |
-| `price`, `original_price`, `price_display`, sale/discount fallbacks | Intentionally not carried forward | Published V1 Product owns one explicit positive retail price |
-| `blog_posts` and Blog-only workflow tables | Deprecate as runtime authority | One typed Content aggregate replaces the parallel CMS |
-| Legacy `quote_requests`/`quote_items` combining request and negotiation | Preserve temporarily as migration input, then deprecate | Submitted request and negotiated Quote are distinct canonical aggregates |
-| Legacy Order/Quote snapshot fields and idempotency/advisory-lock logic | Preserve as invariant, refactor into canonical tables/function | Historical correctness and retry/concurrency safety remain mandatory |
-| `admin_users.role`, bcrypt sessions, legacy role hierarchy | Intentionally not carried forward | Supabase Auth plus fixed multi-role assignment is the approved boundary |
-| Quote Cart persistence | Intentionally not a canonical database aggregate | V1 Quote Cart is pre-submission client/application state; Quote Request is the first immutable database authority |
-| Package/BOM, Combo, inventory, promotions, custom roles, deep audit | Intentionally not carried forward | Outside LEO-561 and V1-approved scope |
+Do **not** implement the final selector from the historical LEO-561 Family tables alone.
 
-LEO-562 must map or quarantine legacy evidence into this contract without
-adding compatibility columns or reviving a second authority.
+The baseline created concepts including:
 
-## Local proof
+- `product_families`;
+- `product_family_configuration_groups`;
+- `product_family_memberships` with optional group assignment;
+- a Product-level unique `products.sku` as the only sellable SKU identity;
+- Public Family navigation eligibility based on Product-member count.
 
-The focused integration proof applies the migration to an empty PostgreSQL
-17.6 database, runs synthetic rollback-wrapped invariants, then uses two
-independent connections to race the same Quote conversion. The deterministic
-runner manifest is separately replayed and captured against pinned PostgreSQL
-16.10. No remote database is used.
+Owner later locked ADR 0022, which requires instead:
 
-The proof covers clean apply, manifest/checksum identity, Product independence,
-optional two-Product Family grouping, primary leaf Category, ordered
-Collections, typed attributes, positive public price, media/document
-separation, canonical Content references, immutable Order/Quote snapshots,
-Quote Request separation, Quote conversion replay/concurrency, manual payment
-projection, fixed multi-role assignment, fail-closed RLS prerequisites, and
-absence of legacy authority columns.
+- user-facing **Dòng sản phẩm**;
+- maximum one Dòng per Product;
+- 1–3 ordered dependent **Trục lựa chọn**;
+- custom Axis labels with optional semantic type;
+- dependent **Lựa chọn** paths;
+- one-to-many exact sellable SKUs under a Product where required;
+- terminal path mapping to real Product and/or exact sellable SKU;
+- Product-changing choice changes canonical PDP;
+- SKU-only choice remains on the same PDP;
+- selector eligibility based on valid selectable terminal paths;
+- no Family-selector-specific `retailer_package` target.
+
+## Migration rule
+
+Historical migrations are immutable.
+
+After final wireframe freeze, implementation should:
+
+1. audit the current `dpg_v1` baseline;
+2. propose the exact additive schema delta for Product SKUs + Dòng/Axis/Option;
+3. receive Owner/Coordinator approval for material schema/service choices;
+4. add a new migration rather than editing LEO-561 history;
+5. extend RLS/services/importer/media/backup contracts;
+6. validate in isolated Preview before any Production activation.
+
+At the 05/09/2026 architecture audit, isolated Preview `dongphugia-runtime` had the M1/M2 schema but zero canonical rows in the Product/Family catalogue tables, so no live V1 catalogue dataset currently requires destructive transformation.
+
+## Current documents to read
+
+Before any future Product/Dòng implementation read:
+
+- `docs/adr/0022-v1-product-line-axis-option-family-model.md`;
+- `docs/internal/v1-product-line-axis-option-m0-m2-impact-audit.md`;
+- `docs/internal/v1-pdp-family-system-implementation-handoff.md`;
+- `docs/internal/v1-family-admin-pdp-selector-linkage.md`;
+- `docs/internal/v1-admin-operations-implementation-handoff.md`;
+- `docs/internal/v1-wireframe-freeze-implementation-index.md`.
+
+ADR 0017 is superseded historical design evidence only.
+
+## Gate
+
+This file documents history; it does not authorize a Supabase push, import, merge or application rollout.
+
+No implementation until the Owner says exactly:
+
+**`V1 WIREFRAME APPROVED / FROZEN`**
