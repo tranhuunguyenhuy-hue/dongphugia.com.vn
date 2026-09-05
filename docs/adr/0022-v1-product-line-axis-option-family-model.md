@@ -58,6 +58,35 @@ Examples:
 
 Every final sellable configuration must be backed by a real canonical Product/SKU record. V1 no longer needs a Family-selector-specific `retailer_package` target for these choices.
 
+## Product → SKU override / fallback contract — Owner decision 05/09/2026
+
+The Owner has locked the commerce/media inheritance rule:
+
+> A sellable SKU **may define its own price, availability/status and media**. When a SKU-specific value is not declared, runtime falls back to the canonical Product value.
+
+Product therefore remains the default source for:
+
+- `price`;
+- optional `sale_price`;
+- optional `voucher_online_discount_amount`;
+- indicative availability/status;
+- default primary/gallery media.
+
+A sellable SKU may carry nullable SKU-specific values for those commerce fields and optional SKU-specific media mappings.
+
+Effective runtime resolution is deterministic:
+
+- SKU-specific value exists → use the SKU value;
+- SKU-specific value is absent → use the Product value;
+- SKU-specific media mapping exists → use the SKU mapping for the selected SKU;
+- no SKU-specific media mapping → use Product media.
+
+This fallback is not a second Product/PDP identity. SKU switching stays on the same canonical Product/PDP unless the selected Dòng option explicitly targets another Product.
+
+Public PDP, Search, Cart, Quote and Order intake must resolve authoritative effective values server-side from the selected Product + SKU. Historical Quote/Order snapshots preserve the resolved values and exact Product/SKU identity so later catalogue changes cannot rewrite history.
+
+Admin must make inheritance visible and controllable. Staff should be able to see whether each SKU value is **Kế thừa Sản phẩm** or **Dùng giá trị riêng**, rather than editing duplicated values without knowing their source.
+
 ## Public eligibility
 
 A Dòng sản phẩm becomes a meaningful Public selector when it has at least two valid selectable terminal paths. Eligibility is **not** defined as “at least two Product members”, because a valid Dòng may differentiate multiple SKUs of one Product.
@@ -67,11 +96,12 @@ A Dòng sản phẩm becomes a meaningful Public selector when it has at least t
 Admin should manage the same structure the customer sees:
 
 - Product identity/PDP;
-- exact sellable SKU records;
+- Product-level default commerce/media values;
+- exact sellable SKU records with explicit override/fallback state;
 - optional Dòng sản phẩm membership;
 - ordered Trục → Lựa chọn tree;
 - target mapping to Product/SKU;
-- Public preview of the resulting selector.
+- Public preview of the resulting selector and effective SKU state.
 
 Do not expose legacy schema terms such as Configuration Group / Configuration as the primary staff mental model.
 
@@ -113,9 +143,11 @@ Exact SQL/table names are intentionally deferred until implementation review, bu
 - optional semantic type per Axis;
 - exact target resolution to Product and/or sellable SKU;
 - one-to-many sellable SKUs per Product;
-- optional SKU-specific price/availability/media where approved by the final Product/SKU commerce contract;
+- Product defaults plus nullable SKU-specific price/sale/online-discount/availability fields;
+- optional SKU-specific media mapping with Product-media fallback;
 - deterministic Public selector projection;
-- exact selected Product/SKU snapshots in Cart/Quote/Order.
+- authoritative effective Product/SKU resolution at commerce boundaries;
+- exact selected Product/SKU and resolved commercial snapshots in Cart/Quote/Order flows.
 
 ## Migration safety
 
