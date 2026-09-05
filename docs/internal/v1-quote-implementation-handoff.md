@@ -1,249 +1,169 @@
 # V1 Quote — Implementation Handoff
 
-**Status:** Owner-review candidate; implementation blocked until global wireframe freeze  
+**Status:** Owner-review candidate; amended for ADR 0022; implementation blocked until global wireframe freeze  
 **Date:** 2026-09-05  
-**Audience:** Codex, maintainers, Product/Technical Owner  
 **Figma:** `Dong Phu Gia V1 — LEO-579 Mobile Wireframes` (`LbiwIXMaip9LJ5jIauMNof`)  
-**Figma section:** `07 — QUOTE` (`917:2`)  
-**Linear:** LEO-571 — Build Quote Cart, negotiated Quote and Quote-to-Order flow
+**Section:** `07 — QUOTE` (`917:2`)  
+**Linear:** LEO-571
 
 > [!IMPORTANT]
-> Do **not** implement this document yet. Coding starts only after 100% launch-critical Public + Admin wireframes are Owner-approved and the Owner explicitly says **`V1 WIREFRAME APPROVED / FROZEN`**.
->
-> Quote Desktop + Mobile are structurally QA-clean and ready for Owner review, but are not approved/frozen yet.
+> No implementation before 100% launch-critical Public + Admin wireframes are Owner-approved and the Owner says exactly **`V1 WIREFRAME APPROVED / FROZEN`**.
 
-## 1. Purpose
+## 1. Canonical flow
 
-Durable V1 Quote contract:
+`PDP → Quote Cart → Request Information → Review & Send → immutable Quote Request NEW → Sales negotiation → negotiated Quote → tokenized read-only share → optional idempotent Quote→Order`
 
-**PDP → Quote Cart → Quote Request information → Review & Send → Quote Request `NEW` → Sales contact/negotiation → negotiated Quote → tokenized shareable Quote → optional authorized Quote→Order**.
+Quote Cart remains separate from Retail Cart.
 
-Quote is intentionally separate from Retail Cart/Checkout. Do not merge the two states or reuse one cart as the other.
+Quote Request does not create an Order.
 
-## 2. Authority
+## 2. Product/SKU selection identity
 
-1. Owner's newest explicit decisions.
-2. Final Owner-approved Figma Quote screens after review.
-3. This handoff.
-4. PDP/Family handoff for Product/colour/package identity.
-5. Canonical V1 schema/services where not superseded.
-6. Legacy Production only as reference.
+ADR 0022 replaces historical Family package/configuration identity.
 
-## 3. Current Figma authority
+Every sellable PDP selection must resolve to:
+
+- a real canonical Product;
+- an exact sellable SKU where applicable.
+
+Dòng/Trục/Lựa chọn is navigation to that identity, not a separately quoted runtime package object.
+
+Quote Cart/Request must preserve the exact selected Product/SKU snapshot plus human-readable selected option labels where useful.
+
+Examples:
+
+- MS885 selection resolves to the chosen Product/model and exact SKU;
+- TBG10302 `Bộ tay sen 108ZR → Màu Chrome` resolves to the approved real Product + Chrome SKU.
+
+Do not reconstruct a sellable line from legacy component strings at Quote time.
+
+## 3. Quote Cart
 
 Desktop:
 
-- `917:6` — D13A Quote Cart / Normal.
-- `917:44` — D13B Quote Cart / Needs attention.
-- `917:373` — D14A Quote Request / Information.
-- `917:411` — D14B Quote Request / Review before submit.
-- `917:442` — D14C Quote Request / Submitted.
-- `917:174` — D15 Shareable Quote / Read only.
+- `917:6` — D13A Normal
+- `917:44` — D13B Needs Attention
 
 Mobile:
 
-- `917:214` — M13A Quote Cart / Normal.
-- `917:249` — M13B Quote Cart / Needs attention.
-- `917:289` — M14A Quote Request / Information.
-- `917:314` — M14B Quote Request / Review.
-- `917:335` — M14C Quote Request / Submitted.
-- `917:347` — M15 Shareable Quote / Read only.
+- `917:214` — M13A Normal
+- `917:249` — M13B Needs Attention
 
-All 12 current Quote frames have passed structural QA for missing fonts, root-boundary overflow and frame overlap.
+Each line has explicit quantity controls and remove action.
 
-## 4. Quote Cart contract
+A line that no longer resolves to a valid Product/SKU enters Needs Attention. Submission is blocked until resolved or removed.
 
-Quote Cart is a guest commercial-enquiry cart, not Retail Cart.
+## 4. Quote Request submission
 
-Each line preserves:
+Desktop:
 
-- canonical manufacturer Product or approved `retailer_package` target;
-- exact selected sellable option/colour/SKU when applicable;
-- **customer-editable quantity** using decrement/increment controls;
-- remove-line action;
-- optional reference price;
-- one customer-facing package line for `retailer_package`;
-- package quantity applied to the complete package.
+- `917:373` — D14A Information
+- `917:411` — D14B Review
+- `917:442` — D14C Submitted
 
-Reference prices are context only and must be labelled/treated as **not the final commercial Quote**.
+Mobile:
 
-If a Product/package/configuration is no longer valid:
+- `917:289`, `917:314`, `917:335`.
 
-- the line enters Needs attention;
-- request submission is blocked;
-- customer must select a valid configuration or remove the line;
-- no silent substitution/splitting.
+The submitted Quote Request is immutable customer evidence.
 
-Quote Cart must not:
+Preserve at minimum:
 
-- create an Order;
-- share state silently with Retail Cart;
-- promise displayed Product price as negotiated Quote price;
-- add coupon/promotion logic.
+- customer/project context;
+- requested quantity;
+- customer note;
+- Product identity/model snapshot;
+- exact selected SKU snapshot;
+- selected option labels useful for display;
+- authoritative reference commerce snapshot where required by the approved contract.
 
-## 5. Quote Request contract
+## 5. Sales-negotiated Quote
 
-Guest fields:
+Sales does not edit the original Quote Request.
 
-Required:
+Negotiated Quote owns its commercial terms:
 
-- customer name;
-- phone.
+- quoted line price/adjustments;
+- quantities;
+- Quote notes/terms;
+- validity/state;
+- public share state.
 
-Optional/contextual:
+Changing quoted price must never mutate canonical Product/SKU pricing.
 
-- email;
-- project/construction name;
-- need/short project description;
-- note to Sales.
-
-There is an explicit Review-before-submit state.
-
-Review shows:
-
-- contact data;
-- project context;
-- exact requested Product/colour/package lines + quantity;
-- customer notes;
-- reference-price disclaimer;
-- statement that Sales will negotiate/issue the actual Quote.
-
-Submission creates a **Quote Request, not a Retail Order**.
-
-Submitted state communicates:
-
-- request reference/code;
-- `NEW` received state;
-- customer/project summary;
-- expectation that Sales will contact the customer.
-
-Validation/retry must preserve entered data. Request creation must use pragmatic duplicate prevention/idempotency consistent with canonical service architecture so a network retry cannot unintentionally create duplicate requests.
-
-## 6. Quote Request lifecycle
-
-Keep request handling small. Current operational meaning must support at least:
-
-- `NEW` — received, not handled;
-- contacted/in-progress — Sales is discussing requirements;
-- resolved/converted/cancelled terminal handling according to the canonical service model.
-
-Do not invent CRM, assignment, scoring or automation scope.
-
-## 7. Negotiated Quote aggregate
-
-A negotiated Quote is a separate Sales-owned commercial aggregate derived from a Quote Request or created by authorized Sales.
-
-Support:
-
-- stable Quote ID/reference;
-- customer/project snapshot;
-- status/lifecycle;
-- revision/version where needed by canonical services;
-- issue/publish timestamp;
-- optional validity/expiry;
-- ordered Quote lines;
-- exact Product/colour/package snapshots;
-- negotiated line unit price;
-- Quote-specific line discount/adjustment where authorized;
-- terms/notes;
-- final Quote total;
-- immutable issued commercial snapshot.
-
-Negotiated Quote pricing is Quote-specific. It must never mutate Product `price`, `sale_price` or `voucher_online_discount_amount`.
-
-## 8. Shareable Quote
+## 6. Shareable Quote
 
 Public route:
 
 `/bao-gia/{publicToken}`
 
-Contract:
+Desktop:
 
-- tokenized/public-safe identifier;
-- read-only;
-- no account requirement;
-- no customer editing;
-- no implicit Order creation;
-- show public-safe Quote reference/version/validity/customer-project summary/lines/prices/adjustments/total/terms;
-- internal Sales notes never leak into public response;
-- token may be revoked/rotated if supported by canonical architecture.
+- `917:174` — D15
 
-Do not expose an internal sequential Quote code as route authority.
+Mobile:
 
-## 9. Quote → Order
+- `917:347` — M15
 
-Quote→Order is an authorized Admin/Sales operation, not a Public CTA.
+Rules:
 
-Conversion must:
+- opaque public-safe token;
+- read-only customer projection;
+- no Admin-only note leakage;
+- internal Quote code is not route authority.
 
-- be explicit and idempotent;
-- create exactly one resulting Order for one valid conversion intent;
-- preserve the negotiated commercial snapshot;
-- preserve exact Product/colour/package identity and package component snapshots;
-- link Quote ↔ Order where practical;
+## 7. Quote → Order
+
+Conversion is explicit, authorized and idempotent.
+
+It must:
+
+- revalidate conversion eligibility;
+- create exactly one resulting Order;
+- snapshot the negotiated commercial terms;
+- preserve exact Product/SKU identity;
+- link Quote ↔ Order;
 - leave the original Quote Request unchanged;
-- never silently re-price the accepted/issued Quote from current Retail pricing;
-- recover the same Order on retry after a lost response.
+- return the same Order when safely retried.
 
-If the Quote has changed since the valid issued/accepted version, conversion must require an explicit valid version/state rather than converting an ambiguous draft.
+## 8. Product/Dòng changes after submission
 
-## 10. Public/Admin continuity
+Later catalogue changes to Product, SKU or Dòng/Axis/Option definitions do not rewrite:
 
-Public:
+- Quote Request history;
+- negotiated Quote history;
+- converted Order history.
 
-`D13/M13 Quote Cart → D14/M14 Request → D15/M15 Shareable Quote`
+Historical documents retain the identity/labels captured at their transaction time.
 
-Admin page `02 — ADMIN — Operational Wireframes`:
+## 9. Explicit exclusions
 
-- A17 Quote Request List (`31:835`).
-- A18 Quote Request Detail / immutable (`31:843`).
-- A19 Negotiated Quote editor (`31:853`).
-- A20 tokenized Share Quote state (`31:869`).
-- A21 idempotent Quote→Order (`31:879`).
+No:
 
-Public request snapshots and Admin negotiation must remain traceable without mutating the original customer submission.
+- merge with Retail Cart;
+- automatic Order creation from Quote Request;
+- customer editing of public Quote;
+- generic configurator/BOM engine;
+- runtime construction of arbitrary Product combinations;
+- Product-price mutation from negotiated Quote;
+- non-idempotent Quote→Order retry.
 
-## 11. Responsive Public contract
+## 10. Acceptance after global freeze
 
-Desktop and Mobile share one Quote data/state model.
+Prove:
 
-Mobile may stack cards/actions but preserves:
+1. Quote Cart and Retail Cart are separate;
+2. exact selected Product/SKU survives Quote Cart and immutable Request;
+3. Needs Attention blocks invalid Product/SKU lines;
+4. Request snapshot cannot be rewritten by Sales;
+5. negotiated Quote pricing is Quote-specific;
+6. share route is tokenized/read-only;
+7. Quote→Order preserves exact Product/SKU and negotiated terms;
+8. conversion is idempotent;
+9. later Product/SKU/Dòng changes cannot mutate historical snapshots.
 
-- isolated Quote Cart;
-- quantity/remove controls;
-- needs-attention blocking;
-- Review-before-submit;
-- submitted request semantics;
-- tokenized read-only Quote;
-- exact monetary meaning.
+## 11. Gate
 
-## 12. Acceptance criteria after global freeze
+No implementation until the Owner says exactly:
 
-Implementation must prove:
-
-1. Quote Cart is isolated from Retail Cart.
-2. Quantity edits/removal operate on Quote Cart lines only.
-3. selected Product colour/sellable SKU survives into request/Quote snapshots.
-4. `retailer_package` remains one customer line with immutable component snapshot semantics.
-5. invalid configuration blocks request submission.
-6. Quote Request does not create a Retail Order.
-7. Review preserves/displays customer/project/line data.
-8. request retry does not create unintended duplicates.
-9. negotiated Quote prices do not mutate Product pricing.
-10. shareable Quote is tokenized/read-only/public-safe.
-11. Quote lifecycle/revisions are deterministic.
-12. Quote→Order is idempotent and snapshot-preserving.
-13. no login/CRM/coupon/customer-editor scope is introduced.
-
-## 13. Codex sequence after global freeze
-
-1. Read this handoff + final Figma + PDP/Family contract + canonical schema/service docs.
-2. Audit current Quote Request/legacy Quote code read-only.
-3. Report exact reusable code and schema/service/Public/Admin/test deltas.
-4. Do not preserve legacy semantics automatically.
-5. Coordinator/Owner approves material delta plan.
-6. Implement domain/service/idempotency first.
-7. Implement Public Quote Cart/Request/share page.
-8. Implement Admin Quote Request/negotiated Quote/share/Quote→Order.
-9. Add contract + E2E acceptance tests.
-10. Do not broaden scope.
+**`V1 WIREFRAME APPROVED / FROZEN`**
