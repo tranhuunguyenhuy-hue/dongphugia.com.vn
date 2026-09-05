@@ -46,9 +46,10 @@ Launch-critical modules:
 
 - Auth & access states.
 - Dashboard.
-- Product/Catalogue.
-- sellable colour/SKU options.
-- Categories / Brands / Family configurations / Specs / Media.
+- Product list/editor.
+- Product sellable colour/SKU options.
+- Product Family + PDP-selector management.
+- Product media/documents.
 - Retail Orders + commercial confirmation/payment operations.
 - Quote Requests / negotiated Quotes / share / Quote→Order.
 - Contact Requests / CSKH.
@@ -56,6 +57,14 @@ Launch-critical modules:
 - Campaign merchandising.
 - Users & fixed roles.
 - narrow Managed Commerce Configuration.
+
+Explicit Admin V1 scope reduction — Owner decision 05/09/2026:
+
+- **No Category management/CRUD module.**
+- **No Brand management/CRUD module.**
+- **No Spec/Filter metadata management module.**
+
+Category, Brand and filter/spec data may continue to exist as canonical Public/catalogue data and references, but their Admin management lifecycle is outside V1.
 
 Admin is **desktop-first operational UI**. The canonical phase does not require a separate mobile Admin IA/screen set.
 
@@ -80,11 +89,11 @@ The established Admin page is the visual/structural authority. The discarded tem
 
 Admin review index: `182:2`.
 
-Current coverage: **32 Axx operational states**, grouped into:
+Current coverage: **31 operational states**, grouped into:
 
 - `182:7` Auth & Access — A01–A06.
 - `182:13` Dashboard — A07.
-- `182:16` Catalogue Operations — A08–A14 + A09B.
+- `182:16` Product Operations — A08, A09, A09B, A09C, A10, A10B, A14.
 - `182:20` Orders — A15–A16B.
 - `182:24` Quote / Sales — A17–A21.
 - `182:31` Marketing / Content + Campaign — A22–A25.
@@ -92,7 +101,19 @@ Current coverage: **32 Axx operational states**, grouped into:
 - `264:302` Customer Care — A29.
 - `934:132` Managed Configuration — A30.
 
-Admin structural QA on 2026-09-05: **32/32 current Axx frames have no missing fonts, root-boundary overflow or frame-to-frame overlap.** Owner approval is still pending.
+Current Product/Family node authority:
+
+- `31:729` — A08 Product List.
+- `31:741` — A09 Product with Family.
+- `930:11` — A09B Màu & SKU.
+- `1015:2` — A09C Product without Family.
+- `31:761` — A10 Family / PDP Selector editor.
+- `1012:85` — A10B guided Family creation from Product.
+- `31:799` — A14 Product Media / Documents.
+
+Removed from current Figma authority: A11 Category Management, A12 Brand Management, A13 Specs/Filter Metadata.
+
+Catalogue redesign structural QA on 05/09/2026: all seven current Product states are root-boundary/missing-font clean, and removed modules/nav entries are absent.
 
 Reference/obsolete screens never override current frames.
 
@@ -107,7 +128,7 @@ Prepared for final Owner review in this wireframe-completion phase:
 
 - Quote Desktop + Mobile.
 - Content / Landing / Showroom / Support Desktop + Mobile.
-- Admin A01–A30 operational page, including newly aligned Catalogue, Orders, Campaign, Customer Care and Managed Configuration states.
+- Admin page, including the revised PDP-first Product/Family flow.
 
 Slice completion does not open implementation before the global freeze phrase.
 
@@ -126,6 +147,19 @@ Core boundaries:
 - Configuration target = manufacturer Product or `retailer_package`;
 - colour stays on same PDP and selects exact sellable option;
 - no standalone Family page.
+
+Admin/PDP selector bridge:
+
+`docs/internal/v1-family-admin-pdp-selector-linkage.md`
+
+Core Admin behavior:
+
+- Product can exist without Family;
+- Family membership does not create a selector card;
+- A10 edits an ordered selector-card rail mirroring approved Public PDP;
+- A10B guides Family + first member + first selector Configuration while preserving those as separate relationships;
+- optional grouping is progressive disclosure;
+- package colour mapping is explicit.
 
 ### Retail Order
 
@@ -178,7 +212,8 @@ Core boundaries:
 
 - page `02 — ADMIN — Operational Wireframes` is the Admin Figma authority;
 - separate Admin app + fixed multi-role permissions;
-- Product canonical pricing + sellable options + Family configurations;
+- Product-centered flow: Product → Màu & SKU → optional Family/PDP selector → Media/Documents → Preview → Publish;
+- no Category/Brand/Spec-Filter management module in V1;
 - Retail Order staff commercial confirmation using the Public lifecycle;
 - Quote Request / negotiated Quote / token share / idempotent Quote→Order;
 - Contact Request queue;
@@ -205,6 +240,9 @@ Do not implement or expose current UI for:
 
 - Wishlist.
 - Collection/manufacturer Collection normalization.
+- Admin Category management/CRUD.
+- Admin Brand management/CRUD.
+- Admin Spec/Filter metadata management UI.
 - mandatory customer account/login portal.
 - customer Order dashboard/portal.
 - Compare.
@@ -223,16 +261,18 @@ Do not implement or expose current UI for:
 ## 9. Cross-domain invariants
 
 1. Canonical Product data remains the commerce source of truth.
-2. Colour/finish sellable options remain on one canonical Product/PDP.
-3. Historical Orders/Quotes use immutable commercial snapshots.
-4. `retailer_package` never masquerades as a manufacturer model.
-5. Retail and Quote flows are separate.
-6. Contact Request and Quote Request are separate intents/domains.
-7. Campaign is Homepage merchandising, not Collection or pricing rules.
-8. Public and Admin route/app boundaries remain separate but operate the same domain truth.
-9. Server-side permissions/RLS are authoritative; UI hiding is insufficient.
-10. Desktop/Mobile Public screens are responsive presentations of the same domain contracts.
-11. Legacy Production is evidence/reference, not UX/data authority.
+2. Product may exist without Family; Family is used only where related selector navigation is needed.
+3. Family membership and Public selector Configuration are separate relationships.
+4. Colour/finish sellable options remain on one canonical Product/PDP.
+5. Historical Orders/Quotes use immutable commercial snapshots.
+6. `retailer_package` never masquerades as a manufacturer model.
+7. Retail and Quote flows are separate.
+8. Contact Request and Quote Request are separate intents/domains.
+9. Campaign is Homepage merchandising, not Collection or pricing rules.
+10. Public and Admin route/app boundaries remain separate but operate the same domain truth.
+11. Server-side permissions/RLS are authoritative; UI hiding is insufficient.
+12. Desktop/Mobile Public screens are responsive presentations of the same domain contracts.
+13. Legacy Production is evidence/reference, not UX/data authority.
 
 ## 10. Required implementation workflow for Codex after freeze
 
@@ -247,11 +287,12 @@ For each slice:
    - service/API delta;
    - Public/Admin UI delta;
    - tests/migration needs.
-4. Do **not** start implementation from the gap report alone when material architecture/schema decisions require approval.
-5. Coordinator/Owner reviews the proposed delta.
-6. Implement in dependency order: domain/schema/service → APIs/actions → UI → tests → migration/fixtures.
-7. Prove acceptance criteria against final frozen Figma and handoffs.
-8. Do not broaden scope.
+4. Explicitly identify legacy Admin Category/Brand/Spec-Filter routes/components so they are not restored into V1 navigation.
+5. Do **not** start implementation from the gap report alone when material architecture/schema decisions require approval.
+6. Coordinator/Owner reviews the proposed delta.
+7. Implement in dependency order: domain/schema/service → APIs/actions → UI → tests → migration/fixtures.
+8. Prove acceptance criteria against final frozen Figma and handoffs.
+9. Do not broaden scope.
 
 ## 11. Freeze completion checklist
 
@@ -259,6 +300,8 @@ Before the Owner can safely say `V1 WIREFRAME APPROVED / FROZEN`, verify:
 
 - every launch-critical Public page/state has a reviewable current frame;
 - every launch-critical Admin module/action has a current operational frame on page 02;
+- Product/Family Admin matches approved PDP selector behavior;
+- removed Category/Brand/Spec-Filter Admin modules are absent from current V1 authority and docs;
 - obsolete Wishlist/Collection/legacy frames are clearly reference-only or removed from current flows;
 - Quote, Retail, Contact and Campaign boundaries are consistent across Public/Admin Figma and docs;
 - final Sitemap FigJam exists;
