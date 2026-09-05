@@ -1,6 +1,6 @@
 # V1 PDP + Dòng sản phẩm — Implementation Handoff
 
-**Status:** Owner-locked design/architecture contract; implementation blocked until global wireframe freeze  
+**Status:** Owner-locked Public design/architecture contract; Admin Product/Dòng replacement is OWNER REVIEW; implementation blocked until global wireframe freeze  
 **Date:** 2026-09-05  
 **Audience:** Codex, maintainers, Product/Technical Owner  
 **Figma:** `Dong Phu Gia V1 — LEO-579 Mobile Wireframes` (`LbiwIXMaip9LJ5jIauMNof`)  
@@ -50,7 +50,7 @@ Canonical shape:
 
 `Dòng → Trục 1 → Lựa chọn → [Trục 2 → Lựa chọn] → [Trục 3 → Lựa chọn] → Sản phẩm / SKU`
 
-## 3. Product vs SKU behavior
+## 3. Product vs SKU behavior — locked
 
 Product identity and exact sellable SKU identity are distinct.
 
@@ -63,10 +63,21 @@ A selection may resolve only to another SKU of the current Product:
 
 - remain on the same canonical PDP/URL;
 - change exact SKU;
-- price/sale/online-discount may change according to the final approved Product/SKU commerce contract;
-- availability may change;
+- effective price/sale/online-discount may change;
+- availability/status may change;
 - gallery/media may change;
 - Cart/Quote must preserve the exact selected SKU.
+
+### Product-default / SKU-specific inheritance
+
+Owner decision 05/09/2026:
+
+- Product provides the default price/sale/online-discount values, indicative availability/status and default media;
+- a sellable SKU may define its own value for those fields and its own media mapping;
+- when a SKU-specific value is absent, runtime falls back to the Product value;
+- SKU-specific media mapping, when present, replaces Product media for the selected SKU; otherwise Product media is used.
+
+Effective resolution must be deterministic and server-authoritative. UI may communicate the source as `Kế thừa Sản phẩm` or `Dùng giá trị riêng`.
 
 `Màu` is not a separate Family subsystem. It is one possible Trục label/semantic type.
 
@@ -160,9 +171,11 @@ The selector is navigation to canonical commerce identities, not a free configur
 - no runtime construction of arbitrary component combinations;
 - no fabricated Product/SKU;
 - final selection must resolve to authoritative Product/SKU data;
-- server revalidates authoritative price/availability at Cart/Checkout/Quote boundaries;
+- effective commerce/media state resolves from SKU-specific value first, then Product fallback;
+- server revalidates authoritative effective price/availability at Cart/Checkout/Quote boundaries;
 - Retail Cart and Quote Cart preserve exact selected Product + SKU identity;
-- Order/Quote historical snapshots remain immutable after later catalogue changes.
+- Order/Quote snapshots preserve the resolved commercial values used at creation/confirmation;
+- historical snapshots remain immutable after later Product/SKU changes.
 
 ## 8. Search and routing
 
@@ -175,26 +188,37 @@ Routing rules:
 - no standalone Dòng route;
 - no separate colour SEO page.
 
-## 9. Admin dependency
+Search/PDP projections must resolve effective price/status using SKU-specific values where present and Product fallback otherwise.
 
-Admin must manage the same mental model customers see:
+## 9. Admin dependency — current OWNER REVIEW replacement
 
-1. canonical Sản phẩm/PDP;
-2. one or more exact sellable SKUs under the Product;
-3. optional membership in one Dòng sản phẩm;
-4. 1–3 ordered Trục lựa chọn;
-5. dependent Lựa chọn paths;
-6. terminal mapping to Product and/or SKU;
-7. Public PDP preview.
+The previous Admin Product/Dòng candidate was not approved by Owner and is superseded for review.
 
-Current Admin authority:
+The replacement is designed around three staff jobs: search/manage Product, create Product, create/manage Dòng.
 
-- `31:741` — A09 Product;
-- `930:11` — A09B Sản phẩm · SKU bán được;
-- `1015:2` — A09C Sản phẩm chưa có Dòng;
-- `31:761` — A10 Dòng sản phẩm / Trục / Lựa chọn;
-- `1012:85` — A10B Tạo Dòng sản phẩm từ Sản phẩm;
-- `31:799` — media/documents.
+Current review nodes:
+
+### Search/manage Product
+
+- `1051:4` — A08R Tìm kiếm & quản lý Sản phẩm;
+- `1051:196` — A09R Sản phẩm / Tổng quan.
+
+### Create Product
+
+- `1051:394` — A09N1 Tạo Sản phẩm / Thông tin cơ bản;
+- `1051:549` — A09N2 Tạo Sản phẩm / SKU & Kế thừa;
+- `1051:733` — A09N3 Tạo Sản phẩm / Dòng & Xuất bản.
+
+### Create/manage Dòng
+
+- `1051:909` — A10R Danh sách Dòng sản phẩm;
+- `1051:1066` — A10C Tạo Dòng sản phẩm;
+- `1051:1231` — A10E Quản lý Dòng / Trục / Lựa chọn / Xem trước PDP;
+- `31:799` — A14 Hình ảnh & tài liệu remains reused.
+
+Admin must make Product-default vs SKU-specific inheritance visible and provide direct Public PDP preview from Product/Dòng workflows.
+
+Detailed review contract: `docs/internal/v1-admin-product-line-redesign-review.md`.
 
 ## 10. Import / provenance rules
 
@@ -208,9 +232,10 @@ Import/curation must explicitly establish:
 - dependent Option paths;
 - Product membership;
 - exact sellable SKU records;
-- Product/SKU terminal targets.
+- Product/SKU terminal targets;
+- Product-default and SKU-specific commerce/media values only when evidence supports ownership.
 
-Ambiguous mappings must be quarantined. Never guess by parsing model strings alone.
+Ambiguous mappings or ambiguous SKU override ownership must be quarantined. Never guess by parsing model strings alone.
 
 ## 11. M0–M2 compatibility
 
@@ -221,7 +246,8 @@ Historical migrations stay immutable. After global freeze, implementation uses a
 See:
 
 - `docs/adr/0022-v1-product-line-axis-option-family-model.md`;
-- `docs/internal/v1-product-line-axis-option-m0-m2-impact-audit.md`.
+- `docs/internal/v1-product-line-axis-option-m0-m2-impact-audit.md`;
+- `docs/internal/v1-admin-product-line-redesign-review.md`.
 
 ## 12. Acceptance criteria after global freeze
 
@@ -235,10 +261,12 @@ Implementation must prove at minimum:
 6. TBG10302 behaves as `Bộ sản phẩm → Product → Màu → SKU`;
 7. Product-changing choice navigates to canonical target PDP;
 8. SKU-only choice keeps the same PDP and switches exact SKU/state;
-9. every terminal sellable path resolves to a real Product/SKU;
-10. no `retailer_package` selector target is required;
-11. exact Product/SKU survives Cart, Quote and Order snapshots;
-12. Desktop and Mobile share one domain contract.
+9. SKU-specific price/status/media overrides Product when present;
+10. missing SKU-specific value falls back to Product deterministically;
+11. every terminal sellable path resolves to a real Product/SKU;
+12. no `retailer_package` selector target is required;
+13. exact Product/SKU and resolved commerce values survive Cart, Quote and Order snapshots;
+14. Desktop and Mobile share one domain contract.
 
 ## 13. Gate
 
