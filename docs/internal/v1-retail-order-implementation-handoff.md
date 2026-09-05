@@ -1,524 +1,173 @@
 # V1 Retail Order — Implementation Handoff
 
-**Status:** Owner-approved Desktop + Mobile design contract; implementation blocked until global wireframe freeze  
-**Owner approval date:** 2026-09-05  
-**Audience:** Codex, maintainers, Product/Technical Owner  
+**Status:** Owner-approved Desktop + Mobile design contract; amended for ADR 0022; implementation blocked until global wireframe freeze  
+**Date:** 2026-09-05  
 **Figma:** `Dong Phu Gia V1 — LEO-579 Mobile Wireframes` (`LbiwIXMaip9LJ5jIauMNof`)  
-**Figma section:** `06 — RETAIL ORDER` (`181:29`)  
-**Linear:** LEO-567 — Build retail Cart, guest Checkout and Order flow
+**Section:** `06 — RETAIL ORDER` (`181:29`)  
+**Architecture:** ADR 0021 + ADR 0022
 
 > [!IMPORTANT]
-> Do **not** implement this document yet. Coding starts only after the Owner explicitly says:
-> **`V1 WIREFRAME APPROVED / FROZEN`**.
->
-> The Retail Order slice itself is fully Owner-approved on Desktop and Mobile. That slice approval does **not** override the global implementation gate.
+> Retail Order design is approved, but implementation still requires the exact global Owner gate **`V1 WIREFRAME APPROVED / FROZEN`**.
 
-## 1. Purpose
+## 1. Canonical flow
 
-This is the durable implementation handoff for the approved V1 Retail Order experience:
+`PDP → Retail Cart → Guest Checkout → Review & Send → Order NEW → CONTACTED → CONFIRMED → PROCESSING → COMPLETED`
 
-**PDP → Retail Cart → Guest Checkout → Review & Send → Order `NEW` → staff confirmation → `CONTACTED` → `CONFIRMED` → `PROCESSING` → `COMPLETED`**.
+`CANCELLED` is an allowed terminal branch according to canonical service rules.
 
-It exists so Codex does not infer behavior from legacy Production checkout UI, stale schema assumptions, old variant/package data, or the Quote flow.
+Retail Cart is separate from Quote Cart.
 
-Core V1 principles:
+## 2. Product/SKU selection identity
 
-- no customer account required;
-- no payment gateway;
-- payment methods are `COD` and `BANK_TRANSFER` only;
-- Retail Cart and Quote Cart are separate flows;
-- staff confirmation is required before an Order is commercially final;
-- Product/colour/package selections from the approved PDP Family System survive into Cart and immutable Order snapshots;
-- online discount is auto-applied; there is no coupon/voucher engine;
-- Desktop and Mobile share one business contract. Mobile is a responsive presentation of the same state machine, not a separate commerce flow.
+Every sellable PDP state under ADR 0022 resolves to:
 
-## 2. Authority and conflict rules
+- one real canonical Product;
+- one exact sellable SKU where the Product has SKU options.
 
-For Retail Order scope, authority order is:
+Dòng/Trục/Lựa chọn is the navigation mechanism used to reach that identity. Retail commerce must not persist a Family-specific runtime package target.
 
-1. Owner's newest explicit decisions.
-2. Approved Figma Retail Order screens listed in this document.
-3. This implementation handoff.
-4. ADR `docs/adr/0021-v1-retail-order-staff-confirmation-and-pending-fees.md`.
-5. PDP/Family handoff + ADR 0017 for Product/colour/package identity.
-6. Pricing ADR 0020.
-7. Existing canonical V1 schema/services where not superseded.
-8. Legacy Production only as migration/reference evidence.
+When adding to Retail Cart, server authority must resolve and validate the exact Product/SKU. Never trust client-supplied price or SKU claims.
 
-If older UI/docs conflict with the approved Figma or this contract, do not silently preserve the older behavior.
+Cart and immutable Order line snapshots preserve at minimum:
 
-## 3. Approved Figma authority
-
-Section: **`06 — RETAIL ORDER`** (`181:29`).
-
-### 3.1 Desktop Cart — APPROVED
-
-| Node | Screen | Contract |
-| --- | --- | --- |
-| `777:3` | D10A — Retail Cart / Populated / Normal | Normal Product + retailer-package cart |
-| `777:133` | D10B — Quantity / Pricing updated | Quantity changes update totals deterministically |
-| `777:263` | D10C — Needs attention / Block checkout | Invalid/unavailable configuration blocks Checkout |
-| `777:397` | D10D — Empty Cart | Empty state |
-
-### 3.2 Desktop Guest Checkout — APPROVED
-
-| Node | Screen | Contract |
-| --- | --- | --- |
-| `800:2` | D11A — COD / Normal | Guest information + COD |
-| `800:120` | D11B — Bank Transfer | Bank choice; no premature transfer |
-| `800:241` | D11C — Validation errors | Preserve entered data and correct errors |
-| `810:98` | D11D — Review before submit | Explicit Review before Order creation |
-| `800:363` | D11E — Submitting | Submission locked/idempotent |
-| `800:484` | D11F — Submission failure / Retry | Retry without data loss or duplicate Order |
-| `812:2` | SPEC — D11 Checkout · Staff Confirmation Contract | Supporting contract |
-
-### 3.3 Desktop Order Confirmation / Status — APPROVED
-
-| Node | Screen | Contract |
-| --- | --- | --- |
-| `818:2` | D12A — COD / `NEW` | Order received; waiting for staff confirmation |
-| `818:157` | D12B — Bank Transfer / `NEW` | Order received; **do not transfer yet** |
-| `818:315` | D12C — `CONTACTED` | Staff contacted customer; details still being confirmed |
-| `818:470` | D12D — `CONFIRMED` COD | Final commercial total confirmed |
-| `863:2` | D12E — `CONFIRMED` Bank Transfer | Confirmed total + managed bank-transfer instructions |
-
-Final approved D12 presentation rules:
-
-- one customer-facing Order lifecycle progress only;
-- do not duplicate status across a separate status hero, second lifecycle tracker and summary badge;
-- current status and lifecycle progress are one coherent status surface;
-- Order number belongs in **Thông tin đơn hàng** and supports copy action;
-- detailed order/customer/payment/amount information remains visible below the progress;
-- Bank Transfer instructions appear only after final commercial confirmation.
-
-### 3.4 Mobile Cart — APPROVED
-
-| Node | Screen |
-| --- | --- |
-| `902:2` | M10A — Retail Cart / Populated / Normal |
-| `902:95` | M10B — Quantity / Pricing updated |
-| `902:188` | M10C — Needs attention / Block checkout |
-| `902:286` | M10D — Empty Cart |
-
-### 3.5 Mobile Guest Checkout — APPROVED
-
-| Node | Screen |
-| --- | --- |
-| `906:2` | M11A — COD / Normal |
-| `906:107` | M11B — Bank Transfer selected |
-| `906:215` | M11C — Validation errors |
-| `906:323` | M11D — Review before submit |
-| `906:402` | M11E — Submitting |
-| `906:467` | M11F — Submission failure / Retry |
-
-### 3.6 Mobile Order Confirmation / Status — APPROVED
-
-| Node | Screen |
-| --- | --- |
-| `908:2` | M12A — COD / `NEW` |
-| `908:91` | M12B — Bank Transfer / `NEW` |
-| `908:183` | M12C — `CONTACTED` |
-| `908:272` | M12D — `CONFIRMED` COD |
-| `908:366` | M12E — `CONFIRMED` Bank Transfer |
-
-Do not use obsolete/rejected Retail Order explorations as implementation authority.
-
-## 4. Retail Cart contract
-
-### 4.1 Retail Cart is not Quote Cart
-
-Retail Cart and Quote Cart remain separate.
-
-Do not add a CTA that silently converts Retail Cart into Quote Request. Quote has its own state and screens.
-
-### 4.2 Cart line identity
-
-Cart must support approved PDP selections:
-
-1. `manufacturer_product` configuration;
-2. exact selected colour/sellable option where applicable;
-3. `retailer_package` configuration.
-
-For a manufacturer Product, preserve at least:
-
-- canonical Product ID;
-- canonical Product/model identity;
-- selected sellable SKU/colour option, if any;
-- configuration/display label where useful;
+- Product identity/model;
+- exact SKU identity/code;
+- selected option labels useful to the customer, e.g. Màu;
 - quantity;
-- authoritative pricing inputs at Order creation.
+- authoritative unit price/discount state used by the transaction;
+- display/media snapshot required by the approved UI.
 
-A `retailer_package` appears as **one customer-facing Cart line / one ordered configuration**, not as unrelated component lines.
+Product-changing Dòng choices already navigate to the appropriate canonical PDP before add-to-cart. SKU-only choices remain on one PDP.
 
-Example fixture: `Bộ sen TBG10302 + DGH108ZR`.
+## 3. Cart states
 
-The UI may show `Gồm 2 sản phẩm`, while the backend retains canonical package/component references. Quantity applies to the complete package.
+Desktop authority:
 
-If a required package component/configuration becomes invalid or unavailable:
+- `777:3`, `777:133`, `777:263`, `777:397`.
 
-- line enters **Needs attention**;
-- Checkout is blocked;
-- customer must choose another valid configuration or remove the line;
-- do not silently substitute or split package components.
+Mobile authority:
 
-### 4.3 Pricing
+- `902:2`, `902:95`, `902:188`, `902:286`.
 
-Canonical Product pricing:
+Cart must detect a line that can no longer be resolved/sold and enter the approved Needs Attention state. Invalid state blocks checkout until resolved or removed.
 
-- `price` = regular selling price;
-- `sale_price` = optional promotional selling price;
-- `voucher_online_discount_amount` = optional additional fixed online discount.
+Quantity and remove actions are explicit.
 
-Current Product price = `sale_price ?? price`.
+## 4. Guest Checkout
 
-Online discount is automatically applied to an online Retail Order. It is not a claim/checkbox interaction.
+Desktop authority:
 
-Cart summary distinguishes:
+- `800:2`, `800:120`, `800:241`, `810:98`, `800:363`, `800:484`, `812:2`.
 
-- Product price before online discount;
-- online discount;
-- shipping-fee state;
-- current Product subtotal/tạm tính.
+Mobile authority:
 
-Never display pending shipping as `0đ` or imply free shipping.
+- `906:2`, `906:107`, `906:215`, `906:323`, `906:402`, `906:467`.
 
-### 4.4 Availability and revalidation
+No mandatory customer account.
 
-Indicative availability may be shown, but Checkout/Order creation must revalidate sellability and pricing.
+Payment methods:
 
-A Cart with unresolved line problems cannot proceed.
+- COD
+- Bank Transfer
 
-## 5. Guest Checkout contract
+Review occurs before final submission.
 
-### 5.1 Approved user flow
+## 5. Order creation
 
-Customer-facing checkout is intentionally simple:
+Submission creates:
 
-**1. Thông tin → 2. Kiểm tra & gửi → 3. Nhân viên xác nhận → 4. Xử lý & giao hàng**
+- source = RETAIL;
+- status = NEW;
+- payment_status = UNPAID.
 
-Only steps **1–2** are customer actions during Checkout. Steps 3–4 describe what happens after submission.
+The confirmation experience means **received**, not commercially confirmed.
 
-Implementation rules:
+Staff later confirms unresolved commercial facts.
 
-- do not restore the rejected `Process Context Header` / `Bước x / 4` banner on Cart or Checkout;
-- show the short public **Quy trình đặt hàng** inside content where useful;
-- Review remains mandatory before Order creation;
-- do not create extra pages merely because the process has four labels.
+## 6. Pending fees and final total
 
-### 5.2 No account
+At NEW, shipping/installation fees may be pending.
 
-Checkout is guest-first. Do not introduce login/account requirements.
+Pending must not be represented as confirmed `0đ`.
 
-### 5.3 Customer/contact fields
+Staff confirmation determines the approved final commercial total before transition to CONFIRMED.
 
-Required:
+## 7. Bank Transfer
 
-- name;
-- phone.
+At NEW/CONTACTED:
 
-Optional:
+- do not instruct transfer;
+- do not use a temporary subtotal as transfer amount;
+- managed bank instructions remain hidden/non-actionable.
 
-- email;
-- order note.
+After CONFIRMED:
 
-Validation errors preserve all entered data.
+- final total is fixed;
+- managed bank instructions may become actionable;
+- Order may remain UNPAID;
+- confirming the Order does not mark payment paid.
 
-### 5.4 Shipping address
+## 8. Confirmation states
 
-Approved hierarchy:
+Desktop authority:
 
-- Tỉnh / Thành phố;
-- Phường / Xã;
-- detailed address.
+- `818:2` — NEW COD
+- `818:157` — NEW Bank
+- `818:315` — CONTACTED
+- `818:470` — CONFIRMED COD
+- `863:2` — CONFIRMED Bank
 
-Use searchable selectors where appropriate. Form entry does not imply that final shipping fee is known.
+Mobile authority:
 
-### 5.5 Installation support
+- `908:2`, `908:91`, `908:183`, `908:272`, `908:366`.
 
-Optional customer intent:
+## 9. Historical snapshot invariants
 
-**`Tôi cần nhân viên tư vấn lắp đặt`**.
+Later changes to:
 
-This is not an automatic installation sale/fee. Persist the intent explicitly so staff can confirm capability, scope and fee later.
+- Product;
+- SKU;
+- Dòng/Axis/Option structure;
+- Product/SKU price;
+- availability;
+- media;
 
-### 5.6 Payment methods
+must not rewrite existing Order line history.
 
-Supported V1 methods:
+## 10. Idempotency
 
-- `COD`;
-- `BANK_TRANSFER`.
+Order creation must be idempotent. A retry after uncertain client/network response must return the same Order rather than create a duplicate.
 
-No online gateway.
+## 11. Explicit exclusions
 
-#### COD
+No:
 
-Customer pays according to the commercial total confirmed by staff. At Order creation `payment_status = UNPAID`.
+- mandatory account;
+- payment gateway;
+- realtime inventory engine;
+- shipping-rate engine;
+- fulfilment/warehouse platform;
+- arbitrary bundle/configurator engine;
+- runtime Product-combination creation.
 
-#### Bank Transfer
+## 12. Acceptance after global freeze
 
-At `NEW` / before commercial confirmation:
+Prove:
 
-- display **Chưa chuyển khoản** / **Chưa cần chuyển khoản**;
-- do not tell customer to transfer the temporary Product subtotal;
-- do not expose the temporary subtotal as final transfer amount;
-- do not require transfer to create the Order.
+1. exact selected Product/SKU is authoritatively resolved;
+2. SKU-only choice survives Cart and Order snapshot;
+3. Needs Attention blocks unresolved invalid lines;
+4. NEW/UNPAID is created once;
+5. pending fee is different from confirmed zero;
+6. staff confirmation fixes final total;
+7. Bank instructions appear only after CONFIRMED;
+8. CONFIRMED Bank may remain UNPAID;
+9. lifecycle is exact;
+10. later catalogue changes cannot rewrite Order history;
+11. retries are idempotent.
 
-After `CONFIRMED`:
+## 13. Gate
 
-- final commercial total is available;
-- bank-transfer instructions may become actionable;
-- bank account/instruction values come from managed configuration, never hard-coded UI/business logic.
+No implementation until the Owner says exactly:
 
-### 5.7 Review before submit
-
-Only the Review state has the final **Gửi đơn hàng** action.
-
-Review must cover:
-
-- contact;
-- delivery address;
-- installation-support intent;
-- payment method;
-- order note;
-- ordered Product/colour/package snapshots;
-- Product price/discount currently recorded;
-- fees still pending;
-- the fact that staff will confirm pending commercial details.
-
-### 5.8 Submission / retry
-
-Submission is idempotent.
-
-If the Order was created but the client lost the response, retry must recover/return the same Order rather than creating a duplicate.
-
-Submitting blocks duplicate submit actions while preserving state. Failure retains user data and permits retry/edit.
-
-## 6. Order lifecycle and staff-confirmation contract
-
-Canonical lifecycle:
-
-`NEW → CONTACTED → CONFIRMED → PROCESSING → COMPLETED`
-
-`CANCELLED` is an allowed terminal branch according to the service transition contract.
-
-Customer-facing meaning:
-
-- `NEW`: request/order received; **not commercially confirmed**;
-- `CONTACTED`: staff has contacted customer and is resolving pending details;
-- `CONFIRMED`: parties have agreed stock/fees/final commercial total;
-- `PROCESSING`: confirmed order is being fulfilled;
-- `COMPLETED`: fulfilled;
-- `CANCELLED`: stopped/cancelled.
-
-Guest Checkout creates:
-
-- `source = RETAIL`;
-- `status = NEW`;
-- `payment_status = UNPAID`.
-
-The first confirmation surface says **Đơn hàng đã được tiếp nhận**. Do not imply the sale is already commercially confirmed.
-
-Depending on the order, staff may confirm:
-
-- actual sellability/stock context;
-- package composition validity;
-- delivery fee;
-- delivery timing;
-- installation capability/fee if requested;
-- final payable amount;
-- bank-transfer instructions when applicable.
-
-## 7. Order Confirmation / customer status surface
-
-### 7.1 One progress surface
-
-Desktop and Mobile use one simple lifecycle progress:
-
-**Tiếp nhận → Liên hệ → Xác nhận → Xử lý → Hoàn tất**
-
-The progress is a customer-readable representation of Order lifecycle; it is not a Checkout stepper.
-
-Rules:
-
-- highlight current/reached lifecycle state;
-- show one current-status label with the progress;
-- do not duplicate a second full tracker;
-- do not repeat the same status in an Order Summary badge;
-- keep Mã đơn in **Thông tin đơn hàng**;
-- keep recipient/address/payment/install-support snapshots and ordered lines visible;
-- cancellation is a separate terminal branch, not a sixth normal forward step.
-
-### 7.2 Bank Transfer states
-
-`NEW`:
-
-- no transfer instruction;
-- no final transfer amount;
-- clear instruction to wait for staff confirmation.
-
-`CONFIRMED`:
-
-- final commercial total is explicit;
-- transfer guidance can be shown;
-- managed bank details are rendered from configuration;
-- payment may still be `UNPAID` until payment reconciliation occurs.
-
-### 7.3 No account dashboard implied
-
-Approved D12/M12 states define status semantics. They do **not** approve a customer account or order-history dashboard.
-
-If a later V1 task requires public revisit/status access, define a secure guest-access mechanism separately. Do not expose an Order by a guessable order number alone.
-
-## 8. Amount semantics
-
-Approved UX distinguishes **pending** from **confirmed** fees.
-
-Do not encode pending shipping as `shipping_fee = 0`, because zero is a valid confirmed free-shipping amount and is not the same as unknown/pending.
-
-Required behavior:
-
-- Product price snapshots and online discount are recorded at Order creation;
-- shipping/installation may be `PENDING_CONFIRMATION`;
-- `tạm tính sản phẩm` is not the final payable total;
-- `CONFIRMED` may show confirmed shipping/install fee(s) and final total.
-
-Exact physical column names can be finalized in the post-freeze schema brief, but these semantics are mandatory.
-
-## 9. Required schema/data amendments after global freeze
-
-The approved UX requires additive amendments to current V1 Orders.
-
-### 9.1 Selected sellable-option snapshot
-
-Order lines preserve the exact sellable option selected on PDP/Cart, including colour SKU where applicable.
-
-Recommended concepts:
-
-- canonical Product ID;
-- selected sellable-option ID nullable;
-- SKU snapshot;
-- option/colour label snapshot;
-- Product/configuration label snapshot.
-
-Do not snapshot only the base Product SKU if the customer selected a colour-specific option.
-
-### 9.2 Retailer-package snapshot
-
-Required concepts:
-
-- line/target kind: `manufacturer_product | retailer_package` or equivalent;
-- retailer-package ID/key snapshot;
-- package label snapshot;
-- immutable component snapshot at Order creation;
-- quantity applies to the package as a whole.
-
-Historical Orders must not change when package curation changes later.
-
-### 9.3 Shipping confirmation state
-
-Represent shipping-fee state explicitly, e.g.:
-
-- `PENDING_CONFIRMATION`;
-- `CONFIRMED`.
-
-Nullable amount + explicit state or an equivalent model is acceptable. `0` alone is not.
-
-### 9.4 Installation support / fee
-
-Persist customer intent explicitly, e.g. `installation_support_requested`.
-
-If installation fee participates in confirmed total, model it explicitly rather than hiding it in notes.
-
-Recommended semantic states:
-
-- `NOT_REQUESTED`;
-- `PENDING_CONFIRMATION`;
-- `CONFIRMED`.
-
-### 9.5 Final total confirmation
-
-The model distinguishes:
-
-- Product subtotal known at intake;
-- pending fees;
-- commercially final total after staff confirmation.
-
-Do not expose a temporary amount as final payable amount.
-
-### 9.6 Bank-transfer instructions
-
-Bank account/instruction data is managed configuration and becomes customer-visible only when business rules allow transfer.
-
-### 9.7 Idempotency
-
-Keep/extend the request-hash/idempotency service boundary so Guest Checkout retry cannot duplicate an Order.
-
-## 10. Responsive implementation contract
-
-Desktop and Mobile are both approved and must remain behaviorally equivalent.
-
-Mobile rules visible in approved M10/M11/M12:
-
-- 390px reference width;
-- stack content into a single reading column;
-- Product/Order Summary follows the main form/status information rather than becoming a permanently separate desktop rail;
-- primary CTA remains full-width or clearly dominant;
-- Cart line quantity/remove controls remain directly reachable;
-- Checkout fields stack without removing required information;
-- Review state remains explicit;
-- Order lifecycle progress remains a single status surface;
-- do not remove status/payment/fee information just to shorten the page.
-
-Responsive code may adapt spacing/wrapping, but must not invent different business behavior per breakpoint.
-
-## 11. Acceptance criteria for later implementation
-
-Post-freeze implementation tests must prove at minimum:
-
-1. manufacturer Product + selected colour SKU survives PDP → Cart → Order snapshot;
-2. retailer package remains one customer line and freezes component snapshot;
-3. invalid package/component blocks Checkout before Order creation;
-4. quantity/pricing recalculates deterministically;
-5. online discount is auto-applied and snapshotted;
-6. shipping `pending` cannot be confused with confirmed free shipping;
-7. installation-support intent persists;
-8. guest checkout creates `RETAIL / NEW / UNPAID`;
-9. Bank Transfer does not require payment before confirmation;
-10. final total is displayed as confirmed only after staff confirmation;
-11. Bank Transfer `CONFIRMED` uses managed instructions + confirmed amount;
-12. retry is idempotent;
-13. Retail Cart never silently becomes Quote Cart;
-14. no customer account/payment gateway is introduced;
-15. Checkout preserves the approved **Thông tin → Kiểm tra & gửi** customer-action flow;
-16. rejected `Process Context Header`/duplicate checkout step banners do not return;
-17. Order status uses one lifecycle progress surface without duplicate tracker/status badge;
-18. Desktop and Mobile satisfy the same business contract;
-19. legacy Cart/Checkout/variant/package fields are not runtime authority.
-
-## 12. Codex handoff sequence after global freeze
-
-When, and only when, the Owner has said **`V1 WIREFRAME APPROVED / FROZEN`**, use this document similarly to the PDP implementation handoff:
-
-1. Codex reads this handoff, ADR 0021, PDP/Family handoff, ADR 0017 and pricing ADR 0020.
-2. Audit existing Retail Cart/Order schema/services against this contract; do not redesign UX.
-3. Produce a concise delta plan covering schema, service/API, Cart state, Checkout/idempotency, staff-confirmation amounts and responsive UI.
-4. Surface conflicts/gaps instead of silently adapting the approved design to legacy code.
-5. Obtain Owner approval for schema/migration decisions before destructive or persistent-data changes.
-6. Implement in minimal reviewable slices with tests against Section 11.
-7. Treat approved Figma nodes as visual/interaction authority throughout implementation.
-
-Do not re-open already approved Product/Family/Retail UX unless an implementation blocker proves the approved contract technically impossible.
-
-## 13. Current implementation gate
-
-Retail Order design prerequisites are complete:
-
-- Desktop D10/D11/D12: **APPROVED**;
-- Mobile M10/M11/M12: **APPROVED**;
-- durable Retail implementation handoff: synchronized with final approved Figma nodes.
-
-What is **still missing** is the project-wide gate:
-
-- Owner has **not yet** said `V1 WIREFRAME APPROVED / FROZEN` for 100% launch-critical Public + Admin wireframes.
-
-Therefore no Codex/application/schema implementation is authorized yet. Documentation/read-only analysis may continue.
+**`V1 WIREFRAME APPROVED / FROZEN`**
