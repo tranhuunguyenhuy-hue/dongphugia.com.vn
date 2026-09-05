@@ -23,11 +23,13 @@ The established Admin visual/interaction language is intentionally operational:
 
 - persistent left navigation;
 - top context/search bar;
-- dense resource list/table + contextual inspector where useful;
+- dense resource lists where useful;
 - focused create/edit/detail screens;
 - explicit state chips and task actions;
 - restrained neutral UI with orange operational accent;
-- desktop-first V1. **No separate mobile Admin wireframe system is required for this phase.**
+- desktop-first V1; no separate mobile Admin IA in this phase.
+
+All **staff-facing UI copy is Vietnamese**. Internal field names/enums remain implementation details and must not leak back into the UI.
 
 ## 2. Authority and conflict rules
 
@@ -47,9 +49,9 @@ For Admin implementation, use this authority order:
 
 If an older Admin screen, schema note or service behavior conflicts with a newer approved domain contract, do not silently preserve the older behavior.
 
-## 3. Current Figma authority — 32 operational states
+## 3. Current Figma authority — 31 operational states
 
-Structural QA on 2026-09-05: **32/32 current Axx frames have no missing fonts, root-boundary overflow or frame-to-frame overlap.** This is layout QA only; Owner approval is still required.
+Structural QA on 2026-09-05: **31 current Axx frames are root-boundary clean and have no missing fonts.** Catalogue states listed below were additionally cross-checked against the approved Public PDP Family Selector.
 
 ### 3.1 Auth & Access — `01 — AUTH & ACCESS` (`182:7`)
 
@@ -64,16 +66,25 @@ Structural QA on 2026-09-05: **32/32 current Axx frames have no missing fonts, r
 
 - `31:713` — A07 Admin Dashboard.
 
-### 3.3 Catalogue Operations — `03 — CATALOGUE OPERATIONS` (`182:16`)
+### 3.3 Product operations — `03 — CATALOGUE OPERATIONS` (`182:16`)
+
+Current V1 authority is intentionally reduced to Product-centered operations:
 
 - `31:729` — A08 Product List.
-- `31:741` — A09 Product Create / Edit / Detail.
-- `930:11` — A09B Product Sellable Options / Colours.
-- `31:761` — A10 Family Management.
-- `31:771` — A11 Category Management.
-- `31:781` — A12 Brand Management.
-- `31:789` — A13 Specs / Filter Metadata.
-- `31:799` — A14 Media / Documents.
+- `31:741` — A09 Product Create / Edit / Detail — Product already linked to Family.
+- `930:11` — A09B Product Sellable Options / Colours — Product sub-flow.
+- `1015:2` — A09C Product / no Family — explicit create-or-join entry state.
+- `31:761` — A10 Family Management / PDP Selector editor.
+- `1012:85` — A10B guided Family creation from a Product.
+- `31:799` — A14 Media / Documents — Product sub-flow.
+
+Removed from V1 Admin authority:
+
+- A11 Category Management.
+- A12 Brand Management.
+- A13 Specs / Filter Metadata Management.
+
+Category, Brand and filter/spec metadata may still exist as canonical catalogue data used by Public pages and Product records, but **V1 Admin does not provide CRUD/management modules for them**.
 
 ### 3.4 Orders — `04 — ORDERS` (`182:20`)
 
@@ -96,7 +107,7 @@ Structural QA on 2026-09-05: **32/32 current Axx frames have no missing fonts, r
 - `933:2` — A24 Campaign List.
 - `933:139` — A25 Campaign Editor.
 
-The previous Collection frames are removed from current V1 Admin authority. Collection remains OUT OF V1.
+Collection remains OUT OF V1.
 
 ### 3.7 Staff & Roles — `07 — STAFF & ROLES` (`182:36`)
 
@@ -116,9 +127,7 @@ The previous Collection frames are removed from current V1 Admin authority. Coll
 
 Admin host: `admin.dongphugia.vn`.
 
-Public and Admin remain separate application surfaces even where they share canonical services/data.
-
-Admin does not create a second copy of Product, pricing, Order, Quote, Content or Contact Request truth. Admin reads/writes the same canonical domains through protected service boundaries.
+Public and Admin remain separate application surfaces even where they share canonical services/data. Admin does not create a second copy of Product, pricing, Order, Quote, Content or Contact Request truth.
 
 ## 5. Authentication and fixed roles
 
@@ -137,10 +146,12 @@ No custom role builder in V1.
 
 Role intent:
 
-- **Product:** catalogue/Product/Family/spec/media/readiness operations.
+- **Product:** Product, sellable colour/SKU, Family/PDP-selector, media/documents and publish-readiness operations.
 - **Sales:** Retail Orders, commercial confirmation/payment operations, Quote Requests, negotiated Quotes, Quote→Order.
 - **Marketing:** Guide/Inspiration/Buying Guide/Landing content and Campaign merchandising.
 - **Admin:** staff/fixed-role assignment, managed commerce configuration and broad access according to canonical RLS/service rules.
+
+Product role does **not** imply V1 Category/Brand/Spec-Filter administration.
 
 UI hiding is not authorization. Server-side permission/RLS enforcement remains mandatory.
 
@@ -158,33 +169,81 @@ Launch-critical summaries include:
 
 Do not expand into analytics/CRM dashboards.
 
-## 7. Product / Catalogue operations
+## 7. Product operations — final Owner-review flow
 
-Catalogue Admin must respect the approved PDP/Family handoff.
+Admin Product management is designed from the approved Public PDP backwards. The staff mental model should be:
 
-### 7.1 Canonical Product editor
+**Product → colour/SKU → optional Family → PDP selector choices → media/documents → preview → publish**.
+
+Do not expose the underlying normalized schema as the primary UX.
+
+### 7.1 A08 Product List
+
+A08 prioritizes information required to understand the resulting PDP:
+
+- Product/model;
+- Family + current PDP selector choice;
+- colour/SKU state;
+- current price;
+- publication/readiness state.
+
+Useful operational filters include `Chưa có nhóm`, `Cần xử lý` and publication state.
+
+From the list, staff can go directly to:
+
+- Product detail;
+- the Family/PDP selector currently controlling that Product.
+
+Category/Brand columns are no longer the primary management surface.
+
+### 7.2 A09 Product editor — Product with Family
 
 A09 manages manufacturer Product truth including:
 
 - Product/model identity;
-- Brand;
-- primary Category;
+- canonical Brand and primary Category references shown as source data, not Admin-managed domains;
 - `price` = regular public selling price;
 - `sale_price` = optional current promotional selling price;
 - `voucher_online_discount_amount` = optional fixed online-order discount;
 - indicative availability;
-- specs/attributes;
-- media;
-- technical documents;
+- media/documents;
 - publication/readiness state.
+
+The editor provides Product-centered sub-flows:
+
+- Tổng quan;
+- Màu & SKU;
+- Nhóm sản phẩm;
+- Hình ảnh & tài liệu;
+- Xuất bản.
+
+The overview includes a **Cấu trúc hiển thị trên PDP** card showing:
+
+- current Family;
+- current selector choice targeting the Product;
+- available colours/SKUs;
+- direct actions into Family and colour management.
 
 Effective current Product price remains `sale_price ?? price`; the online discount is a Product-level V1 incentive, not a generic coupon engine.
 
-### 7.2 Sellable colour / finish options
+### 7.3 A09C — Product without Family
 
-A09B is the explicit Admin state for the approved rule:
+A09C proves that Family is optional.
 
-> Colour/finish stays on the same Product and same canonical PDP.
+A Product can exist and have its canonical PDP without belonging to a Family.
+
+When Family is useful, staff gets exactly two choices:
+
+1. **Tạo nhóm từ Sản phẩm này** → A10B.
+2. **Thêm vào nhóm có sẵn** → existing Family assignment.
+
+Do not make Family membership a mandatory Product-readiness condition.
+
+### 7.4 A09B — Sellable colour / finish options
+
+A09B is a Product sub-flow, not a parallel catalogue domain.
+
+Colour/finish stays on the same Product and same canonical PDP.
 
 Each sellable option can own/override the exact sellable SKU and relevant commerce/media state, including:
 
@@ -201,242 +260,154 @@ Public dependency:
 
 `PDP colour selection → exact sellable option → Retail Cart / Quote snapshot preserves exact SKU + colour`.
 
-### 7.3 Family System
+### 7.5 A10 — Family / PDP Selector editor
 
-A10 implements the same hierarchy as Public PDP:
+A10 is deliberately **WYSIWYG-first** and mirrors the approved Public PDP selector.
 
-**Family → optional Configuration Group → Configuration → optional Colour**
+The primary section is the ordered rail of selector cards. Each Admin card corresponds to exactly one Public selector choice.
 
-A Configuration target is exactly one of:
+Staff can:
+
+- see selector cards in Public order;
+- reorder them;
+- select a card and edit its display details;
+- add another Product or retailer package choice;
+- preview the resulting PDP.
+
+The selected-card editor exposes the business concepts, not raw schema names:
+
+- display label;
+- choice type: manufacturer Product or retailer package;
+- target Product/package;
+- selector thumbnail;
+- optional colour mapping;
+- optional selector group;
+- public state;
+- selectable state.
+
+Family membership is shown separately below the selector editor and must never be conflated with selector-card creation.
+
+Optional Configuration Groups are progressive disclosure: TBG10302 does not use groups; a staff user only enables grouping when a large Family genuinely needs meaningful tabs on Public PDP.
+
+Canonical hierarchy remains:
+
+**Family → optional Configuration Group → Configuration → optional Colour**.
+
+Configuration target is one of:
 
 - `manufacturer_product`;
 - `retailer_package`.
 
 Family itself has no independent price, availability or standalone Public page.
 
+### 7.6 A10B — guided Family creation from Product
+
+A10B is the optimized creation path when staff starts from an ungrouped Product.
+
+One compact form guides three explicit operations:
+
+1. create Family identity;
+2. add the current Product as the first Family member;
+3. create the first PDP selector Configuration targeting the current Product.
+
+The UX may submit these in one action, but implementation must preserve them as separate domain relationships. Membership alone must never auto-create the selector Configuration.
+
+The first selector card is previewed before completion. After creation, staff lands in A10 to add/reorder other manufacturer Products or retailer packages.
+
+### 7.7 Retailer package rules
+
 For `retailer_package`:
 
 - composition references canonical Product/component IDs;
-- UI can expose the package as one Family Configuration;
+- UI exposes the package as one Family selector choice;
 - package does not become a manufacturer Product or independent SEO identity;
-- package pricing is server-derived from canonical component commerce data unless a future explicit pricing rule is approved.
+- package pricing is server-derived from canonical component commerce data unless a future explicit pricing rule is approved;
+- package colour mapping, when shown, is explicit for that package/Configuration and never inferred from component Product colours.
 
-Do not reintroduce legacy `variant_group` semantics or simple Product-membership-only Family management.
+Do not reintroduce legacy `variant_group` semantics or Product-membership-only Family management.
 
-### 7.4 Category, Brand, Specs, Media
+### 7.8 Media / Documents
 
-A11–A14 remain operational editors for canonical taxonomy, Brand metadata, typed specs/filter metadata and managed media/documents.
+A14 remains a Product sub-flow for managed image/gallery/technical-document operations and processing states.
 
-Admin must not copy Product business truth into Content or Campaign records.
+Do not create separate V1 Admin domains for:
+
+- Category management;
+- Brand management;
+- Spec/filter-schema management.
+
+Product records may display canonical Brand/Category values and Public/Content may reference them, but their management lifecycle is outside V1 Admin scope.
 
 ## 8. Product publication/readiness
 
-A08/A09 surface actionable readiness rather than silently publishing incomplete catalogue data.
+A08/A09/A09C surface actionable readiness rather than silently publishing incomplete catalogue data.
+
+Family is optional; when a Family exists, its selector mapping must be valid before related selector choices become Public/selectable.
 
 Authorized roles may publish directly; V1 does not introduce a heavyweight approval workflow.
 
-Implementation should reuse current canonical publish-quality rules and extend them only where the approved Product/Family/sellable-option contracts require additional checks.
-
 ## 9. Retail Orders operations
 
-Admin must use exactly the Retail Order lifecycle:
+Admin uses exactly:
 
 `NEW → CONTACTED → CONFIRMED → PROCESSING → COMPLETED`
 
-`CANCELLED` is an allowed terminal branch according to canonical service rules.
+`CANCELLED` is an allowed terminal branch.
 
-Do not restore old Admin lifecycle labels such as `Preparing` or `Shipped` as current V1 authority.
-
-### 9.1 Order list
-
-A15 supports operational filtering by current lifecycle/payment status and distinguishes temporary/pending commercial amount from a confirmed final total.
-
-### 9.2 Order detail before confirmation
-
-A16 shows the `NEW` state with:
-
-- immutable ordered line snapshots;
-- exact selected Product / colour-SKU / retailer package identity;
-- customer/delivery snapshot;
-- payment method/status;
-- optional installation-support intent;
-- shipping fee pending state;
-- installation fee pending/not-applicable state;
-- final total `not yet confirmed`;
-- action to record customer contact / progress toward commercial confirmation.
-
-**Pending fee is not confirmed `0đ`.**
-
-### 9.3 Commercial confirmation
-
-Staff confirms stock/fees/final total before the Order becomes `CONFIRMED`.
-
-The final commercial total must be deterministic and persisted as historical Order truth.
-
-### 9.4 Bank Transfer after confirmation
-
-A16B proves the post-confirmation contract:
-
-- Order = `CONFIRMED`;
-- final total is fixed;
-- payment may still be `UNPAID`;
-- managed Bank Transfer instructions become customer-actionable only now;
-- payment status changes only when receipt is actually recorded.
-
-Admin confirmation itself must **not** mark Bank Transfer paid.
+A15/A16/A16B must preserve immutable ordered-line snapshots, pending fee semantics, staff-confirmed final total and Bank Transfer instructions only after `CONFIRMED`. Confirmation alone does not mark payment paid.
 
 ## 10. Quote / Sales operations
 
-The Admin flow is intentionally separated:
+Admin flow:
 
 **immutable Quote Request → negotiated Quote → tokenized read-only share → optional idempotent Quote→Order**.
 
-### 10.1 Quote Request
-
-A17/A18 show the customer-submitted request as immutable evidence.
-
-Preserve:
-
-- customer/project context;
-- requested quantities/notes;
-- exact selected Product + colour/sellable SKU or retailer package snapshot.
-
-Sales must not rewrite the original customer request when negotiating commercial terms.
-
-### 10.2 Negotiated Quote
-
-A19 owns Quote-specific commercial terms:
-
-- line negotiated pricing/adjustments;
-- Quote notes/terms;
-- revisions/version semantics where required by canonical services;
-- validity;
-- issue/publish state.
-
-Editing Quote pricing must not mutate Product price/sale/online-discount truth.
-
-### 10.3 Public share
-
-A20 uses a public-safe tokenized route:
-
-`/bao-gia/{publicToken}`
-
-Do not expose the internal Quote code as route authority.
-
-The shared customer view is read-only.
-
-### 10.4 Quote → Order
-
-A21 conversion is explicit and idempotent:
-
-- revalidate conversion eligibility;
-- create exactly one resulting Order from negotiated commercial snapshots;
-- preserve exact Product/colour/package identity and negotiated terms;
-- link Quote ↔ resulting Order;
-- leave the original Quote Request unchanged;
-- retry after a lost response returns the same Order rather than duplicating it.
+The original customer request remains immutable. Negotiated Quote commercial terms are Quote-specific and never mutate Product pricing truth. Public share route uses `/bao-gia/{publicToken}`. Quote→Order preserves exact Product/colour/package snapshots and must be idempotent.
 
 ## 11. Contact Request / Customer Care
 
-A29 operates the dedicated Contact Request domain created by approved Public consultation entry points.
+A29 operates the dedicated Contact Request domain.
 
-Public intake persists:
-
-- required name;
-- required phone;
-- optional message/consultation need;
-- source page / entry point;
-- created timestamp.
-
-Admin lifecycle is intentionally small:
+Lifecycle:
 
 `NEW → CONTACTED → CLOSED`
 
-Admin actions:
-
-- inspect contact/message/source/time;
-- mark CONTACTED;
-- close request.
-
-Contact Request is **not Quote Request** and this module is not a CRM, lead-scoring, assignment, notification or marketing-automation system.
+It remains distinct from Quote Request and is not a CRM/assignment/automation platform.
 
 ## 12. Marketing Content
 
-A22/A23 manage the approved Content types:
+A22/A23 manage:
 
 - Guide;
 - Inspiration;
 - Buying Guide;
 - Landing Page.
 
-Use validated ordered flexible blocks and canonical Product/Category/Brand references. Marketing may control editorial presentation, but referenced canonical catalogue/commerce facts remain owned by their source domains.
-
-No Blog-only CMS authority.
+Use validated flexible blocks and canonical Product/Category/Brand references. Category/Brand may be referenced by content without adding Category/Brand CRUD back into Admin V1.
 
 ## 13. Campaign merchandising
 
-A24/A25 replace the obsolete Collection Admin concept.
+A24/A25 manage Homepage merchandising only:
 
-Campaign manages only:
-
-- internal Campaign identity;
+- Campaign identity;
 - banner/media;
-- manually selected ordered canonical Products;
+- manually ordered canonical Products;
 - Homepage placement;
-- `Draft / Published / Archived` state;
-- Homepage preview/publish/archive actions.
+- Draft / Published / Archived state.
 
-Campaign has no standalone Public route in current V1.
-
-Campaign is explicitly:
-
-- **not Collection**;
-- **not a coupon/promotion/pricing-rules engine**;
-- not allowed to override canonical Product pricing.
-
-Homepage Product cards continue reading price/sale/online-discount semantics from canonical Product commerce data.
+Campaign is not Collection and is not a pricing/promotion-rules engine.
 
 ## 14. Users & fixed roles
 
-A26–A28 support:
-
-- staff list;
-- invite/create through supported Auth tooling;
-- multi-role assignment using the fixed V1 roles;
-- disable/access state as allowed by current Auth/service boundaries.
-
-Do not expose public signup, custom roles, arbitrary permission-matrix building or organization management.
+A26–A28 support staff list, invite, fixed multi-role assignment and disable/access state. No public signup, custom-role builder or arbitrary permission matrix.
 
 ## 15. Managed Commerce Configuration
 
-A30 is deliberately narrow.
-
-Current launch-critical use: Bank Transfer customer instructions required by the approved Retail Order flow.
-
-Managed fields may include the configured:
-
-- bank name;
-- account holder;
-- account number;
-- optional branch/note;
-- transfer-content template;
-- customer-facing instruction copy.
-
-Exposure rule:
-
-- `NEW / CONTACTED`: Public must not expose these instructions or request transfer;
-- `CONFIRMED`: final total + managed instructions may become actionable;
-- payment remains `UNPAID` until receipt is recorded.
-
-Do not expand A30 into a generic settings/CMS engine without a new approved requirement.
+A30 remains deliberately narrow. Current launch-critical use is managed Bank Transfer customer instructions. Public cannot expose them before Order `CONFIRMED`; payment remains unpaid until actual receipt is recorded.
 
 ## 16. Desktop-first Admin boundary
 
-The canonical Admin wireframe set is desktop-first because this is a high-density staff operational workspace.
-
-Do not invent a separate mobile Admin product or duplicate every Axx state into mobile-only screens during V1 implementation.
-
-Normal responsive hardening for practical smaller desktop/tablet widths may be implemented using the same domain semantics and permissions, but it is not a second information architecture or feature set.
+Do not invent a separate mobile Admin product or duplicate every Axx state into mobile-only screens during V1.
 
 ## 17. Explicit Admin exclusions
 
@@ -444,6 +415,9 @@ V1 Admin does not include:
 
 - Wishlist;
 - Collection;
+- Category management/CRUD;
+- Brand management/CRUD;
+- Spec/filter metadata management UI;
 - custom roles;
 - CRM;
 - procurement/supplier management;
@@ -463,35 +437,39 @@ Implementation must prove at minimum:
 1. Admin host requires authentication.
 2. Fixed-role permissions are enforced server-side/RLS, not only hidden in UI.
 3. Product editor writes canonical `price / sale_price / voucher_online_discount_amount` semantics.
-4. Sellable colour options remain on one Product/PDP and preserve exact SKU/media/commerce state.
-5. Family Admin supports optional groups + `manufacturer_product` / `retailer_package` Configuration targets.
-6. No Collection/Wishlist Admin capability is exposed.
-7. Orders use `NEW → CONTACTED → CONFIRMED → PROCESSING → COMPLETED` and pending-vs-confirmed fee semantics.
-8. Bank instructions are unavailable before CONFIRMED and come from managed configuration afterward.
-9. Order line history preserves immutable Product/colour/package snapshots.
-10. Quote Request remains immutable; negotiated Quote pricing is Quote-specific.
-11. Shareable Quote is tokenized/read-only; Quote→Order is snapshot-preserving and idempotent.
-12. Contact Request uses `NEW / CONTACTED / CLOSED` and remains distinct from Quote Request.
-13. Content editor supports Guide/Inspiration/Buying Guide/Landing flexible blocks + canonical references.
-14. Campaign is Homepage merchandising only and cannot override Product prices.
-15. Staff can receive one or more fixed roles; no custom-role builder exists.
-16. Bank Transfer configuration is managed rather than hard-coded.
-17. Final implementation matches the established page-02 Admin operational shell/style rather than the discarded temporary Admin wireframes.
+4. Product without Family can remain valid and publishable when all required non-Family readiness checks pass.
+5. A09C supports explicit create-new-Family vs join-existing-Family actions.
+6. A10B creates Family membership and first selector Configuration as separate domain relationships even if submitted through one guided form.
+7. A10 selector-card order/label/thumbnail/public/selectable state maps deterministically to approved Public PDP selector cards.
+8. Sellable colour options remain on one Product/PDP and preserve exact SKU/media/commerce state.
+9. Family Admin supports optional groups + `manufacturer_product` / `retailer_package` targets.
+10. Retailer-package component Products do not become Family members automatically; package colours are explicit.
+11. No Category/Brand/Spec-Filter management routes or UI are exposed in V1 Admin.
+12. No Collection/Wishlist Admin capability is exposed.
+13. Orders use the approved Retail Order lifecycle and pending-vs-confirmed fee semantics.
+14. Bank instructions are unavailable before `CONFIRMED` and come from managed configuration afterward.
+15. Quote Request remains immutable; Quote share is tokenized/read-only; Quote→Order is snapshot-preserving and idempotent.
+16. Contact Request remains distinct from Quote Request.
+17. Content/Campaign stay within approved scope.
+18. Staff receives only fixed V1 roles.
+19. Staff-facing Admin copy follows the Vietnamese Figma authority and does not expose raw schema/internal enum names.
+20. Final implementation matches page-02 Admin shell/style and not discarded temporary/legacy Admin UI.
 
 ## 19. Codex implementation sequence after global freeze
 
 1. Read the master wireframe/implementation index.
-2. Read this Admin handoff plus the PDP, Retail Order, Quote and Content/Contact handoffs.
+2. Read this Admin handoff plus PDP, Family-linkage, Retail Order, Quote and Content/Contact handoffs.
 3. Audit only relevant current Admin/Auth/service code read-only.
-4. Map current routes/components/services to the A01–A30 authority above.
-5. Report exact reusable code, stale assumptions, schema/service deltas and tests needed.
-6. Do not start coding from the gap report alone where material schema/architecture decisions remain unresolved.
-7. After Coordinator/Owner approval, implement shared Admin shell/Auth/permission guards.
-8. Implement Catalogue/Product/Family/sellable options.
-9. Implement Retail Order operations and commercial confirmation.
-10. Implement Quote Request/Quote/share/Quote→Order.
-11. Implement Contact Request queue.
-12. Implement Content/Campaign.
-13. Implement Users/Roles + narrow Managed Commerce Configuration.
-14. Add permission, lifecycle, idempotency and cross-Public/Admin acceptance tests.
-15. Do not broaden scope.
+4. Map current routes/components/services to the current 31-state authority above.
+5. Explicitly identify and exclude any legacy Category/Brand/Spec-Filter Admin implementation from V1 routing/navigation.
+6. Report reusable code, stale assumptions, schema/service deltas and tests needed.
+7. Do not code from the gap report alone where material schema decisions remain unresolved.
+8. After Coordinator/Owner approval, implement shared Admin shell/Auth/permission guards.
+9. Implement Product → colour/SKU → Family/PDP-selector → media/docs → publish flow.
+10. Implement Retail Order operations and commercial confirmation.
+11. Implement Quote Request/Quote/share/Quote→Order.
+12. Implement Contact Request queue.
+13. Implement Content/Campaign.
+14. Implement Users/Roles + narrow Managed Commerce Configuration.
+15. Add permission, lifecycle, idempotency and cross-Public/Admin acceptance tests.
+16. Do not broaden scope.
