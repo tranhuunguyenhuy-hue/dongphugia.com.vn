@@ -1,122 +1,142 @@
 # ADR 0021 — V1 Retail Order staff confirmation and pending-fee semantics
 
-**Status:** Accepted by Owner at design-contract level; implementation blocked until global wireframe freeze  
-**Date:** 2026-09-05
+**Status:** Accepted by Owner at design-contract level; amended 2026-09-05 for ADR 0022 Product/SKU identity  
+**Implementation gate:** `V1 WIREFRAME APPROVED / FROZEN`
 
 ## Context
 
 V1 Retail commerce is guest-first and uses manual business confirmation rather than a payment gateway or realtime inventory/fulfilment engine.
 
-The existing canonical schema already has:
+The canonical lifecycle remains:
 
-- order lifecycle `NEW → CONTACTED → CONFIRMED → PROCESSING → COMPLETED` with cancellation branches;
-- payment methods `COD | BANK_TRANSFER`;
-- payment status including `UNPAID`;
-- customer/address snapshots;
-- numeric shipping/discount/total fields.
+`NEW → CONTACTED → CONFIRMED → PROCESSING → COMPLETED`
 
-Approved wireframes clarified a business distinction not fully represented by the original schema: at Guest Checkout submission, product pricing can be known while shipping and installation fees may still be **pending staff confirmation**. A numeric `0` must not mean both “unknown/pending” and “confirmed free”.
+with `CANCELLED` as a terminal branch where allowed.
 
-The approved PDP Family System also introduced selected colour sellable options and `retailer_package` configurations that must survive into Retail Cart and immutable Order snapshots.
+Payment methods remain exactly:
+
+- COD
+- BANK_TRANSFER
+
+At Guest Checkout submission, Product/SKU price can be known while shipping and installation fees may still be pending staff confirmation. Numeric `0` must not represent both “unknown/pending” and “confirmed free”.
+
+ADR 0022 also clarifies catalogue selection identity: every sellable PDP selection resolves to a real canonical Product and exact sellable SKU. The historical `retailer_package` selector target is no longer current authority.
 
 ## Decision
 
 ### 1. Order creation is intake, not commercial confirmation
 
-Guest Checkout creates a Retail Order in:
+Guest Checkout creates a Retail Order with:
 
-- `source = RETAIL`;
-- `status = NEW`;
-- `payment_status = UNPAID`.
+- source = RETAIL;
+- status = NEW;
+- payment_status = UNPAID.
 
-Customer-facing copy must say the Order/request has been **received** and is **waiting for staff confirmation**. It must not claim the transaction is confirmed at `NEW`.
+Customer copy says the request/order was received and is waiting for staff confirmation. It must not claim commercial confirmation at NEW.
 
-### 2. Staff confirmation owns unresolved commercial facts
+### 2. Cart and Order line identity
 
-Staff may confirm after submission:
+Before Order creation the server must resolve the customer's selected PDP state to authoritative canonical identities.
 
-- sellability/stock context;
-- retailer-package validity;
-- shipping fee/timing;
-- installation capability/fee when requested;
-- final payable amount;
-- bank-transfer instructions when applicable.
+Each line must preserve an immutable historical snapshot of at least:
 
-`CONTACTED` means staff has engaged the customer but commercial confirmation is not complete. `CONFIRMED` means the parties have agreed the relevant commercial details and the Order can proceed to fulfilment.
+- Product ID/model identity;
+- exact sellable SKU ID/code;
+- human-readable selected option label(s) where useful, e.g. Màu = Đen mờ;
+- quantity;
+- authoritative unit commercial values used for the line;
+- Product/SKU display identity/media snapshot required by the final Order UI.
 
-### 3. Pending fees are first-class state
+The Dòng/Axis/Option tree is navigation/selection structure. The Order's sellable authority is the resolved Product/SKU snapshot, not a runtime Family/package object.
 
-Shipping and installation need explicit pending/confirmed semantics.
+Client-supplied price/SKU claims are never authoritative.
 
-Do not encode a pending fee as numeric zero.
+### 3. Staff confirmation owns unresolved commercial facts
 
-Implementation may use an enum/state column plus nullable amount or an equivalent normalized model, but must distinguish:
+After submission staff may confirm:
+
+- current Product/SKU sellability/availability context;
+- shipping fee and timing;
+- installation fee or not-applicable state;
+- final commercial total;
+- other approved manual fulfilment details within V1 scope.
+
+Pending is not `0đ`.
+
+The system must distinguish:
 
 - pending/unknown;
-- confirmed zero/free;
-- confirmed positive amount.
+- confirmed free (`0đ`);
+- confirmed positive amount;
+- not applicable where the field supports that distinction.
 
-### 4. Bank transfer is deferred until confirmation
+### 4. Lifecycle
 
-At `NEW` (and while final total is still unresolved):
+Normal path:
 
-- do not require payment;
-- do not tell the customer to transfer the temporary subtotal;
-- do not present a temporary amount as the final transfer amount.
+`NEW → CONTACTED → CONFIRMED → PROCESSING → COMPLETED`
 
-Bank account/instruction data must be managed configuration, not hard-coded UI content. Transfer instructions become customer-actionable only when the final commercial total is confirmed according to the approved flow.
+Staff contact does not itself confirm final commercial facts.
 
-### 5. Retail selections are snapshotted exactly
+`CONFIRMED` means the approved commercial total and required fee state are fixed for that Order snapshot.
 
-Order lines must preserve the exact customer selection from the approved PDP/Cart system:
+### 5. Bank Transfer
 
-- canonical manufacturer Product;
-- selected colour/sellable SKU when present;
-- or `retailer_package` identity;
-- immutable component snapshot for a retailer package;
-- quantity and authoritative pricing/discount inputs.
+At NEW/CONTACTED:
 
-A retailer package is one customer-facing Cart/Order line even though its component snapshot contains multiple canonical Products.
+- do not ask customer to transfer;
+- do not show temporary subtotal as transfer amount;
+- managed bank instructions are not yet actionable.
 
-### 6. Online discount is automatic
+After CONFIRMED:
 
-`voucher_online_discount_amount` remains the only approved Product-level online incentive in this flow. It is automatically applied and snapshotted. No coupon/claim/stacking engine is introduced.
+- final amount is fixed;
+- managed bank details/instructions may be shown;
+- payment may still be UNPAID;
+- staff confirmation does not mark payment paid.
 
-### 7. Installation support is explicit customer intent
+Payment status changes only from actual recorded payment transactions according to the canonical payment service.
 
-Checkout may capture `installation_support_requested` (or equivalent explicit field). This intent must not be hidden only inside free-text notes. If installation fee participates in the confirmed total, it receives explicit pending/confirmed amount semantics.
+### 6. COD
 
-### 8. Retry must be idempotent
+COD follows the same commercial-confirmation lifecycle. It does not bypass staff confirmation of pending fees/final total.
 
-Guest Checkout submission must remain idempotent. A retry after a lost response cannot create a second Order for the same accepted submission.
+### 7. Historical immutability
 
-### 9. Scope boundaries
+Later changes to Product, SKU, Dòng/Axis/Option definitions, media, pricing or availability must not rewrite existing Order line history.
 
-This ADR does not approve:
+## Non-goals
 
-- a customer account/profile;
-- a payment gateway;
-- realtime inventory;
-- a customer order-history dashboard;
-- exposing Orders by guessable order number alone;
-- merging Retail Cart with Quote Cart.
+This ADR does not add:
 
-A future guest order-status revisit surface, if needed, requires an explicit secure-access design.
+- payment gateway;
+- realtime inventory engine;
+- shipping-rate engine;
+- procurement/warehouse/fulfilment platform;
+- arbitrary configurator/BOM engine;
+- runtime package construction.
 
-## Consequences
+## Implementation impact after global freeze
 
-The current `orders.shipping_fee not null default 0` / always-numeric total assumption requires an additive amendment before the approved UX can be implemented without semantic ambiguity.
+ADR 0022 requires the eventual Order intake service to resolve exact SKU identities from the selected Dòng path and to snapshot Product + SKU authoritatively.
 
-Order-line structures also require the approved PDP/Family amendments so colour/sellable options and retailer packages can be snapshotted deterministically.
+Historical M1/M2 migrations remain immutable. Any schema/service amendments are additive/corrective after global freeze.
 
-The detailed design/implementation handoff is:
+## Acceptance criteria
 
-`docs/internal/v1-retail-order-implementation-handoff.md`
+Implementation must prove:
 
-## Implementation gate
+1. Retail submission creates NEW/UNPAID.
+2. exact Product/SKU is server-resolved and snapshotted.
+3. pending shipping/install state is distinct from confirmed zero.
+4. CONFIRMED fixes final commercial total.
+5. Bank Transfer instructions are unavailable before CONFIRMED.
+6. CONFIRMED Bank Order may remain UNPAID.
+7. later catalogue Product/SKU/Dòng changes do not mutate Order history.
+8. idempotent retry cannot create duplicate Orders.
 
-No schema or application implementation from this ADR may start until the Owner explicitly says:
+## Gate
+
+No implementation before the Owner says exactly:
 
 **`V1 WIREFRAME APPROVED / FROZEN`**
-
-At that point, prepare a concise schema/service implementation brief for Owner approval before changing migrations or runtime code.
