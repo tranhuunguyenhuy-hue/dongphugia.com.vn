@@ -307,18 +307,14 @@ async function prepareProofOrigin(fixtureFile = 'pipeline-probe.sql', migrationN
   await cp(path.join(repoRoot, 'db/postgres-migrations'), tempOrigin, { recursive: true })
   const manifestPath = path.join(tempOrigin, 'manifest.json')
   const manifest = JSON.parse(await readFile(manifestPath, 'utf8')) as { migrations: Array<{ name: string; path: string }> }
-  for (const migration of manifest.migrations) {
-    const migrationPath = path.resolve(tempOrigin, migration.path)
-    if (!migrationPath.startsWith(`${tempOrigin}${path.sep}`)) fail('proof migration path escapes its temporary origin')
-    await rm(migrationPath, { force: true })
-  }
   const fixturePath = `0001_${fixtureFile}`
   await cp(path.join(repoRoot, 'scripts/staging/fixtures', fixtureFile), path.join(tempOrigin, fixturePath))
-  manifest.migrations = [{ name: migrationName, path: fixturePath }]
+  manifest.migrations.push({ name: migrationName, path: fixturePath })
   await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, 'utf8')
   const checksumFiles = [
     ...['0000_baseline_v1/extensions.sql', '0000_baseline_v1/core.sql', '0000_baseline_v1/catalog-integrity.sql', '0000_baseline_v1/publishing-runtime.sql'],
-    'schema-manifest.json', 'schema-drift-allowlist.json', fixturePath,
+    'schema-manifest.json', 'schema-drift-allowlist.json',
+    ...manifest.migrations.map((migration) => migration.path),
   ]
   const checksums = []
   for (const file of checksumFiles) checksums.push(`${createHash('sha256').update(await readFile(path.join(tempOrigin, file))).digest('hex')}  ${file}`)

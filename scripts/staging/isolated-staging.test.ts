@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process'
-import { rm } from 'node:fs/promises'
+import { readFile, rm } from 'node:fs/promises'
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { prepareProofOrigin } from './isolated-staging'
@@ -7,9 +7,21 @@ import { prepareProofOrigin } from './isolated-staging'
 const repoRoot = process.cwd()
 
 describe('isolated Staging proof origin', () => {
-  it('contains exactly the disposable migration declared by its manifest', async () => {
+  it('preserves canonical migrations before appending its disposable probe', async () => {
     const proofOrigin = await prepareProofOrigin()
     try {
+      const canonicalManifest = JSON.parse(await readFile(
+        path.join(repoRoot, 'db/postgres-migrations/manifest.json'),
+        'utf8',
+      )) as { migrations: Array<{ path: string }> }
+      const proofManifest = JSON.parse(await readFile(proofOrigin.manifest, 'utf8')) as {
+        migrations: Array<{ path: string }>
+      }
+      expect(proofManifest.migrations.map((migration) => migration.path)).toEqual([
+        ...canonicalManifest.migrations.map((migration) => migration.path),
+        '0001_pipeline-probe.sql',
+      ])
+
       const output = execFileSync('npx', [
         'tsx',
         path.join(repoRoot, 'scripts/db/postgres-migration-runner.ts'),
@@ -28,7 +40,7 @@ describe('isolated Staging proof origin', () => {
         stdio: ['ignore', 'pipe', 'pipe'],
       })
 
-      expect(JSON.parse(output)).toMatchObject({ status: 'VALIDATED', migrations: 1 })
+      expect(JSON.parse(output)).toMatchObject({ status: 'VALIDATED', migrations: canonicalManifest.migrations.length + 1 })
     } finally {
       await rm(proofOrigin.tempRoot, { recursive: true, force: true })
     }
