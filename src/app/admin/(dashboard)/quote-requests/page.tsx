@@ -10,6 +10,7 @@ import { QuoteStatusButton } from "./quote-status-button"
 import { QuoteAssignSelect } from "./quote-assign-select"
 import { getCurrentUser } from '@/lib/auth/get-current-user'
 import { can } from '@/lib/auth/permissions'
+import { getAdminQuoteRequests } from '@/lib/admin-quote-requests'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -33,20 +34,11 @@ export default async function QuoteRequestsPage({ searchParams }: PageProps) {
     const currentUser = await getCurrentUser()
     const isSaleOnly = currentUser && !can(currentUser.role, 'quotes:read')
 
-    const whereObj: any = {}
+    const whereObj: { status?: string; assigned_to?: number } = {}
     if (statusFilter) whereObj.status = statusFilter
     if (isSaleOnly) whereObj.assigned_to = currentUser.id
 
-    const quotes = await prisma.quote_requests.findMany({
-        where: whereObj,
-        orderBy: { created_at: 'desc' },
-        include: {
-            assigned_user: { select: { id: true, name: true, email: true } },
-            quote_items: {
-                include: { products: { select: { id: true, name: true } } },
-            },
-        },
-    })
+    const quotes = await getAdminQuoteRequests(whereObj)
 
     const staffMembers = await prisma.admin_users.findMany({
         where: { is_active: true, role: { in: ['admin', 'sale_manager', 'sale'] } },
@@ -126,7 +118,7 @@ export default async function QuoteRequestsPage({ searchParams }: PageProps) {
                                     <TableCell className="text-sm">
                                     {q.quote_items && q.quote_items.length > 0 ? (
                             <span className="text-sm">
-                                {q.quote_items.map((qi: any) =>
+                                {q.quote_items.map((qi) =>
                                     qi.product_name_snapshot ||
                                     (qi.products?.name ? `${qi.products.name} (Legacy — live Product)` : 'Sản phẩm không còn trong danh mục')
                                 ).join(', ')}
