@@ -305,10 +305,15 @@ async function prepareProofOrigin(fixtureFile = 'pipeline-probe.sql', migrationN
   const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'dpg-pipeline-proof-'))
   const tempOrigin = path.join(tempRoot, 'origin')
   await cp(path.join(repoRoot, 'db/postgres-migrations'), tempOrigin, { recursive: true })
+  const manifestPath = path.join(tempOrigin, 'manifest.json')
+  const manifest = JSON.parse(await readFile(manifestPath, 'utf8')) as { migrations: Array<{ name: string; path: string }> }
+  for (const migration of manifest.migrations) {
+    const migrationPath = path.resolve(tempOrigin, migration.path)
+    if (!migrationPath.startsWith(`${tempOrigin}${path.sep}`)) fail('proof migration path escapes its temporary origin')
+    await rm(migrationPath, { force: true })
+  }
   const fixturePath = `0001_${fixtureFile}`
   await cp(path.join(repoRoot, 'scripts/staging/fixtures', fixtureFile), path.join(tempOrigin, fixturePath))
-  const manifestPath = path.join(tempOrigin, 'manifest.json')
-  const manifest = JSON.parse(await readFile(manifestPath, 'utf8')) as { migrations: unknown[] }
   manifest.migrations = [{ name: migrationName, path: fixturePath }]
   await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, 'utf8')
   const checksumFiles = [
@@ -491,3 +496,5 @@ if (isDirectExecution) {
     process.exitCode = 1
   })
 }
+
+export { prepareProofOrigin }
