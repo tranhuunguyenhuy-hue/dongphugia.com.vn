@@ -2,7 +2,7 @@ import { createHash, randomBytes } from 'node:crypto'
 import { cp, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import { execFileSync } from 'node:child_process'
+import { execFileSync, spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { compare } from '../db/postgres-schema-verify'
 
@@ -40,6 +40,25 @@ function docker(args: string[], options: { input?: string; allowFailure?: boolea
     const safeArgs = args.filter((arg) => !arg.includes('PASSWORD=') && !arg.includes('postgresql://')).slice(0, 5).join(' ')
     fail(`docker operation failed (${status}): docker ${safeArgs}`)
   }
+}
+
+function sanitizeRuntimeLog(output: string) {
+  const signals = new Set<string>()
+  for (const match of output.matchAll(/\bP\d{4}\b/g)) signals.add(`prisma=${match[0]}`)
+  for (const match of output.matchAll(/\b(?:PrismaClientKnownRequestError|PrismaClientInitializationError|TypeError|ReferenceError|SyntaxError)\b/g)) {
+    signals.add(`type=${match[0]}`)
+  }
+  for (const match of output.matchAll(/\bdigest:\s*['"]?(\d+)['"]?/g)) signals.add(`next_digest=${match[1]}`)
+  return [...signals].join(',') || 'no-sanitized-runtime-signal'
+}
+
+function runtimeFailureSignal() {
+  const result = spawnSync('docker', ['logs', '--tail', '200', names.app], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe'],
+  })
+  return sanitizeRuntimeLog(`${result.stdout ?? ''}\n${result.stderr ?? ''}`)
 }
 
 function resource(name: string, kind: ResourceKind): Resource { return { name, kind } }
@@ -279,14 +298,18 @@ function deployApp(target: ReturnType<typeof startTarget>, image: string) {
 
 async function smoke(port: number) {
   const request = async (pathname: string) => {
+    let lastStatus: number | undefined
     for (let attempt = 0; attempt < 60; attempt += 1) {
       try {
         const response = await fetch(`http://127.0.0.1:${port}${pathname}`, { signal: AbortSignal.timeout(3_000) })
         const body = await response.text()
+        lastStatus = response.status
         if (response.status >= 500) throw new Error('server error')
         return { status: response.status, body }
       } catch {
-        if (attempt === 59) fail(`runtime smoke did not become healthy: ${pathname}`)
+        if (attempt === 59) {
+          fail(`runtime smoke did not become healthy: ${pathname} (last_status=${lastStatus ?? 'unavailable'}; ${runtimeFailureSignal()})`)
+        }
         await new Promise((resolve) => setTimeout(resolve, 1_000))
       }
     }
@@ -493,4 +516,4 @@ if (isDirectExecution) {
   })
 }
 
-export { prepareProofOrigin }
+export { prepareProofOrigin, sanitizeRuntimeLog }
