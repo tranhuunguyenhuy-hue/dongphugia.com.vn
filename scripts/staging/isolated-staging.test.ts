@@ -2,7 +2,7 @@ import { execFileSync } from 'node:child_process'
 import { readFile, rm } from 'node:fs/promises'
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { prepareProofOrigin } from './isolated-staging'
+import { prepareProofOrigin, sanitizeRuntimeLog } from './isolated-staging'
 
 const repoRoot = process.cwd()
 
@@ -44,5 +44,19 @@ describe('isolated Staging proof origin', () => {
     } finally {
       await rm(proofOrigin.tempRoot, { recursive: true, force: true })
     }
+  })
+
+  it('reports only allowlisted runtime failure signals', () => {
+    const output = sanitizeRuntimeLog([
+      'DATABASE_URL=postgresql://admin:secret@example.invalid/customer_records',
+      'PrismaClientKnownRequestError: customer@example.invalid',
+      "code: 'P2022'",
+      "digest: '741852963'",
+    ].join('\n'))
+
+    expect(output).toBe('prisma=P2022,type=PrismaClientKnownRequestError,next_digest=741852963')
+    expect(output).not.toContain('secret')
+    expect(output).not.toContain('customer')
+    expect(output).not.toContain('DATABASE_URL')
   })
 })
