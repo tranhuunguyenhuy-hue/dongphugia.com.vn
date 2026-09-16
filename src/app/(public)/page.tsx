@@ -11,6 +11,7 @@ import { getFeaturedProductsByCategorySlug } from "@/lib/public-api-products"
 import { getHomepageBanners } from "@/lib/homepage-data"
 import prisma from "@/lib/prisma"
 import { buildPublicListingVisibilityWhere } from "@/lib/public-product-visibility"
+import { withRuntimeQueryDiagnostic } from "@/lib/runtime-query-diagnostics"
 
 export const revalidate = 300
 
@@ -43,30 +44,30 @@ const getHomepageContentData = unstable_cache(
         }
 
         return Promise.all([
-            getFeaturedProductsByCategorySlug('thiet-bi-ve-sinh', ['toto', 'inax'], null, 0, 3),
-            getFeaturedProductsByCategorySlug('thiet-bi-bep', null, null, 0, 3),
-            getFeaturedProductsByCategorySlug('gach-op-lat', null, null, 0, 3),
-            getFeaturedProductsByCategorySlug('vat-lieu-nuoc', null, null, 0, 3),
-            prisma.brands.findMany({
+            withRuntimeQueryDiagnostic('homepage_featured_tbvs', () => getFeaturedProductsByCategorySlug('thiet-bi-ve-sinh', ['toto', 'inax'], null, 0, 3)),
+            withRuntimeQueryDiagnostic('homepage_featured_kitchen', () => getFeaturedProductsByCategorySlug('thiet-bi-bep', null, null, 0, 3)),
+            withRuntimeQueryDiagnostic('homepage_featured_tiles', () => getFeaturedProductsByCategorySlug('gach-op-lat', null, null, 0, 3)),
+            withRuntimeQueryDiagnostic('homepage_featured_water', () => getFeaturedProductsByCategorySlug('vat-lieu-nuoc', null, null, 0, 3)),
+            withRuntimeQueryDiagnostic('homepage_brands_tbvs', () => prisma.brands.findMany({
                 where: { products: { some: publicTbvsProducts } },
                 select: { name: true, slug: true }
-            }),
-            prisma.subcategories.findMany({
+            })),
+            withRuntimeQueryDiagnostic('homepage_subcategories_tbvs', () => prisma.subcategories.findMany({
                 where: { categories: { slug: 'thiet-bi-ve-sinh' }, products: { some: publicTbvsProducts } },
                 select: { name: true, slug: true }
-            }),
-            prisma.subcategories.findMany({
+            })),
+            withRuntimeQueryDiagnostic('homepage_subcategories_kitchen', () => prisma.subcategories.findMany({
                 where: {
                     categories: { slug: 'thiet-bi-bep' },
                     slug: { notIn: ['thiet-bi-bep-khac'] },
                     products: { some: publicKitchenProducts },
                 },
                 select: { name: true, slug: true }
-            }),
-            prisma.brands.findMany({
+            })),
+            withRuntimeQueryDiagnostic('homepage_brands_kitchen', () => prisma.brands.findMany({
                 where: { products: { some: publicKitchenProducts } },
                 select: { name: true, slug: true }
-            })
+            }))
         ])
     },
     ['homepage-content-data-v1'],

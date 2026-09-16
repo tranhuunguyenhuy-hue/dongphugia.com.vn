@@ -52,9 +52,10 @@ describe('isolated Staging proof origin', () => {
       'PrismaClientKnownRequestError: customer@example.invalid',
       "code: 'P2022'",
       "digest: '741852963'",
+      'DPG_RUNTIME_QUERY=homepage_featured_tbvs',
     ].join('\n'))
 
-    expect(output).toBe('prisma=P2022,type=PrismaClientKnownRequestError,next_digest=741852963')
+    expect(output).toBe('prisma=P2022,type=PrismaClientKnownRequestError,next_digest=741852963,query=homepage_featured_tbvs')
     expect(output).not.toContain('secret')
     expect(output).not.toContain('customer')
     expect(output).not.toContain('DATABASE_URL')

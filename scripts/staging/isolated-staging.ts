@@ -49,6 +49,9 @@ function sanitizeRuntimeLog(output: string) {
     signals.add(`type=${match[0]}`)
   }
   for (const match of output.matchAll(/\bdigest:\s*['"]?(\d+)['"]?/g)) signals.add(`next_digest=${match[1]}`)
+  for (const match of output.matchAll(/\bDPG_RUNTIME_QUERY=(homepage_(?:banners|featured_(?:tbvs|kitchen|tiles|water)|brands_(?:tbvs|kitchen)|subcategories_(?:tbvs|kitchen)))\b/g)) {
+    signals.add(`query=${match[1]}`)
+  }
   return [...signals].join(',') || 'no-sanitized-runtime-signal'
 }
 
