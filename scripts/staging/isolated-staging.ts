@@ -253,6 +253,14 @@ function imageInfo(image: string) {
   return { id, architecture, revision: revision || null }
 }
 
+function candidateDeployTarget(image: string): 'production' | 'staging' {
+  return image.includes('@sha256:') ? 'production' : 'staging'
+}
+
+function candidateSiteUrl(deployTarget: 'production' | 'staging') {
+  return deployTarget === 'production' ? 'https://www.dongphugia.vn' : 'https://dongphugia-staging.example.test'
+}
+
 function prepareImage(commit: string, image?: string, build = false) {
   if (image && !build) {
     if (!image.includes('@sha256:') && !image.startsWith('dpg-foundation-isolated-staging:')) {
@@ -261,7 +269,7 @@ function prepareImage(commit: string, image?: string, build = false) {
     if (image.includes('@sha256:')) docker(['pull', image])
     const info = imageInfo(image)
     if (info.revision && info.revision !== commit) fail('candidate image revision does not match the checkout')
-    return { image, ...info }
+    return { image, deployTarget: candidateDeployTarget(image), ...info }
   }
   docker([
     'build', '--platform', 'linux/arm64', '--tag', imageName,
@@ -272,18 +280,19 @@ function prepareImage(commit: string, image?: string, build = false) {
     '--build-arg', 'PUBLISHING_BUNNY_CDN_HOSTNAME=media.dongphugia.vn',
     '.',
   ])
-  return { image: imageName, ...imageInfo(imageName) }
+  return { image: imageName, deployTarget: candidateDeployTarget(imageName), ...imageInfo(imageName) }
 }
 
-function deployApp(target: ReturnType<typeof startTarget>, image: string) {
+function deployApp(target: ReturnType<typeof startTarget>, image: string, deployTarget: 'production' | 'staging') {
   const dbUrl = `postgresql://dpg_staging_app:${target.appPassword}@postgres:5432/dpg_isolated_staging`
+  const siteUrl = candidateSiteUrl(deployTarget)
   docker([
     'run', '--detach', '--name', names.app,
     '--label', `${scopeLabel}=${scopeValue}`,
     '--network', names.network,
     '--publish', '127.0.0.1:3000:3000',
-    '--env', 'NODE_ENV=production', '--env', 'DEPLOY_TARGET=staging', '--env', 'RUNTIME_ROLE=staging',
-    '--env', 'NEXT_PUBLIC_SITE_URL=https://dongphugia-staging.example.test',
+    '--env', 'NODE_ENV=production', '--env', `DEPLOY_TARGET=${deployTarget}`, '--env', 'RUNTIME_ROLE=staging',
+    '--env', `NEXT_PUBLIC_SITE_URL=${siteUrl}`,
     '--env', `DATABASE_URL=${dbUrl}`, '--env', `DIRECT_URL=${dbUrl}`, '--env', `PUBLISHING_DATABASE_URL=${dbUrl}`,
     '--env', 'EXPECTED_DATABASE_IDENTITY=dongphugia:isolated-staging:v1',
     '--env', 'EXPECTED_PUBLISHING_DATABASE_IDENTITY=dongphugia:isolated-staging:v1',
@@ -443,7 +452,7 @@ async function proof(options: { image?: string; build: boolean; allowDirty: bool
         entries: drift.map((entry) => ({ ...entry, reason: 'disposable pipeline probe only', owner: 'Deployment Foundation', reviewBy: '2026-08-26' })),
       }, null, 2) + '\n', 'utf8')
       verifySchema(target, path.join(repoRoot, 'db/postgres-migrations/schema-manifest.json'), allowlistPath)
-      const runtime = deployApp(target, image.image)
+      const runtime = deployApp(target, image.image, image.deployTarget)
       const smokes = await smoke(runtime.port)
       return {
         status: 'PASS',
@@ -476,7 +485,7 @@ async function provision(options: { image?: string; build: boolean; allowDirty: 
     runMigrations(target)
     grantRuntime(target)
     const schema = verifySchema(target)
-    const runtime = image ? deployApp(target, image.image) : undefined
+    const runtime = image ? deployApp(target, image.image, image.deployTarget) : undefined
     const smokes = runtime ? await smoke(runtime.port) : undefined
     console.log(JSON.stringify({ status: 'PASS', branch: candidate.branch, commit: candidate.commit, imageDigest: image?.id, schema, smokes, rollback: 'run npm run staging:isolated -- reset; recreate/replay is the only rollback', production: 'NOT EXECUTED' }))
   } catch (error) {
@@ -519,4 +528,4 @@ if (isDirectExecution) {
   })
 }
 
-export { prepareProofOrigin, sanitizeRuntimeLog }
+export { candidateDeployTarget, candidateSiteUrl, prepareProofOrigin, sanitizeRuntimeLog }
