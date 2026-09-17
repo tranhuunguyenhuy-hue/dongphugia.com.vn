@@ -1,8 +1,9 @@
 # Dongphugia delivery workflow
 
-This is the single authority for source delivery, GitHub Issues, PRs,
-validation, review, and release. Root `AGENTS.md` owns always-on
-safety; `docs/AGENTS.md` owns application conventions.
+This is the single authority for source delivery, validation, review, PRs,
+merge, Staging, and release. Root `AGENTS.md` owns always-on safety;
+`docs/AGENTS.md` owns application conventions; Linear owns V02 roadmap,
+active Issue scope, acceptance, execution state, blockers, and work coordination.
 
 ## Core flow
 
@@ -18,6 +19,10 @@ Production: no | separately approved later
 
 Codex finds repository and primary-source facts. The PM decides product
 trade-offs, scope, acceptance, merge, and Production approval.
+
+For V02-managed work, the active Linear Issue is the durable task record. If the
+Issue is unavailable or materially conflicts with the request, stop before
+mutation and surface the minimum decision needed to proceed.
 
 Request is complete when outcome, observable acceptance, and Production intent
 are recorded, or the unresolved decision is named for Align.
@@ -49,8 +54,8 @@ Increase them when current evidence supports it.
 Start with the root `AGENTS.md` safety preflight, then add only the evidence the
 scope and recorded controls require:
 
-- Read-only work checks remote, PR, or live state only when freshness affects
-  the conclusion.
+- Read-only work checks remote, PR, Linear, or live state only when freshness
+  affects the conclusion.
 - Source mutation checks latest `origin/main`, open PRs, worktree ownership, and
   branch readiness before the first write.
 - Production and materially risky work revalidate target identity, authorization,
@@ -66,12 +71,12 @@ clear task proceeds directly. Use `$grill-with-docs` only when a product,
 architecture, or material risk decision remains unresolved.
 
 Align is read-only by default. Record glossary or ADR changes during Execute
-only after the PM confirms the decision and those files are in scope.
+only after the PM confirms the product/scope decision and those files are in
+scope. Codex owns routine technical decisions inside approved scope.
 
-Align is complete when the PM has resolved every material product,
-architecture, scope, acceptance, and risk decision, or each unresolved item is
-explicitly blocked or deferred. Defer every GRILL-generated file write until
-Execute.
+Align is complete when every material product, scope, acceptance, and risk
+decision is resolved, or each unresolved item is explicitly blocked or deferred.
+Defer every GRILL-generated file write until Execute.
 
 ### 5. Execute
 
@@ -79,13 +84,20 @@ The Primary Codex is the sole mutation owner. For source work, create one
 `codex/<task>` branch from clean, latest `main` immediately before the first
 write. Branch creation is an execution detail, not a separate user gate.
 
-Specify only when useful:
+For V02-managed work:
 
-- A clear, one-session task needs no Issue or formal spec.
-- Use a bounded GitHub Issue/spec when acceptance is unclear, the work is risky,
-  or independent phases need a durable handoff.
-- Work with persistent state, authority, irreversibility, or difficult rollback
-  requires a dedicated Issue/spec and recovery plan.
+- Read the full active Linear Issue before mutation.
+- Treat its Outcome, In Scope, Out of Scope, Acceptance, Dependencies, and
+  Environment as the execution contract.
+- Update Linear when execution state, blocker relations, or handoff state changes.
+- Do not create a parallel GitHub Issue for the same task.
+- Put durable technical detail in the PR, ADR/spec, runbook, or evidence file and
+  link it from Linear instead of duplicating it into the task record.
+
+A clear one-session task outside the managed V02 roadmap may proceed from an
+explicit request when no durable tracker is needed. Work with persistent state,
+authority, irreversibility, or difficult rollback still requires a durable scoped
+record and recovery plan.
 
 Implement the smallest change that satisfies acceptance. Use `$tdd`,
 `$diagnosing-bugs`, `$codebase-design`, or other skills only when their specific
@@ -132,14 +144,17 @@ is rerun.
 ### 8. Deliver
 
 Commit only task-owned files, push one task branch, open one PR, and wait for
-required CI. The PR records scope, acceptance source, controls,
-validation/review evidence, remaining risk, Production requirement, and next
-authorized action.
+required CI. The PR records the active Linear Issue, scope, acceptance source,
+controls, validation/review evidence, remaining risk, Production requirement,
+and next authorized action.
 
 Repository policy requires PM approval to merge to `main`. Required CI and PR
 review evidence remain merge gates. GitHub branch-protection enforcement is
 live control-plane state, not a documentation fact: verify it immediately
 before relying on it. A task with `Production: no` may finish at Deliver.
+
+When the source delivery state changes, update the active Linear Issue rather
+than maintaining a second GitHub-Issue status record.
 
 Deliver is complete when the PR contains the required evidence and required CI
 passes; merge still waits for PM approval.
@@ -167,13 +182,13 @@ the workflow or release path.
   with Validation. Required CI, PM merge approval, and the root `AGENTS.md`
   Production gates remain mandatory when their stage applies.
 - Meaningful behavior or operational changes add functional Staging validation,
-  monitoring, rollback readiness, an Issue/spec, and independent review when
-  justified by the actual effect.
+  monitoring, rollback readiness, a durable scoped record, and independent
+  review when justified by the actual effect.
 - Persistent state, authority, irreversibility, or difficult rollback adds the
-  controls the affected state needs: a dedicated Issue/spec, architecture and
-  safety review, fresh backup/checksum/private copy where applicable, restore
-  verification, rollback readiness, no-split-brain evidence, staged
-  migration/rollback, and explicit approval before mutation.
+  controls the affected state needs: architecture and safety review, fresh
+  backup/checksum/private copy where applicable, restore verification, rollback
+  readiness, no-split-brain evidence, staged migration/rollback, and explicit
+  approval before mutation.
 
 Mandatory Production safety invariants live only in root `AGENTS.md`.
 
@@ -184,9 +199,9 @@ control when its tools participate:
 
 - `$grill-with-docs` supports Align only when a material decision is unresolved;
   it is not required for clear tasks and follows Align's no-write boundary.
-- `$to-spec` is optional synthesis after alignment. Keep the Issue bounded to
-  acceptance and risk; publish through `docs/agents/issue-tracker.md` without a
-  triage label.
+- `$to-spec` is optional synthesis after alignment. For V02-managed work, keep
+  outcome/scope/acceptance in the active Linear Issue and put durable technical
+  detail in the linked ADR/spec/PR rather than creating a parallel GitHub Issue.
 - `$implement` is optional. Its upstream full-suite and mandatory-review steps
   yield to this workflow's focused Validate and risk-proportionate Review
   stages.
