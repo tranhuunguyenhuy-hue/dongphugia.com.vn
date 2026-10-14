@@ -132,9 +132,9 @@ The separately approved publication run uses
 `CLOUDFLARE_LEO563_PREVIEW_TOKEN`, scoped to the exact account with Workers
 Scripts Edit only. That secret is available only to the one-shot upload job; it
 does not replace or broaden the existing deployment token. Before Cloudflare is
-mutated, the workflow requires a manual dispatch from the exact task branch,
-the explicit approved 40-character source SHA, an open PR #138 targeting
-`main`, and an exact match to the current PR head. It then downloads the
+mutated, the workflow requires a manual dispatch from the exact approved PR
+branch, the explicit PR number and approved 40-character source SHA, an open PR
+targeting `main`, and an exact match to the current PR head. It then downloads the
 same-run candidate, recomputes its complete immutable identity, validates the
 Preview config allowlist and Workers Free limits, executes a Wrangler dry run,
 and proves by GET-only inspection that the exact Worker is either absent, the
@@ -178,7 +178,7 @@ The exact approved immutable publication command from the candidate directory
 is:
 
 ```sh
-wrangler versions upload --config wrangler.preview.json --preview-alias pr-138
+wrangler versions upload --config wrangler.preview.json --preview-alias pr-<approved-pr-number>
 ```
 
 This uploads one immutable version and creates only version/alias Preview URLs

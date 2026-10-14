@@ -2,7 +2,9 @@ import { writeFile } from 'node:fs/promises'
 import { pathToFileURL } from 'node:url'
 
 const WORKER_NAME = 'dongphugia-v1-public-preview'
-const PREVIEW_ALIAS = 'pr-138'
+const PREVIEW_PR_NUMBER = process.env.DPG_PREVIEW_PR_NUMBER || '138'
+if (!/^[1-9][0-9]*$/.test(PREVIEW_PR_NUMBER)) throw new Error('LEO563_REAL_PREVIEW_PR_NUMBER_INVALID')
+const PREVIEW_ALIAS = `pr-${PREVIEW_PR_NUMBER}`
 const BROWSER_CACHE_CONTROL = 'public, max-age=0, must-revalidate'
 const EDGE_CACHE_CONTROL = 'public, max-age=300, must-revalidate'
 const PRIVATE_CACHE_CONTROL = 'private, no-store'
@@ -79,7 +81,9 @@ export async function verifyRealPreview({ baseUrl, sourceSha, fetchImpl = fetch,
   if (!/<meta[^>]+name=["']robots["'][^>]+content=["'][^"']*noindex[^"']*nofollow/i.test(html)) {
     throw new Error('LEO563_REAL_PREVIEW_HTML_NOINDEX_FAILED')
   }
-  if (!/<title>Dong Phu Gia Public Application<\/title>/i.test(html)) throw new Error('LEO563_REAL_PREVIEW_METADATA_FAILED')
+  if (!/<title>Đông Phú Gia - Vật liệu xây dựng cao cấp tại Đà Lạt<\/title>/i.test(html)) {
+    throw new Error('LEO563_REAL_PREVIEW_METADATA_FAILED')
+  }
   if (/stale-while-revalidate/i.test(`${header(first, 'Cache-Control')} ${header(first, 'CDN-Cache-Control')}`)) {
     throw new Error('LEO563_REAL_PREVIEW_STALE_POLICY_FORBIDDEN')
   }
