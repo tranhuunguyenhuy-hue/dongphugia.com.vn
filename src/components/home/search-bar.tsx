@@ -63,7 +63,7 @@ export function SearchBar({ onExpandedChange }: { onExpandedChange?: (expanded: 
         fetch(`/api/search?q=${encodeURIComponent(debouncedQuery)}&limit=8`, {
             signal: controller.signal,
         })
-            .then(r => r.json())
+            .then(r => r.json() as Promise<{ results?: SearchResult[]; total?: number }>)
             .then(data => {
                 setResults(data.results ?? [])
                 setTotal(data.total ?? 0)
