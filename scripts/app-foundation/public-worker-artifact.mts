@@ -72,6 +72,9 @@ async function main() {
   const assetsDir = path.resolve(args['assets-dir'] || '')
   const outputDir = path.resolve(args.output || '')
   const sourceCommit = args['source-sha'] || ''
+  const previewPrNumber = process.env.DPG_PREVIEW_PR_NUMBER || '138'
+  if (!/^[1-9][0-9]*$/.test(previewPrNumber)) throw new Error('PUBLIC_WORKER_PREVIEW_PR_INVALID')
+  const previewAlias = `pr-${previewPrNumber}`
   if (!/^[0-9a-f]{40}$/.test(sourceCommit)) throw new Error('PUBLIC_WORKER_ARTIFACT_SOURCE_INVALID')
   if (!await stat(serverDir).then((value) => value.isDirectory()).catch(() => false)) throw new Error('PUBLIC_WORKER_SERVER_MISSING')
   if (!await stat(assetsDir).then((value) => value.isDirectory()).catch(() => false)) throw new Error('PUBLIC_WORKER_ASSETS_MISSING')
@@ -137,7 +140,7 @@ async function main() {
     configSha256,
     previewConfig: {
       workerName: previewConfig.name,
-      previewAlias: 'pr-138',
+      previewAlias,
       workersDev: previewConfig.workers_dev,
       previewUrls: previewConfig.preview_urls,
       sha256: previewConfigSha256,

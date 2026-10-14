@@ -4,8 +4,10 @@ import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 
 const WORKER_NAME = 'dongphugia-v1-public-preview'
-const PREVIEW_ALIAS = 'pr-138'
-const PULL_REQUEST = 138
+const PREVIEW_PR_NUMBER = process.env.DPG_PREVIEW_PR_NUMBER || '138'
+if (!/^[1-9][0-9]*$/.test(PREVIEW_PR_NUMBER)) throw new Error('LEO563_PREVIEW_PR_NUMBER_INVALID')
+const PREVIEW_ALIAS = `pr-${PREVIEW_PR_NUMBER}`
+const PULL_REQUEST = Number(PREVIEW_PR_NUMBER)
 const FREE_WORKER_GZIP_LIMIT_KIB = 3 * 1024
 const FREE_STATIC_ASSET_LIMIT = 20_000
 const STATIC_ASSET_FILE_LIMIT_BYTES = 25 * 1024 * 1024

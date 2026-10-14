@@ -36,7 +36,8 @@ describe('LEO-563 Public Worker artifact contract', () => {
       "name: 'dongphugia-v1-public-preview'",
       'workers_dev: false',
       'preview_urls: true',
-      "previewAlias: 'pr-138'",
+      "const previewAlias = `pr-${previewPrNumber}`",
+      'previewAlias,',
       "activation: 'owner-gated'",
       "'wrangler.preview.json'",
     ]) expect(source).toContain(marker)
