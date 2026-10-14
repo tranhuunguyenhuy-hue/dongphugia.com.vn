@@ -1,18 +1,11 @@
 import Link from 'next/link'
-import prisma from '@/lib/prisma'
+import type { PublicHomePost } from '@dpg/app-contracts'
 import { DeferredResponsiveMedia } from '@/components/media/deferred-responsive-media'
 import { normalizePublishingMediaUrl } from '@/lib/publishing/media-url'
 
 export const revalidate = 300
 
-export async function BlogSection() {
-    const posts = await prisma.blog_posts.findMany({
-        where: { status: 'published', published_at: { lte: new Date() } },
-        include: { blog_categories: true },
-        orderBy: { created_at: 'desc' },
-        take: 3
-    })
-
+export function BlogSection({ posts }: { posts: readonly PublicHomePost[] }) {
     if (posts.length === 0) return null
 
     const dateFormatter = new Intl.DateTimeFormat('vi-VN', {
@@ -49,27 +42,27 @@ export async function BlogSection() {
                             className="w-[85vw] shrink-0 snap-start sm:w-[50vw] md:w-[calc(33.333%-16px)]"
                         >
                             <Link
-                                href={`/blog/${post.blog_categories?.slug}/${post.slug}`}
+                                href={`/blog/${post.category?.slug}/${post.slug}`}
                                 className="group flex flex-col gap-4"
                             >
                                 <div className="relative aspect-[4/3] overflow-hidden rounded-sm bg-neutral-200">
                                     <DeferredResponsiveMedia
-                                        src={normalizePublishingMediaUrl(post.thumbnail_url) || '/images/banner-1.editorial.w960.webp'}
+                                        src={normalizePublishingMediaUrl(post.thumbnailUrl) || '/images/banner-1.editorial.w960.webp'}
                                         alt={post.title}
                                         fill
                                         profile="editorial"
                                         sizes="(max-width: 640px) 85vw, (max-width: 1024px) 50vw, 33vw"
                                         className="object-cover transition-transform duration-500 group-hover:scale-105"
                                     />
-                                    {post.blog_categories ? (
+                                    {post.category ? (
                                         <div className="absolute left-4 top-4 bg-white/90 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-[#2E7A96]">
-                                            {post.blog_categories.name}
+                                            {post.category.name}
                                         </div>
                                     ) : null}
                                 </div>
                                 <div className="flex flex-col gap-2">
                                     <p className="text-sm font-medium text-gray-500">
-                                        {dateFormatter.format(post.published_at ?? post.created_at)}
+                                        {dateFormatter.format(new Date(post.publishedAt))}
                                     </p>
                                     <h3 className="line-clamp-2 text-xl font-bold leading-tight text-[#192125] transition-colors group-hover:text-[#2E7A96]">
                                         {post.title}

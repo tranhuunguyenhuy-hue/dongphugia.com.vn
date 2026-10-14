@@ -9,6 +9,7 @@ if (!sourceCommit || !/^[0-9a-f]{40}$/.test(sourceCommit)) {
 }
 
 export default defineConfig({
+  publicDir: '../../public',
   define: {
     __DPG_BUILD_SOURCE_SHA__: JSON.stringify(sourceCommit),
   },

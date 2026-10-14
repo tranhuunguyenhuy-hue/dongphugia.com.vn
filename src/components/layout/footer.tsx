@@ -107,7 +107,7 @@ export function Footer() {
                                         </div>
                                     </div>
                                 </li>
-                                <li><a href={siteConfig.url} target="_blank" rel="noopener noreferrer" className="text-stone-600 text-body-sm hover:text-brand-600 transition-colors">{siteConfig.url.replace('https://', '')}</a></li>
+                                <li><a href="https://www.dongphugia.vn" target="_blank" rel="noopener noreferrer" className="text-stone-600 text-body-sm hover:text-brand-600 transition-colors">www.dongphugia.vn</a></li>
                             </ul>
                         </div>
                     </div>

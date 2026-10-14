@@ -5,7 +5,7 @@ import dynamic from "next/dynamic"
 import { Phone, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useState, useEffect, useId, useRef } from "react"
-import { getMegaMenuData } from '@/app/actions/mega-menu-actions'
+import { getMegaMenuData } from '@dpg/public-interactions'
 import type { Category, MenuData } from '@/components/home/mega-menu'
 import { MegaMenuHeader } from '@/components/home/mega-menu'
 import { CartIcon } from '@/components/cart/cart-icon'
