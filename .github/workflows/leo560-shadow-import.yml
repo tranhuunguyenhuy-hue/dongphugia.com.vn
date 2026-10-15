@@ -1,0 +1,378 @@
+name: LEO-560 catalogue shadow import
+
+on:
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: Apply the validated catalogue-only snapshot to Supabase Preview
+        required: true
+        default: false
+        type: boolean
+      approved_source_sha:
+        description: Exact trusted main SHA containing the reviewed importer
+        required: true
+        type: string
+      backup_run_id:
+        description: Fresh successful runtime-backup run with isolated restore PASS
+        required: true
+        type: string
+      backup_pr_number:
+        description: Exact task PR bound into the backup artifact
+        required: true
+        type: string
+      backup_candidate_sha:
+        description: Exact task PR head bound into the backup artifact
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+  issues: read
+  pull-requests: read
+
+concurrency:
+  group: leo560-catalogue-shadow-import
+  cancel-in-progress: false
+
+env:
+  EXPECTED_SNAPSHOT_SHA256: 86db472b7fa2aed53d287ef1f4eb2c817320e4650fcbd9b56d53a71a39d6edf1
+  EXPECTED_SNAPSHOT_VERSION_ID: CSyMYJz1glatK32aWl2K8pukzxzXl69c
+  EXPECTED_LEO562_CHECKSUM: ad10fb1e31d19cb36aad9f90a94b98a44142263a2a9e9c90e5e9da633cacc706
+  SUPABASE_ORGANIZATION_SLUG: pjouohhhwurycbqvhxzn
+  POSTGRES_IMAGE: postgres:17.6-bookworm@sha256:45cd22f8d32e189d245403954882f88e7a8714301fda80dab6da90f1265b25a3
+
+jobs:
+  preflight:
+    name: Validate exact source, approval, and recovery proof
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    outputs:
+      source_sha: ${{ steps.gate.outputs.source_sha }}
+      backup_control_sha: ${{ steps.gate.outputs.backup_control_sha }}
+      artifact_name: ${{ steps.gate.outputs.artifact_name }}
+      mode: ${{ steps.gate.outputs.mode }}
+    steps:
+      - name: Check out the exact trusted main revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.approved_source_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Validate immutable execution identities
+        id: gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REF_VALUE: ${{ github.ref }}
+          GITHUB_SHA_VALUE: ${{ github.sha }}
+          APPROVED_SOURCE_SHA: ${{ inputs.approved_source_sha }}
+          BACKUP_RUN_ID: ${{ inputs.backup_run_id }}
+          BACKUP_PR_NUMBER: ${{ inputs.backup_pr_number }}
+          BACKUP_CANDIDATE_SHA: ${{ inputs.backup_candidate_sha }}
+          APPLY: ${{ inputs.apply }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_VALUE" = 'refs/heads/main'
+          [[ "$APPROVED_SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$BACKUP_CANDIDATE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$BACKUP_RUN_ID" =~ ^[0-9]+$ ]]
+          [[ "$BACKUP_PR_NUMBER" =~ ^[0-9]+$ ]]
+          test "$APPROVED_SOURCE_SHA" = "$GITHUB_SHA_VALUE"
+          test "$(git rev-parse HEAD)" = "$APPROVED_SOURCE_SHA"
+
+          issue_json="$RUNNER_TEMP/issue-152.json"
+          pull_json="$RUNNER_TEMP/backup-pull.json"
+          gh api "repos/$GITHUB_REPOSITORY/issues/152" >"$issue_json"
+          test "$(jq -r '.state' "$issue_json")" = 'open'
+          jq -e '.body | contains("V1 WIREFRAME APPROVED / FROZEN")' "$issue_json" >/dev/null
+          jq -e '.body | contains("Product, Brand, Category, Attribute, and Provenance")' "$issue_json" >/dev/null
+          jq -e '.body | contains("PII, Auth, customers, staff, orders, quotes, Blog, media bytes")' "$issue_json" >/dev/null
+
+          gh api "repos/$GITHUB_REPOSITORY/pulls/$BACKUP_PR_NUMBER" >"$pull_json"
+          test "$(jq -r '.head.sha' "$pull_json")" = "$BACKUP_CANDIDATE_SHA"
+          test "$(jq -r '.head.repo.full_name' "$pull_json")" = "$GITHUB_REPOSITORY"
+          test "$(jq -r '.base.ref' "$pull_json")" = 'main'
+          test "$(jq -r '.base.repo.full_name' "$pull_json")" = "$GITHUB_REPOSITORY"
+          test "$(jq -r '.merged' "$pull_json")" = 'true'
+          pull_merge_sha="$(jq -r '.merge_commit_sha' "$pull_json")"
+          [[ "$pull_merge_sha" =~ ^[0-9a-f]{40}$ ]]
+          git fetch --no-tags --depth=1 origin "$pull_merge_sha"
+          git merge-base --is-ancestor "$pull_merge_sha" "$APPROVED_SOURCE_SHA"
+
+          run_json="$RUNNER_TEMP/backup-run.json"
+          jobs_json="$RUNNER_TEMP/backup-jobs.json"
+          artifacts_json="$RUNNER_TEMP/backup-artifacts.json"
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$BACKUP_RUN_ID" >"$run_json"
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$BACKUP_RUN_ID/jobs?filter=all&per_page=100" >"$jobs_json"
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$BACKUP_RUN_ID/artifacts" >"$artifacts_json"
+          test "$(jq -r '.conclusion' "$run_json")" = 'success'
+          test "$(jq -r '.event' "$run_json")" = 'workflow_dispatch'
+          test "$(jq -r '.head_branch' "$run_json")" = 'main'
+          test "$(jq -r '.path' "$run_json")" = '.github/workflows/runtime-backup.yml'
+          jq -e '.jobs | any(.name == "Encrypt and retain the runtime logical backup" and .conclusion == "success")' "$jobs_json" >/dev/null
+          jq -e '.jobs | any(.name == "Rehearse the encrypted backup in isolated PostgreSQL" and .conclusion == "success")' "$jobs_json" >/dev/null
+          artifact_name="leo540-runtime-backup-$BACKUP_RUN_ID"
+          jq -e --arg name "$artifact_name" '.artifacts | any(.name == $name and .expired == false)' "$artifacts_json" >/dev/null
+          backup_control_sha="$(jq -r '.head_sha' "$run_json")"
+          [[ "$backup_control_sha" =~ ^[0-9a-f]{40}$ ]]
+          mode='preflight'
+          if [[ "$APPLY" == 'true' ]]; then mode='apply'; fi
+          {
+            echo "source_sha=$APPROVED_SOURCE_SHA"
+            echo "backup_control_sha=$backup_control_sha"
+            echo "artifact_name=$artifact_name"
+            echo "mode=$mode"
+          } >>"$GITHUB_OUTPUT"
+          echo "LEO560_PREFLIGHT status=PASS mode=$mode backup_run_id=$BACKUP_RUN_ID"
+
+      - name: Download the exact encrypted recovery artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BACKUP_RUN_ID: ${{ inputs.backup_run_id }}
+          ARTIFACT_NAME: ${{ steps.gate.outputs.artifact_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/leo560-recovery-proof"
+          gh run download "$BACKUP_RUN_ID" --name "$ARTIFACT_NAME" --dir "$RUNNER_TEMP/leo560-recovery-proof"
+
+      - name: Verify the exact PR-bound recovery artifact
+        env:
+          BACKUP_DIR: ${{ runner.temp }}/leo560-recovery-proof
+          BACKUP_RUN_ID: ${{ inputs.backup_run_id }}
+          BACKUP_PR_NUMBER: ${{ inputs.backup_pr_number }}
+          BACKUP_CANDIDATE_SHA: ${{ inputs.backup_candidate_sha }}
+          BACKUP_CONTROL_SHA: ${{ steps.gate.outputs.backup_control_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/backup/exact-pr-artifact-identity.mjs verify \
+            "$BACKUP_DIR" "$BACKUP_PR_NUMBER" "$BACKUP_CANDIDATE_SHA" \
+            "$BACKUP_CONTROL_SHA" "$BACKUP_RUN_ID"
+
+  shadow-import:
+    name: Preflight or apply catalogue-only shadow import
+    needs: preflight
+    if: needs.preflight.result == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    environment: runtime-backup
+    services:
+      postgres:
+        image: postgres:17.6-bookworm@sha256:45cd22f8d32e189d245403954882f88e7a8714301fda80dab6da90f1265b25a3
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: leo560-local-ephemeral
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      LEO560_SHADOW_IMPORT_APPROVED: '1'
+      LEO560_APPROVED_SOURCE_SHA: ${{ needs.preflight.outputs.source_sha }}
+      LEO560_BACKUP_RUN_ID: ${{ inputs.backup_run_id }}
+      LEO560_APPROVAL_ISSUE: '152'
+      SOURCE_URL: postgresql://postgres:leo560-local-ephemeral@127.0.0.1:5432/leo560_source
+      LOCAL_TARGET_URL: postgresql://postgres:leo560-local-ephemeral@127.0.0.1:5432/leo560_canonical
+      IMPORT_MODE: ${{ needs.preflight.outputs.mode }}
+    steps:
+      - name: Check out the exact approved source revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.preflight.outputs.source_sha }}
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install locked dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci
+          sudo apt-get update -qq
+          sudo apt-get install --no-install-recommends --yes age >/dev/null
+
+      - name: Verify current Supabase Free plan and exact healthy project
+        env:
+          SUPABASE_MANAGEMENT_TOKEN: ${{ secrets.SUPABASE_MANAGEMENT_TOKEN }}
+          ORGANIZATION_RESULT: ${{ runner.temp }}/supabase-organization.json
+          PROJECTS_RESULT: ${{ runner.temp }}/supabase-projects.json
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$SUPABASE_MANAGEMENT_TOKEN"
+          printf 'header = "Authorization: Bearer %s"\n' "$SUPABASE_MANAGEMENT_TOKEN" | \
+            curl --config - --fail --silent --show-error \
+              --output "$ORGANIZATION_RESULT" \
+              "https://api.supabase.com/v1/organizations/$SUPABASE_ORGANIZATION_SLUG"
+          printf 'header = "Authorization: Bearer %s"\n' "$SUPABASE_MANAGEMENT_TOKEN" | \
+            curl --config - --fail --silent --show-error \
+              --output "$PROJECTS_RESULT" \
+              'https://api.supabase.com/v1/projects'
+          test "$(jq -r '.plan' "$ORGANIZATION_RESULT")" = 'free'
+          test "$(jq '[.[] | select(.status == "ACTIVE_HEALTHY")] | length' "$PROJECTS_RESULT")" -le 2
+          jq -e 'any(.ref == "tlmgudfhsyzayiazuugf" and .organization_slug == "pjouohhhwurycbqvhxzn" and .name == "dongphugia-runtime" and .region == "ap-southeast-1" and .status == "ACTIVE_HEALTHY")' "$PROJECTS_RESULT" >/dev/null
+          echo 'LEO560_SUPABASE_CONTROL_PLANE status=PASS plan=free project=exact region=ap-southeast-1 health=ACTIVE_HEALTHY'
+          rm -f "$ORGANIZATION_RESULT" "$PROJECTS_RESULT"
+
+      - name: Verify live Cloudflare Preview isolation on the canonical zone
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_READONLY_DISCOVERY_TOKEN }}
+          CLOUDFLARE_REPORT: ${{ runner.temp }}/cloudflare-readonly.json
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          test -n "$CLOUDFLARE_API_TOKEN"
+          node scripts/app-foundation/cloudflare-readonly-discovery.mjs \
+            --source-sha "$LEO560_APPROVED_SOURCE_SHA" \
+            --output "$CLOUDFLARE_REPORT" >/dev/null
+          jq -e '
+            . as $report |
+            ([
+              "workers.scripts.list",
+              "workers.domains.list",
+              "zones.list.dongphugia.vn",
+              "workers.routes.list.dongphugia.vn",
+              "workers.subdomain.get:dongphugia-v1-public-preview",
+              "workers.settings.get:dongphugia-v1-public-preview",
+              "workers.versions.list:dongphugia-v1-public-preview",
+              "workers.deployments.list:dongphugia-v1-public-preview"
+            ] | all(. as $label | $report.calls | any(.label == $label and .status == "READ_OK"))) and
+            (.workers | any(
+              .name == "dongphugia-v1-public-preview" and
+              .clearlyNonProduction == true and
+              .workersDevEnabled == false and
+              .previewUrlsEnabled == true and
+              .customDomains == [] and
+              .routes == [] and
+              .productionAssociation == false and
+              (.bindings | all(.type == "assets"))
+            ))
+          ' "$CLOUDFLARE_REPORT" >/dev/null
+          echo 'LEO560_CLOUDFLARE_ISOLATION status=PASS mode=read-only canonical_zone_routes=none custom_domains=none data_bindings=none'
+
+      - name: Retrieve and verify the exact immutable LEO-560 snapshot
+        env:
+          LEO560_SNAPSHOT_URL: ${{ secrets.LEO560_SNAPSHOT_URL }}
+          SNAPSHOT_PATH: ${{ runner.temp }}/leo560-source.dump
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$LEO560_SNAPSHOT_URL"
+          npm exec -- tsx scripts/migration/leo560-verify-snapshot-url.ts
+          umask 077
+          printf 'url = "%s"\n' "$LEO560_SNAPSHOT_URL" | \
+            curl --config - --fail --silent --show-error --location --output "$SNAPSHOT_PATH"
+          test "$(stat --format='%s' "$SNAPSHOT_PATH")" = '88499596'
+          echo "$EXPECTED_SNAPSHOT_SHA256  $SNAPSHOT_PATH" | sha256sum --check --status
+          echo "LEO560_SNAPSHOT status=PASS version_id=$EXPECTED_SNAPSHOT_VERSION_ID"
+
+      - name: Restore the snapshot and replay deterministic LEO-562 mapping locally
+        env:
+          PGPASSWORD: leo560-local-ephemeral
+          SNAPSHOT_PATH: ${{ runner.temp }}/leo560-source.dump
+          IMPORT_EVIDENCE: ${{ runner.temp }}/leo562-evidence.json
+          QUARANTINE_EVIDENCE: ${{ runner.temp }}/leo562-quarantine.json
+          IMPORT_RESULT: ${{ runner.temp }}/leo562-result.json
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run --rm --network host --env PGPASSWORD "$POSTGRES_IMAGE" \
+            createdb --host=127.0.0.1 --username=postgres leo560_source
+          docker run --rm --network host --env PGPASSWORD "$POSTGRES_IMAGE" \
+            createdb --host=127.0.0.1 --username=postgres leo560_canonical
+          docker run --rm --network host --env PGPASSWORD \
+            --volume "$SNAPSHOT_PATH:/input/source.dump:ro" "$POSTGRES_IMAGE" \
+            pg_restore --host=127.0.0.1 --username=postgres --dbname=leo560_source \
+              --no-owner --no-privileges /input/source.dump
+          docker run --rm --network host --env PGPASSWORD \
+            --volume "$GITHUB_WORKSPACE:/workspace:ro" "$POSTGRES_IMAGE" \
+            psql "$LOCAL_TARGET_URL" -X -v ON_ERROR_STOP=1 \
+              --file /workspace/supabase/migrations/20260830004338_leo561_canonical_v1_schema.sql >/dev/null
+          npm run db:import:leo562 -- \
+            --source-dump "$SNAPSHOT_PATH" \
+            --source-url "$SOURCE_URL" \
+            --target-url "$LOCAL_TARGET_URL" \
+            --evidence-out "$IMPORT_EVIDENCE" \
+            --quarantine-out "$QUARANTINE_EVIDENCE" \
+            --replay >"$IMPORT_RESULT"
+          test "$(jq -r '.status' "$IMPORT_RESULT")" = 'PASS'
+          test "$(jq -r '.canonicalChecksum' "$IMPORT_RESULT")" = "$EXPECTED_LEO562_CHECKSUM"
+          test "$(jq -r '.replayMatch' "$IMPORT_RESULT")" = 'true'
+          echo 'LEO562_LOCAL_REPLAY status=PASS'
+
+      - name: Encrypt the detailed quarantine evidence
+        env:
+          AGE_RECIPIENT: ${{ vars.BACKUP_AGE_RECIPIENT }}
+          QUARANTINE_EVIDENCE: ${{ runner.temp }}/leo562-quarantine.json
+          ENCRYPTED_QUARANTINE: ${{ runner.temp }}/leo562-quarantine.json.age
+          QUARANTINE_CHECKSUM: ${{ runner.temp }}/leo562-quarantine.json.age.sha256
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$AGE_RECIPIENT" =~ ^age1[[:alnum:]]+$ ]]
+          age --recipient "$AGE_RECIPIENT" --output "$ENCRYPTED_QUARANTINE" "$QUARANTINE_EVIDENCE"
+          sha256sum "$ENCRYPTED_QUARANTINE" >"$QUARANTINE_CHECKSUM"
+          rm -f "$QUARANTINE_EVIDENCE"
+          echo 'LEO562_QUARANTINE status=ENCRYPTED retention_days=14'
+
+      - name: Enforce catalogue-only target preflight or apply
+        env:
+          SUPABASE_RUNTIME_MIGRATION_URL: ${{ secrets.SUPABASE_RUNTIME_MIGRATION_URL }}
+          SHADOW_EVIDENCE: ${{ runner.temp }}/leo560-shadow-evidence.json
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$SUPABASE_RUNTIME_MIGRATION_URL"
+          npm exec -- tsx scripts/migration/leo560-shadow-import.ts \
+            --mode "$IMPORT_MODE" \
+            --source-url "$LOCAL_TARGET_URL" \
+            --evidence-out "$SHADOW_EVIDENCE"
+
+      - name: Upload sanitized evidence with approved retention
+        uses: actions/upload-artifact@v4
+        with:
+          name: leo560-shadow-import-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/leo562-evidence.json
+            ${{ runner.temp }}/leo560-shadow-evidence.json
+            ${{ runner.temp }}/leo562-quarantine.json.age
+            ${{ runner.temp }}/leo562-quarantine.json.age.sha256
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Record sanitized result
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "### LEO-560 catalogue shadow import: ${IMPORT_MODE^^} PASS"
+            echo '- Target: dongphugia-runtime Preview, Singapore'
+            echo '- Included: Product, Brand, Category, Attribute, Provenance'
+            echo '- Excluded: PII, Auth, customer, staff, order, quote, Blog, media bytes, Product Family/Axis/Option'
+            echo '- Source: exact immutable LEO-560 dump size, SHA-256, and deterministic LEO-562 replay verified'
+            echo '- Recovery: fresh encrypted backup and isolated restore run verified; retention 14 days'
+            echo '- Production database read/write, merge, DNS, traffic, and cutover: none'
+          } >>"$GITHUB_STEP_SUMMARY"
+
+      - name: Remove plaintext temporary material
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f "$RUNNER_TEMP/leo560-source.dump" \
+            "$RUNNER_TEMP/leo562-quarantine.json" \
+            "$RUNNER_TEMP/leo562-result.json"

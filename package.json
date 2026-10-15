@@ -27,6 +27,7 @@
     "db:manifest:postgres": "tsx scripts/db/postgres-schema-manifest.ts",
     "db:verify-schema:postgres": "tsx scripts/db/postgres-schema-verify.ts",
     "db:import:leo562": "tsx scripts/migration/leo562-import.ts",
+    "db:import:leo560-shadow": "tsx scripts/migration/leo560-shadow-import.ts",
     "staging:isolated": "tsx scripts/staging/isolated-staging.ts",
     "postinstall": "prisma generate",
     "test": "vitest run",

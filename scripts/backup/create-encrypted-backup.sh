@@ -9,6 +9,7 @@ backup_id="${BACKUP_ID:-leo540-$(date -u +%Y%m%dT%H%M%SZ)}"
 retention_days="${BACKUP_RETENTION_DAYS:-}"
 postgres_image="${POSTGRES_IMAGE:-postgres:17.6-bookworm@sha256:45cd22f8d32e189d245403954882f88e7a8714301fda80dab6da90f1265b25a3}"
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+source "$repo_root/scripts/backup/exported-snapshot.sh"
 
 if [[ ! "$backup_id" =~ ^[A-Za-z0-9._-]+$ ]]; then
   echo 'LEO540_BACKUP status=FAIL stage=preflight reason=invalid_backup_id'
@@ -34,7 +35,9 @@ export PGOPTIONS='-c role=dpg_backup'
 mkdir -p "$output_dir"
 output_dir="$(cd "$output_dir" && pwd)"
 tmp_dir="$(mktemp --directory /dev/shm/leo540-backup.XXXXXX)"
+
 cleanup() {
+  cleanup_snapshot_keeper 'ROLLBACK'
   rm -rf "$tmp_dir"
 }
 trap cleanup EXIT
@@ -104,14 +107,20 @@ if [[ "$(<"$tmp_dir/free-tier.status")" != 'WITHIN_BUDGET' ]]; then
   exit 1
 fi
 
-manifest_raw="$tmp_dir/runtime-manifest.json"
-if ! psql "$DATABASE_URL" -X -q -A -t -v ON_ERROR_STOP=1 \
-  -c "set role dpg_backup" \
-  >/dev/null 2>"$tmp_dir/manifest-role.error"; then
-  echo 'LEO540_BACKUP status=FAIL stage=manifest reason=backup_role_switch_failed'
+if ! start_snapshot_keeper "$DATABASE_URL" "$tmp_dir"; then
+  echo "LEO540_BACKUP status=FAIL stage=snapshot reason=$snapshot_keeper_failure_reason"
   exit 1
 fi
-if { printf 'set role dpg_backup;\n'; cat "$repo_root/scripts/backup/runtime-manifest.sql"; } | psql "$DATABASE_URL" -X -q -A -t -v ON_ERROR_STOP=1 -v VERBOSITY=verbose \
+snapshot_id="$exported_snapshot_id"
+
+manifest_raw="$tmp_dir/runtime-manifest.json"
+if {
+  printf 'BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY;\n'
+  printf "SET TRANSACTION SNAPSHOT '%s';\n" "$snapshot_id"
+  printf 'SET ROLE dpg_backup;\n'
+  cat "$repo_root/scripts/backup/runtime-manifest.sql"
+  printf '\nCOMMIT;\n'
+} | psql "$DATABASE_URL" -X -q -A -t -v ON_ERROR_STOP=1 -v VERBOSITY=verbose \
   >"$manifest_raw" 2>"$tmp_dir/manifest.error"; then
   :
 else
@@ -140,8 +149,8 @@ plain_dump="$tmp_dir/runtime.dump"
 encrypted_dump="$output_dir/${backup_id}.dump.age"
 manifest="$output_dir/${backup_id}.manifest.json"
 checksums="$output_dir/${backup_id}.checksums.sha256"
-if docker run --rm --network host --env DATABASE_URL "$postgres_image" \
-  sh -ceu 'pg_dump "$DATABASE_URL" --role=dpg_backup --enable-row-security --format=custom --no-owner --no-privileges --no-comments --schema=dpg_app --schema=dpg_v1 --schema=dpg_control' \
+if docker run --rm --network host --env DATABASE_URL --env SNAPSHOT_ID="$snapshot_id" "$postgres_image" \
+  sh -ceu 'pg_dump "$DATABASE_URL" --snapshot="$SNAPSHOT_ID" --role=dpg_backup --enable-row-security --format=custom --no-owner --no-privileges --no-comments --schema=dpg_app --schema=dpg_v1 --schema=dpg_control' \
   >"$plain_dump" \
   2>"$tmp_dir/pg_dump.error"; then
   :
@@ -164,6 +173,10 @@ else
   sqlstate="$(sed -nE 's/.*ERROR:[[:space:]]*([0-9A-Z]{5}).*/\1/p' "$tmp_dir/pg_dump.error" | head -n 1)"
   if [[ ! "$sqlstate" =~ ^[0-9A-Z]{5}$ ]]; then sqlstate='unknown'; fi
   echo "LEO540_BACKUP status=FAIL stage=logical_dump reason=$reason sqlstate=$sqlstate exit_code=$pg_dump_status"
+  exit 1
+fi
+if ! finalize_snapshot_keeper 'COMMIT'; then
+  echo 'LEO540_BACKUP status=FAIL stage=snapshot reason=snapshot_keeper_finalize_failed'
   exit 1
 fi
 if ! age --encrypt --recipient "$AGE_RECIPIENT" --output "$encrypted_dump" "$plain_dump" \

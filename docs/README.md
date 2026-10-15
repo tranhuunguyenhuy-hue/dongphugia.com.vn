@@ -63,6 +63,9 @@ not an authority document: verify it immediately before relying on it.
 - `CURRENT` — [LEO-562 deterministic Legacy-to-V1 import](deploy/leo-562-deterministic-v1-import.md):
   local-only source mapping, normalization, quarantine, publish-quality,
   reconciliation, and deterministic replay evidence.
+- `CURRENT` — [LEO-560 catalogue-only Supabase Preview shadow import](deploy/leo-560-catalogue-shadow-import.md):
+  exact-snapshot, recovery-gated, catalogue-only Preview import procedure and
+  its fail-closed credential, size, exclusion, and rollback controls.
 - `CURRENT` — [LEO-563 New Production application foundation](deploy/leo-563-app-foundation.md):
   separate Public/Admin deployables, pure app contracts, environment/cache
   boundaries, and fail-closed CI candidate gating.
