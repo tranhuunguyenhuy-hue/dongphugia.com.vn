@@ -824,6 +824,7 @@ jobs:
           OWNER_APPROVED_UPLOAD: ${{ needs.repo-code-gate.outputs.owner_approved_upload }}
           UPLOAD_JOB_RESULT: ${{ needs.cloudflare-preview-upload.result }}
           UPLOAD_RESULT: ${{ needs.cloudflare-preview-upload.outputs.result }}
+          PR_NUMBER: ${{ needs.repo-code-gate.outputs.pull_request_number }}
         shell: bash
         run: |
           set -euo pipefail
