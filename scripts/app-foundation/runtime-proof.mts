@@ -41,7 +41,9 @@ function assertNoindexHtml(html: string) {
   if (!/<meta\s+name=["']robots["']\s+content=["']noindex,\s*nofollow["']\s*\/?>(?:<\/meta>)?/i.test(html)) {
     throw new Error('RUNTIME_PROOF_HTML_NOINDEX_FAILED')
   }
-  if (!html.includes('<title>Dong Phu Gia')) throw new Error('RUNTIME_PROOF_SSR_METADATA_FAILED')
+  if (!html.includes('<title>Đông Phú Gia - Vật liệu xây dựng cao cấp tại Đà Lạt')) {
+    throw new Error('RUNTIME_PROOF_SSR_METADATA_FAILED')
+  }
 }
 
 async function requestWithHost(baseUrl: URL, host: string) {
