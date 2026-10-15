@@ -166,6 +166,7 @@ describe('migration PR CI and Preview workflow contract', () => {
     ]) expect(workflow).toContain(marker)
 
     expect(workflow.match(/versions upload/g)).toHaveLength(2)
+    expect(workflow.match(/^\s+PR_NUMBER: \$\{\{ needs\.repo-code-gate\.outputs\.pull_request_number \}\}$/gm)).toHaveLength(3)
     expect(workflow.match(/secrets\.CLOUDFLARE_LEO563_PREVIEW_TOKEN/g)).toHaveLength(5)
     expect(workflow.match(/secrets\.CLOUDFLARE_READONLY_DISCOVERY_TOKEN/g)).toHaveLength(1)
     expect(workflow).not.toContain('secrets.CLOUDFLARE_API_TOKEN')
