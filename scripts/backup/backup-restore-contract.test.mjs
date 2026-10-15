@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest'
 
 const root = process.cwd()
 const backup = readFileSync(resolve(root, 'scripts/backup/create-encrypted-backup.sh'), 'utf8')
+const snapshotKeeper = readFileSync(resolve(root, 'scripts/backup/exported-snapshot.sh'), 'utf8')
 const restore = readFileSync(resolve(root, 'scripts/backup/rehearse-isolated-restore.sh'), 'utf8')
 const manifestSql = readFileSync(resolve(root, 'scripts/backup/runtime-manifest.sql'), 'utf8')
 const validationSql = readFileSync(resolve(root, 'scripts/backup/validate-runtime.sql'), 'utf8')
@@ -24,6 +25,23 @@ describe('LEO-540 backup and restore public contracts', () => {
     expect(backup).toContain("current_setting('transaction_read_only') = 'on'")
     expect(backup).not.toContain('age --decrypt')
     expect(backup).not.toContain('pg_dumpall')
+  })
+
+  it('binds the manifest and logical dump to one exported PostgreSQL snapshot', () => {
+    const snapshotStart = backup.indexOf('start_snapshot_keeper "$DATABASE_URL" "$tmp_dir"')
+    const manifestSnapshot = backup.indexOf('SET TRANSACTION SNAPSHOT')
+    const manifestQuery = backup.indexOf('runtime-manifest.sql')
+    const dumpSnapshot = backup.indexOf('--snapshot="$SNAPSHOT_ID"')
+    const snapshotRelease = backup.lastIndexOf("finalize_snapshot_keeper 'COMMIT'")
+
+    expect(snapshotKeeper).toContain('SELECT pg_export_snapshot();')
+    expect(snapshotStart).toBeGreaterThan(-1)
+    expect(manifestSnapshot).toBeGreaterThan(snapshotStart)
+    expect(manifestQuery).toBeGreaterThan(manifestSnapshot)
+    expect(dumpSnapshot).toBeGreaterThan(manifestQuery)
+    expect(snapshotRelease).toBeGreaterThan(dumpSnapshot)
+    expect(backup).toContain("cleanup_snapshot_keeper 'ROLLBACK'")
+    expect(snapshotKeeper).not.toContain('echo "$exported_snapshot_id"')
   })
 
   it('verifies checksums and isolation before restoring', () => {

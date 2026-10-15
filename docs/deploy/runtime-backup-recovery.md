@@ -23,17 +23,22 @@ is not active on `main` until this PR is approved and merged. The backup job:
    `dpg_app`, `dpg_v1`, and `dpg_control`;
 2. checks the target contract's 350 MiB hard ceiling and 250/300 MiB alert
    thresholds, stopping unless the live size is `WITHIN_BUDGET`;
-3. runs PostgreSQL 17.6 `pg_dump` with row-security enabled in custom logical
-   format for only `dpg_app`, `dpg_v1`, and `dpg_control`;
+3. exports one read-only `REPEATABLE READ` PostgreSQL snapshot and keeps its
+   source transaction open while both consumers run;
 4. creates the schema/data manifest from catalog metadata, row counts, and
-   row hashes only;
-5. encrypts the dump with `age` before it leaves a tmpfs workspace; and
-6. uploads the encrypted bundle, manifest, and checksum file as one GitHub
+   row hashes inside that exported snapshot;
+5. runs PostgreSQL 17.6 `pg_dump` with the same snapshot, row-security enabled,
+   and custom logical format for only `dpg_app`, `dpg_v1`, and `dpg_control`;
+6. commits the snapshot keeper only after both consumers succeed, then encrypts
+   the dump with `age` before it leaves a tmpfs workspace; and
+7. uploads the encrypted bundle, manifest, and checksum file as one GitHub
    Actions artifact with a 14-day retention period.
 
 The artifact contains no plaintext dump. The manifest contains no row values,
 credentials, URLs, tokens, passwords, or key material. The checksum file covers
-both the encrypted archive and the manifest.
+both the encrypted archive and the manifest. A snapshot export, import, keeper,
+manifest, or dump failure rolls back the keeper and fails closed without
+printing the snapshot identifier.
 
 ## Protected exact-PR pre-merge rehearsal
 
