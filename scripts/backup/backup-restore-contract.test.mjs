@@ -44,6 +44,18 @@ describe('LEO-540 backup and restore public contracts', () => {
     expect(snapshotKeeper).not.toContain('echo "$exported_snapshot_id"')
   })
 
+  it('bounds the keeper idle timeout inside only the exported-snapshot transaction', () => {
+    const transactionStart = snapshotKeeper.indexOf('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY;')
+    const boundedTimeout = snapshotKeeper.indexOf("SET LOCAL idle_in_transaction_session_timeout = '20min';")
+    const snapshotExport = snapshotKeeper.indexOf('SELECT pg_export_snapshot();')
+
+    expect(transactionStart).toBeGreaterThan(-1)
+    expect(boundedTimeout).toBeGreaterThan(transactionStart)
+    expect(snapshotExport).toBeGreaterThan(boundedTimeout)
+    expect(snapshotKeeper).not.toMatch(/ALTER\s+ROLE/i)
+    expect(snapshotKeeper).not.toContain('SET SESSION idle_in_transaction_session_timeout')
+  })
+
   it('verifies checksums and isolation before restoring', () => {
     const checksum = restore.indexOf('sha256sum -c')
     const decrypt = restore.indexOf('age --decrypt')

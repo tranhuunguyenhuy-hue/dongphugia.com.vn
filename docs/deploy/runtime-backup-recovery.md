@@ -23,8 +23,9 @@ is not active on `main` until this PR is approved and merged. The backup job:
    `dpg_app`, `dpg_v1`, and `dpg_control`;
 2. checks the target contract's 350 MiB hard ceiling and 250/300 MiB alert
    thresholds, stopping unless the live size is `WITHIN_BUDGET`;
-3. exports one read-only `REPEATABLE READ` PostgreSQL snapshot and keeps its
-   source transaction open while both consumers run;
+3. exports one read-only `REPEATABLE READ` PostgreSQL snapshot, applies a
+   20-minute `idle_in_transaction_session_timeout` only inside that transaction,
+   and keeps the source transaction open while both consumers run;
 4. creates the schema/data manifest from catalog metadata, row counts, and
    row hashes inside that exported snapshot;
 5. runs PostgreSQL 17.6 `pg_dump` with the same snapshot, row-security enabled,
@@ -38,7 +39,9 @@ The artifact contains no plaintext dump. The manifest contains no row values,
 credentials, URLs, tokens, passwords, or key material. The checksum file covers
 both the encrypted archive and the manifest. A snapshot export, import, keeper,
 manifest, or dump failure rolls back the keeper and fails closed without
-printing the snapshot identifier.
+printing the snapshot identifier. The bounded keeper timeout does not alter the
+login role, database, or system timeout defaults; the workflow job's existing
+25-minute ceiling remains the outer bound.
 
 ## Protected exact-PR pre-merge rehearsal
 
