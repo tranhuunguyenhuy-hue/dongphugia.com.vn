@@ -149,7 +149,9 @@ fi
 node "$repo_root/scripts/backup/manifest-contract.mjs" compare "$manifest" "$actual_manifest" >/dev/null 2>"$tmp_dir/manifest-compare.error" || {
   categories="$(sed -nE 's/.*categories=([a-z_,]+).*/\1/p' "$tmp_dir/manifest-compare.error" | head -n 1)"
   if [[ ! "$categories" =~ ^[a-z_,]+$ ]]; then categories='unknown'; fi
-  echo "LEO540_RESTORE status=FAIL stage=manifest_comparison reason=manifest_mismatch categories=$categories"
+  tables="$(sed -nE 's/.*tables=([a-z0-9_.,]+).*/\1/p' "$tmp_dir/manifest-compare.error" | head -n 1)"
+  if [[ ! "$tables" =~ ^([a-z][a-z0-9_]*\.)?[a-z][a-z0-9_]*(,([a-z][a-z0-9_]*\.)?[a-z][a-z0-9_]*)*$|^none$ ]]; then tables='unknown'; fi
+  echo "LEO540_RESTORE status=FAIL stage=manifest_comparison reason=manifest_mismatch categories=$categories tables=$tables"
   exit 1
 }
 manifest_compared='true'

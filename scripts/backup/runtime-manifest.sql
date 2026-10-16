@@ -1,5 +1,7 @@
 -- LEO-540 sanitized runtime manifest. This query returns metadata only:
 -- schema definitions, row counts, and row hashes. It must never select row data.
+SET TIME ZONE 'UTC';
+
 WITH table_objects AS (
   SELECT COALESCE(jsonb_agg(
     jsonb_build_object(
@@ -116,113 +118,113 @@ WITH table_objects AS (
   ) AS value
 ), canonical_v1_data AS (
   SELECT 'dpg_v1.staff_users' AS table_name, count(*) AS row_count,
-    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)), '[]'::jsonb)::text, 'UTF8')), 'hex') AS sha256,
+    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)::text COLLATE "C"), '[]'::jsonb)::text, 'UTF8')), 'hex') AS sha256,
     'canonical_dpg_v1' AS source_authority
   FROM dpg_v1.staff_users item
   UNION ALL SELECT 'dpg_v1.staff_user_roles', count(*),
-    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)), '[]'::jsonb)::text, 'UTF8')), 'hex'),
+    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)::text COLLATE "C"), '[]'::jsonb)::text, 'UTF8')), 'hex'),
     'canonical_dpg_v1' FROM dpg_v1.staff_user_roles item
   UNION ALL SELECT 'dpg_v1.role_capabilities', count(*),
-    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)), '[]'::jsonb)::text, 'UTF8')), 'hex'),
+    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)::text COLLATE "C"), '[]'::jsonb)::text, 'UTF8')), 'hex'),
     'canonical_dpg_v1' FROM dpg_v1.role_capabilities item
   UNION ALL SELECT 'dpg_v1.media_assets', count(*),
-    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)), '[]'::jsonb)::text, 'UTF8')), 'hex'),
+    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)::text COLLATE "C"), '[]'::jsonb)::text, 'UTF8')), 'hex'),
     'canonical_dpg_v1' FROM dpg_v1.media_assets item
   UNION ALL SELECT 'dpg_v1.media_variants', count(*),
-    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)), '[]'::jsonb)::text, 'UTF8')), 'hex'),
+    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)::text COLLATE "C"), '[]'::jsonb)::text, 'UTF8')), 'hex'),
     'canonical_dpg_v1' FROM dpg_v1.media_variants item
   UNION ALL SELECT 'dpg_v1.brands', count(*),
-    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)), '[]'::jsonb)::text, 'UTF8')), 'hex'),
+    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)::text COLLATE "C"), '[]'::jsonb)::text, 'UTF8')), 'hex'),
     'canonical_dpg_v1' FROM dpg_v1.brands item
   UNION ALL SELECT 'dpg_v1.categories', count(*),
-    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)), '[]'::jsonb)::text, 'UTF8')), 'hex'),
+    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)::text COLLATE "C"), '[]'::jsonb)::text, 'UTF8')), 'hex'),
     'canonical_dpg_v1' FROM dpg_v1.categories item
   UNION ALL SELECT 'dpg_v1.product_families', count(*),
-    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)), '[]'::jsonb)::text, 'UTF8')), 'hex'),
+    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)::text COLLATE "C"), '[]'::jsonb)::text, 'UTF8')), 'hex'),
     'canonical_dpg_v1' FROM dpg_v1.product_families item
   UNION ALL SELECT 'dpg_v1.product_family_configuration_groups', count(*),
-    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)), '[]'::jsonb)::text, 'UTF8')), 'hex'),
+    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)::text COLLATE "C"), '[]'::jsonb)::text, 'UTF8')), 'hex'),
     'canonical_dpg_v1' FROM dpg_v1.product_family_configuration_groups item
   UNION ALL SELECT 'dpg_v1.products', count(*),
-    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)), '[]'::jsonb)::text, 'UTF8')), 'hex'),
+    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)::text COLLATE "C"), '[]'::jsonb)::text, 'UTF8')), 'hex'),
     'canonical_dpg_v1' FROM dpg_v1.products item
   UNION ALL SELECT 'dpg_v1.product_family_memberships', count(*),
-    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)), '[]'::jsonb)::text, 'UTF8')), 'hex'),
+    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)::text COLLATE "C"), '[]'::jsonb)::text, 'UTF8')), 'hex'),
     'canonical_dpg_v1' FROM dpg_v1.product_family_memberships item
   UNION ALL SELECT 'dpg_v1.product_source_provenance', count(*),
-    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)), '[]'::jsonb)::text, 'UTF8')), 'hex'),
+    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)::text COLLATE "C"), '[]'::jsonb)::text, 'UTF8')), 'hex'),
     'canonical_dpg_v1' FROM dpg_v1.product_source_provenance item
   UNION ALL SELECT 'dpg_v1.collections', count(*),
-    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)), '[]'::jsonb)::text, 'UTF8')), 'hex'),
+    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)::text COLLATE "C"), '[]'::jsonb)::text, 'UTF8')), 'hex'),
     'canonical_dpg_v1' FROM dpg_v1.collections item
   UNION ALL SELECT 'dpg_v1.collection_products', count(*),
-    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)), '[]'::jsonb)::text, 'UTF8')), 'hex'),
+    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)::text COLLATE "C"), '[]'::jsonb)::text, 'UTF8')), 'hex'),
     'canonical_dpg_v1' FROM dpg_v1.collection_products item
   UNION ALL SELECT 'dpg_v1.attribute_definitions', count(*),
-    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)), '[]'::jsonb)::text, 'UTF8')), 'hex'),
+    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)::text COLLATE "C"), '[]'::jsonb)::text, 'UTF8')), 'hex'),
     'canonical_dpg_v1' FROM dpg_v1.attribute_definitions item
   UNION ALL SELECT 'dpg_v1.attribute_options', count(*),
-    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)), '[]'::jsonb)::text, 'UTF8')), 'hex'),
+    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)::text COLLATE "C"), '[]'::jsonb)::text, 'UTF8')), 'hex'),
     'canonical_dpg_v1' FROM dpg_v1.attribute_options item
   UNION ALL SELECT 'dpg_v1.category_attribute_policies', count(*),
-    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)), '[]'::jsonb)::text, 'UTF8')), 'hex'),
+    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)::text COLLATE "C"), '[]'::jsonb)::text, 'UTF8')), 'hex'),
     'canonical_dpg_v1' FROM dpg_v1.category_attribute_policies item
   UNION ALL SELECT 'dpg_v1.product_attribute_values', count(*),
-    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)), '[]'::jsonb)::text, 'UTF8')), 'hex'),
+    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)::text COLLATE "C"), '[]'::jsonb)::text, 'UTF8')), 'hex'),
     'canonical_dpg_v1' FROM dpg_v1.product_attribute_values item
   UNION ALL SELECT 'dpg_v1.product_attribute_multi_options', count(*),
-    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)), '[]'::jsonb)::text, 'UTF8')), 'hex'),
+    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)::text COLLATE "C"), '[]'::jsonb)::text, 'UTF8')), 'hex'),
     'canonical_dpg_v1' FROM dpg_v1.product_attribute_multi_options item
   UNION ALL SELECT 'dpg_v1.product_media', count(*),
-    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)), '[]'::jsonb)::text, 'UTF8')), 'hex'),
+    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)::text COLLATE "C"), '[]'::jsonb)::text, 'UTF8')), 'hex'),
     'canonical_dpg_v1' FROM dpg_v1.product_media item
   UNION ALL SELECT 'dpg_v1.product_documents', count(*),
-    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)), '[]'::jsonb)::text, 'UTF8')), 'hex'),
+    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)::text COLLATE "C"), '[]'::jsonb)::text, 'UTF8')), 'hex'),
     'canonical_dpg_v1' FROM dpg_v1.product_documents item
   UNION ALL SELECT 'dpg_v1.content_entries', count(*),
-    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)), '[]'::jsonb)::text, 'UTF8')), 'hex'),
+    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)::text COLLATE "C"), '[]'::jsonb)::text, 'UTF8')), 'hex'),
     'canonical_dpg_v1' FROM dpg_v1.content_entries item
   UNION ALL SELECT 'dpg_v1.content_blocks', count(*),
-    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)), '[]'::jsonb)::text, 'UTF8')), 'hex'),
+    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)::text COLLATE "C"), '[]'::jsonb)::text, 'UTF8')), 'hex'),
     'canonical_dpg_v1' FROM dpg_v1.content_blocks item
   UNION ALL SELECT 'dpg_v1.content_product_references', count(*),
-    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)), '[]'::jsonb)::text, 'UTF8')), 'hex'),
+    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)::text COLLATE "C"), '[]'::jsonb)::text, 'UTF8')), 'hex'),
     'canonical_dpg_v1' FROM dpg_v1.content_product_references item
   UNION ALL SELECT 'dpg_v1.content_category_references', count(*),
-    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)), '[]'::jsonb)::text, 'UTF8')), 'hex'),
+    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)::text COLLATE "C"), '[]'::jsonb)::text, 'UTF8')), 'hex'),
     'canonical_dpg_v1' FROM dpg_v1.content_category_references item
   UNION ALL SELECT 'dpg_v1.content_brand_references', count(*),
-    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)), '[]'::jsonb)::text, 'UTF8')), 'hex'),
+    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)::text COLLATE "C"), '[]'::jsonb)::text, 'UTF8')), 'hex'),
     'canonical_dpg_v1' FROM dpg_v1.content_brand_references item
   UNION ALL SELECT 'dpg_v1.quote_requests', count(*),
-    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)), '[]'::jsonb)::text, 'UTF8')), 'hex'),
+    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)::text COLLATE "C"), '[]'::jsonb)::text, 'UTF8')), 'hex'),
     'canonical_dpg_v1' FROM dpg_v1.quote_requests item
   UNION ALL SELECT 'dpg_v1.quote_request_lines', count(*),
-    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)), '[]'::jsonb)::text, 'UTF8')), 'hex'),
+    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)::text COLLATE "C"), '[]'::jsonb)::text, 'UTF8')), 'hex'),
     'canonical_dpg_v1' FROM dpg_v1.quote_request_lines item
   UNION ALL SELECT 'dpg_v1.quotes', count(*),
-    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)), '[]'::jsonb)::text, 'UTF8')), 'hex'),
+    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)::text COLLATE "C"), '[]'::jsonb)::text, 'UTF8')), 'hex'),
     'canonical_dpg_v1' FROM dpg_v1.quotes item
   UNION ALL SELECT 'dpg_v1.quote_lines', count(*),
-    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)), '[]'::jsonb)::text, 'UTF8')), 'hex'),
+    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)::text COLLATE "C"), '[]'::jsonb)::text, 'UTF8')), 'hex'),
     'canonical_dpg_v1' FROM dpg_v1.quote_lines item
   UNION ALL SELECT 'dpg_v1.quote_shares', count(*),
-    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)), '[]'::jsonb)::text, 'UTF8')), 'hex'),
+    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)::text COLLATE "C"), '[]'::jsonb)::text, 'UTF8')), 'hex'),
     'canonical_dpg_v1' FROM dpg_v1.quote_shares item
   UNION ALL SELECT 'dpg_v1.orders', count(*),
-    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)), '[]'::jsonb)::text, 'UTF8')), 'hex'),
+    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)::text COLLATE "C"), '[]'::jsonb)::text, 'UTF8')), 'hex'),
     'canonical_dpg_v1' FROM dpg_v1.orders item
   UNION ALL SELECT 'dpg_v1.order_lines', count(*),
-    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)), '[]'::jsonb)::text, 'UTF8')), 'hex'),
+    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)::text COLLATE "C"), '[]'::jsonb)::text, 'UTF8')), 'hex'),
     'canonical_dpg_v1' FROM dpg_v1.order_lines item
   UNION ALL SELECT 'dpg_v1.payment_transactions', count(*),
-    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)), '[]'::jsonb)::text, 'UTF8')), 'hex'),
+    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)::text COLLATE "C"), '[]'::jsonb)::text, 'UTF8')), 'hex'),
     'canonical_dpg_v1' FROM dpg_v1.payment_transactions item
   UNION ALL SELECT 'dpg_v1.commerce_idempotency_records', count(*),
-    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)), '[]'::jsonb)::text, 'UTF8')), 'hex'),
+    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)::text COLLATE "C"), '[]'::jsonb)::text, 'UTF8')), 'hex'),
     'canonical_dpg_v1' FROM dpg_v1.commerce_idempotency_records item
   UNION ALL SELECT 'dpg_v1.service_idempotency_records', count(*),
-    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)), '[]'::jsonb)::text, 'UTF8')), 'hex'),
+    encode(sha256(convert_to(coalesce(jsonb_agg(to_jsonb(item) ORDER BY to_jsonb(item)::text COLLATE "C"), '[]'::jsonb)::text, 'UTF8')), 'hex'),
     'canonical_dpg_v1' FROM dpg_v1.service_idempotency_records item
 ), canonical_v1_restore_counts AS (
   SELECT jsonb_agg(jsonb_build_object(

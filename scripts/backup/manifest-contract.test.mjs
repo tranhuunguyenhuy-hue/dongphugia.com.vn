@@ -1,7 +1,13 @@
+import { spawnSync } from 'node:child_process'
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join, resolve } from 'node:path'
+
 import { describe, expect, it } from 'vitest'
 
 import {
   CANONICAL_V1_RESTORE_COUNT_TABLES,
+  compareRuntimeManifestDetails,
   compareRuntimeManifests,
   RESTORE_COUNT_TABLES,
   validateRuntimeManifest,
@@ -95,5 +101,47 @@ describe('LEO-540 runtime manifest contract', () => {
     const actual = valid()
     actual.data[0].rowCount = 2
     expect(compareRuntimeManifests(expected, actual)).toEqual(['data row counts changed'])
+  })
+
+  it('reports only sanitized table identities for data hash mismatches', () => {
+    const expected = valid()
+    const actual = valid()
+    expected.data[0].tableName = 'dpg_v1.categories'
+    actual.data[0].tableName = 'dpg_v1.categories'
+    actual.data[0].sha256 = 'b'.repeat(64)
+
+    expect(compareRuntimeManifestDetails(expected, actual)).toEqual({
+      violations: ['data row hashes changed'],
+      tables: ['dpg_v1.categories'],
+    })
+  })
+
+  it('prints mismatch table identities without printing row hashes', () => {
+    const workspace = mkdtempSync(join(tmpdir(), 'leo540-manifest-'))
+    const expected = valid()
+    const actual = valid()
+    expected.data[0].tableName = 'dpg_v1.categories'
+    actual.data[0].tableName = 'dpg_v1.categories'
+    actual.data[0].sha256 = 'b'.repeat(64)
+    const expectedPath = join(workspace, 'expected.json')
+    const actualPath = join(workspace, 'actual.json')
+    writeFileSync(expectedPath, JSON.stringify(expected))
+    writeFileSync(actualPath, JSON.stringify(actual))
+
+    try {
+      const result = spawnSync(process.execPath, [
+        resolve('scripts/backup/manifest-contract.mjs'),
+        'compare',
+        expectedPath,
+        actualPath,
+      ], { encoding: 'utf8' })
+
+      expect(result.status).toBe(1)
+      expect(result.stderr).toContain('categories=data_hashes tables=dpg_v1.categories')
+      expect(result.stderr).not.toContain(expected.data[0].sha256)
+      expect(result.stderr).not.toContain(actual.data[0].sha256)
+    } finally {
+      rmSync(workspace, { recursive: true, force: true })
+    }
   })
 })

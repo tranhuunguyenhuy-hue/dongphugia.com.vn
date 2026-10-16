@@ -27,7 +27,9 @@ is not active on `main` until this PR is approved and merged. The backup job:
    20-minute `idle_in_transaction_session_timeout` only inside that transaction,
    and keeps the source transaction open while both consumers run;
 4. creates the schema/data manifest from catalog metadata, row counts, and
-   row hashes inside that exported snapshot;
+   row hashes inside that exported snapshot, with UTC timestamp rendering and
+   C-collated row ordering so hashes do not depend on session timezone or
+   database locale;
 5. runs PostgreSQL 17.6 `pg_dump` with the same snapshot, row-security enabled,
    and custom logical format for only `dpg_app`, `dpg_v1`, and `dpg_control`;
 6. commits the snapshot keeper only after both consumers succeed, then encrypts
@@ -139,7 +141,9 @@ workspace after the result is emitted; it never removes an archive.
 After restore, the same sanitized manifest query is run against the container.
 The comparison requires exact target, schema, and data manifests; it ignores
 only runtime metadata that is expected to differ, such as database size and
-backup timestamp.
+backup timestamp. On a data mismatch, the failure boundary may emit only the
+validated table identity plus the generic mismatch category; it never emits a
+row hash, column value, or row content.
 
 ## Product, Family/MS885, Blog, and V1 validation
 

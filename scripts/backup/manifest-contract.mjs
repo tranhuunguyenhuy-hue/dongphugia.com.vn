@@ -12,6 +12,7 @@ export const EXPECTED_TARGET = {
 }
 
 const PROHIBITED_KEY = /password|secret|token|private.?key|database.?url|connection.?string|row.?data|payload|content|dump/i
+const SAFE_TABLE_IDENTITY = /^(?:[a-z][a-z0-9_]*\.)?[a-z][a-z0-9_]*$/
 export const RESTORE_COUNT_TABLES = [
   'blog_categories',
   'blog_post_tags',
@@ -105,7 +106,8 @@ export function validateRuntimeManifest(manifest) {
   }
   if (containsProhibitedKey(manifest)) violations.push('manifest contains a prohibited sensitive field')
   for (const entry of manifest.data ?? []) {
-    if (!entry || typeof entry.tableName !== 'string' || !Number.isInteger(entry.rowCount) || entry.rowCount < 0
+    if (!entry || typeof entry.tableName !== 'string' || !SAFE_TABLE_IDENTITY.test(entry.tableName)
+      || !Number.isInteger(entry.rowCount) || entry.rowCount < 0
       || !/^[a-f0-9]{64}$/.test(entry.sha256) || typeof entry.sourceAuthority !== 'string') {
       violations.push('data manifest entry is invalid')
       break
@@ -137,9 +139,10 @@ export function validateRuntimeManifest(manifest) {
   return [...new Set(violations)]
 }
 
-export function compareRuntimeManifests(expected, actual) {
+export function compareRuntimeManifestDetails(expected, actual) {
   const violations = [...validateRuntimeManifest(expected), ...validateRuntimeManifest(actual)]
-  if (violations.length > 0) return [...new Set(violations)]
+  if (violations.length > 0) return { violations: [...new Set(violations)], tables: [] }
+  const tables = new Set()
   if (JSON.stringify(canonical(expected.target)) !== JSON.stringify(canonical(actual.target))) violations.push('target manifest changed')
   if (JSON.stringify(canonical(expected.schema)) !== JSON.stringify(canonical(actual.schema))) violations.push('schema manifest changed')
   if (expected.data.length !== actual.data.length
@@ -152,9 +155,18 @@ export function compareRuntimeManifests(expected, actual) {
   for (const entry of expected.data) {
     const actualEntry = actualDataByTable.get(entry.tableName)
     if (!actualEntry) continue
-    if (entry.rowCount !== actualEntry.rowCount) violations.push('data row counts changed')
-    if (entry.sha256 !== actualEntry.sha256) violations.push('data row hashes changed')
-    if (entry.sourceAuthority !== actualEntry.sourceAuthority) violations.push('data source authority changed')
+    if (entry.rowCount !== actualEntry.rowCount) {
+      violations.push('data row counts changed')
+      tables.add(entry.tableName)
+    }
+    if (entry.sha256 !== actualEntry.sha256) {
+      violations.push('data row hashes changed')
+      tables.add(entry.tableName)
+    }
+    if (entry.sourceAuthority !== actualEntry.sourceAuthority) {
+      violations.push('data source authority changed')
+      tables.add(entry.tableName)
+    }
   }
   const actualRestoreCounts = new Map(actual.restoreCounts.map((entry) => [entry.tableName, entry.rowCount]))
   if (expected.restoreCounts.some((entry) => actualRestoreCounts.get(entry.tableName) !== entry.rowCount)) {
@@ -168,19 +180,28 @@ export function compareRuntimeManifests(expected, actual) {
   )) {
     violations.push('canonical V1 restore aggregate counts changed')
   }
-  return [...new Set(violations)]
+  return {
+    violations: [...new Set(violations)],
+    tables: [...tables].filter((tableName) => SAFE_TABLE_IDENTITY.test(tableName)).sort(),
+  }
+}
+
+export function compareRuntimeManifests(expected, actual) {
+  return compareRuntimeManifestDetails(expected, actual).violations
 }
 
 async function main() {
   const [mode, expectedPath, actualPath] = process.argv.slice(2)
   if (!['validate', 'compare'].includes(mode)) throw new Error('usage: node scripts/backup/manifest-contract.mjs validate <manifest> | compare <expected> <actual>')
   const expected = JSON.parse(await readFile(expectedPath, 'utf8'))
-  const violations = mode === 'validate'
-    ? validateRuntimeManifest(expected)
-    : compareRuntimeManifests(expected, JSON.parse(await readFile(actualPath, 'utf8')))
+  const details = mode === 'validate'
+    ? { violations: validateRuntimeManifest(expected), tables: [] }
+    : compareRuntimeManifestDetails(expected, JSON.parse(await readFile(actualPath, 'utf8')))
+  const { violations } = details
   if (violations.length > 0) {
     const categories = [...new Set(violations.map(violationCategory))].sort().join(',')
-    process.stderr.write(`LEO540_MANIFEST status=FAIL violation_count=${violations.length} categories=${categories}\n`)
+    const tables = details.tables.length > 0 ? details.tables.join(',') : 'none'
+    process.stderr.write(`LEO540_MANIFEST status=FAIL violation_count=${violations.length} categories=${categories} tables=${tables}\n`)
     process.exitCode = 1
     return
   }
