@@ -5,9 +5,10 @@ import { join } from 'node:path'
 const SHA_PATTERN = /^[0-9a-f]{40}$/
 const RUN_ID_PATTERN = /^[1-9][0-9]*$/
 
-function assertIdentityParts(prNumber, candidateSha, controlSha, workflowRunId) {
+function assertIdentityParts(prNumber, candidateSha, controlSha, workflowRunId, mergeSha = '') {
   if (!/^[1-9][0-9]*$/.test(String(prNumber))) throw new Error('invalid_pr_number')
   if (!SHA_PATTERN.test(candidateSha) || !SHA_PATTERN.test(controlSha)) throw new Error('invalid_sha')
+  if (mergeSha && !SHA_PATTERN.test(mergeSha)) throw new Error('invalid_merge_sha')
   if (!RUN_ID_PATTERN.test(String(workflowRunId))) throw new Error('invalid_workflow_run_id')
 }
 
@@ -31,8 +32,8 @@ async function sha256(path) {
 }
 
 export async function bindExactPrArtifactIdentity(directory, identity) {
-  const { prNumber, candidateSha, controlSha, workflowRunId } = identity
-  assertIdentityParts(prNumber, candidateSha, controlSha, workflowRunId)
+  const { prNumber, candidateSha, controlSha, workflowRunId, mergeSha = '' } = identity
+  assertIdentityParts(prNumber, candidateSha, controlSha, workflowRunId, mergeSha)
   const files = await bundleFiles(directory)
   const manifest = JSON.parse(await readFile(files.manifest, 'utf8'))
   if (!Number.isInteger(manifest.formatVersion) || manifest.formatVersion < 1) throw new Error('manifest_version_invalid')
@@ -44,6 +45,7 @@ export async function bindExactPrArtifactIdentity(directory, identity) {
     prNumber: Number(prNumber),
     candidateSha,
     controlSha,
+    ...(mergeSha ? { mergeSha } : {}),
     workflowRunId: String(workflowRunId),
     backupTimestamp: manifest.createdAt,
     manifestVersion: manifest.formatVersion,
@@ -54,8 +56,8 @@ export async function bindExactPrArtifactIdentity(directory, identity) {
 }
 
 export async function verifyExactPrArtifactIdentity(directory, expected) {
-  const { prNumber, candidateSha, controlSha, workflowRunId } = expected
-  assertIdentityParts(prNumber, candidateSha, controlSha, workflowRunId)
+  const { prNumber, candidateSha, controlSha, workflowRunId, mergeSha = '' } = expected
+  assertIdentityParts(prNumber, candidateSha, controlSha, workflowRunId, mergeSha)
   const files = await bundleFiles(directory)
   const manifest = JSON.parse(await readFile(files.manifest, 'utf8'))
   const identity = manifest.artifactIdentity
@@ -63,6 +65,7 @@ export async function verifyExactPrArtifactIdentity(directory, expected) {
     || identity.prNumber !== Number(prNumber)
     || identity.candidateSha !== candidateSha
     || identity.controlSha !== controlSha
+    || (identity.mergeSha ?? '') !== mergeSha
     || identity.workflowRunId !== String(workflowRunId)
     || identity.backupTimestamp !== manifest.createdAt
     || identity.manifestVersion !== manifest.formatVersion) {
@@ -74,11 +77,11 @@ export async function verifyExactPrArtifactIdentity(directory, expected) {
 }
 
 async function main() {
-  const [mode, directory, prNumber, candidateSha, controlSha, workflowRunId] = process.argv.slice(2)
+  const [mode, directory, prNumber, candidateSha, controlSha, workflowRunId, mergeSha = ''] = process.argv.slice(2)
   if (!['bind', 'verify'].includes(mode) || !directory || !prNumber || !candidateSha || !controlSha || !workflowRunId) {
-    throw new Error('usage: node exact-pr-artifact-identity.mjs bind|verify <bundle-dir> <pr-number> <candidate-sha> <control-sha> <run-id>')
+    throw new Error('usage: node exact-pr-artifact-identity.mjs bind|verify <bundle-dir> <pr-number> <candidate-sha> <control-sha> <run-id> [merge-sha]')
   }
-  const identity = { prNumber, candidateSha, controlSha, workflowRunId }
+  const identity = { prNumber, candidateSha, controlSha, workflowRunId, mergeSha }
   if (mode === 'bind') await bindExactPrArtifactIdentity(directory, identity)
   else await verifyExactPrArtifactIdentity(directory, identity)
   process.stdout.write(`LEO552_ARTIFACT_IDENTITY status=PASS mode=${mode}\n`)

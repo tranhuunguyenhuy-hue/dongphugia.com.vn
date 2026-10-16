@@ -12,11 +12,11 @@ on:
         default: true
         type: boolean
       pr_number:
-        description: Exact open PR number to validate before the protected rehearsal
+        description: Exact open or merged PR number to validate before the protected rehearsal
         required: false
         type: string
       candidate_sha:
-        description: Exact current head SHA of the open PR
+        description: Exact current head SHA of the open or merged PR
         required: false
         type: string
 
@@ -42,12 +42,14 @@ jobs:
       mode: ${{ steps.mode.outputs.mode }}
       pr_number: ${{ steps.mode.outputs.pr_number }}
       candidate_sha: ${{ steps.mode.outputs.candidate_sha }}
+      candidate_merge_sha: ${{ steps.mode.outputs.candidate_merge_sha }}
       control_sha: ${{ steps.mode.outputs.control_sha }}
     steps:
       - name: Require the trusted main workflow revision
         uses: actions/checkout@v4
         with:
           ref: refs/heads/main
+          fetch-depth: 0
           persist-credentials: false
 
       - name: Resolve and validate the exact PR candidate
@@ -75,6 +77,7 @@ jobs:
               echo 'mode=scheduled'
               echo 'pr_number='
               echo 'candidate_sha='
+              echo 'candidate_merge_sha='
               echo "control_sha=$control_sha"
             } >> "$GITHUB_OUTPUT"
             echo 'LEO552_PREFLIGHT status=PASS mode=scheduled'
@@ -87,6 +90,7 @@ jobs:
               echo 'mode=legacy-manual'
               echo 'pr_number='
               echo 'candidate_sha='
+              echo 'candidate_merge_sha='
               echo "control_sha=$control_sha"
             } >> "$GITHUB_OUTPUT"
             echo 'LEO552_PREFLIGHT status=PASS mode=legacy-manual'
@@ -104,12 +108,26 @@ jobs:
             && git merge-base --is-ancestor "$CANDIDATE_SHA" "$pr_head_sha"; then
             candidate_reachable='true'
           fi
+          candidate_mode='exact-pr-head'
+          candidate_merge_sha=''
+          merge_commit_reachable='false'
+          if jq -e '.state == "closed" and .merged == true' "$pr_json" >/dev/null; then
+            candidate_mode='exact-merged-pr-head'
+            candidate_merge_sha="$(jq -r '.merge_commit_sha // empty' "$pr_json")"
+            if [[ "$candidate_merge_sha" =~ ^[0-9a-f]{40}$ ]] \
+              && git fetch --no-tags --depth=1 origin "$candidate_merge_sha" >/dev/null 2>&1 \
+              && git merge-base --is-ancestor "$candidate_merge_sha" "$control_sha"; then
+              merge_commit_reachable='true'
+            fi
+          fi
           node scripts/backup/exact-pr-preflight.mjs validate \
-            "$pr_json" "$GITHUB_REPOSITORY" "$PR_NUMBER" "$CANDIDATE_SHA" "$candidate_reachable"
+            "$pr_json" "$GITHUB_REPOSITORY" "$PR_NUMBER" "$CANDIDATE_SHA" \
+            "$candidate_reachable" "$merge_commit_reachable"
           {
-            echo 'mode=exact-pr-head'
+            echo "mode=$candidate_mode"
             echo "pr_number=$PR_NUMBER"
             echo "candidate_sha=$CANDIDATE_SHA"
+            echo "candidate_merge_sha=$candidate_merge_sha"
             echo "control_sha=$control_sha"
           } >> "$GITHUB_OUTPUT"
 
@@ -158,18 +176,20 @@ jobs:
           bash scripts/backup/create-encrypted-backup.sh
 
       - name: Bind exact candidate identity into the artifact manifest
-        if: needs.preflight.outputs.mode == 'exact-pr-head'
+        if: startsWith(needs.preflight.outputs.mode, 'exact-')
         env:
           OUTPUT_DIR: ${{ runner.temp }}/leo540-backup
           PR_NUMBER: ${{ needs.preflight.outputs.pr_number }}
           CANDIDATE_SHA: ${{ needs.preflight.outputs.candidate_sha }}
+          CANDIDATE_MERGE_SHA: ${{ needs.preflight.outputs.candidate_merge_sha }}
           CONTROL_SHA: ${{ needs.preflight.outputs.control_sha }}
           WORKFLOW_RUN_ID: ${{ github.run_id }}
         shell: bash
         run: |
           set -euo pipefail
           node scripts/backup/exact-pr-artifact-identity.mjs bind \
-            "$OUTPUT_DIR" "$PR_NUMBER" "$CANDIDATE_SHA" "$CONTROL_SHA" "$WORKFLOW_RUN_ID"
+            "$OUTPUT_DIR" "$PR_NUMBER" "$CANDIDATE_SHA" "$CONTROL_SHA" \
+            "$WORKFLOW_RUN_ID" "$CANDIDATE_MERGE_SHA"
 
       - name: Upload the encrypted bundle with approved retention
         id: bundle
@@ -192,8 +212,8 @@ jobs:
             echo '- Database rows, credentials, and encryption material: not emitted'
           } >> "$GITHUB_STEP_SUMMARY"
           echo "artifact_name=leo540-runtime-backup-${{ github.run_id }}" >> "$GITHUB_OUTPUT"
-          if [[ '${{ needs.preflight.outputs.mode }}' == 'exact-pr-head' ]]; then
-            echo '- Exact candidate identity: PR number, candidate SHA, trusted main control SHA, run ID, timestamp, and manifest version are bound in the sanitized manifest.' >> "$GITHUB_STEP_SUMMARY"
+          if [[ '${{ needs.preflight.outputs.mode }}' == exact-* ]]; then
+            echo '- Exact candidate identity: PR number, candidate SHA, optional merged-PR merge SHA, trusted main control SHA, run ID, timestamp, and manifest version are bound in the sanitized manifest.' >> "$GITHUB_STEP_SUMMARY"
           fi
 
   restore:
@@ -235,18 +255,20 @@ jobs:
           github-token: ${{ github.token }}
 
       - name: Verify exact candidate artifact identity
-        if: needs.preflight.outputs.mode == 'exact-pr-head'
+        if: startsWith(needs.preflight.outputs.mode, 'exact-')
         env:
           BACKUP_DIR: ${{ runner.temp }}/leo540-backup
           PR_NUMBER: ${{ needs.preflight.outputs.pr_number }}
           CANDIDATE_SHA: ${{ needs.preflight.outputs.candidate_sha }}
+          CANDIDATE_MERGE_SHA: ${{ needs.preflight.outputs.candidate_merge_sha }}
           CONTROL_SHA: ${{ needs.preflight.outputs.control_sha }}
           WORKFLOW_RUN_ID: ${{ github.run_id }}
         shell: bash
         run: |
           set -euo pipefail
           node scripts/backup/exact-pr-artifact-identity.mjs verify \
-            "$BACKUP_DIR" "$PR_NUMBER" "$CANDIDATE_SHA" "$CONTROL_SHA" "$WORKFLOW_RUN_ID"
+            "$BACKUP_DIR" "$PR_NUMBER" "$CANDIDATE_SHA" "$CONTROL_SHA" \
+            "$WORKFLOW_RUN_ID" "$CANDIDATE_MERGE_SHA"
 
       - name: Restore, compare manifests, and validate the isolated target
         env:

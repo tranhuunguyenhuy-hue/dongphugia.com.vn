@@ -45,16 +45,19 @@ printing the snapshot identifier. The bounded keeper timeout does not alter the
 login role, database, or system timeout defaults; the workflow job's existing
 25-minute ceiling remains the outer bound.
 
-## Protected exact-PR pre-merge rehearsal
+## Protected exact-PR rehearsal
 
 The same `runtime-backup.yml` workflow has a second, narrowly bounded manual
-mode for an Owner-approved open PR. The operator supplies both `pr_number` and
-`candidate_sha`, while dispatching the workflow from `main`. An unprotected
-preflight resolves the PR through GitHub and fails closed unless all of these
-facts match the current state: this repository, an open PR, base `main`, a
+mode for an Owner-approved open or merged PR. The operator supplies both
+`pr_number` and `candidate_sha`, while dispatching the workflow from `main`.
+An unprotected preflight resolves the PR through GitHub and fails closed unless
+all of these facts match the current state: this repository, base `main`, a
 same-repository head, the supplied SHA as the current head SHA, and a reachable
-candidate commit. Missing, stale, closed, foreign/fork, base-mismatched, or
-PR/SHA-mismatched input never starts a `runtime-backup` Environment job.
+candidate commit. An open PR retains the pre-merge mode. A merged PR is accepted
+only when GitHub records it as merged, its merge commit is a valid SHA, and that
+exact merge commit is an ancestor of the trusted `main` control revision.
+Missing, stale, unmerged-closed, foreign/fork, base-mismatched, PR/SHA-mismatched,
+or off-main merge input never starts a `runtime-backup` Environment job.
 
 The workflow definition and all executable control scripts are checked out
 from trusted `main`. Exact mode never fetches, archives, checks out, parses, or
@@ -76,8 +79,10 @@ scheduler and migration changes remain separate.
 Before artifact upload, a trusted main-side binder adds a sanitized
 `artifactIdentity` object to the manifest containing the PR number, exact
 candidate SHA, trusted workflow/main control SHA, workflow run ID, backup
-timestamp, and manifest version. It rewrites the existing checksum sidecar;
-the restore job verifies this identity before decrypting. Existing age
+timestamp, and manifest version. Merged-PR mode also binds the exact merge SHA;
+the LEO-560 recovery gate must verify the same merge SHA before using that
+artifact. The binder rewrites the existing checksum sidecar; the restore job
+verifies this identity before decrypting. Existing age
 encryption, checksum verification, PostgreSQL 17 network-disabled/tmpfs-only
 restore, manifest comparison, semantic validation, retention, and alert paths
 remain in force. Scheduled runs and legacy main-only manual dispatches use the

@@ -34,6 +34,17 @@ describe('backup restore rehearsal workflow contract', () => {
         expect(workflow).toContain("test \"$GITHUB_REF\" = 'refs/heads/main'")
     })
 
+    it('accepts only an exact merged PR whose merge identity is bound into the artifact', () => {
+        expect(workflow).toContain('fetch-depth: 0')
+        expect(workflow).toContain("candidate_merge_sha=\"$(jq -r '.merge_commit_sha // empty' \"$pr_json\")\"")
+        expect(workflow).toContain('git merge-base --is-ancestor "$candidate_merge_sha" "$control_sha"')
+        expect(workflow).toContain('merge_commit_reachable')
+        expect(workflow).toContain("candidate_mode='exact-merged-pr-head'")
+        expect(workflow).toContain('candidate_merge_sha: ${{ steps.mode.outputs.candidate_merge_sha }}')
+        expect(workflow).toContain('CANDIDATE_MERGE_SHA: ${{ needs.preflight.outputs.candidate_merge_sha }}')
+        expect(workflow).toContain('"$WORKFLOW_RUN_ID" "$CANDIDATE_MERGE_SHA"')
+    })
+
     it('requires the protected Environment for backup, restore, and alert jobs', () => {
         expect(workflow.match(/environment: runtime-backup/g)).toHaveLength(3)
         expect(workflow).toContain('pull-requests: read')

@@ -17,24 +17,29 @@ export function validateExactPrCandidate(input) {
   if (pr.repositoryFullName !== repository
     || pr.baseRepositoryFullName !== repository) return fail('repository_mismatch')
   if (String(pr.number) !== requestedPrNumber) return fail('pull_request_number_mismatch')
-  if (pr.state !== 'open') return fail('pull_request_not_open')
+  const isOpen = pr.state === 'open'
+  const isMerged = pr.state === 'closed' && pr.merged === true
+  if (!isOpen && !isMerged) return fail('pull_request_not_open')
   if (pr.baseRef !== 'main') return fail('base_branch_mismatch')
   if (pr.headRepositoryFullName !== repository) return fail('untrusted_candidate_repository')
   if (pr.headSha !== candidateSha) return fail('candidate_sha_is_not_current_pr_head')
   if (input.candidateReachable !== true) return fail('candidate_commit_not_reachable_from_pr_head')
+  if (isMerged && !SHA_PATTERN.test(pr.mergeCommitSha)) return fail('missing_or_invalid_merge_sha')
+  if (isMerged && input.mergeCommitReachable !== true) return fail('merge_commit_not_reachable_from_main')
 
   return {
     accepted: true,
-    mode: 'exact-pr-head',
+    mode: isMerged ? 'exact-merged-pr-head' : 'exact-pr-head',
     prNumber: Number(requestedPrNumber),
     candidateSha,
+    ...(isMerged ? { mergeSha: pr.mergeCommitSha } : {}),
   }
 }
 
 async function main() {
-  const [mode, prJsonPath, repository, requestedPrNumber, candidateSha, candidateReachable] = process.argv.slice(2)
+  const [mode, prJsonPath, repository, requestedPrNumber, candidateSha, candidateReachable, mergeCommitReachable] = process.argv.slice(2)
   if (mode !== 'validate' || !prJsonPath || !repository || !requestedPrNumber || !candidateSha) {
-    throw new Error('usage: node exact-pr-preflight.mjs validate <pr-json> <repository> <pr-number> <candidate-sha> <reachable>')
+    throw new Error('usage: node exact-pr-preflight.mjs validate <pr-json> <repository> <pr-number> <candidate-sha> <candidate-reachable> [merge-commit-reachable]')
   }
 
   const { readFile } = await import('node:fs/promises')
@@ -44,6 +49,7 @@ async function main() {
     requestedPrNumber,
     candidateSha,
     candidateReachable: candidateReachable === 'true',
+    mergeCommitReachable: mergeCommitReachable === 'true',
     pr: {
       repositoryFullName: raw.base?.repo?.full_name,
       baseRepositoryFullName: raw.base?.repo?.full_name,
@@ -52,6 +58,8 @@ async function main() {
       headRepositoryFullName: raw.head?.repo?.full_name,
       headSha: raw.head?.sha,
       state: raw.state,
+      merged: raw.merged,
+      mergeCommitSha: raw.merge_commit_sha,
     },
   })
   if (!result.accepted) {
