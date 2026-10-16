@@ -1,5 +1,7 @@
 -- LEO-540 sanitized runtime manifest. This query returns metadata only:
 -- schema definitions, row counts, and row hashes. It must never select row data.
+SET TIME ZONE 'UTC';
+
 WITH table_objects AS (
   SELECT COALESCE(jsonb_agg(
     jsonb_build_object(

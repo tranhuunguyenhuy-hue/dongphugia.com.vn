@@ -89,7 +89,7 @@ integration('LEO-540 runtime manifest database contract', () => {
       const utc = await runtimeManifest(client, 'UTC')
       const hoChiMinh = await runtimeManifest(client, 'Asia/Ho_Chi_Minh')
 
-      expect(categoryHash(hoChiMinh)).toBe(categoryHash(utc))
+      expect(categoryHash(hoChiMinh) === categoryHash(utc)).toBe(true)
     } finally {
       await client.end()
       await admin.query(`drop database ${databaseName} with (force)`)
