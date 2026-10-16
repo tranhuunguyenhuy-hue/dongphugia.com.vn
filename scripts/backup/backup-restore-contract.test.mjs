@@ -72,6 +72,7 @@ describe('LEO-540 backup and restore public contracts', () => {
     expect(restore).toContain('--tmpfs /var/lib/postgresql/data')
     expect(restore).toContain('--tmpfs /tmp')
     expect(restore).toContain('--tmpfs /var/run/postgresql')
+    expect(restore).toContain('categories=$categories tables=$tables')
     expect(restore).toContain("test \"$(docker inspect --format '{{.HostConfig.NetworkMode}}' \"$container_name\")\" = 'none'")
     expect(restore).not.toContain('DATABASE_URL')
   })
