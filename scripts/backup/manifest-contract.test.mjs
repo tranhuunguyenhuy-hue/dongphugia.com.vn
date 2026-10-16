@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   CANONICAL_V1_RESTORE_COUNT_TABLES,
+  compareRuntimeManifestDetails,
   compareRuntimeManifests,
   RESTORE_COUNT_TABLES,
   validateRuntimeManifest,
@@ -95,5 +96,18 @@ describe('LEO-540 runtime manifest contract', () => {
     const actual = valid()
     actual.data[0].rowCount = 2
     expect(compareRuntimeManifests(expected, actual)).toEqual(['data row counts changed'])
+  })
+
+  it('reports only sanitized table identities for data hash mismatches', () => {
+    const expected = valid()
+    const actual = valid()
+    expected.data[0].tableName = 'dpg_v1.categories'
+    actual.data[0].tableName = 'dpg_v1.categories'
+    actual.data[0].sha256 = 'b'.repeat(64)
+
+    expect(compareRuntimeManifestDetails(expected, actual)).toEqual({
+      violations: ['data row hashes changed'],
+      tables: ['dpg_v1.categories'],
+    })
   })
 })
