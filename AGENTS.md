@@ -28,18 +28,26 @@ project requires explicit PM approval for a recovery operation.
 
 ## Sources of truth
 
-- GitHub Issue: outcome, scope, acceptance, and durable execution status.
+- Linear: V02 roadmap, active Issue outcome/scope/acceptance, execution state,
+  blockers, and work coordination.
 - Pull Request: source diff, review, validation, and merge evidence.
 - Repository documentation: canonical policy, architecture, and procedures.
+- GitHub ADR/spec/evidence: durable technical decisions and proof.
 - Dated runtime/control-plane evidence: current state only when revalidated.
 - Chat: temporary context; record durable decisions in their canonical home.
+
+Do not create or maintain a parallel GitHub-Issue task ledger for V02 work.
+Historical GitHub Issues may be read as evidence, but they do not override the
+active Linear Issue. If a managed V02 task has no readable Linear Issue, stop
+before mutation and report the missing control-plane access instead of guessing.
 
 ## Read progressively
 
 Read, in order:
 
 1. This file.
-2. The current Issue or explicit request.
+2. The active Linear Issue, or an explicit request only for work not yet managed
+   by the V02 control plane.
 3. Only the applicable guide, ADR, runbook, or state snapshot.
 4. Relevant source and tests.
 
@@ -49,8 +57,7 @@ source conflict rather than choosing silently.
 ## Scope and ownership
 
 Before mutation, record the outcome, exact target, exclusions, risk-proportionate
-controls,
-acceptance evidence, rollback position, and mutation owner: `HELD`.
+controls, acceptance evidence, rollback position, and mutation owner: `HELD`.
 
 - Preserve unrelated worktrees, branches, and dirty files.
 - Do not reset, stash, clean, rebase, broadly reformat, delete, deploy, or
@@ -71,7 +78,7 @@ Use:
   release path.
 - Increase those controls when persistent state, authority, shared
   environments, difficult rollback, or material blast radius enters scope.
-- The complete routing, delivery, review, and release rules live in
+- The complete delivery, review, and release rules live in
   `docs/WORKFLOW-WITH-CODEX.md`.
 
 ## Gates
@@ -96,7 +103,8 @@ write-frozen, noindex candidate-validation context.
 
 - `docs/README.md`: documentation map and ownership.
 - `docs/AGENTS.md`: application, schema, test, UI, and media conventions.
-- `docs/WORKFLOW-WITH-CODEX.md`: routing, delivery, review, and release.
+- `docs/WORKFLOW-WITH-CODEX.md`: delivery, review, and release.
+- `docs/agents/issue-tracker.md`: Linear execution-tracker adapter.
 - `docs/ops/project-current-state.md`: dated runtime baseline and deferrals.
 - `docs/adr/`: durable technical and policy decisions.
 - `docs/deploy/`: environment-specific deployment runbooks and procedures.
@@ -107,4 +115,5 @@ write-frozen, noindex candidate-validation context.
 
 Report outcome and evidence; completed scope and exclusions; branch, commit,
 and PR where applicable; gates passed, blocked, or `UNKNOWN`; remaining risk;
-next authorized action; and mutation ownership: `HELD` or `RELEASED`.
+next authorized action; Linear Issue state/handoff when applicable; and mutation
+ownership: `HELD` or `RELEASED`.
