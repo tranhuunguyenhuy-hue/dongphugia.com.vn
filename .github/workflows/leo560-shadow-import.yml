@@ -50,6 +50,7 @@ jobs:
     outputs:
       source_sha: ${{ steps.gate.outputs.source_sha }}
       backup_control_sha: ${{ steps.gate.outputs.backup_control_sha }}
+      backup_merge_sha: ${{ steps.gate.outputs.backup_merge_sha }}
       artifact_name: ${{ steps.gate.outputs.artifact_name }}
       mode: ${{ steps.gate.outputs.mode }}
     steps:
@@ -123,6 +124,7 @@ jobs:
           {
             echo "source_sha=$APPROVED_SOURCE_SHA"
             echo "backup_control_sha=$backup_control_sha"
+            echo "backup_merge_sha=$pull_merge_sha"
             echo "artifact_name=$artifact_name"
             echo "mode=$mode"
           } >>"$GITHUB_OUTPUT"
@@ -146,12 +148,13 @@ jobs:
           BACKUP_PR_NUMBER: ${{ inputs.backup_pr_number }}
           BACKUP_CANDIDATE_SHA: ${{ inputs.backup_candidate_sha }}
           BACKUP_CONTROL_SHA: ${{ steps.gate.outputs.backup_control_sha }}
+          BACKUP_MERGE_SHA: ${{ steps.gate.outputs.backup_merge_sha }}
         shell: bash
         run: |
           set -euo pipefail
           node scripts/backup/exact-pr-artifact-identity.mjs verify \
             "$BACKUP_DIR" "$BACKUP_PR_NUMBER" "$BACKUP_CANDIDATE_SHA" \
-            "$BACKUP_CONTROL_SHA" "$BACKUP_RUN_ID"
+            "$BACKUP_CONTROL_SHA" "$BACKUP_RUN_ID" "$BACKUP_MERGE_SHA"
 
   shadow-import:
     name: Preflight or apply catalogue-only shadow import

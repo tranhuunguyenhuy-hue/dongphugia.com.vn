@@ -16,6 +16,11 @@ const identity = {
   workflowRunId: '12345',
 }
 
+const mergedIdentity = {
+  ...identity,
+  mergeSha: 'd'.repeat(40),
+}
+
 async function createBundle() {
   const directory = await mkdtemp(join(tmpdir(), 'leo552-artifact-'))
   const archive = join(directory, 'leo540-12345.dump.age')
@@ -58,6 +63,21 @@ describe('LEO-552 artifact identity', () => {
     await expect(verifyExactPrArtifactIdentity(directory, {
       ...identity,
       candidateSha: 'c'.repeat(40),
+    })).rejects.toThrow('artifact_identity_mismatch')
+  })
+
+  it('binds and verifies the exact merge commit for a merged PR backup', async () => {
+    const directory = await createBundle()
+    await bindExactPrArtifactIdentity(directory, mergedIdentity)
+
+    const manifest = JSON.parse(await readFile(join(directory, 'leo540-12345.manifest.json'), 'utf8'))
+    expect(manifest.artifactIdentity.mergeSha).toBe(mergedIdentity.mergeSha)
+    await expect(verifyExactPrArtifactIdentity(directory, mergedIdentity)).resolves.toMatchObject({
+      manifestVersion: 2,
+    })
+    await expect(verifyExactPrArtifactIdentity(directory, {
+      ...mergedIdentity,
+      mergeSha: 'e'.repeat(40),
     })).rejects.toThrow('artifact_identity_mismatch')
   })
 })
