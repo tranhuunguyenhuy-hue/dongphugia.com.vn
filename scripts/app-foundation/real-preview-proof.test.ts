@@ -43,7 +43,7 @@ describe('LEO-563 real Public Preview proof', () => {
         })
       }
       rootCount += 1
-      return response('<html><head><title>Dong Phu Gia Public Application</title><meta name="robots" content="noindex,nofollow"></head></html>', {
+      return response('<html><head><title>Đông Phú Gia - Vật liệu xây dựng cao cấp tại Đà Lạt</title><meta name="robots" content="noindex,nofollow"></head></html>', {
         'Content-Type': 'text/html',
         'Cache-Control': 'public, max-age=0, must-revalidate',
         'CDN-Cache-Control': 'public, max-age=300, must-revalidate',
@@ -97,7 +97,7 @@ describe('LEO-563 real Public Preview proof', () => {
         })
       }
       rootCount += 1
-      return response('<html><head><title>Dong Phu Gia Public Application</title><meta name="robots" content="noindex,nofollow"></head></html>', {
+      return response('<html><head><title>Đông Phú Gia - Vật liệu xây dựng cao cấp tại Đà Lạt</title><meta name="robots" content="noindex,nofollow"></head></html>', {
         'Content-Type': 'text/html',
         'Cache-Control': 'public, max-age=0, must-revalidate',
         'CDN-Cache-Control': 'public, max-age=300, must-revalidate',

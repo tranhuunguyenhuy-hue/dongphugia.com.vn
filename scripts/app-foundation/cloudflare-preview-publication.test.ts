@@ -9,6 +9,8 @@ import {
   validatePreviewConfig,
 } from './cloudflare-preview-publication.mjs'
 
+const currentPreviewAlias = `pr-${process.env.DPG_PREVIEW_PR_NUMBER || '138'}`
+
 function validConfig() {
   return {
     name: 'dongphugia-v1-public-preview',
@@ -147,7 +149,7 @@ describe('LEO-563 Cloudflare Preview publication gate', () => {
   it('accepts only the isolated Free-plan Preview contract', () => {
     expect(validatePreviewConfig(validConfig())).toMatchObject({
       workerName: 'dongphugia-v1-public-preview',
-      previewAlias: 'pr-138',
+      previewAlias: currentPreviewAlias,
       workersDev: false,
       previewUrls: true,
       routes: [],
@@ -177,12 +179,12 @@ describe('LEO-563 Cloudflare Preview publication gate', () => {
     const parsed = parseWranglerUpload(`
       Worker Version ID: 11111111-2222-3333-4444-555555555555
       Version Preview URL: https://abc123-dongphugia-v1-public-preview.example.workers.dev
-      Alias URL: https://pr-138-dongphugia-v1-public-preview.example.workers.dev
+      Alias URL: https://${currentPreviewAlias}-dongphugia-v1-public-preview.example.workers.dev
     `)
     expect(parsed).toEqual({
       workerVersionId: '11111111-2222-3333-4444-555555555555',
-      previewAlias: 'pr-138',
-      previewUrl: 'https://pr-138-dongphugia-v1-public-preview.example.workers.dev',
+      previewAlias: currentPreviewAlias,
+      previewUrl: `https://${currentPreviewAlias}-dongphugia-v1-public-preview.example.workers.dev`,
       versionPreviewUrl: 'https://abc123-dongphugia-v1-public-preview.example.workers.dev',
     })
   })
@@ -349,6 +351,42 @@ describe('LEO-563 Cloudflare Preview publication gate', () => {
         deploymentIdentityBasis: 'prior-version-evidence',
       },
     })
+  })
+
+  it('reuses self-consistent managed Preview evidence from a prior pull request', async () => {
+    const evidence = managedPublicationEvidence()
+    const priorPullRequest = 137
+    const priorPreviewAlias = `pr-${priorPullRequest}`
+    const managedPublication = validateManagedPublicationEvidence({
+      publicationPreflight: {
+        ...evidence.publicationPreflight,
+        pullRequest: priorPullRequest,
+        previewAlias: priorPreviewAlias,
+      },
+      uploadEvidence: {
+        ...evidence.uploadEvidence,
+        pullRequest: priorPullRequest,
+        previewAlias: priorPreviewAlias,
+        previewUrl: `https://${priorPreviewAlias}-dongphugia-v1-public-preview.example.workers.dev`,
+      },
+      resourceProof: evidence.resourceProof,
+      expectedWorkflowRunId: evidence.publicationPreflight.workflowRunId,
+    })
+
+    expect(managedPublication).toMatchObject({
+      pullRequest: priorPullRequest,
+      previewAlias: priorPreviewAlias,
+      workerVersionId: evidence.workerVersionId,
+    })
+    await expect(inspectRemoteResourceState({
+      accountId: 'synthetic-account',
+      apiToken: 'synthetic-token',
+      managedPublication,
+      fetchImpl: managedRemoteFetch({
+        workerVersionId: evidence.workerVersionId,
+        deploymentId: evidence.deploymentId,
+      }),
+    })).resolves.toMatchObject({ state: 'MANAGED_ACTIVE_PREVIEW' })
   })
 
   it('accepts the proven bootstrap plus immutable version history', async () => {

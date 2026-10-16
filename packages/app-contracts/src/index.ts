@@ -44,3 +44,61 @@ export const PUBLIC_PREVIEW_NOINDEX = {
 } as const
 
 export const ADMIN_PRIVATE_CACHE_CONTROL = 'private, no-store'
+
+export type PublicHomeBanner = Readonly<{
+  id: number
+  title: string | null
+  imageUrl: string
+  linkUrl: string | null
+  mobileImageUrl?: string | null
+  desktopImageUrl?: string | null
+  desktopLargeImageUrl?: string | null
+}>
+
+export type PublicHomeProduct = Readonly<{
+  id: number
+  name: string
+  slug: string
+  sku: string
+  price: number | null
+  image_main_url: string | null
+  [key: string]: unknown
+}>
+
+export type PublicHomeCategory = Readonly<{
+  id: string
+  label: string
+  basePath: string
+  products: readonly PublicHomeProduct[]
+  totalCount: number
+  availableBrands?: readonly Readonly<{ name: string; slug: string }>[]
+  availableSubcategories?: readonly Readonly<{ name: string; slug: string }>[]
+}>
+
+export type PublicHomePost = Readonly<{
+  id: number
+  title: string
+  slug: string
+  excerpt: string | null
+  thumbnailUrl: string | null
+  publishedAt: string
+  category: Readonly<{ name: string; slug: string }> | null
+}>
+
+export type PublicHomePageData = Readonly<{
+  banners: readonly PublicHomeBanner[]
+  categories: readonly PublicHomeCategory[]
+  posts: readonly PublicHomePost[]
+}>
+
+export type PublicContactPayload = Readonly<{
+  name: string
+  phone: string
+  email?: string
+  message: string
+}>
+
+export type PublicContactResult = Readonly<{
+  success: boolean
+  error?: string
+}>

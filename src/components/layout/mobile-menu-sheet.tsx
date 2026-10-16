@@ -6,7 +6,7 @@ import Image from 'next/image'
 import { Phone, ChevronDown, ChevronRight, Menu } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet'
-import { getMegaMenuData } from '@/app/actions/mega-menu-actions'
+import { getMegaMenuData } from '@dpg/public-interactions'
 import type { Category, MenuData } from '@/components/home/mega-menu'
 import {
     NAV_PRODUCT_CATEGORIES as PRODUCT_CATEGORIES,
