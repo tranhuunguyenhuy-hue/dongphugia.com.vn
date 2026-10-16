@@ -68,9 +68,10 @@ start_snapshot_keeper() {
   snapshot_keeper_pid="$!"
   snapshot_keeper_started='true'
 
-  if ! printf '\\o %s\n%s\n%s\n\\o\n' \
+  if ! printf '\\o %s\n%s\n%s\n%s\n\\o\n' \
     "$snapshot_id_file" \
     'BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY;' \
+    "SET LOCAL idle_in_transaction_session_timeout = '20min';" \
     'SELECT pg_export_snapshot();' \
     >&9; then
     # shellcheck disable=SC2034

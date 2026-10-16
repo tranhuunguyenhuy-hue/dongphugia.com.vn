@@ -13,6 +13,15 @@ const integration = databaseUrl && postgresImage ? describe : describe.skip
 const snapshotPattern = /[0-9A-Fa-f]+-[0-9A-Fa-f]+-[0-9]+/
 const repoRoot = process.cwd()
 const harness = `${repoRoot}/scripts/backup/exported-snapshot.integration-harness.sh`
+const timeoutRole = 'snapshot_timeout_login'
+const timeoutDatabaseUrl = databaseUrl
+  ? (() => {
+      const url = new URL(databaseUrl)
+      url.username = timeoutRole
+      url.password = ''
+      return url.toString()
+    })()
+  : undefined
 
 function waitForFile(path, timeoutMs = 20_000) {
   return new Promise((resolve, reject) => {
@@ -26,7 +35,7 @@ function waitForFile(path, timeoutMs = 20_000) {
   })
 }
 
-function runHarness(mode) {
+function runHarness(mode, snapshotDatabaseUrl = databaseUrl) {
   const id = randomUUID()
   const workspace = `/dev/shm/leo540-snapshot-test-${id}`
   const stateDir = `/dev/shm/leo540-snapshot-state-${id}`
@@ -43,7 +52,7 @@ function runHarness(mode) {
       ...process.env,
       PSQL_BIN: psqlWrapper,
       POSTGRES_IMAGE: postgresImage,
-      SNAPSHOT_TEST_DATABASE_URL: databaseUrl,
+      SNAPSHOT_TEST_DATABASE_URL: snapshotDatabaseUrl,
       SNAPSHOT_TEST_WORKSPACE: workspace,
       SNAPSHOT_TEST_PID_FILE: pidFile,
       SNAPSHOT_TEST_APP_FILE: appFile,
@@ -80,6 +89,10 @@ integration('PostgreSQL exported snapshot lifecycle', () => {
     await client.query('create schema snapshot_contract_test')
     await client.query('create table snapshot_contract_test.items (id integer primary key, label text not null)')
     await client.query("insert into snapshot_contract_test.items values (1, 'before-one'), (2, 'before-two')")
+    await client.query(`create role ${timeoutRole} login`)
+    await client.query(`alter role ${timeoutRole} set idle_in_transaction_session_timeout = '1s'`)
+    await client.query(`grant usage on schema snapshot_contract_test to ${timeoutRole}`)
+    await client.query(`grant select on snapshot_contract_test.items to ${timeoutRole}`)
     await client.end()
   }, 30_000)
 
@@ -87,6 +100,8 @@ integration('PostgreSQL exported snapshot lifecycle', () => {
     const client = new Client({ connectionString: databaseUrl })
     await client.connect()
     await client.query('drop schema if exists snapshot_contract_test cascade')
+    await client.query(`drop owned by ${timeoutRole}`)
+    await client.query(`drop role ${timeoutRole}`)
     await client.end()
   })
 
@@ -130,6 +145,27 @@ integration('PostgreSQL exported snapshot lifecycle', () => {
     await assertKeeperGone(run)
     rmSync(run.stateDir, { recursive: true, force: true })
   }, 60_000)
+
+  it('keeps the snapshot alive past the login role idle timeout without changing that role', async () => {
+    const run = runHarness('hold', timeoutDatabaseUrl)
+    await waitForFile(`${run.workspace}/ready`)
+    await new Promise(resolve => setTimeout(resolve, 1_500))
+    writeFileSync(`${run.workspace}/release`, '')
+
+    const result = await run.completed
+    expect(result.code).toBe(0)
+    expect(result.stdout).toContain('SNAPSHOT_INTEGRATION status=PASS stage=complete')
+    expect(`${result.stdout}${result.stderr}`).not.toMatch(snapshotPattern)
+
+    const client = new Client({ connectionString: databaseUrl })
+    await client.connect()
+    const roleSettings = await client.query('select rolconfig from pg_roles where rolname = $1', [timeoutRole])
+    await client.end()
+    expect(roleSettings.rows[0].rolconfig).toContain('idle_in_transaction_session_timeout=1s')
+
+    await assertKeeperGone(run)
+    rmSync(run.stateDir, { recursive: true, force: true })
+  }, 30_000)
 
   for (const mode of ['manifest-failure', 'dump-failure']) {
     it(`rolls back, terminates, and redacts the keeper on ${mode}`, async () => {
