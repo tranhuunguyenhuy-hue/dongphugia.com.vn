@@ -96,4 +96,34 @@ integration('LEO-540 runtime manifest database contract', () => {
       await admin.end()
     }
   })
+
+  it('produces the same row hash in databases with different ICU locales', async () => {
+    const suffix = `${process.pid}_${Date.now()}`
+    const germanDatabase = `runtime_manifest_de_${suffix}`
+    const swedishDatabase = `runtime_manifest_sv_${suffix}`
+    const admin = new Client({ connectionString: databaseUrl })
+    await admin.connect()
+    await admin.query(`create database ${germanDatabase} template template0 locale_provider icu icu_locale 'de-DE'`)
+    await admin.query(`create database ${swedishDatabase} template template0 locale_provider icu icu_locale 'sv-SE'`)
+
+    const german = new Client({ connectionString: databaseConnection(germanDatabase) })
+    const swedish = new Client({ connectionString: databaseConnection(swedishDatabase) })
+    try {
+      await german.connect()
+      await swedish.connect()
+      await bootstrapRuntimeManifestDatabase(german)
+      await bootstrapRuntimeManifestDatabase(swedish)
+
+      const germanManifest = await runtimeManifest(german, 'UTC')
+      const swedishManifest = await runtimeManifest(swedish, 'UTC')
+
+      expect(categoryHash(germanManifest) === categoryHash(swedishManifest)).toBe(true)
+    } finally {
+      await german.end()
+      await swedish.end()
+      await admin.query(`drop database ${germanDatabase} with (force)`)
+      await admin.query(`drop database ${swedishDatabase} with (force)`)
+      await admin.end()
+    }
+  })
 })
