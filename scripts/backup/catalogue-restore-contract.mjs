@@ -32,6 +32,36 @@ export const CATALOGUE_TABLES = [
   'subcategories',
 ]
 
+export const CATALOGUE_RESTORE_ORDER = [
+  'brands',
+  'catalog_taxons',
+  'categories',
+  'colors',
+  'materials',
+  'origins',
+  'product_variant_groups',
+  'subcategories',
+  'product_types',
+  'product_sub_types',
+  'spec_definitions',
+  'spec_options',
+  'products',
+  'external_taxonomy_mappings',
+  'filter_definitions',
+  'product_attribute_values',
+  'product_descriptions',
+  'product_documents',
+  'product_features',
+  'product_feature_values',
+  'product_images',
+  'product_package_items',
+  'product_relationships',
+  'product_secondary_subcategories',
+  'product_source_mappings',
+  'product_spec_values',
+  'product_taxon_assignments',
+]
+
 const EXPECTED_TARGET = {
   projectName: 'dongphugia-runtime',
   region: 'ap-southeast-1',
@@ -70,7 +100,7 @@ function validDataEntry(entry) {
 }
 
 export function catalogueTableArguments() {
-  return CATALOGUE_TABLES.flatMap((table) => ['--table', `dpg_app.${table}`])
+  return CATALOGUE_RESTORE_ORDER.flatMap((table) => ['--table', `dpg_app.${table}`])
 }
 
 function tableHashSelect(table) {

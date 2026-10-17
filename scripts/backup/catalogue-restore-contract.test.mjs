@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   CATALOGUE_TABLES,
+  CATALOGUE_RESTORE_ORDER,
   buildCatalogueSnapshotSql,
   buildCatalogueValidationSql,
   catalogueTableArguments,
@@ -37,6 +38,16 @@ const expectedTables = [
   'spec_definitions',
   'spec_options',
   'subcategories',
+]
+
+const expectedRestoreOrder = [
+  'brands', 'catalog_taxons', 'categories', 'colors', 'materials', 'origins',
+  'product_variant_groups', 'subcategories', 'product_types', 'product_sub_types',
+  'spec_definitions', 'spec_options', 'products', 'external_taxonomy_mappings',
+  'filter_definitions', 'product_attribute_values', 'product_descriptions',
+  'product_documents', 'product_features', 'product_feature_values', 'product_images',
+  'product_package_items', 'product_relationships', 'product_secondary_subcategories',
+  'product_source_mappings', 'product_spec_values', 'product_taxon_assignments',
 ]
 
 const hash = (character) => character.repeat(64)
@@ -93,8 +104,9 @@ function catalogueManifest(overrides = {}) {
 describe('catalogue-only restore contract', () => {
   it('pins the complete product catalogue allowlist and no sensitive surface', () => {
     expect(CATALOGUE_TABLES).toEqual(expectedTables)
+    expect([...CATALOGUE_RESTORE_ORDER].sort()).toEqual(expectedTables)
     expect(catalogueTableArguments()).toEqual(
-      expectedTables.flatMap((table) => ['--table', `dpg_app.${table}`]),
+      expectedRestoreOrder.flatMap((table) => ['--table', `dpg_app.${table}`]),
     )
     expect(CATALOGUE_TABLES).not.toEqual(expect.arrayContaining([
       'admin_users', 'admin_sessions', 'customers', 'orders', 'order_items',

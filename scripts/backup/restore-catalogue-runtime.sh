@@ -144,9 +144,11 @@ SQL
 
   cat "$plain_dump" | docker exec -i "$container_name" \
     pg_restore -U postgres -d target --schema-only --exit-on-error --no-owner --no-privileges >/dev/null
-  cat "$plain_dump" | docker exec -i "$container_name" \
-    pg_restore --data-only --no-owner --no-privileges --exit-on-error \
-      "${restore_table_args[@]}" -U postgres -d target >/dev/null
+  for table_arg in "${restore_table_args[@]}"; do
+    cat "$plain_dump" | docker exec -i "$container_name" \
+      pg_restore --data-only --no-owner --no-privileges --exit-on-error \
+        "$table_arg" -U postgres -d target >/dev/null
+  done
   node "$contract" snapshot-sql | docker exec -i "$container_name" \
     psql -U postgres -d target -X -q -A -t -v ON_ERROR_STOP=1 \
     >"$tmp_dir/catalogue-actual.json"
@@ -172,10 +174,13 @@ validation_sql="$tmp_dir/catalogue-validation.sql"
 sequence_sql="$tmp_dir/catalogue-sequences.sql"
 driver_sql="$tmp_dir/catalogue-driver.sql"
 
-docker run --rm --network none --read-only \
-  --volume "$tmp_dir:/work:rw" "$postgres_image" \
-  pg_restore --data-only --no-owner --no-privileges --exit-on-error \
-    "${restore_table_args[@]}" --file /work/catalogue-restore.sql /work/runtime.dump
+: >"$restore_sql"
+for table_arg in "${restore_table_args[@]}"; do
+  docker run --rm --network none --read-only \
+    --volume "$tmp_dir:/work:rw" "$postgres_image" \
+    pg_restore --data-only --no-owner --no-privileges --exit-on-error \
+      "$table_arg" --file - /work/runtime.dump >>"$restore_sql"
+done
 node "$contract" validation-sql "$EXPECTED_CATALOGUE_MANIFEST" >"$validation_sql"
 node "$contract" sequence-sql >"$sequence_sql"
 
