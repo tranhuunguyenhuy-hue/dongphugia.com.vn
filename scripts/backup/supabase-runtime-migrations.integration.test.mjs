@@ -3,7 +3,11 @@ import { readFile } from 'node:fs/promises'
 import pg from 'pg'
 import { describe, expect, it } from 'vitest'
 
-import { ADOPTED_CHECKPOINT_MIGRATIONS, executeRuntimeMigrations } from './supabase-runtime-migrations.mjs'
+import {
+  ADOPTED_CHECKPOINT_MIGRATIONS,
+  executeRuntimeMigrations,
+  stripOuterTransaction,
+} from './supabase-runtime-migrations.mjs'
 
 const { Client } = pg
 const postgresImage = process.env.POSTGRES_SNAPSHOT_INTEGRATION_IMAGE
@@ -57,6 +61,12 @@ describe('Supabase runtime migration adoption integration', () => {
         const behavioralAcceptance = (await readFile(
           'supabase/tests/supabase_runtime_adoption_behavior.sql', 'utf8',
         )).replace(/^\\set[^\n]*\n/, '')
+        const rlsAcceptance = (await readFile(
+          'supabase/tests/leo560_preview_rls_hardening.sql', 'utf8',
+        )).replace(/^\\set[^\n]*\n/, '')
+        const hardeningMigration = stripOuterTransaction(await readFile(
+          'supabase/migrations/20261016090000_leo560_preview_rls_hardening.sql', 'utf8',
+        ))
 
         const attestCheckpoint = async () => {
           const attestor = new Client({ connectionString })
@@ -85,7 +95,19 @@ describe('Supabase runtime migration adoption integration', () => {
         await executeRuntimeMigrations(client, 'apply', attestCheckpoint)
 
         const ledger = await client.query('select count(*)::integer as count from dpg_control.runtime_migration_ledger')
-        expect(ledger.rows[0]?.count).toBe(22)
+        expect(ledger.rows[0]?.count).toBe(23)
+        await client.query(rlsAcceptance)
+
+        await client.query('begin')
+        await client.query('savepoint before_hardening_precondition_probe')
+        await client.query('drop policy leo540_backup_select on dpg_app.admin_sessions')
+        await expect(client.query(hardeningMigration))
+          .rejects.toThrow(/LEO560_RLS_BACKUP_POLICY_PRECONDITION_FAILED:admin_sessions/)
+        await client.query('rollback to savepoint before_hardening_precondition_probe')
+        await client.query('release savepoint before_hardening_precondition_probe')
+        await client.query('rollback')
+
+        await client.query(rlsAcceptance)
         await executeRuntimeMigrations(client, 'status')
       } finally {
         await client?.end().catch(() => undefined)

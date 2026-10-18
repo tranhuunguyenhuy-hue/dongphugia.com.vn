@@ -24,9 +24,13 @@ restored in full to the remote project.
 
 Apply the repository migrations in filename order. The inserted
 `20260828183000_leo542_backup_role_prerequisite.sql` creates only the
-passwordless `dpg_backup` capability needed by later LEO-542 grants. It refuses
-an inexact target or any pre-existing role with stronger attributes. Creating
-`dpg_backup_login` or any credential is outside this migration.
+passwordless `dpg_backup` capability needed by later grants. The ordered
+`20260828183200_leo540_backup_coverage_prerequisite.sql` then grants only
+schema usage and SELECT on the nine tables required by the existing Preview
+RLS-hardening preconditions, with one `leo540_backup_select` policy per table.
+It refuses an inexact target, role drift, or any pre-existing privilege/policy
+on those tables. It grants no access to other tables or application roles.
+Creating `dpg_backup_login` or any credential is outside these migrations.
 
 The remote restore preflight requires the complete current V1 schema, exact
 target contract, PostgreSQL 17, the four restricted capability roles, empty
@@ -93,9 +97,12 @@ attestation. The rollback-only synthetic owner-isolation probe runs only inside
 
 After that attestation, the runner stores exact checked-out migration hashes in
 a private forced-RLS ledger and applies each remaining migration once in
-repository order. The final gate requires the complete 22-entry ledger plus
+repository order. The final gate requires the complete 23-entry ledger plus
 schema, forced-RLS, read-only API acceptance, and (for `migrate`) rollback-only
-behavioral acceptance before catalogue preflight can pass.
+behavioral acceptance before catalogue preflight can pass. The PostgreSQL 17
+integration replay also runs the LEO-560 read-only acceptance and verifies that
+its existing `admin_sessions` backup-policy precondition still fails closed
+when deliberately removed inside a rolled-back test transaction.
 
 After rehearsal, default remote preflight is read-only. When operation is
 `restore`, the generated data-only restore, sequence repair, deterministic

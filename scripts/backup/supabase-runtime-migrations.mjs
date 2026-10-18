@@ -21,6 +21,7 @@ export const ADOPTED_CHECKPOINT_MIGRATIONS = [
 export const EXPECTED_RUNTIME_MIGRATIONS = [
   ...ADOPTED_CHECKPOINT_MIGRATIONS,
   '20260828183000_leo542_backup_role_prerequisite.sql',
+  '20260828183200_leo540_backup_coverage_prerequisite.sql',
   '20260828183714_leo542_backup_coverage_prerequisite.sql',
   '20260828184629_leo542_backup_sequence_coverage_prerequisite.sql',
   '20260828185021_leo542_admin_publishing_runtime.sql',
