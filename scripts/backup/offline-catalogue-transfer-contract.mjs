@@ -30,6 +30,12 @@ const ARCHIVE_MEMBERS = Object.freeze([
   `${PINNED_ARTIFACT.backupId}.checksums.sha256`,
 ]);
 
+const ACQUISITION_PR = Object.freeze({
+  number: 161,
+  headRef: "codex/offline-catalogue-rehearsal",
+  repository: "tranhuunguyenhuy-hue/dongphugia.com.vn",
+});
+
 const ATTESTATION_FORMAT = "dpg-offline-egress-attestation-v1";
 const REQUIRED_DENY_ALL_CONTROLS = Object.freeze({
   ipv4Egress: "deny-all",
@@ -119,11 +125,75 @@ export function validateArtifactMetadata(run, artifact, now = new Date()) {
   };
 }
 
+export function validateReviewedPrSource(pr, trustedMainSha, sourceSha) {
+  const repositoryId = PINNED_ARTIFACT.repositoryId;
+  const canonicalRepo = ACQUISITION_PR.repository;
+  if (
+    !/^[a-f0-9]{40}$/.test(trustedMainSha ?? "") ||
+    !/^[a-f0-9]{40}$/.test(sourceSha ?? "") ||
+    !pr ||
+    pr.number !== ACQUISITION_PR.number ||
+    pr.state !== "open" ||
+    pr.draft !== false ||
+    pr.merged_at !== null ||
+    pr.head?.sha !== sourceSha ||
+    pr.head?.ref !== ACQUISITION_PR.headRef ||
+    pr.head?.repo?.id !== repositoryId ||
+    pr.head?.repo?.full_name !== canonicalRepo ||
+    pr.base?.sha !== trustedMainSha ||
+    pr.base?.ref !== "main" ||
+    pr.base?.repo?.id !== repositoryId ||
+    pr.base?.repo?.full_name !== canonicalRepo
+  ) {
+    fail("acquisition_pr_identity_mismatch");
+  }
+  return {
+    status: "verified",
+    mode: "reviewed-pr",
+    sourceSha,
+    trustedMainSha,
+    pullRequest: ACQUISITION_PR.number,
+  };
+}
+
+function validatedAcquisitionSource(source, trustedMainSha) {
+  const expected = source ?? {
+    status: "verified",
+    mode: "main",
+    sourceSha: trustedMainSha,
+    trustedMainSha,
+    pullRequest: null,
+  };
+  if (
+    !expected ||
+    typeof expected !== "object" ||
+    Array.isArray(expected) ||
+    canonicalJson(Object.keys(expected).sort()) !==
+      canonicalJson(
+        ["status", "mode", "sourceSha", "trustedMainSha", "pullRequest"].sort(),
+      ) ||
+    expected.status !== "verified" ||
+    expected.trustedMainSha !== trustedMainSha ||
+    !/^[a-f0-9]{40}$/.test(expected.sourceSha ?? "") ||
+    !(
+      (expected.mode === "main" &&
+        expected.sourceSha === trustedMainSha &&
+        expected.pullRequest === null) ||
+      (expected.mode === "reviewed-pr" &&
+        expected.pullRequest === ACQUISITION_PR.number)
+    )
+  ) {
+    fail("acquisition_source_identity_mismatch");
+  }
+  return expected;
+}
+
 export function createTransferProvenance(
   metadata,
   archiveSha256,
   capturedAt,
   trustedMainSha,
+  source,
 ) {
   if (
     !metadata ||
@@ -142,8 +212,9 @@ export function createTransferProvenance(
   const capturedTime = Date.parse(capturedAt);
   if (!Number.isFinite(capturedTime) || capturedTime > Date.now())
     fail("backup_acquisition_time_invalid");
+  const acquisition = validatedAcquisitionSource(source, trustedMainSha);
   return {
-    format: "dpg-encrypted-artifact-transfer-v1",
+    format: "dpg-encrypted-artifact-transfer-v2",
     repository: "tranhuunguyenhuy-hue/dongphugia.com.vn",
     runId: metadata.runId,
     artifactId: metadata.artifactId,
@@ -152,6 +223,9 @@ export function createTransferProvenance(
     artifactSizeBytes: metadata.artifactSizeBytes,
     archiveSha256,
     trustedMainSha,
+    acquisitionSourceMode: acquisition.mode,
+    acquisitionSourceSha: acquisition.sourceSha,
+    acquisitionPullRequest: acquisition.pullRequest,
     expiresAt: metadata.expiresAt,
     capturedAt,
     sourceControlSha: metadata.sourceControlSha,
@@ -166,7 +240,9 @@ export function validateTransferProvenance(
   archiveSha256,
   trustedMainSha,
   now = new Date(),
+  source,
 ) {
+  const acquisition = validatedAcquisitionSource(source, trustedMainSha);
   const expectedFields = [
     "format",
     "repository",
@@ -177,6 +253,9 @@ export function validateTransferProvenance(
     "artifactSizeBytes",
     "archiveSha256",
     "trustedMainSha",
+    "acquisitionSourceMode",
+    "acquisitionSourceSha",
+    "acquisitionPullRequest",
     "expiresAt",
     "capturedAt",
     "sourceControlSha",
@@ -190,7 +269,7 @@ export function validateTransferProvenance(
     Array.isArray(provenance) ||
     canonicalJson(Object.keys(provenance).sort()) !==
       canonicalJson(expectedFields) ||
-    provenance.format !== "dpg-encrypted-artifact-transfer-v1" ||
+    provenance.format !== "dpg-encrypted-artifact-transfer-v2" ||
     provenance.repository !== "tranhuunguyenhuy-hue/dongphugia.com.vn" ||
     provenance.runId !== PINNED_ARTIFACT.runId ||
     provenance.artifactId !== PINNED_ARTIFACT.artifactId ||
@@ -200,6 +279,9 @@ export function validateTransferProvenance(
     provenance.archiveSha256 !==
       PINNED_ARTIFACT.artifactDigest.slice("sha256:".length) ||
     provenance.trustedMainSha !== trustedMainSha ||
+    provenance.acquisitionSourceMode !== acquisition.mode ||
+    provenance.acquisitionSourceSha !== acquisition.sourceSha ||
+    provenance.acquisitionPullRequest !== acquisition.pullRequest ||
     !/^[a-f0-9]{40}$/.test(trustedMainSha ?? "") ||
     archiveSha256 !== PINNED_ARTIFACT.artifactDigest.slice("sha256:".length) ||
     provenance.expiresAt !== PINNED_ARTIFACT.expiresAt ||
@@ -471,6 +553,13 @@ async function main() {
     process.stdout.write(`${JSON.stringify(result)}\n`);
     return;
   }
+  if (mode === "validate-acquisition-pr") {
+    const { readFile } = await import("node:fs/promises");
+    const pr = JSON.parse(await readFile(args[0], "utf8"));
+    const result = validateReviewedPrSource(pr, args[1], args[2]);
+    process.stdout.write(`${JSON.stringify(result)}\n`);
+    return;
+  }
   if (mode === "validate-archive-members") {
     const { readFile } = await import("node:fs/promises");
     const members = (await readFile(args[0], "utf8"))
@@ -495,11 +584,15 @@ async function main() {
   if (mode === "create-provenance") {
     const { readFile, writeFile } = await import("node:fs/promises");
     const metadata = JSON.parse(await readFile(args[0], "utf8"));
+    const source = args[5]
+      ? JSON.parse(await readFile(args[5], "utf8"))
+      : undefined;
     const result = createTransferProvenance(
       metadata,
       args[1],
       args[2],
       args[3],
+      source,
     );
     await writeFile(args[4], `${JSON.stringify(result, null, 2)}\n`, {
       mode: 0o600,

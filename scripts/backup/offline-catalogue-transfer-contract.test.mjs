@@ -8,6 +8,7 @@ import {
   validateArtifactMetadata,
   validateArtifactArchiveMembers,
   validateArtifactPackage,
+  validateReviewedPrSource,
   validateTmpfsCapacity,
   validateTransferProvenance,
   verifySignedOfflineAttestation,
@@ -49,6 +50,29 @@ const archiveMembers = [
   "leo540-38915575745.checksums.sha256",
 ];
 
+const reviewedPr = {
+  number: 161,
+  state: "open",
+  draft: false,
+  merged_at: null,
+  head: {
+    sha: "8".repeat(40),
+    ref: "codex/offline-catalogue-rehearsal",
+    repo: {
+      id: 1157762683,
+      full_name: "tranhuunguyenhuy-hue/dongphugia.com.vn",
+    },
+  },
+  base: {
+    sha: "b".repeat(40),
+    ref: "main",
+    repo: {
+      id: 1157762683,
+      full_name: "tranhuunguyenhuy-hue/dongphugia.com.vn",
+    },
+  },
+};
+
 function signedEvidence(overrides = {}) {
   const { publicKey, privateKey } = generateKeyPairSync("ed25519");
   const attestation = {
@@ -89,6 +113,34 @@ function signedEvidence(overrides = {}) {
 }
 
 describe("offline catalogue transfer contract", () => {
+  it("accepts only the reviewed immutable PR source on the verified live canonical main", () => {
+    expect(
+      validateReviewedPrSource(reviewedPr, "b".repeat(40), "8".repeat(40)),
+    ).toEqual({
+      status: "verified",
+      mode: "reviewed-pr",
+      sourceSha: "8".repeat(40),
+      trustedMainSha: "b".repeat(40),
+      pullRequest: 161,
+    });
+    for (const changed of [
+      { ...reviewedPr, number: 162 },
+      { ...reviewedPr, state: "closed" },
+      { ...reviewedPr, draft: true },
+      { ...reviewedPr, head: { ...reviewedPr.head, sha: "9".repeat(40) } },
+      {
+        ...reviewedPr,
+        head: { ...reviewedPr.head, repo: { ...reviewedPr.head.repo, id: 1 } },
+      },
+      { ...reviewedPr, base: { ...reviewedPr.base, sha: "c".repeat(40) } },
+      { ...reviewedPr, base: { ...reviewedPr.base, ref: "other" } },
+    ]) {
+      expect(() =>
+        validateReviewedPrSource(changed, "b".repeat(40), "8".repeat(40)),
+      ).toThrow(/acquisition_pr_identity_mismatch/);
+    }
+  });
+
   it("accepts only the exact still-retained successful main backup run and artifact metadata", () => {
     expect(
       validateArtifactMetadata(
@@ -291,6 +343,49 @@ describe("offline catalogue transfer contract", () => {
         new Date("2026-10-30T14:27:48Z"),
       ),
     ).toThrow(/expired/);
+  });
+
+  it("binds reviewed PR acquisition to both the live main and exact PR source commit", () => {
+    const metadata = validateArtifactMetadata(
+      validRun,
+      validArtifact,
+      new Date("2026-10-18T10:00:00Z"),
+    );
+    const source = validateReviewedPrSource(
+      reviewedPr,
+      "b".repeat(40),
+      "8".repeat(40),
+    );
+    const provenance = createTransferProvenance(
+      metadata,
+      PINNED_ARTIFACT.artifactDigest.slice("sha256:".length),
+      "2026-10-18T10:00:00Z",
+      "b".repeat(40),
+      source,
+    );
+    expect(provenance).toMatchObject({
+      trustedMainSha: "b".repeat(40),
+      acquisitionSourceMode: "reviewed-pr",
+      acquisitionSourceSha: "8".repeat(40),
+      acquisitionPullRequest: 161,
+    });
+    expect(
+      validateTransferProvenance(
+        provenance,
+        PINNED_ARTIFACT.artifactDigest.slice("sha256:".length),
+        "b".repeat(40),
+        new Date("2026-10-18T10:30:00Z"),
+        source,
+      ),
+    ).toMatchObject({ status: "verified" });
+    expect(() =>
+      validateTransferProvenance(
+        provenance,
+        PINNED_ARTIFACT.artifactDigest.slice("sha256:".length),
+        "b".repeat(40),
+        new Date("2026-10-18T10:30:00Z"),
+      ),
+    ).toThrow(/provenance_mismatch/);
   });
 
   it("emits only sanitized 27-table names and row counts from rehearsal evidence", () => {

@@ -8,11 +8,15 @@ acquisition on a trusted operator machine from a later fully offline restore
 on a disposable Linux host. There is no GitHub Actions workflow for the
 secret-bearing replay.
 
-The source change does **not** authorize either phase to run. Current approval
-is limited to editing this PR and running source/static tests. Artifact download,
-copy/preservation, decryption, age-key delivery, runner/host provisioning,
-Supabase access, merge, or production changes each remain prohibited until the
-Owner approves that exact phase separately.
+Issue #160 comment `6252739416` approved ciphertext-only Phase A, subject to
+a clean canonical checkout pinned to verified live `main`, read-only artifact
+access, and protected durable storage. Those conditions were not met at the
+last preflight: this acquisition source still lived only in open PR #161.
+Comment `6252789373` authorizes **source-only** work on a possible reviewed-PR
+bootstrap. It does not authorize executing that new path. The Owner must
+separately approve the exact reviewed PR commit and invocation before using
+it. Phase B, age-key delivery, merge, infrastructure provisioning, Supabase,
+Cloudflare, DNS, and Production remain separate gates.
 
 The GitHub artifact is pinned to run `38915575745`, artifact ID `12052107648`,
 package digest
@@ -27,7 +31,7 @@ inspected by this change.
 ## Trust-domain diagram
 
 ```text
-Phase A: trusted main checkout + read-only GitHub access
+Phase A: independently verified main or reviewed PR source + read-only GitHub access
   exact run/artifact metadata -> exact ZIP digest -> encrypted-only package
              |                         no age identity
              +---- Owner-controlled physical/offline handoff ----+
@@ -42,12 +46,24 @@ Phase B: disposable Linux host, network disconnected             v
 
 The package digest is hard-pinned in the source contract and is checked again
 offline. The provenance sidecar binds that digest to the exact GitHub run,
-artifact, source revision, and acquisition checkout SHA. The Owner manually
+artifact, verified live-main SHA, and acquisition source mode/SHA. The Owner manually
 controls the transfer medium and verifies the displayed digest through the
 authenticated Phase A session before accepting the package. Phase B never
 calls GitHub or any other remote endpoint.
 
 ## Phase A — GitHub-connected ciphertext acquisition
+
+There are two possible source roots. Merging exact PR #161 through the normal
+review/CI/Owner gate puts the reviewed code on canonical `main`; the original
+main-pinned bootstrap below then applies. The alternative is an immutable PR
+commit independently reviewed and approved by the Owner, with its acquisition
+script SHA-256 provided through a separate trusted channel. That alternative
+can avoid waiting for a merge, but its unmerged code carries a distinct trust
+risk; the existing Phase A approval does **not** authorize its execution.
+Neither path changes the artifact, credential, encrypted-storage, or
+provenance gates.
+
+### Canonical-main bootstrap
 
 The acquisition script cannot establish its own source integrity before it
 starts, so never provide it a token from an arbitrary checkout. First perform a
@@ -72,11 +88,12 @@ test "$(git -C trusted-acquisition rev-parse HEAD)" = "$trusted_sha"
 test -z "$(git -C trusted-acquisition status --porcelain --untracked-files=all)"
 ```
 
-Run manually on that trusted operator workstation after a separate Owner
-approval for artifact acquisition and preservation. Use a dedicated read-only
-GitHub token scoped only to the repository Actions metadata/artifact read
-operations needed below; do not use a write-capable token. Supply it only to
-this command (do not export it in the shell). The script immediately removes
+Run manually on that trusted operator workstation after all applicable Owner
+approvals. Use a dedicated fine-grained token scoped to this repository with
+**Contents: read** (for the commit and PR metadata/private clone) and
+**Actions: read** (for run and artifact metadata/download); grant no write
+permissions. Supply it only to this command without entering the value in
+shell history. The script immediately removes
 `GH_TOKEN` from its inherited environment, scopes the token only to individual
 `gh api` invocations, and unsets its private shell variable after the last API
 call. Node, checksum, unzip, Git, and validation subprocesses receive no token.
@@ -90,8 +107,82 @@ bash scripts/backup/acquire-offline-catalogue-ciphertext.sh \
   /absolute/new/private/output-directory
 ```
 
-The script refuses a non-canonical repository, non-`main` ref, dirty checkout,
-wrong SHA, live GitHub `main` mismatch, existing output directory, or output
+### Independently reviewed PR-commit bootstrap — source candidate only
+
+The Owner must first review the final PR #161 commit and all code reachable by
+the acquisition entrypoint, including the transfer, manifest, and catalogue
+restore contracts. An independent reviewer records the exact PR head SHA and
+the SHA-256 of `acquire-offline-catalogue-ciphertext.sh` outside the checkout.
+Do not derive either approved value merely by inspecting the checkout that is
+about to run. Any new push, changed review, or new SHA needs a fresh review and
+Owner decision. This source candidate does not satisfy the existing
+main-only operational approval by itself.
+
+Using trusted system Git/GitHub CLI, before supplying any artifact token to
+repository code, verify live `main` and PR #161 against those independently
+approved pins, clone the canonical repository into a new private directory,
+fetch the exact PR ref, and check out the approved commit detached:
+
+```sh
+approved_pr_sha=<independently-approved-40-character-commit>
+approved_script_sha256=<independently-reviewed-64-character-sha256>
+live_main_sha="$(gh api repos/tranhuunguyenhuy-hue/dongphugia.com.vn/commits/main --jq .sha)"
+live_pr_sha="$(gh api repos/tranhuunguyenhuy-hue/dongphugia.com.vn/pulls/161 --jq .head.sha)"
+test "$live_pr_sha" = "$approved_pr_sha"
+git clone https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn.git trusted-acquisition
+git -C trusted-acquisition fetch origin refs/pull/161/head
+git -C trusted-acquisition checkout --detach "$approved_pr_sha"
+test "$(git -C trusted-acquisition rev-parse HEAD)" = "$approved_pr_sha"
+test "$(git -C trusted-acquisition remote get-url origin)" = 'https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn.git'
+test -z "$(git -C trusted-acquisition status --porcelain --untracked-files=all)"
+git -C trusted-acquisition merge-base --is-ancestor "$live_main_sha" "$approved_pr_sha"
+test "$(shasum -a 256 trusted-acquisition/scripts/backup/acquire-offline-catalogue-ciphertext.sh | awk '{print $1}')" = "$approved_script_sha256"
+```
+
+These manual checks are the root of trust. The script then independently
+checks the clean detached checkout, main ancestry, script hash, live main SHA,
+PR number/state/base/head/repository identity, and exact artifact metadata.
+Its `reviewed-pr` provenance records both the live-main SHA and the executed
+PR source SHA. A rejected source check must end before any artifact request;
+do not switch to a different PR head or remove a guard. Only after separate
+Owner approval for this exact PR-mode invocation may the operator run:
+
+```sh
+ACQUISITION_SOURCE_MODE=reviewed-pr \
+EXPECTED_MAIN_SHA="$live_main_sha" \
+EXPECTED_PR_HEAD_SHA="$approved_pr_sha" \
+EXPECTED_SCRIPT_SHA256="$approved_script_sha256" \
+GH_TOKEN=<locally-injected-read-only-token> \
+bash trusted-acquisition/scripts/backup/acquire-offline-catalogue-ciphertext.sh \
+  /absolute/new/private/output-directory
+```
+
+PR-mode provenance intentionally fails the current Phase B `main`-only source
+check. Phase B needs a separately reviewed source/provenance decision and its
+own Owner approval; Phase A preservation does not imply replay readiness.
+
+### Owner setup before either acquisition path
+
+1. On an Owner-controlled workstation, select only this repository for a
+   fine-grained credential with Contents read and Actions read; give it a short
+   expiry spanning acquisition and no write permissions. Verify the selected
+   repository and permissions in GitHub. Inject it locally without pasting it
+   into chat, Issue, PR, process logs, or shell history.
+2. From trusted system tools, confirm the credential can read the live-main
+   commit, PR metadata when using the PR path, exact run metadata, and artifact
+   metadata. A successful metadata read is not a download or preservation.
+3. Identify an Owner-controlled encrypted persistent volume with enough free
+   space and a private output parent outside the repository. Verify device or
+   volume encryption, directory access restricted to the Owner, and a retention
+   plan extending beyond 2026-10-30 14:27:48 UTC. Keep its actual path private.
+4. Immediately before acquisition, recheck the approved source pins, GitHub
+   artifact expiry, exact ID/digest/size, volume availability, and output
+   directory absence. Preserve only the encrypted ZIP and sanitized provenance.
+   Afterward verify file modes, rehash the saved ZIP, and privately record its
+   location and retention owner. Never post the token, bytes, or path publicly.
+
+The script refuses a non-canonical repository, mismatched source ref or SHA,
+dirty checkout, live GitHub `main` mismatch, existing output directory, or output
 inside the repository after canonicalizing the output parent through symlinks. It reads only
 the exact pinned run and artifact metadata, checks run event/branch/workflow
 identity, artifact ID/name/digest/size/expiry and run provenance, then requests
@@ -103,7 +194,7 @@ never emits artifact bytes or manifest rows in logs.
 
 The script does not upload a second artifact or automate transfer to Phase B.
 The Owner must use an approved offline medium and preserve chain of custody.
-Do not execute Phase A under this source-only approval.
+Do not execute the reviewed-PR path under its source-only approval.
 
 ## Phase B — Owner-controlled offline replay
 
@@ -220,11 +311,14 @@ digest/size, manifest identity, expiry, signed attestation, key fingerprint,
 challenge, host ID, boot ID, policy digest, network control, tmpfs type/capacity,
 image digest, empty target, allowlist, parity, or sanitized-evidence check is
 missing or mismatched. Do not weaken a check or switch to a different artifact.
-Do not preserve the artifact beyond its current expiry by another mechanism
-without a separate Owner decision.
+Issue #160 comment `6252739416` separately approved secure ciphertext
+preservation beyond GitHub expiry. The present Phase B provenance validator
+still rejects replay after that expiry; resolve that conflict under Phase B's
+own review and approval before any post-expiry replay.
 
-Before either operation, obtain separate Owner approval for artifact
-acquisition/preservation. Before Phase B additionally obtain approval for
+Before acquisition, revalidate the chosen source mode against the applicable
+Owner approval; the current approval does not include reviewed-PR execution.
+Before Phase B additionally obtain approval for
 host/provisioning and external egress-control evidence, age-key delivery, and
 offline execution. Merge remains a separate Owner gate. This source change does
 not authorize a download, copy, decrypt, restore, runner/host provisioning,

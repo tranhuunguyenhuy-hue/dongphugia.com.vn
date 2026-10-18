@@ -9,6 +9,9 @@ fail() {
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
 contract="$repo_root/scripts/backup/offline-catalogue-transfer-contract.mjs"
 expected_main_sha="${EXPECTED_MAIN_SHA:-}"
+acquisition_source_mode="${ACQUISITION_SOURCE_MODE:-main}"
+expected_pr_head_sha="${EXPECTED_PR_HEAD_SHA:-}"
+expected_script_sha256="${EXPECTED_SCRIPT_SHA256:-}"
 output_dir="${1:-}"
 github_read_token="${GH_TOKEN:-}"
 unset GH_TOKEN
@@ -23,8 +26,27 @@ case "$remote_url" in
   https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn.git|https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn|git@github.com:tranhuunguyenhuy-hue/dongphugia.com.vn.git) ;;
   *) fail canonical_repository_required ;;
 esac
-[[ "$(git -C "$repo_root" symbolic-ref --short HEAD 2>/dev/null || true)" = 'main' ]] || fail trusted_main_ref_required
-[[ "$(git -C "$repo_root" rev-parse HEAD)" = "$expected_main_sha" ]] || fail trusted_main_sha_mismatch
+case "$acquisition_source_mode" in
+  main)
+    [[ "$(git -C "$repo_root" symbolic-ref --short HEAD 2>/dev/null || true)" = 'main' ]] || fail trusted_main_ref_required
+    [[ "$(git -C "$repo_root" rev-parse HEAD)" = "$expected_main_sha" ]] || fail trusted_main_sha_mismatch
+    ;;
+  reviewed-pr)
+    [[ "$expected_pr_head_sha" =~ ^[a-f0-9]{40}$ ]] || fail expected_pr_head_sha_required
+    [[ "$expected_script_sha256" =~ ^[a-f0-9]{64}$ ]] || fail expected_script_sha256_required
+    [[ -z "$(git -C "$repo_root" symbolic-ref --short HEAD 2>/dev/null || true)" ]] || fail reviewed_pr_detached_head_required
+    [[ "$(git -C "$repo_root" rev-parse HEAD)" = "$expected_pr_head_sha" ]] || fail reviewed_pr_head_sha_mismatch
+    git -C "$repo_root" merge-base --is-ancestor "$expected_main_sha" "$expected_pr_head_sha" \
+      || fail reviewed_pr_main_ancestry_mismatch
+    if command -v sha256sum >/dev/null 2>&1; then
+      script_sha256="$(sha256sum "$repo_root/scripts/backup/acquire-offline-catalogue-ciphertext.sh" | awk '{print $1}')"
+    else
+      script_sha256="$(shasum -a 256 "$repo_root/scripts/backup/acquire-offline-catalogue-ciphertext.sh" | awk '{print $1}')"
+    fi
+    [[ "$script_sha256" = "$expected_script_sha256" ]] || fail reviewed_script_hash_mismatch
+    ;;
+  *) fail acquisition_source_mode_invalid ;;
+esac
 [[ -z "$(git -C "$repo_root" status --porcelain --untracked-files=all)" ]] || fail clean_trusted_checkout_required
 
 for command in gh node jq unzip; do
@@ -64,6 +86,14 @@ backup_id="$(jq -r '.backupId' <<<"$identity")"
 live_main_sha="$(GH_TOKEN="$github_read_token" gh api "repos/$repo/commits/main" --jq .sha)" \
   || fail github_trusted_main_unavailable
 [[ "$live_main_sha" = "$expected_main_sha" ]] || fail github_trusted_main_sha_mismatch
+source_file_args=()
+if [[ "$acquisition_source_mode" = 'reviewed-pr' ]]; then
+  GH_TOKEN="$github_read_token" gh api "repos/$repo/pulls/161" >"$tmp_dir/pr.json" \
+    || fail github_reviewed_pr_metadata_unavailable
+  node "$contract" validate-acquisition-pr "$tmp_dir/pr.json" "$expected_main_sha" "$expected_pr_head_sha" \
+    >"$tmp_dir/verified-source.json" || fail acquisition_pr_identity_mismatch
+  source_file_args=("$tmp_dir/verified-source.json")
+fi
 GH_TOKEN="$github_read_token" gh api "repos/$repo/actions/runs/$run_id" >"$tmp_dir/run.json" \
   || fail github_run_metadata_unavailable
 GH_TOKEN="$github_read_token" gh api "repos/$repo/actions/artifacts/$artifact_id" >"$tmp_dir/artifact.json" \
@@ -116,7 +146,7 @@ mkdir -m 700 -- "$output_dir" || fail output_directory_creation_failed
 output_created='true'
 cp -- "$tmp_dir/artifact.zip" "$output_dir/artifact-12052107648.zip" || fail ciphertext_copy_failed
 node "$contract" create-provenance "$tmp_dir/verified-metadata.json" "$actual_digest" "$date_now" \
-  "$expected_main_sha" "$output_dir/provenance.json" >/dev/null || fail sanitized_provenance_creation_failed
+  "$expected_main_sha" "$output_dir/provenance.json" "${source_file_args[@]}" >/dev/null || fail sanitized_provenance_creation_failed
 output_created='false'
 printf 'OFFLINE_CATALOGUE_ACQUISITION status=PASS artifact_id=%s package_sha256=%s bytes=%s output=ciphertext_only\n' \
   "$artifact_id" "$actual_digest" "$actual_bytes"
