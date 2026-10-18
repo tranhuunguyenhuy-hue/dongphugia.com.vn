@@ -2,16 +2,32 @@ const COMMAND_PATTERN = /^\/codex dispatch\n```json\n([\s\S]+)\n```$/
 const PROTECTED_PATH_PREFIXES = [
   '.artifacts/',
   '.git/',
+  '.gitattributes',
   '.github/',
+  '.gitmodules',
   'AGENTS.md',
   'docs/AGENTS.md',
   'docs/WORKFLOW-WITH-CODEX.md',
+  'docs/agents/codex-auto-dispatcher.md',
   'docs/deploy/offline-catalogue-rehearsal.md',
   'scripts/automation/',
   'scripts/backup/',
 ]
 
-function isAllowedPath(path) {
+function conflictsWithProtectedPath(path) {
+  return PROTECTED_PATH_PREFIXES.some((protectedPath) => {
+    const exactProtectedPath = protectedPath.endsWith('/')
+      ? protectedPath.slice(0, -1)
+      : protectedPath
+    return (
+      path === exactProtectedPath ||
+      (protectedPath.endsWith('/') && path.startsWith(protectedPath)) ||
+      (path.endsWith('/') && exactProtectedPath.startsWith(path))
+    )
+  })
+}
+
+export function isAllowedPath(path) {
   return (
     typeof path === 'string' &&
     path.length > 0 &&
@@ -19,9 +35,7 @@ function isAllowedPath(path) {
     !path.startsWith('/') &&
     !path.includes('\\') &&
     !path.split('/').some((segment) => segment === '.' || segment === '..') &&
-    !PROTECTED_PATH_PREFIXES.some(
-      (prefix) => path === prefix.slice(0, -1) || path.startsWith(prefix),
-    )
+    !conflictsWithProtectedPath(path)
   )
 }
 
@@ -49,7 +63,9 @@ export function parseDispatchCommand(body) {
     'acceptance',
     'allowed_paths',
     'external_writes',
+    'mutation_owner',
     'production',
+    'rollback',
     'task',
     'title',
     'version',
@@ -62,6 +78,8 @@ export function parseDispatchCommand(body) {
     task.version !== 1 ||
     !isBoundedText(task.title, 120, { singleLine: true }) ||
     !isBoundedText(task.task, 8_000) ||
+    !isBoundedText(task.rollback, 500, { singleLine: true }) ||
+    task.mutation_owner !== 'HELD' ||
     !Array.isArray(task.acceptance) ||
     !Array.isArray(task.allowed_paths) ||
     task.production !== false ||

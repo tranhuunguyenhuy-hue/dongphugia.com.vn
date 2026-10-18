@@ -28,6 +28,11 @@ ${task.acceptance.map((item) => `- ${item}`).join('\n')}
 
 ${task.allowed_paths.map((item) => `- \`${item}\``).join('\n')}
 
+## Recorded control state
+
+- Mutation ownership: \`HELD\`
+- Rollback position: ${task.rollback}
+
 ## Non-negotiable controls
 
 - Edit only the authorized paths above. Do not alter workflows, agent authority files, dispatcher code, backup/offline-rehearsal code, or any external system.
@@ -35,7 +40,7 @@ ${task.allowed_paths.map((item) => `- \`${item}\``).join('\n')}
 - Do not commit, push, create a pull request, or post to GitHub. A separate deterministic publisher owns those writes.
 - Do not use sudo or Docker. Keep all edits inside the workspace-write sandbox.
 - Run focused local tests that do not need secrets or external services. Report every unrun check as UNKNOWN.
-- Finish with a concise summary of changed files, tests, exclusions, remaining risk, and the next approval gate.
+- Finish with a concise summary of changed files, tests, exclusions, remaining risk, rollback position, the next approval gate, and \`Mutation ownership: RELEASED\` after the source handoff is complete.
 `
 
 await writeFile(outputPath, prompt, { mode: 0o600 })

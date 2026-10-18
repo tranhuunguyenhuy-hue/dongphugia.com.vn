@@ -15,14 +15,16 @@ function job(name, nextName) {
 }
 
 describe('Codex auto-dispatcher workflow trust boundary', () => {
-  it('uses only created issue comments on the default branch with per-issue serialization', () => {
+  it('uses only created issue comments and an atomic per-Issue claim without lossy pending runs', () => {
     expect(workflow).toContain('issue_comment:')
     expect(workflow).toContain('types: [created]')
     expect(workflow).not.toContain('pull_request_target')
-    expect(workflow).toContain('codex-auto-dispatch-${{ github.repository_id }}-${{ github.event.issue.number }}')
-    expect(workflow).not.toContain('queue:')
-    expect(workflow).toContain('cancel-in-progress: false')
+    expect(workflow).not.toContain('\nconcurrency:')
+    expect(workflow).toContain('refs/heads/codex/dispatch-lock-')
+    expect(workflow).toContain('CODEX_AUTO_DISPATCH_REJECTED_BUSY')
+    expect(workflow).toContain('--method DELETE')
     expect(workflow).toContain('CODEX_AUTO_DISPATCH_RUNNING')
+    expect(workflow).toContain('CODEX_AUTO_DISPATCH_LOCK_RELEASE_FAILED')
   })
 
   it('keeps Codex read-only at GitHub and gives write authority only to the publisher job', () => {
@@ -52,6 +54,8 @@ describe('Codex auto-dispatcher workflow trust boundary', () => {
     expect(publish).toContain('$RUNNER_TEMP/generated-result/codex.patch')
     expect(publish).toContain('gh pr create --draft')
     expect(workflow).not.toMatch(/(?:gh pr merge|git merge|enable-auto-merge)/)
+    expect(workflow).toContain('needs: [preflight, claim, execute, publish, no_changes]')
+    expect(workflow).toContain("needs.no_changes.result == 'failure'")
   })
 
   it('pins every third-party action to an immutable commit', () => {

@@ -6,10 +6,6 @@ on:
 
 permissions: {}
 
-concurrency:
-  group: codex-auto-dispatch-${{ github.repository_id }}-${{ github.event.issue.number }}
-  cancel-in-progress: false
-
 jobs:
   preflight:
     name: Validate trusted dispatch event
@@ -47,13 +43,15 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
-  mark_running:
-    name: Report accepted task
+  claim:
+    name: Atomically claim the Issue execution slot
     needs: preflight
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
       contents: read
+    outputs:
+      claimed: ${{ steps.claim.outputs.claimed }}
     steps:
       - name: Mint short-lived status token
         id: publisher-token
@@ -64,24 +62,44 @@ jobs:
           owner: ${{ github.repository_owner }}
           repositories: dongphugia.com.vn
 
-      - name: Report validated execution start
+      - name: Claim the Issue slot and report accepted or busy
+        id: claim
         env:
           GH_TOKEN: ${{ steps.publisher-token.outputs.token }}
           ISSUE_NUMBER: ${{ needs.preflight.outputs.issue_number }}
           DISPATCH_ID: ${{ needs.preflight.outputs.dispatch_id }}
           BASE_SHA: ${{ needs.preflight.outputs.base_sha }}
           DISPATCH_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          REPOSITORY: ${{ github.repository }}
         run: |
-          {
-            echo "<!-- codex-auto-dispatch:$DISPATCH_ID:running -->"
-            echo "CODEX_AUTO_DISPATCH_RUNNING: authenticated command accepted at exact base \`$BASE_SHA\`."
-            echo "One bounded source-only attempt is running: $DISPATCH_RUN_URL"
-          } > issue-comment.md
+          lock_ref="refs/heads/codex/dispatch-lock-$ISSUE_NUMBER"
+          lock_path="repos/$REPOSITORY/git/ref/heads/codex/dispatch-lock-$ISSUE_NUMBER"
+          if gh api --method POST "repos/$REPOSITORY/git/refs" \
+            -f ref="$lock_ref" -f sha="$BASE_SHA" >/dev/null 2>&1; then
+            echo 'claimed=true' >> "$GITHUB_OUTPUT"
+            {
+              echo "<!-- codex-auto-dispatch:$DISPATCH_ID:running -->"
+              echo "CODEX_AUTO_DISPATCH_RUNNING: authenticated command accepted at exact base \`$BASE_SHA\`."
+              echo "One bounded source-only attempt is running: $DISPATCH_RUN_URL"
+            } > issue-comment.md
+          elif gh api "$lock_path" >/dev/null 2>&1; then
+            echo 'claimed=false' >> "$GITHUB_OUTPUT"
+            {
+              echo "<!-- codex-auto-dispatch:$DISPATCH_ID:rejected-busy -->"
+              echo 'CODEX_AUTO_DISPATCH_REJECTED_BUSY: another task owns this Issue slot.'
+              echo 'No Codex/API execution or automatic retry occurred; submit a new command after the active run reaches a terminal state.'
+              echo "Evidence: $DISPATCH_RUN_URL"
+            } > issue-comment.md
+          else
+            echo 'Atomic lock creation failed for a reason other than an existing lock.' >&2
+            exit 1
+          fi
           gh issue comment "$ISSUE_NUMBER" --body-file issue-comment.md
 
   execute:
     name: Run Codex without GitHub write authority
-    needs: [preflight, mark_running]
+    needs: [preflight, claim]
+    if: ${{ needs.claim.outputs.claimed == 'true' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     permissions:
@@ -277,25 +295,16 @@ jobs:
 
   report_failure:
     name: Report bounded failure
-    needs: [preflight, execute, publish]
-    if: ${{ always() && needs.preflight.result == 'success' && (needs.execute.result == 'failure' || needs.publish.result == 'failure') }}
+    needs: [preflight, claim, execute, publish, no_changes]
+    if: ${{ always() && needs.preflight.result == 'success' && (needs.claim.result == 'failure' || needs.execute.result == 'failure' || needs.publish.result == 'failure' || needs.no_changes.result == 'failure') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
-      contents: read
+      issues: write
     steps:
-      - name: Mint short-lived status token
-        id: publisher-token
-        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349
-        with:
-          app-id: ${{ secrets.CODEX_PUBLISHER_APP_ID }}
-          private-key: ${{ secrets.CODEX_PUBLISHER_APP_PRIVATE_KEY }}
-          owner: ${{ github.repository_owner }}
-          repositories: dongphugia.com.vn
-
       - name: Report failure without automatic retry
         env:
-          GH_TOKEN: ${{ steps.publisher-token.outputs.token }}
+          GH_TOKEN: ${{ github.token }}
           ISSUE_NUMBER: ${{ needs.preflight.outputs.issue_number }}
           DISPATCH_ID: ${{ needs.preflight.outputs.dispatch_id }}
           DISPATCH_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
@@ -305,5 +314,61 @@ jobs:
             echo 'CODEX_AUTO_DISPATCH_FAILED: No automatic retry was attempted.'
             echo "Inspect: $DISPATCH_RUN_URL"
             echo 'Issue a new validated command only after resolving the cause.'
+          } > issue-comment.md
+          gh issue comment "$ISSUE_NUMBER" --body-file issue-comment.md
+
+  release_lock:
+    name: Release the claimed Issue execution slot
+    needs: [preflight, claim, execute, publish, no_changes, report_failure]
+    if: ${{ always() && needs.preflight.result == 'success' && needs.claim.outputs.claimed == 'true' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Mint short-lived publisher token
+        id: publisher-token
+        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349
+        with:
+          app-id: ${{ secrets.CODEX_PUBLISHER_APP_ID }}
+          private-key: ${{ secrets.CODEX_PUBLISHER_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: dongphugia.com.vn
+
+      - name: Verify and delete only this transient lock ref
+        env:
+          GH_TOKEN: ${{ steps.publisher-token.outputs.token }}
+          ISSUE_NUMBER: ${{ needs.preflight.outputs.issue_number }}
+          BASE_SHA: ${{ needs.preflight.outputs.base_sha }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          lock_path="repos/$REPOSITORY/git/ref/heads/codex/dispatch-lock-$ISSUE_NUMBER"
+          current_sha="$(gh api "$lock_path" --jq .object.sha)"
+          if [[ "$current_sha" != "$BASE_SHA" ]]; then
+            echo 'Refusing to release a lock whose SHA no longer matches this dispatch.' >&2
+            exit 1
+          fi
+          gh api --method DELETE "$lock_path"
+
+  report_release_failure:
+    name: Report a lock cleanup failure
+    needs: [preflight, release_lock]
+    if: ${{ always() && needs.preflight.result == 'success' && needs.release_lock.result == 'failure' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Record the manual cleanup gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ needs.preflight.outputs.issue_number }}
+          DISPATCH_ID: ${{ needs.preflight.outputs.dispatch_id }}
+          DISPATCH_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          {
+            echo "<!-- codex-auto-dispatch:$DISPATCH_ID:lock-release-failed -->"
+            echo 'CODEX_AUTO_DISPATCH_LOCK_RELEASE_FAILED: the transient Issue lock remains fail-closed.'
+            echo "Inspect and remove only the verified lock ref before retrying: $DISPATCH_RUN_URL"
           } > issue-comment.md
           gh issue comment "$ISSUE_NUMBER" --body-file issue-comment.md

@@ -1,3 +1,5 @@
+import { isAllowedPath } from './codex-dispatch-preflight.mjs'
+
 const MAX_PATCH_BYTES = 1024 * 1024
 const MAX_FILES = 50
 
@@ -11,7 +13,7 @@ export function validatePatchText(patch, task) {
   }
   if (
     patch.includes('GIT binary patch') ||
-    /(?:^|\n)(?:new file mode|deleted file mode|old mode|new mode) 120000(?:\n|$)/.test(
+    /(?:^|\n)(?:new file mode|deleted file mode|old mode|new mode) (?:120000|160000)(?:\n|$)/.test(
       patch,
     )
   ) {
@@ -30,6 +32,9 @@ export function validatePatchText(patch, task) {
 
   if (files.length === 0 || files.length > MAX_FILES || new Set(files).size !== files.length) {
     throw new Error('PATCH_FILE_COUNT_INVALID')
+  }
+  if (!files.every(isAllowedPath)) {
+    throw new Error('PATCH_PROTECTED_PATH')
   }
   if (
     !files.every((file) =>

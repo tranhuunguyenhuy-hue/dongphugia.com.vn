@@ -15,6 +15,10 @@ Use two adoption steps, and stop at an Owner gate between them:
    a Codex cloud task. ChatGPT can therefore coordinate by posting the bounded
    task directly to GitHub; the Owner no longer has to copy it into Codex.
    This is the simplest path and needs no repository API key or custom runner.
+   The official sources found for this design document an explicit `@codex`
+   mention, not assignment by itself, as the authenticated execution trigger.
+   An Issue assignment without that mention is therefore **not** a verified
+   automatic trigger and must not be treated as one.
 2. **Activate the GitHub Events + `openai/codex-action` dispatcher only if the
    native pilot cannot provide the required policy and evidence.** The prototype
    in this PR adds deterministic actor/ref validation, idempotency, one task per
@@ -57,6 +61,12 @@ preflight job (GitHub read token only)
   - deterministic branch absence (dedupe)
         |
         v
+claim job (separate publisher identity)
+  - atomically creates one transient lock ref per Issue
+  - records RUNNING, or REJECTED_BUSY without API/model execution
+  - no lossy GitHub Actions pending-run concurrency queue
+        |
+        v
 Codex job (ephemeral hosted runner)
   - exact validated main SHA
   - contents:read; no GitHub write token
@@ -95,6 +105,8 @@ comments, PR body, branch name, or hidden HTML is never sent to Codex.
   "task": "Implement the approved source-only change and focused tests.",
   "acceptance": ["Focused tests pass", "A draft PR is opened"],
   "allowed_paths": ["apps/public/", "scripts/quality/"],
+  "rollback": "Close the draft PR and delete only its task branch.",
+  "mutation_owner": "HELD",
   "production": false,
   "external_writes": false
 }
@@ -108,17 +120,22 @@ The command is accepted only when all of these remain true:
 - event action is `created`, `GITHUB_REF` is `refs/heads/main`, and GitHub API
   confirms `GITHUB_SHA` is the current `main` ref;
 - task, acceptance, and path arrays stay within fixed size limits;
+- rollback position is bounded text and mutation ownership is exactly `HELD`;
 - `production` and `external_writes` are exactly `false`;
 - no authorized path reaches `.github/`, agent authority/workflow policy,
   dispatcher code, backup/offline-rehearsal code, `.git`, or `.artifacts`;
 - the deterministic result branch does not already exist.
 
-The concurrency group serializes work by repository ID and Issue number with
-`cancel-in-progress: false`. GitHub supports one running and one pending member
-per ordinary concurrency group; coordinators must not enqueue multiple commands
-on one Issue while another is pending. A completed branch makes re-delivery of
-the same comment fail closed. A failed attempt has no automatic retry; the
-coordinator must diagnose it and create a new authenticated command.
+The workflow deliberately does not use ordinary GitHub Actions concurrency:
+that mechanism keeps only one pending run and can replace an earlier pending
+command. Instead, the publisher identity atomically creates
+`refs/heads/codex/dispatch-lock-<issue>` at the validated base before any
+OpenAI job. A competing command records `CODEX_AUTO_DISPATCH_REJECTED_BUSY` and
+does not reach the model. Every terminal path verifies the lock SHA and removes
+only that transient ref. A cleanup failure leaves the lock fail-closed, records
+`CODEX_AUTO_DISPATCH_LOCK_RELEASE_FAILED`, and requires Owner audit before the
+exact ref is removed. A completed result branch makes re-delivery of the same
+comment fail closed. There is no automatic retry.
 
 ## Trust boundaries and remaining limits
 
@@ -131,8 +148,8 @@ coordinator must diagnose it and create a new authenticated command.
   writable workspace or result artifact.
 - **The publisher does not execute the generated change.** It validates and
   applies the patch, then relies on normal PR CI and review. The patch cannot
-  add workflows, symlinks, binary payloads, backup changes, or dispatcher
-  changes.
+  add workflows, symlinks, gitlinks/submodules, binary payloads, backup changes,
+  or dispatcher changes.
 - **Prompt injection is reduced, not eliminated.** Only an API-authenticated
   repository admin can supply the task prompt. A compromised admin account is
   therefore still a trusted-principal compromise.
@@ -203,12 +220,15 @@ Acceptance evidence:
    the GitHub-verified `main` SHA, and creates at most one deterministic branch.
 3. Codex cannot push, comment, create a PR, use sudo/Docker, or read publisher
    credentials.
-4. An out-of-scope, binary, symlink, oversized, duplicate, or base-mismatched
-   patch fails before push.
+4. An out-of-scope, binary, symlink, gitlink/submodule, oversized, duplicate,
+   or base-mismatched patch fails before push.
 5. A valid text patch produces one draft PR, a completion comment, a run link,
    exact base SHA, ordinary required CI, and no merge/deploy/Production action.
-6. Re-delivery of the same comment fails closed because the deterministic branch
-   already exists. Failure has no automatic retry or event loop.
+6. Two concurrent commands on one Issue produce one atomic lock winner and one
+   explicit `REJECTED_BUSY` result; neither task is silently replaced in a
+   pending queue. Re-delivery of a completed comment fails closed because the
+   deterministic branch already exists. Failure has no automatic retry or event
+   loop.
 7. Logs and one-day artifacts contain no credential, secret value, PII, or
    Production data.
 
@@ -217,8 +237,10 @@ Acceptance evidence:
 Before any Production connection exists, shutdown is source/control-plane only:
 disable the workflow, revoke the OpenAI key, uninstall or suspend the publisher
 GitHub App, remove the three repository secrets, and close any generated draft
-PRs after review. Removing the workflow still requires a normal reviewed PR;
-emergency credential revocation does not.
+PRs after review. Verify and remove only any stale
+`codex/dispatch-lock-<issue>` ref after checking its run and exact SHA. Removing
+the workflow still requires a normal reviewed PR; emergency credential
+revocation does not.
 
 ## Primary references
 

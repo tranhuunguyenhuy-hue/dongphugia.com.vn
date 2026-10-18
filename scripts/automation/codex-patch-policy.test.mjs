@@ -34,4 +34,34 @@ index 1111111..0000000
       validatePatchText(patch, { allowed_paths: ['docs/agents/'] }),
     ).toThrowError('PATCH_CONTENT_INVALID')
   })
+
+  it('rejects gitlink and submodule changes inside an authorized directory', () => {
+    const patch = `diff --git a/docs/agents/vendor b/docs/agents/vendor
+new file mode 160000
+index 0000000..1111111
+--- /dev/null
++++ b/docs/agents/vendor
+@@ -0,0 +1 @@
++Subproject commit 1111111111111111111111111111111111111111
+`
+
+    expect(() =>
+      validatePatchText(patch, { allowed_paths: ['docs/agents/'] }),
+    ).toThrowError('PATCH_CONTENT_INVALID')
+  })
+
+  it('rejects a protected file even if a forged task scope contains its parent', () => {
+    const patch = `diff --git a/docs/deploy/offline-catalogue-rehearsal.md b/docs/deploy/offline-catalogue-rehearsal.md
+index 1111111..2222222 100644
+--- a/docs/deploy/offline-catalogue-rehearsal.md
++++ b/docs/deploy/offline-catalogue-rehearsal.md
+@@ -1 +1 @@
+-protected
++tampered
+`
+
+    expect(() =>
+      validatePatchText(patch, { allowed_paths: ['docs/deploy/'] }),
+    ).toThrowError('PATCH_PROTECTED_PATH')
+  })
 })

@@ -12,7 +12,9 @@ const validCommand = `/codex dispatch
   "title": "Document catalogue recovery gate",
   "task": "Update the source-only recovery documentation and its static tests.",
   "acceptance": ["Focused static tests pass", "A draft pull request is opened"],
-  "allowed_paths": ["docs/deploy/", "scripts/quality/"],
+  "allowed_paths": ["docs/deploy/example.md", "scripts/quality/"],
+  "rollback": "Close the draft PR and delete only its task branch.",
+  "mutation_owner": "HELD",
   "production": false,
   "external_writes": false
 }
@@ -25,7 +27,9 @@ describe('Codex dispatch command', () => {
       title: 'Document catalogue recovery gate',
       task: 'Update the source-only recovery documentation and its static tests.',
       acceptance: ['Focused static tests pass', 'A draft pull request is opened'],
-      allowed_paths: ['docs/deploy/', 'scripts/quality/'],
+      allowed_paths: ['docs/deploy/example.md', 'scripts/quality/'],
+      rollback: 'Close the draft PR and delete only its task branch.',
+      mutation_owner: 'HELD',
       production: false,
       external_writes: false,
     })
@@ -94,11 +98,19 @@ describe('Codex dispatch command', () => {
 
   it('rejects task scopes that could alter automation or escape the repository', () => {
     const unsafeCommand = validCommand.replace(
-      '["docs/deploy/", "scripts/quality/"]',
+      '["docs/deploy/example.md", "scripts/quality/"]',
       '[".github/workflows/", "../outside"]',
     )
 
     expect(() => parseDispatchCommand(unsafeCommand)).toThrowError(
+      'DISPATCH_ALLOWED_PATH_INVALID',
+    )
+
+    const protectedAncestor = validCommand.replace(
+      '["docs/deploy/example.md", "scripts/quality/"]',
+      '["docs/deploy/"]',
+    )
+    expect(() => parseDispatchCommand(protectedAncestor)).toThrowError(
       'DISPATCH_ALLOWED_PATH_INVALID',
     )
   })
@@ -118,6 +130,74 @@ describe('Codex dispatch command', () => {
     )
     expect(() => parseDispatchCommand(oversizedTask)).toThrowError(
       'DISPATCH_SCHEMA_INVALID',
+    )
+  })
+
+  it('fails closed for a spoofed actor, non-admin permission, or prior result branch', async () => {
+    const event = {
+      action: 'created',
+      repository: {
+        id: 1157762683,
+        full_name: 'tranhuunguyenhuy-hue/dongphugia.com.vn',
+      },
+      sender: { id: 258872309, login: 'trusted-owner' },
+      issue: { number: 160 },
+      comment: {
+        id: 6250663223,
+        body: validCommand,
+        user: { id: 258872309, login: 'trusted-owner' },
+      },
+    }
+    const validate = (candidateEvent, permission = 'admin', branchStatus = 404) =>
+      validateDispatchEvent({
+        event: candidateEvent,
+        repository: 'tranhuunguyenhuy-hue/dongphugia.com.vn',
+        repositoryId: 1157762683,
+        ref: 'refs/heads/main',
+        sha: 'a'.repeat(40),
+        githubApi: async (path) => {
+          if (path.endsWith('/dongphugia.com.vn')) {
+            return {
+              status: 200,
+              data: { id: 1157762683, default_branch: 'main' },
+            }
+          }
+          if (path.includes('/collaborators/')) {
+            return {
+              status: 200,
+              data: { permission, user: { id: 258872309 } },
+            }
+          }
+          if (path.endsWith('/git/ref/heads/main')) {
+            return { status: 200, data: { object: { sha: 'a'.repeat(40) } } }
+          }
+          return { status: branchStatus, data: null }
+        },
+      })
+
+    const spoofed = structuredClone(event)
+    spoofed.comment.user.id = 1
+    const wrongRepository = structuredClone(event)
+    wrongRepository.repository.id = 1
+    await expect(validate(spoofed)).rejects.toThrowError('DISPATCH_EVENT_INVALID')
+    await expect(validate(wrongRepository)).rejects.toThrowError(
+      'DISPATCH_EVENT_INVALID',
+    )
+    await expect(
+      validateDispatchEvent({
+        event,
+        githubApi: async () => ({ status: 500, data: null }),
+        repository: 'tranhuunguyenhuy-hue/dongphugia.com.vn',
+        repositoryId: 1157762683,
+        ref: 'refs/heads/not-main',
+        sha: 'a'.repeat(40),
+      }),
+    ).rejects.toThrowError('DISPATCH_EVENT_INVALID')
+    await expect(validate(event, 'write')).rejects.toThrowError(
+      'DISPATCH_ACTOR_UNAUTHORIZED',
+    )
+    await expect(validate(event, 'admin', 200)).rejects.toThrowError(
+      'DISPATCH_ALREADY_PROCESSED',
     )
   })
 })
