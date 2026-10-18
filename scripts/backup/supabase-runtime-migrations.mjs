@@ -139,6 +139,9 @@ async function createLedgerAndAdoptCheckpoint(client, migrations) {
       alter table dpg_control.runtime_migration_ledger force row level security;
       revoke all on table dpg_control.runtime_migration_ledger
         from public, anon, authenticated, service_role, dpg_runtime, dpg_readonly;
+      grant select, insert on table dpg_control.runtime_migration_ledger to postgres;
+      create policy runtime_migration_admin on dpg_control.runtime_migration_ledger
+        for all to postgres using (true) with check (true);
     `)
     for (const migration of migrations.slice(0, ADOPTED_CHECKPOINT_MIGRATIONS.length)) {
       await client.query(

@@ -33,6 +33,9 @@ describe('Supabase runtime migration runner contract', () => {
   it('keeps database failures sanitized and never logs database error text', async () => {
     const runner = await readFile('scripts/backup/supabase-runtime-migrations.mjs', 'utf8')
     expect(runner).toContain('reason=database_operation_failed')
+    expect(runner).toContain('force row level security')
+    expect(runner).toContain('create policy runtime_migration_admin')
+    expect(runner).toContain('grant select, insert on table dpg_control.runtime_migration_ledger to postgres')
     expect(runner).not.toMatch(/error\.(detail|hint|where|query|stack)/)
   })
 })
