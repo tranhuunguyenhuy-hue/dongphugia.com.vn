@@ -30,8 +30,10 @@ an inexact target or any pre-existing role with stronger attributes. Creating
 
 The remote restore preflight requires the complete current V1 schema, exact
 target contract, PostgreSQL 17, the four restricted capability roles, empty
-Auth and Storage, no `dpg_app` rows, an empty restore manifest, and enough room
-under the 350 MiB hard stop.
+Auth and Storage, an empty restore manifest, and enough room under the 350 MiB
+hard stop. All `dpg_app` tables must be empty except the exact migration-owned
+MS885 family/configuration/gap seed tuples; those four seed tables are not
+imported from the recovery artifact and any semantic drift stops the run.
 
 ## Catalogue-only boundary
 
@@ -83,8 +85,9 @@ The source runtime connection secret is never read or reused by this workflow.
 Before any checkpoint hash is adopted, the migration runner replays the exact
 seven files in pinned, network-disabled PostgreSQL 17 and requires the
 normalized `dpg_app`/`dpg_control` schema-only dump to equal the remote dump.
-It then verifies the complete role, membership, role-setting, object, empty-data
-and RLS contract. Default `preflight` performs only this read-only remote
+It then verifies the complete role, membership, connection-limit, role-setting,
+object, exact-seed/otherwise-empty-data and RLS contract. Default `preflight`
+performs only this read-only remote
 attestation. The rollback-only synthetic owner-isolation probe runs only inside
 `migrate`, immediately before the first ledger write.
 

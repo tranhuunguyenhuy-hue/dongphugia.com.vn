@@ -6,6 +6,8 @@ declare
   role_drift boolean;
   membership_drift boolean;
   setting_drift boolean;
+  table_name text;
+  has_rows boolean;
 begin
   if current_setting('server_version_num')::integer not between 170000 and 179999 then
     raise exception 'SUPABASE_CHECKPOINT_POSTGRES_VERSION_FAILED';
@@ -26,11 +28,16 @@ begin
     raise exception 'SUPABASE_CHECKPOINT_TARGET_FAILED';
   end if;
 
-  with expected(role_name, can_login) as (values
-    ('dpg_migration', false), ('dpg_runtime', false), ('dpg_readonly', false),
-    ('dpg_migration_login', true), ('dpg_runtime_login', true), ('dpg_readonly_login', true)
+  with expected(role_name, can_login, connection_limit) as (values
+    ('dpg_migration', false, 2),
+    ('dpg_runtime', false, 10),
+    ('dpg_readonly', false, 5),
+    ('dpg_migration_login', true, 2),
+    ('dpg_runtime_login', true, 10),
+    ('dpg_readonly_login', true, 5)
   ), actual as (
-    select rolname as role_name, rolcanlogin as can_login
+    select rolname as role_name, rolcanlogin as can_login,
+           rolconnlimit as connection_limit
     from pg_roles
     where rolname like 'dpg\_%' escape '\'
   )
@@ -120,6 +127,75 @@ begin
      or exists (select 1 from dpg_app.leo539_rls_probe) then
     raise exception 'SUPABASE_CHECKPOINT_EMPTY_TARGET_FAILED';
   end if;
+
+  if exists (
+    (select family_key, label, source, confidence
+     from dpg_app.product_families
+     except values ('toto:ms885', 'TOTO MS885', 'toto-catalogue', 'high'))
+    union all
+    (values ('toto:ms885', 'TOTO MS885', 'toto-catalogue', 'high')
+     except select family_key, label, source, confidence
+            from dpg_app.product_families)
+  ) or exists (
+    (select family.family_key, configuration.group_key, configuration.label,
+            configuration.sort_order, configuration.source, configuration.confidence
+     from dpg_app.product_family_configuration_groups configuration
+     join dpg_app.product_families family on family.id = configuration.family_id
+     except values
+       ('toto:ms885', 'ecowasher', 'nắp rửa cơ', 0, 'toto-catalogue', 'high'),
+       ('toto:ms885', 'electronic-washlet', 'nắp điện tử', 1, 'toto-catalogue', 'high'),
+       ('toto:ms885', 'soft-close', 'nắp đóng êm', 2, 'toto-catalogue', 'high'))
+    union all
+    (values
+       ('toto:ms885', 'ecowasher', 'nắp rửa cơ', 0, 'toto-catalogue', 'high'),
+       ('toto:ms885', 'electronic-washlet', 'nắp điện tử', 1, 'toto-catalogue', 'high'),
+       ('toto:ms885', 'soft-close', 'nắp đóng êm', 2, 'toto-catalogue', 'high')
+     except select family.family_key, configuration.group_key, configuration.label,
+                   configuration.sort_order, configuration.source, configuration.confidence
+            from dpg_app.product_family_configuration_groups configuration
+            join dpg_app.product_families family on family.id = configuration.family_id)
+  ) or exists (
+    (select family.family_key, gap.member_key, gap.gap_type, gap.status,
+            gap.source, gap.confidence, gap.note
+     from dpg_app.product_family_catalogue_gaps gap
+     join dpg_app.product_families family on family.id = gap.family_id
+     except values
+       ('toto:ms885', 'MS885DW4#XW', 'missing_product', 'open', 'toto-catalogue', 'high',
+        'Approved canonical member; Product row is not fabricated by M2.3.'),
+       ('toto:ms885', 'MS885DW18#XW', 'missing_product', 'open', 'toto-catalogue', 'high',
+        'Approved canonical member; Product row is not fabricated by M2.3.'))
+    union all
+    (values
+       ('toto:ms885', 'MS885DW4#XW', 'missing_product', 'open', 'toto-catalogue', 'high',
+        'Approved canonical member; Product row is not fabricated by M2.3.'),
+       ('toto:ms885', 'MS885DW18#XW', 'missing_product', 'open', 'toto-catalogue', 'high',
+        'Approved canonical member; Product row is not fabricated by M2.3.')
+     except select family.family_key, gap.member_key, gap.gap_type, gap.status,
+                   gap.source, gap.confidence, gap.note
+            from dpg_app.product_family_catalogue_gaps gap
+            join dpg_app.product_families family on family.id = gap.family_id)
+  ) or exists (select 1 from dpg_app.product_family_memberships) then
+    raise exception 'SUPABASE_CHECKPOINT_SEED_DRIFT_FAILED';
+  end if;
+
+  for table_name in
+    select c.relname
+    from pg_class c
+    join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'dpg_app'
+      and c.relkind in ('r', 'p')
+      and c.relname not in (
+        'product_families', 'product_family_configuration_groups',
+        'product_family_catalogue_gaps', 'product_family_memberships'
+      )
+    order by c.relname
+  loop
+    execute format('select exists(select 1 from dpg_app.%I limit 1)', table_name)
+      into has_rows;
+    if has_rows then
+      raise exception 'SUPABASE_CHECKPOINT_UNEXPECTED_ROWS table=%', table_name;
+    end if;
+  end loop;
 end
 $checkpoint_catalogue$;
 

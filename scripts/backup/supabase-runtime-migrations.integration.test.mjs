@@ -56,10 +56,26 @@ describe('Supabase runtime migration adoption integration', () => {
         const behavioralAcceptance = (await readFile(
           'supabase/tests/supabase_runtime_adoption_behavior.sql', 'utf8',
         )).replace(/^\\set[^\n]*\n/, '')
-        await executeRuntimeMigrations(client, 'apply', async () => {
+
+        const attestCheckpoint = async () => {
           await client.query(readonlyAcceptance)
           await client.query(behavioralAcceptance)
-        })
+        }
+
+        await client.query("insert into dpg_app.brands (name, slug) values ('Rejected', 'rejected')")
+        await expect(executeRuntimeMigrations(client, 'apply', attestCheckpoint))
+          .rejects.toThrow(/SUPABASE_CHECKPOINT_UNEXPECTED_ROWS/)
+        expect((await client.query(
+          "select to_regclass('dpg_control.runtime_migration_ledger') is null as absent",
+        )).rows[0]?.absent).toBe(true)
+        await client.query("delete from dpg_app.brands where slug = 'rejected'")
+
+        await client.query('alter role dpg_runtime_login connection limit 9')
+        await expect(executeRuntimeMigrations(client, 'apply', attestCheckpoint))
+          .rejects.toThrow(/SUPABASE_CHECKPOINT_ROLE_FAILED/)
+        await client.query('alter role dpg_runtime_login connection limit 10')
+
+        await executeRuntimeMigrations(client, 'apply', attestCheckpoint)
 
         const ledger = await client.query('select count(*)::integer as count from dpg_control.runtime_migration_ledger')
         expect(ledger.rows[0]?.count).toBe(22)

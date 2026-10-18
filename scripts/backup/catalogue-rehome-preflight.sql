@@ -97,25 +97,230 @@ begin
     end if;
   end loop;
 
-  if (select count(*) from dpg_v1.categories) <> 4
-     or exists (select 1 from dpg_v1.categories where parent_id is not null)
-     or exists (
-       (select id, sector, slug, sort_order from dpg_v1.categories)
-       except values
-         ('10000000-0000-4000-8000-000000000001'::uuid, 'sanitary', 'sanitary', 0),
-         ('10000000-0000-4000-8000-000000000002'::uuid, 'tile', 'tile', 1),
-         ('10000000-0000-4000-8000-000000000003'::uuid, 'water', 'water', 2),
-         ('10000000-0000-4000-8000-000000000004'::uuid, 'kitchen', 'kitchen', 3)
-     )
-     or (select count(*) from dpg_v1.role_capabilities) <> 62 then
-    raise exception 'CATALOGUE_REHOME_V1_SEED_DRIFT';
+  if exists (
+    (select id, parent_id, sector, name, slug, summary, is_leaf, is_active,
+            sort_order, version, updated_by
+     from dpg_v1.categories
+     except values
+       ('10000000-0000-4000-8000-000000000001'::uuid, null::uuid, 'sanitary',
+        'Thiết bị vệ sinh', 'sanitary', null::text, false, true, 0, 1, null::uuid),
+       ('10000000-0000-4000-8000-000000000002'::uuid, null::uuid, 'tile',
+        'Gạch ốp lát', 'tile', null::text, false, true, 1, 1, null::uuid),
+       ('10000000-0000-4000-8000-000000000003'::uuid, null::uuid, 'water',
+        'Thiết bị nước', 'water', null::text, false, true, 2, 1, null::uuid),
+       ('10000000-0000-4000-8000-000000000004'::uuid, null::uuid, 'kitchen',
+        'Thiết bị bếp', 'kitchen', null::text, false, true, 3, 1, null::uuid))
+    union all
+    (values
+       ('10000000-0000-4000-8000-000000000001'::uuid, null::uuid, 'sanitary',
+        'Thiết bị vệ sinh', 'sanitary', null::text, false, true, 0, 1, null::uuid),
+       ('10000000-0000-4000-8000-000000000002'::uuid, null::uuid, 'tile',
+        'Gạch ốp lát', 'tile', null::text, false, true, 1, 1, null::uuid),
+       ('10000000-0000-4000-8000-000000000003'::uuid, null::uuid, 'water',
+        'Thiết bị nước', 'water', null::text, false, true, 2, 1, null::uuid),
+       ('10000000-0000-4000-8000-000000000004'::uuid, null::uuid, 'kitchen',
+        'Thiết bị bếp', 'kitchen', null::text, false, true, 3, 1, null::uuid)
+     except select id, parent_id, sector, name, slug, summary, is_leaf, is_active,
+                   sort_order, version, updated_by
+            from dpg_v1.categories)
+  ) then
+    raise exception 'CATALOGUE_REHOME_V1_CATEGORY_SEED_DRIFT';
+  end if;
+
+  if exists (
+    (select role::text, capability::text from dpg_v1.role_capabilities
+     except values
+       ('Product', 'catalogue.read'),
+       ('Product', 'catalogue.create'),
+       ('Product', 'catalogue.update'),
+       ('Product', 'catalogue.publish'),
+       ('Product', 'catalogue.archive'),
+       ('Product', 'marketing.collection.read'),
+       ('Sales', 'catalogue.read'),
+       ('Sales', 'marketing.collection.read'),
+       ('Sales', 'sales.order.read'),
+       ('Sales', 'sales.order.lifecycle.update'),
+       ('Sales', 'sales.order.payment.update'),
+       ('Sales', 'sales.order.archive'),
+       ('Sales', 'sales.quote_request.read'),
+       ('Sales', 'sales.quote.read'),
+       ('Sales', 'sales.quote.create'),
+       ('Sales', 'sales.quote.update'),
+       ('Sales', 'sales.quote.publish'),
+       ('Sales', 'sales.quote.archive'),
+       ('Marketing', 'catalogue.read'),
+       ('Marketing', 'marketing.content.read'),
+       ('Marketing', 'marketing.content.create'),
+       ('Marketing', 'marketing.content.update'),
+       ('Marketing', 'marketing.content.publish'),
+       ('Marketing', 'marketing.content.archive'),
+       ('Marketing', 'marketing.collection.read'),
+       ('Marketing', 'marketing.collection.create'),
+       ('Marketing', 'marketing.collection.update'),
+       ('Marketing', 'marketing.collection.publish'),
+       ('Marketing', 'marketing.collection.archive'),
+       ('Admin', 'catalogue.read'),
+       ('Admin', 'catalogue.create'),
+       ('Admin', 'catalogue.update'),
+       ('Admin', 'catalogue.publish'),
+       ('Admin', 'catalogue.archive'),
+       ('Admin', 'sales.order.read'),
+       ('Admin', 'sales.order.lifecycle.update'),
+       ('Admin', 'sales.order.payment.update'),
+       ('Admin', 'sales.order.archive'),
+       ('Admin', 'sales.quote_request.read'),
+       ('Admin', 'sales.quote.read'),
+       ('Admin', 'sales.quote.create'),
+       ('Admin', 'sales.quote.update'),
+       ('Admin', 'sales.quote.publish'),
+       ('Admin', 'sales.quote.archive'),
+       ('Admin', 'marketing.content.read'),
+       ('Admin', 'marketing.content.create'),
+       ('Admin', 'marketing.content.update'),
+       ('Admin', 'marketing.content.publish'),
+       ('Admin', 'marketing.content.archive'),
+       ('Admin', 'marketing.collection.read'),
+       ('Admin', 'marketing.collection.create'),
+       ('Admin', 'marketing.collection.update'),
+       ('Admin', 'marketing.collection.publish'),
+       ('Admin', 'marketing.collection.archive'),
+       ('Admin', 'admin.staff.read'),
+       ('Admin', 'admin.staff.create'),
+       ('Admin', 'admin.staff.update'),
+       ('Admin', 'admin.staff.disable'),
+       ('Admin', 'admin.staff.assign_roles'),
+       ('Admin', 'admin.config.read'),
+       ('Admin', 'admin.config.create'),
+       ('Admin', 'admin.config.update'))
+    union all
+    (values
+       ('Product', 'catalogue.read'),
+       ('Product', 'catalogue.create'),
+       ('Product', 'catalogue.update'),
+       ('Product', 'catalogue.publish'),
+       ('Product', 'catalogue.archive'),
+       ('Product', 'marketing.collection.read'),
+       ('Sales', 'catalogue.read'),
+       ('Sales', 'marketing.collection.read'),
+       ('Sales', 'sales.order.read'),
+       ('Sales', 'sales.order.lifecycle.update'),
+       ('Sales', 'sales.order.payment.update'),
+       ('Sales', 'sales.order.archive'),
+       ('Sales', 'sales.quote_request.read'),
+       ('Sales', 'sales.quote.read'),
+       ('Sales', 'sales.quote.create'),
+       ('Sales', 'sales.quote.update'),
+       ('Sales', 'sales.quote.publish'),
+       ('Sales', 'sales.quote.archive'),
+       ('Marketing', 'catalogue.read'),
+       ('Marketing', 'marketing.content.read'),
+       ('Marketing', 'marketing.content.create'),
+       ('Marketing', 'marketing.content.update'),
+       ('Marketing', 'marketing.content.publish'),
+       ('Marketing', 'marketing.content.archive'),
+       ('Marketing', 'marketing.collection.read'),
+       ('Marketing', 'marketing.collection.create'),
+       ('Marketing', 'marketing.collection.update'),
+       ('Marketing', 'marketing.collection.publish'),
+       ('Marketing', 'marketing.collection.archive'),
+       ('Admin', 'catalogue.read'),
+       ('Admin', 'catalogue.create'),
+       ('Admin', 'catalogue.update'),
+       ('Admin', 'catalogue.publish'),
+       ('Admin', 'catalogue.archive'),
+       ('Admin', 'sales.order.read'),
+       ('Admin', 'sales.order.lifecycle.update'),
+       ('Admin', 'sales.order.payment.update'),
+       ('Admin', 'sales.order.archive'),
+       ('Admin', 'sales.quote_request.read'),
+       ('Admin', 'sales.quote.read'),
+       ('Admin', 'sales.quote.create'),
+       ('Admin', 'sales.quote.update'),
+       ('Admin', 'sales.quote.publish'),
+       ('Admin', 'sales.quote.archive'),
+       ('Admin', 'marketing.content.read'),
+       ('Admin', 'marketing.content.create'),
+       ('Admin', 'marketing.content.update'),
+       ('Admin', 'marketing.content.publish'),
+       ('Admin', 'marketing.content.archive'),
+       ('Admin', 'marketing.collection.read'),
+       ('Admin', 'marketing.collection.create'),
+       ('Admin', 'marketing.collection.update'),
+       ('Admin', 'marketing.collection.publish'),
+       ('Admin', 'marketing.collection.archive'),
+       ('Admin', 'admin.staff.read'),
+       ('Admin', 'admin.staff.create'),
+       ('Admin', 'admin.staff.update'),
+       ('Admin', 'admin.staff.disable'),
+       ('Admin', 'admin.staff.assign_roles'),
+       ('Admin', 'admin.config.read'),
+       ('Admin', 'admin.config.create'),
+       ('Admin', 'admin.config.update')
+     except select role::text, capability::text from dpg_v1.role_capabilities)
+  ) then
+    raise exception 'CATALOGUE_REHOME_V1_ROLE_CAPABILITY_SEED_DRIFT';
+  end if;
+
+  if exists (
+    (select family_key, label, source, confidence
+     from dpg_app.product_families
+     except values ('toto:ms885', 'TOTO MS885', 'toto-catalogue', 'high'))
+    union all
+    (values ('toto:ms885', 'TOTO MS885', 'toto-catalogue', 'high')
+     except select family_key, label, source, confidence
+            from dpg_app.product_families)
+  ) or exists (
+    (select family.family_key, configuration.group_key, configuration.label,
+            configuration.sort_order, configuration.source, configuration.confidence
+     from dpg_app.product_family_configuration_groups configuration
+     join dpg_app.product_families family on family.id = configuration.family_id
+     except values
+       ('toto:ms885', 'ecowasher', 'nắp rửa cơ', 0, 'toto-catalogue', 'high'),
+       ('toto:ms885', 'electronic-washlet', 'nắp điện tử', 1, 'toto-catalogue', 'high'),
+       ('toto:ms885', 'soft-close', 'nắp đóng êm', 2, 'toto-catalogue', 'high'))
+    union all
+    (values
+       ('toto:ms885', 'ecowasher', 'nắp rửa cơ', 0, 'toto-catalogue', 'high'),
+       ('toto:ms885', 'electronic-washlet', 'nắp điện tử', 1, 'toto-catalogue', 'high'),
+       ('toto:ms885', 'soft-close', 'nắp đóng êm', 2, 'toto-catalogue', 'high')
+     except select family.family_key, configuration.group_key, configuration.label,
+                   configuration.sort_order, configuration.source, configuration.confidence
+            from dpg_app.product_family_configuration_groups configuration
+            join dpg_app.product_families family on family.id = configuration.family_id)
+  ) or exists (
+    (select family.family_key, gap.member_key, gap.gap_type, gap.status,
+            gap.source, gap.confidence, gap.note
+     from dpg_app.product_family_catalogue_gaps gap
+     join dpg_app.product_families family on family.id = gap.family_id
+     except values
+       ('toto:ms885', 'MS885DW4#XW', 'missing_product', 'open', 'toto-catalogue', 'high',
+        'Approved canonical member; Product row is not fabricated by M2.3.'),
+       ('toto:ms885', 'MS885DW18#XW', 'missing_product', 'open', 'toto-catalogue', 'high',
+        'Approved canonical member; Product row is not fabricated by M2.3.'))
+    union all
+    (values
+       ('toto:ms885', 'MS885DW4#XW', 'missing_product', 'open', 'toto-catalogue', 'high',
+        'Approved canonical member; Product row is not fabricated by M2.3.'),
+       ('toto:ms885', 'MS885DW18#XW', 'missing_product', 'open', 'toto-catalogue', 'high',
+        'Approved canonical member; Product row is not fabricated by M2.3.')
+     except select family.family_key, gap.member_key, gap.gap_type, gap.status,
+                   gap.source, gap.confidence, gap.note
+            from dpg_app.product_family_catalogue_gaps gap
+            join dpg_app.product_families family on family.id = gap.family_id)
+  ) or exists (select 1 from dpg_app.product_family_memberships) then
+    raise exception 'CATALOGUE_REHOME_CHECKPOINT_SEED_DRIFT';
   end if;
 
   for table_name in
     select c.relname
     from pg_class c
     join pg_namespace n on n.oid = c.relnamespace
-    where n.nspname = 'dpg_app' and c.relkind in ('r', 'p')
+    where n.nspname = 'dpg_app'
+      and c.relkind in ('r', 'p')
+      and c.relname not in (
+        'product_families', 'product_family_configuration_groups',
+        'product_family_catalogue_gaps', 'product_family_memberships'
+      )
     order by c.relname
   loop
     execute format('select exists(select 1 from dpg_app.%I limit 1)', table_name)

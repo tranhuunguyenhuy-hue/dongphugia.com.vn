@@ -62,6 +62,13 @@ export const CATALOGUE_RESTORE_ORDER = [
   'product_taxon_assignments',
 ]
 
+export const MIGRATION_SEED_TABLES = [
+  'product_families',
+  'product_family_configuration_groups',
+  'product_family_catalogue_gaps',
+  'product_family_memberships',
+]
+
 const EXPECTED_TARGET = {
   projectName: 'dongphugia-runtime',
   region: 'ap-southeast-1',
@@ -113,14 +120,15 @@ from dpg_app.${table} item`
 }
 
 function excludedTableLoop(body) {
-  const allowlist = CATALOGUE_TABLES.map((table) => `'${table}'`).join(', ')
+  const nonImportedSeedTables = [...CATALOGUE_TABLES, ...MIGRATION_SEED_TABLES]
+    .map((table) => `'${table}'`).join(', ')
   return `for excluded_table in
     select c.relname
     from pg_class c
     join pg_namespace n on n.oid = c.relnamespace
     where n.nspname = 'dpg_app'
       and c.relkind in ('r', 'p')
-      and c.relname <> all(array[${allowlist}]::text[])
+      and c.relname <> all(array[${nonImportedSeedTables}]::text[])
     order by c.relname
   loop
     execute format('select exists(select 1 from dpg_app.%I limit 1)', excluded_table)

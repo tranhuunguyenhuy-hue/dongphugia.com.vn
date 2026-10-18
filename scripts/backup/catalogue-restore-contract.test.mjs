@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   CATALOGUE_TABLES,
   CATALOGUE_RESTORE_ORDER,
+  MIGRATION_SEED_TABLES,
   buildCatalogueSnapshotSql,
   buildCatalogueValidationSql,
   catalogueTableArguments,
@@ -112,6 +113,10 @@ describe('catalogue-only restore contract', () => {
       'admin_users', 'admin_sessions', 'customers', 'orders', 'order_items',
       'quote_requests', 'quote_items', 'blog_posts', 'publishing_machine_identities',
     ]))
+    expect(MIGRATION_SEED_TABLES).toEqual([
+      'product_families', 'product_family_configuration_groups',
+      'product_family_catalogue_gaps', 'product_family_memberships',
+    ])
   })
 
   it('accepts only the exact retained source artifact identity', () => {
@@ -167,6 +172,7 @@ describe('catalogue-only restore contract', () => {
       expect(sql).toContain("n.nspname = 'dpg_app'")
       expect(sql).not.toMatch(/select\s+\*\s+from/i)
       expect(sql).not.toMatch(/admin_users.*email|blog_posts.*content|customers.*phone/i)
+      for (const table of MIGRATION_SEED_TABLES) expect(sql).toContain(`'${table}'`)
     }
     expect(validationSql).toContain('CATALOGUE_MANIFEST_MISMATCH table=products')
     expect(validationSql).toContain('CATALOGUE_EXCLUDED_ROWS table=%')

@@ -271,6 +271,6 @@ jobs:
             echo '- Source: exact retained encrypted artifact with isolated filtered-restore rehearsal'
             echo '- Included: Product, Brand, Category, attribute/specification/taxonomy, relationship, URL metadata, provenance'
             echo '- Excluded: PII, Auth, customer, staff/admin, order, quote, Blog, publishing identity/credential, media bytes'
-            echo '- Target: exact isolated Free Preview project; empty-target and 350 MiB guards enforced'
+            echo '- Target: exact isolated Free Preview project; exact migration seeds, otherwise-empty target, and 350 MiB guards enforced'
             echo '- DNS, traffic, cutover, and legacy-project mutation: none'
           } >>"$GITHUB_STEP_SUMMARY"
