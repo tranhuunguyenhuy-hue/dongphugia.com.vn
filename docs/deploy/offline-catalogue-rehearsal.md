@@ -63,6 +63,26 @@ risk; the existing Phase A approval does **not** authorize its execution.
 Neither path changes the artifact, credential, encrypted-storage, or
 provenance gates.
 
+For either path, first verify the repository-scoped credential has only
+**Contents: read** and **Actions: read**. In the trusted operator shell, with
+command tracing disabled, receive it through a no-echo prompt rather than
+typing its value into a command. The examples below use this local variable;
+they never contain the token value:
+
+```sh
+set +x
+printf 'Read-only GitHub token: ' >&2
+IFS= read -r -s github_read_token
+printf '\n' >&2
+test -n "$github_read_token"
+```
+
+Keep this shell private, do not enable tracing, and `unset github_read_token`
+immediately after the selected procedure (also on any abort). Use the same
+read-only credential for the independent API and Git bootstrap and for the
+subsequent acquisition invocation; do not fall back to an ambient broader
+GitHub login or Git credential helper. Stop if any check below fails.
+
 ### Canonical-main bootstrap
 
 The acquisition script cannot establish its own source integrity before it
@@ -80,11 +100,12 @@ For example, in an empty private temporary parent directory, use the already
 trusted system `gh` and `git` binaries:
 
 ```sh
-trusted_sha="$(gh api repos/tranhuunguyenhuy-hue/dongphugia.com.vn/commits/main --jq .sha)"
-git clone https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn.git trusted-acquisition
-git -C trusted-acquisition fetch origin "$trusted_sha"
+trusted_sha="$(GH_TOKEN="$github_read_token" gh api repos/tranhuunguyenhuy-hue/dongphugia.com.vn/commits/main --jq .sha)"
+GH_TOKEN="$github_read_token" GIT_TERMINAL_PROMPT=0 git -c credential.helper= -c credential.helper='!gh auth git-credential' clone https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn.git trusted-acquisition
+GH_TOKEN="$github_read_token" GIT_TERMINAL_PROMPT=0 git -C trusted-acquisition -c credential.helper= -c credential.helper='!gh auth git-credential' fetch origin "$trusted_sha"
 git -C trusted-acquisition checkout -B main "$trusted_sha"
 test "$(git -C trusted-acquisition rev-parse HEAD)" = "$trusted_sha"
+test "$(git -C trusted-acquisition remote get-url origin)" = 'https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn.git'
 test -z "$(git -C trusted-acquisition status --porcelain --untracked-files=all)"
 ```
 
@@ -92,8 +113,8 @@ Run manually on that trusted operator workstation after all applicable Owner
 approvals. Use a dedicated fine-grained token scoped to this repository with
 **Contents: read** (for the commit and PR metadata/private clone) and
 **Actions: read** (for run and artifact metadata/download); grant no write
-permissions. Supply it only to this command without entering the value in
-shell history. The script immediately removes
+permissions. Supply it only through the no-echo variable above, never as a
+literal in shell history. The script immediately removes
 `GH_TOKEN` from its inherited environment, scopes the token only to individual
 `gh api` invocations, and unsets its private shell variable after the last API
 call. Node, checksum, unzip, Git, and validation subprocesses receive no token.
@@ -101,10 +122,11 @@ No age identity, Supabase URL, Cloudflare/AWS credential, or other decrypt
 material is accepted by the script.
 
 ```sh
-EXPECTED_MAIN_SHA=<exact-trusted-main-sha> \
-GH_TOKEN=<read-only-github-token> \
-bash scripts/backup/acquire-offline-catalogue-ciphertext.sh \
+EXPECTED_MAIN_SHA="$trusted_sha" \
+GH_TOKEN="$github_read_token" \
+bash trusted-acquisition/scripts/backup/acquire-offline-catalogue-ciphertext.sh \
   /absolute/new/private/output-directory
+unset github_read_token
 ```
 
 ### Independently reviewed PR-commit bootstrap — source candidate only
@@ -126,11 +148,11 @@ fetch the exact PR ref, and check out the approved commit detached:
 ```sh
 approved_pr_sha=<independently-approved-40-character-commit>
 approved_script_sha256=<independently-reviewed-64-character-sha256>
-live_main_sha="$(gh api repos/tranhuunguyenhuy-hue/dongphugia.com.vn/commits/main --jq .sha)"
-live_pr_sha="$(gh api repos/tranhuunguyenhuy-hue/dongphugia.com.vn/pulls/161 --jq .head.sha)"
+live_main_sha="$(GH_TOKEN="$github_read_token" gh api repos/tranhuunguyenhuy-hue/dongphugia.com.vn/commits/main --jq .sha)"
+live_pr_sha="$(GH_TOKEN="$github_read_token" gh api repos/tranhuunguyenhuy-hue/dongphugia.com.vn/pulls/161 --jq .head.sha)"
 test "$live_pr_sha" = "$approved_pr_sha"
-git clone https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn.git trusted-acquisition
-git -C trusted-acquisition fetch origin refs/pull/161/head
+GH_TOKEN="$github_read_token" GIT_TERMINAL_PROMPT=0 git -c credential.helper= -c credential.helper='!gh auth git-credential' clone https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn.git trusted-acquisition
+GH_TOKEN="$github_read_token" GIT_TERMINAL_PROMPT=0 git -C trusted-acquisition -c credential.helper= -c credential.helper='!gh auth git-credential' fetch origin refs/pull/161/head
 git -C trusted-acquisition checkout --detach "$approved_pr_sha"
 test "$(git -C trusted-acquisition rev-parse HEAD)" = "$approved_pr_sha"
 test "$(git -C trusted-acquisition remote get-url origin)" = 'https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn.git'
@@ -152,9 +174,10 @@ ACQUISITION_SOURCE_MODE=reviewed-pr \
 EXPECTED_MAIN_SHA="$live_main_sha" \
 EXPECTED_PR_HEAD_SHA="$approved_pr_sha" \
 EXPECTED_SCRIPT_SHA256="$approved_script_sha256" \
-GH_TOKEN=<locally-injected-read-only-token> \
+GH_TOKEN="$github_read_token" \
 bash trusted-acquisition/scripts/backup/acquire-offline-catalogue-ciphertext.sh \
   /absolute/new/private/output-directory
+unset github_read_token
 ```
 
 PR-mode provenance intentionally fails the current Phase B `main`-only source
