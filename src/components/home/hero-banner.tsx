@@ -1,33 +1,13 @@
-import { existsSync } from "node:fs"
-import path from "node:path"
 import Link from "next/link"
+import type { PublicHomeBanner } from "@dpg/app-contracts"
 import { HeroBannerControls } from "@/components/home/hero-banner-controls-lazy"
-import {
-    createResponsiveMediaUrl,
-    createResponsiveSrcSet,
-} from "@/lib/media/media-profiles"
 
-type Banner = {
-    id: number
-    title?: string | null
-    image_url: string
-    link_url?: string | null
-}
-
-type HeroBannerProps = { banners: Banner[] }
+type HeroBannerProps = { banners: readonly PublicHomeBanner[] }
 
 // Standard banner aspect ratio: 16:9
 const BANNER_WIDTH = 1600
 const BANNER_HEIGHT = 900
 const CAROUSEL_ID = "homepage-hero-carousel"
-
-function localResponsiveAsset(url: string, width: number) {
-    if (!url.startsWith("/")) return null
-    const candidate = createResponsiveMediaUrl(url, width)
-    return existsSync(path.join(process.cwd(), "public", candidate))
-        ? candidate
-        : null
-}
 
 /**
  * Server-render the hero media so its first paint does not depend on hydrating
@@ -77,13 +57,13 @@ export function HeroBanner({ banners }: HeroBannerProps) {
             {(() => {
                 const item = items[0]
                 const mobileImage =
-                    localResponsiveAsset(item.image_url, 720) ??
+                    item.mobileImageUrl ??
                     "/api/homepage-hero?width=720"
                 const desktopImage =
-                    localResponsiveAsset(item.image_url, 1280) ??
+                    item.desktopImageUrl ??
                     "/api/homepage-hero?width=1280"
                 const desktopImage1600 =
-                    localResponsiveAsset(item.image_url, 1600) ??
+                    item.desktopLargeImageUrl ??
                     "/api/homepage-hero?width=1600"
                 const image = (
                     <>
@@ -137,8 +117,8 @@ export function HeroBanner({ banners }: HeroBannerProps) {
                         aria-roledescription="slide"
                         aria-label={`1 trên ${items.length}`}
                     >
-                        {item.link_url ? (
-                            <Link href={item.link_url} className="block h-full w-full">
+                        {item.linkUrl ? (
+                            <Link href={item.linkUrl} className="block h-full w-full">
                                 {image}
                             </Link>
                         ) : image}

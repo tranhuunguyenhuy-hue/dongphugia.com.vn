@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react"
 import Link from "next/link"
+import type { PublicHomeBanner } from "@dpg/app-contracts"
 import {
     createResponsiveMediaUrl,
     createResponsiveSrcSet,
@@ -9,12 +10,7 @@ import {
 
 type HeroBannerControlsProps = {
     carouselId: string
-    banners: Array<{
-        id: number
-        title?: string | null
-        image_url: string
-        link_url?: string | null
-    }>
+    banners: readonly PublicHomeBanner[]
 }
 
 export function HeroBannerControls({
@@ -43,7 +39,9 @@ export function HeroBannerControls({
 
     const item = banners[current]
     const responsiveSrcSet = current > 0
-        ? createResponsiveSrcSet(item.image_url, "hero")
+        ? item.desktopImageUrl && item.desktopLargeImageUrl
+            ? `${item.desktopImageUrl} 1280w, ${item.desktopLargeImageUrl} 1600w`
+            : createResponsiveSrcSet(item.imageUrl, "hero")
         : null
     const replacementImage = current > 0 ? (
         <picture className="block h-full w-full">
@@ -52,7 +50,7 @@ export function HeroBannerControls({
                     <source
                         media="(max-width: 767px)"
                         type="image/webp"
-                        srcSet={createResponsiveMediaUrl(item.image_url, 720)}
+                        srcSet={item.mobileImageUrl ?? createResponsiveMediaUrl(item.imageUrl, 720)}
                     />
                     <source
                         media="(min-width: 768px)"
@@ -63,7 +61,7 @@ export function HeroBannerControls({
                 </>
             ) : null}
             <img
-                src={item.image_url}
+                src={item.imageUrl}
                 alt={item.title || "Không gian vật liệu cao cấp Đông Phú Gia"}
                 width={1600}
                 height={900}
@@ -83,8 +81,8 @@ export function HeroBannerControls({
                     aria-roledescription="slide"
                     aria-label={`${current + 1} trên ${itemCount}`}
                 >
-                    {item.link_url ? (
-                        <Link href={item.link_url} className="block h-full w-full">
+                    {item.linkUrl ? (
+                        <Link href={item.linkUrl} className="block h-full w-full">
                             {replacementImage}
                         </Link>
                     ) : replacementImage}

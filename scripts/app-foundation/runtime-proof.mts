@@ -37,11 +37,13 @@ async function responseBody(response: Response, expectedStatus = 200) {
   return response.text()
 }
 
-function assertNoindexHtml(html: string) {
+function assertNoindexHtml(html: string, expectedTitle: string) {
   if (!/<meta\s+name=["']robots["']\s+content=["']noindex,\s*nofollow["']\s*\/?>(?:<\/meta>)?/i.test(html)) {
     throw new Error('RUNTIME_PROOF_HTML_NOINDEX_FAILED')
   }
-  if (!html.includes('<title>Dong Phu Gia')) throw new Error('RUNTIME_PROOF_SSR_METADATA_FAILED')
+  if (!html.includes(`<title>${expectedTitle}`)) {
+    throw new Error('RUNTIME_PROOF_SSR_METADATA_FAILED')
+  }
 }
 
 async function requestWithHost(baseUrl: URL, host: string) {
@@ -70,7 +72,7 @@ async function collectPublicProof(baseUrl: URL) {
   const proofHost = `leo563-${randomUUID()}.preview.invalid`
   const first = await fetch(new URL('/', baseUrl), { headers: { host: proofHost } })
   const firstBody = await responseBody(first)
-  assertNoindexHtml(firstBody)
+  assertNoindexHtml(firstBody, 'Đông Phú Gia - Vật liệu xây dựng cao cấp tại Đà Lạt')
   requireHeader(first, 'x-robots-tag', 'noindex, nofollow')
   requireHeader(first, 'cache-control', 'public, max-age=0, must-revalidate')
   requireHeader(first, 'cdn-cache-control', `public, max-age=${PUBLIC_EDGE_CACHE_SECONDS}, must-revalidate`)
@@ -143,7 +145,7 @@ async function collectAdminProof(baseUrl: URL) {
 
   const login = await fetch(loginUrl)
   const html = await responseBody(login)
-  assertNoindexHtml(html)
+  assertNoindexHtml(html, 'Dong Phu Gia Admin Application')
   requireHeader(login, 'x-robots-tag', 'noindex, nofollow')
   requireHeader(login, 'cache-control', 'private, no-store')
 

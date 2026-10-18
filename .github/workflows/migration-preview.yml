@@ -6,12 +6,16 @@ on:
   workflow_dispatch:
     inputs:
       publish_leo563_public_preview:
-        description: Upload the exact verified PR #138 candidate as one isolated Worker Preview version
+        description: Upload one exact verified PR candidate as an isolated Worker Preview version
         required: true
         default: false
         type: boolean
+      approved_pr_number:
+        description: Exact open pull request number approved for the Preview upload
+        required: false
+        type: string
       approved_source_sha:
-        description: Exact 40-character PR #138 head SHA approved for the Preview upload
+        description: Exact 40-character approved pull request head SHA
         required: false
         type: string
       managed_preview_run_id:
@@ -65,6 +69,7 @@ jobs:
           SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           GITHUB_REF_VALUE: ${{ github.ref }}
           MANUAL_UPLOAD: ${{ inputs.publish_leo563_public_preview || false }}
+          APPROVED_PR_NUMBER: ${{ inputs.approved_pr_number || '' }}
           APPROVED_SOURCE_SHA: ${{ inputs.approved_source_sha || '' }}
           MANAGED_PREVIEW_RUN_ID: ${{ inputs.managed_preview_run_id || '' }}
           MANAGED_PREVIEW_SOURCE_SHA: ${{ inputs.managed_preview_source_sha || '' }}
@@ -76,8 +81,8 @@ jobs:
           set -euo pipefail
           if [[ "$EVENT_NAME" == "workflow_dispatch" && "$MANUAL_UPLOAD" == "true" ]]; then
             [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]
+            [[ "$APPROVED_PR_NUMBER" =~ ^[1-9][0-9]*$ ]]
             [[ "$APPROVED_SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]
-            test "$GITHUB_REF_VALUE" = 'refs/heads/codex/leo-563-public-admin-ci-foundation'
             test "$SOURCE_SHA" = "$APPROVED_SOURCE_SHA"
             if [[ -n "$MANAGED_PREVIEW_RUN_ID" || -n "$MANAGED_PREVIEW_SOURCE_SHA" ]]; then
               [[ "$MANAGED_PREVIEW_RUN_ID" =~ ^[0-9]+$ ]]
@@ -86,10 +91,11 @@ jobs:
             if [[ -n "$MANAGED_PREVIEW_BOOTSTRAP_VERSION_ID" ]]; then
               [[ "$MANAGED_PREVIEW_BOOTSTRAP_VERSION_ID" =~ ^[0-9a-f-]{32,64}$ ]]
             fi
-            pr_json="$(gh api "repos/$REPOSITORY/pulls/138")"
+            pr_json="$(gh api "repos/$REPOSITORY/pulls/$APPROVED_PR_NUMBER")"
             test "$(jq -r '.state' <<< "$pr_json")" = 'open'
             test "$(jq -r '.base.ref' <<< "$pr_json")" = 'main'
-            test "$(jq -r '.head.ref' <<< "$pr_json")" = 'codex/leo-563-public-admin-ci-foundation'
+            approved_head_ref="$(jq -r '.head.ref' <<< "$pr_json")"
+            test "$GITHUB_REF_VALUE" = "refs/heads/$approved_head_ref"
             test "$(jq -r '.head.sha' <<< "$pr_json")" = "$SOURCE_SHA"
             {
               echo "source_sha=$SOURCE_SHA"
@@ -97,13 +103,13 @@ jobs:
               echo 'admin_changed=true'
               echo 'preview_required=true'
               echo 'owner_approved_upload=true'
-              echo 'pull_request_number=138'
+              echo "pull_request_number=$APPROVED_PR_NUMBER"
               echo "managed_preview_run_id=$MANAGED_PREVIEW_RUN_ID"
               echo "managed_preview_source_sha=$MANAGED_PREVIEW_SOURCE_SHA"
               echo "managed_preview_bootstrap_version_id=$MANAGED_PREVIEW_BOOTSTRAP_VERSION_ID"
-              echo 'reason=OWNER_APPROVED_EXACT_PR_138_PREVIEW_UPLOAD'
+              echo 'reason=OWNER_APPROVED_EXACT_PR_PREVIEW_UPLOAD'
             } >> "$GITHUB_OUTPUT"
-            echo 'LEO563_REPO_CODE_GATE status=OWNER_APPROVED_EXACT_PR_138_PREVIEW_UPLOAD'
+            echo 'LEO563_REPO_CODE_GATE status=OWNER_APPROVED_EXACT_PR_PREVIEW_UPLOAD'
             exit 0
           fi
           if [[ "$EVENT_NAME" != "pull_request" ]]; then
@@ -215,6 +221,7 @@ jobs:
       OUTPUT: ${{ github.workspace }}/.artifacts/dongphugia-app-preview
       SOURCE_SHA: ${{ needs.repo-code-gate.outputs.source_sha }}
       PR_NUMBER: ${{ needs.repo-code-gate.outputs.pull_request_number }}
+      DPG_PREVIEW_PR_NUMBER: ${{ needs.repo-code-gate.outputs.pull_request_number }}
       WORKFLOW_RUN_ID: ${{ github.run_id }}
     steps:
       - name: Checkout the exact PR-head revision
@@ -541,6 +548,7 @@ jobs:
     env:
       SOURCE_SHA: ${{ needs.repo-code-gate.outputs.source_sha }}
       PR_NUMBER: ${{ needs.repo-code-gate.outputs.pull_request_number }}
+      DPG_PREVIEW_PR_NUMBER: ${{ needs.repo-code-gate.outputs.pull_request_number }}
       WORKFLOW_RUN_ID: ${{ github.run_id }}
       ARTIFACT_ROOT: ${{ github.workspace }}/.artifacts/dongphugia-app-preview-download
       EVIDENCE_DIR: ${{ github.workspace }}/.artifacts/leo563-public-preview-evidence
@@ -607,7 +615,7 @@ jobs:
             --dry-run \
             --strict \
             --config wrangler.preview.json \
-            --preview-alias pr-138
+            --preview-alias "pr-$PR_NUMBER"
 
       - name: Validate the exact prior LEO-563 evidence for managed Preview reuse
         if: ${{ needs.repo-code-gate.outputs.managed_preview_run_id != '' }}
@@ -663,7 +671,7 @@ jobs:
               node "$WRANGLER_BIN" deploy \
                 --strict \
                 --config wrangler.preview.json \
-                --message "LEO-563 PR #138 bootstrap source $SOURCE_SHA" \
+                --message "PR #$PR_NUMBER bootstrap source $SOURCE_SHA" \
                 2>&1 | tee "$EVIDENCE_DIR/bootstrap-deploy.log"
               ;;
             INCOMPLETE)
@@ -683,7 +691,7 @@ jobs:
               ;;
           esac
 
-      - name: Upload one immutable Worker version with the PR #138 Preview alias
+      - name: Upload one immutable Worker version with the approved PR Preview alias
         id: version_upload
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -700,9 +708,9 @@ jobs:
           node "$WRANGLER_BIN" versions upload \
             --strict \
             --config wrangler.preview.json \
-            --preview-alias pr-138 \
+            --preview-alias "pr-$PR_NUMBER" \
             --tag "leo563-${SOURCE_SHA:0:12}" \
-            --message "LEO-563 PR #138 source $SOURCE_SHA" \
+            --message "PR #$PR_NUMBER source $SOURCE_SHA" \
             2>&1 | tee "$EVIDENCE_DIR/wrangler-upload.log"
 
       - name: Record the immutable version and workers.dev Preview identity
@@ -755,7 +763,7 @@ jobs:
             echo "- Exact source SHA: $SOURCE_SHA"
             echo '- Worker: dongphugia-v1-public-preview'
             echo "- Worker version ID: $version_id"
-            echo '- Preview alias: pr-138'
+            echo "- Preview alias: pr-$PR_NUMBER"
             echo "- Preview URL: $preview_url"
             echo '- Workers Free CPU/subrequest ceilings: provider-enforced; no explicit limits configured'
             echo '- Real SSR, health, HTML/header/robots noindex, MISS/HIT/bypass, and 300-second freshness: PASS'
@@ -816,6 +824,7 @@ jobs:
           OWNER_APPROVED_UPLOAD: ${{ needs.repo-code-gate.outputs.owner_approved_upload }}
           UPLOAD_JOB_RESULT: ${{ needs.cloudflare-preview-upload.result }}
           UPLOAD_RESULT: ${{ needs.cloudflare-preview-upload.outputs.result }}
+          PR_NUMBER: ${{ needs.repo-code-gate.outputs.pull_request_number }}
         shell: bash
         run: |
           set -euo pipefail
@@ -841,7 +850,7 @@ jobs:
             echo 'result=REAL_PUBLIC_PREVIEW_PASS' >> "$GITHUB_OUTPUT"
             {
               echo '### Cloudflare Preview: REAL_PUBLIC_PREVIEW_PASS'
-              echo '- One immutable version was uploaded to dongphugia-v1-public-preview with alias pr-138.'
+              echo "- One immutable version was uploaded to dongphugia-v1-public-preview with alias pr-$PR_NUMBER."
               echo '- No Production deployment, custom domain, route, DNS, traffic, or paid-plan mutation was performed.'
             } >> "$GITHUB_STEP_SUMMARY"
             exit 0

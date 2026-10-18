@@ -110,7 +110,7 @@ describe('LEO-563 application foundation contract', () => {
       'adminArtifactSha256',
       'SKIPPED_UNRELATED_CHANGE',
       'BLOCKED_BY_OWNER_GATE',
-      'OWNER_APPROVED_EXACT_PR_138_PREVIEW_UPLOAD',
+      'OWNER_APPROVED_EXACT_PR_PREVIEW_UPLOAD',
       'REAL_PUBLIC_PREVIEW_PASS',
       'Production custom domain/DNS/traffic: unchanged.',
     ]) expect(`${workflow}\n${changeGate}\n${candidateScript}`).toContain(marker)
@@ -129,7 +129,7 @@ describe('LEO-563 application foundation contract', () => {
     expect(workflow).not.toContain('secrets.CLOUDFLARE_API_TOKEN')
     expect(workflow).toContain('cloudflare-readonly-discovery.mjs')
     expect(workflow.match(/versions upload/g)).toHaveLength(2)
-    expect(workflow).toContain('--preview-alias pr-138')
+    expect(workflow).toContain('--preview-alias "pr-$PR_NUMBER"')
     expect(previewPublication).toContain("const WORKER_NAME = 'dongphugia-v1-public-preview'")
     expect(previewPublication).toContain('LEO563_PREVIEW_PRODUCTION_HOST_FORBIDDEN')
     expect(previewPublication).toContain('LEO563_PREVIEW_REMOTE_BINDING_OR_ROUTE_FORBIDDEN')

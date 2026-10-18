@@ -58,7 +58,7 @@ describe('migration PR CI and Preview workflow contract', () => {
   it('bootstraps only an absent Worker, reconciles incomplete state, or reuses a verified managed Preview before version upload', () => {
     const stateCheckStart = workflow.indexOf('name: Inspect the current Worker state before publication')
     const bootstrapStart = workflow.indexOf('name: Bootstrap absent, reconcile incomplete, or reuse managed active Preview')
-    const versionUploadStart = workflow.indexOf('name: Upload one immutable Worker version with the PR #138 Preview alias')
+    const versionUploadStart = workflow.indexOf('name: Upload one immutable Worker version with the approved PR Preview alias')
     const stateCheckEnd = workflow.indexOf('\n\n      - name:', stateCheckStart)
     const stateCheckStep = workflow.slice(stateCheckStart, stateCheckEnd)
     const bootstrapEnd = workflow.indexOf('\n\n      - name:', bootstrapStart)
@@ -83,7 +83,7 @@ describe('migration PR CI and Preview workflow contract', () => {
 
   it('records a write attempt and distinguishes pre-publication from current-attempt failure inspection', () => {
     const bootstrapStart = workflow.indexOf('name: Bootstrap absent, reconcile incomplete, or reuse managed active Preview')
-    const versionUploadStart = workflow.indexOf('name: Upload one immutable Worker version with the PR #138 Preview alias')
+    const versionUploadStart = workflow.indexOf('name: Upload one immutable Worker version with the approved PR Preview alias')
     const postFailureStart = workflow.indexOf('name: Inspect the Worker state after a failed publication or runtime gate')
     const postFailureEnd = workflow.indexOf('\n\n      - name:', postFailureStart)
     const postFailureStep = workflow.slice(postFailureStart, postFailureEnd)
@@ -151,20 +151,22 @@ describe('migration PR CI and Preview workflow contract', () => {
 
     for (const marker of [
       'publish_leo563_public_preview',
+      'approved_pr_number',
       'approved_source_sha',
-      "refs/heads/codex/leo-563-public-admin-ci-foundation",
-      'pulls/138',
+      'refs/heads/$approved_head_ref',
+      'pulls/$APPROVED_PR_NUMBER',
       'test "$SOURCE_SHA" = "$APPROVED_SOURCE_SHA"',
       'Re-verify the complete candidate identity before any Cloudflare mutation',
       'npm run app:verify-candidate',
       'npm run app:preview-publication -- preflight',
       'versions upload',
-      '--preview-alias pr-138',
+      '--preview-alias "pr-$PR_NUMBER"',
       'REAL_PUBLIC_PREVIEW_PASS',
       'CLOUDFLARE_LEO563_PREVIEW_TOKEN',
     ]) expect(workflow).toContain(marker)
 
     expect(workflow.match(/versions upload/g)).toHaveLength(2)
+    expect(workflow.match(/^\s+PR_NUMBER: \$\{\{ needs\.repo-code-gate\.outputs\.pull_request_number \}\}$/gm)).toHaveLength(3)
     expect(workflow.match(/secrets\.CLOUDFLARE_LEO563_PREVIEW_TOKEN/g)).toHaveLength(5)
     expect(workflow.match(/secrets\.CLOUDFLARE_READONLY_DISCOVERY_TOKEN/g)).toHaveLength(1)
     expect(workflow).not.toContain('secrets.CLOUDFLARE_API_TOKEN')
@@ -184,7 +186,7 @@ describe('migration PR CI and Preview workflow contract', () => {
 
     for (const marker of [
       "const WORKER_NAME = 'dongphugia-v1-public-preview'",
-      "const PREVIEW_ALIAS = 'pr-138'",
+      'const PREVIEW_ALIAS = `pr-${PREVIEW_PR_NUMBER}`',
       'config.workers_dev !== false',
       'config.preview_urls !== true',
       "Object.hasOwn(config, 'limits')",
