@@ -122,12 +122,6 @@ declare
     'product_family_memberships',
     'publishing_credentials'
   ];
-  readonly_tables constant text[] := array[
-    'product_families',
-    'product_family_catalogue_gaps',
-    'product_family_configuration_groups',
-    'product_family_memberships'
-  ];
 begin
   foreach target_table_name in array target_tables
   loop
@@ -156,6 +150,12 @@ declare
     'product_family_configuration_groups',
     'product_family_memberships',
     'publishing_credentials'
+  ];
+  readonly_tables constant text[] := array[
+    'product_families',
+    'product_family_catalogue_gaps',
+    'product_family_configuration_groups',
+    'product_family_memberships'
   ];
 begin
   if not has_schema_privilege('dpg_backup', 'dpg_app', 'USAGE') then
