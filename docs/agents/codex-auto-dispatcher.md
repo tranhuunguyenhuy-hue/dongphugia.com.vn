@@ -84,6 +84,12 @@ publisher job (fresh hosted runner, separate GitHub App)
   - pushes deterministic task branch
   - opens DRAFT PR and comments evidence
   - never merges and never deploys
+        |
+        v
+lock cleanup + final status (fresh jobs)
+  - verifies lock SHA before deleting only the transient ref
+  - records Mutation ownership: RELEASED only after successful cleanup
+  - leaves HELD + a fail-closed Owner gate if cleanup fails
 ```
 
 The dispatcher workflow is intentionally an `issue_comment` workflow. GitHub
@@ -134,8 +140,11 @@ OpenAI job. A competing command records `CODEX_AUTO_DISPATCH_REJECTED_BUSY` and
 does not reach the model. Every terminal path verifies the lock SHA and removes
 only that transient ref. A cleanup failure leaves the lock fail-closed, records
 `CODEX_AUTO_DISPATCH_LOCK_RELEASE_FAILED`, and requires Owner audit before the
-exact ref is removed. A completed result branch makes re-delivery of the same
-comment fail closed. There is no automatic retry.
+exact ref is removed. The draft PR and intermediate status remain `HELD` until
+cleanup succeeds; only then does a separate status job record
+`CODEX_AUTO_DISPATCH_RELEASED` and `Mutation ownership: RELEASED`. A completed
+result branch makes re-delivery of the same comment fail closed. There is no
+automatic retry.
 
 ## Trust boundaries and remaining limits
 
@@ -146,6 +155,11 @@ comment fail closed. There is no automatic retry.
   jobs on fresh runners. The publisher independently downloads the immutable
   preflight dispatch artifact; it never trusts a dispatch file from the model's
   writable workspace or result artifact.
+- **Publisher credentials are job-scoped.** The claim token requests only
+  Contents + Issues write, the draft-PR publisher requests Contents + Issues +
+  Pull requests write, and lock cleanup requests only Contents write. Status-
+  only jobs use the workflow token with Issues write and never receive the App
+  private key.
 - **The publisher does not execute the generated change.** It validates and
   applies the patch, then relies on normal PR CI and review. The patch cannot
   add workflows, symlinks, gitlinks/submodules, binary payloads, backup changes,
@@ -223,7 +237,8 @@ Acceptance evidence:
 4. An out-of-scope, binary, symlink, gitlink/submodule, oversized, duplicate,
    or base-mismatched patch fails before push.
 5. A valid text patch produces one draft PR, a completion comment, a run link,
-   exact base SHA, ordinary required CI, and no merge/deploy/Production action.
+   exact base SHA, ordinary required CI, a final `RELEASED` status only after
+   verified lock cleanup, and no merge/deploy/Production action.
 6. Two concurrent commands on one Issue produce one atomic lock winner and one
    explicit `REJECTED_BUSY` result; neither task is silently replaced in a
    pending queue. Re-delivery of a completed comment fails closed because the

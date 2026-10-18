@@ -26,7 +26,7 @@ Implements the validated task from #${dispatch.issue_number}, comment ${dispatch
 - Rollback position: ${dispatch.task.rollback}
 - Remaining risk: prompt injection by the trusted admin, model error, and ordinary source defects remain possible until CI and review pass
 - Next authorized action: Owner reviews this draft and its required CI; merge requires separate approval
-- Mutation ownership: **RELEASED**
+- Mutation ownership: **HELD by publisher pending verified lock cleanup**
 
 The Codex executor had no GitHub write token. A separate deterministic publisher validated the patch scope and opened this draft PR. Required CI and human review remain independent gates.
 `

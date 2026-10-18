@@ -7,6 +7,10 @@ const workflow = await readFile(
   resolve(process.cwd(), '.github/workflows/codex-auto-dispatcher.yml'),
   'utf8',
 )
+const publisherMetadata = await readFile(
+  resolve(process.cwd(), 'scripts/automation/codex-publish-metadata.mjs'),
+  'utf8',
+)
 
 function job(name, nextName) {
   const start = workflow.indexOf(`  ${name}:`)
@@ -28,8 +32,15 @@ describe('Codex auto-dispatcher workflow trust boundary', () => {
   })
 
   it('keeps Codex read-only at GitHub and gives write authority only to the publisher job', () => {
+    const claim = job('claim', 'execute')
     const execute = job('execute', 'publish')
-    const publish = job('publish')
+    const publish = job('publish', 'no_changes')
+    const noChanges = job('no_changes', 'report_failure')
+    const release = job('release_lock', 'report_release_failure')
+
+    expect(claim).toContain('permission-contents: write')
+    expect(claim).toContain('permission-issues: write')
+    expect(claim).not.toContain('permission-pull-requests: write')
 
     expect(execute).toContain('contents: read')
     expect(execute).not.toContain('contents: write')
@@ -49,6 +60,9 @@ describe('Codex auto-dispatcher workflow trust boundary', () => {
     expect(publish).not.toContain('OPENAI_API_KEY')
     expect(publish).toContain('CODEX_PUBLISHER_APP_ID')
     expect(publish).toContain('CODEX_PUBLISHER_APP_PRIVATE_KEY')
+    expect(publish).toContain('permission-contents: write')
+    expect(publish).toContain('permission-issues: write')
+    expect(publish).toContain('permission-pull-requests: write')
     expect(publish).toContain('Reload trusted dispatch independently of model output')
     expect(publish).toContain('$RUNNER_TEMP/trusted-dispatch/dispatch.json')
     expect(publish).toContain('$RUNNER_TEMP/generated-result/codex.patch')
@@ -56,6 +70,13 @@ describe('Codex auto-dispatcher workflow trust boundary', () => {
     expect(workflow).not.toMatch(/(?:gh pr merge|git merge|enable-auto-merge)/)
     expect(workflow).toContain('needs: [preflight, claim, execute, publish, no_changes]')
     expect(workflow).toContain("needs.no_changes.result == 'failure'")
+    expect(noChanges).not.toContain('CODEX_PUBLISHER_APP')
+    expect(noChanges).toContain('GH_TOKEN: ${{ github.token }}')
+    expect(release).toContain('permission-contents: write')
+    expect(release).not.toContain('permission-pull-requests: write')
+    expect(workflow).toContain('CODEX_AUTO_DISPATCH_RELEASED')
+    expect(publisherMetadata).toContain('HELD by publisher pending verified lock cleanup')
+    expect(publisherMetadata).not.toContain('Mutation ownership: **RELEASED**')
   })
 
   it('pins every third-party action to an immutable commit', () => {

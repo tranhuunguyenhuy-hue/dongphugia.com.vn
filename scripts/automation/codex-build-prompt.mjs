@@ -40,7 +40,7 @@ ${task.allowed_paths.map((item) => `- \`${item}\``).join('\n')}
 - Do not commit, push, create a pull request, or post to GitHub. A separate deterministic publisher owns those writes.
 - Do not use sudo or Docker. Keep all edits inside the workspace-write sandbox.
 - Run focused local tests that do not need secrets or external services. Report every unrun check as UNKNOWN.
-- Finish with a concise summary of changed files, tests, exclusions, remaining risk, rollback position, the next approval gate, and \`Mutation ownership: RELEASED\` after the source handoff is complete.
+- Finish with a concise summary of changed files, tests, exclusions, remaining risk, rollback position, the next approval gate, and \`Executor mutation ownership: RELEASED TO PUBLISHER\` after the source handoff is complete. The workflow publisher retains overall ownership until its verified lock cleanup finishes.
 `
 
 await writeFile(outputPath, prompt, { mode: 0o600 })

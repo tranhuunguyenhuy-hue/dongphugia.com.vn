@@ -53,7 +53,7 @@ jobs:
     outputs:
       claimed: ${{ steps.claim.outputs.claimed }}
     steps:
-      - name: Mint short-lived status token
+      - name: Mint short-lived claim token
         id: publisher-token
         uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349
         with:
@@ -61,6 +61,8 @@ jobs:
           private-key: ${{ secrets.CODEX_PUBLISHER_APP_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
           repositories: dongphugia.com.vn
+          permission-contents: write
+          permission-issues: write
 
       - name: Claim the Issue slot and report accepted or busy
         id: claim
@@ -81,6 +83,7 @@ jobs:
               echo "<!-- codex-auto-dispatch:$DISPATCH_ID:running -->"
               echo "CODEX_AUTO_DISPATCH_RUNNING: authenticated command accepted at exact base \`$BASE_SHA\`."
               echo "One bounded source-only attempt is running: $DISPATCH_RUN_URL"
+              echo 'Mutation ownership: HELD by the dispatcher publisher.'
             } > issue-comment.md
           elif gh api "$lock_path" >/dev/null 2>&1; then
             echo 'claimed=false' >> "$GITHUB_OUTPUT"
@@ -89,6 +92,7 @@ jobs:
               echo 'CODEX_AUTO_DISPATCH_REJECTED_BUSY: another task owns this Issue slot.'
               echo 'No Codex/API execution or automatic retry occurred; submit a new command after the active run reaches a terminal state.'
               echo "Evidence: $DISPATCH_RUN_URL"
+              echo 'Mutation ownership: NOT ACQUIRED.'
             } > issue-comment.md
           else
             echo 'Atomic lock creation failed for a reason other than an existing lock.' >&2
@@ -200,6 +204,9 @@ jobs:
           private-key: ${{ secrets.CODEX_PUBLISHER_APP_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
           repositories: dongphugia.com.vn
+          permission-contents: write
+          permission-issues: write
+          permission-pull-requests: write
 
       - name: Checkout exact validated base with publisher identity
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
@@ -257,6 +264,7 @@ jobs:
             echo "Exact base: \`${{ needs.preflight.outputs.base_sha }}\`"
             echo "Workflow evidence: $DISPATCH_RUN_URL"
             echo 'Merge and Production remain Owner gates.'
+            echo 'Mutation ownership: HELD by the publisher pending verified lock cleanup.'
           } > issue-comment.md
           gh issue comment "$ISSUE_NUMBER" --body-file issue-comment.md
 
@@ -267,20 +275,11 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
-      contents: read
+      issues: write
     steps:
-      - name: Mint short-lived status token
-        id: publisher-token
-        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349
-        with:
-          app-id: ${{ secrets.CODEX_PUBLISHER_APP_ID }}
-          private-key: ${{ secrets.CODEX_PUBLISHER_APP_PRIVATE_KEY }}
-          owner: ${{ github.repository_owner }}
-          repositories: dongphugia.com.vn
-
       - name: Report no source change
         env:
-          GH_TOKEN: ${{ steps.publisher-token.outputs.token }}
+          GH_TOKEN: ${{ github.token }}
           ISSUE_NUMBER: ${{ needs.preflight.outputs.issue_number }}
           DISPATCH_ID: ${{ needs.preflight.outputs.dispatch_id }}
           DISPATCH_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
@@ -290,6 +289,7 @@ jobs:
             echo 'CODEX_AUTO_DISPATCH_COMPLETE: Codex produced no source diff.'
             echo "Review workflow run: $DISPATCH_RUN_URL"
             echo 'No merge or Production action occurred.'
+            echo 'Mutation ownership: HELD by the publisher pending verified lock cleanup.'
           } > issue-comment.md
           gh issue comment "$ISSUE_NUMBER" --body-file issue-comment.md
 
@@ -314,6 +314,7 @@ jobs:
             echo 'CODEX_AUTO_DISPATCH_FAILED: No automatic retry was attempted.'
             echo "Inspect: $DISPATCH_RUN_URL"
             echo 'Issue a new validated command only after resolving the cause.'
+            echo 'Mutation ownership: HELD if the Issue lock was acquired; cleanup runs fail-closed.'
           } > issue-comment.md
           gh issue comment "$ISSUE_NUMBER" --body-file issue-comment.md
 
@@ -334,6 +335,7 @@ jobs:
           private-key: ${{ secrets.CODEX_PUBLISHER_APP_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
           repositories: dongphugia.com.vn
+          permission-contents: write
 
       - name: Verify and delete only this transient lock ref
         env:
@@ -349,6 +351,30 @@ jobs:
             exit 1
           fi
           gh api --method DELETE "$lock_path"
+
+  report_release_success:
+    name: Record final mutation ownership release
+    needs: [preflight, release_lock]
+    if: ${{ always() && needs.preflight.result == 'success' && needs.release_lock.result == 'success' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Record final released state
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ needs.preflight.outputs.issue_number }}
+          DISPATCH_ID: ${{ needs.preflight.outputs.dispatch_id }}
+          DISPATCH_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          {
+            echo "<!-- codex-auto-dispatch:$DISPATCH_ID:released -->"
+            echo 'CODEX_AUTO_DISPATCH_RELEASED: the verified transient Issue lock was removed.'
+            echo "Evidence: $DISPATCH_RUN_URL"
+            echo 'Mutation ownership: RELEASED.'
+          } > issue-comment.md
+          gh issue comment "$ISSUE_NUMBER" --body-file issue-comment.md
 
   report_release_failure:
     name: Report a lock cleanup failure
@@ -370,5 +396,6 @@ jobs:
             echo "<!-- codex-auto-dispatch:$DISPATCH_ID:lock-release-failed -->"
             echo 'CODEX_AUTO_DISPATCH_LOCK_RELEASE_FAILED: the transient Issue lock remains fail-closed.'
             echo "Inspect and remove only the verified lock ref before retrying: $DISPATCH_RUN_URL"
+            echo 'Mutation ownership: HELD; Owner cleanup approval is required.'
           } > issue-comment.md
           gh issue comment "$ISSUE_NUMBER" --body-file issue-comment.md
