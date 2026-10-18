@@ -6,6 +6,8 @@ sanitized provisioning evidence lives in `../ops/project-current-state.md`.
 ## Target identity and scope
 
 - Project name: `dongphugia-runtime`
+- Organization: `Đông Phú Gia Runtime`, ref `ymjvuwefhqqlymwlocqn`
+- Project ref: `bonxyxluzlxfkdetryoo`
 - Region: Singapore, `ap-southeast-1`
 - PostgreSQL: 17
 - Environment: isolated Preview target; not Production
@@ -22,7 +24,7 @@ Apply the migrations in `supabase/migrations/` in filename order. Never place a
 password, token, service-role key, database URL, or credential verifier in the
 migration, command line, CI log, PR, Linear, or evidence.
 
-The boundary creates three `NOLOGIN`, `NOSUPERUSER`, `NOCREATEDB`,
+The boundary creates four `NOLOGIN`, `NOSUPERUSER`, `NOCREATEDB`,
 `NOCREATEROLE`, `NOINHERIT`, `NOREPLICATION`, `NOBYPASSRLS` capability roles:
 
 - `dpg_migration`: owns `dpg_app` and `dpg_control`, may execute the explicit
@@ -32,8 +34,15 @@ The boundary creates three `NOLOGIN`, `NOSUPERUSER`, `NOCREATEDB`,
   RLS and an authenticated owner claim.
 - `dpg_readonly`: receives `SELECT` only, has
   `default_transaction_read_only=on`, and cannot insert, update, or delete.
+- `dpg_backup`: is a passwordless capability prerequisite for explicit backup
+  grants. It owns nothing, receives no broad or default privilege, and is
+  created before the reviewed LEO-542 backup-coverage migrations. Its
+  prerequisite rejects any pre-existing membership path, shared dependency,
+  owned object, object or column ACL, default privilege, policy grant, user
+  mapping, or role setting before later explicit read-only grants are applied.
 
-The boundary also creates one target-local `LOGIN` identity per capability:
+The original boundary creates one target-local `LOGIN` identity for each
+application capability:
 `dpg_migration_login`, `dpg_runtime_login`, and `dpg_readonly_login`. Each is
 `NOINHERIT`, has the same restricted attributes as its capability, and is a
 member of exactly one capability role. PostgreSQL generates the initial
@@ -41,6 +50,10 @@ passwords inside the target; the migration never returns them and no operator
 retrieves them. Before first consumer use, reset only that target-local
 credential through an approved secret-delivery path, then explicitly `SET ROLE`
 to the single granted capability.
+
+`dpg_backup_login` remains a separate target-local secret-delivery operation
+owned by the backup runbook. The migration creates only `dpg_backup` as
+`NOLOGIN`; it never creates, retrieves, emits, or persists that credential.
 
 ## Auth, RLS, and environment separation
 

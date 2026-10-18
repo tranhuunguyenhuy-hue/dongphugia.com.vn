@@ -1,0 +1,276 @@
+name: Supabase runtime catalogue re-home
+
+on:
+  workflow_dispatch:
+    inputs:
+      approved_source_sha:
+        description: Exact merged main SHA containing the reviewed re-home controls
+        required: true
+        type: string
+      operation:
+        description: Read-only preflight, apply remaining schema migrations, or restore catalogue
+        required: true
+        default: preflight
+        type: choice
+        options:
+          - preflight
+          - migrate
+          - restore
+
+permissions:
+  contents: read
+  actions: read
+  issues: read
+
+concurrency:
+  group: supabase-runtime-rehome-${{ github.repository }}
+  cancel-in-progress: false
+
+env:
+  POSTGRES_IMAGE: postgres:17.6-bookworm@sha256:45cd22f8d32e189d245403954882f88e7a8714301fda80dab6da90f1265b25a3
+  ISSUE_NUMBER: '158'
+  BACKUP_RUN_ID: '38915575745'
+  BACKUP_ARTIFACT_NAME: 'leo540-runtime-backup-38915575745'
+  BACKUP_ARTIFACT_ID: '12052107648'
+  EXPECTED_PR_NUMBER: '156'
+  EXPECTED_CANDIDATE_SHA: d300eb696a94acfa557fbaf7a8c0e66876dafb63
+  EXPECTED_CONTROL_SHA: ce64e8cc7caf91b8bf2e4e2315d49e21bacdfffc
+  EXPECTED_MERGE_SHA: 59d9ea02dbceb5a3b83d00f929a8ee3a8f70cc35
+  EXPECTED_WORKFLOW_RUN_ID: '38915575745'
+  SUPABASE_ORGANIZATION_SLUG: ymjvuwefhqqlymwlocqn
+  SUPABASE_PROJECT_REF: bonxyxluzlxfkdetryoo
+  SUPABASE_PROJECT_REGION: ap-southeast-1
+
+jobs:
+  preflight:
+    name: Verify trusted source, approval record, and retained artifact
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    outputs:
+      source_sha: ${{ steps.gate.outputs.source_sha }}
+    steps:
+      - name: Check out trusted main
+        uses: actions/checkout@v4
+        with:
+          ref: refs/heads/main
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify exact main and durable scope
+        id: gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APPROVED_SOURCE_SHA: ${{ inputs.approved_source_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = 'refs/heads/main'
+          [[ "$APPROVED_SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          test "$(git rev-parse HEAD)" = "$APPROVED_SOURCE_SHA"
+          test "$GITHUB_SHA" = "$APPROVED_SOURCE_SHA"
+
+          issue_json="$RUNNER_TEMP/issue-158.json"
+          run_json="$RUNNER_TEMP/backup-run.json"
+          artifacts_json="$RUNNER_TEMP/backup-artifacts.json"
+          gh api "repos/$GITHUB_REPOSITORY/issues/$ISSUE_NUMBER" >"$issue_json"
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$BACKUP_RUN_ID" >"$run_json"
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$BACKUP_RUN_ID/artifacts" >"$artifacts_json"
+
+          test "$(jq -r '.state' "$issue_json")" = 'open'
+          jq -e '.body | contains("Mutation ownership: HELD")' "$issue_json" >/dev/null
+          jq -e '.body | contains("Expanded catalogue scope approved on 2026-10-18")' "$issue_json" >/dev/null
+          jq -e '.body | contains("PII, Auth users, customers, staff/admin identities or sessions, orders, quotes/quote requests, Blog")' "$issue_json" >/dev/null
+          test "$(jq -r '.conclusion' "$run_json")" = 'success'
+          test "$(jq -r '.head_sha' "$run_json")" = "$EXPECTED_CONTROL_SHA"
+          jq -e --arg name "$BACKUP_ARTIFACT_NAME" --argjson id "$BACKUP_ARTIFACT_ID" '
+            .artifacts | any(.name == $name and .id == $id and .expired == false)
+          ' "$artifacts_json" >/dev/null
+          echo "source_sha=$APPROVED_SOURCE_SHA" >>"$GITHUB_OUTPUT"
+          echo 'CATALOGUE_REHOME_GATE status=PASS issue=158 artifact=exact'
+
+  restore:
+    name: Rehearse and preflight or restore catalogue
+    needs: preflight
+    if: needs.preflight.result == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    environment: runtime-backup
+    steps:
+      - name: Check out the exact approved controls
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.preflight.outputs.source_sha }}
+          persist-credentials: false
+
+      - name: Install restore tooling
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install --no-install-recommends --yes age jq postgresql-client >/dev/null
+
+      - name: Set up locked Node.js dependencies
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install locked project dependencies
+        shell: bash
+        run: npm ci
+
+      - name: Verify current Supabase Free plan and exact healthy project
+        env:
+          SUPABASE_MANAGEMENT_TOKEN: ${{ secrets.SUPABASE_MANAGEMENT_TOKEN }}
+          ORGANIZATION_RESULT: ${{ runner.temp }}/supabase-organization.json
+          PROJECTS_RESULT: ${{ runner.temp }}/supabase-projects.json
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$SUPABASE_MANAGEMENT_TOKEN"
+          printf 'header = "Authorization: Bearer %s"\n' "$SUPABASE_MANAGEMENT_TOKEN" | \
+            curl --config - --fail --silent --show-error \
+              --output "$ORGANIZATION_RESULT" \
+              "https://api.supabase.com/v1/organizations/$SUPABASE_ORGANIZATION_SLUG"
+          printf 'header = "Authorization: Bearer %s"\n' "$SUPABASE_MANAGEMENT_TOKEN" | \
+            curl --config - --fail --silent --show-error \
+              --output "$PROJECTS_RESULT" \
+              'https://api.supabase.com/v1/projects'
+          test "$(jq -r '.plan' "$ORGANIZATION_RESULT")" = 'free'
+          test "$(jq --arg org "$SUPABASE_ORGANIZATION_SLUG" \
+            '[.[] | select(.organization_slug == $org and .status == "ACTIVE_HEALTHY")] | length' \
+            "$PROJECTS_RESULT")" -le 2
+          jq -e --arg ref "$SUPABASE_PROJECT_REF" \
+            --arg org "$SUPABASE_ORGANIZATION_SLUG" \
+            --arg region "$SUPABASE_PROJECT_REGION" '
+              any(.ref == $ref and .organization_slug == $org
+                and .name == "dongphugia-runtime" and .region == $region
+                and .status == "ACTIVE_HEALTHY")
+            ' "$PROJECTS_RESULT" >/dev/null
+          rm -f "$ORGANIZATION_RESULT" "$PROJECTS_RESULT"
+          echo 'SUPABASE_CONTROL_PLANE status=PASS plan=free project=exact region=ap-southeast-1 health=ACTIVE_HEALTHY'
+
+      - name: Download the exact encrypted backup artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/catalogue-rehome-backup"
+          gh run download "$BACKUP_RUN_ID" --name "$BACKUP_ARTIFACT_NAME" \
+            --dir "$RUNNER_TEMP/catalogue-rehome-backup"
+
+      - name: Rehearse the filtered restore without network
+        env:
+          MODE: rehearsal
+          BACKUP_DIR: ${{ runner.temp }}/catalogue-rehome-backup
+          OUTPUT_DIR: ${{ runner.temp }}/catalogue-rehome-evidence
+          AGE_IDENTITY: ${{ secrets.BACKUP_AGE_PRIVATE_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash scripts/backup/restore-catalogue-runtime.sh
+
+      - name: Apply the exact remaining migrations in repository order
+        if: inputs.operation == 'migrate'
+        env:
+          SUPABASE_REHOME_DATABASE_URL: ${{ secrets.SUPABASE_REHOME_DATABASE_URL }}
+        shell: bash
+        run: node scripts/backup/supabase-runtime-migrations.mjs apply
+
+      - name: Attest the exact existing checkpoint without remote mutation
+        if: inputs.operation == 'preflight'
+        env:
+          CHECKPOINT_ATTESTATION_MODE: readonly
+          SUPABASE_REHOME_DATABASE_URL: ${{ secrets.SUPABASE_REHOME_DATABASE_URL }}
+        shell: bash
+        run: bash scripts/backup/attest-supabase-runtime-checkpoint.sh
+
+      - name: Verify exact migration ledger and read-only schema, RLS, and API boundary
+        if: inputs.operation != 'preflight'
+        env:
+          SUPABASE_REHOME_DATABASE_URL: ${{ secrets.SUPABASE_REHOME_DATABASE_URL }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/backup/supabase-runtime-migrations.mjs status
+          if ! node scripts/backup/supabase-runtime-psql.mjs \
+            --file supabase/tests/leo560_preview_rls_hardening.sql \
+            >/dev/null 2>"$RUNNER_TEMP/supabase-acceptance.error"; then
+            rm -f "$RUNNER_TEMP/supabase-acceptance.error"
+            echo 'SUPABASE_RUNTIME_ACCEPTANCE status=FAIL stage=rls'
+            exit 1
+          fi
+          if ! node scripts/backup/supabase-runtime-psql.mjs \
+            --file supabase/tests/supabase_runtime_readonly_acceptance.sql \
+            >/dev/null 2>"$RUNNER_TEMP/supabase-acceptance.error"; then
+            rm -f "$RUNNER_TEMP/supabase-acceptance.error"
+            echo 'SUPABASE_RUNTIME_ACCEPTANCE status=FAIL stage=api_readonly'
+            exit 1
+          fi
+          rm -f "$RUNNER_TEMP/supabase-acceptance.error"
+          echo 'SUPABASE_RUNTIME_ACCEPTANCE status=PASS schema=exact rls=forced api=readonly-validated'
+
+      - name: Run rollback-only API behavior acceptance after schema mutation
+        if: inputs.operation == 'migrate'
+        env:
+          SUPABASE_REHOME_DATABASE_URL: ${{ secrets.SUPABASE_REHOME_DATABASE_URL }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! node scripts/backup/supabase-runtime-psql.mjs \
+            --file supabase/tests/leo565_media_foundation.sql \
+            >/dev/null 2>"$RUNNER_TEMP/supabase-acceptance.error"; then
+            rm -f "$RUNNER_TEMP/supabase-acceptance.error"
+            echo 'SUPABASE_RUNTIME_ACCEPTANCE status=FAIL stage=api'
+            exit 1
+          fi
+          rm -f "$RUNNER_TEMP/supabase-acceptance.error"
+          echo 'SUPABASE_RUNTIME_ACCEPTANCE status=PASS api=rollback-only-behavior-validated'
+
+      - name: Verify the exact remote target remains empty
+        if: inputs.operation != 'preflight'
+        env:
+          MODE: preflight
+          BACKUP_DIR: ${{ runner.temp }}/catalogue-rehome-backup
+          OUTPUT_DIR: ${{ runner.temp }}/catalogue-rehome-evidence
+          SUPABASE_REHOME_DATABASE_URL: ${{ secrets.SUPABASE_REHOME_DATABASE_URL }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash scripts/backup/restore-catalogue-runtime.sh
+
+      - name: Apply the filtered catalogue in one transaction
+        if: inputs.operation == 'restore'
+        env:
+          MODE: apply
+          BACKUP_DIR: ${{ runner.temp }}/catalogue-rehome-backup
+          OUTPUT_DIR: ${{ runner.temp }}/catalogue-rehome-evidence
+          AGE_IDENTITY: ${{ secrets.BACKUP_AGE_PRIVATE_KEY }}
+          SUPABASE_REHOME_DATABASE_URL: ${{ secrets.SUPABASE_REHOME_DATABASE_URL }}
+          EXPECTED_CATALOGUE_MANIFEST: ${{ runner.temp }}/catalogue-rehome-evidence/catalogue-expected.json
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash scripts/backup/restore-catalogue-runtime.sh
+
+      - name: Upload sanitized evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: catalogue-rehome-${{ github.run_id }}
+          path: ${{ runner.temp }}/catalogue-rehome-evidence
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Record bounded result
+        shell: bash
+        run: |
+          {
+            echo '### Supabase runtime catalogue re-home: PASS'
+            echo "- Operation: ${{ inputs.operation }}"
+            echo '- Source: exact retained encrypted artifact with isolated filtered-restore rehearsal'
+            echo '- Included: Product, Brand, Category, attribute/specification/taxonomy, relationship, URL metadata, provenance'
+            echo '- Excluded: PII, Auth, customer, staff/admin, order, quote, Blog, publishing identity/credential, media bytes'
+            echo '- Target: exact isolated Free Preview project; exact migration seeds, otherwise-empty target, and 350 MiB guards enforced'
+            echo '- DNS, traffic, cutover, and legacy-project mutation: none'
+          } >>"$GITHUB_STEP_SUMMARY"
