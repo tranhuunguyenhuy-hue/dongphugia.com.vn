@@ -79,6 +79,9 @@ not an authority document: verify it immediately before relying on it.
 - `CURRENT` — [Workflow controls](WORKFLOW-WITH-CODEX.md#risk-proportionate-controls):
   the one standard workflow and risk-proportionate validation, recovery, and
   approval controls.
+- `PROPOSED` — [Codex event dispatcher](agents/codex-auto-dispatcher.md):
+  source-only GitHub event design, trust boundaries, cost model, activation
+  gates, and dry-run acceptance plan. It is not active or authorized to run.
 - `SUPPORTING` — [Design system](DESIGN_SYSTEM.md): UI token and component
   design work.
 - `SUPPORTING` — [Public sitemap map](SITEMAP.md): crawl, sitemap, and public

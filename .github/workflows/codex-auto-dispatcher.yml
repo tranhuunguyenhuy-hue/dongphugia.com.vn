@@ -1,0 +1,309 @@
+name: Codex source-only auto-dispatcher
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions: {}
+
+concurrency:
+  group: codex-auto-dispatch-${{ github.repository_id }}-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    name: Validate trusted dispatch event
+    if: ${{ github.event.issue != null && github.event.comment != null }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      issue_number: ${{ steps.validate.outputs.issue_number }}
+      source_comment_id: ${{ steps.validate.outputs.source_comment_id }}
+      base_sha: ${{ steps.validate.outputs.base_sha }}
+      branch: ${{ steps.validate.outputs.branch }}
+      dispatch_id: ${{ steps.validate.outputs.dispatch_id }}
+    steps:
+      - name: Checkout trusted default-branch controls
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Validate repository, actor, ref, command, and idempotency
+        id: validate
+        env:
+          EXPECTED_REPOSITORY_ID: '1157762683'
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/automation/codex-dispatch-preflight-cli.mjs > dispatch.json
+
+      - name: Store normalized dispatch only
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: codex-dispatch-${{ github.event.issue.number }}-${{ github.event.comment.id }}
+          path: dispatch.json
+          if-no-files-found: error
+          retention-days: 1
+
+  mark_running:
+    name: Report accepted task
+    needs: preflight
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Mint short-lived status token
+        id: publisher-token
+        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349
+        with:
+          app-id: ${{ secrets.CODEX_PUBLISHER_APP_ID }}
+          private-key: ${{ secrets.CODEX_PUBLISHER_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: dongphugia.com.vn
+
+      - name: Report validated execution start
+        env:
+          GH_TOKEN: ${{ steps.publisher-token.outputs.token }}
+          ISSUE_NUMBER: ${{ needs.preflight.outputs.issue_number }}
+          DISPATCH_ID: ${{ needs.preflight.outputs.dispatch_id }}
+          BASE_SHA: ${{ needs.preflight.outputs.base_sha }}
+          DISPATCH_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          {
+            echo "<!-- codex-auto-dispatch:$DISPATCH_ID:running -->"
+            echo "CODEX_AUTO_DISPATCH_RUNNING: authenticated command accepted at exact base \`$BASE_SHA\`."
+            echo "One bounded source-only attempt is running: $DISPATCH_RUN_URL"
+          } > issue-comment.md
+          gh issue comment "$ISSUE_NUMBER" --body-file issue-comment.md
+
+  execute:
+    name: Run Codex without GitHub write authority
+    needs: [preflight, mark_running]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      actions: read
+      contents: read
+    outputs:
+      has_patch: ${{ steps.patch.outputs.has_patch }}
+    steps:
+      - name: Checkout exact validated base
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ needs.preflight.outputs.base_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Download normalized dispatch
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0
+        with:
+          name: codex-dispatch-${{ needs.preflight.outputs.issue_number }}-${{ needs.preflight.outputs.source_comment_id }}
+          path: ${{ runner.temp }}/trusted-dispatch
+
+      - name: Build bounded prompt from normalized task
+        run: >-
+          node scripts/automation/codex-build-prompt.mjs
+          "$RUNNER_TEMP/trusted-dispatch/dispatch.json"
+          "$RUNNER_TEMP/codex-task.md"
+
+      - name: Remove Docker socket access before model execution
+        shell: bash
+        run: |
+          if [[ -S /var/run/docker.sock ]]; then
+            sudo chmod 000 /var/run/docker.sock
+          fi
+          if [[ -r /var/run/docker.sock || -w /var/run/docker.sock ]]; then
+            echo 'Docker socket remains accessible' >&2
+            exit 1
+          fi
+
+      - name: Make Git control state read-only during model execution
+        run: |
+          chmod -R a-w .git
+          if [[ -w .git/config ]]; then
+            echo 'Git control state remains writable' >&2
+            exit 1
+          fi
+
+      - name: Run Codex in the workspace sandbox
+        uses: openai/codex-action@bdf19a4a223ec2549a3e2274a0cf61556bc07675
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          prompt-file: ${{ runner.temp }}/codex-task.md
+          output-file: ${{ runner.temp }}/codex-final.md
+          model: gpt-5.3-codex
+          effort: medium
+          sandbox: workspace-write
+          safety-strategy: drop-sudo
+          codex-args: '["--ephemeral"]'
+
+      - name: Serialize the workspace diff without executing repository code
+        id: patch
+        shell: bash
+        run: |
+          chmod -R u+w .git
+          git add -N -- .
+          git -c core.attributesFile=/dev/null diff \
+            --binary --no-ext-diff --no-textconv HEAD -- > "$RUNNER_TEMP/codex.patch"
+          if [[ -s "$RUNNER_TEMP/codex.patch" ]]; then
+            echo 'has_patch=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'has_patch=false' >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Store patch and bounded evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: codex-result-${{ needs.preflight.outputs.issue_number }}-${{ needs.preflight.outputs.source_comment_id }}
+          path: |
+            ${{ runner.temp }}/codex.patch
+            ${{ runner.temp }}/codex-final.md
+          if-no-files-found: error
+          retention-days: 1
+
+  publish:
+    name: Validate patch and open a draft PR
+    needs: [preflight, execute]
+    if: ${{ needs.execute.outputs.has_patch == 'true' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - name: Mint short-lived publisher token
+        id: publisher-token
+        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349
+        with:
+          app-id: ${{ secrets.CODEX_PUBLISHER_APP_ID }}
+          private-key: ${{ secrets.CODEX_PUBLISHER_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: dongphugia.com.vn
+
+      - name: Checkout exact validated base with publisher identity
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ needs.preflight.outputs.base_sha }}
+          fetch-depth: 0
+          token: ${{ steps.publisher-token.outputs.token }}
+
+      - name: Download generated patch
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0
+        with:
+          name: codex-result-${{ needs.preflight.outputs.issue_number }}-${{ needs.preflight.outputs.source_comment_id }}
+          path: ${{ runner.temp }}/generated-result
+
+      - name: Reload trusted dispatch independently of model output
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0
+        with:
+          name: codex-dispatch-${{ needs.preflight.outputs.issue_number }}-${{ needs.preflight.outputs.source_comment_id }}
+          path: ${{ runner.temp }}/trusted-dispatch
+
+      - name: Enforce base, path, size, text-only, and symlink policy
+        run: |
+          node scripts/automation/codex-patch-policy-cli.mjs \
+            "$RUNNER_TEMP/trusted-dispatch/dispatch.json" \
+            "$RUNNER_TEMP/generated-result/codex.patch"
+          git apply --check --index "$RUNNER_TEMP/generated-result/codex.patch"
+          git apply --index "$RUNNER_TEMP/generated-result/codex.patch"
+
+      - name: Commit validated patch on its deterministic branch
+        env:
+          DISPATCH_BRANCH: ${{ needs.preflight.outputs.branch }}
+        run: |
+          git config user.name 'codex-publisher[bot]'
+          git config user.email 'codex-publisher[bot]@users.noreply.github.com'
+          git switch -c "$DISPATCH_BRANCH"
+          git commit -m "codex: automated source-only task #${{ needs.preflight.outputs.issue_number }}"
+          git push origin "HEAD:refs/heads/$DISPATCH_BRANCH"
+
+      - name: Open draft PR and report evidence to the source issue
+        env:
+          GH_TOKEN: ${{ steps.publisher-token.outputs.token }}
+          DISPATCH_BRANCH: ${{ needs.preflight.outputs.branch }}
+          DISPATCH_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          ISSUE_NUMBER: ${{ needs.preflight.outputs.issue_number }}
+        shell: bash
+        run: |
+          node scripts/automation/codex-publish-metadata.mjs \
+            "$RUNNER_TEMP/trusted-dispatch/dispatch.json" pr-title.txt pr-body.md
+          pr_url="$(gh pr create --draft --base main --head "$DISPATCH_BRANCH" --title "$(<pr-title.txt)" --body-file pr-body.md)"
+          {
+            echo '<!-- codex-auto-dispatch:${{ needs.preflight.outputs.dispatch_id }}:complete -->'
+            echo 'CODEX_AUTO_DISPATCH_COMPLETE'
+            echo
+            echo "Draft PR: $pr_url"
+            echo "Exact base: \`${{ needs.preflight.outputs.base_sha }}\`"
+            echo "Workflow evidence: $DISPATCH_RUN_URL"
+            echo 'Merge and Production remain Owner gates.'
+          } > issue-comment.md
+          gh issue comment "$ISSUE_NUMBER" --body-file issue-comment.md
+
+  no_changes:
+    name: Report successful no-change result
+    needs: [preflight, execute]
+    if: ${{ needs.execute.outputs.has_patch == 'false' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Mint short-lived status token
+        id: publisher-token
+        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349
+        with:
+          app-id: ${{ secrets.CODEX_PUBLISHER_APP_ID }}
+          private-key: ${{ secrets.CODEX_PUBLISHER_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: dongphugia.com.vn
+
+      - name: Report no source change
+        env:
+          GH_TOKEN: ${{ steps.publisher-token.outputs.token }}
+          ISSUE_NUMBER: ${{ needs.preflight.outputs.issue_number }}
+          DISPATCH_ID: ${{ needs.preflight.outputs.dispatch_id }}
+          DISPATCH_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          {
+            echo "<!-- codex-auto-dispatch:$DISPATCH_ID:complete -->"
+            echo 'CODEX_AUTO_DISPATCH_COMPLETE: Codex produced no source diff.'
+            echo "Review workflow run: $DISPATCH_RUN_URL"
+            echo 'No merge or Production action occurred.'
+          } > issue-comment.md
+          gh issue comment "$ISSUE_NUMBER" --body-file issue-comment.md
+
+  report_failure:
+    name: Report bounded failure
+    needs: [preflight, execute, publish]
+    if: ${{ always() && needs.preflight.result == 'success' && (needs.execute.result == 'failure' || needs.publish.result == 'failure') }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Mint short-lived status token
+        id: publisher-token
+        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349
+        with:
+          app-id: ${{ secrets.CODEX_PUBLISHER_APP_ID }}
+          private-key: ${{ secrets.CODEX_PUBLISHER_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: dongphugia.com.vn
+
+      - name: Report failure without automatic retry
+        env:
+          GH_TOKEN: ${{ steps.publisher-token.outputs.token }}
+          ISSUE_NUMBER: ${{ needs.preflight.outputs.issue_number }}
+          DISPATCH_ID: ${{ needs.preflight.outputs.dispatch_id }}
+          DISPATCH_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          {
+            echo "<!-- codex-auto-dispatch:$DISPATCH_ID:failed -->"
+            echo 'CODEX_AUTO_DISPATCH_FAILED: No automatic retry was attempted.'
+            echo "Inspect: $DISPATCH_RUN_URL"
+            echo 'Issue a new validated command only after resolving the cause.'
+          } > issue-comment.md
+          gh issue comment "$ISSUE_NUMBER" --body-file issue-comment.md
