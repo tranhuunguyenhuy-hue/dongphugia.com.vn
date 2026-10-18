@@ -45,10 +45,16 @@ describe('LEO-540 backup coverage prerequisite', () => {
     expect(migration).toContain('not rolcanlogin')
     expect(migration).toContain('not rolsuper')
     expect(migration).toContain('pg_auth_members')
-    expect(migration).toContain('LEO540_BACKUP_TABLE_PRECONDITION_FAILED')
+    expect(migration).toContain('LEO540_TABLE_PRECONDITION_FAILED')
     expect(migration).toContain('LEO540_BACKUP_POSTCONDITION_FAILED')
+    expect(migration).toContain('LEO540_READONLY_POSTCONDITION_FAILED')
     expect(migration).not.toMatch(/grant\s+(insert|update|delete|truncate|references|trigger)/i)
-    expect(migration).not.toMatch(/grant\s+select\s+on\s+table\s+dpg_app\.(?!%I)/i)
     expect(migration).not.toMatch(/\b(public|anon|authenticated|service_role|dpg_runtime)\b[^\n]*\b(select|insert|update|delete)\b/i)
+
+    const readonlyGrants = [...migration.matchAll(/grant select on table ([\s\S]*?) to dpg_readonly;/gi)]
+    expect(readonlyGrants).toHaveLength(1)
+    expect(readonlyGrants[0]?.[1]?.replace(/\s+/g, ' ').trim()).toBe(
+      'dpg_app.product_families, dpg_app.product_family_catalogue_gaps, dpg_app.product_family_configuration_groups, dpg_app.product_family_memberships',
+    )
   })
 })

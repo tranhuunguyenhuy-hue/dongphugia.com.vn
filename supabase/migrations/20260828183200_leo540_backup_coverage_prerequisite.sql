@@ -18,6 +18,12 @@ declare
     'product_family_memberships',
     'publishing_credentials'
   ];
+  readonly_tables constant text[] := array[
+    'product_families',
+    'product_family_catalogue_gaps',
+    'product_family_configuration_groups',
+    'product_family_memberships'
+  ];
 begin
   if not exists (
     select 1
@@ -78,8 +84,17 @@ begin
       where table_schema = 'dpg_app'
         and information_schema.table_privileges.table_name = target_table_name
         and grantee = 'dpg_backup'
+    ) or (
+      target_table_name = any (readonly_tables)
+      and exists (
+        select 1
+        from information_schema.table_privileges
+        where table_schema = 'dpg_app'
+          and information_schema.table_privileges.table_name = target_table_name
+          and grantee = 'dpg_readonly'
+      )
     ) then
-      raise exception 'LEO540_BACKUP_TABLE_PRECONDITION_FAILED:%', target_table_name;
+      raise exception 'LEO540_TABLE_PRECONDITION_FAILED:%', target_table_name;
     end if;
   end loop;
 end
@@ -87,6 +102,11 @@ $preflight$;
 
 set local role dpg_migration;
 grant usage on schema dpg_app to dpg_backup;
+grant select on table dpg_app.product_families,
+  dpg_app.product_family_catalogue_gaps,
+  dpg_app.product_family_configuration_groups,
+  dpg_app.product_family_memberships
+  to dpg_readonly;
 
 do $apply$
 declare
@@ -101,6 +121,12 @@ declare
     'product_family_configuration_groups',
     'product_family_memberships',
     'publishing_credentials'
+  ];
+  readonly_tables constant text[] := array[
+    'product_families',
+    'product_family_catalogue_gaps',
+    'product_family_configuration_groups',
+    'product_family_memberships'
   ];
 begin
   foreach target_table_name in array target_tables
@@ -167,6 +193,25 @@ begin
            and p.polwithcheck is null
        ) <> 1 then
       raise exception 'LEO540_BACKUP_POSTCONDITION_FAILED:%', target_table_name;
+    end if;
+
+    if target_table_name = any (readonly_tables) then
+      select coalesce(array_agg(privilege_type::text order by privilege_type::text), array[]::text[])
+        into direct_privileges
+      from information_schema.table_privileges
+      where table_schema = 'dpg_app'
+        and information_schema.table_privileges.table_name = target_table_name
+        and grantee = 'dpg_readonly';
+
+      if direct_privileges <> array['SELECT']::text[]
+         or has_table_privilege('dpg_readonly', format('dpg_app.%I', target_table_name), 'INSERT')
+         or has_table_privilege('dpg_readonly', format('dpg_app.%I', target_table_name), 'UPDATE')
+         or has_table_privilege('dpg_readonly', format('dpg_app.%I', target_table_name), 'DELETE')
+         or has_table_privilege('dpg_readonly', format('dpg_app.%I', target_table_name), 'TRUNCATE')
+         or has_table_privilege('dpg_readonly', format('dpg_app.%I', target_table_name), 'REFERENCES')
+         or has_table_privilege('dpg_readonly', format('dpg_app.%I', target_table_name), 'TRIGGER') then
+        raise exception 'LEO540_READONLY_POSTCONDITION_FAILED:%', target_table_name;
+      end if;
     end if;
   end loop;
 end

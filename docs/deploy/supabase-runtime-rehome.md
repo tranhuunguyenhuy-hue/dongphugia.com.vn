@@ -28,8 +28,10 @@ passwordless `dpg_backup` capability needed by later grants. The ordered
 `20260828183200_leo540_backup_coverage_prerequisite.sql` then grants only
 schema usage and SELECT on the nine tables required by the existing Preview
 RLS-hardening preconditions, with one `leo540_backup_select` policy per table.
-It refuses an inexact target, role drift, or any pre-existing privilege/policy
-on those tables. It grants no access to other tables or application roles.
+It also grants SELECT only to `dpg_readonly` on the four existing family
+boundary tables that LEO-560 requires, without adding a write privilege or
+policy. It refuses an inexact target, role drift, or pre-existing direct
+privileges/policies on these tables; no other table or role gains access.
 Creating `dpg_backup_login` or any credential is outside these migrations.
 
 The remote restore preflight requires the complete current V1 schema, exact
