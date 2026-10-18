@@ -64,6 +64,7 @@ describe('Supabase runtime migration adoption integration', () => {
         const rlsAcceptance = (await readFile(
           'supabase/tests/leo560_preview_rls_hardening.sql', 'utf8',
         )).replace(/^\\set[^\n]*\n/, '')
+        const cataloguePreflight = await readFile('scripts/backup/catalogue-rehome-preflight.sql', 'utf8')
         const hardeningMigration = stripOuterTransaction(await readFile(
           'supabase/migrations/20261016090000_leo560_preview_rls_hardening.sql', 'utf8',
         ))
@@ -97,17 +98,38 @@ describe('Supabase runtime migration adoption integration', () => {
         const ledger = await client.query('select count(*)::integer as count from dpg_control.runtime_migration_ledger')
         expect(ledger.rows[0]?.count).toBe(23)
         await client.query(rlsAcceptance)
+        await client.query(cataloguePreflight)
 
         await client.query('begin')
-        await client.query('savepoint before_hardening_precondition_probe')
+        for (const table of [
+          'admin_sessions',
+          'crawl_import_decisions',
+          'crawl_product_snapshots',
+          'crawl_runs',
+          'product_families',
+          'product_family_catalogue_gaps',
+          'product_family_configuration_groups',
+          'product_family_memberships',
+          'publishing_credentials',
+        ]) {
+          await client.query(`alter table dpg_app.${table} no force row level security`)
+          await client.query(`alter table dpg_app.${table} disable row level security`)
+        }
+        for (const table of [
+          'product_families',
+          'product_family_catalogue_gaps',
+          'product_family_configuration_groups',
+          'product_family_memberships',
+        ]) {
+          await client.query(`drop policy leo560_readonly_select on dpg_app.${table}`)
+        }
         await client.query('drop policy leo540_backup_select on dpg_app.admin_sessions')
         await expect(client.query(hardeningMigration))
           .rejects.toThrow(/LEO560_RLS_BACKUP_POLICY_PRECONDITION_FAILED:admin_sessions/)
-        await client.query('rollback to savepoint before_hardening_precondition_probe')
-        await client.query('release savepoint before_hardening_precondition_probe')
         await client.query('rollback')
 
         await client.query(rlsAcceptance)
+        await client.query(cataloguePreflight)
         await executeRuntimeMigrations(client, 'status')
       } finally {
         await client?.end().catch(() => undefined)

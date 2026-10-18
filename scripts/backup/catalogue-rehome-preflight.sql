@@ -36,7 +36,7 @@ begin
     raise exception 'CATALOGUE_REHOME_SCHEMA_INCOMPLETE';
   end if;
 
-  if (select count(*) from dpg_control.runtime_migration_ledger) <> 22 then
+  if (select count(*) from dpg_control.runtime_migration_ledger) <> 23 then
     raise exception 'CATALOGUE_REHOME_MIGRATION_LEDGER_INCOMPLETE';
   end if;
 
