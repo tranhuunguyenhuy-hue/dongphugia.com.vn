@@ -35,6 +35,7 @@ describe('LEO-542 backup capability prerequisite', () => {
     expect(migration).toContain('LEO542_BACKUP_ROLE_CONTRACT_FAILED')
     expect(migration).toContain('LEO542_BACKUP_ROLE_AUTHORITY_DRIFT_FAILED')
     expect(migration).toContain('pg_auth_members')
+    expect(migration).toContain('pg_shdepend')
     expect(migration).toContain('pg_default_acl')
     expect(migration).toContain('aclexplode')
     expect(migration).toContain('pg_db_role_setting')
@@ -108,6 +109,12 @@ describe('LEO-542 backup capability prerequisite', () => {
         await client.query('begin')
         await client.query('alter role dpg_backup login')
         await expect(client.query(migration)).rejects.toThrow(/LEO542_BACKUP_ROLE_CONTRACT_FAILED/)
+        await client.query('rollback')
+
+        await client.query('begin')
+        await client.query("create type public.leo542_acl_type as enum ('synthetic')")
+        await client.query('grant usage on type public.leo542_acl_type to dpg_backup')
+        await expect(client.query(migration)).rejects.toThrow(/LEO542_BACKUP_ROLE_AUTHORITY_DRIFT_FAILED/)
         await client.query('rollback')
 
         await client.query('begin')

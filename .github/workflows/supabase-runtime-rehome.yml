@@ -178,23 +178,47 @@ jobs:
         shell: bash
         run: node scripts/backup/supabase-runtime-migrations.mjs apply
 
-      - name: Verify exact migration ledger and final schema, RLS, and API boundary
+      - name: Attest the exact existing checkpoint without remote mutation
+        if: inputs.operation == 'preflight'
+        env:
+          CHECKPOINT_ATTESTATION_MODE: readonly
+          SUPABASE_REHOME_DATABASE_URL: ${{ secrets.SUPABASE_REHOME_DATABASE_URL }}
+        shell: bash
+        run: bash scripts/backup/attest-supabase-runtime-checkpoint.sh
+
+      - name: Verify exact migration ledger and read-only schema, RLS, and API boundary
+        if: inputs.operation != 'preflight'
         env:
           SUPABASE_REHOME_DATABASE_URL: ${{ secrets.SUPABASE_REHOME_DATABASE_URL }}
         shell: bash
         run: |
           set -euo pipefail
           node scripts/backup/supabase-runtime-migrations.mjs status
-          unset PGHOST PGHOSTADDR PGDATABASE PGUSER PGSERVICE PGSERVICEFILE PGOPTIONS PGPASSFILE
-          export PGSSLMODE=require
-          if ! psql "$SUPABASE_REHOME_DATABASE_URL" -X -q -v ON_ERROR_STOP=1 \
+          if ! node scripts/backup/supabase-runtime-psql.mjs \
             --file supabase/tests/leo560_preview_rls_hardening.sql \
             >/dev/null 2>"$RUNNER_TEMP/supabase-acceptance.error"; then
             rm -f "$RUNNER_TEMP/supabase-acceptance.error"
             echo 'SUPABASE_RUNTIME_ACCEPTANCE status=FAIL stage=rls'
             exit 1
           fi
-          if ! psql "$SUPABASE_REHOME_DATABASE_URL" -X -q -v ON_ERROR_STOP=1 \
+          if ! node scripts/backup/supabase-runtime-psql.mjs \
+            --file supabase/tests/supabase_runtime_readonly_acceptance.sql \
+            >/dev/null 2>"$RUNNER_TEMP/supabase-acceptance.error"; then
+            rm -f "$RUNNER_TEMP/supabase-acceptance.error"
+            echo 'SUPABASE_RUNTIME_ACCEPTANCE status=FAIL stage=api_readonly'
+            exit 1
+          fi
+          rm -f "$RUNNER_TEMP/supabase-acceptance.error"
+          echo 'SUPABASE_RUNTIME_ACCEPTANCE status=PASS schema=exact rls=forced api=readonly-validated'
+
+      - name: Run rollback-only API behavior acceptance after schema mutation
+        if: inputs.operation == 'migrate'
+        env:
+          SUPABASE_REHOME_DATABASE_URL: ${{ secrets.SUPABASE_REHOME_DATABASE_URL }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! node scripts/backup/supabase-runtime-psql.mjs \
             --file supabase/tests/leo565_media_foundation.sql \
             >/dev/null 2>"$RUNNER_TEMP/supabase-acceptance.error"; then
             rm -f "$RUNNER_TEMP/supabase-acceptance.error"
@@ -202,9 +226,10 @@ jobs:
             exit 1
           fi
           rm -f "$RUNNER_TEMP/supabase-acceptance.error"
-          echo 'SUPABASE_RUNTIME_ACCEPTANCE status=PASS schema=exact rls=forced api=validated'
+          echo 'SUPABASE_RUNTIME_ACCEPTANCE status=PASS api=rollback-only-behavior-validated'
 
       - name: Verify the exact remote target remains empty
+        if: inputs.operation != 'preflight'
         env:
           MODE: preflight
           BACKUP_DIR: ${{ runner.temp }}/catalogue-rehome-backup

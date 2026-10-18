@@ -36,6 +36,7 @@ describe('Supabase runtime migration runner contract', () => {
     expect(runner).toContain('force row level security')
     expect(runner).toContain('create policy runtime_migration_admin')
     expect(runner).toContain('grant select, insert on table dpg_control.runtime_migration_ledger to postgres')
+    expect(runner).toContain("execFileSync('bash', ['scripts/backup/attest-supabase-runtime-checkpoint.sh']")
     expect(runner).not.toMatch(/error\.(detail|hint|where|query|stack)/)
   })
 })

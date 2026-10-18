@@ -81,14 +81,34 @@ begin
   if exists (select 1 from storage.objects limit 1) then
     raise exception 'CATALOGUE_REHOME_STORAGE_NOT_EMPTY';
   end if;
-  if exists (select 1 from dpg_v1.products limit 1)
-     or exists (select 1 from dpg_v1.staff_users limit 1)
-     or exists (select 1 from dpg_v1.media_assets limit 1)
-     or exists (select 1 from dpg_v1.content_entries limit 1)
-     or exists (select 1 from dpg_v1.quote_requests limit 1)
-     or exists (select 1 from dpg_v1.quotes limit 1)
-     or exists (select 1 from dpg_v1.orders limit 1) then
-    raise exception 'CATALOGUE_REHOME_V1_DATA_NOT_EMPTY';
+  for table_name in
+    select c.relname
+    from pg_class c
+    join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'dpg_v1'
+      and c.relkind in ('r', 'p')
+      and c.relname not in ('categories', 'role_capabilities')
+    order by c.relname
+  loop
+    execute format('select exists(select 1 from dpg_v1.%I limit 1)', table_name)
+      into has_rows;
+    if has_rows then
+      raise exception 'CATALOGUE_REHOME_V1_DATA_NOT_EMPTY table=%', table_name;
+    end if;
+  end loop;
+
+  if (select count(*) from dpg_v1.categories) <> 4
+     or exists (select 1 from dpg_v1.categories where parent_id is not null)
+     or exists (
+       (select id, sector, slug, sort_order from dpg_v1.categories)
+       except values
+         ('10000000-0000-4000-8000-000000000001'::uuid, 'sanitary', 'sanitary', 0),
+         ('10000000-0000-4000-8000-000000000002'::uuid, 'tile', 'tile', 1),
+         ('10000000-0000-4000-8000-000000000003'::uuid, 'water', 'water', 2),
+         ('10000000-0000-4000-8000-000000000004'::uuid, 'kitchen', 'kitchen', 3)
+     )
+     or (select count(*) from dpg_v1.role_capabilities) <> 62 then
+    raise exception 'CATALOGUE_REHOME_V1_SEED_DRIFT';
   end if;
 
   for table_name in

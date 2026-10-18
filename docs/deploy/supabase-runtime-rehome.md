@@ -80,17 +80,26 @@ provide:
 
 The source runtime connection secret is never read or reused by this workflow.
 
-The migration runner adopts the already-attested seven-migration checkpoint,
-stores exact checked-out migration hashes in a private forced-RLS ledger, and
-applies each remaining migration once in repository order. The final gate
-requires the complete 22-entry ledger plus schema, forced-RLS, and API
-acceptance before catalogue preflight can pass.
+Before any checkpoint hash is adopted, the migration runner replays the exact
+seven files in pinned, network-disabled PostgreSQL 17 and requires the
+normalized `dpg_app`/`dpg_control` schema-only dump to equal the remote dump.
+It then verifies the complete role, membership, role-setting, object, empty-data
+and RLS contract. Default `preflight` performs only this read-only remote
+attestation. The rollback-only synthetic owner-isolation probe runs only inside
+`migrate`, immediately before the first ledger write.
 
-After rehearsal, remote preflight is read-only. When operation is `restore`, the generated
-data-only restore, sequence repair, deterministic manifest validation, excluded
-surface check, and size guard execute inside one serializable transaction. Any
-error disconnects with the transaction uncommitted. A post-commit sanitized
-manifest must still equal the rehearsed manifest.
+After that attestation, the runner stores exact checked-out migration hashes in
+a private forced-RLS ledger and applies each remaining migration once in
+repository order. The final gate requires the complete 22-entry ledger plus
+schema, forced-RLS, read-only API acceptance, and (for `migrate`) rollback-only
+behavioral acceptance before catalogue preflight can pass.
+
+After rehearsal, default remote preflight is read-only. When operation is
+`restore`, the generated data-only restore, sequence repair, deterministic
+manifest validation, excluded surface check, and size guard execute inside one
+serializable transaction. Any error disconnects with the transaction
+uncommitted. A post-commit sanitized manifest must still equal the rehearsed
+manifest.
 
 ## Gates and rollback
 

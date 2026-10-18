@@ -37,9 +37,9 @@ The boundary creates four `NOLOGIN`, `NOSUPERUSER`, `NOCREATEDB`,
 - `dpg_backup`: is a passwordless capability prerequisite for explicit backup
   grants. It owns nothing, receives no broad or default privilege, and is
   created before the reviewed LEO-542 backup-coverage migrations. Its
-  prerequisite rejects any pre-existing membership path, owned object, ACL,
-  default privilege, policy grant, or role setting before later explicit
-  read-only grants are applied.
+  prerequisite rejects any pre-existing membership path, shared dependency,
+  owned object, object or column ACL, default privilege, policy grant, user
+  mapping, or role setting before later explicit read-only grants are applied.
 
 The original boundary creates one target-local `LOGIN` identity for each
 application capability:

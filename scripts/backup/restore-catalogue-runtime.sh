@@ -17,6 +17,7 @@ fi
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 contract="$repo_root/scripts/backup/catalogue-restore-contract.mjs"
 target_contract="$repo_root/scripts/backup/supabase-runtime-target.mjs"
+psql_wrapper="$repo_root/scripts/backup/supabase-runtime-psql.mjs"
 preflight_sql="$repo_root/scripts/backup/catalogue-rehome-preflight.sql"
 postgres_image="${POSTGRES_IMAGE:-postgres:17.6-bookworm@sha256:45cd22f8d32e189d245403954882f88e7a8714301fda80dab6da90f1265b25a3}"
 output_dir="${OUTPUT_DIR:-$RUNNER_TEMP/catalogue-rehome-evidence}"
@@ -74,11 +75,6 @@ validate_target_url() {
   node "$target_contract" validate-url >/dev/null
 }
 
-harden_libpq_environment() {
-  unset PGHOST PGHOSTADDR PGDATABASE PGUSER PGSERVICE PGSERVICEFILE PGOPTIONS PGPASSFILE
-  export PGSSLMODE=require
-}
-
 sensitive_failure() {
   local stage="$1"
   rm -f "$tmp_dir/sensitive.error"
@@ -96,9 +92,8 @@ if [[ "$MODE" == 'preflight' ]]; then
     echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=target_url_mismatch'
     exit 1
   }
-  harden_libpq_environment
-  if ! psql "$SUPABASE_REHOME_DATABASE_URL" -X -q -v ON_ERROR_STOP=1 \
-    --file "$preflight_sql" >/dev/null 2>"$tmp_dir/sensitive.error"; then
+  if ! SUPABASE_PSQL_TMPDIR="$tmp_dir" node "$psql_wrapper" --file "$preflight_sql" \
+    >/dev/null 2>"$tmp_dir/sensitive.error"; then
     sensitive_failure remote_preflight
   fi
   rm -f "$tmp_dir/sensitive.error"
@@ -196,7 +191,6 @@ validate_target_url || {
   echo 'CATALOGUE_REHOME status=FAIL stage=apply reason=target_url_mismatch'
   exit 1
 }
-harden_libpq_environment
 
 restore_sql="$tmp_dir/catalogue-restore.sql"
 validation_sql="$tmp_dir/catalogue-validation.sql"
@@ -225,12 +219,12 @@ printf '%s\n' \
   "\\i '$validation_sql'" \
   'commit;' >"$driver_sql"
 
-if ! psql "$SUPABASE_REHOME_DATABASE_URL" -X -q --file "$driver_sql" \
+if ! SUPABASE_PSQL_TMPDIR="$tmp_dir" node "$psql_wrapper" --file "$driver_sql" \
   >/dev/null 2>"$tmp_dir/sensitive.error"; then
   sensitive_failure remote_apply
 fi
-if ! node "$contract" snapshot-sql | psql "$SUPABASE_REHOME_DATABASE_URL" \
-  -X -q -A -t -v ON_ERROR_STOP=1 >"$output_dir/catalogue-actual.json" \
+if ! node "$contract" snapshot-sql | SUPABASE_PSQL_TMPDIR="$tmp_dir" \
+  node "$psql_wrapper" --tuples-only >"$output_dir/catalogue-actual.json" \
   2>"$tmp_dir/sensitive.error"; then
   sensitive_failure remote_manifest
 fi

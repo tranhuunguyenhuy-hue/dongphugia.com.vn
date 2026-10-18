@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto'
+import { execFileSync } from 'node:child_process'
 import { readFile, readdir } from 'node:fs/promises'
 import path from 'node:path'
 import pg from 'pg'
@@ -229,19 +230,17 @@ async function validateFinalSchema(client) {
   if (!row || Object.values(row).some((value) => value !== true)) fail('final_schema_rls_api_validation_failed')
 }
 
-async function run() {
-  const mode = process.argv[2]
+export async function executeRuntimeMigrations(client, mode, checkpointAttestor) {
   if (!['status', 'apply'].includes(mode)) fail('mode_invalid')
   const migrations = await loadMigrations()
-  const client = new Client(parseSupabaseRuntimeTarget(process.env.SUPABASE_REHOME_DATABASE_URL))
+  await configure(client)
+  await client.query("select pg_advisory_lock(hashtext('dongphugia:supabase-runtime-migrations:v1'))")
 
   try {
-    await client.connect()
-    await configure(client)
-    await client.query("select pg_advisory_lock(hashtext('dongphugia:supabase-runtime-migrations:v1'))")
-
     if (!(await ledgerExists(client))) {
       if (mode !== 'apply') fail('migration_state_incomplete')
+      if (!checkpointAttestor) fail('checkpoint_attestation_required')
+      await checkpointAttestor()
       await createLedgerAndAdoptCheckpoint(client, migrations)
     }
 
@@ -249,7 +248,25 @@ async function run() {
     if (mode === 'apply') await applyPendingMigrations(client, migrations)
     validateLedger(await readLedger(client), migrations, true)
     await validateFinalSchema(client)
-    process.stdout.write(`SUPABASE_RUNTIME_MIGRATIONS status=PASS mode=${mode} count=${migrations.length}\n`)
+    return migrations.length
+  } finally {
+    await client.query("select pg_advisory_unlock(hashtext('dongphugia:supabase-runtime-migrations:v1'))").catch(() => undefined)
+  }
+}
+
+async function run() {
+  const mode = process.argv[2]
+  const client = new Client(parseSupabaseRuntimeTarget(process.env.SUPABASE_REHOME_DATABASE_URL))
+  try {
+    await client.connect()
+    const count = await executeRuntimeMigrations(client, mode, async () => {
+      execFileSync('bash', ['scripts/backup/attest-supabase-runtime-checkpoint.sh'], {
+        cwd: process.cwd(),
+        env: { ...process.env, CHECKPOINT_ATTESTATION_MODE: 'behavioral' },
+        stdio: 'inherit',
+      })
+    })
+    process.stdout.write(`SUPABASE_RUNTIME_MIGRATIONS status=PASS mode=${mode} count=${count}\n`)
   } catch (error) {
     if (!String(error?.message ?? '').startsWith('migration_')) {
       process.stderr.write('SUPABASE_RUNTIME_MIGRATIONS status=FAIL reason=database_operation_failed\n')
@@ -258,7 +275,6 @@ async function run() {
     }
     process.exitCode = 1
   } finally {
-    await client.query("select pg_advisory_unlock(hashtext('dongphugia:supabase-runtime-migrations:v1'))").catch(() => undefined)
     await client.end().catch(() => undefined)
   }
 }
