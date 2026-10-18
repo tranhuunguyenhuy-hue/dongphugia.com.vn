@@ -101,15 +101,24 @@ if [[ "$MODE" == 'preflight' ]]; then
   exit 0
 fi
 
-: "${AGE_IDENTITY:?AGE_IDENTITY is required}"
-printf '%s\n' "$AGE_IDENTITY" >"$tmp_dir/age-identity"
-chmod 600 "$tmp_dir/age-identity"
+age_identity_path="$tmp_dir/age-identity"
+if [[ -n "${AGE_IDENTITY_FILE:-}" ]]; then
+  if [[ ! -f "$AGE_IDENTITY_FILE" || -L "$AGE_IDENTITY_FILE" || "$AGE_IDENTITY_FILE" != /dev/shm/* ]]; then
+    echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=age_identity_file_must_be_on_tmpfs'
+    exit 1
+  fi
+  cp -- "$AGE_IDENTITY_FILE" "$age_identity_path"
+else
+  : "${AGE_IDENTITY:?AGE_IDENTITY or AGE_IDENTITY_FILE is required}"
+  printf '%s\n' "$AGE_IDENTITY" >"$age_identity_path"
+fi
+chmod 600 "$age_identity_path"
 plain_dump="$tmp_dir/runtime.dump"
-if ! age --decrypt --identity "$tmp_dir/age-identity" --output "$plain_dump" "$archive" \
+if ! age --decrypt --identity "$age_identity_path" --output "$plain_dump" "$archive" \
   2>"$tmp_dir/sensitive.error"; then
   sensitive_failure decrypt
 fi
-rm -f "$tmp_dir/age-identity"
+rm -f "$age_identity_path"
 rm -f "$tmp_dir/sensitive.error"
 
 mapfile -t restore_table_args < <(node "$contract" table-args)

@@ -1,21 +1,191 @@
-# Offline filtered catalogue rehearsal
+# Two-domain offline catalogue recovery
 
-## Purpose and scope
+## Purpose and current authorization
 
-This is a source-only, manual workflow for rehearsing the exact encrypted LEO-560 catalogue backup against a disposable PostgreSQL 17.6 target. It does not connect to or write to Supabase, Production, Cloudflare, AWS, DNS, or the public site. It does not import data into a remote project. A successful rehearsal proves only that the pinned artifact decrypts in the isolated runner, restores the allowlisted catalogue into a fresh local database, and matches the source catalogue manifest.
+This runbook describes a source-only design for preserving and rehearsing the
+exact encrypted LEO-560 artifact. It separates a GitHub-connected ciphertext
+acquisition on a trusted operator machine from a later fully offline restore
+on a disposable Linux host. There is no GitHub Actions workflow for the
+secret-bearing replay.
 
-The workflow is pinned to the recorded run, artifact ID/name/digest, control/candidate/merge identities, PR number, and expiry. It also validates the checksum, manifest, and source identity before decrypting. The restore script confirms PostgreSQL 17.6, requires a truly empty target, uses the existing 27-table contract, starts PostgreSQL with `--network none`, and compares catalogue manifests. Its only persisted result is a sanitized aggregate database-size/duration file plus the GitHub step summary containing table names and row counts. Per-table content and hashes are not emitted. Artifact and evidence files are removed from `/dev/shm` in an `always()` cleanup step.
+The source change does **not** authorize either phase to run. Current approval
+is limited to editing this PR and running source/static tests. Artifact download,
+copy/preservation, decryption, age-key delivery, runner/host provisioning,
+Supabase access, merge, or production changes each remain prohibited until the
+Owner approves that exact phase separately.
 
-## Runner and network boundary
+The GitHub artifact is pinned to run `38915575745`, artifact ID `12052107648`,
+package digest
+`sha256:348431a2837ae5c3f473d80f5ca8807242e5bb1e164caf71f740a4bb76049e57`,
+size 9,286,999 bytes, source control SHA
+`ce64e8cc7caf91b8bf2e4e2315d49e21bacdfffc`, and expiry
+**2026-10-30 14:27:48 UTC**. Read-only GitHub metadata was revalidated on
+2026-10-18; this is dated evidence and must be revalidated at a separately
+approved acquisition. The artifact content has not been downloaded or
+inspected by this change.
 
-GitHub-hosted runners are not accepted: this workflow needs actual host-enforced egress denial, not a claim inferred from container `--network none`. It is restricted to the protected `runtime-backup` environment and runner labels `self-hosted`, `linux`, and `dpg-offline-pg17`. Before downloading the encrypted artifact or exposing the age identity, the job requires a root-owned, non-writable `/usr/local/sbin/dpg-offline-runner-attest` executable to attest the `dongphugia-catalogue-rehearsal` profile and the Supabase-egress-deny policy; it then verifies `/dev/shm` is tmpfs and the digest-pinned PostgreSQL image is preloaded.
+## Trust-domain diagram
 
-The dedicated runner must be single-use, isolated from other workloads, have an externally enforced host/firewall policy denying Supabase APIs and database endpoints as well as all production, Cloudflare, and AWS endpoints, and allow only the minimum GitHub Actions/artifact endpoints required for this workflow. Its root-managed attestor must validate the active host policy, runner identity, immutable policy digest, and the egress-deny rules; a workflow-local test or Docker network setting is not equivalent. The runner must have no persistent workspace, use tmpfs for artifact/decrypted/evidence material, and be destroyed or reprovisioned after a job. The age identity is injected only into the single restore step and is never logged or persisted outside tmpfs.
+```text
+Phase A: trusted main checkout + read-only GitHub access
+  exact run/artifact metadata -> exact ZIP digest -> encrypted-only package
+             |                         no age identity
+             +---- Owner-controlled physical/offline handoff ----+
+                                                                 |
+Phase B: disposable Linux host, network disconnected             v
+  external security reviewer signs current deny-all attestation
+       -> verify signature/host/boot/challenge/policy before key
+       -> stage age identity in /dev/shm -> local PostgreSQL 17.6
+       -> 27-table parity check -> sanitized evidence only
+       -> erase tmpfs work area; operator removes staged key
+```
 
-**Current gate: NOT PROVEN.** No dedicated runner, root-owned attestor, host firewall policy, or independent egress evidence is provisioned/verified by this source change. The workflow must not be dispatched until the owner separately approves runner provisioning, the exact network policy and its evidence are reviewed, and the secret-bearing run is separately authorized. The workflow intentionally fails closed if the attestor or local prerequisites are absent. Source CI does not validate the host egress boundary or run the rehearsal.
+The package digest is hard-pinned in the source contract and is checked again
+offline. The provenance sidecar binds that digest to the exact GitHub run,
+artifact, source revision, and acquisition checkout SHA. The Owner manually
+controls the transfer medium and verifies the displayed digest through the
+authenticated Phase A session before accepting the package. Phase B never
+calls GitHub or any other remote endpoint.
 
-## Invocation and acceptance
+## Phase A — GitHub-connected ciphertext acquisition
 
-After a separately approved source merge and runner/security review, an authorized owner may dispatch this workflow only from `main`, entering the exact main SHA that GitHub is running. The `runtime-backup` environment reviewer gate applies. The workflow checks the immutable backup provenance and retention window, performs the offline restore, validates source/target parity, and writes only sanitized aggregate evidence. A green workflow is not approval to import, merge another change, alter DNS/traffic, or access Production.
+Run manually on a trusted operator workstation from a clean, exact `main`
+checkout after a separate Owner approval for artifact acquisition and
+preservation. Use a dedicated read-only GitHub token scoped to repository
+Actions/artifact metadata and contents read; do not use a write-capable token.
+No age identity, Supabase URL, Cloudflare/AWS credential, or other decrypt
+material is accepted by the script.
 
-Acceptance for this source PR is limited to source review and required CI. No rehearsal, Supabase connection, secret read/write, runner creation, environment change, merge, import, DNS, or traffic action is part of this PR.
+```sh
+EXPECTED_MAIN_SHA=<exact-trusted-main-sha> \
+GH_TOKEN=<read-only-github-token> \
+bash scripts/backup/acquire-offline-catalogue-ciphertext.sh \
+  /absolute/new/private/output-directory
+```
+
+The script refuses a non-canonical repository, non-`main` ref, dirty checkout,
+wrong SHA, existing output directory, or output inside the repository. It reads
+only the exact pinned run and artifact metadata, checks run event/branch/workflow
+identity, artifact ID/name/digest/size/expiry and run provenance, then requests
+the exact artifact ZIP by ID. It checks package size and SHA-256, rejects path,
+extra, duplicate, or ambiguous ZIP members, verifies the encrypted payload's
+checksum and sanitized manifest/source identity, and writes only the original
+encrypted artifact ZIP plus a whitelist-only `provenance.json` sidecar. It
+never emits artifact bytes or manifest rows in logs.
+
+The script does not upload a second artifact or automate transfer to Phase B.
+The Owner must use an approved offline medium and preserve chain of custody.
+Do not execute Phase A under this source-only approval.
+
+## Phase B — Owner-controlled offline replay
+
+Use a disposable Linux system that is not registered as any GitHub runner and
+has no cloud credentials. An independent security operator (not the replay
+operator) must inspect the host's external network controls using an out-of-band
+host console or physical link control, disconnect all network links, verify the
+policy digest, and sign a short-lived Ed25519 attestation. The private signing
+key remains outside the replay host. A root process or script running inside
+the guest is **not** independent evidence and cannot satisfy this gate.
+
+The signed attestation must bind a fresh 256-bit challenge to the replay host
+and boot ID, the externally reviewed policy SHA-256, operator and distinct
+reviewer IDs, issue/expiry times no more than one hour apart, and these exact
+controls: IPv4, IPv6, DNS, proxy, metadata, host, Docker daemon and container
+egress `deny-all`; physical/network links `disconnected`; review method
+`out-of-band-host-console`. The operator also pins the attestation public-key
+fingerprint and policy digest through a separate trusted channel. This PR
+contains no such trust key, policy digest, or provisioned host: all are
+**UNKNOWN / Owner setup required**.
+
+The signed JSON shape is exactly the fields validated by
+`verifySignedOfflineAttestation`: `format`, `challenge`, `hostId`, `bootId`,
+`policySha256`, `issuedAt`, `expiresAt`, `operatorId`, `reviewerId`,
+`verificationMethod`, and `controls`. The reviewer signs UTF-8 canonical JSON
+(recursively sorted object keys, array order preserved) with Ed25519; the
+separate signature file is base64. The verifier rejects extra fields, an
+untrusted public-key fingerprint, a stale/mismatched host challenge, any
+non-deny control, an operator/reviewer identity collision, or a signature
+mismatch. The external reviewer—not the guest—must verify the policy digest
+against the active host/network controls before signing.
+
+First disconnect the host network and generate a challenge. Pass the challenge
+and hashed host/boot identity to the independent reviewer using a separate
+out-of-band channel; receive the signed attestation back on the offline medium.
+Then run `verify` with the transfer directory and attestation metadata, but
+without staging the age identity:
+
+```sh
+OFFLINE_EGRESS_POLICY_SHA256=<reviewed-policy-sha256> \
+bash scripts/backup/offline-catalogue-rehearsal.sh prepare-attestation
+
+EXPECTED_MAIN_SHA=<same-main-sha-as-phase-a> \
+OFFLINE_BUNDLE_DIR=<owner-controlled-transfer-directory> \
+OFFLINE_ATTESTATION_FILE=<signed-attestation-json> \
+OFFLINE_ATTESTATION_SIGNATURE_FILE=<signature-file> \
+OFFLINE_ATTESTATION_PUBLIC_KEY_FILE=<trusted-public-key> \
+OFFLINE_ATTESTATION_KEY_SHA256=<out-of-band-key-fingerprint> \
+OFFLINE_EGRESS_POLICY_SHA256=<reviewed-policy-sha256> \
+OFFLINE_CHALLENGE=<challenge-from-prepare-step> \
+OFFLINE_OPERATOR_ID=<operator-id> \
+MIN_TMPFS_BYTES=<independently-measured-required-bytes> \
+bash scripts/backup/offline-catalogue-rehearsal.sh verify
+```
+
+Only after `verify` passes may the separately approved age identity be staged
+as a mode-0600 regular file in `/dev/shm`. The `rehearse` invocation repeats
+signature, host/boot, digest, provenance, tmpfs, capacity, and pinned-image
+checks before it reads the key file. Phase B has no GitHub runner context,
+GitHub/cloud token environment, proxy, network/API client, log uploader, or
+artifact upload. It uses only local tools; PostgreSQL runs with `--network none`
+and a digest-pinned PostgreSQL 17.6 image. Any egress availability is still a
+STOP: the signed external proof, not the container setting, is the host boundary.
+
+```sh
+EXPECTED_MAIN_SHA=<same-main-sha-as-phase-a> \
+OFFLINE_BUNDLE_DIR=<owner-controlled-transfer-directory> \
+OFFLINE_ATTESTATION_FILE=<signed-attestation-json> \
+OFFLINE_ATTESTATION_SIGNATURE_FILE=<signature-file> \
+OFFLINE_ATTESTATION_PUBLIC_KEY_FILE=<trusted-public-key> \
+OFFLINE_ATTESTATION_KEY_SHA256=<out-of-band-key-fingerprint> \
+OFFLINE_EGRESS_POLICY_SHA256=<reviewed-policy-sha256> \
+OFFLINE_CHALLENGE=<challenge-from-prepare-step> \
+OFFLINE_OPERATOR_ID=<operator-id> \
+MIN_TMPFS_BYTES=<independently-measured-required-bytes> \
+AGE_IDENTITY_FILE=/dev/shm/<owner-staged-mode-0600-file> \
+OFFLINE_EVIDENCE_DIR=<absolute-new-private-evidence-directory> \
+bash scripts/backup/offline-catalogue-rehearsal.sh rehearse
+```
+
+Capacity is currently **UNKNOWN**. `MIN_TMPFS_BYTES` must be independently
+derived from the actual restore's required space (encrypted package, expanded
+dump, temporary PostgreSQL data and evidence with safety margin), not guessed
+from the encrypted ZIP size. The run script fails if `/dev/shm` is not tmpfs,
+if the required capacity is absent/invalid/insufficient, or if the exact image
+is not already present locally. It never pulls an image.
+
+The replay reuses the existing exact 27-table restore contract, confirms a
+fresh empty target, PostgreSQL `17.6`, excluded-table emptiness, and row-count
+and hash parity against the pinned manifest. It writes a sanitized summary
+containing only table names, counts, filtered table total, approximate database
+bytes, and duration—no row contents or per-table hashes. The restore script
+removes plaintext, temporary identity copy, container and tmpfs work directory
+on exit. The operator must remove the separately staged identity file from
+`/dev/shm` and securely destroy/reimage the disposable host after recording the
+sanitized evidence.
+
+## Stop conditions and approval gates
+
+Stop without retry if any run/artifact ID, repository, source SHA, package
+digest/size, manifest identity, expiry, signed attestation, key fingerprint,
+challenge, host ID, boot ID, policy digest, network control, tmpfs type/capacity,
+image digest, empty target, allowlist, parity, or sanitized-evidence check is
+missing or mismatched. Do not weaken a check or switch to a different artifact.
+Do not preserve the artifact beyond its current expiry by another mechanism
+without a separate Owner decision.
+
+Before either operation, obtain separate Owner approval for artifact
+acquisition/preservation. Before Phase B additionally obtain approval for
+host/provisioning and external egress-control evidence, age-key delivery, and
+offline execution. Merge remains a separate Owner gate. This source change does
+not authorize a download, copy, decrypt, restore, runner/host provisioning,
+Supabase/Cloudflare/AWS/DNS/Production access, or merge.
