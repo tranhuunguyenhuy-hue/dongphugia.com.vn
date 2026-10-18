@@ -72,6 +72,7 @@ function signedEvidence(overrides = {}) {
       dockerDaemonEgress: "deny-all",
       dockerContainerEgress: "deny-all",
       networkLinks: "disconnected",
+      physicalIsolationMaintainedThroughReplay: true,
     },
     ...overrides,
   };
@@ -403,6 +404,29 @@ describe("offline catalogue transfer contract", () => {
         now: new Date("2026-10-18T12:00:01Z"),
       }),
     ).toThrow(/expired/);
+  });
+
+  it("requires independent physical isolation to remain in force for the entire replay", () => {
+    const evidence = signedEvidence({
+      controls: {
+        ...signedEvidence().attestation.controls,
+        physicalIsolationMaintainedThroughReplay: false,
+      },
+    });
+    expect(() =>
+      verifySignedOfflineAttestation({
+        ...evidence,
+        expectedPublicKeySha256: createHash("sha256")
+          .update(evidence.publicKeyPem)
+          .digest("hex"),
+        expectedChallenge: "a".repeat(64),
+        expectedHostId: "airgap-host-01",
+        expectedBootId: "boot-2026-10-18-01",
+        expectedPolicySha256: "b".repeat(64),
+        operatorId: "operator-01",
+        now: new Date("2026-10-18T10:30:00Z"),
+      }),
+    ).toThrow(/physical_isolation_lifetime_required/);
   });
 
   it("rejects tampered signatures and unpinned verification keys", () => {

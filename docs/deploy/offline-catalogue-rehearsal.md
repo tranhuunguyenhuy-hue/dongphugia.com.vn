@@ -49,10 +49,37 @@ calls GitHub or any other remote endpoint.
 
 ## Phase A — GitHub-connected ciphertext acquisition
 
-Run manually on a trusted operator workstation from a clean, exact `main`
-checkout after a separate Owner approval for artifact acquisition and
-preservation. Use a dedicated read-only GitHub token scoped to repository
-Actions/artifact metadata and contents read; do not use a write-capable token.
+The acquisition script cannot establish its own source integrity before it
+starts, so never provide it a token from an arbitrary checkout. First perform a
+trusted bootstrap using the system GitHub CLI and Git, without running any repo
+script: obtain the live `main` SHA from the GitHub API, create a fresh canonical
+clone, fetch/check out that exact SHA, and verify the clone is clean and its
+`origin` is the canonical repository. Treat a stale SHA, fork, locally relabeled
+branch, or modified checkout as a STOP. Only after this independent source check
+may the operator pass the token to the exact-main acquisition script. This
+manual bootstrap is the root of trust; the script's runtime API check detects
+main moving after bootstrap but is not a substitute for it.
+
+For example, in an empty private temporary parent directory, use the already
+trusted system `gh` and `git` binaries:
+
+```sh
+trusted_sha="$(gh api repos/tranhuunguyenhuy-hue/dongphugia.com.vn/commits/main --jq .sha)"
+git clone https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn.git trusted-acquisition
+git -C trusted-acquisition fetch origin "$trusted_sha"
+git -C trusted-acquisition checkout -B main "$trusted_sha"
+test "$(git -C trusted-acquisition rev-parse HEAD)" = "$trusted_sha"
+test -z "$(git -C trusted-acquisition status --porcelain --untracked-files=all)"
+```
+
+Run manually on that trusted operator workstation after a separate Owner
+approval for artifact acquisition and preservation. Use a dedicated read-only
+GitHub token scoped only to the repository Actions metadata/artifact read
+operations needed below; do not use a write-capable token. Supply it only to
+this command (do not export it in the shell). The script immediately removes
+`GH_TOKEN` from its inherited environment, scopes the token only to individual
+`gh api` invocations, and unsets its private shell variable after the last API
+call. Node, checksum, unzip, Git, and validation subprocesses receive no token.
 No age identity, Supabase URL, Cloudflare/AWS credential, or other decrypt
 material is accepted by the script.
 
@@ -64,8 +91,9 @@ bash scripts/backup/acquire-offline-catalogue-ciphertext.sh \
 ```
 
 The script refuses a non-canonical repository, non-`main` ref, dirty checkout,
-wrong SHA, existing output directory, or output inside the repository. It reads
-only the exact pinned run and artifact metadata, checks run event/branch/workflow
+wrong SHA, live GitHub `main` mismatch, existing output directory, or output
+inside the repository after canonicalizing the output parent through symlinks. It reads only
+the exact pinned run and artifact metadata, checks run event/branch/workflow
 identity, artifact ID/name/digest/size/expiry and run provenance, then requests
 the exact artifact ZIP by ID. It checks package size and SHA-256, rejects path,
 extra, duplicate, or ambiguous ZIP members, verifies the encrypted payload's
@@ -91,8 +119,16 @@ The signed attestation must bind a fresh 256-bit challenge to the replay host
 and boot ID, the externally reviewed policy SHA-256, operator and distinct
 reviewer IDs, issue/expiry times no more than one hour apart, and these exact
 controls: IPv4, IPv6, DNS, proxy, metadata, host, Docker daemon and container
-egress `deny-all`; physical/network links `disconnected`; review method
-`out-of-band-host-console`. The operator also pins the attestation public-key
+egress `deny-all`; physical/network links `disconnected`; and
+`physicalIsolationMaintainedThroughReplay: true`. The independent reviewer
+must commit to keeping physical isolation in force from before age-key staging
+until the replay process exits, the key is removed, and the operator confirms
+teardown. The independent reviewer must ensure the links remain physically disconnected for the entire replay, and stay out-of-band to ensure no
+link is reconnected; if continuous independent oversight cannot be guaranteed,
+do not stage the key and do not run replay. Review method is
+`out-of-band-host-console`. This is an external manual interlock, not a
+point-in-time guest attestation or a claim that the source script can enforce
+the host boundary. The operator also pins the attestation public-key
 fingerprint and policy digest through a separate trusted channel. This PR
 contains no such trust key, policy digest, or provisioned host: all are
 **UNKNOWN / Owner setup required**.
@@ -100,7 +136,8 @@ contains no such trust key, policy digest, or provisioned host: all are
 The signed JSON shape is exactly the fields validated by
 `verifySignedOfflineAttestation`: `format`, `challenge`, `hostId`, `bootId`,
 `policySha256`, `issuedAt`, `expiresAt`, `operatorId`, `reviewerId`,
-`verificationMethod`, and `controls`. The reviewer signs UTF-8 canonical JSON
+`verificationMethod`, and `controls`; controls include the signed-through-replay
+commitment. The reviewer signs UTF-8 canonical JSON
 (recursively sorted object keys, array order preserved) with Ed25519; the
 separate signature file is base64. The verifier rejects extra fields, an
 untrusted public-key fingerprint, a stale/mismatched host challenge, any
@@ -108,7 +145,9 @@ non-deny control, an operator/reviewer identity collision, or a signature
 mismatch. The external reviewer—not the guest—must verify the policy digest
 against the active host/network controls before signing.
 
-First disconnect the host network and generate a challenge. Pass the challenge
+First have the independent reviewer physically disconnect/disable every
+network interface and confirm the host will remain disconnected until teardown;
+only then generate a challenge. Pass the challenge
 and hashed host/boot identity to the independent reviewer using a separate
 out-of-band channel; receive the signed attestation back on the offline medium.
 Then run `verify` with the transfer directory and attestation metadata, but
@@ -138,7 +177,8 @@ checks before it reads the key file. Phase B has no GitHub runner context,
 GitHub/cloud token environment, proxy, network/API client, log uploader, or
 artifact upload. It uses only local tools; PostgreSQL runs with `--network none`
 and a digest-pinned PostgreSQL 17.6 image. Any egress availability is still a
-STOP: the signed external proof, not the container setting, is the host boundary.
+STOP: the signed external proof and continuous out-of-band human interlock, not
+the container setting or a one-time signature check, are the host boundary.
 
 ```sh
 EXPECTED_MAIN_SHA=<same-main-sha-as-phase-a> \

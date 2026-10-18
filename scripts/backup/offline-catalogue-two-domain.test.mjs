@@ -13,6 +13,10 @@ describe("two-domain offline catalogue recovery", () => {
     expect(acquisition).toContain("symbolic-ref --short HEAD");
     expect(acquisition).toContain("EXPECTED_MAIN_SHA");
     expect(acquisition).toContain("GH_TOKEN");
+    expect(acquisition).toContain("commits/main");
+    expect(acquisition).toContain('GH_TOKEN="$github_read_token" gh api');
+    expect(acquisition).toContain("unset GH_TOKEN");
+    expect(acquisition).toContain("pwd -P");
     expect(acquisition).toContain("/actions/runs/");
     expect(acquisition).toContain("/actions/artifacts/");
     expect(acquisition).toContain("/zip");
@@ -103,6 +107,10 @@ describe("two-domain offline catalogue recovery", () => {
     expect(runbook).toContain("Phase B");
     expect(runbook).toContain("independent security operator");
     expect(runbook).toContain("deny-all");
+    expect(runbook).toContain(
+      "remain physically disconnected for the entire replay",
+    );
+    expect(runbook).toContain("trusted bootstrap");
     expect(runbook).toContain("UNKNOWN");
     expect(runbook).toContain("2026-10-30 14:27:48 UTC");
     expect(runbook).toContain("There is no GitHub Actions workflow");

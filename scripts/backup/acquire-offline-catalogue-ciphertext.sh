@@ -6,14 +6,16 @@ fail() {
   exit 1
 }
 
-repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
 contract="$repo_root/scripts/backup/offline-catalogue-transfer-contract.mjs"
 expected_main_sha="${EXPECTED_MAIN_SHA:-}"
 output_dir="${1:-}"
+github_read_token="${GH_TOKEN:-}"
+unset GH_TOKEN
 
 [[ "$expected_main_sha" =~ ^[a-f0-9]{40}$ ]] || fail expected_main_sha_required
 [[ -n "$output_dir" && "$output_dir" = /* ]] || fail absolute_new_output_directory_required
-[[ -n "${GH_TOKEN:-}" ]] || fail read_only_gh_token_required
+[[ -n "$github_read_token" ]] || fail read_only_gh_token_required
 
 repo='tranhuunguyenhuy-hue/dongphugia.com.vn'
 remote_url="$(git -C "$repo_root" remote get-url origin 2>/dev/null || true)"
@@ -29,8 +31,14 @@ for command in gh node jq unzip; do
   command -v "$command" >/dev/null 2>&1 || fail "missing_${command}"
 done
 
-output_parent="$(dirname "$output_dir")"
-[[ -d "$output_parent" && ! -L "$output_parent" ]] || fail output_parent_missing_or_symlink
+output_dir="${output_dir%/}"
+[[ -n "$output_dir" ]] || fail output_directory_invalid
+output_parent="${output_dir%/*}"
+output_name="${output_dir##*/}"
+[[ -n "$output_name" ]] || fail output_directory_invalid
+[[ -d "$output_parent" ]] || fail output_parent_missing
+output_parent="$(cd "$output_parent" && pwd -P)" || fail output_parent_unresolvable
+output_dir="$output_parent/$output_name"
 [[ ! -e "$output_dir" && ! -L "$output_dir" ]] || fail output_directory_already_exists
 case "$output_dir/" in "$repo_root/"*) fail output_must_be_outside_repository ;; esac
 
@@ -53,14 +61,21 @@ artifact_digest="$(jq -r '.artifactDigest' <<<"$identity")"
 artifact_bytes="$(jq -r '.artifactSizeBytes' <<<"$identity")"
 backup_id="$(jq -r '.backupId' <<<"$identity")"
 
-gh api "repos/$repo/actions/runs/$run_id" >"$tmp_dir/run.json" || fail github_run_metadata_unavailable
-gh api "repos/$repo/actions/artifacts/$artifact_id" >"$tmp_dir/artifact.json" || fail github_artifact_metadata_unavailable
+live_main_sha="$(GH_TOKEN="$github_read_token" gh api "repos/$repo/commits/main" --jq .sha)" \
+  || fail github_trusted_main_unavailable
+[[ "$live_main_sha" = "$expected_main_sha" ]] || fail github_trusted_main_sha_mismatch
+GH_TOKEN="$github_read_token" gh api "repos/$repo/actions/runs/$run_id" >"$tmp_dir/run.json" \
+  || fail github_run_metadata_unavailable
+GH_TOKEN="$github_read_token" gh api "repos/$repo/actions/artifacts/$artifact_id" >"$tmp_dir/artifact.json" \
+  || fail github_artifact_metadata_unavailable
 date_now="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 node "$contract" validate-metadata "$tmp_dir/run.json" "$tmp_dir/artifact.json" "$date_now" \
   >"$tmp_dir/verified-metadata.json" || fail pinned_artifact_provenance_mismatch
 
-gh api "repos/$repo/actions/artifacts/$artifact_id/zip" --output "$tmp_dir/artifact.zip" \
+GH_TOKEN="$github_read_token" gh api "repos/$repo/actions/artifacts/$artifact_id/zip" \
+  --output "$tmp_dir/artifact.zip" \
   || fail exact_artifact_download_failed
+unset github_read_token
 actual_bytes="$(wc -c <"$tmp_dir/artifact.zip" | tr -d ' ')"
 [[ "$actual_bytes" = "$artifact_bytes" ]] || fail artifact_package_size_mismatch
 if command -v sha256sum >/dev/null 2>&1; then

@@ -41,6 +41,7 @@ const REQUIRED_DENY_ALL_CONTROLS = Object.freeze({
   dockerDaemonEgress: "deny-all",
   dockerContainerEgress: "deny-all",
   networkLinks: "disconnected",
+  physicalIsolationMaintainedThroughReplay: true,
 });
 
 function fail(reason) {
@@ -331,6 +332,9 @@ export function verifySignedOfflineAttestation({
     attestation.verificationMethod !== "out-of-band-host-console"
   ) {
     fail("offline_attestation_independent_review_missing");
+  }
+  if (attestation.controls?.physicalIsolationMaintainedThroughReplay !== true) {
+    fail("physical_isolation_lifetime_required");
   }
   if (
     canonicalJson(attestation.controls) !==
