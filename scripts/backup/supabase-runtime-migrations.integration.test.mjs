@@ -29,7 +29,8 @@ describe('Supabase runtime migration adoption integration', () => {
           await new Promise((resolve) => setTimeout(resolve, 500))
         }
         const port = docker('port', container, '5432/tcp').split(':').at(-1)
-        client = new Client({ connectionString: `postgresql://postgres@127.0.0.1:${port}/postgres` })
+        const connectionString = `postgresql://postgres@127.0.0.1:${port}/postgres`
+        client = new Client({ connectionString })
         await client.connect()
         await client.query(`
           create role anon nologin;
@@ -58,8 +59,14 @@ describe('Supabase runtime migration adoption integration', () => {
         )).replace(/^\\set[^\n]*\n/, '')
 
         const attestCheckpoint = async () => {
-          await client.query(readonlyAcceptance)
-          await client.query(behavioralAcceptance)
+          const attestor = new Client({ connectionString })
+          try {
+            await attestor.connect()
+            await attestor.query(readonlyAcceptance)
+            await attestor.query(behavioralAcceptance)
+          } finally {
+            await attestor.end().catch(() => undefined)
+          }
         }
 
         await client.query("insert into dpg_app.brands (name, slug) values ('Rejected', 'rejected')")
