@@ -7,11 +7,15 @@ on:
         description: Exact merged main SHA containing the reviewed re-home controls
         required: true
         type: string
-      apply:
-        description: Restore the catalogue into the exact empty Supabase target
+      operation:
+        description: Read-only preflight, apply remaining schema migrations, or restore catalogue
         required: true
-        default: false
-        type: boolean
+        default: preflight
+        type: choice
+        options:
+          - preflight
+          - migrate
+          - restore
 
 permissions:
   contents: read
@@ -33,6 +37,9 @@ env:
   EXPECTED_CONTROL_SHA: ce64e8cc7caf91b8bf2e4e2315d49e21bacdfffc
   EXPECTED_MERGE_SHA: 59d9ea02dbceb5a3b83d00f929a8ee3a8f70cc35
   EXPECTED_WORKFLOW_RUN_ID: '38915575745'
+  SUPABASE_ORGANIZATION_SLUG: ymjvuwefhqqlymwlocqn
+  SUPABASE_PROJECT_REF: bonxyxluzlxfkdetryoo
+  SUPABASE_PROJECT_REGION: ap-southeast-1
 
 jobs:
   preflight:
@@ -71,6 +78,7 @@ jobs:
 
           test "$(jq -r '.state' "$issue_json")" = 'open'
           jq -e '.body | contains("Mutation ownership: HELD")' "$issue_json" >/dev/null
+          jq -e '.body | contains("Expanded catalogue scope approved on 2026-10-18")' "$issue_json" >/dev/null
           jq -e '.body | contains("PII, Auth users, customers, staff/admin identities or sessions, orders, quotes/quote requests, Blog")' "$issue_json" >/dev/null
           test "$(jq -r '.conclusion' "$run_json")" = 'success'
           test "$(jq -r '.head_sha' "$run_json")" = "$EXPECTED_CONTROL_SHA"
@@ -101,6 +109,47 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install --no-install-recommends --yes age jq postgresql-client >/dev/null
 
+      - name: Set up locked Node.js dependencies
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install locked project dependencies
+        shell: bash
+        run: npm ci
+
+      - name: Verify current Supabase Free plan and exact healthy project
+        env:
+          SUPABASE_MANAGEMENT_TOKEN: ${{ secrets.SUPABASE_MANAGEMENT_TOKEN }}
+          ORGANIZATION_RESULT: ${{ runner.temp }}/supabase-organization.json
+          PROJECTS_RESULT: ${{ runner.temp }}/supabase-projects.json
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$SUPABASE_MANAGEMENT_TOKEN"
+          printf 'header = "Authorization: Bearer %s"\n' "$SUPABASE_MANAGEMENT_TOKEN" | \
+            curl --config - --fail --silent --show-error \
+              --output "$ORGANIZATION_RESULT" \
+              "https://api.supabase.com/v1/organizations/$SUPABASE_ORGANIZATION_SLUG"
+          printf 'header = "Authorization: Bearer %s"\n' "$SUPABASE_MANAGEMENT_TOKEN" | \
+            curl --config - --fail --silent --show-error \
+              --output "$PROJECTS_RESULT" \
+              'https://api.supabase.com/v1/projects'
+          test "$(jq -r '.plan' "$ORGANIZATION_RESULT")" = 'free'
+          test "$(jq --arg org "$SUPABASE_ORGANIZATION_SLUG" \
+            '[.[] | select(.organization_slug == $org and .status == "ACTIVE_HEALTHY")] | length' \
+            "$PROJECTS_RESULT")" -le 2
+          jq -e --arg ref "$SUPABASE_PROJECT_REF" \
+            --arg org "$SUPABASE_ORGANIZATION_SLUG" \
+            --arg region "$SUPABASE_PROJECT_REGION" '
+              any(.ref == $ref and .organization_slug == $org
+                and .name == "dongphugia-runtime" and .region == $region
+                and .status == "ACTIVE_HEALTHY")
+            ' "$PROJECTS_RESULT" >/dev/null
+          rm -f "$ORGANIZATION_RESULT" "$PROJECTS_RESULT"
+          echo 'SUPABASE_CONTROL_PLANE status=PASS plan=free project=exact region=ap-southeast-1 health=ACTIVE_HEALTHY'
+
       - name: Download the exact encrypted backup artifact
         env:
           GH_TOKEN: ${{ github.token }}
@@ -122,6 +171,39 @@ jobs:
           set -euo pipefail
           bash scripts/backup/restore-catalogue-runtime.sh
 
+      - name: Apply the exact remaining migrations in repository order
+        if: inputs.operation == 'migrate'
+        env:
+          SUPABASE_REHOME_DATABASE_URL: ${{ secrets.SUPABASE_REHOME_DATABASE_URL }}
+        shell: bash
+        run: node scripts/backup/supabase-runtime-migrations.mjs apply
+
+      - name: Verify exact migration ledger and final schema, RLS, and API boundary
+        env:
+          SUPABASE_REHOME_DATABASE_URL: ${{ secrets.SUPABASE_REHOME_DATABASE_URL }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/backup/supabase-runtime-migrations.mjs status
+          unset PGHOST PGHOSTADDR PGDATABASE PGUSER PGSERVICE PGSERVICEFILE PGOPTIONS PGPASSFILE
+          export PGSSLMODE=require
+          if ! psql "$SUPABASE_REHOME_DATABASE_URL" -X -q -v ON_ERROR_STOP=1 \
+            --file supabase/tests/leo560_preview_rls_hardening.sql \
+            >/dev/null 2>"$RUNNER_TEMP/supabase-acceptance.error"; then
+            rm -f "$RUNNER_TEMP/supabase-acceptance.error"
+            echo 'SUPABASE_RUNTIME_ACCEPTANCE status=FAIL stage=rls'
+            exit 1
+          fi
+          if ! psql "$SUPABASE_REHOME_DATABASE_URL" -X -q -v ON_ERROR_STOP=1 \
+            --file supabase/tests/leo565_media_foundation.sql \
+            >/dev/null 2>"$RUNNER_TEMP/supabase-acceptance.error"; then
+            rm -f "$RUNNER_TEMP/supabase-acceptance.error"
+            echo 'SUPABASE_RUNTIME_ACCEPTANCE status=FAIL stage=api'
+            exit 1
+          fi
+          rm -f "$RUNNER_TEMP/supabase-acceptance.error"
+          echo 'SUPABASE_RUNTIME_ACCEPTANCE status=PASS schema=exact rls=forced api=validated'
+
       - name: Verify the exact remote target remains empty
         env:
           MODE: preflight
@@ -134,7 +216,7 @@ jobs:
           bash scripts/backup/restore-catalogue-runtime.sh
 
       - name: Apply the filtered catalogue in one transaction
-        if: inputs.apply == true
+        if: inputs.operation == 'restore'
         env:
           MODE: apply
           BACKUP_DIR: ${{ runner.temp }}/catalogue-rehome-backup
@@ -160,7 +242,7 @@ jobs:
         run: |
           {
             echo '### Supabase runtime catalogue re-home: PASS'
-            echo "- Mode: ${{ inputs.apply == true && 'apply' || 'preflight' }}"
+            echo "- Operation: ${{ inputs.operation }}"
             echo '- Source: exact retained encrypted artifact with isolated filtered-restore rehearsal'
             echo '- Included: Product, Brand, Category, attribute/specification/taxonomy, relationship, URL metadata, provenance'
             echo '- Excluded: PII, Auth, customer, staff/admin, order, quote, Blog, publishing identity/credential, media bytes'

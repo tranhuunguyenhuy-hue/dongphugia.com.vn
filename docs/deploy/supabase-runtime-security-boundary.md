@@ -6,6 +6,8 @@ sanitized provisioning evidence lives in `../ops/project-current-state.md`.
 ## Target identity and scope
 
 - Project name: `dongphugia-runtime`
+- Organization: `Đông Phú Gia Runtime`, ref `ymjvuwefhqqlymwlocqn`
+- Project ref: `bonxyxluzlxfkdetryoo`
 - Region: Singapore, `ap-southeast-1`
 - PostgreSQL: 17
 - Environment: isolated Preview target; not Production
@@ -34,7 +36,10 @@ The boundary creates four `NOLOGIN`, `NOSUPERUSER`, `NOCREATEDB`,
   `default_transaction_read_only=on`, and cannot insert, update, or delete.
 - `dpg_backup`: is a passwordless capability prerequisite for explicit backup
   grants. It owns nothing, receives no broad or default privilege, and is
-  created before the reviewed LEO-542 backup-coverage migrations.
+  created before the reviewed LEO-542 backup-coverage migrations. Its
+  prerequisite rejects any pre-existing membership path, owned object, ACL,
+  default privilege, policy grant, or role setting before later explicit
+  read-only grants are applied.
 
 The original boundary creates one target-local `LOGIN` identity for each
 application capability:

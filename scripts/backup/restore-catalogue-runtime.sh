@@ -16,13 +16,16 @@ fi
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 contract="$repo_root/scripts/backup/catalogue-restore-contract.mjs"
+target_contract="$repo_root/scripts/backup/supabase-runtime-target.mjs"
 preflight_sql="$repo_root/scripts/backup/catalogue-rehome-preflight.sql"
 postgres_image="${POSTGRES_IMAGE:-postgres:17.6-bookworm@sha256:45cd22f8d32e189d245403954882f88e7a8714301fda80dab6da90f1265b25a3}"
 output_dir="${OUTPUT_DIR:-$RUNNER_TEMP/catalogue-rehome-evidence}"
 mkdir -p "$output_dir"
 
 tmp_parent='/dev/shm'
-if [[ ! -d "$tmp_parent" ]]; then
+if ! command -v findmnt >/dev/null 2>&1 \
+   || [[ ! -d "$tmp_parent" ]] \
+   || [[ "$(findmnt --noheadings --output FSTYPE --target "$tmp_parent" | xargs)" != 'tmpfs' ]]; then
   echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=tmpfs_unavailable'
   exit 1
 fi
@@ -38,7 +41,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-for command in age docker jq node sha256sum; do
+for command in age docker findmnt jq node sha256sum; do
   command -v "$command" >/dev/null 2>&1 || {
     echo "CATALOGUE_REHOME status=FAIL stage=preflight reason=missing_${command}"
     exit 1
@@ -68,16 +71,19 @@ node "$contract" validate-source "$manifest" \
   "$EXPECTED_WORKFLOW_RUN_ID" "$EXPECTED_MERGE_SHA" >/dev/null
 
 validate_target_url() {
-  node -e '
-    const value = process.env.SUPABASE_REHOME_DATABASE_URL;
-    if (!value) process.exit(1);
-    const url = new URL(value);
-    const ref = "bonxyxluzlxfkdetryoo";
-    const direct = url.hostname === `db.${ref}.supabase.co` && url.username === "postgres";
-    const pooler = url.hostname === "aws-0-ap-southeast-1.pooler.supabase.com"
-      && url.username === `postgres.${ref}`;
-    if ((!direct && !pooler) || url.pathname !== "/postgres") process.exit(1);
-  '
+  node "$target_contract" validate-url >/dev/null
+}
+
+harden_libpq_environment() {
+  unset PGHOST PGHOSTADDR PGDATABASE PGUSER PGSERVICE PGSERVICEFILE PGOPTIONS PGPASSFILE
+  export PGSSLMODE=require
+}
+
+sensitive_failure() {
+  local stage="$1"
+  rm -f "$tmp_dir/sensitive.error"
+  echo "CATALOGUE_REHOME status=FAIL stage=$stage reason=sensitive_operation_failed"
+  exit 1
 }
 
 if [[ "$MODE" == 'preflight' ]]; then
@@ -90,8 +96,12 @@ if [[ "$MODE" == 'preflight' ]]; then
     echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=target_url_mismatch'
     exit 1
   }
-  psql "$SUPABASE_REHOME_DATABASE_URL" -X -q -v ON_ERROR_STOP=1 \
-    --file "$preflight_sql" >/dev/null
+  harden_libpq_environment
+  if ! psql "$SUPABASE_REHOME_DATABASE_URL" -X -q -v ON_ERROR_STOP=1 \
+    --file "$preflight_sql" >/dev/null 2>"$tmp_dir/sensitive.error"; then
+    sensitive_failure remote_preflight
+  fi
+  rm -f "$tmp_dir/sensitive.error"
   echo 'CATALOGUE_REHOME status=PASS mode=preflight target=exact empty=true'
   exit 0
 fi
@@ -100,8 +110,12 @@ fi
 printf '%s\n' "$AGE_IDENTITY" >"$tmp_dir/age-identity"
 chmod 600 "$tmp_dir/age-identity"
 plain_dump="$tmp_dir/runtime.dump"
-age --decrypt --identity "$tmp_dir/age-identity" --output "$plain_dump" "$archive" 2>"$tmp_dir/age.error"
+if ! age --decrypt --identity "$tmp_dir/age-identity" --output "$plain_dump" "$archive" \
+  2>"$tmp_dir/sensitive.error"; then
+  sensitive_failure decrypt
+fi
 rm -f "$tmp_dir/age-identity"
+rm -f "$tmp_dir/sensitive.error"
 
 mapfile -t restore_table_args < <(node "$contract" table-args)
 test "${#restore_table_args[@]}" -gt 0
@@ -136,22 +150,36 @@ create database source;
 create database target;
 SQL
 
-  cat "$plain_dump" | docker exec -i "$container_name" \
-    pg_restore -U postgres -d source --exit-on-error --no-owner --no-privileges >/dev/null
-  node "$contract" snapshot-sql | docker exec -i "$container_name" \
+  if ! docker exec -i "$container_name" \
+    pg_restore -U postgres -d source --exit-on-error --no-owner --no-privileges \
+      <"$plain_dump" >/dev/null 2>"$tmp_dir/sensitive.error"; then
+    sensitive_failure rehearsal_source_restore
+  fi
+  if ! node "$contract" snapshot-sql | docker exec -i "$container_name" \
     psql -U postgres -d source -X -q -A -t -v ON_ERROR_STOP=1 \
-    >"$output_dir/catalogue-expected.json"
+      >"$output_dir/catalogue-expected.json" 2>"$tmp_dir/sensitive.error"; then
+    sensitive_failure rehearsal_source_manifest
+  fi
 
-  cat "$plain_dump" | docker exec -i "$container_name" \
-    pg_restore -U postgres -d target --schema-only --exit-on-error --no-owner --no-privileges >/dev/null
+  if ! docker exec -i "$container_name" \
+    pg_restore -U postgres -d target --schema-only --exit-on-error --no-owner --no-privileges \
+      <"$plain_dump" >/dev/null 2>"$tmp_dir/sensitive.error"; then
+    sensitive_failure rehearsal_schema_restore
+  fi
   for table_arg in "${restore_table_args[@]}"; do
-    cat "$plain_dump" | docker exec -i "$container_name" \
+    if ! docker exec -i "$container_name" \
       pg_restore --data-only --no-owner --no-privileges --exit-on-error \
-        "$table_arg" -U postgres -d target >/dev/null
+        "$table_arg" -U postgres -d target <"$plain_dump" \
+        >/dev/null 2>"$tmp_dir/sensitive.error"; then
+      sensitive_failure rehearsal_catalogue_restore
+    fi
   done
-  node "$contract" snapshot-sql | docker exec -i "$container_name" \
+  if ! node "$contract" snapshot-sql | docker exec -i "$container_name" \
     psql -U postgres -d target -X -q -A -t -v ON_ERROR_STOP=1 \
-    >"$tmp_dir/catalogue-actual.json"
+      >"$tmp_dir/catalogue-actual.json" 2>"$tmp_dir/sensitive.error"; then
+    sensitive_failure rehearsal_target_manifest
+  fi
+  rm -f "$tmp_dir/sensitive.error"
   node "$contract" compare "$output_dir/catalogue-expected.json" \
     "$tmp_dir/catalogue-actual.json" >/dev/null
   echo 'CATALOGUE_REHOME status=PASS mode=rehearsal network=none filtered=true'
@@ -168,6 +196,7 @@ validate_target_url || {
   echo 'CATALOGUE_REHOME status=FAIL stage=apply reason=target_url_mismatch'
   exit 1
 }
+harden_libpq_environment
 
 restore_sql="$tmp_dir/catalogue-restore.sql"
 validation_sql="$tmp_dir/catalogue-validation.sql"
@@ -176,10 +205,13 @@ driver_sql="$tmp_dir/catalogue-driver.sql"
 
 : >"$restore_sql"
 for table_arg in "${restore_table_args[@]}"; do
-  docker run --rm --network none --read-only \
+  if ! docker run --rm --network none --read-only \
     --volume "$tmp_dir:/work:rw" "$postgres_image" \
     pg_restore --data-only --no-owner --no-privileges --exit-on-error \
-      "$table_arg" --file - /work/runtime.dump >>"$restore_sql"
+      "$table_arg" --file - /work/runtime.dump >>"$restore_sql" \
+      2>"$tmp_dir/sensitive.error"; then
+    sensitive_failure generate_catalogue_restore
+  fi
 done
 node "$contract" validation-sql "$EXPECTED_CATALOGUE_MANIFEST" >"$validation_sql"
 node "$contract" sequence-sql >"$sequence_sql"
@@ -193,9 +225,16 @@ printf '%s\n' \
   "\\i '$validation_sql'" \
   'commit;' >"$driver_sql"
 
-psql "$SUPABASE_REHOME_DATABASE_URL" -X -q --file "$driver_sql" >/dev/null
-node "$contract" snapshot-sql | psql "$SUPABASE_REHOME_DATABASE_URL" \
-  -X -q -A -t -v ON_ERROR_STOP=1 >"$output_dir/catalogue-actual.json"
+if ! psql "$SUPABASE_REHOME_DATABASE_URL" -X -q --file "$driver_sql" \
+  >/dev/null 2>"$tmp_dir/sensitive.error"; then
+  sensitive_failure remote_apply
+fi
+if ! node "$contract" snapshot-sql | psql "$SUPABASE_REHOME_DATABASE_URL" \
+  -X -q -A -t -v ON_ERROR_STOP=1 >"$output_dir/catalogue-actual.json" \
+  2>"$tmp_dir/sensitive.error"; then
+  sensitive_failure remote_manifest
+fi
+rm -f "$tmp_dir/sensitive.error"
 node "$contract" compare "$EXPECTED_CATALOGUE_MANIFEST" \
   "$output_dir/catalogue-actual.json" >/dev/null
 echo 'CATALOGUE_REHOME status=PASS mode=apply target=exact transaction=committed'

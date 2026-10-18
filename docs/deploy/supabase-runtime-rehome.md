@@ -35,6 +35,11 @@ under the 350 MiB hard stop.
 
 ## Catalogue-only boundary
 
+The PM approved the expanded recovery catalogue boundary on 2026-10-18 for
+this exact new-account target. This supersedes the narrower historical
+LEO-560/S3 boundary only for Issue #158; it does not alter or retroactively
+authorize the old project or old artifact workflow.
+
 The executable allowlist contains only the 27 legacy catalogue metadata tables
 needed for Product, Brand, Category, taxonomy, attribute/specification,
 relationship, product image/document URL metadata, and provenance behavior.
@@ -42,7 +47,8 @@ It excludes admin and session data, PII, customers, staff, orders, quotes,
 Blog, publishing identities and credentials, and media bytes. `dpg_v1` rows are
 not imported from this artifact.
 
-The full encrypted archive is decrypted only into tmpfs. Before any remote
+The full encrypted archive is decrypted only after `/dev/shm` is proven to be
+a real `tmpfs` mount. Before any remote
 connection, the exact filtered restore is rehearsed in pinned PostgreSQL 17:
 
 1. a network-disabled source database receives the full exact archive;
@@ -58,7 +64,9 @@ pass/fail state. It contains no rows, URLs, credentials, keys, or media bytes.
 ## Protected workflow
 
 `.github/workflows/supabase-runtime-rehome.yml` is manual, protected-main-only,
-and defaults to read-only `apply=false`. It verifies open Issue #158, the exact
+and defaults to the read-only `preflight` operation. `migrate` applies only the
+missing reviewed migrations; `restore` requires their exact completed ledger
+and performs the catalogue transaction. It verifies open Issue #158, the exact
 merged control SHA supplied by the operator, the successful source run, and the
 non-expired exact artifact ID. The protected `runtime-backup` Environment must
 provide:
@@ -66,11 +74,19 @@ provide:
 - existing `BACKUP_AGE_PRIVATE_KEY`, used only in the tmpfs rehearsal/apply;
 - `SUPABASE_REHOME_DATABASE_URL`, restricted to project ref
   `bonxyxluzlxfkdetryoo` through its exact direct or Singapore session-pooler
-  identity.
+  identity; URL query/hash parameters and non-session pooler ports are rejected;
+- `SUPABASE_MANAGEMENT_TOKEN`, scoped for read-only verification of organization
+  `ymjvuwefhqqlymwlocqn`, its Free plan, and project identity/region/health.
 
 The source runtime connection secret is never read or reused by this workflow.
 
-After rehearsal, remote preflight is read-only. When `apply=true`, the generated
+The migration runner adopts the already-attested seven-migration checkpoint,
+stores exact checked-out migration hashes in a private forced-RLS ledger, and
+applies each remaining migration once in repository order. The final gate
+requires the complete 22-entry ledger plus schema, forced-RLS, and API
+acceptance before catalogue preflight can pass.
+
+After rehearsal, remote preflight is read-only. When operation is `restore`, the generated
 data-only restore, sequence repair, deterministic manifest validation, excluded
 surface check, and size guard execute inside one serializable transaction. Any
 error disconnects with the transaction uncommitted. A post-commit sanitized

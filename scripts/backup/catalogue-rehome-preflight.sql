@@ -28,8 +28,27 @@ begin
 
   if to_regclass('dpg_v1.products') is null
      or to_regclass('dpg_app.products') is null
-     or to_regclass('dpg_control.leo538_restore_manifest') is null then
+     or to_regclass('dpg_control.leo538_restore_manifest') is null
+     or to_regclass('dpg_control.runtime_migration_ledger') is null
+     or to_regprocedure('dpg_v1_api.public_product_get(uuid)') is null
+     or to_regprocedure('dpg_v1_api.catalogue_media_register(jsonb,text)') is null
+     or to_regprocedure('dpg_v1_api.order_intake_create(jsonb,text)') is null then
     raise exception 'CATALOGUE_REHOME_SCHEMA_INCOMPLETE';
+  end if;
+
+  if (select count(*) from dpg_control.runtime_migration_ledger) <> 22 then
+    raise exception 'CATALOGUE_REHOME_MIGRATION_LEDGER_INCOMPLETE';
+  end if;
+
+  if exists (
+    select 1
+    from pg_class c
+    join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname in ('dpg_app', 'dpg_control', 'dpg_v1')
+      and c.relkind in ('r', 'p')
+      and (not c.relrowsecurity or not c.relforcerowsecurity)
+  ) then
+    raise exception 'CATALOGUE_REHOME_RLS_INCOMPLETE';
   end if;
 
   if exists (
@@ -46,11 +65,30 @@ begin
     raise exception 'CATALOGUE_REHOME_ROLE_CONTRACT_FAILED';
   end if;
 
+  if exists (
+    select 1
+    from pg_auth_members memberships
+    join pg_roles granted_role on granted_role.oid = memberships.roleid
+    join pg_roles member_role on member_role.oid = memberships.member
+    where granted_role.rolname = 'dpg_backup' or member_role.rolname = 'dpg_backup'
+  ) then
+    raise exception 'CATALOGUE_REHOME_BACKUP_ROLE_MEMBERSHIP_FAILED';
+  end if;
+
   if exists (select 1 from auth.users limit 1) then
     raise exception 'CATALOGUE_REHOME_AUTH_NOT_EMPTY';
   end if;
   if exists (select 1 from storage.objects limit 1) then
     raise exception 'CATALOGUE_REHOME_STORAGE_NOT_EMPTY';
+  end if;
+  if exists (select 1 from dpg_v1.products limit 1)
+     or exists (select 1 from dpg_v1.staff_users limit 1)
+     or exists (select 1 from dpg_v1.media_assets limit 1)
+     or exists (select 1 from dpg_v1.content_entries limit 1)
+     or exists (select 1 from dpg_v1.quote_requests limit 1)
+     or exists (select 1 from dpg_v1.quotes limit 1)
+     or exists (select 1 from dpg_v1.orders limit 1) then
+    raise exception 'CATALOGUE_REHOME_V1_DATA_NOT_EMPTY';
   end if;
 
   for table_name in
