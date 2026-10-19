@@ -225,6 +225,11 @@ function validateLedger(rows, migrations, requireComplete) {
   if (rows.length < ADOPTED_CHECKPOINT_MIGRATIONS.length) {
     fail('migration_checkpoint_incomplete')
   }
+  if (rows.some((row, index) => row.application_source !== (
+    index < ADOPTED_CHECKPOINT_MIGRATIONS.length ? 'checkpoint-adopted' : 'runner-applied'
+  ))) {
+    fail('migration_ledger_source_drift')
+  }
   if (requireComplete && rows.length !== migrations.length) fail('migration_state_incomplete')
 }
 

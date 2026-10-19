@@ -11,12 +11,15 @@ import {
 } from './supabase-runtime-migrations.mjs'
 
 async function expectedLedgerPrefix(length) {
-  return Promise.all(EXPECTED_RUNTIME_MIGRATIONS.slice(0, length).map(async (filename) => {
+  return Promise.all(EXPECTED_RUNTIME_MIGRATIONS.slice(0, length).map(async (filename, index) => {
     const bytes = await readFile(`supabase/migrations/${filename}`)
     return {
       version: filename.slice(0, 14),
       filename,
       sha256: createHash('sha256').update(bytes).digest('hex'),
+      application_source: index < ADOPTED_CHECKPOINT_MIGRATIONS.length
+        ? 'checkpoint-adopted'
+        : 'runner-applied',
     }
   }))
 }
@@ -95,6 +98,23 @@ describe('Supabase runtime migration runner contract', () => {
     await expect(executeRuntimeMigrations(client, 'apply'))
       .rejects.toThrow('migration_ledger_non_prefix')
     expect(statements.some((sql) => sql.trim() === missingMigrationSql.trim())).toBe(false)
+  })
+
+  it.each([
+    [0, 'runner-applied'],
+    [ADOPTED_CHECKPOINT_MIGRATIONS.length, 'checkpoint-adopted'],
+  ])('rejects incorrect application provenance at ledger index %i before migration SQL', async (index, source) => {
+    const ledgerRows = await expectedLedgerPrefix(EXPECTED_RUNTIME_MIGRATIONS.length)
+    ledgerRows[index].application_source = source
+    const { client, statements } = migrationReadClient(ledgerRows)
+    const pendingMigrationSql = stripOuterTransaction(await readFile(
+      `supabase/migrations/${EXPECTED_RUNTIME_MIGRATIONS.at(-1)}`,
+      'utf8',
+    ))
+
+    await expect(executeRuntimeMigrations(client, 'apply'))
+      .rejects.toThrow('migration_ledger_source_drift')
+    expect(statements.some((sql) => sql.trim() === pendingMigrationSql.trim())).toBe(false)
   })
 
   it.each([0, ADOPTED_CHECKPOINT_MIGRATIONS.length - 1])(

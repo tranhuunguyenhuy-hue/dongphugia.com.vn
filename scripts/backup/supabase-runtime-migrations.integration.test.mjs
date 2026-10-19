@@ -259,6 +259,82 @@ describe('Supabase runtime migration adoption integration', () => {
         await client.query(runtimeReadonlyAcceptance)
         await client.query(cataloguePreflight)
 
+        await client.query('begin')
+        await client.query(`
+          create policy codex_unexpected_product_policy on dpg_v1.products
+          for select to authenticated using (true)
+        `)
+        await expect(client.query(runtimeReadonlyAcceptance))
+          .rejects.toThrow('SUPABASE_RUNTIME_READONLY_RLS_POLICY_SET_FAILED')
+        await client.query('rollback')
+        await client.query(runtimeReadonlyAcceptance)
+
+        await client.query('begin')
+        await client.query('drop policy v1_products_staff_select on dpg_v1.products')
+        await client.query(`
+          create policy v1_products_staff_select on dpg_v1.products
+          for select to authenticated using (true)
+        `)
+        await expect(client.query(runtimeReadonlyAcceptance))
+          .rejects.toThrow('SUPABASE_RUNTIME_READONLY_RLS_POLICY_SET_FAILED')
+        await client.query('rollback')
+        await client.query(runtimeReadonlyAcceptance)
+
+        await client.query('begin')
+        await client.query('grant create on schema dpg_v1_api to authenticated')
+        await client.query('alter view dpg_v1_api.public_products owner to authenticated')
+        await expect(client.query(runtimeReadonlyAcceptance))
+          .rejects.toThrow('SUPABASE_RUNTIME_READONLY_API_OWNER_FAILED')
+        await client.query('rollback')
+        await client.query(runtimeReadonlyAcceptance)
+
+        await client.query('begin')
+        await client.query(`
+          create function dpg_v1_api.codex_unexpected_helper()
+          returns integer language sql immutable as 'select 1'
+        `)
+        await expect(client.query(runtimeReadonlyAcceptance))
+          .rejects.toThrow('SUPABASE_RUNTIME_READONLY_API_FUNCTION_SET_FAILED')
+        await client.query('rollback')
+        await client.query(runtimeReadonlyAcceptance)
+
+        await client.query('begin')
+        await client.query('grant execute on function dpg_v1_api.public_product_get(uuid) to public')
+        await expect(client.query(runtimeReadonlyAcceptance))
+          .rejects.toThrow('SUPABASE_RUNTIME_READONLY_API_FUNCTION_GRANT_SET_FAILED')
+        await client.query('rollback')
+        await client.query(runtimeReadonlyAcceptance)
+
+        const pendingProvenanceMigration = EXPECTED_RUNTIME_MIGRATIONS.at(-1)
+        const pendingProvenanceSql = stripOuterTransaction(await readFile(
+          `supabase/migrations/${pendingProvenanceMigration}`, 'utf8',
+        ))
+        let provenanceMigrationStarted = false
+        const incorrectProvenanceClient = new Proxy(client, {
+          get(target, property) {
+            if (property === 'query') {
+              return (sql, ...values) => {
+                if (typeof sql === 'string' && sql.trim() === pendingProvenanceSql.trim()) {
+                  provenanceMigrationStarted = true
+                }
+                return target.query(sql, ...values)
+              }
+            }
+            return Reflect.get(target, property, target)
+          },
+        })
+        await client.query('begin')
+        await client.query(`
+          update dpg_control.runtime_migration_ledger
+          set application_source = 'runner-applied'
+          where filename = $1
+        `, [ADOPTED_CHECKPOINT_MIGRATIONS[0]])
+        await client.query('delete from dpg_control.runtime_migration_ledger where filename = $1', [pendingProvenanceMigration])
+        await expect(executeRuntimeMigrations(incorrectProvenanceClient, 'apply'))
+          .rejects.toThrow('migration_ledger_source_drift')
+        expect(provenanceMigrationStarted).toBe(false)
+        await client.query('rollback')
+
         await client.query('grant insert (id) on dpg_v1.products to dpg_backup')
         await expect(client.query(runtimeReadonlyAcceptance))
           .rejects.toThrow('SUPABASE_RUNTIME_READONLY_BACKUP_WRITE_PRIVILEGE')
