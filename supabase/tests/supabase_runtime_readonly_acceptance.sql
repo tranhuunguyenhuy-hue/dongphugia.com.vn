@@ -8,6 +8,8 @@ declare
   table_name text;
   api_principal text;
   api_relation_drift boolean;
+  api_schema_grant_drift boolean;
+  api_relation_grant_drift boolean;
 begin
   if to_regprocedure('dpg_v1_api.public_product_get(uuid)') is null
      or to_regprocedure('dpg_v1_api.catalogue_media_register(jsonb,text)') is null
@@ -33,11 +35,10 @@ begin
     ('public_collections'),
     ('staff_products')
   ), actual as (
-    select c.relname
+    select c.relname::text as relation_name
     from pg_class c
     join pg_namespace n on n.oid = c.relnamespace
     where n.nspname = 'dpg_v1_api'
-      and c.relkind in ('r', 'p', 'v', 'm', 'f')
   )
   select exists (
     (select * from expected except select * from actual)
@@ -49,10 +50,84 @@ begin
     from pg_class c
     join pg_namespace n on n.oid = c.relnamespace
     where n.nspname = 'dpg_v1_api'
-      and c.relkind in ('r', 'p', 'v', 'm', 'f')
       and (c.relkind <> 'v' or not coalesce(c.reloptions, '{}'::text[]) @> array['security_invoker=true'])
   ) then
     raise exception 'SUPABASE_RUNTIME_READONLY_API_RELATION_SET_FAILED';
+  end if;
+
+  with expected(principal, privilege_type, is_grantable) as (values
+    ('anon', 'USAGE', false),
+    ('authenticated', 'USAGE', false)
+  ), actual as (
+    select case
+             when acl.grantee = 0::oid then 'PUBLIC'
+             else coalesce(grantee.rolname, format('OID:%s', acl.grantee))
+           end as principal,
+           acl.privilege_type,
+           acl.is_grantable
+    from pg_namespace n
+    cross join lateral aclexplode(coalesce(n.nspacl, acldefault('n', n.nspowner))) acl
+    left join pg_roles grantee on grantee.oid = acl.grantee
+    where n.nspname = 'dpg_v1_api'
+      and acl.grantee <> n.nspowner
+  )
+  select exists (
+    (select * from expected except select * from actual)
+    union all
+    (select * from actual except select * from expected)
+  ) into api_schema_grant_drift;
+  if api_schema_grant_drift then
+    raise exception 'SUPABASE_RUNTIME_READONLY_API_SCHEMA_GRANT_SET_FAILED';
+  end if;
+
+  with expected(relation_name, principal, privilege_type, is_grantable) as (values
+    ('public_products', 'anon', 'SELECT', false),
+    ('public_products', 'authenticated', 'SELECT', false),
+    ('public_content', 'anon', 'SELECT', false),
+    ('public_content', 'authenticated', 'SELECT', false),
+    ('public_collections', 'anon', 'SELECT', false),
+    ('public_collections', 'authenticated', 'SELECT', false),
+    ('staff_products', 'authenticated', 'SELECT', false)
+  ), actual as (
+    select c.relname::text as relation_name,
+           case
+             when acl.grantee = 0::oid then 'PUBLIC'
+             else coalesce(grantee.rolname, format('OID:%s', acl.grantee))
+           end as principal,
+           acl.privilege_type,
+           acl.is_grantable
+    from pg_class c
+    join pg_namespace n on n.oid = c.relnamespace
+    cross join lateral aclexplode(coalesce(c.relacl, acldefault('r', c.relowner))) acl
+    left join pg_roles grantee on grantee.oid = acl.grantee
+    where n.nspname = 'dpg_v1_api'
+      and acl.grantee <> c.relowner
+    union all
+    select c.relname::text as relation_name,
+           case
+             when acl.grantee = 0::oid then 'PUBLIC'
+             else coalesce(grantee.rolname, format('OID:%s', acl.grantee))
+           end as principal,
+           acl.privilege_type,
+           acl.is_grantable
+    from pg_attribute a
+    join pg_class c on c.oid = a.attrelid
+    join pg_namespace n on n.oid = c.relnamespace
+    cross join lateral aclexplode(a.attacl) acl
+    left join pg_roles grantee on grantee.oid = acl.grantee
+    where n.nspname = 'dpg_v1_api'
+      and a.attnum > 0
+      and not a.attisdropped
+      and a.attacl is not null
+      and acl.grantee <> c.relowner
+  )
+  select exists (
+    (select * from expected except select * from actual)
+    union all
+    (select * from actual except select * from expected)
+  ) into api_relation_grant_drift;
+  if api_relation_grant_drift then
+    raise exception 'SUPABASE_RUNTIME_READONLY_API_GRANT_SET_FAILED';
   end if;
 
   if not has_table_privilege('anon', 'dpg_v1_api.public_products', 'SELECT')
@@ -62,7 +137,11 @@ begin
      or not has_table_privilege('authenticated', 'dpg_v1_api.public_content', 'SELECT')
      or not has_table_privilege('authenticated', 'dpg_v1_api.public_collections', 'SELECT')
      or not has_table_privilege('authenticated', 'dpg_v1_api.staff_products', 'SELECT')
-     or has_table_privilege('anon', 'dpg_v1_api.staff_products', 'SELECT') then
+     or has_table_privilege('anon', 'dpg_v1_api.staff_products', 'SELECT')
+     or has_table_privilege('service_role', 'dpg_v1_api.public_products', 'SELECT')
+     or has_table_privilege('service_role', 'dpg_v1_api.public_content', 'SELECT')
+     or has_table_privilege('service_role', 'dpg_v1_api.public_collections', 'SELECT')
+     or has_table_privilege('service_role', 'dpg_v1_api.staff_products', 'SELECT') then
     raise exception 'SUPABASE_RUNTIME_READONLY_API_GRANT_INCOMPLETE';
   end if;
 

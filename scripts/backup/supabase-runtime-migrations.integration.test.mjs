@@ -266,6 +266,23 @@ describe('Supabase runtime migration adoption integration', () => {
         await client.query('revoke insert (id) on dpg_v1.products from dpg_backup')
         await client.query(runtimeReadonlyAcceptance)
 
+        await client.query('create sequence dpg_v1_api.unexpected_runtime_sequence')
+        await expect(client.query(runtimeReadonlyAcceptance))
+          .rejects.toThrow('SUPABASE_RUNTIME_READONLY_API_RELATION_SET_FAILED')
+        await client.query('rollback').catch(() => undefined)
+        await client.query('drop sequence dpg_v1_api.unexpected_runtime_sequence')
+        await client.query('grant usage on schema dpg_v1_api to service_role')
+        await expect(client.query(runtimeReadonlyAcceptance))
+          .rejects.toThrow('SUPABASE_RUNTIME_READONLY_API_SCHEMA_GRANT_SET_FAILED')
+        await client.query('rollback').catch(() => undefined)
+        await client.query('revoke usage on schema dpg_v1_api from service_role')
+        await client.query('grant select (id) on dpg_v1_api.public_products to service_role')
+        await expect(client.query(runtimeReadonlyAcceptance))
+          .rejects.toThrow('SUPABASE_RUNTIME_READONLY_API_GRANT_SET_FAILED')
+        await client.query('rollback').catch(() => undefined)
+        await client.query('revoke select (id) on dpg_v1_api.public_products from service_role')
+        await client.query(runtimeReadonlyAcceptance)
+
         await client.query('begin')
         await client.query(`
           update dpg_control.runtime_migration_ledger
