@@ -289,6 +289,22 @@ describe('Supabase runtime migration adoption integration', () => {
         await client.query(runtimeReadonlyAcceptance)
 
         await client.query('begin')
+        await client.query(`
+          create function dpg_v1.staff_has_capability(text)
+          returns boolean language sql immutable as 'select true'
+        `)
+        await client.query('drop policy v1_products_staff_select on dpg_v1.products')
+        await client.query(`
+          create policy v1_products_staff_select on dpg_v1.products
+          for select to authenticated
+          using (status = 'PUBLISHED' or dpg_v1.staff_has_capability('catalogue.read'::text))
+        `)
+        await expect(client.query(runtimeReadonlyAcceptance))
+          .rejects.toThrow('SUPABASE_RUNTIME_READONLY_RLS_POLICY_SET_FAILED')
+        await client.query('rollback')
+        await client.query(runtimeReadonlyAcceptance)
+
+        await client.query('begin')
         await client.query('alter function dpg_v1_api.public_product_get(uuid) security definer')
         await expect(client.query(runtimeReadonlyAcceptance))
           .rejects.toThrow('SUPABASE_RUNTIME_READONLY_API_FUNCTION_SECURITY_MODE_FAILED')
