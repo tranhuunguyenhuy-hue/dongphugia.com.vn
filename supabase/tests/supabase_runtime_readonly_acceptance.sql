@@ -8,7 +8,6 @@ declare
   table_name text;
   api_principal text;
   api_relation_drift boolean;
-  api_owner_drift boolean;
   api_schema_grant_drift boolean;
   api_relation_grant_drift boolean;
   api_product_policy_drift boolean;
@@ -152,12 +151,20 @@ begin
     raise exception 'SUPABASE_RUNTIME_READONLY_API_GRANT_SET_FAILED';
   end if;
 
-  with expected(policy_name, policy_command, policy_permissive, policy_roles, policy_qual, policy_check) as (values
-    ('v1_products_public_select', 'r', true, array['anon']::text[], 'status=''PUBLISHED''', ''),
-    ('v1_products_staff_select', 'r', true, array['authenticated']::text[], 'status=''PUBLISHED''ordpg_v1.staff_has_capability(''catalogue.read'')', ''),
-    ('v1_products_create', 'a', true, array['authenticated']::text[], '', 'dpg_v1.staff_has_capability(''catalogue.create'')andstatus=''DRAFT'''),
-    ('v1_products_update', 'w', true, array['authenticated']::text[], 'dpg_v1.staff_has_capability(''catalogue.update'')ordpg_v1.staff_has_capability(''catalogue.publish'')ordpg_v1.staff_has_capability(''catalogue.archive'')', 'dpg_v1.staff_has_capability(''catalogue.update'')ordpg_v1.staff_has_capability(''catalogue.publish'')ordpg_v1.staff_has_capability(''catalogue.archive'')'),
+  with expected_raw(policy_name, policy_command, policy_permissive, policy_roles, policy_qual, policy_check) as (values
+    ('v1_products_public_select', 'r', true, array['anon']::text[], 'status = ''PUBLISHED''', ''),
+    ('v1_products_staff_select', 'r', true, array['authenticated']::text[], 'status = ''PUBLISHED'' or dpg_v1.staff_has_capability(''catalogue.read'')', ''),
+    ('v1_products_create', 'a', true, array['authenticated']::text[], '', 'dpg_v1.staff_has_capability(''catalogue.create'') and status = ''DRAFT'''),
+    ('v1_products_update', 'w', true, array['authenticated']::text[], 'dpg_v1.staff_has_capability(''catalogue.update'') or dpg_v1.staff_has_capability(''catalogue.publish'') or dpg_v1.staff_has_capability(''catalogue.archive'')', 'dpg_v1.staff_has_capability(''catalogue.update'') or dpg_v1.staff_has_capability(''catalogue.publish'') or dpg_v1.staff_has_capability(''catalogue.archive'')'),
     ('leo565_backup_products_select', 'r', true, array['dpg_backup']::text[], 'true', '')
+  ), expected as (
+    select policy_name,
+           policy_command,
+           policy_permissive,
+           policy_roles,
+           regexp_replace(coalesce(policy_qual, ''), '[[:space:]()]|::[[:alnum:]_.]+', '', 'g') as policy_qual,
+           regexp_replace(coalesce(policy_check, ''), '[[:space:]()]|::[[:alnum:]_.]+', '', 'g') as policy_check
+    from expected_raw
   ), actual as (
     select p.polname::text as policy_name,
            p.polcmd::text as policy_command,
@@ -285,6 +292,14 @@ begin
   into api_function_inventory_drift, api_function_grant_drift, api_function_effective_drift;
   if api_function_inventory_drift then
     raise exception 'SUPABASE_RUNTIME_READONLY_API_FUNCTION_SET_FAILED';
+  end if;
+  if exists (
+    select 1
+    from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'dpg_v1_api' and p.prosecdef
+  ) then
+    raise exception 'SUPABASE_RUNTIME_READONLY_API_FUNCTION_SECURITY_MODE_FAILED';
   end if;
   if api_function_grant_drift then
     raise exception 'SUPABASE_RUNTIME_READONLY_API_FUNCTION_GRANT_SET_FAILED';

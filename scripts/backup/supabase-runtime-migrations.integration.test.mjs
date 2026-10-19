@@ -289,6 +289,13 @@ describe('Supabase runtime migration adoption integration', () => {
         await client.query(runtimeReadonlyAcceptance)
 
         await client.query('begin')
+        await client.query('alter function dpg_v1_api.public_product_get(uuid) security definer')
+        await expect(client.query(runtimeReadonlyAcceptance))
+          .rejects.toThrow('SUPABASE_RUNTIME_READONLY_API_FUNCTION_SECURITY_MODE_FAILED')
+        await client.query('rollback')
+        await client.query(runtimeReadonlyAcceptance)
+
+        await client.query('begin')
         await client.query(`
           create function dpg_v1_api.codex_unexpected_helper()
           returns integer language sql immutable as 'select 1'
