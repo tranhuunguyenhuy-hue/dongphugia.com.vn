@@ -66,6 +66,9 @@ describe('Supabase runtime migration adoption integration', () => {
         const rlsAcceptance = (await readFile(
           'supabase/tests/leo560_preview_rls_hardening.sql', 'utf8',
         )).replace(/^\\set[^\n]*\n/, '')
+        const runtimeReadonlyAcceptance = (await readFile(
+          'supabase/tests/supabase_runtime_readonly_acceptance.sql', 'utf8',
+        )).replace(/^\\set[^\n]*\n/, '')
         const cataloguePreflight = await readFile('scripts/backup/catalogue-rehome-preflight.sql', 'utf8')
         const hardeningMigration = stripOuterTransaction(await readFile(
           'supabase/migrations/20261016090000_leo560_preview_rls_hardening.sql', 'utf8',
@@ -250,6 +253,7 @@ describe('Supabase runtime migration adoption integration', () => {
         await client.query('drop table public.synthetic_migration_size_probe')
 
         await client.query(rlsAcceptance)
+        await client.query(runtimeReadonlyAcceptance)
         await client.query(cataloguePreflight)
 
         await client.query('begin')
@@ -289,6 +293,7 @@ describe('Supabase runtime migration adoption integration', () => {
         await client.query('rollback')
 
         await client.query(rlsAcceptance)
+        await client.query(runtimeReadonlyAcceptance)
         await client.query(cataloguePreflight)
         await executeRuntimeMigrations(client, 'status')
       } finally {
