@@ -1,17 +1,15 @@
 import type { Metadata } from "next"
-import { unstable_cache } from "next/cache"
 import { connection } from "next/server"
 import { Suspense } from "react"
+import {
+    getPublicHomeBanners,
+    getPublicHomeContent,
+} from "@dpg/public-home-runtime"
 import { HeroBanner } from "@/components/home/hero-banner"
 import { BrandSlider } from "@/components/home/brand-slider"
 import { BlogSection } from "@/components/home/blog-section"
 import { HomeCategoryBlockAlt } from "@/components/home/home-category-block-alt"
 import { LazyContactSection } from "@/components/home/lazy-contact-section"
-import { getFeaturedProductsByCategorySlug } from "@/lib/public-api-products"
-import { getHomepageBanners } from "@/lib/homepage-data"
-import prisma from "@/lib/prisma"
-import { buildPublicListingVisibilityWhere } from "@/lib/public-product-visibility"
-import { withRuntimeQueryDiagnostic } from "@/lib/runtime-query-diagnostics"
 
 export const revalidate = 300
 
@@ -32,79 +30,23 @@ export const metadata: Metadata = {
     },
 }
 
-const getHomepageContentData = unstable_cache(
-    async () => {
-        const publicTbvsProducts = {
-            ...buildPublicListingVisibilityWhere(),
-            categories: { slug: 'thiet-bi-ve-sinh' },
-        }
-        const publicKitchenProducts = {
-            ...buildPublicListingVisibilityWhere(),
-            categories: { slug: 'thiet-bi-bep' },
-        }
-
-        return Promise.all([
-            withRuntimeQueryDiagnostic('homepage_featured_tbvs', () => getFeaturedProductsByCategorySlug('thiet-bi-ve-sinh', ['toto', 'inax'], null, 0, 3)),
-            withRuntimeQueryDiagnostic('homepage_featured_kitchen', () => getFeaturedProductsByCategorySlug('thiet-bi-bep', null, null, 0, 3)),
-            withRuntimeQueryDiagnostic('homepage_featured_tiles', () => getFeaturedProductsByCategorySlug('gach-op-lat', null, null, 0, 3)),
-            withRuntimeQueryDiagnostic('homepage_featured_water', () => getFeaturedProductsByCategorySlug('vat-lieu-nuoc', null, null, 0, 3)),
-            withRuntimeQueryDiagnostic('homepage_brands_tbvs', () => prisma.brands.findMany({
-                where: { products: { some: publicTbvsProducts } },
-                select: { name: true, slug: true }
-            })),
-            withRuntimeQueryDiagnostic('homepage_subcategories_tbvs', () => prisma.subcategories.findMany({
-                where: { categories: { slug: 'thiet-bi-ve-sinh' }, products: { some: publicTbvsProducts } },
-                select: { name: true, slug: true }
-            })),
-            withRuntimeQueryDiagnostic('homepage_subcategories_kitchen', () => prisma.subcategories.findMany({
-                where: {
-                    categories: { slug: 'thiet-bi-bep' },
-                    slug: { notIn: ['thiet-bi-bep-khac'] },
-                    products: { some: publicKitchenProducts },
-                },
-                select: { name: true, slug: true }
-            })),
-            withRuntimeQueryDiagnostic('homepage_brands_kitchen', () => prisma.brands.findMany({
-                where: { products: { some: publicKitchenProducts } },
-                select: { name: true, slug: true }
-            }))
-        ])
-    },
-    ['homepage-content-data-v1'],
-    { revalidate: 3600, tags: ['homepage'] }
-)
-
 async function HomepageContentSections() {
-    const [tbvsData, bepData, gachData, nuocData, tbvsBrands, tbvsSubcats, bepSubcats, bepBrands] = await getHomepageContentData()
-    const allCategories = [
-        { 
-            id: 'thiet-bi-ve-sinh', 
-            label: 'Thiết Bị Vệ Sinh', 
-            basePath: '/thiet-bi-ve-sinh', 
-            products: tbvsData.products, 
-            totalCount: tbvsData.total,
-            availableBrands: tbvsBrands,
-            availableSubcategories: tbvsSubcats
-        },
-        { 
-            id: 'thiet-bi-bep', 
-            label: 'Thiết Bị Bếp', 
-            basePath: '/thiet-bi-bep', 
-            products: bepData.products, 
-            totalCount: bepData.total,
-            availableBrands: bepBrands,
-            availableSubcategories: bepSubcats
-        },
-        { id: 'vat-lieu-nuoc', label: 'Vật Liệu Nước', basePath: '/vat-lieu-nuoc', products: nuocData.products, totalCount: nuocData.total },
-        { id: 'gach-op-lat', label: 'Gạch Ốp Lát', basePath: '/gach-op-lat', products: gachData.products, totalCount: gachData.total },
-    ].filter(c => c.products.length > 0)
-
+    const { categories, posts, previewNotice } = await getPublicHomeContent()
     return (
         <>
             {/* Brand Slider */}
             <div className="max-w-[1280px] mx-auto px-5">
                 <BrandSlider />
             </div>
+
+            {previewNotice ? (
+                <aside
+                    role="note"
+                    className="mx-auto max-w-[1280px] rounded-xl border border-amber-300 bg-amber-50 px-5 py-4 text-sm leading-6 text-amber-950"
+                >
+                    {previewNotice}
+                </aside>
+            ) : null}
 
             {/* Featured Products (Khối 1) - Tạm ẩn để nghiên cứu thêm */}
             {/*
@@ -116,16 +58,16 @@ async function HomepageContentSections() {
             */}
 
             {/* Category Blocks (Khối 2-5) */}
-            {allCategories.length > 0 && (
+            {categories.length > 0 && (
                 <div className="max-w-[1280px] mx-auto px-5 py-6 lg:py-10 flex flex-col gap-12 lg:gap-16">
-                    {allCategories.map((cat) => (
+                    {categories.map((cat) => (
                         <HomeCategoryBlockAlt key={cat.id} categoryData={cat} />
                     ))}
                 </div>
             )}
 
             {/* Blog */}
-            <BlogSection />
+            <BlogSection posts={posts} />
 
             {/* Contact Form */}
             <LazyContactSection />
@@ -135,8 +77,7 @@ async function HomepageContentSections() {
 
 export default async function HomePage() {
     await connection()
-
-    const banners = await getHomepageBanners()
+    const banners = await getPublicHomeBanners()
 
     return (
         <div className="bg-white">

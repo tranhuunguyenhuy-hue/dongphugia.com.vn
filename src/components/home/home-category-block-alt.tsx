@@ -19,10 +19,10 @@ interface HomeCategoryBlockAltProps {
         basePath: string
         // ProductCard supports the serialized product payload returned by Prisma.
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        products: any[]
+        products: readonly any[]
         totalCount?: number
-        availableBrands?: Brand[]
-        availableSubcategories?: Subcategory[]
+        availableBrands?: readonly Brand[]
+        availableSubcategories?: readonly Subcategory[]
     }
 }
 

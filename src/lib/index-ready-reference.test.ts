@@ -47,7 +47,7 @@ describe('index-ready public references', () => {
 
     it('binds every public listing, filter, home-card and sibling helper to the shared visibility predicates', () => {
         const publicProducts = source('src/lib/public-api-products.ts')
-        const homepage = source('src/app/(public)/page.tsx')
+        const homepageRuntime = source('src/runtime/legacy-public-home.ts')
 
         expect(helperSection(publicProducts, 'getAvailableFilters')).toContain('const categoryProductWhere: Prisma.productsWhereInput = {')
         expect(helperSection(publicProducts, 'getAvailableFiltersBySubcategory')).toContain('...buildPublicListingVisibilityWhere(),')
@@ -64,10 +64,10 @@ describe('index-ready public references', () => {
         ]) {
             expect(helperSection(publicProducts, helperName), helperName).toContain('buildPublicListingVisibilityWhere()')
         }
-        expect(homepage).toContain('const publicTbvsProducts = {')
-        expect(homepage).toContain('const publicKitchenProducts = {')
-        expect(homepage).toContain('products: { some: publicTbvsProducts }')
-        expect(homepage).toContain('products: { some: publicKitchenProducts }')
+        expect(homepageRuntime).toContain('const publicTbvsProducts = {')
+        expect(homepageRuntime).toContain('const publicKitchenProducts = {')
+        expect(homepageRuntime).toContain('products: { some: publicTbvsProducts }')
+        expect(homepageRuntime).toContain('products: { some: publicKitchenProducts }')
     })
 
     it('keeps customer-facing metadata and sitemap modules free of legacy/staging hosts', () => {

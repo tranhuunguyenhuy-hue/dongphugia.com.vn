@@ -4,8 +4,10 @@ import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 
 const WORKER_NAME = 'dongphugia-v1-public-preview'
-const PREVIEW_ALIAS = 'pr-138'
-const PULL_REQUEST = 138
+const PREVIEW_PR_NUMBER = process.env.DPG_PREVIEW_PR_NUMBER || '138'
+if (!/^[1-9][0-9]*$/.test(PREVIEW_PR_NUMBER)) throw new Error('LEO563_PREVIEW_PR_NUMBER_INVALID')
+const PREVIEW_ALIAS = `pr-${PREVIEW_PR_NUMBER}`
+const PULL_REQUEST = Number(PREVIEW_PR_NUMBER)
 const FREE_WORKER_GZIP_LIMIT_KIB = 3 * 1024
 const FREE_STATIC_ASSET_LIMIT = 20_000
 const STATIC_ASSET_FILE_LIMIT_BYTES = 25 * 1024 * 1024
@@ -373,16 +375,20 @@ function normalizeManagedDeployments(value, errorCode = 'LEO563_PREVIEW_MANAGED_
 }
 
 function normalizeManagedPublicationProof(proof) {
+  const managedPullRequest = proof?.pullRequest
+  const managedPreviewAlias = Number.isSafeInteger(managedPullRequest) && managedPullRequest > 0
+    ? `pr-${managedPullRequest}`
+    : null
   if (
     !proof ||
     proof.contract !== 'dongphugia:cloudflare-managed-preview-evidence:v1' ||
     proof.workerName !== WORKER_NAME ||
     typeof proof.sourceCommit !== 'string' ||
     !/^[0-9a-f]{40}$/.test(proof.sourceCommit) ||
-    proof.pullRequest !== PULL_REQUEST ||
+    managedPreviewAlias === null ||
     typeof proof.workflowRunId !== 'string' ||
     !/^\d+$/.test(proof.workflowRunId) ||
-    proof.previewAlias !== PREVIEW_ALIAS ||
+    proof.previewAlias !== managedPreviewAlias ||
     proof.workersDev !== false ||
     proof.previewUrls !== true ||
     !Array.isArray(proof.customDomains) || proof.customDomains.length !== 0 ||
@@ -441,10 +447,10 @@ function normalizeManagedPublicationProof(proof) {
   return {
     contract: 'dongphugia:cloudflare-managed-preview-evidence:v1',
     sourceCommit: proof.sourceCommit,
-    pullRequest: PULL_REQUEST,
+    pullRequest: managedPullRequest,
     workflowRunId: proof.workflowRunId,
     workerName: WORKER_NAME,
-    previewAlias: PREVIEW_ALIAS,
+    previewAlias: managedPreviewAlias,
     workerVersionId,
     bootstrapVersionId,
     workersDev: false,
@@ -472,12 +478,16 @@ export function validateManagedPublicationEvidence({ publicationPreflight, uploa
   ) throw new Error('LEO563_PREVIEW_MANAGED_EVIDENCE_CONTRACT_INVALID')
 
   const sourceCommit = publicationPreflight.sourceCommit
+  const managedPullRequest = publicationPreflight.pullRequest
+  const managedPreviewAlias = Number.isSafeInteger(managedPullRequest) && managedPullRequest > 0
+    ? `pr-${managedPullRequest}`
+    : null
   if (
     typeof sourceCommit !== 'string' ||
     !/^[0-9a-f]{40}$/.test(sourceCommit) ||
     uploadEvidence.sourceCommit !== sourceCommit ||
-    publicationPreflight.pullRequest !== PULL_REQUEST ||
-    uploadEvidence.pullRequest !== PULL_REQUEST ||
+    managedPreviewAlias === null ||
+    uploadEvidence.pullRequest !== managedPullRequest ||
     (expectedWorkflowRunId !== null && String(publicationPreflight.workflowRunId) !== String(expectedWorkflowRunId))
   ) throw new Error('LEO563_PREVIEW_MANAGED_EVIDENCE_SOURCE_FAILED')
 
@@ -485,8 +495,8 @@ export function validateManagedPublicationEvidence({ publicationPreflight, uploa
     if (evidence.workerName !== WORKER_NAME) throw new Error('LEO563_PREVIEW_MANAGED_EVIDENCE_WORKER_IDENTITY_FAILED')
   }
   if (
-    publicationPreflight.previewAlias !== PREVIEW_ALIAS ||
-    uploadEvidence.previewAlias !== PREVIEW_ALIAS ||
+    publicationPreflight.previewAlias !== managedPreviewAlias ||
+    uploadEvidence.previewAlias !== managedPreviewAlias ||
     publicationPreflight.workersDev !== false ||
     publicationPreflight.previewUrls !== true ||
     uploadEvidence.productionDeployment !== 'not-performed' ||
@@ -563,10 +573,10 @@ export function validateManagedPublicationEvidence({ publicationPreflight, uploa
   return normalizeManagedPublicationProof({
     contract: 'dongphugia:cloudflare-managed-preview-evidence:v1',
     sourceCommit,
-    pullRequest: PULL_REQUEST,
+    pullRequest: managedPullRequest,
     workflowRunId: String(publicationPreflight.workflowRunId),
     workerName: WORKER_NAME,
-    previewAlias: PREVIEW_ALIAS,
+    previewAlias: managedPreviewAlias,
     workerVersionId,
     bootstrapVersionId,
     workersDev: false,

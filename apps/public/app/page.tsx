@@ -1,13 +1,11 @@
-import { APPLICATIONS } from '@dpg/app-contracts'
+import CanonicalHomePage, {
+  metadata,
+  revalidate,
+} from '@/app/(public)/page'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 
-export default function PublicFoundationPage() {
-  return (
-    <main data-application={APPLICATIONS.public.name} data-route-owner="public">
-      <h1>Dong Phu Gia Public Application</h1>
-      <p>This is the New Production public application foundation.</p>
-    </main>
-  )
-}
+export { metadata, revalidate }
+
+export default CanonicalHomePage

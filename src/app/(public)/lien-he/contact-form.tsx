@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { siteConfig } from "@/config/site";
 import { useState } from "react";
 import { toast } from "sonner";
-import { submitContactForm } from "@/lib/actions";
+import { submitContactForm } from "@dpg/public-interactions";
 import { trackGenerateLead } from "@/lib/tracking";
 
 /**
@@ -16,7 +16,7 @@ import { trackGenerateLead } from "@/lib/tracking";
  * Contains all interactive form state, submission logic, and contact info display.
  * Separated from lien-he/page.tsx (Server Component) to allow metadata export.
  */
-export function ContactForm() {
+export function ContactForm({ readOnly = false }: { readOnly?: boolean }) {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -84,7 +84,7 @@ export function ContactForm() {
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20">
 
                     {/* Left: Contact Info */}
-                    <div className="lg:col-span-5 flex flex-col gap-10">
+                    <div className={`${readOnly ? "lg:col-span-12" : "lg:col-span-5"} flex flex-col gap-10`}>
                         <div>
                             <h2 className="text-2xl font-bold text-neutral-900 mb-8">Thông tin liên hệ</h2>
                             <div className="flex flex-col gap-6">
@@ -161,7 +161,12 @@ export function ContactForm() {
                         </div>
                     </div>
 
-                    {/* Right: Contact Form */}
+                    {/* Preview keeps the canonical contact details but never collects personal data. */}
+                    {readOnly ? (
+                        <aside className="lg:col-span-12 rounded-xl border border-amber-300 bg-amber-50 px-5 py-4 text-sm leading-6 text-amber-950">
+                            Biểu mẫu đang tạm khóa trên bản Preview. Vui lòng liên hệ qua số điện thoại hoặc email ở trên.
+                        </aside>
+                    ) : (
                     <div className="lg:col-span-7">
                         <div className="bg-white rounded-3xl p-8 sm:p-10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-neutral-100 relative overflow-hidden">
                             {/* Decorative background element */}
@@ -243,6 +248,7 @@ export function ContactForm() {
                             </div>
                         </div>
                     </div>
+                    )}
                 </div>
 
                 {/* Full width Map Section */}
