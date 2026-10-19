@@ -11,6 +11,7 @@ declare
   api_schema_grant_drift boolean;
   api_relation_grant_drift boolean;
   api_product_policy_drift boolean;
+  api_product_policy_drift_details text[];
   api_capability_function_drift boolean;
   api_staff_context_function_drift boolean;
   api_function_inventory_drift boolean;
@@ -189,20 +190,28 @@ begin
     where p.schemaname = 'dpg_v1'
       and p.tablename = 'products'
   )
-  select exists (
-    select 1
+  select coalesce(array_agg(
+    format('%s:%s', drift.policy_name, drift.field_name)
+    order by drift.policy_name, drift.field_name
+  ), array[]::text[])
+  into api_product_policy_drift_details
+  from (
+    select coalesce(e.policy_name, a.policy_name) as policy_name,
+           unnest(array_remove(array[
+             case when e.policy_name is null or a.policy_name is null then 'presence'::text end,
+             case when e.policy_command is distinct from a.policy_command then 'command'::text end,
+             case when e.policy_permissive is distinct from a.policy_permissive then 'permissive'::text end,
+             case when e.policy_roles is distinct from a.policy_roles then 'roles'::text end,
+             case when e.policy_qual is distinct from a.policy_qual then 'qual'::text end,
+             case when e.policy_check is distinct from a.policy_check then 'with_check'::text end
+           ], null::text)) as field_name
     from expected e
     full join actual a using (policy_name)
-    where e.policy_name is null
-       or a.policy_name is null
-       or e.policy_command is distinct from a.policy_command
-       or e.policy_permissive is distinct from a.policy_permissive
-       or e.policy_roles is distinct from a.policy_roles
-       or e.policy_qual is distinct from a.policy_qual
-       or e.policy_check is distinct from a.policy_check
-  ) into api_product_policy_drift;
+  ) drift;
+  api_product_policy_drift := cardinality(api_product_policy_drift_details) > 0;
   if api_product_policy_drift then
-    raise exception 'SUPABASE_RUNTIME_READONLY_RLS_POLICY_SET_FAILED';
+    raise exception 'SUPABASE_RUNTIME_READONLY_RLS_POLICY_SET_FAILED:%',
+      array_to_string(api_product_policy_drift_details, ',');
   end if;
 
   select not exists (
