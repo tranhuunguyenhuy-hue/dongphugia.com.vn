@@ -7,6 +7,7 @@ import pg from 'pg'
 import { parseSupabaseRuntimeTarget } from './supabase-runtime-target.mjs'
 
 const { Client } = pg
+const DATABASE_SIZE_HARD_CEILING_BYTES = 367001600n
 
 export const ADOPTED_CHECKPOINT_MIGRATIONS = [
   '20260827204635_leo539_security_boundary.sql',
@@ -42,6 +43,46 @@ const migrationsDirectory = path.resolve('supabase/migrations')
 
 function fail(reason) {
   throw new Error(reason)
+}
+
+export function validateDatabaseSize(currentSizeBytes, hardCeilingBytes) {
+  if (currentSizeBytes === null || currentSizeBytes === undefined
+    || hardCeilingBytes === null || hardCeilingBytes === undefined) {
+    fail('database_size_unavailable')
+  }
+  if (!/^(0|[1-9]\d*)$/.test(String(currentSizeBytes))
+    || !/^(0|[1-9]\d*)$/.test(String(hardCeilingBytes))) {
+    fail('database_size_unavailable')
+  }
+
+  let currentSize
+  let hardCeiling
+  try {
+    currentSize = BigInt(currentSizeBytes)
+    hardCeiling = BigInt(hardCeilingBytes)
+  } catch {
+    fail('database_size_unavailable')
+  }
+
+  if (currentSize < 0n) fail('database_size_unavailable')
+  if (hardCeiling !== DATABASE_SIZE_HARD_CEILING_BYTES) {
+    fail('database_size_contract_mismatch')
+  }
+  if (currentSize >= hardCeiling) fail('database_size_hard_limit_reached')
+  return currentSize
+}
+
+export async function assertDatabaseSizeWithinContract(client) {
+  const result = await client.query(`
+    select
+      pg_database_size(current_database())::text as current_size_bytes,
+      (select hard_database_ceiling_bytes::text
+       from dpg_control.target_contract
+       where singleton) as hard_ceiling_bytes
+  `)
+  const row = result.rows[0]
+  if (!row) fail('database_size_unavailable')
+  return validateDatabaseSize(row.current_size_bytes, row.hard_ceiling_bytes)
 }
 
 function digest(bytes) {
@@ -126,6 +167,7 @@ async function ledgerExists(client) {
 
 async function createLedgerAndAdoptCheckpoint(client, migrations) {
   await attestTargetAndCheckpoint(client)
+  await assertDatabaseSizeWithinContract(client)
   await client.query('begin isolation level serializable')
   try {
     await client.query(`
@@ -153,6 +195,7 @@ async function createLedgerAndAdoptCheckpoint(client, migrations) {
         [migration.filename.slice(0, 14), migration.filename, migration.sha256],
       )
     }
+    await assertDatabaseSizeWithinContract(client)
     await client.query('commit')
   } catch (error) {
     await client.query('rollback').catch(() => undefined)
@@ -176,6 +219,12 @@ function validateLedger(rows, migrations, requireComplete) {
     || row.version !== row.filename.slice(0, 14))) {
     fail('migration_ledger_drift')
   }
+  if (rows.some((row, index) => row.filename !== migrations[index]?.filename)) {
+    fail('migration_ledger_non_prefix')
+  }
+  if (rows.length < ADOPTED_CHECKPOINT_MIGRATIONS.length) {
+    fail('migration_checkpoint_incomplete')
+  }
   if (requireComplete && rows.length !== migrations.length) fail('migration_state_incomplete')
 }
 
@@ -183,6 +232,7 @@ async function applyPendingMigrations(client, migrations) {
   const applied = new Set((await readLedger(client)).map((row) => row.filename))
   for (const migration of migrations) {
     if (applied.has(migration.filename)) continue
+    await assertDatabaseSizeWithinContract(client)
     await client.query('begin isolation level serializable')
     try {
       await client.query(stripOuterTransaction(migration.sql))
@@ -192,6 +242,7 @@ async function applyPendingMigrations(client, migrations) {
          values ($1, $2, $3, 'runner-applied')`,
         [migration.filename.slice(0, 14), migration.filename, migration.sha256],
       )
+      await assertDatabaseSizeWithinContract(client)
       await client.query('commit')
     } catch (error) {
       await client.query('rollback').catch(() => undefined)
@@ -238,6 +289,7 @@ export async function executeRuntimeMigrations(client, mode, checkpointAttestor)
   await client.query("select pg_advisory_lock(hashtext('dongphugia:supabase-runtime-migrations:v1'))")
 
   try {
+    if (mode === 'apply') await assertDatabaseSizeWithinContract(client)
     if (!(await ledgerExists(client))) {
       if (mode !== 'apply') fail('migration_state_incomplete')
       if (!checkpointAttestor) fail('checkpoint_attestation_required')
@@ -247,6 +299,7 @@ export async function executeRuntimeMigrations(client, mode, checkpointAttestor)
 
     validateLedger(await readLedger(client), migrations, false)
     if (mode === 'apply') await applyPendingMigrations(client, migrations)
+    await assertDatabaseSizeWithinContract(client)
     validateLedger(await readLedger(client), migrations, true)
     await validateFinalSchema(client)
     return migrations.length

@@ -5,6 +5,8 @@ import { describe, expect, it } from 'vitest'
 
 import {
   ADOPTED_CHECKPOINT_MIGRATIONS,
+  EXPECTED_RUNTIME_MIGRATIONS,
+  assertDatabaseSizeWithinContract,
   executeRuntimeMigrations,
   stripOuterTransaction,
 } from './supabase-runtime-migrations.mjs'
@@ -19,7 +21,7 @@ function docker(...args) {
 
 describe('Supabase runtime migration adoption integration', () => {
   it.runIf(dockerIntegration)(
-    'attests the checkpoint, applies every remaining migration atomically, and revalidates status',
+    'attests the checkpoint, commits pending migrations separately, and revalidates status',
     async () => {
       const container = `dpg-runtime-migrations-${process.pid}-${Date.now()}`
       docker('run', '--detach', '--name', container, '--publish', '127.0.0.1::5432',
@@ -93,13 +95,171 @@ describe('Supabase runtime migration adoption integration', () => {
           .rejects.toThrow(/SUPABASE_CHECKPOINT_ROLE_FAILED/)
         await client.query('alter role dpg_runtime_login connection limit 10')
 
+        let sizeGuardChecks = 0
+        const sizeFailureClient = new Proxy(client, {
+          get(target, property) {
+            if (property === 'query') {
+              return (sql, ...values) => {
+                if (typeof sql === 'string' && sql.includes('pg_database_size(current_database())')) {
+                  sizeGuardChecks += 1
+                  if (sizeGuardChecks === 5) {
+                    return Promise.resolve({
+                      rows: [{ current_size_bytes: '367001600', hard_ceiling_bytes: '367001600' }],
+                    })
+                  }
+                }
+                return target.query(sql, ...values)
+              }
+            }
+            return Reflect.get(target, property, target)
+          },
+        })
+        await expect(executeRuntimeMigrations(sizeFailureClient, 'apply', attestCheckpoint))
+          .rejects.toThrow('database_size_hard_limit_reached')
+        expect(sizeGuardChecks).toBe(5)
+        expect((await client.query(
+          'select count(*)::integer as count from dpg_control.runtime_migration_ledger',
+        )).rows[0]?.count).toBe(ADOPTED_CHECKPOINT_MIGRATIONS.length)
+        expect((await client.query("select to_regrole('dpg_backup') is null as absent"))
+          .rows[0]?.absent).toBe(true)
+
+        const failedMigration = EXPECTED_RUNTIME_MIGRATIONS[ADOPTED_CHECKPOINT_MIGRATIONS.length + 1]
+        let injectFailure = true
+        const failingClient = new Proxy(client, {
+          get(target, property) {
+            if (property === 'query') {
+              return (sql, ...values) => {
+                const parameters = values[0]
+                if (injectFailure
+                  && typeof sql === 'string'
+                  && sql.includes('insert into dpg_control.runtime_migration_ledger')
+                  && Array.isArray(parameters)
+                  && parameters[0] === failedMigration.slice(0, 14)) {
+                  injectFailure = false
+                  throw new Error('synthetic_mid_sequence_failure')
+                }
+                return target.query(sql, ...values)
+              }
+            }
+            return Reflect.get(target, property, target)
+          },
+        })
+        await expect(executeRuntimeMigrations(failingClient, 'apply', attestCheckpoint))
+          .rejects.toThrow('synthetic_mid_sequence_failure')
+        expect(injectFailure).toBe(false)
+        const prefixLedger = await client.query(
+          'select count(*)::integer as count from dpg_control.runtime_migration_ledger',
+        )
+        expect(prefixLedger.rows[0]?.count).toBe(ADOPTED_CHECKPOINT_MIGRATIONS.length + 1)
+        expect((await client.query("select to_regrole('dpg_backup') is not null as present"))
+          .rows[0]?.present).toBe(true)
+        expect((await client.query(`
+          select count(*)::integer as count
+          from pg_policy p
+          join pg_class c on c.oid = p.polrelid
+          join pg_namespace n on n.oid = c.relnamespace
+          where n.nspname = 'dpg_app' and p.polname = 'leo540_backup_select'
+        `)).rows[0]?.count).toBe(0)
+
+        let migrationSizeChecks = 0
+        const migrationSizeFailureClient = new Proxy(client, {
+          get(target, property) {
+            if (property === 'query') {
+              return (sql, ...values) => {
+                if (typeof sql === 'string' && sql.includes('pg_database_size(current_database())')) {
+                  migrationSizeChecks += 1
+                  if (migrationSizeChecks === 3) {
+                    return Promise.resolve({
+                      rows: [{ current_size_bytes: '367001600', hard_ceiling_bytes: '367001600' }],
+                    })
+                  }
+                }
+                return target.query(sql, ...values)
+              }
+            }
+            return Reflect.get(target, property, target)
+          },
+        })
+        await expect(executeRuntimeMigrations(migrationSizeFailureClient, 'apply', attestCheckpoint))
+          .rejects.toThrow('database_size_hard_limit_reached')
+        expect(migrationSizeChecks).toBe(3)
+        expect((await client.query(
+          'select count(*)::integer as count from dpg_control.runtime_migration_ledger',
+        )).rows[0]?.count).toBe(ADOPTED_CHECKPOINT_MIGRATIONS.length + 1)
+        expect((await client.query(`
+          select count(*)::integer as count
+          from pg_policy p
+          join pg_class c on c.oid = p.polrelid
+          join pg_namespace n on n.oid = c.relnamespace
+          where n.nspname = 'dpg_app' and p.polname = 'leo540_backup_select'
+        `)).rows[0]?.count).toBe(0)
+
+        const missingCheckpointRow = (await client.query(`
+          select version, filename, sha256, application_source
+          from dpg_control.runtime_migration_ledger where filename = $1
+        `, [EXPECTED_RUNTIME_MIGRATIONS[0]])).rows[0]
+        await client.query(
+          'delete from dpg_control.runtime_migration_ledger where filename = $1',
+          [EXPECTED_RUNTIME_MIGRATIONS[0]],
+        )
+        const missingCheckpointSql = stripOuterTransaction(await readFile(
+          `supabase/migrations/${EXPECTED_RUNTIME_MIGRATIONS[0]}`,
+          'utf8',
+        ))
+        let missingMigrationStarted = false
+        const gappedLedgerClient = new Proxy(client, {
+          get(target, property) {
+            if (property === 'query') {
+              return (sql, ...values) => {
+                if (typeof sql === 'string' && sql.trim() === missingCheckpointSql.trim()) {
+                  missingMigrationStarted = true
+                }
+                return target.query(sql, ...values)
+              }
+            }
+            return Reflect.get(target, property, target)
+          },
+        })
+        await expect(executeRuntimeMigrations(gappedLedgerClient, 'apply', attestCheckpoint))
+          .rejects.toThrow('migration_ledger_non_prefix')
+        expect(missingMigrationStarted).toBe(false)
+        await client.query(`
+          insert into dpg_control.runtime_migration_ledger
+            (version, filename, sha256, application_source)
+          values ($1, $2, $3, $4)
+        `, [missingCheckpointRow.version, missingCheckpointRow.filename,
+          missingCheckpointRow.sha256, missingCheckpointRow.application_source])
+
+        // Retry resumes from the committed ledger prefix; it does not reset or
+        // roll back earlier migration transactions.
+
         await executeRuntimeMigrations(client, 'apply', attestCheckpoint)
 
         const ledger = await client.query('select count(*)::integer as count from dpg_control.runtime_migration_ledger')
         expect(ledger.rows[0]?.count).toBe(23)
+
+        const databaseSizeBefore = await assertDatabaseSizeWithinContract(client)
+        await client.query(`
+          create table public.synthetic_migration_size_probe (payload bytea not null);
+          insert into public.synthetic_migration_size_probe (payload)
+          select extensions.gen_random_bytes(1024)
+          from generate_series(1, 1024);
+        `)
+        const databaseSizeAfter = await assertDatabaseSizeWithinContract(client)
+        expect(databaseSizeAfter).toBeGreaterThan(databaseSizeBefore)
+        await client.query('drop table public.synthetic_migration_size_probe')
+
         await client.query(rlsAcceptance)
         await client.query(cataloguePreflight)
 
+        await client.query('begin')
+        await client.query(`
+          update dpg_control.runtime_migration_ledger
+          set sha256 = repeat('0', 64)
+          where filename = $1
+        `, [EXPECTED_RUNTIME_MIGRATIONS.at(-1)])
+        await expect(executeRuntimeMigrations(client, 'status')).rejects.toThrow('migration_ledger_drift')
+        await client.query('rollback')
         await client.query('begin')
         for (const table of [
           'admin_sessions',
