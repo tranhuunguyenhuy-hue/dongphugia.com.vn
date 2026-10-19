@@ -40,6 +40,10 @@ if [[ "$(findmnt --noheadings --output FSTYPE --target "$tmp_dir" 2>/dev/null)" 
   echo 'LEO540_RESTORE status=FAIL stage=preflight reason=plaintext_workspace_not_tmpfs'
   exit 1
 fi
+if ! docker image inspect "$postgres_image" >/dev/null 2>"$tmp_dir/docker-image.error"; then
+  echo 'LEO540_RESTORE status=FAIL stage=preflight reason=postgres_image_not_cached'
+  exit 1
+fi
 
 shopt -s nullglob
 archives=("$BACKUP_DIR"/*.dump.age)
@@ -84,7 +88,6 @@ fi
 rm -f "$tmp_dir/age-identity"
 
 stage='container_start'
-docker pull "$postgres_image" >/dev/null 2>"$tmp_dir/docker-pull.error"
 docker run --rm --detach --name "$container_name" \
   --network none \
   --read-only \

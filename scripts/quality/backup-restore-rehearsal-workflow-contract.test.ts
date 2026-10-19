@@ -7,6 +7,10 @@ const workflow = readFileSync(
     resolve(process.cwd(), '.github/workflows/runtime-backup.yml'),
     'utf8',
 )
+const restoreScript = readFileSync(
+    resolve(process.cwd(), 'scripts/backup/rehearse-isolated-restore.sh'),
+    'utf8',
+)
 
 describe('backup restore rehearsal workflow contract', () => {
     it('is scheduled/manual and restricted to protected main', () => {
@@ -100,5 +104,11 @@ describe('backup restore rehearsal workflow contract', () => {
         expect(workflow).toContain('postgres:17.6-bookworm@sha256:45cd22f8d32e189d245403954882f88e7a8714301fda80dab6da90f1265b25a3')
         expect(workflow).toContain('environment: runtime-backup')
         expect(workflow).toContain('actions/download-artifact@v4')
+    })
+
+    it('fails closed when the pinned PostgreSQL image is not already local', () => {
+        expect(restoreScript).toContain('docker image inspect "$postgres_image"')
+        expect(restoreScript).toContain('reason=postgres_image_not_cached')
+        expect(restoreScript).not.toContain('docker pull "$postgres_image"')
     })
 })
