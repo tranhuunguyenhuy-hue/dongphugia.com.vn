@@ -1,1 +1,4 @@
-/* The application shell intentionally has no product feature UI. */
+/* Reuse the canonical Production design system for Public Preview routes. */
+@import "../../../src/app/globals.css";
+
+@source "../../../src";
