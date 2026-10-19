@@ -156,9 +156,9 @@ begin
 
   with expected_raw(policy_name, policy_command, policy_permissive, policy_roles, policy_qual, policy_check) as (values
     ('v1_products_public_select', 'r', true, array['anon']::text[], 'status = ''PUBLISHED''::dpg_v1.record_status', ''),
-    ('v1_products_staff_select', 'r', true, array['authenticated']::text[], 'status = ''PUBLISHED''::dpg_v1.record_status or dpg_v1.staff_has_capability(''catalogue.read''::dpg_v1.staff_capability)', ''),
-    ('v1_products_create', 'a', true, array['authenticated']::text[], '', 'dpg_v1.staff_has_capability(''catalogue.create''::dpg_v1.staff_capability) and status = ''DRAFT''::dpg_v1.record_status'),
-    ('v1_products_update', 'w', true, array['authenticated']::text[], 'dpg_v1.staff_has_capability(''catalogue.update''::dpg_v1.staff_capability) or dpg_v1.staff_has_capability(''catalogue.publish''::dpg_v1.staff_capability) or dpg_v1.staff_has_capability(''catalogue.archive''::dpg_v1.staff_capability)', 'dpg_v1.staff_has_capability(''catalogue.update''::dpg_v1.staff_capability) or dpg_v1.staff_has_capability(''catalogue.publish''::dpg_v1.staff_capability) or dpg_v1.staff_has_capability(''catalogue.archive''::dpg_v1.staff_capability)'),
+    ('v1_products_staff_select', 'r', true, array['authenticated']::text[], 'status = ''PUBLISHED''::dpg_v1.record_status OR dpg_v1.staff_has_capability(''catalogue.read''::dpg_v1.staff_capability)', ''),
+    ('v1_products_create', 'a', true, array['authenticated']::text[], '', 'dpg_v1.staff_has_capability(''catalogue.create''::dpg_v1.staff_capability) AND status = ''DRAFT''::dpg_v1.record_status'),
+    ('v1_products_update', 'w', true, array['authenticated']::text[], 'dpg_v1.staff_has_capability(''catalogue.update''::dpg_v1.staff_capability) OR dpg_v1.staff_has_capability(''catalogue.publish''::dpg_v1.staff_capability) OR dpg_v1.staff_has_capability(''catalogue.archive''::dpg_v1.staff_capability)', 'dpg_v1.staff_has_capability(''catalogue.update''::dpg_v1.staff_capability) OR dpg_v1.staff_has_capability(''catalogue.publish''::dpg_v1.staff_capability) OR dpg_v1.staff_has_capability(''catalogue.archive''::dpg_v1.staff_capability)'),
     ('leo565_backup_products_select', 'r', true, array['dpg_backup']::text[], 'true', '')
   ), expected as (
     select policy_name,
