@@ -89,6 +89,7 @@ rm -f "$tmp_dir/age-identity"
 
 stage='container_start'
 docker run --rm --detach --name "$container_name" \
+  --pull=never \
   --network none \
   --read-only \
   --pids-limit 256 \

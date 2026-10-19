@@ -109,6 +109,7 @@ describe('backup restore rehearsal workflow contract', () => {
     it('fails closed when the pinned PostgreSQL image is not already local', () => {
         expect(restoreScript).toContain('docker image inspect "$postgres_image"')
         expect(restoreScript).toContain('reason=postgres_image_not_cached')
+        expect(restoreScript).toContain('--pull=never')
         expect(restoreScript).not.toContain('docker pull "$postgres_image"')
     })
 })
