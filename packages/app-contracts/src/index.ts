@@ -19,6 +19,17 @@ export type ApplicationName = keyof typeof APPLICATIONS
 
 export const PUBLIC_ROUTE_OWNERSHIP = [
   { path: '/', owner: 'public', purpose: 'application-shell' },
+  { path: '/[categorySlug]', owner: 'public', purpose: 'catalogue-category' },
+  {
+    path: '/[categorySlug]/[subcategorySlug]',
+    owner: 'public',
+    purpose: 'catalogue-listing',
+  },
+  {
+    path: '/[categorySlug]/[subcategorySlug]/[productSlug]',
+    owner: 'public',
+    purpose: 'catalogue-product',
+  },
   { path: '/robots.txt', owner: 'public', purpose: 'crawler-policy' },
   { path: '/api/health', owner: 'public', purpose: 'runtime-probe' },
 ] as const
