@@ -4,6 +4,7 @@ import { request as httpRequest } from 'node:http'
 import path from 'node:path'
 
 import { PUBLIC_EDGE_CACHE_SECONDS } from '../../packages/app-contracts/src/index'
+import { assertNoindexHtml } from './runtime-proof-html.mjs'
 
 type Application = 'public' | 'admin'
 
@@ -35,15 +36,6 @@ async function responseBody(response: Response, expectedStatus = 200) {
     throw new Error(`RUNTIME_PROOF_STATUS_FAILED:${response.url}:${response.status}`)
   }
   return response.text()
-}
-
-function assertNoindexHtml(html: string, expectedTitle: string) {
-  if (!/<meta\s+name=["']robots["']\s+content=["']noindex,\s*nofollow["']\s*\/?>(?:<\/meta>)?/i.test(html)) {
-    throw new Error('RUNTIME_PROOF_HTML_NOINDEX_FAILED')
-  }
-  if (!html.includes(`<title>${expectedTitle}`)) {
-    throw new Error('RUNTIME_PROOF_SSR_METADATA_FAILED')
-  }
 }
 
 async function requestWithHost(baseUrl: URL, host: string) {
