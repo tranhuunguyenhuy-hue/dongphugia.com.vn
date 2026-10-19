@@ -306,6 +306,34 @@ describe('Supabase runtime migration adoption integration', () => {
 
         await client.query('begin')
         await client.query(`
+          create or replace function dpg_v1.current_staff_context()
+          returns table (
+            auth_user_id uuid,
+            email text,
+            display_name text,
+            status dpg_v1.staff_status,
+            roles dpg_v1.staff_role[],
+            capabilities dpg_v1.staff_capability[]
+          )
+          language sql
+          stable
+          security definer
+          set search_path = pg_catalog, dpg_v1
+          as $$
+            select auth.uid(), 'synthetic@example.invalid'::text, 'Synthetic'::text,
+                   'active'::dpg_v1.staff_status,
+                   enum_range(null::dpg_v1.staff_role),
+                   enum_range(null::dpg_v1.staff_capability)
+            where auth.uid() is not null
+          $$
+        `)
+        await expect(client.query(runtimeReadonlyAcceptance))
+          .rejects.toThrow('SUPABASE_RUNTIME_READONLY_STAFF_CONTEXT_HELPER_FAILED')
+        await client.query('rollback')
+        await client.query(runtimeReadonlyAcceptance)
+
+        await client.query('begin')
+        await client.query(`
           create or replace function dpg_v1.staff_has_capability(p_capability dpg_v1.staff_capability)
           returns boolean
           language plpgsql

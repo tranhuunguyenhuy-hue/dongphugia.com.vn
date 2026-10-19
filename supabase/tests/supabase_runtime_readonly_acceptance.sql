@@ -12,6 +12,7 @@ declare
   api_relation_grant_drift boolean;
   api_product_policy_drift boolean;
   api_capability_function_drift boolean;
+  api_staff_context_function_drift boolean;
   api_function_inventory_drift boolean;
   api_function_grant_drift boolean;
   api_function_effective_drift boolean;
@@ -167,27 +168,38 @@ begin
            regexp_replace(coalesce(policy_check, ''), '[[:space:]()]', '', 'g') as policy_check
     from expected_raw
   ), actual as (
-    select p.polname::text as policy_name,
-           p.polcmd::text as policy_command,
-           p.polpermissive as policy_permissive,
+    select p.policyname::text as policy_name,
+           case p.cmd
+             when 'SELECT' then 'r'
+             when 'INSERT' then 'a'
+             when 'UPDATE' then 'w'
+             when 'DELETE' then 'd'
+             when 'ALL' then '*'
+             else p.cmd
+           end as policy_command,
+           p.permissive = 'PERMISSIVE' as policy_permissive,
            array(
-             select case
-                      when policy_role.role_oid = 0::oid then 'PUBLIC'
-                      else coalesce(role_name.rolname, format('OID:%s', policy_role.role_oid))
-                    end
-             from unnest(p.polroles) as policy_role(role_oid)
-             left join pg_roles role_name on role_name.oid = policy_role.role_oid
-             order by 1
+             select role_name::text
+             from unnest(p.roles) as policy_role(role_name)
+             order by role_name::text
            ) as policy_roles,
-           regexp_replace(coalesce(pg_get_expr(p.polqual, 'dpg_v1.products'::regclass), ''), '[[:space:]()]', '', 'g') as policy_qual,
-           regexp_replace(coalesce(pg_get_expr(p.polwithcheck, 'dpg_v1.products'::regclass), ''), '[[:space:]()]', '', 'g') as policy_check
-    from pg_policy p
-    where p.polrelid = 'dpg_v1.products'::regclass
+           regexp_replace(coalesce(p.qual, ''), '[[:space:]()]', '', 'g') as policy_qual,
+           regexp_replace(coalesce(p.with_check, ''), '[[:space:]()]', '', 'g') as policy_check
+    from pg_policies p
+    where p.schemaname = 'dpg_v1'
+      and p.tablename = 'products'
   )
   select exists (
-    (select * from expected except select * from actual)
-    union all
-    (select * from actual except select * from expected)
+    select 1
+    from expected e
+    full join actual a using (policy_name)
+    where e.policy_name is null
+       or a.policy_name is null
+       or e.policy_command is distinct from a.policy_command
+       or e.policy_permissive is distinct from a.policy_permissive
+       or e.policy_roles is distinct from a.policy_roles
+       or e.policy_qual is distinct from a.policy_qual
+       or e.policy_check is distinct from a.policy_check
   ) into api_product_policy_drift;
   if api_product_policy_drift then
     raise exception 'SUPABASE_RUNTIME_READONLY_RLS_POLICY_SET_FAILED';
@@ -220,6 +232,51 @@ $expected_capability_body$, '[[:space:]]', '', 'g')
   ) into api_capability_function_drift;
   if api_capability_function_drift then
     raise exception 'SUPABASE_RUNTIME_READONLY_CAPABILITY_HELPER_FAILED';
+  end if;
+
+  select not exists (
+    select 1
+    from pg_proc p
+    where p.oid = to_regprocedure('dpg_v1.current_staff_context()')
+      and p.proowner = 'postgres'::regrole
+      and p.prosecdef
+      and p.provolatile = 's'
+      and p.prorettype = 'record'::regtype
+      and p.prolang = (select oid from pg_language where lanname = 'sql')
+      and not p.proleakproof
+      and p.proconfig = array['search_path=pg_catalog, dpg_v1']::text[]
+      and regexp_replace(pg_get_function_result(p.oid), '[[:space:]]', '', 'g') =
+        'TABLE(auth_user_iduuid,emailtext,display_nametext,statusdpg_v1.staff_status,rolesdpg_v1.staff_role[],capabilitiesdpg_v1.staff_capability[])'
+      and regexp_replace(p.prosrc, '[[:space:]]', '', 'g') = regexp_replace($expected_staff_context_body$
+select
+  su.auth_user_id,
+  su.email,
+  su.display_name,
+  su.status,
+  coalesce(
+    (
+      select array_agg(distinct sur.role order by sur.role)
+      from dpg_v1.staff_user_roles sur
+      where sur.auth_user_id = su.auth_user_id
+    ),
+    '{}'::dpg_v1.staff_role[]
+  ),
+  coalesce(
+    (
+      select array_agg(distinct rc.capability order by rc.capability)
+      from dpg_v1.staff_user_roles sur
+      join dpg_v1.role_capabilities rc on rc.role = sur.role
+      where sur.auth_user_id = su.auth_user_id
+    ),
+    '{}'::dpg_v1.staff_capability[]
+  )
+from dpg_v1.staff_users su
+where su.auth_user_id = auth.uid()
+  and su.status = 'active'
+$expected_staff_context_body$, '[[:space:]]', '', 'g')
+  ) into api_staff_context_function_drift;
+  if api_staff_context_function_drift then
+    raise exception 'SUPABASE_RUNTIME_READONLY_STAFF_CONTEXT_HELPER_FAILED';
   end if;
 
   with expected(function_signature, anon_execute, authenticated_execute) as (values
