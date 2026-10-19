@@ -1,10 +1,11 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
+import { unstable_cache } from 'next/cache'
 
 import type {
   PublicHomeBanner,
   PublicHomeCategory,
-  PublicHomePageData,
+  PublicHomeContent,
   PublicHomePost,
   PublicHomeProduct,
 } from '@dpg/app-contracts'
@@ -46,9 +47,8 @@ export async function getPublicHomeBanners(): Promise<PublicHomeBanner[]> {
   return banners.map(serializeBanner)
 }
 
-export async function getPublicHomeContent(): Promise<
-  Pick<PublicHomePageData, 'categories' | 'posts'>
-> {
+const getCachedPublicHomeContent = unstable_cache(
+  async (): Promise<PublicHomeContent> => {
   const publicTbvsProducts = {
     ...buildPublicListingVisibilityWhere(),
     categories: { slug: 'thiet-bi-ve-sinh' },
@@ -167,8 +167,15 @@ export async function getPublicHomeContent(): Promise<
       : null,
   }))
 
-  return {
-    categories,
-    posts: serializedPosts,
-  }
+    return {
+      categories,
+      posts: serializedPosts,
+    }
+  },
+  ['homepage-content-data-v1'],
+  { revalidate: 3600, tags: ['homepage'] },
+)
+
+export async function getPublicHomeContent(): Promise<PublicHomeContent> {
+  return getCachedPublicHomeContent()
 }

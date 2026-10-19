@@ -38,12 +38,12 @@ async function responseBody(response: Response, expectedStatus = 200) {
   return response.text()
 }
 
-async function requestWithHost(baseUrl: URL, host: string) {
+async function requestWithHost(baseUrl: URL, host: string, requestPath = '/') {
   return new Promise<{ status: number; headers: Record<string, string | string[] | undefined>; body: string }>((resolve, reject) => {
     const request = httpRequest({
       hostname: baseUrl.hostname,
       port: baseUrl.port,
-      path: '/',
+      path: requestPath,
       method: 'GET',
       headers: { Host: host },
     }, (response) => {
@@ -99,6 +99,29 @@ async function collectPublicProof(baseUrl: URL) {
     throw new Error('RUNTIME_PROOF_PRODUCTION_HOST_CACHE_FAILED')
   }
 
+  const contact = await requestWithHost(baseUrl, proofHost, '/lien-he')
+  if (contact.status !== 200) throw new Error(`RUNTIME_PROOF_CONTACT_STATUS_FAILED:${contact.status}`)
+  if (contact.headers['x-robots-tag'] !== 'noindex, nofollow') {
+    throw new Error('RUNTIME_PROOF_CONTACT_NOINDEX_HEADER_FAILED')
+  }
+  assertNoindexHtml(contact.body, 'Liên Hệ Tư Vấn')
+  if (!contact.body.includes('Biểu mẫu đang tạm khóa trên bản Preview')) {
+    throw new Error('RUNTIME_PROOF_CONTACT_READ_ONLY_NOTICE_FAILED')
+  }
+  if (contact.body.includes('contact-name') || contact.body.includes('Gửi yêu cầu trực tuyến')) {
+    throw new Error('RUNTIME_PROOF_CONTACT_FORM_RENDERED_IN_PREVIEW')
+  }
+
+  const about = await requestWithHost(baseUrl, proofHost, '/ve-chung-toi')
+  if (about.status !== 200) throw new Error(`RUNTIME_PROOF_ABOUT_STATUS_FAILED:${about.status}`)
+  if (about.headers['x-robots-tag'] !== 'noindex, nofollow') {
+    throw new Error('RUNTIME_PROOF_ABOUT_NOINDEX_HEADER_FAILED')
+  }
+  assertNoindexHtml(about.body, 'Về chúng tôi')
+  if (!about.body.includes('Hiểu bạn cần gì.')) {
+    throw new Error('RUNTIME_PROOF_CANONICAL_ABOUT_CONTENT_MISSING')
+  }
+
   return {
     runtime: 'workerd-local',
     ssr: { status: first.status, htmlSha256: sha256(firstBody), metadata: true },
@@ -112,6 +135,10 @@ async function collectPublicProof(baseUrl: URL) {
       keyDimensions: ['hostname', 'pathname', 'allowlisted-query', 'source-sha'],
     },
     previewIsolation: { productionHostRejected: true },
+    canonicalRoutes: {
+      contact: { status: contact.status, readOnly: true, noindex: true, formMarkupAbsent: true },
+      about: { status: about.status, noindex: true, canonicalContent: true },
+    },
     subrequests: {
       renderFetchCalls: 0,
       cacheApiMissPathMaximum: 2,

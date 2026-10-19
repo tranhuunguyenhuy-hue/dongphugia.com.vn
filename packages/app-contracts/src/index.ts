@@ -19,6 +19,8 @@ export type ApplicationName = keyof typeof APPLICATIONS
 
 export const PUBLIC_ROUTE_OWNERSHIP = [
   { path: '/', owner: 'public', purpose: 'application-shell' },
+  { path: '/lien-he', owner: 'public', purpose: 'contact-readonly' },
+  { path: '/ve-chung-toi', owner: 'public', purpose: 'company-profile' },
   { path: '/[categorySlug]', owner: 'public', purpose: 'catalogue-category' },
   {
     path: '/[categorySlug]/[subcategorySlug]',
@@ -100,7 +102,12 @@ export type PublicHomePageData = Readonly<{
   banners: readonly PublicHomeBanner[]
   categories: readonly PublicHomeCategory[]
   posts: readonly PublicHomePost[]
+  previewNotice?: string
 }>
+
+export type PublicHomeContent = Readonly<
+  Pick<PublicHomePageData, 'categories' | 'posts'> & { previewNotice?: string }
+>
 
 export type PublicContactPayload = Readonly<{
   name: string

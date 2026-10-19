@@ -31,13 +31,22 @@ export const metadata: Metadata = {
 }
 
 async function HomepageContentSections() {
-    const { categories, posts } = await getPublicHomeContent()
+    const { categories, posts, previewNotice } = await getPublicHomeContent()
     return (
         <>
             {/* Brand Slider */}
             <div className="max-w-[1280px] mx-auto px-5">
                 <BrandSlider />
             </div>
+
+            {previewNotice ? (
+                <aside
+                    role="note"
+                    className="mx-auto max-w-[1280px] rounded-xl border border-amber-300 bg-amber-50 px-5 py-4 text-sm leading-6 text-amber-950"
+                >
+                    {previewNotice}
+                </aside>
+            ) : null}
 
             {/* Featured Products (Khối 1) - Tạm ẩn để nghiên cứu thêm */}
             {/*

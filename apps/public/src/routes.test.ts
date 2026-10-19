@@ -14,6 +14,8 @@ describe('Public route ownership baseline', () => {
     expect(PUBLIC_APPLICATION_NAME).toBe('public')
     expect(PUBLIC_ROUTE_OWNERSHIP.map(({ path }) => path)).toEqual([
       '/',
+      '/lien-he',
+      '/ve-chung-toi',
       '/[categorySlug]',
       '/[categorySlug]/[subcategorySlug]',
       '/[categorySlug]/[subcategorySlug]/[productSlug]',

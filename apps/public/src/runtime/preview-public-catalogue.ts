@@ -17,7 +17,7 @@ const FIXTURE_IMAGES: Readonly<Record<string, string>> = {
 }
 
 export const PUBLIC_CATALOGUE_FIXTURE_NOTICE =
-  'Dữ liệu minh họa cục bộ cho Preview — không phải dữ liệu được khôi phục từ Production.'
+  'Dữ liệu minh họa cục bộ cho Preview — không phải dữ liệu được khôi phục từ Production; tên sản phẩm, thương hiệu và liên kết sản phẩm/danh mục chỉ là fixture kiểm thử, chưa xác minh với catalogue chính thức.'
 
 function assertFixtureRuntime() {
   if (getPublicAppEnvironment().environment === 'production') {

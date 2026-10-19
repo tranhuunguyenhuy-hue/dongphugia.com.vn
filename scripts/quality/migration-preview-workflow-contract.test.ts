@@ -205,4 +205,10 @@ describe('migration PR CI and Preview workflow contract', () => {
     expect(realPreviewProof).toContain('directives.includes(PREVIEW_ROBOTS_REQUIRED_DIRECTIVE)')
     expect(realPreviewProof).not.toContain('PREVIEW_ROBOTS_HEADER)')
   })
+
+  it('requires the Owner account to authorize any manual Cloudflare upload', () => {
+    expect(workflow).toContain('DISPATCH_ACTOR: ${{ github.actor }}')
+    expect(workflow).toContain('test "$DISPATCH_ACTOR" = \'tranhuunguyenhuy-hue\'')
+    expect(workflow).toContain("echo 'owner_approved_upload=true'")
+  })
 })

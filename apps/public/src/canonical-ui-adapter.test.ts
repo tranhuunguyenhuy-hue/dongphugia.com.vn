@@ -23,7 +23,17 @@ describe('Cloudflare canonical Public UI adapter', () => {
     expect(canonicalPage).not.toMatch(/lib\/(?:prisma|homepage-data|public-api-products)/)
   })
 
-  it('provides representative serializable homepage data without privileged state', async () => {
+  it('keeps canonical About and read-only Contact pages reachable in Preview', () => {
+    const aboutRoute = readFileSync(resolve(repositoryRoot, 'apps/public/app/ve-chung-toi/page.tsx'), 'utf8')
+    const contactRoute = readFileSync(resolve(repositoryRoot, 'apps/public/app/lien-he/page.tsx'), 'utf8')
+    const contactComponent = readFileSync(resolve(repositoryRoot, 'src/app/(public)/lien-he/contact-form.tsx'), 'utf8')
+
+    expect(aboutRoute).toContain("AboutClient")
+    expect(contactRoute).toContain('ContactForm readOnly')
+    expect(contactComponent).toContain('@dpg/public-interactions')
+  })
+
+  it('labels the synthetic Preview data and does not invent Blog content', async () => {
     const [banners, data] = await Promise.all([
       getPublicHomeBanners(),
       getPublicHomeContent(),
@@ -36,6 +46,10 @@ describe('Cloudflare canonical Public UI adapter', () => {
       'gach-op-lat',
     ])
     expect(data.categories.every((category) => category.products.length > 0)).toBe(true)
+    expect(data.previewNotice).toMatch(/minh họa/i)
+    expect(data.previewNotice).toMatch(/không phải dữ liệu/i)
+    expect(data.previewNotice).toMatch(/liên kết sản phẩm\/danh mục chỉ là fixture kiểm thử/i)
+    expect(data.posts).toEqual([])
     expect(() => JSON.stringify({ banners, ...data })).not.toThrow()
   })
 

@@ -68,6 +68,7 @@ jobs:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           GITHUB_REF_VALUE: ${{ github.ref }}
+          DISPATCH_ACTOR: ${{ github.actor }}
           MANUAL_UPLOAD: ${{ inputs.publish_leo563_public_preview || false }}
           APPROVED_PR_NUMBER: ${{ inputs.approved_pr_number || '' }}
           APPROVED_SOURCE_SHA: ${{ inputs.approved_source_sha || '' }}
@@ -80,6 +81,7 @@ jobs:
         run: |
           set -euo pipefail
           if [[ "$EVENT_NAME" == "workflow_dispatch" && "$MANUAL_UPLOAD" == "true" ]]; then
+            test "$DISPATCH_ACTOR" = 'tranhuunguyenhuy-hue'
             [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]
             [[ "$APPROVED_PR_NUMBER" =~ ^[1-9][0-9]*$ ]]
             [[ "$APPROVED_SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]
