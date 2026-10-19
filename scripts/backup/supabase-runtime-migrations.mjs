@@ -107,6 +107,30 @@ export function stripOuterTransaction(sql) {
   return lines.join('\n')
 }
 
+export function stripReadOnlyOuterTransaction(sql) {
+  const lines = sql.split(/\r?\n/)
+  const controls = lines
+    .map((line, index) => ({ index, value: line.trim().toLowerCase() }))
+    .filter(({ value }) => [
+      'begin transaction isolation level repeatable read read only;',
+      'commit;',
+      'rollback;',
+      'start transaction;',
+    ].includes(value))
+
+  if (controls.length !== 2
+    || controls[0].value !== 'begin transaction isolation level repeatable read read only;'
+    || controls[1].value !== 'rollback;'
+    || lines.slice(0, controls[0].index).some((line) => line.trim() !== '')
+    || lines.slice(controls[1].index + 1).some((line) => line.trim() !== '')) {
+    fail('readonly_acceptance_transaction_contract_changed')
+  }
+
+  lines[controls[0].index] = ''
+  lines[controls[1].index] = ''
+  return lines.join('\n')
+}
+
 async function loadMigrations() {
   const actual = (await readdir(migrationsDirectory))
     .filter((name) => name.endsWith('.sql'))

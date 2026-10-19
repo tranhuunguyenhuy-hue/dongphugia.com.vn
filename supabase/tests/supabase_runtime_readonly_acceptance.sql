@@ -14,6 +14,7 @@ declare
   api_product_policy_drift_details text[];
   api_capability_function_drift boolean;
   api_staff_context_function_drift boolean;
+  api_staff_helper_grant_drift boolean;
   api_function_inventory_drift boolean;
   api_function_grant_drift boolean;
   api_function_effective_drift boolean;
@@ -286,6 +287,34 @@ $expected_staff_context_body$, '[[:space:]]', '', 'g')
   ) into api_staff_context_function_drift;
   if api_staff_context_function_drift then
     raise exception 'SUPABASE_RUNTIME_READONLY_STAFF_CONTEXT_HELPER_FAILED';
+  end if;
+
+  with expected(function_oid, principal, privilege_type, is_grantable) as (values
+    (to_regprocedure('dpg_v1.current_staff_context()')::oid, 'authenticated', 'EXECUTE', false),
+    (to_regprocedure('dpg_v1.staff_has_capability(dpg_v1.staff_capability)')::oid, 'authenticated', 'EXECUTE', false)
+  ), actual as (
+    select p.oid as function_oid,
+           grantee.rolname::text as principal,
+           acl.privilege_type,
+           acl.is_grantable
+    from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+    cross join lateral aclexplode(coalesce(p.proacl, acldefault('f', p.proowner))) acl
+    left join pg_roles grantee on grantee.oid = acl.grantee
+    where n.nspname = 'dpg_v1'
+      and p.oid in (
+        to_regprocedure('dpg_v1.current_staff_context()'),
+        to_regprocedure('dpg_v1.staff_has_capability(dpg_v1.staff_capability)')
+      )
+      and acl.grantee <> p.proowner
+  )
+  select exists (
+    (select * from expected except select * from actual)
+    union all
+    (select * from actual except select * from expected)
+  ) into api_staff_helper_grant_drift;
+  if api_staff_helper_grant_drift then
+    raise exception 'SUPABASE_RUNTIME_READONLY_STAFF_HELPER_GRANT_SET_FAILED';
   end if;
 
   with expected(function_signature, anon_execute, authenticated_execute) as (values

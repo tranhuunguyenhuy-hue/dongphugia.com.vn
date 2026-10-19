@@ -8,6 +8,7 @@ import {
   EXPECTED_RUNTIME_MIGRATIONS,
   assertDatabaseSizeWithinContract,
   executeRuntimeMigrations,
+  stripReadOnlyOuterTransaction,
   stripOuterTransaction,
 } from './supabase-runtime-migrations.mjs'
 
@@ -72,6 +73,9 @@ describe('Supabase runtime migration adoption integration', () => {
         const runtimeReadonlyAcceptance = (await readFile(
           'supabase/tests/supabase_runtime_readonly_acceptance.sql', 'utf8',
         )).replace(/^\\set[^\n]*\n/, '')
+        const runtimeReadonlyAcceptanceInTransaction = stripReadOnlyOuterTransaction(
+          runtimeReadonlyAcceptance,
+        )
         const cataloguePreflight = await readFile('scripts/backup/catalogue-rehome-preflight.sql', 'utf8')
         const hardeningMigration = stripOuterTransaction(await readFile(
           'supabase/migrations/20261016090000_leo560_preview_rls_hardening.sql', 'utf8',
@@ -264,7 +268,7 @@ describe('Supabase runtime migration adoption integration', () => {
           create policy codex_unexpected_product_policy on dpg_v1.products
           for select to authenticated using (true)
         `)
-        await expect(client.query(runtimeReadonlyAcceptance))
+        await expect(client.query(runtimeReadonlyAcceptanceInTransaction))
           .rejects.toThrow('SUPABASE_RUNTIME_READONLY_RLS_POLICY_SET_FAILED')
         await client.query('rollback')
         await client.query(runtimeReadonlyAcceptance)
@@ -275,7 +279,7 @@ describe('Supabase runtime migration adoption integration', () => {
           create policy v1_products_staff_select on dpg_v1.products
           for select to authenticated using (true)
         `)
-        await expect(client.query(runtimeReadonlyAcceptance))
+        await expect(client.query(runtimeReadonlyAcceptanceInTransaction))
           .rejects.toThrow('SUPABASE_RUNTIME_READONLY_RLS_POLICY_SET_FAILED')
         await client.query('rollback')
         await client.query(runtimeReadonlyAcceptance)
@@ -283,7 +287,7 @@ describe('Supabase runtime migration adoption integration', () => {
         await client.query('begin')
         await client.query('grant create on schema dpg_v1_api to authenticated')
         await client.query('alter view dpg_v1_api.public_products owner to authenticated')
-        await expect(client.query(runtimeReadonlyAcceptance))
+        await expect(client.query(runtimeReadonlyAcceptanceInTransaction))
           .rejects.toThrow('SUPABASE_RUNTIME_READONLY_API_OWNER_FAILED')
         await client.query('rollback')
         await client.query(runtimeReadonlyAcceptance)
@@ -299,7 +303,7 @@ describe('Supabase runtime migration adoption integration', () => {
           for select to authenticated
           using (status = 'PUBLISHED' or dpg_v1.staff_has_capability('catalogue.read'::text))
         `)
-        await expect(client.query(runtimeReadonlyAcceptance))
+        await expect(client.query(runtimeReadonlyAcceptanceInTransaction))
           .rejects.toThrow('SUPABASE_RUNTIME_READONLY_RLS_POLICY_SET_FAILED')
         await client.query('rollback')
         await client.query(runtimeReadonlyAcceptance)
@@ -327,8 +331,22 @@ describe('Supabase runtime migration adoption integration', () => {
             where auth.uid() is not null
           $$
         `)
-        await expect(client.query(runtimeReadonlyAcceptance))
+        await expect(client.query(runtimeReadonlyAcceptanceInTransaction))
           .rejects.toThrow('SUPABASE_RUNTIME_READONLY_STAFF_CONTEXT_HELPER_FAILED')
+        await client.query('rollback')
+        await client.query(runtimeReadonlyAcceptance)
+
+        await client.query('begin')
+        await client.query('grant execute on function dpg_v1.current_staff_context() to public')
+        await expect(client.query(runtimeReadonlyAcceptanceInTransaction))
+          .rejects.toThrow('SUPABASE_RUNTIME_READONLY_STAFF_HELPER_GRANT_SET_FAILED')
+        await client.query('rollback')
+        await client.query(runtimeReadonlyAcceptance)
+
+        await client.query('begin')
+        await client.query('grant execute on function dpg_v1.staff_has_capability(dpg_v1.staff_capability) to public')
+        await expect(client.query(runtimeReadonlyAcceptanceInTransaction))
+          .rejects.toThrow('SUPABASE_RUNTIME_READONLY_STAFF_HELPER_GRANT_SET_FAILED')
         await client.query('rollback')
         await client.query(runtimeReadonlyAcceptance)
 
@@ -346,7 +364,7 @@ describe('Supabase runtime migration adoption integration', () => {
           end
           $$
         `)
-        await expect(client.query(runtimeReadonlyAcceptance))
+        await expect(client.query(runtimeReadonlyAcceptanceInTransaction))
           .rejects.toThrow('SUPABASE_RUNTIME_READONLY_CAPABILITY_HELPER_FAILED')
         await client.query('rollback')
         await client.query(runtimeReadonlyAcceptance)
@@ -374,14 +392,14 @@ describe('Supabase runtime migration adoption integration', () => {
           end
           $$
         `)
-        await expect(client.query(runtimeReadonlyAcceptance))
+        await expect(client.query(runtimeReadonlyAcceptanceInTransaction))
           .rejects.toThrow('SUPABASE_RUNTIME_READONLY_CAPABILITY_HELPER_FAILED')
         await client.query('rollback')
         await client.query(runtimeReadonlyAcceptance)
 
         await client.query('begin')
         await client.query('alter function dpg_v1_api.public_product_get(uuid) security definer')
-        await expect(client.query(runtimeReadonlyAcceptance))
+        await expect(client.query(runtimeReadonlyAcceptanceInTransaction))
           .rejects.toThrow('SUPABASE_RUNTIME_READONLY_API_FUNCTION_SECURITY_MODE_FAILED')
         await client.query('rollback')
         await client.query(runtimeReadonlyAcceptance)
@@ -391,14 +409,14 @@ describe('Supabase runtime migration adoption integration', () => {
           create function dpg_v1_api.codex_unexpected_helper()
           returns integer language sql immutable as 'select 1'
         `)
-        await expect(client.query(runtimeReadonlyAcceptance))
+        await expect(client.query(runtimeReadonlyAcceptanceInTransaction))
           .rejects.toThrow('SUPABASE_RUNTIME_READONLY_API_FUNCTION_SET_FAILED')
         await client.query('rollback')
         await client.query(runtimeReadonlyAcceptance)
 
         await client.query('begin')
         await client.query('grant execute on function dpg_v1_api.public_product_get(uuid) to public')
-        await expect(client.query(runtimeReadonlyAcceptance))
+        await expect(client.query(runtimeReadonlyAcceptanceInTransaction))
           .rejects.toThrow('SUPABASE_RUNTIME_READONLY_API_FUNCTION_GRANT_SET_FAILED')
         await client.query('rollback')
         await client.query(runtimeReadonlyAcceptance)

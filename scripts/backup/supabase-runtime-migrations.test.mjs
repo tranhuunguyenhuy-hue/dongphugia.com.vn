@@ -6,6 +6,7 @@ import {
   ADOPTED_CHECKPOINT_MIGRATIONS,
   EXPECTED_RUNTIME_MIGRATIONS,
   executeRuntimeMigrations,
+  stripReadOnlyOuterTransaction,
   stripOuterTransaction,
   validateDatabaseSize,
 } from './supabase-runtime-migrations.mjs'
@@ -69,6 +70,19 @@ describe('Supabase runtime migration runner contract', () => {
 
     expect(() => stripOuterTransaction('begin;\nselect 1;\ncommit;\ncommit;'))
       .toThrow('migration_transaction_contract_changed')
+  })
+
+  it('strips only the exact read-only acceptance wrapper for fault-injection transactions', async () => {
+    const sql = (await readFile(
+      'supabase/tests/supabase_runtime_readonly_acceptance.sql', 'utf8',
+    )).replace(/^\\set[^\n]*\n/, '')
+    const normalized = stripReadOnlyOuterTransaction(sql)
+
+    expect(sql).toMatch(/^begin transaction isolation level repeatable read read only;/i)
+    expect(sql).toMatch(/^rollback;\s*$/im)
+    expect(normalized).not.toMatch(/^\s*(begin|commit|rollback|start transaction)\s*;/im)
+    expect(() => stripReadOnlyOuterTransaction('begin;\nselect 1;\nrollback;'))
+      .toThrow('readonly_acceptance_transaction_contract_changed')
   })
 
   it('fails closed at the 350 MiB database-size ceiling', () => {
