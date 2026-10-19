@@ -52,7 +52,7 @@ describe('Public catalogue route contract', () => {
     expect(
       resolvePublicCatalogueRoute([
         'thiet-bi-ve-sinh',
-        'bon-cau',
+        'ban-cau',
         'ban-cau-mot-khoi-cao-cap',
       ]),
     ).toMatchObject({ kind: 'product', product: { fixtureOnly: true } })
@@ -77,6 +77,34 @@ describe('Public catalogue route contract', () => {
     }
   })
 
+  it('preserves canonical homepage product URLs while redirecting the integrated fixture slug', () => {
+    expect(resolvePublicCatalogueRoute(['thiet-bi-ve-sinh', 'ban-cau'])).toMatchObject({
+      kind: 'listing',
+      listing: { slug: 'ban-cau' },
+    })
+    expect(
+      resolvePublicCatalogueRoute([
+        'thiet-bi-ve-sinh',
+        'ban-cau',
+        'ban-cau-mot-khoi-cao-cap',
+      ]),
+    ).toMatchObject({ kind: 'product', product: { slug: 'ban-cau-mot-khoi-cao-cap' } })
+    expect(resolvePublicCatalogueRoute(['thiet-bi-ve-sinh', 'bon-cau'])).toEqual({
+      kind: 'redirect',
+      destination: '/thiet-bi-ve-sinh/ban-cau',
+    })
+    expect(
+      resolvePublicCatalogueRoute([
+        'thiet-bi-ve-sinh',
+        'bon-cau',
+        'ban-cau-mot-khoi-cao-cap',
+      ]),
+    ).toEqual({
+      kind: 'redirect',
+      destination: '/thiet-bi-ve-sinh/ban-cau/ban-cau-mot-khoi-cao-cap',
+    })
+  })
+
   it('rejects unknown categories, listings, products, and malformed slugs', () => {
     expect(resolvePublicCatalogueRoute(['not-a-category'])).toEqual({ kind: 'not-found' })
     expect(resolvePublicCatalogueRoute(['thiet-bi-ve-sinh', 'not-a-listing'])).toEqual({
@@ -99,7 +127,7 @@ describe('Public catalogue route contract', () => {
       resolvePublicCatalogueRoute(['thiet-bi-ve-sinh', 'ban-cau-mot-khoi-cao-cap']),
     ).toEqual({
       kind: 'redirect',
-      destination: '/thiet-bi-ve-sinh/bon-cau/ban-cau-mot-khoi-cao-cap',
+      destination: '/thiet-bi-ve-sinh/ban-cau/ban-cau-mot-khoi-cao-cap',
     })
     expect(
       resolvePublicCatalogueRoute([

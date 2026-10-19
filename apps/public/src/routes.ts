@@ -31,7 +31,7 @@ export const PUBLIC_CATALOGUE_CATEGORIES: readonly PublicCatalogueCategory[] = [
   {
     slug: 'thiet-bi-ve-sinh',
     name: 'Thiết bị vệ sinh',
-    listings: [{ slug: 'bon-cau', name: 'Bồn cầu' }],
+    listings: [{ slug: 'ban-cau', name: 'Bàn cầu', legacySlugs: ['bon-cau'] }],
   },
   {
     slug: 'thiet-bi-bep',
