@@ -295,11 +295,7 @@ export function validateTransferProvenance(
   const expiryTime = Date.parse(PINNED_ARTIFACT.expiresAt);
   if (!Number.isFinite(capturedTime) || !Number.isFinite(now?.getTime?.()))
     fail("backup_transfer_time_invalid");
-  if (
-    capturedTime > now.getTime() ||
-    now.getTime() >= expiryTime ||
-    capturedTime >= expiryTime
-  ) {
+  if (capturedTime > now.getTime() || capturedTime >= expiryTime) {
     fail("backup_transfer_expired_or_future");
   }
   return {

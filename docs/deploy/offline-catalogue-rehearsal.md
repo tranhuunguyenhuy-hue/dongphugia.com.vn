@@ -8,15 +8,15 @@ acquisition on a trusted operator machine from a later fully offline restore
 on a disposable Linux host. There is no GitHub Actions workflow for the
 secret-bearing replay.
 
-Issue #160 comment `6252739416` approved ciphertext-only Phase A, subject to
-a clean canonical checkout pinned to verified live `main`, read-only artifact
-access, and protected durable storage. Those conditions were not met at the
-last preflight: this acquisition source still lived only in open PR #161.
-Comment `6252789373` authorizes **source-only** work on a possible reviewed-PR
-bootstrap. It does not authorize executing that new path. The Owner must
-separately approve the exact reviewed PR commit and invocation before using
-it. Phase B, age-key delivery, merge, infrastructure provisioning, Supabase,
-Cloudflare, DNS, and Production remain separate gates.
+Issue #160 comment `6252739416` approved ciphertext-only Phase A, subject to a
+clean trusted checkout, read-only artifact access, and protected durable
+storage. Comment `6257891738` separately authorizes the reviewed-PR route only
+for exact PR #161 head `4e72417b6e87949dd3f44b96a5ead9d5b82f05dc` and its
+independently verified acquisition-script hash. The route remains blocked
+until its read-only credential and durable protected storage gates are met.
+This follow-up branch is not an approved Phase A acquisition source. Phase B,
+age-key delivery, merge, infrastructure provisioning, Supabase, Cloudflare,
+DNS, and Production remain separate gates.
 
 The GitHub artifact is pinned to run `38915575745`, artifact ID `12052107648`,
 package digest
@@ -59,9 +59,10 @@ main-pinned bootstrap below then applies. The alternative is an immutable PR
 commit independently reviewed and approved by the Owner, with its acquisition
 script SHA-256 provided through a separate trusted channel. That alternative
 can avoid waiting for a merge, but its unmerged code carries a distinct trust
-risk; the existing Phase A approval does **not** authorize its execution.
-Neither path changes the artifact, credential, encrypted-storage, or
-provenance gates.
+risk. The Owner has separately approved that route for only the exact PR #161
+head and script hash recorded in comment `6257891738`; no later commit or this
+follow-up branch is covered. Neither path changes the artifact, credential,
+encrypted-storage, or provenance gates.
 
 For either path, first verify the repository-scoped credential has only
 **Contents: read** and **Actions: read**. In the trusted operator shell, with
@@ -217,7 +218,9 @@ never emits artifact bytes or manifest rows in logs.
 
 The script does not upload a second artifact or automate transfer to Phase B.
 The Owner must use an approved offline medium and preserve chain of custody.
-Do not execute the reviewed-PR path under its source-only approval.
+For Phase A, use only the exact PR #161 source pin approved in comment
+`6257891738`. This follow-up branch changes the offline provenance validator
+and is not part of that acquisition approval.
 
 ## Phase B — Owner-controlled offline replay
 
@@ -335,12 +338,18 @@ challenge, host ID, boot ID, policy digest, network control, tmpfs type/capacity
 image digest, empty target, allowlist, parity, or sanitized-evidence check is
 missing or mismatched. Do not weaken a check or switch to a different artifact.
 Issue #160 comment `6252739416` separately approved secure ciphertext
-preservation beyond GitHub expiry. The present Phase B provenance validator
-still rejects replay after that expiry; resolve that conflict under Phase B's
-own review and approval before any post-expiry replay.
+preservation beyond GitHub expiry. The GitHub expiry is the API retrieval
+deadline: artifact metadata validation still rejects a download at or after
+that deadline. Offline provenance verification may happen later only when the
+recorded `capturedAt` is before expiry and not later than verification time;
+the exact artifact identity, digest, source, and provenance checks still
+apply. This permits validating a protected ciphertext copy after GitHub removes
+the artifact; it does not permit claiming a late acquisition or bypass any
+separate Phase B approval.
 
-Before acquisition, revalidate the chosen source mode against the applicable
-Owner approval; the current approval does not include reviewed-PR execution.
+Before acquisition, revalidate the exact approved PR #161 source pin and all
+credential, storage, and artifact gates. The follow-up branch itself is not an
+approved acquisition source.
 Before Phase B additionally obtain approval for
 host/provisioning and external egress-control evidence, age-key delivery, and
 offline execution. Merge remains a separate Owner gate. This source change does

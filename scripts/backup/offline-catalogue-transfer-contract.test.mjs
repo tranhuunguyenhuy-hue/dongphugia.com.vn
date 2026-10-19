@@ -335,14 +335,63 @@ describe("offline catalogue transfer contract", () => {
         new Date("2026-10-18T10:30:00Z"),
       ),
     ).toThrow(/provenance_mismatch/);
-    expect(() =>
+    expect(
       validateTransferProvenance(
         provenance,
         PINNED_ARTIFACT.artifactDigest.slice("sha256:".length),
         "a".repeat(40),
         new Date("2026-10-30T14:27:48Z"),
       ),
-    ).toThrow(/expired/);
+    ).toMatchObject({ status: "verified", artifactId: "12052107648" });
+  });
+
+  it("validates a preserved transfer after artifact expiry only when acquisition preceded expiry", () => {
+    const metadata = validateArtifactMetadata(
+      validRun,
+      validArtifact,
+      new Date("2026-10-18T10:00:00Z"),
+    );
+    const archiveSha256 = PINNED_ARTIFACT.artifactDigest.slice(
+      "sha256:".length,
+    );
+    const timelyProvenance = createTransferProvenance(
+      metadata,
+      archiveSha256,
+      "2026-10-18T10:00:00Z",
+      "a".repeat(40),
+    );
+
+    expect(
+      validateTransferProvenance(
+        timelyProvenance,
+        archiveSha256,
+        "a".repeat(40),
+        new Date("2026-11-01T00:00:00Z"),
+      ),
+    ).toMatchObject({ status: "verified", artifactId: "12052107648" });
+
+    for (const capturedAt of [
+      "2026-10-30T14:27:48.000Z",
+      "2026-10-30T14:27:49.000Z",
+    ]) {
+      expect(() =>
+        validateTransferProvenance(
+          { ...timelyProvenance, capturedAt },
+          archiveSha256,
+          "a".repeat(40),
+          new Date("2026-11-01T00:00:00Z"),
+        ),
+      ).toThrow(/expired_or_future/);
+    }
+
+    expect(() =>
+      validateTransferProvenance(
+        timelyProvenance,
+        archiveSha256,
+        "a".repeat(40),
+        new Date("2026-10-17T00:00:00Z"),
+      ),
+    ).toThrow(/expired_or_future/);
   });
 
   it("binds reviewed PR acquisition to both the live main and exact PR source commit", () => {
