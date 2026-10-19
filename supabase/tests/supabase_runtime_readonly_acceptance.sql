@@ -202,7 +202,8 @@ begin
       and p.provolatile = 's'
       and p.prorettype = 'boolean'::regtype
       and p.prolang = (select oid from pg_language where lanname = 'plpgsql')
-      and coalesce(p.proconfig, '{}'::text[]) @> array['search_path=pg_catalog, dpg_v1']::text[]
+      and not p.proleakproof
+      and p.proconfig = array['search_path=pg_catalog, dpg_v1']::text[]
       and regexp_replace(p.prosrc, '[[:space:]]', '', 'g') = regexp_replace($expected_capability_body$
 begin
   if auth.uid() is null or p_capability is null then
