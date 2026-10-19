@@ -14,6 +14,9 @@ import {
 const { Client } = pg
 const postgresImage = process.env.POSTGRES_SNAPSHOT_INTEGRATION_IMAGE
 const dockerIntegration = Boolean(postgresImage)
+const isDatabaseSizeGuardQuery = (sql) => typeof sql === 'string'
+  && /^\s*select\s+pg_database_size\(current_database\(\)\)::text\s+as\s+current_size_bytes,/i.test(sql)
+  && /\bas\s+hard_ceiling_bytes\b/i.test(sql)
 
 function docker(...args) {
   return execFileSync('docker', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim()
@@ -103,7 +106,7 @@ describe('Supabase runtime migration adoption integration', () => {
           get(target, property) {
             if (property === 'query') {
               return (sql, ...values) => {
-                if (typeof sql === 'string' && sql.includes('pg_database_size(current_database())')) {
+                if (isDatabaseSizeGuardQuery(sql)) {
                   sizeGuardChecks += 1
                   if (sizeGuardChecks === 5) {
                     return Promise.resolve({
@@ -169,7 +172,7 @@ describe('Supabase runtime migration adoption integration', () => {
           get(target, property) {
             if (property === 'query') {
               return (sql, ...values) => {
-                if (typeof sql === 'string' && sql.includes('pg_database_size(current_database())')) {
+                if (isDatabaseSizeGuardQuery(sql)) {
                   migrationSizeChecks += 1
                   if (migrationSizeChecks === 3) {
                     return Promise.resolve({
