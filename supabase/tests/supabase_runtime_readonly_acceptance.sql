@@ -11,6 +11,7 @@ declare
   api_schema_grant_drift boolean;
   api_relation_grant_drift boolean;
   api_product_policy_drift boolean;
+  api_capability_function_drift boolean;
   api_function_inventory_drift boolean;
   api_function_grant_drift boolean;
   api_function_effective_drift boolean;
@@ -190,6 +191,34 @@ begin
   ) into api_product_policy_drift;
   if api_product_policy_drift then
     raise exception 'SUPABASE_RUNTIME_READONLY_RLS_POLICY_SET_FAILED';
+  end if;
+
+  select not exists (
+    select 1
+    from pg_proc p
+    where p.oid = to_regprocedure('dpg_v1.staff_has_capability(dpg_v1.staff_capability)')
+      and p.proowner = 'postgres'::regrole
+      and p.prosecdef
+      and p.provolatile = 's'
+      and p.prorettype = 'boolean'::regtype
+      and p.prolang = (select oid from pg_language where lanname = 'plpgsql')
+      and coalesce(p.proconfig, '{}'::text[]) @> array['search_path=pg_catalog, dpg_v1']::text[]
+      and regexp_replace(p.prosrc, '[[:space:]]', '', 'g') = regexp_replace($expected_capability_body$
+begin
+  if auth.uid() is null or p_capability is null then
+    return false;
+  end if;
+
+  return exists (
+    select 1
+    from dpg_v1.current_staff_context() context
+    where p_capability = any(context.capabilities)
+  );
+end
+$expected_capability_body$, '[[:space:]]', '', 'g')
+  ) into api_capability_function_drift;
+  if api_capability_function_drift then
+    raise exception 'SUPABASE_RUNTIME_READONLY_CAPABILITY_HELPER_FAILED';
   end if;
 
   with expected(function_signature, anon_execute, authenticated_execute) as (values

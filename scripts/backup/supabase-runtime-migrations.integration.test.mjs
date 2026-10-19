@@ -305,6 +305,25 @@ describe('Supabase runtime migration adoption integration', () => {
         await client.query(runtimeReadonlyAcceptance)
 
         await client.query('begin')
+        await client.query(`
+          create or replace function dpg_v1.staff_has_capability(p_capability dpg_v1.staff_capability)
+          returns boolean
+          language plpgsql
+          stable
+          security definer
+          set search_path = pg_catalog, dpg_v1
+          as $$
+          begin
+            return true;
+          end
+          $$
+        `)
+        await expect(client.query(runtimeReadonlyAcceptance))
+          .rejects.toThrow('SUPABASE_RUNTIME_READONLY_CAPABILITY_HELPER_FAILED')
+        await client.query('rollback')
+        await client.query(runtimeReadonlyAcceptance)
+
+        await client.query('begin')
         await client.query('alter function dpg_v1_api.public_product_get(uuid) security definer')
         await expect(client.query(runtimeReadonlyAcceptance))
           .rejects.toThrow('SUPABASE_RUNTIME_READONLY_API_FUNCTION_SECURITY_MODE_FAILED')
