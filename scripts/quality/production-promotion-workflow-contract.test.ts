@@ -5,8 +5,52 @@ import { describe, expect, it } from 'vitest'
 const workflow = readFileSync(resolve(process.cwd(), '.github/workflows/production-promotion.yml'), 'utf8')
 const workflowsDirectory = resolve(process.cwd(), '.github/workflows')
 const workflowFiles = readdirSync(workflowsDirectory)
-  .filter((file) => file.endsWith('.yml'))
+  .filter((file) => /\.(?:yml|yaml)$/.test(file))
   .map((file) => ({ file, source: readFileSync(resolve(workflowsDirectory, file), 'utf8') }))
+
+function hasClosedPullRequestTrigger(source: string) {
+  const lines = source.split(/\r?\n/)
+  let pullRequestIndent = -1
+  let typesIndent = -1
+  let readingTypes = false
+  for (const line of lines) {
+    const trimmed = line.trim()
+    if (!trimmed || trimmed.startsWith('#')) continue
+    const indent = line.length - line.trimStart().length
+    if (/^(?:pull_request|pull_request_target):\s*(?:#.*)?$/.test(trimmed)) {
+      pullRequestIndent = indent
+      typesIndent = -1
+      readingTypes = false
+      continue
+    }
+    if (/^(?:pull_request|pull_request_target):\s*\{[^}]*\bclosed\b[^}]*\}/.test(trimmed)) return true
+    if (pullRequestIndent < 0) continue
+    if (indent <= pullRequestIndent) {
+      pullRequestIndent = -1
+      typesIndent = -1
+      readingTypes = false
+      continue
+    }
+    const types = trimmed.match(/^types:\s*(.*)$/)
+    if (types) {
+      typesIndent = indent
+      readingTypes = true
+      if (/\bclosed\b/.test(types[1])) return true
+      continue
+    }
+    if (readingTypes && indent > typesIndent && /^-\s*closed\s*(?:#.*)?$/.test(trimmed)) return true
+    if (readingTypes && indent <= typesIndent) readingTypes = false
+  }
+  return false
+}
+
+function reachesProductionPromotion(source: string) {
+  return (
+    source.includes('./.github/workflows/production-promotion.yml') ||
+    source.includes('cloudflare/wrangler-action@') ||
+    /\b(?:wrangler|pages)\s+deploy\b/.test(source)
+  )
+}
 
 describe('LEO-537 Production promotion workflow contract', () => {
   it('is reusable, disabled before cutover, and protected by explicit Production approval', () => {
@@ -19,19 +63,39 @@ describe('LEO-537 Production promotion workflow contract', () => {
     expect(workflow).toContain("if: needs.production-enable-gate.outputs.enabled == 'true'")
     expect(workflow).toContain('owner_confirmation:')
     expect(workflow).toContain('DISPATCH_ACTOR: ${{ github.actor }}')
+    expect(workflow).toContain('EVENT_NAME: ${{ github.event_name }}')
     expect(workflow).toContain("\"$DISPATCH_ACTOR\" == 'tranhuunguyenhuy-hue'")
     expect(workflow).toContain('OWNER_CONFIRMATION')
     expect(workflow).toContain('OWNER_CONFIRMATION\" == \"true\"')
+    expect(workflow).toContain('(\"$EVENT_NAME\" == \"workflow_dispatch\" || \"$EVENT_NAME\" == \"workflow_call\")')
   })
 
   it('cannot promote from a merged pull-request trigger', () => {
     const automaticMergePromotionWorkflows = workflowFiles
-      .filter(({ source }) => /types:\s*\[closed\]/.test(source))
-      .filter(({ source }) => source.includes('./.github/workflows/production-promotion.yml'))
+      .filter(({ source }) => hasClosedPullRequestTrigger(source))
+      .filter(({ source }) => reachesProductionPromotion(source))
       .map(({ file }) => file)
 
     expect(automaticMergePromotionWorkflows).toEqual([])
     expect(existsSync(resolve(workflowsDirectory, 'production-merge.yml'))).toBe(false)
+  })
+
+  it('detects multiline merged-PR triggers even when candidate and flag markers are present', () => {
+    const syntheticMergedPromotionWorkflow = `
+on:
+  pull_request:
+    types:
+      - closed
+env:
+  PRODUCTION_PROMOTION_ENABLED: true
+jobs:
+  promote:
+    uses: ./.github/workflows/production-promotion.yml
+    with:
+      preview_artifact_name: dongphugia-preview-deadbeef
+`
+    expect(hasClosedPullRequestTrigger(syntheticMergedPromotionWorkflow)).toBe(true)
+    expect(reachesProductionPromotion(syntheticMergedPromotionWorkflow)).toBe(true)
   })
 
   it('keeps normal main quality and manual promotion paths available', () => {

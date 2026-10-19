@@ -96,9 +96,10 @@ jobs:
           PRODUCTION_PROMOTION_ENABLED: ${{ vars.PRODUCTION_PROMOTION_ENABLED }}
           OWNER_CONFIRMATION: ${{ inputs.owner_confirmation || github.event.inputs.owner_confirmation || false }}
           DISPATCH_ACTOR: ${{ github.actor }}
+          EVENT_NAME: ${{ github.event_name }}
         run: |
           set -euo pipefail
-          if [[ "$PRODUCTION_PROMOTION_ENABLED" == "true" && "$OWNER_CONFIRMATION" == "true" && "$DISPATCH_ACTOR" == 'tranhuunguyenhuy-hue' ]]; then
+          if [[ ("$EVENT_NAME" == "workflow_dispatch" || "$EVENT_NAME" == "workflow_call") && "$PRODUCTION_PROMOTION_ENABLED" == "true" && "$OWNER_CONFIRMATION" == "true" && "$DISPATCH_ACTOR" == 'tranhuunguyenhuy-hue' ]]; then
             echo 'enabled=true' >> "$GITHUB_OUTPUT"
             exit 0
           fi
