@@ -33,6 +33,10 @@ on:
         required: false
         default: main
         type: string
+      owner_confirmation:
+        description: Explicit Owner confirmation for this exact manual promotion request.
+        required: true
+        type: boolean
   workflow_dispatch:
     inputs:
       candidate_source_sha:
@@ -66,6 +70,10 @@ on:
         required: false
         default: main
         type: string
+      owner_confirmation:
+        description: Explicit Owner confirmation for this exact manual promotion request.
+        required: true
+        type: boolean
 
 permissions:
   actions: read
@@ -86,16 +94,18 @@ jobs:
         id: gate
         env:
           PRODUCTION_PROMOTION_ENABLED: ${{ vars.PRODUCTION_PROMOTION_ENABLED }}
+          OWNER_CONFIRMATION: ${{ inputs.owner_confirmation || github.event.inputs.owner_confirmation || false }}
+          DISPATCH_ACTOR: ${{ github.actor }}
         run: |
           set -euo pipefail
-          if [[ "$PRODUCTION_PROMOTION_ENABLED" == "true" ]]; then
+          if [[ "$PRODUCTION_PROMOTION_ENABLED" == "true" && "$OWNER_CONFIRMATION" == "true" && "$DISPATCH_ACTOR" == 'tranhuunguyenhuy-hue' ]]; then
             echo 'enabled=true' >> "$GITHUB_OUTPUT"
             exit 0
           fi
           echo 'enabled=false' >> "$GITHUB_OUTPUT"
           {
             echo '### Production promotion: BLOCKED_BY_CUTOVER_OWNER_GATE'
-            echo 'PRODUCTION_PROMOTION_ENABLED is not true; no Production environment job or Cloudflare mutation was started.'
+            echo 'Production promotion requires the cutover flag, explicit Owner confirmation, and the Owner account actor; no Production environment job or Cloudflare mutation was started.'
           } >> "$GITHUB_STEP_SUMMARY"
 
   production-promotion:
