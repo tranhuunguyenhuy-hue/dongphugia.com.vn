@@ -263,6 +263,17 @@ describe('Supabase runtime migration adoption integration', () => {
         await client.query(runtimeReadonlyAcceptance)
         await client.query(cataloguePreflight)
 
+        await client.query(`alter type dpg_v1.record_status add value if not exists '(PUBLISHED)'`)
+        await client.query('begin')
+        await client.query(`
+          alter policy v1_products_public_select on dpg_v1.products
+          using (status = '(PUBLISHED)'::dpg_v1.record_status)
+        `)
+        await expect(client.query(runtimeReadonlyAcceptanceInTransaction))
+          .rejects.toThrow('SUPABASE_RUNTIME_READONLY_RLS_POLICY_SET_FAILED')
+        await client.query('rollback')
+        await client.query(runtimeReadonlyAcceptance)
+
         await client.query('begin')
         await client.query(`
           create policy codex_unexpected_product_policy on dpg_v1.products
@@ -349,6 +360,20 @@ describe('Supabase runtime migration adoption integration', () => {
           .rejects.toThrow('SUPABASE_RUNTIME_READONLY_STAFF_HELPER_GRANT_SET_FAILED')
         await client.query('rollback')
         await client.query(runtimeReadonlyAcceptance)
+
+        for (const membershipOption of ['inherit true', 'inherit false']) {
+          for (const role of [
+            'anon', 'service_role', 'dpg_runtime', 'dpg_runtime_login',
+            'dpg_readonly', 'dpg_readonly_login', 'dpg_backup',
+          ]) {
+            await client.query('begin')
+            await client.query(`grant authenticated to ${role} with ${membershipOption}`)
+            await expect(client.query(runtimeReadonlyAcceptanceInTransaction))
+              .rejects.toThrow('SUPABASE_RUNTIME_READONLY_STAFF_HELPER_EFFECTIVE_PRIVILEGES_FAILED')
+            await client.query('rollback')
+            await client.query(runtimeReadonlyAcceptance)
+          }
+        }
 
         await client.query('begin')
         await client.query(`

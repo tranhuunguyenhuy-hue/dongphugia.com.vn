@@ -107,6 +107,101 @@ export function stripOuterTransaction(sql) {
   return lines.join('\n')
 }
 
+function hasEmbeddedTransactionControl(sql) {
+  const executable = []
+  let index = 0
+
+  const mask = (start, end) => executable.push(sql.slice(start, end).replace(/[^\r\n]/g, ' '))
+  const previousCodePoint = (end) => {
+    if (end <= 0) return ''
+    let start = end - 1
+    const lastCodeUnit = sql.charCodeAt(start)
+    if (lastCodeUnit >= 0xdc00 && lastCodeUnit <= 0xdfff && start > 0) {
+      const previousCodeUnit = sql.charCodeAt(start - 1)
+      if (previousCodeUnit >= 0xd800 && previousCodeUnit <= 0xdbff) start -= 1
+    }
+    return sql.slice(start, end)
+  }
+
+  while (index < sql.length) {
+    if (sql.startsWith('--', index)) {
+      let end = index + 2
+      while (end < sql.length && sql[end] !== '\n' && sql[end] !== '\r') end += 1
+      mask(index, end)
+      index = end
+      continue
+    }
+
+    if (sql.startsWith('/*', index)) {
+      let end = index + 2
+      let depth = 1
+      while (end < sql.length && depth > 0) {
+        if (sql.startsWith('/*', end)) {
+          depth += 1
+          end += 2
+        } else if (sql.startsWith('*/', end)) {
+          depth -= 1
+          end += 2
+        } else {
+          end += 1
+        }
+      }
+      if (depth !== 0) return true
+      mask(index, end)
+      index = end
+      continue
+    }
+
+    const previousCharacter = previousCodePoint(index)
+    const dollarTag = sql[index] === '$'
+      && !/[_$\p{ID_Continue}]/u.test(previousCharacter)
+      ? /^\$(?:[_\p{ID_Start}][\p{ID_Continue}]*)?\$/u.exec(sql.slice(index))?.[0]
+      : undefined
+    if (dollarTag) {
+      const closing = sql.indexOf(dollarTag, index + dollarTag.length)
+      if (closing === -1) return true
+      const end = closing + dollarTag.length
+      mask(index, end)
+      index = end
+      continue
+    }
+
+    if (sql[index] === "'" || sql[index] === '"') {
+      const quote = sql[index]
+      const prefixIndex = index - previousCharacter.length
+      const beforePrefix = previousCodePoint(prefixIndex)
+      const escapeString = quote === "'"
+        && /^[eE]$/.test(previousCharacter)
+        && !/[_$\p{ID_Continue}]/u.test(beforePrefix)
+      let end = index + 1
+      let closed = false
+      while (end < sql.length) {
+        if (quote === "'" && escapeString && sql[end] === '\\') {
+          end += 2
+        } else if (sql[end] === quote && sql[end + 1] === quote) {
+          end += 2
+        } else if (sql[end] === quote) {
+          end += 1
+          closed = true
+          break
+        } else {
+          end += 1
+        }
+      }
+      if (!closed) return true
+      mask(index, end)
+      index = end
+      continue
+    }
+
+    executable.push(sql[index])
+    index += 1
+  }
+
+  return /\b(?:begin\b|start\s+transaction\b|commit\b|rollback\b|abort\b|savepoint\b|release\b|prepare\s+transaction\b|set\s+transaction\b)|(?:^|;)\s*end\b/i
+    .test(executable.join(''))
+}
+
 export function stripReadOnlyOuterTransaction(sql) {
   const lines = sql.split(/\r?\n/)
   const controls = lines
@@ -128,6 +223,11 @@ export function stripReadOnlyOuterTransaction(sql) {
 
   lines[controls[0].index] = ''
   lines[controls[1].index] = ''
+
+  if (hasEmbeddedTransactionControl(lines.join('\n'))) {
+    fail('readonly_acceptance_transaction_contract_changed')
+  }
+
   return lines.join('\n')
 }
 

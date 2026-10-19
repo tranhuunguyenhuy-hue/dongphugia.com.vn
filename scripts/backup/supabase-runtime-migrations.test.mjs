@@ -83,6 +83,25 @@ describe('Supabase runtime migration runner contract', () => {
     expect(normalized).not.toMatch(/^\s*(begin|commit|rollback|start transaction)\s*;/im)
     expect(() => stripReadOnlyOuterTransaction('begin;\nselect 1;\nrollback;'))
       .toThrow('readonly_acceptance_transaction_contract_changed')
+    expect(() => stripReadOnlyOuterTransaction([
+      'begin transaction isolation level repeatable read read only;',
+      'select 1; commit; select 2;',
+      'rollback;',
+    ].join('\n'))).toThrow('readonly_acceptance_transaction_contract_changed')
+    for (const statement of [
+      'begin isolation level repeatable read;',
+      'end;',
+      "select '--'; end;",
+      "select 'backslash\\'; end; select 'closing';",
+      'select $é$body$é$; commit; select $body$payload $body$; select $é$body$é$;',
+      'select 1 as 𐐀$tag$; commit; select $tag$payload$tag$;',
+    ]) {
+      expect(() => stripReadOnlyOuterTransaction([
+        'begin transaction isolation level repeatable read read only;',
+        `select 1; ${statement}`,
+        'rollback;',
+      ].join('\n'))).toThrow('readonly_acceptance_transaction_contract_changed')
+    }
   })
 
   it('fails closed at the 350 MiB database-size ceiling', () => {

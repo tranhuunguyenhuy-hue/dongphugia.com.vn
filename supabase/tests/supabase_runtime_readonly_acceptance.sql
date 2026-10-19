@@ -15,6 +15,7 @@ declare
   api_capability_function_drift boolean;
   api_staff_context_function_drift boolean;
   api_staff_helper_grant_drift boolean;
+  api_staff_helper_effective_drift boolean;
   api_function_inventory_drift boolean;
   api_function_grant_drift boolean;
   api_function_effective_drift boolean;
@@ -155,19 +156,24 @@ begin
     raise exception 'SUPABASE_RUNTIME_READONLY_API_GRANT_SET_FAILED';
   end if;
 
-  with expected_raw(policy_name, policy_command, policy_permissive, policy_roles, policy_qual, policy_check) as (values
-    ('v1_products_public_select', 'r', true, array['anon']::text[], 'status = ''PUBLISHED''::dpg_v1.record_status', ''),
-    ('v1_products_staff_select', 'r', true, array['authenticated']::text[], 'status = ''PUBLISHED''::dpg_v1.record_status OR dpg_v1.staff_has_capability(''catalogue.read''::dpg_v1.staff_capability)', ''),
-    ('v1_products_create', 'a', true, array['authenticated']::text[], '', 'dpg_v1.staff_has_capability(''catalogue.create''::dpg_v1.staff_capability) AND status = ''DRAFT''::dpg_v1.record_status'),
-    ('v1_products_update', 'w', true, array['authenticated']::text[], 'dpg_v1.staff_has_capability(''catalogue.update''::dpg_v1.staff_capability) OR dpg_v1.staff_has_capability(''catalogue.publish''::dpg_v1.staff_capability) OR dpg_v1.staff_has_capability(''catalogue.archive''::dpg_v1.staff_capability)', 'dpg_v1.staff_has_capability(''catalogue.update''::dpg_v1.staff_capability) OR dpg_v1.staff_has_capability(''catalogue.publish''::dpg_v1.staff_capability) OR dpg_v1.staff_has_capability(''catalogue.archive''::dpg_v1.staff_capability)'),
-    ('leo565_backup_products_select', 'r', true, array['dpg_backup']::text[], 'true', '')
+  -- These audited predicates each use one boolean operator family (AND or OR).
+  -- Keep literal tokens byte-exact below; if a predicate mixes AND and OR,
+  -- replace parenthesis normalization with structural expression comparison.
+  with expected_raw(policy_name, policy_command, policy_permissive, policy_roles, policy_qual, policy_check, policy_qual_literals, policy_check_literals) as (values
+    ('v1_products_public_select', 'r', true, array['anon']::text[], 'status = ''PUBLISHED''::dpg_v1.record_status', '', array[quote_literal('PUBLISHED')]::text[], array[]::text[]),
+    ('v1_products_staff_select', 'r', true, array['authenticated']::text[], 'status = ''PUBLISHED''::dpg_v1.record_status OR dpg_v1.staff_has_capability(''catalogue.read''::dpg_v1.staff_capability)', '', array[quote_literal('PUBLISHED'), quote_literal('catalogue.read')]::text[], array[]::text[]),
+    ('v1_products_create', 'a', true, array['authenticated']::text[], '', 'dpg_v1.staff_has_capability(''catalogue.create''::dpg_v1.staff_capability) AND status = ''DRAFT''::dpg_v1.record_status', array[]::text[], array[quote_literal('catalogue.create'), quote_literal('DRAFT')]::text[]),
+    ('v1_products_update', 'w', true, array['authenticated']::text[], 'dpg_v1.staff_has_capability(''catalogue.update''::dpg_v1.staff_capability) OR dpg_v1.staff_has_capability(''catalogue.publish''::dpg_v1.staff_capability) OR dpg_v1.staff_has_capability(''catalogue.archive''::dpg_v1.staff_capability)', 'dpg_v1.staff_has_capability(''catalogue.update''::dpg_v1.staff_capability) OR dpg_v1.staff_has_capability(''catalogue.publish''::dpg_v1.staff_capability) OR dpg_v1.staff_has_capability(''catalogue.archive''::dpg_v1.staff_capability)', array[quote_literal('catalogue.update'), quote_literal('catalogue.publish'), quote_literal('catalogue.archive')]::text[], array[quote_literal('catalogue.update'), quote_literal('catalogue.publish'), quote_literal('catalogue.archive')]::text[]),
+    ('leo565_backup_products_select', 'r', true, array['dpg_backup']::text[], 'true', '', array[]::text[], array[]::text[])
   ), expected as (
     select policy_name,
            policy_command,
            policy_permissive,
            policy_roles,
            regexp_replace(coalesce(policy_qual, ''), '[[:space:]()]', '', 'g') as policy_qual,
-           regexp_replace(coalesce(policy_check, ''), '[[:space:]()]', '', 'g') as policy_check
+           regexp_replace(coalesce(policy_check, ''), '[[:space:]()]', '', 'g') as policy_check,
+           policy_qual_literals,
+           policy_check_literals
     from expected_raw
   ), actual as (
     select p.policyname::text as policy_name,
@@ -186,7 +192,19 @@ begin
              order by role_name::text
            ) as policy_roles,
            regexp_replace(coalesce(p.qual, ''), '[[:space:]()]', '', 'g') as policy_qual,
-           regexp_replace(coalesce(p.with_check, ''), '[[:space:]()]', '', 'g') as policy_check
+           regexp_replace(coalesce(p.with_check, ''), '[[:space:]()]', '', 'g') as policy_check,
+           array(
+             select token[1]
+             from regexp_matches(coalesce(p.qual, ''), $$'(?:[^']|'')*'$$, 'g')
+                  with ordinality as literal_tokens(token, ordinal)
+             order by ordinal
+           ) as policy_qual_literals,
+           array(
+             select token[1]
+             from regexp_matches(coalesce(p.with_check, ''), $$'(?:[^']|'')*'$$, 'g')
+                  with ordinality as literal_tokens(token, ordinal)
+             order by ordinal
+           ) as policy_check_literals
     from pg_policies p
     where p.schemaname = 'dpg_v1'
       and p.tablename = 'products'
@@ -204,7 +222,9 @@ begin
              case when e.policy_permissive is distinct from a.policy_permissive then 'permissive'::text end,
              case when e.policy_roles is distinct from a.policy_roles then 'roles'::text end,
              case when e.policy_qual is distinct from a.policy_qual then 'qual'::text end,
-             case when e.policy_check is distinct from a.policy_check then 'with_check'::text end
+             case when e.policy_check is distinct from a.policy_check then 'with_check'::text end,
+             case when e.policy_qual_literals is distinct from a.policy_qual_literals then 'qual_literals'::text end,
+             case when e.policy_check_literals is distinct from a.policy_check_literals then 'with_check_literals'::text end
            ], null::text)) as field_name
     from expected e
     full join actual a using (policy_name)
@@ -315,6 +335,30 @@ $expected_staff_context_body$, '[[:space:]]', '', 'g')
   ) into api_staff_helper_grant_drift;
   if api_staff_helper_grant_drift then
     raise exception 'SUPABASE_RUNTIME_READONLY_STAFF_HELPER_GRANT_SET_FAILED';
+  end if;
+
+  with helper_functions(function_oid) as (values
+    (to_regprocedure('dpg_v1.current_staff_context()')::oid),
+    (to_regprocedure('dpg_v1.staff_has_capability(dpg_v1.staff_capability)')::oid)
+  ), expected_principals(principal, can_execute, can_set_authenticated) as (values
+    ('anon'::text, false, false),
+    ('authenticated'::text, true, true),
+    ('service_role'::text, false, false),
+    ('dpg_runtime'::text, false, false),
+    ('dpg_runtime_login'::text, false, false),
+    ('dpg_readonly'::text, false, false),
+    ('dpg_readonly_login'::text, false, false),
+    ('dpg_backup'::text, false, false)
+  )
+  select exists (
+    select 1
+    from helper_functions f
+    cross join expected_principals p
+    where has_function_privilege(p.principal, f.function_oid, 'EXECUTE') is distinct from p.can_execute
+       or pg_has_role(p.principal, 'authenticated', 'SET') is distinct from p.can_set_authenticated
+  ) into api_staff_helper_effective_drift;
+  if api_staff_helper_effective_drift then
+    raise exception 'SUPABASE_RUNTIME_READONLY_STAFF_HELPER_EFFECTIVE_PRIVILEGES_FAILED';
   end if;
 
   with expected(function_signature, anon_execute, authenticated_execute) as (values
