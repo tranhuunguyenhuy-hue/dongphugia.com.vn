@@ -256,6 +256,13 @@ describe('Supabase runtime migration adoption integration', () => {
         await client.query(runtimeReadonlyAcceptance)
         await client.query(cataloguePreflight)
 
+        await client.query('grant insert (id) on dpg_v1.products to dpg_backup')
+        await expect(client.query(runtimeReadonlyAcceptance))
+          .rejects.toThrow('SUPABASE_RUNTIME_READONLY_BACKUP_WRITE_PRIVILEGE')
+        await client.query('rollback').catch(() => undefined)
+        await client.query('revoke insert (id) on dpg_v1.products from dpg_backup')
+        await client.query(runtimeReadonlyAcceptance)
+
         await client.query('begin')
         await client.query(`
           update dpg_control.runtime_migration_ledger

@@ -43,7 +43,10 @@ begin
     if has_table_privilege('dpg_backup', format('dpg_v1.%I', table_name), 'INSERT')
        or has_table_privilege('dpg_backup', format('dpg_v1.%I', table_name), 'UPDATE')
        or has_table_privilege('dpg_backup', format('dpg_v1.%I', table_name), 'DELETE')
-       or has_table_privilege('dpg_backup', format('dpg_v1.%I', table_name), 'TRUNCATE') then
+       or has_table_privilege('dpg_backup', format('dpg_v1.%I', table_name), 'TRUNCATE')
+       or has_any_column_privilege('dpg_backup', format('dpg_v1.%I', table_name), 'INSERT')
+       or has_any_column_privilege('dpg_backup', format('dpg_v1.%I', table_name), 'UPDATE')
+       or has_any_column_privilege('dpg_backup', format('dpg_v1.%I', table_name), 'REFERENCES') then
       raise exception 'SUPABASE_RUNTIME_READONLY_BACKUP_WRITE_PRIVILEGE table=%', table_name;
     end if;
   end loop;
