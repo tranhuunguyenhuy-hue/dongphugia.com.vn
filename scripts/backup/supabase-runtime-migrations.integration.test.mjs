@@ -29,6 +29,14 @@ function postgresReadiness(container, host) {
   ], { encoding: 'utf8', stdio: ['ignore', 'ignore', 'ignore'], timeout: 1_500 })
 }
 
+async function waitForPostgresReadiness(container, host, deadline) {
+  while (Date.now() < deadline) {
+    if (postgresReadiness(container, host).status === 0) return true
+    await new Promise((resolve) => setTimeout(resolve, 250))
+  }
+  return false
+}
+
 function postgresContainerState(container) {
   const result = spawnSync('docker', [
     'inspect', '--format', '{{.State.Status}}|{{.State.Running}}|{{.State.OOMKilled}}|{{.State.ExitCode}}', container,
@@ -59,6 +67,39 @@ function postgresFailureKind(error) {
   return 'other'
 }
 
+function sanitizedErrorCause(error) {
+  const allowedNames = new Set(['AssertionError', 'Error', 'RangeError', 'TypeError'])
+  const originalName = allowedNames.has(error?.name) ? error.name : 'Error'
+  const originalCode = typeof error?.code === 'string' && /^[A-Z0-9]{4,12}$/.test(error.code)
+    ? error.code
+    : 'unavailable'
+  const cause = new Error(`SANITIZED_CAUSE name=${originalName} code=${originalCode}`)
+  cause.name = 'SanitizedIntegrationCause'
+  if (typeof error?.stack === 'string') {
+    const stackFrames = error.stack.split('\n').slice(1)
+      .filter((line) => /^\s+at\s/.test(line))
+    if (stackFrames.length > 0) {
+      cause.stack = `${cause.name}: ${cause.message}\n${stackFrames.join('\n')}`
+    }
+  }
+  return cause
+}
+
+function sanitizedIntegrationFailure(error, phase, failureKind) {
+  const failure = new Error(
+    `PG17_MIGRATION_INTEGRATION_FAILED phase=${phase} failure=${failureKind}`,
+    { cause: sanitizedErrorCause(error) },
+  )
+  if (typeof error?.stack === 'string') {
+    const stackFrames = error.stack.split('\n').slice(1)
+      .filter((line) => /^\s+at\s/.test(line))
+    if (stackFrames.length > 0) {
+      failure.stack = `${failure.name}: ${failure.message}\n${stackFrames.join('\n')}`
+    }
+  }
+  return failure
+}
+
 describe('Supabase runtime migration adoption integration', () => {
   it.runIf(dockerIntegration)(
     'attests the checkpoint, commits pending migrations separately, and revalidates status',
@@ -74,11 +115,9 @@ describe('Supabase runtime migration adoption integration', () => {
 
         const readinessDeadline = Date.now() + 22_500
         phase = 'observe_socket_only_initialization_server'
-        let socketReadyDuringInitialization = false
-        while (!socketReadyDuringInitialization && Date.now() < readinessDeadline) {
-          socketReadyDuringInitialization = postgresReadiness(container, '/var/run/postgresql').status === 0
-          if (!socketReadyDuringInitialization) await new Promise((resolve) => setTimeout(resolve, 250))
-        }
+        const socketReadyDuringInitialization = await waitForPostgresReadiness(
+          container, '/var/run/postgresql', readinessDeadline,
+        )
         expect(socketReadyDuringInitialization).toBe(true)
 
         phase = 'prove_initialization_server_is_not_tcp_ready'
@@ -88,11 +127,9 @@ describe('Supabase runtime migration adoption integration', () => {
         process.stdout.write('PG17_MIGRATION_STARTUP_PROBE socket_init_ready=true tcp_init_ready=false\n')
 
         phase = 'wait_for_final_postgres_tcp_listener'
-        let postgresTcpReady = false
-        while (!postgresTcpReady && Date.now() < readinessDeadline) {
-          postgresTcpReady = postgresReadiness(container, '127.0.0.1').status === 0
-          if (!postgresTcpReady) await new Promise((resolve) => setTimeout(resolve, 250))
-        }
+        const postgresTcpReady = await waitForPostgresReadiness(
+          container, '127.0.0.1', readinessDeadline,
+        )
         expect(postgresTcpReady).toBe(true)
 
         phase = 'resolve_published_port'
@@ -656,7 +693,7 @@ describe('Supabase runtime migration adoption integration', () => {
           + `container=${postgresContainerState(container)} tcp_probe=${Number.isInteger(tcpProbe.status) ? tcpProbe.status : 'unavailable'} `
           + `failure=${failureKind}\n`,
         )
-        throw new Error(`PG17_MIGRATION_INTEGRATION_FAILED phase=${phase} failure=${failureKind}`)
+        throw sanitizedIntegrationFailure(error, phase, failureKind)
       } finally {
         await client?.end().catch(() => undefined)
         spawnSync('docker', ['rm', '--force', container], { stdio: 'ignore' })
