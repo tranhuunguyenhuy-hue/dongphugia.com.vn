@@ -25,6 +25,7 @@ const postgresFailureKinds = new Set([
   'other',
 ])
 const sanitizedCauseNames = new Set(['AssertionError', 'Error', 'RangeError', 'TypeError'])
+const MAX_SAFE_ERROR_PROTOTYPE_DEPTH = 16
 const isDatabaseSizeGuardQuery = (sql) => typeof sql === 'string'
   && /^\s*select\s+pg_database_size\(current_database\(\)\)::text\s+as\s+current_size_bytes,/i.test(sql)
   && /\bas\s+hard_ceiling_bytes\b/i.test(sql)
@@ -77,6 +78,28 @@ function errorDataValue(error, property) {
   }
 }
 
+function boundedErrorPrototypeChain(error) {
+  if (!error || (typeof error !== 'object' && typeof error !== 'function')) return null
+
+  const chain = []
+  const visited = new Set()
+  let current = error
+
+  try {
+    while (current !== null && chain.length < MAX_SAFE_ERROR_PROTOTYPE_DEPTH) {
+      if (visited.has(current)) return null
+      visited.add(current)
+      chain.push(current)
+      if (current === Error.prototype) return chain
+      current = Object.getPrototypeOf(current)
+    }
+  } catch {
+    return null
+  }
+
+  return null
+}
+
 function postgresFailureKind(error) {
   if (errorDataValue(error, 'message') === 'Connection terminated unexpectedly') {
     return 'connection_terminated_unexpectedly'
@@ -91,17 +114,17 @@ function postgresFailureKind(error) {
 }
 
 function sanitizedCauseName(error) {
+  const chain = boundedErrorPrototypeChain(error)
+  if (!chain) return 'Error'
+
   try {
-    if (!(error instanceof Error)) return 'Error'
-    let current = error
-    while (current) {
+    for (const current of chain) {
       const descriptor = Object.getOwnPropertyDescriptor(current, 'name')
       if (descriptor) {
         return Object.hasOwn(descriptor, 'value') && sanitizedCauseNames.has(descriptor.value)
           ? descriptor.value
           : 'Error'
       }
-      current = Object.getPrototypeOf(current)
     }
   } catch {
     return 'Error'
@@ -193,6 +216,78 @@ describe('PostgreSQL integration failure diagnostics', () => {
 
     expect(failure.cause.message).toContain('name=TypeError')
     expect(failure.cause.message).toContain('failure=connection_reset')
+    expect(diagnosticText(failure)).not.toContain('private cause detail')
+  })
+
+  it('bounds traversal of a long hostile proxy prototype chain', () => {
+    let prototypeReads = 0
+    const chain = Array.from({ length: 32 }, (_, index) => new Proxy({}, {
+      getPrototypeOf() {
+        prototypeReads += 1
+        return chain[index + 1] ?? Error.prototype
+      },
+    }))
+
+    const failure = sanitizedIntegrationFailure(chain[0], 'connect_main_client', 'other')
+
+    expect(prototypeReads).toBeLessThanOrEqual(16)
+    expect(failure.cause.message).toContain('name=Error')
+  })
+
+  it('terminates when a hostile Error proxy has a cyclic prototype chain', () => {
+    let prototypeReads = 0
+    let errorProxy
+    errorProxy = new Proxy(new Error('SELF_CYCLE_SECRET'), {
+      getPrototypeOf() {
+        prototypeReads += 1
+        if (prototypeReads > 20) throw new Error('test guard for an unbounded prototype walk')
+        return errorProxy
+      },
+    })
+
+    const failure = sanitizedIntegrationFailure(errorProxy, 'connect_main_client', 'other')
+
+    expect(prototypeReads).toBeLessThanOrEqual(16)
+    expect(diagnosticText(failure)).not.toContain('SELF_CYCLE_SECRET')
+    expect(diagnosticText(failure)).not.toContain('test guard')
+  })
+
+  it('does not expose exceptions thrown by hostile proxy traps', () => {
+    let prototypeReads = 0
+    const prototypeTrapError = new Proxy(new Error('PROXY_CAUSE_SECRET'), {
+      getPrototypeOf() {
+        prototypeReads += 1
+        throw new Error('GET_PROTOTYPE_SECRET')
+      },
+    })
+    const descriptorTrapError = new Proxy(new Error('DESCRIPTOR_CAUSE_SECRET'), {
+      getPrototypeOf(target) {
+        return Reflect.getPrototypeOf(target)
+      },
+      getOwnPropertyDescriptor(target, property) {
+        if (property === 'name') throw new Error('DESCRIPTOR_TRAP_SECRET')
+        return Reflect.getOwnPropertyDescriptor(target, property)
+      },
+    })
+
+    const prototypeFailure = sanitizedIntegrationFailure(prototypeTrapError, 'connect_main_client', 'other')
+    const descriptorFailure = sanitizedIntegrationFailure(descriptorTrapError, 'connect_main_client', 'other')
+
+    expect(prototypeReads).toBeLessThanOrEqual(16)
+    expect(diagnosticText(prototypeFailure)).not.toContain('PROXY_CAUSE_SECRET')
+    expect(diagnosticText(prototypeFailure)).not.toContain('GET_PROTOTYPE_SECRET')
+    expect(diagnosticText(descriptorFailure)).not.toContain('DESCRIPTOR_CAUSE_SECRET')
+    expect(diagnosticText(descriptorFailure)).not.toContain('DESCRIPTOR_TRAP_SECRET')
+  })
+
+  it('replaces unallowlisted error names with the generic safe name', () => {
+    const error = new Error('private cause detail')
+    error.name = 'UNALLOWLISTED_NAME_SECRET'
+
+    const failure = sanitizedIntegrationFailure(error, 'connect_main_client', 'other')
+
+    expect(failure.cause.message).toContain('name=Error')
+    expect(diagnosticText(failure)).not.toContain('UNALLOWLISTED_NAME_SECRET')
     expect(diagnosticText(failure)).not.toContain('private cause detail')
   })
 
