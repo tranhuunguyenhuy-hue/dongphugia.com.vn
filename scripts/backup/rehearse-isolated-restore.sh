@@ -5,7 +5,41 @@ set -euo pipefail
 : "${AGE_IDENTITY:?AGE_IDENTITY is required}"
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-postgres_image="${POSTGRES_IMAGE:-postgres:17.6-bookworm@sha256:45cd22f8d32e189d245403954882f88e7a8714301fda80dab6da90f1265b25a3}"
+# shellcheck source=scripts/backup/postgres-image-pin.sh
+source "$repo_root/scripts/backup/postgres-image-pin.sh"
+if ! postgres_image="$(dpg_resolve_postgres_image)"; then
+  echo 'LEO540_RESTORE status=FAIL stage=preflight reason=postgres_image_reference_invalid'
+  exit 1
+fi
+if ! command -v docker >/dev/null 2>&1; then
+  echo 'LEO540_RESTORE status=FAIL stage=preflight reason=missing_docker'
+  exit 1
+fi
+
+docker_endpoint=''
+if [[ -n "${DOCKER_HOST:-}" && "$DOCKER_HOST" != unix://* ]]; then
+  echo 'LEO540_RESTORE status=FAIL stage=preflight reason=docker_remote_daemon_disallowed'
+  exit 1
+fi
+if [[ -n "${DOCKER_CONTEXT:-}" ]]; then
+  if ! docker_endpoint="$(docker context inspect --format '{{(index .Endpoints "docker").Host}}' "$DOCKER_CONTEXT" 2>/dev/null)"; then
+    echo 'LEO540_RESTORE status=FAIL stage=preflight reason=docker_context_unavailable'
+    exit 1
+  fi
+elif [[ -n "${DOCKER_HOST:-}" ]]; then
+  docker_endpoint="$DOCKER_HOST"
+else
+  if ! docker_context="$(docker context show 2>/dev/null)" ||
+    ! docker_endpoint="$(docker context inspect --format '{{(index .Endpoints "docker").Host}}' "$docker_context" 2>/dev/null)"; then
+    echo 'LEO540_RESTORE status=FAIL stage=preflight reason=docker_context_unavailable'
+    exit 1
+  fi
+fi
+if [[ "$docker_endpoint" != unix://* ]]; then
+  echo 'LEO540_RESTORE status=FAIL stage=preflight reason=docker_remote_daemon_disallowed'
+  exit 1
+fi
+
 tmp_dir="$(mktemp --directory /dev/shm/leo540-restore.XXXXXX)"
 container_name="leo540-restore-${RANDOM}${RANDOM}"
 stage='preflight'
@@ -30,7 +64,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-for command in age docker jq node sha256sum; do
+for command in age jq node sha256sum; do
   command -v "$command" >/dev/null 2>&1 || {
     echo "LEO540_RESTORE status=FAIL stage=preflight reason=missing_${command}"
     exit 1
@@ -38,6 +72,10 @@ for command in age docker jq node sha256sum; do
 done
 if [[ "$(findmnt --noheadings --output FSTYPE --target "$tmp_dir" 2>/dev/null)" != 'tmpfs' ]]; then
   echo 'LEO540_RESTORE status=FAIL stage=preflight reason=plaintext_workspace_not_tmpfs'
+  exit 1
+fi
+if ! docker image inspect "$postgres_image" >/dev/null 2>"$tmp_dir/docker-image.error"; then
+  echo 'LEO540_RESTORE status=FAIL stage=preflight reason=postgres_image_not_cached'
   exit 1
 fi
 
@@ -84,8 +122,8 @@ fi
 rm -f "$tmp_dir/age-identity"
 
 stage='container_start'
-docker pull "$postgres_image" >/dev/null 2>"$tmp_dir/docker-pull.error"
 docker run --rm --detach --name "$container_name" \
+  --pull=never \
   --network none \
   --read-only \
   --pids-limit 256 \
