@@ -276,6 +276,20 @@ describe('Supabase runtime migration adoption integration', () => {
 
         await client.query('begin')
         await client.query(`
+          alter policy v1_products_staff_select on dpg_v1.products
+          using (
+            (status = 'PUBLISHED'::dpg_v1.record_status
+              or dpg_v1.staff_has_capability('catalogue.read'::dpg_v1.staff_capability))
+            and status = 'PUBLISHED'::dpg_v1.record_status
+          )
+        `)
+        await expect(client.query(runtimeReadonlyAcceptanceInTransaction))
+          .rejects.toThrow('SUPABASE_RUNTIME_READONLY_RLS_POLICY_MIXED_BOOLEAN_OPERATOR_FAMILY_FAILED')
+        await client.query('rollback')
+        await client.query(runtimeReadonlyAcceptance)
+
+        await client.query('begin')
+        await client.query(`
           create policy codex_unexpected_product_policy on dpg_v1.products
           for select to authenticated using (true)
         `)

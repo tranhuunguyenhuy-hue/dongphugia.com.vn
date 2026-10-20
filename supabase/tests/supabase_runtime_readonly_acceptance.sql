@@ -157,8 +157,8 @@ begin
   end if;
 
   -- These audited predicates each use one boolean operator family (AND or OR).
-  -- Keep literal tokens byte-exact below; if a predicate mixes AND and OR,
-  -- replace parenthesis normalization with structural expression comparison.
+  -- Mixed AND/OR predicates fail closed before parenthesis normalization;
+  -- structural comparison is required before such a predicate can be allowed.
   with expected_raw(policy_name, policy_command, policy_permissive, policy_roles, policy_qual, policy_check, policy_qual_literals, policy_check_literals) as (values
     ('v1_products_public_select', 'r', true, array['anon']::text[], 'status = ''PUBLISHED''::dpg_v1.record_status', '', array[quote_literal('PUBLISHED')]::text[], array[]::text[]),
     ('v1_products_staff_select', 'r', true, array['authenticated']::text[], 'status = ''PUBLISHED''::dpg_v1.record_status OR dpg_v1.staff_has_capability(''catalogue.read''::dpg_v1.staff_capability)', '', array[quote_literal('PUBLISHED'), quote_literal('catalogue.read')]::text[], array[]::text[]),
@@ -172,6 +172,10 @@ begin
            policy_roles,
            regexp_replace(coalesce(policy_qual, ''), '[[:space:]()]', '', 'g') as policy_qual,
            regexp_replace(coalesce(policy_check, ''), '[[:space:]()]', '', 'g') as policy_check,
+           regexp_replace(coalesce(policy_qual, ''), $$'(?:[^']|'')*'$$, ' ', 'g') ~* $$\mAND\M$$ as policy_qual_has_and,
+           regexp_replace(coalesce(policy_qual, ''), $$'(?:[^']|'')*'$$, ' ', 'g') ~* $$\mOR\M$$ as policy_qual_has_or,
+           regexp_replace(coalesce(policy_check, ''), $$'(?:[^']|'')*'$$, ' ', 'g') ~* $$\mAND\M$$ as policy_check_has_and,
+           regexp_replace(coalesce(policy_check, ''), $$'(?:[^']|'')*'$$, ' ', 'g') ~* $$\mOR\M$$ as policy_check_has_or,
            policy_qual_literals,
            policy_check_literals
     from expected_raw
@@ -193,6 +197,10 @@ begin
            ) as policy_roles,
            regexp_replace(coalesce(p.qual, ''), '[[:space:]()]', '', 'g') as policy_qual,
            regexp_replace(coalesce(p.with_check, ''), '[[:space:]()]', '', 'g') as policy_check,
+           regexp_replace(coalesce(p.qual, ''), $$'(?:[^']|'')*'$$, ' ', 'g') ~* $$\mAND\M$$ as policy_qual_has_and,
+           regexp_replace(coalesce(p.qual, ''), $$'(?:[^']|'')*'$$, ' ', 'g') ~* $$\mOR\M$$ as policy_qual_has_or,
+           regexp_replace(coalesce(p.with_check, ''), $$'(?:[^']|'')*'$$, ' ', 'g') ~* $$\mAND\M$$ as policy_check_has_and,
+           regexp_replace(coalesce(p.with_check, ''), $$'(?:[^']|'')*'$$, ' ', 'g') ~* $$\mOR\M$$ as policy_check_has_or,
            array(
              select token[1]
              from regexp_matches(coalesce(p.qual, ''), $$'(?:[^']|'')*'$$, 'g')
@@ -221,6 +229,12 @@ begin
              case when e.policy_command is distinct from a.policy_command then 'command'::text end,
              case when e.policy_permissive is distinct from a.policy_permissive then 'permissive'::text end,
              case when e.policy_roles is distinct from a.policy_roles then 'roles'::text end,
+             case when (coalesce(e.policy_qual_has_and, false) and coalesce(e.policy_qual_has_or, false))
+                       or (coalesce(a.policy_qual_has_and, false) and coalesce(a.policy_qual_has_or, false))
+                  then 'qual_mixed_boolean_operator_family'::text end,
+             case when (coalesce(e.policy_check_has_and, false) and coalesce(e.policy_check_has_or, false))
+                       or (coalesce(a.policy_check_has_and, false) and coalesce(a.policy_check_has_or, false))
+                  then 'with_check_mixed_boolean_operator_family'::text end,
              case when e.policy_qual is distinct from a.policy_qual then 'qual'::text end,
              case when e.policy_check is distinct from a.policy_check then 'with_check'::text end,
              case when e.policy_qual_literals is distinct from a.policy_qual_literals then 'qual_literals'::text end,
@@ -230,6 +244,15 @@ begin
     full join actual a using (policy_name)
   ) drift;
   api_product_policy_drift := cardinality(api_product_policy_drift_details) > 0;
+  if exists (
+    select 1
+    from unnest(api_product_policy_drift_details) as drift(detail)
+    where detail like '%:qual_mixed_boolean_operator_family'
+       or detail like '%:with_check_mixed_boolean_operator_family'
+  ) then
+    raise exception 'SUPABASE_RUNTIME_READONLY_RLS_POLICY_MIXED_BOOLEAN_OPERATOR_FAMILY_FAILED:%',
+      array_to_string(api_product_policy_drift_details, ',');
+  end if;
   if api_product_policy_drift then
     raise exception 'SUPABASE_RUNTIME_READONLY_RLS_POLICY_SET_FAILED:%',
       array_to_string(api_product_policy_drift_details, ',');
