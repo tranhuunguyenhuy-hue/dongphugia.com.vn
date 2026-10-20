@@ -107,7 +107,63 @@ function validDataEntry(entry) {
 }
 
 export function catalogueTableArguments() {
-  return CATALOGUE_RESTORE_ORDER.flatMap((table) => ['--table', `dpg_app.${table}`])
+  return CATALOGUE_RESTORE_ORDER.flatMap((table) => ['--table', table])
+}
+
+export function buildRehearsalTargetCheckSql() {
+  const allowed = CATALOGUE_TABLES.map((table) => `'${table}'`).join(', ')
+  return `do $catalogue_rehearsal_target$
+declare
+  item record;
+  has_rows boolean;
+begin
+  for item in
+    select n.nspname as schema_name, c.relname as object_name, c.relkind as object_kind
+    from pg_class c
+    join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname <> 'information_schema'
+      and n.nspname !~ '^pg_'
+      and c.relkind in ('r', 'p', 'm', 'f')
+      and not (n.nspname = 'dpg_app' and c.relname = any(array[${allowed}]::text[]))
+    order by n.nspname, c.relname
+  loop
+    execute format('select exists(select 1 from %I.%I limit 1)', item.schema_name, item.object_name)
+      into has_rows;
+    if has_rows then
+      raise exception 'CATALOGUE_REHEARSAL_EXCLUDED_ROWS table=%.%', item.schema_name, item.object_name;
+    end if;
+  end loop;
+
+  if exists(select 1 from pg_largeobject_metadata) then
+    raise exception 'CATALOGUE_REHEARSAL_LARGE_OBJECTS_PRESENT';
+  end if;
+
+  for item in
+    select n.nspname as schema_name, c.relname as object_name, s.seqstart as start_value
+    from pg_class c
+    join pg_namespace n on n.oid = c.relnamespace
+    join pg_sequence s on s.seqrelid = c.oid
+    where n.nspname <> 'information_schema'
+      and n.nspname !~ '^pg_'
+      and c.relkind = 'S'
+      and not exists (
+        select 1 from pg_depend d
+        join pg_class owner_table on owner_table.oid = d.refobjid
+        join pg_namespace owner_schema on owner_schema.oid = owner_table.relnamespace
+        where d.objid = c.oid and d.deptype in ('a', 'i')
+          and owner_schema.nspname = 'dpg_app'
+          and owner_table.relname = any(array[${allowed}]::text[])
+      )
+    order by n.nspname, c.relname
+  loop
+    execute format('select is_called or last_value <> $1 from %I.%I', item.schema_name, item.object_name)
+      into has_rows using item.start_value;
+    if has_rows then
+      raise exception 'CATALOGUE_REHEARSAL_EXCLUDED_SEQUENCE sequence=%.%', item.schema_name, item.object_name;
+    end if;
+  end loop;
+end
+$catalogue_rehearsal_target$;\n`
 }
 
 function tableHashSelect(table) {
@@ -337,6 +393,10 @@ async function main() {
   }
   if (mode === 'snapshot-sql') {
     process.stdout.write(buildCatalogueSnapshotSql())
+    return
+  }
+  if (mode === 'rehearsal-target-check-sql') {
+    process.stdout.write(buildRehearsalTargetCheckSql())
     return
   }
   if (mode === 'sequence-sql') {

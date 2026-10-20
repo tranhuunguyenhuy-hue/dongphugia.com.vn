@@ -13,6 +13,7 @@ if [[ "$MODE" != 'rehearsal' && "$MODE" != 'preflight' && "$MODE" != 'apply' ]];
   echo 'CATALOGUE_REHOME status=FAIL reason=mode must be rehearsal, preflight, or apply'
   exit 1
 fi
+umask 077
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 contract="$repo_root/scripts/backup/catalogue-restore-contract.mjs"
@@ -20,8 +21,6 @@ target_contract="$repo_root/scripts/backup/supabase-runtime-target.mjs"
 psql_wrapper="$repo_root/scripts/backup/supabase-runtime-psql.mjs"
 preflight_sql="$repo_root/scripts/backup/catalogue-rehome-preflight.sql"
 postgres_image="${POSTGRES_IMAGE:-postgres:17.6-bookworm@sha256:45cd22f8d32e189d245403954882f88e7a8714301fda80dab6da90f1265b25a3}"
-output_dir="${OUTPUT_DIR:-$RUNNER_TEMP/catalogue-rehome-evidence}"
-mkdir -p "$output_dir"
 
 tmp_parent='/dev/shm'
 if ! command -v findmnt >/dev/null 2>&1 \
@@ -48,6 +47,85 @@ for command in age docker findmnt jq node sha256sum; do
     exit 1
   }
 done
+
+if [[ "$MODE" == 'rehearsal' ]]; then
+  # Rehearsal handles the full source dump. Reject remote daemons and image pulls
+  # before decryption, and keep all generated evidence inside the guest tmpfs.
+  # shellcheck source=scripts/backup/postgres-image-pin.sh
+  source "$repo_root/scripts/backup/postgres-image-pin.sh"
+  if ! postgres_image="$(dpg_resolve_postgres_image)"; then
+    echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=postgres_image_reference_invalid'
+    exit 1
+  fi
+  if [[ -n "${SUPABASE_REHOME_DATABASE_URL:-}" ]]; then
+    echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=remote_target_present'
+    exit 1
+  fi
+  if ! command -v ip >/dev/null 2>&1 ||
+     ! route4="$(ip -4 route show default 2>/dev/null)" ||
+     ! route6="$(ip -6 route show default 2>/dev/null)" ||
+     [[ -n "$route4$route6" ]]; then
+    echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=guest_network_not_isolated'
+    exit 1
+  fi
+  for interface in /sys/class/net/*; do
+    case "${interface##*/}" in
+      lo|docker0) ;;
+      *) echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=guest_network_not_isolated'; exit 1 ;;
+    esac
+  done
+  if [[ -n "${DOCKER_HOST:-}" && "$DOCKER_HOST" != unix://* ]]; then
+    echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=docker_remote_daemon_disallowed'
+    exit 1
+  fi
+  docker_context="${DOCKER_CONTEXT:-}"
+  if [[ -z "$docker_context" && -z "${DOCKER_HOST:-}" ]]; then
+    docker_context="$(docker context show 2>/dev/null)" || {
+      echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=docker_context_unavailable'
+      exit 1
+    }
+  fi
+  if [[ -n "$docker_context" ]]; then
+    docker_endpoint="$(docker context inspect --format '{{(index .Endpoints "docker").Host}}' "$docker_context" 2>/dev/null)" || {
+      echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=docker_context_unavailable'
+      exit 1
+    }
+  else
+    docker_endpoint="$DOCKER_HOST"
+  fi
+  if [[ "$docker_endpoint" != unix://* ]]; then
+    echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=docker_remote_daemon_disallowed'
+    exit 1
+  fi
+  if ! image_platform="$(docker image inspect --format '{{.Os}}/{{.Architecture}}' "$postgres_image" 2>/dev/null)"; then
+    echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=postgres_image_not_cached'
+    exit 1
+  fi
+  case "$(uname -m)" in
+    aarch64|arm64) expected_platform='linux/arm64' ;;
+    *) echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=unsupported_host_arch'; exit 1 ;;
+  esac
+  if [[ "$image_platform" != "$expected_platform" ]]; then
+    echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=postgres_image_platform_mismatch'
+    exit 1
+  fi
+  output_dir="${OUTPUT_DIR:-$tmp_dir/evidence}"
+  if ! command -v realpath >/dev/null 2>&1 ||
+     [[ "$output_dir" != /dev/shm/* || "$(realpath -m -- "$output_dir")" != /dev/shm/* ]]; then
+    echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=evidence_workspace_not_tmpfs'
+    exit 1
+  fi
+  mkdir -p "$output_dir"
+  if [[ -L "$output_dir" ||
+        "$(findmnt --noheadings --output FSTYPE --target "$output_dir" | xargs)" != 'tmpfs' ]]; then
+    echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=evidence_workspace_not_tmpfs'
+    exit 1
+  fi
+  chmod 700 "$output_dir"
+else
+  output_dir="${OUTPUT_DIR:-${RUNNER_TEMP:?RUNNER_TEMP is required}/catalogue-rehome-evidence}"
+  mkdir -p "$output_dir"
+fi
 
 shopt -s nullglob
 archives=("$BACKUP_DIR"/*.dump.age)
@@ -101,8 +179,17 @@ if [[ "$MODE" == 'preflight' ]]; then
   exit 0
 fi
 
-: "${AGE_IDENTITY:?AGE_IDENTITY is required}"
-printf '%s\n' "$AGE_IDENTITY" >"$tmp_dir/age-identity"
+if [[ -n "${AGE_IDENTITY_FILE:-}" ]]; then
+  if [[ -n "${AGE_IDENTITY:-}" || ! -f "$AGE_IDENTITY_FILE" || -L "$AGE_IDENTITY_FILE" ||
+        "$(findmnt --noheadings --output FSTYPE --target "$AGE_IDENTITY_FILE" | xargs)" != 'tmpfs' ]]; then
+    echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=age_identity_file_invalid'
+    exit 1
+  fi
+  cat -- "$AGE_IDENTITY_FILE" >"$tmp_dir/age-identity"
+else
+  : "${AGE_IDENTITY:?AGE_IDENTITY or AGE_IDENTITY_FILE is required}"
+  printf '%s\n' "$AGE_IDENTITY" >"$tmp_dir/age-identity"
+fi
 chmod 600 "$tmp_dir/age-identity"
 plain_dump="$tmp_dir/runtime.dump"
 if ! age --decrypt --identity "$tmp_dir/age-identity" --output "$plain_dump" "$archive" \
@@ -116,7 +203,7 @@ mapfile -t restore_table_args < <(node "$contract" table-args)
 test "${#restore_table_args[@]}" -gt 0
 
 if [[ "$MODE" == 'rehearsal' ]]; then
-  docker run --rm --detach --name "$container_name" \
+  docker run --rm --detach --name "$container_name" --pull=never --log-driver=none \
     --network none --read-only --pids-limit 256 --memory 1536m \
     --tmpfs /var/lib/postgresql/data:rw,nosuid,nodev,noexec,size=1g \
     --tmpfs /tmp:rw,nosuid,nodev,noexec,size=128m \
@@ -124,6 +211,9 @@ if [[ "$MODE" == 'rehearsal' ]]; then
     --env POSTGRES_HOST_AUTH_METHOD=trust "$postgres_image" >/dev/null
   container_started='true'
   test "$(docker inspect --format '{{.HostConfig.NetworkMode}}' "$container_name")" = 'none'
+  test "$(docker inspect --format '{{.HostConfig.LogConfig.Type}}' "$container_name")" = 'none'
+  test "$(docker inspect --format '{{len .Mounts}}' "$container_name")" = '0'
+  test "$(docker inspect --format '{{len .HostConfig.Tmpfs}}' "$container_name")" -ge 3
   ready='false'
   for _ in {1..45}; do
     if docker exec "$container_name" pg_isready -U postgres >/dev/null 2>&1; then ready='true'; break; fi
@@ -164,11 +254,17 @@ SQL
   for table_arg in "${restore_table_args[@]}"; do
     if ! docker exec -i "$container_name" \
       pg_restore --data-only --no-owner --no-privileges --exit-on-error \
+        --schema=dpg_app --strict-names \
         "$table_arg" -U postgres -d target <"$plain_dump" \
         >/dev/null 2>"$tmp_dir/sensitive.error"; then
       sensitive_failure rehearsal_catalogue_restore
     fi
   done
+  if ! node "$contract" rehearsal-target-check-sql | docker exec -i "$container_name" \
+    psql -U postgres -d target -X -q -v ON_ERROR_STOP=1 \
+      >/dev/null 2>"$tmp_dir/sensitive.error"; then
+    sensitive_failure rehearsal_target_exclusions
+  fi
   if ! node "$contract" snapshot-sql | docker exec -i "$container_name" \
     psql -U postgres -d target -X -q -A -t -v ON_ERROR_STOP=1 \
       >"$tmp_dir/catalogue-actual.json" 2>"$tmp_dir/sensitive.error"; then
@@ -202,6 +298,7 @@ for table_arg in "${restore_table_args[@]}"; do
   if ! docker run --rm --network none --read-only \
     --volume "$tmp_dir:/work:rw" "$postgres_image" \
     pg_restore --data-only --no-owner --no-privileges --exit-on-error \
+      --schema=dpg_app --strict-names \
       "$table_arg" --file - /work/runtime.dump >>"$restore_sql" \
       2>"$tmp_dir/sensitive.error"; then
     sensitive_failure generate_catalogue_restore
