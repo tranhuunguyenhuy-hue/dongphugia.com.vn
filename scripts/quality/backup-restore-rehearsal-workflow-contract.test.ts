@@ -1,6 +1,7 @@
 import { spawnSync } from 'node:child_process'
-import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { chmodSync, existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join, resolve } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
@@ -26,6 +27,55 @@ function runPostgresImageResolver(postgresImage?: string) {
         ['-c', 'source "$1" && dpg_resolve_postgres_image', 'postgres-image-pin-test', postgresImagePinPath],
         { encoding: 'utf8', env },
     )
+}
+
+function runRestorePreflight(envOverrides: Record<string, string>) {
+    const testDirectory = mkdtempSync(join(tmpdir(), 'restore-preflight-test-'))
+    const binDirectory = join(testDirectory, 'bin')
+    const backupDirectory = join(testDirectory, 'empty-backup')
+    const dockerPath = join(binDirectory, 'docker')
+    const dockerLogPath = join(testDirectory, 'docker.log')
+    mkdirSync(binDirectory)
+    mkdirSync(backupDirectory)
+    writeFileSync(
+        dockerPath,
+        [
+            '#!/usr/bin/env bash',
+            'set -euo pipefail',
+            'printf "%s\\n" "$*" >> "$DOCKER_TEST_LOG"',
+            'if [[ "$1" == context && "$2" == show ]]; then printf "default\\n"; exit 0; fi',
+            'if [[ "$1" == context && "$2" == inspect ]]; then printf "%s\\n" "$DOCKER_TEST_ENDPOINT"; exit 0; fi',
+            'exit 1',
+        ].join('\n'),
+    )
+    chmodSync(dockerPath, 0o755)
+
+    const env = {
+        ...process.env,
+        PATH: binDirectory + ':' + (process.env.PATH ?? ''),
+        BACKUP_DIR: backupDirectory,
+        AGE_IDENTITY: 'test-only-placeholder',
+        DOCKER_TEST_ENDPOINT: 'ssh://remote.invalid',
+        DOCKER_TEST_LOG: dockerLogPath,
+    }
+    delete env.POSTGRES_IMAGE
+    delete env.DOCKER_HOST
+    delete env.DOCKER_CONTEXT
+    Object.assign(env, envOverrides)
+
+    try {
+        const result = spawnSync(
+            'bash',
+            [resolve(process.cwd(), 'scripts/backup/rehearse-isolated-restore.sh')],
+            { encoding: 'utf8', env },
+        )
+        return {
+            ...result,
+            dockerCalls: existsSync(dockerLogPath) ? readFileSync(dockerLogPath, 'utf8') : '',
+        }
+    } finally {
+        rmSync(testDirectory, { recursive: true, force: true })
+    }
 }
 
 describe('backup restore rehearsal workflow contract', () => {
@@ -131,8 +181,28 @@ describe('backup restore rehearsal workflow contract', () => {
         )
         expect(restoreScript).toContain('docker image inspect "$postgres_image"')
         expect(restoreScript).toContain('reason=postgres_image_not_cached')
+        expect(restoreScript).toContain('reason=docker_remote_daemon_disallowed')
+        expect(restoreScript.indexOf('docker_remote_daemon_disallowed')).toBeLessThan(
+            restoreScript.indexOf('docker image inspect'),
+        )
         expect(restoreScript).toContain('--pull=never')
         expect(restoreScript).not.toContain('docker pull "$postgres_image"')
+    })
+
+    it.each([
+        ['DOCKER_HOST', { DOCKER_HOST: 'tcp://remote.invalid:2375' }],
+        ['DOCKER_CONTEXT', { DOCKER_CONTEXT: 'remote' }],
+        ['conflicting DOCKER_HOST and DOCKER_CONTEXT', {
+            DOCKER_HOST: 'tcp://remote.invalid:2375',
+            DOCKER_CONTEXT: 'local',
+        }],
+    ])('rejects remote daemons selected through %s before image or backup access', (_label, overrides) => {
+        const result = runRestorePreflight(overrides)
+
+        expect(result.status).not.toBe(0)
+        expect(result.stdout ?? '').toContain('reason=docker_remote_daemon_disallowed')
+        expect(result.stdout ?? '').not.toContain('stage=decryption')
+        expect(result.dockerCalls).not.toContain('image inspect')
     })
 
     it('uses the approved digest when POSTGRES_IMAGE is unset or exactly matches', () => {
