@@ -34,6 +34,39 @@ policy. It refuses an inexact target, role drift, or pre-existing direct
 privileges/policies on these tables; no other table or role gains access.
 Creating `dpg_backup_login` or any credential is outside these migrations.
 
+## Migration transaction and size boundary
+
+The runner verifies the target's exact 367001600-byte hard ceiling and measures
+`pg_database_size(current_database())` before checkpoint-ledger adoption, before
+each pending migration, after that migration and its ledger row inside the same
+serializable transaction, and after the sequence. The measured size must remain
+strictly below 350 MiB; equality is a hard stop. A size or contract failure
+rolls back the active migration transaction and does not start the next one.
+
+Checkpoint entries 1–7 are adopted together only after the full checkpoint
+attestation. Pending entries 8–23 each commit in their own serializable
+transaction. If entry N fails, only N rolls back: the exact committed prefix
+and its ledger checksums remain. The runner does not automatically reset the
+database, edit the ledger, or run down-migrations.
+
+On a failed migration, stop the workflow and preserve its run ID, exact source
+commit, failed filename, and sanitized failure reason. Before any retry, the
+runner fails closed unless the ledger contains all seven adopted checkpoint
+entries followed by an ordered contiguous prefix; gaps fail with
+`migration_ledger_non_prefix`, and a shorter existing ledger fails with
+`migration_checkpoint_incomplete`, before pending migration DDL. An
+Owner-authorized read-only inspection must also verify each filename, version,
+and SHA-256 against the manifest at that exact commit, then recheck target
+identity, PostgreSQL 17, Free-plan/database headroom, forced RLS/grants, and
+empty Auth/Storage and catalogue invariants. A non-prefix, short checkpoint,
+checksum/schema mismatch, or unavailable gate is NOT_READY and requires a
+reviewed repair plan. Never hand-edit the ledger, reset/drop the target, or
+retry blindly. Resuming the same exact source is a separate Owner decision
+naming the target, source commit, observed prefix, and failed migration; the
+runner then skips the verified prefix and applies only missing files. This
+procedure does not authorize catalogue import, backup replay/decryption,
+Preview publication, Production, DNS, or traffic.
+
 The remote restore preflight requires the complete current V1 schema, exact
 target contract, PostgreSQL 17, the four restricted capability roles, empty
 Auth and Storage, an empty restore manifest, and enough room under the 350 MiB

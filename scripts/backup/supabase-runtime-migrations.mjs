@@ -7,6 +7,7 @@ import pg from 'pg'
 import { parseSupabaseRuntimeTarget } from './supabase-runtime-target.mjs'
 
 const { Client } = pg
+const DATABASE_SIZE_HARD_CEILING_BYTES = 367001600n
 
 export const ADOPTED_CHECKPOINT_MIGRATIONS = [
   '20260827204635_leo539_security_boundary.sql',
@@ -44,6 +45,46 @@ function fail(reason) {
   throw new Error(reason)
 }
 
+export function validateDatabaseSize(currentSizeBytes, hardCeilingBytes) {
+  if (currentSizeBytes === null || currentSizeBytes === undefined
+    || hardCeilingBytes === null || hardCeilingBytes === undefined) {
+    fail('database_size_unavailable')
+  }
+  if (!/^(0|[1-9]\d*)$/.test(String(currentSizeBytes))
+    || !/^(0|[1-9]\d*)$/.test(String(hardCeilingBytes))) {
+    fail('database_size_unavailable')
+  }
+
+  let currentSize
+  let hardCeiling
+  try {
+    currentSize = BigInt(currentSizeBytes)
+    hardCeiling = BigInt(hardCeilingBytes)
+  } catch {
+    fail('database_size_unavailable')
+  }
+
+  if (currentSize < 0n) fail('database_size_unavailable')
+  if (hardCeiling !== DATABASE_SIZE_HARD_CEILING_BYTES) {
+    fail('database_size_contract_mismatch')
+  }
+  if (currentSize >= hardCeiling) fail('database_size_hard_limit_reached')
+  return currentSize
+}
+
+export async function assertDatabaseSizeWithinContract(client) {
+  const result = await client.query(`
+    select
+      pg_database_size(current_database())::text as current_size_bytes,
+      (select hard_database_ceiling_bytes::text
+       from dpg_control.target_contract
+       where singleton) as hard_ceiling_bytes
+  `)
+  const row = result.rows[0]
+  if (!row) fail('database_size_unavailable')
+  return validateDatabaseSize(row.current_size_bytes, row.hard_ceiling_bytes)
+}
+
 function digest(bytes) {
   return createHash('sha256').update(bytes).digest('hex')
 }
@@ -63,6 +104,130 @@ export function stripOuterTransaction(sql) {
   }
   lines[controls[0].index] = ''
   lines[controls[1].index] = ''
+  return lines.join('\n')
+}
+
+function hasEmbeddedTransactionControl(sql) {
+  const executable = []
+  let index = 0
+
+  const mask = (start, end) => executable.push(sql.slice(start, end).replace(/[^\r\n]/g, ' '))
+  const previousCodePoint = (end) => {
+    if (end <= 0) return ''
+    let start = end - 1
+    const lastCodeUnit = sql.charCodeAt(start)
+    if (lastCodeUnit >= 0xdc00 && lastCodeUnit <= 0xdfff && start > 0) {
+      const previousCodeUnit = sql.charCodeAt(start - 1)
+      if (previousCodeUnit >= 0xd800 && previousCodeUnit <= 0xdbff) start -= 1
+    }
+    return sql.slice(start, end)
+  }
+
+  while (index < sql.length) {
+    if (sql.startsWith('--', index)) {
+      let end = index + 2
+      while (end < sql.length && sql[end] !== '\n' && sql[end] !== '\r') end += 1
+      mask(index, end)
+      index = end
+      continue
+    }
+
+    if (sql.startsWith('/*', index)) {
+      let end = index + 2
+      let depth = 1
+      while (end < sql.length && depth > 0) {
+        if (sql.startsWith('/*', end)) {
+          depth += 1
+          end += 2
+        } else if (sql.startsWith('*/', end)) {
+          depth -= 1
+          end += 2
+        } else {
+          end += 1
+        }
+      }
+      if (depth !== 0) return true
+      mask(index, end)
+      index = end
+      continue
+    }
+
+    const previousCharacter = previousCodePoint(index)
+    const dollarTag = sql[index] === '$'
+      && !/[_$\p{ID_Continue}]/u.test(previousCharacter)
+      ? /^\$(?:[_\p{ID_Start}][\p{ID_Continue}]*)?\$/u.exec(sql.slice(index))?.[0]
+      : undefined
+    if (dollarTag) {
+      const closing = sql.indexOf(dollarTag, index + dollarTag.length)
+      if (closing === -1) return true
+      const end = closing + dollarTag.length
+      mask(index, end)
+      index = end
+      continue
+    }
+
+    if (sql[index] === "'" || sql[index] === '"') {
+      const quote = sql[index]
+      const prefixIndex = index - previousCharacter.length
+      const beforePrefix = previousCodePoint(prefixIndex)
+      const escapeString = quote === "'"
+        && /^[eE]$/.test(previousCharacter)
+        && !/[_$\p{ID_Continue}]/u.test(beforePrefix)
+      let end = index + 1
+      let closed = false
+      while (end < sql.length) {
+        if (quote === "'" && escapeString && sql[end] === '\\') {
+          end += 2
+        } else if (sql[end] === quote && sql[end + 1] === quote) {
+          end += 2
+        } else if (sql[end] === quote) {
+          end += 1
+          closed = true
+          break
+        } else {
+          end += 1
+        }
+      }
+      if (!closed) return true
+      mask(index, end)
+      index = end
+      continue
+    }
+
+    executable.push(sql[index])
+    index += 1
+  }
+
+  return /\b(?:begin\b|start\s+transaction\b|commit\b|rollback\b|abort\b|savepoint\b|release\b|prepare\s+transaction\b|set\s+transaction\b)|(?:^|;)\s*end\b/i
+    .test(executable.join(''))
+}
+
+export function stripReadOnlyOuterTransaction(sql) {
+  const lines = sql.split(/\r?\n/)
+  const controls = lines
+    .map((line, index) => ({ index, value: line.trim().toLowerCase() }))
+    .filter(({ value }) => [
+      'begin transaction isolation level repeatable read read only;',
+      'commit;',
+      'rollback;',
+      'start transaction;',
+    ].includes(value))
+
+  if (controls.length !== 2
+    || controls[0].value !== 'begin transaction isolation level repeatable read read only;'
+    || controls[1].value !== 'rollback;'
+    || lines.slice(0, controls[0].index).some((line) => line.trim() !== '')
+    || lines.slice(controls[1].index + 1).some((line) => line.trim() !== '')) {
+    fail('readonly_acceptance_transaction_contract_changed')
+  }
+
+  lines[controls[0].index] = ''
+  lines[controls[1].index] = ''
+
+  if (hasEmbeddedTransactionControl(lines.join('\n'))) {
+    fail('readonly_acceptance_transaction_contract_changed')
+  }
+
   return lines.join('\n')
 }
 
@@ -126,6 +291,7 @@ async function ledgerExists(client) {
 
 async function createLedgerAndAdoptCheckpoint(client, migrations) {
   await attestTargetAndCheckpoint(client)
+  await assertDatabaseSizeWithinContract(client)
   await client.query('begin isolation level serializable')
   try {
     await client.query(`
@@ -153,6 +319,7 @@ async function createLedgerAndAdoptCheckpoint(client, migrations) {
         [migration.filename.slice(0, 14), migration.filename, migration.sha256],
       )
     }
+    await assertDatabaseSizeWithinContract(client)
     await client.query('commit')
   } catch (error) {
     await client.query('rollback').catch(() => undefined)
@@ -176,6 +343,17 @@ function validateLedger(rows, migrations, requireComplete) {
     || row.version !== row.filename.slice(0, 14))) {
     fail('migration_ledger_drift')
   }
+  if (rows.some((row, index) => row.filename !== migrations[index]?.filename)) {
+    fail('migration_ledger_non_prefix')
+  }
+  if (rows.length < ADOPTED_CHECKPOINT_MIGRATIONS.length) {
+    fail('migration_checkpoint_incomplete')
+  }
+  if (rows.some((row, index) => row.application_source !== (
+    index < ADOPTED_CHECKPOINT_MIGRATIONS.length ? 'checkpoint-adopted' : 'runner-applied'
+  ))) {
+    fail('migration_ledger_source_drift')
+  }
   if (requireComplete && rows.length !== migrations.length) fail('migration_state_incomplete')
 }
 
@@ -183,6 +361,7 @@ async function applyPendingMigrations(client, migrations) {
   const applied = new Set((await readLedger(client)).map((row) => row.filename))
   for (const migration of migrations) {
     if (applied.has(migration.filename)) continue
+    await assertDatabaseSizeWithinContract(client)
     await client.query('begin isolation level serializable')
     try {
       await client.query(stripOuterTransaction(migration.sql))
@@ -192,6 +371,7 @@ async function applyPendingMigrations(client, migrations) {
          values ($1, $2, $3, 'runner-applied')`,
         [migration.filename.slice(0, 14), migration.filename, migration.sha256],
       )
+      await assertDatabaseSizeWithinContract(client)
       await client.query('commit')
     } catch (error) {
       await client.query('rollback').catch(() => undefined)
@@ -238,6 +418,7 @@ export async function executeRuntimeMigrations(client, mode, checkpointAttestor)
   await client.query("select pg_advisory_lock(hashtext('dongphugia:supabase-runtime-migrations:v1'))")
 
   try {
+    if (mode === 'apply') await assertDatabaseSizeWithinContract(client)
     if (!(await ledgerExists(client))) {
       if (mode !== 'apply') fail('migration_state_incomplete')
       if (!checkpointAttestor) fail('checkpoint_attestation_required')
@@ -247,6 +428,7 @@ export async function executeRuntimeMigrations(client, mode, checkpointAttestor)
 
     validateLedger(await readLedger(client), migrations, false)
     if (mode === 'apply') await applyPendingMigrations(client, migrations)
+    await assertDatabaseSizeWithinContract(client)
     validateLedger(await readLedger(client), migrations, true)
     await validateFinalSchema(client)
     return migrations.length
