@@ -23,25 +23,85 @@ function docker(...args) {
   return execFileSync('docker', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim()
 }
 
+function postgresReadiness(container, host) {
+  return spawnSync('docker', [
+    'exec', container, 'pg_isready', '-q', '-t', '1', '-h', host, '-U', 'postgres',
+  ], { encoding: 'utf8', stdio: ['ignore', 'ignore', 'ignore'], timeout: 1_500 })
+}
+
+function postgresContainerState(container) {
+  const result = spawnSync('docker', [
+    'inspect', '--format', '{{.State.Status}}|{{.State.Running}}|{{.State.OOMKilled}}|{{.State.ExitCode}}', container,
+  ], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 1_500 })
+  if (result.status !== 0) return 'unavailable'
+
+  const [status, running, oomKilled, exitCode] = result.stdout.trim().split('|')
+  if (!['created', 'running', 'restarting', 'paused', 'exited', 'dead'].includes(status)
+    || !['true', 'false'].includes(running)
+    || !['true', 'false'].includes(oomKilled)
+    || !/^\d+$/.test(exitCode ?? '')) return 'unavailable'
+
+  return `state=${status},alive=${running},oom=${oomKilled},exit=${exitCode}`
+}
+
+function postgresClientState(client) {
+  if (!client) return 'not_created'
+  return `connected=${Boolean(client._connected)},ending=${Boolean(client._ending)},ended=${Boolean(client._ended)},queryable=${Boolean(client._queryable)}`
+}
+
+function postgresFailureKind(error) {
+  if (error?.message === 'Connection terminated unexpectedly') return 'connection_terminated_unexpectedly'
+  if (error?.name === 'AssertionError') return 'assertion_failed'
+  if (error?.code === 'ECONNREFUSED') return 'connection_refused'
+  if (error?.code === 'ECONNRESET') return 'connection_reset'
+  if (error?.code === 'ETIMEDOUT') return 'connection_timed_out'
+  if (error?.code === '57P03') return 'server_startup_rejected'
+  return 'other'
+}
+
 describe('Supabase runtime migration adoption integration', () => {
   it.runIf(dockerIntegration)(
     'attests the checkpoint, commits pending migrations separately, and revalidates status',
     async () => {
       const container = `dpg-runtime-migrations-${process.pid}-${Date.now()}`
-      docker('run', '--detach', '--name', container, '--publish', '127.0.0.1::5432',
-        '--env', 'POSTGRES_HOST_AUTH_METHOD=trust', postgresImage)
-
       let client
+      let phase = 'start_isolated_postgres'
       try {
-        for (let attempt = 0; attempt < 45; attempt += 1) {
-          const ready = spawnSync('docker', ['exec', container, 'pg_isready', '-U', 'postgres'])
-          if (ready.status === 0) break
-          await new Promise((resolve) => setTimeout(resolve, 500))
+        const startupDelayFixture = `${process.cwd()}/scripts/backup/fixtures/runtime-migration-startup-delay.sql`
+        docker('run', '--detach', '--name', container, '--publish', '127.0.0.1::5432',
+          '--mount', `type=bind,source=${startupDelayFixture},target=/docker-entrypoint-initdb.d/000-startup-delay.sql,readonly`,
+          '--env', 'POSTGRES_HOST_AUTH_METHOD=trust', postgresImage)
+
+        const readinessDeadline = Date.now() + 22_500
+        phase = 'observe_socket_only_initialization_server'
+        let socketReadyDuringInitialization = false
+        while (!socketReadyDuringInitialization && Date.now() < readinessDeadline) {
+          socketReadyDuringInitialization = postgresReadiness(container, '/var/run/postgresql').status === 0
+          if (!socketReadyDuringInitialization) await new Promise((resolve) => setTimeout(resolve, 250))
         }
+        expect(socketReadyDuringInitialization).toBe(true)
+
+        phase = 'prove_initialization_server_is_not_tcp_ready'
+        const tcpDuringInitialization = postgresReadiness(container, '127.0.0.1')
+        expect(tcpDuringInitialization.error).toBeUndefined()
+        expect(tcpDuringInitialization.status).toBe(2)
+        process.stdout.write('PG17_MIGRATION_STARTUP_PROBE socket_init_ready=true tcp_init_ready=false\n')
+
+        phase = 'wait_for_final_postgres_tcp_listener'
+        let postgresTcpReady = false
+        while (!postgresTcpReady && Date.now() < readinessDeadline) {
+          postgresTcpReady = postgresReadiness(container, '127.0.0.1').status === 0
+          if (!postgresTcpReady) await new Promise((resolve) => setTimeout(resolve, 250))
+        }
+        expect(postgresTcpReady).toBe(true)
+
+        phase = 'resolve_published_port'
         const port = docker('port', container, '5432/tcp').split(':').at(-1)
         const connectionString = `postgresql://postgres@127.0.0.1:${port}/postgres`
         client = new Client({ connectionString })
+        phase = 'connect_main_client'
         await client.connect()
+        phase = 'bootstrap_synthetic_database'
         await client.query(`
           create role anon nologin;
           create role authenticated nologin;
@@ -57,10 +117,13 @@ describe('Supabase runtime migration adoption integration', () => {
           set search_path to "$user", public, extensions;
         `)
 
-        for (const filename of ADOPTED_CHECKPOINT_MIGRATIONS) {
+        phase = 'replay_adopted_checkpoint_migrations'
+        for (const [index, filename] of ADOPTED_CHECKPOINT_MIGRATIONS.entries()) {
+          phase = `replay_checkpoint_migration_${index + 1}`
           await client.query(await readFile(`supabase/migrations/${filename}`, 'utf8'))
         }
 
+        phase = 'load_synthetic_acceptance_contracts'
         const readonlyAcceptance = (await readFile(
           'supabase/tests/supabase_runtime_adoption_checkpoint.sql', 'utf8',
         )).replace(/^\\set[^\n]*\n/, '')
@@ -92,6 +155,7 @@ describe('Supabase runtime migration adoption integration', () => {
           }
         }
 
+        phase = 'reject_unexpected_checkpoint_data'
         await client.query("insert into dpg_app.brands (name, slug) values ('Rejected', 'rejected')")
         await expect(executeRuntimeMigrations(client, 'apply', attestCheckpoint))
           .rejects.toThrow(/SUPABASE_CHECKPOINT_UNEXPECTED_ROWS/)
@@ -100,11 +164,13 @@ describe('Supabase runtime migration adoption integration', () => {
         )).rows[0]?.absent).toBe(true)
         await client.query("delete from dpg_app.brands where slug = 'rejected'")
 
+        phase = 'reject_checkpoint_role_drift'
         await client.query('alter role dpg_runtime_login connection limit 9')
         await expect(executeRuntimeMigrations(client, 'apply', attestCheckpoint))
           .rejects.toThrow(/SUPABASE_CHECKPOINT_ROLE_FAILED/)
         await client.query('alter role dpg_runtime_login connection limit 10')
 
+        phase = 'reject_checkpoint_size_limit'
         let sizeGuardChecks = 0
         const sizeFailureClient = new Proxy(client, {
           get(target, property) {
@@ -133,6 +199,7 @@ describe('Supabase runtime migration adoption integration', () => {
         expect((await client.query("select to_regrole('dpg_backup') is null as absent"))
           .rows[0]?.absent).toBe(true)
 
+        phase = 'preserve_committed_prefix_after_injected_failure'
         const failedMigration = EXPECTED_RUNTIME_MIGRATIONS[ADOPTED_CHECKPOINT_MIGRATIONS.length + 1]
         let injectFailure = true
         const failingClient = new Proxy(client, {
@@ -171,6 +238,7 @@ describe('Supabase runtime migration adoption integration', () => {
           where n.nspname = 'dpg_app' and p.polname = 'leo540_backup_select'
         `)).rows[0]?.count).toBe(0)
 
+        phase = 'reject_size_limit_inside_pending_migration_transaction'
         let migrationSizeChecks = 0
         const migrationSizeFailureClient = new Proxy(client, {
           get(target, property) {
@@ -204,6 +272,7 @@ describe('Supabase runtime migration adoption integration', () => {
           where n.nspname = 'dpg_app' and p.polname = 'leo540_backup_select'
         `)).rows[0]?.count).toBe(0)
 
+        phase = 'reject_checkpoint_ledger_gap_before_ddl'
         const missingCheckpointRow = (await client.query(`
           select version, filename, sha256, application_source
           from dpg_control.runtime_migration_ledger where filename = $1
@@ -243,11 +312,13 @@ describe('Supabase runtime migration adoption integration', () => {
         // Retry resumes from the committed ledger prefix; it does not reset or
         // roll back earlier migration transactions.
 
+        phase = 'resume_ordered_pending_migrations'
         await executeRuntimeMigrations(client, 'apply', attestCheckpoint)
 
         const ledger = await client.query('select count(*)::integer as count from dpg_control.runtime_migration_ledger')
         expect(ledger.rows[0]?.count).toBe(23)
 
+        phase = 'verify_database_size_guard'
         const databaseSizeBefore = await assertDatabaseSizeWithinContract(client)
         await client.query(`
           create table public.synthetic_migration_size_probe (payload bytea not null);
@@ -259,11 +330,13 @@ describe('Supabase runtime migration adoption integration', () => {
         expect(databaseSizeAfter).toBeGreaterThan(databaseSizeBefore)
         await client.query('drop table public.synthetic_migration_size_probe')
 
+        phase = 'verify_readonly_rls_acceptance'
         await client.query(rlsAcceptance)
         await client.query(runtimeReadonlyAcceptance)
         await client.query(cataloguePreflight)
 
         await client.query(`alter type dpg_v1.record_status add value if not exists '(PUBLISHED)'`)
+        phase = 'reject_policy_literal_token_drift'
         await client.query('begin')
         await client.query(`
           alter policy v1_products_public_select on dpg_v1.products
@@ -274,6 +347,7 @@ describe('Supabase runtime migration adoption integration', () => {
         await client.query('rollback')
         await client.query(runtimeReadonlyAcceptance)
 
+        phase = 'reject_policy_mixed_boolean_operator_family'
         await client.query('begin')
         await client.query(`
           alter policy v1_products_staff_select on dpg_v1.products
@@ -288,6 +362,7 @@ describe('Supabase runtime migration adoption integration', () => {
         await client.query('rollback')
         await client.query(runtimeReadonlyAcceptance)
 
+        phase = 'reject_unexpected_policy_set'
         await client.query('begin')
         await client.query(`
           create policy codex_unexpected_product_policy on dpg_v1.products
@@ -298,6 +373,7 @@ describe('Supabase runtime migration adoption integration', () => {
         await client.query('rollback')
         await client.query(runtimeReadonlyAcceptance)
 
+        phase = 'reject_policy_predicate_drift'
         await client.query('begin')
         await client.query('drop policy v1_products_staff_select on dpg_v1.products')
         await client.query(`
@@ -309,6 +385,7 @@ describe('Supabase runtime migration adoption integration', () => {
         await client.query('rollback')
         await client.query(runtimeReadonlyAcceptance)
 
+        phase = 'reject_api_view_owner_drift'
         await client.query('begin')
         await client.query('grant create on schema dpg_v1_api to authenticated')
         await client.query('alter view dpg_v1_api.public_products owner to authenticated')
@@ -317,6 +394,7 @@ describe('Supabase runtime migration adoption integration', () => {
         await client.query('rollback')
         await client.query(runtimeReadonlyAcceptance)
 
+        phase = 'reject_api_helper_signature_drift'
         await client.query('begin')
         await client.query(`
           create function dpg_v1.staff_has_capability(text)
@@ -333,6 +411,7 @@ describe('Supabase runtime migration adoption integration', () => {
         await client.query('rollback')
         await client.query(runtimeReadonlyAcceptance)
 
+        phase = 'reject_staff_context_helper_drift'
         await client.query('begin')
         await client.query(`
           create or replace function dpg_v1.current_staff_context()
@@ -361,6 +440,7 @@ describe('Supabase runtime migration adoption integration', () => {
         await client.query('rollback')
         await client.query(runtimeReadonlyAcceptance)
 
+        phase = 'reject_public_staff_helper_grants'
         await client.query('begin')
         await client.query('grant execute on function dpg_v1.current_staff_context() to public')
         await expect(client.query(runtimeReadonlyAcceptanceInTransaction))
@@ -375,6 +455,7 @@ describe('Supabase runtime migration adoption integration', () => {
         await client.query('rollback')
         await client.query(runtimeReadonlyAcceptance)
 
+        phase = 'reject_effective_staff_role_membership'
         for (const membershipOption of ['inherit true', 'inherit false']) {
           for (const role of [
             'anon', 'service_role', 'dpg_runtime', 'dpg_runtime_login',
@@ -389,6 +470,7 @@ describe('Supabase runtime migration adoption integration', () => {
           }
         }
 
+        phase = 'reject_capability_helper_security_mode_drift'
         await client.query('begin')
         await client.query(`
           create or replace function dpg_v1.staff_has_capability(p_capability dpg_v1.staff_capability)
@@ -408,6 +490,7 @@ describe('Supabase runtime migration adoption integration', () => {
         await client.query('rollback')
         await client.query(runtimeReadonlyAcceptance)
 
+        phase = 'reject_capability_helper_configuration_drift'
         await client.query('begin')
         await client.query(`
           create or replace function dpg_v1.staff_has_capability(p_capability dpg_v1.staff_capability)
@@ -436,6 +519,7 @@ describe('Supabase runtime migration adoption integration', () => {
         await client.query('rollback')
         await client.query(runtimeReadonlyAcceptance)
 
+        phase = 'reject_api_function_security_mode_drift'
         await client.query('begin')
         await client.query('alter function dpg_v1_api.public_product_get(uuid) security definer')
         await expect(client.query(runtimeReadonlyAcceptanceInTransaction))
@@ -443,6 +527,7 @@ describe('Supabase runtime migration adoption integration', () => {
         await client.query('rollback')
         await client.query(runtimeReadonlyAcceptance)
 
+        phase = 'reject_api_function_set_drift'
         await client.query('begin')
         await client.query(`
           create function dpg_v1_api.codex_unexpected_helper()
@@ -453,6 +538,7 @@ describe('Supabase runtime migration adoption integration', () => {
         await client.query('rollback')
         await client.query(runtimeReadonlyAcceptance)
 
+        phase = 'reject_api_function_grant_drift'
         await client.query('begin')
         await client.query('grant execute on function dpg_v1_api.public_product_get(uuid) to public')
         await expect(client.query(runtimeReadonlyAcceptanceInTransaction))
@@ -460,6 +546,7 @@ describe('Supabase runtime migration adoption integration', () => {
         await client.query('rollback')
         await client.query(runtimeReadonlyAcceptance)
 
+        phase = 'reject_migration_ledger_source_drift'
         const pendingProvenanceMigration = EXPECTED_RUNTIME_MIGRATIONS.at(-1)
         const pendingProvenanceSql = stripOuterTransaction(await readFile(
           `supabase/migrations/${pendingProvenanceMigration}`, 'utf8',
@@ -490,6 +577,7 @@ describe('Supabase runtime migration adoption integration', () => {
         expect(provenanceMigrationStarted).toBe(false)
         await client.query('rollback')
 
+        phase = 'reject_backup_write_privilege'
         await client.query('grant insert (id) on dpg_v1.products to dpg_backup')
         await expect(client.query(runtimeReadonlyAcceptance))
           .rejects.toThrow('SUPABASE_RUNTIME_READONLY_BACKUP_WRITE_PRIVILEGE')
@@ -497,16 +585,19 @@ describe('Supabase runtime migration adoption integration', () => {
         await client.query('revoke insert (id) on dpg_v1.products from dpg_backup')
         await client.query(runtimeReadonlyAcceptance)
 
+        phase = 'reject_api_relation_set_drift'
         await client.query('create sequence dpg_v1_api.unexpected_runtime_sequence')
         await expect(client.query(runtimeReadonlyAcceptance))
           .rejects.toThrow('SUPABASE_RUNTIME_READONLY_API_RELATION_SET_FAILED')
         await client.query('rollback').catch(() => undefined)
         await client.query('drop sequence dpg_v1_api.unexpected_runtime_sequence')
+        phase = 'reject_runtime_schema_grant_drift'
         await client.query('grant usage on schema dpg_v1_api to service_role')
         await expect(client.query(runtimeReadonlyAcceptance))
           .rejects.toThrow('SUPABASE_RUNTIME_READONLY_API_SCHEMA_GRANT_SET_FAILED')
         await client.query('rollback').catch(() => undefined)
         await client.query('revoke usage on schema dpg_v1_api from service_role')
+        phase = 'reject_api_relation_grant_drift'
         await client.query('grant select (id) on dpg_v1_api.public_products to service_role')
         await expect(client.query(runtimeReadonlyAcceptance))
           .rejects.toThrow('SUPABASE_RUNTIME_READONLY_API_GRANT_SET_FAILED')
@@ -514,6 +605,7 @@ describe('Supabase runtime migration adoption integration', () => {
         await client.query('revoke select (id) on dpg_v1_api.public_products from service_role')
         await client.query(runtimeReadonlyAcceptance)
 
+        phase = 'reject_migration_ledger_hash_drift'
         await client.query('begin')
         await client.query(`
           update dpg_control.runtime_migration_ledger
@@ -546,6 +638,7 @@ describe('Supabase runtime migration adoption integration', () => {
           await client.query(`drop policy leo560_readonly_select on dpg_app.${table}`)
         }
         await client.query('drop policy leo540_backup_select on dpg_app.admin_sessions')
+        phase = 'reject_rollback_hardening_precondition_drift'
         await expect(client.query(hardeningMigration))
           .rejects.toThrow(/LEO560_RLS_BACKUP_POLICY_PRECONDITION_FAILED:admin_sessions/)
         await client.query('rollback')
@@ -553,7 +646,17 @@ describe('Supabase runtime migration adoption integration', () => {
         await client.query(rlsAcceptance)
         await client.query(runtimeReadonlyAcceptance)
         await client.query(cataloguePreflight)
+        phase = 'verify_final_migration_status'
         await executeRuntimeMigrations(client, 'status')
+      } catch (error) {
+        const failureKind = postgresFailureKind(error)
+        const tcpProbe = postgresReadiness(container, '127.0.0.1')
+        process.stderr.write(
+          `[PG17_MIGRATION_DIAGNOSTIC] phase=${phase} client=${postgresClientState(client)} `
+          + `container=${postgresContainerState(container)} tcp_probe=${Number.isInteger(tcpProbe.status) ? tcpProbe.status : 'unavailable'} `
+          + `failure=${failureKind}\n`,
+        )
+        throw new Error(`PG17_MIGRATION_INTEGRATION_FAILED phase=${phase} failure=${failureKind}`)
       } finally {
         await client?.end().catch(() => undefined)
         spawnSync('docker', ['rm', '--force', container], { stdio: 'ignore' })
