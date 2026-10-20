@@ -1,3 +1,4 @@
+import { spawnSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
@@ -11,6 +12,21 @@ const restoreScript = readFileSync(
     resolve(process.cwd(), 'scripts/backup/rehearse-isolated-restore.sh'),
     'utf8',
 )
+const postgresImagePinPath = resolve(process.cwd(), 'scripts/backup/postgres-image-pin.sh')
+const postgresImagePinHelper = readFileSync(postgresImagePinPath, 'utf8')
+const approvedPostgresImage =
+    'postgres:17.6-bookworm@sha256:45cd22f8d32e189d245403954882f88e7a8714301fda80dab6da90f1265b25a3'
+
+function runPostgresImageResolver(postgresImage?: string) {
+    const env = { ...process.env }
+    delete env.POSTGRES_IMAGE
+    if (postgresImage !== undefined) env.POSTGRES_IMAGE = postgresImage
+    return spawnSync(
+        'bash',
+        ['-c', 'source "$1" && dpg_resolve_postgres_image', 'postgres-image-pin-test', postgresImagePinPath],
+        { encoding: 'utf8', env },
+    )
+}
 
 describe('backup restore rehearsal workflow contract', () => {
     it('is scheduled/manual and restricted to protected main', () => {
@@ -101,15 +117,43 @@ describe('backup restore rehearsal workflow contract', () => {
     })
 
     it('uses the isolated restore script and pinned PostgreSQL 17 image', () => {
-        expect(workflow).toContain('postgres:17.6-bookworm@sha256:45cd22f8d32e189d245403954882f88e7a8714301fda80dab6da90f1265b25a3')
+        expect(workflow).toContain(approvedPostgresImage)
+        expect(postgresImagePinHelper).toContain(approvedPostgresImage)
         expect(workflow).toContain('environment: runtime-backup')
         expect(workflow).toContain('actions/download-artifact@v4')
     })
 
     it('fails closed when the pinned PostgreSQL image is not already local', () => {
+        expect(restoreScript).toContain('source "$repo_root/scripts/backup/postgres-image-pin.sh"')
+        expect(restoreScript).toContain('reason=postgres_image_reference_invalid')
+        expect(restoreScript.indexOf('dpg_resolve_postgres_image')).toBeLessThan(
+            restoreScript.indexOf('docker image inspect'),
+        )
         expect(restoreScript).toContain('docker image inspect "$postgres_image"')
         expect(restoreScript).toContain('reason=postgres_image_not_cached')
         expect(restoreScript).toContain('--pull=never')
         expect(restoreScript).not.toContain('docker pull "$postgres_image"')
+    })
+
+    it('uses the approved digest when POSTGRES_IMAGE is unset or exactly matches', () => {
+        const unset = runPostgresImageResolver()
+        const exact = runPostgresImageResolver(approvedPostgresImage)
+
+        expect(unset.status).toBe(0)
+        expect(unset.stdout?.trim()).toBe(approvedPostgresImage)
+        expect(exact.status).toBe(0)
+        expect(exact.stdout?.trim()).toBe(approvedPostgresImage)
+    })
+
+    it.each([
+        ['empty override', ''],
+        ['mutable tag', 'postgres:17.6-bookworm'],
+        ['wrong digest', 'postgres:17.6-bookworm@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'],
+        ['shell-substitution override', '$(printf wrong-image)'],
+    ])('rejects %s without resolving it as a command', (_label, override) => {
+        const result = runPostgresImageResolver(override)
+
+        expect(result.status).not.toBe(0)
+        expect(result.stdout ?? '').toBe('')
     })
 })

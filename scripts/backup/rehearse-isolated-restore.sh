@@ -5,7 +5,12 @@ set -euo pipefail
 : "${AGE_IDENTITY:?AGE_IDENTITY is required}"
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-postgres_image="${POSTGRES_IMAGE:-postgres:17.6-bookworm@sha256:45cd22f8d32e189d245403954882f88e7a8714301fda80dab6da90f1265b25a3}"
+# shellcheck source=scripts/backup/postgres-image-pin.sh
+source "$repo_root/scripts/backup/postgres-image-pin.sh"
+if ! postgres_image="$(dpg_resolve_postgres_image)"; then
+  echo 'LEO540_RESTORE status=FAIL stage=preflight reason=postgres_image_reference_invalid'
+  exit 1
+fi
 tmp_dir="$(mktemp --directory /dev/shm/leo540-restore.XXXXXX)"
 container_name="leo540-restore-${RANDOM}${RANDOM}"
 stage='preflight'
