@@ -1,6 +1,7 @@
 import { execFileSync, spawnSync } from 'node:child_process'
 import { readFile } from 'node:fs/promises'
 import { types as utilTypes } from 'node:util'
+import { AssertionError as ChaiAssertionError } from 'chai'
 import pg from 'pg'
 import { describe, expect, it } from 'vitest'
 
@@ -84,11 +85,25 @@ function errorDataValue(error, property) {
   }
 }
 
+function isChaiAssertionError(error) {
+  try {
+    // The native Error brand rejects Proxies before reading their prototype.
+    // A direct prototype identity check recognizes Chai without invoking its
+    // inherited `name` getter or traversing an attacker-controlled chain.
+    return utilTypes.isNativeError(error)
+      && Object.getPrototypeOf(error) === ChaiAssertionError.prototype
+  } catch {
+    return false
+  }
+}
+
 function postgresFailureKind(error) {
   if (errorDataValue(error, 'message') === 'Connection terminated unexpectedly') {
     return 'connection_terminated_unexpectedly'
   }
-  if (errorDataValue(error, 'name') === 'AssertionError') return 'assertion_failed'
+  if (isChaiAssertionError(error) || errorDataValue(error, 'name') === 'AssertionError') {
+    return 'assertion_failed'
+  }
   const code = errorDataValue(error, 'code')
   if (code === 'ECONNREFUSED') return 'connection_refused'
   if (code === 'ECONNRESET') return 'connection_reset'
@@ -107,6 +122,7 @@ function sanitizedCauseName(error) {
         ? descriptor.value
         : 'Error'
     }
+    if (isChaiAssertionError(error)) return 'AssertionError'
     // Native Errors cannot be Proxies here; inspect one prototype only and
     // never follow a caller-supplied prototype chain.
     return builtinErrorPrototypeNames.get(Object.getPrototypeOf(error)) ?? 'Error'
@@ -202,6 +218,28 @@ describe('PostgreSQL integration failure diagnostics', () => {
     expect(failure.cause.message).toContain('name=TypeError')
     expect(failure.cause.message).toContain('failure=connection_reset')
     expect(diagnosticText(failure)).not.toContain('private cause detail')
+  })
+
+  it('preserves the real Vitest AssertionError with its inherited name getter', () => {
+    let assertionError
+    try {
+      expect(1).toBe(2)
+    } catch (error) {
+      assertionError = error
+    }
+
+    expect(assertionError).toBeInstanceOf(ChaiAssertionError)
+    expect(utilTypes.isNativeError(assertionError)).toBe(true)
+    expect(Object.getOwnPropertyDescriptor(assertionError, 'name')).toBeUndefined()
+    const assertionPrototype = Object.getPrototypeOf(assertionError)
+    expect(assertionPrototype).toBe(ChaiAssertionError.prototype)
+    expect(Object.getOwnPropertyDescriptor(assertionPrototype, 'name')?.get).toBeTypeOf('function')
+
+    const { failureKind, failure } = postgresIntegrationFailure(assertionError, 'connect_main_client')
+
+    expect(failureKind).toBe('assertion_failed')
+    expect(failure.cause.message).toContain('name=AssertionError')
+    expect(diagnosticText(failure)).not.toContain(assertionError.message)
   })
 
   it('preserves the allowlisted PostgreSQL failure categories for native errors', () => {
