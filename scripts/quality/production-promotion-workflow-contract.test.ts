@@ -38,7 +38,7 @@ function hasClosedPullRequestTrigger(source: string) {
       if (/\bclosed\b/.test(types[1])) return true
       continue
     }
-    if (readingTypes && indent > typesIndent && /^-\s*closed\s*(?:#.*)?$/.test(trimmed)) return true
+    if (readingTypes && indent > typesIndent && /^-\s*(?:closed|'closed'|"closed")\s*(?:#.*)?$/.test(trimmed)) return true
     if (readingTypes && indent <= typesIndent) readingTypes = false
   }
   return false
@@ -63,11 +63,15 @@ describe('LEO-537 Production promotion workflow contract', () => {
     expect(workflow).toContain("if: needs.production-enable-gate.outputs.enabled == 'true'")
     expect(workflow).toContain('owner_confirmation:')
     expect(workflow).toContain('DISPATCH_ACTOR: ${{ github.actor }}')
+    expect(workflow).toContain('TRIGGERING_ACTOR: ${{ github.triggering_actor }}')
     expect(workflow).toContain('EVENT_NAME: ${{ github.event_name }}')
+    expect(workflow).toContain('EVENT_REF: ${{ github.ref }}')
     expect(workflow).toContain("\"$DISPATCH_ACTOR\" == 'tranhuunguyenhuy-hue'")
+    expect(workflow).toContain("\"$TRIGGERING_ACTOR\" == 'tranhuunguyenhuy-hue'")
     expect(workflow).toContain('OWNER_CONFIRMATION')
     expect(workflow).toContain('OWNER_CONFIRMATION\" == \"true\"')
-    expect(workflow).toContain('(\"$EVENT_NAME\" == \"workflow_dispatch\" || \"$EVENT_NAME\" == \"workflow_call\")')
+    expect(workflow).toContain('\"$EVENT_NAME\" == \"workflow_dispatch\"')
+    expect(workflow).toContain('\"$EVENT_REF\" == \'refs/heads/main\'')
   })
 
   it('cannot promote from a merged pull-request trigger', () => {
@@ -80,12 +84,20 @@ describe('LEO-537 Production promotion workflow contract', () => {
     expect(existsSync(resolve(workflowsDirectory, 'production-merge.yml'))).toBe(false)
   })
 
-  it('detects multiline merged-PR triggers even when candidate and flag markers are present', () => {
+  it.each([
+    ['plain block item', 'types:\n      - closed'],
+    ['single-quoted block item', "types:\n      - 'closed'"],
+    ['double-quoted block item', 'types:\n      - "closed"'],
+    ['flow sequence', 'types: ["closed", opened]'],
+    ['flow mapping with single quotes', "pull_request: { types: ['closed'] }"],
+    ['pull_request_target flow mapping', 'pull_request_target: { types: ["closed", opened] }'],
+  ])('detects %s merged-PR trigger syntax', (_label, trigger) => {
+    const event = trigger.startsWith('pull_request')
+      ? trigger.replace(/\n/g, '\n  ')
+      : `pull_request:\n    ${trigger}`
     const syntheticMergedPromotionWorkflow = `
 on:
-  pull_request:
-    types:
-      - closed
+  ${event.replace(/\n/g, '\n  ')}
 env:
   PRODUCTION_PROMOTION_ENABLED: true
 jobs:
@@ -96,6 +108,26 @@ jobs:
 `
     expect(hasClosedPullRequestTrigger(syntheticMergedPromotionWorkflow)).toBe(true)
     expect(reachesProductionPromotion(syntheticMergedPromotionWorkflow)).toBe(true)
+  })
+
+  it('does not treat pull_request triggers without a closed activity type as merged triggers', () => {
+    expect(hasClosedPullRequestTrigger('on:\n  pull_request:\n    branches: [main]')).toBe(false)
+  })
+
+  it('validates merged candidate provenance before requesting the Production environment', () => {
+    expect(workflow).toContain('candidate-provenance-gate:')
+    expect(workflow).toContain('pull-requests: read')
+    expect(workflow).toContain('gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER"')
+    expect(workflow).toContain('gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main"')
+    expect(workflow).toContain('gh api "repos/$GITHUB_REPOSITORY/compare/$merge_sha...$EVENT_SHA"')
+    expect(workflow).toContain("pr.merged !== true")
+    expect(workflow).toContain("typeof pr.merged_at !== 'string'")
+    expect(workflow).toContain("pr.base?.ref !== 'main'")
+    expect(workflow).toContain('pr.head?.sha !== sourceSha')
+    expect(workflow).toContain('pr.merge_commit_sha')
+    expect(workflow).toContain('comparison.merge_base_commit?.sha !== mergeSha')
+    expect(workflow).toContain("candidate-provenance-gate.result == 'success'")
+    expect(workflow).not.toContain('test "${{ inputs.target_ref')
   })
 
   it('keeps normal main quality and manual promotion paths available', () => {

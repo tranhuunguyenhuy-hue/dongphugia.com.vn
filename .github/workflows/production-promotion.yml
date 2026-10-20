@@ -87,6 +87,8 @@ jobs:
   production-enable-gate:
     name: Production promotion enablement gate
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       enabled: ${{ steps.gate.outputs.enabled }}
     steps:
@@ -96,23 +98,154 @@ jobs:
           PRODUCTION_PROMOTION_ENABLED: ${{ vars.PRODUCTION_PROMOTION_ENABLED }}
           OWNER_CONFIRMATION: ${{ inputs.owner_confirmation || github.event.inputs.owner_confirmation || false }}
           DISPATCH_ACTOR: ${{ github.actor }}
+          TRIGGERING_ACTOR: ${{ github.triggering_actor }}
           EVENT_NAME: ${{ github.event_name }}
+          EVENT_REF: ${{ github.ref }}
         run: |
           set -euo pipefail
-          if [[ ("$EVENT_NAME" == "workflow_dispatch" || "$EVENT_NAME" == "workflow_call") && "$PRODUCTION_PROMOTION_ENABLED" == "true" && "$OWNER_CONFIRMATION" == "true" && "$DISPATCH_ACTOR" == 'tranhuunguyenhuy-hue' ]]; then
+          if [[ "$EVENT_NAME" == "workflow_dispatch" &&
+            "$EVENT_REF" == 'refs/heads/main' &&
+            "$PRODUCTION_PROMOTION_ENABLED" == "true" &&
+            "$OWNER_CONFIRMATION" == "true" &&
+            "$DISPATCH_ACTOR" == 'tranhuunguyenhuy-hue' &&
+            "$TRIGGERING_ACTOR" == 'tranhuunguyenhuy-hue' ]]; then
             echo 'enabled=true' >> "$GITHUB_OUTPUT"
             exit 0
           fi
           echo 'enabled=false' >> "$GITHUB_OUTPUT"
           {
             echo '### Production promotion: BLOCKED_BY_CUTOVER_OWNER_GATE'
-            echo 'Production promotion requires the cutover flag, explicit Owner confirmation, and the Owner account actor; no Production environment job or Cloudflare mutation was started.'
+            echo 'Production promotion requires a manual dispatch from main, the cutover flag, explicit Owner confirmation, and both original and triggering actors to be the Owner; no Production environment job or Cloudflare mutation was started.'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  candidate-provenance-gate:
+    name: Require exact merged PR provenance on current main
+    needs: production-enable-gate
+    if: needs.production-enable-gate.outputs.enabled == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Verify merged PR identity and main ancestry before Production approval
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_REF: ${{ github.ref }}
+          EVENT_SHA: ${{ github.sha }}
+          TARGET_REF: ${{ inputs.target_ref || github.event.inputs.target_ref || 'main' }}
+          SOURCE_SHA: ${{ inputs.candidate_source_sha || github.event.inputs.candidate_source_sha }}
+          PR_NUMBER: ${{ inputs.candidate_pr_number || github.event.inputs.candidate_pr_number }}
+          PREVIEW_RUN_ID: ${{ inputs.preview_run_id || github.event.inputs.preview_run_id }}
+          ARTIFACT_NAME: ${{ inputs.preview_artifact_name || github.event.inputs.preview_artifact_name }}
+          ARTIFACT_SHA: ${{ inputs.artifact_sha256 || github.event.inputs.artifact_sha256 }}
+          MODE: ${{ inputs.mode || github.event.inputs.mode || 'promote' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          fail() {
+            echo "CANDIDATE_PROVENANCE_FAILED:$1"
+            exit 1
+          }
+
+          [[ "$EVENT_NAME" == 'workflow_dispatch' ]] || fail unsupported_event
+          [[ "$EVENT_REF" == 'refs/heads/main' ]] || fail dispatch_ref
+          [[ "$TARGET_REF" == 'main' ]] || fail target_ref
+          [[ "$EVENT_SHA" =~ ^[0-9a-f]{40}$ ]] || fail dispatch_sha
+          [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]] || fail source_sha
+          [[ "$PR_NUMBER" =~ ^[1-9][0-9]*$ ]] || fail pr_number
+          [[ "$PREVIEW_RUN_ID" =~ ^[1-9][0-9]*$ ]] || fail preview_run_id
+          [[ "$ARTIFACT_NAME" == dongphugia-preview-* ]] || fail artifact_name
+          [[ "$ARTIFACT_SHA" =~ ^[0-9a-f]{64}$ ]] || fail artifact_sha
+          [[ "$MODE" == promote || "$MODE" == rollback ]] || fail mode
+
+          pr_json="$RUNNER_TEMP/production-promotion-pr.json"
+          main_ref_json="$RUNNER_TEMP/production-promotion-main-ref.json"
+          comparison_json="$RUNNER_TEMP/production-promotion-main-ancestry.json"
+          if ! gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" >"$pr_json" 2>/dev/null; then
+            fail pr_lookup
+          fi
+          if ! gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" >"$main_ref_json" 2>/dev/null; then
+            fail main_ref_lookup
+          fi
+
+          if ! merge_sha="$(node - "$pr_json" "$main_ref_json" "$EVENT_SHA" "$SOURCE_SHA" "$PR_NUMBER" "$GITHUB_REPOSITORY" <<'NODE'
+          const fs = require('node:fs')
+          const fail = (reason) => {
+            console.error(`CANDIDATE_PROVENANCE_FAILED:${reason}`)
+            process.exit(1)
+          }
+          let pr
+          let mainRef
+          try {
+            pr = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'))
+            mainRef = JSON.parse(fs.readFileSync(process.argv[3], 'utf8'))
+          } catch {
+            fail('api_response')
+          }
+          const [eventSha, sourceSha, prNumber, repository] = process.argv.slice(4)
+          const sha = /^[0-9a-f]{40}$/
+          if (mainRef.ref !== 'refs/heads/main' || mainRef.object?.type !== 'commit' || mainRef.object?.sha !== eventSha) {
+            fail('main_ref_changed')
+          }
+          if (
+            pr.number !== Number(prNumber) ||
+            pr.state !== 'closed' ||
+            pr.merged !== true ||
+            typeof pr.merged_at !== 'string' ||
+            pr.merged_at.length === 0
+          ) fail('pr_not_merged')
+          if (
+            pr.base?.ref !== 'main' ||
+            pr.base?.repo?.full_name?.toLowerCase() !== repository.toLowerCase()
+          ) fail('pr_target')
+          if (!sha.test(sourceSha) || pr.head?.sha !== sourceSha) fail('pr_head_identity')
+          if (!sha.test(pr.merge_commit_sha ?? '')) fail('merge_commit_sha')
+          process.stdout.write(pr.merge_commit_sha)
+          NODE
+          )"; then
+            exit 1
+          fi
+
+          if ! gh api "repos/$GITHUB_REPOSITORY/compare/$merge_sha...$EVENT_SHA" >"$comparison_json" 2>/dev/null; then
+            fail main_ancestry_lookup
+          fi
+          if ! node - "$comparison_json" "$merge_sha" "$EVENT_SHA" <<'NODE'
+          const fs = require('node:fs')
+          const fail = (reason) => {
+            console.error(`CANDIDATE_PROVENANCE_FAILED:${reason}`)
+            process.exit(1)
+          }
+          let comparison
+          try {
+            comparison = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'))
+          } catch {
+            fail('comparison_response')
+          }
+          const [mergeSha, eventSha] = process.argv.slice(3)
+          if (
+            !['ahead', 'identical'].includes(comparison.status) ||
+            comparison.base_commit?.sha !== mergeSha ||
+            comparison.head_commit?.sha !== eventSha ||
+            comparison.merge_base_commit?.sha !== mergeSha
+          ) fail('merge_commit_not_on_current_main')
+          NODE
+          then
+            exit 1
+          fi
+          {
+            echo '### Merged PR provenance: PASS'
+            echo "- Candidate PR: #$PR_NUMBER"
+            echo "- Candidate source SHA: $SOURCE_SHA"
+            echo "- Merge commit: $merge_sha"
+            echo "- Exact current main SHA: $EVENT_SHA"
           } >> "$GITHUB_STEP_SUMMARY"
 
   production-promotion:
     name: Promote exact immutable Cloudflare candidate
-    needs: production-enable-gate
-    if: needs.production-enable-gate.outputs.enabled == 'true'
+    needs: [production-enable-gate, candidate-provenance-gate]
+    if: needs.production-enable-gate.outputs.enabled == 'true' && needs.candidate-provenance-gate.result == 'success'
     runs-on: ubuntu-latest
     environment:
       name: production
@@ -126,9 +259,10 @@ jobs:
           ARTIFACT_NAME: ${{ inputs.preview_artifact_name || github.event.inputs.preview_artifact_name }}
           ARTIFACT_SHA: ${{ inputs.artifact_sha256 || github.event.inputs.artifact_sha256 }}
           MODE: ${{ inputs.mode || github.event.inputs.mode || 'promote' }}
+          TARGET_REF: ${{ inputs.target_ref || github.event.inputs.target_ref || 'main' }}
         run: |
           set -euo pipefail
-          test "${{ inputs.target_ref || github.event.inputs.target_ref || 'main' }}" = "main"
+          test "$TARGET_REF" = "main"
           [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]
           [[ "$PR_NUMBER" =~ ^[0-9]+$ && "$PR_NUMBER" != 0 ]]
           [[ "$PREVIEW_RUN_ID" =~ ^[0-9]+$ && "$PREVIEW_RUN_ID" != 0 ]]
