@@ -1,5 +1,6 @@
 import { execFileSync, spawnSync } from 'node:child_process'
 import { readFile } from 'node:fs/promises'
+import { types as utilTypes } from 'node:util'
 import pg from 'pg'
 import { describe, expect, it } from 'vitest'
 
@@ -25,7 +26,11 @@ const postgresFailureKinds = new Set([
   'other',
 ])
 const sanitizedCauseNames = new Set(['AssertionError', 'Error', 'RangeError', 'TypeError'])
-const MAX_SAFE_ERROR_PROTOTYPE_DEPTH = 16
+const builtinErrorPrototypeNames = new Map([
+  [Error.prototype, 'Error'],
+  [RangeError.prototype, 'RangeError'],
+  [TypeError.prototype, 'TypeError'],
+])
 const isDatabaseSizeGuardQuery = (sql) => typeof sql === 'string'
   && /^\s*select\s+pg_database_size\(current_database\(\)\)::text\s+as\s+current_size_bytes,/i.test(sql)
   && /\bas\s+hard_ceiling_bytes\b/i.test(sql)
@@ -70,34 +75,13 @@ function postgresClientState(client) {
 
 function errorDataValue(error, property) {
   try {
-    if (!(error instanceof Error)) return undefined
+    // This native brand check does not invoke user-controlled Proxy traps.
+    if (!utilTypes.isNativeError(error)) return undefined
     const descriptor = Object.getOwnPropertyDescriptor(error, property)
     return descriptor && Object.hasOwn(descriptor, 'value') ? descriptor.value : undefined
   } catch {
     return undefined
   }
-}
-
-function boundedErrorPrototypeChain(error) {
-  if (!error || (typeof error !== 'object' && typeof error !== 'function')) return null
-
-  const chain = []
-  const visited = new Set()
-  let current = error
-
-  try {
-    while (current !== null && chain.length < MAX_SAFE_ERROR_PROTOTYPE_DEPTH) {
-      if (visited.has(current)) return null
-      visited.add(current)
-      chain.push(current)
-      if (current === Error.prototype) return chain
-      current = Object.getPrototypeOf(current)
-    }
-  } catch {
-    return null
-  }
-
-  return null
 }
 
 function postgresFailureKind(error) {
@@ -114,22 +98,21 @@ function postgresFailureKind(error) {
 }
 
 function sanitizedCauseName(error) {
-  const chain = boundedErrorPrototypeChain(error)
-  if (!chain) return 'Error'
+  if (!utilTypes.isNativeError(error)) return 'Error'
 
   try {
-    for (const current of chain) {
-      const descriptor = Object.getOwnPropertyDescriptor(current, 'name')
-      if (descriptor) {
-        return Object.hasOwn(descriptor, 'value') && sanitizedCauseNames.has(descriptor.value)
-          ? descriptor.value
-          : 'Error'
-      }
+    const descriptor = Object.getOwnPropertyDescriptor(error, 'name')
+    if (descriptor) {
+      return Object.hasOwn(descriptor, 'value') && sanitizedCauseNames.has(descriptor.value)
+        ? descriptor.value
+        : 'Error'
     }
+    // Native Errors cannot be Proxies here; inspect one prototype only and
+    // never follow a caller-supplied prototype chain.
+    return builtinErrorPrototypeNames.get(Object.getPrototypeOf(error)) ?? 'Error'
   } catch {
     return 'Error'
   }
-  return 'Error'
 }
 
 function sanitizedErrorCause(error, failureKind) {
@@ -154,6 +137,14 @@ function sanitizedIntegrationFailure(error, phase, failureKind) {
   return failure
 }
 
+function postgresIntegrationFailure(error, phase) {
+  const failureKind = postgresFailureKind(error)
+  return {
+    failureKind,
+    failure: sanitizedIntegrationFailure(error, phase, failureKind),
+  }
+}
+
 describe('PostgreSQL integration failure diagnostics', () => {
   const diagnosticText = (error) => [
     error.message,
@@ -166,11 +157,7 @@ describe('PostgreSQL integration failure diagnostics', () => {
     const error = new Error('ordinary connection error')
     error.stack = 'Error: ordinary connection error\n    at forged token=STACK_SECRET'
 
-    const failure = sanitizedIntegrationFailure(
-      error,
-      'connect_main_client',
-      postgresFailureKind(error),
-    )
+    const { failure } = postgresIntegrationFailure(error, 'connect_main_client')
 
     expect(diagnosticText(failure)).not.toContain('STACK_SECRET')
   })
@@ -208,15 +195,31 @@ describe('PostgreSQL integration failure diagnostics', () => {
   })
 
   it('preserves allowlisted built-in error names and failure categories', () => {
-    const failure = sanitizedIntegrationFailure(
-      new TypeError('private cause detail'),
-      'connect_main_client',
-      'connection_reset',
-    )
+    const error = Object.assign(new TypeError('private cause detail'), { code: 'ECONNRESET' })
+    const { failureKind, failure } = postgresIntegrationFailure(error, 'connect_main_client')
 
+    expect(failureKind).toBe('connection_reset')
     expect(failure.cause.message).toContain('name=TypeError')
     expect(failure.cause.message).toContain('failure=connection_reset')
     expect(diagnosticText(failure)).not.toContain('private cause detail')
+  })
+
+  it('preserves the allowlisted PostgreSQL failure categories for native errors', () => {
+    const cases = [
+      [new Error('Connection terminated unexpectedly'), 'connection_terminated_unexpectedly'],
+      [Object.assign(new Error('private assertion detail'), { name: 'AssertionError' }), 'assertion_failed'],
+      [Object.assign(new Error('private refused detail'), { code: 'ECONNREFUSED' }), 'connection_refused'],
+      [Object.assign(new Error('private reset detail'), { code: 'ECONNRESET' }), 'connection_reset'],
+      [Object.assign(new Error('private timeout detail'), { code: 'ETIMEDOUT' }), 'connection_timed_out'],
+      [Object.assign(new Error('private startup detail'), { code: '57P03' }), 'server_startup_rejected'],
+    ]
+
+    for (const [error, expectedKind] of cases) {
+      const { failureKind, failure } = postgresIntegrationFailure(error, 'connect_main_client')
+
+      expect(failureKind).toBe(expectedKind)
+      expect(diagnosticText(failure)).not.toContain(error.message)
+    }
   })
 
   it('bounds traversal of a long hostile proxy prototype chain', () => {
@@ -278,6 +281,93 @@ describe('PostgreSQL integration failure diagnostics', () => {
     expect(diagnosticText(prototypeFailure)).not.toContain('GET_PROTOTYPE_SECRET')
     expect(diagnosticText(descriptorFailure)).not.toContain('DESCRIPTOR_CAUSE_SECRET')
     expect(diagnosticText(descriptorFailure)).not.toContain('DESCRIPTOR_TRAP_SECRET')
+  })
+
+  it('does not introspect hostile proxies on the PostgreSQL failure path', () => {
+    let prototypeReads = 0
+    let descriptorReads = 0
+    const error = new Proxy(new Error('HOSTILE_CAUSE_SECRET'), {
+      getPrototypeOf() {
+        prototypeReads += 1
+        throw new Error('PROTOTYPE_TRAP_SECRET')
+      },
+      getOwnPropertyDescriptor(target, property) {
+        if (['code', 'message', 'name', 'stack'].includes(property)) {
+          descriptorReads += 1
+          throw new Error('DESCRIPTOR_TRAP_SECRET')
+        }
+        return Reflect.getOwnPropertyDescriptor(target, property)
+      },
+    })
+
+    const { failureKind, failure } = postgresIntegrationFailure(error, 'connect_main_client')
+
+    expect(failureKind).toBe('other')
+    expect(prototypeReads).toBe(0)
+    expect(descriptorReads).toBe(0)
+    expect(diagnosticText(failure)).not.toMatch(/HOSTILE_CAUSE_SECRET|PROTOTYPE_TRAP_SECRET|DESCRIPTOR_TRAP_SECRET/)
+
+    let hostilePrototypeReads = 0
+    const hostilePrototype = new Proxy({}, {
+      getPrototypeOf() {
+        hostilePrototypeReads += 1
+        throw new Error('HOSTILE_PROTOTYPE_TRAP_SECRET')
+      },
+    })
+    const nativeErrorWithHostilePrototype = Object.setPrototypeOf(
+      new Error('HOSTILE_PROTOTYPE_CAUSE_SECRET'),
+      hostilePrototype,
+    )
+    const hostilePrototypeDiagnostic = postgresIntegrationFailure(
+      nativeErrorWithHostilePrototype,
+      'connect_main_client',
+    )
+
+    expect(hostilePrototypeDiagnostic.failureKind).toBe('other')
+    expect(hostilePrototypeReads).toBe(0)
+    expect(diagnosticText(hostilePrototypeDiagnostic.failure))
+      .not.toMatch(/HOSTILE_PROTOTYPE_CAUSE_SECRET|HOSTILE_PROTOTYPE_TRAP_SECRET/)
+  })
+
+  it('does not traverse cyclic or long proxy chains on the PostgreSQL failure path', () => {
+    let cyclicReads = 0
+    let cyclicProxy
+    cyclicProxy = new Proxy(new Error('CYCLIC_CAUSE_SECRET'), {
+      getPrototypeOf() {
+        cyclicReads += 1
+        if (cyclicReads > 32) throw new Error('CYCLIC_TRAP_GUARD_SECRET')
+        return cyclicProxy
+      },
+    })
+
+    let longChainReads = 0
+    const chain = Array.from({ length: 32 }, (_, index) => new Proxy(new Error('LONG_CHAIN_SECRET'), {
+      getPrototypeOf() {
+        longChainReads += 1
+        if (longChainReads > 64) throw new Error('LONG_CHAIN_TRAP_GUARD_SECRET')
+        return chain[index + 1] ?? Error.prototype
+      },
+    }))
+
+    const cyclic = postgresIntegrationFailure(cyclicProxy, 'connect_main_client')
+    const longChain = postgresIntegrationFailure(chain[0], 'connect_main_client')
+
+    expect(cyclic.failureKind).toBe('other')
+    expect(longChain.failureKind).toBe('other')
+    expect(cyclicReads).toBe(0)
+    expect(longChainReads).toBe(0)
+    expect(diagnosticText(cyclic.failure)).not.toMatch(/CYCLIC_CAUSE_SECRET|CYCLIC_TRAP_GUARD_SECRET/)
+    expect(diagnosticText(longChain.failure)).not.toMatch(/LONG_CHAIN_SECRET|LONG_CHAIN_TRAP_GUARD_SECRET/)
+  })
+
+  it('fails closed for a revoked proxy on the PostgreSQL failure path', () => {
+    const { proxy, revoke } = Proxy.revocable(new Error('REVOKED_CAUSE_SECRET'), {})
+    revoke()
+
+    const { failureKind, failure } = postgresIntegrationFailure(proxy, 'connect_main_client')
+
+    expect(failureKind).toBe('other')
+    expect(diagnosticText(failure)).not.toContain('REVOKED_CAUSE_SECRET')
   })
 
   it('replaces unallowlisted error names with the generic safe name', () => {
@@ -900,14 +990,14 @@ describe('Supabase runtime migration adoption integration', () => {
         phase = 'verify_final_migration_status'
         await executeRuntimeMigrations(client, 'status')
       } catch (error) {
-        const failureKind = postgresFailureKind(error)
+        const { failureKind, failure } = postgresIntegrationFailure(error, phase)
         const tcpProbe = postgresReadiness(container, '127.0.0.1')
         process.stderr.write(
           `[PG17_MIGRATION_DIAGNOSTIC] phase=${phase} client=${postgresClientState(client)} `
           + `container=${postgresContainerState(container)} tcp_probe=${Number.isInteger(tcpProbe.status) ? tcpProbe.status : 'unavailable'} `
           + `failure=${failureKind}\n`,
         )
-        throw sanitizedIntegrationFailure(error, phase, failureKind)
+        throw failure
       } finally {
         await client?.end().catch(() => undefined)
         spawnSync('docker', ['rm', '--force', container], { stdio: 'ignore' })
