@@ -9,6 +9,12 @@ const workflowFiles = readdirSync(workflowsDirectory)
   .map((file) => ({ file, source: readFileSync(resolve(workflowsDirectory, file), 'utf8') }))
 
 function hasClosedPullRequestTrigger(source: string) {
+  if (
+    /(?:^|[,{])\s*["']?pull_request(?:_target)?["']?\s*:\s*\{[^{}]*\btypes\s*:\s*\[[^\]]*\bclosed\b[^\]]*\][^{}]*\}/s.test(
+      source,
+    )
+  ) return true
+
   const lines = source.split(/\r?\n/)
   let pullRequestIndent = -1
   let typesIndent = -1
@@ -91,13 +97,15 @@ describe('LEO-537 Production promotion workflow contract', () => {
     ['flow sequence', 'types: ["closed", opened]'],
     ['flow mapping with single quotes', "pull_request: { types: ['closed'] }"],
     ['pull_request_target flow mapping', 'pull_request_target: { types: ["closed", opened] }'],
+    ['top-level flow on mapping', 'on: {pull_request: {types: [closed]}}'],
+    ['quoted top-level flow keys', '"on": {"pull_request": {types: ["closed"]}}'],
   ])('detects %s merged-PR trigger syntax', (_label, trigger) => {
+    const topLevelFlowOn = /^(?:on|'on'|"on")\s*:/.test(trigger)
     const event = trigger.startsWith('pull_request')
       ? trigger.replace(/\n/g, '\n  ')
-      : `pull_request:\n    ${trigger}`
+      : 'pull_request:\n    ' + trigger
     const syntheticMergedPromotionWorkflow = `
-on:
-  ${event.replace(/\n/g, '\n  ')}
+${topLevelFlowOn ? trigger : 'on:\n  ' + event.replace(/\n/g, '\n  ')}
 env:
   PRODUCTION_PROMOTION_ENABLED: true
 jobs:
@@ -119,11 +127,14 @@ jobs:
     expect(workflow).toContain('pull-requests: read')
     expect(workflow).toContain('gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER"')
     expect(workflow).toContain('gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main"')
+    expect(workflow).toContain('gh api "repos/$GITHUB_REPOSITORY/git/commits/$merge_sha"')
     expect(workflow).toContain('gh api "repos/$GITHUB_REPOSITORY/compare/$merge_sha...$EVENT_SHA"')
     expect(workflow).toContain("pr.merged !== true")
     expect(workflow).toContain("typeof pr.merged_at !== 'string'")
     expect(workflow).toContain("pr.base?.ref !== 'main'")
     expect(workflow).toContain('pr.head?.sha !== sourceSha')
+    expect(workflow).toContain('mergeCommit.parents.some((parent) => parent?.sha === sourceSha)')
+    expect(workflow).toContain("fail('pr_head_not_merged')")
     expect(workflow).toContain('pr.merge_commit_sha')
     expect(workflow).toContain('comparison.merge_base_commit?.sha !== mergeSha')
     expect(workflow).toContain("candidate-provenance-gate.result == 'success'")
@@ -137,6 +148,11 @@ jobs:
     expect(workflow).toContain('workflow_dispatch:')
     expect(workflow).toContain('actions/download-artifact@v4')
     expect(workflow).toContain('name: production')
+    expect(workflow).toContain('name: Reconfirm exact main SHA after Production approval')
+    expect(workflow).toContain('CANDIDATE_PROVENANCE_FAILED:main_moved_during_approval')
+    expect(workflow.indexOf('name: Reconfirm exact main SHA after Production approval')).toBeLessThan(
+      workflow.indexOf('uses: cloudflare/wrangler-action@v3'),
+    )
   })
 
   it('carries the Preview artifact and complete candidate identity into promotion', () => {

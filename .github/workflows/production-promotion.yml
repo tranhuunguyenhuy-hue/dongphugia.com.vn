@@ -162,6 +162,7 @@ jobs:
 
           pr_json="$RUNNER_TEMP/production-promotion-pr.json"
           main_ref_json="$RUNNER_TEMP/production-promotion-main-ref.json"
+          merge_commit_json="$RUNNER_TEMP/production-promotion-merge-commit.json"
           comparison_json="$RUNNER_TEMP/production-promotion-main-ancestry.json"
           if ! gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" >"$pr_json" 2>/dev/null; then
             fail pr_lookup
@@ -205,6 +206,32 @@ jobs:
           process.stdout.write(pr.merge_commit_sha)
           NODE
           )"; then
+            exit 1
+          fi
+
+          if ! gh api "repos/$GITHUB_REPOSITORY/git/commits/$merge_sha" >"$merge_commit_json" 2>/dev/null; then
+            fail merge_commit_lookup
+          fi
+          if ! node - "$merge_commit_json" "$merge_sha" "$SOURCE_SHA" <<'NODE'
+          const fs = require('node:fs')
+          const fail = (reason) => {
+            console.error('CANDIDATE_PROVENANCE_FAILED:' + reason)
+            process.exit(1)
+          }
+          let mergeCommit
+          try {
+            mergeCommit = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'))
+          } catch {
+            fail('merge_commit_response')
+          }
+          const [mergeSha, sourceSha] = process.argv.slice(3)
+          if (
+            mergeCommit.sha !== mergeSha ||
+            !Array.isArray(mergeCommit.parents) ||
+            !mergeCommit.parents.some((parent) => parent?.sha === sourceSha)
+          ) fail('pr_head_not_merged')
+          NODE
+          then
             exit 1
           fi
 
@@ -337,6 +364,38 @@ jobs:
             echo "- Artifact SHA-256: $actual_sha"
             echo '- Preview noindex and runtime identity evidence: PASS'
           } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Reconfirm exact main SHA after Production approval
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          EXPECTED_MAIN_SHA: ${{ github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          main_ref_json="$RUNNER_TEMP/production-promotion-main-ref-after-approval.json"
+          if ! gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" >"$main_ref_json" 2>/dev/null; then
+            echo 'CANDIDATE_PROVENANCE_FAILED:main_recheck_lookup'
+            exit 1
+          fi
+          node - "$main_ref_json" "$EXPECTED_MAIN_SHA" <<'NODE'
+          const fs = require('node:fs')
+          let mainRef
+          try {
+            mainRef = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'))
+          } catch {
+            console.error('CANDIDATE_PROVENANCE_FAILED:main_recheck_response')
+            process.exit(1)
+          }
+          if (
+            mainRef.ref !== 'refs/heads/main' ||
+            mainRef.object?.type !== 'commit' ||
+            mainRef.object?.sha !== process.argv[3]
+          ) {
+            console.error('CANDIDATE_PROVENANCE_FAILED:main_moved_during_approval')
+            process.exit(1)
+          }
+          NODE
 
       - name: Promote the same artifact to Cloudflare Production
         uses: cloudflare/wrangler-action@v3

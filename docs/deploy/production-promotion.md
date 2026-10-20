@@ -20,11 +20,13 @@ artifact. Rollback does not accept a mutable tag, latest reference, or an
 unverified artifact.
 
 Before the protected Production environment is requested, the workflow verifies
-that the candidate PR is closed and merged into `main`, its current PR head
-matches the Preview source SHA, its merge commit is reachable from the exact
-current `main` SHA for the dispatch, and the candidate, run, artifact, and
-digest inputs are well formed. Missing API evidence, a changed main ref, or
-any identity mismatch fails closed.
+that the candidate PR is closed and merged into `main`, the Preview source SHA
+is an actual parent of that PR's merge commit, the merge commit is reachable
+from the exact current `main` SHA for the dispatch, and the candidate, run,
+artifact, and digest inputs are well formed. After the protected Production
+environment approval and artifact verification, the workflow rechecks that
+`main` still points to the dispatch SHA immediately before deployment. Missing
+API evidence, a changed main ref, or any identity mismatch fails closed.
 
 Promotion is initiated only from `refs/heads/main` through a manual dispatch
 with `owner_confirmation=true`. Both the original workflow actor and the
