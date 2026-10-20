@@ -99,6 +99,29 @@ connection, the exact filtered restore is rehearsed in pinned PostgreSQL 17:
    compared; and
 5. every excluded `dpg_app` table must remain empty.
 
+For a Mac-hosted offline rehearsal, invoke `MODE=rehearsal` directly inside a
+separately approved Linux ARM64 guest; do not dispatch the re-home workflow,
+which contacts the Supabase control plane before its rehearsal step. The
+rehearsal source database still receives the **full** dump, including excluded
+rows. Only the target database is data-filtered. Its table selectors use
+`--schema=dpg_app --table=<unqualified name> --strict-names`, and the target
+check rejects rows in every other application table, including migration seed
+tables, plus unexpected large objects and noncatalogue sequence advances.
+This is a target-data boundary, not a guarantee that the source dump never
+contains sensitive data or that schema-only restore creates only 27 objects.
+
+Before any real archive or key enters the guest, an independent reviewer must
+verify that the guest has no NIC, no route or egress, no writable host share,
+guest swap or persistent plaintext path, and sufficient tmpfs/RAM/disk capacity.
+The rehearsal script additionally refuses a remote Docker endpoint, uncached or
+wrong-platform PostgreSQL image, an active guest network interface/default
+route, a remote Supabase URL, and non-tmpfs evidence output. It runs its pinned
+local image with `--pull=never` and a network-disabled container. An age key
+may be supplied as an owner-controlled tmpfs file through `AGE_IDENTITY_FILE`;
+never place it in chat, repository files, CI logs or command arguments. These
+checks do not replace independent hypervisor-level isolation evidence. The
+retained artifact and key remain out of scope until separately approved.
+
 Evidence contains only aggregate counts, hashes, excluded table names, and
 pass/fail state. It contains no rows, URLs, credentials, keys, or media bytes.
 

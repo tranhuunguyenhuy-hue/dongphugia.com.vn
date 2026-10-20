@@ -4,6 +4,7 @@ import {
   CATALOGUE_TABLES,
   CATALOGUE_RESTORE_ORDER,
   MIGRATION_SEED_TABLES,
+  buildRehearsalTargetCheckSql,
   buildCatalogueSnapshotSql,
   buildCatalogueValidationSql,
   catalogueTableArguments,
@@ -107,7 +108,7 @@ describe('catalogue-only restore contract', () => {
     expect(CATALOGUE_TABLES).toEqual(expectedTables)
     expect([...CATALOGUE_RESTORE_ORDER].sort()).toEqual(expectedTables)
     expect(catalogueTableArguments()).toEqual(
-      expectedRestoreOrder.flatMap((table) => ['--table', `dpg_app.${table}`]),
+      expectedRestoreOrder.flatMap((table) => ['--table', table]),
     )
     expect(CATALOGUE_TABLES).not.toEqual(expect.arrayContaining([
       'admin_users', 'admin_sessions', 'customers', 'orders', 'order_items',
@@ -176,5 +177,18 @@ describe('catalogue-only restore contract', () => {
     }
     expect(validationSql).toContain('CATALOGUE_MANIFEST_MISMATCH table=products')
     expect(validationSql).toContain('CATALOGUE_EXCLUDED_ROWS table=%')
+  })
+
+  it('checks every noncatalogue target schema, seeds, sequences and large objects', () => {
+    const sql = buildRehearsalTargetCheckSql()
+    expect(sql).toContain("n.nspname <> 'information_schema'")
+    expect(sql).toContain("n.nspname !~ '^pg_'")
+    expect(sql).toContain("c.relkind in ('r', 'p', 'm', 'f')")
+    expect(sql).toContain('pg_largeobject_metadata')
+    expect(sql).toContain("c.relkind = 'S'")
+    expect(sql).toContain('last_value <> $1')
+    expect(sql).toContain('CATALOGUE_REHEARSAL_EXCLUDED_ROWS')
+    expect(sql).toContain('CATALOGUE_REHEARSAL_EXCLUDED_SEQUENCE')
+    expect(sql).not.toMatch(/select\s+\*\s+from/i)
   })
 })
