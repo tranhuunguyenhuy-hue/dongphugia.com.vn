@@ -15,6 +15,16 @@ import {
 const { Client } = pg
 const postgresImage = process.env.POSTGRES_SNAPSHOT_INTEGRATION_IMAGE
 const dockerIntegration = Boolean(postgresImage)
+const postgresFailureKinds = new Set([
+  'connection_terminated_unexpectedly',
+  'assertion_failed',
+  'connection_refused',
+  'connection_reset',
+  'connection_timed_out',
+  'server_startup_rejected',
+  'other',
+])
+const sanitizedCauseNames = new Set(['AssertionError', 'Error', 'RangeError', 'TypeError'])
 const isDatabaseSizeGuardQuery = (sql) => typeof sql === 'string'
   && /^\s*select\s+pg_database_size\(current_database\(\)\)::text\s+as\s+current_size_bytes,/i.test(sql)
   && /\bas\s+hard_ceiling_bytes\b/i.test(sql)
@@ -57,48 +67,157 @@ function postgresClientState(client) {
   return `connected=${Boolean(client._connected)},ending=${Boolean(client._ending)},ended=${Boolean(client._ended)},queryable=${Boolean(client._queryable)}`
 }
 
+function errorDataValue(error, property) {
+  try {
+    if (!(error instanceof Error)) return undefined
+    const descriptor = Object.getOwnPropertyDescriptor(error, property)
+    return descriptor && Object.hasOwn(descriptor, 'value') ? descriptor.value : undefined
+  } catch {
+    return undefined
+  }
+}
+
 function postgresFailureKind(error) {
-  if (error?.message === 'Connection terminated unexpectedly') return 'connection_terminated_unexpectedly'
-  if (error?.name === 'AssertionError') return 'assertion_failed'
-  if (error?.code === 'ECONNREFUSED') return 'connection_refused'
-  if (error?.code === 'ECONNRESET') return 'connection_reset'
-  if (error?.code === 'ETIMEDOUT') return 'connection_timed_out'
-  if (error?.code === '57P03') return 'server_startup_rejected'
+  if (errorDataValue(error, 'message') === 'Connection terminated unexpectedly') {
+    return 'connection_terminated_unexpectedly'
+  }
+  if (errorDataValue(error, 'name') === 'AssertionError') return 'assertion_failed'
+  const code = errorDataValue(error, 'code')
+  if (code === 'ECONNREFUSED') return 'connection_refused'
+  if (code === 'ECONNRESET') return 'connection_reset'
+  if (code === 'ETIMEDOUT') return 'connection_timed_out'
+  if (code === '57P03') return 'server_startup_rejected'
   return 'other'
 }
 
-function sanitizedErrorCause(error) {
-  const allowedNames = new Set(['AssertionError', 'Error', 'RangeError', 'TypeError'])
-  const originalName = allowedNames.has(error?.name) ? error.name : 'Error'
-  const originalCode = typeof error?.code === 'string' && /^[A-Z0-9]{4,12}$/.test(error.code)
-    ? error.code
-    : 'unavailable'
-  const cause = new Error(`SANITIZED_CAUSE name=${originalName} code=${originalCode}`)
-  cause.name = 'SanitizedIntegrationCause'
-  if (typeof error?.stack === 'string') {
-    const stackFrames = error.stack.split('\n').slice(1)
-      .filter((line) => /^\s+at\s/.test(line))
-    if (stackFrames.length > 0) {
-      cause.stack = `${cause.name}: ${cause.message}\n${stackFrames.join('\n')}`
+function sanitizedCauseName(error) {
+  try {
+    if (!(error instanceof Error)) return 'Error'
+    let current = error
+    while (current) {
+      const descriptor = Object.getOwnPropertyDescriptor(current, 'name')
+      if (descriptor) {
+        return Object.hasOwn(descriptor, 'value') && sanitizedCauseNames.has(descriptor.value)
+          ? descriptor.value
+          : 'Error'
+      }
+      current = Object.getPrototypeOf(current)
     }
+  } catch {
+    return 'Error'
   }
+  return 'Error'
+}
+
+function sanitizedErrorCause(error, failureKind) {
+  const safeName = sanitizedCauseName(error)
+  const safeFailureKind = postgresFailureKinds.has(failureKind) ? failureKind : 'other'
+  const cause = new Error(`SANITIZED_CAUSE name=${safeName} failure=${safeFailureKind}`)
+  cause.name = 'SanitizedIntegrationCause'
+  cause.stack = `${cause.name}: ${cause.message}`
   return cause
 }
 
 function sanitizedIntegrationFailure(error, phase, failureKind) {
+  const safePhase = typeof phase === 'string' && /^[a-z][a-z0-9_]{0,63}$/.test(phase)
+    ? phase
+    : 'unknown'
+  const safeFailureKind = postgresFailureKinds.has(failureKind) ? failureKind : 'other'
   const failure = new Error(
-    `PG17_MIGRATION_INTEGRATION_FAILED phase=${phase} failure=${failureKind}`,
-    { cause: sanitizedErrorCause(error) },
+    `PG17_MIGRATION_INTEGRATION_FAILED phase=${safePhase} failure=${safeFailureKind}`,
+    { cause: sanitizedErrorCause(error, safeFailureKind) },
   )
-  if (typeof error?.stack === 'string') {
-    const stackFrames = error.stack.split('\n').slice(1)
-      .filter((line) => /^\s+at\s/.test(line))
-    if (stackFrames.length > 0) {
-      failure.stack = `${failure.name}: ${failure.message}\n${stackFrames.join('\n')}`
-    }
-  }
+  failure.stack = `${failure.name}: ${failure.message}\n    at <sanitized integration diagnostic>`
   return failure
 }
+
+describe('PostgreSQL integration failure diagnostics', () => {
+  const diagnosticText = (error) => [
+    error.message,
+    error.stack,
+    error.cause?.message,
+    error.cause?.stack,
+  ].filter(Boolean).join('\n')
+
+  it('does not copy forged multiline stack frames into public diagnostics', () => {
+    const error = new Error('ordinary connection error')
+    error.stack = 'Error: ordinary connection error\n    at forged token=STACK_SECRET'
+
+    const failure = sanitizedIntegrationFailure(
+      error,
+      'connect_main_client',
+      postgresFailureKind(error),
+    )
+
+    expect(diagnosticText(failure)).not.toContain('STACK_SECRET')
+  })
+
+  it('does not copy local or runner filesystem paths into public diagnostics', () => {
+    const error = new Error('ordinary connection error')
+    error.stack = [
+      'Error: ordinary connection error',
+      '    at local (/Users/private-user/dongphugia/secret.js:8:3)',
+      '    at runner (/home/runner/work/dongphugia/private.js:9:4)',
+    ].join('\n')
+
+    const failure = sanitizedIntegrationFailure(
+      error,
+      'connect_main_client',
+      postgresFailureKind(error),
+    )
+
+    expect(diagnosticText(failure)).not.toContain('/Users/private-user')
+    expect(diagnosticText(failure)).not.toContain('/home/runner')
+  })
+
+  it('does not copy token-like unallowlisted error codes into public diagnostics', () => {
+    const error = new Error('unknown database failure')
+    error.code = 'TOKENSECRET9'
+
+    const failure = sanitizedIntegrationFailure(
+      error,
+      'connect_main_client',
+      postgresFailureKind(error),
+    )
+
+    expect(postgresFailureKind(error)).toBe('other')
+    expect(diagnosticText(failure)).not.toContain('TOKENSECRET9')
+  })
+
+  it('preserves allowlisted built-in error names and failure categories', () => {
+    const failure = sanitizedIntegrationFailure(
+      new TypeError('private cause detail'),
+      'connect_main_client',
+      'connection_reset',
+    )
+
+    expect(failure.cause.message).toContain('name=TypeError')
+    expect(failure.cause.message).toContain('failure=connection_reset')
+    expect(diagnosticText(failure)).not.toContain('private cause detail')
+  })
+
+  it('does not inspect or expose fields from non-Error thrown objects', () => {
+    let propertyReads = 0
+    const thrown = Object.fromEntries(['name', 'message', 'code', 'stack'].map((key) => [
+      key,
+      'non-error sentinel',
+    ]))
+    for (const key of Object.keys(thrown)) {
+      Object.defineProperty(thrown, key, {
+        get() {
+          propertyReads += 1
+          return `NON_ERROR_SECRET_${key}`
+        },
+      })
+    }
+
+    expect(postgresFailureKind(thrown)).toBe('other')
+    const failure = sanitizedIntegrationFailure(thrown, 'connect_main_client', 'other')
+
+    expect(propertyReads).toBe(0)
+    expect(diagnosticText(failure)).not.toContain('NON_ERROR_SECRET_')
+  })
+})
 
 describe('Supabase runtime migration adoption integration', () => {
   it.runIf(dockerIntegration)(
