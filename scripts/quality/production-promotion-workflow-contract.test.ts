@@ -23,7 +23,7 @@ function hasClosedPullRequestTrigger(source: string) {
     const trimmed = line.trim()
     if (!trimmed || trimmed.startsWith('#')) continue
     const indent = line.length - line.trimStart().length
-    if (/^(?:pull_request|pull_request_target):\s*(?:#.*)?$/.test(trimmed)) {
+    if (/^(?:pull_request|pull_request_target|['"]pull_request(?:_target)?['"]):\s*(?:#.*)?$/.test(trimmed)) {
       pullRequestIndent = indent
       typesIndent = -1
       readingTypes = false
@@ -116,6 +116,13 @@ jobs:
 `
     expect(hasClosedPullRequestTrigger(syntheticMergedPromotionWorkflow)).toBe(true)
     expect(reachesProductionPromotion(syntheticMergedPromotionWorkflow)).toBe(true)
+  })
+
+  it.each([
+    ['double-quoted pull_request key', 'on:\n  "pull_request":\n    types: [closed]'],
+    ['single-quoted pull_request_target key', "on:\n  'pull_request_target':\n    types:\n      - closed"],
+  ])('detects %s in a block-style event mapping', (_label, trigger) => {
+    expect(hasClosedPullRequestTrigger(trigger)).toBe(true)
   })
 
   it('does not treat pull_request triggers without a closed activity type as merged triggers', () => {
