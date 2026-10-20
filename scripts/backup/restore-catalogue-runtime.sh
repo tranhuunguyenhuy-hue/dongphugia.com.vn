@@ -101,21 +101,31 @@ if [[ "$MODE" == 'preflight' ]]; then
   exit 0
 fi
 
-: "${AGE_IDENTITY:?AGE_IDENTITY is required}"
-printf '%s\n' "$AGE_IDENTITY" >"$tmp_dir/age-identity"
-chmod 600 "$tmp_dir/age-identity"
+age_identity_path="$tmp_dir/age-identity"
+if [[ -n "${AGE_IDENTITY_FILE:-}" ]]; then
+  if [[ ! -f "$AGE_IDENTITY_FILE" || -L "$AGE_IDENTITY_FILE" || "$AGE_IDENTITY_FILE" != /dev/shm/* ]]; then
+    echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=age_identity_file_must_be_on_tmpfs'
+    exit 1
+  fi
+  cp -- "$AGE_IDENTITY_FILE" "$age_identity_path"
+else
+  : "${AGE_IDENTITY:?AGE_IDENTITY or AGE_IDENTITY_FILE is required}"
+  printf '%s\n' "$AGE_IDENTITY" >"$age_identity_path"
+fi
+chmod 600 "$age_identity_path"
 plain_dump="$tmp_dir/runtime.dump"
-if ! age --decrypt --identity "$tmp_dir/age-identity" --output "$plain_dump" "$archive" \
+if ! age --decrypt --identity "$age_identity_path" --output "$plain_dump" "$archive" \
   2>"$tmp_dir/sensitive.error"; then
   sensitive_failure decrypt
 fi
-rm -f "$tmp_dir/age-identity"
+rm -f "$age_identity_path"
 rm -f "$tmp_dir/sensitive.error"
 
 mapfile -t restore_table_args < <(node "$contract" table-args)
 test "${#restore_table_args[@]}" -gt 0
 
 if [[ "$MODE" == 'rehearsal' ]]; then
+  rehearsal_started_seconds="$SECONDS"
   docker run --rm --detach --name "$container_name" \
     --network none --read-only --pids-limit 256 --memory 1536m \
     --tmpfs /var/lib/postgresql/data:rw,nosuid,nodev,noexec,size=1g \
@@ -130,6 +140,9 @@ if [[ "$MODE" == 'rehearsal' ]]; then
     sleep 1
   done
   test "$ready" = 'true'
+  server_version_num="$(docker exec "$container_name" psql -U postgres -d postgres -X -q -A -t \
+    -v ON_ERROR_STOP=1 -c "select current_setting('server_version_num')")"
+  test "$server_version_num" = '170006'
 
   docker exec -i "$container_name" psql -U postgres -d postgres -X -q -v ON_ERROR_STOP=1 <<'SQL'
 create role dpg_migration noinherit nologin nosuperuser nocreatedb nocreaterole noreplication nobypassrls;
@@ -144,6 +157,10 @@ create function auth.uid() returns uuid language sql stable as $$ select null::u
 create database source;
 create database target;
 SQL
+
+  empty_target_objects="$(docker exec "$container_name" psql -U postgres -d target -X -q -A -t \
+    -v ON_ERROR_STOP=1 -c "select count(*) from pg_class c join pg_namespace n on n.oid = c.relnamespace where n.nspname not in ('pg_catalog', 'information_schema') and n.nspname !~ '^pg_' and c.relkind in ('r', 'p', 'v', 'm', 'S', 'f')")"
+  test "$empty_target_objects" = '0'
 
   if ! docker exec -i "$container_name" \
     pg_restore -U postgres -d source --exit-on-error --no-owner --no-privileges \
@@ -177,7 +194,15 @@ SQL
   rm -f "$tmp_dir/sensitive.error"
   node "$contract" compare "$output_dir/catalogue-expected.json" \
     "$tmp_dir/catalogue-actual.json" >/dev/null
-  echo 'CATALOGUE_REHOME status=PASS mode=rehearsal network=none filtered=true'
+  database_bytes="$(docker exec "$container_name" psql -U postgres -d target -X -q -A -t \
+    -v ON_ERROR_STOP=1 -c "select pg_database_size('target')")"
+  [[ "$database_bytes" =~ ^[0-9]+$ ]]
+  duration_seconds="$((SECONDS - rehearsal_started_seconds))"
+  mkdir -p "$output_dir"
+  jq -n --argjson databaseBytes "$database_bytes" --argjson durationSeconds "$duration_seconds" \
+    '{databaseBytes: $databaseBytes, durationSeconds: $durationSeconds}' \
+    >"$output_dir/rehearsal-metrics.json"
+  echo "CATALOGUE_REHOME status=PASS mode=rehearsal network=none filtered=true table_count=27 database_bytes=$database_bytes duration_seconds=$duration_seconds"
   exit 0
 fi
 
