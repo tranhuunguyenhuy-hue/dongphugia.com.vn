@@ -120,3 +120,5 @@ export type PublicContactResult = Readonly<{
   success: boolean
   error?: string
 }>
+
+export * from './public-catalogue'
