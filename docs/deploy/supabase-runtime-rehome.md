@@ -122,6 +122,18 @@ never place it in chat, repository files, CI logs or command arguments. These
 checks do not replace independent hypervisor-level isolation evidence. The
 retained artifact and key remain out of scope until separately approved.
 
+The rehearsal and Quality CI share the immutable official PostgreSQL 17.6
+Bookworm OCI **index** `sha256:f3bd19c606e442c3d7bdfa8002e03fe260a1023351e0ea4598032022b68dd6e3`.
+Its `linux/amd64` child manifest is
+`sha256:45cd22f8d32e189d245403954882f88e7a8714301fda80dab6da90f1265b25a3`;
+its `linux/arm64/v8` child manifest is
+`sha256:5d11ffb37e58a7c9a2285359e50f7674e216c99b9114e47b0e7f21187c11252c`.
+Both child configs declare `PG_VERSION=17.6-2.pgdg12+1` and identify Debian
+Bookworm in their build history. The index, child manifests, and local image
+IDs are different identities. A separately approved public-only ARM64 offline
+test must verify the selected child and guest isolation before any real archive
+or key is considered.
+
 Evidence contains only aggregate counts, hashes, excluded table names, and
 pass/fail state. It contains no rows, URLs, credentials, keys, or media bytes.
 

@@ -15,8 +15,21 @@ const restoreScript = readFileSync(
 )
 const postgresImagePinPath = resolve(process.cwd(), 'scripts/backup/postgres-image-pin.sh')
 const postgresImagePinHelper = readFileSync(postgresImagePinPath, 'utf8')
+const catalogueRestore = readFileSync(
+    resolve(process.cwd(), 'scripts/backup/restore-catalogue-runtime.sh'),
+    'utf8',
+)
+const qualityWorkflow = readFileSync(resolve(process.cwd(), '.github/workflows/quality.yml'), 'utf8')
+const rehomeWorkflow = readFileSync(
+    resolve(process.cwd(), '.github/workflows/supabase-runtime-rehome.yml'),
+    'utf8',
+)
 const approvedPostgresImage =
+    'postgres:17.6-bookworm@sha256:f3bd19c606e442c3d7bdfa8002e03fe260a1023351e0ea4598032022b68dd6e3'
+const historicalBackupPostgresImage =
     'postgres:17.6-bookworm@sha256:45cd22f8d32e189d245403954882f88e7a8714301fda80dab6da90f1265b25a3'
+const arm64ChildPostgresImage =
+    'postgres:17.6-bookworm@sha256:5d11ffb37e58a7c9a2285359e50f7674e216c99b9114e47b0e7f21187c11252c'
 
 function runPostgresImageResolver(postgresImage?: string) {
     const env = { ...process.env }
@@ -166,9 +179,17 @@ describe('backup restore rehearsal workflow contract', () => {
         expect(workflow).not.toContain('actions/upload-artifact@v3')
     })
 
-    it('uses the isolated restore script and pinned PostgreSQL 17 image', () => {
-        expect(workflow).toContain(approvedPostgresImage)
+    it('keeps the historical AMD64 backup pin and uses the new index for catalogue recovery', () => {
+        expect(workflow).toContain(historicalBackupPostgresImage)
         expect(postgresImagePinHelper).toContain(approvedPostgresImage)
+        expect(catalogueRestore).toContain(approvedPostgresImage)
+        expect(qualityWorkflow).toContain('image: ' + approvedPostgresImage)
+        expect(qualityWorkflow).toContain('POSTGRES_SNAPSHOT_INTEGRATION_IMAGE: ' + approvedPostgresImage)
+        expect(rehomeWorkflow).toContain('POSTGRES_IMAGE: ' + approvedPostgresImage)
+        expect(postgresImagePinHelper).not.toContain(historicalBackupPostgresImage)
+        expect(catalogueRestore).not.toContain(historicalBackupPostgresImage)
+        expect(qualityWorkflow).not.toContain(historicalBackupPostgresImage)
+        expect(rehomeWorkflow).not.toContain(historicalBackupPostgresImage)
         expect(workflow).toContain('environment: runtime-backup')
         expect(workflow).toContain('actions/download-artifact@v4')
     })
@@ -217,6 +238,8 @@ describe('backup restore rehearsal workflow contract', () => {
 
     it.each([
         ['empty override', ''],
+        ['historical AMD64 child', historicalBackupPostgresImage],
+        ['standalone ARM64 child', arm64ChildPostgresImage],
         ['mutable tag', 'postgres:17.6-bookworm'],
         ['wrong digest', 'postgres:17.6-bookworm@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'],
         ['shell-substitution override', '$(printf wrong-image)'],

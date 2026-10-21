@@ -20,7 +20,7 @@ contract="$repo_root/scripts/backup/catalogue-restore-contract.mjs"
 target_contract="$repo_root/scripts/backup/supabase-runtime-target.mjs"
 psql_wrapper="$repo_root/scripts/backup/supabase-runtime-psql.mjs"
 preflight_sql="$repo_root/scripts/backup/catalogue-rehome-preflight.sql"
-postgres_image="${POSTGRES_IMAGE:-postgres:17.6-bookworm@sha256:45cd22f8d32e189d245403954882f88e7a8714301fda80dab6da90f1265b25a3}"
+postgres_image="${POSTGRES_IMAGE:-postgres:17.6-bookworm@sha256:f3bd19c606e442c3d7bdfa8002e03fe260a1023351e0ea4598032022b68dd6e3}"
 
 tmp_parent='/dev/shm'
 if ! command -v findmnt >/dev/null 2>&1 \
