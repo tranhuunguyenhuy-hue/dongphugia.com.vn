@@ -1,15 +1,17 @@
 import vinextHandler from 'vinext/server/fetch-handler'
 
 import {
-  assertPreviewRuntime,
+  assertPublicRuntime,
   createCacheKey,
   isAnonymousCacheCandidate,
   isCacheableResponse,
   isForbiddenInternalControlRequest,
+  isTemporarilyUnavailablePublicPath,
   PRIVATE_CACHE_CONTROL,
   PUBLIC_BROWSER_CACHE_CONTROL,
   PUBLIC_EDGE_CACHE_CONTROL,
   PUBLIC_PREVIEW_ROBOTS_HEADER,
+  temporaryUnavailablePublicResponse,
   type PublicWorkerEnvironment,
   withHeaders,
 } from './src/worker-policy'
@@ -24,26 +26,45 @@ export default {
     environment: PublicWorkerEnvironment,
     context: ExecutionContext,
   ) {
+    let mode: 'preview' | 'production'
     try {
-      assertPreviewRuntime(request, environment)
+      mode = assertPublicRuntime(request, environment)
     } catch {
       return new Response('Preview configuration rejected.', {
         status: 503,
         headers: {
           'Cache-Control': PRIVATE_CACHE_CONTROL,
-          'X-Robots-Tag': PUBLIC_PREVIEW_ROBOTS_HEADER,
+          ...(environment.APP_ENV === 'preview' &&
+          !['dongphugia.vn', 'www.dongphugia.vn'].includes(new URL(request.url).hostname.toLowerCase())
+            ? { 'X-Robots-Tag': PUBLIC_PREVIEW_ROBOTS_HEADER }
+            : {}),
         },
       })
     }
+
+    const robotsHeader: Record<string, string> = mode === 'preview'
+      ? { 'X-Robots-Tag': PUBLIC_PREVIEW_ROBOTS_HEADER }
+      : {}
 
     if (isForbiddenInternalControlRequest(request)) {
       return new Response('Not found.', {
         status: 404,
         headers: {
           'Cache-Control': PRIVATE_CACHE_CONTROL,
-          'X-Robots-Tag': PUBLIC_PREVIEW_ROBOTS_HEADER,
+          ...robotsHeader,
         },
       })
+    }
+
+    if (request.method !== 'GET' && request.method !== 'HEAD') {
+      return new Response('Method not allowed.', {
+        status: 405,
+        headers: { 'Cache-Control': PRIVATE_CACHE_CONTROL, Allow: 'GET, HEAD', ...robotsHeader },
+      })
+    }
+
+    if (isTemporarilyUnavailablePublicPath(request)) {
+      return temporaryUnavailablePublicResponse(request, mode === 'preview')
     }
 
     const cacheCandidate = isAnonymousCacheCandidate(request)
@@ -58,7 +79,7 @@ export default {
           'Cache-Control': PUBLIC_BROWSER_CACHE_CONTROL,
           'CDN-Cache-Control': PUBLIC_EDGE_CACHE_CONTROL,
           'X-DPG-Cache': 'HIT',
-          'X-Robots-Tag': PUBLIC_PREVIEW_ROBOTS_HEADER,
+          ...robotsHeader,
         })
       }
     }
@@ -69,7 +90,7 @@ export default {
         ...sourceIdentityHeader,
         'Cache-Control': PRIVATE_CACHE_CONTROL,
         'X-DPG-Cache': 'BYPASS',
-        'X-Robots-Tag': PUBLIC_PREVIEW_ROBOTS_HEADER,
+        ...robotsHeader,
       })
     }
 
@@ -77,7 +98,7 @@ export default {
       ...sourceIdentityHeader,
       'Cache-Control': PUBLIC_EDGE_CACHE_CONTROL,
       'X-DPG-Cache': 'STORED',
-      'X-Robots-Tag': PUBLIC_PREVIEW_ROBOTS_HEADER,
+      ...robotsHeader,
     })
     context.waitUntil(workerCache!.put(cacheKey, stored))
 
@@ -86,7 +107,7 @@ export default {
       'Cache-Control': PUBLIC_BROWSER_CACHE_CONTROL,
       'CDN-Cache-Control': PUBLIC_EDGE_CACHE_CONTROL,
       'X-DPG-Cache': 'MISS',
-      'X-Robots-Tag': PUBLIC_PREVIEW_ROBOTS_HEADER,
+      ...robotsHeader,
     })
   },
 }

@@ -2,9 +2,18 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 import { getPublicAppEnvironment } from './src/config/env'
-import { PUBLIC_PREVIEW_ROBOTS_HEADER } from './src/worker-policy'
+import {
+  isTemporarilyUnavailablePublicPath,
+  PUBLIC_PREVIEW_ROBOTS_HEADER,
+  temporaryUnavailablePublicResponse,
+} from './src/worker-policy'
 
 export function proxy(request: NextRequest) {
+  const preview = getPublicAppEnvironment().previewNoindex
+  if (isTemporarilyUnavailablePublicPath(request)) {
+    return temporaryUnavailablePublicResponse(request, preview)
+  }
+
   const response = NextResponse.next()
   const isApiResponse = request.nextUrl.pathname.startsWith('/api/')
   response.headers.set(
@@ -13,7 +22,7 @@ export function proxy(request: NextRequest) {
       ? 'private, no-store'
       : 'public, max-age=0, s-maxage=300, must-revalidate',
   )
-  if (getPublicAppEnvironment().previewNoindex) {
+  if (preview) {
     response.headers.set('X-Robots-Tag', PUBLIC_PREVIEW_ROBOTS_HEADER)
   }
   return response

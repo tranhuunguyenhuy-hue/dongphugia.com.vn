@@ -33,6 +33,7 @@ export const PUBLIC_ROUTE_OWNERSHIP = [
     purpose: 'catalogue-product',
   },
   { path: '/robots.txt', owner: 'public', purpose: 'crawler-policy' },
+  { path: '/sitemap.xml', owner: 'public', purpose: 'crawler-inventory' },
   { path: '/api/health', owner: 'public', purpose: 'runtime-probe' },
 ] as const
 

@@ -11,10 +11,6 @@ import { resolvePublicCatalogueRoute } from '../../../src/routes'
 
 export const runtime = 'edge'
 
-export const metadata: Metadata = {
-  robots: { index: false, follow: false },
-}
-
 type PageProps = {
   params: Promise<{ categorySlug: string; subcategorySlug: string }>
 }
