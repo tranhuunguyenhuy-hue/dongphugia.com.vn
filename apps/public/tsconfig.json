@@ -7,7 +7,7 @@
       "@dpg/app-contracts": ["../../packages/app-contracts/src/index.ts"],
       "@dpg/public-home-runtime": ["./src/runtime/preview-public-home.ts"],
       "@dpg/public-interactions": ["./src/runtime/preview-public-interactions.ts"],
-      "@dpg/public-catalogue-runtime": ["./src/runtime/preview-public-catalogue.ts"]
+      "@dpg/public-ui-policy": ["./src/runtime/preview-public-ui-policy.ts"]
     }
   },
   "include": [

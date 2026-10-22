@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { siteConfig, NAV_PRODUCT_CATEGORIES, NAV_FOOTER_ABOUT_LINKS, NAV_FOOTER_LEGAL_LINKS } from "@/config/site";
 import { DeferredResponsiveMedia } from "@/components/media/deferred-responsive-media";
+import { PUBLIC_UI_READ_ONLY } from "@dpg/public-ui-policy";
 
 export function Footer() {
     return (
@@ -25,10 +26,10 @@ export function Footer() {
                             <div className="flex flex-col gap-2">
                                 <div className="h-1 w-8 bg-brand-500" />
                                 <h3 className="text-stone-900 font-medium text-[15px]">
-                                    Đăng ký nhận bản tin ưu đãi
+                                    {PUBLIC_UI_READ_ONLY ? 'Thông tin liên hệ' : 'Đăng ký nhận bản tin ưu đãi'}
                                 </h3>
                             </div>
-                            <form
+                            {!PUBLIC_UI_READ_ONLY ? <form
                                 action="/lien-he"
                                 method="get"
                                 className="flex items-stretch max-w-[360px] gap-0 shadow-sm rounded-[8px] overflow-hidden"
@@ -45,9 +46,9 @@ export function Footer() {
                                 >
                                     Đăng ký
                                 </button>
-                            </form>
+                            </form> : <Link href="/lien-he" className="inline-flex h-11 items-center justify-center rounded-lg bg-brand-700 px-6 font-medium text-white">Liên hệ Đông Phú Gia</Link>}
                             <p className="text-stone-500 text-[13px] leading-relaxed max-w-[360px]">
-                                Bằng việc đăng ký, bạn đồng ý với Chính sách Bảo mật của chúng tôi và nhận thông tin cập nhật từ Đông Phú Gia.
+                                {PUBLIC_UI_READ_ONLY ? 'Biểu mẫu trực tuyến đang tạm khóa. Vui lòng gọi trực tiếp để được tư vấn.' : 'Bằng việc đăng ký, bạn đồng ý với Chính sách Bảo mật của chúng tôi và nhận thông tin cập nhật từ Đông Phú Gia.'}
                             </p>
                         </div>
                     </div>
@@ -62,7 +63,7 @@ export function Footer() {
                             </div>
                             <ul className="flex flex-col gap-3">
                                 {NAV_PRODUCT_CATEGORIES.map(link => (
-                                    <li key={link.href}><Link href={link.href} className="text-stone-600 text-body-sm hover:text-brand-600 transition-colors">{link.label}</Link></li>
+                                    <li key={link.href}><Link href={link.href} prefetch={!PUBLIC_UI_READ_ONLY} className="text-stone-600 text-body-sm hover:text-brand-600 transition-colors">{link.label}</Link></li>
                                 ))}
                             </ul>
                         </div>
@@ -75,7 +76,7 @@ export function Footer() {
                             </div>
                             <ul className="flex flex-col gap-3">
                                 {NAV_FOOTER_ABOUT_LINKS.map(link => (
-                                    <li key={link.href}><Link href={link.href} className="text-stone-600 text-body-sm hover:text-brand-600 transition-colors">{link.label}</Link></li>
+                                    <li key={link.href}><Link href={link.href} prefetch={!PUBLIC_UI_READ_ONLY} className="text-stone-600 text-body-sm hover:text-brand-600 transition-colors">{link.label}</Link></li>
                                 ))}
                             </ul>
                         </div>
@@ -120,7 +121,7 @@ export function Footer() {
                     </p>
                     <div className="flex flex-wrap items-center justify-center lg:justify-end gap-4 lg:gap-6">
                         {NAV_FOOTER_LEGAL_LINKS.map(link => (
-                            <Link key={link.href} href={link.href} className="text-stone-500 text-[13px] hover:text-brand-600 transition-colors whitespace-nowrap">{link.label}</Link>
+                            <Link key={link.href} href={link.href} prefetch={!PUBLIC_UI_READ_ONLY} className="text-stone-500 text-[13px] hover:text-brand-600 transition-colors whitespace-nowrap">{link.label}</Link>
                         ))}
                     </div>
                 </div>

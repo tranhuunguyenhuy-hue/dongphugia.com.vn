@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from "react"
 import dynamic from "next/dynamic"
 import { usePathname } from "next/navigation"
 import { MessageCircle, X } from "lucide-react"
+import Link from "next/link"
+import { PUBLIC_UI_READ_ONLY } from "@dpg/public-ui-policy"
 
 const ChatboxWidget = dynamic(
     () => import("@/components/ui/chatbox-widget").then((module) => module.ChatboxWidget),
@@ -40,6 +42,18 @@ export function FloatingContact() {
     }, [isOpen])
 
     if (!isMounted) return null
+
+    if (PUBLIC_UI_READ_ONLY) {
+        return (
+            <Link
+                href="/lien-he"
+                className="fixed bottom-6 right-5 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[#2E7A96] text-white shadow-[0_4px_16px_rgba(46,122,150,0.5)] focus-visible:ring-2 focus-visible:ring-brand-500"
+                aria-label="Thông tin liên hệ Đông Phú Gia"
+            >
+                <MessageCircle className="h-7 w-7" aria-hidden="true" />
+            </Link>
+        )
+    }
 
     const isProductPage = pathname?.includes('/gach-op-lat/') || pathname?.includes('/thiet-bi-ve-sinh/') || pathname?.includes('/thiet-bi-bep/') || pathname?.includes('/vat-lieu-nuoc/')
     const mobileBottomClass = isProductPage ? "bottom-[calc(85px+env(safe-area-inset-bottom))]" : "bottom-6"

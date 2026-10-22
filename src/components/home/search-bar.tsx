@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Search, X, ArrowRight, Package2, Loader2 } from 'lucide-react'
 import Image from 'next/image'
 import { formatPrice } from '@/lib/utils'
+import { PUBLIC_UI_READ_ONLY } from '@dpg/public-ui-policy'
 
 interface SearchResult {
     id: number
@@ -32,6 +33,17 @@ function useDebounce<T>(value: T, delay: number): T {
 }
 
 export function SearchBar({ onExpandedChange }: { onExpandedChange?: (expanded: boolean) => void }) {
+    if (PUBLIC_UI_READ_ONLY) {
+        return (
+            <span className="flex h-11 w-11 items-center justify-center rounded-full text-stone-400" title="Tìm kiếm đang được cập nhật" aria-label="Tìm kiếm đang được cập nhật">
+                <Search className="h-[22px] w-[22px]" aria-hidden="true" />
+            </span>
+        )
+    }
+    return <ActiveSearchBar onExpandedChange={onExpandedChange} />
+}
+
+function ActiveSearchBar({ onExpandedChange }: { onExpandedChange?: (expanded: boolean) => void }) {
     const router = useRouter()
     const [query, setQuery] = useState('')
     const [results, setResults] = useState<SearchResult[]>([])
