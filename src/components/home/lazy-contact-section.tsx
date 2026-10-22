@@ -3,6 +3,7 @@
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
+import { PUBLIC_UI_READ_ONLY } from '@dpg/public-ui-policy'
 
 const ContactSection = dynamic(
     () => import('@/components/home/contact-section').then((module) => module.ContactSection),
@@ -10,6 +11,23 @@ const ContactSection = dynamic(
 )
 
 export function LazyContactSection() {
+    if (PUBLIC_UI_READ_ONLY) return <ReadOnlyContactSection />
+    return <InteractiveContactSection />
+}
+
+function ReadOnlyContactSection() {
+    return (
+        <section className="bg-stone-50 py-16 lg:py-24">
+            <div className="u-container mx-auto max-w-3xl text-center">
+                <h2 className="mb-3 text-3xl font-bold tracking-tight text-neutral-900">Liên hệ tư vấn</h2>
+                <p className="mb-6 text-neutral-500">Biểu mẫu trực tuyến đang tạm khóa. Vui lòng gọi trực tiếp hoặc xem thông tin liên hệ.</p>
+                <Link href="/lien-he" className="inline-flex h-12 items-center rounded-xl bg-[#2E7A96] px-6 font-semibold text-white">Thông tin liên hệ</Link>
+            </div>
+        </section>
+    )
+}
+
+function InteractiveContactSection() {
     const [shouldLoad, setShouldLoad] = useState(false)
     const boundaryRef = useRef<HTMLDivElement>(null)
 

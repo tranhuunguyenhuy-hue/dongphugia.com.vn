@@ -30,7 +30,7 @@ export default function PublicRootLayout({
         data-application={APPLICATIONS.public.name}
         className="antialiased font-sans"
       >
-        <CanonicalPublicLayout emergencyShell>{children}</CanonicalPublicLayout>
+        <CanonicalPublicLayout>{children}</CanonicalPublicLayout>
       </body>
     </html>
   )

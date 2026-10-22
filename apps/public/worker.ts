@@ -63,6 +63,18 @@ export default {
       })
     }
 
+    // Preserve the browser's conventional favicon URL through the existing
+    // immutable SVG asset. No second media copy or unverified asset is added.
+    if (new URL(request.url).pathname === '/favicon.ico') {
+      if (!environment.ASSETS) return new Response('Asset unavailable.', {
+        status: 503,
+        headers: { 'Cache-Control': PRIVATE_CACHE_CONTROL, ...robotsHeader },
+      })
+      const iconUrl = new URL('/images/logo-icon.svg', request.url)
+      const icon = await environment.ASSETS.fetch(new Request(iconUrl, request))
+      return withHeaders(icon, { ...sourceIdentityHeader, ...robotsHeader })
+    }
+
     if (isTemporarilyUnavailablePublicPath(request)) {
       return temporaryUnavailablePublicResponse(request, mode === 'preview')
     }

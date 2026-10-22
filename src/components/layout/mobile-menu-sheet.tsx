@@ -5,7 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Phone, ChevronDown, ChevronRight, Menu } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet'
+import { Sheet, SheetContent, SheetDescription, SheetTrigger, SheetTitle } from '@/components/ui/sheet'
 import { getMegaMenuData } from '@dpg/public-interactions'
 import type { Category, MenuData } from '@/components/home/mega-menu'
 import {
@@ -14,6 +14,7 @@ import {
     NAV_ABOUT_LINKS as ABOUT_LINKS,
 } from '@/config/site'
 import { trackGenerateLead } from '@/lib/tracking'
+import { PUBLIC_UI_READ_ONLY, PUBLIC_UI_READ_ONLY_MENU } from '@dpg/public-ui-policy'
 
 
 // ── Accordion item for a single product category ──
@@ -111,11 +112,11 @@ export function MobileMenuSheet({
     const [menuData, setMenuData] = useState<{
         categories: Category[]
         menuData: Record<string, MenuData>
-    } | null>(null)
+    } | null>(PUBLIC_UI_READ_ONLY_MENU)
 
     // Fetch mega-menu data when sheet first opens (lazy load)
     useEffect(() => {
-        if (open && !menuData) {
+        if (!PUBLIC_UI_READ_ONLY && open && !menuData) {
             getMegaMenuData().then(setMenuData).catch(console.error)
         }
     }, [open, menuData])
@@ -135,6 +136,7 @@ export function MobileMenuSheet({
 
             <SheetContent side="left" className="w-[300px] sm:w-[340px] p-0 border-r border-border">
                 <SheetTitle className="sr-only">Menu điều hướng</SheetTitle>
+                <SheetDescription className="sr-only">Chọn nhóm hàng hoặc trang thông tin Đông Phú Gia.</SheetDescription>
 
                 <div className="flex flex-col h-full bg-background">
                     {/* ── Logo header ── */}
@@ -198,6 +200,7 @@ export function MobileMenuSheet({
                                 <Link
                                     key={link.href}
                                     href={link.href}
+                                    prefetch={!PUBLIC_UI_READ_ONLY}
                                     onClick={handleNavigate}
                                     className="block py-3 text-[15px] font-medium text-stone-900 active:text-brand-600 transition-colors"
                                 >

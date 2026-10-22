@@ -1,7 +1,5 @@
 import type { Metadata } from 'next'
 
-import { EmergencyPublicHomePage } from '@/app/(public)/page'
-
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 
@@ -11,4 +9,4 @@ export const metadata: Metadata = {
   alternates: { canonical: '/' },
 }
 
-export default EmergencyPublicHomePage
+export { default } from '@/app/(public)/page'

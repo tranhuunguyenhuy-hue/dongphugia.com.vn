@@ -8,6 +8,7 @@ export type PublicWorkerEnvironment = Readonly<{
   APP_BUILD_TARGET: string
   APP_ORIGIN: string
   PREVIEW_NOINDEX: string
+  ASSETS?: { fetch(request: Request): Promise<Response> }
   [name: string]: unknown
 }>
 

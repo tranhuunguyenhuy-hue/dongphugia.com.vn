@@ -12,6 +12,7 @@ import { CartIcon } from '@/components/cart/cart-icon'
 import { LazyCartDrawer } from '@/components/cart/lazy-cart-drawer'
 import { SearchBar } from '@/components/home/search-bar'
 import { trackGenerateLead } from '@/lib/tracking'
+import { PUBLIC_UI_READ_ONLY, PUBLIC_UI_READ_ONLY_MENU } from '@dpg/public-ui-policy'
 
 import { NAV_MAIN_LINKS as NAV_LINKS, NAV_ABOUT_LINKS as ABOUT_LINKS } from "@/config/site"
 
@@ -21,12 +22,12 @@ const MobileMenuSheet = dynamic(
 )
 
 function ProductsDropdown() {
-    const [data, setData] = useState<{ categories: Category[], menuData: Record<string, MenuData> } | null>(null)
+    const [data, setData] = useState<{ categories: Category[], menuData: Record<string, MenuData> } | null>(PUBLIC_UI_READ_ONLY_MENU)
     const [requested, setRequested] = useState(false)
     const containerRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
-        if (requested && !data) {
+        if (!PUBLIC_UI_READ_ONLY && requested && !data) {
             getMegaMenuData().then(setData).catch(console.error)
         }
     }, [data, requested])
@@ -102,7 +103,7 @@ function AboutDropdown() {
                 className={`absolute top-[calc(50%+24px)] left-1/2 -translate-x-1/2 w-[220px] bg-white shadow-[0_12px_40px_rgba(0,0,0,0.08)] rounded-[16px] border border-stone-100 py-2 transition-all duration-300 z-50 origin-top ${isOpen ? 'opacity-100 visible translate-y-0 scale-100' : 'opacity-0 invisible translate-y-2 scale-95 pointer-events-none'}`}
             >
                 {ABOUT_LINKS.map(link => (
-                    <Link key={link.href} href={link.href} role="menuitem" onClick={() => setIsOpen(false)} className="block px-4 py-2.5 text-[15px] font-medium text-stone-700 hover:bg-stone-50 hover:text-brand-600 transition-colors">
+                    <Link key={link.href} href={link.href} prefetch={!PUBLIC_UI_READ_ONLY} role="menuitem" onClick={() => setIsOpen(false)} className="block px-4 py-2.5 text-[15px] font-medium text-stone-700 hover:bg-stone-50 hover:text-brand-600 transition-colors">
                         {link.label}
                     </Link>
                 ))}
@@ -147,7 +148,7 @@ export function Header() {
                                 <ProductsDropdown />
                                 <AboutDropdown />
                                 {NAV_LINKS.map((link) => (
-                                    <Link key={link.href} href={link.href} className="px-4 py-2 rounded-full font-medium text-[15px] leading-[20px] text-stone-700 hover:text-brand-600 hover:bg-brand-50 transition-all duration-300 h-[38px] flex items-center bg-transparent">
+                                    <Link key={link.href} href={link.href} prefetch={!PUBLIC_UI_READ_ONLY} className="px-4 py-2 rounded-full font-medium text-[15px] leading-[20px] text-stone-700 hover:text-brand-600 hover:bg-brand-50 transition-all duration-300 h-[38px] flex items-center bg-transparent">
                                         {link.label}
                                     </Link>
                                 ))}
@@ -157,7 +158,7 @@ export function Header() {
                             <div className="hidden lg:flex items-center gap-4">
                                 <SearchBar />
                                 <div className="h-6 w-px bg-stone-200 ml-1"></div>
-                                <CartIcon />
+                                {!PUBLIC_UI_READ_ONLY && <CartIcon />}
                                 <Button asChild className="px-6 h-11 text-[15px] font-medium gap-2 bg-brand-700 hover:bg-brand-800 text-white rounded-full shadow-sm ml-2">
                                     <Link href="/lien-he" aria-label="Liên hệ" onClick={() => trackGenerateLead('navbar_contact')}>
                                         Liên hệ
@@ -169,7 +170,7 @@ export function Header() {
                             {/* Mobile: Search + Cart + Menu */}
                             <div className="flex lg:hidden items-center gap-0.5">
                                 <SearchBar />
-                                <CartIcon />
+                                {!PUBLIC_UI_READ_ONLY && <CartIcon />}
                                 {mobileMenuRequested ? (
                                     <MobileMenuSheet initiallyOpen />
                                 ) : (
@@ -198,7 +199,7 @@ export function Header() {
                     </div>
                 </div>
             </header>
-            <LazyCartDrawer />
+            {!PUBLIC_UI_READ_ONLY && <LazyCartDrawer />}
         </>
     )
 }

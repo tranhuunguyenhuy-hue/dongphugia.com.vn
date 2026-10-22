@@ -21,7 +21,7 @@ function parseArgs(argv: string[]) {
   return args
 }
 
-function sha256(value: string) {
+function sha256(value: string | Buffer) {
   return createHash('sha256').update(value).digest('hex')
 }
 
@@ -61,12 +61,37 @@ async function requestWithHost(baseUrl: URL, host: string, requestPath = '/') {
 }
 
 async function collectPublicProof(baseUrl: URL) {
+  const assetProof: Record<string, { status: number; mime: string; sha256: string }> = {}
+  for (const [assetPath, expectedMime] of [
+    ['/images/Logo.png', 'image/png'],
+    ['/images/banner-3.jpg', 'image/jpeg'],
+    ['/images/logo-icon.svg', 'image/svg+xml'],
+    ['/favicon.ico', 'image/svg+xml'],
+  ] as const) {
+    const response = await fetch(new URL(assetPath, baseUrl))
+    const mime = response.headers.get('content-type') || ''
+    if (response.status !== 200 || !mime.startsWith(expectedMime)) {
+      throw new Error(`RUNTIME_PROOF_ASSET_FAILED:${assetPath}:${response.status}:${mime}`)
+    }
+    assetProof[assetPath] = {
+      status: response.status,
+      mime,
+      sha256: sha256(Buffer.from(await response.arrayBuffer())),
+    }
+  }
   const proofHost = `leo563-${randomUUID()}.preview.invalid`
   const first = await fetch(new URL('/', baseUrl), { headers: { host: proofHost } })
   const firstBody = await responseBody(first)
   assertNoindexHtml(firstBody, 'Đông Phú Gia - Vật liệu xây dựng tại Đà Lạt')
-  if (!firstBody.includes('Danh mục trực tuyến đang được cập nhật') || /DPG-PREVIEW-|1\.500 mẫu/i.test(firstBody)) {
-    throw new Error('RUNTIME_PROOF_EMERGENCY_HOME_CONTENT_FAILED')
+  if (
+    !firstBody.includes('Danh mục trực tuyến đang được cập nhật') ||
+    !firstBody.includes('Đối tác thương hiệu') ||
+    !firstBody.includes('id="home-category-thiet-bi-ve-sinh"') ||
+    !firstBody.includes('/images/banner-3.jpg') ||
+    !firstBody.includes('Thông tin liên hệ') ||
+    /DPG-PREVIEW-|1\.500 mẫu|Mã fixture/i.test(firstBody)
+  ) {
+    throw new Error('RUNTIME_PROOF_CANONICAL_HOME_CONTENT_FAILED')
   }
   requireHeader(first, 'x-robots-tag', 'noindex, nofollow')
   requireHeader(first, 'cache-control', 'public, max-age=0, must-revalidate')
@@ -117,10 +142,10 @@ async function collectPublicProof(baseUrl: URL) {
 
   const category = await requestWithHost(baseUrl, proofHost, '/thiet-bi-ve-sinh')
   if (category.status !== 200 || !category.body.includes('Danh mục trực tuyến đang được cập nhật')) {
-    throw new Error(`RUNTIME_PROOF_EMERGENCY_CATEGORY_FAILED:${category.status}`)
+    throw new Error(`RUNTIME_PROOF_CATEGORY_FAILED:${category.status}`)
   }
   if (category.headers['x-robots-tag'] !== 'noindex, nofollow' || /DPG-PREVIEW-|fixture/i.test(category.body)) {
-    throw new Error('RUNTIME_PROOF_EMERGENCY_CATEGORY_CONTENT_FAILED')
+    throw new Error('RUNTIME_PROOF_CATEGORY_CONTENT_FAILED')
   }
 
   const legacyProduct = await requestWithHost(baseUrl, proofHost, '/thiet-bi-ve-sinh/ban-cau/legacy-product')
@@ -138,6 +163,7 @@ async function collectPublicProof(baseUrl: URL) {
 
   return {
     runtime: 'workerd-local',
+    assets: assetProof,
     ssr: { status: first.status, htmlSha256: sha256(firstBody), metadata: true },
     noindex: { htmlMeta: true, responseHeader: true, robotsDisallowAll: true },
     cache: {
