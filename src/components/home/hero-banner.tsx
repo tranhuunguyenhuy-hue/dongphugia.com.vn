@@ -65,13 +65,15 @@ export function HeroBanner({ banners }: HeroBannerProps) {
                 const desktopImage1600 =
                     item.desktopLargeImageUrl ??
                     "/api/homepage-hero?width=1600"
+                const mobileType = /\.jpe?g(?:\?|$)/i.test(mobileImage) ? "image/jpeg" : "image/webp"
+                const desktopType = /\.jpe?g(?:\?|$)/i.test(desktopImage) ? "image/jpeg" : "image/webp"
                 const image = (
                     <>
                         <link
                             rel="preload"
                             as="image"
                             href={mobileImage}
-                            type="image/webp"
+                            type={mobileType}
                             media="(max-width: 767px)"
                             fetchPriority="high"
                         />
@@ -79,19 +81,19 @@ export function HeroBanner({ banners }: HeroBannerProps) {
                             rel="preload"
                             as="image"
                             href={desktopImage}
-                            type="image/webp"
+                            type={desktopType}
                             media="(min-width: 768px)"
                             fetchPriority="high"
                         />
                         <picture className="block h-full w-full">
                             <source
                                 media="(max-width: 767px)"
-                                type="image/webp"
+                                type={mobileType}
                                 srcSet={mobileImage}
                             />
                             <source
                                 media="(min-width: 768px)"
-                                type="image/webp"
+                                type={desktopType}
                                 srcSet={`${desktopImage} 1280w, ${desktopImage1600} 1600w`}
                                 sizes="1280px"
                             />

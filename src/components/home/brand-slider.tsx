@@ -1,4 +1,5 @@
 import { DeferredBrandLogo } from '@/components/media/deferred-brand-logo'
+import { PUBLIC_UI_READ_ONLY } from '@dpg/public-ui-policy'
 
 const BRAND_SLUGS = [
     'toto', 'inax', 'caesar', 'american-standard', 'grohe', 'cotto', 'viglacera',
@@ -13,7 +14,7 @@ export function BrandSlider() {
         <section className="w-full py-8 lg:py-10 overflow-hidden" aria-label="Đối tác thương hiệu">
             {/* Section label */}
             <p className="text-center text-[13px] uppercase tracking-widest font-semibold text-stone-600 mb-8 w-full">
-                Được hơn 30 đối tác toàn cầu tin tưởng
+                {PUBLIC_UI_READ_ONLY ? 'Không gian thương hiệu — danh mục đang cập nhật' : 'Được hơn 30 đối tác toàn cầu tin tưởng'}
             </p>
 
             {/* Marquee container */}

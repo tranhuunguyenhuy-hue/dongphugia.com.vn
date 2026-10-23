@@ -81,7 +81,7 @@ export async function verifyRealPreview({ baseUrl, sourceSha, fetchImpl = fetch,
   if (!/<meta[^>]+name=["']robots["'][^>]+content=["'][^"']*noindex[^"']*nofollow/i.test(html)) {
     throw new Error('LEO563_REAL_PREVIEW_HTML_NOINDEX_FAILED')
   }
-  if (!/<title>Đông Phú Gia - Vật liệu xây dựng cao cấp tại Đà Lạt<\/title>/i.test(html)) {
+  if (!/<title>Đông Phú Gia - Vật liệu xây dựng tại Đà Lạt<\/title>/i.test(html)) {
     throw new Error('LEO563_REAL_PREVIEW_METADATA_FAILED')
   }
   if (/stale-while-revalidate/i.test(`${header(first, 'Cache-Control')} ${header(first, 'CDN-Cache-Control')}`)) {

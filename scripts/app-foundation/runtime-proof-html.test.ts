@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { assertNoindexHtml } from './runtime-proof-html.mjs'
 
-const canonicalTitle = 'Đông Phú Gia - Vật liệu xây dựng cao cấp tại Đà Lạt'
+const canonicalTitle = 'Đông Phú Gia - Vật liệu xây dựng tại Đà Lạt'
 const fixtureTitle = 'Danh mục sản phẩm | Đông Phú Gia Preview'
 const adminTitle = 'Dong Phu Gia Admin Application'
 
