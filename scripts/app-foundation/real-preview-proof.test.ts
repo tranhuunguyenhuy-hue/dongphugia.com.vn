@@ -43,7 +43,7 @@ describe('LEO-563 real Public Preview proof', () => {
         })
       }
       rootCount += 1
-      return response('<html><head><title>Đông Phú Gia - Vật liệu xây dựng cao cấp tại Đà Lạt</title><meta name="robots" content="noindex,nofollow"></head></html>', {
+      return response('<html><head><title>Đông Phú Gia - Vật liệu xây dựng tại Đà Lạt</title><meta name="robots" content="noindex,nofollow"></head></html>', {
         'Content-Type': 'text/html',
         'Cache-Control': 'public, max-age=0, must-revalidate',
         'CDN-Cache-Control': 'public, max-age=300, must-revalidate',
@@ -97,7 +97,7 @@ describe('LEO-563 real Public Preview proof', () => {
         })
       }
       rootCount += 1
-      return response('<html><head><title>Đông Phú Gia - Vật liệu xây dựng cao cấp tại Đà Lạt</title><meta name="robots" content="noindex,nofollow"></head></html>', {
+      return response('<html><head><title>Đông Phú Gia - Vật liệu xây dựng tại Đà Lạt</title><meta name="robots" content="noindex,nofollow"></head></html>', {
         'Content-Type': 'text/html',
         'Cache-Control': 'public, max-age=0, must-revalidate',
         'CDN-Cache-Control': 'public, max-age=300, must-revalidate',
@@ -108,6 +108,23 @@ describe('LEO-563 real Public Preview proof', () => {
 
     await expect(verifyRealPreview({ baseUrl, sourceSha, fetchImpl, hitAttempts: 1 })).rejects.toThrow(
       'LEO563_REAL_PREVIEW_X_ROBOTS_FAILED',
+    )
+  })
+
+  it('rejects a title that differs from the exact Owner-accepted Public metadata', async () => {
+    const fetchImpl = async () => response(
+      '<html><head><title>Đông Phú Gia - Vật liệu xây dựng cao cấp tại Đà Lạt</title><meta name="robots" content="noindex,nofollow"></head></html>',
+      {
+        'Content-Type': 'text/html',
+        'Cache-Control': 'public, max-age=0, must-revalidate',
+        'CDN-Cache-Control': 'public, max-age=300, must-revalidate',
+        'X-DPG-Cache': 'MISS',
+        'X-Robots-Tag': 'noindex',
+      },
+    )
+
+    await expect(verifyRealPreview({ baseUrl, sourceSha, fetchImpl })).rejects.toThrow(
+      'LEO563_REAL_PREVIEW_METADATA_FAILED',
     )
   })
 })

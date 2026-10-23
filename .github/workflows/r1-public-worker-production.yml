@@ -1,0 +1,141 @@
+name: R1 Public Worker Production Gate (disabled)
+
+on:
+  workflow_dispatch:
+    inputs:
+      owner_go_comment_id:
+        description: New Issue 160 Owner GO comment for this exact future release
+        required: true
+        type: string
+      source_pr:
+        description: Merged source PR number
+        required: true
+        type: string
+      source_sha:
+        description: Exact merged PR head SHA
+        required: true
+        type: string
+      artifact_sha256:
+        description: SHA-256 of the separately validated immutable Worker artifact
+        required: true
+        type: string
+      account_id:
+        description: Cloudflare account ID covered by the future Owner GO
+        required: true
+        type: string
+      zone_id:
+        description: Active Cloudflare zone ID covered by the future Owner GO
+        required: true
+        type: string
+      hostname:
+        description: Exact verified Production hostname
+        required: true
+        type: string
+      rollback_worker_version_id:
+        description: Previously verified Production Worker version ID
+        required: true
+        type: string
+      rollback_source_sha:
+        description: Source SHA for the verified rollback Worker version
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+  issues: read
+  pull-requests: read
+
+jobs:
+  read-only-release-gate:
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      github.actor == 'tranhuunguyenhuy-hue' &&
+      vars.R1_PUBLIC_WORKER_PRODUCTION_RELEASE_ENABLED == 'true' &&
+      inputs.owner_go_comment_id != ''
+    environment:
+      name: production
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the dispatched main commit
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify independent Production environment approval
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          owner_reviewer_gate="$(gh api "repos/${GITHUB_REPOSITORY}/environments/production" --jq '[.protection_rules[]? | select(.type == "required_reviewers" and .prevent_self_review == true) | .reviewers[]?.reviewer.login] | any(. == "tranhuunguyenhuy-hue")')"
+          test "$owner_reviewer_gate" = "true" || {
+            echo "R1_PRODUCTION_ENVIRONMENT_REQUIRES_OWNER_AND_PREVENT_SELF_REVIEW"
+            exit 1
+          }
+
+      - name: Verify future Owner GO and exact release evidence references
+        env:
+          GH_TOKEN: ${{ github.token }}
+          OWNER_GO_COMMENT_ID: ${{ inputs.owner_go_comment_id }}
+          SOURCE_PR: ${{ inputs.source_pr }}
+          SOURCE_SHA: ${{ inputs.source_sha }}
+          ARTIFACT_SHA256: ${{ inputs.artifact_sha256 }}
+          ACCOUNT_ID: ${{ inputs.account_id }}
+          ZONE_ID: ${{ inputs.zone_id }}
+          HOSTNAME: ${{ inputs.hostname }}
+          ROLLBACK_WORKER_VERSION_ID: ${{ inputs.rollback_worker_version_id }}
+          ROLLBACK_SOURCE_SHA: ${{ inputs.rollback_source_sha }}
+        run: |
+          set -euo pipefail
+          [[ "$OWNER_GO_COMMENT_ID" =~ ^[0-9]+$ ]]
+          [[ "$SOURCE_PR" =~ ^[1-9][0-9]*$ ]]
+          [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$ARTIFACT_SHA256" =~ ^[0-9a-f]{64}$ ]]
+          [[ "$ACCOUNT_ID" =~ ^[0-9a-f]{32}$ ]]
+          [[ "$ZONE_ID" =~ ^[0-9a-f]{32}$ ]]
+          [[ "$HOSTNAME" == "www.dongphugia.vn" ]]
+          [[ "$ROLLBACK_WORKER_VERSION_ID" =~ ^[0-9a-f-]{32,64}$ ]]
+          [[ "$ROLLBACK_SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]
+
+          approval="$(gh api "repos/${GITHUB_REPOSITORY}/issues/comments/${OWNER_GO_COMMENT_ID}")"
+          test "$(jq -r '.user.login' <<<"$approval")" = "tranhuunguyenhuy-hue"
+          test "$(jq -r '.issue_url' <<<"$approval")" = "https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/160"
+          approval_body="$(jq -r '.body // ""' <<<"$approval")"
+          grep -Fq 'OWNER GO — R1 WORKER PRODUCTION RELEASE' <<<"$approval_body"
+          for evidence in \
+            "$SOURCE_SHA" "$ARTIFACT_SHA256" "$ACCOUNT_ID" "$ZONE_ID" "$HOSTNAME" \
+            "$ROLLBACK_WORKER_VERSION_ID" "$ROLLBACK_SOURCE_SHA" \
+            'WORKERS_FREE_PLAN_CONFIRMED' \
+            'ACTIONS_PACKAGES_ZERO_STOP_AT_LIMIT' \
+            'NO_PAYMENT_METHOD_CONFIRMED' \
+            'DNS_TLS_AND_EMAIL_INVENTORY_VERIFIED' \
+            'ROLLBACK_TARGET_VERIFIED'; do
+            grep -Fq -- "$evidence" <<<"$approval_body"
+          done
+
+          pull_request="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${SOURCE_PR}")"
+          test "$(jq -r '.state' <<<"$pull_request")" = "closed"
+          test "$(jq -r '.merged_at // ""' <<<"$pull_request")" != ""
+          test "$(jq -r '.head.sha' <<<"$pull_request")" = "$SOURCE_SHA"
+          merge_sha="$(jq -r '.merge_commit_sha // ""' <<<"$pull_request")"
+          [[ "$merge_sha" =~ ^[0-9a-f]{40}$ ]]
+          git fetch --no-tags origin main
+          git merge-base --is-ancestor "$merge_sha" "$GITHUB_SHA"
+
+          node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs'
+          const config = JSON.parse(readFileSync('apps/public/wrangler.production.jsonc', 'utf8'))
+          if (config.name !== 'dongphugia-v1-public-production-candidate') throw new Error('R1_PRODUCTION_WORKER_NAME_MISMATCH')
+          if (config.vars?.APP_ENV !== 'production' || config.vars?.APP_BUILD_TARGET !== 'public') throw new Error('R1_PRODUCTION_BUILD_TARGET_MISMATCH')
+          if (config.vars?.APP_ORIGIN !== 'https://www.dongphugia.vn' || config.vars?.PREVIEW_NOINDEX !== 'false') throw new Error('R1_PRODUCTION_PUBLIC_CONFIG_MISMATCH')
+          if (config.workers_dev !== false || config.preview_urls !== false) throw new Error('R1_PRODUCTION_WORKER_ENDPOINTS_ENABLED')
+          if (config.assets?.binding !== 'ASSETS' || config.assets?.directory !== 'dist/client') throw new Error('R1_PRODUCTION_ASSETS_CONFIG_MISMATCH')
+          if ('routes' in config || 'route' in config || 'custom_domains' in config || 'bindings' in config) throw new Error('R1_PRODUCTION_ROUTE_OR_BINDING_FORBIDDEN')
+          NODE
+
+      - name: Stop; this A2 workflow is a non-mutating gate skeleton only
+        run: |
+          echo "A2_RELEASE_EXECUTION_NOT_IMPLEMENTED: require a separate Owner GO and reviewed release workflow after artifact, Free-plan, DNS/TLS, email, and rollback evidence are independently verified."
+          exit 1

@@ -253,7 +253,21 @@ export function parseWranglerDeploy(output) {
 
 function providerErrorCodes(body) {
   if (!Array.isArray(body?.errors)) return []
-  return body.errors.map((error) => Number(error?.code)).filter(Number.isInteger)
+  return [...new Set(body.errors
+    .map((error) => error?.code)
+    .filter((code) => typeof code === 'number' && Number.isSafeInteger(code) && code >= 0 && code <= 999999))]
+    .sort((left, right) => left - right)
+    .slice(0, 8)
+}
+
+function safeHttpStatus(status) {
+  return Number.isInteger(status) && status >= 100 && status <= 599 ? status : 'UNKNOWN'
+}
+
+function inspectionReadFailure(label, status, errorCodes) {
+  const safeStatus = safeHttpStatus(status)
+  const safeCodes = errorCodes.length ? errorCodes.join(',') : 'UNKNOWN'
+  return new Error(`LEO563_PREVIEW_INSPECTION_READ_FAILED:${label}:HTTP_STATUS=${safeStatus}:CLOUDFLARE_CODES=${safeCodes}`)
 }
 
 function normalizeOptionalList(value, errorCode) {
@@ -938,15 +952,22 @@ export async function inspectPublishedResource({ accountId, apiToken, versionId,
   const calls = []
   const headers = { Authorization: `Bearer ${apiToken}`, 'Content-Type': 'application/json' }
   async function get(label, pathname) {
-    const response = await fetchImpl(`https://api.cloudflare.com/client/v4${pathname}`, { method: 'GET', headers })
+    let response
+    try {
+      response = await fetchImpl(`https://api.cloudflare.com/client/v4${pathname}`, { method: 'GET', headers })
+    } catch {
+      calls.push({ label, status: 'READ_FAILED', httpStatus: null, errorCodes: [] })
+      throw inspectionReadFailure(label, null, [])
+    }
     let body = null
     try {
       body = await response.json()
     } catch {
       // Provider response bytes are intentionally not echoed.
     }
-    calls.push({ label, status: response.ok ? 'READ_OK' : 'READ_FAILED', httpStatus: response.status, errorCodes: providerErrorCodes(body) })
-    if (!response.ok || body?.success === false) throw new Error(`LEO563_PREVIEW_INSPECTION_READ_FAILED:${label}`)
+    const errorCodes = providerErrorCodes(body)
+    calls.push({ label, status: response.ok ? 'READ_OK' : 'READ_FAILED', httpStatus: safeHttpStatus(response.status), errorCodes })
+    if (!response.ok || body?.success === false) throw inspectionReadFailure(label, response.status, errorCodes)
     return body?.result ?? null
   }
 
