@@ -206,6 +206,39 @@ jobs:
       - name: Test
         run: npm test
 
+      - name: B11 public synthetic re-wrap contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s scripts/backup -p 'test_b11_rewrap_*.py' -v
+          mkdir -p "$RUNNER_TEMP/b11-public-age"
+          curl --fail --location --silent --show-error --max-time 120 \
+            --output "$RUNNER_TEMP/b11-public-age/age.tar.gz" \
+            'https://github.com/FiloSottile/age/releases/download/v1.3.2/age-v1.3.2-linux-amd64.tar.gz'
+          printf '%s  %s\n' \
+            'cbe24006683f8eb669266162894b9a522a1af52f2665fbc63a4bb032ed26ac10' \
+            "$RUNNER_TEMP/b11-public-age/age.tar.gz" | sha256sum --check --status
+          tar -xOzf "$RUNNER_TEMP/b11-public-age/age.tar.gz" age/age > "$RUNNER_TEMP/b11-public-age/age"
+          tar -xOzf "$RUNNER_TEMP/b11-public-age/age.tar.gz" age/age-keygen > "$RUNNER_TEMP/b11-public-age/age-keygen"
+          chmod 0555 "$RUNNER_TEMP/b11-public-age/age" "$RUNNER_TEMP/b11-public-age/age-keygen"
+          printf '%s  %s\n' \
+            'eb7dd1b518f0a307c99cd97782623c5321da049154b04acd2d98d21aa7bc9b2c' \
+            "$RUNNER_TEMP/b11-public-age/age" | sha256sum --check --status
+          docker pull 'python:3.12-slim@sha256:a0f57064cbdcd6285fa45f51237ab0b35ea8ebaed06a1f5973e89e19dfb86704' >/dev/null
+          docker run --rm --pull=never --network none --read-only --cap-drop ALL \
+            --security-opt no-new-privileges --pids-limit 64 --memory 768m --cpus 1 \
+            --user 65534:65534 --tmpfs /tmp:rw,nosuid,nodev,noexec,size=64m \
+            --mount "type=bind,src=$RUNNER_TEMP/b11-public-age/age,dst=/opt/age,readonly" \
+            --mount "type=bind,src=$RUNNER_TEMP/b11-public-age/age-keygen,dst=/opt/age-keygen,readonly" \
+            --mount "type=bind,src=$GITHUB_WORKSPACE/scripts/backup/b11_rewrap_core.py,dst=/opt/b11_rewrap_core.py,readonly" \
+            --mount "type=bind,src=$GITHUB_WORKSPACE/scripts/backup/test_b11_rewrap_linux.py,dst=/opt/test_b11_rewrap_linux.py,readonly" \
+            --mount "type=bind,src=$GITHUB_WORKSPACE/scripts/backup/fixtures/b11-stalled-age.sh,dst=/opt/b11-stalled-age.sh,readonly" \
+            --env B11_TEST_AGE_BIN=/opt/age --env B11_TEST_AGE_KEYGEN_BIN=/opt/age-keygen \
+            --env B11_TEST_STALLED_AGE_BIN=/opt/b11-stalled-age.sh \
+            --env PYTHONDONTWRITEBYTECODE=1 \
+            'python:3.12-slim@sha256:a0f57064cbdcd6285fa45f51237ab0b35ea8ebaed06a1f5973e89e19dfb86704' \
+            python3 -B /opt/test_b11_rewrap_linux.py
+
       - name: Check the legacy static artifact contract without publishing it
         run: npm run static:check
 

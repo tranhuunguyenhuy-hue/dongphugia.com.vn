@@ -1,0 +1,148 @@
+name: B11 single encrypted recovery re-wrap
+
+# Source-only candidate. No automatic event can run this workflow. A future
+# Owner GO must set the exact approved main SHA variable and supply a narrowly
+# scoped destination credential before any protected dispatch.
+on:
+  workflow_dispatch:
+    inputs:
+      approved_control_sha:
+        description: Exact reviewed main commit approved for one recovery run
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: b11-single-rewrap-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  rewrap:
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      github.repository == 'tranhuunguyenhuy-hue/dongphugia.com.vn' &&
+      github.actor == 'tranhuunguyenhuy-hue' &&
+      github.run_attempt == 1 &&
+      vars.B11_REWRAP_APPROVED_SHA == github.sha &&
+      inputs.approved_control_sha == github.sha
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    environment: runtime-backup
+    steps:
+      - name: Check out immutable approved control
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Attest exact control and guard missing activation
+        env:
+          APPROVED_SHA: ${{ vars.B11_REWRAP_APPROVED_SHA }}
+          DISPATCH_SHA: ${{ inputs.approved_control_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = refs/heads/main
+          test "$GITHUB_REPOSITORY" = tranhuunguyenhuy-hue/dongphugia.com.vn
+          test "$GITHUB_ACTOR" = tranhuunguyenhuy-hue
+          test "$GITHUB_RUN_ATTEMPT" = 1
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$APPROVED_SHA" = "$GITHUB_SHA"
+          test "$DISPATCH_SHA" = "$GITHUB_SHA"
+
+      - name: Set up manifest validator runtime
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24.13.0
+
+      - name: Prepare immutable public-only tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/b11-tools" "$RUNNER_TEMP/b11-output"
+          curl --fail --location --silent --show-error --max-time 120 \
+            --output "$RUNNER_TEMP/b11-tools/age.tar.gz" \
+            'https://github.com/FiloSottile/age/releases/download/v1.3.2/age-v1.3.2-linux-amd64.tar.gz'
+          printf '%s  %s\n' \
+            'cbe24006683f8eb669266162894b9a522a1af52f2665fbc63a4bb032ed26ac10' \
+            "$RUNNER_TEMP/b11-tools/age.tar.gz" | sha256sum --check --status
+          tar -xOzf "$RUNNER_TEMP/b11-tools/age.tar.gz" age/age > "$RUNNER_TEMP/b11-tools/age"
+          chmod 0555 "$RUNNER_TEMP/b11-tools/age"
+          printf '%s  %s\n' \
+            'eb7dd1b518f0a307c99cd97782623c5321da049154b04acd2d98d21aa7bc9b2c' \
+            "$RUNNER_TEMP/b11-tools/age" | sha256sum --check --status
+          docker pull 'python:3.12-slim@sha256:a0f57064cbdcd6285fa45f51237ab0b35ea8ebaed06a1f5973e89e19dfb86704' >/dev/null
+          sudo chown 65534:65534 "$RUNNER_TEMP/b11-output"
+          chmod 0700 "$RUNNER_TEMP/b11-output"
+
+      - name: Fetch and verify one exact historical encrypted artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+          B11_ARTIFACT_ZIP: ${{ runner.temp }}/b11-artifact.zip
+          B11_MANIFEST_JSON: ${{ runner.temp }}/b11-manifest.json
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -B scripts/backup/b11_rewrap_io.py fetch
+          if ! node scripts/backup/manifest-contract.mjs validate "$B11_MANIFEST_JSON" >/dev/null 2>&1; then
+            echo 'B11_SOURCE status=FAIL reason=manifest_contract_invalid'
+            exit 1
+          fi
+          echo 'B11_SOURCE status=PASS manifest_contract=PASS'
+
+      - name: Prove private destination and credential before key use
+        env:
+          B11_VAULT_CONTENTS_TOKEN: ${{ secrets.B11_VAULT_CONTENTS_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -B scripts/backup/b11_rewrap_io.py destination-preflight
+
+      - name: Enforce the only protected dispatch before key use
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -B scripts/backup/b11_rewrap_io.py single-dispatch
+
+      - name: Re-wrap inside a network-disabled container
+        env:
+          B11_OLD_AGE_IDENTITY: ${{ secrets.BACKUP_AGE_PRIVATE_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +x
+          if [[ -z "${B11_OLD_AGE_IDENTITY:-}" ]]; then
+            echo 'B11_REWRAP status=FAIL reason=identity_missing'
+            exit 1
+          fi
+          printf '%s\n' "$B11_OLD_AGE_IDENTITY" | env -u B11_OLD_AGE_IDENTITY docker run --rm -i \
+            --pull=never --network none --read-only --cap-drop ALL \
+            --security-opt no-new-privileges --pids-limit 64 --memory 768m --cpus 1 \
+            --user 65534:65534 --tmpfs /tmp:rw,nosuid,nodev,noexec,size=32m \
+            --mount "type=bind,src=$RUNNER_TEMP/b11-artifact.zip,dst=/input/artifact.zip,readonly" \
+            --mount "type=bind,src=$RUNNER_TEMP/b11-tools/age,dst=/opt/age,readonly" \
+            --mount "type=bind,src=$GITHUB_WORKSPACE/scripts/backup/b11_rewrap_core.py,dst=/opt/b11_rewrap_core.py,readonly" \
+            --mount "type=bind,src=$RUNNER_TEMP/b11-output,dst=/output" \
+            --env PYTHONDONTWRITEBYTECODE=1 \
+            'python:3.12-slim@sha256:a0f57064cbdcd6285fa45f51237ab0b35ea8ebaed06a1f5973e89e19dfb86704' \
+            python3 -B /opt/b11_rewrap_core.py
+
+      - name: Upload only new ciphertext directly to private destination
+        env:
+          B11_VAULT_CONTENTS_TOKEN: ${{ secrets.B11_VAULT_CONTENTS_TOKEN }}
+          B11_CIPHERTEXT_PATH: ${{ runner.temp }}/b11-output/leo540-38915575745-rewrapped.dump.age
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -B scripts/backup/b11_rewrap_io.py upload
+
+      - name: Record sanitized result
+        shell: bash
+        run: |
+          echo '### B11 re-wrap: ciphertext uploaded to the Owner-only private destination' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Original identity, plaintext dump, and database rows were not uploaded or printed.' >> "$GITHUB_STEP_SUMMARY"
