@@ -1,0 +1,42 @@
+name: Codex Issue 160 dispatcher (dry run)
+
+on:
+  issues:
+    types: [labeled]
+
+permissions:
+  contents: read
+  issues: read
+
+concurrency:
+  group: codex-task-issue-${{ github.event.issue.number || github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  validate-approved-task:
+    if: >-
+      github.repository == 'tranhuunguyenhuy-hue/dongphugia.com.vn' &&
+      github.event.action == 'labeled' &&
+      github.event.issue.number == 160 &&
+      github.event.label.name == 'codex:dispatch-approved'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out trusted default-branch dispatcher code
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.0.0
+        with:
+          ref: main
+          persist-credentials: false
+
+      - name: Validate repository, event, workflow ref, and actor permission
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/automation/codex-task-dispatcher.mjs
+
+      - name: Record sanitized dry-run evidence
+        run: |
+          {
+            echo '### Codex dispatcher dry run'
+            echo 'The event was validated only; no Codex task or publisher was invoked.'
+            echo 'Evidence is limited to the workflow run and sanitized validator output.'
+          } >> "$GITHUB_STEP_SUMMARY"
