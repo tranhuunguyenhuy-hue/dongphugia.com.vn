@@ -36,6 +36,8 @@ DESTINATION_PATH = f"recovery/{OUTPUT_NAME}"
 API_ROOT = "https://api.github.com"
 MAX_JSON_BYTES = 24 * 1024 * 1024
 OWNER_LOGIN = "tranhuunguyenhuy-hue"
+PREVIOUS_FAILED_RUN_ID = 40256221494
+PREVIOUS_FAILED_CONTROL_SHA = "067b8e9f033c2b95645b7a52e0f3377370a91361"
 
 
 def _api_request(path: str, token: str, *, method: str = "GET", body: bytes | None = None) -> bytes:
@@ -260,12 +262,22 @@ def upload_ciphertext(token: str, input_path: Path) -> str:
 def validate_single_dispatch(runs: dict, run_id: int) -> None:
     listed = runs.get("workflow_runs")
     if (
-        runs.get("total_count") != 1
+        runs.get("total_count") != 2
         or not isinstance(listed, list)
-        or len(listed) != 1
-        or listed[0].get("id") != run_id
-        or listed[0].get("event") != "workflow_dispatch"
-        or listed[0].get("run_attempt") != 1
+        or len(listed) != 2
+        or {run.get("id") for run in listed} != {run_id, PREVIOUS_FAILED_RUN_ID}
+    ):
+        raise RewrapError("single_dispatch_unproved")
+    current = next(run for run in listed if run["id"] == run_id)
+    previous = next(run for run in listed if run["id"] == PREVIOUS_FAILED_RUN_ID)
+    if (
+        current.get("event") != "workflow_dispatch"
+        or current.get("run_attempt") != 1
+        or previous.get("event") != "workflow_dispatch"
+        or previous.get("run_attempt") != 1
+        or previous.get("head_sha") != PREVIOUS_FAILED_CONTROL_SHA
+        or previous.get("status") != "completed"
+        or previous.get("conclusion") != "failure"
     ):
         raise RewrapError("single_dispatch_unproved")
 
@@ -291,7 +303,7 @@ def main() -> int:
             print("B11_DESTINATION status=PASS collaborators=owner_only actor=owner push_access=visible path=vacant")
         elif sys.argv[1] == "single-dispatch":
             preflight_single_dispatch(os.environ.get("GH_TOKEN", ""), int(os.environ["GITHUB_RUN_ID"]))
-            print("B11_DISPATCH status=PASS count=1 attempt=1")
+            print("B11_DISPATCH status=PASS total=2 prior_failed=1 current=1 attempt=1")
         else:
             token = os.environ.get("B11_VAULT_CONTENTS_TOKEN", "")
             digest = upload_ciphertext(token, Path(os.environ["B11_CIPHERTEXT_PATH"]))
