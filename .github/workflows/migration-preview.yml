@@ -239,6 +239,28 @@ jobs:
             'python:3.12-slim@sha256:a0f57064cbdcd6285fa45f51237ab0b35ea8ebaed06a1f5973e89e19dfb86704' \
             python3 -B /opt/test_b11_rewrap_linux.py
 
+      - name: B11 public-only Docker file permission handoff
+        shell: bash
+        run: |
+          set -euo pipefail
+          probe="$RUNNER_TEMP/b11-public-permission-probe"
+          mkdir -p "$probe/output"
+          printf 'B11_PUBLIC_PERMISSION_FIXTURE' > "$probe/input"
+          chmod 0600 "$probe/input"
+          chmod 0700 "$probe/output"
+          sudo chown 65534:65534 "$probe/input" "$probe/output"
+          docker run --rm --pull=never --network none --read-only --cap-drop ALL \
+            --security-opt no-new-privileges --user 65534:65534 \
+            --mount "type=bind,src=$probe/input,dst=/input/probe,readonly" \
+            --mount "type=bind,src=$probe/output,dst=/output" \
+            'python:3.12-slim@sha256:a0f57064cbdcd6285fa45f51237ab0b35ea8ebaed06a1f5973e89e19dfb86704' \
+            sh -c 'umask 077; cat /input/probe > /output/probe'
+          sudo test -f "$probe/output/probe"
+          sudo test ! -L "$probe/output/probe"
+          sudo chown "$(id -u):$(id -g)" "$probe/output" "$probe/output/probe"
+          test -r "$probe/output/probe"
+          test "$(cat "$probe/output/probe")" = 'B11_PUBLIC_PERMISSION_FIXTURE'
+
       - name: Check the legacy static artifact contract without publishing it
         run: npm run static:check
 

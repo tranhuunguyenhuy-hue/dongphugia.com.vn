@@ -14,6 +14,8 @@ from b11_rewrap_io import (
     HISTORICAL_ARTIFACT_ID,
     HISTORICAL_RUN_HEAD,
     HISTORICAL_RUN_ID,
+    PREVIOUS_FAILED_CONTROL_SHA,
+    PREVIOUS_FAILED_RUN_ID,
     _signed_host_allowed,
     upload_ciphertext,
     validate_destination_collaborators,
@@ -79,14 +81,28 @@ class IOContractTests(unittest.TestCase):
         with self.assertRaisesRegex(RewrapError, "destination_acl_mismatch"):
             validate_destination_collaborators([owner, {"login": "another"}])
 
-    def test_single_dispatch_rejects_reruns_and_other_dispatches(self):
-        run = {"id": 77, "event": "workflow_dispatch", "run_attempt": 1}
-        validate_single_dispatch({"total_count": 1, "workflow_runs": [run]}, 77)
-        with self.assertRaisesRegex(RewrapError, "single_dispatch_unproved"):
-            validate_single_dispatch({"total_count": 2, "workflow_runs": [run]}, 77)
-        run["run_attempt"] = 2
-        with self.assertRaisesRegex(RewrapError, "single_dispatch_unproved"):
-            validate_single_dispatch({"total_count": 1, "workflow_runs": [run]}, 77)
+    def test_one_new_dispatch_requires_only_the_pinned_failed_predecessor(self):
+        current = {"id": 77, "event": "workflow_dispatch", "run_attempt": 1}
+        previous = {
+            "id": PREVIOUS_FAILED_RUN_ID,
+            "event": "workflow_dispatch",
+            "run_attempt": 1,
+            "head_sha": PREVIOUS_FAILED_CONTROL_SHA,
+            "status": "completed",
+            "conclusion": "failure",
+        }
+        runs = {"total_count": 2, "workflow_runs": [current, previous]}
+        validate_single_dispatch(runs, 77)
+        for invalid in (
+            {"total_count": 1, "workflow_runs": [current]},
+            {"total_count": 3, "workflow_runs": [current, previous]},
+            {"total_count": 2, "workflow_runs": [current, {**previous, "run_attempt": 2}]},
+            {"total_count": 2, "workflow_runs": [current, {**previous, "head_sha": "wrong"}]},
+            {"total_count": 2, "workflow_runs": [current, {**previous, "conclusion": "success"}]},
+            {"total_count": 2, "workflow_runs": [{**current, "run_attempt": 2}, previous]},
+        ):
+            with self.subTest(invalid=invalid), self.assertRaisesRegex(RewrapError, "single_dispatch_unproved"):
+                validate_single_dispatch(invalid, 77)
 
     def test_signed_url_allowlist(self):
         self.assertTrue(_signed_host_allowed("https://productionresultssa1.blob.core.windows.net/file?sig=fixture"))
