@@ -260,6 +260,50 @@ describe('LEO-563 Cloudflare Preview publication gate', () => {
     expect(requests.every(({ method }) => method === 'GET')).toBe(true)
   })
 
+  it.each([
+    ['HTTP error with numeric Cloudflare codes', async () => Response.json({
+      success: false,
+      errors: [
+        { code: 10000, message: 'Bearer cf_secret_value' },
+        { code: '10001', message: 'https://private.invalid/?token=query_secret' },
+        { code: 1.5, message: 'body_secret' },
+      ],
+    }, { status: 403 }), 'HTTP_STATUS=403:CLOUDFLARE_CODES=10000'],
+    ['HTTP 200 API error with allowlisted code field', async () => Response.json({
+      success: false,
+      errors: [{ code: 10000, message: 'Authorization: Bearer api_secret_value' }],
+    }, { status: 200 }), 'HTTP_STATUS=200:CLOUDFLARE_CODES=10000'],
+    ['malformed HTTP response', async () => new Response('Bearer body_secret https://private.invalid/?key=query_secret', { status: 502 }), 'HTTP_STATUS=502:CLOUDFLARE_CODES=UNKNOWN'],
+    ['invalid HTTP status', async () => ({ ok: false, status: 700, json: async () => ({ success: false, errors: [{ code: '10000' }] }) }), 'HTTP_STATUS=UNKNOWN:CLOUDFLARE_CODES=UNKNOWN'],
+    ['transport failure', async () => { throw new Error('Bearer transport_secret https://private.invalid/?token=query_secret') }, 'HTTP_STATUS=UNKNOWN:CLOUDFLARE_CODES=UNKNOWN'],
+  ])('fails closed and emits only sanitized diagnostics for %s', async (_label, versionResponse, expectedDiagnostic) => {
+    const versionId = '11111111-2222-3333-4444-555555555555'
+    const evidence = managedPublicationEvidence()
+    const safeFetch = managedRemoteFetch({ workerVersionId: versionId, deploymentId: evidence.deploymentId })
+    const fetchImpl = async (input: URL | RequestInfo, init?: RequestInit) => {
+      if (String(input).endsWith(`/versions/${versionId}`)) return versionResponse()
+      return safeFetch(input, init)
+    }
+
+    let failure: unknown
+    try {
+      await inspectPublishedResource({
+        accountId: 'synthetic-account',
+        apiToken: 'synthetic-token',
+        versionId,
+        fetchImpl,
+      })
+    } catch (error) {
+      failure = error
+    }
+
+    expect(failure).toBeInstanceOf(Error)
+    const message = (failure as Error).message
+    expect(message).toContain('LEO563_PREVIEW_INSPECTION_READ_FAILED:workers.version.get')
+    expect(message).toContain(expectedDiagnostic)
+    expect(message).not.toMatch(/cf_secret_value|api_secret_value|body_secret|transport_secret|query_secret|private\.invalid|synthetic-account|synthetic-token|Authorization|Bearer/i)
+  })
+
   it('classifies an absent Worker as safe for first deployment', async () => {
     const requests: string[] = []
     const fetchImpl = async (input: URL | RequestInfo, init?: RequestInit) => {

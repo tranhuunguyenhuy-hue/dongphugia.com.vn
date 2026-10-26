@@ -14,6 +14,10 @@ export default defineConfig({
                 __dirname,
                 './packages/app-contracts/src/index.ts',
             ),
+            '@dpg/public-ui-policy': path.resolve(
+                __dirname,
+                './src/runtime/legacy-public-ui-policy.ts',
+            ),
         },
         // exclude next.js specific files
         exclude: [
