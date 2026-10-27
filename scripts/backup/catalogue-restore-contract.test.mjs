@@ -7,6 +7,8 @@ import {
   buildRehearsalTargetCheckSql,
   buildCatalogueSnapshotSql,
   buildCatalogueValidationSql,
+  buildCatalogueSequenceSql,
+  buildRuntimeBaselinePreflightSql,
   catalogueTableArguments,
   compareCatalogueManifests,
   validateCatalogueSourceManifest,
@@ -190,5 +192,28 @@ describe('catalogue-only restore contract', () => {
     expect(sql).toContain('CATALOGUE_REHEARSAL_EXCLUDED_ROWS')
     expect(sql).toContain('CATALOGUE_REHEARSAL_EXCLUDED_SEQUENCE')
     expect(sql).not.toMatch(/select\s+\*\s+from/i)
+  })
+
+  it('repairs catalogue sequences with transactional restart instead of nonrollbackable setval', () => {
+    const sql = buildCatalogueSequenceSql()
+    expect(sql).toContain('alter sequence %s restart with %s')
+    expect(sql).toContain('from pg_sequence where seqrelid = sequence_name::regclass')
+    expect(sql).toContain('catalogue_sequence_increment_invalid')
+    expect(sql).not.toMatch(/\bsetval\s*\(/i)
+  })
+
+  it('fails closed on baseline drift before the protected snapshot or schema mutation', () => {
+    const sql = buildRuntimeBaselinePreflightSql()
+    expect(sql).toContain("server_version_num")
+    expect(sql).toContain('367001600')
+    expect(sql).toContain('runtime_migration_ledger')
+    expect(sql).toContain("n.nspname = 'dpg_app'")
+    expect(sql).toContain('catalogue_tables text[]')
+    expect(sql).toContain("raise exception 'runtime_baseline_catalogue_not_empty'")
+    expect(sql).toContain('auth.users')
+    expect(sql).toContain('storage.objects')
+    expect(sql).toContain("'runtime_baseline_rls_gap_set_changed'")
+    expect(sql).not.toMatch(/select\s+\*\s+from/i)
+    expect(sql).not.toMatch(/insert\s+into|update\s+|delete\s+from|truncate\s+/i)
   })
 })

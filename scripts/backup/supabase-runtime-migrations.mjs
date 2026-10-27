@@ -5,6 +5,7 @@ import path from 'node:path'
 import pg from 'pg'
 
 import { parseSupabaseRuntimeTarget } from './supabase-runtime-target.mjs'
+import { supabaseRuntimeTlsOptions } from './supabase-runtime-tls.mjs'
 
 const { Client } = pg
 const DATABASE_SIZE_HARD_CEILING_BYTES = 367001600n
@@ -439,7 +440,8 @@ export async function executeRuntimeMigrations(client, mode, checkpointAttestor)
 
 async function run() {
   const mode = process.argv[2]
-  const client = new Client(parseSupabaseRuntimeTarget(process.env.SUPABASE_REHOME_DATABASE_URL))
+  const target = parseSupabaseRuntimeTarget(process.env.SUPABASE_REHOME_DATABASE_URL)
+  const client = new Client({ ...target, ssl: supabaseRuntimeTlsOptions(target.host) })
   try {
     await client.connect()
     const count = await executeRuntimeMigrations(client, mode, async () => {

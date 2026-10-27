@@ -3,6 +3,7 @@ import { chmod, mkdtemp, rm, statfs, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
 import { parseSupabaseRuntimeTarget } from './supabase-runtime-target.mjs'
+import { validateSupabaseRuntimeRootCertificate } from './supabase-runtime-tls.mjs'
 
 const TMPFS_MAGIC = 0x01021994
 
@@ -23,12 +24,16 @@ async function main() {
   if (!fileMode && !stdinMode) throw new Error('mode_invalid')
 
   const target = parseSupabaseRuntimeTarget(process.env.SUPABASE_REHOME_DATABASE_URL)
+  const rootCertificate = validateSupabaseRuntimeRootCertificate(
+    process.env.SUPABASE_REHOME_ROOT_CA_CERTIFICATE,
+  )
   const tmpParent = process.env.SUPABASE_PSQL_TMPDIR || '/dev/shm'
   const filesystem = await statfs(tmpParent)
   if (Number(filesystem.type) !== TMPFS_MAGIC) throw new Error('tmpfs_required')
 
   const tmpDirectory = await mkdtemp(path.join(tmpParent, 'dpg-psql-'))
   const pgpass = path.join(tmpDirectory, '.pgpass')
+  const rootCertificatePath = path.join(tmpDirectory, 'root.crt')
   try {
     await writeFile(pgpass, [
       pgpassEscape(target.host),
@@ -38,9 +43,10 @@ async function main() {
       pgpassEscape(target.password),
     ].join(':') + '\n', { mode: 0o600 })
     await chmod(pgpass, 0o600)
+    await writeFile(rootCertificatePath, rootCertificate, { mode: 0o600 })
 
     const childEnvironment = Object.fromEntries(Object.entries(process.env).filter(([name]) => (
-      name !== 'SUPABASE_REHOME_DATABASE_URL' && !name.startsWith('PG')
+      !name.startsWith('SUPABASE_REHOME_') && !name.startsWith('PG')
     )))
     Object.assign(childEnvironment, {
       PGHOST: target.host,
@@ -48,7 +54,8 @@ async function main() {
       PGDATABASE: target.database,
       PGUSER: target.user,
       PGPASSFILE: pgpass,
-      PGSSLMODE: 'require',
+      PGSSLMODE: 'verify-full',
+      PGSSLROOTCERT: rootCertificatePath,
       PGAPPNAME: 'dongphugia-supabase-runtime-rehome',
     })
 
@@ -68,7 +75,10 @@ async function main() {
 }
 
 void main().catch((error) => {
-  const allowed = new Set(['mode_invalid', 'tmpfs_required', 'credential_encoding_invalid'])
+  const allowed = new Set([
+    'mode_invalid', 'tmpfs_required', 'credential_encoding_invalid',
+    'supabase_runtime_tls_certificate_invalid',
+  ])
   const reason = allowed.has(error?.message) ? error.message : 'database_operation_failed'
   fail(reason)
 })

@@ -278,6 +278,10 @@ declare
   table_name text;
   sequence_name text;
   maximum_id bigint;
+  sequence_increment bigint;
+  sequence_minimum bigint;
+  sequence_maximum bigint;
+  next_sequence_value bigint;
 begin
   foreach table_name in array array[${allowlist}]::text[]
   loop
@@ -285,12 +289,88 @@ begin
     if sequence_name is not null then
       execute format('select max(id)::bigint from dpg_app.%I', table_name) into maximum_id;
       if maximum_id is not null then
-        perform setval(sequence_name::regclass, maximum_id, true);
+        select seqincrement, seqmin, seqmax
+          into sequence_increment, sequence_minimum, sequence_maximum
+          from pg_sequence where seqrelid = sequence_name::regclass;
+        if sequence_increment is null or sequence_increment <= 0 then
+          raise exception 'catalogue_sequence_increment_invalid';
+        end if;
+        next_sequence_value := maximum_id + sequence_increment;
+        if next_sequence_value < sequence_minimum or next_sequence_value > sequence_maximum then
+          raise exception 'catalogue_sequence_value_out_of_range';
+        end if;
+        execute format('alter sequence %s restart with %s', sequence_name::regclass, next_sequence_value);
       end if;
     end if;
   end loop;
 end
 $catalogue_sequence_reset$;
+`
+}
+
+export function buildRuntimeBaselinePreflightSql() {
+  const tableList = CATALOGUE_TABLES.map((table) => `'${table}'`).join(', ')
+  return `do $runtime_baseline_preflight$
+declare
+  table_name text;
+  table_has_rows boolean;
+  catalogue_tables text[] := array[${tableList}]::text[];
+begin
+  if current_setting('server_version_num')::integer not between 170000 and 179999 then
+    raise exception 'runtime_baseline_postgres_version_mismatch';
+  end if;
+  if pg_database_size(current_database()) >= 367001600 then
+    raise exception 'runtime_baseline_database_size_limit';
+  end if;
+  if not exists (
+    select 1 from dpg_control.target_contract
+    where singleton
+      and project_name = 'dongphugia-runtime'
+      and region = 'ap-southeast-1'
+      and environment = 'preview'
+      and data_class = 'production-derived-reduced-runtime'
+      and production_data_allowed
+      and not production_credentials_allowed
+      and not production_writes_allowed
+      and hard_database_ceiling_bytes = 367001600
+  ) then
+    raise exception 'runtime_baseline_target_contract_mismatch';
+  end if;
+  if to_regclass('dpg_control.runtime_migration_ledger') is not null
+     or to_regnamespace('dpg_v1') is not null
+     or to_regnamespace('dpg_v1_api') is not null
+     or to_regclass('dpg_v1.products') is not null
+     or to_regprocedure('dpg_v1_api.public_product_get(uuid)') is not null
+     or to_regprocedure('dpg_v1_api.catalogue_media_register(jsonb,text)') is not null
+     or to_regprocedure('dpg_v1_api.order_intake_create(jsonb,text)') is not null
+     or exists (select 1 from pg_roles where rolname = 'dpg_backup') then
+    raise exception 'runtime_baseline_migration_state_changed';
+  end if;
+  if (select count(*) from pg_class c join pg_namespace n on n.oid = c.relnamespace
+      where n.nspname = 'dpg_app' and c.relkind in ('r','p')
+        and (not c.relrowsecurity or not c.relforcerowsecurity)) <> 13 then
+    raise exception 'runtime_baseline_rls_gap_set_changed';
+  end if;
+  if exists (select 1 from auth.users) or exists (select 1 from storage.objects) then
+    raise exception 'runtime_baseline_auth_storage_not_empty';
+  end if;
+  foreach table_name in array catalogue_tables loop
+    if to_regclass(format('dpg_app.%I', table_name)) is null then
+      raise exception 'runtime_baseline_catalogue_table_missing';
+    end if;
+    execute format('select exists (select 1 from dpg_app.%I)', table_name) into table_has_rows;
+    if table_has_rows then
+      raise exception 'runtime_baseline_catalogue_not_empty';
+    end if;
+  end loop;
+end
+$runtime_baseline_preflight$;
+
+select pg_database_size(current_database())::bigint::text || '|' ||
+  (select count(*)::text from pg_class c join pg_namespace n on n.oid = c.relnamespace
+   where n.nspname = 'dpg_app' and c.relkind in ('r','p')
+     and (not c.relrowsecurity or not c.relforcerowsecurity)) || '|' ||
+  cardinality(array[${tableList}]::text[])::text;
 `
 }
 
@@ -402,6 +482,10 @@ async function main() {
   }
   if (mode === 'sequence-sql') {
     process.stdout.write(buildCatalogueSequenceSql())
+    return
+  }
+  if (mode === 'baseline-preflight-sql') {
+    process.stdout.write(buildRuntimeBaselinePreflightSql())
     return
   }
   if (mode === 'validation-sql') {

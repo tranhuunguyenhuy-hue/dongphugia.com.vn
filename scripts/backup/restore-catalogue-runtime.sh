@@ -25,6 +25,7 @@ preflight_sql="$repo_root/scripts/backup/catalogue-rehome-preflight.sql"
 source "$repo_root/scripts/backup/c-actions-container-staging.sh"
 postgres_image="${POSTGRES_IMAGE:-postgres:17.6-bookworm@sha256:f3bd19c606e442c3d7bdfa8002e03fe260a1023351e0ea4598032022b68dd6e3}"
 hosted_recovery="${HOSTED_RECOVERY:-false}"
+keep_output_dir="${KEEP_OUTPUT_DIR:-false}"
 recovery_age_recipient="${EXPECTED_AGE_RECIPIENT:-age1cvg7hkdl4ctfdfv8a3a4vkcgc7ge7anyls2rn4y62vtnsxuczawqw4h0dr}"
 case "$recovery_age_recipient" in
   age1cvg7hkdl4ctfdfv8a3a4vkcgc7ge7anyls2rn4y62vtnsxuczawqw4h0dr|\
@@ -33,6 +34,10 @@ case "$recovery_age_recipient" in
 esac
 if [[ "$hosted_recovery" != false && "$hosted_recovery" != true ]]; then
   echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=hosted_mode_invalid'
+  exit 1
+fi
+if [[ "$keep_output_dir" != false && "$keep_output_dir" != true ]]; then
+  echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=keep_output_dir_invalid'
   exit 1
 fi
 
@@ -52,7 +57,7 @@ cleanup() {
     docker rm --force "$container_name" >/dev/null 2>&1 || true
   fi
   rm -rf "$tmp_dir"
-  if [[ "$hosted_recovery" == true && -n "${output_dir:-}" ]]; then
+  if [[ "$hosted_recovery" == true && "$keep_output_dir" != true && -n "${output_dir:-}" ]]; then
     rm -rf "$output_dir"
   fi
 }
@@ -496,6 +501,13 @@ if [[ "$MODE" == 'rehearsal' ]]; then
       echo 'CATALOGUE_REHOME status=FAIL stage=rehearsal_aggregate reason=unexpected_table_count'
       exit 1
     fi
+    jq -n \
+      --argjson sourceDatabaseBytes "$source_bytes" \
+      --argjson filteredTargetDatabaseBytes "$target_bytes" \
+      --argjson hardCeilingBytes 367001600 \
+      '{format:"dpg-rehearsal-capacity-v1",sourceDatabaseBytes:$sourceDatabaseBytes,filteredTargetDatabaseBytes:$filteredTargetDatabaseBytes,hardCeilingBytes:$hardCeilingBytes}' \
+      >"$output_dir/rehearsal-capacity.json"
+    chmod 0600 "$output_dir/rehearsal-capacity.json"
     echo "CATALOGUE_REHOME_CAPACITY status=PASS source_dump_bytes=$plain_bytes source_database_bytes=$source_bytes target_database_bytes=$target_bytes target_ceiling_bytes=367001600"
     echo "CATALOGUE_REHOME_EVIDENCE status=PASS tables=$table_count excluded=0"
   fi
@@ -539,8 +551,17 @@ printf '%s\n' \
   "\\i '$preflight_sql'" \
   "\\i '$restore_sql'" \
   "\\i '$sequence_sql'" \
-  "\\i '$validation_sql'" \
-  'commit;' >"$driver_sql"
+  "\\i '$validation_sql'" >"$driver_sql"
+cat >>"$driver_sql" <<'SQL'
+do $catalogue_size_guard$
+begin
+  if pg_database_size(current_database()) >= 367001600 then
+    raise exception 'catalogue_database_size_limit';
+  end if;
+end
+$catalogue_size_guard$;
+commit;
+SQL
 
 if ! SUPABASE_PSQL_TMPDIR="$tmp_dir" node "$psql_wrapper" --file "$driver_sql" \
   >/dev/null 2>"$tmp_dir/sensitive.error"; then
