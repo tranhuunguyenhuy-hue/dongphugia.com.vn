@@ -11,9 +11,17 @@ emit_result() {
 expected_recipient="${B11_TRUSTED_RECIPIENT:-}"
 image="${RECIPIENT_DIAGNOSTIC_IMAGE:-}"
 age_keygen="${AGE_KEYGEN_PATH:-}"
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+container_validator="$script_dir/c-actions-recipient-diagnostic-container.sh"
 
-# The protected workflow validates these non-secret inputs in a separate step
-# before it binds B11_RECOVERY_AGE_IDENTITY to the diagnostic process.
+# The protected workflow validates these non-secret inputs before it binds an
+# age identity to the diagnostic process.
+if [[ -z "$expected_recipient" || -z "$image" || -z "$age_keygen" ||
+      ! -f "$age_keygen" || -L "$age_keygen" || ! -x "$age_keygen" ||
+      ! -f "$container_validator" || -L "$container_validator" || ! -x "$container_validator" ]]; then
+  emit_result INCONCLUSIVE preflight
+  exit 0
+fi
 
 container_output=''
 if ! container_output="$(
@@ -32,41 +40,10 @@ if ! container_output="$(
     --memory-swap 64m \
     --ulimit core=0 \
     --env "B11_TRUSTED_RECIPIENT=$expected_recipient" \
-    --entrypoint /bin/sh \
-    "$image" -c '
-      set -eu
-      umask 077
-      identity_file=/run/recipient-diagnostic/identity
-      cat >"$identity_file"
-      if [ ! -s "$identity_file" ]; then
-        printf "%s\\n" "INCONCLUSIVE secret_input"
-        exit 0
-      fi
-      if [ "$(wc -l <"$identity_file")" -ne 1 ]; then
-        printf "%s\\n" "INVALID_FORMAT identity_format"
-        exit 0
-      fi
-      IFS= read -r identity <"$identity_file"
-      if [ -z "$identity" ]; then
-        printf "%s\\n" "INCONCLUSIVE secret_input"
-        exit 0
-      fi
-      unset identity
-      if recipient="$(/usr/local/bin/age-keygen -y "$identity_file" 2>/dev/null)"; then
-        case "$recipient" in
-          age1*) ;;
-          *) printf "%s\\n" "INVALID_FORMAT identity_format"; exit 0 ;;
-        esac
-      else
-        printf "%s\\n" "INVALID_FORMAT identity_format"
-        exit 0
-      fi
-      if [ "$recipient" = "$B11_TRUSTED_RECIPIENT" ]; then
-        printf "%s\\n" "VALID_MATCH recipient_compare"
-      else
-        printf "%s\\n" "VALID_MISMATCH recipient_compare"
-      fi
-    '
+    --mount "type=bind,source=$age_keygen,target=/usr/local/bin/age-keygen,readonly" \
+    --mount "type=bind,source=$container_validator,target=/usr/local/bin/recipient-diagnostic,readonly" \
+    --entrypoint /usr/local/bin/recipient-diagnostic \
+    "$image" 2>/dev/null
 )"; then
   emit_result INCONCLUSIVE container
   exit 0
@@ -77,5 +54,7 @@ case "$container_output" in
   'VALID_MISMATCH recipient_compare') emit_result VALID_MISMATCH recipient_compare ;;
   'INVALID_FORMAT identity_format') emit_result INVALID_FORMAT identity_format ;;
   'INCONCLUSIVE secret_input') emit_result INCONCLUSIVE secret_input ;;
+  'INCONCLUSIVE container') emit_result INCONCLUSIVE container ;;
+  'INCONCLUSIVE identity_output') emit_result INCONCLUSIVE identity_output ;;
   *) emit_result INCONCLUSIVE container_output ;;
 esac
