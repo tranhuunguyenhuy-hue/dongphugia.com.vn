@@ -44,7 +44,9 @@ describe('Supabase runtime catalogue re-home workflow', () => {
   it('rehearses the exact filtered restore in network-isolated PostgreSQL before remote use', async () => {
     const restore = await readFile(restorePath, 'utf8')
 
-    expect(restore).toContain("mode must be rehearsal, preflight, or apply")
+    const modeGuard = restore.match(/if \[\[([\s\S]*?)\]\]; then/)
+    expect(modeGuard?.[1]).toContain('"$MODE" != \'container-preflight\'')
+    expect(restore).toContain('reason=mode_invalid')
     expect(restore).toContain('sha256sum -c')
     expect(restore).toContain('manifest-contract.mjs" validate')
     expect(restore).toContain('"$contract" validate-source')
@@ -81,8 +83,8 @@ describe('Supabase runtime catalogue re-home workflow', () => {
     expect(restore).toContain('stage_container_tmpfs_file')
     expect(restore).toContain('verify_container_age_identity_from_stdin')
     expect(restore).not.toContain('docker cp ')
-    expect(staging).toContain('docker exec --user 0 -i')
     expect(staging).toContain('docker exec --user postgres -i')
+    expect(staging).not.toContain('docker exec --user 0')
     expect(staging).toContain('AGE_IDENTITY_FILE')
     expect(staging).toContain('umask 077')
     expect(staging).toContain('/recovery-data/archive.age')

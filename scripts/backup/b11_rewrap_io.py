@@ -85,7 +85,7 @@ def _api_json(path: str, token: str, *, method: str = "GET", body: bytes | None 
     return value
 
 
-def validate_source_metadata(run: dict, artifact: dict) -> None:
+def validate_source_metadata(run: dict, artifact: dict, *, expected_expires_at: str | None = None) -> None:
     """Bind API metadata to the exact historical run and artifact roles."""
     workflow_run = artifact.get("workflow_run") or {}
     if (
@@ -105,6 +105,8 @@ def validate_source_metadata(run: dict, artifact: dict) -> None:
     digest = artifact.get("digest")
     if digest is not None and digest != f"sha256:{APPROVED_ZIP_SHA256}":
         raise RewrapError("source_digest_mismatch")
+    if expected_expires_at is not None and artifact.get("expires_at") != expected_expires_at:
+        raise RewrapError("source_expiry_mismatch")
 
 
 def _signed_host_allowed(url: str) -> bool:
@@ -124,10 +126,16 @@ class _SignedRedirect(urllib.request.HTTPRedirectHandler):
         return super().redirect_request(request, fp, code, msg, headers, newurl)
 
 
-def fetch_exact_artifact(token: str, output_zip: Path, output_manifest: Path) -> None:
+def fetch_exact_artifact(
+    token: str,
+    output_zip: Path,
+    output_manifest: Path,
+    *,
+    expected_expires_at: str | None = None,
+) -> None:
     run = _api_json(f"/repos/{SOURCE_REPOSITORY}/actions/runs/{HISTORICAL_RUN_ID}", token)
     artifact = _api_json(f"/repos/{SOURCE_REPOSITORY}/actions/artifacts/{HISTORICAL_ARTIFACT_ID}", token)
-    validate_source_metadata(run, artifact)
+    validate_source_metadata(run, artifact, expected_expires_at=expected_expires_at)
     request = urllib.request.Request(
         f"{API_ROOT}/repos/{SOURCE_REPOSITORY}/actions/artifacts/{HISTORICAL_ARTIFACT_ID}/zip",
         headers={"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json"},

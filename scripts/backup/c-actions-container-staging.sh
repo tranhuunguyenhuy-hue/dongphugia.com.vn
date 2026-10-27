@@ -12,20 +12,20 @@ stage_container_tmpfs_file() {
 
   case "$destination|$owner|$mode" in
     '/recovery-data/archive.age|postgres:postgres|0400'|\
-    '/recovery-tools/age|root:root|0555'|\
-    '/recovery-tools/age-keygen|root:root|0555') ;;
+    '/recovery-tools/age|postgres:postgres|0555'|\
+    '/recovery-tools/age-keygen|postgres:postgres|0555') ;;
     *) return 2 ;;
   esac
   [[ -f "$source_path" && ! -L "$source_path" ]] || return 2
 
-  docker exec --user 0 -i "$container_name" sh -c '
+  docker exec --user postgres -i "$container_name" sh -c '
     set -eu
     umask 077
     destination=$1
     owner=$2
     mode=$3
     cat >"$destination"
-    chown "$owner" "$destination"
+    test "$owner" = postgres:postgres
     chmod "$mode" "$destination"
   ' sh "$destination" "$owner" "$mode" <"$source_path" >/dev/null 2>&1
 }
