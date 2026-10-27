@@ -543,3 +543,37 @@ jobs:
           rm -rf -- "$BACKUP_DIR" "$SNAPSHOT_DIR" "$OUTPUT_DIR" \
             /dev/shm/issue160-organization.json /dev/shm/issue160-projects.json \
             "$RUNNER_TEMP/issue160-recovery-tools"
+
+  report_stop:
+    name: Report sanitized recovery STOP to Issue 160
+    needs: [source_gate, recover]
+    if: ${{ always() && github.actor == 'tranhuunguyenhuy-hue' && (needs.source_gate.result != 'success' || needs.recover.result != 'success') }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Post bounded failure state only
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_GATE_RESULT: ${{ needs.source_gate.result }}
+          RECOVERY_RESULT: ${{ needs.recover.result }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          SOURCE_SHA: ${{ github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          body="$(cat <<EOF
+          ## Issue #160 protected recovery — STOP
+
+          Run: $RUN_URL
+          Source SHA: $SOURCE_SHA
+          Source gate: $SOURCE_GATE_RESULT
+          Recovery job: $RECOVERY_RESULT
+          Target write state: UNKNOWN; do not retry.
+
+          No secret values, decrypted data, database rows, or raw failure logs are included here. Check the protected run through its approved access path before any further action.
+          EOF
+          )"
+          gh api --method POST "repos/$GITHUB_REPOSITORY/issues/$ISSUE_NUMBER/comments" \
+            --field body="$body" >/dev/null
