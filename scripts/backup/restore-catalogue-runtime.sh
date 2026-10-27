@@ -48,6 +48,8 @@ cleanup() {
   fi
 }
 trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
 for command in age docker findmnt jq node sha256sum; do
   command -v "$command" >/dev/null 2>&1 || {
@@ -87,6 +89,20 @@ if [[ "$MODE" == 'rehearsal' ]]; then
           "${GITHUB_REF:-}" != refs/heads/main ]]; then
     echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=hosted_context_invalid'
     exit 1
+  else
+    if ! command -v ip >/dev/null 2>&1 || [[ ! -d /sys/class/net/lo ]] ||
+       ! route4="$(ip -4 route show 2>/dev/null)" ||
+       ! route6="$(ip -6 route show 2>/dev/null)" ||
+       [[ -n "$route4$route6" ]]; then
+      echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=host_network_not_isolated'
+      exit 1
+    fi
+    for interface in /sys/class/net/*; do
+      if [[ "${interface##*/}" != lo ]]; then
+        echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=host_network_not_isolated'
+        exit 1
+      fi
+    done
   fi
   if [[ -n "${DOCKER_HOST:-}" && "$DOCKER_HOST" != unix://* ]]; then
     echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=docker_remote_daemon_disallowed'
@@ -211,6 +227,7 @@ if [[ -n "${AGE_IDENTITY_FILE:-}" ]]; then
     exit 1
   fi
   cat -- "$AGE_IDENTITY_FILE" >"$tmp_dir/age-identity"
+  rm -f -- "$AGE_IDENTITY_FILE"
 else
   : "${AGE_IDENTITY:?AGE_IDENTITY or AGE_IDENTITY_FILE is required}"
   printf '%s\n' "$AGE_IDENTITY" >"$tmp_dir/age-identity"
