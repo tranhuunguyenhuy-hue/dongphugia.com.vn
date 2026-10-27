@@ -95,9 +95,11 @@ describe.skipIf(!runContainerStaging)('read-only recovery container staging', ()
       expect(dockerCommand(['inspect', '--format', '{{.HostConfig.ReadonlyRootfs}}', containerName]).trim()).toBe('true')
       expect(dockerCommand(['inspect', '--format', '{{.HostConfig.NetworkMode}}', containerName]).trim()).toBe('none')
       expect(dockerCommand(['inspect', '--format', '{{.HostConfig.LogConfig.Type}}', containerName]).trim()).toBe('none')
+      const tmpfsConfig = JSON.parse(dockerCommand(['inspect', '--format', '{{json .HostConfig.Tmpfs}}', containerName]))
+      expect(tmpfsConfig).toHaveProperty('/var/lib/postgresql/data')
       const mounts = dockerCommand(['inspect', '--format', '{{range .Mounts}}{{.Type}} {{.Destination}}{{"\\n"}}{{end}}', containerName])
       const mountLines = mounts.trim().split('\n')
-      for (const destination of ['/var/lib/postgresql/data', '/recovery-data', '/recovery-tools']) {
+      for (const destination of ['/recovery-data', '/recovery-tools']) {
         const destinationMounts = mountLines.filter((line) => line.endsWith(` ${destination}`))
         expect(destinationMounts).toEqual([`tmpfs ${destination}`])
       }
