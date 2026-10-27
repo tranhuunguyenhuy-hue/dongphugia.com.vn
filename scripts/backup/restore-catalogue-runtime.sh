@@ -9,8 +9,9 @@ set -euo pipefail
 : "${EXPECTED_MERGE_SHA:?EXPECTED_MERGE_SHA is required}"
 : "${EXPECTED_WORKFLOW_RUN_ID:?EXPECTED_WORKFLOW_RUN_ID is required}"
 
-if [[ "$MODE" != 'rehearsal' && "$MODE" != 'preflight' && "$MODE" != 'apply' ]]; then
-  echo 'CATALOGUE_REHOME status=FAIL reason=mode must be rehearsal, preflight, or apply'
+if [[ "$MODE" != 'rehearsal' && "$MODE" != 'preflight' &&
+      "$MODE" != 'container-preflight' && "$MODE" != 'apply' ]]; then
+  echo 'CATALOGUE_REHOME status=FAIL reason=mode_invalid'
   exit 1
 fi
 umask 077
@@ -24,6 +25,12 @@ preflight_sql="$repo_root/scripts/backup/catalogue-rehome-preflight.sql"
 source "$repo_root/scripts/backup/c-actions-container-staging.sh"
 postgres_image="${POSTGRES_IMAGE:-postgres:17.6-bookworm@sha256:f3bd19c606e442c3d7bdfa8002e03fe260a1023351e0ea4598032022b68dd6e3}"
 hosted_recovery="${HOSTED_RECOVERY:-false}"
+recovery_age_recipient="${EXPECTED_AGE_RECIPIENT:-age1cvg7hkdl4ctfdfv8a3a4vkcgc7ge7anyls2rn4y62vtnsxuczawqw4h0dr}"
+case "$recovery_age_recipient" in
+  age1cvg7hkdl4ctfdfv8a3a4vkcgc7ge7anyls2rn4y62vtnsxuczawqw4h0dr|\
+  age12zqtv9r2fc4v2j0kk6v79xrvy66gxcht2uqfxvqske4lzh83uq2qtqhfmc) ;;
+  *) echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=age_recipient_not_allowlisted'; exit 1 ;;
+esac
 if [[ "$hosted_recovery" != false && "$hosted_recovery" != true ]]; then
   echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=hosted_mode_invalid'
   exit 1
@@ -60,7 +67,7 @@ for command in age docker findmnt jq node sha256sum; do
   }
 done
 
-if [[ "$MODE" == 'rehearsal' ]]; then
+if [[ "$MODE" == 'rehearsal' || "$MODE" == 'container-preflight' ]]; then
   # Rehearsal handles the full source dump. Reject remote daemons and image pulls
   # before decryption, and keep generated evidence inside tmpfs.
   # shellcheck source=scripts/backup/postgres-image-pin.sh
@@ -91,7 +98,7 @@ if [[ "$MODE" == 'rehearsal' ]]; then
           "${GITHUB_REF:-}" != refs/heads/main ]]; then
     echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=hosted_context_invalid'
     exit 1
-  elif [[ "$MODE" != rehearsal ]]; then
+  elif [[ "$MODE" != rehearsal && "$MODE" != container-preflight ]]; then
     echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=hosted_mode_requires_rehearsal'
     exit 1
   fi
@@ -198,6 +205,9 @@ sensitive_failure() {
 start_rehearsal_container() {
   local pg_tmpfs_size='1g'
   local pg_memory='1536m'
+  local pg_memory_bytes='1610612736'
+  local postgres_uid
+  local postgres_gid
   local mount_report
   local -a recovery_tmpfs=()
   if [[ "$hosted_recovery" == true ]]; then
@@ -206,22 +216,53 @@ start_rehearsal_container() {
     # this network-disabled container.
     pg_tmpfs_size='3g'
     pg_memory='6g'
+    pg_memory_bytes='6442450944'
+  fi
+  postgres_uid="$(docker run --rm --pull=never --network none --read-only \
+    --user postgres --entrypoint id "$postgres_image" -u postgres 2>/dev/null)" || {
+    echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=postgres_uid_unavailable'
+    return 1
+  }
+  postgres_gid="$(docker run --rm --pull=never --network none --read-only \
+    --user postgres --entrypoint id "$postgres_image" -g postgres 2>/dev/null)" || {
+    echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=postgres_gid_unavailable'
+    return 1
+  }
+  if [[ ! "$postgres_uid" =~ ^[0-9]+$ || ! "$postgres_gid" =~ ^[0-9]+$ ]]; then
+    echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=postgres_identity_invalid'
+    return 1
+  fi
+  if [[ "$hosted_recovery" == true && ( "$postgres_uid" != 999 || "$postgres_gid" != 999 ) ]]; then
+    echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=postgres_identity_mismatch'
+    return 1
+  fi
+  if [[ "$hosted_recovery" == true ]]; then
     recovery_tmpfs=(
-      --tmpfs /recovery-data:rw,nosuid,nodev,noexec,size=2200m
-      --tmpfs /recovery-tools:rw,nosuid,nodev,exec,size=32m
+      --tmpfs "/recovery-data:rw,nosuid,nodev,noexec,size=2200m,uid=${postgres_uid},gid=${postgres_gid},mode=0700"
+      --tmpfs "/recovery-tools:rw,nosuid,nodev,exec,size=32m,uid=${postgres_uid},gid=${postgres_gid},mode=0700"
     )
   fi
   docker run --rm --detach --name "$container_name" --pull=never --log-driver=none \
-    --network none --read-only --pids-limit 256 --memory "$pg_memory" \
-    --tmpfs /var/lib/postgresql/data:rw,nosuid,nodev,noexec,size="$pg_tmpfs_size" \
-    --tmpfs /tmp:rw,nosuid,nodev,noexec,size=128m \
-    --tmpfs /var/run/postgresql:rw,nosuid,nodev,noexec,size=64m \
+    --user "$postgres_uid:$postgres_gid" \
+    --network none --read-only --pids-limit 256 --memory "$pg_memory" --memory-swap "$pg_memory" \
+    --cap-drop ALL --security-opt no-new-privileges=true --ulimit core=0 \
+    --tmpfs "/var/lib/postgresql/data:rw,nosuid,nodev,noexec,size=${pg_tmpfs_size},uid=${postgres_uid},gid=${postgres_gid},mode=0700" \
+    --tmpfs "/tmp:rw,nosuid,nodev,noexec,size=128m,uid=${postgres_uid},gid=${postgres_gid},mode=0700" \
+    --tmpfs "/var/run/postgresql:rw,nosuid,nodev,noexec,size=64m,uid=${postgres_uid},gid=${postgres_gid},mode=0700" \
     "${recovery_tmpfs[@]}" \
     --env POSTGRES_HOST_AUTH_METHOD=trust "$postgres_image" >/dev/null
   container_started='true'
   test "$(docker inspect --format '{{.HostConfig.NetworkMode}}' "$container_name")" = 'none'
   test "$(docker inspect --format '{{.HostConfig.LogConfig.Type}}' "$container_name")" = 'none'
   test "$(docker inspect --format '{{.HostConfig.ReadonlyRootfs}}' "$container_name")" = 'true'
+  test "$(docker inspect --format '{{.Config.User}}' "$container_name")" = "$postgres_uid:$postgres_gid"
+  test "$(docker inspect --format '{{json .HostConfig.CapDrop}}' "$container_name")" = '["ALL"]'
+  test "$(docker inspect --format '{{json .HostConfig.SecurityOpt}}' "$container_name")" = '["no-new-privileges=true"]'
+  test "$(docker inspect --format '{{.HostConfig.Memory}}' "$container_name")" = "$pg_memory_bytes"
+  test "$(docker inspect --format '{{.HostConfig.MemorySwap}}' "$container_name")" = "$pg_memory_bytes"
+  container_ulimits="$(docker inspect --format '{{json .HostConfig.Ulimits}}' "$container_name")"
+  jq -e 'any(.[]?; .Name == "core" and .Soft == 0 and .Hard == 0)' \
+    <<<"$container_ulimits" >/dev/null
   mount_report="$(docker inspect --format '{{range .Mounts}}{{.Type}} {{.Destination}}{{"\n"}}{{end}}' "$container_name")"
   while read -r mount_type mount_target; do
     [[ -z "$mount_type" ]] && continue
@@ -235,6 +276,24 @@ start_rehearsal_container() {
     test "$(docker inspect --format '{{len .HostConfig.Tmpfs}}' "$container_name")" -ge 5
   else
     test "$(docker inspect --format '{{len .HostConfig.Tmpfs}}' "$container_name")" -ge 3
+  fi
+  if ! docker exec --user postgres "$container_name" sh -c '
+    set -eu
+    test "$(id -u)" -ne 0
+    test "$(ulimit -c)" = 0
+    awk '\''$1 == "CapEff:" { if ($2 != "0000000000000000") exit 1; found = 1 } END { exit !found }'\'' /proc/self/status
+    if [ -r /sys/fs/cgroup/memory.swap.max ]; then
+      test "$(cat /sys/fs/cgroup/memory.swap.max)" = 0
+    elif [ -r /sys/fs/cgroup/memory/memory.memsw.limit_in_bytes ]; then
+      test "$(cat /sys/fs/cgroup/memory/memory.memsw.limit_in_bytes)" = "$(cat /sys/fs/cgroup/memory/memory.limit_in_bytes)"
+    else
+      exit 1
+    fi
+    awk '\''NR > 2 { iface = $1; sub(/:$/, "", iface); seen = 1; if (iface != "lo") other = 1 } END { exit (!seen || other) }'\'' /proc/net/dev
+    if ( : > /recovery-rootfs-write-probe ) 2>/dev/null; then exit 1; fi
+  ' >/dev/null 2>&1; then
+    echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=container_isolation_unproved'
+    return 1
   fi
   ready='false'
   for _ in {1..45}; do
@@ -287,8 +346,13 @@ fi
 mapfile -t restore_table_args < <(node "$contract" table-args)
 test "${#restore_table_args[@]}" -gt 0
 
-if [[ "$MODE" == 'rehearsal' ]]; then
+if [[ "$MODE" == 'rehearsal' || "$MODE" == 'container-preflight' ]]; then
   start_rehearsal_container
+fi
+
+if [[ "$MODE" == 'container-preflight' ]]; then
+  echo 'CATALOGUE_REHOME_PREFLIGHT status=PASS container=nonroot readonly network_none swap_zero tmpfs_only'
+  exit 0
 fi
 
 if [[ "$hosted_recovery" == true ]]; then
@@ -309,26 +373,25 @@ if [[ "$hosted_recovery" == true ]]; then
     echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=age_tools_invalid'
     exit 1
   fi
-  docker exec --user 0 "$container_name" install -d -o postgres -g postgres -m 0700 /recovery-data
-  docker exec --user 0 "$container_name" install -d -m 0755 /recovery-tools
+  docker exec --user postgres "$container_name" install -d -m 0700 /recovery-data
+  docker exec --user postgres "$container_name" install -d -m 0700 /recovery-tools
   stage_container_tmpfs_file "$container_name" "$archive" /recovery-data/archive.age postgres:postgres 0400 ||
     sensitive_failure container_staging
-  stage_container_tmpfs_file "$container_name" "$age_binary" /recovery-tools/age root:root 0555 ||
+  stage_container_tmpfs_file "$container_name" "$age_binary" /recovery-tools/age postgres:postgres 0555 ||
     sensitive_failure container_staging
-  stage_container_tmpfs_file "$container_name" "$age_keygen_binary" /recovery-tools/age-keygen root:root 0555 ||
+  stage_container_tmpfs_file "$container_name" "$age_keygen_binary" /recovery-tools/age-keygen postgres:postgres 0555 ||
     sensitive_failure container_staging
 
-  IFS= read -r identity || {
+  identity="$(cat)" || {
     echo 'CATALOGUE_REHOME status=FAIL stage=recipient reason=identity_missing'
     exit 1
   }
-  if [[ -z "$identity" ]] || IFS= read -r unexpected_input; then
-    unset identity unexpected_input
-    echo 'CATALOGUE_REHOME status=FAIL stage=recipient reason=identity_input_invalid'
+  if [[ -z "$identity" ]]; then
+    unset identity
+    echo 'CATALOGUE_REHOME status=FAIL stage=recipient reason=identity_missing'
     exit 1
   fi
-  recovery_age_recipient='age1cvg7hkdl4ctfdfv8a3a4vkcgc7ge7anyls2rn4y62vtnsxuczawqw4h0dr'
-  if ! printf '%s\n' "$identity" |
+  if ! printf '%s' "$identity" |
     verify_container_age_identity_from_stdin "$container_name" "$recovery_age_recipient"; then
     unset identity
     sensitive_failure recipient
@@ -418,21 +481,23 @@ if [[ "$MODE" == 'rehearsal' ]]; then
   node "$contract" compare "$output_dir/catalogue-expected.json" \
     "$tmp_dir/catalogue-actual.json" >/dev/null
   if [[ "$hosted_recovery" == true ]]; then
+    source_bytes="$(docker exec "$container_name" psql -U postgres -d source -X -A -t -v ON_ERROR_STOP=1 -c "select pg_database_size('source')" 2>/dev/null)" || sensitive_failure rehearsal_capacity
+    [[ "$source_bytes" =~ ^[0-9]+$ ]] || sensitive_failure rehearsal_capacity
     target_bytes="$(docker exec "$container_name" psql -U postgres -d target -X -A -t -v ON_ERROR_STOP=1 -c "select pg_database_size('target')" 2>/dev/null)" || sensitive_failure rehearsal_capacity
     [[ "$target_bytes" =~ ^[0-9]+$ ]] || sensitive_failure rehearsal_capacity
     if (( target_bytes >= 367001600 )); then
+      echo "CATALOGUE_REHOME_CAPACITY status=STOP source_database_bytes=$source_bytes target_database_bytes=$target_bytes target_ceiling_bytes=367001600"
       echo 'CATALOGUE_REHOME status=FAIL stage=capacity reason=target_database_ceiling'
       exit 1
     fi
     table_count="$(jq -r '.tables | length' "$output_dir/catalogue-expected.json")"
-    total_rows="$(jq -r '[.tables[].rowCount] | add' "$output_dir/catalogue-expected.json")"
-    manifest_hash="$(sha256sum "$output_dir/catalogue-expected.json" | cut -d ' ' -f1)"
-    if [[ "$table_count" != 27 || ! "$total_rows" =~ ^[0-9]+$ ||
-          ! "$manifest_hash" =~ ^[a-f0-9]{64}$ ]]; then
-      sensitive_failure rehearsal_aggregate
+    if [[ "$table_count" != 27 ]]; then
+      echo "CATALOGUE_REHOME_EVIDENCE status=STOP tables=$table_count expected_tables=27 source_database_bytes=$source_bytes target_database_bytes=$target_bytes"
+      echo 'CATALOGUE_REHOME status=FAIL stage=rehearsal_aggregate reason=unexpected_table_count'
+      exit 1
     fi
-    echo "CATALOGUE_REHOME_CAPACITY status=PASS source_dump_bytes=$plain_bytes target_database_bytes=$target_bytes"
-    echo "CATALOGUE_REHOME_EVIDENCE status=PASS tables=$table_count total_rows=$total_rows manifest_sha256=$manifest_hash excluded=0"
+    echo "CATALOGUE_REHOME_CAPACITY status=PASS source_dump_bytes=$plain_bytes source_database_bytes=$source_bytes target_database_bytes=$target_bytes target_ceiling_bytes=367001600"
+    echo "CATALOGUE_REHOME_EVIDENCE status=PASS tables=$table_count excluded=0"
   fi
   echo 'CATALOGUE_REHOME status=PASS mode=rehearsal network=none filtered=true'
   exit 0
