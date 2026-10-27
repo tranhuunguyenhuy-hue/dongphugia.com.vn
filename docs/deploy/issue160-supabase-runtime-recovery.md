@@ -1,6 +1,6 @@
 # Issue #160 Supabase runtime recovery
 
-Status: gated source procedure; it is not dispatch or write authorization.
+Status: STOP — source procedure is not dispatch-ready and grants no write authorization.
 
 The workflow `.github/workflows/supabase-runtime-issue160-recovery-once.yml`
 exists for the exact Owner GO and target `bonxyxluzlxfkdetryoo`. It permits one
@@ -16,28 +16,44 @@ Do not dispatch until all of these are verified on the exact candidate:
 
 1. Security, Standards, and Spec review plus required CI pass on the exact main
    SHA.
-2. The original encrypted source artifact and its approved custody are verified
-   before the 30 October 2026 expiry. The current workflow only stages source
-   ciphertext in runner tmpfs and removes it at job cleanup; that is not durable
-   custody.
+2. Re-attest the original ciphertext artifact ID, size, SHA-256, expiry, and
+   Owner-controlled ciphertext-only custody copy immediately before the
+   approved run. Keep both copies; never persist plaintext or delete either.
 3. The `runtime-backup` Environment has the required secret names configured:
    `SUPABASE_REHOME_DATABASE_URL`, `SUPABASE_REHOME_ROOT_CA_CERTIFICATE`,
-   `SUPABASE_MANAGEMENT_TOKEN`, `SUPABASE_REHOME_SNAPSHOT_AGE_IDENTITY`, and
-   `BACKUP_AGE_PRIVATE_KEY`; it also has the
-   `SUPABASE_REHOME_SNAPSHOT_AGE_RECIPIENT` variable. Inspect names only; never
-   retrieve or print values.
-4. The connection target is verified over TLS with hostname and CA checks, and
-   the database identity and privileges are proven without exposing the URL.
-   The connection role must have only the permissions needed for the approved
-   schema reconciliation and catalogue sync. `dpg_backup` remains a separate
-   non-login, non-superuser, non-`BYPASSRLS` capability.
-5. The exact affected-state snapshot is encrypted, fits the approved GitHub
-   artifact budget, and passes isolated restore and rollback-equivalence checks.
-6. The current target plan, database size, projected imported size, reserved
+   `SUPABASE_MANAGEMENT_TOKEN`, and `BACKUP_AGE_PRIVATE_KEY`. The workflow
+   derives the snapshot recipient from the existing protected key only after
+   authenticating the source bundle, then compares it with the public B11
+   recipient. `SUPABASE_REHOME_SNAPSHOT_AGE_IDENTITY` and
+   `SUPABASE_REHOME_SNAPSHOT_AGE_RECIPIENT` are not used. Inspect secret names
+   only; never retrieve or print values. The project root CA is a project-bound
+   certificate downloaded from Supabase Database Settings; do not guess it or
+   substitute a generic CA.
+4. Prove the exact TLS-verified target and least-privilege effective connection
+   role without exposing the URL. The current target parser accepts only the
+   `postgres` direct/pooler identity, so this requirement is not met. Require
+   an Owner-approved migration identity with only the capabilities needed by
+   the approved schema change and an explicit sanitized role attestation;
+   `dpg_backup` remains a separate non-login, non-superuser, non-`BYPASSRLS`
+   capability.
+5. The source tree currently encrypts schema/data archives, checks their
+   decrypted hashes, restores them in isolated PostgreSQL, compares selected
+   `auth`/`extensions` ACLs, and checks table inventory. This is not yet full
+   rollback-equivalence evidence for all affected data, schema, sequence,
+   role, grant, RLS, and function state. Do not dispatch until that proof and
+   exact pre-write destination revalidation are implemented and reviewed.
+6. Verify account-wide zero-cost Actions plus Packages allowance and current
+   usage before retaining a recovery checkpoint or deleting any CI artifact.
+   A repository-only artifact count is insufficient. Do not delete protected
+   recovery, source, custody, legal, or security evidence.
+7. The current `runtime-backup` Environment has only the Owner as required
+   reviewer and permits self-review. Configure a genuinely independent
+   required reviewer and prevent self-review before dispatch.
+8. The current target plan, database size, projected imported size, reserved
    headroom, migration ledger, schema contract, and RLS state all pass. The
    accepted database ceiling is 367,001,600 bytes; do not infer database size
    from encrypted artifact size.
-7. GitHub Environment approval is recorded for the exact run and SHA.
+9. GitHub Environment approval is recorded for the exact run and SHA.
 
 If any gate is `UNKNOWN`, the original source artifact cannot be preserved, the
 artifact budget would be exceeded, or the destination snapshot cannot prove
