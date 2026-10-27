@@ -16,12 +16,21 @@ import {
 const databaseUrl = process.env.POSTGRES_SNAPSHOT_INTEGRATION_URL
 const image = process.env.POSTGRES_SNAPSHOT_INTEGRATION_IMAGE
 const runIntegration = Boolean(databaseUrl && image && process.platform === 'linux')
+const runContainerStaging = Boolean(image && process.platform === 'linux')
 
 function docker(args, options = {}) {
   const result = spawnSync('docker', ['run', '--rm', '--pull=never', '--network=host', ...args], {
     encoding: 'utf8', maxBuffer: 8 * 1024 * 1024, ...options,
   })
   if (result.status !== 0) throw new Error(`synthetic_pg_command_failed:${result.status}`)
+  return result.stdout
+}
+
+function dockerCommand(args, options = {}) {
+  const result = spawnSync('docker', args, {
+    encoding: 'utf8', maxBuffer: 8 * 1024 * 1024, timeout: 30_000, ...options,
+  })
+  if (result.status !== 0) throw new Error('synthetic_container_command_failed')
   return result.stdout
 }
 
@@ -42,6 +51,86 @@ async function catalogueSnapshot(client) {
   }
   return { contract: 'dongphugia:catalogue-filtered-restore:v1', tables, excludedRows: [] }
 }
+
+describe.skipIf(!runContainerStaging)('read-only recovery container staging', () => {
+  it('streams synthetic archive, tools, and recipient input into network-none tmpfs', async () => {
+    const suffix = process.pid + '_' + Date.now()
+    const containerName = 'c-stage-' + suffix
+    const stagingHelper = join(process.cwd(), 'scripts/backup/c-actions-container-staging.sh')
+    const folder = await mkdtemp(join(tmpdir(), 'c-actions-staging-synthetic-'))
+    const archivePath = join(folder, 'synthetic.dump.age')
+    const agePath = join(folder, 'synthetic-age')
+    const ageKeygenPath = join(folder, 'synthetic-age-keygen')
+    const syntheticCiphertext = 'synthetic-ciphertext-only'
+    const syntheticIdentity = 'synthetic-identity-only'
+    const syntheticRecipient = 'synthetic-recipient-only'
+    const ageScript = '#!/bin/sh\nset -eu\ntest "$1" = --version\nprintf "%s\\n" synthetic-age-tool-ok\n'
+    const ageKeygenScript = [
+      '#!/bin/sh',
+      'set -eu',
+      'test "$1" = -y',
+      'test "$(cat "$2")" = ' + syntheticIdentity,
+      'printf "%s\\n" ' + syntheticRecipient,
+      '',
+    ].join('\n')
+    let started = false
+
+    try {
+      await writeFile(archivePath, syntheticCiphertext)
+      await writeFile(agePath, ageScript)
+      await writeFile(ageKeygenPath, ageKeygenScript)
+
+      const start = spawnSync('docker', [
+        'run', '--detach', '--rm', '--pull=never', '--name', containerName,
+        '--log-driver=none', '--network', 'none', '--read-only', '--pids-limit', '64',
+        '--memory', '512m',
+        '--tmpfs', '/recovery-data:rw,nosuid,nodev,noexec,size=8m',
+        '--tmpfs', '/recovery-tools:rw,nosuid,nodev,exec,size=8m',
+        '--entrypoint', 'sh', image, '-c', 'while :; do sleep 60; done',
+      ], { encoding: 'utf8', maxBuffer: 8 * 1024 * 1024, timeout: 30_000 })
+      started = start.status === 0
+      expect(start.status).toBe(0)
+
+      expect(dockerCommand(['inspect', '--format', '{{.HostConfig.ReadonlyRootfs}}', containerName]).trim()).toBe('true')
+      expect(dockerCommand(['inspect', '--format', '{{.HostConfig.NetworkMode}}', containerName]).trim()).toBe('none')
+      expect(dockerCommand(['inspect', '--format', '{{.HostConfig.LogConfig.Type}}', containerName]).trim()).toBe('none')
+      const mounts = dockerCommand(['inspect', '--format', '{{range .Mounts}}{{.Type}} {{.Destination}}{{"\\n"}}{{end}}', containerName])
+      const mountLines = mounts.trim().split('\n')
+      expect(mountLines.every((line) => line.startsWith('tmpfs '))).toBe(true)
+      expect(mounts).toContain('tmpfs /recovery-data')
+      expect(mounts).toContain('tmpfs /recovery-tools')
+
+      dockerCommand(['exec', '--user', '0', containerName, 'install', '-d', '-o', 'postgres', '-g', 'postgres', '-m', '0700', '/recovery-data'])
+      dockerCommand(['exec', '--user', '0', containerName, 'install', '-d', '-m', '0755', '/recovery-tools'])
+
+      const stage = (source, destination, owner, mode) => {
+        const result = spawnSync('bash', [
+          '-c', 'source "$1"; stage_container_tmpfs_file "$2" "$3" "$4" "$5" "$6"',
+          'bash', stagingHelper, containerName, source, destination, owner, mode,
+        ], { encoding: 'utf8', maxBuffer: 8 * 1024 * 1024, timeout: 30_000 })
+        expect(result.status).toBe(0)
+      }
+      stage(archivePath, '/recovery-data/archive.age', 'postgres:postgres', '0400')
+      stage(agePath, '/recovery-tools/age', 'root:root', '0555')
+      stage(ageKeygenPath, '/recovery-tools/age-keygen', 'root:root', '0555')
+
+      expect(dockerCommand(['exec', '--user', 'postgres', containerName, 'cat', '/recovery-data/archive.age'])).toBe(syntheticCiphertext)
+      expect(dockerCommand(['exec', '--user', 'postgres', containerName, 'stat', '-c', '%a %U:%G', '/recovery-data/archive.age']).trim()).toBe('400 postgres:postgres')
+      expect(dockerCommand(['exec', '--user', 'postgres', containerName, '/recovery-tools/age', '--version']).trim()).toBe('synthetic-age-tool-ok')
+      expect(dockerCommand(['exec', '--user', 'postgres', containerName, 'stat', '-c', '%a %U:%G', '/recovery-tools/age-keygen']).trim()).toBe('555 root:root')
+
+      const handoff = spawnSync('bash', [
+        '-c', 'source "$1"; verify_container_age_identity_from_stdin "$2" "$3"',
+        'bash', stagingHelper, containerName, syntheticRecipient,
+      ], { input: syntheticIdentity + '\n', encoding: 'utf8', maxBuffer: 8 * 1024 * 1024, timeout: 30_000 })
+      expect(handoff.status).toBe(0)
+      expect(dockerCommand(['exec', '--user', 'postgres', containerName, 'stat', '-c', '%a %U:%G', '/recovery-data/age-identity']).trim()).toBe('600 postgres:postgres')
+    } finally {
+      if (started) spawnSync('docker', ['rm', '--force', containerName], { encoding: 'utf8', timeout: 30_000 })
+      await rm(folder, { recursive: true, force: true })
+    }
+  }, 120_000)
+})
 
 describe.skipIf(!runIntegration)('catalogue rehearsal PG17.6 synthetic restore', () => {
   it('imports only 27 catalogue data tables and rejects missing names and excluded data', async () => {

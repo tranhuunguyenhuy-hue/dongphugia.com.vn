@@ -20,6 +20,8 @@ contract="$repo_root/scripts/backup/catalogue-restore-contract.mjs"
 target_contract="$repo_root/scripts/backup/supabase-runtime-target.mjs"
 psql_wrapper="$repo_root/scripts/backup/supabase-runtime-psql.mjs"
 preflight_sql="$repo_root/scripts/backup/catalogue-rehome-preflight.sql"
+# shellcheck source=scripts/backup/c-actions-container-staging.sh
+source "$repo_root/scripts/backup/c-actions-container-staging.sh"
 postgres_image="${POSTGRES_IMAGE:-postgres:17.6-bookworm@sha256:f3bd19c606e442c3d7bdfa8002e03fe260a1023351e0ea4598032022b68dd6e3}"
 hosted_recovery="${HOSTED_RECOVERY:-false}"
 if [[ "$hosted_recovery" != false && "$hosted_recovery" != true ]]; then
@@ -309,12 +311,12 @@ if [[ "$hosted_recovery" == true ]]; then
   fi
   docker exec --user 0 "$container_name" install -d -o postgres -g postgres -m 0700 /recovery-data
   docker exec --user 0 "$container_name" install -d -m 0755 /recovery-tools
-  docker cp "$archive" "$container_name:/recovery-data/archive.age" >/dev/null
-  docker cp "$age_binary" "$container_name:/recovery-tools/age" >/dev/null
-  docker cp "$age_keygen_binary" "$container_name:/recovery-tools/age-keygen" >/dev/null
-  docker exec --user 0 "$container_name" chown postgres:postgres /recovery-data/archive.age
-  docker exec --user 0 "$container_name" chmod 0400 /recovery-data/archive.age
-  docker exec --user 0 "$container_name" chmod 0555 /recovery-tools/age /recovery-tools/age-keygen
+  stage_container_tmpfs_file "$container_name" "$archive" /recovery-data/archive.age postgres:postgres 0400 ||
+    sensitive_failure container_staging
+  stage_container_tmpfs_file "$container_name" "$age_binary" /recovery-tools/age root:root 0555 ||
+    sensitive_failure container_staging
+  stage_container_tmpfs_file "$container_name" "$age_keygen_binary" /recovery-tools/age-keygen root:root 0555 ||
+    sensitive_failure container_staging
 
   IFS= read -r identity || {
     echo 'CATALOGUE_REHOME status=FAIL stage=recipient reason=identity_missing'
@@ -325,16 +327,9 @@ if [[ "$hosted_recovery" == true ]]; then
     echo 'CATALOGUE_REHOME status=FAIL stage=recipient reason=identity_input_invalid'
     exit 1
   fi
-  if ! printf '%s\n' "$identity" | env -u AGE_IDENTITY -u AGE_IDENTITY_FILE \
-    docker exec --user postgres -i "$container_name" sh -c '
-      set -eu
-      umask 077
-      identity_file=/recovery-data/age-identity
-      cat >"$identity_file"
-      chmod 0600 "$identity_file"
-      recipient="$(/recovery-tools/age-keygen -y "$identity_file" 2>/dev/null)" || exit 1
-      test "$recipient" = "age1cvg7hkdl4ctfdfv8a3a4vkcgc7ge7anyls2rn4y62vtnsxuczawqw4h0dr"
-    ' >/dev/null 2>"$tmp_dir/sensitive.error"; then
+  recovery_age_recipient='age1cvg7hkdl4ctfdfv8a3a4vkcgc7ge7anyls2rn4y62vtnsxuczawqw4h0dr'
+  if ! printf '%s\n' "$identity" |
+    verify_container_age_identity_from_stdin "$container_name" "$recovery_age_recipient"; then
     unset identity
     sensitive_failure recipient
   fi

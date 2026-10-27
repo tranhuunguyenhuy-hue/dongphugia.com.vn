@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 
 const workflowPath = '.github/workflows/supabase-runtime-rehome.yml'
 const restorePath = 'scripts/backup/restore-catalogue-runtime.sh'
+const stagingPath = 'scripts/backup/c-actions-container-staging.sh'
 const preflightPath = 'scripts/backup/catalogue-rehome-preflight.sql'
 
 describe('Supabase runtime catalogue re-home workflow', () => {
@@ -69,6 +70,23 @@ describe('Supabase runtime catalogue re-home workflow', () => {
     expect(restore).toContain('--log-driver=none')
     expect(restore).toContain('evidence_workspace_not_tmpfs')
     expect(restore).toContain('"$contract" compare')
+  })
+
+  it('stages protected inputs through container stdin into allowlisted tmpfs paths', async () => {
+    const [restore, staging] = await Promise.all([
+      readFile(restorePath, 'utf8'),
+      readFile(stagingPath, 'utf8'),
+    ])
+
+    expect(restore).toContain('stage_container_tmpfs_file')
+    expect(restore).toContain('verify_container_age_identity_from_stdin')
+    expect(restore).not.toContain('docker cp ')
+    expect(staging).toContain('docker exec --user 0 -i')
+    expect(staging).toContain('docker exec --user postgres -i')
+    expect(staging).toContain('AGE_IDENTITY_FILE')
+    expect(staging).toContain('umask 077')
+    expect(staging).toContain('/recovery-data/archive.age')
+    expect(staging).toContain('/recovery-tools/age-keygen')
   })
 
   it('creates the inert auth stub in both restore databases before loading the archive', async () => {
