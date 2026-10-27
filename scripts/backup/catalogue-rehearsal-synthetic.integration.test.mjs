@@ -84,6 +84,7 @@ describe.skipIf(!runContainerStaging)('read-only recovery container staging', ()
         'run', '--detach', '--rm', '--pull=never', '--name', containerName,
         '--log-driver=none', '--network', 'none', '--read-only', '--pids-limit', '64',
         '--memory', '512m',
+        '--tmpfs', '/var/lib/postgresql/data:rw,nosuid,nodev,noexec,size=8m',
         '--tmpfs', '/recovery-data:rw,nosuid,nodev,noexec,size=8m',
         '--tmpfs', '/recovery-tools:rw,nosuid,nodev,exec,size=8m',
         '--entrypoint', 'sh', image, '-c', 'while :; do sleep 60; done',
