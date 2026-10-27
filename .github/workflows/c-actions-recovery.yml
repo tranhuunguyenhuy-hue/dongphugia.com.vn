@@ -62,14 +62,17 @@ jobs:
           test "$(findmnt -no FSTYPE -T /dev/shm)" = tmpfs
           tmpfs_available="$(df -B1 --output=avail /dev/shm | tail -1 | xargs)"
           disk_available="$(df -B1 --output=avail "$RUNNER_TEMP" | tail -1 | xargs)"
-          [[ "$tmpfs_available" =~ ^[0-9]+$ && "$disk_available" =~ ^[0-9]+$ ]]
-          if (( tmpfs_available < 6442450944 || disk_available < 4294967296 )); then
-            printf 'C_RECOVERY_CAPACITY status=FAIL dev_shm_available_bytes=%s runner_disk_available_bytes=%s\n' \
-              "$tmpfs_available" "$disk_available"
+          memory_available_kib="$(awk '/^MemAvailable:/ { print $2 }' /proc/meminfo)"
+          [[ "$tmpfs_available" =~ ^[0-9]+$ && "$disk_available" =~ ^[0-9]+$ &&
+             "$memory_available_kib" =~ ^[0-9]+$ ]]
+          if (( tmpfs_available < 6442450944 || disk_available < 4294967296 ||
+                memory_available_kib < 6291456 )); then
+            printf 'C_RECOVERY_CAPACITY status=FAIL dev_shm_available_bytes=%s runner_disk_available_bytes=%s runner_memory_available_bytes=%s\n' \
+              "$tmpfs_available" "$disk_available" "$((memory_available_kib * 1024))"
             exit 1
           fi
-          printf 'C_RECOVERY_CAPACITY status=PASS dev_shm_available_bytes=%s runner_disk_available_bytes=%s dev_shm_required_bytes=6442450944 runner_disk_required_bytes=4294967296\n' \
-            "$tmpfs_available" "$disk_available"
+          printf 'C_RECOVERY_CAPACITY status=PASS dev_shm_available_bytes=%s runner_disk_available_bytes=%s runner_memory_available_bytes=%s dev_shm_required_bytes=6442450944 runner_disk_required_bytes=4294967296 runner_memory_required_bytes=6442450944\n' \
+            "$tmpfs_available" "$disk_available" "$((memory_available_kib * 1024))"
           echo 'C_RECOVERY_GATE status=PASS source=exact'
 
       - name: Enforce the sole protected dispatch before key use
@@ -104,22 +107,6 @@ jobs:
           docker pull "$POSTGRES_IMAGE" >/dev/null 2>&1
           test "$(docker image inspect --format '{{.Os}}/{{.Architecture}}' "$POSTGRES_IMAGE")" = linux/amd64
 
-      - name: Require a working no-egress namespace before protected identity
-        shell: bash
-        run: |
-          set -euo pipefail
-          sudo -n /usr/bin/unshare --net -- /bin/bash -c '
-            set -euo pipefail
-            command -v ip >/dev/null 2>&1
-            test -d /sys/class/net/lo
-            test -z "$(ip -4 route show)"
-            test -z "$(ip -6 route show)"
-            for interface in /sys/class/net/*; do
-              test "${interface##*/}" = lo
-            done
-          '
-          echo 'C_RECOVERY_GATE status=PASS host_network_namespace=isolated'
-
       - name: Verify exact B11 ciphertext and historical source envelope
         shell: bash
         env:
@@ -136,7 +123,7 @@ jobs:
             "$EXPECTED_WORKFLOW_RUN_ID" "$EXPECTED_MERGE_SHA" >/dev/null
           (cd "$BACKUP_DIR" && sha256sum -c leo540-38915575745.checksums.sha256 >/dev/null)
 
-      - name: Verify identity and restore with host egress disabled
+      - name: Verify identity and restore in a network-isolated container
         shell: bash
         env:
           MODE: rehearsal
@@ -145,13 +132,15 @@ jobs:
         run: |
           set -euo pipefail
           set +x
+          echo 'C_RECOVERY_NETWORK host=enabled sensitive_container=network_none'
           test -n "$B11_RECOVERY_AGE_IDENTITY"
-          printf '%s\n' "$B11_RECOVERY_AGE_IDENTITY" |
-            sudo --non-interactive \
-              --preserve-env=PATH,MODE,HOSTED_RECOVERY,BACKUP_DIR,OUTPUT_DIR,EXPECTED_PR_NUMBER,EXPECTED_CANDIDATE_SHA,EXPECTED_CONTROL_SHA,EXPECTED_MERGE_SHA,EXPECTED_WORKFLOW_RUN_ID,POSTGRES_IMAGE,GITHUB_ACTIONS,GITHUB_EVENT_NAME,GITHUB_REF,RUNNER_TEMP \
-              /usr/bin/unshare --net -- \
-              /usr/bin/env DOCKER_HOST=unix:///var/run/docker.sock \
+          identity="$B11_RECOVERY_AGE_IDENTITY"
+          unset B11_RECOVERY_AGE_IDENTITY
+          trap 'unset identity B11_RECOVERY_AGE_IDENTITY' EXIT
+          printf '%s\n' "$identity" |
+            env -u DOCKER_CONTEXT DOCKER_HOST=unix:///var/run/docker.sock \
               /bin/bash scripts/backup/c-actions-isolated-rehearsal.sh
+          unset identity
 
       - name: Remove ephemeral backup and tool copies
         if: always()

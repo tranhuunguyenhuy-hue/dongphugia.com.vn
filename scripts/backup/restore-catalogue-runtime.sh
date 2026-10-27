@@ -60,7 +60,7 @@ done
 
 if [[ "$MODE" == 'rehearsal' ]]; then
   # Rehearsal handles the full source dump. Reject remote daemons and image pulls
-  # before decryption, and keep all generated evidence inside the guest tmpfs.
+  # before decryption, and keep generated evidence inside tmpfs.
   # shellcheck source=scripts/backup/postgres-image-pin.sh
   source "$repo_root/scripts/backup/postgres-image-pin.sh"
   if ! postgres_image="$(dpg_resolve_postgres_image)"; then
@@ -89,20 +89,9 @@ if [[ "$MODE" == 'rehearsal' ]]; then
           "${GITHUB_REF:-}" != refs/heads/main ]]; then
     echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=hosted_context_invalid'
     exit 1
-  else
-    if ! command -v ip >/dev/null 2>&1 || [[ ! -d /sys/class/net/lo ]] ||
-       ! route4="$(ip -4 route show 2>/dev/null)" ||
-       ! route6="$(ip -6 route show 2>/dev/null)" ||
-       [[ -n "$route4$route6" ]]; then
-      echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=host_network_not_isolated'
-      exit 1
-    fi
-    for interface in /sys/class/net/*; do
-      if [[ "${interface##*/}" != lo ]]; then
-        echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=host_network_not_isolated'
-        exit 1
-      fi
-    done
+  elif [[ "$MODE" != rehearsal ]]; then
+    echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=hosted_mode_requires_rehearsal'
+    exit 1
   fi
   if [[ -n "${DOCKER_HOST:-}" && "$DOCKER_HOST" != unix://* ]]; then
     echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=docker_remote_daemon_disallowed'
@@ -144,8 +133,11 @@ if [[ "$MODE" == 'rehearsal' ]]; then
   if [[ "$hosted_recovery" == true ]]; then
     available_tmpfs="$(df -B1 --output=avail /dev/shm | tail -1 | xargs)"
     available_disk="$(df -B1 --output=avail "$RUNNER_TEMP" | tail -1 | xargs)"
-    [[ "$available_tmpfs" =~ ^[0-9]+$ && "$available_disk" =~ ^[0-9]+$ ]] || exit 1
-    if (( available_tmpfs < 6442450944 || available_disk < 4294967296 )); then
+    available_memory_kib="$(awk '/^MemAvailable:/ { print $2 }' /proc/meminfo)"
+    [[ "$available_tmpfs" =~ ^[0-9]+$ && "$available_disk" =~ ^[0-9]+$ &&
+       "$available_memory_kib" =~ ^[0-9]+$ ]] || exit 1
+    if (( available_tmpfs < 6442450944 || available_disk < 4294967296 ||
+          available_memory_kib < 6291456 )); then
       echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=runner_capacity_insufficient'
       exit 1
     fi
@@ -201,71 +193,47 @@ sensitive_failure() {
   exit 1
 }
 
-if [[ "$MODE" == 'preflight' ]]; then
-  : "${SUPABASE_REHOME_DATABASE_URL:?SUPABASE_REHOME_DATABASE_URL is required}"
-  command -v psql >/dev/null 2>&1 || {
-    echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=missing_psql'
-    exit 1
-  }
-  validate_target_url || {
-    echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=target_url_mismatch'
-    exit 1
-  }
-  if ! SUPABASE_PSQL_TMPDIR="$tmp_dir" node "$psql_wrapper" --file "$preflight_sql" \
-    >/dev/null 2>"$tmp_dir/sensitive.error"; then
-    sensitive_failure remote_preflight
+start_rehearsal_container() {
+  local pg_tmpfs_size='1g'
+  local pg_memory='1536m'
+  local mount_report
+  local -a recovery_tmpfs=()
+  if [[ "$hosted_recovery" == true ]]; then
+    # The runner and Docker daemon remain network-connected. The key is sent
+    # only over the local Docker socket; key processing and plaintext stay in
+    # this network-disabled container.
+    pg_tmpfs_size='3g'
+    pg_memory='6g'
+    recovery_tmpfs=(
+      --tmpfs /recovery-data:rw,nosuid,nodev,noexec,size=2200m
+      --tmpfs /recovery-tools:rw,nosuid,nodev,exec,size=32m
+    )
   fi
-  rm -f "$tmp_dir/sensitive.error"
-  echo 'CATALOGUE_REHOME status=PASS mode=preflight target=exact empty=true'
-  exit 0
-fi
-
-if [[ -n "${AGE_IDENTITY_FILE:-}" ]]; then
-  if [[ -n "${AGE_IDENTITY:-}" || ! -f "$AGE_IDENTITY_FILE" || -L "$AGE_IDENTITY_FILE" ||
-        "$(findmnt --noheadings --output FSTYPE --target "$AGE_IDENTITY_FILE" | xargs)" != 'tmpfs' ]]; then
-    echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=age_identity_file_invalid'
-    exit 1
-  fi
-  cat -- "$AGE_IDENTITY_FILE" >"$tmp_dir/age-identity"
-  rm -f -- "$AGE_IDENTITY_FILE"
-else
-  : "${AGE_IDENTITY:?AGE_IDENTITY or AGE_IDENTITY_FILE is required}"
-  printf '%s\n' "$AGE_IDENTITY" >"$tmp_dir/age-identity"
-fi
-chmod 600 "$tmp_dir/age-identity"
-plain_dump="$tmp_dir/runtime.dump"
-if ! age --decrypt --identity "$tmp_dir/age-identity" --output "$plain_dump" "$archive" \
-  2>"$tmp_dir/sensitive.error"; then
-  sensitive_failure decrypt
-fi
-rm -f "$tmp_dir/age-identity"
-rm -f "$tmp_dir/sensitive.error"
-if [[ "$hosted_recovery" == true ]]; then
-  plain_bytes="$(stat -c %s "$plain_dump")"
-  if (( plain_bytes > 2147483648 )); then
-    echo 'CATALOGUE_REHOME status=FAIL stage=capacity reason=source_dump_too_large'
-    exit 1
-  fi
-fi
-
-mapfile -t restore_table_args < <(node "$contract" table-args)
-test "${#restore_table_args[@]}" -gt 0
-
-if [[ "$MODE" == 'rehearsal' ]]; then
-  pg_tmpfs_size=1g
-  pg_memory=1536m
-  if [[ "$hosted_recovery" == true ]]; then pg_tmpfs_size=3g; pg_memory=4g; fi
   docker run --rm --detach --name "$container_name" --pull=never --log-driver=none \
     --network none --read-only --pids-limit 256 --memory "$pg_memory" \
     --tmpfs /var/lib/postgresql/data:rw,nosuid,nodev,noexec,size="$pg_tmpfs_size" \
     --tmpfs /tmp:rw,nosuid,nodev,noexec,size=128m \
     --tmpfs /var/run/postgresql:rw,nosuid,nodev,noexec,size=64m \
+    "${recovery_tmpfs[@]}" \
     --env POSTGRES_HOST_AUTH_METHOD=trust "$postgres_image" >/dev/null
   container_started='true'
   test "$(docker inspect --format '{{.HostConfig.NetworkMode}}' "$container_name")" = 'none'
   test "$(docker inspect --format '{{.HostConfig.LogConfig.Type}}' "$container_name")" = 'none'
-  test "$(docker inspect --format '{{len .Mounts}}' "$container_name")" = '0'
-  test "$(docker inspect --format '{{len .HostConfig.Tmpfs}}' "$container_name")" -ge 3
+  test "$(docker inspect --format '{{.HostConfig.ReadonlyRootfs}}' "$container_name")" = 'true'
+  mount_report="$(docker inspect --format '{{range .Mounts}}{{.Type}} {{.Destination}}{{"\n"}}{{end}}' "$container_name")"
+  while read -r mount_type mount_target; do
+    [[ -z "$mount_type" ]] && continue
+    [[ "$mount_type" == tmpfs ]] || return 1
+    case "$mount_target" in
+      /var/lib/postgresql/data|/tmp|/var/run/postgresql|/recovery-data|/recovery-tools) ;;
+      *) return 1 ;;
+    esac
+  done <<<"$mount_report"
+  if [[ "$hosted_recovery" == true ]]; then
+    test "$(docker inspect --format '{{len .HostConfig.Tmpfs}}' "$container_name")" -ge 5
+  else
+    test "$(docker inspect --format '{{len .HostConfig.Tmpfs}}' "$container_name")" -ge 3
+  fi
   ready='false'
   for _ in {1..45}; do
     if docker exec "$container_name" pg_isready -U postgres >/dev/null 2>&1; then ready='true'; break; fi
@@ -293,10 +261,135 @@ create schema auth;
 create function auth.uid() returns uuid language sql stable as $$ select null::uuid $$;
 SQL
   done
+}
 
-  if ! docker exec -i "$container_name" \
-    pg_restore -U postgres -d source --exit-on-error --no-owner --no-privileges \
-      <"$plain_dump" >/dev/null 2>"$tmp_dir/sensitive.error"; then
+if [[ "$MODE" == 'preflight' ]]; then
+  : "${SUPABASE_REHOME_DATABASE_URL:?SUPABASE_REHOME_DATABASE_URL is required}"
+  command -v psql >/dev/null 2>&1 || {
+    echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=missing_psql'
+    exit 1
+  }
+  validate_target_url || {
+    echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=target_url_mismatch'
+    exit 1
+  }
+  if ! SUPABASE_PSQL_TMPDIR="$tmp_dir" node "$psql_wrapper" --file "$preflight_sql" \
+    >/dev/null 2>"$tmp_dir/sensitive.error"; then
+    sensitive_failure remote_preflight
+  fi
+  rm -f "$tmp_dir/sensitive.error"
+  echo 'CATALOGUE_REHOME status=PASS mode=preflight target=exact empty=true'
+  exit 0
+fi
+
+mapfile -t restore_table_args < <(node "$contract" table-args)
+test "${#restore_table_args[@]}" -gt 0
+
+if [[ "$MODE" == 'rehearsal' ]]; then
+  start_rehearsal_container
+fi
+
+if [[ "$hosted_recovery" == true ]]; then
+  if [[ -n "${AGE_IDENTITY:-}${AGE_IDENTITY_FILE:-}" ]]; then
+    echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=host_identity_environment_disallowed'
+    exit 1
+  fi
+  age_binary="$(command -v age 2>/dev/null)" || {
+    echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=age_tools_invalid'
+    exit 1
+  }
+  age_keygen_binary="$(command -v age-keygen 2>/dev/null)" || {
+    echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=age_tools_invalid'
+    exit 1
+  }
+  if [[ ! -f "$age_binary" || -L "$age_binary" || ! -x "$age_binary" ||
+        ! -f "$age_keygen_binary" || -L "$age_keygen_binary" || ! -x "$age_keygen_binary" ]]; then
+    echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=age_tools_invalid'
+    exit 1
+  fi
+  docker exec --user 0 "$container_name" install -d -o postgres -g postgres -m 0700 /recovery-data
+  docker exec --user 0 "$container_name" install -d -m 0755 /recovery-tools
+  docker cp "$archive" "$container_name:/recovery-data/archive.age" >/dev/null
+  docker cp "$age_binary" "$container_name:/recovery-tools/age" >/dev/null
+  docker cp "$age_keygen_binary" "$container_name:/recovery-tools/age-keygen" >/dev/null
+  docker exec --user 0 "$container_name" chown postgres:postgres /recovery-data/archive.age
+  docker exec --user 0 "$container_name" chmod 0400 /recovery-data/archive.age
+  docker exec --user 0 "$container_name" chmod 0555 /recovery-tools/age /recovery-tools/age-keygen
+
+  IFS= read -r identity || {
+    echo 'CATALOGUE_REHOME status=FAIL stage=recipient reason=identity_missing'
+    exit 1
+  }
+  if [[ -z "$identity" ]] || IFS= read -r unexpected_input; then
+    unset identity unexpected_input
+    echo 'CATALOGUE_REHOME status=FAIL stage=recipient reason=identity_input_invalid'
+    exit 1
+  fi
+  if ! printf '%s\n' "$identity" | env -u AGE_IDENTITY -u AGE_IDENTITY_FILE \
+    docker exec --user postgres -i "$container_name" sh -c '
+      set -eu
+      umask 077
+      identity_file=/recovery-data/age-identity
+      cat >"$identity_file"
+      chmod 0600 "$identity_file"
+      recipient="$(/recovery-tools/age-keygen -y "$identity_file" 2>/dev/null)" || exit 1
+      test "$recipient" = "age1cvg7hkdl4ctfdfv8a3a4vkcgc7ge7anyls2rn4y62vtnsxuczawqw4h0dr"
+    ' >/dev/null 2>"$tmp_dir/sensitive.error"; then
+    unset identity
+    sensitive_failure recipient
+  fi
+  unset identity
+  if ! docker exec --user postgres "$container_name" sh -c '
+    set -eu
+    umask 077
+    /recovery-tools/age --decrypt --identity /recovery-data/age-identity \
+      --output /recovery-data/runtime.dump /recovery-data/archive.age 2>/dev/null
+    rm -f /recovery-data/age-identity
+  ' >/dev/null 2>"$tmp_dir/sensitive.error"; then
+    sensitive_failure decrypt
+  fi
+  plain_bytes="$(docker exec --user postgres "$container_name" stat -c %s /recovery-data/runtime.dump 2>/dev/null)" || sensitive_failure decrypt
+  if [[ ! "$plain_bytes" =~ ^[0-9]+$ ]]; then sensitive_failure decrypt; fi
+  if (( plain_bytes > 2147483648 )); then
+    echo 'CATALOGUE_REHOME status=FAIL stage=capacity reason=source_dump_too_large'
+    exit 1
+  fi
+  plain_dump='/recovery-data/runtime.dump'
+else
+  if [[ -n "${AGE_IDENTITY_FILE:-}" ]]; then
+    if [[ -n "${AGE_IDENTITY:-}" || ! -f "$AGE_IDENTITY_FILE" || -L "$AGE_IDENTITY_FILE" ||
+          "$(findmnt --noheadings --output FSTYPE --target "$AGE_IDENTITY_FILE" | xargs)" != 'tmpfs' ]]; then
+      echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=age_identity_file_invalid'
+      exit 1
+    fi
+    cat -- "$AGE_IDENTITY_FILE" >"$tmp_dir/age-identity"
+    rm -f -- "$AGE_IDENTITY_FILE"
+  else
+    : "${AGE_IDENTITY:?AGE_IDENTITY or AGE_IDENTITY_FILE is required}"
+    printf '%s\n' "$AGE_IDENTITY" >"$tmp_dir/age-identity"
+  fi
+  chmod 600 "$tmp_dir/age-identity"
+  plain_dump="$tmp_dir/runtime.dump"
+  if ! age --decrypt --identity "$tmp_dir/age-identity" --output "$plain_dump" "$archive" \
+    2>"$tmp_dir/sensitive.error"; then
+    sensitive_failure decrypt
+  fi
+  rm -f "$tmp_dir/age-identity"
+fi
+rm -f "$tmp_dir/sensitive.error"
+
+container_pg_restore() {
+  if [[ "$hosted_recovery" == true ]]; then
+    docker exec --user postgres "$container_name" pg_restore "$@" "$plain_dump"
+  else
+    docker exec -i "$container_name" pg_restore "$@" <"$plain_dump"
+  fi
+}
+
+if [[ "$MODE" == 'rehearsal' ]]; then
+
+  if ! container_pg_restore -U postgres -d source --exit-on-error --no-owner --no-privileges \
+    >/dev/null 2>"$tmp_dir/sensitive.error"; then
     sensitive_failure rehearsal_source_restore
   fi
   if ! node "$contract" snapshot-sql | docker exec -i "$container_name" \
@@ -305,17 +398,14 @@ SQL
     sensitive_failure rehearsal_source_manifest
   fi
 
-  if ! docker exec -i "$container_name" \
-    pg_restore -U postgres -d target --schema-only --exit-on-error --no-owner --no-privileges \
-      <"$plain_dump" >/dev/null 2>"$tmp_dir/sensitive.error"; then
+  if ! container_pg_restore -U postgres -d target --schema-only --exit-on-error --no-owner --no-privileges \
+    >/dev/null 2>"$tmp_dir/sensitive.error"; then
     sensitive_failure rehearsal_schema_restore
   fi
   for table_arg in "${restore_table_args[@]}"; do
-    if ! docker exec -i "$container_name" \
-      pg_restore --data-only --no-owner --no-privileges --exit-on-error \
-        --schema=dpg_app --strict-names \
-        "$table_arg" -U postgres -d target <"$plain_dump" \
-        >/dev/null 2>"$tmp_dir/sensitive.error"; then
+    if ! container_pg_restore --data-only --no-owner --no-privileges --exit-on-error \
+      --schema=dpg_app --strict-names "$table_arg" -U postgres -d target \
+      >/dev/null 2>"$tmp_dir/sensitive.error"; then
       sensitive_failure rehearsal_catalogue_restore
     fi
   done
