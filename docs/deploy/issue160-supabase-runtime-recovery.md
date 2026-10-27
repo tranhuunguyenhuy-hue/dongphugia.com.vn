@@ -23,7 +23,7 @@ Do not dispatch until all of these are verified on the exact candidate:
    `SUPABASE_REHOME_DATABASE_URL`, `SUPABASE_REHOME_ROOT_CA_CERTIFICATE`,
    `SUPABASE_MANAGEMENT_TOKEN`, and `BACKUP_AGE_PRIVATE_KEY`. The workflow
    derives the snapshot recipient from the existing protected key only after
-   authenticating the source bundle, then compares it with the public B11
+   authenticating the source bundle, then compares it with the original backup
    recipient. `SUPABASE_REHOME_SNAPSHOT_AGE_IDENTITY` and
    `SUPABASE_REHOME_SNAPSHOT_AGE_RECIPIENT` are not used. Inspect secret names
    only; never retrieve or print values. The project root CA is a project-bound

@@ -1,4 +1,6 @@
+import { execFileSync, spawnSync } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
+import { setTimeout as delay } from 'node:timers/promises'
 
 import pg from 'pg'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
@@ -10,10 +12,10 @@ import {
 } from './catalogue-restore-contract.mjs'
 
 const { Client } = pg
-const serviceUrl = process.env.POSTGRES_SNAPSHOT_INTEGRATION_URL
-const integration = serviceUrl ? describe : describe.skip
+const postgresImage = process.env.POSTGRES_SNAPSHOT_INTEGRATION_IMAGE
+const integration = postgresImage ? describe : describe.skip
 
-let databaseName
+let containerName
 let databaseClient
 
 async function readSequenceState(sequenceName) {
@@ -23,18 +25,33 @@ async function readSequenceState(sequenceName) {
 
 integration('Issue 160 baseline and sequence behavior on synthetic PostgreSQL', () => {
   beforeAll(async () => {
-    const admin = new Client({ connectionString: serviceUrl })
-    await admin.connect()
-    databaseName = `issue160_contract_${randomUUID().replaceAll('-', '')}`
-    try {
-      await admin.query(`create database "${databaseName}"`)
-    } finally {
-      await admin.end()
-    }
+    containerName = `issue160-contract-${randomUUID().replaceAll('-', '')}`
+    execFileSync('docker', [
+      'run', '--detach', '--name', containerName, '--publish', '127.0.0.1::5432',
+      '--env', 'POSTGRES_HOST_AUTH_METHOD=trust', postgresImage,
+    ], { stdio: ['ignore', 'pipe', 'pipe'] })
 
-    const databaseUrl = new URL(serviceUrl)
-    databaseUrl.pathname = `/${databaseName}`
-    databaseClient = new Client({ connectionString: databaseUrl.toString() })
+    const deadline = Date.now() + 30_000
+    let ready = false
+    while (Date.now() < deadline) {
+      const probe = spawnSync('docker', [
+        'exec', containerName, 'pg_isready', '-q', '-t', '1', '-h', '127.0.0.1',
+        '-U', 'postgres', '-d', 'postgres',
+      ], { stdio: 'ignore', timeout: 2_000 })
+      if (probe.status === 0) {
+        ready = true
+        break
+      }
+      await delay(250)
+    }
+    if (!ready) throw new Error('synthetic_postgres_not_ready')
+
+    const publishedPort = execFileSync('docker', ['port', containerName, '5432/tcp'], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    }).trim().split(':').at(-1)
+    if (!publishedPort || !/^\d+$/.test(publishedPort)) throw new Error('synthetic_postgres_port_unavailable')
+    databaseClient = new Client({ connectionString: `postgresql://postgres@127.0.0.1:${publishedPort}/postgres` })
     await databaseClient.connect()
     await databaseClient.query(`
       create schema dpg_app;
@@ -71,19 +88,22 @@ integration('Issue 160 baseline and sequence behavior on synthetic PostgreSQL', 
 
   afterAll(async () => {
     await databaseClient?.end()
-    if (!databaseName) return
-    const admin = new Client({ connectionString: serviceUrl })
-    await admin.connect()
-    try {
-      await admin.query(`drop database if exists "${databaseName}" with (force)`)
-    } finally {
-      await admin.end()
+    if (containerName) {
+      try {
+        execFileSync('docker', ['rm', '--force', containerName], { stdio: 'ignore' })
+      } catch {
+        // Cleanup is best-effort after a failing test; the unique container name is never reused.
+      }
     }
   }, 30_000)
 
   it('accepts the exact empty catalogue baseline and rejects row or RLS drift', async () => {
     const preflight = await databaseClient.query(buildRuntimeBaselinePreflightSql())
-    expect(Object.values(preflight.rows[0])[0]).toMatch(/^\d+\|13\|27$/)
+    const selectResult = Array.isArray(preflight)
+      ? preflight.find((result) => result.rows?.length > 0)
+      : preflight
+    expect(selectResult?.rows).toHaveLength(1)
+    expect(Object.values(selectResult.rows[0])[0]).toMatch(/^\d+\|13\|27$/)
 
     await databaseClient.query('insert into dpg_app.products default values')
     await expect(databaseClient.query(buildRuntimeBaselinePreflightSql()))
