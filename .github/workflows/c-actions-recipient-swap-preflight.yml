@@ -5,10 +5,14 @@ on:
     branches:
       - main
     paths:
+      - .github/workflows/c-actions-original-key-diagnostic-once.yml
       - .github/workflows/c-actions-recipient-diagnostic-once.yml
       - .github/workflows/c-actions-recipient-swap-preflight.yml
       - scripts/backup/c-actions-container-swap-smoke.sh
       - scripts/backup/c-actions-host-swap-preflight.sh
+      - scripts/backup/c-actions-recipient-diagnostic.sh
+      - scripts/backup/c-actions-recipient-diagnostic-container.sh
+      - scripts/backup/c-actions-recipient-diagnostic-synthetic.test.sh
 
 permissions:
   contents: read
@@ -24,6 +28,10 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
+
+      - name: Validate age identity-format handling with synthetic input
+        shell: bash
+        run: bash scripts/backup/c-actions-recipient-diagnostic-synthetic.test.sh
 
       - name: Pull the pinned public image
         shell: bash
