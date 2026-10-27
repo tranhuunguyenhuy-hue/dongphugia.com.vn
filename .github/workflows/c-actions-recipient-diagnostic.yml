@@ -1,0 +1,97 @@
+name: C protected recipient identity diagnostic
+
+on:
+  workflow_dispatch:
+    inputs:
+      approved_control_sha:
+        description: Exact merged main commit approved for this one diagnostic
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: c-recipient-diagnostic-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  diagnose:
+    if: >-
+      github.repository == 'tranhuunguyenhuy-hue/dongphugia.com.vn' &&
+      github.ref == 'refs/heads/main' &&
+      github.actor == 'tranhuunguyenhuy-hue' &&
+      github.run_number == 1 &&
+      github.run_attempt == 1 &&
+      inputs.approved_control_sha == github.sha
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: runtime-backup
+    env:
+      RECIPIENT_DIAGNOSTIC_IMAGE: postgres:17.6-bookworm@sha256:f3bd19c606e442c3d7bdfa8002e03fe260a1023351e0ea4598032022b68dd6e3
+      # Owner-held B11 public metadata, independently recorded in the re-wrap note and core.
+      B11_TRUSTED_RECIPIENT: age1cvg7hkdl4ctfdfv8a3a4vkcgc7ge7anyls2rn4y62vtnsxuczawqw4h0dr
+
+    steps:
+      - name: Check out the exact approved control
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Require the one approved diagnostic control
+        shell: bash
+        env:
+          APPROVED_SHA: ${{ inputs.approved_control_sha }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_EVENT_NAME" = workflow_dispatch
+          test "$GITHUB_REF" = refs/heads/main
+          test "$GITHUB_ACTOR" = tranhuunguyenhuy-hue
+          test "$GITHUB_RUN_NUMBER" = 1
+          test "$GITHUB_RUN_ATTEMPT" = 1
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$APPROVED_SHA" = "$GITHUB_SHA"
+
+      - name: Prepare pinned public tools before secret access
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(awk '/^SwapTotal:/ { print $2 }' /proc/meminfo)" = 0
+          test "$(awk 'NR > 1 { count++ } END { print count + 0 }' /proc/swaps)" = 0
+          tools_dir="$RUNNER_TEMP/c-recipient-diagnostic"
+          mkdir -m 700 "$tools_dir"
+          curl --fail --location --silent --show-error --max-time 120 \
+            --output "$tools_dir/age.tar.gz" \
+            'https://github.com/FiloSottile/age/releases/download/v1.3.2/age-v1.3.2-linux-amd64.tar.gz'
+          printf '%s  %s\n' \
+            'cbe24006683f8eb669266162894b9a522a1af52f2665fbc63a4bb032ed26ac10' \
+            "$tools_dir/age.tar.gz" | sha256sum --check --status
+          tar -xOzf "$tools_dir/age.tar.gz" age/age-keygen > "$tools_dir/age-keygen"
+          chmod 0555 "$tools_dir/age-keygen"
+          docker pull "$RECIPIENT_DIAGNOSTIC_IMAGE" >/dev/null 2>&1
+          test "$(docker image inspect --format '{{.Os}}/{{.Architecture}}' "$RECIPIENT_DIAGNOSTIC_IMAGE")" = linux/amd64
+
+      - name: Diagnose the protected identity through isolated stdin
+        shell: bash
+        env:
+          B11_RECOVERY_AGE_IDENTITY: ${{ secrets.B11_RECOVERY_AGE_IDENTITY }}
+        run: |
+          set -euo pipefail
+          set +x
+          ulimit -c 0
+          trap 'unset B11_RECOVERY_AGE_IDENTITY' EXIT
+          printf '%s\n' "$B11_RECOVERY_AGE_IDENTITY" |
+            env -i \
+              PATH="$PATH" \
+              HOME="$RUNNER_TEMP" \
+              DOCKER_HOST=unix:///var/run/docker.sock \
+              AGE_KEYGEN_PATH="$RUNNER_TEMP/c-recipient-diagnostic/age-keygen" \
+              RECIPIENT_DIAGNOSTIC_IMAGE="$RECIPIENT_DIAGNOSTIC_IMAGE" \
+              B11_TRUSTED_RECIPIENT="$B11_TRUSTED_RECIPIENT" \
+              bash scripts/backup/c-actions-recipient-diagnostic.sh
+
+      - name: Remove pinned public tools
+        if: always()
+        shell: bash
+        run: rm -rf -- "$RUNNER_TEMP/c-recipient-diagnostic"
