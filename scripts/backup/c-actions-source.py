@@ -28,7 +28,7 @@ SOURCE_REPOSITORY = "tranhuunguyenhuy-hue/dongphugia.com.vn"
 def require_single_dispatch(token: str, run_id: int, head_sha: str) -> None:
     runs = _api_json(
         f"/repos/{SOURCE_REPOSITORY}/actions/workflows/c-actions-recovery.yml/runs"
-        "?event=workflow_dispatch&per_page=2", token
+        f"?event=workflow_dispatch&head_sha={head_sha}&per_page=2", token
     )
     listed = runs.get("workflow_runs")
     if (runs.get("total_count") != 1 or not isinstance(listed, list) or
