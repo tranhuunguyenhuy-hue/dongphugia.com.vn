@@ -22,6 +22,7 @@ env:
   ISSUE_NUMBER: '160'
   OWNER_GO_COMMENT_ID: '6444168865'
   OWNER_UPDATE_COMMENT_ID: '6444628120'
+  OWNER_LATEST_GO_COMMENT_ID: '6447230355'
   BACKUP_RUN_ID: '38915575745'
   BACKUP_ARTIFACT_ID: '12052107648'
   BACKUP_ARTIFACT_NAME: 'leo540-runtime-backup-38915575745'
@@ -79,12 +80,16 @@ jobs:
           latest_owner_comment="$(gh api --paginate --jq \
             '.[] | select(.user.login == "tranhuunguyenhuy-hue") | .id' \
             "repos/$GITHUB_REPOSITORY/issues/$ISSUE_NUMBER/comments?per_page=100" | sort -n | tail -n 1)"
-          test "$latest_owner_comment" = "$OWNER_UPDATE_COMMENT_ID"
+          test "$latest_owner_comment" = "$OWNER_LATEST_GO_COMMENT_ID"
 
           go_comment="$(gh api "repos/$GITHUB_REPOSITORY/issues/comments/$OWNER_GO_COMMENT_ID")"
           jq -e --arg owner 'tranhuunguyenhuy-hue' \
             '.user.login == $owner and (.body | contains("OWNER GO — SUPABASE SCHEMA RECONCILIATION & CONDITIONAL CATALOGUE SYNC"))' \
             <<<"$go_comment" >/dev/null
+          latest_go_comment="$(gh api "repos/$GITHUB_REPOSITORY/issues/comments/$OWNER_LATEST_GO_COMMENT_ID")"
+          jq -e --arg owner 'tranhuunguyenhuy-hue' \
+            '.user.login == $owner and (.body | contains("OWNER GO — P0 FAST-TRACK SAFE RECOVERY & WEBSITE READINESS"))' \
+            <<<"$latest_go_comment" >/dev/null
           update_comment="$(gh api "repos/$GITHUB_REPOSITORY/issues/comments/$OWNER_UPDATE_COMMENT_ID")"
           jq -e --arg owner 'tranhuunguyenhuy-hue' \
             '.user.login == $owner and (.body | gsub("`"; "") | contains("SUPABASE_REHOME_DATABASE_URL has now been added"))' \
@@ -179,21 +184,17 @@ jobs:
           test "$(docker image inspect --format '{{.Os}}/{{.Architecture}}' "$POSTGRES_IMAGE")" = linux/amd64
           npm ci
 
-      - name: Require protected recovery credentials and dedicated rollback identity
+      - name: Require protected database, TLS, and management credentials
         env:
           SUPABASE_REHOME_DATABASE_URL: ${{ secrets.SUPABASE_REHOME_DATABASE_URL }}
           SUPABASE_REHOME_ROOT_CA_CERTIFICATE: ${{ secrets.SUPABASE_REHOME_ROOT_CA_CERTIFICATE }}
           SUPABASE_MANAGEMENT_TOKEN: ${{ secrets.SUPABASE_MANAGEMENT_TOKEN }}
-          SUPABASE_REHOME_SNAPSHOT_AGE_IDENTITY: ${{ secrets.SUPABASE_REHOME_SNAPSHOT_AGE_IDENTITY }}
-          SUPABASE_REHOME_SNAPSHOT_AGE_RECIPIENT: ${{ vars.SUPABASE_REHOME_SNAPSHOT_AGE_RECIPIENT }}
         shell: bash
         run: |
           set -euo pipefail
           test -n "$SUPABASE_REHOME_DATABASE_URL"
           test -n "$SUPABASE_REHOME_ROOT_CA_CERTIFICATE"
           test -n "$SUPABASE_MANAGEMENT_TOKEN"
-          test -n "$SUPABASE_REHOME_SNAPSHOT_AGE_IDENTITY"
-          test -n "$SUPABASE_REHOME_SNAPSHOT_AGE_RECIPIENT"
           echo 'ISSUE160_RECOVERY_GATE status=PASS protected_secret_presence=all'
 
       - name: Verify exact Free organization and healthy target project
@@ -267,8 +268,7 @@ jobs:
         env:
           SUPABASE_REHOME_DATABASE_URL: ${{ secrets.SUPABASE_REHOME_DATABASE_URL }}
           SUPABASE_REHOME_ROOT_CA_CERTIFICATE: ${{ secrets.SUPABASE_REHOME_ROOT_CA_CERTIFICATE }}
-          SUPABASE_REHOME_SNAPSHOT_AGE_IDENTITY: ${{ secrets.SUPABASE_REHOME_SNAPSHOT_AGE_IDENTITY }}
-          SUPABASE_REHOME_SNAPSHOT_AGE_RECIPIENT: ${{ vars.SUPABASE_REHOME_SNAPSHOT_AGE_RECIPIENT }}
+          BACKUP_AGE_PRIVATE_KEY: ${{ secrets.BACKUP_AGE_PRIVATE_KEY }}
           EXPECTED_SOURCE_AGE_RECIPIENT: ${{ env.EXPECTED_SOURCE_AGE_RECIPIENT }}
         shell: bash
         run: bash scripts/backup/supabase-runtime-snapshot.sh
@@ -341,11 +341,15 @@ jobs:
           latest_owner_comment="$(gh api --paginate --jq \
             '.[] | select(.user.login == "tranhuunguyenhuy-hue") | .id' \
             "repos/$GITHUB_REPOSITORY/issues/$ISSUE_NUMBER/comments?per_page=100" | sort -n | tail -n 1)"
-          test "$latest_owner_comment" = "$OWNER_UPDATE_COMMENT_ID"
+          test "$latest_owner_comment" = "$OWNER_LATEST_GO_COMMENT_ID"
           go_comment="$(gh api "repos/$GITHUB_REPOSITORY/issues/comments/$OWNER_GO_COMMENT_ID")"
           jq -e --arg owner 'tranhuunguyenhuy-hue' \
             '.user.login == $owner and (.body | contains("OWNER GO — SUPABASE SCHEMA RECONCILIATION & CONDITIONAL CATALOGUE SYNC"))' \
             <<<"$go_comment" >/dev/null
+          latest_go_comment="$(gh api "repos/$GITHUB_REPOSITORY/issues/comments/$OWNER_LATEST_GO_COMMENT_ID")"
+          jq -e --arg owner 'tranhuunguyenhuy-hue' \
+            '.user.login == $owner and (.body | contains("OWNER GO — P0 FAST-TRACK SAFE RECOVERY & WEBSITE READINESS"))' \
+            <<<"$latest_go_comment" >/dev/null
           update_comment="$(gh api "repos/$GITHUB_REPOSITORY/issues/comments/$OWNER_UPDATE_COMMENT_ID")"
           jq -e --arg owner 'tranhuunguyenhuy-hue' \
             '.user.login == $owner and (.body | gsub("`"; "") | contains("SUPABASE_REHOME_DATABASE_URL has now been added"))' \
@@ -353,12 +357,20 @@ jobs:
           test -n "$SNAPSHOT_ARTIFACT_ID"
           test "$(jq -r '.projectRef' "$SNAPSHOT_DIR/snapshot-receipt.json")" = "$SUPABASE_PROJECT_REF"
           test "$(jq -r '.sourceSha' "$SNAPSHOT_DIR/snapshot-receipt.json")" = "$GITHUB_SHA"
-          for snapshot in affected-schemas.custom.age global-roles.no-passwords.sql.age; do
+          for snapshot in affected-schemas.custom.age public-schema.custom.age \
+            auth-extension-schema-acls.json.age global-roles.no-passwords.sql.age; do
             test -f "$SNAPSHOT_DIR/$snapshot" && test ! -L "$SNAPSHOT_DIR/$snapshot"
           done
           database_hash="$(jq -r '.databaseCiphertextSha256' "$SNAPSHOT_DIR/snapshot-receipt.json")"
+          public_hash="$(jq -r '.publicCiphertextSha256' "$SNAPSHOT_DIR/snapshot-receipt.json")"
+          acl_hash="$(jq -r '.authExtensionAclCiphertextSha256' "$SNAPSHOT_DIR/snapshot-receipt.json")"
           globals_hash="$(jq -r '.globalsCiphertextSha256' "$SNAPSHOT_DIR/snapshot-receipt.json")"
+          test "$(jq -r '.format' "$SNAPSHOT_DIR/snapshot-receipt.json")" = dpg-supabase-destination-snapshot-v2
+          test "$(jq -r '.isolatedArchiveHashChecks' "$SNAPSHOT_DIR/snapshot-receipt.json")" = PASS
+          test "$(jq -r '.isolatedSchemaAclEquivalence' "$SNAPSHOT_DIR/snapshot-receipt.json")" = PASS
           test "$(sha256sum "$SNAPSHOT_DIR/affected-schemas.custom.age" | awk '{print $1}')" = "$database_hash"
+          test "$(sha256sum "$SNAPSHOT_DIR/public-schema.custom.age" | awk '{print $1}')" = "$public_hash"
+          test "$(sha256sum "$SNAPSHOT_DIR/auth-extension-schema-acls.json.age" | awk '{print $1}')" = "$acl_hash"
           test "$(sha256sum "$SNAPSHOT_DIR/global-roles.no-passwords.sql.age" | awk '{print $1}')" = "$globals_hash"
 
           org_result=/dev/shm/issue160-prewrite-organization.json

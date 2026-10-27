@@ -1,15 +1,25 @@
 import { spawn } from 'node:child_process'
-import { chmod, mkdtemp, rm, statfs, writeFile } from 'node:fs/promises'
+import { chmod, mkdtemp, readFile, rm, statfs, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
 import { parseSupabaseRuntimeTarget } from './supabase-runtime-target.mjs'
 import { validateSupabaseRuntimeRootCertificate } from './supabase-runtime-tls.mjs'
 
 const TMPFS_MAGIC = 0x01021994
-const POSTGRES_IMAGE = 'postgres:17.6-bookworm@sha256:45cd22f8d32e189d245403954882f88e7a8714301fda80dab6da90f1265b25a3'
+const POSTGRES_IMAGE = 'postgres:17.6-bookworm@sha256:f3bd19c606e442c3d7bdfa8002e03fe260a1023351e0ea4598032022b68dd6e3'
 const DUMP_MODES = new Map([
   ['--checkpoint-schema', ['pg_dump', '--schema-only', '--schema=dpg_app', '--schema=dpg_control']],
-  ['--affected-state-snapshot', ['pg_dump', '--format=custom', '--schema=dpg_app', '--schema=dpg_control']],
+  ['--affected-state-snapshot', [
+    'pg_dump', '--format=custom', '--schema=dpg_app', '--schema=dpg_control',
+    '--schema=dpg_v1', '--schema=dpg_v1_api',
+  ]],
+  ['--affected-public-schema-snapshot', [
+    'pg_dump', '--format=custom', '--schema-only', '--schema=public',
+  ]],
+  ['--auth-extension-schema-acls', [
+    'psql', '-X', '-q', '-A', '-t', '-v', 'ON_ERROR_STOP=1',
+    '--file=/run/dpg/supabase-runtime-schema-acl-snapshot.sql',
+  ]],
   ['--global-roles-snapshot', ['pg_dumpall', '--globals-only', '--no-role-passwords']],
 ])
 
@@ -41,6 +51,14 @@ async function main() {
   const pgpass = path.join(tmpDirectory, '.pgpass')
   const rootCertificatePath = path.join(tmpDirectory, 'root.crt')
   try {
+    if (process.argv[2] === '--auth-extension-schema-acls') {
+      const aclQueryPath = new URL('./supabase-runtime-schema-acl-snapshot.sql', import.meta.url)
+      await writeFile(
+        path.join(tmpDirectory, 'supabase-runtime-schema-acl-snapshot.sql'),
+        await readFile(aclQueryPath),
+        { mode: 0o400 },
+      )
+    }
     await writeFile(pgpass, [
       pgpassEscape(target.host), String(target.port), pgpassEscape(target.database),
       pgpassEscape(target.user), pgpassEscape(target.password),

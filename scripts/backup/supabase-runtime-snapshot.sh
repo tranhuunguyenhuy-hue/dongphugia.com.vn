@@ -9,18 +9,17 @@ fail() {
 : "${OUTPUT_DIR:?OUTPUT_DIR is required}"
 : "${SUPABASE_REHOME_DATABASE_URL:?SUPABASE_REHOME_DATABASE_URL is required}"
 : "${SUPABASE_REHOME_ROOT_CA_CERTIFICATE:?SUPABASE_REHOME_ROOT_CA_CERTIFICATE is required}"
-: "${SUPABASE_REHOME_SNAPSHOT_AGE_RECIPIENT:?SUPABASE_REHOME_SNAPSHOT_AGE_RECIPIENT is required}"
-: "${SUPABASE_REHOME_SNAPSHOT_AGE_IDENTITY:?SUPABASE_REHOME_SNAPSHOT_AGE_IDENTITY is required}"
+: "${BACKUP_AGE_PRIVATE_KEY:?BACKUP_AGE_PRIVATE_KEY is required}"
 : "${EXPECTED_SOURCE_AGE_RECIPIENT:?EXPECTED_SOURCE_AGE_RECIPIENT is required}"
 
 if [[ "${GITHUB_ACTIONS:-}" != true || "${GITHUB_EVENT_NAME:-}" != workflow_dispatch ||
       "${GITHUB_REF:-}" != refs/heads/main || "${GITHUB_RUN_ATTEMPT:-}" != 1 ]]; then
   fail execution_context_invalid
 fi
-if [[ ! "$SUPABASE_REHOME_SNAPSHOT_AGE_RECIPIENT" =~ ^age1[0-9a-z]+$ ]] ||
-   [[ "$SUPABASE_REHOME_SNAPSHOT_AGE_RECIPIENT" == "$EXPECTED_SOURCE_AGE_RECIPIENT" ]]; then
-  fail snapshot_recipient_invalid
-fi
+case "$EXPECTED_SOURCE_AGE_RECIPIENT" in
+  age12zqtv9r2fc4v2j0kk6v79xrvy66gxcht2uqfxvqske4lzh83uq2qtqhfmc) ;;
+  *) fail source_recipient_invalid ;;
+esac
 
 tmp_parent='/dev/shm'
 if ! command -v findmnt >/dev/null 2>&1 ||
@@ -70,34 +69,86 @@ trap 'exit 130' INT
 trap 'exit 143' TERM
 
 identity_file="$tmp_dir/snapshot-identity"
-printf '%s\n' "$SUPABASE_REHOME_SNAPSHOT_AGE_IDENTITY" >"$identity_file"
+identity_value="$BACKUP_AGE_PRIVATE_KEY"
+unset BACKUP_AGE_PRIVATE_KEY
+printf '%s' "$identity_value" >"$identity_file"
+unset identity_value
 chmod 0600 "$identity_file"
-unset SUPABASE_REHOME_SNAPSHOT_AGE_IDENTITY
 if ! age-keygen -y "$identity_file" >"$tmp_dir/derived-recipient" 2>/dev/null ||
-   ! printf '%s\n' "$SUPABASE_REHOME_SNAPSHOT_AGE_RECIPIENT" >"$tmp_dir/expected-recipient" ||
+   ! printf '%s\n' "$EXPECTED_SOURCE_AGE_RECIPIENT" >"$tmp_dir/expected-recipient" ||
    ! cmp -s "$tmp_dir/derived-recipient" "$tmp_dir/expected-recipient"; then
-  fail snapshot_identity_recipient_mismatch
+  fail validated_backup_identity_mismatch
 fi
-unset SUPABASE_REHOME_SNAPSHOT_AGE_RECIPIENT
+unset EXPECTED_SOURCE_AGE_RECIPIENT
 
 dump_script='scripts/backup/supabase-runtime-pg-dump.mjs'
 database_snapshot="$OUTPUT_DIR/affected-schemas.custom.age"
+public_snapshot="$OUTPUT_DIR/public-schema.custom.age"
+acl_snapshot="$OUTPUT_DIR/auth-extension-schema-acls.json.age"
 globals_snapshot="$OUTPUT_DIR/global-roles.no-passwords.sql.age"
-if ! node "$dump_script" --affected-state-snapshot |
-     age --recipient "$(cat "$tmp_dir/expected-recipient")" --output "$database_snapshot" 2>"$tmp_dir/database-encrypt.error"; then
-  fail destination_snapshot_failed
+snapshot_recipient="$(cat "$tmp_dir/expected-recipient")"
+schema_acl_query='scripts/backup/supabase-runtime-schema-acl-snapshot.sql'
+cp -- "$schema_acl_query" "$tmp_dir/schema-acl-snapshot.sql" || fail snapshot_query_unavailable
+chmod 0400 "$tmp_dir/schema-acl-snapshot.sql"
+
+capture_encrypted_snapshot() {
+  local dump_mode="$1"
+  local ciphertext_path="$2"
+  local hash_path="$3"
+  local snapshot_name
+  local fifo_path
+  local hash_pid
+  local plaintext_hash
+  snapshot_name="$(basename "$ciphertext_path")"
+  fifo_path="$tmp_dir/$snapshot_name.plaintext.pipe"
+  mkfifo "$fifo_path" || fail snapshot_pipeline_unavailable
+  sha256sum <"$fifo_path" | awk '{ print $1 }' >"$hash_path" &
+  hash_pid=$!
+  if ! node "$dump_script" "$dump_mode" \
+       2>"$tmp_dir/$snapshot_name.dump.stderr" |
+       tee "$fifo_path" |
+       age --recipient "$snapshot_recipient" --output "$ciphertext_path" \
+         2>"$tmp_dir/$snapshot_name.encrypt.stderr"; then
+    wait "$hash_pid" 2>/dev/null || true
+    fail snapshot_capture_failed
+  fi
+  wait "$hash_pid" || fail snapshot_hash_failed
+  plaintext_hash="$(cat "$hash_path")"
+  [[ "$plaintext_hash" =~ ^[0-9a-f]{64}$ ]] || fail snapshot_hash_failed
+  rm -f -- "$fifo_path"
+}
+
+database_plain_hash="$tmp_dir/database.plain.sha256"
+public_plain_hash="$tmp_dir/public-schema.plain.sha256"
+acl_plain_hash="$tmp_dir/schema-acls.plain.sha256"
+globals_plain_hash="$tmp_dir/global-roles.plain.sha256"
+capture_encrypted_snapshot --affected-state-snapshot "$database_snapshot" "$database_plain_hash"
+capture_encrypted_snapshot --affected-public-schema-snapshot "$public_snapshot" "$public_plain_hash"
+capture_encrypted_snapshot --auth-extension-schema-acls "$acl_snapshot" "$acl_plain_hash"
+capture_encrypted_snapshot --global-roles-snapshot "$globals_snapshot" "$globals_plain_hash"
+
+acl_plain="$tmp_dir/auth-extension-schema-acls.json"
+if ! age --decrypt --identity "$identity_file" "$acl_snapshot" >"$acl_plain" \
+     2>"$tmp_dir/schema-acls.decrypt.stderr"; then
+  fail destination_acl_snapshot_decrypt_failed
 fi
-if ! node "$dump_script" --global-roles-snapshot |
-     age --recipient "$(cat "$tmp_dir/expected-recipient")" --output "$globals_snapshot" 2>"$tmp_dir/globals-encrypt.error"; then
-  fail destination_roles_snapshot_failed
-fi
+chmod 0600 "$acl_plain"
+test "$(sha256sum "$acl_plain" | awk '{print $1}')" = "$(cat "$acl_plain_hash")" ||
+  fail destination_acl_snapshot_hash_mismatch
+jq -e '
+  .format == "dpg-runtime-schema-acl-v1" and
+  (.roles | type == "array" and length > 0) and
+  (.schemas | map(.name) | sort == ["auth", "extensions"])
+' "$acl_plain" >/dev/null || fail destination_acl_snapshot_invalid
+
 unset SUPABASE_REHOME_ROOT_CA_CERTIFICATE SUPABASE_REHOME_DATABASE_URL
 
 docker run --detach --name "$container_name" --network none --read-only --log-driver=none \
   --pids-limit 128 --memory 512m \
+  --mount "type=bind,source=$tmp_dir/schema-acl-snapshot.sql,target=/run/schema-acl-snapshot.sql,readonly" \
   --tmpfs /var/lib/postgresql/data:rw,nosuid,nodev,size=384m \
   --tmpfs /var/run/postgresql:rw,nosuid,nodev,size=16m \
-  --tmpfs /tmp:rw,noexec,nosuid,nodev,size=16m \
+  --tmpfs /tmp:rw,noexec,nosuid,nodev,size=512m \
   --env POSTGRES_HOST_AUTH_METHOD=trust \
   --env POSTGRES_USER=dpg_snapshot_restore \
   "$postgres_image" >/dev/null 2>&1 || fail isolated_restore_start_failed
@@ -111,63 +162,128 @@ for _ in $(seq 1 60); do
 done
 [[ "$ready" == true ]] || fail isolated_restore_not_ready
 
-if ! age --decrypt --identity "$identity_file" "$globals_snapshot" 2>"$tmp_dir/globals-decrypt.error" |
-     docker exec --interactive --user postgres "$container_name" \
-       psql -U dpg_snapshot_restore -X -q -v ON_ERROR_STOP=1 -d postgres >/dev/null 2>"$tmp_dir/globals-restore.error"; then
+stage_encrypted_snapshot() {
+  local ciphertext_path="$1"
+  local hash_path="$2"
+  local staged_path="$3"
+  local failure_reason="$4"
+  local expected_hash
+  local actual_hash
+  if ! age --decrypt --identity "$identity_file" "$ciphertext_path" \
+       2>"$tmp_dir/snapshot.decrypt.stderr" |
+       docker exec --interactive --user postgres "$container_name" \
+         sh -c 'umask 077; cat > "$1"' sh "$staged_path" \
+         >/dev/null 2>"$tmp_dir/snapshot-stage.stderr"; then
+    fail "$failure_reason"
+  fi
+  expected_hash="$(cat "$hash_path")"
+  actual_hash="$(docker exec --user postgres "$container_name" \
+    sha256sum "$staged_path" 2>/dev/null | awk '{print $1}')" || fail snapshot_hash_check_failed
+  [[ "$actual_hash" == "$expected_hash" ]] || fail snapshot_plaintext_hash_mismatch
+}
+
+stage_encrypted_snapshot "$globals_snapshot" "$globals_plain_hash" \
+  /tmp/global-roles.no-passwords.sql isolated_roles_restore_failed
+if ! docker exec --user postgres "$container_name" \
+     psql -U dpg_snapshot_restore -X -q -v ON_ERROR_STOP=1 -d postgres \
+       --file=/tmp/global-roles.no-passwords.sql \
+       >/dev/null 2>"$tmp_dir/globals-restore.error"; then
   fail isolated_roles_restore_failed
 fi
+docker exec --user postgres "$container_name" rm -f /tmp/global-roles.no-passwords.sql \
+  >/dev/null 2>&1 || fail isolated_roles_restore_failed
+
 docker exec --interactive --user postgres "$container_name" \
   psql -U dpg_snapshot_restore -X -q -v ON_ERROR_STOP=1 -d postgres >/dev/null 2>"$tmp_dir/bootstrap.error" <<'SQL' ||
 fail isolated_restore_bootstrap_failed
 create schema auth;
+create schema extensions;
+create extension pgcrypto with schema extensions;
 create table auth.users (id uuid primary key);
 create function auth.uid() returns uuid language sql stable as $$ select null::uuid $$;
 create function auth.jwt() returns jsonb language sql stable as $$ select '{}'::jsonb $$;
 create function auth.role() returns text language sql stable as $$ select null::text $$;
 SQL
 
-if ! age --decrypt --identity "$identity_file" "$database_snapshot" 2>"$tmp_dir/database-decrypt.error" |
-     docker exec --interactive --user postgres "$container_name" \
-       sh -c 'umask 077; cat > /tmp/affected-schemas.dump' \
-       >/dev/null 2>"$tmp_dir/database-stage.error"; then
-  fail isolated_database_restore_failed
+node scripts/backup/supabase-runtime-schema-acl.mjs restore-sql "$acl_plain" |
+  docker exec --interactive --user postgres "$container_name" \
+    psql -U dpg_snapshot_restore -X -q -v ON_ERROR_STOP=1 -d postgres \
+    >/dev/null 2>"$tmp_dir/schema-acl-restore.error" || fail isolated_acl_restore_failed
+
+if ! docker exec --user postgres "$container_name" \
+     psql -U dpg_snapshot_restore -X -q -A -t -v ON_ERROR_STOP=1 -d postgres \
+       --file=/run/schema-acl-snapshot.sql >"$tmp_dir/restored-schema-acls.json" \
+       2>"$tmp_dir/schema-acl-verify.error"; then
+  fail isolated_acl_verification_failed
 fi
-expected_tables="$(docker exec --user postgres "$container_name" \
+jq -S 'del(.roles) | .schemas |= map(.grants |= sort_by(.grantee, .privilege, .grantable))' \
+  "$acl_plain" >"$tmp_dir/source-schema-acls.normalized.json"
+jq -S 'del(.roles) | .schemas |= map(.grants |= sort_by(.grantee, .privilege, .grantable))' \
+  "$tmp_dir/restored-schema-acls.json" >"$tmp_dir/restored-schema-acls.normalized.json"
+cmp -s "$tmp_dir/source-schema-acls.normalized.json" "$tmp_dir/restored-schema-acls.normalized.json" ||
+  fail isolated_acl_equivalence_failed
+
+stage_encrypted_snapshot "$database_snapshot" "$database_plain_hash" \
+  /tmp/affected-schemas.dump isolated_database_restore_failed
+stage_encrypted_snapshot "$public_snapshot" "$public_plain_hash" \
+  /tmp/public-schema.dump isolated_public_schema_restore_failed
+expected_runtime_tables="$(docker exec --user postgres "$container_name" \
   pg_restore --list /tmp/affected-schemas.dump 2>/dev/null | \
   awk -F'; ' '$2 ~ /^[0-9]+ [0-9]+ TABLE / { count += 1 } END { print count + 0 }')" ||
   fail isolated_restore_verification_failed
-[[ "$expected_tables" =~ ^[1-9][0-9]*$ ]] || fail isolated_restore_verification_failed
+expected_public_tables="$(docker exec --user postgres "$container_name" \
+  pg_restore --list /tmp/public-schema.dump 2>/dev/null | \
+  awk -F'; ' '$2 ~ /^[0-9]+ [0-9]+ TABLE / { count += 1 } END { print count + 0 }')" ||
+  fail isolated_restore_verification_failed
+expected_tables=$((expected_runtime_tables + expected_public_tables))
+[[ "$expected_runtime_tables" =~ ^[1-9][0-9]*$ && "$expected_public_tables" =~ ^[0-9]+$ ]] ||
+  fail isolated_restore_verification_failed
 if ! docker exec --user postgres "$container_name" \
   pg_restore --format=custom --username=dpg_snapshot_restore --exit-on-error \
     --single-transaction --dbname=postgres /tmp/affected-schemas.dump \
     >/dev/null 2>"$tmp_dir/database-restore.error"; then
   fail isolated_database_restore_failed
 fi
+if ! docker exec --user postgres "$container_name" \
+  pg_restore --format=custom --username=dpg_snapshot_restore --clean --if-exists --exit-on-error \
+    --single-transaction --dbname=postgres /tmp/public-schema.dump \
+    >/dev/null 2>"$tmp_dir/public-schema-restore.error"; then
+  fail isolated_public_schema_restore_failed
+fi
 rm -f -- "$identity_file" "$tmp_dir/derived-recipient" "$tmp_dir/expected-recipient"
 
 restored_tables="$(docker exec --user postgres "$container_name" \
   psql -U dpg_snapshot_restore -X -q -A -t -v ON_ERROR_STOP=1 -d postgres \
-  -c "select count(*)::text from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname in ('dpg_app','dpg_control') and c.relkind in ('r','p')" 2>/dev/null)" ||
+  -c "select count(*)::text from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname in ('dpg_app','dpg_control','dpg_v1','public') and c.relkind in ('r','p')" 2>/dev/null)" ||
   fail isolated_restore_verification_failed
 [[ "$restored_tables" =~ ^[1-9][0-9]*$ && "$restored_tables" == "$expected_tables" ]] ||
   fail isolated_restore_verification_failed
-docker exec --user postgres "$container_name" rm -f /tmp/affected-schemas.dump ||
+docker exec --user postgres "$container_name" rm -f \
+  /tmp/affected-schemas.dump /tmp/public-schema.dump /tmp/global-roles.no-passwords.sql ||
   fail isolated_restore_verification_failed
 
 database_bytes="$(wc -c <"$database_snapshot" | xargs)"
+public_bytes="$(wc -c <"$public_snapshot" | xargs)"
+acl_bytes="$(wc -c <"$acl_snapshot" | xargs)"
 globals_bytes="$(wc -c <"$globals_snapshot" | xargs)"
 database_sha256="$(sha256sum "$database_snapshot" | awk '{print $1}')"
+public_sha256="$(sha256sum "$public_snapshot" | awk '{print $1}')"
+acl_sha256="$(sha256sum "$acl_snapshot" | awk '{print $1}')"
 globals_sha256="$(sha256sum "$globals_snapshot" | awk '{print $1}')"
 jq -n \
   --arg sourceSha "${GITHUB_SHA:?GITHUB_SHA is required}" \
   --arg projectRef 'bonxyxluzlxfkdetryoo' \
   --arg databaseSha256 "$database_sha256" \
+  --arg publicSha256 "$public_sha256" \
+  --arg aclSha256 "$acl_sha256" \
   --arg globalsSha256 "$globals_sha256" \
   --argjson databaseCiphertextBytes "$database_bytes" \
+  --argjson publicCiphertextBytes "$public_bytes" \
+  --argjson aclCiphertextBytes "$acl_bytes" \
   --argjson globalsCiphertextBytes "$globals_bytes" \
   --argjson isolatedRestoredTableEntries "$restored_tables" \
-  '{format:"dpg-supabase-destination-snapshot-v1",sourceSha:$sourceSha,projectRef:$projectRef,databaseCiphertextBytes:$databaseCiphertextBytes,databaseCiphertextSha256:$databaseSha256,globalsCiphertextBytes:$globalsCiphertextBytes,globalsCiphertextSha256:$globalsSha256,isolatedRestoredTableEntries:$isolatedRestoredTableEntries}' \
+  '{format:"dpg-supabase-destination-snapshot-v2",sourceSha:$sourceSha,projectRef:$projectRef,snapshotScopes:["dpg_app","dpg_control","dpg_v1","dpg_v1_api","public schema only","auth/extensions schema ACL only","global roles without passwords"],databaseCiphertextBytes:$databaseCiphertextBytes,databaseCiphertextSha256:$databaseSha256,publicCiphertextBytes:$publicCiphertextBytes,publicCiphertextSha256:$publicSha256,authExtensionAclCiphertextBytes:$aclCiphertextBytes,authExtensionAclCiphertextSha256:$aclSha256,globalsCiphertextBytes:$globalsCiphertextBytes,globalsCiphertextSha256:$globalsSha256,isolatedRestoredTableEntries:$isolatedRestoredTableEntries,isolatedArchiveHashChecks:"PASS",isolatedSchemaAclEquivalence:"PASS",rolePasswordsCaptured:false}' \
   >"$OUTPUT_DIR/snapshot-receipt.json"
 chmod 0600 "$OUTPUT_DIR"/*
-printf 'SUPABASE_RUNTIME_SNAPSHOT status=PASS database_ciphertext_bytes=%s globals_ciphertext_bytes=%s isolated_restore=PASS restored_table_entries=%s\n' \
-  "$database_bytes" "$globals_bytes" "$restored_tables"
+printf 'SUPABASE_RUNTIME_SNAPSHOT status=PASS database_ciphertext_bytes=%s public_schema_ciphertext_bytes=%s schema_acl_ciphertext_bytes=%s globals_ciphertext_bytes=%s isolated_restore=PASS restored_table_entries=%s acl_equivalence=PASS archive_hash_checks=PASS\n' \
+  "$database_bytes" "$public_bytes" "$acl_bytes" "$globals_bytes" "$restored_tables"

@@ -156,6 +156,32 @@ provide:
 
 The source runtime connection secret is never read or reused by this workflow.
 
+For the separate Issue #160 one-shot sync, use
+`.github/workflows/supabase-runtime-issue160-recovery-once.yml`. It additionally
+requires `SUPABASE_REHOME_ROOT_CA_CERTIFICATE`, downloaded from the target
+project's Database Settings and used with `sslmode=verify-full`; there is no
+verified generic public download URL. The protected Environment must require a
+genuinely independent reviewer and prevent self-review. Stop before the
+recovery job reads a secret if either the root certificate or this approval
+control is absent.
+
+That workflow binds the existing protected `BACKUP_AGE_PRIVATE_KEY` only after
+the original ciphertext bundle passes exact checksum and manifest validation.
+It derives the public age recipient in tmpfs, validates it against the original
+source recipient, and uses it to encrypt the destination snapshot. The snapshot
+covers full logical state in `dpg_app`, `dpg_control`, `dpg_v1`, and `dpg_v1_api`;
+the `public` schema definition without table rows; `auth` and `extensions`
+schema ACLs only; and global roles without passwords. It decrypts each archive
+only into tmpfs, checks the decrypted archive hashes inside an isolated
+PostgreSQL container, restores the archive there, compares the
+`auth`/`extensions` ACL contract, and checks the table inventory before any
+destination write.
+
+The encrypted checkpoint does not automatically reverse partial migration
+commits. On failure, stop and preserve the exact snapshot and ledger. Do not
+retry, drop schemas, reset the project, or restore to the destination without a
+separate Owner decision and a separately reviewed rollback procedure.
+
 Before any checkpoint hash is adopted, the migration runner replays the exact
 seven files in pinned, network-disabled PostgreSQL 17 and requires the
 normalized `dpg_app`/`dpg_control` schema-only dump to equal the remote dump.
