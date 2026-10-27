@@ -6,6 +6,7 @@ import base64
 import hashlib
 import json
 import os
+import re
 import sys
 import zipfile
 from pathlib import Path
@@ -21,6 +22,22 @@ from b11_rewrap_io import (
 EXPECTED_BYTES = 9_240_647
 EXPECTED_SHA256 = "15d8ec3d1d22e884ed280fd9eb810ce8a7f7257553e180a2aa9e9aff7a49b50a"
 BACKUP_ID = "leo540-38915575745"
+SOURCE_REPOSITORY = "tranhuunguyenhuy-hue/dongphugia.com.vn"
+
+
+def require_single_dispatch(token: str, run_id: int, head_sha: str) -> None:
+    runs = _api_json(
+        f"/repos/{SOURCE_REPOSITORY}/actions/workflows/c-actions-recovery.yml/runs"
+        "?event=workflow_dispatch&per_page=2", token
+    )
+    listed = runs.get("workflow_runs")
+    if (runs.get("total_count") != 1 or not isinstance(listed, list) or
+            len(listed) != 1 or listed[0].get("id") != run_id or
+            listed[0].get("head_sha") != head_sha or
+            listed[0].get("head_branch") != "main" or
+            listed[0].get("event") != "workflow_dispatch" or
+            listed[0].get("run_attempt") != 1):
+        raise RewrapError("single_dispatch_unproved")
 
 
 def prepare(output_dir: Path, source_token: str, vault_token: str) -> None:
@@ -37,10 +54,18 @@ def prepare(output_dir: Path, source_token: str, vault_token: str) -> None:
         )
         if item.get("type") != "file" or item.get("path") != DESTINATION_PATH:
             raise RewrapError("vault_item_invalid")
-        if item.get("encoding") != "base64" or item.get("size") != EXPECTED_BYTES:
+        blob_sha = item.get("sha")
+        if (item.get("size") != EXPECTED_BYTES or
+                not isinstance(blob_sha, str) or
+                re.fullmatch(r"[a-f0-9]{40}", blob_sha) is None):
             raise RewrapError("vault_item_invalid")
+        blob = _api_json(
+            f"/repos/{DESTINATION_REPOSITORY}/git/blobs/{blob_sha}", vault_token
+        )
+        if blob.get("encoding") != "base64" or blob.get("size") != EXPECTED_BYTES:
+            raise RewrapError("vault_blob_invalid")
         try:
-            ciphertext = base64.b64decode(item["content"], validate=False)
+            ciphertext = base64.b64decode(blob["content"], validate=False)
         except (KeyError, TypeError, ValueError) as exc:
             raise RewrapError("vault_content_invalid") from exc
         if (len(ciphertext) != EXPECTED_BYTES or
@@ -79,12 +104,21 @@ def prepare(output_dir: Path, source_token: str, vault_token: str) -> None:
 
 if __name__ == "__main__":
     try:
-        prepare(
-            Path(os.environ["BACKUP_DIR"]),
-            os.environ["GH_TOKEN"],
-            os.environ["B11_VAULT_CONTENTS_TOKEN"],
-        )
-        print("C_RECOVERY_SOURCE status=PASS ciphertext=exact manifest=derived")
+        if len(sys.argv) != 2 or sys.argv[1] not in ("single-dispatch", "prepare"):
+            raise RewrapError("mode_invalid")
+        if sys.argv[1] == "single-dispatch":
+            require_single_dispatch(
+                os.environ["GH_TOKEN"], int(os.environ["GITHUB_RUN_ID"]),
+                os.environ["GITHUB_SHA"],
+            )
+            print("C_RECOVERY_DISPATCH status=PASS count=1 attempt=1")
+        else:
+            prepare(
+                Path(os.environ["BACKUP_DIR"]),
+                os.environ["GH_TOKEN"],
+                os.environ["B11_VAULT_CONTENTS_TOKEN"],
+            )
+            print("C_RECOVERY_SOURCE status=PASS ciphertext=exact manifest=derived")
     except RewrapError as exc:
         print(f"C_RECOVERY_SOURCE status=FAIL reason={exc}", file=sys.stderr)
         raise SystemExit(1) from None

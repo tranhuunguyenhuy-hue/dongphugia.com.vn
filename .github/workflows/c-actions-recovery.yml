@@ -64,6 +64,12 @@ jobs:
           test "$(df -B1 --output=avail "$RUNNER_TEMP" | tail -1 | xargs)" -ge 4294967296
           echo 'C_RECOVERY_GATE status=PASS source=exact capacity_floor=PASS'
 
+      - name: Enforce the sole protected dispatch before key use
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 -B scripts/backup/c-actions-source.py single-dispatch
+
       - name: Prepare pinned public tools before protected input
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
@@ -98,7 +104,7 @@ jobs:
         run: |
           set -euo pipefail
           umask 077
-          python3 -B scripts/backup/c-actions-source.py
+          python3 -B scripts/backup/c-actions-source.py prepare
           node scripts/backup/manifest-contract.mjs validate "$BACKUP_DIR/leo540-38915575745.manifest.json" >/dev/null
           node scripts/backup/catalogue-restore-contract.mjs validate-source \
             "$BACKUP_DIR/leo540-38915575745.manifest.json" \

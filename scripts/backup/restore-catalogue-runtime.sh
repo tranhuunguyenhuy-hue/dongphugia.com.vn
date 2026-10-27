@@ -322,7 +322,15 @@ SQL
       echo 'CATALOGUE_REHOME status=FAIL stage=capacity reason=target_database_ceiling'
       exit 1
     fi
+    table_count="$(jq -r '.tables | length' "$output_dir/catalogue-expected.json")"
+    total_rows="$(jq -r '[.tables[].rowCount] | add' "$output_dir/catalogue-expected.json")"
+    manifest_hash="$(sha256sum "$output_dir/catalogue-expected.json" | cut -d ' ' -f1)"
+    if [[ "$table_count" != 27 || ! "$total_rows" =~ ^[0-9]+$ ||
+          ! "$manifest_hash" =~ ^[a-f0-9]{64}$ ]]; then
+      sensitive_failure rehearsal_aggregate
+    fi
     echo "CATALOGUE_REHOME_CAPACITY status=PASS source_dump_bytes=$plain_bytes target_database_bytes=$target_bytes"
+    echo "CATALOGUE_REHOME_EVIDENCE status=PASS tables=$table_count total_rows=$total_rows manifest_sha256=$manifest_hash excluded=0"
   fi
   echo 'CATALOGUE_REHOME status=PASS mode=rehearsal network=none filtered=true'
   exit 0
