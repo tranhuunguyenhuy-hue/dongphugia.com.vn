@@ -96,13 +96,9 @@ describe.skipIf(!runContainerStaging)('read-only recovery container staging', ()
       expect(dockerCommand(['inspect', '--format', '{{.HostConfig.NetworkMode}}', containerName]).trim()).toBe('none')
       expect(dockerCommand(['inspect', '--format', '{{.HostConfig.LogConfig.Type}}', containerName]).trim()).toBe('none')
       const tmpfsConfig = JSON.parse(dockerCommand(['inspect', '--format', '{{json .HostConfig.Tmpfs}}', containerName]))
-      expect(tmpfsConfig).toHaveProperty('/var/lib/postgresql/data')
-      const mounts = dockerCommand(['inspect', '--format', '{{range .Mounts}}{{.Type}} {{.Destination}}{{"\\n"}}{{end}}', containerName])
-      const mountLines = mounts.trim().split('\n')
-      for (const destination of ['/recovery-data', '/recovery-tools']) {
-        const destinationMounts = mountLines.filter((line) => line.endsWith(` ${destination}`))
-        expect(destinationMounts).toEqual([`tmpfs ${destination}`])
-      }
+      expect(Object.keys(tmpfsConfig).sort()).toEqual([
+        '/recovery-data', '/recovery-tools', '/var/lib/postgresql/data',
+      ])
 
       dockerCommand(['exec', '--user', '0', containerName, 'install', '-d', '-o', 'postgres', '-g', 'postgres', '-m', '0700', '/recovery-data'])
       dockerCommand(['exec', '--user', '0', containerName, 'install', '-d', '-m', '0755', '/recovery-tools'])
