@@ -166,11 +166,12 @@ describe.skipIf(!runIntegration)('catalogue rehearsal PG17.6 synthetic restore',
       await source.query("create table unexpected.products (id integer); insert into unexpected.products values (99)")
 
       // Exercise the actual snapshot SQL used by the protected recovery workflow.
-      const snapshotResults = await source.query(buildCatalogueSnapshotSql())
-      const snapshotRow = snapshotResults.flatMap((result) => result.rows ?? [])
-        .find((row) => typeof row.jsonb_build_object === 'string')
-      expect(snapshotRow).toBeDefined()
-      const generatedSnapshot = JSON.parse(snapshotRow.jsonb_build_object)
+      const snapshotResult = spawnSync('docker', [
+        'run', '--rm', '--pull=never', '--network=host', image,
+        'psql', '-d', databaseConnection(sourceName), '-X', '-q', '-A', '-t', '-v', 'ON_ERROR_STOP=1',
+      ], { input: buildCatalogueSnapshotSql(), encoding: 'utf8', timeout: 30_000 })
+      expect(snapshotResult.status, snapshotResult.stderr).toBe(0)
+      const generatedSnapshot = JSON.parse(snapshotResult.stdout.trim())
       expect(generatedSnapshot.tables).toHaveLength(27)
       expect(generatedSnapshot.excludedRows).toEqual(['blog_posts'])
 
