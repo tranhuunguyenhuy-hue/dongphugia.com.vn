@@ -97,9 +97,10 @@ describe.skipIf(!runContainerStaging)('read-only recovery container staging', ()
       expect(dockerCommand(['inspect', '--format', '{{.HostConfig.LogConfig.Type}}', containerName]).trim()).toBe('none')
       const mounts = dockerCommand(['inspect', '--format', '{{range .Mounts}}{{.Type}} {{.Destination}}{{"\\n"}}{{end}}', containerName])
       const mountLines = mounts.trim().split('\n')
-      expect(mountLines.every((line) => line.startsWith('tmpfs '))).toBe(true)
-      expect(mounts).toContain('tmpfs /recovery-data')
-      expect(mounts).toContain('tmpfs /recovery-tools')
+      for (const destination of ['/var/lib/postgresql/data', '/recovery-data', '/recovery-tools']) {
+        const destinationMounts = mountLines.filter((line) => line.endsWith(` ${destination}`))
+        expect(destinationMounts).toEqual([`tmpfs ${destination}`])
+      }
 
       dockerCommand(['exec', '--user', '0', containerName, 'install', '-d', '-o', 'postgres', '-g', 'postgres', '-m', '0700', '/recovery-data'])
       dockerCommand(['exec', '--user', '0', containerName, 'install', '-d', '-m', '0755', '/recovery-tools'])
