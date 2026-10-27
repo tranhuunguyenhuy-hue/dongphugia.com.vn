@@ -2,7 +2,10 @@ import { spawnSync } from 'node:child_process'
 import { readFile } from 'node:fs/promises'
 import { describe, expect, it } from 'vitest'
 
-const workflowPath = '.github/workflows/c-actions-original-authentic-recovery-once.yml'
+const workflowPaths = [
+  '.github/workflows/c-actions-original-authentic-recovery-once.yml',
+  '.github/workflows/c-actions-original-authentic-recovery-go-6442512635.yml',
+]
 
 describe('one-time original authentic recovery', () => {
   it('stages only the pinned source artifact using synthetic fixtures', () => {
@@ -13,7 +16,7 @@ describe('one-time original authentic recovery', () => {
     expect(result.status, result.stderr).toBe(0)
   })
 
-  it('requires the protected exact-main one-shot and keeps secret use after source validation', async () => {
+  it.each(workflowPaths)('requires protected exact-main one-shot controls in %s', async (workflowPath) => {
     const workflow = await readFile(workflowPath, 'utf8')
     const sourceHelper = await readFile('scripts/backup/c_actions_original_source.py', 'utf8')
     const source = workflow.indexOf('c_actions_original_source.py')

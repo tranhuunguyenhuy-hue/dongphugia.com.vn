@@ -229,16 +229,16 @@ export function buildCatalogueSnapshotSql() {
   const inserts = CATALOGUE_TABLES.map((table) => `insert into catalogue_manifest_entries
 select '${table}', row_count, sha256 from (${tableHashSelect(table)}) as snapshot(row_count, sha256);`).join('\n')
 
-  return `begin transaction isolation level repeatable read read only;
-set local timezone = 'UTC';
-create temp table catalogue_manifest_entries (
+  return `create temp table catalogue_manifest_entries (
   table_name text primary key,
   row_count bigint not null,
   sha256 char(64) not null
-) on commit drop;
+);
 create temp table catalogue_excluded_rows (
   table_name text primary key
-) on commit drop;
+);
+begin transaction isolation level repeatable read read only;
+set local timezone = 'UTC';
 
 ${inserts}
 
@@ -267,6 +267,7 @@ select jsonb_build_object(
   ), '[]'::jsonb)
 )::text;
 commit;
+drop table catalogue_manifest_entries, catalogue_excluded_rows;
 `
 }
 
