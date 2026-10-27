@@ -74,6 +74,18 @@ jobs:
         shell: bash
         run: bash scripts/backup/c-actions-container-swap-smoke.sh
 
+      - name: Validate diagnostic tools and trusted metadata before secret access
+        shell: bash
+        env:
+          AGE_KEYGEN_PATH: ${{ runner.temp }}/c-recipient-diagnostic/age-keygen
+        run: |
+          set -euo pipefail
+          [[ "$B11_TRUSTED_RECIPIENT" =~ ^age1[023456789acdefghjklmnpqrstuvwxyz]{20,120}$ ]]
+          test "$RECIPIENT_DIAGNOSTIC_IMAGE" = 'postgres:17.6-bookworm@sha256:f3bd19c606e442c3d7bdfa8002e03fe260a1023351e0ea4598032022b68dd6e3'
+          test -f "$AGE_KEYGEN_PATH"
+          test ! -L "$AGE_KEYGEN_PATH"
+          test -x "$AGE_KEYGEN_PATH"
+
       - name: Disable and verify runner host swap before secret access
         shell: bash
         run: bash scripts/backup/c-actions-host-swap-preflight.sh
