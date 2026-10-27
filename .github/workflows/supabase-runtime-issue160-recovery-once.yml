@@ -551,6 +551,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
+      actions: read
       issues: write
     steps:
       - name: Post bounded failure state only
@@ -563,6 +564,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          failed_steps="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/jobs" \
+            --jq '[.jobs[].steps[]? | select(.conclusion == "failure") | .name] | join(", ")' \
+            2>/dev/null || true)"
+          if [[ -z "$failed_steps" ]]; then
+            failed_steps='UNKNOWN; inspect the protected run URL'
+          fi
           body="$(cat <<EOF
           ## Issue #160 protected recovery — STOP
 
@@ -570,6 +577,10 @@ jobs:
           Source SHA: $SOURCE_SHA
           Source gate: $SOURCE_GATE_RESULT
           Recovery job: $RECOVERY_RESULT
+          Failed step: $failed_steps
+          Verified table count: UNKNOWN
+          Schema/RLS: UNKNOWN
+          Database bytes: UNKNOWN
           Target write state: UNKNOWN; do not retry.
 
           No secret values, decrypted data, database rows, or raw failure logs are included here. Check the protected run through its approved access path before any further action.

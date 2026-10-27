@@ -12,8 +12,13 @@ describe('Issue 160 recovery workflow failure reporting', () => {
   it('posts only a sanitized STOP from an Owner-dispatched run with issue-only permission', () => {
     expect(reportJob).not.toBe('')
     expect(reportJob).toContain("github.actor == 'tranhuunguyenhuy-hue'")
+    expect(reportJob).toContain('actions: read')
     expect(reportJob).toContain('issues: write')
     expect(reportJob).toContain('Target write state: UNKNOWN; do not retry.')
+    expect(reportJob).toContain('Verified table count: UNKNOWN')
+    expect(reportJob).toContain('Schema/RLS: UNKNOWN')
+    expect(reportJob).toContain('Database bytes: UNKNOWN')
+    expect(reportJob).toContain('Failed step: $failed_steps')
     expect(reportJob).toContain('Run: $RUN_URL')
     expect(reportJob).toContain('Source SHA: $SOURCE_SHA')
     expect(reportJob).not.toMatch(/secrets\./)
