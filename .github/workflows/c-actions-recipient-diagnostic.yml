@@ -57,6 +57,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          test "$(awk '/^SwapTotal:/ { print $2 }' /proc/meminfo)" = 0
+          test "$(awk 'NR > 1 { count++ } END { print count + 0 }' /proc/swaps)" = 0
           tools_dir="$RUNNER_TEMP/c-recipient-diagnostic"
           mkdir -m 700 "$tools_dir"
           curl --fail --location --silent --show-error --max-time 120 \
@@ -77,6 +79,7 @@ jobs:
         run: |
           set -euo pipefail
           set +x
+          ulimit -c 0
           trap 'unset B11_RECOVERY_AGE_IDENTITY' EXIT
           printf '%s\n' "$B11_RECOVERY_AGE_IDENTITY" |
             env -i \

@@ -33,6 +33,7 @@ if ! container_output="$(
     --security-opt no-new-privileges=true \
     --pids-limit 16 \
     --memory 64m \
+    --memory-swap 64m \
     --ulimit core=0 \
     --env "B11_TRUSTED_RECIPIENT=$expected_recipient" \
     --entrypoint /bin/sh \
