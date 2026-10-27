@@ -12,12 +12,8 @@ expected_recipient="${B11_TRUSTED_RECIPIENT:-}"
 image="${RECIPIENT_DIAGNOSTIC_IMAGE:-}"
 age_keygen="${AGE_KEYGEN_PATH:-}"
 
-if [[ ! "$expected_recipient" =~ ^age1[023456789acdefghjklmnpqrstuvwxyz]{20,120}$ ||
-      "$image" != 'postgres:17.6-bookworm@sha256:f3bd19c606e442c3d7bdfa8002e03fe260a1023351e0ea4598032022b68dd6e3' ||
-      ! -f "$age_keygen" || -L "$age_keygen" || ! -x "$age_keygen" ]]; then
-  emit_result INCONCLUSIVE tool_preflight
-  exit 0
-fi
+# The protected workflow validates these non-secret inputs in a separate step
+# before it binds B11_RECOVERY_AGE_IDENTITY to the diagnostic process.
 
 container_output=''
 if ! container_output="$(
