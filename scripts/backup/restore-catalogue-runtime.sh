@@ -21,6 +21,11 @@ target_contract="$repo_root/scripts/backup/supabase-runtime-target.mjs"
 psql_wrapper="$repo_root/scripts/backup/supabase-runtime-psql.mjs"
 preflight_sql="$repo_root/scripts/backup/catalogue-rehome-preflight.sql"
 postgres_image="${POSTGRES_IMAGE:-postgres:17.6-bookworm@sha256:f3bd19c606e442c3d7bdfa8002e03fe260a1023351e0ea4598032022b68dd6e3}"
+hosted_recovery="${HOSTED_RECOVERY:-false}"
+if [[ "$hosted_recovery" != false && "$hosted_recovery" != true ]]; then
+  echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=hosted_mode_invalid'
+  exit 1
+fi
 
 tmp_parent='/dev/shm'
 if ! command -v findmnt >/dev/null 2>&1 \
@@ -38,8 +43,13 @@ cleanup() {
     docker rm --force "$container_name" >/dev/null 2>&1 || true
   fi
   rm -rf "$tmp_dir"
+  if [[ "$hosted_recovery" == true && -n "${output_dir:-}" ]]; then
+    rm -rf "$output_dir"
+  fi
 }
 trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
 for command in age docker findmnt jq node sha256sum; do
   command -v "$command" >/dev/null 2>&1 || {
@@ -61,19 +71,39 @@ if [[ "$MODE" == 'rehearsal' ]]; then
     echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=remote_target_present'
     exit 1
   fi
-  if ! command -v ip >/dev/null 2>&1 ||
-     ! route4="$(ip -4 route show default 2>/dev/null)" ||
-     ! route6="$(ip -6 route show default 2>/dev/null)" ||
-     [[ -n "$route4$route6" ]]; then
-    echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=guest_network_not_isolated'
+  if [[ "$hosted_recovery" == false ]]; then
+    if ! command -v ip >/dev/null 2>&1 ||
+       ! route4="$(ip -4 route show default 2>/dev/null)" ||
+       ! route6="$(ip -6 route show default 2>/dev/null)" ||
+       [[ -n "$route4$route6" ]]; then
+      echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=guest_network_not_isolated'
+      exit 1
+    fi
+    for interface in /sys/class/net/*; do
+      case "${interface##*/}" in
+        lo|docker0) ;;
+        *) echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=guest_network_not_isolated'; exit 1 ;;
+      esac
+    done
+  elif [[ "${GITHUB_ACTIONS:-}" != true || "${GITHUB_EVENT_NAME:-}" != workflow_dispatch ||
+          "${GITHUB_REF:-}" != refs/heads/main ]]; then
+    echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=hosted_context_invalid'
     exit 1
+  else
+    if ! command -v ip >/dev/null 2>&1 || [[ ! -d /sys/class/net/lo ]] ||
+       ! route4="$(ip -4 route show 2>/dev/null)" ||
+       ! route6="$(ip -6 route show 2>/dev/null)" ||
+       [[ -n "$route4$route6" ]]; then
+      echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=host_network_not_isolated'
+      exit 1
+    fi
+    for interface in /sys/class/net/*; do
+      if [[ "${interface##*/}" != lo ]]; then
+        echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=host_network_not_isolated'
+        exit 1
+      fi
+    done
   fi
-  for interface in /sys/class/net/*; do
-    case "${interface##*/}" in
-      lo|docker0) ;;
-      *) echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=guest_network_not_isolated'; exit 1 ;;
-    esac
-  done
   if [[ -n "${DOCKER_HOST:-}" && "$DOCKER_HOST" != unix://* ]]; then
     echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=docker_remote_daemon_disallowed'
     exit 1
@@ -103,11 +133,22 @@ if [[ "$MODE" == 'rehearsal' ]]; then
   fi
   case "$(uname -m)" in
     aarch64|arm64) expected_platform='linux/arm64' ;;
+    x86_64) if [[ "$hosted_recovery" == true ]]; then expected_platform='linux/amd64';
+            else echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=unsupported_host_arch'; exit 1; fi ;;
     *) echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=unsupported_host_arch'; exit 1 ;;
   esac
   if [[ "$image_platform" != "$expected_platform" ]]; then
     echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=postgres_image_platform_mismatch'
     exit 1
+  fi
+  if [[ "$hosted_recovery" == true ]]; then
+    available_tmpfs="$(df -B1 --output=avail /dev/shm | tail -1 | xargs)"
+    available_disk="$(df -B1 --output=avail "$RUNNER_TEMP" | tail -1 | xargs)"
+    [[ "$available_tmpfs" =~ ^[0-9]+$ && "$available_disk" =~ ^[0-9]+$ ]] || exit 1
+    if (( available_tmpfs < 6442450944 || available_disk < 4294967296 )); then
+      echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=runner_capacity_insufficient'
+      exit 1
+    fi
   fi
   output_dir="${OUTPUT_DIR:-$tmp_dir/evidence}"
   if ! command -v realpath >/dev/null 2>&1 ||
@@ -186,6 +227,7 @@ if [[ -n "${AGE_IDENTITY_FILE:-}" ]]; then
     exit 1
   fi
   cat -- "$AGE_IDENTITY_FILE" >"$tmp_dir/age-identity"
+  rm -f -- "$AGE_IDENTITY_FILE"
 else
   : "${AGE_IDENTITY:?AGE_IDENTITY or AGE_IDENTITY_FILE is required}"
   printf '%s\n' "$AGE_IDENTITY" >"$tmp_dir/age-identity"
@@ -198,14 +240,24 @@ if ! age --decrypt --identity "$tmp_dir/age-identity" --output "$plain_dump" "$a
 fi
 rm -f "$tmp_dir/age-identity"
 rm -f "$tmp_dir/sensitive.error"
+if [[ "$hosted_recovery" == true ]]; then
+  plain_bytes="$(stat -c %s "$plain_dump")"
+  if (( plain_bytes > 2147483648 )); then
+    echo 'CATALOGUE_REHOME status=FAIL stage=capacity reason=source_dump_too_large'
+    exit 1
+  fi
+fi
 
 mapfile -t restore_table_args < <(node "$contract" table-args)
 test "${#restore_table_args[@]}" -gt 0
 
 if [[ "$MODE" == 'rehearsal' ]]; then
+  pg_tmpfs_size=1g
+  pg_memory=1536m
+  if [[ "$hosted_recovery" == true ]]; then pg_tmpfs_size=3g; pg_memory=4g; fi
   docker run --rm --detach --name "$container_name" --pull=never --log-driver=none \
-    --network none --read-only --pids-limit 256 --memory 1536m \
-    --tmpfs /var/lib/postgresql/data:rw,nosuid,nodev,noexec,size=1g \
+    --network none --read-only --pids-limit 256 --memory "$pg_memory" \
+    --tmpfs /var/lib/postgresql/data:rw,nosuid,nodev,noexec,size="$pg_tmpfs_size" \
     --tmpfs /tmp:rw,nosuid,nodev,noexec,size=128m \
     --tmpfs /var/run/postgresql:rw,nosuid,nodev,noexec,size=64m \
     --env POSTGRES_HOST_AUTH_METHOD=trust "$postgres_image" >/dev/null
@@ -229,11 +281,18 @@ create role dpg_backup noinherit nologin nosuperuser nocreatedb nocreaterole nor
 create role authenticated nologin;
 create role anon nologin;
 create role service_role nologin;
-create schema auth;
-create function auth.uid() returns uuid language sql stable as $$ select null::uuid $$;
 create database source;
 create database target;
 SQL
+
+  # CREATE DATABASE clones template1, not postgres. The archive contains RLS
+  # policies that call auth.uid(), so each restore database needs its own stub.
+  for database in source target; do
+    docker exec -i "$container_name" psql -U postgres -d "$database" -X -q -v ON_ERROR_STOP=1 <<'SQL'
+create schema auth;
+create function auth.uid() returns uuid language sql stable as $$ select null::uuid $$;
+SQL
+  done
 
   if ! docker exec -i "$container_name" \
     pg_restore -U postgres -d source --exit-on-error --no-owner --no-privileges \
@@ -273,6 +332,23 @@ SQL
   rm -f "$tmp_dir/sensitive.error"
   node "$contract" compare "$output_dir/catalogue-expected.json" \
     "$tmp_dir/catalogue-actual.json" >/dev/null
+  if [[ "$hosted_recovery" == true ]]; then
+    target_bytes="$(docker exec "$container_name" psql -U postgres -d target -X -A -t -v ON_ERROR_STOP=1 -c "select pg_database_size('target')" 2>/dev/null)" || sensitive_failure rehearsal_capacity
+    [[ "$target_bytes" =~ ^[0-9]+$ ]] || sensitive_failure rehearsal_capacity
+    if (( target_bytes >= 367001600 )); then
+      echo 'CATALOGUE_REHOME status=FAIL stage=capacity reason=target_database_ceiling'
+      exit 1
+    fi
+    table_count="$(jq -r '.tables | length' "$output_dir/catalogue-expected.json")"
+    total_rows="$(jq -r '[.tables[].rowCount] | add' "$output_dir/catalogue-expected.json")"
+    manifest_hash="$(sha256sum "$output_dir/catalogue-expected.json" | cut -d ' ' -f1)"
+    if [[ "$table_count" != 27 || ! "$total_rows" =~ ^[0-9]+$ ||
+          ! "$manifest_hash" =~ ^[a-f0-9]{64}$ ]]; then
+      sensitive_failure rehearsal_aggregate
+    fi
+    echo "CATALOGUE_REHOME_CAPACITY status=PASS source_dump_bytes=$plain_bytes target_database_bytes=$target_bytes"
+    echo "CATALOGUE_REHOME_EVIDENCE status=PASS tables=$table_count total_rows=$total_rows manifest_sha256=$manifest_hash excluded=0"
+  fi
   echo 'CATALOGUE_REHOME status=PASS mode=rehearsal network=none filtered=true'
   exit 0
 fi

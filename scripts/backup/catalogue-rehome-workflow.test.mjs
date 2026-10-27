@@ -71,6 +71,17 @@ describe('Supabase runtime catalogue re-home workflow', () => {
     expect(restore).toContain('"$contract" compare')
   })
 
+  it('creates the inert auth stub in both restore databases before loading the archive', async () => {
+    const restore = await readFile(restorePath, 'utf8')
+    const sourceRestore = restore.indexOf('pg_restore -U postgres -d source')
+    expect(sourceRestore).toBeGreaterThan(0)
+
+    const bootstrap = restore.slice(0, sourceRestore)
+    expect(bootstrap).toMatch(
+      /for database in source target; do\s+docker exec -i "\$container_name" psql -U postgres -d "\$database" -X -q -v ON_ERROR_STOP=1 <<'SQL'\s+create schema auth;\s+create function auth\.uid\(\) returns uuid language sql stable as \$\$ select null::uuid \$\$;\s+SQL\s+done/,
+    )
+  })
+
   it('keeps remote mutation empty-target-only, transactional, size-guarded, and catalogue-only', async () => {
     const [restore, preflight] = await Promise.all([
       readFile(restorePath, 'utf8'),
