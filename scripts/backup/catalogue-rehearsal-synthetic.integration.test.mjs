@@ -83,10 +83,10 @@ describe.skipIf(!runContainerStaging)('read-only recovery container staging', ()
       const start = spawnSync('docker', [
         'run', '--detach', '--rm', '--pull=never', '--name', containerName,
         '--log-driver=none', '--network', 'none', '--read-only', '--pids-limit', '64',
-        '--memory', '512m',
-        '--tmpfs', '/var/lib/postgresql/data:rw,nosuid,nodev,noexec,size=8m',
-        '--tmpfs', '/recovery-data:rw,nosuid,nodev,noexec,size=8m',
-        '--tmpfs', '/recovery-tools:rw,nosuid,nodev,exec,size=8m',
+        '--user', '999:999', '--memory', '512m', '--memory-swap', '512m',
+        '--tmpfs', '/var/lib/postgresql/data:rw,nosuid,nodev,noexec,size=8m,uid=999,gid=999,mode=0700',
+        '--tmpfs', '/recovery-data:rw,nosuid,nodev,noexec,size=8m,uid=999,gid=999,mode=0700',
+        '--tmpfs', '/recovery-tools:rw,nosuid,nodev,exec,size=8m,uid=999,gid=999,mode=0700',
         '--entrypoint', 'sh', image, '-c', 'while :; do sleep 60; done',
       ], { encoding: 'utf8', maxBuffer: 8 * 1024 * 1024, timeout: 30_000 })
       started = start.status === 0
@@ -95,13 +95,13 @@ describe.skipIf(!runContainerStaging)('read-only recovery container staging', ()
       expect(dockerCommand(['inspect', '--format', '{{.HostConfig.ReadonlyRootfs}}', containerName]).trim()).toBe('true')
       expect(dockerCommand(['inspect', '--format', '{{.HostConfig.NetworkMode}}', containerName]).trim()).toBe('none')
       expect(dockerCommand(['inspect', '--format', '{{.HostConfig.LogConfig.Type}}', containerName]).trim()).toBe('none')
+      expect(dockerCommand(['inspect', '--format', '{{.Config.User}}', containerName]).trim()).toBe('999:999')
+      expect(dockerCommand(['inspect', '--format', '{{.HostConfig.Memory}}', containerName]).trim()).toBe('536870912')
+      expect(dockerCommand(['inspect', '--format', '{{.HostConfig.MemorySwap}}', containerName]).trim()).toBe('536870912')
       const tmpfsConfig = JSON.parse(dockerCommand(['inspect', '--format', '{{json .HostConfig.Tmpfs}}', containerName]))
       expect(Object.keys(tmpfsConfig).sort()).toEqual([
         '/recovery-data', '/recovery-tools', '/var/lib/postgresql/data',
       ])
-
-      dockerCommand(['exec', '--user', '0', containerName, 'install', '-d', '-o', 'postgres', '-g', 'postgres', '-m', '0700', '/recovery-data'])
-      dockerCommand(['exec', '--user', '0', containerName, 'install', '-d', '-m', '0755', '/recovery-tools'])
 
       const stage = (source, destination, owner, mode) => {
         const result = spawnSync('bash', [
@@ -111,13 +111,13 @@ describe.skipIf(!runContainerStaging)('read-only recovery container staging', ()
         expect(result.status).toBe(0)
       }
       stage(archivePath, '/recovery-data/archive.age', 'postgres:postgres', '0400')
-      stage(agePath, '/recovery-tools/age', 'root:root', '0555')
-      stage(ageKeygenPath, '/recovery-tools/age-keygen', 'root:root', '0555')
+      stage(agePath, '/recovery-tools/age', 'postgres:postgres', '0555')
+      stage(ageKeygenPath, '/recovery-tools/age-keygen', 'postgres:postgres', '0555')
 
       expect(dockerCommand(['exec', '--user', 'postgres', containerName, 'cat', '/recovery-data/archive.age'])).toBe(syntheticCiphertext)
       expect(dockerCommand(['exec', '--user', 'postgres', containerName, 'stat', '-c', '%a %U:%G', '/recovery-data/archive.age']).trim()).toBe('400 postgres:postgres')
       expect(dockerCommand(['exec', '--user', 'postgres', containerName, '/recovery-tools/age', '--version']).trim()).toBe('synthetic-age-tool-ok')
-      expect(dockerCommand(['exec', '--user', 'postgres', containerName, 'stat', '-c', '%a %U:%G', '/recovery-tools/age-keygen']).trim()).toBe('555 root:root')
+      expect(dockerCommand(['exec', '--user', 'postgres', containerName, 'stat', '-c', '%a %U:%G', '/recovery-tools/age-keygen']).trim()).toBe('555 postgres:postgres')
 
       const handoff = spawnSync('bash', [
         '-c', 'source "$1"; verify_container_age_identity_from_stdin "$2" "$3"',

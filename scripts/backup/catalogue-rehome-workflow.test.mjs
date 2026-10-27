@@ -44,7 +44,9 @@ describe('Supabase runtime catalogue re-home workflow', () => {
   it('rehearses the exact filtered restore in network-isolated PostgreSQL before remote use', async () => {
     const restore = await readFile(restorePath, 'utf8')
 
-    expect(restore).toContain("mode must be rehearsal, preflight, or apply")
+    const modeGuard = restore.match(/if \[\[([\s\S]*?)\]\]; then/)
+    expect(modeGuard?.[1]).toContain('"$MODE" != \'container-preflight\'')
+    expect(restore).toContain('reason=mode_invalid')
     expect(restore).toContain('sha256sum -c')
     expect(restore).toContain('manifest-contract.mjs" validate')
     expect(restore).toContain('"$contract" validate-source')
