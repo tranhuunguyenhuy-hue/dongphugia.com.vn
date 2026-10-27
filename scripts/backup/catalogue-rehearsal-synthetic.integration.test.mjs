@@ -167,7 +167,7 @@ describe.skipIf(!runIntegration)('catalogue rehearsal PG17.6 synthetic restore',
 
       // Exercise the actual snapshot SQL used by the protected recovery workflow.
       const snapshotResult = spawnSync('docker', [
-        'run', '--rm', '--pull=never', '--network=host', image,
+        'run', '--rm', '-i', '--pull=never', '--network=host', image,
         'psql', '-d', databaseConnection(sourceName), '-X', '-q', '-A', '-t', '-v', 'ON_ERROR_STOP=1',
       ], { input: buildCatalogueSnapshotSql(), encoding: 'utf8', timeout: 30_000 })
       expect(snapshotResult.status, snapshotResult.stderr).toBe(0)
