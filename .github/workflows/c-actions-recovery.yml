@@ -1,0 +1,142 @@
+name: C single authentic catalogue recovery
+
+on:
+  workflow_dispatch:
+    inputs:
+      approved_control_sha:
+        description: Exact merged main commit approved for one protected rehearsal
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: c-authentic-recovery-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  recover:
+    if: >-
+      github.repository == 'tranhuunguyenhuy-hue/dongphugia.com.vn' &&
+      github.ref == 'refs/heads/main' &&
+      github.actor == 'tranhuunguyenhuy-hue' &&
+      github.run_attempt == 1 &&
+      vars.C_RECOVERY_APPROVED_SHA == github.sha &&
+      inputs.approved_control_sha == github.sha
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    environment: runtime-backup
+    env:
+      POSTGRES_IMAGE: postgres:17.6-bookworm@sha256:f3bd19c606e442c3d7bdfa8002e03fe260a1023351e0ea4598032022b68dd6e3
+      BACKUP_DIR: /tmp/c-actions-backup
+      OUTPUT_DIR: /dev/shm/c-actions-evidence
+      EXPECTED_PR_NUMBER: '156'
+      EXPECTED_CANDIDATE_SHA: d300eb696a94acfa557fbaf7a8c0e66876dafb63
+      EXPECTED_CONTROL_SHA: ce64e8cc7caf91b8bf2e4e2315d49e21bacdfffc
+      EXPECTED_MERGE_SHA: 59d9ea02dbceb5a3b83d00f929a8ee3a8f70cc35
+      EXPECTED_WORKFLOW_RUN_ID: '38915575745'
+
+    steps:
+      - name: Check out the exact approved control
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Require exact one-shot source and runner capacity
+        shell: bash
+        env:
+          APPROVED_SHA: ${{ vars.C_RECOVERY_APPROVED_SHA }}
+          DISPATCH_SHA: ${{ inputs.approved_control_sha }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_EVENT_NAME" = workflow_dispatch
+          test "$GITHUB_REF" = refs/heads/main
+          test "$GITHUB_ACTOR" = tranhuunguyenhuy-hue
+          test "$GITHUB_RUN_ATTEMPT" = 1
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$APPROVED_SHA" = "$GITHUB_SHA"
+          test "$DISPATCH_SHA" = "$GITHUB_SHA"
+          test "$(findmnt -no FSTYPE -T /dev/shm)" = tmpfs
+          test "$(df -B1 --output=avail /dev/shm | tail -1 | xargs)" -ge 6442450944
+          test "$(df -B1 --output=avail "$RUNNER_TEMP" | tail -1 | xargs)" -ge 4294967296
+          echo 'C_RECOVERY_GATE status=PASS source=exact capacity_floor=PASS'
+
+      - name: Prepare pinned public tools before protected input
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24.13.0
+
+      - name: Install pinned age and PostgreSQL image before protected input
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -m 700 "$RUNNER_TEMP/c-actions-tools"
+          curl --fail --location --silent --show-error --max-time 120 \
+            --output "$RUNNER_TEMP/c-actions-tools/age.tar.gz" \
+            'https://github.com/FiloSottile/age/releases/download/v1.3.2/age-v1.3.2-linux-amd64.tar.gz'
+          printf '%s  %s\n' \
+            'cbe24006683f8eb669266162894b9a522a1af52f2665fbc63a4bb032ed26ac10' \
+            "$RUNNER_TEMP/c-actions-tools/age.tar.gz" | sha256sum --check --status
+          tar -xOzf "$RUNNER_TEMP/c-actions-tools/age.tar.gz" age/age > "$RUNNER_TEMP/c-actions-tools/age"
+          tar -xOzf "$RUNNER_TEMP/c-actions-tools/age.tar.gz" age/age-keygen > "$RUNNER_TEMP/c-actions-tools/age-keygen"
+          chmod 0500 "$RUNNER_TEMP/c-actions-tools/age" "$RUNNER_TEMP/c-actions-tools/age-keygen"
+          printf '%s  %s\n' \
+            'eb7dd1b518f0a307c99cd97782623c5321da049154b04acd2d98d21aa7bc9b2c' \
+            "$RUNNER_TEMP/c-actions-tools/age" | sha256sum --check --status
+          echo "$RUNNER_TEMP/c-actions-tools" >> "$GITHUB_PATH"
+          docker pull "$POSTGRES_IMAGE" >/dev/null 2>&1
+          test "$(docker image inspect --format '{{.Os}}/{{.Architecture}}' "$POSTGRES_IMAGE")" = linux/amd64
+
+      - name: Verify exact B11 ciphertext and historical source envelope
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          B11_VAULT_CONTENTS_TOKEN: ${{ secrets.B11_VAULT_CONTENTS_TOKEN }}
+        run: |
+          set -euo pipefail
+          umask 077
+          python3 -B scripts/backup/c-actions-source.py
+          node scripts/backup/manifest-contract.mjs validate "$BACKUP_DIR/leo540-38915575745.manifest.json" >/dev/null
+          node scripts/backup/catalogue-restore-contract.mjs validate-source \
+            "$BACKUP_DIR/leo540-38915575745.manifest.json" \
+            "$EXPECTED_PR_NUMBER" "$EXPECTED_CANDIDATE_SHA" "$EXPECTED_CONTROL_SHA" \
+            "$EXPECTED_WORKFLOW_RUN_ID" "$EXPECTED_MERGE_SHA" >/dev/null
+          (cd "$BACKUP_DIR" && sha256sum -c leo540-38915575745.checksums.sha256 >/dev/null)
+
+      - name: Check new Owner identity against the pinned public recipient
+        shell: bash
+        env:
+          B11_RECOVERY_AGE_IDENTITY: ${{ secrets.B11_RECOVERY_AGE_IDENTITY }}
+        run: |
+          set -euo pipefail
+          set +x
+          test -n "$B11_RECOVERY_AGE_IDENTITY"
+          recipient="$(printf '%s\n' "$B11_RECOVERY_AGE_IDENTITY" | age-keygen -y 2>/dev/null)" || {
+            echo 'C_RECOVERY_GATE status=FAIL stage=recipient'
+            exit 1
+          }
+          test "$recipient" = age1cvg7hkdl4ctfdfv8a3a4vkcgc7ge7anyls2rn4y62vtnsxuczawqw4h0dr || {
+            echo 'C_RECOVERY_GATE status=FAIL stage=recipient'
+            exit 1
+          }
+          echo 'C_RECOVERY_GATE status=PASS recipient=exact'
+
+      - name: Restore and verify authentic catalogue in isolated temporary PostgreSQL
+        shell: bash
+        env:
+          MODE: rehearsal
+          HOSTED_RECOVERY: 'true'
+          AGE_IDENTITY: ${{ secrets.B11_RECOVERY_AGE_IDENTITY }}
+        run: |
+          set -euo pipefail
+          set +x
+          bash scripts/backup/restore-catalogue-runtime.sh
+
+      - name: Remove encrypted working copy
+        if: always()
+        shell: bash
+        run: |
+          rm -rf -- "$BACKUP_DIR" "$OUTPUT_DIR"
