@@ -65,6 +65,8 @@ case "$arguments" in
   *'target=/usr/local/bin/recipient-diagnostic,readonly'*) ;;
   *) exit 2 ;;
 esac
+printf '%s' "$arguments" | awk -F 'target=/usr/local/bin/age-keygen,readonly' 'END { if (NF != 2) exit 2 }'
+printf '%s' "$arguments" | awk -F 'target=/usr/local/bin/recipient-diagnostic,readonly' 'END { if (NF != 2) exit 2 }'
 
 exec env \
   AGE_KEYGEN_PATH="$SYNTHETIC_AGE_KEYGEN_PATH" \

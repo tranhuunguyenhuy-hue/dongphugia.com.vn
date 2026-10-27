@@ -40,7 +40,6 @@ if ! container_output="$(
     --memory-swap 64m \
     --ulimit core=0 \
     --env "B11_TRUSTED_RECIPIENT=$expected_recipient" \
-    --mount "type=bind,source=$age_keygen,target=/usr/local/bin/age-keygen,readonly" \
     --mount "type=bind,source=$container_validator,target=/usr/local/bin/recipient-diagnostic,readonly" \
     --entrypoint /usr/local/bin/recipient-diagnostic \
     "$image" 2>/dev/null
