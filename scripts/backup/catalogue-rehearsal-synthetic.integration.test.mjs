@@ -9,6 +9,7 @@ import { describe, expect, it } from 'vitest'
 import {
   CATALOGUE_RESTORE_ORDER,
   CATALOGUE_TABLES,
+  buildCatalogueSnapshotSql,
   buildRehearsalTargetCheckSql,
   compareCatalogueManifests,
 } from './catalogue-restore-contract.mjs'
@@ -163,6 +164,15 @@ describe.skipIf(!runIntegration)('catalogue rehearsal PG17.6 synthetic restore',
       await source.query("create table dpg_control.private_flags (id integer); insert into dpg_control.private_flags values (1)")
       await source.query("create table unexpected.private_rows (id integer); insert into unexpected.private_rows values (1)")
       await source.query("create table unexpected.products (id integer); insert into unexpected.products values (99)")
+
+      // Exercise the actual snapshot SQL used by the protected recovery workflow.
+      const snapshotResults = await source.query(buildCatalogueSnapshotSql())
+      const snapshotRow = snapshotResults.flatMap((result) => result.rows ?? [])
+        .find((row) => typeof row.jsonb_build_object === 'string')
+      expect(snapshotRow).toBeDefined()
+      const generatedSnapshot = JSON.parse(snapshotRow.jsonb_build_object)
+      expect(generatedSnapshot.tables).toHaveLength(27)
+      expect(generatedSnapshot.excludedRows).toEqual(['blog_posts'])
 
       const dump = spawnSync('docker', [
         'run', '--rm', '--pull=never', '--network=host', image,
