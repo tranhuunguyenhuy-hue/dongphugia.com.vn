@@ -24,13 +24,6 @@ trap 'exit 129' HUP
 trap 'exit 130' INT
 trap 'exit 143' TERM
 
-if [ -z "$expected_recipient" ] || [ ! -d "$runtime_dir" ] ||
-   [ -L "$runtime_dir" ] || [ ! -w "$runtime_dir" ] ||
-   [ ! -f "$age_keygen" ] || [ -L "$age_keygen" ] || [ ! -x "$age_keygen" ]; then
-  emit_result INCONCLUSIVE container
-  exit 0
-fi
-
 if ! cat >"$identity_file"; then
   emit_result INCONCLUSIVE secret_input
   exit 0

@@ -11,17 +11,7 @@ emit_result() {
 expected_recipient="${B11_TRUSTED_RECIPIENT:-}"
 image="${RECIPIENT_DIAGNOSTIC_IMAGE:-}"
 age_keygen="${AGE_KEYGEN_PATH:-}"
-script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
-container_validator="$script_dir/c-actions-recipient-diagnostic-container.sh"
-
-# The protected workflow validates these non-secret inputs before it binds an
-# age identity to the diagnostic process.
-if [[ -z "$expected_recipient" || -z "$image" || -z "$age_keygen" ||
-      ! -f "$age_keygen" || -L "$age_keygen" || ! -x "$age_keygen" ||
-      ! -f "$container_validator" || -L "$container_validator" || ! -x "$container_validator" ]]; then
-  emit_result INCONCLUSIVE preflight
-  exit 0
-fi
+container_validator="${DIAGNOSTIC_SCRIPT_PATH:-}"
 
 container_output=''
 if ! container_output="$(

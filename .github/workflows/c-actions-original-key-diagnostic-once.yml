@@ -94,10 +94,29 @@ jobs:
         shell: bash
         run: bash scripts/backup/c-actions-host-swap-preflight.sh
 
+      - name: Verify the exact isolated diagnostic launch with empty input
+        shell: bash
+        env:
+          AGE_KEYGEN_PATH: ${{ runner.temp }}/c-original-age-key-diagnostic/age-keygen
+          DIAGNOSTIC_SCRIPT_PATH: ${{ github.workspace }}/scripts/backup/c-actions-recipient-diagnostic-container.sh
+        run: |
+          set -euo pipefail
+          output="$(printf '' | env -i \
+            PATH="$PATH" \
+            HOME="$RUNNER_TEMP" \
+            DOCKER_HOST=unix:///var/run/docker.sock \
+            AGE_KEYGEN_PATH="$AGE_KEYGEN_PATH" \
+            DIAGNOSTIC_SCRIPT_PATH="$DIAGNOSTIC_SCRIPT_PATH" \
+            RECIPIENT_DIAGNOSTIC_IMAGE="$RECIPIENT_DIAGNOSTIC_IMAGE" \
+            B11_TRUSTED_RECIPIENT="$B11_TRUSTED_RECIPIENT" \
+            bash scripts/backup/c-actions-recipient-diagnostic.sh)"
+          test "$output" = 'C_RECIPIENT_DIAGNOSTIC outcome=INCONCLUSIVE stage=secret_input'
+
       - name: Diagnose the original identity through isolated stdin
         shell: bash
         env:
           BACKUP_AGE_PRIVATE_KEY: ${{ secrets.BACKUP_AGE_PRIVATE_KEY }}
+          DIAGNOSTIC_SCRIPT_PATH: ${{ github.workspace }}/scripts/backup/c-actions-recipient-diagnostic-container.sh
         run: |
           set -euo pipefail
           set +x
@@ -109,6 +128,7 @@ jobs:
               HOME="$RUNNER_TEMP" \
               DOCKER_HOST=unix:///var/run/docker.sock \
               AGE_KEYGEN_PATH="$RUNNER_TEMP/c-original-age-key-diagnostic/age-keygen" \
+              DIAGNOSTIC_SCRIPT_PATH="$DIAGNOSTIC_SCRIPT_PATH" \
               RECIPIENT_DIAGNOSTIC_IMAGE="$RECIPIENT_DIAGNOSTIC_IMAGE" \
               B11_TRUSTED_RECIPIENT="$B11_TRUSTED_RECIPIENT" \
               bash scripts/backup/c-actions-recipient-diagnostic.sh

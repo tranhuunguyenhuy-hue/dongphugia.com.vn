@@ -113,6 +113,7 @@ host_result="$(printf '%b' "$valid_fixture" | env -i \
   B11_TRUSTED_RECIPIENT="$synthetic_recipient" \
   RECIPIENT_DIAGNOSTIC_IMAGE='postgres:17.6-bookworm@sha256:f3bd19c606e442c3d7bdfa8002e03fe260a1023351e0ea4598032022b68dd6e3' \
   AGE_KEYGEN_PATH="$fake_age_keygen" \
+  DIAGNOSTIC_SCRIPT_PATH="$validator" \
   SYNTHETIC_AGE_KEYGEN_PATH="$fake_age_keygen" \
   SYNTHETIC_RECIPIENT="$synthetic_recipient" \
   SYNTHETIC_VALIDATOR="$validator" \
