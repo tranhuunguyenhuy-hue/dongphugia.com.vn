@@ -1,4 +1,4 @@
-name: C protected recipient identity diagnostic
+name: C protected recipient identity diagnostic (one-time)
 
 on:
   workflow_dispatch:
@@ -12,7 +12,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: c-recipient-diagnostic-${{ github.repository }}
+  group: c-recipient-diagnostic-once-${{ github.repository }}
   cancel-in-progress: false
 
 jobs:
@@ -57,8 +57,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(awk '/^SwapTotal:/ { print $2 }' /proc/meminfo)" = 0
-          test "$(awk 'NR > 1 { count++ } END { print count + 0 }' /proc/swaps)" = 0
           tools_dir="$RUNNER_TEMP/c-recipient-diagnostic"
           mkdir -m 700 "$tools_dir"
           curl --fail --location --silent --show-error --max-time 120 \
@@ -71,6 +69,14 @@ jobs:
           chmod 0555 "$tools_dir/age-keygen"
           docker pull "$RECIPIENT_DIAGNOSTIC_IMAGE" >/dev/null 2>&1
           test "$(docker image inspect --format '{{.Os}}/{{.Architecture}}' "$RECIPIENT_DIAGNOSTIC_IMAGE")" = linux/amd64
+
+      - name: Verify the isolated no-swap container before secret access
+        shell: bash
+        run: bash scripts/backup/c-actions-container-swap-smoke.sh
+
+      - name: Disable and verify runner host swap before secret access
+        shell: bash
+        run: bash scripts/backup/c-actions-host-swap-preflight.sh
 
       - name: Diagnose the protected identity through isolated stdin
         shell: bash
