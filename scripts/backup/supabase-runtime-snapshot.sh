@@ -93,7 +93,7 @@ if ! node "$dump_script" --global-roles-snapshot |
 fi
 unset SUPABASE_REHOME_ROOT_CA_CERTIFICATE SUPABASE_REHOME_DATABASE_URL
 
-docker run --detach --name "$container_name" --network none --read-only \
+docker run --detach --name "$container_name" --network none --read-only --log-driver=none \
   --pids-limit 128 --memory 512m \
   --tmpfs /var/lib/postgresql/data:rw,nosuid,nodev,size=384m \
   --tmpfs /var/run/postgresql:rw,nosuid,nodev,size=16m \
@@ -102,6 +102,8 @@ docker run --detach --name "$container_name" --network none --read-only \
   --env POSTGRES_USER=dpg_snapshot_restore \
   "$postgres_image" >/dev/null 2>&1 || fail isolated_restore_start_failed
 container_started=true
+[[ "$(docker inspect --format '{{.HostConfig.LogConfig.Type}}' "$container_name")" == 'none' ]] ||
+  fail isolated_restore_logging_enabled
 ready=false
 for _ in $(seq 1 60); do
   if docker exec "$container_name" pg_isready -U dpg_snapshot_restore -d postgres >/dev/null 2>&1; then ready=true; break; fi
@@ -126,9 +128,19 @@ SQL
 
 if ! age --decrypt --identity "$identity_file" "$database_snapshot" 2>"$tmp_dir/database-decrypt.error" |
      docker exec --interactive --user postgres "$container_name" \
-       pg_restore --format=custom --username=dpg_snapshot_restore --exit-on-error \
-       --single-transaction --dbname=postgres - \
-       >/dev/null 2>"$tmp_dir/database-restore.error"; then
+       sh -c 'umask 077; cat > /tmp/affected-schemas.dump' \
+       >/dev/null 2>"$tmp_dir/database-stage.error"; then
+  fail isolated_database_restore_failed
+fi
+expected_tables="$(docker exec --user postgres "$container_name" \
+  pg_restore --list /tmp/affected-schemas.dump 2>/dev/null | \
+  awk -F'; ' '$2 ~ /^[0-9]+ [0-9]+ TABLE / { count += 1 } END { print count + 0 }')" ||
+  fail isolated_restore_verification_failed
+[[ "$expected_tables" =~ ^[1-9][0-9]*$ ]] || fail isolated_restore_verification_failed
+if ! docker exec --user postgres "$container_name" \
+  pg_restore --format=custom --username=dpg_snapshot_restore --exit-on-error \
+    --single-transaction --dbname=postgres /tmp/affected-schemas.dump \
+    >/dev/null 2>"$tmp_dir/database-restore.error"; then
   fail isolated_database_restore_failed
 fi
 rm -f -- "$identity_file" "$tmp_dir/derived-recipient" "$tmp_dir/expected-recipient"
@@ -137,7 +149,10 @@ restored_tables="$(docker exec --user postgres "$container_name" \
   psql -U dpg_snapshot_restore -X -q -A -t -v ON_ERROR_STOP=1 -d postgres \
   -c "select count(*)::text from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname in ('dpg_app','dpg_control') and c.relkind in ('r','p')" 2>/dev/null)" ||
   fail isolated_restore_verification_failed
-[[ "$restored_tables" =~ ^[1-9][0-9]*$ ]] || fail isolated_restore_verification_failed
+[[ "$restored_tables" =~ ^[1-9][0-9]*$ && "$restored_tables" == "$expected_tables" ]] ||
+  fail isolated_restore_verification_failed
+docker exec --user postgres "$container_name" rm -f /tmp/affected-schemas.dump ||
+  fail isolated_restore_verification_failed
 
 database_bytes="$(wc -c <"$database_snapshot" | xargs)"
 globals_bytes="$(wc -c <"$globals_snapshot" | xargs)"
@@ -150,9 +165,9 @@ jq -n \
   --arg globalsSha256 "$globals_sha256" \
   --argjson databaseCiphertextBytes "$database_bytes" \
   --argjson globalsCiphertextBytes "$globals_bytes" \
-  --argjson isolatedRestoredSchemaObjects "$restored_tables" \
-  '{format:"dpg-supabase-destination-snapshot-v1",sourceSha:$sourceSha,projectRef:$projectRef,databaseCiphertextBytes:$databaseCiphertextBytes,databaseCiphertextSha256:$databaseSha256,globalsCiphertextBytes:$globalsCiphertextBytes,globalsCiphertextSha256:$globalsSha256,isolatedRestoredSchemaObjects:$isolatedRestoredSchemaObjects}' \
+  --argjson isolatedRestoredTableEntries "$restored_tables" \
+  '{format:"dpg-supabase-destination-snapshot-v1",sourceSha:$sourceSha,projectRef:$projectRef,databaseCiphertextBytes:$databaseCiphertextBytes,databaseCiphertextSha256:$databaseSha256,globalsCiphertextBytes:$globalsCiphertextBytes,globalsCiphertextSha256:$globalsSha256,isolatedRestoredTableEntries:$isolatedRestoredTableEntries}' \
   >"$OUTPUT_DIR/snapshot-receipt.json"
 chmod 0600 "$OUTPUT_DIR"/*
-printf 'SUPABASE_RUNTIME_SNAPSHOT status=PASS database_ciphertext_bytes=%s globals_ciphertext_bytes=%s isolated_restore=PASS\n' \
-  "$database_bytes" "$globals_bytes"
+printf 'SUPABASE_RUNTIME_SNAPSHOT status=PASS database_ciphertext_bytes=%s globals_ciphertext_bytes=%s isolated_restore=PASS restored_table_entries=%s\n' \
+  "$database_bytes" "$globals_bytes" "$restored_tables"

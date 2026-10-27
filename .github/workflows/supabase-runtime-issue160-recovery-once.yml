@@ -42,6 +42,7 @@ env:
   SUPABASE_PROJECT_REGION: ap-southeast-1
   SUPABASE_FREE_DATABASE_SIZE_LIMIT_BYTES: '500000000'
   SUPABASE_RUNTIME_DATABASE_HARD_CEILING_BYTES: '367001600'
+  GITHUB_ARTIFACT_STORAGE_BUDGET_BYTES: '500000000'
 
 jobs:
   source_gate:
@@ -77,7 +78,7 @@ jobs:
           test "$(jq -r '.state' <<<"$issue_json")" = open
           latest_owner_comment="$(gh api --paginate --jq \
             '.[] | select(.user.login == "tranhuunguyenhuy-hue") | .id' \
-            "repos/$GITHUB_REPOSITORY/issues/$ISSUE_NUMBER/comments?per_page=100" | tail -n 1)"
+            "repos/$GITHUB_REPOSITORY/issues/$ISSUE_NUMBER/comments?per_page=100" | sort -n | tail -n 1)"
           test "$latest_owner_comment" = "$OWNER_UPDATE_COMMENT_ID"
 
           go_comment="$(gh api "repos/$GITHUB_REPOSITORY/issues/comments/$OWNER_GO_COMMENT_ID")"
@@ -85,8 +86,8 @@ jobs:
             '.user.login == $owner and (.body | contains("OWNER GO — SUPABASE SCHEMA RECONCILIATION & CONDITIONAL CATALOGUE SYNC"))' \
             <<<"$go_comment" >/dev/null
           update_comment="$(gh api "repos/$GITHUB_REPOSITORY/issues/comments/$OWNER_UPDATE_COMMENT_ID")"
-          jq -e --arg owner 'tranhuunguyenhue' \
-            '.user.login == $owner and (.body | contains("SUPABASE_REHOME_DATABASE_URL has now been added"))' \
+          jq -e --arg owner 'tranhuunguyenhuy-hue' \
+            '.user.login == $owner and (.body | gsub("`"; "") | contains("SUPABASE_REHOME_DATABASE_URL has now been added"))' \
             <<<"$update_comment" >/dev/null
 
           source_run="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$BACKUP_RUN_ID")"
@@ -99,6 +100,15 @@ jobs:
           test "$(jq -r '.expired' <<<"$artifact")" = false
           expires_at="$(jq -r '.expires_at' <<<"$artifact")"
           test "$(date -d "$expires_at" +%s)" -gt "$(date +%s)"
+          active_artifact_bytes="$(gh api --paginate --jq \
+            '.artifacts[] | select(.expired == false) | .size_in_bytes' \
+            "repos/$GITHUB_REPOSITORY/actions/artifacts?per_page=100" | \
+            awk '{ total += $1 } END { printf "%.0f", total }')"
+          [[ "$active_artifact_bytes" =~ ^[0-9]+$ ]]
+          if (( active_artifact_bytes >= GITHUB_ARTIFACT_STORAGE_BUDGET_BYTES )); then
+            echo 'ISSUE160_RECOVERY status=STOP stage=source_gate reason=github_artifact_budget_exceeded'
+            exit 1
+          fi
           echo 'ISSUE160_RECOVERY_GATE status=PASS owner_go=current source_artifact=exact run_attempt=one'
 
   recover:
@@ -174,7 +184,6 @@ jobs:
           SUPABASE_REHOME_DATABASE_URL: ${{ secrets.SUPABASE_REHOME_DATABASE_URL }}
           SUPABASE_REHOME_ROOT_CA_CERTIFICATE: ${{ secrets.SUPABASE_REHOME_ROOT_CA_CERTIFICATE }}
           SUPABASE_MANAGEMENT_TOKEN: ${{ secrets.SUPABASE_MANAGEMENT_TOKEN }}
-          BACKUP_AGE_PRIVATE_KEY: ${{ secrets.BACKUP_AGE_PRIVATE_KEY }}
           SUPABASE_REHOME_SNAPSHOT_AGE_IDENTITY: ${{ secrets.SUPABASE_REHOME_SNAPSHOT_AGE_IDENTITY }}
           SUPABASE_REHOME_SNAPSHOT_AGE_RECIPIENT: ${{ vars.SUPABASE_REHOME_SNAPSHOT_AGE_RECIPIENT }}
         shell: bash
@@ -183,7 +192,6 @@ jobs:
           test -n "$SUPABASE_REHOME_DATABASE_URL"
           test -n "$SUPABASE_REHOME_ROOT_CA_CERTIFICATE"
           test -n "$SUPABASE_MANAGEMENT_TOKEN"
-          test -n "$BACKUP_AGE_PRIVATE_KEY"
           test -n "$SUPABASE_REHOME_SNAPSHOT_AGE_IDENTITY"
           test -n "$SUPABASE_REHOME_SNAPSHOT_AGE_RECIPIENT"
           echo 'ISSUE160_RECOVERY_GATE status=PASS protected_secret_presence=all'
@@ -220,6 +228,25 @@ jobs:
         shell: bash
         run: python3 -B scripts/backup/c_actions_original_source.py
 
+      - name: Verify exact source bundle before binding its private identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          archives=("$BACKUP_DIR"/*.dump.age)
+          manifests=("$BACKUP_DIR"/*.manifest.json)
+          checksum_files=("$BACKUP_DIR"/*.checksums.sha256)
+          shopt -u nullglob
+          test "${#archives[@]}" = 1
+          test "${#manifests[@]}" = 1
+          test "${#checksum_files[@]}" = 1
+          (cd "$BACKUP_DIR" && sha256sum -c "$(basename "${checksum_files[0]}")" >/dev/null)
+          node scripts/backup/manifest-contract.mjs validate "${manifests[0]}" >/dev/null
+          node scripts/backup/catalogue-restore-contract.mjs validate-source "${manifests[0]}" \
+            "$EXPECTED_PR_NUMBER" "$EXPECTED_CANDIDATE_SHA" "$EXPECTED_CONTROL_SHA" \
+            "$EXPECTED_WORKFLOW_RUN_ID" "$EXPECTED_MERGE_SHA" >/dev/null
+          echo 'ISSUE160_RECOVERY_GATE status=PASS source_bundle=exact ciphertext=verified'
+
       - name: Verify read-only target baseline over verified TLS
         id: baseline
         env:
@@ -245,6 +272,28 @@ jobs:
           EXPECTED_SOURCE_AGE_RECIPIENT: ${{ env.EXPECTED_SOURCE_AGE_RECIPIENT }}
         shell: bash
         run: bash scripts/backup/supabase-runtime-snapshot.sh
+
+      - name: Check rollback snapshot retention against the free artifact budget
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          active_artifact_bytes="$(gh api --paginate --jq \
+            '.artifacts[] | select(.expired == false) | .size_in_bytes' \
+            "repos/$GITHUB_REPOSITORY/actions/artifacts?per_page=100" | \
+            awk '{ total += $1 } END { printf "%.0f", total }')"
+          [[ "$active_artifact_bytes" =~ ^[0-9]+$ ]]
+          snapshot_bytes="$(find "$SNAPSHOT_DIR" -maxdepth 1 -type f -printf '%s\n' | \
+            awk '{ total += $1 } END { printf "%.0f", total }')"
+          [[ "$snapshot_bytes" =~ ^[0-9]+$ && "$snapshot_bytes" -gt 0 ]]
+          evidence_reserve_bytes=5242880
+          projected_artifact_bytes=$((active_artifact_bytes + snapshot_bytes + evidence_reserve_bytes))
+          if (( projected_artifact_bytes >= GITHUB_ARTIFACT_STORAGE_BUDGET_BYTES )); then
+            echo 'ISSUE160_RECOVERY status=STOP stage=artifact_capacity reason=github_artifact_budget_exceeded'
+            exit 1
+          fi
+          echo 'ISSUE160_RECOVERY status=PASS stage=artifact_capacity rollback_snapshot_retained=true evidence_reserve=5MiB'
 
       - name: Persist only encrypted destination snapshot and sanitized receipt
         id: snapshot_upload
@@ -278,6 +327,7 @@ jobs:
 
       - name: Revalidate project, snapshot artifact, and unchanged target before first write
         env:
+          GH_TOKEN: ${{ github.token }}
           SUPABASE_MANAGEMENT_TOKEN: ${{ secrets.SUPABASE_MANAGEMENT_TOKEN }}
           SUPABASE_REHOME_DATABASE_URL: ${{ secrets.SUPABASE_REHOME_DATABASE_URL }}
           SUPABASE_REHOME_ROOT_CA_CERTIFICATE: ${{ secrets.SUPABASE_REHOME_ROOT_CA_CERTIFICATE }}
@@ -286,6 +336,20 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          issue_json="$(gh api "repos/$GITHUB_REPOSITORY/issues/$ISSUE_NUMBER")"
+          test "$(jq -r '.state' <<<"$issue_json")" = open
+          latest_owner_comment="$(gh api --paginate --jq \
+            '.[] | select(.user.login == "tranhuunguyenhuy-hue") | .id' \
+            "repos/$GITHUB_REPOSITORY/issues/$ISSUE_NUMBER/comments?per_page=100" | sort -n | tail -n 1)"
+          test "$latest_owner_comment" = "$OWNER_UPDATE_COMMENT_ID"
+          go_comment="$(gh api "repos/$GITHUB_REPOSITORY/issues/comments/$OWNER_GO_COMMENT_ID")"
+          jq -e --arg owner 'tranhuunguyenhuy-hue' \
+            '.user.login == $owner and (.body | contains("OWNER GO — SUPABASE SCHEMA RECONCILIATION & CONDITIONAL CATALOGUE SYNC"))' \
+            <<<"$go_comment" >/dev/null
+          update_comment="$(gh api "repos/$GITHUB_REPOSITORY/issues/comments/$OWNER_UPDATE_COMMENT_ID")"
+          jq -e --arg owner 'tranhuunguyenhuy-hue' \
+            '.user.login == $owner and (.body | gsub("`"; "") | contains("SUPABASE_REHOME_DATABASE_URL has now been added"))' \
+            <<<"$update_comment" >/dev/null
           test -n "$SNAPSHOT_ARTIFACT_ID"
           test "$(jq -r '.projectRef' "$SNAPSHOT_DIR/snapshot-receipt.json")" = "$SUPABASE_PROJECT_REF"
           test "$(jq -r '.sourceSha' "$SNAPSHOT_DIR/snapshot-receipt.json")" = "$GITHUB_SHA"
@@ -317,21 +381,20 @@ jobs:
           rm -f "$org_result" "$projects_result"
 
           node scripts/backup/supabase-runtime-target.mjs validate-url
-          baseline="$(node scripts/backup/catalogue-restore-contract.mjs baseline-preflight-sql | \
+          current_bytes="$(printf '%s\n' 'select pg_database_size(current_database())::bigint::text;' | \
             SUPABASE_PSQL_TMPDIR=/dev/shm node scripts/backup/supabase-runtime-psql.mjs --tuples-only)"
-          [[ "$baseline" =~ ^([0-9]+)\|13\|27$ ]]
-          test "${BASH_REMATCH[1]}" = "$SNAPSHOT_BASELINE_DATABASE_BYTES"
+          [[ "$current_bytes" =~ ^[0-9]+$ ]]
           filtered_bytes="$(jq -er '.filteredTargetDatabaseBytes | numbers' "$OUTPUT_DIR/rehearsal-capacity.json")"
           [[ "$filtered_bytes" =~ ^[0-9]+$ ]]
           reserve_bytes=67108864
-          projected_bytes=$((SNAPSHOT_BASELINE_DATABASE_BYTES + filtered_bytes + reserve_bytes))
+          projected_bytes=$((current_bytes + filtered_bytes + reserve_bytes))
           if (( projected_bytes >= SUPABASE_RUNTIME_DATABASE_HARD_CEILING_BYTES || \
                 projected_bytes >= SUPABASE_FREE_DATABASE_SIZE_LIMIT_BYTES )); then
             echo 'SUPABASE_RUNTIME_CAPACITY status=STOP stage=pre-migration reason=insufficient_database_headroom'
             exit 1
           fi
-          echo "SUPABASE_RUNTIME_CAPACITY status=PASS stage=pre-migration baseline_database_bytes=$SNAPSHOT_BASELINE_DATABASE_BYTES filtered_catalogue_database_bytes=$filtered_bytes reserved_headroom_bytes=$reserve_bytes projected_database_bytes=$projected_bytes free_plan_limit_bytes=$SUPABASE_FREE_DATABASE_SIZE_LIMIT_BYTES internal_hard_ceiling_bytes=$SUPABASE_RUNTIME_DATABASE_HARD_CEILING_BYTES"
-          echo "ISSUE160_RECOVERY_GATE status=PASS prewrite_project=exact snapshot=verified database_bytes=$SNAPSHOT_BASELINE_DATABASE_BYTES"
+          echo "SUPABASE_RUNTIME_CAPACITY status=PASS stage=pre-catalogue current_database_bytes=$current_bytes filtered_catalogue_database_bytes=$filtered_bytes reserved_headroom_bytes=$reserve_bytes projected_database_bytes=$projected_bytes free_plan_limit_bytes=$SUPABASE_FREE_DATABASE_SIZE_LIMIT_BYTES internal_hard_ceiling_bytes=$SUPABASE_RUNTIME_DATABASE_HARD_CEILING_BYTES"
+          echo "ISSUE160_RECOVERY_GATE status=PASS pre_catalogue_schema=verified snapshot=verified database_bytes=$current_bytes"
 
       - name: Apply verified canonical schema migrations once
         env:

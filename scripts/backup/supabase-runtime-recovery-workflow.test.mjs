@@ -12,8 +12,26 @@ describe('Issue 160 protected recovery workflow', () => {
     expect(workflow).toContain('BACKUP_ARTIFACT_SHA256:')
     expect(workflow).toContain("environment: runtime-backup")
     expect(workflow).toContain('cancel-in-progress: false')
+    expect(workflow).toContain('GITHUB_ARTIFACT_STORAGE_BUDGET_BYTES: \'500000000\'')
+    expect(workflow).toContain('reason=github_artifact_budget_exceeded')
+    expect(workflow).toContain('sort -n | tail -n 1')
+    expect(workflow).toContain('gsub("`"; "")')
     expect(workflow).not.toContain('continue-on-error: true')
     expect(workflow).not.toMatch(/permissions:[\s\S]{0,180}contents:\s*write/)
+  })
+
+  it('verifies the source ciphertext before binding its private identity', async () => {
+    const workflow = await readFile('.github/workflows/supabase-runtime-issue160-recovery-once.yml', 'utf8')
+    const sourceVerify = workflow.indexOf('Verify exact source bundle before binding its private identity')
+    const decrypt = workflow.indexOf('Rehearse the exact filtered catalogue source in isolated PostgreSQL')
+    const earlyGate = workflow.indexOf('Require protected recovery credentials and dedicated rollback identity')
+    const sourceDownload = workflow.indexOf('Download exact original ciphertext into tmpfs')
+    expect(sourceDownload).toBeGreaterThan(-1)
+    expect(sourceVerify).toBeGreaterThan(sourceDownload)
+    expect(decrypt).toBeGreaterThan(sourceVerify)
+    expect(workflow.indexOf('BACKUP_AGE_PRIVATE_KEY: ${{ secrets.BACKUP_AGE_PRIVATE_KEY }}', earlyGate))
+      .toBeGreaterThan(decrypt)
+    expect(workflow.slice(earlyGate, sourceDownload)).not.toContain('BACKUP_AGE_PRIVATE_KEY')
   })
 
   it('uploads a client-encrypted restorable snapshot before the first remote mutation', async () => {
@@ -41,12 +59,20 @@ describe('Issue 160 protected recovery workflow', () => {
 
   it('measures isolated database capacity and enforces the hard ceiling inside the write transaction', async () => {
     const restore = await readFile('scripts/backup/restore-catalogue-runtime.sh', 'utf8')
+    const workflow = await readFile('.github/workflows/supabase-runtime-issue160-recovery-once.yml', 'utf8')
     expect(restore).toContain('filteredTargetDatabaseBytes')
     expect(restore).toContain('rehearsal-capacity.json')
     const guard = restore.indexOf('do $catalogue_size_guard$')
     expect(guard).toBeGreaterThan(-1)
     expect(restore.slice(guard)).toContain('pg_database_size(current_database()) >= 367001600')
     expect(restore.slice(guard)).toContain('commit;')
+    const catalogueCapacity = workflow.slice(
+      workflow.indexOf('Prove Free-plan database headroom before catalogue write'),
+      workflow.indexOf('Execute the single catalogue sync transaction'),
+    )
+    expect(catalogueCapacity).toContain('select pg_database_size(current_database())::bigint::text;')
+    expect(catalogueCapacity).toContain('current_bytes + filtered_bytes + reserve_bytes')
+    expect(catalogueCapacity).not.toContain('baseline-preflight-sql')
   })
 
   it('keeps the snapshot encrypted, verifies a tmpfs restore, and excludes role password hashes', async () => {
@@ -59,8 +85,11 @@ describe('Issue 160 protected recovery workflow', () => {
     expect(script).toContain('--global-roles-snapshot')
     expect(dump).toContain('--no-role-passwords')
     expect(script).toContain('--network none')
+    expect(script).toContain('--log-driver=none')
     expect(script).toContain('pg_restore --format=custom')
     expect(script).toContain('isolated_database_restore_failed')
+    expect(script).toContain('expected_tables')
+    expect(script).toContain('"$restored_tables" == "$expected_tables"')
     expect(script).toContain('.custom.age')
     expect(script).toContain('.sql.age')
     expect(script).not.toMatch(/OUTPUT_DIR[^\n]*\.dump(?!\.age)/)
@@ -76,5 +105,14 @@ describe('Issue 160 protected recovery workflow', () => {
     expect(workflow).toContain('KEEP_OUTPUT_DIR=true')
     expect(workflow).toContain('Remove protected temporary files')
     expect(workflow).toContain('if: always()')
+  })
+
+  it('keeps hosted apply in the isolated container and reads the staged dump there', async () => {
+    const restore = await readFile('scripts/backup/restore-catalogue-runtime.sh', 'utf8')
+    expect(restore).toContain('[[ "$MODE" == \'apply\' && "$hosted_recovery" != true ]]')
+    expect(restore).toContain('|| "$MODE" == \'apply\'')
+    expect(restore).toContain('docker exec --user postgres "$container_name"')
+    expect(restore).toContain('"$table_arg" --file - "$plain_dump"')
+    expect(restore).not.toContain('/work/runtime.dump')
   })
 })

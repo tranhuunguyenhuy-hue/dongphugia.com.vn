@@ -40,6 +40,10 @@ if [[ "$keep_output_dir" != false && "$keep_output_dir" != true ]]; then
   echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=keep_output_dir_invalid'
   exit 1
 fi
+if [[ "$MODE" == 'apply' && "$hosted_recovery" != true ]]; then
+  echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=hosted_apply_required'
+  exit 1
+fi
 
 tmp_parent='/dev/shm'
 if ! command -v findmnt >/dev/null 2>&1 \
@@ -72,7 +76,7 @@ for command in age docker findmnt jq node sha256sum; do
   }
 done
 
-if [[ "$MODE" == 'rehearsal' || "$MODE" == 'container-preflight' ]]; then
+if [[ "$MODE" == 'rehearsal' || "$MODE" == 'container-preflight' || "$MODE" == 'apply' ]]; then
   # Rehearsal handles the full source dump. Reject remote daemons and image pulls
   # before decryption, and keep generated evidence inside tmpfs.
   # shellcheck source=scripts/backup/postgres-image-pin.sh
@@ -81,8 +85,13 @@ if [[ "$MODE" == 'rehearsal' || "$MODE" == 'container-preflight' ]]; then
     echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=postgres_image_reference_invalid'
     exit 1
   fi
-  if [[ -n "${SUPABASE_REHOME_DATABASE_URL:-}" ]]; then
-    echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=remote_target_present'
+  if [[ "$MODE" == 'rehearsal' || "$MODE" == 'container-preflight' ]]; then
+    if [[ -n "${SUPABASE_REHOME_DATABASE_URL:-}" ]]; then
+      echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=remote_target_present'
+      exit 1
+    fi
+  elif [[ -z "${SUPABASE_REHOME_DATABASE_URL:-}" ]]; then
+    echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=target_missing'
     exit 1
   fi
   if [[ "$hosted_recovery" == false ]]; then
@@ -102,9 +111,6 @@ if [[ "$MODE" == 'rehearsal' || "$MODE" == 'container-preflight' ]]; then
   elif [[ "${GITHUB_ACTIONS:-}" != true || "${GITHUB_EVENT_NAME:-}" != workflow_dispatch ||
           "${GITHUB_REF:-}" != refs/heads/main ]]; then
     echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=hosted_context_invalid'
-    exit 1
-  elif [[ "$MODE" != rehearsal && "$MODE" != container-preflight ]]; then
-    echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=hosted_mode_requires_rehearsal'
     exit 1
   fi
   if [[ -n "${DOCKER_HOST:-}" && "$DOCKER_HOST" != unix://* ]]; then
@@ -351,7 +357,7 @@ fi
 mapfile -t restore_table_args < <(node "$contract" table-args)
 test "${#restore_table_args[@]}" -gt 0
 
-if [[ "$MODE" == 'rehearsal' || "$MODE" == 'container-preflight' ]]; then
+if [[ "$MODE" == 'rehearsal' || "$MODE" == 'container-preflight' || "$MODE" == 'apply' ]]; then
   start_rehearsal_container
 fi
 
@@ -533,11 +539,10 @@ driver_sql="$tmp_dir/catalogue-driver.sql"
 
 : >"$restore_sql"
 for table_arg in "${restore_table_args[@]}"; do
-  if ! docker run --rm --network none --read-only \
-    --volume "$tmp_dir:/work:rw" "$postgres_image" \
+  if ! docker exec --user postgres "$container_name" \
     pg_restore --data-only --no-owner --no-privileges --exit-on-error \
       --schema=dpg_app --strict-names \
-      "$table_arg" --file - /work/runtime.dump >>"$restore_sql" \
+      "$table_arg" --file - "$plain_dump" >>"$restore_sql" \
       2>"$tmp_dir/sensitive.error"; then
     sensitive_failure generate_catalogue_restore
   fi
