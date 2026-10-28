@@ -57,6 +57,36 @@ def command(args, **kw):
     return subprocess.run(args, check=True, capture_output=True, **kw).stdout
 
 
+def verify_affected_state(identity):
+    """Read the immutable pre-setup snapshot, verify ciphertext and decrypt in RAM."""
+    repo = os.environ["DIRECT_VAULT_REPOSITORY"]
+    assert re.fullmatch(r"tranhuunguyenhuy-hue/[A-Za-z0-9_.-]+", repo)
+    commit = "354efb8cfe4740936c50f2f34030cf2081ab2a6d"
+    request = urllib.request.Request(
+        "https://api.github.com/repos/" + repo + "/contents/affected-state.age?ref=" + commit,
+        headers={"Authorization": "Bearer " + os.environ["DIRECT_VAULT_TOKEN"],
+                 "Accept": "application/vnd.github+json"})
+    class NoRedirect(urllib.request.HTTPRedirectHandler):
+        def redirect_request(self, *args, **kwargs):
+            return None
+    with urllib.request.build_opener(NoRedirect).open(request, timeout=30) as response:
+        payload = json.load(response)
+    encrypted = base64.b64decode(payload["content"])
+    assert len(encrypted) == 92031
+    assert hashlib.sha256(encrypted).hexdigest() == "df0de24f7d41ff965c4fbd872058fdac73fed7f4d77d82f595116df58c8868f2"
+    plaintext = command(["age", "--decrypt", "--identity", str(identity)], input=encrypted)
+    assert hashlib.sha256(plaintext).hexdigest() == "7d48235d944077cc0173fc64b8acf1f7208184476ba1ec51791d7151130183d3"
+    snapshot = json.loads(plaintext)
+    assert snapshot["contract"] == "dpg:affected-state-before-setup:v1"
+    assert snapshot["target"] == "bonxyxluzlxfkdetryoo"
+    assert len(snapshot["tables"]) == 27 and all(t["rows"] == 0 for t in snapshot["tables"])
+    assert snapshot["new_roles"] == [] and snapshot["new_helper"] is None
+    assert len(snapshot["sequence_state"]) == 27
+    print(json.dumps({"affected_state_decryption": "PASS", "checkpoint_commit": commit,
+        "target_tables": 27, "target_rows": 0, "sequence_states": 27,
+        "live_target_comparison": "REQUIRED_BEFORE_WRITE", "database_queries": False}))
+
+
 def main():
     assert os.environ.get("GITHUB_ACTIONS") == "true"
     assert os.environ.get("GITHUB_REF") == "refs/heads/main"
@@ -74,7 +104,7 @@ def main():
             assert os.environ.get("KEY_ALREADY_PRESENT") == "false"
             command(["age-keygen", "-o", str(identity)])
         else:
-            assert mode in ("verify", "vault-check")
+            assert mode in ("verify", "vault-check", "checkpoint-verify")
             identity.write_text(os.environ["DIRECT_CHECKPOINT_AGE_IDENTITY"])
         recipient = command(["age-keygen", "-y", str(identity)]).decode().strip()
         assert recipient.startswith("age1") and recipient.isalnum()
@@ -93,6 +123,8 @@ def main():
             assert recipient == os.environ["EXPECTED_RECIPIENT"]
         if mode == "vault-check":
             print(json.dumps(check_vault(encrypted)))
+        if mode == "checkpoint-verify":
+            verify_affected_state(identity)
         print(json.dumps({"status": "PASS", "mode": mode, "recipient": recipient}))
 
 

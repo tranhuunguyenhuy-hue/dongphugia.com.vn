@@ -4,7 +4,7 @@ on:
     inputs:
       mode:
         type: choice
-        options: [generate, verify, vault-check]
+        options: [generate, verify, vault-check, checkpoint-verify, connection-audit]
         required: true
       approved_sha:
         type: string
@@ -26,7 +26,7 @@ jobs:
     if: >-
       github.ref == 'refs/heads/main' && github.actor == 'tranhuunguyenhuy-hue' &&
       github.repository == 'tranhuunguyenhuy-hue/dongphugia.com.vn' &&
-      github.run_attempt == 1 && inputs.approved_sha == github.sha
+      github.run_attempt == 1 && inputs.approved_sha == github.sha && inputs.mode != 'connection-audit'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     environment: catalogue-direct-migration
@@ -61,8 +61,8 @@ jobs:
           ENV_KEY_ID: ${{ inputs.environment_key_id }}
           EXPECTED_RECIPIENT: ${{ inputs.expected_recipient }}
           DIRECT_CHECKPOINT_AGE_IDENTITY: ${{ inputs.mode != 'generate' && secrets.DIRECT_CHECKPOINT_AGE_IDENTITY || '' }}
-          DIRECT_VAULT_REPOSITORY: ${{ inputs.mode == 'vault-check' && secrets.DIRECT_VAULT_REPOSITORY || '' }}
-          DIRECT_VAULT_TOKEN: ${{ inputs.mode == 'vault-check' && secrets.DIRECT_VAULT_TOKEN || '' }}
+          DIRECT_VAULT_REPOSITORY: ${{ (inputs.mode == 'vault-check' || inputs.mode == 'checkpoint-verify') && secrets.DIRECT_VAULT_REPOSITORY || '' }}
+          DIRECT_VAULT_TOKEN: ${{ (inputs.mode == 'vault-check' || inputs.mode == 'checkpoint-verify') && secrets.DIRECT_VAULT_TOKEN || '' }}
           SEALED_OUTPUT: ${{ runner.temp }}/direct-checkpoint-key.sealed.json
         run: |
           set -euo pipefail
@@ -83,3 +83,45 @@ jobs:
           set -euo pipefail
           test "$(findmnt -no FSTYPE -T /dev/shm)" = tmpfs
           find /dev/shm -maxdepth 1 -type d -name 'direct-key-*' -exec rm -rf -- {} +
+
+  connection-metadata:
+    if: >-
+      github.ref == 'refs/heads/main' && github.actor == 'tranhuunguyenhuy-hue' &&
+      github.repository == 'tranhuunguyenhuy-hue/dongphugia.com.vn' &&
+      github.run_attempt == 1 && inputs.approved_sha == github.sha && inputs.mode == 'connection-audit'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    # Read existing connection secrets only. No backup/key access or Environment mutation.
+    environment: runtime-backup
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Prepare trusted runtime before connection material
+        run: |
+          set -euo pipefail
+          bash scripts/backup/c-actions-host-swap-preflight.sh
+          python3 -m venv "$RUNNER_TEMP/direct-connection-python"
+          "$RUNNER_TEMP/direct-connection-python/bin/pip" install --only-binary=:all: \
+            PyNaCl==1.5.0 cffi==1.17.1 pycparser==2.22
+      - name: Bind approved projects and seal existing setup candidates
+        env:
+          APPROVED_SHA: ${{ inputs.approved_sha }}
+          ENV_PUBLIC_KEY: ${{ inputs.environment_public_key }}
+          ENV_KEY_ID: ${{ inputs.environment_key_id }}
+          LEGACY_DIRECT_URL: ${{ secrets.DIRECT_URL }}
+          LEGACY_DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          LEGACY_RUNTIME_URL: ${{ secrets.SUPABASE_RUNTIME_DATABASE_URL }}
+          LEGACY_REHOME_URL: ${{ secrets.SUPABASE_REHOME_DATABASE_URL }}
+          SEALED_OUTPUT: ${{ runner.temp }}/direct-setup-connections.sealed.json
+        run: |
+          set -euo pipefail
+          set +x
+          ulimit -c 0
+          "$RUNNER_TEMP/direct-connection-python/bin/python" -B scripts/catalogue-direct/connection-audit.py
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: direct-setup-connections-sealed
+          path: ${{ runner.temp }}/direct-setup-connections.sealed.json
+          retention-days: 1
+          if-no-files-found: error
