@@ -6,6 +6,7 @@ import { spawn } from 'node:child_process'
 import { createGzip, createGunzip } from 'node:zlib'
 import { pipeline } from 'node:stream/promises'
 import { createInterface } from 'node:readline'
+import { RLS_EVENT_BODY } from './platform-boundary.mjs'
 import {
   CONTRACT, SOURCE, TARGET, RECOVERY_ID, SHA, CATALOGUE_TABLES, CATALOGUE_RESTORE_ORDER,
   DATABASE_CEILING, CHECKPOINT_CEILING, requireGate, digest, identifier,
@@ -18,6 +19,9 @@ let directory
 let phase = 'preflight'
 let targetWriteAttempted = false
 const connections = []
+export async function closeConnections() {
+  await Promise.allSettled(connections.map(c => c.end()))
+}
 const vaultApi = 'https://api.github.com/repos/'
 
 async function vault(path, method = 'GET', body) {
@@ -133,7 +137,7 @@ async function recipient(identity) {
   return result.trim()
 }
 
-async function connect(purpose) {
+export async function connect(purpose) {
   const { default: pg } = await import('pg')
   const source = purpose === 'source'
   const client = new pg.Client(connectionConfig(
@@ -143,6 +147,12 @@ async function connect(purpose) {
   // Never let an asynchronous pg error print connection material or a row.
   client.on('error', () => { process.exitCode = 1 })
   await client.connect()
+  await attestRole(client, purpose)
+  return client
+}
+
+export async function attestRole(client, purpose) {
+  const source = purpose === 'source'
   await client.query('set row_security = off')
   const { rows: [role] } = await client.query(`select r.rolsuper, r.rolcreatedb, r.rolcreaterole,
     r.rolreplication, r.rolbypassrls, current_user as name from pg_roles r where rolname=current_user`)
@@ -152,12 +162,17 @@ async function connect(purpose) {
   const rights = await client.query(`select n.nspname as schema, c.relname as name,
     has_table_privilege(c.oid, 'SELECT') as read,
     has_table_privilege(c.oid, 'INSERT') as insert,
-    has_table_privilege(c.oid, 'UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER') as other
+    has_table_privilege(c.oid, 'UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER') as other,
+    (c.relkind='v' and n.nspname='extensions' and c.relname in ('pg_stat_statements','pg_stat_statements_info')
+      and exists(select 1 from pg_depend d join pg_extension e on e.oid=d.refobjid
+        where d.classid='pg_class'::regclass and d.objid=c.oid and d.refclassid='pg_extension'::regclass
+        and d.deptype='e' and e.extname='pg_stat_statements')) as platform_statistics
     from pg_class c join pg_namespace n on n.oid=c.relnamespace
     where c.relkind in ('r','p','v','m','f') and n.nspname !~ '^pg_' and n.nspname <> 'information_schema'`)
   for (const right of rights.rows) {
     const allowed = right.schema === schema && CATALOGUE_TABLES.includes(right.name)
-    requireGate(!right.other && (!right.read || allowed) && (!right.insert || (allowed && purpose === 'import')), 'ROLE_TABLE_BOUNDARY')
+    requireGate(!right.other && (!right.read || allowed || right.platform_statistics)
+      && (!right.insert || (allowed && purpose === 'import')), 'ROLE_TABLE_BOUNDARY')
   }
   requireGate(rights.rows.filter((r) => r.schema === schema && CATALOGUE_TABLES.includes(r.name) && r.read
     && (purpose !== 'import' || r.insert)).length === 27, 'ROLE_TABLE_SET')
@@ -169,8 +184,12 @@ async function connect(purpose) {
     exists(select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace
       where n.nspname !~ '^pg_' and p.prosecdef and has_function_privilege(p.oid,'EXECUTE')
       and not ($1::boolean and p.oid=to_regprocedure('dpg_app.direct_catalogue_restart(text,text,bigint)'))
+      and not (n.nspname='public' and p.proname='rls_auto_enable' and p.pronargs=0
+        and p.prorettype='event_trigger'::regtype and p.prosrc=$2
+        and p.proowner=(select oid from pg_roles where rolname='postgres')
+        and p.proconfig=array['search_path=pg_catalog'])
       and p.oid<>coalesce(to_regprocedure('dpg_control.enforce_free_tier_headroom_statement()'),0)) as definer,
-    has_database_privilege(current_database(),'CREATE') as dbcreate`, [purpose === 'import'])
+    has_database_privilege(current_database(),'CREATE') as dbcreate`, [purpose === 'import', RLS_EVENT_BODY])
   requireGate(!extra.membership && !extra.ddl && !extra.definer && !extra.dbcreate, 'ROLE_AUTHORITY_BOUNDARY')
   const sequenceRights = await client.query(`select
     has_sequence_privilege(c.oid,'USAGE,UPDATE') as write,
@@ -196,7 +215,6 @@ async function connect(purpose) {
         or (a.grantee=(select oid from pg_roles where rolname=current_user) and a.is_grantable))) as extra`)
     requireGate(!acl.extra, 'SEQUENCE_HELPER_ACL')
   }
-  return client
 }
 
 export async function metadata(client, schema) {
@@ -492,7 +510,7 @@ if (process.argv[1]?.endsWith('/run.mjs')) {
       state: 'PRESERVE_CHECKPOINT_VERIFY_BEFORE_RESUME' }))
     process.exitCode = 1
   }).finally(async () => {
-    await Promise.allSettled(connections.map((c) => c.end()))
+    await closeConnections()
     if (directory) await rm(directory, { recursive: true, force: true })
     for (const key of Object.keys(env)) if (key.startsWith('DIRECT_')) delete env[key]
   })

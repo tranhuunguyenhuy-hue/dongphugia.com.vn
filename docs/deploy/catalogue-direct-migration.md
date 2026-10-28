@@ -122,7 +122,7 @@ remote rollback/import replay. On failure verify actual committed state first.
 Physical database files can retain aborted tuples; never interpret SQL rollback
 as proof disk bytes were reclaimed, and never auto-truncate/vacuum to resume.
 
-## Single Owner setup checklist
+## Codex setup and Owner-only material
 
 No independent human reviewer or per-deployment approval is required for this
 new Environment under the updated Owner instruction. Keep old environments as
@@ -140,7 +140,7 @@ provisioning session; never chat, Issue comments, source, public logs or artifac
 | `DIRECT_TARGET_READ_DATABASE_URL` | Restricted reader for exactly 27 `dpg_app` tables and linked sequences in `bonxyxluzlxfkdetryoo`. |
 | `DIRECT_TARGET_IMPORT_DATABASE_URL` | `dpg_direct_import` login, SELECT/INSERT on the 27 tables, sequence SELECT, execute only the bounded restart helper. No superuser, memberships or table UPDATE/DELETE. |
 | `DIRECT_TARGET_CA` | Official destination project server root certificate. |
-| `DIRECT_CHECKPOINT_AGE_IDENTITY` | Existing Owner-held verified age identity copied securely for this Environment; no rotation or backup change. Enables encrypted checkpoint export and later recovery. |
+| `DIRECT_CHECKPOINT_AGE_IDENTITY` | Independent direct-checkpoint identity, generated and verified in the protected runner. Historical backup identities remain untouched. |
 | `DIRECT_VAULT_REPOSITORY` | Existing Owner-private vault `owner/repository`, kept private; no new repository required. |
 | `DIRECT_VAULT_TOKEN` | Fine-grained Contents read/write credential scoped to that vault only. No default-branch write is performed. |
 
@@ -155,8 +155,7 @@ GitHub cannot reveal/re-copy encrypted Environment secret values. Do not grant
 read access to all secrets or repurpose old legacy URLs by name. Codex can perform
 reviewed setup and configure secret values through a protected session when the
 necessary login is available; only Owner-held login/MFA and inaccessible secret
-material require Owner action. No need to provision unused migration URLs or
-new encryption keys. Browser Use may be enabled in Work settings to allow Codex
+material require Owner action. The independent checkpoint key is already configured; do not regenerate it or request a historical backup key. Browser Use may be enabled in Work settings to allow Codex
 to handle Dashboard navigation; the human completes MFA/credential entry.
 
 Finally, confirm account-wide Actions/Packages usage and private-vault headroom
@@ -214,3 +213,42 @@ checkpoint/run/SHA, target-write attempt and transaction certainty, safe remaini
 unit and minimal Owner action. Harmless local syntax/tooling/test mistakes may
 be corrected without restarting the recovery. Post milestone evidence to Issue
 #160. Never turn mechanism/fixture PASS into a real migration or Preview claim.
+
+## Protected connection bootstrap
+
+`catalogue-direct-setup.yml` has three manual units: `preflight`, `source`,
+`target`, all exact-main/Owner/attempt-one guarded in the direct Environment.
+Temporary administrative setup URL slots are sealed to its pinned public key
+from existing exact-project candidates. They never enter the transfer runner.
+No historical Environment settings, backup/key slots, or original URLs change.
+
+Preflight verifies TLS, administrative capability and the full live target
+metadata/ACL/RLS/policy/trigger/linked-sequence/empty-data state against immutable
+checkpoint `354efb8cfe4740936c50f2f34030cf2081ab2a6d`. Snapshot encryption,
+hash, decryption and semantic checks precede any persistent role/schema change.
+Each provisioning unit generates new credentials only in the swap-free runtime,
+stores its encrypted preimage plus credentials in a new immutable private ref,
+and reads/decrypts it back **before** the database transaction. Existing setup
+refs or roles refuse replay. Each source or target unit commits atomically;
+target locks the allowlist, repeats the before-state comparison, and uses only
+the reviewed parity/role/helper SQL. Effective role checks run before commit;
+fresh restricted TLS logins are independently verified afterward. Only pinned
+GitHub sealed values leave the runner for installation by the existing Owner
+CLI. No plaintext credential artifact or log is produced. A lost or ambiguous
+commit retains its setup checkpoint and requires independent state diagnosis.
+
+The role gate permits only the extension-owned `extensions.pg_stat_statements`
+and `pg_stat_statements_info` platform views in addition to the catalogue set.
+PostgreSQL restricts other users' SQL text to privileged roles, and membership
+in such roles remains forbidden. A same-named unowned view fails. The exact
+existing `public.rls_auto_enable()` body/owner/configuration/`event_trigger`
+return type is also recognized: it cannot be invoked as an ordinary routine,
+and the transfer roles have no persistent DDL authority. Arbitrary executable
+SECURITY DEFINER routines still fail. No global ACL is revoked or widened.
+See [PostgreSQL pg_stat_statements](https://www.postgresql.org/docs/17/pgstatstatements.html)
+and [event triggers](https://www.postgresql.org/docs/17/event-trigger-definition.html).
+
+After the three purpose-specific secrets pass authentication and permission
+checks, use the unchanged M1 export entrypoint. Preserve all setup and data
+checkpoint refs. Remove only task-created temporary administrative slots when
+setup/recovery no longer needs them; never change original credentials.
