@@ -7,6 +7,17 @@ import { createHash } from 'node:crypto'
 import { publicOnlyPreflight, confirmWorkersFree, verifySnapshotHttps } from './public-preview.mjs'
 import { WORKER_NAME, PREVIEW_ALIAS } from '../app-foundation/cloudflare-preview-publication.mjs'
 const source='a'.repeat(40),checkpoint='b'.repeat(40)
+it('uses only a fresh exact-account Dashboard proof on Billing403; never overrides a paid API plan',async()=>{
+  const accountId='synthetic-account'
+  const proof={contract:'dpg:cloudflare-workers-free-attestation:v1',accountHash:createHash('sha256').update(accountId).digest('hex'),
+    plan:'workers_free',state:'active',billableUsd:0,verifiedAt:new Date().toISOString(),
+    evidenceUrl:`https://dash.cloudflare.com/${accountId}/billing/subscriptions`}
+  const args={accountId,apiToken:'synthetic',attestation:proof,fetchImpl:async()=>new Response('{}',{status:403})}
+  expect((await confirmWorkersFree(args)).evidenceMode).toBe('AUTHENTICATED_DASHBOARD')
+  await expect(confirmWorkersFree({...args,accountId:'wrong-account'})).rejects.toThrow('PUBLIC_PREVIEW_DASHBOARD_PROOF_INVALID')
+  await expect(confirmWorkersFree({...args,attestation:{...proof,verifiedAt:'2020-01-01'}})).rejects.toThrow('PUBLIC_PREVIEW_DASHBOARD_PROOF_INVALID')
+  await expect(confirmWorkersFree({...args,fetchImpl:async()=>Response.json({result:[{rate_plan:{public_name:'Workers Paid'}}]})})).rejects.toThrow()
+})
 async function digest(root) {
   const files=[]
   async function walk(dir=''){for(const e of await readdir(path.join(root,dir),{withFileTypes:true})){const p=path.join(dir,e.name);if(e.isDirectory())await walk(p);else files.push(p)}}

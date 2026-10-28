@@ -55,10 +55,20 @@ export async function publicOnlyPreflight({buildRoot,sourceSha,workflowRunId,che
       staticAssetLimit:20000,largestStaticAssetBytes:assets.largestFile,individualStaticAssetLimitBytes:25*1024*1024,passed:true},
     productionSupabase:'not-bound',productionDnsOrTraffic:'unchanged-before-upload',admin:'deferred'}
 }
-export async function confirmWorkersFree({accountId,apiToken,fetchImpl=fetch}) {
+export async function confirmWorkersFree({accountId,apiToken,fetchImpl=fetch,attestation}) {
   gate(accountId&&apiToken,'PUBLIC_PREVIEW_PROVIDER_CREDENTIALS_REQUIRED')
   const response=await fetchImpl(`https://api.cloudflare.com/client/v4/accounts/${accountId}/subscriptions`,{
     method:'GET',redirect:'error',headers:{Authorization:'Bearer '+apiToken,Accept:'application/json'}})
+  if(response.status===403 && attestation) {
+    const proof=typeof attestation==='string'?JSON.parse(attestation):attestation
+    const age=Date.now()-Date.parse(proof.verifiedAt)
+    gate(proof.contract==='dpg:cloudflare-workers-free-attestation:v1'
+      && proof.accountHash===sha256(accountId) && proof.plan==='workers_free' && proof.state==='active'
+      && proof.billableUsd===0 && age>=0 && age<=86400000
+      && proof.evidenceUrl===`https://dash.cloudflare.com/${accountId}/billing/subscriptions`,'PUBLIC_PREVIEW_DASHBOARD_PROOF_INVALID')
+    return {contract:'dpg:public-preview-zero-cost:v1',workersFreeConfirmed:true,checkedAt:proof.verifiedAt,
+      evidenceMode:'AUTHENTICATED_DASHBOARD',apiStatus:403,mutation:false}
+  }
   gate(response.ok,'PUBLIC_PREVIEW_PLAN_HTTP_'+response.status)
   const body=await response.json()
   gate(body.success!==false&&Array.isArray(body.result),'PUBLIC_PREVIEW_PLAN_UNKNOWN')
@@ -103,7 +113,8 @@ async function main() {
   let result
   if(mode==='preflight')result=await publicOnlyPreflight({buildRoot:path.resolve(args['build-root']),sourceSha:args['source-sha'],
     workflowRunId:args['workflow-run-id'],checkpoint:args.checkpoint,m3RunId:args['m3-run-id'],pullRequest:Number(args['pr-number'])})
-  else if(mode==='confirm-free')result=await confirmWorkersFree({accountId:process.env.CLOUDFLARE_ACCOUNT_ID,apiToken:process.env.CLOUDFLARE_API_TOKEN})
+  else if(mode==='confirm-free')result=await confirmWorkersFree({accountId:process.env.CLOUDFLARE_ACCOUNT_ID,apiToken:process.env.CLOUDFLARE_API_TOKEN,
+    attestation:process.env.DIRECT_CLOUDFLARE_FREE_ATTESTATION})
   else if(mode==='verify-https')result=await verifySnapshotHttps({baseUrl:args.url,sourceSha:args['source-sha'],checkpoint:args.checkpoint,
     m3RunId:args['m3-run-id'],buildRoot:path.resolve(args['build-root'])})
   else throw new Error('PUBLIC_PREVIEW_MODE')
