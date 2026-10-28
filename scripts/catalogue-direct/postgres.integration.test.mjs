@@ -9,6 +9,25 @@ import { setupState, assertBeforeSetup } from './setup-state.mjs'
 
 const url = process.env.POSTGRES_SNAPSHOT_INTEGRATION_URL
 describe.skipIf(!url)('direct data-only mapping on isolated PostgreSQL', () => {
+  it('allows the PG17 non-superuser creator to attest a new role without retaining SET authority',async()=>{
+    const base=new URL(url)
+    expect(['127.0.0.1','localhost','[::1]']).toContain(base.hostname)
+    const client=new pg.Client({connectionString:url});await client.connect()
+    const creator=`direct_creator_${process.pid}`,proof=`direct_proof_${process.pid}`
+    try {
+      await client.query(`create role ${creator} nologin nosuperuser createrole bypassrls`)
+      await client.query(`set session authorization ${creator};begin;set local createrole_self_grant='set'`)
+      await client.query(`create role ${proof} nologin nosuperuser nocreaterole noinherit bypassrls`)
+      await client.query(`set local role ${proof}`)
+      expect((await client.query('select current_user as name')).rows[0].name).toBe(proof)
+      await client.query(`reset role;grant ${proof} to ${creator} with set false;commit`)
+      expect((await client.query('select pg_has_role($1,$2,\'SET\') as allowed',[creator,proof])).rows[0].allowed).toBe(false)
+    } finally {
+      await client.query('rollback;reset session authorization')
+      await client.query(`drop role if exists ${proof};drop role if exists ${creator}`)
+      await client.end()
+    }
+  })
   it('preserves all 27 table hashes, precision, FK/keys and rolls back rows AND sequence restart', async () => {
     const base = new URL(url)
     // This fixture must never connect to either approved remote database or any arbitrary host.

@@ -5,7 +5,7 @@ import { spawnSync } from 'node:child_process'
 import { readFile, writeFile, mkdtemp, rm, statfs } from 'node:fs/promises'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { SOURCE, TARGET, SHA, connectionConfig, provisioningSql, requireGate, digest, assertBudget } from './contract.mjs'
+import { SOURCE, TARGET, SHA, connectionConfig, provisioningSql, requireGate, digest, assertBudget, identifier } from './contract.mjs'
 import { attestRole, connect, closeConnections } from './run.mjs'
 import { setupState, assertBeforeSetup } from './setup-state.mjs'
 
@@ -138,6 +138,10 @@ async function main() {
   phase='setup_transaction'
   await selected.client.query('begin')
   try {
+    // PG17 non-superuser CREATEROLE defaults to ADMIN without SET on new roles.
+    // Enable SET only for this transaction's new roles to attest their rights;
+    // restore SET=false before commit. No existing role membership is widened.
+    await selected.client.query("set local createrole_self_grant = 'set'")
     if(purpose==='target') {
       for(const name of expected.tables.map(t=>t.name)) await selected.client.query(`lock table dpg_app."${name}" in access exclusive mode`)
       assertBeforeSetup(expected,await setupState(selected.client,'dpg_app'))
@@ -160,6 +164,7 @@ async function main() {
       await selected.client.query('set local role dpg_direct_'+role)
       await attestRole(selected.client,role)
       await selected.client.query('reset role')
+      await selected.client.query('grant dpg_direct_'+role+' to '+identifier(selected.principal)+' with set false')
     }
     phase='setup_commit'
     await selected.client.query('commit')
