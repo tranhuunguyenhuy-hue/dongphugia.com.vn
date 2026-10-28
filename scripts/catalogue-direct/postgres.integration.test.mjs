@@ -3,7 +3,7 @@ import pg from 'pg'
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { CATALOGUE_TABLES, CATALOGUE_RESTORE_ORDER, insertSql, rowsSql, provisioningSql, assertSchema } from './contract.mjs'
-import { metadata } from './run.mjs'
+import { metadata, assertTargetPrivate } from './run.mjs'
 
 const url = process.env.POSTGRES_SNAPSHOT_INTEGRATION_URL
 describe.skipIf(!url)('direct data-only mapping on isolated PostgreSQL', () => {
@@ -91,6 +91,11 @@ describe.skipIf(!url)('direct data-only mapping on isolated PostgreSQL', () => {
       await expect(client.query("select dpg_app.direct_catalogue_restart('products','id',1)")).rejects.toMatchObject({ code: 'P0001' })
       await client.query('reset session authorization')
       await expect(client.query("select dpg_app.direct_catalogue_restart('products','id',2)")).rejects.toMatchObject({ code: 'P0001' })
+      await assertTargetPrivate(client)
+      await client.query('grant select on dpg_app.products to public')
+      await expect(assertTargetPrivate(client)).rejects.toThrow('TARGET_PUBLIC_EXPOSURE')
+      await client.query('revoke select on dpg_app.products from public')
+      await assertTargetPrivate(client)
       await expect(client.query(parity)).rejects.toMatchObject({ code: 'P0001' })
     } finally {
       if (client) { try { await client.query('rollback'); await client.query('reset session authorization') } catch { /* fixture cleanup */ } await client.end() }

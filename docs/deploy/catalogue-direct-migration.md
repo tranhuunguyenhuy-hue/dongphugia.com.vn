@@ -31,7 +31,8 @@ branches remain unchanged. This procedure does not authorize Production or DNS.
    transaction commits the data and sequence changes. No DDL replay, trigger
    disabling, table truncation or RLS relaxation occurs during import.
 3. **M3 / verify**: separate read-only identity and repeatable-read snapshot;
-   compare all 27 counts/hashes, constraints, forced RLS, sequence **next-value
+   compare all 27 counts/hashes, constraints, forced RLS, repeat the
+   anon/authenticated/PUBLIC exposure gate, sequence **next-value
    semantics** and PostgreSQL database bytes. A checkpoint code SHA must equal
    execution SHA by default. After a compatible code fix, explicitly supply the
    original `checkpoint_code_sha`; the workflow verifies that it is an ancestor
@@ -111,8 +112,10 @@ rows. Provision target identities through an authorized private administrative
 session; never run migration data transfer as `postgres`.
 
 Synthetic PostgreSQL verification proves rollback of inserted rows **and**
-transactional sequence restart, precision, FK/key preservation and negative
-helper/DELETE probes. An empty affected target with unchanged schema plus this
+transactional sequence restart, parity/role DDL rollback, precision, FK/key
+preservation and negative helper/DELETE/post-import-PUBLIC-grant probes. Metadata
+checkpoints include exact table ACLs and RLS policies for before-state comparison.
+An empty affected target with unchanged schema plus this
 transaction boundary is the rollback position; an arbitrary full-database
 snapshot is not required by this data-only implementation. There is no automatic
 remote rollback/import replay. On failure verify actual committed state first.

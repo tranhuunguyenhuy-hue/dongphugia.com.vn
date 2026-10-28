@@ -210,8 +210,12 @@ export async function metadata(client, schema) {
       where a.attrelid=$1::regclass and a.attnum>0 and not a.attisdropped order by a.attnum`, [relation])
     const { rows: constraints } = await client.query(`select pg_get_constraintdef(oid) as definition
       from pg_constraint where conrelid=$1::regclass order by contype,pg_get_constraintdef(oid)`, [relation])
-    const { rows: [security] } = await client.query(`select relrowsecurity as rls, relforcerowsecurity as "forceRls"
-      from pg_class where oid=$1::regclass`, [relation])
+    const { rows: [security] } = await client.query(`select c.relrowsecurity as rls, c.relforcerowsecurity as "forceRls",
+      c.relacl::text as acl, (select coalesce(json_agg(json_build_object('name',p.polname,
+        'roles',p.polroles::text,'command',p.polcmd,'permissive',p.polpermissive,
+        'using',pg_get_expr(p.polqual,p.polrelid),'check',pg_get_expr(p.polwithcheck,p.polrelid))
+        order by p.polname),'[]'::json) from pg_policy p where p.polrelid=c.oid) as policies
+      from pg_class c where c.oid=$1::regclass`, [relation])
     const { rows: triggers } = await client.query(`select t.tgname as name,t.tgtype::integer as type,
       t.tgenabled as enabled,n.nspname as schema,p.proname as function,p.prosrc as body,
       p.prosecdef as definer,p.proconfig as config,l.lanname as language from pg_trigger t
@@ -330,13 +334,17 @@ async function* sourceLines(path) {
   finally { lines.close(); input.destroy() }
 }
 
-async function targetSnapshot(client, schema) {
+export async function assertTargetPrivate(client) {
   const { rows: [exposure] } = await client.query(`select exists(select 1 from pg_class c
     join pg_namespace n on n.oid=c.relnamespace where n.nspname='dpg_app' and c.relname=any($1::text[])
     and (exists(select 1 from pg_roles r where r.rolname in ('anon','authenticated')
       and has_table_privilege(r.oid,c.oid,'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER'))
     or exists(select 1 from aclexplode(coalesce(c.relacl,acldefault('r',c.relowner))) a where a.grantee=0))) as unsafe`, [CATALOGUE_TABLES])
   requireGate(!exposure.unsafe, 'TARGET_PUBLIC_EXPOSURE')
+}
+
+async function targetSnapshot(client, schema) {
+  await assertTargetPrivate(client)
   const { rows: [size] } = await client.query('select pg_database_size(current_database())::text as bytes')
   requireGate(BigInt(size.bytes) < BigInt(DATABASE_CEILING), 'DATABASE_CAPACITY')
   const tables = []
@@ -464,6 +472,7 @@ async function main() {
     phase = 'M3_independent_read'
     const reader = await connect('read')
     await reader.query('begin isolation level repeatable read read only')
+    await assertTargetPrivate(reader)
     const targetSchema = await metadata(reader, 'dpg_app')
     assertSchema(source.header.schema, targetSchema)
     const verified = await verifyData(reader, source, targetSchema, true)
