@@ -55,6 +55,7 @@ jobs:
       - name: Generate and seal, or verify stored key with a public probe
         env:
           KEY_MODE: ${{ inputs.mode }}
+          KEY_ALREADY_PRESENT: ${{ secrets.DIRECT_CHECKPOINT_AGE_IDENTITY != '' }}
           APPROVED_SHA: ${{ inputs.approved_sha }}
           ENV_PUBLIC_KEY: ${{ inputs.environment_public_key }}
           ENV_KEY_ID: ${{ inputs.environment_key_id }}

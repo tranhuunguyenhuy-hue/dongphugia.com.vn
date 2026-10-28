@@ -25,6 +25,7 @@ def main():
         identity = root / "identity"
         mode = os.environ["KEY_MODE"]
         if mode == "generate":
+            assert os.environ.get("KEY_ALREADY_PRESENT") == "false"
             command(["age-keygen", "-o", str(identity)])
         else:
             assert mode == "verify"
