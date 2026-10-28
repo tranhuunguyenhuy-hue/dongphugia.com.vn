@@ -15,6 +15,16 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  images: {
+    unoptimized: true,
+    remotePatterns: [
+      { protocol: 'https', hostname: 'cdn.dongphugia.com.vn' },
+      { protocol: 'https', hostname: 'cdn.hita.com.vn' },
+      { protocol: 'https', hostname: 'hita.com.vn' },
+      { protocol: 'https', hostname: 'vietceramics.com' },
+      { protocol: 'https', hostname: 'tygjmrhandbffjllxveu.supabase.co', pathname: '/storage/v1/object/public/**' },
+    ],
+  },
   async generateBuildId() {
     return process.env.BUILD_SOURCE_SHA?.trim() || 'local-public-foundation'
   },

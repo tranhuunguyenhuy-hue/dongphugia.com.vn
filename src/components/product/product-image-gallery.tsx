@@ -67,7 +67,7 @@ export function ProductImageGallery({
         return () => window.removeEventListener('product-variant-preview', handlePreview);
     }, []);
 
-    const activeImage = displayImages[activeIndex] ?? null;
+    const activeImage = erroredIndices.has(activeIndex) ? null : (displayImages[activeIndex] ?? null);
 
     const handleImageError = (idx: number) => {
         setErroredIndices(prev => new Set(prev).add(idx));

@@ -2,14 +2,16 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound, permanentRedirect } from 'next/navigation'
 
+import { siteConfig, siteLinks } from '@/config/site'
 import { ProductImageGallery } from '@/components/product/product-image-gallery'
 import {
   PUBLIC_CATALOGUE_FIXTURE_NOTICE,
   getPreviewCatalogueProduct,
 } from '@dpg/public-catalogue-runtime'
-import { resolvePublicCatalogueRoute } from '../../../../src/routes'
+import { resolvePublicCatalogueRoute } from '@dpg/public-catalogue-runtime'
 
 export const runtime = 'edge'
+export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
@@ -21,11 +23,11 @@ type PageProps = {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { categorySlug, subcategorySlug, productSlug } = await params
-  const product = getPreviewCatalogueProduct(categorySlug, subcategorySlug, productSlug)
+  const product = await getPreviewCatalogueProduct(categorySlug, subcategorySlug, productSlug)
   if (!product) return { title: 'Không tìm thấy sản phẩm', robots: { index: false } }
 
   return {
-    title: `${product.name} | Đông Phú Gia Preview`,
+    title: `${product.name}`,
     description: PUBLIC_CATALOGUE_FIXTURE_NOTICE,
     robots: { index: false, follow: false },
   }
@@ -33,9 +35,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function PublicProductPage({ params }: PageProps) {
   const { categorySlug, subcategorySlug, productSlug } = await params
-  const route = resolvePublicCatalogueRoute([categorySlug, subcategorySlug, productSlug])
+  const route = await resolvePublicCatalogueRoute([categorySlug, subcategorySlug, productSlug])
   if (route.kind === 'redirect') permanentRedirect(route.destination)
-  const product = getPreviewCatalogueProduct(categorySlug, subcategorySlug, productSlug)
+  const product = await getPreviewCatalogueProduct(categorySlug, subcategorySlug, productSlug)
   if (!product) notFound()
 
   return (
@@ -57,12 +59,15 @@ export default async function PublicProductPage({ params }: PageProps) {
             {product.brand.name}
           </p>
           <h1 className="text-3xl font-bold text-stone-900">{product.name}</h1>
-          <p className="text-sm text-stone-500">Mã fixture: {product.sku}</p>
+          <p className="text-sm text-stone-500">Mã sản phẩm: {product.sku}</p>
           <p className="text-xl font-semibold text-brand-800">Liên hệ</p>
           <p className="text-sm leading-6 text-stone-600">
-            Trang chi tiết chỉ dùng để kiểm thử điều hướng và giao diện. Thông tin thuộc tính,
-            giá và khả năng cung ứng sẽ lấy từ nguồn catalogue được phê duyệt sau khi khôi phục dữ liệu.
+            Catalogue khôi phục ở chế độ chỉ đọc. Vui lòng liên hệ để xác nhận giá và khả năng cung ứng hiện tại.
           </p>
+          <div className="flex flex-wrap gap-3">
+            <a className="rounded-xl bg-brand-700 px-5 py-3 font-semibold text-white" href={`tel:${siteConfig.contact.hotline}`}>Gọi tư vấn</a>
+            <a className="rounded-xl border border-brand-700 px-5 py-3 font-semibold text-brand-700" href={siteLinks.zalo} rel="noopener noreferrer" target="_blank">Nhận báo giá qua Zalo</a>
+          </div>
         </div>
       </section>
     </main>
