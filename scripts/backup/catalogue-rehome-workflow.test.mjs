@@ -114,6 +114,7 @@ describe('Supabase runtime catalogue re-home workflow', () => {
     expect(restore).toContain("\\i '$validation_sql'")
     expect(restore).toContain('commit;')
     expect(restore).toContain('SUPABASE_REHOME_DATABASE_URL')
+    expect(restore).toContain('SUPABASE_RUNTIME_TARGET_PURPOSE=snapshot')
     expect(restore).not.toMatch(/SUPABASE_RUNTIME_DATABASE_URL|production/i)
 
     expect(preflight).toContain("project_name = 'dongphugia-runtime'")
@@ -132,7 +133,7 @@ describe('Supabase runtime catalogue re-home workflow', () => {
     expect(preflight).toContain('auth.users')
     expect(preflight).toContain('storage.objects')
     expect(preflight).toContain('CATALOGUE_REHOME_TARGET_NOT_EMPTY table=%')
-    expect(preflight).toContain('assert_free_tier_headroom')
+    expect(preflight).toContain('pg_database_size(current_database()) + 114691219')
     expect(preflight).not.toMatch(/truncate|delete\s+from|drop\s+table/i)
   })
 })

@@ -220,7 +220,6 @@ begin
   ${checks}
 end
 $catalogue_restore_validation$;
-select dpg_control.assert_free_tier_headroom(0);
 -- excludedRows are validated dynamically and never populated with row data.
 `
 }

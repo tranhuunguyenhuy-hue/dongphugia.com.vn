@@ -352,12 +352,8 @@ $catalogue_rehome_preflight$;
 
 do $catalogue_rehome_headroom$
 begin
-  if current_user = 'dpg_catalogue_restore' then
-    if pg_database_size(current_database()) + 114691219 >= 367001600 then
-      raise exception 'CATALOGUE_REHOME_DATABASE_HEADROOM_FAILED';
-    end if;
-  else
-    perform dpg_control.assert_free_tier_headroom(114691219);
+  if pg_database_size(current_database()) + 114691219 >= 367001600 then
+    raise exception 'CATALOGUE_REHOME_DATABASE_HEADROOM_FAILED';
   end if;
 end
 $catalogue_rehome_headroom$;

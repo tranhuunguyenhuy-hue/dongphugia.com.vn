@@ -54,12 +54,25 @@ describe('Supabase runtime migration runner contract', () => {
           session_user: 'dpg_migration_login',
           current_user: 'dpg_migration',
           can_set_migration_role: true,
+          exact_membership_contract: true,
           login_role_minimal: true,
           capability_role_minimal: true,
         }] }
       },
     }
     await expect(assertMigrationIdentity(client)).resolves.toBeUndefined()
+    await expect(assertMigrationIdentity({
+      async query() {
+        return { rows: [{
+          session_user: 'dpg_migration_login',
+          current_user: 'dpg_migration',
+          can_set_migration_role: true,
+          exact_membership_contract: false,
+          login_role_minimal: true,
+          capability_role_minimal: true,
+        }] }
+      },
+    })).rejects.toThrow('migration_identity_contract_failed')
     await expect(assertMigrationIdentity({
       async query() { return { rows: [{ session_user: 'postgres', current_user: 'postgres' }] } },
     })).rejects.toThrow('migration_identity_contract_failed')

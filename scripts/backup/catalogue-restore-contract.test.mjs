@@ -181,6 +181,7 @@ describe('catalogue-only restore contract', () => {
     }
     expect(validationSql).toContain('CATALOGUE_MANIFEST_MISMATCH table=products')
     expect(validationSql).toContain('CATALOGUE_EXCLUDED_ROWS table=%')
+    expect(validationSql).not.toContain('dpg_control.assert_free_tier_headroom')
   })
 
   it('checks every noncatalogue target schema, seeds, sequences and large objects', () => {

@@ -34,6 +34,10 @@ fi
 for command in age age-keygen docker findmnt jq node sha256sum; do
   command -v "$command" >/dev/null 2>&1 || fail "missing_${command}"
 done
+if ! printf 'select 1;\n' | node scripts/backup/supabase-runtime-psql.mjs --tuples-only \
+     >/dev/null 2>/dev/null; then
+  fail snapshot_identity_invalid
+fi
 
 postgres_image="${POSTGRES_IMAGE:-postgres:17.6-bookworm@sha256:f3bd19c606e442c3d7bdfa8002e03fe260a1023351e0ea4598032022b68dd6e3}"
 if [[ "$postgres_image" != 'postgres:17.6-bookworm@sha256:f3bd19c606e442c3d7bdfa8002e03fe260a1023351e0ea4598032022b68dd6e3' ]]; then

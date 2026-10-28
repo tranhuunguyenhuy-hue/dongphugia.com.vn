@@ -4,9 +4,9 @@ const SESSION_POOLER_HOST = 'aws-0-ap-southeast-1.pooler.supabase.com'
 const TARGET_PURPOSES = {
   snapshot: {
     environmentName: 'SUPABASE_REHOME_DATABASE_URL',
-    loginRole: 'postgres',
-    setRole: undefined,
-    options: '-c default_transaction_read_only=on',
+    loginRole: 'dpg_snapshot_login',
+    setRole: 'dpg_snapshot_readonly',
+    options: '-c role=dpg_snapshot_readonly -c default_transaction_read_only=on',
   },
   migration: {
     environmentName: 'SUPABASE_REHOME_MIGRATION_DATABASE_URL',

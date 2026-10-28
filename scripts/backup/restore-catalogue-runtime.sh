@@ -528,6 +528,7 @@ if [[ "$MODE" == 'rehearsal' ]]; then
 fi
 
 : "${SUPABASE_REHOME_CATALOGUE_DATABASE_URL:?SUPABASE_REHOME_CATALOGUE_DATABASE_URL is required}"
+: "${SUPABASE_REHOME_DATABASE_URL:?SUPABASE_REHOME_DATABASE_URL is required for post-restore verification}"
 : "${EXPECTED_CATALOGUE_MANIFEST:?EXPECTED_CATALOGUE_MANIFEST is required}"
 command -v psql >/dev/null 2>&1 || {
   echo 'CATALOGUE_REHOME status=FAIL stage=apply reason=missing_psql'
@@ -582,7 +583,7 @@ if ! SUPABASE_RUNTIME_TARGET_PURPOSE="$target_purpose" \
   >/dev/null 2>"$tmp_dir/sensitive.error"; then
   sensitive_failure remote_apply
 fi
-if ! node "$contract" snapshot-sql | SUPABASE_RUNTIME_TARGET_PURPOSE="$target_purpose" \
+if ! node "$contract" snapshot-sql | SUPABASE_RUNTIME_TARGET_PURPOSE=snapshot \
   SUPABASE_PSQL_TMPDIR="$tmp_dir" \
   node "$psql_wrapper" --tuples-only >"$output_dir/catalogue-actual.json" \
   2>"$tmp_dir/sensitive.error"; then

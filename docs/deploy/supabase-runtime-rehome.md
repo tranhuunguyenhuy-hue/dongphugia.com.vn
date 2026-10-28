@@ -44,9 +44,10 @@ strictly below 350 MiB; equality is a hard stop. A size or contract failure
 rolls back the active migration transaction and does not start the next one.
 
 Checkpoint entries 1–7 are adopted together only after the full checkpoint
-attestation. Pending entries 8–23 each commit in their own serializable
-transaction. If entry N fails, only N rolls back: the exact committed prefix
-and its ledger checksums remain. The runner does not automatically reset the
+attestation. All pending canonical migrations then run as one serializable
+transaction, with each ledger row inserted in that same transaction. If any
+pending migration fails, the entire pending suffix rolls back; no migration in
+that suffix remains committed. The runner does not automatically reset the
 database, edit the ledger, or run down-migrations.
 
 On a failed migration, stop the workflow and preserve its run ID, exact source

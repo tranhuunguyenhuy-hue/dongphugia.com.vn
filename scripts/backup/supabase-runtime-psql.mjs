@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process'
-import { chmod, mkdtemp, rm, statfs, writeFile } from 'node:fs/promises'
+import { chmod, mkdtemp, readFile, rm, statfs, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
 import { resolveSupabaseRuntimeTarget } from './supabase-runtime-target.mjs'
@@ -45,6 +45,15 @@ async function main() {
     ].join(':') + '\n', { mode: 0o600 })
     await chmod(pgpass, 0o600)
     await writeFile(rootCertificatePath, rootCertificate, { mode: 0o600 })
+    let snapshotIdentityPath
+    if (purpose === 'snapshot') {
+      snapshotIdentityPath = path.join(tmpDirectory, 'snapshot-identity.sql')
+      await writeFile(
+        snapshotIdentityPath,
+        await readFile(new URL('./supabase-runtime-snapshot-identity.sql', import.meta.url)),
+        { mode: 0o400 },
+      )
+    }
 
     const childEnvironment = Object.fromEntries(Object.entries(process.env).filter(([name]) => (
       !name.startsWith('SUPABASE_REHOME_') && !name.startsWith('PG')
@@ -62,8 +71,9 @@ async function main() {
     })
 
     const psqlArgs = ['-X', '-q', '-v', 'ON_ERROR_STOP=1']
+    if (snapshotIdentityPath) psqlArgs.push('--file', snapshotIdentityPath)
     if (fileMode) psqlArgs.push('--file', args[1])
-    if (stdinMode) psqlArgs.push('-A', '-t')
+    if (stdinMode) psqlArgs.push('-A', '-t', '--file', '-')
 
     const exitCode = await new Promise((resolve, reject) => {
       const child = spawn('psql', psqlArgs, { env: childEnvironment, stdio: 'inherit' })

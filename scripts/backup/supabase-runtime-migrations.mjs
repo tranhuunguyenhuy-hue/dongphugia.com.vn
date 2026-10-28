@@ -369,6 +369,28 @@ export async function assertMigrationIdentity(client) {
       session_user::text as session_user,
       current_user::text as current_user,
       pg_has_role(session_user, 'dpg_migration'::name, 'SET') as can_set_migration_role,
+      (
+        (select count(*) from pg_auth_members
+         where member = (select oid from pg_roles where rolname = 'dpg_migration_login')) = 1
+        and exists (
+          select 1 from pg_auth_members m
+          join pg_roles capability on capability.oid = m.roleid
+          join pg_roles login on login.oid = m.member
+          where capability.rolname = 'dpg_migration'
+            and login.rolname = 'dpg_migration_login'
+            and not m.admin_option and not m.inherit_option and m.set_option
+        )
+        and not exists (
+          select 1 from pg_auth_members m
+          join pg_roles granted on granted.oid = m.roleid
+          join pg_roles member_role on member_role.oid = m.member
+          where (granted.rolname in ('dpg_migration', 'dpg_migration_login')
+                 or member_role.rolname in ('dpg_migration', 'dpg_migration_login'))
+            and not (granted.rolname = 'dpg_migration'
+              and member_role.rolname = 'dpg_migration_login'
+              and not m.admin_option and not m.inherit_option and m.set_option)
+        )
+      ) as exact_membership_contract,
       exists (
         select 1 from pg_roles
         where rolname = 'dpg_migration_login'
@@ -386,6 +408,7 @@ export async function assertMigrationIdentity(client) {
   if (!row || row.session_user !== 'dpg_migration_login'
     || row.current_user !== 'dpg_migration'
     || row.can_set_migration_role !== true
+    || row.exact_membership_contract !== true
     || row.login_role_minimal !== true
     || row.capability_role_minimal !== true) {
     fail('migration_identity_contract_failed')
