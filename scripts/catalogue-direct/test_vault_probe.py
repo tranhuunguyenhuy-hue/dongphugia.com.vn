@@ -54,7 +54,7 @@ class VaultProbeTests(unittest.TestCase):
     def test_http_error_sanitized(self):
         with self.assertRaises(ns['VaultGate']) as caught:
             self.check(failure=True)
-        self.assertEqual(str(caught.exception),'VAULT_HTTP_403')
+        self.assertEqual(str(caught.exception),'VAULT_METADATA_HTTP_403')
 
 if __name__=='__main__':
     unittest.main()

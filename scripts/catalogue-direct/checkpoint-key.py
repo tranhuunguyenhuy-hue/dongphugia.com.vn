@@ -34,7 +34,9 @@ def check_vault(encrypted):
                     raise VaultGate("VAULT_CLASSIC_OAUTH_SCOPES_REJECTED")
                 return json.load(response)
         except urllib.error.HTTPError as error:
-            raise VaultGate("VAULT_HTTP_" + str(error.code)) from None
+            stage = ("CONTENTS_WRITE" if method == "POST" else "CONTENTS_READ" if "/git/blobs/" in path
+                     else "PRIVATE_SCOPE_LIST" if path.startswith("user/repos?") else "METADATA")
+            raise VaultGate("VAULT_" + stage + "_HTTP_" + str(error.code)) from None
     metadata = api("repos/" + repo)
     if not metadata.get("private") or metadata.get("owner", {}).get("login") != "tranhuunguyenhuy-hue":
         raise VaultGate("VAULT_OWNER_OR_PRIVACY_MISMATCH")
