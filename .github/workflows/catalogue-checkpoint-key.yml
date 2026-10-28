@@ -4,7 +4,7 @@ on:
     inputs:
       mode:
         type: choice
-        options: [generate, verify]
+        options: [generate, verify, vault-check]
         required: true
       approved_sha:
         type: string
@@ -60,7 +60,9 @@ jobs:
           ENV_PUBLIC_KEY: ${{ inputs.environment_public_key }}
           ENV_KEY_ID: ${{ inputs.environment_key_id }}
           EXPECTED_RECIPIENT: ${{ inputs.expected_recipient }}
-          DIRECT_CHECKPOINT_AGE_IDENTITY: ${{ inputs.mode == 'verify' && secrets.DIRECT_CHECKPOINT_AGE_IDENTITY || '' }}
+          DIRECT_CHECKPOINT_AGE_IDENTITY: ${{ inputs.mode != 'generate' && secrets.DIRECT_CHECKPOINT_AGE_IDENTITY || '' }}
+          DIRECT_VAULT_REPOSITORY: ${{ inputs.mode == 'vault-check' && secrets.DIRECT_VAULT_REPOSITORY || '' }}
+          DIRECT_VAULT_TOKEN: ${{ inputs.mode == 'vault-check' && secrets.DIRECT_VAULT_TOKEN || '' }}
           SEALED_OUTPUT: ${{ runner.temp }}/direct-checkpoint-key.sealed.json
         run: |
           set -euo pipefail
