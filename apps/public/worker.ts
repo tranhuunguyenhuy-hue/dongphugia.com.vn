@@ -1,4 +1,5 @@
 import vinextHandler from 'vinext/server/fetch-handler'
+import { publicSnapshotCheckpoint } from './src/runtime/public-snapshot-mode'
 
 import {
   assertPreviewRuntime,
@@ -46,8 +47,24 @@ export default {
       })
     }
 
+    const pathname = new URL(request.url).pathname
+    const catalogueRequest = pathname === '/' || ['thiet-bi-ve-sinh','thiet-bi-bep','vat-lieu-nuoc','gach-op-lat'].some(root => pathname === `/${root}` || pathname.startsWith(`/${root}/`))
+    if (publicSnapshotCheckpoint() && catalogueRequest) {
+      const assets = environment.ASSETS as { fetch?: (url: string) => Promise<Response> } | undefined
+      let ready = false
+      try {
+        const response = await assets?.fetch?.('https://catalogue-assets.invalid/__catalogue/v1/manifest.json')
+        if (response?.ok) {
+          const manifest = await response.json() as { contract?: string; checkpoint?: string }
+          ready = manifest.contract === 'dpg:public-catalogue-snapshot:v1' && manifest.checkpoint === publicSnapshotCheckpoint()
+        }
+      } catch { /* No raw asset/error response is disclosed. */ }
+      if (!ready) return new Response('Catalogue temporarily unavailable.', {status:503,headers:{
+        'Cache-Control':PRIVATE_CACHE_CONTROL,'X-Robots-Tag':PUBLIC_PREVIEW_ROBOTS_HEADER,...sourceIdentityHeader,
+      }})
+    }
     const cacheCandidate = isAnonymousCacheCandidate(request)
-    const cacheKey = cacheCandidate ? createCacheKey(request, __DPG_BUILD_SOURCE_SHA__) : null
+    const cacheKey = cacheCandidate ? createCacheKey(request, __DPG_BUILD_SOURCE_SHA__, publicSnapshotCheckpoint()) : null
     const workerCache = cacheKey ? await caches.open('dongphugia-public-v1') : null
 
     if (cacheKey && workerCache) {

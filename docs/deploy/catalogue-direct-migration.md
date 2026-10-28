@@ -252,3 +252,24 @@ After the three purpose-specific secrets pass authentication and permission
 checks, use the unchanged M1 export entrypoint. Preserve all setup and data
 checkpoint refs. Remove only task-created temporary administrative slots when
 setup/recovery no longer needs them; never change original credentials.
+
+## FAST Public-only M4 candidate
+
+Owner FAST direction6470305678 authorizes the manual
+`catalogue-public-preview.yml` path after real M3 PASS. It builds the existing
+canonical Public adapter with the public M1 checkpoint identity, then gives only
+the restricted target reader to the separate public DTO projection step. No
+historic prices, raw HTML, provenance or private blobs enter Worker assets.
+Pricing/availability use contact-only wording. No database credentials enter the
+Worker. M3 run/checkpoint identity and code ancestry are checked before data use.
+
+The existing assembler retains/hashes the Public-only candidate before any
+provider write; Admin is deferred. Publication uses only an existing isolated
+Worker version Preview, with Free-plan/capacity/isolation checks and retained
+managed-state evidence. No bootstrap, active deployment replacement, custom
+domain or DNS mutation is allowed. HTTP and browser acceptance must prove the
+exact real snapshot; synthetic fixture health cannot satisfy M4.
+
+A same-SHA retained artifact may resume only if its producer finished and no
+upload step started. Any attempted upload with unknown outcome requires read-only
+provider inspection; never upload again blindly. Production/DNS remains HOLD.

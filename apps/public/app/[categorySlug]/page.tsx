@@ -6,9 +6,10 @@ import {
   PUBLIC_CATALOGUE_FIXTURE_NOTICE,
   getPreviewCatalogueListings,
 } from '@dpg/public-catalogue-runtime'
-import { resolvePublicCatalogueRoute } from '../../src/routes'
+import { resolvePublicCatalogueRoute } from '@dpg/public-catalogue-runtime'
 
 export const runtime = 'edge'
+export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
@@ -18,21 +19,21 @@ type PageProps = { params: Promise<{ categorySlug: string }> }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { categorySlug } = await params
-  const route = resolvePublicCatalogueRoute([categorySlug])
+  const route = await resolvePublicCatalogueRoute([categorySlug])
   if (route.kind !== 'category') return { title: 'Không tìm thấy danh mục', robots: { index: false } }
 
   return {
-    title: `${route.category.name} | Đông Phú Gia Preview`,
+    title: `${route.category.name}`,
     robots: { index: false, follow: false },
   }
 }
 
 export default async function PublicCategoryPage({ params }: PageProps) {
   const { categorySlug } = await params
-  const route = resolvePublicCatalogueRoute([categorySlug])
+  const route = await resolvePublicCatalogueRoute([categorySlug])
   if (route.kind !== 'category') notFound()
 
-  const listings = getPreviewCatalogueListings(route.category.slug)
+  const listings = await getPreviewCatalogueListings(route.category.slug)
 
   return (
     <main className="mx-auto max-w-6xl space-y-8 px-5 py-10">

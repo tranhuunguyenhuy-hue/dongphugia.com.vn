@@ -7,9 +7,10 @@ import {
   PUBLIC_CATALOGUE_FIXTURE_NOTICE,
   getPreviewCatalogueProducts,
 } from '@dpg/public-catalogue-runtime'
-import { resolvePublicCatalogueRoute } from '../../../src/routes'
+import { resolvePublicCatalogueRoute } from '@dpg/public-catalogue-runtime'
 
 export const runtime = 'edge'
+export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
@@ -17,26 +18,34 @@ export const metadata: Metadata = {
 
 type PageProps = {
   params: Promise<{ categorySlug: string; subcategorySlug: string }>
+  searchParams: Promise<{ page?: string }>
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { categorySlug, subcategorySlug } = await params
-  const route = resolvePublicCatalogueRoute([categorySlug, subcategorySlug])
+  const route = await resolvePublicCatalogueRoute([categorySlug, subcategorySlug])
   if (route.kind !== 'listing') return { title: 'Không tìm thấy danh mục', robots: { index: false } }
 
   return {
-    title: `${route.listing.name} | ${route.category.name} | Đông Phú Gia Preview`,
+    title: `${route.listing.name} | ${route.category.name}`,
     robots: { index: false, follow: false },
   }
 }
 
-export default async function PublicListingPage({ params }: PageProps) {
+export default async function PublicListingPage({ params, searchParams }: PageProps) {
   const { categorySlug, subcategorySlug } = await params
-  const route = resolvePublicCatalogueRoute([categorySlug, subcategorySlug])
+  const route = await resolvePublicCatalogueRoute([categorySlug, subcategorySlug])
   if (route.kind === 'redirect') permanentRedirect(route.destination)
   if (route.kind !== 'listing') notFound()
 
-  const products = getPreviewCatalogueProducts(route.category.slug, route.listing.slug)
+  const query = await searchParams
+  const page = query.page && /^[1-9][0-9]*$/.test(query.page) ? Number(query.page) : 1
+  if (!Number.isSafeInteger(page)) notFound()
+  const products = await getPreviewCatalogueProducts(route.category.slug, route.listing.slug, page)
+  if (page > 1 && products.length === 0) notFound()
+  const total = 'totalCount' in route.listing ? Number(route.listing.totalCount) : products.length
+  const lastPage = Math.max(1, Math.ceil(total / 48))
+  const listingPath = `/${route.category.slug}/${route.listing.slug}`
 
   return (
     <main className="mx-auto max-w-6xl space-y-8 px-5 py-10">
@@ -56,6 +65,11 @@ export default async function PublicListingPage({ params }: PageProps) {
           </li>
         ))}
       </ul>
+      {lastPage > 1 ? <nav aria-label="Phân trang sản phẩm" className="flex items-center justify-center gap-6">
+        {page > 1 ? <Link href={`${listingPath}?page=${page - 1}`} rel="prev">← Trang trước</Link> : null}
+        <span>Trang {page} / {lastPage}</span>
+        {page < lastPage ? <Link href={`${listingPath}?page=${page + 1}`} rel="next">Trang sau →</Link> : null}
+      </nav> : null}
     </main>
   )
 }

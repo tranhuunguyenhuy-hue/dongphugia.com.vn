@@ -84,12 +84,16 @@ export function isForbiddenInternalControlRequest(request: Request) {
   )
 }
 
-export function createCacheKey(request: Request, sourceCommit: string) {
+export function createCacheKey(request: Request, sourceCommit: string, catalogueCheckpoint: string | null = null) {
   if (!/^[0-9a-f]{40}$/.test(sourceCommit)) throw new Error('PUBLIC_WORKER_CACHE_SOURCE_INVALID')
   const url = new URL(request.url)
   url.search = ''
   url.hash = ''
   url.searchParams.set('__dpg_source', sourceCommit)
+  if (catalogueCheckpoint) {
+    if (!/^[0-9a-f]{40}$/.test(catalogueCheckpoint)) throw new Error('PUBLIC_CATALOGUE_CHECKPOINT_INVALID')
+    url.searchParams.set('__dpg_catalogue', catalogueCheckpoint)
+  }
   return new Request(url.toString(), { method: 'GET' })
 }
 

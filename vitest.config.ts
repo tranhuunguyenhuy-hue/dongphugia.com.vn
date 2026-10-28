@@ -9,6 +9,7 @@ export default defineConfig({
         globals: true,
         setupFiles: ['./vitest.setup.ts'],
         alias: {
+            'cloudflare:workers': path.resolve(__dirname, './tests/helpers/cloudflare-workers-stub.ts'),
             '@': path.resolve(__dirname, './src'),
             '@dpg/app-contracts': path.resolve(
                 __dirname,

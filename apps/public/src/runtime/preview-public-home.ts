@@ -15,10 +15,10 @@ export async function getPublicHomeBanners(): Promise<PublicHomePageData['banner
 }
 
 export async function getPublicHomeContent(): Promise<PublicHomeContent> {
-  const categories: readonly PublicHomeCategory[] = getPreviewCatalogueCategories().map((category) => {
+  const categories: readonly PublicHomeCategory[] = await Promise.all((await getPreviewCatalogueCategories()).map(async (category) => {
     const listing = category.listings[0]
     const products = listing
-      ? getPreviewCatalogueProducts(category.slug, listing.slug)
+      ? (await getPreviewCatalogueProducts(category.slug, listing.slug)).slice(0, 8)
       : []
     const availableBrands = products.reduce<Array<{ name: string; slug: string }>>((brands, product) => {
       const brand = product.brands as { name: string; slug: string } | undefined
@@ -31,11 +31,11 @@ export async function getPublicHomeContent(): Promise<PublicHomeContent> {
       label: category.name,
       basePath: `/${category.slug}`,
       products,
-      totalCount: products.length,
+      totalCount: 'totalCount' in category ? Number(category.totalCount) : products.length,
       availableBrands,
       availableSubcategories: category.listings.map(({ name, slug }) => ({ name, slug })),
     }
-  })
+  }))
 
   return {
     categories,
