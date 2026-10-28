@@ -3,10 +3,31 @@ import pg from 'pg'
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { CATALOGUE_TABLES, CATALOGUE_RESTORE_ORDER, insertSql, rowsSql, provisioningSql, assertSchema } from './contract.mjs'
-import { metadata, assertTargetPrivate } from './run.mjs'
+import { metadata, assertTargetPrivate, attestRole } from './run.mjs'
+import { RLS_EVENT_BODY } from './platform-boundary.mjs'
+import { setupState, assertBeforeSetup } from './setup-state.mjs'
 
 const url = process.env.POSTGRES_SNAPSHOT_INTEGRATION_URL
 describe.skipIf(!url)('direct data-only mapping on isolated PostgreSQL', () => {
+  it('allows the PG17 non-superuser creator to attest a new role without retaining SET authority',async()=>{
+    const base=new URL(url)
+    expect(['127.0.0.1','localhost','[::1]']).toContain(base.hostname)
+    const client=new pg.Client({connectionString:url});await client.connect()
+    const creator=`direct_creator_${process.pid}`,proof=`direct_proof_${process.pid}`
+    try {
+      await client.query(`create role ${creator} nologin nosuperuser createrole bypassrls`)
+      await client.query(`set session authorization ${creator};begin;set local createrole_self_grant='set'`)
+      await client.query(`create role ${proof} nologin nosuperuser nocreaterole noinherit bypassrls`)
+      await client.query(`set local role ${proof}`)
+      expect((await client.query('select current_user as name')).rows[0].name).toBe(proof)
+      await client.query(`reset role;grant ${proof} to ${creator} with set false;commit`)
+      expect((await client.query('select pg_has_role($1,$2,\'SET\') as allowed',[creator,proof])).rows[0].allowed).toBe(false)
+    } finally {
+      await client.query('rollback;reset session authorization')
+      await client.query(`drop role if exists ${proof};drop role if exists ${creator}`)
+      await client.end()
+    }
+  })
   it('preserves all 27 table hashes, precision, FK/keys and rolls back rows AND sequence restart', async () => {
     const base = new URL(url)
     // This fixture must never connect to either approved remote database or any arbitrary host.
@@ -63,6 +84,37 @@ describe.skipIf(!url)('direct data-only mapping on isolated PostgreSQL', () => {
       await client.query('rollback')
       expect((await client.query("select to_regrole('dpg_direct_import') as role")).rows[0].role).toBeNull()
       await client.query(provisioningSql('import')); createdRole = true
+      const beforeSetup=await setupState(client,'dpg_app')
+      expect(beforeSetup.tables).toHaveLength(27)
+      expect(beforeSetup.sequence_state).toHaveLength(27)
+      assertBeforeSetup(beforeSetup,await setupState(client,'dpg_app'))
+      const drift=structuredClone(beforeSetup); drift.tables[0].owner='different_owner'
+      expect(()=>assertBeforeSetup(beforeSetup,drift)).toThrow('SETUP_BEFORE_STATE_CHANGED')
+      await client.query('create policy fixture_restrictive on dpg_app.brands as restrictive using(true)')
+      await expect(setupState(client,'dpg_app')).rejects.toThrow('SETUP_POLICY_SEMANTICS')
+      await client.query('drop policy fixture_restrictive on dpg_app.brands')
+      await client.query(`create function dpg_app.fixture_guard() returns trigger language plpgsql as 'begin return null; end';
+        create trigger leo538_free_tier_headroom after insert or update on dpg_app.brands
+        for each statement execute function dpg_app.fixture_guard();
+        alter table dpg_app.brands disable trigger leo538_free_tier_headroom`)
+      await expect(setupState(client,'dpg_app')).rejects.toThrow('SETUP_TRIGGER_SEMANTICS')
+      await client.query('drop trigger leo538_free_tier_headroom on dpg_app.brands; drop function dpg_app.fixture_guard()')
+      // Only extension-owned platform views and the exact non-callable event
+      // trigger are exempt. Arbitrary views/SECURITY DEFINER routines still fail.
+      await client.query('create schema extensions; create extension pg_stat_statements with schema extensions')
+      await client.query(`create function public.rls_auto_enable() returns event_trigger language plpgsql
+        security definer set search_path=pg_catalog as $event$${RLS_EVENT_BODY}$event$`)
+      await client.query('set role dpg_direct_import')
+      await attestRole(client,'import')
+      await client.query('reset role')
+      await client.query("create function public.unrelated_definer() returns integer language sql security definer as 'select 1'")
+      await client.query('set role dpg_direct_import')
+      await expect(attestRole(client,'import')).rejects.toThrow('ROLE_AUTHORITY_BOUNDARY')
+      await client.query('reset role; drop function public.unrelated_definer(); drop extension pg_stat_statements')
+      await client.query('create view extensions.pg_stat_statements as select 1 as harmless; grant select on extensions.pg_stat_statements to public')
+      await client.query('set role dpg_direct_import')
+      await expect(attestRole(client,'import')).rejects.toThrow('ROLE_TABLE_BOUNDARY')
+      await client.query('reset role; drop view extensions.pg_stat_statements')
       expect((await client.query("select has_function_privilege($1,'dpg_app.direct_catalogue_restart(text,text,bigint)','EXECUTE') as allowed", [guest])).rows[0].allowed).toBe(false)
       const source = new Map()
       const columns = new Map((await metadata(client, 'public')).map((t) => [t.name, t.columns.map((c) => c.name)]))

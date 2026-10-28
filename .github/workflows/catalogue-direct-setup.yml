@@ -1,0 +1,87 @@
+name: Direct catalogue restricted connection setup
+on:
+  workflow_dispatch:
+    inputs:
+      purpose:
+        type: choice
+        options: [source, target]
+        required: true
+      approved_sha:
+        type: string
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: catalogue-direct-migration
+  cancel-in-progress: false
+jobs:
+  setup:
+    if: >-
+      github.ref == 'refs/heads/main' && github.actor == 'tranhuunguyenhuy-hue' &&
+      github.repository == 'tranhuunguyenhuy-hue/dongphugia.com.vn' &&
+      github.run_attempt == 1 && inputs.approved_sha == github.sha
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: catalogue-direct-migration
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.13.0
+      - run: npm ci --ignore-scripts
+      - name: Prepare swap-free runner and tools before private material
+        run: |
+          set -euo pipefail
+          bash scripts/backup/c-actions-host-swap-preflight.sh
+          tools_dir="$RUNNER_TEMP/direct-key-tools"
+          mkdir -m 700 "$tools_dir"
+          curl --fail --location --silent --show-error --max-time 120 \
+            -o "$tools_dir/age.tar.gz" \
+            'https://github.com/FiloSottile/age/releases/download/v1.3.2/age-v1.3.2-linux-amd64.tar.gz'
+          printf '%s  %s\n' 'cbe24006683f8eb669266162894b9a522a1af52f2665fbc63a4bb032ed26ac10' \
+            "$tools_dir/age.tar.gz" | sha256sum --check --status
+          tar -xOzf "$tools_dir/age.tar.gz" age/age > "$tools_dir/age"
+          tar -xOzf "$tools_dir/age.tar.gz" age/age-keygen > "$tools_dir/age-keygen"
+          chmod 0500 "$tools_dir/age" "$tools_dir/age-keygen"
+          echo "$tools_dir" >> "$GITHUB_PATH"
+          python3 -m venv "$RUNNER_TEMP/direct-key-python"
+          "$RUNNER_TEMP/direct-key-python/bin/pip" install --only-binary=:all: \
+            PyNaCl==1.5.0 cffi==1.17.1 pycparser==2.22
+      - name: Check exact before-state or provision one checkpoint unit
+        env:
+          SETUP_PURPOSE: ${{ inputs.purpose }}
+          APPROVED_SHA: ${{ inputs.approved_sha }}
+          ENV_PUBLIC_KEY: x0l57JCVOgPjnBI6xNZSk2QC+njh3+ttEZI9tvExkAE=
+          ENV_KEY_ID: '3380204578043523366'
+          DIRECT_ZERO_COST_ATTESTATION: ${{ vars.DIRECT_ZERO_COST_ATTESTATION }}
+          DIRECT_CHECKPOINT_AGE_RECIPIENT: ${{ vars.DIRECT_CHECKPOINT_AGE_RECIPIENT }}
+          DIRECT_CHECKPOINT_AGE_IDENTITY: ${{ secrets.DIRECT_CHECKPOINT_AGE_IDENTITY }}
+          DIRECT_VAULT_REPOSITORY: ${{ secrets.DIRECT_VAULT_REPOSITORY }}
+          DIRECT_VAULT_TOKEN: ${{ secrets.DIRECT_VAULT_TOKEN }}
+          DIRECT_SOURCE_SETUP_DATABASE_URL: ${{ inputs.purpose == 'source' && secrets.DIRECT_SOURCE_SETUP_DATABASE_URL || '' }}
+          DIRECT_TARGET_SETUP_DATABASE_URL: ${{ inputs.purpose == 'target' && secrets.DIRECT_TARGET_SETUP_DATABASE_URL || '' }}
+          DIRECT_SOURCE_CA: ${{ secrets.DIRECT_SOURCE_CA }}
+          DIRECT_TARGET_CA: ${{ secrets.DIRECT_TARGET_CA }}
+          SEALED_OUTPUT: ${{ runner.temp }}/direct-purpose-connections.sealed.json
+        run: |
+          set -euo pipefail
+          set +x
+          ulimit -c 0
+          umask 077
+          export SETUP_PYTHON="$RUNNER_TEMP/direct-key-python/bin/python"
+          node scripts/catalogue-direct/secure-setup.mjs
+      - name: Transport only pinned Environment sealed purpose connections
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: direct-purpose-connections-sealed
+          path: ${{ runner.temp }}/direct-purpose-connections.sealed.json
+          retention-days: 1
+          if-no-files-found: error
+      - name: Clear ephemeral material
+        if: always()
+        run: |
+          set -euo pipefail
+          test "$(findmnt -no FSTYPE -T /dev/shm)" = tmpfs
+          find /dev/shm -maxdepth 1 -type d -name 'direct-setup-*' -exec rm -rf -- {} +
