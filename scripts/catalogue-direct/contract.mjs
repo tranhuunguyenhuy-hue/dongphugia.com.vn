@@ -73,6 +73,10 @@ export function assertManifest(manifest) {
   return manifest
 }
 export function normalizeDefinition(value) {
+  // PostgreSQL deparses the same reviewed varchar-array -> text-array cast
+  // either on the array or on each element. Allow only these exact two forms.
+  const stockChecks = ["CHECK (((stock_status)::text = ANY ((ARRAY['in_stock'::character varying, 'out_of_stock'::character varying, 'discontinued'::character varying, 'contact'::character varying, 'pre_order'::character varying])::text[])))","CHECK (((stock_status)::text = ANY (ARRAY[('in_stock'::character varying)::text, ('out_of_stock'::character varying)::text, ('discontinued'::character varying)::text, ('contact'::character varying)::text, ('pre_order'::character varying)::text])))"]
+  if (stockChecks.includes(value)) return stockChecks[0]
   return value.replaceAll('public.', '').replaceAll('dpg_app.', '')
 }
 export function comparableSchema(metadata) {
