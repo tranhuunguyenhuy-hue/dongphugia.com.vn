@@ -34,8 +34,8 @@ before any protected run.
   Migration identity attests exact role attributes and membership before
   migration operations. Catalogue apply attests that its capability role is
   `BYPASSRLS`, has no admin/database/role powers or unrelated memberships,
-  grants only read/write on the 27 allowlisted tables, read-only access to
-  recovery metadata/seeds, and ownership only of their sequences. It must not
+  grants only `SELECT` and `INSERT` on the 27 allowlisted tables, read-only
+  access to recovery metadata/seeds, and ownership only of their sequences. It must not
   have table access outside that contract, schema/database CREATE, or
   application-function EXECUTE. It does not read or write Auth/Storage.
 - Post-restore manifest verification runs through the distinct snapshot

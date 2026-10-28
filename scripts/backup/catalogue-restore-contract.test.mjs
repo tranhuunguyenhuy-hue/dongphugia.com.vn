@@ -214,6 +214,8 @@ describe('catalogue-only restore contract', () => {
     expect(sql).toContain('catalogue_restore_unrelated_grant_present')
     expect(sql).toContain('catalogue_restore_function_execute_present')
     expect(sql).toContain('catalogue_restore_sequence_owner_invalid')
+    expect(sql).toContain("has_table_privilege(current_user, relation.oid, 'UPDATE')")
+    expect(sql).toContain("has_table_privilege(current_user, relation.oid, 'DELETE')")
     for (const table of expectedTables) expect(sql).toContain(`'${table}'`)
     expect(sql).not.toMatch(/select\s+\*\s+from/i)
   })

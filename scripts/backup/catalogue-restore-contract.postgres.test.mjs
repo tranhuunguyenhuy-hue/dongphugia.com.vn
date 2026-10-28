@@ -113,7 +113,7 @@ integration('Issue 160 baseline and sequence behavior on synthetic PostgreSQL', 
       grant dpg_catalogue_restore to dpg_catalogue_restore_login
         with inherit false, set true;
       grant usage on schema dpg_app, dpg_control, dpg_v1 to dpg_catalogue_restore;
-      grant select, insert, update, delete on all tables in schema dpg_app to dpg_catalogue_restore;
+      grant select, insert on all tables in schema dpg_app to dpg_catalogue_restore;
       grant select on dpg_control.target_contract, dpg_control.runtime_migration_ledger,
         dpg_control.leo538_restore_manifest, dpg_v1.categories,
         dpg_v1.role_capabilities to dpg_catalogue_restore;
@@ -237,6 +237,14 @@ integration('Issue 160 baseline and sequence behavior on synthetic PostgreSQL', 
     try {
       await restoreClient.connect()
       await restoreClient.query(buildCatalogueRestoreIdentitySql())
+      await databaseClient.query('grant update on dpg_app.products to dpg_catalogue_restore')
+      await expect(restoreClient.query(buildCatalogueRestoreIdentitySql()))
+        .rejects.toThrow('catalogue_restore_catalogue_grants_invalid')
+      await databaseClient.query('revoke update on dpg_app.products from dpg_catalogue_restore')
+      await databaseClient.query('grant delete on dpg_app.products to dpg_catalogue_restore')
+      await expect(restoreClient.query(buildCatalogueRestoreIdentitySql()))
+        .rejects.toThrow('catalogue_restore_catalogue_grants_invalid')
+      await databaseClient.query('revoke delete on dpg_app.products from dpg_catalogue_restore')
       await databaseClient.query('create table dpg_app.unrelated_restore_probe (id integer)')
       await databaseClient.query('grant select on dpg_app.unrelated_restore_probe to dpg_catalogue_restore')
       await expect(restoreClient.query(buildCatalogueRestoreIdentitySql()))

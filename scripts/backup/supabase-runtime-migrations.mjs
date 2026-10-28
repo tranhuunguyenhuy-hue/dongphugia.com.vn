@@ -280,9 +280,7 @@ async function attestTargetAndCheckpoint(client) {
       to_regclass('dpg_app.runtime_audit_events') is not null as runtime_audit,
       to_regprocedure('public.runtime_order_list(integer,integer)') is not null as runtime_api,
       not exists (select 1 from pg_roles where rolname = 'dpg_backup') as backup_role_absent,
-      to_regnamespace('dpg_v1') is null as v1_absent,
-      not exists (select 1 from auth.users) as auth_empty,
-      not exists (select 1 from storage.objects) as storage_empty
+      to_regnamespace('dpg_v1') is null as v1_absent
   `)
   const row = result.rows[0]
   if (!row || Object.values(row).some((value) => value !== true)) {
@@ -465,9 +463,7 @@ async function validateFinalSchema(client) {
       ) as roles_restricted,
       (select count(*) from pg_roles
        where rolname in ('dpg_migration', 'dpg_runtime', 'dpg_readonly', 'dpg_backup')) = 4
-        as roles_complete,
-      not exists (select 1 from auth.users) as auth_empty,
-      not exists (select 1 from storage.objects) as storage_empty
+        as roles_complete
   `)
   const row = result.rows[0]
   if (!row || Object.values(row).some((value) => value !== true)) fail('final_schema_rls_api_validation_failed')

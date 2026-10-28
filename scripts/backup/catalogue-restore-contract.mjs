@@ -400,8 +400,8 @@ begin
     if relation_is_catalogue then
       if not has_table_privilege(current_user, relation.oid, 'SELECT')
          or not has_table_privilege(current_user, relation.oid, 'INSERT')
-         or not has_table_privilege(current_user, relation.oid, 'UPDATE')
-         or not has_table_privilege(current_user, relation.oid, 'DELETE')
+         or has_table_privilege(current_user, relation.oid, 'UPDATE')
+         or has_table_privilege(current_user, relation.oid, 'DELETE')
          or has_table_privilege(current_user, relation.oid, 'TRUNCATE')
          or has_table_privilege(current_user, relation.oid, 'REFERENCES')
          or has_table_privilege(current_user, relation.oid, 'TRIGGER') then

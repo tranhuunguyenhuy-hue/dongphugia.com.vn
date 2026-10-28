@@ -245,4 +245,13 @@ describe('Supabase runtime migration runner contract', () => {
     expect(runner).toContain("execFileSync('bash', ['scripts/backup/attest-supabase-runtime-checkpoint.sh']")
     expect(runner).not.toMatch(/error\.(detail|hint|where|query|stack)/)
   })
+
+  it('keeps Auth and Storage emptiness checks on the snapshot acceptance identity', async () => {
+    const runner = await readFile('scripts/backup/supabase-runtime-migrations.mjs', 'utf8')
+    const acceptance = await readFile('supabase/tests/supabase_runtime_readonly_acceptance.sql', 'utf8')
+
+    expect(runner).not.toMatch(/from\s+auth\.users|from\s+storage\.objects/i)
+    expect(acceptance).toMatch(/exists\s*\(select\s+1\s+from\s+auth\.users\)/i)
+    expect(acceptance).toMatch(/exists\s*\(select\s+1\s+from\s+storage\.objects\)/i)
+  })
 })
