@@ -1,0 +1,83 @@
+name: Independent direct-checkpoint key bootstrap
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        type: choice
+        options: [generate, verify]
+        required: true
+      approved_sha:
+        type: string
+        required: true
+      environment_public_key:
+        description: Public encryption key of catalogue-direct-migration (not a credential)
+        type: string
+      environment_key_id:
+        type: string
+      expected_recipient:
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: catalogue-direct-migration
+  cancel-in-progress: false
+jobs:
+  bootstrap:
+    if: >-
+      github.ref == 'refs/heads/main' && github.actor == 'tranhuunguyenhuy-hue' &&
+      github.repository == 'tranhuunguyenhuy-hue/dongphugia.com.vn' &&
+      github.run_attempt == 1 && inputs.approved_sha == github.sha
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment: catalogue-direct-migration
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Prepare swap-free runner and tools before private material
+        run: |
+          set -euo pipefail
+          bash scripts/backup/c-actions-host-swap-preflight.sh
+          tools_dir="$RUNNER_TEMP/direct-key-tools"
+          mkdir -m 700 "$tools_dir"
+          curl --fail --location --silent --show-error --max-time 120 \
+            -o "$tools_dir/age.tar.gz" \
+            'https://github.com/FiloSottile/age/releases/download/v1.3.2/age-v1.3.2-linux-amd64.tar.gz'
+          printf '%s  %s\n' 'cbe24006683f8eb669266162894b9a522a1af52f2665fbc63a4bb032ed26ac10' \
+            "$tools_dir/age.tar.gz" | sha256sum --check --status
+          tar -xOzf "$tools_dir/age.tar.gz" age/age > "$tools_dir/age"
+          tar -xOzf "$tools_dir/age.tar.gz" age/age-keygen > "$tools_dir/age-keygen"
+          chmod 0500 "$tools_dir/age" "$tools_dir/age-keygen"
+          echo "$tools_dir" >> "$GITHUB_PATH"
+          python3 -m venv "$RUNNER_TEMP/direct-key-python"
+          "$RUNNER_TEMP/direct-key-python/bin/pip" install --only-binary=:all: \
+            PyNaCl==1.5.0 cffi==1.17.1 pycparser==2.22
+      - name: Generate and seal, or verify stored key with a public probe
+        env:
+          KEY_MODE: ${{ inputs.mode }}
+          KEY_ALREADY_PRESENT: ${{ secrets.DIRECT_CHECKPOINT_AGE_IDENTITY != '' }}
+          APPROVED_SHA: ${{ inputs.approved_sha }}
+          ENV_PUBLIC_KEY: ${{ inputs.environment_public_key }}
+          ENV_KEY_ID: ${{ inputs.environment_key_id }}
+          EXPECTED_RECIPIENT: ${{ inputs.expected_recipient }}
+          DIRECT_CHECKPOINT_AGE_IDENTITY: ${{ inputs.mode == 'verify' && secrets.DIRECT_CHECKPOINT_AGE_IDENTITY || '' }}
+          SEALED_OUTPUT: ${{ runner.temp }}/direct-checkpoint-key.sealed.json
+        run: |
+          set -euo pipefail
+          set +x
+          ulimit -c 0
+          "$RUNNER_TEMP/direct-key-python/bin/python" -B scripts/catalogue-direct/checkpoint-key.py
+      - name: Transport only Environment-public-key-sealed ciphertext
+        if: inputs.mode == 'generate'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: direct-checkpoint-key-sealed
+          path: ${{ runner.temp }}/direct-checkpoint-key.sealed.json
+          retention-days: 1
+          if-no-files-found: error
+      - name: Clear ephemeral material
+        if: always()
+        run: |
+          set -euo pipefail
+          test "$(findmnt -no FSTYPE -T /dev/shm)" = tmpfs
+          find /dev/shm -maxdepth 1 -type d -name 'direct-key-*' -exec rm -rf -- {} +
