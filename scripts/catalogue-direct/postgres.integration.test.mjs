@@ -35,7 +35,7 @@ describe.skipIf(!url)('direct data-only mapping on isolated PostgreSQL', () => {
     const admin = new pg.Client({ connectionString: url })
     await admin.connect()
     const database = `direct_fixture_${process.pid}_${Date.now()}`
-    let client, createdRole = false, createdGuest = false
+    let client, createdRole = false, createdGuest = false, createdAuthenticated = false
     const guest = `direct_guest_${process.pid}`
     try {
       await admin.query(`create database ${database}`)
@@ -150,6 +150,30 @@ describe.skipIf(!url)('direct data-only mapping on isolated PostgreSQL', () => {
       await client.query('reset session authorization')
       await expect(client.query("select dpg_app.direct_catalogue_restart('products','id',2)")).rejects.toMatchObject({ code: 'P0001' })
       await assertTargetPrivate(client)
+      const hadAuthenticated=(await client.query("select to_regrole('authenticated') as role")).rows[0].role
+      if(!hadAuthenticated) { await client.query('create role authenticated nologin');createdAuthenticated=true }
+      await client.query(`alter table dpg_app.products add column is_active boolean default true,
+        add column publication_status varchar default 'public',add column pdp_visibility varchar default 'public',
+        add column sellable_status varchar default 'sellable';
+        grant usage on schema dpg_app to authenticated;grant select on dpg_app.products to authenticated;
+        create policy leo541_products_select_public on dpg_app.products for select to authenticated
+        using(is_active and publication_status='public' and pdp_visibility='public' and sellable_status='sellable')`)
+      await assertTargetPrivate(client)
+      await client.query('set role authenticated')
+      expect((await client.query('select count(*)::int as n from dpg_app.products')).rows[0].n).toBe(1)
+      await client.query('reset role')
+      await client.query("update dpg_app.products set publication_status='private'")
+      await client.query('set role authenticated')
+      expect((await client.query('select count(*)::int as n from dpg_app.products')).rows[0].n).toBe(0)
+      await client.query('reset role')
+      await client.query('create policy unexpected_public_read on dpg_app.products to authenticated using(true)')
+      await expect(assertTargetPrivate(client)).rejects.toThrow('TARGET_PUBLIC_EXPOSURE')
+      await client.query('drop policy unexpected_public_read on dpg_app.products;grant select on dpg_app.brands to authenticated')
+      await expect(assertTargetPrivate(client)).rejects.toThrow('TARGET_PUBLIC_EXPOSURE')
+      await client.query('revoke select on dpg_app.brands from authenticated;alter table dpg_app.products no force row level security')
+      await expect(assertTargetPrivate(client)).rejects.toThrow('TARGET_PUBLIC_EXPOSURE')
+      await client.query('alter table dpg_app.products force row level security')
+      await assertTargetPrivate(client)
       await client.query('grant select on dpg_app.products to public')
       await expect(assertTargetPrivate(client)).rejects.toThrow('TARGET_PUBLIC_EXPOSURE')
       await client.query('revoke select on dpg_app.products from public')
@@ -159,6 +183,7 @@ describe.skipIf(!url)('direct data-only mapping on isolated PostgreSQL', () => {
       if (client) { try { await client.query('rollback'); await client.query('reset session authorization') } catch { /* fixture cleanup */ } await client.end() }
       await admin.query(`drop database if exists ${database} with (force)`)
       if (createdRole) await admin.query('revoke connect on database postgres from dpg_direct_import; drop role dpg_direct_import')
+      if (createdAuthenticated) await admin.query('drop role authenticated')
       if (createdGuest) await admin.query(`drop role ${guest}`)
       await admin.end()
     }
