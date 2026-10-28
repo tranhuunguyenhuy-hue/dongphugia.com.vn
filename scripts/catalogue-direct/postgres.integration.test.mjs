@@ -71,6 +71,15 @@ describe.skipIf(!url)('direct data-only mapping on isolated PostgreSQL', () => {
       assertBeforeSetup(beforeSetup,await setupState(client,'dpg_app'))
       const drift=structuredClone(beforeSetup); drift.tables[0].owner='different_owner'
       expect(()=>assertBeforeSetup(beforeSetup,drift)).toThrow('SETUP_BEFORE_STATE_CHANGED')
+      await client.query('create policy fixture_restrictive on dpg_app.brands as restrictive using(true)')
+      await expect(setupState(client,'dpg_app')).rejects.toThrow('SETUP_POLICY_SEMANTICS')
+      await client.query('drop policy fixture_restrictive on dpg_app.brands')
+      await client.query(`create function dpg_app.fixture_guard() returns trigger language plpgsql as 'begin return null; end';
+        create trigger leo538_free_tier_headroom after insert or update on dpg_app.brands
+        for each statement execute function dpg_app.fixture_guard();
+        alter table dpg_app.brands disable trigger leo538_free_tier_headroom`)
+      await expect(setupState(client,'dpg_app')).rejects.toThrow('SETUP_TRIGGER_SEMANTICS')
+      await client.query('drop trigger leo538_free_tier_headroom on dpg_app.brands; drop function dpg_app.fixture_guard()')
       // Only extension-owned platform views and the exact non-callable event
       // trigger are exempt. Arbitrary views/SECURITY DEFINER routines still fail.
       await client.query('create schema extensions; create extension pg_stat_statements with schema extensions')

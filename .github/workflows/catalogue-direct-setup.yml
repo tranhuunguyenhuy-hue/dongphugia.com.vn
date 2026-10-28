@@ -4,7 +4,7 @@ on:
     inputs:
       purpose:
         type: choice
-        options: [preflight, source, target]
+        options: [source, target]
         required: true
       approved_sha:
         type: string
@@ -60,8 +60,8 @@ jobs:
           DIRECT_CHECKPOINT_AGE_IDENTITY: ${{ secrets.DIRECT_CHECKPOINT_AGE_IDENTITY }}
           DIRECT_VAULT_REPOSITORY: ${{ secrets.DIRECT_VAULT_REPOSITORY }}
           DIRECT_VAULT_TOKEN: ${{ secrets.DIRECT_VAULT_TOKEN }}
-          DIRECT_SOURCE_SETUP_DATABASE_URL: ${{ secrets.DIRECT_SOURCE_SETUP_DATABASE_URL }}
-          DIRECT_TARGET_SETUP_DATABASE_URL: ${{ secrets.DIRECT_TARGET_SETUP_DATABASE_URL }}
+          DIRECT_SOURCE_SETUP_DATABASE_URL: ${{ inputs.purpose == 'source' && secrets.DIRECT_SOURCE_SETUP_DATABASE_URL || '' }}
+          DIRECT_TARGET_SETUP_DATABASE_URL: ${{ inputs.purpose == 'target' && secrets.DIRECT_TARGET_SETUP_DATABASE_URL || '' }}
           DIRECT_SOURCE_CA: ${{ secrets.DIRECT_SOURCE_CA }}
           DIRECT_TARGET_CA: ${{ secrets.DIRECT_TARGET_CA }}
           SEALED_OUTPUT: ${{ runner.temp }}/direct-purpose-connections.sealed.json
@@ -73,7 +73,6 @@ jobs:
           export SETUP_PYTHON="$RUNNER_TEMP/direct-key-python/bin/python"
           node scripts/catalogue-direct/secure-setup.mjs
       - name: Transport only pinned Environment sealed purpose connections
-        if: inputs.purpose != 'preflight'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: direct-purpose-connections-sealed

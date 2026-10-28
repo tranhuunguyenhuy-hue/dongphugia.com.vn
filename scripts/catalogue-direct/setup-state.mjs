@@ -43,12 +43,28 @@ export async function setupState(client, schema) {
     `select last_value::text,is_called from ${identifier(schema)}.${identifier(seq.name)}`)).rows[0]})
   const new_roles=(await client.query(`select rolname from pg_roles where rolname=any($1::text[])`,[
     schema==='public'?['dpg_direct_source']:['dpg_direct_read','dpg_direct_import']])).rows
+  const security_semantics=(await client.query(`select c.relname as table_name,'policy' as kind,p.polname as name,
+    p.polpermissive::text as state from pg_policy p join pg_class c on c.oid=p.polrelid
+    join pg_namespace n on n.oid=c.relnamespace where n.nspname=$1 and c.relname=any($2::text[])
+    union all select c.relname,'trigger',t.tgname,t.tgenabled::text from pg_trigger t
+    join pg_class c on c.oid=t.tgrelid join pg_namespace n on n.oid=c.relnamespace
+    where n.nspname=$1 and c.relname=any($2::text[]) and not t.tgisinternal`,[schema,CATALOGUE_TABLES])).rows
+  if(schema==='dpg_app') for(const item of security_semantics) {
+    // Canonical boundary migration creates permissive SELECT policies and
+    // normally enabled statement guards. The older checkpoint omits these
+    // flags; validate the canonical semantics and preserve them in this unit.
+    if(item.kind==='policy') requireGate(item.state==='true','SETUP_POLICY_SEMANTICS')
+    if(item.kind==='trigger' && item.name==='leo538_free_tier_headroom')
+      requireGate(['O','A'].includes(item.state),'SETUP_TRIGGER_SEMANTICS')
+  }
   const {rows:[helper]}=await client.query(`select to_regprocedure('dpg_app.direct_catalogue_restart(text,text,bigint)')::text as value`)
-  return {tables,sequences,sequence_state,new_roles,new_helper:helper.value}
+  return {tables,sequences,sequence_state,new_roles,new_helper:helper.value,security_semantics}
 }
 
 export function assertBeforeSetup(expected, actual) {
   for (const field of ['tables','sequences','sequence_state','new_roles','new_helper']) {
     requireGate(JSON.stringify(canonical(expected[field]))===JSON.stringify(canonical(actual[field])), 'SETUP_BEFORE_STATE_CHANGED')
   }
+  if(expected.security_semantics) requireGate(JSON.stringify(canonical(expected.security_semantics))===
+    JSON.stringify(canonical(actual.security_semantics)),'SETUP_BEFORE_STATE_CHANGED')
 }

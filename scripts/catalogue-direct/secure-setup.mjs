@@ -96,7 +96,7 @@ async function main() {
     && env.GITHUB_REPOSITORY==='tranhuunguyenhuy-hue/dongphugia.com.vn'
     && env.GITHUB_ACTOR==='tranhuunguyenhuy-hue' && env.GITHUB_RUN_ATTEMPT==='1'
     && SHA.test(env.GITHUB_SHA??'') && env.APPROVED_SHA===env.GITHUB_SHA,'SETUP_AUTHORITY')
-  requireGate(['preflight','source','target'].includes(env.SETUP_PURPOSE),'SETUP_PURPOSE')
+  requireGate(['source','target'].includes(env.SETUP_PURPOSE),'SETUP_PURPOSE')
   requireGate(env.ENV_PUBLIC_KEY===KEY && env.ENV_KEY_ID==='3380204578043523366','SETUP_ENVIRONMENT_KEY')
   assertBudget(JSON.parse(env.DIRECT_ZERO_COST_ATTESTATION??'null'))
   requireGate((await readFile('/proc/swaps','utf8')).trim().split('\n').length===1,'SETUP_SWAP_FORBIDDEN')
@@ -104,24 +104,25 @@ async function main() {
   directory=await mkdtemp('/dev/shm/direct-setup-')
   await writeFile(join(directory,'identity'),env.DIRECT_CHECKPOINT_AGE_IDENTITY,{mode:0o600})
   requireGate(command('age-keygen',['-y',join(directory,'identity')]).toString().trim()===env.DIRECT_CHECKPOINT_AGE_RECIPIENT,'SETUP_RECIPIENT')
-  const encrypted=await encryptedBlob(BEFORE,'affected-state.age')
-  requireGate(digest(encrypted)==='df0de24f7d41ff965c4fbd872058fdac73fed7f4d77d82f595116df58c8868f2','SETUP_BEFORE_CIPHERTEXT')
-  const plain=crypt('decrypt',encrypted)
-  requireGate(digest(plain)==='7d48235d944077cc0173fc64b8acf1f7208184476ba1ec51791d7151130183d3','SETUP_BEFORE_PLAINTEXT')
-  const expected=JSON.parse(plain)
-  requireGate(expected.target===TARGET && expected.contract==='dpg:affected-state-before-setup:v1','SETUP_BEFORE_IDENTITY')
-  phase='setup_source_connect'
-  const source=await admin('source')
-  phase='setup_target_connect'
-  const target=await admin('target')
-  phase='setup_live_before_comparison'
-  await target.client.query('begin isolation level repeatable read read only')
-  assertBeforeSetup(expected,await setupState(target.client,'dpg_app'))
-  await target.client.query('commit')
-  console.log(JSON.stringify({setup_authentication:'PASS',tls_verify_full:true,target_before_comparison:'PASS',database_writes:false}))
-  if(env.SETUP_PURPOSE==='preflight') return
   const purpose=env.SETUP_PURPOSE
-  const selected=purpose==='source'?source:target
+  phase='setup_'+purpose+'_connect'
+  const selected=await admin(purpose)
+  let expected
+  if(purpose==='target') {
+    // M1 source setup has no destination prerequisite. Reuse the verified
+    // target preimage only when destination setup is actually selected.
+    const encrypted=await encryptedBlob(BEFORE,'affected-state.age')
+    requireGate(digest(encrypted)==='df0de24f7d41ff965c4fbd872058fdac73fed7f4d77d82f595116df58c8868f2','SETUP_BEFORE_CIPHERTEXT')
+    const plain=crypt('decrypt',encrypted)
+    requireGate(digest(plain)==='7d48235d944077cc0173fc64b8acf1f7208184476ba1ec51791d7151130183d3','SETUP_BEFORE_PLAINTEXT')
+    expected=JSON.parse(plain)
+    requireGate(expected.target===TARGET && expected.contract==='dpg:affected-state-before-setup:v1','SETUP_BEFORE_IDENTITY')
+    phase='setup_live_before_comparison'
+    await selected.client.query('begin isolation level repeatable read read only')
+    assertBeforeSetup(expected,await setupState(selected.client,'dpg_app'))
+    await selected.client.query('commit')
+  }
+  console.log(JSON.stringify({setup_authentication:'PASS',purpose,tls_verify_full:true,database_writes:false}))
   const roles=purpose==='source'?['source']:['read','import']
   const secretNames={source:'DIRECT_SOURCE_DATABASE_URL',read:'DIRECT_TARGET_READ_DATABASE_URL',import:'DIRECT_TARGET_IMPORT_DATABASE_URL'}
   const urls={},passwords={}
@@ -178,7 +179,7 @@ async function main() {
   payload.source_sha=env.GITHUB_SHA; payload.setup_checkpoint=checkpoint; payload.purpose=purpose
   await writeFile(env.SEALED_OUTPUT,JSON.stringify(payload),{mode:0o600})
   console.log(JSON.stringify({status:'PASS',purpose,setup_checkpoint:checkpoint,committed:true,
-    independent_login_and_role_boundary:'PASS',configured_secret_names:Object.keys(urls),plaintext_artifact:false}))
+    independent_login_and_role_boundary:'PASS',sealed_secret_names:Object.keys(urls),plaintext_artifact:false}))
 }
 
 if(process.argv[1]===fileURLToPath(import.meta.url)) main().catch(error=>{

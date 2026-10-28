@@ -216,13 +216,13 @@ be corrected without restarting the recovery. Post milestone evidence to Issue
 
 ## Protected connection bootstrap
 
-`catalogue-direct-setup.yml` has three manual units: `preflight`, `source`,
-`target`, all exact-main/Owner/attempt-one guarded in the direct Environment.
+`catalogue-direct-setup.yml` has two manual units: `source`, `target`, all exact-main/Owner/attempt-one guarded in the direct Environment.
 Temporary administrative setup URL slots are sealed to its pinned public key
 from existing exact-project candidates. They never enter the transfer runner.
 No historical Environment settings, backup/key slots, or original URLs change.
 
-Preflight verifies TLS, administrative capability and the full live target
+Source setup verifies only source TLS and administrative capability; it has no
+destination prerequisite. Target setup verifies TLS, capability and the full live target
 metadata/ACL/RLS/policy/trigger/linked-sequence/empty-data state against immutable
 checkpoint `354efb8cfe4740936c50f2f34030cf2081ab2a6d`. Snapshot encryption,
 hash, decryption and semantic checks precede any persistent role/schema change.
