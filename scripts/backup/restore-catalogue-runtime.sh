@@ -565,7 +565,6 @@ printf '%s\n' \
   "\\i '$identity_sql'" \
   "\\i '$preflight_sql'" \
   "\\i '$restore_sql'" \
-  "\\i '$sequence_sql'" \
   "\\i '$validation_sql'" >"$driver_sql"
 cat >>"$driver_sql" <<'SQL'
 do $catalogue_size_guard$
@@ -575,8 +574,8 @@ begin
   end if;
 end
 $catalogue_size_guard$;
-commit;
 SQL
+printf '%s\n' "\\i '$sequence_sql'" 'commit;' >>"$driver_sql"
 
 if ! SUPABASE_RUNTIME_TARGET_PURPOSE="$target_purpose" \
   SUPABASE_PSQL_TMPDIR="$tmp_dir" node "$psql_wrapper" --file "$driver_sql" \

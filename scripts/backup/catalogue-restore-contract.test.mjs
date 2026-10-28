@@ -197,12 +197,13 @@ describe('catalogue-only restore contract', () => {
     expect(sql).not.toMatch(/select\s+\*\s+from/i)
   })
 
-  it('repairs catalogue sequences with transactional restart instead of nonrollbackable setval', () => {
+  it('resets catalogue sequences only after calculating an in-range next value', () => {
     const sql = buildCatalogueSequenceSql()
-    expect(sql).toContain('alter sequence %s restart with %s')
+    expect(sql).toContain('sequence_names := array_append(sequence_names, sequence_name)')
+    expect(sql).toContain('sequence_values := array_append(sequence_values, next_sequence_value)')
+    expect(sql).toContain('sequence_names[sequence_index]::regclass')
     expect(sql).toContain('from pg_sequence where seqrelid = sequence_name::regclass')
     expect(sql).toContain('catalogue_sequence_increment_invalid')
-    expect(sql).not.toMatch(/\bsetval\s*\(/i)
   })
 
   it('attests a bounded restore identity and exact catalogue table allowlist before writes', () => {
@@ -213,7 +214,7 @@ describe('catalogue-only restore contract', () => {
     expect(sql).toContain('has_database_privilege(current_user, current_database(), \'CREATE\')')
     expect(sql).toContain('catalogue_restore_unrelated_grant_present')
     expect(sql).toContain('catalogue_restore_function_execute_present')
-    expect(sql).toContain('catalogue_restore_sequence_owner_invalid')
+    expect(sql).toContain('catalogue_restore_sequence_grants_invalid')
     expect(sql).toContain("has_table_privilege(current_user, relation.oid, 'UPDATE')")
     expect(sql).toContain("has_table_privilege(current_user, relation.oid, 'DELETE')")
     for (const table of expectedTables) expect(sql).toContain(`'${table}'`)

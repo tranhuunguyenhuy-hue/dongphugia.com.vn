@@ -119,7 +119,7 @@ integration('Issue 160 baseline and sequence behavior on synthetic PostgreSQL', 
         dpg_v1.role_capabilities to dpg_catalogue_restore;
     `)
     for (const table of CATALOGUE_TABLES) {
-      await databaseClient.query(`alter sequence dpg_app.${table}_id_seq owner to dpg_catalogue_restore`)
+      await databaseClient.query(`grant update on sequence dpg_app.${table}_id_seq to dpg_catalogue_restore`)
     }
   }, 30_000)
 
@@ -153,7 +153,7 @@ integration('Issue 160 baseline and sequence behavior on synthetic PostgreSQL', 
       .rejects.toThrow('runtime_baseline_rls_gap_set_changed')
   })
 
-  it('restarts catalogue sequences transactionally and restores their prior state on rollback', async () => {
+  it('resets catalogue sequences at the explicit snapshot-rollback boundary', async () => {
     await databaseClient.query('insert into dpg_app.brands default values')
     await databaseClient.query('insert into dpg_app.brands (id) values (10)')
     const before = await readSequenceState('dpg_app.brands_id_seq')
@@ -164,12 +164,6 @@ integration('Issue 160 baseline and sequence behavior on synthetic PostgreSQL', 
     expect(await readSequenceState('dpg_app.brands_id_seq'))
       .toEqual({ last_value: '11', is_called: false })
     await databaseClient.query('rollback')
-    expect(await readSequenceState('dpg_app.brands_id_seq'))
-      .toEqual({ last_value: '1', is_called: true })
-
-    await databaseClient.query('begin')
-    await databaseClient.query(buildCatalogueSequenceSql())
-    await databaseClient.query('commit')
     expect(await readSequenceState('dpg_app.brands_id_seq'))
       .toEqual({ last_value: '11', is_called: false })
     expect((await databaseClient.query("select nextval('dpg_app.brands_id_seq')::text as value")).rows[0].value)
@@ -237,6 +231,14 @@ integration('Issue 160 baseline and sequence behavior on synthetic PostgreSQL', 
     try {
       await restoreClient.connect()
       await restoreClient.query(buildCatalogueRestoreIdentitySql())
+      await databaseClient.query('revoke update on sequence dpg_app.products_id_seq from dpg_catalogue_restore')
+      await expect(restoreClient.query(buildCatalogueRestoreIdentitySql()))
+        .rejects.toThrow('catalogue_restore_sequence_grants_invalid')
+      await databaseClient.query('grant update on sequence dpg_app.products_id_seq to dpg_catalogue_restore')
+      await databaseClient.query('grant usage on sequence dpg_app.products_id_seq to dpg_catalogue_restore')
+      await expect(restoreClient.query(buildCatalogueRestoreIdentitySql()))
+        .rejects.toThrow('catalogue_restore_sequence_grants_invalid')
+      await databaseClient.query('revoke usage on sequence dpg_app.products_id_seq from dpg_catalogue_restore')
       await databaseClient.query('grant update on dpg_app.products to dpg_catalogue_restore')
       await expect(restoreClient.query(buildCatalogueRestoreIdentitySql()))
         .rejects.toThrow('catalogue_restore_catalogue_grants_invalid')

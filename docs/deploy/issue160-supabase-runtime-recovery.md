@@ -35,9 +35,14 @@ before any protected run.
   migration operations. Catalogue apply attests that its capability role is
   `BYPASSRLS`, has no admin/database/role powers or unrelated memberships,
   grants only `SELECT` and `INSERT` on the 27 allowlisted tables, read-only
-  access to recovery metadata/seeds, and ownership only of their sequences. It must not
+  access to recovery metadata/seeds, and `UPDATE` only on their linked sequences.
+  It must not
   have table access outside that contract, schema/database CREATE, or
   application-function EXECUTE. It does not read or write Auth/Storage.
+- Sequence state is reset with the minimum PostgreSQL sequence privilege after
+  data validation. PostgreSQL sequence changes are not transactionally rolled
+  back, so any failure after sequence reset requires restoring the already
+  verified encrypted destination snapshot before another authorized attempt.
 - Post-restore manifest verification runs through the distinct snapshot
   identity. It verifies the 27 catalogue tables and excluded application
   surfaces without giving the restore role excluded-table access. The snapshot

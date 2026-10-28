@@ -281,6 +281,9 @@ declare
   sequence_minimum bigint;
   sequence_maximum bigint;
   next_sequence_value bigint;
+  sequence_names text[] := array[]::text[];
+  sequence_values bigint[] := array[]::bigint[];
+  sequence_index integer;
 begin
   foreach table_name in array array[${allowlist}]::text[]
   loop
@@ -298,9 +301,18 @@ begin
         if next_sequence_value < sequence_minimum or next_sequence_value > sequence_maximum then
           raise exception 'catalogue_sequence_value_out_of_range';
         end if;
-        execute format('alter sequence %s restart with %s', sequence_name::regclass, next_sequence_value);
+        sequence_names := array_append(sequence_names, sequence_name);
+        sequence_values := array_append(sequence_values, next_sequence_value);
       end if;
     end if;
+  end loop;
+  for sequence_index in 1..coalesce(array_length(sequence_names, 1), 0)
+  loop
+    perform setval(
+      sequence_names[sequence_index]::regclass,
+      sequence_values[sequence_index],
+      false
+    );
   end loop;
 end
 $catalogue_sequence_reset$;
@@ -446,9 +458,10 @@ begin
       and sequence.relkind = 'S'
   loop
     if relation.nspname = 'dpg_app' and relation.allowlisted_sequence then
-      if not exists (select 1 from pg_class where oid = relation.oid
-                     and relowner = (select oid from pg_roles where rolname = 'dpg_catalogue_restore')) then
-        raise exception 'catalogue_restore_sequence_owner_invalid';
+      if not has_sequence_privilege(current_user, relation.oid, 'UPDATE')
+         or has_sequence_privilege(current_user, relation.oid, 'USAGE')
+         or has_sequence_privilege(current_user, relation.oid, 'SELECT') then
+        raise exception 'catalogue_restore_sequence_grants_invalid';
       end if;
     elsif has_sequence_privilege(current_user, relation.oid, 'USAGE')
        or has_sequence_privilege(current_user, relation.oid, 'SELECT')
