@@ -1,0 +1,145 @@
+name: Direct catalogue migration (M1-M3, no Production)
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/catalogue-direct/**'
+      - 'scripts/backup/catalogue-restore-contract.mjs'
+      - '.github/workflows/catalogue-direct-migration.yml'
+  workflow_dispatch:
+    inputs:
+      stage:
+        description: export creates M1; import or verify resumes the exact immutable M1 checkpoint
+        required: true
+        type: choice
+        options: [export, import, verify]
+      approved_sha:
+        description: Exact reviewed main SHA; no separate deployment approval is required
+        required: true
+        type: string
+      checkpoint:
+        description: Immutable private-vault commit from M1 (empty for export)
+        required: false
+        type: string
+      checkpoint_code_sha:
+        description: Original reviewed M1 code SHA when resuming after a compatible code fix
+        required: false
+        type: string
+      resume_before_checkpoint:
+        description: Preserved target-before receipt for an explicitly authorized post-STOP import resume
+        required: false
+        type: string
+      resume_owner_comment:
+        description: Issue 160 Owner comment ID authorizing this exact source/before/current-code tuple
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: catalogue-direct-migration
+  cancel-in-progress: false
+
+jobs:
+  contract-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17.6-bookworm@sha256:f3bd19c606e442c3d7bdfa8002e03fe260a1023351e0ea4598032022b68dd6e3
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports: ['55432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -h 127.0.0.1"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24.13.0
+      - run: npm ci --ignore-scripts
+      - name: Prove exact 27-table copy and transactional rollback with synthetic PostgreSQL
+        env:
+          POSTGRES_SNAPSHOT_INTEGRATION_URL: postgresql://postgres@127.0.0.1:55432/postgres
+        run: npx vitest run scripts/catalogue-direct
+
+  execute:
+    needs: contract-tests
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      github.repository == 'tranhuunguyenhuy-hue/dongphugia.com.vn' &&
+      github.actor == 'tranhuunguyenhuy-hue' && github.ref == 'refs/heads/main' &&
+      github.run_attempt == 1 && inputs.approved_sha == github.sha
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    environment: catalogue-direct-migration
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24.13.0
+      - name: Install dependencies without lifecycle scripts before protected input
+        run: npm ci --ignore-scripts
+      - name: Disable host swap and require tmpfs before protected input
+        run: |
+          set -euo pipefail
+          bash scripts/backup/c-actions-host-swap-preflight.sh
+          test "$(findmnt -no FSTYPE -T /dev/shm)" = tmpfs
+          sudo mount -o remount,size=5G /dev/shm
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+      - name: Install checksum-pinned age before protected input
+        run: |
+          set -euo pipefail
+          tools_dir="$RUNNER_TEMP/direct-tools"
+          mkdir -m 700 "$tools_dir"
+          curl --fail --location --silent --show-error --max-time 120 \
+            --output "$tools_dir/age.tar.gz" \
+            'https://github.com/FiloSottile/age/releases/download/v1.3.2/age-v1.3.2-linux-amd64.tar.gz'
+          printf '%s  %s\n' \
+            'cbe24006683f8eb669266162894b9a522a1af52f2665fbc63a4bb032ed26ac10' \
+            "$tools_dir/age.tar.gz" | sha256sum --check --status
+          tar -xOzf "$tools_dir/age.tar.gz" age/age > "$tools_dir/age"
+          tar -xOzf "$tools_dir/age.tar.gz" age/age-keygen > "$tools_dir/age-keygen"
+          chmod 0500 "$tools_dir/age" "$tools_dir/age-keygen"
+          echo "$tools_dir" >> "$GITHUB_PATH"
+      - name: Execute only the selected checkpoint unit (no retry)
+        env:
+          DIRECT_STAGE: ${{ inputs.stage }}
+          DIRECT_APPROVED_SHA: ${{ inputs.approved_sha }}
+          DIRECT_CHECKPOINT: ${{ inputs.checkpoint }}
+          DIRECT_CHECKPOINT_CODE_SHA: ${{ inputs.checkpoint_code_sha }}
+          DIRECT_RESUME_BEFORE_CHECKPOINT: ${{ inputs.resume_before_checkpoint }}
+          DIRECT_RESUME_OWNER_COMMENT: ${{ inputs.resume_owner_comment }}
+          DIRECT_ZERO_COST_ATTESTATION: ${{ vars.DIRECT_ZERO_COST_ATTESTATION }}
+          DIRECT_SOURCE_DATABASE_URL: ${{ secrets.DIRECT_SOURCE_DATABASE_URL }}
+          DIRECT_SOURCE_CA: ${{ secrets.DIRECT_SOURCE_CA }}
+          DIRECT_TARGET_READ_DATABASE_URL: ${{ secrets.DIRECT_TARGET_READ_DATABASE_URL }}
+          DIRECT_TARGET_IMPORT_DATABASE_URL: ${{ secrets.DIRECT_TARGET_IMPORT_DATABASE_URL }}
+          DIRECT_TARGET_CA: ${{ secrets.DIRECT_TARGET_CA }}
+          DIRECT_CHECKPOINT_AGE_IDENTITY: ${{ secrets.DIRECT_CHECKPOINT_AGE_IDENTITY }}
+          DIRECT_VAULT_REPOSITORY: ${{ secrets.DIRECT_VAULT_REPOSITORY }}
+          DIRECT_VAULT_TOKEN: ${{ secrets.DIRECT_VAULT_TOKEN }}
+        run: |
+          set -euo pipefail
+          set +x
+          umask 077
+          ulimit -c 0
+          if [[ -n "$DIRECT_CHECKPOINT_CODE_SHA" ]]; then
+            [[ "$DIRECT_CHECKPOINT_CODE_SHA" =~ ^[a-f0-9]{40}$ ]]
+            git merge-base --is-ancestor "$DIRECT_CHECKPOINT_CODE_SHA" "$GITHUB_SHA"
+          fi
+          node scripts/catalogue-direct/run.mjs
+      - name: Remove only ephemeral secret-bearing tmpfs on every exit
+        if: always()
+        run: |
+          set -euo pipefail
+          test "$(findmnt -no FSTYPE -T /dev/shm)" = tmpfs
+          find /dev/shm -mindepth 1 -maxdepth 1 -type d -name 'dpg-direct-*' -exec rm -rf -- {} +
