@@ -1,0 +1,250 @@
+name: Direct catalogue Public-only real-data Preview
+on:
+  workflow_dispatch:
+    inputs:
+      approved_sha:
+        type: string
+        required: true
+      checkpoint:
+        description: Exact immutable M1 checkpoint already verified by M3
+        type: string
+        required: true
+      m3_run_id:
+        type: string
+        required: true
+      preview_pr_number:
+        description: Task PR number used only for the isolated pr-N Preview alias
+        type: string
+        required: true
+      artifact_run_id:
+        description: Resume a same-SHA Public artifact only if no prior upload step started
+        type: string
+      managed_preview_run_id:
+        description: Prior successful managed LEO-563 Preview evidence run (Codex resolves it)
+        type: string
+      managed_preview_source_sha:
+        type: string
+      publish:
+        type: boolean
+        default: true
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: catalogue-direct-migration
+  cancel-in-progress: false
+jobs:
+  public-preview:
+    if: >-
+      github.ref == 'refs/heads/main' && github.actor == 'tranhuunguyenhuy-hue' &&
+      github.repository == 'tranhuunguyenhuy-hue/dongphugia.com.vn' &&
+      github.run_attempt == 1 && inputs.approved_sha == github.sha
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    environment: catalogue-direct-migration
+    env:
+      SOURCE_SHA: ${{ github.sha }}
+      DPG_PREVIEW_PR_NUMBER: ${{ inputs.preview_pr_number }}
+      CHECKPOINT: ${{ inputs.checkpoint }}
+      M3_RUN_ID: ${{ inputs.m3_run_id }}
+      ARTIFACT_RUN_ID: ${{ inputs.artifact_run_id }}
+      MANAGED_PREVIEW_RUN_ID: ${{ inputs.managed_preview_run_id }}
+      MANAGED_PREVIEW_SOURCE_SHA: ${{ inputs.managed_preview_source_sha }}
+      ARTIFACT_ROOT: ${{ github.workspace }}/.artifacts/dpg-public-catalogue-preview
+      MANAGED_ROOT: ${{ github.workspace }}/.artifacts/dpg-managed-public-preview
+      WRANGLER_BIN: ${{ github.workspace }}/apps/public/node_modules/wrangler/bin/wrangler.js
+      WRANGLER_SEND_METRICS: 'false'
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.13.0
+      - name: Install locked tools before protected material
+        run: |
+          set -euo pipefail
+          npm ci
+          npm ci --prefix apps/public
+          umask 077
+          mkdir -p "$ARTIFACT_ROOT/evidence"
+          bash scripts/backup/c-actions-host-swap-preflight.sh
+      - name: Verify execution tuple and existing zero-cost evidence
+        env:
+          DIRECT_ZERO_COST_ATTESTATION: ${{ vars.DIRECT_ZERO_COST_ATTESTATION }}
+        run: |
+          set -euo pipefail
+          [[ "$CHECKPOINT" =~ ^[a-f0-9]{40}$ ]]
+          [[ "$M3_RUN_ID" =~ ^[0-9]+$ ]]
+          [[ "$DPG_PREVIEW_PR_NUMBER" =~ ^[1-9][0-9]*$ ]]
+          if [[ -n "$ARTIFACT_RUN_ID" ]]; then [[ "$ARTIFACT_RUN_ID" =~ ^[0-9]+$ ]]; fi
+          if [[ -n "$MANAGED_PREVIEW_RUN_ID" || -n "$MANAGED_PREVIEW_SOURCE_SHA" ]]; then
+            [[ "$MANAGED_PREVIEW_RUN_ID" =~ ^[0-9]+$ ]]
+            [[ "$MANAGED_PREVIEW_SOURCE_SHA" =~ ^[a-f0-9]{40}$ ]]
+          fi
+          node --input-type=module -e 'import {assertBudget} from "./scripts/catalogue-direct/contract.mjs"; assertBudget(JSON.parse(process.env.DIRECT_ZERO_COST_ATTESTATION));'
+      - name: Validate a preserved artifact before resuming an incomplete publication unit
+        if: inputs.artifact_run_id != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_RUN: ${{ inputs.artifact_run_id }}
+        run: |
+          set -euo pipefail
+          [[ "$ARTIFACT_RUN" =~ ^[0-9]+$ ]]
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$ARTIFACT_RUN" > "$RUNNER_TEMP/producer-run.json"
+          jq -e --arg sha "$SOURCE_SHA" '.status=="completed" and .head_sha==$sha and .head_branch=="main" and .event=="workflow_dispatch" and .run_attempt==1 and .actor.login=="tranhuunguyenhuy-hue" and .path==".github/workflows/catalogue-public-preview.yml"' "$RUNNER_TEMP/producer-run.json" >/dev/null
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$ARTIFACT_RUN/jobs" > "$RUNNER_TEMP/producer-jobs.json"
+          jq -e '[.jobs[].steps[] | select(.name=="Upload one existing Worker version") | select(.status=="in_progress" or (.status=="completed" and .conclusion!="skipped"))] | length==0' "$RUNNER_TEMP/producer-jobs.json" >/dev/null
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        if: inputs.artifact_run_id != ''
+        with:
+          name: public-catalogue-preview-${{ github.sha }}
+          path: ${{ env.ARTIFACT_ROOT }}
+          run-id: ${{ inputs.artifact_run_id }}
+          github-token: ${{ github.token }}
+      - name: Build canonical Public Worker without database credentials
+        if: inputs.artifact_run_id == ''
+        env:
+          APP_ENV: preview
+          APP_BUILD_TARGET: public
+          APP_ORIGIN: https://public-preview.invalid
+          PREVIEW_NOINDEX: 'true'
+          BUILD_SOURCE_SHA: ${{ github.sha }}
+          PUBLIC_CATALOGUE_CHECKPOINT: ${{ inputs.checkpoint }}
+        run: npm run build:public-worker
+      - name: Generate public-only assets from the independently verified target
+        if: inputs.artifact_run_id == ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DIRECT_TARGET_READ_DATABASE_URL: ${{ secrets.DIRECT_TARGET_READ_DATABASE_URL }}
+          DIRECT_TARGET_CA: ${{ secrets.DIRECT_TARGET_CA }}
+          DIRECT_ZERO_COST_ATTESTATION: ${{ vars.DIRECT_ZERO_COST_ATTESTATION }}
+          PUBLIC_CATALOGUE_M1_CHECKPOINT: ${{ inputs.checkpoint }}
+          PUBLIC_CATALOGUE_M3_RUN_ID: ${{ inputs.m3_run_id }}
+        run: |
+          set -euo pipefail
+          set +x
+          ulimit -c 0
+          umask 077
+          npx tsx scripts/catalogue-direct/build-public-projection.mts
+      - name: Assemble and hash only the immutable Public Worker and assets
+        if: inputs.artifact_run_id == ''
+        run: |
+          set -euo pipefail
+          npm run app:assemble-public-worker -- --repository-root . \
+            --server-dir apps/public/dist/server --assets-dir apps/public/dist/client \
+            --output "$ARTIFACT_ROOT/build" --source-sha "$SOURCE_SHA"
+      - name: Verify Public-only artifact, real snapshot identity and Free caps
+        run: |
+          set -euo pipefail
+          node scripts/catalogue-direct/public-preview.mjs preflight \
+            --build-root "$ARTIFACT_ROOT/build" --source-sha "$SOURCE_SHA" \
+            --checkpoint "$CHECKPOINT" --m3-run-id "$M3_RUN_ID" --pr-number "$DPG_PREVIEW_PR_NUMBER" \
+            --workflow-run-id "$GITHUB_RUN_ID" --output "$ARTIFACT_ROOT/evidence/publication-preflight-current.json"
+          if [[ -n "$ARTIFACT_RUN_ID" ]]; then
+            jq -e --slurpfile now "$ARTIFACT_ROOT/evidence/publication-preflight-current.json" '.publicArtifactSha256==$now[0].publicArtifactSha256 and .checkpoint==$now[0].checkpoint and .m3RunId==$now[0].m3RunId' "$ARTIFACT_ROOT/evidence/publication-preflight.json" >/dev/null
+          fi
+          cp "$ARTIFACT_ROOT/evidence/publication-preflight-current.json" "$ARTIFACT_ROOT/evidence/publication-preflight.json"
+          cd "$ARTIFACT_ROOT/build"
+          node "$WRANGLER_BIN" versions upload --dry-run --strict --config wrangler.preview.json --preview-alias "pr-$DPG_PREVIEW_PR_NUMBER"
+      - name: Preserve the immutable Public-only candidate before any provider write
+        if: inputs.artifact_run_id == ''
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: public-catalogue-preview-${{ github.sha }}
+          path: ${{ env.ARTIFACT_ROOT }}
+          include-hidden-files: true
+          retention-days: 1
+          if-no-files-found: error
+      - name: Download the exact existing managed Preview evidence
+        if: inputs.publish && inputs.managed_preview_run_id != ''
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: leo563-real-public-preview-${{ inputs.managed_preview_source_sha }}
+          path: ${{ env.MANAGED_ROOT }}
+          run-id: ${{ inputs.managed_preview_run_id }}
+          github-token: ${{ github.token }}
+      - name: Validate existing managed Preview custody
+        if: inputs.publish && inputs.managed_preview_run_id != ''
+        run: |
+          set -euo pipefail
+          node scripts/app-foundation/cloudflare-preview-publication.mjs validate-managed-publication \
+            --publication-preflight "$MANAGED_ROOT/publication-preflight.json" \
+            --upload "$MANAGED_ROOT/upload-evidence.json" --resource-proof "$MANAGED_ROOT/resource-proof.json" \
+            --expected-workflow-run-id "$MANAGED_PREVIEW_RUN_ID" \
+            --output "$ARTIFACT_ROOT/evidence/managed-publication-proof.json"
+      - name: Confirm Workers Free and inspect the existing Preview before upload
+        if: inputs.publish
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_LEO563_PREVIEW_TOKEN }}
+        run: |
+          set -euo pipefail
+          set +x
+          node scripts/catalogue-direct/public-preview.mjs confirm-free --output "$ARTIFACT_ROOT/evidence/zero-cost.json"
+          args=(inspect-resource-state --output "$ARTIFACT_ROOT/evidence/remote-preflight.json")
+          if [[ -f "$ARTIFACT_ROOT/evidence/managed-publication-proof.json" ]]; then
+            args+=(--managed-publication-proof "$ARTIFACT_ROOT/evidence/managed-publication-proof.json")
+          fi
+          node scripts/app-foundation/cloudflare-preview-publication.mjs "${args[@]}"
+          jq -e '.workerAbsent==false and .bootstrapRequired==false and .reconciliationAllowed==true and (.state=="INCOMPLETE" or .state=="MANAGED_ACTIVE_PREVIEW")' "$ARTIFACT_ROOT/evidence/remote-preflight.json" >/dev/null
+      - name: Upload one existing Worker version
+        if: inputs.publish
+        id: version_upload
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_LEO563_PREVIEW_TOKEN }}
+        run: |
+          set -euo pipefail
+          set +x
+          echo 'write_attempted=true' >> "$GITHUB_OUTPUT"
+          cd "$ARTIFACT_ROOT/build"
+          node "$WRANGLER_BIN" versions upload --strict --config wrangler.preview.json \
+            --preview-alias "pr-$DPG_PREVIEW_PR_NUMBER" --tag "catalogue-${SOURCE_SHA:0:12}" \
+            --message "Issue160 Public-only source $SOURCE_SHA" \
+            > "$RUNNER_TEMP/public-preview-upload.log" 2>&1
+      - name: Record immutable Preview version and verify unchanged deployment and isolation
+        if: inputs.publish
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_LEO563_PREVIEW_TOKEN }}
+        run: |
+          set -euo pipefail
+          set +x
+          node scripts/app-foundation/cloudflare-preview-publication.mjs record-upload \
+            --input "$RUNNER_TEMP/public-preview-upload.log" --preflight "$ARTIFACT_ROOT/evidence/publication-preflight.json" \
+            --source-sha "$SOURCE_SHA" --output "$ARTIFACT_ROOT/evidence/upload-evidence.json"
+          node scripts/app-foundation/cloudflare-preview-publication.mjs inspect-resource \
+            --upload "$ARTIFACT_ROOT/evidence/upload-evidence.json" --preflight "$ARTIFACT_ROOT/evidence/remote-preflight.json" \
+            --output "$ARTIFACT_ROOT/evidence/resource-proof.json"
+      - name: Verify real HTTPS canonical shell and exact restored public catalogue
+        if: inputs.publish
+        run: |
+          set -euo pipefail
+          preview_url="$(jq -r '.previewUrl' "$ARTIFACT_ROOT/evidence/upload-evidence.json")"
+          node scripts/app-foundation/real-preview-proof.mjs --url "$preview_url" --source-sha "$SOURCE_SHA" --output "$ARTIFACT_ROOT/evidence/runtime-proof.json"
+          node scripts/catalogue-direct/public-preview.mjs verify-https --url "$preview_url" --source-sha "$SOURCE_SHA" \
+            --checkpoint "$CHECKPOINT" --m3-run-id "$M3_RUN_ID" --build-root "$ARTIFACT_ROOT/build" \
+            --output "$ARTIFACT_ROOT/evidence/real-catalogue-proof.json"
+          jq '{sourceCommit,checkpoint,m3RunId,previewUrl,publicProducts,listingProducts,unknownRoute,prices,productionDns}' "$ARTIFACT_ROOT/evidence/real-catalogue-proof.json" >> "$GITHUB_STEP_SUMMARY"
+      - name: Record a failed upload without replay or raw provider output
+        if: failure() && steps.version_upload.outputs.write_attempted == 'true'
+        run: |
+          set -euo pipefail
+          node --input-type=module - "$RUNNER_TEMP/public-preview-upload.log" "$ARTIFACT_ROOT/evidence/upload-stop.json" <<'NODE'
+          import {readFile,writeFile} from 'node:fs/promises'
+          const log=await readFile(process.argv[2],'utf8').catch(()=>'')
+          const providerCodes=[...new Set([...log.matchAll(/\[code:\s*(\d+)\]/g)].map(x=>Number(x[1])))]
+          const stop={status:'STOP',unit:'versions-upload',writeAttempted:true,writeOutcome:'UNKNOWN_REQUIRES_READ_ONLY_INSPECTION',providerCodes,automaticRetry:false}
+          await writeFile(process.argv[3],JSON.stringify(stop,null,2)+'\n')
+          console.log(JSON.stringify(stop))
+          NODE
+      - name: Preserve sanitized execution evidence on every outcome
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: public-catalogue-preview-evidence-${{ github.run_id }}
+          path: ${{ env.ARTIFACT_ROOT }}/evidence/*.json
+          retention-days: 1
+          if-no-files-found: warn
