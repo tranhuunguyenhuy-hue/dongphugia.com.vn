@@ -159,11 +159,11 @@ describe.skipIf(!url)('direct data-only mapping on isolated PostgreSQL', () => {
         create policy leo541_products_select_public on dpg_app.products for select to authenticated
         using(is_active and publication_status='public' and pdp_visibility='public' and sellable_status='sellable')`)
       await assertTargetPrivate(client)
-      await client.query('set role authenticated')
+      await client.query('set row_security=on;set role authenticated')
       expect((await client.query('select count(*)::int as n from dpg_app.products')).rows[0].n).toBe(1)
       await client.query('reset role')
       await client.query("update dpg_app.products set publication_status='private'")
-      await client.query('set role authenticated')
+      await client.query('set row_security=on;set role authenticated')
       expect((await client.query('select count(*)::int as n from dpg_app.products')).rows[0].n).toBe(0)
       await client.query('reset role')
       await client.query('create policy unexpected_public_read on dpg_app.products to authenticated using(true)')
