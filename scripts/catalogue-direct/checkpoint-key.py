@@ -49,7 +49,8 @@ def check_vault(encrypted):
     if hashlib.sha256(base64.b64decode(readback["content"])).digest() != hashlib.sha256(encrypted).digest():
         raise VaultGate("VAULT_PROBE_HASH_MISMATCH")
     return {"vault_contents_read_write": "PASS", "probe_blob_sha": blob["sha"],
-            "existing_refs_modified": False, "scope_evidence": "no_classic_scopes_one_visible_private_repo"}
+            "existing_refs_modified": False, "scope_evidence": "no_classic_scopes_one_visible_private_repo",
+            "least_privilege_scope": "REQUIRES_PAT_SETTINGS_VERIFICATION"}
 
 
 def command(args, **kw):
