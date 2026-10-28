@@ -1,14 +1,14 @@
 import { createHash, randomUUID } from 'node:crypto'
 import { createReadStream, createWriteStream } from 'node:fs'
-import { readFile, writeFile, mkdtemp, rm, statfs } from 'node:fs/promises'
+import { readFile, writeFile, mkdtemp, rm, statfs, open } from 'node:fs/promises'
 import { join } from 'node:path'
 import { spawn } from 'node:child_process'
 import { createGzip, createGunzip } from 'node:zlib'
 import { pipeline } from 'node:stream/promises'
 import { createInterface } from 'node:readline'
 import {
-  CONTRACT, SOURCE, TARGET, SHA, CATALOGUE_TABLES, CATALOGUE_RESTORE_ORDER,
-  DATABASE_CEILING, CHECKPOINT_CEILING, requireGate, digest, identifier, tableIdentifier,
+  CONTRACT, SOURCE, TARGET, RECOVERY_ID, SHA, CATALOGUE_TABLES, CATALOGUE_RESTORE_ORDER,
+  DATABASE_CEILING, CHECKPOINT_CEILING, requireGate, digest, identifier,
   connectionConfig, assertBudget, assertManifest, assertSchema, rowsSql, insertSql, assertResume,
   SEQUENCE_BODY,
 } from './contract.mjs'
@@ -34,7 +34,18 @@ async function vault(path, method = 'GET', body) {
 
 async function saveCheckpoint(file, kind, reference = randomUUID()) {
   const bytes = await readFile(file)
-  requireGate(bytes.length <= CHECKPOINT_CEILING, 'CHECKPOINT_CAPACITY')
+  const ceiling = kind === 'source' ? 190000000 : 10000000
+  requireGate(bytes.length <= ceiling, 'CHECKPOINT_CAPACITY')
+  const refs = await vault(`/git/matching-refs/heads/direct-${RECOVERY_ID}-`)
+  requireGate(Array.isArray(refs) && refs.length <= 100, 'CHECKPOINT_LEDGER_BOUND')
+  let allocated = 0
+  for (const ref of refs) {
+    const receipt = await checkpointReceipt(ref.object.sha)
+    requireGate(receipt.recoveryId === RECOVERY_ID && Number.isSafeInteger(receipt.bytes)
+      && receipt.bytes > 0 && receipt.bytes <= CHECKPOINT_CEILING, 'CHECKPOINT_LEDGER_INVALID')
+    allocated += receipt.bytes
+  }
+  requireGate(allocated + bytes.length <= CHECKPOINT_CEILING, 'CUMULATIVE_CHECKPOINT_CAPACITY')
   const tree = []
   const parts = []
   for (let offset = 0; offset < bytes.length; offset += 16000000) {
@@ -44,7 +55,7 @@ async function saveCheckpoint(file, kind, reference = randomUUID()) {
     parts.push({ path, bytes: part.length, hash: digest(part) })
     tree.push({ path, mode: '100644', type: 'blob', sha: blob.sha })
   }
-  const receipt = { contract: CONTRACT, kind, source: SOURCE, target: TARGET, codeSha: env.GITHUB_SHA,
+  const receipt = { contract: CONTRACT, recoveryId: RECOVERY_ID, kind, source: SOURCE, target: TARGET, codeSha: env.GITHUB_SHA,
     bytes: bytes.length, hash: digest(bytes), parts }
   const blob = await vault('/git/blobs', 'POST', { content: JSON.stringify(receipt), encoding: 'utf-8' })
   tree.push({ path: 'receipt.json', mode: '100644', type: 'blob', sha: blob.sha })
@@ -53,14 +64,14 @@ async function saveCheckpoint(file, kind, reference = randomUUID()) {
     message: `Immutable direct catalogue ${kind}`, tree: created.sha, parents: [],
   })
   // A new orphan ref preserves every original backup/default branch. Never PATCH a ref.
-  await vault('/git/refs', 'POST', { ref: `refs/heads/direct-${reference}`, sha: commit.sha })
+  await vault('/git/refs', 'POST', { ref: `refs/heads/direct-${RECOVERY_ID}-${reference}`, sha: commit.sha })
   const verification = join(directory, 'readback.age')
   await loadCheckpoint(commit.sha, verification, kind)
   requireGate(digest(await readFile(verification)) === digest(bytes), 'CHECKPOINT_READBACK')
   return commit.sha
 }
 
-async function loadCheckpoint(sha, file, kind) {
+async function checkpointReceipt(sha) {
   requireGate(SHA.test(sha ?? ''), 'CHECKPOINT_REQUIRED')
   const commit = await vault(`/git/commits/${sha}`)
   const listing = await vault(`/git/trees/${commit.tree.sha}`)
@@ -69,17 +80,22 @@ async function loadCheckpoint(sha, file, kind) {
   requireGate(receiptEntry, 'CHECKPOINT_RECEIPT')
   const blob = await vault(`/git/blobs/${receiptEntry.sha}`)
   const receipt = JSON.parse(Buffer.from(blob.content, 'base64').toString('utf8'))
+  return { ...receipt, entries: listing.tree }
+}
+
+async function loadCheckpoint(sha, file, kind) {
+  const receipt = await checkpointReceipt(sha)
   requireGate(receipt.contract === CONTRACT && receipt.source === SOURCE && receipt.target === TARGET
-    && receipt.kind === kind && SHA.test(receipt.codeSha), 'CHECKPOINT_IDENTITY')
-  // A new code SHA needs an explicit reviewed compatibility decision; never silently promote old data.
-  requireGate(receipt.codeSha === env.GITHUB_SHA, 'CHECKPOINT_CODE_MISMATCH')
+    && receipt.recoveryId === RECOVERY_ID && receipt.kind === kind && SHA.test(receipt.codeSha), 'CHECKPOINT_IDENTITY')
+  // Source SHA is explicit and reviewed on resume; a harmless fix must not force re-export.
+  if (kind === 'source') requireGate(receipt.codeSha === (env.DIRECT_CHECKPOINT_CODE_SHA || env.GITHUB_SHA), 'CHECKPOINT_CODE_MISMATCH')
   requireGate(Number.isSafeInteger(receipt.bytes) && receipt.bytes > 0
     && receipt.bytes <= CHECKPOINT_CEILING && Array.isArray(receipt.parts)
     && receipt.parts.length > 0 && receipt.parts.length <= 13, 'CHECKPOINT_CAPACITY')
   const parts = []
   for (const [index, part] of receipt.parts.entries()) {
     requireGate(part.path === `${String(index).padStart(4, '0')}.agepart`, 'CHECKPOINT_PART')
-    const entry = listing.tree.find((item) => item.path === part.path && item.type === 'blob')
+    const entry = receipt.entries.find((item) => item.path === part.path && item.type === 'blob')
     requireGate(entry, 'CHECKPOINT_PART')
     const remote = await vault(`/git/blobs/${entry.sha}`)
     const content = Buffer.from(remote.content, 'base64')
@@ -152,9 +168,19 @@ async function connect(purpose) {
       and has_schema_privilege(n.oid,'CREATE')) as ddl,
     exists(select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace
       where n.nspname !~ '^pg_' and p.prosecdef and has_function_privilege(p.oid,'EXECUTE')
-      and not ($1::boolean and p.oid=to_regprocedure('dpg_app.direct_catalogue_restart(text,text,bigint)'))) as definer,
+      and not ($1::boolean and p.oid=to_regprocedure('dpg_app.direct_catalogue_restart(text,text,bigint)'))
+      and p.oid<>coalesce(to_regprocedure('dpg_control.enforce_free_tier_headroom_statement()'),0)) as definer,
     has_database_privilege(current_database(),'CREATE') as dbcreate`, [purpose === 'import'])
   requireGate(!extra.membership && !extra.ddl && !extra.definer && !extra.dbcreate, 'ROLE_AUTHORITY_BOUNDARY')
+  const sequenceRights = await client.query(`select
+    has_sequence_privilege(c.oid,'USAGE,UPDATE') as write,
+    has_sequence_privilege(c.oid,'SELECT') as read,
+    exists(select 1 from pg_depend d join pg_class t on t.oid=d.refobjid
+      join pg_namespace tn on tn.oid=t.relnamespace where d.objid=c.oid and d.deptype in ('a','i')
+        and tn.nspname=$1 and t.relname=any($2::text[])) as allowed
+    from pg_class c join pg_namespace n on n.oid=c.relnamespace
+    where c.relkind='S' and n.nspname !~ '^pg_'`, [schema, CATALOGUE_TABLES])
+  requireGate(sequenceRights.rows.every((r) => !r.write && (!r.read || r.allowed)), 'ROLE_SEQUENCE_BOUNDARY')
   if (purpose === 'import') {
     requireGate(role.name === 'dpg_direct_import', 'IMPORT_IDENTITY')
     const { rows: [helper] } = await client.query(`select p.prosrc,p.prosecdef,p.proconfig,
@@ -163,6 +189,12 @@ async function connect(purpose) {
     requireGate(helper?.prosrc === SEQUENCE_BODY && helper.prosecdef && helper.lanname === 'plpgsql'
       && JSON.stringify(helper.proconfig) === JSON.stringify(['search_path=pg_catalog'])
       && helper.owner !== role.name, 'SEQUENCE_HELPER_ATTESTATION')
+    const { rows: [acl] } = await client.query(`select exists(select 1 from pg_proc p
+      cross join lateral aclexplode(coalesce(p.proacl,acldefault('f',p.proowner))) a
+      where p.oid='dpg_app.direct_catalogue_restart(text,text,bigint)'::regprocedure
+      and (a.grantee not in (p.proowner,(select oid from pg_roles where rolname=current_user))
+        or (a.grantee=(select oid from pg_roles where rolname=current_user) and a.is_grantable))) as extra`)
+    requireGate(!acl.extra, 'SEQUENCE_HELPER_ACL')
   }
   return client
 }
@@ -180,8 +212,12 @@ export async function metadata(client, schema) {
       from pg_constraint where conrelid=$1::regclass order by contype,pg_get_constraintdef(oid)`, [relation])
     const { rows: [security] } = await client.query(`select relrowsecurity as rls, relforcerowsecurity as "forceRls"
       from pg_class where oid=$1::regclass`, [relation])
-    const { rows: triggers } = await client.query(`select tgname from pg_trigger
-      where tgrelid=$1::regclass and not tgisinternal and tgenabled<>'D' and (tgtype & 4)=4`, [relation])
+    const { rows: triggers } = await client.query(`select t.tgname as name,t.tgtype::integer as type,
+      t.tgenabled as enabled,n.nspname as schema,p.proname as function,p.prosrc as body,
+      p.prosecdef as definer,p.proconfig as config,l.lanname as language from pg_trigger t
+      join pg_proc p on p.oid=t.tgfoid join pg_namespace n on n.oid=p.pronamespace
+      join pg_language l on l.oid=p.prolang
+      where t.tgrelid=$1::regclass and not t.tgisinternal and t.tgenabled<>'D' and (t.tgtype & 4)=4`, [relation])
     const sequences = []
     for (const column of columns) {
       const { rows: [linked] } = await client.query('select pg_get_serial_sequence($1,$2) as name', [relation, column.name])
@@ -196,7 +232,7 @@ export async function metadata(client, schema) {
       }
     }
     tables.push({ name, columns, constraints: constraints.map((c) => c.definition), ...security,
-      insertTriggers: triggers.map((t) => t.tgname), sequences })
+      insertTriggers: triggers, sequences })
   }
   return tables
 }
@@ -219,13 +255,17 @@ async function scan(client, schema, table, onRow = async () => {}) {
 }
 
 async function exportSource() {
+  const existing = await vault(`/git/matching-refs/heads/direct-${RECOVERY_ID}-source`)
+  requireGate(existing.length === 0, 'SOURCE_CHECKPOINT_EXISTS_RESUME_INSTEAD')
   const client = await connect('source')
   await client.query('begin isolation level repeatable read read only')
   const schema = await metadata(client, 'public')
   const path = join(directory, 'source.jsonl')
-  const output = createWriteStream(path, { mode: 0o600 })
+  const output = await open(path, 'wx', 0o600)
+  let buffered = ''
   const line = async (value) => {
-    if (!output.write(JSON.stringify(value) + '\n')) await new Promise((resolve) => output.once('drain', resolve))
+    buffered += JSON.stringify(value) + '\n'
+    if (buffered.length >= 262144) { await output.write(buffered); buffered = '' }
   }
   try {
     const { rows: [footprint] } = await client.query(`select sum(pg_total_relation_size(c.oid))::text as bytes
@@ -239,16 +279,16 @@ async function exportSource() {
     }
     const manifest = assertManifest({ contract: CONTRACT, source: SOURCE, target: TARGET, codeSha: env.GITHUB_SHA, tables })
     await line({ kind: 'manifest', ...manifest })
-    output.end()
-    await new Promise((resolve, reject) => { output.on('finish', resolve); output.on('error', reject) })
+    if (buffered) await output.write(buffered)
+    await output.close()
     await client.query('commit')
     phase = 'M1_encrypt'
     const encrypted = join(directory, 'source.age')
     await age('encrypt', path, encrypted)
     phase = 'M1_durable_checkpoint'
-    const checkpoint = await saveCheckpoint(encrypted, 'source')
+    const checkpoint = await saveCheckpoint(encrypted, 'source', 'source')
     return { stage: 'M1', checkpoint, tables: 27, rows: tables.reduce((sum, t) => sum + t.count, 0) }
-  } catch (error) { output.destroy(); throw error }
+  } finally { await output.close() }
 }
 
 async function readSource(checkpoint) {
@@ -272,7 +312,8 @@ async function readSource(checkpoint) {
     else throw new Error('UNKNOWN_CHECKPOINT_RECORD')
   }
   requireGate(header?.contract === CONTRACT && header.source === SOURCE && header.target === TARGET
-    && header.codeSha === env.GITHUB_SHA && manifest, 'CHECKPOINT_HEADER')
+    && header.codeSha === (env.DIRECT_CHECKPOINT_CODE_SHA || env.GITHUB_SHA)
+    && manifest?.codeSha === header.codeSha, 'CHECKPOINT_HEADER')
   requireGate(header.schema?.length === 27 && new Set(header.schema.map((t) => t.name)).size === 27
     && CATALOGUE_TABLES.every((t) => header.schema.some((m) => m.name === t)), 'CHECKPOINT_SCHEMA')
   for (const table of manifest.tables) {
@@ -290,6 +331,12 @@ async function* sourceLines(path) {
 }
 
 async function targetSnapshot(client, schema) {
+  const { rows: [exposure] } = await client.query(`select exists(select 1 from pg_class c
+    join pg_namespace n on n.oid=c.relnamespace where n.nspname='dpg_app' and c.relname=any($1::text[])
+    and (exists(select 1 from pg_roles r where r.rolname in ('anon','authenticated')
+      and has_table_privilege(r.oid,c.oid,'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER'))
+    or exists(select 1 from aclexplode(coalesce(c.relacl,acldefault('r',c.relowner))) a where a.grantee=0))) as unsafe`, [CATALOGUE_TABLES])
+  requireGate(!exposure.unsafe, 'TARGET_PUBLIC_EXPOSURE')
   const { rows: [size] } = await client.query('select pg_database_size(current_database())::text as bytes')
   requireGate(BigInt(size.bytes) < BigInt(DATABASE_CEILING), 'DATABASE_CAPACITY')
   const tables = []
@@ -316,6 +363,8 @@ async function verifyData(client, source, targetSchema, checkSequences) {
 }
 
 async function importTarget(checkpoint, source) {
+  // Credential/privilege/setup errors must not consume the data-write attempt marker.
+  const writer = await connect('import')
   const reader = await connect('read')
   await reader.query('begin isolation level repeatable read read only')
   const before = await targetSnapshot(reader, await metadata(reader, 'dpg_app'))
@@ -330,9 +379,29 @@ async function importTarget(checkpoint, source) {
   const encrypted = join(directory, 'before.age')
   await age('encrypt', snapshotPath, encrypted)
   phase = 'M2_attempt_checkpoint'
-  const beforeCheckpoint = await saveCheckpoint(encrypted, 'target-before', `attempt-${checkpoint}`)
+  let attemptRef = `attempt-${checkpoint}`
+  if (env.DIRECT_RESUME_BEFORE_CHECKPOINT) {
+    const priorEncrypted = join(directory, 'prior-before.age')
+    await loadCheckpoint(env.DIRECT_RESUME_BEFORE_CHECKPOINT, priorEncrypted, 'target-before')
+    const priorPath = join(directory, 'prior-before.json')
+    await age('decrypt', priorEncrypted, priorPath)
+    const prior = JSON.parse(await readFile(priorPath, 'utf8'))
+    requireGate(prior.sourceCheckpoint === checkpoint && JSON.stringify(prior.schema) === JSON.stringify(before.schema)
+      && prior.tables.every((t) => t.count === 0), 'RESUME_BEFORE_STATE_MISMATCH')
+    const id = env.DIRECT_RESUME_OWNER_COMMENT
+    requireGate(/^\d+$/.test(id ?? ''), 'RESUME_OWNER_AUTHORITY_REQUIRED')
+    const response = await fetch(`https://api.github.com/repos/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/comments/${id}`,
+      { signal: AbortSignal.timeout(15000), redirect: 'error', headers: { Accept: 'application/vnd.github+json' } })
+    requireGate(response.ok, 'RESUME_OWNER_AUTHORITY_REQUIRED')
+    const approval = await response.json()
+    const marker = `DIRECT_RESUME_GO source=${checkpoint} before=${env.DIRECT_RESUME_BEFORE_CHECKPOINT} code=${env.GITHUB_SHA}`
+    requireGate(approval.user?.login === 'tranhuunguyenhuy-hue'
+      && approval.issue_url === 'https://api.github.com/repos/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/160'
+      && approval.body?.split('\n').includes(marker), 'RESUME_OWNER_AUTHORITY_REQUIRED')
+    attemptRef = `resume-go-${id}`
+  }
+  const beforeCheckpoint = await saveCheckpoint(encrypted, 'target-before', attemptRef)
   console.log(JSON.stringify({ status: 'PASS', stage: 'M2_before', checkpoint: beforeCheckpoint }))
-  const writer = await connect('import')
   await writer.query('begin isolation level serializable')
   try {
     requireGate((await writer.query('select pg_try_advisory_xact_lock(160,27) as locked')).rows[0].locked, 'MUTATION_OWNER_BUSY')

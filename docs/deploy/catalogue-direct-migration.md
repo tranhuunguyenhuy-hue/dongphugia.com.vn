@@ -22,7 +22,7 @@ branches remain unchanged. This procedure does not authorize Production or DNS.
    encrypted bundle and verify its authenticated content and per-table hashes
    before connecting the writer. Check exact destination
    `bonxyxluzlxfkdetryoo.dpg_app`, empty tables, schema compatibility, forced RLS,
-   insert-trigger absence and projected capacity. Save the affected empty-table
+   absence of unreviewed INSERT triggers and projected capacity. Save the affected empty-table
    state and sequence/schema metadata in another encrypted checkpoint. A fixed
    private ref `direct-attempt-<M1 commit>` is the one-shot write guard: it is
    never updated, deleted or bypassed. Replay after ambiguous commit is refused.
@@ -33,8 +33,11 @@ branches remain unchanged. This procedure does not authorize Production or DNS.
 3. **M3 / verify**: separate read-only identity and repeatable-read snapshot;
    compare all 27 counts/hashes, constraints, forced RLS, sequence **next-value
    semantics** and PostgreSQL database bytes. A checkpoint code SHA must equal
-   execution SHA; code changes after M1 need an explicit reviewed compatibility
-   decision, not a fresh export by default.
+   execution SHA by default. After a compatible code fix, explicitly supply the
+   original `checkpoint_code_sha`; the workflow verifies that it is an ancestor
+   of current reviewed main and still uses the same bundle contract. No fresh
+   export is needed. M1 also checks the approved 375,221-row baseline and four
+   key per-table counts; empty/drifting catalogue requires review.
 4. **M4 / Preview**: only after M3 PASS, reuse the canonical public application
    and existing Preview delivery path. This workflow does **not** implement
    public UI integration or claim that M4 has passed. Public filtering must use
@@ -43,9 +46,14 @@ branches remain unchanged. This procedure does not authorize Production or DNS.
    Do not use fixtures or an emergency replacement UI as catalogue recovery.
 5. **M5**: Production/DNS/bindings remain HOLD pending separate Owner GO.
 
-The current implementation requires exact column/default/constraint mapping;
-any difference is a review gate, not grounds to alter the source or relax target
-checks. Reject generated columns and unreviewed INSERT triggers. Sequence
+The current implementation requires column/type/nullability/constraint parity.
+All columns are inserted explicitly, so differing defaults and serial-versus-identity
+syntax do not change source values. Only PostgreSQL timestamp default precision
+versus explicit precision 6 is normalized; precision loss is refused. Reject
+generated columns and unreviewed INSERT triggers. The existing canonical
+`leo538_free_tier_headroom` statement trigger is retained: its event/configuration
+and exact function body must match the committed boundary migration. No guard is
+disabled. Sequence
 metadata is non-MVCC in PostgreSQL: the snapshot preserves rows consistently and
 records observed sequence state; the next value must exceed restored IDs.
 Source writes and `nextval()` are never used. `ALTER SEQUENCE RESTART` is
@@ -53,6 +61,20 @@ transactional; `setval()` is forbidden because it does not roll back.
 [PostgreSQL sequence functions](https://www.postgresql.org/docs/17/functions-sequence.html)
 
 ## Roles and initial setup
+
+Live metadata audit on 28 Oct found 27/27 tables and 316 columns on both projects,
+but destination lacks 20 UNIQUE constraints, one stock-status CHECK and two
+NOT NULL attributes. `scripts/catalogue-direct/target-parity.sql` prepares exactly
+those 23 statements in one transaction with an all-27-tables-empty guard. The
+source remains unchanged. Do not run it before exact target attestation and a
+durable pre-setup schema/ACL/empty-data checkpoint; the role bootstrap changes
+permissions and schema, so its snapshot precedes this setup, not just import.
+The transfer workflow deliberately does not run administrative setup SQL as the
+import role. Codex uses the authorized administrative control-plane session for
+this one reviewed M2 setup unit after M1, then revalidates the least-privilege
+credentials. No real role/helper/parity setup has executed yet. The existing
+23 canonical migrations are not replayed. Any newly observed difference requires
+review of that difference, not an unbounded migration run.
 
 Generate reviewable, password-free setup with:
 
@@ -70,17 +92,22 @@ PUBLIC grants. Import additionally needs the fixed-schema SECURITY DEFINER
 owner. PUBLIC execute is revoked; only `dpg_direct_import` may call it. The
 helper checks the original session user, hardcoded table allowlist, linked
 sequence, increment and next-value lower bound. Its exact body/configuration is
-attested before use. It executes no arbitrary caller-supplied SQL.
+attested before use, including exclusive effective execute ACL. Creation revokes
+unintended function default grants on this new helper, preserving other ACLs.
+It executes no arbitrary caller-supplied SQL.
 
 Purpose roles have BYPASSRLS solely to prevent silent filtered exports and allow
 inserts under forced RLS, paired with bounded table grants. Runtime attestation
 rejects superuser/role/database powers, memberships, unrelated table access,
-schema CREATE and executable unrelated SECURITY DEFINER routines. PUBLIC
+schema CREATE, direct sequence USAGE/UPDATE or unrelated sequence SELECT, and
+executable unrelated SECURITY DEFINER routines. Target preflight also rejects
+anon/authenticated/PUBLIC table access before any import. PUBLIC
 inherited privileges may cause a genuine security STOP; do not globally revoke
 or widen ACLs automatically. No role/password bootstrap has run on either real
-project. Source is read-only: use an existing compliant source identity; creating
-the generated source role requires a separate explicit source-access setup
-decision. Provision target identities through an authorized private administrative
+project. Source catalogue remains read-only: prefer an existing compliant source
+identity. Any necessary identity bootstrap changes only reviewed access metadata
+through the authorized private administrative session, never source catalogue
+rows. Provision target identities through an authorized private administrative
 session; never run migration data transfer as `postgres`.
 
 Synthetic PostgreSQL verification proves rollback of inserted rows **and**
@@ -132,10 +159,14 @@ to handle Dashboard navigation; the human completes MFA/credential entry.
 Finally, confirm account-wide Actions/Packages usage and private-vault headroom
 at GitHub Settings → Billing & licensing → Usage. Set Environment variable
 `DIRECT_ZERO_COST_ATTESTATION` to a JSON record with `verifiedAt` (current UTC
-ISO timestamp), `billableUsd: 0`, `paidUsageBlocked: true`, and
+ISO timestamp), `recoveryId: "issue160-direct-20261028"`, `billableUsd: 0`, `paidUsageBlocked: true`, and
 `checkpointBytesRemaining` (verified integer bytes, at least 200000000).
 Do not fabricate this record: Codex can set it after reading actual evidence.
 It expires after 24 hours. No paid overage, plan upgrade or artifact deletion.
+All checkpoint refs for this fixed recovery ID are inventoried before publication;
+their cumulative bytes plus the new checkpoint cannot exceed 200 MB. Source
+ciphertext is capped at 190 MB, retaining space for before-state receipts, and
+the single source ref prevents repeated exports consuming the same allowance.
 The 200 MB checkpoint cap is an internal conservative guard, not a claim about
 the account's actual billing allowance.
 
@@ -157,6 +188,23 @@ must never trigger another export. The fixed attempt ref preserves the before
 state across ambiguous commit or runner loss; use verify to establish reality.
 Keep original ciphertext, refs and prior success evidence. Clear only ephemeral
 secret/plaintext; rollback uncommitted transactions on disconnect.
+
+After a genuine data-write STOP, normal execution must first choose `verify`.
+If the target is independently proven to match its preserved **empty** before
+state including sequences/schema, a new linked import attempt may use
+`resume_before_checkpoint` plus `resume_owner_comment`. The latter identifies an
+Owner comment in Issue #160 containing exactly this line (substitute SHAs):
+
+```text
+DIRECT_RESUME_GO source=<M1 commit> before=<preserved before commit> code=<current main SHA>
+```
+
+The original attempt remains intact. Each resume GO comment can create only one
+new immutable attempt ref; reuse is refused. This is recovery approval after a
+real STOP, not approval for every routine deployment. Credential attestation
+occurs before creating the data-write marker, so a missing writer credential
+does not consume it. An ambiguous commit with nonempty/different target never
+permits automatic import replay.
 
 On data/security/cost/permission risk: STOP, publish exact stage, last verified
 checkpoint/run/SHA, target-write attempt and transaction certainty, safe remaining

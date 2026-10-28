@@ -21,6 +21,18 @@ on:
         description: Immutable private-vault commit from M1 (empty for export)
         required: false
         type: string
+      checkpoint_code_sha:
+        description: Original reviewed M1 code SHA when resuming after a compatible code fix
+        required: false
+        type: string
+      resume_before_checkpoint:
+        description: Preserved target-before receipt for an explicitly authorized post-STOP import resume
+        required: false
+        type: string
+      resume_owner_comment:
+        description: Issue 160 Owner comment ID authorizing this exact source/before/current-code tuple
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -70,6 +82,7 @@ jobs:
         with:
           ref: ${{ github.sha }}
           persist-credentials: false
+          fetch-depth: 0
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 24.13.0
@@ -102,6 +115,9 @@ jobs:
           DIRECT_STAGE: ${{ inputs.stage }}
           DIRECT_APPROVED_SHA: ${{ inputs.approved_sha }}
           DIRECT_CHECKPOINT: ${{ inputs.checkpoint }}
+          DIRECT_CHECKPOINT_CODE_SHA: ${{ inputs.checkpoint_code_sha }}
+          DIRECT_RESUME_BEFORE_CHECKPOINT: ${{ inputs.resume_before_checkpoint }}
+          DIRECT_RESUME_OWNER_COMMENT: ${{ inputs.resume_owner_comment }}
           DIRECT_ZERO_COST_ATTESTATION: ${{ vars.DIRECT_ZERO_COST_ATTESTATION }}
           DIRECT_SOURCE_DATABASE_URL: ${{ secrets.DIRECT_SOURCE_DATABASE_URL }}
           DIRECT_SOURCE_CA: ${{ secrets.DIRECT_SOURCE_CA }}
@@ -116,6 +132,10 @@ jobs:
           set +x
           umask 077
           ulimit -c 0
+          if [[ -n "$DIRECT_CHECKPOINT_CODE_SHA" ]]; then
+            [[ "$DIRECT_CHECKPOINT_CODE_SHA" =~ ^[a-f0-9]{40}$ ]]
+            git merge-base --is-ancestor "$DIRECT_CHECKPOINT_CODE_SHA" "$GITHUB_SHA"
+          fi
           node scripts/catalogue-direct/run.mjs
       - name: Remove only ephemeral secret-bearing tmpfs on every exit
         if: always()

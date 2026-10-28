@@ -2,7 +2,7 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import {
-  SOURCE, TARGET, CONTRACT, CATALOGUE_TABLES, CATALOGUE_RESTORE_ORDER, SEQUENCE_BODY,
+  SOURCE, TARGET, CONTRACT, RECOVERY_ID, HEADROOM_BODY, CATALOGUE_TABLES, CATALOGUE_RESTORE_ORDER, SEQUENCE_BODY,
   connectionConfig, assertBudget, assertManifest, assertSchema, assertResume,
   insertSql, rowsSql, provisioningSql, comparableSchema,
 } from './contract.mjs'
@@ -10,8 +10,11 @@ import {
 const ca = '-----BEGIN CERTIFICATE-----\nsynthetic\n-----END CERTIFICATE-----'
 const sha = 'a'.repeat(40)
 const validUrl = `postgresql://dpg_direct_source:synthetic@db.${SOURCE}.supabase.co:5432/postgres`
-const manifest = () => ({ contract: CONTRACT, source: SOURCE, target: TARGET, codeSha: sha,
-  tables: CATALOGUE_TABLES.map((name) => ({ name, count: 0, hash: 'b'.repeat(64) })) })
+const manifest = () => {
+  const counts = { products: 17752, product_images: 110321, product_descriptions: 17752, product_spec_values: 135311, brands: 94085 }
+  return { contract: CONTRACT, source: SOURCE, target: TARGET, codeSha: sha,
+    tables: CATALOGUE_TABLES.map((name) => ({ name, count: counts[name] ?? 0, hash: 'b'.repeat(64) })) }
+}
 const schema = (namespace) => CATALOGUE_RESTORE_ORDER.map((name) => ({ name, rls: true, forceRls: true,
   insertTriggers: [], sequences: [], columns: [{ name: 'id', type: 'integer', notNull: true, generated: '',
     identity: '', default: `nextval('${namespace}.${name}_id_seq'::regclass)` }], constraints: ['PRIMARY KEY (id)'] }))
@@ -51,9 +54,15 @@ describe('direct 27-table scope and connections', () => {
     expect(() => assertResume('export', sha)).toThrow('CHECKPOINT_REQUIRED')
     expect(() => assertResume('verify', sha)).not.toThrow()
   })
+  it('rejects empty or changed source baseline instead of claiming a successful empty recovery', () => {
+    const empty = manifest(); empty.tables.forEach((t) => { t.count = 0 })
+    expect(() => assertManifest(empty)).toThrow('SOURCE_BASELINE_DRIFT_REVIEW_REQUIRED')
+    const drift = manifest(); drift.tables.find((t) => t.name === 'products').count++
+    expect(() => assertManifest(drift)).toThrow('SOURCE_BASELINE_DRIFT_REVIEW_REQUIRED')
+  })
   it('requires recent account-wide $0 evidence and bounded private checkpoint headroom', () => {
     const now = Date.now()
-    const good = { verifiedAt: new Date(now).toISOString(), billableUsd: 0,
+    const good = { recoveryId: RECOVERY_ID, verifiedAt: new Date(now).toISOString(), billableUsd: 0,
       paidUsageBlocked: true, checkpointBytesRemaining: 200000000 }
     expect(() => assertBudget(good, now)).not.toThrow()
     expect(() => assertBudget({ ...good, billableUsd: 1 }, now)).toThrow('ZERO_COST')
@@ -75,6 +84,21 @@ describe('schema mapping and reversible sequence control', () => {
     expect(() => assertSchema(schema('public'), triggered)).toThrow('INSERT_TRIGGER')
     const unprotected = schema('dpg_app'); unprotected[0].forceRls = false
     expect(() => assertSchema(schema('public'), unprotected)).toThrow('TARGET_RLS')
+  })
+  it('retains the exact canonical capacity trigger and accepts only lossless timestamp precision mapping', () => {
+    const target = schema('dpg_app')
+    target[0].insertTriggers.push({ name: 'leo538_free_tier_headroom', type: 20, enabled: 'O', schema: 'dpg_control',
+      function: 'enforce_free_tier_headroom_statement', body: HEADROOM_BODY, definer: true,
+      config: ['search_path=pg_catalog'], language: 'plpgsql' })
+    expect(() => assertSchema(schema('public'), target)).not.toThrow()
+    target[0].insertTriggers[0].body += '\nperform malicious();'
+    expect(() => assertSchema(schema('public'), target)).toThrow('INSERT_TRIGGER')
+    const source = schema('public'); const destination = schema('dpg_app')
+    source[0].columns[0].type = 'timestamp with time zone'
+    destination[0].columns[0].type = 'timestamp(6) with time zone'
+    expect(() => assertSchema(source, destination)).not.toThrow()
+    destination[0].columns[0].type = 'timestamp(3) with time zone'
+    expect(() => assertSchema(source, destination)).toThrow('SCHEMA_MAPPING')
   })
   it('preserves identity keys and JSON numeric precision with explicit column insert', () => {
     expect(insertSql('products', ['id', 'price'])).toBe('insert into dpg_app."products" ("id", "price") overriding system value select "id", "price" from json_populate_recordset(null::dpg_app."products", $1::json)')
