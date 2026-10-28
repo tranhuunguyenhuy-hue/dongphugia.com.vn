@@ -75,27 +75,29 @@ begin
     raise exception 'CATALOGUE_REHOME_BACKUP_ROLE_MEMBERSHIP_FAILED';
   end if;
 
-  if exists (select 1 from auth.users limit 1) then
-    raise exception 'CATALOGUE_REHOME_AUTH_NOT_EMPTY';
-  end if;
-  if exists (select 1 from storage.objects limit 1) then
-    raise exception 'CATALOGUE_REHOME_STORAGE_NOT_EMPTY';
-  end if;
-  for table_name in
-    select c.relname
-    from pg_class c
-    join pg_namespace n on n.oid = c.relnamespace
-    where n.nspname = 'dpg_v1'
-      and c.relkind in ('r', 'p')
-      and c.relname not in ('categories', 'role_capabilities')
-    order by c.relname
-  loop
-    execute format('select exists(select 1 from dpg_v1.%I limit 1)', table_name)
-      into has_rows;
-    if has_rows then
-      raise exception 'CATALOGUE_REHOME_V1_DATA_NOT_EMPTY table=%', table_name;
+  if current_user <> 'dpg_catalogue_restore' then
+    if exists (select 1 from auth.users limit 1) then
+      raise exception 'CATALOGUE_REHOME_AUTH_NOT_EMPTY';
     end if;
-  end loop;
+    if exists (select 1 from storage.objects limit 1) then
+      raise exception 'CATALOGUE_REHOME_STORAGE_NOT_EMPTY';
+    end if;
+    for table_name in
+      select c.relname
+      from pg_class c
+      join pg_namespace n on n.oid = c.relnamespace
+      where n.nspname = 'dpg_v1'
+        and c.relkind in ('r', 'p')
+        and c.relname not in ('categories', 'role_capabilities')
+      order by c.relname
+    loop
+      execute format('select exists(select 1 from dpg_v1.%I limit 1)', table_name)
+        into has_rows;
+      if has_rows then
+        raise exception 'CATALOGUE_REHOME_V1_DATA_NOT_EMPTY table=%', table_name;
+      end if;
+    end loop;
+  end if;
 
   if exists (
     (select id, parent_id, sector, name, slug, summary, is_leaf, is_active,
@@ -261,54 +263,56 @@ begin
     raise exception 'CATALOGUE_REHOME_V1_ROLE_CAPABILITY_SEED_DRIFT';
   end if;
 
-  if exists (
-    (select family_key, label, source, confidence
-     from dpg_app.product_families
-     except values ('toto:ms885', 'TOTO MS885', 'toto-catalogue', 'high'))
-    union all
-    (values ('toto:ms885', 'TOTO MS885', 'toto-catalogue', 'high')
-     except select family_key, label, source, confidence
-            from dpg_app.product_families)
-  ) or exists (
-    (select family.family_key, configuration.group_key, configuration.label,
-            configuration.sort_order, configuration.source, configuration.confidence
-     from dpg_app.product_family_configuration_groups configuration
-     join dpg_app.product_families family on family.id = configuration.family_id
-     except values
-       ('toto:ms885', 'ecowasher', 'nắp rửa cơ', 0, 'toto-catalogue', 'high'),
-       ('toto:ms885', 'electronic-washlet', 'nắp điện tử', 1, 'toto-catalogue', 'high'),
-       ('toto:ms885', 'soft-close', 'nắp đóng êm', 2, 'toto-catalogue', 'high'))
-    union all
-    (values
-       ('toto:ms885', 'ecowasher', 'nắp rửa cơ', 0, 'toto-catalogue', 'high'),
-       ('toto:ms885', 'electronic-washlet', 'nắp điện tử', 1, 'toto-catalogue', 'high'),
-       ('toto:ms885', 'soft-close', 'nắp đóng êm', 2, 'toto-catalogue', 'high')
-     except select family.family_key, configuration.group_key, configuration.label,
-                   configuration.sort_order, configuration.source, configuration.confidence
-            from dpg_app.product_family_configuration_groups configuration
-            join dpg_app.product_families family on family.id = configuration.family_id)
-  ) or exists (
-    (select family.family_key, gap.member_key, gap.gap_type, gap.status,
-            gap.source, gap.confidence, gap.note
-     from dpg_app.product_family_catalogue_gaps gap
-     join dpg_app.product_families family on family.id = gap.family_id
-     except values
-       ('toto:ms885', 'MS885DW4#XW', 'missing_product', 'open', 'toto-catalogue', 'high',
-        'Approved canonical member; Product row is not fabricated by M2.3.'),
-       ('toto:ms885', 'MS885DW18#XW', 'missing_product', 'open', 'toto-catalogue', 'high',
-        'Approved canonical member; Product row is not fabricated by M2.3.'))
-    union all
-    (values
-       ('toto:ms885', 'MS885DW4#XW', 'missing_product', 'open', 'toto-catalogue', 'high',
-        'Approved canonical member; Product row is not fabricated by M2.3.'),
-       ('toto:ms885', 'MS885DW18#XW', 'missing_product', 'open', 'toto-catalogue', 'high',
-        'Approved canonical member; Product row is not fabricated by M2.3.')
-     except select family.family_key, gap.member_key, gap.gap_type, gap.status,
-                   gap.source, gap.confidence, gap.note
-            from dpg_app.product_family_catalogue_gaps gap
-            join dpg_app.product_families family on family.id = gap.family_id)
-  ) or exists (select 1 from dpg_app.product_family_memberships) then
-    raise exception 'CATALOGUE_REHOME_CHECKPOINT_SEED_DRIFT';
+  if current_user <> 'dpg_catalogue_restore' then
+    if exists (
+      (select family_key, label, source, confidence
+       from dpg_app.product_families
+       except values ('toto:ms885', 'TOTO MS885', 'toto-catalogue', 'high'))
+      union all
+      (values ('toto:ms885', 'TOTO MS885', 'toto-catalogue', 'high')
+       except select family_key, label, source, confidence
+              from dpg_app.product_families)
+    ) or exists (
+      (select family.family_key, configuration.group_key, configuration.label,
+              configuration.sort_order, configuration.source, configuration.confidence
+       from dpg_app.product_family_configuration_groups configuration
+       join dpg_app.product_families family on family.id = configuration.family_id
+       except values
+         ('toto:ms885', 'ecowasher', 'nắp rửa cơ', 0, 'toto-catalogue', 'high'),
+         ('toto:ms885', 'electronic-washlet', 'nắp điện tử', 1, 'toto-catalogue', 'high'),
+         ('toto:ms885', 'soft-close', 'nắp đóng êm', 2, 'toto-catalogue', 'high'))
+      union all
+      (values
+         ('toto:ms885', 'ecowasher', 'nắp rửa cơ', 0, 'toto-catalogue', 'high'),
+         ('toto:ms885', 'electronic-washlet', 'nắp điện tử', 1, 'toto-catalogue', 'high'),
+         ('toto:ms885', 'soft-close', 'nắp đóng êm', 2, 'toto-catalogue', 'high')
+       except select family.family_key, configuration.group_key, configuration.label,
+                     configuration.sort_order, configuration.source, configuration.confidence
+              from dpg_app.product_family_configuration_groups configuration
+              join dpg_app.product_families family on family.id = configuration.family_id)
+    ) or exists (
+      (select family.family_key, gap.member_key, gap.gap_type, gap.status,
+              gap.source, gap.confidence, gap.note
+       from dpg_app.product_family_catalogue_gaps gap
+       join dpg_app.product_families family on family.id = gap.family_id
+       except values
+         ('toto:ms885', 'MS885DW4#XW', 'missing_product', 'open', 'toto-catalogue', 'high',
+          'Approved canonical member; Product row is not fabricated by M2.3.'),
+         ('toto:ms885', 'MS885DW18#XW', 'missing_product', 'open', 'toto-catalogue', 'high',
+          'Approved canonical member; Product row is not fabricated by M2.3.'))
+      union all
+      (values
+         ('toto:ms885', 'MS885DW4#XW', 'missing_product', 'open', 'toto-catalogue', 'high',
+          'Approved canonical member; Product row is not fabricated by M2.3.'),
+         ('toto:ms885', 'MS885DW18#XW', 'missing_product', 'open', 'toto-catalogue', 'high',
+          'Approved canonical member; Product row is not fabricated by M2.3.')
+       except select family.family_key, gap.member_key, gap.gap_type, gap.status,
+                     gap.source, gap.confidence, gap.note
+              from dpg_app.product_family_catalogue_gaps gap
+              join dpg_app.product_families family on family.id = gap.family_id)
+    ) or exists (select 1 from dpg_app.product_family_memberships) then
+      raise exception 'CATALOGUE_REHOME_CHECKPOINT_SEED_DRIFT';
+    end if;
   end if;
 
   for table_name in
@@ -321,6 +325,16 @@ begin
         'product_families', 'product_family_configuration_groups',
         'product_family_catalogue_gaps', 'product_family_memberships'
       )
+      and (current_user <> 'dpg_catalogue_restore' or c.relname = any(array[
+        'brands', 'catalog_taxons', 'categories', 'colors', 'external_taxonomy_mappings',
+        'filter_definitions', 'materials', 'origins', 'product_attribute_values',
+        'product_descriptions', 'product_documents', 'product_feature_values',
+        'product_features', 'product_images', 'product_package_items',
+        'product_relationships', 'product_secondary_subcategories', 'product_source_mappings',
+        'product_spec_values', 'product_sub_types', 'product_taxon_assignments',
+        'product_types', 'product_variant_groups', 'products', 'spec_definitions',
+        'spec_options', 'subcategories'
+      ]::text[]))
     order by c.relname
   loop
     execute format('select exists(select 1 from dpg_app.%I limit 1)', table_name)
@@ -336,4 +350,10 @@ begin
 end
 $catalogue_rehome_preflight$;
 
-select dpg_control.assert_free_tier_headroom(114691219);
+do $catalogue_rehome_headroom$
+begin
+  if pg_database_size(current_database()) + 114691219 >= 367001600 then
+    raise exception 'CATALOGUE_REHOME_DATABASE_HEADROOM_FAILED';
+  end if;
+end
+$catalogue_rehome_headroom$;

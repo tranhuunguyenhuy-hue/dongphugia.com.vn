@@ -1,0 +1,603 @@
+name: Issue 160 protected Supabase recovery (one attempt)
+
+on:
+  workflow_dispatch:
+    inputs:
+      approved_main_sha:
+        description: Exact main SHA containing the reviewed recovery controls
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+  issues: read
+
+concurrency:
+  group: supabase-runtime-issue160-recovery-${{ github.repository }}
+  cancel-in-progress: false
+
+env:
+  POSTGRES_IMAGE: postgres:17.6-bookworm@sha256:f3bd19c606e442c3d7bdfa8002e03fe260a1023351e0ea4598032022b68dd6e3
+  ISSUE_NUMBER: '160'
+  OWNER_GO_COMMENT_ID: '6444168865'
+  OWNER_UPDATE_COMMENT_ID: '6444628120'
+  OWNER_LATEST_GO_COMMENT_ID: '6458714324'
+  BACKUP_RUN_ID: '38915575745'
+  BACKUP_ARTIFACT_ID: '12052107648'
+  BACKUP_ARTIFACT_NAME: 'leo540-runtime-backup-38915575745'
+  BACKUP_ARTIFACT_SIZE: '9286999'
+  BACKUP_ARTIFACT_SHA256: '348431a2837ae5c3f473d80f5ca8807242e5bb1e164caf71f740a4bb76049e57'
+  BACKUP_CONTROL_SHA: 'ce64e8cc7caf91b8bf2e4e2315d49e21bacdfffc'
+  EXPECTED_PR_NUMBER: '156'
+  EXPECTED_CANDIDATE_SHA: d300eb696a94acfa557fbaf7a8c0e66876dafb63
+  EXPECTED_CONTROL_SHA: ce64e8cc7caf91b8bf2e4e2315d49e21bacdfffc
+  EXPECTED_MERGE_SHA: 59d9ea02dbceb5a3b83d00f929a8ee3a8f70cc35
+  EXPECTED_WORKFLOW_RUN_ID: '38915575745'
+  EXPECTED_SOURCE_AGE_RECIPIENT: age12zqtv9r2fc4v2j0kk6v79xrvy66gxcht2uqfxvqske4lzh83uq2qtqhfmc
+  BACKUP_DIR: /dev/shm/c-issue160-original-backup
+  SNAPSHOT_DIR: /dev/shm/c-issue160-destination-snapshot
+  OUTPUT_DIR: /dev/shm/c-issue160-catalogue-evidence
+  SUPABASE_ORGANIZATION_SLUG: ymjvuwefhqqlymwlocqn
+  SUPABASE_PROJECT_REF: bonxyxluzlxfkdetryoo
+  SUPABASE_PROJECT_REGION: ap-southeast-1
+  SUPABASE_FREE_DATABASE_SIZE_LIMIT_BYTES: '500000000'
+  SUPABASE_RUNTIME_DATABASE_HARD_CEILING_BYTES: '367001600'
+  GITHUB_ARTIFACT_STORAGE_BUDGET_BYTES: '500000000'
+
+jobs:
+  source_gate:
+    name: Validate exact owner GO, source artifact, and one-shot context
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact main
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: refs/heads/main
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Validate exact GO, source and one-shot dispatch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APPROVED_MAIN_SHA: ${{ inputs.approved_main_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REPOSITORY" = 'tranhuunguyenhuy-hue/dongphugia.com.vn'
+          test "$GITHUB_EVENT_NAME" = workflow_dispatch
+          test "$GITHUB_REF" = refs/heads/main
+          test "$GITHUB_ACTOR" = tranhuunguyenhuy-hue
+          test "$GITHUB_RUN_NUMBER" = 1
+          test "$GITHUB_RUN_ATTEMPT" = 1
+          [[ "$APPROVED_MAIN_SHA" =~ ^[0-9a-f]{40}$ ]]
+          test "$(git rev-parse HEAD)" = "$APPROVED_MAIN_SHA"
+          test "$GITHUB_SHA" = "$APPROVED_MAIN_SHA"
+
+          issue_json="$(gh api "repos/$GITHUB_REPOSITORY/issues/$ISSUE_NUMBER")"
+          test "$(jq -r '.state' <<<"$issue_json")" = open
+          latest_owner_control="$(gh api --paginate --jq \
+            '.[] | select(.user.login == "tranhuunguyenhuy-hue") | select(.body | sub("(?m)^#+\\s*"; "") | test("(?m)^OWNER (GO|APPROVAL|STOP|HOLD|CANCEL|REVOKE)(\\s|—|:|$)")) | .id' \
+            "repos/$GITHUB_REPOSITORY/issues/$ISSUE_NUMBER/comments?per_page=100" | sort -n | tail -n 1)"
+          test "$latest_owner_control" = "$OWNER_LATEST_GO_COMMENT_ID"
+
+          go_comment="$(gh api "repos/$GITHUB_REPOSITORY/issues/comments/$OWNER_GO_COMMENT_ID")"
+          jq -e --arg owner 'tranhuunguyenhuy-hue' \
+            '.user.login == $owner and (.body | contains("OWNER GO — SUPABASE SCHEMA RECONCILIATION & CONDITIONAL CATALOGUE SYNC"))' \
+            <<<"$go_comment" >/dev/null
+          latest_go_comment="$(gh api "repos/$GITHUB_REPOSITORY/issues/comments/$OWNER_LATEST_GO_COMMENT_ID")"
+          jq -e --arg owner 'tranhuunguyenhuy-hue' \
+            '.user.login == $owner and (.body | contains("OWNER APPROVAL — PRIORITIZE FINAL BLOCKER RESOLUTION"))' \
+            <<<"$latest_go_comment" >/dev/null
+          update_comment="$(gh api "repos/$GITHUB_REPOSITORY/issues/comments/$OWNER_UPDATE_COMMENT_ID")"
+          jq -e --arg owner 'tranhuunguyenhuy-hue' \
+            '.user.login == $owner and (.body | gsub("`"; "") | contains("SUPABASE_REHOME_DATABASE_URL has now been added"))' \
+            <<<"$update_comment" >/dev/null
+
+          source_run="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$BACKUP_RUN_ID")"
+          test "$(jq -r '.conclusion' <<<"$source_run")" = success
+          test "$(jq -r '.head_sha' <<<"$source_run")" = "$BACKUP_CONTROL_SHA"
+          artifact="$(gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$BACKUP_ARTIFACT_ID")"
+          test "$(jq -r '.name' <<<"$artifact")" = "$BACKUP_ARTIFACT_NAME"
+          test "$(jq -r '.size_in_bytes' <<<"$artifact")" = "$BACKUP_ARTIFACT_SIZE"
+          test "$(jq -r '.digest' <<<"$artifact")" = "sha256:$BACKUP_ARTIFACT_SHA256"
+          test "$(jq -r '.expired' <<<"$artifact")" = false
+          expires_at="$(jq -r '.expires_at' <<<"$artifact")"
+          test "$(date -d "$expires_at" +%s)" -gt "$(date +%s)"
+          active_artifact_bytes="$(gh api --paginate --jq \
+            '.artifacts[] | select(.expired == false) | .size_in_bytes' \
+            "repos/$GITHUB_REPOSITORY/actions/artifacts?per_page=100" | \
+            awk '{ total += $1 } END { printf "%.0f", total }')"
+          [[ "$active_artifact_bytes" =~ ^[0-9]+$ ]]
+          if (( active_artifact_bytes >= GITHUB_ARTIFACT_STORAGE_BUDGET_BYTES )); then
+            echo 'ISSUE160_RECOVERY status=STOP stage=source_gate reason=github_artifact_budget_exceeded'
+            exit 1
+          fi
+          echo 'ISSUE160_RECOVERY_GATE status=PASS owner_go=current source_artifact=exact run_attempt=one'
+
+  recover:
+    name: Snapshot, schema reconciliation, and one catalogue sync
+    needs: source_gate
+    if: needs.source_gate.result == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    environment: runtime-backup
+    steps:
+      - name: Check out the exact approved main SHA
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ inputs.approved_main_sha }}
+          persist-credentials: false
+
+      - name: Check runner capacity before protected inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(findmnt -no FSTYPE -T /dev/shm)" = tmpfs
+          tmpfs_available="$(df -B1 --output=avail /dev/shm | tail -1 | xargs)"
+          disk_available="$(df -B1 --output=avail "$RUNNER_TEMP" | tail -1 | xargs)"
+          memory_available_kib="$(awk '/^MemAvailable:/ { print $2 }' /proc/meminfo)"
+          [[ "$tmpfs_available" =~ ^[0-9]+$ && "$disk_available" =~ ^[0-9]+$ &&
+             "$memory_available_kib" =~ ^[0-9]+$ ]]
+          if (( tmpfs_available < 6442450944 || disk_available < 4294967296 ||
+                memory_available_kib < 6291456 )); then
+            echo 'ISSUE160_RECOVERY status=STOP stage=runner_capacity'
+            exit 1
+          fi
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$GITHUB_RUN_NUMBER" = 1
+          test "$GITHUB_RUN_ATTEMPT" = 1
+          echo 'ISSUE160_RECOVERY status=PASS stage=runner_capacity exact_sha=true'
+
+      - name: Disable and verify host swap before protected inputs
+        shell: bash
+        run: bash scripts/backup/c-actions-host-swap-preflight.sh
+
+      - name: Install pinned tools and PostgreSQL client image before protected inputs
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24.13.0
+
+      - name: Prepare age, PostgreSQL client, locked dependencies, and pinned image
+        shell: bash
+        run: |
+          set -euo pipefail
+          tools_dir="$RUNNER_TEMP/issue160-recovery-tools"
+          mkdir -m 0700 "$tools_dir"
+          sudo apt-get update -qq
+          sudo apt-get install --no-install-recommends --yes jq postgresql-client >/dev/null
+          curl --fail --location --silent --show-error --max-time 120 \
+            --output "$tools_dir/age.tar.gz" \
+            'https://github.com/FiloSottile/age/releases/download/v1.3.2/age-v1.3.2-linux-amd64.tar.gz'
+          printf '%s  %s\n' \
+            'cbe24006683f8eb669266162894b9a522a1af52f2665fbc63a4bb032ed26ac10' \
+            "$tools_dir/age.tar.gz" | sha256sum --check --status
+          tar -xOzf "$tools_dir/age.tar.gz" age/age >"$tools_dir/age"
+          tar -xOzf "$tools_dir/age.tar.gz" age/age-keygen >"$tools_dir/age-keygen"
+          chmod 0500 "$tools_dir/age" "$tools_dir/age-keygen"
+          printf '%s  %s\n' \
+            'eb7dd1b518f0a307c99cd97782623c5321da049154b04acd2d98d21aa7bc9b2c' \
+            "$tools_dir/age" | sha256sum --check --status
+          echo "$tools_dir" >>"$GITHUB_PATH"
+          docker pull "$POSTGRES_IMAGE" >/dev/null 2>&1
+          test "$(docker image inspect --format '{{.Os}}/{{.Architecture}}' "$POSTGRES_IMAGE")" = linux/amd64
+          npm ci
+
+      - name: Require protected database, TLS, and management credentials
+        env:
+          SUPABASE_REHOME_DATABASE_URL: ${{ secrets.SUPABASE_REHOME_DATABASE_URL }}
+          SUPABASE_REHOME_MIGRATION_DATABASE_URL: ${{ secrets.SUPABASE_REHOME_MIGRATION_DATABASE_URL }}
+          SUPABASE_REHOME_CATALOGUE_DATABASE_URL: ${{ secrets.SUPABASE_REHOME_CATALOGUE_DATABASE_URL }}
+          SUPABASE_REHOME_ROOT_CA_CERTIFICATE: ${{ secrets.SUPABASE_REHOME_ROOT_CA_CERTIFICATE }}
+          SUPABASE_MANAGEMENT_TOKEN: ${{ secrets.SUPABASE_MANAGEMENT_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$SUPABASE_REHOME_DATABASE_URL"
+          test -n "$SUPABASE_REHOME_MIGRATION_DATABASE_URL"
+          test -n "$SUPABASE_REHOME_CATALOGUE_DATABASE_URL"
+          test -n "$SUPABASE_REHOME_ROOT_CA_CERTIFICATE"
+          test -n "$SUPABASE_MANAGEMENT_TOKEN"
+          echo 'ISSUE160_RECOVERY_GATE status=PASS protected_secret_presence=all'
+
+      - name: Verify exact Free organization and healthy target project
+        env:
+          SUPABASE_MANAGEMENT_TOKEN: ${{ secrets.SUPABASE_MANAGEMENT_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          org_result=/dev/shm/issue160-organization.json
+          projects_result=/dev/shm/issue160-projects.json
+          printf 'header = "Authorization: Bearer %s"\n' "$SUPABASE_MANAGEMENT_TOKEN" | \
+            curl --config - --fail --silent --show-error --max-time 30 \
+              --output "$org_result" \
+              "https://api.supabase.com/v1/organizations/$SUPABASE_ORGANIZATION_SLUG"
+          printf 'header = "Authorization: Bearer %s"\n' "$SUPABASE_MANAGEMENT_TOKEN" | \
+            curl --config - --fail --silent --show-error --max-time 30 \
+              --output "$projects_result" 'https://api.supabase.com/v1/projects'
+          test "$(jq -r '.plan' "$org_result")" = free
+          jq -e --arg ref "$SUPABASE_PROJECT_REF" \
+            --arg org "$SUPABASE_ORGANIZATION_SLUG" \
+            --arg region "$SUPABASE_PROJECT_REGION" '
+              any(.[] | select(.ref == $ref and .organization_slug == $org
+                and .name == "dongphugia-runtime" and .region == $region
+                and .status == "ACTIVE_HEALTHY"))
+            ' "$projects_result" >/dev/null
+          rm -f "$org_result" "$projects_result"
+          echo 'SUPABASE_CONTROL_PLANE status=PASS plan=free project=exact region=ap-southeast-1 health=ACTIVE_HEALTHY'
+
+      - name: Download exact original ciphertext into tmpfs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: python3 -B scripts/backup/c_actions_original_source.py
+
+      - name: Verify exact source bundle before binding its private identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          archives=("$BACKUP_DIR"/*.dump.age)
+          manifests=("$BACKUP_DIR"/*.manifest.json)
+          checksum_files=("$BACKUP_DIR"/*.checksums.sha256)
+          shopt -u nullglob
+          test "${#archives[@]}" = 1
+          test "${#manifests[@]}" = 1
+          test "${#checksum_files[@]}" = 1
+          (cd "$BACKUP_DIR" && sha256sum -c "$(basename "${checksum_files[0]}")" >/dev/null)
+          node scripts/backup/manifest-contract.mjs validate "${manifests[0]}" >/dev/null
+          node scripts/backup/catalogue-restore-contract.mjs validate-source "${manifests[0]}" \
+            "$EXPECTED_PR_NUMBER" "$EXPECTED_CANDIDATE_SHA" "$EXPECTED_CONTROL_SHA" \
+            "$EXPECTED_WORKFLOW_RUN_ID" "$EXPECTED_MERGE_SHA" >/dev/null
+          echo 'ISSUE160_RECOVERY_GATE status=PASS source_bundle=exact ciphertext=verified'
+
+      - name: Verify read-only target baseline over verified TLS
+        id: baseline
+        env:
+          SUPABASE_REHOME_DATABASE_URL: ${{ secrets.SUPABASE_REHOME_DATABASE_URL }}
+          SUPABASE_REHOME_ROOT_CA_CERTIFICATE: ${{ secrets.SUPABASE_REHOME_ROOT_CA_CERTIFICATE }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/backup/supabase-runtime-target.mjs validate-url
+          baseline="$(node scripts/backup/catalogue-restore-contract.mjs baseline-preflight-sql | \
+            SUPABASE_PSQL_TMPDIR=/dev/shm node scripts/backup/supabase-runtime-psql.mjs --tuples-only)"
+          [[ "$baseline" =~ ^([0-9]+)\|13\|27$ ]]
+          database_bytes="${BASH_REMATCH[1]}"
+          echo "database_bytes=$database_bytes" >>"$GITHUB_OUTPUT"
+          echo "SUPABASE_RUNTIME_BASELINE status=PASS database_bytes=$database_bytes rls_gaps=13 catalogue_tables=27 auth_storage=empty"
+
+      - name: Create and prove encrypted destination snapshot before writes
+        env:
+          SUPABASE_REHOME_DATABASE_URL: ${{ secrets.SUPABASE_REHOME_DATABASE_URL }}
+          SUPABASE_REHOME_ROOT_CA_CERTIFICATE: ${{ secrets.SUPABASE_REHOME_ROOT_CA_CERTIFICATE }}
+          BACKUP_AGE_PRIVATE_KEY: ${{ secrets.BACKUP_AGE_PRIVATE_KEY }}
+          EXPECTED_SOURCE_AGE_RECIPIENT: ${{ env.EXPECTED_SOURCE_AGE_RECIPIENT }}
+        shell: bash
+        run: bash scripts/backup/supabase-runtime-snapshot.sh
+
+      - name: Check rollback snapshot retention against the free artifact budget
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          active_artifact_bytes="$(gh api --paginate --jq \
+            '.artifacts[] | select(.expired == false) | .size_in_bytes' \
+            "repos/$GITHUB_REPOSITORY/actions/artifacts?per_page=100" | \
+            awk '{ total += $1 } END { printf "%.0f", total }')"
+          [[ "$active_artifact_bytes" =~ ^[0-9]+$ ]]
+          snapshot_bytes="$(find "$SNAPSHOT_DIR" -maxdepth 1 -type f -printf '%s\n' | \
+            awk '{ total += $1 } END { printf "%.0f", total }')"
+          [[ "$snapshot_bytes" =~ ^[0-9]+$ && "$snapshot_bytes" -gt 0 ]]
+          evidence_reserve_bytes=5242880
+          projected_artifact_bytes=$((active_artifact_bytes + snapshot_bytes + evidence_reserve_bytes))
+          if (( projected_artifact_bytes >= GITHUB_ARTIFACT_STORAGE_BUDGET_BYTES )); then
+            echo 'ISSUE160_RECOVERY status=STOP stage=artifact_capacity reason=github_artifact_budget_exceeded'
+            exit 1
+          fi
+          echo 'ISSUE160_RECOVERY status=PASS stage=artifact_capacity rollback_snapshot_retained=true evidence_reserve=5MiB'
+
+      - name: Persist only encrypted destination snapshot and sanitized receipt
+        id: snapshot_upload
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: issue160-destination-snapshot-${{ github.run_id }}
+          path: ${{ env.SNAPSHOT_DIR }}
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Rehearse the exact filtered catalogue source in isolated PostgreSQL
+        env:
+          BACKUP_AGE_PRIVATE_KEY: ${{ secrets.BACKUP_AGE_PRIVATE_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          identity="$BACKUP_AGE_PRIVATE_KEY"
+          unset BACKUP_AGE_PRIVATE_KEY
+          trap 'unset identity' EXIT
+          printf '%s' "$identity" | env -u AGE_IDENTITY -u AGE_IDENTITY_FILE \
+            MODE=rehearsal HOSTED_RECOVERY=true KEEP_OUTPUT_DIR=true \
+            BACKUP_DIR="$BACKUP_DIR" OUTPUT_DIR="$OUTPUT_DIR" \
+            EXPECTED_AGE_RECIPIENT="$EXPECTED_SOURCE_AGE_RECIPIENT" \
+            POSTGRES_IMAGE="$POSTGRES_IMAGE" \
+            EXPECTED_PR_NUMBER="$EXPECTED_PR_NUMBER" \
+            EXPECTED_CANDIDATE_SHA="$EXPECTED_CANDIDATE_SHA" \
+            EXPECTED_CONTROL_SHA="$EXPECTED_CONTROL_SHA" \
+            EXPECTED_MERGE_SHA="$EXPECTED_MERGE_SHA" \
+            EXPECTED_WORKFLOW_RUN_ID="$EXPECTED_WORKFLOW_RUN_ID" \
+            bash scripts/backup/restore-catalogue-runtime.sh
+
+      - name: Revalidate project, snapshot artifact, and unchanged target before first write
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SUPABASE_MANAGEMENT_TOKEN: ${{ secrets.SUPABASE_MANAGEMENT_TOKEN }}
+          SUPABASE_REHOME_DATABASE_URL: ${{ secrets.SUPABASE_REHOME_DATABASE_URL }}
+          SUPABASE_REHOME_ROOT_CA_CERTIFICATE: ${{ secrets.SUPABASE_REHOME_ROOT_CA_CERTIFICATE }}
+          SNAPSHOT_ARTIFACT_ID: ${{ steps.snapshot_upload.outputs.artifact-id }}
+          SNAPSHOT_BASELINE_DATABASE_BYTES: ${{ steps.baseline.outputs.database_bytes }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          issue_json="$(gh api "repos/$GITHUB_REPOSITORY/issues/$ISSUE_NUMBER")"
+          test "$(jq -r '.state' <<<"$issue_json")" = open
+          latest_owner_control="$(gh api --paginate --jq \
+            '.[] | select(.user.login == "tranhuunguyenhuy-hue") | select(.body | sub("(?m)^#+\\s*"; "") | test("(?m)^OWNER (GO|APPROVAL|STOP|HOLD|CANCEL|REVOKE)(\\s|—|:|$)")) | .id' \
+            "repos/$GITHUB_REPOSITORY/issues/$ISSUE_NUMBER/comments?per_page=100" | sort -n | tail -n 1)"
+          test "$latest_owner_control" = "$OWNER_LATEST_GO_COMMENT_ID"
+          go_comment="$(gh api "repos/$GITHUB_REPOSITORY/issues/comments/$OWNER_GO_COMMENT_ID")"
+          jq -e --arg owner 'tranhuunguyenhuy-hue' \
+            '.user.login == $owner and (.body | contains("OWNER GO — SUPABASE SCHEMA RECONCILIATION & CONDITIONAL CATALOGUE SYNC"))' \
+            <<<"$go_comment" >/dev/null
+          latest_go_comment="$(gh api "repos/$GITHUB_REPOSITORY/issues/comments/$OWNER_LATEST_GO_COMMENT_ID")"
+          jq -e --arg owner 'tranhuunguyenhuy-hue' \
+            '.user.login == $owner and (.body | contains("OWNER APPROVAL — PRIORITIZE FINAL BLOCKER RESOLUTION"))' \
+            <<<"$latest_go_comment" >/dev/null
+          update_comment="$(gh api "repos/$GITHUB_REPOSITORY/issues/comments/$OWNER_UPDATE_COMMENT_ID")"
+          jq -e --arg owner 'tranhuunguyenhuy-hue' \
+            '.user.login == $owner and (.body | gsub("`"; "") | contains("SUPABASE_REHOME_DATABASE_URL has now been added"))' \
+            <<<"$update_comment" >/dev/null
+          test -n "$SNAPSHOT_ARTIFACT_ID"
+          test "$(jq -r '.projectRef' "$SNAPSHOT_DIR/snapshot-receipt.json")" = "$SUPABASE_PROJECT_REF"
+          test "$(jq -r '.sourceSha' "$SNAPSHOT_DIR/snapshot-receipt.json")" = "$GITHUB_SHA"
+          for snapshot in affected-schemas.custom.age public-schema.custom.age \
+            auth-extension-schema-acls.json.age global-roles.no-passwords.sql.age; do
+            test -f "$SNAPSHOT_DIR/$snapshot" && test ! -L "$SNAPSHOT_DIR/$snapshot"
+          done
+          database_hash="$(jq -r '.databaseCiphertextSha256' "$SNAPSHOT_DIR/snapshot-receipt.json")"
+          public_hash="$(jq -r '.publicCiphertextSha256' "$SNAPSHOT_DIR/snapshot-receipt.json")"
+          acl_hash="$(jq -r '.authExtensionAclCiphertextSha256' "$SNAPSHOT_DIR/snapshot-receipt.json")"
+          globals_hash="$(jq -r '.globalsCiphertextSha256' "$SNAPSHOT_DIR/snapshot-receipt.json")"
+          test "$(jq -r '.format' "$SNAPSHOT_DIR/snapshot-receipt.json")" = dpg-supabase-destination-snapshot-v3
+          test "$(jq -r '.isolatedArchiveHashChecks' "$SNAPSHOT_DIR/snapshot-receipt.json")" = PASS
+          test "$(jq -r '.isolatedSchemaAclEquivalence' "$SNAPSHOT_DIR/snapshot-receipt.json")" = PASS
+          test "$(jq -r '.isolatedSchemaEquivalence' "$SNAPSHOT_DIR/snapshot-receipt.json")" = PASS
+          test "$(jq -r '.isolatedDataAndSequenceEquivalence' "$SNAPSHOT_DIR/snapshot-receipt.json")" = PASS
+          test "$(jq -r '.isolatedRoleStateEquivalence' "$SNAPSHOT_DIR/snapshot-receipt.json")" = PASS
+          test "$(sha256sum "$SNAPSHOT_DIR/affected-schemas.custom.age" | awk '{print $1}')" = "$database_hash"
+          test "$(sha256sum "$SNAPSHOT_DIR/public-schema.custom.age" | awk '{print $1}')" = "$public_hash"
+          test "$(sha256sum "$SNAPSHOT_DIR/auth-extension-schema-acls.json.age" | awk '{print $1}')" = "$acl_hash"
+          test "$(sha256sum "$SNAPSHOT_DIR/global-roles.no-passwords.sql.age" | awk '{print $1}')" = "$globals_hash"
+
+          org_result=/dev/shm/issue160-prewrite-organization.json
+          projects_result=/dev/shm/issue160-prewrite-projects.json
+          printf 'header = "Authorization: Bearer %s"\n' "$SUPABASE_MANAGEMENT_TOKEN" | \
+            curl --config - --fail --silent --show-error --max-time 30 \
+              --output "$org_result" \
+              "https://api.supabase.com/v1/organizations/$SUPABASE_ORGANIZATION_SLUG"
+          printf 'header = "Authorization: Bearer %s"\n' "$SUPABASE_MANAGEMENT_TOKEN" | \
+            curl --config - --fail --silent --show-error --max-time 30 \
+              --output "$projects_result" 'https://api.supabase.com/v1/projects'
+          test "$(jq -r '.plan' "$org_result")" = free
+          jq -e --arg ref "$SUPABASE_PROJECT_REF" \
+            --arg org "$SUPABASE_ORGANIZATION_SLUG" \
+            --arg region "$SUPABASE_PROJECT_REGION" '
+              any(.[] | select(.ref == $ref and .organization_slug == $org
+                and .name == "dongphugia-runtime" and .region == $region
+                and .status == "ACTIVE_HEALTHY"))
+            ' "$projects_result" >/dev/null
+          rm -f "$org_result" "$projects_result"
+
+          node scripts/backup/supabase-runtime-target.mjs validate-url
+          current_bytes="$(printf '%s\n' 'select pg_database_size(current_database())::bigint::text;' | \
+            SUPABASE_PSQL_TMPDIR=/dev/shm node scripts/backup/supabase-runtime-psql.mjs --tuples-only)"
+          [[ "$current_bytes" =~ ^[0-9]+$ ]]
+          filtered_bytes="$(jq -er '.filteredTargetDatabaseBytes | numbers' "$OUTPUT_DIR/rehearsal-capacity.json")"
+          [[ "$filtered_bytes" =~ ^[0-9]+$ ]]
+          reserve_bytes=67108864
+          projected_bytes=$((current_bytes + filtered_bytes + reserve_bytes))
+          if (( projected_bytes >= SUPABASE_RUNTIME_DATABASE_HARD_CEILING_BYTES || \
+                projected_bytes >= SUPABASE_FREE_DATABASE_SIZE_LIMIT_BYTES )); then
+            echo 'SUPABASE_RUNTIME_CAPACITY status=STOP stage=pre-migration reason=insufficient_database_headroom'
+            exit 1
+          fi
+          echo "SUPABASE_RUNTIME_CAPACITY status=PASS stage=pre-catalogue current_database_bytes=$current_bytes filtered_catalogue_database_bytes=$filtered_bytes reserved_headroom_bytes=$reserve_bytes projected_database_bytes=$projected_bytes free_plan_limit_bytes=$SUPABASE_FREE_DATABASE_SIZE_LIMIT_BYTES internal_hard_ceiling_bytes=$SUPABASE_RUNTIME_DATABASE_HARD_CEILING_BYTES"
+          echo "ISSUE160_RECOVERY_GATE status=PASS pre_catalogue_schema=verified snapshot=verified database_bytes=$current_bytes"
+
+      - name: Apply verified canonical schema migrations once
+        env:
+          SUPABASE_REHOME_DATABASE_URL: ${{ secrets.SUPABASE_REHOME_DATABASE_URL }}
+          SUPABASE_REHOME_MIGRATION_DATABASE_URL: ${{ secrets.SUPABASE_REHOME_MIGRATION_DATABASE_URL }}
+          SUPABASE_REHOME_ROOT_CA_CERTIFICATE: ${{ secrets.SUPABASE_REHOME_ROOT_CA_CERTIFICATE }}
+        shell: bash
+        run: node scripts/backup/supabase-runtime-migrations.mjs apply
+
+      - name: Verify all 23 migrations, schema, RLS, and read-only API contract
+        env:
+          SUPABASE_REHOME_DATABASE_URL: ${{ secrets.SUPABASE_REHOME_DATABASE_URL }}
+          SUPABASE_REHOME_MIGRATION_DATABASE_URL: ${{ secrets.SUPABASE_REHOME_MIGRATION_DATABASE_URL }}
+          SUPABASE_REHOME_ROOT_CA_CERTIFICATE: ${{ secrets.SUPABASE_REHOME_ROOT_CA_CERTIFICATE }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/backup/supabase-runtime-migrations.mjs status
+          for acceptance in supabase/tests/leo560_preview_rls_hardening.sql \
+            supabase/tests/supabase_runtime_readonly_acceptance.sql; do
+            if ! node scripts/backup/supabase-runtime-psql.mjs --file "$acceptance" \
+              >/dev/null 2>/dev/null; then
+              echo 'SUPABASE_RUNTIME_ACCEPTANCE status=STOP stage=read_only_contract'
+              exit 1
+            fi
+          done
+          echo 'SUPABASE_RUNTIME_ACCEPTANCE status=PASS migrations=23 rls=forced api=readonly'
+
+      - name: Recheck target is still empty and exact before catalogue write
+        env:
+          MODE: preflight
+          HOSTED_RECOVERY: 'true'
+          KEEP_OUTPUT_DIR: 'true'
+          BACKUP_DIR: ${{ env.BACKUP_DIR }}
+          OUTPUT_DIR: ${{ env.OUTPUT_DIR }}
+          EXPECTED_PR_NUMBER: ${{ env.EXPECTED_PR_NUMBER }}
+          EXPECTED_CANDIDATE_SHA: ${{ env.EXPECTED_CANDIDATE_SHA }}
+          EXPECTED_CONTROL_SHA: ${{ env.EXPECTED_CONTROL_SHA }}
+          EXPECTED_MERGE_SHA: ${{ env.EXPECTED_MERGE_SHA }}
+          EXPECTED_WORKFLOW_RUN_ID: ${{ env.EXPECTED_WORKFLOW_RUN_ID }}
+          SUPABASE_REHOME_DATABASE_URL: ${{ secrets.SUPABASE_REHOME_DATABASE_URL }}
+          SUPABASE_REHOME_ROOT_CA_CERTIFICATE: ${{ secrets.SUPABASE_REHOME_ROOT_CA_CERTIFICATE }}
+        shell: bash
+        run: bash scripts/backup/restore-catalogue-runtime.sh
+
+      - name: Prove Free-plan database headroom before catalogue write
+        env:
+          SUPABASE_REHOME_DATABASE_URL: ${{ secrets.SUPABASE_REHOME_DATABASE_URL }}
+          SUPABASE_REHOME_ROOT_CA_CERTIFICATE: ${{ secrets.SUPABASE_REHOME_ROOT_CA_CERTIFICATE }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          rehearsal_file="$OUTPUT_DIR/rehearsal-capacity.json"
+          test -f "$rehearsal_file" && test ! -L "$rehearsal_file"
+          filtered_bytes="$(jq -er '.filteredTargetDatabaseBytes | numbers' "$rehearsal_file")"
+          [[ "$filtered_bytes" =~ ^[0-9]+$ ]]
+          current_bytes="$(printf '%s\n' 'select pg_database_size(current_database())::bigint::text;' | \
+            SUPABASE_PSQL_TMPDIR=/dev/shm node scripts/backup/supabase-runtime-psql.mjs --tuples-only)"
+          [[ "$current_bytes" =~ ^[0-9]+$ ]]
+          reserve_bytes=67108864
+          projected_bytes=$((current_bytes + filtered_bytes + reserve_bytes))
+          if (( projected_bytes >= SUPABASE_RUNTIME_DATABASE_HARD_CEILING_BYTES || \
+                projected_bytes >= SUPABASE_FREE_DATABASE_SIZE_LIMIT_BYTES )); then
+            echo 'SUPABASE_RUNTIME_CAPACITY status=STOP reason=insufficient_database_headroom'
+            exit 1
+          fi
+          echo "SUPABASE_RUNTIME_CAPACITY status=PASS current_database_bytes=$current_bytes filtered_catalogue_database_bytes=$filtered_bytes reserved_headroom_bytes=$reserve_bytes projected_database_bytes=$projected_bytes free_plan_limit_bytes=$SUPABASE_FREE_DATABASE_SIZE_LIMIT_BYTES internal_hard_ceiling_bytes=$SUPABASE_RUNTIME_DATABASE_HARD_CEILING_BYTES"
+
+      - name: Execute the single catalogue sync transaction
+        env:
+          MODE: apply
+          HOSTED_RECOVERY: 'true'
+          KEEP_OUTPUT_DIR: 'true'
+          BACKUP_DIR: ${{ env.BACKUP_DIR }}
+          OUTPUT_DIR: ${{ env.OUTPUT_DIR }}
+          EXPECTED_PR_NUMBER: ${{ env.EXPECTED_PR_NUMBER }}
+          EXPECTED_CANDIDATE_SHA: ${{ env.EXPECTED_CANDIDATE_SHA }}
+          EXPECTED_CONTROL_SHA: ${{ env.EXPECTED_CONTROL_SHA }}
+          EXPECTED_MERGE_SHA: ${{ env.EXPECTED_MERGE_SHA }}
+          EXPECTED_WORKFLOW_RUN_ID: ${{ env.EXPECTED_WORKFLOW_RUN_ID }}
+          EXPECTED_CATALOGUE_MANIFEST: ${{ env.OUTPUT_DIR }}/catalogue-expected.json
+          SUPABASE_REHOME_DATABASE_URL: ${{ secrets.SUPABASE_REHOME_DATABASE_URL }}
+          SUPABASE_RUNTIME_TARGET_PURPOSE: catalogue_restore
+          SUPABASE_REHOME_CATALOGUE_DATABASE_URL: ${{ secrets.SUPABASE_REHOME_CATALOGUE_DATABASE_URL }}
+          SUPABASE_REHOME_ROOT_CA_CERTIFICATE: ${{ secrets.SUPABASE_REHOME_ROOT_CA_CERTIFICATE }}
+          BACKUP_AGE_PRIVATE_KEY: ${{ secrets.BACKUP_AGE_PRIVATE_KEY }}
+          EXPECTED_AGE_RECIPIENT: ${{ env.EXPECTED_SOURCE_AGE_RECIPIENT }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          identity="$BACKUP_AGE_PRIVATE_KEY"
+          unset BACKUP_AGE_PRIVATE_KEY
+          trap 'unset identity' EXIT
+          printf '%s' "$identity" | env -u AGE_IDENTITY -u AGE_IDENTITY_FILE \
+            bash scripts/backup/restore-catalogue-runtime.sh
+
+      - name: Confirm final database size and retained migration contract
+        id: final
+        env:
+          SUPABASE_REHOME_DATABASE_URL: ${{ secrets.SUPABASE_REHOME_DATABASE_URL }}
+          SUPABASE_REHOME_MIGRATION_DATABASE_URL: ${{ secrets.SUPABASE_REHOME_MIGRATION_DATABASE_URL }}
+          SUPABASE_REHOME_ROOT_CA_CERTIFICATE: ${{ secrets.SUPABASE_REHOME_ROOT_CA_CERTIFICATE }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/backup/supabase-runtime-migrations.mjs status
+          final_bytes="$(printf '%s\n' 'select pg_database_size(current_database())::bigint::text;' | \
+            SUPABASE_PSQL_TMPDIR=/dev/shm node scripts/backup/supabase-runtime-psql.mjs --tuples-only)"
+          [[ "$final_bytes" =~ ^[0-9]+$ ]]
+          (( final_bytes < 367001600 ))
+          echo "database_bytes=$final_bytes" >>"$GITHUB_OUTPUT"
+          echo "SUPABASE_RUNTIME_FINAL database_bytes=$final_bytes migration_count=23"
+
+      - name: Upload sanitized catalogue evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: issue160-catalogue-verification-${{ github.run_id }}
+          path: ${{ env.OUTPUT_DIR }}
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Record bounded success result
+        if: success()
+        shell: bash
+        run: |
+          {
+            echo '### Issue #160 protected Supabase recovery: PASS'
+            echo '- Snapshot: encrypted at rest; isolated PostgreSQL restore validation passed before schema mutation.'
+            echo '- Schema: exact 23-migration ledger, required API contract, and forced RLS verified.'
+            echo '- Catalogue: authenticated source filtered to the exact 27-table allowlist; counts and hashes compared.'
+            echo "- Final database bytes: ${{ steps.final.outputs.database_bytes }} (hard ceiling 367001600)."
+            echo '- Auth, Storage, Production, DNS, and Cloudflare were not written.'
+          } >>"$GITHUB_STEP_SUMMARY"
+
+      - name: Remove protected temporary files
+        if: always()
+        shell: bash
+        run: |
+          rm -rf -- "$BACKUP_DIR" "$SNAPSHOT_DIR" "$OUTPUT_DIR" \
+            /dev/shm/issue160-organization.json /dev/shm/issue160-projects.json \
+            "$RUNNER_TEMP/issue160-recovery-tools"
+
+  report_stop:
+    name: Report sanitized recovery STOP to Issue 160
+    needs: [source_gate, recover]
+    if: ${{ always() && github.actor == 'tranhuunguyenhuy-hue' && (needs.source_gate.result != 'success' || needs.recover.result != 'success') }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      actions: read
+      issues: write
+    steps:
+      - name: Post bounded failure state only
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_GATE_RESULT: ${{ needs.source_gate.result }}
+          RECOVERY_RESULT: ${{ needs.recover.result }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          SOURCE_SHA: ${{ github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          failed_steps="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/jobs" \
+            --jq '[.jobs[].steps[]? | select(.conclusion == "failure") | .name] | join(", ")' \
+            2>/dev/null || true)"
+          if [[ -z "$failed_steps" ]]; then
+            failed_steps='UNKNOWN; inspect the protected run URL'
+          fi
+          body="$(cat <<EOF
+          ## Issue #160 protected recovery — STOP
+
+          Run: $RUN_URL
+          Source SHA: $SOURCE_SHA
+          Source gate: $SOURCE_GATE_RESULT
+          Recovery job: $RECOVERY_RESULT
+          Failed step: $failed_steps
+          Verified table count: UNKNOWN
+          Row counts/hashes: UNKNOWN
+          Schema/RLS: UNKNOWN
+          Database bytes: UNKNOWN
+          Target write state: UNKNOWN; do not retry.
+
+          No secret values, decrypted data, database rows, or raw failure logs are included here. Check the protected run through its approved access path before any further action.
+          EOF
+          )"
+          gh api --method POST "repos/$GITHUB_REPOSITORY/issues/$ISSUE_NUMBER/comments" \
+            --field body="$body" >/dev/null

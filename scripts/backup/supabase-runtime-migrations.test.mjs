@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest'
 import {
   ADOPTED_CHECKPOINT_MIGRATIONS,
   EXPECTED_RUNTIME_MIGRATIONS,
+  assertMigrationIdentity,
   executeRuntimeMigrations,
   stripReadOnlyOuterTransaction,
   stripOuterTransaction,
@@ -46,6 +47,37 @@ function migrationReadClient(ledgerRows) {
 }
 
 describe('Supabase runtime migration runner contract', () => {
+  it('requires the exact unprivileged migration identity before migration operations', async () => {
+    const client = {
+      async query() {
+        return { rows: [{
+          session_user: 'dpg_migration_login',
+          current_user: 'dpg_migration',
+          can_set_migration_role: true,
+          exact_membership_contract: true,
+          login_role_minimal: true,
+          capability_role_minimal: true,
+        }] }
+      },
+    }
+    await expect(assertMigrationIdentity(client)).resolves.toBeUndefined()
+    await expect(assertMigrationIdentity({
+      async query() {
+        return { rows: [{
+          session_user: 'dpg_migration_login',
+          current_user: 'dpg_migration',
+          can_set_migration_role: true,
+          exact_membership_contract: false,
+          login_role_minimal: true,
+          capability_role_minimal: true,
+        }] }
+      },
+    })).rejects.toThrow('migration_identity_contract_failed')
+    await expect(assertMigrationIdentity({
+      async query() { return { rows: [{ session_user: 'postgres', current_user: 'postgres' }] } },
+    })).rejects.toThrow('migration_identity_contract_failed')
+  })
+
   it('pins the exact adopted checkpoint and complete ordered migration set', async () => {
     const actual = (await readdir('supabase/migrations'))
       .filter((name) => name.endsWith('.sql'))
@@ -133,6 +165,42 @@ describe('Supabase runtime migration runner contract', () => {
     expect(statements.some((sql) => sql.trim() === missingMigrationSql.trim())).toBe(false)
   })
 
+  it('applies the pending migration prefix in one transaction so a later failure rolls it all back', async () => {
+    const prefix = await expectedLedgerPrefix(ADOPTED_CHECKPOINT_MIGRATIONS.length)
+    const statements = []
+    const failedMigration = EXPECTED_RUNTIME_MIGRATIONS[10]
+    const failedSql = stripOuterTransaction(await readFile(
+      `supabase/migrations/${failedMigration}`,
+      'utf8',
+    )).trim()
+    const client = {
+      async query(sql) {
+        statements.push(sql)
+        if (sql.includes('pg_database_size(current_database())')) {
+          return { rows: [{ current_size_bytes: '1000', hard_ceiling_bytes: '367001600' }] }
+        }
+        if (sql.includes("to_regclass('dpg_control.runtime_migration_ledger')")) {
+          return { rows: [{ present: true }] }
+        }
+        if (sql.includes('from dpg_control.runtime_migration_ledger')) {
+          return { rows: prefix }
+        }
+        if (sql.trim() === failedSql) throw new Error('synthetic migration failure')
+        return { rows: [] }
+      },
+    }
+
+    await expect(executeRuntimeMigrations(client, 'apply'))
+      .rejects.toThrow('synthetic migration failure')
+
+    expect(statements.filter((sql) => /^begin isolation level serializable$/i.test(sql.trim())))
+      .toHaveLength(1)
+    expect(statements.filter((sql) => /^commit$/i.test(sql.trim()))).toHaveLength(0)
+    expect(statements.filter((sql) => /^rollback$/i.test(sql.trim()))).toHaveLength(1)
+    expect(statements.findIndex((sql) => sql.trim() === failedSql))
+      .toBeLessThan(statements.findIndex((sql) => /^rollback$/i.test(sql.trim())))
+  })
+
   it.each([
     [0, 'runner-applied'],
     [ADOPTED_CHECKPOINT_MIGRATIONS.length, 'checkpoint-adopted'],
@@ -176,5 +244,14 @@ describe('Supabase runtime migration runner contract', () => {
     expect(runner).toContain('grant select, insert on table dpg_control.runtime_migration_ledger to postgres')
     expect(runner).toContain("execFileSync('bash', ['scripts/backup/attest-supabase-runtime-checkpoint.sh']")
     expect(runner).not.toMatch(/error\.(detail|hint|where|query|stack)/)
+  })
+
+  it('keeps Auth and Storage emptiness checks on the snapshot acceptance identity', async () => {
+    const runner = await readFile('scripts/backup/supabase-runtime-migrations.mjs', 'utf8')
+    const acceptance = await readFile('supabase/tests/supabase_runtime_readonly_acceptance.sql', 'utf8')
+
+    expect(runner).not.toMatch(/from\s+auth\.users|from\s+storage\.objects/i)
+    expect(acceptance).toMatch(/exists\s*\(select\s+1\s+from\s+auth\.users\)/i)
+    expect(acceptance).toMatch(/exists\s*\(select\s+1\s+from\s+storage\.objects\)/i)
   })
 })

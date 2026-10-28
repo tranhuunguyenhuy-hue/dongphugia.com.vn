@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { readFile } from 'node:fs/promises'
 
 import {
   CATALOGUE_TABLES,
@@ -7,6 +8,9 @@ import {
   buildRehearsalTargetCheckSql,
   buildCatalogueSnapshotSql,
   buildCatalogueValidationSql,
+  buildCatalogueSequenceSql,
+  buildCatalogueRestoreIdentitySql,
+  buildRuntimeBaselinePreflightSql,
   catalogueTableArguments,
   compareCatalogueManifests,
   validateCatalogueSourceManifest,
@@ -177,6 +181,7 @@ describe('catalogue-only restore contract', () => {
     }
     expect(validationSql).toContain('CATALOGUE_MANIFEST_MISMATCH table=products')
     expect(validationSql).toContain('CATALOGUE_EXCLUDED_ROWS table=%')
+    expect(validationSql).not.toContain('dpg_control.assert_free_tier_headroom')
   })
 
   it('checks every noncatalogue target schema, seeds, sequences and large objects', () => {
@@ -190,5 +195,56 @@ describe('catalogue-only restore contract', () => {
     expect(sql).toContain('CATALOGUE_REHEARSAL_EXCLUDED_ROWS')
     expect(sql).toContain('CATALOGUE_REHEARSAL_EXCLUDED_SEQUENCE')
     expect(sql).not.toMatch(/select\s+\*\s+from/i)
+  })
+
+  it('resets catalogue sequences only after calculating an in-range next value', () => {
+    const sql = buildCatalogueSequenceSql()
+    expect(sql).toContain('sequence_names := array_append(sequence_names, sequence_name)')
+    expect(sql).toContain('sequence_values := array_append(sequence_values, next_sequence_value)')
+    expect(sql).toContain('sequence_names[sequence_index]::regclass')
+    expect(sql).toContain('from pg_sequence where seqrelid = sequence_name::regclass')
+    expect(sql).toContain('catalogue_sequence_increment_invalid')
+  })
+
+  it('attests a bounded restore identity and exact catalogue table allowlist before writes', () => {
+    const sql = buildCatalogueRestoreIdentitySql()
+    expect(sql).toContain("session_user <> 'dpg_catalogue_restore_login'")
+    expect(sql).toContain("current_user <> 'dpg_catalogue_restore'")
+    expect(sql).toContain('rolbypassrls')
+    expect(sql).toContain('has_database_privilege(current_user, current_database(), \'CREATE\')')
+    expect(sql).toContain('catalogue_restore_unrelated_grant_present')
+    expect(sql).toContain('catalogue_restore_function_execute_present')
+    expect(sql).toContain('catalogue_restore_sequence_grants_invalid')
+    expect(sql).toContain("has_table_privilege(current_user, relation.oid, 'UPDATE')")
+    expect(sql).toContain("has_table_privilege(current_user, relation.oid, 'DELETE')")
+    for (const table of expectedTables) expect(sql).toContain(`'${table}'`)
+    expect(sql).not.toMatch(/select\s+\*\s+from/i)
+  })
+
+  it('uses the same 27-table allowlist in the reduced-role target-empty preflight', async () => {
+    const preflight = await readFile('scripts/backup/catalogue-rehome-preflight.sql', 'utf8')
+    const allowlist = preflight.match(
+      /current_user <> 'dpg_catalogue_restore' or c\.relname = any\(array\[([\s\S]*?)\]::text\[\]\)\)/,
+    )?.[1]
+    expect(allowlist).toBeTruthy()
+    const preflightTables = [...allowlist.matchAll(/'([a-z_]+)'/g)]
+      .map((match) => match[1])
+      .sort()
+    expect(preflightTables).toEqual([...expectedTables].sort())
+  })
+
+  it('fails closed on baseline drift before the protected snapshot or schema mutation', () => {
+    const sql = buildRuntimeBaselinePreflightSql()
+    expect(sql).toContain("server_version_num")
+    expect(sql).toContain('367001600')
+    expect(sql).toContain('runtime_migration_ledger')
+    expect(sql).toContain("n.nspname = 'dpg_app'")
+    expect(sql).toContain('catalogue_tables text[]')
+    expect(sql).toContain("raise exception 'runtime_baseline_catalogue_not_empty'")
+    expect(sql).toContain('auth.users')
+    expect(sql).toContain('storage.objects')
+    expect(sql).toContain("'runtime_baseline_rls_gap_set_changed'")
+    expect(sql).not.toMatch(/select\s+\*\s+from/i)
+    expect(sql).not.toMatch(/insert\s+into|update\s+|delete\s+from|truncate\s+/i)
   })
 })

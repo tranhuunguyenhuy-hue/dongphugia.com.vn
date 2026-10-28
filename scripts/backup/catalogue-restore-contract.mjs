@@ -220,7 +220,6 @@ begin
   ${checks}
 end
 $catalogue_restore_validation$;
-select dpg_control.assert_free_tier_headroom(0);
 -- excludedRows are validated dynamically and never populated with row data.
 `
 }
@@ -278,6 +277,13 @@ declare
   table_name text;
   sequence_name text;
   maximum_id bigint;
+  sequence_increment bigint;
+  sequence_minimum bigint;
+  sequence_maximum bigint;
+  next_sequence_value bigint;
+  sequence_names text[] := array[]::text[];
+  sequence_values bigint[] := array[]::bigint[];
+  sequence_index integer;
 begin
   foreach table_name in array array[${allowlist}]::text[]
   loop
@@ -285,12 +291,263 @@ begin
     if sequence_name is not null then
       execute format('select max(id)::bigint from dpg_app.%I', table_name) into maximum_id;
       if maximum_id is not null then
-        perform setval(sequence_name::regclass, maximum_id, true);
+        select seqincrement, seqmin, seqmax
+          into sequence_increment, sequence_minimum, sequence_maximum
+          from pg_sequence where seqrelid = sequence_name::regclass;
+        if sequence_increment is null or sequence_increment <= 0 then
+          raise exception 'catalogue_sequence_increment_invalid';
+        end if;
+        next_sequence_value := maximum_id + sequence_increment;
+        if next_sequence_value < sequence_minimum or next_sequence_value > sequence_maximum then
+          raise exception 'catalogue_sequence_value_out_of_range';
+        end if;
+        sequence_names := array_append(sequence_names, sequence_name);
+        sequence_values := array_append(sequence_values, next_sequence_value);
       end if;
     end if;
   end loop;
+  for sequence_index in 1..coalesce(array_length(sequence_names, 1), 0)
+  loop
+    perform setval(
+      sequence_names[sequence_index]::regclass,
+      sequence_values[sequence_index],
+      false
+    );
+  end loop;
 end
 $catalogue_sequence_reset$;
+`
+}
+
+export function buildCatalogueRestoreIdentitySql() {
+  const catalogueTables = CATALOGUE_TABLES.map((table) => `'${table}'`).join(', ')
+  return `do $catalogue_restore_identity$
+declare
+  relation record;
+  catalogue_tables text[] := array[${catalogueTables}]::text[];
+  support_relations text[] := array[
+    'dpg_control.target_contract', 'dpg_control.runtime_migration_ledger',
+    'dpg_control.leo538_restore_manifest', 'dpg_v1.categories', 'dpg_v1.role_capabilities'
+  ];
+  relation_is_catalogue boolean;
+  relation_is_support boolean;
+begin
+  if current_database() <> 'postgres'
+     or session_user <> 'dpg_catalogue_restore_login'
+     or current_user <> 'dpg_catalogue_restore' then
+    raise exception 'catalogue_restore_identity_mismatch';
+  end if;
+
+  if not exists (
+    select 1 from pg_roles
+    where rolname = 'dpg_catalogue_restore_login'
+      and rolcanlogin and not rolsuper and not rolcreatedb and not rolcreaterole
+      and not rolinherit and not rolreplication and not rolbypassrls
+  ) or not exists (
+    select 1 from pg_roles
+    where rolname = 'dpg_catalogue_restore'
+      and not rolcanlogin and not rolsuper and not rolcreatedb and not rolcreaterole
+      and not rolinherit and not rolreplication and rolbypassrls
+  ) then
+    raise exception 'catalogue_restore_role_attributes_invalid';
+  end if;
+
+  if (select count(*) from pg_auth_members
+      where member = (select oid from pg_roles where rolname = 'dpg_catalogue_restore_login')) <> 1
+     or not exists (
+       select 1 from pg_auth_members m
+       join pg_roles capability on capability.oid = m.roleid
+       join pg_roles login on login.oid = m.member
+       where capability.rolname = 'dpg_catalogue_restore'
+         and login.rolname = 'dpg_catalogue_restore_login'
+         and not m.admin_option and not m.inherit_option and m.set_option
+     )
+     or exists (
+       select 1 from pg_auth_members m
+       join pg_roles granted on granted.oid = m.roleid
+       join pg_roles member_role on member_role.oid = m.member
+       where (granted.rolname in ('dpg_catalogue_restore', 'dpg_catalogue_restore_login')
+          or member_role.rolname = 'dpg_catalogue_restore')
+         and not (granted.rolname = 'dpg_catalogue_restore'
+          and member_role.rolname = 'dpg_catalogue_restore_login')
+     ) then
+    raise exception 'catalogue_restore_membership_invalid';
+  end if;
+
+  if not has_schema_privilege(current_user, 'dpg_app', 'USAGE')
+     or not has_schema_privilege(current_user, 'dpg_control', 'USAGE')
+     or not has_schema_privilege(current_user, 'dpg_v1', 'USAGE')
+     or exists (
+       select 1 from pg_namespace n
+       where n.nspname !~ '^pg_' and n.nspname <> 'information_schema'
+         and has_schema_privilege(current_user, n.oid, 'CREATE')
+     )
+     or has_database_privilege(current_user, current_database(), 'CREATE')
+     or (select count(*) from pg_class c
+         join pg_namespace n on n.oid = c.relnamespace
+         where (n.nspname || '.' || c.relname) = any(support_relations)
+           and c.relkind in ('r', 'p')) <> cardinality(support_relations) then
+    raise exception 'catalogue_restore_schema_or_support_contract_invalid';
+  end if;
+
+  if (select count(*) from pg_class c
+      join pg_namespace n on n.oid = c.relnamespace
+      where n.nspname = 'dpg_app' and c.relname = any(catalogue_tables)
+        and c.relkind in ('r', 'p')) <> cardinality(catalogue_tables) then
+    raise exception 'catalogue_restore_table_set_incomplete';
+  end if;
+
+  for relation in
+    select c.oid, c.relname, n.nspname, c.relkind
+    from pg_class c
+    join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname in ('dpg_app', 'dpg_control', 'dpg_v1', 'public', 'auth', 'storage')
+      and c.relkind in ('r', 'p', 'v', 'm', 'f')
+  loop
+    relation_is_catalogue := relation.nspname = 'dpg_app'
+      and relation.relname = any(catalogue_tables)
+      and relation.relkind in ('r', 'p');
+    relation_is_support := (relation.nspname || '.' || relation.relname) = any(support_relations);
+
+    if relation_is_catalogue then
+      if not has_table_privilege(current_user, relation.oid, 'SELECT')
+         or not has_table_privilege(current_user, relation.oid, 'INSERT')
+         or has_table_privilege(current_user, relation.oid, 'UPDATE')
+         or has_table_privilege(current_user, relation.oid, 'DELETE')
+         or has_table_privilege(current_user, relation.oid, 'TRUNCATE')
+         or has_table_privilege(current_user, relation.oid, 'REFERENCES')
+         or has_table_privilege(current_user, relation.oid, 'TRIGGER') then
+        raise exception 'catalogue_restore_catalogue_grants_invalid';
+      end if;
+    elsif relation_is_support then
+      if not has_table_privilege(current_user, relation.oid, 'SELECT')
+         or has_table_privilege(current_user, relation.oid, 'INSERT')
+         or has_table_privilege(current_user, relation.oid, 'UPDATE')
+         or has_table_privilege(current_user, relation.oid, 'DELETE')
+         or has_table_privilege(current_user, relation.oid, 'TRUNCATE')
+         or has_table_privilege(current_user, relation.oid, 'REFERENCES')
+         or has_table_privilege(current_user, relation.oid, 'TRIGGER') then
+        raise exception 'catalogue_restore_support_grants_invalid';
+      end if;
+    elsif has_table_privilege(current_user, relation.oid, 'SELECT')
+       or has_table_privilege(current_user, relation.oid, 'INSERT')
+       or has_table_privilege(current_user, relation.oid, 'UPDATE')
+       or has_table_privilege(current_user, relation.oid, 'DELETE')
+       or has_table_privilege(current_user, relation.oid, 'TRUNCATE')
+       or has_table_privilege(current_user, relation.oid, 'REFERENCES')
+       or has_table_privilege(current_user, relation.oid, 'TRIGGER') then
+      raise exception 'catalogue_restore_unrelated_grant_present';
+    end if;
+  end loop;
+
+  for relation in
+    select sequence.oid, n.nspname,
+      exists (
+        select 1 from pg_depend dependency
+        join pg_class table_object on table_object.oid = dependency.refobjid
+        where dependency.classid = 'pg_class'::regclass
+          and dependency.objid = sequence.oid
+          and dependency.refclassid = 'pg_class'::regclass
+          and dependency.deptype in ('a', 'i')
+          and table_object.relnamespace = 'dpg_app'::regnamespace
+          and table_object.relname = any(catalogue_tables)
+      ) as allowlisted_sequence
+    from pg_class sequence
+    join pg_namespace n on n.oid = sequence.relnamespace
+    where n.nspname !~ '^pg_' and n.nspname <> 'information_schema'
+      and sequence.relkind = 'S'
+  loop
+    if relation.nspname = 'dpg_app' and relation.allowlisted_sequence then
+      if not has_sequence_privilege(current_user, relation.oid, 'UPDATE')
+         or has_sequence_privilege(current_user, relation.oid, 'USAGE')
+         or has_sequence_privilege(current_user, relation.oid, 'SELECT') then
+        raise exception 'catalogue_restore_sequence_grants_invalid';
+      end if;
+    elsif has_sequence_privilege(current_user, relation.oid, 'USAGE')
+       or has_sequence_privilege(current_user, relation.oid, 'SELECT')
+       or has_sequence_privilege(current_user, relation.oid, 'UPDATE') then
+      raise exception 'catalogue_restore_unrelated_sequence_grant_present';
+    end if;
+  end loop;
+
+  if exists (
+    select 1
+    from pg_proc function_object
+    join pg_namespace n on n.oid = function_object.pronamespace
+    where n.nspname in ('dpg_app', 'dpg_control', 'dpg_v1', 'dpg_v1_api', 'public')
+      and has_schema_privilege(current_user, n.oid, 'USAGE')
+      and has_function_privilege(current_user, function_object.oid, 'EXECUTE')
+  ) then
+    raise exception 'catalogue_restore_function_execute_present';
+  end if;
+end
+$catalogue_restore_identity$;
+`
+}
+
+export function buildRuntimeBaselinePreflightSql() {
+  const tableList = CATALOGUE_TABLES.map((table) => `'${table}'`).join(', ')
+  return `do $runtime_baseline_preflight$
+declare
+  table_name text;
+  table_has_rows boolean;
+  catalogue_tables text[] := array[${tableList}]::text[];
+begin
+  if current_setting('server_version_num')::integer not between 170000 and 179999 then
+    raise exception 'runtime_baseline_postgres_version_mismatch';
+  end if;
+  if pg_database_size(current_database()) >= 367001600 then
+    raise exception 'runtime_baseline_database_size_limit';
+  end if;
+  if not exists (
+    select 1 from dpg_control.target_contract
+    where singleton
+      and project_name = 'dongphugia-runtime'
+      and region = 'ap-southeast-1'
+      and environment = 'preview'
+      and data_class = 'production-derived-reduced-runtime'
+      and production_data_allowed
+      and not production_credentials_allowed
+      and not production_writes_allowed
+      and hard_database_ceiling_bytes = 367001600
+  ) then
+    raise exception 'runtime_baseline_target_contract_mismatch';
+  end if;
+  if to_regclass('dpg_control.runtime_migration_ledger') is not null
+     or to_regnamespace('dpg_v1') is not null
+     or to_regnamespace('dpg_v1_api') is not null
+     or to_regclass('dpg_v1.products') is not null
+     or to_regprocedure('dpg_v1_api.public_product_get(uuid)') is not null
+     or to_regprocedure('dpg_v1_api.catalogue_media_register(jsonb,text)') is not null
+     or to_regprocedure('dpg_v1_api.order_intake_create(jsonb,text)') is not null
+     or exists (select 1 from pg_roles where rolname = 'dpg_backup') then
+    raise exception 'runtime_baseline_migration_state_changed';
+  end if;
+  if (select count(*) from pg_class c join pg_namespace n on n.oid = c.relnamespace
+      where n.nspname = 'dpg_app' and c.relkind in ('r','p')
+        and (not c.relrowsecurity or not c.relforcerowsecurity)) <> 13 then
+    raise exception 'runtime_baseline_rls_gap_set_changed';
+  end if;
+  if exists (select 1 from auth.users) or exists (select 1 from storage.objects) then
+    raise exception 'runtime_baseline_auth_storage_not_empty';
+  end if;
+  foreach table_name in array catalogue_tables loop
+    if to_regclass(format('dpg_app.%I', table_name)) is null then
+      raise exception 'runtime_baseline_catalogue_table_missing';
+    end if;
+    execute format('select exists (select 1 from dpg_app.%I)', table_name) into table_has_rows;
+    if table_has_rows then
+      raise exception 'runtime_baseline_catalogue_not_empty';
+    end if;
+  end loop;
+end
+$runtime_baseline_preflight$;
+
+select pg_database_size(current_database())::bigint::text || '|' ||
+  (select count(*)::text from pg_class c join pg_namespace n on n.oid = c.relnamespace
+   where n.nspname = 'dpg_app' and c.relkind in ('r','p')
+     and (not c.relrowsecurity or not c.relforcerowsecurity)) || '|' ||
+  cardinality(array[${tableList}]::text[])::text;
 `
 }
 
@@ -402,6 +659,14 @@ async function main() {
   }
   if (mode === 'sequence-sql') {
     process.stdout.write(buildCatalogueSequenceSql())
+    return
+  }
+  if (mode === 'catalogue-restore-identity-sql') {
+    process.stdout.write(buildCatalogueRestoreIdentitySql())
+    return
+  }
+  if (mode === 'baseline-preflight-sql') {
+    process.stdout.write(buildRuntimeBaselinePreflightSql())
     return
   }
   if (mode === 'validation-sql') {

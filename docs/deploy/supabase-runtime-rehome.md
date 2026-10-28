@@ -44,9 +44,10 @@ strictly below 350 MiB; equality is a hard stop. A size or contract failure
 rolls back the active migration transaction and does not start the next one.
 
 Checkpoint entries 1–7 are adopted together only after the full checkpoint
-attestation. Pending entries 8–23 each commit in their own serializable
-transaction. If entry N fails, only N rolls back: the exact committed prefix
-and its ledger checksums remain. The runner does not automatically reset the
+attestation. All pending canonical migrations then run as one serializable
+transaction, with each ledger row inserted in that same transaction. If any
+pending migration fails, the entire pending suffix rolls back; no migration in
+that suffix remains committed. The runner does not automatically reset the
 database, edit the ledger, or run down-migrations.
 
 On a failed migration, stop the workflow and preserve its run ID, exact source
@@ -155,6 +156,32 @@ provide:
   `ymjvuwefhqqlymwlocqn`, its Free plan, and project identity/region/health.
 
 The source runtime connection secret is never read or reused by this workflow.
+
+For the separate Issue #160 one-shot sync, use
+`.github/workflows/supabase-runtime-issue160-recovery-once.yml`. It additionally
+requires `SUPABASE_REHOME_ROOT_CA_CERTIFICATE`, downloaded from the target
+project's Database Settings and used with `sslmode=verify-full`; there is no
+verified generic public download URL. The protected Environment must require a
+genuinely independent reviewer and prevent self-review. Stop before the
+recovery job reads a secret if either the root certificate or this approval
+control is absent.
+
+That workflow binds the existing protected `BACKUP_AGE_PRIVATE_KEY` only after
+the original ciphertext bundle passes exact checksum and manifest validation.
+It derives the public age recipient in tmpfs, validates it against the original
+source recipient, and uses it to encrypt the destination snapshot. The snapshot
+covers full logical state in `dpg_app`, `dpg_control`, `dpg_v1`, and `dpg_v1_api`;
+the `public` schema definition without table rows; `auth` and `extensions`
+schema ACLs only; and global roles without passwords. It decrypts each archive
+only into tmpfs, checks the decrypted archive hashes inside an isolated
+PostgreSQL container, restores the archive there, compares the
+`auth`/`extensions` ACL contract, and checks the table inventory before any
+destination write.
+
+The encrypted checkpoint does not automatically reverse partial migration
+commits. On failure, stop and preserve the exact snapshot and ledger. Do not
+retry, drop schemas, reset the project, or restore to the destination without a
+separate Owner decision and a separately reviewed rollback procedure.
 
 Before any checkpoint hash is adopted, the migration runner replays the exact
 seven files in pinned, network-disabled PostgreSQL 17 and requires the

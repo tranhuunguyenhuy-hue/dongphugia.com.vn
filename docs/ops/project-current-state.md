@@ -94,3 +94,29 @@ Production runtime baseline above.
 - No Production database, credential, row, object, or derived data was accessed
   or placed in this target. No GitHub, Cloudflare, DNS, AWS, traffic, cutover, or
   legacy Supabase mutation occurred.
+
+## Issue #160 recovery control-plane snapshot
+
+Verified 2026-10-28 from GitHub API metadata only. This is not dispatch or
+write authority; revalidate every item before any protected run.
+
+- The repository had 125 active Actions artifacts totaling 873,835,602 bytes.
+  Original backup artifact `12052107648` was present. This exceeds the recovery
+  workflow's internal 500,000,000-byte budget. No artifact was deleted.
+- Account-wide Actions and Packages billing usage was unavailable to the
+  connected GitHub token; the billing endpoint returned 404 without `user`
+  scope. The $0 allowance and usage remain `UNKNOWN`.
+- Environment `runtime-backup` had one required reviewer and
+  `prevent_self_review=false`; its deployment branch policy was present.
+- Secret-name metadata contained `SUPABASE_REHOME_DATABASE_URL`,
+  `SUPABASE_MANAGEMENT_TOKEN`, and `BACKUP_AGE_PRIVATE_KEY`, but not
+  `SUPABASE_REHOME_ROOT_CA_CERTIFICATE`,
+  `SUPABASE_REHOME_MIGRATION_DATABASE_URL`, or
+  `SUPABASE_REHOME_CATALOGUE_DATABASE_URL`. Secret values were not accessed.
+  The identity stored in `SUPABASE_REHOME_DATABASE_URL` was not inspected; the
+  recovery candidate now requires that existing secret to use the dedicated
+  read-only snapshot identity `dpg_snapshot_login` / `dpg_snapshot_readonly`.
+- The target database size was not measured during this source review and is
+  `UNKNOWN`.
+- No protected recovery, backup decryption, database write, artifact cleanup,
+  Production change, or DNS change occurred.

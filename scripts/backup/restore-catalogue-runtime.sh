@@ -25,6 +25,9 @@ preflight_sql="$repo_root/scripts/backup/catalogue-rehome-preflight.sql"
 source "$repo_root/scripts/backup/c-actions-container-staging.sh"
 postgres_image="${POSTGRES_IMAGE:-postgres:17.6-bookworm@sha256:f3bd19c606e442c3d7bdfa8002e03fe260a1023351e0ea4598032022b68dd6e3}"
 hosted_recovery="${HOSTED_RECOVERY:-false}"
+keep_output_dir="${KEEP_OUTPUT_DIR:-false}"
+target_purpose='snapshot'
+if [[ "$MODE" == 'apply' ]]; then target_purpose='catalogue_restore'; fi
 recovery_age_recipient="${EXPECTED_AGE_RECIPIENT:-age1cvg7hkdl4ctfdfv8a3a4vkcgc7ge7anyls2rn4y62vtnsxuczawqw4h0dr}"
 case "$recovery_age_recipient" in
   age1cvg7hkdl4ctfdfv8a3a4vkcgc7ge7anyls2rn4y62vtnsxuczawqw4h0dr|\
@@ -33,6 +36,14 @@ case "$recovery_age_recipient" in
 esac
 if [[ "$hosted_recovery" != false && "$hosted_recovery" != true ]]; then
   echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=hosted_mode_invalid'
+  exit 1
+fi
+if [[ "$keep_output_dir" != false && "$keep_output_dir" != true ]]; then
+  echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=keep_output_dir_invalid'
+  exit 1
+fi
+if [[ "$MODE" == 'apply' && "$hosted_recovery" != true ]]; then
+  echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=hosted_apply_required'
   exit 1
 fi
 
@@ -52,7 +63,7 @@ cleanup() {
     docker rm --force "$container_name" >/dev/null 2>&1 || true
   fi
   rm -rf "$tmp_dir"
-  if [[ "$hosted_recovery" == true && -n "${output_dir:-}" ]]; then
+  if [[ "$hosted_recovery" == true && "$keep_output_dir" != true && -n "${output_dir:-}" ]]; then
     rm -rf "$output_dir"
   fi
 }
@@ -67,7 +78,7 @@ for command in age docker findmnt jq node sha256sum; do
   }
 done
 
-if [[ "$MODE" == 'rehearsal' || "$MODE" == 'container-preflight' ]]; then
+if [[ "$MODE" == 'rehearsal' || "$MODE" == 'container-preflight' || "$MODE" == 'apply' ]]; then
   # Rehearsal handles the full source dump. Reject remote daemons and image pulls
   # before decryption, and keep generated evidence inside tmpfs.
   # shellcheck source=scripts/backup/postgres-image-pin.sh
@@ -76,8 +87,16 @@ if [[ "$MODE" == 'rehearsal' || "$MODE" == 'container-preflight' ]]; then
     echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=postgres_image_reference_invalid'
     exit 1
   fi
-  if [[ -n "${SUPABASE_REHOME_DATABASE_URL:-}" ]]; then
-    echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=remote_target_present'
+  if [[ "$MODE" == 'rehearsal' || "$MODE" == 'container-preflight' ]]; then
+    if [[ -n "${SUPABASE_REHOME_DATABASE_URL:-}" ]]; then
+      echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=remote_target_present'
+      exit 1
+    fi
+  elif [[ "$MODE" == 'apply' && -z "${SUPABASE_REHOME_CATALOGUE_DATABASE_URL:-}" ]]; then
+    echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=target_missing'
+    exit 1
+  elif [[ "$MODE" != 'apply' && -z "${SUPABASE_REHOME_DATABASE_URL:-}" ]]; then
+    echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=target_missing'
     exit 1
   fi
   if [[ "$hosted_recovery" == false ]]; then
@@ -97,9 +116,6 @@ if [[ "$MODE" == 'rehearsal' || "$MODE" == 'container-preflight' ]]; then
   elif [[ "${GITHUB_ACTIONS:-}" != true || "${GITHUB_EVENT_NAME:-}" != workflow_dispatch ||
           "${GITHUB_REF:-}" != refs/heads/main ]]; then
     echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=hosted_context_invalid'
-    exit 1
-  elif [[ "$MODE" != rehearsal && "$MODE" != container-preflight ]]; then
-    echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=hosted_mode_requires_rehearsal'
     exit 1
   fi
   if [[ -n "${DOCKER_HOST:-}" && "$DOCKER_HOST" != unix://* ]]; then
@@ -192,7 +208,8 @@ node "$contract" validate-source "$manifest" \
   "$EXPECTED_WORKFLOW_RUN_ID" "$EXPECTED_MERGE_SHA" >/dev/null
 
 validate_target_url() {
-  node "$target_contract" validate-url >/dev/null
+  SUPABASE_RUNTIME_TARGET_PURPOSE="$target_purpose" \
+    node "$target_contract" validate-url >/dev/null
 }
 
 sensitive_failure() {
@@ -346,7 +363,7 @@ fi
 mapfile -t restore_table_args < <(node "$contract" table-args)
 test "${#restore_table_args[@]}" -gt 0
 
-if [[ "$MODE" == 'rehearsal' || "$MODE" == 'container-preflight' ]]; then
+if [[ "$MODE" == 'rehearsal' || "$MODE" == 'container-preflight' || "$MODE" == 'apply' ]]; then
   start_rehearsal_container
 fi
 
@@ -496,6 +513,13 @@ if [[ "$MODE" == 'rehearsal' ]]; then
       echo 'CATALOGUE_REHOME status=FAIL stage=rehearsal_aggregate reason=unexpected_table_count'
       exit 1
     fi
+    jq -n \
+      --argjson sourceDatabaseBytes "$source_bytes" \
+      --argjson filteredTargetDatabaseBytes "$target_bytes" \
+      --argjson hardCeilingBytes 367001600 \
+      '{format:"dpg-rehearsal-capacity-v1",sourceDatabaseBytes:$sourceDatabaseBytes,filteredTargetDatabaseBytes:$filteredTargetDatabaseBytes,hardCeilingBytes:$hardCeilingBytes}' \
+      >"$output_dir/rehearsal-capacity.json"
+    chmod 0600 "$output_dir/rehearsal-capacity.json"
     echo "CATALOGUE_REHOME_CAPACITY status=PASS source_dump_bytes=$plain_bytes source_database_bytes=$source_bytes target_database_bytes=$target_bytes target_ceiling_bytes=367001600"
     echo "CATALOGUE_REHOME_EVIDENCE status=PASS tables=$table_count excluded=0"
   fi
@@ -503,7 +527,8 @@ if [[ "$MODE" == 'rehearsal' ]]; then
   exit 0
 fi
 
-: "${SUPABASE_REHOME_DATABASE_URL:?SUPABASE_REHOME_DATABASE_URL is required}"
+: "${SUPABASE_REHOME_CATALOGUE_DATABASE_URL:?SUPABASE_REHOME_CATALOGUE_DATABASE_URL is required}"
+: "${SUPABASE_REHOME_DATABASE_URL:?SUPABASE_REHOME_DATABASE_URL is required for post-restore verification}"
 : "${EXPECTED_CATALOGUE_MANIFEST:?EXPECTED_CATALOGUE_MANIFEST is required}"
 command -v psql >/dev/null 2>&1 || {
   echo 'CATALOGUE_REHOME status=FAIL stage=apply reason=missing_psql'
@@ -517,36 +542,48 @@ validate_target_url || {
 restore_sql="$tmp_dir/catalogue-restore.sql"
 validation_sql="$tmp_dir/catalogue-validation.sql"
 sequence_sql="$tmp_dir/catalogue-sequences.sql"
+identity_sql="$tmp_dir/catalogue-restore-identity.sql"
 driver_sql="$tmp_dir/catalogue-driver.sql"
 
 : >"$restore_sql"
 for table_arg in "${restore_table_args[@]}"; do
-  if ! docker run --rm --network none --read-only \
-    --volume "$tmp_dir:/work:rw" "$postgres_image" \
+  if ! docker exec --user postgres "$container_name" \
     pg_restore --data-only --no-owner --no-privileges --exit-on-error \
       --schema=dpg_app --strict-names \
-      "$table_arg" --file - /work/runtime.dump >>"$restore_sql" \
+      "$table_arg" --file - "$plain_dump" >>"$restore_sql" \
       2>"$tmp_dir/sensitive.error"; then
     sensitive_failure generate_catalogue_restore
   fi
 done
 node "$contract" validation-sql "$EXPECTED_CATALOGUE_MANIFEST" >"$validation_sql"
 node "$contract" sequence-sql >"$sequence_sql"
+node "$contract" catalogue-restore-identity-sql >"$identity_sql"
 
 printf '%s\n' \
   '\set ON_ERROR_STOP on' \
   'begin transaction isolation level serializable;' \
+  "\\i '$identity_sql'" \
   "\\i '$preflight_sql'" \
   "\\i '$restore_sql'" \
-  "\\i '$sequence_sql'" \
-  "\\i '$validation_sql'" \
-  'commit;' >"$driver_sql"
+  "\\i '$validation_sql'" >"$driver_sql"
+cat >>"$driver_sql" <<'SQL'
+do $catalogue_size_guard$
+begin
+  if pg_database_size(current_database()) >= 367001600 then
+    raise exception 'catalogue_database_size_limit';
+  end if;
+end
+$catalogue_size_guard$;
+SQL
+printf '%s\n' "\\i '$sequence_sql'" 'commit;' >>"$driver_sql"
 
-if ! SUPABASE_PSQL_TMPDIR="$tmp_dir" node "$psql_wrapper" --file "$driver_sql" \
+if ! SUPABASE_RUNTIME_TARGET_PURPOSE="$target_purpose" \
+  SUPABASE_PSQL_TMPDIR="$tmp_dir" node "$psql_wrapper" --file "$driver_sql" \
   >/dev/null 2>"$tmp_dir/sensitive.error"; then
   sensitive_failure remote_apply
 fi
-if ! node "$contract" snapshot-sql | SUPABASE_PSQL_TMPDIR="$tmp_dir" \
+if ! node "$contract" snapshot-sql | SUPABASE_RUNTIME_TARGET_PURPOSE=snapshot \
+  SUPABASE_PSQL_TMPDIR="$tmp_dir" \
   node "$psql_wrapper" --tuples-only >"$output_dir/catalogue-actual.json" \
   2>"$tmp_dir/sensitive.error"; then
   sensitive_failure remote_manifest

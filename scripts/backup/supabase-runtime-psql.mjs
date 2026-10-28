@@ -1,8 +1,9 @@
 import { spawn } from 'node:child_process'
-import { chmod, mkdtemp, rm, statfs, writeFile } from 'node:fs/promises'
+import { chmod, mkdtemp, readFile, rm, statfs, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
-import { parseSupabaseRuntimeTarget } from './supabase-runtime-target.mjs'
+import { resolveSupabaseRuntimeTarget } from './supabase-runtime-target.mjs'
+import { validateSupabaseRuntimeRootCertificate } from './supabase-runtime-tls.mjs'
 
 const TMPFS_MAGIC = 0x01021994
 
@@ -16,19 +17,43 @@ function pgpassEscape(value) {
   return value.replaceAll('\\', '\\\\').replaceAll(':', '\\:')
 }
 
+export function buildPsqlChildEnvironment(parentEnvironment, target, pgpass, rootCertificatePath) {
+  const childEnvironment = Object.fromEntries(
+    ['PATH', 'LANG', 'LC_ALL', 'LC_CTYPE', 'TZ']
+      .filter((name) => parentEnvironment[name] !== undefined)
+      .map((name) => [name, parentEnvironment[name]]),
+  )
+  return Object.assign(childEnvironment, {
+    PGHOST: target.host,
+    PGPORT: String(target.port),
+    PGDATABASE: target.database,
+    PGUSER: target.user,
+    PGPASSFILE: pgpass,
+    PGSSLMODE: 'verify-full',
+    PGSSLROOTCERT: rootCertificatePath,
+    PGOPTIONS: target.options,
+    PGAPPNAME: 'dongphugia-supabase-runtime-rehome',
+  })
+}
+
 async function main() {
   const args = process.argv.slice(2)
   const fileMode = args.length === 2 && args[0] === '--file'
   const stdinMode = args.length === 1 && args[0] === '--tuples-only'
   if (!fileMode && !stdinMode) throw new Error('mode_invalid')
 
-  const target = parseSupabaseRuntimeTarget(process.env.SUPABASE_REHOME_DATABASE_URL)
+  const purpose = process.env.SUPABASE_RUNTIME_TARGET_PURPOSE || 'snapshot'
+  const target = resolveSupabaseRuntimeTarget(purpose)
+  const rootCertificate = validateSupabaseRuntimeRootCertificate(
+    process.env.SUPABASE_REHOME_ROOT_CA_CERTIFICATE,
+  )
   const tmpParent = process.env.SUPABASE_PSQL_TMPDIR || '/dev/shm'
   const filesystem = await statfs(tmpParent)
   if (Number(filesystem.type) !== TMPFS_MAGIC) throw new Error('tmpfs_required')
 
   const tmpDirectory = await mkdtemp(path.join(tmpParent, 'dpg-psql-'))
   const pgpass = path.join(tmpDirectory, '.pgpass')
+  const rootCertificatePath = path.join(tmpDirectory, 'root.crt')
   try {
     await writeFile(pgpass, [
       pgpassEscape(target.host),
@@ -38,23 +63,28 @@ async function main() {
       pgpassEscape(target.password),
     ].join(':') + '\n', { mode: 0o600 })
     await chmod(pgpass, 0o600)
+    await writeFile(rootCertificatePath, rootCertificate, { mode: 0o600 })
+    let snapshotIdentityPath
+    if (purpose === 'snapshot') {
+      snapshotIdentityPath = path.join(tmpDirectory, 'snapshot-identity.sql')
+      await writeFile(
+        snapshotIdentityPath,
+        await readFile(new URL('./supabase-runtime-snapshot-identity.sql', import.meta.url)),
+        { mode: 0o400 },
+      )
+    }
 
-    const childEnvironment = Object.fromEntries(Object.entries(process.env).filter(([name]) => (
-      name !== 'SUPABASE_REHOME_DATABASE_URL' && !name.startsWith('PG')
-    )))
-    Object.assign(childEnvironment, {
-      PGHOST: target.host,
-      PGPORT: String(target.port),
-      PGDATABASE: target.database,
-      PGUSER: target.user,
-      PGPASSFILE: pgpass,
-      PGSSLMODE: 'require',
-      PGAPPNAME: 'dongphugia-supabase-runtime-rehome',
-    })
+    const childEnvironment = buildPsqlChildEnvironment(
+      process.env,
+      target,
+      pgpass,
+      rootCertificatePath,
+    )
 
     const psqlArgs = ['-X', '-q', '-v', 'ON_ERROR_STOP=1']
+    if (snapshotIdentityPath) psqlArgs.push('--file', snapshotIdentityPath)
     if (fileMode) psqlArgs.push('--file', args[1])
-    if (stdinMode) psqlArgs.push('-A', '-t')
+    if (stdinMode) psqlArgs.push('-A', '-t', '--file', '-')
 
     const exitCode = await new Promise((resolve, reject) => {
       const child = spawn('psql', psqlArgs, { env: childEnvironment, stdio: 'inherit' })
@@ -67,8 +97,11 @@ async function main() {
   }
 }
 
-void main().catch((error) => {
-  const allowed = new Set(['mode_invalid', 'tmpfs_required', 'credential_encoding_invalid'])
+if (process.argv[1]?.endsWith('/supabase-runtime-psql.mjs')) void main().catch((error) => {
+  const allowed = new Set([
+    'mode_invalid', 'tmpfs_required', 'credential_encoding_invalid',
+    'supabase_runtime_tls_certificate_invalid',
+  ])
   const reason = allowed.has(error?.message) ? error.message : 'database_operation_failed'
   fail(reason)
 })

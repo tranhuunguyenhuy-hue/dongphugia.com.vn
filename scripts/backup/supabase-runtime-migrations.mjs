@@ -5,6 +5,7 @@ import path from 'node:path'
 import pg from 'pg'
 
 import { parseSupabaseRuntimeTarget } from './supabase-runtime-target.mjs'
+import { supabaseRuntimeTlsOptions } from './supabase-runtime-tls.mjs'
 
 const { Client } = pg
 const DATABASE_SIZE_HARD_CEILING_BYTES = 367001600n
@@ -95,7 +96,10 @@ export function stripOuterTransaction(sql) {
     .map((line, index) => ({ index, value: line.trim().toLowerCase() }))
     .filter(({ value }) => ['begin;', 'commit;', 'rollback;', 'start transaction;'].includes(value))
 
-  if (controls.length === 0) return sql
+  if (controls.length === 0) {
+    if (hasEmbeddedTransactionControl(sql)) fail('migration_transaction_contract_changed')
+    return sql
+  }
   if (controls.length !== 2
     || controls[0].value !== 'begin;'
     || controls[1].value !== 'commit;'
@@ -104,7 +108,9 @@ export function stripOuterTransaction(sql) {
   }
   lines[controls[0].index] = ''
   lines[controls[1].index] = ''
-  return lines.join('\n')
+  const normalized = lines.join('\n')
+  if (hasEmbeddedTransactionControl(normalized)) fail('migration_transaction_contract_changed')
+  return normalized
 }
 
 function hasEmbeddedTransactionControl(sql) {
@@ -274,9 +280,7 @@ async function attestTargetAndCheckpoint(client) {
       to_regclass('dpg_app.runtime_audit_events') is not null as runtime_audit,
       to_regprocedure('public.runtime_order_list(integer,integer)') is not null as runtime_api,
       not exists (select 1 from pg_roles where rolname = 'dpg_backup') as backup_role_absent,
-      to_regnamespace('dpg_v1') is null as v1_absent,
-      not exists (select 1 from auth.users) as auth_empty,
-      not exists (select 1 from storage.objects) as storage_empty
+      to_regnamespace('dpg_v1') is null as v1_absent
   `)
   const row = result.rows[0]
   if (!row || Object.values(row).some((value) => value !== true)) {
@@ -357,13 +361,69 @@ function validateLedger(rows, migrations, requireComplete) {
   if (requireComplete && rows.length !== migrations.length) fail('migration_state_incomplete')
 }
 
+export async function assertMigrationIdentity(client) {
+  const result = await client.query(`
+    select
+      session_user::text as session_user,
+      current_user::text as current_user,
+      pg_has_role(session_user, 'dpg_migration'::name, 'SET') as can_set_migration_role,
+      (
+        (select count(*) from pg_auth_members
+         where member = (select oid from pg_roles where rolname = 'dpg_migration_login')) = 1
+        and exists (
+          select 1 from pg_auth_members m
+          join pg_roles capability on capability.oid = m.roleid
+          join pg_roles login on login.oid = m.member
+          where capability.rolname = 'dpg_migration'
+            and login.rolname = 'dpg_migration_login'
+            and not m.admin_option and not m.inherit_option and m.set_option
+        )
+        and not exists (
+          select 1 from pg_auth_members m
+          join pg_roles granted on granted.oid = m.roleid
+          join pg_roles member_role on member_role.oid = m.member
+          where (granted.rolname in ('dpg_migration', 'dpg_migration_login')
+                 or member_role.rolname in ('dpg_migration', 'dpg_migration_login'))
+            and not (granted.rolname = 'dpg_migration'
+              and member_role.rolname = 'dpg_migration_login'
+              and not m.admin_option and not m.inherit_option and m.set_option)
+        )
+      ) as exact_membership_contract,
+      exists (
+        select 1 from pg_roles
+        where rolname = 'dpg_migration_login'
+          and rolcanlogin and not rolsuper and not rolcreatedb and not rolcreaterole
+          and not rolinherit and not rolreplication and not rolbypassrls
+      ) as login_role_minimal,
+      exists (
+        select 1 from pg_roles
+        where rolname = 'dpg_migration'
+          and not rolcanlogin and not rolsuper and not rolcreatedb and not rolcreaterole
+          and not rolinherit and not rolreplication and not rolbypassrls
+      ) as capability_role_minimal
+  `)
+  const row = result.rows[0]
+  if (!row || row.session_user !== 'dpg_migration_login'
+    || row.current_user !== 'dpg_migration'
+    || row.can_set_migration_role !== true
+    || row.exact_membership_contract !== true
+    || row.login_role_minimal !== true
+    || row.capability_role_minimal !== true) {
+    fail('migration_identity_contract_failed')
+  }
+}
+
 async function applyPendingMigrations(client, migrations) {
   const applied = new Set((await readLedger(client)).map((row) => row.filename))
-  for (const migration of migrations) {
-    if (applied.has(migration.filename)) continue
-    await assertDatabaseSizeWithinContract(client)
-    await client.query('begin isolation level serializable')
-    try {
+  const pending = migrations.filter((migration) => !applied.has(migration.filename))
+  if (pending.length === 0) return
+
+  await assertDatabaseSizeWithinContract(client)
+  let activeMigration = pending[0].filename
+  await client.query('begin isolation level serializable')
+  try {
+    for (const migration of pending) {
+      activeMigration = migration.filename
       await client.query(stripOuterTransaction(migration.sql))
       await client.query(
         `insert into dpg_control.runtime_migration_ledger
@@ -372,12 +432,12 @@ async function applyPendingMigrations(client, migrations) {
         [migration.filename.slice(0, 14), migration.filename, migration.sha256],
       )
       await assertDatabaseSizeWithinContract(client)
-      await client.query('commit')
-    } catch (error) {
-      await client.query('rollback').catch(() => undefined)
-      process.stderr.write(`SUPABASE_RUNTIME_MIGRATIONS status=FAIL stage=apply migration=${migration.filename}\n`)
-      throw error
     }
+    await client.query('commit')
+  } catch (error) {
+    await client.query('rollback').catch(() => undefined)
+    process.stderr.write(`SUPABASE_RUNTIME_MIGRATIONS status=FAIL stage=apply migration=${activeMigration}\n`)
+    throw error
   }
 }
 
@@ -403,9 +463,7 @@ async function validateFinalSchema(client) {
       ) as roles_restricted,
       (select count(*) from pg_roles
        where rolname in ('dpg_migration', 'dpg_runtime', 'dpg_readonly', 'dpg_backup')) = 4
-        as roles_complete,
-      not exists (select 1 from auth.users) as auth_empty,
-      not exists (select 1 from storage.objects) as storage_empty
+        as roles_complete
   `)
   const row = result.rows[0]
   if (!row || Object.values(row).some((value) => value !== true)) fail('final_schema_rls_api_validation_failed')
@@ -439,13 +497,19 @@ export async function executeRuntimeMigrations(client, mode, checkpointAttestor)
 
 async function run() {
   const mode = process.argv[2]
-  const client = new Client(parseSupabaseRuntimeTarget(process.env.SUPABASE_REHOME_DATABASE_URL))
+  const target = parseSupabaseRuntimeTarget(process.env.SUPABASE_REHOME_MIGRATION_DATABASE_URL, 'migration')
+  const client = new Client({ ...target, ssl: supabaseRuntimeTlsOptions(target.host) })
   try {
     await client.connect()
+    await assertMigrationIdentity(client)
     const count = await executeRuntimeMigrations(client, mode, async () => {
       execFileSync('bash', ['scripts/backup/attest-supabase-runtime-checkpoint.sh'], {
         cwd: process.cwd(),
-        env: { ...process.env, CHECKPOINT_ATTESTATION_MODE: 'behavioral' },
+        env: {
+          ...process.env,
+          SUPABASE_RUNTIME_TARGET_PURPOSE: 'snapshot',
+          CHECKPOINT_ATTESTATION_MODE: 'behavioral',
+        },
         stdio: 'inherit',
       })
     })

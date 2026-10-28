@@ -578,7 +578,7 @@ describe('Supabase runtime migration adoption integration', () => {
         expect((await client.query("select to_regrole('dpg_backup') is null as absent"))
           .rows[0]?.absent).toBe(true)
 
-        phase = 'preserve_committed_prefix_after_injected_failure'
+        phase = 'rollback_pending_suffix_after_injected_failure'
         const failedMigration = EXPECTED_RUNTIME_MIGRATIONS[ADOPTED_CHECKPOINT_MIGRATIONS.length + 1]
         let injectFailure = true
         const failingClient = new Proxy(client, {
@@ -606,9 +606,9 @@ describe('Supabase runtime migration adoption integration', () => {
         const prefixLedger = await client.query(
           'select count(*)::integer as count from dpg_control.runtime_migration_ledger',
         )
-        expect(prefixLedger.rows[0]?.count).toBe(ADOPTED_CHECKPOINT_MIGRATIONS.length + 1)
-        expect((await client.query("select to_regrole('dpg_backup') is not null as present"))
-          .rows[0]?.present).toBe(true)
+        expect(prefixLedger.rows[0]?.count).toBe(ADOPTED_CHECKPOINT_MIGRATIONS.length)
+        expect((await client.query("select to_regrole('dpg_backup') is null as absent"))
+          .rows[0]?.absent).toBe(true)
         expect((await client.query(`
           select count(*)::integer as count
           from pg_policy p
@@ -642,7 +642,7 @@ describe('Supabase runtime migration adoption integration', () => {
         expect(migrationSizeChecks).toBe(3)
         expect((await client.query(
           'select count(*)::integer as count from dpg_control.runtime_migration_ledger',
-        )).rows[0]?.count).toBe(ADOPTED_CHECKPOINT_MIGRATIONS.length + 1)
+        )).rows[0]?.count).toBe(ADOPTED_CHECKPOINT_MIGRATIONS.length)
         expect((await client.query(`
           select count(*)::integer as count
           from pg_policy p
@@ -688,14 +688,14 @@ describe('Supabase runtime migration adoption integration', () => {
         `, [missingCheckpointRow.version, missingCheckpointRow.filename,
           missingCheckpointRow.sha256, missingCheckpointRow.application_source])
 
-        // Retry resumes from the committed ledger prefix; it does not reset or
-        // roll back earlier migration transactions.
+        // A later authorized execution starts again from the unchanged adopted
+        // checkpoint because the prior pending suffix was one transaction.
 
         phase = 'resume_ordered_pending_migrations'
         await executeRuntimeMigrations(client, 'apply', attestCheckpoint)
 
         const ledger = await client.query('select count(*)::integer as count from dpg_control.runtime_migration_ledger')
-        expect(ledger.rows[0]?.count).toBe(23)
+        expect(ledger.rows[0]?.count).toBe(EXPECTED_RUNTIME_MIGRATIONS.length)
 
         phase = 'verify_database_size_guard'
         const databaseSizeBefore = await assertDatabaseSizeWithinContract(client)
