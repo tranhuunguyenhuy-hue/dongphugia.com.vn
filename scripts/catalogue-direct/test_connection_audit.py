@@ -25,6 +25,12 @@ class ProjectBinding(unittest.TestCase):
                       f'postgresql://postgres:example@db.{audit.SOURCE}.supabase.co:bad/postgres']:
             self.assertFalse(audit.matches(value, audit.SOURCE))
 
+    def test_query_overrides_and_fragments_rejected(self):
+        value = f'postgresql://postgres:example@db.{audit.SOURCE}.supabase.co/postgres'
+        for suffix in ['?host=other.test', '?user=postgres.other', '?service=other',
+                       '?options=-csearch_path=other', '?sslmode=disable', '#other']:
+            self.assertFalse(audit.matches(value + suffix, audit.SOURCE))
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -18,6 +18,7 @@ def matches(value, project):
         user=urllib.parse.unquote(url.username or '')
         host=url.hostname or ''
         return (url.scheme in ('postgresql','postgres') and url.path=='/postgres'
+            and not url.query and not url.fragment
             and bool(url.password) and (url.port or 5432) in (5432,6543)
             and (host=='db.'+project+'.supabase.co' or
                 (re.fullmatch(r'aws-[0-9]+-[a-z0-9-]+\.pooler\.supabase\.com',host)
