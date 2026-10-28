@@ -2,7 +2,7 @@
 import pg from 'pg'
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import { CATALOGUE_TABLES, CATALOGUE_RESTORE_ORDER, insertSql, rowsSql, provisioningSql, assertSchema } from './contract.mjs'
+import { CATALOGUE_TABLES, CATALOGUE_RESTORE_ORDER, insertSql, rowsSql, provisioningSql, assertSchema, HEADROOM_BODY } from './contract.mjs'
 import { metadata, assertTargetPrivate, attestRole } from './run.mjs'
 import { RLS_EVENT_BODY } from './platform-boundary.mjs'
 import { setupState, assertBeforeSetup } from './setup-state.mjs'
@@ -104,7 +104,13 @@ describe.skipIf(!url)('direct data-only mapping on isolated PostgreSQL', () => {
       await client.query('create schema extensions; create extension pg_stat_statements with schema extensions')
       await client.query(`create function public.rls_auto_enable() returns event_trigger language plpgsql
         security definer set search_path=pg_catalog as $event$${RLS_EVENT_BODY}$event$`)
+      await client.query(`create schema dpg_control;
+        create function dpg_control.enforce_free_tier_headroom_statement() returns trigger language plpgsql
+        security definer set search_path=pg_catalog as $guard$${HEADROOM_BODY}$guard$;
+        revoke all on function dpg_control.enforce_free_tier_headroom_statement() from public`)
       await client.query('set role dpg_direct_import')
+      expect((await client.query("select has_schema_privilege(current_user,'dpg_control','USAGE') as allowed")).rows[0].allowed).toBe(false)
+      await expect(client.query("select to_regprocedure('dpg_control.enforce_free_tier_headroom_statement()')")).rejects.toMatchObject({code:'42501'})
       await attestRole(client,'import')
       await client.query('reset role')
       await client.query("create function public.unrelated_definer() returns integer language sql security definer as 'select 1'")

@@ -9,6 +9,9 @@ on:
       approved_sha:
         type: string
         required: true
+      resume_setup_checkpoint:
+        description: Only the preserved rolled-back target setup checkpoint; no data import replay
+        type: string
 permissions:
   contents: read
 concurrency:
@@ -52,6 +55,7 @@ jobs:
       - name: Check exact before-state or provision one checkpoint unit
         env:
           SETUP_PURPOSE: ${{ inputs.purpose }}
+          SETUP_RESUME_CHECKPOINT: ${{ inputs.resume_setup_checkpoint }}
           APPROVED_SHA: ${{ inputs.approved_sha }}
           ENV_PUBLIC_KEY: x0l57JCVOgPjnBI6xNZSk2QC+njh3+ttEZI9tvExkAE=
           ENV_KEY_ID: '3380204578043523366'
