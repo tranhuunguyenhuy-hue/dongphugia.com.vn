@@ -1,7 +1,39 @@
 import { readFile } from 'node:fs/promises'
 import { describe, expect, it } from 'vitest'
+import { buildPsqlChildEnvironment } from './supabase-runtime-psql.mjs'
 
 describe('Supabase runtime psql credential boundary', () => {
+  it('passes psql only its connection environment and harmless locale settings', () => {
+    const childEnvironment = buildPsqlChildEnvironment({
+      PATH: '/usr/bin:/bin',
+      LANG: 'C.UTF-8',
+      BACKUP_AGE_PRIVATE_KEY: 'private-key-placeholder',
+      SUPABASE_MANAGEMENT_TOKEN: 'management-token-placeholder',
+      SUPABASE_REHOME_DATABASE_URL: 'postgresql://redacted.invalid',
+      PGPASSWORD: 'password-placeholder',
+      GITHUB_TOKEN: 'github-token-placeholder',
+      NODE_OPTIONS: '--require=unexpected',
+    }, {
+      host: 'db.bonxyxluzlxfkdetryoo.supabase.co',
+      port: 5432,
+      database: 'postgres',
+      user: 'dpg_snapshot_login',
+      options: '-c role=dpg_snapshot_readonly -c default_transaction_read_only=on',
+    }, '/dev/shm/.pgpass', '/dev/shm/root.crt')
+
+    expect(childEnvironment).toMatchObject({
+      PATH: '/usr/bin:/bin',
+      LANG: 'C.UTF-8',
+      PGUSER: 'dpg_snapshot_login',
+      PGSSLMODE: 'verify-full',
+      PGOPTIONS: '-c role=dpg_snapshot_readonly -c default_transaction_read_only=on',
+    })
+    for (const name of [
+      'BACKUP_AGE_PRIVATE_KEY', 'SUPABASE_MANAGEMENT_TOKEN', 'SUPABASE_REHOME_DATABASE_URL',
+      'PGPASSWORD', 'GITHUB_TOKEN', 'NODE_OPTIONS',
+    ]) expect(childEnvironment).not.toHaveProperty(name)
+  })
+
   it('keeps the database URL out of psql argv and uses a tmpfs pgpass file', async () => {
     const [wrapper, restore, workflow, identity, snapshot] = await Promise.all([
       readFile('scripts/backup/supabase-runtime-psql.mjs', 'utf8'),
@@ -11,7 +43,7 @@ describe('Supabase runtime psql credential boundary', () => {
       readFile('scripts/backup/supabase-runtime-snapshot.sh', 'utf8'),
     ])
 
-    expect(wrapper).toContain("!name.startsWith('SUPABASE_REHOME_')")
+    expect(wrapper).toContain("['PATH', 'LANG', 'LC_ALL', 'LC_CTYPE', 'TZ']")
     expect(wrapper).toContain('validateSupabaseRuntimeRootCertificate')
     expect(wrapper).toContain("PGPASSFILE: pgpass")
     expect(wrapper).toContain("PGSSLMODE: 'verify-full'")

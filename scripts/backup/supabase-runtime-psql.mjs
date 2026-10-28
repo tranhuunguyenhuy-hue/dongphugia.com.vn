@@ -17,6 +17,25 @@ function pgpassEscape(value) {
   return value.replaceAll('\\', '\\\\').replaceAll(':', '\\:')
 }
 
+export function buildPsqlChildEnvironment(parentEnvironment, target, pgpass, rootCertificatePath) {
+  const childEnvironment = Object.fromEntries(
+    ['PATH', 'LANG', 'LC_ALL', 'LC_CTYPE', 'TZ']
+      .filter((name) => parentEnvironment[name] !== undefined)
+      .map((name) => [name, parentEnvironment[name]]),
+  )
+  return Object.assign(childEnvironment, {
+    PGHOST: target.host,
+    PGPORT: String(target.port),
+    PGDATABASE: target.database,
+    PGUSER: target.user,
+    PGPASSFILE: pgpass,
+    PGSSLMODE: 'verify-full',
+    PGSSLROOTCERT: rootCertificatePath,
+    PGOPTIONS: target.options,
+    PGAPPNAME: 'dongphugia-supabase-runtime-rehome',
+  })
+}
+
 async function main() {
   const args = process.argv.slice(2)
   const fileMode = args.length === 2 && args[0] === '--file'
@@ -55,20 +74,12 @@ async function main() {
       )
     }
 
-    const childEnvironment = Object.fromEntries(Object.entries(process.env).filter(([name]) => (
-      !name.startsWith('SUPABASE_REHOME_') && !name.startsWith('PG')
-    )))
-    Object.assign(childEnvironment, {
-      PGHOST: target.host,
-      PGPORT: String(target.port),
-      PGDATABASE: target.database,
-      PGUSER: target.user,
-      PGPASSFILE: pgpass,
-      PGSSLMODE: 'verify-full',
-      PGSSLROOTCERT: rootCertificatePath,
-      PGOPTIONS: target.options,
-      PGAPPNAME: 'dongphugia-supabase-runtime-rehome',
-    })
+    const childEnvironment = buildPsqlChildEnvironment(
+      process.env,
+      target,
+      pgpass,
+      rootCertificatePath,
+    )
 
     const psqlArgs = ['-X', '-q', '-v', 'ON_ERROR_STOP=1']
     if (snapshotIdentityPath) psqlArgs.push('--file', snapshotIdentityPath)
@@ -86,7 +97,7 @@ async function main() {
   }
 }
 
-void main().catch((error) => {
+if (process.argv[1]?.endsWith('/supabase-runtime-psql.mjs')) void main().catch((error) => {
   const allowed = new Set([
     'mode_invalid', 'tmpfs_required', 'credential_encoding_invalid',
     'supabase_runtime_tls_certificate_invalid',
