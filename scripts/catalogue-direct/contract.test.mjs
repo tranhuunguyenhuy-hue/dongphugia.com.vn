@@ -4,11 +4,18 @@ import { describe, expect, it } from 'vitest'
 import {
   SOURCE, TARGET, CONTRACT, RECOVERY_ID, HEADROOM_BODY, CATALOGUE_TABLES, CATALOGUE_RESTORE_ORDER, SEQUENCE_BODY,
   connectionConfig, assertBudget, assertManifest, assertSchema, assertResume,
-  insertSql, rowsSql, provisioningSql, comparableSchema,
+  insertSql, rowsSql, provisioningSql, comparableSchema, normalizeDefinition,
 } from './contract.mjs'
 
 const ca = '-----BEGIN CERTIFICATE-----\nsynthetic\n-----END CERTIFICATE-----'
 const sha = 'a'.repeat(40)
+it('normalizes only the two exact equivalent stock-status CHECK cast forms', () => {
+  const source="CHECK (((stock_status)::text = ANY ((ARRAY['in_stock'::character varying, 'out_of_stock'::character varying, 'discontinued'::character varying, 'contact'::character varying, 'pre_order'::character varying])::text[])))"
+  const target="CHECK (((stock_status)::text = ANY (ARRAY[('in_stock'::character varying)::text, ('out_of_stock'::character varying)::text, ('discontinued'::character varying)::text, ('contact'::character varying)::text, ('pre_order'::character varying)::text])))"
+  expect(normalizeDefinition(target)).toBe(normalizeDefinition(source))
+  expect(normalizeDefinition(target.replace('pre_order','unexpected'))).not.toBe(normalizeDefinition(source))
+  expect(normalizeDefinition(target+' NOT VALID')).not.toBe(normalizeDefinition(source))
+})
 const validUrl = `postgresql://dpg_direct_source:synthetic@db.${SOURCE}.supabase.co:5432/postgres`
 const manifest = () => {
   const counts = { products: 17752, product_images: 110321, product_descriptions: 17752, product_spec_values: 135311, brands: 94085 }
