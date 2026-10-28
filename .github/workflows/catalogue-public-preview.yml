@@ -167,8 +167,20 @@ jobs:
           github-token: ${{ github.token }}
       - name: Validate existing managed Preview custody
         if: inputs.publish && inputs.managed_preview_run_id != ''
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_LEO563_PREVIEW_TOKEN }}
         run: |
           set -euo pipefail
+          set +x
+          # A prior upload may have succeeded while its immediate read-back
+          # failed. Close only that known attempt through read-only inspection;
+          # never repeat its upload or relax the exact version/deployment gate.
+          if [[ ! -f "$MANAGED_ROOT/resource-proof.json" ]]; then
+            node scripts/app-foundation/cloudflare-preview-publication.mjs inspect-resource \
+              --upload "$MANAGED_ROOT/upload-evidence.json" --preflight "$MANAGED_ROOT/remote-preflight.json" \
+              --output "$MANAGED_ROOT/resource-proof.json"
+          fi
           node scripts/app-foundation/cloudflare-preview-publication.mjs validate-managed-publication \
             --publication-preflight "$MANAGED_ROOT/publication-preflight.json" \
             --upload "$MANAGED_ROOT/upload-evidence.json" --resource-proof "$MANAGED_ROOT/resource-proof.json" \
