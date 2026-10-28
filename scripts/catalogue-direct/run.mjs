@@ -11,7 +11,7 @@ import {
   CONTRACT, SOURCE, TARGET, RECOVERY_ID, SHA, CATALOGUE_TABLES, CATALOGUE_RESTORE_ORDER,
   DATABASE_CEILING, CHECKPOINT_CEILING, requireGate, digest, identifier,
   connectionConfig, assertBudget, assertManifest, assertSchema, rowsSql, insertSql, assertResume,
-  SEQUENCE_BODY,
+  SEQUENCE_BODY, HEADROOM_BODY,
 } from './contract.mjs'
 
 const env = process.env
@@ -188,8 +188,9 @@ export async function attestRole(client, purpose) {
         and p.prorettype='event_trigger'::regtype and p.prosrc=$2
         and p.proowner=(select oid from pg_roles where rolname='postgres')
         and p.proconfig=array['search_path=pg_catalog'])
-      and p.oid<>coalesce(to_regprocedure('dpg_control.enforce_free_tier_headroom_statement()'),0)) as definer,
-    has_database_privilege(current_database(),'CREATE') as dbcreate`, [purpose === 'import', RLS_EVENT_BODY])
+      and not (n.nspname='dpg_control' and p.proname='enforce_free_tier_headroom_statement' and p.pronargs=0
+        and p.prosrc=$3 and p.proconfig=array['search_path=pg_catalog'])) as definer,
+    has_database_privilege(current_database(),'CREATE') as dbcreate`, [purpose === 'import', RLS_EVENT_BODY, HEADROOM_BODY])
   requireGate(!extra.membership && !extra.ddl && !extra.definer && !extra.dbcreate, 'ROLE_AUTHORITY_BOUNDARY')
   const sequenceRights = await client.query(`select
     has_sequence_privilege(c.oid,'USAGE,UPDATE') as write,

@@ -126,14 +126,41 @@ async function main() {
   const roles=purpose==='source'?['source']:['read','import']
   const secretNames={source:'DIRECT_SOURCE_DATABASE_URL',read:'DIRECT_TARGET_READ_DATABASE_URL',import:'DIRECT_TARGET_IMPORT_DATABASE_URL'}
   const urls={},passwords={}
-  for(const role of roles) {
-    passwords[role]=randomBytes(32).toString('base64url')
-    urls[secretNames[role]]=loginUrl(selected.config,'dpg_direct_'+role,passwords[role],purpose==='source'?SOURCE:TARGET)
-  }
   phase='setup_checkpoint'
   const before=await setupState(selected.client,purpose==='source'?'public':'dpg_app')
   requireGate(before.new_roles.length===0,'SETUP_ROLE_ALREADY_EXISTS')
-  checkpoint=await persistSetup(purpose,{contract:'dpg:direct-setup:v1',purpose,codeSha:env.GITHUB_SHA,before,urls})
+  const resume=env.SETUP_RESUME_CHECKPOINT
+  if(resume) {
+    // Bounded continuation of the proven rolled-back pre-data setup failure,
+    // not a fresh credential/export attempt or a general import replay switch.
+    requireGate(purpose==='target' && resume==='638d3e765fd28df009ef766e092828a96fe765f3','SETUP_RESUME_SCOPE')
+    const refs=await api('/git/matching-refs/heads/direct-setup-issue160-target')
+    requireGate(refs.some(r=>r.ref==='refs/heads/direct-setup-issue160-target' && r.object.sha===resume),'SETUP_RESUME_REF')
+    const original=JSON.parse(crypt('decrypt',await encryptedBlob(resume,'setup.age')))
+    requireGate(original.contract==='dpg:direct-setup:v1' && original.purpose==='target'
+      && original.codeSha==='23ea494e30f8dc5b1f72e0204c70767ee1cbb818','SETUP_RESUME_IDENTITY')
+    assertBeforeSetup(original.before,before)
+    requireGate(Object.keys(original.urls).sort().join(',')===roles.map(r=>secretNames[r]).sort().join(','),'SETUP_RESUME_SECRET_SET')
+    for(const role of roles) {
+      const value=original.urls[secretNames[role]]
+      const config=connectionConfig(value,env.DIRECT_TARGET_CA,TARGET)
+      requireGate([`dpg_direct_${role}`,`dpg_direct_${role}.${TARGET}`].includes(config.user)
+        && /^[A-Za-z0-9_-]{43}$/.test(config.password),'SETUP_RESUME_ROLE')
+      urls[secretNames[role]]=value;passwords[role]=config.password
+    }
+    checkpoint=resume
+    const marker='heads/direct-setup-resume-'+resume
+    requireGate((await api('/git/matching-refs/'+marker)).length===0,'SETUP_RESUME_ALREADY_ATTEMPTED')
+    // Preserve the original ref; the new immutable marker points at its same
+    // encrypted credentials/preimage and permits only this one continuation.
+    await api('/git/refs','POST',{ref:'refs/'+marker,sha:resume})
+  } else {
+    for(const role of roles) {
+      passwords[role]=randomBytes(32).toString('base64url')
+      urls[secretNames[role]]=loginUrl(selected.config,'dpg_direct_'+role,passwords[role],purpose==='source'?SOURCE:TARGET)
+    }
+    checkpoint=await persistSetup(purpose,{contract:'dpg:direct-setup:v1',purpose,codeSha:env.GITHUB_SHA,before,urls})
+  }
   console.log(JSON.stringify({setup_checkpoint:checkpoint,purpose,status:'PERSISTED_READBACK_VERIFIED',database_writes:false}))
   phase='setup_transaction'
   await selected.client.query('begin')
