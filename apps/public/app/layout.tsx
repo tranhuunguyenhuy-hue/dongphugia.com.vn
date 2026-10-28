@@ -2,7 +2,6 @@ import type { Metadata } from 'next'
 
 import { APPLICATIONS } from '@dpg/app-contracts'
 import CanonicalPublicLayout from '@/app/(public)/layout'
-import { Toaster } from '@/components/ui/sonner'
 
 import { getPublicAppEnvironment } from '../src/config/env'
 
@@ -32,7 +31,6 @@ export default function PublicRootLayout({
         className="antialiased font-sans"
       >
         <CanonicalPublicLayout>{children}</CanonicalPublicLayout>
-        <Toaster richColors position="top-right" />
       </body>
     </html>
   )

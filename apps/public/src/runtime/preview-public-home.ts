@@ -1,45 +1,34 @@
-import type {
-  PublicHomeCategory,
-  PublicHomeContent,
-  PublicHomePageData,
-} from '@dpg/app-contracts'
-import {
-  getPreviewCatalogueCategories,
-  getPreviewCatalogueProducts,
-  PUBLIC_CATALOGUE_FIXTURE_NOTICE,
-} from './preview-public-catalogue'
+import type { PublicHomeCategory, PublicHomeContent, PublicHomePageData } from '@dpg/app-contracts'
+import { NAV_PRODUCT_CATEGORIES } from '@/config/site'
 
 export async function getPublicHomeBanners(): Promise<PublicHomePageData['banners']> {
-  // The empty value intentionally exercises the canonical local fallback hero.
-  return []
+  // This existing editorial scene has no embedded SKU, price, or inventory claim.
+  // Keep the canonical HeroBanner component, without using its commerce banner fallback.
+  return [{
+    id: 1,
+    title: 'Không gian nội thất minh họa',
+    imageUrl: '/images/banner-3.jpg',
+    linkUrl: null,
+    mobileImageUrl: '/images/banner-3.jpg',
+    desktopImageUrl: '/images/banner-3.jpg',
+    desktopLargeImageUrl: '/images/banner-3.jpg',
+  }]
 }
 
 export async function getPublicHomeContent(): Promise<PublicHomeContent> {
-  const categories: readonly PublicHomeCategory[] = getPreviewCatalogueCategories().map((category) => {
-    const listing = category.listings[0]
-    const products = listing
-      ? getPreviewCatalogueProducts(category.slug, listing.slug)
-      : []
-    const availableBrands = products.reduce<Array<{ name: string; slug: string }>>((brands, product) => {
-      const brand = product.brands as { name: string; slug: string } | undefined
-      if (brand && !brands.some(({ slug }) => slug === brand.slug)) brands.push(brand)
-      return brands
-    }, [])
-
-    return {
-      id: category.slug,
-      label: category.name,
-      basePath: `/${category.slug}`,
-      products,
-      totalCount: products.length,
-      availableBrands,
-      availableSubcategories: category.listings.map(({ name, slug }) => ({ name, slug })),
-    }
-  })
+  const categories: readonly PublicHomeCategory[] = NAV_PRODUCT_CATEGORIES
+    .filter(({ active }) => active)
+    .map(({ href, label }) => ({
+      id: href.slice(1),
+      label,
+      basePath: href,
+      products: [],
+      totalCount: 0,
+    }))
 
   return {
     categories,
     posts: [],
-    previewNotice: PUBLIC_CATALOGUE_FIXTURE_NOTICE,
+    previewNotice: 'Danh mục trực tuyến đang được cập nhật. Website hiện chưa hiển thị sản phẩm, giá hoặc tình trạng hàng đã xác minh; vui lòng liên hệ trực tiếp để được tư vấn.',
   }
 }

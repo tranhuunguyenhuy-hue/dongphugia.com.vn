@@ -134,7 +134,7 @@ export function ContactForm({ readOnly = false }: { readOnly?: boolean }) {
                                     </div>
                                 </div>
 
-                                <div className="flex items-start gap-4">
+                                {!readOnly ? <div className="flex items-start gap-4">
                                     <div className="flex shrink-0 items-center justify-center w-12 h-12 rounded-xl bg-white border border-neutral-200 text-[#2E7A96] shadow-sm">
                                         <Globe className="w-5 h-5 stroke-[1.5]" />
                                     </div>
@@ -144,7 +144,7 @@ export function ContactForm({ readOnly = false }: { readOnly?: boolean }) {
                                             {siteConfig.url.replace("https://", "")}
                                         </a>
                                     </div>
-                                </div>
+                                </div> : null}
 
                                 <div className="flex items-start gap-4">
                                     <div className="flex shrink-0 items-center justify-center w-12 h-12 rounded-xl bg-white border border-neutral-200 text-[#2E7A96] shadow-sm">
@@ -161,10 +161,10 @@ export function ContactForm({ readOnly = false }: { readOnly?: boolean }) {
                         </div>
                     </div>
 
-                    {/* Preview keeps the canonical contact details but never collects personal data. */}
+                    {/* The emergency shell keeps canonical contact details but never collects personal data. */}
                     {readOnly ? (
                         <aside className="lg:col-span-12 rounded-xl border border-amber-300 bg-amber-50 px-5 py-4 text-sm leading-6 text-amber-950">
-                            Biểu mẫu đang tạm khóa trên bản Preview. Vui lòng liên hệ qua số điện thoại hoặc email ở trên.
+                            Biểu mẫu trực tuyến đang tạm khóa. Vui lòng liên hệ qua số điện thoại hoặc email ở trên.
                         </aside>
                     ) : (
                     <div className="lg:col-span-7">

@@ -22,7 +22,8 @@
       "@/*": ["./src/*"],
       "@dpg/app-contracts": ["./packages/app-contracts/src/index.ts"],
       "@dpg/public-home-runtime": ["./src/runtime/legacy-public-home.ts"],
-      "@dpg/public-interactions": ["./src/runtime/legacy-public-interactions.ts"]
+      "@dpg/public-interactions": ["./src/runtime/legacy-public-interactions.ts"],
+      "@dpg/public-ui-policy": ["./src/runtime/legacy-public-ui-policy.ts"]
     }
   },
   "include": [

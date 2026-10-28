@@ -18,7 +18,10 @@ describe('Cloudflare canonical Public UI adapter', () => {
     const canonicalPage = readFileSync(resolve(repositoryRoot, 'src/app/(public)/page.tsx'), 'utf8')
 
     expect(page).toContain("from '@/app/(public)/page'")
+    expect(page).toContain('export { default }')
+    expect(page).not.toContain('EmergencyPublicHomePage')
     expect(layout).toContain("from '@/app/(public)/layout'")
+    expect(layout).not.toContain('emergencyShell')
     expect(canonicalPage).toContain("from \"@dpg/public-home-runtime\"")
     expect(canonicalPage).not.toMatch(/lib\/(?:prisma|homepage-data|public-api-products)/)
   })
@@ -33,22 +36,23 @@ describe('Cloudflare canonical Public UI adapter', () => {
     expect(contactComponent).toContain('@dpg/public-interactions')
   })
 
-  it('labels the synthetic Preview data and does not invent Blog content', async () => {
+  it('renders category structure without any invented catalogue or Blog content', async () => {
     const [banners, data] = await Promise.all([
       getPublicHomeBanners(),
       getPublicHomeContent(),
     ])
 
+    expect(banners).toHaveLength(1)
+    expect(banners[0]).toMatchObject({ imageUrl: '/images/banner-3.jpg', linkUrl: null })
+
     expect(data.categories.map((category) => category.id)).toEqual([
       'thiet-bi-ve-sinh',
       'thiet-bi-bep',
-      'vat-lieu-nuoc',
       'gach-op-lat',
+      'vat-lieu-nuoc',
     ])
-    expect(data.categories.every((category) => category.products.length > 0)).toBe(true)
-    expect(data.previewNotice).toMatch(/minh họa/i)
-    expect(data.previewNotice).toMatch(/không phải dữ liệu/i)
-    expect(data.previewNotice).toMatch(/liên kết sản phẩm\/danh mục chỉ là fixture kiểm thử/i)
+    expect(data.categories.every((category) => category.products.length === 0 && category.totalCount === 0)).toBe(true)
+    expect(data.previewNotice).toMatch(/chưa hiển thị sản phẩm, giá hoặc tình trạng hàng đã xác minh/i)
     expect(data.posts).toEqual([])
     expect(() => JSON.stringify({ banners, ...data })).not.toThrow()
   })

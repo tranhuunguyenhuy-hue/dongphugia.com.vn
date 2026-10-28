@@ -7,7 +7,7 @@ export function GET() {
   const appEnvironment = getPublicAppEnvironment()
   const body = appEnvironment.previewNoindex
     ? 'User-agent: *\nDisallow: /\n'
-    : 'User-agent: *\nAllow: /\n'
+    : `User-agent: *\nAllow: /\nSitemap: ${appEnvironment.origin}/sitemap.xml\n`
 
   return new Response(body, {
     headers: {

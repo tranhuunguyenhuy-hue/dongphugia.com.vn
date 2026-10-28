@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { BrandLogo } from '@/components/media/brand-logo'
 import { ProductCard } from '@/components/ui/product-card'
+import { PUBLIC_UI_READ_ONLY } from '@dpg/public-ui-policy'
 
 interface Brand {
     name: string
@@ -41,7 +42,7 @@ export function HomeCategoryBlockAlt({
 
     return (
         <section
-            className="relative z-0 my-8 w-full [content-visibility:auto] [contain-intrinsic-size:900px]"
+            className={`relative z-0 my-8 w-full ${PUBLIC_UI_READ_ONLY ? '' : '[content-visibility:auto] [contain-intrinsic-size:900px]'}`}
             aria-labelledby={`home-category-${categoryData.id}`}
         >
             <div className="mb-6 flex w-full flex-col items-start gap-2 md:mb-8 md:gap-3">
@@ -100,7 +101,11 @@ export function HomeCategoryBlockAlt({
                 </nav>
             )}
 
-            {categoryData.products.length > 0 ? (
+            {PUBLIC_UI_READ_ONLY ? (
+                <div className="flex min-h-[180px] w-full flex-col items-center justify-center rounded-2xl border border-dashed border-stone-200 bg-stone-50 px-5 text-center">
+                    <p className="text-stone-600">Sản phẩm, giá và tình trạng hàng chưa được xác minh trên website.</p>
+                </div>
+            ) : categoryData.products.length > 0 ? (
                 <div className="grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-5 lg:grid-cols-5">
                     {categoryData.products.map((product) => (
                         <ProductCard
@@ -127,8 +132,7 @@ export function HomeCategoryBlockAlt({
                     href={categoryData.basePath}
                     className="inline-flex min-h-11 items-center rounded-full border border-brand-600 px-5 py-2 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-50"
                 >
-                    Xem tất cả {categoryData.totalCount?.toLocaleString('vi-VN') ?? ''}{' '}
-                    sản phẩm {categoryData.label.toLowerCase()}
+                    {PUBLIC_UI_READ_ONLY ? `Thông tin ${categoryData.label.toLowerCase()}` : <>Xem tất cả {categoryData.totalCount?.toLocaleString('vi-VN') ?? ''}{' '}sản phẩm {categoryData.label.toLowerCase()}</>}
                 </Link>
             </div>
         </section>
