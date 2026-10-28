@@ -1,76 +1,99 @@
 # Issue #160 Supabase runtime recovery
 
-Status: STOP — source procedure is not dispatch-ready and grants no write authorization.
+Status: **STOP — PR #185 is not dispatch-ready. No recovery or destination
+write is authorized while any gate below is unknown or failing.** The workflow
+has one manual attempt, exact-main-SHA and Owner-comment gates, protected
+`runtime-backup` Environment, no retry path, verified TLS, and pre-write target
+and capacity checks.
 
-The workflow `.github/workflows/supabase-runtime-issue160-recovery-once.yml`
-exists for the exact Owner GO and target `bonxyxluzlxfkdetryoo`. It permits one
-`workflow_dispatch` from `main` with an exact approved main SHA. It verifies the
-current Issue #160 Owner comments, source artifact identity, runner capacity,
-target organization/project, TLS, a destination snapshot, isolated restore,
-schema contract, and database headroom before any remote write. It has no retry
-path. A failed check is a STOP; never rerun the workflow to get past it.
+## Evidence in this candidate
 
-## Dispatch gates
+- Destination snapshot v3 encrypts the complete affected-schema dump for
+  `dpg_app`, `dpg_control`, `dpg_v1`, and `dpg_v1_api` (data, schema, sequence,
+  ACL, RLS, and routine state); `public` schema DDL/ACL/routines; `auth` and
+  `extensions` schema ACLs; and global role attributes/memberships without
+  passwords. The canonical 23-migration set is the scope being compared.
+- Before any write, the workflow restores those objects into pinned,
+  network-isolated PostgreSQL, compares normalized schema and data/sequence
+  dump hashes plus role and schema-ACL state, and checks the encrypted object
+  hashes. Normalization removes only volatile pg_dump version headers and its
+  random psql `\\restrict` token. Snapshot receipt format is v3.
+- Pending canonical migrations now run in one serializable transaction with
+  one ledger update per migration; any failure rolls back the entire pending
+  suffix. The existing protected snapshot and pre-write gates remain required.
+- Target connection purposes are distinct and exact for project
+  `bonxyxluzlxfkdetryoo`: read-only snapshot/admin, `dpg_migration_login` set to
+  `dpg_migration`, and `dpg_catalogue_restore_login` set to
+  `dpg_catalogue_restore`. Migration identity is attested before migration
+  operations. Catalogue apply attests that its capability role is
+  `BYPASSRLS`, has no admin/database/role powers or unrelated memberships,
+  grants only read/write on the 27 allowlisted tables, read-only access to
+  recovery metadata/seeds, and ownership only of their sequences. It must not
+  have table access outside that contract, schema/database CREATE, or
+  application-function EXECUTE. It does not read or write Auth/Storage.
+- The source-ciphertext identity already verified by the prior protected
+  check is reused for destination snapshot encryption; no separate snapshot
+  identity/recipient secret is needed. Do not re-read or output its value.
 
-Do not dispatch until all of these are verified on the exact candidate:
+## Owner checklist — exact remaining gates
 
-1. Security, Standards, and Spec review plus required CI pass on the exact main
-   SHA.
-2. Re-attest the original ciphertext artifact ID, size, SHA-256, expiry, and
-   Owner-controlled ciphertext-only custody copy immediately before the
-   approved run. Keep both copies; never persist plaintext or delete either.
-3. The `runtime-backup` Environment has the required secret names configured:
-   `SUPABASE_REHOME_DATABASE_URL`, `SUPABASE_REHOME_ROOT_CA_CERTIFICATE`,
-   `SUPABASE_MANAGEMENT_TOKEN`, and `BACKUP_AGE_PRIVATE_KEY`. The workflow
-   derives the snapshot recipient from the existing protected key only after
-   authenticating the source bundle, then compares it with the original backup
-   recipient. `SUPABASE_REHOME_SNAPSHOT_AGE_IDENTITY` and
-   `SUPABASE_REHOME_SNAPSHOT_AGE_RECIPIENT` are not used. Inspect secret names
-   only; never retrieve or print values. The project root CA is a project-bound
-   certificate downloaded from Supabase Database Settings; do not guess it or
-   substitute a generic CA.
-4. Prove the exact TLS-verified target and least-privilege effective connection
-   role without exposing the URL. The current target parser accepts only the
-   `postgres` direct/pooler identity, so this requirement is not met. Require
-   an Owner-approved migration identity with only the capabilities needed by
-   the approved schema change and an explicit sanitized role attestation;
-   `dpg_backup` remains a separate non-login, non-superuser, non-`BYPASSRLS`
-   capability.
-5. The source tree currently encrypts schema/data archives, checks their
-   decrypted hashes, restores them in isolated PostgreSQL, compares selected
-   `auth`/`extensions` ACLs, and checks table inventory. This is not yet full
-   rollback-equivalence evidence for all affected data, schema, sequence,
-   role, grant, RLS, and function state. Do not dispatch until that proof and
-   exact pre-write destination revalidation are implemented and reviewed.
-6. Verify account-wide zero-cost Actions plus Packages allowance and current
-   usage before retaining a recovery checkpoint or deleting any CI artifact.
-   A repository-only artifact count is insufficient. Do not delete protected
-   recovery, source, custody, legal, or security evidence.
-7. The current `runtime-backup` Environment has only the Owner as required
-   reviewer and permits self-review. Configure a genuinely independent
-   required reviewer and prevent self-review before dispatch.
-8. The current target plan, database size, projected imported size, reserved
-   headroom, migration ledger, schema contract, and RLS state all pass. The
-   accepted database ceiling is 367,001,600 bytes; do not infer database size
-   from encrypted artifact size.
-9. GitHub Environment approval is recorded for the exact run and SHA.
+1. **$0 billing and artifacts:** Current repository inventory is
+   **125 active artifacts / 873,835,602 bytes**, above the workflow's internal
+   500,000,000-byte guard. Provide current account-wide Actions and Packages
+   allowance and usage from GitHub **Settings → Billing & licensing → Usage**
+   (or enable appropriately scoped billing-read access). No artifact cleanup
+   is safe until both allowance and $0 effect are proven. Preserve artifact
+   `12052107648` and its Owner ciphertext custody copy.
+2. **TLS CA:** Secret-name metadata currently shows
+   `SUPABASE_REHOME_ROOT_CA_CERTIFICATE` is absent. For the exact project
+   `bonxyxluzlxfkdetryoo`, use the Supabase
+   Dashboard project **Connect** panel / server root-certificate download,
+   then set Environment secret
+   `runtime-backup/SUPABASE_REHOME_ROOT_CA_CERTIFICATE`. Keep `verify-full`;
+   never paste certificate or connection material in chat or Issue comments.
+   [Supabase: Connecting with PSQL](https://supabase.com/docs/guides/database/psql)
+   documents the dashboard server root certificate and `sslmode=verify-full`.
+3. **Independent approval:** Environment metadata currently shows only the
+   Owner as reviewer and `prevent_self_review=false`. Repository
+   **Settings → Environments →
+   `runtime-backup` → Required reviewers** must include a human other than the
+   Owner, and **Prevent self-review** must be enabled. Preserve branch
+   restrictions. The prior inspection found only the Owner and self-review
+   allowed; recheck before dispatch.
+4. **Database identities and secrets:** Environment metadata lacks both
+   purpose-specific database URLs below. The existing random password for
+   `dpg_migration_login` was deliberately not returned by its migration, so a
+   new credential must be securely set and stored as
+   `runtime-backup/SUPABASE_REHOME_MIGRATION_DATABASE_URL`. Create/attest the
+   dedicated `dpg_catalogue_restore` capability and its single login member
+   using the exact contract above, then store its TLS connection as
+   `runtime-backup/SUPABASE_REHOME_CATALOGUE_DATABASE_URL`. These are two new
+   secrets; values must never be sent through chat or comments. The existing
+   `SUPABASE_REHOME_DATABASE_URL` is retained only for read-only preflight and
+   snapshot queries. Existing `BACKUP_AGE_PRIVATE_KEY` is reused; no new
+   snapshot key/recipient secret is required. If the target lacks the
+   already-reviewed `dpg_migration`/`dpg_backup` role baseline or exact grants,
+   STOP before changing it and report the specific mismatch.
 
-If any gate is `UNKNOWN`, the original source artifact cannot be preserved, the
-artifact budget would be exceeded, or the destination snapshot cannot prove
-rollback, stop and report the specific blocker on Issue #160. Do not delete
-artifacts or change retention, permissions, credentials, the project plan, or
-infrastructure to force a pass without a separate Owner decision.
+Recheck that Environment contains the required secret **names only**:
+`SUPABASE_REHOME_DATABASE_URL`, `SUPABASE_REHOME_MIGRATION_DATABASE_URL`,
+`SUPABASE_REHOME_CATALOGUE_DATABASE_URL`,
+`SUPABASE_REHOME_ROOT_CA_CERTIFICATE`, `SUPABASE_MANAGEMENT_TOKEN`, and
+`BACKUP_AGE_PRIVATE_KEY`. Never retrieve or print values.
 
-## Execution boundary
+## Dispatch and write gates
 
-The one permitted run may reconcile only the canonical 23 migrations, the
-required `dpg_v1.products` interface and three API procedures, the least-
-privilege `dpg_backup` role, and the 13 identified `dpg_app` RLS settings, then
-perform at most one 27-table catalogue sync. Preserve existing data. Do not
-fabricate migration-ledger entries or replay incompatible migrations.
+Before considering one protected run, require exact-head Security, Standards,
+and Spec PASS; required CI and branch protection PASS; current artifact and
+ciphertext custody attestation; verified account-wide $0 capacity; correct
+secret-name metadata; independent Environment reviewer/self-review protection;
+and a successful TLS, target, migration-identity, rollback-equivalence, role,
+and Free-plan-capacity preflight. GitHub Environment approval must match the
+exact run and SHA. Any unknown is STOP. Do not retry a run or make a destination
+write while stopped.
 
-Never write Supabase Auth or Storage, unrelated data, DNS, Cloudflare
-Production, public launch, AWS, or paid services. The protected job must emit
-only sanitized aggregate evidence. Report one consolidated PASS/STOP result on
-Issue #160 with the exact workflow run, verified table count, counts/hashes,
-schema/RLS result, and database bytes.
+The approved write scope remains only the canonical 23 migrations and one
+transactional sync of the exact 27-table catalogue. Do not change Auth, Storage,
+Production, DNS, Cloudflare bindings, or public launch. Report table counts and
+hashes, schema/RLS, and measured destination bytes only after actual verified
+execution; encrypted backup size is not a database-size estimate.

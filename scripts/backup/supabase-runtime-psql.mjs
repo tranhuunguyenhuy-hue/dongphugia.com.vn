@@ -2,7 +2,7 @@ import { spawn } from 'node:child_process'
 import { chmod, mkdtemp, rm, statfs, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
-import { parseSupabaseRuntimeTarget } from './supabase-runtime-target.mjs'
+import { resolveSupabaseRuntimeTarget } from './supabase-runtime-target.mjs'
 import { validateSupabaseRuntimeRootCertificate } from './supabase-runtime-tls.mjs'
 
 const TMPFS_MAGIC = 0x01021994
@@ -23,7 +23,8 @@ async function main() {
   const stdinMode = args.length === 1 && args[0] === '--tuples-only'
   if (!fileMode && !stdinMode) throw new Error('mode_invalid')
 
-  const target = parseSupabaseRuntimeTarget(process.env.SUPABASE_REHOME_DATABASE_URL)
+  const purpose = process.env.SUPABASE_RUNTIME_TARGET_PURPOSE || 'snapshot'
+  const target = resolveSupabaseRuntimeTarget(purpose)
   const rootCertificate = validateSupabaseRuntimeRootCertificate(
     process.env.SUPABASE_REHOME_ROOT_CA_CERTIFICATE,
   )
@@ -56,6 +57,7 @@ async function main() {
       PGPASSFILE: pgpass,
       PGSSLMODE: 'verify-full',
       PGSSLROOTCERT: rootCertificatePath,
+      PGOPTIONS: target.options,
       PGAPPNAME: 'dongphugia-supabase-runtime-rehome',
     })
 

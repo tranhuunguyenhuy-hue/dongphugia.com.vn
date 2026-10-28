@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { readFile } from 'node:fs/promises'
 
 import {
   CATALOGUE_TABLES,
@@ -8,6 +9,7 @@ import {
   buildCatalogueSnapshotSql,
   buildCatalogueValidationSql,
   buildCatalogueSequenceSql,
+  buildCatalogueRestoreIdentitySql,
   buildRuntimeBaselinePreflightSql,
   catalogueTableArguments,
   compareCatalogueManifests,
@@ -200,6 +202,31 @@ describe('catalogue-only restore contract', () => {
     expect(sql).toContain('from pg_sequence where seqrelid = sequence_name::regclass')
     expect(sql).toContain('catalogue_sequence_increment_invalid')
     expect(sql).not.toMatch(/\bsetval\s*\(/i)
+  })
+
+  it('attests a bounded restore identity and exact catalogue table allowlist before writes', () => {
+    const sql = buildCatalogueRestoreIdentitySql()
+    expect(sql).toContain("session_user <> 'dpg_catalogue_restore_login'")
+    expect(sql).toContain("current_user <> 'dpg_catalogue_restore'")
+    expect(sql).toContain('rolbypassrls')
+    expect(sql).toContain('has_database_privilege(current_user, current_database(), \'CREATE\')')
+    expect(sql).toContain('catalogue_restore_unrelated_grant_present')
+    expect(sql).toContain('catalogue_restore_function_execute_present')
+    expect(sql).toContain('catalogue_restore_sequence_owner_invalid')
+    for (const table of expectedTables) expect(sql).toContain(`'${table}'`)
+    expect(sql).not.toMatch(/select\s+\*\s+from/i)
+  })
+
+  it('uses the same 27-table allowlist in the reduced-role target-empty preflight', async () => {
+    const preflight = await readFile('scripts/backup/catalogue-rehome-preflight.sql', 'utf8')
+    const allowlist = preflight.match(
+      /current_user <> 'dpg_catalogue_restore' or c\.relname = any\(array\[([\s\S]*?)\]::text\[\]\)\)/,
+    )?.[1]
+    expect(allowlist).toBeTruthy()
+    const preflightTables = [...allowlist.matchAll(/'([a-z_]+)'/g)]
+      .map((match) => match[1])
+      .sort()
+    expect(preflightTables).toEqual([...expectedTables].sort())
   })
 
   it('fails closed on baseline drift before the protected snapshot or schema mutation', () => {

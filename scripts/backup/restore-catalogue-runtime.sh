@@ -26,6 +26,8 @@ source "$repo_root/scripts/backup/c-actions-container-staging.sh"
 postgres_image="${POSTGRES_IMAGE:-postgres:17.6-bookworm@sha256:f3bd19c606e442c3d7bdfa8002e03fe260a1023351e0ea4598032022b68dd6e3}"
 hosted_recovery="${HOSTED_RECOVERY:-false}"
 keep_output_dir="${KEEP_OUTPUT_DIR:-false}"
+target_purpose='snapshot'
+if [[ "$MODE" == 'apply' ]]; then target_purpose='catalogue_restore'; fi
 recovery_age_recipient="${EXPECTED_AGE_RECIPIENT:-age1cvg7hkdl4ctfdfv8a3a4vkcgc7ge7anyls2rn4y62vtnsxuczawqw4h0dr}"
 case "$recovery_age_recipient" in
   age1cvg7hkdl4ctfdfv8a3a4vkcgc7ge7anyls2rn4y62vtnsxuczawqw4h0dr|\
@@ -90,7 +92,10 @@ if [[ "$MODE" == 'rehearsal' || "$MODE" == 'container-preflight' || "$MODE" == '
       echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=remote_target_present'
       exit 1
     fi
-  elif [[ -z "${SUPABASE_REHOME_DATABASE_URL:-}" ]]; then
+  elif [[ "$MODE" == 'apply' && -z "${SUPABASE_REHOME_CATALOGUE_DATABASE_URL:-}" ]]; then
+    echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=target_missing'
+    exit 1
+  elif [[ "$MODE" != 'apply' && -z "${SUPABASE_REHOME_DATABASE_URL:-}" ]]; then
     echo 'CATALOGUE_REHOME status=FAIL stage=preflight reason=target_missing'
     exit 1
   fi
@@ -203,7 +208,8 @@ node "$contract" validate-source "$manifest" \
   "$EXPECTED_WORKFLOW_RUN_ID" "$EXPECTED_MERGE_SHA" >/dev/null
 
 validate_target_url() {
-  node "$target_contract" validate-url >/dev/null
+  SUPABASE_RUNTIME_TARGET_PURPOSE="$target_purpose" \
+    node "$target_contract" validate-url >/dev/null
 }
 
 sensitive_failure() {
@@ -521,7 +527,7 @@ if [[ "$MODE" == 'rehearsal' ]]; then
   exit 0
 fi
 
-: "${SUPABASE_REHOME_DATABASE_URL:?SUPABASE_REHOME_DATABASE_URL is required}"
+: "${SUPABASE_REHOME_CATALOGUE_DATABASE_URL:?SUPABASE_REHOME_CATALOGUE_DATABASE_URL is required}"
 : "${EXPECTED_CATALOGUE_MANIFEST:?EXPECTED_CATALOGUE_MANIFEST is required}"
 command -v psql >/dev/null 2>&1 || {
   echo 'CATALOGUE_REHOME status=FAIL stage=apply reason=missing_psql'
@@ -535,6 +541,7 @@ validate_target_url || {
 restore_sql="$tmp_dir/catalogue-restore.sql"
 validation_sql="$tmp_dir/catalogue-validation.sql"
 sequence_sql="$tmp_dir/catalogue-sequences.sql"
+identity_sql="$tmp_dir/catalogue-restore-identity.sql"
 driver_sql="$tmp_dir/catalogue-driver.sql"
 
 : >"$restore_sql"
@@ -549,10 +556,12 @@ for table_arg in "${restore_table_args[@]}"; do
 done
 node "$contract" validation-sql "$EXPECTED_CATALOGUE_MANIFEST" >"$validation_sql"
 node "$contract" sequence-sql >"$sequence_sql"
+node "$contract" catalogue-restore-identity-sql >"$identity_sql"
 
 printf '%s\n' \
   '\set ON_ERROR_STOP on' \
   'begin transaction isolation level serializable;' \
+  "\\i '$identity_sql'" \
   "\\i '$preflight_sql'" \
   "\\i '$restore_sql'" \
   "\\i '$sequence_sql'" \
@@ -568,11 +577,13 @@ $catalogue_size_guard$;
 commit;
 SQL
 
-if ! SUPABASE_PSQL_TMPDIR="$tmp_dir" node "$psql_wrapper" --file "$driver_sql" \
+if ! SUPABASE_RUNTIME_TARGET_PURPOSE="$target_purpose" \
+  SUPABASE_PSQL_TMPDIR="$tmp_dir" node "$psql_wrapper" --file "$driver_sql" \
   >/dev/null 2>"$tmp_dir/sensitive.error"; then
   sensitive_failure remote_apply
 fi
-if ! node "$contract" snapshot-sql | SUPABASE_PSQL_TMPDIR="$tmp_dir" \
+if ! node "$contract" snapshot-sql | SUPABASE_RUNTIME_TARGET_PURPOSE="$target_purpose" \
+  SUPABASE_PSQL_TMPDIR="$tmp_dir" \
   node "$psql_wrapper" --tuples-only >"$output_dir/catalogue-actual.json" \
   2>"$tmp_dir/sensitive.error"; then
   sensitive_failure remote_manifest

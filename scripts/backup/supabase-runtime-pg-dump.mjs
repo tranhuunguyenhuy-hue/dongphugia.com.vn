@@ -21,6 +21,18 @@ const DUMP_MODES = new Map([
     '--file=/run/dpg/supabase-runtime-schema-acl-snapshot.sql',
   ]],
   ['--global-roles-snapshot', ['pg_dumpall', '--globals-only', '--no-role-passwords']],
+  ['--schema-only-equivalence', [
+    'pg_dump', '--schema-only', '--schema=dpg_app', '--schema=dpg_control',
+    '--schema=dpg_v1', '--schema=dpg_v1_api', '--schema=public',
+  ]],
+  ['--data-only-equivalence', [
+    'pg_dump', '--data-only', '--column-inserts', '--schema=dpg_app', '--schema=dpg_control',
+    '--schema=dpg_v1', '--schema=dpg_v1_api',
+  ]],
+  ['--role-state-manifest', [
+    'psql', '-X', '-q', '-A', '-t', '-v', 'ON_ERROR_STOP=1',
+    '--file=/run/dpg/supabase-runtime-role-state-snapshot.sql',
+  ]],
 ])
 
 function fail(reason) {
@@ -39,7 +51,7 @@ async function main() {
   }
   if (process.stdout.isTTY) throw new Error('dump_stream_must_be_piped')
 
-  const target = parseSupabaseRuntimeTarget(process.env.SUPABASE_REHOME_DATABASE_URL)
+  const target = parseSupabaseRuntimeTarget(process.env.SUPABASE_REHOME_DATABASE_URL, 'snapshot')
   const rootCertificate = validateSupabaseRuntimeRootCertificate(
     process.env.SUPABASE_REHOME_ROOT_CA_CERTIFICATE,
   )
@@ -51,11 +63,17 @@ async function main() {
   const pgpass = path.join(tmpDirectory, '.pgpass')
   const rootCertificatePath = path.join(tmpDirectory, 'root.crt')
   try {
-    if (process.argv[2] === '--auth-extension-schema-acls') {
-      const aclQueryPath = new URL('./supabase-runtime-schema-acl-snapshot.sql', import.meta.url)
+    if (process.argv[2] === '--auth-extension-schema-acls'
+      || process.argv[2] === '--role-state-manifest') {
+      const queryFilename = process.argv[2] === '--auth-extension-schema-acls'
+        ? 'supabase-runtime-schema-acl-snapshot.sql'
+        : 'supabase-runtime-role-state-snapshot.sql'
+      const queryPath = new URL(process.argv[2] === '--auth-extension-schema-acls'
+        ? './supabase-runtime-schema-acl-snapshot.sql'
+        : './supabase-runtime-role-state-snapshot.sql', import.meta.url)
       await writeFile(
-        path.join(tmpDirectory, 'supabase-runtime-schema-acl-snapshot.sql'),
-        await readFile(aclQueryPath),
+        path.join(tmpDirectory, queryFilename),
+        await readFile(queryPath),
         { mode: 0o400 },
       )
     }
@@ -76,6 +94,7 @@ async function main() {
       '--env', 'PGPASSFILE=/run/dpg/.pgpass',
       '--env', 'PGSSLMODE=verify-full',
       '--env', 'PGSSLROOTCERT=/run/dpg/root.crt',
+      '--env', `PGOPTIONS=${target.options}`,
       '--env', 'PGAPPNAME=dongphugia-supabase-runtime-rehome',
       POSTGRES_IMAGE,
       ...DUMP_MODES.get(process.argv[2]),

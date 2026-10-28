@@ -88,8 +88,11 @@ acl_snapshot="$OUTPUT_DIR/auth-extension-schema-acls.json.age"
 globals_snapshot="$OUTPUT_DIR/global-roles.no-passwords.sql.age"
 snapshot_recipient="$(cat "$tmp_dir/expected-recipient")"
 schema_acl_query='scripts/backup/supabase-runtime-schema-acl-snapshot.sql'
+role_state_query='scripts/backup/supabase-runtime-role-state-snapshot.sql'
 cp -- "$schema_acl_query" "$tmp_dir/schema-acl-snapshot.sql" || fail snapshot_query_unavailable
+cp -- "$role_state_query" "$tmp_dir/role-state-snapshot.sql" || fail snapshot_query_unavailable
 chmod 0400 "$tmp_dir/schema-acl-snapshot.sql"
+chmod 0400 "$tmp_dir/role-state-snapshot.sql"
 
 capture_encrypted_snapshot() {
   local dump_mode="$1"
@@ -127,6 +130,46 @@ capture_encrypted_snapshot --affected-public-schema-snapshot "$public_snapshot" 
 capture_encrypted_snapshot --auth-extension-schema-acls "$acl_snapshot" "$acl_plain_hash"
 capture_encrypted_snapshot --global-roles-snapshot "$globals_snapshot" "$globals_plain_hash"
 
+capture_logical_hash() {
+  local mode="$1"
+  local hash
+  hash="$(node "$dump_script" "$mode" 2>"$tmp_dir/$mode.stderr" |
+    normalize_pg_dump_stream | sha256sum | awk '{print $1}')" ||
+    fail "${mode#--}_capture_failed"
+  [[ "$hash" =~ ^[0-9a-f]{64}$ ]] || fail "${mode#--}_hash_failed"
+  printf '%s' "$hash"
+}
+
+normalize_pg_dump_stream() {
+  # pg_dump includes server-version headers and a random psql \restrict token.
+  # Remove only those non-state lines so equivalent source/restore SQL hashes
+  # remain comparable across PostgreSQL minor versions and dump invocations.
+  awk '
+    /^-- Dumped from database version / { next }
+    /^-- Dumped by pg_dump version / { next }
+    /^\\(un)?restrict [^[:space:]]+$/ { next }
+    { print }
+  '
+}
+
+schema_equivalence_sha256="$(capture_logical_hash --schema-only-equivalence)"
+data_equivalence_sha256="$(capture_logical_hash --data-only-equivalence)"
+source_role_state="$tmp_dir/role-state.source.json"
+if ! node "$dump_script" --role-state-manifest >"$source_role_state" \
+     2>"$tmp_dir/role-state.source.stderr"; then
+  fail role_state_snapshot_failed
+fi
+chmod 0600 "$source_role_state"
+jq -e '
+  .format == "dpg-runtime-role-state-v1" and
+  .reservedBootstrapRoleAbsent == true and
+  (.roles | type == "array") and
+  (.memberships | type == "array")
+' "$source_role_state" >/dev/null || fail isolated_restore_role_collision
+jq -S 'del(.reservedBootstrapRoleAbsent)' "$source_role_state" \
+  >"$tmp_dir/role-state.source.normalized.json"
+role_state_equivalence_sha256="$(sha256sum "$tmp_dir/role-state.source.normalized.json" | awk '{print $1}')"
+
 acl_plain="$tmp_dir/auth-extension-schema-acls.json"
 if ! age --decrypt --identity "$identity_file" "$acl_snapshot" >"$acl_plain" \
      2>"$tmp_dir/schema-acls.decrypt.stderr"; then
@@ -146,6 +189,7 @@ unset SUPABASE_REHOME_ROOT_CA_CERTIFICATE SUPABASE_REHOME_DATABASE_URL
 docker run --detach --name "$container_name" --network none --read-only --log-driver=none \
   --pids-limit 128 --memory 512m \
   --mount "type=bind,source=$tmp_dir/schema-acl-snapshot.sql,target=/run/schema-acl-snapshot.sql,readonly" \
+  --mount "type=bind,source=$tmp_dir/role-state-snapshot.sql,target=/run/role-state-snapshot.sql,readonly" \
   --tmpfs /var/lib/postgresql/data:rw,nosuid,nodev,size=384m \
   --tmpfs /var/run/postgresql:rw,nosuid,nodev,size=16m \
   --tmpfs /tmp:rw,noexec,nosuid,nodev,size=512m \
@@ -227,6 +271,48 @@ stage_encrypted_snapshot "$database_snapshot" "$database_plain_hash" \
   /tmp/affected-schemas.dump isolated_database_restore_failed
 stage_encrypted_snapshot "$public_snapshot" "$public_plain_hash" \
   /tmp/public-schema.dump isolated_public_schema_restore_failed
+
+if ! docker exec --user postgres "$container_name" \
+     pg_restore --format=custom --username=dpg_snapshot_restore --exit-on-error \
+       --single-transaction --dbname=postgres /tmp/affected-schemas.dump \
+       >/dev/null 2>"$tmp_dir/database-restore.error"; then
+  fail isolated_database_restore_failed
+fi
+if ! docker exec --user postgres "$container_name" \
+     pg_restore --format=custom --username=dpg_snapshot_restore --clean --if-exists --exit-on-error \
+       --single-transaction --dbname=postgres /tmp/public-schema.dump \
+       >/dev/null 2>"$tmp_dir/public-schema-restore.error"; then
+  fail isolated_public_schema_restore_failed
+fi
+
+schema_args=(--schema-only --schema=dpg_app --schema=dpg_control --schema=dpg_v1 --schema=dpg_v1_api --schema=public)
+data_args=(--data-only --column-inserts --schema=dpg_app --schema=dpg_control --schema=dpg_v1 --schema=dpg_v1_api)
+restored_schema_equivalence_sha256="$(docker exec --user postgres "$container_name" \
+  pg_dump -U dpg_snapshot_restore -d postgres "${schema_args[@]}" 2>"$tmp_dir/schema-equivalence.stderr" |
+  normalize_pg_dump_stream |
+  sha256sum | awk '{print $1}')" || fail isolated_schema_equivalence_failed
+restored_data_equivalence_sha256="$(docker exec --user postgres "$container_name" \
+  pg_dump -U dpg_snapshot_restore -d postgres "${data_args[@]}" 2>"$tmp_dir/data-equivalence.stderr" |
+  normalize_pg_dump_stream |
+  sha256sum | awk '{print $1}')" || fail isolated_data_equivalence_failed
+[[ "$restored_schema_equivalence_sha256" == "$schema_equivalence_sha256" ]] ||
+  fail isolated_schema_equivalence_failed
+[[ "$restored_data_equivalence_sha256" == "$data_equivalence_sha256" ]] ||
+  fail isolated_data_equivalence_failed
+
+if ! docker exec --user postgres "$container_name" \
+     psql -U dpg_snapshot_restore -X -q -A -t -v ON_ERROR_STOP=1 -d postgres \
+       --file=/run/role-state-snapshot.sql >"$tmp_dir/role-state.restored.json" \
+       2>"$tmp_dir/role-state.restored.stderr"; then
+  fail isolated_role_state_snapshot_failed
+fi
+jq -e '.format == "dpg-runtime-role-state-v1" and (.roles | type == "array") and (.memberships | type == "array")' \
+  "$tmp_dir/role-state.restored.json" >/dev/null || fail isolated_role_state_snapshot_failed
+jq -S 'del(.reservedBootstrapRoleAbsent)' "$tmp_dir/role-state.restored.json" \
+  >"$tmp_dir/role-state.restored.normalized.json"
+cmp -s "$tmp_dir/role-state.source.normalized.json" "$tmp_dir/role-state.restored.normalized.json" ||
+  fail isolated_role_state_equivalence_failed
+
 expected_runtime_tables="$(docker exec --user postgres "$container_name" \
   pg_restore --list /tmp/affected-schemas.dump 2>/dev/null | \
   awk -F'; ' '$2 ~ /^[0-9]+ [0-9]+ TABLE / { count += 1 } END { print count + 0 }')" ||
@@ -238,18 +324,6 @@ expected_public_tables="$(docker exec --user postgres "$container_name" \
 expected_tables=$((expected_runtime_tables + expected_public_tables))
 [[ "$expected_runtime_tables" =~ ^[1-9][0-9]*$ && "$expected_public_tables" =~ ^[0-9]+$ ]] ||
   fail isolated_restore_verification_failed
-if ! docker exec --user postgres "$container_name" \
-  pg_restore --format=custom --username=dpg_snapshot_restore --exit-on-error \
-    --single-transaction --dbname=postgres /tmp/affected-schemas.dump \
-    >/dev/null 2>"$tmp_dir/database-restore.error"; then
-  fail isolated_database_restore_failed
-fi
-if ! docker exec --user postgres "$container_name" \
-  pg_restore --format=custom --username=dpg_snapshot_restore --clean --if-exists --exit-on-error \
-    --single-transaction --dbname=postgres /tmp/public-schema.dump \
-    >/dev/null 2>"$tmp_dir/public-schema-restore.error"; then
-  fail isolated_public_schema_restore_failed
-fi
 rm -f -- "$identity_file" "$tmp_dir/derived-recipient" "$tmp_dir/expected-recipient"
 
 restored_tables="$(docker exec --user postgres "$container_name" \
@@ -277,13 +351,16 @@ jq -n \
   --arg publicSha256 "$public_sha256" \
   --arg aclSha256 "$acl_sha256" \
   --arg globalsSha256 "$globals_sha256" \
+  --arg schemaEquivalenceSha256 "$schema_equivalence_sha256" \
+  --arg dataEquivalenceSha256 "$data_equivalence_sha256" \
+  --arg roleStateEquivalenceSha256 "$role_state_equivalence_sha256" \
   --argjson databaseCiphertextBytes "$database_bytes" \
   --argjson publicCiphertextBytes "$public_bytes" \
   --argjson aclCiphertextBytes "$acl_bytes" \
   --argjson globalsCiphertextBytes "$globals_bytes" \
   --argjson isolatedRestoredTableEntries "$restored_tables" \
-  '{format:"dpg-supabase-destination-snapshot-v2",sourceSha:$sourceSha,projectRef:$projectRef,snapshotScopes:["dpg_app","dpg_control","dpg_v1","dpg_v1_api","public schema only","auth/extensions schema ACL only","global roles without passwords"],databaseCiphertextBytes:$databaseCiphertextBytes,databaseCiphertextSha256:$databaseSha256,publicCiphertextBytes:$publicCiphertextBytes,publicCiphertextSha256:$publicSha256,authExtensionAclCiphertextBytes:$aclCiphertextBytes,authExtensionAclCiphertextSha256:$aclSha256,globalsCiphertextBytes:$globalsCiphertextBytes,globalsCiphertextSha256:$globalsSha256,isolatedRestoredTableEntries:$isolatedRestoredTableEntries,isolatedArchiveHashChecks:"PASS",isolatedSchemaAclEquivalence:"PASS",rolePasswordsCaptured:false}' \
+  '{format:"dpg-supabase-destination-snapshot-v3",sourceSha:$sourceSha,projectRef:$projectRef,snapshotScopes:["dpg_app data/schema/sequences/grants/RLS/functions","dpg_control data/schema/sequences/grants/RLS/functions","dpg_v1 data/schema/sequences/grants/RLS/functions","dpg_v1_api schema/grants/RLS/functions","public schema/grants/functions","auth/extensions schema grants only","global role attributes/memberships without passwords"],databaseCiphertextBytes:$databaseCiphertextBytes,databaseCiphertextSha256:$databaseSha256,publicCiphertextBytes:$publicCiphertextBytes,publicCiphertextSha256:$publicSha256,authExtensionAclCiphertextBytes:$aclCiphertextBytes,authExtensionAclCiphertextSha256:$aclSha256,globalsCiphertextBytes:$globalsCiphertextBytes,globalsCiphertextSha256:$globalsSha256,schemaEquivalenceSha256:$schemaEquivalenceSha256,dataAndSequenceEquivalenceSha256:$dataEquivalenceSha256,roleStateEquivalenceSha256:$roleStateEquivalenceSha256,isolatedRestoredTableEntries:$isolatedRestoredTableEntries,isolatedArchiveHashChecks:"PASS",isolatedSchemaEquivalence:"PASS",isolatedDataAndSequenceEquivalence:"PASS",isolatedRoleStateEquivalence:"PASS",isolatedSchemaAclEquivalence:"PASS",rolePasswordsCaptured:false}' \
   >"$OUTPUT_DIR/snapshot-receipt.json"
 chmod 0600 "$OUTPUT_DIR"/*
-printf 'SUPABASE_RUNTIME_SNAPSHOT status=PASS database_ciphertext_bytes=%s public_schema_ciphertext_bytes=%s schema_acl_ciphertext_bytes=%s globals_ciphertext_bytes=%s isolated_restore=PASS restored_table_entries=%s acl_equivalence=PASS archive_hash_checks=PASS\n' \
+printf 'SUPABASE_RUNTIME_SNAPSHOT status=PASS database_ciphertext_bytes=%s public_schema_ciphertext_bytes=%s schema_acl_ciphertext_bytes=%s globals_ciphertext_bytes=%s isolated_restore=PASS schema_equivalence=PASS data_sequence_equivalence=PASS role_state_equivalence=PASS acl_equivalence=PASS restored_table_entries=%s\n' \
   "$database_bytes" "$public_bytes" "$acl_bytes" "$globals_bytes" "$restored_tables"

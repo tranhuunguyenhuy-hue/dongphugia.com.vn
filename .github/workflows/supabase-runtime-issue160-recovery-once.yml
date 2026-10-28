@@ -22,7 +22,7 @@ env:
   ISSUE_NUMBER: '160'
   OWNER_GO_COMMENT_ID: '6444168865'
   OWNER_UPDATE_COMMENT_ID: '6444628120'
-  OWNER_LATEST_GO_COMMENT_ID: '6447230355'
+  OWNER_LATEST_GO_COMMENT_ID: '6458714324'
   BACKUP_RUN_ID: '38915575745'
   BACKUP_ARTIFACT_ID: '12052107648'
   BACKUP_ARTIFACT_NAME: 'leo540-runtime-backup-38915575745'
@@ -77,10 +77,10 @@ jobs:
 
           issue_json="$(gh api "repos/$GITHUB_REPOSITORY/issues/$ISSUE_NUMBER")"
           test "$(jq -r '.state' <<<"$issue_json")" = open
-          latest_owner_comment="$(gh api --paginate --jq \
-            '.[] | select(.user.login == "tranhuunguyenhuy-hue") | .id' \
+          latest_owner_control="$(gh api --paginate --jq \
+            '.[] | select(.user.login == "tranhuunguyenhuy-hue") | select(.body | sub("(?m)^#+\\s*"; "") | test("(?m)^OWNER (GO|APPROVAL|STOP|HOLD|CANCEL|REVOKE)(\\s|—|:|$)")) | .id' \
             "repos/$GITHUB_REPOSITORY/issues/$ISSUE_NUMBER/comments?per_page=100" | sort -n | tail -n 1)"
-          test "$latest_owner_comment" = "$OWNER_LATEST_GO_COMMENT_ID"
+          test "$latest_owner_control" = "$OWNER_LATEST_GO_COMMENT_ID"
 
           go_comment="$(gh api "repos/$GITHUB_REPOSITORY/issues/comments/$OWNER_GO_COMMENT_ID")"
           jq -e --arg owner 'tranhuunguyenhuy-hue' \
@@ -88,7 +88,7 @@ jobs:
             <<<"$go_comment" >/dev/null
           latest_go_comment="$(gh api "repos/$GITHUB_REPOSITORY/issues/comments/$OWNER_LATEST_GO_COMMENT_ID")"
           jq -e --arg owner 'tranhuunguyenhuy-hue' \
-            '.user.login == $owner and (.body | contains("OWNER GO — P0 FAST-TRACK SAFE RECOVERY & WEBSITE READINESS"))' \
+            '.user.login == $owner and (.body | contains("OWNER APPROVAL — PRIORITIZE FINAL BLOCKER RESOLUTION"))' \
             <<<"$latest_go_comment" >/dev/null
           update_comment="$(gh api "repos/$GITHUB_REPOSITORY/issues/comments/$OWNER_UPDATE_COMMENT_ID")"
           jq -e --arg owner 'tranhuunguyenhuy-hue' \
@@ -187,12 +187,16 @@ jobs:
       - name: Require protected database, TLS, and management credentials
         env:
           SUPABASE_REHOME_DATABASE_URL: ${{ secrets.SUPABASE_REHOME_DATABASE_URL }}
+          SUPABASE_REHOME_MIGRATION_DATABASE_URL: ${{ secrets.SUPABASE_REHOME_MIGRATION_DATABASE_URL }}
+          SUPABASE_REHOME_CATALOGUE_DATABASE_URL: ${{ secrets.SUPABASE_REHOME_CATALOGUE_DATABASE_URL }}
           SUPABASE_REHOME_ROOT_CA_CERTIFICATE: ${{ secrets.SUPABASE_REHOME_ROOT_CA_CERTIFICATE }}
           SUPABASE_MANAGEMENT_TOKEN: ${{ secrets.SUPABASE_MANAGEMENT_TOKEN }}
         shell: bash
         run: |
           set -euo pipefail
           test -n "$SUPABASE_REHOME_DATABASE_URL"
+          test -n "$SUPABASE_REHOME_MIGRATION_DATABASE_URL"
+          test -n "$SUPABASE_REHOME_CATALOGUE_DATABASE_URL"
           test -n "$SUPABASE_REHOME_ROOT_CA_CERTIFICATE"
           test -n "$SUPABASE_MANAGEMENT_TOKEN"
           echo 'ISSUE160_RECOVERY_GATE status=PASS protected_secret_presence=all'
@@ -338,17 +342,17 @@ jobs:
           set -euo pipefail
           issue_json="$(gh api "repos/$GITHUB_REPOSITORY/issues/$ISSUE_NUMBER")"
           test "$(jq -r '.state' <<<"$issue_json")" = open
-          latest_owner_comment="$(gh api --paginate --jq \
-            '.[] | select(.user.login == "tranhuunguyenhuy-hue") | .id' \
+          latest_owner_control="$(gh api --paginate --jq \
+            '.[] | select(.user.login == "tranhuunguyenhuy-hue") | select(.body | sub("(?m)^#+\\s*"; "") | test("(?m)^OWNER (GO|APPROVAL|STOP|HOLD|CANCEL|REVOKE)(\\s|—|:|$)")) | .id' \
             "repos/$GITHUB_REPOSITORY/issues/$ISSUE_NUMBER/comments?per_page=100" | sort -n | tail -n 1)"
-          test "$latest_owner_comment" = "$OWNER_LATEST_GO_COMMENT_ID"
+          test "$latest_owner_control" = "$OWNER_LATEST_GO_COMMENT_ID"
           go_comment="$(gh api "repos/$GITHUB_REPOSITORY/issues/comments/$OWNER_GO_COMMENT_ID")"
           jq -e --arg owner 'tranhuunguyenhuy-hue' \
             '.user.login == $owner and (.body | contains("OWNER GO — SUPABASE SCHEMA RECONCILIATION & CONDITIONAL CATALOGUE SYNC"))' \
             <<<"$go_comment" >/dev/null
           latest_go_comment="$(gh api "repos/$GITHUB_REPOSITORY/issues/comments/$OWNER_LATEST_GO_COMMENT_ID")"
           jq -e --arg owner 'tranhuunguyenhuy-hue' \
-            '.user.login == $owner and (.body | contains("OWNER GO — P0 FAST-TRACK SAFE RECOVERY & WEBSITE READINESS"))' \
+            '.user.login == $owner and (.body | contains("OWNER APPROVAL — PRIORITIZE FINAL BLOCKER RESOLUTION"))' \
             <<<"$latest_go_comment" >/dev/null
           update_comment="$(gh api "repos/$GITHUB_REPOSITORY/issues/comments/$OWNER_UPDATE_COMMENT_ID")"
           jq -e --arg owner 'tranhuunguyenhuy-hue' \
@@ -365,9 +369,12 @@ jobs:
           public_hash="$(jq -r '.publicCiphertextSha256' "$SNAPSHOT_DIR/snapshot-receipt.json")"
           acl_hash="$(jq -r '.authExtensionAclCiphertextSha256' "$SNAPSHOT_DIR/snapshot-receipt.json")"
           globals_hash="$(jq -r '.globalsCiphertextSha256' "$SNAPSHOT_DIR/snapshot-receipt.json")"
-          test "$(jq -r '.format' "$SNAPSHOT_DIR/snapshot-receipt.json")" = dpg-supabase-destination-snapshot-v2
+          test "$(jq -r '.format' "$SNAPSHOT_DIR/snapshot-receipt.json")" = dpg-supabase-destination-snapshot-v3
           test "$(jq -r '.isolatedArchiveHashChecks' "$SNAPSHOT_DIR/snapshot-receipt.json")" = PASS
           test "$(jq -r '.isolatedSchemaAclEquivalence' "$SNAPSHOT_DIR/snapshot-receipt.json")" = PASS
+          test "$(jq -r '.isolatedSchemaEquivalence' "$SNAPSHOT_DIR/snapshot-receipt.json")" = PASS
+          test "$(jq -r '.isolatedDataAndSequenceEquivalence' "$SNAPSHOT_DIR/snapshot-receipt.json")" = PASS
+          test "$(jq -r '.isolatedRoleStateEquivalence' "$SNAPSHOT_DIR/snapshot-receipt.json")" = PASS
           test "$(sha256sum "$SNAPSHOT_DIR/affected-schemas.custom.age" | awk '{print $1}')" = "$database_hash"
           test "$(sha256sum "$SNAPSHOT_DIR/public-schema.custom.age" | awk '{print $1}')" = "$public_hash"
           test "$(sha256sum "$SNAPSHOT_DIR/auth-extension-schema-acls.json.age" | awk '{print $1}')" = "$acl_hash"
@@ -411,6 +418,7 @@ jobs:
       - name: Apply verified canonical schema migrations once
         env:
           SUPABASE_REHOME_DATABASE_URL: ${{ secrets.SUPABASE_REHOME_DATABASE_URL }}
+          SUPABASE_REHOME_MIGRATION_DATABASE_URL: ${{ secrets.SUPABASE_REHOME_MIGRATION_DATABASE_URL }}
           SUPABASE_REHOME_ROOT_CA_CERTIFICATE: ${{ secrets.SUPABASE_REHOME_ROOT_CA_CERTIFICATE }}
         shell: bash
         run: node scripts/backup/supabase-runtime-migrations.mjs apply
@@ -418,6 +426,7 @@ jobs:
       - name: Verify all 23 migrations, schema, RLS, and read-only API contract
         env:
           SUPABASE_REHOME_DATABASE_URL: ${{ secrets.SUPABASE_REHOME_DATABASE_URL }}
+          SUPABASE_REHOME_MIGRATION_DATABASE_URL: ${{ secrets.SUPABASE_REHOME_MIGRATION_DATABASE_URL }}
           SUPABASE_REHOME_ROOT_CA_CERTIFICATE: ${{ secrets.SUPABASE_REHOME_ROOT_CA_CERTIFICATE }}
         shell: bash
         run: |
@@ -486,7 +495,8 @@ jobs:
           EXPECTED_MERGE_SHA: ${{ env.EXPECTED_MERGE_SHA }}
           EXPECTED_WORKFLOW_RUN_ID: ${{ env.EXPECTED_WORKFLOW_RUN_ID }}
           EXPECTED_CATALOGUE_MANIFEST: ${{ env.OUTPUT_DIR }}/catalogue-expected.json
-          SUPABASE_REHOME_DATABASE_URL: ${{ secrets.SUPABASE_REHOME_DATABASE_URL }}
+          SUPABASE_RUNTIME_TARGET_PURPOSE: catalogue_restore
+          SUPABASE_REHOME_CATALOGUE_DATABASE_URL: ${{ secrets.SUPABASE_REHOME_CATALOGUE_DATABASE_URL }}
           SUPABASE_REHOME_ROOT_CA_CERTIFICATE: ${{ secrets.SUPABASE_REHOME_ROOT_CA_CERTIFICATE }}
           BACKUP_AGE_PRIVATE_KEY: ${{ secrets.BACKUP_AGE_PRIVATE_KEY }}
           EXPECTED_AGE_RECIPIENT: ${{ env.EXPECTED_SOURCE_AGE_RECIPIENT }}
@@ -503,6 +513,7 @@ jobs:
         id: final
         env:
           SUPABASE_REHOME_DATABASE_URL: ${{ secrets.SUPABASE_REHOME_DATABASE_URL }}
+          SUPABASE_REHOME_MIGRATION_DATABASE_URL: ${{ secrets.SUPABASE_REHOME_MIGRATION_DATABASE_URL }}
           SUPABASE_REHOME_ROOT_CA_CERTIFICATE: ${{ secrets.SUPABASE_REHOME_ROOT_CA_CERTIFICATE }}
         shell: bash
         run: |
