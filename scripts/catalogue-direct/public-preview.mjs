@@ -40,6 +40,16 @@ export async function publicOnlyPreflight({buildRoot,sourceSha,workflowRunId,che
   gate(evidence.previewConfig?.previewAlias===PREVIEW_ALIAS&&evidence.previewConfig?.workerName===WORKER_NAME,'PUBLIC_PREVIEW_ARTIFACT_RESOURCE')
   gate(manifest.contract==='dpg:public-catalogue-snapshot:v1'&&manifest.checkpoint===checkpoint
     &&manifest.m3RunId===m3RunId&&SHA.test(manifest.m3CodeSha)&&manifest.products>0&&manifest.listingProducts>0,'PUBLIC_PREVIEW_REAL_SNAPSHOT_REQUIRED')
+  const renderRoot=path.join(buildRoot,'assets/__render/v1',sourceSha,checkpoint)
+  const rendered=JSON.parse(await readFile(path.join(renderRoot,'ready.json'),'utf8'))
+  const progress=JSON.parse(await readFile(path.join(renderRoot,'progress.json'),'utf8'))
+  const snapshotHash=sha256(await readFile(path.join(buildRoot,'assets/__catalogue/v1/manifest.json')))
+  gate(rendered.status==='COMPLETE'&&rendered.sourceSha===sourceSha&&rendered.checkpoint===checkpoint
+    &&rendered.snapshotHash===snapshotHash&&rendered.products===manifest.products
+    &&Number.isSafeInteger(rendered.routes)&&rendered.routes>=manifest.products+7&&rendered.routes<9000
+    &&Number.isSafeInteger(rendered.compressedBytes)&&rendered.compressedBytes>0&&rendered.compressedBytes<=200000000
+    &&progress.sourceSha===sourceSha&&progress.checkpoint===checkpoint&&progress.snapshotHash===snapshotHash
+    &&progress.total===rendered.routes&&Object.keys(progress.completed).length===rendered.routes,'PUBLIC_PREVIEW_RENDER_INCOMPLETE')
   const worker=await directoryDigest(path.join(buildRoot,'worker'))
   const assets=await directoryDigest(path.join(buildRoot,'assets'))
   const previewConfigSha256=sha256(configBytes)
@@ -53,6 +63,7 @@ export async function publicOnlyPreflight({buildRoot,sourceSha,workflowRunId,che
     previewConfigSha256,...configProof,checkpoint,m3RunId,m3CodeSha:manifest.m3CodeSha,
     freeLimits:{workerGzipKiB:evidence.worker.wranglerGzipKiB,workerGzipLimitKiB:3072,staticAssetFiles:assets.fileCount,
       staticAssetLimit:20000,largestStaticAssetBytes:assets.largestFile,individualStaticAssetLimitBytes:25*1024*1024,passed:true},
+    prerenderedRoutes:rendered.routes,prerenderedBytes:rendered.compressedBytes,
     productionSupabase:'not-bound',productionDnsOrTraffic:'unchanged-before-upload',admin:'deferred'}
 }
 export async function confirmWorkersFree({accountId,apiToken,fetchImpl=fetch,attestation}) {

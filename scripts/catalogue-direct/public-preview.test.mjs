@@ -35,6 +35,11 @@ async function fixture() {
   const configBytes=JSON.stringify(config)
   await writeFile(path.join(root,'wrangler.preview.json'),configBytes)
   await writeFile(path.join(root,'assets/__catalogue/v1/manifest.json'),JSON.stringify({contract:'dpg:public-catalogue-snapshot:v1',checkpoint,m3CodeSha:'c'.repeat(40),m3RunId:'123',products:1,listingProducts:1,categories:[]}))
+  const renderRoot=path.join(root,'assets/__render/v1',source,checkpoint)
+  await mkdir(renderRoot,{recursive:true})
+  const snapshotHash=createHash('sha256').update(await readFile(path.join(root,'assets/__catalogue/v1/manifest.json'))).digest('hex')
+  await writeFile(path.join(renderRoot,'ready.json'),JSON.stringify({status:'COMPLETE',sourceSha:source,checkpoint,snapshotHash,products:1,routes:8,compressedBytes:100}))
+  await writeFile(path.join(renderRoot,'progress.json'),JSON.stringify({sourceSha:source,checkpoint,snapshotHash,total:8,completed:Object.fromEntries(Array.from({length:8},(_,n)=>['/'+n,{}]))}))
   const evidence={contract:'dongphugia:public-worker-artifact:v1',sourceCommit:source,
     worker:{sha256:await digest(path.join(root,'worker')),wranglerGzipKiB:1},staticAssets:{sha256:await digest(path.join(root,'assets'))},
     previewConfig:{workerName:WORKER_NAME,previewAlias:PREVIEW_ALIAS,sha256:createHash('sha256').update(configBytes).digest('hex')},freeLimits:{passed:true}}
@@ -69,6 +74,13 @@ describe('Public-only Preview publication mechanism, no live data or API',()=>{
     await expect(confirmWorkersFree({accountId:'synthetic',apiToken:'test-only',fetchImpl})).resolves.toMatchObject({workersFreeConfirmed:true,mutation:false})
     await expect(confirmWorkersFree({accountId:'synthetic',apiToken:'test-only',fetchImpl:async()=>Response.json({success:true,result:[{rate_plan:{public_name:'Workers Paid'}}]})})).rejects.toThrow('FREE_NOT_CONFIRMED')
     await expect(confirmWorkersFree({accountId:'synthetic',apiToken:'test-only',fetchImpl:async()=>new Response('{}',{status:403})})).rejects.toThrow('HTTP_403')
+  })
+  it('rejects incomplete rendering even when the public snapshot exists',async()=>{
+    const {root}=await fixture()
+    try{
+      await writeFile(path.join(root,'assets/__render/v1',source,checkpoint,'ready.json'),JSON.stringify({status:'INCOMPLETE'}))
+      await expect(publicOnlyPreflight({buildRoot:root,sourceSha:source,workflowRunId:'1',checkpoint,m3RunId:'123',pullRequest:Number(PREVIEW_ALIAS.slice(3))})).rejects.toThrow('RENDER_INCOMPLETE')
+    }finally{await rm(root,{recursive:true,force:true})}
   })
   it('never accepts a synthetic fixture health response as real-data M4 readiness',async()=>{
     await expect(verifySnapshotHttps({baseUrl:`https://${PREVIEW_ALIAS}-${WORKER_NAME}.synthetic.workers.dev`,sourceSha:source,checkpoint,m3RunId:'123',buildRoot:'/not-used',

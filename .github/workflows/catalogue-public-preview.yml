@@ -19,6 +19,9 @@ on:
       artifact_run_id:
         description: Resume a same-SHA Public artifact only if no prior upload step started
         type: string
+      render_checkpoint_run_id:
+        description: Resume only the same-SHA public rendering checkpoint, without replaying completed routes
+        type: string
       managed_preview_run_id:
         description: Prior successful managed LEO-563 Preview evidence run (Codex resolves it)
         type: string
@@ -55,6 +58,7 @@ jobs:
       ARTIFACT_RUN_ID: ${{ inputs.artifact_run_id }}
       MANAGED_PREVIEW_RUN_ID: ${{ inputs.managed_preview_run_id }}
       MANAGED_PREVIEW_SOURCE_SHA: ${{ inputs.managed_preview_source_sha }}
+      RENDER_CHECKPOINT_RUN_ID: ${{ inputs.render_checkpoint_run_id }}
       ARTIFACT_ROOT: ${{ github.workspace }}/.artifacts/dpg-public-catalogue-preview
       MANAGED_ROOT: ${{ github.workspace }}/.artifacts/dpg-managed-public-preview
       WRANGLER_BIN: ${{ github.workspace }}/apps/public/node_modules/wrangler/bin/wrangler.js
@@ -133,6 +137,54 @@ jobs:
           ulimit -c 0
           umask 077
           npx tsx scripts/catalogue-direct/build-public-projection.mts
+      - name: Assemble the public-only local rendering source
+        if: inputs.artifact_run_id == ''
+        run: |
+          npm run app:assemble-public-worker -- --repository-root . \
+            --server-dir apps/public/dist/server --assets-dir apps/public/dist/client \
+            --output "$RUNNER_TEMP/public-render-source" --source-sha "$SOURCE_SHA"
+      - name: Verify a same-source partial rendering checkpoint before reuse
+        if: inputs.artifact_run_id == '' && inputs.render_checkpoint_run_id != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          [[ "$RENDER_CHECKPOINT_RUN_ID" =~ ^[0-9]+$ ]]
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RENDER_CHECKPOINT_RUN_ID" > "$RUNNER_TEMP/render-producer.json"
+          jq -e --arg sha "$SOURCE_SHA" '.status=="completed" and .head_sha==$sha and .head_branch=="main" and .event=="workflow_dispatch" and .run_attempt==1 and .actor.login=="tranhuunguyenhuy-hue" and .path==".github/workflows/catalogue-public-preview.yml"' "$RUNNER_TEMP/render-producer.json" >/dev/null
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RENDER_CHECKPOINT_RUN_ID/jobs" > "$RUNNER_TEMP/render-producer-jobs.json"
+          jq -e '[.jobs[].steps[] | select(.name=="Upload one existing Worker version") | select(.status=="in_progress" or (.status=="completed" and .conclusion!="skipped"))] | length==0' "$RUNNER_TEMP/render-producer-jobs.json" >/dev/null
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        if: inputs.artifact_run_id == '' && inputs.render_checkpoint_run_id != ''
+        with:
+          name: public-render-checkpoint-${{ github.sha }}
+          path: ${{ runner.temp }}/public-render-checkpoint
+          run-id: ${{ inputs.render_checkpoint_run_id }}
+          github-token: ${{ github.token }}
+      - name: Prerender canonical catalogue HTML and Flight within bounded Free assets
+        if: inputs.artifact_run_id == ''
+        run: |
+          set -euo pipefail
+          node "$WRANGLER_BIN" dev --local --config "$RUNNER_TEMP/public-render-source/wrangler.preview.json" \
+            --port 8790 --var CATALOGUE_BUILD_RENDER:true --persist-to "$RUNNER_TEMP/public-render-state" \
+            > "$RUNNER_TEMP/public-render.log" 2>&1 &
+          render_pid=$!
+          trap 'kill "$render_pid" 2>/dev/null || true' EXIT
+          node scripts/catalogue-direct/prerender-public-snapshot.mjs \
+            --assets-root "$RUNNER_TEMP/public-render-source/assets" --checkpoint-root "$RUNNER_TEMP/public-render-checkpoint" --base-url http://127.0.0.1:8790 \
+            --source-sha "$SOURCE_SHA" --checkpoint "$CHECKPOINT"
+          kill "$render_pid" 2>/dev/null || true
+          wait "$render_pid" || true
+          cp -R "$RUNNER_TEMP/public-render-checkpoint" apps/public/dist/client/__render
+          printf '\n/__render/*\n  X-Robots-Tag: noindex, nofollow\n  Cache-Control: private, no-store\n' >> apps/public/dist/client/_headers
+      - name: Preserve only partial public rendering progress on failure
+        if: failure() && inputs.artifact_run_id == ''
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: public-render-checkpoint-${{ github.sha }}
+          path: ${{ runner.temp }}/public-render-checkpoint
+          retention-days: 1
+          if-no-files-found: warn
       - name: Assemble and hash only the immutable Public Worker and assets
         if: inputs.artifact_run_id == ''
         run: |
