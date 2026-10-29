@@ -30,11 +30,17 @@ export const getPublicProducts:typeof Original.getPublicProducts=async(f={})=>{
  const total=products.length,size=f.pageSize??24,page=f.page??1
  return {products:products.slice((page-1)*size,page*size),total,totalPages:Math.max(1,Math.ceil(total/size)),currentPage:page,page,pageSize:size} as unknown as Awaited<ReturnType<typeof Original.getPublicProducts>>
 }
+const escapePublicText=(value:string)=>value.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')
+function publicDescription(content:{summary:string|null;specifications:Record<string,string>}|undefined){
+ if(content?.summary)return '<p>'+escapePublicText(content.summary)+'</p>'
+ const rows=Object.entries(content?.specifications??{}).slice(0,6)
+ return rows.length?'<ul>'+rows.map(([key,value])=>'<li>'+escapePublicText(key)+': '+escapePublicText(value)+'</li>').join('')+'</ul>':null
+}
 export const getPublicProductBySlug:typeof Original.getPublicProductBySlug=async(category,slug)=>{
  const c=(await getSnapshotCategories()).find(c=>c.slug===category)
  for(const l of c?.listings??[]) {
   const p=await getSnapshotProduct(category,l.slug,slug)
-  if(p)return {...p,description:null,features:null,colors:null,product_images:[],product_feature_values:[],variant_group:null,original_price:null,list_price:null,sale_price:null,online_discount_amount:null} as unknown as Awaited<ReturnType<typeof Original.getPublicProductBySlug>>
+  if(p)return {...p,description:publicDescription(p.publicContent),features:p.publicContent?.specifications['Công nghệ']?'<p>'+p.publicContent.specifications['Công nghệ'].replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')+'</p>':null,colors:null,product_images:(p.publicContent?.gallery??[]).map(image_url=>({image_url,alt_text:p.name})),product_feature_values:[],variant_group:null,original_price:null,list_price:null,sale_price:null,online_discount_amount:null} as unknown as Awaited<ReturnType<typeof Original.getPublicProductBySlug>>
  }
  return null
 }
@@ -44,5 +50,5 @@ export const getVariantSiblings:typeof Original.getVariantSiblings=async()=>[]
 export const getVariantSelectionData:typeof Original.getVariantSelectionData=async()=>({axes:[],currentVariantOptions:{},siblings:[]})
 export const getProductComponents:typeof Original.getProductComponents=async()=>[]
 export const getPdpDocuments:typeof Original.getPdpDocuments=()=>[]
-export const getPdpSpecifications:typeof Original.getPdpSpecifications=()=>({})
+export const getPdpSpecifications:typeof Original.getPdpSpecifications=(p)=>('publicContent' in p?(p as {publicContent?:{specifications:Record<string,string>}}).publicContent?.specifications??{}:{})
 export const getPdpPackageItems:typeof Original.getPdpPackageItems=()=>[]

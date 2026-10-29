@@ -9,6 +9,7 @@ export type SnapshotProduct={
   id:number;name:string;display_name:string;slug:string;sku:string;price:null;price_display:string;stock_status:'contact';
   image_main_url:string|null;is_active:true;is_featured:boolean;is_promotion:false;variant_options:[];
   categories:{name:string;slug:string};subcategories:{name:string;slug:string};brands:{name:string;slug:string}|null;
+  publicContent?:{summary:string|null;specifications:Record<string,string>;gallery:string[]};
   canonical_category_slug:string;canonical_subcategory_slug:string;url:string;
 }
 type SnapshotListing={slug:string;name:string;totalCount:number}
@@ -31,8 +32,8 @@ async function readAsset<T>(path:string):Promise<T> {
   if(value.contract!==CONTRACT||value.checkpoint!==publicSnapshotCheckpoint()) throw new Error('PUBLIC_CATALOGUE_UNAVAILABLE')
   // Exact documented Bunny pull-zone alias; preserve path, never credentials/query.
   const repair = (v: unknown): unknown => {
-    if (Array.isArray(v)) return v.map(repair)
-    if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v).map(([k,x])=>[k,k==='image_main_url'&&typeof x==='string'&&x.startsWith('https://cdn.dongphugia.com.vn/')?x.replace('https://cdn.dongphugia.com.vn/','https://dpg-products.b-cdn.net/'):repair(x)]))
+    if (Array.isArray(v)) return v.map(x=>typeof x==='string'&&x.startsWith('https://cdn.dongphugia.com.vn/')?x.replace('https://cdn.dongphugia.com.vn/','https://dpg-products.b-cdn.net/'):repair(x))
+    if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v).map(([k,x])=>[k,(k==='image_main_url'||k==='gallery')&&typeof x==='string'&&x.startsWith('https://cdn.dongphugia.com.vn/')?x.replace('https://cdn.dongphugia.com.vn/','https://dpg-products.b-cdn.net/'):repair(x)]))
     return v
   }
   return repair(value) as T
