@@ -1,9 +1,20 @@
 import {beforeEach,it,expect,vi} from 'vitest'
 import {gzipSync} from 'node:zlib'
+import {createHash} from 'node:crypto'
 import {servePrerenderedCatalogue,prerenderRouteKey} from './prerendered-catalogue'
 const source='a'.repeat(40),checkpoint='b'.repeat(40)
 beforeEach(()=>{vi.stubEnv('PUBLIC_CATALOGUE_CHECKPOINT',checkpoint)})
-function environment(){return {ASSETS:{fetch:vi.fn(async(url:string)=>url.endsWith('ready.json')?Response.json({status:'COMPLETE',sourceSha:source,checkpoint}):new Response(new Uint8Array(gzipSync('canonical public content'))))}}}
+const manifest=()=>({contract:'dpg:public-catalogue-snapshot:v1',checkpoint,categories:[
+ {slug:'thiet-bi-ve-sinh',brands:[]},
+ {slug:'thiet-bi-bep',brands:[{slug:'brand-a',name:'Brand A'},{slug:'brand-b',name:'Brand B'}]},
+ {slug:'vat-lieu-nuoc',brands:[]},
+ {slug:'gach-op-lat',brands:[]},
+]})
+function environment(options:{manifestBody?:string;manifestStatus?:number}={}){return {ASSETS:{fetch:vi.fn(async(url:string)=>{
+ if(url.endsWith('ready.json'))return Response.json({status:'COMPLETE',sourceSha:source,checkpoint})
+ if(url.endsWith('/__catalogue/v1/manifest.json'))return new Response(options.manifestBody??JSON.stringify(manifest()),{status:options.manifestStatus??200})
+ return new Response(new Uint8Array(gzipSync('canonical public content')))
+})}}}
 it('serves complete immutable content without SSR with explicit Flight/HTML encoding',async()=>{
  const env=environment()
  const html=await servePrerenderedCatalogue(new Request('https://preview.invalid/thiet-bi-bep/voi-rua-chen'),env,source)
@@ -18,12 +29,47 @@ it('requires complete exact checkpoint and restricts build rendering to loopback
  expect((await servePrerenderedCatalogue(new Request('https://preview.invalid/'),missing,source))?.status).toBe(503)
  expect((await servePrerenderedCatalogue(new Request('https://preview.invalid/',{method:'POST'}),missing,source))?.status).toBe(405)
 })
+it('serves one shared HTML and Flight asset key for every category-root brand selection',async()=>{
+ const env=environment()
+ const html=await servePrerenderedCatalogue(new Request('https://preview.invalid/thiet-bi-bep?brands=brand-a,brand-b'),env,source)
+ const htmlAsset=env.ASSETS.fetch.mock.calls.at(-1)?.[0]
+ const rsc=await servePrerenderedCatalogue(new Request('https://preview.invalid/thiet-bi-bep?brands=brand-a,brand-b',{headers:{RSC:'1'}}),env,source)
+ const rscAsset=env.ASSETS.fetch.mock.calls.at(-1)?.[0]
+ const rootDigest=createHash('sha256').update('/thiet-bi-bep').digest('hex')
+ expect(html?.status).toBe(200)
+ expect(htmlAsset).toContain(rootDigest+'.html.gz')
+ expect(rsc?.headers.get('content-type')).toContain('text/x-component')
+ expect(rscAsset).toContain(rootDigest+'.rsc.gz')
+ expect(env.ASSETS.fetch.mock.calls.filter(call=>call[0].endsWith('/__catalogue/v1/manifest.json'))).toHaveLength(2)
+ expect(prerenderRouteKey(new URL('https://preview.invalid/thiet-bi-bep?brands=brand-a'))).toBe('/thiet-bi-bep')
+})
+it('returns 404 for a syntactically valid brand absent from the public root snapshot',async()=>{
+ const env=environment()
+ const response=await servePrerenderedCatalogue(new Request('https://preview.invalid/thiet-bi-bep?brands=unknown-brand'),env,source)
+ expect(response?.status).toBe(404)
+ expect(env.ASSETS.fetch.mock.calls.some(call=>call[0].includes(createHash('sha256').update('/thiet-bi-bep').digest('hex')))).toBe(false)
+})
+it.each([
+ ['missing snapshot manifest',{manifestStatus:404}],
+ ['malformed JSON snapshot manifest',{manifestBody:'not-json'}],
+ ['wrong snapshot contract',{manifestBody:JSON.stringify({...manifest(),contract:'other'})}],
+ ['wrong snapshot checkpoint',{manifestBody:JSON.stringify({...manifest(),checkpoint:'c'.repeat(40)})}],
+ ['missing root brand metadata',{manifestBody:JSON.stringify({...manifest(),categories:manifest().categories.map(category=>category.slug==='thiet-bi-bep'?{slug:category.slug}:category)})}],
+ ['malformed root brand metadata',{manifestBody:JSON.stringify({...manifest(),categories:manifest().categories.map(category=>category.slug==='thiet-bi-bep'?{...category,brands:[{slug:'Bad Slug',name:'Bad'}]}:category)})}],
+])('returns 503 for %s',async(_label,options)=>{
+ const env=environment(options)
+ const response=await servePrerenderedCatalogue(new Request('https://preview.invalid/thiet-bi-bep?brands=brand-a'),env,source)
+ expect(response?.status).toBe(503)
+ expect(env.ASSETS.fetch.mock.calls.some(call=>call[0].includes(createHash('sha256').update('/thiet-bi-bep').digest('hex')))).toBe(false)
+})
 it('normalizes only supported navigation and prevents route traversal/filters',()=>{
  expect(prerenderRouteKey(new URL('https://preview.invalid/thiet-bi-bep/voi-rua-chen?page=1&_rsc=x&utm_source=test'))).toBe('/thiet-bi-bep/voi-rua-chen')
  expect(prerenderRouteKey(new URL('https://preview.invalid/thiet-bi-bep/voi-rua-chen?page=2'))).toBe('/thiet-bi-bep/voi-rua-chen?page=2')
  expect(prerenderRouteKey(new URL('https://preview.invalid/thiet-bi-bep/voi-rua-chen?price=1'))).toBeNull()
-  expect(prerenderRouteKey(new URL('https://preview.invalid/thiet-bi-bep?brands=brand-a'))).toBe('/thiet-bi-bep?brands=brand-a')
+  expect(prerenderRouteKey(new URL('https://preview.invalid/thiet-bi-bep?brands=brand-a'))).toBe('/thiet-bi-bep')
   expect(prerenderRouteKey(new URL('https://preview.invalid/thiet-bi-bep?brands=brand-a,brand-b'))).toBe('/thiet-bi-bep')
+  expect(prerenderRouteKey(new URL('https://preview.invalid/thiet-bi-bep?brands=brand-b,brand-a'))).toBe('/thiet-bi-bep')
+  expect(prerenderRouteKey(new URL(`https://preview.invalid/thiet-bi-bep?brands=${Array.from({length:21},(_,i)=>`brand-${i}`).join(',')}`))).toBeNull()
   expect(prerenderRouteKey(new URL('https://preview.invalid/thiet-bi-bep?brands=brand-a,,brand-b'))).toBeNull()
   expect(prerenderRouteKey(new URL('https://preview.invalid/thiet-bi-bep?brands=brand-a,brand-a'))).toBeNull()
   expect(prerenderRouteKey(new URL('https://preview.invalid/thiet-bi-bep/voi-rua-chen?brands=brand-a'))).toBeNull()

@@ -122,6 +122,7 @@ export function buildProjection(products, evidence, rootMetadata = []) {
       perBrandCount.set(entry.brandSlug,count+1)
     }
     category.listings=category.listings
+      .filter(listing=>listing.totalCount>0)
       .sort((a,b)=>a.rootSortOrder-b.rootSortOrder||a.name.localeCompare(b.name)||a.slug.localeCompare(b.slug))
       .map(({slug,name,thumbnail_url,totalCount})=>({slug,name,thumbnail_url,totalCount}))
   }

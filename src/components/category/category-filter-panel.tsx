@@ -1,8 +1,12 @@
 'use client'
 
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { BrandLogo } from '@/components/media/brand-logo'
+
+const subscribeToHydration = () => () => undefined
+const getClientHydrationSnapshot = () => true
+const getServerHydrationSnapshot = () => false
 
 export interface CategoryFilterBrand { id: number | string; name: string; slug?: string }
 
@@ -181,11 +185,17 @@ function BrandSection({
 // ── Main Component ────────────────────────────────────────────────────────────
 export function CategoryFilterPanel({ brands, mode = 'canonical' }: CategoryFilterPanelProps) {
     const snapshotMode = mode === 'snapshot'
+    const hydrated = useSyncExternalStore(
+        subscribeToHydration,
+        getClientHydrationSnapshot,
+        getServerHydrationSnapshot,
+    )
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()
 
-    const activeBrands = searchParams.get('brands')?.split(',').filter(Boolean) ?? []
+    const queryBrands = searchParams.get('brands')?.split(',').filter(Boolean) ?? []
+    const activeBrands = snapshotMode && !hydrated ? [] : queryBrands
     const priceParam = searchParams.get('price') ?? ''
     const [localPrice, setLocalPrice] = useState<[number, number]>(() =>
         priceParam ? parsePriceParam(priceParam) : [PRICE_MIN, PRICE_MAX]

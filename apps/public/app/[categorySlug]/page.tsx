@@ -39,7 +39,10 @@ export default async function PublicCategoryPage({params,searchParams}:PageProps
     typeof rawBrand!=='string'||brandSlugs.length===0||brandSlugs.some(brandSlug=>!SLUG.test(brandSlug))||new Set(brandSlugs).size!==brandSlugs.length
   )))notFound()
 
-  const root=await getSnapshotCategoryRoot(categorySlug,brandSlugs)
-  if(!root)notFound()
+  // The prerendered root asset is shared by every valid brand selection. Keep
+  // its server props independent of the URL; snapshot filters activate after
+  // hydration so HTML, Flight and browser history agree without route combos.
+  const root=await getSnapshotCategoryRoot(categorySlug)
+  if(!root||brandSlugs.some(slug=>!root.brands.some(brand=>brand.slug===slug)))notFound()
   return <CategoryRootView {...root} filterMode="snapshot" />
 }

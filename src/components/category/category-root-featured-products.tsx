@@ -1,8 +1,21 @@
 'use client'
 
 import { useSearchParams } from 'next/navigation'
+import { useSyncExternalStore } from 'react'
 import { Star } from 'lucide-react'
 import { ProductCard, type ProductCardProps } from '@/components/ui/product-card'
+
+const subscribeToHydration = () => () => undefined
+const getClientHydrationSnapshot = () => true
+const getServerHydrationSnapshot = () => false
+
+function useHasHydrated() {
+    return useSyncExternalStore(
+        subscribeToHydration,
+        getClientHydrationSnapshot,
+        getServerHydrationSnapshot,
+    )
+}
 
 type CategoryRootFeaturedSectionProps = {
     basePath: string
@@ -60,13 +73,40 @@ type CategoryRootFeaturedProductsProps = Omit<CategoryRootFeaturedSectionProps, 
     filterableFeaturedProducts: ProductCardProps['product'][]
 }
 
+export function CategoryRootFeaturedNeutralSection({featuredGridClassName}:Pick<CategoryRootFeaturedSectionProps,'featuredGridClassName'>) {
+    return (
+        <section aria-label="Sản phẩm nổi bật">
+            <div className="flex items-center gap-2 mb-5">
+                <Star className="h-4 w-4 text-amber-400 fill-amber-400" aria-hidden="true" />
+                <h2 className="text-[15px] font-semibold text-neutral-900">Sản phẩm nổi bật</h2>
+            </div>
+            <noscript>
+                <p className="mb-4 text-sm text-neutral-500">Bật JavaScript để xem sản phẩm nổi bật và lọc theo thương hiệu.</p>
+            </noscript>
+            <div className={featuredGridClassName} aria-hidden="true">
+                {Array.from({length:4},(_,index)=>(
+                    <div key={index}>
+                        <div className="aspect-square rounded-xl bg-neutral-100" />
+                        <div className="mt-3 h-3 w-3/4 rounded bg-neutral-100" />
+                        <div className="mt-2 h-3 w-1/2 rounded bg-neutral-100" />
+                        <div className="mt-4 h-4 w-2/3 rounded bg-neutral-100" />
+                    </div>
+                ))}
+            </div>
+        </section>
+    )
+}
+
 export function CategoryRootFeaturedProducts({
     basePath,
     featuredProducts,
     filterableFeaturedProducts,
     featuredGridClassName,
 }: CategoryRootFeaturedProductsProps) {
+    const hydrated = useHasHydrated()
     const selectedBrands = useSearchParams().get('brands')?.split(',').filter(Boolean) ?? []
+    if (!hydrated) return <CategoryRootFeaturedNeutralSection featuredGridClassName={featuredGridClassName} />
+
     const visibleProducts = selectedBrands.length
         ? filterableFeaturedProducts
             .filter((product) => product.brands?.slug && selectedBrands.includes(product.brands.slug))

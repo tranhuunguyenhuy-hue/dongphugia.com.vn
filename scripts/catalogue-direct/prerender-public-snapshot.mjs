@@ -14,9 +14,6 @@ export function renderPaths(manifest,products){
  for(const c of manifest.categories){
   gate(['thiet-bi-ve-sinh','thiet-bi-bep','vat-lieu-nuoc','gach-op-lat'].includes(c.slug),'RENDER_FAMILY')
   paths.add('/'+c.slug)
-  const rootBrands=c.brands??c.homeProducts?.flatMap(p=>p.brands?[p.brands]:[])??[]
-  const brandSlugs=new Set(rootBrands.map(b=>b.slug))
-  for(const brandSlug of brandSlugs){gate(typeof brandSlug==='string'&&/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(brandSlug),'RENDER_BRAND');paths.add('/'+c.slug+'?brands='+brandSlug)}
   for(const l of c.listings){
    gate(/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(l.slug)&&Number.isSafeInteger(l.totalCount)&&l.totalCount>0,'RENDER_LISTING')
    const base=`/${c.slug}/${l.slug}`;paths.add(base)

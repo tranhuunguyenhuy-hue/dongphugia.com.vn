@@ -3,7 +3,7 @@ import Link from "next/link"
 import { Suspense, type ComponentProps } from "react"
 import { ChevronRight, Home } from "lucide-react"
 import { CategoryFilterPanel, type CategoryFilterBrand, type CategoryFilterPanelMode } from "@/components/category/category-filter-panel"
-import { CategoryRootFeaturedProducts, CategoryRootFeaturedSection } from "@/components/category/category-root-featured-products"
+import { CategoryRootFeaturedNeutralSection, CategoryRootFeaturedProducts, CategoryRootFeaturedSection } from "@/components/category/category-root-featured-products"
 import { SubcategoryIconGrid } from "@/components/category/subcategory-icon-grid"
 import type { ProductCardProps } from "@/components/ui/product-card"
 
@@ -75,12 +75,16 @@ export function CategoryRootView({
 
                     <div className="border-t border-neutral-100" />
 
-                    <Suspense fallback={<CategoryRootFeaturedSection
-                        basePath={basePath}
-                        featuredProducts={featuredProducts}
-                        isFiltered={isFiltered}
-                        featuredGridClassName={featuredGridClassName}
-                    />}>
+                    <Suspense fallback={filterMode === "snapshot" ? (
+                        <CategoryRootFeaturedNeutralSection featuredGridClassName={featuredGridClassName} />
+                    ) : (
+                        <CategoryRootFeaturedSection
+                            basePath={basePath}
+                            featuredProducts={featuredProducts}
+                            isFiltered={isFiltered}
+                            featuredGridClassName={featuredGridClassName}
+                        />
+                    )}>
                         {filterMode === "snapshot" ? (
                             <CategoryRootFeaturedProducts
                                 basePath={basePath}
