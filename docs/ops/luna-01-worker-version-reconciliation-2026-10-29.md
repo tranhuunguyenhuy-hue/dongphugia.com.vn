@@ -68,8 +68,8 @@ this replay used synthetic credentials and made no network requests.
 
 This resolves control-plane reconciliation, not visual or runtime acceptance.
 Owner UI acceptance remains FAIL / NOT ACCEPTED per #202. No browser acceptance,
-full build, data operation, publication, merge or deployment was performed.
-Required CI/review remains a separate source delivery gate. Production/DNS HOLD.
-Next authorized work is source review/delivery for LUNA-01; any new publication
-requires separate Owner authorization. Mutation ownership RELEASED on completion
-of this bounded source handoff; no other task or recovery work is resumed.
+full build, data operation, publication or deployment was performed. PR #206
+contains the source correction; required CI and independent Standards/Spec
+review are tracked separately from Preview acceptance. Production/DNS HOLD.
+Any new publication requires separate Owner authorization. This reconciliation
+does not resume any other task or recovery work.

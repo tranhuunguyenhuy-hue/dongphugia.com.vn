@@ -764,14 +764,12 @@ async function listRemoteVersions(get, pathname) {
     const batch = body?.result?.items
     const info = body?.result_info
     if (!Array.isArray(batch) || !info) throw new Error('LEO563_PREVIEW_VERSION_PAGINATION_INVALID')
-    if (info) {
-      if (info.page !== page || info.per_page !== 10 || info.count !== batch.length ||
-        !Number.isSafeInteger(info.total_count) || info.total_count < 0 ||
-        (total !== null && total !== info.total_count)) {
-        throw new Error('LEO563_PREVIEW_VERSION_PAGINATION_INVALID')
-      }
-      total = info.total_count
+    if (info.page !== page || info.per_page !== 10 || info.count !== batch.length ||
+      !Number.isSafeInteger(info.total_count) || info.total_count < 0 ||
+      (total !== null && total !== info.total_count)) {
+      throw new Error('LEO563_PREVIEW_VERSION_PAGINATION_INVALID')
     }
+    total = info.total_count
     for (const id of collectRemoteVersionIds({ items: batch })) {
       if (seen.has(id)) throw new Error('LEO563_PREVIEW_VERSION_PAGINATION_DUPLICATE')
       seen.add(id)

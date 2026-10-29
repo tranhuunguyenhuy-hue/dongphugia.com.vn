@@ -195,6 +195,66 @@ describe('LEO-563 Cloudflare Preview publication gate', () => {
     }
   })
 
+  it('post-upload inspection reconciles every version page against a managed baseline', async () => {
+    const evidence = managedPublicationEvidence()
+    const priorVersionIds = Array.from({ length: 10 }, (_, i) => (i + 1).toString(16).padStart(32, '0'))
+    priorVersionIds[0] = evidence.workerVersionId
+    evidence.resourceProof = {
+      ...evidence.resourceProof,
+      contract: 'dongphugia:cloudflare-preview-resource-proof:v2',
+      versionIds: priorVersionIds,
+      deployments: [evidence.deployment],
+      deploymentIds: [evidence.deploymentId],
+    }
+    const managedPublication = validateManagedPublicationEvidence({
+      publicationPreflight: evidence.publicationPreflight,
+      uploadEvidence: evidence.uploadEvidence,
+      resourceProof: evidence.resourceProof,
+      expectedWorkflowRunId: evidence.publicationPreflight.workflowRunId,
+    })
+    let currentVersionIds = priorVersionIds
+    const versionPages: number[] = []
+    const fetchImpl = async (input: URL | RequestInfo, init?: RequestInit) => {
+      expect(init?.method).toBe('GET')
+      const url = new URL(String(input))
+      const path = url.pathname
+      let result: unknown
+      if (path.endsWith('/scripts')) result = [{ id: 'dongphugia-v1-public-preview', routes: [] }]
+      else if (path.endsWith('/domains')) result = []
+      else if (path.endsWith('/subdomain')) result = { enabled: false, previews_enabled: true }
+      else if (path.endsWith('/settings')) result = { bindings: evidence.bindings }
+      else if (path.endsWith('/deployments')) result = { deployments: [{
+        id: evidence.deploymentId,
+        strategy: 'percentage',
+        versions: [{ version_id: evidence.workerVersionId, percentage: 100 }],
+      }] }
+      else if (path.endsWith('/versions')) {
+        const page = Number(url.searchParams.get('page'))
+        versionPages.push(page)
+        const items = currentVersionIds.slice((page - 1) * 10, page * 10).map(id => ({ id }))
+        return Response.json({ success: true, result: { items },
+          result_info: { page, per_page: 10, count: items.length, total_count: currentVersionIds.length },
+        })
+      } else result = { id: url.pathname.split('/').pop() }
+      return Response.json({ success: true, result })
+    }
+
+    const beforeState = await inspectRemoteResourceState({
+      accountId: 'synthetic-account', apiToken: 'synthetic-token', managedPublication, fetchImpl,
+    })
+    expect(beforeState.versionIds).toHaveLength(10)
+    const uploadedVersionId = 'bbbbbbbb-cccc-dddd-eeee-ffffffffffff'
+    currentVersionIds = [...priorVersionIds, uploadedVersionId]
+    versionPages.length = 0
+
+    const proof = await inspectPublishedResource({
+      accountId: 'synthetic-account', apiToken: 'synthetic-token', versionId: uploadedVersionId,
+      beforeState, fetchImpl,
+    })
+    expect(proof.versionIds).toEqual([...currentVersionIds].sort())
+    expect(versionPages).toEqual([1, 2])
+  })
+
   it('accepts only the isolated Free-plan Preview contract', () => {
     expect(validatePreviewConfig(validConfig())).toMatchObject({
       workerName: 'dongphugia-v1-public-preview',
