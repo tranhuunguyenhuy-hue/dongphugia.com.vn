@@ -23,6 +23,11 @@ async function main() {
     .digest('hex')
   const environment = {
     ...process.env,
+    // The deterministic entropy preload assigns stable values by callsite
+    // invocation. Keep native build scheduling serial so worker completion
+    // order cannot reassign invocation numbers across identical builds.
+    ROLLDOWN_WORKER_THREADS: '1',
+    RAYON_NUM_THREADS: '1',
     DPG_DETERMINISTIC_BUILD_SEED: createHash('sha256')
       .update(`dongphugia:public-worker-build:v1:${sourceCommit}`)
       .digest('hex'),
