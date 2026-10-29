@@ -1,6 +1,7 @@
 import { cache } from 'react'
 import { usesPublicSnapshot, publicSnapshotCheckpoint } from './public-snapshot-mode'
 import { buildSnapshotCategoryRoot } from './public-category-root'
+import { readBoundedPublicAssetText } from './bounded-public-asset'
 import {
   PUBLIC_SNAPSHOT_LISTING_MAX_PAGES,
   PUBLIC_SNAPSHOT_LISTING_PAGE_SIZE,
@@ -31,8 +32,7 @@ async function readAsset<T>(path:string):Promise<T> {
   if(!assets) throw new Error('PUBLIC_CATALOGUE_UNAVAILABLE')
   const response=await assets.fetch('https://catalogue-assets.invalid/__catalogue/v1/'+path)
   if(!response.ok) throw new Error('PUBLIC_CATALOGUE_UNAVAILABLE')
-  const body=await response.text()
-  if(body.length>2000000) throw new Error('PUBLIC_CATALOGUE_UNAVAILABLE')
+  const body=await readBoundedPublicAssetText(response)
   let value
   try { value=JSON.parse(body) } catch { throw new Error('PUBLIC_CATALOGUE_UNAVAILABLE') }
   if(value.contract!==CONTRACT||value.checkpoint!==publicSnapshotCheckpoint()) throw new Error('PUBLIC_CATALOGUE_UNAVAILABLE')
