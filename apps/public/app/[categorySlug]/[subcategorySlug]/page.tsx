@@ -5,7 +5,12 @@ import Tile from '@/app/(public)/gach-op-lat/[sub]/page'
 import {notFound} from 'next/navigation'
 export const runtime='edge'
 export const dynamic='force-dynamic'
-export const metadata={robots:{index:false,follow:false}}
+export async function generateMetadata({params}:{params:Promise<{categorySlug:string;subcategorySlug:string;productSlug?:string}>}) {
+ const p=await params
+ const {resolveSnapshotRoute}=await import('../../../src/runtime/public-snapshot-catalogue')
+ const route=await resolveSnapshotRoute([p.categorySlug,p.subcategorySlug,...(p.productSlug?[p.productSlug]:[])])
+ return {title:route.kind==='product'?route.product.name:route.kind==='listing'?route.listing.name:'Không tìm thấy',robots:{index:false,follow:false}}
+}
 export default async function CanonicalRoute({params,searchParams}: {params:Promise<{categorySlug:string;subcategorySlug:string;productSlug?:string}>;searchParams:Promise<Record<string,string>>}) {
  const p=await params
  const query=await searchParams

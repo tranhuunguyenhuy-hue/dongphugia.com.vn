@@ -86,7 +86,9 @@ export default async function ProductDetailPage({ params }: PageProps) {
 
 
 
-    const stockDisplay = product.stock_status === 'in_stock'
+    const stockDisplay = product.stock_status === 'contact'
+        ? <span className="text-stone-600 font-medium">Liên hệ</span>
+        : product.stock_status === 'in_stock'
         ? <span className="text-success-600 font-medium">Còn hàng</span>
         : product.stock_status === 'pre_order'
         ? <span className="text-warning-600 font-medium">Đặt trước</span>
