@@ -353,13 +353,15 @@ async function* sourceLines(path) {
   finally { lines.close(); input.destroy() }
 }
 
-export async function assertTargetPrivate(client) {
+// Production callers check Supabase's canonical role; isolated tests can pass
+// a run-unique role so PostgreSQL's cluster-global role namespace cannot race.
+export async function assertTargetPrivate(client, authenticatedRole = 'authenticated') {
   const { rows: [exposure] } = await client.query(`select exists(select 1 from pg_class c
     join pg_namespace n on n.oid=c.relnamespace where n.nspname='dpg_app' and c.relname=any($1::text[])
-    and (exists(select 1 from pg_roles r where r.rolname in ('anon','authenticated')
+    and (exists(select 1 from pg_roles r where r.rolname in ('anon',$3::name)
       and (has_table_privilege(r.oid,c.oid,'INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER')
         or (has_table_privilege(r.oid,c.oid,'SELECT') and not (
-          r.rolname='authenticated' and c.relname='products' and c.relrowsecurity and c.relforcerowsecurity
+          r.rolname=$3::name and c.relname='products' and c.relrowsecurity and c.relforcerowsecurity
           and not r.rolsuper and not r.rolbypassrls
           and not has_table_privilege(r.oid,c.oid,'SELECT WITH GRANT OPTION')
           and exists(select 1 from pg_policy p where p.polrelid=c.oid
@@ -372,7 +374,7 @@ export async function assertTargetPrivate(client) {
             and p.polname<>'leo541_products_select_public')
         ))))
     or exists(select 1 from aclexplode(coalesce(c.relacl,acldefault('r',c.relowner))) a where a.grantee=0))) as unsafe`, [CATALOGUE_TABLES,
-    "(is_active AND ((publication_status)::text = 'public'::text) AND ((pdp_visibility)::text = 'public'::text) AND ((sellable_status)::text = 'sellable'::text))"])
+    "(is_active AND ((publication_status)::text = 'public'::text) AND ((pdp_visibility)::text = 'public'::text) AND ((sellable_status)::text = 'sellable'::text))", authenticatedRole])
   requireGate(!exposure.unsafe, 'TARGET_PUBLIC_EXPOSURE')
 }
 
