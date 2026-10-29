@@ -119,7 +119,7 @@ export function SubcategoryIconGrid({
                         const isActive = activeSlug === sub.slug
                         return (
                             <Link
-                                key={sub.id}
+                                key={sub.id ?? sub.slug}
                                 href={`${basePath}/${sub.slug}`}
                                 ref={isActive ? activeItemRef : null}
                                 className={`group/item shrink-0 snap-start flex flex-col items-center gap-1 w-[56px] sm:w-[68px] lg:w-[76px] transition-opacity duration-200 ${

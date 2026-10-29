@@ -1,5 +1,6 @@
 import { cache } from 'react'
 import { usesPublicSnapshot, publicSnapshotCheckpoint } from './public-snapshot-mode'
+import { buildSnapshotCategoryRoot } from './public-category-root'
 export { usesPublicSnapshot } from './public-snapshot-mode'
 
 const CONTRACT='dpg:public-catalogue-snapshot:v1'
@@ -12,8 +13,9 @@ export type SnapshotProduct={
   publicContent?:{summary:string|null;specifications:Record<string,string>;gallery:string[]};
   canonical_category_slug:string;canonical_subcategory_slug:string;url:string;
 }
-type SnapshotListing={slug:string;name:string;totalCount:number}
-type SnapshotCategory={slug:string;name:string;listings:SnapshotListing[];homeProducts:SnapshotProduct[];totalCount:number}
+type SnapshotListing={slug:string;name:string;thumbnail_url?:string|null;totalCount:number}
+type SnapshotBrand={slug:string;name:string}
+export type SnapshotCategory={slug:string;name:string;listings:SnapshotListing[];homeProducts:SnapshotProduct[];totalCount:number;brands?:SnapshotBrand[];featuredProducts?:SnapshotProduct[];featuredProductsByBrand?:SnapshotProduct[]}
 type Manifest={contract:string;checkpoint:string;m3CodeSha:string;m3RunId:string;notice:string;categories:SnapshotCategory[];productBuckets:string[];products:number;listingProducts:number}
 type AssetEnvelope={contract:string;checkpoint:string;products?:SnapshotProduct[];totalCount?:number;page?:number}
 
@@ -33,13 +35,18 @@ async function readAsset<T>(path:string):Promise<T> {
   // Exact documented Bunny pull-zone alias; preserve path, never credentials/query.
   const repair = (v: unknown): unknown => {
     if (Array.isArray(v)) return v.map(x=>typeof x==='string'&&x.startsWith('https://cdn.dongphugia.com.vn/')?x.replace('https://cdn.dongphugia.com.vn/','https://dpg-products.b-cdn.net/'):repair(x))
-    if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v).map(([k,x])=>[k,(k==='image_main_url'||k==='gallery')&&typeof x==='string'&&x.startsWith('https://cdn.dongphugia.com.vn/')?x.replace('https://cdn.dongphugia.com.vn/','https://dpg-products.b-cdn.net/'):repair(x)]))
+    if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v).map(([k,x])=>[k,(k==='image_main_url'||k==='thumbnail_url'||k==='gallery')&&typeof x==='string'&&x.startsWith('https://cdn.dongphugia.com.vn/')?x.replace('https://cdn.dongphugia.com.vn/','https://dpg-products.b-cdn.net/'):repair(x)]))
     return v
   }
   return repair(value) as T
 }
 export const readSnapshotManifest=cache(async()=>readAsset<Manifest>('manifest.json'))
 export async function getSnapshotCategories() { return (await readSnapshotManifest()).categories }
+export async function getSnapshotCategoryRoot(categorySlug:string,brandSlugs:readonly string[]=[]){
+  if(!SLUG.test(categorySlug)||brandSlugs.some(brandSlug=>!SLUG.test(brandSlug)))return null
+  const category=(await getSnapshotCategories()).find(c=>c.slug===categorySlug)
+  return category?buildSnapshotCategoryRoot(category,brandSlugs):null
+}
 export async function getSnapshotProducts(category:string,listing:string,page=1) {
   if(!SLUG.test(category)||!SLUG.test(listing)||!Number.isSafeInteger(page)||page<1) return {products:[],totalCount:0,page}
   const categoryRecord=(await getSnapshotCategories()).find(c=>c.slug===category)

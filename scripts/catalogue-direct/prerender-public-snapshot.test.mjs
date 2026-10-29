@@ -6,12 +6,12 @@ import {prerender,renderPaths} from './prerender-public-snapshot.mjs'
 const sourceSha='a'.repeat(40),checkpoint='b'.repeat(40)
 const families=['thiet-bi-ve-sinh','thiet-bi-bep','vat-lieu-nuoc','gach-op-lat']
 const products=families.map(f=>({url:`/${f}/listing/product`}))
-const manifest={contract:'dpg:public-catalogue-snapshot:v1',checkpoint,products:4,productBuckets:['00'],categories:families.map(slug=>({slug,listings:[{slug:'listing',totalCount:25}]}))}
+const manifest={contract:'dpg:public-catalogue-snapshot:v1',checkpoint,products:4,productBuckets:['00'],categories:families.map((slug,index)=>({slug,brands:[{slug:`brand-${index}`,name:`Brand ${index}`}],listings:[{slug:'listing',totalCount:25}]}))}
 async function fixture(){const root=await mkdtemp(join(tmpdir(),'dpg-public-render-test-'));await mkdir(join(root,'__catalogue/v1/products'),{recursive:true});await writeFile(join(root,'__catalogue/v1/manifest.json'),JSON.stringify(manifest));await writeFile(join(root,'__catalogue/v1/products/00.json'),JSON.stringify({checkpoint,products}));return root}
 const ok=async()=>new Response('<html><h1>Actual canonical renderer</h1></html>',{headers:{'content-type':'text/html','x-dpg-source-sha':sourceSha}})
 it('enumerates all products and exact canonical family pagination sizes',()=>{
  const paths=renderPaths(manifest,products)
- expect(paths).toHaveLength(20);expect(paths).toContain('/thiet-bi-ve-sinh/listing?page=3');expect(paths).not.toContain('/thiet-bi-bep/listing?page=3')
+ expect(paths).toHaveLength(20);expect(paths.filter(path=>path.includes('?brands=')).length).toBe(0);expect(paths).toContain('/thiet-bi-ve-sinh/listing?page=3');expect(paths).not.toContain('/thiet-bi-bep/listing?page=3')
  expect(()=>renderPaths({...manifest,products:5},products)).toThrow('COVERAGE')
 })
 it('preserves completed routes on failure, resumes hashes and rejects tampering',async()=>{

@@ -7,7 +7,7 @@ import { connect, closeConnections, assertTargetPrivate } from './run.mjs'
 import { assertBudget } from './contract.mjs'
 import type { ProductVisibilityInput } from '../../src/lib/public-product-visibility'
 import type { ProductPathInput, ProductTaxonAssignmentRef } from '../../src/lib/taxonomy-paths'
-import { projectProduct, buildProjection } from './public-projection.mjs'
+import { projectProduct, buildProjection, ROOTS } from './public-projection.mjs'
 import {projectPublicContent,PUBLIC_SPEC_KEYS,PUBLIC_LEGACY_SPEC_PATHS} from './public-product-content.mjs'
 
 // Root .ts modules are CommonJS; this protected .mts runner is ESM. Keep the
@@ -16,7 +16,7 @@ const require=createRequire(import.meta.url)
 const {resolveProductVisibility}=require('../../src/lib/public-product-visibility.ts') as typeof import('../../src/lib/public-product-visibility')
 const {getCanonicalProductPath}=require('../../src/lib/taxonomy-paths.ts') as typeof import('../../src/lib/taxonomy-paths')
 
-type ProjectionRow = ProductVisibilityInput & ProductPathInput & {id:number;name:string;display_name:string|null;sku:string;image_main_url:string|null;is_featured:boolean;brand_name:string|null;brand_slug:string|null;product_taxon_assignments:ProductTaxonAssignmentRef[]}
+type ProjectionRow = ProductVisibilityInput & ProductPathInput & {id:number;name:string;display_name:string|null;sku:string;image_main_url:string|null;is_featured:boolean;brand_name:string|null;brand_slug:string|null;rootSortOrder:number;rootBrandId:number|null;rootBrandSortOrder:number|null;rootSubcategorySortOrder:number|null;rootSubcategoryThumbnailUrl:string|null;product_taxon_assignments:ProductTaxonAssignmentRef[]}
 let projectionPhase='PRECHECK'
 const REPO='tranhuunguyenhuy-hue/dongphugia.com.vn'
 function proof() {
@@ -55,6 +55,11 @@ async function main() {
   // Canonical products.description and explicit technical scalar paths only.
   // Alternate description blobs, arbitrary JSON, documents and commercial terms are excluded.
   const result=await client.query(`select p.id,p.name,p.display_name,p.slug,p.sku,p.product_type,p.image_main_url,p.is_featured,
+    p.sort_order as "rootSortOrder",b.id as "rootBrandId",b.sort_order as "rootBrandSortOrder",
+    case when c.slug='gach-op-lat' and coalesce(root_taxonomy.has_taxon,false)
+      then root_taxonomy.sort_order else s.sort_order end as "rootSubcategorySortOrder",
+    case when c.slug='gach-op-lat' and coalesce(root_taxonomy.has_taxon,false)
+      then null else s.thumbnail_url end as "rootSubcategoryThumbnailUrl",
     p.is_active,p.stock_status,p.sellable_status,p.publication_status,p.pdp_visibility,p.listing_visibility,
     p.search_visibility,p.seo_indexing,p.sitemap_include,
     case when octet_length(p.description)<=16000 then p.description else null end as "publicDescription",
@@ -81,6 +86,13 @@ async function main() {
     from dpg_app.products p join dpg_app.categories c on c.id=p.category_id
     left join dpg_app.subcategories s on s.id=p.subcategory_id
     left join dpg_app.brands b on b.id=p.brand_id
+    left join lateral (
+      select min(t.sort_order) as sort_order,count(*)>0 as has_taxon
+      from dpg_app.product_taxon_assignments a
+      join dpg_app.catalog_taxons t on t.id=a.taxon_id
+      where a.product_id=p.id and a.is_primary and t.is_active
+        and t.canonical_path like 'gach-op-lat/%'
+    ) root_taxonomy on true
     where c.is_active and (s.id is null or s.is_active)
       and p.is_active and p.stock_status<>'discontinued' and p.sellable_status='sellable'
       and p.publication_status='public' and p.pdp_visibility='public'
@@ -88,6 +100,27 @@ async function main() {
   projectionPhase='PUBLIC_TRANSFORM'
   const rows = result.rows as ProjectionRow[]
   const activeCategories = new Set((await client.query('select slug from dpg_app.categories where is_active')).rows.map((row: {slug:string}) => row.slug))
+  const rootRows=(await client.query(`select c.slug as "categorySlug",c.name as "categoryName",
+      s.slug as "subcategorySlug",s.name as "subcategoryName",s.sort_order as "subcategorySortOrder",
+      s.thumbnail_url as "subcategoryThumbnailUrl"
+    from dpg_app.categories c
+    left join dpg_app.subcategories s on s.category_id=c.id and s.is_active
+    where c.is_active and c.slug=any($1::text[])
+    order by c.sort_order,c.slug,s.sort_order,s.slug`,[ROOTS])).rows as {
+      categorySlug:string;categoryName:string;subcategorySlug:string|null;subcategoryName:string|null;
+      subcategorySortOrder:number|null;subcategoryThumbnailUrl:string|null
+    }[]
+  const rootMap=new Map<string,{slug:string;name:string;listings:{slug:string;name:string;sortOrder:number;thumbnailUrl:string|null}[]}>()
+  for(const row of rootRows){
+    let root=rootMap.get(row.categorySlug)
+    if(!root){root={slug:row.categorySlug,name:row.categoryName,listings:[]};rootMap.set(row.categorySlug,root)}
+    // Gạch uses getPublicListingLeaves, which excludes empty legacy leaves;
+    // populated leaves are reconstructed from eligible product paths below.
+    if(row.categorySlug!=='gach-op-lat'&&row.subcategorySlug&&row.subcategoryName){
+      root.listings.push({slug:row.subcategorySlug,name:row.subcategoryName,sortOrder:row.subcategorySortOrder??0,thumbnailUrl:row.subcategoryThumbnailUrl})
+    }
+  }
+  const rootMetadata=[...rootMap.values()]
   const projected=rows.map(row => {
     const canonical = getCanonicalProductPath(row)
     if (!activeCategories.has(canonical.categorySlug)) return null
@@ -98,7 +131,7 @@ async function main() {
     return product?{...product,publicContent:projectPublicContent(row)}:null
   }).filter(Boolean)
   projectionPhase='PUBLIC_ASSEMBLY'
-  const {manifest,assets}=buildProjection(projected,evidence)
+  const {manifest,assets}=buildProjection(projected,evidence,rootMetadata)
   if(!manifest.products||!manifest.listingProducts) throw new Error('PUBLIC_PROJECTION_EMPTY_REVIEW_REQUIRED')
   await client.query('commit')
   projectionPhase='ASSET_WRITE'
