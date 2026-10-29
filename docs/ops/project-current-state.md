@@ -3,6 +3,20 @@
 Last verified: 2026-08-21. This is a dated operational snapshot, not release
 authority. Revalidate live state immediately before any runtime mutation.
 
+## Cloudflare Preview version reconciliation — 2026-10-29
+
+Read-only inspection after run `40823454239` confirmed Worker version
+`17fe81fb-9f43-43b9-85d0-33952cff74d6` and exactly the 10 version IDs recorded
+in that run's preflight plus the uploaded version. Its `pr-201` alias and source
+SHA match the upload receipt. Deployment `6e7022d5-5f4d-4f51-8ab3-01850503a711`
+is unchanged and still assigns 100% to bootstrap version
+`d4658ffa-2fcd-465b-bae7-7967bb1c7f78`; there are no Worker routes or custom
+domains. Workers.dev remains disabled and Preview URLs enabled. The failed
+post-upload inspection was caused by reading only the default 10-version page.
+LUNA-01 source correction and validation are tracked in PR #206 and
+`luna-01-worker-version-reconciliation-2026-10-29.md`. This evidence does not
+accept the Preview UI or authorize a new upload, Production, or DNS change.
+
 ## Production baseline
 
 - Application: `dongphugia-web-production-dark`
