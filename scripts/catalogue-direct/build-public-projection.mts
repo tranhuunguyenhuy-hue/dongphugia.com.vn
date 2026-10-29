@@ -17,6 +17,7 @@ const {resolveProductVisibility}=require('../../src/lib/public-product-visibilit
 const {getCanonicalProductPath}=require('../../src/lib/taxonomy-paths.ts') as typeof import('../../src/lib/taxonomy-paths')
 
 type ProjectionRow = ProductVisibilityInput & ProductPathInput & {id:number;name:string;display_name:string|null;sku:string;image_main_url:string|null;is_featured:boolean;brand_name:string|null;brand_slug:string|null;product_taxon_assignments:ProductTaxonAssignmentRef[]}
+let projectionPhase='PRECHECK'
 const REPO='tranhuunguyenhuy-hue/dongphugia.com.vn'
 function proof() {
   const runId=process.env.PUBLIC_CATALOGUE_M3_RUN_ID??''
@@ -41,10 +42,14 @@ async function main() {
   if(process.env.GITHUB_ACTIONS!=='true'||process.env.GITHUB_REF!=='refs/heads/main'
     ||process.env.GITHUB_ACTOR!=='tranhuunguyenhuy-hue'||process.env.GITHUB_RUN_ATTEMPT!=='1') throw new Error('PROTECTED_BUILD_REQUIRED')
   assertBudget(JSON.parse(process.env.DIRECT_ZERO_COST_ATTESTATION??'null'))
+  projectionPhase='M3_PROOF'
   const evidence=proof()
+  projectionPhase='CONNECT_READ'
   const client=await connect('read')
   await client.query('begin isolation level repeatable read read only')
+  projectionPhase='TARGET_PRIVACY'
   await assertTargetPrivate(client)
+  projectionPhase='PUBLIC_QUERY'
   // Explicit selected fields only: no Auth, Storage, orders, customer records,
   // source URLs, raw descriptions/spec blobs, raw prices or arbitrary JSON.
   // Canonical products.description and explicit technical scalar paths only.
@@ -80,6 +85,7 @@ async function main() {
       and p.is_active and p.stock_status<>'discontinued' and p.sellable_status='sellable'
       and p.publication_status='public' and p.pdp_visibility='public'
     order by p.is_featured desc,p.listing_priority desc,p.sort_order,p.id`,[PUBLIC_SPEC_KEYS,JSON.stringify(PUBLIC_LEGACY_SPEC_PATHS)])
+  projectionPhase='PUBLIC_TRANSFORM'
   const rows = result.rows as ProjectionRow[]
   const activeCategories = new Set((await client.query('select slug from dpg_app.categories where is_active')).rows.map((row: {slug:string}) => row.slug))
   const projected=rows.map(row => {
@@ -91,9 +97,11 @@ async function main() {
     const product=projectProduct(row,{...visibility,listing:visibility.listing && primaryListing},canonical)
     return product?{...product,publicContent:projectPublicContent(row)}:null
   }).filter(Boolean)
+  projectionPhase='PUBLIC_ASSEMBLY'
   const {manifest,assets}=buildProjection(projected,evidence)
   if(!manifest.products||!manifest.listingProducts) throw new Error('PUBLIC_PROJECTION_EMPTY_REVIEW_REQUIRED')
   await client.query('commit')
+  projectionPhase='ASSET_WRITE'
   const output=resolve('apps/public/dist/client/__catalogue/v1')
   await mkdir(resolve('apps/public/dist/client/__catalogue'),{recursive:true})
   await mkdir(output) // existing snapshot refuses replacement/replay
@@ -114,5 +122,10 @@ async function main() {
     publicProducts:manifest.products,listingProducts:manifest.listingProducts,excludedInvalidCanonical:rows.length-projected.length,assets:assets.size,bytes,
     prices:'CONTACT_ONLY',inventory:'CONFIRM_WITH_OWNER',privateFieldsExported:false}))
 }
-main().catch(()=>{console.error('PUBLIC_PROJECTION status=STOP reason=PROTECTED_BUILD_FAILED');process.exitCode=1})
+main().catch(error=>{
+ const reasons=new Set(['PUBLIC_PROJECTION_UNSAFE_CONTENT','PUBLIC_PROJECTION_UNSAFE_DTO','PUBLIC_PROJECTION_DUPLICATE_CANONICAL_PATH','PUBLIC_PROJECTION_M3_EVIDENCE_REQUIRED','PUBLIC_PROJECTION_EMPTY_REVIEW_REQUIRED','PUBLIC_ASSET_CAPACITY','PUBLIC_PROJECTION_CAPACITY','M3_RUN_NOT_VERIFIED','M3_EXACT_CHECKPOINT_NOT_VERIFIED'])
+ const reason=reasons.has(error?.message)?error.message:'PROTECTED_BUILD_FAILED'
+ const sqlCode=['42501','42703','42P01','22023','57014','53200','53300'].includes(error?.code)?error.code:null
+ console.error(JSON.stringify({status:'STOP',stage:'M4_PUBLIC_PROJECTION',phase:projectionPhase,reason,sqlCode}));process.exitCode=1
+})
   .finally(closeConnections)

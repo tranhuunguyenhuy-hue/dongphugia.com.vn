@@ -17,3 +17,13 @@ it('preserves plain technical symbols without double encoding',()=>{expect(publi
 it('strips hidden markup attributes but rejects decoded visible contacts and stale prices',()=>{expect(publicText('<p>Chậu rửa sứ</p><img src="https://private.test/?token=abc">')).toBe('Chậu rửa sứ');expect(publicText('Email: x&#64;example.com')).toBeNull();expect(publicText('Giá 1.200.000&#8363;')).toBeNull();expect(publicText('０９０１２３４５６７')).toBeNull()})
 
 it('rejects standalone prices, currencies and formatted telephone contacts',()=>{for(const s of ['Giá: 1.200.000','Giá 100 EUR','Giá $100','Điện thoại: 090.123.4567','090-123-4567'])expect(publicText(s)).toBeNull()})
+it('validates projected text without changing literal entities or truncation boundaries',async()=>{
+ const {isSafePublicContent}=await import('./public-product-content.mjs')
+ for(const value of ['a'.repeat(179)+' '+'b'.repeat(40),'A &amp;lt; B']){
+  const c=projectPublicContent({publicDescription:value,publicSpecifications:[{key:'Chất liệu',isPdpVisible:true,value}]})
+  expect(isSafePublicContent(c)).toBe(true)
+ }
+ expect(isSafePublicContent({summary:'<b>raw</b>',specifications:{},gallery:[]})).toBe(false)
+ expect(isSafePublicContent({summary:'x&#64;example.com',specifications:{},gallery:[]})).toBe(false)
+ for(const summary of ['Good <!-- token=abc123 -->','Good <!-- x@example.com -->','Good <!DOCTYPE html>','Good <?private?>'])expect(isSafePublicContent({summary,specifications:{},gallery:[]})).toBe(false)
+})

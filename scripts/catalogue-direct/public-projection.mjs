@@ -1,6 +1,6 @@
 import {safeImage} from './public-image-policy.mjs'
 export {safeImage} from './public-image-policy.mjs'
-import {projectPublicContent} from './public-product-content.mjs'
+import {isSafePublicContent} from './public-product-content.mjs'
 import { createHash } from 'node:crypto'
 
 export const PROJECTION_CONTRACT = 'dpg:public-catalogue-snapshot:v1'
@@ -42,12 +42,7 @@ export function buildProjection(products, evidence) {
   for (const product of products) {
     const keys = ['id','name','display_name','slug','sku','price','price_display','stock_status','image_main_url','is_active','is_featured','is_promotion','variant_options','categories','subcategories','brands','canonical_category_slug','canonical_subcategory_slug','url','listingEligible','publicContent']
     if (Object.keys(product).some(key => !keys.includes(key)) || product.price !== null || product.stock_status !== 'contact') throw new Error('PUBLIC_PROJECTION_UNSAFE_DTO')
-    if(product.publicContent){
-      const c=product.publicContent
-      if(Object.keys(c).some(k=>!['summary','specifications','gallery'].includes(k))||!c.specifications||!Array.isArray(c.gallery))throw new Error('PUBLIC_PROJECTION_UNSAFE_CONTENT')
-      const checked=projectPublicContent({publicDescription:c.summary,publicSpecifications:Object.entries(c.specifications).map(([key,value])=>({key,value,isPdpVisible:true})),publicGallery:c.gallery})
-      if(JSON.stringify(c)!==JSON.stringify(checked))throw new Error('PUBLIC_PROJECTION_UNSAFE_CONTENT')
-    }
+    if(product.publicContent&&!isSafePublicContent(product.publicContent))throw new Error('PUBLIC_PROJECTION_UNSAFE_CONTENT')
     if (paths.has(product.url)) throw new Error('PUBLIC_PROJECTION_DUPLICATE_CANONICAL_PATH')
     paths.add(product.url)
     // Eligibility is a server-side decision, not a public DTO property.
