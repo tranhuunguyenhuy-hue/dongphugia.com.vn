@@ -21,7 +21,8 @@ export async function readBoundedPublicAssetText(response: Response, maxBytes = 
     }
     return new TextDecoder('utf-8', { fatal: true }).decode(bytes)
   } catch {
-    await reader.cancel().catch(() => {})
+    // Cancellation is best effort; a stalled upstream must not hold the 503 response.
+    void reader.cancel().catch(() => {})
     throw new Error('PUBLIC_CATALOGUE_UNAVAILABLE')
   } finally {
     reader.releaseLock()
