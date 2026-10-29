@@ -29,7 +29,13 @@ async function readAsset<T>(path:string):Promise<T> {
   let value
   try { value=JSON.parse(body) } catch { throw new Error('PUBLIC_CATALOGUE_UNAVAILABLE') }
   if(value.contract!==CONTRACT||value.checkpoint!==publicSnapshotCheckpoint()) throw new Error('PUBLIC_CATALOGUE_UNAVAILABLE')
-  return value as T
+  // Exact documented Bunny pull-zone alias; preserve path, never credentials/query.
+  const repair = (v: unknown): unknown => {
+    if (Array.isArray(v)) return v.map(repair)
+    if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v).map(([k,x])=>[k,k==='image_main_url'&&typeof x==='string'&&x.startsWith('https://cdn.dongphugia.com.vn/')?x.replace('https://cdn.dongphugia.com.vn/','https://dpg-products.b-cdn.net/'):repair(x)]))
+    return v
+  }
+  return repair(value) as T
 }
 export const readSnapshotManifest=cache(async()=>readAsset<Manifest>('manifest.json'))
 export async function getSnapshotCategories() { return (await readSnapshotManifest()).categories }

@@ -19,6 +19,7 @@ const nextConfig: NextConfig = {
     unoptimized: true,
     remotePatterns: [
       { protocol: 'https', hostname: 'cdn.dongphugia.com.vn' },
+      { protocol: 'https', hostname: 'dpg-products.b-cdn.net' },
       { protocol: 'https', hostname: 'cdn.hita.com.vn' },
       { protocol: 'https', hostname: 'hita.com.vn' },
       { protocol: 'https', hostname: 'vietceramics.com' },

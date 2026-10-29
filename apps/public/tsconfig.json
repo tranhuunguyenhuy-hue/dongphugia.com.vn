@@ -1,13 +1,43 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "types": ["@cloudflare/workers-types"],
+    "types": [
+      "@cloudflare/workers-types"
+    ],
     "paths": {
-      "@/*": ["../../src/*"],
-      "@dpg/app-contracts": ["../../packages/app-contracts/src/index.ts"],
-      "@dpg/public-home-runtime": ["./src/runtime/preview-public-home.ts"],
-      "@dpg/public-interactions": ["./src/runtime/preview-public-interactions.ts"],
-      "@dpg/public-catalogue-runtime": ["./src/runtime/preview-public-catalogue.ts"]
+      "@/*": [
+        "../../src/*"
+      ],
+      "@dpg/app-contracts": [
+        "../../packages/app-contracts/src/index.ts"
+      ],
+      "@dpg/public-home-runtime": [
+        "./src/runtime/preview-public-home.ts"
+      ],
+      "@dpg/public-interactions": [
+        "./src/runtime/preview-public-interactions.ts"
+      ],
+      "@dpg/public-catalogue-runtime": [
+        "./src/runtime/preview-public-catalogue.ts"
+      ],
+      "@/lib/public-api-products": [
+        "./src/runtime/canonical-public-api.ts"
+      ],
+      "@/components/product/product-cta": [
+        "./src/runtime/preview-product-cta.tsx"
+      ],
+      "@/components/home/hero-banner": [
+        "./src/runtime/preview-hero.tsx"
+      ],
+      "@/components/category/category-sort": [
+        "./src/runtime/preview-sort.tsx"
+      ],
+      "@/components/category/desktop-advanced-sidebar-filter": [
+        "./src/runtime/preview-desktop-advanced-sidebar-filter.tsx"
+      ],
+      "@/components/category/category-mobile-filter": [
+        "./src/runtime/preview-category-mobile-filter.tsx"
+      ]
     }
   },
   "include": [
@@ -24,5 +54,7 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules"
+  ]
 }
