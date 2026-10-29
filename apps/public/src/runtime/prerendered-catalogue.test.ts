@@ -49,6 +49,14 @@ it('returns 404 for a syntactically valid brand absent from the public root snap
  expect(response?.status).toBe(404)
  expect(env.ASSETS.fetch.mock.calls.some(call=>call[0].includes(createHash('sha256').update('/thiet-bi-bep').digest('hex')))).toBe(false)
 })
+it('fails closed on oversized readiness and root manifest assets',async()=>{
+ const oversizedReady={ASSETS:{fetch:async(url:string)=>url.endsWith('ready.json')
+   ?new Response(new Uint8Array(4_097))
+   :new Response(new Uint8Array(gzipSync('canonical public content')))}}
+ expect((await servePrerenderedCatalogue(new Request('https://preview.invalid/thiet-bi-bep'),oversizedReady,source))?.status).toBe(503)
+ const oversizedManifest=environment({manifestBody:'x'.repeat(2_000_001)})
+ expect((await servePrerenderedCatalogue(new Request('https://preview.invalid/thiet-bi-bep?brands=brand-a'),oversizedManifest,source))?.status).toBe(503)
+})
 it.each([
  ['missing snapshot manifest',{manifestStatus:404}],
  ['malformed JSON snapshot manifest',{manifestBody:'not-json'}],

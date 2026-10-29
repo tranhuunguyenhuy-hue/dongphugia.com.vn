@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   assertPreviewRuntime,
+  classifyPublicApiRequest,
   createCacheKey,
   isAnonymousCacheCandidate,
   isCacheableResponse,
@@ -53,5 +54,17 @@ describe('Public Worker fail-closed policy', () => {
     expect(isForbiddenInternalControlRequest(new Request('https://preview.invalid/', { headers: { 'x-prerender-revalidate': 'synthetic' } }))).toBe(true)
     expect(isForbiddenInternalControlRequest(new Request('https://preview.invalid/', { headers: { cookie: '__prerender_bypass=synthetic' } }))).toBe(true)
     expect(isForbiddenInternalControlRequest(new Request('https://preview.invalid/'))).toBe(false)
+  })
+
+  it('allows only owned public GET/HEAD APIs and blocks arbitrary or mutating routes', () => {
+    expect(classifyPublicApiRequest(new Request('https://preview.invalid/api/health'))).toBe('allow')
+    expect(classifyPublicApiRequest(new Request('https://preview.invalid/api/catalogue/listings/thiet-bi-bep/voi-rua-chen'))).toBe('allow')
+    expect(classifyPublicApiRequest(new Request('https://preview.invalid/api/catalogue/listings/gach-op-lat/gach-van-da-marble', { method: 'HEAD' }))).toBe('allow')
+    expect(classifyPublicApiRequest(new Request('https://preview.invalid/api/catalogue/listings/not-a-family/voi-rua-chen'))).toBe('not-found')
+    expect(classifyPublicApiRequest(new Request('https://preview.invalid/api/catalogue/listings/thiet-bi-bep/%2fprivate'))).toBe('not-found')
+    expect(classifyPublicApiRequest(new Request('https://preview.invalid/api/catalogue/listings/thiet-bi-bep/voi-rua-chen', { method: 'POST' }))).toBe('method-not-allowed')
+    expect(classifyPublicApiRequest(new Request('https://preview.invalid/api/catalogue/listings/thiet-bi-bep/voi-rua-chen', { method: 'DELETE' }))).toBe('method-not-allowed')
+    expect(classifyPublicApiRequest(new Request('https://preview.invalid/api/admin/export'))).toBe('not-found')
+    expect(classifyPublicApiRequest(new Request('https://preview.invalid/thiet-bi-bep/voi-rua-chen'))).toBe('not-api')
   })
 })

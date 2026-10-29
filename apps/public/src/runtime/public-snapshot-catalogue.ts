@@ -1,6 +1,11 @@
 import { cache } from 'react'
 import { usesPublicSnapshot, publicSnapshotCheckpoint } from './public-snapshot-mode'
 import { buildSnapshotCategoryRoot } from './public-category-root'
+import { readBoundedPublicAssetText } from './bounded-public-asset'
+import {
+  PUBLIC_SNAPSHOT_LISTING_MAX_PAGES,
+  PUBLIC_SNAPSHOT_LISTING_PAGE_SIZE,
+} from './snapshot-listing-contract'
 export { usesPublicSnapshot } from './public-snapshot-mode'
 
 const CONTRACT='dpg:public-catalogue-snapshot:v1'
@@ -27,8 +32,7 @@ async function readAsset<T>(path:string):Promise<T> {
   if(!assets) throw new Error('PUBLIC_CATALOGUE_UNAVAILABLE')
   const response=await assets.fetch('https://catalogue-assets.invalid/__catalogue/v1/'+path)
   if(!response.ok) throw new Error('PUBLIC_CATALOGUE_UNAVAILABLE')
-  const body=await response.text()
-  if(body.length>2000000) throw new Error('PUBLIC_CATALOGUE_UNAVAILABLE')
+  const body=await readBoundedPublicAssetText(response)
   let value
   try { value=JSON.parse(body) } catch { throw new Error('PUBLIC_CATALOGUE_UNAVAILABLE') }
   if(value.contract!==CONTRACT||value.checkpoint!==publicSnapshotCheckpoint()) throw new Error('PUBLIC_CATALOGUE_UNAVAILABLE')
@@ -51,10 +55,18 @@ export async function getSnapshotProducts(category:string,listing:string,page=1)
   if(!SLUG.test(category)||!SLUG.test(listing)||!Number.isSafeInteger(page)||page<1) return {products:[],totalCount:0,page}
   const categoryRecord=(await getSnapshotCategories()).find(c=>c.slug===category)
   const list=categoryRecord?.listings.find(l=>l.slug===listing)
-  if(!list||page>Math.ceil(list.totalCount/48)) return {products:[],totalCount:list?.totalCount??0,page}
+  if(!list||page>Math.ceil(list.totalCount/PUBLIC_SNAPSHOT_LISTING_PAGE_SIZE)) return {products:[],totalCount:list?.totalCount??0,page}
+  if(!Number.isSafeInteger(list.totalCount)||list.totalCount<1
+    ||Math.ceil(list.totalCount/PUBLIC_SNAPSHOT_LISTING_PAGE_SIZE)>PUBLIC_SNAPSHOT_LISTING_MAX_PAGES)
+    throw new Error('PUBLIC_CATALOGUE_UNAVAILABLE')
   const result=await readAsset<AssetEnvelope>(`listings/${category}/${listing}/${page}.json`)
-  return {products:result.products??[],totalCount:result.totalCount??0,page}
+  const expectedProducts=Math.min(PUBLIC_SNAPSHOT_LISTING_PAGE_SIZE,list.totalCount-(page-1)*PUBLIC_SNAPSHOT_LISTING_PAGE_SIZE)
+  if(!Array.isArray(result.products)||result.page!==page||result.totalCount!==list.totalCount
+    ||result.products.length!==expectedProducts)
+    throw new Error('PUBLIC_CATALOGUE_UNAVAILABLE')
+  return {products:result.products,totalCount:list.totalCount,page}
 }
+
 export async function getSnapshotProduct(category:string,listing:string,slug:string) {
   if(![category,listing,slug].every(s=>SLUG.test(s))) return null
   const path=`/${category}/${listing}/${slug}`
