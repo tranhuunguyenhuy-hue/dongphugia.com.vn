@@ -1,5 +1,6 @@
 import {publicSnapshotCheckpoint} from './public-snapshot-mode'
 import {readBoundedPublicAssetText} from './bounded-public-asset'
+import {parsePublicSnapshotListingFilters} from './snapshot-listing-contract'
 
 const FAMILIES=['thiet-bi-ve-sinh','thiet-bi-bep','vat-lieu-nuoc','gach-op-lat']
 const SLUG=/^[a-z0-9]+(?:-[a-z0-9]+)*$/
@@ -29,6 +30,13 @@ function snapshotRootBrands(value:unknown,checkpoint:string,categorySlug:string)
 }
 export function prerenderRouteKey(url:URL):string|null {
   if(!isPrerenderedPath(url.pathname)||!/^\/(?:[a-z0-9]+(?:-[a-z0-9]+)*(?:\/|$))*$/.test(url.pathname))return null
+  const parts=url.pathname.split('/').filter(Boolean)
+  if(parts.length===2&&FAMILIES.includes(parts[0])){
+    const query=new URLSearchParams(url.searchParams)
+    query.delete('_rsc')
+    const filters=parsePublicSnapshotListingFilters(query)
+    return filters?url.pathname+(filters.page>1?`?page=${filters.page}`:''):null
+  }
   const isCategoryRoot=FAMILIES.some(f=>url.pathname===`/${f}`)
   const brands=url.searchParams.getAll('brands')
   if(brands.length>1)return null

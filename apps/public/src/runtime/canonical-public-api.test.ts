@@ -7,6 +7,10 @@ vi.mock('./public-snapshot-catalogue',()=>({
 }))
 import {getPublicProducts,getAvailableFiltersBySubcategory,getPublicProductBySlug,getPdpSpecifications} from './canonical-public-api'
 describe('canonical Preview public snapshot seam',()=>{
+ it('returns the real total for snapshot Listing templates without reading server-side product pages',async()=>{
+  const result=await getPublicProducts({category_slug:'thiet-bi-bep',subcategory_slugs:'voi-rua-chen',pageSize:24,page:2})
+  expect(result).toMatchObject({products:[],total:60,totalPages:3,page:2,pageSize:24})
+ })
  it('filters on the complete listing, then paginates without historic prices',async()=>{
   const result=await getPublicProducts({category_slug:'thiet-bi-bep',subcategory_slug:'voi-rua-chen',brand_slug:'b',pageSize:5,page:2})
   expect(result.total).toBe(10);expect(result.products).toHaveLength(5);expect(result.products[0].id).toBe(55)

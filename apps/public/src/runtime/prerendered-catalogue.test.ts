@@ -43,6 +43,20 @@ it('serves one shared HTML and Flight asset key for every category-root brand se
  expect(env.ASSETS.fetch.mock.calls.filter(call=>call[0].endsWith('/__catalogue/v1/manifest.json'))).toHaveLength(2)
  expect(prerenderRouteKey(new URL('https://preview.invalid/thiet-bi-bep?brands=brand-a'))).toBe('/thiet-bi-bep')
 })
+it('serves filtered Listing deep links through one bounded HTML and Flight page asset',async()=>{
+ const env=environment()
+ const routeKey='/thiet-bi-bep/voi-rua-chen?page=2'
+ const routeDigest=createHash('sha256').update(routeKey).digest('hex')
+ const html=await servePrerenderedCatalogue(new Request('https://preview.invalid/thiet-bi-bep/voi-rua-chen?brand=brand-a,brand-b&page=2'),env,source)
+ const htmlAsset=env.ASSETS.fetch.mock.calls.at(-1)?.[0]
+ const rsc=await servePrerenderedCatalogue(new Request('https://preview.invalid/thiet-bi-bep/voi-rua-chen?brand=brand-b&page=2&_rsc=flight',{headers:{RSC:'1'}}),env,source)
+ const rscAsset=env.ASSETS.fetch.mock.calls.at(-1)?.[0]
+ expect(html?.status).toBe(200)
+ expect(htmlAsset).toContain(routeDigest+'.html.gz')
+ expect(rsc?.headers.get('content-type')).toContain('text/x-component')
+ expect(rscAsset).toContain(routeDigest+'.rsc.gz')
+ expect(prerenderRouteKey(new URL('https://preview.invalid/thiet-bi-bep/voi-rua-chen?brand=brand-b&is_featured=true&page=2'))).toBe(routeKey)
+})
 it('returns 404 for a syntactically valid brand absent from the public root snapshot',async()=>{
  const env=environment()
  const response=await servePrerenderedCatalogue(new Request('https://preview.invalid/thiet-bi-bep?brands=unknown-brand'),env,source)
@@ -73,6 +87,8 @@ it.each([
 it('normalizes only supported navigation and prevents route traversal/filters',()=>{
  expect(prerenderRouteKey(new URL('https://preview.invalid/thiet-bi-bep/voi-rua-chen?page=1&_rsc=x&utm_source=test'))).toBe('/thiet-bi-bep/voi-rua-chen')
  expect(prerenderRouteKey(new URL('https://preview.invalid/thiet-bi-bep/voi-rua-chen?page=2'))).toBe('/thiet-bi-bep/voi-rua-chen?page=2')
+ expect(prerenderRouteKey(new URL('https://preview.invalid/thiet-bi-bep/voi-rua-chen?brand=brand-a,brand-b&is_featured=true&page=2&_rsc=flight'))).toBe('/thiet-bi-bep/voi-rua-chen?page=2')
+ expect(prerenderRouteKey(new URL('https://preview.invalid/thiet-bi-bep/voi-rua-chen?brand=brand-a,brand-a'))).toBeNull()
  expect(prerenderRouteKey(new URL('https://preview.invalid/thiet-bi-bep/voi-rua-chen?price=1'))).toBeNull()
   expect(prerenderRouteKey(new URL('https://preview.invalid/thiet-bi-bep?brands=brand-a'))).toBe('/thiet-bi-bep')
   expect(prerenderRouteKey(new URL('https://preview.invalid/thiet-bi-bep?brands=brand-a,brand-b'))).toBe('/thiet-bi-bep')

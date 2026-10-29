@@ -16,13 +16,21 @@ export const getPublicListingLeaves:typeof Original.getPublicListingLeaves=async
  return (c?.listings??[]).map(l=>({id:null,name:l.name,slug:l.slug,description:null,thumbnail_url:null,source:'legacy' as const,_count:{products:l.totalCount}}))
 }
 export const getPublicListingLeaf:typeof Original.getPublicListingLeaf=async(category,sub)=>(await getPublicListingLeaves(category)).find(l=>l.slug===sub)??null
-export const getListingRuntimeConfig:typeof Original.getListingRuntimeConfig=()=>({profileKey:null,hideColorFilter:true,enableSpecFilters:false,enableProductTypeTabs:false,readyForRefactor:false,relationPriority:['brand']})
+export const getListingRuntimeConfig:typeof Original.getListingRuntimeConfig=()=>({snapshotMode:true,profileKey:null,hideColorFilter:true,enableSpecFilters:false,enableProductTypeTabs:false,readyForRefactor:false,relationPriority:['brand']})
 export const getAvailableFiltersBySubcategory:typeof Original.getAvailableFiltersBySubcategory=async(sub,_type,category)=>{
  const products=await allProducts(category??'thiet-bi-ve-sinh',sub)
  const brands=Array.from(new Map(products.filter(p=>p.brands).map(p=>[p.brands!.slug,p.brands!])).values())
  return {brands:brands.map(b=>({...b,logo_url:null})),subcategories:(await getPublicListingLeaves(category??'thiet-bi-ve-sinh')).map(l=>({...l,icon_name:null})),materials:[],origins:[],features:[],colors:[]}
 }
 export const getPublicProducts:typeof Original.getPublicProducts=async(f={})=>{
+ // Listing HTML and Flight share a neutral shell. The browser loads the exact
+ // immutable shards and applies URL filters; PDP related cards keep their data.
+ if((f.pageSize===12||f.pageSize===24)&&typeof f.subcategory_slugs==='string'){
+  const category=(await getSnapshotCategories()).find(c=>c.slug===f.category_slug)
+  const listing=category?.listings.find(l=>l.slug===f.subcategory_slugs)
+  if(!listing)return {products:[],total:0,totalPages:1,currentPage:f.page??1,page:f.page??1,pageSize:f.pageSize} as Awaited<ReturnType<typeof Original.getPublicProducts>>
+  return {products:[],total:listing.totalCount,totalPages:Math.max(1,Math.ceil(listing.totalCount/f.pageSize)),currentPage:f.page??1,page:f.page??1,pageSize:f.pageSize} as Awaited<ReturnType<typeof Original.getPublicProducts>>
+ }
  let products=await allProducts(f.category_slug??'thiet-bi-ve-sinh',Array.isArray(f.subcategory_slugs)?f.subcategory_slugs[0]:f.subcategory_slugs??f.subcategory_slug)
  if(f.brand_slug)products=products.filter(p=>(Array.isArray(f.brand_slug)?f.brand_slug:f.brand_slug!.split(',')).includes(p.brands?.slug??''))
  if(f.is_featured)products=products.filter(p=>p.is_featured)
