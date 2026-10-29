@@ -22,6 +22,11 @@ on:
       managed_preview_run_id:
         description: Prior successful managed LEO-563 Preview evidence run (Codex resolves it)
         type: string
+      managed_preview_kind:
+        description: Receipt producer type; catalogue requires a successful direct Preview run
+        type: choice
+        options: [legacy, catalogue]
+        default: legacy
       managed_preview_source_sha:
         type: string
       publish:
@@ -161,10 +166,18 @@ jobs:
         if: inputs.publish && inputs.managed_preview_run_id != ''
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
-          name: leo563-real-public-preview-${{ inputs.managed_preview_source_sha }}
+          name: ${{ inputs.managed_preview_kind == 'catalogue' && format('public-catalogue-preview-evidence-{0}', inputs.managed_preview_run_id) || format('leo563-real-public-preview-{0}', inputs.managed_preview_source_sha) }}
           path: ${{ env.MANAGED_ROOT }}
           run-id: ${{ inputs.managed_preview_run_id }}
           github-token: ${{ github.token }}
+      - name: Verify successful catalogue receipt producer
+        if: inputs.publish && inputs.managed_preview_run_id != '' && inputs.managed_preview_kind == 'catalogue'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$MANAGED_PREVIEW_RUN_ID" > "$RUNNER_TEMP/managed-catalogue-producer.json"
+          jq -e --arg sha "$MANAGED_PREVIEW_SOURCE_SHA" '.conclusion=="success" and .status=="completed" and .head_sha==$sha and .head_branch=="main" and .event=="workflow_dispatch" and .run_attempt==1 and .actor.login=="tranhuunguyenhuy-hue" and .path==".github/workflows/catalogue-public-preview.yml"' "$RUNNER_TEMP/managed-catalogue-producer.json" >/dev/null
       - name: Validate existing managed Preview custody
         if: inputs.publish && inputs.managed_preview_run_id != ''
         env:
