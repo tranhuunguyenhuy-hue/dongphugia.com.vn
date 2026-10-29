@@ -4,10 +4,13 @@ import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { BrandLogo } from '@/components/media/brand-logo'
 
-interface Brand { id: number; name: string; slug?: string }
+export interface CategoryFilterBrand { id: number | string; name: string; slug?: string }
+
+export type CategoryFilterPanelMode = 'canonical' | 'snapshot'
 
 interface CategoryFilterPanelProps {
-    brands: Brand[]
+    brands: CategoryFilterBrand[]
+    mode?: CategoryFilterPanelMode
 }
 
 const PRICE_MIN = 0
@@ -83,13 +86,14 @@ function DualRangeSlider({
 }
 
 // ── Brand Tag with Logo ───────────────────────────────────────────────────────
-export function BrandTag({ brand, active, onToggle }: { brand: Brand; active: boolean; onToggle: () => void }) {
+export function BrandTag({ brand, active, onToggle }: { brand: CategoryFilterBrand; active: boolean; onToggle: () => void }) {
     const slug = brand.slug || brand.name.toLowerCase().replace(/\s+/g, '-')
 
     return (
         <button
             type="button"
             onClick={onToggle}
+            aria-pressed={active}
             className={`
                 relative h-8 px-2.5 rounded-lg border flex items-center justify-center gap-1.5
                 transition-all duration-200 cursor-pointer select-none group/tag
@@ -124,12 +128,13 @@ export function BrandTag({ brand, active, onToggle }: { brand: Brand; active: bo
 
 // ── Brand Section (compact tags) ──────────────────────────────────────────────
 function BrandSection({
-    brands, activeBrands, onToggle, activeCount,
+    brands, activeBrands, onToggle, activeCount, brandValue,
 }: {
-    brands: Brand[]
+    brands: CategoryFilterBrand[]
     activeBrands: string[]
     onToggle: (name: string) => void
     activeCount: number
+    brandValue: (brand: CategoryFilterBrand) => string
 }) {
     const [open, setOpen] = useState(true)
     return (
@@ -163,8 +168,8 @@ function BrandSection({
                         <BrandTag
                             key={b.id}
                             brand={b}
-                            active={activeBrands.includes(b.name)}
-                            onToggle={() => onToggle(b.name)}
+                            active={activeBrands.includes(brandValue(b))}
+                            onToggle={() => onToggle(brandValue(b))}
                         />
                     ))}
                 </div>
@@ -174,7 +179,8 @@ function BrandSection({
 }
 
 // ── Main Component ────────────────────────────────────────────────────────────
-export function CategoryFilterPanel({ brands }: CategoryFilterPanelProps) {
+export function CategoryFilterPanel({ brands, mode = 'canonical' }: CategoryFilterPanelProps) {
+    const snapshotMode = mode === 'snapshot'
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()
@@ -184,7 +190,7 @@ export function CategoryFilterPanel({ brands }: CategoryFilterPanelProps) {
     const [localPrice, setLocalPrice] = useState<[number, number]>(() =>
         priceParam ? parsePriceParam(priceParam) : [PRICE_MIN, PRICE_MAX]
     )
-    const isPriceActive = priceParam !== ''
+    const isPriceActive = !snapshotMode && priceParam !== ''
     const [advOpen, setAdvOpen] = useState(true)
 
     useEffect(() => {
@@ -222,10 +228,12 @@ export function CategoryFilterPanel({ brands }: CategoryFilterPanelProps) {
         [router, pathname, searchParams]
     )
 
-    const toggleBrand = (brandName: string) => {
-        const next = activeBrands.includes(brandName)
-            ? activeBrands.filter((b) => b !== brandName)
-            : [...activeBrands, brandName]
+    const getBrandValue = (brand: CategoryFilterBrand) => snapshotMode ? brand.slug ?? '' : brand.name
+
+    const toggleBrand = (brandValue: string) => {
+        const next = activeBrands.includes(brandValue)
+            ? activeBrands.filter((b) => b !== brandValue)
+            : [...activeBrands, brandValue]
         updateParam('brands', next.length ? next.join(',') : null)
     }
 
@@ -305,53 +313,57 @@ export function CategoryFilterPanel({ brands }: CategoryFilterPanelProps) {
                                         <BrandTag
                                             key={b.id}
                                             brand={b}
-                                            active={activeBrands.includes(b.name)}
-                                            onToggle={() => toggleBrand(b.name)}
+                                            active={activeBrands.includes(getBrandValue(b))}
+                                            onToggle={() => toggleBrand(getBrandValue(b))}
                                         />
                                     ))}
                                 </div>
                             </div>
                         )}
 
-                        {/* ── Price — dual range slider ── */}
-                        <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                                <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
-                                    Khoảng giá
-                                </p>
-                                {isPriceActive && (
-                                    <button
-                                        onClick={() => {
-                                            setLocalPrice([PRICE_MIN, PRICE_MAX])
-                                            updateParam('price', null)
-                                        }}
-                                        className="text-[10px] text-neutral-400 hover:text-neutral-600 transition-colors"
-                                    >
-                                        Reset
-                                    </button>
-                                )}
+                        {snapshotMode ? (
+                            <div className="space-y-2">
+                                <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">Khoảng giá</p>
+                                <p className="rounded bg-neutral-50 px-3 py-2 text-[12px] text-neutral-500">Liên hệ để nhận báo giá</p>
                             </div>
-                            <DualRangeSlider
-                                min={PRICE_MIN}
-                                max={PRICE_MAX}
-                                step={PRICE_STEP}
-                                value={localPrice}
-                                onChange={handleSliderChange}
-                            />
-                            <div className="flex items-center justify-between">
-                                <span className={`text-[12px] font-semibold tabular-nums transition-colors ${
-                                    isPriceActive ? 'text-[#2E7A96]' : 'text-neutral-500'
-                                }`}>
-                                    {formatPrice(localPrice[0])}
-                                </span>
-                                <span className="text-[10px] text-neutral-300 mx-1">—</span>
-                                <span className={`text-[12px] font-semibold tabular-nums transition-colors ${
-                                    isPriceActive ? 'text-[#2E7A96]' : 'text-neutral-500'
-                                }`}>
-                                    {localPrice[1] >= PRICE_MAX ? `${formatPrice(PRICE_MAX)}+` : formatPrice(localPrice[1])}
-                                </span>
+                        ) : (
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">Khoảng giá</p>
+                                    {isPriceActive && (
+                                        <button
+                                            onClick={() => {
+                                                setLocalPrice([PRICE_MIN, PRICE_MAX])
+                                                updateParam('price', null)
+                                            }}
+                                            className="text-[10px] text-neutral-400 hover:text-neutral-600 transition-colors"
+                                        >
+                                            Reset
+                                        </button>
+                                    )}
+                                </div>
+                                <DualRangeSlider
+                                    min={PRICE_MIN}
+                                    max={PRICE_MAX}
+                                    step={PRICE_STEP}
+                                    value={localPrice}
+                                    onChange={handleSliderChange}
+                                />
+                                <div className="flex items-center justify-between">
+                                    <span className={`text-[12px] font-semibold tabular-nums transition-colors ${
+                                        isPriceActive ? 'text-[#2E7A96]' : 'text-neutral-500'
+                                    }`}>
+                                        {formatPrice(localPrice[0])}
+                                    </span>
+                                    <span className="text-[10px] text-neutral-300 mx-1">—</span>
+                                    <span className={`text-[12px] font-semibold tabular-nums transition-colors ${
+                                        isPriceActive ? 'text-[#2E7A96]' : 'text-neutral-500'
+                                    }`}>
+                                        {localPrice[1] >= PRICE_MAX ? `${formatPrice(PRICE_MAX)}+` : formatPrice(localPrice[1])}
+                                    </span>
+                                </div>
                             </div>
-                        </div>
+                        )}
                     </div>
                 )}
             </div>

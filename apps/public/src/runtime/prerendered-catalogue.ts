@@ -1,13 +1,21 @@
 import {publicSnapshotCheckpoint} from './public-snapshot-mode'
 
 const FAMILIES=['thiet-bi-ve-sinh','thiet-bi-bep','vat-lieu-nuoc','gach-op-lat']
+const SLUG=/^[a-z0-9]+(?:-[a-z0-9]+)*$/
 export const isPrerenderedPath=(path:string)=>['/','/lien-he','/ve-chung-toi'].includes(path)||FAMILIES.some(f=>path===`/${f}`||path.startsWith(`/${f}/`))
 export function prerenderRouteKey(url:URL):string|null {
   if(!isPrerenderedPath(url.pathname)||!/^\/(?:[a-z0-9]+(?:-[a-z0-9]+)*(?:\/|$))*$/.test(url.pathname))return null
-  for(const key of url.searchParams.keys())if(!['page','_rsc','fbclid','gclid'].includes(key)&&!key.startsWith('utm_'))return null
+  const isCategoryRoot=FAMILIES.some(f=>url.pathname===`/${f}`)
+  const brands=url.searchParams.getAll('brands')
+  if(brands.length>1)return null
+  const selectedBrands=brands.length===1?brands[0].split(','):[]
+  if(brands.length===1&&(!isCategoryRoot||selectedBrands.length===0||selectedBrands.some(brand=>!SLUG.test(brand))||new Set(selectedBrands).size!==selectedBrands.length))return null
+  for(const key of url.searchParams.keys())if(!['page','brands','_rsc','fbclid','gclid'].includes(key)&&!key.startsWith('utm_'))return null
   if(url.searchParams.getAll('page').length>1)return null
   const page=url.searchParams.get('page')
   if(page!==null&&!/^[1-9][0-9]{0,3}$/.test(page))return null
+  if(isCategoryRoot&&page!==null)return null
+  if(selectedBrands.length===1)return url.pathname+`?brands=${selectedBrands[0]}`
   return url.pathname+(page&&page!=='1'?`?page=${page}`:'')
 }
 export async function servePrerenderedCatalogue(request:Request,environment:Record<string,unknown>,sourceSha:string):Promise<Response|null>{

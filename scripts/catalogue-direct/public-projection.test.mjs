@@ -43,3 +43,37 @@ it('keeps reviewed content on PDP assets only and rejects nested private fields'
  assert.equal(built.assets.get('listings/thiet-bi-ve-sinh/bon-cau/1.json').products[0].publicContent,undefined)
  assert.throws(()=>buildProjection([{...dto,publicContent:{...content,raw_html:'private'}}],evidence),/UNSAFE_CONTENT/)
 })
+it('projects truthful category brands and a bounded featured set per brand',()=>{
+ const products=Array.from({length:10},(_,index)=>projectProduct({
+  ...input,id:index+1,slug:`product-${index+1}`,brand_name:index<9?'Synthetic Brand':'Other Brand',brand_slug:index<9?'synthetic-brand':'other-brand',is_featured:index!==8,
+  rootBrandId:index<9?1:2,rootBrandSortOrder:index<9?1:2,
+ },{pdp:true,listing:true},path))
+ const built=buildProjection(products,evidence)
+ const category=built.manifest.categories[0]
+ assert.deepEqual(category.brands,[{slug:'synthetic-brand',name:'Synthetic Brand'},{slug:'other-brand',name:'Other Brand'}])
+ assert.equal(category.featuredProductsByBrand.filter(p=>p.brands?.slug==='synthetic-brand').length,8)
+ assert.equal(category.featuredProductsByBrand.filter(p=>p.brands?.slug==='other-brand').length,1)
+ assert(category.featuredProductsByBrand.every(p=>p.is_featured&&p.price===null&&p.stock_status==='contact'))
+ assert(!JSON.stringify(category).includes('listingEligible'))
+})
+it('keeps category roots in canonical product, brand and listing order without leaking sort metadata',()=>{
+ const inputs=[
+  {...input,id:1,slug:'late-brand-b',brand_name:'Brand B',brand_slug:'brand-b',is_featured:true,rootSortOrder:30,rootBrandId:2,rootBrandSortOrder:20,rootSubcategorySortOrder:20,rootSubcategoryThumbnailUrl:'https://cdn.hita.com.vn/listing-b.jpg'},
+  {...input,id:2,slug:'middle-brand-a',brand_name:'Brand A',brand_slug:'brand-a',is_featured:true,rootSortOrder:20,rootBrandId:1,rootBrandSortOrder:10,rootSubcategorySortOrder:10,rootSubcategoryThumbnailUrl:'https://cdn.hita.com.vn/listing-a.jpg'},
+  {...input,id:3,slug:'first-brand-a',brand_name:'Brand A',brand_slug:'brand-a',is_featured:true,rootSortOrder:10,rootBrandId:1,rootBrandSortOrder:10,rootSubcategorySortOrder:20,rootSubcategoryThumbnailUrl:'https://cdn.hita.com.vn/listing-b.jpg'},
+ ].map(value=>projectProduct(value,{pdp:true,listing:true},path))
+ const built=buildProjection(inputs,evidence,[{slug:'thiet-bi-ve-sinh',name:'Thiết bị vệ sinh',listings:[
+  {slug:'empty',name:'Danh mục trống',sortOrder:0,thumbnailUrl:null},
+  {slug:'bon-cau',name:'Bồn cầu',sortOrder:10,thumbnailUrl:'https://cdn.hita.com.vn/listing-a.jpg'},
+  {slug:'voi-sen',name:'Vòi sen',sortOrder:20,thumbnailUrl:'https://cdn.hita.com.vn/listing-b.jpg'},
+ ]}])
+ const category=built.manifest.categories[0]
+ assert.deepEqual(category.featuredProducts.map(p=>p.slug),['first-brand-a','middle-brand-a','late-brand-b'])
+ assert.deepEqual(category.brands,[{slug:'brand-a',name:'Brand A'},{slug:'brand-b',name:'Brand B'}])
+ assert.deepEqual(category.featuredProductsByBrand.map(p=>p.slug),['first-brand-a','middle-brand-a','late-brand-b'])
+ assert.deepEqual(category.listings.map(l=>l.slug),['empty','bon-cau','voi-sen'])
+ assert.equal(category.listings[0].totalCount,0)
+ assert.equal(category.listings[1].thumbnail_url,'https://cdn.hita.com.vn/listing-a.jpg')
+ assert(!JSON.stringify(built.manifest).includes('rootSortOrder'))
+ assert(!JSON.stringify(built.manifest).includes('rootBrandSortOrder'))
+})
