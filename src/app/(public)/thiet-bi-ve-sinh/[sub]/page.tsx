@@ -9,6 +9,7 @@ import { DesktopAdvancedSidebarFilter } from "@/components/category/desktop-adva
 import { ActiveFilters, ActiveFilterDict } from "@/components/category/active-filters"
 import { CategoryMobileFilter } from "@/components/category/category-mobile-filter"
 import { CategorySort } from "@/components/category/category-sort"
+import { PreviewListingSection } from "@/components/category/preview-listing-section"
 import { ProductTypeFilter } from "@/components/category/product-type-filter"
 import { ActiveSpecFilterChips, SpecFilterDef } from "@/components/category/subcategory-spec-filter"
 import { StaticSubcategoryNavigation } from "@/components/category/static-subcategory-navigation"
@@ -191,7 +192,7 @@ export default async function ThietBiVeSinhSubPage({ params, searchParams }: Pag
 
 
 
-                    <div className="mb-4 flex flex-col gap-3">
+                    {!listingRuntimeConfig.snapshotMode && <div className="mb-4 flex flex-col gap-3">
                         <div className="flex justify-between items-center gap-2 py-2 lg:py-0">
                             <span className="text-sm font-medium text-neutral-500">
                                 <strong className="text-neutral-900">{total.toLocaleString('vi-VN')}</strong> sản phẩm
@@ -219,9 +220,14 @@ export default async function ThietBiVeSinhSubPage({ params, searchParams }: Pag
                                 <ActiveFilters filterDict={filterDict} excludeKeys={["sub"]} />
                             </Suspense>
                         ) : null}
-                    </div>
+                    </div>}
 
-                    {products.length > 0 ? (
+                    {listingRuntimeConfig.snapshotMode ? (
+                        <Suspense fallback={<div role="status" className="py-24 text-center">Đang tải sản phẩm…</div>}>
+                            <PreviewListingSection categorySlug={CATEGORY_SLUG} listingSlug={sub} basePath={BASE_PATH}
+                                pageSize={PAGE_SIZE} availableFilters={availableFilters} runtimeConfig={listingRuntimeConfig} filterDict={filterDict} />
+                        </Suspense>
+                    ) : products.length > 0 ? (
                         <>
                             <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
                                 {products.map((product, index) => (

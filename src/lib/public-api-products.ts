@@ -93,6 +93,7 @@ export type PublicListingLeaf = {
 }
 
 export type ListingRuntimeConfig = {
+    snapshotMode?: boolean
     profileKey: string | null
     hideColorFilter: boolean
     enableSpecFilters: boolean

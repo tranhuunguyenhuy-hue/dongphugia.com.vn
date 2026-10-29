@@ -153,6 +153,7 @@ export function BrandTagChip({ slug, name, active, onClick }: {
         <button
             type="button"
             onClick={onClick}
+            aria-pressed={active}
             className={`
                 relative h-8 px-2.5 rounded-lg border flex items-center justify-center gap-1.5
                 transition-all duration-200 cursor-pointer select-none group/tag
@@ -539,7 +540,7 @@ export function AdvancedSidebarFilter({
                 {relationSections}
 
                 {/* ── Price — dual range slider ── */}
-                <div className="space-y-2">
+                {!runtimeConfig?.snapshotMode && <div className="space-y-2">
                     <div className="flex items-center justify-between">
                         <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
                             Khoảng giá
@@ -572,7 +573,7 @@ export function AdvancedSidebarFilter({
                             {localPrice[1] >= PRICE_MAX ? `${formatPrice(PRICE_MAX)}+` : formatPrice(localPrice[1])}
                         </span>
                     </div>
-                </div>
+                </div>}
 
                 {/* ── Features — tag chips ── */}
                 {availableFilters.features.length > 0 && (
@@ -623,7 +624,7 @@ export function AdvancedSidebarFilter({
                         Tùy chọn khác
                     </p>
                     <div className="flex flex-wrap gap-1.5">
-                        <TagChip
+                        {!runtimeConfig?.snapshotMode && <TagChip
                             label="Khuyến mãi"
                             active={isPromotion}
                             onClick={() => {
@@ -632,7 +633,7 @@ export function AdvancedSidebarFilter({
                                 params.set('page', '1')
                                 router.push(`${pathname}?${params.toString()}`, { scroll: false })
                             }}
-                        />
+                        />}
                         <TagChip
                             label="Sản phẩm nổi bật"
                             active={isFeatured}

@@ -5,6 +5,9 @@
       "@cloudflare/workers-types"
     ],
     "paths": {
+      "@/components/category/preview-listing-section": [
+        "./src/runtime/preview-listing-section.tsx"
+      ],
       "@/*": [
         "../../src/*"
       ],
