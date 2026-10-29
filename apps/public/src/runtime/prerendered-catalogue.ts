@@ -1,4 +1,5 @@
 import {publicSnapshotCheckpoint} from './public-snapshot-mode'
+import {readBoundedPublicAssetText} from './bounded-public-asset'
 
 const FAMILIES=['thiet-bi-ve-sinh','thiet-bi-bep','vat-lieu-nuoc','gach-op-lat']
 const SLUG=/^[a-z0-9]+(?:-[a-z0-9]+)*$/
@@ -57,15 +58,16 @@ export async function servePrerenderedCatalogue(request:Request,environment:Reco
   const prefix=`https://catalogue-assets.invalid/__render/v1/${sourceSha}/${checkpoint}/`
   const ready=await assets?.fetch?.(prefix+'ready.json')
   if(!ready?.ok)return stop(503,'Catalogue temporarily unavailable.')
-  const proof=await ready.json() as {sourceSha?:string;checkpoint?:string;status?:string}
+  let proof:{sourceSha?:string;checkpoint?:string;status?:string}
+  try { proof=JSON.parse(await readBoundedPublicAssetText(ready,4_096)) }
+  catch { return stop(503,'Catalogue temporarily unavailable.') }
   if(proof.sourceSha!==sourceSha||proof.checkpoint!==checkpoint||proof.status!=='COMPLETE')return stop(503,'Catalogue temporarily unavailable.')
   if(url.searchParams.has('brands')){
     let manifestResponse:Response|undefined,manifestBody:unknown
     try{
       manifestResponse=await assets?.fetch?.(SNAPSHOT_MANIFEST_URL)
       if(!manifestResponse?.ok)return stop(503,'Catalogue temporarily unavailable.')
-      const text=await manifestResponse.text()
-      if(text.length>2_000_000)return stop(503,'Catalogue temporarily unavailable.')
+      const text=await readBoundedPublicAssetText(manifestResponse)
       manifestBody=JSON.parse(text)
     }catch{return stop(503,'Catalogue temporarily unavailable.')}
     const brands=snapshotRootBrands(manifestBody,checkpoint,url.pathname.slice(1))

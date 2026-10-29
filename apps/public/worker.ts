@@ -2,6 +2,7 @@ import vinextHandler from 'vinext/server/fetch-handler'
 import {exceptionCategory} from '../../scripts/catalogue-direct/preview-diagnostic-safety.mjs'
 import { publicSnapshotCheckpoint } from './src/runtime/public-snapshot-mode'
 import {servePrerenderedCatalogue} from './src/runtime/prerendered-catalogue'
+import {readBoundedPublicAssetText} from './src/runtime/bounded-public-asset'
 
 import {
   assertPreviewRuntime,
@@ -74,7 +75,7 @@ export default {
       try {
         const response = await assets?.fetch?.('https://catalogue-assets.invalid/__catalogue/v1/manifest.json')
         if (response?.ok) {
-          const manifest = await response.json() as { contract?: string; checkpoint?: string }
+          const manifest = JSON.parse(await readBoundedPublicAssetText(response)) as { contract?: string; checkpoint?: string }
           ready = manifest.contract === 'dpg:public-catalogue-snapshot:v1' && manifest.checkpoint === publicSnapshotCheckpoint()
         }
       } catch { /* No raw asset/error response is disclosed. */ }
