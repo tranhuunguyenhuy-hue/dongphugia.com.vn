@@ -17,3 +17,11 @@ it('does not equate request proof with browser or Owner acceptance',async()=>{
  expect(r.failed).toBe(0);expect(r.browserAcceptance).toBe('SEPARATE_GATE');expect(r.ownerAcceptance).toBe('PENDING')
  await expect(runLoadRegression({urls:['https://private.example'],sourceSha:sha,checkpoint})).rejects.toThrow('TARGET')
 })
+it('rejects streamed Flight errors even when HTTP status is 200',async()=>{
+ const fetchImpl=async(u,options)=>{
+  if(options?.headers?.RSC==='1')return new Response('0:{"partial":true}\n1:E{"digest":"render-error"}\n',{headers:{'content-type':'text/x-component','X-DPG-Source-SHA':sha}})
+  return transport(false)(u,options)
+ }
+ const r=await runLoadRegression({urls:[url],sourceSha:sha,checkpoint,repeats:1,fetchImpl})
+ expect(r.requests).toBe(34);expect(r.failed).toBe(17);expect(r.records.filter(x=>x.mode==='rsc').every(x=>!x.pass&&x.status===200)).toBe(true)
+})
