@@ -1,12 +1,19 @@
 // Run only in the protected runner after M3. This script is not imported by Public.
 import { execFileSync } from 'node:child_process'
+import { createRequire } from 'node:module'
 import { mkdir, writeFile, readFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { connect, closeConnections, assertTargetPrivate } from './run.mjs'
 import { assertBudget } from './contract.mjs'
-import { resolveProductVisibility, type ProductVisibilityInput } from '../../src/lib/public-product-visibility'
-import { getCanonicalProductPath, type ProductPathInput, type ProductTaxonAssignmentRef } from '../../src/lib/taxonomy-paths'
+import type { ProductVisibilityInput } from '../../src/lib/public-product-visibility'
+import type { ProductPathInput, ProductTaxonAssignmentRef } from '../../src/lib/taxonomy-paths'
 import { projectProduct, buildProjection } from './public-projection.mjs'
+
+// Root .ts modules are CommonJS; this protected .mts runner is ESM. Keep the
+// exact canonical implementations using tsx's registered CommonJS loader.
+const require=createRequire(import.meta.url)
+const {resolveProductVisibility}=require('../../src/lib/public-product-visibility.ts') as typeof import('../../src/lib/public-product-visibility')
+const {getCanonicalProductPath}=require('../../src/lib/taxonomy-paths.ts') as typeof import('../../src/lib/taxonomy-paths')
 
 type ProjectionRow = ProductVisibilityInput & ProductPathInput & {id:number;name:string;display_name:string|null;sku:string;image_main_url:string|null;is_featured:boolean;brand_name:string|null;brand_slug:string|null;product_taxon_assignments:ProductTaxonAssignmentRef[]}
 const REPO='tranhuunguyenhuy-hue/dongphugia.com.vn'
