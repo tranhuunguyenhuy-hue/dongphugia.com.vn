@@ -11,5 +11,5 @@ it('loads canonical CommonJS modules from the ESM runner before denying unprotec
   expect(result.status).toBe(1)
   expect(result.signal).toBeNull()
   expect(result.stdout).toBe('')
-  expect(result.stderr.trim()).toBe('PUBLIC_PROJECTION status=STOP reason=PROTECTED_BUILD_FAILED')
+  expect(JSON.parse(result.stderr.trim())).toEqual({status:'STOP',stage:'M4_PUBLIC_PROJECTION',phase:'PRECHECK',reason:'PROTECTED_BUILD_FAILED',sqlCode:null})
 })
