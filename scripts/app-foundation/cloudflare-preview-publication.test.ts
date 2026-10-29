@@ -102,6 +102,13 @@ function managedPublicationEvidence() {
   }
 }
 
+function providerResponse(result: unknown) {
+  const items = (result as { items?: unknown[] } | null)?.items
+  return Response.json({ success: true, result,
+    ...(Array.isArray(items) ? { result_info: { page: 1, per_page: 10, count: items.length, total_count: items.length } } : {}),
+  })
+}
+
 function managedRemoteFetch({
   workerVersionId,
   deploymentId,
@@ -136,16 +143,58 @@ function managedRemoteFetch({
           ? { enabled: false, previews_enabled: true }
           : url.endsWith('/settings')
             ? { bindings }
-            : url.endsWith('/versions')
+            : new URL(url).pathname.endsWith('/versions')
               ? { items: versions }
               : url.endsWith('/deployments')
                 ? { deployments }
                 : { id: workerVersionId }
-    return Response.json({ success: true, result })
+    return providerResponse(result)
   }
 }
 
 describe('LEO-563 Cloudflare Preview publication gate', () => {
+  it.each([
+    [11, 'normal'], [25, 'normal'], [11, 'duplicate'], [11, 'missing'],
+    [11, 'changed-total'], [11, 'read-error'], [11, 'partial'], [11, 'no-metadata'],
+  ] as const)('reconciles %i versions with %s pages and fails closed on drift', async (count, mode) => {
+    const evidence = managedPublicationEvidence()
+    const ids = Array.from({ length: count }, (_, i) => i.toString(16).padStart(32, '0'))
+    const expectedPublication = {
+      contract: 'dongphugia:cloudflare-preview-resource-proof:v2',
+      workerName: 'dongphugia-v1-public-preview', workerVersionId: ids[0],
+      versionIds: ids, deployments: [], deploymentIds: [],
+      workersDev: false, previewUrls: true, customDomains: [], workerRoutes: [], productionAssociation: false,
+      publicationBaseline: { workerName: 'dongphugia-v1-public-preview', state: 'ABSENT',
+        workerAbsent: true, bootstrapRequired: true, reconciliationAllowed: true, activeDeployment: false,
+        versionCount: 0, versionIds: [], deployments: [], deploymentIds: [], customDomains: [], workerRoutes: [], bindings: [] },
+    }
+    const fallback = managedRemoteFetch({ workerVersionId: ids[0], deploymentId: evidence.deploymentId, deployments: [] })
+    const pages: number[] = []
+    const fetchImpl = async (input: URL | RequestInfo, init?: RequestInit) => {
+      const url = new URL(String(input))
+      if (!url.pathname.endsWith('/versions')) return fallback(input, init)
+      expect(init?.method).toBe('GET')
+      const page = Number(url.searchParams.get('page') || 1)
+      pages.push(page)
+      if (page === 2 && mode === 'read-error') return Response.json({ success: false }, { status: 503 })
+      const offset = mode === 'partial' ? (page - 1) * 5 : (page - 1) * 10
+      const batch = ids.slice(offset, offset + (mode === 'partial' ? 5 : 10)).map(id => ({ id }))
+      if (page === 2 && mode === 'duplicate') batch[0] = { id: ids[0] }
+      if (page === 2 && mode === 'missing') batch.length = 0
+      if (mode === 'no-metadata') return Response.json({ success: true, result: { items: batch } })
+      return Response.json({ success: true, result: { items: batch },
+        result_info: { page, per_page: 10, total_count: count + (page === 2 && mode === 'changed-total' ? 1 : 0), count: batch.length },
+      })
+    }
+    const inspection = inspectRemoteResourceState({ accountId: 'synthetic', apiToken: 'synthetic', expectedPublication, fetchImpl })
+    if (['normal', 'partial'].includes(mode)) {
+      await expect(inspection).resolves.toMatchObject({ versionIds: ids })
+      expect(pages).toEqual(Array.from({ length: Math.ceil(count / (mode === 'partial' ? 5 : 10)) }, (_, i) => i + 1))
+    } else {
+      await expect(inspection).rejects.toThrow(/LEO563_PREVIEW_(VERSION_PAGINATION|REMOTE_PREFLIGHT_READ_FAILED)/)
+    }
+  })
+
   it('accepts only the isolated Free-plan Preview contract', () => {
     expect(validatePreviewConfig(validConfig())).toMatchObject({
       workerName: 'dongphugia-v1-public-preview',
@@ -219,10 +268,10 @@ describe('LEO-563 Cloudflare Preview publication gate', () => {
       ] }
       else if (url.endsWith('/subdomain')) result = { enabled: false, previews_enabled: true }
       else if (url.includes('/workers/domains?')) result = []
-      else if (url.endsWith('/versions')) result = { items: [{ id: versionId }] }
+      else if (new URL(url).pathname.endsWith('/versions')) result = { items: [{ id: versionId }] }
       else if (url.endsWith('/deployments')) result = { deployments: [] }
       else result = { id: versionId }
-      return Response.json({ success: true, result })
+      return providerResponse(result)
     }
 
     const proof = await inspectPublishedResource({
@@ -294,12 +343,12 @@ describe('LEO-563 Cloudflare Preview publication gate', () => {
             ? { enabled: false, previews_enabled: false }
             : url.endsWith('/settings')
               ? { bindings: [] }
-              : url.endsWith('/versions')
+              : new URL(url).pathname.endsWith('/versions')
                 ? { items: [] }
                 : url.endsWith('/deployments')
                   ? { deployments: [] }
                   : null
-      return Response.json({ success: true, result })
+      return providerResponse(result)
     }
 
     await expect(inspectRemoteResourceState({ accountId: 'synthetic-account', apiToken: 'synthetic-token', fetchImpl })).resolves.toMatchObject({
@@ -645,12 +694,12 @@ describe('LEO-563 Cloudflare Preview publication gate', () => {
             ? { enabled: false, previews_enabled: true }
             : url.endsWith('/settings')
               ? { bindings: [{ name: 'ASSETS', type: 'assets' }] }
-              : url.endsWith('/versions')
+              : new URL(url).pathname.endsWith('/versions')
                 ? { items: [{ id: versionId }] }
                 : url.endsWith('/deployments')
                   ? { deployments: [providerDeployment] }
                   : null
-      return Response.json({ success: true, result })
+      return providerResponse(result)
     }
 
     await expect(inspectRemoteResourceState({
@@ -711,12 +760,12 @@ describe('LEO-563 Cloudflare Preview publication gate', () => {
             ? { enabled: false, previews_enabled: true }
             : url.endsWith('/settings')
               ? { bindings: [{ name: 'ASSETS', type: 'assets' }] }
-              : url.endsWith('/versions')
+              : new URL(url).pathname.endsWith('/versions')
                 ? { items: [{ id: versionId }, { id: unexpectedVersionId }] }
                 : url.endsWith('/deployments')
                   ? { deployments: [] }
                   : null
-      return Response.json({ success: true, result })
+      return providerResponse(result)
     }
 
     await expect(inspectRemoteResourceState({
@@ -768,7 +817,7 @@ describe('LEO-563 Cloudflare Preview publication gate', () => {
             ? { enabled: false, previews_enabled: true }
             : url.endsWith('/settings')
               ? { bindings: [{ name: 'ASSETS', type: 'assets' }] }
-              : url.endsWith('/versions')
+              : new URL(url).pathname.endsWith('/versions')
                 ? { items: [{ id: versionId }] }
                 : url.endsWith('/deployments')
                   ? {
@@ -779,7 +828,7 @@ describe('LEO-563 Cloudflare Preview publication gate', () => {
                     }],
                   }
                   : null
-      return Response.json({ success: true, result })
+      return providerResponse(result)
     }
 
     await expect(inspectRemoteResourceState({
@@ -811,12 +860,12 @@ describe('LEO-563 Cloudflare Preview publication gate', () => {
             ? { enabled: false, previews_enabled: false }
             : url.endsWith('/settings')
               ? (override.settings ?? { bindings: [] })
-              : url.endsWith('/versions')
+              : new URL(url).pathname.endsWith('/versions')
                 ? (override.versions ?? { items: [] })
                 : url.endsWith('/deployments')
                   ? (override.deployments ?? { deployments: [] })
                   : null
-      return Response.json({ success: true, result })
+      return providerResponse(result)
     }
 
     await expect(inspectRemoteResourceState({
@@ -837,12 +886,12 @@ describe('LEO-563 Cloudflare Preview publication gate', () => {
             ? { enabled: false, previews_enabled: false }
             : url.endsWith('/settings')
               ? null
-              : url.endsWith('/versions')
+              : new URL(url).pathname.endsWith('/versions')
                 ? { items: [] }
                 : url.endsWith('/deployments')
                   ? { deployments: [] }
                   : null
-      return Response.json({ success: true, result })
+      return providerResponse(result)
     }
 
     await expect(inspectRemoteResourceState({

@@ -754,13 +754,46 @@ function sameJson(left, right) {
   return JSON.stringify(left) === JSON.stringify(right)
 }
 
+// Read the complete version set; never reconcile a truncated provider page.
+async function listRemoteVersions(get, pathname) {
+  const items = []
+  const seen = new Set()
+  let total = null
+  for (let page = 1; page <= 1000; page += 1) {
+    const body = await get('workers.versions.list', `${pathname}?page=${page}&per_page=10`, true)
+    const batch = body?.result?.items
+    const info = body?.result_info
+    if (!Array.isArray(batch) || !info) throw new Error('LEO563_PREVIEW_VERSION_PAGINATION_INVALID')
+    if (info) {
+      if (info.page !== page || info.per_page !== 10 || info.count !== batch.length ||
+        !Number.isSafeInteger(info.total_count) || info.total_count < 0 ||
+        (total !== null && total !== info.total_count)) {
+        throw new Error('LEO563_PREVIEW_VERSION_PAGINATION_INVALID')
+      }
+      total = info.total_count
+    }
+    for (const id of collectRemoteVersionIds({ items: batch })) {
+      if (seen.has(id)) throw new Error('LEO563_PREVIEW_VERSION_PAGINATION_DUPLICATE')
+      seen.add(id)
+      items.push({ id })
+    }
+    if (total !== null) {
+      if (items.length > total || (items.length < total && batch.length === 0)) {
+        throw new Error('LEO563_PREVIEW_VERSION_PAGINATION_INCOMPLETE')
+      }
+      if (items.length === total) return { items }
+    }
+  }
+  throw new Error('LEO563_PREVIEW_VERSION_PAGINATION_LIMIT')
+}
+
 export async function inspectRemoteResourceState({ accountId, apiToken, expectedPublication = null, managedPublication = null, fetchImpl = fetch }) {
   if (!accountId || !apiToken) throw new Error('LEO563_PREVIEW_REMOTE_PREFLIGHT_CREDENTIALS_MISSING')
   if (expectedPublication && managedPublication) throw new Error('LEO563_PREVIEW_REMOTE_PREFLIGHT_MODES_CONFLICT')
   const managed = managedPublication ? normalizeManagedPublicationProof(managedPublication) : null
   const calls = []
   const headers = { Authorization: `Bearer ${apiToken}`, 'Content-Type': 'application/json' }
-  async function get(label, pathname) {
+  async function get(label, pathname, envelope = false) {
     const response = await fetchImpl(`https://api.cloudflare.com/client/v4${pathname}`, { method: 'GET', headers })
     let body = null
     try {
@@ -770,7 +803,7 @@ export async function inspectRemoteResourceState({ accountId, apiToken, expected
     }
     calls.push({ label, status: response.ok ? 'READ_OK' : 'READ_FAILED', httpStatus: response.status, errorCodes: providerErrorCodes(body) })
     if (!response.ok || body?.success === false) throw new Error(`LEO563_PREVIEW_REMOTE_PREFLIGHT_READ_FAILED:${label}`)
-    return body?.result ?? null
+    return envelope ? body : body?.result ?? null
   }
   const [scripts, domains] = await Promise.all([
     get('workers.scripts.list', `/accounts/${accountId}/workers/scripts`),
@@ -808,7 +841,7 @@ export async function inspectRemoteResourceState({ accountId, apiToken, expected
   const [subdomain, settings, versions, deployments] = await Promise.all([
     get('workers.subdomain.get', `/accounts/${accountId}/workers/scripts/${encodedWorker}/subdomain`),
     get('workers.settings.get', `/accounts/${accountId}/workers/scripts/${encodedWorker}/settings`),
-    get('workers.versions.list', `/accounts/${accountId}/workers/scripts/${encodedWorker}/versions`),
+    listRemoteVersions(get, `/accounts/${accountId}/workers/scripts/${encodedWorker}/versions`),
     get('workers.deployments.list', `/accounts/${accountId}/workers/scripts/${encodedWorker}/deployments`),
   ])
   if (
@@ -937,7 +970,7 @@ export async function inspectPublishedResource({ accountId, apiToken, versionId,
   }
   const calls = []
   const headers = { Authorization: `Bearer ${apiToken}`, 'Content-Type': 'application/json' }
-  async function get(label, pathname) {
+  async function get(label, pathname, envelope = false) {
     const response = await fetchImpl(`https://api.cloudflare.com/client/v4${pathname}`, { method: 'GET', headers })
     let body = null
     try {
@@ -947,7 +980,7 @@ export async function inspectPublishedResource({ accountId, apiToken, versionId,
     }
     calls.push({ label, status: response.ok ? 'READ_OK' : 'READ_FAILED', httpStatus: response.status, errorCodes: providerErrorCodes(body) })
     if (!response.ok || body?.success === false) throw new Error(`LEO563_PREVIEW_INSPECTION_READ_FAILED:${label}`)
-    return body?.result ?? null
+    return envelope ? body : body?.result ?? null
   }
 
   const encodedWorker = encodeURIComponent(WORKER_NAME)
@@ -957,7 +990,7 @@ export async function inspectPublishedResource({ accountId, apiToken, versionId,
     get('workers.subdomain.get', `/accounts/${accountId}/workers/scripts/${encodedWorker}/subdomain`),
     get('workers.domains.list', `/accounts/${accountId}/workers/domains?service=${encodedWorker}`),
     get('workers.version.get', `/accounts/${accountId}/workers/scripts/${encodedWorker}/versions/${encodeURIComponent(versionId)}`),
-    get('workers.versions.list', `/accounts/${accountId}/workers/scripts/${encodedWorker}/versions`),
+    listRemoteVersions(get, `/accounts/${accountId}/workers/scripts/${encodedWorker}/versions`),
     get('workers.deployments.list', `/accounts/${accountId}/workers/scripts/${encodedWorker}/deployments`),
   ])
 
