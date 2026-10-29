@@ -25,4 +25,5 @@ it('validates projected text without changing literal entities or truncation bou
  }
  expect(isSafePublicContent({summary:'<b>raw</b>',specifications:{},gallery:[]})).toBe(false)
  expect(isSafePublicContent({summary:'x&#64;example.com',specifications:{},gallery:[]})).toBe(false)
+ for(const summary of ['Good <!-- token=abc123 -->','Good <!-- x@example.com -->','Good <!DOCTYPE html>','Good <?private?>'])expect(isSafePublicContent({summary,specifications:{},gallery:[]})).toBe(false)
 })

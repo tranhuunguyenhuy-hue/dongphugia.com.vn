@@ -30,7 +30,7 @@ export function projectPublicContent(input){
 // Validate already-projected plain text without parsing it as HTML a second time.
 // Re-parsing changes legitimate literal entity notation; the rendering sink escapes it.
 export function isSafePublicContent(c){
- const plain=(v,max)=>typeof v==='string'&&v.length>0&&v.length<=max&&v.trim()===v&&!/[\u0000-\u001f\u007f]/.test(v)&&!/<\/?[a-z][^>]*>/i.test(v)&&publicText(v,max)!==null
+ const plain=(v,max)=>typeof v==='string'&&v.length>0&&v.length<=max&&v.trim()===v&&!/[\u0000-\u001f\u007f]/.test(v)&&!/<(?:\/?[a-z]|!|\?)/i.test(v)&&!PRIVATE_OR_COMMERCIAL.test(v.normalize('NFKC'))&&publicText(v,max)!==null
  if(!c||Object.keys(c).length!==3||Object.keys(c).some(k=>!['summary','specifications','gallery'].includes(k)))return false
  if(c.summary!==null&&!plain(c.summary,2400))return false
  if(!c.specifications||typeof c.specifications!=='object'||Array.isArray(c.specifications)||Object.keys(c.specifications).length>24)return false
