@@ -81,6 +81,7 @@ export async function prerender({assetsRoot,checkpointRoot,baseUrl,sourceSha,che
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
  const args={};for(let i=2;i<process.argv.length;i+=2)args[process.argv[i].slice(2)]=process.argv[i+1]
- const {extractRscPayloadFromPrerenderedHtml}=await import('../../apps/public/node_modules/vinext/dist/build/prerender.js')
+ const adapterUrl=pathToFileURL(resolve('apps/public/node_modules/vinext/dist/build/prerender.js')).href
+ const {extractRscPayloadFromPrerenderedHtml}=await import(/* @vite-ignore */adapterUrl)
  prerender({assetsRoot:resolve(args['assets-root']),checkpointRoot:resolve(args['checkpoint-root']),baseUrl:args['base-url'],sourceSha:args['source-sha'],checkpoint:args.checkpoint,extractFlight:extractRscPayloadFromPrerenderedHtml}).then(p=>console.log(JSON.stringify(p))).catch(error=>{console.error(JSON.stringify({status:'STOP',stage:'CANONICAL_PRERENDER',reason:/^RENDER_[A-Z_]+$/.test(error?.message??'')?error.message:'RENDER_FAILED',checkpointPreserved:true}));process.exitCode=1})
 }
