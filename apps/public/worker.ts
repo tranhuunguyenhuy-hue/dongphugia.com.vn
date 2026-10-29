@@ -1,6 +1,7 @@
 import vinextHandler from 'vinext/server/fetch-handler'
 import {exceptionCategory} from '../../scripts/catalogue-direct/preview-diagnostic-safety.mjs'
 import { publicSnapshotCheckpoint } from './src/runtime/public-snapshot-mode'
+import {servePrerenderedCatalogue} from './src/runtime/prerendered-catalogue'
 
 import {
   assertPreviewRuntime,
@@ -49,6 +50,8 @@ export default {
       })
     }
 
+    const prerendered=await servePrerenderedCatalogue(request,environment,__DPG_BUILD_SOURCE_SHA__)
+    if(prerendered)return prerendered
     const pathname = new URL(request.url).pathname
     const catalogueRequest = pathname === '/' || ['thiet-bi-ve-sinh','thiet-bi-bep','vat-lieu-nuoc','gach-op-lat'].some(root => pathname === `/${root}` || pathname.startsWith(`/${root}/`))
     if (publicSnapshotCheckpoint() && catalogueRequest) {
