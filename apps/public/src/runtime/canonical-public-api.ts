@@ -40,7 +40,7 @@ export const getPublicProductBySlug:typeof Original.getPublicProductBySlug=async
  const c=(await getSnapshotCategories()).find(c=>c.slug===category)
  for(const l of c?.listings??[]) {
   const p=await getSnapshotProduct(category,l.slug,slug)
-  if(p)return {...p,description:publicDescription(p.publicContent),features:p.publicContent?.specifications['Công nghệ']?'<p>'+p.publicContent.specifications['Công nghệ'].replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')+'</p>':null,colors:null,product_images:(p.publicContent?.gallery??[]).map(image_url=>({image_url,alt_text:p.name})),product_feature_values:[],variant_group:null,original_price:null,list_price:null,sale_price:null,online_discount_amount:null} as unknown as Awaited<ReturnType<typeof Original.getPublicProductBySlug>>
+  if(p)return {...p,description:publicDescription(p.publicContent),features:null,colors:null,product_images:(p.publicContent?.gallery??[]).map(image_url=>({image_url,alt_text:p.name})),product_feature_values:[],variant_group:null,original_price:null,list_price:null,sale_price:null,online_discount_amount:null} as unknown as Awaited<ReturnType<typeof Original.getPublicProductBySlug>>
  }
  return null
 }
