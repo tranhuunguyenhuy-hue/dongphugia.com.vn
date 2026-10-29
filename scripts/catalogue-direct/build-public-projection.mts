@@ -61,7 +61,7 @@ async function main() {
        order by sd.sort_order,sv.sort_order,sv.id limit 100) v),'[]'::jsonb) ||
     coalesce((select jsonb_agg(jsonb_build_object('key',m.label,'isPdpVisible',true,'value',p.specs->>m.path))
       from jsonb_each_text($2::jsonb) as m(path,label)
-      where jsonb_typeof(p.specs->m.path) in ('string','number')),'[]'::jsonb) as "publicSpecifications",
+      where jsonb_typeof(p.specs->m.path) in ('string','number') and octet_length(p.specs->>m.path)<=2000),'[]'::jsonb) as "publicSpecifications",
     coalesce((select jsonb_agg(i.image_url) from (select image_url from dpg_app.product_images
       where product_id=p.id and image_type='gallery' order by sort_order,id limit 12)i),'[]'::jsonb) as "publicGallery",
     jsonb_build_object('slug',c.slug,'name',c.name) as categories,

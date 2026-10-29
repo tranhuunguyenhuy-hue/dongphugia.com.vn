@@ -15,3 +15,5 @@ it('rejects contacts/commercial terms and arbitrary raw blobs, caps all output',
 it('preserves plain technical symbols without double encoding',()=>{expect(publicText('A & B')).toBe('A & B');expect(publicText('X < Y')).toBe('X < Y');expect(publicText('&lt;script&gt;alert(1)&lt;/script&gt;')).toBeNull()})
 
 it('strips hidden markup attributes but rejects decoded visible contacts and stale prices',()=>{expect(publicText('<p>Chậu rửa sứ</p><img src="https://private.test/?token=abc">')).toBe('Chậu rửa sứ');expect(publicText('Email: x&#64;example.com')).toBeNull();expect(publicText('Giá 1.200.000&#8363;')).toBeNull();expect(publicText('０９０１２３４５６７')).toBeNull()})
+
+it('rejects standalone prices, currencies and formatted telephone contacts',()=>{for(const s of ['Giá: 1.200.000','Giá 100 EUR','Giá $100','Điện thoại: 090.123.4567','090-123-4567'])expect(publicText(s)).toBeNull()})
