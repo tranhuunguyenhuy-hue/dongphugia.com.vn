@@ -35,7 +35,7 @@ describe('synthetic mechanism only: public snapshot projection',()=>{
 })
 it('keeps reviewed content on PDP assets only and rejects nested private fields',()=>{
  const dto=projectProduct(input,{pdp:true,listing:true},path)
- const content={summary:'Sản phẩm bằng sứ',specifications:{'Chất liệu':'Sứ'},gallery:['https://cdn.dongphugia.com.vn/a.jpg']}
+ const content={summary:null,specifications:{'Chất liệu':'Sứ'},gallery:['https://cdn.dongphugia.com.vn/a.jpg']}
  const built=buildProjection([{...dto,publicContent:content}],evidence)
  const pdp=built.assets.get('products/'+productBucket(dto.url)+'.json').products[0]
  assert.deepEqual(pdp.publicContent,content)

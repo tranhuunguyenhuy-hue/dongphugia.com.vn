@@ -47,13 +47,10 @@ async function main() {
   await assertTargetPrivate(client)
   // Explicit selected fields only: no Auth, Storage, orders, customer records,
   // source URLs, raw descriptions/spec blobs, raw prices or arbitrary JSON.
-  // Clean editorial and visible allowlisted technical fields are sanitized before any artifact.
+  // Only visible allowlisted technical fields are projected; editorial provenance remains unapproved.
   const result=await client.query(`select p.id,p.name,p.display_name,p.slug,p.sku,p.product_type,p.image_main_url,p.is_featured,
     p.is_active,p.stock_status,p.sellable_status,p.publication_status,p.pdp_visibility,p.listing_visibility,
     p.search_visibility,p.seo_indexing,p.sitemap_include,
-    (select d.clean_html from dpg_app.product_descriptions d where d.product_id=p.id
-      and cardinality(d.clean_issues)=0 and octet_length(d.clean_html)<=16000) as "cleanEditorial",
-    true as "editorialApproved",
     coalesce((select jsonb_agg(jsonb_build_object('key',v.key,'isPdpVisible',true,'value',v.value)) from
       (select sd.key,coalesce(so.value,sv.value_text,sv.value_number::text) as value
        from dpg_app.product_spec_values sv join dpg_app.spec_definitions sd on sd.id=sv.spec_definition_id

@@ -7,11 +7,12 @@ export function publicText(value,max=500){
  if(typeof value!=='string'&&typeof value!=='number')return null
  const raw=String(value)
  if(raw.length>20000||PRIVATE_OR_COMMERCIAL.test(raw))return null
- const text=sanitizeHtml(raw,{allowedTags:[],allowedAttributes:{},nonTextTags:['script','style','textarea','option']}).replace(/[\u0000-\u001f\u007f]/g,' ').replace(/\s+/g,' ').trim()
- return text&&!PRIVATE_OR_COMMERCIAL.test(text)?text.slice(0,max):null
+ const text=sanitizeHtml(raw,{allowedTags:[],allowedAttributes:{},nonTextTags:['script','style','textarea','option']}).replace(/&(amp|lt|gt|quot|#39|apos);/g,(_match,key)=>({amp:'&',lt:'<',gt:'>',quot:'"','#39':"'",apos:"'"}[key])).replace(/[\u0000-\u001f\u007f]/g,' ').replace(/\s+/g,' ').trim()
+ return text&&!/<\/?[a-z][^>]*>/i.test(text)&&!PRIVATE_OR_COMMERCIAL.test(text)?text.slice(0,max):null
 }
 export function projectPublicContent(input){
- const summary=input.editorialApproved===true?publicText(input.cleanEditorial,2400):null
+ // Cleaning status does not prove editorial publication approval.
+ const summary=null
  const specifications={}
  for(const s of (Array.isArray(input.publicSpecifications)?input.publicSpecifications:[]).slice(0,100)){
   if(s.isPdpVisible!==true||!PUBLIC_SPEC_KEYS.includes(s.key)||Object.keys(specifications).length>=24)continue

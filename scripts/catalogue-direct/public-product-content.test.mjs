@@ -2,7 +2,7 @@ import {it,expect} from 'vitest'
 import {projectPublicContent,publicText} from './public-product-content.mjs'
 it('exposes only reviewed technical content and explicitly public editorial',()=>{
  const c=projectPublicContent({editorialApproved:true,cleanEditorial:'<p>Chậu rửa <strong>sứ</strong>.</p><script>alert(1)</script>',publicSpecifications:[{key:'Chất liệu',isPdpVisible:true,value:'Sứ'},{key:'Bảo hành',isPdpVisible:true,value:'5 năm'},{key:'Màu sắc',isPdpVisible:false,value:'Trắng'}],publicGallery:['https://cdn.dongphugia.com.vn/a.jpg','javascript:alert(1)']})
- expect(c.summary).toBe('Chậu rửa sứ.');expect(c.specifications).toEqual({'Chất liệu':'Sứ'});expect(c.gallery).toHaveLength(1)
+ expect(c.summary).toBeNull();expect(c.specifications).toEqual({'Chất liệu':'Sứ'});expect(c.gallery).toHaveLength(1)
  expect(projectPublicContent({cleanEditorial:'<p>Unapproved</p>'}).summary).toBeNull()
 })
 it('rejects contacts/commercial terms and arbitrary raw blobs, caps all output',()=>{
@@ -11,3 +11,5 @@ it('rejects contacts/commercial terms and arbitrary raw blobs, caps all output',
  expect(c).toEqual({summary:null,specifications:{},gallery:[]})
  expect(publicText('a'.repeat(1000),100)).toHaveLength(100)
 })
+
+it('preserves plain technical symbols without double encoding',()=>{expect(publicText('A & B')).toBe('A & B');expect(publicText('X < Y')).toBe('X < Y');expect(publicText('&lt;script&gt;alert(1)&lt;/script&gt;')).toBeNull()})
