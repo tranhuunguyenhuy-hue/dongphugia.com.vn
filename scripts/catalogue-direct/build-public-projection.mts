@@ -8,7 +8,7 @@ import { assertBudget } from './contract.mjs'
 import type { ProductVisibilityInput } from '../../src/lib/public-product-visibility'
 import type { ProductPathInput, ProductTaxonAssignmentRef } from '../../src/lib/taxonomy-paths'
 import { projectProduct, buildProjection } from './public-projection.mjs'
-import {projectPublicContent,PUBLIC_SPEC_KEYS} from './public-product-content.mjs'
+import {projectPublicContent,PUBLIC_SPEC_KEYS,PUBLIC_LEGACY_SPEC_PATHS} from './public-product-content.mjs'
 
 // Root .ts modules are CommonJS; this protected .mts runner is ESM. Keep the
 // exact canonical implementations using tsx's registered CommonJS loader.
@@ -47,16 +47,21 @@ async function main() {
   await assertTargetPrivate(client)
   // Explicit selected fields only: no Auth, Storage, orders, customer records,
   // source URLs, raw descriptions/spec blobs, raw prices or arbitrary JSON.
-  // Only visible allowlisted technical fields are projected; editorial provenance remains unapproved.
+  // Canonical products.description and explicit technical scalar paths only.
+  // Alternate description blobs, arbitrary JSON, documents and commercial terms are excluded.
   const result=await client.query(`select p.id,p.name,p.display_name,p.slug,p.sku,p.product_type,p.image_main_url,p.is_featured,
     p.is_active,p.stock_status,p.sellable_status,p.publication_status,p.pdp_visibility,p.listing_visibility,
     p.search_visibility,p.seo_indexing,p.sitemap_include,
+    case when octet_length(p.description)<=16000 then p.description else null end as "publicDescription",
     coalesce((select jsonb_agg(jsonb_build_object('key',v.key,'isPdpVisible',true,'value',v.value)) from
       (select sd.key,coalesce(so.value,sv.value_text,sv.value_number::text) as value
        from dpg_app.product_spec_values sv join dpg_app.spec_definitions sd on sd.id=sv.spec_definition_id
        left join dpg_app.spec_options so on so.id=sv.option_id
        where sv.product_id=p.id and sd.is_pdp_visible and sd.key=any($1::text[])
-       order by sd.sort_order,sv.sort_order,sv.id limit 100) v),'[]'::jsonb) as "publicSpecifications",
+       order by sd.sort_order,sv.sort_order,sv.id limit 100) v),'[]'::jsonb) ||
+    coalesce((select jsonb_agg(jsonb_build_object('key',m.label,'isPdpVisible',true,'value',p.specs->>m.path))
+      from jsonb_each_text($2::jsonb) as m(path,label)
+      where jsonb_typeof(p.specs->m.path) in ('string','number')),'[]'::jsonb) as "publicSpecifications",
     coalesce((select jsonb_agg(i.image_url) from (select image_url from dpg_app.product_images
       where product_id=p.id and image_type='gallery' order by sort_order,id limit 12)i),'[]'::jsonb) as "publicGallery",
     jsonb_build_object('slug',c.slug,'name',c.name) as categories,
@@ -74,7 +79,7 @@ async function main() {
     where c.is_active and (s.id is null or s.is_active)
       and p.is_active and p.stock_status<>'discontinued' and p.sellable_status='sellable'
       and p.publication_status='public' and p.pdp_visibility='public'
-    order by p.is_featured desc,p.listing_priority desc,p.sort_order,p.id`,[PUBLIC_SPEC_KEYS])
+    order by p.is_featured desc,p.listing_priority desc,p.sort_order,p.id`,[PUBLIC_SPEC_KEYS,JSON.stringify(PUBLIC_LEGACY_SPEC_PATHS)])
   const rows = result.rows as ProjectionRow[]
   const activeCategories = new Set((await client.query('select slug from dpg_app.categories where is_active')).rows.map((row: {slug:string}) => row.slug))
   const projected=rows.map(row => {

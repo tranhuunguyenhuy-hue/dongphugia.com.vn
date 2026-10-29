@@ -45,7 +45,7 @@ export function buildProjection(products, evidence) {
     if(product.publicContent){
       const c=product.publicContent
       if(Object.keys(c).some(k=>!['summary','specifications','gallery'].includes(k))||!c.specifications||!Array.isArray(c.gallery))throw new Error('PUBLIC_PROJECTION_UNSAFE_CONTENT')
-      const checked=projectPublicContent({editorialApproved:true,cleanEditorial:c.summary,publicSpecifications:Object.entries(c.specifications).map(([key,value])=>({key,value,isPdpVisible:true})),publicGallery:c.gallery})
+      const checked=projectPublicContent({publicDescription:c.summary,publicSpecifications:Object.entries(c.specifications).map(([key,value])=>({key,value,isPdpVisible:true})),publicGallery:c.gallery})
       if(JSON.stringify(c)!==JSON.stringify(checked))throw new Error('PUBLIC_PROJECTION_UNSAFE_CONTENT')
     }
     if (paths.has(product.url)) throw new Error('PUBLIC_PROJECTION_DUPLICATE_CANONICAL_PATH')
@@ -70,7 +70,7 @@ export function buildProjection(products, evidence) {
   }
   const assets = new Map()
   const contentStats={summaries:products.filter(p=>p.publicContent?.summary).length,specifications:products.filter(p=>Object.keys(p.publicContent?.specifications??{}).length).length,galleries:products.filter(p=>p.publicContent?.gallery?.length).length}
-  const manifest = { contentPolicy:'technical-public-v1',contentStats,contract:PROJECTION_CONTRACT,...evidence,notice:NOTICE,productBuckets:[...buckets.keys()].sort(),categories:[...categories.values()],products:products.length,listingProducts:[...pages.values()].reduce((n,p)=>n+p.length,0) }
+  const manifest = { contentPolicy:'canonical-public-content-v1',contentStats,contract:PROJECTION_CONTRACT,...evidence,notice:NOTICE,productBuckets:[...buckets.keys()].sort(),categories:[...categories.values()],products:products.length,listingProducts:[...pages.values()].reduce((n,p)=>n+p.length,0) }
   assets.set('manifest.json', manifest)
   for (const [bucket, values] of buckets) assets.set(`products/${bucket}.json`,{contract:PROJECTION_CONTRACT,checkpoint:evidence.checkpoint,products:values})
   for (const [key, values] of pages) for(let offset=0;offset<values.length;offset+=PAGE_SIZE)
