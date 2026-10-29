@@ -339,6 +339,20 @@ jobs:
             test "$first" = "$second"
           done
 
+      - name: Preserve code-only evidence when immutable identity proof fails
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: public-determinism-failure-${{ needs.repo-code-gate.outputs.source_sha }}
+          path: |
+            ${{ runner.temp }}/public-worker-first/worker
+            ${{ runner.temp }}/public-worker-first/worker-artifact-evidence.json
+            ${{ runner.temp }}/public-worker-second/worker
+            ${{ runner.temp }}/public-worker-second/worker-artifact-evidence.json
+          retention-days: 1
+          if-no-files-found: ignore
+          include-hidden-files: false
+
       - name: Prove Public SSR, noindex, cache, and Preview isolation in workerd
         env:
           RUNTIME_PROOF: ${{ runner.temp }}/public-runtime-proof.json
