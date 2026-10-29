@@ -1,3 +1,6 @@
+import {safeImage} from './public-image-policy.mjs'
+export {safeImage} from './public-image-policy.mjs'
+import {projectPublicContent} from './public-product-content.mjs'
 import { createHash } from 'node:crypto'
 
 export const PROJECTION_CONTRACT = 'dpg:public-catalogue-snapshot:v1'
@@ -5,17 +8,6 @@ export const PAGE_SIZE = 48
 export const NOTICE = 'Catalogue khôi phục ở chế độ chỉ đọc. Giá và tồn kho cần được xác nhận; vui lòng liên hệ Đông Phú Gia để nhận báo giá hiện tại.'
 export const ROOTS = ['thiet-bi-ve-sinh', 'thiet-bi-bep', 'vat-lieu-nuoc', 'gach-op-lat']
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
-const IMAGE_HOSTS = new Set(['cdn.dongphugia.com.vn', 'cdn.hita.com.vn', 'hita.com.vn', 'vietceramics.com', 'tygjmrhandbffjllxveu.supabase.co'])
-export function safeImage(value) {
-  if (typeof value !== 'string') return null
-  if (/^\/images\/[^\s?#%]+$/.test(value) && !value.includes('..')) return value
-  try {
-    const url = new URL(value)
-    if (url.protocol !== 'https:' || url.username || url.password || url.search || url.hash || !IMAGE_HOSTS.has(url.hostname)) return null
-    if (url.hostname.endsWith('.supabase.co') && !url.pathname.startsWith('/storage/v1/object/public/')) return null
-    return url.toString()
-  } catch { return null }
-}
 export function productBucket(path) { return createHash('sha256').update(path).digest('hex').slice(0, 2) }
 
 // Caller supplies canonical public-visibility and taxonomy decisions from the
@@ -48,15 +40,21 @@ export function buildProjection(products, evidence) {
   const buckets = new Map()
   const pages = new Map()
   for (const product of products) {
-    const keys = ['id','name','display_name','slug','sku','price','price_display','stock_status','image_main_url','is_active','is_featured','is_promotion','variant_options','categories','subcategories','brands','canonical_category_slug','canonical_subcategory_slug','url','listingEligible']
+    const keys = ['id','name','display_name','slug','sku','price','price_display','stock_status','image_main_url','is_active','is_featured','is_promotion','variant_options','categories','subcategories','brands','canonical_category_slug','canonical_subcategory_slug','url','listingEligible','publicContent']
     if (Object.keys(product).some(key => !keys.includes(key)) || product.price !== null || product.stock_status !== 'contact') throw new Error('PUBLIC_PROJECTION_UNSAFE_DTO')
+    if(product.publicContent){
+      const c=product.publicContent
+      if(Object.keys(c).some(k=>!['summary','specifications','gallery'].includes(k))||!c.specifications||!Array.isArray(c.gallery))throw new Error('PUBLIC_PROJECTION_UNSAFE_CONTENT')
+      const checked=projectPublicContent({publicDescription:c.summary,publicSpecifications:Object.entries(c.specifications).map(([key,value])=>({key,value,isPdpVisible:true})),publicGallery:c.gallery})
+      if(JSON.stringify(c)!==JSON.stringify(checked))throw new Error('PUBLIC_PROJECTION_UNSAFE_CONTENT')
+    }
     if (paths.has(product.url)) throw new Error('PUBLIC_PROJECTION_DUPLICATE_CANONICAL_PATH')
     paths.add(product.url)
     // Eligibility is a server-side decision, not a public DTO property.
-    const { listingEligible, ...publicProduct } = product
+    const { listingEligible, publicContent, ...publicProduct } = product
     const bucket = productBucket(product.url)
     if (!buckets.has(bucket)) buckets.set(bucket, [])
-    buckets.get(bucket).push(publicProduct)
+    buckets.get(bucket).push(publicContent?{...publicProduct,publicContent}:publicProduct)
     if (!listingEligible) continue
     const categorySlug = product.categories.slug, listingSlug = product.subcategories.slug
     if (!categories.has(categorySlug)) categories.set(categorySlug, {slug:categorySlug,name:product.categories.name,listings:[],homeProducts:[],totalCount:0})
@@ -71,7 +69,8 @@ export function buildProjection(products, evidence) {
     pages.get(key).push(publicProduct)
   }
   const assets = new Map()
-  const manifest = { contract:PROJECTION_CONTRACT,...evidence,notice:NOTICE,productBuckets:[...buckets.keys()].sort(),categories:[...categories.values()],products:products.length,listingProducts:[...pages.values()].reduce((n,p)=>n+p.length,0) }
+  const contentStats={summaries:products.filter(p=>p.publicContent?.summary).length,specifications:products.filter(p=>Object.keys(p.publicContent?.specifications??{}).length).length,galleries:products.filter(p=>p.publicContent?.gallery?.length).length}
+  const manifest = { contentPolicy:'canonical-public-content-v1',contentStats,contract:PROJECTION_CONTRACT,...evidence,notice:NOTICE,productBuckets:[...buckets.keys()].sort(),categories:[...categories.values()],products:products.length,listingProducts:[...pages.values()].reduce((n,p)=>n+p.length,0) }
   assets.set('manifest.json', manifest)
   for (const [bucket, values] of buckets) assets.set(`products/${bucket}.json`,{contract:PROJECTION_CONTRACT,checkpoint:evidence.checkpoint,products:values})
   for (const [key, values] of pages) for(let offset=0;offset<values.length;offset+=PAGE_SIZE)

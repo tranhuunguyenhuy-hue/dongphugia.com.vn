@@ -33,3 +33,13 @@ describe('synthetic mechanism only: public snapshot projection',()=>{
     for(const url of ['/images/a?token=private','/images/%2e%2e/private','javascript:alert(1)','https://evil.test/image.jpg','https://user:password@cdn.hita.com.vn/a','https://tygjmrhandbffjllxveu.supabase.co/storage/v1/object/sign/private?a=1']) assert.equal(safeImage(url),null)
   })
 })
+it('keeps reviewed content on PDP assets only and rejects nested private fields',()=>{
+ const dto=projectProduct(input,{pdp:true,listing:true},path)
+ const content={summary:null,specifications:{'Chất liệu':'Sứ'},gallery:['https://cdn.dongphugia.com.vn/a.jpg']}
+ const built=buildProjection([{...dto,publicContent:content}],evidence)
+ const pdp=built.assets.get('products/'+productBucket(dto.url)+'.json').products[0]
+ assert.deepEqual(pdp.publicContent,content)
+ assert.equal(built.manifest.categories[0].homeProducts[0].publicContent,undefined)
+ assert.equal(built.assets.get('listings/thiet-bi-ve-sinh/bon-cau/1.json').products[0].publicContent,undefined)
+ assert.throws(()=>buildProjection([{...dto,publicContent:{...content,raw_html:'private'}}],evidence),/UNSAFE_CONTENT/)
+})

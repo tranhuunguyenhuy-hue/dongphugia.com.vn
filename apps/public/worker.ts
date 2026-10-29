@@ -1,4 +1,5 @@
 import vinextHandler from 'vinext/server/fetch-handler'
+import {exceptionCategory} from '../../scripts/catalogue-direct/preview-diagnostic-safety.mjs'
 import { publicSnapshotCheckpoint } from './src/runtime/public-snapshot-mode'
 
 import {
@@ -25,6 +26,7 @@ export default {
     environment: PublicWorkerEnvironment,
     context: ExecutionContext,
   ) {
+    try {
     try {
       assertPreviewRuntime(request, environment)
     } catch {
@@ -105,5 +107,14 @@ export default {
       'X-DPG-Cache': 'MISS',
       'X-Robots-Tag': PUBLIC_PREVIEW_ROBOTS_HEADER,
     })
+    } catch(error:unknown) {
+      let category='UNCLASSIFIED_EXCEPTION'
+      try {if(error&&typeof error==='object'&&'message' in error)category=String(exceptionCategory(error.message))}catch{/* no introspection failure is disclosed */}
+      console.error(JSON.stringify({event:'PUBLIC_RENDER_FAILURE',category}))
+      return new Response('Catalogue temporarily unavailable.',{status:503,headers:{
+        ...sourceIdentityHeader,'Cache-Control':PRIVATE_CACHE_CONTROL,'X-Robots-Tag':PUBLIC_PREVIEW_ROBOTS_HEADER,
+        'X-DPG-Render-Failure':category,
+      }})
+    }
   },
 }

@@ -9,6 +9,7 @@ export default defineConfig({
         globals: true,
         setupFiles: ['./vitest.setup.ts'],
         alias: {
+            'vinext/server/fetch-handler': path.resolve(__dirname, './tests/helpers/vinext-handler-stub.ts'),
             'cloudflare:workers': path.resolve(__dirname, './tests/helpers/cloudflare-workers-stub.ts'),
             '@': path.resolve(__dirname, './src'),
             '@dpg/app-contracts': path.resolve(
