@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import { APPLICATIONS } from '@dpg/app-contracts'
 import CanonicalPublicLayout from '@/app/(public)/layout'
 import { Toaster } from '@/components/ui/sonner'
+import { publicFontClasses, publicViewport } from '@/lib/public-typography'
 
 import { getPublicAppEnvironment } from '../src/config/env'
 
@@ -11,6 +12,7 @@ import './globals.css'
 const appEnvironment = getPublicAppEnvironment()
 
 export const runtime = 'edge'
+export const viewport = publicViewport
 
 export const metadata: Metadata = {
   metadataBase: new URL(appEnvironment.origin),
@@ -29,7 +31,7 @@ export default function PublicRootLayout({
     <html lang="vi">
       <body
         data-application={APPLICATIONS.public.name}
-        className="antialiased font-sans"
+        className={`${publicFontClasses} antialiased font-sans`}
       >
         <CanonicalPublicLayout>{children}</CanonicalPublicLayout>
         <Toaster richColors position="top-right" />

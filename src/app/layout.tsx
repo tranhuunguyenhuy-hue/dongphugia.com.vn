@@ -1,31 +1,12 @@
 import type { Metadata, Viewport } from "next";
-import { Be_Vietnam_Pro, Playfair_Display } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { GoogleTagManager } from '@next/third-parties/google';
 import { JsonLd } from "@/components/seo/json-ld";
 import { buildOrganizationSchema } from "@/lib/seo/schema";
 import { getSiteRuntimeConfig } from "@/lib/site";
+import { publicFontClasses, publicViewport } from "@/lib/public-typography";
 import { WebVitalsReporter } from "@/components/analytics/web-vitals-reporter";
 import "./globals.css";
-
-const beVietnamPro = Be_Vietnam_Pro({
-  variable: "--font-sans",
-  subsets: ["latin", "vietnamese"],
-  // Keep two static cuts on the critical path. Browser font matching maps the
-  // intermediate 500/600 styles to the nearest loaded brand weight.
-  weight: ["400", "700"],
-  display: "swap",
-  preload: false,
-});
-
-const playfairDisplay = Playfair_Display({
-  variable: "--font-display",
-  subsets: ["latin", "vietnamese"],
-  weight: "variable",
-  style: "normal",
-  display: "swap",
-  preload: false,
-});
 
 export const dynamic = 'force-dynamic'
 
@@ -58,15 +39,7 @@ export function generateMetadata(): Metadata {
 
 // Required: tells mobile browsers to use device width, not the legacy 980px desktop default.
 // Without this, DevTools mobile emulation and real phones will show the DESKTOP layout.
-export const viewport: Viewport = {
-  width: "device-width",
-  initialScale: 1,
-  maximumScale: 5,   // allow user pinch-zoom for accessibility
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#0f1114" },
-  ],
-};
+export const viewport: Viewport = publicViewport;
 
 export default function RootLayout({
   children,
@@ -91,7 +64,7 @@ export default function RootLayout({
         ) : null}
       </head>
       <body
-        className={`${beVietnamPro.variable} ${playfairDisplay.variable} antialiased font-sans`}
+        className={`${publicFontClasses} antialiased font-sans`}
       >
         {children}
         {/* Organization / LocalBusiness structured data — site-wide SEO signal */}
