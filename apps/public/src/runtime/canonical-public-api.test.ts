@@ -3,7 +3,7 @@ const products=Array.from({length:60},(_,i)=>({id:i,slug:'p-'+i,name:'P'+i,brand
 vi.mock('./public-snapshot-catalogue',()=>({
  getSnapshotCategories:async()=>[{slug:'thiet-bi-bep',listings:[{slug:'voi-rua-chen',name:'Vòi rửa chén',totalCount:60}]}],
  getSnapshotProducts:async(_c:string,_s:string,page:number)=>({products:products.slice((page-1)*48,page*48)}),
- getSnapshotProduct:async()=>null,
+ getSnapshotProduct:async(_category:string,_listing:string,slug:string)=>slug==='public-content'?{id:1,slug,name:'Public product',price:null,stock_status:'contact',publicContent:{summary:'Public summary',specifications:{'Công nghệ':'Public technology specification'},gallery:[]}}:null,
 }))
 import {getPublicProducts,getAvailableFiltersBySubcategory,getPublicProductBySlug,getPdpSpecifications} from './canonical-public-api'
 describe('canonical Preview public snapshot seam',()=>{
@@ -18,4 +18,14 @@ describe('canonical Preview public snapshot seam',()=>{
   expect(getPdpSpecifications({} as never)).toEqual({})
   expect(await getPublicProductBySlug('unknown','unknown')).toBeNull()
  })
+})
+
+it('keeps public technology in specifications without inventing a feature tab',async()=>{
+ const product=await getPublicProductBySlug('thiet-bi-bep','public-content')
+ expect(product).not.toBeNull()
+ expect(getPdpSpecifications(product!)).toEqual({'Công nghệ':'Public technology specification'})
+ expect(product?.features).toBeNull()
+ expect(product?.description).toBe('<p>Public summary</p>')
+ expect(product?.price).toBeNull()
+ expect(product?.stock_status).toBe('contact')
 })
