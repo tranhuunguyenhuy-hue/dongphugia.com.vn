@@ -5,6 +5,7 @@ import {servePrerenderedCatalogue} from './src/runtime/prerendered-catalogue'
 
 import {
   assertPreviewRuntime,
+  classifyPublicApiRequest,
   createCacheKey,
   isAnonymousCacheCandidate,
   isCacheableResponse,
@@ -46,6 +47,19 @@ export default {
         headers: {
           'Cache-Control': PRIVATE_CACHE_CONTROL,
           'X-Robots-Tag': PUBLIC_PREVIEW_ROBOTS_HEADER,
+        },
+      })
+    }
+
+    const publicApiDecision = classifyPublicApiRequest(request)
+    if (publicApiDecision === 'not-found' || publicApiDecision === 'method-not-allowed') {
+      return new Response(publicApiDecision === 'not-found' ? 'Not found.' : 'Method not allowed.', {
+        status: publicApiDecision === 'not-found' ? 404 : 405,
+        headers: {
+          'Cache-Control': PRIVATE_CACHE_CONTROL,
+          'X-Robots-Tag': PUBLIC_PREVIEW_ROBOTS_HEADER,
+          ...(publicApiDecision === 'method-not-allowed' ? { Allow: 'GET, HEAD' } : {}),
+          ...sourceIdentityHeader,
         },
       })
     }

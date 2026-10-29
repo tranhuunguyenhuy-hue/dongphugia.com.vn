@@ -2,11 +2,8 @@ import { cache } from 'react'
 import { usesPublicSnapshot, publicSnapshotCheckpoint } from './public-snapshot-mode'
 import { buildSnapshotCategoryRoot } from './public-category-root'
 import {
-  isPublicSnapshotListingProduct,
-  PUBLIC_SNAPSHOT_LISTING_CONTRACT,
   PUBLIC_SNAPSHOT_LISTING_MAX_PAGES,
   PUBLIC_SNAPSHOT_LISTING_PAGE_SIZE,
-  type PublicSnapshotListingShard,
 } from './snapshot-listing-contract'
 export { usesPublicSnapshot } from './public-snapshot-mode'
 
@@ -70,38 +67,6 @@ export async function getSnapshotProducts(category:string,listing:string,page=1)
   return {products:result.products,totalCount:list.totalCount,page}
 }
 
-export async function getPublicSnapshotListingShard(category:string,listing:string,page=1):Promise<PublicSnapshotListingShard|null> {
-  if(!SLUG.test(category)||!SLUG.test(listing)||!Number.isSafeInteger(page)||page<1)return null
-  const manifest=await readSnapshotManifest()
-  const categoryRecord=manifest.categories.find(value=>value.slug===category)
-  if(!categoryRecord)return null
-  const listingRecord=categoryRecord.listings.find(value=>value.slug===listing)
-  if(!listingRecord)return null
-  if(!Number.isSafeInteger(listingRecord.totalCount)||listingRecord.totalCount<1
-    ||Math.ceil(listingRecord.totalCount/PUBLIC_SNAPSHOT_LISTING_PAGE_SIZE)>PUBLIC_SNAPSHOT_LISTING_MAX_PAGES)
-    throw new Error('PUBLIC_CATALOGUE_UNAVAILABLE')
-  const totalPages=Math.ceil(listingRecord.totalCount/PUBLIC_SNAPSHOT_LISTING_PAGE_SIZE)
-  if(page>totalPages)return null
-  const shard=await getSnapshotProducts(category,listing,page)
-  if(shard.totalCount!==listingRecord.totalCount||shard.page!==page||shard.products.length===0
-    ||shard.products.some(product=>!isPublicSnapshotListingProduct(product,category,listing)))
-    throw new Error('PUBLIC_CATALOGUE_UNAVAILABLE')
-  const products=shard.products.map(product=>({
-    id:product.id,name:product.name,display_name:product.display_name,slug:product.slug,sku:product.sku,
-    price:null as const,price_display:'Liên hệ báo giá' as const,stock_status:'contact' as const,
-    image_main_url:product.image_main_url,is_active:true as const,is_featured:product.is_featured,
-    is_promotion:false as const,variant_options:[] as [],categories:product.categories,
-    subcategories:product.subcategories,brands:product.brands,
-    canonical_category_slug:product.canonical_category_slug,
-    canonical_subcategory_slug:product.canonical_subcategory_slug,url:product.url,
-  }))
-  const response:PublicSnapshotListingShard={
-    contract:PUBLIC_SNAPSHOT_LISTING_CONTRACT,checkpoint:publicSnapshotCheckpoint()!,
-    categorySlug:category,listingSlug:listing,page,pageSize:PUBLIC_SNAPSHOT_LISTING_PAGE_SIZE,
-    totalCount:listingRecord.totalCount,totalPages,products,
-  }
-  return response
-}
 export async function getSnapshotProduct(category:string,listing:string,slug:string) {
   if(![category,listing,slug].every(s=>SLUG.test(s))) return null
   const path=`/${category}/${listing}/${slug}`

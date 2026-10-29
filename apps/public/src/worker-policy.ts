@@ -1,7 +1,7 @@
 // next.config.ts loads this module while Next compiles the config itself, before
 // TypeScript path aliases are available. Keep this boundary runtime-resolvable
 // without changing the public app's package alias contract elsewhere.
-import { PUBLIC_EDGE_CACHE_SECONDS } from '../../../packages/app-contracts/src/index'
+import { PUBLIC_EDGE_CACHE_SECONDS, PUBLIC_ROUTE_OWNERSHIP } from '../../../packages/app-contracts/src/index'
 
 export type PublicWorkerEnvironment = Readonly<{
   APP_ENV: string
@@ -24,6 +24,8 @@ const FORBIDDEN_INTERNAL_HEADERS = [
 ] as const
 const PRIVILEGED_RUNTIME_BINDING_PATTERN =
   /(SERVICE_ROLE|AUTH_ADMIN|ADMIN_SESSION|SECRET|PASSWORD|DATABASE_URL|DIRECT_URL|PRIVATE_KEY|CREDENTIAL|CLOUDFLARE_API_TOKEN|BUNNY_API_KEY)/i
+const LISTING_API_FAMILIES = new Set(['thiet-bi-ve-sinh', 'thiet-bi-bep', 'vat-lieu-nuoc', 'gach-op-lat'])
+const LISTING_API_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 
 export const PRIVATE_CACHE_CONTROL = 'private, no-store'
 export const PUBLIC_BROWSER_CACHE_CONTROL = 'public, max-age=0, must-revalidate'
@@ -82,6 +84,31 @@ export function isForbiddenInternalControlRequest(request: Request) {
     FORBIDDEN_INTERNAL_HEADERS.some((name) => request.headers.has(name)) ||
     /(?:^|;\s*)(?:__prerender_bypass|__next_preview_data)=/i.test(cookie)
   )
+}
+
+export type PublicApiRequestDecision = 'not-api' | 'allow' | 'not-found' | 'method-not-allowed'
+
+export function classifyPublicApiRequest(request: Request): PublicApiRequestDecision {
+  const { pathname } = new URL(request.url)
+  if (!pathname.startsWith('/api/')) return 'not-api'
+
+  const ownsHealth = PUBLIC_ROUTE_OWNERSHIP.some((route) =>
+    route.owner === 'public' && route.path === '/api/health' && route.purpose === 'runtime-probe',
+  ) && pathname === '/api/health'
+  const ownsListingShardRoute = PUBLIC_ROUTE_OWNERSHIP.some((route) =>
+    route.owner === 'public'
+      && route.path === '/api/catalogue/listings/[categorySlug]/[listingSlug]'
+      && route.purpose === 'catalogue-listing-snapshot-readonly',
+  ) && /^\/api\/catalogue\/listings\/([^/]+)\/([^/]+)$/.test(pathname)
+
+  const listingMatch = pathname.match(/^\/api\/catalogue\/listings\/([^/]+)\/([^/]+)$/)
+  const validListingRoute = ownsListingShardRoute
+    && listingMatch !== null
+    && LISTING_API_FAMILIES.has(listingMatch[1])
+    && LISTING_API_SLUG.test(listingMatch[2])
+  if (!ownsHealth && !validListingRoute) return 'not-found'
+  if (request.method !== 'GET' && request.method !== 'HEAD') return 'method-not-allowed'
+  return 'allow'
 }
 
 export function createCacheKey(request: Request, sourceCommit: string, catalogueCheckpoint: string | null = null) {

@@ -1,7 +1,7 @@
 export const PUBLIC_SNAPSHOT_LISTING_CONTRACT = 'dpg:public-catalogue-listing-shard:v1'
 export const PUBLIC_SNAPSHOT_LISTING_PAGE_SIZE = 48
-export const PUBLIC_SNAPSHOT_LISTING_MAX_PAGES = 128
-export const PUBLIC_SNAPSHOT_LISTING_MAX_BRANDS = 20
+export const PUBLIC_SNAPSHOT_LISTING_MAX_PAGES = 64
+export const PUBLIC_SNAPSHOT_LISTING_MAX_BRANDS = 32
 
 const SAFE_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 const SAFE_CHECKPOINT = /^[a-f0-9]{40}$/
@@ -62,6 +62,11 @@ function isSafeText(value: unknown, maxLength = 240): value is string {
     return typeof value === 'string' && value.trim().length > 0 && value.length <= maxLength
 }
 
+function hasExactKeys(value: Record<string, unknown>, expected: readonly string[]) {
+    const keys = Object.keys(value)
+    return keys.length === expected.length && keys.every((key) => expected.includes(key))
+}
+
 function isSafeImage(value: unknown): value is string | null {
     if (value === null) return true
     if (typeof value !== 'string' || value.length > 2048) return false
@@ -87,13 +92,12 @@ export function isPublicSnapshotListingProduct(
     listingSlug?: string,
 ): value is PublicSnapshotListingProduct {
     if (!isRecord(value)) return false
-    const allowedKeys = new Set([
+    if (!hasExactKeys(value, [
         'id', 'name', 'display_name', 'slug', 'sku', 'price', 'price_display', 'stock_status',
         'image_main_url', 'is_active', 'is_featured', 'is_promotion', 'variant_options',
         'categories', 'subcategories', 'brands', 'canonical_category_slug',
         'canonical_subcategory_slug', 'url',
-    ])
-    if (Object.keys(value).some((key) => !allowedKeys.has(key))) return false
+    ])) return false
     if (!Number.isSafeInteger(value.id) || (value.id as number) <= 0
         || !isSafeText(value.name) || !isSafeText(value.display_name)
         || typeof value.slug !== 'string' || !SAFE_SLUG.test(value.slug)
@@ -104,11 +108,14 @@ export function isPublicSnapshotListingProduct(
         || value.is_promotion !== false || !Array.isArray(value.variant_options)
         || value.variant_options.length !== 0) return false
 
-    if (!isRecord(value.categories) || !isSafeText(value.categories.name)
+    if (!isRecord(value.categories) || !hasExactKeys(value.categories, ['name', 'slug'])
+        || !isSafeText(value.categories.name)
         || typeof value.categories.slug !== 'string' || !SAFE_SLUG.test(value.categories.slug)
-        || !isRecord(value.subcategories) || !isSafeText(value.subcategories.name)
+        || !isRecord(value.subcategories) || !hasExactKeys(value.subcategories, ['name', 'slug'])
+        || !isSafeText(value.subcategories.name)
         || typeof value.subcategories.slug !== 'string' || !SAFE_SLUG.test(value.subcategories.slug)
         || (value.brands !== null && (!isRecord(value.brands)
+            || !hasExactKeys(value.brands, ['name', 'slug'])
             || !isSafeText(value.brands.name)
             || typeof value.brands.slug !== 'string'
             || !SAFE_SLUG.test(value.brands.slug)))) return false
@@ -127,6 +134,10 @@ export function isPublicSnapshotListingShard(
     expected?: { categorySlug?: string; listingSlug?: string; page?: number; checkpoint?: string },
 ): value is PublicSnapshotListingShard {
     if (!isRecord(value)) return false
+    if (!hasExactKeys(value, [
+        'contract', 'checkpoint', 'categorySlug', 'listingSlug', 'page', 'pageSize',
+        'totalCount', 'totalPages', 'products',
+    ])) return false
     const categorySlug = value.categorySlug
     const listingSlug = value.listingSlug
     const page = value.page

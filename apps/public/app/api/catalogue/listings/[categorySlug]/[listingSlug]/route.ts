@@ -1,4 +1,4 @@
-import { getPublicSnapshotListingShard } from '../../../../../../src/runtime/public-snapshot-catalogue'
+import { getPublicSnapshotListingShard } from '../../../../../../src/runtime/public-snapshot-listing'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
