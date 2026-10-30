@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { BrandLogo } from '@/components/media/brand-logo'
+import { notifySearchParamsChange, useLiveSearchParams } from '@/components/category/use-live-search-params'
 
 const subscribeToHydration = () => () => undefined
 const getClientHydrationSnapshot = () => true
@@ -192,7 +193,13 @@ export function CategoryFilterPanel({ brands, mode = 'canonical' }: CategoryFilt
     )
     const router = useRouter()
     const pathname = usePathname()
-    const searchParams = useSearchParams()
+    const routerSearchParams = useSearchParams()
+    const searchParams = useLiveSearchParams(routerSearchParams.toString())
+    const navigateToFilters = useCallback((href: string) => {
+        if (snapshotMode) window.history.pushState(null, '', href)
+        else router.push(href, { scroll: false })
+        notifySearchParamsChange()
+    }, [router, snapshotMode])
 
     const queryBrands = searchParams.get('brands')?.split(',').filter(Boolean) ?? []
     const activeBrands = snapshotMode && !hydrated ? [] : queryBrands
@@ -217,10 +224,10 @@ export function CategoryFilterPanel({ brands, mode = 'canonical' }: CategoryFilt
                 const params = new URLSearchParams(searchParams.toString())
                 if (lo <= PRICE_MIN && hi >= PRICE_MAX) params.delete('price')
                 else params.set('price', `${lo}-${hi}`)
-                router.push(`${pathname}?${params.toString()}`, { scroll: false })
+                navigateToFilters(`${pathname}?${params.toString()}`)
             }, 400)
         },
-        [router, pathname, searchParams]
+        [navigateToFilters, pathname, searchParams]
     )
 
     const handleSliderChange = (value: [number, number]) => {
@@ -233,9 +240,9 @@ export function CategoryFilterPanel({ brands, mode = 'canonical' }: CategoryFilt
             const params = new URLSearchParams(searchParams.toString())
             if (value) params.set(key, value)
             else params.delete(key)
-            router.push(`${pathname}?${params.toString()}`, { scroll: false })
+            navigateToFilters(`${pathname}?${params.toString()}`)
         },
-        [router, pathname, searchParams]
+        [navigateToFilters, pathname, searchParams]
     )
 
     const getBrandValue = (brand: CategoryFilterBrand) => snapshotMode ? brand.slug ?? '' : brand.name
@@ -252,7 +259,7 @@ export function CategoryFilterPanel({ brands, mode = 'canonical' }: CategoryFilt
         const params = new URLSearchParams(searchParams.toString())
         params.delete('brands')
         params.delete('price')
-        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+        navigateToFilters(`${pathname}?${params.toString()}`)
     }
 
     const hasFilters = activeBrands.length > 0 || isPriceActive

@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react"
 import Link from "next/link"
 import { usePathname, useSearchParams } from "next/navigation"
 import { cn } from "@/lib/utils"
+import { useLiveSearchParams } from "@/components/category/use-live-search-params"
 
 interface ListingPaginationProps {
   totalPages: number
@@ -22,7 +23,8 @@ export function ListingPagination({
   currentPage,
 }: ListingPaginationProps) {
   const pathname = usePathname()
-  const searchParams = useSearchParams()
+  const routerSearchParams = useSearchParams()
+  const searchParams = useLiveSearchParams(routerSearchParams.toString())
 
   if (totalPages <= 1) return null
 

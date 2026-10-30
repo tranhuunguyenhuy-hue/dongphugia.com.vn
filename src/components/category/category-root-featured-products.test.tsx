@@ -23,6 +23,7 @@ const product = (id: number, slug: string, brandSlug: string): ProductCardProps[
 describe('CategoryRootFeaturedProducts snapshot filtering', () => {
     it('shows the top eight products from the union of selected brands', () => {
         navigation.search = 'brands=brand-a%2Cbrand-b'
+        window.history.replaceState({}, '', `/?${navigation.search}`)
         const filtered = [
             ...Array.from({ length: 5 }, (_, index) => product(index + 1, `brand-a-${index + 1}`, 'brand-a')),
             ...Array.from({ length: 5 }, (_, index) => product(index + 6, `brand-b-${index + 1}`, 'brand-b')),
