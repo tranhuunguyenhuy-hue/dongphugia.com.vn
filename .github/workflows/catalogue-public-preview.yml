@@ -54,6 +54,7 @@ on:
 permissions:
   contents: read
   actions: read
+  pull-requests: read
 concurrency:
   group: catalogue-direct-migration
   cancel-in-progress: false
@@ -123,6 +124,16 @@ jobs:
             [[ "$MANAGED_PREVIEW_RUN_ID" =~ ^[0-9]+$ ]]
             [[ "$MANAGED_PREVIEW_SOURCE_SHA" =~ ^[a-f0-9]{40}$ ]]
           fi
+      - name: Verify exact merged source PR for the pinned catalogue candidate
+        if: inputs.publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api "repos/$GITHUB_REPOSITORY/pulls/216" > "$RUNNER_TEMP/candidate-source-pr.json"
+          jq -e --arg sha "$SOURCE_SHA" \
+            '.state=="closed" and .merged==true and .base.ref=="main" and .merge_commit_sha==$sha' \
+            "$RUNNER_TEMP/candidate-source-pr.json" >/dev/null
       - name: Verify zero-cost and checkpoint-headroom evidence for publishing
         if: inputs.publish
         env:
@@ -380,7 +391,7 @@ jobs:
           node scripts/app-foundation/cloudflare-preview-publication.mjs attest-managed-baseline \
             "${identity[@]}" --expected-version-count 11 \
             --expected-latest-version-id 17fe81fb-9f43-43b9-85d0-33952cff74d6 \
-            --bootstrap-version-id d4658ffa-2fcd-465b-ae7-7967bb1c7f78 \
+            --bootstrap-version-id d4658ffa-2fcd-465b-bae7-7967bb1c7f78 \
             --expected-deployment-id 6e7022d5-5f4d-4f51-8ab3-01850503a711 \
             --output "$ARTIFACT_ROOT/evidence/managed-state-receipt.json"
           node scripts/app-foundation/cloudflare-preview-publication.mjs inspect-resource-state \

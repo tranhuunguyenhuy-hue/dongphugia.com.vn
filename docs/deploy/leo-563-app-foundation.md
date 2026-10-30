@@ -153,6 +153,17 @@ identity, or any unexpected version/deployment, keeps the job fail-closed. A
 write-path failure without an exact publication evidence record continues to
 use the pre-publication empty-state contract.
 
+For the one-time real-catalogue recovery authorized by Owner in Issue #160
+comment #6521637380, the candidate PR #216 was already merged before its exact
+artifact was preserved. The publication workflow therefore runs from `main`
+to honor the protected Environment's main-only branch policy, while checking
+that PR #216 is closed, merged into `main`, and has the exact candidate source
+SHA as its merge commit. It also pins the successful producer run, artifact ID,
+size, and digest, and requires the Owner actor and exact current `main` workflow
+SHA. This narrow exception replaces the open-current-PR check only for that
+Owner-authorized preserved candidate; it does not change the Environment
+policy, permit a different candidate, or alter the general open-PR gate above.
+
 For the original LEO-563 run whose v1 resource proof predates version/deployment
 inventory, the Owner-approved managed workflow may supply the exact bootstrap
 version ID separately. The proof then requires the complete remote version set
