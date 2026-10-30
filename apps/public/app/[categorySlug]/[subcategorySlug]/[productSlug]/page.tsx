@@ -3,13 +3,16 @@ import Kitchen from '@/app/(public)/thiet-bi-bep/[sub]/[slug]/page'
 import Water from '@/app/(public)/vat-lieu-nuoc/[sub]/[slug]/page'
 import Tile from '@/app/(public)/gach-op-lat/[sub]/[slug]/page'
 import {notFound} from 'next/navigation'
+import {buildSnapshotRouteMetadata} from '../../../../src/runtime/preview-route-metadata'
 export const runtime='edge'
 export const dynamic='force-dynamic'
 export async function generateMetadata({params}:{params:Promise<{categorySlug:string;subcategorySlug:string;productSlug?:string}>}) {
  const p=await params
  const {resolveSnapshotRoute}=await import('../../../../src/runtime/public-snapshot-catalogue')
  const route=await resolveSnapshotRoute([p.categorySlug,p.subcategorySlug,...(p.productSlug?[p.productSlug]:[])])
- return {title:route.kind==='product'?route.product.name:route.kind==='listing'?route.listing.name:'Không tìm thấy',robots:{index:false,follow:false}}
+ return route.kind==='product'||route.kind==='listing'
+  ? buildSnapshotRouteMetadata(route)
+  : {title:'Không tìm thấy',robots:{index:false,follow:false}}
 }
 export default async function CanonicalRoute({params,searchParams}: {params:Promise<{categorySlug:string;subcategorySlug:string;productSlug?:string}>;searchParams:Promise<Record<string,string>>}) {
  const p=await params

@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 
 import { CategoryRootView } from '@/components/category/category-root-view'
 import { getSnapshotCategoryRoot } from '../../src/runtime/public-snapshot-catalogue'
+import { buildPreviewRouteMetadata } from '../../src/runtime/preview-route-metadata'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -26,7 +27,7 @@ export async function generateMetadata({params}:PageProps):Promise<Metadata>{
   const {categorySlug}=await params
   const title=CATEGORY_TITLES[categorySlug]
   return title
-    ? {title,robots:{index:false,follow:false}}
+    ? buildPreviewRouteMetadata(title,[categorySlug])
     : {title:'Không tìm thấy danh mục',robots:{index:false,follow:false}}
 }
 
