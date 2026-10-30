@@ -67,7 +67,7 @@ export function HomeCategoryBlockAlt({
                             {brands.map((brand) => (
                                 <Link
                                     key={brand.slug}
-                                    href={`${categoryData.basePath}?brands=${encodeURIComponent(brand.name)}`}
+                                    href={`${categoryData.basePath}?brands=${encodeURIComponent(brand.slug)}`}
                                     className="flex h-16 min-w-[116px] shrink-0 items-center justify-center rounded-xl border border-neutral-200 bg-white px-3 opacity-70 transition-colors hover:border-brand-300 hover:opacity-100"
                                     aria-label={`Xem ${categoryData.label} thương hiệu ${brand.name}`}
                                 >

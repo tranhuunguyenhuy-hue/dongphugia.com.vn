@@ -63,6 +63,12 @@ it('returns 404 for a syntactically valid brand absent from the public root snap
  expect(response?.status).toBe(404)
  expect(env.ASSETS.fetch.mock.calls.some(call=>call[0].includes(createHash('sha256').update('/thiet-bi-bep').digest('hex')))).toBe(false)
 })
+it('rejects display-name brand values without relaxing lowercase slug validation',async()=>{
+ const env=environment()
+ const response=await servePrerenderedCatalogue(new Request('https://preview.invalid/thiet-bi-ve-sinh?brands=TOTO'),env,source)
+ expect(response?.status).toBe(400)
+ expect(env.ASSETS.fetch).not.toHaveBeenCalled()
+})
 it('fails closed on oversized readiness and root manifest assets',async()=>{
  const oversizedReady={ASSETS:{fetch:async(url:string)=>url.endsWith('ready.json')
    ?new Response(new Uint8Array(4_097))

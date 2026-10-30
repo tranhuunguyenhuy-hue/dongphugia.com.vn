@@ -4,6 +4,7 @@ import { useSearchParams } from 'next/navigation'
 import { useSyncExternalStore } from 'react'
 import { Star } from 'lucide-react'
 import { ProductCard, type ProductCardProps } from '@/components/ui/product-card'
+import { useLiveSearchParams } from '@/components/category/use-live-search-params'
 
 const subscribeToHydration = () => () => undefined
 const getClientHydrationSnapshot = () => true
@@ -104,7 +105,8 @@ export function CategoryRootFeaturedProducts({
     featuredGridClassName,
 }: CategoryRootFeaturedProductsProps) {
     const hydrated = useHasHydrated()
-    const selectedBrands = useSearchParams().get('brands')?.split(',').filter(Boolean) ?? []
+    const routerSearchParams = useSearchParams()
+    const selectedBrands = useLiveSearchParams(routerSearchParams.toString()).get('brands')?.split(',').filter(Boolean) ?? []
     if (!hydrated) return <CategoryRootFeaturedNeutralSection featuredGridClassName={featuredGridClassName} />
 
     const visibleProducts = selectedBrands.length

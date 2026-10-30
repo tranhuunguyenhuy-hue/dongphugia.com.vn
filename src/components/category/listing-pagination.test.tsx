@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react"
 import { readFileSync } from "node:fs"
 import { resolve } from "node:path"
-import { beforeEach, describe, expect, it, vi } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 const navigation = vi.hoisted(() => ({
   pathname: "/blog",
@@ -19,6 +19,11 @@ describe("public listing pagination", () => {
   beforeEach(() => {
     navigation.pathname = "/blog"
     navigation.searchParams = new URLSearchParams("sort=latest")
+    window.history.replaceState({}, "", "/blog?sort=latest")
+  })
+
+  afterEach(() => {
+    window.history.replaceState({}, "", "/")
   })
 
   it("keeps existing filters while exposing direct previous, page, and next links", () => {
@@ -46,5 +51,22 @@ describe("public listing pagination", () => {
     )
 
     expect(source).not.toContain('from "@/components/ui/')
+  })
+
+  it("keeps direct multi-brand URL filters in pagination links when Next params are stale", () => {
+    navigation.pathname = "/thiet-bi-bep/voi-rua-chen"
+    navigation.searchParams = new URLSearchParams()
+    window.history.replaceState({}, "", "/thiet-bi-bep/voi-rua-chen?brands=toto%2Cinax&page=2")
+
+    render(<ListingPagination totalPages={3} currentPage={2} />)
+
+    expect(screen.getByRole("link", { name: "Trang trước" })).toHaveAttribute(
+      "href",
+      "/thiet-bi-bep/voi-rua-chen?brands=toto%2Cinax&page=1",
+    )
+    expect(screen.getByRole("link", { name: "Trang sau" })).toHaveAttribute(
+      "href",
+      "/thiet-bi-bep/voi-rua-chen?brands=toto%2Cinax&page=3",
+    )
   })
 })
