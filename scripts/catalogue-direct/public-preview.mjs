@@ -1,6 +1,7 @@
 // Public-only immutable Preview units. No Admin build and no provider mutation.
 import { createHash } from 'node:crypto'
-import { readFile, readdir, writeFile } from 'node:fs/promises'
+import { createReadStream } from 'node:fs'
+import { lstat, readFile, readdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { validatePreviewConfig, WORKER_NAME, PREVIEW_ALIAS } from '../app-foundation/cloudflare-preview-publication.mjs'
@@ -8,6 +9,9 @@ import { validatePreviewConfig, WORKER_NAME, PREVIEW_ALIAS } from '../app-founda
 const SHA=/^[a-f0-9]{40}$/
 const sha256=bytes=>createHash('sha256').update(bytes).digest('hex')
 const DETERMINISM_FILE_LIMIT=25000
+const DETERMINISM_FILE_BYTES_LIMIT=25*1024*1024
+const DETERMINISM_BUILD_BYTES_LIMIT=1024*1024*1024
+const CLOUDFLARE_PLAN_ATTESTATION_MAX_AGE_MS=15*60*1000
 function gate(value,reason) { if(!value)throw new Error(reason) }
 async function publicBuildInventory(root,{fileLimit=DETERMINISM_FILE_LIMIT,collectFiles=true,comparePaths=(a,b)=>a<b?-1:a>b?1:0}={}) {
   const absoluteRoot=path.resolve(root)
@@ -33,12 +37,26 @@ async function publicBuildInventory(root,{fileLimit=DETERMINISM_FILE_LIMIT,colle
   const treeHash=createHash('sha256')
   let totalBytes=0,largestFile={path:'',bytes:0}
   for(const normalized of paths) {
-    const bytes=await readFile(path.join(absoluteRoot,normalized))
-    const digest=createHash('sha256').update(bytes).digest('hex')
-    files?.set(normalized,{sha256:digest,bytes:bytes.length})
-    treeHash.update(normalized+'\0').update(bytes).update('\0')
-    totalBytes+=bytes.length
-    if(bytes.length>largestFile.bytes)largestFile={path:normalized,bytes:bytes.length}
+    const filePath=path.join(absoluteRoot,normalized)
+    const info=await lstat(filePath)
+    gate(info.isFile(),'PUBLIC_PREVIEW_DETERMINISM_NONFILE_FORBIDDEN')
+    gate(info.size<=DETERMINISM_FILE_BYTES_LIMIT,'PUBLIC_PREVIEW_DETERMINISM_FILE_BYTE_LIMIT')
+    gate(totalBytes+info.size<=DETERMINISM_BUILD_BYTES_LIMIT,'PUBLIC_PREVIEW_DETERMINISM_TOTAL_BYTE_LIMIT')
+    const fileHash=createHash('sha256')
+    let fileBytes=0
+    treeHash.update(normalized+'\0')
+    for await (const chunk of createReadStream(filePath)) {
+      fileBytes+=chunk.length
+      gate(fileBytes<=DETERMINISM_FILE_BYTES_LIMIT,'PUBLIC_PREVIEW_DETERMINISM_FILE_BYTE_LIMIT')
+      gate(totalBytes+fileBytes<=DETERMINISM_BUILD_BYTES_LIMIT,'PUBLIC_PREVIEW_DETERMINISM_TOTAL_BYTE_LIMIT')
+      fileHash.update(chunk)
+      treeHash.update(chunk)
+    }
+    gate(fileBytes===info.size,'PUBLIC_PREVIEW_DETERMINISM_FILE_CHANGED')
+    treeHash.update('\0')
+    files?.set(normalized,{sha256:fileHash.digest('hex'),bytes:fileBytes})
+    totalBytes+=fileBytes
+    if(fileBytes>largestFile.bytes)largestFile={path:normalized,bytes:fileBytes}
   }
   gate(paths.length>0,'PUBLIC_PREVIEW_DETERMINISM_EMPTY_BUILD')
   return {files,sha256:treeHash.digest('hex'),fileCount:paths.length,totalBytes,largestFile}
@@ -134,7 +152,7 @@ export async function confirmWorkersFree({accountId,apiToken,fetchImpl=fetch,att
     const age=Date.now()-Date.parse(proof.verifiedAt)
     gate(proof.contract==='dpg:cloudflare-workers-free-attestation:v1'
       && proof.accountHash===sha256(accountId) && proof.plan==='workers_free' && proof.state==='active'
-      && proof.billableUsd===0 && age>=0 && age<=86400000
+      && proof.billableUsd===0 && age>=0 && age<=CLOUDFLARE_PLAN_ATTESTATION_MAX_AGE_MS
       && proof.evidenceUrl===`https://dash.cloudflare.com/${accountId}/billing/subscriptions`,'PUBLIC_PREVIEW_DASHBOARD_PROOF_INVALID')
     return {contract:'dpg:public-preview-zero-cost:v1',workersFreeConfirmed:true,checkedAt:proof.verifiedAt,
       evidenceMode:'AUTHENTICATED_DASHBOARD',apiStatus:403,mutation:false}

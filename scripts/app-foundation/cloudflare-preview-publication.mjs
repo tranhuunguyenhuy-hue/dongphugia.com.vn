@@ -299,12 +299,13 @@ function collectWorkerCustomDomains(domains) {
   return customDomains.sort()
 }
 
-function collectRemoteVersionIds(versions, errorCode = 'LEO563_PREVIEW_REMOTE_VERSION_STATE_UNKNOWN') {
+function collectRemoteVersionIds(versions, errorCode = 'LEO563_PREVIEW_REMOTE_VERSION_STATE_UNKNOWN', sort = true) {
   if (!Array.isArray(versions?.items)) throw new Error(errorCode)
-  return versions.items.map((version) => {
+  const ids = versions.items.map((version) => {
     if (typeof version?.id !== 'string' || !/^[0-9a-f-]{32,64}$/i.test(version.id)) throw new Error(errorCode)
     return version.id
-  }).sort()
+  })
+  return sort ? ids.sort() : ids
 }
 
 function collectRemoteDeployments(deployments, errorCode = 'LEO563_PREVIEW_REMOTE_DEPLOYMENT_STATE_UNKNOWN') {
@@ -840,6 +841,7 @@ function managedBaselineStateSnapshot(state) {
     state?.state !== 'MANAGED_BASELINE_ATTESTED' ||
     state?.workerName !== WORKER_NAME ||
     !Array.isArray(state.versionIds) ||
+    !VERSION_ID_PATTERN.test(state.latestVersionId ?? '') ||
     !Array.isArray(state.deployments) ||
     !Array.isArray(state.deploymentIds) ||
     !Array.isArray(state.customDomains) ||
@@ -855,6 +857,7 @@ function managedBaselineStateSnapshot(state) {
     state: state.state,
     workerName: state.workerName,
     versionCount: state.versionIds.length,
+    latestVersionId: state.latestVersionId,
     versionIds: state.versionIds,
     deployments: state.deployments,
     deploymentIds: state.deploymentIds,
@@ -879,6 +882,8 @@ function validateManagedBaselineState(state, expected = null) {
     snapshot.versionCount !== 11 ||
     snapshot.versionIds.length !== 11 ||
     new Set(snapshot.versionIds).size !== 11 ||
+    snapshot.versionIds.some((versionId) => !VERSION_ID_PATTERN.test(versionId)) ||
+    snapshot.latestVersionId !== latestVersionId ||
     !snapshot.versionIds.includes(latestVersionId) ||
     !snapshot.versionIds.includes(bootstrapVersionId) ||
     !sameJson(snapshot.versionIds, [...snapshot.versionIds].sort()) ||
@@ -898,7 +903,7 @@ function validateManagedBaselineState(state, expected = null) {
 
   if (expected) {
     const expectedState = managedBaselineStateSnapshot(expected)
-    for (const field of ['versionCount', 'versionIds', 'deployments', 'deploymentIds', 'customDomains', 'workerRoutes', 'bindings', 'subdomain']) {
+    for (const field of ['versionCount', 'latestVersionId', 'versionIds', 'deployments', 'deploymentIds', 'customDomains', 'workerRoutes', 'bindings', 'subdomain']) {
       if (!sameJson(snapshot[field], expectedState[field])) {
         throw new Error(`LEO563_PREVIEW_MANAGED_BASELINE_${field.replace(/[A-Z]/g, (char) => `_${char}`).toUpperCase()}_DRIFT`)
       }
@@ -977,7 +982,8 @@ async function listRemoteVersions(get, pathname) {
       throw new Error('LEO563_PREVIEW_VERSION_PAGINATION_INVALID')
     }
     total = info.total_count
-    for (const id of collectRemoteVersionIds({ items: batch })) {
+    // Cloudflare documents the first listed Worker version as the latest.
+    for (const id of collectRemoteVersionIds({ items: batch }, undefined, false)) {
       if (seen.has(id)) throw new Error('LEO563_PREVIEW_VERSION_PAGINATION_DUPLICATE')
       seen.add(id)
       items.push({ id })
@@ -1088,6 +1094,7 @@ export async function inspectRemoteResourceState({ accountId, apiToken, expected
       workerName: WORKER_NAME,
       state: 'MANAGED_BASELINE_ATTESTED',
       versionCount: versionIds.length,
+      latestVersionId: versions.items?.[0]?.id ?? null,
       versionIds,
       deployments: deploymentRecords,
       deploymentIds: remoteDeploymentIds(deploymentRecords),
@@ -1115,6 +1122,7 @@ export async function inspectRemoteResourceState({ accountId, apiToken, expected
     validateManagedBaselineState(state, managedBaseline.kind === 'exact' ? expectedState : null)
     if (managedBaseline.kind === 'known' && (
       versionIds.length !== managedBaseline.known.versionCount ||
+      state.latestVersionId !== managedBaseline.known.latestVersionId ||
       !versionIds.includes(managedBaseline.known.latestVersionId) ||
       !versionIds.includes(managedBaseline.known.bootstrapVersionId) ||
       !sameJson(state.deployments, expectedState.deployments)

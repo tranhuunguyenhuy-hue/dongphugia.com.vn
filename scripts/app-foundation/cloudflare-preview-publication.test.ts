@@ -185,9 +185,13 @@ const knownBaselineVersionIds = [
   '00000000-0000-4000-8000-000000000009',
   knownManagedBaseline.latestVersionId,
 ].sort()
+const knownBaselineApiVersionIds = [
+  knownManagedBaseline.latestVersionId,
+  ...knownBaselineVersionIds.filter(id => id !== knownManagedBaseline.latestVersionId),
+]
 
 function managedBaselineRemoteFetch({
-  versionIds = knownBaselineVersionIds,
+  versionIds = knownBaselineApiVersionIds,
   deploymentId = knownManagedBaseline.deploymentId,
   deploymentVersionId = knownManagedBaseline.bootstrapVersionId,
   subdomain = { enabled: false, previews_enabled: true },
@@ -344,6 +348,7 @@ describe('LEO-563 Cloudflare Preview publication gate', () => {
       state: 'MANAGED_BASELINE_ATTESTED',
       workerName: 'dongphugia-v1-public-preview',
       versionCount: 11,
+      latestVersionId: knownManagedBaseline.latestVersionId,
       versionIds: knownBaselineVersionIds,
       deploymentIds: [knownManagedBaseline.deploymentId],
       deployments: [{
@@ -372,7 +377,20 @@ describe('LEO-563 Cloudflare Preview publication gate', () => {
       expectedManagedBaseline: expectedState,
       fetchImpl: managedBaselineRemoteFetch().fetchImpl,
     })
-    expect(rechecked).toMatchObject({ state: 'MANAGED_BASELINE_ATTESTED', versionIds: knownBaselineVersionIds })
+    expect(rechecked).toMatchObject({
+      state: 'MANAGED_BASELINE_ATTESTED',
+      latestVersionId: knownManagedBaseline.latestVersionId,
+      versionIds: knownBaselineVersionIds,
+    })
+
+    const changedOlderVersionIds = [...knownBaselineApiVersionIds]
+    changedOlderVersionIds[5] = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+    await expect(inspectRemoteResourceState({
+      accountId: 'synthetic-account',
+      apiToken: 'synthetic-token',
+      expectedManagedBaseline: expectedState,
+      fetchImpl: managedBaselineRemoteFetch({ versionIds: changedOlderVersionIds }).fetchImpl,
+    })).rejects.toThrow('LEO563_PREVIEW_MANAGED_BASELINE_VERSION_IDS_DRIFT')
   })
 
   it.each([
@@ -380,6 +398,7 @@ describe('LEO-563 Cloudflare Preview publication gate', () => {
     ['an extra version', { versionIds: [...knownBaselineVersionIds, 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'] }],
     ['a changed deployment identity', { deploymentId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' }],
     ['a deployment no longer points at bootstrap', { deploymentVersionId: knownManagedBaseline.latestVersionId }],
+    ['the documented latest version is not first', { versionIds: [...knownBaselineApiVersionIds].reverse() }],
     ['a workers.dev association', { subdomain: { enabled: true, previews_enabled: true } }],
     ['a route association', { scriptRoutes: ['www.dongphugia.vn/*'] }],
     ['a custom domain association', { domains: [{ service: 'dongphugia-v1-public-preview', hostname: 'preview.dongphugia.vn' }] }],

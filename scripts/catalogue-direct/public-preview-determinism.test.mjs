@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
-import { mkdtemp, mkdir, rm, symlink, writeFile } from 'node:fs/promises'
+import { mkdtemp, mkdir, open, rm, symlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { comparePublicBuildDirectories } from './public-preview.mjs'
@@ -67,6 +67,19 @@ describe('Public Preview independent-build comparison', () => {
       await symlink(path.join(first, 'worker.js'), path.join(second, 'linked-worker.js'))
       await expect(comparePublicBuildDirectories({ firstRoot: first, secondRoot: second }))
         .rejects.toThrow('PUBLIC_PREVIEW_DETERMINISM_SYMLINK_FORBIDDEN')
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  it('rejects an oversized file before reading its contents', async () => {
+    const { root, first, second } = await directories()
+    try {
+      const handle = await open(path.join(first, 'oversized.bin'), 'w')
+      await handle.truncate(25 * 1024 * 1024 + 1)
+      await handle.close()
+      await expect(comparePublicBuildDirectories({ firstRoot: first, secondRoot: second }))
+        .rejects.toThrow('PUBLIC_PREVIEW_DETERMINISM_FILE_BYTE_LIMIT')
     } finally {
       await rm(root, { recursive: true, force: true })
     }
