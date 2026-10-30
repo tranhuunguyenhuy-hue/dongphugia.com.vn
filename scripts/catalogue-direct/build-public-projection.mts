@@ -4,7 +4,7 @@ import { createRequire } from 'node:module'
 import { mkdir, writeFile, readFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { connect, closeConnections, assertTargetPrivate } from './run.mjs'
-import { assertBudget } from './contract.mjs'
+import { assertPublicPreviewBudget } from './contract.mjs'
 import type { ProductVisibilityInput } from '../../src/lib/public-product-visibility'
 import type { ProductPathInput, ProductTaxonAssignmentRef } from '../../src/lib/taxonomy-paths'
 import { projectProduct, buildProjection, ROOTS } from './public-projection.mjs'
@@ -19,6 +19,17 @@ const {getCanonicalProductPath}=require('../../src/lib/taxonomy-paths.ts') as ty
 type ProjectionRow = ProductVisibilityInput & ProductPathInput & {id:number;name:string;display_name:string|null;sku:string;image_main_url:string|null;is_featured:boolean;brand_name:string|null;brand_slug:string|null;rootSortOrder:number;rootBrandId:number|null;rootBrandSortOrder:number|null;rootSubcategorySortOrder:number|null;rootSubcategoryThumbnailUrl:string|null;product_taxon_assignments:ProductTaxonAssignmentRef[]}
 let projectionPhase='PRECHECK'
 const REPO='tranhuunguyenhuy-hue/dongphugia.com.vn'
+function parseBudgetEvidence(raw:string|undefined) {
+  try{return JSON.parse(raw??'null')}catch{throw new Error('ZERO_COST_EVIDENCE_INVALID')}
+}
+function assertPreviewBudget() {
+  const publicationMode=process.env.DIRECT_PUBLIC_PREVIEW_PUBLISH
+  if(publicationMode==='false') return assertPublicPreviewBudget(false,undefined,
+    parseBudgetEvidence(process.env.DIRECT_ZERO_COST_CANDIDATE_EVIDENCE))
+  if(publicationMode==='true') return assertPublicPreviewBudget(true,
+    parseBudgetEvidence(process.env.DIRECT_ZERO_COST_ATTESTATION),undefined)
+  return assertPublicPreviewBudget(undefined,undefined,undefined)
+}
 function proof() {
   const runId=process.env.PUBLIC_CATALOGUE_M3_RUN_ID??''
   const checkpoint=process.env.PUBLIC_CATALOGUE_M1_CHECKPOINT??''
@@ -41,7 +52,7 @@ function proof() {
 async function main() {
   if(process.env.GITHUB_ACTIONS!=='true'||process.env.GITHUB_REF!=='refs/heads/main'
     ||process.env.GITHUB_ACTOR!=='tranhuunguyenhuy-hue'||process.env.GITHUB_RUN_ATTEMPT!=='1') throw new Error('PROTECTED_BUILD_REQUIRED')
-  assertBudget(JSON.parse(process.env.DIRECT_ZERO_COST_ATTESTATION??'null'))
+  assertPreviewBudget()
   projectionPhase='M3_PROOF'
   const evidence=proof()
   projectionPhase='CONNECT_READ'

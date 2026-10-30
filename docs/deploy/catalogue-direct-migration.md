@@ -172,6 +172,17 @@ the single source ref prevents repeated exports consuming the same allowance.
 The 200 MB checkpoint cap is an internal conservative guard, not a claim about
 the account's actual billing allowance.
 
+The protected `catalogue-public-preview` workflow has one narrow exception:
+only `publish=false` may use the separate Environment variable
+`DIRECT_ZERO_COST_CANDIDATE_EVIDENCE`, containing `verifiedAt` (current UTC,
+no more than 24 hours old), the exact `recoveryId`, `billableUsd: 0` and
+`paidUsageBlocked: true`. It intentionally carries no checkpoint-headroom
+claim. Keep `DIRECT_ZERO_COST_ATTESTATION` unchanged as the full cost-plus-
+headroom evidence; never refresh its timestamp from cost-only evidence. All
+checkpoint writes, M1–M3, `publish=true`, Worker uploads and Production continue
+to require the full attestation. The candidate-only variable is read only by
+the protected Preview workflow and its Public projection runner.
+
 ## Execute and preserve
 
 After exact-head review, required CI and PM merge gate, use workflow_dispatch on
