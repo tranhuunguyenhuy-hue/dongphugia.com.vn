@@ -9,35 +9,12 @@ const SHA=/^[a-f0-9]{40}$/
 const sha256=bytes=>createHash('sha256').update(bytes).digest('hex')
 const DETERMINISM_FILE_LIMIT=25000
 function gate(value,reason) { if(!value)throw new Error(reason) }
-async function directoryDigest(root,relative='') {
-  const paths=[]
-  async function visit(child) {
-    for(const entry of await readdir(path.join(root,child),{withFileTypes:true})) {
-      gate(!entry.isSymbolicLink(),'PUBLIC_PREVIEW_SYMLINK_FORBIDDEN')
-      const next=path.join(child,entry.name)
-      if(entry.isDirectory())await visit(next)
-      else if(entry.isFile())paths.push(next)
-      else throw new Error('PUBLIC_PREVIEW_NONFILE_FORBIDDEN')
-    }
-  }
-  await visit(relative)
-  paths.sort((a,b)=>a.localeCompare(b))
-  const hash=createHash('sha256');let totalBytes=0,largestFile=0
-  for(const file of paths) {
-    const bytes=await readFile(path.join(root,file));totalBytes+=bytes.length;largestFile=Math.max(largestFile,bytes.length)
-    hash.update(file.split(path.sep).join('/')+'\0');hash.update(bytes);hash.update('\0')
-  }
-  return {sha256:hash.digest('hex'),fileCount:paths.length,totalBytes,largestFile}
-}
-
-async function publicBuildInventory(root) {
+async function publicBuildInventory(root,{fileLimit=DETERMINISM_FILE_LIMIT,collectFiles=true,comparePaths=(a,b)=>a<b?-1:a>b?1:0}={}) {
   const absoluteRoot=path.resolve(root)
-  const files=new Map()
-  const treeHash=createHash('sha256')
-  let totalBytes=0,largestFile=0
+  const files=collectFiles?new Map():null
+  const paths=[]
   async function visit(relative='') {
-    const entries=(await readdir(path.join(absoluteRoot,relative),{withFileTypes:true}))
-      .sort((left,right)=>left.name<right.name?-1:left.name>right.name?1:0)
+    const entries=await readdir(path.join(absoluteRoot,relative),{withFileTypes:true})
     for(const entry of entries) {
       if(entry.isSymbolicLink())throw new Error('PUBLIC_PREVIEW_DETERMINISM_SYMLINK_FORBIDDEN')
       const joined=path.join(relative,entry.name)
@@ -46,19 +23,35 @@ async function publicBuildInventory(root) {
         'PUBLIC_PREVIEW_DETERMINISM_PATH_UNSAFE')
       if(entry.isDirectory())await visit(joined)
       else if(entry.isFile()) {
-        if(files.size>=DETERMINISM_FILE_LIMIT)throw new Error('PUBLIC_PREVIEW_DETERMINISM_FILE_LIMIT')
-        const bytes=await readFile(path.join(absoluteRoot,joined))
-        const digest=createHash('sha256').update(bytes).digest('hex')
-        files.set(normalized,{sha256:digest,bytes:bytes.length})
-        treeHash.update(normalized+'\0').update(bytes).update('\0')
-        totalBytes+=bytes.length
-        largestFile=Math.max(largestFile,bytes.length)
+        if(paths.length>=fileLimit)throw new Error('PUBLIC_PREVIEW_DETERMINISM_FILE_LIMIT')
+        paths.push(normalized)
       } else throw new Error('PUBLIC_PREVIEW_DETERMINISM_NONFILE_FORBIDDEN')
     }
   }
   await visit()
-  gate(files.size>0,'PUBLIC_PREVIEW_DETERMINISM_EMPTY_BUILD')
-  return {files,sha256:treeHash.digest('hex'),fileCount:files.size,totalBytes,largestFile}
+  paths.sort(comparePaths)
+  const treeHash=createHash('sha256')
+  let totalBytes=0,largestFile={path:'',bytes:0}
+  for(const normalized of paths) {
+    const bytes=await readFile(path.join(absoluteRoot,normalized))
+    const digest=createHash('sha256').update(bytes).digest('hex')
+    files?.set(normalized,{sha256:digest,bytes:bytes.length})
+    treeHash.update(normalized+'\0').update(bytes).update('\0')
+    totalBytes+=bytes.length
+    if(bytes.length>largestFile.bytes)largestFile={path:normalized,bytes:bytes.length}
+  }
+  gate(paths.length>0,'PUBLIC_PREVIEW_DETERMINISM_EMPTY_BUILD')
+  return {files,sha256:treeHash.digest('hex'),fileCount:paths.length,totalBytes,largestFile}
+}
+
+async function directoryDigest(root,relative='') {
+  const inventory=await publicBuildInventory(path.join(root,relative),{
+    fileLimit:Number.MAX_SAFE_INTEGER,
+    collectFiles:false,
+    comparePaths:(a,b)=>a.localeCompare(b),
+  })
+  const {files:_files,...digest}=inventory
+  return {...digest,largestFile:digest.largestFile.bytes}
 }
 
 export async function comparePublicBuildDirectories({firstRoot,secondRoot}) {
