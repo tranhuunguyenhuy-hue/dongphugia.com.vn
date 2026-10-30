@@ -168,21 +168,21 @@ const managedBaselineIdentity = {
 const knownManagedBaseline = {
   versionCount: 11,
   latestVersionId: '17fe81fb-9f43-43b9-85d0-33952cff74d6',
-  bootstrapVersionId: 'd4658ffa-2fcd-465b-ae7-7967bb1c7f78',
+  bootstrapVersionId: 'd4658ffa-2fcd-465b-bae7-7967bb1c7f78',
   deploymentId: '6e7022d5-5f4d-4f51-8ab3-01850503a711',
 }
 
 const knownBaselineVersionIds = [
-  knownManagedBaseline.bootstrapVersionId,
-  '00000000-0000-4000-8000-000000000001',
-  '00000000-0000-4000-8000-000000000002',
-  '00000000-0000-4000-8000-000000000003',
-  '00000000-0000-4000-8000-000000000004',
-  '00000000-0000-4000-8000-000000000005',
-  '00000000-0000-4000-8000-000000000006',
-  '00000000-0000-4000-8000-000000000007',
-  '00000000-0000-4000-8000-000000000008',
-  '00000000-0000-4000-8000-000000000009',
+  '0ecbc1a2-dd99-4330-bde6-8fcca77ffb1f',
+  '2cbb3f2c-b8ec-4844-8326-1a9fcb4e4cf7',
+  '48f40297-7381-49bc-ab67-4c4dec83e7bf',
+  '59352d64-974d-4afc-8bfd-57edb92369c4',
+  '67fe3336-601e-4cac-a960-d70ee692d448',
+  '7ec0bdbb-bfe7-4cf5-b6d3-695249251c2b',
+  '86568faa-17fb-4658-ac26-f62ccd2ffbc0',
+  '91a968e9-4ac2-48c0-8c0f-7c1df5c3e55a',
+  '9f20e256-83fa-4756-9518-71ef7571d466',
+  'd4658ffa-2fcd-465b-bae7-7967bb1c7f78',
   knownManagedBaseline.latestVersionId,
 ].sort()
 const knownBaselineApiVersionIds = [
@@ -396,6 +396,7 @@ describe('LEO-563 Cloudflare Preview publication gate', () => {
   it.each([
     ['missing known uploaded version', { versionIds: knownBaselineVersionIds.filter(id => id !== knownManagedBaseline.latestVersionId) }],
     ['an extra version', { versionIds: [...knownBaselineVersionIds, 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'] }],
+    ['a replaced historical version with the same count', { versionIds: knownBaselineApiVersionIds.map((id, index) => index === 5 ? 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' : id) }],
     ['a changed deployment identity', { deploymentId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' }],
     ['a deployment no longer points at bootstrap', { deploymentVersionId: knownManagedBaseline.latestVersionId }],
     ['the documented latest version is not first', { versionIds: [...knownBaselineApiVersionIds].reverse() }],

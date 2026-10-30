@@ -66,7 +66,7 @@ async function publicBuildInventory(root,{fileLimit=DETERMINISM_FILE_LIMIT,colle
 
 async function directoryDigest(root,relative='') {
   const inventory=await publicBuildInventory(path.join(root,relative),{
-    fileLimit:Number.MAX_SAFE_INTEGER,
+    fileLimit:DETERMINISM_FILE_LIMIT,
     collectFiles:false,
     comparePaths:(a,b)=>a.localeCompare(b),
   })
