@@ -7,6 +7,7 @@ import { validatePreviewConfig, WORKER_NAME, PREVIEW_ALIAS } from '../app-founda
 
 const SHA=/^[a-f0-9]{40}$/
 const sha256=bytes=>createHash('sha256').update(bytes).digest('hex')
+const DETERMINISM_FILE_LIMIT=25000
 function gate(value,reason) { if(!value)throw new Error(reason) }
 async function directoryDigest(root,relative='') {
   const paths=[]
@@ -28,6 +29,71 @@ async function directoryDigest(root,relative='') {
   }
   return {sha256:hash.digest('hex'),fileCount:paths.length,totalBytes,largestFile}
 }
+
+async function publicBuildInventory(root) {
+  const absoluteRoot=path.resolve(root)
+  const files=new Map()
+  const treeHash=createHash('sha256')
+  let totalBytes=0,largestFile=0
+  async function visit(relative='') {
+    const entries=(await readdir(path.join(absoluteRoot,relative),{withFileTypes:true}))
+      .sort((left,right)=>left.name<right.name?-1:left.name>right.name?1:0)
+    for(const entry of entries) {
+      if(entry.isSymbolicLink())throw new Error('PUBLIC_PREVIEW_DETERMINISM_SYMLINK_FORBIDDEN')
+      const joined=path.join(relative,entry.name)
+      const normalized=joined.split(path.sep).join('/')
+      gate(!path.isAbsolute(normalized)&&!normalized.split('/').includes('..')&&!normalized.includes('\\'),
+        'PUBLIC_PREVIEW_DETERMINISM_PATH_UNSAFE')
+      if(entry.isDirectory())await visit(joined)
+      else if(entry.isFile()) {
+        if(files.size>=DETERMINISM_FILE_LIMIT)throw new Error('PUBLIC_PREVIEW_DETERMINISM_FILE_LIMIT')
+        const bytes=await readFile(path.join(absoluteRoot,joined))
+        const digest=createHash('sha256').update(bytes).digest('hex')
+        files.set(normalized,{sha256:digest,bytes:bytes.length})
+        treeHash.update(normalized+'\0').update(bytes).update('\0')
+        totalBytes+=bytes.length
+        largestFile=Math.max(largestFile,bytes.length)
+      } else throw new Error('PUBLIC_PREVIEW_DETERMINISM_NONFILE_FORBIDDEN')
+    }
+  }
+  await visit()
+  gate(files.size>0,'PUBLIC_PREVIEW_DETERMINISM_EMPTY_BUILD')
+  return {files,sha256:treeHash.digest('hex'),fileCount:files.size,totalBytes,largestFile}
+}
+
+export async function comparePublicBuildDirectories({firstRoot,secondRoot}) {
+  gate(typeof firstRoot==='string'&&firstRoot.length>0&&typeof secondRoot==='string'&&secondRoot.length>0,
+    'PUBLIC_PREVIEW_DETERMINISM_ROOT_REQUIRED')
+  const [first,second]=await Promise.all([publicBuildInventory(firstRoot),publicBuildInventory(secondRoot)])
+  const paths=[...new Set([...first.files.keys(),...second.files.keys()])].sort((left,right)=>left<right?-1:left>right?1:0)
+  const differences=[]
+  for(const file of paths) {
+    const before=first.files.get(file),after=second.files.get(file)
+    if(before?.sha256===after?.sha256&&before?.bytes===after?.bytes)continue
+    differences.push({
+      path:file,
+      firstSha256:before?.sha256??null,
+      firstBytes:before?.bytes??null,
+      secondSha256:after?.sha256??null,
+      secondBytes:after?.bytes??null,
+    })
+  }
+  return {
+    contract:'dpg:public-preview-determinism:v1',
+    status:differences.length===0?'PASS':'FAIL',
+    firstSha256:first.sha256,
+    secondSha256:second.sha256,
+    firstFileCount:first.fileCount,
+    secondFileCount:second.fileCount,
+    firstBytes:first.totalBytes,
+    secondBytes:second.totalBytes,
+    largestFirstFile:first.largestFile,
+    largestSecondFile:second.largestFile,
+    differingFileCount:differences.length,
+    differences,
+  }
+}
+
 export async function publicOnlyPreflight({buildRoot,sourceSha,workflowRunId,checkpoint,m3RunId,pullRequest}) {
   gate(SHA.test(sourceSha)&&SHA.test(checkpoint)&&/^\d+$/.test(workflowRunId)&&/^\d+$/.test(m3RunId),'PUBLIC_PREVIEW_IDENTITY_REQUIRED')
   gate(Number.isSafeInteger(pullRequest)&&pullRequest>0&&PREVIEW_ALIAS===`pr-${pullRequest}`,'PUBLIC_PREVIEW_ALIAS_MISMATCH')
@@ -122,6 +188,14 @@ function parseArgs(args) { const out={};for(let i=0;i<args.length;i+=2){gate(arg
 async function main() {
   const [mode,...rest]=process.argv.slice(2);const args=parseArgs(rest)
   let result
+  if(mode==='compare-builds') {
+    result=await comparePublicBuildDirectories({firstRoot:path.resolve(args['first-root']),secondRoot:path.resolve(args['second-root'])})
+    await writeFile(args.output,JSON.stringify(result,null,2)+'\n',{mode:0o600})
+    console.log(JSON.stringify({status:result.status,unit:mode,firstSha256:result.firstSha256,
+      secondSha256:result.secondSha256,differingFileCount:result.differingFileCount}))
+    if(result.status!=='PASS')throw new Error('PUBLIC_PREVIEW_DETERMINISM_MISMATCH')
+    return
+  }
   if(mode==='preflight')result=await publicOnlyPreflight({buildRoot:path.resolve(args['build-root']),sourceSha:args['source-sha'],
     workflowRunId:args['workflow-run-id'],checkpoint:args.checkpoint,m3RunId:args['m3-run-id'],pullRequest:Number(args['pr-number'])})
   else if(mode==='confirm-free')result=await confirmWorkersFree({accountId:process.env.CLOUDFLARE_ACCOUNT_ID,apiToken:process.env.CLOUDFLARE_API_TOKEN,
