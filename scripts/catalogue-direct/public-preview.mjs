@@ -15,6 +15,8 @@ const CLOUDFLARE_PLAN_ATTESTATION_MAX_AGE_MS=15*60*1000
 function gate(value,reason) { if(!value)throw new Error(reason) }
 async function publicBuildInventory(root,{fileLimit=DETERMINISM_FILE_LIMIT,collectFiles=true,comparePaths=(a,b)=>a<b?-1:a>b?1:0}={}) {
   const absoluteRoot=path.resolve(root)
+  const rootInfo=await lstat(absoluteRoot)
+  gate(rootInfo.isDirectory(),'PUBLIC_PREVIEW_DETERMINISM_ROOT_UNSAFE')
   const files=collectFiles?new Map():null
   const paths=[]
   async function visit(relative='') {

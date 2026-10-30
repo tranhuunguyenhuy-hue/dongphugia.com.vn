@@ -72,6 +72,18 @@ describe('Public Preview independent-build comparison', () => {
     }
   })
 
+  it('rejects a symbolic link used as a build root', async () => {
+    const { root, first, second } = await directories()
+    try {
+      const alias = path.join(root, 'candidate-root-link')
+      await symlink(first, alias)
+      await expect(comparePublicBuildDirectories({ firstRoot: alias, secondRoot: second }))
+        .rejects.toThrow('PUBLIC_PREVIEW_DETERMINISM_ROOT_UNSAFE')
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
   it('rejects an oversized file before reading its contents', async () => {
     const { root, first, second } = await directories()
     try {
