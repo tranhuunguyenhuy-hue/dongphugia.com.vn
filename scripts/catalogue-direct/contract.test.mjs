@@ -2,8 +2,8 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import {
-  SOURCE, TARGET, CONTRACT, RECOVERY_ID, HEADROOM_BODY, CATALOGUE_TABLES, CATALOGUE_RESTORE_ORDER, SEQUENCE_BODY,
-  connectionConfig, assertBudget, assertManifest, assertSchema, assertResume,
+  SOURCE, TARGET, CONTRACT, RECOVERY_ID, CHECKPOINT_CEILING, HEADROOM_BODY, CATALOGUE_TABLES, CATALOGUE_RESTORE_ORDER, SEQUENCE_BODY,
+  connectionConfig, assertBudget, assertCandidateBudget, assertPublicPreviewBudget, assertManifest, assertSchema, assertResume,
   insertSql, rowsSql, provisioningSql, comparableSchema, normalizeDefinition,
 } from './contract.mjs'
 
@@ -76,6 +76,67 @@ describe('direct 27-table scope and connections', () => {
     expect(() => assertBudget({ ...good, checkpointBytesRemaining: 1 }, now)).toThrow('QUOTA')
     expect(() => assertBudget(good, now + 86400001)).toThrow('STALE')
     expect(() => assertBudget(good, now - 1)).toThrow('STALE')
+  })
+  it('allows only the non-publishing candidate to use fresh cost evidence without vault headroom', () => {
+    const now = Date.now()
+    const costOnly = { recoveryId: RECOVERY_ID, verifiedAt: new Date(now).toISOString(),
+      billableUsd: 0, paidUsageBlocked: true }
+    expect(() => assertCandidateBudget(costOnly, now)).not.toThrow()
+    expect(() => assertCandidateBudget({ ...costOnly, checkpointBytesRemaining: 0 }, now)).not.toThrow()
+    expect(() => assertCandidateBudget({ ...costOnly, verifiedAt: new Date(now - 86400001).toISOString() }, now))
+      .toThrow('BUDGET_EVIDENCE_STALE')
+    const staleFullEvidence = { ...costOnly, checkpointBytesRemaining: CHECKPOINT_CEILING,
+      verifiedAt: new Date(now - 86400001).toISOString() }
+    expect(() => assertBudget(staleFullEvidence, now)).toThrow('BUDGET_EVIDENCE_STALE')
+    expect(() => assertBudget(costOnly, now)).toThrow('CHECKPOINT_QUOTA_REQUIRED')
+    expect(() => assertBudget({ ...costOnly, checkpointBytesRemaining: 1 }, now)).toThrow('CHECKPOINT_QUOTA_REQUIRED')
+    expect(() => assertCandidateBudget({ ...costOnly, billableUsd: 1 }, now)).toThrow('ZERO_COST_EVIDENCE_REQUIRED')
+    expect(() => assertCandidateBudget({ ...costOnly, paidUsageBlocked: false }, now)).toThrow('ZERO_COST_EVIDENCE_REQUIRED')
+    expect(() => assertCandidateBudget({ ...costOnly, recoveryId: 'other' }, now)).toThrow('ZERO_COST_EVIDENCE_REQUIRED')
+    expect(() => assertCandidateBudget({ ...costOnly, verifiedAt: new Date(now - 86400001).toISOString() }, now))
+      .toThrow('BUDGET_EVIDENCE_STALE')
+    expect(() => assertCandidateBudget({ ...costOnly, verifiedAt: new Date(now + 1).toISOString() }, now))
+      .toThrow('BUDGET_EVIDENCE_STALE')
+    expect(() => assertCandidateBudget({ ...costOnly, verifiedAt: '2026-10-30T12:00:00+07:00' }, now))
+      .toThrow('BUDGET_EVIDENCE_TIMESTAMP_INVALID')
+    expect(() => assertCandidateBudget({ ...costOnly, verifiedAt: '2026-02-30T12:00:00.000Z' }, now))
+      .toThrow('BUDGET_EVIDENCE_TIMESTAMP_INVALID')
+  })
+  it('keeps publication routing and its full headroom gate executable', () => {
+    const now = Date.now()
+    const costOnly = { recoveryId: RECOVERY_ID, verifiedAt: new Date(now).toISOString(),
+      billableUsd: 0, paidUsageBlocked: true }
+    const full = { ...costOnly, checkpointBytesRemaining: CHECKPOINT_CEILING }
+    expect(() => assertPublicPreviewBudget(false, full, costOnly, now)).not.toThrow()
+    expect(() => assertPublicPreviewBudget(false, full, undefined, now)).toThrow('ZERO_COST_EVIDENCE_REQUIRED')
+    expect(() => assertPublicPreviewBudget(true, full, costOnly, now)).not.toThrow()
+    expect(() => assertPublicPreviewBudget(true, costOnly, full, now)).toThrow('CHECKPOINT_QUOTA_REQUIRED')
+    expect(() => assertPublicPreviewBudget(undefined, full, costOnly, now)).toThrow('PUBLICATION_MODE_REQUIRED')
+    expect(() => assertPublicPreviewBudget('false', full, costOnly, now)).toThrow('PUBLICATION_MODE_REQUIRED')
+  })
+  it('routes only publish=false to cost-only evidence in both protected callsites', () => {
+    const workflow = readFileSync(new URL('../../.github/workflows/catalogue-public-preview.yml', import.meta.url), 'utf8')
+    const runner = readFileSync(new URL('./build-public-projection.mts', import.meta.url), 'utf8')
+    const directMigration = readFileSync(new URL('./run.mjs', import.meta.url), 'utf8')
+    const secureSetup = readFileSync(new URL('./secure-setup.mjs', import.meta.url), 'utf8')
+    const budgetBlock = workflow.slice(
+      workflow.indexOf('- name: Verify execution tuple'),
+      workflow.indexOf('- name: Validate a preserved artifact before resuming an incomplete publication unit'),
+    )
+    expect(budgetBlock).toMatch(/if: inputs\.publish[\s\S]*?assertBudget/)
+    expect(budgetBlock).toMatch(/if: inputs\.publish == false[\s\S]*?assertCandidateBudget/)
+    expect(budgetBlock).toContain('DIRECT_ZERO_COST_CANDIDATE_EVIDENCE: ${{ vars.DIRECT_ZERO_COST_CANDIDATE_EVIDENCE }}')
+    expect(workflow).toContain('DIRECT_PUBLIC_PREVIEW_PUBLISH: ${{ inputs.publish }}')
+    expect(workflow).toContain("DIRECT_ZERO_COST_ATTESTATION: ${{ inputs.publish && vars.DIRECT_ZERO_COST_ATTESTATION || '' }}")
+    expect(workflow).toContain("DIRECT_ZERO_COST_CANDIDATE_EVIDENCE: ${{ inputs.publish == false && vars.DIRECT_ZERO_COST_CANDIDATE_EVIDENCE || '' }}")
+    expect(runner).toContain("publicationMode==='false') return assertPublicPreviewBudget(false")
+    expect(runner).toContain('parseBudgetEvidence(process.env.DIRECT_ZERO_COST_CANDIDATE_EVIDENCE))')
+    expect(runner).toContain("publicationMode==='true') return assertPublicPreviewBudget(true")
+    expect(runner).toContain('parseBudgetEvidence(process.env.DIRECT_ZERO_COST_ATTESTATION),undefined)')
+    expect(runner).toContain('DIRECT_ZERO_COST_CANDIDATE_EVIDENCE')
+    expect(directMigration).toContain("assertBudget(JSON.parse(env.DIRECT_ZERO_COST_ATTESTATION ?? 'null'))")
+    expect(secureSetup).toContain("assertBudget(JSON.parse(env.DIRECT_ZERO_COST_ATTESTATION??'null'))")
+    expect(workflow).toMatch(/- name: Upload one existing Worker version\n\s+if: inputs\.publish/)
   })
 })
 

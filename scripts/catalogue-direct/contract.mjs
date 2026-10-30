@@ -48,14 +48,43 @@ export function connectionConfig(value, ca, project) {
     options: '-c search_path=pg_catalog -c timezone=UTC -c datestyle=ISO,YMD -c statement_timeout=180000 -c lock_timeout=10000 -c idle_in_transaction_session_timeout=180000',
   }
 }
-export function assertBudget(attestation, now = Date.now()) {
+function assertZeroCostEvidence(attestation) {
   requireGate(attestation && attestation.recoveryId === RECOVERY_ID
     && attestation.billableUsd === 0 && attestation.paidUsageBlocked === true,
     'ZERO_COST_EVIDENCE_REQUIRED')
-  requireGate(Number.isSafeInteger(attestation.checkpointBytesRemaining)
-    && attestation.checkpointBytesRemaining >= CHECKPOINT_CEILING, 'CHECKPOINT_QUOTA_REQUIRED')
+}
+function assertFreshEvidence(attestation, now) {
   const time = Date.parse(attestation.verifiedAt)
   requireGate(Number.isFinite(time) && now >= time && now - time <= 86400000, 'BUDGET_EVIDENCE_STALE')
+}
+function assertFreshUtcCandidateEvidence(attestation, now) {
+  const verifiedAt = attestation.verifiedAt
+  requireGate(typeof verifiedAt === 'string'
+    && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(verifiedAt),
+  'BUDGET_EVIDENCE_TIMESTAMP_INVALID')
+  const time = Date.parse(verifiedAt)
+  requireGate(Number.isFinite(time) && new Date(time).toISOString() === verifiedAt,
+    'BUDGET_EVIDENCE_TIMESTAMP_INVALID')
+  requireGate(now >= time && now - time <= 86400000, 'BUDGET_EVIDENCE_STALE')
+}
+function assertCheckpointHeadroom(attestation) {
+  requireGate(Number.isSafeInteger(attestation.checkpointBytesRemaining)
+    && attestation.checkpointBytesRemaining >= CHECKPOINT_CEILING, 'CHECKPOINT_QUOTA_REQUIRED')
+}
+// Only the protected publish=false candidate may use cost evidence without vault headroom.
+export function assertCandidateBudget(attestation, now = Date.now()) {
+  assertZeroCostEvidence(attestation)
+  assertFreshUtcCandidateEvidence(attestation, now)
+}
+export function assertBudget(attestation, now = Date.now()) {
+  assertZeroCostEvidence(attestation)
+  assertCheckpointHeadroom(attestation)
+  assertFreshEvidence(attestation, now)
+}
+export function assertPublicPreviewBudget(publish, fullAttestation, candidateAttestation, now = Date.now()) {
+  requireGate(typeof publish === 'boolean', 'PUBLICATION_MODE_REQUIRED')
+  if (publish) return assertBudget(fullAttestation, now)
+  return assertCandidateBudget(candidateAttestation, now)
 }
 export function assertManifest(manifest) {
   requireGate(manifest?.contract === CONTRACT && manifest.source === SOURCE

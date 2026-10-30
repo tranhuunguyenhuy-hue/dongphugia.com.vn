@@ -79,9 +79,7 @@ jobs:
           umask 077
           mkdir -p "$ARTIFACT_ROOT/evidence"
           bash scripts/backup/c-actions-host-swap-preflight.sh
-      - name: Verify execution tuple and existing zero-cost evidence
-        env:
-          DIRECT_ZERO_COST_ATTESTATION: ${{ vars.DIRECT_ZERO_COST_ATTESTATION }}
+      - name: Verify execution tuple
         run: |
           set -euo pipefail
           [[ "$CHECKPOINT" =~ ^[a-f0-9]{40}$ ]]
@@ -92,7 +90,16 @@ jobs:
             [[ "$MANAGED_PREVIEW_RUN_ID" =~ ^[0-9]+$ ]]
             [[ "$MANAGED_PREVIEW_SOURCE_SHA" =~ ^[a-f0-9]{40}$ ]]
           fi
-          node --input-type=module -e 'import {assertBudget} from "./scripts/catalogue-direct/contract.mjs"; assertBudget(JSON.parse(process.env.DIRECT_ZERO_COST_ATTESTATION));'
+      - name: Verify zero-cost and checkpoint-headroom evidence for publishing
+        if: inputs.publish
+        env:
+          DIRECT_ZERO_COST_ATTESTATION: ${{ vars.DIRECT_ZERO_COST_ATTESTATION }}
+        run: node --input-type=module -e 'import {assertBudget} from "./scripts/catalogue-direct/contract.mjs"; let evidence; try { evidence=JSON.parse(process.env.DIRECT_ZERO_COST_ATTESTATION??"null") } catch { throw new Error("ZERO_COST_EVIDENCE_INVALID") }; assertBudget(evidence);'
+      - name: Verify candidate zero-cost evidence without vault headroom
+        if: inputs.publish == false
+        env:
+          DIRECT_ZERO_COST_CANDIDATE_EVIDENCE: ${{ vars.DIRECT_ZERO_COST_CANDIDATE_EVIDENCE }}
+        run: node --input-type=module -e 'import {assertCandidateBudget} from "./scripts/catalogue-direct/contract.mjs"; let evidence; try { evidence=JSON.parse(process.env.DIRECT_ZERO_COST_CANDIDATE_EVIDENCE??"null") } catch { throw new Error("ZERO_COST_EVIDENCE_INVALID") }; assertCandidateBudget(evidence);'
       - name: Validate a preserved artifact before resuming an incomplete publication unit
         if: inputs.artifact_run_id != ''
         env:
@@ -128,7 +135,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           DIRECT_TARGET_READ_DATABASE_URL: ${{ secrets.DIRECT_TARGET_READ_DATABASE_URL }}
           DIRECT_TARGET_CA: ${{ secrets.DIRECT_TARGET_CA }}
-          DIRECT_ZERO_COST_ATTESTATION: ${{ vars.DIRECT_ZERO_COST_ATTESTATION }}
+          DIRECT_ZERO_COST_ATTESTATION: ${{ inputs.publish && vars.DIRECT_ZERO_COST_ATTESTATION || '' }}
+          DIRECT_ZERO_COST_CANDIDATE_EVIDENCE: ${{ inputs.publish == false && vars.DIRECT_ZERO_COST_CANDIDATE_EVIDENCE || '' }}
+          DIRECT_PUBLIC_PREVIEW_PUBLISH: ${{ inputs.publish }}
           PUBLIC_CATALOGUE_M1_CHECKPOINT: ${{ inputs.checkpoint }}
           PUBLIC_CATALOGUE_M3_RUN_ID: ${{ inputs.m3_run_id }}
         run: |
