@@ -1,0 +1,30 @@
+name: Read-only direct checkpoint vault audit
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: catalogue-direct-migration
+  cancel-in-progress: false
+jobs:
+  audit:
+    if: github.event_name == 'workflow_dispatch' && github.repository == 'tranhuunguyenhuy-hue/dongphugia.com.vn' && github.ref == 'refs/heads/main' && github.actor == 'tranhuunguyenhuy-hue' && github.run_attempt == 1
+    environment: catalogue-direct-migration
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.13.0
+      - name: Read-only protected checkpoint inventory
+        env:
+          DIRECT_VAULT_REPOSITORY: ${{ secrets.DIRECT_VAULT_REPOSITORY }}
+          DIRECT_VAULT_TOKEN: ${{ secrets.DIRECT_VAULT_TOKEN }}
+        run: |
+          set -euo pipefail
+          set +x
+          ulimit -c 0
+          node scripts/catalogue-direct/vault-checkpoint-audit.mjs
