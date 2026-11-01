@@ -220,7 +220,9 @@ export async function verifySnapshotHttps({baseUrl,sourceSha,checkpoint,m3RunId,
   gate(missing.status===404,'PUBLIC_PREVIEW_UNKNOWN_ROUTE')
   return {contract:'dpg:public-real-catalogue-preview:v1',sourceCommit:sourceSha,checkpoint,m3RunId,
     previewUrl:baseUrl,publicProducts:state.publicProducts,listingProducts:state.listingProducts,
-    servedSnapshotHash:sha256(body),routesChecked:paths.length,unknownRoute:404,prices:'CONTACT_ONLY',admin:'deferred',productionDns:'HOLD'}
+    servedSnapshotHash:sha256(body),routesChecked:paths.length,unknownRoute:404,
+    transactionalPrices:'CONTACT_ONLY',historicalReferencePrices:manifest.contentStats?.referencePrices??0,
+    admin:'deferred',productionDns:'HOLD'}
 }
 function parseArgs(args) { const out={};for(let i=0;i<args.length;i+=2){gate(args[i]?.startsWith('--')&&args[i+1],'PUBLIC_PREVIEW_ARGUMENT');out[args[i].slice(2)]=args[i+1]}return out }
 async function main() {

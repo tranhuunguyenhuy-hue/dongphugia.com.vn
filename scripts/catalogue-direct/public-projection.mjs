@@ -64,8 +64,8 @@ export function buildProjection(products, evidence, rootMetadata = []) {
     const keys = ['id','name','display_name','slug','sku','price','price_display','stock_status','image_main_url','is_active','is_featured','is_promotion','variant_options','categories','subcategories','brands','canonical_category_slug','canonical_subcategory_slug','url','listingEligible','publicContent','variant_group','variant_type','variant_label','rootSortOrder','rootBrandId','rootBrandSortOrder','rootSubcategorySortOrder','rootSubcategoryThumbnailUrl']
     if (Object.keys(product).some(key => !keys.includes(key)) || product.price !== null || product.stock_status !== 'contact') throw new Error('PUBLIC_PROJECTION_UNSAFE_DTO')
     if(product.publicContent&&!isSafePublicContent(product.publicContent))throw new Error('PUBLIC_PROJECTION_UNSAFE_CONTENT')
-    if(product.variant_group!==undefined&&(!/^public-[1-9][0-9]*$/.test(product.variant_group)
-      ||!['size','color','seat_type'].includes(product.variant_type)
+    if(product.variant_group!==undefined&&(product.listingEligible!==true||!/^public-[1-9][0-9]*$/.test(product.variant_group)
+      ||!['size','seat_type'].includes(product.variant_type)
       ||!product.variant_label||publicText(product.variant_label,100)!==product.variant_label))throw new Error('PUBLIC_PROJECTION_UNSAFE_VARIANT')
     if (paths.has(product.url)) throw new Error('PUBLIC_PROJECTION_DUPLICATE_CANONICAL_PATH')
     paths.add(product.url)
@@ -136,7 +136,7 @@ export function buildProjection(products, evidence, rootMetadata = []) {
   }
   for(const [key,members] of variantGroups){
     const first=members[0]
-    if(members.length<2||members.length>8||new Set(members.map(p=>p.id)).size!==members.length
+    if(members.length<2||members.length>8||!first.brands?.slug||new Set(members.map(p=>p.id)).size!==members.length
       ||new Set(members.map(p=>p.sku)).size!==members.length
       ||new Set(members.map(p=>p.variant_label.toLocaleLowerCase('vi'))).size!==members.length
       ||members.some(p=>p.variant_type!==first.variant_type||p.categories.slug!==first.categories.slug

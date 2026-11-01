@@ -1676,3 +1676,7 @@ export const getCompatibleLids = unstable_cache(
 export function getPdpDescriptionBlocks(_product: unknown): Array<{kind:'heading'|'paragraph'|'bullet';text:string}> {
     return []
 }
+
+export function getPdpHistoricalReferencePrice(_product: unknown): {amountVnd:number;recordedUpdateDate:string;provenance:string}|null {
+    return null
+}

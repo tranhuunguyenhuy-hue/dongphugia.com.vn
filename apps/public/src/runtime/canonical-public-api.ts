@@ -69,3 +69,13 @@ export const getPdpDescriptionBlocks:typeof Original.getPdpDescriptionBlocks=(pr
   block&&typeof block==='object'&&['heading','paragraph','bullet'].includes(block.kind)
   &&typeof block.text==='string'&&block.text.length>0&&block.text.length<=800).slice(0,12)
 }
+export const getPdpHistoricalReferencePrice:typeof Original.getPdpHistoricalReferencePrice=(product)=>{
+ const value=(product as {publicContent?:{referencePrice?:unknown}})?.publicContent?.referencePrice
+ return value&&typeof value==='object'&&Object.keys(value).length===3
+  &&(value as {provenance?:unknown}).provenance==='legacy-manual-public-display'
+  &&(value as {recordedUpdateDate?:unknown}).recordedUpdateDate==='2026-07-02'
+  &&Number.isSafeInteger((value as {amountVnd?:unknown}).amountVnd)
+  &&(value as {amountVnd:number}).amountVnd>0
+  &&(value as {amountVnd:number}).amountVnd<=1_000_000_000
+  ?value as {amountVnd:number;recordedUpdateDate:string;provenance:string}:null
+}

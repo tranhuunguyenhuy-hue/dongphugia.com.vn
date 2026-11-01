@@ -443,7 +443,7 @@ jobs:
           node scripts/catalogue-direct/public-preview.mjs verify-https --url "$preview_url" --source-sha "$SOURCE_SHA" \
             --checkpoint "$CHECKPOINT" --m3-run-id "$M3_RUN_ID" --build-root "$ARTIFACT_ROOT/build" \
             --output "$ARTIFACT_ROOT/evidence/real-catalogue-proof.json"
-          jq '{sourceCommit,checkpoint,m3RunId,previewUrl,publicProducts,listingProducts,unknownRoute,prices,productionDns}' "$ARTIFACT_ROOT/evidence/real-catalogue-proof.json" >> "$GITHUB_STEP_SUMMARY"
+          jq '{sourceCommit,checkpoint,m3RunId,previewUrl,publicProducts,listingProducts,unknownRoute,transactionalPrices,historicalReferencePrices,productionDns}' "$ARTIFACT_ROOT/evidence/real-catalogue-proof.json" >> "$GITHUB_STEP_SUMMARY"
       - name: Record a failed upload without replay or raw provider output
         if: failure() && steps.version_upload.outputs.write_attempted == 'true'
         run: |

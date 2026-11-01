@@ -149,7 +149,7 @@ async function main() {
   const rawGroups=await client.query(`select vg.id,vg.group_key,vg.source,vg.confidence,vg.variant_type,
     (select count(*)::integer from dpg_app.products all_p where all_p.variant_group=vg.group_key) as "allMemberCount"
     from dpg_app.product_variant_groups vg where vg.confidence='high' and vg.source like 'hita-normalized-%'
-      and vg.variant_type=any($1::text[])`,[['size','color','seat_type']])
+      and vg.variant_type=any($1::text[])`,[['size','seat_type']])
   const allowedGroups=new Map(rawGroups.rows.map((group: {id:number;group_key:string;source:string;confidence:string;variant_type:string;allMemberCount:number})=>[group.group_key,group]))
   const candidates=new Map<string,typeof projectedPairs>()
   for(const pair of projectedPairs){
@@ -162,9 +162,9 @@ async function main() {
   for(const [key,members] of candidates){
     const group=allowedGroups.get(key)
     if(!group||members.length<2||members.length>8||group.allMemberCount!==members.length
-      ||members.some(({row})=>row.variant_group_id!==group.id||row.variant_type!==group.variant_type||row.is_combo))continue
+      ||members.some(({row,product})=>row.variant_group_id!==group.id||row.variant_type!==group.variant_type||row.is_combo||product.listingEligible!==true))continue
     const first=members[0].product
-    if(members.some(({product})=>product.categories.slug!==first.categories.slug
+    if(!first.brands?.slug||members.some(({product})=>product.categories.slug!==first.categories.slug
       ||product.subcategories.slug!==first.subcategories.slug||product.brands?.slug!==first.brands?.slug))continue
     const labels=members.map(({row})=>publicText(row.variant_label,100))
     if(labels.some(label=>!label)||new Set(labels.map(label=>label!.toLocaleLowerCase('vi'))).size!==members.length
@@ -199,7 +199,7 @@ async function main() {
   console.log(JSON.stringify({status:'PASS',stage:'M4_PUBLIC_PROJECTION',...evidence,
     publicProducts:manifest.products,listingProducts:manifest.listingProducts,excludedInvalidCanonical:rows.length-projected.length,assets:assets.size,bytes,
     historicalReferencePrices:manifest.contentStats.referencePrices,verifiedVariantProducts:publicVariantById.size,
-    prices:'CONTACT_ONLY',inventory:'CONFIRM_WITH_OWNER',privateFieldsExported:false}))
+    transactionalPrices:'CONTACT_ONLY',inventory:'CONFIRM_WITH_OWNER',privateFieldsExported:false}))
 }
 main().catch(error=>{
  const reasons=new Set(['PUBLIC_PROJECTION_UNSAFE_CONTENT','PUBLIC_PROJECTION_UNSAFE_DTO','PUBLIC_PROJECTION_DUPLICATE_CANONICAL_PATH','PUBLIC_PROJECTION_M3_EVIDENCE_REQUIRED','PUBLIC_PROJECTION_EMPTY_REVIEW_REQUIRED','PUBLIC_ASSET_CAPACITY','PUBLIC_PROJECTION_CAPACITY','M3_RUN_NOT_VERIFIED','M3_EXACT_CHECKPOINT_NOT_VERIFIED'])

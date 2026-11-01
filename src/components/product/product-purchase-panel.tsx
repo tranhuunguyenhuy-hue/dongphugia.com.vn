@@ -8,7 +8,18 @@ import { HistoricalReferencePriceNotice } from '@/components/product/historical-
 import { VariantPreview, VariantSelector } from '@/components/product/variant-selector'; import { resolveProductCommerce } from '@/lib/product-commerce'
 
 interface ProductPurchasePanelProps {
-    product: any
+    product: {
+        id: number; sku: string; slug: string; name: string; price: number | null;
+        original_price: number | null; sale_price: number | null; list_price: number | null;
+        online_discount_amount: number | null; price_display: string | null;
+        image_main_url: string | null; product_images: {image_url:string}[];
+        stock_status: string | null; is_active: boolean; variant_group: string | null;
+        sale_status?: string | null; price_state?: string | null;
+        variant_type: string | null; variant_label: string | null;
+        colors: {name:string;hex_code:string|null}|null;
+        brands: {name:string}|null;
+    }
+    historicalReferencePrice?: {amountVnd:number;recordedUpdateDate:string;provenance:string}|null
     variantSiblings: VariantSibling[]
     variantAxes?: unknown
     currentVariantOptions?: unknown
@@ -21,13 +32,13 @@ const toClientMoney = (value: unknown) =>
 
 export function ProductPurchasePanel({
     product,
+    historicalReferencePrice,
     variantSiblings,
     variantAxes,
     currentVariantOptions,
     categorySlug,
     subcategorySlug,
 }: ProductPurchasePanelProps) {
-    const referencePrice = product.publicContent?.referencePrice as {amountVnd:number;recordedUpdateDate:string;provenance:string}|null|undefined
     const productKey = `${product.id}:${product.sku}`
     const [selection, setSelection] = useState<{
         productKey: string
@@ -84,7 +95,7 @@ export function ProductPurchasePanel({
                     currentVariantOptions={currentVariantOptions}
                     variantAxes={variantAxes}
                     selectedSku={displayProduct.sku}
-                    onPreviewVariant={product.publicContent ? undefined : (variant) => setSelection({ productKey, variant })}
+                    onPreviewVariant={(variant) => setSelection({ productKey, variant })}
                     variantType={product.variant_type}
                     variantLabel={product.variant_label}
                     variantGroup={product.variant_group}
@@ -120,7 +131,7 @@ export function ProductPurchasePanel({
                     stockStatus={displayProduct.stock_status}
                 />
             </ProductPrice>
-            <HistoricalReferencePriceNotice referencePrice={referencePrice} />
+            <HistoricalReferencePriceNotice referencePrice={historicalReferencePrice} />
         </>
     )
 }

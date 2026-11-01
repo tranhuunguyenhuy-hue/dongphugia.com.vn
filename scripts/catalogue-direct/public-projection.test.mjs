@@ -69,6 +69,9 @@ it('publishes only complete real-product sibling groups and keeps all commerce c
  assert.throws(()=>buildProjection([members[0],{...members[1],variant_label:members[0].variant_label}],evidence),/UNSAFE_VARIANT/)
  assert.throws(()=>buildProjection([members[0],{...members[1],categories:{name:'Other',slug:'thiet-bi-bep'}}],evidence),/UNSAFE_VARIANT/)
  assert.throws(()=>buildProjection([members[0],{...members[1],variant_group:'public-17|private'}],evidence),/UNSAFE_VARIANT/)
+ assert.throws(()=>buildProjection([{...members[0],brands:null},{...members[1],brands:null}],evidence),/UNSAFE_VARIANT/)
+ assert.throws(()=>buildProjection([members[0],{...members[1],variant_type:'color'}],evidence),/UNSAFE_VARIANT/)
+ assert.throws(()=>buildProjection([members[0],{...members[1],listingEligible:false}],evidence),/UNSAFE_VARIANT/)
 })
 it('projects truthful category brands and a bounded featured set per brand',()=>{
  const products=Array.from({length:10},(_,index)=>projectProduct({

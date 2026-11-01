@@ -1,7 +1,7 @@
 import { Metadata } from "next"
 import { notFound, permanentRedirect } from "next/navigation"
 import Link from "next/link"
-import { getPdpDescriptionBlocks, getPdpDocuments, getPdpPackageItems, getPdpSpecifications, getPublicProductBySlug, getPublicProducts, getProductComponents, getVariantSelectionData, getVariantSiblings } from "@/lib/public-api-products"
+import { getPdpDescriptionBlocks, getPdpHistoricalReferencePrice, getPdpDocuments, getPdpPackageItems, getPdpSpecifications, getPublicProductBySlug, getPublicProducts, getProductComponents, getVariantSelectionData, getVariantSiblings } from "@/lib/public-api-products"
 import { ProductImageGallery } from "@/components/product/product-image-gallery"
 import { ProductDetailTabs } from "@/components/product/product-detail-tabs"
 import { ProductComponentsSection } from "@/components/product/product-components-section"
@@ -224,6 +224,7 @@ export default async function ThietBiVeSinhDetailPage({ params }: PageProps) {
 
                     <ProductPurchasePanel
                         product={purchaseProduct}
+                        historicalReferencePrice={getPdpHistoricalReferencePrice(product)}
                         variantSiblings={clientVariantSiblings}
                         variantAxes={clientVariantSelectionData.axes}
                         currentVariantOptions={clientVariantSelectionData.currentVariantOptions}

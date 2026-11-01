@@ -17,7 +17,7 @@ export type SnapshotProduct={
   categories:{name:string;slug:string};subcategories:{name:string;slug:string};brands:{name:string;slug:string}|null;
   publicContent?:{summary:string|null;descriptionBlocks:{kind:'heading'|'paragraph'|'bullet';text:string}[];specifications:Record<string,string>;gallery:string[];referencePrice:{amountVnd:number;recordedUpdateDate:'2026-07-02';provenance:'legacy-manual-public-display'}|null};
   canonical_category_slug:string;canonical_subcategory_slug:string;url:string;
-  variant_group?:string;variant_type?:'size'|'color'|'seat_type';variant_label?:string;
+  variant_group?:string;variant_type?:'size'|'seat_type';variant_label?:string;
 }
 type SnapshotListing={slug:string;name:string;thumbnail_url?:string|null;totalCount:number}
 type SnapshotBrand={slug:string;name:string}
