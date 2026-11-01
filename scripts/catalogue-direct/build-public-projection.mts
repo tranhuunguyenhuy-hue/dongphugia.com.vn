@@ -25,8 +25,13 @@ function parseBudgetEvidence(raw:string|undefined) {
 }
 function assertPreviewBudget() {
   const publicationMode=process.env.DIRECT_PUBLIC_PREVIEW_PUBLISH
-  if(publicationMode==='false') return assertPublicPreviewBudget(false,undefined,
-    parseBudgetEvidence(process.env.DIRECT_ZERO_COST_CANDIDATE_EVIDENCE))
+  // This workflow unit reads a private target and writes only a sanitized local
+  // candidate artifact. Billing remains UNKNOWN; it does not claim zero cost.
+  if(publicationMode==='false') {
+    if(process.env.GITHUB_WORKFLOW_REF!==`${REPO}/.github/workflows/catalogue-public-preview-v2.yml@refs/heads/main`)
+      throw new Error('PREVIEW2_READ_ONLY_SCOPE_REQUIRED')
+    return
+  }
   if(publicationMode==='true') return assertPublicPreviewBudget(true,
     parseBudgetEvidence(process.env.DIRECT_ZERO_COST_ATTESTATION),undefined)
   return assertPublicPreviewBudget(undefined,undefined,undefined)

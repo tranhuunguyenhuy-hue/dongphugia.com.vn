@@ -136,16 +136,9 @@ jobs:
           set -euo pipefail
           gh api "repos/$GITHUB_REPOSITORY/pulls/$DPG_PREVIEW_PR_NUMBER" > "$RUNNER_TEMP/candidate-source-pr.json"
           jq -e --arg sha "$SOURCE_SHA" '.state=="closed" and .merged==true and .base.ref=="main" and .merge_commit_sha==$sha' "$RUNNER_TEMP/candidate-source-pr.json" >/dev/null
-      - name: Verify fresh zero-cost evidence for vault-free Preview publication
-        if: inputs.publish
-        env:
-          DIRECT_ZERO_COST_PREVIEW_PUBLICATION_EVIDENCE: ${{ vars.DIRECT_ZERO_COST_PREVIEW_PUBLICATION_EVIDENCE }}
-        run: node --input-type=module -e 'import {assertPreviewPublicationBudget} from "./scripts/catalogue-direct/contract.mjs"; let evidence; try { evidence=JSON.parse(process.env.DIRECT_ZERO_COST_PREVIEW_PUBLICATION_EVIDENCE??"null") } catch { throw new Error("ZERO_COST_EVIDENCE_INVALID") }; assertPreviewPublicationBudget(evidence);'
-      - name: Verify candidate zero-cost evidence without vault headroom
-        if: inputs.publish == false
-        env:
-          DIRECT_ZERO_COST_CANDIDATE_EVIDENCE: ${{ vars.DIRECT_ZERO_COST_CANDIDATE_EVIDENCE }}
-        run: node --input-type=module -e 'import {assertCandidateBudget} from "./scripts/catalogue-direct/contract.mjs"; let evidence; try { evidence=JSON.parse(process.env.DIRECT_ZERO_COST_CANDIDATE_EVIDENCE??"null") } catch { throw new Error("ZERO_COST_EVIDENCE_INVALID") }; assertCandidateBudget(evidence);'
+      - name: Record Preview-only billing as unverified
+        run: |
+          node --input-type=module -e 'import {writeFileSync} from "node:fs"; writeFileSync(process.env.ARTIFACT_ROOT+"/evidence/billing-status.json",JSON.stringify({scope:"issue220-preview2-only",billableUsd:null,paidUsageBlocked:null,status:"UNKNOWN",checkpointVaultWrite:false,productionMutation:false})+"\n")'
       - name: Validate a preserved artifact before resuming an incomplete publication unit
         if: inputs.artifact_run_id != ''
         env:
@@ -188,7 +181,6 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           DIRECT_TARGET_READ_DATABASE_URL: ${{ secrets.DIRECT_TARGET_READ_DATABASE_URL }}
           DIRECT_TARGET_CA: ${{ secrets.DIRECT_TARGET_CA }}
-          DIRECT_ZERO_COST_CANDIDATE_EVIDENCE: ${{ vars.DIRECT_ZERO_COST_CANDIDATE_EVIDENCE }}
           DIRECT_PUBLIC_PREVIEW_PUBLISH: 'false'
           PUBLIC_CATALOGUE_M1_CHECKPOINT: ${{ inputs.checkpoint }}
           PUBLIC_CATALOGUE_M3_RUN_ID: ${{ inputs.m3_run_id }}
@@ -371,12 +363,11 @@ jobs:
             --upload "$MANAGED_ROOT/upload-evidence.json" --resource-proof "$MANAGED_ROOT/resource-proof.json" \
             --expected-workflow-run-id "$MANAGED_PREVIEW_RUN_ID" \
             --output "$ARTIFACT_ROOT/evidence/managed-publication-proof.json"
-      - name: Confirm Workers Free plan before upload
+      - name: Confirm Workers Free plan automatically before upload
         if: inputs.publish
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_LEO563_PREVIEW_TOKEN }}
-          DIRECT_CLOUDFLARE_FREE_ATTESTATION: ${{ vars.DIRECT_CLOUDFLARE_FREE_ATTESTATION }}
         run: |
           set -euo pipefail
           set +x
