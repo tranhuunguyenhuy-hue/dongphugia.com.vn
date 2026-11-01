@@ -1,6 +1,6 @@
 import {safeImage} from './public-image-policy.mjs'
 export {safeImage} from './public-image-policy.mjs'
-import {isSafePublicContent} from './public-product-content.mjs'
+import {isSafePublicContent,publicText} from './public-product-content.mjs'
 import { createHash } from 'node:crypto'
 
 export const PROJECTION_CONTRACT = 'dpg:public-catalogue-snapshot:v1'
@@ -46,6 +46,7 @@ export function buildProjection(products, evidence, rootMetadata = []) {
   const pages = new Map()
   const categoryBrands = new Map()
   const featuredCandidates = new Map()
+  const variantGroups = new Map()
   for (const root of rootMetadata) {
     if (!ROOTS.includes(root.slug) || !SLUG.test(root.slug) || categories.has(root.slug)) throw new Error('PUBLIC_PROJECTION_ROOT_METADATA_INVALID')
     const category = {slug:root.slug,name:root.name,listings:[],homeProducts:[],totalCount:0,brands:[],featuredProducts:[],featuredProductsByBrand:[]}
@@ -60,9 +61,12 @@ export function buildProjection(products, evidence, rootMetadata = []) {
     featuredCandidates.set(root.slug,[])
   }
   for (const product of products) {
-    const keys = ['id','name','display_name','slug','sku','price','price_display','stock_status','image_main_url','is_active','is_featured','is_promotion','variant_options','categories','subcategories','brands','canonical_category_slug','canonical_subcategory_slug','url','listingEligible','publicContent','rootSortOrder','rootBrandId','rootBrandSortOrder','rootSubcategorySortOrder','rootSubcategoryThumbnailUrl']
+    const keys = ['id','name','display_name','slug','sku','price','price_display','stock_status','image_main_url','is_active','is_featured','is_promotion','variant_options','categories','subcategories','brands','canonical_category_slug','canonical_subcategory_slug','url','listingEligible','publicContent','variant_group','variant_type','variant_label','rootSortOrder','rootBrandId','rootBrandSortOrder','rootSubcategorySortOrder','rootSubcategoryThumbnailUrl']
     if (Object.keys(product).some(key => !keys.includes(key)) || product.price !== null || product.stock_status !== 'contact') throw new Error('PUBLIC_PROJECTION_UNSAFE_DTO')
     if(product.publicContent&&!isSafePublicContent(product.publicContent))throw new Error('PUBLIC_PROJECTION_UNSAFE_CONTENT')
+    if(product.variant_group!==undefined&&(product.listingEligible!==true||!/^public-[1-9][0-9]*$/.test(product.variant_group)
+      ||!['size','seat_type'].includes(product.variant_type)
+      ||!product.variant_label||publicText(product.variant_label,100)!==product.variant_label))throw new Error('PUBLIC_PROJECTION_UNSAFE_VARIANT')
     if (paths.has(product.url)) throw new Error('PUBLIC_PROJECTION_DUPLICATE_CANONICAL_PATH')
     paths.add(product.url)
     // Eligibility is a server-side decision, not a public DTO property.
@@ -79,6 +83,10 @@ export function buildProjection(products, evidence, rootMetadata = []) {
     const bucket = productBucket(product.url)
     if (!buckets.has(bucket)) buckets.set(bucket, [])
     buckets.get(bucket).push(publicContent?{...publicProduct,publicContent}:publicProduct)
+    if(product.variant_group){
+      if(!variantGroups.has(product.variant_group))variantGroups.set(product.variant_group,[])
+      variantGroups.get(product.variant_group).push(publicProduct)
+    }
     if (!listingEligible) continue
     const categorySlug = product.categories.slug, listingSlug = product.subcategories.slug
     if (!categories.has(categorySlug)) categories.set(categorySlug, {slug:categorySlug,name:product.categories.name,listings:[],homeProducts:[],totalCount:0,brands:[],featuredProducts:[],featuredProductsByBrand:[]})
@@ -126,9 +134,19 @@ export function buildProjection(products, evidence, rootMetadata = []) {
       .sort((a,b)=>a.rootSortOrder-b.rootSortOrder||a.name.localeCompare(b.name)||a.slug.localeCompare(b.slug))
       .map(({slug,name,thumbnail_url,totalCount})=>({slug,name,thumbnail_url,totalCount}))
   }
+  for(const [key,members] of variantGroups){
+    const first=members[0]
+    if(members.length<2||members.length>8||!first.brands?.slug||new Set(members.map(p=>p.id)).size!==members.length
+      ||new Set(members.map(p=>p.sku)).size!==members.length
+      ||new Set(members.map(p=>p.variant_label.toLocaleLowerCase('vi'))).size!==members.length
+      ||members.some(p=>p.variant_type!==first.variant_type||p.categories.slug!==first.categories.slug
+        ||p.subcategories.slug!==first.subcategories.slug||p.brands?.slug!==first.brands?.slug))
+      throw new Error('PUBLIC_PROJECTION_UNSAFE_VARIANT')
+    variantGroups.set(key,members.sort((a,b)=>a.sku.localeCompare(b.sku)))
+  }
   const assets = new Map()
-  const contentStats={summaries:products.filter(p=>p.publicContent?.summary).length,descriptionBlocks:products.filter(p=>p.publicContent?.descriptionBlocks?.length).length,specifications:products.filter(p=>Object.keys(p.publicContent?.specifications??{}).length).length,galleries:products.filter(p=>p.publicContent?.gallery?.length).length}
-  const manifest = { contentPolicy:'canonical-public-content-v2',contentStats,contract:PROJECTION_CONTRACT,...evidence,notice:NOTICE,productBuckets:[...buckets.keys()].sort(),categories:[...categories.values()],products:products.length,listingProducts:[...pages.values()].reduce((n,p)=>n+p.length,0) }
+  const contentStats={summaries:products.filter(p=>p.publicContent?.summary).length,descriptionBlocks:products.filter(p=>p.publicContent?.descriptionBlocks?.length).length,specifications:products.filter(p=>Object.keys(p.publicContent?.specifications??{}).length).length,galleries:products.filter(p=>p.publicContent?.gallery?.length).length,referencePrices:products.filter(p=>p.publicContent?.referencePrice).length,variantProducts:[...variantGroups.values()].reduce((n,m)=>n+m.length,0)}
+  const manifest = { contentPolicy:'canonical-public-content-v3',contentStats,variantGroups:Object.fromEntries([...variantGroups].sort(([a],[b])=>a.localeCompare(b))),contract:PROJECTION_CONTRACT,...evidence,notice:NOTICE,productBuckets:[...buckets.keys()].sort(),categories:[...categories.values()],products:products.length,listingProducts:[...pages.values()].reduce((n,p)=>n+p.length,0) }
   assets.set('manifest.json', manifest)
   for (const [bucket, values] of buckets) assets.set(`products/${bucket}.json`,{contract:PROJECTION_CONTRACT,checkpoint:evidence.checkpoint,products:values})
   for (const [key, values] of pages) for(let offset=0;offset<values.length;offset+=PAGE_SIZE)

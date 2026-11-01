@@ -23,6 +23,23 @@ export function publicDescriptionBlocks(value){
  }
  return blocks.length>=2?blocks:[]
 }
+export function historicalPublicReferencePrice(input){
+ const price=Number(input.price)
+ const display=typeof input.price_display==='string'?input.price_display.trim():''
+ const digits=display.replace(/[^0-9]/g,'')
+ const date=input.price_updated_at instanceof Date?input.price_updated_at.toISOString().slice(0,10):null
+ if(input.source_system!=='manual'||input.price_source!=='manual'||input.source_url
+   ||input.price_state!=='priced'||input.price_confidence!=='high'
+   ||!Number.isSafeInteger(price)||price<=0||price>1_000_000_000
+   ||!/^\d[\d., ]*\s*(?:đ|vnđ|vnd)$/iu.test(display)
+   ||digits!==String(price)||date!=='2026-07-02')return null
+ return {amountVnd:price,recordedUpdateDate:date,provenance:'legacy-manual-public-display'}
+}
+export function isSafeHistoricalReferencePrice(value){
+ return value===null||(value&&Object.keys(value).length===3
+   &&Number.isSafeInteger(value.amountVnd)&&value.amountVnd>0&&value.amountVnd<=1_000_000_000
+   &&value.recordedUpdateDate==='2026-07-02'&&value.provenance==='legacy-manual-public-display')
+}
 export function projectPublicContent(input){
  // Existing canonical public PDP field only; never alternate clean/raw HTML.
  const summary=publicText(input.publicDescription,2400)
@@ -37,16 +54,17 @@ export function projectPublicContent(input){
   const url=safeImage(value);if(url&&!gallery.includes(url))gallery.push(url)
   if(gallery.length===6)break
  }
- return {summary,descriptionBlocks,specifications,gallery}
+ return {summary,descriptionBlocks,specifications,gallery,referencePrice:historicalPublicReferencePrice(input)}
 }
 
 // Validate already-projected plain text without parsing it as HTML a second time.
 // Re-parsing changes legitimate literal entity notation; the rendering sink escapes it.
 export function isSafePublicContent(c){
  const plain=(v,max)=>typeof v==='string'&&v.length>0&&v.length<=max&&v.trim()===v&&!/[\u0000-\u001f\u007f]/.test(v)&&!/<(?:\/?[a-z]|!|\?)/i.test(v)&&!PRIVATE_OR_COMMERCIAL.test(v.normalize('NFKC'))&&publicText(v,max)!==null
- if(!c||Object.keys(c).length!==4||Object.keys(c).some(k=>!['summary','descriptionBlocks','specifications','gallery'].includes(k)))return false
+ if(!c||Object.keys(c).length!==5||Object.keys(c).some(k=>!['summary','descriptionBlocks','specifications','gallery','referencePrice'].includes(k)))return false
  if(c.summary!==null&&!plain(c.summary,2400))return false
  if(!Array.isArray(c.descriptionBlocks)||c.descriptionBlocks.length>12||!c.descriptionBlocks.every(b=>b&&Object.keys(b).length===2&&['heading','paragraph','bullet'].includes(b.kind)&&plain(b.text,800)))return false
+ if(!isSafeHistoricalReferencePrice(c.referencePrice))return false
  if(!c.specifications||typeof c.specifications!=='object'||Array.isArray(c.specifications)||Object.keys(c.specifications).length>24)return false
  if(!Object.entries(c.specifications).every(([k,v])=>PUBLIC_SPEC_KEYS.includes(k)&&plain(v,180)))return false
  return Array.isArray(c.gallery)&&c.gallery.length<=6&&new Set(c.gallery).size===c.gallery.length&&c.gallery.every(u=>typeof u==='string'&&safeImage(u)===u)

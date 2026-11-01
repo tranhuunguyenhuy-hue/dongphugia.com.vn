@@ -39,13 +39,39 @@ describe('synthetic mechanism only: public snapshot projection',()=>{
 })
 it('keeps reviewed content on PDP assets only and rejects nested private fields',()=>{
  const dto=projectProduct(input,{pdp:true,listing:true},path)
- const content={summary:null,descriptionBlocks:[],specifications:{'Chất liệu':'Sứ'},gallery:['https://cdn.dongphugia.com.vn/a.jpg']}
+ const content={summary:null,descriptionBlocks:[],specifications:{'Chất liệu':'Sứ'},gallery:['https://cdn.dongphugia.com.vn/a.jpg'],referencePrice:null}
  const built=buildProjection([{...dto,publicContent:content}],evidence)
  const pdp=built.assets.get('products/'+productBucket(dto.url)+'.json').products[0]
  assert.deepEqual(pdp.publicContent,content)
  assert.equal(built.manifest.categories[0].homeProducts[0].publicContent,undefined)
  assert.equal(built.assets.get('listings/thiet-bi-ve-sinh/bon-cau/1.json').products[0].publicContent,undefined)
  assert.throws(()=>buildProjection([{...dto,publicContent:{...content,raw_html:'private'}}],evidence),/UNSAFE_CONTENT/)
+})
+it('keeps historical reference amount in PDP-only content while all transaction prices stay null',()=>{
+ const dto=projectProduct(input,{pdp:true,listing:true},path)
+ const content={summary:null,descriptionBlocks:[],specifications:{},gallery:[],referencePrice:{amountVnd:1200000,recordedUpdateDate:'2026-07-02',provenance:'legacy-manual-public-display'}}
+ const built=buildProjection([{...dto,publicContent:content}],evidence)
+ const pdp=built.assets.get('products/'+productBucket(dto.url)+'.json').products[0]
+ assert.equal(pdp.publicContent.referencePrice.amountVnd,1200000)
+ assert.equal(pdp.price,null)
+ assert.equal(built.manifest.contentStats.referencePrices,1)
+ assert.equal(built.assets.get('listings/thiet-bi-ve-sinh/bon-cau/1.json').products[0].publicContent,undefined)
+ assert.throws(()=>buildProjection([{...dto,publicContent:{...content,referencePrice:{...content.referencePrice,provenance:'hita'}}}],evidence),/UNSAFE_CONTENT/)
+})
+it('publishes only complete real-product sibling groups and keeps all commerce contact-only',()=>{
+ const members=[1,2,3].map(id=>({...projectProduct({...input,id,sku:`SKU-${id}`,slug:`variant-${id}`},{pdp:true,listing:true},path),
+  variant_group:'public-17',variant_type:'size',variant_label:`Kích thước ${id}`}))
+ const built=buildProjection(members,evidence)
+ assert.equal(built.manifest.contentStats.variantProducts,3)
+ assert.deepEqual(built.manifest.variantGroups['public-17'].map(p=>p.url),members.map(p=>p.url))
+ assert(built.manifest.variantGroups['public-17'].every(p=>p.price===null&&p.stock_status==='contact'))
+ assert.throws(()=>buildProjection(members.slice(0,1),evidence),/UNSAFE_VARIANT/)
+ assert.throws(()=>buildProjection([members[0],{...members[1],variant_label:members[0].variant_label}],evidence),/UNSAFE_VARIANT/)
+ assert.throws(()=>buildProjection([members[0],{...members[1],categories:{name:'Other',slug:'thiet-bi-bep'}}],evidence),/UNSAFE_VARIANT/)
+ assert.throws(()=>buildProjection([members[0],{...members[1],variant_group:'public-17|private'}],evidence),/UNSAFE_VARIANT/)
+ assert.throws(()=>buildProjection([{...members[0],brands:null},{...members[1],brands:null}],evidence),/UNSAFE_VARIANT/)
+ assert.throws(()=>buildProjection([members[0],{...members[1],variant_type:'color'}],evidence),/UNSAFE_VARIANT/)
+ assert.throws(()=>buildProjection([members[0],{...members[1],listingEligible:false}],evidence),/UNSAFE_VARIANT/)
 })
 it('projects truthful category brands and a bounded featured set per brand',()=>{
  const products=Array.from({length:10},(_,index)=>projectProduct({

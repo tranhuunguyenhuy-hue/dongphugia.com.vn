@@ -1,7 +1,7 @@
 import { Metadata } from "next"
 import { notFound, permanentRedirect } from "next/navigation"
 import Link from "next/link"
-import { getPdpDescriptionBlocks, getPdpDocuments, getPdpPackageItems, getPdpSpecifications, getPublicProductBySlug, getPublicProducts, getVariantSiblings } from "@/lib/public-api-products"
+import { getPdpDescriptionBlocks, getPdpHistoricalReferencePrice, getPdpDocuments, getPdpPackageItems, getPdpSpecifications, getPublicProductBySlug, getPublicProducts, getVariantSiblings } from "@/lib/public-api-products"
 import { VariantSelector } from "@/components/product/variant-selector"
 import { ProductImageGallery } from "@/components/product/product-image-gallery"
 import { ProductDetailTabs } from "@/components/product/product-detail-tabs"
@@ -11,6 +11,7 @@ import { ProductCard } from "@/components/ui/product-card"
 import { RecentlyViewedProducts } from "@/components/product/recently-viewed"
 import { BrandBadge } from "@/components/ui/brand-badge"
 import { ProductPrice } from "@/components/product/product-price"
+import { HistoricalReferencePriceNotice } from "@/components/product/historical-reference-price"
 import { JsonLd } from "@/components/seo/json-ld"
 import { buildProductSchema, buildBreadcrumbSchema } from "@/lib/seo/schema"
 import { buildProductMetadata, toNullableNumber } from "@/lib/seo/product-seo"
@@ -247,6 +248,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
                             slug={product.slug}
                         />
                     </ProductPrice>
+                    <HistoricalReferencePriceNotice referencePrice={getPdpHistoricalReferencePrice(product)} />
 
                     {/* Box Includes (Nguyên hộp bao gồm) */}
                     {boxIncludes.length > 0 && (
