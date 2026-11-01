@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 import type { VariantSibling } from '@/lib/public-api-products'
 import { ProductCTA } from '@/components/product/product-cta'
 import { ProductPrice } from '@/components/product/product-price'
+import { HistoricalReferencePriceNotice } from '@/components/product/historical-reference-price'
 import { VariantPreview, VariantSelector } from '@/components/product/variant-selector'; import { resolveProductCommerce } from '@/lib/product-commerce'
 
 interface ProductPurchasePanelProps {
@@ -26,6 +27,7 @@ export function ProductPurchasePanel({
     categorySlug,
     subcategorySlug,
 }: ProductPurchasePanelProps) {
+    const referencePrice = product.publicContent?.referencePrice as {amountVnd:number;recordedUpdateDate:string;provenance:string}|null|undefined
     const productKey = `${product.id}:${product.sku}`
     const [selection, setSelection] = useState<{
         productKey: string
@@ -82,7 +84,7 @@ export function ProductPurchasePanel({
                     currentVariantOptions={currentVariantOptions}
                     variantAxes={variantAxes}
                     selectedSku={displayProduct.sku}
-                    onPreviewVariant={(variant) => setSelection({ productKey, variant })}
+                    onPreviewVariant={product.publicContent ? undefined : (variant) => setSelection({ productKey, variant })}
                     variantType={product.variant_type}
                     variantLabel={product.variant_label}
                     variantGroup={product.variant_group}
@@ -118,6 +120,7 @@ export function ProductPurchasePanel({
                     stockStatus={displayProduct.stock_status}
                 />
             </ProductPrice>
+            <HistoricalReferencePriceNotice referencePrice={referencePrice} />
         </>
     )
 }

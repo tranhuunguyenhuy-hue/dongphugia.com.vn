@@ -15,13 +15,14 @@ export type SnapshotProduct={
   id:number;name:string;display_name:string;slug:string;sku:string;price:null;price_display:string;stock_status:'contact';
   image_main_url:string|null;is_active:true;is_featured:boolean;is_promotion:false;variant_options:[];
   categories:{name:string;slug:string};subcategories:{name:string;slug:string};brands:{name:string;slug:string}|null;
-  publicContent?:{summary:string|null;descriptionBlocks:{kind:'heading'|'paragraph'|'bullet';text:string}[];specifications:Record<string,string>;gallery:string[]};
+  publicContent?:{summary:string|null;descriptionBlocks:{kind:'heading'|'paragraph'|'bullet';text:string}[];specifications:Record<string,string>;gallery:string[];referencePrice:{amountVnd:number;recordedUpdateDate:'2026-07-02';provenance:'legacy-manual-public-display'}|null};
   canonical_category_slug:string;canonical_subcategory_slug:string;url:string;
+  variant_group?:string;variant_type?:'size'|'color'|'seat_type';variant_label?:string;
 }
 type SnapshotListing={slug:string;name:string;thumbnail_url?:string|null;totalCount:number}
 type SnapshotBrand={slug:string;name:string}
 export type SnapshotCategory={slug:string;name:string;listings:SnapshotListing[];homeProducts:SnapshotProduct[];totalCount:number;brands?:SnapshotBrand[];featuredProducts?:SnapshotProduct[];featuredProductsByBrand?:SnapshotProduct[]}
-type Manifest={contract:string;checkpoint:string;m3CodeSha:string;m3RunId:string;notice:string;categories:SnapshotCategory[];productBuckets:string[];products:number;listingProducts:number}
+type Manifest={contract:string;checkpoint:string;m3CodeSha:string;m3RunId:string;notice:string;categories:SnapshotCategory[];productBuckets:string[];products:number;listingProducts:number;variantGroups?:Record<string,SnapshotProduct[]>}
 type AssetEnvelope={contract:string;checkpoint:string;products?:SnapshotProduct[];totalCount?:number;page?:number}
 
 async function readAsset<T>(path:string):Promise<T> {
@@ -45,6 +46,13 @@ async function readAsset<T>(path:string):Promise<T> {
   return repair(value) as T
 }
 export const readSnapshotManifest=cache(async()=>readAsset<Manifest>('manifest.json'))
+export async function getSnapshotVariantSiblings(group:string,currentId:number){
+ if(!/^public-[1-9][0-9]*$/.test(group)||!Number.isSafeInteger(currentId))return []
+ const members=(await readSnapshotManifest()).variantGroups?.[group]
+ if(!Array.isArray(members)||members.length<2||members.length>8
+   ||!members.some(p=>p.id===currentId)||members.some(p=>p.variant_group!==group))return []
+ return members.filter(p=>p.id!==currentId)
+}
 export async function getSnapshotCategories() { return (await readSnapshotManifest()).categories }
 export async function getSnapshotCategoryRoot(categorySlug:string,brandSlugs:readonly string[]=[]){
   if(!SLUG.test(categorySlug)||brandSlugs.some(brandSlug=>!SLUG.test(brandSlug)))return null

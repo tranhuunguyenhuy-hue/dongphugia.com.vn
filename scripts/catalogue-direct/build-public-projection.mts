@@ -8,7 +8,7 @@ import { assertPublicPreviewBudget } from './contract.mjs'
 import type { ProductVisibilityInput } from '../../src/lib/public-product-visibility'
 import type { ProductPathInput, ProductTaxonAssignmentRef } from '../../src/lib/taxonomy-paths'
 import { projectProduct, buildProjection, ROOTS } from './public-projection.mjs'
-import {projectPublicContent,PUBLIC_SPEC_KEYS,PUBLIC_LEGACY_SPEC_PATHS} from './public-product-content.mjs'
+import {projectPublicContent,publicText,PUBLIC_SPEC_KEYS,PUBLIC_LEGACY_SPEC_PATHS} from './public-product-content.mjs'
 
 // Root .ts modules are CommonJS; this protected .mts runner is ESM. Keep the
 // exact canonical implementations using tsx's registered CommonJS loader.
@@ -17,6 +17,7 @@ const {resolveProductVisibility}=require('../../src/lib/public-product-visibilit
 const {getCanonicalProductPath}=require('../../src/lib/taxonomy-paths.ts') as typeof import('../../src/lib/taxonomy-paths')
 
 type ProjectionRow = ProductVisibilityInput & ProductPathInput & {id:number;name:string;display_name:string|null;sku:string;image_main_url:string|null;is_featured:boolean;brand_name:string|null;brand_slug:string|null;rootSortOrder:number;rootBrandId:number|null;rootBrandSortOrder:number|null;rootSubcategorySortOrder:number|null;rootSubcategoryThumbnailUrl:string|null;product_taxon_assignments:ProductTaxonAssignmentRef[]}
+type LegacyVariantRow=ProjectionRow & {variant_group:string|null;variant_group_id:number|null;variant_label:string|null;variant_type:string|null;is_combo:boolean}
 let projectionPhase='PRECHECK'
 const REPO='tranhuunguyenhuy-hue/dongphugia.com.vn'
 function parseBudgetEvidence(raw:string|undefined) {
@@ -62,10 +63,12 @@ async function main() {
   await assertTargetPrivate(client)
   projectionPhase='PUBLIC_QUERY'
   // Explicit selected fields only: no Auth, Storage, orders, customer records,
-  // source URLs, raw descriptions/spec blobs, raw prices or arbitrary JSON.
-  // Canonical products.description and explicit technical scalar paths only.
-  // Alternate description blobs, arbitrary JSON, documents and commercial terms are excluded.
+  // Source URLs and legacy prices remain protected in runner memory for strict
+  // historical-reference eligibility. Only reviewed scalar DTOs are emitted.
+  // Alternate description blobs, arbitrary JSON and documents are excluded.
   const result=await client.query(`select p.id,p.name,p.display_name,p.slug,p.sku,p.product_type,p.image_main_url,p.is_featured,
+    p.price,p.price_display,p.price_updated_at,p.price_source,p.price_state,p.price_confidence,p.source_system,p.source_url,
+    p.variant_group,p.variant_group_id,p.variant_label,p.variant_type,p.is_combo,
     p.sort_order as "rootSortOrder",b.id as "rootBrandId",b.sort_order as "rootBrandSortOrder",
     case when c.slug='gach-op-lat' and coalesce(root_taxonomy.has_taxon,false)
       then root_taxonomy.sort_order else s.sort_order end as "rootSubcategorySortOrder",
@@ -109,7 +112,7 @@ async function main() {
       and p.publication_status='public' and p.pdp_visibility='public'
     order by p.is_featured desc,p.listing_priority desc,p.sort_order,p.id`,[PUBLIC_SPEC_KEYS,JSON.stringify(PUBLIC_LEGACY_SPEC_PATHS)])
   projectionPhase='PUBLIC_TRANSFORM'
-  const rows = result.rows as ProjectionRow[]
+  const rows = result.rows as LegacyVariantRow[]
   const activeCategories = new Set((await client.query('select slug from dpg_app.categories where is_active')).rows.map((row: {slug:string}) => row.slug))
   const rootRows=(await client.query(`select c.slug as "categorySlug",c.name as "categoryName",
       s.slug as "subcategorySlug",s.name as "subcategoryName",s.sort_order as "subcategorySortOrder",
@@ -132,15 +135,46 @@ async function main() {
     }
   }
   const rootMetadata=[...rootMap.values()]
-  const projected=rows.map(row => {
+  const projectedPairs=rows.map(row => {
     const canonical = getCanonicalProductPath(row)
     if (!activeCategories.has(canonical.categorySlug)) return null
     const visibility = resolveProductVisibility(row)
     const primaries = row.product_taxon_assignments.filter(assignment => assignment.is_primary)
     const primaryListing = primaries.length === 0 || (primaries.length === 1 && primaries[0].catalog_taxons?.is_listing_enabled === true)
     const product=projectProduct(row,{...visibility,listing:visibility.listing && primaryListing},canonical)
-    return product?{...product,publicContent:projectPublicContent(row)}:null
-  }).filter(Boolean)
+    return product?{row,product:{...product,publicContent:projectPublicContent(row)}}:null
+  }).filter((pair):pair is NonNullable<typeof pair>=>pair!==null)
+  // Legacy groups are never the approved Family model. Only a small, fully
+  // public one-axis sibling subset with exact independent PDP targets is used.
+  const rawGroups=await client.query(`select vg.id,vg.group_key,vg.source,vg.confidence,vg.variant_type,
+    (select count(*)::integer from dpg_app.products all_p where all_p.variant_group=vg.group_key) as "allMemberCount"
+    from dpg_app.product_variant_groups vg where vg.confidence='high' and vg.source like 'hita-normalized-%'
+      and vg.variant_type=any($1::text[])`,[['size','color','seat_type']])
+  const allowedGroups=new Map(rawGroups.rows.map((group: {id:number;group_key:string;source:string;confidence:string;variant_type:string;allMemberCount:number})=>[group.group_key,group]))
+  const candidates=new Map<string,typeof projectedPairs>()
+  for(const pair of projectedPairs){
+    const key=pair.row.variant_group
+    if(!key)continue
+    if(!candidates.has(key))candidates.set(key,[])
+    candidates.get(key)!.push(pair)
+  }
+  const publicVariantById=new Map<number,{variant_group:string;variant_type:string;variant_label:string}>()
+  for(const [key,members] of candidates){
+    const group=allowedGroups.get(key)
+    if(!group||members.length<2||members.length>8||group.allMemberCount!==members.length
+      ||members.some(({row})=>row.variant_group_id!==group.id||row.variant_type!==group.variant_type||row.is_combo))continue
+    const first=members[0].product
+    if(members.some(({product})=>product.categories.slug!==first.categories.slug
+      ||product.subcategories.slug!==first.subcategories.slug||product.brands?.slug!==first.brands?.slug))continue
+    const labels=members.map(({row})=>publicText(row.variant_label,100))
+    if(labels.some(label=>!label)||new Set(labels.map(label=>label!.toLocaleLowerCase('vi'))).size!==members.length
+      ||new Set(members.map(({product})=>product.sku)).size!==members.length
+      ||new Set(members.map(({product})=>product.url)).size!==members.length)continue
+    members.forEach(({product},index)=>publicVariantById.set(product.id,{
+      variant_group:`public-${group.id}`,variant_type:group.variant_type,variant_label:labels[index]!,
+    }))
+  }
+  const projected=projectedPairs.map(({product})=>({...product,...publicVariantById.get(product.id)}))
   projectionPhase='PUBLIC_ASSEMBLY'
   const {manifest,assets}=buildProjection(projected,evidence,rootMetadata)
   if(!manifest.products||!manifest.listingProducts) throw new Error('PUBLIC_PROJECTION_EMPTY_REVIEW_REQUIRED')
@@ -164,6 +198,7 @@ async function main() {
   // Only public projection DTO assets are emitted. Raw SQL rows stay in memory.
   console.log(JSON.stringify({status:'PASS',stage:'M4_PUBLIC_PROJECTION',...evidence,
     publicProducts:manifest.products,listingProducts:manifest.listingProducts,excludedInvalidCanonical:rows.length-projected.length,assets:assets.size,bytes,
+    historicalReferencePrices:manifest.contentStats.referencePrices,verifiedVariantProducts:publicVariantById.size,
     prices:'CONTACT_ONLY',inventory:'CONFIRM_WITH_OWNER',privateFieldsExported:false}))
 }
 main().catch(error=>{
