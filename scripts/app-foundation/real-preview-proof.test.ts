@@ -17,7 +17,6 @@ describe('LEO-563 real Public Preview proof', () => {
   })
 
   it('accepts the provider workers.dev noindex header with full HTML and robots controls', async () => {
-    let rootCount = 0
     const fetchImpl = async (input: URL | RequestInfo, init?: RequestInit) => {
       const url = new URL(String(input))
       if (url.pathname === '/api/health') {
@@ -38,16 +37,12 @@ describe('LEO-563 real Public Preview proof', () => {
       if (url.search || new Headers(init?.headers).has('cookie')) {
         return response('<html></html>', {
           'Cache-Control': 'private, no-store',
-          'X-DPG-Cache': 'BYPASS',
           'X-Robots-Tag': 'noindex',
-        })
+        }, url.search ? 400 : 200)
       }
-      rootCount += 1
       return response('<html><head><title>Đông Phú Gia - Vật liệu xây dựng cao cấp tại Đà Lạt</title><meta name="robots" content="noindex,nofollow"></head></html>', {
         'Content-Type': 'text/html',
-        'Cache-Control': 'public, max-age=0, must-revalidate',
-        'CDN-Cache-Control': 'public, max-age=300, must-revalidate',
-        'X-DPG-Cache': rootCount === 1 ? 'MISS' : 'HIT',
+        'Cache-Control': 'private, no-store',
         'X-Robots-Tag': 'noindex',
       })
     }
@@ -55,12 +50,12 @@ describe('LEO-563 real Public Preview proof', () => {
     const proof = await verifyRealPreview({ baseUrl, sourceSha, fetchImpl })
     expect(proof.contract).toBe('dongphugia:real-public-preview-proof:v2')
     expect(proof.observations.cache).toMatchObject({
-      first: 'MISS',
-      subsequent: 'HIT',
-      query: 'BYPASS',
-      cookie: 'BYPASS',
-      api: 'BYPASS',
-      edgeMaxAgeSeconds: 300,
+      first: 'PRIVATE_NO_STORE',
+      subsequent: 'PRIVATE_NO_STORE',
+      query: 'REJECTED_PRIVATE_NO_STORE',
+      cookie: 'PRIVATE_NO_STORE',
+      api: 'BYPASS_PRIVATE_NO_STORE',
+      edgeMaxAgeSeconds: 0,
       staleServing: false,
     })
     expect(proof.observations.limits).toEqual({
@@ -72,7 +67,6 @@ describe('LEO-563 real Public Preview proof', () => {
   })
 
   it('rejects a required Preview response that loses the noindex directive', async () => {
-    let rootCount = 0
     const fetchImpl = async (input: URL | RequestInfo, init?: RequestInit) => {
       const url = new URL(String(input))
       if (url.pathname === '/api/health') {
@@ -92,22 +86,30 @@ describe('LEO-563 real Public Preview proof', () => {
       if (url.search || new Headers(init?.headers).has('cookie')) {
         return response('<html></html>', {
           'Cache-Control': 'private, no-store',
-          'X-DPG-Cache': 'BYPASS',
           'X-Robots-Tag': 'noindex, nofollow',
-        })
+        }, url.search ? 400 : 200)
       }
-      rootCount += 1
       return response('<html><head><title>Đông Phú Gia - Vật liệu xây dựng cao cấp tại Đà Lạt</title><meta name="robots" content="noindex,nofollow"></head></html>', {
         'Content-Type': 'text/html',
-        'Cache-Control': 'public, max-age=0, must-revalidate',
-        'CDN-Cache-Control': 'public, max-age=300, must-revalidate',
-        'X-DPG-Cache': rootCount === 1 ? 'MISS' : 'HIT',
+        'Cache-Control': 'private, no-store',
         'X-Robots-Tag': 'noindex, nofollow',
       })
     }
 
-    await expect(verifyRealPreview({ baseUrl, sourceSha, fetchImpl, hitAttempts: 1 })).rejects.toThrow(
+    await expect(verifyRealPreview({ baseUrl, sourceSha, fetchImpl })).rejects.toThrow(
       'LEO563_REAL_PREVIEW_X_ROBOTS_FAILED',
     )
+  })
+
+  it('rejects public caching or an unexpected cache marker on the prerendered root', async () => {
+    for (const unsafe of [
+      { 'Cache-Control': 'public, max-age=300', 'X-Robots-Tag': 'noindex' },
+      { 'Cache-Control': 'private, no-store', 'X-Robots-Tag': 'noindex', 'X-DPG-Cache': 'HIT' },
+    ]) {
+      const fetchImpl = async () => response('<html></html>', unsafe)
+      await expect(verifyRealPreview({ baseUrl, sourceSha, fetchImpl })).rejects.toThrow(
+        'LEO563_REAL_PREVIEW_PRERENDER_CACHE_FAILED',
+      )
+    }
   })
 })
