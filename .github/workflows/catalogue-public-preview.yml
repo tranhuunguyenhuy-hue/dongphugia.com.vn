@@ -234,7 +234,11 @@ jobs:
           kill "$render_pid" 2>/dev/null || true
           wait "$render_pid" 2>/dev/null || true
           render_pid=''
+          node "$GITHUB_WORKSPACE/scripts/catalogue-direct/public-preview.mjs" reconcile-progress \
+            --first-root "$ARTIFACT_ROOT/build" --second-render-root "$render_root" \
+            --source-sha "$SOURCE_SHA" --checkpoint "$CHECKPOINT"
           cp -R "$render_root" apps/public/dist/client/__render
+          printf '\n/__catalogue/*\n  X-Robots-Tag: noindex, nofollow\n  Cache-Control: private, no-store\n' >> apps/public/dist/client/_headers
           printf '\n/__render/*\n  X-Robots-Tag: noindex, nofollow\n  Cache-Control: private, no-store\n' >> apps/public/dist/client/_headers
           npm run app:assemble-public-worker -- --repository-root . \
             --server-dir apps/public/dist/server --assets-dir apps/public/dist/client \
