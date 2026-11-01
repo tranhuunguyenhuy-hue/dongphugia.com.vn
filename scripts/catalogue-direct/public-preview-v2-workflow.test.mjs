@@ -4,19 +4,21 @@ import { expect, it } from 'vitest'
 const workflow=readFileSync('.github/workflows/catalogue-public-preview-v2.yml','utf8')
 
 it('builds one protected read-only source candidate before any possible Worker upload',()=>{
- const order=['Verify execution tuple','Verify candidate zero-cost evidence without vault headroom',
+ const order=['Verify execution tuple','Record Preview-only billing as unverified',
   'Build canonical Public Worker without database credentials','Generate public-only assets from the independently verified target',
   'Prerender canonical catalogue HTML and Flight within bounded Free assets',
   'Verify Public-only artifact, real snapshot identity and Free caps',
   'Preserve the immutable Public-only candidate before any provider write',
-  'Confirm Workers Free plan before upload','Create a fresh read-only managed-state receipt and immediately recheck it',
+  'Confirm Workers Free plan automatically before upload','Create a fresh read-only managed-state receipt and immediately recheck it',
   'Upload one existing Worker version']
  let previous=-1
  for(const step of order){const index=workflow.indexOf(`- name: ${step}`);expect(index).toBeGreaterThan(previous);previous=index}
  expect(workflow).toContain("DIRECT_PUBLIC_PREVIEW_PUBLISH: 'false'")
  expect(workflow).toContain('DIRECT_TARGET_READ_DATABASE_URL: ${{ secrets.DIRECT_TARGET_READ_DATABASE_URL }}')
- expect(workflow).toContain('DIRECT_ZERO_COST_PREVIEW_PUBLICATION_EVIDENCE: ${{ vars.DIRECT_ZERO_COST_PREVIEW_PUBLICATION_EVIDENCE }}')
- expect(workflow).toContain('assertPreviewPublicationBudget')
+ expect(workflow).not.toContain('DIRECT_ZERO_COST_PREVIEW_PUBLICATION_EVIDENCE')
+ expect(workflow).not.toContain('DIRECT_ZERO_COST_CANDIDATE_EVIDENCE')
+ expect(workflow).not.toContain('DIRECT_CLOUDFLARE_FREE_ATTESTATION')
+ expect(workflow).toContain('billing-status.json')
  expect(workflow).toContain('preview2-candidate-audit.mjs "$ARTIFACT_ROOT/build"')
  expect(workflow).not.toContain('DIRECT_VAULT_TOKEN')
  expect(workflow).not.toContain('wrangler deploy ')
