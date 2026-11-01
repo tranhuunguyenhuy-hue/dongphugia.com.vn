@@ -1670,3 +1670,9 @@ export const getCompatibleLids = unstable_cache(
     ['compatible-lids'],
     { revalidate: 3600, tags: ['products', 'compatible-lids'] }
 )
+
+// Legacy Production descriptions continue through their established renderer.
+// The isolated snapshot adapter supplies reviewed text blocks separately.
+export function getPdpDescriptionBlocks(_product: unknown): Array<{kind:'heading'|'paragraph'|'bullet';text:string}> {
+    return []
+}

@@ -15,7 +15,7 @@ export type SnapshotProduct={
   id:number;name:string;display_name:string;slug:string;sku:string;price:null;price_display:string;stock_status:'contact';
   image_main_url:string|null;is_active:true;is_featured:boolean;is_promotion:false;variant_options:[];
   categories:{name:string;slug:string};subcategories:{name:string;slug:string};brands:{name:string;slug:string}|null;
-  publicContent?:{summary:string|null;specifications:Record<string,string>;gallery:string[]};
+  publicContent?:{summary:string|null;descriptionBlocks:{kind:'heading'|'paragraph'|'bullet';text:string}[];specifications:Record<string,string>;gallery:string[]};
   canonical_category_slug:string;canonical_subcategory_slug:string;url:string;
 }
 type SnapshotListing={slug:string;name:string;thumbnail_url?:string|null;totalCount:number}

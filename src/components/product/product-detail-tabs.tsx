@@ -55,8 +55,9 @@ export interface Technology {
 
 export interface ProductDetailTabsProps {
     description?: string | null;
+    descriptionBlocks?: ReadonlyArray<{kind:'heading'|'paragraph'|'bullet';text:string}>;
     features?: string | null;
-    specifications?: any;
+    specifications?: unknown;
     /** Extra specs prepended before parsed specifications (e.g. sango dimensions) */
     extraSpecs?: { key: string; value: React.ReactNode }[];
     /** Technologies list (e.g. TBVS technologies) */
@@ -73,6 +74,7 @@ export interface ProductDetailTabsProps {
 
 export function ProductDetailTabs({
     description,
+    descriptionBlocks = [],
     features,
     specifications,
     extraSpecs,
@@ -104,7 +106,7 @@ export function ProductDetailTabs({
                 setShowInfoToggle(false);
             }
         }
-    }, [activeTab, description]);
+    }, [activeTab, description, descriptionBlocks]);
 
     const config = {
         infoLabel: tabConfig?.infoLabel ?? 'Thông tin chung',
@@ -123,10 +125,10 @@ export function ProductDetailTabs({
 
     if (specifications) {
         if (Array.isArray(specifications)) {
-            const parsed = specifications.map((s: any) => ({
-                key: s.key || s.name || Object.keys(s)[0] || '',
-                value: s.value || Object.values(s)[0] || '',
-            })).filter((s: { key: string; value: any }) => s.key && s.value);
+            const parsed = specifications.filter((s): s is Record<string, unknown> => s !== null && typeof s === 'object' && !Array.isArray(s)).map(s => ({
+                key: String(s.key || s.name || Object.keys(s)[0] || ''),
+                value: String(s.value || Object.values(s)[0] || ''),
+            })).filter(s => s.key && s.value);
             specsList = [...specsList, ...parsed];
         } else if (typeof specifications === 'object' && specifications !== null) {
             const parsed = Object.entries(specifications)
@@ -164,14 +166,17 @@ export function ProductDetailTabs({
     const parsedDocuments = [...documents];
     
     // Extract explicitly parsed documents array if injected by crawler
-    if (specifications && typeof specifications === 'object' && Array.isArray(specifications.documents)) {
-        specifications.documents.forEach((doc: any) => {
-            if (doc.url && doc.name) {
+    const specificationDocuments = specifications && typeof specifications === 'object' && !Array.isArray(specifications)
+        ? (specifications as Record<string, unknown>).documents : null;
+    if (Array.isArray(specificationDocuments)) {
+        specificationDocuments.forEach((doc: unknown) => {
+            if (doc && typeof doc === 'object' && typeof (doc as Record<string, unknown>).url === 'string' && typeof (doc as Record<string, unknown>).name === 'string') {
+                const document = doc as {url:string;name:string;type?:string;size?:string};
                 parsedDocuments.push({
-                    name: doc.name,
-                    url: doc.url,
-                    type: doc.type || (doc.url.toLowerCase().endsWith('.pdf') ? 'PDF' : 'Link'),
-                    size: doc.size || 'Xem chi tiết',
+                    name: document.name,
+                    url: document.url,
+                    type: document.type || (document.url.toLowerCase().endsWith('.pdf') ? 'PDF' : 'Link'),
+                    size: document.size || 'Xem chi tiết',
                 });
             }
         });
@@ -235,7 +240,7 @@ export function ProductDetailTabs({
 
     specsList.sort((a, b) => getSpecPriority(a.key) - getSpecPriority(b.key));
 
-    const renderSpecValue = (key: string, value: any) => {
+    const renderSpecValue = (key: string, value: React.ReactNode) => {
         if (typeof value !== 'string') {
             // If value is a ReactNode (like the color swatch), render it directly
             return value;
@@ -301,13 +306,18 @@ export function ProductDetailTabs({
             <div key={activeTab} className="mt-6 animate-tabFadeIn">
                 {activeTab === 'info' && (
                     <div>
-                        {description ? (
+                        {descriptionBlocks.length > 0 || description ? (
                             <div className="relative">
                                 <div
                                     ref={infoContentRef}
                                     className={`font-normal text-base leading-relaxed text-stone-700 prose max-w-none prose-headings:font-bold prose-headings:text-stone-900 prose-h2:text-2xl prose-h3:text-xl prose-a:text-[#00b2e3] hover:prose-a:text-[#25738E] prose-ul:list-disc prose-ul:pl-5 prose-li:my-1 prose-img:rounded-xl prose-img:shadow-sm transition-all duration-500 overflow-hidden ${(!isInfoExpanded && showInfoToggle) ? 'max-h-[500px]' : ''}`}
-                                    dangerouslySetInnerHTML={{ __html: sanitizeProductHtml(description) }}
-                                />
+                                >
+                                    {descriptionBlocks.length > 0 ? descriptionBlocks.map((block,index) =>
+                                        block.kind === 'heading' ? <h2 key={index}>{block.text}</h2> :
+                                        block.kind === 'bullet' ? <ul key={index}><li>{block.text}</li></ul> :
+                                        <p key={index}>{block.text}</p>
+                                    ) : <div dangerouslySetInnerHTML={{ __html: sanitizeProductHtml(description ?? '') }} />}
+                                </div>
                                 {showInfoToggle && !isInfoExpanded && (
                                     <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-white via-white/80 to-transparent pointer-events-none" />
                                 )}

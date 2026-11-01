@@ -60,3 +60,10 @@ export const getProductComponents:typeof Original.getProductComponents=async()=>
 export const getPdpDocuments:typeof Original.getPdpDocuments=()=>[]
 export const getPdpSpecifications:typeof Original.getPdpSpecifications=(p)=>('publicContent' in p?(p as {publicContent?:{specifications:Record<string,string>}}).publicContent?.specifications??{}:{})
 export const getPdpPackageItems:typeof Original.getPdpPackageItems=()=>[]
+export const getPdpDescriptionBlocks:typeof Original.getPdpDescriptionBlocks=(product)=>{
+ const blocks=(product as {publicContent?:{descriptionBlocks?:unknown}})?.publicContent?.descriptionBlocks
+ if(!Array.isArray(blocks))return []
+ return blocks.filter((block):block is {kind:'heading'|'paragraph'|'bullet';text:string}=>
+  block&&typeof block==='object'&&['heading','paragraph','bullet'].includes(block.kind)
+  &&typeof block.text==='string'&&block.text.length>0&&block.text.length<=800).slice(0,12)
+}

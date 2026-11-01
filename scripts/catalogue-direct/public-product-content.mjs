@@ -11,9 +11,22 @@ export function publicText(value,max=500){
  const text=sanitizeHtml(raw,{allowedTags:[],allowedAttributes:{},nonTextTags:['script','style','textarea','option']}).replace(/&(amp|lt|gt|quot|#39|apos);/g,(_match,key)=>({amp:'&',lt:'<',gt:'>',quot:'"','#39':"'",apos:"'"}[key])).replace(/[\u0000-\u001f\u007f]/g,' ').replace(/\s+/g,' ').trim()
  return text&&!/<\/?[a-z][^>]*>/i.test(text)&&!PRIVATE_OR_COMMERCIAL.test(text.normalize('NFKC'))?text.slice(0,max).trim():null
 }
+export function publicDescriptionBlocks(value){
+ if(typeof value!=='string'||value.length>16000)return []
+ const safeMarkup=sanitizeHtml(value,{allowedTags:['h2','h3','p','ul','ol','li','strong','em','br'],allowedAttributes:{},nonTextTags:['script','style','textarea','option']})
+ const blocks=[]
+ for(const match of safeMarkup.matchAll(/<(h2|h3|p|li)>([\s\S]*?)<\/\1>/gi)){
+  const kind=match[1]==='h2'||match[1]==='h3'?'heading':match[1]==='li'?'bullet':'paragraph'
+  const text=publicText(match[2],2000)
+  if(text&&text.length<=800)blocks.push({kind,text})
+  if(blocks.length===12)break
+ }
+ return blocks.length>=2?blocks:[]
+}
 export function projectPublicContent(input){
  // Existing canonical public PDP field only; never alternate clean/raw HTML.
  const summary=publicText(input.publicDescription,2400)
+ const descriptionBlocks=publicDescriptionBlocks(input.publicDescription)
  const specifications={}
  for(const s of (Array.isArray(input.publicSpecifications)?input.publicSpecifications:[]).slice(0,100)){
   if(s.isPdpVisible!==true||!PUBLIC_SPEC_KEYS.includes(s.key)||Object.keys(specifications).length>=24)continue
@@ -24,15 +37,16 @@ export function projectPublicContent(input){
   const url=safeImage(value);if(url&&!gallery.includes(url))gallery.push(url)
   if(gallery.length===6)break
  }
- return {summary,specifications,gallery}
+ return {summary,descriptionBlocks,specifications,gallery}
 }
 
 // Validate already-projected plain text without parsing it as HTML a second time.
 // Re-parsing changes legitimate literal entity notation; the rendering sink escapes it.
 export function isSafePublicContent(c){
  const plain=(v,max)=>typeof v==='string'&&v.length>0&&v.length<=max&&v.trim()===v&&!/[\u0000-\u001f\u007f]/.test(v)&&!/<(?:\/?[a-z]|!|\?)/i.test(v)&&!PRIVATE_OR_COMMERCIAL.test(v.normalize('NFKC'))&&publicText(v,max)!==null
- if(!c||Object.keys(c).length!==3||Object.keys(c).some(k=>!['summary','specifications','gallery'].includes(k)))return false
+ if(!c||Object.keys(c).length!==4||Object.keys(c).some(k=>!['summary','descriptionBlocks','specifications','gallery'].includes(k)))return false
  if(c.summary!==null&&!plain(c.summary,2400))return false
+ if(!Array.isArray(c.descriptionBlocks)||c.descriptionBlocks.length>12||!c.descriptionBlocks.every(b=>b&&Object.keys(b).length===2&&['heading','paragraph','bullet'].includes(b.kind)&&plain(b.text,800)))return false
  if(!c.specifications||typeof c.specifications!=='object'||Array.isArray(c.specifications)||Object.keys(c.specifications).length>24)return false
  if(!Object.entries(c.specifications).every(([k,v])=>PUBLIC_SPEC_KEYS.includes(k)&&plain(v,180)))return false
  return Array.isArray(c.gallery)&&c.gallery.length<=6&&new Set(c.gallery).size===c.gallery.length&&c.gallery.every(u=>typeof u==='string'&&safeImage(u)===u)
