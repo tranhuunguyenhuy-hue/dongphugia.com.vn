@@ -130,11 +130,11 @@ jobs:
           jq -e --arg sha "$SOURCE_SHA" \
             '.state=="closed" and .merged==true and .base.ref=="main" and .merge_commit_sha==$sha' \
             "$RUNNER_TEMP/candidate-source-pr.json" >/dev/null
-      - name: Verify zero-cost and checkpoint-headroom evidence for publishing
+      - name: Verify fresh zero-cost evidence for vault-free Preview publication
         if: inputs.publish
         env:
-          DIRECT_ZERO_COST_ATTESTATION: ${{ vars.DIRECT_ZERO_COST_ATTESTATION }}
-        run: node --input-type=module -e 'import {assertBudget} from "./scripts/catalogue-direct/contract.mjs"; let evidence; try { evidence=JSON.parse(process.env.DIRECT_ZERO_COST_ATTESTATION??"null") } catch { throw new Error("ZERO_COST_EVIDENCE_INVALID") }; assertBudget(evidence);'
+          DIRECT_ZERO_COST_PREVIEW_PUBLICATION_EVIDENCE: ${{ vars.DIRECT_ZERO_COST_PREVIEW_PUBLICATION_EVIDENCE }}
+        run: node --input-type=module -e 'import {assertPreviewPublicationBudget} from "./scripts/catalogue-direct/contract.mjs"; let evidence; try { evidence=JSON.parse(process.env.DIRECT_ZERO_COST_PREVIEW_PUBLICATION_EVIDENCE??"null") } catch { throw new Error("ZERO_COST_EVIDENCE_INVALID") }; assertPreviewPublicationBudget(evidence);'
       - name: Verify candidate zero-cost evidence without vault headroom
         if: inputs.publish == false
         env:

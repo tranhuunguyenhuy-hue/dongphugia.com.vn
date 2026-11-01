@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import {
   SOURCE, TARGET, CONTRACT, RECOVERY_ID, CHECKPOINT_CEILING, HEADROOM_BODY, CATALOGUE_TABLES, CATALOGUE_RESTORE_ORDER, SEQUENCE_BODY,
-  connectionConfig, assertBudget, assertCandidateBudget, assertPublicPreviewBudget, assertManifest, assertSchema, assertResume,
+  connectionConfig, assertBudget, assertCandidateBudget, assertPreviewPublicationBudget, assertPublicPreviewBudget, assertManifest, assertSchema, assertResume,
   insertSql, rowsSql, provisioningSql, comparableSchema, normalizeDefinition,
 } from './contract.mjs'
 
@@ -114,6 +114,21 @@ describe('direct 27-table scope and connections', () => {
     expect(() => assertPublicPreviewBudget(undefined, full, costOnly, now)).toThrow('PUBLICATION_MODE_REQUIRED')
     expect(() => assertPublicPreviewBudget('false', full, costOnly, now)).toThrow('PUBLICATION_MODE_REQUIRED')
   })
+  it('requires fresh exact $0 evidence for vault-free Preview publication', () => {
+    const now = Date.now()
+    const good = { recoveryId: RECOVERY_ID, verifiedAt: new Date(now).toISOString(),
+      billableUsd: 0, paidUsageBlocked: true }
+    expect(() => assertPreviewPublicationBudget(good, now)).not.toThrow()
+    expect(() => assertPreviewPublicationBudget({ ...good, checkpointBytesRemaining: 0 }, now)).not.toThrow()
+    expect(() => assertPreviewPublicationBudget({ ...good, billableUsd: 1 }, now)).toThrow('ZERO_COST_EVIDENCE_REQUIRED')
+    expect(() => assertPreviewPublicationBudget({ ...good, paidUsageBlocked: false }, now)).toThrow('ZERO_COST_EVIDENCE_REQUIRED')
+    expect(() => assertPreviewPublicationBudget({ ...good, recoveryId: 'other' }, now)).toThrow('ZERO_COST_EVIDENCE_REQUIRED')
+    expect(() => assertPreviewPublicationBudget({ ...good, verifiedAt: new Date(now - 86400001).toISOString() }, now))
+      .toThrow('BUDGET_EVIDENCE_STALE')
+    expect(() => assertPreviewPublicationBudget({ ...good, verifiedAt: new Date(now + 1).toISOString() }, now))
+      .toThrow('BUDGET_EVIDENCE_STALE')
+    expect(() => assertBudget(good, now)).toThrow('CHECKPOINT_QUOTA_REQUIRED')
+  })
   it('routes publish=false to cost-only evidence and excludes candidate generation from the pinned workflow', () => {
     const workflow = readFileSync(new URL('../../.github/workflows/catalogue-public-preview.yml', import.meta.url), 'utf8')
     const runner = readFileSync(new URL('./build-public-projection.mts', import.meta.url), 'utf8')
@@ -123,12 +138,16 @@ describe('direct 27-table scope and connections', () => {
       workflow.indexOf('- name: Verify execution tuple'),
       workflow.indexOf('- name: Validate a preserved artifact before resuming an incomplete publication unit'),
     )
-    expect(budgetBlock).toMatch(/if: inputs\.publish[\s\S]*?assertBudget/)
+    expect(budgetBlock).toMatch(/if: inputs\.publish[\s\S]*?assertPreviewPublicationBudget/)
     expect(budgetBlock).toMatch(/if: inputs\.publish == false[\s\S]*?assertCandidateBudget/)
     expect(budgetBlock).toContain('DIRECT_ZERO_COST_CANDIDATE_EVIDENCE: ${{ vars.DIRECT_ZERO_COST_CANDIDATE_EVIDENCE }}')
     expect(workflow).not.toContain('DIRECT_PUBLIC_PREVIEW_PUBLISH: ${{ inputs.publish }}')
     expect(workflow).not.toContain('DIRECT_TARGET_READ_DATABASE_URL')
-    expect(workflow).toContain('DIRECT_ZERO_COST_ATTESTATION: ${{ vars.DIRECT_ZERO_COST_ATTESTATION }}')
+    expect(workflow).not.toContain('DIRECT_VAULT_REPOSITORY')
+    expect(workflow).not.toContain('DIRECT_VAULT_TOKEN')
+    expect(workflow).not.toContain('DIRECT_CHECKPOINT_AGE_IDENTITY')
+    expect(workflow).toContain('DIRECT_ZERO_COST_PREVIEW_PUBLICATION_EVIDENCE: ${{ vars.DIRECT_ZERO_COST_PREVIEW_PUBLICATION_EVIDENCE }}')
+    expect(workflow).not.toContain('DIRECT_ZERO_COST_ATTESTATION: ${{ vars.DIRECT_ZERO_COST_ATTESTATION }}')
     expect(workflow).toContain('DIRECT_ZERO_COST_CANDIDATE_EVIDENCE: ${{ vars.DIRECT_ZERO_COST_CANDIDATE_EVIDENCE }}')
     expect(runner).toContain("publicationMode==='false') return assertPublicPreviewBudget(false")
     expect(runner).toContain('parseBudgetEvidence(process.env.DIRECT_ZERO_COST_CANDIDATE_EVIDENCE))')
@@ -144,7 +163,7 @@ describe('direct 27-table scope and connections', () => {
     const workflow = readFileSync(new URL('../../.github/workflows/catalogue-public-preview.yml', import.meta.url), 'utf8')
     const artifactIndex = workflow.indexOf('- name: Validate a preserved artifact before resuming an incomplete publication unit')
     const determinismIndex = workflow.indexOf('- name: Independently rebuild the exact candidate from its preserved catalogue snapshot')
-    const budgetIndex = workflow.indexOf('- name: Verify zero-cost and checkpoint-headroom evidence for publishing')
+    const budgetIndex = workflow.indexOf('- name: Verify fresh zero-cost evidence for vault-free Preview publication')
     const freeIndex = workflow.indexOf('- name: Confirm Workers Free plan before upload')
     const receiptIndex = workflow.indexOf('- name: Create a fresh read-only managed-state receipt and immediately recheck it')
     const uploadIndex = workflow.indexOf('- name: Upload one existing Worker version')

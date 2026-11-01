@@ -71,8 +71,12 @@ function assertCheckpointHeadroom(attestation) {
   requireGate(Number.isSafeInteger(attestation.checkpointBytesRemaining)
     && attestation.checkpointBytesRemaining >= CHECKPOINT_CEILING, 'CHECKPOINT_QUOTA_REQUIRED')
 }
-// Only the protected publish=false candidate may use cost evidence without vault headroom.
+// Public Preview does not write the checkpoint vault; its cost gate is separate.
 export function assertCandidateBudget(attestation, now = Date.now()) {
+  assertZeroCostEvidence(attestation)
+  assertFreshUtcCandidateEvidence(attestation, now)
+}
+export function assertPreviewPublicationBudget(attestation, now = Date.now()) {
   assertZeroCostEvidence(attestation)
   assertFreshUtcCandidateEvidence(attestation, now)
 }
