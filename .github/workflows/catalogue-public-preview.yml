@@ -19,25 +19,23 @@ on:
       artifact_run_id:
         description: Exact successful source-candidate run whose preserved artifact is being reused
         type: string
+        required: true
       candidate_source_sha:
         description: Exact source SHA represented by the preserved real-catalogue artifact
         type: string
+        required: true
       candidate_artifact_id:
         description: Exact GitHub artifact ID from the successful candidate run
         type: string
+        required: true
       candidate_artifact_size_bytes:
         description: Exact GitHub artifact archive size in bytes
         type: string
+        required: true
       candidate_archive_sha256:
         description: Exact GitHub artifact archive SHA-256 digest
         type: string
-      allow_candidate_build:
-        description: Explicitly allow a new nonpublishing candidate build when no preserved artifact run is supplied
-        type: boolean
-        default: false
-      render_checkpoint_run_id:
-        description: Resume only the same-SHA public rendering checkpoint, without replaying completed routes
-        type: string
+        required: true
       managed_preview_run_id:
         description: Prior successful managed LEO-563 Preview evidence run (Codex resolves it)
         type: string
@@ -50,7 +48,7 @@ on:
         type: string
       publish:
         type: boolean
-        default: true
+        default: false
 permissions:
   contents: read
   actions: read
@@ -68,7 +66,7 @@ jobs:
     timeout-minutes: 120
     environment: catalogue-direct-migration
     env:
-      SOURCE_SHA: ${{ inputs.candidate_source_sha != '' && inputs.candidate_source_sha || github.sha }}
+      SOURCE_SHA: ${{ inputs.candidate_source_sha }}
       DPG_PREVIEW_PR_NUMBER: ${{ inputs.preview_pr_number }}
       CHECKPOINT: ${{ inputs.checkpoint }}
       M3_RUN_ID: ${{ inputs.m3_run_id }}
@@ -78,7 +76,6 @@ jobs:
       CANDIDATE_ARCHIVE_SHA256: ${{ inputs.candidate_archive_sha256 }}
       MANAGED_PREVIEW_RUN_ID: ${{ inputs.managed_preview_run_id }}
       MANAGED_PREVIEW_SOURCE_SHA: ${{ inputs.managed_preview_source_sha }}
-      RENDER_CHECKPOINT_RUN_ID: ${{ inputs.render_checkpoint_run_id }}
       ARTIFACT_ROOT: ${{ github.workspace }}/.artifacts/dpg-public-catalogue-preview
       MANAGED_ROOT: ${{ github.workspace }}/.artifacts/dpg-managed-public-preview
       WRANGLER_BIN: ${{ github.workspace }}/apps/public/node_modules/wrangler/bin/wrangler.js
@@ -106,18 +103,13 @@ jobs:
           [[ "$CHECKPOINT" =~ ^[a-f0-9]{40}$ ]]
           [[ "$M3_RUN_ID" =~ ^[0-9]+$ ]]
           [[ "$DPG_PREVIEW_PR_NUMBER" =~ ^[1-9][0-9]*$ ]]
-          if [[ -n "$ARTIFACT_RUN_ID" ]]; then [[ "$ARTIFACT_RUN_ID" =~ ^[0-9]+$ ]]; fi
-          if [[ -z "$ARTIFACT_RUN_ID" && "${{ inputs.allow_candidate_build }}" != true ]]; then
-            echo 'PUBLIC_PREVIEW_CANDIDATE_BUILD_NOT_AUTHORIZED' >&2
-            exit 1
-          fi
+          [[ "$SOURCE_SHA" == 'da3c8fe7a94f71b70ce391a8925e5360f197b74b' ]]
+          [[ "$DPG_PREVIEW_PR_NUMBER" == '216' ]]
+          [[ "$ARTIFACT_RUN_ID" == '41031057535' ]]
+          [[ "$CANDIDATE_ARTIFACT_ID" == '12966875385' ]]
+          [[ "$CANDIDATE_ARTIFACT_SIZE_BYTES" == '170366858' ]]
+          [[ "$CANDIDATE_ARCHIVE_SHA256" == '4e3ad7bb1fbd6f1a33f5c88cf5691837edd07230828d898913f4492b34cd22bf' ]]
           if [[ "${{ inputs.publish }}" == true ]]; then
-            [[ "$SOURCE_SHA" == 'da3c8fe7a94f71b70ce391a8925e5360f197b74b' ]]
-            [[ "$ARTIFACT_RUN_ID" == '41031057535' ]]
-            [[ "$CANDIDATE_ARTIFACT_ID" == '12966875385' ]]
-            [[ "$CANDIDATE_ARTIFACT_SIZE_BYTES" == '170366858' ]]
-            [[ "$CANDIDATE_ARCHIVE_SHA256" == '4e3ad7bb1fbd6f1a33f5c88cf5691837edd07230828d898913f4492b34cd22bf' ]]
-            [[ "$DPG_PREVIEW_PR_NUMBER" == '216' ]]
             [[ -z "$MANAGED_PREVIEW_RUN_ID" && -z "$MANAGED_PREVIEW_SOURCE_SHA" ]]
           fi
           if [[ -n "$MANAGED_PREVIEW_RUN_ID" || -n "$MANAGED_PREVIEW_SOURCE_SHA" ]]; then
@@ -170,88 +162,6 @@ jobs:
           path: ${{ env.ARTIFACT_ROOT }}
           run-id: ${{ inputs.artifact_run_id }}
           github-token: ${{ github.token }}
-      - name: Build canonical Public Worker without database credentials
-        if: inputs.artifact_run_id == '' && inputs.allow_candidate_build
-        env:
-          APP_ENV: preview
-          APP_BUILD_TARGET: public
-          APP_ORIGIN: https://public-preview.invalid
-          PREVIEW_NOINDEX: 'true'
-          BUILD_SOURCE_SHA: ${{ github.sha }}
-          PUBLIC_CATALOGUE_CHECKPOINT: ${{ inputs.checkpoint }}
-        run: npm run build:public-worker
-      - name: Generate public-only assets from the independently verified target
-        if: inputs.artifact_run_id == '' && inputs.allow_candidate_build
-        env:
-          GH_TOKEN: ${{ github.token }}
-          DIRECT_TARGET_READ_DATABASE_URL: ${{ secrets.DIRECT_TARGET_READ_DATABASE_URL }}
-          DIRECT_TARGET_CA: ${{ secrets.DIRECT_TARGET_CA }}
-          DIRECT_ZERO_COST_ATTESTATION: ${{ inputs.publish && vars.DIRECT_ZERO_COST_ATTESTATION || '' }}
-          DIRECT_ZERO_COST_CANDIDATE_EVIDENCE: ${{ inputs.publish == false && vars.DIRECT_ZERO_COST_CANDIDATE_EVIDENCE || '' }}
-          DIRECT_PUBLIC_PREVIEW_PUBLISH: ${{ inputs.publish }}
-          PUBLIC_CATALOGUE_M1_CHECKPOINT: ${{ inputs.checkpoint }}
-          PUBLIC_CATALOGUE_M3_RUN_ID: ${{ inputs.m3_run_id }}
-        run: |
-          set -euo pipefail
-          set +x
-          ulimit -c 0
-          umask 077
-          npx tsx scripts/catalogue-direct/build-public-projection.mts
-      - name: Assemble the public-only local rendering source
-        if: inputs.artifact_run_id == '' && inputs.allow_candidate_build
-        run: |
-          npm run app:assemble-public-worker -- --repository-root . \
-            --server-dir apps/public/dist/server --assets-dir apps/public/dist/client \
-            --output "$RUNNER_TEMP/public-render-source" --source-sha "$SOURCE_SHA"
-      - name: Verify a same-source partial rendering checkpoint before reuse
-        if: inputs.artifact_run_id == '' && inputs.allow_candidate_build && inputs.render_checkpoint_run_id != ''
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          [[ "$RENDER_CHECKPOINT_RUN_ID" =~ ^[0-9]+$ ]]
-          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RENDER_CHECKPOINT_RUN_ID" > "$RUNNER_TEMP/render-producer.json"
-          jq -e --arg sha "$SOURCE_SHA" '.status=="completed" and .head_sha==$sha and .head_branch=="main" and .event=="workflow_dispatch" and .run_attempt==1 and .actor.login=="tranhuunguyenhuy-hue" and .path==".github/workflows/catalogue-public-preview.yml"' "$RUNNER_TEMP/render-producer.json" >/dev/null
-          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RENDER_CHECKPOINT_RUN_ID/jobs" > "$RUNNER_TEMP/render-producer-jobs.json"
-          jq -e '[.jobs[].steps[] | select(.name=="Upload one existing Worker version") | select(.status=="in_progress" or (.status=="completed" and .conclusion!="skipped"))] | length==0' "$RUNNER_TEMP/render-producer-jobs.json" >/dev/null
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
-        if: inputs.artifact_run_id == '' && inputs.allow_candidate_build && inputs.render_checkpoint_run_id != ''
-        with:
-          name: public-render-checkpoint-${{ github.sha }}
-          path: ${{ runner.temp }}/public-render-checkpoint
-          run-id: ${{ inputs.render_checkpoint_run_id }}
-          github-token: ${{ github.token }}
-      - name: Prerender canonical catalogue HTML and Flight within bounded Free assets
-        if: inputs.artifact_run_id == '' && inputs.allow_candidate_build
-        run: |
-          set -euo pipefail
-          node "$WRANGLER_BIN" dev --local --config "$RUNNER_TEMP/public-render-source/wrangler.preview.json" \
-            --port 8790 --var CATALOGUE_BUILD_RENDER:true --persist-to "$RUNNER_TEMP/public-render-state" \
-            > "$RUNNER_TEMP/public-render.log" 2>&1 &
-          render_pid=$!
-          trap 'kill "$render_pid" 2>/dev/null || true' EXIT
-          node scripts/catalogue-direct/prerender-public-snapshot.mjs \
-            --assets-root "$RUNNER_TEMP/public-render-source/assets" --checkpoint-root "$RUNNER_TEMP/public-render-checkpoint" --base-url http://127.0.0.1:8790 \
-            --source-sha "$SOURCE_SHA" --checkpoint "$CHECKPOINT"
-          kill "$render_pid" 2>/dev/null || true
-          wait "$render_pid" || true
-          cp -R "$RUNNER_TEMP/public-render-checkpoint" apps/public/dist/client/__render
-          printf '\n/__render/*\n  X-Robots-Tag: noindex, nofollow\n  Cache-Control: private, no-store\n' >> apps/public/dist/client/_headers
-      - name: Preserve only partial public rendering progress on failure
-        if: failure() && inputs.artifact_run_id == '' && inputs.allow_candidate_build
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: public-render-checkpoint-${{ github.sha }}
-          path: ${{ runner.temp }}/public-render-checkpoint
-          retention-days: 1
-          if-no-files-found: warn
-      - name: Assemble and hash only the immutable Public Worker and assets
-        if: inputs.artifact_run_id == '' && inputs.allow_candidate_build
-        run: |
-          set -euo pipefail
-          npm run app:assemble-public-worker -- --repository-root . \
-            --server-dir apps/public/dist/server --assets-dir apps/public/dist/client \
-            --output "$ARTIFACT_ROOT/build" --source-sha "$SOURCE_SHA"
       - name: Verify Public-only artifact, real snapshot identity and Free caps
         run: |
           set -euo pipefail
@@ -319,15 +229,6 @@ jobs:
           node scripts/catalogue-direct/public-preview.mjs compare-builds \
             --first-root "$ARTIFACT_ROOT/build" --second-root "$independent_build" \
             --output "$ARTIFACT_ROOT/evidence/determinism.json"
-      - name: Preserve the immutable Public-only candidate before any provider write
-        if: inputs.artifact_run_id == '' && inputs.allow_candidate_build
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: public-catalogue-preview-${{ github.sha }}
-          path: ${{ env.ARTIFACT_ROOT }}
-          include-hidden-files: true
-          retention-days: 1
-          if-no-files-found: error
       - name: Download the exact existing managed Preview evidence
         if: inputs.publish && inputs.managed_preview_run_id != ''
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093

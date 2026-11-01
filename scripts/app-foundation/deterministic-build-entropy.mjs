@@ -53,4 +53,16 @@ crypto.randomUUID = function deterministicBuildRandomUuid() {
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`
 }
 
+// This preload runs only in the build subprocess. Keep runtime randomness intact;
+// build-tool identifiers must be reproducible without rewriting emitted bytes.
+Math.random = function deterministicBuildMathRandom() {
+  const { callsite, invocation } = callsiteInvocation('mathRandom')
+  const bytes = createHmac('sha256', seed)
+    .update(`dongphugia:public-worker-build-math-random:v1:${callsite}:${invocation}`)
+    .digest()
+  const high = bytes.readUInt32BE(0) >>> 5
+  const low = bytes.readUInt32BE(4) >>> 6
+  return (high * 67108864 + low) / 9007199254740992
+}
+
 syncBuiltinESMExports()

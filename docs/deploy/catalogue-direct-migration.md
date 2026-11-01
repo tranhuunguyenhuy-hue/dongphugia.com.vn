@@ -284,3 +284,10 @@ exact real snapshot; synthetic fixture health cannot satisfy M4.
 A same-SHA retained artifact may resume only if its producer finished and no
 upload step started. Any attempted upload with unknown outcome requires read-only
 provider inspection; never upload again blindly. Production/DNS remains HOLD.
+
+For the single Owner-authorized recovery candidate in Issue #160 comment
+#6521637380, `catalogue-public-preview.yml` is pinned to the already-preserved
+run `41031057535` and artifact `12966875385`. It requires that archive's exact
+source SHA, artifact ID, size and digest, and contains no alternate path to
+rebuild catalogue data, prerender a replacement candidate, or upload a second
+candidate artifact. M1–M3 remain complete and are not rerun by this workflow.
