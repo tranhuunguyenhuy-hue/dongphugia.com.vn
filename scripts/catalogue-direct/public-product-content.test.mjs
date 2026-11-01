@@ -1,14 +1,15 @@
 import {it,expect} from 'vitest'
-import {projectPublicContent,publicText} from './public-product-content.mjs'
+import {projectPublicContent,publicText,isSafePublicContent} from './public-product-content.mjs'
 it('exposes only reviewed technical content and explicitly public editorial',()=>{
  const c=projectPublicContent({publicDescription:'<p>Chậu rửa <strong>sứ</strong>.</p><script>alert(1)</script>',publicSpecifications:[{key:'Chất liệu',isPdpVisible:true,value:'Sứ'},{key:'Bảo hành',isPdpVisible:true,value:'5 năm'},{key:'Màu sắc',isPdpVisible:false,value:'Trắng'}],publicGallery:['https://cdn.dongphugia.com.vn/a.jpg','javascript:alert(1)']})
  expect(c.summary).toBe('Chậu rửa sứ.');expect(c.specifications).toEqual({'Chất liệu':'Sứ'});expect(c.gallery).toHaveLength(1)
+ expect(c.descriptionBlocks).toEqual([])
  expect(projectPublicContent({cleanEditorial:'<p>Unapproved</p>'}).summary).toBeNull()
 })
 it('rejects contacts/commercial terms and arbitrary raw blobs, caps all output',()=>{
  for(const v of ['hotline 0901234567','Giá bán 100 USD','1.200.000đ','Bảo hành 5 năm','token=abc123','x@example.com','https://private.test','<img src=x onerror=alert(1)>'])expect(publicText(v)).toBeNull()
  const c=projectPublicContent({raw_html:'private',raw_value:'private',value_json:{secret:'private'},publicSpecifications:[{key:'Chất liệu',isPdpVisible:true,value:{raw:'private'}}]})
- expect(c).toEqual({summary:null,specifications:{},gallery:[]})
+ expect(c).toEqual({summary:null,descriptionBlocks:[],specifications:{},gallery:[]})
  expect(publicText('a'.repeat(1000),100)).toHaveLength(100)
 })
 
@@ -23,7 +24,14 @@ it('validates projected text without changing literal entities or truncation bou
   const c=projectPublicContent({publicDescription:value,publicSpecifications:[{key:'Chất liệu',isPdpVisible:true,value}]})
   expect(isSafePublicContent(c)).toBe(true)
  }
- expect(isSafePublicContent({summary:'<b>raw</b>',specifications:{},gallery:[]})).toBe(false)
- expect(isSafePublicContent({summary:'x&#64;example.com',specifications:{},gallery:[]})).toBe(false)
- for(const summary of ['Good <!-- token=abc123 -->','Good <!-- x@example.com -->','Good <!DOCTYPE html>','Good <?private?>'])expect(isSafePublicContent({summary,specifications:{},gallery:[]})).toBe(false)
+ expect(isSafePublicContent({summary:'<b>raw</b>',descriptionBlocks:[],specifications:{},gallery:[]})).toBe(false)
+ expect(isSafePublicContent({summary:'x&#64;example.com',descriptionBlocks:[],specifications:{},gallery:[]})).toBe(false)
+ for(const summary of ['Good <!-- token=abc123 -->','Good <!-- x@example.com -->','Good <!DOCTYPE html>','Good <?private?>'])expect(isSafePublicContent({summary,descriptionBlocks:[],specifications:{},gallery:[]})).toBe(false)
+})
+
+it('preserves safe description hierarchy as text blocks and drops commercial or active markup',()=>{
+ const c=projectPublicContent({publicDescription:'<h2>Công nghệ men</h2><p>Bề mặt sáng bóng <strong>dễ lau chùi</strong>.</p><ul><li>Thân sứ cao cấp</li><li>Giá 1.000.000đ</li></ul><script>alert(1)</script>',publicSpecifications:[],publicGallery:[]})
+ expect(c.descriptionBlocks).toEqual([{kind:'heading',text:'Công nghệ men'},{kind:'paragraph',text:'Bề mặt sáng bóng dễ lau chùi.'},{kind:'bullet',text:'Thân sứ cao cấp'}])
+ expect(isSafePublicContent(c)).toBe(true)
+ expect(isSafePublicContent({...c,descriptionBlocks:[{kind:'paragraph',text:'0901234567'}]})).toBe(false)
 })

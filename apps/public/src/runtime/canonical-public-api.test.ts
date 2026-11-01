@@ -3,9 +3,9 @@ const products=Array.from({length:60},(_,i)=>({id:i,slug:'p-'+i,name:'P'+i,brand
 vi.mock('./public-snapshot-catalogue',()=>({
  getSnapshotCategories:async()=>[{slug:'thiet-bi-bep',listings:[{slug:'voi-rua-chen',name:'Vòi rửa chén',totalCount:60}]}],
  getSnapshotProducts:async(_c:string,_s:string,page:number)=>({products:products.slice((page-1)*48,page*48)}),
- getSnapshotProduct:async(_category:string,_listing:string,slug:string)=>slug==='public-content'?{id:1,slug,name:'Public product',price:null,stock_status:'contact',publicContent:{summary:'Public summary',specifications:{'Công nghệ':'Public technology specification'},gallery:[]}}:null,
+ getSnapshotProduct:async(_category:string,_listing:string,slug:string)=>slug==='public-content'?{id:1,slug,name:'Public product',price:null,stock_status:'contact',publicContent:{summary:'Public summary',descriptionBlocks:[{kind:'heading',text:'Công nghệ'},{kind:'paragraph',text:'Nội dung thực.'}],specifications:{'Công nghệ':'Public technology specification'},gallery:[]}}:null,
 }))
-import {getPublicProducts,getAvailableFiltersBySubcategory,getPublicProductBySlug,getPdpSpecifications} from './canonical-public-api'
+import {getPublicProducts,getAvailableFiltersBySubcategory,getPublicProductBySlug,getPdpSpecifications,getPdpDescriptionBlocks} from './canonical-public-api'
 describe('canonical Preview public snapshot seam',()=>{
  it('returns the real total for snapshot Listing templates without reading server-side product pages',async()=>{
   const result=await getPublicProducts({category_slug:'thiet-bi-bep',subcategory_slugs:'voi-rua-chen',pageSize:24,page:2})
@@ -30,6 +30,7 @@ it('keeps public technology in specifications without inventing a feature tab',a
  expect(getPdpSpecifications(product!)).toEqual({'Công nghệ':'Public technology specification'})
  expect(product?.features).toBeNull()
  expect(product?.description).toBe('<p>Public summary</p>')
+ expect(getPdpDescriptionBlocks(product)).toEqual([{kind:'heading',text:'Công nghệ'},{kind:'paragraph',text:'Nội dung thực.'}])
  expect(product?.price).toBeNull()
  expect(product?.stock_status).toBe('contact')
 })

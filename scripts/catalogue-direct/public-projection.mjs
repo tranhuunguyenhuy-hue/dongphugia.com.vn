@@ -127,8 +127,8 @@ export function buildProjection(products, evidence, rootMetadata = []) {
       .map(({slug,name,thumbnail_url,totalCount})=>({slug,name,thumbnail_url,totalCount}))
   }
   const assets = new Map()
-  const contentStats={summaries:products.filter(p=>p.publicContent?.summary).length,specifications:products.filter(p=>Object.keys(p.publicContent?.specifications??{}).length).length,galleries:products.filter(p=>p.publicContent?.gallery?.length).length}
-  const manifest = { contentPolicy:'canonical-public-content-v1',contentStats,contract:PROJECTION_CONTRACT,...evidence,notice:NOTICE,productBuckets:[...buckets.keys()].sort(),categories:[...categories.values()],products:products.length,listingProducts:[...pages.values()].reduce((n,p)=>n+p.length,0) }
+  const contentStats={summaries:products.filter(p=>p.publicContent?.summary).length,descriptionBlocks:products.filter(p=>p.publicContent?.descriptionBlocks?.length).length,specifications:products.filter(p=>Object.keys(p.publicContent?.specifications??{}).length).length,galleries:products.filter(p=>p.publicContent?.gallery?.length).length}
+  const manifest = { contentPolicy:'canonical-public-content-v2',contentStats,contract:PROJECTION_CONTRACT,...evidence,notice:NOTICE,productBuckets:[...buckets.keys()].sort(),categories:[...categories.values()],products:products.length,listingProducts:[...pages.values()].reduce((n,p)=>n+p.length,0) }
   assets.set('manifest.json', manifest)
   for (const [bucket, values] of buckets) assets.set(`products/${bucket}.json`,{contract:PROJECTION_CONTRACT,checkpoint:evidence.checkpoint,products:values})
   for (const [key, values] of pages) for(let offset=0;offset<values.length;offset+=PAGE_SIZE)

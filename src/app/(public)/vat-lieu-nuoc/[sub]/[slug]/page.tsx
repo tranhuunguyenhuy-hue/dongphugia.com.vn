@@ -1,7 +1,7 @@
 import { Metadata } from "next"
 import { notFound, permanentRedirect } from "next/navigation"
 import Link from "next/link"
-import { getPdpDocuments, getPdpPackageItems, getPdpSpecifications, getPublicProductBySlug, getPublicProducts, getVariantSiblings } from "@/lib/public-api-products"
+import { getPdpDescriptionBlocks, getPdpDocuments, getPdpPackageItems, getPdpSpecifications, getPublicProductBySlug, getPublicProducts, getVariantSiblings } from "@/lib/public-api-products"
 import { VariantSelector } from "@/components/product/variant-selector"
 import { ProductImageGallery } from "@/components/product/product-image-gallery"
 import { ProductDetailTabs } from "@/components/product/product-detail-tabs"
@@ -263,6 +263,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
                     <div className="mt-2">
                         <ProductDetailTabs
                             description={product.description}
+                            descriptionBlocks={getPdpDescriptionBlocks(product)}
                             features={product.features}
                             specifications={productSpecifications}
                             documents={productDocuments}
