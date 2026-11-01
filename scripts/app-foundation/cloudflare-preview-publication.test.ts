@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest'
 import {
   inspectRemoteResourceState,
   inspectPublishedResource,
+  createManagedStateReceipt,
+  validateManagedStateReceipt,
   validateManagedPublicationEvidence,
   parseWranglerDeploy,
   parseWranglerUpload,
@@ -152,6 +154,84 @@ function managedRemoteFetch({
   }
 }
 
+const managedBaselineIdentity = {
+  sourceCommit: 'da3c8fe7a94f71b70ce391a8925e5360f197b74b',
+  candidateRunId: '41031057535',
+  candidateArtifactId: '12966875385',
+  candidateArtifactSizeBytes: 170366858,
+  candidateArchiveSha256: '4e3ad7bb1fbd6f1a33f5c88cf5691837edd07230828d898913f4492b34cd22bf',
+  checkpoint: '87e4b06b73ab20df11d95021e1da8bd8f497ee5e',
+  m3RunId: '40739074902',
+  pullRequest: 216,
+}
+
+const knownManagedBaseline = {
+  versionCount: 11,
+  latestVersionId: '17fe81fb-9f43-43b9-85d0-33952cff74d6',
+  bootstrapVersionId: 'd4658ffa-2fcd-465b-bae7-7967bb1c7f78',
+  deploymentId: '6e7022d5-5f4d-4f51-8ab3-01850503a711',
+}
+
+const knownBaselineVersionIds = [
+  '0ecbc1a2-dd99-4330-bde6-8fcca77ffb1f',
+  '2cbb3f2c-b8ec-4844-8326-1a9fcb4e4cf7',
+  '48f40297-7381-49bc-ab67-4c4dec83e7bf',
+  '59352d64-974d-4afc-8bfd-57edb92369c4',
+  '67fe3336-601e-4cac-a960-d70ee692d448',
+  '7ec0bdbb-bfe7-4cf5-b6d3-695249251c2b',
+  '86568faa-17fb-4658-ac26-f62ccd2ffbc0',
+  '91a968e9-4ac2-48c0-8c0f-7c1df5c3e55a',
+  '9f20e256-83fa-4756-9518-71ef7571d466',
+  'd4658ffa-2fcd-465b-bae7-7967bb1c7f78',
+  knownManagedBaseline.latestVersionId,
+].sort()
+const knownBaselineApiVersionIds = [
+  knownManagedBaseline.latestVersionId,
+  ...knownBaselineVersionIds.filter(id => id !== knownManagedBaseline.latestVersionId),
+]
+
+function managedBaselineRemoteFetch({
+  versionIds = knownBaselineApiVersionIds,
+  deploymentId = knownManagedBaseline.deploymentId,
+  deploymentVersionId = knownManagedBaseline.bootstrapVersionId,
+  subdomain = { enabled: false, previews_enabled: true },
+  scriptRoutes = [],
+  domains = [],
+}: {
+  versionIds?: readonly string[],
+  deploymentId?: string,
+  deploymentVersionId?: string,
+  subdomain?: { enabled: boolean, previews_enabled: boolean },
+  scriptRoutes?: readonly unknown[],
+  domains?: readonly unknown[],
+} = {}) {
+  const requests: { url: string, method: string | undefined, redirect: RequestRedirect | undefined }[] = []
+  const fetchImpl = async (input: URL | RequestInfo, init?: RequestInit) => {
+    const url = new URL(String(input))
+    requests.push({ url: url.href, method: init?.method, redirect: init?.redirect })
+    const path = url.pathname
+    let result: unknown
+    if (path.endsWith('/scripts')) result = [{ id: 'dongphugia-v1-public-preview', routes: scriptRoutes }]
+    else if (path.endsWith('/domains')) result = domains
+    else if (path.endsWith('/subdomain')) result = subdomain
+    else if (path.endsWith('/settings')) result = { bindings: managedPublicationEvidence().bindings }
+    else if (path.endsWith('/deployments')) result = { deployments: [{
+      id: deploymentId,
+      strategy: 'percentage',
+      versions: [{ version_id: deploymentVersionId, percentage: 100 }],
+    }] }
+    else if (path.endsWith('/versions')) {
+      const page = Number(url.searchParams.get('page'))
+      const items = versionIds.slice((page - 1) * 10, page * 10).map(id => ({ id }))
+      return Response.json({ success: true, result: { items },
+        result_info: { page, per_page: 10, count: items.length, total_count: versionIds.length },
+      })
+    } else result = null
+    return Response.json({ success: true, result })
+  }
+  return { requests, fetchImpl }
+}
+
 describe('LEO-563 Cloudflare Preview publication gate', () => {
   it.each([
     [11, 'normal'], [25, 'normal'], [11, 'duplicate'], [11, 'missing'],
@@ -253,6 +333,105 @@ describe('LEO-563 Cloudflare Preview publication gate', () => {
     })
     expect(proof.versionIds).toEqual([...currentVersionIds].sort())
     expect(versionPages).toEqual([1, 2])
+  })
+
+  it('attests the exact known 11-version bootstrap baseline through paginated GET-only reads', async () => {
+    const { requests, fetchImpl } = managedBaselineRemoteFetch()
+    const remoteState = await inspectRemoteResourceState({
+      accountId: 'synthetic-account',
+      apiToken: 'synthetic-token',
+      expectedManagedBaseline: knownManagedBaseline,
+      fetchImpl,
+    })
+
+    expect(remoteState).toMatchObject({
+      state: 'MANAGED_BASELINE_ATTESTED',
+      workerName: 'dongphugia-v1-public-preview',
+      versionCount: 11,
+      latestVersionId: knownManagedBaseline.latestVersionId,
+      versionIds: knownBaselineVersionIds,
+      deploymentIds: [knownManagedBaseline.deploymentId],
+      deployments: [{
+        id: knownManagedBaseline.deploymentId,
+        strategy: 'percentage',
+        versions: [{ versionId: knownManagedBaseline.bootstrapVersionId, percentage: 100 }],
+      }],
+      customDomains: [],
+      workerRoutes: [],
+      bindings: managedPublicationEvidence().bindings,
+      subdomain: { workersDevEnabled: false, previewUrlsEnabled: true },
+    })
+    expect(requests.filter(request => new URL(request.url).pathname.endsWith('/versions')).map(request => new URL(request.url).searchParams.get('page')))
+      .toEqual(['1', '2'])
+    expect(requests.every(request => request.method === 'GET')).toBe(true)
+    expect(requests.every(request => request.redirect === 'error')).toBe(true)
+
+    const verifiedAt = '2026-10-30T11:00:00.000Z'
+    const receipt = createManagedStateReceipt({ remoteState, identity: managedBaselineIdentity, verifiedAt })
+    const expectedState = validateManagedStateReceipt(receipt, managedBaselineIdentity, Date.parse('2026-10-30T11:01:00.000Z'))
+    expect(expectedState).toMatchObject({ versionIds: knownBaselineVersionIds, deployments: remoteState.deployments })
+
+    const rechecked = await inspectRemoteResourceState({
+      accountId: 'synthetic-account',
+      apiToken: 'synthetic-token',
+      expectedManagedBaseline: expectedState,
+      fetchImpl: managedBaselineRemoteFetch().fetchImpl,
+    })
+    expect(rechecked).toMatchObject({
+      state: 'MANAGED_BASELINE_ATTESTED',
+      latestVersionId: knownManagedBaseline.latestVersionId,
+      versionIds: knownBaselineVersionIds,
+    })
+
+    const changedOlderVersionIds = [...knownBaselineApiVersionIds]
+    changedOlderVersionIds[5] = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+    await expect(inspectRemoteResourceState({
+      accountId: 'synthetic-account',
+      apiToken: 'synthetic-token',
+      expectedManagedBaseline: expectedState,
+      fetchImpl: managedBaselineRemoteFetch({ versionIds: changedOlderVersionIds }).fetchImpl,
+    })).rejects.toThrow('LEO563_PREVIEW_MANAGED_BASELINE_VERSION_IDS_DRIFT')
+  })
+
+  it.each([
+    ['missing known uploaded version', { versionIds: knownBaselineVersionIds.filter(id => id !== knownManagedBaseline.latestVersionId) }],
+    ['an extra version', { versionIds: [...knownBaselineVersionIds, 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'] }],
+    ['a replaced historical version with the same count', { versionIds: knownBaselineApiVersionIds.map((id, index) => index === 5 ? 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' : id) }],
+    ['a changed deployment identity', { deploymentId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' }],
+    ['a deployment no longer points at bootstrap', { deploymentVersionId: knownManagedBaseline.latestVersionId }],
+    ['the documented latest version is not first', { versionIds: [...knownBaselineApiVersionIds].reverse() }],
+    ['a workers.dev association', { subdomain: { enabled: true, previews_enabled: true } }],
+    ['a route association', { scriptRoutes: ['www.dongphugia.vn/*'] }],
+    ['a custom domain association', { domains: [{ service: 'dongphugia-v1-public-preview', hostname: 'preview.dongphugia.vn' }] }],
+  ] as const)('rejects managed baseline drift: %s', async (_label, override) => {
+    const { fetchImpl } = managedBaselineRemoteFetch(override)
+    await expect(inspectRemoteResourceState({
+      accountId: 'synthetic-account',
+      apiToken: 'synthetic-token',
+      expectedManagedBaseline: knownManagedBaseline,
+      fetchImpl,
+    })).rejects.toThrow(/LEO563_PREVIEW_MANAGED_BASELINE/)
+  })
+
+  it('rejects a stale or modified managed-state receipt before a live-state comparison', async () => {
+    const { fetchImpl } = managedBaselineRemoteFetch()
+    const remoteState = await inspectRemoteResourceState({
+      accountId: 'synthetic-account',
+      apiToken: 'synthetic-token',
+      expectedManagedBaseline: knownManagedBaseline,
+      fetchImpl,
+    })
+    const receipt = createManagedStateReceipt({
+      remoteState,
+      identity: managedBaselineIdentity,
+      verifiedAt: '2026-10-30T11:00:00.000Z',
+    })
+
+    expect(() => validateManagedStateReceipt(receipt, managedBaselineIdentity, Date.parse('2026-10-30T11:20:01.000Z')))
+      .toThrow('LEO563_PREVIEW_MANAGED_BASELINE_RECEIPT_STALE')
+    const modified = { ...receipt, currentState: { ...receipt.currentState, versionIds: [] } }
+    expect(() => validateManagedStateReceipt(modified, managedBaselineIdentity, Date.parse('2026-10-30T11:01:00.000Z')))
+      .toThrow('LEO563_PREVIEW_MANAGED_BASELINE_RECEIPT_INTEGRITY')
   })
 
   it('accepts only the isolated Free-plan Preview contract', () => {

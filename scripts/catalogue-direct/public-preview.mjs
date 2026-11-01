@@ -1,33 +1,112 @@
 // Public-only immutable Preview units. No Admin build and no provider mutation.
 import { createHash } from 'node:crypto'
-import { readFile, readdir, writeFile } from 'node:fs/promises'
+import { createReadStream } from 'node:fs'
+import { lstat, readFile, readdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { validatePreviewConfig, WORKER_NAME, PREVIEW_ALIAS } from '../app-foundation/cloudflare-preview-publication.mjs'
 
 const SHA=/^[a-f0-9]{40}$/
 const sha256=bytes=>createHash('sha256').update(bytes).digest('hex')
+const DETERMINISM_FILE_LIMIT=25000
+const DETERMINISM_FILE_BYTES_LIMIT=25*1024*1024
+const DETERMINISM_BUILD_BYTES_LIMIT=1024*1024*1024
+const CLOUDFLARE_PLAN_ATTESTATION_MAX_AGE_MS=15*60*1000
 function gate(value,reason) { if(!value)throw new Error(reason) }
-async function directoryDigest(root,relative='') {
+async function publicBuildInventory(root,{fileLimit=DETERMINISM_FILE_LIMIT,collectFiles=true,comparePaths=(a,b)=>a<b?-1:a>b?1:0}={}) {
+  const absoluteRoot=path.resolve(root)
+  const rootInfo=await lstat(absoluteRoot)
+  gate(rootInfo.isDirectory(),'PUBLIC_PREVIEW_DETERMINISM_ROOT_UNSAFE')
+  const files=collectFiles?new Map():null
   const paths=[]
-  async function visit(child) {
-    for(const entry of await readdir(path.join(root,child),{withFileTypes:true})) {
-      gate(!entry.isSymbolicLink(),'PUBLIC_PREVIEW_SYMLINK_FORBIDDEN')
-      const next=path.join(child,entry.name)
-      if(entry.isDirectory())await visit(next)
-      else if(entry.isFile())paths.push(next)
-      else throw new Error('PUBLIC_PREVIEW_NONFILE_FORBIDDEN')
+  async function visit(relative='') {
+    const entries=await readdir(path.join(absoluteRoot,relative),{withFileTypes:true})
+    for(const entry of entries) {
+      if(entry.isSymbolicLink())throw new Error('PUBLIC_PREVIEW_DETERMINISM_SYMLINK_FORBIDDEN')
+      const joined=path.join(relative,entry.name)
+      const normalized=joined.split(path.sep).join('/')
+      gate(!path.isAbsolute(normalized)&&!normalized.split('/').includes('..')&&!normalized.includes('\\'),
+        'PUBLIC_PREVIEW_DETERMINISM_PATH_UNSAFE')
+      if(entry.isDirectory())await visit(joined)
+      else if(entry.isFile()) {
+        if(paths.length>=fileLimit)throw new Error('PUBLIC_PREVIEW_DETERMINISM_FILE_LIMIT')
+        paths.push(normalized)
+      } else throw new Error('PUBLIC_PREVIEW_DETERMINISM_NONFILE_FORBIDDEN')
     }
   }
-  await visit(relative)
-  paths.sort((a,b)=>a.localeCompare(b))
-  const hash=createHash('sha256');let totalBytes=0,largestFile=0
-  for(const file of paths) {
-    const bytes=await readFile(path.join(root,file));totalBytes+=bytes.length;largestFile=Math.max(largestFile,bytes.length)
-    hash.update(file.split(path.sep).join('/')+'\0');hash.update(bytes);hash.update('\0')
+  await visit()
+  paths.sort(comparePaths)
+  const treeHash=createHash('sha256')
+  let totalBytes=0,largestFile={path:'',bytes:0}
+  for(const normalized of paths) {
+    const filePath=path.join(absoluteRoot,normalized)
+    const info=await lstat(filePath)
+    gate(info.isFile(),'PUBLIC_PREVIEW_DETERMINISM_NONFILE_FORBIDDEN')
+    gate(info.size<=DETERMINISM_FILE_BYTES_LIMIT,'PUBLIC_PREVIEW_DETERMINISM_FILE_BYTE_LIMIT')
+    gate(totalBytes+info.size<=DETERMINISM_BUILD_BYTES_LIMIT,'PUBLIC_PREVIEW_DETERMINISM_TOTAL_BYTE_LIMIT')
+    const fileHash=createHash('sha256')
+    let fileBytes=0
+    treeHash.update(normalized+'\0')
+    for await (const chunk of createReadStream(filePath)) {
+      fileBytes+=chunk.length
+      gate(fileBytes<=DETERMINISM_FILE_BYTES_LIMIT,'PUBLIC_PREVIEW_DETERMINISM_FILE_BYTE_LIMIT')
+      gate(totalBytes+fileBytes<=DETERMINISM_BUILD_BYTES_LIMIT,'PUBLIC_PREVIEW_DETERMINISM_TOTAL_BYTE_LIMIT')
+      fileHash.update(chunk)
+      treeHash.update(chunk)
+    }
+    gate(fileBytes===info.size,'PUBLIC_PREVIEW_DETERMINISM_FILE_CHANGED')
+    treeHash.update('\0')
+    files?.set(normalized,{sha256:fileHash.digest('hex'),bytes:fileBytes})
+    totalBytes+=fileBytes
+    if(fileBytes>largestFile.bytes)largestFile={path:normalized,bytes:fileBytes}
   }
-  return {sha256:hash.digest('hex'),fileCount:paths.length,totalBytes,largestFile}
+  gate(paths.length>0,'PUBLIC_PREVIEW_DETERMINISM_EMPTY_BUILD')
+  return {files,sha256:treeHash.digest('hex'),fileCount:paths.length,totalBytes,largestFile}
 }
+
+async function directoryDigest(root,relative='') {
+  const inventory=await publicBuildInventory(path.join(root,relative),{
+    fileLimit:DETERMINISM_FILE_LIMIT,
+    collectFiles:false,
+    comparePaths:(a,b)=>a.localeCompare(b),
+  })
+  const {files:_files,...digest}=inventory
+  return {...digest,largestFile:digest.largestFile.bytes}
+}
+
+export async function comparePublicBuildDirectories({firstRoot,secondRoot}) {
+  gate(typeof firstRoot==='string'&&firstRoot.length>0&&typeof secondRoot==='string'&&secondRoot.length>0,
+    'PUBLIC_PREVIEW_DETERMINISM_ROOT_REQUIRED')
+  const [first,second]=await Promise.all([publicBuildInventory(firstRoot),publicBuildInventory(secondRoot)])
+  const paths=[...new Set([...first.files.keys(),...second.files.keys()])].sort((left,right)=>left<right?-1:left>right?1:0)
+  const differences=[]
+  for(const file of paths) {
+    const before=first.files.get(file),after=second.files.get(file)
+    if(before?.sha256===after?.sha256&&before?.bytes===after?.bytes)continue
+    differences.push({
+      path:file,
+      firstSha256:before?.sha256??null,
+      firstBytes:before?.bytes??null,
+      secondSha256:after?.sha256??null,
+      secondBytes:after?.bytes??null,
+    })
+  }
+  return {
+    contract:'dpg:public-preview-determinism:v1',
+    status:differences.length===0?'PASS':'FAIL',
+    firstSha256:first.sha256,
+    secondSha256:second.sha256,
+    firstFileCount:first.fileCount,
+    secondFileCount:second.fileCount,
+    firstBytes:first.totalBytes,
+    secondBytes:second.totalBytes,
+    largestFirstFile:first.largestFile,
+    largestSecondFile:second.largestFile,
+    differingFileCount:differences.length,
+    differences,
+  }
+}
+
 export async function publicOnlyPreflight({buildRoot,sourceSha,workflowRunId,checkpoint,m3RunId,pullRequest}) {
   gate(SHA.test(sourceSha)&&SHA.test(checkpoint)&&/^\d+$/.test(workflowRunId)&&/^\d+$/.test(m3RunId),'PUBLIC_PREVIEW_IDENTITY_REQUIRED')
   gate(Number.isSafeInteger(pullRequest)&&pullRequest>0&&PREVIEW_ALIAS===`pr-${pullRequest}`,'PUBLIC_PREVIEW_ALIAS_MISMATCH')
@@ -75,7 +154,7 @@ export async function confirmWorkersFree({accountId,apiToken,fetchImpl=fetch,att
     const age=Date.now()-Date.parse(proof.verifiedAt)
     gate(proof.contract==='dpg:cloudflare-workers-free-attestation:v1'
       && proof.accountHash===sha256(accountId) && proof.plan==='workers_free' && proof.state==='active'
-      && proof.billableUsd===0 && age>=0 && age<=86400000
+      && proof.billableUsd===0 && age>=0 && age<=CLOUDFLARE_PLAN_ATTESTATION_MAX_AGE_MS
       && proof.evidenceUrl===`https://dash.cloudflare.com/${accountId}/billing/subscriptions`,'PUBLIC_PREVIEW_DASHBOARD_PROOF_INVALID')
     return {contract:'dpg:public-preview-zero-cost:v1',workersFreeConfirmed:true,checkedAt:proof.verifiedAt,
       evidenceMode:'AUTHENTICATED_DASHBOARD',apiStatus:403,mutation:false}
@@ -122,6 +201,14 @@ function parseArgs(args) { const out={};for(let i=0;i<args.length;i+=2){gate(arg
 async function main() {
   const [mode,...rest]=process.argv.slice(2);const args=parseArgs(rest)
   let result
+  if(mode==='compare-builds') {
+    result=await comparePublicBuildDirectories({firstRoot:path.resolve(args['first-root']),secondRoot:path.resolve(args['second-root'])})
+    await writeFile(args.output,JSON.stringify(result,null,2)+'\n',{mode:0o600})
+    console.log(JSON.stringify({status:result.status,unit:mode,firstSha256:result.firstSha256,
+      secondSha256:result.secondSha256,differingFileCount:result.differingFileCount}))
+    if(result.status!=='PASS')throw new Error('PUBLIC_PREVIEW_DETERMINISM_MISMATCH')
+    return
+  }
   if(mode==='preflight')result=await publicOnlyPreflight({buildRoot:path.resolve(args['build-root']),sourceSha:args['source-sha'],
     workflowRunId:args['workflow-run-id'],checkpoint:args.checkpoint,m3RunId:args['m3-run-id'],pullRequest:Number(args['pr-number'])})
   else if(mode==='confirm-free')result=await confirmWorkersFree({accountId:process.env.CLOUDFLARE_ACCOUNT_ID,apiToken:process.env.CLOUDFLARE_API_TOKEN,

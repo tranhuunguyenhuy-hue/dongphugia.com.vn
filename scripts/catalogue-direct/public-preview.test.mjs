@@ -16,6 +16,8 @@ it('uses only a fresh exact-account Dashboard proof on Billing403; never overrid
   expect((await confirmWorkersFree(args)).evidenceMode).toBe('AUTHENTICATED_DASHBOARD')
   await expect(confirmWorkersFree({...args,accountId:'wrong-account'})).rejects.toThrow('PUBLIC_PREVIEW_DASHBOARD_PROOF_INVALID')
   await expect(confirmWorkersFree({...args,attestation:{...proof,verifiedAt:'2020-01-01'}})).rejects.toThrow('PUBLIC_PREVIEW_DASHBOARD_PROOF_INVALID')
+  await expect(confirmWorkersFree({...args,attestation:{...proof,verifiedAt:new Date(Date.now()-16*60*1000).toISOString()}}))
+    .rejects.toThrow('PUBLIC_PREVIEW_DASHBOARD_PROOF_INVALID')
   await expect(confirmWorkersFree({...args,fetchImpl:async()=>Response.json({result:[{rate_plan:{public_name:'Workers Paid'}}]})})).rejects.toThrow()
 })
 async function digest(root) {
