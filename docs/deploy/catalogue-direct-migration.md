@@ -291,3 +291,29 @@ run `41031057535` and artifact `12966875385`. It requires that archive's exact
 source SHA, artifact ID, size and digest, and contains no alternate path to
 rebuild catalogue data, prerender a replacement candidate, or upload a second
 candidate artifact. M1–M3 remain complete and are not rerun by this workflow.
+
+### Preserved ZIP transport after remote retention expiry
+
+The local archive may be received through a temporary HTTPS Quick Tunnel with
+an application bearer capability scoped to exactly `/artifact`. The Mac helper
+binds loopback, prevalidates the pinned archive and permits one successful GET
+within 30 minutes. The random 256-bit transport capability and temporary endpoint
+belong only in `catalogue-direct-migration` Environment secrets
+`DPG_ARTIFACT_HANDOFF_TOKEN` and `DPG_ARTIFACT_HANDOFF_URL`; never workflow inputs,
+Issue text or logs. This capability is not a Cloudflare/account credential.
+
+Set `use_local_archive_handoff=true` only for the preserved ZIP. The runner still
+validates the original successful producer, exact source and absence of an upload
+attempt. It substitutes only acquisition of expired bytes: HTTPS redirects are
+rejected, the archive must match its original byte size/SHA-256, and ZIP CRC,
+paths, entry/file/expanded-size limits are checked before extraction. All existing
+preflight, independent exact-source build comparison, budget, Free-plan, live
+receipt and single-upload gates remain mandatory. Never relabel another archive
+as the expired artifact. No archive is stored in GitHub source/releases or vault.
+
+Cloudflare terminates tunnel TLS and is part of the transport trust boundary.
+Stop both local processes and remove the two task-specific Environment secrets
+after the transfer/run; keep the original Mac ZIP. The hosted runner's received
+ZIP/staging files are ephemeral and are not uploaded as evidence. Evidence may
+contain only verified counts/digests and the transport type, never the endpoint or
+capability. A timeout/failed transfer requires diagnosis before any new attempt.

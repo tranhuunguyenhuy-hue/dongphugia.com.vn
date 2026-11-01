@@ -36,6 +36,10 @@ on:
         description: Exact GitHub artifact archive SHA-256 digest
         type: string
         required: true
+      use_local_archive_handoff:
+        description: Receive the exact preserved ZIP through the protected ephemeral handoff
+        type: boolean
+        default: false
       managed_preview_run_id:
         description: Prior successful managed LEO-563 Preview evidence run (Codex resolves it)
         type: string
@@ -148,7 +152,7 @@ jobs:
           jq -e --arg sha "$SOURCE_SHA" '.status=="completed" and .conclusion=="success" and .head_sha==$sha and .head_branch=="main" and .event=="workflow_dispatch" and .run_attempt==1 and .actor.login=="tranhuunguyenhuy-hue" and .path==".github/workflows/catalogue-public-preview.yml"' "$RUNNER_TEMP/producer-run.json" >/dev/null
           gh api "repos/$GITHUB_REPOSITORY/actions/runs/$ARTIFACT_RUN/jobs" > "$RUNNER_TEMP/producer-jobs.json"
           jq -e '[.jobs[].steps[] | select(.name=="Upload one existing Worker version") | select(.status=="in_progress" or (.status=="completed" and .conclusion!="skipped"))] | length==0' "$RUNNER_TEMP/producer-jobs.json" >/dev/null
-          if [[ "${{ inputs.publish }}" == true ]]; then
+          if [[ "${{ inputs.publish }}" == true && "${{ inputs.use_local_archive_handoff }}" != true ]]; then
             gh api "repos/$GITHUB_REPOSITORY/actions/runs/$ARTIFACT_RUN/artifacts?per_page=100" > "$RUNNER_TEMP/candidate-artifacts.json"
             jq -e --argjson id "$CANDIDATE_ARTIFACT_ID" --arg name "public-catalogue-preview-$SOURCE_SHA" \
               --argjson size "$CANDIDATE_ARTIFACT_SIZE_BYTES" --arg digest "sha256:$CANDIDATE_ARCHIVE_SHA256" \
@@ -156,12 +160,22 @@ jobs:
               "$RUNNER_TEMP/candidate-artifacts.json" >/dev/null
           fi
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
-        if: inputs.artifact_run_id != ''
+        if: inputs.artifact_run_id != '' && !inputs.use_local_archive_handoff
         with:
           name: public-catalogue-preview-${{ env.SOURCE_SHA }}
           path: ${{ env.ARTIFACT_ROOT }}
           run-id: ${{ inputs.artifact_run_id }}
           github-token: ${{ github.token }}
+      - name: Receive and verify the exact preserved local archive
+        if: inputs.use_local_archive_handoff
+        env:
+          DPG_ARTIFACT_HANDOFF_URL: ${{ secrets.DPG_ARTIFACT_HANDOFF_URL }}
+          DPG_ARTIFACT_HANDOFF_TOKEN: ${{ secrets.DPG_ARTIFACT_HANDOFF_TOKEN }}
+        run: |
+          set -euo pipefail
+          set +x
+          umask 077
+          node scripts/catalogue-direct/artifact-handoff.mjs receive --output "$ARTIFACT_ROOT"
       - name: Verify Public-only artifact, real snapshot identity and Free caps
         run: |
           set -euo pipefail
