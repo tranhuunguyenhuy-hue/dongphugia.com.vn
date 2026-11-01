@@ -4,9 +4,45 @@ import { mkdtemp, mkdir, writeFile, readFile, readdir, rm } from 'node:fs/promis
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { createHash } from 'node:crypto'
-import { publicOnlyPreflight, confirmWorkersFree, verifySnapshotHttps } from './public-preview.mjs'
+import { publicOnlyPreflight, confirmWorkersFree, verifySnapshotHttps, reconcileRenderProgress } from './public-preview.mjs'
 import { WORKER_NAME, PREVIEW_ALIAS } from '../app-foundation/cloudflare-preview-publication.mjs'
 const source='a'.repeat(40),checkpoint='b'.repeat(40)
+it('reconciles only unordered, semantically identical route progress before strict byte comparison',async()=>{
+  const root=await mkdtemp(path.join(tmpdir(),'dpg-progress-reconcile-'))
+  const firstRoot=path.join(root,'first'),secondRenderRoot=path.join(root,'second')
+  const relative=path.join('v1',source,checkpoint,'progress.json')
+  const firstPath=path.join(firstRoot,'assets/__render',relative),secondPath=path.join(secondRenderRoot,relative)
+  const entry=(hash)=>({html:{sha256:hash,bytes:10},rsc:{sha256:hash,bytes:5}})
+  const completed={'/a':entry('a'.repeat(64)),'/b':entry('b'.repeat(64))}
+  const first=JSON.stringify({contract:'dpg:canonical-prerender:v1',sourceSha:source,checkpoint,
+    snapshotHash:'c'.repeat(64),total:2,completed})
+  const second=JSON.stringify({contract:'dpg:canonical-prerender:v1',sourceSha:source,checkpoint,
+    snapshotHash:'c'.repeat(64),total:2,completed:{'/b':completed['/b'],'/a':completed['/a']}})
+  try{
+    await mkdir(path.dirname(firstPath),{recursive:true});await mkdir(path.dirname(secondPath),{recursive:true})
+    await writeFile(firstPath,first);await writeFile(secondPath,second)
+    expect((await reconcileRenderProgress({firstRoot,secondRenderRoot,sourceSha:source,checkpoint})).routes).toBe(2)
+    expect((await readFile(secondPath,'utf8'))).toBe(first)
+    const changed=second.replace('b'.repeat(64),'d'.repeat(64))
+    await writeFile(secondPath,changed)
+    await expect(reconcileRenderProgress({firstRoot,secondRenderRoot,sourceSha:source,checkpoint}))
+      .rejects.toThrow('PUBLIC_PREVIEW_PROGRESS_CONTENT_MISMATCH')
+    expect((await readFile(secondPath,'utf8'))).toBe(changed)
+  }finally{await rm(root,{recursive:true,force:true})}
+})
+it('reproduces both public noindex header blocks and keeps strict comparison before upload',async()=>{
+  const workflow=await readFile(new URL('../../.github/workflows/catalogue-public-preview.yml',import.meta.url),'utf8')
+  const reconcile=workflow.indexOf('public-preview.mjs" reconcile-progress')
+  const catalogueHeader=workflow.indexOf("printf '\\n/__catalogue/*")
+  const renderHeader=workflow.indexOf("printf '\\n/__render/*")
+  const compare=workflow.indexOf('public-preview.mjs compare-builds')
+  const upload=workflow.indexOf('- name: Upload one existing Worker version')
+  expect(reconcile).toBeGreaterThan(0)
+  expect(catalogueHeader).toBeGreaterThan(reconcile)
+  expect(renderHeader).toBeGreaterThan(catalogueHeader)
+  expect(compare).toBeGreaterThan(renderHeader)
+  expect(upload).toBeGreaterThan(compare)
+})
 it('uses only a fresh exact-account Dashboard proof on Billing403; never overrides a paid API plan',async()=>{
   const accountId='synthetic-account'
   const proof={contract:'dpg:cloudflare-workers-free-attestation:v1',accountHash:createHash('sha256').update(accountId).digest('hex'),

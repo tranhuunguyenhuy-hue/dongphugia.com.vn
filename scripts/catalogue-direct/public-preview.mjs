@@ -4,6 +4,7 @@ import { createReadStream } from 'node:fs'
 import { lstat, readFile, readdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
+import { isDeepStrictEqual } from 'node:util'
 import { validatePreviewConfig, WORKER_NAME, PREVIEW_ALIAS } from '../app-foundation/cloudflare-preview-publication.mjs'
 
 const SHA=/^[a-f0-9]{40}$/
@@ -12,7 +13,31 @@ const DETERMINISM_FILE_LIMIT=25000
 const DETERMINISM_FILE_BYTES_LIMIT=25*1024*1024
 const DETERMINISM_BUILD_BYTES_LIMIT=1024*1024*1024
 const CLOUDFLARE_PLAN_ATTESTATION_MAX_AGE_MS=15*60*1000
+const RENDER_PROGRESS_MAX_BYTES=2_000_000
 function gate(value,reason) { if(!value)throw new Error(reason) }
+export async function reconcileRenderProgress({firstRoot,secondRenderRoot,sourceSha,checkpoint}) {
+  gate(SHA.test(sourceSha)&&SHA.test(checkpoint),'PUBLIC_PREVIEW_PROGRESS_IDENTITY')
+  const relative=path.join('v1',sourceSha,checkpoint,'progress.json')
+  const firstPath=path.join(firstRoot,'assets','__render',relative)
+  const secondPath=path.join(secondRenderRoot,relative)
+  const [firstInfo,secondInfo]=await Promise.all([lstat(firstPath),lstat(secondPath)])
+  gate(firstInfo.isFile()&&secondInfo.isFile()&&firstInfo.size>0&&secondInfo.size>0
+    &&firstInfo.size<=RENDER_PROGRESS_MAX_BYTES&&secondInfo.size<=RENDER_PROGRESS_MAX_BYTES,
+  'PUBLIC_PREVIEW_PROGRESS_FILE_UNSAFE')
+  const [firstBytes,secondBytes]=await Promise.all([readFile(firstPath),readFile(secondPath)])
+  let first,second
+  try { first=JSON.parse(firstBytes);second=JSON.parse(secondBytes) }
+  catch { throw new Error('PUBLIC_PREVIEW_PROGRESS_INVALID') }
+  gate(first?.contract==='dpg:canonical-prerender:v1'&&first.sourceSha===sourceSha
+    &&first.checkpoint===checkpoint&&Number.isSafeInteger(first.total)&&first.total>0
+    &&Object.keys(first.completed??{}).length===first.total,
+  'PUBLIC_PREVIEW_PROGRESS_IDENTITY')
+  gate(isDeepStrictEqual(first,second),'PUBLIC_PREVIEW_PROGRESS_CONTENT_MISMATCH')
+  // Completion order is nondeterministic; preserve the pinned producer's bytes
+  // only after every independent route entry has matched semantically.
+  await writeFile(secondPath,firstBytes,{flag:'w'})
+  return {status:'PASS',routes:first.total,producerSha256:sha256(firstBytes)}
+}
 async function publicBuildInventory(root,{fileLimit=DETERMINISM_FILE_LIMIT,collectFiles=true,comparePaths=(a,b)=>a<b?-1:a>b?1:0}={}) {
   const absoluteRoot=path.resolve(root)
   const rootInfo=await lstat(absoluteRoot)
@@ -201,6 +226,12 @@ function parseArgs(args) { const out={};for(let i=0;i<args.length;i+=2){gate(arg
 async function main() {
   const [mode,...rest]=process.argv.slice(2);const args=parseArgs(rest)
   let result
+  if(mode==='reconcile-progress') {
+    result=await reconcileRenderProgress({firstRoot:path.resolve(args['first-root']),
+      secondRenderRoot:path.resolve(args['second-render-root']),sourceSha:args['source-sha'],checkpoint:args.checkpoint})
+    console.log(JSON.stringify({status:result.status,unit:mode,routes:result.routes,producerSha256:result.producerSha256}))
+    return
+  }
   if(mode==='compare-builds') {
     result=await comparePublicBuildDirectories({firstRoot:path.resolve(args['first-root']),secondRoot:path.resolve(args['second-root'])})
     await writeFile(args.output,JSON.stringify(result,null,2)+'\n',{mode:0o600})
