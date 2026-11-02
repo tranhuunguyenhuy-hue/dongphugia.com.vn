@@ -15,28 +15,30 @@ const CAROUSEL_ID = "homepage-hero-carousel"
  */
 export function HeroBanner({ banners }: HeroBannerProps) {
     const items = banners.length > 0 ? banners : []
+    // The recovered PNG campaign images are 1606×752; preserve the artwork ratio.
+    const isPngBannerSet = items.length > 0 && items.every(({ imageUrl }) => /\.png(?:\?.*)?$/i.test(imageUrl))
 
     if (items.length === 0) {
         return (
-            <div className="relative aspect-[16/9] w-full overflow-hidden rounded-md bg-stone-50 shadow-md">
+            <div className={`relative ${isPngBannerSet ? "aspect-[1606/752]" : "aspect-[16/9]"} w-full overflow-hidden rounded-md bg-stone-50 shadow-md`}>
                 <link
                     rel="preload"
                     as="image"
                     href="/images/banner-1.editorial.w960.webp"
-                    type="image/webp"
+                    type={isPngBannerSet ? "image/png" : "image/webp"}
                     fetchPriority="high"
                 />
                 <picture>
                     <source
-                        type="image/webp"
+                        type={isPngBannerSet ? "image/png" : "image/webp"}
                         srcSet="/images/banner-1.editorial.w640.webp 640w, /images/banner-1.editorial.w960.webp 960w"
                         sizes="(max-width: 767px) 100vw, 1280px"
                     />
                     <img
                         src="/images/banner-1.editorial.w960.webp"
                         alt="Đông Phú Gia - Vật liệu xây dựng"
-                        width={BANNER_WIDTH}
-                        height={BANNER_HEIGHT}
+                        width={isPngBannerSet ? 1606 : BANNER_WIDTH}
+                        height={isPngBannerSet ? 752 : BANNER_HEIGHT}
                         className="h-full w-full object-cover"
                         loading="eager"
                         fetchPriority="high"
@@ -50,7 +52,7 @@ export function HeroBanner({ banners }: HeroBannerProps) {
     return (
         <div
             id={CAROUSEL_ID}
-            className="relative aspect-[16/9] w-full overflow-hidden rounded-md bg-stone-50 shadow-md"
+            className={`relative ${isPngBannerSet ? "aspect-[1606/752]" : "aspect-[16/9]"} w-full overflow-hidden rounded-md bg-stone-50 shadow-md`}
             aria-roledescription="carousel"
             aria-label="Banner nổi bật"
         >
@@ -71,7 +73,7 @@ export function HeroBanner({ banners }: HeroBannerProps) {
                             rel="preload"
                             as="image"
                             href={mobileImage}
-                            type="image/webp"
+                            type={isPngBannerSet ? "image/png" : "image/webp"}
                             media="(max-width: 767px)"
                             fetchPriority="high"
                         />
@@ -79,27 +81,27 @@ export function HeroBanner({ banners }: HeroBannerProps) {
                             rel="preload"
                             as="image"
                             href={desktopImage}
-                            type="image/webp"
+                            type={isPngBannerSet ? "image/png" : "image/webp"}
                             media="(min-width: 768px)"
                             fetchPriority="high"
                         />
                         <picture className="block h-full w-full">
                             <source
                                 media="(max-width: 767px)"
-                                type="image/webp"
+                                type={isPngBannerSet ? "image/png" : "image/webp"}
                                 srcSet={mobileImage}
                             />
                             <source
                                 media="(min-width: 768px)"
-                                type="image/webp"
+                                type={isPngBannerSet ? "image/png" : "image/webp"}
                                 srcSet={`${desktopImage} 1280w, ${desktopImage1600} 1600w`}
                                 sizes="1280px"
                             />
                             <img
                                 src={desktopImage}
                                 alt={item.title || "Không gian vật liệu cao cấp Đông Phú Gia"}
-                                width={BANNER_WIDTH}
-                                height={BANNER_HEIGHT}
+                                width={isPngBannerSet ? 1606 : BANNER_WIDTH}
+                                height={isPngBannerSet ? 752 : BANNER_HEIGHT}
                                 className="h-full w-full object-cover"
                                 loading="eager"
                                 fetchPriority="high"
