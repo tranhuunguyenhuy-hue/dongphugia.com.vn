@@ -44,6 +44,7 @@ jobs:
           echo 'fe5a98949573a6ccba21b5334ffc924204183971c9d660cbb8e31ccf8a0aeadf  '"$RUNNER_TEMP/accepted-public.zip" | sha256sum --check --status
           mkdir -p "$RUNNER_TEMP/accepted-public"
           unzip -q "$RUNNER_TEMP/accepted-public.zip" -d "$RUNNER_TEMP/accepted-public"
+          npm ci
           node scripts/catalogue-direct/preview2-candidate-audit.mjs "$RUNNER_TEMP/accepted-public/build" "$RUNNER_TEMP/accepted-public-audit.json"
       - name: Validate snapshot identity and install pinned tools
         id: identity
@@ -54,7 +55,6 @@ jobs:
           checkpoint="$(jq -er '.checkpoint | select(test("^[a-f0-9]{40}$"))' "$snapshot")"
           jq -e '.contract=="dpg:public-catalogue-snapshot:v1" and .products==5223 and .listingProducts==4853 and .contentPolicy=="canonical-public-content-v3"' "$snapshot" >/dev/null
           echo "checkpoint=$checkpoint" >> "$GITHUB_OUTPUT"
-          npm ci
           npm ci --prefix apps/public
       - name: Build Production Worker with canonical origin and public-only snapshot
         env:
