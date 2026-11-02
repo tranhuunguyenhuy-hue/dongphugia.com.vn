@@ -3,3 +3,5 @@
 *.sh text eol=lf
 bin/* text eol=lf
 docs/catalogue/evidence/inax/INAX_2026_sanitary_sku_prices.csv -text
+docs/catalogue/evidence/inax/INAX_2026_page_audit.csv -text
+docs/catalogue/evidence/inax/INAX_2026_products_verified.csv -text
