@@ -47,9 +47,11 @@ describe('Owner Production homepage hotfix', () => {
     expect(existsSync(resolve(root, 'apps/public/app/[categorySlug]/page.tsx'))).toBe(true)
   })
 
-  it('provides a factual news landing route without fabricated articles', () => {
+  it('provides restored factual published news articles without placeholders', () => {
     const page = readFileSync(resolve(root, 'apps/public/app/blog/page.tsx'), 'utf8')
     expect(page).toContain("canonical: '/blog'")
-    expect(page).toContain('Bài viết đang được cập nhật')
+    expect(page).toContain('blogPosts')
+    expect(page).toContain('Góc chia sẻ')
+    expect(page).not.toContain('Bài viết đang được cập nhật')
   })
 })
