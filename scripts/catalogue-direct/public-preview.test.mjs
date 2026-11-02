@@ -56,6 +56,19 @@ it('uses only a fresh exact-account Dashboard proof on Billing403; never overrid
     .rejects.toThrow('PUBLIC_PREVIEW_DASHBOARD_PROOF_INVALID')
   await expect(confirmWorkersFree({...args,fetchImpl:async()=>Response.json({result:[{rate_plan:{public_name:'Workers Paid'}}]})})).rejects.toThrow()
 })
+it('accepts the exact fresh Owner Free screenshot only when the successful API omits a Workers plan',async()=>{
+  const accountId='synthetic-account'
+  const proof={contract:'dpg:owner-workers-free-screenshot:v1',accountHash:createHash('sha256').update(accountId).digest('hex'),
+    screenshotSha256:'c2114583b04ce804086d28b10e3c450c90f3b80ec8107ed4efe671bcc60094b8',
+    plan:'workers_free',state:'active',billableUsd:null,verifiedAt:new Date().toISOString()}
+  const fetchImpl=async()=>Response.json({success:true,result:[]})
+  expect((await confirmWorkersFree({accountId,apiToken:'synthetic',attestation:proof,fetchImpl})).evidenceMode).toBe('OWNER_SCREENSHOT')
+  await expect(confirmWorkersFree({accountId,apiToken:'synthetic',attestation:{...proof,screenshotSha256:'wrong'},fetchImpl}))
+    .rejects.toThrow('PUBLIC_PREVIEW_OWNER_SCREENSHOT_PROOF_INVALID')
+  await expect(confirmWorkersFree({accountId,apiToken:'synthetic',attestation:proof,
+    fetchImpl:async()=>Response.json({success:true,result:[{rate_plan:{public_name:'Workers Paid'}}]})}))
+    .rejects.toThrow('PUBLIC_PREVIEW_PAID_WORKERS_PLAN_FORBIDDEN')
+})
 async function digest(root) {
   const files=[]
   async function walk(dir=''){for(const e of await readdir(path.join(root,dir),{withFileTypes:true})){const p=path.join(dir,e.name);if(e.isDirectory())await walk(p);else files.push(p)}}
@@ -110,7 +123,7 @@ describe('Public-only Preview publication mechanism, no live data or API',()=>{
       return Response.json({success:true,result:[{rate_plan:{public_name:'Workers Free'},component:{name:'workers'}}]})
     }
     await expect(confirmWorkersFree({accountId:'synthetic',apiToken:'test-only',fetchImpl})).resolves.toMatchObject({workersFreeConfirmed:true,mutation:false})
-    await expect(confirmWorkersFree({accountId:'synthetic',apiToken:'test-only',fetchImpl:async()=>Response.json({success:true,result:[{rate_plan:{public_name:'Workers Paid'}}]})})).rejects.toThrow('FREE_NOT_CONFIRMED')
+    await expect(confirmWorkersFree({accountId:'synthetic',apiToken:'test-only',fetchImpl:async()=>Response.json({success:true,result:[{rate_plan:{public_name:'Workers Paid'}}]})})).rejects.toThrow('PUBLIC_PREVIEW_PAID_WORKERS_PLAN_FORBIDDEN')
     await expect(confirmWorkersFree({accountId:'synthetic',apiToken:'test-only',fetchImpl:async()=>new Response('{}',{status:403})})).rejects.toThrow('HTTP_403')
   })
   it('rejects incomplete rendering even when the public snapshot exists',async()=>{

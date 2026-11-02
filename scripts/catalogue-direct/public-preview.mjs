@@ -13,6 +13,7 @@ const DETERMINISM_FILE_LIMIT=25000
 const DETERMINISM_FILE_BYTES_LIMIT=25*1024*1024
 const DETERMINISM_BUILD_BYTES_LIMIT=1024*1024*1024
 const CLOUDFLARE_PLAN_ATTESTATION_MAX_AGE_MS=15*60*1000
+const OWNER_FREE_SCREENSHOT_SHA256='c2114583b04ce804086d28b10e3c450c90f3b80ec8107ed4efe671bcc60094b8'
 const RENDER_PROGRESS_MAX_BYTES=2_000_000
 function gate(value,reason) { if(!value)throw new Error(reason) }
 export async function reconcileRenderProgress({firstRoot,secondRenderRoot,sourceSha,checkpoint}) {
@@ -188,8 +189,19 @@ export async function confirmWorkersFree({accountId,apiToken,fetchImpl=fetch,att
   const body=await response.json()
   gate(body.success!==false&&Array.isArray(body.result),'PUBLIC_PREVIEW_PLAN_UNKNOWN')
   const plans=body.result.map(s=>[s.rate_plan?.public_name,s.rate_plan?.name,s.component?.name].filter(x=>typeof x==='string').join(' ')).filter(x=>/workers/i.test(x))
-  gate(plans.some(x=>/workers[\s_-]+free|free.*workers/i.test(x)),'PUBLIC_PREVIEW_WORKERS_FREE_NOT_CONFIRMED')
   gate(plans.every(x=>/free/i.test(x)),'PUBLIC_PREVIEW_PAID_WORKERS_PLAN_FORBIDDEN')
+  if(!plans.some(x=>/workers[\s_-]+free|free.*workers/i.test(x)) && attestation) {
+    const proof=typeof attestation==='string'?JSON.parse(attestation):attestation
+    const age=Date.now()-Date.parse(proof.verifiedAt)
+    gate(proof.contract==='dpg:owner-workers-free-screenshot:v1'
+      && proof.accountHash===sha256(accountId) && proof.screenshotSha256===OWNER_FREE_SCREENSHOT_SHA256
+      && proof.plan==='workers_free' && proof.state==='active'
+      && proof.billableUsd===null && age>=0 && age<=CLOUDFLARE_PLAN_ATTESTATION_MAX_AGE_MS,
+    'PUBLIC_PREVIEW_OWNER_SCREENSHOT_PROOF_INVALID')
+    return {contract:'dpg:public-preview-zero-cost:v1',workersFreeConfirmed:true,checkedAt:proof.verifiedAt,
+      evidenceMode:'OWNER_SCREENSHOT',billableUsd:null,mutation:false}
+  }
+  gate(plans.some(x=>/workers[\s_-]+free|free.*workers/i.test(x)),'PUBLIC_PREVIEW_WORKERS_FREE_NOT_CONFIRMED')
   return {contract:'dpg:public-preview-zero-cost:v1',workersFreeConfirmed:true,checkedAt:new Date().toISOString(),mutation:false}
 }
 export async function verifySnapshotHttps({baseUrl,sourceSha,checkpoint,m3RunId,buildRoot,fetchImpl=fetch}) {
