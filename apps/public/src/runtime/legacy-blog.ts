@@ -59,6 +59,20 @@ export function blogPostPath(post: LegacyBlogPost) {
   return `/blog/${post.category.slug}/${post.slug}`
 }
 
+// Exactly two thumbnail assets have been visually confirmed by Owner on the
+// official default Bunny pull-zone hostname. Do not blanket-rewrite unverified
+// cover images or inline media; preserve original database snapshot metadata.
+const ownerVerifiedLegacyThumbnailAliases = new Map([
+  [
+    'https://cdn.dongphugia.com.vn/blog/1782900852828-h356on.png',
+    'https://dpg-products.b-cdn.net/blog/1782900852828-h356on.png',
+  ],
+  [
+    'https://cdn.dongphugia.com.vn/blog/1782811954060-lm1xt.png',
+    'https://dpg-products.b-cdn.net/blog/1782811954060-lm1xt.png',
+  ],
+])
+
 // Preserve every historical media URL in the immutable public snapshot.
 // Unknown / unsupported URL hosts are not embedded into the visible page.
 const allowedMediaHosts = new Set([
@@ -74,8 +88,10 @@ export function historicalBlogImage(value: string | null | undefined): string | 
   if (!value) return null
   try {
     const url = new URL(value)
-    return url.protocol === 'https:' &&
-      (allowedMediaHosts.has(url.hostname) || verifiedMediaUrls.has(url.href)) ? url.href : null
+    if (url.protocol !== 'https:') return null
+    const verifiedAlias = ownerVerifiedLegacyThumbnailAliases.get(url.href)
+    if (verifiedAlias) return verifiedAlias
+    return allowedMediaHosts.has(url.hostname) || verifiedMediaUrls.has(url.href) ? url.href : null
   } catch {
     return null
   }

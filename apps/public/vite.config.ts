@@ -10,10 +10,9 @@ if (!sourceCommit || !/^[0-9a-f]{40}$/.test(sourceCommit)) {
   throw new Error('PUBLIC_WORKER_SOURCE_SHA_REQUIRED')
 }
 
-// Rolldown emitted two different CommonJS interop calls for vinext's namespace
-// React import in the SSR navigation chunk on the same GitHub runner. That one
-// byte difference cascaded through the content-hashed SSR imports. Express the
-// existing React object import as an explicit default import before bundling.
+// React is CommonJS. Load its exports directly in vinext navigation so Rolldown
+// does not generate a variable ESM interop wrapper for this React object. The
+// two interop modes otherwise cascade into different SSR chunk hashes.
 function stableNavigationReactImport(): Plugin {
   return {
     name: 'dpg:stable-navigation-react-import',
@@ -22,7 +21,7 @@ function stableNavigationReactImport(): Plugin {
       if (!id.replaceAll('\\', '/').includes('/vinext/dist/shims/navigation.js')) return
       const source = 'import * as React$1 from "react";'
       if (!code.includes(source)) throw new Error('VINEXT_NAVIGATION_REACT_IMPORT_CHANGED')
-      return code.replace(source, 'import React$1 from "react";')
+      return code.replace(source, 'const React$1 = require("react");')
     },
   }
 }
