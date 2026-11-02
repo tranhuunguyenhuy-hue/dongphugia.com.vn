@@ -26,6 +26,7 @@ jobs:
           APP_BUILD_TARGET: public
           APP_ORIGIN: https://www.dongphugia.vn
           BUILD_SOURCE_SHA: 5f3e0972973770835f195b271a59b1e1aabee0a2
+          PUBLIC_CATALOGUE_CHECKPOINT: 87e4b06b73ab20df11d95021e1da8bd8f497ee5e
         run: |
           set -euo pipefail
           cp apps/public/wrangler.production.jsonc apps/public/wrangler.jsonc
