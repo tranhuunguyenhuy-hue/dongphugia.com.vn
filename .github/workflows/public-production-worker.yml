@@ -35,12 +35,16 @@ jobs:
           set -euo pipefail
           gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/13093442346" > "$RUNNER_TEMP/source-artifact.json"
           jq -e '.id==13093442346 and .expired==false and .size_in_bytes==172075221 and .digest=="sha256:fe5a98949573a6ccba21b5334ffc924204183971c9d660cbb8e31ccf8a0aeadf" and .workflow_run.head_sha=="db57ece2090e39f25dc0c31782de2a938d6ea74e"' "$RUNNER_TEMP/source-artifact.json" >/dev/null
-      - uses: actions/download-artifact@v4
-        with:
-          name: public-catalogue-preview-db57ece2090e39f25dc0c31782de2a938d6ea74e
-          path: ${{ runner.temp }}/accepted-public
-          run-id: 41331653445
-          github-token: ${{ github.token }}
+      - name: Download and hash the exact accepted archive
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/13093442346/zip" > "$RUNNER_TEMP/accepted-public.zip"
+          echo 'fe5a98949573a6ccba21b5334ffc924204183971c9d660cbb8e31ccf8a0aeadf  '"$RUNNER_TEMP/accepted-public.zip" | sha256sum --check --status
+          mkdir -p "$RUNNER_TEMP/accepted-public"
+          unzip -q "$RUNNER_TEMP/accepted-public.zip" -d "$RUNNER_TEMP/accepted-public"
+          node scripts/catalogue-direct/preview2-candidate-audit.mjs "$RUNNER_TEMP/accepted-public/build" "$RUNNER_TEMP/accepted-public-audit.json"
       - name: Validate snapshot identity and install pinned tools
         id: identity
         run: |
@@ -63,6 +67,9 @@ jobs:
           set -euo pipefail
           cp apps/public/wrangler.production.jsonc apps/public/wrangler.jsonc
           npm run build:public-worker
+          cp -R apps/public/dist "$RUNNER_TEMP/first-production-build"
+          npm run build:public-worker
+          diff -qr "$RUNNER_TEMP/first-production-build" apps/public/dist
           cp -R "$RUNNER_TEMP/accepted-public/build/assets/__catalogue" apps/public/dist/client/__catalogue
           npm run app:assemble-public-worker -- --repository-root . --server-dir apps/public/dist/server --assets-dir apps/public/dist/client --output "$RUNNER_TEMP/render-source" --source-sha "$GITHUB_SHA"
           node apps/public/node_modules/wrangler/bin/wrangler.js dev --local --config "$RUNNER_TEMP/render-source/wrangler.json" --port 8790 --var CATALOGUE_BUILD_RENDER:true > "$RUNNER_TEMP/render.log" 2>&1 &
@@ -73,6 +80,16 @@ jobs:
           npm run app:assemble-public-worker -- --repository-root . --server-dir apps/public/dist/server --assets-dir apps/public/dist/client --output "$RUNNER_TEMP/production-build" --source-sha "$GITHUB_SHA"
           jq -e '.name=="dongphugia-v1-public-production" and .workers_dev==true and .preview_urls==false and .vars.APP_ENV=="production" and .vars.APP_ORIGIN=="https://www.dongphugia.vn" and (.vars|has("PREVIEW_NOINDEX")|not)' "$RUNNER_TEMP/production-build/wrangler.json" >/dev/null
           jq -e --arg sha "$GITHUB_SHA" --arg checkpoint "$PUBLIC_CATALOGUE_CHECKPOINT" '.status=="COMPLETE" and .sourceSha==$sha and .checkpoint==$checkpoint and .routes==5621 and .products==5223' "$RUNNER_TEMP/production-build/assets/__render/v1/$GITHUB_SHA/$PUBLIC_CATALOGUE_CHECKPOINT/ready.json" >/dev/null
+          node apps/public/node_modules/wrangler/bin/wrangler.js dev --local --config "$RUNNER_TEMP/production-build/wrangler.json" --port 8791 > "$RUNNER_TEMP/production-smoke.log" 2>&1 &
+          smoke_pid=$!
+          trap 'kill "$smoke_pid" 2>/dev/null || true' EXIT
+          ready=0
+          for _ in {1..40}; do
+            if curl --fail --silent http://127.0.0.1:8791/api/health >/dev/null; then ready=1; break; fi
+            sleep 0.25
+          done
+          test "$ready" -eq 1
+          node scripts/catalogue-direct/public-production-smoke.mjs http://127.0.0.1:8791 "$GITHUB_SHA" local
       - name: Upload versioned Production candidate
         uses: actions/upload-artifact@v4
         with:
@@ -106,3 +123,4 @@ jobs:
           npm ci --prefix apps/public
           cd "$RUNNER_TEMP/production-build"
           node "$GITHUB_WORKSPACE/apps/public/node_modules/wrangler/bin/wrangler.js" deploy --config wrangler.json
+          node "$GITHUB_WORKSPACE/scripts/catalogue-direct/public-production-smoke.mjs" https://dongphugia-v1-public-production.tranhuunguyenhuy.workers.dev "$GITHUB_SHA" workers-dev
