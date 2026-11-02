@@ -37,3 +37,7 @@ At `2026-11-02 16:05:22 UTC`, a new read-only exact-SKU aggregate probe of all *
 ### Visual product-card batch: PDF pages 37–39
 
 Full-resolution visual review confirms 14 additional exact codes and their printed prices: eight two-piece toilet variants on PDF p.37, three wall-hung toilets on p.38, and the Jet Bowl plus two separately priced installation components on p.39. The product-level CSV now contains **87 CONFIRMED**, **199 REVIEW** rows; SHA-256 `112c4ad348b21ead368f226ab637c8d1aad3d2c7e8b5966ebbe1f0f505e413eb`. `REVIEW` prices remain blank. This batch does not complete product-level review of all 107 pages or W4 matching.
+
+### Visual product-card batch: PDF pages 41, 43–45
+
+Page 41 is a lifestyle image without printed SKU/price card. Full-resolution review of pages 43–45 confirms 20 additional distinct unambiguous full codes and printed prices, including separately priced pedestal components. `INAX_2026_products_verified.csv`: **107 CONFIRMED**, **182 REVIEW**; SHA-256 `cdc424031a1f288f9b85f0620161eb2568c77b411f1a79ad6534b21be2c7e3e7`. Parenthetical GC/EC/FC multiple-variant families remain REVIEW rather than assigning one family price to unverified full variants. Product-level audit of the remaining pages and W4 remain open.
