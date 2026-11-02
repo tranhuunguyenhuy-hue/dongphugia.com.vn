@@ -32,7 +32,7 @@ if (!robots.body.includes('Allow: /') || robots.body.includes('Disallow: /')) fa
 
 for (const path of paths) {
   const { response, body } = await checked(path)
-  const canonical = `https://www.dongphugia.vn${path}`
+  const canonical = path === '/' ? 'https://www.dongphugia.vn' : `https://www.dongphugia.vn${path}`
   if (!response.headers.get('content-type')?.includes('text/html') || !body.includes('<h1')
     || !body.includes(`href="${canonical}"`) || /<meta[^>]+name="robots"[^>]+noindex/i.test(body)) fail('HTML')
   const robotsHeader = response.headers.get('x-robots-tag')
