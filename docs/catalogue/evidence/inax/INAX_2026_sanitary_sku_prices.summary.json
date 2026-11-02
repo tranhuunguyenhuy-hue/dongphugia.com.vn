@@ -1,0 +1,774 @@
+{
+  "pdf_sha256": "c9e6ccba1bb8f817b3bd09e0533e5002620172ec88b21b8461388ca63699da67",
+  "pdf_bytes": 44558520,
+  "pdf_pages": 107,
+  "csv_sha256": "c628805083020b8a9ae538e788851eeef2c3f2e8e74c8835e38bcaa8be7335f7",
+  "rows": 2348,
+  "unique_full_codes": 650,
+  "rows_with_price": 369,
+  "rows_needing_manual_review": 2251,
+  "pages_examined": 107,
+  "pages_with_sku": 82,
+  "pages_with_price": 53,
+  "pages_without_listing": 25,
+  "pages_needing_manual_review": 79,
+  "group_counts": {
+    "UNKNOWN": 2153,
+    "Bồn cầu": 45,
+    "Lavabo": 22,
+    "Sen & vòi": 97,
+    "Bồn tắm": 14,
+    "Bồn tiểu": 17
+  },
+  "pages": [
+    {
+      "pdf_page": 1,
+      "printed_page": "",
+      "text_chars": 26,
+      "code_occurrences": 0,
+      "price_occurrences": 0
+    },
+    {
+      "pdf_page": 2,
+      "printed_page": "2/3",
+      "text_chars": 712,
+      "code_occurrences": 0,
+      "price_occurrences": 0
+    },
+    {
+      "pdf_page": 3,
+      "printed_page": "4/5",
+      "text_chars": 2042,
+      "code_occurrences": 0,
+      "price_occurrences": 0
+    },
+    {
+      "pdf_page": 4,
+      "printed_page": "6/7",
+      "text_chars": 1200,
+      "code_occurrences": 0,
+      "price_occurrences": 0
+    },
+    {
+      "pdf_page": 5,
+      "printed_page": "8/9",
+      "text_chars": 1714,
+      "code_occurrences": 3,
+      "price_occurrences": 0
+    },
+    {
+      "pdf_page": 6,
+      "printed_page": "10/11",
+      "text_chars": 363,
+      "code_occurrences": 0,
+      "price_occurrences": 0
+    },
+    {
+      "pdf_page": 7,
+      "printed_page": "12/13",
+      "text_chars": 2731,
+      "code_occurrences": 12,
+      "price_occurrences": 12
+    },
+    {
+      "pdf_page": 8,
+      "printed_page": "14/15",
+      "text_chars": 1000,
+      "code_occurrences": 4,
+      "price_occurrences": 4
+    },
+    {
+      "pdf_page": 9,
+      "printed_page": "16/17",
+      "text_chars": 434,
+      "code_occurrences": 0,
+      "price_occurrences": 0
+    },
+    {
+      "pdf_page": 10,
+      "printed_page": "18/19",
+      "text_chars": 2999,
+      "code_occurrences": 12,
+      "price_occurrences": 12
+    },
+    {
+      "pdf_page": 11,
+      "printed_page": "20/21",
+      "text_chars": 674,
+      "code_occurrences": 0,
+      "price_occurrences": 0
+    },
+    {
+      "pdf_page": 12,
+      "printed_page": "22/23",
+      "text_chars": 2647,
+      "code_occurrences": 12,
+      "price_occurrences": 12
+    },
+    {
+      "pdf_page": 13,
+      "printed_page": "24/25",
+      "text_chars": 441,
+      "code_occurrences": 0,
+      "price_occurrences": 0
+    },
+    {
+      "pdf_page": 14,
+      "printed_page": "26/27",
+      "text_chars": 1180,
+      "code_occurrences": 7,
+      "price_occurrences": 7
+    },
+    {
+      "pdf_page": 15,
+      "printed_page": "28/29",
+      "text_chars": 1740,
+      "code_occurrences": 0,
+      "price_occurrences": 0
+    },
+    {
+      "pdf_page": 16,
+      "printed_page": "31/30",
+      "text_chars": 843,
+      "code_occurrences": 2,
+      "price_occurrences": 2
+    },
+    {
+      "pdf_page": 17,
+      "printed_page": "32/33",
+      "text_chars": 480,
+      "code_occurrences": 0,
+      "price_occurrences": 0
+    },
+    {
+      "pdf_page": 18,
+      "printed_page": "35/34",
+      "text_chars": 1479,
+      "code_occurrences": 0,
+      "price_occurrences": 0
+    },
+    {
+      "pdf_page": 19,
+      "printed_page": "37/36",
+      "text_chars": 1686,
+      "code_occurrences": 2,
+      "price_occurrences": 2
+    },
+    {
+      "pdf_page": 20,
+      "printed_page": "38/39",
+      "text_chars": 978,
+      "code_occurrences": 2,
+      "price_occurrences": 2
+    },
+    {
+      "pdf_page": 21,
+      "printed_page": "40/41",
+      "text_chars": 1661,
+      "code_occurrences": 0,
+      "price_occurrences": 0
+    },
+    {
+      "pdf_page": 22,
+      "printed_page": "42/43",
+      "text_chars": 980,
+      "code_occurrences": 0,
+      "price_occurrences": 0
+    },
+    {
+      "pdf_page": 23,
+      "printed_page": "45",
+      "text_chars": 1614,
+      "code_occurrences": 25,
+      "price_occurrences": 2
+    },
+    {
+      "pdf_page": 24,
+      "printed_page": "47/46",
+      "text_chars": 1549,
+      "code_occurrences": 26,
+      "price_occurrences": 2
+    },
+    {
+      "pdf_page": 25,
+      "printed_page": "49/48",
+      "text_chars": 2817,
+      "code_occurrences": 51,
+      "price_occurrences": 4
+    },
+    {
+      "pdf_page": 26,
+      "printed_page": "50",
+      "text_chars": 1290,
+      "code_occurrences": 26,
+      "price_occurrences": 2
+    },
+    {
+      "pdf_page": 27,
+      "printed_page": "53/52",
+      "text_chars": 2458,
+      "code_occurrences": 57,
+      "price_occurrences": 5
+    },
+    {
+      "pdf_page": 28,
+      "printed_page": "54/55",
+      "text_chars": 1542,
+      "code_occurrences": 1,
+      "price_occurrences": 0
+    },
+    {
+      "pdf_page": 29,
+      "printed_page": "",
+      "text_chars": 538,
+      "code_occurrences": 0,
+      "price_occurrences": 0
+    },
+    {
+      "pdf_page": 30,
+      "printed_page": "58/59",
+      "text_chars": 531,
+      "code_occurrences": 0,
+      "price_occurrences": 0
+    },
+    {
+      "pdf_page": 31,
+      "printed_page": "60/61",
+      "text_chars": 394,
+      "code_occurrences": 2,
+      "price_occurrences": 0
+    },
+    {
+      "pdf_page": 32,
+      "printed_page": "62/63",
+      "text_chars": 1256,
+      "code_occurrences": 13,
+      "price_occurrences": 3
+    },
+    {
+      "pdf_page": 33,
+      "printed_page": "65/64",
+      "text_chars": 1263,
+      "code_occurrences": 24,
+      "price_occurrences": 5
+    },
+    {
+      "pdf_page": 34,
+      "printed_page": "67",
+      "text_chars": 1222,
+      "code_occurrences": 21,
+      "price_occurrences": 5
+    },
+    {
+      "pdf_page": 35,
+      "printed_page": "69/68",
+      "text_chars": 2409,
+      "code_occurrences": 48,
+      "price_occurrences": 10
+    },
+    {
+      "pdf_page": 36,
+      "printed_page": "71",
+      "text_chars": 1266,
+      "code_occurrences": 26,
+      "price_occurrences": 8
+    },
+    {
+      "pdf_page": 37,
+      "printed_page": "73/72",
+      "text_chars": 1229,
+      "code_occurrences": 28,
+      "price_occurrences": 8
+    },
+    {
+      "pdf_page": 38,
+      "printed_page": "75/74",
+      "text_chars": 844,
+      "code_occurrences": 13,
+      "price_occurrences": 3
+    },
+    {
+      "pdf_page": 39,
+      "printed_page": "77/76",
+      "text_chars": 416,
+      "code_occurrences": 2,
+      "price_occurrences": 1
+    },
+    {
+      "pdf_page": 40,
+      "printed_page": "79",
+      "text_chars": 1086,
+      "code_occurrences": 0,
+      "price_occurrences": 0
+    },
+    {
+      "pdf_page": 41,
+      "printed_page": "80/81",
+      "text_chars": 268,
+      "code_occurrences": 0,
+      "price_occurrences": 0
+    },
+    {
+      "pdf_page": 42,
+      "printed_page": "83/82",
+      "text_chars": 2077,
+      "code_occurrences": 20,
+      "price_occurrences": 9
+    },
+    {
+      "pdf_page": 43,
+      "printed_page": "85/84",
+      "text_chars": 1126,
+      "code_occurrences": 15,
+      "price_occurrences": 7
+    },
+    {
+      "pdf_page": 44,
+      "printed_page": "87/86",
+      "text_chars": 1966,
+      "code_occurrences": 38,
+      "price_occurrences": 20
+    },
+    {
+      "pdf_page": 45,
+      "printed_page": "89/88",
+      "text_chars": 1581,
+      "code_occurrences": 36,
+      "price_occurrences": 13
+    },
+    {
+      "pdf_page": 46,
+      "printed_page": "91/90",
+      "text_chars": 1337,
+      "code_occurrences": 31,
+      "price_occurrences": 2
+    },
+    {
+      "pdf_page": 47,
+      "printed_page": "92/93",
+      "text_chars": 2584,
+      "code_occurrences": 0,
+      "price_occurrences": 0
+    },
+    {
+      "pdf_page": 48,
+      "printed_page": "94/95",
+      "text_chars": 285,
+      "code_occurrences": 0,
+      "price_occurrences": 0
+    },
+    {
+      "pdf_page": 49,
+      "printed_page": "96/97",
+      "text_chars": 2312,
+      "code_occurrences": 0,
+      "price_occurrences": 0
+    },
+    {
+      "pdf_page": 50,
+      "printed_page": "98/99",
+      "text_chars": 1690,
+      "code_occurrences": 0,
+      "price_occurrences": 0
+    },
+    {
+      "pdf_page": 51,
+      "printed_page": "101",
+      "text_chars": 338,
+      "code_occurrences": 0,
+      "price_occurrences": 0
+    },
+    {
+      "pdf_page": 52,
+      "printed_page": "103/102",
+      "text_chars": 1305,
+      "code_occurrences": 10,
+      "price_occurrences": 6
+    },
+    {
+      "pdf_page": 53,
+      "printed_page": "105/104",
+      "text_chars": 988,
+      "code_occurrences": 6,
+      "price_occurrences": 6
+    },
+    {
+      "pdf_page": 54,
+      "printed_page": "106/107",
+      "text_chars": 1784,
+      "code_occurrences": 11,
+      "price_occurrences": 11
+    },
+    {
+      "pdf_page": 55,
+      "printed_page": "109/108",
+      "text_chars": 1619,
+      "code_occurrences": 5,
+      "price_occurrences": 5
+    },
+    {
+      "pdf_page": 56,
+      "printed_page": "111/110",
+      "text_chars": 2048,
+      "code_occurrences": 10,
+      "price_occurrences": 10
+    },
+    {
+      "pdf_page": 57,
+      "printed_page": "113/112",
+      "text_chars": 1568,
+      "code_occurrences": 9,
+      "price_occurrences": 4
+    },
+    {
+      "pdf_page": 58,
+      "printed_page": "115/114",
+      "text_chars": 868,
+      "code_occurrences": 3,
+      "price_occurrences": 3
+    },
+    {
+      "pdf_page": 59,
+      "printed_page": "116/117",
+      "text_chars": 553,
+      "code_occurrences": 9,
+      "price_occurrences": 9
+    },
+    {
+      "pdf_page": 60,
+      "printed_page": "118",
+      "text_chars": 145,
+      "code_occurrences": 4,
+      "price_occurrences": 4
+    },
+    {
+      "pdf_page": 61,
+      "printed_page": "121/120",
+      "text_chars": 636,
+      "code_occurrences": 14,
+      "price_occurrences": 14
+    },
+    {
+      "pdf_page": 62,
+      "printed_page": "123/122",
+      "text_chars": 551,
+      "code_occurrences": 12,
+      "price_occurrences": 12
+    },
+    {
+      "pdf_page": 63,
+      "printed_page": "125/124",
+      "text_chars": 387,
+      "code_occurrences": 7,
+      "price_occurrences": 7
+    },
+    {
+      "pdf_page": 64,
+      "printed_page": "127/126",
+      "text_chars": 217,
+      "code_occurrences": 4,
+      "price_occurrences": 4
+    },
+    {
+      "pdf_page": 65,
+      "printed_page": "129/128",
+      "text_chars": 636,
+      "code_occurrences": 20,
+      "price_occurrences": 18
+    },
+    {
+      "pdf_page": 66,
+      "printed_page": "131/130",
+      "text_chars": 358,
+      "code_occurrences": 8,
+      "price_occurrences": 8
+    },
+    {
+      "pdf_page": 67,
+      "printed_page": "133/132",
+      "text_chars": 1168,
+      "code_occurrences": 9,
+      "price_occurrences": 9
+    },
+    {
+      "pdf_page": 68,
+      "printed_page": "135/134",
+      "text_chars": 232,
+      "code_occurrences": 6,
+      "price_occurrences": 6
+    },
+    {
+      "pdf_page": 69,
+      "printed_page": "137/136",
+      "text_chars": 1279,
+      "code_occurrences": 21,
+      "price_occurrences": 6
+    },
+    {
+      "pdf_page": 70,
+      "printed_page": "",
+      "text_chars": 225,
+      "code_occurrences": 0,
+      "price_occurrences": 0
+    },
+    {
+      "pdf_page": 71,
+      "printed_page": "141/140",
+      "text_chars": 1031,
+      "code_occurrences": 4,
+      "price_occurrences": 4
+    },
+    {
+      "pdf_page": 72,
+      "printed_page": "142",
+      "text_chars": 915,
+      "code_occurrences": 8,
+      "price_occurrences": 6
+    },
+    {
+      "pdf_page": 73,
+      "printed_page": "144/145",
+      "text_chars": 1405,
+      "code_occurrences": 19,
+      "price_occurrences": 12
+    },
+    {
+      "pdf_page": 74,
+      "printed_page": "146/147",
+      "text_chars": 990,
+      "code_occurrences": 19,
+      "price_occurrences": 14
+    },
+    {
+      "pdf_page": 75,
+      "printed_page": "149/148",
+      "text_chars": 698,
+      "code_occurrences": 6,
+      "price_occurrences": 6
+    },
+    {
+      "pdf_page": 76,
+      "printed_page": "",
+      "text_chars": 345,
+      "code_occurrences": 6,
+      "price_occurrences": 4
+    },
+    {
+      "pdf_page": 77,
+      "printed_page": "153/152",
+      "text_chars": 1348,
+      "code_occurrences": 20,
+      "price_occurrences": 15
+    },
+    {
+      "pdf_page": 78,
+      "printed_page": "155/154",
+      "text_chars": 1016,
+      "code_occurrences": 17,
+      "price_occurrences": 4
+    },
+    {
+      "pdf_page": 79,
+      "printed_page": "157/156",
+      "text_chars": 1056,
+      "code_occurrences": 13,
+      "price_occurrences": 5
+    },
+    {
+      "pdf_page": 80,
+      "printed_page": "158/159",
+      "text_chars": 2519,
+      "code_occurrences": 94,
+      "price_occurrences": 0
+    },
+    {
+      "pdf_page": 81,
+      "printed_page": "160/161",
+      "text_chars": 3416,
+      "code_occurrences": 284,
+      "price_occurrences": 0
+    },
+    {
+      "pdf_page": 82,
+      "printed_page": "162/163",
+      "text_chars": 3268,
+      "code_occurrences": 273,
+      "price_occurrences": 0
+    },
+    {
+      "pdf_page": 83,
+      "printed_page": "164/165",
+      "text_chars": 4064,
+      "code_occurrences": 352,
+      "price_occurrences": 0
+    },
+    {
+      "pdf_page": 84,
+      "printed_page": "166/167/540",
+      "text_chars": 2911,
+      "code_occurrences": 199,
+      "price_occurrences": 0
+    },
+    {
+      "pdf_page": 85,
+      "printed_page": "168/169/100",
+      "text_chars": 899,
+      "code_occurrences": 10,
+      "price_occurrences": 0
+    },
+    {
+      "pdf_page": 86,
+      "printed_page": "170/171",
+      "text_chars": 877,
+      "code_occurrences": 10,
+      "price_occurrences": 0
+    },
+    {
+      "pdf_page": 87,
+      "printed_page": "172/173",
+      "text_chars": 1515,
+      "code_occurrences": 26,
+      "price_occurrences": 0
+    },
+    {
+      "pdf_page": 88,
+      "printed_page": "174/175",
+      "text_chars": 1862,
+      "code_occurrences": 12,
+      "price_occurrences": 0
+    },
+    {
+      "pdf_page": 89,
+      "printed_page": "176/177/700",
+      "text_chars": 2226,
+      "code_occurrences": 17,
+      "price_occurrences": 0
+    },
+    {
+      "pdf_page": 90,
+      "printed_page": "178/179",
+      "text_chars": 1880,
+      "code_occurrences": 17,
+      "price_occurrences": 0
+    },
+    {
+      "pdf_page": 91,
+      "printed_page": "180/181",
+      "text_chars": 2033,
+      "code_occurrences": 21,
+      "price_occurrences": 0
+    },
+    {
+      "pdf_page": 92,
+      "printed_page": "182/183/54",
+      "text_chars": 1144,
+      "code_occurrences": 12,
+      "price_occurrences": 0
+    },
+    {
+      "pdf_page": 93,
+      "printed_page": "184/185",
+      "text_chars": 797,
+      "code_occurrences": 10,
+      "price_occurrences": 0
+    },
+    {
+      "pdf_page": 94,
+      "printed_page": "186/187",
+      "text_chars": 545,
+      "code_occurrences": 10,
+      "price_occurrences": 0
+    },
+    {
+      "pdf_page": 95,
+      "printed_page": "188/189",
+      "text_chars": 732,
+      "code_occurrences": 16,
+      "price_occurrences": 0
+    },
+    {
+      "pdf_page": 96,
+      "printed_page": "190/191",
+      "text_chars": 915,
+      "code_occurrences": 13,
+      "price_occurrences": 0
+    },
+    {
+      "pdf_page": 97,
+      "printed_page": "192/193/149",
+      "text_chars": 609,
+      "code_occurrences": 15,
+      "price_occurrences": 0
+    },
+    {
+      "pdf_page": 98,
+      "printed_page": "194/195",
+      "text_chars": 710,
+      "code_occurrences": 12,
+      "price_occurrences": 0
+    },
+    {
+      "pdf_page": 99,
+      "printed_page": "196/197/52",
+      "text_chars": 630,
+      "code_occurrences": 10,
+      "price_occurrences": 0
+    },
+    {
+      "pdf_page": 100,
+      "printed_page": "198/199",
+      "text_chars": 539,
+      "code_occurrences": 12,
+      "price_occurrences": 0
+    },
+    {
+      "pdf_page": 101,
+      "printed_page": "200/201/116",
+      "text_chars": 918,
+      "code_occurrences": 17,
+      "price_occurrences": 0
+    },
+    {
+      "pdf_page": 102,
+      "printed_page": "202/203",
+      "text_chars": 657,
+      "code_occurrences": 10,
+      "price_occurrences": 0
+    },
+    {
+      "pdf_page": 103,
+      "printed_page": "204/205/800",
+      "text_chars": 1385,
+      "code_occurrences": 15,
+      "price_occurrences": 0
+    },
+    {
+      "pdf_page": 104,
+      "printed_page": "206/207",
+      "text_chars": 2058,
+      "code_occurrences": 25,
+      "price_occurrences": 0
+    },
+    {
+      "pdf_page": 105,
+      "printed_page": "208/209",
+      "text_chars": 878,
+      "code_occurrences": 17,
+      "price_occurrences": 0
+    },
+    {
+      "pdf_page": 106,
+      "printed_page": "210/211",
+      "text_chars": 2609,
+      "code_occurrences": 0,
+      "price_occurrences": 0
+    },
+    {
+      "pdf_page": 107,
+      "printed_page": "",
+      "text_chars": 88,
+      "code_occurrences": 0,
+      "price_occurrences": 0
+    }
+  ]
+}
