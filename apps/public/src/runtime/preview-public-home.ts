@@ -8,6 +8,7 @@ import {
   getPreviewCatalogueProducts,
   PUBLIC_CATALOGUE_FIXTURE_NOTICE,
 } from './preview-public-catalogue'
+import { blogPosts } from './legacy-blog'
 
 export async function getPublicHomeBanners(): Promise<PublicHomePageData['banners']> {
   if (process.env.APP_ENV !== 'production') return []
@@ -71,7 +72,20 @@ export async function getPublicHomeContent(): Promise<PublicHomeContent> {
 
   return {
     categories,
-    posts: [],
+    posts: process.env.APP_ENV === 'production'
+      ? blogPosts.slice(0, 3).map((post) => ({
+          id: post.id,
+          title: post.title,
+          slug: post.slug,
+          excerpt: post.excerpt,
+          // The historical CDN is temporarily unavailable. Avoid a broken
+          // home-page image until the asset is mirrored to stable Storage.
+          thumbnailUrl: post.thumbnail_url?.startsWith('https://cdn.dongphugia.com.vn/')
+            ? null : post.thumbnail_url,
+          publishedAt: post.published_at,
+          category: { name: post.category.name, slug: post.category.slug },
+        }))
+      : [],
     previewNotice: process.env.APP_ENV === 'production' ? undefined : PUBLIC_CATALOGUE_FIXTURE_NOTICE,
   }
 }

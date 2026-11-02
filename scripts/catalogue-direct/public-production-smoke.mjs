@@ -6,7 +6,21 @@ const productPaths = [
   '/vat-lieu-nuoc/loc-nuoc/may-loc-tong-dau-nguon-karofi-ktf-552',
   '/gach-op-lat/gach-op-lat/gach-612en8a',
 ]
-const paths = ['/', '/blog', '/thiet-bi-ve-sinh', '/thiet-bi-bep', '/vat-lieu-nuoc', '/gach-op-lat', ...productPaths]
+const blogPaths = [
+  '/blog',
+  '/blog/xu-huong',
+  '/blog/kien-thuc',
+  '/blog/huong-dan-chon',
+  '/blog/xu-huong/xu-huong-gach-op-lat-2026-top-5-mau-gach-dan-dau-xu-huong',
+  '/blog/xu-huong/goi-y-thiet-ke-nha-ve-sinh-don-dau-xu-huong-2026',
+  '/blog/kien-thuc/cach-chon-bon-cau-cho-gia-dinh-5-sai-lam-pho-bien-can-tranh',
+  '/blog/huong-dan-chon/bon-cau-1-khoi-vs-2-khoi-nen-chon-loai-nao',
+  '/blog/huong-dan-chon/lavabo-dat-ban-vs-am-ban-nen-chon-loai-nao-cho-phong-tam-cua-ban',
+  '/blog/huong-dan-chon/sen-cay-hay-sen-thuong-so-sanh-chi-tiet-tu-van-chon-dung-cho-phong-tam-cua-ban',
+  '/blog/huong-dan-chon/chon-thiet-bi-ve-sinh-phong-tam-2026-huong-dan-tu-a-z',
+  '/blog/huong-dan-chon/so-sanh-nap-rua-dien-tu-toto-va-inax-2026-chon-loai-nao',
+]
+const paths = ['/', ...blogPaths, '/thiet-bi-ve-sinh', '/thiet-bi-bep', '/vat-lieu-nuoc', '/gach-op-lat', ...productPaths]
 const fail = (reason) => { throw new Error(`PUBLIC_PRODUCTION_SMOKE_${reason}`) }
 if (!/^[a-f0-9]{40}$/.test(sourceSha) || !['local', 'workers-dev'].includes(posture)) fail('ARGUMENT')
 const base = new URL(baseArgument)
@@ -40,7 +54,13 @@ for (const path of paths) {
   if (path === '/' && (!body.includes('1776486977694-87cnaa.png')
     || body.includes('Catalogue khôi phục ở chế độ chỉ đọc')
     || body.includes('Sản phẩm Gạch Ốp Lát'))) fail('HOME_HOTFIX')
-  if (path === '/blog' && !body.includes('Bài viết đang được cập nhật')) fail('NEWS_HOTFIX')
+  if (path === '/blog' && (body.includes('Bài viết đang được cập nhật')
+    || !body.includes('Góc chia sẻ')
+    || !body.includes('so-sanh-nap-rua-dien-tu-toto-va-inax-2026-chon-loai-nao')
+    || !body.includes('xu-huong-gach-op-lat-2026-top-5-mau-gach-dan-dau-xu-huong'))) fail('NEWS_RESTORE')
+  if (path.startsWith('/blog/') && path.split('/').length === 4
+    && (!body.includes('<article') || !body.includes('application/ld+json')))
+    fail('NEWS_ARTICLE')
 }
 for (const [assetPath, contentType] of [
   ['/images/banner-1.editorial.w960.webp', 'image/webp'],

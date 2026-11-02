@@ -46,14 +46,20 @@ export function BlogSection({ posts }: { posts: readonly PublicHomePost[] }) {
                                 className="group flex flex-col gap-4"
                             >
                                 <div className="relative aspect-[4/3] overflow-hidden rounded-sm bg-neutral-200">
-                                    <DeferredResponsiveMedia
-                                        src={normalizePublishingMediaUrl(post.thumbnailUrl) || '/images/banner-1.editorial.w960.webp'}
-                                        alt={post.title}
-                                        fill
-                                        profile="editorial"
-                                        sizes="(max-width: 640px) 85vw, (max-width: 1024px) 50vw, 33vw"
-                                        className="object-cover transition-transform duration-500 group-hover:scale-105"
-                                    />
+                                    {post.thumbnailUrl ? (
+                                        <DeferredResponsiveMedia
+                                            src={normalizePublishingMediaUrl(post.thumbnailUrl) || post.thumbnailUrl}
+                                            alt={post.title}
+                                            fill
+                                            profile="editorial"
+                                            sizes="(max-width: 640px) 85vw, (max-width: 1024px) 50vw, 33vw"
+                                            className="object-cover transition-transform duration-500 group-hover:scale-105"
+                                        />
+                                    ) : (
+                                        <span className="flex h-full items-center justify-center px-4 text-center text-sm text-[#6A8A97]">
+                                            Ảnh bài viết đang được khôi phục
+                                        </span>
+                                    )}
                                     {post.category ? (
                                         <div className="absolute left-4 top-4 bg-white/90 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-[#2E7A96]">
                                             {post.category.name}
