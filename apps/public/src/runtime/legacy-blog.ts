@@ -21,8 +21,8 @@ export const blogPosts: readonly LegacyBlogPost[] = archive.posts
     if (!category) throw new Error('LEGACY_BLOG_CATEGORY_MISSING')
     return { ...post, category }
   })
-  .sort((a, b) => Number(b.is_pinned) - Number(a.is_pinned)
-    || b.published_at.localeCompare(a.published_at)
+  .sort((a, b) => b.published_at.localeCompare(a.published_at)
+    || Number(b.is_pinned) - Number(a.is_pinned)
     || b.id - a.id)
 
 export const blogCategoriesWithPosts = blogCategories.filter((category) =>

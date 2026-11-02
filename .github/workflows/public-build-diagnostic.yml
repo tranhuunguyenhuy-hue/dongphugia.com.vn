@@ -33,9 +33,7 @@ jobs:
           set -euo pipefail
           cp apps/public/wrangler.production.jsonc apps/public/wrangler.jsonc
           npm run build:public-worker > "$RUNNER_TEMP/first.log" 2>&1
-          # Build each candidate with no previous dist input. Keep the first
-          # output intact for byte comparison and failure artifact analysis.
-          mv apps/public/dist "$RUNNER_TEMP/first-dist"
+          cp -R apps/public/dist "$RUNNER_TEMP/first-dist"
           npm run build:public-worker > "$RUNNER_TEMP/second.log" 2>&1
           python3 scripts/catalogue-direct/public-build-diff.py \
             "$RUNNER_TEMP/first-dist" apps/public/dist "$RUNNER_TEMP/public-build-diff.json"

@@ -27,6 +27,7 @@ describe('Owner-requested legacy blog restoration', () => {
     expect(blogCategoriesWithPosts).toHaveLength(3)
     expect(new Set(blogPosts.map((post) => post.id)).size).toBe(10)
     expect(new Set(blogPosts.map((post) => post.slug)).size).toBe(10)
+    expect(blogPosts.slice(0, 2).map((post) => post.id)).toEqual([18, 17])
     for (const post of blogPosts) {
       expect(post.status).toBe('published')
       expect(post.content.length).toBeGreaterThan(5000)
