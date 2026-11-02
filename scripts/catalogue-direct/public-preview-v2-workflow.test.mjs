@@ -17,7 +17,7 @@ it('builds one protected read-only source candidate before any possible Worker u
  expect(workflow).toContain('DIRECT_TARGET_READ_DATABASE_URL: ${{ secrets.DIRECT_TARGET_READ_DATABASE_URL }}')
  expect(workflow).not.toContain('DIRECT_ZERO_COST_PREVIEW_PUBLICATION_EVIDENCE')
  expect(workflow).not.toContain('DIRECT_ZERO_COST_CANDIDATE_EVIDENCE')
- expect(workflow).not.toContain('DIRECT_CLOUDFLARE_FREE_ATTESTATION')
+ expect(workflow).toContain('DIRECT_CLOUDFLARE_FREE_ATTESTATION: ${{ inputs.workers_free_screenshot_evidence }}')
  expect(workflow).toContain('billing-status.json')
  expect(workflow).toContain('preview2-candidate-audit.mjs "$ARTIFACT_ROOT/build"')
  expect(workflow).not.toContain('DIRECT_VAULT_TOKEN')
