@@ -35,7 +35,7 @@ function ProductsDropdown() {
         >
             <button
                 type="button"
-                onClick={() => setIsOpen((open) => !open)}
+                onClick={() => setIsOpen(true)}
                 className="flex h-[38px] items-center gap-1.5 rounded-full bg-transparent px-4 py-2 text-[15px] font-medium leading-[20px] text-stone-700 transition-all duration-300 hover:bg-brand-50 hover:text-brand-600 focus:outline-none"
                 aria-label="Xem sản phẩm"
                 aria-haspopup="menu"
