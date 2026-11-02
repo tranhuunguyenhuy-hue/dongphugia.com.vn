@@ -6,3 +6,4 @@ docs/catalogue/evidence/inax/INAX_2026_sanitary_sku_prices.csv -text
 docs/catalogue/evidence/inax/INAX_2026_page_audit.csv -text
 docs/catalogue/evidence/inax/INAX_2026_products_verified.csv -text
 docs/catalogue/evidence/inax/INAX_2026_card_candidates.csv -text
+docs/catalogue/evidence/inax/2026-04/*.csv -text
