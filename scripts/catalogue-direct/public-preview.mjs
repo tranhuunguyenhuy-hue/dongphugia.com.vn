@@ -13,7 +13,7 @@ const DETERMINISM_FILE_LIMIT=25000
 const DETERMINISM_FILE_BYTES_LIMIT=25*1024*1024
 const DETERMINISM_BUILD_BYTES_LIMIT=1024*1024*1024
 const CLOUDFLARE_PLAN_ATTESTATION_MAX_AGE_MS=15*60*1000
-const OWNER_FREE_SCREENSHOT_SHA256='c9e64ee045c9400001e7bb595fadbe18dcf4c11216782db0fe38329984b80846'
+const OWNER_FREE_SCREENSHOT_SHA256='ae1c8e30370bb9913b4ff65a2dec2c2f44640cfdf05313e74e0bfbce7cc504f3'
 const RENDER_PROGRESS_MAX_BYTES=2_000_000
 function gate(value,reason) { if(!value)throw new Error(reason) }
 export async function reconcileRenderProgress({firstRoot,secondRenderRoot,sourceSha,checkpoint}) {
