@@ -73,6 +73,27 @@ describe('Owner-requested legacy blog restoration', () => {
     expect(historicalBlogImage('https://media.dongphugia.vn/publishing/unverified.webp')).toBeNull()
   })
 
+  it('routes only the two Owner-verified broken Blog thumbnails through Bunny', () => {
+    const cases = [
+      {
+        id: 11,
+        expected: 'https://dpg-products.b-cdn.net/blog/1782900852828-h356on.png',
+      },
+      {
+        id: 10,
+        expected: 'https://dpg-products.b-cdn.net/blog/1782811954060-lm1xt.png',
+      },
+    ]
+    for (const { id, expected } of cases) {
+      const post = blogPosts.find((item) => item.id === id)
+      expect(post).toBeDefined()
+      expect(historicalBlogImage(post!.thumbnail_url)).toBe(expected)
+      expect(historicalBlogImage(post!.cover_image_url)).toBe(post!.cover_image_url)
+    }
+    expect(historicalBlogImage('https://cdn.dongphugia.com.vn/blog/not-verified.png'))
+      .toBe('https://cdn.dongphugia.com.vn/blog/not-verified.png')
+  })
+
   it('restores actual Worker routes and removes the news placeholder from smoke tests', () => {
     const listing = readFileSync(resolve(root, 'apps/public/app/blog/page.tsx'), 'utf8')
     const category = readFileSync(resolve(root, 'apps/public/app/blog/[categorySlug]/page.tsx'), 'utf8')
