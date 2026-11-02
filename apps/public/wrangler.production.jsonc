@@ -1,7 +1,7 @@
 {
   "$schema": "../../node_modules/wrangler/config-schema.json",
   "name": "dongphugia-v1-public-production",
-  "compatibility_date": "2026-10-30",
+  "compatibility_date": "2026-08-30",
   "compatibility_flags": ["nodejs_compat"],
   "main": "worker.ts",
   "workers_dev": true,
