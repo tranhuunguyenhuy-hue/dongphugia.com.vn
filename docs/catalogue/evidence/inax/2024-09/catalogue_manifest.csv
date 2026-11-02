@@ -1,0 +1,2 @@
+﻿source_catalogue_id,brand,official_source_url,title,market,sector,edition_or_revision,publication_or_effective_date_printed,pdf_sha256,pdf_bytes,page_count,retrieval_timestamp,extraction_method_version
+INAX-VN-BATHROOM-2024-09,INAX,https://www.inax.com.vn/wp-content/uploads/2024/11/Cataogue_A5_Ver_092024_no-Aqua-spa.pdf,Catalogue Phòng tắm INAX 2024,Vietnam,bathroom,2024 (filename Ver_092024),,3a96f02666b9d548c2825289ee31bfe7ad5199245b3f40009e94e5e738bcdf0e,49637827,103,2026-11-02T17:37:59Z,extract_manufacturer_edition.py v1; PyMuPDF native text blocks
