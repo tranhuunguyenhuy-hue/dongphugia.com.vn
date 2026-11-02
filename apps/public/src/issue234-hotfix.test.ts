@@ -7,22 +7,31 @@ const root = resolve(import.meta.dirname, '../../..')
 afterEach(() => vi.unstubAllEnvs())
 
 describe('Owner Production homepage hotfix', () => {
-  it('shows three Owner-selected local banner slides in the canonical Production carousel', async () => {
+  it('shows three Owner-verified legacy PNG slides in the canonical Production carousel', async () => {
     vi.stubEnv('APP_ENV', 'production')
     const banners = await getPublicHomeBanners()
-    expect(banners.map((banner) => banner.imageUrl)).toEqual([
-      '/images/banner-1.jpg',
-      '/images/banner-2.jpg',
-      '/images/banner-3.jpg',
+    const archive = 'https://tygjmrhandbffjllxveu.supabase.co/storage/v1/object/public/images/banners/'
+    expect(banners.map(({ id }) => id)).toEqual([6, 4, 5])
+    expect(banners.map(({ imageUrl }) => imageUrl)).toEqual([
+      archive + '1776486977694-87cnaa.png',
+      archive + '1776485447824-r0eml8.png',
+      archive + '1776485426606-t2pflg.png',
     ])
-    expect(banners.map((banner) => banner.linkUrl)).toEqual([null, null, null])
+    expect(banners.map(({ linkUrl }) => linkUrl)).toEqual([null, null, null])
     for (const banner of banners) {
-      for (const url of [banner.imageUrl, banner.mobileImageUrl, banner.desktopImageUrl, banner.desktopLargeImageUrl]) {
-        if (url) expect(existsSync(resolve(root, 'public', url.slice(1)))).toBe(true)
-      }
+      expect(banner.mobileImageUrl).toBe(banner.imageUrl)
+      expect(banner.desktopImageUrl).toBe(banner.imageUrl)
+      expect(banner.desktopLargeImageUrl).toBe(banner.imageUrl)
+    }
+    // Preserve the previously approved local images for a bounded rollback.
+    for (const filename of ['banner-1.jpg', 'banner-2.jpg', 'banner-3.jpg']) {
+      expect(existsSync(resolve(root, 'public/images', filename))).toBe(true)
     }
     const carousel = readFileSync(resolve(root, 'src/components/home/hero-banner.tsx'), 'utf8')
     expect(carousel).toContain('items.length > 1')
+    expect(carousel).toContain('aspect-[1606/752]')
+    const controls = readFileSync(resolve(root, 'src/components/home/hero-banner-controls.tsx'), 'utf8')
+    expect(controls).toContain('isPngOriginal')
     const home = readFileSync(resolve(root, 'apps/public/src/runtime/preview-public-home.ts'), 'utf8')
     expect(home).toContain("process.env.APP_ENV === 'production' ? undefined")
   })
