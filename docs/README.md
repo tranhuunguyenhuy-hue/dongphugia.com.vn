@@ -21,6 +21,8 @@ not an authority document: verify it immediately before relying on it.
 
 ## Choose by task
 
+- `CURRENT` — [Sanitary catalogue cleanup plan](plans/sanitary-catalogue-cleanup.md): V1 scope, product decisions, and CP0–CP5 acceptance.
+
 - `SUPPORTING` — [Current operational state](ops/project-current-state.md):
   dated Production baseline, active deferrals, incident follow-up, and handoff;
   revalidate it before runtime work.
