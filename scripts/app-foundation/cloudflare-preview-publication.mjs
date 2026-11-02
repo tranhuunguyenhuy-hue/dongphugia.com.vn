@@ -19,8 +19,8 @@ const MANAGED_BASELINE_RECEIPT_MAX_AGE_MS = 15 * 60 * 1000
 const MANAGED_BASELINE_CONTRACT = 'dongphugia:cloudflare-preview-managed-baseline-state:v1'
 const MANAGED_STATE_RECEIPT_CONTRACT = 'dongphugia:cloudflare-preview-managed-state-receipt:v1'
 const OWNER_RECONCILED_MANAGED_BASELINE = Object.freeze({
-  versionCount: 11,
-  latestVersionId: '17fe81fb-9f43-43b9-85d0-33952cff74d6',
+  versionCount: 12,
+  latestVersionId: '49c91111-a0c6-4d3b-9db6-cfa318a9bf4a',
   bootstrapVersionId: 'd4658ffa-2fcd-465b-bae7-7967bb1c7f78',
   deploymentId: '6e7022d5-5f4d-4f51-8ab3-01850503a711',
   versionIds: Object.freeze([
@@ -35,6 +35,7 @@ const OWNER_RECONCILED_MANAGED_BASELINE = Object.freeze({
     '9f20e256-83fa-4756-9518-71ef7571d466',
     'd4658ffa-2fcd-465b-bae7-7967bb1c7f78',
     '17fe81fb-9f43-43b9-85d0-33952cff74d6',
+    '49c91111-a0c6-4d3b-9db6-cfa318a9bf4a',
   ].sort()),
 })
 const ALLOWED_CONFIG_KEYS = new Set([
@@ -892,9 +893,9 @@ function validateManagedBaselineState(state, expected = null) {
     versions: [{ versionId: bootstrapVersionId, percentage: 100 }],
   }
   if (
-    snapshot.versionCount !== 11 ||
-    snapshot.versionIds.length !== 11 ||
-    new Set(snapshot.versionIds).size !== 11 ||
+    snapshot.versionCount !== OWNER_RECONCILED_MANAGED_BASELINE.versionCount ||
+    snapshot.versionIds.length !== OWNER_RECONCILED_MANAGED_BASELINE.versionCount ||
+    new Set(snapshot.versionIds).size !== OWNER_RECONCILED_MANAGED_BASELINE.versionCount ||
     snapshot.versionIds.some((versionId) => !VERSION_ID_PATTERN.test(versionId)) ||
     snapshot.latestVersionId !== latestVersionId ||
     !snapshot.versionIds.includes(latestVersionId) ||
