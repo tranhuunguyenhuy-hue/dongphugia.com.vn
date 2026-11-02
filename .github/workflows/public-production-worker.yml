@@ -69,6 +69,9 @@ jobs:
           npm run build:public-worker
           cp -R apps/public/dist "$RUNNER_TEMP/first-production-build"
           npm run build:public-worker
+          python3 scripts/catalogue-direct/public-build-diff.py \
+            "$RUNNER_TEMP/first-production-build" apps/public/dist \
+            "$RUNNER_TEMP/public-build-diff.json"
           diff -qr "$RUNNER_TEMP/first-production-build" apps/public/dist
           cp -R "$RUNNER_TEMP/accepted-public/build/assets/__catalogue" apps/public/dist/client/__catalogue
           npm run app:assemble-public-worker -- --repository-root . --server-dir apps/public/dist/server --assets-dir apps/public/dist/client --output "$RUNNER_TEMP/render-source" --source-sha "$GITHUB_SHA"
@@ -90,6 +93,14 @@ jobs:
           done
           test "$ready" -eq 1
           node scripts/catalogue-direct/public-production-smoke.mjs http://127.0.0.1:8791 "$GITHUB_SHA" local
+      - name: Preserve bounded SSR comparison after a build failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: public-production-build-diff-${{ github.run_id }}
+          path: ${{ runner.temp }}/public-build-diff.json
+          if-no-files-found: warn
+          retention-days: 1
       - name: Upload versioned Production candidate
         uses: actions/upload-artifact@v4
         with:

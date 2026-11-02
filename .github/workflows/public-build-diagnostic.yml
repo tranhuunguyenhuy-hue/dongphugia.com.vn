@@ -1,0 +1,48 @@
+name: Public Worker build diagnostic
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/public-build-diagnostic.yml
+      - scripts/catalogue-direct/public-build-diff.py
+      - apps/public/src/runtime/legacy-blog-snapshot.json
+      - apps/public/src/runtime/legacy-blog-media.json
+
+permissions:
+  contents: read
+
+jobs:
+  compare-ssr:
+    if: github.event.pull_request.head.ref == 'codex/blog-content-backup-20261102'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: npm ci
+      - run: npm ci --prefix apps/public
+      - name: Compare two Production builds for this exact PR head
+        env:
+          APP_ENV: production
+          APP_BUILD_TARGET: public
+          APP_ORIGIN: https://www.dongphugia.vn
+          BUILD_SOURCE_SHA: ${{ github.event.pull_request.head.sha }}
+          PUBLIC_CATALOGUE_CHECKPOINT: 87e4b06b73ab20df11d95021e1da8bd8f497ee5e
+        run: |
+          set -euo pipefail
+          cp apps/public/wrangler.production.jsonc apps/public/wrangler.jsonc
+          npm run build:public-worker > "$RUNNER_TEMP/first.log" 2>&1
+          cp -R apps/public/dist "$RUNNER_TEMP/first-dist"
+          npm run build:public-worker > "$RUNNER_TEMP/second.log" 2>&1
+          python3 scripts/catalogue-direct/public-build-diff.py \
+            "$RUNNER_TEMP/first-dist" apps/public/dist "$RUNNER_TEMP/public-build-diff.json"
+          diff -qr "$RUNNER_TEMP/first-dist" apps/public/dist
+      - name: Preserve bounded content comparison
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: public-ssr-diff-${{ github.run_id }}
+          path: ${{ runner.temp }}/public-build-diff.json
+          if-no-files-found: warn
+          retention-days: 1
