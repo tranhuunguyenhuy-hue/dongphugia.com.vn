@@ -38,7 +38,9 @@ export function HeroBannerControls({
     }, [carouselId, current])
 
     const item = banners[current]
-    const responsiveSrcSet = current > 0
+    // Direct PNG archive URLs must not be advertised as WebP or rewritten by the optimizer.
+    const isPngOriginal = /\.png(?:\?.*)?$/i.test(item.imageUrl)
+    const responsiveSrcSet = current > 0 && !isPngOriginal
         ? item.desktopImageUrl && item.desktopLargeImageUrl
             ? `${item.desktopImageUrl} 1280w, ${item.desktopLargeImageUrl} 1600w`
             : createResponsiveSrcSet(item.imageUrl, "hero")

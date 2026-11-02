@@ -11,19 +11,38 @@ import {
 
 export async function getPublicHomeBanners(): Promise<PublicHomePageData['banners']> {
   if (process.env.APP_ENV !== 'production') return []
-  // Owner-approved, existing public assets. No unverified Admin provenance or invented CTAs.
+  // Owner-verified historical Production artwork, archived in the legacy Supabase Storage bucket.
+  // These three objects correspond to inactive legacy DB rows (6, 4, 5); Owner confirmed
+  // the artworks and order, independently of those historical is_active flags.
+  // Keep the local /images/banner-*.jpg assets as a rollback option until assets are mirrored.
   return [
     {
-      id: 1,
+      id: 6,
       title: 'Banner 1',
-      imageUrl: '/images/banner-1.jpg',
-      mobileImageUrl: '/images/banner-1.editorial.w640.webp',
-      desktopImageUrl: '/images/banner-1.editorial.w960.webp',
-      desktopLargeImageUrl: '/images/banner-1.editorial.w960.webp',
+      imageUrl: 'https://tygjmrhandbffjllxveu.supabase.co/storage/v1/object/public/images/banners/1776486977694-87cnaa.png',
+      mobileImageUrl: 'https://tygjmrhandbffjllxveu.supabase.co/storage/v1/object/public/images/banners/1776486977694-87cnaa.png',
+      desktopImageUrl: 'https://tygjmrhandbffjllxveu.supabase.co/storage/v1/object/public/images/banners/1776486977694-87cnaa.png',
+      desktopLargeImageUrl: 'https://tygjmrhandbffjllxveu.supabase.co/storage/v1/object/public/images/banners/1776486977694-87cnaa.png',
       linkUrl: null,
     },
-    { id: 2, title: 'Banner 2', imageUrl: '/images/banner-2.jpg', linkUrl: null },
-    { id: 3, title: 'Banner 3', imageUrl: '/images/banner-3.jpg', linkUrl: null },
+    {
+      id: 4,
+      title: 'Banner 2',
+      imageUrl: 'https://tygjmrhandbffjllxveu.supabase.co/storage/v1/object/public/images/banners/1776485447824-r0eml8.png',
+      mobileImageUrl: 'https://tygjmrhandbffjllxveu.supabase.co/storage/v1/object/public/images/banners/1776485447824-r0eml8.png',
+      desktopImageUrl: 'https://tygjmrhandbffjllxveu.supabase.co/storage/v1/object/public/images/banners/1776485447824-r0eml8.png',
+      desktopLargeImageUrl: 'https://tygjmrhandbffjllxveu.supabase.co/storage/v1/object/public/images/banners/1776485447824-r0eml8.png',
+      linkUrl: null,
+    },
+    {
+      id: 5,
+      title: 'Banner 3',
+      imageUrl: 'https://tygjmrhandbffjllxveu.supabase.co/storage/v1/object/public/images/banners/1776485426606-t2pflg.png',
+      mobileImageUrl: 'https://tygjmrhandbffjllxveu.supabase.co/storage/v1/object/public/images/banners/1776485426606-t2pflg.png',
+      desktopImageUrl: 'https://tygjmrhandbffjllxveu.supabase.co/storage/v1/object/public/images/banners/1776485426606-t2pflg.png',
+      desktopLargeImageUrl: 'https://tygjmrhandbffjllxveu.supabase.co/storage/v1/object/public/images/banners/1776485426606-t2pflg.png',
+      linkUrl: null,
+    },
   ]
 }
 

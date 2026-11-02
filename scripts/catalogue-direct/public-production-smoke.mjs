@@ -37,7 +37,7 @@ for (const path of paths) {
     || !body.includes(`href="${canonical}"`) || /<meta[^>]+name="robots"[^>]+noindex/i.test(body)) fail('HTML')
   const robotsHeader = response.headers.get('x-robots-tag')
   if (posture === 'workers-dev' ? robotsHeader !== 'noindex, nofollow' : robotsHeader !== null) fail('INDEX_HEADER')
-  if (path === '/' && (!body.includes('/images/banner-1.editorial.w960.webp')
+  if (path === '/' && (!body.includes('1776486977694-87cnaa.png')
     || body.includes('Catalogue khôi phục ở chế độ chỉ đọc')
     || body.includes('Sản phẩm Gạch Ốp Lát'))) fail('HOME_HOTFIX')
   if (path === '/blog' && !body.includes('Bài viết đang được cập nhật')) fail('NEWS_HOTFIX')
@@ -51,5 +51,22 @@ for (const [assetPath, contentType] of [
   const image = await fetch(new URL(assetPath, base), { signal: AbortSignal.timeout(20000) })
   if (image.status !== 200 || !image.headers.get('content-type')?.includes(contentType)) fail('HERO_ASSET')
   await image.body?.cancel()
+}
+// The three Owner-confirmed historical Production banners are public PNG objects.
+// Keep the existing local fallback image checks above for a rollback path.
+const archiveBannerUrls = [
+  'https://tygjmrhandbffjllxveu.supabase.co/storage/v1/object/public/images/banners/1776486977694-87cnaa.png',
+  'https://tygjmrhandbffjllxveu.supabase.co/storage/v1/object/public/images/banners/1776485447824-r0eml8.png',
+  'https://tygjmrhandbffjllxveu.supabase.co/storage/v1/object/public/images/banners/1776485426606-t2pflg.png',
+]
+for (const assetUrl of archiveBannerUrls) {
+  let healthy = false
+  for (let attempt = 0; attempt < 2 && !healthy; attempt++) {
+    try {
+      const image = await fetch(assetUrl, { method: 'HEAD', signal: AbortSignal.timeout(20000) })
+      healthy = image.status === 200 && image.headers.get('content-type')?.includes('image/png')
+    } catch { /* Retry once for transient legacy Storage connectivity. */ }
+  }
+  if (!healthy) fail('HERO_ARCHIVE')
 }
 console.log(`PUBLIC_PRODUCTION_SMOKE status=PASS posture=${posture} routes=${paths.length} source=${sourceSha}`)
