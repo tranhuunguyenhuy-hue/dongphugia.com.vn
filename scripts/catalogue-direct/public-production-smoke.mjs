@@ -60,6 +60,10 @@ for (const path of paths) {
     || !body.includes('Góc chia sẻ')
     || !body.includes('so-sanh-nap-rua-dien-tu-toto-va-inax-2026-chon-loai-nao')
     || !body.includes('xu-huong-gach-op-lat-2026-top-5-mau-gach-dan-dau-xu-huong'))) fail('NEWS_RESTORE')
+  if (path === '/blog' && (
+    !body.includes('dpg-products.b-cdn.net/blog/1782900852828-h356on.png')
+    || !body.includes('dpg-products.b-cdn.net/blog/1782811954060-lm1xt.png')
+  )) fail('NEWS_THUMBNAILS')
   if (path.startsWith('/blog/') && path.split('/').length === 4
     && (!body.includes('<article') || !body.includes('application/ld+json')))
     fail('NEWS_ARTICLE')
