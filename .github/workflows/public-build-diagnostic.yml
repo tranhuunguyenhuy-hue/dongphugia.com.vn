@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - .github/workflows/public-build-diagnostic.yml
+      - apps/public/vite.config.ts
+      - apps/public/src/build/**
       - scripts/catalogue-direct/public-build-diff.py
       - apps/public/src/runtime/legacy-blog-snapshot.json
       - apps/public/src/runtime/legacy-blog-media.json
@@ -13,12 +15,13 @@ permissions:
 
 jobs:
   compare-ssr:
-    if: github.event.pull_request.head.ref == 'codex/blog-content-backup-20261102'
+    if: github.event.pull_request.number == 242
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.head.sha }}
           persist-credentials: false
       - run: npm ci
       - run: npm ci --prefix apps/public
