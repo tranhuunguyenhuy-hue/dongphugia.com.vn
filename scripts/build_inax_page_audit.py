@@ -20,7 +20,7 @@ with out.open('w',encoding='utf-8-sig',newline='') as f:
   elif n in marketing: kind='MARKETING_OR_PRODUCT_CONTEXT'
   else: kind='OTHER'
   # Contact sheets establish layout only; detailed SKU/price checks remain open.
-  verified={7:3,35:10,36:1,42:6,55:5,71:4,74:16}.get(n,0)
+  verified={7:3,8:4,10:6,14:4,16:2,19:2,20:2,23:1,25:2,26:1,27:2,32:3,33:5,35:10,42:6,55:5,71:4,74:16}.get(n,0)
   status='PARTIAL_PRODUCT_QA' if verified else 'DETAIL_QA_PENDING' if kind in ('PRODUCT_CARD','MIXED_PRODUCT_PRICELIST_TABLE') else 'LAYOUT_CLASSIFIED'
   note='Visual layout classification from rendered PDF page; full-resolution product/price audit pending' if status!='LAYOUT_CLASSIFIED' else 'Visual layout classified; code mentions here are not independently verified sellable listings'
   w.writerow([n,kind,'YES',verified,'UNKNOWN' if status!='LAYOUT_CLASSIFIED' else '0',status,note])
