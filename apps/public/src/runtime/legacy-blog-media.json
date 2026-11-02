@@ -1,0 +1,70 @@
+{
+  "contract": "dpg:verified-legacy-blog-media:v1",
+  "sourceBackup": "leo540-38915575745",
+  "assets": [
+    {
+      "postId": "18",
+      "sourceUrl": "https://media.dongphugia.vn/publishing/625cf2c1-2ec7-4ded-b33a-ee7950c5bc4b/0e81ee11-05ab-4bc9-bafc-53c8bf64f90f/inline.w960.webp",
+      "deliveryUrl": "https://dpg-publishing-production.b-cdn.net/publishing/625cf2c1-2ec7-4ded-b33a-ee7950c5bc4b/0e81ee11-05ab-4bc9-bafc-53c8bf64f90f/inline.w960.webp",
+      "bytes": 54622,
+      "sha256": "3a32044ec324ea1d16f4a9654b849308f78c585a1efc442414a5e354506350b0",
+      "mime": "image/webp"
+    },
+    {
+      "postId": "18",
+      "sourceUrl": "https://media.dongphugia.vn/publishing/625cf2c1-2ec7-4ded-b33a-ee7950c5bc4b/77e91633-fe21-4d1f-9b17-f68f8f37b083/inline.w960.webp",
+      "deliveryUrl": "https://dpg-publishing-production.b-cdn.net/publishing/625cf2c1-2ec7-4ded-b33a-ee7950c5bc4b/77e91633-fe21-4d1f-9b17-f68f8f37b083/inline.w960.webp",
+      "bytes": 86482,
+      "sha256": "f9970bf578461bfb8ce88ba13386deafefecb2201539de927a5d8e78ba962934",
+      "mime": "image/webp"
+    },
+    {
+      "postId": "18",
+      "sourceUrl": "https://media.dongphugia.vn/publishing/625cf2c1-2ec7-4ded-b33a-ee7950c5bc4b/7cec4ef4-418f-4602-b515-f9644ede620d/cover.w1600.webp",
+      "deliveryUrl": "https://dpg-publishing-production.b-cdn.net/publishing/625cf2c1-2ec7-4ded-b33a-ee7950c5bc4b/7cec4ef4-418f-4602-b515-f9644ede620d/cover.w1600.webp",
+      "bytes": 129374,
+      "sha256": "df0568491ed133730ddc63b6b7e3e732fd1e12c75885f53cf40d6aded9de0d47",
+      "mime": "image/webp"
+    },
+    {
+      "postId": "18",
+      "sourceUrl": "https://media.dongphugia.vn/publishing/625cf2c1-2ec7-4ded-b33a-ee7950c5bc4b/9919c5c2-c8b2-4a47-82e0-25c1d454a20f/thumbnail.w960.webp",
+      "deliveryUrl": "https://dpg-publishing-production.b-cdn.net/publishing/625cf2c1-2ec7-4ded-b33a-ee7950c5bc4b/9919c5c2-c8b2-4a47-82e0-25c1d454a20f/thumbnail.w960.webp",
+      "bytes": 78128,
+      "sha256": "58ab32c7b9377bec3354c43748d60427d3a5ec89b02299559304b44b54c84278",
+      "mime": "image/webp"
+    },
+    {
+      "postId": "17",
+      "sourceUrl": "https://dpg-publishing-production.b-cdn.net/publishing/625cf2c1-2ec7-4ded-b33a-ee7950c5bc4b/2173282d-3d84-4868-9748-fa73d8158b2b/cover.w1600.webp",
+      "deliveryUrl": "https://dpg-publishing-production.b-cdn.net/publishing/625cf2c1-2ec7-4ded-b33a-ee7950c5bc4b/2173282d-3d84-4868-9748-fa73d8158b2b/cover.w1600.webp",
+      "bytes": 100064,
+      "sha256": "957c49f5d1782756d5b4c2cc3d8c3f4314f058c008ee101a49da18b089c8eec3",
+      "mime": "image/webp"
+    },
+    {
+      "postId": "17",
+      "sourceUrl": "https://dpg-publishing-production.b-cdn.net/publishing/625cf2c1-2ec7-4ded-b33a-ee7950c5bc4b/41c707a2-07e7-412b-ba76-dd71c0f5f3e3/inline.w960.webp",
+      "deliveryUrl": "https://dpg-publishing-production.b-cdn.net/publishing/625cf2c1-2ec7-4ded-b33a-ee7950c5bc4b/41c707a2-07e7-412b-ba76-dd71c0f5f3e3/inline.w960.webp",
+      "bytes": 27328,
+      "sha256": "caf99982b116abeececf9f1a1b01faca58e504d9c43b91354169f0d82211e0b5",
+      "mime": "image/webp"
+    },
+    {
+      "postId": "17",
+      "sourceUrl": "https://dpg-publishing-production.b-cdn.net/publishing/625cf2c1-2ec7-4ded-b33a-ee7950c5bc4b/5d94e2a7-5474-4558-9c9b-41dfc35e76f3/thumbnail.w960.webp",
+      "deliveryUrl": "https://dpg-publishing-production.b-cdn.net/publishing/625cf2c1-2ec7-4ded-b33a-ee7950c5bc4b/5d94e2a7-5474-4558-9c9b-41dfc35e76f3/thumbnail.w960.webp",
+      "bytes": 56148,
+      "sha256": "2b0e099aabc9eaa3deb397510f43a634852e980a55e243610cfad7d84c4dfeaf",
+      "mime": "image/webp"
+    },
+    {
+      "postId": "17",
+      "sourceUrl": "https://dpg-publishing-production.b-cdn.net/publishing/625cf2c1-2ec7-4ded-b33a-ee7950c5bc4b/c86e2abd-f266-4f3f-bcad-eb381df3264c/inline.w960.webp",
+      "deliveryUrl": "https://dpg-publishing-production.b-cdn.net/publishing/625cf2c1-2ec7-4ded-b33a-ee7950c5bc4b/c86e2abd-f266-4f3f-bcad-eb381df3264c/inline.w960.webp",
+      "bytes": 67786,
+      "sha256": "e6ecb798517bb075974992a50633ad7997551b96ff40d44f1ee9354714d8f386",
+      "mime": "image/webp"
+    }
+  ]
+}

@@ -14,11 +14,13 @@ const blogPaths = [
   '/blog/xu-huong/xu-huong-gach-op-lat-2026-top-5-mau-gach-dan-dau-xu-huong',
   '/blog/xu-huong/goi-y-thiet-ke-nha-ve-sinh-don-dau-xu-huong-2026',
   '/blog/kien-thuc/cach-chon-bon-cau-cho-gia-dinh-5-sai-lam-pho-bien-can-tranh',
+  '/blog/kien-thuc/toto-cs320drt7-bon-cau-hai-khoi-2026',
   '/blog/huong-dan-chon/bon-cau-1-khoi-vs-2-khoi-nen-chon-loai-nao',
   '/blog/huong-dan-chon/lavabo-dat-ban-vs-am-ban-nen-chon-loai-nao-cho-phong-tam-cua-ban',
   '/blog/huong-dan-chon/sen-cay-hay-sen-thuong-so-sanh-chi-tiet-tu-van-chon-dung-cho-phong-tam-cua-ban',
   '/blog/huong-dan-chon/chon-thiet-bi-ve-sinh-phong-tam-2026-huong-dan-tu-a-z',
   '/blog/huong-dan-chon/so-sanh-nap-rua-dien-tu-toto-va-inax-2026-chon-loai-nao',
+  '/blog/huong-dan-chon/inax-bfv-604s-sen-cay-cam-bien-nhiet-do-2026',
 ]
 const paths = ['/', ...blogPaths, '/thiet-bi-ve-sinh', '/thiet-bi-bep', '/vat-lieu-nuoc', '/gach-op-lat', ...productPaths]
 const fail = (reason) => { throw new Error(`PUBLIC_PRODUCTION_SMOKE_${reason}`) }
