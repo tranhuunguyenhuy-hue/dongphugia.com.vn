@@ -5,7 +5,7 @@
 4,MARKETING_OR_PRODUCT_CONTEXT,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
 5,CONTENTS,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
 6,MARKETING_OR_PRODUCT_CONTEXT,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
-7,PRODUCT_CARD,YES,3,UNKNOWN,PARTIAL_PRODUCT_QA,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
+7,PRODUCT_CARD,YES,3,UNKNOWN,PARTIAL_PRODUCT_QA,Full-resolution rendered card checks for listed confirmed SKUs; other page cards and table rows may remain pending
 8,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
 9,MARKETING_OR_PRODUCT_CONTEXT,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
 10,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
@@ -33,14 +33,14 @@
 32,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
 33,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
 34,MARKETING_OR_PRODUCT_CONTEXT,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
-35,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
-36,PRODUCT_CARD,YES,1,UNKNOWN,PARTIAL_PRODUCT_QA,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
+35,PRODUCT_CARD,YES,10,UNKNOWN,PARTIAL_PRODUCT_QA,Full-resolution rendered card checks for listed confirmed SKUs; other page cards and table rows may remain pending
+36,PRODUCT_CARD,YES,1,UNKNOWN,PARTIAL_PRODUCT_QA,Full-resolution rendered card checks for listed confirmed SKUs; other page cards and table rows may remain pending
 37,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
 38,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
 39,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
 40,MARKETING_OR_PRODUCT_CONTEXT,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
 41,MARKETING_OR_PRODUCT_CONTEXT,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
-42,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
+42,PRODUCT_CARD,YES,6,UNKNOWN,PARTIAL_PRODUCT_QA,Full-resolution rendered card checks for listed confirmed SKUs; other page cards and table rows may remain pending
 43,MARKETING_OR_PRODUCT_CONTEXT,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
 44,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
 45,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
@@ -53,7 +53,7 @@
 52,MARKETING_OR_PRODUCT_CONTEXT,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
 53,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
 54,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
-55,PRODUCT_CARD,YES,1,UNKNOWN,PARTIAL_PRODUCT_QA,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
+55,PRODUCT_CARD,YES,5,UNKNOWN,PARTIAL_PRODUCT_QA,Full-resolution rendered card checks for listed confirmed SKUs; other page cards and table rows may remain pending
 56,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
 57,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
 58,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
@@ -69,10 +69,10 @@
 68,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
 69,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
 70,MARKETING_OR_PRODUCT_CONTEXT,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
-71,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
+71,PRODUCT_CARD,YES,4,UNKNOWN,PARTIAL_PRODUCT_QA,Full-resolution rendered card checks for listed confirmed SKUs; other page cards and table rows may remain pending
 72,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
 73,MARKETING_OR_PRODUCT_CONTEXT,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
-74,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
+74,PRODUCT_CARD,YES,16,UNKNOWN,PARTIAL_PRODUCT_QA,Full-resolution rendered card checks for listed confirmed SKUs; other page cards and table rows may remain pending
 75,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
 76,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
 77,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
