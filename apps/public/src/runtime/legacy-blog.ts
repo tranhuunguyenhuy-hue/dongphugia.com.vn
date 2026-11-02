@@ -1,4 +1,5 @@
 import archive from './legacy-blog-snapshot.json'
+import verifiedMedia from './legacy-blog-media.json'
 
 export type LegacyBlogCategory = (typeof archive.categories)[number]
 export type LegacyBlogPost = (typeof archive.posts)[number] & {
@@ -64,12 +65,17 @@ const allowedMediaHosts = new Set([
   'tygjmrhandbffjllxveu.supabase.co',
   'cdn.dongphugia.com.vn',
 ])
+const verifiedMediaUrls = new Set(verifiedMedia.assets.flatMap((asset) => [
+  asset.sourceUrl,
+  asset.deliveryUrl,
+]))
 
 export function historicalBlogImage(value: string | null | undefined): string | null {
   if (!value) return null
   try {
     const url = new URL(value)
-    return url.protocol === 'https:' && allowedMediaHosts.has(url.hostname) ? url.href : null
+    return url.protocol === 'https:' &&
+      (allowedMediaHosts.has(url.hostname) || verifiedMediaUrls.has(url.href)) ? url.href : null
   } catch {
     return null
   }
