@@ -1,4 +1,1 @@
-* text=auto eol=lf
-*.js text eol=lf
-*.sh text eol=lf
-bin/* text eol=lf
+docs/catalogue/evidence/inax/INAX_2026_sanitary_sku_prices.csv -text
