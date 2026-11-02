@@ -6,7 +6,7 @@ const productPaths = [
   '/vat-lieu-nuoc/loc-nuoc/may-loc-tong-dau-nguon-karofi-ktf-552',
   '/gach-op-lat/gach-op-lat/gach-612en8a',
 ]
-const paths = ['/', '/thiet-bi-ve-sinh', '/thiet-bi-bep', '/vat-lieu-nuoc', '/gach-op-lat', ...productPaths]
+const paths = ['/', '/blog', '/thiet-bi-ve-sinh', '/thiet-bi-bep', '/vat-lieu-nuoc', '/gach-op-lat', ...productPaths]
 const fail = (reason) => { throw new Error(`PUBLIC_PRODUCTION_SMOKE_${reason}`) }
 if (!/^[a-f0-9]{40}$/.test(sourceSha) || !['local', 'workers-dev'].includes(posture)) fail('ARGUMENT')
 const base = new URL(baseArgument)
@@ -37,5 +37,12 @@ for (const path of paths) {
     || !body.includes(`href="${canonical}"`) || /<meta[^>]+name="robots"[^>]+noindex/i.test(body)) fail('HTML')
   const robotsHeader = response.headers.get('x-robots-tag')
   if (posture === 'workers-dev' ? robotsHeader !== 'noindex, nofollow' : robotsHeader !== null) fail('INDEX_HEADER')
+  if (path === '/' && (!body.includes('/banners/banner-kitchen.hero.w1280.webp')
+    || body.includes('Catalogue khôi phục ở chế độ chỉ đọc')
+    || body.includes('Sản phẩm Gạch Ốp Lát'))) fail('HOME_HOTFIX')
+  if (path === '/blog' && !body.includes('Bài viết đang được cập nhật')) fail('NEWS_HOTFIX')
 }
+const hero = await fetch(new URL('/banners/banner-kitchen.hero.w1280.webp', base), { signal: AbortSignal.timeout(20000) })
+if (hero.status !== 200 || !hero.headers.get('content-type')?.includes('image/webp')) fail('HERO_ASSET')
+await hero.body?.cancel()
 console.log(`PUBLIC_PRODUCTION_SMOKE status=PASS posture=${posture} routes=${paths.length} source=${sourceSha}`)
