@@ -60,7 +60,7 @@ async function HomepageContentSections() {
             {/* Category Blocks (Khối 2-5) */}
             {categories.length > 0 && (
                 <div className="max-w-[1280px] mx-auto px-5 py-6 lg:py-10 flex flex-col gap-12 lg:gap-16">
-                    {categories.map((cat) => (
+                    {categories.filter((cat) => cat.id !== 'gach-op-lat').map((cat) => (
                         <HomeCategoryBlockAlt key={cat.id} categoryData={cat} />
                     ))}
                 </div>
