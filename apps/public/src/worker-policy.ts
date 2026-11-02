@@ -32,6 +32,35 @@ export const PUBLIC_BROWSER_CACHE_CONTROL = 'public, max-age=0, must-revalidate'
 export const PUBLIC_EDGE_CACHE_CONTROL = `public, max-age=${PUBLIC_EDGE_CACHE_SECONDS}, must-revalidate`
 export const PUBLIC_PREVIEW_ROBOTS_HEADER = 'noindex, nofollow'
 
+export function assertPublicRuntime(request: Request, environment: PublicWorkerEnvironment) {
+  if (environment.APP_ENV === 'preview') {
+    assertPreviewRuntime(request, environment)
+    return
+  }
+  const url = new URL(request.url)
+  if (environment.APP_ENV !== 'production' || environment.APP_BUILD_TARGET !== 'public'
+    || environment.APP_ORIGIN !== 'https://www.dongphugia.vn'
+    || environment.PREVIEW_NOINDEX === 'true'
+    || !['https:', 'http:'].includes(url.protocol)) {
+    throw new Error('PUBLIC_WORKER_PRODUCTION_CONFIGURATION_REQUIRED')
+  }
+  if (url.hostname !== 'www.dongphugia.vn' && url.hostname !== 'dongphugia.vn'
+    && url.hostname !== 'dongphugia-v1-public-production.tranhuunguyenhuy.workers.dev'
+    && !['localhost', '127.0.0.1'].includes(url.hostname)) {
+    throw new Error('PUBLIC_WORKER_PRODUCTION_HOST_FORBIDDEN')
+  }
+  for (const name of Object.keys(environment)) {
+    if (PRIVILEGED_RUNTIME_BINDING_PATTERN.test(name)) {
+      throw new Error(`PUBLIC_WORKER_PRIVILEGED_BINDING_FORBIDDEN:${name}`)
+    }
+  }
+}
+
+export function robotsHeader(request: Request, environment: PublicWorkerEnvironment) {
+  return environment.APP_ENV === 'preview' || new URL(request.url).hostname.endsWith('.workers.dev')
+    ? PUBLIC_PREVIEW_ROBOTS_HEADER : null
+}
+
 export function assertPreviewRuntime(request: Request, environment: PublicWorkerEnvironment) {
   const hostname = new URL(request.url).hostname.toLowerCase()
   let configuredOrigin: URL

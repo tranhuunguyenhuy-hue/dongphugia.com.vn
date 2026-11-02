@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   assertPreviewRuntime,
+  assertPublicRuntime,
   classifyPublicApiRequest,
   createCacheKey,
   isAnonymousCacheCandidate,
@@ -9,6 +10,7 @@ import {
   isForbiddenInternalControlRequest,
   PUBLIC_EDGE_CACHE_CONTROL,
   PUBLIC_PREVIEW_ROBOTS_HEADER,
+  robotsHeader,
 } from './worker-policy'
 
 const sourceCommit = '8b96aecb8c34cc46079f292369aa961d9e5c2020'
@@ -29,6 +31,17 @@ describe('Public Worker fail-closed policy', () => {
     expect(() => assertPreviewRuntime(new Request('https://preview.invalid/'), { ...previewEnvironment, PREVIEW_NOINDEX: 'false' })).toThrow('PUBLIC_WORKER_PREVIEW_CONFIGURATION_REQUIRED')
     expect(() => assertPreviewRuntime(new Request('https://preview.invalid/'), { ...previewEnvironment, APP_ORIGIN: 'https://admin.dongphugia.vn' })).toThrow('PUBLIC_WORKER_PREVIEW_ORIGIN_INVALID')
     expect(() => assertPreviewRuntime(new Request('https://preview.invalid/'), { ...previewEnvironment, SUPABASE_SERVICE_ROLE_KEY: 'synthetic' })).toThrow('PUBLIC_WORKER_PRIVILEGED_BINDING_FORBIDDEN')
+  })
+
+  it('requires a distinct public Production runtime and indexes only the canonical host', () => {
+    const production = { APP_ENV: 'production', APP_BUILD_TARGET: 'public', APP_ORIGIN: 'https://www.dongphugia.vn', PREVIEW_NOINDEX: '' }
+    const canonical = new Request('https://www.dongphugia.vn/thiet-bi-bep')
+    expect(() => assertPublicRuntime(canonical, production)).not.toThrow()
+    expect(robotsHeader(canonical, production)).toBeNull()
+    expect(robotsHeader(new Request('https://dongphugia-v1-public-production.tranhuunguyenhuy.workers.dev/'), production)).toBe('noindex, nofollow')
+    expect(() => assertPublicRuntime(canonical, { ...production, PREVIEW_NOINDEX: 'true' })).toThrow('PUBLIC_WORKER_PRODUCTION_CONFIGURATION_REQUIRED')
+    expect(() => assertPublicRuntime(new Request('https://private.dongphugia.vn/'), production)).toThrow('PUBLIC_WORKER_PRODUCTION_HOST_FORBIDDEN')
+    expect(() => assertPublicRuntime(canonical, { ...production, SUPABASE_SERVICE_ROLE_KEY: 'synthetic' })).toThrow('PUBLIC_WORKER_PRIVILEGED_BINDING_FORBIDDEN')
   })
 
   it('caches only anonymous root responses and keys by host, path, and source SHA', () => {

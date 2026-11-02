@@ -5,7 +5,7 @@ import {servePrerenderedCatalogue} from './src/runtime/prerendered-catalogue'
 import {readBoundedPublicAssetText} from './src/runtime/bounded-public-asset'
 
 import {
-  assertPreviewRuntime,
+  assertPublicRuntime,
   classifyPublicApiRequest,
   createCacheKey,
   isAnonymousCacheCandidate,
@@ -14,7 +14,7 @@ import {
   PRIVATE_CACHE_CONTROL,
   PUBLIC_BROWSER_CACHE_CONTROL,
   PUBLIC_EDGE_CACHE_CONTROL,
-  PUBLIC_PREVIEW_ROBOTS_HEADER,
+  robotsHeader,
   type PublicWorkerEnvironment,
   withHeaders,
 } from './src/worker-policy'
@@ -29,17 +29,26 @@ export default {
     environment: PublicWorkerEnvironment,
     context: ExecutionContext,
   ) {
+    const robotValue = robotsHeader(request, environment)
+    const robotHeaders: Record<string, string> = robotValue ? { 'X-Robots-Tag': robotValue } : {}
     try {
     try {
-      assertPreviewRuntime(request, environment)
+      assertPublicRuntime(request, environment)
     } catch {
-      return new Response('Preview configuration rejected.', {
+      return new Response('Public configuration rejected.', {
         status: 503,
         headers: {
           'Cache-Control': PRIVATE_CACHE_CONTROL,
-          'X-Robots-Tag': PUBLIC_PREVIEW_ROBOTS_HEADER,
+          ...robotHeaders,
         },
       })
+    }
+
+    if (environment.APP_ENV === 'production' && new URL(request.url).hostname === 'dongphugia.vn') {
+      const destination = new URL(request.url)
+      destination.protocol = 'https:'
+      destination.hostname = 'www.dongphugia.vn'
+      return Response.redirect(destination, 301)
     }
 
     if (isForbiddenInternalControlRequest(request)) {
@@ -47,7 +56,7 @@ export default {
         status: 404,
         headers: {
           'Cache-Control': PRIVATE_CACHE_CONTROL,
-          'X-Robots-Tag': PUBLIC_PREVIEW_ROBOTS_HEADER,
+          ...robotHeaders,
         },
       })
     }
@@ -58,7 +67,7 @@ export default {
         status: publicApiDecision === 'not-found' ? 404 : 405,
         headers: {
           'Cache-Control': PRIVATE_CACHE_CONTROL,
-          'X-Robots-Tag': PUBLIC_PREVIEW_ROBOTS_HEADER,
+          ...robotHeaders,
           ...(publicApiDecision === 'method-not-allowed' ? { Allow: 'GET, HEAD' } : {}),
           ...sourceIdentityHeader,
         },
@@ -80,7 +89,7 @@ export default {
         }
       } catch { /* No raw asset/error response is disclosed. */ }
       if (!ready) return new Response('Catalogue temporarily unavailable.', {status:503,headers:{
-        'Cache-Control':PRIVATE_CACHE_CONTROL,'X-Robots-Tag':PUBLIC_PREVIEW_ROBOTS_HEADER,...sourceIdentityHeader,
+        'Cache-Control':PRIVATE_CACHE_CONTROL,...robotHeaders,...sourceIdentityHeader,
       }})
     }
     const cacheCandidate = isAnonymousCacheCandidate(request)
@@ -95,7 +104,7 @@ export default {
           'Cache-Control': PUBLIC_BROWSER_CACHE_CONTROL,
           'CDN-Cache-Control': PUBLIC_EDGE_CACHE_CONTROL,
           'X-DPG-Cache': 'HIT',
-          'X-Robots-Tag': PUBLIC_PREVIEW_ROBOTS_HEADER,
+          ...robotHeaders,
         })
       }
     }
@@ -106,7 +115,7 @@ export default {
         ...sourceIdentityHeader,
         'Cache-Control': PRIVATE_CACHE_CONTROL,
         'X-DPG-Cache': 'BYPASS',
-        'X-Robots-Tag': PUBLIC_PREVIEW_ROBOTS_HEADER,
+        ...robotHeaders,
       })
     }
 
@@ -114,7 +123,7 @@ export default {
       ...sourceIdentityHeader,
       'Cache-Control': PUBLIC_EDGE_CACHE_CONTROL,
       'X-DPG-Cache': 'STORED',
-      'X-Robots-Tag': PUBLIC_PREVIEW_ROBOTS_HEADER,
+      ...robotHeaders,
     })
     context.waitUntil(workerCache!.put(cacheKey, stored))
 
@@ -123,14 +132,14 @@ export default {
       'Cache-Control': PUBLIC_BROWSER_CACHE_CONTROL,
       'CDN-Cache-Control': PUBLIC_EDGE_CACHE_CONTROL,
       'X-DPG-Cache': 'MISS',
-      'X-Robots-Tag': PUBLIC_PREVIEW_ROBOTS_HEADER,
+      ...robotHeaders,
     })
     } catch(error:unknown) {
       let category='UNCLASSIFIED_EXCEPTION'
       try {if(error&&typeof error==='object'&&'message' in error)category=String(exceptionCategory(error.message))}catch{/* no introspection failure is disclosed */}
       console.error(JSON.stringify({event:'PUBLIC_RENDER_FAILURE',category}))
       return new Response('Catalogue temporarily unavailable.',{status:503,headers:{
-        ...sourceIdentityHeader,'Cache-Control':PRIVATE_CACHE_CONTROL,'X-Robots-Tag':PUBLIC_PREVIEW_ROBOTS_HEADER,
+        ...sourceIdentityHeader,'Cache-Control':PRIVATE_CACHE_CONTROL,...robotHeaders,
         'X-DPG-Render-Failure':category,
       }})
     }

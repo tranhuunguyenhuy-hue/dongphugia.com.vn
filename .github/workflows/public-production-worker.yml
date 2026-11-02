@@ -1,0 +1,108 @@
+name: Public Production Worker
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Upload the validated dedicated Production Worker version
+        type: boolean
+        default: false
+        required: true
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: public-production-worker
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    outputs:
+      checkpoint: ${{ steps.identity.outputs.checkpoint }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify preserved accepted public candidate
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/13093442346" > "$RUNNER_TEMP/source-artifact.json"
+          jq -e '.id==13093442346 and .expired==false and .size_in_bytes==172075221 and .digest=="sha256:fe5a98949573a6ccba21b5334ffc924204183971c9d660cbb8e31ccf8a0aeadf" and .workflow_run.head_sha=="db57ece2090e39f25dc0c31782de2a938d6ea74e"' "$RUNNER_TEMP/source-artifact.json" >/dev/null
+      - uses: actions/download-artifact@v4
+        with:
+          name: public-catalogue-preview-db57ece2090e39f25dc0c31782de2a938d6ea74e
+          path: ${{ runner.temp }}/accepted-public
+          run-id: 41331653445
+          github-token: ${{ github.token }}
+      - name: Validate snapshot identity and install pinned tools
+        id: identity
+        run: |
+          set -euo pipefail
+          snapshot="$RUNNER_TEMP/accepted-public/build/assets/__catalogue/v1/manifest.json"
+          test -f "$snapshot"
+          checkpoint="$(jq -er '.checkpoint | select(test("^[a-f0-9]{40}$"))' "$snapshot")"
+          jq -e '.contract=="dpg:public-catalogue-snapshot:v1" and .products==5223 and .listingProducts==4853 and .contentPolicy=="canonical-public-content-v3"' "$snapshot" >/dev/null
+          echo "checkpoint=$checkpoint" >> "$GITHUB_OUTPUT"
+          npm ci
+          npm ci --prefix apps/public
+      - name: Build Production Worker with canonical origin and public-only snapshot
+        env:
+          APP_ENV: production
+          APP_BUILD_TARGET: public
+          APP_ORIGIN: https://www.dongphugia.vn
+          BUILD_SOURCE_SHA: ${{ github.sha }}
+          PUBLIC_CATALOGUE_CHECKPOINT: ${{ steps.identity.outputs.checkpoint }}
+        run: |
+          set -euo pipefail
+          cp apps/public/wrangler.production.jsonc apps/public/wrangler.jsonc
+          npm run build:public-worker
+          cp -R "$RUNNER_TEMP/accepted-public/build/assets/__catalogue" apps/public/dist/client/__catalogue
+          npm run app:assemble-public-worker -- --repository-root . --server-dir apps/public/dist/server --assets-dir apps/public/dist/client --output "$RUNNER_TEMP/render-source" --source-sha "$GITHUB_SHA"
+          node apps/public/node_modules/wrangler/bin/wrangler.js dev --local --config "$RUNNER_TEMP/render-source/wrangler.json" --port 8790 --var CATALOGUE_BUILD_RENDER:true > "$RUNNER_TEMP/render.log" 2>&1 &
+          render_pid=$!
+          trap 'kill "$render_pid" 2>/dev/null || true' EXIT
+          node scripts/catalogue-direct/prerender-public-snapshot.mjs --assets-root "$RUNNER_TEMP/render-source/assets" --checkpoint-root "$RUNNER_TEMP/prod-render" --base-url http://127.0.0.1:8790 --source-sha "$GITHUB_SHA" --checkpoint "$PUBLIC_CATALOGUE_CHECKPOINT"
+          cp -R "$RUNNER_TEMP/prod-render" apps/public/dist/client/__render
+          npm run app:assemble-public-worker -- --repository-root . --server-dir apps/public/dist/server --assets-dir apps/public/dist/client --output "$RUNNER_TEMP/production-build" --source-sha "$GITHUB_SHA"
+          jq -e '.name=="dongphugia-v1-public-production" and .workers_dev==true and .preview_urls==false and .vars.APP_ENV=="production" and .vars.APP_ORIGIN=="https://www.dongphugia.vn" and (.vars|has("PREVIEW_NOINDEX")|not)' "$RUNNER_TEMP/production-build/wrangler.json" >/dev/null
+          jq -e --arg sha "$GITHUB_SHA" --arg checkpoint "$PUBLIC_CATALOGUE_CHECKPOINT" '.status=="COMPLETE" and .sourceSha==$sha and .checkpoint==$checkpoint and .routes==5621 and .products==5223' "$RUNNER_TEMP/production-build/assets/__render/v1/$GITHUB_SHA/$PUBLIC_CATALOGUE_CHECKPOINT/ready.json" >/dev/null
+      - name: Upload versioned Production candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: public-production-${{ github.sha }}
+          path: ${{ runner.temp }}/production-build
+          retention-days: 7
+          if-no-files-found: error
+
+  deploy:
+    if: inputs.publish
+    needs: build
+    runs-on: ubuntu-latest
+    environment: Production
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: public-production-${{ github.sha }}
+          path: ${{ runner.temp }}/production-build
+      - name: Deploy only the dedicated Production Worker
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          test -n "$CLOUDFLARE_API_TOKEN"
+          npm ci --prefix apps/public
+          cd "$RUNNER_TEMP/production-build"
+          node "$GITHUB_WORKSPACE/apps/public/node_modules/wrangler/bin/wrangler.js" deploy --config wrangler.json

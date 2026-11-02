@@ -10,11 +10,17 @@ const manifest=()=>({contract:'dpg:public-catalogue-snapshot:v1',checkpoint,cate
  {slug:'vat-lieu-nuoc',brands:[]},
  {slug:'gach-op-lat',brands:[]},
 ]})
-function environment(options:{manifestBody?:string;manifestStatus?:number}={}){return {ASSETS:{fetch:vi.fn(async(url:string)=>{
+function environment(options:{manifestBody?:string;manifestStatus?:number}={}){return {APP_ENV:'preview',ASSETS:{fetch:vi.fn(async(url:string)=>{
  if(url.endsWith('ready.json'))return Response.json({status:'COMPLETE',sourceSha:source,checkpoint})
  if(url.endsWith('/__catalogue/v1/manifest.json'))return new Response(options.manifestBody??JSON.stringify(manifest()),{status:options.manifestStatus??200})
  return new Response(new Uint8Array(gzipSync('canonical public content')))
 })}}}
+it('serves the Production domain without a preview noindex header',async()=>{
+ const env={...environment(),APP_ENV:'production'}
+ const html=await servePrerenderedCatalogue(new Request('https://www.dongphugia.vn/thiet-bi-bep'),env,source)
+ expect(html?.status).toBe(200)
+ expect(html?.headers.has('x-robots-tag')).toBe(false)
+})
 it('serves complete immutable content without SSR with explicit Flight/HTML encoding',async()=>{
  const env=environment()
  const html=await servePrerenderedCatalogue(new Request('https://preview.invalid/thiet-bi-bep/voi-rua-chen'),env,source)

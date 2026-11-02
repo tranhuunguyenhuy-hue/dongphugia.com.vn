@@ -57,7 +57,9 @@ export async function servePrerenderedCatalogue(request:Request,environment:Reco
   if(!checkpoint||!isPrerenderedPath(url.pathname))return null
   // Build-only loopback renderer; this variable is never in the publication config.
   if(environment.CATALOGUE_BUILD_RENDER==='true'&&['127.0.0.1','localhost','[::1]'].includes(url.hostname))return null
-  const headers=new Headers({'Cache-Control':'private, no-store','X-Robots-Tag':'noindex, nofollow','X-DPG-Source-SHA':sourceSha,'Vary':'RSC, Accept-Encoding'})
+  const preview=environment.APP_ENV==='preview'
+  const headers=new Headers({'Cache-Control':'private, no-store','X-DPG-Source-SHA':sourceSha,'Vary':'RSC, Accept-Encoding'})
+  if(preview||url.hostname.endsWith('.workers.dev'))headers.set('X-Robots-Tag','noindex, nofollow')
   const stop=(status:number,message:string)=>new Response(message,{status,headers})
   if(!['GET','HEAD'].includes(request.method))return stop(405,'Method not allowed.')
   const key=prerenderRouteKey(url)
