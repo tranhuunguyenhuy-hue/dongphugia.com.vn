@@ -10,8 +10,16 @@ import {
 } from './preview-public-catalogue'
 
 export async function getPublicHomeBanners(): Promise<PublicHomePageData['banners']> {
-  // The empty value intentionally exercises the canonical local fallback hero.
-  return []
+  if (process.env.APP_ENV !== 'production') return []
+  return [{
+    id: 1,
+    title: 'Thiết bị bếp Đông Phú Gia',
+    imageUrl: '/banners/banner-kitchen.jpg',
+    mobileImageUrl: '/banners/banner-kitchen.hero.w720.webp',
+    desktopImageUrl: '/banners/banner-kitchen.hero.w1280.webp',
+    desktopLargeImageUrl: '/banners/banner-kitchen.hero.w1600.webp',
+    linkUrl: '/thiet-bi-bep',
+  }]
 }
 
 export async function getPublicHomeContent(): Promise<PublicHomeContent> {
@@ -40,6 +48,6 @@ export async function getPublicHomeContent(): Promise<PublicHomeContent> {
   return {
     categories,
     posts: [],
-    previewNotice: PUBLIC_CATALOGUE_FIXTURE_NOTICE,
+    previewNotice: process.env.APP_ENV === 'production' ? undefined : PUBLIC_CATALOGUE_FIXTURE_NOTICE,
   }
 }

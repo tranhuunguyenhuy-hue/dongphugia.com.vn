@@ -4,16 +4,13 @@ import Link from "next/link"
 import dynamic from "next/dynamic"
 import { Phone, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { useState, useEffect, useId, useRef } from "react"
-import { getMegaMenuData } from '@dpg/public-interactions'
-import type { Category, MenuData } from '@/components/home/mega-menu'
-import { MegaMenuHeader } from '@/components/home/mega-menu'
+import { useState, useEffect, useId } from "react"
 import { CartIcon } from '@/components/cart/cart-icon'
 import { LazyCartDrawer } from '@/components/cart/lazy-cart-drawer'
 import { SearchBar } from '@/components/home/search-bar'
 import { trackGenerateLead } from '@/lib/tracking'
 
-import { NAV_MAIN_LINKS as NAV_LINKS, NAV_ABOUT_LINKS as ABOUT_LINKS } from "@/config/site"
+import { NAV_MAIN_LINKS as NAV_LINKS, NAV_ABOUT_LINKS as ABOUT_LINKS, NAV_PRODUCT_CATEGORIES } from "@/config/site"
 
 const MobileMenuSheet = dynamic(
     () => import('@/components/layout/mobile-menu-sheet').then((module) => module.MobileMenuSheet),
@@ -21,49 +18,42 @@ const MobileMenuSheet = dynamic(
 )
 
 function ProductsDropdown() {
-    const [data, setData] = useState<{ categories: Category[], menuData: Record<string, MenuData> } | null>(null)
-    const [requested, setRequested] = useState(false)
-    const containerRef = useRef<HTMLDivElement>(null)
-
-    useEffect(() => {
-        if (requested && !data) {
-            getMegaMenuData().then(setData).catch(console.error)
-        }
-    }, [data, requested])
-
-    useEffect(() => {
-        if (!data) return
-
-        const frame = requestAnimationFrame(() => {
-            containerRef.current?.querySelector('button')?.focus()
-        })
-        return () => cancelAnimationFrame(frame)
-    }, [data])
-
-    if (!data) return (
+    const [isOpen, setIsOpen] = useState(false)
+    const menuId = useId()
+    return (
         <div
-            ref={containerRef}
-            className="flex h-full items-center"
-            onMouseEnter={() => setRequested(true)}
-            onFocus={() => setRequested(true)}
+            className="relative flex h-full items-center"
+            onMouseEnter={() => setIsOpen(true)}
+            onMouseLeave={() => setIsOpen(false)}
+            onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setIsOpen(false) }}
+            onKeyDown={(event) => {
+                if (event.key === 'Escape') {
+                    setIsOpen(false)
+                    ;(event.currentTarget.querySelector('button') as HTMLButtonElement | null)?.focus()
+                }
+            }}
         >
             <button
                 type="button"
-                onClick={() => setRequested(true)}
+                onClick={() => setIsOpen((open) => !open)}
                 className="flex h-[38px] items-center gap-1.5 rounded-full bg-transparent px-4 py-2 text-[15px] font-medium leading-[20px] text-stone-700 transition-all duration-300 hover:bg-brand-50 hover:text-brand-600 focus:outline-none"
-                aria-label={requested ? "Đang tải menu sản phẩm" : "Xem sản phẩm"}
+                aria-label="Xem sản phẩm"
                 aria-haspopup="menu"
-                aria-expanded="false"
+                aria-expanded={isOpen}
+                aria-controls={menuId}
             >
                 Sản phẩm
                 <ChevronDown className="h-4 w-4 transition-transform duration-300" />
             </button>
-        </div>
-    );
-
-    return (
-        <div ref={containerRef} className="flex h-full items-center">
-            <MegaMenuHeader categories={data.categories} menuData={data.menuData} />
+            <div id={menuId} role="menu" aria-label="Danh mục sản phẩm" aria-hidden={!isOpen} inert={!isOpen}
+                className={`absolute left-0 top-full z-50 w-64 rounded-xl border border-stone-200 bg-white p-2 shadow-xl ${isOpen ? '' : 'hidden'}`}>
+                {NAV_PRODUCT_CATEGORIES.filter((category) => category.active).map((category) => (
+                    <Link key={category.href} href={category.href} role="menuitem" onClick={() => setIsOpen(false)}
+                        className="block rounded-lg px-4 py-3 text-stone-800 hover:bg-brand-50 hover:text-brand-700 focus:bg-brand-50">
+                        {category.label}
+                    </Link>
+                ))}
+            </div>
         </div>
     )
 }

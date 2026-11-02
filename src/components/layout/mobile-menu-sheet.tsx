@@ -1,13 +1,12 @@
 'use client'
 
-import { useState, useEffect, useCallback, useId } from 'react'
+import { useState, useCallback, useId } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Phone, ChevronDown, ChevronRight, Menu } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet'
-import { getMegaMenuData } from '@dpg/public-interactions'
-import type { Category, MenuData } from '@/components/home/mega-menu'
+import type { MenuData } from '@/components/home/mega-menu'
 import {
     NAV_PRODUCT_CATEGORIES as PRODUCT_CATEGORIES,
     NAV_MAIN_LINKS as NAV_LINKS,
@@ -108,17 +107,6 @@ export function MobileMenuSheet({
     initiallyOpen?: boolean
 }) {
     const [open, setOpen] = useState(initiallyOpen)
-    const [menuData, setMenuData] = useState<{
-        categories: Category[]
-        menuData: Record<string, MenuData>
-    } | null>(null)
-
-    // Fetch mega-menu data when sheet first opens (lazy load)
-    useEffect(() => {
-        if (open && !menuData) {
-            getMegaMenuData().then(setMenuData).catch(console.error)
-        }
-    }, [open, menuData])
 
     // Close sheet on navigation
     const handleNavigate = useCallback(() => {
@@ -172,14 +160,11 @@ export function MobileMenuSheet({
                                     )
                                 }
 
-                                const slug = cat.href.replace('/', '')
-                                const data = menuData?.menuData?.[slug]
-
                                 return (
                                     <CategoryAccordionItem
                                         key={cat.href}
                                         category={cat}
-                                        data={data}
+                                        data={undefined}
                                         onNavigate={handleNavigate}
                                     />
                                 )
