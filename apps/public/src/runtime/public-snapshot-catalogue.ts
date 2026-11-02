@@ -26,7 +26,9 @@ type Manifest={contract:string;checkpoint:string;m3CodeSha:string;m3RunId:string
 type AssetEnvelope={contract:string;checkpoint:string;products?:SnapshotProduct[];totalCount?:number;page?:number}
 
 async function readAsset<T>(path:string):Promise<T> {
-  if(!usesPublicSnapshot()||process.env.APP_ENV!=='preview'||process.env.PREVIEW_NOINDEX!=='true'
+  if(!usesPublicSnapshot()||!(['preview','production'].includes(process.env.APP_ENV??''))
+    ||(process.env.APP_ENV==='preview'&&process.env.PREVIEW_NOINDEX!=='true')
+    ||(process.env.APP_ENV==='production'&&process.env.PREVIEW_NOINDEX==='true')
     ||!publicSnapshotCheckpoint()) throw new Error('PUBLIC_CATALOGUE_UNAVAILABLE')
   const {env}=await import('cloudflare:workers')
   const assets=(env as {ASSETS?:{fetch:(url:string)=>Promise<Response>}}).ASSETS

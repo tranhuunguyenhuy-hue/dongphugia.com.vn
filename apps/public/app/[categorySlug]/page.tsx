@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 
 import { CategoryRootView } from '@/components/category/category-root-view'
 import { getSnapshotCategoryRoot } from '../../src/runtime/public-snapshot-catalogue'
+import { getPublicAppEnvironment } from '../../src/config/env'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -25,8 +26,9 @@ type PageProps={
 export async function generateMetadata({params}:PageProps):Promise<Metadata>{
   const {categorySlug}=await params
   const title=CATEGORY_TITLES[categorySlug]
+  const indexable=getPublicAppEnvironment().environment==='production'
   return title
-    ? {title,robots:{index:false,follow:false}}
+    ? {title,alternates:{canonical:`/${categorySlug}`},robots:{index:indexable,follow:indexable}}
     : {title:'Không tìm thấy danh mục',robots:{index:false,follow:false}}
 }
 
