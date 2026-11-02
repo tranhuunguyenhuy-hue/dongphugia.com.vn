@@ -37,12 +37,19 @@ for (const path of paths) {
     || !body.includes(`href="${canonical}"`) || /<meta[^>]+name="robots"[^>]+noindex/i.test(body)) fail('HTML')
   const robotsHeader = response.headers.get('x-robots-tag')
   if (posture === 'workers-dev' ? robotsHeader !== 'noindex, nofollow' : robotsHeader !== null) fail('INDEX_HEADER')
-  if (path === '/' && (!body.includes('/banners/banner-kitchen.hero.w1280.webp')
+  if (path === '/' && (!body.includes('/images/banner-1.editorial.w960.webp')
     || body.includes('Catalogue khôi phục ở chế độ chỉ đọc')
     || body.includes('Sản phẩm Gạch Ốp Lát'))) fail('HOME_HOTFIX')
   if (path === '/blog' && !body.includes('Bài viết đang được cập nhật')) fail('NEWS_HOTFIX')
 }
-const hero = await fetch(new URL('/banners/banner-kitchen.hero.w1280.webp', base), { signal: AbortSignal.timeout(20000) })
-if (hero.status !== 200 || !hero.headers.get('content-type')?.includes('image/webp')) fail('HERO_ASSET')
-await hero.body?.cancel()
+for (const [assetPath, contentType] of [
+  ['/images/banner-1.editorial.w960.webp', 'image/webp'],
+  ['/images/banner-1.jpg', 'image/jpeg'],
+  ['/images/banner-2.jpg', 'image/jpeg'],
+  ['/images/banner-3.jpg', 'image/jpeg'],
+]) {
+  const image = await fetch(new URL(assetPath, base), { signal: AbortSignal.timeout(20000) })
+  if (image.status !== 200 || !image.headers.get('content-type')?.includes(contentType)) fail('HERO_ASSET')
+  await image.body?.cancel()
+}
 console.log(`PUBLIC_PRODUCTION_SMOKE status=PASS posture=${posture} routes=${paths.length} source=${sourceSha}`)
