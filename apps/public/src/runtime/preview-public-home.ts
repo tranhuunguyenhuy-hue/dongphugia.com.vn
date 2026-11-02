@@ -11,15 +11,20 @@ import {
 
 export async function getPublicHomeBanners(): Promise<PublicHomePageData['banners']> {
   if (process.env.APP_ENV !== 'production') return []
-  return [{
-    id: 1,
-    title: 'Thiết bị bếp Đông Phú Gia',
-    imageUrl: '/banners/banner-kitchen.jpg',
-    mobileImageUrl: '/banners/banner-kitchen.hero.w720.webp',
-    desktopImageUrl: '/banners/banner-kitchen.hero.w1280.webp',
-    desktopLargeImageUrl: '/banners/banner-kitchen.hero.w1600.webp',
-    linkUrl: '/thiet-bi-bep',
-  }]
+  // Owner-approved, existing public assets. No unverified Admin provenance or invented CTAs.
+  return [
+    {
+      id: 1,
+      title: 'Banner 1',
+      imageUrl: '/images/banner-1.jpg',
+      mobileImageUrl: '/images/banner-1.editorial.w640.webp',
+      desktopImageUrl: '/images/banner-1.editorial.w960.webp',
+      desktopLargeImageUrl: '/images/banner-1.editorial.w960.webp',
+      linkUrl: null,
+    },
+    { id: 2, title: 'Banner 2', imageUrl: '/images/banner-2.jpg', linkUrl: null },
+    { id: 3, title: 'Banner 3', imageUrl: '/images/banner-3.jpg', linkUrl: null },
+  ]
 }
 
 export async function getPublicHomeContent(): Promise<PublicHomeContent> {
