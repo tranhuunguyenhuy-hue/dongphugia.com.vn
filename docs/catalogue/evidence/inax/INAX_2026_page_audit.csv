@@ -1,0 +1,108 @@
+﻿pdf_page,page_type,layout_visually_checked,product_cards_verified,unresolved_items,detail_status,evidence_notes
+1,COVER,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
+2,MARKETING_OR_PRODUCT_CONTEXT,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
+3,MARKETING_OR_PRODUCT_CONTEXT,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
+4,MARKETING_OR_PRODUCT_CONTEXT,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
+5,CONTENTS,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
+6,MARKETING_OR_PRODUCT_CONTEXT,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
+7,PRODUCT_CARD,YES,3,UNKNOWN,PARTIAL_PRODUCT_QA,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
+8,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
+9,MARKETING_OR_PRODUCT_CONTEXT,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
+10,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
+11,MARKETING_OR_PRODUCT_CONTEXT,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
+12,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
+13,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
+14,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
+15,MARKETING_OR_PRODUCT_CONTEXT,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
+16,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
+17,MARKETING_OR_PRODUCT_CONTEXT,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
+18,MARKETING_OR_PRODUCT_CONTEXT,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
+19,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
+20,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
+21,MARKETING_OR_PRODUCT_CONTEXT,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
+22,MARKETING_OR_PRODUCT_CONTEXT,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
+23,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
+24,MIXED_PRODUCT_PRICELIST_TABLE,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
+25,MIXED_PRODUCT_PRICELIST_TABLE,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
+26,MIXED_PRODUCT_PRICELIST_TABLE,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
+27,MIXED_PRODUCT_PRICELIST_TABLE,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
+28,MARKETING_OR_PRODUCT_CONTEXT,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
+29,MARKETING_OR_PRODUCT_CONTEXT,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
+30,MARKETING_OR_PRODUCT_CONTEXT,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
+31,MARKETING_OR_PRODUCT_CONTEXT,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
+32,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
+33,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
+34,MARKETING_OR_PRODUCT_CONTEXT,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
+35,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
+36,PRODUCT_CARD,YES,1,UNKNOWN,PARTIAL_PRODUCT_QA,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
+37,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
+38,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
+39,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
+40,MARKETING_OR_PRODUCT_CONTEXT,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
+41,MARKETING_OR_PRODUCT_CONTEXT,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
+42,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
+43,MARKETING_OR_PRODUCT_CONTEXT,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
+44,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
+45,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
+46,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
+47,MARKETING_OR_PRODUCT_CONTEXT,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
+48,MARKETING_OR_PRODUCT_CONTEXT,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
+49,MARKETING_OR_PRODUCT_CONTEXT,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
+50,MARKETING_OR_PRODUCT_CONTEXT,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
+51,MARKETING_OR_PRODUCT_CONTEXT,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
+52,MARKETING_OR_PRODUCT_CONTEXT,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
+53,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
+54,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
+55,PRODUCT_CARD,YES,1,UNKNOWN,PARTIAL_PRODUCT_QA,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
+56,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
+57,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
+58,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
+59,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
+60,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
+61,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
+62,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
+63,MARKETING_OR_PRODUCT_CONTEXT,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
+64,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
+65,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
+66,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
+67,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
+68,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
+69,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
+70,MARKETING_OR_PRODUCT_CONTEXT,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
+71,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
+72,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
+73,MARKETING_OR_PRODUCT_CONTEXT,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
+74,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
+75,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
+76,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
+77,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
+78,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
+79,PRODUCT_CARD,YES,0,UNKNOWN,DETAIL_QA_PENDING,Visual layout classification from rendered PDF page; full-resolution product/price audit pending
+80,COMPATIBILITY,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
+81,COMPATIBILITY,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
+82,COMPATIBILITY,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
+83,COMPATIBILITY,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
+84,TECHNICAL_DRAWING,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
+85,TECHNICAL_DRAWING,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
+86,TECHNICAL_DRAWING,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
+87,TECHNICAL_DRAWING,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
+88,TECHNICAL_DRAWING,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
+89,TECHNICAL_DRAWING,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
+90,TECHNICAL_DRAWING,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
+91,TECHNICAL_DRAWING,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
+92,TECHNICAL_DRAWING,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
+93,TECHNICAL_DRAWING,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
+94,TECHNICAL_DRAWING,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
+95,TECHNICAL_DRAWING,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
+96,TECHNICAL_DRAWING,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
+97,TECHNICAL_DRAWING,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
+98,TECHNICAL_DRAWING,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
+99,TECHNICAL_DRAWING,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
+100,TECHNICAL_DRAWING,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
+101,TECHNICAL_DRAWING,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
+102,TECHNICAL_DRAWING,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
+103,TECHNICAL_DRAWING,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
+104,TECHNICAL_DRAWING,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
+105,TECHNICAL_DRAWING,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
+106,MARKETING_OR_PRODUCT_CONTEXT,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings
+107,MARKETING_OR_PRODUCT_CONTEXT,YES,0,0,LAYOUT_CLASSIFIED,Visual layout classified; code mentions here are not independently verified sellable listings

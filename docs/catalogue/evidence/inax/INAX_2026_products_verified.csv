@@ -1,0 +1,6 @@
+﻿brand,market,edition,manufacturer_product_name,sku_full,model,variant,product_kind,category,pdf_page,additional_pages,manufacturer_printed_price_vnd,price_status,verification_status,evidence_locator,pdf_sha256
+INAX,Vietnam,04/2026,Bàn cầu một khối,AC-1052VN,AC-1052VN,,sellable_product,Bồn cầu,7,,23120000,PRINTED_CONFIRMED,CONFIRMED,rendered product card on PDF page 7,c9e6ccba1bb8f817b3bd09e0533e5002620172ec88b21b8461388ca63699da67
+INAX,Vietnam,04/2026,Bàn cầu điện tử,AC-G216VN/BW1,AC-G216VN,BW1,sellable_product,Bồn cầu,7,,125140000,PRINTED_CONFIRMED,CONFIRMED,rendered product card on PDF page 7,c9e6ccba1bb8f817b3bd09e0533e5002620172ec88b21b8461388ca63699da67
+INAX,Vietnam,04/2026,Vòi chậu,LFV-652S,LFV-652S,,sellable_product,Sen & vòi,7,,5460000,PRINTED_CONFIRMED,CONFIRMED,rendered product card on PDF page 7,c9e6ccba1bb8f817b3bd09e0533e5002620172ec88b21b8461388ca63699da67
+INAX,Vietnam,04/2026,Bàn cầu hai khối,AC-514VAN,AC-514VAN,,sellable_product,Bồn cầu,36,,4560000,PRINTED_CONFIRMED,CONFIRMED,rendered product card on PDF page 36,c9e6ccba1bb8f817b3bd09e0533e5002620172ec88b21b8461388ca63699da67
+INAX,Vietnam,04/2026,Sen cây nhiệt tự động,BFV-655T,BFV-655T,,sellable_product,Sen & vòi,55,,37980000,PRINTED_CONFIRMED,CONFIRMED,rendered product card on PDF page 55,c9e6ccba1bb8f817b3bd09e0533e5002620172ec88b21b8461388ca63699da67
