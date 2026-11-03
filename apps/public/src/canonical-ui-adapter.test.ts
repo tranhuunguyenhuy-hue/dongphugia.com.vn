@@ -26,11 +26,13 @@ describe('Cloudflare canonical Public UI adapter', () => {
   it('keeps canonical About and read-only Contact pages reachable in Preview', () => {
     const aboutRoute = readFileSync(resolve(repositoryRoot, 'apps/public/app/ve-chung-toi/page.tsx'), 'utf8')
     const contactRoute = readFileSync(resolve(repositoryRoot, 'apps/public/app/lien-he/page.tsx'), 'utf8')
-    const contactComponent = readFileSync(resolve(repositoryRoot, 'src/app/(public)/lien-he/contact-form.tsx'), 'utf8')
+    const contactComponent = readFileSync(resolve(repositoryRoot, 'apps/public/src/runtime/public-contact-section.tsx'), 'utf8')
 
     expect(aboutRoute).toContain("AboutClient")
-    expect(contactRoute).toContain('ContactForm readOnly')
-    expect(contactComponent).toContain('@dpg/public-interactions')
+    expect(contactRoute).toContain('ContactSection')
+    expect(contactComponent).toContain('siteLinks.zalo')
+    expect(contactComponent).toContain('tel:')
+    expect(contactComponent).not.toContain('<form')
   })
 
   it('labels the synthetic Preview data and does not invent Blog content', async () => {
