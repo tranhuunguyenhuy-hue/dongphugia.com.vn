@@ -1,5 +1,7 @@
 # Preliminary INAX PDF-to-project SKU count — 03 Nov 2026 ICT
 
+**Historical checkpoint, superseded for DB-row suffix counts by [`INAX_2024_2026_reconciliation_audit.md`](INAX_2024_2026_reconciliation_audit.md).** The broad `PDF code + /…` rule below admitted five legacy/component DB SKUs. The controlled `/BW1` or `/SG9` result is 636 associated / 1,745 unmatched DB rows. This file is retained for traceability.
+
 **Scope:** read-only count against approved V1 Supabase project `bonxyxluzlxfkdetryoo`, database `postgres`, `dpg_app.products` joined to `dpg_app.brands` resolved by `brands.slug='inax'`. SQL checkpoint: **2026-11-03 02:12:27 UTC** (09:12:27 ICT). Principal: `postgres`; INAX rows and distinct DB SKU strings: **2,381** each. Aggregate fingerprint `md5(string_agg(id || ':' || sku || ':' || publication_status, ',' ORDER BY id))` = `3cfba37fb7e6c3e81b4c723c5ccdf6e8`. No private database rows were exported. The current Public snapshot identity is **UNKNOWN**.
 
 ## PDF code candidates matched to database
