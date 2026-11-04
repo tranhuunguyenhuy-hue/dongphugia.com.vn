@@ -43,7 +43,7 @@ const sanitizedDatabaseMessageCodes = new Set([
   'DPG_PHASE2_ADMIN_POSTFLIGHT_FAILED',
 ])
 const sanitizedDatabaseObjectNames = {
-  schema: new Set(['dpg_app', 'public']),
+  schema: new Set(['auth', 'dpg_app', 'public']),
   table: new Set([
     'admin_users', 'audit_logs', 'guest_order_idempotency_records',
     'guest_order_rate_limit_windows', 'order_items', 'orders',
@@ -360,6 +360,15 @@ describe('PostgreSQL integration failure diagnostics', () => {
     expect(diagnosticText(privateObjectFailure.failure)).toContain('schema=dpg_app')
     expect(diagnosticText(privateObjectFailure.failure)).not.toContain('customer_phone_lookup')
     expect(diagnosticText(privateObjectFailure.failure)).not.toContain('column=phone')
+
+    const authSchemaError = Object.assign(new Error('private schema permission detail'), {
+      code: '42501', schema: 'auth',
+    })
+    const authSchemaFailure = postgresIntegrationFailure(
+      authSchemaError,
+      'resume_ordered_pending_migrations',
+    )
+    expect(diagnosticText(authSchemaFailure.failure)).toContain('schema=auth')
   })
 
   it('bounds traversal of a long hostile proxy prototype chain', () => {
