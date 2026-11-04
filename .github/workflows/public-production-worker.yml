@@ -111,7 +111,7 @@ jobs:
             sleep 0.25
           done
           test "$ready" -eq 1
-          node scripts/catalogue-direct/public-production-smoke.mjs http://127.0.0.1:8791 "$GITHUB_SHA" local
+          node scripts/catalogue-direct/public-production-smoke.mjs http://127.0.0.1:8791 "$GITHUB_SHA" local "$PUBLIC_CATALOGUE_CHECKPOINT"
       - name: Preserve bounded SSR comparison after a build failure
         if: failure()
         uses: actions/upload-artifact@v4
@@ -146,6 +146,7 @@ jobs:
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          PUBLIC_CATALOGUE_CHECKPOINT: ${{ needs.build.outputs.checkpoint }}
         run: |
           set -euo pipefail
           test -n "$CLOUDFLARE_ACCOUNT_ID"
@@ -153,4 +154,4 @@ jobs:
           npm ci --prefix apps/public
           cd "$RUNNER_TEMP/production-build"
           node "$GITHUB_WORKSPACE/apps/public/node_modules/wrangler/bin/wrangler.js" deploy --config wrangler.json
-          node "$GITHUB_WORKSPACE/scripts/catalogue-direct/public-production-smoke.mjs" https://dongphugia-v1-public-production.tranhuunguyenhuy.workers.dev "$GITHUB_SHA" workers-dev
+          node "$GITHUB_WORKSPACE/scripts/catalogue-direct/public-production-smoke.mjs" https://dongphugia-v1-public-production.tranhuunguyenhuy.workers.dev "$GITHUB_SHA" workers-dev "$PUBLIC_CATALOGUE_CHECKPOINT"
