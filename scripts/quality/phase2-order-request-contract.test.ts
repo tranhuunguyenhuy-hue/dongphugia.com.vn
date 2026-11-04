@@ -8,6 +8,8 @@ const adminInboxPath = path.join(root, 'supabase/migrations/20261104190000_phase
 const adminRollbackPath = path.join(root, 'docs/deploy/phase2-admin-order-inbox-rollback.sql')
 const guestRollbackPath = path.join(root, 'docs/deploy/phase2-guest-order-intake-rollback.sql')
 const supabaseConfigPath = path.join(root, 'supabase/config.toml')
+const legacyAdminCommercePath = path.join(root, 'supabase/functions/admin-commerce/index.ts')
+const separateAdminOrderActionsPath = path.join(root, 'apps/admin/app/orders/actions.ts')
 
 describe('Phase 2 order-request database contract', () => {
   it('keeps guest shipping fees pending only at intake so staff can confirm them later', async () => {
@@ -19,6 +21,41 @@ describe('Phase 2 order-request database contract', () => {
     expect(guestMigration).toContain("and shipping_fee_status = 'pending_confirmation'")
     expect(guestMigration).not.toContain('phase2_public_shipping_fee_pending_check')
     expect(rollback).not.toContain('phase2_public_shipping_fee_pending_check')
+  })
+
+  it('keeps guest order idempotency valid for delayed retries without delete access', async () => {
+    const [guestMigration, rollback] = await Promise.all([
+      readFile(guestIntakePath, 'utf8'),
+      readFile(guestRollbackPath, 'utf8'),
+    ])
+    const idempotencyTable = guestMigration.match(/create table dpg_app\.guest_order_idempotency_records\s*\(([\s\S]*?)\);/i)?.[1]
+    const createFunction = guestMigration.match(/create function public\.guest_order_request_create\([\s\S]*?\n\$\$;/i)?.[0]
+    const receiptFunction = guestMigration.match(/create function public\.guest_order_request_receipt\([\s\S]*?\n\$\$;/i)?.[0]
+
+    expect(idempotencyTable).toBeDefined()
+    expect(idempotencyTable).not.toMatch(/expires_at/i)
+    expect(guestMigration).not.toContain('idx_guest_order_idempotency_expiry')
+    expect(createFunction).toBeDefined()
+    expect(createFunction).not.toMatch(/delete\s+from\s+dpg_app\.guest_order_idempotency_records/i)
+    expect(receiptFunction).toBeDefined()
+    expect(receiptFunction).not.toMatch(/expires_at/i)
+    expect(guestMigration).toContain('create policy phase2_guest_idempotency_select')
+    expect(guestMigration).toContain('create policy phase2_guest_idempotency_insert')
+    expect(guestMigration).toContain("or has_table_privilege('anon', 'dpg_app.guest_order_idempotency_records', 'DELETE')")
+    expect(rollback).toContain('drop policy phase2_guest_idempotency_select')
+    expect(rollback).toContain('drop policy phase2_guest_idempotency_insert')
+  })
+
+  it('keeps the legacy Admin order patch and guest-request transition RPC separate', async () => {
+    const [legacyAdminCommerce, separateAdminOrderActions] = await Promise.all([
+      readFile(legacyAdminCommercePath, 'utf8'),
+      readFile(separateAdminOrderActionsPath, 'utf8'),
+    ])
+
+    expect(legacyAdminCommerce).toContain("callRpc(client,'leo542_admin_commerce_patch'")
+    expect(legacyAdminCommerce).not.toContain('phase2_admin_order_update_status')
+    expect(separateAdminOrderActions).toContain("['received', 'cancelled']")
+    expect(separateAdminOrderActions).toContain("'phase2_admin_order_update_status'")
   })
 
   it('keeps the Admin transition invoker-scoped behind the private dpg_app schema', async () => {

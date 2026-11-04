@@ -102,7 +102,8 @@ begin
            'phase2_guest_products_select_public',
            'phase2_guest_orders_insert_pending',
            'phase2_guest_order_items_insert',
-           'phase2_guest_idempotency_all',
+           'phase2_guest_idempotency_select',
+           'phase2_guest_idempotency_insert',
            'phase2_guest_rate_limit_all'
          )
      ) then
@@ -140,12 +141,14 @@ alter table dpg_app.orders
   add constraint phase2_shipping_fee_status_check
   check (shipping_fee_status is null or shipping_fee_status in ('pending_confirmation', 'confirmed', 'not_applicable'));
 
+-- Keep only hashed submission values and the minimal receipt, not raw customer
+-- fields, for the idempotency lifetime. A customer may retry after an extended
+-- offline period; expiring a key could create a second request after a lost response.
 create table dpg_app.guest_order_idempotency_records (
   key_hash char(64) primary key,
   request_hash char(64) not null,
   safe_response jsonb not null,
-  created_at timestamptz not null default now(),
-  expires_at timestamptz not null
+  created_at timestamptz not null default now()
 );
 
 create table dpg_app.guest_order_rate_limit_windows (
@@ -155,8 +158,6 @@ create table dpg_app.guest_order_rate_limit_windows (
   primary key (phone_hash, window_start)
 );
 
-create index if not exists idx_guest_order_idempotency_expiry
-  on dpg_app.guest_order_idempotency_records (expires_at);
 create index if not exists idx_guest_order_rate_expiry
   on dpg_app.guest_order_rate_limit_windows (window_start);
 
@@ -212,8 +213,11 @@ create policy phase2_guest_order_items_insert on dpg_app.order_items
     end
   );
 
-create policy phase2_guest_idempotency_all on dpg_app.guest_order_idempotency_records
-  for all to anon using (true) with check (true);
+create policy phase2_guest_idempotency_select on dpg_app.guest_order_idempotency_records
+  for select to anon using (true);
+
+create policy phase2_guest_idempotency_insert on dpg_app.guest_order_idempotency_records
+  for insert to anon with check (true);
 
 create policy phase2_guest_rate_limit_all on dpg_app.guest_order_rate_limit_windows
   for all to anon using (true) with check (true);
@@ -234,9 +238,9 @@ grant insert (
   order_id, product_id, product_name, product_sku, quantity, unit_price,
   total_price, commercial_snapshot
 ) on table dpg_app.order_items to anon;
-grant select (key_hash, request_hash, safe_response, expires_at),
-  insert (key_hash, request_hash, safe_response, expires_at),
-  delete on table dpg_app.guest_order_idempotency_records to anon;
+grant select (key_hash, request_hash, safe_response),
+  insert (key_hash, request_hash, safe_response)
+  on table dpg_app.guest_order_idempotency_records to anon;
 grant select (phone_hash, window_start, request_count),
   insert (phone_hash, window_start, request_count),
   update (request_count), delete
@@ -339,18 +343,6 @@ begin
   v_key_hash := dpg_app.runtime_key_hash(btrim(p_idempotency_key));
   v_request_hash := dpg_app.runtime_hash(p_input);
   perform pg_advisory_xact_lock(hashtextextended('dpg:guest-order:idempotency:' || v_key_hash, 0));
-  with expired_keys as (
-    select key_hash
-    from dpg_app.guest_order_idempotency_records
-    where expires_at <= now()
-    order by expires_at
-    limit 100
-  )
-  delete from dpg_app.guest_order_idempotency_records r
-  using expired_keys e
-  where r.key_hash = e.key_hash;
-  delete from dpg_app.guest_order_idempotency_records
-   where key_hash = v_key_hash and expires_at <= now();
   select request_hash, safe_response into v_existing.request_hash, v_existing.safe_response
     from dpg_app.guest_order_idempotency_records
    where key_hash = v_key_hash;
@@ -515,9 +507,9 @@ begin
       'payment_status', 'unpaid'
     );
     insert into dpg_app.guest_order_idempotency_records (
-      key_hash, request_hash, safe_response, expires_at
+      key_hash, request_hash, safe_response
     ) values (
-      v_key_hash, v_request_hash, v_safe_response, now() + interval '24 hours'
+      v_key_hash, v_request_hash, v_safe_response
     );
     return v_safe_response;
   exception when others then
@@ -554,8 +546,7 @@ begin
 
   select safe_response into v_safe_response
   from dpg_app.guest_order_idempotency_records
-  where key_hash = dpg_app.runtime_key_hash(btrim(p_idempotency_key))
-    and expires_at > now();
+  where key_hash = dpg_app.runtime_key_hash(btrim(p_idempotency_key));
   if not found then return null; end if;
 
   v_order_number := v_safe_response ->> 'order_number';
@@ -649,8 +640,43 @@ begin
      or has_table_privilege('anon', 'dpg_app.guest_order_idempotency_records', 'SELECT')
      or has_table_privilege('anon', 'dpg_app.guest_order_idempotency_records', 'INSERT')
      or has_table_privilege('anon', 'dpg_app.guest_order_idempotency_records', 'UPDATE')
-     or not has_table_privilege('anon', 'dpg_app.guest_order_idempotency_records', 'DELETE')
+     or has_table_privilege('anon', 'dpg_app.guest_order_idempotency_records', 'DELETE')
+     or not exists (
+       select 1 from pg_policy p
+       join pg_class c on c.oid = p.polrelid
+       join pg_namespace n on n.oid = c.relnamespace
+       where n.nspname = 'dpg_app' and c.relname = 'guest_order_idempotency_records'
+         and p.polname = 'phase2_guest_idempotency_select' and p.polcmd = 'r'
+         and p.polroles = array[(select oid from pg_roles where rolname = 'anon')]
+     )
+     or not exists (
+       select 1 from pg_policy p
+       join pg_class c on c.oid = p.polrelid
+       join pg_namespace n on n.oid = c.relnamespace
+       where n.nspname = 'dpg_app' and c.relname = 'guest_order_idempotency_records'
+         and p.polname = 'phase2_guest_idempotency_insert' and p.polcmd = 'a'
+         and p.polroles = array[(select oid from pg_roles where rolname = 'anon')]
+     )
+     or exists (
+       select 1 from pg_policy p
+       join pg_class c on c.oid = p.polrelid
+       join pg_namespace n on n.oid = c.relnamespace
+       where n.nspname = 'dpg_app' and c.relname = 'guest_order_idempotency_records'
+         and p.polname not in ('phase2_guest_idempotency_select', 'phase2_guest_idempotency_insert')
+     )
+     or not has_column_privilege('anon', 'dpg_app.guest_order_idempotency_records', 'key_hash', 'SELECT')
+     or not has_column_privilege('anon', 'dpg_app.guest_order_idempotency_records', 'request_hash', 'SELECT')
      or not has_column_privilege('anon', 'dpg_app.guest_order_idempotency_records', 'safe_response', 'SELECT')
+     or not has_column_privilege('anon', 'dpg_app.guest_order_idempotency_records', 'key_hash', 'INSERT')
+     or not has_column_privilege('anon', 'dpg_app.guest_order_idempotency_records', 'request_hash', 'INSERT')
+     or not has_column_privilege('anon', 'dpg_app.guest_order_idempotency_records', 'safe_response', 'INSERT')
+     or exists (
+       select 1 from information_schema.column_privileges
+       where grantee = 'anon' and table_schema = 'dpg_app'
+         and table_name = 'guest_order_idempotency_records'
+         and privilege_type in ('SELECT', 'INSERT')
+         and column_name not in ('key_hash', 'request_hash', 'safe_response')
+     )
      or has_table_privilege('anon', 'dpg_app.guest_order_rate_limit_windows', 'SELECT')
      or has_table_privilege('anon', 'dpg_app.guest_order_rate_limit_windows', 'INSERT')
      or has_table_privilege('anon', 'dpg_app.guest_order_rate_limit_windows', 'UPDATE')

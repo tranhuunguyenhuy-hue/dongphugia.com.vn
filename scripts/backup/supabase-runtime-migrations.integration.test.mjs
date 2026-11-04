@@ -780,6 +780,61 @@ describe('Supabase runtime migration adoption integration', () => {
           await client.query('rollback').catch(() => undefined)
         }
 
+        phase = 'verify_phase2_guest_idempotency_after_delayed_retry'
+        const retryKey = '11111111-1111-4111-8111-111111111111'
+        const retryInput = {
+          customer_name: 'Synthetic Retry Check',
+          customer_phone: '0900000000',
+          customer_email: '',
+          customer_address: '',
+          note: '',
+          items: [{ productId: 2147483647, quantity: 1, installOption: 'none' }],
+        }
+        const retryResponse = {
+          order_number: 'DPG-261105-ABCDEF12',
+          status: 'pending',
+          payment_status: 'unpaid',
+        }
+        const retryRequestId = '22222222-2222-4222-8222-222222222222'
+        await client.query('begin')
+        try {
+          await client.query(`
+            insert into dpg_app.guest_order_idempotency_records (
+              key_hash, request_hash, safe_response, created_at
+            ) values (
+              dpg_app.runtime_key_hash($1),
+              dpg_app.runtime_hash($2::jsonb),
+              $3::jsonb,
+              now() - interval '48 hours'
+            )
+          `, [retryKey, JSON.stringify(retryInput), JSON.stringify(retryResponse)])
+          const ordersBefore = await client.query('select count(*)::integer as count from dpg_app.orders')
+          expect(ordersBefore.rows[0]?.count).toBe(0)
+
+          await client.query('set local role anon')
+          const replay = await client.query(`
+            select public.guest_order_request_create($1::jsonb, $2, $3::uuid) as response
+          `, [JSON.stringify(retryInput), retryKey, retryRequestId])
+          expect(replay.rows[0]?.response).toEqual(retryResponse)
+
+          const receipt = await client.query(
+            'select public.guest_order_request_receipt($1) as response', [retryKey],
+          )
+          expect(receipt.rows[0]?.response).toEqual(retryResponse)
+          await client.query('reset role')
+
+          const ordersAfter = await client.query('select count(*)::integer as count from dpg_app.orders')
+          expect(ordersAfter.rows[0]?.count).toBe(ordersBefore.rows[0]?.count)
+          const storedKeys = await client.query(`
+            select count(*)::integer as count
+            from dpg_app.guest_order_idempotency_records
+            where key_hash = dpg_app.runtime_key_hash($1)
+          `, [retryKey])
+          expect(storedKeys.rows[0]?.count).toBe(1)
+        } finally {
+          await client.query('rollback').catch(() => undefined)
+        }
+
         phase = 'verify_database_size_guard'
         const databaseSizeBefore = await assertDatabaseSizeWithinContract(client)
         await client.query(`

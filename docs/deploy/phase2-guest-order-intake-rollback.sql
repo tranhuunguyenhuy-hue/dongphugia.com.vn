@@ -60,7 +60,8 @@ drop function public.guest_order_request_create(jsonb, text, uuid);
 drop policy phase2_guest_products_select_public on dpg_app.products;
 drop policy phase2_guest_orders_insert_pending on dpg_app.orders;
 drop policy phase2_guest_order_items_insert on dpg_app.order_items;
-drop policy phase2_guest_idempotency_all on dpg_app.guest_order_idempotency_records;
+drop policy phase2_guest_idempotency_select on dpg_app.guest_order_idempotency_records;
+drop policy phase2_guest_idempotency_insert on dpg_app.guest_order_idempotency_records;
 drop policy phase2_guest_rate_limit_all on dpg_app.guest_order_rate_limit_windows;
 
 drop table dpg_app.guest_order_idempotency_records;

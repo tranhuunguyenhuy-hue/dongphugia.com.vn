@@ -15,15 +15,7 @@ Deno.serve(async (request) => {
     if(request.method==='PATCH'){
       const body=await readJson(request) as {id?:unknown;patch?:unknown}
       if(!body || typeof body!=='object' || body.id===undefined || body.patch===undefined)throw new RuntimeHttpError(400,'INVALID_INPUT')
-      const orderId=integerParam(String(body.id),'INVALID_RESOURCE_ID')
-      if(resource==='orders'){
-        if(!body.patch || typeof body.patch!=='object' || Array.isArray(body.patch))throw new RuntimeHttpError(400,'INVALID_INPUT')
-        const patch=body.patch as Record<string,unknown>
-        if(Object.keys(patch).length!==1 || !['received','confirmed','cancelled'].includes(String(patch.status)))throw new RuntimeHttpError(400,'INVALID_ORDER_STATUS')
-        const data=await callRpc(client,'phase2_admin_order_update_status',{p_order_id:orderId,p_status:patch.status,p_idempotency_key:idempotencyKey(request),p_request_id:request_id})
-        return jsonResponse({data},200,request_id)
-      }
-      const data=await callRpc(client,'leo542_admin_commerce_patch',{p_resource:resource,p_id:orderId,p_patch:body.patch,p_idempotency_key:idempotencyKey(request),p_request_id:request_id})
+      const data=await callRpc(client,'leo542_admin_commerce_patch',{p_resource:resource,p_id:integerParam(String(body.id),'INVALID_RESOURCE_ID'),p_patch:body.patch,p_idempotency_key:idempotencyKey(request),p_request_id:request_id})
       return jsonResponse({data},200,request_id)
     }
     return jsonResponse({error:{code:'METHOD_NOT_ALLOWED',request_id}},405,request_id)
