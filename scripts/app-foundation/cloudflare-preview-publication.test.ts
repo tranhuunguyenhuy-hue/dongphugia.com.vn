@@ -166,8 +166,8 @@ const managedBaselineIdentity = {
 }
 
 const knownManagedBaseline = {
-  versionCount: 12,
-  latestVersionId: '49c91111-a0c6-4d3b-9db6-cfa318a9bf4a',
+  versionCount: 13,
+  latestVersionId: 'a1e4dc1e-51ed-4e08-9cc5-147aa0fae456',
   bootstrapVersionId: 'd4658ffa-2fcd-465b-bae7-7967bb1c7f78',
   deploymentId: '6e7022d5-5f4d-4f51-8ab3-01850503a711',
 }
@@ -184,6 +184,7 @@ const knownBaselineVersionIds = [
   '9f20e256-83fa-4756-9518-71ef7571d466',
   'd4658ffa-2fcd-465b-bae7-7967bb1c7f78',
   '17fe81fb-9f43-43b9-85d0-33952cff74d6',
+  '49c91111-a0c6-4d3b-9db6-cfa318a9bf4a',
   knownManagedBaseline.latestVersionId,
 ].sort()
 const knownBaselineApiVersionIds = [
@@ -336,7 +337,7 @@ describe('LEO-563 Cloudflare Preview publication gate', () => {
     expect(versionPages).toEqual([1, 2])
   })
 
-  it('attests the exact known 11-version bootstrap baseline through paginated GET-only reads', async () => {
+  it('attests the exact known 13-version managed baseline through paginated GET-only reads', async () => {
     const { requests, fetchImpl } = managedBaselineRemoteFetch()
     const remoteState = await inspectRemoteResourceState({
       accountId: 'synthetic-account',
@@ -348,7 +349,7 @@ describe('LEO-563 Cloudflare Preview publication gate', () => {
     expect(remoteState).toMatchObject({
       state: 'MANAGED_BASELINE_ATTESTED',
       workerName: 'dongphugia-v1-public-preview',
-      versionCount: 12,
+      versionCount: 13,
       latestVersionId: knownManagedBaseline.latestVersionId,
       versionIds: knownBaselineVersionIds,
       deploymentIds: [knownManagedBaseline.deploymentId],

@@ -19,8 +19,8 @@ const MANAGED_BASELINE_RECEIPT_MAX_AGE_MS = 15 * 60 * 1000
 const MANAGED_BASELINE_CONTRACT = 'dongphugia:cloudflare-preview-managed-baseline-state:v1'
 const MANAGED_STATE_RECEIPT_CONTRACT = 'dongphugia:cloudflare-preview-managed-state-receipt:v1'
 const OWNER_RECONCILED_MANAGED_BASELINE = Object.freeze({
-  versionCount: 12,
-  latestVersionId: '49c91111-a0c6-4d3b-9db6-cfa318a9bf4a',
+  versionCount: 13,
+  latestVersionId: 'a1e4dc1e-51ed-4e08-9cc5-147aa0fae456',
   bootstrapVersionId: 'd4658ffa-2fcd-465b-bae7-7967bb1c7f78',
   deploymentId: '6e7022d5-5f4d-4f51-8ab3-01850503a711',
   versionIds: Object.freeze([
@@ -36,6 +36,7 @@ const OWNER_RECONCILED_MANAGED_BASELINE = Object.freeze({
     'd4658ffa-2fcd-465b-bae7-7967bb1c7f78',
     '17fe81fb-9f43-43b9-85d0-33952cff74d6',
     '49c91111-a0c6-4d3b-9db6-cfa318a9bf4a',
+    'a1e4dc1e-51ed-4e08-9cc5-147aa0fae456',
   ].sort()),
 })
 const ALLOWED_CONFIG_KEYS = new Set([

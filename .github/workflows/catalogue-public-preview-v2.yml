@@ -391,15 +391,15 @@ jobs:
             --candidate-archive-sha256 "$CANDIDATE_ARCHIVE_SHA256" \
             --checkpoint "$CHECKPOINT" --m3-run-id "$M3_RUN_ID" --pull-request "$DPG_PREVIEW_PR_NUMBER")
           node scripts/app-foundation/cloudflare-preview-publication.mjs attest-managed-baseline \
-            "${identity[@]}" --expected-version-count 12 \
-            --expected-latest-version-id 49c91111-a0c6-4d3b-9db6-cfa318a9bf4a \
+            "${identity[@]}" --expected-version-count 13 \
+            --expected-latest-version-id a1e4dc1e-51ed-4e08-9cc5-147aa0fae456 \
             --bootstrap-version-id d4658ffa-2fcd-465b-bae7-7967bb1c7f78 \
             --expected-deployment-id 6e7022d5-5f4d-4f51-8ab3-01850503a711 \
             --output "$ARTIFACT_ROOT/evidence/managed-state-receipt.json"
           node scripts/app-foundation/cloudflare-preview-publication.mjs inspect-resource-state \
             "${identity[@]}" --managed-baseline-receipt "$ARTIFACT_ROOT/evidence/managed-state-receipt.json" \
             --output "$ARTIFACT_ROOT/evidence/remote-preflight.json"
-          jq -e '.state=="MANAGED_BASELINE_ATTESTED" and .versionCount==12 and .latestVersionId=="49c91111-a0c6-4d3b-9db6-cfa318a9bf4a" and (.deployments|length)==1 and .deployments[0].versions[0].percentage==100 and (.customDomains|length)==0 and (.workerRoutes|length)==0 and .subdomain.workersDevEnabled==false and .subdomain.previewUrlsEnabled==true and ([.calls[].status] | all(.=="READ_OK"))' \
+          jq -e '.state=="MANAGED_BASELINE_ATTESTED" and .versionCount==13 and .latestVersionId=="a1e4dc1e-51ed-4e08-9cc5-147aa0fae456" and (.deployments|length)==1 and .deployments[0].versions[0].percentage==100 and (.customDomains|length)==0 and (.workerRoutes|length)==0 and .subdomain.workersDevEnabled==false and .subdomain.previewUrlsEnabled==true and ([.calls[].status] | all(.=="READ_OK"))' \
             "$ARTIFACT_ROOT/evidence/remote-preflight.json" >/dev/null
       - name: Upload one existing Worker version
         if: inputs.publish
