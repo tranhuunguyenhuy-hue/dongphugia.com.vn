@@ -105,8 +105,8 @@ async function collectPublicProof(baseUrl: URL) {
     throw new Error('RUNTIME_PROOF_CONTACT_NOINDEX_HEADER_FAILED')
   }
   assertNoindexHtml(contact.body, 'Liên Hệ Tư Vấn')
-  if (!contact.body.includes('Biểu mẫu đang tạm khóa trên bản Preview')) {
-    throw new Error('RUNTIME_PROOF_CONTACT_READ_ONLY_NOTICE_FAILED')
+  if (!contact.body.includes('Gọi tư vấn') || !contact.body.includes('Nhắn Zalo')) {
+    throw new Error('RUNTIME_PROOF_CONTACT_ACTIONS_FAILED')
   }
   if (contact.body.includes('contact-name') || contact.body.includes('Gửi yêu cầu trực tuyến')) {
     throw new Error('RUNTIME_PROOF_CONTACT_FORM_RENDERED_IN_PREVIEW')
