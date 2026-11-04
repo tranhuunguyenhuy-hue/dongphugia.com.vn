@@ -5,6 +5,12 @@
       "@cloudflare/workers-types"
     ],
     "paths": {
+      "@/components/home/contact-section": [
+        "./src/runtime/public-contact-section.tsx"
+      ],
+      "@/components/home/lazy-contact-section": [
+        "./src/runtime/public-lazy-contact-section.tsx"
+      ],
       "@/components/category/preview-listing-section": [
         "./src/runtime/preview-listing-section.tsx"
       ],

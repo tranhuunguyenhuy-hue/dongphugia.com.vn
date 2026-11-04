@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 
-import { ContactForm } from '@/app/(public)/lien-he/contact-form'
+import { ContactSection } from '../../src/runtime/public-contact-section'
 import { getPublicAppEnvironment } from '../../src/config/env'
 
 export const runtime = 'edge'
@@ -13,5 +13,5 @@ export const metadata: Metadata = {
 }
 
 export default function PreviewContactPage() {
-  return <ContactForm readOnly />
+  return <ContactSection asPage />
 }

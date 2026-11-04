@@ -28,23 +28,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - name: Verify preserved accepted public candidate
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Recover the locked public snapshot and audit every listing shard
         run: |
           set -euo pipefail
-          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/13093442346" > "$RUNNER_TEMP/source-artifact.json"
-          jq -e '.id==13093442346 and .expired==false and .size_in_bytes==172075221 and .digest=="sha256:fe5a98949573a6ccba21b5334ffc924204183971c9d660cbb8e31ccf8a0aeadf" and .workflow_run.head_sha=="db57ece2090e39f25dc0c31782de2a938d6ea74e"' "$RUNNER_TEMP/source-artifact.json" >/dev/null
-      - name: Download and hash the exact accepted archive
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/13093442346/zip" > "$RUNNER_TEMP/accepted-public.zip"
-          echo 'fe5a98949573a6ccba21b5334ffc924204183971c9d660cbb8e31ccf8a0aeadf  '"$RUNNER_TEMP/accepted-public.zip" | sha256sum --check --status
-          mkdir -p "$RUNNER_TEMP/accepted-public"
-          unzip -q "$RUNNER_TEMP/accepted-public.zip" -d "$RUNNER_TEMP/accepted-public"
           npm ci
+          node scripts/catalogue-direct/fetch-locked-public-snapshot.mjs "$RUNNER_TEMP/accepted-public/build/assets"
           node scripts/catalogue-direct/preview2-candidate-audit.mjs "$RUNNER_TEMP/accepted-public/build" "$RUNNER_TEMP/accepted-public-audit.json"
       - name: Validate snapshot identity and install pinned tools
         id: identity
@@ -74,6 +62,7 @@ jobs:
             "$RUNNER_TEMP/public-build-diff.json"
           diff -qr "$RUNNER_TEMP/first-production-build" apps/public/dist
           cp -R "$RUNNER_TEMP/accepted-public/build/assets/__catalogue" apps/public/dist/client/__catalogue
+          node scripts/catalogue-direct/build-public-sitemap.mjs apps/public/dist/client https://www.dongphugia.vn
           npm run app:assemble-public-worker -- --repository-root . --server-dir apps/public/dist/server --assets-dir apps/public/dist/client --output "$RUNNER_TEMP/render-source" --source-sha "$GITHUB_SHA"
           node apps/public/node_modules/wrangler/bin/wrangler.js dev --local --config "$RUNNER_TEMP/render-source/wrangler.json" --port 8790 --var CATALOGUE_BUILD_RENDER:true > "$RUNNER_TEMP/render.log" 2>&1 &
           render_pid=$!

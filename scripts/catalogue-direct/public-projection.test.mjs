@@ -29,6 +29,14 @@ describe('synthetic mechanism only: public snapshot projection',()=>{
     assert.equal(built.manifest.listingProducts,0)
     assert.deepEqual(built.manifest.categories,[])
   })
+  it('keeps the domain sitemap decision separate from PDP visibility',()=>{
+    const indexed=projectProduct(input,{pdp:true,listing:true,sitemap:true},path)
+    const excluded=projectProduct({...input,id:2,slug:'excluded',sku:'EXCLUDED'},
+      {pdp:true,listing:true,sitemap:false},path)
+    const built=buildProjection([indexed,excluded],evidence)
+    assert.deepEqual(built.manifest.sitemapProductIds,[1])
+    assert.equal(built.assets.get('products/'+productBucket(excluded.url)+'.json').products.some(p=>p.id===2),true)
+  })
   it('rejects path collisions, missing proof and unsafe image protocols/hosts',()=>{
     const dto=projectProduct(input,{pdp:true,listing:true},path)
     assert.throws(()=>buildProjection([dto,dto],evidence),/DUPLICATE/)

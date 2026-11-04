@@ -32,6 +32,10 @@ export async function auditPreview2Candidate(buildRoot,{minProducts=5000,expecte
  }
  if(products.size!==manifest.products||referencePrices!==manifest.contentStats?.referencePrices
    ||descriptionBlocks!==manifest.contentStats?.descriptionBlocks)fail('COUNT_MISMATCH')
+ if(manifest.sitemapProductIds!==undefined
+   &&(!Array.isArray(manifest.sitemapProductIds)||manifest.sitemapProductIds.length>products.size
+     ||manifest.sitemapProductIds.some((id,index)=>!Number.isSafeInteger(id)||!products.has(id)
+       ||(index>0&&id<=manifest.sitemapProductIds[index-1]))))fail('SITEMAP_PRODUCT_IDS')
  let variantProducts=0
  const groups=manifest.variantGroups
  if(!groups||typeof groups!=='object'||Array.isArray(groups))fail('VARIANT_GROUPS_MISSING')
@@ -47,9 +51,36 @@ export async function auditPreview2Candidate(buildRoot,{minProducts=5000,expecte
  }
  if(variantProducts!==manifest.contentStats?.variantProducts
    ||[...products.values()].filter(p=>p.variant_group).length!==variantProducts)fail('VARIANT_COUNT_MISMATCH')
+ const listingIds=new Set()
+ let listingCount=0,listingPages=0
+ for(const category of manifest.categories??[]){
+  for(const listing of category.listings??[]){
+   if(!Number.isSafeInteger(listing.totalCount)||listing.totalCount<1)fail('LISTING_COUNT')
+   let seen=0
+   for(let page=1;page<=Math.ceil(listing.totalCount/48);page++){
+    const shard=await boundedJson(path.join(root,'listings',category.slug,listing.slug,`${page}.json`))
+    const expected=Math.min(48,listing.totalCount-(page-1)*48)
+    if(shard.contract!==manifest.contract||shard.checkpoint!==manifest.checkpoint
+      ||shard.page!==page||shard.totalCount!==listing.totalCount
+      ||!Array.isArray(shard.products)||shard.products.length!==expected)fail('LISTING_SHARD')
+    for(const product of shard.products){
+     const canonical=products.get(product.id)
+     if(!canonical||canonical.url!==product.url
+       ||canonical.categories?.slug!==category.slug||canonical.subcategories?.slug!==listing.slug
+       ||listingIds.has(product.id))fail('LISTING_PRODUCT')
+     listingIds.add(product.id)
+     seen++
+    }
+    listingPages++
+   }
+   if(seen!==listing.totalCount)fail('LISTING_COUNT')
+   listingCount+=seen
+  }
+ }
+ if(listingCount!==manifest.listingProducts)fail('LISTING_COUNT')
  return {status:'PASS',contract:'dpg:preview2-candidate-audit:v1',products:products.size,
   historicalReferencePrices:referencePrices,contactOnlyProducts:products.size-referencePrices,
-  descriptionBlockProducts:descriptionBlocks,variantGroups:Object.keys(groups).length,variantProducts,
+  descriptionBlockProducts:descriptionBlocks,variantGroups:Object.keys(groups).length,variantProducts,listingCount,listingPages,
   transactionalPrices:'CONTACT_ONLY',privateFieldsExported:false}
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===new URL(import.meta.url).pathname){

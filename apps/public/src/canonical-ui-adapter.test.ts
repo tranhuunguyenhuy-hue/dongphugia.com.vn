@@ -26,14 +26,16 @@ describe('Cloudflare canonical Public UI adapter', () => {
   it('keeps canonical About and read-only Contact pages reachable in Preview', () => {
     const aboutRoute = readFileSync(resolve(repositoryRoot, 'apps/public/app/ve-chung-toi/page.tsx'), 'utf8')
     const contactRoute = readFileSync(resolve(repositoryRoot, 'apps/public/app/lien-he/page.tsx'), 'utf8')
-    const contactComponent = readFileSync(resolve(repositoryRoot, 'src/app/(public)/lien-he/contact-form.tsx'), 'utf8')
+    const contactComponent = readFileSync(resolve(repositoryRoot, 'apps/public/src/runtime/public-contact-section.tsx'), 'utf8')
 
     expect(aboutRoute).toContain("AboutClient")
-    expect(contactRoute).toContain('ContactForm readOnly')
-    expect(contactComponent).toContain('@dpg/public-interactions')
+    expect(contactRoute).toContain('ContactSection')
+    expect(contactComponent).toContain('siteLinks.zalo')
+    expect(contactComponent).toContain('tel:')
+    expect(contactComponent).not.toContain('<form')
   })
 
-  it('labels the synthetic Preview data and does not invent Blog content', async () => {
+  it('labels synthetic product fixtures while showing the frozen public Blog snapshot', async () => {
     const [banners, data] = await Promise.all([
       getPublicHomeBanners(),
       getPublicHomeContent(),
@@ -49,7 +51,9 @@ describe('Cloudflare canonical Public UI adapter', () => {
     expect(data.previewNotice).toMatch(/minh họa/i)
     expect(data.previewNotice).toMatch(/không phải dữ liệu/i)
     expect(data.previewNotice).toMatch(/liên kết sản phẩm\/danh mục chỉ là fixture kiểm thử/i)
-    expect(data.posts).toEqual([])
+    expect(data.posts).toHaveLength(3)
+    expect(data.posts.every(post => Boolean(post.thumbnailUrl))).toBe(true)
+    expect(data.posts[2].thumbnailUrl).toMatch(/^https:\/\/dpg-products\.b-cdn\.net\//)
     expect(() => JSON.stringify({ banners, ...data })).not.toThrow()
   })
 

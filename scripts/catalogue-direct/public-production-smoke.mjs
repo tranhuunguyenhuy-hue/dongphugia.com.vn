@@ -45,6 +45,12 @@ if (healthBody.status !== 'ok' || healthBody.catalogueMode !== 'verified-snapsho
   || healthBody.publicProducts !== 5223 || healthBody.listingProducts !== 4853) fail('HEALTH')
 const robots = await checked('/robots.txt')
 if (!robots.body.includes('Allow: /') || robots.body.includes('Disallow: /')) fail('ROBOTS')
+if (!robots.body.includes('Sitemap: https://www.dongphugia.vn/sitemap.xml')) fail('ROBOTS_SITEMAP')
+const sitemap = await fetch(new URL('/sitemap.xml', base), { signal: AbortSignal.timeout(20000) })
+const sitemapBody = await sitemap.text()
+if (sitemap.status !== 200 || !sitemap.headers.get('content-type')?.includes('xml')
+  || sitemapBody.length > 2_000_000 || !sitemapBody.includes('<urlset')
+  || !sitemapBody.includes('https://www.dongphugia.vn/thiet-bi-ve-sinh/lavabo')) fail('SITEMAP')
 
 for (const path of paths) {
   const { response, body } = await checked(path)

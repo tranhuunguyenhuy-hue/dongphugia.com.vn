@@ -39,33 +39,38 @@ export async function getPublicSnapshotListingShard(
         PUBLIC_SNAPSHOT_LISTING_PAGE_SIZE,
         listingRecord.totalCount - (page - 1) * PUBLIC_SNAPSHOT_LISTING_PAGE_SIZE,
     )
-    if (source.totalCount !== listingRecord.totalCount || source.page !== page
-        || source.products.length !== expectedProducts
-        || source.products.some((product) => !isPublicSnapshotListingProduct(product, category, listing))) {
-        throw new Error('PUBLIC_CATALOGUE_UNAVAILABLE')
-    }
-
+    // Product buckets retain audited variant metadata for PDP selection. Listing
+    // shards use the narrower public card DTO; validate that the source carries
+    // only those known fields before projecting it.
+    const listingKeys = new Set([
+        'id', 'name', 'display_name', 'slug', 'sku', 'price', 'price_display',
+        'stock_status', 'image_main_url', 'is_active', 'is_featured',
+        'is_promotion', 'variant_options', 'categories', 'subcategories',
+        'brands', 'canonical_category_slug', 'canonical_subcategory_slug',
+        'url', 'variant_group', 'variant_type', 'variant_label',
+    ])
     const products = source.products.map((product) => ({
-        id: product.id,
-        name: product.name,
-        display_name: product.display_name,
-        slug: product.slug,
-        sku: product.sku,
-        price: null,
+        id: product.id, name: product.name, display_name: product.display_name,
+        slug: product.slug, sku: product.sku, price: null,
         price_display: 'Liên hệ báo giá' as const,
-        stock_status: 'contact' as const,
-        image_main_url: product.image_main_url,
-        is_active: true as const,
-        is_featured: product.is_featured,
-        is_promotion: false as const,
-        variant_options: [] as [],
-        categories: product.categories,
-        subcategories: product.subcategories,
+        stock_status: 'contact' as const, image_main_url: product.image_main_url,
+        is_active: true as const, is_featured: product.is_featured,
+        is_promotion: false as const, variant_options: [] as [],
+        categories: product.categories, subcategories: product.subcategories,
         brands: product.brands,
         canonical_category_slug: product.canonical_category_slug,
         canonical_subcategory_slug: product.canonical_subcategory_slug,
         url: product.url,
     }))
+    if (source.totalCount !== listingRecord.totalCount || source.page !== page
+        || source.products.length !== expectedProducts
+        || source.products.some((product) => Object.keys(product).some((key) => !listingKeys.has(key))
+            || product.price !== null || product.stock_status !== 'contact'
+            || product.is_active !== true || product.is_promotion !== false
+            || !Array.isArray(product.variant_options) || product.variant_options.length !== 0)
+        || products.some((product) => !isPublicSnapshotListingProduct(product, category, listing))) {
+        throw new Error('PUBLIC_CATALOGUE_UNAVAILABLE')
+    }
 
     return {
         contract: PUBLIC_SNAPSHOT_LISTING_CONTRACT,

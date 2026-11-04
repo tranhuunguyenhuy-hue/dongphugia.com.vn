@@ -66,6 +66,17 @@ describe('public snapshot listing shard projection', () => {
         expect(Object.keys(shard!.products[0])).not.toContain('sale_price')
     })
 
+    it('serves a listing page containing a verified variant without leaking variant metadata', async () => {
+        mocks.getProducts.mockResolvedValue({
+            products: [{ ...product(49), variant_group: 'public-17', variant_type: 'size', variant_label: 'Kích thước 49' }],
+            totalCount: 49,
+            page: 2,
+        })
+        const shard = await getPublicSnapshotListingShard('thiet-bi-bep', 'voi-rua-chen', 2)
+        expect(shard?.products).toHaveLength(1)
+        expect(Object.keys(shard!.products[0])).not.toContain('variant_group')
+    })
+
     it('returns not-found for absent category/listing and out-of-range shard pages', async () => {
         mocks.getProducts.mockResolvedValue({ products: [], totalCount: 49, page: 3 })
         expect(await getPublicSnapshotListingShard('thiet-bi-bep', 'voi-rua-chen', 3)).toBeNull()
