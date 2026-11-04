@@ -1,6 +1,7 @@
 import { readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { isSafePublicContent } from './public-product-content.mjs'
+import { isRestoredPublicPricing } from './public-restored-pricing.mjs'
 
 const fail=reason=>{throw new Error(`PREVIEW2_CANDIDATE_${reason}`)}
 async function boundedJson(file,max=2_000_000){
@@ -11,27 +12,42 @@ async function boundedJson(file,max=2_000_000){
 export async function auditPreview2Candidate(buildRoot,{minProducts=5000,expectedBuckets=256}={}){
  const root=path.resolve(buildRoot,'assets/__catalogue/v1')
  const manifest=await boundedJson(path.join(root,'manifest.json'))
- if(manifest.contract!=='dpg:public-catalogue-snapshot:v1'||manifest.contentPolicy!=='canonical-public-content-v3'
+ const restored=manifest.contentPolicy==='canonical-public-content-v4'
+ if(manifest.contract!=='dpg:public-catalogue-snapshot:v1'||!['canonical-public-content-v3','canonical-public-content-v4'].includes(manifest.contentPolicy)
    ||!Number.isSafeInteger(manifest.products)||manifest.products<minProducts
    ||!Array.isArray(manifest.productBuckets)||manifest.productBuckets.length!==expectedBuckets)fail('MANIFEST_IDENTITY')
  const products=new Map(),paths=new Set()
- let referencePrices=0,descriptionBlocks=0
+ let referencePrices=0,descriptionBlocks=0,publicPrices=0,onlineFinalPrices=0,hitaPrices=0,manualPrices=0,verifiedOriginalPrices=0,richDescriptions=0,productsWithDocuments=0
  for(const bucket of manifest.productBuckets){
   if(!/^[a-f0-9]{2}$/.test(bucket))fail('BUCKET_NAME')
   const asset=await boundedJson(path.join(root,'products',`${bucket}.json`))
   if(asset.contract!==manifest.contract||asset.checkpoint!==manifest.checkpoint||!Array.isArray(asset.products))fail('BUCKET_IDENTITY')
   for(const product of asset.products){
+   const priceKeys=['price','original_price','list_price','sale_price','online_discount_amount','final_online_price','price_display','is_promotion','price_provenance']
+   const price=Object.fromEntries(priceKeys.map(key=>[key,product[key]]))
    if(!Number.isSafeInteger(product.id)||products.has(product.id)||typeof product.url!=='string'||paths.has(product.url)
-     ||product.price!==null||product.price_display!=='Liên hệ báo giá'||product.stock_status!=='contact'
-     ||product.is_promotion!==false||!Array.isArray(product.variant_options)||product.variant_options.length!==0
+     ||(restored?!isRestoredPublicPricing(price):product.price!==null||product.price_display!=='Liên hệ báo giá'||product.is_promotion!==false)
+     ||product.stock_status!=='contact'||!Array.isArray(product.variant_options)||product.variant_options.length!==0
      ||!isSafePublicContent(product.publicContent))fail('PRODUCT_UNSAFE')
    products.set(product.id,product);paths.add(product.url)
    if(product.publicContent.referencePrice)referencePrices++
    if(product.publicContent.descriptionBlocks.length)descriptionBlocks++
+   if(product.price!==null)publicPrices++
+   if(product.final_online_price!==null&&product.final_online_price!==undefined)onlineFinalPrices++
+   if(product.price_provenance==='legacy-hita-pm-approved-2026-11-03')hitaPrices++
+   if(product.price_provenance==='legacy-manual-2026-07-02')manualPrices++
+   if(product.original_price!==null&&product.original_price!==undefined)verifiedOriginalPrices++
+   if(product.publicContent.descriptionHtml)richDescriptions++
+   if(product.publicContent.documents?.length)productsWithDocuments++
   }
  }
  if(products.size!==manifest.products||referencePrices!==manifest.contentStats?.referencePrices
-   ||descriptionBlocks!==manifest.contentStats?.descriptionBlocks)fail('COUNT_MISMATCH')
+   ||descriptionBlocks!==manifest.contentStats?.descriptionBlocks
+   ||(restored&&(publicPrices!==manifest.contentStats?.publicPrices||onlineFinalPrices!==manifest.contentStats?.onlineFinalPrices
+    ||hitaPrices!==manifest.contentStats?.hitaPrices||manualPrices!==manifest.contentStats?.manualPrices
+    ||verifiedOriginalPrices!==manifest.contentStats?.verifiedOriginalPrices
+    ||richDescriptions!==manifest.contentStats?.richDescriptions||productsWithDocuments!==manifest.contentStats?.productsWithDocuments
+    ||publicPrices!==hitaPrices+manualPrices)))fail('COUNT_MISMATCH')
  let variantProducts=0
  const groups=manifest.variantGroups
  if(!groups||typeof groups!=='object'||Array.isArray(groups))fail('VARIANT_GROUPS_MISSING')
@@ -41,7 +57,7 @@ export async function auditPreview2Candidate(buildRoot,{minProducts=5000,expecte
    const canonical=products.get(member.id)
    if(!canonical||canonical.variant_group!==key||canonical.url!==member.url
      ||canonical.sku!==member.sku||canonical.variant_label!==member.variant_label
-     ||member.price!==null||member.stock_status!=='contact'||member.publicContent!==undefined)fail('VARIANT_TARGET_UNSAFE')
+     ||member.price!==canonical.price||member.stock_status!=='contact'||member.publicContent!==undefined)fail('VARIANT_TARGET_UNSAFE')
    variantProducts++
   }
  }
@@ -61,7 +77,7 @@ export async function auditPreview2Candidate(buildRoot,{minProducts=5000,expecte
       ||!Array.isArray(shard.products)||shard.products.length!==expected)fail('LISTING_SHARD')
     for(const product of shard.products){
      const canonical=products.get(product.id)
-     if(!canonical||canonical.url!==product.url
+     if(!canonical||canonical.url!==product.url||canonical.price!==product.price
        ||canonical.categories?.slug!==category.slug||canonical.subcategories?.slug!==listing.slug
        ||listingIds.has(product.id))fail('LISTING_PRODUCT')
      listingIds.add(product.id)
@@ -74,10 +90,32 @@ export async function auditPreview2Candidate(buildRoot,{minProducts=5000,expecte
   }
  }
  if(listingCount!==manifest.listingProducts)fail('LISTING_COUNT')
+ let searchProducts=0
+ if(restored){
+  if(!Array.isArray(manifest.searchShards)||manifest.searchShards.join(',')!=='0,1,2,3')fail('SEARCH_MANIFEST')
+  const seenSearch=new Set()
+  for(const shard of manifest.searchShards){
+   const asset=await boundedJson(path.join(root,'search',`${shard}.json`))
+   if(asset.contract!==manifest.contract||asset.checkpoint!==manifest.checkpoint||!Array.isArray(asset.products))fail('SEARCH_SHARD')
+   for(const item of asset.products){
+    const canonical=products.get(item.id)
+    if(!canonical||seenSearch.has(item.id)||canonical.url!==item.url||canonical.sku!==item.sku
+      ||canonical.price!==item.price||canonical.list_price!==item.list_price
+      ||canonical.sale_price!==item.sale_price
+      ||canonical.final_online_price!==item.final_online_price
+      ||JSON.stringify(canonical.product_feature_values)!==JSON.stringify(item.product_feature_values)
+      ||JSON.stringify(canonical.colors)!==JSON.stringify(item.colors)
+      ||item.id%4!==Number(shard))fail('SEARCH_PRODUCT')
+    seenSearch.add(item.id);searchProducts++
+   }
+  }
+  if(searchProducts!==manifest.searchProducts||searchProducts>products.size)fail('SEARCH_COUNT')
+ }
  return {status:'PASS',contract:'dpg:preview2-candidate-audit:v1',products:products.size,
-  historicalReferencePrices:referencePrices,contactOnlyProducts:products.size-referencePrices,
+  historicalReferencePrices:referencePrices,contactOnlyProducts:products.size-(restored?publicPrices:referencePrices),
+  publicPrices,hitaPrices,manualPrices,verifiedOriginalPrices,onlineFinalPrices,richDescriptions,productsWithDocuments,searchProducts,
   descriptionBlockProducts:descriptionBlocks,variantGroups:Object.keys(groups).length,variantProducts,listingCount,listingPages,
-  transactionalPrices:'CONTACT_ONLY',privateFieldsExported:false}
+  transactionalPrices:restored?'RESTORED_HISTORICAL_PUBLIC':'CONTACT_ONLY',privateFieldsExported:false}
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===new URL(import.meta.url).pathname){
  const [, ,buildRoot,output]=process.argv

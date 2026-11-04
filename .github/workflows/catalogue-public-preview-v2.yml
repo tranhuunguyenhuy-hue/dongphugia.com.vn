@@ -187,6 +187,7 @@ jobs:
           DIRECT_PUBLIC_PREVIEW_PUBLISH: 'false'
           PUBLIC_CATALOGUE_M1_CHECKPOINT: ${{ inputs.checkpoint }}
           PUBLIC_CATALOGUE_M3_RUN_ID: ${{ inputs.m3_run_id }}
+          PUBLIC_PRICE_EXCEPTIONS_PATH: ${{ github.workspace }}/.artifacts/dpg-public-catalogue-preview/evidence/price-exceptions.json
         run: |
           set -euo pipefail
           set +x
@@ -327,7 +328,7 @@ jobs:
           name: public-catalogue-preview-${{ github.sha }}
           path: ${{ env.ARTIFACT_ROOT }}
           include-hidden-files: true
-          retention-days: 1
+          retention-days: 7
           if-no-files-found: error
       - name: Download the exact existing managed Preview evidence
         if: inputs.publish && inputs.managed_preview_run_id != ''

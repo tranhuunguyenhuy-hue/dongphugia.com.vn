@@ -34,6 +34,8 @@ export function ProductPrice({ price, originalPrice, listPrice, salePrice, price
     const numPrice = commerce.displayPrice ?? 0
     const numOriginal = commerce.originalPrice ?? 0
     const numOnlineDiscount = Number(onlineDiscountAmount)
+    const finalOnlinePrice = hasFiniteOnlineDiscount(numPrice, numOnlineDiscount) && commerce.priceMode === 'PUBLIC_PRICE'
+        ? numPrice - numOnlineDiscount : null
     const hasDiscount = commerce.salePrice !== null
     const statusDisplay = priceDisplay || 'Liên hệ báo giá'
     const hasPublicPrice = commerce.priceMode === 'PUBLIC_PRICE'
@@ -101,6 +103,7 @@ export function ProductPrice({ price, originalPrice, listPrice, salePrice, price
                                     </span>
                                     <span className="text-[13px] font-medium text-stone-600">khi đặt Online</span>
                                 </div>
+                                {finalOnlinePrice !== null && <div className="text-[14px] font-bold text-emerald-800">Giá cuối online: {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(finalOnlinePrice)}</div>}
                             </div>
                         </div>
                     )}
@@ -255,3 +258,5 @@ export function ProductPrice({ price, originalPrice, listPrice, salePrice, price
         </ProductOptionsContext.Provider>
     )
 }
+
+function hasFiniteOnlineDiscount(price:number, discount:number){return Number.isSafeInteger(price)&&price>0&&Number.isSafeInteger(discount)&&discount>0&&discount<price}

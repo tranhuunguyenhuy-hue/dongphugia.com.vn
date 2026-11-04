@@ -54,7 +54,7 @@ function shard(page: number, all: PublicSnapshotListingProduct[], totalCount = a
 describe('public snapshot listing contract', () => {
     it('parses multi-brand OR and featured AND filters from direct URL state', () => {
         const filters = parsePublicSnapshotListingFilters(new URLSearchParams('brand=brand-a,brand-b&is_featured=true&page=2'))
-        expect(filters).toEqual({ brands: ['brand-a', 'brand-b'], featured: true, page: 2 })
+        expect(filters).toEqual({ brands: ['brand-a', 'brand-b'], featured: true, page: 2,sort:'default' })
 
         const products = [
             product(1, 'brand-a', false),
@@ -80,13 +80,22 @@ describe('public snapshot listing contract', () => {
         expect(parsePublicSnapshotListingFilters(new URLSearchParams('brand=a,a'))).toBeNull()
         expect(parsePublicSnapshotListingFilters(new URLSearchParams('brand=a&brand=b'))).toBeNull()
         expect(parsePublicSnapshotListingFilters(new URLSearchParams('brand=bad/slug'))).toBeNull()
-        expect(parsePublicSnapshotListingFilters(new URLSearchParams('price=100-200'))).toBeNull()
-        expect(parsePublicSnapshotListingFilters(new URLSearchParams('sort=price-asc'))).toBeNull()
+        expect(parsePublicSnapshotListingFilters(new URLSearchParams('price=200-100'))).toBeNull()
+        expect(parsePublicSnapshotListingFilters(new URLSearchParams('sort=unknown'))).toBeNull()
+        expect(parsePublicSnapshotListingFilters(new URLSearchParams('price=100-200&sort=price-asc'))).toMatchObject({priceRange:[100,200],sort:'price-asc'})
         expect(parsePublicSnapshotListingFilters(new URLSearchParams('is_featured=false'))).toBeNull()
         const supportedCap = Array.from({ length: 32 }, (_, index) => `brand-${index}`).join(',')
         expect(parsePublicSnapshotListingFilters(new URLSearchParams(`brand=${supportedCap}`))?.brands).toHaveLength(32)
         const overCap = Array.from({ length: 33 }, (_, index) => `brand-${index}`).join(',')
         expect(parsePublicSnapshotListingFilters(new URLSearchParams(`brand=${overCap}`))).toBeNull()
+    })
+    it('sorts restored prices and filters a range without treating absent prices as zero',()=>{
+        const priced=(id:number,price:number|null)=>({...product(id,'brand-a',false),price})
+        const products=[priced(1,null),priced(2,2400000),priced(3,1200000)]
+        const filters=parsePublicSnapshotListingFilters(new URLSearchParams('sort=price-asc'))!
+        expect(filterPublicSnapshotListing(products,filters,12).products.map(p=>p.id)).toEqual([3,2,1])
+        const range=parsePublicSnapshotListingFilters(new URLSearchParams('price=1000000-2000000'))!
+        expect(filterPublicSnapshotListing(products,range,12).products.map(p=>p.id)).toEqual([3])
     })
 
     it('rejects a shard with changed checkpoint, missing items, or price leakage', () => {

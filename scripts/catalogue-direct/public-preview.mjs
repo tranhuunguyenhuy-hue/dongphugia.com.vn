@@ -226,14 +226,17 @@ export async function verifySnapshotHttps({baseUrl,sourceSha,checkpoint,m3RunId,
     const response=await request(pathname);const html=await response.text()
     gate(response.status===200&&response.headers.get('X-DPG-Source-SHA')===sourceSha
       &&response.headers.get('X-Robots-Tag')?.includes('noindex'),'PUBLIC_PREVIEW_REAL_ROUTE')
-    if(pathname===product.url) gate(html.includes('Liên hệ')&&!html.includes('Mã fixture:'),'PUBLIC_PREVIEW_CONTACT_PRICING')
+    if(pathname===product.url) gate((manifest.contentPolicy==='canonical-public-content-v4'
+      ?html.includes(product.price===null?'Liên hệ':new Intl.NumberFormat('vi-VN').format(product.price))
+      :html.includes('Liên hệ'))&&!html.includes('Mã fixture:'),'PUBLIC_PREVIEW_CONTACT_PRICING')
   }
   const missing=await request('/not-a-public-catalogue-route-160')
   gate(missing.status===404,'PUBLIC_PREVIEW_UNKNOWN_ROUTE')
   return {contract:'dpg:public-real-catalogue-preview:v1',sourceCommit:sourceSha,checkpoint,m3RunId,
     previewUrl:baseUrl,publicProducts:state.publicProducts,listingProducts:state.listingProducts,
     servedSnapshotHash:sha256(body),routesChecked:paths.length,unknownRoute:404,
-    transactionalPrices:'CONTACT_ONLY',historicalReferencePrices:manifest.contentStats?.referencePrices??0,
+    transactionalPrices:manifest.contentPolicy==='canonical-public-content-v4'?'RESTORED_HISTORICAL_PUBLIC':'CONTACT_ONLY',
+    publicPrices:manifest.contentStats?.publicPrices??0,historicalReferencePrices:manifest.contentStats?.referencePrices??0,
     admin:'deferred',productionDns:'HOLD'}
 }
 function parseArgs(args) { const out={};for(let i=0;i<args.length;i+=2){gate(args[i]?.startsWith('--')&&args[i+1],'PUBLIC_PREVIEW_ARGUMENT');out[args[i].slice(2)]=args[i+1]}return out }

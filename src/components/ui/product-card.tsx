@@ -77,6 +77,11 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
         compatibilityPrice: product.price,
         stockStatus: product.stock_status,
     });
+    const onlineDiscount = Number(product.online_discount_amount);
+    const finalOnlinePrice = commerce.priceMode === 'PUBLIC_PRICE'
+        && Number.isSafeInteger(onlineDiscount) && onlineDiscount > 0
+        && onlineDiscount < (commerce.displayPrice ?? 0)
+        ? (commerce.displayPrice ?? 0) - onlineDiscount : null;
 
     let discountPercent = 0;
     if (commerce.salePrice !== null && commerce.originalPrice !== null) {
@@ -262,6 +267,7 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
                                     Giảm thêm {formatPrice(Number(product.online_discount_amount))}
                                 </span>
                             )}
+                            {finalOnlinePrice !== null && <span className="text-[12px] font-bold text-emerald-800">Giá cuối online: {formatPrice(finalOnlinePrice)}</span>}
                         </>
                     ) : (
                         <span className="font-semibold text-[14px] text-[#2E7A96] tracking-tight">

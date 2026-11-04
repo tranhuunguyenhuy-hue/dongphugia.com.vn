@@ -76,6 +76,14 @@ describe('public snapshot listing shard projection', () => {
         expect(shard?.products).toHaveLength(1)
         expect(Object.keys(shard!.products[0])).not.toContain('variant_group')
     })
+    it('keeps the restored Hita price when the original price is absent',async()=>{
+        mocks.getProducts.mockResolvedValue({products:[{...product(49),price:21223200,price_display:null,
+            original_price:null,list_price:21223200,sale_price:null,online_discount_amount:null,
+            final_online_price:null,price_provenance:'legacy-hita-pm-approved-2026-11-03',
+            product_feature_values:[],colors:null}],totalCount:49,page:2})
+        const shard=await getPublicSnapshotListingShard('thiet-bi-bep','voi-rua-chen',2)
+        expect(shard?.products[0]).toMatchObject({price:21223200,original_price:null,list_price:21223200})
+    })
 
     it('returns not-found for absent category/listing and out-of-range shard pages', async () => {
         mocks.getProducts.mockResolvedValue({ products: [], totalCount: 49, page: 3 })

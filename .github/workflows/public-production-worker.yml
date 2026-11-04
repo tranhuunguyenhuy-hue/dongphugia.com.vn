@@ -8,6 +8,14 @@ on:
         type: boolean
         default: false
         required: true
+      candidate_run_id:
+        description: Successful same-source Public Preview candidate run for the restored v4 snapshot
+        type: string
+        required: true
+      candidate_manifest_sha256:
+        description: SHA-256 of the approved v4 manifest.json; required with candidate_run_id
+        type: string
+        required: true
 
 permissions:
   contents: read
@@ -28,11 +36,33 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - name: Recover the locked public snapshot and audit every listing shard
+      - name: Verify the approved restored candidate producer
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
+          CANDIDATE_MANIFEST_SHA256: ${{ inputs.candidate_manifest_sha256 }}
+        run: |
+          set -euo pipefail
+          [[ "$CANDIDATE_RUN_ID" =~ ^[0-9]+$ ]]
+          [[ "$CANDIDATE_MANIFEST_SHA256" =~ ^[a-f0-9]{64}$ ]]
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$CANDIDATE_RUN_ID" > "$RUNNER_TEMP/producer.json"
+          jq -e --arg sha "$GITHUB_SHA" '.conclusion=="success" and .head_sha==$sha and .head_branch=="main" and .event=="workflow_dispatch" and .run_attempt==1 and .path==".github/workflows/catalogue-public-preview-v2.yml" and .actor.login=="tranhuunguyenhuy-hue"' "$RUNNER_TEMP/producer.json" >/dev/null
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: public-catalogue-preview-${{ github.sha }}
+          path: ${{ runner.temp }}/accepted-public
+          run-id: ${{ inputs.candidate_run_id }}
+          github-token: ${{ github.token }}
+      - name: Audit the exact restored snapshot and manifest digest
+        env:
+          CANDIDATE_MANIFEST_SHA256: ${{ inputs.candidate_manifest_sha256 }}
         run: |
           set -euo pipefail
           npm ci
-          node scripts/catalogue-direct/fetch-locked-public-snapshot.mjs "$RUNNER_TEMP/accepted-public/build/assets"
+          snapshot="$RUNNER_TEMP/accepted-public/build/assets/__catalogue/v1/manifest.json"
+          test -f "$snapshot"
+          test "$(sha256sum "$snapshot" | cut -d' ' -f1)" = "$CANDIDATE_MANIFEST_SHA256"
+          jq -e '.contentPolicy=="canonical-public-content-v4" and .contentStats.publicPrices>0 and .searchProducts>0' "$snapshot" >/dev/null
           node scripts/catalogue-direct/preview2-candidate-audit.mjs "$RUNNER_TEMP/accepted-public/build" "$RUNNER_TEMP/accepted-public-audit.json"
       - name: Validate snapshot identity and install pinned tools
         id: identity
@@ -41,7 +71,7 @@ jobs:
           snapshot="$RUNNER_TEMP/accepted-public/build/assets/__catalogue/v1/manifest.json"
           test -f "$snapshot"
           checkpoint="$(jq -er '.checkpoint | select(test("^[a-f0-9]{40}$"))' "$snapshot")"
-          jq -e '.contract=="dpg:public-catalogue-snapshot:v1" and .products==5223 and .listingProducts==4853 and .contentPolicy=="canonical-public-content-v3"' "$snapshot" >/dev/null
+          jq -e '.contract=="dpg:public-catalogue-snapshot:v1" and .products==5223 and .listingProducts==4853 and .contentPolicy=="canonical-public-content-v4"' "$snapshot" >/dev/null
           echo "checkpoint=$checkpoint" >> "$GITHUB_OUTPUT"
           npm ci --prefix apps/public
       - name: Build Production Worker with canonical origin and public-only snapshot

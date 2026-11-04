@@ -124,6 +124,9 @@ export function classifyPublicApiRequest(request: Request): PublicApiRequestDeci
   const ownsHealth = PUBLIC_ROUTE_OWNERSHIP.some((route) =>
     route.owner === 'public' && route.path === '/api/health' && route.purpose === 'runtime-probe',
   ) && pathname === '/api/health'
+  const ownsSearch = PUBLIC_ROUTE_OWNERSHIP.some((route) =>
+    route.owner === 'public' && route.path === '/api/search' && route.purpose === 'catalogue-search-snapshot-readonly',
+  ) && pathname === '/api/search'
   const ownsListingShardRoute = PUBLIC_ROUTE_OWNERSHIP.some((route) =>
     route.owner === 'public'
       && route.path === '/api/catalogue/listings/[categorySlug]/[listingSlug]'
@@ -135,7 +138,7 @@ export function classifyPublicApiRequest(request: Request): PublicApiRequestDeci
     && listingMatch !== null
     && LISTING_API_FAMILIES.has(listingMatch[1])
     && LISTING_API_SLUG.test(listingMatch[2])
-  if (!ownsHealth && !validListingRoute) return 'not-found'
+  if (!ownsHealth && !ownsSearch && !validListingRoute) return 'not-found'
   if (request.method !== 'GET' && request.method !== 'HEAD') return 'method-not-allowed'
   return 'allow'
 }

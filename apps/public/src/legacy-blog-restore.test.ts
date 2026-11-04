@@ -14,6 +14,7 @@ import {
   getLegacyBlogPost,
   getLegacyBlogPostsForCategory,
   historicalBlogImage,
+  restoreHistoricalBlogArticleLinks,
 } from './runtime/legacy-blog'
 
 const root = resolve(import.meta.dirname, '../../..')
@@ -73,7 +74,7 @@ describe('Owner-requested legacy blog restoration', () => {
     expect(historicalBlogImage('https://media.dongphugia.vn/publishing/unverified.webp')).toBeNull()
   })
 
-  it('routes only the two Owner-verified broken Blog thumbnails through Bunny', () => {
+  it('routes the verified old Blog images through Bunny', () => {
     const cases = [
       {
         id: 11,
@@ -88,10 +89,13 @@ describe('Owner-requested legacy blog restoration', () => {
       const post = blogPosts.find((item) => item.id === id)
       expect(post).toBeDefined()
       expect(historicalBlogImage(post!.thumbnail_url)).toBe(expected)
-      expect(historicalBlogImage(post!.cover_image_url)).toBe(post!.cover_image_url)
+      expect(historicalBlogImage(post!.cover_image_url)).toBe(post!.cover_image_url?.replace('https://cdn.dongphugia.com.vn/','https://dpg-products.b-cdn.net/'))
     }
     expect(historicalBlogImage('https://cdn.dongphugia.com.vn/blog/not-verified.png'))
-      .toBe('https://cdn.dongphugia.com.vn/blog/not-verified.png')
+      .toBeNull()
+    const html=restoreHistoricalBlogArticleLinks('<p><img src="https://cdn.dongphugia.com.vn/blog/1782900583342-xau1gc.png"><a href="https://www.dongphugia.com.vn/thiet-bi-ve-sinh/bon-cau?sub=bon-cau&amp;brand=toto">Xem</a></p>')
+    expect(html).toContain('https://dpg-products.b-cdn.net/blog/1782900583342-xau1gc.png')
+    expect(html).toContain('https://www.dongphugia.vn/thiet-bi-ve-sinh/bon-cau?brand=toto')
   })
 
   it('restores actual Worker routes and removes the news placeholder from smoke tests', () => {
