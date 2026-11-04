@@ -27,6 +27,21 @@ const postgresFailureKinds = new Set([
   'other',
 ])
 const sanitizedCauseNames = new Set(['AssertionError', 'Error', 'RangeError', 'TypeError'])
+const sanitizedDatabaseMessageCodes = new Set([
+  'DPG_PHASE2_TARGET_CONTRACT_FAILED',
+  'DPG_PHASE2_DPG_APP_SCHEMA_MISMATCH',
+  'DPG_PHASE2_PRODUCT_PRICING_SCHEMA_MISMATCH',
+  'DPG_PHASE2_MIGRATION_ROLE_CONTRACT_FAILED',
+  'DPG_PHASE2_MIGRATION_ALREADY_PRESENT',
+  'DPG_PHASE2_POLICY_NAME_COLLISION',
+  'DPG_PHASE2_ANON_PRIVILEGE_PREEXISTS',
+  'DPG_PHASE2_POSTFLIGHT_FAILED',
+  'DPG_PHASE2_ADMIN_TARGET_CONTRACT_FAILED',
+  'DPG_PHASE2_ADMIN_BASELINE_MISSING',
+  'DPG_PHASE2_ADMIN_PRIVILEGE_BASELINE_MISMATCH',
+  'DPG_PHASE2_ADMIN_MIGRATION_ALREADY_PRESENT',
+  'DPG_PHASE2_ADMIN_POSTFLIGHT_FAILED',
+])
 const builtinErrorPrototypeNames = new Map([
   [Error.prototype, 'Error'],
   [RangeError.prototype, 'RangeError'],
@@ -134,7 +149,17 @@ function sanitizedCauseName(error) {
 function sanitizedErrorCause(error, failureKind) {
   const safeName = sanitizedCauseName(error)
   const safeFailureKind = postgresFailureKinds.has(failureKind) ? failureKind : 'other'
-  const cause = new Error(`SANITIZED_CAUSE name=${safeName} failure=${safeFailureKind}`)
+  const rawSqlState = errorDataValue(error, 'code')
+  const safeSqlState = typeof rawSqlState === 'string' && /^[0-9A-Z]{5}$/.test(rawSqlState)
+    ? rawSqlState
+    : 'unknown'
+  const rawMessageCode = errorDataValue(error, 'message')
+  const safeMessageCode = sanitizedDatabaseMessageCodes.has(rawMessageCode)
+    ? rawMessageCode
+    : undefined
+  const safeDetails = [`sqlstate=${safeSqlState}`]
+  if (safeMessageCode) safeDetails.push(`message_code=${safeMessageCode}`)
+  const cause = new Error(`SANITIZED_CAUSE name=${safeName} failure=${safeFailureKind} ${safeDetails.join(' ')}`)
   cause.name = 'SanitizedIntegrationCause'
   cause.stack = `${cause.name}: ${cause.message}`
   return cause
@@ -258,6 +283,19 @@ describe('PostgreSQL integration failure diagnostics', () => {
       expect(failureKind).toBe(expectedKind)
       expect(diagnosticText(failure)).not.toContain(error.message)
     }
+  })
+
+  it('reports only allowlisted SQLSTATE and Phase 2 migration error codes', () => {
+    const error = Object.assign(new Error('DPG_PHASE2_ADMIN_POSTFLIGHT_FAILED'), { code: 'P0001' })
+    const { failure } = postgresIntegrationFailure(error, 'resume_ordered_pending_migrations')
+
+    expect(diagnosticText(failure)).toContain('sqlstate=P0001')
+    expect(diagnosticText(failure)).toContain('message_code=DPG_PHASE2_ADMIN_POSTFLIGHT_FAILED')
+
+    const privateError = Object.assign(new Error('CUSTOMER_PHONE_SECRET'), { code: 'P0001' })
+    const privateFailure = postgresIntegrationFailure(privateError, 'resume_ordered_pending_migrations')
+    expect(diagnosticText(privateFailure.failure)).not.toContain('CUSTOMER_PHONE_SECRET')
+    expect(diagnosticText(privateFailure.failure)).not.toContain('message_code=')
   })
 
   it('bounds traversal of a long hostile proxy prototype chain', () => {
@@ -695,7 +733,7 @@ describe('Supabase runtime migration adoption integration', () => {
         await executeRuntimeMigrations(client, 'apply', attestCheckpoint)
 
         const ledger = await client.query('select count(*)::integer as count from dpg_control.runtime_migration_ledger')
-        expect(ledger.rows[0]?.count).toBe(23)
+        expect(ledger.rows[0]?.count).toBe(EXPECTED_RUNTIME_MIGRATIONS.length)
 
         phase = 'verify_database_size_guard'
         const databaseSizeBefore = await assertDatabaseSizeWithinContract(client)
