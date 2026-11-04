@@ -48,6 +48,11 @@ export async function auditPreview2Candidate(buildRoot,{minProducts=5000,expecte
     ||verifiedOriginalPrices!==manifest.contentStats?.verifiedOriginalPrices
     ||richDescriptions!==manifest.contentStats?.richDescriptions||productsWithDocuments!==manifest.contentStats?.productsWithDocuments
     ||publicPrices!==hitaPrices+manualPrices)))fail('COUNT_MISMATCH')
+ if((restored&&manifest.sitemapProductIds===undefined)
+   ||(manifest.sitemapProductIds!==undefined
+     &&(!Array.isArray(manifest.sitemapProductIds)||manifest.sitemapProductIds.length>products.size
+       ||manifest.sitemapProductIds.some((id,index)=>!Number.isSafeInteger(id)||!products.has(id)
+         ||(index>0&&id<=manifest.sitemapProductIds[index-1])))))fail('SITEMAP_PRODUCT_IDS')
  let variantProducts=0
  const groups=manifest.variantGroups
  if(!groups||typeof groups!=='object'||Array.isArray(groups))fail('VARIANT_GROUPS_MISSING')
