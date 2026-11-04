@@ -57,6 +57,10 @@ const sanitizedDatabaseObjectNames = {
     'safe_response', 'status', 'updated_at',
   ]),
 }
+const sanitizedDatabaseRoutineNames = new Set([
+  'aclcheck_error', 'aclcheck_error_col', 'aclcheck_error_string',
+  'member_can_set_role',
+])
 const builtinErrorPrototypeNames = new Map([
   [Error.prototype, 'Error'],
   [RangeError.prototype, 'RangeError'],
@@ -189,6 +193,8 @@ function sanitizedErrorCause(error, failureKind) {
       safeDetails.push(`${field}=${value}`)
     }
   }
+  const routine = errorDataValue(error, 'routine')
+  if (sanitizedDatabaseRoutineNames.has(routine)) safeDetails.push(`postgres_routine=${routine}`)
   if (safeMessageCode) safeDetails.push(`message_code=${safeMessageCode}`)
   const cause = new Error(`SANITIZED_CAUSE name=${safeName} failure=${safeFailureKind} ${safeDetails.join(' ')}`)
   cause.name = 'SanitizedIntegrationCause'
@@ -369,6 +375,23 @@ describe('PostgreSQL integration failure diagnostics', () => {
       'resume_ordered_pending_migrations',
     )
     expect(diagnosticText(authSchemaFailure.failure)).toContain('schema=auth')
+
+    const routineError = Object.assign(new Error('private permission detail'), {
+      code: '42501', routine: 'aclcheck_error_col',
+    })
+    const routineFailure = postgresIntegrationFailure(
+      routineError,
+      'resume_ordered_pending_migrations',
+    )
+    expect(diagnosticText(routineFailure.failure)).toContain('postgres_routine=aclcheck_error_col')
+    const unlistedRoutineError = Object.assign(new Error('private permission detail'), {
+      code: '42501', routine: 'customer_lookup_private',
+    })
+    const unlistedRoutineFailure = postgresIntegrationFailure(
+      unlistedRoutineError,
+      'resume_ordered_pending_migrations',
+    )
+    expect(diagnosticText(unlistedRoutineFailure.failure)).not.toContain('postgres_routine=')
   })
 
   it('bounds traversal of a long hostile proxy prototype chain', () => {
