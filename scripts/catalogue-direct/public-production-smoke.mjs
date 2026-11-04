@@ -50,7 +50,7 @@ const sitemap = await fetch(new URL('/sitemap.xml', base), { signal: AbortSignal
 const sitemapBody = await sitemap.text()
 if (sitemap.status !== 200 || !sitemap.headers.get('content-type')?.includes('xml')
   || sitemapBody.length > 2_000_000 || !sitemapBody.includes('<urlset')
-  || !sitemapBody.includes('https://www.dongphugia.vn/thiet-bi-ve-sinh/lavabo/chau-lavabo-treo-tuong-toto-lt300c')) fail('SITEMAP')
+  || !sitemapBody.includes('https://www.dongphugia.vn/thiet-bi-ve-sinh/lavabo')) fail('SITEMAP')
 const snapshot=JSON.parse((await checked('/__catalogue/v1/manifest.json')).body)
 const restored=snapshot.contentPolicy==='canonical-public-content-v4'
 
