@@ -1,1 +1,59 @@
-/* The application shell intentionally has no Admin feature UI. */
+:root {
+  color-scheme: light;
+  font-family: Arial, Helvetica, sans-serif;
+  background: #f7f9fa;
+  color: #17212b;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; min-height: 100vh; }
+a { color: inherit; }
+
+.admin-page { width: min(1240px, calc(100% - 32px)); margin: 0 auto; padding: 36px 0 64px; }
+.admin-page h1 { margin: 0; font-size: clamp(26px, 4vw, 34px); letter-spacing: -0.03em; }
+.admin-page h2 { margin: 0 0 16px; font-size: 19px; }
+.admin-page-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; margin-bottom: 24px; }
+.admin-eyebrow { margin: 0 0 8px; color: #477186; font-size: 12px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; }
+.admin-muted { color: #687783; font-size: 14px; line-height: 1.6; }
+.admin-link { color: #17637e; font-weight: 600; text-decoration: none; }
+.admin-link:hover { text-decoration: underline; }
+.admin-filter-row, .admin-button-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.admin-filter-row { margin-bottom: 18px; }
+.admin-filter { display: inline-flex; min-height: 36px; align-items: center; border: 1px solid #d9e1e5; border-radius: 999px; background: #fff; color: #566570; padding: 0 14px; font-size: 13px; text-decoration: none; }
+.admin-filter-active { border-color: #236f8a; background: #236f8a; color: #fff; }
+.admin-panel { overflow: hidden; border: 1px solid #e0e6e9; border-radius: 14px; background: #fff; padding: 22px; box-shadow: 0 4px 16px rgb(26 55 70 / 4%); }
+.admin-empty { padding: 42px 22px; text-align: center; }
+.admin-table-wrap { overflow-x: auto; }
+.admin-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
+.admin-table th { background: #f6f8f9; color: #65737d; font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+.admin-table th, .admin-table td { border-bottom: 1px solid #edf0f2; padding: 13px 12px; white-space: nowrap; }
+.admin-table tbody tr:last-child td { border-bottom: 0; }
+.admin-order-number { font-variant-numeric: tabular-nums; }
+.admin-status-pill { display: inline-flex; border-radius: 999px; background: #fff5de; color: #865c0b; padding: 5px 9px; font-size: 12px; font-weight: 600; }
+.admin-table-footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; border-top: 1px solid #edf0f2; margin-top: 10px; padding-top: 18px; color: #687783; font-size: 13px; }
+.admin-button { display: inline-flex; min-height: 40px; align-items: center; justify-content: center; border: 1px solid #236f8a; border-radius: 9px; background: #236f8a; color: #fff; cursor: pointer; padding: 0 14px; font: inherit; font-size: 13px; font-weight: 700; text-decoration: none; }
+.admin-button:hover { background: #195b73; }
+.admin-button:disabled { cursor: wait; opacity: 0.65; }
+.admin-button-secondary { border-color: #d6dfe3; background: #fff; color: #374650; }
+.admin-button-secondary:hover { background: #f3f6f7; }
+.admin-detail-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 0.8fr); gap: 18px; align-items: start; }
+.admin-detail-wide { grid-column: 1 / -1; }
+.admin-definition-list { display: grid; gap: 15px; margin: 0; }
+.admin-definition-list div { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 14px; }
+.admin-definition-list dt { color: #687783; font-size: 13px; }
+.admin-definition-list dd { margin: 0; overflow-wrap: anywhere; font-size: 14px; }
+.admin-status-actions { display: grid; gap: 12px; margin: 16px 0; }
+.admin-status-actions .admin-muted { margin: 0; }
+.admin-error { border-radius: 8px; background: #fff1f0; color: #9d2c27; padding: 10px 12px; font-size: 13px; }
+.admin-order-totals { width: min(380px, 100%); margin: 18px 0 0 auto; }
+.admin-order-totals p { display: flex; justify-content: space-between; gap: 16px; color: #687783; font-size: 13px; }
+.admin-order-totals strong { color: #24313a; }
+.admin-order-totals .admin-total-row { border-top: 1px solid #e6ebed; padding-top: 12px; color: #24313a; font-size: 16px; font-weight: 700; }
+
+@media (max-width: 760px) {
+  .admin-page-header, .admin-table-footer { flex-direction: column; align-items: flex-start; }
+  .admin-detail-grid { grid-template-columns: 1fr; }
+  .admin-detail-wide { grid-column: auto; }
+  .admin-panel { padding: 16px; }
+  .admin-definition-list div { grid-template-columns: 1fr; gap: 4px; }
+}

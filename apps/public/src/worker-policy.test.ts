@@ -71,6 +71,9 @@ describe('Public Worker fail-closed policy', () => {
 
   it('allows only owned public GET/HEAD APIs and blocks arbitrary or mutating routes', () => {
     expect(classifyPublicApiRequest(new Request('https://preview.invalid/api/health'))).toBe('allow')
+    expect(classifyPublicApiRequest(new Request('https://preview.invalid/api/order-requests', { method: 'POST' }))).toBe('allow')
+    expect(classifyPublicApiRequest(new Request('https://preview.invalid/api/order-requests'))).toBe('method-not-allowed')
+    expect(classifyPublicApiRequest(new Request('https://preview.invalid/api/order-requests', { method: 'DELETE' }))).toBe('method-not-allowed')
     expect(classifyPublicApiRequest(new Request('https://preview.invalid/api/catalogue/listings/thiet-bi-bep/voi-rua-chen'))).toBe('allow')
     expect(classifyPublicApiRequest(new Request('https://preview.invalid/api/catalogue/listings/gach-op-lat/gach-van-da-marble', { method: 'HEAD' }))).toBe('allow')
     expect(classifyPublicApiRequest(new Request('https://preview.invalid/api/catalogue/listings/not-a-family/voi-rua-chen'))).toBe('not-found')

@@ -31,7 +31,7 @@ export async function requireActiveStaff(): Promise<AdminStaffContext> {
   const { data: claims, error: claimsError } = await supabase.auth.getClaims()
   if (claimsError || !claims?.claims?.sub) redirect('/login')
 
-  const { data, error } = await supabase.schema('dpg_v1_api').rpc('staff_context')
+  const { data, error } = await supabase.schema('public').rpc('phase2_admin_staff_context')
   if (error || !isActiveStaffContext(data)) redirect('/login?error=staff_access')
   return data
 }

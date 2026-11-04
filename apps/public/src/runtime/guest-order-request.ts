@@ -1,0 +1,273 @@
+import type { PublicWorkerEnvironment } from '../worker-policy'
+
+const MAX_REQUEST_BYTES = 16 * 1024
+const MAX_RESPONSE_BYTES = 4 * 1024
+const PUBLIC_CACHE_CONTROL = 'private, no-store'
+const PHONE_PATTERN = /^(?:\+84|0)(?:3|5|7|8|9)\d{8}$/
+const ORDER_NUMBER_PATTERN = /^DPG-[0-9]{6}-[0-9A-F]{8}$/
+const SAFE_ERROR_CODES = new Set([
+  'METHOD_NOT_ALLOWED',
+  'ORIGIN_FORBIDDEN',
+  'UNSUPPORTED_MEDIA_TYPE',
+  'REQUEST_TOO_LARGE',
+  'UNAUTHORIZED',
+  'INVALID_INPUT',
+  'INVALID_CUSTOMER_NAME',
+  'INVALID_CUSTOMER_PHONE',
+  'INVALID_CUSTOMER_EMAIL',
+  'INVALID_CUSTOMER_ADDRESS',
+  'INVALID_NOTE',
+  'INVALID_ITEM',
+  'INVALID_QUANTITY',
+  'DUPLICATE_PRODUCT',
+  'INVALID_INSTALL_OPTION',
+  'INVALID_IDEMPOTENCY_KEY',
+  'IDEMPOTENCY_KEY_REUSED',
+  'PRODUCT_UNAVAILABLE',
+  'PRODUCT_REQUIRES_QUOTE',
+  'ORDER_RATE_LIMITED',
+  'ORDER_REQUEST_FAILED',
+])
+
+export type GuestOrderEnvironment = Pick<PublicWorkerEnvironment,
+  'PUBLIC_ORDER_INTAKE_URL' | 'PUBLIC_SUPABASE_PUBLISHABLE_KEY' | 'ORDER_REQUEST_LIMITER'>
+
+class RequestFailure extends Error {
+  constructor(readonly status: number, readonly code: string) {
+    super(code)
+  }
+}
+
+function jsonResponse(body: unknown, status: number, requestId: string) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: {
+      'Cache-Control': PUBLIC_CACHE_CONTROL,
+      'Content-Type': 'application/json; charset=utf-8',
+      'X-Request-Id': requestId,
+    },
+  })
+}
+
+function configuredUpstream(environment: GuestOrderEnvironment): { endpoint: URL; publishableKey: string } {
+  const rawEndpoint = environment.PUBLIC_ORDER_INTAKE_URL
+  const publishableKey = environment.PUBLIC_SUPABASE_PUBLISHABLE_KEY
+  if (typeof rawEndpoint !== 'string' || typeof publishableKey !== 'string') {
+    throw new RequestFailure(503, 'ORDER_INTAKE_UNAVAILABLE')
+  }
+
+  let endpoint: URL
+  try {
+    endpoint = new URL(rawEndpoint)
+  } catch {
+    throw new RequestFailure(503, 'ORDER_INTAKE_UNAVAILABLE')
+  }
+
+  if (
+    endpoint.protocol !== 'https:' ||
+    !/^[a-z0-9-]+\.supabase\.co$/i.test(endpoint.hostname) ||
+    endpoint.pathname !== '/functions/v1/order-intake' ||
+    endpoint.username || endpoint.password || endpoint.search || endpoint.hash ||
+    !/^sb_publishable_[A-Za-z0-9_-]+$/.test(publishableKey)
+  ) throw new RequestFailure(503, 'ORDER_INTAKE_UNAVAILABLE')
+
+  return { endpoint, publishableKey }
+}
+
+async function readBoundedBody(request: Request, maxBytes: number): Promise<string> {
+  const contentLength = request.headers.get('content-length')
+  if (contentLength && Number(contentLength) > maxBytes) {
+    throw new RequestFailure(413, 'REQUEST_TOO_LARGE')
+  }
+
+  const reader = request.body?.getReader()
+  if (!reader) throw new RequestFailure(400, 'INVALID_JSON')
+
+  const chunks: Uint8Array[] = []
+  let totalBytes = 0
+  try {
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      totalBytes += value.byteLength
+      if (totalBytes > maxBytes) {
+        await reader.cancel()
+        throw new RequestFailure(413, 'REQUEST_TOO_LARGE')
+      }
+      chunks.push(value)
+    }
+  } finally {
+    reader.releaseLock()
+  }
+
+  const bytes = new Uint8Array(totalBytes)
+  let offset = 0
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset)
+    offset += chunk.byteLength
+  }
+
+  try {
+    return new TextDecoder('utf-8', { fatal: true }).decode(bytes)
+  } catch {
+    throw new RequestFailure(400, 'INVALID_JSON')
+  }
+}
+
+function normalizedPhoneFrom(input: unknown): string {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) {
+    throw new RequestFailure(400, 'INVALID_INPUT')
+  }
+  const phone = (input as Record<string, unknown>).customer_phone
+  if (typeof phone !== 'string') throw new RequestFailure(400, 'INVALID_CUSTOMER_PHONE')
+  const normalized = phone.trim().replace(/[\s().-]/g, '')
+  if (!PHONE_PATTERN.test(normalized)) throw new RequestFailure(400, 'INVALID_CUSTOMER_PHONE')
+  return normalized
+}
+
+async function digest(value: string): Promise<string> {
+  const result = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value))
+  return Array.from(new Uint8Array(result), (byte) => byte.toString(16).padStart(2, '0')).join('')
+}
+
+async function readBoundedResponse(response: Response): Promise<string> {
+  const reader = response.body?.getReader()
+  if (!reader) return ''
+  const chunks: Uint8Array[] = []
+  let totalBytes = 0
+  try {
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      totalBytes += value.byteLength
+      if (totalBytes > MAX_RESPONSE_BYTES) {
+        await reader.cancel()
+        throw new RequestFailure(502, 'ORDER_INTAKE_FAILED')
+      }
+      chunks.push(value)
+    }
+  } finally {
+    reader.releaseLock()
+  }
+  const bytes = new Uint8Array(totalBytes)
+  let offset = 0
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset)
+    offset += chunk.byteLength
+  }
+  return new TextDecoder().decode(bytes)
+}
+
+function upstreamErrorCode(value: unknown): string {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return 'ORDER_INTAKE_FAILED'
+  const error = (value as Record<string, unknown>).error
+  if (!error || typeof error !== 'object' || Array.isArray(error)) return 'ORDER_INTAKE_FAILED'
+  const code = (error as Record<string, unknown>).code
+  return typeof code === 'string' && SAFE_ERROR_CODES.has(code) ? code : 'ORDER_INTAKE_FAILED'
+}
+
+function statusForError(code: string): number {
+  if (code === 'ORIGIN_FORBIDDEN') return 403
+  if (code === 'UNAUTHORIZED') return 401
+  if (code === 'METHOD_NOT_ALLOWED') return 405
+  if (code === 'UNSUPPORTED_MEDIA_TYPE') return 415
+  if (code === 'REQUEST_TOO_LARGE') return 413
+  if (code === 'ORDER_RATE_LIMITED') return 429
+  if (code === 'IDEMPOTENCY_KEY_REUSED') return 409
+  if (code === 'PRODUCT_UNAVAILABLE') return 409
+  if (code === 'PRODUCT_REQUIRES_QUOTE') return 422
+  if (code.startsWith('INVALID_') || code === 'DUPLICATE_PRODUCT') return 400
+  return 503
+}
+
+export async function handleGuestOrderRequest(
+  request: Request,
+  environment: GuestOrderEnvironment,
+  fetcher: typeof fetch = fetch,
+): Promise<Response> {
+  const requestId = crypto.randomUUID()
+  if (request.method !== 'POST') {
+    return jsonResponse({ error: { code: 'METHOD_NOT_ALLOWED' } }, 405, requestId)
+  }
+
+  try {
+    const origin = request.headers.get('origin')
+    if (!origin || new URL(origin).origin !== new URL(request.url).origin) {
+      throw new RequestFailure(403, 'ORIGIN_FORBIDDEN')
+    }
+    if (!request.headers.get('content-type')?.toLowerCase().startsWith('application/json')) {
+      throw new RequestFailure(415, 'UNSUPPORTED_MEDIA_TYPE')
+    }
+
+    const idempotencyKey = request.headers.get('idempotency-key')?.trim()
+    if (!idempotencyKey || idempotencyKey.length < 8 || idempotencyKey.length > 200) {
+      throw new RequestFailure(400, 'INVALID_IDEMPOTENCY_KEY')
+    }
+
+    const bodyText = await readBoundedBody(request, MAX_REQUEST_BYTES)
+    let input: unknown
+    try {
+      input = JSON.parse(bodyText)
+    } catch {
+      throw new RequestFailure(400, 'INVALID_JSON')
+    }
+    const phone = normalizedPhoneFrom(input)
+    const upstream = configuredUpstream(environment)
+    const limiter = environment.ORDER_REQUEST_LIMITER
+    if (!limiter) throw new RequestFailure(503, 'ORDER_INTAKE_UNAVAILABLE')
+
+    const phoneHash = await digest(phone)
+    const rate = await limiter.limit({ key: `guest-order-phone:${phoneHash}` })
+    if (!rate.success) throw new RequestFailure(429, 'ORDER_RATE_LIMITED')
+
+    let response: Response
+    try {
+      response = await fetcher(upstream.endpoint, {
+        method: 'POST',
+        redirect: 'error',
+        signal: AbortSignal.timeout(10_000),
+        headers: {
+          'Content-Type': 'application/json',
+          'Idempotency-Key': idempotencyKey,
+          'Origin': origin,
+          'apikey': upstream.publishableKey,
+          'X-Request-Id': requestId,
+        },
+        body: bodyText,
+      })
+    } catch {
+      throw new RequestFailure(503, 'ORDER_INTAKE_UNAVAILABLE')
+    }
+
+    let payload: unknown
+    try {
+      payload = JSON.parse(await readBoundedResponse(response))
+    } catch (error) {
+      if (error instanceof RequestFailure) throw error
+      throw new RequestFailure(502, 'ORDER_INTAKE_FAILED')
+    }
+
+    if (!response.ok) {
+      const code = upstreamErrorCode(payload)
+      return jsonResponse({ error: { code } }, statusForError(code), requestId)
+    }
+
+    const data = payload && typeof payload === 'object' && !Array.isArray(payload)
+      ? (payload as Record<string, unknown>).data
+      : null
+    if (
+      !data || typeof data !== 'object' || Array.isArray(data) ||
+      typeof (data as Record<string, unknown>).order_number !== 'string' ||
+      !ORDER_NUMBER_PATTERN.test((data as Record<string, unknown>).order_number as string) ||
+      (data as Record<string, unknown>).status !== 'pending' ||
+      (data as Record<string, unknown>).payment_status !== 'unpaid'
+    ) throw new RequestFailure(502, 'ORDER_INTAKE_FAILED')
+
+    return jsonResponse({ data }, 201, requestId)
+  } catch (error) {
+    if (error instanceof RequestFailure) {
+      return jsonResponse({ error: { code: error.code } }, error.status, requestId)
+    }
+    return jsonResponse({ error: { code: 'ORDER_INTAKE_UNAVAILABLE' } }, 503, requestId)
+  }
+}

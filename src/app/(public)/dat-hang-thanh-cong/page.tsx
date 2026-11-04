@@ -5,8 +5,8 @@ import { Button } from '@/components/ui/button'
 import { siteConfig } from '@/config/site'
 
 export const metadata: Metadata = {
-    title: 'Đặt hàng thành công',
-    description: 'Đơn hàng của bạn đã được ghi nhận. Đông Phú Gia sẽ liên hệ xác nhận sớm nhất.',
+    title: 'Đã nhận yêu cầu đặt hàng',
+    description: 'Đông Phú Gia đã nhận yêu cầu và sẽ liên hệ xác nhận giá, tồn kho trước khi chốt.',
     robots: { index: false, follow: false },
 }
 
@@ -16,8 +16,7 @@ interface Props {
 
 export default async function OrderSuccessPage({ searchParams }: Props) {
     const { order } = await searchParams
-    const orderNumber = order ?? 'DPG-XXXXXXXX-XXXXXX'
-
+    const orderNumber = order && /^[A-Z0-9-]{3,32}$/.test(order) ? order : null
 
     return (
         <div className="min-h-[60vh] flex items-center justify-center px-5 py-16">
@@ -29,28 +28,30 @@ export default async function OrderSuccessPage({ searchParams }: Props) {
 
                 {/* Title */}
                 <h1 className="text-3xl font-bold text-neutral-900 mb-3">
-                    Đặt hàng thành công!
+                    Đã nhận yêu cầu đặt hàng
                 </h1>
                 <p className="text-neutral-600 text-lg mb-8 leading-relaxed">
-                    Cảm ơn bạn đã tin tưởng Đông Phú Gia. Chúng tôi đã ghi nhận đơn hàng của bạn.
+                    Cảm ơn bạn đã gửi yêu cầu đến Đông Phú Gia. Yêu cầu đang chờ nhân viên kiểm tra và xác nhận; đơn hàng chưa được chốt và bạn chưa phải thanh toán.
                 </p>
 
                 {/* Order Number Chip */}
-                <div className="inline-flex items-center gap-2 bg-[#EAF6FB] border border-[#C5E8F5] rounded-full px-6 py-3 mb-8">
-                    <span className="text-sm text-neutral-600">Mã đơn hàng:</span>
-                    <span className="font-bold text-[#2E7A96] text-lg tracking-widest">{orderNumber}</span>
-                </div>
+                {orderNumber && (
+                    <div className="inline-flex items-center gap-2 bg-[#EAF6FB] border border-[#C5E8F5] rounded-full px-6 py-3 mb-8">
+                        <span className="text-sm text-neutral-600">Mã tiếp nhận:</span>
+                        <span className="font-bold text-[#2E7A96] text-lg tracking-widest">{orderNumber}</span>
+                    </div>
+                )}
 
                 {/* Info Card */}
                 <div className="bg-neutral-50 border border-neutral-200 rounded-2xl p-6 mb-8 text-left space-y-3">
                     <h2 className="font-semibold text-neutral-900 mb-4">Bước tiếp theo</h2>
                     <div className="flex items-start gap-3">
                         <div className="w-6 h-6 rounded-full bg-[#2E7A96] text-white text-xs flex items-center justify-center font-bold shrink-0 mt-0.5">1</div>
-                        <p className="text-sm text-neutral-700">Nhân viên CSKH sẽ gọi điện xác nhận đơn hàng trong vòng <strong>30 phút</strong> (giờ hành chính).</p>
+                        <p className="text-sm text-neutral-700">Nhân viên sẽ liên hệ theo số điện thoại bạn cung cấp để xác nhận giá, tồn kho và thông tin giao nhận.</p>
                     </div>
                     <div className="flex items-start gap-3">
                         <div className="w-6 h-6 rounded-full bg-[#2E7A96] text-white text-xs flex items-center justify-center font-bold shrink-0 mt-0.5">2</div>
-                        <p className="text-sm text-neutral-700">Sau khi xác nhận, đơn hàng sẽ được <strong>tư vấn giá, thương thảo</strong> và sắp xếp giao hàng.</p>
+                        <p className="text-sm text-neutral-700">Yêu cầu chỉ trở thành đơn hàng sau khi bạn và nhân viên thống nhất các thông tin.</p>
                     </div>
                     <div className="flex items-start gap-3">
                         <div className="w-6 h-6 rounded-full bg-[#2E7A96] text-white text-xs flex items-center justify-center font-bold shrink-0 mt-0.5">3</div>

@@ -1,17 +1,17 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useCartStore, useCartTotal, CartItem } from '@/lib/cart-store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { formatPrice, generateOrderNumber } from '@/lib/utils'
+import { formatPrice } from '@/lib/utils'
 import { Minus, Plus, Trash2, Package2, ShoppingBag, ArrowLeft, Loader2 } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { toast } from 'sonner'
-import { trackPurchase } from '@/lib/tracking'
+import { trackGenerateLead } from '@/lib/tracking'
 
 const VIETNAM_MOBILE_PATTERN = /^(?:\+84|0)(?:3|5|7|8|9)\d{8}$/
 
@@ -19,6 +19,7 @@ export default function CartPage() {
     const router = useRouter()
     const { items, removeItem, updateQuantity, clearCart } = useCartStore()
     const total = useCartTotal()
+    const idempotencyRef = useRef<{ cartFingerprint: string; key: string } | null>(null)
 
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [form, setForm] = useState({
@@ -29,7 +30,7 @@ export default function CartPage() {
         note: '',
     })
 
-    const hasPricedItems = items.some(i => i.price !== null && i.price > 0)
+    const hasOnlyPricedItems = items.every(i => (i.finalPrice ?? i.price ?? 0) > 0)
     const normalizedPhone = form.customer_phone.replace(/[\s().-]/g, '')
     const phoneIsInvalid = form.customer_phone.length > 0 && !VIETNAM_MOBILE_PATTERN.test(normalizedPhone)
 
@@ -49,43 +50,73 @@ export default function CartPage() {
 
         setIsSubmitting(true)
         try {
-            const res = await fetch('/api/orders', {
+            const input = {
+                ...form,
+                customer_phone: normalizedPhone,
+                items: items.map(item => ({
+                    productId: item.productId,
+                    quantity: item.quantity,
+                    installOption: item.installOption ?? 'none',
+                })),
+            }
+            // Persist only a random key and a hash of cart IDs/quantities. Do not
+            // store the customer form or a fingerprint containing PII.
+            const cartFingerprint = await createCartFingerprint(input.items)
+            const idempotencyKey = getOrCreateOrderRequestKey(cartFingerprint, idempotencyRef.current)
+            idempotencyRef.current = { cartFingerprint, key: idempotencyKey }
+
+            const res = await fetch('/api/order-requests', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    ...form,
-                    items: items.map(item => ({
-                        productId: item.productId,
-                        quantity: item.quantity,
-                        installOption: item.installOption ?? 'none',
-                    })),
-                }),
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Idempotency-Key': idempotencyKey,
+                },
+                body: JSON.stringify(input),
             })
-            const data = await res.json()
+            const data: unknown = await res.json().catch(() => null)
 
             if (!res.ok) {
-                toast.error(data.error ?? 'Đã có lỗi xảy ra. Vui lòng thử lại.')
+                const code = data && typeof data === 'object' && 'error' in data
+                    && data.error && typeof data.error === 'object' && 'code' in data.error
+                    && typeof data.error.code === 'string'
+                    ? data.error.code
+                    : ''
+                const message = code === 'PRODUCT_UNAVAILABLE'
+                    ? 'Một sản phẩm trong giỏ không còn khả dụng. Vui lòng kiểm tra lại.'
+                    : code === 'PRODUCT_REQUIRES_QUOTE'
+                        ? 'Một sản phẩm cần được báo giá riêng. Vui lòng xóa sản phẩm đó hoặc liên hệ tư vấn.'
+                        : code === 'ORDER_RATE_LIMITED'
+                            ? 'Bạn vừa gửi nhiều yêu cầu. Vui lòng đợi một chút rồi thử lại.'
+                            : code === 'ORDER_INTAKE_UNAVAILABLE'
+                                ? 'Chức năng nhận yêu cầu đang tạm thời gián đoạn. Giỏ hàng của bạn vẫn được giữ lại.'
+                                : code === 'IDEMPOTENCY_KEY_REUSED'
+                                    ? 'Yêu cầu này đã được gửi trước đó với thông tin khác. Nếu bạn muốn tạo yêu cầu mới, hãy kiểm tra lại rồi bấm gửi thêm một lần nữa.'
+                                : 'Chưa gửi được yêu cầu. Vui lòng kiểm tra thông tin và thử lại.'
+                if (code === 'IDEMPOTENCY_KEY_REUSED') {
+                    clearOrderRequestKey(cartFingerprint, idempotencyKey)
+                    idempotencyRef.current = null
+                }
+                toast.error(message)
                 return
             }
 
-            // Track purchase
-            const transaction_id = data.order_number || generateOrderNumber()
-            const authoritativeTotal = Number(data.total)
-            trackPurchase(
-                transaction_id,
-                Number.isFinite(authoritativeTotal) ? authoritativeTotal : total,
-                items.map(item => ({
-                    item_id: item.sku || item.productId.toString(),
-                    item_name: item.name,
-                    price: item.finalPrice ?? item.price ?? 0,
-                    quantity: item.quantity,
-                    item_category: item.categorySlug,
-                    item_brand: item.brandName || undefined
-                }))
-            )
+            const orderNumber = data && typeof data === 'object' && 'data' in data
+                && data.data && typeof data.data === 'object' && 'order_number' in data.data
+                && typeof data.data.order_number === 'string'
+                ? data.data.order_number
+                : null
+            if (!orderNumber) {
+                toast.error('Chưa xác nhận được mã tiếp nhận. Giỏ hàng của bạn vẫn được giữ lại.')
+                return
+            }
 
+            // A submitted request is not a confirmed purchase.
+            trackGenerateLead('order_request_submit')
+
+            clearOrderRequestKey(cartFingerprint, idempotencyKey)
+            idempotencyRef.current = null
             clearCart()
-            router.push(`/dat-hang-thanh-cong?order=${data.order_number}`)
+            router.push(`/dat-hang-thanh-cong?order=${encodeURIComponent(orderNumber)}`)
         } catch {
             toast.error('Không thể kết nối. Vui lòng kiểm tra mạng và thử lại.')
         } finally {
@@ -185,20 +216,20 @@ export default function CartPage() {
                         </div>
 
                         <div className="border-t border-neutral-200 pt-4 flex justify-between">
-                            <span className="font-semibold text-neutral-900">Tổng cộng</span>
+                            <span className="font-semibold text-neutral-900">Tạm tính tham khảo</span>
                             <span className="font-bold text-xl text-[#2E7A96]">
-                                {hasPricedItems ? formatPrice(total) : 'Liên hệ'}
+                                {hasOnlyPricedItems ? formatPrice(total) : 'Liên hệ báo giá'}
                             </span>
                         </div>
 
                         <p className="text-xs text-neutral-400">
-                            Giá chưa bao gồm chi phí vận chuyển. Nhân viên sẽ liên hệ xác nhận đơn hàng.
+                            Giá chưa gồm vận chuyển. Đây mới là yêu cầu đặt hàng; nhân viên sẽ xác nhận giá và tồn kho trước khi chốt. Bạn chưa phải thanh toán lúc gửi yêu cầu.
                         </p>
                     </div>
 
                     {/* Customer Form */}
                     <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-neutral-200 p-6 space-y-4">
-                        <h2 className="font-semibold text-neutral-900 text-lg">Thông tin đặt hàng</h2>
+                        <h2 className="font-semibold text-neutral-900 text-lg">Gửi yêu cầu đặt hàng</h2>
 
                         <div className="space-y-1">
                             <label htmlFor="customer-name" className="text-sm font-medium text-neutral-700">
@@ -282,7 +313,7 @@ export default function CartPage() {
                                     Đang xử lý...
                                 </>
                             ) : (
-                                'Xác nhận đặt hàng'
+                                'Gửi yêu cầu đặt hàng'
                             )}
                         </Button>
 
@@ -297,6 +328,52 @@ export default function CartPage() {
             </div>
         </div>
     )
+}
+
+const ORDER_REQUEST_STORAGE_KEY = 'dpg-order-request-idempotency-v1'
+
+async function createCartFingerprint(items: Array<{ productId: number; quantity: number; installOption?: string }>) {
+    const canonicalItems = items.map(({ productId, quantity, installOption }) => ({
+        productId,
+        quantity,
+        installOption: installOption ?? 'none',
+    }))
+    const digest = await window.crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(canonicalItems)))
+    return Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('')
+}
+
+function getOrCreateOrderRequestKey(
+    cartFingerprint: string,
+    current: { cartFingerprint: string; key: string } | null,
+) {
+    try {
+        if (current?.cartFingerprint === cartFingerprint) return current.key
+        const stored = localStorage.getItem(ORDER_REQUEST_STORAGE_KEY)
+        if (stored) {
+            const value: unknown = JSON.parse(stored)
+            if (value && typeof value === 'object' && 'cartFingerprint' in value && 'key' in value
+                && value.cartFingerprint === cartFingerprint && typeof value.key === 'string'
+                && /^[a-f0-9-]{36}$/i.test(value.key)) return value.key
+        }
+    } catch { /* A storage failure falls back to an in-memory request key. */ }
+
+    const key = window.crypto.randomUUID()
+    try {
+        localStorage.setItem(ORDER_REQUEST_STORAGE_KEY, JSON.stringify({ cartFingerprint, key }))
+    } catch { /* The server still enforces idempotency for retries on this page. */ }
+    return key
+}
+
+function clearOrderRequestKey(cartFingerprint: string, key: string) {
+    try {
+        const stored = localStorage.getItem(ORDER_REQUEST_STORAGE_KEY)
+        if (!stored) return
+        const value: unknown = JSON.parse(stored)
+        if (value && typeof value === 'object' && 'cartFingerprint' in value && 'key' in value
+            && value.cartFingerprint === cartFingerprint && value.key === key) {
+            localStorage.removeItem(ORDER_REQUEST_STORAGE_KEY)
+        }
+    } catch { /* Storage cleanup is best effort; the order endpoint remains authoritative. */ }
 }
 
 // ─── CartPageItem ─────────────────────────────────────────────────────────────

@@ -2,12 +2,16 @@
 // TypeScript path aliases are available. Keep this boundary runtime-resolvable
 // without changing the public app's package alias contract elsewhere.
 import { PUBLIC_EDGE_CACHE_SECONDS, PUBLIC_ROUTE_OWNERSHIP } from '../../../packages/app-contracts/src/index'
+import type { RateLimit } from '@cloudflare/workers-types'
 
 export type PublicWorkerEnvironment = Readonly<{
   APP_ENV: string
   APP_BUILD_TARGET: string
   APP_ORIGIN: string
   PREVIEW_NOINDEX: string
+  PUBLIC_ORDER_INTAKE_URL?: string
+  PUBLIC_SUPABASE_PUBLISHABLE_KEY?: string
+  ORDER_REQUEST_LIMITER?: RateLimit
   [name: string]: unknown
 }>
 
@@ -132,6 +136,13 @@ export function classifyPublicApiRequest(request: Request): PublicApiRequestDeci
       && route.path === '/api/catalogue/listings/[categorySlug]/[listingSlug]'
       && route.purpose === 'catalogue-listing-snapshot-readonly',
   ) && /^\/api\/catalogue\/listings\/([^/]+)\/([^/]+)$/.test(pathname)
+  const ownsGuestOrderRequest = PUBLIC_ROUTE_OWNERSHIP.some((route) =>
+    route.owner === 'public'
+      && route.path === '/api/order-requests'
+      && route.purpose === 'guest-order-request-write',
+  ) && pathname === '/api/order-requests'
+
+  if (ownsGuestOrderRequest) return request.method === 'POST' ? 'allow' : 'method-not-allowed'
 
   const listingMatch = pathname.match(/^\/api\/catalogue\/listings\/([^/]+)\/([^/]+)$/)
   const validListingRoute = ownsListingShardRoute
