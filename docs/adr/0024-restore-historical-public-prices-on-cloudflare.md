@@ -17,7 +17,7 @@ the recovered row, not a replacement retailer price catalogue. The protected
 projection reads only public, eligible products and exports explicit allowlisted
 fields into one versioned snapshot.
 
-For a SKU, the old positive `price` is the recovered current Public selling
+For a SKU, the old positive `price` is the recovered historical Public selling
 price. The source must be `manual` or `hita`, with matching source system, high
 confidence, `priced` state, and the verified 2026-07-02 source update date.
 Manual rows additionally require matching sale and list fields. A Hita row
@@ -37,6 +37,10 @@ the contact actions remain phone and Zalo.
 ## Relationship to V1 pricing work
 
 ADR 0020 defines the canonical future Product and Order pricing semantics.
+This Owner decision narrowly supersedes the contact-only July-price rule in
+the M4 section of `docs/deploy/catalogue-direct-migration.md` for this Public
+recovery candidate. Display text identifies the values as restored data and
+asks customers to confirm current price and stock before purchase.
 This recovery snapshot is a compatibility view over the old published fields.
 It does not change the V1 Product/Order schema or make historical field names
 authoritative for new commerce writes.
