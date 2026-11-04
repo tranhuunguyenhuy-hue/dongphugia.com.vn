@@ -48,14 +48,25 @@ export async function getPublicSnapshotListingShard(
         'is_promotion', 'variant_options', 'categories', 'subcategories',
         'brands', 'canonical_category_slug', 'canonical_subcategory_slug',
         'url', 'variant_group', 'variant_type', 'variant_label',
+        'original_price', 'list_price', 'sale_price', 'online_discount_amount',
+        'final_online_price', 'price_provenance',
+        'product_feature_values', 'colors',
     ])
     const products = source.products.map((product) => ({
         id: product.id, name: product.name, display_name: product.display_name,
-        slug: product.slug, sku: product.sku, price: null,
-        price_display: 'Liên hệ báo giá' as const,
+        slug: product.slug, sku: product.sku, price: product.price,
+        price_display: product.price_display,
+        ...(Object.hasOwn(product,'price_provenance')?{
+            original_price:product.original_price??null,list_price:product.list_price??null,
+            sale_price:product.sale_price??null,online_discount_amount:product.online_discount_amount??null,
+            final_online_price:product.final_online_price??null,price_provenance:product.price_provenance??null,
+        }:{}),
+        ...(Object.hasOwn(product,'product_feature_values')?{
+            product_feature_values:product.product_feature_values??[],colors:product.colors??null,
+        }:{}),
         stock_status: 'contact' as const, image_main_url: product.image_main_url,
         is_active: true as const, is_featured: product.is_featured,
-        is_promotion: false as const, variant_options: [] as [],
+        is_promotion: product.is_promotion, variant_options: [] as [],
         categories: product.categories, subcategories: product.subcategories,
         brands: product.brands,
         canonical_category_slug: product.canonical_category_slug,
@@ -65,8 +76,8 @@ export async function getPublicSnapshotListingShard(
     if (source.totalCount !== listingRecord.totalCount || source.page !== page
         || source.products.length !== expectedProducts
         || source.products.some((product) => Object.keys(product).some((key) => !listingKeys.has(key))
-            || product.price !== null || product.stock_status !== 'contact'
-            || product.is_active !== true || product.is_promotion !== false
+            || product.stock_status !== 'contact'
+            || product.is_active !== true
             || !Array.isArray(product.variant_options) || product.variant_options.length !== 0)
         || products.some((product) => !isPublicSnapshotListingProduct(product, category, listing))) {
         throw new Error('PUBLIC_CATALOGUE_UNAVAILABLE')

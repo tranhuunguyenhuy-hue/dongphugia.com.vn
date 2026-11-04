@@ -42,8 +42,9 @@ branches remain unchanged. This procedure does not authorize Production or DNS.
 4. **M4 / Preview**: only after M3 PASS, reuse the canonical public application
    and existing Preview delivery path. This workflow does **not** implement
    public UI integration or claim that M4 has passed. Public filtering must use
-   active/publication/PDP/listing/indexing rules; July source prices must not be
-   presented as current. Verify real images, routes, SEO and browser behavior.
+   active/publication/PDP/listing/indexing rules; July source prices remain
+   contact-only except for the Owner-approved, provenance-bound historical
+   display in ADR 0024. Verify real images, routes, SEO and browser behavior.
    Do not use fixtures or an emergency replacement UI as catalogue recovery.
 5. **M5**: Production/DNS/bindings remain HOLD pending separate Owner GO.
 

@@ -42,4 +42,21 @@ describe('CategoryRootFeaturedProducts snapshot filtering', () => {
         expect(screen.getByText('brand-b-1')).toBeVisible()
         expect(screen.queryByText('brand-c-only')).toBeNull()
     })
+
+    it('uses restored selling prices for the price range on category roots', () => {
+        navigation.search = 'price=1000000-3000000'
+        window.history.replaceState({}, '', `/?${navigation.search}`)
+        const low = {...product(1, 'low', 'brand-a'), list_price: 900_000, price: 900_000, stock_status: 'contact'}
+        const inRange = {...product(2, 'in-range', 'brand-a'), list_price: 2_000_000, price: 2_000_000, stock_status: 'contact'}
+        const high = {...product(3, 'high', 'brand-a'), list_price: 4_000_000, price: 4_000_000, stock_status: 'contact'}
+        render(<CategoryRootFeaturedProducts
+            basePath="/thiet-bi-bep"
+            featuredProducts={[low]}
+            filterableFeaturedProducts={[low, inRange, high]}
+            featuredGridClassName="grid"
+        />)
+        expect(screen.getByText('in-range')).toBeVisible()
+        expect(screen.queryByText('low')).toBeNull()
+        expect(screen.queryByText('high')).toBeNull()
+    })
 })

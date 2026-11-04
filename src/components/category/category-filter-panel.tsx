@@ -207,7 +207,7 @@ export function CategoryFilterPanel({ brands, mode = 'canonical' }: CategoryFilt
     const [localPrice, setLocalPrice] = useState<[number, number]>(() =>
         priceParam ? parsePriceParam(priceParam) : [PRICE_MIN, PRICE_MAX]
     )
-    const isPriceActive = !snapshotMode && priceParam !== ''
+    const isPriceActive = priceParam !== ''
     const [advOpen, setAdvOpen] = useState(true)
 
     useEffect(() => {
@@ -338,12 +338,7 @@ export function CategoryFilterPanel({ brands, mode = 'canonical' }: CategoryFilt
                             </div>
                         )}
 
-                        {snapshotMode ? (
-                            <div className="space-y-2">
-                                <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">Khoảng giá</p>
-                                <p className="rounded bg-neutral-50 px-3 py-2 text-[12px] text-neutral-500">Liên hệ để nhận báo giá</p>
-                            </div>
-                        ) : (
+                        {(
                             <div className="space-y-2">
                                 <div className="flex items-center justify-between">
                                     <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">Khoảng giá</p>

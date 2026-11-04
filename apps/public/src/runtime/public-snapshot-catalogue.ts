@@ -10,19 +10,21 @@ export { usesPublicSnapshot } from './public-snapshot-mode'
 
 const CONTRACT='dpg:public-catalogue-snapshot:v1'
 const SLUG=/^[a-z0-9]+(?:-[a-z0-9]+)*$/
-export const PUBLIC_SNAPSHOT_NOTICE='Catalogue khôi phục ở chế độ chỉ đọc. Giá và tồn kho cần được xác nhận; vui lòng liên hệ Đông Phú Gia để nhận báo giá hiện tại.'
+export const PUBLIC_SNAPSHOT_NOTICE='Giá hiển thị theo dữ liệu công khai đã khôi phục. Vui lòng liên hệ Đông Phú Gia để xác nhận giá và tồn kho hiện tại.'
 export type SnapshotProduct={
-  id:number;name:string;display_name:string;slug:string;sku:string;price:null;price_display:string;stock_status:'contact';
-  image_main_url:string|null;is_active:true;is_featured:boolean;is_promotion:false;variant_options:[];
+  id:number;name:string;display_name:string;slug:string;sku:string;price:number|null;price_display:string|null;stock_status:'contact';
+  original_price?:number|null;list_price?:number|null;sale_price?:number|null;online_discount_amount?:number|null;final_online_price?:number|null;price_provenance?:string|null;
+  image_main_url:string|null;is_active:true;is_featured:boolean;is_promotion:boolean;variant_options:[];
+  product_feature_values?:{product_features:{name:string}}[];colors?:{name:string;hex_code:string|null}|null;
   categories:{name:string;slug:string};subcategories:{name:string;slug:string};brands:{name:string;slug:string}|null;
-  publicContent?:{summary:string|null;descriptionBlocks:{kind:'heading'|'paragraph'|'bullet';text:string}[];specifications:Record<string,string>;gallery:string[];referencePrice:{amountVnd:number;recordedUpdateDate:'2026-07-02';provenance:'legacy-manual-public-display'}|null};
+  publicContent?:{summary:string|null;descriptionBlocks:{kind:'heading'|'paragraph'|'bullet';text:string}[];specifications:Record<string,string>;gallery:string[];referencePrice:{amountVnd:number;recordedUpdateDate:'2026-07-02';provenance:'legacy-manual-public-display'}|null;descriptionHtml?:string|null;documents?:{name:string;url:string;type:string;size?:string}[]};
   canonical_category_slug:string;canonical_subcategory_slug:string;url:string;
   variant_group?:string;variant_type?:'size'|'seat_type';variant_label?:string;
 }
 type SnapshotListing={slug:string;name:string;thumbnail_url?:string|null;totalCount:number}
 type SnapshotBrand={slug:string;name:string}
 export type SnapshotCategory={slug:string;name:string;listings:SnapshotListing[];homeProducts:SnapshotProduct[];totalCount:number;brands?:SnapshotBrand[];featuredProducts?:SnapshotProduct[];featuredProductsByBrand?:SnapshotProduct[]}
-type Manifest={contract:string;checkpoint:string;m3CodeSha:string;m3RunId:string;notice:string;categories:SnapshotCategory[];productBuckets:string[];products:number;listingProducts:number;variantGroups?:Record<string,SnapshotProduct[]>}
+type Manifest={contract:string;checkpoint:string;m3CodeSha:string;m3RunId:string;notice:string;categories:SnapshotCategory[];productBuckets:string[];products:number;listingProducts:number;variantGroups?:Record<string,SnapshotProduct[]>;searchShards?:string[];searchProducts?:number}
 type AssetEnvelope={contract:string;checkpoint:string;products?:SnapshotProduct[];totalCount?:number;page?:number}
 
 async function readAsset<T>(path:string):Promise<T> {
@@ -48,6 +50,17 @@ async function readAsset<T>(path:string):Promise<T> {
   return repair(value) as T
 }
 export const readSnapshotManifest=cache(async()=>readAsset<Manifest>('manifest.json'))
+export type SnapshotSearchProduct={id:number;sku:string;name:string;slug:string;url:string;price:number|null;original_price:number|null;list_price:number|null;sale_price:number|null;online_discount_amount:number|null;final_online_price:number|null;price_display:string|null;image_main_url:string|null;category_slug:string;subcategory_slug:string;brand_name:string|null;product_feature_values:{product_features:{name:string}}[];colors:{name:string;hex_code:string|null}|null}
+export async function getSnapshotSearchProducts(){
+ const manifest=await readSnapshotManifest()
+ if(!Array.isArray(manifest.searchShards)||manifest.searchShards.join(',')!=='0,1,2,3'
+   ||!Number.isSafeInteger(manifest.searchProducts)||manifest.searchProducts===undefined
+   ||manifest.searchProducts<0||manifest.searchProducts>manifest.products)throw new Error('PUBLIC_CATALOGUE_UNAVAILABLE')
+ const shards=await Promise.all(manifest.searchShards.map(id=>readAsset<{products:SnapshotSearchProduct[]}>(`search/${id}.json`)))
+ const products=shards.flatMap(shard=>shard.products)
+ if(products.length!==manifest.searchProducts||new Set(products.map(product=>product.id)).size!==products.length)throw new Error('PUBLIC_CATALOGUE_UNAVAILABLE')
+ return products
+}
 export async function getSnapshotVariantSiblings(group:string,currentId:number){
  if(!/^public-[1-9][0-9]*$/.test(group)||!Number.isSafeInteger(currentId))return []
  const members=(await readSnapshotManifest()).variantGroups?.[group]
@@ -89,7 +102,7 @@ export async function getSnapshotProduct(category:string,listing:string,slug:str
   if(!product) return null
   return {...product,imageUrl:product.image_main_url,brand:product.brands??{name:'',slug:''},
     categoryName:product.categories.name,listingName:product.subcategories.name,
-    categoryPath:`/${category}`,listingPath:`/${category}/${listing}`,productPath:path,priceDisplay:'Liên hệ báo giá'}
+    categoryPath:`/${category}`,listingPath:`/${category}/${listing}`,productPath:path,priceDisplay:product.price_display??(product.price===null?'Liên hệ báo giá':null)}
 }
 export async function resolveSnapshotRoute(segments:readonly string[]) {
   if(!segments.length)return {kind:'home' as const}

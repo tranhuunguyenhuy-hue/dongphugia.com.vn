@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { projectProduct, buildProjection, safeImage, productBucket, ROOTS } from './public-projection.mjs'
 import { prerender, renderPaths } from './prerender-public-snapshot.mjs'
+import {projectPublicContent} from './public-product-content.mjs'
 const input={id:1,name:'Sản phẩm minh họa kiểm thử',slug:'synthetic-only',sku:'SYNTHETIC',image_main_url:'https://cdn.hita.com.vn/example.jpg',brand_name:'Synthetic Brand',brand_slug:'synthetic-brand',price:'123456',source_url:'private-marker',customer_email:'secret-marker',specs:{internal:'secret-marker'},is_featured:false}
 const path={categorySlug:'thiet-bi-ve-sinh',subcategorySlug:'bon-cau',categoryName:'Thiết bị vệ sinh',subcategoryName:'Bồn cầu',taxonomyException:null}
 const evidence={checkpoint:'a'.repeat(40),m3CodeSha:'b'.repeat(40),m3RunId:'123'}
@@ -44,6 +45,23 @@ describe('synthetic mechanism only: public snapshot projection',()=>{
     assert.throws(()=>buildProjection([dto],{}),/EVIDENCE/)
     for(const url of ['/images/a?token=private','/images/%2e%2e/private','javascript:alert(1)','https://evil.test/image.jpg','https://user:password@cdn.hita.com.vn/a','https://tygjmrhandbffjllxveu.supabase.co/storage/v1/object/sign/private?a=1']) assert.equal(safeImage(url),null)
   })
+})
+it('keeps restored Hita prices, rich PDP content and search on one snapshot',()=>{
+ const row={...input,price:21223200,original_price:26529000,list_price:26529000,sale_price:21223200,online_discount_amount:3183000,
+  price_updated_at:new Date('2026-07-02T00:00:00Z'),price_source:'hita',source_system:'hita',price_state:'priced',price_confidence:'high',
+  publicDescription:'<h2>Thông tin chung</h2><img src="https://cdn.dongphugia.com.vn/products/test.jpg">',publicDocuments:[]}
+ const dto=projectProduct(row,{pdp:true,listing:true,search:true},path,{restoreCommerce:true})
+ const built=buildProjection([{...dto,publicContent:projectPublicContent(row,{rich:true})}],evidence,[],{restoreCommerce:true})
+ const pdp=built.assets.get('products/'+productBucket(dto.url)+'.json').products[0]
+ const listing=built.assets.get('listings/thiet-bi-ve-sinh/bon-cau/1.json').products[0]
+ const search=built.assets.get('search/1.json').products[0]
+ assert.equal(pdp.final_online_price,18040200)
+ assert.equal(listing.final_online_price,pdp.final_online_price)
+ assert.equal(search.final_online_price,pdp.final_online_price)
+ assert.match(pdp.publicContent.descriptionHtml,/dpg-products\.b-cdn\.net/)
+ assert.equal(built.manifest.contentPolicy,'canonical-public-content-v4')
+ assert.equal(built.manifest.searchProducts,1)
+ assert.equal(built.manifest.contentStats.publicPrices,1)
 })
 it('keeps reviewed content on PDP assets only and rejects nested private fields',()=>{
  const dto=projectProduct(input,{pdp:true,listing:true},path)

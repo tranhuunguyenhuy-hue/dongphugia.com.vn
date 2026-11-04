@@ -59,25 +59,22 @@ export function blogPostPath(post: LegacyBlogPost) {
   return `/blog/${post.category.slug}/${post.slug}`
 }
 
-// Exactly two thumbnail assets have been visually confirmed by Owner on the
-// official default Bunny pull-zone hostname. Do not blanket-rewrite unverified
-// cover images or inline media; preserve original database snapshot metadata.
-const ownerVerifiedLegacyThumbnailAliases = new Map([
-  [
-    'https://cdn.dongphugia.com.vn/blog/1782900852828-h356on.png',
-    'https://dpg-products.b-cdn.net/blog/1782900852828-h356on.png',
-  ],
-  [
-    'https://cdn.dongphugia.com.vn/blog/1782811954060-lm1xt.png',
-    'https://dpg-products.b-cdn.net/blog/1782811954060-lm1xt.png',
-  ],
+// Every old-CDN Blog image in the frozen public snapshot was checked at the
+// Bunny path on 2026-11-04 (HTTP 200, image/png). Keep the set exact.
+const verifiedLegacyBlogFiles=new Set([
+  '1782900856082-07fw89.png','1782900852828-h356on.png',
+  '1782900583342-xau1gc.png','1782900595979-3no5dp.png',
+  '1782900608836-cnlsev.png','1782900630678-xjhqn.png',
+  '1782900645322-r9pwsj.png','1782900654935-1i96x.png',
+  '1782901095727-dyj5rx.png','1782811960521-ubztwd.png',
+  '1782811954060-lm1xt.png','1782811525156-t4ntyk.png',
+  '1782811549421-g9ss0l.png','1782811563320-1quc5te.png',
 ])
 
 // Preserve every historical media URL in the immutable public snapshot.
 // Unknown / unsupported URL hosts are not embedded into the visible page.
 const allowedMediaHosts = new Set([
   'tygjmrhandbffjllxveu.supabase.co',
-  'cdn.dongphugia.com.vn',
 ])
 const verifiedMediaUrls = new Set(verifiedMedia.assets.flatMap((asset) => [
   asset.sourceUrl,
@@ -89,10 +86,28 @@ export function historicalBlogImage(value: string | null | undefined): string | 
   try {
     const url = new URL(value)
     if (url.protocol !== 'https:') return null
-    const verifiedAlias = ownerVerifiedLegacyThumbnailAliases.get(url.href)
-    if (verifiedAlias) return verifiedAlias
+    if(url.hostname==='cdn.dongphugia.com.vn'&&url.search===''&&url.hash===''
+      &&url.pathname.startsWith('/blog/')&&verifiedLegacyBlogFiles.has(url.pathname.slice(6)))
+      return `https://dpg-products.b-cdn.net${url.pathname}`
     return allowedMediaHosts.has(url.hostname) || verifiedMediaUrls.has(url.href) ? url.href : null
   } catch {
     return null
   }
+}
+
+export function restoreHistoricalBlogArticleLinks(html:string){
+ return html.replace(/\b(src|href)=(['"])(.*?)\2/gi,(whole,attribute:string,quote:string,raw:string)=>{
+  if(attribute.toLowerCase()==='src'){
+   const restored=historicalBlogImage(raw)
+   return restored?`src=${quote}${restored}${quote}`:whole
+  }
+  try{
+   const url=new URL(raw.replaceAll('&amp;','&'))
+   if(!['dongphugia.com.vn','www.dongphugia.com.vn'].includes(url.hostname)
+     ||!['http:','https:'].includes(url.protocol))return whole
+   url.searchParams.delete('sub')
+   const target=`https://www.dongphugia.vn${url.pathname}${url.search}`.replaceAll('&','&amp;')
+   return `href=${quote}${target}${quote}`
+  }catch{return whole}
+ })
 }

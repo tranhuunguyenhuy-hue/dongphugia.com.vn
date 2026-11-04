@@ -40,6 +40,7 @@ export const getPublicProducts:typeof Original.getPublicProducts=async(f={})=>{
 }
 const escapePublicText=(value:string)=>value.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')
 function publicDescription(content:{summary:string|null;specifications:Record<string,string>}|undefined){
+ if(content&&'descriptionHtml' in content&&typeof content.descriptionHtml==='string')return content.descriptionHtml
  if(content?.summary)return '<p>'+escapePublicText(content.summary)+'</p>'
  const rows=Object.entries(content?.specifications??{}).slice(0,6)
  return rows.length?'<ul>'+rows.map(([key,value])=>'<li>'+escapePublicText(key)+': '+escapePublicText(value)+'</li>').join('')+'</ul>':null
@@ -48,28 +49,30 @@ export const getPublicProductBySlug:typeof Original.getPublicProductBySlug=async
  const c=(await getSnapshotCategories()).find(c=>c.slug===category)
  for(const l of c?.listings??[]) {
   const p=await getSnapshotProduct(category,l.slug,slug)
-  if(p)return {...p,description:publicDescription(p.publicContent),features:null,colors:null,product_images:(p.publicContent?.gallery??[]).map(image_url=>({image_url,alt_text:p.name})),product_feature_values:[],variant_group:p.variant_group??null,original_price:null,list_price:null,sale_price:null,online_discount_amount:null} as unknown as Awaited<ReturnType<typeof Original.getPublicProductBySlug>>
+  if(p)return {...p,description:publicDescription(p.publicContent),features:null,colors:p.colors??null,product_images:(p.publicContent?.gallery??[]).map(image_url=>({image_url,alt_text:p.name})),product_feature_values:p.product_feature_values??[],variant_group:p.variant_group??null,original_price:p.original_price??null,list_price:p.list_price??null,sale_price:p.sale_price??null,online_discount_amount:p.online_discount_amount??null} as unknown as Awaited<ReturnType<typeof Original.getPublicProductBySlug>>
  }
  return null
 }
 export const getProductTypeFiltersBySubcategory:typeof Original.getProductTypeFiltersBySubcategory=async()=>[]
 export const getSubcategorySpecFilters:typeof Original.getSubcategorySpecFilters=async()=>[]
 export const getVariantSiblings:typeof Original.getVariantSiblings=async(group,id)=>
- (await getSnapshotVariantSiblings(group,id)).map(p=>({...p,original_price:null,list_price:null,sale_price:null,online_discount_amount:null,
-  variant_type:p.variant_type??null,variant_label:p.variant_label??null,colors:null})) as Awaited<ReturnType<typeof Original.getVariantSiblings>>
+ (await getSnapshotVariantSiblings(group,id)).map(p=>({...p,original_price:p.original_price??null,list_price:p.list_price??null,sale_price:p.sale_price??null,online_discount_amount:p.online_discount_amount??null,
+  variant_type:p.variant_type??null,variant_label:p.variant_label??null,colors:p.colors??null})) as Awaited<ReturnType<typeof Original.getVariantSiblings>>
 export const getVariantSelectionData:typeof Original.getVariantSelectionData=async(group,id)=>({axes:[],currentVariantOptions:[],siblings:await getVariantSiblings(group,id)})
 export const getProductComponents:typeof Original.getProductComponents=async()=>[]
-export const getPdpDocuments:typeof Original.getPdpDocuments=()=>[]
+export const getPdpDocuments:typeof Original.getPdpDocuments=(p)=>('publicContent' in p?((p as {publicContent?:{documents?:{name:string;url:string;type:string;size?:string}[]}}).publicContent?.documents??[]).map(doc=>({...doc,size:doc.size??''})):[])
 export const getPdpSpecifications:typeof Original.getPdpSpecifications=(p)=>('publicContent' in p?(p as {publicContent?:{specifications:Record<string,string>}}).publicContent?.specifications??{}:{})
 export const getPdpPackageItems:typeof Original.getPdpPackageItems=()=>[]
 export const getPdpDescriptionBlocks:typeof Original.getPdpDescriptionBlocks=(product)=>{
  const blocks=(product as {publicContent?:{descriptionBlocks?:unknown}})?.publicContent?.descriptionBlocks
+ if(typeof (product as {publicContent?:{descriptionHtml?:unknown}})?.publicContent?.descriptionHtml==='string')return []
  if(!Array.isArray(blocks))return []
  return blocks.filter((block):block is {kind:'heading'|'paragraph'|'bullet';text:string}=>
   block&&typeof block==='object'&&['heading','paragraph','bullet'].includes(block.kind)
   &&typeof block.text==='string'&&block.text.length>0&&block.text.length<=800).slice(0,12)
 }
 export const getPdpHistoricalReferencePrice:typeof Original.getPdpHistoricalReferencePrice=(product)=>{
+ if((product as {price?:number|null}).price!==null&&(product as {price?:number|null}).price!==undefined)return null
  const value=(product as {publicContent?:{referencePrice?:unknown}})?.publicContent?.referencePrice
  return value&&typeof value==='object'&&Object.keys(value).length===3
   &&(value as {provenance?:unknown}).provenance==='legacy-manual-public-display'

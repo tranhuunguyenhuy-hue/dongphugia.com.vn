@@ -1,4 +1,4 @@
-const IMAGE_HOSTS = new Set(['cdn.dongphugia.com.vn', 'cdn.hita.com.vn', 'hita.com.vn', 'vietceramics.com', 'tygjmrhandbffjllxveu.supabase.co'])
+const IMAGE_HOSTS = new Set(['cdn.dongphugia.com.vn', 'dpg-products.b-cdn.net', 'cdn.hita.com.vn', 'hita.com.vn', 'vietceramics.com', 'tygjmrhandbffjllxveu.supabase.co'])
 export function safeImage(value) {
   if (typeof value !== 'string') return null
   if (/^\/images\/[^\s?#%]+$/.test(value) && !value.includes('..')) return value
