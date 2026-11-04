@@ -1,5 +1,7 @@
 // Bounded read-only proof of the Production Worker before and after upload.
-const [baseArgument, sourceSha, posture] = process.argv.slice(2)
+import { isExpectedProductionResponse, isExpectedPublicSnapshotManifest } from './public-production-smoke-contract.mjs'
+
+const [baseArgument, sourceSha, posture, expectedCheckpoint] = process.argv.slice(2)
 const productPaths = [
   '/thiet-bi-ve-sinh/lavabo/chau-lavabo-treo-tuong-toto-lt300c',
   '/thiet-bi-bep/voi-rua-chen/voi-bep-toto-tx605kesbr',
@@ -24,15 +26,15 @@ const blogPaths = [
 ]
 const paths = ['/', ...blogPaths, '/thiet-bi-ve-sinh', '/thiet-bi-bep', '/vat-lieu-nuoc', '/gach-op-lat', '/thiet-bi-ve-sinh/lavabo', ...productPaths]
 const fail = (reason) => { throw new Error(`PUBLIC_PRODUCTION_SMOKE_${reason}`) }
-if (!/^[a-f0-9]{40}$/.test(sourceSha) || !['local', 'workers-dev'].includes(posture)) fail('ARGUMENT')
+if (!/^[a-f0-9]{40}$/.test(sourceSha) || !/^[a-f0-9]{40}$/.test(expectedCheckpoint)
+  || !['local', 'workers-dev'].includes(posture)) fail('ARGUMENT')
 const base = new URL(baseArgument)
 if (posture === 'local' && !(base.protocol === 'http:' && ['127.0.0.1', 'localhost'].includes(base.hostname))) fail('BASE')
 if (posture === 'workers-dev' && !(base.protocol === 'https:' && base.hostname === 'dongphugia-v1-public-production.tranhuunguyenhuy.workers.dev')) fail('BASE')
 
 async function checked(path) {
   const response = await fetch(new URL(path, base), { redirect: 'manual', signal: AbortSignal.timeout(20000) })
-  if (response.status !== 200 || response.headers.get('x-dpg-source-sha') !== sourceSha
-    || response.headers.has('set-cookie')) fail('HTTP')
+  if (!isExpectedProductionResponse(response, sourceSha)) fail('HTTP')
   const bytes = new Uint8Array(await response.arrayBuffer())
   if (bytes.length > 2_000_000) fail('SIZE')
   return { response, body: new TextDecoder().decode(bytes) }
@@ -51,8 +53,16 @@ const sitemapBody = await sitemap.text()
 if (sitemap.status !== 200 || !sitemap.headers.get('content-type')?.includes('xml')
   || sitemapBody.length > 2_000_000 || !sitemapBody.includes('<urlset')
   || !sitemapBody.includes('https://www.dongphugia.vn/thiet-bi-ve-sinh/lavabo')) fail('SITEMAP')
-const snapshot=JSON.parse((await checked('/__catalogue/v1/manifest.json')).body)
-const restored=snapshot.contentPolicy==='canonical-public-content-v4'
+const manifestResponse = await fetch(new URL('/__catalogue/v1/manifest.json', base), {
+  redirect: 'manual', signal: AbortSignal.timeout(20000),
+})
+if (!isExpectedProductionResponse(manifestResponse, sourceSha, { staticAsset: true })
+  || !manifestResponse.headers.get('content-type')?.includes('application/json')) fail('MANIFEST_HTTP')
+const manifestBytes = new Uint8Array(await manifestResponse.arrayBuffer())
+if (manifestBytes.length > 2_000_000) fail('SIZE')
+let snapshot
+try { snapshot = JSON.parse(new TextDecoder().decode(manifestBytes)) } catch { fail('MANIFEST_JSON') }
+if (!isExpectedPublicSnapshotManifest(snapshot, expectedCheckpoint)) fail('MANIFEST')
 
 for (const path of paths) {
   const { response, body } = await checked(path)
@@ -76,16 +86,14 @@ for (const path of paths) {
     && (!body.includes('<article') || !body.includes('application/ld+json')))
     fail('NEWS_ARTICLE')
 }
-if(restored){
-  const search=JSON.parse((await checked('/api/search?q=MS636DT2%23XW&limit=8')).body)
-  const exact=search.results?.find(product=>product.sku==='MS636DT2#XW')
-  if(!exact||exact.price!==21223200||exact.original_price!==26529000
-    ||exact.final_online_price!==18040200||search.total<1)fail('RESTORED_SEARCH_PRICE')
-  const pdp=(await checked('/thiet-bi-ve-sinh/bon-cau/bon-cau-1-khoi-toto-ms636dt2-nap-dong-em-tc393vs')).body
-  if(!pdp.includes('21.223.200')||!pdp.includes('18.040.200')
-    ||!pdp.includes('Tài liệu kỹ thuật')||!pdp.includes('Nắp đóng êm TC393VS')
-    ||!pdp.includes('dpg-products.b-cdn.net/'))fail('RESTORED_PDP')
-}
+const search=JSON.parse((await checked('/api/search?q=MS636DT2%23XW&limit=8')).body)
+const exact=search.results?.find(product=>product.sku==='MS636DT2#XW')
+if(!exact||exact.price!==21223200||exact.original_price!==26529000
+  ||exact.final_online_price!==18040200||search.total<1)fail('RESTORED_SEARCH_PRICE')
+const pdp=(await checked('/thiet-bi-ve-sinh/bon-cau/bon-cau-1-khoi-toto-ms636dt2-nap-dong-em-tc393vs')).body
+if(!pdp.includes('21.223.200')||!pdp.includes('18.040.200')
+  ||!pdp.includes('Tài liệu kỹ thuật')||!pdp.includes('Nắp đóng êm TC393VS')
+  ||!pdp.includes('dpg-products.b-cdn.net/'))fail('RESTORED_PDP')
 for (const [assetPath, contentType] of [
   ['/images/banner-1.editorial.w960.webp', 'image/webp'],
   ['/images/banner-1.jpg', 'image/jpeg'],
