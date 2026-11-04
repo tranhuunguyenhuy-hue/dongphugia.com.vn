@@ -153,11 +153,21 @@ function sanitizedErrorCause(error, failureKind) {
   const safeSqlState = typeof rawSqlState === 'string' && /^[0-9A-Z]{5}$/.test(rawSqlState)
     ? rawSqlState
     : 'unknown'
+  const rawSqlPosition = errorDataValue(error, 'position')
+  const parsedSqlPosition = typeof rawSqlPosition === 'string' && /^\d{1,7}$/.test(rawSqlPosition)
+    ? Number(rawSqlPosition)
+    : undefined
+  const safeSqlPosition = Number.isSafeInteger(parsedSqlPosition)
+    && parsedSqlPosition > 0
+    && parsedSqlPosition <= 1_000_000
+    ? parsedSqlPosition
+    : undefined
   const rawMessageCode = errorDataValue(error, 'message')
   const safeMessageCode = sanitizedDatabaseMessageCodes.has(rawMessageCode)
     ? rawMessageCode
     : undefined
   const safeDetails = [`sqlstate=${safeSqlState}`]
+  if (safeSqlPosition !== undefined) safeDetails.push(`sql_position=${safeSqlPosition}`)
   if (safeMessageCode) safeDetails.push(`message_code=${safeMessageCode}`)
   const cause = new Error(`SANITIZED_CAUSE name=${safeName} failure=${safeFailureKind} ${safeDetails.join(' ')}`)
   cause.name = 'SanitizedIntegrationCause'
@@ -296,6 +306,18 @@ describe('PostgreSQL integration failure diagnostics', () => {
     const privateFailure = postgresIntegrationFailure(privateError, 'resume_ordered_pending_migrations')
     expect(diagnosticText(privateFailure.failure)).not.toContain('CUSTOMER_PHONE_SECRET')
     expect(diagnosticText(privateFailure.failure)).not.toContain('message_code=')
+
+    const positionedError = Object.assign(
+      new Error('private statement detail'),
+      { code: '42501', position: '9876' },
+    )
+    const positionedFailure = postgresIntegrationFailure(
+      positionedError,
+      'resume_ordered_pending_migrations',
+    )
+    expect(diagnosticText(positionedFailure.failure)).toContain('sqlstate=42501')
+    expect(diagnosticText(positionedFailure.failure)).toContain('sql_position=9876')
+    expect(diagnosticText(positionedFailure.failure)).not.toContain('private statement detail')
   })
 
   it('bounds traversal of a long hostile proxy prototype chain', () => {
