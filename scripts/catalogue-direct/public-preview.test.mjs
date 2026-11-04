@@ -59,7 +59,7 @@ it('uses only a fresh exact-account Dashboard proof on Billing403; never overrid
 it('accepts the exact fresh Owner Free screenshot only when the successful API omits a Workers plan',async()=>{
   const accountId='synthetic-account'
   const proof={contract:'dpg:owner-workers-free-screenshot:v1',accountHash:createHash('sha256').update(accountId).digest('hex'),
-    screenshotSha256:'58b3367820e32dbda0c8de544ce81af693733edb8994cccf1fae720530d28310',
+    screenshotSha256:'39f6b84d3ddd3e64b01aafbd174a5b05789b905197004f7d636944c906b30ef8',
     plan:'workers_free',state:'active',billableUsd:null,verifiedAt:new Date().toISOString()}
   const fetchImpl=async()=>Response.json({success:true,result:[]})
   expect((await confirmWorkersFree({accountId,apiToken:'synthetic',attestation:proof,fetchImpl})).evidenceMode).toBe('OWNER_SCREENSHOT')
