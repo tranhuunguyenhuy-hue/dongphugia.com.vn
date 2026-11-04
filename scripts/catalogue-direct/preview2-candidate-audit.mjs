@@ -32,6 +32,10 @@ export async function auditPreview2Candidate(buildRoot,{minProducts=5000,expecte
  }
  if(products.size!==manifest.products||referencePrices!==manifest.contentStats?.referencePrices
    ||descriptionBlocks!==manifest.contentStats?.descriptionBlocks)fail('COUNT_MISMATCH')
+ if(manifest.sitemapProductIds!==undefined
+   &&(!Array.isArray(manifest.sitemapProductIds)||manifest.sitemapProductIds.length>products.size
+     ||manifest.sitemapProductIds.some((id,index)=>!Number.isSafeInteger(id)||!products.has(id)
+       ||(index>0&&id<=manifest.sitemapProductIds[index-1]))))fail('SITEMAP_PRODUCT_IDS')
  let variantProducts=0
  const groups=manifest.variantGroups
  if(!groups||typeof groups!=='object'||Array.isArray(groups))fail('VARIANT_GROUPS_MISSING')

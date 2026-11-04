@@ -72,8 +72,7 @@ export async function getPublicHomeContent(): Promise<PublicHomeContent> {
 
   return {
     categories,
-    posts: process.env.APP_ENV === 'production'
-      ? blogPosts.slice(0, 3).map((post) => ({
+    posts: blogPosts.slice(0, 3).map((post) => ({
           id: post.id,
           title: post.title,
           slug: post.slug,
@@ -81,8 +80,7 @@ export async function getPublicHomeContent(): Promise<PublicHomeContent> {
           thumbnailUrl: historicalBlogImage(post.thumbnail_url),
           publishedAt: post.published_at,
           category: { name: post.category.name, slug: post.category.slug },
-        }))
-      : [],
+        })),
     previewNotice: process.env.APP_ENV === 'production' ? undefined : PUBLIC_CATALOGUE_FIXTURE_NOTICE,
   }
 }
