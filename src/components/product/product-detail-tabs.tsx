@@ -31,7 +31,13 @@ function sanitizeProductHtml(html: string): string {
     // 3. Remove empty paragraph tags left after cleanup
     result = result.replace(/<p[^>]*>\s*<\/p>/gi, '');
 
-    return sanitizeRichHtml(result);
+    // Historical description images often have no dimensions. A lazy image
+    // with a zero-sized box never enters the viewport and therefore never
+    // starts loading, even after scrolling to "Thông tin chung".
+    return sanitizeRichHtml(result).replace(
+        /(<img\b[^>]*\bloading=")lazy(")/gi,
+        '$1eager$2'
+    );
 }
 
 // ────────── Types ──────────

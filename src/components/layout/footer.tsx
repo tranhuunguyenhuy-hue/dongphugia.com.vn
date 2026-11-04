@@ -7,7 +7,7 @@ export function Footer() {
         <footer className="w-full bg-stone-50 border-t border-border">
             <div className="max-w-[1280px] mx-auto px-6 sm:px-8 lg:px-12 py-16 sm:py-20 lg:py-24">
                 <div className="flex flex-col lg:flex-row gap-12 lg:gap-24 mb-16">
-                    {/* Left Column: Logo & Newsletter */}
+                    {/* Left Column: Logo & contact */}
                     <div className="w-full lg:w-[380px] shrink-0 flex flex-col gap-8">
                         <Link href="/" className="inline-flex items-center" aria-label="Đông Phú Gia - Trang chủ">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -25,29 +25,15 @@ export function Footer() {
                             <div className="flex flex-col gap-2">
                                 <div className="h-1 w-8 bg-brand-500" />
                                 <h3 className="text-stone-900 font-medium text-[15px]">
-                                    Đăng ký nhận bản tin ưu đãi
+                                    Liên hệ tư vấn
                                 </h3>
                             </div>
-                            <form
-                                action="/lien-he"
-                                method="get"
-                                className="flex items-stretch max-w-[360px] gap-0 shadow-sm rounded-[8px] overflow-hidden"
-                            >
-                                <input
-                                    name="email"
-                                    type="email"
-                                    placeholder="Nhập email của bạn"
-                                    className="flex-1 h-11 px-4 border border-stone-200 border-r-0 bg-white text-[15px] leading-[24px] text-stone-900 placeholder:text-stone-400 focus:outline-none transition-all"
-                                />
-                                <button
-                                    type="submit"
-                                    className="h-11 px-6 bg-brand-700 hover:bg-brand-800 text-white font-medium text-[15px] transition-colors flex items-center justify-center tracking-wide"
-                                >
-                                    Đăng ký
-                                </button>
-                            </form>
+                            <div className="flex flex-wrap gap-3 text-sm font-medium">
+                                <a href="tel:0949349949" className="rounded-lg bg-brand-700 px-5 py-3 text-white hover:bg-brand-800">Gọi tư vấn</a>
+                                <a href="https://zalo.me/0855528688" target="_blank" rel="noopener noreferrer" className="rounded-lg border border-brand-700 px-5 py-3 text-brand-700 hover:bg-white">Nhắn Zalo</a>
+                            </div>
                             <p className="text-stone-500 text-[13px] leading-relaxed max-w-[360px]">
-                                Bằng việc đăng ký, bạn đồng ý với Chính sách Bảo mật của chúng tôi và nhận thông tin cập nhật từ Đông Phú Gia.
+                                Đội ngũ Đông Phú Gia sẽ xác nhận giá và tình trạng hàng khi tư vấn.
                             </p>
                         </div>
                     </div>
