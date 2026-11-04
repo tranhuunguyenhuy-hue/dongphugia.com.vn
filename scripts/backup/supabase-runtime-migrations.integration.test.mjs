@@ -42,25 +42,6 @@ const sanitizedDatabaseMessageCodes = new Set([
   'DPG_PHASE2_ADMIN_MIGRATION_ALREADY_PRESENT',
   'DPG_PHASE2_ADMIN_POSTFLIGHT_FAILED',
 ])
-const sanitizedDatabaseObjectNames = {
-  schema: new Set(['auth', 'dpg_app', 'public']),
-  table: new Set([
-    'admin_users', 'audit_logs', 'guest_order_idempotency_records',
-    'guest_order_rate_limit_windows', 'order_items', 'orders',
-    'phase2_admin_order_status_idempotency',
-  ]),
-  column: new Set([
-    'assigned_to', 'auth_user_id', 'changed_fields', 'commercial_snapshot',
-    'created_at', 'customer_email', 'customer_name', 'customer_phone',
-    'expires_at', 'idempotency_key_hash', 'internal_note', 'key_hash',
-    'order_origin', 'payment_status', 'request_hash', 'request_id',
-    'safe_response', 'status', 'updated_at',
-  ]),
-}
-const sanitizedDatabaseRoutineNames = new Set([
-  'aclcheck_error', 'aclcheck_error_col', 'aclcheck_error_string',
-  'member_can_set_role',
-])
 const builtinErrorPrototypeNames = new Map([
   [Error.prototype, 'Error'],
   [RangeError.prototype, 'RangeError'],
@@ -172,29 +153,11 @@ function sanitizedErrorCause(error, failureKind) {
   const safeSqlState = typeof rawSqlState === 'string' && /^[0-9A-Z]{5}$/.test(rawSqlState)
     ? rawSqlState
     : 'unknown'
-  const rawSqlPosition = errorDataValue(error, 'position')
-  const parsedSqlPosition = typeof rawSqlPosition === 'string' && /^\d{1,7}$/.test(rawSqlPosition)
-    ? Number(rawSqlPosition)
-    : undefined
-  const safeSqlPosition = Number.isSafeInteger(parsedSqlPosition)
-    && parsedSqlPosition > 0
-    && parsedSqlPosition <= 1_000_000
-    ? parsedSqlPosition
-    : undefined
   const rawMessageCode = errorDataValue(error, 'message')
   const safeMessageCode = sanitizedDatabaseMessageCodes.has(rawMessageCode)
     ? rawMessageCode
     : undefined
   const safeDetails = [`sqlstate=${safeSqlState}`]
-  if (safeSqlPosition !== undefined) safeDetails.push(`sql_position=${safeSqlPosition}`)
-  for (const field of Object.keys(sanitizedDatabaseObjectNames)) {
-    const value = errorDataValue(error, field)
-    if (typeof value === 'string' && sanitizedDatabaseObjectNames[field].has(value)) {
-      safeDetails.push(`${field}=${value}`)
-    }
-  }
-  const routine = errorDataValue(error, 'routine')
-  if (sanitizedDatabaseRoutineNames.has(routine)) safeDetails.push(`postgres_routine=${routine}`)
   if (safeMessageCode) safeDetails.push(`message_code=${safeMessageCode}`)
   const cause = new Error(`SANITIZED_CAUSE name=${safeName} failure=${safeFailureKind} ${safeDetails.join(' ')}`)
   cause.name = 'SanitizedIntegrationCause'
@@ -334,64 +297,6 @@ describe('PostgreSQL integration failure diagnostics', () => {
     expect(diagnosticText(privateFailure.failure)).not.toContain('CUSTOMER_PHONE_SECRET')
     expect(diagnosticText(privateFailure.failure)).not.toContain('message_code=')
 
-    const positionedError = Object.assign(
-      new Error('private statement detail'),
-      { code: '42501', position: '9876' },
-    )
-    const positionedFailure = postgresIntegrationFailure(
-      positionedError,
-      'resume_ordered_pending_migrations',
-    )
-    expect(diagnosticText(positionedFailure.failure)).toContain('sqlstate=42501')
-    expect(diagnosticText(positionedFailure.failure)).toContain('sql_position=9876')
-    expect(diagnosticText(positionedFailure.failure)).not.toContain('private statement detail')
-
-    const objectError = Object.assign(new Error('private permission detail'), {
-      code: '42501', schema: 'dpg_app', table: 'orders', column: 'status',
-    })
-    const objectFailure = postgresIntegrationFailure(
-      objectError,
-      'resume_ordered_pending_migrations',
-    )
-    expect(diagnosticText(objectFailure.failure)).toContain('schema=dpg_app')
-    expect(diagnosticText(objectFailure.failure)).toContain('table=orders')
-    expect(diagnosticText(objectFailure.failure)).toContain('column=status')
-    const privateObjectError = Object.assign(new Error('private permission detail'), {
-      code: '42501', schema: 'dpg_app', table: 'customer_phone_lookup', column: 'phone',
-    })
-    const privateObjectFailure = postgresIntegrationFailure(
-      privateObjectError,
-      'resume_ordered_pending_migrations',
-    )
-    expect(diagnosticText(privateObjectFailure.failure)).toContain('schema=dpg_app')
-    expect(diagnosticText(privateObjectFailure.failure)).not.toContain('customer_phone_lookup')
-    expect(diagnosticText(privateObjectFailure.failure)).not.toContain('column=phone')
-
-    const authSchemaError = Object.assign(new Error('private schema permission detail'), {
-      code: '42501', schema: 'auth',
-    })
-    const authSchemaFailure = postgresIntegrationFailure(
-      authSchemaError,
-      'resume_ordered_pending_migrations',
-    )
-    expect(diagnosticText(authSchemaFailure.failure)).toContain('schema=auth')
-
-    const routineError = Object.assign(new Error('private permission detail'), {
-      code: '42501', routine: 'aclcheck_error_col',
-    })
-    const routineFailure = postgresIntegrationFailure(
-      routineError,
-      'resume_ordered_pending_migrations',
-    )
-    expect(diagnosticText(routineFailure.failure)).toContain('postgres_routine=aclcheck_error_col')
-    const unlistedRoutineError = Object.assign(new Error('private permission detail'), {
-      code: '42501', routine: 'customer_lookup_private',
-    })
-    const unlistedRoutineFailure = postgresIntegrationFailure(
-      unlistedRoutineError,
-      'resume_ordered_pending_migrations',
-    )
-    expect(diagnosticText(unlistedRoutineFailure.failure)).not.toContain('postgres_routine=')
   })
 
   it('bounds traversal of a long hostile proxy prototype chain', () => {
@@ -830,6 +735,50 @@ describe('Supabase runtime migration adoption integration', () => {
 
         const ledger = await client.query('select count(*)::integer as count from dpg_control.runtime_migration_ledger')
         expect(ledger.rows[0]?.count).toBe(EXPECTED_RUNTIME_MIGRATIONS.length)
+
+        phase = 'verify_phase2_admin_idempotency_rls'
+        const authenticatedUser = '00000000-0000-4000-8000-000000000101'
+        const differentUser = '00000000-0000-4000-8000-000000000102'
+        await client.query('begin')
+        try {
+          await client.query('set local role authenticated')
+          await client.query(
+            "select set_config('request.jwt.claims', $1, true)",
+            [JSON.stringify({ sub: authenticatedUser })],
+          )
+          await client.query(`
+            insert into dpg_app.phase2_admin_order_status_idempotency (
+              auth_user_id, key_hash, request_hash, safe_response, expires_at
+            ) values ($1, repeat('a', 64), repeat('b', 64), '{"status":"received"}'::jsonb, now() + interval '24 hours')
+          `, [authenticatedUser])
+          const ownRow = await client.query(`
+            select count(*)::integer as count
+            from dpg_app.phase2_admin_order_status_idempotency
+            where auth_user_id = $1
+          `, [authenticatedUser])
+          expect(ownRow.rows[0]?.count).toBe(1)
+
+          await client.query(
+            "select set_config('request.jwt.claims', $1, true)",
+            [JSON.stringify({ sub: differentUser })],
+          )
+          const anotherUsersRow = await client.query(`
+            select count(*)::integer as count
+            from dpg_app.phase2_admin_order_status_idempotency
+            where auth_user_id = $1
+          `, [authenticatedUser])
+          expect(anotherUsersRow.rows[0]?.count).toBe(0)
+
+          await client.query('savepoint reject_other_auth_user_insert')
+          await expect(client.query(`
+            insert into dpg_app.phase2_admin_order_status_idempotency (
+              auth_user_id, key_hash, request_hash, safe_response, expires_at
+            ) values ($1, repeat('c', 64), repeat('d', 64), '{"status":"received"}'::jsonb, now() + interval '24 hours')
+          `, [authenticatedUser])).rejects.toMatchObject({ code: '42501' })
+          await client.query('rollback to savepoint reject_other_auth_user_insert')
+        } finally {
+          await client.query('rollback').catch(() => undefined)
+        }
 
         phase = 'verify_database_size_guard'
         const databaseSizeBefore = await assertDatabaseSizeWithinContract(client)

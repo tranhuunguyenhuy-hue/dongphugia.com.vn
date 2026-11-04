@@ -84,6 +84,7 @@ begin
      or to_regprocedure('public.phase2_admin_order_list(text,integer,integer)') is not null
      or to_regprocedure('public.phase2_admin_order_get(integer)') is not null
      or to_regprocedure('public.phase2_admin_order_update_status(integer,text,text,uuid)') is not null
+     or to_regprocedure('dpg_app.phase2_admin_auth_uid()') is not null
      or to_regprocedure('dpg_app.phase2_guard_order_status_update()') is not null
      or exists (
        select 1 from pg_trigger t
@@ -115,11 +116,32 @@ alter table dpg_app.phase2_admin_order_status_idempotency enable row level secur
 alter table dpg_app.phase2_admin_order_status_idempotency force row level security;
 revoke all on table dpg_app.phase2_admin_order_status_idempotency
   from public, anon, authenticated, service_role;
+
+-- The migration role intentionally has no USAGE on Supabase's auth schema.
+-- Keep the policy caller-scoped by resolving auth.uid() inside an invoker
+-- function that is evaluated as the authenticated user at request time.
+create function dpg_app.phase2_admin_auth_uid()
+returns uuid
+language plpgsql
+stable
+security invoker
+set search_path = pg_catalog, dpg_app
+as $$
+begin
+  return auth.uid();
+end
+$$;
+
+alter function dpg_app.phase2_admin_auth_uid() owner to dpg_migration;
+revoke all on function dpg_app.phase2_admin_auth_uid()
+  from public, anon, service_role;
+grant execute on function dpg_app.phase2_admin_auth_uid() to authenticated;
+
 create policy phase2_admin_order_status_idempotency_all
   on dpg_app.phase2_admin_order_status_idempotency
   for all to authenticated
-  using (auth_user_id = auth.uid())
-  with check (auth_user_id = auth.uid());
+  using (auth_user_id = dpg_app.phase2_admin_auth_uid())
+  with check (auth_user_id = dpg_app.phase2_admin_auth_uid());
 
 revoke update on table dpg_app.orders from authenticated;
 revoke update (status, updated_at, payment_status, assigned_to, internal_note) on table dpg_app.orders from authenticated;
@@ -468,6 +490,17 @@ begin
      or not has_table_privilege('authenticated', 'dpg_app.phase2_admin_order_status_idempotency', 'INSERT')
      or not has_table_privilege('authenticated', 'dpg_app.phase2_admin_order_status_idempotency', 'UPDATE')
      or not has_table_privilege('authenticated', 'dpg_app.phase2_admin_order_status_idempotency', 'DELETE')
+     or not exists (
+       select 1 from pg_proc p
+       join pg_language l on l.oid = p.prolang
+       where p.oid = 'dpg_app.phase2_admin_auth_uid()'::regprocedure
+         and pg_get_userbyid(p.proowner) = 'dpg_migration'
+         and l.lanname = 'plpgsql'
+         and not p.prosecdef
+     )
+     or not has_function_privilege('authenticated', 'dpg_app.phase2_admin_auth_uid()', 'EXECUTE')
+     or has_function_privilege('anon', 'dpg_app.phase2_admin_auth_uid()', 'EXECUTE')
+     or has_function_privilege('service_role', 'dpg_app.phase2_admin_auth_uid()', 'EXECUTE')
      or not exists (
        select 1 from pg_trigger t
        join pg_class c on c.oid = t.tgrelid
