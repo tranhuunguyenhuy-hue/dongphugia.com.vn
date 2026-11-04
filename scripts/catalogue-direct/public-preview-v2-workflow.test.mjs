@@ -27,8 +27,8 @@ it('builds one protected read-only source candidate before any possible Worker u
 })
 
 it('pins the newly read managed baseline and excludes write on candidate-only run',()=>{
- expect(workflow).toContain('--expected-version-count 12')
- expect(workflow).toContain('--expected-latest-version-id 49c91111-a0c6-4d3b-9db6-cfa318a9bf4a')
+ expect(workflow).toContain('--expected-version-count 13')
+ expect(workflow).toContain('--expected-latest-version-id a1e4dc1e-51ed-4e08-9cc5-147aa0fae456')
  expect(workflow).toContain('--bootstrap-version-id d4658ffa-2fcd-465b-bae7-7967bb1c7f78')
  expect(workflow).toContain('and .path==".github/workflows/catalogue-public-preview-v2.yml"')
  expect(workflow).toMatch(/- name: Upload one existing Worker version\n\s+if: inputs\.publish/)
