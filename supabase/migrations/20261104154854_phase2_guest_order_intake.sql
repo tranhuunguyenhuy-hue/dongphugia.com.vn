@@ -34,6 +34,20 @@ begin
     raise exception 'DPG_PHASE2_DPG_APP_SCHEMA_MISMATCH';
   end if;
 
+  if (
+       select count(distinct column_name)
+       from information_schema.columns
+       where table_schema = 'dpg_app'
+         and table_name = 'products'
+         and column_name in (
+           'price', 'original_price', 'list_price', 'sale_price',
+           'online_discount_amount', 'stock_status', 'price_source',
+           'source_system', 'price_state', 'price_confidence', 'price_updated_at'
+         )
+     ) <> 11 then
+    raise exception 'DPG_PHASE2_PRODUCT_PRICING_SCHEMA_MISMATCH';
+  end if;
+
   if not has_schema_privilege('dpg_migration', 'dpg_app', 'USAGE')
      or not has_schema_privilege('dpg_migration', 'public', 'USAGE')
      or has_schema_privilege('dpg_migration', 'public', 'CREATE')
@@ -214,11 +228,12 @@ declare
   v_item jsonb;
   v_product record;
   v_product_ids integer[] := array[]::integer[];
-  v_canonical_list_price numeric;
+  v_public_selling_price numeric;
   v_list_price numeric;
   v_sale_price numeric;
   v_base_price numeric;
   v_online_discount numeric;
+  v_effective_discount numeric;
   v_install_option text;
   v_installation_fee numeric;
   v_unit_price numeric;
@@ -326,7 +341,8 @@ begin
   begin
     for v_item in select value from jsonb_array_elements(p_input -> 'items') loop
       select id, sku, name, price, original_price, list_price, sale_price,
-        online_discount_amount, stock_status
+        online_discount_amount, stock_status, price_source, source_system,
+        price_state, price_confidence, price_updated_at
         into v_product
       from dpg_app.products
       where id = (v_item ->> 'productId')::integer
@@ -334,48 +350,73 @@ begin
         and publication_status = 'public'
         and pdp_visibility = 'public'
         and sellable_status = 'sellable'
-        and stock_status = 'in_stock';
+        -- Availability is reconfirmed by staff; these states may create only
+        -- a pending request, never an accepted or fulfilled order.
+        and stock_status in ('in_stock', 'pre_order', 'preorder', 'contact');
       if not found then raise exception 'PRODUCT_UNAVAILABLE'; end if;
 
-      v_canonical_list_price := case
-        when v_product.list_price is not null and v_product.list_price > 0 then v_product.list_price
+      -- Match the frozen Public price allowlist: exact source identity,
+      -- priced/high-confidence facts from 2026-07-02, and positive integer VND.
+      -- Hita prices remain authoritative when optional comparison fields differ;
+      -- manual prices additionally require matching list/original and sale facts.
+      v_public_selling_price := case
+        when v_product.price_source in ('hita', 'manual')
+          and v_product.source_system = v_product.price_source
+          and v_product.price_state = 'priced'
+          and v_product.price_confidence = 'high'
+          and v_product.price_updated_at is not null
+          and (v_product.price_updated_at at time zone 'UTC')::date = date '2026-07-02'
+          and v_product.price is not null
+          and v_product.price > 0
+          and v_product.price <= 1000000000
+          and v_product.price = trunc(v_product.price)
+          and (
+            v_product.price_source = 'hita'
+            or (
+              v_product.sale_price = v_product.price
+              and v_product.list_price is not null
+              and v_product.list_price > 0
+              and v_product.list_price <= 1000000000
+              and v_product.list_price = trunc(v_product.list_price)
+              and v_product.original_price = v_product.list_price
+            )
+          )
+          then v_product.price
         else null end;
-      v_list_price := coalesce(
-        v_canonical_list_price,
-        case when v_product.original_price > 0 then v_product.original_price end,
-        case when v_product.price > 0 then v_product.price end
-      );
-      if v_list_price is null
-         or (v_canonical_list_price is null and v_product.sale_price is null) then
+      if v_public_selling_price is null then
         raise exception 'PRODUCT_REQUIRES_QUOTE';
       end if;
 
-      if v_product.sale_price is not null then
-        if v_product.sale_price <= 0 or v_product.sale_price >= v_list_price then
-          raise exception 'PRODUCT_REQUIRES_QUOTE';
-        end if;
-        v_sale_price := v_product.sale_price;
-      else
-        v_sale_price := null;
-      end if;
-      v_base_price := coalesce(v_sale_price, v_canonical_list_price);
-      if v_base_price is null or v_base_price <= 0 then
-        raise exception 'PRODUCT_REQUIRES_QUOTE';
-      end if;
+      v_list_price := case
+        when v_product.list_price is not null
+          and v_product.original_price = v_product.list_price
+          and v_product.list_price >= v_public_selling_price
+          and v_product.list_price <= 1000000000
+          and v_product.list_price = trunc(v_product.list_price)
+          then v_product.list_price
+        else v_public_selling_price end;
+      v_sale_price := case
+        when v_public_selling_price < v_list_price then v_public_selling_price
+        else null end;
+      v_base_price := v_public_selling_price;
       v_online_discount := case
         when v_product.online_discount_amount > 0
+          and v_product.online_discount_amount <= 1000000000
+          and v_product.online_discount_amount = trunc(v_product.online_discount_amount)
           and v_product.online_discount_amount < v_base_price then v_product.online_discount_amount
-        else 0 end;
+        else null end;
+      v_effective_discount := coalesce(v_online_discount, 0);
       v_install_option := coalesce(v_item ->> 'installOption', 'none');
       v_installation_fee := case v_install_option
         when 'install' then 200000
         when 'replace' then 350000
         else 0 end;
       v_unit_price := v_base_price + v_installation_fee;
-      v_final_unit_price := v_base_price - v_online_discount + v_installation_fee;
+      v_final_unit_price := case when v_online_discount is null then null
+        else v_base_price - v_online_discount + v_installation_fee end;
       v_line_total := v_unit_price * (v_item ->> 'quantity')::integer;
       v_subtotal := v_subtotal + v_line_total;
-      v_discount := v_discount + v_online_discount * (v_item ->> 'quantity')::integer;
+      v_discount := v_discount + v_effective_discount * (v_item ->> 'quantity')::integer;
       v_lines := v_lines || jsonb_build_array(jsonb_build_object(
         'product_id', v_product.id,
         'product_name', case v_install_option

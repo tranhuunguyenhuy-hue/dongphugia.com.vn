@@ -64,7 +64,7 @@ export function ProductCTA({
   const finalOnlinePrice = basePrice === null
     ? null
     : resolveFinalOnlinePrice(basePrice, discount) ?? basePrice
-  const canRequestOrder = commerce.canAddToCart && finalOnlinePrice !== null && finalOnlinePrice > 0
+  const canRequestOrder = commerce.canRequestOrder && finalOnlinePrice !== null && finalOnlinePrice > 0
 
   const handleAddToCart = () => {
     if (!canRequestOrder || finalOnlinePrice === null) return

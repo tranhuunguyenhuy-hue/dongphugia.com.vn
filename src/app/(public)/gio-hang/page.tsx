@@ -1,8 +1,9 @@
 'use client'
 
 import { useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { useCartStore, useCartTotal, CartItem } from '@/lib/cart-store'
+import { getPersistedOrderRequestNumber } from '@/lib/guest-order-contract'
+import { OrderRequestConfirmation } from '@/components/orders/order-request-confirmation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -16,12 +17,12 @@ import { trackGenerateLead } from '@/lib/tracking'
 const VIETNAM_MOBILE_PATTERN = /^(?:\+84|0)(?:3|5|7|8|9)\d{8}$/
 
 export default function CartPage() {
-    const router = useRouter()
     const { items, removeItem, updateQuantity, clearCart } = useCartStore()
     const total = useCartTotal()
     const idempotencyRef = useRef<{ cartFingerprint: string; key: string } | null>(null)
 
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [submittedOrderNumber, setSubmittedOrderNumber] = useState<string | null>(null)
     const [form, setForm] = useState({
         customer_name: '',
         customer_phone: '',
@@ -100,11 +101,7 @@ export default function CartPage() {
                 return
             }
 
-            const orderNumber = data && typeof data === 'object' && 'data' in data
-                && data.data && typeof data.data === 'object' && 'order_number' in data.data
-                && typeof data.data.order_number === 'string'
-                ? data.data.order_number
-                : null
+            const orderNumber = getPersistedOrderRequestNumber(data)
             if (!orderNumber) {
                 toast.error('Chưa xác nhận được mã tiếp nhận. Giỏ hàng của bạn vẫn được giữ lại.')
                 return
@@ -116,12 +113,16 @@ export default function CartPage() {
             clearOrderRequestKey(cartFingerprint, idempotencyKey)
             idempotencyRef.current = null
             clearCart()
-            router.push(`/dat-hang-thanh-cong?order=${encodeURIComponent(orderNumber)}`)
+            setSubmittedOrderNumber(orderNumber)
         } catch {
             toast.error('Không thể kết nối. Vui lòng kiểm tra mạng và thử lại.')
         } finally {
             setIsSubmitting(false)
         }
+    }
+
+    if (submittedOrderNumber) {
+        return <OrderRequestConfirmation orderNumber={submittedOrderNumber} />
     }
 
     if (items.length === 0) {
