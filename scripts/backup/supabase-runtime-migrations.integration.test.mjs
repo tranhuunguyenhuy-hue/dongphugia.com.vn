@@ -42,6 +42,21 @@ const sanitizedDatabaseMessageCodes = new Set([
   'DPG_PHASE2_ADMIN_MIGRATION_ALREADY_PRESENT',
   'DPG_PHASE2_ADMIN_POSTFLIGHT_FAILED',
 ])
+const sanitizedDatabaseObjectNames = {
+  schema: new Set(['dpg_app', 'public']),
+  table: new Set([
+    'admin_users', 'audit_logs', 'guest_order_idempotency_records',
+    'guest_order_rate_limit_windows', 'order_items', 'orders',
+    'phase2_admin_order_status_idempotency',
+  ]),
+  column: new Set([
+    'assigned_to', 'auth_user_id', 'changed_fields', 'commercial_snapshot',
+    'created_at', 'customer_email', 'customer_name', 'customer_phone',
+    'expires_at', 'idempotency_key_hash', 'internal_note', 'key_hash',
+    'order_origin', 'payment_status', 'request_hash', 'request_id',
+    'safe_response', 'status', 'updated_at',
+  ]),
+}
 const builtinErrorPrototypeNames = new Map([
   [Error.prototype, 'Error'],
   [RangeError.prototype, 'RangeError'],
@@ -168,6 +183,12 @@ function sanitizedErrorCause(error, failureKind) {
     : undefined
   const safeDetails = [`sqlstate=${safeSqlState}`]
   if (safeSqlPosition !== undefined) safeDetails.push(`sql_position=${safeSqlPosition}`)
+  for (const field of Object.keys(sanitizedDatabaseObjectNames)) {
+    const value = errorDataValue(error, field)
+    if (typeof value === 'string' && sanitizedDatabaseObjectNames[field].has(value)) {
+      safeDetails.push(`${field}=${value}`)
+    }
+  }
   if (safeMessageCode) safeDetails.push(`message_code=${safeMessageCode}`)
   const cause = new Error(`SANITIZED_CAUSE name=${safeName} failure=${safeFailureKind} ${safeDetails.join(' ')}`)
   cause.name = 'SanitizedIntegrationCause'
@@ -318,6 +339,27 @@ describe('PostgreSQL integration failure diagnostics', () => {
     expect(diagnosticText(positionedFailure.failure)).toContain('sqlstate=42501')
     expect(diagnosticText(positionedFailure.failure)).toContain('sql_position=9876')
     expect(diagnosticText(positionedFailure.failure)).not.toContain('private statement detail')
+
+    const objectError = Object.assign(new Error('private permission detail'), {
+      code: '42501', schema: 'dpg_app', table: 'orders', column: 'status',
+    })
+    const objectFailure = postgresIntegrationFailure(
+      objectError,
+      'resume_ordered_pending_migrations',
+    )
+    expect(diagnosticText(objectFailure.failure)).toContain('schema=dpg_app')
+    expect(diagnosticText(objectFailure.failure)).toContain('table=orders')
+    expect(diagnosticText(objectFailure.failure)).toContain('column=status')
+    const privateObjectError = Object.assign(new Error('private permission detail'), {
+      code: '42501', schema: 'dpg_app', table: 'customer_phone_lookup', column: 'phone',
+    })
+    const privateObjectFailure = postgresIntegrationFailure(
+      privateObjectError,
+      'resume_ordered_pending_migrations',
+    )
+    expect(diagnosticText(privateObjectFailure.failure)).toContain('schema=dpg_app')
+    expect(diagnosticText(privateObjectFailure.failure)).not.toContain('customer_phone_lookup')
+    expect(diagnosticText(privateObjectFailure.failure)).not.toContain('column=phone')
   })
 
   it('bounds traversal of a long hostile proxy prototype chain', () => {
