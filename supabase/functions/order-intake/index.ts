@@ -18,6 +18,7 @@ type OrderRequestInput = {
 const MAX_REQUEST_BYTES = 16 * 1024
 const PHONE_PATTERN = /^(?:\+84|0)(?:3|5|7|8|9)\d{8}$/
 const ORDER_NUMBER_PATTERN = /^DPG-[0-9]{6}-[0-9A-F]{8}$/
+const IDEMPOTENCY_KEY_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 const ALLOWED_ERROR_CODES = new Set([
   'METHOD_NOT_ALLOWED',
   'ORIGIN_FORBIDDEN',
@@ -193,18 +194,18 @@ Deno.serve(async (request) => {
   const requestId = request.headers.get('x-request-id')?.match(/^[a-f0-9-]{36}$/i)
     ? request.headers.get('x-request-id')!
     : crypto.randomUUID()
-  if (request.method !== 'POST') {
+  if (request.method !== 'POST' && request.method !== 'GET') {
     return jsonResponse({ error: { code: 'METHOD_NOT_ALLOWED' } }, 405, requestId)
   }
   if (!isAllowedOrigin(request.headers.get('origin'))) {
     return jsonResponse({ error: { code: 'ORIGIN_FORBIDDEN' } }, 403, requestId)
   }
-  if (!request.headers.get('content-type')?.toLowerCase().startsWith('application/json')) {
+  if (request.method === 'POST' && !request.headers.get('content-type')?.toLowerCase().startsWith('application/json')) {
     return jsonResponse({ error: { code: 'UNSUPPORTED_MEDIA_TYPE' } }, 415, requestId)
   }
 
   const idempotencyKey = request.headers.get('idempotency-key')?.trim()
-  if (!idempotencyKey || idempotencyKey.length < 8 || idempotencyKey.length > 200) {
+  if (!idempotencyKey || !IDEMPOTENCY_KEY_PATTERN.test(idempotencyKey)) {
     return jsonResponse({ error: { code: 'INVALID_IDEMPOTENCY_KEY' } }, 400, requestId)
   }
 
@@ -212,6 +213,35 @@ Deno.serve(async (request) => {
     const { data: context, error: authError } = await createSupabaseContext(request, { auth: 'publishable' })
     if (authError || !context) {
       return jsonResponse({ error: { code: 'UNAUTHORIZED' } }, 401, requestId)
+    }
+
+    if (request.method === 'GET') {
+      const { data, error } = await context.supabase.rpc('guest_order_request_receipt', {
+        p_idempotency_key: idempotencyKey,
+      })
+      if (error) {
+        const code = rpcErrorCode(error)
+        if (code === 'ORDER_REQUEST_FAILED') {
+          console.error(JSON.stringify({ event: 'ORDER_RECEIPT_RPC_FAILURE', request_id: requestId, code }))
+        }
+        return jsonResponse({ error: { code } }, statusForError(code), requestId)
+      }
+      if (data === null) return jsonResponse({ data: null }, 200, requestId)
+      if (
+        !data || typeof data !== 'object' || Array.isArray(data) ||
+        typeof (data as Record<string, unknown>).order_number !== 'string' ||
+        !ORDER_NUMBER_PATTERN.test((data as Record<string, unknown>).order_number as string) ||
+        (data as Record<string, unknown>).status !== 'pending' ||
+        (data as Record<string, unknown>).payment_status !== 'unpaid'
+      ) {
+        console.error(JSON.stringify({ event: 'ORDER_RECEIPT_INVALID_RPC_RESPONSE', request_id: requestId }))
+        return jsonResponse({ error: { code: 'ORDER_REQUEST_FAILED' } }, 503, requestId)
+      }
+      return jsonResponse({ data: {
+        order_number: (data as Record<string, unknown>).order_number,
+        status: 'pending',
+        payment_status: 'unpaid',
+      } }, 200, requestId)
     }
 
     const input = validateInput(await readBoundedJson(request))
@@ -246,7 +276,11 @@ Deno.serve(async (request) => {
       return jsonResponse({ error: { code: 'ORDER_REQUEST_FAILED' } }, 503, requestId)
     }
 
-    return jsonResponse({ data }, 201, requestId)
+    return jsonResponse({ data: {
+      order_number: (data as Record<string, unknown>).order_number,
+      status: 'pending',
+      payment_status: 'unpaid',
+    } }, 201, requestId)
   } catch (error) {
     if (error instanceof RequestFailure) {
       return jsonResponse({ error: { code: error.code } }, error.status, requestId)

@@ -8,6 +8,7 @@ export const ORDER_REQUEST_STATUSES = [
 ] as const
 
 export type OrderRequestStatus = (typeof ORDER_REQUEST_STATUSES)[number]
+export type ShippingFeeStatus = 'pending_confirmation' | 'confirmed' | 'not_applicable'
 
 export type AdminOrderSummary = Readonly<{
   id: number
@@ -17,6 +18,7 @@ export type AdminOrderSummary = Readonly<{
   status: OrderRequestStatus
   payment_status: string
   total: number
+  shipping_fee_status: ShippingFeeStatus
   assigned_to: number | null
   created_at: string
 }>
@@ -67,6 +69,7 @@ function parseOrderSummary(value: unknown): AdminOrderSummary | null {
   if (!candidate) return null
   const id = positiveInteger(candidate.id)
   const total = nonNegativeNumber(candidate.total)
+  const shippingFeeStatus = candidate.shipping_fee_status
   if (
     id === null || total === null ||
     typeof candidate.order_number !== 'string' ||
@@ -75,6 +78,7 @@ function parseOrderSummary(value: unknown): AdminOrderSummary | null {
     typeof candidate.status !== 'string' ||
     !ORDER_REQUEST_STATUSES.includes(candidate.status as OrderRequestStatus) ||
     typeof candidate.payment_status !== 'string' ||
+    (shippingFeeStatus !== 'pending_confirmation' && shippingFeeStatus !== 'confirmed' && shippingFeeStatus !== 'not_applicable') ||
     typeof candidate.created_at !== 'string'
   ) return null
 
@@ -91,6 +95,7 @@ function parseOrderSummary(value: unknown): AdminOrderSummary | null {
     status: candidate.status as OrderRequestStatus,
     payment_status: candidate.payment_status,
     total,
+    shipping_fee_status: shippingFeeStatus,
     assigned_to: assignedTo,
     created_at: candidate.created_at,
   }
@@ -114,8 +119,10 @@ export function parseAdminOrderDetail(value: unknown): AdminOrderDetail | null {
   const subtotal = nonNegativeNumber(order.subtotal)
   const discount = nonNegativeNumber(order.discount)
   const shippingFee = nonNegativeNumber(order.shipping_fee)
+  const shippingFeeStatus = order.shipping_fee_status
   if (
     !summary || subtotal === null || discount === null || shippingFee === null ||
+    (shippingFeeStatus !== 'pending_confirmation' && shippingFeeStatus !== 'confirmed' && shippingFeeStatus !== 'not_applicable') ||
     typeof order.updated_at !== 'string' ||
     (order.customer_email !== null && typeof order.customer_email !== 'string') ||
     (order.customer_address !== null && typeof order.customer_address !== 'string') ||
@@ -158,6 +165,7 @@ export function parseAdminOrderDetail(value: unknown): AdminOrderDetail | null {
       subtotal,
       discount,
       shipping_fee: shippingFee,
+      shipping_fee_status: shippingFeeStatus,
       internal_note: order.internal_note as string | null,
       updated_at: order.updated_at,
     },
@@ -172,7 +180,7 @@ export function parseOrderRequestStatus(value: string | undefined): OrderRequest
 }
 
 export function allowedOrderRequestStatusTransitions(status: OrderRequestStatus): OrderRequestStatus[] {
-  if (status === 'pending') return ['received', 'confirmed', 'cancelled']
-  if (status === 'received') return ['confirmed', 'cancelled']
+  if (status === 'pending') return ['received', 'cancelled']
+  if (status === 'received') return ['cancelled']
   return []
 }

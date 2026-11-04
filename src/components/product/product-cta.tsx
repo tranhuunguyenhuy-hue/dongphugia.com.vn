@@ -63,7 +63,7 @@ export function ProductCTA({
     
     const productOptions = useProductOptions();
     const installOption = productOptions?.installOption || 'none';
-    const installationFee = productOptions?.installationFee || 0;
+    const installationFee = productOptions?.installationFee ?? null;
     const requestedOnlineDiscountAmount = productOptions?.onlineDiscountAmount || 0;
     const discountedProductPrice = resolveFinalOnlinePrice(displayPrice, requestedOnlineDiscountAmount);
     const onlineDiscountAmount = discountedProductPrice === null ? 0 : requestedOnlineDiscountAmount;
@@ -76,7 +76,7 @@ export function ProductCTA({
 
     const handleAddToCart = () => {
         if (!canRequestOrder || displayPrice === null) return;
-        const finalPrice = (discountedProductPrice ?? displayPrice) + installationFee;
+        const finalPrice = discountedProductPrice ?? displayPrice;
         
         addItem({
             productId,
@@ -157,7 +157,7 @@ export function ProductCTA({
     };
 
     const finalItemPrice = canRequestOrder && displayPrice !== null
-        ? ((discountedProductPrice ?? displayPrice) + installationFee)
+        ? (discountedProductPrice ?? displayPrice)
         : 0;
     const totalPrice = finalItemPrice * quantity;
 

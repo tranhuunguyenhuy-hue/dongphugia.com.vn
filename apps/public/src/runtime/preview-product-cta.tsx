@@ -82,9 +82,9 @@ export function ProductCTA({
       brandName: brandName ?? null,
       quantity,
       installOption: options?.installOption ?? 'none',
-      installationFee: options?.installationFee ?? 0,
+      installationFee: options?.installationFee ?? null,
       onlineDiscountAmount: basePrice !== null && finalOnlinePrice < basePrice ? discount : 0,
-      finalPrice: finalOnlinePrice + (options?.installationFee ?? 0),
+      finalPrice: finalOnlinePrice,
     })
     setAdded(true)
   }

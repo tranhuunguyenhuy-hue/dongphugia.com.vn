@@ -1,8 +1,17 @@
 'use client'
 
-import { useRef, useState } from 'react'
-import { useCartStore, useCartTotal, CartItem } from '@/lib/cart-store'
+import { useEffect, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { getCartItemUnitPrice, useCartStore, useCartTotal, CartItem } from '@/lib/cart-store'
 import { getPersistedOrderRequestNumber } from '@/lib/guest-order-contract'
+import {
+    getConflictedOrderRequestReceiptKeys,
+    getPendingOrderRequestReceiptKeys,
+    lookupOrderRequestReceipt,
+    markOrderRequestReceiptConflict,
+    markOrderRequestReceiptVerified,
+    storeOrderRequestReceiptKey,
+} from '@/lib/guest-order-client'
 import { OrderRequestConfirmation } from '@/components/orders/order-request-confirmation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -19,10 +28,14 @@ const VIETNAM_MOBILE_PATTERN = /^(?:\+84|0)(?:3|5|7|8|9)\d{8}$/
 export default function CartPage() {
     const { items, removeItem, updateQuantity, clearCart } = useCartStore()
     const total = useCartTotal()
+    const router = useRouter()
     const idempotencyRef = useRef<{ cartFingerprint: string; key: string } | null>(null)
 
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [submittedOrderNumber, setSubmittedOrderNumber] = useState<string | null>(null)
+    const [priorOrderNotice, setPriorOrderNotice] = useState<string | null>(null)
+    const [hasUnresolvedReceiptConflict, setHasUnresolvedReceiptConflict] = useState(false)
+    const [isCheckingReceipt, setIsCheckingReceipt] = useState(false)
     const [form, setForm] = useState({
         customer_name: '',
         customer_phone: '',
@@ -31,9 +44,72 @@ export default function CartPage() {
         note: '',
     })
 
-    const hasOnlyPricedItems = items.every(i => (i.finalPrice ?? i.price ?? 0) > 0)
+    const hasOnlyPricedItems = items.every(i => getCartItemUnitPrice(i) !== null)
     const normalizedPhone = form.customer_phone.replace(/[\s().-]/g, '')
     const phoneIsInvalid = form.customer_phone.length > 0 && !VIETNAM_MOBILE_PATTERN.test(normalizedPhone)
+
+    useEffect(() => {
+        let active = true
+        const conflictedKeys = getConflictedOrderRequestReceiptKeys()
+        const pendingKeys = getPendingOrderRequestReceiptKeys()
+        if (conflictedKeys.length) {
+            setHasUnresolvedReceiptConflict(true)
+        }
+        if (!conflictedKeys.length && !pendingKeys.length) return
+        setIsCheckingReceipt(true)
+        void (async () => {
+            let conflictWasVerified = false
+            for (const key of conflictedKeys) {
+                const orderNumber = await lookupOrderRequestReceipt(key)
+                if (!active) return
+                if (!orderNumber) continue
+                conflictWasVerified = true
+                setPriorOrderNotice(
+                    `Yêu cầu trước ${orderNumber} đã được tiếp nhận. Thông tin bạn vừa chỉnh sửa chưa được gửi; giỏ hàng vẫn được giữ lại.`,
+                )
+                setHasUnresolvedReceiptConflict(false)
+                break
+            }
+            if (conflictedKeys.length && !conflictWasVerified) {
+                setPriorOrderNotice(null)
+                setHasUnresolvedReceiptConflict(true)
+            }
+
+            // A pending request may have succeeded before its response was
+            // lost. Show its receipt, but never clear a cart automatically:
+            // the customer may have changed the cart after that request.
+            for (const key of pendingKeys) {
+                const orderNumber = await lookupOrderRequestReceipt(key)
+                if (!active) return
+                if (!orderNumber) continue
+                if (!conflictedKeys.length || conflictWasVerified) {
+                    setPriorOrderNotice(
+                        `Yêu cầu trước ${orderNumber} đã được tiếp nhận. Giỏ hàng hiện tại được giữ nguyên để bạn kiểm tra trước khi gửi tiếp.`,
+                    )
+                }
+                break
+            }
+            if (active) setIsCheckingReceipt(false)
+        })()
+        return () => { active = false }
+    }, [])
+
+    const handleCheckConflictedReceipt = async () => {
+        setIsCheckingReceipt(true)
+        const keys = getConflictedOrderRequestReceiptKeys()
+        for (const key of keys) {
+            const orderNumber = await lookupOrderRequestReceipt(key)
+            if (!orderNumber) continue
+            setPriorOrderNotice(
+                `Yêu cầu trước ${orderNumber} đã được tiếp nhận. Thông tin bạn vừa chỉnh sửa chưa được gửi; giỏ hàng vẫn được giữ lại.`,
+            )
+            setHasUnresolvedReceiptConflict(false)
+            setIsCheckingReceipt(false)
+            return
+        }
+        setIsCheckingReceipt(false)
+        setHasUnresolvedReceiptConflict(true)
+    }
 
     const handleClearCart = () => {
         if (window.confirm('Xóa toàn bộ sản phẩm khỏi giỏ hàng?')) {
@@ -50,6 +126,8 @@ export default function CartPage() {
         }
 
         setIsSubmitting(true)
+        let pendingRequest: { cartFingerprint: string; key: string } | null = null
+        let receiptKeyStored = false
         try {
             const input = {
                 ...form,
@@ -65,6 +143,8 @@ export default function CartPage() {
             const cartFingerprint = await createCartFingerprint(input.items)
             const idempotencyKey = getOrCreateOrderRequestKey(cartFingerprint, idempotencyRef.current)
             idempotencyRef.current = { cartFingerprint, key: idempotencyKey }
+            pendingRequest = { cartFingerprint, key: idempotencyKey }
+            receiptKeyStored = storeOrderRequestReceiptKey(idempotencyKey)
 
             const res = await fetch('/api/order-requests', {
                 method: 'POST',
@@ -82,6 +162,27 @@ export default function CartPage() {
                     && typeof data.error.code === 'string'
                     ? data.error.code
                     : ''
+                if (code === 'IDEMPOTENCY_KEY_REUSED') {
+                    if (receiptKeyStored) markOrderRequestReceiptConflict(idempotencyKey)
+                    setHasUnresolvedReceiptConflict(receiptKeyStored)
+                    setPriorOrderNotice(null)
+                    setIsCheckingReceipt(receiptKeyStored)
+                    const priorOrderNumber = await lookupOrderRequestReceipt(idempotencyKey)
+                    setIsCheckingReceipt(false)
+                    if (priorOrderNumber) {
+                        setPriorOrderNotice(
+                            `Yêu cầu trước ${priorOrderNumber} đã được tiếp nhận. Thông tin bạn vừa chỉnh sửa chưa được gửi; giỏ hàng vẫn được giữ lại.`,
+                        )
+                        setHasUnresolvedReceiptConflict(false)
+                    } else if (receiptKeyStored) {
+                        setPriorOrderNotice('Không thể xác minh yêu cầu cũ lúc này. Hệ thống đang giữ nguyên giỏ hàng để tránh báo đã gửi thành công nhầm.')
+                    } else {
+                        toast.error('Khóa gửi đã được dùng cho yêu cầu trước. Giỏ hàng được giữ nguyên; vui lòng thử gửi lại để tạo yêu cầu mới.')
+                    }
+                    clearOrderRequestKey(cartFingerprint, idempotencyKey)
+                    idempotencyRef.current = null
+                    return
+                }
                 const message = code === 'PRODUCT_UNAVAILABLE'
                     ? 'Một sản phẩm trong giỏ không còn khả dụng. Vui lòng kiểm tra lại.'
                     : code === 'PRODUCT_REQUIRES_QUOTE'
@@ -90,12 +191,17 @@ export default function CartPage() {
                             ? 'Bạn vừa gửi nhiều yêu cầu. Vui lòng đợi một chút rồi thử lại.'
                             : code === 'ORDER_INTAKE_UNAVAILABLE'
                                 ? 'Chức năng nhận yêu cầu đang tạm thời gián đoạn. Giỏ hàng của bạn vẫn được giữ lại.'
-                                : code === 'IDEMPOTENCY_KEY_REUSED'
-                                    ? 'Yêu cầu này đã được gửi trước đó với thông tin khác. Nếu bạn muốn tạo yêu cầu mới, hãy kiểm tra lại rồi bấm gửi thêm một lần nữa.'
                                 : 'Chưa gửi được yêu cầu. Vui lòng kiểm tra thông tin và thử lại.'
-                if (code === 'IDEMPOTENCY_KEY_REUSED') {
+                const recoveredOrderNumber = await lookupOrderRequestReceipt(idempotencyKey)
+                if (recoveredOrderNumber) {
+                    markOrderRequestReceiptVerified(idempotencyKey)
+                    trackGenerateLead('order_request_submit')
                     clearOrderRequestKey(cartFingerprint, idempotencyKey)
                     idempotencyRef.current = null
+                    clearCart()
+                    if (receiptKeyStored) router.push('/dat-hang-thanh-cong')
+                    else setSubmittedOrderNumber(recoveredOrderNumber)
+                    return
                 }
                 toast.error(message)
                 return
@@ -103,6 +209,17 @@ export default function CartPage() {
 
             const orderNumber = getPersistedOrderRequestNumber(data)
             if (!orderNumber) {
+                const recoveredOrderNumber = await lookupOrderRequestReceipt(idempotencyKey)
+                if (recoveredOrderNumber) {
+                    markOrderRequestReceiptVerified(idempotencyKey)
+                    trackGenerateLead('order_request_submit')
+                    clearOrderRequestKey(cartFingerprint, idempotencyKey)
+                    idempotencyRef.current = null
+                    clearCart()
+                    if (receiptKeyStored) router.push('/dat-hang-thanh-cong')
+                    else setSubmittedOrderNumber(recoveredOrderNumber)
+                    return
+                }
                 toast.error('Chưa xác nhận được mã tiếp nhận. Giỏ hàng của bạn vẫn được giữ lại.')
                 return
             }
@@ -110,12 +227,27 @@ export default function CartPage() {
             // A submitted request is not a confirmed purchase.
             trackGenerateLead('order_request_submit')
 
+            markOrderRequestReceiptVerified(idempotencyKey)
             clearOrderRequestKey(cartFingerprint, idempotencyKey)
             idempotencyRef.current = null
             clearCart()
-            setSubmittedOrderNumber(orderNumber)
+            if (receiptKeyStored) router.push('/dat-hang-thanh-cong')
+            else setSubmittedOrderNumber(orderNumber)
         } catch {
-            toast.error('Không thể kết nối. Vui lòng kiểm tra mạng và thử lại.')
+            const recoveredOrderNumber = pendingRequest
+                ? await lookupOrderRequestReceipt(pendingRequest.key)
+                : null
+            if (pendingRequest && recoveredOrderNumber) {
+                markOrderRequestReceiptVerified(pendingRequest.key)
+                trackGenerateLead('order_request_submit')
+                clearOrderRequestKey(pendingRequest.cartFingerprint, pendingRequest.key)
+                idempotencyRef.current = null
+                clearCart()
+                if (receiptKeyStored) router.push('/dat-hang-thanh-cong')
+                else setSubmittedOrderNumber(recoveredOrderNumber)
+            } else {
+                toast.error('Không thể kết nối. Vui lòng kiểm tra mạng và thử lại.')
+            }
         } finally {
             setIsSubmitting(false)
         }
@@ -128,6 +260,7 @@ export default function CartPage() {
     if (items.length === 0) {
         return (
             <div className="max-w-[1280px] mx-auto px-5 lg:px-8 py-16 flex flex-col items-center gap-6 text-center">
+                {isCheckingReceipt && <p className="text-neutral-500">Đang kiểm tra yêu cầu vừa gửi…</p>}
                 <div className="w-24 h-24 bg-neutral-100 rounded-full flex items-center justify-center">
                     <ShoppingBag className="w-10 h-10 text-neutral-300" />
                 </div>
@@ -189,13 +322,31 @@ export default function CartPage() {
 
                 {/* Right: Order Summary + Form */}
                 <div className="space-y-6">
+                    {hasUnresolvedReceiptConflict ? (
+                        <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900" role="alert">
+                            <p>{priorOrderNotice ?? 'Đang xác minh một yêu cầu trước đó. Giỏ hàng hiện tại sẽ được giữ nguyên.'}</p>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => void handleCheckConflictedReceipt()}
+                                disabled={isCheckingReceipt}
+                                className="mt-3"
+                            >
+                                {isCheckingReceipt ? 'Đang kiểm tra…' : 'Kiểm tra lại yêu cầu cũ'}
+                            </Button>
+                        </div>
+                    ) : priorOrderNotice ? (
+                        <p className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900" role="status">
+                            {priorOrderNotice} Nếu muốn gửi yêu cầu mới theo thông tin hiện tại, hãy kiểm tra lại rồi bấm gửi lại.
+                        </p>
+                    ) : null}
                     {/* Summary */}
                     <div className="bg-neutral-50 rounded-2xl border border-neutral-200 p-6 space-y-4">
                         <h2 className="font-semibold text-neutral-900 text-lg">Tóm tắt đơn hàng</h2>
 
                         <div className="space-y-2 text-sm">
                             {items.map(item => {
-                                const finalItemPrice = item.finalPrice ?? item.price;
+                                const finalItemPrice = getCartItemUnitPrice(item);
                                 return (
                                     <div key={item.cartItemId} className="flex flex-col mb-2 last:mb-0">
                                         <div className="flex justify-between text-neutral-600">
@@ -206,8 +357,8 @@ export default function CartPage() {
                                         </div>
                                         {(item.installOption === 'install' || item.installOption === 'replace' || (item.onlineDiscountAmount || 0) > 0) && (
                                             <div className="text-[11px] text-neutral-400 pl-2">
-                                                {item.installOption === 'install' && <span>+ Lắp đặt</span>}
-                                                {item.installOption === 'replace' && <span>+ Tháo dỡ & Lắp đặt</span>}
+                                                {item.installOption === 'install' && <span>+ Lắp đặt, phí do nhân viên xác nhận</span>}
+                                                {item.installOption === 'replace' && <span>+ Tháo dỡ & Lắp đặt, phí do nhân viên xác nhận</span>}
                                                 {(item.onlineDiscountAmount || 0) > 0 && <span>, có ưu đãi online tham khảo</span>}
                                             </div>
                                         )}
@@ -224,7 +375,7 @@ export default function CartPage() {
                         </div>
 
                         <p className="text-xs text-neutral-400">
-                            Giá chưa gồm vận chuyển. Đây mới là yêu cầu đặt hàng; nhân viên sẽ xác nhận giá và tồn kho trước khi chốt. Bạn chưa phải thanh toán lúc gửi yêu cầu.
+                            Tạm tính chưa gồm phí lắp đặt và vận chuyển (nếu có). Đây mới là yêu cầu đặt hàng; nhân viên sẽ xác nhận giá và tồn kho trước khi chốt. Bạn chưa phải thanh toán lúc gửi yêu cầu.
                         </p>
                     </div>
 
@@ -305,7 +456,7 @@ export default function CartPage() {
 
                         <Button
                             type="submit"
-                            disabled={isSubmitting || phoneIsInvalid}
+                            disabled={isSubmitting || phoneIsInvalid || hasUnresolvedReceiptConflict}
                             className="w-full h-12 bg-[#2E7A96] hover:bg-[#25617a] text-white font-semibold text-[15px] rounded-xl gap-2 mt-2"
                         >
                             {isSubmitting ? (
@@ -384,7 +535,7 @@ function CartPageItem({ item, onRemove, onQtyChange }: {
     onRemove: () => void
     onQtyChange: (qty: number) => void
 }) {
-    const finalItemPrice = item.finalPrice ?? item.price;
+    const finalItemPrice = getCartItemUnitPrice(item);
     return (
         <div className="flex gap-4 p-4 bg-white border border-neutral-200 rounded-2xl">
             <div className="w-20 h-20 rounded-xl border border-neutral-100 bg-neutral-50 overflow-hidden shrink-0">
@@ -405,10 +556,10 @@ function CartPageItem({ item, onRemove, onQtyChange }: {
                 {/* Options display */}
                 <div className="flex flex-col gap-0.5 mt-1.5">
                     {item.installOption === 'install' && (
-                        <p className="text-[12px] text-sky-600 font-medium">+ Lắp đặt: {formatPrice(item.installationFee || 0)}</p>
+                        <p className="text-[12px] text-sky-600 font-medium">+ Lắp đặt: nhân viên xác nhận phí</p>
                     )}
                     {item.installOption === 'replace' && (
-                        <p className="text-[12px] text-sky-600 font-medium">+ Tháo dỡ & Lắp đặt: {formatPrice(item.installationFee || 0)}</p>
+                        <p className="text-[12px] text-sky-600 font-medium">+ Tháo dỡ & Lắp đặt: nhân viên xác nhận phí</p>
                     )}
                     {(item.onlineDiscountAmount || 0) > 0 && (
                         <p className="text-[12px] text-emerald-600 font-medium">Ưu đãi online tham khảo: {formatPrice(item.onlineDiscountAmount || 0)}</p>

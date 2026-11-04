@@ -37,6 +37,11 @@ begin
      )
      or not exists (
        select 1 from information_schema.columns
+       where table_schema = 'dpg_app' and table_name = 'orders'
+         and column_name = 'shipping_fee_status'
+     )
+     or not exists (
+       select 1 from information_schema.columns
        where table_schema = 'dpg_app' and table_name = 'order_items'
          and column_name = 'commercial_snapshot'
      )
@@ -45,7 +50,14 @@ begin
        where table_schema = 'dpg_app' and table_name = 'audit_logs'
          and column_name in ('auth_user_id', 'auth_session_id', 'request_id', 'idempotency_key_hash', 'changed_fields')
        group by table_schema, table_name having count(*) = 5
-     ) then
+     )
+     or (
+       select count(*) from pg_class c
+       join pg_namespace n on n.oid = c.relnamespace
+       where n.nspname = 'dpg_app'
+         and c.relname in ('orders', 'audit_logs')
+         and c.relrowsecurity and c.relforcerowsecurity
+     ) <> 2 then
     raise exception 'DPG_PHASE2_ADMIN_BASELINE_MISSING';
   end if;
 
@@ -67,27 +79,19 @@ begin
     raise exception 'DPG_PHASE2_ADMIN_PRIVILEGE_BASELINE_MISMATCH';
   end if;
 
-  if exists (
-    select 1
-    from pg_policy p
-    join pg_class c on c.oid = p.polrelid
-    join pg_namespace n on n.oid = c.relnamespace
-    where n.nspname = 'dpg_app'
-      and c.relname in ('orders', 'audit_logs')
-      and p.polname in (
-        'phase2_admin_order_requests_select',
-        'phase2_admin_order_requests_update',
-        'phase2_admin_order_status_audit_insert'
-      )
-  ) then
-    raise exception 'DPG_PHASE2_ADMIN_POLICY_NAME_COLLISION';
-  end if;
-
   if to_regclass('dpg_app.phase2_admin_order_status_idempotency') is not null
      or to_regprocedure('public.phase2_admin_staff_context()') is not null
      or to_regprocedure('public.phase2_admin_order_list(text,integer,integer)') is not null
      or to_regprocedure('public.phase2_admin_order_get(integer)') is not null
-     or to_regprocedure('public.phase2_admin_order_update_status(integer,text,text,uuid)') is not null then
+     or to_regprocedure('public.phase2_admin_order_update_status(integer,text,text,uuid)') is not null
+     or to_regprocedure('dpg_app.phase2_guard_order_status_update()') is not null
+     or exists (
+       select 1 from pg_trigger t
+       join pg_class c on c.oid = t.tgrelid
+       join pg_namespace n on n.oid = c.relnamespace
+       where n.nspname = 'dpg_app' and c.relname = 'orders'
+         and t.tgname = 'phase2_order_status_guard' and not t.tgisinternal
+     ) then
     raise exception 'DPG_PHASE2_ADMIN_MIGRATION_ALREADY_PRESENT';
   end if;
 end
@@ -113,48 +117,74 @@ revoke all on table dpg_app.phase2_admin_order_status_idempotency
   from public, anon, authenticated, service_role;
 create policy phase2_admin_order_status_idempotency_all
   on dpg_app.phase2_admin_order_status_idempotency
-  for all to dpg_migration using (true) with check (true);
+  for all to authenticated
+  using (auth_user_id = auth.uid())
+  with check (auth_user_id = auth.uid());
 
--- The definer-owned order-status interface can see and update only guest
--- requests that the current authenticated staff member may read.
-create policy phase2_admin_order_requests_select
-  on dpg_app.orders for select to dpg_migration
-  using (
-    order_origin = 'public_web'
-    and (
-      dpg_app.leo542_admin_can('orders:read')
-      or (dpg_app.leo542_admin_can('orders:read_assigned')
-          and assigned_to = (select admin_id from dpg_app.leo542_actor_context()))
-    )
+revoke update on table dpg_app.orders from authenticated;
+revoke update (status, updated_at, payment_status, assigned_to, internal_note) on table dpg_app.orders from authenticated;
+grant update (status, updated_at, payment_status, assigned_to, internal_note) on table dpg_app.orders to authenticated;
+grant select, insert, update, delete
+  on table dpg_app.phase2_admin_order_status_idempotency to authenticated;
+
+create function dpg_app.phase2_guard_order_status_update()
+returns trigger
+language plpgsql
+security invoker
+set search_path = pg_catalog, dpg_app, auth
+as $$
+declare
+  v_actor record;
+  v_request_id text := nullif(current_setting('dpg.phase2.order_status_request_id', true), '');
+  v_key_hash text := nullif(current_setting('dpg.phase2.order_status_key_hash', true), '');
+begin
+  -- Preserve the existing LEO-542 lifecycle for legacy orders. Phase 2 rules
+  -- apply only once the order is explicitly tagged as a public guest request.
+  if old.order_origin is distinct from 'public_web' and new.order_origin is distinct from 'public_web' then
+    return new;
+  end if;
+  if old.order_origin is distinct from 'public_web' or new.order_origin is distinct from 'public_web' then
+    raise exception 'INVALID_ORDER_ORIGIN_TRANSITION';
+  end if;
+  if new.payment_status is distinct from old.payment_status then
+    raise exception 'PHASE2_PAYMENT_CONFIRMATION_OUT_OF_SCOPE';
+  end if;
+  if new.status is not distinct from old.status then return new; end if;
+  if not (
+    (old.status = 'pending' and new.status in ('received', 'cancelled'))
+    or (old.status = 'received' and new.status = 'cancelled')
+  ) then
+    raise exception 'INVALID_ORDER_TRANSITION';
+  end if;
+  if v_request_id is null
+     or v_request_id !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
+     or v_key_hash is null
+     or v_key_hash !~ '^[0-9a-f]{64}$' then
+    raise exception 'PHASE2_STATUS_RPC_REQUIRED';
+  end if;
+
+  select * into v_actor from dpg_app.leo542_actor_context();
+  if v_actor.actor_kind <> 'admin' or not dpg_app.leo542_admin_can('orders:update_status') then
+    raise exception 'FORBIDDEN';
+  end if;
+
+  insert into dpg_app.audit_logs (
+    user_id, action, entity_type, entity_id, auth_user_id, auth_session_id,
+    request_id, idempotency_key_hash, changed_fields
+  ) values (
+    v_actor.admin_id, 'phase2.order.status.updated', 'order', new.id,
+    auth.uid(), v_actor.auth_session_id, v_request_id::uuid, v_key_hash, array['status']
   );
-create policy phase2_admin_order_requests_update
-  on dpg_app.orders for update to dpg_migration
-  using (
-    order_origin = 'public_web'
-    and dpg_app.leo542_admin_can('orders:update_status')
-    and (
-      dpg_app.leo542_admin_can('orders:read')
-      or (dpg_app.leo542_admin_can('orders:read_assigned')
-          and assigned_to = (select admin_id from dpg_app.leo542_actor_context()))
-    )
-  )
-  with check (
-    order_origin = 'public_web'
-    and dpg_app.leo542_admin_can('orders:update_status')
-    and (
-      dpg_app.leo542_admin_can('orders:read')
-      or (dpg_app.leo542_admin_can('orders:read_assigned')
-          and assigned_to = (select admin_id from dpg_app.leo542_actor_context()))
-    )
-  );
-create policy phase2_admin_order_status_audit_insert
-  on dpg_app.audit_logs for insert to dpg_migration
-  with check (
-    auth_user_id = auth.uid()
-    and user_id = (select admin_id from dpg_app.leo542_actor_context())
-    and action = 'phase2.order.status.updated'
-    and entity_type = 'order'
-  );
+  return new;
+end
+$$;
+
+alter function dpg_app.phase2_guard_order_status_update() owner to dpg_migration;
+revoke all on function dpg_app.phase2_guard_order_status_update()
+  from public, anon, authenticated, service_role;
+create trigger phase2_order_status_guard
+before update of status, payment_status on dpg_app.orders
+for each row execute function dpg_app.phase2_guard_order_status_update();
 
 reset role;
 grant create on schema public to dpg_migration;
@@ -243,7 +273,7 @@ begin
       select jsonb_agg(to_jsonb(x) order by x.created_at desc, x.id desc)
       from (
         select o.id, o.order_number, o.customer_name, o.customer_phone,
-          o.status, o.payment_status, o.total, o.assigned_to, o.created_at
+          o.status, o.payment_status, o.total, o.shipping_fee_status, o.assigned_to, o.created_at
         from dpg_app.orders o
         where o.order_origin = 'public_web'
           and (p_status is null or o.status = p_status)
@@ -276,7 +306,7 @@ begin
   from (
     select o.id, o.order_number, o.customer_name, o.customer_phone,
       o.customer_email, o.customer_address, o.note, o.status,
-      o.payment_status, o.subtotal, o.discount, o.shipping_fee, o.total,
+      o.payment_status, o.subtotal, o.discount, o.shipping_fee, o.shipping_fee_status, o.total,
       o.assigned_to, o.internal_note, o.created_at, o.updated_at
     from dpg_app.orders o
     where o.id = p_order_id and o.order_origin = 'public_web'
@@ -305,9 +335,8 @@ create function public.phase2_admin_order_update_status(
 returns jsonb
 language plpgsql
 volatile
-security definer
+security invoker
 set search_path = pg_catalog, dpg_app, auth
-set row_security = on
 as $$
 declare
   v_actor record;
@@ -323,7 +352,7 @@ begin
      or length(btrim(coalesce(p_idempotency_key, ''))) not between 8 and 200 then
     raise exception 'INVALID_INPUT';
   end if;
-  if p_status is null or p_status not in ('received', 'confirmed', 'cancelled') then raise exception 'INVALID_ORDER_STATUS'; end if;
+  if p_status is null or p_status not in ('received', 'cancelled') then raise exception 'INVALID_ORDER_STATUS'; end if;
 
   select * into v_actor from dpg_app.leo542_actor_context();
   if v_actor.actor_kind <> 'admin' or not dpg_app.leo542_admin_can('orders:update_status') then
@@ -363,10 +392,12 @@ begin
   for update;
   if not found then raise exception 'RESOURCE_NOT_FOUND'; end if;
   if not (
-    (v_order.status = 'pending' and p_status in ('received', 'confirmed', 'cancelled'))
-    or (v_order.status = 'received' and p_status in ('confirmed', 'cancelled'))
+    (v_order.status = 'pending' and p_status in ('received', 'cancelled'))
+    or (v_order.status = 'received' and p_status = 'cancelled')
   ) then raise exception 'INVALID_ORDER_TRANSITION'; end if;
 
+  perform set_config('dpg.phase2.order_status_request_id', p_request_id::text, true);
+  perform set_config('dpg.phase2.order_status_key_hash', v_key_hash, true);
   update dpg_app.orders
   set status = p_status, updated_at = now()
   where id = p_order_id
@@ -382,13 +413,6 @@ begin
   ) values (
     auth.uid(), v_key_hash, v_request_hash, v_response, now() + interval '24 hours'
   );
-  insert into dpg_app.audit_logs (
-    user_id, action, entity_type, entity_id, auth_user_id, auth_session_id,
-    request_id, idempotency_key_hash, changed_fields
-  ) values (
-    v_actor.admin_id, 'phase2.order.status.updated', 'order', p_order_id,
-    auth.uid(), v_actor.auth_session_id, p_request_id, v_key_hash, array['status']
-  );
   return v_response;
 end
 $$;
@@ -397,6 +421,8 @@ reset role;
 revoke create on schema public from dpg_migration;
 
 alter function public.phase2_admin_order_update_status(integer,text,text,uuid) owner to dpg_migration;
+comment on function public.phase2_admin_order_update_status(integer,text,text,uuid) is
+  'Staff-only SECURITY INVOKER transition RPC: capability checks, forced RLS, restricted order columns, idempotency, and audit trigger are applied atomically.';
 revoke all on function public.phase2_admin_staff_context(),
   public.phase2_admin_order_list(text,integer,integer),
   public.phase2_admin_order_get(integer),
@@ -408,27 +434,65 @@ grant execute on function public.phase2_admin_staff_context(),
   public.phase2_admin_order_update_status(integer,text,text,uuid)
   to authenticated;
 
--- Staff status changes go through the narrow transition RPC below. Keep the
--- underlying orders table read-only to authenticated clients.
-revoke update on table dpg_app.orders from authenticated;
+-- dpg_app is intentionally absent from PostgREST exposed schemas. The public
+-- RPC runs as the authenticated caller and receives only the columns and
+-- owner-bound idempotency rows required for this transition.
 
 do $postflight$
-declare
-  function_owner text;
-  function_is_definer boolean;
 begin
-  select pg_get_userbyid(p.proowner), p.prosecdef
-    into function_owner, function_is_definer
-  from pg_proc p
-  where p.oid = 'public.phase2_admin_order_update_status(integer,text,text,uuid)'::regprocedure;
-
-  if function_owner is distinct from 'dpg_migration'
-     or function_is_definer is distinct from true
+  if not exists (
+       select 1 from pg_proc p
+       where p.oid = 'public.phase2_admin_order_update_status(integer,text,text,uuid)'::regprocedure
+         and not p.prosecdef and pg_get_userbyid(p.proowner) = 'dpg_migration'
+     )
      or has_schema_privilege('dpg_migration', 'public', 'CREATE')
      or has_table_privilege('authenticated', 'dpg_app.orders', 'UPDATE')
-     or has_any_column_privilege('authenticated', 'dpg_app.orders', 'UPDATE')
+     or not has_column_privilege('authenticated', 'dpg_app.orders', 'status', 'UPDATE')
+     or not has_column_privilege('authenticated', 'dpg_app.orders', 'updated_at', 'UPDATE')
+     or not has_column_privilege('authenticated', 'dpg_app.orders', 'payment_status', 'UPDATE')
+     or not has_column_privilege('authenticated', 'dpg_app.orders', 'assigned_to', 'UPDATE')
+     or not has_column_privilege('authenticated', 'dpg_app.orders', 'internal_note', 'UPDATE')
+     or exists (
+       select 1 from information_schema.column_privileges
+       where grantee = 'authenticated'
+         and table_schema = 'dpg_app'
+         and table_name = 'orders'
+         and privilege_type = 'UPDATE'
+         and column_name not in ('status', 'updated_at', 'payment_status', 'assigned_to', 'internal_note')
+     )
      or has_table_privilege('anon', 'dpg_app.phase2_admin_order_status_idempotency', 'SELECT')
-     or has_table_privilege('authenticated', 'dpg_app.phase2_admin_order_status_idempotency', 'SELECT')
+     or has_table_privilege('anon', 'dpg_app.phase2_admin_order_status_idempotency', 'INSERT')
+     or has_table_privilege('anon', 'dpg_app.phase2_admin_order_status_idempotency', 'UPDATE')
+     or has_table_privilege('anon', 'dpg_app.phase2_admin_order_status_idempotency', 'DELETE')
+     or not has_table_privilege('authenticated', 'dpg_app.phase2_admin_order_status_idempotency', 'SELECT')
+     or not has_table_privilege('authenticated', 'dpg_app.phase2_admin_order_status_idempotency', 'INSERT')
+     or not has_table_privilege('authenticated', 'dpg_app.phase2_admin_order_status_idempotency', 'UPDATE')
+     or not has_table_privilege('authenticated', 'dpg_app.phase2_admin_order_status_idempotency', 'DELETE')
+     or not exists (
+       select 1 from pg_trigger t
+       join pg_class c on c.oid = t.tgrelid
+       join pg_namespace n on n.oid = c.relnamespace
+       where n.nspname = 'dpg_app'
+         and c.relname = 'orders'
+         and t.tgname = 'phase2_order_status_guard'
+         and not t.tgisinternal
+         and t.tgenabled = 'O'
+     )
+     or not exists (
+       select 1 from pg_proc p
+       where p.oid = 'dpg_app.phase2_guard_order_status_update()'::regprocedure
+         and not p.prosecdef and pg_get_userbyid(p.proowner) = 'dpg_migration'
+     )
+     or has_function_privilege('anon', 'dpg_app.phase2_guard_order_status_update()', 'EXECUTE')
+     or has_function_privilege('authenticated', 'dpg_app.phase2_guard_order_status_update()', 'EXECUTE')
+     or (
+       select count(*) from pg_class c
+       join pg_namespace n on n.oid = c.relnamespace
+       where n.nspname = 'dpg_app'
+         and c.relname in ('orders', 'audit_logs')
+         and c.relrowsecurity and c.relforcerowsecurity
+     ) <> 2
+     or not has_function_privilege('authenticated', 'public.phase2_admin_order_update_status(integer,text,text,uuid)', 'EXECUTE')
      or has_function_privilege('anon', 'public.phase2_admin_order_update_status(integer,text,text,uuid)', 'EXECUTE')
      or has_function_privilege('service_role', 'public.phase2_admin_order_update_status(integer,text,text,uuid)', 'EXECUTE') then
     raise exception 'DPG_PHASE2_ADMIN_POSTFLIGHT_FAILED';

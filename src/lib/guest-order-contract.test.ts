@@ -20,6 +20,7 @@ describe('getPersistedOrderRequestNumber', () => {
     { data: { order_number: 'DPG-261104-0000002A', status: 'confirmed', payment_status: 'unpaid' } },
     { data: { order_number: 'DPG-261104-0000002A', status: 'pending', payment_status: 'paid' } },
     { data: { order_number: 'forged-order', status: 'pending', payment_status: 'unpaid' } },
+    { data: { order_number: 'DPG-261104-0000002A', status: 'pending', payment_status: 'unpaid', customer_phone: 'private' } },
   ])('rejects an incomplete or unverified response: %o', (value) => {
     expect(getPersistedOrderRequestNumber(value)).toBeNull()
   })

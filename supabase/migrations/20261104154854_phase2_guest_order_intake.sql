@@ -61,6 +61,7 @@ begin
      or not has_function_privilege('dpg_migration', 'dpg_app.runtime_hash(jsonb)', 'EXECUTE')
      or not has_function_privilege('dpg_migration', 'dpg_app.runtime_key_hash(text)', 'EXECUTE')
      or not has_sequence_privilege('dpg_migration', 'dpg_app.orders_id_seq', 'USAGE')
+     or not has_sequence_privilege('dpg_migration', 'dpg_app.order_items_id_seq', 'USAGE')
      or exists (
        select 1
        from pg_class c
@@ -80,9 +81,14 @@ begin
        select 1 from information_schema.columns
        where table_schema = 'dpg_app' and table_name = 'order_items' and column_name = 'commercial_snapshot'
      )
+     or exists (
+       select 1 from information_schema.columns
+       where table_schema = 'dpg_app' and table_name = 'orders' and column_name = 'shipping_fee_status'
+     )
      or to_regclass('dpg_app.guest_order_idempotency_records') is not null
      or to_regclass('dpg_app.guest_order_rate_limit_windows') is not null
-     or to_regprocedure('public.guest_order_request_create(jsonb,text,uuid)') is not null then
+     or to_regprocedure('public.guest_order_request_create(jsonb,text,uuid)') is not null
+     or to_regprocedure('public.guest_order_request_receipt(text)') is not null then
     raise exception 'DPG_PHASE2_MIGRATION_ALREADY_PRESENT';
   end if;
 
@@ -106,9 +112,13 @@ begin
   if has_schema_privilege('anon', 'dpg_app', 'USAGE')
      or has_table_privilege('anon', 'dpg_app.orders', 'INSERT')
      or has_table_privilege('anon', 'dpg_app.order_items', 'INSERT')
+     or has_any_column_privilege('anon', 'dpg_app.orders', 'INSERT')
+     or has_any_column_privilege('anon', 'dpg_app.order_items', 'INSERT')
      or has_any_column_privilege('anon', 'dpg_app.products', 'SELECT')
      or has_function_privilege('anon', 'dpg_app.runtime_hash(jsonb)', 'EXECUTE')
-     or has_function_privilege('anon', 'dpg_app.runtime_key_hash(text)', 'EXECUTE') then
+     or has_function_privilege('anon', 'dpg_app.runtime_key_hash(text)', 'EXECUTE')
+     or has_sequence_privilege('anon', 'dpg_app.orders_id_seq', 'USAGE')
+     or has_sequence_privilege('anon', 'dpg_app.order_items_id_seq', 'USAGE') then
     raise exception 'DPG_PHASE2_ANON_PRIVILEGE_PREEXISTS';
   end if;
 end
@@ -124,6 +134,11 @@ alter table dpg_app.orders
 alter table dpg_app.orders
   add constraint phase2_order_origin_check
   check (order_origin is null or order_origin = 'public_web');
+alter table dpg_app.orders
+  add column shipping_fee_status varchar(30);
+alter table dpg_app.orders
+  add constraint phase2_shipping_fee_status_check
+  check (shipping_fee_status is null or shipping_fee_status in ('pending_confirmation', 'confirmed', 'not_applicable'));
 
 create table dpg_app.guest_order_idempotency_records (
   key_hash char(64) primary key,
@@ -160,7 +175,7 @@ revoke all on function dpg_app.runtime_hash(jsonb), dpg_app.runtime_key_hash(tex
   from public, anon;
 
 create policy phase2_guest_products_select_public on dpg_app.products
-  for select to dpg_migration
+  for select to anon
   using (
     is_active
     and publication_status = 'public'
@@ -169,17 +184,18 @@ create policy phase2_guest_products_select_public on dpg_app.products
   );
 
 create policy phase2_guest_orders_insert_pending on dpg_app.orders
-  for insert to dpg_migration
+  for insert to anon
   with check (
     owner_id is null
     and status = 'pending'
     and payment_status = 'unpaid'
     and payment_method is null
     and order_origin = 'public_web'
+    and shipping_fee_status = 'pending_confirmation'
   );
 
 create policy phase2_guest_order_items_insert on dpg_app.order_items
-  for insert to dpg_migration
+  for insert to anon
   with check (
     quantity between 1 and 99
     and unit_price > 0
@@ -188,17 +204,46 @@ create policy phase2_guest_order_items_insert on dpg_app.order_items
     and commercial_snapshot ->> 'install_option' in ('none', 'install', 'replace')
     and case commercial_snapshot ->> 'install_option'
       when 'none' then coalesce((commercial_snapshot ->> 'installation_fee')::numeric = 0, false)
-      when 'install' then coalesce((commercial_snapshot ->> 'installation_fee')::numeric = 200000, false)
-      when 'replace' then coalesce((commercial_snapshot ->> 'installation_fee')::numeric = 350000, false)
+      when 'install' then commercial_snapshot ->> 'installation_fee' is null
+        and commercial_snapshot ->> 'installation_fee_status' = 'pending_confirmation'
+      when 'replace' then commercial_snapshot ->> 'installation_fee' is null
+        and commercial_snapshot ->> 'installation_fee_status' = 'pending_confirmation'
       else false
     end
   );
 
 create policy phase2_guest_idempotency_all on dpg_app.guest_order_idempotency_records
-  for all to dpg_migration using (true) with check (true);
+  for all to anon using (true) with check (true);
 
 create policy phase2_guest_rate_limit_all on dpg_app.guest_order_rate_limit_windows
-  for all to dpg_migration using (true) with check (true);
+  for all to anon using (true) with check (true);
+
+grant usage on schema dpg_app to anon;
+grant select (
+  id, sku, name, price, original_price, list_price, sale_price,
+  online_discount_amount, stock_status, price_source, source_system,
+  price_state, price_confidence, price_updated_at, is_active,
+  publication_status, pdp_visibility, sellable_status
+) on table dpg_app.products to anon;
+grant insert (
+  id, owner_id, order_number, customer_name, customer_phone, customer_email,
+  customer_address, note, subtotal, discount, total, status, payment_status,
+  order_origin, shipping_fee_status
+) on table dpg_app.orders to anon;
+grant insert (
+  order_id, product_id, product_name, product_sku, quantity, unit_price,
+  total_price, commercial_snapshot
+) on table dpg_app.order_items to anon;
+grant select (key_hash, request_hash, safe_response, expires_at),
+  insert (key_hash, request_hash, safe_response, expires_at),
+  delete on table dpg_app.guest_order_idempotency_records to anon;
+grant select (phone_hash, window_start, request_count),
+  insert (phone_hash, window_start, request_count),
+  update (request_count), delete
+  on table dpg_app.guest_order_rate_limit_windows to anon;
+grant usage on sequence dpg_app.orders_id_seq to anon;
+grant usage on sequence dpg_app.order_items_id_seq to anon;
+grant execute on function dpg_app.runtime_hash(jsonb), dpg_app.runtime_key_hash(text) to anon;
 
 reset role;
 grant create on schema public to dpg_migration;
@@ -211,7 +256,7 @@ create function public.guest_order_request_create(
 )
 returns jsonb
 language plpgsql
-security definer
+security invoker
 set search_path = pg_catalog, dpg_app
 set row_security = on
 as $$
@@ -300,15 +345,15 @@ begin
     where expires_at <= now()
     order by expires_at
     limit 100
-    for update skip locked
   )
   delete from dpg_app.guest_order_idempotency_records r
   using expired_keys e
   where r.key_hash = e.key_hash;
   delete from dpg_app.guest_order_idempotency_records
    where key_hash = v_key_hash and expires_at <= now();
-  select * into v_existing from dpg_app.guest_order_idempotency_records
-   where key_hash = v_key_hash for update;
+  select request_hash, safe_response into v_existing.request_hash, v_existing.safe_response
+    from dpg_app.guest_order_idempotency_records
+   where key_hash = v_key_hash;
   if found then
     if v_existing.request_hash <> v_request_hash then raise exception 'IDEMPOTENCY_KEY_REUSED'; end if;
     return v_existing.safe_response;
@@ -322,7 +367,6 @@ begin
     where window_start < now() - interval '1 hour'
     order by window_start
     limit 500
-    for update skip locked
   )
   delete from dpg_app.guest_order_rate_limit_windows r
   using expired_windows e
@@ -378,6 +422,7 @@ begin
               and v_product.list_price > 0
               and v_product.list_price <= 1000000000
               and v_product.list_price = trunc(v_product.list_price)
+              and v_product.list_price >= v_product.price
               and v_product.original_price = v_product.list_price
             )
           )
@@ -408,12 +453,11 @@ begin
       v_effective_discount := coalesce(v_online_discount, 0);
       v_install_option := coalesce(v_item ->> 'installOption', 'none');
       v_installation_fee := case v_install_option
-        when 'install' then 200000
-        when 'replace' then 350000
-        else 0 end;
-      v_unit_price := v_base_price + v_installation_fee;
+        when 'none' then 0
+        else null end;
+      v_unit_price := v_base_price;
       v_final_unit_price := case when v_online_discount is null then null
-        else v_base_price - v_online_discount + v_installation_fee end;
+        else v_base_price - v_online_discount end;
       v_line_total := v_unit_price * (v_item ->> 'quantity')::integer;
       v_subtotal := v_subtotal + v_line_total;
       v_discount := v_discount + v_effective_discount * (v_item ->> 'quantity')::integer;
@@ -432,6 +476,7 @@ begin
           'sale_price', v_sale_price,
           'online_discount_amount', v_online_discount,
           'installation_fee', v_installation_fee,
+          'installation_fee_status', case when v_install_option = 'none' then 'not_applicable' else 'pending_confirmation' end,
           'install_option', v_install_option,
           'final_unit_price', v_final_unit_price,
           'snapshot_at', clock_timestamp()
@@ -445,11 +490,11 @@ begin
     insert into dpg_app.orders (
       id, owner_id, order_number, customer_name, customer_phone, customer_email,
       customer_address, note, subtotal, discount, total, status, payment_status,
-      order_origin
+      order_origin, shipping_fee_status
     ) values (
       v_order_id, null, v_order_number, v_name, v_phone, nullif(v_email, ''),
       v_address, v_note, v_subtotal, v_discount, v_order_total, 'pending', 'unpaid',
-      'public_web'
+      'public_web', 'pending_confirmation'
     );
 
     for v_line in select value from jsonb_array_elements(v_lines) loop
@@ -490,49 +535,135 @@ begin
 end;
 $$;
 
+create function public.guest_order_request_receipt(p_idempotency_key text)
+returns jsonb
+language plpgsql
+stable
+security invoker
+set search_path = pg_catalog, dpg_app
+set row_security = on
+as $$
+declare
+  v_safe_response jsonb;
+  v_order_number text;
+begin
+  if p_idempotency_key is null
+     or btrim(p_idempotency_key) !~* '^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$' then
+    raise exception 'INVALID_IDEMPOTENCY_KEY';
+  end if;
+
+  select safe_response into v_safe_response
+  from dpg_app.guest_order_idempotency_records
+  where key_hash = dpg_app.runtime_key_hash(btrim(p_idempotency_key))
+    and expires_at > now();
+  if not found then return null; end if;
+
+  v_order_number := v_safe_response ->> 'order_number';
+  if jsonb_typeof(v_safe_response) <> 'object'
+     or v_order_number !~ '^DPG-[0-9]{6}-[0-9A-F]{8}$'
+     or v_safe_response ->> 'status' <> 'pending'
+     or v_safe_response ->> 'payment_status' <> 'unpaid' then
+    raise exception 'ORDER_REQUEST_FAILED';
+  end if;
+
+  return jsonb_build_object(
+    'order_number', v_order_number,
+    'status', 'pending',
+    'payment_status', 'unpaid'
+  );
+end;
+$$;
+
 reset role;
 revoke create on schema public from dpg_migration;
 
-revoke all on function public.guest_order_request_create(jsonb, text, uuid)
+revoke all on function public.guest_order_request_create(jsonb, text, uuid),
+  public.guest_order_request_receipt(text)
   from public, anon, authenticated, service_role;
 grant execute on function public.guest_order_request_create(jsonb, text, uuid) to anon;
+grant execute on function public.guest_order_request_receipt(text) to anon;
 
 comment on function public.guest_order_request_create(jsonb, text, uuid) is
-  'Public guest order request only: creates a pending, unpaid request with canonical product snapshots; no guest read or lifecycle operations.';
+  'Public guest order request only: SECURITY INVOKER creates a pending, unpaid request with canonical product snapshots; no list or lifecycle operations.';
+
+comment on function public.guest_order_request_receipt(text) is
+  'Reads only the minimal pending, unpaid receipt for a high-entropy idempotency key; no guest order list or customer details.';
 
 do $phase2_postflight$
-declare
-  function_owner text;
-  function_is_definer boolean;
 begin
-  select pg_get_userbyid(p.proowner), p.prosecdef
-    into function_owner, function_is_definer
-  from pg_proc p
-  where p.oid = 'public.guest_order_request_create(jsonb,text,uuid)'::regprocedure;
-
-  if function_owner is distinct from 'dpg_migration'
-     or function_is_definer is distinct from true
+  if exists (
+       select 1 from pg_proc p
+       where p.oid in (
+         'public.guest_order_request_create(jsonb,text,uuid)'::regprocedure,
+         'public.guest_order_request_receipt(text)'::regprocedure
+       )
+         and (p.prosecdef or pg_get_userbyid(p.proowner) <> 'dpg_migration')
+     )
      or has_schema_privilege('dpg_migration', 'public', 'CREATE')
+     or not has_schema_privilege('anon', 'dpg_app', 'USAGE')
      or not has_function_privilege('anon', 'public.guest_order_request_create(jsonb,text,uuid)', 'EXECUTE')
+     or not has_function_privilege('anon', 'public.guest_order_request_receipt(text)', 'EXECUTE')
      or has_table_privilege('anon', 'dpg_app.orders', 'SELECT')
      or has_table_privilege('anon', 'dpg_app.orders', 'INSERT')
      or has_table_privilege('anon', 'dpg_app.orders', 'UPDATE')
      or has_table_privilege('anon', 'dpg_app.orders', 'DELETE')
+     or not has_column_privilege('anon', 'dpg_app.orders', 'total', 'INSERT')
+     or not has_column_privilege('anon', 'dpg_app.orders', 'shipping_fee_status', 'INSERT')
      or has_table_privilege('anon', 'dpg_app.order_items', 'SELECT')
      or has_table_privilege('anon', 'dpg_app.order_items', 'INSERT')
      or has_table_privilege('anon', 'dpg_app.order_items', 'UPDATE')
      or has_table_privilege('anon', 'dpg_app.order_items', 'DELETE')
-     or has_any_column_privilege('anon', 'dpg_app.products', 'SELECT')
+     or not has_column_privilege('anon', 'dpg_app.order_items', 'commercial_snapshot', 'INSERT')
+     or exists (
+       select 1 from information_schema.column_privileges
+       where grantee = 'anon' and table_schema = 'dpg_app' and table_name = 'orders'
+         and privilege_type = 'INSERT'
+         and column_name not in (
+           'id', 'owner_id', 'order_number', 'customer_name', 'customer_phone',
+           'customer_email', 'customer_address', 'note', 'subtotal', 'discount',
+           'total', 'status', 'payment_status', 'order_origin', 'shipping_fee_status'
+         )
+     )
+     or exists (
+       select 1 from information_schema.column_privileges
+       where grantee = 'anon' and table_schema = 'dpg_app' and table_name = 'order_items'
+         and privilege_type = 'INSERT'
+         and column_name not in (
+           'order_id', 'product_id', 'product_name', 'product_sku', 'quantity',
+           'unit_price', 'total_price', 'commercial_snapshot'
+         )
+     )
+     or has_table_privilege('anon', 'dpg_app.products', 'SELECT')
+     or not has_column_privilege('anon', 'dpg_app.products', 'price', 'SELECT')
+     or exists (
+       select 1 from information_schema.column_privileges
+       where grantee = 'anon' and table_schema = 'dpg_app' and table_name = 'products'
+         and privilege_type = 'SELECT'
+         and column_name not in (
+           'id', 'sku', 'name', 'price', 'original_price', 'list_price', 'sale_price',
+           'online_discount_amount', 'stock_status', 'price_source', 'source_system',
+           'price_state', 'price_confidence', 'price_updated_at', 'is_active',
+           'publication_status', 'pdp_visibility', 'sellable_status'
+         )
+     )
      or has_table_privilege('anon', 'dpg_app.guest_order_idempotency_records', 'SELECT')
      or has_table_privilege('anon', 'dpg_app.guest_order_idempotency_records', 'INSERT')
      or has_table_privilege('anon', 'dpg_app.guest_order_idempotency_records', 'UPDATE')
-     or has_table_privilege('anon', 'dpg_app.guest_order_idempotency_records', 'DELETE')
+     or not has_table_privilege('anon', 'dpg_app.guest_order_idempotency_records', 'DELETE')
+     or not has_column_privilege('anon', 'dpg_app.guest_order_idempotency_records', 'safe_response', 'SELECT')
      or has_table_privilege('anon', 'dpg_app.guest_order_rate_limit_windows', 'SELECT')
      or has_table_privilege('anon', 'dpg_app.guest_order_rate_limit_windows', 'INSERT')
      or has_table_privilege('anon', 'dpg_app.guest_order_rate_limit_windows', 'UPDATE')
-     or has_table_privilege('anon', 'dpg_app.guest_order_rate_limit_windows', 'DELETE')
+     or not has_table_privilege('anon', 'dpg_app.guest_order_rate_limit_windows', 'DELETE')
+     or not has_column_privilege('anon', 'dpg_app.guest_order_rate_limit_windows', 'request_count', 'UPDATE')
+     or not has_sequence_privilege('anon', 'dpg_app.orders_id_seq', 'USAGE')
+     or not has_sequence_privilege('anon', 'dpg_app.order_items_id_seq', 'USAGE')
+     or not has_function_privilege('anon', 'dpg_app.runtime_hash(jsonb)', 'EXECUTE')
+     or not has_function_privilege('anon', 'dpg_app.runtime_key_hash(text)', 'EXECUTE')
      or has_function_privilege('authenticated', 'public.guest_order_request_create(jsonb,text,uuid)', 'EXECUTE')
-     or has_function_privilege('service_role', 'public.guest_order_request_create(jsonb,text,uuid)', 'EXECUTE') then
+     or has_function_privilege('authenticated', 'public.guest_order_request_receipt(text)', 'EXECUTE')
+     or has_function_privilege('service_role', 'public.guest_order_request_create(jsonb,text,uuid)', 'EXECUTE')
+     or has_function_privilege('service_role', 'public.guest_order_request_receipt(text)', 'EXECUTE') then
     raise exception 'DPG_PHASE2_POSTFLIGHT_FAILED';
   end if;
 end

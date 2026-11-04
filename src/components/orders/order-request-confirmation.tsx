@@ -13,21 +13,21 @@ export function OrderRequestConfirmation({ orderNumber }: { orderNumber: string 
         <p className="text-neutral-600 text-lg mb-6 leading-relaxed">
           Yêu cầu của bạn đang chờ nhân viên kiểm tra và xác nhận. Đây chưa phải đơn hàng đã chốt và bạn chưa phải thanh toán.
         </p>
-        <div className="inline-flex items-center gap-2 bg-[#EAF6FB] border border-[#C5E8F5] rounded-full px-6 py-3 mb-8">
+        <div className="inline-flex items-center gap-2 bg-brand-50 border border-brand-100 rounded-full px-6 py-3 mb-8">
           <span className="text-sm text-neutral-600">Mã tiếp nhận:</span>
-          <span className="font-bold text-[#2E7A96] text-lg tracking-widest">{orderNumber}</span>
+          <span className="font-bold text-brand-700 text-lg tracking-widest">{orderNumber}</span>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <a
             href={`tel:${siteConfig.contact.businessRoom}`}
-            className="inline-flex h-10 items-center justify-center rounded-md border border-[#2E7A96] px-4 text-sm font-medium text-[#2E7A96] transition-colors hover:bg-[#2E7A96] hover:text-white"
+            className="inline-flex h-10 items-center justify-center rounded-md border border-brand-600 px-4 text-sm font-medium text-brand-700 transition-colors hover:bg-brand-700 hover:text-white"
           >
             <Phone className="mr-2 w-4 h-4" />
             Phòng KD: {siteConfig.contact.businessRoomLabel}
           </a>
           <Link
             href="/"
-            className="inline-flex h-10 items-center justify-center rounded-md bg-[#2E7A96] px-4 text-sm font-medium text-white transition-colors hover:bg-[#25617a]"
+            className="inline-flex h-10 items-center justify-center rounded-md bg-brand-700 px-4 text-sm font-medium text-white transition-colors hover:bg-brand-800"
           >
             Tiếp tục mua hàng
             <ArrowRight className="ml-2 w-4 h-4" />

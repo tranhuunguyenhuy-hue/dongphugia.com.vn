@@ -58,7 +58,9 @@ describe('Supabase runtime migration runner contract', () => {
       .toBe(EXPECTED_RUNTIME_MIGRATIONS.indexOf('20260828183000_leo542_backup_role_prerequisite.sql') + 1)
     expect(EXPECTED_RUNTIME_MIGRATIONS.indexOf('20260828183200_leo540_backup_coverage_prerequisite.sql'))
       .toBeLessThan(EXPECTED_RUNTIME_MIGRATIONS.indexOf('20261016090000_leo560_preview_rls_hardening.sql'))
-    expect(EXPECTED_RUNTIME_MIGRATIONS.at(-1)).toBe('20261016090000_leo560_preview_rls_hardening.sql')
+    expect(EXPECTED_RUNTIME_MIGRATIONS.indexOf('20261104154854_phase2_guest_order_intake.sql'))
+      .toBe(EXPECTED_RUNTIME_MIGRATIONS.indexOf('20261016090000_leo560_preview_rls_hardening.sql') + 1)
+    expect(EXPECTED_RUNTIME_MIGRATIONS.at(-1)).toBe('20261104190000_phase2_admin_order_inbox.sql')
   })
 
   it('normalizes only a single outer transaction so ledger recording stays atomic', async () => {

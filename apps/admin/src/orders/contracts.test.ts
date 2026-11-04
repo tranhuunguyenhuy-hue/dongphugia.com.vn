@@ -15,6 +15,7 @@ const summary = {
   status: 'pending',
   payment_status: 'unpaid',
   total: 1200000,
+  shipping_fee_status: 'pending_confirmation',
   assigned_to: null,
   created_at: '2026-11-04T10:00:00.000Z',
 }
@@ -26,6 +27,7 @@ describe('Admin order inbox transport contracts', () => {
       total: 1,
     })
     expect(parseAdminOrderList({ orders: [{ ...summary, status: 'unexpected' }], total: 1 })).toBeNull()
+    expect(parseAdminOrderList({ orders: [{ ...summary, shipping_fee_status: 'unknown' }], total: 1 })).toBeNull()
     expect(parseAdminOrderList({ orders: [summary], total: -1 })).toBeNull()
   })
 
@@ -39,6 +41,7 @@ describe('Admin order inbox transport contracts', () => {
         subtotal: 1200000,
         discount: 0,
         shipping_fee: 0,
+        shipping_fee_status: 'pending_confirmation',
         internal_note: null,
         updated_at: summary.created_at,
       },
@@ -60,8 +63,8 @@ describe('Admin order inbox transport contracts', () => {
   it('allows only staff confirmation steps for public order requests', () => {
     expect(parseOrderRequestStatus('pending')).toBe('pending')
     expect(parseOrderRequestStatus('not-a-status')).toBeNull()
-    expect(allowedOrderRequestStatusTransitions('pending')).toEqual(['received', 'confirmed', 'cancelled'])
-    expect(allowedOrderRequestStatusTransitions('received')).toEqual(['confirmed', 'cancelled'])
+    expect(allowedOrderRequestStatusTransitions('pending')).toEqual(['received', 'cancelled'])
+    expect(allowedOrderRequestStatusTransitions('received')).toEqual(['cancelled'])
     expect(allowedOrderRequestStatusTransitions('confirmed')).toEqual([])
   })
 })

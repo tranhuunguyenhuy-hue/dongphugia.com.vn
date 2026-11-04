@@ -141,8 +141,14 @@ export function classifyPublicApiRequest(request: Request): PublicApiRequestDeci
       && route.path === '/api/order-requests'
       && route.purpose === 'guest-order-request-write',
   ) && pathname === '/api/order-requests'
+  const ownsGuestOrderReceipt = PUBLIC_ROUTE_OWNERSHIP.some((route) =>
+    route.owner === 'public'
+      && route.path === '/api/order-requests/receipt'
+      && route.purpose === 'guest-order-request-receipt-readonly',
+  ) && pathname === '/api/order-requests/receipt'
 
   if (ownsGuestOrderRequest) return request.method === 'POST' ? 'allow' : 'method-not-allowed'
+  if (ownsGuestOrderReceipt) return request.method === 'GET' ? 'allow' : 'method-not-allowed'
 
   const listingMatch = pathname.match(/^\/api\/catalogue\/listings\/([^/]+)\/([^/]+)$/)
   const validListingRoute = ownsListingShardRoute

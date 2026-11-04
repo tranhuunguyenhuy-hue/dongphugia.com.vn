@@ -77,7 +77,7 @@ export default async function AdminOrderInboxPage({
         <section className="admin-panel" aria-label="Danh sách yêu cầu đặt hàng">
           <div className="admin-table-wrap">
             <table className="admin-table">
-              <thead><tr><th>Mã tiếp nhận</th><th>Khách hàng</th><th>Liên hệ</th><th>Trạng thái</th><th>Tạm tính</th><th>Ngày gửi</th><th /></tr></thead>
+              <thead><tr><th>Mã tiếp nhận</th><th>Khách hàng</th><th>Liên hệ</th><th>Trạng thái</th><th>Tạm tính tham khảo</th><th>Ngày gửi</th><th /></tr></thead>
               <tbody>
                 {result.orders.map((order) => (
                   <tr key={order.id}>

@@ -62,17 +62,25 @@ export default async function AdminGuestOrderDetailPage({ params }: { params: Pr
           <h2>Sản phẩm khách yêu cầu</h2>
           <div className="admin-table-wrap">
             <table className="admin-table">
-              <thead><tr><th>Sản phẩm</th><th>SKU</th><th>Số lượng</th><th>Giá tại thời điểm gửi</th><th>Tạm tính</th></tr></thead>
+              <thead><tr><th>Sản phẩm</th><th>SKU</th><th>Số lượng</th><th>Giá tại thời điểm gửi</th><th>Phí lắp đặt</th><th>Tạm tính</th></tr></thead>
               <tbody>
                 {items.map((item) => {
                   const finalUnitPrice = Number(item.commercial_snapshot.final_unit_price)
                   const hasSnapshotPrice = Number.isFinite(finalUnitPrice) && finalUnitPrice > 0
+                  const installOption = item.commercial_snapshot.install_option
+                  const installationFeeStatus = item.commercial_snapshot.installation_fee_status
+                  const installationLabel = installOption === 'none'
+                    ? 'Không yêu cầu'
+                    : installationFeeStatus === 'pending_confirmation'
+                      ? 'Nhân viên xác nhận'
+                      : 'Chưa xác định'
                   return (
                     <tr key={item.id}>
                       <td>{item.product_name}</td>
                       <td>{item.product_sku}</td>
                       <td>{item.quantity}</td>
                       <td>{hasSnapshotPrice ? formatPrice(finalUnitPrice) : formatPrice(item.unit_price)}</td>
+                      <td>{installationLabel}</td>
                       <td>{formatPrice(item.total_price)}</td>
                     </tr>
                   )
@@ -83,8 +91,17 @@ export default async function AdminGuestOrderDetailPage({ params }: { params: Pr
           <div className="admin-order-totals">
             <p><span>Tạm tính</span><strong>{formatPrice(order.subtotal)}</strong></p>
             <p><span>Ưu đãi online tham khảo</span><strong>{formatPrice(order.discount)}</strong></p>
-            <p><span>Phí vận chuyển</span><strong>{formatPrice(order.shipping_fee)}</strong></p>
-            <p className="admin-total-row"><span>Tổng tham khảo</span><strong>{formatPrice(order.total)}</strong></p>
+            <p>
+              <span>Phí vận chuyển</span>
+              <strong>
+                {order.shipping_fee_status === 'pending_confirmation'
+                  ? 'Nhân viên xác nhận'
+                  : order.shipping_fee_status === 'not_applicable'
+                    ? 'Không áp dụng'
+                    : formatPrice(order.shipping_fee)}
+              </strong>
+            </p>
+            <p className="admin-total-row"><span>Tổng tham khảo, chưa gồm phí chờ xác nhận</span><strong>{formatPrice(order.total)}</strong></p>
           </div>
         </section>
       </div>

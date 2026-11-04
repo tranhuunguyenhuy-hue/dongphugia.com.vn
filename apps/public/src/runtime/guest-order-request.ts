@@ -5,6 +5,7 @@ const MAX_RESPONSE_BYTES = 4 * 1024
 const PUBLIC_CACHE_CONTROL = 'private, no-store'
 const PHONE_PATTERN = /^(?:\+84|0)(?:3|5|7|8|9)\d{8}$/
 const ORDER_NUMBER_PATTERN = /^DPG-[0-9]{6}-[0-9A-F]{8}$/
+const IDEMPOTENCY_KEY_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 const SAFE_ERROR_CODES = new Set([
   'METHOD_NOT_ALLOWED',
   'ORIGIN_FORBIDDEN',
@@ -180,6 +181,105 @@ function statusForError(code: string): number {
   return 503
 }
 
+function safeReceiptFrom(value: unknown): { order_number: string; status: 'pending'; payment_status: 'unpaid' } | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null
+  const data = (value as Record<string, unknown>).data
+  if (!data || typeof data !== 'object' || Array.isArray(data)) return null
+  const record = data as Record<string, unknown>
+  if (
+    typeof record.order_number !== 'string' || !ORDER_NUMBER_PATTERN.test(record.order_number)
+    || record.status !== 'pending' || record.payment_status !== 'unpaid'
+  ) return null
+  return {
+    order_number: record.order_number,
+    status: 'pending',
+    payment_status: 'unpaid',
+  }
+}
+
+async function readPersistedReceipt(
+  endpoint: URL,
+  publishableKey: string,
+  origin: string,
+  requestId: string,
+  idempotencyKey: string,
+  fetcher: typeof fetch,
+): Promise<{ receipt: ReturnType<typeof safeReceiptFrom>; available: boolean }> {
+  try {
+    const response = await fetcher(endpoint, {
+      method: 'GET',
+      redirect: 'error',
+      signal: AbortSignal.timeout(10_000),
+      headers: {
+        'Idempotency-Key': idempotencyKey,
+        'Origin': origin,
+        'apikey': publishableKey,
+        'X-Request-Id': requestId,
+      },
+    })
+    if (!response.ok) return { receipt: null, available: false }
+    const payload: unknown = JSON.parse(await readBoundedResponse(response))
+    const data = payload && typeof payload === 'object' && !Array.isArray(payload)
+      ? (payload as Record<string, unknown>).data
+      : null
+    if (data === null) return { receipt: null, available: true }
+    const receipt = safeReceiptFrom(payload)
+    return { receipt, available: receipt !== null }
+  } catch {
+    return { receipt: null, available: false }
+  }
+}
+
+async function rateLimitByRequestIp(request: Request, limiter: NonNullable<GuestOrderEnvironment['ORDER_REQUEST_LIMITER']>) {
+  const clientIp = request.headers.get('cf-connecting-ip') ?? 'unknown-client'
+  const clientHash = await digest(clientIp)
+  return limiter.limit({ key: `guest-order-request-ip:${clientHash}` })
+}
+
+export async function handleGuestOrderReceiptRequest(
+  request: Request,
+  environment: GuestOrderEnvironment,
+  fetcher: typeof fetch = fetch,
+): Promise<Response> {
+  const requestId = crypto.randomUUID()
+  if (request.method !== 'GET') {
+    return jsonResponse({ error: { code: 'METHOD_NOT_ALLOWED' } }, 405, requestId)
+  }
+
+  try {
+    const origin = request.headers.get('origin')
+    if (origin && new URL(origin).origin !== new URL(request.url).origin) {
+      throw new RequestFailure(403, 'ORIGIN_FORBIDDEN')
+    }
+    const idempotencyKey = request.headers.get('idempotency-key')?.trim()
+    if (!idempotencyKey || !IDEMPOTENCY_KEY_PATTERN.test(idempotencyKey)) {
+      throw new RequestFailure(400, 'INVALID_IDEMPOTENCY_KEY')
+    }
+    const upstream = configuredUpstream(environment)
+    const limiter = environment.ORDER_REQUEST_LIMITER
+    if (!limiter) throw new RequestFailure(503, 'ORDER_INTAKE_UNAVAILABLE')
+    const rate = await rateLimitByRequestIp(request, limiter)
+    if (!rate.success) throw new RequestFailure(429, 'ORDER_RATE_LIMITED')
+
+    const forwardedOrigin = origin ?? new URL(request.url).origin
+    const result = await readPersistedReceipt(
+      upstream.endpoint,
+      upstream.publishableKey,
+      forwardedOrigin,
+      requestId,
+      idempotencyKey,
+      fetcher,
+    )
+    if (!result.available) throw new RequestFailure(503, 'ORDER_INTAKE_UNAVAILABLE')
+    return jsonResponse({ data: result.receipt }, 200, requestId)
+  } catch (error) {
+    if (error instanceof RequestFailure) {
+      return jsonResponse({ error: { code: error.code } }, error.status, requestId)
+    }
+    return jsonResponse({ error: { code: 'ORDER_INTAKE_UNAVAILABLE' } }, 503, requestId)
+  }
+}
+
 export async function handleGuestOrderRequest(
   request: Request,
   environment: GuestOrderEnvironment,
@@ -200,7 +300,7 @@ export async function handleGuestOrderRequest(
     }
 
     const idempotencyKey = request.headers.get('idempotency-key')?.trim()
-    if (!idempotencyKey || idempotencyKey.length < 8 || idempotencyKey.length > 200) {
+    if (!idempotencyKey || !IDEMPOTENCY_KEY_PATTERN.test(idempotencyKey)) {
       throw new RequestFailure(400, 'INVALID_IDEMPOTENCY_KEY')
     }
 
@@ -216,9 +316,25 @@ export async function handleGuestOrderRequest(
     const limiter = environment.ORDER_REQUEST_LIMITER
     if (!limiter) throw new RequestFailure(503, 'ORDER_INTAKE_UNAVAILABLE')
 
-    const phoneHash = await digest(phone)
-    const rate = await limiter.limit({ key: `guest-order-phone:${phoneHash}` })
-    if (!rate.success) throw new RequestFailure(429, 'ORDER_RATE_LIMITED')
+    const requestIpRate = await rateLimitByRequestIp(request, limiter)
+    if (!requestIpRate.success) throw new RequestFailure(429, 'ORDER_RATE_LIMITED')
+
+    // Check the idempotency record before the phone limit. A replay with the
+    // same key must reach the canonical RPC so it can return the saved receipt
+    // (or reject a changed payload) without counting as another new order.
+    const persistedReceipt = await readPersistedReceipt(
+      upstream.endpoint,
+      upstream.publishableKey,
+      origin,
+      requestId,
+      idempotencyKey,
+      fetcher,
+    )
+    if (!persistedReceipt.receipt) {
+      const phoneHash = await digest(phone)
+      const rate = await limiter.limit({ key: `guest-order-phone:${phoneHash}` })
+      if (!rate.success) throw new RequestFailure(429, 'ORDER_RATE_LIMITED')
+    }
 
     let response: Response
     try {
@@ -252,18 +368,10 @@ export async function handleGuestOrderRequest(
       return jsonResponse({ error: { code } }, statusForError(code), requestId)
     }
 
-    const data = payload && typeof payload === 'object' && !Array.isArray(payload)
-      ? (payload as Record<string, unknown>).data
-      : null
-    if (
-      !data || typeof data !== 'object' || Array.isArray(data) ||
-      typeof (data as Record<string, unknown>).order_number !== 'string' ||
-      !ORDER_NUMBER_PATTERN.test((data as Record<string, unknown>).order_number as string) ||
-      (data as Record<string, unknown>).status !== 'pending' ||
-      (data as Record<string, unknown>).payment_status !== 'unpaid'
-    ) throw new RequestFailure(502, 'ORDER_INTAKE_FAILED')
+    const receipt = safeReceiptFrom(payload)
+    if (!receipt) throw new RequestFailure(502, 'ORDER_INTAKE_FAILED')
 
-    return jsonResponse({ data }, 201, requestId)
+    return jsonResponse({ data: receipt }, 201, requestId)
   } catch (error) {
     if (error instanceof RequestFailure) {
       return jsonResponse({ error: { code: error.code } }, error.status, requestId)

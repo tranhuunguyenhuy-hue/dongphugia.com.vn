@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache'
 
 import { requireActiveStaff } from '../../src/auth/require-staff'
 import { createAdminServerClient } from '../../src/supabase/server'
-const STAFF_TRANSITION_STATUSES = ['received', 'confirmed', 'cancelled'] as const
+const STAFF_TRANSITION_STATUSES = ['received', 'cancelled'] as const
 
 export type OrderStatusActionResult =
   | { ok: true }

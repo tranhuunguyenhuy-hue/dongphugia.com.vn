@@ -26,6 +26,15 @@ begin
      or to_regprocedure('public.phase2_admin_order_list(text,integer,integer)') is null
      or to_regprocedure('public.phase2_admin_order_get(integer)') is null
      or to_regprocedure('public.phase2_admin_order_update_status(integer,text,text,uuid)') is null
+     or to_regprocedure('dpg_app.phase2_guard_order_status_update()') is null
+     or not exists (
+       select 1 from pg_trigger t
+       join pg_class c on c.oid = t.tgrelid
+       join pg_namespace n on n.oid = c.relnamespace
+       where n.nspname = 'dpg_app' and c.relname = 'orders'
+         and t.tgname = 'phase2_order_status_guard'
+         and not t.tgisinternal and t.tgenabled = 'O'
+     )
      or to_regclass('dpg_app.phase2_admin_order_status_idempotency') is null then
     raise exception 'DPG_PHASE2_ADMIN_ROLLBACK_SCHEMA_MISMATCH';
   end if;
@@ -45,6 +54,8 @@ end
 $rollback_preflight$;
 
 set role dpg_migration;
+drop trigger phase2_order_status_guard on dpg_app.orders;
+drop function dpg_app.phase2_guard_order_status_update();
 drop function public.phase2_admin_order_update_status(integer,text,text,uuid);
 drop function public.phase2_admin_order_get(integer);
 drop function public.phase2_admin_order_list(text,integer,integer);
@@ -52,17 +63,16 @@ drop function public.phase2_admin_staff_context();
 
 drop policy phase2_admin_order_status_idempotency_all
   on dpg_app.phase2_admin_order_status_idempotency;
-drop policy phase2_admin_order_requests_select on dpg_app.orders;
-drop policy phase2_admin_order_requests_update on dpg_app.orders;
-drop policy phase2_admin_order_status_audit_insert on dpg_app.audit_logs;
 drop table dpg_app.phase2_admin_order_status_idempotency;
 
+revoke update (status, updated_at, payment_status, assigned_to, internal_note) on table dpg_app.orders from authenticated;
 grant update on table dpg_app.orders to authenticated;
 reset role;
 
 do $rollback_postflight$
 begin
   if to_regprocedure('public.phase2_admin_order_update_status(integer,text,text,uuid)') is not null
+     or to_regprocedure('dpg_app.phase2_guard_order_status_update()') is not null
      or to_regclass('dpg_app.phase2_admin_order_status_idempotency') is not null
      or not has_table_privilege('authenticated', 'dpg_app.orders', 'UPDATE') then
     raise exception 'DPG_PHASE2_ADMIN_ROLLBACK_POSTFLIGHT_FAILED';

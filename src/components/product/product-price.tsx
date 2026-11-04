@@ -195,7 +195,7 @@ export function ProductPrice({ price, originalPrice, listPrice, salePrice, price
                                     "ml-auto text-[12px] font-bold transition-colors",
                                     installOption === 'install' ? "text-sky-700" : "text-stone-600"
                                 )}>
-                                    +200.000đ
+                                    Nhân viên xác nhận phí
                                 </span>
                             </label>
 
@@ -217,7 +217,7 @@ export function ProductPrice({ price, originalPrice, listPrice, salePrice, price
                                     <div className={cn("w-2 h-2 rounded-full bg-sky-600 transition-transform duration-200", installOption === 'replace' ? "scale-100" : "scale-0")} />
                                 </div>
                                 <span className={cn("text-[12px] font-medium flex-1", installOption === 'replace' ? "text-sky-900" : "text-stone-600")}>Tháo dỡ & Lắp đặt</span>
-                                <span className="text-[12px] font-bold text-sky-700">+350.000đ</span>
+                                <span className="text-[12px] font-bold text-sky-700">Nhân viên xác nhận phí</span>
                             </label>
                         </div>
                     </div>

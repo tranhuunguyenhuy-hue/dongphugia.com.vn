@@ -9,7 +9,7 @@ import { updateGuestOrderStatus } from './actions'
 const LABELS: Record<OrderRequestStatus, string> = {
   pending: 'Chờ nhân viên xử lý',
   received: 'Đã tiếp nhận',
-  confirmed: 'Đã xác nhận với khách',
+  confirmed: 'Đã chốt thương mại',
   inventory_check: 'Đang kiểm tra kho',
   completed: 'Hoàn tất',
   cancelled: 'Đã hủy',
@@ -68,7 +68,7 @@ export function OrderStatusEditor({
         ))}
       </div>
       {message ? <p className="admin-error" role="alert">{message}</p> : null}
-      <p className="admin-muted">Cập nhật trạng thái không thu tiền và không tự động xác nhận thanh toán.</p>
+      <p className="admin-muted">Chỉ tiếp nhận hoặc hủy yêu cầu tại đây. Chỉ chốt thương mại sau khi đã ghi nhận giá cuối và các phí vận chuyển/lắp đặt.</p>
     </div>
   )
 }

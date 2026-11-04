@@ -5,6 +5,8 @@ export function getPersistedOrderRequestNumber(value: unknown): string | null {
   if (!value || typeof value !== 'object' || Array.isArray(value) || !('data' in value)) return null
   const data = value.data
   if (!data || typeof data !== 'object' || Array.isArray(data)) return null
+  const keys = Object.keys(data).sort()
+  if (keys.length !== 3 || keys.join(',') !== 'order_number,payment_status,status') return null
   if (
     !('order_number' in data) || typeof data.order_number !== 'string'
     || !ORDER_NUMBER_PATTERN.test(data.order_number)

@@ -44,6 +44,7 @@ export const PUBLIC_ROUTE_OWNERSHIP = [
   },
   { path: '/api/health', owner: 'public', purpose: 'runtime-probe' },
   { path: '/api/order-requests', owner: 'public', purpose: 'guest-order-request-write' },
+  { path: '/api/order-requests/receipt', owner: 'public', purpose: 'guest-order-request-receipt-readonly' },
 ] as const
 
 export const ADMIN_ROUTE_OWNERSHIP = [

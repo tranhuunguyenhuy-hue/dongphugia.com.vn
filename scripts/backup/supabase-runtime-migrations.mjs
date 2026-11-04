@@ -37,6 +37,8 @@ export const EXPECTED_RUNTIME_MIGRATIONS = [
   '20260901170000_leo565_media_foundation.sql',
   '20260903165000_owner_v1_pricing_contract.sql',
   '20261016090000_leo560_preview_rls_hardening.sql',
+  '20261104154854_phase2_guest_order_intake.sql',
+  '20261104190000_phase2_admin_order_inbox.sql',
 ]
 
 const migrationsDirectory = path.resolve('supabase/migrations')

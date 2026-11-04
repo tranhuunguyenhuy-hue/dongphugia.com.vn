@@ -13,9 +13,10 @@ describe('order pricing', () => {
         })).toBe(900_000)
     })
 
-    it('uses the shared installation fee table', () => {
-        expect(getInstallationFee('install')).toBe(200_000)
-        expect(getInstallationFee('replace')).toBe(350_000)
+    it('keeps unconfirmed installation fees pending and out of the provisional amount', () => {
+        expect(getInstallationFee('none')).toBe(0)
+        expect(getInstallationFee('install')).toBeNull()
+        expect(getInstallationFee('replace')).toBeNull()
         expect(calculateOrderUnitPrice({
             listPrice: 1_000_000,
             originalPrice: null,
@@ -23,7 +24,7 @@ describe('order pricing', () => {
             compatibilityPrice: null,
             stockStatus: 'in_stock',
             installOption: 'install',
-        })).toBe(1_200_000)
+        })).toBe(1_000_000)
     })
 
     it('rejects missing prices and invalid legacy-only price facts', () => {

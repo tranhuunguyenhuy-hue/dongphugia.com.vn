@@ -3,7 +3,7 @@ import {exceptionCategory} from '../../scripts/catalogue-direct/preview-diagnost
 import { publicSnapshotCheckpoint } from './src/runtime/public-snapshot-mode'
 import {servePrerenderedCatalogue} from './src/runtime/prerendered-catalogue'
 import {readBoundedPublicAssetText} from './src/runtime/bounded-public-asset'
-import {handleGuestOrderRequest} from './src/runtime/guest-order-request'
+import {handleGuestOrderReceiptRequest, handleGuestOrderRequest} from './src/runtime/guest-order-request'
 
 import {
   assertPublicRuntime,
@@ -64,6 +64,9 @@ export default {
 
     if (new URL(request.url).pathname === '/api/order-requests') {
       return handleGuestOrderRequest(request, environment)
+    }
+    if (new URL(request.url).pathname === '/api/order-requests/receipt') {
+      return handleGuestOrderReceiptRequest(request, environment)
     }
 
     const publicApiDecision = classifyPublicApiRequest(request)
