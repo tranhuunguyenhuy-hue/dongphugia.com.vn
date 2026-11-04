@@ -28,3 +28,11 @@ it('shows the technical documents tab and a clear empty state', () => {
     fireEvent.click(screen.getByRole('tab',{name:'Tài liệu kỹ thuật'}))
     expect(screen.getByText('Sản phẩm này chưa có tài liệu kỹ thuật công khai.')).toBeTruthy()
 })
+
+it('loads dimensionless public description images when the PDP opens', () => {
+    const html = renderToStaticMarkup(<ProductDetailTabs
+        description={'<p><img src="https://dpg-products.b-cdn.net/description_assets/example.png" alt="Sản phẩm" loading="lazy"></p>'}
+    />)
+    expect(html).toContain('alt="Sản phẩm" loading="eager"')
+    expect(html).not.toContain('loading="lazy"')
+})
