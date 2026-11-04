@@ -27,6 +27,13 @@ export type ProductCommerceProjection = {
   canRequestQuote: boolean
 }
 
+export function resolveFinalOnlinePrice(displayPrice: number | null, discount: unknown): number | null {
+  const amount = typeof discount === 'number' ? discount : Number(discount)
+  return Number.isSafeInteger(displayPrice) && displayPrice !== null && displayPrice > 0
+    && Number.isSafeInteger(amount) && amount > 0 && amount < displayPrice
+    ? displayPrice - amount : null
+}
+
 export function mapProductAvailability(stockStatus: string | null | undefined): ProductAvailability | null {
   switch (stockStatus) {
     case "in_stock":

@@ -112,7 +112,7 @@ export function ProductDetailTabs({
         infoLabel: tabConfig?.infoLabel ?? 'Thông tin chung',
         featuresLabel: tabConfig?.featuresLabel ?? 'Tính năng nổi bật',
         specsLabel: tabConfig?.specsLabel ?? 'Thông số kỹ thuật',
-        docsLabel: 'Tài liệu hướng dẫn',
+        docsLabel: 'Tài liệu kỹ thuật',
     };
 
     // Parse specifications robustly
@@ -292,14 +292,12 @@ export function ProductDetailTabs({
                     isActive={activeTab === 'specs'}
                     onClick={() => setActiveTab('specs')}
                 />
-                {parsedDocuments.length > 0 && (
-                    <TabButton
+                <TabButton
                         icon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" /></svg>}
                         label={config.docsLabel}
                         isActive={activeTab === 'docs'}
                         onClick={() => setActiveTab('docs')}
                     />
-                )}
             </div>
 
             {/* Tab Content */}
@@ -447,9 +445,11 @@ export function ProductDetailTabs({
                     </div>
                 )}
 
-                {activeTab === 'docs' && parsedDocuments.length > 0 && (
+                {activeTab === 'docs' && (
                     <div className="space-y-4 animate-fade-in">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {parsedDocuments.length === 0 ? (
+                            <p className="text-stone-500 text-sm">Sản phẩm này chưa có tài liệu kỹ thuật công khai.</p>
+                        ) : <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             {parsedDocuments.map((doc, idx) => (
                                 <a 
                                     key={idx} 
@@ -473,7 +473,7 @@ export function ProductDetailTabs({
                                     </div>
                                 </a>
                             ))}
-                        </div>
+                        </div>}
                     </div>
                 )}
 

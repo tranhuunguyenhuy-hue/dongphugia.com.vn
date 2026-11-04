@@ -1,5 +1,6 @@
 import { expect, it } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
+import {fireEvent,render,screen} from '@testing-library/react'
 
 import { ProductDetailTabs } from './product-detail-tabs'
 
@@ -20,4 +21,10 @@ it('renders projected description blocks as escaped React text with canonical ta
     expect(html).toContain('<li>Thân sứ cao cấp</li>')
     expect(html).not.toContain('Legacy fallback')
     expect(html).not.toContain('<script>')
+})
+
+it('shows the technical documents tab and a clear empty state', () => {
+    render(<ProductDetailTabs documents={[]} />)
+    fireEvent.click(screen.getByRole('tab',{name:'Tài liệu kỹ thuật'}))
+    expect(screen.getByText('Sản phẩm này chưa có tài liệu kỹ thuật công khai.')).toBeTruthy()
 })

@@ -183,7 +183,9 @@ async function main() {
       &&['MS636DT2#XW','MS636DT8#XW','MS636CDRW23#XW'].every(sku=>members.some(({row})=>row.sku===sku))
     if(!group||members.length<2||members.length>8||(!ms636&&group.allMemberCount!==members.length)
       ||members.some(({row,product})=>row.variant_group_id!==group.id||row.variant_type!==group.variant_type
-        ||(!ms636&&row.is_combo)||product.listingEligible!==true))continue
+        // MS636DT2 is the one recorded toilet + soft-close seat bundle in this
+        // exact bowl/seat series. Other bundles never become variants.
+        ||(row.is_combo&&!(ms636&&row.sku==='MS636DT2#XW'))||product.listingEligible!==true))continue
     const first=members[0].product
     if(!first.brands?.slug||members.some(({product})=>product.categories.slug!==first.categories.slug
       ||product.subcategories.slug!==first.subcategories.slug||product.brands?.slug!==first.brands?.slug))continue

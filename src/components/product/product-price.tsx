@@ -5,7 +5,7 @@ import { Sparkles, Gift, ShieldCheck, Award, Truck, Headphones } from 'lucide-re
 import { useState } from "react"
 import { ProductOptionsContext } from "./product-options-context"
 import { getInstallationFee, type InstallOption } from "@/lib/order-pricing"
-import { resolveProductCommerce } from "@/lib/product-commerce"
+import { resolveFinalOnlinePrice, resolveProductCommerce } from "@/lib/product-commerce"
 
 interface ProductPriceProps {
     price: number | null | undefined
@@ -34,8 +34,8 @@ export function ProductPrice({ price, originalPrice, listPrice, salePrice, price
     const numPrice = commerce.displayPrice ?? 0
     const numOriginal = commerce.originalPrice ?? 0
     const numOnlineDiscount = Number(onlineDiscountAmount)
-    const finalOnlinePrice = hasFiniteOnlineDiscount(numPrice, numOnlineDiscount) && commerce.priceMode === 'PUBLIC_PRICE'
-        ? numPrice - numOnlineDiscount : null
+    const finalOnlinePrice = commerce.priceMode === 'PUBLIC_PRICE'
+        ? resolveFinalOnlinePrice(numPrice, numOnlineDiscount) : null
     const hasDiscount = commerce.salePrice !== null
     const statusDisplay = priceDisplay || 'Liên hệ báo giá'
     const hasPublicPrice = commerce.priceMode === 'PUBLIC_PRICE'
@@ -45,7 +45,7 @@ export function ProductPrice({ price, originalPrice, listPrice, salePrice, price
         : statusDisplay
 
     return (
-        <ProductOptionsContext.Provider value={{ installOption, setInstallOption, installationFee, onlineDiscountAmount: numOnlineDiscount }}>
+        <ProductOptionsContext.Provider value={{ installOption, setInstallOption, installationFee, onlineDiscountAmount: finalOnlinePrice === null ? 0 : numOnlineDiscount }}>
         <div className={cn("relative rounded-[24px] bg-white shadow-[0_8px_30px_rgba(0,0,0,0.06)] mb-6", className)}>
             <div className="flex flex-col p-5 lg:p-6 h-full">
                 
@@ -78,7 +78,7 @@ export function ProductPrice({ price, originalPrice, listPrice, salePrice, price
                     )}
 
                     {/* Online Discount Sub-Card (Shopee-style Voucher) */}
-                    {hasPublicPrice && numOnlineDiscount > 0 && (
+                    {hasPublicPrice && finalOnlinePrice !== null && (
                         <div className="mt-4 flex relative rounded-xl bg-orange-50/60 border border-orange-200">
                             
                             {/* Left Stub */}
@@ -258,5 +258,3 @@ export function ProductPrice({ price, originalPrice, listPrice, salePrice, price
         </ProductOptionsContext.Provider>
     )
 }
-
-function hasFiniteOnlineDiscount(price:number, discount:number){return Number.isSafeInteger(price)&&price>0&&Number.isSafeInteger(discount)&&discount>0&&discount<price}
