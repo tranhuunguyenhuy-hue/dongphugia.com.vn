@@ -9,6 +9,7 @@ import {
   getLegacyBlogPost,
   getLegacyBlogRelatedPosts,
   historicalBlogImage,
+  restoreHistoricalBlogArticleLinks,
 } from '../../../../src/runtime/legacy-blog'
 
 export const runtime = 'edge'
@@ -45,7 +46,7 @@ export default async function PublicBlogPostPage({ params }: Props) {
   if (!post) notFound()
   const cover = historicalBlogImage(post.cover_image_url ?? post.thumbnail_url)
   const articleContent = sanitizeRichHtml(
-    post.content.replace(/<h1(\s|>)/gi, '<h2$1').replace(/<\/h1>/gi, '</h2>'),
+    restoreHistoricalBlogArticleLinks(post.content.replace(/<h1(\s|>)/gi, '<h2$1').replace(/<\/h1>/gi, '</h2>')),
   )
   const relatedPosts = getLegacyBlogRelatedPosts(post)
   const path = blogPostPath(post)

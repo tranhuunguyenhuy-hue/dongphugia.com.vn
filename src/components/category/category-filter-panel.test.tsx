@@ -13,14 +13,14 @@ import {CategoryFilterPanel} from './category-filter-panel'
 describe('CategoryFilterPanel snapshot mode',()=>{
   beforeEach(()=>{navigation.push.mockReset();navigation.search='';window.history.replaceState({},'','/thiet-bi-bep?page=2&sort=latest')})
 
-  it('filters multiple real brand slugs and leaves historical price controls unavailable',()=>{
+  it('filters multiple real brand slugs and exposes restored price controls',()=>{
     const {rerender}=render(<CategoryFilterPanel mode="snapshot" brands={[
       {id:'brand-a',slug:'brand-a',name:'Brand A'},
       {id:'brand-b',slug:'brand-b',name:'Brand B'},
     ]} />)
 
-    expect(screen.getByText('Liên hệ để nhận báo giá')).toBeVisible()
-    expect(document.querySelectorAll('input[type="range"]')).toHaveLength(0)
+    expect(screen.getByText('Khoảng giá')).toBeVisible()
+    expect(document.querySelectorAll('input[type="range"]')).toHaveLength(2)
     fireEvent.click(screen.getByRole('button',{name:'Brand A'}))
     expect(window.location.search).toBe('?page=2&sort=latest&brands=brand-a')
     expect(navigation.push).not.toHaveBeenCalled()

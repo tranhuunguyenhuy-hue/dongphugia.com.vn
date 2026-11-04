@@ -76,6 +76,7 @@ const props = {
 describe('canonical Preview listing section', () => {
   beforeEach(() => {
     mocks.search = new URLSearchParams()
+    window.history.replaceState(null,'','/thiet-bi-bep/voi-rua-chen')
     mocks.fetch.mockReset()
     vi.stubGlobal('fetch', mocks.fetch)
     mocks.fetch.mockImplementation(async (input: RequestInfo | URL) => {
@@ -86,6 +87,7 @@ describe('canonical Preview listing section', () => {
 
   it('hydrates a direct multi-brand URL, filters the authentic shard set and responds to history URL changes', async () => {
     mocks.search = new URLSearchParams('brand=brand-a,brand-b&is_featured=true&page=1')
+    window.history.replaceState(null,'',`/thiet-bi-bep/voi-rua-chen?${mocks.search}`)
     const view = render(<PreviewListingSection {...props} />)
 
     const cards = await screen.findAllByTestId('product-card')
@@ -94,12 +96,16 @@ describe('canonical Preview listing section', () => {
     // Next navigation and browser back/forward update the URL; the same loaded
     // snapshot is re-filtered without an extra API fetch or a blank result.
     mocks.search = new URLSearchParams('brand=brand-a,brand-b&page=2')
+    window.history.pushState(null,'',`/thiet-bi-bep/voi-rua-chen?${mocks.search}`)
+    fireEvent.popState(window)
     view.rerender(<PreviewListingSection {...props} />)
     await waitFor(() => expect(screen.getAllByTestId('product-card').map(card => card.textContent?.split(':')[0]))
       .toEqual(['13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24']))
     expect(screen.getByRole('navigation', { name: 'Pagination' }).textContent).toContain('Trang 2/3')
 
     mocks.search = new URLSearchParams('brand=brand-a,brand-b&is_featured=true&page=1')
+    window.history.pushState(null,'',`/thiet-bi-bep/voi-rua-chen?${mocks.search}`)
+    fireEvent.popState(window)
     view.rerender(<PreviewListingSection {...props} />)
     await waitFor(() => expect(screen.getAllByTestId('product-card')).toHaveLength(8))
     expect(mocks.fetch).toHaveBeenCalledTimes(1)
@@ -118,15 +124,16 @@ describe('canonical Preview listing section', () => {
     const html = renderToString(<PreviewListingSection {...props} />)
     expect(html).toContain('Đang tải sản phẩm')
     expect(html).not.toContain('Sản phẩm 1')
-    expect(html).not.toContain('Sắp xếp')
+    expect(html).toContain('Sắp xếp')
 
     render(<PreviewListingSection {...props} />)
     expect(await screen.findByText('1:Sản phẩm 1')).toBeTruthy()
-    expect(screen.queryByText('Sắp xếp')).toBeNull()
+    expect(screen.queryByText('Sắp xếp')).toBeTruthy()
   })
 
   it('fails closed with a way back when the URL uses unsupported sort fields', () => {
-    mocks.search = new URLSearchParams('sort=price-asc')
+    mocks.search = new URLSearchParams('sort=unknown')
+    window.history.replaceState(null,'',`/thiet-bi-bep/voi-rua-chen?${mocks.search}`)
     render(<PreviewListingSection {...props} />)
     expect(screen.getByRole('alert').textContent).toContain('Bộ lọc không hợp lệ')
     expect(screen.getByRole('link', { name: 'Xóa bộ lọc' }).getAttribute('href'))

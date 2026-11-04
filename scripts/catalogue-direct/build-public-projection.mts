@@ -68,20 +68,24 @@ async function main() {
   await assertTargetPrivate(client)
   projectionPhase='PUBLIC_QUERY'
   // Explicit selected fields only: no Auth, Storage, orders, customer records,
-  // Source URLs and legacy prices remain protected in runner memory for strict
-  // historical-reference eligibility. Only reviewed scalar DTOs are emitted.
-  // Alternate description blobs, arbitrary JSON and documents are excluded.
+  // Source URLs and raw rows remain protected in runner memory. Explicitly
+  // allowlisted historical prices, public description and documents are emitted.
   const result=await client.query(`select p.id,p.name,p.display_name,p.slug,p.sku,p.product_type,p.image_main_url,p.is_featured,
-    p.price,p.price_display,p.price_updated_at,p.price_source,p.price_state,p.price_confidence,p.source_system,p.source_url,
+    p.price,p.original_price,p.list_price,p.sale_price,p.online_discount_amount,
+    p.price_display,p.price_updated_at,p.price_source,p.price_state,p.price_confidence,p.source_system,p.source_url,
     p.variant_group,p.variant_group_id,p.variant_label,p.variant_type,p.is_combo,
     p.sort_order as "rootSortOrder",b.id as "rootBrandId",b.sort_order as "rootBrandSortOrder",
+    color.name as "cardColorName",color.hex_code as "cardColorHex",
+    coalesce((select jsonb_agg(f.name) from (select pf.name from dpg_app.product_feature_values pfv
+      join dpg_app.product_features pf on pf.id=pfv.feature_id
+      where pfv.product_id=p.id order by pf.sort_order,pfv.id limit 3) f),'[]'::jsonb) as "cardFeatures",
     case when c.slug='gach-op-lat' and coalesce(root_taxonomy.has_taxon,false)
       then root_taxonomy.sort_order else s.sort_order end as "rootSubcategorySortOrder",
     case when c.slug='gach-op-lat' and coalesce(root_taxonomy.has_taxon,false)
       then null else s.thumbnail_url end as "rootSubcategoryThumbnailUrl",
     p.is_active,p.stock_status,p.sellable_status,p.publication_status,p.pdp_visibility,p.listing_visibility,
     p.search_visibility,p.seo_indexing,p.sitemap_include,
-    case when octet_length(p.description)<=16000 then p.description else null end as "publicDescription",
+    case when octet_length(p.description)<=20000 then p.description else null end as "publicDescription",
     coalesce((select jsonb_agg(jsonb_build_object('key',v.key,'isPdpVisible',true,'value',v.value)) from
       (select sd.key,coalesce(so.value,sv.value_text,sv.value_number::text) as value
        from dpg_app.product_spec_values sv join dpg_app.spec_definitions sd on sd.id=sv.spec_definition_id
@@ -93,6 +97,9 @@ async function main() {
       where jsonb_typeof(p.specs->m.path) in ('string','number') and octet_length(p.specs->>m.path)<=2000),'[]'::jsonb) as "publicSpecifications",
     coalesce((select jsonb_agg(i.image_url) from (select image_url from dpg_app.product_images
       where product_id=p.id and image_type='gallery' order by sort_order,id limit 12)i),'[]'::jsonb) as "publicGallery",
+    coalesce((select jsonb_agg(jsonb_build_object('name',d.name,'url',d.url,'document_type',d.document_type,'file_ext',d.file_ext,'file_size',d.file_size))
+      from (select name,url,document_type,file_ext,file_size from dpg_app.product_documents
+        where product_id=p.id order by sort_order,id limit 20)d),'[]'::jsonb) as "publicDocuments",
     jsonb_build_object('slug',c.slug,'name',c.name) as categories,
     case when s.id is null then null else jsonb_build_object('slug',s.slug,'name',s.name) end as subcategories,
     case when b.is_active then b.name else null end as brand_name,
@@ -105,6 +112,7 @@ async function main() {
     from dpg_app.products p join dpg_app.categories c on c.id=p.category_id
     left join dpg_app.subcategories s on s.id=p.subcategory_id
     left join dpg_app.brands b on b.id=p.brand_id
+    left join dpg_app.colors color on color.id=p.color_id
     left join lateral (
       select min(t.sort_order) as sort_order,count(*)>0 as has_taxon
       from dpg_app.product_taxon_assignments a
@@ -146,15 +154,17 @@ async function main() {
     const visibility = resolveProductVisibility(row)
     const primaries = row.product_taxon_assignments.filter(assignment => assignment.is_primary)
     const primaryListing = primaries.length === 0 || (primaries.length === 1 && primaries[0].catalog_taxons?.is_listing_enabled === true)
-    const product=projectProduct(row,{...visibility,listing:visibility.listing && primaryListing},canonical)
-    return product?{row,product:{...product,publicContent:projectPublicContent(row)}}:null
+    const product=projectProduct(row,{...visibility,listing:visibility.listing && primaryListing},canonical,{restoreCommerce:true})
+    return product?{row,product:{...product,publicContent:projectPublicContent(row,{rich:true})}}:null
   }).filter((pair):pair is NonNullable<typeof pair>=>pair!==null)
   // Legacy groups are never the approved Family model. Only a small, fully
   // public one-axis sibling subset with exact independent PDP targets is used.
   const rawGroups=await client.query(`select vg.id,vg.group_key,vg.source,vg.confidence,vg.variant_type,
     (select count(*)::integer from dpg_app.products all_p where all_p.variant_group=vg.group_key) as "allMemberCount"
-    from dpg_app.product_variant_groups vg where vg.confidence='high' and vg.source like 'hita-normalized-%'
-      and vg.variant_type=any($1::text[])`,[['size','seat_type']])
+    from dpg_app.product_variant_groups vg where
+      (vg.confidence='high' and vg.source like 'hita-normalized-%' and vg.variant_type=any($1::text[]))
+      or (vg.id=237 and vg.group_key='MS636' and vg.source='legacy-products'
+        and vg.confidence='medium' and vg.variant_type='seat_type')`,[['size','seat_type']])
   const allowedGroups=new Map(rawGroups.rows.map((group: {id:number;group_key:string;source:string;confidence:string;variant_type:string;allMemberCount:number})=>[group.group_key,group]))
   const candidates=new Map<string,typeof projectedPairs>()
   for(const pair of projectedPairs){
@@ -166,12 +176,20 @@ async function main() {
   const publicVariantById=new Map<number,{variant_group:string;variant_type:string;variant_label:string}>()
   for(const [key,members] of candidates){
     const group=allowedGroups.get(key)
-    if(!group||members.length<2||members.length>8||group.allMemberCount!==members.length
-      ||members.some(({row,product})=>row.variant_group_id!==group.id||row.variant_type!==group.variant_type||row.is_combo||product.listingEligible!==true))continue
+    const ms636=key==='MS636'&&group?.id===237&&group.source==='legacy-products'
+      &&group.confidence==='medium'&&group.variant_type==='seat_type'
+      &&group.allMemberCount===4&&members.length===3
+      &&new Set(members.map(({row})=>row.sku)).size===3
+      &&['MS636DT2#XW','MS636DT8#XW','MS636CDRW23#XW'].every(sku=>members.some(({row})=>row.sku===sku))
+    if(!group||members.length<2||members.length>8||(!ms636&&group.allMemberCount!==members.length)
+      ||members.some(({row,product})=>row.variant_group_id!==group.id||row.variant_type!==group.variant_type
+        // MS636DT2 is the one recorded toilet + soft-close seat bundle in this
+        // exact bowl/seat series. Other bundles never become variants.
+        ||(row.is_combo&&!(ms636&&row.sku==='MS636DT2#XW'))||product.listingEligible!==true))continue
     const first=members[0].product
     if(!first.brands?.slug||members.some(({product})=>product.categories.slug!==first.categories.slug
       ||product.subcategories.slug!==first.subcategories.slug||product.brands?.slug!==first.brands?.slug))continue
-    const labels=members.map(({row})=>publicText(row.variant_label,100))
+    const labels=members.map(({row})=>publicText(row.variant_label??(ms636&&row.sku==='MS636DT2#XW'?'Nắp đóng êm TC393VS':null),100))
     if(labels.some(label=>!label)||new Set(labels.map(label=>label!.toLocaleLowerCase('vi'))).size!==members.length
       ||new Set(members.map(({product})=>product.sku)).size!==members.length
       ||new Set(members.map(({product})=>product.url)).size!==members.length)continue
@@ -181,7 +199,7 @@ async function main() {
   }
   const projected=projectedPairs.map(({product})=>({...product,...publicVariantById.get(product.id)}))
   projectionPhase='PUBLIC_ASSEMBLY'
-  const {manifest,assets}=buildProjection(projected,evidence,rootMetadata)
+  const {manifest,assets}=buildProjection(projected,evidence,rootMetadata,{restoreCommerce:true})
   if(!manifest.products||!manifest.listingProducts) throw new Error('PUBLIC_PROJECTION_EMPTY_REVIEW_REQUIRED')
   await client.query('commit')
   projectionPhase='ASSET_WRITE'
@@ -197,6 +215,24 @@ async function main() {
     await writeFile(resolve(output,name),content,{mode:0o600})
   }
   if(bytes>100000000||assets.size>5000) throw new Error('PUBLIC_PROJECTION_CAPACITY')
+  const exceptions=projectedPairs.flatMap(({row,product})=>{
+    const reasons:string[]=[]
+    if(product.price===null)reasons.push('CONTACT_ONLY_PRICE_UNVERIFIED')
+    else if(row.price_source==='hita'){
+      if(product.original_price===null)reasons.push('ORIGINAL_PRICE_UNVERIFIED')
+      if(Number(row.sale_price)!==product.price)reasons.push('HISTORICAL_SALE_FIELD_CONFLICT')
+      if(row.online_discount_amount!==null&&Number(row.online_discount_amount)>0
+        &&product.online_discount_amount===null)reasons.push('ONLINE_DISCOUNT_INVALID')
+    }
+    return reasons.length?[{sku:product.sku,reasons}]:[]
+  })
+  const exceptionPath=process.env.PUBLIC_PRICE_EXCEPTIONS_PATH
+  if(exceptionPath){
+    if(process.env.GITHUB_ACTIONS!=='true'||!exceptionPath.endsWith('/evidence/price-exceptions.json'))throw new Error('PUBLIC_PRICE_EXCEPTIONS_PATH_INVALID')
+    await mkdir(resolve(exceptionPath,'..'),{recursive:true})
+    await writeFile(exceptionPath,JSON.stringify({contract:'dpg:public-price-exceptions:v1',checkpoint:evidence.checkpoint,
+      products:projected.length,items:exceptions},null,2)+'\n',{mode:0o600})
+  }
   const headersPath = resolve('apps/public/dist/client/_headers')
   const existingHeaders = await readFile(headersPath, 'utf8').catch(() => '')
   if (!existingHeaders.includes('/__catalogue/*')) await writeFile(headersPath, existingHeaders + '\n/__catalogue/*\n  X-Robots-Tag: noindex, nofollow\n  Cache-Control: private, no-store\n')
@@ -204,7 +240,9 @@ async function main() {
   console.log(JSON.stringify({status:'PASS',stage:'M4_PUBLIC_PROJECTION',...evidence,
     publicProducts:manifest.products,listingProducts:manifest.listingProducts,excludedInvalidCanonical:rows.length-projected.length,assets:assets.size,bytes,
     historicalReferencePrices:manifest.contentStats.referencePrices,verifiedVariantProducts:publicVariantById.size,
-    transactionalPrices:'CONTACT_ONLY',inventory:'CONFIRM_WITH_OWNER',privateFieldsExported:false}))
+    publicPrices:manifest.contentStats.publicPrices,hitaPrices:manifest.contentStats.hitaPrices,
+    onlineFinalPrices:manifest.contentStats.onlineFinalPrices,priceExceptions:exceptions.length,
+    inventory:'CONFIRM_WITH_OWNER',privateFieldsExported:false}))
 }
 main().catch(error=>{
  const reasons=new Set(['PUBLIC_PROJECTION_UNSAFE_CONTENT','PUBLIC_PROJECTION_UNSAFE_DTO','PUBLIC_PROJECTION_DUPLICATE_CANONICAL_PATH','PUBLIC_PROJECTION_M3_EVIDENCE_REQUIRED','PUBLIC_PROJECTION_EMPTY_REVIEW_REQUIRED','PUBLIC_ASSET_CAPACITY','PUBLIC_PROJECTION_CAPACITY','M3_RUN_NOT_VERIFIED','M3_EXACT_CHECKPOINT_NOT_VERIFIED'])

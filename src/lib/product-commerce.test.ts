@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest"
-import { resolveProductCommerce } from "./product-commerce"
+import { resolveFinalOnlinePrice, resolveProductCommerce } from "./product-commerce"
+
+it('only computes a final online price for a valid public discount', () => {
+  expect(resolveFinalOnlinePrice(21_223_200, 3_183_000)).toBe(18_040_200)
+  expect(resolveFinalOnlinePrice(21_223_200, 21_223_200)).toBeNull()
+  expect(resolveFinalOnlinePrice(null, 3_183_000)).toBeNull()
+})
 
 describe("resolveProductCommerce", () => {
   it("projects canonical public sale price and in-stock purchase state", () => {

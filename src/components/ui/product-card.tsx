@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { formatPrice, cn } from '@/lib/utils';
 import { siteConfig } from '@/config/site';
 import { getVariantDisplayColor } from '@/lib/variant-color-display';
-import { DeferredResponsiveMedia } from '@/components/media/deferred-responsive-media'; import { ResponsiveMedia } from '@/components/media/responsive-media'; import { resolveProductCommerce } from '@/lib/product-commerce';
+import { DeferredResponsiveMedia } from '@/components/media/deferred-responsive-media'; import { ResponsiveMedia } from '@/components/media/responsive-media'; import { resolveFinalOnlinePrice, resolveProductCommerce } from '@/lib/product-commerce';
 
 export interface ProductCardProps {
     product: any;
@@ -77,6 +77,9 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
         compatibilityPrice: product.price,
         stockStatus: product.stock_status,
     });
+    const onlineDiscount = Number(product.online_discount_amount);
+    const finalOnlinePrice = commerce.priceMode === 'PUBLIC_PRICE'
+        ? resolveFinalOnlinePrice(commerce.displayPrice, onlineDiscount) : null;
 
     let discountPercent = 0;
     if (commerce.salePrice !== null && commerce.originalPrice !== null) {
@@ -257,11 +260,12 @@ export function ProductCard({ product, showPrice = true, patternSlug, basePath =
                                     </span>
                                 )}
                             </div>
-                            {product.online_discount_amount && Number(product.online_discount_amount) > 0 && (
+                            {finalOnlinePrice !== null && (
                                 <span className="px-2 py-[5px] mt-0.5 text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-[4px] leading-none whitespace-nowrap w-fit">
                                     Giảm thêm {formatPrice(Number(product.online_discount_amount))}
                                 </span>
                             )}
+                            {finalOnlinePrice !== null && <span className="text-[12px] font-bold text-emerald-800">Giá cuối online: {formatPrice(finalOnlinePrice)}</span>}
                         </>
                     ) : (
                         <span className="font-semibold text-[14px] text-[#2E7A96] tracking-tight">

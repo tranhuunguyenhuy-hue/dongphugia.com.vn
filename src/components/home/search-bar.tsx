@@ -14,6 +14,7 @@ interface SearchResult {
     price: number | null
     original_price?: number | null
     online_discount_amount?: number | null
+    final_online_price?: number | null
     price_display: string | null
     image_main_url: string | null
     category_slug: string
@@ -219,6 +220,9 @@ export function SearchBar({ onExpandedChange }: { onExpandedChange?: (expanded: 
                                                 </>
                                             )}
                                         </div>
+                                        {item.final_online_price !== null && item.final_online_price !== undefined && (
+                                            <span className="text-[11px] font-bold text-emerald-800">Giá cuối online: {formatPrice(item.final_online_price)}</span>
+                                        )}
                                     </div>
                                 </div>
                             </button>

@@ -20,6 +20,8 @@ describe('Public route ownership baseline', () => {
       '/[categorySlug]/[subcategorySlug]',
       '/[categorySlug]/[subcategorySlug]/[productSlug]',
       '/robots.txt',
+      '/tim-kiem',
+      '/api/search',
       '/api/catalogue/listings/[categorySlug]/[listingSlug]',
       '/api/health',
     ])

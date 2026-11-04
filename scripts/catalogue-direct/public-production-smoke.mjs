@@ -22,7 +22,7 @@ const blogPaths = [
   '/blog/huong-dan-chon/so-sanh-nap-rua-dien-tu-toto-va-inax-2026-chon-loai-nao',
   '/blog/huong-dan-chon/inax-bfv-604s-sen-cay-cam-bien-nhiet-do-2026',
 ]
-const paths = ['/', ...blogPaths, '/thiet-bi-ve-sinh', '/thiet-bi-bep', '/vat-lieu-nuoc', '/gach-op-lat', ...productPaths]
+const paths = ['/', ...blogPaths, '/thiet-bi-ve-sinh', '/thiet-bi-bep', '/vat-lieu-nuoc', '/gach-op-lat', '/thiet-bi-ve-sinh/lavabo', ...productPaths]
 const fail = (reason) => { throw new Error(`PUBLIC_PRODUCTION_SMOKE_${reason}`) }
 if (!/^[a-f0-9]{40}$/.test(sourceSha) || !['local', 'workers-dev'].includes(posture)) fail('ARGUMENT')
 const base = new URL(baseArgument)
@@ -51,6 +51,8 @@ const sitemapBody = await sitemap.text()
 if (sitemap.status !== 200 || !sitemap.headers.get('content-type')?.includes('xml')
   || sitemapBody.length > 2_000_000 || !sitemapBody.includes('<urlset')
   || !sitemapBody.includes('https://www.dongphugia.vn/thiet-bi-ve-sinh/lavabo')) fail('SITEMAP')
+const snapshot=JSON.parse((await checked('/__catalogue/v1/manifest.json')).body)
+const restored=snapshot.contentPolicy==='canonical-public-content-v4'
 
 for (const path of paths) {
   const { response, body } = await checked(path)
@@ -73,6 +75,16 @@ for (const path of paths) {
   if (path.startsWith('/blog/') && path.split('/').length === 4
     && (!body.includes('<article') || !body.includes('application/ld+json')))
     fail('NEWS_ARTICLE')
+}
+if(restored){
+  const search=JSON.parse((await checked('/api/search?q=MS636DT2%23XW&limit=8')).body)
+  const exact=search.results?.find(product=>product.sku==='MS636DT2#XW')
+  if(!exact||exact.price!==21223200||exact.original_price!==26529000
+    ||exact.final_online_price!==18040200||search.total<1)fail('RESTORED_SEARCH_PRICE')
+  const pdp=(await checked('/thiet-bi-ve-sinh/bon-cau/bon-cau-1-khoi-toto-ms636dt2-nap-dong-em-tc393vs')).body
+  if(!pdp.includes('21.223.200')||!pdp.includes('18.040.200')
+    ||!pdp.includes('Tài liệu kỹ thuật')||!pdp.includes('Nắp đóng êm TC393VS')
+    ||!pdp.includes('dpg-products.b-cdn.net/'))fail('RESTORED_PDP')
 }
 for (const [assetPath, contentType] of [
   ['/images/banner-1.editorial.w960.webp', 'image/webp'],

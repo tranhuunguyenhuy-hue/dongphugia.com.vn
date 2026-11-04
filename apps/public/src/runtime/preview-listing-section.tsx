@@ -8,6 +8,7 @@ import { ListingPagination } from '@/components/category/listing-pagination'
 import { CategoryMobileFilter } from '@/components/category/category-mobile-filter'
 import { CategorySort } from '@/components/category/category-sort'
 import { ActiveFilters } from '@/components/category/active-filters'
+import {useLiveSearchParams} from '@/components/category/use-live-search-params'
 import type { PreviewListingSectionProps } from '@/components/category/preview-listing-section.types'
 import { shouldPrioritizeListingCard } from '@/lib/listing-image-priority'
 import {
@@ -20,7 +21,8 @@ import { parsePublicSnapshotListingFilters } from './snapshot-listing-contract'
 export function PreviewListingSection({
   categorySlug, listingSlug, basePath, pageSize, availableFilters, runtimeConfig, filterDict,
 }: PreviewListingSectionProps) {
-  const searchParams = useSearchParams()
+  const routerSearchParams=useSearchParams()
+  const searchParams=useLiveSearchParams(routerSearchParams.toString())
   const [attempt, setAttempt] = useState(0)
   const [state, setState] = useState<{
     key: string
@@ -56,8 +58,7 @@ export function PreviewListingSection({
         <div className="flex items-center gap-2">
           <CategoryMobileFilter availableFilters={availableFilters} runtimeConfig={runtimeConfig}
             hideColorFilter={runtimeConfig.hideColorFilter} />
-          {/* Snapshot products have no public price value or trustworthy sort key. */}
-          {!runtimeConfig.snapshotMode && <CategorySort />}
+          <CategorySort />
         </div>
       </div>
       <ActiveFilters filterDict={filterDict} excludeKeys={['sub']} />

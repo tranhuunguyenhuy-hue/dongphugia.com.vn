@@ -5,6 +5,7 @@ import { useSyncExternalStore } from 'react'
 import { Star } from 'lucide-react'
 import { ProductCard, type ProductCardProps } from '@/components/ui/product-card'
 import { useLiveSearchParams } from '@/components/category/use-live-search-params'
+import { resolveProductCommerce } from '@/lib/product-commerce'
 
 const subscribeToHydration = () => () => undefined
 const getClientHydrationSnapshot = () => true
@@ -106,20 +107,32 @@ export function CategoryRootFeaturedProducts({
 }: CategoryRootFeaturedProductsProps) {
     const hydrated = useHasHydrated()
     const routerSearchParams = useSearchParams()
-    const selectedBrands = useLiveSearchParams(routerSearchParams.toString()).get('brands')?.split(',').filter(Boolean) ?? []
+    const searchParams = useLiveSearchParams(routerSearchParams.toString())
+    const selectedBrands = searchParams.get('brands')?.split(',').filter(Boolean) ?? []
+    const priceMatch = /^(\d{1,9})-(\d{1,9})$/.exec(searchParams.get('price') ?? '')
+    const priceRange = priceMatch && Number(priceMatch[1]) <= Number(priceMatch[2])
+        ? [Number(priceMatch[1]), Number(priceMatch[2])] as const : null
     if (!hydrated) return <CategoryRootFeaturedNeutralSection featuredGridClassName={featuredGridClassName} />
 
-    const visibleProducts = selectedBrands.length
-        ? filterableFeaturedProducts
-            .filter((product) => product.brands?.slug && selectedBrands.includes(product.brands.slug))
-            .slice(0, 8)
-        : featuredProducts
+    const visibleProducts = (selectedBrands.length || priceRange ? filterableFeaturedProducts : featuredProducts)
+        .filter((product) => !selectedBrands.length || Boolean(product.brands?.slug && selectedBrands.includes(product.brands.slug)))
+        .filter((product) => {
+            if (!priceRange) return true
+            const price = resolveProductCommerce({
+                listPrice: product.list_price, originalPrice: product.original_price,
+                salePrice: product.sale_price, compatibilityPrice: product.price,
+                stockStatus: product.stock_status,
+            }).displayPrice
+            return price !== null && price >= priceRange[0]
+                && (priceRange[1] >= 50_000_000 || price <= priceRange[1])
+        })
+        .slice(0, 8)
 
     return (
         <CategoryRootFeaturedSection
             basePath={basePath}
             featuredProducts={visibleProducts}
-            isFiltered={selectedBrands.length > 0}
+            isFiltered={selectedBrands.length > 0 || priceRange !== null}
             featuredGridClassName={featuredGridClassName}
         />
     )

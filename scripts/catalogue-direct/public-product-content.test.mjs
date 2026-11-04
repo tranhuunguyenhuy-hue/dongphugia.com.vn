@@ -44,3 +44,20 @@ it('accepts only the old public manual VND display matching its product price an
  expect(isSafePublicContent(projected)).toBe(true)
  expect(isSafePublicContent({...projected,referencePrice:{...projected.referencePrice,amountVnd:0}})).toBe(false)
 })
+it('restores only safe public rich media and verified document URLs',()=>{
+ const c=projectPublicContent({
+  publicDescription:'<h2>Thiết kế</h2><p>Chi tiết <img src="https://cdn.dongphugia.com.vn/products/a.jpg" onerror="alert(1)" alt="Ảnh"></p><table><tr><td>Trắng</td></tr></table><script>alert(1)</script>',
+  publicDocuments:[{name:'Bản vẽ kỹ thuật',url:'https://cdn.dongphugia.com.vn/product_docs/a.pdf',document_type:'PDF',file_ext:'pdf'},
+   {name:'Sai',url:'javascript:alert(1)',document_type:'PDF'}],
+ },{rich:true})
+ expect(c.descriptionHtml).toContain('https://dpg-products.b-cdn.net/products/a.jpg')
+ expect(c.descriptionHtml).toContain('<table>')
+ expect(c.descriptionHtml).not.toContain('onerror')
+ expect(c.descriptionHtml).not.toContain('alert(1)')
+ expect(c.documents).toEqual([{name:'Bản vẽ kỹ thuật',url:'https://dpg-products.b-cdn.net/product_docs/a.pdf',type:'PDF'}])
+ expect(isSafePublicContent(c)).toBe(true)
+ expect(isSafePublicContent({...c,descriptionHtml:'<img src="javascript:alert(1)">'})).toBe(false)
+ const cad=projectPublicContent({publicDocuments:[{name:'Bản vẽ CAD',url:'https://cdn.hita.com.vn/download?path=products/toto/ms636.dwg',document_type:'CAD',file_ext:'dwg'}]},{rich:true})
+ expect(cad.documents).toHaveLength(1)
+ expect(isSafePublicContent(cad)).toBe(true)
+})
