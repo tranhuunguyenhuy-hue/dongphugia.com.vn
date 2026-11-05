@@ -7,7 +7,7 @@ with relations as (
   'rls',c.relrowsecurity,'forceRls',c.relforcerowsecurity,
   'columnAclHash',encode(sha256(convert_to(coalesce((select jsonb_agg(jsonb_build_array(a.attname,a.attacl::text) order by a.attnum)::text from pg_attribute a where a.attrelid=c.oid and a.attnum>0 and not a.attisdropped),''),'UTF8')),'hex'),
   'acl',coalesce((select jsonb_agg(jsonb_build_object('grantee',case when a.grantee=0 then 'PUBLIC' else pg_get_userbyid(a.grantee) end,'grantor',pg_get_userbyid(a.grantor),'privilege',a.privilege_type,'grantable',a.is_grantable) order by a.grantee,a.privilege_type,a.grantor)
-   from aclexplode(coalesce(c.relacl,acldefault(case when c.relkind='S' then 'S'::"char" else 'r'::"char" end,c.relowner))) a),'[]'::jsonb),
+   from aclexplode(coalesce(c.relacl,acldefault(case when c.relkind='S' then 's'::"char" else 'r'::"char" end,c.relowner))) a),'[]'::jsonb),
   'shape',encode(sha256(convert_to(jsonb_build_object(
    'columns',(select jsonb_agg(jsonb_build_array(att.attname,format_type(att.atttypid,att.atttypmod),att.attnotnull,att.attidentity,att.attgenerated,coalesce(pg_get_expr(ad.adbin,ad.adrelid),''),att.attcollation::regcollation::text) order by att.attnum) from pg_attribute att left join pg_attrdef ad on ad.adrelid=att.attrelid and ad.adnum=att.attnum where att.attrelid=c.oid and att.attnum>0 and not att.attisdropped),
    'constraints',(select jsonb_agg(jsonb_build_array(con.conname,pg_get_constraintdef(con.oid)) order by con.conname) from pg_constraint con where con.conrelid=c.oid),

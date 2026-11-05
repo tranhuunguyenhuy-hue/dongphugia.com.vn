@@ -43,6 +43,7 @@ it.runIf(enabled)('preserves populated catalogue, rejects drift/incomplete RLS c
     await client.connect()
     const capture=async()=>{await client.query('begin read only');try{return await readInventory(client)}finally{await client.query('rollback')}}
     const expected=await capture()
+    expect(expected.relations.find(r=>r.name==='dpg_app.products_id_seq').acl.filter(a=>a.grantee==='dpg_migration').map(a=>a.privilege)).toEqual(['SELECT','UPDATE','USAGE'])
     const original=await readState(client,expected)
     const rejectsWith=async(promise,wanted)=>{
       let failure

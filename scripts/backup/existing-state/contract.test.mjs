@@ -56,6 +56,7 @@ describe('existing-state backup contract',()=>{
   })
   it('catches changed data, changed sequence state and missing coverage without exposing values',()=>{
     expect(()=>assertStateEqual(state(),state())).not.toThrow()
+    expect(()=>assertStateEqual(state(),state().reverse())).not.toThrow()
     const changed=state();changed[0].hash='b'.repeat(64)
     expect(()=>assertStateEqual(state(),changed)).toThrow('data_preservation_failed')
     const seq=state();seq.find(r=>r.identity===sequences[0].name).hash='b'.repeat(64)
@@ -67,6 +68,8 @@ describe('existing-state backup contract',()=>{
   it('restore contract checks functional schema and does not require future V1 modules',()=>{
     const source=restoreShape(afterBootstrap())
     const local=afterBootstrap();local.schemas[0].owner='postgres';local.roles=[];local.relations[0].owner='postgres'
+    expect(fingerprint(restoreShape(local))).toBe(fingerprint(source))
+    local.relations.reverse();local.routines.reverse();local.types.reverse();local.schemas.reverse()
     expect(fingerprint(restoreShape(local))).toBe(fingerprint(source))
     local.relations[0].shape='b'.repeat(64)
     expect(fingerprint(restoreShape(local))).not.toBe(fingerprint(source))
@@ -92,7 +95,7 @@ describe('one-use approval and artifact identities',()=>{
     expect(()=>validateApproval(approval(),[{body:`EXISTING-BACKUP-CLAIMED: comment=123 nonce=${nonce} `}],input,'2026-11-05T11:00:00Z')).toThrow('approval_claimed')
   })
   it('binds all encrypted files to exact source, target, baseline and run',()=>{
-    const envelope={contract:'dongphugia:existing-state-backup:v1',baselineSha,target:'bonxyxluzlxfkdetryoo',sourceSha:sha,runId:'123',files:Object.fromEntries(['snapshot.dump.age','state.json.age','api.sql.age'].map(n=>[n,'a'.repeat(64)]))}
+    const envelope={contract:'dongphugia:existing-state-backup:v1',baselineSha,target:'bonxyxluzlxfkdetryoo',sourceSha:sha,runId:'123',files:Object.fromEntries(['snapshot.dump.age','state.json.age','public-api.json.age'].map(n=>[n,'a'.repeat(64)]))}
     expect(()=>validateEnvelope(envelope,sha,'123')).not.toThrow()
     expect(()=>validateEnvelope(envelope,sha,'124')).toThrow()
     envelope.files['raw.json']='a'.repeat(64)

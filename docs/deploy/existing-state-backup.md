@@ -123,9 +123,9 @@ under dpg_backup with row-security enabled. It verifies all state again before
 closing the keeper, including nontransactional sequence state.
 
 The schema-filtered custom dump includes dpg_app and dpg_control. Existing
-public.runtime_* function definitions are preserved separately in the same
+public.runtime_* function definitions and their exact owner/EXECUTE ACL recovery statements are preserved separately in the same
 snapshot because a schema-filtered dump would omit them. The dump, complete
-state manifest and those definitions are individually age-encrypted before
+state manifest and that public-API recovery record are individually age-encrypted before
 leaving tmpfs. Only three ciphertext files and a public envelope are uploaded.
 The envelope binds target, baseline, exact source/run and ciphertext checksums;
 it contains no row hashes/counts, schema SQL, keys or credentials. Artifacts
@@ -138,7 +138,7 @@ tmpfs. It restores to the pinned PostgreSQL 17 image with --pull=never,
 --network none, read-only root filesystem, no host mounts, tmpfs database/tmp
 and a 1.5 GiB memory ceiling. Necessary roles and auth.uid are inert local
 stubs with no login/admin/BYPASSRLS; neither keys nor database URLs are passed
-to that container. Public API definitions are restored there, never remotely.
+to that container. Public API definitions are restored there, never remotely. Their exact owner/ACL statements and decoded ACL entries stay in the encrypted JSON for separately approved recovery; the sandbox deliberately does not apply those privilege statements.
 The actual current functional schema, policies, every table's data fingerprint
 and every sequence value/state must match the encrypted snapshot. Source owner/ACL metadata is retained inside the encrypted dump. Those
 application owner/ACL commands are intentionally not applied inside the sandbox; this is a content and

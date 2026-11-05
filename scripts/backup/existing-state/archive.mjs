@@ -3,11 +3,12 @@ import { execFileSync } from 'node:child_process'
 import { closeSync, mkdtempSync, openSync, readFileSync, writeFileSync, rmSync, statfsSync, mkdirSync, lstatSync } from 'node:fs'
 import path from 'node:path'
 import pg from 'pg'
-import { baseline, CONTRACT, fingerprint, ident, requireGate, restoreShape, assertStateEqual, assertStateShape, tablesFor, sequencesFor } from './contract.mjs'
+import { baseline, CONTRACT, fingerprint, ident, requireGate, restoreShape, assertStateEqual, assertStateShape, assertSnapshotInventory, tablesFor, sequencesFor } from './contract.mjs'
+import { preservePublicApi } from './public-api.mjs'
 import { connection, assertTarget, readState, backupInventory, assertBackupLogin, assertCapability, API_SQL } from './database.mjs'
 
 export const IMAGE='postgres:17.6-bookworm@sha256:f3bd19c606e442c3d7bdfa8002e03fe260a1023351e0ea4598032022b68dd6e3'
-const FILES=['snapshot.dump.age','state.json.age','api.sql.age']
+const FILES=['snapshot.dump.age','state.json.age','public-api.json.age']
 const hashFile=file=>createHash('sha256').update(readFileSync(file)).digest('hex')
 const childEnv=()=>Object.fromEntries(Object.entries(process.env).filter(([key])=>!/^PG|DATABASE_URL|AGE_IDENTITY|PRIVATE_KEY|TOKEN|PASSWORD/.test(key) && !/DATABASE_URL/.test(key)))
 let workspace
@@ -53,7 +54,7 @@ async function backup(output, expected = baseline, suppliedTarget) {
     const inventory=await backupInventory(client, expected)
     await assertCapability(client, expected)
     const data=await readState(client, expected)
-    const api=(await client.query(API_SQL)).rows[0].definitions
+    const api=preservePublicApi((await client.query(API_SQL)).rows[0].api,inventory)
     const snapshot=(await client.query('select pg_export_snapshot() as snapshot')).rows[0].snapshot
     requireGate(/^[A-Fa-f0-9-]+$/.test(snapshot),'snapshot_invalid')
     const credentials=path.join(workspace,'connection');mkdirSync(credentials,{mode:0o700})
@@ -68,7 +69,7 @@ async function backup(output, expected = baseline, suppliedTarget) {
     assertStateEqual(data, await readState(client, expected), expected)
     await client.query('commit')
     writeFileSync(path.join(workspace,'state.json'),JSON.stringify({contract:CONTRACT,baselineSha:fingerprint(expected),inventory,data,sourceSha:process.env.APPROVED_SOURCE_SHA,runId:process.env.GITHUB_RUN_ID}),{mode:0o600})
-    writeFileSync(path.join(workspace,'api.sql'),api,{mode:0o600})
+    writeFileSync(path.join(workspace,'public-api.json'),JSON.stringify(api),{mode:0o600})
     mkdirSync(output,{recursive:true,mode:0o700})
     for(const file of FILES) command('age',['--encrypt','--recipient',recipient,'--output',path.join(output,file),path.join(workspace,file.slice(0,-4))])
     const envelope={contract:CONTRACT,target:'bonxyxluzlxfkdetryoo',baselineSha:fingerprint(expected),sourceSha:process.env.APPROVED_SOURCE_SHA,runId:process.env.GITHUB_RUN_ID,createdAt:new Date().toISOString(),files:Object.fromEntries(FILES.map(file=>[file,hashFile(path.join(output,file))]))}
@@ -100,6 +101,7 @@ async function restore(input, expected = baseline) {
   const state=JSON.parse(readFileSync(path.join(workspace,'state.json'),'utf8'))
   requireGate(state.contract===CONTRACT && state.baselineSha===fingerprint(expected) && state.sourceSha===envelope.sourceSha && state.runId===envelope.runId,'encrypted_state_identity_failed')
   assertStateShape(state.data, expected)
+  assertSnapshotInventory(state.inventory,expected)
   const name=`dpg-existing-restore-${process.pid}-${Date.now()}`
   let started=false
   try {
@@ -116,7 +118,8 @@ async function restore(input, expected = baseline) {
     const psql=['exec','-i',name,'psql','-U','postgres','-d','postgres','-X','-q','-A','-t','-v','ON_ERROR_STOP=1']
     command('docker',psql,inertBootstrapSql(expected))
     command('docker',['exec','-i',name,'pg_restore','-U','postgres','-d','postgres','--exit-on-error','--no-owner','--no-privileges'],readFileSync(path.join(workspace,'snapshot.dump')))
-    command('docker',psql,readFileSync(path.join(workspace,'api.sql')))
+    const api=preservePublicApi(JSON.parse(readFileSync(path.join(workspace,'public-api.json'),'utf8')),state.inventory,true)
+    command('docker',psql,api.map(row=>row.definition).join('\n'))
     const {INVENTORY_SQL,dataStateSql}=await import('./contract.mjs')
     const observedInventory=JSON.parse(command('docker',psql,`begin read only;\n${INVENTORY_SQL}\nrollback;`).trim())
     requireGate(fingerprint(restoreShape(observedInventory))===fingerprint(restoreShape(state.inventory)),'restore_schema_failed')

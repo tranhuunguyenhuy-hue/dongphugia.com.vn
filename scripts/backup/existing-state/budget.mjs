@@ -9,7 +9,7 @@ try {
   const used=artifacts.filter(a=>!a.expired).reduce((sum,a)=>sum+a.size_in_bytes,0)
   let pending=0
   if(process.env.BACKUP_DIR)for(const file of readdirSync(process.env.BACKUP_DIR)) {
-    if(!['snapshot.dump.age','state.json.age','api.sql.age','envelope.json'].includes(file))throw new Error('file')
+    if(!['snapshot.dump.age','state.json.age','public-api.json.age','envelope.json'].includes(file))throw new Error('file')
     const stat=lstatSync(path.join(process.env.BACKUP_DIR,file))
     if(!stat.isFile() || stat.isSymbolicLink())throw new Error('type')
     pending+=stat.size

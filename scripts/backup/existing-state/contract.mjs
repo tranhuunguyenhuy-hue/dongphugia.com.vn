@@ -99,15 +99,27 @@ export function assertStateShape(state, contract = baseline) {
 }
 export function assertStateEqual(before, after, contract = baseline) {
   assertStateShape(before, contract); assertStateShape(after, contract)
-  requireGate(fingerprint(before) === fingerprint(after), 'data_preservation_failed')
+  requireGate(fingerprint([...before].sort((a,b)=>a.identity<b.identity?-1:1)) === fingerprint([...after].sort((a,b)=>a.identity<b.identity?-1:1)), 'data_preservation_failed')
 }
 // Restore deliberately omits original ownership/ACLs; functional definitions,
 // policies, table flags, columns, constraints, indexes, triggers and data match.
+const byName=(a,b)=>a.name<b.name?-1:a.name>b.name?1:0
 export function restoreShape(inventory) {
   return {
-    schemas:inventory.schemas.map(s=>s.name),
-    relations:inventory.relations.map(r=>({name:r.name,kind:r.kind,rls:r.rls,forceRls:r.forceRls,shape:r.shape,policies:r.policies})),
-    routines:inventory.routines.map(r=>({name:r.name,definitionHash:r.definitionHash})),
-    types:inventory.types.map(t=>[t[0],t[1],t[3]]),
+    schemas:inventory.schemas.map(s=>s.name).sort(),
+    relations:inventory.relations.map(r=>({name:r.name,kind:r.kind,rls:r.rls,forceRls:r.forceRls,shape:r.shape,policies:r.policies.map(p=>({...p,roles:[...p.roles].sort()})).sort(byName)})).sort(byName),
+    routines:inventory.routines.map(r=>({name:r.name,definitionHash:r.definitionHash})).sort(byName),
+    types:inventory.types.map(t=>[t[0],t[1],t[3]]).sort((a,b)=>a[0]<b[0]?-1:a[0]>b[0]?1:0),
   }
+}
+export function assertSnapshotInventory(inventory,expected=baseline) {
+  const normalized=structuredClone(inventory)
+  const login=normalized.roles.find(r=>r.name==='dpg_backup_login')
+  requireGate(login && login.login && !login.super && !login.createRole && !login.createDb && !login.bypassRls && !login.replication && !login.inherit && login.limit===2,'backup_login_flags_failed')
+  normalized.roles=normalized.roles.filter(r=>r.name!=='dpg_backup_login')
+  const membership=normalized.memberships.filter(m=>m.slice(0,2).includes('dpg_backup_login'))
+  const wanted=[['dpg_backup','dpg_backup_login',false,false,true,expected.creator.name],['dpg_backup_login',expected.creator.name,true,false,false,expected.creator.bootstrapGrantor]]
+  requireGate(membership.length===2 && wanted.every(row=>membership.some(m=>JSON.stringify(m)===JSON.stringify(row))),'backup_login_membership_failed')
+  normalized.memberships=normalized.memberships.filter(m=>!m.slice(0,2).includes('dpg_backup_login'))
+  assertInventory(normalized,true,expected)
 }

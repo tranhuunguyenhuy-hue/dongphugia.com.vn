@@ -1,6 +1,6 @@
 import pg from 'pg'
 import { parseSupabaseRuntimeTarget } from '../supabase-runtime-target.mjs'
-import { baseline, baselineSha, INVENTORY_SQL, assertInventory, assertStateEqual, assertStateShape, bootstrapStatements, dataStateSql, tables, sequences, tablesFor, sequencesFor, qualified, requireGate, fingerprint } from './contract.mjs'
+import { baseline, baselineSha, INVENTORY_SQL, assertInventory, assertSnapshotInventory, assertStateEqual, assertStateShape, bootstrapStatements, dataStateSql, tables, sequences, tablesFor, sequencesFor, qualified, requireGate, fingerprint } from './contract.mjs'
 
 export function connection(value, backup = false) {
   if (!backup) return parseSupabaseRuntimeTarget(value)
@@ -136,18 +136,10 @@ export async function assertBackupLogin(client, expected = baseline) {
 }
 export async function backupInventory(client, expected = baseline) {
   const inventory = await readInventory(client)
-  const normalized = structuredClone(inventory)
-  const login = normalized.roles.find(r=>r.name === 'dpg_backup_login')
-  requireGate(login && login.login && !login.super && !login.createRole && !login.createDb && !login.bypassRls && !login.replication && !login.inherit && login.limit === 2, 'backup_login_flags_failed')
-  normalized.roles = normalized.roles.filter(r=>r.name !== 'dpg_backup_login')
-  const membership = normalized.memberships.filter(m=>m.slice(0,2).includes('dpg_backup_login'))
-  const wanted=[['dpg_backup','dpg_backup_login',false,false,true,expected.creator.name],['dpg_backup_login',expected.creator.name,true,false,false,expected.creator.bootstrapGrantor]]
-  requireGate(membership.length===2 && wanted.every(row=>membership.some(m=>JSON.stringify(m)===JSON.stringify(row))),'backup_login_membership_failed')
-  normalized.memberships = normalized.memberships.filter(m=>!m.slice(0,2).includes('dpg_backup_login'))
-  assertInventory(normalized, true, expected)
+  assertSnapshotInventory(inventory,expected)
   return inventory
 }
-export const API_SQL = `select coalesce(string_agg(pg_get_functiondef(p.oid),E'\n' order by p.proname,pg_get_function_identity_arguments(p.oid)),'') as definitions from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.prokind in ('f','p') and p.proname like 'runtime\\_%' escape '\\'`
+export { PUBLIC_API_SQL as API_SQL } from './public-api.mjs'
 
 export async function main() {
   const mode=process.argv[2]

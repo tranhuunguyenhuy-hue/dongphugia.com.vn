@@ -1155,6 +1155,18 @@
           "grantee": "dpg_migration",
           "grantor": "dpg_migration",
           "grantable": false,
+          "privilege": "SELECT"
+        },
+        {
+          "grantee": "dpg_migration",
+          "grantor": "dpg_migration",
+          "grantable": false,
+          "privilege": "UPDATE"
+        },
+        {
+          "grantee": "dpg_migration",
+          "grantor": "dpg_migration",
+          "grantable": false,
           "privilege": "USAGE"
         }
       ],
@@ -1257,6 +1269,18 @@
           "grantee": "dpg_migration",
           "grantor": "dpg_migration",
           "grantable": false,
+          "privilege": "SELECT"
+        },
+        {
+          "grantee": "dpg_migration",
+          "grantor": "dpg_migration",
+          "grantable": false,
+          "privilege": "UPDATE"
+        },
+        {
+          "grantee": "dpg_migration",
+          "grantor": "dpg_migration",
+          "grantable": false,
           "privilege": "USAGE"
         }
       ],
@@ -1331,6 +1355,18 @@
     },
     {
       "acl": [
+        {
+          "grantee": "dpg_migration",
+          "grantor": "dpg_migration",
+          "grantable": false,
+          "privilege": "SELECT"
+        },
+        {
+          "grantee": "dpg_migration",
+          "grantor": "dpg_migration",
+          "grantable": false,
+          "privilege": "UPDATE"
+        },
         {
           "grantee": "dpg_migration",
           "grantor": "dpg_migration",
@@ -1437,6 +1473,18 @@
           "grantee": "dpg_migration",
           "grantor": "dpg_migration",
           "grantable": false,
+          "privilege": "SELECT"
+        },
+        {
+          "grantee": "dpg_migration",
+          "grantor": "dpg_migration",
+          "grantable": false,
+          "privilege": "UPDATE"
+        },
+        {
+          "grantee": "dpg_migration",
+          "grantor": "dpg_migration",
+          "grantable": false,
           "privilege": "USAGE"
         }
       ],
@@ -1535,6 +1583,18 @@
     },
     {
       "acl": [
+        {
+          "grantee": "dpg_migration",
+          "grantor": "dpg_migration",
+          "grantable": false,
+          "privilege": "SELECT"
+        },
+        {
+          "grantee": "dpg_migration",
+          "grantor": "dpg_migration",
+          "grantable": false,
+          "privilege": "UPDATE"
+        },
         {
           "grantee": "dpg_migration",
           "grantor": "dpg_migration",
@@ -1725,6 +1785,18 @@
           "grantee": "dpg_migration",
           "grantor": "dpg_migration",
           "grantable": false,
+          "privilege": "SELECT"
+        },
+        {
+          "grantee": "dpg_migration",
+          "grantor": "dpg_migration",
+          "grantable": false,
+          "privilege": "UPDATE"
+        },
+        {
+          "grantee": "dpg_migration",
+          "grantor": "dpg_migration",
+          "grantable": false,
           "privilege": "USAGE"
         }
       ],
@@ -1823,6 +1895,18 @@
     },
     {
       "acl": [
+        {
+          "grantee": "dpg_migration",
+          "grantor": "dpg_migration",
+          "grantable": false,
+          "privilege": "SELECT"
+        },
+        {
+          "grantee": "dpg_migration",
+          "grantor": "dpg_migration",
+          "grantable": false,
+          "privilege": "UPDATE"
+        },
         {
           "grantee": "dpg_migration",
           "grantor": "dpg_migration",
@@ -2481,6 +2565,18 @@
           "grantee": "dpg_migration",
           "grantor": "dpg_migration",
           "grantable": false,
+          "privilege": "SELECT"
+        },
+        {
+          "grantee": "dpg_migration",
+          "grantor": "dpg_migration",
+          "grantable": false,
+          "privilege": "UPDATE"
+        },
+        {
+          "grantee": "dpg_migration",
+          "grantor": "dpg_migration",
+          "grantable": false,
           "privilege": "USAGE"
         }
       ],
@@ -2559,6 +2655,18 @@
           "grantee": "dpg_migration",
           "grantor": "dpg_migration",
           "grantable": false,
+          "privilege": "SELECT"
+        },
+        {
+          "grantee": "dpg_migration",
+          "grantor": "dpg_migration",
+          "grantable": false,
+          "privilege": "UPDATE"
+        },
+        {
+          "grantee": "dpg_migration",
+          "grantor": "dpg_migration",
+          "grantable": false,
           "privilege": "USAGE"
         }
       ],
@@ -2633,6 +2741,18 @@
     },
     {
       "acl": [
+        {
+          "grantee": "dpg_migration",
+          "grantor": "dpg_migration",
+          "grantable": false,
+          "privilege": "SELECT"
+        },
+        {
+          "grantee": "dpg_migration",
+          "grantor": "dpg_migration",
+          "grantable": false,
+          "privilege": "UPDATE"
+        },
         {
           "grantee": "dpg_migration",
           "grantor": "dpg_migration",
@@ -2735,6 +2855,18 @@
     },
     {
       "acl": [
+        {
+          "grantee": "dpg_migration",
+          "grantor": "dpg_migration",
+          "grantable": false,
+          "privilege": "SELECT"
+        },
+        {
+          "grantee": "dpg_migration",
+          "grantor": "dpg_migration",
+          "grantable": false,
+          "privilege": "UPDATE"
+        },
         {
           "grantee": "dpg_migration",
           "grantor": "dpg_migration",
@@ -3966,6 +4098,18 @@
           "grantee": "dpg_migration",
           "grantor": "dpg_migration",
           "grantable": false,
+          "privilege": "SELECT"
+        },
+        {
+          "grantee": "dpg_migration",
+          "grantor": "dpg_migration",
+          "grantable": false,
+          "privilege": "UPDATE"
+        },
+        {
+          "grantee": "dpg_migration",
+          "grantor": "dpg_migration",
+          "grantable": false,
           "privilege": "USAGE"
         }
       ],
@@ -4476,6 +4620,18 @@
           "grantee": "dpg_migration",
           "grantor": "dpg_migration",
           "grantable": false,
+          "privilege": "SELECT"
+        },
+        {
+          "grantee": "dpg_migration",
+          "grantor": "dpg_migration",
+          "grantable": false,
+          "privilege": "UPDATE"
+        },
+        {
+          "grantee": "dpg_migration",
+          "grantor": "dpg_migration",
+          "grantable": false,
           "privilege": "USAGE"
         }
       ],
@@ -4550,6 +4706,18 @@
     },
     {
       "acl": [
+        {
+          "grantee": "dpg_migration",
+          "grantor": "dpg_migration",
+          "grantable": false,
+          "privilege": "SELECT"
+        },
+        {
+          "grantee": "dpg_migration",
+          "grantor": "dpg_migration",
+          "grantable": false,
+          "privilege": "UPDATE"
+        },
         {
           "grantee": "dpg_migration",
           "grantor": "dpg_migration",
@@ -4632,6 +4800,18 @@
           "grantee": "dpg_migration",
           "grantor": "dpg_migration",
           "grantable": false,
+          "privilege": "SELECT"
+        },
+        {
+          "grantee": "dpg_migration",
+          "grantor": "dpg_migration",
+          "grantable": false,
+          "privilege": "UPDATE"
+        },
+        {
+          "grantee": "dpg_migration",
+          "grantor": "dpg_migration",
+          "grantable": false,
           "privilege": "USAGE"
         }
       ],
@@ -4706,6 +4886,18 @@
     },
     {
       "acl": [
+        {
+          "grantee": "dpg_migration",
+          "grantor": "dpg_migration",
+          "grantable": false,
+          "privilege": "SELECT"
+        },
+        {
+          "grantee": "dpg_migration",
+          "grantor": "dpg_migration",
+          "grantable": false,
+          "privilege": "UPDATE"
+        },
         {
           "grantee": "dpg_migration",
           "grantor": "dpg_migration",
@@ -6700,6 +6892,18 @@
           "grantee": "dpg_migration",
           "grantor": "dpg_migration",
           "grantable": false,
+          "privilege": "SELECT"
+        },
+        {
+          "grantee": "dpg_migration",
+          "grantor": "dpg_migration",
+          "grantable": false,
+          "privilege": "UPDATE"
+        },
+        {
+          "grantee": "dpg_migration",
+          "grantor": "dpg_migration",
+          "grantable": false,
           "privilege": "USAGE"
         }
       ],
@@ -6774,6 +6978,18 @@
     },
     {
       "acl": [
+        {
+          "grantee": "dpg_migration",
+          "grantor": "dpg_migration",
+          "grantable": false,
+          "privilege": "SELECT"
+        },
+        {
+          "grantee": "dpg_migration",
+          "grantor": "dpg_migration",
+          "grantable": false,
+          "privilege": "UPDATE"
+        },
         {
           "grantee": "dpg_migration",
           "grantor": "dpg_migration",
@@ -7248,6 +7464,18 @@
     },
     {
       "acl": [
+        {
+          "grantee": "dpg_migration",
+          "grantor": "dpg_migration",
+          "grantable": false,
+          "privilege": "SELECT"
+        },
+        {
+          "grantee": "dpg_migration",
+          "grantor": "dpg_migration",
+          "grantable": false,
+          "privilege": "UPDATE"
+        },
         {
           "grantee": "dpg_migration",
           "grantor": "dpg_migration",
@@ -8042,6 +8270,18 @@
     },
     {
       "acl": [
+        {
+          "grantee": "dpg_migration",
+          "grantor": "dpg_migration",
+          "grantable": false,
+          "privilege": "SELECT"
+        },
+        {
+          "grantee": "dpg_migration",
+          "grantor": "dpg_migration",
+          "grantable": false,
+          "privilege": "UPDATE"
+        },
         {
           "grantee": "dpg_migration",
           "grantor": "dpg_migration",
