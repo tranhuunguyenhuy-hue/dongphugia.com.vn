@@ -1,0 +1,13 @@
+{
+  "edition": "general-2024",
+  "source_sha256": "9a94011d053473c7ec62daa1b53351b983461fc61fb8dd1abccd689047f07f2c",
+  "pdf_pages": 225,
+  "pages_with_native_text": 224,
+  "pages_with_candidates": 126,
+  "candidate_occurrences": 5311,
+  "distinct_candidate_codes": 1298,
+  "visually_verified_products": 0,
+  "codes_with_verified_price": 0,
+  "price_keyword_pages": 0,
+  "status": "PARTIAL_NATIVE_TEXT_CHECKPOINT"
+}
