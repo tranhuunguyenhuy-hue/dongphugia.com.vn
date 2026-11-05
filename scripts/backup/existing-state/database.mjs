@@ -105,10 +105,18 @@ export async function bootstrap(client, expectedSha, expected = baseline) {
   }
 }
 
-export async function inspect(client) {
-  await client.query('begin transaction isolation level repeatable read read only')
-  try { await assertTarget(client); assertInventory(await readInventory(client)); }
-  finally { await client.query('rollback') }
+export async function inspect(client, report = () => {}) {
+  let stage='begin'
+  try {
+    await client.query('begin transaction isolation level repeatable read read only')
+    stage='target';report(stage,'START');await assertTarget(client);report(stage,'PASS')
+    stage='inventory';report(stage,'START');assertInventory(await readInventory(client));report(stage,'PASS')
+    stage='fingerprint';report(stage,'START');await readState(client);report(stage,'PASS')
+  } catch(error) {
+    const reason=error?.message==='Query read timeout'?'CLIENT_QUERY_TIMEOUT':error?.code==='57014'?'SERVER_QUERY_CANCELED':error?.code==='55P03'?'LOCK_UNAVAILABLE':'UNCLASSIFIED'
+    report(stage,'FAIL',reason)
+    throw error
+  } finally { await client.query('rollback').catch(()=>{}) }
 }
 
 export async function assertBackupLogin(client, expected = baseline) {
@@ -148,7 +156,7 @@ export async function main() {
   client.on('error',()=>{})
   try {
     await client.connect()
-    if(mode==='inspect') await inspect(client)
+    if(mode==='inspect') await inspect(client,(stage,status,reason)=>process.stdout.write(`EXISTING_BACKUP_DIAGNOSTIC stage=${stage} status=${status}${reason?` reason=${reason}`:''}\n`))
     else await bootstrap(client,process.env.APPROVED_BASELINE_SHA)
     process.stdout.write(`EXISTING_BACKUP status=PASS mode=${mode} baseline=${baselineSha} tables=${tables.length} sequences=${sequences.length}\n`)
   } finally { await client.end().catch(()=>{}) }
