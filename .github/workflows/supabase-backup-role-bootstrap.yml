@@ -35,6 +35,7 @@ env:
   APPROVAL_MARKER: 'BACKUP-BOOTSTRAP-APPROVED: bonxyxluzlxfkdetryoo / exactly two existing migrations'
   SUPABASE_ORGANIZATION_SLUG: ymjvuwefhqqlymwlocqn
   SUPABASE_PROJECT_REF: bonxyxluzlxfkdetryoo
+  SUPABASE_PROJECT_NAME: dongphugia-runtime
   SUPABASE_PROJECT_REGION: ap-southeast-1
 
 jobs:
@@ -189,15 +190,8 @@ jobs:
           printf 'header = "Authorization: Bearer %s"\n' "$SUPABASE_MANAGEMENT_TOKEN" | \
             curl --config - --fail --silent --show-error \
               --output "$PROJECTS_RESULT" \
-              'https://api.supabase.com/v1/projects'
-          test "$(jq -r '.plan' "$ORGANIZATION_RESULT")" = 'free'
-          jq -e --arg ref "$SUPABASE_PROJECT_REF" \
-            --arg org "$SUPABASE_ORGANIZATION_SLUG" \
-            --arg region "$SUPABASE_PROJECT_REGION" '
-              any(.[]; .ref == $ref and .organization_slug == $org
-                and .name == "dongphugia-runtime" and .region == $region
-                and .status == "ACTIVE_HEALTHY")
-            ' "$PROJECTS_RESULT" >/dev/null
+              "https://api.supabase.com/v1/organizations/$SUPABASE_ORGANIZATION_SLUG/projects?search=dongphugia-runtime&limit=100"
+          node scripts/backup/supabase-management-response.mjs "$ORGANIZATION_RESULT" "$PROJECTS_RESULT"
           rm -f "$ORGANIZATION_RESULT" "$PROJECTS_RESULT"
           test -n "$SUPABASE_REHOME_DATABASE_URL"
           node scripts/backup/supabase-runtime-target.mjs validate-url
