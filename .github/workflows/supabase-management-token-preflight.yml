@@ -1,0 +1,113 @@
+name: Verify read-only Supabase Management access
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: supabase-management-token-preflight-${{ github.repository }}
+  cancel-in-progress: false
+
+env:
+  SUPABASE_MANAGEMENT_API: https://api.supabase.com
+  SUPABASE_ORGANIZATION_SLUG: ymjvuwefhqqlymwlocqn
+  SUPABASE_PROJECT_REF: bonxyxluzlxfkdetryoo
+  SUPABASE_PROJECT_REGION: ap-southeast-1
+
+jobs:
+  verify:
+    name: Verify scoped Management API access
+    if: >-
+      github.repository == 'tranhuunguyenhuy-hue/dongphugia.com.vn' &&
+      github.ref == 'refs/heads/main' &&
+      github.actor == 'tranhuunguyenhuy-hue' &&
+      github.run_attempt == 1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    environment: runtime-backup
+    permissions:
+      contents: read
+    steps:
+      - name: Check out exact main dispatch revision
+        uses: actions/checkout@v4
+        with:
+          ref: refs/heads/main
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Verify owner dispatch and exact main revision
+        env:
+          WORKFLOW_TRIGGERING_ACTOR: ${{ github.triggering_actor }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REPOSITORY" = 'tranhuunguyenhuy-hue/dongphugia.com.vn'
+          test "$GITHUB_REF" = 'refs/heads/main'
+          test "$GITHUB_ACTOR" = 'tranhuunguyenhuy-hue'
+          test "$WORKFLOW_TRIGGERING_ACTOR" = 'tranhuunguyenhuy-hue'
+          test "$GITHUB_RUN_ATTEMPT" = '1'
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          echo 'SUPABASE_MANAGEMENT_PREFLIGHT source=PASS owner=PASS'
+
+      - name: Verify organization and exact project with GET-only requests
+        env:
+          SUPABASE_MANAGEMENT_TOKEN: ${{ secrets.SUPABASE_MANAGEMENT_TOKEN }}
+          ORGANIZATION_RESULT: ${{ runner.temp }}/supabase-organization.json
+          PROJECTS_RESULT: ${{ runner.temp }}/supabase-projects.json
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +x
+
+          if [[ -z "${SUPABASE_MANAGEMENT_TOKEN:-}" ]]; then
+            echo 'SUPABASE_MANAGEMENT_PREFLIGHT status=FAIL reason=secret_missing'
+            exit 1
+          fi
+
+          cleanup() {
+            rm -f "$ORGANIZATION_RESULT" "$PROJECTS_RESULT"
+            unset SUPABASE_MANAGEMENT_TOKEN
+          }
+          trap cleanup EXIT
+
+          request_json() {
+            local endpoint="$1"
+            local output="$2"
+            local url="$3"
+            local status
+
+            if ! status="$(printf 'header = "Authorization: Bearer %s"\n' "$SUPABASE_MANAGEMENT_TOKEN" \
+              | curl --config - --silent --show-error --connect-timeout 5 --max-time 15 \
+                --output "$output" --write-out '%{http_code}' "$url")"; then
+              printf 'SUPABASE_MANAGEMENT_PREFLIGHT status=FAIL endpoint=%s reason=transport\n' "$endpoint"
+              return 1
+            fi
+            if [[ "$status" != '200' ]]; then
+              printf 'SUPABASE_MANAGEMENT_PREFLIGHT status=FAIL endpoint=%s http_status=%s\n' "$endpoint" "$status"
+              return 1
+            fi
+          }
+
+          request_json organization "$ORGANIZATION_RESULT" \
+            "$SUPABASE_MANAGEMENT_API/v1/organizations/$SUPABASE_ORGANIZATION_SLUG"
+          request_json organization_projects "$PROJECTS_RESULT" \
+            "$SUPABASE_MANAGEMENT_API/v1/organizations/$SUPABASE_ORGANIZATION_SLUG/projects?search=dongphugia-runtime&limit=100"
+
+          if ! jq -e '.plan == "free"' "$ORGANIZATION_RESULT" >/dev/null; then
+            echo 'SUPABASE_MANAGEMENT_PREFLIGHT status=FAIL reason=organization_plan_mismatch'
+            exit 1
+          fi
+          if ! jq -e --arg ref "$SUPABASE_PROJECT_REF" \
+            --arg org "$SUPABASE_ORGANIZATION_SLUG" \
+            --arg region "$SUPABASE_PROJECT_REGION" '
+              any(.[]; .ref == $ref and .organization_slug == $org
+                and .name == "dongphugia-runtime" and .region == $region
+                and .status == "ACTIVE_HEALTHY")
+            ' "$PROJECTS_RESULT" >/dev/null; then
+            echo 'SUPABASE_MANAGEMENT_PREFLIGHT status=FAIL reason=exact_project_identity_mismatch'
+            exit 1
+          fi
+
+          echo 'SUPABASE_MANAGEMENT_PREFLIGHT status=PASS organization_plan=free exact_project=ACTIVE_HEALTHY access=read_only'

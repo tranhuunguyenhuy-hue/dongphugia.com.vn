@@ -59,10 +59,16 @@ bootstrap.
   migrations in local network-disabled PostgreSQL and compares the normalized
   schema dump with the exact remote checkpoint.
 
-The workflow uses only the existing `runtime-backup` GitHub Actions environment and
-its exact-target database URL and read-only Supabase Management token. It does
-not require the expired catalogue artifact because it neither decrypts nor
-restores a backup.
+The workflow uses only the existing `runtime-backup` GitHub Actions environment,
+its exact-target database URL, and a read-only Supabase Management token. The
+token needs only Organization Settings (Read) for the organization plan and
+Organization Projects (Read) for the scoped `/v1/organizations/{slug}/projects`
+lookup; it does not need account-wide project access or database permissions.
+The organization-scoped check uses the same endpoint in the bootstrap and in
+the separate read-only `supabase-management-token-preflight.yml` workflow. The
+preflight never reads a database URL, connects to Postgres, consumes a bootstrap
+approval, or applies migrations. The bootstrap does not require the expired
+catalogue artifact because it neither decrypts nor restores a backup.
 
 ## Acceptance and recovery
 

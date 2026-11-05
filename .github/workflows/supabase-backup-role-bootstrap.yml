@@ -189,7 +189,7 @@ jobs:
           printf 'header = "Authorization: Bearer %s"\n' "$SUPABASE_MANAGEMENT_TOKEN" | \
             curl --config - --fail --silent --show-error \
               --output "$PROJECTS_RESULT" \
-              'https://api.supabase.com/v1/projects'
+              "https://api.supabase.com/v1/organizations/$SUPABASE_ORGANIZATION_SLUG/projects?search=dongphugia-runtime&limit=100"
           test "$(jq -r '.plan' "$ORGANIZATION_RESULT")" = 'free'
           jq -e --arg ref "$SUPABASE_PROJECT_REF" \
             --arg org "$SUPABASE_ORGANIZATION_SLUG" \
