@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   ADOPTED_CHECKPOINT_MIGRATIONS,
+  BACKUP_BOOTSTRAP_PREFIX_LENGTH,
   EXPECTED_RUNTIME_MIGRATIONS,
   assertDatabaseSizeWithinContract,
   executeRuntimeMigrations,
@@ -690,6 +691,21 @@ describe('Supabase runtime migration adoption integration', () => {
 
         // Retry resumes from the committed ledger prefix; it does not reset or
         // roll back earlier migration transactions.
+
+        phase = 'resume_bounded_backup_bootstrap'
+        const backupPrefix = await executeRuntimeMigrations(
+          client,
+          'bootstrap-backup',
+          attestCheckpoint,
+          String(ADOPTED_CHECKPOINT_MIGRATIONS.length + 1),
+        )
+        expect(backupPrefix).toBe(BACKUP_BOOTSTRAP_PREFIX_LENGTH)
+        expect((await client.query(
+          'select count(*)::integer as count from dpg_control.runtime_migration_ledger',
+        )).rows[0]?.count).toBe(BACKUP_BOOTSTRAP_PREFIX_LENGTH)
+        expect((await client.query(`
+          select to_regnamespace('dpg_v1') is null as v1_absent
+        `)).rows[0]).toEqual({ v1_absent: true })
 
         phase = 'resume_ordered_pending_migrations'
         await executeRuntimeMigrations(client, 'apply', attestCheckpoint)

@@ -4,6 +4,8 @@ import { describe, expect, it } from 'vitest'
 
 import {
   ADOPTED_CHECKPOINT_MIGRATIONS,
+  BACKUP_BOOTSTRAP_MIGRATIONS,
+  BACKUP_BOOTSTRAP_PREFIX_LENGTH,
   EXPECTED_RUNTIME_MIGRATIONS,
   executeRuntimeMigrations,
   stripReadOnlyOuterTransaction,
@@ -59,6 +61,11 @@ describe('Supabase runtime migration runner contract', () => {
     expect(EXPECTED_RUNTIME_MIGRATIONS.indexOf('20260828183200_leo540_backup_coverage_prerequisite.sql'))
       .toBeLessThan(EXPECTED_RUNTIME_MIGRATIONS.indexOf('20261016090000_leo560_preview_rls_hardening.sql'))
     expect(EXPECTED_RUNTIME_MIGRATIONS.at(-1)).toBe('20261016090000_leo560_preview_rls_hardening.sql')
+    expect(BACKUP_BOOTSTRAP_MIGRATIONS).toEqual([
+      '20260828183000_leo542_backup_role_prerequisite.sql',
+      '20260828183200_leo540_backup_coverage_prerequisite.sql',
+    ])
+    expect(BACKUP_BOOTSTRAP_PREFIX_LENGTH).toBe(9)
   })
 
   it('normalizes only a single outer transaction so ledger recording stays atomic', async () => {
@@ -131,6 +138,31 @@ describe('Supabase runtime migration runner contract', () => {
     await expect(executeRuntimeMigrations(client, 'apply'))
       .rejects.toThrow('migration_ledger_non_prefix')
     expect(statements.some((sql) => sql.trim() === missingMigrationSql.trim())).toBe(false)
+  })
+
+  it('requires the exact observed prefix before bounded backup-bootstrap execution', async () => {
+    const ledgerRows = await expectedLedgerPrefix(ADOPTED_CHECKPOINT_MIGRATIONS.length + 1)
+    const { client, statements } = migrationReadClient(ledgerRows)
+    const nextMigrationSql = stripOuterTransaction(await readFile(
+      `supabase/migrations/${BACKUP_BOOTSTRAP_MIGRATIONS[1]}`,
+      'utf8',
+    ))
+
+    await expect(executeRuntimeMigrations(
+      client,
+      'bootstrap-backup',
+      undefined,
+      String(ADOPTED_CHECKPOINT_MIGRATIONS.length),
+    )).rejects.toThrow('backup_bootstrap_prefix_mismatch')
+    expect(statements.some((sql) => sql.trim() === nextMigrationSql.trim())).toBe(false)
+  })
+
+  it('rejects bootstrap resume claims outside the adopted-plus-two-migration prefix', async () => {
+    const { client, statements } = migrationReadClient([])
+
+    await expect(executeRuntimeMigrations(client, 'bootstrap-backup', undefined, '10'))
+      .rejects.toThrow('backup_bootstrap_prefix_invalid')
+    expect(statements).toEqual([])
   })
 
   it.each([

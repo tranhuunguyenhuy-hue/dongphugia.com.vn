@@ -1,0 +1,151 @@
+name: Bootstrap bounded Supabase backup capability
+
+on:
+  workflow_dispatch:
+    inputs:
+      approved_source_sha:
+        description: Exact merged main SHA containing this bounded bootstrap
+        required: true
+        type: string
+      expected_ledger_prefix:
+        description: Exact pre-run custom migration ledger state observed and approved for this attempt
+        required: true
+        default: absent
+        type: choice
+        options:
+          - absent
+          - '7'
+          - '8'
+          - '9'
+
+permissions:
+  contents: read
+  issues: read
+
+concurrency:
+  group: supabase-backup-role-bootstrap-${{ github.repository }}
+  cancel-in-progress: false
+
+env:
+  ISSUE_NUMBER: '270'
+  APPROVAL_MARKER: 'BACKUP-BOOTSTRAP-APPROVED: bonxyxluzlxfkdetryoo / exactly two existing migrations'
+  SUPABASE_ORGANIZATION_SLUG: ymjvuwefhqqlymwlocqn
+  SUPABASE_PROJECT_REF: bonxyxluzlxfkdetryoo
+  SUPABASE_PROJECT_REGION: ap-southeast-1
+
+jobs:
+  preflight:
+    name: Verify exact source and Owner decision
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      source_sha: ${{ steps.gate.outputs.source_sha }}
+    steps:
+      - name: Check out trusted main
+        uses: actions/checkout@v4
+        with:
+          ref: refs/heads/main
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify merged source and durable approval
+        id: gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APPROVED_SOURCE_SHA: ${{ inputs.approved_source_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = 'refs/heads/main'
+          test "$GITHUB_ACTOR" = 'tranhuunguyenhuy-hue'
+          [[ "$APPROVED_SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          test "$(git rev-parse HEAD)" = "$APPROVED_SOURCE_SHA"
+          test "$GITHUB_SHA" = "$APPROVED_SOURCE_SHA"
+
+          issue_json="$RUNNER_TEMP/phase2-issue.json"
+          comments_json="$RUNNER_TEMP/phase2-issue-comments.json"
+          gh api "repos/$GITHUB_REPOSITORY/issues/$ISSUE_NUMBER" >"$issue_json"
+          gh api "repos/$GITHUB_REPOSITORY/issues/$ISSUE_NUMBER/comments?per_page=100" >"$comments_json"
+          test "$(jq -r '.state' "$issue_json")" = 'open'
+          jq -e --arg marker "$APPROVAL_MARKER" '
+            any(.[]; .user.login == "tranhuunguyenhuy-hue" and (.body | contains($marker)))
+          ' "$comments_json" >/dev/null
+          rm -f "$issue_json" "$comments_json"
+          echo "source_sha=$APPROVED_SOURCE_SHA" >>"$GITHUB_OUTPUT"
+          echo 'BACKUP_BOOTSTRAP_PREFLIGHT status=PASS issue=270 approval=owner source=exact-main'
+
+  bootstrap:
+    name: Apply only the two backup prerequisite migrations
+    needs: preflight
+    if: needs.preflight.result == 'success' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    environment: runtime-backup
+    permissions:
+      contents: read
+      deployments: write
+    steps:
+      - name: Check out the exact approved source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.preflight.outputs.source_sha }}
+          persist-credentials: false
+
+      - name: Set up locked Node.js dependencies
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install locked project dependencies
+        run: npm ci
+
+      - name: Verify current Free plan, healthy target, and database URL identity
+        env:
+          SUPABASE_MANAGEMENT_TOKEN: ${{ secrets.SUPABASE_MANAGEMENT_TOKEN }}
+          SUPABASE_REHOME_DATABASE_URL: ${{ secrets.SUPABASE_REHOME_DATABASE_URL }}
+          ORGANIZATION_RESULT: ${{ runner.temp }}/supabase-organization.json
+          PROJECTS_RESULT: ${{ runner.temp }}/supabase-projects.json
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$SUPABASE_MANAGEMENT_TOKEN"
+          printf 'header = "Authorization: Bearer %s"\n' "$SUPABASE_MANAGEMENT_TOKEN" | \
+            curl --config - --fail --silent --show-error \
+              --output "$ORGANIZATION_RESULT" \
+              "https://api.supabase.com/v1/organizations/$SUPABASE_ORGANIZATION_SLUG"
+          printf 'header = "Authorization: Bearer %s"\n' "$SUPABASE_MANAGEMENT_TOKEN" | \
+            curl --config - --fail --silent --show-error \
+              --output "$PROJECTS_RESULT" \
+              'https://api.supabase.com/v1/projects'
+          test "$(jq -r '.plan' "$ORGANIZATION_RESULT")" = 'free'
+          jq -e --arg ref "$SUPABASE_PROJECT_REF" \
+            --arg org "$SUPABASE_ORGANIZATION_SLUG" \
+            --arg region "$SUPABASE_PROJECT_REGION" '
+              any(.[]; .ref == $ref and .organization_slug == $org
+                and .name == "dongphugia-runtime" and .region == $region
+                and .status == "ACTIVE_HEALTHY")
+            ' "$PROJECTS_RESULT" >/dev/null
+          rm -f "$ORGANIZATION_RESULT" "$PROJECTS_RESULT"
+          test -n "$SUPABASE_REHOME_DATABASE_URL"
+          node scripts/backup/supabase-runtime-target.mjs validate-url
+
+      - name: Apply the exact approved prefix and verify SELECT-only grants
+        env:
+          SUPABASE_REHOME_DATABASE_URL: ${{ secrets.SUPABASE_REHOME_DATABASE_URL }}
+          EXPECTED_BACKUP_BOOTSTRAP_PREFIX: ${{ inputs.expected_ledger_prefix }}
+        shell: bash
+        run: node scripts/backup/supabase-runtime-migrations.mjs bootstrap-backup
+
+      - name: Record bounded result
+        shell: bash
+        run: |
+          {
+            echo '### Supabase backup capability bootstrap: PASS'
+            echo '- Target: exact healthy Free Preview project; database target contract and size enforced by the migration runner'
+            echo '- Applied: the two existing backup role and coverage migrations only'
+            echo '- Checkpoint: seven existing migrations attested and recorded with source checksums; total ledger prefix is nine'
+            echo '- Access: SELECT-only policies for the exact nine backup tables; four family tables remain SELECT-only for dpg_readonly'
+            echo '- Excluded: login role or credential creation, data import, Phase 2 schema, backup decryption, restore, Production, DNS, and traffic'
+            echo '- Next: configure any required backup login through the protected secret process, then run a fresh backup as a separate approved operation'
+          } >>"$GITHUB_STEP_SUMMARY"

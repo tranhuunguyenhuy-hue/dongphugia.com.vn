@@ -54,6 +54,9 @@ not an authority document: verify it immediately before relying on it.
 - `CURRENT` — [Runtime backup and recovery](deploy/runtime-backup-recovery.md):
   encrypted logical backup, checksum manifest, isolated restore rehearsal, and
   Product/Family/Blog recovery checks (LEO-540).
+- `SUPPORTING` — [Supabase Preview backup-role bootstrap](deploy/supabase-backup-role-bootstrap.md):
+  one-time Owner-approved, exact two-migration bootstrap, checkpoint ledger,
+  bounded workflow, and SELECT-only acceptance for Issue #270.
 - `SUPPORTING` — [LEO-560 isolated raw legacy source](deploy/leo-560-isolated-raw-legacy-source.md):
   dated immutable source/destination identity, checksum, provenance, and
   isolation evidence for the one-time raw migration input.

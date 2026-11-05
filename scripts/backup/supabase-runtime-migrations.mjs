@@ -39,6 +39,14 @@ export const EXPECTED_RUNTIME_MIGRATIONS = [
   '20261016090000_leo560_preview_rls_hardening.sql',
 ]
 
+export const BACKUP_BOOTSTRAP_MIGRATIONS = [
+  '20260828183000_leo542_backup_role_prerequisite.sql',
+  '20260828183200_leo540_backup_coverage_prerequisite.sql',
+]
+
+export const BACKUP_BOOTSTRAP_PREFIX_LENGTH =
+  ADOPTED_CHECKPOINT_MIGRATIONS.length + BACKUP_BOOTSTRAP_MIGRATIONS.length
+
 const migrationsDirectory = path.resolve('supabase/migrations')
 
 function fail(reason) {
@@ -411,23 +419,141 @@ async function validateFinalSchema(client) {
   if (!row || Object.values(row).some((value) => value !== true)) fail('final_schema_rls_api_validation_failed')
 }
 
-export async function executeRuntimeMigrations(client, mode, checkpointAttestor) {
-  if (!['status', 'apply'].includes(mode)) fail('mode_invalid')
+async function validateBackupBootstrap(client) {
+  const result = await client.query(`
+    with backup_tables(table_name) as (
+      values
+        ('admin_sessions'),
+        ('crawl_import_decisions'),
+        ('crawl_product_snapshots'),
+        ('crawl_runs'),
+        ('product_families'),
+        ('product_family_catalogue_gaps'),
+        ('product_family_configuration_groups'),
+        ('product_family_memberships'),
+        ('publishing_credentials')
+    ),
+    readonly_tables(table_name) as (
+      values
+        ('product_families'),
+        ('product_family_catalogue_gaps'),
+        ('product_family_configuration_groups'),
+        ('product_family_memberships')
+    )
+    select
+      exists (
+        select 1 from pg_roles
+        where rolname = 'dpg_backup' and not rolinherit and not rolcanlogin
+          and not rolsuper and not rolcreatedb and not rolcreaterole
+          and not rolreplication and not rolbypassrls
+      ) as backup_role_restricted,
+      to_regrole('dpg_backup_login') is null as backup_login_absent,
+      not exists (
+        select 1 from pg_auth_members
+        where roleid = (select oid from pg_roles where rolname = 'dpg_backup')
+           or member = (select oid from pg_roles where rolname = 'dpg_backup')
+      ) as backup_role_has_no_memberships,
+      has_schema_privilege('dpg_backup', 'dpg_app', 'USAGE')
+        and not has_schema_privilege('dpg_backup', 'dpg_app', 'CREATE')
+        as backup_schema_privilege_exact,
+      (select count(*) = 9
+       from information_schema.table_privileges p
+       join backup_tables t on t.table_name = p.table_name
+       where p.table_schema = 'dpg_app' and p.grantee = 'dpg_backup'
+         and p.privilege_type = 'SELECT') as backup_select_grants_complete,
+      not exists (
+        select 1 from information_schema.table_privileges p
+        join backup_tables t on t.table_name = p.table_name
+        where p.table_schema = 'dpg_app' and p.grantee = 'dpg_backup'
+          and p.privilege_type <> 'SELECT'
+      ) as backup_grants_read_only,
+      (select count(*) = 9
+       from pg_policy p
+       join pg_class c on c.oid = p.polrelid
+       join pg_namespace n on n.oid = c.relnamespace
+       join backup_tables t on t.table_name = c.relname
+       where n.nspname = 'dpg_app' and p.polname = 'leo540_backup_select'
+         and p.polpermissive and p.polcmd = 'r'
+         and p.polroles = array[(select oid from pg_roles where rolname = 'dpg_backup')]::oid[]
+         and pg_get_expr(p.polqual, p.polrelid) = 'true'
+         and p.polwithcheck is null) as backup_policies_complete,
+      (select count(*) = 4
+       from information_schema.table_privileges p
+       join readonly_tables t on t.table_name = p.table_name
+       where p.table_schema = 'dpg_app' and p.grantee = 'dpg_readonly'
+         and p.privilege_type = 'SELECT') as readonly_select_grants_complete,
+      not exists (
+        select 1 from information_schema.table_privileges p
+        join readonly_tables t on t.table_name = p.table_name
+        where p.table_schema = 'dpg_app' and p.grantee = 'dpg_readonly'
+          and p.privilege_type <> 'SELECT'
+      ) as readonly_grants_read_only
+  `)
+  const row = result.rows[0]
+  if (!row || Object.values(row).some((value) => value !== true)) {
+    fail('backup_bootstrap_acceptance_failed')
+  }
+}
+
+export async function executeRuntimeMigrations(
+  client,
+  mode,
+  checkpointAttestor,
+  expectedBootstrapPrefix,
+) {
+  if (!['status', 'apply', 'bootstrap-backup'].includes(mode)) fail('mode_invalid')
+  const validBootstrapPrefixes = [
+    'absent',
+    ...Array.from(
+      { length: BACKUP_BOOTSTRAP_MIGRATIONS.length + 1 },
+      (_, index) => String(ADOPTED_CHECKPOINT_MIGRATIONS.length + index),
+    ),
+  ]
+  if (mode === 'bootstrap-backup'
+    && !validBootstrapPrefixes.includes(expectedBootstrapPrefix)) {
+    fail('backup_bootstrap_prefix_invalid')
+  }
   const migrations = await loadMigrations()
   await configure(client)
   await client.query("select pg_advisory_lock(hashtext('dongphugia:supabase-runtime-migrations:v1'))")
 
   try {
-    if (mode === 'apply') await assertDatabaseSizeWithinContract(client)
-    if (!(await ledgerExists(client))) {
-      if (mode !== 'apply') fail('migration_state_incomplete')
+    if (mode === 'apply' || mode === 'bootstrap-backup') {
+      await assertDatabaseSizeWithinContract(client)
+    }
+    const hasLedger = await ledgerExists(client)
+    if (mode === 'bootstrap-backup') {
+      const observedPrefix = hasLedger ? String((await readLedger(client)).length) : 'absent'
+      if (observedPrefix !== expectedBootstrapPrefix) fail('backup_bootstrap_prefix_mismatch')
+    }
+    if (!hasLedger) {
+      if (mode !== 'apply' && mode !== 'bootstrap-backup') fail('migration_state_incomplete')
       if (!checkpointAttestor) fail('checkpoint_attestation_required')
       await checkpointAttestor()
       await createLedgerAndAdoptCheckpoint(client, migrations)
     }
 
-    validateLedger(await readLedger(client), migrations, false)
+    const initialLedger = await readLedger(client)
+    validateLedger(initialLedger, migrations, false)
+    if (mode === 'bootstrap-backup'
+      && initialLedger.length > BACKUP_BOOTSTRAP_PREFIX_LENGTH) {
+      fail('backup_bootstrap_boundary_exceeded')
+    }
     if (mode === 'apply') await applyPendingMigrations(client, migrations)
+    if (mode === 'bootstrap-backup') {
+      await applyPendingMigrations(
+        client,
+        migrations.slice(0, BACKUP_BOOTSTRAP_PREFIX_LENGTH),
+      )
+      const finalLedger = await readLedger(client)
+      validateLedger(finalLedger, migrations, false)
+      if (finalLedger.length !== BACKUP_BOOTSTRAP_PREFIX_LENGTH) {
+        fail('backup_bootstrap_incomplete')
+      }
+      await validateBackupBootstrap(client)
+      await assertDatabaseSizeWithinContract(client)
+      return BACKUP_BOOTSTRAP_PREFIX_LENGTH
+    }
     await assertDatabaseSizeWithinContract(client)
     validateLedger(await readLedger(client), migrations, true)
     await validateFinalSchema(client)
@@ -442,13 +568,18 @@ async function run() {
   const client = new Client(parseSupabaseRuntimeTarget(process.env.SUPABASE_REHOME_DATABASE_URL))
   try {
     await client.connect()
-    const count = await executeRuntimeMigrations(client, mode, async () => {
-      execFileSync('bash', ['scripts/backup/attest-supabase-runtime-checkpoint.sh'], {
-        cwd: process.cwd(),
-        env: { ...process.env, CHECKPOINT_ATTESTATION_MODE: 'behavioral' },
-        stdio: 'inherit',
-      })
-    })
+    const count = await executeRuntimeMigrations(
+      client,
+      mode,
+      async () => {
+        execFileSync('bash', ['scripts/backup/attest-supabase-runtime-checkpoint.sh'], {
+          cwd: process.cwd(),
+          env: { ...process.env, CHECKPOINT_ATTESTATION_MODE: 'behavioral' },
+          stdio: 'inherit',
+        })
+      },
+      process.env.EXPECTED_BACKUP_BOOTSTRAP_PREFIX,
+    )
     process.stdout.write(`SUPABASE_RUNTIME_MIGRATIONS status=PASS mode=${mode} count=${count}\n`)
   } catch (error) {
     if (!String(error?.message ?? '').startsWith('migration_')) {
