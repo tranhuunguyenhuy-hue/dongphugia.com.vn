@@ -14,6 +14,7 @@ env:
   SUPABASE_MANAGEMENT_API: https://api.supabase.com
   SUPABASE_ORGANIZATION_SLUG: ymjvuwefhqqlymwlocqn
   SUPABASE_PROJECT_REF: bonxyxluzlxfkdetryoo
+  SUPABASE_PROJECT_NAME: dongphugia-runtime
   SUPABASE_PROJECT_REGION: ap-southeast-1
 
 jobs:
@@ -36,6 +37,11 @@ jobs:
           ref: refs/heads/main
           fetch-depth: 1
           persist-credentials: false
+
+      - name: Set up Node.js for the shared response validator
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
 
       - name: Verify owner dispatch and exact main revision
         env:
@@ -95,19 +101,4 @@ jobs:
           request_json organization_projects "$PROJECTS_RESULT" \
             "$SUPABASE_MANAGEMENT_API/v1/organizations/$SUPABASE_ORGANIZATION_SLUG/projects?search=dongphugia-runtime&limit=100"
 
-          if ! jq -e '.plan == "free"' "$ORGANIZATION_RESULT" >/dev/null; then
-            echo 'SUPABASE_MANAGEMENT_PREFLIGHT status=FAIL reason=organization_plan_mismatch'
-            exit 1
-          fi
-          if ! jq -e --arg ref "$SUPABASE_PROJECT_REF" \
-            --arg org "$SUPABASE_ORGANIZATION_SLUG" \
-            --arg region "$SUPABASE_PROJECT_REGION" '
-              any(.[]; .ref == $ref and .organization_slug == $org
-                and .name == "dongphugia-runtime" and .region == $region
-                and .status == "ACTIVE_HEALTHY")
-            ' "$PROJECTS_RESULT" >/dev/null; then
-            echo 'SUPABASE_MANAGEMENT_PREFLIGHT status=FAIL reason=exact_project_identity_mismatch'
-            exit 1
-          fi
-
-          echo 'SUPABASE_MANAGEMENT_PREFLIGHT status=PASS organization_plan=free exact_project=ACTIVE_HEALTHY access=read_only'
+          node scripts/backup/supabase-management-response.mjs "$ORGANIZATION_RESULT" "$PROJECTS_RESULT"
