@@ -590,10 +590,13 @@ async function validateBackupBootstrap(client) {
       not exists (
         select 1 from backup_tables t
         where has_table_privilege('dpg_backup', format('dpg_app.%I', t.table_name), 'INSERT')
+           or has_any_column_privilege('dpg_backup', format('dpg_app.%I', t.table_name), 'INSERT')
            or has_table_privilege('dpg_backup', format('dpg_app.%I', t.table_name), 'UPDATE')
+           or has_any_column_privilege('dpg_backup', format('dpg_app.%I', t.table_name), 'UPDATE')
            or has_table_privilege('dpg_backup', format('dpg_app.%I', t.table_name), 'DELETE')
            or has_table_privilege('dpg_backup', format('dpg_app.%I', t.table_name), 'TRUNCATE')
            or has_table_privilege('dpg_backup', format('dpg_app.%I', t.table_name), 'REFERENCES')
+           or has_any_column_privilege('dpg_backup', format('dpg_app.%I', t.table_name), 'REFERENCES')
            or has_table_privilege('dpg_backup', format('dpg_app.%I', t.table_name), 'TRIGGER')
       ) as backup_effective_table_privileges_read_only,
       not exists (
@@ -609,11 +612,15 @@ async function validateBackupBootstrap(client) {
           )
           and (
             has_table_privilege('dpg_backup', c.oid, 'SELECT')
+            or has_any_column_privilege('dpg_backup', c.oid, 'SELECT')
             or has_table_privilege('dpg_backup', c.oid, 'INSERT')
+            or has_any_column_privilege('dpg_backup', c.oid, 'INSERT')
             or has_table_privilege('dpg_backup', c.oid, 'UPDATE')
+            or has_any_column_privilege('dpg_backup', c.oid, 'UPDATE')
             or has_table_privilege('dpg_backup', c.oid, 'DELETE')
             or has_table_privilege('dpg_backup', c.oid, 'TRUNCATE')
             or has_table_privilege('dpg_backup', c.oid, 'REFERENCES')
+            or has_any_column_privilege('dpg_backup', c.oid, 'REFERENCES')
             or has_table_privilege('dpg_backup', c.oid, 'TRIGGER')
           )
       ) as backup_has_no_effective_privileges_outside_allowlist,
