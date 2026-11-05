@@ -175,3 +175,9 @@ Fixed stage labels distinguish target, inventory and fingerprint; a small
 allowlist distinguishes client timeout, server query cancellation and lock
 unavailability without printing raw errors. Failure leaves the transaction rolled back.
 This read-only diagnostic does not itself authorize a bootstrap retry.
+
+The bootstrap transaction also emits fixed stage labels and allowlisted error
+categories, without rows, hashes, credentials, SQL or raw error messages.
+This instrumentation preserves all existing locks, checks, limits, rollback
+and one-use Owner approval requirements. A new bootstrap attempt still needs
+a separately approved, current-state-bound Owner comment.
