@@ -1,3 +1,9 @@
+import { readFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const SUPABASE_CA = readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'certificates/supabase-prod-ca-2021.crt'), 'utf8')
+
 const PROJECT_REF = 'bonxyxluzlxfkdetryoo'
 const DIRECT_HOST = `db.${PROJECT_REF}.supabase.co`
 const SESSION_POOLER_HOST = 'aws-0-ap-southeast-1.pooler.supabase.com'
@@ -44,7 +50,7 @@ export function parseSupabaseRuntimeTarget(value) {
     database: 'postgres',
     user: decode(url.username),
     password: decode(url.password),
-    ssl: true,
+    ssl: { ca: SUPABASE_CA, rejectUnauthorized: true },
     application_name: 'dongphugia-supabase-runtime-rehome',
     connectionTimeoutMillis: 10_000,
     query_timeout: 60_000,
