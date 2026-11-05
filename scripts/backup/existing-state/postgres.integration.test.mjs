@@ -167,7 +167,7 @@ it.runIf(enabled)('preserves populated catalogue, rejects drift/incomplete RLS c
     process.stdout.write(`EXISTING_BACKUP_SYNTHETIC status=PASS populated=PASS drift=PASS rollback=PASS rls_completeness=PASS encrypted_restore=${archiveEnabled?'PASS':'NOT_RUN'}\n`)
   } catch(error) {
     const allowed=new Set(['42601','42501','42704','42P01','42883','42703','42809','28P01','ECONNREFUSED'])
-    throw new Error(`EXISTING_BACKUP_SYNTHETIC_FAILED phase=${phase} code=${allowed.has(error?.code)?error.code:'UNCLASSIFIED'}`)
+    throw new Error(`EXISTING_BACKUP_SYNTHETIC_FAILED phase=${phase} stage=${/^restore_[a-z_]+$/.test(error?.archiveStage ?? '')?error.archiveStage:'unknown'} code=${allowed.has(error?.code)?error.code:'UNCLASSIFIED'}`)
   }
   finally {
     if(client)await client.end().catch(()=>{})

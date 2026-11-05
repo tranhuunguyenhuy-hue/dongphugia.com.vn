@@ -12,6 +12,7 @@ const FILES=['snapshot.dump.age','state.json.age','public-api.json.age']
 const hashFile=file=>createHash('sha256').update(readFileSync(file)).digest('hex')
 const childEnv=()=>Object.fromEntries(Object.entries(process.env).filter(([key])=>!/^PG|DATABASE_URL|AGE_IDENTITY|PRIVATE_KEY|TOKEN|PASSWORD/.test(key) && !/DATABASE_URL/.test(key)))
 let workspace
+let archiveStage='preflight'
 function command(program,args,input,output) {
   const err=openSync(path.join(workspace,'command.error'),'w',0o600)
   const out=output ? openSync(output,'w',0o600) : 'pipe'
@@ -90,11 +91,13 @@ function inertBootstrapSql(expected = baseline) {
 }
 async function restore(input, expected = baseline) {
   assertIdentity()
+  archiveStage='restore_identity'
   const identity=process.env.AGE_IDENTITY
   requireGate(typeof identity==='string' && identity.startsWith('AGE-SECRET-KEY-'),'identity_missing')
   const envelope=JSON.parse(readFileSync(path.join(input,'envelope.json'),'utf8'))
   validateEnvelope(envelope,process.env.APPROVED_SOURCE_SHA,process.env.GITHUB_RUN_ID,expected)
   for(const file of FILES) requireGate(lstatSync(path.join(input,file)).isFile() && !lstatSync(path.join(input,file)).isSymbolicLink() && hashFile(path.join(input,file))===envelope.files[file],'ciphertext_integrity_failed')
+  archiveStage='restore_decrypt'
   const key=path.join(workspace,'identity');writeFileSync(key,identity,{mode:0o600})
   for(const file of FILES) command('age',['--decrypt','--identity',key,'--output',path.join(workspace,file.slice(0,-4)),path.join(input,file)])
   rmSync(key)
@@ -105,6 +108,7 @@ async function restore(input, expected = baseline) {
   const name=`dpg-existing-restore-${process.pid}-${Date.now()}`
   let started=false
   try {
+    archiveStage='restore_container'
     command('docker',['run','--rm','--detach','--pull=never','--name',name,'--network','none','--read-only','--memory','1536m','--pids-limit','256',
       '--tmpfs','/var/lib/postgresql/data:rw,nosuid,nodev,noexec,size=1g','--tmpfs','/tmp:rw,nosuid,nodev,noexec,size=128m','--tmpfs','/var/run/postgresql:rw,nosuid,nodev,noexec,size=64m',
       '--env','POSTGRES_HOST_AUTH_METHOD=trust',IMAGE]);started=true
@@ -116,13 +120,18 @@ async function restore(input, expected = baseline) {
     }
     requireGate(ready,'restore_startup_failed')
     const psql=['exec','-i',name,'psql','-U','postgres','-d','postgres','-X','-q','-A','-t','-v','ON_ERROR_STOP=1']
+    archiveStage='restore_stub_roles'
     command('docker',psql,inertBootstrapSql(expected))
+    archiveStage='restore_pg_restore'
     command('docker',['exec','-i',name,'pg_restore','-U','postgres','-d','postgres','--exit-on-error','--no-owner','--no-privileges'],readFileSync(path.join(workspace,'snapshot.dump')))
+    archiveStage='restore_public_api'
     const api=preservePublicApi(JSON.parse(readFileSync(path.join(workspace,'public-api.json'),'utf8')),state.inventory,true)
     command('docker',psql,api.map(row=>row.definition).join('\n'))
     const {INVENTORY_SQL,dataStateSql}=await import('./contract.mjs')
+    archiveStage='restore_inventory'
     const observedInventory=JSON.parse(command('docker',psql,`begin read only;\n${INVENTORY_SQL}\nrollback;`).trim())
     requireGate(fingerprint(restoreShape(observedInventory))===fingerprint(restoreShape(state.inventory)),'restore_schema_failed')
+    archiveStage='restore_data'
     const observedData=JSON.parse(command('docker',psql,`begin read only; set local timezone='UTC'; set local datestyle='ISO, YMD'; ${dataStateSql(expected)}; rollback;`).trim())
     assertStateEqual(state.data,observedData,expected)
     process.stdout.write(`EXISTING_RESTORE status=PASS ciphertext=PASS isolated=PASS schema=PASS data=PASS tables=${tablesFor(expected).length} sequences=${sequencesFor(expected).length}\n`)
@@ -131,13 +140,14 @@ async function restore(input, expected = baseline) {
 export async function runArchive(mode, directory, expected = baseline, target) {
   requireGate(['backup','restore'].includes(mode),'mode_invalid')
   requireGate(Number(statfsSync('/dev/shm').type)===0x01021994,'tmpfs_required')
+  archiveStage='preflight'
   workspace=mkdtempSync('/dev/shm/dpg-existing-backup-')
   try {
     validateLocalDocker()
     requireGate(typeof directory==='string' && path.isAbsolute(directory),'backup_directory_invalid')
     if(mode==='backup')await backup(directory,expected,target)
     else await restore(directory,expected)
-  } finally {rmSync(workspace,{recursive:true,force:true})}
+  } catch(error) { if(error && typeof error==='object')error.archiveStage=archiveStage; throw error } finally {rmSync(workspace,{recursive:true,force:true})}
 }
 export async function main() {
   await runArchive(process.argv[2],process.env.BACKUP_DIR)
