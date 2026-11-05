@@ -707,6 +707,75 @@ describe('Supabase runtime migration adoption integration', () => {
           select to_regnamespace('dpg_v1') is null as v1_absent
         `)).rows[0]).toEqual({ v1_absent: true })
 
+        const expectBootstrapDriftRejected = async (driftPhase, applyDrift) => {
+          phase = driftPhase
+          await client.query('begin')
+          try {
+            await applyDrift()
+            await expect(executeRuntimeMigrations(client, 'bootstrap-backup', undefined, '9'))
+              .rejects.toThrow('backup_bootstrap_acceptance_failed')
+          } finally {
+            await client.query('rollback')
+          }
+        }
+
+        await expectBootstrapDriftRejected(
+          'reject_unexpected_relation_acl_on_retry',
+          () => client.query('grant select on dpg_app.brands to dpg_backup'),
+        )
+        await expectBootstrapDriftRejected(
+          'reject_unexpected_routine_acl_on_retry',
+          () => client.query('grant execute on function auth.uid() to dpg_backup'),
+        )
+        await expectBootstrapDriftRejected(
+          'reject_unexpected_column_acl_on_retry',
+          () => client.query('grant select (name) on dpg_app.brands to dpg_backup'),
+        )
+        await expectBootstrapDriftRejected(
+          'reject_effective_public_write_privilege_on_retry',
+          () => client.query('grant update on dpg_app.admin_sessions to public'),
+        )
+        await expectBootstrapDriftRejected(
+          'reject_unexpected_policy_for_backup_role_on_retry',
+          () => client.query(`
+            create policy codex_unexpected_backup_policy on dpg_app.brands
+            for select to dpg_backup using (true)
+          `),
+        )
+        await expectBootstrapDriftRejected(
+          'reject_unexpected_public_policy_on_backup_table_retry',
+          () => client.query(`
+            create policy codex_unexpected_public_policy on dpg_app.admin_sessions
+            for select to public using (true)
+          `),
+        )
+        await expectBootstrapDriftRejected(
+          'reject_backup_role_ownership_on_retry',
+          async () => {
+            await client.query('create table public.codex_backup_owner_probe (id integer)')
+            await client.query('alter table public.codex_backup_owner_probe owner to dpg_backup')
+          },
+        )
+        await expectBootstrapDriftRejected(
+          'reject_backup_role_default_acl_on_retry',
+          () => client.query(`
+            alter default privileges for role dpg_backup in schema dpg_app
+            grant select on tables to dpg_readonly
+          `),
+        )
+        await expectBootstrapDriftRejected(
+          'reject_backup_role_membership_on_retry',
+          () => client.query('grant dpg_readonly to dpg_backup'),
+        )
+        await expectBootstrapDriftRejected(
+          'reject_backup_role_setting_on_retry',
+          () => client.query("alter role dpg_backup set search_path to 'public'"),
+        )
+        await expectBootstrapDriftRejected(
+          'reject_database_wide_role_setting_on_retry',
+          () => client.query("alter role all in database postgres set search_path to 'public'"),
+        )
+
         phase = 'resume_ordered_pending_migrations'
         await executeRuntimeMigrations(client, 'apply', attestCheckpoint)
 

@@ -39,6 +39,16 @@ bootstrap.
 - Owner scope is durably recorded on Issue #270. The workflow requires that
   exact Owner-authored approval marker, the open Issue, a manual dispatch by
   the Owner from `main`, and the exact merged source SHA.
+- The standing scope marker does not authorize execution on a future source
+  revision. Each run also requires a new Owner-authored Issue #270 comment
+  created after the exact PR merge time, with one line in this form:
+  `BACKUP-BOOTSTRAP-EXECUTE: sha=<40-character-merged-sha> prefix=<absent|7|8|9> nonce=<32-lowercase-hex>`.
+  Dispatch must provide that comment's exact ID and the same SHA and prefix.
+  Preflight verifies the comment author, timestamp, SHA, and approved prefix,
+  then claims the nonce with a run/attempt comment before the database job
+  starts. A claimed nonce can never be reused; each retry needs a new exact
+  Owner comment. The current Project Owner must dispatch the workflow from
+  `main`.
 - `expected_ledger_prefix` must match the pre-run custom ledger state:
   `absent`, `7`, `8`, or `9`. A retry is a separate Owner decision using the
   exact observed prefix. A non-prefix, checksum mismatch, schema drift, or
@@ -55,10 +65,14 @@ restores a backup.
 ## Acceptance and recovery
 
 The runner accepts only the exact nine-entry ledger prefix and verifies the
-backup role remains NOLOGIN, has no role memberships, has no schema CREATE
-privilege, and has only the exact SELECT grants and policies. It verifies the
-four `dpg_readonly` SELECT grants and rechecks database size. Logs and workflow
-summary contain no row data, connection URL, or secret.
+backup role remains NOLOGIN, has no role memberships, owns no objects, has no
+default privileges or role settings, and has only the exact SELECT grants and
+policies. It scans all direct ACL catalogs, rejects every other direct ACL and
+policy on the nine protected tables, and verifies the four `dpg_readonly`
+SELECT grants and database size. The workflow summary reports the number of
+migrations applied for the approved starting prefix (`absent`/`7`: two, `8`:
+one, `9`: zero). Logs and summary contain no row data, connection URL, or
+secret.
 
 If either migration fails, stop and preserve the exact workflow run, source
 SHA, observed ledger prefix, failed migration, and sanitized reason. The active

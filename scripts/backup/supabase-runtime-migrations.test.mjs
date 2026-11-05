@@ -7,6 +7,7 @@ import {
   BACKUP_BOOTSTRAP_MIGRATIONS,
   BACKUP_BOOTSTRAP_PREFIX_LENGTH,
   EXPECTED_RUNTIME_MIGRATIONS,
+  backupBootstrapMigrationsAppliedCount,
   executeRuntimeMigrations,
   stripReadOnlyOuterTransaction,
   stripOuterTransaction,
@@ -66,6 +67,20 @@ describe('Supabase runtime migration runner contract', () => {
       '20260828183200_leo540_backup_coverage_prerequisite.sql',
     ])
     expect(BACKUP_BOOTSTRAP_PREFIX_LENGTH).toBe(9)
+  })
+
+  it.each([
+    ['absent', 2],
+    ['7', 2],
+    ['8', 1],
+    ['9', 0],
+  ])('reports the bootstrap migration count for approved prefix %s', (prefix, applied) => {
+    expect(backupBootstrapMigrationsAppliedCount(prefix)).toBe(applied)
+  })
+
+  it('rejects a migration summary prefix outside the bounded set', () => {
+    expect(() => backupBootstrapMigrationsAppliedCount('10'))
+      .toThrow('backup_bootstrap_prefix_invalid')
   })
 
   it('normalizes only a single outer transaction so ledger recording stays atomic', async () => {

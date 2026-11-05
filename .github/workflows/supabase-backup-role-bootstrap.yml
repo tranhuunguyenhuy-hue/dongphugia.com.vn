@@ -7,6 +7,10 @@ on:
         description: Exact merged main SHA containing this bounded bootstrap
         required: true
         type: string
+      execution_approval_comment_id:
+        description: Fresh Owner-authored Issue #270 comment ID binding this exact SHA, prefix, and one-use nonce
+        required: true
+        type: string
       expected_ledger_prefix:
         description: Exact pre-run custom migration ledger state observed and approved for this attempt
         required: true
@@ -40,6 +44,8 @@ jobs:
     timeout-minutes: 5
     outputs:
       source_sha: ${{ steps.gate.outputs.source_sha }}
+      expected_prefix: ${{ steps.gate.outputs.expected_prefix }}
+      migrations_applied: ${{ steps.gate.outputs.migrations_applied }}
     steps:
       - name: Check out trusted main
         uses: actions/checkout@v4
@@ -48,31 +54,81 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Verify merged source and durable approval
+      - name: Verify exact one-time approval and consume its nonce
         id: gate
         env:
           GH_TOKEN: ${{ github.token }}
           APPROVED_SOURCE_SHA: ${{ inputs.approved_source_sha }}
+          APPROVAL_COMMENT_ID: ${{ inputs.execution_approval_comment_id }}
+          EXPECTED_LEDGER_PREFIX: ${{ inputs.expected_ledger_prefix }}
         shell: bash
         run: |
           set -euo pipefail
           test "$GITHUB_REF" = 'refs/heads/main'
           test "$GITHUB_ACTOR" = 'tranhuunguyenhuy-hue'
           [[ "$APPROVED_SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$APPROVAL_COMMENT_ID" =~ ^[0-9]+$ ]]
+          case "$EXPECTED_LEDGER_PREFIX" in
+            absent|7|8|9) ;;
+            *) exit 1 ;;
+          esac
           test "$(git rev-parse HEAD)" = "$APPROVED_SOURCE_SHA"
           test "$GITHUB_SHA" = "$APPROVED_SOURCE_SHA"
 
           issue_json="$RUNNER_TEMP/phase2-issue.json"
           comments_json="$RUNNER_TEMP/phase2-issue-comments.json"
+          pulls_json="$RUNNER_TEMP/phase2-source-pulls.json"
           gh api "repos/$GITHUB_REPOSITORY/issues/$ISSUE_NUMBER" >"$issue_json"
-          gh api "repos/$GITHUB_REPOSITORY/issues/$ISSUE_NUMBER/comments?per_page=100" >"$comments_json"
+          gh api --paginate --slurp \
+            "repos/$GITHUB_REPOSITORY/issues/$ISSUE_NUMBER/comments?per_page=100" \
+            | jq 'add' >"$comments_json"
+          gh api --paginate --slurp \
+            "repos/$GITHUB_REPOSITORY/commits/$APPROVED_SOURCE_SHA/pulls?per_page=100" \
+            | jq 'add' >"$pulls_json"
           test "$(jq -r '.state' "$issue_json")" = 'open'
           jq -e --arg marker "$APPROVAL_MARKER" '
             any(.[]; .user.login == "tranhuunguyenhuy-hue" and (.body | contains($marker)))
           ' "$comments_json" >/dev/null
-          rm -f "$issue_json" "$comments_json"
+
+          merged_pull="$(jq -ce --arg sha "$APPROVED_SOURCE_SHA" '
+            [.[] | select(.base.ref == "main" and .merged_at != null and .merge_commit_sha == $sha)]
+            | if length == 1 then .[0] else error("exact_merged_pull_not_found") end
+          ' "$pulls_json")"
+          merge_time="$(jq -r '.merged_at' <<<"$merged_pull")"
+          merge_epoch="$(date -u -d "$merge_time" +%s)"
+          approval_json="$(jq -ce --argjson id "$APPROVAL_COMMENT_ID" \
+            --arg actor 'tranhuunguyenhuy-hue' \
+            '.[] | select(.id == $id and .user.login == $actor)' "$comments_json")"
+          approval_time="$(jq -r '.created_at' <<<"$approval_json")"
+          approval_epoch="$(date -u -d "$approval_time" +%s)"
+          test "$approval_epoch" -gt "$merge_epoch"
+          approval_body="$(jq -r '.body' <<<"$approval_json")"
+          matching_approval="$(printf '%s\n' "$approval_body" \
+            | grep -E "^BACKUP-BOOTSTRAP-EXECUTE: sha=$APPROVED_SOURCE_SHA prefix=$EXPECTED_LEDGER_PREFIX nonce=[0-9a-f]{32}$" || true)"
+          test "$(printf '%s\n' "$matching_approval" | sed '/^$/d' | wc -l | tr -d ' ')" = '1'
+          nonce="${matching_approval##*nonce=}"
+          if jq -e --arg claim "BACKUP-BOOTSTRAP-CLAIMED: nonce=$nonce" \
+            'any(.[]; .body | contains($claim))' "$comments_json" >/dev/null; then
+            echo 'BACKUP_BOOTSTRAP_PREFLIGHT status=FAIL reason=approval_nonce_already_claimed' >&2
+            exit 1
+          fi
+
+          gh api --method POST "repos/$GITHUB_REPOSITORY/issues/$ISSUE_NUMBER/comments" \
+            -f body="BACKUP-BOOTSTRAP-CLAIMED: nonce=$nonce sha=$APPROVED_SOURCE_SHA prefix=$EXPECTED_LEDGER_PREFIX run=$GITHUB_RUN_ID attempt=$GITHUB_RUN_ATTEMPT" \
+            >/dev/null
+          rm -f "$issue_json" "$comments_json" "$pulls_json"
           echo "source_sha=$APPROVED_SOURCE_SHA" >>"$GITHUB_OUTPUT"
-          echo 'BACKUP_BOOTSTRAP_PREFLIGHT status=PASS issue=270 approval=owner source=exact-main'
+          echo "expected_prefix=$EXPECTED_LEDGER_PREFIX" >>"$GITHUB_OUTPUT"
+          case "$EXPECTED_LEDGER_PREFIX" in
+            absent|7) migrations_applied=2 ;;
+            8) migrations_applied=1 ;;
+            9) migrations_applied=0 ;;
+          esac
+          echo "migrations_applied=$migrations_applied" >>"$GITHUB_OUTPUT"
+          echo 'BACKUP_BOOTSTRAP_PREFLIGHT status=PASS issue=270 approval=owner_exact_sha_prefix nonce=consumed'
+    permissions:
+      contents: read
+      issues: write
 
   bootstrap:
     name: Apply only the two backup prerequisite migrations
@@ -133,7 +189,7 @@ jobs:
       - name: Apply the exact approved prefix and verify SELECT-only grants
         env:
           SUPABASE_REHOME_DATABASE_URL: ${{ secrets.SUPABASE_REHOME_DATABASE_URL }}
-          EXPECTED_BACKUP_BOOTSTRAP_PREFIX: ${{ inputs.expected_ledger_prefix }}
+          EXPECTED_BACKUP_BOOTSTRAP_PREFIX: ${{ needs.preflight.outputs.expected_prefix }}
         shell: bash
         run: node scripts/backup/supabase-runtime-migrations.mjs bootstrap-backup
 
@@ -143,7 +199,7 @@ jobs:
           {
             echo '### Supabase backup capability bootstrap: PASS'
             echo '- Target: exact healthy Free Preview project; database target contract and size enforced by the migration runner'
-            echo '- Applied: the two existing backup role and coverage migrations only'
+            echo "- Applied: ${{ needs.preflight.outputs.migrations_applied }} existing backup role/coverage migration(s) only"
             echo '- Checkpoint: seven existing migrations attested and recorded with source checksums; total ledger prefix is nine'
             echo '- Access: SELECT-only policies for the exact nine backup tables; four family tables remain SELECT-only for dpg_readonly'
             echo '- Excluded: login role or credential creation, data import, Phase 2 schema, backup decryption, restore, Production, DNS, and traffic'
