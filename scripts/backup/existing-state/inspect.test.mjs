@@ -1,5 +1,5 @@
 import { it, expect } from 'vitest'
-import { inspect, bootstrap } from './database.mjs'
+import { inspect, bootstrap, classifyBootstrapFailure } from './database.mjs'
 import { baseline, baselineSha, tables, sequences, INVENTORY_SQL } from './contract.mjs'
 function fake(fail) {
   const calls=[]
@@ -45,4 +45,11 @@ it('rolls back even if the bootstrap reporter throws',async()=>{
   const client={async query(sql){calls.push(sql);if(sql.startsWith('lock table'))throw Object.assign(new Error('sensitive'),{code:'57014'});return {rows:[]}}}
   await expect(bootstrap(client,baselineSha,baseline,()=>{throw new Error('report failure')})).rejects.toThrow('sensitive')
   expect(calls.at(-1)).toBe('rollback')
+})
+
+it('classifies only allowlisted bootstrap contract and database failures',()=>{
+  expect(classifyBootstrapFailure(new Error('capability_memberships_invalid'))).toBe('GATE_CAPABILITY_MEMBERSHIPS_INVALID')
+  expect(classifyBootstrapFailure(Object.assign(new Error('private database detail'),{code:'3F000'}))).toBe('POSTGRES_SCHEMA_MISSING')
+  expect(classifyBootstrapFailure(Object.assign(new Error('private database detail'),{code:'42501'}))).toBe('POSTGRES_PERMISSION_DENIED')
+  expect(classifyBootstrapFailure(Object.assign(new Error('PRIVATE_SECRET'),{code:'ZZ999'}))).toBe('UNCLASSIFIED')
 })

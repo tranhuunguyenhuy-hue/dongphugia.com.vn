@@ -74,6 +74,27 @@ export async function assertCapability(client, expected = baseline) {
   requireGate(Object.values(result.rows[0] ?? {}).length === 5 && Object.values(result.rows[0]).every(v=>v === true), 'capability_effective_privileges_failed')
 }
 
+const bootstrapGateFailures = new Set([
+  'capability_role_invalid','capability_settings_invalid','capability_memberships_invalid',
+  'capability_schema_grants_invalid','capability_relation_grants_invalid',
+  'capability_policy_count_invalid','capability_policy_invalid',
+  'capability_effective_privileges_failed','direct_rights_or_ownership_failed','inventory_drift'
+])
+const postgresFailureLabels = new Map([
+  ['57014','POSTGRES_QUERY_CANCELED'],['55P03','POSTGRES_LOCK_UNAVAILABLE'],
+  ['3F000','POSTGRES_SCHEMA_MISSING'],['42501','POSTGRES_PERMISSION_DENIED'],
+  ['42704','POSTGRES_OBJECT_MISSING'],['42P01','POSTGRES_RELATION_MISSING'],
+  ['42883','POSTGRES_ROUTINE_MISSING'],['42703','POSTGRES_COLUMN_MISSING'],
+  ['42809','POSTGRES_OBJECT_TYPE_MISMATCH'],['42710','POSTGRES_DUPLICATE_OBJECT'],
+  ['23505','POSTGRES_UNIQUE_CONSTRAINT'],['23514','POSTGRES_CHECK_CONSTRAINT'],
+  ['2BP01','POSTGRES_DEPENDENT_OBJECT']
+])
+export function classifyBootstrapFailure(error) {
+  if (error?.message === 'Query read timeout') return 'CLIENT_QUERY_TIMEOUT'
+  if (bootstrapGateFailures.has(error?.message)) return `GATE_${error.message.toUpperCase()}`
+  return postgresFailureLabels.get(error?.code) ?? 'UNCLASSIFIED'
+}
+
 export async function bootstrap(client, expectedSha, expected = baseline, report = () => {}) {
   requireGate(expectedSha === fingerprint(expected), 'baseline_sha_mismatch')
   await client.query('begin isolation level serializable')
@@ -94,9 +115,15 @@ export async function bootstrap(client, expectedSha, expected = baseline, report
     const before = await readState(client, expected)
     stage='capability_grants'; emit(stage,'START')
     for (const sql of bootstrapStatements(expected)) await client.query(sql)
-    stage='capability_validation'; emit(stage,'START')
-    assertInventory(await readInventory(client), true, expected)
+    stage='capability_inventory_read'; emit(stage,'START')
+    const grantedInventory=await readInventory(client)
+    emit(stage,'PASS')
+    stage='capability_inventory_validation'; emit(stage,'START')
+    assertInventory(grantedInventory, true, expected)
+    emit(stage,'PASS')
+    stage='capability_privilege_validation'; emit(stage,'START')
     await assertCapability(client, expected)
+    emit(stage,'PASS')
     stage='backup_visibility'; emit(stage,'START')
     await client.query('grant dpg_backup to postgres with admin false, inherit false, set true granted by postgres')
     await client.query('set local role dpg_backup')
@@ -111,7 +138,7 @@ export async function bootstrap(client, expectedSha, expected = baseline, report
     await client.query('commit')
     emit(stage,'PASS')
   } catch (error) {
-    const reason=error?.message==='Query read timeout'?'CLIENT_QUERY_TIMEOUT':error?.code==='57014'?'SERVER_QUERY_CANCELED':error?.code==='55P03'?'LOCK_UNAVAILABLE':'UNCLASSIFIED'
+    const reason=classifyBootstrapFailure(error)
     await client.query('rollback').catch(()=>{})
     emit(stage,'FAIL',reason)
     throw error
