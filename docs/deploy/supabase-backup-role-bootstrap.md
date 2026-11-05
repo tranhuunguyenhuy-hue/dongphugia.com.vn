@@ -99,3 +99,23 @@ After a successful bootstrap, any backup login and credential must be
 configured through the protected secret process as a separate action. A fresh
 backup, checksum/private-copy verification, and restore rehearsal remain
 separate gates before any later schema/data work.
+
+## Read-only database connection diagnostic
+
+After run `41996633354` failed with the sanitized `database_operation_failed`,
+use `supabase-database-preflight.yml` from exact merged `main`, supplying
+`approved_source_sha`. This Owner-only, attempt-one workflow uses the existing
+`runtime-backup` Environment and database URL. It shares bootstrap concurrency
+so the diagnostic cannot overlap a bootstrap run.
+
+The diagnostic reports only connection type, phase, allowlisted error code,
+aggregate target checks and observed ledger entry count (`absent`, 7, 8 or 9).
+A successful count is an observation, not validation of ledger checksums or
+permission to resume migrations. Unknown errors remain UNCLASSIFIED; messages,
+stacks, SQL details, credentials, hostnames and row contents are never printed.
+It uses the same target parser and TLS behavior as the migration runner,
+bounded connection/query timeouts, a READ ONLY transaction, and rollback.
+It does not invoke the migration runner or create any role or ledger.
+A successful diagnostic does not establish schema equivalence or complete
+bootstrap acceptance. Bootstrap retry still requires a fresh Owner comment
+for the exact source and independently verified prefix.
