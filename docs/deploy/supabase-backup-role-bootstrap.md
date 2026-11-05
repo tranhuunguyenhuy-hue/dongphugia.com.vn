@@ -25,6 +25,10 @@ tables receive SELECT-only grants to `dpg_readonly`. No rows are imported or
 updated. The workflow does not create `dpg_backup_login`, set a password, read
 or write a secret, or run the backup job.
 
+The runner also requires `dpg_backup_login` to be absent before it starts. This
+prevents a partially configured credential role from gaining access during the
+bootstrap.
+
 ## Exact target and gates
 
 - Supabase organization: `ymjvuwefhqqlymwlocqn` (Free).

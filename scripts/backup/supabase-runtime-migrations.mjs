@@ -495,6 +495,13 @@ async function validateBackupBootstrap(client) {
   }
 }
 
+async function assertBackupBootstrapLoginRoleAbsent(client) {
+  const result = await client.query(
+    "select to_regrole('dpg_backup_login') is null as absent",
+  )
+  if (result.rows[0]?.absent !== true) fail('backup_bootstrap_login_role_exists')
+}
+
 export async function executeRuntimeMigrations(
   client,
   mode,
@@ -525,6 +532,7 @@ export async function executeRuntimeMigrations(
     if (mode === 'bootstrap-backup') {
       const observedPrefix = hasLedger ? String((await readLedger(client)).length) : 'absent'
       if (observedPrefix !== expectedBootstrapPrefix) fail('backup_bootstrap_prefix_mismatch')
+      await assertBackupBootstrapLoginRoleAbsent(client)
     }
     if (!hasLedger) {
       if (mode !== 'apply' && mode !== 'bootstrap-backup') fail('migration_state_incomplete')

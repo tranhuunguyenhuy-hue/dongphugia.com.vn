@@ -165,6 +165,33 @@ describe('Supabase runtime migration runner contract', () => {
     expect(statements).toEqual([])
   })
 
+  it('refuses a pre-existing backup login role before applying the bounded prefix', async () => {
+    const ledgerRows = await expectedLedgerPrefix(ADOPTED_CHECKPOINT_MIGRATIONS.length)
+    const statements = []
+    const client = {
+      async query(sql) {
+        statements.push(sql)
+        if (sql.includes('pg_database_size(current_database())')) {
+          return { rows: [{ current_size_bytes: '1000', hard_ceiling_bytes: '367001600' }] }
+        }
+        if (sql.includes("to_regclass('dpg_control.runtime_migration_ledger')")) {
+          return { rows: [{ present: true }] }
+        }
+        if (sql.includes("to_regrole('dpg_backup_login')")) {
+          return { rows: [{ absent: false }] }
+        }
+        if (sql.includes('from dpg_control.runtime_migration_ledger')) {
+          return { rows: ledgerRows }
+        }
+        return { rows: [] }
+      },
+    }
+
+    await expect(executeRuntimeMigrations(client, 'bootstrap-backup', undefined, '7'))
+      .rejects.toThrow('backup_bootstrap_login_role_exists')
+    expect(statements.some((sql) => sql.includes('create role dpg_backup'))).toBe(false)
+  })
+
   it.each([
     [0, 'runner-applied'],
     [ADOPTED_CHECKPOINT_MIGRATIONS.length, 'checkpoint-adopted'],
