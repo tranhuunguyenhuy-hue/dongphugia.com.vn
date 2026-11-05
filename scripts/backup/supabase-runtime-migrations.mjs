@@ -441,6 +441,20 @@ async function validateBackupBootstrap(client) {
         ('product_family_memberships')
     )
     select
+      current_setting('server_version_num')::integer between 170000 and 179999
+        as postgres_17,
+      exists (
+        select 1 from dpg_control.target_contract
+        where singleton
+          and project_name = 'dongphugia-runtime'
+          and region = 'ap-southeast-1'
+          and environment = 'preview'
+          and data_class = 'production-derived-reduced-runtime'
+          and production_data_allowed
+          and not production_credentials_allowed
+          and not production_writes_allowed
+          and hard_database_ceiling_bytes = 367001600
+      ) as target_contract_exact,
       exists (
         select 1 from pg_roles
         where rolname = 'dpg_backup' and not rolinherit and not rolcanlogin
