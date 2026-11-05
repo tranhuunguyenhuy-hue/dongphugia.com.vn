@@ -74,33 +74,46 @@ export async function assertCapability(client, expected = baseline) {
   requireGate(Object.values(result.rows[0] ?? {}).length === 5 && Object.values(result.rows[0]).every(v=>v === true), 'capability_effective_privileges_failed')
 }
 
-export async function bootstrap(client, expectedSha, expected = baseline) {
+export async function bootstrap(client, expectedSha, expected = baseline, report = () => {}) {
   requireGate(expectedSha === fingerprint(expected), 'baseline_sha_mismatch')
   await client.query('begin isolation level serializable')
+  let stage='setup'
+  const emit=(...args)=>{ try { report(...args) } catch {} }
   try {
     await client.query("set local lock_timeout='5s'; set local statement_timeout='120s'; set local idle_in_transaction_session_timeout='180s'")
     // Quiescence is Owner-attested at execution approval. Locks also block table
     // writes; sequences are observed twice because nextval is nontransactional.
+    stage='locks'; emit(stage,'START')
     await client.query(`lock table ${tablesFor(expected).map(t=>qualified(t.name)).join(',')} in share row exclusive mode`)
     requireGate((await client.query("select session_user='postgres' and current_user='postgres' as exact")).rows[0]?.exact===true,'bootstrap_actor_invalid')
+    stage='target_inventory'; emit(stage,'START')
     await assertTarget(client)
     assertInventory(await readInventory(client), false, expected)
     requireGate(!(await client.query("select exists(select 1 from pg_roles where rolname='dpg_backup_login') as present")).rows[0].present, 'backup_login_already_exists')
+    stage='baseline_fingerprint'; emit(stage,'START')
     const before = await readState(client, expected)
+    stage='capability_grants'; emit(stage,'START')
     for (const sql of bootstrapStatements(expected)) await client.query(sql)
+    stage='capability_validation'; emit(stage,'START')
     assertInventory(await readInventory(client), true, expected)
     await assertCapability(client, expected)
+    stage='backup_visibility'; emit(stage,'START')
     await client.query('grant dpg_backup to postgres with admin false, inherit false, set true granted by postgres')
     await client.query('set local role dpg_backup')
     assertStateEqual(before, await readState(client, expected), expected)
     await client.query('reset role')
     await client.query('revoke dpg_backup from postgres granted by postgres')
     assertInventory(await readInventory(client), true, expected)
+    stage='final_fingerprint'; emit(stage,'START')
     assertStateEqual(before, await readState(client, expected), expected)
     await assertTarget(client)
+    stage='commit'; emit(stage,'START')
     await client.query('commit')
+    emit(stage,'PASS')
   } catch (error) {
+    const reason=error?.message==='Query read timeout'?'CLIENT_QUERY_TIMEOUT':error?.code==='57014'?'SERVER_QUERY_CANCELED':error?.code==='55P03'?'LOCK_UNAVAILABLE':'UNCLASSIFIED'
     await client.query('rollback').catch(()=>{})
+    emit(stage,'FAIL',reason)
     throw error
   }
 }
@@ -157,7 +170,7 @@ export async function main() {
   try {
     await client.connect()
     if(mode==='inspect') await inspect(client,(stage,status,reason)=>process.stdout.write(`EXISTING_BACKUP_DIAGNOSTIC stage=${stage} status=${status}${reason?` reason=${reason}`:''}\n`))
-    else await bootstrap(client,process.env.APPROVED_BASELINE_SHA)
+    else await bootstrap(client,process.env.APPROVED_BASELINE_SHA,baseline,(stage,status,reason)=>process.stdout.write(`EXISTING_BACKUP_BOOTSTRAP stage=${stage} status=${status}${reason?` reason=${reason}`:''}\n`))
     process.stdout.write(`EXISTING_BACKUP status=PASS mode=${mode} baseline=${baselineSha} tables=${tables.length} sequences=${sequences.length}\n`)
   } finally { await client.end().catch(()=>{}) }
 }
