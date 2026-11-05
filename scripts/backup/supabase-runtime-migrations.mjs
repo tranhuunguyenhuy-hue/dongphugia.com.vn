@@ -565,6 +565,13 @@ async function validateBackupBootstrap(client) {
       ) as backup_role_has_no_memberships,
       has_schema_privilege('dpg_backup', 'dpg_app', 'USAGE')
         and not has_schema_privilege('dpg_backup', 'dpg_app', 'CREATE')
+        and not exists (
+          select 1
+          from pg_namespace n
+          where n.nspname not in ('pg_catalog', 'information_schema', 'pg_toast')
+            and n.nspname !~ '^pg_(temp|toast_temp)_[0-9]+$'
+            and has_schema_privilege('dpg_backup', n.oid, 'CREATE')
+        )
         as backup_schema_effective_privileges_exact,
       (select count(*) = 10 from backup_acl_items) as backup_acl_scope_exact_count,
       (select count(*) = 9 from backup_acl_items a

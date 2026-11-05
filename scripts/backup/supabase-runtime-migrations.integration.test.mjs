@@ -740,6 +740,10 @@ describe('Supabase runtime migration adoption integration', () => {
           () => client.query('grant update (id) on dpg_app.admin_sessions to public'),
         )
         await expectBootstrapDriftRejected(
+          'reject_effective_public_schema_create_privilege_on_retry',
+          () => client.query('grant create on schema public to public'),
+        )
+        await expectBootstrapDriftRejected(
           'reject_public_read_privilege_outside_allowlist_on_retry',
           () => client.query('grant select on dpg_app.brands to public'),
         )
