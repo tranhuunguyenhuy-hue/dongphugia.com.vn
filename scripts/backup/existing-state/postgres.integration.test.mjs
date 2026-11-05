@@ -139,8 +139,7 @@ it.runIf(enabled)('preserves populated catalogue, rejects drift/incomplete RLS c
       phase='synthetic_generate_tls'
       execFileSync('openssl',['req','-x509','-newkey','rsa:2048','-nodes','-days','1','-subj','/CN=localhost','-addext','subjectAltName=IP:127.0.0.1,DNS:localhost','-keyout',path.join(temporary,'server.key'),'-out',path.join(temporary,'server.crt')],{stdio:'ignore'})
       phase='synthetic_copy_tls'
-      docker('cp',path.join(temporary,'server.key'),`${name}:/tmp/server.key`)
-      docker('cp',path.join(temporary,'server.crt'),`${name}:/tmp/server.crt`)
+      for(const file of ['server.key','server.crt'])execFileSync('docker',['exec','-i',name,'sh','-c',`cat > /tmp/${file}`],{input:readFileSync(path.join(temporary,file)),stdio:['pipe','ignore','pipe'],timeout:10000})
       docker('exec',name,'chown','postgres:postgres','/tmp/server.key','/tmp/server.crt')
       docker('exec',name,'chmod','600','/tmp/server.key')
       phase='synthetic_configure_tls'
