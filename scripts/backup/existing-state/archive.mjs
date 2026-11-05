@@ -45,7 +45,7 @@ async function backup(output, expected = baseline, suppliedTarget) {
   const client=new pg.Client(target);client.on('error',()=>{})
   try {
     await client.connect()
-    await assertBackupLogin(client)
+    await assertBackupLogin(client,expected)
     await client.query('begin isolation level repeatable read read only')
     await client.query("set local statement_timeout='120s'; set local idle_in_transaction_session_timeout='180s'")
     await client.query('set local role dpg_backup')
@@ -64,7 +64,7 @@ async function backup(output, expected = baseline, suppliedTarget) {
       '--env',`PGHOST=${target.host}`,'--env',`PGPORT=${target.port}`,'--env',`PGUSER=${target.user}`,'--env','PGDATABASE=postgres',
       '--env','PGPASSFILE=/run/connection/.pgpass','--env','PGSSLMODE=verify-full','--env','PGSSLROOTCERT=/run/connection/root.crt',
       IMAGE,'pg_dump','--format=custom',`--snapshot=${snapshot}`,'--role=dpg_backup','--enable-row-security',
-      '--no-owner','--no-privileges','--no-comments','--no-blobs','--no-security-labels','--no-publications','--no-subscriptions','--schema=dpg_app','--schema=dpg_control'],undefined,path.join(workspace,'snapshot.dump'))
+      '--no-comments','--no-blobs','--no-security-labels','--no-publications','--no-subscriptions','--schema=dpg_app','--schema=dpg_control'],undefined,path.join(workspace,'snapshot.dump'))
     assertStateEqual(data, await readState(client, expected), expected)
     await client.query('commit')
     writeFileSync(path.join(workspace,'state.json'),JSON.stringify({contract:CONTRACT,baselineSha:fingerprint(expected),inventory,data,sourceSha:process.env.APPROVED_SOURCE_SHA,runId:process.env.GITHUB_RUN_ID}),{mode:0o600})
@@ -78,7 +78,7 @@ async function backup(output, expected = baseline, suppliedTarget) {
   finally {await client.end().catch(()=>{})}
 }
 function inertBootstrapSql(expected = baseline) {
-  const roles=new Set(['anon','authenticated','service_role','dpg_backup','dpg_backup_login',...expected.roles.map(r=>r.name)])
+  const roles=new Set(['anon','authenticated','service_role','dpg_backup','dpg_backup_login',expected.creator.bootstrapGrantor,...expected.roles.map(r=>r.name)])
   for(const r of expected.relations) for(const p of r.policies) for(const role of p.roles) if(!['PUBLIC','postgres'].includes(role))roles.add(role)
   return [...roles].sort().map(role=>`create role ${ident(role)} nologin nosuperuser nocreatedb nocreaterole noinherit noreplication nobypassrls;`).join('\n')+`
     create schema auth;

@@ -36,6 +36,7 @@ export async function assertDirectRights(client, role, capability = false, expec
   const result = await client.query(`with subject as (select oid from pg_roles where rolname=$1), unexpected as (
     select 1 from pg_class c join pg_namespace n on n.oid=c.relnamespace, lateral aclexplode(c.relacl) a
       where a.grantee=(select oid from subject) and not(n.nspname||'.'||c.relname=any($2::text[]) and a.privilege_type='SELECT' and not a.is_grantable)
+    union all select 1 from pg_attribute att, lateral aclexplode(att.attacl) a where a.grantee=(select oid from subject)
     union all select 1 from pg_namespace n, lateral aclexplode(n.nspacl) a
       where a.grantee=(select oid from subject) and not(n.nspname=any($3::text[]) and a.privilege_type='USAGE' and not a.is_grantable)
     union all select 1 from pg_proc p, lateral aclexplode(p.proacl) a where a.grantee=(select oid from subject)
@@ -58,8 +59,8 @@ export async function assertCapability(client, expected = baseline) {
     not exists(select 1 from pg_class c join pg_namespace n on n.oid=c.relnamespace
       where n.nspname !~ '^pg_' and n.nspname <> 'information_schema' and (
         (c.relkind in ('r','p','v','m','f') and (
-          has_table_privilege('dpg_backup',c.oid,'INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER')
-          or (n.nspname||'.'||c.relname <> all($1::text[]) and has_table_privilege('dpg_backup',c.oid,'SELECT'))))
+          has_table_privilege('dpg_backup',c.oid,'INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER') or has_any_column_privilege('dpg_backup',c.oid,'INSERT,UPDATE,REFERENCES')
+          or (n.nspname||'.'||c.relname <> all($1::text[]) and has_any_column_privilege('dpg_backup',c.oid,'SELECT'))))
         or (c.relkind='S' and (has_sequence_privilege('dpg_backup',c.oid,'UPDATE,USAGE')
           or (n.nspname||'.'||c.relname <> all($2::text[]) and has_sequence_privilege('dpg_backup',c.oid,'SELECT'))))
         or c.relowner=(select oid from pg_roles where rolname='dpg_backup'))) as relations_safe,
@@ -81,6 +82,7 @@ export async function bootstrap(client, expectedSha, expected = baseline) {
     // Quiescence is Owner-attested at execution approval. Locks also block table
     // writes; sequences are observed twice because nextval is nontransactional.
     await client.query(`lock table ${tablesFor(expected).map(t=>qualified(t.name)).join(',')} in share row exclusive mode`)
+    requireGate((await client.query("select session_user='postgres' and current_user='postgres' as exact")).rows[0]?.exact===true,'bootstrap_actor_invalid')
     await assertTarget(client)
     assertInventory(await readInventory(client), false, expected)
     requireGate(!(await client.query("select exists(select 1 from pg_roles where rolname='dpg_backup_login') as present")).rows[0].present, 'backup_login_already_exists')
@@ -88,9 +90,12 @@ export async function bootstrap(client, expectedSha, expected = baseline) {
     for (const sql of bootstrapStatements(expected)) await client.query(sql)
     assertInventory(await readInventory(client), true, expected)
     await assertCapability(client, expected)
+    await client.query('grant dpg_backup to postgres with admin false, inherit false, set true granted by postgres')
     await client.query('set local role dpg_backup')
     assertStateEqual(before, await readState(client, expected), expected)
     await client.query('reset role')
+    await client.query('revoke dpg_backup from postgres granted by postgres')
+    assertInventory(await readInventory(client), true, expected)
     assertStateEqual(before, await readState(client, expected), expected)
     await assertTarget(client)
     await client.query('commit')
@@ -106,14 +111,14 @@ export async function inspect(client) {
   finally { await client.query('rollback') }
 }
 
-export async function assertBackupLogin(client) {
+export async function assertBackupLogin(client, expected = baseline) {
   const flags = (await client.query(`select
     session_user='dpg_backup_login' as session_exact,
     current_setting('transaction_read_only')='on' as readonly,
-    exists(select 1 from pg_roles where rolname=session_user and rolcanlogin and not rolsuper and not rolcreatedb and not rolcreaterole and not rolinherit and not rolreplication and not rolbypassrls and rolconnlimit=1) as login_safe,
-    (select count(*)=1 and bool_and(g.rolname='dpg_backup' and not m.admin_option and m.set_option) from pg_auth_members m join pg_roles g on g.oid=m.roleid where m.member=(select oid from pg_roles where rolname=session_user)) as membership_exact,
-    not exists(select 1 from pg_auth_members where roleid=(select oid from pg_roles where rolname=session_user)) as no_members
-  `)).rows[0]
+    exists(select 1 from pg_roles where rolname=session_user and rolcanlogin and not rolsuper and not rolcreatedb and not rolcreaterole and not rolinherit and not rolreplication and not rolbypassrls and rolconnlimit=2) as login_safe,
+    (select count(*)=1 and bool_and(g.rolname='dpg_backup' and not m.admin_option and not m.inherit_option and m.set_option and pg_get_userbyid(m.grantor)=$1) from pg_auth_members m join pg_roles g on g.oid=m.roleid where m.member=(select oid from pg_roles where rolname=session_user)) as membership_exact,
+    (select count(*)=1 and bool_and(pg_get_userbyid(member)=$1 and admin_option and not inherit_option and not set_option and pg_get_userbyid(grantor)=$2) from pg_auth_members where roleid=(select oid from pg_roles where rolname=session_user)) as creator_management_exact
+  `,[expected.creator.name,expected.creator.bootstrapGrantor])).rows[0]
   requireGate(flags && Object.values(flags).every(v=>v === true), 'backup_login_contract_failed')
   const directRights = (await client.query(`select not exists(
     select 1 from pg_class c, lateral aclexplode(c.relacl) a where a.grantee=(select oid from pg_roles where rolname=session_user)
@@ -133,10 +138,11 @@ export async function backupInventory(client, expected = baseline) {
   const inventory = await readInventory(client)
   const normalized = structuredClone(inventory)
   const login = normalized.roles.find(r=>r.name === 'dpg_backup_login')
-  requireGate(login && login.login && !login.super && !login.createRole && !login.createDb && !login.bypassRls && !login.replication && !login.inherit && login.limit === 1, 'backup_login_flags_failed')
+  requireGate(login && login.login && !login.super && !login.createRole && !login.createDb && !login.bypassRls && !login.replication && !login.inherit && login.limit === 2, 'backup_login_flags_failed')
   normalized.roles = normalized.roles.filter(r=>r.name !== 'dpg_backup_login')
   const membership = normalized.memberships.filter(m=>m.slice(0,2).includes('dpg_backup_login'))
-  requireGate(membership.length === 1 && membership[0][0] === 'dpg_backup' && membership[0][1] === 'dpg_backup_login' && !membership[0][2] && membership[0][4], 'backup_login_membership_failed')
+  const wanted=[['dpg_backup','dpg_backup_login',false,false,true,expected.creator.name],['dpg_backup_login',expected.creator.name,true,false,false,expected.creator.bootstrapGrantor]]
+  requireGate(membership.length===2 && wanted.every(row=>membership.some(m=>JSON.stringify(m)===JSON.stringify(row))),'backup_login_membership_failed')
   normalized.memberships = normalized.memberships.filter(m=>!m.slice(0,2).includes('dpg_backup_login'))
   assertInventory(normalized, true, expected)
   return inventory

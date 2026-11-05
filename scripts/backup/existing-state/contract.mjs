@@ -31,6 +31,7 @@ export function validateBaseline(value) {
     requireGate(/^[a-f0-9]{64}$/.test(r.shape), 'baseline_shape_invalid')
   }
   requireGate(new Set(value.relations.map(r=>r.name)).size === value.relations.length, 'baseline_duplicate')
+  requireGate(value.creator?.name==='postgres' && value.creator.super===false && value.creator.createRole===true && value.creator.bootstrapSuper===true, 'baseline_creator_invalid')
   requireGate(value.roles.every(r=>r.name !== CAPABILITY && r.name !== 'dpg_backup_login'), 'baseline_backup_role_exists')
 }
 validateBaseline(baseline)
@@ -59,7 +60,10 @@ export function assertInventory(actual, backupPresent = false, expectedInventory
     requireGate(role && !role.login && !role.super && !role.createDb && !role.createRole && !role.inherit && !role.replication && !role.bypassRls && role.limit === 0, 'capability_role_invalid')
     requireGate(role.settingsHash === createHash('sha256').update('').digest('hex'), 'capability_settings_invalid')
     normalized.roles = normalized.roles.filter(r => r.name !== CAPABILITY)
-    requireGate(normalized.memberships.every(m => !m.slice(0,2).includes(CAPABILITY)), 'capability_memberships_invalid')
+    const creatorGrant=[CAPABILITY,expectedInventory.creator.name,true,false,false,expectedInventory.creator.bootstrapGrantor]
+    const grants=normalized.memberships.filter(m=>m.slice(0,2).includes(CAPABILITY))
+    requireGate(grants.length===1 && JSON.stringify(grants[0])===JSON.stringify(creatorGrant),'capability_memberships_invalid')
+    normalized.memberships=normalized.memberships.filter(m=>!m.slice(0,2).includes(CAPABILITY))
     for (const s of normalized.schemas) {
       const grants = s.acl.filter(a=>a.grantee === CAPABILITY)
       requireGate(grants.length === 1 && grants[0].privilege === 'USAGE' && !grants[0].grantable && grants[0].grantor === s.owner, 'capability_schema_grants_invalid')

@@ -12,7 +12,7 @@ Target is `bonxyxluzlxfkdetryoo`, `dongphugia-runtime`, Singapore, healthy Free
 Preview. `existing-state/baseline.json` contains only catalog metadata or hashes
 of definitions/settings, never table rows, credential values, passwords or role
 password hashes. It records 66 tables, 52 sequences, one view, eight existing
-recovery/application roles, schema owners/ACLs, relation structures and policies,
+recovery/application roles, schema owners/ACLs, relation structures, column-ACL fingerprints and policies,
 function definitions/ACL fingerprints, types, default privileges and memberships.
 The inventory query is explicitly normalized to UTC, ISO dates and a fixed
 search path. `baseline.sha256` records the canonical JSON fingerprint; execution
@@ -41,7 +41,7 @@ It grants schema USAGE on the two pinned schemas and SELECT on exactly the
 66 tables and 52 sequences. For tables already using RLS, it adds one
 permissive SELECT policy dedicated to this role. Existing flags/policies and
 all other role privileges remain unchanged. It adds no default grants,
-credential, login membership, business rows, migration history or old ledger.
+credential, backup-login membership, business rows, migration history or old ledger.
 It does not replay the seven empty-target migrations or either old prerequisite.
 
 A serializable transaction takes SHARE ROW EXCLUSIVE locks on the table set,
@@ -52,6 +52,17 @@ match. It checks direct ACL catalogs, shared ownership dependencies, effective
 DML/sequence privileges, schema/database creation and reachable privileged
 functions. It compares every table/sequence through SET ROLE dpg_backup with
 the privileged before state, then rechecks the privileged state and budget.
+Managed PostgreSQL 17 automatically gives its non-superuser creator a role
+administration edge. The manifest pins the existing postgres actor and bootstrap
+superuser identity. Exactly one provider-created dpg_backup → postgres ADMIN
+membership, with INHERIT FALSE and SET FALSE and the pinned bootstrap grantor,
+is accepted as the new role's management metadata. It gives no role access to
+the backup capability itself. For the RLS visibility probe only, the creator
+adds a separate INHERIT FALSE, SET TRUE, ADMIN FALSE self-grant under its own
+grantor identity, then removes that exact self-grant before final attestation.
+The provider auto-grant is neither edited nor removed. No other membership is
+accepted. Synthetic integration uses the same non-superuser CREATEROLE/BYPASSRLS
+administrator semantics and checks the transient SET grant is gone.
 Only complete success commits. A failure rolls back the active transaction.
 
 Table locks block table writes but do not freeze nextval. The Owner execution
@@ -92,8 +103,11 @@ This source never creates `dpg_backup_login`, changes a password, retrieves a
 secret or reuses the migration login for backup. Before `backup_restore`, a
 separately approved credential operation must establish a dedicated backup
 login with NOINHERIT, no administrative/BYPASSRLS attributes, connection limit
-one, default_transaction_read_only=on, no owned objects or direct ACLs and only
-membership permitting SET ROLE dpg_backup. The runtime URL must use that exact
+two (one keeper plus one dumper), default_transaction_read_only=on, no owned objects or direct ACLs and only
+membership with INHERIT FALSE permitting SET ROLE dpg_backup. Its sole
+administrative member may be the pinned provider-created postgres ADMIN edge
+with INHERIT FALSE/SET FALSE, under the same bootstrap grantor; no login
+inheritance or third-party membership is accepted. The runtime URL must use that exact
 login and exact project/direct or Singapore session-pooler endpoint. Existing
 age recipient/private key are consumed through protected variables/secrets.
 No credential is sent through chat, PRs, logs or command arguments.
@@ -126,8 +140,8 @@ and a 1.5 GiB memory ceiling. Necessary roles and auth.uid are inert local
 stubs with no login/admin/BYPASSRLS; neither keys nor database URLs are passed
 to that container. Public API definitions are restored there, never remotely.
 The actual current functional schema, policies, every table's data fingerprint
-and every sequence value/state must match the encrypted snapshot. Source owner
-ACLs are intentionally not applied inside the sandbox; this is a content and
+and every sequence value/state must match the encrypted snapshot. Source owner/ACL metadata is retained inside the encrypted dump. Those
+application owner/ACL commands are intentionally not applied inside the sandbox; this is a content and
 functional-definition recovery proof, not staff authorization acceptance.
 Future dpg_v1/Admin/order modules are not fabricated or required for this proof.
 

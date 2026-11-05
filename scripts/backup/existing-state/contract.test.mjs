@@ -14,6 +14,7 @@ function afterBootstrap() {
     r.acl.push({grantee:'dpg_backup',grantor:r.owner,privilege:'SELECT',grantable:false})
     if(r.rls)r.policies.push({name:POLICY,command:'r',permissive:true,roles:['dpg_backup'],usingHash:createHash('sha256').update('true').digest('hex'),checkHash:null})
   }
+  x.memberships.push(['dpg_backup',baseline.creator.name,true,false,false,baseline.creator.bootstrapGrantor])
   return x
 }
 const state=()=>[...tables,...sequences].map(r=>({identity:r.name,count:'1',hash:'a'.repeat(64)})).sort((a,b)=>a.identity.localeCompare(b.identity))
@@ -28,7 +29,7 @@ describe('existing-state backup contract',()=>{
     expect(()=>assertInventory(afterBootstrap(),true)).not.toThrow()
     expect(baseline.publicReadViews.map(v=>v.name)).toEqual(['extensions.pg_stat_statements','extensions.pg_stat_statements_info'])
   })
-  it.each(['role','write','grantable','missing','policy','schema','routine','existing_acl','membership','default'])('rejects unauthorized %s changes',kind=>{
+  it.each(['role','write','grantable','missing','policy','schema','routine','existing_acl','column_acl','creator_set','membership','default'])('rejects unauthorized %s changes',kind=>{
     const x=afterBootstrap()
     if(kind==='role')x.roles.find(r=>r.name==='dpg_backup').bypassRls=true
     if(kind==='write')x.relations.find(r=>r.kind==='r').acl.push({grantee:'dpg_backup',grantor:'dpg_migration',privilege:'INSERT',grantable:false})
@@ -38,6 +39,8 @@ describe('existing-state backup contract',()=>{
     if(kind==='schema')x.schemas[0].owner='other'
     if(kind==='routine')x.routines[0].definitionHash='b'.repeat(64)
     if(kind==='existing_acl')x.relations[0].acl[0].grantable=!x.relations[0].acl[0].grantable
+    if(kind==='column_acl')x.relations[0].columnAclHash='b'.repeat(64)
+    if(kind==='creator_set')x.memberships.find(m=>m[0]==='dpg_backup')[4]=true
     if(kind==='membership')x.memberships.push(['dpg_backup','dpg_runtime',false,false,true])
     if(kind==='default')x.defaults.push(['dpg_backup','dpg_app','r','unexpected'])
     expect(()=>assertInventory(x,true)).toThrow()
