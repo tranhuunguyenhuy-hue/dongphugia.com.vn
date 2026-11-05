@@ -172,6 +172,6 @@ transaction automatically. The `inspect` operation now also computes the same
 server-side table and sequence fingerprints, inside its existing READ ONLY
 transaction, without printing fingerprints, counts, rows, SQL or credentials.
 Fixed stage labels distinguish target, inventory and fingerprint; a small
-allowlist distinguishes client timeout, server statement timeout and lock
-timeout without printing raw errors. Failure leaves the transaction rolled back.
+allowlist distinguishes client timeout, server query cancellation and lock
+unavailability without printing raw errors. Failure leaves the transaction rolled back.
 This read-only diagnostic does not itself authorize a bootstrap retry.

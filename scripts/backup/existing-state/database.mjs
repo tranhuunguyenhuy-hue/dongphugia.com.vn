@@ -113,7 +113,7 @@ export async function inspect(client, report = () => {}) {
     stage='inventory';report(stage,'START');assertInventory(await readInventory(client));report(stage,'PASS')
     stage='fingerprint';report(stage,'START');await readState(client);report(stage,'PASS')
   } catch(error) {
-    const reason=error?.message==='Query read timeout'?'CLIENT_QUERY_TIMEOUT':error?.code==='57014'?'STATEMENT_TIMEOUT':error?.code==='55P03'?'LOCK_TIMEOUT':'UNCLASSIFIED'
+    const reason=error?.message==='Query read timeout'?'CLIENT_QUERY_TIMEOUT':error?.code==='57014'?'SERVER_QUERY_CANCELED':error?.code==='55P03'?'LOCK_UNAVAILABLE':'UNCLASSIFIED'
     report(stage,'FAIL',reason)
     throw error
   } finally { await client.query('rollback').catch(()=>{}) }
