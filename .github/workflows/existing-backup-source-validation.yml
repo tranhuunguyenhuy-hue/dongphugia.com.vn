@@ -1,0 +1,38 @@
+name: Existing backup source integration
+on:
+  pull_request:
+    paths:
+      - scripts/backup/existing-state/**
+      - scripts/backup/supabase-runtime-target.mjs
+      - scripts/backup/certificates/**
+      - .github/workflows/existing-backup-source-validation.yml
+      - .github/workflows/existing-state-backup.yml
+permissions:
+  contents: read
+concurrency:
+  group: existing-backup-validation-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  postgres:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Install public synthetic fixture tools
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install --no-install-recommends --yes age >/dev/null
+          docker pull postgres:17.6-bookworm@sha256:f3bd19c606e442c3d7bdfa8002e03fe260a1023351e0ea4598032022b68dd6e3
+      - name: Validate populated bootstrap and encrypted isolated restore
+        env:
+          POSTGRES_SNAPSHOT_INTEGRATION_IMAGE: postgres:17.6-bookworm@sha256:f3bd19c606e442c3d7bdfa8002e03fe260a1023351e0ea4598032022b68dd6e3
+          EXISTING_BACKUP_ARCHIVE_INTEGRATION: '1'
+        run: npx vitest run scripts/backup/existing-state
