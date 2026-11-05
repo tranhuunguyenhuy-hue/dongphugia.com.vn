@@ -6,7 +6,7 @@ import pg from 'pg'
 import { it, expect } from 'vitest'
 import { ADOPTED_CHECKPOINT_MIGRATIONS } from '../supabase-runtime-migrations.mjs'
 import { bootstrap, readInventory, readState, assertCapability, assertBackupLogin, backupInventory } from './database.mjs'
-import { assertInventory, assertStateEqual, fingerprint } from './contract.mjs'
+import { assertInventory, assertStateEqual, fingerprint, INVENTORY_SQL, POLICY } from './contract.mjs'
 import { IMAGE, runArchive } from './archive.mjs'
 
 const enabled=Boolean(process.env.POSTGRES_SNAPSHOT_INTEGRATION_IMAGE)
@@ -59,12 +59,31 @@ it.runIf(enabled)('preserves populated catalogue, rejects drift/incomplete RLS c
     expect((await client.query("select to_regrole('dpg_backup') is null as absent")).rows[0].absent).toBe(true)
     await root.query('alter role dpg_runtime_login connection limit 20')
     phase='rollback_unexpected_data_change'
+    let observedInventory
     const faulty=new Proxy(client,{get(target,key){if(key==='query')return async(sql,...args)=>{
       const result=await target.query(sql,...args)
+      if(sql===INVENTORY_SQL) { const candidate=Array.isArray(result)?result.at(-1):result; if(candidate.rows[0].inventory.roles.some(r=>r.name==='dpg_backup'))observedInventory=candidate.rows[0].inventory }
       if(typeof sql==='string' && sql.startsWith('create role dpg_backup'))await target.query('update dpg_app.products set price=1')
       return result
     };const value=target[key];return typeof value==='function'?value.bind(target):value}})
-    await rejectsWith(bootstrap(faulty,fingerprint(expected),expected),'data_preservation_failed')
+    try { await rejectsWith(bootstrap(faulty,fingerprint(expected),expected),'data_preservation_failed') }
+    catch(error) {
+      if(observedInventory) {
+        const actual=structuredClone(observedInventory)
+        actual.roles=actual.roles.filter(r=>r.name!=='dpg_backup')
+        actual.memberships=actual.memberships.filter(m=>!m.slice(0,2).includes('dpg_backup'))
+        for(const s of actual.schemas)s.acl=s.acl.filter(a=>a.grantee!=='dpg_backup')
+        for(const r of actual.relations){r.acl=r.acl.filter(a=>a.grantee!=='dpg_backup');r.policies=r.policies.filter(p=>p.name!==POLICY)}
+        for(const key of Object.keys(expected))if(fingerprint(expected[key])!==fingerprint(actual[key])) {
+          process.stdout.write(`SYNTHETIC_METADATA_DIFF section=${key}\n`)
+          if(Array.isArray(expected[key]))for(let i=0;i<expected[key].length;i++)if(fingerprint(expected[key][i])!==fingerprint(actual[key][i])) {
+            const fields=Object.keys(expected[key][i]).filter(k=>fingerprint(expected[key][i][k])!==fingerprint(actual[key][i]?.[k]))
+            process.stdout.write(`SYNTHETIC_METADATA_DIFF section=${key} index=${i} fields=${fields.join(',')}\n`)
+          }
+        }
+      }
+      throw error
+    }
     assertStateEqual(original,await readState(client,expected),expected)
     expect((await client.query("select to_regrole('dpg_backup') is null as absent")).rows[0].absent).toBe(true)
     phase='reject_restrictive_rls_data_loss'
