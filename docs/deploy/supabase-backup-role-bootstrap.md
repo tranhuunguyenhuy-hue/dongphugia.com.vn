@@ -119,3 +119,11 @@ It does not invoke the migration runner or create any role or ledger.
 A successful diagnostic does not establish schema equivalence or complete
 bootstrap acceptance. Bootstrap retry still requires a fresh Owner comment
 for the exact source and independently verified prefix.
+
+The shared Node target parser now supplies the pinned official Supabase CA
+with `rejectUnauthorized: true`. The CA provenance/fingerprint is recorded in
+`scripts/backup/certificates/README.md`. This addresses the connection-phase
+`SELF_SIGNED_CERT_IN_CHAIN` observed in diagnostic run `41999982149` without
+changing database credentials or disabling certificate/hostname verification.
+The psql/pg_dump wrappers retain their existing behavior; this bounded repair
+changes only the Node PostgreSQL client trust configuration.
