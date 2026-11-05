@@ -45,3 +45,7 @@ export function preservePublicApi(rows,inventory,requirePreservedSql=false) {
     return {...row,restorePrivilegesSql}
   })
 }
+
+export function definitionsSql(rows) {
+  return rows.map(row=>row.definition.trimEnd()+';').join('\n')+'\n'
+}

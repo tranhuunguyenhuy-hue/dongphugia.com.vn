@@ -4,7 +4,7 @@ import { closeSync, mkdtempSync, openSync, readFileSync, writeFileSync, rmSync, 
 import path from 'node:path'
 import pg from 'pg'
 import { baseline, CONTRACT, fingerprint, ident, requireGate, restoreShape, assertStateEqual, assertStateShape, assertSnapshotInventory, tablesFor, sequencesFor } from './contract.mjs'
-import { preservePublicApi } from './public-api.mjs'
+import { preservePublicApi, definitionsSql } from './public-api.mjs'
 import { connection, assertTarget, readState, backupInventory, assertBackupLogin, assertCapability, API_SQL } from './database.mjs'
 
 export const IMAGE='postgres:17.6-bookworm@sha256:f3bd19c606e442c3d7bdfa8002e03fe260a1023351e0ea4598032022b68dd6e3'
@@ -126,7 +126,7 @@ async function restore(input, expected = baseline) {
     command('docker',['exec','-i',name,'pg_restore','-U','postgres','-d','postgres','--exit-on-error','--no-owner','--no-privileges'],readFileSync(path.join(workspace,'snapshot.dump')))
     archiveStage='restore_public_api'
     const api=preservePublicApi(JSON.parse(readFileSync(path.join(workspace,'public-api.json'),'utf8')),state.inventory,true)
-    command('docker',psql,api.map(row=>row.definition).join('\n'))
+    command('docker',psql,definitionsSql(api))
     const {INVENTORY_SQL,dataStateSql}=await import('./contract.mjs')
     archiveStage='restore_inventory'
     const observedInventory=JSON.parse(command('docker',psql,`begin read only;\n${INVENTORY_SQL}\nrollback;`).trim())
