@@ -57,7 +57,7 @@ it.runIf(enabled)('preserves populated catalogue, rejects drift/incomplete RLS c
     await root.query('alter role dpg_runtime_login connection limit 9')
     await expect(bootstrap(client,fingerprint(expected),expected)).rejects.toThrow('inventory_drift')
     expect((await client.query("select to_regrole('dpg_backup') is null as absent")).rows[0].absent).toBe(true)
-    await root.query('alter role dpg_runtime_login connection limit 20')
+    await root.query('alter role dpg_runtime_login connection limit 10')
     const preflightInventory=await capture()
     for(const key of Object.keys(expected))if(fingerprint(expected[key])!==fingerprint(preflightInventory[key])) {
       process.stdout.write(`SYNTHETIC_PREFLIGHT_DIFF section=${key}\n`)
