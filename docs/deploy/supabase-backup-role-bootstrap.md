@@ -127,3 +127,12 @@ with `rejectUnauthorized: true`. The CA provenance/fingerprint is recorded in
 changing database credentials or disabling certificate/hostname verification.
 The psql/pg_dump wrappers retain their existing behavior; this bounded repair
 changes only the Node PostgreSQL client trust configuration.
+
+## Superseding source candidate for the recovered database
+
+The PM approved a current-state backup plan on 2026-11-05. The recovered target
+has populated catalogue tables and eight existing roles, so this historical
+empty-target/two-migration procedure cannot be retried as-is. See
+[existing-state-backup.md](existing-state-backup.md) for the separate candidate,
+exact metadata baseline, new approval syntax and the remaining execution gates.
+This record does not authorize the replacement candidate's database execution.
