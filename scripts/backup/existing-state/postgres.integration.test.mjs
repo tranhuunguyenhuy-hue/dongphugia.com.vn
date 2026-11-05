@@ -136,16 +136,20 @@ it.runIf(enabled)('preserves populated catalogue, rejects drift/incomplete RLS c
     if(archiveEnabled) {
       phase='synthetic_tls_and_login'
       temporary=mkdtempSync('/dev/shm/dpg-existing-test-')
+      phase='synthetic_generate_tls'
       execFileSync('openssl',['req','-x509','-newkey','rsa:2048','-nodes','-days','1','-subj','/CN=localhost','-addext','subjectAltName=IP:127.0.0.1,DNS:localhost','-keyout',path.join(temporary,'server.key'),'-out',path.join(temporary,'server.crt')],{stdio:'ignore'})
+      phase='synthetic_copy_tls'
       docker('cp',path.join(temporary,'server.key'),`${name}:/tmp/server.key`)
       docker('cp',path.join(temporary,'server.crt'),`${name}:/tmp/server.crt`)
       docker('exec',name,'chown','postgres:postgres','/tmp/server.key','/tmp/server.crt')
       docker('exec',name,'chmod','600','/tmp/server.key')
+      phase='synthetic_configure_tls'
       await root.query("alter system set ssl_cert_file='/tmp/server.crt'")
       await root.query("alter system set ssl_key_file='/tmp/server.key'")
       await root.query('alter system set ssl=on')
       await root.query('select pg_reload_conf()')
       await new Promise(r=>setTimeout(r,500))
+      phase='synthetic_generate_age_identity'
       const identityFile=path.join(temporary,'test-identity')
       execFileSync('age-keygen',['-o',identityFile],{stdio:'ignore'})
       process.env.AGE_RECIPIENT=execFileSync('age-keygen',['-y',identityFile],{encoding:'utf8',stdio:['ignore','pipe','ignore']}).trim()
