@@ -58,6 +58,14 @@ it.runIf(enabled)('preserves populated catalogue, rejects drift/incomplete RLS c
     await expect(bootstrap(client,fingerprint(expected),expected)).rejects.toThrow('inventory_drift')
     expect((await client.query("select to_regrole('dpg_backup') is null as absent")).rows[0].absent).toBe(true)
     await root.query('alter role dpg_runtime_login connection limit 20')
+    const preflightInventory=await capture()
+    for(const key of Object.keys(expected))if(fingerprint(expected[key])!==fingerprint(preflightInventory[key])) {
+      process.stdout.write(`SYNTHETIC_PREFLIGHT_DIFF section=${key}\n`)
+      if(Array.isArray(expected[key]))for(let i=0;i<expected[key].length;i++)if(fingerprint(expected[key][i])!==fingerprint(preflightInventory[key][i])) {
+        const fields=Object.keys(expected[key][i]).filter(k=>fingerprint(expected[key][i][k])!==fingerprint(preflightInventory[key][i]?.[k]))
+        process.stdout.write(`SYNTHETIC_PREFLIGHT_DIFF section=${key} index=${i} fields=${fields.join(',')}\n`)
+      }
+    }
     phase='rollback_unexpected_data_change'
     let observedInventory
     const faulty=new Proxy(client,{get(target,key){if(key==='query')return async(sql,...args)=>{
