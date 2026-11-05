@@ -1,6 +1,6 @@
 import pg from 'pg'
 import { parseSupabaseRuntimeTarget } from '../supabase-runtime-target.mjs'
-import { baseline, baselineSha, INVENTORY_SQL, assertInventory, assertSnapshotInventory, assertStateEqual, assertStateShape, bootstrapStatements, dataStateSql, tables, sequences, tablesFor, sequencesFor, qualified, requireGate, fingerprint } from './contract.mjs'
+import { baseline, baselineSha, INVENTORY_SQL, assertInventory, assertSnapshotInventory, assertStateEqual, assertStateShape, capabilityRoleStatement, bootstrapStatements, dataStateSql, tables, sequences, tablesFor, sequencesFor, qualified, requireGate, fingerprint } from './contract.mjs'
 
 export function connection(value, backup = false) {
   if (!backup) return parseSupabaseRuntimeTarget(value)
@@ -114,7 +114,13 @@ export async function bootstrap(client, expectedSha, expected = baseline, report
     stage='baseline_fingerprint'; emit(stage,'START')
     const before = await readState(client, expected)
     stage='capability_grants'; emit(stage,'START')
+    await client.query(capabilityRoleStatement())
+    // PostgreSQL may record different grantors when the session user is a
+    // member of the object-owner role through multiple membership paths.
+    // Use the owner explicitly so the ACL inventory is deterministic.
+    await client.query('set local role dpg_migration')
     for (const sql of bootstrapStatements(expected)) await client.query(sql)
+    await client.query('reset role')
     stage='capability_inventory_read'; emit(stage,'START')
     const grantedInventory=await readInventory(client)
     emit(stage,'PASS')

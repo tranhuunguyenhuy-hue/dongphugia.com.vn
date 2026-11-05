@@ -37,12 +37,20 @@ it.runIf(enabled)('preserves populated catalogue, rejects drift/incomplete RLS c
       set search_path to "$user",public,extensions;`)
     for(const file of ADOPTED_CHECKPOINT_MIGRATIONS)await client.query(readFileSync(`supabase/migrations/${file}`,'utf8'))
     await client.query('reset role')
+    await root.query('grant dpg_migration to postgres with admin true, inherit false, set false granted by supabase_admin')
+    await root.query('set role postgres')
+    await root.query('grant dpg_migration to postgres with admin false, inherit true, set true')
+    await root.query('reset role')
     await client.query(`with category as (insert into dpg_app.categories(name,slug) values('Synthetic category','synthetic-category') returning id)
       insert into dpg_app.products(sku,name,slug,category_id,price,description) select 'SYNTHETIC-BACKUP-1','Synthetic populated product','synthetic-backup-1',id,123456,'Synthetic HTML content preserved' from category`)
     client=new pg.Client({host:'127.0.0.1',port,user:'postgres',database:'postgres',connectionTimeoutMillis:5000})
     await client.connect()
     const capture=async()=>{await client.query('begin read only');try{return await readInventory(client)}finally{await client.query('rollback')}}
     const expected=await capture()
+    expect(expected.memberships.filter(m=>m[0]==='dpg_migration'&&m[1]==='postgres')).toEqual([
+      ['dpg_migration','postgres',false,true,true,'postgres'],
+      ['dpg_migration','postgres',true,false,false,'supabase_admin'],
+    ])
     expect(expected.relations.find(r=>r.name==='dpg_app.products_id_seq').acl.filter(a=>a.grantee==='dpg_migration').map(a=>a.privilege)).toEqual(['SELECT','UPDATE','USAGE'])
     const original=await readState(client,expected)
     const rejectsWith=async(promise,wanted)=>{
@@ -107,7 +115,16 @@ it.runIf(enabled)('preserves populated catalogue, rejects drift/incomplete RLS c
     expect((await client.query("select to_regrole('dpg_backup') is null as absent")).rows[0].absent).toBe(true)
     await root.query('revoke update(price) on dpg_app.products from public')
     phase='commit_exact_capability'
-    await bootstrap(client,fingerprint(expected),expected)
+    const bootstrapTrace=[]
+    const tracedClient=new Proxy(client,{get(target,key){if(key==='query')return async(sql,...args)=>{bootstrapTrace.push(sql);return target.query(sql,...args)};const value=target[key];return typeof value==='function'?value.bind(target):value}})
+    await bootstrap(tracedClient,fingerprint(expected),expected)
+    const roleCreateIndex=bootstrapTrace.findIndex(sql=>typeof sql==='string'&&/^create role dpg_backup\b/i.test(sql.trim()))
+    const ownerRoleIndex=bootstrapTrace.findIndex(sql=>typeof sql==='string'&&sql.trim().toLowerCase()==='set local role dpg_migration')
+    const ownerDdlIndex=bootstrapTrace.findIndex(sql=>typeof sql==='string'&&/^(grant usage|grant select|create policy)/i.test(sql.trim()))
+    expect(roleCreateIndex).toBeGreaterThanOrEqual(0)
+    expect(ownerRoleIndex).toBeGreaterThan(roleCreateIndex)
+    expect(ownerDdlIndex).toBeGreaterThan(ownerRoleIndex)
+    expect(bootstrapTrace.findIndex(sql=>typeof sql==='string'&&sql.trim().toLowerCase()==='reset role')).toBeGreaterThan(ownerDdlIndex)
     await client.query('begin read only')
     assertInventory(await readInventory(client),true,expected)
     await assertCapability(client,expected)

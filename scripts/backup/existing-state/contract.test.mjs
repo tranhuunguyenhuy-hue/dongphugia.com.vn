@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { describe, it, expect } from 'vitest'
-import { baseline, baselineSha, bootstrapStatements, assertInventory, assertStateEqual, dataStateSql, restoreShape, fingerprint, POLICY, tables, sequences } from './contract.mjs'
+import { baseline, baselineSha, capabilityRoleStatement, bootstrapStatements, assertInventory, assertStateEqual, dataStateSql, restoreShape, fingerprint, POLICY, tables, sequences } from './contract.mjs'
 import { connection } from './database.mjs'
 import { validateApproval } from './execution-gate.mjs'
 import { validateEnvelope } from './archive.mjs'
@@ -45,8 +45,10 @@ describe('existing-state backup contract',()=>{
     if(kind==='default')x.defaults.push(['dpg_backup','dpg_app','r','unexpected'])
     expect(()=>assertInventory(x,true)).toThrow()
   })
-  it('generates only capability DDL/SELECT grants, with no data write or legacy history adoption',()=>{
+  it('creates the loginless capability separately from owner-context SELECT grants and policies',()=>{
+    expect(capabilityRoleStatement()).toBe('create role dpg_backup nologin nosuperuser nocreatedb nocreaterole noinherit noreplication nobypassrls connection limit 0')
     const sql=bootstrapStatements().join(';\n')
+    expect(sql).not.toMatch(/create role/i)
     expect(sql).not.toMatch(/\b(insert|update|delete|truncate|drop|alter|bypassrls|login)\b/i)
     expect(sql).not.toContain('runtime_migration_ledger')
     expect(sql).not.toContain('dpg_backup_login')

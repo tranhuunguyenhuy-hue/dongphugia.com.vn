@@ -40,9 +40,13 @@ export const sequencesFor = value => value.relations.filter(r => r.kind === 'S')
 export const tables = tablesFor(baseline)
 export const sequences = sequencesFor(baseline)
 
+export function capabilityRoleStatement() {
+  return 'create role dpg_backup nologin nosuperuser nocreatedb nocreaterole noinherit noreplication nobypassrls connection limit 0'
+}
+
 export function bootstrapStatements(value = baseline) {
   validateBaseline(value)
-  const sql = ['create role dpg_backup nologin nosuperuser nocreatedb nocreaterole noinherit noreplication nobypassrls connection limit 0']
+  const sql = []
   for (const s of value.schemas) sql.push(`grant usage on schema ${ident(s.name)} to dpg_backup`)
   for (const r of value.relations) {
     if (['r','p'].includes(r.kind)) {
