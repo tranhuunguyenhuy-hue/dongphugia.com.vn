@@ -163,3 +163,15 @@ remain as a checkpoint. If a post-commit issue occurs, freeze further operations
 and propose an exact privilege rollback separately; never alter catalogue rows
 or undo history automatically. Production, DNS, cloud billing, media bytes,
 checkout/orders/CMS schema and catalogue changes are outside this candidate.
+
+## Read-only fingerprint diagnostic after a failed bootstrap
+
+Run 42041540394 failed in its capability transaction with a sanitized generic
+error. Post-run checks found no backup role or legacy ledger. Do not retry the
+transaction automatically. The `inspect` operation now also computes the same
+server-side table and sequence fingerprints, inside its existing READ ONLY
+transaction, without printing fingerprints, counts, rows, SQL or credentials.
+Fixed stage labels distinguish target, inventory and fingerprint; a small
+allowlist distinguishes client timeout, server statement timeout and lock
+timeout without printing raw errors. Failure leaves the transaction rolled back.
+This read-only diagnostic does not itself authorize a bootstrap retry.
