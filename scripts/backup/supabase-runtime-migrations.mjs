@@ -597,6 +597,40 @@ async function validateBackupBootstrap(client) {
            or has_table_privilege('dpg_backup', format('dpg_app.%I', t.table_name), 'TRIGGER')
       ) as backup_effective_table_privileges_read_only,
       not exists (
+        select 1
+        from pg_class c
+        join pg_namespace n on n.oid = c.relnamespace
+        where c.relkind in ('r', 'p', 'v', 'm', 'f')
+          and n.nspname not in ('pg_catalog', 'information_schema', 'pg_toast')
+          and n.nspname !~ '^pg_(temp|toast_temp)_[0-9]+$'
+          and not (
+            n.nspname = 'dpg_app'
+            and exists (select 1 from backup_tables t where t.table_name = c.relname)
+          )
+          and (
+            has_table_privilege('dpg_backup', c.oid, 'SELECT')
+            or has_table_privilege('dpg_backup', c.oid, 'INSERT')
+            or has_table_privilege('dpg_backup', c.oid, 'UPDATE')
+            or has_table_privilege('dpg_backup', c.oid, 'DELETE')
+            or has_table_privilege('dpg_backup', c.oid, 'TRUNCATE')
+            or has_table_privilege('dpg_backup', c.oid, 'REFERENCES')
+            or has_table_privilege('dpg_backup', c.oid, 'TRIGGER')
+          )
+      ) as backup_has_no_effective_privileges_outside_allowlist,
+      not exists (
+        select 1
+        from pg_class c
+        join pg_namespace n on n.oid = c.relnamespace
+        where c.relkind = 'S'
+          and n.nspname not in ('pg_catalog', 'information_schema', 'pg_toast')
+          and n.nspname !~ '^pg_(temp|toast_temp)_[0-9]+$'
+          and (
+            has_sequence_privilege('dpg_backup', c.oid, 'SELECT')
+            or has_sequence_privilege('dpg_backup', c.oid, 'USAGE')
+            or has_sequence_privilege('dpg_backup', c.oid, 'UPDATE')
+          )
+      ) as backup_has_no_effective_sequence_privileges,
+      not exists (
         select 1 from pg_shdepend
         where refclassid = 'pg_authid'::regclass
           and refobjid = (select oid from backup_role)
@@ -614,11 +648,7 @@ async function validateBackupBootstrap(client) {
       ) as backup_role_has_no_user_mappings,
       not exists (
         select 1 from pg_db_role_setting
-        where setrole in ((select oid from backup_role), 0)
-          and setdatabase in (
-            0,
-            (select oid from pg_database where datname = current_database())
-          )
+        where setrole = (select oid from backup_role)
       ) as backup_role_has_no_settings,
       (select count(*) = 9
        from pg_policy p

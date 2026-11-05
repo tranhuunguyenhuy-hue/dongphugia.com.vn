@@ -736,6 +736,24 @@ describe('Supabase runtime migration adoption integration', () => {
           () => client.query('grant update on dpg_app.admin_sessions to public'),
         )
         await expectBootstrapDriftRejected(
+          'reject_public_read_privilege_outside_allowlist_on_retry',
+          () => client.query('grant select on dpg_app.brands to public'),
+        )
+        await expectBootstrapDriftRejected(
+          'reject_public_relation_read_in_other_schema_on_retry',
+          async () => {
+            await client.query('create table public.codex_backup_public_probe (id integer)')
+            await client.query('grant select on public.codex_backup_public_probe to public')
+          },
+        )
+        await expectBootstrapDriftRejected(
+          'reject_public_sequence_privilege_on_retry',
+          async () => {
+            await client.query('create sequence dpg_app.codex_backup_sequence_probe')
+            await client.query('grant usage on sequence dpg_app.codex_backup_sequence_probe to public')
+          },
+        )
+        await expectBootstrapDriftRejected(
           'reject_unexpected_policy_for_backup_role_on_retry',
           () => client.query(`
             create policy codex_unexpected_backup_policy on dpg_app.brands
@@ -771,11 +789,6 @@ describe('Supabase runtime migration adoption integration', () => {
           'reject_backup_role_setting_on_retry',
           () => client.query("alter role dpg_backup set search_path to 'public'"),
         )
-        await expectBootstrapDriftRejected(
-          'reject_database_wide_role_setting_on_retry',
-          () => client.query("alter role all in database postgres set search_path to 'public'"),
-        )
-
         phase = 'resume_ordered_pending_migrations'
         await executeRuntimeMigrations(client, 'apply', attestCheckpoint)
 

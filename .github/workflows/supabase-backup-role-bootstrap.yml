@@ -100,6 +100,8 @@ jobs:
             --arg actor 'tranhuunguyenhuy-hue' \
             '.[] | select(.id == $id and .user.login == $actor)' "$comments_json")"
           approval_time="$(jq -r '.created_at' <<<"$approval_json")"
+          approval_updated_time="$(jq -r '.updated_at' <<<"$approval_json")"
+          test "$approval_time" = "$approval_updated_time"
           approval_epoch="$(date -u -d "$approval_time" +%s)"
           test "$approval_epoch" -gt "$merge_epoch"
           approval_body="$(jq -r '.body' <<<"$approval_json")"
@@ -107,14 +109,18 @@ jobs:
             | grep -E "^BACKUP-BOOTSTRAP-EXECUTE: sha=$APPROVED_SOURCE_SHA prefix=$EXPECTED_LEDGER_PREFIX nonce=[0-9a-f]{32}$" || true)"
           test "$(printf '%s\n' "$matching_approval" | sed '/^$/d' | wc -l | tr -d ' ')" = '1'
           nonce="${matching_approval##*nonce=}"
-          if jq -e --arg claim "BACKUP-BOOTSTRAP-CLAIMED: nonce=$nonce" \
-            'any(.[]; .body | contains($claim))' "$comments_json" >/dev/null; then
-            echo 'BACKUP_BOOTSTRAP_PREFLIGHT status=FAIL reason=approval_nonce_already_claimed' >&2
+          if jq -e \
+            --arg claim_id "approval_comment_id=$APPROVAL_COMMENT_ID " \
+            --arg claim_nonce "nonce=$nonce " \
+            'any(.[]; (.body | contains("BACKUP-BOOTSTRAP-CLAIMED:"))
+              and ((.body | contains($claim_id)) or (.body | contains($claim_nonce))))' \
+            "$comments_json" >/dev/null; then
+            echo 'BACKUP_BOOTSTRAP_PREFLIGHT status=FAIL reason=approval_already_claimed' >&2
             exit 1
           fi
 
           gh api --method POST "repos/$GITHUB_REPOSITORY/issues/$ISSUE_NUMBER/comments" \
-            -f body="BACKUP-BOOTSTRAP-CLAIMED: nonce=$nonce sha=$APPROVED_SOURCE_SHA prefix=$EXPECTED_LEDGER_PREFIX run=$GITHUB_RUN_ID attempt=$GITHUB_RUN_ATTEMPT" \
+            -f body="BACKUP-BOOTSTRAP-CLAIMED: approval_comment_id=$APPROVAL_COMMENT_ID nonce=$nonce sha=$APPROVED_SOURCE_SHA prefix=$EXPECTED_LEDGER_PREFIX run=$GITHUB_RUN_ID attempt=$GITHUB_RUN_ATTEMPT" \
             >/dev/null
           rm -f "$issue_json" "$comments_json" "$pulls_json"
           echo "source_sha=$APPROVED_SOURCE_SHA" >>"$GITHUB_OUTPUT"
@@ -129,6 +135,7 @@ jobs:
     permissions:
       contents: read
       issues: write
+      pull-requests: read
 
   bootstrap:
     name: Apply only the two backup prerequisite migrations
@@ -141,6 +148,15 @@ jobs:
       contents: read
       deployments: write
     steps:
+      - name: Reject workflow reruns that bypass one-time approval
+        env:
+          WORKFLOW_TRIGGERING_ACTOR: ${{ github.triggering_actor }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_RUN_ATTEMPT" = '1'
+          test "$WORKFLOW_TRIGGERING_ACTOR" = 'tranhuunguyenhuy-hue'
+
       - name: Check out the exact approved source
         uses: actions/checkout@v4
         with:

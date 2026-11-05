@@ -44,11 +44,13 @@ bootstrap.
   created after the exact PR merge time, with one line in this form:
   `BACKUP-BOOTSTRAP-EXECUTE: sha=<40-character-merged-sha> prefix=<absent|7|8|9> nonce=<32-lowercase-hex>`.
   Dispatch must provide that comment's exact ID and the same SHA and prefix.
-  Preflight verifies the comment author, timestamp, SHA, and approved prefix,
-  then claims the nonce with a run/attempt comment before the database job
-  starts. A claimed nonce can never be reused; each retry needs a new exact
-  Owner comment. The current Project Owner must dispatch the workflow from
-  `main`.
+  Preflight verifies the comment author, unchanged creation/update timestamp,
+  SHA, and approved prefix, then claims both the comment ID and nonce with a
+  run/attempt comment before the database job starts. A claimed ID or nonce
+  can never be reused; each retry needs a new exact Owner comment and a new
+  workflow dispatch. GitHub job/workflow re-runs are rejected so they cannot
+  skip the preflight claim. The current Project Owner must dispatch the
+  workflow from `main`.
 - `expected_ledger_prefix` must match the pre-run custom ledger state:
   `absent`, `7`, `8`, or `9`. A retry is a separate Owner decision using the
   exact observed prefix. A non-prefix, checksum mismatch, schema drift, or
@@ -68,8 +70,10 @@ The runner accepts only the exact nine-entry ledger prefix and verifies the
 backup role remains NOLOGIN, has no role memberships, owns no objects, has no
 default privileges or role settings, and has only the exact SELECT grants and
 policies. It scans all direct ACL catalogs, rejects every other direct ACL and
-policy on the nine protected tables, and verifies the four `dpg_readonly`
-SELECT grants and database size. The workflow summary reports the number of
+policy on the nine protected tables, rejects effective read/write privileges
+on non-system tables outside the nine-table allowlist, and rejects effective
+access to other sequences. It verifies the four `dpg_readonly` SELECT grants
+and database size. The workflow summary reports the number of
 migrations applied for the approved starting prefix (`absent`/`7`: two, `8`:
 one, `9`: zero). Logs and summary contain no row data, connection URL, or
 secret.
