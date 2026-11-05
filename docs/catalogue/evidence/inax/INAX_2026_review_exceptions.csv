@@ -1,0 +1,6 @@
+pdf_page,code_or_term,status,reason
+5,ECO-X,EXCLUDED_FALSE_POSITIVE,Marketing or series label on contents page; no independent product card
+5,S-LINE,EXCLUDED_FALSE_POSITIVE,Marketing or series label on contents page; no independent product card
+27,AC-514A+CW-S15VN,REVIEW,Combo appears in price table but visual row-to-price pairing requires high-resolution review; do not conflate with AC-514VAN
+80-83,multiple codes,REVIEW,Compatibility tables rather than independent priced product listings; each candidate still requires classification
+84,multiple codes,REVIEW,Technical drawings and compatibility content; no independent price pairing confirmed

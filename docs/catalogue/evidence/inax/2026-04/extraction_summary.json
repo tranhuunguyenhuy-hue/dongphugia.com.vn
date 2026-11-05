@@ -1,0 +1,25 @@
+{
+  "pdf_sha256": "c9e6ccba1bb8f817b3bd09e0533e5002620172ec88b21b8461388ca63699da67",
+  "pdf_pages": 107,
+  "raw_occurrences_preserved": 2348,
+  "visual_overlay_occurrences": 7,
+  "occurrences": 2355,
+  "distinct_sku_candidates": 657,
+  "confirmed_price_skus": 207,
+  "unresolved_price_skus": 450,
+  "conflicting_price_skus": 0,
+  "exceptions": 456,
+  "failed_pages": 0,
+  "coordinate_misses": 1,
+  "files_sha256": {
+    "sku_occurrences.csv": "30d65c7a60b903b4c4c940739f6f9b79a400f0d37d12706f86fc121e2cf047dc",
+    "sku_occurrences_checkpoint_p070.csv": "6f65958f174a4f31196c74d506904e1b193f48f3e0add06d3ce933cf120a76e0",
+    "sku_occurrences_checkpoint_p107.csv": "30d65c7a60b903b4c4c940739f6f9b79a400f0d37d12706f86fc121e2cf047dc",
+    "page_coverage.csv": "44bfdb5880060f41d2b17cd4b73cb35fa6bcfedd75f8a4f3201a5c2102c9d847",
+    "catalogue_manifest.csv": "9130e1bba4c546655b4d4e2a2ebccc4f8ddad98bf7a76cab4d2cb7a0a2628094",
+    "extraction_exceptions.csv": "9097d8618352e6b7f01ec1bc52466b26015a56392c40db46a358724e335b90f1",
+    "sku_occurrences_checkpoint_p035.csv": "717bbfec2eb1c24143463e3338f244d5e7847bea863e9b0cf4fdd5a6e322d65b",
+    "catalogue_skus.csv": "6b2084a0b5a32fe3b32ee32c6f4ec738744bded4fac974b4faf48eccc01b1d0f"
+  },
+  "generated_at_utc": "2026-11-02T17:35:00.632011+00:00"
+}

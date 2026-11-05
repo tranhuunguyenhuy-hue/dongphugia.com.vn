@@ -1,0 +1,22 @@
+{
+  "source_catalogue_id": "INAX-VN-BATHROOM-2025-09",
+  "pdf_sha256": "ab1fa49d0b2dc9195bb918f6f375ae2a3cc00d24f9f841f096627e35454d2637",
+  "pdf_pages": 105,
+  "occurrences": 2474,
+  "distinct_sku_candidates": 697,
+  "paired_price_skus": 378,
+  "unresolved_price_skus": 319,
+  "conflicting_price_skus": 0,
+  "exceptions": 348,
+  "failed_pages": 0,
+  "files_sha256": {
+    "sku_occurrences.csv": "abe299db317d15b844fabf71dcfe34692c8253a47e8e5cc72d30aa4da4432d3b",
+    "sku_occurrences_checkpoint_p070.csv": "9202f804583064b4cc18222ac84b4fad865cb2f90f2914fece0bec76402231ce",
+    "sku_occurrences_checkpoint_p105.csv": "abe299db317d15b844fabf71dcfe34692c8253a47e8e5cc72d30aa4da4432d3b",
+    "page_coverage.csv": "926e534ce5cc526e42ecdb9de8d1ab0a8366de1d3caef82dfb7a59e611eeec14",
+    "catalogue_manifest.csv": "45ccea1a4efdac12daf9e773b3d031ba7c5721b6c03050af49eb5b2ddfeb9145",
+    "extraction_exceptions.csv": "8e33782dfa595077f907d765c51f78d43f6513b7465a844c129227050d03666c",
+    "sku_occurrences_checkpoint_p035.csv": "1cead6a6cf40294c3d7e7f572b7298c9849959cf00ef6c12ae46af7090c069d5",
+    "catalogue_skus.csv": "b0e485883702e3f5a9094b503cdee9a2e68b0e6f32cc78ea7f200c9d5fbc1287"
+  }
+}

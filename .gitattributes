@@ -2,3 +2,11 @@
 *.js text eol=lf
 *.sh text eol=lf
 bin/* text eol=lf
+docs/catalogue/evidence/inax/INAX_2026_sanitary_sku_prices.csv -text
+docs/catalogue/evidence/inax/INAX_2026_page_audit.csv -text
+docs/catalogue/evidence/inax/INAX_2026_products_verified.csv -text
+docs/catalogue/evidence/inax/INAX_2026_card_candidates.csv -text
+docs/catalogue/evidence/inax/2026-04/*.csv -text
+docs/catalogue/evidence/inax/2024-09/*.csv -text
+docs/catalogue/evidence/inax/2025-09/*.csv -text
+docs/catalogue/evidence/inax/INAX_2024_2026_code_reconciliation.csv -text
