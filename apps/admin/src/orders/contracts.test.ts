@@ -66,7 +66,52 @@ describe('Admin order inbox transport contracts', () => {
     expect(parseOrderRequestStatus('not-a-status')).toBeNull()
     expect(allowedOrderRequestStatusTransitions('pending')).toEqual(['received', 'cancelled'])
     expect(allowedOrderRequestStatusTransitions('received')).toEqual(['cancelled'])
-    expect(allowedOrderRequestStatusTransitions('confirmed')).toEqual([])
+    expect(allowedOrderRequestStatusTransitions('confirmed')).toEqual(['inventory_check', 'cancelled'])
+    expect(allowedOrderRequestStatusTransitions('inventory_check')).toEqual(['completed', 'cancelled'])
+  })
+
+  it('requires an immutable commercial snapshot before accepting a confirmed order', () => {
+    const detail = {
+      order: {
+        ...summary,
+        status: 'confirmed',
+        customer_email: null,
+        customer_address: null,
+        note: null,
+        subtotal: 246000,
+        discount: 6000,
+        shipping_fee: 0,
+        shipping_fee_status: 'pending_confirmation',
+        internal_note: null,
+        updated_at: summary.created_at,
+      },
+      items: [{
+        id: 2,
+        product_id: 4,
+        product_name: 'Product',
+        product_sku: 'SKU-1',
+        quantity: 2,
+        unit_price: 123000,
+        total_price: 246000,
+        commercial_snapshot: { install_option: 'install' },
+      }],
+      confirmation: {
+        base_total: 240000,
+        shipping_fee: 15000,
+        installation_fees: [{
+          order_item_id: 2,
+          product_sku: 'SKU-1',
+          install_option: 'install',
+          fee_per_unit: 20000,
+          line_total: 40000,
+        }],
+        confirmed_total: 295000,
+        confirmed_at: summary.created_at,
+      },
+    }
+    expect(parseAdminOrderDetail(detail)?.confirmation?.confirmed_total).toBe(295000)
+    expect(parseAdminOrderDetail({ ...detail, confirmation: null })).toBeNull()
+    expect(parseAdminOrderDetail({ ...detail, confirmation: { ...detail.confirmation, confirmed_total: -1 } })).toBeNull()
   })
 
   it('normalizes bounded order search and rejects control characters or oversized input', () => {

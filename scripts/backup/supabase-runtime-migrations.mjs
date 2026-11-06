@@ -39,6 +39,7 @@ export const EXPECTED_RUNTIME_MIGRATIONS = [
   '20261016090000_leo560_preview_rls_hardening.sql',
   '20261104154854_phase2_guest_order_intake.sql',
   '20261104190000_phase2_admin_order_inbox.sql',
+  '20261106144139_phase2_admin_order_confirmation.sql',
   '20261106210000_phase2_admin_sales_search.sql',
   '20261106213000_phase2_admin_catalogue_editor.sql',
   '20261106220000_phase2_admin_cms_category_read.sql',
