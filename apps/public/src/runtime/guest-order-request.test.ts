@@ -1,11 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { RateLimit } from '@cloudflare/workers-types'
+import { verifyOrderIntakeSignature } from '../../../../packages/app-contracts/src/order-intake-signature'
 
 import { handleGuestOrderReceiptRequest, handleGuestOrderRequest } from './guest-order-request'
 
 const environment = {
   PUBLIC_ORDER_INTAKE_URL: 'https://demo.supabase.co/functions/v1/order-intake',
   PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_test_key',
+  ORDER_INTAKE_SIGNING_SECRET: 'synthetic-order-intake-signing-secret-32-bytes',
 }
 
 const validBody = {
@@ -24,6 +26,8 @@ function createRequest(body: unknown = validBody, origin = 'https://preview.inva
       Origin: origin,
       'Content-Type': 'application/json',
       'Idempotency-Key': '8b96aecb-8c34-4c46-879f-292369aa961d',
+      'X-DPG-Order-Timestamp': '0000000000',
+      'X-DPG-Order-Signature': 'caller-forged-signature',
     },
     body: JSON.stringify(body),
   })
@@ -79,6 +83,16 @@ describe('POST /api/order-requests Worker adapter', () => {
     expect(headers.get('idempotency-key')).toBe('8b96aecb-8c34-4c46-879f-292369aa961d')
     expect(JSON.parse(String(options.body))).toEqual(validBody)
     expect((fetcher.mock.calls[0]?.[1] as RequestInit).method).toBe('GET')
+    expect(await verifyOrderIntakeSignature(environment.ORDER_INTAKE_SIGNING_SECRET, {
+      method: 'POST',
+      path: '/functions/v1/order-intake',
+      origin: 'https://preview.invalid',
+      requestId: headers.get('x-request-id')!,
+      idempotencyKey: headers.get('idempotency-key')!,
+      timestamp: headers.get('x-dpg-order-timestamp')!,
+      bodyText: String(options.body),
+    }, headers.get('x-dpg-order-signature')!)).toBe(true)
+    expect(headers.get('x-dpg-order-signature')).not.toBe('caller-forged-signature')
   })
 
   it('rejects a cross-origin caller before forwarding', async () => {
@@ -208,6 +222,16 @@ describe('GET /api/order-requests/receipt Worker adapter', () => {
     expect(response.headers.get('cache-control')).toBe('private, no-store')
     expect(fetcher).toHaveBeenCalledOnce()
     expect((fetcher.mock.calls[0]?.[1] as RequestInit).method).toBe('GET')
+    const headers = new Headers((fetcher.mock.calls[0]?.[1] as RequestInit).headers)
+    expect(await verifyOrderIntakeSignature(environment.ORDER_INTAKE_SIGNING_SECRET, {
+      method: 'GET',
+      path: '/functions/v1/order-intake',
+      origin: 'https://preview.invalid',
+      requestId: headers.get('x-request-id')!,
+      idempotencyKey: headers.get('idempotency-key')!,
+      timestamp: headers.get('x-dpg-order-timestamp')!,
+      bodyText: '',
+    }, headers.get('x-dpg-order-signature')!)).toBe(true)
   })
 
   it('returns an empty receipt when the key has no persisted record', async () => {

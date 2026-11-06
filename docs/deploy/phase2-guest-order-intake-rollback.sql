@@ -52,8 +52,18 @@ begin
 end
 $phase2_rollback_preflight$;
 
+grant create on schema public to dpg_migration;
+alter function public.guest_order_request_create(jsonb, text, uuid)
+  owner to dpg_migration;
+alter function public.guest_order_request_receipt(text)
+  owner to dpg_migration;
+revoke create on schema public from dpg_migration;
+
 set role dpg_migration;
 
+revoke all on function public.guest_order_request_create(jsonb, text, uuid),
+  public.guest_order_request_receipt(text)
+  from public, anon, authenticated, service_role, dpg_order_intake, dpg_order_intake_login;
 drop function public.guest_order_request_receipt(text);
 drop function public.guest_order_request_create(jsonb, text, uuid);
 
@@ -64,28 +74,32 @@ drop policy phase2_guest_idempotency_select on dpg_app.guest_order_idempotency_r
 drop policy phase2_guest_idempotency_insert on dpg_app.guest_order_idempotency_records;
 drop policy phase2_guest_rate_limit_all on dpg_app.guest_order_rate_limit_windows;
 
-drop table dpg_app.guest_order_idempotency_records;
-drop table dpg_app.guest_order_rate_limit_windows;
-
 revoke select (
   id, sku, name, price, original_price, list_price, sale_price,
   online_discount_amount, stock_status, price_source, source_system,
   price_state, price_confidence, price_updated_at, is_active,
   publication_status, pdp_visibility, sellable_status
-) on table dpg_app.products from anon;
+) on table dpg_app.products from dpg_order_intake_function_owner;
 revoke insert (
   id, owner_id, order_number, customer_name, customer_phone, customer_email,
   customer_address, note, subtotal, discount, total, status, payment_status,
   order_origin, shipping_fee_status
-) on table dpg_app.orders from anon;
+) on table dpg_app.orders from dpg_order_intake_function_owner;
 revoke insert (
   order_id, product_id, product_name, product_sku, quantity, unit_price,
   total_price, commercial_snapshot
-) on table dpg_app.order_items from anon;
-revoke usage on sequence dpg_app.orders_id_seq from anon;
-revoke usage on sequence dpg_app.order_items_id_seq from anon;
-revoke execute on function dpg_app.runtime_hash(jsonb), dpg_app.runtime_key_hash(text) from anon;
-revoke usage on schema dpg_app from anon;
+) on table dpg_app.order_items from dpg_order_intake_function_owner;
+revoke all on table dpg_app.guest_order_idempotency_records,
+  dpg_app.guest_order_rate_limit_windows from dpg_order_intake_function_owner;
+
+drop table dpg_app.guest_order_idempotency_records;
+drop table dpg_app.guest_order_rate_limit_windows;
+revoke usage on sequence dpg_app.orders_id_seq, dpg_app.order_items_id_seq
+  from dpg_order_intake_function_owner;
+revoke execute on function dpg_app.runtime_hash(jsonb), dpg_app.runtime_key_hash(text)
+  from dpg_order_intake_function_owner;
+revoke usage on schema dpg_app from dpg_order_intake_function_owner;
+revoke usage on schema public from dpg_order_intake;
 
 alter table dpg_app.orders drop constraint phase2_order_origin_check;
 alter table dpg_app.orders drop constraint phase2_shipping_fee_status_check;

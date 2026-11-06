@@ -12,6 +12,32 @@ const legacyAdminCommercePath = path.join(root, 'supabase/functions/admin-commer
 const separateAdminOrderActionsPath = path.join(root, 'apps/admin/app/orders/actions.ts')
 
 describe('Phase 2 order-request database contract', () => {
+  it('restricts guest intake RPCs to the dedicated backend role', async () => {
+    const [guestMigration, rollback] = await Promise.all([
+      readFile(guestIntakePath, 'utf8'),
+      readFile(guestRollbackPath, 'utf8'),
+    ])
+    const guestFunctions = guestMigration.match(/create function public\.guest_order_request_(?:create|receipt)\([\s\S]*?\n\$\$;/gi) ?? []
+
+    expect(guestMigration).toContain("rolname = 'dpg_order_intake_function_owner'")
+    expect(guestMigration).toContain('grant execute on function public.guest_order_request_create(jsonb, text, uuid) to dpg_order_intake')
+    expect(guestMigration).toContain('grant execute on function public.guest_order_request_receipt(text) to dpg_order_intake')
+    expect(guestMigration).not.toMatch(/grant execute on function public\.guest_order_request_(?:create|receipt)[^;]*\bto anon/i)
+    expect(guestMigration).not.toMatch(/create policy phase2_guest_[^;]*\bto anon/i)
+    expect(guestFunctions).toHaveLength(2)
+    for (const guestFunction of guestFunctions) {
+      expect(guestFunction).toMatch(/security definer/i)
+      expect(guestFunction).toMatch(/set search_path = pg_catalog, dpg_app/i)
+      expect(guestFunction).toMatch(/set row_security = on/i)
+    }
+    expect(guestMigration).toContain("has_function_privilege('anon', 'public.guest_order_request_create(jsonb,text,uuid)', 'EXECUTE')")
+    expect(guestMigration).toContain("has_function_privilege('authenticated', 'public.guest_order_request_create(jsonb,text,uuid)', 'EXECUTE')")
+    expect(guestMigration).toContain("has_function_privilege('dpg_order_intake', 'public.guest_order_request_create(jsonb,text,uuid)', 'EXECUTE')")
+    expect(guestMigration).toContain("has_function_privilege('dpg_order_intake_function_owner', 'public.guest_order_request_create(jsonb,text,uuid)', 'EXECUTE')")
+    expect(rollback).toContain('revoke all on function public.guest_order_request_create(jsonb, text, uuid),')
+    expect(rollback).toContain('from public, anon, authenticated, service_role, dpg_order_intake, dpg_order_intake_login')
+  })
+
   it('keeps guest shipping fees pending only at intake so staff can confirm them later', async () => {
     const [guestMigration, rollback] = await Promise.all([
       readFile(guestIntakePath, 'utf8'),
@@ -41,7 +67,7 @@ describe('Phase 2 order-request database contract', () => {
     expect(receiptFunction).not.toMatch(/expires_at/i)
     expect(guestMigration).toContain('create policy phase2_guest_idempotency_select')
     expect(guestMigration).toContain('create policy phase2_guest_idempotency_insert')
-    expect(guestMigration).toContain("or has_table_privilege('anon', 'dpg_app.guest_order_idempotency_records', 'DELETE')")
+    expect(guestMigration).toContain("or has_table_privilege('dpg_order_intake', 'dpg_app.guest_order_idempotency_records', 'DELETE')")
     expect(rollback).toContain('drop policy phase2_guest_idempotency_select')
     expect(rollback).toContain('drop policy phase2_guest_idempotency_insert')
   })

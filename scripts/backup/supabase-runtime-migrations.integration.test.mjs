@@ -840,11 +840,62 @@ describe('Supabase runtime migration adoption integration', () => {
           'reject_backup_role_setting_on_retry',
           () => client.query("alter role dpg_backup set search_path to 'public'"),
         )
+        phase = 'bootstrap_synthetic_guest_order_roles'
+        await client.query(`
+          create role dpg_order_intake_function_owner nologin nosuperuser nocreatedb nocreaterole noinherit noreplication nobypassrls connection limit 0;
+          create role dpg_order_intake nologin nosuperuser nocreatedb nocreaterole noinherit noreplication nobypassrls connection limit 0;
+          create role dpg_order_intake_login login nosuperuser nocreatedb nocreaterole noinherit noreplication nobypassrls connection limit 5;
+          grant dpg_order_intake to dpg_order_intake_login;
+        `)
         phase = 'resume_ordered_pending_migrations'
         await executeRuntimeMigrations(client, 'apply', attestCheckpoint)
 
         const ledger = await client.query('select count(*)::integer as count from dpg_control.runtime_migration_ledger')
         expect(ledger.rows[0]?.count).toBe(EXPECTED_RUNTIME_MIGRATIONS.length)
+
+        phase = 'verify_guest_order_rpc_rejects_direct_api_roles'
+        for (const role of ['anon', 'authenticated', 'service_role']) {
+          await client.query('begin')
+          try {
+            await client.query(`set local role ${role}`)
+            await expect(client.query(
+              "select public.guest_order_request_receipt('11111111-1111-4111-8111-111111111111')",
+            )).rejects.toMatchObject({ code: '42501' })
+          } finally {
+            await client.query('rollback').catch(() => undefined)
+          }
+        }
+
+        phase = 'verify_guest_order_rpc_login_requires_capability_role'
+        const intakeLogin = new URL(connectionString)
+        intakeLogin.username = 'dpg_order_intake_login'
+        const intakeClient = new Client({ connectionString: intakeLogin.toString() })
+        try {
+          await intakeClient.connect()
+          await expect(intakeClient.query(
+            "select public.guest_order_request_receipt('11111111-1111-4111-8111-111111111111')",
+          )).rejects.toMatchObject({ code: '42501' })
+          await intakeClient.query('begin')
+          try {
+            await intakeClient.query('set local role dpg_order_intake')
+            const receipt = await intakeClient.query(
+              "select public.guest_order_request_receipt('11111111-1111-4111-8111-111111111111') as response",
+            )
+            expect(receipt.rows[0]?.response).toBeNull()
+            await intakeClient.query('rollback')
+          } catch (error) {
+            await intakeClient.query('rollback').catch(() => undefined)
+            throw error
+          }
+        } finally {
+          await intakeClient.end().catch(() => undefined)
+        }
+        const directTableAccess = await client.query(`
+          select has_schema_privilege('dpg_order_intake', 'dpg_app', 'USAGE') as app_schema,
+            has_table_privilege('dpg_order_intake', 'dpg_app.orders', 'INSERT') as order_insert,
+            has_table_privilege('dpg_order_intake', 'dpg_app.products', 'SELECT') as product_select
+        `)
+        expect(directTableAccess.rows[0]).toEqual({ app_schema: false, order_insert: false, product_select: false })
 
         phase = 'verify_phase2_admin_idempotency_rls'
         const authenticatedUser = '00000000-0000-4000-8000-000000000101'
@@ -921,7 +972,7 @@ describe('Supabase runtime migration adoption integration', () => {
           const ordersBefore = await client.query('select count(*)::integer as count from dpg_app.orders')
           expect(ordersBefore.rows[0]?.count).toBe(0)
 
-          await client.query('set local role anon')
+          await client.query('set local role dpg_order_intake')
           const replay = await client.query(`
             select public.guest_order_request_create($1::jsonb, $2, $3::uuid) as response
           `, [JSON.stringify(retryInput), retryKey, retryRequestId])
@@ -989,7 +1040,7 @@ describe('Supabase runtime migration adoption integration', () => {
           phase2FixtureProductId = product.rows[0]?.id
           createdOrderInput.items[0].productId = phase2FixtureProductId
 
-          await client.query('set local role anon')
+          await client.query('set local role dpg_order_intake')
           phase = 'phase2_guest_missing_product_error'
           const missingProductResponse = await client.query(`
             select public.guest_order_request_create(
@@ -1233,7 +1284,7 @@ describe('Supabase runtime migration adoption integration', () => {
 
             await verifier.query('begin')
             try {
-              await verifier.query('set local role anon')
+              await verifier.query('set local role dpg_order_intake')
               phase = 'phase2_verify_committed_guest_receipt'
               const committedReceipt = await verifier.query(
                 'select public.guest_order_request_receipt($1) as response', [createdOrderKey],

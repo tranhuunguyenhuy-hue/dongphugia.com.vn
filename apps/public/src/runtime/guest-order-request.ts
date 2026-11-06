@@ -1,4 +1,5 @@
 import type { PublicWorkerEnvironment } from '../worker-policy'
+import { createOrderIntakeSignature } from '../../../../packages/app-contracts/src/order-intake-signature'
 
 const MAX_REQUEST_BYTES = 16 * 1024
 const MAX_RESPONSE_BYTES = 4 * 1024
@@ -31,7 +32,7 @@ const SAFE_ERROR_CODES = new Set([
 ])
 
 export type GuestOrderEnvironment = Pick<PublicWorkerEnvironment,
-  'PUBLIC_ORDER_INTAKE_URL' | 'PUBLIC_SUPABASE_PUBLISHABLE_KEY' | 'ORDER_REQUEST_LIMITER'>
+  'PUBLIC_ORDER_INTAKE_URL' | 'PUBLIC_SUPABASE_PUBLISHABLE_KEY' | 'ORDER_INTAKE_SIGNING_SECRET' | 'ORDER_REQUEST_LIMITER'>
 
 class RequestFailure extends Error {
   constructor(readonly status: number, readonly code: string) {
@@ -50,10 +51,12 @@ function jsonResponse(body: unknown, status: number, requestId: string) {
   })
 }
 
-function configuredUpstream(environment: GuestOrderEnvironment): { endpoint: URL; publishableKey: string } {
+function configuredUpstream(environment: GuestOrderEnvironment): { endpoint: URL; publishableKey: string; signingSecret: string } {
   const rawEndpoint = environment.PUBLIC_ORDER_INTAKE_URL
   const publishableKey = environment.PUBLIC_SUPABASE_PUBLISHABLE_KEY
-  if (typeof rawEndpoint !== 'string' || typeof publishableKey !== 'string') {
+  const signingSecret = environment.ORDER_INTAKE_SIGNING_SECRET
+  if (typeof rawEndpoint !== 'string' || typeof publishableKey !== 'string'
+      || typeof signingSecret !== 'string' || new TextEncoder().encode(signingSecret).byteLength < 32) {
     throw new RequestFailure(503, 'ORDER_INTAKE_UNAVAILABLE')
   }
 
@@ -64,15 +67,49 @@ function configuredUpstream(environment: GuestOrderEnvironment): { endpoint: URL
     throw new RequestFailure(503, 'ORDER_INTAKE_UNAVAILABLE')
   }
 
+  const hostedEndpoint = endpoint.protocol === 'https:'
+    && /^[a-z0-9-]+\.supabase\.co$/i.test(endpoint.hostname)
+  const localEndpoint = endpoint.protocol === 'http:'
+    && ['localhost', '127.0.0.1'].includes(endpoint.hostname)
+    && endpoint.port === '54321'
   if (
-    endpoint.protocol !== 'https:' ||
-    !/^[a-z0-9-]+\.supabase\.co$/i.test(endpoint.hostname) ||
+    (!hostedEndpoint && !localEndpoint) ||
     endpoint.pathname !== '/functions/v1/order-intake' ||
     endpoint.username || endpoint.password || endpoint.search || endpoint.hash ||
     !/^sb_publishable_[A-Za-z0-9_-]+$/.test(publishableKey)
   ) throw new RequestFailure(503, 'ORDER_INTAKE_UNAVAILABLE')
 
-  return { endpoint, publishableKey }
+  return { endpoint, publishableKey, signingSecret }
+}
+
+async function signedUpstreamHeaders(
+  method: 'GET' | 'POST',
+  endpoint: URL,
+  origin: string,
+  requestId: string,
+  idempotencyKey: string,
+  bodyText: string,
+  publishableKey: string,
+  signingSecret: string,
+): Promise<Headers> {
+  const timestamp = String(Math.floor(Date.now() / 1000))
+  const signature = await createOrderIntakeSignature(signingSecret, {
+    method,
+    path: endpoint.pathname,
+    origin,
+    requestId,
+    idempotencyKey,
+    timestamp,
+    bodyText,
+  })
+  return new Headers({
+    'Idempotency-Key': idempotencyKey,
+    'Origin': origin,
+    'apikey': publishableKey,
+    'X-Request-Id': requestId,
+    'X-DPG-Order-Timestamp': timestamp,
+    'X-DPG-Order-Signature': signature,
+  })
 }
 
 async function readBoundedBody(request: Request, maxBytes: number): Promise<string> {
@@ -203,19 +240,18 @@ async function readPersistedReceipt(
   origin: string,
   requestId: string,
   idempotencyKey: string,
+  signingSecret: string,
   fetcher: typeof fetch,
 ): Promise<{ receipt: ReturnType<typeof safeReceiptFrom>; available: boolean }> {
   try {
+    const headers = await signedUpstreamHeaders(
+      'GET', endpoint, origin, requestId, idempotencyKey, '', publishableKey, signingSecret,
+    )
     const response = await fetcher(endpoint, {
       method: 'GET',
       redirect: 'error',
       signal: AbortSignal.timeout(10_000),
-      headers: {
-        'Idempotency-Key': idempotencyKey,
-        'Origin': origin,
-        'apikey': publishableKey,
-        'X-Request-Id': requestId,
-      },
+      headers,
     })
     if (!response.ok) return { receipt: null, available: false }
     const payload: unknown = JSON.parse(await readBoundedResponse(response))
@@ -268,6 +304,7 @@ export async function handleGuestOrderReceiptRequest(
       forwardedOrigin,
       requestId,
       idempotencyKey,
+      upstream.signingSecret,
       fetcher,
     )
     if (!result.available) throw new RequestFailure(503, 'ORDER_INTAKE_UNAVAILABLE')
@@ -328,6 +365,7 @@ export async function handleGuestOrderRequest(
       origin,
       requestId,
       idempotencyKey,
+      upstream.signingSecret,
       fetcher,
     )
     if (!persistedReceipt.receipt) {
@@ -338,17 +376,16 @@ export async function handleGuestOrderRequest(
 
     let response: Response
     try {
+      const headers = await signedUpstreamHeaders(
+        'POST', upstream.endpoint, origin, requestId, idempotencyKey, bodyText,
+        upstream.publishableKey, upstream.signingSecret,
+      )
+      headers.set('Content-Type', 'application/json')
       response = await fetcher(upstream.endpoint, {
         method: 'POST',
         redirect: 'error',
         signal: AbortSignal.timeout(10_000),
-        headers: {
-          'Content-Type': 'application/json',
-          'Idempotency-Key': idempotencyKey,
-          'Origin': origin,
-          'apikey': upstream.publishableKey,
-          'X-Request-Id': requestId,
-        },
+        headers,
         body: bodyText,
       })
     } catch {

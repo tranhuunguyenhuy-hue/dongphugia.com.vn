@@ -1,7 +1,10 @@
--- Phase 2: public guest order-request intake on the existing dpg_app catalogue.
+-- Phase 2: backend-mediated public guest order-request intake on dpg_app.
 -- Source only. Applying this migration requires the task-specific backup,
 -- restore rehearsal, target attestation, and Owner authorization described in
--- Issue #270 and the runtime recovery runbook.
+-- Issue #270 and the runtime recovery runbook. The dedicated intake roles must
+-- be provisioned before this migration; they are never created by dpg_migration.
+-- The function owner is separate from both the no-login RPC capability role and
+-- the login role, so a database caller cannot SET ROLE to its data privileges.
 
 do $target_preflight$
 begin
@@ -62,6 +65,53 @@ begin
      or not has_function_privilege('dpg_migration', 'dpg_app.runtime_key_hash(text)', 'EXECUTE')
      or not has_sequence_privilege('dpg_migration', 'dpg_app.orders_id_seq', 'USAGE')
      or not has_sequence_privilege('dpg_migration', 'dpg_app.order_items_id_seq', 'USAGE')
+     or not exists (
+       select 1 from pg_roles
+       where rolname = 'dpg_order_intake_function_owner'
+         and not rolsuper and not rolbypassrls and not rolcanlogin
+         and not rolcreatedb and not rolcreaterole and not rolreplication and not rolinherit
+         and rolconnlimit = 0
+     )
+     or not exists (
+       select 1 from pg_roles
+       where rolname = 'dpg_order_intake'
+         and not rolsuper and not rolbypassrls and not rolcanlogin
+         and not rolcreatedb and not rolcreaterole and not rolreplication and not rolinherit
+         and rolconnlimit = 0
+     )
+     or not exists (
+       select 1 from pg_roles
+       where rolname = 'dpg_order_intake_login'
+         and not rolsuper and not rolbypassrls and rolcanlogin
+         and not rolcreatedb and not rolcreaterole and not rolreplication and not rolinherit
+         and rolconnlimit = 5
+     )
+     or not exists (
+       select 1
+       from pg_auth_members membership
+       join pg_roles capability on capability.oid = membership.roleid
+       join pg_roles login on login.oid = membership.member
+       where capability.rolname = 'dpg_order_intake'
+         and login.rolname = 'dpg_order_intake_login'
+     )
+     or (select count(*) from pg_auth_members membership
+         where membership.member = (select oid from pg_roles where rolname = 'dpg_order_intake_login')) <> 1
+     or (select count(*) from pg_auth_members membership
+         where membership.roleid = (select oid from pg_roles where rolname = 'dpg_order_intake')) <> 1
+     or exists (
+       select 1 from pg_auth_members membership
+       where membership.roleid = (select oid from pg_roles where rolname = 'dpg_order_intake_function_owner')
+          or membership.member = (select oid from pg_roles where rolname = 'dpg_order_intake_function_owner')
+     )
+     or has_schema_privilege('dpg_order_intake_function_owner', 'dpg_app', 'USAGE')
+     or has_schema_privilege('dpg_order_intake_function_owner', 'public', 'CREATE')
+     or has_any_column_privilege('dpg_order_intake_function_owner', 'dpg_app.products', 'SELECT')
+     or has_any_column_privilege('dpg_order_intake_function_owner', 'dpg_app.orders', 'INSERT')
+     or has_any_column_privilege('dpg_order_intake_function_owner', 'dpg_app.order_items', 'INSERT')
+     or has_function_privilege('dpg_order_intake_function_owner', 'dpg_app.runtime_hash(jsonb)', 'EXECUTE')
+     or has_function_privilege('dpg_order_intake_function_owner', 'dpg_app.runtime_key_hash(text)', 'EXECUTE')
+     or has_sequence_privilege('dpg_order_intake_function_owner', 'dpg_app.orders_id_seq', 'USAGE')
+     or has_sequence_privilege('dpg_order_intake_function_owner', 'dpg_app.order_items_id_seq', 'USAGE')
      or exists (
        select 1
        from pg_class c
@@ -173,10 +223,35 @@ revoke all on table dpg_app.guest_order_idempotency_records,
 revoke all on table dpg_app.orders, dpg_app.order_items from public, anon;
 revoke all on table dpg_app.products from public, anon;
 revoke all on function dpg_app.runtime_hash(jsonb), dpg_app.runtime_key_hash(text)
-  from public, anon;
+  from public, anon, service_role, dpg_order_intake, dpg_order_intake_login;
+grant execute on function dpg_app.runtime_hash(jsonb), dpg_app.runtime_key_hash(text)
+  to dpg_order_intake_function_owner;
+
+grant usage on schema dpg_app to dpg_order_intake_function_owner;
+grant select (
+  id, sku, name, price, original_price, list_price, sale_price,
+  online_discount_amount, stock_status, price_source, source_system,
+  price_state, price_confidence, price_updated_at, is_active,
+  publication_status, pdp_visibility, sellable_status
+) on table dpg_app.products to dpg_order_intake_function_owner;
+grant insert (
+  id, owner_id, order_number, customer_name, customer_phone, customer_email,
+  customer_address, note, subtotal, discount, total, status, payment_status,
+  order_origin, shipping_fee_status
+) on table dpg_app.orders to dpg_order_intake_function_owner;
+grant insert (
+  order_id, product_id, product_name, product_sku, quantity, unit_price,
+  total_price, commercial_snapshot
+) on table dpg_app.order_items to dpg_order_intake_function_owner;
+grant select, insert on table dpg_app.guest_order_idempotency_records
+  to dpg_order_intake_function_owner;
+grant select, insert, update, delete on table dpg_app.guest_order_rate_limit_windows
+  to dpg_order_intake_function_owner;
+grant usage on sequence dpg_app.orders_id_seq, dpg_app.order_items_id_seq
+  to dpg_order_intake_function_owner;
 
 create policy phase2_guest_products_select_public on dpg_app.products
-  for select to anon
+  for select to dpg_order_intake_function_owner
   using (
     is_active
     and publication_status = 'public'
@@ -185,7 +260,7 @@ create policy phase2_guest_products_select_public on dpg_app.products
   );
 
 create policy phase2_guest_orders_insert_pending on dpg_app.orders
-  for insert to anon
+  for insert to dpg_order_intake_function_owner
   with check (
     owner_id is null
     and status = 'pending'
@@ -196,7 +271,7 @@ create policy phase2_guest_orders_insert_pending on dpg_app.orders
   );
 
 create policy phase2_guest_order_items_insert on dpg_app.order_items
-  for insert to anon
+  for insert to dpg_order_intake_function_owner
   with check (
     quantity between 1 and 99
     and unit_price > 0
@@ -214,40 +289,15 @@ create policy phase2_guest_order_items_insert on dpg_app.order_items
   );
 
 create policy phase2_guest_idempotency_select on dpg_app.guest_order_idempotency_records
-  for select to anon using (true);
+  for select to dpg_order_intake_function_owner using (true);
 
 create policy phase2_guest_idempotency_insert on dpg_app.guest_order_idempotency_records
-  for insert to anon with check (true);
+  for insert to dpg_order_intake_function_owner with check (true);
 
 create policy phase2_guest_rate_limit_all on dpg_app.guest_order_rate_limit_windows
-  for all to anon using (true) with check (true);
+  for all to dpg_order_intake_function_owner using (true) with check (true);
 
-grant usage on schema dpg_app to anon;
-grant select (
-  id, sku, name, price, original_price, list_price, sale_price,
-  online_discount_amount, stock_status, price_source, source_system,
-  price_state, price_confidence, price_updated_at, is_active,
-  publication_status, pdp_visibility, sellable_status
-) on table dpg_app.products to anon;
-grant insert (
-  id, owner_id, order_number, customer_name, customer_phone, customer_email,
-  customer_address, note, subtotal, discount, total, status, payment_status,
-  order_origin, shipping_fee_status
-) on table dpg_app.orders to anon;
-grant insert (
-  order_id, product_id, product_name, product_sku, quantity, unit_price,
-  total_price, commercial_snapshot
-) on table dpg_app.order_items to anon;
-grant select (key_hash, request_hash, safe_response),
-  insert (key_hash, request_hash, safe_response)
-  on table dpg_app.guest_order_idempotency_records to anon;
-grant select (phone_hash, window_start, request_count),
-  insert (phone_hash, window_start, request_count),
-  update (request_count), delete
-  on table dpg_app.guest_order_rate_limit_windows to anon;
-grant usage on sequence dpg_app.orders_id_seq to anon;
-grant usage on sequence dpg_app.order_items_id_seq to anon;
-grant execute on function dpg_app.runtime_hash(jsonb), dpg_app.runtime_key_hash(text) to anon;
+grant usage on schema public to dpg_order_intake;
 
 reset role;
 grant create on schema public to dpg_migration;
@@ -260,7 +310,7 @@ create function public.guest_order_request_create(
 )
 returns jsonb
 language plpgsql
-security invoker
+security definer
 set search_path = pg_catalog, dpg_app
 set row_security = on
 as $$
@@ -534,7 +584,7 @@ create function public.guest_order_request_receipt(p_idempotency_key text)
 returns jsonb
 language plpgsql
 stable
-security invoker
+security definer
 set search_path = pg_catalog, dpg_app
 set row_security = on
 as $$
@@ -569,88 +619,97 @@ end;
 $$;
 
 reset role;
-revoke create on schema public from dpg_migration;
+grant create on schema public to dpg_order_intake_function_owner;
+alter function public.guest_order_request_create(jsonb, text, uuid)
+  owner to dpg_order_intake_function_owner;
+alter function public.guest_order_request_receipt(text)
+  owner to dpg_order_intake_function_owner;
+revoke create on schema public from dpg_migration, dpg_order_intake_function_owner;
 
 revoke all on function public.guest_order_request_create(jsonb, text, uuid),
   public.guest_order_request_receipt(text)
-  from public, anon, authenticated, service_role;
-grant execute on function public.guest_order_request_create(jsonb, text, uuid) to anon;
-grant execute on function public.guest_order_request_receipt(text) to anon;
+  from public, anon, authenticated, service_role, dpg_order_intake_login;
+grant execute on function public.guest_order_request_create(jsonb, text, uuid) to dpg_order_intake;
+grant execute on function public.guest_order_request_receipt(text) to dpg_order_intake;
 
 comment on function public.guest_order_request_create(jsonb, text, uuid) is
-  'Public guest order request only: SECURITY INVOKER creates a pending, unpaid request with canonical product snapshots; no list or lifecycle operations.';
+  'Backend-only guest order request: SECURITY DEFINER owned by a no-login role with limited table/column grants and RLS policies; EXECUTE is granted only to dpg_order_intake.';
 
 comment on function public.guest_order_request_receipt(text) is
-  'Reads only the minimal pending, unpaid receipt for a high-entropy idempotency key; no guest order list or customer details.';
+  'Backend-only read of the minimal pending, unpaid receipt for a high-entropy idempotency key; the no-login function owner has limited table/column grants and RLS policies; EXECUTE is granted only to dpg_order_intake.';
 
 do $phase2_postflight$
+declare
+  function_count integer;
 begin
-  if exists (
-       select 1 from pg_proc p
-       where p.oid in (
-         'public.guest_order_request_create(jsonb,text,uuid)'::regprocedure,
-         'public.guest_order_request_receipt(text)'::regprocedure
-       )
-         and (p.prosecdef or pg_get_userbyid(p.proowner) <> 'dpg_migration')
-     )
+  select count(*) into function_count
+  from pg_proc p
+  where p.oid in (
+    'public.guest_order_request_create(jsonb,text,uuid)'::regprocedure,
+    'public.guest_order_request_receipt(text)'::regprocedure
+  )
+    and p.prosecdef
+    and pg_get_userbyid(p.proowner) = 'dpg_order_intake_function_owner'
+    and p.proconfig @> array['search_path=pg_catalog, dpg_app', 'row_security=on'];
+
+  if function_count <> 2
      or has_schema_privilege('dpg_migration', 'public', 'CREATE')
-     or not has_schema_privilege('anon', 'dpg_app', 'USAGE')
-     or not has_function_privilege('anon', 'public.guest_order_request_create(jsonb,text,uuid)', 'EXECUTE')
-     or not has_function_privilege('anon', 'public.guest_order_request_receipt(text)', 'EXECUTE')
-     or has_table_privilege('anon', 'dpg_app.orders', 'SELECT')
-     or has_table_privilege('anon', 'dpg_app.orders', 'INSERT')
-     or has_table_privilege('anon', 'dpg_app.orders', 'UPDATE')
-     or has_table_privilege('anon', 'dpg_app.orders', 'DELETE')
-     or not has_column_privilege('anon', 'dpg_app.orders', 'total', 'INSERT')
-     or not has_column_privilege('anon', 'dpg_app.orders', 'shipping_fee_status', 'INSERT')
-     or has_table_privilege('anon', 'dpg_app.order_items', 'SELECT')
-     or has_table_privilege('anon', 'dpg_app.order_items', 'INSERT')
-     or has_table_privilege('anon', 'dpg_app.order_items', 'UPDATE')
-     or has_table_privilege('anon', 'dpg_app.order_items', 'DELETE')
-     or not has_column_privilege('anon', 'dpg_app.order_items', 'commercial_snapshot', 'INSERT')
+     or not has_schema_privilege('dpg_order_intake', 'public', 'USAGE')
+     or has_schema_privilege('anon', 'dpg_app', 'USAGE')
+     or has_function_privilege('anon', 'public.guest_order_request_create(jsonb,text,uuid)', 'EXECUTE')
+     or has_function_privilege('anon', 'public.guest_order_request_receipt(text)', 'EXECUTE')
+     or has_function_privilege('authenticated', 'public.guest_order_request_create(jsonb,text,uuid)', 'EXECUTE')
+     or has_function_privilege('authenticated', 'public.guest_order_request_receipt(text)', 'EXECUTE')
+     or has_function_privilege('service_role', 'public.guest_order_request_create(jsonb,text,uuid)', 'EXECUTE')
+     or has_function_privilege('service_role', 'public.guest_order_request_receipt(text)', 'EXECUTE')
+     or has_function_privilege('dpg_order_intake_login', 'public.guest_order_request_create(jsonb,text,uuid)', 'EXECUTE')
+     or has_function_privilege('dpg_order_intake_login', 'public.guest_order_request_receipt(text)', 'EXECUTE')
+     or not has_function_privilege('dpg_order_intake_function_owner', 'public.guest_order_request_create(jsonb,text,uuid)', 'EXECUTE')
+     or not has_function_privilege('dpg_order_intake_function_owner', 'public.guest_order_request_receipt(text)', 'EXECUTE')
+     or not has_function_privilege('dpg_order_intake', 'public.guest_order_request_create(jsonb,text,uuid)', 'EXECUTE')
+     or not has_function_privilege('dpg_order_intake', 'public.guest_order_request_receipt(text)', 'EXECUTE')
+     or has_schema_privilege('dpg_order_intake', 'dpg_app', 'USAGE')
+     or has_table_privilege('dpg_order_intake', 'dpg_app.orders', 'SELECT')
+     or has_table_privilege('dpg_order_intake', 'dpg_app.orders', 'INSERT')
+     or has_table_privilege('dpg_order_intake', 'dpg_app.order_items', 'SELECT')
+     or has_table_privilege('dpg_order_intake', 'dpg_app.products', 'SELECT')
+     or has_table_privilege('dpg_order_intake', 'dpg_app.guest_order_idempotency_records', 'SELECT')
+     or has_table_privilege('dpg_order_intake', 'dpg_app.guest_order_idempotency_records', 'DELETE')
+     or has_table_privilege('dpg_order_intake', 'dpg_app.guest_order_rate_limit_windows', 'UPDATE')
+     or has_schema_privilege('dpg_order_intake_login', 'dpg_app', 'USAGE')
+     or not has_schema_privilege('dpg_order_intake_function_owner', 'dpg_app', 'USAGE')
+     or not has_column_privilege('dpg_order_intake_function_owner', 'dpg_app.products', 'price', 'SELECT')
+     or not has_column_privilege('dpg_order_intake_function_owner', 'dpg_app.orders', 'total', 'INSERT')
+     or not has_column_privilege('dpg_order_intake_function_owner', 'dpg_app.order_items', 'commercial_snapshot', 'INSERT')
+     or has_any_column_privilege('dpg_order_intake_function_owner', 'dpg_app.orders', 'SELECT')
+     or has_any_column_privilege('dpg_order_intake_function_owner', 'dpg_app.orders', 'UPDATE')
+     or has_table_privilege('dpg_order_intake_function_owner', 'dpg_app.orders', 'DELETE')
+     or has_any_column_privilege('dpg_order_intake_function_owner', 'dpg_app.order_items', 'SELECT')
+     or has_any_column_privilege('dpg_order_intake_function_owner', 'dpg_app.order_items', 'UPDATE')
+     or has_table_privilege('dpg_order_intake_function_owner', 'dpg_app.order_items', 'DELETE')
+     or has_any_column_privilege('dpg_order_intake_function_owner', 'dpg_app.products', 'INSERT')
+     or has_any_column_privilege('dpg_order_intake_function_owner', 'dpg_app.products', 'UPDATE')
+     or has_table_privilege('dpg_order_intake_function_owner', 'dpg_app.products', 'DELETE')
+     or has_function_privilege('dpg_order_intake', 'dpg_app.runtime_hash(jsonb)', 'EXECUTE')
+     or has_function_privilege('dpg_order_intake', 'dpg_app.runtime_key_hash(text)', 'EXECUTE')
+     or has_sequence_privilege('dpg_order_intake', 'dpg_app.orders_id_seq', 'USAGE')
+     or has_sequence_privilege('dpg_order_intake', 'dpg_app.order_items_id_seq', 'USAGE')
      or exists (
-       select 1 from information_schema.column_privileges
-       where grantee = 'anon' and table_schema = 'dpg_app' and table_name = 'orders'
-         and privilege_type = 'INSERT'
-         and column_name not in (
-           'id', 'owner_id', 'order_number', 'customer_name', 'customer_phone',
-           'customer_email', 'customer_address', 'note', 'subtotal', 'discount',
-           'total', 'status', 'payment_status', 'order_origin', 'shipping_fee_status'
-         )
+       select 1 from pg_policy p
+       join pg_class c on c.oid = p.polrelid
+       join pg_namespace n on n.oid = c.relnamespace
+       where n.nspname = 'dpg_app'
+         and c.relname in ('products', 'orders', 'order_items', 'guest_order_idempotency_records', 'guest_order_rate_limit_windows')
+         and p.polname like 'phase2_guest_%'
+         and p.polroles <> array[(select oid from pg_roles where rolname = 'dpg_order_intake_function_owner')]
      )
-     or exists (
-       select 1 from information_schema.column_privileges
-       where grantee = 'anon' and table_schema = 'dpg_app' and table_name = 'order_items'
-         and privilege_type = 'INSERT'
-         and column_name not in (
-           'order_id', 'product_id', 'product_name', 'product_sku', 'quantity',
-           'unit_price', 'total_price', 'commercial_snapshot'
-         )
-     )
-     or has_table_privilege('anon', 'dpg_app.products', 'SELECT')
-     or not has_column_privilege('anon', 'dpg_app.products', 'price', 'SELECT')
-     or exists (
-       select 1 from information_schema.column_privileges
-       where grantee = 'anon' and table_schema = 'dpg_app' and table_name = 'products'
-         and privilege_type = 'SELECT'
-         and column_name not in (
-           'id', 'sku', 'name', 'price', 'original_price', 'list_price', 'sale_price',
-           'online_discount_amount', 'stock_status', 'price_source', 'source_system',
-           'price_state', 'price_confidence', 'price_updated_at', 'is_active',
-           'publication_status', 'pdp_visibility', 'sellable_status'
-         )
-     )
-     or has_table_privilege('anon', 'dpg_app.guest_order_idempotency_records', 'SELECT')
-     or has_table_privilege('anon', 'dpg_app.guest_order_idempotency_records', 'INSERT')
-     or has_table_privilege('anon', 'dpg_app.guest_order_idempotency_records', 'UPDATE')
-     or has_table_privilege('anon', 'dpg_app.guest_order_idempotency_records', 'DELETE')
      or not exists (
        select 1 from pg_policy p
        join pg_class c on c.oid = p.polrelid
        join pg_namespace n on n.oid = c.relnamespace
        where n.nspname = 'dpg_app' and c.relname = 'guest_order_idempotency_records'
          and p.polname = 'phase2_guest_idempotency_select' and p.polcmd = 'r'
-         and p.polroles = array[(select oid from pg_roles where rolname = 'anon')]
+          and p.polroles = array[(select oid from pg_roles where rolname = 'dpg_order_intake_function_owner')]
      )
      or not exists (
        select 1 from pg_policy p
@@ -658,41 +717,8 @@ begin
        join pg_namespace n on n.oid = c.relnamespace
        where n.nspname = 'dpg_app' and c.relname = 'guest_order_idempotency_records'
          and p.polname = 'phase2_guest_idempotency_insert' and p.polcmd = 'a'
-         and p.polroles = array[(select oid from pg_roles where rolname = 'anon')]
-     )
-     or exists (
-       select 1 from pg_policy p
-       join pg_class c on c.oid = p.polrelid
-       join pg_namespace n on n.oid = c.relnamespace
-       where n.nspname = 'dpg_app' and c.relname = 'guest_order_idempotency_records'
-         and p.polname not in ('phase2_guest_idempotency_select', 'phase2_guest_idempotency_insert')
-     )
-     or not has_column_privilege('anon', 'dpg_app.guest_order_idempotency_records', 'key_hash', 'SELECT')
-     or not has_column_privilege('anon', 'dpg_app.guest_order_idempotency_records', 'request_hash', 'SELECT')
-     or not has_column_privilege('anon', 'dpg_app.guest_order_idempotency_records', 'safe_response', 'SELECT')
-     or not has_column_privilege('anon', 'dpg_app.guest_order_idempotency_records', 'key_hash', 'INSERT')
-     or not has_column_privilege('anon', 'dpg_app.guest_order_idempotency_records', 'request_hash', 'INSERT')
-     or not has_column_privilege('anon', 'dpg_app.guest_order_idempotency_records', 'safe_response', 'INSERT')
-     or exists (
-       select 1 from information_schema.column_privileges
-       where grantee = 'anon' and table_schema = 'dpg_app'
-         and table_name = 'guest_order_idempotency_records'
-         and privilege_type in ('SELECT', 'INSERT')
-         and column_name not in ('key_hash', 'request_hash', 'safe_response')
-     )
-     or has_table_privilege('anon', 'dpg_app.guest_order_rate_limit_windows', 'SELECT')
-     or has_table_privilege('anon', 'dpg_app.guest_order_rate_limit_windows', 'INSERT')
-     or has_table_privilege('anon', 'dpg_app.guest_order_rate_limit_windows', 'UPDATE')
-     or not has_table_privilege('anon', 'dpg_app.guest_order_rate_limit_windows', 'DELETE')
-     or not has_column_privilege('anon', 'dpg_app.guest_order_rate_limit_windows', 'request_count', 'UPDATE')
-     or not has_sequence_privilege('anon', 'dpg_app.orders_id_seq', 'USAGE')
-     or not has_sequence_privilege('anon', 'dpg_app.order_items_id_seq', 'USAGE')
-     or not has_function_privilege('anon', 'dpg_app.runtime_hash(jsonb)', 'EXECUTE')
-     or not has_function_privilege('anon', 'dpg_app.runtime_key_hash(text)', 'EXECUTE')
-     or has_function_privilege('authenticated', 'public.guest_order_request_create(jsonb,text,uuid)', 'EXECUTE')
-     or has_function_privilege('authenticated', 'public.guest_order_request_receipt(text)', 'EXECUTE')
-     or has_function_privilege('service_role', 'public.guest_order_request_create(jsonb,text,uuid)', 'EXECUTE')
-     or has_function_privilege('service_role', 'public.guest_order_request_receipt(text)', 'EXECUTE') then
+          and p.polroles = array[(select oid from pg_roles where rolname = 'dpg_order_intake_function_owner')]
+     ) then
     raise exception 'DPG_PHASE2_POSTFLIGHT_FAILED';
   end if;
 end

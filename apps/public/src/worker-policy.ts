@@ -11,6 +11,7 @@ export type PublicWorkerEnvironment = Readonly<{
   PREVIEW_NOINDEX: string
   PUBLIC_ORDER_INTAKE_URL?: string
   PUBLIC_SUPABASE_PUBLISHABLE_KEY?: string
+  ORDER_INTAKE_SIGNING_SECRET?: string
   ORDER_REQUEST_LIMITER?: RateLimit
   [name: string]: unknown
 }>
@@ -28,6 +29,7 @@ const FORBIDDEN_INTERNAL_HEADERS = [
 ] as const
 const PRIVILEGED_RUNTIME_BINDING_PATTERN =
   /(SERVICE_ROLE|AUTH_ADMIN|ADMIN_SESSION|SECRET|PASSWORD|DATABASE_URL|DIRECT_URL|PRIVATE_KEY|CREDENTIAL|CLOUDFLARE_API_TOKEN|BUNNY_API_KEY)/i
+const ALLOWED_SERVER_ONLY_SECRET_BINDING = 'ORDER_INTAKE_SIGNING_SECRET'
 const LISTING_API_FAMILIES = new Set(['thiet-bi-ve-sinh', 'thiet-bi-bep', 'vat-lieu-nuoc', 'gach-op-lat'])
 const LISTING_API_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 
@@ -35,6 +37,21 @@ export const PRIVATE_CACHE_CONTROL = 'private, no-store'
 export const PUBLIC_BROWSER_CACHE_CONTROL = 'public, max-age=0, must-revalidate'
 export const PUBLIC_EDGE_CACHE_CONTROL = `public, max-age=${PUBLIC_EDGE_CACHE_SECONDS}, must-revalidate`
 export const PUBLIC_PREVIEW_ROBOTS_HEADER = 'noindex, nofollow'
+
+function assertPrivilegedRuntimeBindings(environment: PublicWorkerEnvironment) {
+  for (const name of Object.keys(environment)) {
+    if (name === ALLOWED_SERVER_ONLY_SECRET_BINDING) {
+      const value = environment[name]
+      if (typeof value !== 'string' || new TextEncoder().encode(value).byteLength < 32) {
+        throw new Error('PUBLIC_WORKER_ORDER_INTAKE_SIGNING_SECRET_INVALID')
+      }
+      continue
+    }
+    if (PRIVILEGED_RUNTIME_BINDING_PATTERN.test(name)) {
+      throw new Error(`PUBLIC_WORKER_PRIVILEGED_BINDING_FORBIDDEN:${name}`)
+    }
+  }
+}
 
 export function assertPublicRuntime(request: Request, environment: PublicWorkerEnvironment) {
   if (environment.APP_ENV === 'preview') {
@@ -53,11 +70,7 @@ export function assertPublicRuntime(request: Request, environment: PublicWorkerE
     && !['localhost', '127.0.0.1'].includes(url.hostname)) {
     throw new Error('PUBLIC_WORKER_PRODUCTION_HOST_FORBIDDEN')
   }
-  for (const name of Object.keys(environment)) {
-    if (PRIVILEGED_RUNTIME_BINDING_PATTERN.test(name)) {
-      throw new Error(`PUBLIC_WORKER_PRIVILEGED_BINDING_FORBIDDEN:${name}`)
-    }
-  }
+  assertPrivilegedRuntimeBindings(environment)
 }
 
 export function robotsHeader(request: Request, environment: PublicWorkerEnvironment) {
@@ -88,11 +101,7 @@ export function assertPreviewRuntime(request: Request, environment: PublicWorker
     configuredOrigin.hostname === 'dongphugia.vn' ||
     configuredOrigin.hostname.endsWith('.dongphugia.vn')
   ) throw new Error('PUBLIC_WORKER_PREVIEW_ORIGIN_INVALID')
-  for (const name of Object.keys(environment)) {
-    if (PRIVILEGED_RUNTIME_BINDING_PATTERN.test(name)) {
-      throw new Error(`PUBLIC_WORKER_PRIVILEGED_BINDING_FORBIDDEN:${name}`)
-    }
-  }
+  assertPrivilegedRuntimeBindings(environment)
   if (PRODUCTION_HOSTS.has(hostname) || hostname.endsWith('.dongphugia.vn')) {
     throw new Error('PUBLIC_WORKER_PREVIEW_PRODUCTION_HOST_FORBIDDEN')
   }

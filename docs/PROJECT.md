@@ -88,10 +88,13 @@ replace the earlier open-choice wording in this section.
 **Phase 2 completion boundary:** PR #272 implements the guest cart/order-request
 slice and a minimal staff order inbox; it does not complete the full Admin/CMS,
 verified PDP variants or footer parity. Keep those as later bounded slices.
-The PR's `dpg_app` persistence implementation is still subject to exact-target
-backup, Auth/RLS, rate-limit and isolated-Preview gates before any hosted
-migration or function deployment. Passing local tests or CI does not clear
-those gates.
+The source-level direct Data API/RPC bypass is closed by a Worker-to-function
+HMAC boundary, a dedicated least-privilege PostgreSQL login, and database-side
+rate limiting. No hosted secret or connection has been configured by that
+source change. Applying the migration, provisioning the login, setting hosted
+Worker/Function secrets, or deploying either runtime still requires the exact
+target backup/restore, Auth/RLS and isolated-Preview gates and Owner approval.
+Passing local tests or CI does not clear those gates.
 
 **Design provenance and approval:** older 2026-09 V1 Figma handoffs included
 a global `V1 WIREFRAME APPROVED / FROZEN` gate and several review-candidate
