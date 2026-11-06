@@ -9,7 +9,7 @@ owner_decision: true
 This ADR records the Owner-approved V1 scope amendment made on 2026-09-03.
 It is the current repository authority for the affected scope and supersedes
 only the conflicting Wishlist/Collection portions of ADR 0016, ADR 0017, ADR
-0018, `CONTEXT.md`, and the V1.0 schema/service assumptions. All unrelated
+0018, the former root business glossary (now summarized in `docs/PROJECT.md`), and the V1.0 schema/service assumptions. All unrelated
 Product, Family, Brand, Category, Search, commerce, Content, Auth, media, and
 release decisions remain unchanged.
 
@@ -163,6 +163,6 @@ The following earlier statements are no longer V1 authority:
   browser-local Public page/state.
 - ADR 0018: Collection Admin management and `marketing.collection.*` as an
   active V1 Marketing capability.
-- `CONTEXT.md`: Collection as an active canonical V1 catalogue term.
+- the former root business glossary (now summarized in `docs/PROJECT.md`): Collection as an active canonical V1 catalogue term.
 
 Everything else in those documents remains in force unless separately amended.
