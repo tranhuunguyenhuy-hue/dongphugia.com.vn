@@ -56,6 +56,7 @@ export function buildProjection(products, evidence, rootMetadata = [], options =
   const categoryBrands = new Map()
   const featuredCandidates = new Map()
   const variantGroups = new Map()
+  const variantAxes = new Map()
   const searchShards=[[],[],[],[]]
   const sitemapProductIds = []
   for (const root of rootMetadata) {
@@ -72,7 +73,7 @@ export function buildProjection(products, evidence, rootMetadata = [], options =
     featuredCandidates.set(root.slug,[])
   }
   for (const product of products) {
-    const keys = ['id','name','display_name','slug','sku','price','price_display','stock_status','image_main_url','is_active','is_featured','is_promotion','variant_options','categories','subcategories','brands','canonical_category_slug','canonical_subcategory_slug','url','listingEligible','sitemapEligible','publicContent','variant_group','variant_type','variant_label','rootSortOrder','rootBrandId','rootBrandSortOrder','rootSubcategorySortOrder','rootSubcategoryThumbnailUrl']
+    const keys = ['id','name','display_name','slug','sku','price','price_display','stock_status','image_main_url','is_active','is_featured','is_promotion','variant_options','variant_axes','categories','subcategories','brands','canonical_category_slug','canonical_subcategory_slug','url','listingEligible','sitemapEligible','publicContent','variant_group','variant_type','variant_label','rootSortOrder','rootBrandId','rootBrandSortOrder','rootSubcategorySortOrder','rootSubcategoryThumbnailUrl']
     const priceKeys=['price','original_price','list_price','sale_price','online_discount_amount','final_online_price','price_display','is_promotion','price_provenance']
     const price=Object.fromEntries(priceKeys.map(key=>[key,product[key]]))
     if (Object.keys(product).some(key => !keys.includes(key) && !(options.restoreCommerce && (priceKeys.includes(key)||['searchEligible','product_feature_values','colors'].includes(key))))
@@ -85,7 +86,14 @@ export function buildProjection(products, evidence, rootMetadata = [], options =
     if(product.publicContent&&!isSafePublicContent(product.publicContent))throw new Error('PUBLIC_PROJECTION_UNSAFE_CONTENT')
     if(product.variant_group!==undefined&&(product.listingEligible!==true||!/^public-[1-9][0-9]*$/.test(product.variant_group)
       ||!['size','seat_type'].includes(product.variant_type)
-      ||!product.variant_label||publicText(product.variant_label,100)!==product.variant_label))throw new Error('PUBLIC_PROJECTION_UNSAFE_VARIANT')
+      ||!product.variant_label||publicText(product.variant_label,100)!==product.variant_label
+      ||!Array.isArray(product.variant_axes)||product.variant_axes.length!==1
+      ||product.variant_axes[0]?.key!==product.variant_type
+      ||typeof product.variant_axes[0]?.label!=='string'||publicText(product.variant_axes[0].label,80)!==product.variant_axes[0].label
+      ||!Array.isArray(product.variant_options)||product.variant_options.length!==1
+      ||product.variant_options[0]?.axis!==product.variant_type
+      ||typeof product.variant_options[0]?.value!=='string'||publicText(product.variant_options[0].value,100)!==product.variant_options[0].value
+      ||product.variant_options[0]?.label!==product.variant_label))throw new Error('PUBLIC_PROJECTION_UNSAFE_VARIANT')
     if (paths.has(product.url)) throw new Error('PUBLIC_PROJECTION_DUPLICATE_CANONICAL_PATH')
     paths.add(product.url)
     if (product.sitemapEligible) sitemapProductIds.push(product.id)
@@ -95,6 +103,8 @@ export function buildProjection(products, evidence, rootMetadata = [], options =
       searchEligible,
       sitemapEligible,
       publicContent,
+      variant_axes,
+      variant_options,
       rootSortOrder,
       rootBrandId,
       rootBrandSortOrder,
@@ -102,6 +112,7 @@ export function buildProjection(products, evidence, rootMetadata = [], options =
       rootSubcategoryThumbnailUrl,
       ...publicProduct
     } = product
+    publicProduct.variant_options=[]
     if(options.restoreCommerce&&searchEligible===true)searchShards[product.id%4].push({
       id:product.id,sku:product.sku,name:product.name,slug:product.slug,url:product.url,
       price:product.price,original_price:product.original_price,
@@ -117,7 +128,10 @@ export function buildProjection(products, evidence, rootMetadata = [], options =
     buckets.get(bucket).push(publicContent?{...publicProduct,publicContent}:publicProduct)
     if(product.variant_group){
       if(!variantGroups.has(product.variant_group))variantGroups.set(product.variant_group,[])
-      variantGroups.get(product.variant_group).push(publicProduct)
+      variantGroups.get(product.variant_group).push({...publicProduct,variant_options})
+      const existingAxes=variantAxes.get(product.variant_group)
+      if(existingAxes&&JSON.stringify(existingAxes)!==JSON.stringify(variant_axes))throw new Error('PUBLIC_PROJECTION_UNSAFE_VARIANT')
+      variantAxes.set(product.variant_group,variant_axes)
     }
     if (!listingEligible) continue
     const categorySlug = product.categories.slug, listingSlug = product.subcategories.slug
@@ -168,9 +182,11 @@ export function buildProjection(products, evidence, rootMetadata = [], options =
   }
   for(const [key,members] of variantGroups){
     const first=members[0]
-    if(members.length<2||members.length>8||!first.brands?.slug||new Set(members.map(p=>p.id)).size!==members.length
+    if(members.length<2||members.length>8||!first.brands?.slug||!Array.isArray(variantAxes.get(key))
+      ||variantAxes.get(key).length!==1||new Set(members.map(p=>p.id)).size!==members.length
       ||new Set(members.map(p=>p.sku)).size!==members.length
       ||new Set(members.map(p=>p.variant_label.toLocaleLowerCase('vi'))).size!==members.length
+      ||new Set(members.map(p=>p.variant_options[0]?.value.toLocaleLowerCase('vi'))).size!==members.length
       ||members.some(p=>p.variant_type!==first.variant_type||p.categories.slug!==first.categories.slug
         ||p.subcategories.slug!==first.subcategories.slug||p.brands?.slug!==first.brands?.slug))
       throw new Error('PUBLIC_PROJECTION_UNSAFE_VARIANT')
@@ -186,7 +202,7 @@ export function buildProjection(products, evidence, rootMetadata = [], options =
     richDescriptions:products.filter(p=>p.publicContent?.descriptionHtml).length,
     productsWithDocuments:products.filter(p=>p.publicContent?.documents?.length).length,
   }:{})}
-  const manifest = { contentPolicy:options.restoreCommerce?'canonical-public-content-v4':'canonical-public-content-v3',contentStats,variantGroups:Object.fromEntries([...variantGroups].sort(([a],[b])=>a.localeCompare(b))),contract:PROJECTION_CONTRACT,...evidence,notice:NOTICE,productBuckets:[...buckets.keys()].sort(),sitemapProductIds:sitemapProductIds.sort((a,b)=>a-b),...(options.restoreCommerce?{searchShards:searchShards.map((_,i)=>String(i)),searchProducts:searchShards.reduce((n,shard)=>n+shard.length,0)}:{}),categories:[...categories.values()],products:products.length,listingProducts:[...pages.values()].reduce((n,p)=>n+p.length,0) }
+  const manifest = { contentPolicy:options.restoreCommerce?'canonical-public-content-v4':'canonical-public-content-v3',contentStats,variantGroups:Object.fromEntries([...variantGroups].sort(([a],[b])=>a.localeCompare(b))),variantAxes:Object.fromEntries([...variantAxes].sort(([a],[b])=>a.localeCompare(b))),contract:PROJECTION_CONTRACT,...evidence,notice:NOTICE,productBuckets:[...buckets.keys()].sort(),sitemapProductIds:sitemapProductIds.sort((a,b)=>a-b),...(options.restoreCommerce?{searchShards:searchShards.map((_,i)=>String(i)),searchProducts:searchShards.reduce((n,shard)=>n+shard.length,0)}:{}),categories:[...categories.values()],products:products.length,listingProducts:[...pages.values()].reduce((n,p)=>n+p.length,0) }
   assets.set('manifest.json', manifest)
   for (const [bucket, values] of buckets) assets.set(`products/${bucket}.json`,{contract:PROJECTION_CONTRACT,checkpoint:evidence.checkpoint,products:values})
   if(options.restoreCommerce)for(let i=0;i<searchShards.length;i++)assets.set(`search/${i}.json`,{contract:PROJECTION_CONTRACT,checkpoint:evidence.checkpoint,products:searchShards[i]})
