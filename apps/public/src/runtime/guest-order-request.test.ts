@@ -157,6 +157,24 @@ describe('POST /api/order-requests Worker adapter', () => {
     expect(body).toEqual({ error: { code: 'ORDER_INTAKE_FAILED' } })
     expect(JSON.stringify(body)).not.toContain('private')
   })
+
+  it('returns a safe conflict when an idempotency key is reused with changed input', async () => {
+    fetcher
+      .mockResolvedValueOnce(Response.json({ data: null }, { status: 200 }))
+      .mockResolvedValueOnce(Response.json(
+        { error: { code: 'IDEMPOTENCY_KEY_REUSED', details: 'private' } },
+        { status: 409 },
+      ))
+
+    const response = await handleGuestOrderRequest(
+      createRequest({ ...validBody, note: 'changed request' }),
+      { ...environment, ORDER_REQUEST_LIMITER: limiter as unknown as RateLimit },
+      fetcher as unknown as typeof fetch,
+    )
+
+    expect(response.status).toBe(409)
+    expect(await response.json()).toEqual({ error: { code: 'IDEMPOTENCY_KEY_REUSED' } })
+  })
 })
 
 describe('GET /api/order-requests/receipt Worker adapter', () => {

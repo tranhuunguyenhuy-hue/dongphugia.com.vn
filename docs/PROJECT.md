@@ -32,7 +32,7 @@ Worker is deployed, DNS is cut over or a provider restored from this table
 alone. Unrelated catalogue reconciliation (TOTO, INAX, etc.) is its own work,
 not an automatic blocker for Public UI restoration.
 
-## 2A. Phase 2 continuation — scope, sequencing and unresolved decisions
+## 2A. Phase 2 continuation — scope, sequencing and Owner decisions
 
 **Owner request:** [Issue #270](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/270)
 is the task authority for restoring the remaining legacy experience in a
@@ -75,11 +75,21 @@ its actual Production target, P0 state and rollback are confirmed.
    denials and module-by-module user flows are required for any activated
    staff operations.
 
-**Two material choices still open in #270:** whether full Admin/CMS means
-porting legacy monolith or completing `apps/admin` with Supabase Auth/RLS,
-and which old checkout/payment + staff fulfillment actions and persistent
-order target must be restored first. Do **not** invent the answers or merge
-two incompatible Admin/data authorities.
+**Owner decisions recorded in #270 (2026-11-04):** complete the separate
+`apps/admin` application on the new infrastructure; do not rehost the legacy
+monolithic Admin as an interim shortcut. Restore guest cart and order-request
+submission first. Each request must be persisted once, acknowledged to the
+customer, and available to authorized staff. Staff confirms the commercial
+order offline; payment automation is out of this first slice. These decisions
+replace the earlier open-choice wording in this section.
+
+**Phase 2 completion boundary:** PR #272 implements the guest cart/order-request
+slice and a minimal staff order inbox; it does not complete the full Admin/CMS,
+verified PDP variants or footer parity. Keep those as later bounded slices.
+The PR's `dpg_app` persistence implementation is still subject to exact-target
+backup, Auth/RLS, rate-limit and isolated-Preview gates before any hosted
+migration or function deployment. Passing local tests or CI does not clear
+those gates.
 
 **Design provenance and approval:** older 2026-09 V1 Figma handoffs included
 a global `V1 WIREFRAME APPROVED / FROZEN` gate and several review-candidate
