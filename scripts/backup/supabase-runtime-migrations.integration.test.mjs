@@ -946,6 +946,10 @@ describe('Supabase runtime migration adoption integration', () => {
         }
 
         phase = 'verify_phase2_guest_order_persistence_and_staff_inbox'
+        let phase2FixtureCommitted = false
+        let phase2FixtureCategoryId
+        let phase2FixtureProductId
+        let phase2FixtureOrderId
         const createdOrderKey = '33333333-3333-4333-8333-333333333333'
         const createdOrderRequestId = '44444444-4444-4444-8444-444444444444'
         const createdOrderInput = {
@@ -965,6 +969,7 @@ describe('Supabase runtime migration adoption integration', () => {
             values ('Synthetic Phase 2 Category', 'synthetic-phase2-category-${process.pid}')
             returning id
           `)
+          phase2FixtureCategoryId = category.rows[0]?.id
           const product = await client.query(`
             insert into dpg_app.products (
               sku, name, slug, category_id, price, original_price, list_price, sale_price,
@@ -977,8 +982,9 @@ describe('Supabase runtime migration adoption integration', () => {
               3000, 'in_stock', true, 'public', 'public', 'sellable', 'available',
               'priced', 'manual', 'high', '2026-07-02T12:00:00Z', 'manual'
             ) returning id
-          `, [category.rows[0]?.id])
-          createdOrderInput.items[0].productId = product.rows[0]?.id
+          `, [phase2FixtureCategoryId])
+          phase2FixtureProductId = product.rows[0]?.id
+          createdOrderInput.items[0].productId = phase2FixtureProductId
 
           await client.query('set local role anon')
           const missingProductResponse = await client.query(`
@@ -1021,6 +1027,7 @@ describe('Supabase runtime migration adoption integration', () => {
             from dpg_app.orders where order_number = $1
           `, [firstReceipt.order_number])
           expect(persistedOrder.rowCount).toBe(1)
+          phase2FixtureOrderId = persistedOrder.rows[0]?.id
           expect(persistedOrder.rows[0]).toMatchObject({
             customer_name: 'Synthetic Phase 2 Customer',
             status: 'pending',
@@ -1171,8 +1178,89 @@ describe('Supabase runtime migration adoption integration', () => {
           `, [orderId, statusRequestId])).rejects.toMatchObject({ message: 'RESOURCE_NOT_FOUND' })
           await client.query('rollback to savepoint deny_unassigned_staff_update')
           await client.query('reset role')
+
+          await client.query('commit')
+          phase2FixtureCommitted = true
+
+          phase = 'verify_phase2_order_after_commit_from_second_connection'
+          const verifier = new Client({ connectionString })
+          try {
+            await verifier.connect()
+            const committedOrder = await verifier.query(`
+              select id, order_number, status, payment_status, order_origin, total
+              from dpg_app.orders where id = $1
+            `, [phase2FixtureOrderId])
+            expect(committedOrder.rowCount).toBe(1)
+            expect(committedOrder.rows[0]).toMatchObject({
+              order_number: firstReceipt.order_number,
+              status: 'received',
+              payment_status: 'unpaid',
+              order_origin: 'public_web',
+              total: '240000.00',
+            })
+            const committedItems = await verifier.query(`
+              select count(*)::integer as count from dpg_app.order_items where order_id = $1
+            `, [phase2FixtureOrderId])
+            expect(committedItems.rows[0]?.count).toBe(1)
+            const committedIdempotency = await verifier.query(`
+              select count(*)::integer as count from dpg_app.guest_order_idempotency_records
+              where key_hash = dpg_app.runtime_key_hash($1)
+            `, [createdOrderKey])
+            expect(committedIdempotency.rows[0]?.count).toBe(1)
+
+            await verifier.query('begin')
+            try {
+              await verifier.query('set local role anon')
+              const committedReceipt = await verifier.query(
+                'select public.guest_order_request_receipt($1) as response', [createdOrderKey],
+              )
+              expect(committedReceipt.rows[0]?.response).toEqual(firstReceipt)
+              await verifier.query('commit')
+            } catch (error) {
+              await verifier.query('rollback').catch(() => undefined)
+              throw error
+            }
+          } finally {
+            await verifier.end().catch(() => undefined)
+          }
         } finally {
-          await client.query('rollback').catch(() => undefined)
+          if (!phase2FixtureCommitted) {
+            await client.query('rollback').catch(() => undefined)
+          } else {
+            await client.query('begin')
+            try {
+              await client.query(`
+                delete from dpg_app.audit_logs
+                where action = 'phase2.order.status.updated' and entity_id = $1
+              `, [phase2FixtureOrderId])
+              await client.query(`
+                delete from dpg_app.phase2_admin_order_status_idempotency
+                where auth_user_id = any($1::uuid[])
+              `, [[adminAuthUserId, saleAuthUserId]])
+              await client.query('delete from dpg_app.orders where id = $1', [phase2FixtureOrderId])
+              await client.query(`
+                delete from dpg_app.guest_order_idempotency_records
+                where key_hash = dpg_app.runtime_key_hash($1)
+              `, [createdOrderKey])
+              await client.query(`
+                delete from dpg_app.guest_order_rate_limit_windows
+                where phone_hash = any(array[
+                  dpg_app.runtime_key_hash('0900000002'),
+                  dpg_app.runtime_key_hash('0900000003')
+                ])
+              `)
+              await client.query(`
+                delete from dpg_app.admin_users
+                where supabase_auth_user_id = any($1::uuid[])
+              `, [[adminAuthUserId, saleAuthUserId]])
+              await client.query('delete from dpg_app.products where id = $1', [phase2FixtureProductId])
+              await client.query('delete from dpg_app.categories where id = $1', [phase2FixtureCategoryId])
+              await client.query('commit')
+            } catch (error) {
+              await client.query('rollback').catch(() => undefined)
+              throw error
+            }
+          }
         }
 
         phase = 'verify_database_size_guard'
