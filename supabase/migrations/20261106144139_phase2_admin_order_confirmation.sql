@@ -14,7 +14,8 @@ begin
      )
      or exists (
        select 1 from pg_catalog.pg_auth_members m
-       where m.roleid = 'dpg_migration'::regrole or m.member = 'dpg_migration'::regrole
+       where m.member = 'dpg_migration'::regrole
+          or (m.roleid = 'dpg_migration'::regrole and m.member <> 'postgres'::regrole)
      )
      or not has_table_privilege('dpg_migration', 'dpg_app.orders', 'SELECT')
      or not has_table_privilege('dpg_migration', 'dpg_app.orders', 'UPDATE')

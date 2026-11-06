@@ -119,11 +119,11 @@ candidate and target; source PR merge does not authorize it.
 `apps/admin` architecture and guest order request flow above. The active
 source candidates are intentionally separate: PR #272 contains the cart,
 guest order, receipt and initial staff inbox; PR #284 contains Public variant
-projection/selection changes and remains Draft until the tracked 17-group
-total is verified against authoritative source; PR #267 already restored
-Footer parity is merged in PR #267; PR #285 adds Admin Sales search/audit;
-PR #286 adds the capability-gated Product editor; PR #287 adds Blog and
-selected site content editing; PR #288 adds an immutable commercial
+projection/selection changes; retained M4 candidate audit `41848374062`
+reports 17 variant groups and 51 products, and the updated PR body records
+that evidence. Footer parity is merged in PR #267; PR #285 adds Admin Sales
+search/audit; PR #286 adds the capability-gated Product editor; PR #287 adds
+Blog and selected site content editing; PR #288 adds an immutable commercial
 confirmation snapshot before staff can move a guest request into `confirmed`,
 then supports `inventory_check` and `completed`. Confirmation records shipping
 and per-unit installation fees, derives the final total, and does not alter the
