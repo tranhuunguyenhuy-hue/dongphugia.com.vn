@@ -32,21 +32,19 @@ npm test
 npm run build
 ```
 
-## Codex and release
+## Codex and delivery
 
-Codex tự động đọc [AGENTS.md](AGENTS.md), chỉ đọc [CONTEXT.md](CONTEXT.md)
-khi cần ngữ cảnh nghiệp vụ. Không cần đọc toàn bộ `docs/` để bắt đầu.
+Một phiên Codex chỉ cần đọc [AGENTS.md](AGENTS.md) để nắm mục tiêu, công việc
+đang làm, cấu trúc ứng dụng, nghiệp vụ và quy trình phát hành. Chi tiết được
+**tổng hợp duy nhất** tại [Project Handbook](docs/PROJECT.md), đọc khi cần.
 
-Một PR đã merge **không** có nghĩa đã deploy. Phải xác minh hệ thống đang phục
-vụ Production, nhận phê duyệt đúng bản phát hành, và kiểm tra website thật.
-Xem [quy trình mở rộng](docs/WORKFLOW-WITH-CODEX.md) khi cần; xem
-[isolated Staging foundation](docs/deploy/isolated-staging-foundation.md)
-chỉ với các thay đổi dữ liệu cần môi trường cách ly.
+Merge PR không đồng nghĩa với Production. Chỉ deploy sau khi xác minh đúng
+runtime/candidate và có phê duyệt, rồi kiểm tra website thật.
 
 ## Repository map
 
 - `src/`: Next.js application
 - `prisma/`: schema, migrations và seed cần thiết
 - `scripts/`: quality, monitoring, SEO và canonical rollout tools
-- `docs/`: application reference, workflow, sitemap và staging runbook
+- `docs/PROJECT.md`: handbook duy nhất; `docs/deploy/` giữ những runbook còn được CI hoặc vận hành phụ thuộc
 - `.github/workflows/`: quality, performance, staging image và manual candidate
