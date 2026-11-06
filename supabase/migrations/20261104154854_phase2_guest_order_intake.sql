@@ -347,7 +347,9 @@ begin
     from dpg_app.guest_order_idempotency_records
    where key_hash = v_key_hash;
   if found then
-    if v_existing.request_hash <> v_request_hash then raise exception 'IDEMPOTENCY_KEY_REUSED'; end if;
+    if v_existing.request_hash <> v_request_hash then
+      return jsonb_build_object('error', 'IDEMPOTENCY_KEY_REUSED');
+    end if;
     return v_existing.safe_response;
   end if;
 
