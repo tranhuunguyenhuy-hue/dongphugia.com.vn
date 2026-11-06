@@ -243,7 +243,29 @@ documentation-only diffs need structural/link checks rather than unrelated
 application builds. A merge into `main` does **not** equal a Production
 deployment. Record checks as PASS/FAIL/UNKNOWN, never invent a successful gate.
 
-## 8. Documentation policy and maintenance
+## 8. Operational files retained because automation still depends on them
+
+These are not startup context. Open only one when its workflow or risky
+operation directly applies:
+
+- **Isolated PostgreSQL Staging deployment foundation:** [isolated staging](deploy/isolated-staging-foundation.md); the
+  [CI-only disposable database fixtures](deploy/staging-db-bootstrap/RUNBOOK.md)
+  are **not** a Staging or Production runtime procedure.
+- **Migration implementation and budget:** [canonical baseline](deploy/migration-implementation-baseline.md),
+  [free-tier policy](deploy/migration-free-tier-policy.md) — migration only.
+- **Supabase runtime security:** [security boundary](deploy/supabase-runtime-security-boundary.md);
+  authorizations and provider facts must be verified before a database write.
+- **Publishing and data recovery:** [publishing runbook](deploy/publishing-api-v1-runbook.md),
+  [runtime backup](deploy/runtime-backup-recovery.md),
+  [recovery baseline](deploy/leo-565-media-recovery-baseline.md).
+- **Source delivery:** use **one standard workflow and risk-proportionate**
+  validation/recovery controls from section 7, not separate release tracks.
+
+Some tests validate these files literally by path and key contract wording.
+Do not rename/delete an operational reference unless its executable
+consumer and rollback procedure are updated together.
+
+## 9. Documentation policy and maintenance
 
 **Only two canonical guide files for humans and Codex:**
 
