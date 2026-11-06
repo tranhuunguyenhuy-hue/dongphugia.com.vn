@@ -34,6 +34,20 @@ export type AdminOrderItem = Readonly<{
   commercial_snapshot: Record<string, unknown>
 }>
 
+export type OrderConfirmation = Readonly<{
+  base_total: number
+  shipping_fee: number
+  installation_fees: Array<Readonly<{
+    order_item_id: number
+    product_sku: string
+    install_option: 'none' | 'install' | 'replace'
+    fee_per_unit: number
+    line_total: number
+  }>>
+  confirmed_total: number
+  confirmed_at: string
+}>
+
 export type AdminOrderDetail = Readonly<{
   order: AdminOrderSummary & {
     customer_email: string | null
@@ -46,6 +60,7 @@ export type AdminOrderDetail = Readonly<{
     updated_at: string
   }
   items: AdminOrderItem[]
+  confirmation: OrderConfirmation | null
 }>
 
 function record(value: unknown): Record<string, unknown> | null {
@@ -156,6 +171,43 @@ export function parseAdminOrderDetail(value: unknown): AdminOrderDetail | null {
   })
   if (items.some((item) => item === null)) return null
 
+  let confirmation: OrderConfirmation | null = null
+  const rawConfirmation = record(candidate?.confirmation)
+  if (candidate?.confirmation !== null && candidate?.confirmation !== undefined) {
+    if (!rawConfirmation || !Array.isArray(rawConfirmation.installation_fees)) return null
+    const baseTotal = nonNegativeNumber(rawConfirmation.base_total)
+    const confirmationShipping = nonNegativeNumber(rawConfirmation.shipping_fee)
+    const confirmedTotal = nonNegativeNumber(rawConfirmation.confirmed_total)
+    if (baseTotal === null || confirmationShipping === null || confirmedTotal === null || typeof rawConfirmation.confirmed_at !== 'string') return null
+    const installationFees = rawConfirmation.installation_fees.map((value) => {
+      const fee = record(value)
+      const orderItemId = positiveInteger(fee?.order_item_id)
+      const feePerUnit = nonNegativeNumber(fee?.fee_per_unit)
+      const lineTotal = nonNegativeNumber(fee?.line_total)
+      if (
+        !fee || orderItemId === null || feePerUnit === null || lineTotal === null ||
+        typeof fee.product_sku !== 'string' ||
+        (fee.install_option !== 'none' && fee.install_option !== 'install' && fee.install_option !== 'replace')
+      ) return null
+      return {
+        order_item_id: orderItemId,
+        product_sku: fee.product_sku,
+        install_option: fee.install_option,
+        fee_per_unit: feePerUnit,
+        line_total: lineTotal,
+      }
+    })
+    if (installationFees.some((fee) => fee === null)) return null
+    confirmation = {
+      base_total: baseTotal,
+      shipping_fee: confirmationShipping,
+      installation_fees: installationFees as OrderConfirmation['installation_fees'],
+      confirmed_total: confirmedTotal,
+      confirmed_at: rawConfirmation.confirmed_at,
+    }
+  }
+  if (summary.status === 'confirmed' && confirmation === null) return null
+
   return {
     order: {
       ...summary,
@@ -170,6 +222,7 @@ export function parseAdminOrderDetail(value: unknown): AdminOrderDetail | null {
       updated_at: order.updated_at,
     },
     items: items as AdminOrderItem[],
+    confirmation,
   }
 }
 
@@ -189,5 +242,7 @@ export function parseOrderSearchQuery(value: string | undefined): { value: strin
 export function allowedOrderRequestStatusTransitions(status: OrderRequestStatus): OrderRequestStatus[] {
   if (status === 'pending') return ['received', 'cancelled']
   if (status === 'received') return ['cancelled']
+  if (status === 'confirmed') return ['inventory_check', 'cancelled']
+  if (status === 'inventory_check') return ['completed', 'cancelled']
   return []
 }

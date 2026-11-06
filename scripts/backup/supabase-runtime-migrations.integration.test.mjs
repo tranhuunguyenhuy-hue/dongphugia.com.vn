@@ -42,6 +42,8 @@ const sanitizedDatabaseMessageCodes = new Set([
   'DPG_PHASE2_ADMIN_PRIVILEGE_BASELINE_MISMATCH',
   'DPG_PHASE2_ADMIN_MIGRATION_ALREADY_PRESENT',
   'DPG_PHASE2_ADMIN_POSTFLIGHT_FAILED',
+  'DPG_PHASE2_ORDER_CONFIRMATION_PREFLIGHT_FAILED',
+  'DPG_PHASE2_ORDER_CONFIRMATION_POSTFLIGHT_FAILED',
 ])
 const builtinErrorPrototypeNames = new Map([
   [Error.prototype, 'Error'],
@@ -1099,7 +1101,7 @@ describe('Supabase runtime migration adoption integration', () => {
           })
           const orderId = persistedOrder.rows[0]?.id
           const persistedItems = await client.query(`
-            select product_name, product_sku, quantity, unit_price, total_price, commercial_snapshot
+            select id, product_name, product_sku, quantity, unit_price, total_price, commercial_snapshot
             from dpg_app.order_items where order_id = $1
           `, [orderId])
           expect(persistedItems.rowCount).toBe(1)
@@ -1212,11 +1214,97 @@ describe('Supabase runtime migration adoption integration', () => {
           `, [orderId, statusKey, statusRequestId])).rejects.toMatchObject({ message: 'IDEMPOTENCY_KEY_REUSED' })
           await client.query('rollback to savepoint reject_staff_key_reuse')
 
+          phase = 'phase2_confirm_requires_commercial_snapshot'
+          await client.query('savepoint reject_confirmation_without_snapshot')
+          await client.query("select set_config('dpg.phase2.order_status_request_id', $1, true)", [statusRequestId])
+          await client.query("select set_config('dpg.phase2.order_status_key_hash', $1, true)", ['c'.repeat(64)])
+          await expect(client.query("update dpg_app.orders set status = 'confirmed' where id = $1", [orderId]))
+            .rejects.toMatchObject({ message: 'ORDER_COMMERCIAL_CONFIRMATION_REQUIRED' })
+          await client.query('rollback to savepoint reject_confirmation_without_snapshot')
+
+          phase = 'phase2_reject_installation_fee_snapshot_conflict'
+          await client.query('savepoint reject_invalid_installation_fee')
+          await expect(client.query(`
+            select public.phase2_admin_order_confirm(
+              $1, 15000, $2::jsonb, $3, $4::uuid
+            )
+          `, [orderId, JSON.stringify([{ order_item_id: persistedItems.rows[0]?.id, fee_per_unit: 1000 }]),
+            'abababab-abab-4aba-8aba-abababababab', 'acacacac-acac-4cac-8cac-acacacacacac']))
+            .rejects.toMatchObject({ message: 'INSTALLATION_FEE_CONFLICTS_WITH_ORDER_SNAPSHOT' })
+          await client.query('rollback to savepoint reject_invalid_installation_fee')
+
+          phase = 'phase2_staff_commercial_confirmation'
+          const confirmationKey = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd'
+          const confirmationRequestId = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee'
+          const confirmation = await client.query(`
+            select public.phase2_admin_order_confirm(
+              $1, 15000, $2::jsonb, $3, $4::uuid
+            ) as response
+          `, [orderId, JSON.stringify([{ order_item_id: persistedItems.rows[0]?.id, fee_per_unit: 0 }]), confirmationKey, confirmationRequestId])
+          const confirmationResponse = confirmation.rows[0]?.response
+          expect(confirmationResponse).toMatchObject({
+            order_id: orderId, status: 'confirmed', base_total: 240000,
+            shipping_fee: 15000, confirmed_total: 255000,
+            installation_fees: [expect.objectContaining({ fee_per_unit: 0, line_total: 0, install_option: 'none' })],
+          })
+
+          phase = 'phase2_staff_confirmation_idempotency_replay'
+          const confirmationReplay = await client.query(`
+            select public.phase2_admin_order_confirm(
+              $1, 15000, $2::jsonb, $3, $4::uuid
+            ) as response
+          `, [orderId, JSON.stringify([{ order_item_id: persistedItems.rows[0]?.id, fee_per_unit: 0 }]), confirmationKey, confirmationRequestId])
+          expect(confirmationReplay.rows[0]?.response).toEqual(confirmationResponse)
+
+          phase = 'phase2_staff_confirmation_idempotency_conflict'
+          await client.query('savepoint reject_confirmation_key_reuse')
+          await expect(client.query(`
+            select public.phase2_admin_order_confirm(
+              $1, 16000, $2::jsonb, $3, $4::uuid
+            )
+          `, [orderId, JSON.stringify([{ order_item_id: persistedItems.rows[0]?.id, fee_per_unit: 0 }]), confirmationKey, confirmationRequestId]))
+            .rejects.toMatchObject({ message: 'IDEMPOTENCY_KEY_REUSED' })
+          await client.query('rollback to savepoint reject_confirmation_key_reuse')
+
+          phase = 'phase2_deny_direct_confirmation_insert'
+          await client.query('savepoint deny_direct_confirmation_insert')
+          await expect(client.query(`
+            insert into dpg_app.phase2_order_confirmations (
+              order_id, auth_user_id, admin_id, request_id, idempotency_key_hash,
+              request_hash, base_total, shipping_fee, installation_fees, confirmed_total
+            ) values ($1, $2, 1, $3::uuid, $4, $4, 240000, 0, '[]'::jsonb, 240000)
+          `, [orderId, adminAuthUserId, 'ffffffff-ffff-4fff-8fff-ffffffffffff', 'f'.repeat(64)]))
+            .rejects.toMatchObject({ code: '42501' })
+          await client.query('rollback to savepoint deny_direct_confirmation_insert')
+
+          phase = 'phase2_deny_status_rpc_confirmation_shortcut'
+          await client.query('savepoint reject_status_confirmation_shortcut')
+          await expect(client.query(`
+            select public.phase2_admin_order_update_status(
+              $1, 'confirmed', '12121212-1212-4212-8212-121212121212', $2::uuid
+            )
+          `, [orderId, statusRequestId])).rejects.toMatchObject({ message: 'INVALID_ORDER_STATUS' })
+          await client.query('rollback to savepoint reject_status_confirmation_shortcut')
+
+          phase = 'phase2_staff_status_after_confirmation'
+          const postConfirmationStatus = await client.query(`
+            select public.phase2_admin_order_update_status(
+              $1, 'inventory_check', '13131313-1313-4313-8313-131313131313', $2::uuid
+            ) as response
+          `, [orderId, '14141414-1414-4414-8414-141414141414'])
+          expect(postConfirmationStatus.rows[0]?.response).toMatchObject({ id: orderId, status: 'inventory_check' })
+          const completedStatus = await client.query(`
+            select public.phase2_admin_order_update_status(
+              $1, 'completed', '15151515-1515-4515-8515-151515151515', $2::uuid
+            ) as response
+          `, [orderId, '16161616-1616-4616-8616-161616161616'])
+          expect(completedStatus.rows[0]?.response).toMatchObject({ id: orderId, status: 'completed' })
+
           phase = 'phase2_staff_invalid_status'
           await client.query('savepoint reject_staff_invalid_status')
           await expect(client.query(`
             select public.phase2_admin_order_update_status(
-              $1, 'completed', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', $2::uuid
+              $1, 'unexpected', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', $2::uuid
             )
           `, [orderId, statusRequestId])).rejects.toMatchObject({ message: 'INVALID_ORDER_STATUS' })
           await client.query('rollback to savepoint reject_staff_invalid_status')
@@ -1226,7 +1314,12 @@ describe('Supabase runtime migration adoption integration', () => {
             select count(*)::integer as count from dpg_app.audit_logs
             where action = 'phase2.order.status.updated' and entity_id = $1
           `, [orderId])
-          expect(auditCount.rows[0]?.count).toBe(1)
+          expect(auditCount.rows[0]?.count).toBe(4)
+          const commercialAuditCount = await client.query(`
+            select count(*)::integer as count from dpg_app.audit_logs
+            where action = 'phase2.order.commercial.confirmed' and entity_id = $1
+          `, [orderId])
+          expect(commercialAuditCount.rows[0]?.count).toBe(1)
 
           phase = 'phase2_unassigned_staff_inbox'
           await client.query('set local role authenticated')
@@ -1240,6 +1333,19 @@ describe('Supabase runtime migration adoption integration', () => {
             'select public.phase2_admin_order_get($1) as result', [orderId],
           )
           expect(restrictedDetail.rows[0]?.result).toBeNull()
+          const restrictedConfirmation = await client.query(
+            'select confirmed_total from dpg_app.phase2_order_confirmations where order_id = $1', [orderId],
+          )
+          expect(restrictedConfirmation.rowCount).toBe(0)
+          await client.query('savepoint deny_unassigned_staff_confirmation')
+          await expect(client.query(`
+            select public.phase2_admin_order_confirm(
+              $1, 15000, $2::jsonb, $3, $4::uuid
+            )
+          `, [orderId, JSON.stringify([{ order_item_id: persistedItems.rows[0]?.id, fee_per_unit: 0 }]),
+            '17171717-1717-4717-8717-171717171717', '18181818-1818-4818-8818-181818181818']))
+            .rejects.toMatchObject({ message: 'RESOURCE_NOT_FOUND' })
+          await client.query('rollback to savepoint deny_unassigned_staff_confirmation')
           await client.query('savepoint deny_unassigned_staff_update')
           await expect(client.query(`
             select public.phase2_admin_order_update_status(
@@ -1265,7 +1371,7 @@ describe('Supabase runtime migration adoption integration', () => {
             expect(committedOrder.rowCount).toBe(1)
             expect(committedOrder.rows[0]).toMatchObject({
               order_number: firstReceipt.order_number,
-              status: 'received',
+              status: 'completed',
               payment_status: 'unpaid',
               order_origin: 'public_web',
               total: '240000.00',
@@ -1275,6 +1381,16 @@ describe('Supabase runtime migration adoption integration', () => {
               select count(*)::integer as count from dpg_app.order_items where order_id = $1
             `, [phase2FixtureOrderId])
             expect(committedItems.rows[0]?.count).toBe(1)
+            phase = 'phase2_verify_committed_confirmation_snapshot'
+            const committedConfirmation = await verifier.query(`
+              select base_total, shipping_fee, installation_fees, confirmed_total
+              from dpg_app.phase2_order_confirmations where order_id = $1
+            `, [phase2FixtureOrderId])
+            expect(committedConfirmation.rowCount).toBe(1)
+            expect(committedConfirmation.rows[0]).toMatchObject({
+              base_total: '240000.00', shipping_fee: '15000.00', confirmed_total: '255000.00',
+              installation_fees: [expect.objectContaining({ product_sku: 'SYNTHETIC-PHASE2-E2E', line_total: 0 })],
+            })
             phase = 'phase2_verify_committed_idempotency'
             const committedIdempotency = await verifier.query(`
               select count(*)::integer as count from dpg_app.guest_order_idempotency_records
