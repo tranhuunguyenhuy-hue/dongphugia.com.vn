@@ -1,220 +1,156 @@
-# Dongphugia delivery workflow
+# Dongphugia delivery workflow — fast delivery
 
-This is the single authority for source delivery, GitHub Issues, PRs,
-validation, review, and release. Root `AGENTS.md` owns always-on
-safety; `docs/AGENTS.md` owns application conventions.
+This document is the single source of truth for delivering a request from intake
+to a verified Production result. Root `AGENTS.md` retains mandatory authority
+and safety rules. Optimize for restoring a working customer website, not for
+producing process artifacts.
 
-## Core flow
+## Default flow
 
-### 1. Request
+`Request → Implement → Focused validation → PR / Preview if needed → Owner approval → Production → Smoke check`
 
-A request may be short:
+Treat each arrow as an execution step, not a separate meeting or permission.
+Codex handles the work between intake and the final decision. A green CI run,
+merged PR, or built artifact is progress, not a completed user-facing request.
 
-```text
-Outcome: <what should be true>
-Done when: <observable acceptance>
-Production: no | separately approved later
-```
+### 1. Intake — a short message is enough
 
-Codex finds repository and primary-source facts. The PM decides product
-trade-offs, scope, acceptance, merge, and Production approval.
+The user can say what to fix in ordinary language. Capture only:
 
-Request is complete when outcome, observable acceptance, and Production intent
-are recorded, or the unresolved decision is named for Align.
+- **Outcome:** what must work or change for customers.
+- **Done when:** one or two observable acceptance checks.
+- **Destination:** source only, Preview, or Production.
 
-### 2. Plan controls
+Infer routine technical details from the repository. Ask only when a material
+product decision or missing permission genuinely prevents progress. Do not create
+a formal spec, issue, ADR, or approval comment for a simple, bounded fix.
+Use an Issue only for multi-day handoff, cross-team coordination, or genuinely
+risky state changes.
 
-Use the one standard workflow for every task. Before implementation, record the
-controls proportionate to the actual risk. Increase validation, recovery, and
-approval controls whenever Preflight or Execute reveals a larger blast radius.
+If the user asks to restore website functionality or launch a change, plan the
+whole route to Production, but never treat that intent as authorization to
+perform an unconfirmed Production mutation.
 
-- Small, bounded, reversible changes can use focused validation and integrated
-  review.
-- Material API/runtime behavior, authentication, uploads, schedulers, workflow
-  safety contracts, or broad application changes need functional validation,
-  monitoring, and rollback readiness proportional to their effect.
-- Database/schema/data mutation, permissions, destructive work, storage/network
-  authority, plausible data loss or split-brain, irreversibility, and difficult
-  rollback require dedicated recovery evidence and explicit approvals before
-  mutation.
+### 2. Implement — one task, one branch, one PR
 
-Choose controls from blast radius and persistence, not diff size. Source work
-does not authorize runtime mutation.
+Read root `AGENTS.md`, inspect only affected source and necessary operational
+facts, and start from current `main`. Use one short-lived `codex/<task>`
+branch and the smallest change that satisfies acceptance.
 
-Planning is complete when proportionate controls and their reason are recorded.
-Increase them when current evidence supports it.
+Avoid unrelated cleanup, architecture rewrites, backup-system projects,
+review-agent cascades, and speculative hardening. Defer unrelated discoveries
+as follow-up notes; do not open additional blocking PRs.
 
-### 3. Preflight
+Preflight is one quick check: current main, task scope, relevant open PRs,
+and (for a release) the real target. Reuse previously validated information
+unless a concrete change makes it stale.
 
-Start with the root `AGENTS.md` safety preflight, then add only the evidence the
-scope and recorded controls require:
+### 3. Validate — test the actual change
 
-- Read-only work checks remote, PR, or live state only when freshness affects
-  the conclusion.
-- Source mutation checks latest `origin/main`, open PRs, worktree ownership, and
-  branch readiness before the first write.
-- Production and materially risky work revalidate target identity, authorization,
-  monitoring, rollback, and risk-specific gates immediately before mutation.
+- Documentation or process-only: check diff, links/references, and syntax.
+  Skip unrelated application builds and large test suites.
+- UI, layout, SEO, content: run relevant checks, lint/typecheck if affected,
+  and inspect the rendered output if user-visible.
+- Application behavior: run focused unit/integration tests and exercise the
+  affected user flow. Use the full suite when impact crosses modules or required
+  CI demands it.
+- Database, authorization, payments, uploads, network/storage changes:
+  add narrow functional and recovery/security checks covering the actual risk.
 
-Preflight is complete when the controls are supported by current evidence and no
-unowned work or unresolved authority blocks the next action.
+Required CI remains a merge condition. One integrated diff review is enough
+for small reversible work; independent review is reserved for material
+security, data integrity, financial, or irreversible risk. Do not ask for
+multiple reviews of the same unchanged candidate.
 
-### 4. Align
+### 4. Deliver — automated PR and Preview where useful
 
-Confirm outcome, acceptance, scope, exclusions, and unresolved decisions. A
-clear task proceeds directly. Use `$grill-with-docs` only when a product,
-architecture, or material risk decision remains unresolved.
+Commit only task-owned files, open one PR, and let CI run automatically.
+Create a reachable Preview for visual or customer-flow changes when the
+established environment supports it. Do not require a separate Staging
+deployment for a bounded, reversible text/style fix when focused validation
+and Production smoke checks are sufficient.
 
-Align is read-only by default. Record glossary or ADR changes during Execute
-only after the PM confirms the decision and those files are in scope.
+A Preview artifact that was built but never deployed is **not** a Preview.
+If Preview infrastructure is blocked for a low-risk fix, report the limitation
+and use local/rendered evidence rather than starting a separate infrastructure
+project. For high-risk or difficult-to-reverse changes, do not bypass required
+isolated validation.
 
-Align is complete when the PM has resolved every material product,
-architecture, scope, acceptance, and risk decision, or each unresolved item is
-explicitly blocked or deferred. Defer every GRILL-generated file write until
-Execute.
+### 5. Approve — one meaningful Owner decision
 
-### 5. Execute
+The Owner decides whether to release the reviewed change. Where the release
+system supports it, **one recorded go/no-go** may approve both merge and
+Production promotion **only for the same identified candidate and target**.
+The automation must validate that no code or deployment target changed after
+approval. If either changes, a new decision is required.
 
-The Primary Codex is the sole mutation owner. For source work, create one
-`codex/<task>` branch from clean, latest `main` immediately before the first
-write. Branch creation is an execution detail, not a separate user gate.
+Until the release automation actually supports combined approval, comply with
+the existing merge and Production gates. Never represent an approval of an
+Issue, a historical run, or a different commit as release approval.
 
-Specify only when useful:
+### 6. Release — one candidate, verify the real website
 
-- A clear, one-session task needs no Issue or formal spec.
-- Use a bounded GitHub Issue/spec when acceptance is unclear, the work is risky,
-  or independent phases need a durable handoff.
-- Work with persistent state, authority, irreversibility, or difficult rollback
-  requires a dedicated Issue/spec and recovery plan.
+Identify the actual runtime serving `https://www.dongphugia.vn` before
+deploying. Documentation contains historical AWS EC2/Coolify details alongside
+Cloudflare/Supabase migration work; do not choose a provider by assumption.
 
-Implement the smallest change that satisfies acceptance. Use `$tdd`,
-`$diagnosing-bugs`, `$codebase-design`, or other skills only when their specific
-trigger applies; they are not default pipeline stages.
+Promote the exact validated build when supported, then check a small set of
+relevant live URLs and user actions plus health/error signals. Record the
+Production link, deployed version and result. For reversible application
+updates, keep a known-good prior version available for rollback; database
+rollback follows a separate data-safe recovery plan.
 
-Execute is complete when task-owned changes implement the recorded acceptance
-without entering an unapproved scope.
+A request is complete only when the agreed behavior works on the intended
+environment. Do not continue optimizing after the acceptance checks pass.
 
-### 6. Validate
+## Risk determines the extra work — not a new workflow
 
-Run the smallest sufficient validation set for the affected scope:
+| Impact | Typical changes | Extra controls |
+| --- | --- | --- |
+| Low | Copy, CSS, labels, docs, non-sensitive SEO | No database backup, restore rehearsal, dedicated security review, or unrelated staging gate. Focused checks + required CI + Owner release decision. |
+| Medium | Cart UI, public feature logic, search, ordinary API behavior | Targeted integration/smoke checks, Preview if useful, and application rollback readiness. |
+| High | Persistent data/schema migration, credentials, staff permissions, payment/order integrity, CDN/DNS cutover, destructive work | Confirm exact target, authorize the mutation, protect affected data with an appropriate recoverable copy, and validate an isolated or controlled recovery path. Test authorization/data integrity as relevant. |
 
-- Focused tests first; application source uses applicable lint/typecheck.
-- Run a full suite or build only when affected scope, dependencies, repository
-  CI, or the release plan requires it.
-- Documentation-only changes use structural, reference, discovery, and diff
-  checks instead of an unrelated application build.
-- Required CI remains the final merge gate.
+Backups are **not** a universal Phase 2 prerequisite. A blocked database backup
+must not block unrelated CSS, footer, editorial, or other read-only releases.
+Conversely, never skip a necessary recoverable copy for a migration that could
+lose customer or catalogue data. For each high-impact change, choose the
+simplest available reliable method; do not mandate a custom backup framework
+when a tested managed or manual backup is sufficient.
 
-Record commands, results, and any justified `N/A` checks.
+Preserve essential boundaries at all risk levels: do not leak secrets or personal
+data; do not bypass authentication/authorization; do not silently change
+Production credentials, payments, infrastructure, or data; do not deploy to an
+unverified target.
 
-Validate is complete only when every scope- and control-required local check
-passes. If a check is blocked, stop and report the blocker; validation remains
-incomplete.
+## Anti-loop rules
 
-### 7. Review
+- After **two failed attempts using the same approach**, stop retrying that
+  approach. Inspect the exact failure and choose a different method or report
+  the blocker.
+- Separate **blocking** findings (affect acceptance or safe rollout) from
+  **follow-up** findings (nice-to-have). Fix only the former in the current PR.
+- Reuse passing evidence from an unchanged candidate. Do not re-run a long
+  pipeline or request approval merely to reconfirm the same result, unless
+  a changed dependency or explicit release control requires it.
+- Prefer a small, functioning customer-facing release over an unfinished
+  all-in-one Phase 2 bundle when the pieces can be safely deployed separately.
 
-Review effort follows risk:
+## Current automation boundary
 
-- A small bounded change may combine review with Validation: inspect the
-  complete diff for scope, acceptance, documented standards, and unintended
-  behavior.
-- Use independent review when behavior, API/auth, operational risk, persistent
-  state, or diff breadth makes a second pass valuable. Work with difficult
-  rollback or material authority/state effects requires independent
-  Standards/Spec review plus applicable architecture and safety review.
-- Run `$code-review origin/main` whenever the PM requests it or those controls
-  apply. Review agents remain read-only; the Primary resolves accepted findings
-  and reruns affected checks.
+The desired operator experience is:
+`Open PR → automatic CI / Preview → Owner approves → automated Production
+promotion → smoke check / rollback option`.
 
-Review is complete when accepted findings are resolved and affected validation
-is rerun.
+The repository currently has separate legacy and Cloudflare workflow paths,
+some with manual SHA, run-ID, and artifact inputs. This document **does not
+remove those enforced gates** or by itself make Production one-click.
+Consolidate the relevant deploy workflows only after verifying the actual
+Production target, secrets, candidate provenance, and rollback. Do not
+rewrite or enable unrelated deployments just to simplify a source task.
 
-### 8. Deliver
+## Completion report
 
-Commit only task-owned files, push one task branch, open one PR, and wait for
-required CI. The PR records scope, acceptance source, controls,
-validation/review evidence, remaining risk, Production requirement, and next
-authorized action.
-
-Repository policy requires PM approval to merge to `main`. Required CI and PR
-review evidence remain merge gates. GitHub branch-protection enforcement is
-live control-plane state, not a documentation fact: verify it immediately
-before relying on it. A task with `Production: no` may finish at Deliver.
-
-Deliver is complete when the PR contains the required evidence and required CI
-passes; merge still waits for PM approval.
-
-### 9. Release
-
-Source delivery and Production rollout are separate:
-
-`source PR validation → merge → immutable ARM64 candidate → applicable Staging validation → PM Production approval → promote the same digest → Production acceptance`
-
-Routine candidate selection and legally safe Staging validation do not need
-repeated PM approval when they use the established candidate path. Any Staging
-configuration, Production-data permission, or external-system mutation outside
-that path needs separately recorded controls and approval.
-
-Release is complete only after every applicable root `AGENTS.md` Production
-gate and task-specific post-deploy acceptance passes.
-
-## Risk-proportionate controls
-
-Every task follows the same lifecycle above. Risk changes the controls, never
-the workflow or release path.
-
-- Small, bounded, reversible work uses focused validation and may combine review
-  with Validation. Required CI, PM merge approval, and the root `AGENTS.md`
-  Production gates remain mandatory when their stage applies.
-- Meaningful behavior or operational changes add functional Staging validation,
-  monitoring, rollback readiness, an Issue/spec, and independent review when
-  justified by the actual effect.
-- Persistent state, authority, irreversibility, or difficult rollback adds the
-  controls the affected state needs: a dedicated Issue/spec, architecture and
-  safety review, fresh backup/checksum/private copy where applicable, restore
-  verification, rollback readiness, no-split-brain evidence, staged
-  migration/rollback, and explicit approval before mutation.
-
-Mandatory Production safety invariants live only in root `AGENTS.md`.
-
-## Pinned-skill routing
-
-`.agents/skills/` is an unmodified upstream snapshot. These repository rules
-control when its tools participate:
-
-- `$grill-with-docs` supports Align only when a material decision is unresolved;
-  it is not required for clear tasks and follows Align's no-write boundary.
-- `$to-spec` is optional synthesis after alignment. Keep the Issue bounded to
-  acceptance and risk; publish through `docs/agents/issue-tracker.md` without a
-  triage label.
-- `$implement` is optional. Its upstream full-suite and mandatory-review steps
-  yield to this workflow's focused Validate and risk-proportionate Review
-  stages.
-- `$tdd` applies to behavior changes at an agreed public seam when test-first
-  work adds useful protection; it is not a documentation or mechanical-edit
-  gate.
-- `$diagnosing-bugs` is for hard bugs or performance regressions. Use a bounded,
-  sanitized signal and never collect secrets, URLs, environment values, tokens,
-  metadata, or PII.
-- `$code-review` runs on explicit request or when the recorded controls require
-  independent review, not automatically for every diff.
-- Interpret `/improve-codebase-architecture` as `$codebase-design`. Ignore
-  setup-template assumptions for uninstalled `triage` or `wayfinder`; active
-  tracker and domain configuration lives only in `docs/agents/`.
-
-## Scope control
-
-- Stop when acceptance and the recorded controls are satisfied.
-- Record unrelated technical debt as optional follow-up; do not turn it into a
-  blocker, Issue, or PR without current scope.
-- Reuse previously proven infrastructure facts unless concrete drift requires
-  revalidation.
-- Preserve unrelated work and retention constraints; quarantine is the default
-  for legacy material.
-- Optimize for delivery speed, low infrastructure cost, efficient Codex quota,
-  and sufficient Production safety.
-
-Database-backed candidate delivery uses the isolated PostgreSQL foundation in
-`docs/deploy/isolated-staging-foundation.md` and ADR 0013. The legacy shared
-Production-data/media runtime is historical only and must remain write-frozen;
-see `docs/deploy/staging-coolify.md` and ADR 0010.
+Use a short status with: user-visible result; PR and deployed version/link;
+checks passed; unresolved blocker if any; and whether Production was actually
+changed. If no Production change was made, say so explicitly.
