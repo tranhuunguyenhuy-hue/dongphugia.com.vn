@@ -32,6 +32,74 @@ Worker is deployed, DNS is cut over or a provider restored from this table
 alone. Unrelated catalogue reconciliation (TOTO, INAX, etc.) is its own work,
 not an automatic blocker for Public UI restoration.
 
+## 2A. Phase 2 continuation — scope, sequencing and unresolved decisions
+
+**Owner request:** [Issue #270](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/270)
+is the task authority for restoring the remaining legacy experience in a
+**later, independent candidate**. [PR #272](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/pull/272)
+is the existing cart/order implementation, not a branch to overwrite casually.
+Check live GitHub status, current `main`, task-branch ownership, Preview and
+available datasets before editing; avoid simultaneous writes by separate
+agents. P0 [#260](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/260)
+remained open at this snapshot; do not assume Phase 2 can be deployed until
+its actual Production target, P0 state and rollback are confirmed.
+
+**Execution order for a Codex session:**
+
+1. **Inventory (read-only, narrow):** current `apps/public` and
+   `apps/admin` runtime seams; legacy components/routes; verified Product/SKU
+   groupings; current data/Auth authority; existing PR #272; actual Preview
+   readiness. Record only differences necessary for the active Phase 2 slice.
+2. **PDP/Dòng:** compare 17 currently tracked groups / 51 Products with
+   old catalogue relationships; do not infer siblings from SKU prefixes.
+   Test Product-changing versus SKU-only selection, default/override
+   price/media/availability, valid dependent axes, canonical URL and
+   search/PDP behavior. Provide coverage samples and responsive screenshots.
+3. **Footer:** reproduce the approved former Production desktop/mobile
+   structure, links, policies and contact actions, with working URLs and
+   keyboard/accessibility checks. A screenshot alone does not prove links work.
+4. **Cart and Order:** preserve Retail Cart versus Quote Cart. Show
+   Product/SKU/quantity and authoritative effective pricing; checkout is
+   guest-first, and the server creates a **persisted** `NEW`, `UNPAID`
+   request with an idempotency/retry boundary. Do not display fake submission
+   success, treat pending shipping/installation as zero, request bank transfer
+   before staff confirms commercial totals, or duplicate an Order on retry.
+   Verify browser `cart → checkout → acknowledgment`, database result
+   and negative cases. See ADR 0021 for the durable commercial invariants.
+5. **Admin/CMS:** distinguish *restoring old functionality* from *adopting
+   the separate V1 Admin/Auth design*. Functional inventory spans staff
+   login/invite/recovery, dashboard, Product/SKU/line management, media and
+   publication readiness, Retail Orders, Quotes/Sales, content/campaigns,
+   Contact Requests/customer care, staff/roles and managed bank-transfer
+   settings. Restore only the slice the Owner accepts; server-side permission
+   denials and module-by-module user flows are required for any activated
+   staff operations.
+
+**Two material choices still open in #270:** whether full Admin/CMS means
+porting legacy monolith or completing `apps/admin` with Supabase Auth/RLS,
+and which old checkout/payment + staff fulfillment actions and persistent
+order target must be restored first. Do **not** invent the answers or merge
+two incompatible Admin/data authorities.
+
+**Design provenance and approval:** older 2026-09 V1 Figma handoffs included
+a global `V1 WIREFRAME APPROVED / FROZEN` gate and several review-candidate
+screens. Their implementation details are preserved in Git history after
+documentation consolidation. The 2026-11 Phase 2 recovery issue separately
+authorizes bounded implementation/source restoration; it does **not**
+implicitly approve a redesigned V1 schema, production DB mutation, changes
+to staff privileges or new Auth rollout. When a chosen slice depends on
+unfrozen V1 design, obtain a specific Owner decision before coding its
+high-impact contract. Do not use the old global freeze wording as a
+ceremonial blocker for independent reversible UI fixes.
+
+**Done evidence for Phase 2:** representative real variant coverage,
+before/after desktop/mobile Footer, repeat-safe persisted order without
+duplicate, staff capability deny tests and per-module Admin acceptance,
+focused CI, actual reachable Preview and Owner review. Any live data/Auth
+mutation requires exact target-specific permission, recoverable copy and
+rollback proof. Phase 2 Production promotion is a separate GO for the exact
+candidate and target; source PR merge does not authorize it.
+
 ## 2. Repository / application topology
 
 ```text
