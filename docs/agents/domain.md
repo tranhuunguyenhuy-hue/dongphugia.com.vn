@@ -1,34 +1,16 @@
-# Domain docs
+# Domain language reference (read on demand)
 
-This is a single-context repository. Domain language lives in root `CONTEXT.md`;
-hard-to-reverse decisions live in `docs/adr/`.
+Use root `CONTEXT.md` as a short map when changing catalogue, commerce,
+publishing or staff-domain logic. For exact definitions and non-obvious
+invariants, read `docs/agents/domain-glossary-full.md`, but only the section
+relevant to the active task. Neither file is a required startup read for
+unrelated CSS, content copy, build or infrastructure work.
 
-## Before exploring
+ADRs in `docs/adr/` describe durable, hard-to-reverse technical decisions.
+Read the relevant current ADR when changing its contract, never every ADR.
+Avoid generating new glossary/ADR documents unless a real new product
+decision has been approved.
 
-- Read root `CONTEXT.md` when it exists.
-- Read ADRs in `docs/adr/` that touch the area being changed.
-- If either location does not exist, proceed silently. `$domain-modeling`, often
-  reached through `$grill-with-docs`, creates it lazily when a term or decision
-  is actually resolved.
-
-```text
-/
-├── CONTEXT.md
-├── docs/adr/
-└── src/
-```
-
-## Use the glossary
-
-Use the canonical terms from `CONTEXT.md` in issues, specs, tests, code, and
-review findings. If a required concept is missing, reconsider whether the term
-belongs to the domain or note the gap for `$domain-modeling`.
-
-`CONTEXT.md` is a glossary only. It does not contain workflow, implementation
-details, feature specs, or temporary notes.
-
-## Respect decisions
-
-Surface any conflict with an existing ADR instead of silently overriding it.
-Create an ADR only when the decision is hard to reverse, surprising without its
-context, and the result of a real trade-off.
+Do not invent Product Family, Variant, Package/BOM or quote/order semantics
+from names, SKU patterns, or legacy import values. Surface any conflict
+between code, domain definitions and recent Owner decisions.
