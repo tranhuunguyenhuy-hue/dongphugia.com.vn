@@ -4,6 +4,7 @@ import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 const workflow = readFileSync(resolve(process.cwd(), '.github/workflows/migration-preview.yml'), 'utf8')
+const qualityWorkflow = readFileSync(resolve(process.cwd(), '.github/workflows/quality.yml'), 'utf8')
 const buildGuide = readFileSync(resolve(process.cwd(), 'docs/deploy/public-static-build.md'), 'utf8')
 const changeGate = readFileSync(resolve(process.cwd(), 'scripts/app-foundation/preview-change-gate.mjs'), 'utf8')
 const candidateScript = readFileSync(resolve(process.cwd(), 'scripts/app-foundation/preview-candidate.mts'), 'utf8')
@@ -12,18 +13,25 @@ const previewPublication = readFileSync(resolve(process.cwd(), 'scripts/app-foun
 const realPreviewProof = readFileSync(resolve(process.cwd(), 'scripts/app-foundation/real-preview-proof.mjs'), 'utf8')
 
 describe('migration PR CI and Preview workflow contract', () => {
-  it('runs required repository CI against the exact PR head', () => {
+  it('keeps general CI in quality.yml and only runs Preview/risk-specific checks here', () => {
     for (const marker of [
       'pull_request:',
       'branches: [main]',
       'fetch-depth: 0',
       'github.event.pull_request.head.sha || github.sha',
-      'npm run lint',
-      'npm run typecheck',
-      'npm test',
       'npm run static:check',
       'actions/upload-artifact@v4',
+      "needs.repo-code-gate.outputs.ci_required == 'true'",
+      "needs.repo-code-gate.outputs.integration_required == 'true'",
+      "needs.repo-code-gate.outputs.b11_required == 'true'",
     ]) expect(workflow).toContain(marker)
+    for (const general of ['npm run lint', 'npm run typecheck', 'npm test']) {
+      expect(qualityWorkflow).toContain(general)
+    }
+    expect(workflow).not.toContain('run: npm run lint')
+    expect(workflow).not.toContain('run: npm run typecheck\n')
+    expect(workflow).toContain('Database, Auth and commerce integration tests')
+    expect(workflow).toContain('run: npm test')
   })
 
   it('builds both independent deployables and verifies immutable identities', () => {
@@ -134,7 +142,7 @@ describe('migration PR CI and Preview workflow contract', () => {
       'packages/app-contracts/',
       'preview_required',
       'SKIPPED_UNRELATED_CHANGE',
-      'DB/import/docs-only changes cannot reach the application candidate or Cloudflare publication path.',
+      'Non-artifact changes cannot reach the application candidate or Cloudflare publication path.',
     ]) expect(`${workflow}\n${changeGate}`).toContain(marker)
   })
 
