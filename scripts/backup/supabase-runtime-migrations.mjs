@@ -41,6 +41,29 @@ export const EXPECTED_RUNTIME_MIGRATIONS = [
   '20261104190000_phase2_admin_order_inbox.sql',
 ]
 
+export const BACKUP_BOOTSTRAP_MIGRATIONS = [
+  '20260828183000_leo542_backup_role_prerequisite.sql',
+  '20260828183200_leo540_backup_coverage_prerequisite.sql',
+]
+
+export const BACKUP_BOOTSTRAP_PREFIX_LENGTH =
+  ADOPTED_CHECKPOINT_MIGRATIONS.length + BACKUP_BOOTSTRAP_MIGRATIONS.length
+
+export function backupBootstrapMigrationsAppliedCount(expectedPrefix) {
+  const validPrefixes = [
+    'absent',
+    ...Array.from(
+      { length: BACKUP_BOOTSTRAP_MIGRATIONS.length + 1 },
+      (_, index) => String(ADOPTED_CHECKPOINT_MIGRATIONS.length + index),
+    ),
+  ]
+  if (!validPrefixes.includes(expectedPrefix)) fail('backup_bootstrap_prefix_invalid')
+  const startingPrefixLength = expectedPrefix === 'absent'
+    ? ADOPTED_CHECKPOINT_MIGRATIONS.length
+    : Number(expectedPrefix)
+  return BACKUP_BOOTSTRAP_PREFIX_LENGTH - startingPrefixLength
+}
+
 const migrationsDirectory = path.resolve('supabase/migrations')
 
 function fail(reason) {
@@ -413,23 +436,371 @@ async function validateFinalSchema(client) {
   if (!row || Object.values(row).some((value) => value !== true)) fail('final_schema_rls_api_validation_failed')
 }
 
-export async function executeRuntimeMigrations(client, mode, checkpointAttestor) {
-  if (!['status', 'apply'].includes(mode)) fail('mode_invalid')
+async function validateBackupBootstrap(client) {
+  const result = await client.query(`
+    with backup_tables(table_name) as (
+      values
+        ('admin_sessions'),
+        ('crawl_import_decisions'),
+        ('crawl_product_snapshots'),
+        ('crawl_runs'),
+        ('product_families'),
+        ('product_family_catalogue_gaps'),
+        ('product_family_configuration_groups'),
+        ('product_family_memberships'),
+        ('publishing_credentials')
+    ),
+    readonly_tables(table_name) as (
+      values
+        ('product_families'),
+        ('product_family_catalogue_gaps'),
+        ('product_family_configuration_groups'),
+        ('product_family_memberships')
+    ),
+    backup_role as (
+      select oid from pg_roles where rolname = 'dpg_backup'
+    ),
+    backup_acl_items(object_kind, schema_name, object_name, privilege_type, is_grantable) as (
+      select 'relation', n.nspname::text, c.relname::text,
+        acl.privilege_type, acl.is_grantable
+      from pg_class c
+      join pg_namespace n on n.oid = c.relnamespace
+      cross join lateral aclexplode(c.relacl) acl
+      where acl.grantee = (select oid from backup_role)
+      union all
+      select 'column', n.nspname::text, c.relname || '.' || a.attname,
+        acl.privilege_type, acl.is_grantable
+      from pg_attribute a
+      join pg_class c on c.oid = a.attrelid
+      join pg_namespace n on n.oid = c.relnamespace
+      cross join lateral aclexplode(a.attacl) acl
+      where acl.grantee = (select oid from backup_role)
+      union all
+      select 'type', n.nspname::text, t.typname::text,
+        acl.privilege_type, acl.is_grantable
+      from pg_type t
+      join pg_namespace n on n.oid = t.typnamespace
+      cross join lateral aclexplode(t.typacl) acl
+      where acl.grantee = (select oid from backup_role)
+      union all
+      select 'schema', n.nspname::text, n.nspname::text,
+        acl.privilege_type, acl.is_grantable
+      from pg_namespace n
+      cross join lateral aclexplode(n.nspacl) acl
+      where acl.grantee = (select oid from backup_role)
+      union all
+      select 'routine', n.nspname::text, p.proname::text,
+        acl.privilege_type, acl.is_grantable
+      from pg_proc p
+      join pg_namespace n on n.oid = p.pronamespace
+      cross join lateral aclexplode(p.proacl) acl
+      where acl.grantee = (select oid from backup_role)
+      union all
+      select 'database', '', d.datname::text,
+        acl.privilege_type, acl.is_grantable
+      from pg_database d
+      cross join lateral aclexplode(d.datacl) acl
+      where acl.grantee = (select oid from backup_role)
+      union all
+      select 'tablespace', '', t.spcname::text,
+        acl.privilege_type, acl.is_grantable
+      from pg_tablespace t
+      cross join lateral aclexplode(t.spcacl) acl
+      where acl.grantee = (select oid from backup_role)
+      union all
+      select 'language', '', l.lanname::text,
+        acl.privilege_type, acl.is_grantable
+      from pg_language l
+      cross join lateral aclexplode(l.lanacl) acl
+      where acl.grantee = (select oid from backup_role)
+      union all
+      select 'foreign-data-wrapper', '', f.fdwname::text,
+        acl.privilege_type, acl.is_grantable
+      from pg_foreign_data_wrapper f
+      cross join lateral aclexplode(f.fdwacl) acl
+      where acl.grantee = (select oid from backup_role)
+      union all
+      select 'foreign-server', '', s.srvname::text,
+        acl.privilege_type, acl.is_grantable
+      from pg_foreign_server s
+      cross join lateral aclexplode(s.srvacl) acl
+      where acl.grantee = (select oid from backup_role)
+      union all
+      select 'large-object', '', l.oid::text,
+        acl.privilege_type, acl.is_grantable
+      from pg_largeobject_metadata l
+      cross join lateral aclexplode(l.lomacl) acl
+      where acl.grantee = (select oid from backup_role)
+      union all
+      select 'parameter', '', p.parname::text,
+        acl.privilege_type, acl.is_grantable
+      from pg_parameter_acl p
+      cross join lateral aclexplode(p.paracl) acl
+      where acl.grantee = (select oid from backup_role)
+    )
+    select
+      current_setting('server_version_num')::integer between 170000 and 179999
+        as postgres_17,
+      exists (
+        select 1 from dpg_control.target_contract
+        where singleton
+          and project_name = 'dongphugia-runtime'
+          and region = 'ap-southeast-1'
+          and environment = 'preview'
+          and data_class = 'production-derived-reduced-runtime'
+          and production_data_allowed
+          and not production_credentials_allowed
+          and not production_writes_allowed
+          and hard_database_ceiling_bytes = 367001600
+      ) as target_contract_exact,
+      exists (
+        select 1 from pg_roles
+        where rolname = 'dpg_backup' and not rolinherit and not rolcanlogin
+          and not rolsuper and not rolcreatedb and not rolcreaterole
+          and not rolreplication and not rolbypassrls
+      ) as backup_role_restricted,
+      to_regrole('dpg_backup_login') is null as backup_login_absent,
+      not exists (
+        select 1 from pg_auth_members
+        where roleid = (select oid from pg_roles where rolname = 'dpg_backup')
+           or member = (select oid from pg_roles where rolname = 'dpg_backup')
+      ) as backup_role_has_no_memberships,
+      has_schema_privilege('dpg_backup', 'dpg_app', 'USAGE')
+        and not has_schema_privilege('dpg_backup', 'dpg_app', 'CREATE')
+        and not exists (
+          select 1
+          from pg_namespace n
+          where n.nspname not in ('pg_catalog', 'information_schema', 'pg_toast')
+            and n.nspname !~ '^pg_(temp|toast_temp)_[0-9]+$'
+            and has_schema_privilege('dpg_backup', n.oid, 'CREATE')
+        )
+        as backup_schema_effective_privileges_exact,
+      (select count(*) = 10 from backup_acl_items) as backup_acl_scope_exact_count,
+      (select count(*) = 9 from backup_acl_items a
+       join backup_tables t on t.table_name = a.object_name
+       where a.object_kind = 'relation' and a.schema_name = 'dpg_app'
+         and a.privilege_type = 'SELECT' and not a.is_grantable)
+        as backup_table_select_grants_complete,
+      (select count(*) = 1 from backup_acl_items
+       where object_kind = 'schema' and schema_name = 'dpg_app'
+         and object_name = 'dpg_app' and privilege_type = 'USAGE'
+         and not is_grantable) as backup_schema_usage_exact,
+      not exists (
+        select 1 from backup_acl_items a
+        where not (
+          (a.object_kind = 'relation' and a.schema_name = 'dpg_app'
+            and exists (select 1 from backup_tables t where t.table_name = a.object_name)
+            and a.privilege_type = 'SELECT' and not a.is_grantable)
+          or (a.object_kind = 'schema' and a.schema_name = 'dpg_app'
+            and a.object_name = 'dpg_app' and a.privilege_type = 'USAGE'
+            and not a.is_grantable)
+        )
+      ) as no_other_backup_acl_grants,
+      not exists (
+        select 1 from backup_tables t
+        where has_table_privilege('dpg_backup', format('dpg_app.%I', t.table_name), 'INSERT')
+           or has_any_column_privilege('dpg_backup', format('dpg_app.%I', t.table_name), 'INSERT')
+           or has_table_privilege('dpg_backup', format('dpg_app.%I', t.table_name), 'UPDATE')
+           or has_any_column_privilege('dpg_backup', format('dpg_app.%I', t.table_name), 'UPDATE')
+           or has_table_privilege('dpg_backup', format('dpg_app.%I', t.table_name), 'DELETE')
+           or has_table_privilege('dpg_backup', format('dpg_app.%I', t.table_name), 'TRUNCATE')
+           or has_table_privilege('dpg_backup', format('dpg_app.%I', t.table_name), 'REFERENCES')
+           or has_any_column_privilege('dpg_backup', format('dpg_app.%I', t.table_name), 'REFERENCES')
+           or has_table_privilege('dpg_backup', format('dpg_app.%I', t.table_name), 'TRIGGER')
+      ) as backup_effective_table_privileges_read_only,
+      not exists (
+        select 1
+        from pg_class c
+        join pg_namespace n on n.oid = c.relnamespace
+        where c.relkind in ('r', 'p', 'v', 'm', 'f')
+          and n.nspname not in ('pg_catalog', 'information_schema', 'pg_toast')
+          and n.nspname !~ '^pg_(temp|toast_temp)_[0-9]+$'
+          and not (
+            n.nspname = 'dpg_app'
+            and exists (select 1 from backup_tables t where t.table_name = c.relname)
+          )
+          and (
+            has_table_privilege('dpg_backup', c.oid, 'SELECT')
+            or has_any_column_privilege('dpg_backup', c.oid, 'SELECT')
+            or has_table_privilege('dpg_backup', c.oid, 'INSERT')
+            or has_any_column_privilege('dpg_backup', c.oid, 'INSERT')
+            or has_table_privilege('dpg_backup', c.oid, 'UPDATE')
+            or has_any_column_privilege('dpg_backup', c.oid, 'UPDATE')
+            or has_table_privilege('dpg_backup', c.oid, 'DELETE')
+            or has_table_privilege('dpg_backup', c.oid, 'TRUNCATE')
+            or has_table_privilege('dpg_backup', c.oid, 'REFERENCES')
+            or has_any_column_privilege('dpg_backup', c.oid, 'REFERENCES')
+            or has_table_privilege('dpg_backup', c.oid, 'TRIGGER')
+          )
+      ) as backup_has_no_effective_privileges_outside_allowlist,
+      not exists (
+        select 1
+        from pg_class c
+        join pg_namespace n on n.oid = c.relnamespace
+        where c.relkind = 'S'
+          and n.nspname not in ('pg_catalog', 'information_schema', 'pg_toast')
+          and n.nspname !~ '^pg_(temp|toast_temp)_[0-9]+$'
+          and (
+            has_sequence_privilege('dpg_backup', c.oid, 'SELECT')
+            or has_sequence_privilege('dpg_backup', c.oid, 'USAGE')
+            or has_sequence_privilege('dpg_backup', c.oid, 'UPDATE')
+          )
+      ) as backup_has_no_effective_sequence_privileges,
+      not exists (
+        select 1 from pg_shdepend
+        where refclassid = 'pg_authid'::regclass
+          and refobjid = (select oid from backup_role)
+          and deptype = 'o'
+      ) as backup_role_owns_no_objects,
+      not exists (
+        select 1 from pg_default_acl d
+        left join lateral aclexplode(d.defaclacl) acl on true
+        where d.defaclrole = (select oid from backup_role)
+           or acl.grantee = (select oid from backup_role)
+      ) as backup_role_has_no_default_acl,
+      not exists (
+        select 1 from pg_user_mapping
+        where umuser = (select oid from backup_role)
+      ) as backup_role_has_no_user_mappings,
+      not exists (
+        select 1 from pg_db_role_setting
+        where setrole = (select oid from backup_role)
+      ) as backup_role_has_no_settings,
+      (select count(*) = 9
+       from pg_policy p
+       join pg_class c on c.oid = p.polrelid
+       join pg_namespace n on n.oid = c.relnamespace
+       join backup_tables t on t.table_name = c.relname
+       where n.nspname = 'dpg_app' and p.polname = 'leo540_backup_select'
+         and p.polpermissive and p.polcmd = 'r'
+         and p.polroles = array[(select oid from pg_roles where rolname = 'dpg_backup')]::oid[]
+         and pg_get_expr(p.polqual, p.polrelid) = 'true'
+         and p.polwithcheck is null) as backup_policies_complete,
+      not exists (
+        select 1 from pg_policy p
+        where (select oid from backup_role) = any(p.polroles)
+          and not exists (
+            select 1 from pg_class c
+            join pg_namespace n on n.oid = c.relnamespace
+            where c.oid = p.polrelid and n.nspname = 'dpg_app'
+              and c.relname in (
+                'admin_sessions', 'crawl_import_decisions', 'crawl_product_snapshots',
+                'crawl_runs', 'product_families', 'product_family_catalogue_gaps',
+                'product_family_configuration_groups', 'product_family_memberships',
+                'publishing_credentials'
+              )
+              and p.polname = 'leo540_backup_select' and p.polpermissive
+              and p.polcmd = 'r'
+              and p.polroles = array[(select oid from backup_role)]::oid[]
+              and pg_get_expr(p.polqual, p.polrelid) = 'true'
+              and p.polwithcheck is null
+          )
+      ) as no_other_backup_policies,
+      (select count(*) = 9
+       from pg_policy p
+       join pg_class c on c.oid = p.polrelid
+       join pg_namespace n on n.oid = c.relnamespace
+       join backup_tables t on t.table_name = c.relname
+       where n.nspname = 'dpg_app') as backup_target_policy_count_exact,
+      not exists (
+        select 1 from pg_policy p
+        join pg_class c on c.oid = p.polrelid
+        join pg_namespace n on n.oid = c.relnamespace
+        join backup_tables t on t.table_name = c.relname
+        where n.nspname = 'dpg_app'
+          and not (
+            p.polname = 'leo540_backup_select' and p.polpermissive
+            and p.polcmd = 'r'
+            and p.polroles = array[(select oid from backup_role)]::oid[]
+            and pg_get_expr(p.polqual, p.polrelid) = 'true'
+            and p.polwithcheck is null
+          )
+      ) as no_other_backup_target_policies,
+      (select count(*) = 4
+       from information_schema.table_privileges p
+       join readonly_tables t on t.table_name = p.table_name
+       where p.table_schema = 'dpg_app' and p.grantee = 'dpg_readonly'
+         and p.privilege_type = 'SELECT') as readonly_select_grants_complete,
+      not exists (
+        select 1 from information_schema.table_privileges p
+        join readonly_tables t on t.table_name = p.table_name
+        where p.table_schema = 'dpg_app' and p.grantee = 'dpg_readonly'
+          and p.privilege_type <> 'SELECT'
+      ) as readonly_grants_read_only
+  `)
+  const row = result.rows[0]
+  if (!row || Object.values(row).some((value) => value !== true)) {
+    fail('backup_bootstrap_acceptance_failed')
+  }
+}
+
+async function assertBackupBootstrapLoginRoleAbsent(client) {
+  const result = await client.query(
+    "select to_regrole('dpg_backup_login') is null as absent",
+  )
+  if (result.rows[0]?.absent !== true) fail('backup_bootstrap_login_role_exists')
+}
+
+export async function executeRuntimeMigrations(
+  client,
+  mode,
+  checkpointAttestor,
+  expectedBootstrapPrefix,
+) {
+  if (!['status', 'apply', 'bootstrap-backup'].includes(mode)) fail('mode_invalid')
+  const validBootstrapPrefixes = [
+    'absent',
+    ...Array.from(
+      { length: BACKUP_BOOTSTRAP_MIGRATIONS.length + 1 },
+      (_, index) => String(ADOPTED_CHECKPOINT_MIGRATIONS.length + index),
+    ),
+  ]
+  if (mode === 'bootstrap-backup'
+    && !validBootstrapPrefixes.includes(expectedBootstrapPrefix)) {
+    fail('backup_bootstrap_prefix_invalid')
+  }
   const migrations = await loadMigrations()
   await configure(client)
   await client.query("select pg_advisory_lock(hashtext('dongphugia:supabase-runtime-migrations:v1'))")
 
   try {
-    if (mode === 'apply') await assertDatabaseSizeWithinContract(client)
-    if (!(await ledgerExists(client))) {
-      if (mode !== 'apply') fail('migration_state_incomplete')
+    if (mode === 'apply' || mode === 'bootstrap-backup') {
+      await assertDatabaseSizeWithinContract(client)
+    }
+    const hasLedger = await ledgerExists(client)
+    if (mode === 'bootstrap-backup') {
+      const observedPrefix = hasLedger ? String((await readLedger(client)).length) : 'absent'
+      if (observedPrefix !== expectedBootstrapPrefix) fail('backup_bootstrap_prefix_mismatch')
+      await assertBackupBootstrapLoginRoleAbsent(client)
+    }
+    if (!hasLedger) {
+      if (mode !== 'apply' && mode !== 'bootstrap-backup') fail('migration_state_incomplete')
       if (!checkpointAttestor) fail('checkpoint_attestation_required')
       await checkpointAttestor()
       await createLedgerAndAdoptCheckpoint(client, migrations)
     }
 
-    validateLedger(await readLedger(client), migrations, false)
+    const initialLedger = await readLedger(client)
+    validateLedger(initialLedger, migrations, false)
+    if (mode === 'bootstrap-backup'
+      && initialLedger.length > BACKUP_BOOTSTRAP_PREFIX_LENGTH) {
+      fail('backup_bootstrap_boundary_exceeded')
+    }
     if (mode === 'apply') await applyPendingMigrations(client, migrations)
+    if (mode === 'bootstrap-backup') {
+      await applyPendingMigrations(
+        client,
+        migrations.slice(0, BACKUP_BOOTSTRAP_PREFIX_LENGTH),
+      )
+      const finalLedger = await readLedger(client)
+      validateLedger(finalLedger, migrations, false)
+      if (finalLedger.length !== BACKUP_BOOTSTRAP_PREFIX_LENGTH) {
+        fail('backup_bootstrap_incomplete')
+      }
+      await validateBackupBootstrap(client)
+      await assertDatabaseSizeWithinContract(client)
+      return BACKUP_BOOTSTRAP_PREFIX_LENGTH
+    }
     await assertDatabaseSizeWithinContract(client)
     validateLedger(await readLedger(client), migrations, true)
     await validateFinalSchema(client)
@@ -444,14 +815,28 @@ async function run() {
   const client = new Client(parseSupabaseRuntimeTarget(process.env.SUPABASE_REHOME_DATABASE_URL))
   try {
     await client.connect()
-    const count = await executeRuntimeMigrations(client, mode, async () => {
-      execFileSync('bash', ['scripts/backup/attest-supabase-runtime-checkpoint.sh'], {
-        cwd: process.cwd(),
-        env: { ...process.env, CHECKPOINT_ATTESTATION_MODE: 'behavioral' },
-        stdio: 'inherit',
-      })
-    })
-    process.stdout.write(`SUPABASE_RUNTIME_MIGRATIONS status=PASS mode=${mode} count=${count}\n`)
+    const count = await executeRuntimeMigrations(
+      client,
+      mode,
+      async () => {
+        execFileSync('bash', ['scripts/backup/attest-supabase-runtime-checkpoint.sh'], {
+          cwd: process.cwd(),
+          env: { ...process.env, CHECKPOINT_ATTESTATION_MODE: 'behavioral' },
+          stdio: 'inherit',
+        })
+      },
+      process.env.EXPECTED_BACKUP_BOOTSTRAP_PREFIX,
+    )
+    if (mode === 'bootstrap-backup') {
+      const migrationsApplied = backupBootstrapMigrationsAppliedCount(
+        process.env.EXPECTED_BACKUP_BOOTSTRAP_PREFIX,
+      )
+      process.stdout.write(
+        `SUPABASE_RUNTIME_MIGRATIONS status=PASS mode=${mode} prefix=${count} migrations_applied=${migrationsApplied}\n`,
+      )
+    } else {
+      process.stdout.write(`SUPABASE_RUNTIME_MIGRATIONS status=PASS mode=${mode} count=${count}\n`)
+    }
   } catch (error) {
     if (!String(error?.message ?? '').startsWith('migration_')) {
       process.stderr.write('SUPABASE_RUNTIME_MIGRATIONS status=FAIL reason=database_operation_failed\n')

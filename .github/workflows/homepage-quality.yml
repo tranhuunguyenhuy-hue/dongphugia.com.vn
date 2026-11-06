@@ -6,7 +6,26 @@ on:
   workflow_dispatch:
 
 jobs:
-  homepage-readiness:
+  homepage-scope:
+    name: Determine affected homepage paths
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      homepage_required: ${{ steps.scope.outputs.homepage_required }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Detect relevant homepage changes
+        id: scope
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: node scripts/quality/homepage-scope.mjs
+
+  homepage-tests:
+    name: Run browser and performance acceptance only for affected homepage code
+    needs: homepage-scope
+    if: needs.homepage-scope.outputs.homepage_required == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     services:
@@ -132,3 +151,32 @@ jobs:
             *.devtoolslog.json
           if-no-files-found: warn
           retention-days: 7
+
+  # Preserve the required check name on every PR, including docs-only PRs.
+  # The summary fails closed when the classifier or heavy acceptance fails.
+  homepage-readiness:
+    name: homepage-readiness
+    needs: [homepage-scope, homepage-tests]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Enforce scoped homepage acceptance
+        env:
+          SCOPE_RESULT: ${{ needs.homepage-scope.result }}
+          HOMEPAGE_REQUIRED: ${{ needs.homepage-scope.outputs.homepage_required }}
+          TEST_RESULT: ${{ needs.homepage-tests.result }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$SCOPE_RESULT" == "success" ]] || { echo 'Homepage scope detection failed'; exit 1; }
+          if [[ "$HOMEPAGE_REQUIRED" == 'true' ]]; then
+            [[ "$TEST_RESULT" == 'success' ]] || { echo 'Homepage acceptance was required but did not pass'; exit 1; }
+            echo '### Homepage acceptance: PASS' >> "$GITHUB_STEP_SUMMARY"
+          elif [[ "$HOMEPAGE_REQUIRED" == 'false' ]]; then
+            [[ "$TEST_RESULT" == 'skipped' ]] || { echo 'Unexpected homepage job state'; exit 1; }
+            echo '### Homepage acceptance: SKIPPED_NONIMPACTING_DIFF' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'Unknown homepage impact; fail closed'
+            exit 1
+          fi

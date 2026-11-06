@@ -1,0 +1,152 @@
+name: Existing database backup capability and rehearsal
+
+on:
+  workflow_dispatch:
+    inputs:
+      approved_source_sha:
+        description: Exact merged main source SHA
+        required: true
+        type: string
+      approved_baseline_sha:
+        description: Exact checked-in current-state inventory SHA256
+        required: true
+        type: string
+      operation:
+        description: Read-only inventory, bounded capability bootstrap, or separately approved encrypted backup and isolated restore
+        required: true
+        default: inspect
+        type: choice
+        options: [inspect, bootstrap, backup_restore]
+      approval_comment_id:
+        description: Fresh Owner Issue 270 comment binding SHA, baseline, operation, quiescent=yes, nonce (not needed for inspect)
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: supabase-backup-role-bootstrap-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  gate:
+    if: >-
+      github.repository == 'tranhuunguyenhuy-hue/dongphugia.com.vn' &&
+      github.ref == 'refs/heads/main' &&
+      github.actor == 'tranhuunguyenhuy-hue' &&
+      github.run_attempt == 1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: refs/heads/main
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Verify exact source and fresh one-use approval
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APPROVED_SOURCE_SHA: ${{ inputs.approved_source_sha }}
+          APPROVED_BASELINE_SHA: ${{ inputs.approved_baseline_sha }}
+          APPROVAL_COMMENT_ID: ${{ inputs.approval_comment_id }}
+          OPERATION: ${{ inputs.operation }}
+          TRIGGERING_ACTOR: ${{ github.triggering_actor }}
+        run: node scripts/backup/existing-state/execution-gate.mjs
+
+  execute:
+    needs: gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    environment: runtime-backup
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Recheck source and reject job reruns
+        env:
+          APPROVED_SOURCE_SHA: ${{ inputs.approved_source_sha }}
+          TRIGGERING_ACTOR: ${{ github.triggering_actor }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_RUN_ATTEMPT" = 1
+          test "$TRIGGERING_ACTOR" = tranhuunguyenhuy-hue
+          test "$GITHUB_REF" = refs/heads/main
+          test "$GITHUB_SHA" = "$APPROVED_SOURCE_SHA"
+          test "$(git rev-parse HEAD)" = "$APPROVED_SOURCE_SHA"
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Current Free plan and exact healthy Preview project
+        env:
+          SUPABASE_MANAGEMENT_TOKEN: ${{ secrets.SUPABASE_MANAGEMENT_TOKEN }}
+        run: node scripts/backup/existing-state/management.mjs
+      - name: Inspect or apply bounded backup capability
+        if: inputs.operation != 'backup_restore'
+        env:
+          SUPABASE_REHOME_DATABASE_URL: ${{ secrets.SUPABASE_REHOME_DATABASE_URL }}
+          APPROVED_BASELINE_SHA: ${{ inputs.approved_baseline_sha }}
+          OPERATION: ${{ inputs.operation }}
+        run: |
+          set -euo pipefail
+          case "$OPERATION" in
+            inspect) node scripts/backup/existing-state/database.mjs inspect ;;
+            bootstrap) node scripts/backup/existing-state/database.mjs bootstrap ;;
+            *) exit 1 ;;
+          esac
+      - name: Check artifact budget before backup
+        if: inputs.operation == 'backup_restore'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/backup/existing-state/budget.mjs
+      - name: Install archive tools before secrets or plaintext
+        if: inputs.operation == 'backup_restore'
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install --no-install-recommends --yes age >/dev/null
+          docker pull postgres:17.6-bookworm@sha256:f3bd19c606e442c3d7bdfa8002e03fe260a1023351e0ea4598032022b68dd6e3
+      - name: Encrypt one read-only database snapshot
+        if: inputs.operation == 'backup_restore'
+        env:
+          SUPABASE_RUNTIME_DATABASE_URL: ${{ secrets.SUPABASE_RUNTIME_DATABASE_URL }}
+          AGE_RECIPIENT: ${{ vars.BACKUP_AGE_RECIPIENT }}
+          BACKUP_DIR: ${{ runner.temp }}/existing-state-encrypted
+          BACKUP_RETENTION_DAYS: '14'
+          APPROVED_SOURCE_SHA: ${{ inputs.approved_source_sha }}
+        run: node scripts/backup/existing-state/archive.mjs backup
+      - name: Verify ciphertext and restore without network
+        if: inputs.operation == 'backup_restore'
+        env:
+          AGE_IDENTITY: ${{ secrets.BACKUP_AGE_PRIVATE_KEY }}
+          BACKUP_DIR: ${{ runner.temp }}/existing-state-encrypted
+          BACKUP_RETENTION_DAYS: '14'
+          APPROVED_SOURCE_SHA: ${{ inputs.approved_source_sha }}
+        run: node scripts/backup/existing-state/archive.mjs restore
+      - name: Check actual encrypted bundle fits the retained artifact budget
+        if: inputs.operation == 'backup_restore'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BACKUP_DIR: ${{ runner.temp }}/existing-state-encrypted
+        run: node scripts/backup/existing-state/budget.mjs
+      - uses: actions/upload-artifact@v4
+        if: inputs.operation == 'backup_restore'
+        with:
+          name: existing-state-encrypted-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/existing-state-encrypted/*.age
+            ${{ runner.temp }}/existing-state-encrypted/envelope.json
+          if-no-files-found: error
+          retention-days: 14

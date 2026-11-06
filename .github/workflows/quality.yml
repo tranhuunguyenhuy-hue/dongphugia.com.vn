@@ -39,20 +39,52 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v5
 
+      - name: Detect documentation-only changes
+        id: scope
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          set -euo pipefail
+          run_checks=true
+          if [[ "$BASE_SHA" =~ ^[a-f0-9]{40}$ ]] &&
+             [[ "$BASE_SHA" != 0000000000000000000000000000000000000000 ]] &&
+             git fetch --quiet --no-tags --depth=1 origin "$BASE_SHA"; then
+            mapfile -t changed < <(git diff --name-only "$BASE_SHA" HEAD)
+            if (( ${#changed[@]} > 0 )); then
+              run_checks=false
+              for file in "${changed[@]}"; do
+                case "$file" in
+                  docs/*.md|AGENTS.md|CONTEXT.md|README.md|.github/ISSUE_TEMPLATE/*.md) ;;
+                  *) run_checks=true; break ;;
+                esac
+              done
+            fi
+          fi
+          echo "run_app_checks=$run_checks" >> "$GITHUB_OUTPUT"
+          if [[ "$run_checks" == false ]]; then
+            echo 'Documentation-only diff: skip unrelated application lint/typecheck/tests.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
       - name: Set up Node.js
+        if: steps.scope.outputs.run_app_checks == 'true'
         uses: actions/setup-node@v5
         with:
           node-version: 24
           cache: npm
 
       - name: Install dependencies
+        if: steps.scope.outputs.run_app_checks == 'true'
         run: npm ci
 
       - name: Lint
+        if: steps.scope.outputs.run_app_checks == 'true'
         run: npm run lint
 
       - name: Type-check
+        if: steps.scope.outputs.run_app_checks == 'true'
         run: npm run typecheck
 
       - name: Test
+        if: steps.scope.outputs.run_app_checks == 'true'
         run: npm test
