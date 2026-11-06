@@ -70,9 +70,9 @@ Separate PM authorization is required before resuming:
 - MS885, Phase 2 catalogue/PIM, and unrelated refactoring.
 - Permanent deletion of the 2026-08-04 consolidation quarantine.
 
-For routing, approval, rollback, and Production gates, read root `AGENTS.md`,
-`WORKFLOW-WITH-CODEX.md`, and the affected runbook; do not treat this snapshot
-as a substitute.
+For routing and current authority, use root `AGENTS.md`; for detailed
+background consult `docs/PROJECT.md`. This dated snapshot is **not** current
+Production evidence or a replacement for live verification.
 
 ## LEO-539 isolated Supabase target evidence
 
