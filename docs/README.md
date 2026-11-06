@@ -6,14 +6,19 @@ govern new work. `SUPPORTING` sources add task-specific detail. `HISTORICAL`
 and `SUPERSEDED` sources preserve provenance only and do not authorize a new
 delivery path.
 
-## Always applicable
+## Start here — two short entry points
 
-- `CURRENT` — Root [`AGENTS.md`](../AGENTS.md): authority, safety, scope, and
-  gates.
-- `CURRENT` — [`WORKFLOW-WITH-CODEX.md`](WORKFLOW-WITH-CODEX.md): routing,
-  source delivery, validation, review, PR, merge, Staging, and release path.
-- `SUPPORTING` — [`AGENTS.md`](AGENTS.md): application conventions; read only
-  for source work.
+- **Auto-loaded by Codex:** root [`AGENTS.md`](../AGENTS.md) — concise
+  project instructions, fast delivery, critical safety and task routing.
+- **On demand for domain / handoff work:** root [`CONTEXT.md`](../CONTEXT.md) —
+  condensed project context and glossary. Codex does **not** auto-load it.
+
+Read extended material only for the current task:
+[workflow details](WORKFLOW-WITH-CODEX.md),
+[application conventions](agents/application-conventions.md),
+[full business glossary](agents/domain-glossary-full.md).
+The historical `docs/AGENTS.md` entry point was moved to an ordinary
+reference file so it is not auto-loaded when starting Codex in `docs/`.
 
 Repository policy requires a task-owned PR, required CI, and PM approval before
 merge to `main`. GitHub branch-protection configuration is live enforcement,
@@ -24,8 +29,8 @@ not an authority document: verify it immediately before relying on it.
 - `SUPPORTING` — [Current operational state](ops/project-current-state.md):
   dated Production baseline, active deferrals, incident follow-up, and handoff;
   revalidate it before runtime work.
-- `CURRENT` — [Domain context](../CONTEXT.md): canonical catalogue and
-  publishing language.
+- `CURRENT` — [Domain context](../CONTEXT.md): compact glossary and pointers;
+  read the [full glossary](agents/domain-glossary-full.md) for exact semantics.
 - `CURRENT` — [Architecture decisions](adr/): hard-to-reverse technical and
   policy choices. Read the status and related newer ADRs before relying on one.
 - `CURRENT` — [Deployment procedures](deploy/): target-specific Staging and
@@ -82,9 +87,8 @@ not an authority document: verify it immediately before relying on it.
   dedicated-host topology and one-time source-safe clone capability (LEO-527).
 - `SUPPORTING` — [CI-only disposable database fixtures](deploy/staging-db-bootstrap/RUNBOOK.md):
   test fixtures, not a Staging runtime procedure.
-- `CURRENT` — [Workflow controls](WORKFLOW-WITH-CODEX.md#risk-proportionate-controls):
-  the one standard workflow and risk-proportionate validation, recovery, and
-  approval controls.
+- `SUPPORTING` — [Workflow details](WORKFLOW-WITH-CODEX.md):
+  extended, on-demand delivery guidance; root `AGENTS.md` has the startup rules.
 - `SUPPORTING` — [Design system](DESIGN_SYSTEM.md): UI token and component
   design work.
 - `SUPPORTING` — [Public sitemap map](SITEMAP.md): crawl, sitemap, and public
