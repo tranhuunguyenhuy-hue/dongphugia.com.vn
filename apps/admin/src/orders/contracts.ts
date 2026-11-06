@@ -179,6 +179,13 @@ export function parseOrderRequestStatus(value: string | undefined): OrderRequest
     : null
 }
 
+export function parseOrderSearchQuery(value: string | undefined): { value: string; error: string | null } {
+  const normalized = (value ?? '').trim()
+  if (normalized.length > 100) return { value: normalized.slice(0, 100), error: 'Từ khóa tối đa 100 ký tự.' }
+  if (/[\u0000-\u001f\u007f]/.test(normalized)) return { value: '', error: 'Từ khóa có ký tự không hợp lệ.' }
+  return { value: normalized, error: null }
+}
+
 export function allowedOrderRequestStatusTransitions(status: OrderRequestStatus): OrderRequestStatus[] {
   if (status === 'pending') return ['received', 'cancelled']
   if (status === 'received') return ['cancelled']

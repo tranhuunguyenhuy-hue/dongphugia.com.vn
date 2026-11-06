@@ -4,6 +4,7 @@ import {
   allowedOrderRequestStatusTransitions,
   parseAdminOrderDetail,
   parseAdminOrderList,
+  parseOrderSearchQuery,
   parseOrderRequestStatus,
 } from './contracts'
 
@@ -66,5 +67,12 @@ describe('Admin order inbox transport contracts', () => {
     expect(allowedOrderRequestStatusTransitions('pending')).toEqual(['received', 'cancelled'])
     expect(allowedOrderRequestStatusTransitions('received')).toEqual(['cancelled'])
     expect(allowedOrderRequestStatusTransitions('confirmed')).toEqual([])
+  })
+
+  it('normalizes bounded order search and rejects control characters or oversized input', () => {
+    expect(parseOrderSearchQuery('  DPG-261104  ')).toEqual({ value: 'DPG-261104', error: null })
+    expect(parseOrderSearchQuery('')).toEqual({ value: '', error: null })
+    expect(parseOrderSearchQuery('a'.repeat(101))).toEqual({ value: 'a'.repeat(100), error: 'Từ khóa tối đa 100 ký tự.' })
+    expect(parseOrderSearchQuery('Nguyễn\nA')).toEqual({ value: '', error: 'Từ khóa có ký tự không hợp lệ.' })
   })
 })

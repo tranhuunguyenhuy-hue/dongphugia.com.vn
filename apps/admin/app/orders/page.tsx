@@ -1,7 +1,7 @@
 import Link from 'next/link'
 
 import { requireActiveStaff } from '../../src/auth/require-staff'
-import { ORDER_REQUEST_STATUSES, parseOrderRequestStatus } from '../../src/orders/contracts'
+import { ORDER_REQUEST_STATUSES, parseOrderRequestStatus, parseOrderSearchQuery } from '../../src/orders/contracts'
 import { getOrderInbox } from '../../src/orders/queries'
 
 export const runtime = 'nodejs'
@@ -33,7 +33,7 @@ function formatDate(value: string) {
 export default async function AdminOrderInboxPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; page?: string }>
+  searchParams: Promise<{ status?: string; page?: string; q?: string }>
 }) {
   const staff = await requireActiveStaff()
   const canReadOrders = staff.capabilities.includes('orders:read') || staff.capabilities.includes('orders:read_assigned')
@@ -43,11 +43,17 @@ export default async function AdminOrderInboxPage({
 
   const params = await searchParams
   const status = params.status ? parseOrderRequestStatus(params.status) : null
+  const search = parseOrderSearchQuery(params.q)
   const requestedPage = Number(params.page || 1)
   const page = Number.isSafeInteger(requestedPage) ? Math.max(1, Math.min(requestedPage, 401)) : 1
   const pageSize = 25
-  const result = await getOrderInbox({ status, limit: pageSize, offset: (page - 1) * pageSize })
+  const result = search.error ? null : await getOrderInbox({ status, search: search.value, limit: pageSize, offset: (page - 1) * pageSize })
   const selectedStatus = status ?? ''
+  const query = new URLSearchParams()
+  if (selectedStatus) query.set('status', selectedStatus)
+  if (search.value) query.set('q', search.value)
+  const queryPrefix = query.toString()
+  const filteredPath = `/orders?${queryPrefix ? `${queryPrefix}&` : ''}`
   const totalPages = result ? Math.max(1, Math.ceil(result.total / pageSize)) : 1
 
   return (
@@ -64,12 +70,29 @@ export default async function AdminOrderInboxPage({
       <nav className="admin-filter-row" aria-label="Lọc trạng thái yêu cầu">
         {STATUS_FILTERS.map((filter) => {
           const active = selectedStatus === filter.value
-          const href = filter.value ? `/orders?status=${filter.value}` : '/orders'
+          const nextQuery = new URLSearchParams()
+          if (filter.value) nextQuery.set('status', filter.value)
+          if (search.value) nextQuery.set('q', search.value)
+          const serialized = nextQuery.toString()
+          const href = serialized ? `/orders?${serialized}` : '/orders'
           return <Link key={filter.value} href={href} aria-current={active ? 'page' : undefined} className={active ? 'admin-filter admin-filter-active' : 'admin-filter'}>{filter.label}</Link>
         })}
       </nav>
 
-      {!result ? (
+      <form action="/orders" method="get" className="admin-search-form" role="search">
+        {selectedStatus ? <input type="hidden" name="status" value={selectedStatus} /> : null}
+        <label htmlFor="order-search">Tìm theo mã tiếp nhận, tên hoặc số điện thoại</label>
+        <div className="admin-search-controls">
+          <input id="order-search" name="q" type="search" maxLength={100} value={search.value} placeholder="Ví dụ: DPG-…, Nguyễn Văn A" />
+          <button className="admin-button" type="submit">Tìm kiếm</button>
+          {search.value ? <Link className="admin-button admin-button-secondary" href={selectedStatus ? `/orders?status=${selectedStatus}` : '/orders'}>Xóa lọc</Link> : null}
+        </div>
+        {search.error ? <p className="admin-error" role="alert">{search.error}</p> : null}
+      </form>
+
+      {search.error ? (
+        <section className="admin-panel"><h2>Từ khóa chưa hợp lệ</h2><p className="admin-muted">Hãy rút gọn từ khóa còn tối đa 100 ký tự và thử lại.</p></section>
+      ) : !result ? (
         <section className="admin-panel"><h2>Chưa tải được danh sách</h2><p className="admin-muted">Hàng đợi chưa khả dụng. Vui lòng thử tải lại sau.</p></section>
       ) : result.orders.length === 0 ? (
         <section className="admin-panel admin-empty"><h2>Chưa có yêu cầu phù hợp</h2><p className="admin-muted">Các yêu cầu mới từ Public sẽ xuất hiện tại đây.</p></section>
@@ -96,9 +119,9 @@ export default async function AdminOrderInboxPage({
           <footer className="admin-table-footer">
             <span>Hiển thị {result.orders.length} / {result.total} yêu cầu</span>
             <div className="admin-button-row">
-              {page > 1 ? <Link className="admin-button admin-button-secondary" href={`/orders${selectedStatus ? `?status=${selectedStatus}&` : '?'}page=${page - 1}`}>Trước</Link> : null}
+              {page > 1 ? <Link className="admin-button admin-button-secondary" href={`${filteredPath}page=${page - 1}`}>Trước</Link> : null}
               <span>Trang {page} / {totalPages}</span>
-              {page < totalPages ? <Link className="admin-button admin-button-secondary" href={`/orders${selectedStatus ? `?status=${selectedStatus}&` : '?'}page=${page + 1}`}>Sau</Link> : null}
+              {page < totalPages ? <Link className="admin-button admin-button-secondary" href={`${filteredPath}page=${page + 1}`}>Sau</Link> : null}
             </div>
           </footer>
         </section>
