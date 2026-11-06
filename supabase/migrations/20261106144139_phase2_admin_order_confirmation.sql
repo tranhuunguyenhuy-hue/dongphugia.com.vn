@@ -466,7 +466,11 @@ begin
     )
     or exists (
       select 1 from pg_catalog.pg_auth_members m
-      where m.roleid = 'dpg_migration'::regrole or m.member = 'dpg_migration'::regrole
+      where m.member = 'dpg_migration'::regrole
+         or (
+           m.roleid = 'dpg_migration'::regrole
+           and m.member not in ('postgres'::regrole, 'dpg_migration_login'::regrole)
+         )
     )
     or has_table_privilege('anon', 'dpg_app.phase2_order_confirmations', 'SELECT')
     or has_table_privilege('service_role', 'dpg_app.phase2_order_confirmations', 'SELECT')
