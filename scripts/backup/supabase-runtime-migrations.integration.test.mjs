@@ -962,14 +962,17 @@ describe('Supabase runtime migration adoption integration', () => {
         }
         const adminAuthUserId = '00000000-0000-4000-8000-000000000201'
         const saleAuthUserId = '00000000-0000-4000-8000-000000000202'
+        phase = 'phase2_fixture_begin'
         await client.query('begin')
         try {
+          phase = 'phase2_fixture_insert_category'
           const category = await client.query(`
             insert into dpg_app.categories (name, slug)
             values ('Synthetic Phase 2 Category', 'synthetic-phase2-category-${process.pid}')
             returning id
           `)
           phase2FixtureCategoryId = category.rows[0]?.id
+          phase = 'phase2_fixture_insert_product'
           const product = await client.query(`
             insert into dpg_app.products (
               sku, name, slug, category_id, price, original_price, list_price, sale_price,
@@ -987,6 +990,7 @@ describe('Supabase runtime migration adoption integration', () => {
           createdOrderInput.items[0].productId = phase2FixtureProductId
 
           await client.query('set local role anon')
+          phase = 'phase2_guest_missing_product_error'
           const missingProductResponse = await client.query(`
             select public.guest_order_request_create(
               $1::jsonb, $2, '55555555-5555-4555-8555-555555555555'::uuid
@@ -998,6 +1002,7 @@ describe('Supabase runtime migration adoption integration', () => {
           }), '66666666-6666-4666-8666-666666666666'])
           expect(missingProductResponse.rows[0]?.response).toEqual({ error: 'PRODUCT_UNAVAILABLE' })
 
+          phase = 'phase2_guest_order_create'
           const created = await client.query(`
             select public.guest_order_request_create($1::jsonb, $2, $3::uuid) as response
           `, [JSON.stringify(createdOrderInput), createdOrderKey, createdOrderRequestId])
@@ -1005,16 +1010,19 @@ describe('Supabase runtime migration adoption integration', () => {
           expect(firstReceipt).toMatchObject({ status: 'pending', payment_status: 'unpaid' })
           expect(firstReceipt.order_number).toMatch(/^DPG-[0-9]{6}-[0-9A-F]{8}$/)
 
+          phase = 'phase2_guest_receipt_lookup'
           const receipt = await client.query(
             'select public.guest_order_request_receipt($1) as response', [createdOrderKey],
           )
           expect(receipt.rows[0]?.response).toEqual(firstReceipt)
 
+          phase = 'phase2_guest_idempotency_replay'
           const replay = await client.query(`
             select public.guest_order_request_create($1::jsonb, $2, $3::uuid) as response
           `, [JSON.stringify(createdOrderInput), createdOrderKey, createdOrderRequestId])
           expect(replay.rows[0]?.response).toEqual(firstReceipt)
 
+          phase = 'phase2_guest_idempotency_conflict'
           const conflictingReplay = await client.query(`
             select public.guest_order_request_create($1::jsonb, $2, $3::uuid) as response
           `, [JSON.stringify({ ...createdOrderInput, note: 'Changed retry payload' }), createdOrderKey, createdOrderRequestId])
@@ -1067,6 +1075,7 @@ describe('Supabase runtime migration adoption integration', () => {
           `, [firstReceipt.order_number, createdOrderKey])
           expect(duplicateCount.rows[0]).toEqual({ orders: 1, keys: 1 })
 
+          phase = 'phase2_deny_anonymous_inbox'
           await client.query('savepoint deny_anonymous_inbox')
           await client.query('set local role anon')
           await expect(client.query('select public.phase2_admin_order_list(null, 25, 0)'))
@@ -1074,6 +1083,7 @@ describe('Supabase runtime migration adoption integration', () => {
           await client.query('rollback to savepoint deny_anonymous_inbox')
           await client.query('reset role')
 
+          phase = 'phase2_deny_unmapped_staff'
           await client.query('savepoint deny_unmapped_staff')
           await client.query('set local role authenticated')
           await client.query(
@@ -1085,6 +1095,7 @@ describe('Supabase runtime migration adoption integration', () => {
           await client.query('rollback to savepoint deny_unmapped_staff')
           await client.query('reset role')
 
+          phase = 'phase2_insert_staff_fixtures'
           await client.query(`
             insert into dpg_app.admin_users (
               email, name, password_hash, role, is_active, supabase_auth_user_id
@@ -1093,6 +1104,7 @@ describe('Supabase runtime migration adoption integration', () => {
               ('synthetic-sale@example.invalid', 'Synthetic Sale', 'unused-test-hash', 'sale', true, $2)
           `, [adminAuthUserId, saleAuthUserId])
 
+          phase = 'phase2_staff_context'
           await client.query('set local role authenticated')
           await client.query(
             "select set_config('request.jwt.claims', $1, true)",
@@ -1102,6 +1114,7 @@ describe('Supabase runtime migration adoption integration', () => {
           expect(staffContext.rows[0]?.context).toMatchObject({ status: 'active', roles: ['admin'] })
           expect(staffContext.rows[0]?.context.capabilities).toContain('orders:read')
 
+          phase = 'phase2_staff_inbox_list'
           const inbox = await client.query('select public.phase2_admin_order_list(null, 25, 0) as result')
           expect(inbox.rows[0]?.result).toMatchObject({
             total: 1,
@@ -1114,6 +1127,7 @@ describe('Supabase runtime migration adoption integration', () => {
               total: 240000,
             })],
           })
+          phase = 'phase2_staff_order_detail'
           const detail = await client.query(
             'select public.phase2_admin_order_get($1) as result', [orderId],
           )
@@ -1128,22 +1142,26 @@ describe('Supabase runtime migration adoption integration', () => {
 
           const statusKey = '88888888-8888-4888-8888-888888888888'
           const statusRequestId = '99999999-9999-4999-8999-999999999999'
+          phase = 'phase2_staff_status_transition'
           const accepted = await client.query(`
             select public.phase2_admin_order_update_status($1, 'received', $2, $3::uuid) as response
           `, [orderId, statusKey, statusRequestId])
           const statusResponse = accepted.rows[0]?.response
           expect(statusResponse).toMatchObject({ id: orderId, status: 'received', payment_status: 'unpaid' })
+          phase = 'phase2_staff_status_idempotency_replay'
           const statusReplay = await client.query(`
             select public.phase2_admin_order_update_status($1, 'received', $2, $3::uuid) as response
           `, [orderId, statusKey, statusRequestId])
           expect(statusReplay.rows[0]?.response).toEqual(statusResponse)
 
+          phase = 'phase2_staff_status_idempotency_conflict'
           await client.query('savepoint reject_staff_key_reuse')
           await expect(client.query(`
             select public.phase2_admin_order_update_status($1, 'cancelled', $2, $3::uuid)
           `, [orderId, statusKey, statusRequestId])).rejects.toMatchObject({ message: 'IDEMPOTENCY_KEY_REUSED' })
           await client.query('rollback to savepoint reject_staff_key_reuse')
 
+          phase = 'phase2_staff_invalid_status'
           await client.query('savepoint reject_staff_invalid_status')
           await expect(client.query(`
             select public.phase2_admin_order_update_status(
@@ -1159,6 +1177,7 @@ describe('Supabase runtime migration adoption integration', () => {
           `, [orderId])
           expect(auditCount.rows[0]?.count).toBe(1)
 
+          phase = 'phase2_unassigned_staff_inbox'
           await client.query('set local role authenticated')
           await client.query(
             "select set_config('request.jwt.claims', $1, true)",
@@ -1179,6 +1198,7 @@ describe('Supabase runtime migration adoption integration', () => {
           await client.query('rollback to savepoint deny_unassigned_staff_update')
           await client.query('reset role')
 
+          phase = 'phase2_fixture_commit'
           await client.query('commit')
           phase2FixtureCommitted = true
 
@@ -1186,6 +1206,7 @@ describe('Supabase runtime migration adoption integration', () => {
           const verifier = new Client({ connectionString })
           try {
             await verifier.connect()
+            phase = 'phase2_verify_committed_order'
             const committedOrder = await verifier.query(`
               select id, order_number, status, payment_status, order_origin, total
               from dpg_app.orders where id = $1
@@ -1198,10 +1219,12 @@ describe('Supabase runtime migration adoption integration', () => {
               order_origin: 'public_web',
               total: '240000.00',
             })
+            phase = 'phase2_verify_committed_items'
             const committedItems = await verifier.query(`
               select count(*)::integer as count from dpg_app.order_items where order_id = $1
             `, [phase2FixtureOrderId])
             expect(committedItems.rows[0]?.count).toBe(1)
+            phase = 'phase2_verify_committed_idempotency'
             const committedIdempotency = await verifier.query(`
               select count(*)::integer as count from dpg_app.guest_order_idempotency_records
               where key_hash = dpg_app.runtime_key_hash($1)
@@ -1211,6 +1234,7 @@ describe('Supabase runtime migration adoption integration', () => {
             await verifier.query('begin')
             try {
               await verifier.query('set local role anon')
+              phase = 'phase2_verify_committed_guest_receipt'
               const committedReceipt = await verifier.query(
                 'select public.guest_order_request_receipt($1) as response', [createdOrderKey],
               )
