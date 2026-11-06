@@ -60,8 +60,10 @@ its actual Production target, P0 state and rollback are confirmed.
    keyboard/accessibility checks. A screenshot alone does not prove links work.
 4. **Cart and Order:** preserve Retail Cart versus Quote Cart. Show
    Product/SKU/quantity and authoritative effective pricing; checkout is
-   guest-first, and the server creates a **persisted** `NEW`, `UNPAID`
-   request with an idempotency/retry boundary. Do not display fake submission
+   guest-first, and the current `dpg_app` runtime persists each request as
+   `pending` / `unpaid` while it awaits staff confirmation, with an
+   idempotency/retry boundary. Keep the lifecycle semantics in ADR 0021.
+   Do not display fake submission
    success, treat pending shipping/installation as zero, request bank transfer
    before staff confirms commercial totals, or duplicate an Order on retry.
    Verify browser `cart → checkout → acknowledgment`, database result
