@@ -1,9 +1,10 @@
-# Dongphugia delivery workflow — fast delivery
+# Dongphugia delivery workflow — extended reference
 
-This document is the single source of truth for delivering a request from intake
-to a verified Production result. Root `AGENTS.md` retains mandatory authority
-and safety rules. Optimize for restoring a working customer website, not for
-producing process artifacts.
+This is the **on-demand** explanation of the fast delivery process. Codex
+starts with root `AGENTS.md` and reads this file only when a release or
+workflow question needs details. Root `AGENTS.md` owns the concise rules.
+Optimize for restoring a working customer website, not for producing process
+artifacts.
 
 ## Default flow
 
