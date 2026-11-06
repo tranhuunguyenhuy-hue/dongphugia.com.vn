@@ -1,4 +1,5 @@
 import { APPLICATIONS } from '@dpg/app-contracts'
+import Link from 'next/link'
 
 import { requireActiveStaff } from '../src/auth/require-staff'
 
@@ -16,21 +17,21 @@ export default async function AdminFoundationPage() {
       <p>Vai trò: {staff.roles.join(', ') || 'chưa gán'}</p>
       <p>Quyền hiện hành: {staff.capabilities.length}</p>
       {staff.capabilities.includes('orders:read') || staff.capabilities.includes('orders:read_assigned') ? (
-        <p><a href="/orders">Mở hàng đợi yêu cầu đặt hàng</a></p>
+        <p><Link href="/orders">Mở hàng đợi yêu cầu đặt hàng</Link></p>
       ) : null}
       {staff.capabilities.includes('audit:read') ? (
-        <p><a href="/audit">Mở nhật ký thao tác</a></p>
+        <p><Link href="/audit">Mở nhật ký thao tác</Link></p>
       ) : null}
       {staff.capabilities.includes('products:read') ? (
-        <p><a href="/products">Mở danh mục sản phẩm</a></p>
+        <p><Link href="/products">Mở danh mục sản phẩm</Link></p>
       ) : null}
       {staff.capabilities.includes('blog:read') ? (
-        <p><a href="/blog">Quản lý bài viết</a></p>
+        <p><Link href="/blog">Quản lý bài viết</Link></p>
       ) : null}
       {staff.capabilities.includes('categories:read') ? (
-        <p><a href="/content">Quản lý nội dung website</a></p>
+        <p><Link href="/content">Quản lý nội dung website</Link></p>
       ) : null}
-      <a href="/auth/logout">Đăng xuất</a>
+      <Link href="/auth/logout">Đăng xuất</Link>
     </main>
   )
 }
