@@ -10,8 +10,9 @@ Keep it short. Read detailed guidance only when the current task needs it.
 - Checkout: `/Users/m-ac/Projects/dongphugia`
 - Repository: `tranhuunguyenhuy-hue/dongphugia.com.vn`; default branch: `main`
 - Production: `https://www.dongphugia.vn`
-- Runtime baseline: AWS EC2/Coolify, immutable ARM64 images, AWS PostgreSQL,
-  and Bunny-compatible media
+- Historical runtime baseline: AWS EC2/Coolify, immutable ARM64 images,
+  AWS PostgreSQL and Bunny-compatible media. Cloudflare/Supabase recovery work
+  also exists. Verify the runtime currently serving Production before release.
 
 Another clone, worktree, historical branch, Vercel deployment, or Supabase
 project requires explicit PM approval for a recovery operation.
@@ -48,9 +49,10 @@ source conflict rather than choosing silently.
 
 ## Scope and ownership
 
-Before mutation, record the outcome, exact target, exclusions, risk-proportionate
-controls,
-acceptance evidence, rollback position, and mutation owner: `HELD`.
+Before mutation, know the outcome, exact affected target, acceptance check and
+ mutation owner: `HELD`. Record a dedicated recovery/rollback plan only when
+ persistent data, external authority or difficult rollback is actually at risk.
+ A bounded code change needs no lengthy checklist or formal specification.
 
 - Preserve unrelated worktrees, branches, and dirty files.
 - Do not reset, stash, clean, rebase, broadly reformat, delete, deploy, or
@@ -61,36 +63,41 @@ acceptance evidence, rollback position, and mutation owner: `HELD`.
 
 ## Delivery lifecycle
 
-Use:
+Use the fast default:
 
-`Request → Preflight → Align → Execute → Validate → Review → Deliver → Release`
+`Request → Implement → Focused validation → PR / Preview if useful → Owner approval → Production → Smoke check`
 
-- Align is read-only: settle scope, evidence, risk, and acceptance first.
-- Use this one workflow for every task. Risk determines the depth of validation,
-  recovery evidence, and approval controls; it does not select a separate
-  release path.
-- Increase those controls when persistent state, authority, shared
-  environments, difficult rollback, or material blast radius enters scope.
-- The complete routing, delivery, review, and release rules live in
+- One clear customer-facing request normally means one task branch and one PR;
+  no default Issue, formal spec, architecture review, or repeated alignment.
+- Scope and risk determine validation depth. Run backup/restore and dedicated
+  safety checks only for changes that could actually affect protected state.
+- After two failed attempts with the same approach, diagnose or change course
+  rather than generating repetitive repair PRs.
+- Deliver small independent fixes even while unrelated Phase 2 infrastructure
+  or backup work is blocked.
+- Full procedure and the remaining mandatory safety limits live in
   `docs/WORKFLOW-WITH-CODEX.md`.
 
 ## Gates
 
-- Local validation, PR/CI, merge, Staging, and Production are separate gates.
-- Repository policy requires a task-owned PR, required CI, and PM merge
-  approval before `main`. GitHub branch-protection enforcement is live control-
-  plane state: verify it immediately before relying on it; do not claim that
-  documentation proves it is enabled.
-- A branch, green CI, merged PR, health check, or Staging proof is not evidence
-  of Production.
-- Production requires explicit approval for the exact candidate and target.
-- Promote the same validated immutable candidate through downstream gates.
-- Never reveal secrets, tokens, credential URLs, environment values, PII, or
-  database rows.
-
-Read the applicable ADR and deployment runbook before release-related or
-materially risky work. Shared-data Staging is historical only and remains
-write-frozen, noindex candidate-validation context.
+- Repository policy requires a task-owned PR, required CI and PM approval
+  before merge to `main`. Verify actual branch protection rather than
+  assuming documentation enforces it.
+- Routine reversible changes use focused validation and may skip a standalone
+  Staging environment when it adds no relevant evidence. Use Preview or
+  isolated validation for meaningful user flows and material state changes.
+- Prefer one Owner go/no-go covering merge and Production **only when** the
+  reviewed candidate and exact target are identified and the automation
+  guarantees the same artifact. Otherwise obey separate existing gates.
+- Do not mutate Production without explicit authorization of its exact
+  candidate and target. Validate the actual serving runtime and smoke-test
+  after deployment; a green CI or merged PR is not Production evidence.
+- Preserve a safe rollback for app changes and proportionate recoverable
+  data evidence for risky migrations. Never expose secrets, tokens,
+  credential URLs, environment values, PII or database rows.
+- Read an environment-specific runbook only for a relevant release/operation,
+  not for routine code edits. Shared-data Staging is historical, remains
+  write-frozen and is not a prerequisite for unrelated low-risk work.
 
 ## Documentation map
 
