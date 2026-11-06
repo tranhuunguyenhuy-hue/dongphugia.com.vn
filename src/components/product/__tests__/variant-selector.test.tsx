@@ -4,6 +4,56 @@ import type { VariantSibling } from '@/lib/public-api-products'
 import { VariantSelector } from '../variant-selector'
 
 describe('VariantSelector', () => {
+    it('links a verified size choice to that SKU canonical PDP and keeps its own price and image', () => {
+        const siblings: VariantSibling[] = [{
+            id: 4001,
+            sku: 'SYNTHETIC-SIZE-60',
+            name: 'Synthetic sink 60 cm',
+            slug: 'synthetic-sink-60',
+            url: '/thiet-bi-bep/voi-rua-chen/synthetic-sink-60',
+            price: 1_500_000,
+            original_price: null,
+            online_discount_amount: null,
+            price_display: null,
+            image_main_url: 'https://cdn.example.invalid/synthetic-sink-60.jpg',
+            is_active: true,
+            variant_type: 'size',
+            variant_label: '60 cm',
+            variant_options: [{ axis: 'size', label: 'Kích thước', value: '60 cm' }],
+            stock_status: 'in_stock',
+            subcategories: { slug: 'voi-rua-chen' },
+            categories: { slug: 'thiet-bi-bep' },
+        }]
+
+        render(
+            <VariantSelector
+                currentSku="SYNTHETIC-SIZE-50"
+                currentSlug="synthetic-sink-50"
+                currentName="Synthetic sink 50 cm"
+                currentImageMainUrl="https://cdn.example.invalid/synthetic-sink-50.jpg"
+                currentPriceDisplay={null}
+                currentPrice={1_300_000}
+                currentOriginalPrice={null}
+                currentColor={null}
+                currentStockStatus="in_stock"
+                currentVariantOptions={[{ axis: 'size', label: 'Kích thước', value: '50 cm' }]}
+                variantAxes={[{ key: 'size', label: 'Kích thước' }]}
+                selectedSku="SYNTHETIC-SIZE-50"
+                variantType="size"
+                variantLabel="50 cm"
+                variantGroup="SYNTHETIC-SINK"
+                siblings={siblings}
+                categorySlug="thiet-bi-bep"
+                subcategorySlug="voi-rua-chen"
+            />,
+        )
+
+        const choice = screen.getByRole('link', { name: /60 cm/ })
+        expect(choice).toHaveAttribute('href', '/thiet-bi-bep/voi-rua-chen/synthetic-sink-60')
+        expect(choice).toHaveTextContent('1.500.000đ')
+        expect(choice.querySelector('img')).toHaveAttribute('src', 'https://cdn.example.invalid/synthetic-sink-60.jpg')
+    })
+
     it('keeps card order stable when selected variant changes in single-axis groups', () => {
         const siblings: VariantSibling[] = [
             {
