@@ -6,12 +6,16 @@ begin
   if to_regprocedure('public.phase2_admin_order_list(text,integer,integer)') is null
      or to_regprocedure('dpg_app.leo542_actor_context()') is null
      or to_regprocedure('dpg_app.leo542_admin_can(text)') is null
+     or has_schema_privilege('dpg_migration', 'public', 'CREATE')
+     or not has_schema_privilege('dpg_migration', 'public', 'USAGE')
+     or not has_schema_privilege(current_user, 'public', 'CREATE')
      or to_regprocedure('public.phase2_admin_order_search(text,text,integer,integer)') is not null then
     raise exception 'DPG_PHASE2_ADMIN_SEARCH_PREFLIGHT_FAILED';
   end if;
 end
 $preflight$;
 
+grant create on schema public to dpg_migration;
 set role dpg_migration;
 set search_path = pg_catalog, dpg_app, public;
 
@@ -76,6 +80,7 @@ end
 $$;
 
 reset role;
+revoke create on schema public from dpg_migration;
 revoke all on function public.phase2_admin_order_search(text,text,integer,integer)
   from public, anon, service_role;
 grant execute on function public.phase2_admin_order_search(text,text,integer,integer)
@@ -87,7 +92,8 @@ begin
     select 1 from pg_proc p
     where p.oid = 'public.phase2_admin_order_search(text,text,integer,integer)'::regprocedure
       and not p.prosecdef and pg_get_userbyid(p.proowner) = 'dpg_migration'
-  ) or has_function_privilege('anon', 'public.phase2_admin_order_search(text,text,integer,integer)', 'EXECUTE')
+  ) or has_schema_privilege('dpg_migration', 'public', 'CREATE')
+    or has_function_privilege('anon', 'public.phase2_admin_order_search(text,text,integer,integer)', 'EXECUTE')
     or has_function_privilege('service_role', 'public.phase2_admin_order_search(text,text,integer,integer)', 'EXECUTE')
     or not has_function_privilege('authenticated', 'public.phase2_admin_order_search(text,text,integer,integer)', 'EXECUTE') then
     raise exception 'DPG_PHASE2_ADMIN_SEARCH_POSTFLIGHT_FAILED';
