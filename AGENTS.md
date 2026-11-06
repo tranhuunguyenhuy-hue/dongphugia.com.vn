@@ -13,16 +13,30 @@ domain, architecture, deployment, or troubleshooting reference.
   `https://admin.dongphugia.vn`.
 - Business: Vietnamese building-materials retailer. Four catalogue sectors:
   Thiết bị vệ sinh, Gạch ốp lát, Thiết bị nước, Thiết bị bếp.
-- **Immediate priority:** working customer-facing Public: accurate listings,
-  PDP, images, prices, search and SEO; restore the expected visual design.
-  Next: Phase 2 PDP product-line options, footer parity, guest cart/order and
-  Admin CMS. Do not expand a quick Public fix into unrelated migration work.
+- **Current delivery tracks:** P0 Public recovery (#260) is still open;
+  do not assume it is complete or deployed. **Phase 2 (#270) is the next
+  requested source-work track**: verified PDP variants, footer parity,
+  durable guest cart/order and staff Admin/CMS. Keep Phase 2 isolated from
+  the P0 Production candidate; do not fold either into unrelated migration.
 - Work authority: GitHub [#260](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/260)
   (P0 Public recovery), [#270](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/270)
   (Phase 2), [PR #272](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/pull/272)
   (cart/order), [PR #282](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/pull/282)
   (workflow/docs). **These are dated pointers, not confirmed current status:
   inspect the relevant GitHub item only when the request touches it.**
+- **Phase 2 handoff:** first inspect Issue #270 and existing PR #272/branch
+  ownership; continue an active owned PR rather than starting a conflicting
+  branch. Verify 17-group/51-product variant coverage against real source,
+  footer desktop/mobile parity, persistent and idempotent guest orders, and
+  denied unauthorized Admin actions. UI/source work may proceed without a
+  blanket database-backup gate; DB/Auth/provider writes require their own
+  exact approval and recoverable data. The choice between legacy Admin
+  restoration and new Supabase Auth/Admin remains **UNDECIDED** in #270.
+- The 2026-09 V1 design handoffs had a global wireframe-freeze condition.
+  They were consolidated, **not converted into blanket authorization** for
+  new V1 schema/architecture implementation. The newer Phase 2 recovery
+  issue governs bounded source work; settle new-V1 design decisions before
+  irreversible writes. Specific details: `docs/PROJECT.md` §2A.
 - **Runtime caution:** repository contains legacy AWS EC2/Coolify/Prisma/
   PostgreSQL and Cloudflare Workers/Supabase recovery/Preview code. Older
   documents conflict on which serves Production. Verify the actual target
