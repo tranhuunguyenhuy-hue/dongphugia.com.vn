@@ -2,12 +2,17 @@
 // TypeScript path aliases are available. Keep this boundary runtime-resolvable
 // without changing the public app's package alias contract elsewhere.
 import { PUBLIC_EDGE_CACHE_SECONDS, PUBLIC_ROUTE_OWNERSHIP } from '../../../packages/app-contracts/src/index'
+import type { RateLimit } from '@cloudflare/workers-types'
 
 export type PublicWorkerEnvironment = Readonly<{
   APP_ENV: string
   APP_BUILD_TARGET: string
   APP_ORIGIN: string
   PREVIEW_NOINDEX: string
+  PUBLIC_ORDER_INTAKE_URL?: string
+  PUBLIC_SUPABASE_PUBLISHABLE_KEY?: string
+  ORDER_INTAKE_SIGNING_SECRET?: string
+  ORDER_REQUEST_LIMITER?: RateLimit
   [name: string]: unknown
 }>
 
@@ -24,6 +29,7 @@ const FORBIDDEN_INTERNAL_HEADERS = [
 ] as const
 const PRIVILEGED_RUNTIME_BINDING_PATTERN =
   /(SERVICE_ROLE|AUTH_ADMIN|ADMIN_SESSION|SECRET|PASSWORD|DATABASE_URL|DIRECT_URL|PRIVATE_KEY|CREDENTIAL|CLOUDFLARE_API_TOKEN|BUNNY_API_KEY)/i
+const ALLOWED_SERVER_ONLY_SECRET_BINDING = 'ORDER_INTAKE_SIGNING_SECRET'
 const LISTING_API_FAMILIES = new Set(['thiet-bi-ve-sinh', 'thiet-bi-bep', 'vat-lieu-nuoc', 'gach-op-lat'])
 const LISTING_API_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 
@@ -31,6 +37,21 @@ export const PRIVATE_CACHE_CONTROL = 'private, no-store'
 export const PUBLIC_BROWSER_CACHE_CONTROL = 'public, max-age=0, must-revalidate'
 export const PUBLIC_EDGE_CACHE_CONTROL = `public, max-age=${PUBLIC_EDGE_CACHE_SECONDS}, must-revalidate`
 export const PUBLIC_PREVIEW_ROBOTS_HEADER = 'noindex, nofollow'
+
+function assertPrivilegedRuntimeBindings(environment: PublicWorkerEnvironment) {
+  for (const name of Object.keys(environment)) {
+    if (name === ALLOWED_SERVER_ONLY_SECRET_BINDING) {
+      const value = environment[name]
+      if (typeof value !== 'string' || new TextEncoder().encode(value).byteLength < 32) {
+        throw new Error('PUBLIC_WORKER_ORDER_INTAKE_SIGNING_SECRET_INVALID')
+      }
+      continue
+    }
+    if (PRIVILEGED_RUNTIME_BINDING_PATTERN.test(name)) {
+      throw new Error(`PUBLIC_WORKER_PRIVILEGED_BINDING_FORBIDDEN:${name}`)
+    }
+  }
+}
 
 export function assertPublicRuntime(request: Request, environment: PublicWorkerEnvironment) {
   if (environment.APP_ENV === 'preview') {
@@ -49,11 +70,7 @@ export function assertPublicRuntime(request: Request, environment: PublicWorkerE
     && !['localhost', '127.0.0.1'].includes(url.hostname)) {
     throw new Error('PUBLIC_WORKER_PRODUCTION_HOST_FORBIDDEN')
   }
-  for (const name of Object.keys(environment)) {
-    if (PRIVILEGED_RUNTIME_BINDING_PATTERN.test(name)) {
-      throw new Error(`PUBLIC_WORKER_PRIVILEGED_BINDING_FORBIDDEN:${name}`)
-    }
-  }
+  assertPrivilegedRuntimeBindings(environment)
 }
 
 export function robotsHeader(request: Request, environment: PublicWorkerEnvironment) {
@@ -84,11 +101,7 @@ export function assertPreviewRuntime(request: Request, environment: PublicWorker
     configuredOrigin.hostname === 'dongphugia.vn' ||
     configuredOrigin.hostname.endsWith('.dongphugia.vn')
   ) throw new Error('PUBLIC_WORKER_PREVIEW_ORIGIN_INVALID')
-  for (const name of Object.keys(environment)) {
-    if (PRIVILEGED_RUNTIME_BINDING_PATTERN.test(name)) {
-      throw new Error(`PUBLIC_WORKER_PRIVILEGED_BINDING_FORBIDDEN:${name}`)
-    }
-  }
+  assertPrivilegedRuntimeBindings(environment)
   if (PRODUCTION_HOSTS.has(hostname) || hostname.endsWith('.dongphugia.vn')) {
     throw new Error('PUBLIC_WORKER_PREVIEW_PRODUCTION_HOST_FORBIDDEN')
   }
@@ -132,6 +145,19 @@ export function classifyPublicApiRequest(request: Request): PublicApiRequestDeci
       && route.path === '/api/catalogue/listings/[categorySlug]/[listingSlug]'
       && route.purpose === 'catalogue-listing-snapshot-readonly',
   ) && /^\/api\/catalogue\/listings\/([^/]+)\/([^/]+)$/.test(pathname)
+  const ownsGuestOrderRequest = PUBLIC_ROUTE_OWNERSHIP.some((route) =>
+    route.owner === 'public'
+      && route.path === '/api/order-requests'
+      && route.purpose === 'guest-order-request-write',
+  ) && pathname === '/api/order-requests'
+  const ownsGuestOrderReceipt = PUBLIC_ROUTE_OWNERSHIP.some((route) =>
+    route.owner === 'public'
+      && route.path === '/api/order-requests/receipt'
+      && route.purpose === 'guest-order-request-receipt-readonly',
+  ) && pathname === '/api/order-requests/receipt'
+
+  if (ownsGuestOrderRequest) return request.method === 'POST' ? 'allow' : 'method-not-allowed'
+  if (ownsGuestOrderReceipt) return request.method === 'GET' ? 'allow' : 'method-not-allowed'
 
   const listingMatch = pathname.match(/^\/api\/catalogue\/listings\/([^/]+)\/([^/]+)$/)
   const validListingRoute = ownsListingShardRoute

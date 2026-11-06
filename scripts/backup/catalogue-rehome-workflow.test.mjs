@@ -1,5 +1,6 @@
 import { readFile } from 'node:fs/promises'
 import { describe, expect, it } from 'vitest'
+import { EXPECTED_RUNTIME_MIGRATIONS } from './supabase-runtime-migrations.mjs'
 
 const workflowPath = '.github/workflows/supabase-runtime-rehome.yml'
 const restorePath = 'scripts/backup/restore-catalogue-runtime.sh'
@@ -121,7 +122,9 @@ describe('Supabase runtime catalogue re-home workflow', () => {
     expect(preflight).toContain("environment = 'preview'")
     expect(preflight).toContain("to_regclass('dpg_v1.products') is null")
     expect(preflight).toContain('runtime_migration_ledger')
-    expect(preflight).toContain('count(*) from dpg_control.runtime_migration_ledger) <> 23')
+    expect(preflight).toContain(
+      `count(*) from dpg_control.runtime_migration_ledger) <> ${EXPECTED_RUNTIME_MIGRATIONS.length}`,
+    )
     expect(preflight).toContain('CATALOGUE_REHOME_RLS_INCOMPLETE')
     expect(preflight).toContain('CATALOGUE_REHOME_V1_DATA_NOT_EMPTY')
     expect(preflight).toContain("c.relname not in ('categories', 'role_capabilities')")

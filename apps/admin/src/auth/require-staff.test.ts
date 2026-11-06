@@ -27,14 +27,14 @@ describe('Admin active Staff mapping boundary', () => {
     })
   })
 
-  it('requires a verified session claim before querying the V1 staff context', async () => {
+  it('requires a verified session claim before querying the current staff context', async () => {
     getClaims.mockResolvedValue({ data: { claims: null }, error: null })
 
     await expect(requireActiveStaff()).rejects.toThrow('REDIRECT:/login')
     expect(rpc).not.toHaveBeenCalled()
   })
 
-  it('returns only an active V1 staff context', async () => {
+  it('returns only an active staff context mapped from the current dpg_app authority', async () => {
     getClaims.mockResolvedValue({ data: { claims: { sub: 'active-user' } }, error: null })
     const context = {
       auth_user_id: 'active-user',
@@ -47,7 +47,7 @@ describe('Admin active Staff mapping boundary', () => {
     rpc.mockResolvedValue({ data: context, error: null })
 
     await expect(requireActiveStaff()).resolves.toEqual(context)
-    expect(rpc).toHaveBeenCalledWith('staff_context')
+    expect(rpc).toHaveBeenCalledWith('phase2_admin_staff_context')
   })
 
   it('fails closed when the identity is unmapped, invited, disabled, or malformed', async () => {

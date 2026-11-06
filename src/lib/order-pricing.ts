@@ -2,13 +2,13 @@ import { resolveProductCommerce } from './product-commerce'
 
 export type InstallOption = 'none' | 'install' | 'replace'
 
-export const INSTALLATION_FEES: Record<InstallOption, number> = {
+export const INSTALLATION_FEES: Record<InstallOption, number | null> = {
     none: 0,
-    install: 200_000,
-    replace: 350_000,
+    install: null,
+    replace: null,
 }
 
-export function getInstallationFee(option: InstallOption): number {
+export function getInstallationFee(option: InstallOption): number | null {
     return INSTALLATION_FEES[option]
 }
 
@@ -27,7 +27,6 @@ export function calculateOrderUnitPrice({
     salePrice,
     compatibilityPrice,
     stockStatus,
-    installOption,
 }: OrderUnitPriceInput): number | null {
     const commerce = resolveProductCommerce({
         listPrice,
@@ -47,6 +46,7 @@ export function calculateOrderUnitPrice({
         return null
     }
 
-    const unitPrice = authoritativePrice + getInstallationFee(installOption)
-    return Math.round(unitPrice * 100) / 100
+    // Installation is an intent on the request, not a confirmed commercial
+    // fact. Keep it out of the provisional product amount until staff confirms.
+    return Math.round(authoritativePrice * 100) / 100
 }

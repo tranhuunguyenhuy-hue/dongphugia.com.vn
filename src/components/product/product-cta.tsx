@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import { siteConfig } from "@/config/site";
 import { ViewItemTracker } from "@/components/tracking/view-item-tracker";
 import { trackGenerateLead } from "@/lib/tracking";
-import { resolveProductCommerce } from "@/lib/product-commerce";
+import { resolveFinalOnlinePrice, resolveProductCommerce } from "@/lib/product-commerce";
 
 
 interface ProductCTAProps {
@@ -58,13 +58,15 @@ export function ProductCTA({
         stockStatus,
     });
     const hasPrice = commerce.priceMode === 'PUBLIC_PRICE';
-    const canPurchase = commerce.canAddToCart;
+    const canRequestOrder = commerce.canRequestOrder;
     const displayPrice = commerce.displayPrice;
     
     const productOptions = useProductOptions();
     const installOption = productOptions?.installOption || 'none';
-    const installationFee = productOptions?.installationFee || 0;
-    const onlineDiscountAmount = productOptions?.onlineDiscountAmount || 0;
+    const installationFee = productOptions?.installationFee ?? null;
+    const requestedOnlineDiscountAmount = productOptions?.onlineDiscountAmount || 0;
+    const discountedProductPrice = resolveFinalOnlinePrice(displayPrice, requestedOnlineDiscountAmount);
+    const onlineDiscountAmount = discountedProductPrice === null ? 0 : requestedOnlineDiscountAmount;
 
     const [isOpen, setIsOpen] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
@@ -73,8 +75,8 @@ export function ProductCTA({
     const addItem = useCartStore((s) => s.addItem);
 
     const handleAddToCart = () => {
-        if (!canPurchase || displayPrice === null) return;
-        const finalPrice = displayPrice + installationFee;
+        if (!canRequestOrder || displayPrice === null) return;
+        const finalPrice = discountedProductPrice ?? displayPrice;
         
         addItem({
             productId,
@@ -118,7 +120,7 @@ export function ProductCTA({
                     products: [
                         {
                             product_id: productId,
-                            quantity: canPurchase ? quantity : 1,
+                            quantity: canRequestOrder ? quantity : 1,
                         }
                     ]
                 }),
@@ -154,7 +156,9 @@ export function ProductCTA({
         }
     };
 
-    const finalItemPrice = canPurchase && displayPrice !== null ? (displayPrice + installationFee) : 0;
+    const finalItemPrice = canRequestOrder && displayPrice !== null
+        ? (discountedProductPrice ?? displayPrice)
+        : 0;
     const totalPrice = finalItemPrice * quantity;
 
     return (
@@ -170,7 +174,7 @@ export function ProductCTA({
             {/* CTA Stack */}
             <div className="flex flex-col gap-2.5">
                 {/* Add to Cart — primary if has price */}
-                {canPurchase && (
+                {canRequestOrder && (
                     <Button
                         onClick={handleAddToCart}
                         className="group w-full h-[52px] bg-gradient-to-r from-[#2E7A96] to-[#1e586e] hover:brightness-110 !text-white text-[16px] font-bold rounded-xl shadow-[0_12px_24px_-8px_rgba(46,122,150,0.4)] transition-all duration-300 gap-2 border-0"
@@ -346,7 +350,7 @@ export function ProductCTA({
 
             {/* Mobile Sticky Bottom Bar */}
             <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-stone-200 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:hidden z-[100] flex items-center justify-between gap-4 shadow-[0_-8px_30px_rgba(0,0,0,0.06)]">
-                {canPurchase ? (
+                {canRequestOrder ? (
                     <div className="flex flex-col justify-center">
                         <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest leading-none mb-1">Tổng tạm tính</span>
                         <div className="flex items-end gap-1.5">
@@ -377,7 +381,7 @@ export function ProductCTA({
                 )}
                 
                 <div className="flex-1 max-w-[200px]">
-                    {canPurchase ? (
+                    {canRequestOrder ? (
                         <Button
                             onClick={handleAddToCart}
                             className="w-full h-12 bg-gradient-to-r from-[#2E7A96] to-[#1e586e] hover:brightness-110 !text-white text-[15px] font-semibold rounded-xl shadow-[0_4px_14px_rgba(46,122,150,0.25)] transition-all duration-300 gap-2 border-0"

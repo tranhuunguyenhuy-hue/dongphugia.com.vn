@@ -54,6 +54,9 @@ enable_confirmations = true
 [functions.commerce-orders]
 verify_jwt = true
 
+[functions.order-intake]
+verify_jwt = false
+
 [functions.commerce-quotes]
 verify_jwt = true
 

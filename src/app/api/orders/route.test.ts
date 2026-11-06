@@ -78,7 +78,7 @@ describe('POST /api/orders', () => {
         }))
     })
 
-    it('ignores client price, SKU and name and stores authoritative snapshots', async () => {
+    it('ignores client price, SKU and name and excludes the unconfirmed installation fee', async () => {
         const response = await POST(createRequest([{
             productId: 101,
             quantity: 2,
@@ -94,21 +94,21 @@ describe('POST /api/orders', () => {
         expect(mocks.findProducts).toHaveBeenCalledTimes(1)
         expect(mocks.createOrder).toHaveBeenCalledWith({
             data: expect.objectContaining({
-                subtotal: 2_200_000,
-                total: 2_200_000,
+                subtotal: 1_800_000,
+                total: 1_800_000,
                 order_items: {
                     create: [{
                         product_id: 101,
                         product_name: 'Tên từ database (Cần Lắp Đặt)',
                         product_sku: 'DB-SKU-101',
                         quantity: 2,
-                        unit_price: 1_100_000,
-                        total_price: 2_200_000,
+                        unit_price: 900_000,
+                        total_price: 1_800_000,
                     }],
                 },
             }),
         })
-        expect(body).toMatchObject({ success: true, total: 2_200_000 })
+        expect(body).toMatchObject({ success: true, total: 1_800_000 })
     })
 
     it('rejects invalid quantities before opening a transaction', async () => {

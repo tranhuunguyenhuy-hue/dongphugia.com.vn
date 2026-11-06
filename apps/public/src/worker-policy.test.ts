@@ -37,6 +37,14 @@ describe('Public Worker fail-closed policy', () => {
     const production = { APP_ENV: 'production', APP_BUILD_TARGET: 'public', APP_ORIGIN: 'https://www.dongphugia.vn', PREVIEW_NOINDEX: '' }
     const canonical = new Request('https://www.dongphugia.vn/thiet-bi-bep')
     expect(() => assertPublicRuntime(canonical, production)).not.toThrow()
+    expect(() => assertPublicRuntime(canonical, {
+      ...production,
+      ORDER_INTAKE_SIGNING_SECRET: 'synthetic-order-intake-signing-secret-32-bytes',
+    })).not.toThrow()
+    expect(() => assertPublicRuntime(canonical, {
+      ...production,
+      ORDER_INTAKE_SIGNING_SECRET: 'short',
+    })).toThrow('PUBLIC_WORKER_ORDER_INTAKE_SIGNING_SECRET_INVALID')
     expect(robotsHeader(canonical, production)).toBeNull()
     expect(robotsHeader(new Request('https://dongphugia-v1-public-production.tranhuunguyenhuy.workers.dev/'), production)).toBe('noindex, nofollow')
     expect(() => assertPublicRuntime(canonical, { ...production, PREVIEW_NOINDEX: 'true' })).toThrow('PUBLIC_WORKER_PRODUCTION_CONFIGURATION_REQUIRED')
@@ -71,6 +79,11 @@ describe('Public Worker fail-closed policy', () => {
 
   it('allows only owned public GET/HEAD APIs and blocks arbitrary or mutating routes', () => {
     expect(classifyPublicApiRequest(new Request('https://preview.invalid/api/health'))).toBe('allow')
+    expect(classifyPublicApiRequest(new Request('https://preview.invalid/api/order-requests', { method: 'POST' }))).toBe('allow')
+    expect(classifyPublicApiRequest(new Request('https://preview.invalid/api/order-requests'))).toBe('method-not-allowed')
+    expect(classifyPublicApiRequest(new Request('https://preview.invalid/api/order-requests', { method: 'DELETE' }))).toBe('method-not-allowed')
+  expect(classifyPublicApiRequest(new Request('https://preview.invalid/api/order-requests/receipt'))).toBe('allow')
+  expect(classifyPublicApiRequest(new Request('https://preview.invalid/api/order-requests/receipt', { method: 'POST' }))).toBe('method-not-allowed')
     expect(classifyPublicApiRequest(new Request('https://preview.invalid/api/catalogue/listings/thiet-bi-bep/voi-rua-chen'))).toBe('allow')
     expect(classifyPublicApiRequest(new Request('https://preview.invalid/api/catalogue/listings/gach-op-lat/gach-van-da-marble', { method: 'HEAD' }))).toBe('allow')
     expect(classifyPublicApiRequest(new Request('https://preview.invalid/api/catalogue/listings/not-a-family/voi-rua-chen'))).toBe('not-found')
