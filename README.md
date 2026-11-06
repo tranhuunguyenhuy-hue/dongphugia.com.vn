@@ -32,11 +32,16 @@ npm test
 npm run build
 ```
 
-## Release gates
+## Codex and release
 
-Merge source không tự deploy. Quy trình approval, candidate, Staging và
-Production nằm trong [workflow](docs/WORKFLOW-WITH-CODEX.md) và
-[isolated Staging foundation](docs/deploy/isolated-staging-foundation.md).
+Codex tự động đọc [AGENTS.md](AGENTS.md), chỉ đọc [CONTEXT.md](CONTEXT.md)
+khi cần ngữ cảnh nghiệp vụ. Không cần đọc toàn bộ `docs/` để bắt đầu.
+
+Một PR đã merge **không** có nghĩa đã deploy. Phải xác minh hệ thống đang phục
+vụ Production, nhận phê duyệt đúng bản phát hành, và kiểm tra website thật.
+Xem [quy trình mở rộng](docs/WORKFLOW-WITH-CODEX.md) khi cần; xem
+[isolated Staging foundation](docs/deploy/isolated-staging-foundation.md)
+chỉ với các thay đổi dữ liệu cần môi trường cách ly.
 
 ## Repository map
 
