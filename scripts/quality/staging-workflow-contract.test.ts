@@ -27,7 +27,7 @@ const adr = readFileSync(
     resolve(process.cwd(), 'docs/adr/0013-isolated-postgresql-staging-deployment-foundation.md'),
     'utf8',
 )
-const docsIndex = readFileSync(resolve(process.cwd(), 'docs/README.md'), 'utf8')
+const docsIndex = readFileSync(resolve(process.cwd(), 'docs/PROJECT.md'), 'utf8')
 const disposableBootstrapRunbook = readFileSync(
     resolve(process.cwd(), 'docs/deploy/staging-db-bootstrap/RUNBOOK.md'),
     'utf8',

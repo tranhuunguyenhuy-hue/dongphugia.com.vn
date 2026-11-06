@@ -32,16 +32,19 @@ npm test
 npm run build
 ```
 
-## Release gates
+## Codex and delivery
 
-Merge source không tự deploy. Quy trình approval, candidate, Staging và
-Production nằm trong [workflow](docs/WORKFLOW-WITH-CODEX.md) và
-[isolated Staging foundation](docs/deploy/isolated-staging-foundation.md).
+Một phiên Codex chỉ cần đọc [AGENTS.md](AGENTS.md) để nắm mục tiêu, công việc
+đang làm, cấu trúc ứng dụng, nghiệp vụ và quy trình phát hành. Chi tiết được
+**tổng hợp duy nhất** tại [Project Handbook](docs/PROJECT.md), đọc khi cần.
+
+Merge PR không đồng nghĩa với Production. Chỉ deploy sau khi xác minh đúng
+runtime/candidate và có phê duyệt, rồi kiểm tra website thật.
 
 ## Repository map
 
 - `src/`: Next.js application
 - `prisma/`: schema, migrations và seed cần thiết
 - `scripts/`: quality, monitoring, SEO và canonical rollout tools
-- `docs/`: application reference, workflow, sitemap và staging runbook
+- `docs/PROJECT.md`: handbook duy nhất; `docs/deploy/` giữ những runbook còn được CI hoặc vận hành phụ thuộc
 - `.github/workflows/`: quality, performance, staging image và manual candidate

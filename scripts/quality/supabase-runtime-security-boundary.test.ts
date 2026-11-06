@@ -32,7 +32,7 @@ const runbook = readFileSync(
   resolve(process.cwd(), 'docs/deploy/supabase-runtime-security-boundary.md'),
   'utf8',
 )
-const docsIndex = readFileSync(resolve(process.cwd(), 'docs/README.md'), 'utf8')
+const docsIndex = readFileSync(resolve(process.cwd(), 'docs/PROJECT.md'), 'utf8')
 const currentState = readFileSync(
   resolve(process.cwd(), 'docs/ops/project-current-state.md'),
   'utf8',
