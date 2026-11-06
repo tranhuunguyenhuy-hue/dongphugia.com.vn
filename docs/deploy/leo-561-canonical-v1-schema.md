@@ -1,7 +1,7 @@
 # LEO-561 canonical V1 schema contract — historical implemented baseline
 
 **Status:** Historical M1 baseline implemented by LEO-561. **Not current Product/Dòng selector authority.**  
-**Current Product/Dòng authority:** ADR 0022 + `docs/internal/v1-product-line-axis-option-m0-m2-impact-audit.md`  
+**Current Product/Dòng authority:** ADR 0022 + `docs/PROJECT.md` (section 3).  
 **Implementation gate:** `V1 WIREFRAME APPROVED / FROZEN`
 
 ## Why this file now exists as historical evidence
@@ -69,18 +69,13 @@ After final wireframe freeze, implementation should:
 
 At the 05/09/2026 architecture audit, isolated Preview `dongphugia-runtime` had the M1/M2 schema but zero canonical rows in the Product/Family catalogue tables, so no live V1 catalogue dataset currently requires destructive transformation.
 
-## Current documents to read
+## Current reference for Product/Dòng work
 
-Before any future Product/Dòng implementation read:
-
-- `docs/adr/0022-v1-product-line-axis-option-family-model.md`;
-- `docs/internal/v1-product-line-axis-option-m0-m2-impact-audit.md`;
-- `docs/internal/v1-pdp-family-system-implementation-handoff.md`;
-- `docs/internal/v1-family-admin-pdp-selector-linkage.md`;
-- `docs/internal/v1-admin-operations-implementation-handoff.md`;
-- `docs/internal/v1-wireframe-freeze-implementation-index.md`.
-
-ADR 0017 is superseded historical design evidence only.
+Read `docs/PROJECT.md` section 3, then
+`docs/adr/0022-v1-product-line-axis-option-family-model.md` if an exact
+schema/selector decision is needed. Historical implementation handoffs were
+consolidated into the handbook and removed from the working tree; their original
+details remain in Git history. ADR 0017's earlier selector model is superseded.
 
 ## Gate
 
