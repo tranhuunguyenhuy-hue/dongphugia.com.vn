@@ -12,10 +12,18 @@ begin
        select 1 from pg_catalog.pg_roles r where r.rolname = 'dpg_migration'
          and not r.rolsuper and not r.rolbypassrls and not r.rolcanlogin and not r.rolinherit
      )
+     or not exists (
+       select 1 from pg_catalog.pg_roles r where r.rolname = 'dpg_migration_login'
+         and not r.rolsuper and not r.rolbypassrls and r.rolcanlogin and not r.rolinherit
+         and not r.rolcreatedb and not r.rolcreaterole and not r.rolreplication
+     )
      or exists (
        select 1 from pg_catalog.pg_auth_members m
        where m.member = 'dpg_migration'::regrole
-          or (m.roleid = 'dpg_migration'::regrole and m.member <> 'postgres'::regrole)
+          or (
+            m.roleid = 'dpg_migration'::regrole
+            and m.member not in ('postgres'::regrole, 'dpg_migration_login'::regrole)
+          )
      )
      or not has_table_privilege('dpg_migration', 'dpg_app.orders', 'SELECT')
      or not has_table_privilege('dpg_migration', 'dpg_app.orders', 'UPDATE')
