@@ -1,117 +1,76 @@
-# Dongphugia agent contract
+# Dongphugia — Codex instructions
 
-## Purpose
+This is the **only automatically loaded repository guide**. Keep it short.
+Goal: restore and improve the customer website quickly; prioritize a working
+Production outcome over process artifacts. Do not read every document by default.
 
-This is the always-on operating contract for this checkout.
-Keep it short. Read detailed guidance only when the current task needs it.
+## Project map
 
-## Canonical context
+- Repo: `tranhuunguyenhuy-hue/dongphugia.com.vn`; branch: `main`.
+- Customer site: `https://www.dongphugia.vn`.
+- Code: `apps/public/` (new Public), `apps/admin/` (separate staff Admin),
+  `src/` (legacy Next.js), `prisma/`, `scripts/`, `.github/workflows/`.
+- Stack varies by runtime: legacy AWS/Coolify/PostgreSQL/Bunny; newer
+  Cloudflare Workers/Supabase code exists. **Verify the runtime actually
+  serving Production before deployment**; do not infer it from old docs.
+- Domain vocabulary and active work links: `CONTEXT.md` (**read only for
+  catalogue, commerce, CMS, publishing, or cross-session handoff tasks**).
 
-- Checkout: `/Users/m-ac/Projects/dongphugia`
-- Repository: `tranhuunguyenhuy-hue/dongphugia.com.vn`; default branch: `main`
-- Production: `https://www.dongphugia.vn`
-- Historical runtime baseline: AWS EC2/Coolify, immutable ARM64 images,
-  AWS PostgreSQL and Bunny-compatible media. Cloudflare/Supabase recovery work
-  also exists. Verify the runtime currently serving Production before release.
+## Default delivery: fast and focused
 
-Another clone, worktree, historical branch, Vercel deployment, or Supabase
-project requires explicit PM approval for a recovery operation.
+`Request → Change → Relevant tests → PR → Owner approval → Deploy → Live smoke`
 
-## Authority
+1. A plain-language request is enough. Confirm the observable outcome; do not
+   create an Issue, spec, ADR, or review meeting for a small clear task.
+2. Check current `main` and relevant open PRs. Make the smallest bounded
+   change on one `codex/<task>` branch; one task normally means one PR.
+3. Test only affected behavior plus repository-required CI. For docs-only work,
+   verify diff/links; for UI, inspect rendered output; for behavior, run focused
+   tests. Do not require a full build or dedicated reviewer by default.
+4. Use reachable Preview when helpful and available; a build artifact alone
+   is **not** deployed Preview. Do not create an infrastructure project just
+   to validate a reversible copy/CSS change.
+5. Owner must approve merge and Production. A single go/no-go can cover both
+   **only if** automation binds the exact reviewed candidate and target;
+   otherwise use the currently enforced separate gates.
+6. Deploy only to the verified runtime, smoke-test affected live URLs/actions,
+   and report commit, PR, Production result, or explicit blocker.
+7. After two failures with the same fix, inspect the cause or change approach.
+   Do not turn unrelated technical debt into a blocking subproject.
 
-- PM owns outcome, product choices, scope, acceptance, merge, and Production.
-- Primary Codex owns only the explicitly authorized technical scope.
-- One active mutation owner may change a shared target at a time.
-- Review agents are read-only.
-- Skills, green CI, historical evidence, and prior approval do not grant new
-  scope, merge, Production, or external-system authority.
-- “Approved” applies only to the immediately recorded scope.
+**Risk proportionality:** UI/text/SEO without data writes needs no database
+backup or restore rehearsal. Ordinary features need focused functional checks
+and app rollback. Schema/data mutations, payments, staff authorization,
+secrets, CDN/DNS cutovers, or destructive actions require target confirmation,
+appropriate recoverable data, specific approval and a tested recovery path.
+An unrelated Phase 2 backup failure must not block a safe standalone UI fix.
 
-## Sources of truth
+## Source conventions
 
-- GitHub Issue: outcome, scope, acceptance, and durable execution status.
-- Pull Request: source diff, review, validation, and merge evidence.
-- Repository documentation: canonical policy, architecture, and procedures.
-- Dated runtime/control-plane evidence: current state only when revalidated.
-- Chat: temporary context; record durable decisions in their canonical home.
+- Next.js / React / TypeScript. Follow patterns and tests adjacent to the
+  changed file. Use Tailwind v4 tokens (not a new `tailwind.config.js`).
+- Public and staff Admin are separate; never expose staff permissions in
+  public endpoints. Validate inputs and preserve existing Auth, RLS, CSP.
+- Preserve product SKU, public prices, URL/SEO, image paths, and order-history
+  facts; do not infer variant family membership from names or SKU prefixes.
+- Do not commit credentials, private URLs or user data. Do not change shared
+  runtime/database/DNS without the specific authorized scope.
+- Useful checks: `npm run lint`, `npm run typecheck`, `npm test`,
+  and the narrow build/test command for the affected app. Run only what is
+  relevant; required CI is still the merge gate.
 
-## Read progressively
+## Read more only when needed
 
-Read, in order:
+- Detailed domain terms: `docs/agents/domain-glossary-full.md`.
+- Legacy application rules: `docs/agents/application-conventions.md`.
+- Extended release steps: `docs/WORKFLOW-WITH-CODEX.md`.
+- Production change: verify current state, then read the **one** affected
+  `docs/deploy/` runbook; historical `docs/ops/` evidence is not current proof.
+- Architecture changes: read only the relevant `docs/adr/` decision.
+- Project continuation: check the relevant GitHub Issue/PR; never trust a
+  dated summary as a live release status.
 
-1. This file.
-2. The current Issue or explicit request.
-3. Only the applicable guide, ADR, runbook, or state snapshot.
-4. Relevant source and tests.
-
-Do not scan all documentation by default. Stop and report an authoritative
-source conflict rather than choosing silently.
-
-## Scope and ownership
-
-Before mutation, know the outcome, exact affected target, acceptance check and
- mutation owner: `HELD`. Record a dedicated recovery/rollback plan only when
- persistent data, external authority or difficult rollback is actually at risk.
- A bounded code change needs no lengthy checklist or formal specification.
-
-- Preserve unrelated worktrees, branches, and dirty files.
-- Do not reset, stash, clean, rebase, broadly reformat, delete, deploy, or
-  alter external state unless that exact action is authorized.
-- Report missing evidence as `UNKNOWN`; do not infer a pass.
-- Keep diagnosis read-only unless implementation is explicitly requested.
-- Release ownership only after the scope is complete or explicitly handed off.
-
-## Delivery lifecycle
-
-Use the fast default:
-
-`Request → Implement → Focused validation → PR / Preview if useful → Owner approval → Production → Smoke check`
-
-- One clear customer-facing request normally means one task branch and one PR;
-  no default Issue, formal spec, architecture review, or repeated alignment.
-- Scope and risk determine validation depth. Run backup/restore and dedicated
-  safety checks only for changes that could actually affect protected state.
-- After two failed attempts with the same approach, diagnose or change course
-  rather than generating repetitive repair PRs.
-- Deliver small independent fixes even while unrelated Phase 2 infrastructure
-  or backup work is blocked.
-- Full procedure and the remaining mandatory safety limits live in
-  `docs/WORKFLOW-WITH-CODEX.md`.
-
-## Gates
-
-- Repository policy requires a task-owned PR, required CI and PM approval
-  before merge to `main`. Verify actual branch protection rather than
-  assuming documentation enforces it.
-- Routine reversible changes use focused validation and may skip a standalone
-  Staging environment when it adds no relevant evidence. Use Preview or
-  isolated validation for meaningful user flows and material state changes.
-- Prefer one Owner go/no-go covering merge and Production **only when** the
-  reviewed candidate and exact target are identified and the automation
-  guarantees the same artifact. Otherwise obey separate existing gates.
-- Do not mutate Production without explicit authorization of its exact
-  candidate and target. Validate the actual serving runtime and smoke-test
-  after deployment; a green CI or merged PR is not Production evidence.
-- Preserve a safe rollback for app changes and proportionate recoverable
-  data evidence for risky migrations. Never expose secrets, tokens,
-  credential URLs, environment values, PII or database rows.
-- Read an environment-specific runbook only for a relevant release/operation,
-  not for routine code edits. Shared-data Staging is historical, remains
-  write-frozen and is not a prerequisite for unrelated low-risk work.
-
-## Documentation map
-
-- `docs/README.md`: documentation map and ownership.
-- `docs/AGENTS.md`: application, schema, test, UI, and media conventions.
-- `docs/WORKFLOW-WITH-CODEX.md`: routing, delivery, review, and release.
-- `docs/ops/project-current-state.md`: dated runtime baseline and deferrals.
-- `docs/adr/`: durable technical and policy decisions.
-- `docs/deploy/`: environment-specific deployment runbooks and procedures.
-- `CONTEXT.md`: canonical domain language.
-- `.agents/skills/`: immutable upstream snapshot, not policy authority.
-
-## Completion
-
-Report outcome and evidence; completed scope and exclusions; branch, commit,
-and PR where applicable; gates passed, blocked, or `UNKNOWN`; remaining risk;
-next authorized action; and mutation ownership: `HELD` or `RELEASED`.
+Preserve unrelated work. Do not reset, delete, merge, deploy or mutate external
+systems beyond the approved scope. Stop and report a real blocker rather than
+silently weakening tests or security. No Production change without explicit
+approval. Keep completion summaries brief and factual.
