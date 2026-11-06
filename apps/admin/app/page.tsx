@@ -24,6 +24,12 @@ export default async function AdminFoundationPage() {
       {staff.capabilities.includes('products:read') ? (
         <p><a href="/products">Mở danh mục sản phẩm</a></p>
       ) : null}
+      {staff.capabilities.includes('blog:read') ? (
+        <p><a href="/blog">Quản lý bài viết</a></p>
+      ) : null}
+      {staff.capabilities.includes('categories:read') ? (
+        <p><a href="/content">Quản lý nội dung website</a></p>
+      ) : null}
       <a href="/auth/logout">Đăng xuất</a>
     </main>
   )
