@@ -6,7 +6,7 @@ const policy = readFileSync(
   resolve(process.cwd(), 'docs/deploy/migration-free-tier-policy.md'),
   'utf8',
 )
-const docsIndex = readFileSync(resolve(process.cwd(), 'docs/README.md'), 'utf8')
+const docsIndex = readFileSync(resolve(process.cwd(), 'docs/PROJECT.md'), 'utf8')
 const baseline = readFileSync(
   resolve(process.cwd(), 'docs/deploy/migration-implementation-baseline.md'),
   'utf8',
