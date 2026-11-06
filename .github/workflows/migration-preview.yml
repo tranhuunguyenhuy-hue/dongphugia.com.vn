@@ -49,6 +49,9 @@ jobs:
       public_changed: ${{ steps.detect.outputs.public_changed }}
       admin_changed: ${{ steps.detect.outputs.admin_changed }}
       preview_required: ${{ steps.detect.outputs.preview_required }}
+      integration_required: ${{ steps.detect.outputs.integration_required }}
+      b11_required: ${{ steps.detect.outputs.b11_required }}
+      ci_required: ${{ steps.detect.outputs.ci_required }}
       owner_approved_upload: ${{ steps.detect.outputs.owner_approved_upload }}
       pull_request_number: ${{ steps.detect.outputs.pull_request_number }}
       managed_preview_run_id: ${{ steps.detect.outputs.managed_preview_run_id }}
@@ -104,6 +107,9 @@ jobs:
               echo 'public_changed=true'
               echo 'admin_changed=true'
               echo 'preview_required=true'
+              echo 'integration_required=true'
+              echo 'b11_required=true'
+              echo 'ci_required=true'
               echo 'owner_approved_upload=true'
               echo "pull_request_number=$APPROVED_PR_NUMBER"
               echo "managed_preview_run_id=$MANAGED_PREVIEW_RUN_ID"
@@ -120,6 +126,9 @@ jobs:
               echo 'public_changed=false'
               echo 'admin_changed=false'
               echo 'preview_required=false'
+              echo 'integration_required=false'
+              echo 'b11_required=false'
+              echo 'ci_required=false'
               echo 'owner_approved_upload=false'
               echo 'pull_request_number=0'
               echo 'managed_preview_run_id='
@@ -148,7 +157,7 @@ jobs:
   required-ci:
     name: Required repository CI
     needs: repo-code-gate
-    if: needs.repo-code-gate.result == 'success'
+    if: needs.repo-code-gate.result == 'success' && needs.repo-code-gate.outputs.ci_required == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     services:
@@ -176,37 +185,42 @@ jobs:
           persist-credentials: false
 
       - name: Set up Node.js
+        if: needs.repo-code-gate.outputs.preview_required == 'true' || needs.repo-code-gate.outputs.integration_required == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
 
       - name: Install dependencies
+        if: needs.repo-code-gate.outputs.preview_required == 'true' || needs.repo-code-gate.outputs.integration_required == 'true'
         run: npm ci
 
       - name: Install the independently locked Public Worker toolchain
+        if: needs.repo-code-gate.outputs.preview_required == 'true'
         run: npm ci --prefix apps/public
 
-      - name: Lint
-        run: npm run lint
-
-      - name: Type-check
-        run: npm run typecheck
+      # General lint/typecheck/unit tests belong exclusively to quality.yml.
+      # A second test pass is justified only for data/auth/order/CI control changes:
+      # this job supplies a disposable Postgres URL absent from the fast quality job.
+      - name: Database, Auth and commerce integration tests
+        if: needs.repo-code-gate.outputs.integration_required == 'true'
+        run: npm test
 
       - name: Type-check Public independently
+        if: needs.repo-code-gate.outputs.preview_required == 'true'
         run: npm run typecheck:public
 
       - name: Check official vinext compatibility
+        if: needs.repo-code-gate.outputs.preview_required == 'true'
         working-directory: apps/public
         run: npm exec -- vinext check
 
       - name: Check Public Worker fail-closed contracts
+        if: needs.repo-code-gate.outputs.preview_required == 'true'
         run: npm run app:public-worker:check
 
-      - name: Test
-        run: npm test
-
       - name: B11 public synthetic re-wrap contracts
+        if: needs.repo-code-gate.outputs.b11_required == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -240,6 +254,7 @@ jobs:
             python3 -B /opt/test_b11_rewrap_linux.py
 
       - name: B11 public-only Docker file permission handoff
+        if: needs.repo-code-gate.outputs.b11_required == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -262,6 +277,7 @@ jobs:
           test "$(cat "$probe/output/probe")" = 'B11_PUBLIC_PERMISSION_FIXTURE'
 
       - name: Check the legacy static artifact contract without publishing it
+        if: needs.repo-code-gate.outputs.preview_required == 'true'
         run: npm run static:check
 
   app-preview-artifact:
@@ -888,6 +904,7 @@ jobs:
         env:
           REPO_GATE_RESULT: ${{ needs.repo-code-gate.result }}
           CI_RESULT: ${{ needs.required-ci.result }}
+          CI_REQUIRED: ${{ needs.repo-code-gate.outputs.ci_required }}
           PREVIEW_REQUIRED: ${{ needs.repo-code-gate.outputs.preview_required }}
           ARTIFACT_RESULT: ${{ needs.app-preview-artifact.result }}
           ARTIFACT_READY: ${{ needs.app-preview-artifact.outputs.artifact_ready }}
@@ -899,7 +916,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if [[ "$REPO_GATE_RESULT" != "success" || "$CI_RESULT" != "success" ]]; then
+          if [[ "$REPO_GATE_RESULT" != "success" ]] ||
+             [[ "$CI_REQUIRED" == 'true' && "$CI_RESULT" != "success" ]] ||
+             [[ "$CI_REQUIRED" != 'true' && "$CI_RESULT" != "skipped" ]]; then
             echo 'result=BLOCKED_BY_CI_FAILURE' >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -950,6 +969,7 @@ jobs:
         env:
           REPO_GATE_RESULT: ${{ needs.repo-code-gate.result }}
           CI_RESULT: ${{ needs.required-ci.result }}
+          CI_REQUIRED: ${{ needs.repo-code-gate.outputs.ci_required }}
           PREVIEW_REQUIRED: ${{ needs.repo-code-gate.outputs.preview_required }}
           ARTIFACT_RESULT: ${{ needs.app-preview-artifact.result }}
           ARTIFACT_READY: ${{ needs.app-preview-artifact.outputs.artifact_ready }}
@@ -958,14 +978,16 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if [[ "$REPO_GATE_RESULT" != "success" || "$CI_RESULT" != "success" ]]; then
+          if [[ "$REPO_GATE_RESULT" != "success" ]] ||
+             [[ "$CI_REQUIRED" == 'true' && "$CI_RESULT" != "success" ]] ||
+             [[ "$CI_REQUIRED" != 'true' && "$CI_RESULT" != "skipped" ]]; then
             echo 'Repository CI or exact repo-code gate failed; the Preview path is blocked.' >> "$GITHUB_STEP_SUMMARY"
             exit 1
           fi
           if [[ "$PREVIEW_REQUIRED" != "true" ]]; then
             {
               echo '### Final Preview result: SKIPPED_UNRELATED_CHANGE'
-              echo '- DB/import/docs-only changes cannot reach the application candidate or Cloudflare publication path.'
+              echo '- Non-artifact changes cannot reach the application candidate or Cloudflare publication path.'
             } >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi

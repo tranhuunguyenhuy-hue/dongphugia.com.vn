@@ -39,7 +39,7 @@ export function readHomepageImpact({ eventName, baseSha }) {
     const files = execFileSync(
       'git', ['diff', '--name-only', '--diff-filter=ACDMRT', '-z', baseSha, 'HEAD'],
       { encoding: 'utf8' },
-    ).split('\\0').filter(Boolean)
+    ).split('\0').filter(Boolean)
     return needsHomepageChecks(files)
   } catch {
     return true
