@@ -1003,6 +1003,7 @@ describe('Supabase runtime migration adoption integration', () => {
         let phase2FixtureCategoryId
         let phase2FixtureProductId
         let phase2FixtureOrderId
+        const phase2FixtureSku = `SYNTHETIC-PHASE2-${process.pid}`
         const createdOrderKey = '33333333-3333-4333-8333-333333333333'
         const createdOrderRequestId = '44444444-4444-4444-8444-444444444444'
         const createdOrderInput = {
@@ -1033,12 +1034,12 @@ describe('Supabase runtime migration adoption integration', () => {
               pdp_visibility, sellable_status, sale_status, price_state, price_source,
               price_confidence, price_updated_at, source_system
             ) values (
-              'SYNTHETIC-PHASE2-${process.pid}', 'Synthetic Phase 2 Product',
+              $2, 'Synthetic Phase 2 Product',
               'synthetic-phase2-product-${process.pid}', $1, 123000, 150000, 150000, 123000,
               3000, 'in_stock', true, 'public', 'public', 'sellable', 'available',
               'priced', 'manual', 'high', '2026-07-02T12:00:00Z', 'manual'
             ) returning id
-          `, [phase2FixtureCategoryId])
+          `, [phase2FixtureCategoryId, phase2FixtureSku])
           phase2FixtureProductId = product.rows[0]?.id
           createdOrderInput.items[0].productId = phase2FixtureProductId
 
@@ -1389,7 +1390,7 @@ describe('Supabase runtime migration adoption integration', () => {
             expect(committedConfirmation.rowCount).toBe(1)
             expect(committedConfirmation.rows[0]).toMatchObject({
               base_total: '240000.00', shipping_fee: '15000.00', confirmed_total: '255000.00',
-              installation_fees: [expect.objectContaining({ product_sku: 'SYNTHETIC-PHASE2-E2E', line_total: 0 })],
+              installation_fees: [expect.objectContaining({ product_sku: phase2FixtureSku, line_total: 0 })],
             })
             phase = 'phase2_verify_committed_idempotency'
             const committedIdempotency = await verifier.query(`
@@ -1422,12 +1423,17 @@ describe('Supabase runtime migration adoption integration', () => {
             try {
               await client.query(`
                 delete from dpg_app.audit_logs
-                where action = 'phase2.order.status.updated' and entity_id = $1
+                where action in ('phase2.order.status.updated', 'phase2.order.commercial.confirmed')
+                  and entity_id = $1
               `, [phase2FixtureOrderId])
               await client.query(`
                 delete from dpg_app.phase2_admin_order_status_idempotency
                 where auth_user_id = any($1::uuid[])
               `, [[adminAuthUserId, saleAuthUserId]])
+              await client.query(
+                'delete from dpg_app.phase2_order_confirmations where order_id = $1',
+                [phase2FixtureOrderId],
+              )
               await client.query('delete from dpg_app.orders where id = $1', [phase2FixtureOrderId])
               await client.query(`
                 delete from dpg_app.guest_order_idempotency_records

@@ -34,6 +34,10 @@ begin
 end
 $preflight$;
 
+grant execute on function dpg_app.leo542_actor_context(),
+  dpg_app.leo542_admin_can(text), dpg_app.runtime_hash(jsonb),
+  dpg_app.runtime_key_hash(text) to dpg_migration;
+
 set role dpg_migration;
 set search_path = pg_catalog, dpg_app, public, auth;
 
@@ -66,9 +70,17 @@ create policy phase2_order_confirmations_migration_all
 create policy phase2_order_confirmations_staff_select
   on dpg_app.phase2_order_confirmations
   for select to authenticated
-  using (exists (
-    select 1 from dpg_app.orders o where o.id = order_id
-  ));
+  using (
+    dpg_app.leo542_admin_can('orders:read')
+    or (
+      dpg_app.leo542_admin_can('orders:read_assigned')
+      and exists (
+        select 1 from dpg_app.orders o
+        where o.id = order_id
+          and o.assigned_to = (select admin_id from dpg_app.leo542_actor_context())
+      )
+    )
+  );
 grant select (
   order_id, base_total, shipping_fee, installation_fees, confirmed_total, confirmed_at
 ) on table dpg_app.phase2_order_confirmations to authenticated;
@@ -353,7 +365,8 @@ begin
   where id = p_order_id and order_origin = 'public_web' for update;
   if not found then raise exception 'RESOURCE_NOT_FOUND'; end if;
   if not dpg_app.leo542_admin_can('orders:read')
-     and not (dpg_app.leo542_admin_can('orders:read_assigned') and v_order.assigned_to = v_actor.admin_id) then
+     and not (dpg_app.leo542_admin_can('orders:read_assigned')
+       and coalesce(v_order.assigned_to = v_actor.admin_id, false)) then
     raise exception 'RESOURCE_NOT_FOUND';
   end if;
 
