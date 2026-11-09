@@ -11,6 +11,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   forbidden: 'Tài khoản không có quyền sửa trường này.',
   invalid: 'Dữ liệu sửa không hợp lệ.',
   price: 'Giá phải là số VND nguyên trong giới hạn cho phép; giá khuyến mãi phải thấp hơn giá thường.',
+  publication: 'Giá hoặc nguồn giá chưa được xác minh. Hãy lưu sản phẩm ở trạng thái bản nháp trước.',
   stale: 'Sản phẩm đã được người khác sửa. Tải lại trang rồi thử lại.',
   variant: 'Nhóm biến thể không còn đạt điều kiện xác minh hoặc lựa chọn bị trùng.',
   save: 'Chưa lưu được thay đổi. Vui lòng thử lại.',

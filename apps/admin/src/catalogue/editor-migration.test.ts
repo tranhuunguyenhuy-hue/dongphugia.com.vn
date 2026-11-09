@@ -33,5 +33,14 @@ describe('Phase 2 Admin Product editor migration', () => {
     expect(migration).toContain("raise exception 'STALE_VERSION'")
     expect(migration).toContain('phase2.admin.product.update')
     expect(migration).toContain('insert into dpg_app.audit_logs')
+    expect(migration).toContain("'phase2.product.updated', 'product', v_product.id,")
+    expect(migration).not.toContain("'phase2.product.updated', 'product', v_product.id::text,")
+  })
+
+  it('rejects public publication when price provenance is unverified or empty', () => {
+    expect(migration).toContain("raise exception 'UNVERIFIED_PRODUCT_PUBLICATION'")
+    expect(migration).toContain("v_old.price_state = 'priced'")
+    expect(migration).toContain("v_old.price_confidence = 'high'")
+    expect(migration).toContain("v_old.price_source in ('hita','manual')")
   })
 })

@@ -104,6 +104,7 @@ export async function updateAdminProduct(formData: FormData): Promise<never> {
     const message = error.message || ''
     if (message.includes('STALE_VERSION')) redirect(`${fallback}?error=stale`)
     if (message.includes('INVALID_PRICE')) redirect(`${fallback}?error=price`)
+    if (message.includes('UNVERIFIED_PRODUCT_PUBLICATION')) redirect(`${fallback}?error=publication`)
     if (message.includes('VARIANT_GROUP_NOT_VERIFIED') || message.includes('DUPLICATE_VARIANT_OPTION')) redirect(`${fallback}?error=variant`)
     if (message.includes('FORBIDDEN')) redirect(`${fallback}?error=forbidden`)
     redirect(`${fallback}?error=save`)

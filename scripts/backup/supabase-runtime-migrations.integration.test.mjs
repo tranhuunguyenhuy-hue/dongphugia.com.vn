@@ -1165,6 +1165,37 @@ describe('Supabase runtime migration adoption integration', () => {
           expect(staffContext.rows[0]?.context).toMatchObject({ status: 'active', roles: ['admin'] })
           expect(staffContext.rows[0]?.context.capabilities).toContain('orders:read')
 
+          phase = 'phase2_catalogue_reject_unverified_publication'
+          const productVersion = await client.query(
+            'select version from dpg_app.products where id = $1', [phase2FixtureProductId],
+          )
+          await client.query('savepoint reject_unverified_publication')
+          await expect(client.query(`
+            select public.phase2_admin_product_update(
+              $1, $2, '{"price":125000,"publication_status":"public"}'::jsonb,
+              'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1',
+              'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa2'::uuid
+            )
+          `, [phase2FixtureProductId, productVersion.rows[0]?.version]))
+            .rejects.toMatchObject({ message: 'UNVERIFIED_PRODUCT_PUBLICATION' })
+          await client.query('rollback to savepoint reject_unverified_publication')
+
+          phase = 'phase2_catalogue_allow_unverified_draft'
+          await client.query('savepoint allow_unverified_draft')
+          const draftEdit = await client.query(`
+            select public.phase2_admin_product_update(
+              $1, $2, '{"price":125000,"publication_status":"draft"}'::jsonb,
+              'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb1',
+              'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb2'::uuid
+            ) as result
+          `, [phase2FixtureProductId, productVersion.rows[0]?.version])
+          expect(draftEdit.rows[0]?.result).toMatchObject({
+            id: phase2FixtureProductId,
+            publication_status: 'draft',
+            price_state: 'unknown',
+          })
+          await client.query('rollback to savepoint allow_unverified_draft')
+
           phase = 'phase2_staff_inbox_list'
           const inbox = await client.query('select public.phase2_admin_order_list(null, 25, 0) as result')
           expect(inbox.rows[0]?.result).toMatchObject({

@@ -131,6 +131,7 @@ declare
   v_price numeric;
   v_sale numeric;
   v_discount numeric;
+  v_price_verified boolean;
   v_label text;
   v_option jsonb;
   v_options jsonb;
@@ -231,6 +232,31 @@ begin
     raise exception 'INVALID_PRICE';
   end if;
 
+  -- Admin-entered price edits are deliberately unverified. A Product can
+  -- become public only while retaining the frozen, high-confidence source
+  -- proof used by the Public projection and guest-order intake.
+  v_price_verified := not (p_input ?| array['price','sale_price','online_discount_amount'])
+    and v_old.price_state = 'priced'
+    and v_old.price_confidence = 'high'
+    and v_old.price_source in ('hita','manual')
+    and v_old.source_system = v_old.price_source
+    and v_old.price_updated_at is not null
+    and (v_old.price_updated_at at time zone 'UTC')::date = date '2026-07-02'
+    and v_price is not null and v_price > 0 and v_price <= 1000000000 and v_price = trunc(v_price)
+    and (
+      v_old.price_source = 'hita'
+      or (
+        v_sale = v_price
+        and v_old.list_price is not null and v_old.list_price > 0
+        and v_old.list_price <= 1000000000 and v_old.list_price = trunc(v_old.list_price)
+        and v_old.list_price >= v_price and v_old.original_price = v_old.list_price
+      )
+    );
+  if coalesce(p_input->>'publication_status', v_old.publication_status) = 'public'
+     and not v_price_verified then
+    raise exception 'UNVERIFIED_PRODUCT_PUBLICATION';
+  end if;
+
   if p_input ? 'variant_label' or p_input ? 'variant_options' then
     if v_old.variant_group_id is null or v_old.variant_group is null
        or v_old.variant_type not in ('size','seat_type') then raise exception 'VARIANT_GROUP_NOT_VERIFIED'; end if;
@@ -311,7 +337,7 @@ begin
     user_id, action, entity_type, entity_id, auth_user_id, auth_session_id,
     request_id, idempotency_key_hash, changed_fields
   ) values (
-    v_actor.admin_id, 'phase2.product.updated', 'product', v_product.id::text,
+    v_actor.admin_id, 'phase2.product.updated', 'product', v_product.id,
     auth.uid(), v_actor.auth_session_id, p_request_id, v_key_hash, v_fields
   );
   v_result := jsonb_build_object(
