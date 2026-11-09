@@ -22,6 +22,14 @@ const manifest = () => {
   return { contract: CONTRACT, source: SOURCE, target: TARGET, codeSha: sha,
     tables: CATALOGUE_TABLES.map((name) => ({ name, count: counts[name] ?? 0, hash: 'b'.repeat(64) })) }
 }
+
+it('keeps unverified or empty prices out of the public projection query', () => {
+  const runner = readFileSync(new URL('./build-public-projection.mts', import.meta.url), 'utf8')
+  expect(runner).toContain("and p.price_state='priced' and p.price_confidence='high'")
+  expect(runner).toContain("and p.price_source in ('hita','manual') and p.source_system=p.price_source")
+  expect(runner).toContain('and p.price is not null and p.price>0')
+})
+
 const schema = (namespace) => CATALOGUE_RESTORE_ORDER.map((name) => ({ name, rls: true, forceRls: true,
   insertTriggers: [], sequences: [], columns: [{ name: 'id', type: 'integer', notNull: true, generated: '',
     identity: '', default: `nextval('${namespace}.${name}_id_seq'::regclass)` }], constraints: ['PRIMARY KEY (id)'] }))

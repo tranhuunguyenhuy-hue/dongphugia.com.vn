@@ -123,6 +123,15 @@ async function main() {
     where c.is_active and (s.id is null or s.is_active)
       and p.is_active and p.stock_status<>'discontinued' and p.sellable_status='sellable'
       and p.publication_status='public' and p.pdp_visibility='public'
+      and p.price_state='priced' and p.price_confidence='high'
+      and p.price_source in ('hita','manual') and p.source_system=p.price_source
+      and p.price_updated_at is not null and (p.price_updated_at at time zone 'UTC')::date=date '2026-07-02'
+      and p.price is not null and p.price>0 and p.price<=1000000000 and p.price=trunc(p.price)
+      and (p.price_source='hita' or (
+        p.sale_price=p.price and p.list_price is not null and p.list_price>0
+        and p.list_price<=1000000000 and p.list_price=trunc(p.list_price)
+        and p.list_price>=p.price and p.original_price=p.list_price
+      ))
     order by p.is_featured desc,p.listing_priority desc,p.sort_order,p.id`,[PUBLIC_SPEC_KEYS,JSON.stringify(PUBLIC_LEGACY_SPEC_PATHS)])
   projectionPhase='PUBLIC_TRANSFORM'
   const rows = result.rows as LegacyVariantRow[]

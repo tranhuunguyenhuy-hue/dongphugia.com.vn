@@ -21,6 +21,9 @@ export default async function AdminFoundationPage() {
       {staff.capabilities.includes('audit:read') ? (
         <p><a href="/audit">Mở nhật ký thao tác</a></p>
       ) : null}
+      {staff.capabilities.includes('products:read') ? (
+        <p><a href="/products">Mở danh mục sản phẩm</a></p>
+      ) : null}
       <a href="/auth/logout">Đăng xuất</a>
     </main>
   )
