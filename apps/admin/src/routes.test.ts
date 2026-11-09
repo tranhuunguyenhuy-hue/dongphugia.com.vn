@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { ADMIN_APPLICATION_NAME, ADMIN_ROUTE_OWNERSHIP } from './routes'
 
 describe('Admin route ownership baseline', () => {
-  it('owns the foundation and minimal Auth shell routes only', () => {
+  it('owns the Auth shell and staff guest-order inbox routes', () => {
     expect(ADMIN_APPLICATION_NAME).toBe('admin')
     expect(ADMIN_ROUTE_OWNERSHIP.map(({ path }) => path)).toEqual([
       '/',
@@ -13,6 +13,8 @@ describe('Admin route ownership baseline', () => {
       '/auth/callback',
       '/auth/confirm',
       '/auth/logout',
+      '/orders',
+      '/orders/[id]',
       '/robots.txt',
       '/api/health',
     ])

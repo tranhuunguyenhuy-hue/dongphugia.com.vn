@@ -21,7 +21,7 @@ export interface CartItem {
     quantity: number
     cartItemId: string
     installOption?: InstallOption
-    installationFee?: number
+    installationFee?: number | null
     onlineDiscountAmount?: number
     finalPrice?: number
 }
@@ -52,7 +52,7 @@ export const useCartStore = create<CartStore>()(
 
             addItem: (item) => {
                 const { quantity = 1, installOption = 'none', ...rest } = item
-                const cartItemId = `${rest.productId}-${installOption}`
+                const cartItemId = `${rest.productId}:${encodeURIComponent(rest.sku)}:${installOption}`
                 
                 // Track Add to Cart
                 trackAddToCart({
@@ -111,6 +111,29 @@ export const useCartStore = create<CartStore>()(
         }),
         {
             name: 'dpg-cart',
+            version: 3,
+            migrate: (persistedState, version) => {
+                if (!persistedState || typeof persistedState !== 'object') return persistedState as CartStore
+                const state = persistedState as { items?: CartItem[] }
+                return {
+                    ...state,
+                    items: (state.items ?? []).map((item) => {
+                        const basePrice = item.price
+                        const discount = item.onlineDiscountAmount ?? 0
+                        const validDiscount = Number.isFinite(discount) && discount > 0 && basePrice !== null && discount < basePrice
+                            ? discount
+                            : 0
+                        return {
+                            ...item,
+                            cartItemId: version < 3
+                                ? `${item.productId}:${encodeURIComponent(item.sku)}:${item.installOption ?? 'none'}`
+                                : item.cartItemId,
+                            installationFee: item.installOption === 'none' ? 0 : null,
+                            finalPrice: basePrice === null ? undefined : basePrice - validDiscount,
+                        }
+                    }),
+                } as CartStore
+            },
             // Only persist items, not UI state
             partialize: (state) => ({ items: state.items }),
         }
@@ -124,8 +147,22 @@ export const useCartCount = () =>
 
 export const useCartTotal = () =>
     useCartStore((state) =>
-        state.items.reduce((sum, i) => sum + (i.finalPrice ?? i.price ?? 0) * i.quantity, 0)
+        state.items.reduce((sum, i) => {
+            const basePrice = i.price
+            if (basePrice === null || !Number.isFinite(basePrice) || basePrice <= 0) return sum
+            const discount = i.onlineDiscountAmount ?? 0
+            const validDiscount = Number.isFinite(discount) && discount > 0 && discount < basePrice ? discount : 0
+            return sum + (basePrice - validDiscount) * i.quantity
+        }, 0)
     )
 
 export const useCartHasPricedItems = () =>
-    useCartStore((state) => state.items.some(i => (i.finalPrice !== undefined && i.finalPrice !== null ? i.finalPrice > 0 : (i.price !== null && i.price > 0))))
+    useCartStore((state) => state.items.some(i => i.price !== null && Number.isFinite(i.price) && i.price > 0))
+
+export function getCartItemUnitPrice(item: Pick<CartItem, 'price' | 'onlineDiscountAmount'>): number | null {
+    const basePrice = item.price
+    if (basePrice === null || !Number.isFinite(basePrice) || basePrice <= 0) return null
+    const discount = item.onlineDiscountAmount ?? 0
+    const validDiscount = Number.isFinite(discount) && discount > 0 && discount < basePrice ? discount : 0
+    return basePrice - validDiscount
+}

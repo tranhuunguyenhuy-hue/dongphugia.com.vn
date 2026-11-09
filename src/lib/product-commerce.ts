@@ -24,6 +24,8 @@ export type ProductCommerceProjection = {
   displayPrice: number | null
   availability: ProductAvailability | null
   canAddToCart: boolean
+  /** Can enter a request cart for staff confirmation; this does not claim stock or confirm an order. */
+  canRequestOrder: boolean
   canRequestQuote: boolean
 }
 
@@ -60,6 +62,7 @@ const quoteOnly = (availability: ProductAvailability | null, listPrice: number |
   displayPrice: null,
   availability,
   canAddToCart: false,
+  canRequestOrder: false,
   canRequestQuote: availability !== null && availability !== "Discontinued",
 })
 
@@ -101,6 +104,10 @@ export function resolveProductCommerce(
 
   if (displayPrice === null) return quoteOnly(availability, listPrice)
 
+  const isRequestable = availability === "InStock"
+    || availability === "PreOrder"
+    || availability === "QuoteOnly"
+
   return {
     priceMode: "PUBLIC_PRICE",
     listPrice,
@@ -109,6 +116,7 @@ export function resolveProductCommerce(
     displayPrice,
     availability,
     canAddToCart: availability === "InStock",
+    canRequestOrder: isRequestable,
     canRequestQuote: true,
   }
 }

@@ -21,6 +21,7 @@ describe("resolveProductCommerce", () => {
       displayPrice: 1_100_000,
       availability: "InStock",
       canAddToCart: true,
+      canRequestOrder: true,
       canRequestQuote: true,
     })
   })
@@ -36,6 +37,7 @@ describe("resolveProductCommerce", () => {
       displayPrice: null,
       availability: null,
       canAddToCart: false,
+      canRequestOrder: false,
       canRequestQuote: false,
     })
   })
@@ -53,6 +55,7 @@ describe("resolveProductCommerce", () => {
       displayPrice: null,
       availability: "InStock",
       canAddToCart: false,
+      canRequestOrder: false,
       canRequestQuote: true,
     })
   })
@@ -69,6 +72,7 @@ describe("resolveProductCommerce", () => {
       displayPrice: null,
       availability: "InStock",
       canAddToCart: false,
+      canRequestOrder: false,
       canRequestQuote: true,
     })
   })
@@ -83,5 +87,33 @@ describe("resolveProductCommerce", () => {
       listPrice: 1_000_000,
       stockStatus,
     }).availability).toBe(availability)
+  })
+
+  it("allows a priced contact-status product into a staff-confirmed request cart without claiming stock", () => {
+    expect(resolveProductCommerce({
+      listPrice: 1_000_000,
+      stockStatus: "contact",
+    })).toMatchObject({
+      priceMode: "PUBLIC_PRICE",
+      displayPrice: 1_000_000,
+      availability: "QuoteOnly",
+      canAddToCart: false,
+      canRequestOrder: true,
+      canRequestQuote: true,
+    })
+  })
+
+  it("allows a priced preorder into a staff-confirmed request cart", () => {
+    expect(resolveProductCommerce({
+      listPrice: 1_000_000,
+      stockStatus: "pre_order",
+    }).canRequestOrder).toBe(true)
+  })
+
+  it("does not allow discontinued products into a request cart", () => {
+    expect(resolveProductCommerce({
+      listPrice: 1_000_000,
+      stockStatus: "discontinued",
+    }).canRequestOrder).toBe(false)
   })
 })

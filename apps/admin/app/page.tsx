@@ -15,6 +15,9 @@ export default async function AdminFoundationPage() {
       <p>{staff.email}</p>
       <p>Vai trò: {staff.roles.join(', ') || 'chưa gán'}</p>
       <p>Quyền hiện hành: {staff.capabilities.length}</p>
+      {staff.capabilities.includes('orders:read') || staff.capabilities.includes('orders:read_assigned') ? (
+        <p><a href="/orders">Mở hàng đợi yêu cầu đặt hàng</a></p>
+      ) : null}
       <a href="/auth/logout">Đăng xuất</a>
     </main>
   )

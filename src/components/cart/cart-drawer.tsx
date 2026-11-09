@@ -1,6 +1,6 @@
 'use client'
 
-import { useCartStore, useCartTotal, CartItem } from '@/lib/cart-store'
+import { getCartItemUnitPrice, useCartStore, useCartTotal, CartItem } from '@/lib/cart-store'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { Minus, Plus, Trash2, ShoppingCart, ArrowRight, Package2 } from 'lucide-react'
@@ -52,12 +52,13 @@ export function CartDrawer() {
                         <div className="border-t border-neutral-100 px-6 py-5 space-y-4 bg-neutral-50/50">
                             {total > 0 && (
                                 <div className="flex items-center justify-between">
-                                    <span className="text-sm text-neutral-600">Tạm tính</span>
+                                    <span className="text-sm text-neutral-600">Tạm tính tham khảo</span>
                                     <span className="text-lg font-bold text-[#2E7A96]">
                                         {formatPrice(total)}
                                     </span>
                                 </div>
                             )}
+                            <p className="text-xs text-neutral-500">Phí lắp đặt và vận chuyển (nếu có) sẽ được nhân viên xác nhận.</p>
                             <Link href="/gio-hang" onClick={closeCart}>
                                 <Button className="w-full h-12 bg-[#2E7A96] hover:bg-[#25617a] text-white font-semibold text-[15px] rounded-xl gap-2">
                                     Tiến hành đặt hàng
@@ -90,7 +91,7 @@ function CartItemRow({
     onRemove: () => void
     onQtyChange: (qty: number) => void
 }) {
-    const finalItemPrice = item.finalPrice ?? item.price;
+    const finalItemPrice = getCartItemUnitPrice(item);
     const lineTotal = finalItemPrice ? finalItemPrice * item.quantity : null;
 
     return (
@@ -124,10 +125,10 @@ function CartItemRow({
                 {/* Options display */}
                 <div className="flex flex-col gap-0.5 mt-1.5">
                     {item.installOption === 'install' && (
-                        <p className="text-[11px] text-sky-600 font-medium">+ Lắp đặt: {formatPrice(item.installationFee || 0)}</p>
+                        <p className="text-[11px] text-sky-600 font-medium">+ Lắp đặt: nhân viên xác nhận phí</p>
                     )}
                     {item.installOption === 'replace' && (
-                        <p className="text-[11px] text-sky-600 font-medium">+ Tháo dỡ & Lắp đặt: {formatPrice(item.installationFee || 0)}</p>
+                        <p className="text-[11px] text-sky-600 font-medium">+ Tháo dỡ & Lắp đặt: nhân viên xác nhận phí</p>
                     )}
                     {(item.onlineDiscountAmount || 0) > 0 && (
                         <p className="text-[11px] text-emerald-600 font-medium">Ưu đãi online tham khảo: {formatPrice(item.onlineDiscountAmount || 0)}</p>

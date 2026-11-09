@@ -6,7 +6,7 @@ import type { InstallOption } from '@/lib/order-pricing'
 interface ProductOptionsContextType {
     installOption: InstallOption
     setInstallOption: (opt: InstallOption) => void
-    installationFee: number
+    installationFee: number | null
     onlineDiscountAmount: number
 }
 

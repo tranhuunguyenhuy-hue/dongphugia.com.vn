@@ -28,6 +28,21 @@ const postgresFailureKinds = new Set([
   'other',
 ])
 const sanitizedCauseNames = new Set(['AssertionError', 'Error', 'RangeError', 'TypeError'])
+const sanitizedDatabaseMessageCodes = new Set([
+  'DPG_PHASE2_TARGET_CONTRACT_FAILED',
+  'DPG_PHASE2_DPG_APP_SCHEMA_MISMATCH',
+  'DPG_PHASE2_PRODUCT_PRICING_SCHEMA_MISMATCH',
+  'DPG_PHASE2_MIGRATION_ROLE_CONTRACT_FAILED',
+  'DPG_PHASE2_MIGRATION_ALREADY_PRESENT',
+  'DPG_PHASE2_POLICY_NAME_COLLISION',
+  'DPG_PHASE2_ANON_PRIVILEGE_PREEXISTS',
+  'DPG_PHASE2_POSTFLIGHT_FAILED',
+  'DPG_PHASE2_ADMIN_TARGET_CONTRACT_FAILED',
+  'DPG_PHASE2_ADMIN_BASELINE_MISSING',
+  'DPG_PHASE2_ADMIN_PRIVILEGE_BASELINE_MISMATCH',
+  'DPG_PHASE2_ADMIN_MIGRATION_ALREADY_PRESENT',
+  'DPG_PHASE2_ADMIN_POSTFLIGHT_FAILED',
+])
 const builtinErrorPrototypeNames = new Map([
   [Error.prototype, 'Error'],
   [RangeError.prototype, 'RangeError'],
@@ -135,7 +150,17 @@ function sanitizedCauseName(error) {
 function sanitizedErrorCause(error, failureKind) {
   const safeName = sanitizedCauseName(error)
   const safeFailureKind = postgresFailureKinds.has(failureKind) ? failureKind : 'other'
-  const cause = new Error(`SANITIZED_CAUSE name=${safeName} failure=${safeFailureKind}`)
+  const rawSqlState = errorDataValue(error, 'code')
+  const safeSqlState = typeof rawSqlState === 'string' && /^[0-9A-Z]{5}$/.test(rawSqlState)
+    ? rawSqlState
+    : 'unknown'
+  const rawMessageCode = errorDataValue(error, 'message')
+  const safeMessageCode = sanitizedDatabaseMessageCodes.has(rawMessageCode)
+    ? rawMessageCode
+    : undefined
+  const safeDetails = [`sqlstate=${safeSqlState}`]
+  if (safeMessageCode) safeDetails.push(`message_code=${safeMessageCode}`)
+  const cause = new Error(`SANITIZED_CAUSE name=${safeName} failure=${safeFailureKind} ${safeDetails.join(' ')}`)
   cause.name = 'SanitizedIntegrationCause'
   cause.stack = `${cause.name}: ${cause.message}`
   return cause
@@ -259,6 +284,20 @@ describe('PostgreSQL integration failure diagnostics', () => {
       expect(failureKind).toBe(expectedKind)
       expect(diagnosticText(failure)).not.toContain(error.message)
     }
+  })
+
+  it('reports only allowlisted SQLSTATE and Phase 2 migration error codes', () => {
+    const error = Object.assign(new Error('DPG_PHASE2_ADMIN_POSTFLIGHT_FAILED'), { code: 'P0001' })
+    const { failure } = postgresIntegrationFailure(error, 'resume_ordered_pending_migrations')
+
+    expect(diagnosticText(failure)).toContain('sqlstate=P0001')
+    expect(diagnosticText(failure)).toContain('message_code=DPG_PHASE2_ADMIN_POSTFLIGHT_FAILED')
+
+    const privateError = Object.assign(new Error('CUSTOMER_PHONE_SECRET'), { code: 'P0001' })
+    const privateFailure = postgresIntegrationFailure(privateError, 'resume_ordered_pending_migrations')
+    expect(diagnosticText(privateFailure.failure)).not.toContain('CUSTOMER_PHONE_SECRET')
+    expect(diagnosticText(privateFailure.failure)).not.toContain('message_code=')
+
   })
 
   it('bounds traversal of a long hostile proxy prototype chain', () => {
@@ -801,11 +840,516 @@ describe('Supabase runtime migration adoption integration', () => {
           'reject_backup_role_setting_on_retry',
           () => client.query("alter role dpg_backup set search_path to 'public'"),
         )
+        phase = 'bootstrap_synthetic_guest_order_roles'
+        await client.query(`
+          create role dpg_order_intake_function_owner nologin nosuperuser nocreatedb nocreaterole noinherit noreplication nobypassrls connection limit 0;
+          create role dpg_order_intake nologin nosuperuser nocreatedb nocreaterole noinherit noreplication nobypassrls connection limit 0;
+          create role dpg_order_intake_login login nosuperuser nocreatedb nocreaterole noinherit noreplication nobypassrls connection limit 5;
+          grant dpg_order_intake to dpg_order_intake_login;
+        `)
         phase = 'resume_ordered_pending_migrations'
         await executeRuntimeMigrations(client, 'apply', attestCheckpoint)
 
         const ledger = await client.query('select count(*)::integer as count from dpg_control.runtime_migration_ledger')
-        expect(ledger.rows[0]?.count).toBe(23)
+        expect(ledger.rows[0]?.count).toBe(EXPECTED_RUNTIME_MIGRATIONS.length)
+
+        phase = 'verify_guest_order_rpc_rejects_direct_api_roles'
+        for (const role of ['anon', 'authenticated', 'service_role']) {
+          await client.query('begin')
+          try {
+            await client.query(`set local role ${role}`)
+            await expect(client.query(
+              "select public.guest_order_request_receipt('11111111-1111-4111-8111-111111111111')",
+            )).rejects.toMatchObject({ code: '42501' })
+          } finally {
+            await client.query('rollback').catch(() => undefined)
+          }
+        }
+
+        phase = 'verify_guest_order_rpc_login_requires_capability_role'
+        const intakeLogin = new URL(connectionString)
+        intakeLogin.username = 'dpg_order_intake_login'
+        const intakeClient = new Client({ connectionString: intakeLogin.toString() })
+        try {
+          await intakeClient.connect()
+          await expect(intakeClient.query(
+            "select public.guest_order_request_receipt('11111111-1111-4111-8111-111111111111')",
+          )).rejects.toMatchObject({ code: '42501' })
+          await intakeClient.query('begin')
+          try {
+            await intakeClient.query('set local role dpg_order_intake')
+            const receipt = await intakeClient.query(
+              "select public.guest_order_request_receipt('11111111-1111-4111-8111-111111111111') as response",
+            )
+            expect(receipt.rows[0]?.response).toBeNull()
+            await intakeClient.query('rollback')
+          } catch (error) {
+            await intakeClient.query('rollback').catch(() => undefined)
+            throw error
+          }
+        } finally {
+          await intakeClient.end().catch(() => undefined)
+        }
+        const directTableAccess = await client.query(`
+          select has_schema_privilege('dpg_order_intake', 'dpg_app', 'USAGE') as app_schema,
+            has_table_privilege('dpg_order_intake', 'dpg_app.orders', 'INSERT') as order_insert,
+            has_table_privilege('dpg_order_intake', 'dpg_app.products', 'SELECT') as product_select
+        `)
+        expect(directTableAccess.rows[0]).toEqual({ app_schema: false, order_insert: false, product_select: false })
+
+        phase = 'verify_phase2_admin_idempotency_rls'
+        const authenticatedUser = '00000000-0000-4000-8000-000000000101'
+        const differentUser = '00000000-0000-4000-8000-000000000102'
+        await client.query('begin')
+        try {
+          await client.query('set local role authenticated')
+          await client.query(
+            "select set_config('request.jwt.claims', $1, true)",
+            [JSON.stringify({ sub: authenticatedUser })],
+          )
+          await client.query(`
+            insert into dpg_app.phase2_admin_order_status_idempotency (
+              auth_user_id, key_hash, request_hash, safe_response, expires_at
+            ) values ($1, repeat('a', 64), repeat('b', 64), '{"status":"received"}'::jsonb, now() + interval '24 hours')
+          `, [authenticatedUser])
+          const ownRow = await client.query(`
+            select count(*)::integer as count
+            from dpg_app.phase2_admin_order_status_idempotency
+            where auth_user_id = $1
+          `, [authenticatedUser])
+          expect(ownRow.rows[0]?.count).toBe(1)
+
+          await client.query(
+            "select set_config('request.jwt.claims', $1, true)",
+            [JSON.stringify({ sub: differentUser })],
+          )
+          const anotherUsersRow = await client.query(`
+            select count(*)::integer as count
+            from dpg_app.phase2_admin_order_status_idempotency
+            where auth_user_id = $1
+          `, [authenticatedUser])
+          expect(anotherUsersRow.rows[0]?.count).toBe(0)
+
+          await client.query('savepoint reject_other_auth_user_insert')
+          await expect(client.query(`
+            insert into dpg_app.phase2_admin_order_status_idempotency (
+              auth_user_id, key_hash, request_hash, safe_response, expires_at
+            ) values ($1, repeat('c', 64), repeat('d', 64), '{"status":"received"}'::jsonb, now() + interval '24 hours')
+          `, [authenticatedUser])).rejects.toMatchObject({ code: '42501' })
+          await client.query('rollback to savepoint reject_other_auth_user_insert')
+        } finally {
+          await client.query('rollback').catch(() => undefined)
+        }
+
+        phase = 'verify_phase2_guest_idempotency_after_delayed_retry'
+        const retryKey = '11111111-1111-4111-8111-111111111111'
+        const retryInput = {
+          customer_name: 'Synthetic Retry Check',
+          customer_phone: '0900000000',
+          customer_email: '',
+          customer_address: '',
+          note: '',
+          items: [{ productId: 2147483647, sku: 'SYNTHETIC-RETRY', quantity: 1, installOption: 'none' }],
+        }
+        const retryResponse = {
+          order_number: 'DPG-261105-ABCDEF12',
+          status: 'pending',
+          payment_status: 'unpaid',
+        }
+        const retryRequestId = '22222222-2222-4222-8222-222222222222'
+        await client.query('begin')
+        try {
+          await client.query(`
+            insert into dpg_app.guest_order_idempotency_records (
+              key_hash, request_hash, safe_response, created_at
+            ) values (
+              dpg_app.runtime_key_hash($1),
+              dpg_app.runtime_hash($2::jsonb),
+              $3::jsonb,
+              now() - interval '48 hours'
+            )
+          `, [retryKey, JSON.stringify(retryInput), JSON.stringify(retryResponse)])
+          const ordersBefore = await client.query('select count(*)::integer as count from dpg_app.orders')
+          expect(ordersBefore.rows[0]?.count).toBe(0)
+
+          await client.query('set local role dpg_order_intake')
+          const replay = await client.query(`
+            select public.guest_order_request_create($1::jsonb, $2, $3::uuid) as response
+          `, [JSON.stringify(retryInput), retryKey, retryRequestId])
+          expect(replay.rows[0]?.response).toEqual(retryResponse)
+
+          const receipt = await client.query(
+            'select public.guest_order_request_receipt($1) as response', [retryKey],
+          )
+          expect(receipt.rows[0]?.response).toEqual(retryResponse)
+          await client.query('reset role')
+
+          const ordersAfter = await client.query('select count(*)::integer as count from dpg_app.orders')
+          expect(ordersAfter.rows[0]?.count).toBe(ordersBefore.rows[0]?.count)
+          const storedKeys = await client.query(`
+            select count(*)::integer as count
+            from dpg_app.guest_order_idempotency_records
+            where key_hash = dpg_app.runtime_key_hash($1)
+          `, [retryKey])
+          expect(storedKeys.rows[0]?.count).toBe(1)
+        } finally {
+          await client.query('rollback').catch(() => undefined)
+        }
+
+        phase = 'verify_phase2_guest_order_persistence_and_staff_inbox'
+        let phase2FixtureCommitted = false
+        let phase2FixtureCategoryId
+        let phase2FixtureProductId
+        let phase2FixtureOrderId
+        const createdOrderKey = '33333333-3333-4333-8333-333333333333'
+        const createdOrderRequestId = '44444444-4444-4444-8444-444444444444'
+        const createdOrderInput = {
+          customer_name: 'Synthetic Phase 2 Customer',
+          customer_phone: '0900000002',
+          customer_email: 'synthetic-order@example.invalid',
+          customer_address: 'Synthetic test address',
+          note: 'Integration test only',
+          items: [{ productId: 0, sku: '', quantity: 2, installOption: 'none' }],
+        }
+        const adminAuthUserId = '00000000-0000-4000-8000-000000000201'
+        const saleAuthUserId = '00000000-0000-4000-8000-000000000202'
+        phase = 'phase2_fixture_begin'
+        await client.query('begin')
+        try {
+          phase = 'phase2_fixture_insert_category'
+          const category = await client.query(`
+            insert into dpg_app.categories (name, slug)
+            values ('Synthetic Phase 2 Category', 'synthetic-phase2-category-${process.pid}')
+            returning id
+          `)
+          phase2FixtureCategoryId = category.rows[0]?.id
+          phase = 'phase2_fixture_insert_product'
+          const product = await client.query(`
+            insert into dpg_app.products (
+              sku, name, slug, category_id, price, original_price, list_price, sale_price,
+              online_discount_amount, stock_status, is_active, publication_status,
+              pdp_visibility, sellable_status, sale_status, price_state, price_source,
+              price_confidence, price_updated_at, source_system
+            ) values (
+              'SYNTHETIC-PHASE2-${process.pid}', 'Synthetic Phase 2 Product',
+              'synthetic-phase2-product-${process.pid}', $1, 123000, 150000, 150000, 123000,
+              3000, 'in_stock', true, 'public', 'public', 'sellable', 'available',
+              'priced', 'manual', 'high', '2026-07-02T12:00:00Z', 'manual'
+            ) returning id
+          `, [phase2FixtureCategoryId])
+          phase2FixtureProductId = product.rows[0]?.id
+          createdOrderInput.items[0].productId = phase2FixtureProductId
+          createdOrderInput.items[0].sku = `SYNTHETIC-PHASE2-${process.pid}`
+
+          await client.query('set local role dpg_order_intake')
+          phase = 'phase2_guest_missing_product_error'
+          const missingProductResponse = await client.query(`
+            select public.guest_order_request_create(
+              $1::jsonb, $2, '55555555-5555-4555-8555-555555555555'::uuid
+            ) as response
+          `, [JSON.stringify({
+            ...createdOrderInput,
+            customer_phone: '0900000003',
+            items: [{ productId: 2147483647, sku: 'MISSING-SYNTHETIC-SKU', quantity: 1, installOption: 'none' }],
+          }), '66666666-6666-4666-8666-666666666666'])
+          expect(missingProductResponse.rows[0]?.response).toEqual({ error: 'PRODUCT_UNAVAILABLE' })
+
+          phase = 'phase2_guest_exact_sku_mismatch_error'
+          const mismatchedSkuResponse = await client.query(`
+            select public.guest_order_request_create(
+              $1::jsonb, $2, '77777777-7777-4777-8777-777777777778'::uuid
+            ) as response
+          `, [JSON.stringify({
+            ...createdOrderInput,
+            customer_phone: '0900000003',
+            items: [{ ...createdOrderInput.items[0], sku: 'DIFFERENT-SKU' }],
+          }), '77777777-7777-4777-8777-777777777779'])
+          expect(mismatchedSkuResponse.rows[0]?.response).toEqual({ error: 'PRODUCT_UNAVAILABLE' })
+
+          phase = 'phase2_guest_order_create'
+          const created = await client.query(`
+            select public.guest_order_request_create($1::jsonb, $2, $3::uuid) as response
+          `, [JSON.stringify(createdOrderInput), createdOrderKey, createdOrderRequestId])
+          const firstReceipt = created.rows[0]?.response
+          expect(firstReceipt).toMatchObject({ status: 'pending', payment_status: 'unpaid' })
+          expect(firstReceipt.order_number).toMatch(/^DPG-[0-9]{6}-[0-9A-F]{8}$/)
+
+          phase = 'phase2_guest_receipt_lookup'
+          const receipt = await client.query(
+            'select public.guest_order_request_receipt($1) as response', [createdOrderKey],
+          )
+          expect(receipt.rows[0]?.response).toEqual(firstReceipt)
+
+          phase = 'phase2_guest_idempotency_replay'
+          const replay = await client.query(`
+            select public.guest_order_request_create($1::jsonb, $2, $3::uuid) as response
+          `, [JSON.stringify(createdOrderInput), createdOrderKey, createdOrderRequestId])
+          expect(replay.rows[0]?.response).toEqual(firstReceipt)
+
+          phase = 'phase2_guest_idempotency_conflict'
+          const conflictingReplay = await client.query(`
+            select public.guest_order_request_create($1::jsonb, $2, $3::uuid) as response
+          `, [JSON.stringify({ ...createdOrderInput, note: 'Changed retry payload' }), createdOrderKey, createdOrderRequestId])
+          expect(conflictingReplay.rows[0]?.response).toEqual({ error: 'IDEMPOTENCY_KEY_REUSED' })
+          await client.query('reset role')
+
+          const persistedOrder = await client.query(`
+            select id, order_number, customer_name, status, payment_status, order_origin,
+              shipping_fee_status, subtotal, discount, total
+            from dpg_app.orders where order_number = $1
+          `, [firstReceipt.order_number])
+          expect(persistedOrder.rowCount).toBe(1)
+          phase2FixtureOrderId = persistedOrder.rows[0]?.id
+          expect(persistedOrder.rows[0]).toMatchObject({
+            customer_name: 'Synthetic Phase 2 Customer',
+            status: 'pending',
+            payment_status: 'unpaid',
+            order_origin: 'public_web',
+            shipping_fee_status: 'pending_confirmation',
+            subtotal: '246000.00',
+            discount: '6000.00',
+            total: '240000.00',
+          })
+          const orderId = persistedOrder.rows[0]?.id
+          const persistedItems = await client.query(`
+            select product_name, product_sku, quantity, unit_price, total_price, commercial_snapshot
+            from dpg_app.order_items where order_id = $1
+          `, [orderId])
+          expect(persistedItems.rowCount).toBe(1)
+          expect(persistedItems.rows[0]).toMatchObject({
+            product_name: 'Synthetic Phase 2 Product',
+            quantity: 2,
+            unit_price: '123000.00',
+            total_price: '246000.00',
+            commercial_snapshot: expect.objectContaining({
+              list_price: 150000,
+              sale_price: 123000,
+              online_discount_amount: 3000,
+              installation_fee: 0,
+              installation_fee_status: 'not_applicable',
+              install_option: 'none',
+              final_unit_price: 120000,
+            }),
+          })
+          const duplicateCount = await client.query(`
+            select count(*)::integer as orders,
+              (select count(*)::integer from dpg_app.guest_order_idempotency_records
+               where key_hash = dpg_app.runtime_key_hash($2)) as keys
+            from dpg_app.orders where order_number = $1
+          `, [firstReceipt.order_number, createdOrderKey])
+          expect(duplicateCount.rows[0]).toEqual({ orders: 1, keys: 1 })
+
+          phase = 'phase2_deny_anonymous_inbox'
+          await client.query('savepoint deny_anonymous_inbox')
+          await client.query('set local role anon')
+          await expect(client.query('select public.phase2_admin_order_list(null, 25, 0)'))
+            .rejects.toMatchObject({ code: '42501' })
+          await client.query('rollback to savepoint deny_anonymous_inbox')
+          await client.query('reset role')
+
+          phase = 'phase2_deny_unmapped_staff'
+          await client.query('savepoint deny_unmapped_staff')
+          await client.query('set local role authenticated')
+          await client.query(
+            "select set_config('request.jwt.claims', $1, true)",
+            [JSON.stringify({ sub: '00000000-0000-4000-8000-000000000299' })],
+          )
+          await expect(client.query('select public.phase2_admin_order_list(null, 25, 0)'))
+            .rejects.toMatchObject({ message: 'FORBIDDEN_UNMAPPED_PRINCIPAL' })
+          await client.query('rollback to savepoint deny_unmapped_staff')
+          await client.query('reset role')
+
+          phase = 'phase2_insert_staff_fixtures'
+          await client.query(`
+            insert into dpg_app.admin_users (
+              email, name, password_hash, role, is_active, supabase_auth_user_id
+            ) values
+              ('synthetic-admin@example.invalid', 'Synthetic Admin', 'unused-test-hash', 'admin', true, $1),
+              ('synthetic-sale@example.invalid', 'Synthetic Sale', 'unused-test-hash', 'sale', true, $2)
+          `, [adminAuthUserId, saleAuthUserId])
+
+          phase = 'phase2_staff_context'
+          await client.query('set local role authenticated')
+          await client.query(
+            "select set_config('request.jwt.claims', $1, true)",
+            [JSON.stringify({ sub: adminAuthUserId, session_id: '77777777-7777-4777-8777-777777777777' })],
+          )
+          const staffContext = await client.query('select public.phase2_admin_staff_context() as context')
+          expect(staffContext.rows[0]?.context).toMatchObject({ status: 'active', roles: ['admin'] })
+          expect(staffContext.rows[0]?.context.capabilities).toContain('orders:read')
+
+          phase = 'phase2_staff_inbox_list'
+          const inbox = await client.query('select public.phase2_admin_order_list(null, 25, 0) as result')
+          expect(inbox.rows[0]?.result).toMatchObject({
+            total: 1,
+            orders: [expect.objectContaining({
+              id: orderId,
+              order_number: firstReceipt.order_number,
+              customer_name: 'Synthetic Phase 2 Customer',
+              status: 'pending',
+              payment_status: 'unpaid',
+              total: 240000,
+            })],
+          })
+          phase = 'phase2_staff_order_detail'
+          const detail = await client.query(
+            'select public.phase2_admin_order_get($1) as result', [orderId],
+          )
+          expect(detail.rows[0]?.result).toMatchObject({
+            order: { id: orderId, order_number: firstReceipt.order_number },
+            items: [expect.objectContaining({
+              product_name: 'Synthetic Phase 2 Product',
+              quantity: 2,
+              commercial_snapshot: expect.objectContaining({ final_unit_price: 120000 }),
+            })],
+          })
+
+          const statusKey = '88888888-8888-4888-8888-888888888888'
+          const statusRequestId = '99999999-9999-4999-8999-999999999999'
+          phase = 'phase2_staff_status_transition'
+          const accepted = await client.query(`
+            select public.phase2_admin_order_update_status($1, 'received', $2, $3::uuid) as response
+          `, [orderId, statusKey, statusRequestId])
+          const statusResponse = accepted.rows[0]?.response
+          expect(statusResponse).toMatchObject({ id: orderId, status: 'received', payment_status: 'unpaid' })
+          phase = 'phase2_staff_status_idempotency_replay'
+          const statusReplay = await client.query(`
+            select public.phase2_admin_order_update_status($1, 'received', $2, $3::uuid) as response
+          `, [orderId, statusKey, statusRequestId])
+          expect(statusReplay.rows[0]?.response).toEqual(statusResponse)
+
+          phase = 'phase2_staff_status_idempotency_conflict'
+          await client.query('savepoint reject_staff_key_reuse')
+          await expect(client.query(`
+            select public.phase2_admin_order_update_status($1, 'cancelled', $2, $3::uuid)
+          `, [orderId, statusKey, statusRequestId])).rejects.toMatchObject({ message: 'IDEMPOTENCY_KEY_REUSED' })
+          await client.query('rollback to savepoint reject_staff_key_reuse')
+
+          phase = 'phase2_staff_invalid_status'
+          await client.query('savepoint reject_staff_invalid_status')
+          await expect(client.query(`
+            select public.phase2_admin_order_update_status(
+              $1, 'completed', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', $2::uuid
+            )
+          `, [orderId, statusRequestId])).rejects.toMatchObject({ message: 'INVALID_ORDER_STATUS' })
+          await client.query('rollback to savepoint reject_staff_invalid_status')
+          await client.query('reset role')
+
+          const auditCount = await client.query(`
+            select count(*)::integer as count from dpg_app.audit_logs
+            where action = 'phase2.order.status.updated' and entity_id = $1
+          `, [orderId])
+          expect(auditCount.rows[0]?.count).toBe(1)
+
+          phase = 'phase2_unassigned_staff_inbox'
+          await client.query('set local role authenticated')
+          await client.query(
+            "select set_config('request.jwt.claims', $1, true)",
+            [JSON.stringify({ sub: saleAuthUserId })],
+          )
+          const restrictedInbox = await client.query('select public.phase2_admin_order_list(null, 25, 0) as result')
+          expect(restrictedInbox.rows[0]?.result).toEqual({ orders: [], total: 0 })
+          const restrictedDetail = await client.query(
+            'select public.phase2_admin_order_get($1) as result', [orderId],
+          )
+          expect(restrictedDetail.rows[0]?.result).toBeNull()
+          await client.query('savepoint deny_unassigned_staff_update')
+          await expect(client.query(`
+            select public.phase2_admin_order_update_status(
+              $1, 'cancelled', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', $2::uuid
+            )
+          `, [orderId, statusRequestId])).rejects.toMatchObject({ message: 'RESOURCE_NOT_FOUND' })
+          await client.query('rollback to savepoint deny_unassigned_staff_update')
+          await client.query('reset role')
+
+          phase = 'phase2_fixture_commit'
+          await client.query('commit')
+          phase2FixtureCommitted = true
+
+          phase = 'verify_phase2_order_after_commit_from_second_connection'
+          const verifier = new Client({ connectionString })
+          try {
+            await verifier.connect()
+            phase = 'phase2_verify_committed_order'
+            const committedOrder = await verifier.query(`
+              select id, order_number, status, payment_status, order_origin, total
+              from dpg_app.orders where id = $1
+            `, [phase2FixtureOrderId])
+            expect(committedOrder.rowCount).toBe(1)
+            expect(committedOrder.rows[0]).toMatchObject({
+              order_number: firstReceipt.order_number,
+              status: 'received',
+              payment_status: 'unpaid',
+              order_origin: 'public_web',
+              total: '240000.00',
+            })
+            phase = 'phase2_verify_committed_items'
+            const committedItems = await verifier.query(`
+              select count(*)::integer as count from dpg_app.order_items where order_id = $1
+            `, [phase2FixtureOrderId])
+            expect(committedItems.rows[0]?.count).toBe(1)
+            phase = 'phase2_verify_committed_idempotency'
+            const committedIdempotency = await verifier.query(`
+              select count(*)::integer as count from dpg_app.guest_order_idempotency_records
+              where key_hash = dpg_app.runtime_key_hash($1)
+            `, [createdOrderKey])
+            expect(committedIdempotency.rows[0]?.count).toBe(1)
+
+            await verifier.query('begin')
+            try {
+              await verifier.query('set local role dpg_order_intake')
+              phase = 'phase2_verify_committed_guest_receipt'
+              const committedReceipt = await verifier.query(
+                'select public.guest_order_request_receipt($1) as response', [createdOrderKey],
+              )
+              expect(committedReceipt.rows[0]?.response).toEqual(firstReceipt)
+              await verifier.query('commit')
+            } catch (error) {
+              await verifier.query('rollback').catch(() => undefined)
+              throw error
+            }
+          } finally {
+            await verifier.end().catch(() => undefined)
+          }
+        } finally {
+          if (!phase2FixtureCommitted) {
+            await client.query('rollback').catch(() => undefined)
+          } else {
+            await client.query('begin')
+            try {
+              await client.query(`
+                delete from dpg_app.audit_logs
+                where action = 'phase2.order.status.updated' and entity_id = $1
+              `, [phase2FixtureOrderId])
+              await client.query(`
+                delete from dpg_app.phase2_admin_order_status_idempotency
+                where auth_user_id = any($1::uuid[])
+              `, [[adminAuthUserId, saleAuthUserId]])
+              await client.query('delete from dpg_app.orders where id = $1', [phase2FixtureOrderId])
+              await client.query(`
+                delete from dpg_app.guest_order_idempotency_records
+                where key_hash = dpg_app.runtime_key_hash($1)
+              `, [createdOrderKey])
+              await client.query(`
+                delete from dpg_app.guest_order_rate_limit_windows
+                where phone_hash = any(array[
+                  dpg_app.runtime_key_hash('0900000002'),
+                  dpg_app.runtime_key_hash('0900000003')
+                ])
+              `)
+              await client.query(`
+                delete from dpg_app.admin_users
+                where supabase_auth_user_id = any($1::uuid[])
+              `, [[adminAuthUserId, saleAuthUserId]])
+              await client.query('delete from dpg_app.products where id = $1', [phase2FixtureProductId])
+              await client.query('delete from dpg_app.categories where id = $1', [phase2FixtureCategoryId])
+              await client.query('commit')
+            } catch (error) {
+              await client.query('rollback').catch(() => undefined)
+              throw error
+            }
+          }
+        }
 
         phase = 'verify_database_size_guard'
         const databaseSizeBefore = await assertDatabaseSizeWithinContract(client)

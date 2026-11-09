@@ -34,6 +34,8 @@ export const PUBLIC_ROUTE_OWNERSHIP = [
   },
   { path: '/robots.txt', owner: 'public', purpose: 'crawler-policy' },
   { path: '/tim-kiem', owner: 'public', purpose: 'catalogue-search-page' },
+  { path: '/gio-hang', owner: 'public', purpose: 'guest-cart-order-request' },
+  { path: '/dat-hang-thanh-cong', owner: 'public', purpose: 'guest-order-request-acknowledgement' },
   { path: '/api/search', owner: 'public', purpose: 'catalogue-search-snapshot-readonly' },
   {
     path: '/api/catalogue/listings/[categorySlug]/[listingSlug]',
@@ -41,6 +43,8 @@ export const PUBLIC_ROUTE_OWNERSHIP = [
     purpose: 'catalogue-listing-snapshot-readonly',
   },
   { path: '/api/health', owner: 'public', purpose: 'runtime-probe' },
+  { path: '/api/order-requests', owner: 'public', purpose: 'guest-order-request-write' },
+  { path: '/api/order-requests/receipt', owner: 'public', purpose: 'guest-order-request-receipt-readonly' },
 ] as const
 
 export const ADMIN_ROUTE_OWNERSHIP = [
@@ -51,6 +55,8 @@ export const ADMIN_ROUTE_OWNERSHIP = [
   { path: '/auth/callback', owner: 'admin', purpose: 'staff-auth-shell' },
   { path: '/auth/confirm', owner: 'admin', purpose: 'staff-auth-shell' },
   { path: '/auth/logout', owner: 'admin', purpose: 'staff-auth-shell' },
+  { path: '/orders', owner: 'admin', purpose: 'staff-guest-order-inbox' },
+  { path: '/orders/[id]', owner: 'admin', purpose: 'staff-guest-order-detail' },
   { path: '/robots.txt', owner: 'admin', purpose: 'crawler-policy' },
   { path: '/api/health', owner: 'admin', purpose: 'runtime-probe' },
 ] as const
