@@ -3,7 +3,7 @@
 import {cache} from 'react'
 import type * as Original from '../../../../src/lib/public-api-products'
 export type {VariantSibling,ListingRuntimeConfig} from '../../../../src/lib/public-api-products'
-import {getSnapshotCategories,getSnapshotProducts,getSnapshotProduct,getSnapshotVariantSiblings} from './public-snapshot-catalogue'
+import {getSnapshotCategories,getSnapshotProducts,getSnapshotProduct,getSnapshotVariantSiblings,getSnapshotVariantSelectionData} from './public-snapshot-catalogue'
 
 const allProducts=cache(async(category:string,sub?:string)=> {
  const c=(await getSnapshotCategories()).find(c=>c.slug===category)
@@ -58,7 +58,14 @@ export const getSubcategorySpecFilters:typeof Original.getSubcategorySpecFilters
 export const getVariantSiblings:typeof Original.getVariantSiblings=async(group,id)=>
  (await getSnapshotVariantSiblings(group,id)).map(p=>({...p,original_price:p.original_price??null,list_price:p.list_price??null,sale_price:p.sale_price??null,online_discount_amount:p.online_discount_amount??null,
   variant_type:p.variant_type??null,variant_label:p.variant_label??null,colors:p.colors??null})) as Awaited<ReturnType<typeof Original.getVariantSiblings>>
-export const getVariantSelectionData:typeof Original.getVariantSelectionData=async(group,id)=>({axes:[],currentVariantOptions:[],siblings:await getVariantSiblings(group,id)})
+export const getVariantSelectionData:typeof Original.getVariantSelectionData=async(group,id)=>{
+ const selection=await getSnapshotVariantSelectionData(group,id)
+ const siblings=selection.siblings.map(p=>({...p,original_price:p.original_price??null,list_price:p.list_price??null,
+  sale_price:p.sale_price??null,online_discount_amount:p.online_discount_amount??null,
+  variant_type:p.variant_type??null,variant_label:p.variant_label??null,colors:p.colors??null}))
+ const result={axes:selection.axes,currentVariantOptions:selection.currentVariantOptions,siblings}
+ return result as Awaited<ReturnType<typeof Original.getVariantSelectionData>>
+}
 export const getProductComponents:typeof Original.getProductComponents=async()=>[]
 export const getPdpDocuments:typeof Original.getPdpDocuments=(p)=>('publicContent' in p?((p as {publicContent?:{documents?:{name:string;url:string;type:string;size?:string}[]}}).publicContent?.documents??[]).map(doc=>({...doc,size:doc.size??''})):[])
 export const getPdpSpecifications:typeof Original.getPdpSpecifications=(p)=>('publicContent' in p?(p as {publicContent?:{specifications:Record<string,string>}}).publicContent?.specifications??{}:{})

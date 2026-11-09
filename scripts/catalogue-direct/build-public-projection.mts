@@ -17,7 +17,33 @@ const {resolveProductVisibility}=require('../../src/lib/public-product-visibilit
 const {getCanonicalProductPath}=require('../../src/lib/taxonomy-paths.ts') as typeof import('../../src/lib/taxonomy-paths')
 
 type ProjectionRow = ProductVisibilityInput & ProductPathInput & {id:number;name:string;display_name:string|null;sku:string;image_main_url:string|null;is_featured:boolean;brand_name:string|null;brand_slug:string|null;rootSortOrder:number;rootBrandId:number|null;rootBrandSortOrder:number|null;rootSubcategorySortOrder:number|null;rootSubcategoryThumbnailUrl:string|null;product_taxon_assignments:ProductTaxonAssignmentRef[]}
-type LegacyVariantRow=ProjectionRow & {variant_group:string|null;variant_group_id:number|null;variant_label:string|null;variant_type:string|null;is_combo:boolean}
+type LegacyVariantRow=ProjectionRow & {variant_group:string|null;variant_group_id:number|null;variant_label:string|null;variant_type:string|null;variant_options:unknown;is_combo:boolean}
+type PublicVariantAxis={key:'size'|'seat_type';label:string}
+type PublicVariantOption={axis:'size'|'seat_type';value:string;label:string}
+const VARIANT_AXIS_LABELS={size:'Kích thước',seat_type:'Loại nắp'} as const
+
+function publicVariantAxis(value:unknown,type:string):PublicVariantAxis|null {
+  if(type!=='size'&&type!=='seat_type')return null
+  if(Array.isArray(value)&&value.length===0)return {key:type,label:VARIANT_AXIS_LABELS[type]}
+  if(!Array.isArray(value)||value.length!==1)return null
+  const axis=value[0]
+  if(!axis||typeof axis!=='object'||Array.isArray(axis))return null
+  const row=axis as Record<string,unknown>
+  const label=typeof row.label==='string'?publicText(row.label,80):''
+  return row.key===type&&label===row.label&&label?{key:type,label}:null
+}
+
+function publicVariantOption(value:unknown,axis:PublicVariantAxis,sourceLabel:string):PublicVariantOption|null {
+  if(!Array.isArray(value)||value.length===0)return {axis:axis.key,value:sourceLabel,label:sourceLabel}
+  if(value.length!==1)return null
+  const option=value[0]
+  if(!option||typeof option!=='object'||Array.isArray(option))return null
+  const row=option as Record<string,unknown>
+  const optionValue=typeof row.value==='string'?publicText(row.value,100):''
+  const optionLabel=typeof row.label==='string'?publicText(row.label,100):sourceLabel
+  if(row.axis!==axis.key||!optionValue||optionLabel!==sourceLabel)return null
+  return {axis:axis.key,value:optionValue,label:optionLabel}
+}
 let projectionPhase='PRECHECK'
 const REPO='tranhuunguyenhuy-hue/dongphugia.com.vn'
 function parseBudgetEvidence(raw:string|undefined) {
@@ -73,7 +99,7 @@ async function main() {
   const result=await client.query(`select p.id,p.name,p.display_name,p.slug,p.sku,p.product_type,p.image_main_url,p.is_featured,
     p.price,p.original_price,p.list_price,p.sale_price,p.online_discount_amount,
     p.price_display,p.price_updated_at,p.price_source,p.price_state,p.price_confidence,p.source_system,p.source_url,
-    p.variant_group,p.variant_group_id,p.variant_label,p.variant_type,p.is_combo,
+    p.variant_group,p.variant_group_id,p.variant_label,p.variant_type,p.variant_options,p.is_combo,
     p.sort_order as "rootSortOrder",b.id as "rootBrandId",b.sort_order as "rootBrandSortOrder",
     color.name as "cardColorName",color.hex_code as "cardColorHex",
     coalesce((select jsonb_agg(f.name) from (select pf.name from dpg_app.product_feature_values pfv
@@ -168,13 +194,13 @@ async function main() {
   }).filter((pair):pair is NonNullable<typeof pair>=>pair!==null)
   // Legacy groups are never the approved Family model. Only a small, fully
   // public one-axis sibling subset with exact independent PDP targets is used.
-  const rawGroups=await client.query(`select vg.id,vg.group_key,vg.source,vg.confidence,vg.variant_type,
+  const rawGroups=await client.query(`select vg.id,vg.group_key,vg.source,vg.confidence,vg.variant_type,vg.axes,
     (select count(*)::integer from dpg_app.products all_p where all_p.variant_group=vg.group_key) as "allMemberCount"
     from dpg_app.product_variant_groups vg where
       (vg.confidence='high' and vg.source like 'hita-normalized-%' and vg.variant_type=any($1::text[]))
       or (vg.id=237 and vg.group_key='MS636' and vg.source='legacy-products'
         and vg.confidence='medium' and vg.variant_type='seat_type')`,[['size','seat_type']])
-  const allowedGroups=new Map(rawGroups.rows.map((group: {id:number;group_key:string;source:string;confidence:string;variant_type:string;allMemberCount:number})=>[group.group_key,group]))
+  const allowedGroups=new Map(rawGroups.rows.map((group: {id:number;group_key:string;source:string;confidence:string;variant_type:string;axes:unknown;allMemberCount:number})=>[group.group_key,group]))
   const candidates=new Map<string,typeof projectedPairs>()
   for(const pair of projectedPairs){
     const key=pair.row.variant_group
@@ -182,7 +208,7 @@ async function main() {
     if(!candidates.has(key))candidates.set(key,[])
     candidates.get(key)!.push(pair)
   }
-  const publicVariantById=new Map<number,{variant_group:string;variant_type:string;variant_label:string}>()
+  const publicVariantById=new Map<number,{variant_group:string;variant_type:string;variant_label:string;variant_axes:PublicVariantAxis[];variant_options:PublicVariantOption[]}>()
   for(const [key,members] of candidates){
     const group=allowedGroups.get(key)
     const ms636=key==='MS636'&&group?.id===237&&group.source==='legacy-products'
@@ -202,8 +228,13 @@ async function main() {
     if(labels.some(label=>!label)||new Set(labels.map(label=>label!.toLocaleLowerCase('vi'))).size!==members.length
       ||new Set(members.map(({product})=>product.sku)).size!==members.length
       ||new Set(members.map(({product})=>product.url)).size!==members.length)continue
+    const axis=publicVariantAxis(group.axes,group.variant_type)
+    if(!axis)continue
+    const options=members.map(({row},index)=>publicVariantOption(row.variant_options,axis,labels[index]!))
+    if(options.some(option=>!option)||new Set(options.map(option=>option!.value.toLocaleLowerCase('vi'))).size!==members.length)continue
     members.forEach(({product},index)=>publicVariantById.set(product.id,{
       variant_group:`public-${group.id}`,variant_type:group.variant_type,variant_label:labels[index]!,
+      variant_axes:[axis],variant_options:[options[index]!],
     }))
   }
   const projected=projectedPairs.map(({product})=>({...product,...publicVariantById.get(product.id)}))

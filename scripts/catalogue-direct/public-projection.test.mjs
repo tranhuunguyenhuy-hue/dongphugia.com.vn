@@ -86,10 +86,14 @@ it('keeps historical reference amount in PDP-only content while all transaction 
 })
 it('publishes only complete real-product sibling groups and keeps all commerce contact-only',()=>{
  const members=[1,2,3].map(id=>({...projectProduct({...input,id,sku:`SKU-${id}`,slug:`variant-${id}`},{pdp:true,listing:true},path),
-  variant_group:'public-17',variant_type:'size',variant_label:`Kích thước ${id}`}))
+  variant_group:'public-17',variant_type:'size',variant_label:`Kích thước ${id}`,
+  variant_axes:[{key:'size',label:'Kích thước'}],
+  variant_options:[{axis:'size',value:`${id}`,label:`Kích thước ${id}`}]}))
  const built=buildProjection(members,evidence)
  assert.equal(built.manifest.contentStats.variantProducts,3)
  assert.deepEqual(built.manifest.variantGroups['public-17'].map(p=>p.url),members.map(p=>p.url))
+ assert.deepEqual(built.manifest.variantAxes['public-17'],[{key:'size',label:'Kích thước'}])
+ assert.deepEqual(built.manifest.variantGroups['public-17'].map(p=>p.variant_options[0].value),['1','2','3'])
  assert(built.manifest.variantGroups['public-17'].every(p=>p.price===null&&p.stock_status==='contact'))
  assert.throws(()=>buildProjection(members.slice(0,1),evidence),/UNSAFE_VARIANT/)
  assert.throws(()=>buildProjection([members[0],{...members[1],variant_label:members[0].variant_label}],evidence),/UNSAFE_VARIANT/)
@@ -97,6 +101,8 @@ it('publishes only complete real-product sibling groups and keeps all commerce c
  assert.throws(()=>buildProjection([members[0],{...members[1],variant_group:'public-17|private'}],evidence),/UNSAFE_VARIANT/)
  assert.throws(()=>buildProjection([{...members[0],brands:null},{...members[1],brands:null}],evidence),/UNSAFE_VARIANT/)
  assert.throws(()=>buildProjection([members[0],{...members[1],variant_type:'color'}],evidence),/UNSAFE_VARIANT/)
+ assert.throws(()=>buildProjection([members[0],{...members[1],variant_options:[{axis:'size',value:'1',label:'Kích thước 2'}]}],evidence),/UNSAFE_VARIANT/)
+ assert.throws(()=>buildProjection([members[0],{...members[1],variant_axes:[{key:'color',label:'Màu sắc'}]}],evidence),/UNSAFE_VARIANT/)
  assert.throws(()=>buildProjection([members[0],{...members[1],listingEligible:false}],evidence),/UNSAFE_VARIANT/)
 })
 it('projects truthful category brands and a bounded featured set per brand',()=>{
