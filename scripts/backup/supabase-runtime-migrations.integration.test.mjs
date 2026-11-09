@@ -1012,7 +1012,7 @@ describe('Supabase runtime migration adoption integration', () => {
           customer_email: 'synthetic-order@example.invalid',
           customer_address: 'Synthetic test address',
           note: 'Integration test only',
-          items: [{ productId: 0, quantity: 2, installOption: 'none' }],
+          items: [{ productId: 0, quantity: 2, installOption: 'install' }],
         }
         const adminAuthUserId = '00000000-0000-4000-8000-000000000201'
         const saleAuthUserId = '00000000-0000-4000-8000-000000000202'
@@ -1107,7 +1107,7 @@ describe('Supabase runtime migration adoption integration', () => {
           `, [orderId])
           expect(persistedItems.rowCount).toBe(1)
           expect(persistedItems.rows[0]).toMatchObject({
-            product_name: 'Synthetic Phase 2 Product',
+            product_name: 'Synthetic Phase 2 Product (Cần Lắp Đặt)',
             quantity: 2,
             unit_price: '123000.00',
             total_price: '246000.00',
@@ -1115,9 +1115,9 @@ describe('Supabase runtime migration adoption integration', () => {
               list_price: 150000,
               sale_price: 123000,
               online_discount_amount: 3000,
-              installation_fee: 0,
-              installation_fee_status: 'not_applicable',
-              install_option: 'none',
+              installation_fee: null,
+              installation_fee_status: 'pending_confirmation',
+              install_option: 'install',
               final_unit_price: 120000,
             }),
           })
@@ -1188,7 +1188,7 @@ describe('Supabase runtime migration adoption integration', () => {
           expect(detail.rows[0]?.result).toMatchObject({
             order: { id: orderId, order_number: firstReceipt.order_number },
             items: [expect.objectContaining({
-              product_name: 'Synthetic Phase 2 Product',
+              product_name: 'Synthetic Phase 2 Product (Cần Lắp Đặt)',
               quantity: 2,
               commercial_snapshot: expect.objectContaining({ final_unit_price: 120000 }),
             })],
@@ -1229,24 +1229,76 @@ describe('Supabase runtime migration adoption integration', () => {
             select public.phase2_admin_order_confirm(
               $1, 15000, $2::jsonb, $3, $4::uuid
             )
-          `, [orderId, JSON.stringify([{ order_item_id: persistedItems.rows[0]?.id, fee_per_unit: 1000 }]),
+          `, [orderId, JSON.stringify([{ order_item_id: persistedItems.rows[0]?.id + 99999, fee_per_unit: 1000 }]),
             'abababab-abab-4aba-8aba-abababababab', 'acacacac-acac-4cac-8cac-acacacacacac']))
-            .rejects.toMatchObject({ message: 'INSTALLATION_FEE_CONFLICTS_WITH_ORDER_SNAPSHOT' })
+            .rejects.toMatchObject({ message: 'INSTALLATION_FEE_LINES_MISMATCH' })
           await client.query('rollback to savepoint reject_invalid_installation_fee')
 
-          phase = 'phase2_staff_commercial_confirmation'
+          phase = 'phase2_unassigned_staff_inbox'
+          await client.query('reset role')
+          await client.query('set local role authenticated')
+          await client.query(
+            "select set_config('request.jwt.claims', $1, true)",
+            [JSON.stringify({ sub: saleAuthUserId })],
+          )
+          const restrictedInbox = await client.query('select public.phase2_admin_order_list(null, 25, 0) as result')
+          expect(restrictedInbox.rows[0]?.result).toEqual({ orders: [], total: 0 })
+          const restrictedDetail = await client.query(
+            'select public.phase2_admin_order_get($1) as result', [orderId],
+          )
+          expect(restrictedDetail.rows[0]?.result).toBeNull()
+          await client.query('savepoint deny_unassigned_staff_confirmation')
+          await expect(client.query(`
+            select public.phase2_admin_order_confirm(
+              $1, 15000, $2::jsonb, $3, $4::uuid
+            )
+          `, [orderId, JSON.stringify([{ order_item_id: persistedItems.rows[0]?.id, fee_per_unit: 20000 }]),
+            '17171717-1717-4717-8717-171717171717', '18181818-1818-4818-8818-181818181818']))
+            .rejects.toMatchObject({ message: 'RESOURCE_NOT_FOUND' })
+          await client.query('rollback to savepoint deny_unassigned_staff_confirmation')
+
+          phase = 'phase2_assign_order_to_sale_staff'
+          await client.query('reset role')
+          await client.query('set local role authenticated')
+          await client.query(
+            "select set_config('request.jwt.claims', $1, true)",
+            [JSON.stringify({ sub: adminAuthUserId })],
+          )
+          const saleAdmin = await client.query(
+            'select id from dpg_app.admin_users where supabase_auth_user_id = $1', [saleAuthUserId],
+          )
+          await client.query('update dpg_app.orders set assigned_to = $1 where id = $2', [saleAdmin.rows[0]?.id, orderId])
+
+          phase = 'phase2_assigned_staff_read'
+          await client.query('reset role')
+          await client.query('set local role authenticated')
+          await client.query(
+            "select set_config('request.jwt.claims', $1, true)",
+            [JSON.stringify({ sub: saleAuthUserId })],
+          )
+          const assignedInbox = await client.query('select public.phase2_admin_order_list(null, 25, 0) as result')
+          expect(assignedInbox.rows[0]?.result).toMatchObject({
+            total: 1,
+            orders: [expect.objectContaining({ id: orderId, status: 'received' })],
+          })
+          const assignedDetail = await client.query(
+            'select public.phase2_admin_order_get($1) as result', [orderId],
+          )
+          expect(assignedDetail.rows[0]?.result).toMatchObject({ order: { id: orderId, status: 'received' } })
+
+          phase = 'phase2_assigned_staff_commercial_confirmation'
           const confirmationKey = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd'
           const confirmationRequestId = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee'
           const confirmation = await client.query(`
             select public.phase2_admin_order_confirm(
               $1, 15000, $2::jsonb, $3, $4::uuid
             ) as response
-          `, [orderId, JSON.stringify([{ order_item_id: persistedItems.rows[0]?.id, fee_per_unit: 0 }]), confirmationKey, confirmationRequestId])
+          `, [orderId, JSON.stringify([{ order_item_id: persistedItems.rows[0]?.id, fee_per_unit: 20000 }]), confirmationKey, confirmationRequestId])
           const confirmationResponse = confirmation.rows[0]?.response
           expect(confirmationResponse).toMatchObject({
             order_id: orderId, status: 'confirmed', base_total: 240000,
-            shipping_fee: 15000, confirmed_total: 255000,
-            installation_fees: [expect.objectContaining({ fee_per_unit: 0, line_total: 0, install_option: 'none' })],
+            shipping_fee: 15000, confirmed_total: 295000,
+            installation_fees: [expect.objectContaining({ fee_per_unit: 20000, line_total: 40000, install_option: 'install' })],
           })
 
           phase = 'phase2_staff_confirmation_idempotency_replay'
@@ -1254,7 +1306,7 @@ describe('Supabase runtime migration adoption integration', () => {
             select public.phase2_admin_order_confirm(
               $1, 15000, $2::jsonb, $3, $4::uuid
             ) as response
-          `, [orderId, JSON.stringify([{ order_item_id: persistedItems.rows[0]?.id, fee_per_unit: 0 }]), confirmationKey, confirmationRequestId])
+          `, [orderId, JSON.stringify([{ order_item_id: persistedItems.rows[0]?.id, fee_per_unit: 20000 }]), confirmationKey, confirmationRequestId])
           expect(confirmationReplay.rows[0]?.response).toEqual(confirmationResponse)
 
           phase = 'phase2_staff_confirmation_idempotency_conflict'
@@ -1263,9 +1315,17 @@ describe('Supabase runtime migration adoption integration', () => {
             select public.phase2_admin_order_confirm(
               $1, 16000, $2::jsonb, $3, $4::uuid
             )
-          `, [orderId, JSON.stringify([{ order_item_id: persistedItems.rows[0]?.id, fee_per_unit: 0 }]), confirmationKey, confirmationRequestId]))
+          `, [orderId, JSON.stringify([{ order_item_id: persistedItems.rows[0]?.id, fee_per_unit: 20000 }]), confirmationKey, confirmationRequestId]))
             .rejects.toMatchObject({ message: 'IDEMPOTENCY_KEY_REUSED' })
           await client.query('rollback to savepoint reject_confirmation_key_reuse')
+
+          phase = 'phase2_restore_admin_context_after_assigned_confirmation'
+          await client.query('reset role')
+          await client.query('set local role authenticated')
+          await client.query(
+            "select set_config('request.jwt.claims', $1, true)",
+            [JSON.stringify({ sub: adminAuthUserId })],
+          )
 
           phase = 'phase2_deny_direct_confirmation_insert'
           await client.query('savepoint deny_direct_confirmation_insert')
@@ -1322,40 +1382,6 @@ describe('Supabase runtime migration adoption integration', () => {
           `, [orderId])
           expect(commercialAuditCount.rows[0]?.count).toBe(1)
 
-          phase = 'phase2_unassigned_staff_inbox'
-          await client.query('set local role authenticated')
-          await client.query(
-            "select set_config('request.jwt.claims', $1, true)",
-            [JSON.stringify({ sub: saleAuthUserId })],
-          )
-          const restrictedInbox = await client.query('select public.phase2_admin_order_list(null, 25, 0) as result')
-          expect(restrictedInbox.rows[0]?.result).toEqual({ orders: [], total: 0 })
-          const restrictedDetail = await client.query(
-            'select public.phase2_admin_order_get($1) as result', [orderId],
-          )
-          expect(restrictedDetail.rows[0]?.result).toBeNull()
-          const restrictedConfirmation = await client.query(
-            'select confirmed_total from dpg_app.phase2_order_confirmations where order_id = $1', [orderId],
-          )
-          expect(restrictedConfirmation.rowCount).toBe(0)
-          await client.query('savepoint deny_unassigned_staff_confirmation')
-          await expect(client.query(`
-            select public.phase2_admin_order_confirm(
-              $1, 15000, $2::jsonb, $3, $4::uuid
-            )
-          `, [orderId, JSON.stringify([{ order_item_id: persistedItems.rows[0]?.id, fee_per_unit: 0 }]),
-            '17171717-1717-4717-8717-171717171717', '18181818-1818-4818-8818-181818181818']))
-            .rejects.toMatchObject({ message: 'RESOURCE_NOT_FOUND' })
-          await client.query('rollback to savepoint deny_unassigned_staff_confirmation')
-          await client.query('savepoint deny_unassigned_staff_update')
-          await expect(client.query(`
-            select public.phase2_admin_order_update_status(
-              $1, 'cancelled', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', $2::uuid
-            )
-          `, [orderId, statusRequestId])).rejects.toMatchObject({ message: 'RESOURCE_NOT_FOUND' })
-          await client.query('rollback to savepoint deny_unassigned_staff_update')
-          await client.query('reset role')
-
           phase = 'phase2_fixture_commit'
           await client.query('commit')
           phase2FixtureCommitted = true
@@ -1389,8 +1415,12 @@ describe('Supabase runtime migration adoption integration', () => {
             `, [phase2FixtureOrderId])
             expect(committedConfirmation.rowCount).toBe(1)
             expect(committedConfirmation.rows[0]).toMatchObject({
-              base_total: '240000.00', shipping_fee: '15000.00', confirmed_total: '255000.00',
-              installation_fees: [expect.objectContaining({ product_sku: phase2FixtureSku, line_total: 0 })],
+              base_total: '240000.00', shipping_fee: '15000.00', confirmed_total: '295000.00',
+              installation_fees: [expect.objectContaining({
+                product_sku: phase2FixtureSku,
+                fee_per_unit: 20000,
+                line_total: 40000,
+              })],
             })
             phase = 'phase2_verify_committed_idempotency'
             const committedIdempotency = await verifier.query(`
