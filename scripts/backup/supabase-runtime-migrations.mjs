@@ -41,6 +41,7 @@ export const EXPECTED_RUNTIME_MIGRATIONS = [
   '20261104190000_phase2_admin_order_inbox.sql',
   '20261106210000_phase2_admin_sales_search.sql',
   '20261106213000_phase2_admin_catalogue_editor.sql',
+  '20261106220000_phase2_admin_cms_category_read.sql',
 ]
 
 export const BACKUP_BOOTSTRAP_MIGRATIONS = [

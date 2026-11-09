@@ -18,6 +18,9 @@ describe('Admin route ownership baseline', () => {
       '/audit',
       '/products',
       '/products/[id]',
+      '/blog',
+      '/blog/[id]',
+      '/content',
       '/robots.txt',
       '/api/health',
     ])

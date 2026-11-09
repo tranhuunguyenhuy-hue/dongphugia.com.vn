@@ -115,6 +115,22 @@ mutation requires exact target-specific permission, recoverable copy and
 rollback proof. Phase 2 Production promotion is a separate GO for the exact
 candidate and target; source PR merge does not authorize it.
 
+**Execution ledger (2026-11-06):** the Owner selected the independent
+`apps/admin` architecture and guest order request flow above. The active
+source candidates are intentionally separate: PR #272 contains the cart,
+guest order, receipt and initial staff inbox; PR #284 contains Public variant
+projection/selection changes and remains Draft until the tracked 17-group
+total is verified against authoritative source; PR #267 already restored
+Footer parity; PR #285 adds Admin Sales search/audit; and PR #286 adds the
+capability-gated Product editor. The active CMS source candidate adds Blog
+and selected site content editing. These source slices are not merged or
+Production approved by this ledger. The current CMS content editor leaves
+media/link editing read-only and excludes newsletter/forms without a
+receiving backend. A remaining Sales slice must record confirmed commercial
+terms before staff can move a guest request into the confirmed order
+lifecycle. Owner approval, hosted migration, Preview acceptance and Production
+GO remain separate gates.
+
 ## 2. Repository / application topology
 
 ```text
