@@ -949,7 +949,7 @@ describe('Supabase runtime migration adoption integration', () => {
           customer_email: '',
           customer_address: '',
           note: '',
-          items: [{ productId: 2147483647, quantity: 1, installOption: 'none' }],
+          items: [{ productId: 2147483647, sku: 'SYNTHETIC-RETRY', quantity: 1, installOption: 'none' }],
         }
         const retryResponse = {
           order_number: 'DPG-261105-ABCDEF12',
@@ -1009,7 +1009,7 @@ describe('Supabase runtime migration adoption integration', () => {
           customer_email: 'synthetic-order@example.invalid',
           customer_address: 'Synthetic test address',
           note: 'Integration test only',
-          items: [{ productId: 0, quantity: 2, installOption: 'none' }],
+          items: [{ productId: 0, sku: '', quantity: 2, installOption: 'none' }],
         }
         const adminAuthUserId = '00000000-0000-4000-8000-000000000201'
         const saleAuthUserId = '00000000-0000-4000-8000-000000000202'
@@ -1039,6 +1039,7 @@ describe('Supabase runtime migration adoption integration', () => {
           `, [phase2FixtureCategoryId])
           phase2FixtureProductId = product.rows[0]?.id
           createdOrderInput.items[0].productId = phase2FixtureProductId
+          createdOrderInput.items[0].sku = `SYNTHETIC-PHASE2-${process.pid}`
 
           await client.query('set local role dpg_order_intake')
           phase = 'phase2_guest_missing_product_error'
@@ -1049,9 +1050,21 @@ describe('Supabase runtime migration adoption integration', () => {
           `, [JSON.stringify({
             ...createdOrderInput,
             customer_phone: '0900000003',
-            items: [{ productId: 2147483647, quantity: 1, installOption: 'none' }],
+            items: [{ productId: 2147483647, sku: 'MISSING-SYNTHETIC-SKU', quantity: 1, installOption: 'none' }],
           }), '66666666-6666-4666-8666-666666666666'])
           expect(missingProductResponse.rows[0]?.response).toEqual({ error: 'PRODUCT_UNAVAILABLE' })
+
+          phase = 'phase2_guest_exact_sku_mismatch_error'
+          const mismatchedSkuResponse = await client.query(`
+            select public.guest_order_request_create(
+              $1::jsonb, $2, '77777777-7777-4777-8777-777777777778'::uuid
+            ) as response
+          `, [JSON.stringify({
+            ...createdOrderInput,
+            customer_phone: '0900000003',
+            items: [{ ...createdOrderInput.items[0], sku: 'DIFFERENT-SKU' }],
+          }), '77777777-7777-4777-8777-777777777779'])
+          expect(mismatchedSkuResponse.rows[0]?.response).toEqual({ error: 'PRODUCT_UNAVAILABLE' })
 
           phase = 'phase2_guest_order_create'
           const created = await client.query(`

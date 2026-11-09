@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
+  createCartFingerprint,
   getConflictedOrderRequestReceiptKeys,
   getPendingOrderRequestReceiptKeys,
   getStoredOrderRequestReceiptKey,
@@ -42,5 +43,18 @@ describe('guest order receipt recovery storage', () => {
 
     expect(getConflictedOrderRequestReceiptKeys()).toEqual([FIRST_KEY])
     expect(getStoredOrderRequestReceiptKey()).toBe(SECOND_KEY)
+  })
+})
+
+describe('guest order cart fingerprint', () => {
+  it('changes when the selected exact SKU changes', async () => {
+    const first = await createCartFingerprint([
+      { productId: 42, sku: 'SKU-42-A', quantity: 1, installOption: 'none' },
+    ])
+    const second = await createCartFingerprint([
+      { productId: 42, sku: 'SKU-42-B', quantity: 1, installOption: 'none' },
+    ])
+
+    expect(first).not.toBe(second)
   })
 })

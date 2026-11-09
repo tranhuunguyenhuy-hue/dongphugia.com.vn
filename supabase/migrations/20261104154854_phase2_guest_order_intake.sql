@@ -326,7 +326,7 @@ declare
   v_note text;
   v_item jsonb;
   v_product record;
-  v_product_ids integer[] := array[]::integer[];
+  v_selection_keys text[] := array[]::text[];
   v_public_selling_price numeric;
   v_list_price numeric;
   v_sale_price numeric;
@@ -377,17 +377,27 @@ begin
   for v_item in select value from jsonb_array_elements(p_input -> 'items') loop
     if jsonb_typeof(v_item) <> 'object'
        or coalesce(v_item ->> 'productId', '') !~ '^[0-9]{1,10}$'
+       or jsonb_typeof(v_item -> 'sku') is distinct from 'string'
+       or length(btrim(v_item ->> 'sku')) not between 1 and 100
        or coalesce(v_item ->> 'quantity', '') !~ '^[0-9]{1,2}$' then
       raise exception 'INVALID_ITEM';
     end if;
     if (v_item ->> 'productId')::numeric > 2147483647 then raise exception 'INVALID_ITEM'; end if;
     if (v_item ->> 'quantity')::integer not between 1 and 99 then raise exception 'INVALID_QUANTITY'; end if;
-    if (v_item ->> 'productId')::integer = any(v_product_ids) then raise exception 'DUPLICATE_PRODUCT'; end if;
-    v_product_ids := array_append(v_product_ids, (v_item ->> 'productId')::integer);
     if v_item ? 'installOption' and v_item ->> 'installOption' is null then raise exception 'INVALID_INSTALL_OPTION'; end if;
     if coalesce(v_item ->> 'installOption', 'none') not in ('none', 'install', 'replace') then
       raise exception 'INVALID_INSTALL_OPTION';
     end if;
+    if jsonb_build_array(
+      (v_item ->> 'productId')::integer,
+      btrim(v_item ->> 'sku'),
+      coalesce(v_item ->> 'installOption', 'none')
+    )::text = any(v_selection_keys) then raise exception 'DUPLICATE_PRODUCT'; end if;
+    v_selection_keys := array_append(v_selection_keys, jsonb_build_array(
+      (v_item ->> 'productId')::integer,
+      btrim(v_item ->> 'sku'),
+      coalesce(v_item ->> 'installOption', 'none')
+    )::text);
   end loop;
 
   v_key_hash := dpg_app.runtime_key_hash(btrim(p_idempotency_key));
@@ -434,6 +444,7 @@ begin
         into v_product
       from dpg_app.products
       where id = (v_item ->> 'productId')::integer
+        and sku = btrim(v_item ->> 'sku')
         and is_active
         and publication_status = 'public'
         and pdp_visibility = 'public'

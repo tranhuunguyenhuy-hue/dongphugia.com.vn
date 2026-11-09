@@ -5,6 +5,7 @@ import {
 
 type OrderRequestItem = {
   productId: number
+  sku: string
   quantity: number
   installOption: 'none' | 'install' | 'replace'
 }
@@ -160,6 +161,7 @@ function validateInput(value: unknown): OrderRequestInput {
     if (!Number.isSafeInteger(record.productId) || Number(record.productId) < 1) {
       throw new RequestFailure(400, 'INVALID_ITEM')
     }
+    const sku = stringField(record.sku, 'ITEM', 100, true)
     if (!Number.isSafeInteger(record.quantity) || Number(record.quantity) < 1 || Number(record.quantity) > 99) {
       throw new RequestFailure(400, 'INVALID_QUANTITY')
     }
@@ -167,9 +169,9 @@ function validateInput(value: unknown): OrderRequestInput {
     if (installOption !== 'none' && installOption !== 'install' && installOption !== 'replace') {
       throw new RequestFailure(400, 'INVALID_INSTALL_OPTION')
     }
-    return { productId: Number(record.productId), quantity: Number(record.quantity), installOption }
+    return { productId: Number(record.productId), sku, quantity: Number(record.quantity), installOption }
   })
-  if (new Set(items.map((item) => item.productId)).size !== items.length) {
+  if (new Set(items.map((item) => `${item.productId}\u0000${item.sku}\u0000${item.installOption}`)).size !== items.length) {
     throw new RequestFailure(400, 'DUPLICATE_PRODUCT')
   }
 

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { getCartItemUnitPrice, useCartStore, useCartTotal, CartItem } from '@/lib/cart-store'
 import { getPersistedOrderRequestNumber } from '@/lib/guest-order-contract'
 import {
+    createCartFingerprint,
     getConflictedOrderRequestReceiptKeys,
     getPendingOrderRequestReceiptKeys,
     lookupOrderRequestReceipt,
@@ -134,6 +135,7 @@ export default function CartPage() {
                 customer_phone: normalizedPhone,
                 items: items.map(item => ({
                     productId: item.productId,
+                    sku: item.sku,
                     quantity: item.quantity,
                     installOption: item.installOption ?? 'none',
                 })),
@@ -483,16 +485,6 @@ export default function CartPage() {
 }
 
 const ORDER_REQUEST_STORAGE_KEY = 'dpg-order-request-idempotency-v1'
-
-async function createCartFingerprint(items: Array<{ productId: number; quantity: number; installOption?: string }>) {
-    const canonicalItems = items.map(({ productId, quantity, installOption }) => ({
-        productId,
-        quantity,
-        installOption: installOption ?? 'none',
-    }))
-    const digest = await window.crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(canonicalItems)))
-    return Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('')
-}
 
 function getOrCreateOrderRequestKey(
     cartFingerprint: string,

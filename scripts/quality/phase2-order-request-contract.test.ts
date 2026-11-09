@@ -12,6 +12,16 @@ const legacyAdminCommercePath = path.join(root, 'supabase/functions/admin-commer
 const separateAdminOrderActionsPath = path.join(root, 'apps/admin/app/orders/actions.ts')
 
 describe('Phase 2 order-request database contract', () => {
+  it('binds every requested line to the selected exact SKU', async () => {
+    const guestMigration = await readFile(guestIntakePath, 'utf8')
+    const createFunction = guestMigration.match(/create function public\.guest_order_request_create\([\s\S]*?\n\$\$;/i)?.[0]
+
+    expect(createFunction).toBeDefined()
+    expect(createFunction).toContain("jsonb_typeof(v_item -> 'sku') is distinct from 'string'")
+    expect(createFunction).toContain("and sku = btrim(v_item ->> 'sku')")
+    expect(createFunction).toContain("v_request_hash := dpg_app.runtime_hash(p_input)")
+  })
+
   it('restricts guest intake RPCs to the dedicated backend role', async () => {
     const [guestMigration, rollback] = await Promise.all([
       readFile(guestIntakePath, 'utf8'),

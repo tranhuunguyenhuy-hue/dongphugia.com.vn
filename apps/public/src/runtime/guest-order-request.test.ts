@@ -16,7 +16,7 @@ const validBody = {
   customer_email: '',
   customer_address: '',
   note: '',
-  items: [{ productId: 42, quantity: 2, installOption: 'none' }],
+  items: [{ productId: 42, sku: 'SKU-42-A', quantity: 2, installOption: 'none' }],
 }
 
 function createRequest(body: unknown = validBody, origin = 'https://preview.invalid') {

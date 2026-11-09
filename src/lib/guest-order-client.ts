@@ -5,6 +5,22 @@ const IDEMPOTENCY_KEY_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-
 const RECEIPT_LIFETIME_MS = 24 * 60 * 60 * 1000
 type StoredReceiptKey = { key: string; savedAt: number; state: 'pending' | 'verified' | 'conflict' }
 
+export async function createCartFingerprint(items: Array<{
+  productId: number
+  sku: string
+  quantity: number
+  installOption?: string
+}>): Promise<string> {
+  const canonicalItems = items.map(({ productId, sku, quantity, installOption }) => ({
+    productId,
+    sku,
+    quantity,
+    installOption: installOption ?? 'none',
+  }))
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(canonicalItems)))
+  return Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('')
+}
+
 function readStoredReceiptKeys(): StoredReceiptKey[] {
   try {
     const stored = localStorage.getItem(RECEIPT_STORAGE_KEY)

@@ -52,7 +52,7 @@ export const useCartStore = create<CartStore>()(
 
             addItem: (item) => {
                 const { quantity = 1, installOption = 'none', ...rest } = item
-                const cartItemId = `${rest.productId}-${installOption}`
+                const cartItemId = `${rest.productId}:${encodeURIComponent(rest.sku)}:${installOption}`
                 
                 // Track Add to Cart
                 trackAddToCart({
@@ -111,9 +111,9 @@ export const useCartStore = create<CartStore>()(
         }),
         {
             name: 'dpg-cart',
-            version: 2,
+            version: 3,
             migrate: (persistedState, version) => {
-                if (version >= 2 || !persistedState || typeof persistedState !== 'object') return persistedState as CartStore
+                if (!persistedState || typeof persistedState !== 'object') return persistedState as CartStore
                 const state = persistedState as { items?: CartItem[] }
                 return {
                     ...state,
@@ -125,6 +125,9 @@ export const useCartStore = create<CartStore>()(
                             : 0
                         return {
                             ...item,
+                            cartItemId: version < 3
+                                ? `${item.productId}:${encodeURIComponent(item.sku)}:${item.installOption ?? 'none'}`
+                                : item.cartItemId,
                             installationFee: item.installOption === 'none' ? 0 : null,
                             finalPrice: basePrice === null ? undefined : basePrice - validDiscount,
                         }

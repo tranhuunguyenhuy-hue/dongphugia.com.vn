@@ -16,7 +16,7 @@ const input = {
   customer_email: '',
   customer_address: '',
   note: '',
-  items: [{ productId: 42, quantity: 2, installOption: 'none' }],
+  items: [{ productId: 42, sku: 'SKU-42-A', quantity: 2, installOption: 'none' }],
 }
 const bodyText = JSON.stringify(input)
 const nowSeconds = 1_799_000_000
@@ -48,6 +48,20 @@ async function signedRequest(method: 'GET' | 'POST', body = '') {
 }
 
 describe('order-intake signed backend handler', () => {
+  it('requires the exact SKU selected by the guest', async () => {
+    const database = { create: vi.fn(), receipt: vi.fn() }
+    const handler = createOrderIntakeHandler({ database, signingSecret: secret, nowSeconds: () => nowSeconds })
+    const missingSkuBody = JSON.stringify({
+      ...input,
+      items: [{ productId: 42, quantity: 2, installOption: 'none' }],
+    })
+    const response = await handler(await signedRequest('POST', missingSkuBody))
+
+    expect(response.status).toBe(400)
+    expect(await response.json()).toEqual({ error: { code: 'INVALID_ITEM' } })
+    expect(database.create).not.toHaveBeenCalled()
+  })
+
   it('rejects direct public-key callers before any database operation', async () => {
     const database = { create: vi.fn(), receipt: vi.fn() }
     const handler = createOrderIntakeHandler({ database, signingSecret: secret, nowSeconds: () => nowSeconds })
@@ -78,6 +92,25 @@ describe('order-intake signed backend handler', () => {
     expect(await response.json()).toEqual({ data: receipt })
     expect(database.create).toHaveBeenCalledWith(input, idempotencyKey, requestId)
     expect(database.receipt).not.toHaveBeenCalled()
+  })
+
+  it('preserves two selected SKUs of one Product as distinct request lines', async () => {
+    const twoSkuInput = {
+      ...input,
+      items: [
+        { productId: 42, sku: 'SKU-42-A', quantity: 1, installOption: 'none' },
+        { productId: 42, sku: 'SKU-42-B', quantity: 1, installOption: 'none' },
+      ],
+    }
+    const twoSkuBody = JSON.stringify(twoSkuInput)
+    const receipt = { order_number: 'DPG-261106-0000002A', status: 'pending', payment_status: 'unpaid' }
+    const database = { create: vi.fn().mockResolvedValue(receipt), receipt: vi.fn() }
+    const handler = createOrderIntakeHandler({ database, signingSecret: secret, nowSeconds: () => nowSeconds })
+
+    const response = await handler(await signedRequest('POST', twoSkuBody))
+
+    expect(response.status).toBe(201)
+    expect(database.create).toHaveBeenCalledWith(twoSkuInput, idempotencyKey, requestId)
   })
 
   it('rejects an altered signed payload without calling the database', async () => {
