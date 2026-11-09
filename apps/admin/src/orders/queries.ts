@@ -5,12 +5,14 @@ import { parseAdminOrderDetail, parseAdminOrderList, type OrderRequestStatus } f
 
 export async function getOrderInbox(input: {
   status: OrderRequestStatus | null
+  search: string
   limit: number
   offset: number
 }) {
   const client = await createAdminServerClient()
-  const { data, error } = await client.schema('public').rpc('phase2_admin_order_list', {
+  const { data, error } = await client.schema('public').rpc('phase2_admin_order_search', {
     p_status: input.status,
+    p_search: input.search,
     p_limit: input.limit,
     p_offset: input.offset,
   })

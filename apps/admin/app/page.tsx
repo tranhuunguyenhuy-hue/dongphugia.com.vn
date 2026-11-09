@@ -18,6 +18,9 @@ export default async function AdminFoundationPage() {
       {staff.capabilities.includes('orders:read') || staff.capabilities.includes('orders:read_assigned') ? (
         <p><a href="/orders">Mở hàng đợi yêu cầu đặt hàng</a></p>
       ) : null}
+      {staff.capabilities.includes('audit:read') ? (
+        <p><a href="/audit">Mở nhật ký thao tác</a></p>
+      ) : null}
       <a href="/auth/logout">Đăng xuất</a>
     </main>
   )

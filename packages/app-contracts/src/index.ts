@@ -57,6 +57,7 @@ export const ADMIN_ROUTE_OWNERSHIP = [
   { path: '/auth/logout', owner: 'admin', purpose: 'staff-auth-shell' },
   { path: '/orders', owner: 'admin', purpose: 'staff-guest-order-inbox' },
   { path: '/orders/[id]', owner: 'admin', purpose: 'staff-guest-order-detail' },
+  { path: '/audit', owner: 'admin', purpose: 'staff-admin-audit-readonly' },
   { path: '/robots.txt', owner: 'admin', purpose: 'crawler-policy' },
   { path: '/api/health', owner: 'admin', purpose: 'runtime-probe' },
 ] as const
