@@ -5,6 +5,7 @@ import { requireActiveStaff } from '../../../src/auth/require-staff'
 import { getGuestOrder } from '../../../src/orders/queries'
 import { parseOrderRequestStatus } from '../../../src/orders/contracts'
 import { OrderStatusEditor } from '../order-status-editor'
+import { OrderConfirmationEditor } from '../order-confirmation-editor'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -34,7 +35,7 @@ export default async function AdminGuestOrderDetailPage({ params }: { params: Pr
       <header className="admin-page-header">
         <div>
           <h1>{order.order_number}</h1>
-          <p className="admin-muted">Yêu cầu đang chờ trao đổi với khách. Chưa phải đơn đã thanh toán.</p>
+          <p className="admin-muted">Yêu cầu khách gửi; thanh toán vẫn {order.payment_status === 'unpaid' ? 'chưa được xác nhận' : order.payment_status}.</p>
         </div>
         <Link href="/orders" className="admin-button admin-button-secondary">Quay lại danh sách</Link>
       </header>
@@ -69,11 +70,14 @@ export default async function AdminGuestOrderDetailPage({ params }: { params: Pr
                   const hasSnapshotPrice = Number.isFinite(finalUnitPrice) && finalUnitPrice > 0
                   const installOption = item.commercial_snapshot.install_option
                   const installationFeeStatus = item.commercial_snapshot.installation_fee_status
-                  const installationLabel = installOption === 'none'
-                    ? 'Không yêu cầu'
-                    : installationFeeStatus === 'pending_confirmation'
-                      ? 'Nhân viên xác nhận'
-                      : 'Chưa xác định'
+                  const confirmedFee = result.confirmation?.installation_fees.find((fee) => fee.order_item_id === item.id)
+                  const installationLabel = confirmedFee
+                    ? installOption === 'none' ? 'Không yêu cầu' : `${formatPrice(confirmedFee.fee_per_unit)} / sản phẩm`
+                    : installOption === 'none'
+                      ? 'Không yêu cầu'
+                      : installationFeeStatus === 'pending_confirmation'
+                        ? 'Nhân viên xác nhận'
+                        : 'Chưa xác định'
                   return (
                     <tr key={item.id}>
                       <td>{item.product_name}</td>
@@ -95,15 +99,24 @@ export default async function AdminGuestOrderDetailPage({ params }: { params: Pr
               <span>Phí vận chuyển</span>
               <strong>
                 {order.shipping_fee_status === 'pending_confirmation'
-                  ? 'Nhân viên xác nhận'
+                  ? result.confirmation ? formatPrice(result.confirmation.shipping_fee) : 'Nhân viên xác nhận'
                   : order.shipping_fee_status === 'not_applicable'
                     ? 'Không áp dụng'
                     : formatPrice(order.shipping_fee)}
               </strong>
             </p>
-            <p className="admin-total-row"><span>Tổng tham khảo, chưa gồm phí chờ xác nhận</span><strong>{formatPrice(order.total)}</strong></p>
+            <p className="admin-total-row"><span>Tổng tham khảo trước phí</span><strong>{formatPrice(order.total)}</strong></p>
           </div>
         </section>
+        <div className="admin-detail-wide">
+          <OrderConfirmationEditor
+            orderId={order.id}
+            status={status}
+            items={items}
+            confirmation={result.confirmation}
+            editable={canUpdate}
+          />
+        </div>
       </div>
     </main>
   )
