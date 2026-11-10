@@ -135,7 +135,13 @@ export async function runDiscovery({ accountId, apiToken, sourceCommit = null, f
     calls,
     workers: [],
     pagesProjects: [],
-    workersPlan: { status: 'UNKNOWN', labels: [], freeConfirmed: false },
+    workersPlan: {
+      status: 'UNKNOWN',
+      planStatus: 'UNKNOWN',
+      evidence: 'NO_COST_EVIDENCE',
+      labels: [],
+      freeConfirmed: false,
+    },
     suitableIsolatedPublicWorker: null,
     createNewResourceRequired: null,
     productionAssociation: 'UNKNOWN',
@@ -242,23 +248,49 @@ export async function runDiscovery({ accountId, apiToken, sourceCommit = null, f
   report.pagesProjects.sort((left, right) => left.name.localeCompare(right.name))
 
   const labels = planLabels(subscriptions)
-  const freeConfirmed = labels.some((label) => /workers\s+free|free.*workers/i.test(label))
   const subscriptionCall = calls.find((call) => call.label === 'account.subscriptions.list')
+  const accountSettingsCall = calls.find((call) => call.label === 'workers.account-settings.get')
+  const accountDefaultUsageModel = typeof accountSettings?.default_usage_model === 'string'
+    ? accountSettings.default_usage_model.toLowerCase()
+    : null
+  const paidSubscription = labels.some((label) => /workers\s+(?:paid|standard)|standard.*workers/i.test(label))
+  const freeSubscription = labels.some((label) => /workers\s+free|free.*workers/i.test(label))
+  // Cloudflare documents Standard as the Workers Paid usage model. Treat it as
+  // cost-bearing evidence even when the account's billing endpoint is denied.
+  const paidUsageModel = accountDefaultUsageModel === 'standard'
+  const planStatus = paidSubscription || paidUsageModel
+    ? 'PAID'
+    : freeSubscription
+      ? 'FREE'
+      : 'UNKNOWN'
+  const planEvidence = paidSubscription
+    ? 'WORKERS_PAID_SUBSCRIPTION'
+    : paidUsageModel
+      ? 'STANDARD_USAGE_MODEL'
+      : freeSubscription
+        ? 'WORKERS_FREE_SUBSCRIPTION'
+        : subscriptionCall?.status === 'READ_DENIED' || accountSettingsCall?.status === 'READ_DENIED'
+          ? 'PLAN_PERMISSION_INCOMPLETE'
+          : 'NO_EXPLICIT_PLAN_EVIDENCE'
   report.workersPlan = {
     status: subscriptionCall?.status === 'READ_OK' ? 'READ_OK' : 'UNKNOWN',
+    planStatus,
+    evidence: planEvidence,
     labels,
-    freeConfirmed,
-    accountDefaultUsageModel: typeof accountSettings?.default_usage_model === 'string'
-      ? accountSettings.default_usage_model
-      : null,
+    freeConfirmed: planStatus === 'FREE',
+    accountSettingsStatus: accountSettingsCall?.status ?? 'UNKNOWN',
+    accountDefaultUsageModel,
   }
 
-  const discoveryComplete = [
+  const workerInventoryComplete = [
     'workers.scripts.list',
     'workers.domains.list',
-    'workers.routes.list.dongphugia.vn',
-    'pages.projects.list',
+    'workers.account-settings.get',
+    'zones.list.dongphugia.vn',
   ].every((label) => calls.some((call) => call.label === label && call.status === 'READ_OK'))
+  const zoneInventoryKnown = calls.some((call) => call.label === 'zones.list.dongphugia.vn' && call.status === 'READ_OK')
+  const routeInventoryKnown = !zone?.id || calls.some((call) => call.label === 'workers.routes.list.dongphugia.vn' && call.status === 'READ_OK')
+  const discoveryComplete = workerInventoryComplete && zoneInventoryKnown && routeInventoryKnown
 
   const completeVersionDeploymentInventory = discoveryComplete && report.workers.every((worker) => (
     worker.versions.status === 'READ_OK' && worker.deployments.status === 'READ_OK'
@@ -281,7 +313,7 @@ export async function runDiscovery({ accountId, apiToken, sourceCommit = null, f
   report.suitableIsolatedPublicWorker = suitable?.name ?? null
   report.createNewResourceRequired = completeVersionDeploymentInventory ? !suitable : null
   report.productionAssociation = completeVersionDeploymentInventory
-    ? (report.workers.some((worker) => worker.productionAssociation) || report.pagesProjects.some((project) => project.productionAssociation)
+    ? (report.workers.some((worker) => worker.productionAssociation)
       ? 'PRESENT_ON_ACCOUNT_RESOURCES'
       : 'NONE_DISCOVERED')
     : 'UNKNOWN'

@@ -97,11 +97,38 @@ begin
      or (select count(*) from pg_auth_members membership
          where membership.member = (select oid from pg_roles where rolname = 'dpg_order_intake_login')) <> 1
      or (select count(*) from pg_auth_members membership
-         where membership.roleid = (select oid from pg_roles where rolname = 'dpg_order_intake')) <> 1
+         where membership.roleid = (select oid from pg_roles where rolname = 'dpg_order_intake')
+           and membership.member = (select oid from pg_roles where rolname = 'dpg_order_intake_login')) <> 1
      or exists (
        select 1 from pg_auth_members membership
-       where membership.roleid = (select oid from pg_roles where rolname = 'dpg_order_intake_function_owner')
-          or membership.member = (select oid from pg_roles where rolname = 'dpg_order_intake_function_owner')
+       where membership.roleid = (select oid from pg_roles where rolname = 'dpg_order_intake')
+         and membership.member <> (select oid from pg_roles where rolname = 'dpg_order_intake_login')
+         and not (
+           membership.member is not distinct from (select oid from pg_roles where rolname = 'postgres')
+           and membership.grantor is not distinct from (select oid from pg_roles where rolname = 'supabase_admin')
+           and membership.admin_option
+           and not membership.inherit_option
+           and not membership.set_option
+         )
+     )
+     or exists (
+       select 1 from pg_auth_members membership
+       where membership.member = (select oid from pg_roles where rolname = 'dpg_order_intake')
+     )
+     or exists (
+       select 1 from pg_auth_members membership
+       where (
+         membership.roleid = (select oid from pg_roles where rolname = 'dpg_order_intake_function_owner')
+         or membership.member = (select oid from pg_roles where rolname = 'dpg_order_intake_function_owner')
+       )
+         and not (
+           membership.roleid = (select oid from pg_roles where rolname = 'dpg_order_intake_function_owner')
+           and membership.member is not distinct from (select oid from pg_roles where rolname = 'postgres')
+           and membership.grantor is not distinct from (select oid from pg_roles where rolname = 'supabase_admin')
+           and membership.admin_option
+           and not membership.inherit_option
+           and not membership.set_option
+         )
      )
      or has_schema_privilege('dpg_order_intake_function_owner', 'dpg_app', 'USAGE')
      or has_schema_privilege('dpg_order_intake_function_owner', 'public', 'CREATE')
@@ -631,11 +658,14 @@ $$;
 
 reset role;
 grant create on schema public to dpg_order_intake_function_owner;
+grant dpg_order_intake_function_owner to dpg_migration
+  with set true, inherit false, admin false;
+set role dpg_migration;
 alter function public.guest_order_request_create(jsonb, text, uuid)
   owner to dpg_order_intake_function_owner;
 alter function public.guest_order_request_receipt(text)
   owner to dpg_order_intake_function_owner;
-revoke create on schema public from dpg_migration, dpg_order_intake_function_owner;
+set role dpg_order_intake_function_owner;
 
 revoke all on function public.guest_order_request_create(jsonb, text, uuid),
   public.guest_order_request_receipt(text)
@@ -648,6 +678,10 @@ comment on function public.guest_order_request_create(jsonb, text, uuid) is
 
 comment on function public.guest_order_request_receipt(text) is
   'Backend-only read of the minimal pending, unpaid receipt for a high-entropy idempotency key; the no-login function owner has limited table/column grants and RLS policies; EXECUTE is granted only to dpg_order_intake.';
+
+reset role;
+revoke dpg_order_intake_function_owner from dpg_migration;
+revoke create on schema public from dpg_migration, dpg_order_intake_function_owner;
 
 do $phase2_postflight$
 declare

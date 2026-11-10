@@ -49,8 +49,19 @@ begin
   end if;
 
   if exists (
-    select 1 from pg_auth_members
-    where roleid = backup_role_oid or member = backup_role_oid
+    select 1 from pg_auth_members memberships
+    where (memberships.roleid = backup_role_oid or memberships.member = backup_role_oid)
+      and not (
+        -- Supabase records a provider-managed administrative membership when
+        -- postgres creates a role. This exact row has SET and INHERIT disabled;
+        -- reject every other membership involving dpg_backup.
+        memberships.roleid = backup_role_oid
+        and memberships.member is not distinct from (select oid from pg_roles where rolname = 'postgres')
+        and memberships.grantor is not distinct from (select oid from pg_roles where rolname = 'supabase_admin')
+        and memberships.admin_option
+        and not memberships.inherit_option
+        and not memberships.set_option
+      )
   ) or exists (
     -- pg_shdepend is PostgreSQL's exhaustive cross-catalog authority index for
     -- role ownership, ACL grants, and policy dependencies in this database.

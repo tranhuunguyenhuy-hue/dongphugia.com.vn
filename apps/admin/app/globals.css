@@ -11,6 +11,7 @@
 * { box-sizing: border-box; }
 body { margin: 0; min-height: 100vh; }
 a { color: inherit; }
+.admin-preview-notice { position: sticky; top: 0; z-index: 100; border-bottom: 1px solid #e8c86d; background: #fff4cf; color: #5f4300; padding: 8px 16px; text-align: center; font-size: 12px; font-weight: 700; letter-spacing: 0.04em; }
 
 .admin-page { width: min(1240px, calc(100% - 32px)); margin: 0 auto; padding: 36px 0 64px; }
 .admin-page h1 { margin: 0; font-size: clamp(26px, 4vw, 34px); letter-spacing: -0.03em; }

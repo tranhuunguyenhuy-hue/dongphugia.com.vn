@@ -56,7 +56,9 @@ describe('LEO-563 Cloudflare read-only discovery', () => {
     expect(requests.every((request) => request.method === 'GET')).toBe(true)
     expect(report.suitableIsolatedPublicWorker).toBe('safe-preview')
     expect(report.createNewResourceRequired).toBe(false)
-    expect(report.workersPlan.freeConfirmed).toBe(true)
+    expect(report.workersPlan.planStatus).toBe('PAID')
+    expect(report.workersPlan.evidence).toBe('STANDARD_USAGE_MODEL')
+    expect(report.workersPlan.freeConfirmed).toBe(false)
     expect(report.workers.find((worker) => worker.name === 'safe-preview')?.versions).toEqual(expect.objectContaining({
       status: 'READ_OK',
       versionIds: ['11111111-1111-1111-1111-111111111111'],
@@ -72,6 +74,28 @@ describe('LEO-563 Cloudflare read-only discovery', () => {
     expect(serialized).not.toContain('token-secret-value')
     expect(serialized).not.toContain('zone-secret-id')
     expect(serialized).not.toContain('redacted by implementation')
+  })
+
+  it('does not require Pages permission and confirms Free only with explicit Free evidence', async () => {
+    const fetchImpl = async (url: string) => {
+      if (url.endsWith('/workers/scripts')) return response([{ id: 'safe-preview' }])
+      if (url.endsWith('/workers/domains')) return response([])
+      if (url.includes('/subscriptions')) return response([{ rate_plan: { public_name: 'Workers Free' } }])
+      if (url.includes('/account-settings')) return response({ default_usage_model: 'free' })
+      if (url.includes('/zones?')) return response([])
+      if (url.endsWith('/pages/projects')) return response(null, 403)
+      if (url.endsWith('/subdomain')) return response({ enabled: false, previews_enabled: true })
+      if (url.endsWith('/versions')) return response({ items: [{ id: '11111111-1111-1111-1111-111111111111', created_on: '2026-08-31T00:00:00.000Z', number: 1 }] })
+      if (url.endsWith('/deployments')) return response({ deployments: [{ id: '22222222-2222-2222-2222-222222222222', strategy: 'percentage', versions: [{ version_id: '11111111-1111-1111-1111-111111111111', percentage: 100 }] }] })
+      if (url.includes('/settings')) return response({ bindings: [] })
+      throw new Error(`Unexpected test URL: ${url}`)
+    }
+
+    const report = await runDiscovery({ accountId: 'account', apiToken: 'token', fetchImpl })
+    expect(report.workersPlan.planStatus).toBe('FREE')
+    expect(report.workersPlan.freeConfirmed).toBe(true)
+    expect(report.suitableIsolatedPublicWorker).toBe('safe-preview')
+    expect(report.productionAssociation).toBe('NONE_DISCOVERED')
   })
 
   it('fails suitability closed when required inventory permissions are denied', async () => {

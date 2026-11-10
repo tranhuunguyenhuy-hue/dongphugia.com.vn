@@ -23,7 +23,14 @@ export default function AdminRootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="vi">
-      <body data-application={APPLICATIONS.admin.name}>{children}</body>
+      <body data-application={APPLICATIONS.admin.name}>
+        {appEnvironment.environment === 'preview' ? (
+          <aside className="admin-preview-notice" role="status">
+            Preview · Not Production · Dữ liệu kiểm thử
+          </aside>
+        ) : null}
+        {children}
+      </body>
     </html>
   )
 }

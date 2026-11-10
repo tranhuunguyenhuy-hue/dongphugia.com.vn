@@ -155,43 +155,26 @@ function managedRemoteFetch({
 }
 
 const managedBaselineIdentity = {
-  sourceCommit: 'da3c8fe7a94f71b70ce391a8925e5360f197b74b',
-  candidateRunId: '41031057535',
-  candidateArtifactId: '12966875385',
-  candidateArtifactSizeBytes: 170366858,
-  candidateArchiveSha256: '4e3ad7bb1fbd6f1a33f5c88cf5691837edd07230828d898913f4492b34cd22bf',
-  checkpoint: '87e4b06b73ab20df11d95021e1da8bd8f497ee5e',
-  m3RunId: '40739074902',
-  pullRequest: 216,
+  sourceCommit: '1111111111111111111111111111111111111111',
+  candidateRunId: '1001',
+  candidateArtifactId: '2001',
+  candidateArtifactSizeBytes: 1024,
+  candidateArchiveSha256: '1'.repeat(64),
+  checkpoint: '2222222222222222222222222222222222222222',
+  m3RunId: '1002',
+  pullRequest: 290,
 }
 
+const knownBaselineApiVersionIds = Array.from({ length: 14 }, (_, index) =>
+  `00000000-0000-4000-8000-${String(index + 1).padStart(12, '0')}`,
+)
+const knownBaselineVersionIds = [...knownBaselineApiVersionIds].sort()
 const knownManagedBaseline = {
-  versionCount: 14,
-  latestVersionId: '0245f76f-e599-437b-862e-0599fe2b1f39',
-  bootstrapVersionId: 'd4658ffa-2fcd-465b-bae7-7967bb1c7f78',
-  deploymentId: '6e7022d5-5f4d-4f51-8ab3-01850503a711',
+  versionCount: knownBaselineVersionIds.length,
+  latestVersionId: knownBaselineApiVersionIds[0],
+  bootstrapVersionId: knownBaselineApiVersionIds[1],
+  deploymentId: '10000000-0000-4000-8000-000000000001',
 }
-
-const knownBaselineVersionIds = [
-  '0ecbc1a2-dd99-4330-bde6-8fcca77ffb1f',
-  '2cbb3f2c-b8ec-4844-8326-1a9fcb4e4cf7',
-  '48f40297-7381-49bc-ab67-4c4dec83e7bf',
-  '59352d64-974d-4afc-8bfd-57edb92369c4',
-  '67fe3336-601e-4cac-a960-d70ee692d448',
-  '7ec0bdbb-bfe7-4cf5-b6d3-695249251c2b',
-  '86568faa-17fb-4658-ac26-f62ccd2ffbc0',
-  '91a968e9-4ac2-48c0-8c0f-7c1df5c3e55a',
-  '9f20e256-83fa-4756-9518-71ef7571d466',
-  'd4658ffa-2fcd-465b-bae7-7967bb1c7f78',
-  '17fe81fb-9f43-43b9-85d0-33952cff74d6',
-  '49c91111-a0c6-4d3b-9db6-cfa318a9bf4a',
-  'a1e4dc1e-51ed-4e08-9cc5-147aa0fae456',
-  knownManagedBaseline.latestVersionId,
-].sort()
-const knownBaselineApiVersionIds = [
-  knownManagedBaseline.latestVersionId,
-  ...knownBaselineVersionIds.filter(id => id !== knownManagedBaseline.latestVersionId),
-]
 
 function managedBaselineRemoteFetch({
   versionIds = knownBaselineApiVersionIds,
@@ -338,12 +321,11 @@ describe('LEO-563 Cloudflare Preview publication gate', () => {
     expect(versionPages).toEqual([1, 2])
   })
 
-  it('attests the exact known 14-version managed baseline through paginated GET-only reads', async () => {
+  it('records the current isolated Preview from paginated GET-only reads without pinned version IDs', async () => {
     const { requests, fetchImpl } = managedBaselineRemoteFetch()
     const remoteState = await inspectRemoteResourceState({
       accountId: 'synthetic-account',
       apiToken: 'synthetic-token',
-      expectedManagedBaseline: knownManagedBaseline,
       fetchImpl,
     })
 
@@ -396,10 +378,30 @@ describe('LEO-563 Cloudflare Preview publication gate', () => {
     })).rejects.toThrow('LEO563_PREVIEW_MANAGED_BASELINE_VERSION_IDS_DRIFT')
   })
 
+  it('accepts refreshed historical version IDs when the current Preview remains isolated', async () => {
+    const refreshedVersionIds = [...knownBaselineApiVersionIds]
+    refreshedVersionIds[5] = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+    const { fetchImpl } = managedBaselineRemoteFetch({ versionIds: refreshedVersionIds })
+    const state = await inspectRemoteResourceState({
+      accountId: 'synthetic-account',
+      apiToken: 'synthetic-token',
+      fetchImpl,
+    })
+
+    expect(state).toMatchObject({
+      state: 'MANAGED_BASELINE_ATTESTED',
+      versionCount: knownBaselineVersionIds.length,
+      deploymentIds: [knownManagedBaseline.deploymentId],
+      customDomains: [],
+      workerRoutes: [],
+      subdomain: { workersDevEnabled: false, previewUrlsEnabled: true },
+    })
+    expect(state.versionIds).toContain('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')
+  })
+
   it.each([
     ['missing known uploaded version', { versionIds: knownBaselineVersionIds.filter(id => id !== knownManagedBaseline.latestVersionId) }],
     ['an extra version', { versionIds: [...knownBaselineVersionIds, 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'] }],
-    ['a replaced historical version with the same count', { versionIds: knownBaselineApiVersionIds.map((id, index) => index === 5 ? 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' : id) }],
     ['a changed deployment identity', { deploymentId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' }],
     ['a deployment no longer points at bootstrap', { deploymentVersionId: knownManagedBaseline.latestVersionId }],
     ['the documented latest version is not first', { versionIds: [...knownBaselineApiVersionIds].reverse() }],
@@ -682,8 +684,8 @@ describe('LEO-563 Cloudflare Preview publication gate', () => {
 
   it('accepts the proven bootstrap plus immutable version history', async () => {
     const evidence = managedPublicationEvidence()
-    const bootstrapVersionId = 'd4658ffa-2fcd-465b-bae7-7967bb1c7f78'
-    const deploymentId = '6e7022d5-5f4d-4f51-8ab3-01850503a711'
+    const bootstrapVersionId = '30000000-0000-4000-8000-000000000001'
+    const deploymentId = '40000000-0000-4000-8000-000000000001'
     const managedPublication = validateManagedPublicationEvidence({
       publicationPreflight: evidence.publicationPreflight,
       uploadEvidence: evidence.uploadEvidence,

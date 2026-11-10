@@ -33,6 +33,11 @@ export default function PublicRootLayout({
         data-application={APPLICATIONS.public.name}
         className={`${publicFontClasses} antialiased font-sans`}
       >
+        {appEnvironment.environment === 'preview' ? (
+          <aside className="public-preview-notice" role="status">
+            PREVIEW · NOT PRODUCTION · Dữ liệu kiểm thử
+          </aside>
+        ) : null}
         <CanonicalPublicLayout>{children}</CanonicalPublicLayout>
         <Toaster richColors position="top-right" />
       </body>

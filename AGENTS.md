@@ -6,32 +6,36 @@ handoffs, ADRs, runbooks, or a second context file.** Use
 [`docs/PROJECT.md`](docs/PROJECT.md) only if the active task needs detailed
 domain, architecture, deployment, or troubleshooting reference.
 
-## Project and objective (snapshot: 2026-11-06)
+## Project and objective (snapshot: 2026-11-10)
 
 - Repo: `tranhuunguyenhuy-hue/dongphugia.com.vn`, base branch `main`.
 - Customer website: `https://www.dongphugia.vn`; staff application target:
   `https://admin.dongphugia.vn`.
 - Business: Vietnamese building-materials retailer. Four catalogue sectors:
   Thiết bị vệ sinh, Gạch ốp lát, Thiết bị nước, Thiết bị bếp.
-- **Current delivery tracks:** P0 Public recovery (#260) is still open;
-  do not assume it is complete or deployed. **Phase 2 (#270) is the next
-  requested source-work track**: verified PDP variants, footer parity,
-  durable guest cart/order and staff Admin/CMS. Keep Phase 2 isolated from
-  the P0 Production candidate; do not fold either into unrelated migration.
-- Work authority: GitHub [#260](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/260)
-  (P0 Public recovery), [#270](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/270)
-  (Phase 2), [PR #272](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/pull/272)
-  (cart/order), [PR #282](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/pull/282)
-  (workflow/docs). **These are dated pointers, not confirmed current status:
-  inspect the relevant GitHub item only when the request touches it.**
-- **Phase 2 handoff:** first inspect Issue #270 and existing PR #272/branch
-  ownership; continue an active owned PR rather than starting a conflicting
-  branch. Verify 17-group/51-product variant coverage against real source,
-  footer desktop/mobile parity, persistent and idempotent guest orders, and
-  denied unauthorized Admin actions. UI/source work may proceed without a
-  blanket database-backup gate; DB/Auth/provider writes require their own
-  exact approval and recoverable data. The choice between legacy Admin
-  restoration and new Supabase Auth/Admin remains **UNDECIDED** in #270.
+- **Current work:** P0 recovery [#260](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/260)
+  remains separate; check its live state when a task depends on it. Phase 2
+  source candidates are tracked by [#270](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/270)
+  and [PR #291](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/pull/291).
+  The active delegated outcome is the bounded, isolated Public + Admin Preview
+  in [#290](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/290).
+- **#290 Owner authority (2026-11-10):** complete the approved Preview chain
+  without asking for routine reapproval: verify/provision exactly-$0 Free
+  resources, apply synthetic-only migrations/seeds to the isolated Supabase
+  project `uybumsnyqpwcidjxmfsv`, deploy separate Public and Admin Workers,
+  run live smoke/browser checks, and hand off URLs plus a gap list. This does
+  not authorize paid activation, Production or production-derived writes,
+  DNS/CDN changes, or merging `main`. Never write to `bonxyxluzlxfkdetryoo`.
+- **Phase 2 choices are settled:** use the separate `apps/admin` application
+  with Supabase Auth/RLS; Preview covers only existing bounded modules. Do not
+  restore the legacy monolithic CMS or describe excluded modules as accepted.
+  Keep the production migration runner unchanged; the synthetic Preview path
+  must have its own exact-target contract and ledger.
+- **Status discipline:** recheck live GitHub/provider state before claiming a
+  milestone. CI/build is not deployment. Report `FREE_STACK_READY`,
+  `PREVIEW_DEPLOYED`, and `OWNER_HANDOFF_READY` at #290 only when each is
+  evidenced; update #270 with the handoff link. A Preview label + exact SHA is
+  the reusable trigger; do not rely on repeated Owner `workflow_dispatch`.
 - The 2026-09 V1 design handoffs had a global wireframe-freeze condition.
   They were consolidated, **not converted into blanket authorization** for
   new V1 schema/architecture implementation. The newer Phase 2 recovery
@@ -102,7 +106,9 @@ domain, architecture, deployment, or troubleshooting reference.
    no database backup, restore rehearsal or unrelated infrastructure gate.
    Data/schema, payments, privileges, secrets, uploads and DNS/CDN cutovers
    need specific approval, scoped recovery evidence and relevant safeguards.
-5. Owner approves merge and Production candidate/target. Combine approvals
+5. #290 already authorizes its isolated synthetic Preview and bounded hosted
+   test writes; do not ask for repeat approval on that exact project. Owner
+   approval for merge and Production target remains separate. Combine approvals
    only where automation actually binds one reviewed candidate to exact
    deployment. Never confuse PR merge, preview artifact and live Production.
 6. Release to verified runtime; check impacted live URLs/flows, errors and

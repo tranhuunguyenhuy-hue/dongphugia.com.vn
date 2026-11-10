@@ -36,8 +36,11 @@ The boundary creates four `NOLOGIN`, `NOSUPERUSER`, `NOCREATEDB`,
   `default_transaction_read_only=on`, and cannot insert, update, or delete.
 - `dpg_backup`: is a passwordless capability prerequisite for explicit backup
   grants. It owns nothing, receives no broad or default privilege, and is
-  created before the reviewed LEO-542 backup-coverage migrations. Its
-  prerequisite rejects any pre-existing membership path, shared dependency,
+  created before the reviewed LEO-542 backup-coverage migrations. Supabase
+  records one provider-managed membership with `postgres` as member and
+  `supabase_admin` as grantor; only `ADMIN` is enabled. The prerequisite permits
+  only that exact row and rejects every other membership,
+  shared dependency,
   owned object, object or column ACL, default privilege, policy grant, user
   mapping, or role setting before later explicit read-only grants are applied.
 

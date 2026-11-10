@@ -18,28 +18,6 @@ const SHA256_PATTERN = /^[0-9a-f]{64}$/i
 const MANAGED_BASELINE_RECEIPT_MAX_AGE_MS = 15 * 60 * 1000
 const MANAGED_BASELINE_CONTRACT = 'dongphugia:cloudflare-preview-managed-baseline-state:v1'
 const MANAGED_STATE_RECEIPT_CONTRACT = 'dongphugia:cloudflare-preview-managed-state-receipt:v1'
-const OWNER_RECONCILED_MANAGED_BASELINE = Object.freeze({
-  versionCount: 14,
-  latestVersionId: '0245f76f-e599-437b-862e-0599fe2b1f39',
-  bootstrapVersionId: 'd4658ffa-2fcd-465b-bae7-7967bb1c7f78',
-  deploymentId: '6e7022d5-5f4d-4f51-8ab3-01850503a711',
-  versionIds: Object.freeze([
-    '0245f76f-e599-437b-862e-0599fe2b1f39',
-    '0ecbc1a2-dd99-4330-bde6-8fcca77ffb1f',
-    '2cbb3f2c-b8ec-4844-8326-1a9fcb4e4cf7',
-    '48f40297-7381-49bc-ab67-4c4dec83e7bf',
-    '59352d64-974d-4afc-8bfd-57edb92369c4',
-    '67fe3336-601e-4cac-a960-d70ee692d448',
-    '7ec0bdbb-bfe7-4cf5-b6d3-695249251c2b',
-    '86568faa-17fb-4658-ac26-f62ccd2ffbc0',
-    '91a968e9-4ac2-48c0-8c0f-7c1df5c3e55a',
-    '9f20e256-83fa-4756-9518-71ef7571d466',
-    'd4658ffa-2fcd-465b-bae7-7967bb1c7f78',
-    '17fe81fb-9f43-43b9-85d0-33952cff74d6',
-    '49c91111-a0c6-4d3b-9db6-cfa318a9bf4a',
-    'a1e4dc1e-51ed-4e08-9cc5-147aa0fae456',
-  ].sort()),
-})
 const ALLOWED_CONFIG_KEYS = new Set([
   'name',
   'compatibility_date',
@@ -711,18 +689,23 @@ function normalizePrePublicationState(state) {
 
   if (
     state.activeDeployment !== false ||
-    state.versionIds.length !== 0 ||
     state.deployments.length !== 0 ||
     state.deploymentIds.length !== 0 ||
-    state.bindings.length !== 0
+    state.versionIds.some((versionId) => !VERSION_ID_PATTERN.test(versionId)) ||
+    new Set(state.versionIds).size !== state.versionIds.length
   ) throw new Error('LEO563_PREVIEW_PUBLICATION_BASELINE_UNSAFE')
+  try {
+    if (state.bindings.length) assertSafePublishedBindings(state.bindings)
+  } catch {
+    throw new Error('LEO563_PREVIEW_PUBLICATION_BASELINE_UNSAFE')
+  }
   return {
     state: state.state,
-    versionIds: [],
+    versionIds: [...state.versionIds].sort(),
     deployments: [],
     deploymentIds: [],
     activeDeployment: false,
-    bindings: [],
+    bindings: state.bindings,
     customDomains: [...state.customDomains],
     workerRoutes: [...state.workerRoutes],
   }
@@ -770,8 +753,11 @@ function normalizeExpectedPublication(proof) {
     if (!sameJson(normalizedDeployments, baseline.deployments)) {
       throw new Error('LEO563_PREVIEW_POST_FAILURE_EXPECTED_PROOF_INVALID')
     }
-  } else if (baseline.state === 'INCOMPLETE' && normalizedDeployments.length !== 0) {
-    throw new Error('LEO563_PREVIEW_POST_FAILURE_EXPECTED_PROOF_INVALID')
+  } else if (baseline.state === 'INCOMPLETE') {
+    const expectedVersionIds = [...new Set([...baseline.versionIds, proof.workerVersionId])].sort()
+    if (!sameJson(versionIds, expectedVersionIds) || normalizedDeployments.length !== 0) {
+      throw new Error('LEO563_PREVIEW_POST_FAILURE_EXPECTED_PROOF_INVALID')
+    }
   }
   if (
     proof.workersDev !== false ||
@@ -834,14 +820,11 @@ function normalizeManagedStateIdentity(identity) {
 function normalizeKnownManagedBaseline(expectation) {
   if (
     !expectation ||
-    !Number.isSafeInteger(expectation.versionCount) || expectation.versionCount !== OWNER_RECONCILED_MANAGED_BASELINE.versionCount ||
+    !Number.isSafeInteger(expectation.versionCount) || expectation.versionCount < 1 ||
     !VERSION_ID_PATTERN.test(expectation.latestVersionId ?? '') ||
     !VERSION_ID_PATTERN.test(expectation.bootstrapVersionId ?? '') ||
     !VERSION_ID_PATTERN.test(expectation.deploymentId ?? '') ||
-    expectation.latestVersionId === expectation.bootstrapVersionId ||
-    expectation.latestVersionId !== OWNER_RECONCILED_MANAGED_BASELINE.latestVersionId ||
-    expectation.bootstrapVersionId !== OWNER_RECONCILED_MANAGED_BASELINE.bootstrapVersionId ||
-    expectation.deploymentId !== OWNER_RECONCILED_MANAGED_BASELINE.deploymentId
+    expectation.latestVersionId === expectation.bootstrapVersionId
   ) throw new Error('LEO563_PREVIEW_MANAGED_BASELINE_EXPECTATION_INVALID')
   return {
     versionCount: expectation.versionCount,
@@ -888,23 +871,22 @@ function managedBaselineStateSnapshot(state) {
 
 function validateManagedBaselineState(state, expected = null) {
   const snapshot = managedBaselineStateSnapshot(state)
-  const { latestVersionId, bootstrapVersionId, deploymentId } = OWNER_RECONCILED_MANAGED_BASELINE
-  const deployment = {
-    id: deploymentId,
-    strategy: 'percentage',
-    versions: [{ versionId: bootstrapVersionId, percentage: 100 }],
-  }
+  const deployment = snapshot.deployments.length === 1 ? snapshot.deployments[0] : null
   if (
-    snapshot.versionCount !== OWNER_RECONCILED_MANAGED_BASELINE.versionCount ||
-    snapshot.versionIds.length !== OWNER_RECONCILED_MANAGED_BASELINE.versionCount ||
-    new Set(snapshot.versionIds).size !== OWNER_RECONCILED_MANAGED_BASELINE.versionCount ||
+    snapshot.versionCount < 1 ||
+    snapshot.versionIds.length < 1 ||
+    new Set(snapshot.versionIds).size !== snapshot.versionIds.length ||
     snapshot.versionIds.some((versionId) => !VERSION_ID_PATTERN.test(versionId)) ||
-    snapshot.latestVersionId !== latestVersionId ||
-    !snapshot.versionIds.includes(latestVersionId) ||
-    !snapshot.versionIds.includes(bootstrapVersionId) ||
+    !snapshot.versionIds.includes(snapshot.latestVersionId) ||
     !sameJson(snapshot.versionIds, [...snapshot.versionIds].sort()) ||
-    !sameJson(snapshot.deployments, [deployment]) ||
-    !sameJson(snapshot.deploymentIds, [deploymentId]) ||
+    !deployment ||
+    !VERSION_ID_PATTERN.test(deployment.id ?? '') ||
+    deployment.strategy !== 'percentage' ||
+    !Array.isArray(deployment.versions) ||
+    deployment.versions.length !== 1 ||
+    deployment.versions[0].percentage !== 100 ||
+    !snapshot.versionIds.includes(deployment.versions[0].versionId) ||
+    !sameJson(snapshot.deploymentIds, [deployment.id]) ||
     snapshot.customDomains.length !== 0 ||
     snapshot.workerRoutes.length !== 0 ||
     snapshot.subdomain.workersDevEnabled !== false ||
@@ -924,9 +906,6 @@ function validateManagedBaselineState(state, expected = null) {
         throw new Error(`LEO563_PREVIEW_MANAGED_BASELINE_${field.replace(/[A-Z]/g, (char) => `_${char}`).toUpperCase()}_DRIFT`)
       }
     }
-  }
-  if (!sameJson(snapshot.versionIds, OWNER_RECONCILED_MANAGED_BASELINE.versionIds)) {
-    throw new Error('LEO563_PREVIEW_MANAGED_BASELINE_STATE_UNEXPECTED')
   }
   return snapshot
 }
@@ -1186,11 +1165,72 @@ export async function inspectRemoteResourceState({ accountId, apiToken, expected
     }
   }
   if (!expectedPublication) {
-    if (deploymentRecords.length) throw new Error('LEO563_PREVIEW_REMOTE_ACTIVE_DEPLOYMENT_FORBIDDEN')
-    if (versionIds.length) throw new Error('LEO563_PREVIEW_REMOTE_VERSION_STATE_FORBIDDEN')
-    if (bindings.length) throw new Error('LEO563_PREVIEW_REMOTE_BINDING_STATE_FORBIDDEN')
     if (subdomain.enabled !== false) throw new Error('LEO563_PREVIEW_REMOTE_ACTIVE_SUBDOMAIN_FORBIDDEN')
-    if (subdomain.previews_enabled !== false) throw new Error('LEO563_PREVIEW_REMOTE_PREVIEW_URL_STATE_FORBIDDEN')
+    if (deploymentRecords.length && subdomain.previews_enabled !== true) {
+      throw new Error('LEO563_PREVIEW_REMOTE_ACTIVE_DEPLOYMENT_FORBIDDEN')
+    }
+    if (versionIds.length && subdomain.previews_enabled !== true) {
+      throw new Error('LEO563_PREVIEW_REMOTE_VERSION_STATE_FORBIDDEN')
+    }
+    if (bindings.length && subdomain.previews_enabled !== true) {
+      throw new Error('LEO563_PREVIEW_REMOTE_BINDING_STATE_FORBIDDEN')
+    }
+    if (deploymentRecords.length || versionIds.length || bindings.length) {
+      if (deploymentRecords.length === 0) {
+        try {
+          if (bindings.length) assertSafePublishedBindings(bindings)
+        } catch {
+          throw new Error('LEO563_PREVIEW_REMOTE_BINDING_STATE_FORBIDDEN')
+        }
+        return {
+          contract: 'dongphugia:cloudflare-preview-remote-preflight:v2',
+          workerName: WORKER_NAME,
+          state: 'INCOMPLETE',
+          workerAbsent: false,
+          bootstrapRequired: false,
+          reconciliationAllowed: true,
+          activeDeployment: false,
+          versionCount: versionIds.length,
+          versionIds,
+          deployments: [],
+          deploymentIds: [],
+          customDomains,
+          workerRoutes,
+          bindings,
+          subdomain: {
+            workersDevEnabled: subdomain.enabled,
+            previewUrlsEnabled: subdomain.previews_enabled,
+          },
+          calls,
+        }
+      }
+      const currentState = {
+        remoteContract: 'dongphugia:cloudflare-preview-remote-preflight:v2',
+        contract: MANAGED_BASELINE_CONTRACT,
+        workerName: WORKER_NAME,
+        state: 'MANAGED_BASELINE_ATTESTED',
+        workerAbsent: false,
+        bootstrapRequired: false,
+        reconciliationAllowed: true,
+        activeDeployment: true,
+        versionCount: versionIds.length,
+        latestVersionId: versions.items?.[0]?.id ?? null,
+        versionIds,
+        deployments: deploymentRecords,
+        deploymentIds: remoteDeploymentIds(deploymentRecords),
+        customDomains,
+        workerRoutes,
+        bindings,
+        subdomain: {
+          workersDevEnabled: subdomain.enabled,
+          previewUrlsEnabled: subdomain.previews_enabled,
+        },
+        productionAssociation: false,
+        calls,
+      }
+      validateManagedBaselineState(currentState)
+      return currentState
+    }
   } else {
     const expected = normalizeExpectedPublication(expectedPublication)
     if (subdomain.enabled !== false || subdomain.previews_enabled !== true) {
@@ -1318,7 +1358,7 @@ export async function inspectPublishedResource({ accountId, apiToken, versionId,
   if (deploymentRecords.some((deployment) => deployment.versions.some((entry) => !allowedVersionIds.has(entry.versionId)))) {
     throw new Error('LEO563_PREVIEW_INSPECTION_DEPLOYMENT_STATE_UNEXPECTED')
   }
-  if (baseline?.state === 'MANAGED_ACTIVE_PREVIEW' && !sameJson(deploymentRecords, baseline.deployments)) {
+  if (['MANAGED_ACTIVE_PREVIEW', 'MANAGED_BASELINE_ATTESTED'].includes(baseline?.state) && !sameJson(deploymentRecords, baseline.deployments)) {
     throw new Error('LEO563_PREVIEW_INSPECTION_MANAGED_DEPLOYMENT_CHANGED')
   }
   if (baseline?.state === 'INCOMPLETE' && deploymentRecords.length !== 0) {

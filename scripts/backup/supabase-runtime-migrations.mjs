@@ -565,10 +565,20 @@ async function validateBackupBootstrap(client) {
       ) as backup_role_restricted,
       to_regrole('dpg_backup_login') is null as backup_login_absent,
       not exists (
-        select 1 from pg_auth_members
-        where roleid = (select oid from pg_roles where rolname = 'dpg_backup')
-           or member = (select oid from pg_roles where rolname = 'dpg_backup')
-      ) as backup_role_has_no_memberships,
+        select 1 from pg_auth_members memberships
+        where (
+          memberships.roleid = (select oid from pg_roles where rolname = 'dpg_backup')
+          or memberships.member = (select oid from pg_roles where rolname = 'dpg_backup')
+        )
+          and not (
+            memberships.roleid = (select oid from pg_roles where rolname = 'dpg_backup')
+            and memberships.member is not distinct from (select oid from pg_roles where rolname = 'postgres')
+            and memberships.grantor is not distinct from (select oid from pg_roles where rolname = 'supabase_admin')
+            and memberships.admin_option
+            and not memberships.inherit_option
+            and not memberships.set_option
+          )
+      ) as backup_role_has_no_unapproved_memberships,
       has_schema_privilege('dpg_backup', 'dpg_app', 'USAGE')
         and not has_schema_privilege('dpg_backup', 'dpg_app', 'CREATE')
         and not exists (

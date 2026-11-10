@@ -5,6 +5,8 @@ import { describe, expect, it } from 'vitest'
 
 const root = process.cwd()
 const workflow = readFileSync(resolve(root, '.github/workflows/migration-preview.yml'), 'utf8')
+const reusablePublisher = readFileSync(resolve(root, '.github/workflows/preview-public-admin.yml'), 'utf8')
+const fullPreviewWorkflow = `${workflow}\n${reusablePublisher}`
 const changeGate = readFileSync(resolve(root, 'scripts/app-foundation/preview-change-gate.mjs'), 'utf8')
 const candidateScript = readFileSync(resolve(root, 'scripts/app-foundation/preview-candidate.mts'), 'utf8')
 const previewPublication = readFileSync(resolve(root, 'scripts/app-foundation/cloudflare-preview-publication.mjs'), 'utf8')
@@ -109,11 +111,15 @@ describe('LEO-563 application foundation contract', () => {
       'publicArtifactSha256',
       'adminArtifactSha256',
       'SKIPPED_UNRELATED_CHANGE',
-      'BLOCKED_BY_OWNER_GATE',
-      'OWNER_APPROVED_EXACT_PR_PREVIEW_UPLOAD',
+      'CI_PASS_PREVIEW_NOT_DEPLOYED',
+      'BLOCKED_BY_WORKERS_COST_OR_QUOTA',
+      'preview-approved',
+      'admin-preview-upload:',
       'REAL_PUBLIC_PREVIEW_PASS',
-      'Production custom domain/DNS/traffic: unchanged.',
-    ]) expect(`${workflow}\n${changeGate}\n${candidateScript}`).toContain(marker)
+      'REAL_ADMIN_PREVIEW_PASS',
+      "needs.cloudflare-readonly-discovery.outputs.workers_plan_status == 'FREE'",
+      '- Custom domains, routes, and Production traffic: NONE',
+    ]) expect(`${fullPreviewWorkflow}\n${changeGate}\n${candidateScript}`).toContain(marker)
 
     for (const forbidden of [
       'pages project create',
@@ -122,14 +128,14 @@ describe('LEO-563 application foundation contract', () => {
       'wrangler deploy',
       'deployments: write',
       'PRODUCTION_DATABASE_URL',
-    ]) expect(workflow.toLowerCase()).not.toContain(forbidden.toLowerCase())
+    ]) expect(fullPreviewWorkflow.toLowerCase()).not.toContain(forbidden.toLowerCase())
 
     expect(workflow.match(/secrets\.CLOUDFLARE_READONLY_DISCOVERY_TOKEN/g)).toHaveLength(1)
-    expect(workflow.match(/secrets\.CLOUDFLARE_LEO563_PREVIEW_TOKEN/g)).toHaveLength(5)
-    expect(workflow).not.toContain('secrets.CLOUDFLARE_API_TOKEN')
+    expect(reusablePublisher.match(/secrets\.CLOUDFLARE_LEO563_PREVIEW_TOKEN/g)).toHaveLength(6)
+    expect(fullPreviewWorkflow).not.toContain('secrets.CLOUDFLARE_API_TOKEN')
     expect(workflow).toContain('cloudflare-readonly-discovery.mjs')
-    expect(workflow.match(/versions upload/g)).toHaveLength(2)
-    expect(workflow).toContain('--preview-alias "pr-$PR_NUMBER"')
+    expect(reusablePublisher.match(/versions upload/g)).toHaveLength(2)
+    expect(reusablePublisher).toContain('--preview-alias "pr-$PR_NUMBER"')
     expect(previewPublication).toContain("const WORKER_NAME = 'dongphugia-v1-public-preview'")
     expect(previewPublication).toContain('LEO563_PREVIEW_PRODUCTION_HOST_FORBIDDEN')
     expect(previewPublication).toContain('LEO563_PREVIEW_REMOTE_BINDING_OR_ROUTE_FORBIDDEN')

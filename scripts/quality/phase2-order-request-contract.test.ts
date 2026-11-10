@@ -31,6 +31,8 @@ describe('Phase 2 order-request database contract', () => {
     const guestFunctions = guestMigration.match(/create function public\.guest_order_request_(?:create|receipt)\([\s\S]*?\n\$\$;/gi) ?? []
 
     expect(guestMigration).toContain("rolname = 'dpg_order_intake_function_owner'")
+    expect(guestMigration).toContain('grant dpg_order_intake_function_owner to dpg_migration\n  with set true, inherit false, admin false;')
+    expect(guestMigration).toContain('revoke dpg_order_intake_function_owner from dpg_migration;')
     expect(guestMigration).toContain('grant execute on function public.guest_order_request_create(jsonb, text, uuid) to dpg_order_intake')
     expect(guestMigration).toContain('grant execute on function public.guest_order_request_receipt(text) to dpg_order_intake')
     expect(guestMigration).not.toMatch(/grant execute on function public\.guest_order_request_(?:create|receipt)[^;]*\bto anon/i)

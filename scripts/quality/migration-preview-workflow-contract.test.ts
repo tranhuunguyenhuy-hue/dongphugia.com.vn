@@ -4,6 +4,8 @@ import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 const workflow = readFileSync(resolve(process.cwd(), '.github/workflows/migration-preview.yml'), 'utf8')
+const reusablePublisher = readFileSync(resolve(process.cwd(), '.github/workflows/preview-public-admin.yml'), 'utf8')
+const fullPreviewWorkflow = `${workflow}\n${reusablePublisher}`
 const qualityWorkflow = readFileSync(resolve(process.cwd(), '.github/workflows/quality.yml'), 'utf8')
 const buildGuide = readFileSync(resolve(process.cwd(), 'docs/deploy/public-static-build.md'), 'utf8')
 const changeGate = readFileSync(resolve(process.cwd(), 'scripts/app-foundation/preview-change-gate.mjs'), 'utf8')
@@ -64,13 +66,13 @@ describe('migration PR CI and Preview workflow contract', () => {
   })
 
   it('bootstraps only an absent Worker, reconciles incomplete state, or reuses a verified managed Preview before version upload', () => {
-    const stateCheckStart = workflow.indexOf('name: Inspect the current Worker state before publication')
-    const bootstrapStart = workflow.indexOf('name: Bootstrap absent, reconcile incomplete, or reuse managed active Preview')
-    const versionUploadStart = workflow.indexOf('name: Upload one immutable Worker version with the approved PR Preview alias')
-    const stateCheckEnd = workflow.indexOf('\n\n      - name:', stateCheckStart)
-    const stateCheckStep = workflow.slice(stateCheckStart, stateCheckEnd)
-    const bootstrapEnd = workflow.indexOf('\n\n      - name:', bootstrapStart)
-    const bootstrapStep = workflow.slice(bootstrapStart, bootstrapEnd)
+    const stateCheckStart = reusablePublisher.indexOf('name: Inspect the current Worker state before publication')
+    const bootstrapStart = reusablePublisher.indexOf('name: Bootstrap absent, reconcile incomplete, or reuse managed active Preview')
+    const versionUploadStart = reusablePublisher.indexOf('name: Upload one immutable Worker version with the approved PR Preview alias')
+    const stateCheckEnd = reusablePublisher.indexOf('\n\n      - name:', stateCheckStart)
+    const stateCheckStep = reusablePublisher.slice(stateCheckStart, stateCheckEnd)
+    const bootstrapEnd = reusablePublisher.indexOf('\n\n      - name:', bootstrapStart)
+    const bootstrapStep = reusablePublisher.slice(bootstrapStart, bootstrapEnd)
 
     expect(stateCheckStart).toBeGreaterThanOrEqual(0)
     expect(bootstrapStart).toBeGreaterThan(stateCheckStart)
@@ -80,6 +82,7 @@ describe('migration PR CI and Preview workflow contract', () => {
       'ABSENT',
       'INCOMPLETE',
       'MANAGED_ACTIVE_PREVIEW',
+      'MANAGED_BASELINE_ATTESTED',
       'reconciliationAllowed',
       'node "$WRANGLER_BIN" deploy',
       '--strict',
@@ -90,48 +93,42 @@ describe('migration PR CI and Preview workflow contract', () => {
   })
 
   it('records a write attempt and distinguishes pre-publication from current-attempt failure inspection', () => {
-    const bootstrapStart = workflow.indexOf('name: Bootstrap absent, reconcile incomplete, or reuse managed active Preview')
-    const versionUploadStart = workflow.indexOf('name: Upload one immutable Worker version with the approved PR Preview alias')
-    const postFailureStart = workflow.indexOf('name: Inspect the Worker state after a failed publication or runtime gate')
-    const postFailureEnd = workflow.indexOf('\n\n      - name:', postFailureStart)
-    const postFailureStep = workflow.slice(postFailureStart, postFailureEnd)
+    const bootstrapStart = reusablePublisher.indexOf('name: Bootstrap absent, reconcile incomplete, or reuse managed active Preview')
+    const versionUploadStart = reusablePublisher.indexOf('name: Upload one immutable Worker version with the approved PR Preview alias')
+    const postFailureStart = reusablePublisher.indexOf('name: Inspect the Worker state after a failed publication or runtime gate')
+    const postFailureEnd = reusablePublisher.indexOf('\n\n      - name:', postFailureStart)
+    const postFailureStep = reusablePublisher.slice(postFailureStart, postFailureEnd)
 
     expect(bootstrapStart).toBeGreaterThanOrEqual(0)
     expect(versionUploadStart).toBeGreaterThan(bootstrapStart)
     expect(postFailureStart).toBeGreaterThan(versionUploadStart)
-    expect(workflow).toContain('id: bootstrap_write')
-    expect(workflow).toContain('id: version_upload')
-    expect(workflow).toContain('write_attempted=true')
-    expect(workflow).toContain("steps.bootstrap_write.outputs.write_attempted == 'true'")
-    expect(workflow).toContain("steps.version_upload.outputs.write_attempted == 'true'")
+    expect(reusablePublisher).toContain('id: bootstrap_write')
+    expect(reusablePublisher).toContain('id: version_upload')
+    expect(reusablePublisher).toContain('write_attempted=true')
+    expect(reusablePublisher).toContain("steps.bootstrap_write.outputs.write_attempted == 'true'")
+    expect(reusablePublisher).toContain("steps.version_upload.outputs.write_attempted == 'true'")
     expect(postFailureStep).toContain('failure()')
     expect(postFailureStep).toContain('inspect-resource-state')
     expect(postFailureStep).toContain('post-failure-remote-state.json')
     expect(postFailureStep).toContain('--expected-resource-proof')
     expect(postFailureStep).toContain('--upload')
     expect(postFailureStep).toContain('CLOUDFLARE_LEO563_PREVIEW_TOKEN')
-    expect(workflow).toContain('${{ env.EVIDENCE_DIR }}/post-failure-remote-state.json')
-    expect(workflow).toContain('--preflight "$EVIDENCE_DIR/remote-preflight.json"')
-    expect(workflow).toContain('--bootstrap-log "$EVIDENCE_DIR/bootstrap-deploy.log"')
+    expect(reusablePublisher).toContain('${{ env.EVIDENCE_DIR }}/post-failure-remote-state.json')
+    expect(reusablePublisher).toContain('--preflight "$EVIDENCE_DIR/remote-preflight.json"')
+    expect(reusablePublisher).toContain('--bootstrap-log "$EVIDENCE_DIR/bootstrap-deploy.log"')
   })
 
-  it('requires an exact prior LEO-563 evidence artifact before managed Preview reuse', () => {
+  it('uses the current isolated Worker read-back instead of pinned historical version IDs', () => {
     for (const marker of [
-      'managed_preview_run_id',
-      'managed_preview_source_sha',
-      'managed_preview_bootstrap_version_id',
-      'actions: read',
-      'Download the exact prior LEO-563 Preview evidence for managed-state preflight',
-      'run-id: ${{ needs.repo-code-gate.outputs.managed_preview_run_id }}',
-      'name: leo563-real-public-preview-${{ needs.repo-code-gate.outputs.managed_preview_source_sha }}',
-      'validate-managed-publication',
-      '--managed-publication-proof "$EVIDENCE_DIR/managed-publication-proof.json"',
-      '--bootstrap-version-id',
-    ]) expect(workflow).toContain(marker)
+      'MANAGED_BASELINE_ATTESTED',
+      'validateManagedBaselineState(currentState)',
+      'latestVersionId: versions.items?.[0]?.id ?? null',
+      'versions.items?.[0]?.id ?? null',
+    ]) expect(`${fullPreviewWorkflow}\n${previewPublication}`).toContain(marker)
 
-    expect(workflow).toContain('MANAGED_PREVIEW_RUN_ID')
-    expect(workflow).toContain('MANAGED_PREVIEW_SOURCE_SHA')
-    expect(workflow).toContain('managed-publication-proof.json')
+    expect(previewPublication).not.toContain('OWNER_RECONCILED_MANAGED_BASELINE')
+    expect(previewPublication).not.toContain('0245f76f-e599-437b-862e-0599fe2b1f39')
+    expect(previewPublication).not.toContain('6e7022d5-5f4d-4f51-8ab3-01850503a711')
   })
 
   it('skips unrelated changes before the candidate and external Preview path', () => {
@@ -155,29 +152,30 @@ describe('migration PR CI and Preview workflow contract', () => {
       'deployments: write',
       'PRODUCTION_DATABASE_URL',
       'cloudflared tunnel',
-    ]) expect(workflow.toLowerCase()).not.toContain(forbidden.toLowerCase())
+    ]) expect(fullPreviewWorkflow.toLowerCase()).not.toContain(forbidden.toLowerCase())
 
     for (const marker of [
-      'publish_leo563_public_preview',
-      'approved_pr_number',
-      'approved_source_sha',
-      'refs/heads/$approved_head_ref',
-      'pulls/$APPROVED_PR_NUMBER',
-      'test "$SOURCE_SHA" = "$APPROVED_SOURCE_SHA"',
+      "test \"$ACTOR\" = 'tranhuunguyenhuy-hue'",
+      'gh api "repos/$REPOSITORY/pulls/${{ github.event.pull_request.number }}"',
+      "test \"$(jq -r '.head.sha' <<< \"$pr_json\")\" = \"$SOURCE_SHA\"",
       'Re-verify the complete candidate identity before any Cloudflare mutation',
       'npm run app:verify-candidate',
       'npm run app:preview-publication -- preflight',
       'versions upload',
       '--preview-alias "pr-$PR_NUMBER"',
       'REAL_PUBLIC_PREVIEW_PASS',
+      'admin-preview-upload:',
+      'REAL_ADMIN_PREVIEW_PASS',
+      'BLOCKED_BY_WORKERS_COST_OR_QUOTA',
+      'PREVIEW_DEPLOYED',
       'CLOUDFLARE_LEO563_PREVIEW_TOKEN',
-    ]) expect(workflow).toContain(marker)
+    ]) expect(fullPreviewWorkflow).toContain(marker)
 
-    expect(workflow.match(/versions upload/g)).toHaveLength(2)
-    expect(workflow.match(/^\s+PR_NUMBER: \$\{\{ needs\.repo-code-gate\.outputs\.pull_request_number \}\}$/gm)).toHaveLength(3)
-    expect(workflow.match(/secrets\.CLOUDFLARE_LEO563_PREVIEW_TOKEN/g)).toHaveLength(5)
+    expect(reusablePublisher.match(/versions upload/g)).toHaveLength(2)
+    expect(reusablePublisher.match(/^\s+PR_NUMBER: \$\{\{ inputs\.pull_request_number \}\}$/gm)).toHaveLength(1)
+    expect(reusablePublisher.match(/secrets\.CLOUDFLARE_LEO563_PREVIEW_TOKEN/g)).toHaveLength(6)
     expect(workflow.match(/secrets\.CLOUDFLARE_READONLY_DISCOVERY_TOKEN/g)).toHaveLength(1)
-    expect(workflow).not.toContain('secrets.CLOUDFLARE_API_TOKEN')
+    expect(fullPreviewWorkflow).not.toContain('secrets.CLOUDFLARE_API_TOKEN')
     expect(workflow).toContain('cloudflare-readonly-discovery.mjs')
     expect(workflow).toContain('Mutating API methods and Wrangler publication: not invoked.')
     expect(cloudflareDiscovery).toContain("method: 'GET'")
@@ -188,7 +186,9 @@ describe('migration PR CI and Preview workflow contract', () => {
     for (const forbiddenMethod of ["method: 'POST'", "method: 'PUT'", "method: 'PATCH'", "method: 'DELETE'"]) {
       expect(cloudflareDiscovery).not.toContain(forbiddenMethod)
     }
-    expect(workflow).toContain('BLOCKED_BY_OWNER_GATE')
+    expect(fullPreviewWorkflow).not.toContain('BLOCKED_BY_OWNER_GATE')
+    expect(workflow).toContain('CI_PASS_PREVIEW_NOT_DEPLOYED')
+    expect(workflow).toContain("needs.cloudflare-readonly-discovery.outputs.workers_plan_status == 'FREE'")
     expect(`${workflow}\n${candidateScript}`).toContain('productionCustomDomain:')
     expect(`${workflow}\n${candidateScript}`).toContain('productionDnsOrTraffic:')
 
@@ -214,9 +214,15 @@ describe('migration PR CI and Preview workflow contract', () => {
     expect(realPreviewProof).not.toContain('PREVIEW_ROBOTS_HEADER)')
   })
 
-  it('requires the Owner account to authorize any manual Cloudflare upload', () => {
-    expect(workflow).toContain('DISPATCH_ACTOR: ${{ github.actor }}')
-    expect(workflow).toContain('test "$DISPATCH_ACTOR" = \'tranhuunguyenhuy-hue\'')
-    expect(workflow).toContain("echo 'owner_approved_upload=true'")
+  it('requires the Owner exact-SHA Preview label before any Cloudflare upload', () => {
+    expect(workflow).not.toContain('workflow_dispatch:')
+    expect(workflow).toContain('EVENT_ACTION: ${{ github.event.action || \'\' }}')
+    expect(workflow).toContain('EVENT_LABEL: ${{ github.event.label.name || \'\' }}')
+    expect(workflow).toContain("if [[ \"$EVENT_ACTION\" == 'labeled' && \"$EVENT_LABEL\" == 'preview-approved' ]]; then")
+    expect(workflow).toContain("test \"$ACTOR\" = 'tranhuunguyenhuy-hue'")
+    expect(workflow).toContain("test \"$(jq -r '.head.sha' <<< \"$pr_json\")\" = \"$SOURCE_SHA\"")
+    expect(workflow).toContain('owner_approved_upload=true')
+    expect(workflow).toContain("uses: ./.github/workflows/preview-public-admin.yml")
+    expect(reusablePublisher).toContain('workflow_call:')
   })
 })

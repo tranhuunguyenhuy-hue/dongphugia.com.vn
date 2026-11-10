@@ -2,3 +2,5 @@
 @import "../../../src/app/globals.css";
 
 @source "../../../src";
+
+.public-preview-notice { position: relative; z-index: 100; border-bottom: 1px solid #e8c86d; background: #fff4cf; color: #5f4300; padding: 8px 16px; text-align: center; font: 700 12px/1.35 Arial, sans-serif; letter-spacing: 0.04em; }

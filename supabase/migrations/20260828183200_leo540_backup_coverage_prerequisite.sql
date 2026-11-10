@@ -52,9 +52,19 @@ begin
       and not rolreplication
       and not rolbypassrls
   ) or exists (
-    select 1 from pg_auth_members
-    where roleid = (select oid from pg_roles where rolname = 'dpg_backup')
-       or member = (select oid from pg_roles where rolname = 'dpg_backup')
+    select 1 from pg_auth_members memberships
+    where (
+      memberships.roleid = (select oid from pg_roles where rolname = 'dpg_backup')
+      or memberships.member = (select oid from pg_roles where rolname = 'dpg_backup')
+    )
+      and not (
+        memberships.roleid = (select oid from pg_roles where rolname = 'dpg_backup')
+        and memberships.member is not distinct from (select oid from pg_roles where rolname = 'postgres')
+        and memberships.grantor is not distinct from (select oid from pg_roles where rolname = 'supabase_admin')
+        and memberships.admin_option
+        and not memberships.inherit_option
+        and not memberships.set_option
+      )
   ) then
     raise exception 'LEO540_BACKUP_ROLE_CONTRACT_FAILED';
   end if;

@@ -5,7 +5,7 @@
 > for a task involving implementation decisions, data, architecture, security
 > boundaries or release. It replaces fragmented general process manuals,
 > outdated wireframe handoffs, duplicate glossaries and speculative roadmaps.
-> Snapshot: **2026-11-06**. Dated facts are leads, not live runtime proof.
+> Snapshot: **2026-11-10**. Dated facts are leads, not live runtime proof.
 
 ## 1. Business goal and current work
 
@@ -23,6 +23,8 @@ customer orders and catalogue integrity.
 | --- | --- | --- |
 | P0 public recovery | [Issue #260](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/260) | Listings, PDP, pricing, media, search, SEO, canonical UI. |
 | Phase 2 features | [Issue #270](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/270) | Product-line options, footer parity, guest cart/order, full Admin CMS. |
+| Bounded Phase 2 Preview | [Issue #290](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/290) | Owner-approved isolated Public + Admin Preview, synthetic data, live verification and handoff. |
+| Phase 2 integration candidate | [PR #291](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/pull/291) | Integrated Draft candidate; inspect its exact current head and checks before use. |
 | Cart / order delivery | [PR #272](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/pull/272) | Separate scoped change; recheck PR state before modifying overlapping code. |
 | Delivery / docs cleanup | [PR #282](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/pull/282) | Single Codex context, fewer redundant documents, risk-based workflow. |
 
@@ -35,14 +37,12 @@ not an automatic blocker for Public UI restoration.
 ## 2A. Phase 2 continuation — scope, sequencing and Owner decisions
 
 **Owner request:** [Issue #270](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/270)
-is the task authority for restoring the remaining legacy experience in a
-**later, independent candidate**. [PR #272](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/pull/272)
-is the existing cart/order implementation, not a branch to overwrite casually.
-Check live GitHub status, current `main`, task-branch ownership, Preview and
-available datasets before editing; avoid simultaneous writes by separate
-agents. P0 [#260](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/260)
-remained open at this snapshot; do not assume Phase 2 can be deployed until
-its actual Production target, P0 state and rollback are confirmed.
+tracks broader Phase 2 work. The active delivery authority for a bounded
+isolated Preview is child [Issue #290](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/290).
+The integrated candidate is [PR #291](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/pull/291);
+inspect its live head/checks before use. P0 [#260](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/260)
+is independent and is not a gate for #290. Never infer its current status or
+Production behavior from this dated handbook.
 
 **Execution order for a Codex session:**
 
@@ -68,14 +68,12 @@ its actual Production target, P0 state and rollback are confirmed.
    before staff confirms commercial totals, or duplicate an Order on retry.
    Verify browser `cart → checkout → acknowledgment`, database result
    and negative cases. See ADR 0021 for the durable commercial invariants.
-5. **Admin/CMS:** distinguish *restoring old functionality* from *adopting
-   the separate V1 Admin/Auth design*. Functional inventory spans staff
-   login/invite/recovery, dashboard, Product/SKU/line management, media and
-   publication readiness, Retail Orders, Quotes/Sales, content/campaigns,
-   Contact Requests/customer care, staff/roles and managed bank-transfer
-   settings. Restore only the slice the Owner accepts; server-side permission
-   denials and module-by-module user flows are required for any activated
-   staff operations.
+5. **Admin/CMS:** use the separately approved `apps/admin` application with
+   Supabase Auth/RLS. The Preview includes existing bounded Sales/order,
+   Product editor and selected Blog/content slices. It is not full legacy CMS
+   acceptance. Media/link editing, newsletter/forms, customer care, and other
+   unbuilt modules remain excluded unless #270 is updated later. Staff actions
+   require server-side capability checks and denied-role evidence.
 
 **Owner decisions recorded in #270 (2026-11-04):** complete the separate
 `apps/admin` application on the new infrastructure; do not rehost the legacy
@@ -90,32 +88,39 @@ slice and a minimal staff order inbox; it does not complete the full Admin/CMS,
 verified PDP variants or footer parity. Keep those as later bounded slices.
 The source-level direct Data API/RPC bypass is closed by a Worker-to-function
 HMAC boundary, a dedicated least-privilege PostgreSQL login, and database-side
-rate limiting. No hosted secret or connection has been configured by that
-source change. Applying the migration, provisioning the login, setting hosted
-Worker/Function secrets, or deploying either runtime still requires the exact
-target backup/restore, Auth/RLS and isolated-Preview gates and Owner approval.
-Passing local tests or CI does not clear those gates.
+rate limiting. Owner's 2026-11-10 directive at #290 authorizes this isolated
+synthetic Preview chain without routine reapproval. Never apply the
+production-derived root runner to the test target: the separate
+`supabase/preview_migrations/` and `scripts/preview/synthetic-preview-runner.mjs`
+must fail closed on the exact Preview project ref, convert its target to
+`preview_synthetic`, verify the approved public fixture set, and ledger every
+source SQL hash. Keep `scripts/backup/supabase-runtime-migrations.mjs` and its
+Production-derived target guard unchanged. Do not mutate
+`bonxyxluzlxfkdetryoo`.
 
 **Design provenance and approval:** older 2026-09 V1 Figma handoffs included
 a global `V1 WIREFRAME APPROVED / FROZEN` gate and several review-candidate
 screens. Their implementation details are preserved in Git history after
 documentation consolidation. The 2026-11 Phase 2 recovery issue separately
 authorizes bounded implementation/source restoration; it does **not**
-implicitly approve a redesigned V1 schema, production DB mutation, changes
-to staff privileges or new Auth rollout. When a chosen slice depends on
-unfrozen V1 design, obtain a specific Owner decision before coding its
-high-impact contract. Do not use the old global freeze wording as a
-ceremonial blocker for independent reversible UI fixes.
+implicitly approve a redesigned V1 schema, Production DB mutation or changes
+to staff privileges. #290 separately approves test staff authentication on
+its exact synthetic Preview project. When a later slice depends on unfrozen V1
+design, obtain a specific Owner decision before coding its high-impact
+contract. Do not use the old global freeze wording as a ceremonial blocker for
+independent reversible UI fixes.
 
 **Done evidence for Phase 2:** representative real variant coverage,
 before/after desktop/mobile Footer, repeat-safe persisted order without
 duplicate, staff capability deny tests and per-module Admin acceptance,
-focused CI, actual reachable Preview and Owner review. Any live data/Auth
-mutation requires exact target-specific permission, recoverable copy and
-rollback proof. Phase 2 Production promotion is a separate GO for the exact
-candidate and target; source PR merge does not authorize it.
+focused CI, actual reachable Preview and Owner review. The disposable #290
+database is eligible for deterministic migration/seed and recreate-based
+recovery because it contains only synthetic or approved public fixtures; this
+authority does not extend to any other project. Phase 2 Production promotion
+is a separate GO for the exact candidate and target; source PR merge does not
+authorize it.
 
-**Execution ledger (2026-11-06):** the Owner selected the independent
+**Execution ledger (updated 2026-11-10):** the Owner selected the independent
 `apps/admin` architecture and guest order request flow above. The active
 source candidates are intentionally separate: PR #272 contains the cart,
 guest order, receipt and initial staff inbox; PR #284 contains Public variant
@@ -130,8 +135,19 @@ and per-unit installation fees, derives the final total, and does not alter the
 original receipt, item-price snapshots or payment state. These source slices
 are not merged or Production approved by this ledger. The CMS editor leaves
 media/link editing read-only and excludes newsletter/forms without a receiving
-backend. Owner approval, hosted migration, Preview acceptance and Production
-GO remain separate gates.
+backend. The Owner has approved the bounded #290 Preview; actual Preview
+acceptance and Production GO remain separate gates.
+
+**Preview delivery contract:** a reusable Preview task is done only after live
+Public and protected/noindex Admin URLs serve the exact candidate SHA,
+synthetic database and Auth/RLS smoke checks pass, desktop/mobile E2E evidence
+exists, and the Owner receives URLs, test access through a private channel,
+module gaps and recreate instructions. A green CI run or built artifact is
+`CI_PASS`, not `PREVIEW_DEPLOYED`. Trigger future uploads from the
+`preview-approved` PR label bound to the exact current SHA, with privileged
+deployment logic sourced from trusted CI. Do not execute candidate repository
+code in a job that holds deployment credentials. A skipped upload or
+`BLOCKED` summary is not delivery success.
 
 ## 2. Repository / application topology
 
