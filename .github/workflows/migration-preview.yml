@@ -353,6 +353,9 @@ jobs:
           --build-target public-worker-static-assets
           --runtime-proof "${{ runner.temp }}/public-runtime-proof.json"
 
+      - name: Install the independently locked Admin toolchain before Next builds
+        run: npm ci --prefix apps/admin
+
       - name: Build Admin independently in private noindex Preview mode
         env:
           APP_ENV: preview
@@ -400,9 +403,6 @@ jobs:
           --source-sha "$SOURCE_SHA"
           --build-target admin-independent-private-runtime
           --runtime-proof "${{ runner.temp }}/admin-runtime-proof.json"
-
-      - name: Install the independently locked Admin Worker toolchain
-        run: npm ci --prefix apps/admin
 
       - name: Build the isolated Cloudflare Admin Worker
         env:
