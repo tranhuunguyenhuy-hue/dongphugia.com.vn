@@ -45,16 +45,18 @@ export function assertSyntheticPreviewDatabaseUrl(value) {
 
   const expectedHost = `db.${SYNTHETIC_PREVIEW_TARGET.projectRef}.supabase.co`
   const sslmode = parsed.searchParams.get('sslmode')
-  if (
-    !['postgres:', 'postgresql:'].includes(parsed.protocol) ||
-    parsed.hostname !== expectedHost ||
-    parsed.port !== '5432' ||
-    parsed.pathname !== '/postgres' ||
-    parsed.username !== 'postgres' ||
-    !parsed.password ||
-    !['require', 'verify-ca', 'verify-full'].includes(sslmode ?? '')
-  ) {
-    throw new Error('DPG_SYNTHETIC_PREVIEW_DATABASE_TARGET_REJECTED')
+  const rejectedFields = [
+    ...(!['postgres:', 'postgresql:'].includes(parsed.protocol) ? ['protocol'] : []),
+    ...(parsed.hostname !== expectedHost ? ['target_host'] : []),
+    ...(parsed.port !== '5432' ? ['port'] : []),
+    ...(parsed.pathname !== '/postgres' ? ['database'] : []),
+    ...(parsed.username !== 'postgres' ? ['migration_role'] : []),
+    ...(!parsed.password ? ['password_absent'] : []),
+    ...(!['require', 'verify-ca', 'verify-full'].includes(sslmode ?? '') ? ['tls_mode'] : []),
+  ]
+  if (rejectedFields.length) {
+    // Report only field names: never include connection-string components or values.
+    throw new Error(`DPG_SYNTHETIC_PREVIEW_DATABASE_TARGET_REJECTED fields=${rejectedFields.join(',')}`)
   }
 
   return Object.freeze({

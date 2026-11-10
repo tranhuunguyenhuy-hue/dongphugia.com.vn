@@ -25,6 +25,19 @@ describe('synthetic Preview target contract', () => {
     ]) expect(() => assertSyntheticPreviewDatabaseUrl(url)).toThrow('DPG_SYNTHETIC_PREVIEW_DATABASE_TARGET_REJECTED')
   })
 
+  it('reports rejected connection-string fields without printing their values', () => {
+    let error
+    try {
+      assertSyntheticPreviewDatabaseUrl(
+        'postgresql://limited_login:fixture-pw@db.invalid.example:6543/private?sslmode=disable',
+      )
+    } catch (caught) {
+      error = caught
+    }
+    expect(error.message).toContain('fields=target_host,port,database,migration_role,tls_mode')
+    expect(error.message).not.toContain('fixture-pw')
+  })
+
   it('transforms only the exact two Phase 2 target guards and keeps the production runner untouched', async () => {
     const guardMigrations = SYNTHETIC_PREVIEW_MIGRATIONS.slice(0, 2)
     for (const migration of guardMigrations) {
