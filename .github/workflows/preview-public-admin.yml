@@ -20,6 +20,8 @@ on:
         required: true
       CLOUDFLARE_LEO563_PREVIEW_TOKEN:
         required: true
+      PHASE2_PREVIEW_ORDER_INTAKE_SIGNING_SECRET:
+        required: true
     outputs:
       public_result:
         description: Exact-SHA live Public Worker proof result
@@ -175,6 +177,9 @@ jobs:
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_LEO563_PREVIEW_TOKEN }}
+          PREVIEW_SUPABASE_PUBLISHABLE_KEY: ${{ vars.PREVIEW_SUPABASE_PUBLISHABLE_KEY }}
+          PHASE2_PREVIEW_ORDER_INTAKE_SIGNING_SECRET: ${{ secrets.PHASE2_PREVIEW_ORDER_INTAKE_SIGNING_SECRET }}
+          PUBLIC_ORDER_INTAKE_URL: https://uybumsnyqpwcidjxmfsv.supabase.co/functions/v1/order-intake
           WRANGLER_SEND_METRICS: 'false'
         shell: bash
         run: |
@@ -182,11 +187,25 @@ jobs:
           echo 'write_attempted=false' >> "$GITHUB_OUTPUT"
           test -n "$CLOUDFLARE_ACCOUNT_ID"
           test -n "$CLOUDFLARE_API_TOKEN"
+          test -n "$PREVIEW_SUPABASE_PUBLISHABLE_KEY"
+          test "$PUBLIC_ORDER_INTAKE_URL" = 'https://uybumsnyqpwcidjxmfsv.supabase.co/functions/v1/order-intake'
+          [[ "$PREVIEW_SUPABASE_PUBLISHABLE_KEY" == sb_publishable_* ]]
+          if (( ${#PHASE2_PREVIEW_ORDER_INTAKE_SIGNING_SECRET} < 32 )); then
+            echo 'Preview order signing secret is missing or too short.' >&2
+            exit 1
+          fi
           cd "$ARTIFACT_ROOT/public/build"
+          umask 077
+          secrets_file="$(mktemp "${RUNNER_TEMP}/phase2-preview-worker-secrets.XXXXXX.json")"
+          trap 'rm -f "$secrets_file"' EXIT
+          node --input-type=module -e 'import { writeFile } from "node:fs/promises"; const file=process.argv[1]; const value=process.env.PHASE2_PREVIEW_ORDER_INTAKE_SIGNING_SECRET; if (typeof value !== "string" || new TextEncoder().encode(value).byteLength < 32) throw new Error("PREVIEW_ORDER_SECRET_INVALID"); await writeFile(file, JSON.stringify({ ORDER_INTAKE_SIGNING_SECRET: value }), { mode: 0o600, flag: "wx" });' "$secrets_file"
           echo 'write_attempted=true' >> "$GITHUB_OUTPUT"
           node "$WRANGLER_BIN" versions upload \
             --strict \
             --config wrangler.preview.json \
+            --var "PUBLIC_ORDER_INTAKE_URL:${PUBLIC_ORDER_INTAKE_URL}" \
+            --var "PUBLIC_SUPABASE_PUBLISHABLE_KEY:${PREVIEW_SUPABASE_PUBLISHABLE_KEY}" \
+            --secrets-file "$secrets_file" \
             --preview-alias "pr-$PR_NUMBER" \
             --tag "leo563-${SOURCE_SHA:0:12}" \
             --message "PR #$PR_NUMBER source $SOURCE_SHA" \

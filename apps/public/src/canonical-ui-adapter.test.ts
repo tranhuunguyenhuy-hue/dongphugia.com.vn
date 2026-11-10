@@ -46,8 +46,13 @@ describe('Cloudflare canonical Public UI adapter', () => {
       'thiet-bi-bep',
       'vat-lieu-nuoc',
       'gach-op-lat',
+      'preview-synthetic',
     ])
-    expect(data.categories.every((category) => category.products.length > 0)).toBe(true)
+    expect(data.categories.filter(category => category.id !== 'preview-synthetic').every((category) => category.products.length === 0)).toBe(true)
+    expect(data.categories.find(category => category.id === 'preview-synthetic')?.products.map(product => product.sku)).toEqual([
+      'DPG-290-SYN-A',
+      'DPG-290-SYN-B',
+    ])
     expect(data.previewNotice).toMatch(/minh họa/i)
     expect(data.previewNotice).toMatch(/không phải dữ liệu/i)
     expect(data.previewNotice).toMatch(/liên kết sản phẩm\/danh mục chỉ là fixture kiểm thử/i)

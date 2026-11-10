@@ -10,6 +10,17 @@ import {
   getPublicCataloguePath,
   resolvePublicCatalogueRoute as resolveFixturePublicCatalogueRoute,
 } from '../routes'
+import { selectSnapshotVariantData } from './variant-selection-contract'
+import type { SnapshotVariantMember } from './variant-selection-contract'
+import type { VariantSibling } from '../../../../src/lib/public-api-products'
+
+type PreviewVariantMember = SnapshotVariantMember & VariantSibling & {
+  list_price: number | null
+  sale_price: number | null
+  variant_group: string
+  variant_type: 'seat_type'
+  variant_label: string
+}
 
 const FIXTURE_IMAGES: Readonly<Record<string, string>> = {
   'thumb-toilet.152w.webp': toiletImage.src,
@@ -44,29 +55,84 @@ export async function getPreviewCatalogueProducts(categorySlug: string, listingS
   assertFixtureRuntime()
   const route = resolveFixturePublicCatalogueRoute([categorySlug, listingSlug])
   if (route.kind !== 'listing') return []
+  if (route.category.slug !== 'preview-synthetic' || route.listing.slug !== 'sku-options') return []
 
-  return PUBLIC_CATALOGUE_FIXTURE_PRODUCTS.map((product, index) => ({
-    id: index + 1,
+  return PUBLIC_CATALOGUE_FIXTURE_PRODUCTS
+    .filter(product => product.productId && product.priceVnd && product.variantGroup)
+    .map((product, index) => {
+      const record = buildFixtureProductRecord(product, route.category, route.listing)
+      return {
+        ...record,
+        is_featured: index === 0,
+        is_promotion: false,
+        variant_options: [],
+        fixtureOnly: true as const,
+      }
+    })
+}
+
+function buildFixtureProductRecord(
+  product: (typeof PUBLIC_CATALOGUE_FIXTURE_PRODUCTS)[number],
+  category: (typeof PUBLIC_CATALOGUE_CATEGORIES)[number],
+  listing: (typeof PUBLIC_CATALOGUE_CATEGORIES)[number]['listings'][number],
+) {
+  const imageUrl = FIXTURE_IMAGES[product.image] ?? null
+  const price = product.priceVnd ?? null
+  const priceDisplay = price === null ? 'Liên hệ' : `Giá kiểm thử ${new Intl.NumberFormat('vi-VN').format(price)} ₫`
+  const variantOptions = product.variantGroup && product.variantLabel && product.variantValue
+    ? [{ axis: 'seat_type' as const, value: product.variantValue, label: product.variantLabel }]
+    : []
+
+  return {
+    id: product.productId ?? PUBLIC_CATALOGUE_FIXTURE_PRODUCTS.findIndex(candidate => candidate.sku === product.sku) + 1,
     name: product.name,
     display_name: product.name,
     slug: product.slug,
     sku: product.sku,
-    price: null,
-    price_display: 'Liên hệ',
-    image_main_url: FIXTURE_IMAGES[product.image] ?? null,
-    stock_status: 'contact' as const,
+    price,
+    price_display: priceDisplay,
+    original_price: null,
+    list_price: null,
+    sale_price: null,
+    online_discount_amount: null,
+    image_main_url: imageUrl,
+    stock_status: price === null ? 'contact' as const : 'in_stock' as const,
     is_active: true as const,
-    is_featured: index === 0,
     is_promotion: false,
-    variant_options: [],
-    categories: { name: route.category.name, slug: route.category.slug },
-    subcategories: { name: route.listing.name, slug: route.listing.slug },
+    variant_options: variantOptions,
+    variant_group: product.variantGroup,
+    variant_type: product.variantGroup ? 'seat_type' as const : null,
+    variant_label: product.variantLabel ?? null,
+    categories: { name: category.name, slug: category.slug },
+    subcategories: { name: listing.name, slug: listing.slug },
     brands: product.brand,
-    url: getPublicCataloguePath(route.category.slug, route.listing.slug, product.slug),
-    canonical_category_slug: route.category.slug,
-    canonical_subcategory_slug: route.listing.slug,
+    url: getPublicCataloguePath(category.slug, listing.slug, product.slug),
+    canonical_category_slug: category.slug,
+    canonical_subcategory_slug: listing.slug,
     fixtureOnly: product.fixtureOnly,
-  }))
+  }
+}
+
+function previewVariantMembers() {
+  const category = PUBLIC_CATALOGUE_CATEGORIES.find(value => value.slug === 'preview-synthetic')
+  const listing = category?.listings.find(value => value.slug === 'sku-options')
+  if (!category || !listing) return []
+  return PUBLIC_CATALOGUE_FIXTURE_PRODUCTS
+    .filter(product => product.productId && product.priceVnd && product.variantGroup)
+    .map(product => buildFixtureProductRecord(product, category, listing) as PreviewVariantMember)
+}
+
+export function getPreviewVariantSelectionData(group: string, currentProductId: number) {
+  return selectSnapshotVariantData<PreviewVariantMember>(
+    group,
+    currentProductId,
+    previewVariantMembers(),
+    [{ key: 'seat_type', label: 'Tùy chọn SKU' }],
+  )
+}
+
+export async function getPreviewVariantSiblings(group: string, currentProductId: number) {
+  return getPreviewVariantSelectionData(group, currentProductId).siblings
 }
 
 export async function getPreviewCatalogueProduct(
@@ -78,43 +144,22 @@ export async function getPreviewCatalogueProduct(
   assertFixtureRuntime()
   const route = resolveFixturePublicCatalogueRoute([categorySlug, listingSlug, productSlug])
   if (route.kind !== 'product') return null
-
   const imageUrl = FIXTURE_IMAGES[route.product.image] ?? null
-  const productId = PUBLIC_CATALOGUE_FIXTURE_PRODUCTS.findIndex(product => product.sku === route.product.sku) + 1
+  const product = buildFixtureProductRecord(route.product, route.category, route.listing)
+  const priceDisplay = product.price_display
   return {
-    ...route.product,
-    id: productId,
-    display_name: route.product.name,
-    price: null,
-    price_display: 'Liên hệ',
-    original_price: null,
-    list_price: null,
-    sale_price: null,
-    online_discount_amount: null,
-    stock_status: 'contact' as const,
-    is_active: true as const,
-    is_featured: productId === 1,
+    ...product,
+    is_featured: product.id === 1,
     is_promotion: false,
-    variant_options: [],
     image_main_url: imageUrl,
-    categories: { name: route.category.name, slug: route.category.slug },
-    subcategories: { name: route.listing.name, slug: route.listing.slug },
-    brands: route.product.brand,
-    url: getPublicCataloguePath(route.category.slug, route.listing.slug, route.product.slug),
-    canonical_category_slug: route.category.slug,
-    canonical_subcategory_slug: route.listing.slug,
     seo_indexing: 'noindex',
     imageUrl,
     categoryName: route.category.name,
     listingName: route.listing.name,
     categoryPath: getPublicCataloguePath(route.category.slug),
     listingPath: getPublicCataloguePath(route.category.slug, route.listing.slug),
-    productPath: getPublicCataloguePath(
-      route.category.slug,
-      route.listing.slug,
-      route.product.slug,
-    ),
-    priceDisplay: 'Liên hệ',
+    productPath: getPublicCataloguePath(route.category.slug, route.listing.slug, route.product.slug),
+    priceDisplay,
   }
 }
 

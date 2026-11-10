@@ -86,4 +86,30 @@ describe('synthetic Preview target contract', () => {
     expect(migration).toContain('alter table dpg_control.target_contract')
     expect(migration).toContain('not production_data_allowed')
   })
+
+  it('limits public order-price and publication exceptions to the two synthetic SKU rows', async () => {
+    const guardEntry = SYNTHETIC_PREVIEW_MIGRATIONS.find(entry => entry.version === '20261110170000')
+    const seedEntry = SYNTHETIC_PREVIEW_MIGRATIONS.find(entry => entry.version === '20261110180000')
+    expect(guardEntry).toBeDefined()
+    expect(seedEntry).toBeDefined()
+    const [guard, seed] = await Promise.all([
+      readFile(resolve(guardEntry.path), 'utf8'),
+      readFile(resolve(seedEntry.path), 'utf8'),
+    ])
+    expect(guard).toContain("target.project_name = 'dongphugia-phase2-preview-290'")
+    expect(guard).toContain("product.sku = 'DPG-290-SYN-A'")
+    expect(guard).toContain("product.sku = 'DPG-290-SYN-B'")
+    expect(guard).toContain("product.price = 100000")
+    expect(guard).toContain("product.price = 120000")
+    expect(guard).toContain("product.price_source = 'synthetic-preview'")
+    expect(guard).toContain("source_system = 'synthetic-preview'")
+    expect(guard).toContain('not p.prosecdef')
+    expect(guard).toContain('phase2_preview_synthetic_product_eligible(v_product.id)')
+    expect(guard).toContain('phase2_preview_synthetic_product_eligible(v_old.id)')
+    expect(seed).toContain("'public', 'public', 'public', 'visible'")
+    expect(seed).toContain("'priced', 'synthetic-preview', 'low'")
+    expect(seed).toContain("'noindex', false")
+    expect(seed).not.toContain('production-derived')
+    expect(seed).not.toContain('price_confidence = \'high\'')
+  })
 })

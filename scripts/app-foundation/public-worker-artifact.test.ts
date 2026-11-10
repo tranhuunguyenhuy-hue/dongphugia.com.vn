@@ -41,7 +41,7 @@ describe('LEO-563 Public Worker artifact contract', () => {
       "activation: 'owner-gated'",
       "'wrangler.preview.json'",
     ]) expect(source).toContain(marker)
-    expect(source).not.toContain('limits:')
+    expect(source).not.toContain('\n    limits:')
     expect(source).not.toContain('subrequests')
     expect(source).not.toContain('cpu_ms')
     for (const forbidden of [

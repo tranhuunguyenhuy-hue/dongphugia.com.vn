@@ -138,7 +138,7 @@ export async function publicOnlyPreflight({buildRoot,sourceSha,workflowRunId,che
   gate(Number.isSafeInteger(pullRequest)&&pullRequest>0&&PREVIEW_ALIAS===`pr-${pullRequest}`,'PUBLIC_PREVIEW_ALIAS_MISMATCH')
   const configPath=path.join(buildRoot,'wrangler.preview.json')
   const configBytes=await readFile(configPath)
-  const configProof=validatePreviewConfig(JSON.parse(configBytes))
+  const configProof=validatePreviewConfig(JSON.parse(configBytes), { requireOrderRateLimit: false })
   const evidence=JSON.parse(await readFile(path.join(buildRoot,'worker-artifact-evidence.json'),'utf8'))
   const manifest=JSON.parse(await readFile(path.join(buildRoot,'assets/__catalogue/v1/manifest.json'),'utf8'))
   gate(evidence.contract==='dongphugia:public-worker-artifact:v1'&&evidence.sourceCommit===sourceSha,'PUBLIC_PREVIEW_ARTIFACT_SOURCE')

@@ -9,6 +9,7 @@ import {
   parseWranglerDeploy,
   parseWranglerUpload,
   validatePreviewConfig,
+  assertSafePublishedBindings,
 } from './cloudflare-preview-publication.mjs'
 
 const currentPreviewAlias = `pr-${process.env.DPG_PREVIEW_PR_NUMBER || '138'}`
@@ -22,6 +23,7 @@ function validConfig() {
     workers_dev: false,
     preview_urls: true,
     assets: { directory: 'assets', not_found_handling: 'none', binding: 'ASSETS' },
+    ratelimits: [{ name: 'ORDER_REQUEST_LIMITER', namespace_id: '2910290', simple: { limit: 10, period: 60 } }],
     vars: {
       APP_ENV: 'preview',
       APP_BUILD_TARGET: 'public',
@@ -219,6 +221,28 @@ function managedBaselineRemoteFetch({
 }
 
 describe('LEO-563 Cloudflare Preview publication gate', () => {
+  it('allows only the bounded order-intake Preview bindings, including one server-side secret', () => {
+    expect(() => assertSafePublishedBindings([
+      { name: 'ASSETS', type: 'assets' },
+      { name: 'APP_ENV', type: 'plain_text' },
+      { name: 'APP_BUILD_TARGET', type: 'plain_text' },
+      { name: 'APP_ORIGIN', type: 'plain_text' },
+      { name: 'PREVIEW_NOINDEX', type: 'plain_text' },
+      { name: 'PUBLIC_ORDER_INTAKE_URL', type: 'plain_text' },
+      { name: 'PUBLIC_SUPABASE_PUBLISHABLE_KEY', type: 'plain_text' },
+      { name: 'ORDER_INTAKE_SIGNING_SECRET', type: 'secret_text' },
+      { name: 'ORDER_REQUEST_LIMITER', type: 'ratelimit' },
+    ])).not.toThrow()
+    expect(() => assertSafePublishedBindings([
+      { name: 'ASSETS', type: 'assets' },
+      { name: 'ORDER_INTAKE_SIGNING_SECRET', type: 'plain_text' },
+    ])).toThrow('LEO563_PREVIEW_INSPECTION_SECRET_BINDING_FAILED')
+    expect(() => assertSafePublishedBindings([
+      { name: 'ASSETS', type: 'assets' },
+      { name: 'SUPABASE_SECRET_KEY', type: 'secret_text' },
+    ])).toThrow('LEO563_PREVIEW_INSPECTION_SECRET_BINDING_FAILED')
+  })
+
   it.each([
     [11, 'normal'], [25, 'normal'], [11, 'duplicate'], [11, 'missing'],
     [11, 'changed-total'], [11, 'read-error'], [11, 'partial'], [11, 'no-metadata'],
@@ -454,6 +478,7 @@ describe('LEO-563 Cloudflare Preview publication gate', () => {
     ['route', { routes: [{ pattern: 'dongphugia.vn/*' }] }],
     ['custom domain', { custom_domains: ['www.dongphugia.vn'] }],
     ['secret binding', { vars: { ...validConfig().vars, DATABASE_URL: 'forbidden' } }],
+    ['rate limit binding drift', { ratelimits: [{ name: 'OTHER_LIMITER', namespace_id: '2910290', simple: { limit: 10, period: 60 } }] }],
     ['workers.dev production endpoint', { workers_dev: true }],
   ])('rejects %s configuration', (_label, change) => {
     expect(() => validatePreviewConfig({ ...validConfig(), ...change })).toThrow(/LEO563_PREVIEW_/)

@@ -19,6 +19,8 @@ export const SYNTHETIC_PREVIEW_MIGRATIONS = Object.freeze([
   { version: '20261106210000', name: 'phase2_admin_sales_search', path: 'supabase/migrations/20261106210000_phase2_admin_sales_search.sql' },
   { version: '20261106213000', name: 'phase2_admin_catalogue_editor', path: 'supabase/migrations/20261106213000_phase2_admin_catalogue_editor.sql' },
   { version: '20261106220000', name: 'phase2_admin_cms_category_read', path: 'supabase/migrations/20261106220000_phase2_admin_cms_category_read.sql' },
+  { version: '20261110170000', name: 'phase2_preview_synthetic_publication_guard', path: 'supabase/preview_migrations/20261110170000_phase2_preview_synthetic_publication_guard.sql' },
+  { version: '20261110180000', name: 'phase2_preview_synthetic_seed', path: 'supabase/preview_migrations/20261110_phase2_synthetic_seed.sql' },
 ])
 
 export const SYNTHETIC_PREVIEW_CONTRACT_MIGRATION = Object.freeze({

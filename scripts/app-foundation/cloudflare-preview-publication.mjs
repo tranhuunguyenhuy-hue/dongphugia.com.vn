@@ -26,6 +26,7 @@ const ALLOWED_CONFIG_KEYS = new Set([
   'workers_dev',
   'preview_urls',
   'assets',
+  'ratelimits',
   'vars',
   'no_bundle',
   'rules',
@@ -94,7 +95,7 @@ async function digestDirectory(root) {
   return { sha256: hash.digest('hex'), fileCount: files.length, totalBytes, largestFile }
 }
 
-export function validatePreviewConfig(configValue) {
+export function validatePreviewConfig(configValue, { requireOrderRateLimit = true } = {}) {
   const config = requirePlainObject(configValue, 'CONFIG')
   if (Object.hasOwn(config, 'limits')) throw new Error('LEO563_PREVIEW_EXPLICIT_LIMITS_FORBIDDEN')
   for (const key of Object.keys(config)) {
@@ -136,6 +137,16 @@ export function validatePreviewConfig(configValue) {
     throw new Error('LEO563_PREVIEW_SECRET_LIKE_VAR_FORBIDDEN')
   }
 
+  const rateLimits = config.ratelimits
+  const expectedOrderLimit = Array.isArray(rateLimits) && rateLimits.length === 1 && JSON.stringify(rateLimits[0]) === JSON.stringify({
+    name: 'ORDER_REQUEST_LIMITER',
+    namespace_id: '2910290',
+    simple: { limit: 10, period: 60 },
+  })
+  if ((requireOrderRateLimit && !expectedOrderLimit) || (!requireOrderRateLimit && rateLimits !== undefined && !expectedOrderLimit)) {
+    throw new Error('LEO563_PREVIEW_RATE_LIMIT_BINDING_FAILED')
+  }
+
   const serialized = JSON.stringify(config)
   if (PRODUCTION_HOST_PATTERN.test(serialized)) throw new Error('LEO563_PREVIEW_PRODUCTION_HOST_FORBIDDEN')
   if (/\b(?:route|routes|custom_domains|triggers|services|d1_databases|kv_namespaces|r2_buckets|hyperdrive|durable_objects|secrets)\b/i.test(serialized)) {
@@ -149,7 +160,10 @@ export function validatePreviewConfig(configValue) {
     previewUrls: true,
     routes: [],
     customDomains: [],
-    bindings: [{ name: 'ASSETS', type: 'assets' }],
+    bindings: [
+      { name: 'ASSETS', type: 'assets' },
+      ...(expectedOrderLimit ? [{ name: 'ORDER_REQUEST_LIMITER', type: 'ratelimit' }] : []),
+    ],
   }
 }
 
@@ -326,12 +340,17 @@ function remoteDeploymentIds(deployments) {
   return deployments.map((deployment) => deployment.id)
 }
 
-function assertSafePublishedBindings(bindings) {
-  const safePlainText = new Set(['APP_ENV', 'APP_BUILD_TARGET', 'APP_ORIGIN', 'PREVIEW_NOINDEX'])
+export function assertSafePublishedBindings(bindings) {
+  const safePlainText = new Set([
+    'APP_ENV', 'APP_BUILD_TARGET', 'APP_ORIGIN', 'PREVIEW_NOINDEX',
+    'PUBLIC_ORDER_INTAKE_URL', 'PUBLIC_SUPABASE_PUBLISHABLE_KEY',
+  ])
   if (!bindings.some((binding) => binding.name === 'ASSETS' && binding.type === 'assets')) {
     throw new Error('LEO563_PREVIEW_INSPECTION_ASSETS_BINDING_FAILED')
   }
   for (const binding of bindings) {
+    if (binding.name === 'ORDER_INTAKE_SIGNING_SECRET' && binding.type === 'secret_text') continue
+    if (binding.name === 'ORDER_REQUEST_LIMITER' && binding.type === 'ratelimit') continue
     if (SECRET_LIKE_PATTERN.test(binding.name)) throw new Error('LEO563_PREVIEW_INSPECTION_SECRET_BINDING_FAILED')
     if (binding.type === 'assets' && binding.name === 'ASSETS') continue
     if (binding.type === 'plain_text' && safePlainText.has(binding.name)) continue

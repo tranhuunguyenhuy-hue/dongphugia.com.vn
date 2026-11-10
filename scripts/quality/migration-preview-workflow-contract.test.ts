@@ -155,8 +155,9 @@ describe('migration PR CI and Preview workflow contract', () => {
     ]) expect(fullPreviewWorkflow.toLowerCase()).not.toContain(forbidden.toLowerCase())
 
     for (const marker of [
-      "test \"$ACTOR\" = 'tranhuunguyenhuy-hue'",
-      'gh api "repos/$REPOSITORY/pulls/${{ github.event.pull_request.number }}"',
+      "\"$ACTOR\" == 'tranhuunguyenhuy-hue'",
+      "pr_number='${{ github.event.pull_request.number }}'",
+      'gh api "repos/$REPOSITORY/pulls/$pr_number"',
       "test \"$(jq -r '.head.sha' <<< \"$pr_json\")\" = \"$SOURCE_SHA\"",
       'Re-verify the complete candidate identity before any Cloudflare mutation',
       'npm run app:verify-candidate',
@@ -218,8 +219,10 @@ describe('migration PR CI and Preview workflow contract', () => {
     expect(workflow).not.toContain('workflow_dispatch:')
     expect(workflow).toContain('EVENT_ACTION: ${{ github.event.action || \'\' }}')
     expect(workflow).toContain('EVENT_LABEL: ${{ github.event.label.name || \'\' }}')
-    expect(workflow).toContain("if [[ \"$EVENT_ACTION\" == 'labeled' && \"$EVENT_LABEL\" == 'preview-approved' ]]; then")
-    expect(workflow).toContain("test \"$ACTOR\" = 'tranhuunguyenhuy-hue'")
+    expect(workflow).toContain('approved_label_present=')
+    expect(workflow).toContain("if [[ \"$EVENT_ACTION\" == 'labeled' && \"$EVENT_LABEL\" == 'preview-approved' && \"$ACTOR\" == 'tranhuunguyenhuy-hue' ]]; then")
+    expect(workflow).toContain('gh api --paginate --slurp')
+    expect(workflow).toContain(".actor.login == \"tranhuunguyenhuy-hue\"")
     expect(workflow).toContain("test \"$(jq -r '.head.sha' <<< \"$pr_json\")\" = \"$SOURCE_SHA\"")
     expect(workflow).toContain('owner_approved_upload=true')
     expect(workflow).toContain("uses: ./.github/workflows/preview-public-admin.yml")

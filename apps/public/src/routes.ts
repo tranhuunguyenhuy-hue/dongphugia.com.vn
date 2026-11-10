@@ -25,6 +25,11 @@ export type PublicCatalogueFixtureProduct = Readonly<{
   image: string
   brand: Readonly<{ name: string; slug: string }>
   fixtureOnly: true
+  productId?: number
+  priceVnd?: number
+  variantGroup?: string
+  variantLabel?: string
+  variantValue?: string
 }>
 
 export const PUBLIC_CATALOGUE_CATEGORIES: readonly PublicCatalogueCategory[] = [
@@ -54,6 +59,11 @@ export const PUBLIC_CATALOGUE_CATEGORIES: readonly PublicCatalogueCategory[] = [
       },
     ],
   },
+  {
+    slug: 'preview-synthetic',
+    name: 'Sản phẩm thử nghiệm',
+    listings: [{ slug: 'sku-options', name: 'Tùy chọn SKU' }],
+  },
 ]
 
 export const PUBLIC_CATALOGUE_FIXTURE_PRODUCTS: readonly PublicCatalogueFixtureProduct[] = [
@@ -80,6 +90,32 @@ export const PUBLIC_CATALOGUE_FIXTURE_PRODUCTS: readonly PublicCatalogueFixtureP
     image: 'thumb-shower.152w.webp',
     brand: { name: 'Grohe', slug: 'grohe' },
     fixtureOnly: true,
+  },
+  {
+    name: 'PREVIEW ONLY — Synthetic option A',
+    slug: 'preview-option-a',
+    sku: 'DPG-290-SYN-A',
+    image: '',
+    brand: { name: 'Preview synthetic', slug: 'preview-synthetic' },
+    fixtureOnly: true,
+    productId: 1,
+    priceVnd: 100000,
+    variantGroup: 'public-290',
+    variantLabel: 'Option A',
+    variantValue: 'a',
+  },
+  {
+    name: 'PREVIEW ONLY — Synthetic option B',
+    slug: 'preview-option-b',
+    sku: 'DPG-290-SYN-B',
+    image: '',
+    brand: { name: 'Preview synthetic', slug: 'preview-synthetic' },
+    fixtureOnly: true,
+    productId: 2,
+    priceVnd: 120000,
+    variantGroup: 'public-290',
+    variantLabel: 'Option B',
+    variantValue: 'b',
   },
 ]
 

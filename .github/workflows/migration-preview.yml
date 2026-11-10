@@ -9,6 +9,7 @@ permissions:
   contents: read
   actions: read
   pull-requests: read
+  issues: read
 
 concurrency:
   group: migration-preview-${{ github.event.pull_request.number || github.ref }}
@@ -73,17 +74,28 @@ jobs:
             --head "$SOURCE_SHA" \
             --output "$GITHUB_OUTPUT"
           owner_approved_upload=false
-          if [[ "$EVENT_ACTION" == 'labeled' && "$EVENT_LABEL" == 'preview-approved' ]]; then
-            test "$ACTOR" = 'tranhuunguyenhuy-hue'
-            pr_json="$(gh api "repos/$REPOSITORY/pulls/${{ github.event.pull_request.number }}")"
-            test "$(jq -r '.state' <<< "$pr_json")" = 'open'
-            test "$(jq -r '.base.ref' <<< "$pr_json")" = 'main'
-            test "$(jq -r '.base.repo.full_name' <<< "$pr_json")" = "$REPOSITORY"
-            test "$(jq -r '.head.repo.full_name' <<< "$pr_json")" = "$REPOSITORY"
-            test "$(jq -r '.head.sha' <<< "$pr_json")" = "$SOURCE_SHA"
-            grep -qx 'preview_required=true' "$GITHUB_OUTPUT"
-            owner_approved_upload=true
-            echo 'LEO563_REPO_CODE_GATE status=OWNER_LABEL_APPROVED_EXACT_PR_SHA'
+          pr_number='${{ github.event.pull_request.number }}'
+          pr_json="$(gh api "repos/$REPOSITORY/pulls/$pr_number")"
+          test "$(jq -r '.state' <<< "$pr_json")" = 'open'
+          test "$(jq -r '.base.ref' <<< "$pr_json")" = 'main'
+          test "$(jq -r '.base.repo.full_name' <<< "$pr_json")" = "$REPOSITORY"
+          test "$(jq -r '.head.repo.full_name' <<< "$pr_json")" = "$REPOSITORY"
+          test "$(jq -r '.head.sha' <<< "$pr_json")" = "$SOURCE_SHA"
+          approved_label_present="$(jq -r '[.labels[].name] | any(. == "preview-approved")' <<< "$pr_json")"
+          if [[ "$approved_label_present" == 'true' ]] && grep -qx 'preview_required=true' "$GITHUB_OUTPUT"; then
+            owner_applied_current_label=false
+            if [[ "$EVENT_ACTION" == 'labeled' && "$EVENT_LABEL" == 'preview-approved' && "$ACTOR" == 'tranhuunguyenhuy-hue' ]]; then
+              owner_applied_current_label=true
+            else
+              label_events="$(gh api --paginate --slurp "repos/$REPOSITORY/issues/$pr_number/events?per_page=100")"
+              if jq -e 'add | map(select((.event == "labeled" or .event == "unlabeled") and .label.name == "preview-approved")) | sort_by(.created_at) | last | .event == "labeled" and .actor.login == "tranhuunguyenhuy-hue"' <<< "$label_events" >/dev/null; then
+                owner_applied_current_label=true
+              fi
+            fi
+            if [[ "$owner_applied_current_label" == 'true' ]]; then
+              owner_approved_upload=true
+              echo 'LEO563_REPO_CODE_GATE status=OWNER_LABEL_APPROVED_EXACT_PR_SHA'
+            fi
           fi
           {
             echo 'reason=EXACT_PR_HEAD_DIFF'
@@ -597,10 +609,47 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+  synthetic-preview-migrations:
+    name: Apply and attest the exact synthetic Preview migration set
+    needs: [repo-code-gate, required-ci]
+    if: needs.repo-code-gate.outputs.owner_approved_upload == 'true' && needs.repo-code-gate.outputs.preview_required == 'true' && needs.required-ci.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout the exact Owner-labeled PR-head revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.repo-code-gate.outputs.source_sha }}
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install the locked Preview migration runner
+        run: npm ci
+
+      - name: Apply and checksum-attest only the synthetic Preview migrations
+        id: migrate
+        env:
+          SUPABASE_PREVIEW_DATABASE_URL: ${{ secrets.MIGRATION_PREVIEW_DATABASE_URL }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/preview/synthetic-preview-runner.mjs
+          echo 'result=SYNTHETIC_PREVIEW_MIGRATIONS_READY' >> "$GITHUB_OUTPUT"
+          {
+            echo '### Supabase synthetic Preview migrations: PASS'
+            echo '- Exact target: dongphugia-phase2-preview-290 / uybumsnyqpwcidjxmfsv'
+            echo '- TLS, target contract, 350 MiB ceiling, checksum ledger, synthetic fixture seed: verified by the runner.'
+          } >> "$GITHUB_STEP_SUMMARY"
+
   preview-public-admin:
     name: Reusable exact-SHA Public and Admin Preview publisher
-    needs: [repo-code-gate, required-ci, app-preview-artifact, cloudflare-readonly-discovery]
-    if: needs.repo-code-gate.outputs.owner_approved_upload == 'true' && needs.repo-code-gate.outputs.preview_required == 'true' && needs.required-ci.result == 'success' && needs.app-preview-artifact.result == 'success' && needs.cloudflare-readonly-discovery.outputs.result == 'READ_COMPLETE' && needs.cloudflare-readonly-discovery.outputs.workers_plan_status == 'FREE'
+    needs: [repo-code-gate, required-ci, app-preview-artifact, cloudflare-readonly-discovery, synthetic-preview-migrations]
+    if: needs.repo-code-gate.outputs.owner_approved_upload == 'true' && needs.repo-code-gate.outputs.preview_required == 'true' && needs.required-ci.result == 'success' && needs.app-preview-artifact.result == 'success' && needs.synthetic-preview-migrations.result == 'success' && needs.cloudflare-readonly-discovery.outputs.result == 'READ_COMPLETE' && needs.cloudflare-readonly-discovery.outputs.workers_plan_status == 'FREE'
     uses: ./.github/workflows/preview-public-admin.yml
     with:
       source_sha: ${{ needs.repo-code-gate.outputs.source_sha }}
@@ -609,10 +658,11 @@ jobs:
     secrets:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       CLOUDFLARE_LEO563_PREVIEW_TOKEN: ${{ secrets.CLOUDFLARE_LEO563_PREVIEW_TOKEN }}
+      PHASE2_PREVIEW_ORDER_INTAKE_SIGNING_SECRET: ${{ secrets.PHASE2_PREVIEW_ORDER_INTAKE_SIGNING_SECRET }}
 
   cloudflare-preview-gate:
     name: Preview deployment result
-    needs: [repo-code-gate, required-ci, app-preview-artifact, cloudflare-readonly-discovery, preview-public-admin]
+    needs: [repo-code-gate, required-ci, app-preview-artifact, cloudflare-readonly-discovery, synthetic-preview-migrations, preview-public-admin]
     if: always()
     outputs:
       result: ${{ steps.gate.outputs.result }}
@@ -635,6 +685,7 @@ jobs:
           ADMIN_JOB_RESULT: ${{ needs.preview-public-admin.result }}
           ADMIN_RESULT: ${{ needs.preview-public-admin.outputs.admin_result }}
           PR_NUMBER: ${{ needs.repo-code-gate.outputs.pull_request_number }}
+          MIGRATION_JOB_RESULT: ${{ needs.synthetic-preview-migrations.result }}
         shell: bash
         run: |
           set -euo pipefail
@@ -655,6 +706,15 @@ jobs:
             exit 0
           fi
           if [[ "$OWNER_APPROVED_UPLOAD" == "true" ]]; then
+            if [[ "$MIGRATION_JOB_RESULT" != 'success' ]]; then
+              echo 'result=BLOCKED_BY_SYNTHETIC_PREVIEW_MIGRATION_FAILURE' >> "$GITHUB_OUTPUT"
+              {
+                echo '### Synthetic Supabase Preview migration: BLOCKED'
+                echo "- Migration job result: $MIGRATION_JOB_RESULT"
+                echo '- Public/Admin Worker publication was not attempted before the exact-target migration ledger and synthetic seed passed.'
+              } >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
             if [[ "$WORKERS_PLAN_STATUS" != 'FREE' ]]; then
               echo 'result=BLOCKED_BY_WORKERS_COST_OR_QUOTA' >> "$GITHUB_OUTPUT"
               {

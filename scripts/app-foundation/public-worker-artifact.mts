@@ -113,6 +113,11 @@ async function main() {
       APP_ORIGIN: 'https://public-preview.invalid',
       PREVIEW_NOINDEX: 'true',
     },
+    ratelimits: [{
+      name: 'ORDER_REQUEST_LIMITER',
+      namespace_id: '2910290',
+      simple: { limit: 10, period: 60 },
+    }],
     no_bundle: true,
     rules: [{ type: 'ESModule', globs: ['**/*.js', '**/*.mjs'] }],
   }
