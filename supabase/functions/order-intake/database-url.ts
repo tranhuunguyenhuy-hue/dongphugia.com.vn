@@ -38,3 +38,13 @@ export function isOrderIntakeDatabaseUrl(raw: string, options: DatabaseUrlOption
     && sharedPoolerRole !== null
     && (parsed.port === '5432' || parsed.port === '6543')
 }
+
+/** The platform default is usable only when it already has the dedicated intake identity. */
+export function selectOrderIntakeDatabaseUrl(
+  configured: string,
+  platformDefault: string,
+  options: DatabaseUrlOptions = {},
+): string {
+  const candidate = configured || platformDefault
+  return isOrderIntakeDatabaseUrl(candidate, options) ? candidate : ''
+}

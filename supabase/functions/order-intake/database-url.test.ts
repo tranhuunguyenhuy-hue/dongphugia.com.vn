@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isOrderIntakeDatabaseUrl } from './database-url'
+import { isOrderIntakeDatabaseUrl, selectOrderIntakeDatabaseUrl } from './database-url'
 
 const ref = 'bonxyxluzlxfkdetryoo'
 
@@ -40,5 +40,13 @@ describe('order intake database URL', () => {
       'postgresql://postgres:local@127.0.0.1:5432/postgres?sslmode=disable',
       { allowLocal: true },
     )).toBe(false)
+  })
+
+  it('uses the platform default only when it is the dedicated TLS intake login', () => {
+    const dedicated = `postgresql://dpg_order_intake_login:secret@db.${ref}.supabase.co:5432/postgres?sslmode=require`
+    const privileged = `postgresql://postgres:secret@db.${ref}.supabase.co:5432/postgres?sslmode=require`
+    expect(selectOrderIntakeDatabaseUrl('', dedicated)).toBe(dedicated)
+    expect(selectOrderIntakeDatabaseUrl('', privileged)).toBe('')
+    expect(selectOrderIntakeDatabaseUrl(privileged, dedicated)).toBe('')
   })
 })

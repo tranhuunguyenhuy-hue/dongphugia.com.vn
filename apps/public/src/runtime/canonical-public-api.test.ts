@@ -1,6 +1,9 @@
 import {describe,it,expect,vi} from 'vitest'
 const products=Array.from({length:60},(_,i)=>({id:i,slug:'p-'+i,name:'P'+i,brands:{name:i<50?'A':'B',slug:i<50?'a':'b'},is_featured:false,price:null,stock_status:'contact'}))
+vi.mock('./public-snapshot-mode',()=>({usesPublicSnapshot:()=>true}))
 vi.mock('./public-snapshot-catalogue',()=>({
+ usesPublicSnapshot:()=>true,
+ PUBLIC_SNAPSHOT_NOTICE:'Snapshot test notice',
  getSnapshotCategories:async()=>[{slug:'thiet-bi-bep',listings:[{slug:'voi-rua-chen',name:'Vòi rửa chén',totalCount:60}]}],
  getSnapshotProducts:async(_c:string,_s:string,page:number)=>({products:products.slice((page-1)*48,page*48)}),
  getSnapshotProduct:async(_category:string,_listing:string,slug:string)=>slug==='public-content'?{id:1,slug,name:'Public product',price:null,stock_status:'contact',publicContent:{summary:'Public summary',descriptionBlocks:[{kind:'heading',text:'Công nghệ'},{kind:'paragraph',text:'Nội dung thực.'}],specifications:{'Công nghệ':'Public technology specification'},gallery:[],referencePrice:{amountVnd:1200000,recordedUpdateDate:'2026-07-02',provenance:'legacy-manual-public-display'}}}:null,

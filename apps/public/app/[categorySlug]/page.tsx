@@ -3,6 +3,9 @@ import { notFound } from 'next/navigation'
 
 import { CategoryRootView } from '@/components/category/category-root-view'
 import { getSnapshotCategoryRoot } from '../../src/runtime/public-snapshot-catalogue'
+import { usesPublicSnapshot } from '../../src/runtime/public-snapshot-mode'
+import { getPreviewCatalogueCategories, getPreviewCatalogueProducts } from '../../src/runtime/preview-public-catalogue'
+import { buildSnapshotCategoryRoot } from '../../src/runtime/public-category-root'
 import { getPublicAppEnvironment } from '../../src/config/env'
 
 export const runtime = 'edge'
@@ -44,7 +47,21 @@ export default async function PublicCategoryPage({params,searchParams}:PageProps
   // The prerendered root asset is shared by every valid brand selection. Keep
   // its server props independent of the URL; snapshot filters activate after
   // hydration so HTML, Flight and browser history agree without route combos.
-  const root=await getSnapshotCategoryRoot(categorySlug)
+  const root=usesPublicSnapshot()
+    ? await getSnapshotCategoryRoot(categorySlug)
+    : await (async()=>{
+      const category=(await getPreviewCatalogueCategories()).find(c=>c.slug===categorySlug)
+      if(!category)return null
+      const listings=await Promise.all(category.listings.map(async listing=>({
+        ...listing,
+        totalCount:(await getPreviewCatalogueProducts(categorySlug,listing.slug)).length,
+      })))
+      const homeProducts=(await Promise.all(category.listings.map(listing=>
+        getPreviewCatalogueProducts(categorySlug,listing.slug)))).flat()
+      return buildSnapshotCategoryRoot({
+        slug:category.slug,name:category.name,listings,homeProducts,totalCount:homeProducts.length,
+      })
+    })()
   if(!root||brandSlugs.some(slug=>!root.brands.some(brand=>brand.slug===slug)))notFound()
   return <CategoryRootView {...root} filterMode="snapshot" />
 }

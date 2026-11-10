@@ -354,9 +354,18 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "$EVIDENCE_DIR"
-          node scripts/preview/real-admin-preview-proof.mjs \
-            --url "$ADMIN_PREVIEW_URL" \
-            --source-sha "$SOURCE_SHA" > "$ADMIN_PROOF"
+          for attempt in {1..10}; do
+            if node scripts/preview/real-admin-preview-proof.mjs \
+              --url "$ADMIN_PREVIEW_URL" \
+              --source-sha "$SOURCE_SHA" > "$ADMIN_PROOF"; then
+              exit 0
+            fi
+            if [[ "$attempt" -eq 10 ]]; then
+              echo 'Admin Worker did not pass live acceptance after bounded propagation checks.' >&2
+              exit 1
+            fi
+            sleep 3
+          done
 
       - name: Record Admin Preview acceptance
         id: record

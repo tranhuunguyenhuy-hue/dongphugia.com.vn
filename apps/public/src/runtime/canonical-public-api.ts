@@ -4,15 +4,30 @@ import {cache} from 'react'
 import type * as Original from '../../../../src/lib/public-api-products'
 export type {VariantSibling,ListingRuntimeConfig} from '../../../../src/lib/public-api-products'
 import {getSnapshotCategories,getSnapshotProducts,getSnapshotProduct,getSnapshotVariantSiblings,getSnapshotVariantSelectionData} from './public-snapshot-catalogue'
+import type {SnapshotProduct} from './public-snapshot-catalogue'
+import {usesPublicSnapshot} from './public-snapshot-mode'
+import {getPreviewCatalogueCategories,getPreviewCatalogueProducts,getPreviewCatalogueProduct} from './preview-public-catalogue'
+
+async function categories(){
+ if(usesPublicSnapshot())return getSnapshotCategories()
+ return Promise.all((await getPreviewCatalogueCategories()).map(async c=>{
+  const listings=await Promise.all(c.listings.map(async l=>({...l,totalCount:(await getPreviewCatalogueProducts(c.slug,l.slug)).length})))
+  return {...c,listings,homeProducts:[],totalCount:listings.reduce((sum,l)=>sum+l.totalCount,0)}
+ }))
+}
+async function listingProducts(category:string,listing:string,page:number){
+ return usesPublicSnapshot()?getSnapshotProducts(category,listing,page)
+  :{products:await getPreviewCatalogueProducts(category,listing),totalCount:(await getPreviewCatalogueProducts(category,listing)).length,page}
+}
 
 const allProducts=cache(async(category:string,sub?:string)=> {
- const c=(await getSnapshotCategories()).find(c=>c.slug===category)
+ const c=(await categories()).find(c=>c.slug===category)
  if(!c)return []
- const result=await Promise.all(c.listings.filter(l=>!sub||l.slug===sub).flatMap(l=>Array.from({length:Math.ceil(l.totalCount/48)},(_,i)=>getSnapshotProducts(category,l.slug,i+1))))
+ const result=await Promise.all(c.listings.filter(l=>!sub||l.slug===sub).flatMap(l=>Array.from({length:Math.ceil(l.totalCount/48)},(_,i)=>listingProducts(category,l.slug,i+1))))
  return result.flatMap(r=>r.products)
 })
 export const getPublicListingLeaves:typeof Original.getPublicListingLeaves=async(category)=>{
- const c=(await getSnapshotCategories()).find(c=>c.slug===category)
+ const c=(await categories()).find(c=>c.slug===category)
  return (c?.listings??[]).map(l=>({id:null,name:l.name,slug:l.slug,description:null,thumbnail_url:null,source:'legacy' as const,_count:{products:l.totalCount}}))
 }
 export const getPublicListingLeaf:typeof Original.getPublicListingLeaf=async(category,sub)=>(await getPublicListingLeaves(category)).find(l=>l.slug===sub)??null
@@ -26,7 +41,7 @@ export const getPublicProducts:typeof Original.getPublicProducts=async(f={})=>{
  // Listing HTML and Flight share a neutral shell. The browser loads the exact
  // immutable shards and applies URL filters; PDP related cards keep their data.
  if((f.pageSize===12||f.pageSize===24)&&typeof f.subcategory_slugs==='string'){
-  const category=(await getSnapshotCategories()).find(c=>c.slug===f.category_slug)
+  const category=(await categories()).find(c=>c.slug===f.category_slug)
   const listing=category?.listings.find(l=>l.slug===f.subcategory_slugs)
   if(!listing)return {products:[],total:0,totalPages:1,currentPage:f.page??1,page:f.page??1,pageSize:f.pageSize} as Awaited<ReturnType<typeof Original.getPublicProducts>>
   return {products:[],total:listing.totalCount,totalPages:Math.max(1,Math.ceil(listing.totalCount/f.pageSize)),currentPage:f.page??1,page:f.page??1,pageSize:f.pageSize} as Awaited<ReturnType<typeof Original.getPublicProducts>>
@@ -46,9 +61,9 @@ function publicDescription(content:{summary:string|null;specifications:Record<st
  return rows.length?'<ul>'+rows.map(([key,value])=>'<li>'+escapePublicText(key)+': '+escapePublicText(value)+'</li>').join('')+'</ul>':null
 }
 export const getPublicProductBySlug:typeof Original.getPublicProductBySlug=async(category,slug)=>{
- const c=(await getSnapshotCategories()).find(c=>c.slug===category)
+ const c=(await categories()).find(c=>c.slug===category)
  for(const l of c?.listings??[]) {
-  const p=await getSnapshotProduct(category,l.slug,slug)
+  const p:SnapshotProduct|null=usesPublicSnapshot()?await getSnapshotProduct(category,l.slug,slug):await getPreviewCatalogueProduct(category,l.slug,slug)
   if(p)return {...p,description:publicDescription(p.publicContent),features:null,colors:p.colors??null,product_images:(p.publicContent?.gallery??[]).map(image_url=>({image_url,alt_text:p.name})),product_feature_values:p.product_feature_values??[],variant_group:p.variant_group??null,original_price:p.original_price??null,list_price:p.list_price??null,sale_price:p.sale_price??null,online_discount_amount:p.online_discount_amount??null} as unknown as Awaited<ReturnType<typeof Original.getPublicProductBySlug>>
  }
  return null
@@ -56,10 +71,10 @@ export const getPublicProductBySlug:typeof Original.getPublicProductBySlug=async
 export const getProductTypeFiltersBySubcategory:typeof Original.getProductTypeFiltersBySubcategory=async()=>[]
 export const getSubcategorySpecFilters:typeof Original.getSubcategorySpecFilters=async()=>[]
 export const getVariantSiblings:typeof Original.getVariantSiblings=async(group,id)=>
- (await getSnapshotVariantSiblings(group,id)).map(p=>({...p,original_price:p.original_price??null,list_price:p.list_price??null,sale_price:p.sale_price??null,online_discount_amount:p.online_discount_amount??null,
+ (usesPublicSnapshot()?await getSnapshotVariantSiblings(group,id):[]).map(p=>({...p,original_price:p.original_price??null,list_price:p.list_price??null,sale_price:p.sale_price??null,online_discount_amount:p.online_discount_amount??null,
   variant_type:p.variant_type??null,variant_label:p.variant_label??null,colors:p.colors??null})) as Awaited<ReturnType<typeof Original.getVariantSiblings>>
 export const getVariantSelectionData:typeof Original.getVariantSelectionData=async(group,id)=>{
- const selection=await getSnapshotVariantSelectionData(group,id)
+ const selection=usesPublicSnapshot()?await getSnapshotVariantSelectionData(group,id):{axes:[],currentVariantOptions:[],siblings:[]}
  const siblings=selection.siblings.map(p=>({...p,original_price:p.original_price??null,list_price:p.list_price??null,
   sale_price:p.sale_price??null,online_discount_amount:p.online_discount_amount??null,
   variant_type:p.variant_type??null,variant_label:p.variant_label??null,colors:p.colors??null}))

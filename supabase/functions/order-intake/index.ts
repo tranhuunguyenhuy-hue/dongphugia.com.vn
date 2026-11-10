@@ -5,9 +5,13 @@ import {
   type OrderIntakeDatabase,
 } from './handler.ts'
 import { createOrderIntakeDatabase } from './database.ts'
-import { isOrderIntakeDatabaseUrl } from './database-url.ts'
+import { isOrderIntakeDatabaseUrl, selectOrderIntakeDatabaseUrl } from './database-url.ts'
 
-const databaseUrl = Deno.env.get('ORDER_INTAKE_DATABASE_URL')?.trim() ?? ''
+const databaseUrl = selectOrderIntakeDatabaseUrl(
+  Deno.env.get('ORDER_INTAKE_DATABASE_URL')?.trim() ?? '',
+  Deno.env.get('SUPABASE_DB_URL')?.trim() ?? '',
+  { allowLocal: Deno.env.get('DPG_ORDER_INTAKE_ALLOW_LOCAL_DATABASE') === 'true' },
+)
 const signingSecret = Deno.env.get('ORDER_INTAKE_SIGNING_SECRET')?.trim() ?? ''
 
 function unavailable(): Response {
@@ -37,6 +41,12 @@ function createDatabase(url: string): OrderIntakeDatabase | null {
 
 const database = databaseUrl ? createDatabase(databaseUrl) : null
 if (!database || new TextEncoder().encode(signingSecret).byteLength < 32) {
+  console.info(JSON.stringify({
+    event: 'ORDER_INTAKE_CONFIG_UNAVAILABLE',
+    dedicatedUrlConfigured: Boolean(Deno.env.get('ORDER_INTAKE_DATABASE_URL')?.trim()),
+    platformDefaultAccepted: isOrderIntakeDatabaseUrl(Deno.env.get('SUPABASE_DB_URL')?.trim() ?? ''),
+    signingSecretValid: new TextEncoder().encode(signingSecret).byteLength >= 32,
+  }))
   Deno.serve(unavailable)
 } else {
   Deno.serve(createOrderIntakeHandler({ database, signingSecret }))

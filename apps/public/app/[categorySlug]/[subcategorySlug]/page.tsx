@@ -4,12 +4,12 @@ import Water from '@/app/(public)/vat-lieu-nuoc/[sub]/page'
 import Tile from '@/app/(public)/gach-op-lat/[sub]/page'
 import {notFound} from 'next/navigation'
 import {getPublicAppEnvironment} from '../../../src/config/env'
+import {resolvePublicCatalogueRoute} from '../../../src/runtime/preview-public-catalogue'
 export const runtime='edge'
 export const dynamic='force-dynamic'
 export async function generateMetadata({params}:{params:Promise<{categorySlug:string;subcategorySlug:string;productSlug?:string}>}) {
  const p=await params
- const {resolveSnapshotRoute}=await import('../../../src/runtime/public-snapshot-catalogue')
- const route=await resolveSnapshotRoute([p.categorySlug,p.subcategorySlug,...(p.productSlug?[p.productSlug]:[])])
+ const route=await resolvePublicCatalogueRoute([p.categorySlug,p.subcategorySlug,...(p.productSlug?[p.productSlug]:[])])
  const indexable=getPublicAppEnvironment().environment==='production'&&route.kind!=='not-found'
  return {title:route.kind==='product'?route.product.name:route.kind==='listing'?route.listing.name:'Không tìm thấy',alternates:indexable?{canonical:`/${p.categorySlug}/${p.subcategorySlug}`}:undefined,robots:{index:indexable,follow:indexable}}
 }
