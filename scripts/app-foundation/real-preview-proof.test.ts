@@ -37,12 +37,15 @@ describe('LEO-563 real Public Preview proof', () => {
       if (url.search || new Headers(init?.headers).has('cookie')) {
         return response('<html></html>', {
           'Cache-Control': 'private, no-store',
+          'X-DPG-Cache': 'BYPASS',
           'X-Robots-Tag': 'noindex',
-        }, url.search ? 400 : 200)
+        })
       }
       return response('<html><head><title>Đông Phú Gia - Vật liệu xây dựng cao cấp tại Đà Lạt</title><meta name="robots" content="noindex,nofollow"></head></html>', {
         'Content-Type': 'text/html',
-        'Cache-Control': 'private, no-store',
+        'Cache-Control': 'public, max-age=0, must-revalidate',
+        'CDN-Cache-Control': 'public, max-age=300, must-revalidate',
+        'X-DPG-Cache': 'MISS',
         'X-Robots-Tag': 'noindex',
       })
     }
@@ -50,12 +53,12 @@ describe('LEO-563 real Public Preview proof', () => {
     const proof = await verifyRealPreview({ baseUrl, sourceSha, fetchImpl })
     expect(proof.contract).toBe('dongphugia:real-public-preview-proof:v2')
     expect(proof.observations.cache).toMatchObject({
-      first: 'PRIVATE_NO_STORE',
-      subsequent: 'PRIVATE_NO_STORE',
-      query: 'REJECTED_PRIVATE_NO_STORE',
-      cookie: 'PRIVATE_NO_STORE',
+      first: 'MISS',
+      subsequent: 'MISS',
+      query: 'BYPASS_PRIVATE_NO_STORE',
+      cookie: 'BYPASS_PRIVATE_NO_STORE',
       api: 'BYPASS_PRIVATE_NO_STORE',
-      edgeMaxAgeSeconds: 0,
+      edgeMaxAgeSeconds: 300,
       staleServing: false,
     })
     expect(proof.observations.limits).toEqual({
@@ -86,12 +89,15 @@ describe('LEO-563 real Public Preview proof', () => {
       if (url.search || new Headers(init?.headers).has('cookie')) {
         return response('<html></html>', {
           'Cache-Control': 'private, no-store',
+          'X-DPG-Cache': 'BYPASS',
           'X-Robots-Tag': 'noindex, nofollow',
-        }, url.search ? 400 : 200)
+        })
       }
       return response('<html><head><title>Đông Phú Gia - Vật liệu xây dựng cao cấp tại Đà Lạt</title><meta name="robots" content="noindex,nofollow"></head></html>', {
         'Content-Type': 'text/html',
-        'Cache-Control': 'private, no-store',
+        'Cache-Control': 'public, max-age=0, must-revalidate',
+        'CDN-Cache-Control': 'public, max-age=300, must-revalidate',
+        'X-DPG-Cache': 'MISS',
         'X-Robots-Tag': 'noindex, nofollow',
       })
     }
@@ -101,14 +107,14 @@ describe('LEO-563 real Public Preview proof', () => {
     )
   })
 
-  it('rejects public caching or an unexpected cache marker on the prerendered root', async () => {
+  it('rejects a root with unsafe or inconsistent cache headers', async () => {
     for (const unsafe of [
       { 'Cache-Control': 'public, max-age=300', 'X-Robots-Tag': 'noindex' },
       { 'Cache-Control': 'private, no-store', 'X-Robots-Tag': 'noindex', 'X-DPG-Cache': 'HIT' },
     ]) {
       const fetchImpl = async () => response('<html></html>', unsafe)
       await expect(verifyRealPreview({ baseUrl, sourceSha, fetchImpl })).rejects.toThrow(
-        'LEO563_REAL_PREVIEW_PRERENDER_CACHE_FAILED',
+        'LEO563_REAL_PREVIEW_PUBLIC_CACHE_FAILED',
       )
     }
   })

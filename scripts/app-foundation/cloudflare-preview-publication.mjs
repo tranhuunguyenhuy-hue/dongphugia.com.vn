@@ -628,7 +628,23 @@ function normalizePrePublicationState(state) {
     throw new Error('LEO563_PREVIEW_PUBLICATION_BASELINE_UNKNOWN')
   }
   if (state.state === 'MANAGED_BASELINE_ATTESTED') {
-    const baseline = validateManagedBaselineState(state)
+    // A published resource proof carries the already-attested baseline in its
+    // compact form; the initial remote preflight carries the full contract.
+    const baseline = state.contract === MANAGED_BASELINE_CONTRACT
+      ? validateManagedBaselineState(state)
+      : state
+    if (state.contract !== MANAGED_BASELINE_CONTRACT &&
+      (baseline.activeDeployment !== true || baseline.workerAbsent !== false ||
+      baseline.reconciliationAllowed !== true)) throw new Error('LEO563_PREVIEW_PUBLICATION_BASELINE_UNSAFE')
+    if (!Array.isArray(baseline.versionIds) ||
+      baseline.versionIds.length < 1 || baseline.versionIds.some((id) => !VERSION_ID_PATTERN.test(id)) ||
+      !Array.isArray(baseline.deployments) || baseline.deployments.length !== 1 ||
+      !Array.isArray(baseline.deploymentIds) ||
+      !sameJson(baseline.deploymentIds, remoteDeploymentIds(baseline.deployments)) ||
+      !Array.isArray(baseline.bindings) || !Array.isArray(baseline.customDomains) ||
+      baseline.customDomains.length !== 0 || !Array.isArray(baseline.workerRoutes) ||
+      baseline.workerRoutes.length !== 0) throw new Error('LEO563_PREVIEW_PUBLICATION_BASELINE_UNSAFE')
+    assertSafePublishedBindings(baseline.bindings)
     return {
       state: state.state,
       versionIds: [...baseline.versionIds],

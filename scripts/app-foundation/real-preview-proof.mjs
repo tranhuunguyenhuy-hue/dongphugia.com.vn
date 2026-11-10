@@ -6,6 +6,8 @@ const PREVIEW_PR_NUMBER = process.env.DPG_PREVIEW_PR_NUMBER || '138'
 if (!/^[1-9][0-9]*$/.test(PREVIEW_PR_NUMBER)) throw new Error('LEO563_REAL_PREVIEW_PR_NUMBER_INVALID')
 const PREVIEW_ALIAS = `pr-${PREVIEW_PR_NUMBER}`
 const PRIVATE_CACHE_CONTROL = 'private, no-store'
+const PUBLIC_BROWSER_CACHE_CONTROL = 'public, max-age=0, must-revalidate'
+const PUBLIC_EDGE_CACHE_CONTROL = 'public, max-age=300, must-revalidate'
 const PREVIEW_ROBOTS_REQUIRED_DIRECTIVE = 'noindex'
 
 function parseArgs(argv) {
@@ -61,10 +63,18 @@ function assertPreviewRobots(response) {
   }
 }
 
-function assertPrivatePrerender(response) {
+function assertPublicRoot(response) {
+  const marker = header(response, 'X-DPG-Cache')
+  if (header(response, 'Cache-Control') !== PUBLIC_BROWSER_CACHE_CONTROL ||
+    header(response, 'CDN-Cache-Control') !== PUBLIC_EDGE_CACHE_CONTROL ||
+    !['MISS', 'HIT'].includes(marker)) throw new Error('LEO563_REAL_PREVIEW_PUBLIC_CACHE_FAILED')
+  return marker
+}
+
+function assertPrivateBypass(response) {
   if (header(response, 'Cache-Control') !== PRIVATE_CACHE_CONTROL ||
-    header(response, 'CDN-Cache-Control') || header(response, 'X-DPG-Cache')) {
-    throw new Error('LEO563_REAL_PREVIEW_PRERENDER_CACHE_FAILED')
+    header(response, 'CDN-Cache-Control') || header(response, 'X-DPG-Cache') !== 'BYPASS') {
+    throw new Error('LEO563_REAL_PREVIEW_PRIVATE_CACHE_FAILED')
   }
 }
 
@@ -79,7 +89,7 @@ export async function verifyRealPreview({ baseUrl, sourceSha, fetchImpl = fetch 
   const first = await request(fetchImpl, previewUrl)
   const html = await first.text()
   if (first.status !== 200) throw new Error('LEO563_REAL_PREVIEW_ROOT_STATUS_FAILED')
-  assertPrivatePrerender(first)
+  const firstCache = assertPublicRoot(first)
   assertPreviewRobots(first)
   if (!/<meta[^>]+name=["']robots["'][^>]+content=["'][^"']*noindex[^"']*nofollow/i.test(html)) {
     throw new Error('LEO563_REAL_PREVIEW_HTML_NOINDEX_FAILED')
@@ -94,19 +104,19 @@ export async function verifyRealPreview({ baseUrl, sourceSha, fetchImpl = fetch 
 
   const repeated = await request(fetchImpl, previewUrl)
   if (repeated.status !== 200) throw new Error('LEO563_REAL_PREVIEW_REPEAT_STATUS_FAILED')
-  assertPrivatePrerender(repeated)
+  const repeatedCache = assertPublicRoot(repeated)
   assertPreviewRobots(repeated)
   assertSource(repeated, sourceCommit, 'root-repeat')
 
   const query = await request(fetchImpl, new URL('/?leo563=1', previewUrl))
-  if (query.status !== 400) throw new Error('LEO563_REAL_PREVIEW_QUERY_REJECTION_FAILED')
-  assertPrivatePrerender(query)
+  if (query.status !== 200) throw new Error('LEO563_REAL_PREVIEW_QUERY_STATUS_FAILED')
+  assertPrivateBypass(query)
   assertPreviewRobots(query)
   assertSource(query, sourceCommit, 'query')
 
   const cookie = await request(fetchImpl, previewUrl, { headers: { Cookie: 'leo563-preview=1' } })
   if (cookie.status !== 200) throw new Error('LEO563_REAL_PREVIEW_COOKIE_STATUS_FAILED')
-  assertPrivatePrerender(cookie)
+  assertPrivateBypass(cookie)
   assertPreviewRobots(cookie)
   assertSource(cookie, sourceCommit, 'cookie')
 
@@ -143,12 +153,12 @@ export async function verifyRealPreview({ baseUrl, sourceSha, fetchImpl = fetch 
       health: { status: 200, application: 'public' },
       noindex: { htmlMeta: true, responseHeader: true, robotsDisallowAll: true },
       cache: {
-        first: 'PRIVATE_NO_STORE',
-        subsequent: 'PRIVATE_NO_STORE',
-        query: 'REJECTED_PRIVATE_NO_STORE',
-        cookie: 'PRIVATE_NO_STORE',
+        first: firstCache,
+        subsequent: repeatedCache,
+        query: 'BYPASS_PRIVATE_NO_STORE',
+        cookie: 'BYPASS_PRIVATE_NO_STORE',
         api: 'BYPASS_PRIVATE_NO_STORE',
-        edgeMaxAgeSeconds: 0,
+        edgeMaxAgeSeconds: 300,
         staleServing: false,
       },
       limits: {
