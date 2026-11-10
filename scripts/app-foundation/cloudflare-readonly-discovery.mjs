@@ -255,20 +255,20 @@ export async function runDiscovery({ accountId, apiToken, sourceCommit = null, f
     : null
   const paidSubscription = labels.some((label) => /workers\s+(?:paid|standard)|standard.*workers/i.test(label))
   const freeSubscription = labels.some((label) => /workers\s+free|free.*workers/i.test(label))
-  // Cloudflare documents Standard as the Workers Paid usage model. Treat it as
-  // cost-bearing evidence even when the account's billing endpoint is denied.
-  const paidUsageModel = accountDefaultUsageModel === 'standard'
-  const planStatus = paidSubscription || paidUsageModel
+  const completeSubscriptions = subscriptionCall?.status === 'READ_OK' && Array.isArray(subscriptions)
+  // The account default is a setting, not proof of an active Workers Paid subscription.
+  // Workers Free is the default when the complete subscription list has no Workers Paid entry.
+  const planStatus = paidSubscription
     ? 'PAID'
-    : freeSubscription
+    : freeSubscription || completeSubscriptions
       ? 'FREE'
       : 'UNKNOWN'
   const planEvidence = paidSubscription
     ? 'WORKERS_PAID_SUBSCRIPTION'
-    : paidUsageModel
-      ? 'STANDARD_USAGE_MODEL'
-      : freeSubscription
+    : freeSubscription
         ? 'WORKERS_FREE_SUBSCRIPTION'
+        : completeSubscriptions
+          ? 'NO_WORKERS_PAID_SUBSCRIPTION'
         : subscriptionCall?.status === 'READ_DENIED' || accountSettingsCall?.status === 'READ_DENIED'
           ? 'PLAN_PERMISSION_INCOMPLETE'
           : 'NO_EXPLICIT_PLAN_EVIDENCE'

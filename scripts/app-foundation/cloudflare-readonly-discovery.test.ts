@@ -56,9 +56,9 @@ describe('LEO-563 Cloudflare read-only discovery', () => {
     expect(requests.every((request) => request.method === 'GET')).toBe(true)
     expect(report.suitableIsolatedPublicWorker).toBe('safe-preview')
     expect(report.createNewResourceRequired).toBe(false)
-    expect(report.workersPlan.planStatus).toBe('PAID')
-    expect(report.workersPlan.evidence).toBe('STANDARD_USAGE_MODEL')
-    expect(report.workersPlan.freeConfirmed).toBe(false)
+    expect(report.workersPlan.planStatus).toBe('FREE')
+    expect(report.workersPlan.evidence).toBe('WORKERS_FREE_SUBSCRIPTION')
+    expect(report.workersPlan.freeConfirmed).toBe(true)
     expect(report.workers.find((worker) => worker.name === 'safe-preview')?.versions).toEqual(expect.objectContaining({
       status: 'READ_OK',
       versionIds: ['11111111-1111-1111-1111-111111111111'],
@@ -96,6 +96,30 @@ describe('LEO-563 Cloudflare read-only discovery', () => {
     expect(report.workersPlan.freeConfirmed).toBe(true)
     expect(report.suitableIsolatedPublicWorker).toBe('safe-preview')
     expect(report.productionAssociation).toBe('NONE_DISCOVERED')
+  })
+
+  it('uses a complete subscription list instead of the account default usage model', async () => {
+    const fetchImpl = async (url: string) => {
+      if (url.endsWith('/workers/scripts') || url.endsWith('/workers/domains') || url.includes('/zones?') || url.endsWith('/pages/projects')) return response([])
+      if (url.includes('/subscriptions')) return response([{ rate_plan: { public_name: 'Cloudflare Free Plan' } }, { rate_plan: { public_name: 'Images Stream Basic' } }])
+      if (url.includes('/account-settings')) return response({ default_usage_model: 'standard' })
+      throw new Error(`Unexpected test URL: ${url}`)
+    }
+    const report = await runDiscovery({ accountId: 'account', apiToken: 'token', fetchImpl })
+    expect(report.workersPlan.planStatus).toBe('FREE')
+    expect(report.workersPlan.evidence).toBe('NO_WORKERS_PAID_SUBSCRIPTION')
+  })
+
+  it('classifies an explicit Workers Paid subscription as paid', async () => {
+    const fetchImpl = async (url: string) => {
+      if (url.endsWith('/workers/scripts') || url.endsWith('/workers/domains') || url.includes('/zones?') || url.endsWith('/pages/projects')) return response([])
+      if (url.includes('/subscriptions')) return response([{ rate_plan: { public_name: 'Workers Paid' } }])
+      if (url.includes('/account-settings')) return response({ default_usage_model: 'standard' })
+      throw new Error(`Unexpected test URL: ${url}`)
+    }
+    const report = await runDiscovery({ accountId: 'account', apiToken: 'token', fetchImpl })
+    expect(report.workersPlan.planStatus).toBe('PAID')
+    expect(report.workersPlan.evidence).toBe('WORKERS_PAID_SUBSCRIPTION')
   })
 
   it('fails suitability closed when required inventory permissions are denied', async () => {
