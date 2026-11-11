@@ -315,50 +315,11 @@ operational detail, for example [media recovery](deploy/leo-565-media-recovery-b
 [backup/recovery](deploy/runtime-backup-recovery.md). Do not make them startup
 prerequisites for content, layout or ordinary product changes.
 
-## 7. Efficient Codex delivery policy
+## 7. Delivery policy
 
-**Default:** a clear task starts immediately. One focused branch, one PR,
-only tests related to the modified scope; full CI is retained when required.
-No automatic multi-agent review, formal spec, separate ADR or backup project
-for routine changes.
-
-| Risk | Examples | What is enough |
-| --- | --- | --- |
-| Low | Copy, footer, styling, accessible labels, non-sensitive SEO | Diff + rendered/browser check if visual; relevant tests and required CI; application rollback. |
-| Medium | Cart interactions, search/API logic, business behavior | Focused unit/integration tests, affected Preview flow where useful, app rollback and smoke checks. |
-| High | Schema/data, payment/order writes, staff permissions, credentials, CDN/DNS or destructive actions | Validate exact target and affected state, scoped recoverable copy/rehearsal, independent risk check when justified, explicit Owner authorization. |
-
-**Pipeline:** `Request → Implement → Focused validate → PR/CI → Owner GO →
-Production → Smoke`. Before a source write, check main/related PRs and
-task-owned diff. Preview only when it provides useful validation and is
-actually reachable. No workflow/PR screenshot proves Production success;
-inspect actual deployed version, customer URLs/flows and error metrics.
-If automated release supports a single exact-candidate Owner approval, use
-it; otherwise respect the existing separate GitHub/runtime gates. Never
-self-authorize Production.
-
-A deployable candidate must identify source commit, PR, required CI and
-immutable artifact when supported. A rollback uses a known-good application
-version; data migrations require their own data-safe plan. If a task is
-blocked twice by one method, diagnose and change approach rather than
-retrying it indefinitely. Do not convert unrelated technical debt into a
-current release blocker.
-
-### Local commands
-
-```sh
-npm ci                    # when dependencies required
-npm run lint              # relevant application check
-npm run typecheck         # type-safe source changes
-npm test                  # focused/required repository tests
-npm run build:public      # Public build only when needed
-npm run build:admin       # Admin build only when needed
-```
-
-The root CI quality workflow may run broader checks for changed code;
-documentation-only diffs need structural/link checks rather than unrelated
-application builds. A merge into `main` does **not** equal a Production
-deployment. Record checks as PASS/FAIL/UNKNOWN, never invent a successful gate.
+Root [AGENTS.md](../AGENTS.md) is the sole working-policy source for assignment,
+autonomy, validation, review/merge/release, Issue closure, setup and staging planning.
+This handbook supplies technical and product reference only.
 
 ## 8. Operational files retained because automation still depends on them
 
@@ -376,37 +337,17 @@ operation directly applies:
   [runtime backup](deploy/runtime-backup-recovery.md),
   [recovery baseline](deploy/leo-565-media-recovery-baseline.md).
 - **Source delivery:** use **one standard workflow and risk-proportionate**
-  validation/recovery controls from section 7, not separate release tracks.
+  validation/recovery controls from root AGENTS.md, not separate release tracks.
 
 Some tests validate these files literally by path and key contract wording.
 Do not rename/delete an operational reference unless its executable
 consumer and rollback procedure are updated together.
 
-## 9. Documentation policy and maintenance
+## 9. Documentation maintenance
 
-**Only two canonical guide files for humans and Codex:**
-
-1. `AGENTS.md` — all session-critical context, current priorities, module
-   map, short workflow and business invariants. Keep under a reasonable
-   startup token budget. Codex loads this automatically.
-2. `docs/PROJECT.md` — consolidated handbook and reference links for
-   deeper technical work. Do not read it routinely.
-
-Other Markdown files are retained **only** where actively referenced by
-executable tests, migration scripts, legal/external integration users, or a
-specific high-risk operational runbook. Historical superseded ADRs, roadmap
-experiments, completed handoff memos and duplicate documentation should be
-removed from the working tree once their relevant rules are summarized
-here. Git preserves full prior contents in history.
-
-Code and executable schema remain the technical source of truth;
-real GitHub Issues/PRs are task state; GitHub Actions/Provider dashboards are
-deployment state. Any dated statement in these Markdown files must be
-revalidated before it is used to approve a risky action.
-
-**Update protocol:** for a new feature or decision, modify implementation
-and update a short relevant section of `AGENTS.md` only if default session
-behavior changes; otherwise update just this handbook. Avoid per-issue
-documentation. Never duplicate the same policy across multiple Markdown
-files. For completed old work, retain PR/commit links rather than copying
-whole historical conversations into context.
+Maintain working policy only in root AGENTS.md. Keep this file for on-demand
+technical/product context, and retain specialized runbooks/ADRs required by tests,
+operations or external integrations. Preserve executable references when editing.
+Code/schema define implementation; Issues/PRs record task state; live provider and
+Actions evidence establish deployment state. Revalidate dated facts before use.
+Update the relevant reference when behavior changes; avoid per-ticket process docs.

@@ -27,3 +27,11 @@ specialized context is `docs/PROJECT.md`. These take precedence when upstream
 skills assume extra docs, uninstalled helpers, or redundant workflow stages.
 
 License: `LICENSE.mattpocock-skills`.
+
+## Deliberate local adaptations
+
+The autonomy policy in root AGENTS.md governs all repository skills. Local changes:
+TDD selects seams autonomously; grilling is explicitly user-invoked. These are
+intentional project adaptations of the pinned snapshot, to review with this change.
+Preserve them when updating upstream skills. Setup/interview skills are not routine
+Issue prerequisites; technical references remain in docs/PROJECT.md.
