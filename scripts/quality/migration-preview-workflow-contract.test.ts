@@ -118,6 +118,19 @@ describe('migration PR CI and Preview workflow contract', () => {
     expect(reusablePublisher).toContain('--bootstrap-log "$EVIDENCE_DIR/bootstrap-deploy.log"')
   })
 
+  it('writes the Worker secret into a new file inside a private temporary directory', () => {
+    const uploadStart = reusablePublisher.indexOf('name: Upload one immutable Worker version with the approved PR Preview alias')
+    const uploadEnd = reusablePublisher.indexOf('\n\n      - name:', uploadStart)
+    const uploadStep = reusablePublisher.slice(uploadStart, uploadEnd)
+
+    expect(uploadStep).toContain('umask 077')
+    expect(uploadStep).toContain('secrets_dir="$(mktemp -d "${RUNNER_TEMP}/phase2-preview-worker-secrets.XXXXXX")"')
+    expect(uploadStep).toContain('secrets_file="${secrets_dir}/worker-secrets.json"')
+    expect(uploadStep).toContain('flag: "wx"')
+    expect(uploadStep).toContain("trap 'rm -f \"$secrets_file\"; rmdir \"$secrets_dir\"' EXIT")
+    expect(uploadStep).not.toContain('mktemp "${RUNNER_TEMP}/phase2-preview-worker-secrets.XXXXXX.json"')
+  })
+
   it('uses the current isolated Worker read-back instead of pinned historical version IDs', () => {
     for (const marker of [
       'MANAGED_BASELINE_ATTESTED',

@@ -196,8 +196,9 @@ jobs:
           fi
           cd "$ARTIFACT_ROOT/public/build"
           umask 077
-          secrets_file="$(mktemp "${RUNNER_TEMP}/phase2-preview-worker-secrets.XXXXXX.json")"
-          trap 'rm -f "$secrets_file"' EXIT
+          secrets_dir="$(mktemp -d "${RUNNER_TEMP}/phase2-preview-worker-secrets.XXXXXX")"
+          secrets_file="${secrets_dir}/worker-secrets.json"
+          trap 'rm -f "$secrets_file"; rmdir "$secrets_dir"' EXIT
           node --input-type=module -e 'import { writeFile } from "node:fs/promises"; const file=process.argv[1]; const value=process.env.PHASE2_PREVIEW_ORDER_INTAKE_SIGNING_SECRET; if (typeof value !== "string" || new TextEncoder().encode(value).byteLength < 32) throw new Error("PREVIEW_ORDER_SECRET_INVALID"); await writeFile(file, JSON.stringify({ ORDER_INTAKE_SIGNING_SECRET: value }), { mode: 0o600, flag: "wx" });' "$secrets_file"
           echo 'write_attempted=true' >> "$GITHUB_OUTPUT"
           node "$WRANGLER_BIN" versions upload \
