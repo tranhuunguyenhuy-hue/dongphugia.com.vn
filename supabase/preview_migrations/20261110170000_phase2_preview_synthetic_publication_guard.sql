@@ -15,8 +15,27 @@ begin
       and not production_credentials_allowed
       and not production_writes_allowed
       and hard_database_ceiling_bytes = 367001600
-  ) then
-    raise exception 'DPG_PREVIEW_290_SYNTHETIC_GUARD_TARGET_REQUIRED';
+  ) or has_schema_privilege('dpg_migration', 'public', 'CREATE')
+     or has_schema_privilege('dpg_order_intake_function_owner', 'public', 'CREATE')
+     or exists (
+       select 1 from pg_auth_members membership
+       where membership.roleid = (select oid from pg_roles where rolname = 'dpg_order_intake_function_owner')
+         and membership.member = (select oid from pg_roles where rolname = 'dpg_migration')
+     )
+     or not exists (
+       select 1 from pg_proc p
+       where p.oid = 'public.guest_order_request_create(jsonb,text,uuid)'::regprocedure
+         and pg_get_userbyid(p.proowner) = 'dpg_order_intake_function_owner'
+         and p.prosecdef
+         and p.proconfig @> array['search_path=pg_catalog, dpg_app', 'row_security=on']
+     )
+     or not exists (
+       select 1 from pg_proc p
+       where p.oid = 'public.phase2_admin_product_update(integer,integer,jsonb,text,uuid)'::regprocedure
+         and pg_get_userbyid(p.proowner) = 'dpg_migration'
+         and not p.prosecdef
+     ) then
+    raise exception 'DPG_PREVIEW_290_SYNTHETIC_GUARD_PRECONDITION_FAILED';
   end if;
 end
 $preview_guard_preflight$;
@@ -104,10 +123,18 @@ grant usage on schema dpg_control to authenticated, dpg_order_intake_function_ow
 grant execute on function dpg_control.phase2_preview_synthetic_product_eligible(integer)
   to authenticated, dpg_order_intake_function_owner;
 
-do $preview_guard_patch$
+-- Replace the guest RPC as its existing no-login SECURITY DEFINER owner.
+-- dpg_migration receives only temporary SET membership and schema CREATE;
+-- both are removed before postflight and commit.
+grant create on schema public to dpg_order_intake_function_owner;
+grant dpg_order_intake_function_owner to dpg_migration
+  with set true, inherit false, admin false;
+set role dpg_migration;
+set role dpg_order_intake_function_owner;
+
+do $preview_guard_guest_patch$
 declare
   guest_definition text;
-  admin_definition text;
   original text;
   replacement text;
   occurrences integer;
@@ -121,6 +148,23 @@ begin
   occurrences := (length(guest_definition) - length(replace(guest_definition, original, ''))) / length(original);
   if occurrences <> 1 then raise exception 'DPG_PREVIEW_290_GUEST_PRICE_GUARD_DRIFT'; end if;
   execute replace(guest_definition, original, replacement);
+end
+$preview_guard_guest_patch$;
+
+reset role;
+revoke dpg_order_intake_function_owner from dpg_migration;
+
+-- Replace the existing SECURITY INVOKER editor RPC as its dpg_migration owner.
+grant create on schema public to dpg_migration;
+set role dpg_migration;
+
+do $preview_guard_admin_patch$
+declare
+  admin_definition text;
+  original text;
+  replacement text;
+  occurrences integer;
+begin
 
   admin_definition := pg_get_functiondef('public.phase2_admin_product_update(integer,integer,jsonb,text,uuid)'::regprocedure);
   original := 'v_price_verified := not (p_input ?| array[''price'',''sale_price'',''online_discount_amount''])' || E'\n'
@@ -140,7 +184,10 @@ begin
   if occurrences <> 1 then raise exception 'DPG_PREVIEW_290_ADMIN_PRICE_GUARD_CLOSE_DRIFT'; end if;
   execute replace(admin_definition, original, replacement);
 end
-$preview_guard_patch$;
+$preview_guard_admin_patch$;
+
+reset role;
+revoke create on schema public from dpg_migration, dpg_order_intake_function_owner;
 
 do $preview_guard_postflight$
 begin
@@ -152,13 +199,32 @@ begin
        select 1 from pg_proc p
        where p.oid = 'public.guest_order_request_create(jsonb,text,uuid)'::regprocedure
          and p.prosrc like '%phase2_preview_synthetic_product_eligible(v_product.id)%'
+         and p.prosecdef
+         and p.proconfig @> array['search_path=pg_catalog, dpg_app', 'row_security=on']
          and pg_get_userbyid(p.proowner) = 'dpg_order_intake_function_owner'
      )
+     or has_function_privilege('anon', 'public.guest_order_request_create(jsonb,text,uuid)', 'EXECUTE')
+     or has_function_privilege('authenticated', 'public.guest_order_request_create(jsonb,text,uuid)', 'EXECUTE')
+     or has_function_privilege('service_role', 'public.guest_order_request_create(jsonb,text,uuid)', 'EXECUTE')
+     or has_function_privilege('dpg_order_intake_login', 'public.guest_order_request_create(jsonb,text,uuid)', 'EXECUTE')
+     or not has_function_privilege('dpg_order_intake', 'public.guest_order_request_create(jsonb,text,uuid)', 'EXECUTE')
+     or not has_function_privilege('dpg_order_intake_function_owner', 'public.guest_order_request_create(jsonb,text,uuid)', 'EXECUTE')
      or not exists (
        select 1 from pg_proc p
        where p.oid = 'public.phase2_admin_product_update(integer,integer,jsonb,text,uuid)'::regprocedure
          and p.prosrc like '%phase2_preview_synthetic_product_eligible(v_old.id)%'
+         and pg_get_userbyid(p.proowner) = 'dpg_migration'
          and not p.prosecdef
+     )
+     or has_function_privilege('anon', 'public.phase2_admin_product_update(integer,integer,jsonb,text,uuid)', 'EXECUTE')
+     or has_function_privilege('service_role', 'public.phase2_admin_product_update(integer,integer,jsonb,text,uuid)', 'EXECUTE')
+     or not has_function_privilege('authenticated', 'public.phase2_admin_product_update(integer,integer,jsonb,text,uuid)', 'EXECUTE')
+     or has_schema_privilege('dpg_migration', 'public', 'CREATE')
+     or has_schema_privilege('dpg_order_intake_function_owner', 'public', 'CREATE')
+     or exists (
+       select 1 from pg_auth_members membership
+       where membership.roleid = (select oid from pg_roles where rolname = 'dpg_order_intake_function_owner')
+         and membership.member = (select oid from pg_roles where rolname = 'dpg_migration')
      )
      or not exists (
        select 1 from pg_policy p
