@@ -10,6 +10,7 @@ import {
 } from './order-intake-diagnostic.mjs'
 
 const accountId = 'd54f3402b9d112ab64d6135e0e3f1fb1'
+const tokenId = 'abcdef0123456789abcdef0123456789'
 const orderIntakeUrl = 'https://uybumsnyqpwcidjxmfsv.supabase.co/functions/v1/order-intake'
 const publishableKey = 'sb_publishable_synthetic_public_preview_key'
 const sourceSha = '434cb72ea453d384148255f9f1cbbf3e530f6098'
@@ -35,6 +36,7 @@ function baseConfig() {
 
 function permittedTokenDetails() {
   return {
+    id: tokenId,
     status: 'active',
     provisioner_type: 'com.cloudflare.api.apitoken',
     policies: [
@@ -50,6 +52,28 @@ function permittedTokenDetails() {
         effect: 'allow',
         resources: { 'com.cloudflare.api.user.0123456789abcdef0123456789abcdef': '*' },
         permission_groups: [{ name: 'API Tokens Read' }],
+      },
+    ],
+  }
+}
+
+function permittedAccountOwnedTokenDetails() {
+  return {
+    id: tokenId,
+    status: 'active',
+    policies: [
+      {
+        effect: 'allow',
+        resources: { [`com.cloudflare.api.account.${accountId}`]: '*' },
+        permission_groups: [
+          { name: 'Workers Scripts Write' },
+          { name: 'Account Settings Read' },
+        ],
+      },
+      {
+        effect: 'allow',
+        resources: { [`com.cloudflare.api.account.${accountId}`]: '*' },
+        permission_groups: [{ name: 'Account API Tokens Read' }],
       },
     ],
   }
@@ -118,28 +142,178 @@ describe('order intake diagnostic credential scope', () => {
     expect(attestPreviewTokenScope(accountId, wildcard).reason).toBe('TOKEN_RESOURCE_SCOPE_NOT_EXACT')
   })
 
+  it('does not treat an active token or missing provenance alone as scope proof', () => {
+    const details = permittedTokenDetails()
+    delete (details as { provisioner_type?: string }).provisioner_type
+    expect(attestPreviewTokenScope(accountId, details)).toEqual({
+      ok: false,
+      reason: 'TOKEN_PROVISIONER_TYPE_UNKNOWN',
+    })
+    expect(attestPreviewTokenScope(accountId, {
+      id: tokenId,
+      status: 'active',
+      provisioner_type: 'com.cloudflare.api.apitoken',
+    }, { expectedTokenId: tokenId })).toEqual({
+      ok: false,
+      reason: 'TOKEN_POLICIES_MISSING',
+    })
+  })
+
   it('inspects token policy metadata without returning credential values', async () => {
     const requests: Array<{ url: string; authorization: string | null }> = []
     const fetcher = async (input: RequestInfo | URL, init?: RequestInit) => {
       requests.push({ url: String(input), authorization: new Headers(init?.headers).get('authorization') })
       if (requests.length === 1) {
-        return Response.json({ success: true, result: { id: 'abcdef0123456789abcdef0123456789', status: 'active' } })
+        return Response.json({ success: true, result: { id: tokenId, status: 'active' } })
+      }
+      if (String(input).endsWith(`/accounts/${accountId}/tokens/${tokenId}`)) {
+        return new Response('{}', { status: 404 })
       }
       return Response.json({ success: true, result: permittedTokenDetails() })
     }
 
     const result = await attestCloudflareCredential(accountId, 'secret-test-only', fetcher)
 
-    expect(result).toEqual({ ok: true, scope: 'PREVIEW_ACCOUNT_WORKER_WRITE_AND_TAIL_ONLY' })
+    expect(result).toEqual({
+      ok: true,
+      scope: 'PREVIEW_ACCOUNT_WORKER_WRITE_AND_TAIL_ONLY',
+      detailsSource: 'USER_TOKEN_DETAILS',
+    })
     expect(requests.map(({ url }) => url)).toEqual([
       'https://api.cloudflare.com/client/v4/user/tokens/verify',
-      'https://api.cloudflare.com/client/v4/user/tokens/abcdef0123456789abcdef0123456789',
+      `https://api.cloudflare.com/client/v4/accounts/${accountId}/tokens/${tokenId}`,
+      `https://api.cloudflare.com/client/v4/user/tokens/${tokenId}`,
     ])
     expect(requests.every(({ authorization }) => authorization === 'Bearer secret-test-only')).toBe(true)
     expect(JSON.stringify(result)).not.toContain('secret-test-only')
   })
 
-  it('fails closed when token metadata cannot be read instead of deploying with unknown scope', async () => {
+  it('uses the account-owned token details endpoint and accepts its optional provenance field only with exact policies', async () => {
+    const requests: Array<{ url: string; method: string; authorization: string | null }> = []
+    const fetcher = async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      requests.push({
+        url,
+        method: init?.method ?? 'GET',
+        authorization: new Headers(init?.headers).get('authorization'),
+      })
+      if (url.endsWith('/user/tokens/verify')) {
+        return Response.json({ success: true, result: { id: tokenId, status: 'active' } })
+      }
+      if (url.endsWith(`/accounts/${accountId}/tokens/${tokenId}`)) {
+        return Response.json({ success: true, result: permittedAccountOwnedTokenDetails() })
+      }
+      throw new Error('UNEXPECTED_TOKEN_SCOPE_REQUEST')
+    }
+
+    await expect(attestCloudflareCredential(accountId, 'secret-test-only', fetcher)).resolves.toEqual({
+      ok: true,
+      scope: 'PREVIEW_ACCOUNT_WORKER_WRITE_AND_TAIL_ONLY',
+      detailsSource: 'ACCOUNT_OWNED_TOKEN_DETAILS',
+    })
+    expect(requests.map(({ url }) => url)).toEqual([
+      'https://api.cloudflare.com/client/v4/user/tokens/verify',
+      `https://api.cloudflare.com/client/v4/accounts/${accountId}/tokens/${tokenId}`,
+    ])
+    expect(requests.every(({ method }) => method === 'GET')).toBe(true)
+    expect(requests.every(({ authorization }) => authorization === 'Bearer secret-test-only')).toBe(true)
+    expect(JSON.stringify(requests.map(({ url, method }) => ({ url, method })))).not.toContain('secret-test-only')
+  })
+
+  it('falls back to the user-owned token details endpoint when account details are not available', async () => {
+    const requests: string[] = []
+    const fetcher = async (input: RequestInfo | URL) => {
+      const url = String(input)
+      requests.push(url)
+      if (url.endsWith('/user/tokens/verify')) {
+        return Response.json({ success: true, result: { id: tokenId, status: 'active' } })
+      }
+      if (url.endsWith(`/accounts/${accountId}/tokens/${tokenId}`)) return new Response('{}', { status: 403 })
+      if (url.endsWith(`/user/tokens/${tokenId}`)) {
+        return Response.json({ success: true, result: permittedTokenDetails() })
+      }
+      throw new Error('UNEXPECTED_TOKEN_SCOPE_REQUEST')
+    }
+
+    await expect(attestCloudflareCredential(accountId, 'secret-test-only', fetcher)).resolves.toMatchObject({
+      ok: true,
+      scope: 'PREVIEW_ACCOUNT_WORKER_WRITE_AND_TAIL_ONLY',
+      detailsSource: 'USER_TOKEN_DETAILS',
+    })
+    expect(requests).toEqual([
+      'https://api.cloudflare.com/client/v4/user/tokens/verify',
+      `https://api.cloudflare.com/client/v4/accounts/${accountId}/tokens/${tokenId}`,
+      `https://api.cloudflare.com/client/v4/user/tokens/${tokenId}`,
+    ])
+  })
+
+  it('still rejects an OAuth-provisioned token returned by the account-owned endpoint', async () => {
+    const oauthDetails = {
+      ...permittedAccountOwnedTokenDetails(),
+      provisioner_type: 'com.cloudflare.api.oauthtoken',
+    }
+    const fetcher = async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.endsWith('/user/tokens/verify')) {
+        return Response.json({ success: true, result: { id: tokenId, status: 'active' } })
+      }
+      if (url.endsWith(`/accounts/${accountId}/tokens/${tokenId}`)) {
+        return Response.json({ success: true, result: oauthDetails })
+      }
+      throw new Error('UNEXPECTED_TOKEN_SCOPE_REQUEST')
+    }
+
+    await expect(attestCloudflareCredential(accountId, 'secret-test-only', fetcher)).resolves.toEqual({
+      ok: false,
+      reason: 'OAUTH_TOKEN_NOT_ALLOWED',
+      detailsSource: 'ACCOUNT_OWNED_TOKEN_DETAILS',
+    })
+  })
+
+  it('rejects scope details for a token ID different from the verified bearer', async () => {
+    const mismatchedDetails = { ...permittedAccountOwnedTokenDetails(), id: 'fedcba9876543210fedcba9876543210' }
+    const fetcher = async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.endsWith('/user/tokens/verify')) {
+        return Response.json({ success: true, result: { id: tokenId, status: 'active' } })
+      }
+      if (url.endsWith(`/accounts/${accountId}/tokens/${tokenId}`)) {
+        return Response.json({ success: true, result: mismatchedDetails })
+      }
+      throw new Error('UNEXPECTED_TOKEN_SCOPE_REQUEST')
+    }
+
+    await expect(attestCloudflareCredential(accountId, 'secret-test-only', fetcher)).resolves.toEqual({
+      ok: false,
+      reason: 'TOKEN_DETAILS_ID_MISMATCH',
+      detailsSource: 'ACCOUNT_OWNED_TOKEN_DETAILS',
+    })
+  })
+
+  it('fails closed when neither owner-specific details endpoint can disclose scope', async () => {
+    const requests: string[] = []
+    const fetcher = async (input: RequestInfo | URL) => {
+      const url = String(input)
+      requests.push(url)
+      if (url.endsWith('/user/tokens/verify')) {
+        return Response.json({ success: true, result: { id: tokenId, status: 'active' } })
+      }
+      return new Response('{}', { status: 403 })
+    }
+
+    await expect(attestCloudflareCredential(accountId, 'secret-test-only', fetcher)).resolves.toEqual({
+      ok: false,
+      reason: 'TOKEN_SCOPE_DETAILS_DENIED',
+      detailsSourcesAttempted: ['ACCOUNT_OWNED_TOKEN_DETAILS', 'USER_TOKEN_DETAILS'],
+    })
+    expect(requests).toEqual([
+      'https://api.cloudflare.com/client/v4/user/tokens/verify',
+      `https://api.cloudflare.com/client/v4/accounts/${accountId}/tokens/${tokenId}`,
+      `https://api.cloudflare.com/client/v4/user/tokens/${tokenId}`,
+    ])
+  })
+
+  it('fails closed when token verification is denied before any scope fetch', async () => {
     const fetcher = async () => new Response('{}', { status: 403 })
     await expect(attestCloudflareCredential(accountId, 'secret-test-only', fetcher)).resolves.toEqual({
       ok: false,

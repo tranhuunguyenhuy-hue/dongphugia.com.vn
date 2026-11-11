@@ -97,14 +97,26 @@ function selfUserResourceIsExact(resources) {
     && entries[0][1] === '*'
 }
 
-export function attestPreviewTokenScope(accountId, details) {
+export function attestPreviewTokenScope(accountId, details, { expectedTokenId, detailsSource } = {}) {
   if (accountId !== APPROVED_ACCOUNT_ID) return { ok: false, reason: 'ACCOUNT_ID_NOT_APPROVED' }
   if (!details || details.status !== 'active') return { ok: false, reason: 'TOKEN_INACTIVE' }
-  if (typeof details.provisioner_type !== 'string') return { ok: false, reason: 'TOKEN_PROVISIONER_TYPE_UNKNOWN' }
-  if (/oauth/i.test(details.provisioner_type)) {
-    return { ok: false, reason: 'OAUTH_TOKEN_NOT_ALLOWED' }
+  if (expectedTokenId && details.id !== expectedTokenId) {
+    return { ok: false, reason: 'TOKEN_DETAILS_ID_MISMATCH' }
   }
-  if (!/api.?token/i.test(details.provisioner_type)) return { ok: false, reason: 'TOKEN_PROVISIONER_TYPE_UNKNOWN' }
+  if (details.provisioner_type !== undefined && details.provisioner_type !== null) {
+    if (typeof details.provisioner_type !== 'string') return { ok: false, reason: 'TOKEN_PROVISIONER_TYPE_UNKNOWN' }
+    if (/oauth/i.test(details.provisioner_type)) {
+      return { ok: false, reason: 'OAUTH_TOKEN_NOT_ALLOWED' }
+    }
+    if (!/api.?token/i.test(details.provisioner_type)) {
+      return { ok: false, reason: 'TOKEN_PROVISIONER_TYPE_UNKNOWN' }
+    }
+  } else if (!['ACCOUNT_OWNED_TOKEN_DETAILS', 'USER_TOKEN_DETAILS'].includes(detailsSource)
+      || (typeof details.provisioner_id === 'string' && details.provisioner_id.length > 0)) {
+    // Cloudflare documents provisioner_type as optional and only present for provisioned account-owned tokens.
+    // When absent, require the successful owner-specific token-details route and exact policy checks below.
+    return { ok: false, reason: 'TOKEN_PROVISIONER_TYPE_UNKNOWN' }
+  }
 
   const policies = details.policies
   if (!Array.isArray(policies) || policies.length === 0) return { ok: false, reason: 'TOKEN_POLICIES_MISSING' }
@@ -171,22 +183,56 @@ export async function attestCloudflareCredential(accountId, token, fetcher = fet
     return { ok: false, reason: 'TOKEN_VERIFY_INACTIVE' }
   }
 
-  let detailsResponse
-  try {
-    detailsResponse = await fetcher(`https://api.cloudflare.com/client/v4/user/tokens/${tokenId}`, { headers })
-  } catch {
-    return { ok: false, reason: 'TOKEN_SCOPE_DETAILS_UNAVAILABLE' }
-  }
-  if (!detailsResponse.ok) return { ok: false, reason: 'TOKEN_SCOPE_DETAILS_DENIED' }
+  // Verify returns only token ID/status. Scope comes only from the detail API.
+  // Cloudflare has separate detail routes for account-owned and user-owned tokens;
+  // try the account-owned route first, then the user route, without requesting new permissions.
+  const detailSources = [
+    {
+      name: 'ACCOUNT_OWNED_TOKEN_DETAILS',
+      url: `https://api.cloudflare.com/client/v4/accounts/${accountId}/tokens/${tokenId}`,
+    },
+    {
+      name: 'USER_TOKEN_DETAILS',
+      url: `https://api.cloudflare.com/client/v4/user/tokens/${tokenId}`,
+    },
+  ]
+  let responsesReceived = 0
+  const attemptedDetailsSources = []
+  for (const source of detailSources) {
+    attemptedDetailsSources.push(source.name)
+    let detailsResponse
+    try {
+      detailsResponse = await fetcher(source.url, { headers })
+    } catch {
+      continue
+    }
+    responsesReceived += 1
+    if (!detailsResponse.ok) continue
 
-  let details
-  try {
-    details = await detailsResponse.json()
-  } catch {
-    return { ok: false, reason: 'TOKEN_SCOPE_DETAILS_INVALID' }
+    let details
+    try {
+      details = await detailsResponse.json()
+    } catch {
+      return { ok: false, reason: 'TOKEN_SCOPE_DETAILS_INVALID', detailsSource: source.name }
+    }
+    if (details?.success !== true || !details?.result || typeof details.result !== 'object') {
+      return { ok: false, reason: 'TOKEN_SCOPE_DETAILS_INVALID', detailsSource: source.name }
+    }
+
+    return {
+      ...attestPreviewTokenScope(accountId, details.result, {
+        expectedTokenId: tokenId,
+        detailsSource: source.name,
+      }),
+      detailsSource: source.name,
+    }
   }
-  if (details?.success !== true) return { ok: false, reason: 'TOKEN_SCOPE_DETAILS_INVALID' }
-  return attestPreviewTokenScope(accountId, details.result)
+
+  return {
+    ok: false,
+    reason: responsesReceived > 0 ? 'TOKEN_SCOPE_DETAILS_DENIED' : 'TOKEN_SCOPE_DETAILS_UNAVAILABLE',
+    detailsSourcesAttempted: attemptedDetailsSources,
+  }
 }
 
 export async function preflightOrderIntakeDiagnosticTarget({ accountId, token, workerName }, fetcher = fetch) {
@@ -454,9 +500,11 @@ async function run() {
     process.stdout.write(`${JSON.stringify({
       result: result.ok ? 'ORDER_DIAGNOSTIC_CREDENTIAL_SCOPE_PASS' : 'BLOCKED_BY_CREDENTIAL_SCOPE',
       reason: result.ok ? undefined : result.reason,
+      ...(result.detailsSource ? { details_source: result.detailsSource } : {}),
+      ...(result.detailsSourcesAttempted ? { details_sources_attempted: result.detailsSourcesAttempted } : {}),
     })}\n`)
     if (process.env.GITHUB_OUTPUT) {
-      await writeFile(process.env.GITHUB_OUTPUT, `result=${result.ok ? 'ORDER_DIAGNOSTIC_CREDENTIAL_SCOPE_PASS' : 'BLOCKED_BY_CREDENTIAL_SCOPE'}\nreason=${result.ok ? 'NONE' : result.reason}\n`, { flag: 'a' })
+      await writeFile(process.env.GITHUB_OUTPUT, `result=${result.ok ? 'ORDER_DIAGNOSTIC_CREDENTIAL_SCOPE_PASS' : 'BLOCKED_BY_CREDENTIAL_SCOPE'}\nreason=${result.ok ? 'NONE' : result.reason}\ndetails_source=${result.detailsSource ?? 'UNKNOWN'}\n`, { flag: 'a' })
     }
     return
   }
