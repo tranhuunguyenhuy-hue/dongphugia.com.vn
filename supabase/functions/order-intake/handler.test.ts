@@ -25,11 +25,11 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-async function signedRequest(method: 'GET' | 'POST', body = '') {
+async function signedRequest(method: 'GET' | 'POST', body = '', requestOrigin = origin) {
   const signatureInput: OrderIntakeSignatureInput = {
     method,
     path: '/functions/v1/order-intake',
-    origin,
+    origin: requestOrigin,
     requestId,
     idempotencyKey,
     timestamp: String(nowSeconds),
@@ -39,7 +39,7 @@ async function signedRequest(method: 'GET' | 'POST', body = '') {
   return new Request(`https://project.supabase.co${signatureInput.path}`, {
     method,
     headers: {
-      Origin: origin,
+      Origin: requestOrigin,
       apikey: 'sb_publishable_test_key',
       'Content-Type': 'application/json',
       'Idempotency-Key': idempotencyKey,
@@ -52,6 +52,18 @@ async function signedRequest(method: 'GET' | 'POST', body = '') {
 }
 
 describe('order-intake signed backend handler', () => {
+  it('accepts the isolated per-PR diagnostic Worker origin from the allowlist for read-only receipt checks', async () => {
+    const diagnosticOrigin = 'https://pr-291-dongphugia-v1-public-preview.tranhuunguyenhuy.workers.dev'
+    const database = { create: vi.fn(), receipt: vi.fn().mockResolvedValue(null) }
+    const handler = createOrderIntakeHandler({ database, signingSecret: secret, nowSeconds: () => nowSeconds })
+    const response = await handler(await signedRequest('GET', '', diagnosticOrigin))
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({ data: null })
+    expect(database.receipt).toHaveBeenCalledOnce()
+    expect(database.create).not.toHaveBeenCalled()
+  })
+
   it('logs only a correlated configuration category when the signing secret is invalid', async () => {
     const diagnostics = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
     const database = { create: vi.fn(), receipt: vi.fn() }

@@ -66,7 +66,8 @@ export default {
       return handleGuestOrderRequest(request, environment)
     }
     if (new URL(request.url).pathname === '/api/order-requests/receipt') {
-      return handleGuestOrderReceiptRequest(request, environment)
+      const response = await handleGuestOrderReceiptRequest(request, environment)
+      return withHeaders(response, { ...sourceIdentityHeader, ...robotHeaders })
     }
 
     const publicApiDecision = classifyPublicApiRequest(request)

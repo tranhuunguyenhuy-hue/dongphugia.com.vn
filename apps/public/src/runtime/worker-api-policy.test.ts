@@ -25,6 +25,31 @@ beforeAll(async () => {
 beforeEach(() => mocks.vinextFetch.mockClear())
 
 describe('public Worker API route ownership', () => {
+    it('identifies and keeps read-only receipt responses private and noindex in Preview', async () => {
+        const restoreFetch = globalThis.fetch
+        vi.stubGlobal('fetch', vi.fn(async () => Response.json({ data: null })))
+        try {
+            const request = new Request('https://preview.invalid/api/order-requests/receipt', {
+                headers: { 'Idempotency-Key': '8b96aecb-8c34-4c46-879f-292369aa961d' },
+            })
+            const response = await worker.fetch(request, {
+                ...environment,
+                PUBLIC_ORDER_INTAKE_URL: 'https://demo.supabase.co/functions/v1/order-intake',
+                PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_test_key',
+                ORDER_INTAKE_SIGNING_SECRET: 'synthetic-order-intake-signing-secret-32-bytes',
+                ORDER_REQUEST_LIMITER: { limit: async () => ({ success: true }) },
+            }, {} as ExecutionContext)
+
+            expect(response.status).toBe(200)
+            expect(await response.json()).toEqual({ data: null })
+            expect(response.headers.get('cache-control')).toBe('private, no-store')
+            expect(response.headers.get('x-dpg-source-sha')).toBe('a'.repeat(40))
+            expect(response.headers.get('x-robots-tag')).toBe('noindex, nofollow')
+        } finally {
+            vi.stubGlobal('fetch', restoreFetch)
+        }
+    })
+
     it('routes only the owned listing read endpoint through to the public app', async () => {
         const request = new Request('https://preview.invalid/api/catalogue/listings/thiet-bi-bep/voi-rua-chen?page=1')
         const response = await worker.fetch(request, environment, {} as ExecutionContext)

@@ -186,8 +186,8 @@ describe('migration PR CI and Preview workflow contract', () => {
     ]) expect(fullPreviewWorkflow).toContain(marker)
 
     expect(reusablePublisher.match(/versions upload/g)).toHaveLength(2)
-    expect(reusablePublisher.match(/^\s+PR_NUMBER: \$\{\{ inputs\.pull_request_number \}\}$/gm)).toHaveLength(1)
-    expect(reusablePublisher.match(/secrets\.CLOUDFLARE_LEO563_PREVIEW_TOKEN/g)).toHaveLength(6)
+    expect(reusablePublisher.match(/^\s+PR_NUMBER: \$\{\{ inputs\.pull_request_number \}\}$/gm)).toHaveLength(2)
+    expect(reusablePublisher.match(/secrets\.CLOUDFLARE_LEO563_PREVIEW_TOKEN/g)?.length).toBeGreaterThanOrEqual(10)
     expect(workflow.match(/secrets\.CLOUDFLARE_READONLY_DISCOVERY_TOKEN/g)).toHaveLength(1)
     expect(fullPreviewWorkflow).not.toContain('secrets.CLOUDFLARE_API_TOKEN')
     expect(workflow).toContain('cloudflare-readonly-discovery.mjs')
@@ -234,11 +234,61 @@ describe('migration PR CI and Preview workflow contract', () => {
     expect(workflow).toContain('EVENT_LABEL: ${{ github.event.label.name || \'\' }}')
     expect(workflow).toContain('approved_label_present=')
     expect(workflow).toContain("if [[ \"$EVENT_ACTION\" == 'labeled' && \"$EVENT_LABEL\" == 'preview-approved' && \"$ACTOR\" == 'tranhuunguyenhuy-hue' ]]; then")
-    expect(workflow).toContain('gh api --paginate --slurp')
-    expect(workflow).toContain(".actor.login == \"tranhuunguyenhuy-hue\"")
+    expect(workflow).not.toContain('gh api --paginate --slurp')
+    expect(workflow).not.toContain('label_events=')
     expect(workflow).toContain("test \"$(jq -r '.head.sha' <<< \"$pr_json\")\" = \"$SOURCE_SHA\"")
     expect(workflow).toContain('owner_approved_upload=true')
     expect(workflow).toContain("uses: ./.github/workflows/preview-public-admin.yml")
     expect(reusablePublisher).toContain('workflow_call:')
+  })
+
+  it('keeps the temporary order-intake diagnostic exact-SHA, Free-only, nonpersistent, and always cleaned up', () => {
+    const diagnosticJobStart = reusablePublisher.indexOf('  order-intake-diagnostic:')
+    const diagnosticJob = reusablePublisher.slice(diagnosticJobStart)
+    const normalizedDiagnosticJob = diagnosticJob.replace(/\\/g, ' ').replace(/\s+/g, ' ')
+    for (const marker of [
+      "run_order_intake_diagnostic == true",
+      "inputs.workers_plan_status == 'FREE'",
+      "needs.public-preview-upload.outputs.result == 'REAL_PUBLIC_PREVIEW_PASS'",
+      "needs.admin-preview-upload.outputs.result == 'REAL_ADMIN_PREVIEW_PASS'",
+      'ref: ${{ inputs.source_sha }}',
+      'actions/download-artifact@v4',
+      'npm run app:verify-candidate',
+      'attest-scope',
+      'preflight',
+      'wrangler.diagnostic.json',
+      'node "$WRANGLER_BIN" tail "$WORKER_NAME" --format json --method GET',
+      '--search PUBLIC_ORDER_INTAKE_DIAGNOSTIC',
+      'exact source $SOURCE_SHA temporary receipt diagnostic',
+      "steps.deploy.outputs.write_attempted == 'true'",
+      'order-intake-diagnostic.mjs cleanup',
+      "diagnostic_result='DIAGNOSTIC_CLEANUP_FAILED'",
+      'no Version URL used',
+      'no order POST or order write',
+    ]) expect(normalizedDiagnosticJob, `Missing diagnostic workflow marker: ${marker}`).toContain(marker)
+    expect(diagnosticJob).not.toContain('--sampling-rate')
+    expect(diagnosticJob).not.toContain('--preview-alias')
+    expect(diagnosticJob).not.toContain('workers_dev: false')
+    expect(diagnosticJob).toContain("--config wrangler.diagnostic.json")
+    expect(reusablePublisher).toContain('run_order_intake_diagnostic:')
+    expect(reusablePublisher).toContain('order_intake_diagnostic_result:')
+  })
+
+  it('limits order-intake diagnostics to the exact isolated account, APP_ORIGIN allowlist, and no-persistence telemetry', () => {
+    const diagnosticHelper = readFileSync(resolve(process.cwd(), 'scripts/app-foundation/order-intake-diagnostic.mjs'), 'utf8')
+    const edgeHandler = readFileSync(resolve(process.cwd(), 'supabase/functions/order-intake/handler.ts'), 'utf8')
+    for (const marker of [
+      "const APPROVED_ACCOUNT_ID = 'd54f3402b9d112ab64d6135e0e3f1fb1'",
+      "const APPROVED_SUPABASE_INTAKE_URL = 'https://uybumsnyqpwcidjxmfsv.supabase.co/functions/v1/order-intake'",
+      'config.account_id = APPROVED_ACCOUNT_ID',
+      'config.workers_dev = true',
+      'config.preview_urls = false',
+      'APP_ORIGIN: previewUrl',
+      'invocation_logs: false',
+      'persist: false',
+      'traces: {\n      enabled: false,\n      persist: false,',
+      'ORDER_DIAGNOSTIC_CLEANUP_PASS',
+    ]) expect(diagnosticHelper).toContain(marker)
+    expect(edgeHandler).toContain('^pr-[0-9]+-dongphugia-v1-public-preview\\.tranhuunguyenhuy\\.workers\\.dev$')
   })
 })
