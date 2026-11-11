@@ -6,32 +6,24 @@ handoffs, ADRs, runbooks, or a second context file.** Use
 [`docs/PROJECT.md`](docs/PROJECT.md) only if the active task needs detailed
 domain, architecture, deployment, or troubleshooting reference.
 
-## Project and objective (snapshot: 2026-11-06)
+## Project and objective (snapshot: 2026-11-11)
 
 - Repo: `tranhuunguyenhuy-hue/dongphugia.com.vn`, base branch `main`.
 - Customer website: `https://www.dongphugia.vn`; staff application target:
   `https://admin.dongphugia.vn`.
 - Business: Vietnamese building-materials retailer. Four catalogue sectors:
   Thiết bị vệ sinh, Gạch ốp lát, Thiết bị nước, Thiết bị bếp.
-- **Current delivery tracks:** P0 Public recovery (#260) is still open;
-  do not assume it is complete or deployed. **Phase 2 (#270) is the next
-  requested source-work track**: verified PDP variants, footer parity,
-  durable guest cart/order and staff Admin/CMS. Keep Phase 2 isolated from
-  the P0 Production candidate; do not fold either into unrelated migration.
-- Work authority: GitHub [#260](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/260)
-  (P0 Public recovery), [#270](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/270)
-  (Phase 2), [PR #272](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/pull/272)
-  (cart/order), [PR #282](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/pull/282)
-  (workflow/docs). **These are dated pointers, not confirmed current status:
-  inspect the relevant GitHub item only when the request touches it.**
-- **Phase 2 handoff:** first inspect Issue #270 and existing PR #272/branch
-  ownership; continue an active owned PR rather than starting a conflicting
-  branch. Verify 17-group/51-product variant coverage against real source,
-  footer desktop/mobile parity, persistent and idempotent guest orders, and
-  denied unauthorized Admin actions. UI/source work may proceed without a
-  blanket database-backup gate; DB/Auth/provider writes require their own
-  exact approval and recoverable data. The choice between legacy Admin
-  restoration and new Supabase Auth/Admin remains **UNDECIDED** in #270.
+- **Current delivery tracks:** P0 recovery [#260](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/260)
+  remains separate; verify its live state when a task depends on it. Phase 2
+  sources are tracked by [#270](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/270)
+  and integrated candidate [PR #291](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/pull/291).
+  The bounded Public + Admin Preview is [#290](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/290).
+- **Phase 2 choices are settled:** retain the separate `apps/admin` application
+  with Supabase Auth/RLS; Preview covers only the existing bounded modules. Do
+  not restore the legacy monolithic CMS or describe excluded modules as accepted.
+  Continue the owned integration PR and verify variant/cart/order, staff-denial,
+  publication-integrity and desktop/mobile evidence on the exact candidate.
+  Hosted writes require the recorded exact-target authorization and recovery path.
 - The 2026-09 V1 design handoffs had a global wireframe-freeze condition.
   They were consolidated, **not converted into blanket authorization** for
   new V1 schema/architecture implementation. The newer Phase 2 recovery

@@ -12,13 +12,30 @@ import {
 } from './synthetic-preview-contract.mjs'
 
 describe('synthetic Preview target contract', () => {
-  it('accepts only a TLS PostgreSQL URL for the exact disposable test project', () => {
+  it('accepts direct TLS and the exact project-specific IPv4 Session Pooler route', () => {
     expect(assertSyntheticPreviewDatabaseUrl(
       'postgresql://postgres:pw@db.uybumsnyqpwcidjxmfsv.supabase.co:5432/postgres?sslmode=require',
-    )).toMatchObject({ projectRef: SYNTHETIC_PREVIEW_TARGET.projectRef, database: 'postgres' })
+    )).toMatchObject({
+      projectRef: SYNTHETIC_PREVIEW_TARGET.projectRef,
+      database: 'postgres',
+      connectionMode: 'direct',
+    })
+    expect(assertSyntheticPreviewDatabaseUrl(
+      'postgresql://postgres.uybumsnyqpwcidjxmfsv:pw@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres?sslmode=require',
+    )).toMatchObject({
+      projectRef: SYNTHETIC_PREVIEW_TARGET.projectRef,
+      host: 'aws-0-ap-southeast-1.pooler.supabase.com',
+      database: 'postgres',
+      connectionMode: 'session-pooler',
+    })
 
     for (const url of [
       'postgresql://postgres:pw@db.bonxyxluzlxfkdetryoo.supabase.co:5432/postgres?sslmode=require',
+      'postgresql://postgres.bonxyxluzlxfkdetryoo:pw@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres?sslmode=require',
+      'postgresql://postgres.uybumsnyqpwcidjxmfsv:pw@aws-0-us-east-1.pooler.supabase.com:5432/postgres?sslmode=require',
+      'postgresql://postgres.uybumsnyqpwcidjxmfsv:pw@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres?sslmode=require',
+      'postgresql://postgres:pw@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres?sslmode=require',
+      'postgresql://postgres.uybumsnyqpwcidjxmfsv:pw@db.uybumsnyqpwcidjxmfsv.supabase.co:5432/postgres?sslmode=require',
       'postgresql://postgres:pw@db.uybumsnyqpwcidjxmfsv.supabase.co:5432/postgres',
       'postgresql://postgres:pw@db.uybumsnyqpwcidjxmfsv.supabase.co:5433/postgres?sslmode=require',
       'https://uybumsnyqpwcidjxmfsv.supabase.co',
@@ -36,6 +53,7 @@ describe('synthetic Preview target contract', () => {
     }
     expect(error.message).toContain('fields=target_host,port,database,migration_role,tls_mode')
     expect(error.message).not.toContain('fixture-pw')
+    expect(error.message).not.toContain('invalid.example')
   })
 
   it('transforms only the exact two Phase 2 target guards and keeps the production runner untouched', async () => {

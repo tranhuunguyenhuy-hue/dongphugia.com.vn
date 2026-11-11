@@ -98,6 +98,16 @@ source SQL hash. Keep `scripts/backup/supabase-runtime-migrations.mjs` and its
 Production-derived target guard unchanged. Do not mutate
 `bonxyxluzlxfkdetryoo`.
 
+The GitHub-hosted migration job uses IPv4 networking. For this Preview project,
+the Supabase Connect dialog identifies Session Pooler as
+`aws-0-ap-southeast-1.pooler.supabase.com` with project-qualified user
+`postgres.uybumsnyqpwcidjxmfsv`, port `5432`, database `postgres`, and TLS
+required. The synthetic runner accepts that exact regional/project route plus
+the exact direct endpoint for IPv6-capable clients; it rejects transaction
+pooling, other pooler regions/projects, other migration roles, and weaker TLS.
+See Supabase's [Postgres connection guide](https://supabase.com/docs/guides/database/connecting-to-postgres)
+and [IPv4 guide](https://supabase.com/docs/guides/platform/ipv4-address).
+
 **Design provenance and approval:** older 2026-09 V1 Figma handoffs included
 a global `V1 WIREFRAME APPROVED / FROZEN` gate and several review-candidate
 screens. Their implementation details are preserved in Git history after

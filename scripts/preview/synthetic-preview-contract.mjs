@@ -43,14 +43,22 @@ export function assertSyntheticPreviewDatabaseUrl(value) {
     throw new Error('DPG_SYNTHETIC_PREVIEW_DATABASE_URL_INVALID')
   }
 
-  const expectedHost = `db.${SYNTHETIC_PREVIEW_TARGET.projectRef}.supabase.co`
+  const directHost = `db.${SYNTHETIC_PREVIEW_TARGET.projectRef}.supabase.co`
+  // Confirmed from this project's Connect dialog: this exact shared Supavisor
+  // endpoint is its IPv4 Session Pooler in ap-southeast-1.
+  const sessionPoolerHost = `aws-0-${SYNTHETIC_PREVIEW_TARGET.region}.pooler.supabase.com`
   const sslmode = parsed.searchParams.get('sslmode')
+  const isDirectConnection = parsed.hostname === directHost
+  const isSessionPooler = parsed.hostname === sessionPoolerHost
+  const validMigrationRole = isDirectConnection
+    ? parsed.username === 'postgres'
+    : isSessionPooler && parsed.username === `postgres.${SYNTHETIC_PREVIEW_TARGET.projectRef}`
   const rejectedFields = [
     ...(!['postgres:', 'postgresql:'].includes(parsed.protocol) ? ['protocol'] : []),
-    ...(parsed.hostname !== expectedHost ? ['target_host'] : []),
+    ...(!isDirectConnection && !isSessionPooler ? ['target_host'] : []),
     ...(parsed.port !== '5432' ? ['port'] : []),
     ...(parsed.pathname !== '/postgres' ? ['database'] : []),
-    ...(parsed.username !== 'postgres' ? ['migration_role'] : []),
+    ...(!validMigrationRole ? ['migration_role'] : []),
     ...(!parsed.password ? ['password_absent'] : []),
     ...(!['require', 'verify-ca', 'verify-full'].includes(sslmode ?? '') ? ['tls_mode'] : []),
   ]
@@ -61,9 +69,10 @@ export function assertSyntheticPreviewDatabaseUrl(value) {
 
   return Object.freeze({
     projectRef: SYNTHETIC_PREVIEW_TARGET.projectRef,
-    host: expectedHost,
+    host: parsed.hostname,
     database: 'postgres',
     sslmode,
+    connectionMode: isSessionPooler ? 'session-pooler' : 'direct',
   })
 }
 
