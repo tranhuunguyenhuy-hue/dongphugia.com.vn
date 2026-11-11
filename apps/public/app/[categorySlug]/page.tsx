@@ -7,6 +7,7 @@ import { usesPublicSnapshot } from '../../src/runtime/public-snapshot-mode'
 import { getPreviewCatalogueCategories, getPreviewCatalogueProducts } from '../../src/runtime/preview-public-catalogue'
 import { buildSnapshotCategoryRoot } from '../../src/runtime/public-category-root'
 import { getPublicAppEnvironment } from '../../src/config/env'
+import { isPreviewSyntheticCategoryRoute, PREVIEW_SYNTHETIC_CATEGORY_SLUG } from '../../src/runtime/preview-synthetic-route-contract'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -16,6 +17,7 @@ const CATEGORY_TITLES:Record<string,string>={
   'thiet-bi-bep':'Thiết Bị Bếp',
   'vat-lieu-nuoc':'Vật Liệu Nước',
   'gach-op-lat':'Gạch Ốp Lát',
+  'preview-synthetic':'Sản phẩm thử nghiệm',
 }
 const SLUG=/^[a-z0-9]+(?:-[a-z0-9]+)*$/
 const TRACKING_KEYS=new Set(['_rsc','fbclid','gclid'])
@@ -29,14 +31,18 @@ type PageProps={
 export async function generateMetadata({params}:PageProps):Promise<Metadata>{
   const {categorySlug}=await params
   const title=CATEGORY_TITLES[categorySlug]
-  const indexable=getPublicAppEnvironment().environment==='production'
+  const environment=getPublicAppEnvironment().environment
+  const synthetic=categorySlug===PREVIEW_SYNTHETIC_CATEGORY_SLUG
+  const indexable=!synthetic&&environment==='production'
   return title
-    ? {title,alternates:{canonical:`/${categorySlug}`},robots:{index:indexable,follow:indexable}}
+    ? {title,alternates:synthetic?undefined:{canonical:`/${categorySlug}`},robots:{index:indexable,follow:indexable}}
     : {title:'Không tìm thấy danh mục',robots:{index:false,follow:false}}
 }
 
 export default async function PublicCategoryPage({params,searchParams}:PageProps){
   const [{categorySlug},query]=await Promise.all([params,searchParams])
+  if(categorySlug===PREVIEW_SYNTHETIC_CATEGORY_SLUG
+    &&!isPreviewSyntheticCategoryRoute(getPublicAppEnvironment().environment,categorySlug))notFound()
   const unsupported=Object.keys(query).some(key=>key!=='brands'&&!TRACKING_KEYS.has(key)&&!key.startsWith('utm_'))
   const rawBrand=query.brands
   const brandSlugs=rawBrand===undefined?[]:typeof rawBrand==='string'?rawBrand.split(','):[]
