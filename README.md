@@ -3,12 +3,10 @@
 Website catalogue và báo giá của Đông Phú Gia.
 
 - Public production: `https://www.dongphugia.vn`
-- Runtime: AWS EC2/Coolify với immutable ARM64 image
-- Database production duy nhất: AWS PostgreSQL
+- Runtime/database: xác minh target và deployed SHA hiện hành trước khi vận hành;
+  repository chứa cả AWS và Cloudflare adapters.
 - Media: Bunny CDN
-- Default branch: `main`; repository policy requires PR, required CI, and PM
-  merge approval. Verify GitHub branch-protection enforcement live before
-  relying on it.
+- Default branch: `main`; working policy, Owner setup checklist and staging plan: [AGENTS.md](AGENTS.md).
 
 ## Local development
 
