@@ -163,24 +163,46 @@ export async function attestCloudflareCredential(accountId, token, fetcher = fet
   if (accountId !== APPROVED_ACCOUNT_ID) return { ok: false, reason: 'ACCOUNT_ID_NOT_APPROVED' }
   if (!token || typeof token !== 'string') return { ok: false, reason: 'TOKEN_VALUE_MISSING' }
   const headers = { Authorization: `Bearer ${token}` }
-  let verifyResponse
-  try {
-    verifyResponse = await fetcher('https://api.cloudflare.com/client/v4/user/tokens/verify', { headers })
-  } catch {
-    return { ok: false, reason: 'TOKEN_VERIFY_UNAVAILABLE' }
-  }
-  if (!verifyResponse.ok) return { ok: false, reason: 'TOKEN_VERIFY_DENIED' }
+  let tokenId
+  let verifyResponsesReceived = 0
+  const verifySources = [
+    {
+      name: 'ACCOUNT_TOKEN_VERIFY',
+      url: `https://api.cloudflare.com/client/v4/accounts/${accountId}/tokens/verify`,
+    },
+    {
+      name: 'USER_TOKEN_VERIFY',
+      url: 'https://api.cloudflare.com/client/v4/user/tokens/verify',
+    },
+  ]
+  for (const source of verifySources) {
+    let verifyResponse
+    try {
+      verifyResponse = await fetcher(source.url, { headers })
+    } catch {
+      continue
+    }
+    verifyResponsesReceived += 1
+    if (!verifyResponse.ok) continue
 
-  let verification
-  try {
-    verification = await verifyResponse.json()
-  } catch {
-    return { ok: false, reason: 'TOKEN_VERIFY_RESPONSE_INVALID' }
+    let verification
+    try {
+      verification = await verifyResponse.json()
+    } catch {
+      return { ok: false, reason: 'TOKEN_VERIFY_RESPONSE_INVALID' }
+    }
+    tokenId = verification?.result?.id
+    if (verification?.success !== true || verification?.result?.status !== 'active'
+        || typeof tokenId !== 'string' || !/^[a-f0-9]{32}$/i.test(tokenId)) {
+      return { ok: false, reason: 'TOKEN_VERIFY_INACTIVE' }
+    }
+    break
   }
-  const tokenId = verification?.result?.id
-  if (verification?.success !== true || verification?.result?.status !== 'active'
-      || typeof tokenId !== 'string' || !/^[a-f0-9]{32}$/i.test(tokenId)) {
-    return { ok: false, reason: 'TOKEN_VERIFY_INACTIVE' }
+  if (!tokenId) {
+    return {
+      ok: false,
+      reason: verifyResponsesReceived > 0 ? 'TOKEN_VERIFY_DENIED' : 'TOKEN_VERIFY_UNAVAILABLE',
+    }
   }
 
   // Verify returns only token ID/status. Scope comes only from the detail API.

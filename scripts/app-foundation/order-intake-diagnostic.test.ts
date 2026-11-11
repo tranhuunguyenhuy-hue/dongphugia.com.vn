@@ -163,7 +163,10 @@ describe('order intake diagnostic credential scope', () => {
     const requests: Array<{ url: string; authorization: string | null }> = []
     const fetcher = async (input: RequestInfo | URL, init?: RequestInit) => {
       requests.push({ url: String(input), authorization: new Headers(init?.headers).get('authorization') })
-      if (requests.length === 1) {
+      if (String(input).endsWith(`/accounts/${accountId}/tokens/verify`)) {
+        return new Response('{}', { status: 403 })
+      }
+      if (String(input).endsWith('/user/tokens/verify')) {
         return Response.json({ success: true, result: { id: tokenId, status: 'active' } })
       }
       if (String(input).endsWith(`/accounts/${accountId}/tokens/${tokenId}`)) {
@@ -180,6 +183,7 @@ describe('order intake diagnostic credential scope', () => {
       detailsSource: 'USER_TOKEN_DETAILS',
     })
     expect(requests.map(({ url }) => url)).toEqual([
+      `https://api.cloudflare.com/client/v4/accounts/${accountId}/tokens/verify`,
       'https://api.cloudflare.com/client/v4/user/tokens/verify',
       `https://api.cloudflare.com/client/v4/accounts/${accountId}/tokens/${tokenId}`,
       `https://api.cloudflare.com/client/v4/user/tokens/${tokenId}`,
@@ -197,7 +201,7 @@ describe('order intake diagnostic credential scope', () => {
         method: init?.method ?? 'GET',
         authorization: new Headers(init?.headers).get('authorization'),
       })
-      if (url.endsWith('/user/tokens/verify')) {
+      if (url.endsWith(`/accounts/${accountId}/tokens/verify`)) {
         return Response.json({ success: true, result: { id: tokenId, status: 'active' } })
       }
       if (url.endsWith(`/accounts/${accountId}/tokens/${tokenId}`)) {
@@ -212,7 +216,7 @@ describe('order intake diagnostic credential scope', () => {
       detailsSource: 'ACCOUNT_OWNED_TOKEN_DETAILS',
     })
     expect(requests.map(({ url }) => url)).toEqual([
-      'https://api.cloudflare.com/client/v4/user/tokens/verify',
+      `https://api.cloudflare.com/client/v4/accounts/${accountId}/tokens/verify`,
       `https://api.cloudflare.com/client/v4/accounts/${accountId}/tokens/${tokenId}`,
     ])
     expect(requests.every(({ method }) => method === 'GET')).toBe(true)
@@ -225,6 +229,7 @@ describe('order intake diagnostic credential scope', () => {
     const fetcher = async (input: RequestInfo | URL) => {
       const url = String(input)
       requests.push(url)
+      if (url.endsWith(`/accounts/${accountId}/tokens/verify`)) return new Response('{}', { status: 403 })
       if (url.endsWith('/user/tokens/verify')) {
         return Response.json({ success: true, result: { id: tokenId, status: 'active' } })
       }
@@ -241,6 +246,7 @@ describe('order intake diagnostic credential scope', () => {
       detailsSource: 'USER_TOKEN_DETAILS',
     })
     expect(requests).toEqual([
+      `https://api.cloudflare.com/client/v4/accounts/${accountId}/tokens/verify`,
       'https://api.cloudflare.com/client/v4/user/tokens/verify',
       `https://api.cloudflare.com/client/v4/accounts/${accountId}/tokens/${tokenId}`,
       `https://api.cloudflare.com/client/v4/user/tokens/${tokenId}`,
@@ -254,7 +260,7 @@ describe('order intake diagnostic credential scope', () => {
     }
     const fetcher = async (input: RequestInfo | URL) => {
       const url = String(input)
-      if (url.endsWith('/user/tokens/verify')) {
+      if (url.endsWith(`/accounts/${accountId}/tokens/verify`)) {
         return Response.json({ success: true, result: { id: tokenId, status: 'active' } })
       }
       if (url.endsWith(`/accounts/${accountId}/tokens/${tokenId}`)) {
@@ -274,7 +280,7 @@ describe('order intake diagnostic credential scope', () => {
     const mismatchedDetails = { ...permittedAccountOwnedTokenDetails(), id: 'fedcba9876543210fedcba9876543210' }
     const fetcher = async (input: RequestInfo | URL) => {
       const url = String(input)
-      if (url.endsWith('/user/tokens/verify')) {
+      if (url.endsWith(`/accounts/${accountId}/tokens/verify`)) {
         return Response.json({ success: true, result: { id: tokenId, status: 'active' } })
       }
       if (url.endsWith(`/accounts/${accountId}/tokens/${tokenId}`)) {
@@ -295,7 +301,7 @@ describe('order intake diagnostic credential scope', () => {
     const fetcher = async (input: RequestInfo | URL) => {
       const url = String(input)
       requests.push(url)
-      if (url.endsWith('/user/tokens/verify')) {
+      if (url.endsWith(`/accounts/${accountId}/tokens/verify`)) {
         return Response.json({ success: true, result: { id: tokenId, status: 'active' } })
       }
       return new Response('{}', { status: 403 })
@@ -307,7 +313,7 @@ describe('order intake diagnostic credential scope', () => {
       detailsSourcesAttempted: ['ACCOUNT_OWNED_TOKEN_DETAILS', 'USER_TOKEN_DETAILS'],
     })
     expect(requests).toEqual([
-      'https://api.cloudflare.com/client/v4/user/tokens/verify',
+      `https://api.cloudflare.com/client/v4/accounts/${accountId}/tokens/verify`,
       `https://api.cloudflare.com/client/v4/accounts/${accountId}/tokens/${tokenId}`,
       `https://api.cloudflare.com/client/v4/user/tokens/${tokenId}`,
     ])
