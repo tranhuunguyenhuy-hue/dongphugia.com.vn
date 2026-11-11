@@ -1,0 +1,28 @@
+name: PR Preview cleanup
+on:
+  pull_request_target:
+    types: [closed]
+permissions: {}
+concurrency:
+  group: pr-preview-publish-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+jobs:
+  cleanup:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    environment: pr-preview
+    steps:
+      # No checkout and no execution of PR code in this privileged workflow.
+      - name: Delete only the closed PR Worker
+        env:
+          TOKEN: ${{ secrets.PREVIEW_CLOUDFLARE_API_TOKEN }}
+          ACCOUNT: ${{ vars.PREVIEW_CLOUDFLARE_ACCOUNT_ID }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          [[ "$PR_NUMBER" =~ ^[1-9][0-9]*$ ]]
+          [[ "$ACCOUNT" =~ ^[a-f0-9]{32}$ ]]
+          test -n "$TOKEN"
+          status=$(curl --silent --show-error -o "$RUNNER_TEMP/delete.json" -w '%{http_code}' -X DELETE -H "Authorization: Bearer $TOKEN" "https://api.cloudflare.com/client/v4/accounts/$ACCOUNT/workers/scripts/dpg-pr-$PR_NUMBER")
+          if [[ "$status" == 404 ]]; then exit 0; fi
+          test "$status" = 200
+          jq -e '.success == true' "$RUNNER_TEMP/delete.json" >/dev/null

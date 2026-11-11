@@ -2,7 +2,7 @@
 
 - What changed:
 - Why:
-- Release path: FAST_PATH / STANDARD / HIGH_RISK
+- Related Issue and source-only / release-required completion:
 
 ## Scope
 
@@ -13,6 +13,7 @@
 
 - Acceptance source:
 - Done when:
+- Acceptance criterion → verification evidence:
 
 ## Risk
 
@@ -27,7 +28,7 @@
 
 ## Review
 
-- Integrated FAST_PATH review or independent review evidence:
+- Self-review against acceptance criteria and any required independent review:
 - Findings resolved:
 
 ## Rollout and rollback
