@@ -1,8 +1,12 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { RateLimit } from '@cloudflare/workers-types'
 import { verifyOrderIntakeSignature } from '../../../../packages/app-contracts/src/order-intake-signature'
 
 import { handleGuestOrderReceiptRequest, handleGuestOrderRequest } from './guest-order-request'
+
+afterEach(() => {
+  vi.restoreAllMocks()
+})
 
 const environment = {
   PUBLIC_ORDER_INTAKE_URL: 'https://demo.supabase.co/functions/v1/order-intake',
@@ -38,6 +42,23 @@ function createReceiptRequest(key = '8b96aecb-8c34-4c46-879f-292369aa961d', orig
     method: 'GET',
     headers: { Origin: origin, 'Idempotency-Key': key },
   })
+}
+
+function expectReceiptDiagnostic(
+  calls: unknown[][],
+  stage: string,
+  upstreamStatus?: number,
+) {
+  expect(calls).toHaveLength(1)
+  expect(calls[0]?.[0]).toBe('PUBLIC_ORDER_INTAKE_DIAGNOSTIC')
+  const event = JSON.parse(String(calls[0]?.[1])) as Record<string, unknown>
+  expect(event).toEqual({
+    requestId: expect.stringMatching(/^[0-9a-f-]{36}$/i),
+    operation: 'receipt',
+    stage,
+    ...(upstreamStatus === undefined ? {} : { upstreamStatus }),
+  })
+  return event
 }
 
 describe('POST /api/order-requests Worker adapter', () => {
@@ -261,4 +282,198 @@ describe('GET /api/order-requests/receipt Worker adapter', () => {
     expect(crossOriginResponse.status).toBe(403)
     expect(fetcher).not.toHaveBeenCalled()
   })
+
+  it('logs only a correlated configuration category while keeping the public failure generic', async () => {
+    const diagnostics = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    const response = await handleGuestOrderReceiptRequest(
+      createReceiptRequest(),
+      {
+        ...environment,
+        PUBLIC_ORDER_INTAKE_URL: `${environment.PUBLIC_ORDER_INTAKE_URL}?token=CONFIG_SECRET`,
+        ORDER_REQUEST_LIMITER: limiter as unknown as RateLimit,
+      },
+      fetcher as unknown as typeof fetch,
+    )
+
+    expect(response.status).toBe(503)
+    expect(await response.json()).toEqual({ error: { code: 'ORDER_INTAKE_UNAVAILABLE' } })
+    const event = expectReceiptDiagnostic(diagnostics.mock.calls, 'configuration')
+    expect(response.headers.get('x-request-id')).toBe(event.requestId)
+    expect(JSON.stringify(diagnostics.mock.calls)).not.toContain('CONFIG_SECRET')
+    expect(JSON.stringify(diagnostics.mock.calls)).not.toContain('demo.supabase.co')
+    expect(fetcher).not.toHaveBeenCalled()
+  })
+
+  it('logs a signing category without including signing or request material', async () => {
+    const diagnostics = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    vi.spyOn(crypto.subtle, 'importKey').mockRejectedValue(new Error('PRIVATE_SIGNING_FAILURE'))
+    const response = await handleGuestOrderReceiptRequest(
+      createReceiptRequest(),
+      { ...environment, ORDER_REQUEST_LIMITER: limiter as unknown as RateLimit },
+      fetcher as unknown as typeof fetch,
+    )
+
+    expect(response.status).toBe(503)
+    expect(await response.json()).toEqual({ error: { code: 'ORDER_INTAKE_UNAVAILABLE' } })
+    const event = expectReceiptDiagnostic(diagnostics.mock.calls, 'signing')
+    expect(response.headers.get('x-request-id')).toBe(event.requestId)
+    const logged = JSON.stringify(diagnostics.mock.calls)
+    expect(logged).not.toContain('PRIVATE_SIGNING_FAILURE')
+    expect(logged).not.toContain(environment.ORDER_INTAKE_SIGNING_SECRET)
+    expect(logged).not.toContain('demo.supabase.co')
+    expect(logged).not.toContain('8b96aecb-8c34-4c46-879f-292369aa961d')
+    expect(fetcher).not.toHaveBeenCalled()
+  })
+
+  it('logs a fetch category without leaking the thrown upstream error', async () => {
+    const diagnostics = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    fetcher.mockRejectedValueOnce(new Error('https://private.invalid/?token=FETCH_SECRET'))
+    const response = await handleGuestOrderReceiptRequest(
+      createReceiptRequest(),
+      { ...environment, ORDER_REQUEST_LIMITER: limiter as unknown as RateLimit },
+      fetcher as unknown as typeof fetch,
+    )
+
+    expect(response.status).toBe(503)
+    expect(await response.json()).toEqual({ error: { code: 'ORDER_INTAKE_UNAVAILABLE' } })
+    const event = expectReceiptDiagnostic(diagnostics.mock.calls, 'fetch')
+    expect(response.headers.get('x-request-id')).toBe(event.requestId)
+    expect(JSON.stringify(diagnostics.mock.calls)).not.toContain('FETCH_SECRET')
+    expect(JSON.stringify(diagnostics.mock.calls)).not.toContain('private.invalid')
+  })
+
+  it('logs only upstream status for a non-success Edge response', async () => {
+    const diagnostics = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    fetcher.mockResolvedValueOnce(Response.json({ error: { code: 'UNAUTHORIZED', details: 'EDGE_PRIVATE' } }, { status: 401 }))
+    const response = await handleGuestOrderReceiptRequest(
+      createReceiptRequest(),
+      { ...environment, ORDER_REQUEST_LIMITER: limiter as unknown as RateLimit },
+      fetcher as unknown as typeof fetch,
+    )
+
+    expect(response.status).toBe(503)
+    expect(await response.json()).toEqual({ error: { code: 'ORDER_INTAKE_UNAVAILABLE' } })
+    const event = expectReceiptDiagnostic(diagnostics.mock.calls, 'edge_status', 401)
+    expect(response.headers.get('x-request-id')).toBe(event.requestId)
+    expect(JSON.stringify(diagnostics.mock.calls)).not.toContain('UNAUTHORIZED')
+    expect(JSON.stringify(diagnostics.mock.calls)).not.toContain('EDGE_PRIVATE')
+  })
+
+  it('logs a decode category without exposing an invalid upstream body', async () => {
+    const diagnostics = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    fetcher.mockResolvedValueOnce(new Response('PRIVATE_INVALID_JSON', { status: 200 }))
+    const response = await handleGuestOrderReceiptRequest(
+      createReceiptRequest(),
+      { ...environment, ORDER_REQUEST_LIMITER: limiter as unknown as RateLimit },
+      fetcher as unknown as typeof fetch,
+    )
+
+    expect(response.status).toBe(503)
+    expect(await response.json()).toEqual({ error: { code: 'ORDER_INTAKE_UNAVAILABLE' } })
+    const event = expectReceiptDiagnostic(diagnostics.mock.calls, 'decode', 200)
+    expect(response.headers.get('x-request-id')).toBe(event.requestId)
+    expect(JSON.stringify(diagnostics.mock.calls)).not.toContain('PRIVATE_INVALID_JSON')
+  })
+
+  it('logs a decode category when an upstream receipt has an invalid shape', async () => {
+    const diagnostics = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    fetcher.mockResolvedValueOnce(Response.json({ data: { order_number: 'PRIVATE_INVALID_RECEIPT' } }, { status: 200 }))
+    const response = await handleGuestOrderReceiptRequest(
+      createReceiptRequest(),
+      { ...environment, ORDER_REQUEST_LIMITER: limiter as unknown as RateLimit },
+      fetcher as unknown as typeof fetch,
+    )
+
+    expect(response.status).toBe(503)
+    expect(await response.json()).toEqual({ error: { code: 'ORDER_INTAKE_UNAVAILABLE' } })
+    const event = expectReceiptDiagnostic(diagnostics.mock.calls, 'decode', 200)
+    expect(response.headers.get('x-request-id')).toBe(event.requestId)
+    expect(JSON.stringify(diagnostics.mock.calls)).not.toContain('PRIVATE_INVALID_RECEIPT')
+  })
+
+  it('rejects a successful upstream response that omits the receipt envelope', async () => {
+    const diagnostics = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    fetcher.mockResolvedValueOnce(Response.json({ private: 'PRIVATE_MALFORMED_RESPONSE' }, { status: 200 }))
+    const response = await handleGuestOrderReceiptRequest(
+      createReceiptRequest(),
+      { ...environment, ORDER_REQUEST_LIMITER: limiter as unknown as RateLimit },
+      fetcher as unknown as typeof fetch,
+    )
+
+    expect(response.status).toBe(503)
+    expect(await response.json()).toEqual({ error: { code: 'ORDER_INTAKE_UNAVAILABLE' } })
+    expectReceiptDiagnostic(diagnostics.mock.calls, 'decode', 200)
+    expect(JSON.stringify(diagnostics.mock.calls)).not.toContain('PRIVATE_MALFORMED_RESPONSE')
+  })
+
+  it('rejects a successful upstream response with a non-object receipt envelope', async () => {
+    const diagnostics = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    fetcher.mockResolvedValueOnce(Response.json(null, { status: 200 }))
+    const response = await handleGuestOrderReceiptRequest(
+      createReceiptRequest(),
+      { ...environment, ORDER_REQUEST_LIMITER: limiter as unknown as RateLimit },
+      fetcher as unknown as typeof fetch,
+    )
+
+    expect(response.status).toBe(503)
+    expect(await response.json()).toEqual({ error: { code: 'ORDER_INTAKE_UNAVAILABLE' } })
+    expectReceiptDiagnostic(diagnostics.mock.calls, 'decode', 200)
+  })
+
+  it('keeps order submission generic and logs only the correlated fetch category', async () => {
+    const diagnostics = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    fetcher
+      .mockResolvedValueOnce(Response.json({ data: null }, { status: 200 }))
+      .mockRejectedValueOnce(new Error('CUSTOMER_BODY_SECRET'))
+    const response = await handleGuestOrderRequest(
+      createRequest(),
+      { ...environment, ORDER_REQUEST_LIMITER: limiter as unknown as RateLimit },
+      fetcher as unknown as typeof fetch,
+    )
+
+    expect(response.status).toBe(503)
+    expect(await response.json()).toEqual({ error: { code: 'ORDER_INTAKE_UNAVAILABLE' } })
+    expect(diagnostics.mock.calls).toHaveLength(1)
+    expect(diagnostics.mock.calls[0]?.[0]).toBe('PUBLIC_ORDER_INTAKE_DIAGNOSTIC')
+    const event = JSON.parse(String(diagnostics.mock.calls[0]?.[1]))
+    expect(event).toEqual({
+      requestId: response.headers.get('x-request-id'),
+      operation: 'submit',
+      stage: 'fetch',
+    })
+    expect(JSON.stringify(diagnostics.mock.calls)).not.toContain('CUSTOMER_BODY_SECRET')
+    expect(JSON.stringify(diagnostics.mock.calls)).not.toContain(JSON.stringify(validBody))
+  })
+  it('keeps intake diagnostics out of public response headers', async () => {
+    const diagnostics = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    fetcher.mockResolvedValueOnce(Response.json({ private: 'DO_NOT_EXPOSE' }, { status: 401 }))
+    const response = await handleGuestOrderReceiptRequest(
+      createReceiptRequest(),
+      { ...environment, ORDER_REQUEST_LIMITER: limiter as unknown as RateLimit },
+      fetcher as unknown as typeof fetch,
+    )
+    expect(response.status).toBe(503)
+    expect(response.headers.get('x-dpg-intake-stage')).toBeNull()
+    expect(response.headers.get('x-dpg-intake-upstream-status')).toBeNull()
+    expect(response.headers.get('cache-control')).toBe('private, no-store')
+    expect(await response.json()).toEqual({ error: { code: 'ORDER_INTAKE_UNAVAILABLE' } })
+    expectReceiptDiagnostic(diagnostics.mock.calls, 'edge_status', 401)
+  })
+
+  it('keeps limiter exceptions fail-closed without attempting an upstream fetch', async () => {
+    const diagnostics = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    limiter.limit.mockRejectedValueOnce(new Error('PRIVATE_LIMITER_ERROR'))
+    const response = await handleGuestOrderReceiptRequest(
+      createReceiptRequest(),
+      { ...environment, ORDER_REQUEST_LIMITER: limiter as unknown as RateLimit },
+      fetcher as unknown as typeof fetch,
+    )
+    expect(response.status).toBe(503)
+    expect(response.headers.get('x-dpg-intake-stage')).toBeNull()
+    expect(response.headers.get('x-dpg-intake-upstream-status')).toBeNull()
+    expectReceiptDiagnostic(diagnostics.mock.calls, 'limiter')
+    expect(fetcher).not.toHaveBeenCalled()
+    expect(JSON.stringify(diagnostics.mock.calls)).not.toContain('PRIVATE_LIMITER_ERROR')
+  })
+
 })

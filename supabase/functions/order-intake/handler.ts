@@ -30,6 +30,9 @@ type HandlerOptions = Readonly<{
   nowSeconds?: () => number
 }>
 
+type IntakeDiagnosticStage = 'configuration' | 'signature' | 'database' | 'decode' | 'runtime'
+type IntakeDiagnosticOperation = 'receipt' | 'submit' | 'other'
+
 const MAX_REQUEST_BYTES = 16 * 1024
 const PHONE_PATTERN = /^(?:\+84|0)(?:3|5|7|8|9)\d{8}$/
 const ORDER_NUMBER_PATTERN = /^DPG-[0-9]{6}-[0-9A-F]{8}$/
@@ -45,8 +48,25 @@ const ALLOWED_ERROR_CODES = new Set([
 ])
 
 class RequestFailure extends Error {
-  constructor(readonly status: number, readonly code: string) {
+  constructor(
+    readonly status: number,
+    readonly code: string,
+    readonly diagnosticStage?: IntakeDiagnosticStage,
+  ) {
     super(code)
+  }
+}
+
+function reportIntakeDiagnostic(
+  requestId: string,
+  operation: IntakeDiagnosticOperation,
+  stage: IntakeDiagnosticStage,
+  status: number,
+) {
+  try {
+    console.warn('ORDER_INTAKE_DIAGNOSTIC', JSON.stringify({ requestId, operation, stage, status }))
+  } catch {
+    // Diagnostics must not change the fail-closed request behavior.
   }
 }
 
@@ -237,6 +257,9 @@ export function createOrderIntakeHandler(options: HandlerOptions): (request: Req
     const requestId = request.headers.get('x-request-id')?.match(REQUEST_ID_PATTERN)
       ? request.headers.get('x-request-id')!
       : crypto.randomUUID()
+    const operation: IntakeDiagnosticOperation = request.method === 'GET'
+      ? 'receipt'
+      : request.method === 'POST' ? 'submit' : 'other'
     if (request.method !== 'POST' && request.method !== 'GET') {
       return jsonResponse({ error: { code: 'METHOD_NOT_ALLOWED' } }, 405, requestId)
     }
@@ -255,9 +278,11 @@ export function createOrderIntakeHandler(options: HandlerOptions): (request: Req
       return jsonResponse({ error: { code: 'INVALID_IDEMPOTENCY_KEY' } }, 400, requestId)
     }
     if (options.signingSecret.length < 32) {
+      reportIntakeDiagnostic(requestId, operation, 'configuration', 503)
       return jsonResponse({ error: { code: 'ORDER_REQUEST_FAILED' } }, 503, requestId)
     }
 
+    let activeStage: IntakeDiagnosticStage = 'decode'
     try {
       let bodyText = ''
       let input: OrderRequestInput | null = null
@@ -266,12 +291,14 @@ export function createOrderIntakeHandler(options: HandlerOptions): (request: Req
         bodyText = parsed.bodyText
         input = validateInput(parsed.value)
       }
+      activeStage = 'signature'
       const signatureInput = signedInput(request, bodyText)
       const signature = request.headers.get('x-dpg-order-signature') ?? ''
       if (!signatureInput || !(await verifyOrderIntakeSignature(
         options.signingSecret, signatureInput, signature, nowSeconds(),
-      ))) throw new RequestFailure(401, 'UNAUTHORIZED')
+      ))) throw new RequestFailure(401, 'UNAUTHORIZED', 'signature')
 
+      activeStage = 'database'
       if (request.method === 'GET') {
         const receipt = safeReceipt(await options.database.receipt(idempotencyKey))
         return jsonResponse({ data: receipt }, 200, requestId)
@@ -280,15 +307,24 @@ export function createOrderIntakeHandler(options: HandlerOptions): (request: Req
       const result = await options.database.create(input!, idempotencyKey, requestId)
       const errorCode = safeDatabaseError(result)
       if (errorCode !== 'ORDER_REQUEST_FAILED' || (result && typeof result === 'object' && 'error' in result)) {
+        if (errorCode === 'ORDER_REQUEST_FAILED') {
+          reportIntakeDiagnostic(requestId, operation, 'database', statusForError(errorCode))
+        }
         return jsonResponse({ error: { code: errorCode } }, statusForError(errorCode), requestId)
       }
       const receipt = safeReceipt(result)
-      if (!receipt) throw new RequestFailure(503, 'ORDER_REQUEST_FAILED')
+      if (!receipt) throw new RequestFailure(503, 'ORDER_REQUEST_FAILED', 'decode')
       return jsonResponse({ data: receipt }, 201, requestId)
     } catch (error) {
       if (error instanceof RequestFailure) {
+        if (error.diagnosticStage) {
+          reportIntakeDiagnostic(requestId, operation, error.diagnosticStage, error.status)
+        } else if (activeStage === 'database' && error.status >= 500) {
+          reportIntakeDiagnostic(requestId, operation, 'database', error.status)
+        }
         return jsonResponse({ error: { code: error.code } }, error.status, requestId)
       }
+      reportIntakeDiagnostic(requestId, operation, activeStage, 503)
       return jsonResponse({ error: { code: safeDatabaseError(error) } }, 503, requestId)
     }
   }

@@ -34,9 +34,35 @@ const SAFE_ERROR_CODES = new Set([
 export type GuestOrderEnvironment = Pick<PublicWorkerEnvironment,
   'PUBLIC_ORDER_INTAKE_URL' | 'PUBLIC_SUPABASE_PUBLISHABLE_KEY' | 'ORDER_INTAKE_SIGNING_SECRET' | 'ORDER_REQUEST_LIMITER'>
 
+type IntakeDiagnosticStage = 'configuration' | 'signing' | 'fetch' | 'edge_status' | 'decode' | 'limiter' | 'runtime'
+type IntakeDiagnosticOperation = 'receipt' | 'submit'
+
 class RequestFailure extends Error {
-  constructor(readonly status: number, readonly code: string) {
+  constructor(
+    readonly status: number,
+    readonly code: string,
+    readonly diagnosticStage?: IntakeDiagnosticStage,
+  ) {
     super(code)
+  }
+}
+
+function reportIntakeDiagnostic(
+  requestId: string,
+  operation: IntakeDiagnosticOperation,
+  stage: IntakeDiagnosticStage,
+  upstreamStatus?: number,
+) {
+  const event = {
+    requestId,
+    operation,
+    stage,
+    ...(upstreamStatus === undefined ? {} : { upstreamStatus }),
+  }
+  try {
+    console.warn('PUBLIC_ORDER_INTAKE_DIAGNOSTIC', JSON.stringify(event))
+  } catch {
+    // Diagnostics must never change the fail-closed public request behavior.
   }
 }
 
@@ -51,20 +77,26 @@ function jsonResponse(body: unknown, status: number, requestId: string) {
   })
 }
 
+function requestDiagnostics(requestId: string, operation: IntakeDiagnosticOperation) {
+  return (stage: IntakeDiagnosticStage, upstreamStatus?: number) => {
+    reportIntakeDiagnostic(requestId, operation, stage, upstreamStatus)
+  }
+}
+
 function configuredUpstream(environment: GuestOrderEnvironment): { endpoint: URL; publishableKey: string; signingSecret: string } {
   const rawEndpoint = environment.PUBLIC_ORDER_INTAKE_URL
   const publishableKey = environment.PUBLIC_SUPABASE_PUBLISHABLE_KEY
   const signingSecret = environment.ORDER_INTAKE_SIGNING_SECRET
   if (typeof rawEndpoint !== 'string' || typeof publishableKey !== 'string'
       || typeof signingSecret !== 'string' || new TextEncoder().encode(signingSecret).byteLength < 32) {
-    throw new RequestFailure(503, 'ORDER_INTAKE_UNAVAILABLE')
+    throw new RequestFailure(503, 'ORDER_INTAKE_UNAVAILABLE', 'configuration')
   }
 
   let endpoint: URL
   try {
     endpoint = new URL(rawEndpoint)
   } catch {
-    throw new RequestFailure(503, 'ORDER_INTAKE_UNAVAILABLE')
+    throw new RequestFailure(503, 'ORDER_INTAKE_UNAVAILABLE', 'configuration')
   }
 
   const hostedEndpoint = endpoint.protocol === 'https:'
@@ -77,7 +109,7 @@ function configuredUpstream(environment: GuestOrderEnvironment): { endpoint: URL
     endpoint.pathname !== '/functions/v1/order-intake' ||
     endpoint.username || endpoint.password || endpoint.search || endpoint.hash ||
     !/^sb_publishable_[A-Za-z0-9_-]+$/.test(publishableKey)
-  ) throw new RequestFailure(503, 'ORDER_INTAKE_UNAVAILABLE')
+  ) throw new RequestFailure(503, 'ORDER_INTAKE_UNAVAILABLE', 'configuration')
 
   return { endpoint, publishableKey, signingSecret }
 }
@@ -242,26 +274,57 @@ async function readPersistedReceipt(
   idempotencyKey: string,
   signingSecret: string,
   fetcher: typeof fetch,
+  report: (stage: IntakeDiagnosticStage, upstreamStatus?: number) => void,
 ): Promise<{ receipt: ReturnType<typeof safeReceiptFrom>; available: boolean }> {
+  let headers: Headers
   try {
-    const headers = await signedUpstreamHeaders(
+    headers = await signedUpstreamHeaders(
       'GET', endpoint, origin, requestId, idempotencyKey, '', publishableKey, signingSecret,
     )
-    const response = await fetcher(endpoint, {
+  } catch {
+    report('signing')
+    return { receipt: null, available: false }
+  }
+
+  let response: Response
+  try {
+    response = await fetcher(endpoint, {
       method: 'GET',
       redirect: 'error',
       signal: AbortSignal.timeout(10_000),
       headers,
     })
-    if (!response.ok) return { receipt: null, available: false }
-    const payload: unknown = JSON.parse(await readBoundedResponse(response))
-    const data = payload && typeof payload === 'object' && !Array.isArray(payload)
-      ? (payload as Record<string, unknown>).data
-      : null
+  } catch {
+    report('fetch')
+    return { receipt: null, available: false }
+  }
+
+  if (!response.ok) {
+    report('edge_status', response.status)
+    return { receipt: null, available: false }
+  }
+
+  let payload: unknown
+  try {
+    payload = JSON.parse(await readBoundedResponse(response))
+  } catch {
+    report('decode', response.status)
+    return { receipt: null, available: false }
+  }
+
+  try {
+    if (!payload || typeof payload !== 'object' || Array.isArray(payload)
+        || !Object.prototype.hasOwnProperty.call(payload, 'data')) {
+      report('decode', response.status)
+      return { receipt: null, available: false }
+    }
+    const data = (payload as Record<string, unknown>).data
     if (data === null) return { receipt: null, available: true }
     const receipt = safeReceiptFrom(payload)
+    if (!receipt) report('decode', response.status)
     return { receipt, available: receipt !== null }
   } catch {
+    report('decode', response.status)
     return { receipt: null, available: false }
   }
 }
@@ -278,6 +341,7 @@ export async function handleGuestOrderReceiptRequest(
   fetcher: typeof fetch = fetch,
 ): Promise<Response> {
   const requestId = crypto.randomUUID()
+  const report = requestDiagnostics(requestId, 'receipt')
   if (request.method !== 'GET') {
     return jsonResponse({ error: { code: 'METHOD_NOT_ALLOWED' } }, 405, requestId)
   }
@@ -293,8 +357,13 @@ export async function handleGuestOrderReceiptRequest(
     }
     const upstream = configuredUpstream(environment)
     const limiter = environment.ORDER_REQUEST_LIMITER
-    if (!limiter) throw new RequestFailure(503, 'ORDER_INTAKE_UNAVAILABLE')
-    const rate = await rateLimitByRequestIp(request, limiter)
+    if (!limiter) throw new RequestFailure(503, 'ORDER_INTAKE_UNAVAILABLE', 'configuration')
+    let rate: Awaited<ReturnType<typeof rateLimitByRequestIp>>
+    try {
+      rate = await rateLimitByRequestIp(request, limiter)
+    } catch {
+      throw new RequestFailure(503, 'ORDER_INTAKE_UNAVAILABLE', 'limiter')
+    }
     if (!rate.success) throw new RequestFailure(429, 'ORDER_RATE_LIMITED')
 
     const forwardedOrigin = origin ?? new URL(request.url).origin
@@ -306,13 +375,16 @@ export async function handleGuestOrderReceiptRequest(
       idempotencyKey,
       upstream.signingSecret,
       fetcher,
+      report,
     )
     if (!result.available) throw new RequestFailure(503, 'ORDER_INTAKE_UNAVAILABLE')
     return jsonResponse({ data: result.receipt }, 200, requestId)
   } catch (error) {
     if (error instanceof RequestFailure) {
+      if (error.diagnosticStage) report(error.diagnosticStage)
       return jsonResponse({ error: { code: error.code } }, error.status, requestId)
     }
+    report('runtime')
     return jsonResponse({ error: { code: 'ORDER_INTAKE_UNAVAILABLE' } }, 503, requestId)
   }
 }
@@ -323,6 +395,7 @@ export async function handleGuestOrderRequest(
   fetcher: typeof fetch = fetch,
 ): Promise<Response> {
   const requestId = crypto.randomUUID()
+  const report = requestDiagnostics(requestId, 'submit')
   if (request.method !== 'POST') {
     return jsonResponse({ error: { code: 'METHOD_NOT_ALLOWED' } }, 405, requestId)
   }
@@ -351,9 +424,14 @@ export async function handleGuestOrderRequest(
     const phone = normalizedPhoneFrom(input)
     const upstream = configuredUpstream(environment)
     const limiter = environment.ORDER_REQUEST_LIMITER
-    if (!limiter) throw new RequestFailure(503, 'ORDER_INTAKE_UNAVAILABLE')
+    if (!limiter) throw new RequestFailure(503, 'ORDER_INTAKE_UNAVAILABLE', 'configuration')
 
-    const requestIpRate = await rateLimitByRequestIp(request, limiter)
+    let requestIpRate: Awaited<ReturnType<typeof rateLimitByRequestIp>>
+    try {
+      requestIpRate = await rateLimitByRequestIp(request, limiter)
+    } catch {
+      throw new RequestFailure(503, 'ORDER_INTAKE_UNAVAILABLE', 'limiter')
+    }
     if (!requestIpRate.success) throw new RequestFailure(429, 'ORDER_RATE_LIMITED')
 
     // Check the idempotency record before the phone limit. A replay with the
@@ -367,20 +445,33 @@ export async function handleGuestOrderRequest(
       idempotencyKey,
       upstream.signingSecret,
       fetcher,
+      report,
     )
     if (!persistedReceipt.receipt) {
       const phoneHash = await digest(phone)
-      const rate = await limiter.limit({ key: `guest-order-phone:${phoneHash}` })
+      let rate: Awaited<ReturnType<typeof limiter.limit>>
+      try {
+        rate = await limiter.limit({ key: `guest-order-phone:${phoneHash}` })
+      } catch {
+        throw new RequestFailure(503, 'ORDER_INTAKE_UNAVAILABLE', 'limiter')
+      }
       if (!rate.success) throw new RequestFailure(429, 'ORDER_RATE_LIMITED')
     }
 
-    let response: Response
+    let headers: Headers
     try {
-      const headers = await signedUpstreamHeaders(
+      headers = await signedUpstreamHeaders(
         'POST', upstream.endpoint, origin, requestId, idempotencyKey, bodyText,
         upstream.publishableKey, upstream.signingSecret,
       )
-      headers.set('Content-Type', 'application/json')
+    } catch {
+      report('signing')
+      throw new RequestFailure(503, 'ORDER_INTAKE_UNAVAILABLE')
+    }
+    headers.set('Content-Type', 'application/json')
+
+    let response: Response
+    try {
       response = await fetcher(upstream.endpoint, {
         method: 'POST',
         redirect: 'error',
@@ -389,6 +480,7 @@ export async function handleGuestOrderRequest(
         body: bodyText,
       })
     } catch {
+      report('fetch')
       throw new RequestFailure(503, 'ORDER_INTAKE_UNAVAILABLE')
     }
 
@@ -396,23 +488,30 @@ export async function handleGuestOrderRequest(
     try {
       payload = JSON.parse(await readBoundedResponse(response))
     } catch (error) {
+      report('decode', response.status)
       if (error instanceof RequestFailure) throw error
       throw new RequestFailure(502, 'ORDER_INTAKE_FAILED')
     }
 
     if (!response.ok) {
+      report('edge_status', response.status)
       const code = upstreamErrorCode(payload)
       return jsonResponse({ error: { code } }, statusForError(code), requestId)
     }
 
     const receipt = safeReceiptFrom(payload)
-    if (!receipt) throw new RequestFailure(502, 'ORDER_INTAKE_FAILED')
+    if (!receipt) {
+      report('decode', response.status)
+      throw new RequestFailure(502, 'ORDER_INTAKE_FAILED')
+    }
 
     return jsonResponse({ data: receipt }, 201, requestId)
   } catch (error) {
     if (error instanceof RequestFailure) {
+      if (error.diagnosticStage) report(error.diagnosticStage)
       return jsonResponse({ error: { code: error.code } }, error.status, requestId)
     }
+    report('runtime')
     return jsonResponse({ error: { code: 'ORDER_INTAKE_UNAVAILABLE' } }, 503, requestId)
   }
 }

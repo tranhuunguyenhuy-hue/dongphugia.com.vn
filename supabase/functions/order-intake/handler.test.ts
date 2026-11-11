@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import {
   createOrderIntakeSignature,
@@ -20,6 +20,10 @@ const input = {
 }
 const bodyText = JSON.stringify(input)
 const nowSeconds = 1_799_000_000
+
+afterEach(() => {
+  vi.restoreAllMocks()
+})
 
 async function signedRequest(method: 'GET' | 'POST', body = '') {
   const signatureInput: OrderIntakeSignatureInput = {
@@ -48,6 +52,26 @@ async function signedRequest(method: 'GET' | 'POST', body = '') {
 }
 
 describe('order-intake signed backend handler', () => {
+  it('logs only a correlated configuration category when the signing secret is invalid', async () => {
+    const diagnostics = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    const database = { create: vi.fn(), receipt: vi.fn() }
+    const handler = createOrderIntakeHandler({ database, signingSecret: 'short', nowSeconds: () => nowSeconds })
+    const response = await handler(await signedRequest('GET'))
+
+    expect(response.status).toBe(503)
+    expect(await response.json()).toEqual({ error: { code: 'ORDER_REQUEST_FAILED' } })
+    expect(response.headers.get('x-request-id')).toBe(requestId)
+    expect(diagnostics.mock.calls).toHaveLength(1)
+    expect(diagnostics.mock.calls[0]?.[0]).toBe('ORDER_INTAKE_DIAGNOSTIC')
+    expect(JSON.parse(String(diagnostics.mock.calls[0]?.[1]))).toEqual({
+      requestId,
+      operation: 'receipt',
+      stage: 'configuration',
+      status: 503,
+    })
+    expect(database.receipt).not.toHaveBeenCalled()
+  })
+
   it('requires the exact SKU selected by the guest', async () => {
     const database = { create: vi.fn(), receipt: vi.fn() }
     const handler = createOrderIntakeHandler({ database, signingSecret: secret, nowSeconds: () => nowSeconds })
@@ -122,6 +146,67 @@ describe('order-intake signed backend handler', () => {
 
     expect(response.status).toBe(401)
     expect(database.create).not.toHaveBeenCalled()
+  })
+
+  it('logs a correlated signature rejection without exposing signed request material', async () => {
+    const diagnostics = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    const database = { create: vi.fn(), receipt: vi.fn() }
+    const handler = createOrderIntakeHandler({ database, signingSecret: secret, nowSeconds: () => nowSeconds })
+    const valid = await signedRequest('GET')
+    const headers = new Headers(valid.headers)
+    headers.set('X-DPG-Order-Signature', 'a'.repeat(64))
+    const response = await handler(new Request(valid, { headers }))
+
+    expect(response.status).toBe(401)
+    expect(await response.json()).toEqual({ error: { code: 'UNAUTHORIZED' } })
+    expect(response.headers.get('x-request-id')).toBe(requestId)
+    expect(diagnostics.mock.calls).toHaveLength(1)
+    expect(diagnostics.mock.calls[0]?.[0]).toBe('ORDER_INTAKE_DIAGNOSTIC')
+    const event = JSON.parse(String(diagnostics.mock.calls[0]?.[1]))
+    expect(event).toEqual({ requestId, operation: 'receipt', stage: 'signature', status: 401 })
+    const logged = JSON.stringify(diagnostics.mock.calls)
+    expect(logged).not.toContain(secret)
+    expect(logged).not.toContain(idempotencyKey)
+    expect(logged).not.toContain(origin)
+    expect(logged).not.toContain('a'.repeat(64))
+    expect(database.receipt).not.toHaveBeenCalled()
+  })
+
+  it('logs only a correlated database category when receipt storage fails', async () => {
+    const diagnostics = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    const databaseError = 'postgres://private.invalid/?password=DB_PRIVATE'
+    const database = { create: vi.fn(), receipt: vi.fn().mockRejectedValue(new Error(databaseError)) }
+    const handler = createOrderIntakeHandler({ database, signingSecret: secret, nowSeconds: () => nowSeconds })
+    const response = await handler(await signedRequest('GET'))
+
+    expect(response.status).toBe(503)
+    expect(await response.json()).toEqual({ error: { code: 'ORDER_REQUEST_FAILED' } })
+    expect(response.headers.get('x-request-id')).toBe(requestId)
+    expect(diagnostics.mock.calls).toHaveLength(1)
+    expect(diagnostics.mock.calls[0]?.[0]).toBe('ORDER_INTAKE_DIAGNOSTIC')
+    const event = JSON.parse(String(diagnostics.mock.calls[0]?.[1]))
+    expect(event).toEqual({ requestId, operation: 'receipt', stage: 'database', status: 503 })
+    expect(JSON.stringify(diagnostics.mock.calls)).not.toContain(databaseError)
+  })
+
+  it('logs a safe decode category when order persistence returns an invalid receipt', async () => {
+    const diagnostics = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    const database = { create: vi.fn().mockResolvedValue({ order_number: 'PRIVATE_INVALID_RECEIPT' }), receipt: vi.fn() }
+    const handler = createOrderIntakeHandler({ database, signingSecret: secret, nowSeconds: () => nowSeconds })
+    const response = await handler(await signedRequest('POST', bodyText))
+
+    expect(response.status).toBe(503)
+    expect(await response.json()).toEqual({ error: { code: 'ORDER_REQUEST_FAILED' } })
+    expect(response.headers.get('x-request-id')).toBe(requestId)
+    expect(diagnostics.mock.calls).toHaveLength(1)
+    expect(diagnostics.mock.calls[0]?.[0]).toBe('ORDER_INTAKE_DIAGNOSTIC')
+    expect(JSON.parse(String(diagnostics.mock.calls[0]?.[1]))).toEqual({
+      requestId,
+      operation: 'submit',
+      stage: 'decode',
+      status: 503,
+    })
+    expect(JSON.stringify(diagnostics.mock.calls)).not.toContain('PRIVATE_INVALID_RECEIPT')
   })
 
   it('verifies a signed receipt read and returns only the safe receipt fields', async () => {
