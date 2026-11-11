@@ -90,6 +90,7 @@ export async function PreviewSyntheticProductPage({ productSlug }: { productSlug
   const selection = await getVariantSelectionData(product.variant_group, product.id)
   const expectedSiblingSku = EXPECTED_SKUS.find((sku) => sku !== product.sku)
   if (selection.siblings.length !== 1 || selection.siblings[0]?.sku !== expectedSiblingSku) notFound()
+  const syntheticPreviewPrice = nullableNumber(product.price)
 
   return (
     <main className="mx-auto w-full max-w-[1240px] px-5 py-8 lg:px-8 lg:py-12" data-preview-synthetic-product>
@@ -123,7 +124,11 @@ export async function PreviewSyntheticProductPage({ productSlug }: { productSlug
               price: nullableNumber(product.price),
               original_price: nullableNumber(product.original_price),
               sale_price: nullableNumber(product.sale_price),
-              list_price: nullableNumber(product.list_price),
+              // The normal commerce projection intentionally will not treat a
+              // legacy `price` field as a selling price. This isolated route
+              // promotes only the explicitly synthetic fixture amount so the
+              // cart can exercise exact-SKU behavior in noindex Preview.
+              list_price: nullableNumber(product.list_price) ?? syntheticPreviewPrice,
               online_discount_amount: nullableNumber(product.online_discount_amount),
               price_display: product.price_display,
               image_main_url: product.image_main_url,

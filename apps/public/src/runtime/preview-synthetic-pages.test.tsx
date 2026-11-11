@@ -51,8 +51,8 @@ vi.mock('@/components/ui/product-card', () => ({
 }))
 
 vi.mock('@/components/product/product-purchase-panel', () => ({
-  ProductPurchasePanel: ({ product, variantSiblings }: { product: { sku: string }; variantSiblings: Array<{ sku: string }> }) => (
-    <div data-panel-sku={product.sku} data-sibling-skus={variantSiblings.map(({ sku }) => sku).join(',')} />
+  ProductPurchasePanel: ({ product, variantSiblings }: { product: { sku: string; list_price: number | null }; variantSiblings: Array<{ sku: string }> }) => (
+    <div data-panel-sku={product.sku} data-list-price={product.list_price} data-sibling-skus={variantSiblings.map(({ sku }) => sku).join(',')} />
   ),
 }))
 
@@ -89,6 +89,7 @@ describe('synthetic Preview route pages', () => {
     expect(product).toContain('data-preview-synthetic-product')
     expect(product).toContain('data-testid="selected-sku">DPG-290-SYN-A</strong>')
     expect(product).toContain('data-panel-sku="DPG-290-SYN-A"')
+    expect(product).toContain('data-list-price="100000"')
     expect(product).toContain('data-sibling-skus="DPG-290-SYN-B"')
     expect(product).toContain('Giá hiển thị là giá kiểm thử tổng hợp')
   })
