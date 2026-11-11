@@ -157,6 +157,13 @@ describe('order intake diagnostic credential scope', () => {
       ok: false,
       reason: 'TOKEN_POLICIES_MISSING',
     })
+    const malformedProvenance = permittedTokenDetails() as { provisioner_type?: string; provisioner_id?: unknown }
+    delete malformedProvenance.provisioner_type
+    malformedProvenance.provisioner_id = 42
+    expect(attestPreviewTokenScope(accountId, malformedProvenance, {
+      expectedTokenId: tokenId,
+      detailsSource: 'USER_TOKEN_DETAILS',
+    })).toEqual({ ok: false, reason: 'TOKEN_PROVISIONER_TYPE_UNKNOWN' })
   })
 
   it('inspects token policy metadata without returning credential values', async () => {

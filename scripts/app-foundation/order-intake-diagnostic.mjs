@@ -112,7 +112,7 @@ export function attestPreviewTokenScope(accountId, details, { expectedTokenId, d
       return { ok: false, reason: 'TOKEN_PROVISIONER_TYPE_UNKNOWN' }
     }
   } else if (!['ACCOUNT_OWNED_TOKEN_DETAILS', 'USER_TOKEN_DETAILS'].includes(detailsSource)
-      || (typeof details.provisioner_id === 'string' && details.provisioner_id.length > 0)) {
+      || (details.provisioner_id !== undefined && details.provisioner_id !== null)) {
     // Cloudflare documents provisioner_type as optional and only present for provisioned account-owned tokens.
     // When absent, require the successful owner-specific token-details route and exact policy checks below.
     return { ok: false, reason: 'TOKEN_PROVISIONER_TYPE_UNKNOWN' }
