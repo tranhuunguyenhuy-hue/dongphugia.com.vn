@@ -300,7 +300,11 @@ export function createOrderIntakeHandler(options: HandlerOptions): (request: Req
 
       activeStage = 'database'
       if (request.method === 'GET') {
-        const receipt = safeReceipt(await options.database.receipt(idempotencyKey))
+        const storedReceipt = await options.database.receipt(idempotencyKey)
+        const receipt = safeReceipt(storedReceipt)
+        if (storedReceipt !== null && storedReceipt !== undefined && !receipt) {
+          throw new RequestFailure(503, 'ORDER_REQUEST_FAILED', 'decode')
+        }
         return jsonResponse({ data: receipt }, 200, requestId)
       }
 

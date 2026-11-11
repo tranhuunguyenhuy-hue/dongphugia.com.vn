@@ -221,6 +221,25 @@ describe('order-intake signed backend handler', () => {
     expect(database.create).not.toHaveBeenCalled()
   })
 
+  it('logs a safe decode category when receipt storage returns an invalid shape', async () => {
+    const diagnostics = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    const database = { create: vi.fn(), receipt: vi.fn().mockResolvedValue({ order_number: 'PRIVATE_INVALID_RECEIPT' }) }
+    const handler = createOrderIntakeHandler({ database, signingSecret: secret, nowSeconds: () => nowSeconds })
+    const response = await handler(await signedRequest('GET'))
+
+    expect(response.status).toBe(503)
+    expect(await response.json()).toEqual({ error: { code: 'ORDER_REQUEST_FAILED' } })
+    expect(response.headers.get('x-request-id')).toBe(requestId)
+    expect(diagnostics.mock.calls).toHaveLength(1)
+    expect(JSON.parse(String(diagnostics.mock.calls[0]?.[1]))).toEqual({
+      requestId,
+      operation: 'receipt',
+      stage: 'decode',
+      status: 503,
+    })
+    expect(JSON.stringify(diagnostics.mock.calls)).not.toContain('PRIVATE_INVALID_RECEIPT')
+  })
+
   it('allows signed loopback requests for isolated local browser acceptance', async () => {
     const receipt = { order_number: 'DPG-261106-0000002A', status: 'pending', payment_status: 'unpaid' }
     const database = { create: vi.fn().mockResolvedValue(receipt), receipt: vi.fn() }
