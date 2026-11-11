@@ -177,6 +177,7 @@ describe('synthetic Preview target contract', () => {
     expect(adminPatchStart).toBeGreaterThan(guestReset)
     expect(adminPatchStart).toBeLessThan(adminReplace)
     expect(adminReset).toBeGreaterThan(adminReplace)
+    expect(guard).toContain("replacement := E'      )\\n      )\\n    );")
     expect(guard).toContain('revoke dpg_order_intake_function_owner from dpg_migration')
     expect(guard).toContain('revoke create on schema public from dpg_migration, dpg_order_intake_function_owner')
     expect(guard).toContain("pg_get_userbyid(p.proowner) = 'dpg_order_intake_function_owner'")

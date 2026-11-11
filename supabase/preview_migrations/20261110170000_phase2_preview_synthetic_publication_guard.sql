@@ -179,7 +179,7 @@ begin
   admin_definition := replace(admin_definition, original, replacement);
 
   original := E'    );\n  if coalesce(p_input->>''publication_status'', v_old.publication_status) = ''public''';
-  replacement := E'      )\n    );\n  if coalesce(p_input->>''publication_status'', v_old.publication_status) = ''public''';
+  replacement := E'      )\n      )\n    );\n  if coalesce(p_input->>''publication_status'', v_old.publication_status) = ''public''';
   occurrences := (length(admin_definition) - length(replace(admin_definition, original, ''))) / length(original);
   if occurrences <> 1 then raise exception 'DPG_PREVIEW_290_ADMIN_PRICE_GUARD_CLOSE_DRIFT'; end if;
   execute replace(admin_definition, original, replacement);
