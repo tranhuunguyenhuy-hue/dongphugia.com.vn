@@ -48,6 +48,9 @@ export function assertSyntheticPreviewDatabaseUrl(value) {
   // endpoint is its IPv4 Session Pooler in ap-southeast-1.
   const sessionPoolerHost = `aws-0-${SYNTHETIC_PREVIEW_TARGET.region}.pooler.supabase.com`
   const sslmode = parsed.searchParams.get('sslmode')
+  const queryKeys = [...parsed.searchParams.keys()]
+  const unsupportedConnectionOptions = queryKeys.some((key) => key !== 'sslmode')
+    || parsed.searchParams.getAll('sslmode').length !== 1
   const isDirectConnection = parsed.hostname === directHost
   const isSessionPooler = parsed.hostname === sessionPoolerHost
   const validMigrationRole = isDirectConnection
@@ -61,6 +64,7 @@ export function assertSyntheticPreviewDatabaseUrl(value) {
     ...(!validMigrationRole ? ['migration_role'] : []),
     ...(!parsed.password ? ['password_absent'] : []),
     ...(!['require', 'verify-ca', 'verify-full'].includes(sslmode ?? '') ? ['tls_mode'] : []),
+    ...(unsupportedConnectionOptions ? ['connection_options'] : []),
   ]
   if (rejectedFields.length) {
     // Report only field names: never include connection-string components or values.

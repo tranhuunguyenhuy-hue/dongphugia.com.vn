@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
+import { X509Certificate } from 'node:crypto'
 import pg from 'pg'
 
 import {
@@ -13,14 +14,103 @@ import {
   sha256,
 } from './synthetic-preview-contract.mjs'
 
-const repositoryRoot = resolve(fileURLToPath(new URL('../..', import.meta.url)))
 const ledgerTable = 'dpg_control.synthetic_preview_migration_ledger'
+export const SYNTHETIC_PREVIEW_ROOT_CA_ENV = 'SUPABASE_PREVIEW_DATABASE_SSL_ROOT_CA_PEM'
+const EXPECTED_ROOT_CA_COMMON_NAME = 'CN=Supabase Root 2021 CA'
+// Supabase's upstream issue #50862 reports this fingerprint for the
+// Dashboard-provided Supabase Root 2021 CA; require an exact match.
+const EXPECTED_ROOT_CA_FINGERPRINT_SHA256 = '807025ad50d4ed219d2c9c7d299c004f824eb00cf7f65afef607d07b72e6cafa'
+
+function validateRootCaCertificate(rootCaPem, expectedFingerprintSha256) {
+  if (typeof rootCaPem !== 'string' || !rootCaPem.trim()) {
+    throw new Error('DPG_SYNTHETIC_PREVIEW_ROOT_CA_REQUIRED')
+  }
+
+  const normalizedPem = rootCaPem.trim().replaceAll('\r\n', '\n')
+  const certificateBlocks = normalizedPem.match(/-----BEGIN CERTIFICATE-----[\s\S]+?-----END CERTIFICATE-----/g) ?? []
+  if (certificateBlocks.length !== 1 || normalizedPem.replace(certificateBlocks[0] ?? '', '').trim()) {
+    throw new Error('DPG_SYNTHETIC_PREVIEW_ROOT_CA_INVALID')
+  }
+
+  let certificate
+  try {
+    certificate = new X509Certificate(certificateBlocks[0])
+  } catch {
+    throw new Error('DPG_SYNTHETIC_PREVIEW_ROOT_CA_INVALID')
+  }
+
+  const validFrom = Date.parse(certificate.validFrom)
+  const validTo = Date.parse(certificate.validTo)
+  if (
+    !certificate.ca
+    || !certificate.subject.includes(EXPECTED_ROOT_CA_COMMON_NAME)
+    || certificate.subject !== certificate.issuer
+    || !certificate.verify(certificate.publicKey)
+    || !Number.isFinite(validFrom)
+    || !Number.isFinite(validTo)
+    || validFrom > Date.now()
+    || validTo <= Date.now()
+  ) throw new Error('DPG_SYNTHETIC_PREVIEW_ROOT_CA_INVALID')
+
+  const fingerprintSha256 = certificate.fingerprint256?.replaceAll(':', '').toLowerCase()
+  if (!fingerprintSha256 || !/^[0-9a-f]{64}$/.test(fingerprintSha256)) {
+    throw new Error('DPG_SYNTHETIC_PREVIEW_ROOT_CA_INVALID')
+  }
+  if (fingerprintSha256 !== expectedFingerprintSha256) {
+    throw new Error('DPG_SYNTHETIC_PREVIEW_ROOT_CA_FINGERPRINT_MISMATCH')
+  }
+
+  return { pem: certificateBlocks[0], fingerprintSha256 }
+}
+
+export function buildSyntheticPreviewPoolConfig(
+  databaseUrl,
+  rootCaPem,
+  { expectedRootCaFingerprintSha256 = EXPECTED_ROOT_CA_FINGERPRINT_SHA256 } = {},
+) {
+  const target = assertSyntheticPreviewDatabaseUrl(databaseUrl)
+  if (target.projectRef !== SYNTHETIC_PREVIEW_TARGET.projectRef) {
+    throw new Error('DPG_SYNTHETIC_PREVIEW_PROJECT_REF_MISMATCH')
+  }
+
+  const rootCa = validateRootCaCertificate(rootCaPem, expectedRootCaFingerprintSha256)
+  let url
+  let user
+  let password
+  try {
+    url = new URL(databaseUrl)
+    user = decodeURIComponent(url.username)
+    password = decodeURIComponent(url.password)
+  } catch {
+    // Never echo the source URL; it contains the database credential.
+    throw new Error('DPG_SYNTHETIC_PREVIEW_DATABASE_URL_INVALID')
+  }
+
+  return {
+    target,
+    rootCaFingerprintSha256: rootCa.fingerprintSha256,
+    poolConfig: {
+      host: target.host,
+      port: Number(url.port),
+      database: target.database,
+      user,
+      password,
+      // Keep the hostname from the allowlisted URL. Node's default hostname
+      // verification remains enabled because rejectUnauthorized stays true
+      // and no custom servername/checkServerIdentity is supplied.
+      ssl: { ca: rootCa.pem, rejectUnauthorized: true },
+      max: 1,
+      connectionTimeoutMillis: 15000,
+    },
+  }
+}
 
 function quote(value) {
   return `'${String(value).replaceAll("'", "''")}'`
 }
 
 async function readMigration(entry) {
+  const repositoryRoot = resolve(fileURLToPath(new URL('../..', import.meta.url)))
   const source = await readFile(resolve(repositoryRoot, entry.path), 'utf8')
   const sql = entry.version === SYNTHETIC_PREVIEW_CONTRACT_MIGRATION.version
     ? source
@@ -74,14 +164,15 @@ async function checkTargetRow(client) {
 
 export async function runSyntheticPreviewMigrations({
   databaseUrl = process.env.SUPABASE_PREVIEW_DATABASE_URL,
+  rootCaPem = process.env[SYNTHETIC_PREVIEW_ROOT_CA_ENV],
   Pool = pg.Pool,
 } = {}) {
-  const target = assertSyntheticPreviewDatabaseUrl(databaseUrl)
-  if (target.projectRef !== SYNTHETIC_PREVIEW_TARGET.projectRef) {
-    throw new Error('DPG_SYNTHETIC_PREVIEW_PROJECT_REF_MISMATCH')
-  }
-
-  const pool = new Pool({ connectionString: databaseUrl, ssl: { rejectUnauthorized: true }, max: 1 })
+  const { target, rootCaFingerprintSha256, poolConfig } = buildSyntheticPreviewPoolConfig(databaseUrl, rootCaPem)
+  // Do not pass connectionString: pg 8.20 merges pg-connection-string's parsed
+  // query options over this config. sslmode=require becomes an empty SSL object
+  // and discards the CA. Discrete properties preserve the CA, strict chain and
+  // hostname verification above.
+  const pool = new Pool(poolConfig)
   const client = await pool.connect()
   const entries = [SYNTHETIC_PREVIEW_CONTRACT_MIGRATION, ...SYNTHETIC_PREVIEW_MIGRATIONS]
   const prepared = await Promise.all(entries.map(readMigration))
@@ -139,6 +230,8 @@ export async function runSyntheticPreviewMigrations({
     return {
       status: 'SYNTHETIC_PREVIEW_MIGRATIONS_READY',
       projectRef: target.projectRef,
+      tlsMode: 'verify-full',
+      rootCaFingerprintSha256,
       appliedVersions: expected.map((entry) => entry.version),
       databaseBytes: Number((await client.query('select pg_database_size(current_database()) as bytes')).rows[0].bytes),
     }

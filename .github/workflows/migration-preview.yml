@@ -635,6 +635,7 @@ jobs:
         id: migrate
         env:
           SUPABASE_PREVIEW_DATABASE_URL: ${{ secrets.MIGRATION_PREVIEW_DATABASE_URL }}
+          SUPABASE_PREVIEW_DATABASE_SSL_ROOT_CA_PEM: ${{ vars.MIGRATION_PREVIEW_DATABASE_SSL_ROOT_CA_PEM }}
         shell: bash
         run: |
           set -euo pipefail

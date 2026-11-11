@@ -34,12 +34,20 @@ describe('synthetic Preview target contract', () => {
       'postgresql://postgres.bonxyxluzlxfkdetryoo:pw@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres?sslmode=require',
       'postgresql://postgres.uybumsnyqpwcidjxmfsv:pw@aws-0-us-east-1.pooler.supabase.com:5432/postgres?sslmode=require',
       'postgresql://postgres.uybumsnyqpwcidjxmfsv:pw@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres?sslmode=require',
+      'postgresql://postgres.uybumsnyqpwcidjxmfsv:pw@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres?sslmode=require&sslrootcert=/tmp/untrusted.crt',
+      'postgresql://postgres.uybumsnyqpwcidjxmfsv:pw@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres?sslmode=require&sslmode=disable',
       'postgresql://postgres:pw@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres?sslmode=require',
       'postgresql://postgres.uybumsnyqpwcidjxmfsv:pw@db.uybumsnyqpwcidjxmfsv.supabase.co:5432/postgres?sslmode=require',
       'postgresql://postgres:pw@db.uybumsnyqpwcidjxmfsv.supabase.co:5432/postgres',
       'postgresql://postgres:pw@db.uybumsnyqpwcidjxmfsv.supabase.co:5433/postgres?sslmode=require',
       'https://uybumsnyqpwcidjxmfsv.supabase.co',
     ]) expect(() => assertSyntheticPreviewDatabaseUrl(url)).toThrow('DPG_SYNTHETIC_PREVIEW_DATABASE_TARGET_REJECTED')
+  })
+
+  it('rejects query options that could override the runner-managed TLS trust settings', () => {
+    expect(() => assertSyntheticPreviewDatabaseUrl(
+      'postgresql://postgres.uybumsnyqpwcidjxmfsv:pw@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres?sslmode=require&sslrootcert=/tmp/untrusted.crt',
+    )).toThrow('fields=connection_options')
   })
 
   it('reports rejected connection-string fields without printing their values', () => {
