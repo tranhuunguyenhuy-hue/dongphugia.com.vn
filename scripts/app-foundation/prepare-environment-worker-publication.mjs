@@ -3,10 +3,8 @@ import { readFile, readdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
 const EXPECTED_ACCOUNT_ID = 'd54f3402b9d112ab64d6135e0e3f1fb1'
-const SUBDOMAIN = 'tranhuunguyenhuy'
 const ENVIRONMENTS = {
-  preview: { workerName: 'dpg-preview' },
-  staging: { workerName: 'dpg-staging' },
+  staging: { workerName: 'dpg-staging', origin: 'https://dpg-staging.tranhuunguyenhuy.workers.dev' },
 }
 const SHA = /^[a-f0-9]{40}$/
 const SHA256 = /^[a-f0-9]{64}$/
@@ -17,7 +15,13 @@ const CONFIG_KEYS = [
 ]
 const VAR_KEYS = [
   'APP_ENV', 'APP_ORIGIN', 'PREVIEW_NOINDEX', 'BUILD_SOURCE_SHA',
-  'NEXT_PUBLIC_SUPABASE_URL', 'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY', 'ADMIN_BASE_PATH',
+  'PUBLIC_CATALOGUE_SOURCE',
+]
+const PRODUCTION_CATALOGUE_PATHS = [
+  '/__catalogue/v1/manifest.json',
+  '/__catalogue/v1/listings/{family}/{listing}/{page}.json',
+  '/__catalogue/v1/products/{bucket}.json',
+  '/__catalogue/v1/search/{shard}.json',
 ]
 
 function fail(code) {
@@ -59,20 +63,6 @@ async function digestDirectory(root) {
   return { sha256: hash.digest('hex'), fileCount: files.length, totalBytes, files }
 }
 
-function validateSupabaseUrl(value) {
-  let parsed
-  try {
-    parsed = new URL(value)
-  } catch {
-    fail('ENVIRONMENT_WORKER_PUBLISH_SUPABASE_URL_INVALID')
-  }
-  if (parsed.protocol !== 'https:' || !/^[a-z0-9-]+\.supabase\.co$/.test(parsed.hostname) || parsed.port
-    || parsed.username || parsed.password || parsed.pathname !== '/' || parsed.search || parsed.hash) {
-    fail('ENVIRONMENT_WORKER_PUBLISH_REQUIRES_ISOLATED_SUPABASE_PROJECT')
-  }
-  return parsed.origin
-}
-
 export async function prepareEnvironmentWorkerPublication({
   artifactRoot,
   environment,
@@ -88,25 +78,40 @@ export async function prepareEnvironmentWorkerPublication({
   const manifest = JSON.parse(await readFile(path.join(root, 'candidate-manifest.json'), 'utf8'))
   const originalConfigBytes = await readFile(path.join(root, 'wrangler.json'))
   const originalConfig = JSON.parse(originalConfigBytes.toString('utf8'))
-  const origin = `https://${target.workerName}.${SUBDOMAIN}.workers.dev`
+  const origin = target.origin
   if (!isObject(manifest) || manifest.contract !== 'dpg:combined-environment-worker:v1'
     || manifest.sourceSha !== sourceSha || manifest.appEnvironment !== environment
     || manifest.workerName !== target.workerName || manifest.origin !== origin
-    || manifest.dataMode !== 'synthetic-fixtures'
+    || manifest.dataMode !== 'production-published-public-catalogue'
     || !isObject(manifest.deployment) || manifest.deployment.workersDev !== true
+    || manifest.deployment.localOnly !== false
     || manifest.deployment.previewUrls !== false || manifest.deployment.noindex !== true
     || JSON.stringify(manifest.deployment.customDomains) !== '[]'
     || JSON.stringify(manifest.deployment.routes) !== '[]'
     || !isObject(manifest.observability) || manifest.observability.logs !== true
-    || manifest.observability.persist !== false || manifest.observability.traces !== false) {
+    || manifest.observability.persist !== false || manifest.observability.traces !== false
+    || !isObject(manifest.productionData)
+    || manifest.productionData.origin !== 'https://www.dongphugia.vn'
+    || manifest.productionData.mode !== 'runtime-readonly-public-assets'
+    || JSON.stringify(manifest.productionData.allowedPaths) !== JSON.stringify(PRODUCTION_CATALOGUE_PATHS)
+    || manifest.productionData.credentials !== false || manifest.productionData.cookies !== false
+    || manifest.productionData.privateAdminData !== 'unavailable'
+    || manifest.productionData.authWrites !== 'disabled'
+    || manifest.productionData.orderWrites !== 'disabled'
+    || manifest.productionData.cmsWrites !== 'disabled'
+    || manifest.productionData.uploadWrites !== 'disabled'
+    || !isObject(manifest.authentication) || manifest.authentication.enabled !== false
+    || manifest.authentication.providerConfigBound !== false) {
     fail('ENVIRONMENT_WORKER_PUBLISH_MANIFEST_IDENTITY_INVALID')
   }
   if (!isObject(manifest.apps) || manifest.apps.public?.entrypoint !== 'public-worker/index.js'
-    || manifest.apps.admin?.entrypoint !== 'admin-worker/index.js'
-    || manifest.apps.admin?.basePath !== '/admin' || manifest.apps.admin?.assetsBasePath !== '/admin/') {
+    || manifest.apps.admin?.route !== '/admin' || manifest.apps.admin?.status !== 503
+    || manifest.apps.admin?.runtime !== 'static-unavailable'
+    || manifest.apps.admin?.authentication !== 'disabled'
+    || manifest.apps.admin?.privateData !== 'unavailable') {
     fail('ENVIRONMENT_WORKER_PUBLISH_APP_MOUNT_INVALID')
   }
-  for (const section of [manifest.apps.public, manifest.apps.admin, manifest.assets]) {
+  for (const section of [manifest.apps.public, manifest.assets]) {
     if (!isObject(section) || !SHA256.test(section.sha256 || '')
       || !Number.isSafeInteger(section.fileCount) || section.fileCount < 1
       || !Number.isSafeInteger(section.totalBytes) || section.totalBytes < 1) {
@@ -125,10 +130,9 @@ export async function prepareEnvironmentWorkerPublication({
 
   const actualDirectories = await Promise.all([
     digestDirectory(path.join(root, 'public-worker')),
-    digestDirectory(path.join(root, 'admin-worker')),
     digestDirectory(path.join(root, 'assets')),
   ])
-  for (const [index, section] of [manifest.apps.public, manifest.apps.admin, manifest.assets].entries()) {
+  for (const [index, section] of [manifest.apps.public, manifest.assets].entries()) {
     const actual = actualDirectories[index]
     if (actual.sha256 !== section.sha256 || actual.fileCount !== section.fileCount
       || actual.totalBytes !== section.totalBytes) {
@@ -139,22 +143,22 @@ export async function prepareEnvironmentWorkerPublication({
     readFile(path.join(root, 'worker.mjs')),
     readFile(path.join(root, 'dispatch.mjs')),
   ])
-  if (sha256(workerBytes) !== manifest.dispatcher.sha256
+  if (/from\s+['"]\.\/admin-worker\//.test(workerBytes.toString('utf8'))
+    || sha256(workerBytes) !== manifest.dispatcher.sha256
     || sha256(dispatchBytes) !== manifest.dispatcher.dispatchSha256) {
     fail('ENVIRONMENT_WORKER_PUBLISH_DISPATCHER_DIGEST_MISMATCH')
   }
-  if (!actualDirectories[2].files.some((file) => file.startsWith(`admin${path.sep}_next${path.sep}static${path.sep}`))
-    || !actualDirectories[2].files.some((file) => file.startsWith(`_next${path.sep}static${path.sep}`))) {
+  if (!actualDirectories[1].files.some((file) => file.startsWith(`_next${path.sep}static${path.sep}`))
+    || actualDirectories[1].files.some((file) => file.startsWith(`admin${path.sep}`))) {
     fail('ENVIRONMENT_WORKER_PUBLISH_STATIC_MOUNT_INVALID')
   }
 
-  const allowedRootEntries = new Set(['worker.mjs', 'dispatch.mjs', 'wrangler.json', 'candidate-manifest.json', 'public-worker', 'admin-worker', 'assets'])
+  const allowedRootEntries = new Set(['worker.mjs', 'dispatch.mjs', 'wrangler.json', 'candidate-manifest.json', 'public-worker', 'assets'])
   const rootEntries = await readdir(root, { withFileTypes: true })
   if (rootEntries.some((entry) => !allowedRootEntries.has(entry.name) || entry.isSymbolicLink())) {
     fail('ENVIRONMENT_WORKER_PUBLISH_ROOT_CONTENT_INVALID')
   }
 
-  const supabaseUrl = validateSupabaseUrl(manifest.supabase?.url)
   const allowedConfigKeys = [...CONFIG_KEYS].sort()
   if (!isObject(originalConfig)
     || JSON.stringify(Object.keys(originalConfig).sort()) !== JSON.stringify(allowedConfigKeys)
@@ -173,10 +177,7 @@ export async function prepareEnvironmentWorkerPublication({
     || JSON.stringify(Object.keys(originalConfig.vars).sort()) !== JSON.stringify([...VAR_KEYS].sort())
     || originalConfig.vars.APP_ENV !== environment || originalConfig.vars.APP_ORIGIN !== origin
     || originalConfig.vars.PREVIEW_NOINDEX !== 'true' || originalConfig.vars.BUILD_SOURCE_SHA !== sourceSha
-    || originalConfig.vars.NEXT_PUBLIC_SUPABASE_URL !== supabaseUrl
-    || originalConfig.vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.startsWith('sb_publishable_') !== true
-    || originalConfig.vars.ADMIN_BASE_PATH !== '/admin'
-    || sha256(originalConfig.vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) !== manifest.supabase.publishableKeySha256
+    || originalConfig.vars.PUBLIC_CATALOGUE_SOURCE !== 'production-published-snapshot'
     || Object.keys(originalConfig.vars).some((name) => SECRET_NAME.test(name))) {
     fail('ENVIRONMENT_WORKER_PUBLISH_CONFIG_ALLOWLIST_INVALID')
   }
@@ -199,9 +200,7 @@ export async function prepareEnvironmentWorkerPublication({
       APP_ORIGIN: origin,
       PREVIEW_NOINDEX: 'true',
       BUILD_SOURCE_SHA: sourceSha,
-      NEXT_PUBLIC_SUPABASE_URL: supabaseUrl,
-      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: originalConfig.vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
-      ADMIN_BASE_PATH: '/admin',
+      PUBLIC_CATALOGUE_SOURCE: 'production-published-snapshot',
     },
   }
   await writeFile(path.join(root, 'wrangler.json'), `${JSON.stringify(deploymentConfig, null, 2)}\n`, 'utf8')
@@ -214,10 +213,11 @@ export async function prepareEnvironmentWorkerPublication({
     accountId: EXPECTED_ACCOUNT_ID,
     apps: {
       publicSha256: actualDirectories[0].sha256,
-      adminSha256: actualDirectories[1].sha256,
-      assetsSha256: actualDirectories[2].sha256,
+      admin: 'static-unavailable-private-data-disabled',
+      assetsSha256: actualDirectories[1].sha256,
     },
-    dataMode: 'synthetic-fixtures',
+    dataMode: 'production-published-public-catalogue',
+    authentication: 'disabled-without-provider-config',
     deploymentConfigSha256: sha256(`${JSON.stringify(deploymentConfig, null, 2)}\n`),
   }
   await writeFile(path.join(root, 'publication-manifest.json'), `${JSON.stringify(evidence, null, 2)}\n`, 'utf8')
@@ -227,7 +227,7 @@ export async function prepareEnvironmentWorkerPublication({
 async function main() {
   const [artifactRoot, environment, sourceSha, accountId] = process.argv.slice(2)
   if (!artifactRoot || !environment || !sourceSha || !accountId) {
-    fail('USAGE: prepare-environment-worker-publication <artifact-root> <preview|staging> <source-sha> <account-id>')
+    fail('USAGE: prepare-environment-worker-publication <artifact-root> staging <source-sha> <account-id>')
   }
   const evidence = await prepareEnvironmentWorkerPublication({ artifactRoot, environment, sourceSha, accountId })
   process.stdout.write(`${JSON.stringify({ status: 'ENVIRONMENT_WORKER_PUBLICATION_PREFLIGHT_PASS', ...evidence })}\n`)

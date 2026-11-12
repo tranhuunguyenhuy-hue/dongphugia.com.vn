@@ -1,5 +1,5 @@
-import { publicSnapshotCheckpoint } from './public-snapshot-mode'
 import { getSnapshotProducts, readSnapshotManifest } from './public-snapshot-catalogue'
+import { publicSnapshotCheckpoint } from './public-snapshot-mode'
 import {
     isPublicSnapshotListingProduct,
     PUBLIC_SNAPSHOT_LISTING_CONTRACT,
@@ -32,8 +32,10 @@ export async function getPublicSnapshotListingShard(
     const totalPages = Math.ceil(listingRecord.totalCount / PUBLIC_SNAPSHOT_LISTING_PAGE_SIZE)
     if (page > totalPages) return null
 
-    const checkpoint = publicSnapshotCheckpoint()
-    if (!checkpoint) throw new Error('PUBLIC_CATALOGUE_UNAVAILABLE')
+    const checkpoint = manifest.checkpoint
+    if (!/^[a-f0-9]{40}$/.test(checkpoint)
+        || (process.env.PUBLIC_CATALOGUE_SOURCE !== 'production-published-snapshot'
+            && checkpoint !== publicSnapshotCheckpoint())) throw new Error('PUBLIC_CATALOGUE_UNAVAILABLE')
     const source = await getSnapshotProducts(category, listing, page)
     const expectedProducts = Math.min(
         PUBLIC_SNAPSHOT_LISTING_PAGE_SIZE,

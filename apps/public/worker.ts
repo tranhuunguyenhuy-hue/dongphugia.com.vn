@@ -92,7 +92,10 @@ export default {
         'Cache-Control':PRIVATE_CACHE_CONTROL,...robotHeaders,...sourceIdentityHeader,
       }})
     }
-    const cacheCandidate = isAnonymousCacheCandidate(request)
+    // Production keeps its existing anonymous HTML cache. Preview and Staging
+    // always reflect the current published catalogue and never persist page
+    // responses in the local/deployment Worker Cache API.
+    const cacheCandidate = environment.APP_ENV === 'production' && isAnonymousCacheCandidate(request)
     const cacheKey = cacheCandidate ? createCacheKey(request, __DPG_BUILD_SOURCE_SHA__, publicSnapshotCheckpoint()) : null
     const workerCache = cacheKey ? await caches.open('dongphugia-public-v1') : null
 

@@ -2,6 +2,7 @@ const ADMIN_PRODUCTION_ORIGIN = 'https://admin.dongphugia.vn'
 const ADMIN_BROWSER_ENV_KEYS = new Set([
   'NEXT_PUBLIC_SUPABASE_URL',
   'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY',
+  'NEXT_PUBLIC_ADMIN_AUTH_ENABLED',
 ])
 
 const PRIVILEGED_ENV_PATTERN =
@@ -17,6 +18,19 @@ export type AdminAppEnvironment = Readonly<{
 
 function valueOf(environment: Record<string, string | undefined>, name: string) {
   return environment[name]?.trim() || undefined
+}
+
+export function isAdminAuthEnabled(source?: Record<string, string | undefined>) {
+  // Keep the direct property read so Next/Vite can inline the build-time public
+  // flag in browser code. Production keeps its existing enabled default; the
+  // local Preview and Staging build contract explicitly sets this to false.
+  const publicValue = source
+    ? valueOf(source, 'NEXT_PUBLIC_ADMIN_AUTH_ENABLED')
+    : process.env.NEXT_PUBLIC_ADMIN_AUTH_ENABLED?.trim()
+  const serverValue = source
+    ? valueOf(source, 'ADMIN_AUTH_ENABLED')
+    : process.env.ADMIN_AUTH_ENABLED?.trim()
+  return publicValue !== 'false' && serverValue !== 'false'
 }
 
 function assertBrowserEnvironmentIsApproved(
@@ -70,7 +84,13 @@ function validateOrigin(
   ) {
     throw new Error('ADMIN_PREVIEW_PRODUCTION_DOMAIN_FORBIDDEN')
   }
-
+  if (environment === 'preview' && (!['localhost','127.0.0.1'].includes(parsed.hostname) || parsed.protocol !== 'http:')) {
+    throw new Error('ADMIN_LOCAL_PREVIEW_ORIGIN_REQUIRED')
+  }
+  if (environment === 'staging' && (parsed.protocol !== 'https:'
+    || parsed.hostname !== 'dpg-staging.tranhuunguyenhuy.workers.dev')) {
+    throw new Error('ADMIN_STAGING_ORIGIN_REQUIRED')
+  }
   return configuredOrigin.replace(/\/$/, '')
 }
 

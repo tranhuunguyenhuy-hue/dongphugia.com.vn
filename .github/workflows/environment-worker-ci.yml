@@ -1,4 +1,4 @@
-name: Unified Preview and Staging Worker CI
+name: Local Preview and Staging Worker CI
 
 on:
   pull_request:
@@ -14,13 +14,11 @@ concurrency:
 
 jobs:
   combined-worker:
-    name: Combined Public and Admin Worker
+    name: Production catalogue Worker with closed Admin boundary
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     env:
       SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-      NEXT_PUBLIC_SUPABASE_URL: https://supabase.invalid
-      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_synthetic
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
@@ -53,15 +51,15 @@ jobs:
       - name: Install Chromium for local Worker route and responsive checks
         run: npx playwright install --with-deps chromium
 
-      - name: Build and browser-check both fixed Worker identities without provider credentials
+      - name: Build and browser-check local Preview and Staging runtimes without provider credentials
         shell: bash
         run: |
           set -euo pipefail
           for environment in preview staging; do
             case "$environment" in
               preview)
-                worker_name='dpg-preview'
-                origin='https://dpg-preview.tranhuunguyenhuy.workers.dev'
+                worker_name='dpg-local-preview'
+                origin='http://127.0.0.1:8787'
                 ;;
               staging)
                 worker_name='dpg-staging'
@@ -75,6 +73,32 @@ jobs:
               PREVIEW_NOINDEX=true \
               BUILD_SOURCE_SHA="$SOURCE_SHA" \
               npm run build:environment-worker
+            worker_log="$RUNNER_TEMP/dpg-environment-worker-$environment.log"
+            browser_origin='http://127.0.0.1:8787'
+            node apps/environment-worker/node_modules/wrangler/bin/wrangler.js dev \
+              --local --config ".artifacts/environment-worker/$environment/wrangler.json" \
+              --ip 127.0.0.1 --port 8787 >"$worker_log" 2>&1 &
+            worker_pid=$!
+            cleanup_worker() {
+              status=$?
+              kill "$worker_pid" 2>/dev/null || true
+              wait "$worker_pid" 2>/dev/null || true
+              if [ "$status" -ne 0 ]; then tail -n 80 "$worker_log"; fi
+              return "$status"
+            }
+            trap cleanup_worker EXIT
+            ready=false
+            for attempt in $(seq 1 60); do
+              if curl --fail --silent --show-error --max-time 2 "$browser_origin/" >/dev/null; then
+                ready=true
+                break
+              fi
+              sleep 1
+            done
+            test "$ready" = true
             BUILD_SOURCE_SHA="$SOURCE_SHA" \
+              ENVIRONMENT_WORKER_BROWSER_ORIGIN="$browser_origin" \
               node scripts/app-foundation/environment-worker-browser.mjs "$environment"
+            trap - EXIT
+            cleanup_worker
           done

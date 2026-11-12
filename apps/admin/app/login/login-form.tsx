@@ -3,9 +3,10 @@
 import { FormEvent, useState } from 'react'
 
 import { createAdminBrowserClient } from '../../src/supabase/browser'
-import { getAdminPath } from '../../src/config/env'
+import { getAdminPath, isAdminAuthEnabled } from '../../src/config/env'
 
 export function LoginForm({ nextPath }: { nextPath: string }) {
+  const authEnabled = isAdminAuthEnabled()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -13,6 +14,7 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (!authEnabled) return
     setPending(true)
     setError(null)
     const supabase = createAdminBrowserClient()
@@ -27,6 +29,7 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
 
   return (
     <form onSubmit={submit} autoComplete="on">
+      {!authEnabled ? <p role="status">Đăng nhập bị tắt trong môi trường này để tránh thay đổi dữ liệu Auth của Production.</p> : null}
       <label>
         Email
         <input
@@ -35,6 +38,7 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
           autoComplete="username"
           required
           value={email}
+          disabled={!authEnabled}
           onChange={(event) => setEmail(event.target.value)}
         />
       </label>
@@ -46,11 +50,12 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
           autoComplete="current-password"
           required
           value={password}
+          disabled={!authEnabled}
           onChange={(event) => setPassword(event.target.value)}
         />
       </label>
       {error ? <p role="alert">{error}</p> : null}
-      <button type="submit" disabled={pending}>
+      <button type="submit" disabled={!authEnabled || pending}>
         {pending ? 'Đang xác thực…' : 'Đăng nhập'}
       </button>
       <a href={getAdminPath('/forgot-password')}>Quên mật khẩu?</a>

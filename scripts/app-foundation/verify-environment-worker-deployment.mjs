@@ -1,7 +1,5 @@
 const ACCOUNT_ID = 'd54f3402b9d112ab64d6135e0e3f1fb1'
-const SUBDOMAIN = 'tranhuunguyenhuy'
 const ENVIRONMENTS = {
-  preview: { workerName: 'dpg-preview' },
   staging: { workerName: 'dpg-staging' },
 }
 const SHA = /^[a-f0-9]{40}$/
@@ -29,46 +27,86 @@ async function fetchChecked(fetchImpl, url, init, expectedStatus, sourceSha, app
 async function verifyRuntime({ fetchImpl = fetch, origin, sourceSha }) {
   const publicResponse = await fetchChecked(fetchImpl, `${origin}/`, { cache: 'no-store' }, 200, sourceSha, 'public')
   const publicHtml = await publicResponse.text()
-  if (!publicHtml.includes('Dữ liệu minh họa') || !publicHtml.includes('fixture kiểm thử')) {
-    fail('ENVIRONMENT_WORKER_RUNTIME_SYNTHETIC_PUBLIC_FIXTURE_MISSING')
+  if (publicResponse.headers.get('x-dpg-data-source') !== 'production-published-public-catalogue'
+    || !publicHtml.includes('Dữ liệu sản phẩm và giá được đọc trực tiếp từ catalogue công khai')) {
+    fail('ENVIRONMENT_WORKER_RUNTIME_PRODUCTION_CATALOGUE_NOTICE_MISSING')
   }
   if (/(SUPABASE_SERVICE_ROLE_KEY|AUTH_ADMIN_SECRET|DATABASE_URL|staff_context)/i.test(publicHtml)) {
     fail('ENVIRONMENT_WORKER_RUNTIME_PUBLIC_PRIVILEGED_STATE_EXPOSED')
   }
 
-  const adminResponse = await fetchChecked(fetchImpl, `${origin}/admin/login`, { cache: 'no-store' }, 200, sourceSha, 'admin')
+  const healthResponse = await fetchChecked(fetchImpl, `${origin}/api/health`, { cache: 'no-store' }, 200, sourceSha, 'public')
+  const publicHealth = await healthResponse.json()
+  if (publicHealth.catalogueMode !== 'production-published-public-catalogue'
+    || !SHA.test(publicHealth.catalogueCheckpoint || '') || publicHealth.publicProducts < 1) {
+    fail('ENVIRONMENT_WORKER_RUNTIME_PRODUCTION_CATALOGUE_CHECKPOINT_INVALID')
+  }
+  const listingResponse = await fetchChecked(fetchImpl,
+    `${origin}/api/catalogue/listings/thiet-bi-bep/bep-dien-tu`, { cache: 'no-store' }, 200, sourceSha, 'public')
+  const listing = await listingResponse.json()
+  if (listing.contract !== 'dpg:public-catalogue-listing-shard:v1'
+    || listing.checkpoint !== publicHealth.catalogueCheckpoint
+    || !Array.isArray(listing.products) || listing.products.length < 1) {
+    fail('ENVIRONMENT_WORKER_RUNTIME_PRODUCTION_CATALOGUE_LISTING_INVALID')
+  }
+  const searchResponse = await fetchChecked(fetchImpl, `${origin}/api/search?q=toto&limit=1`, { cache: 'no-store' }, 200, sourceSha, 'public')
+  const search = await searchResponse.json()
+  if (!Array.isArray(search.results) || search.results.length !== 1 || typeof search.results[0].sku !== 'string') {
+    fail('ENVIRONMENT_WORKER_RUNTIME_PRODUCTION_CATALOGUE_SEARCH_INVALID')
+  }
+
+  const adminResponse = await fetchChecked(fetchImpl, `${origin}/admin/login`, { cache: 'no-store' }, 503, sourceSha, 'admin')
   if (adminResponse.headers.get('cache-control')?.toLowerCase().includes('private') !== true) {
     fail('ENVIRONMENT_WORKER_RUNTIME_ADMIN_CACHE_NOT_PRIVATE')
   }
+  if (adminResponse.headers.get('x-dpg-authentication') !== 'disabled'
+    || adminResponse.headers.get('x-dpg-private-data') !== 'unavailable'
+    || adminResponse.headers.has('set-cookie')) {
+    fail('ENVIRONMENT_WORKER_RUNTIME_ADMIN_PRIVATE_BOUNDARY_INVALID')
+  }
   const adminHtml = await adminResponse.text()
-  if (!adminHtml.includes('name="email"') || !adminHtml.includes('name="password"')
-    || !adminHtml.includes('href="/admin/forgot-password"')) {
-    fail('ENVIRONMENT_WORKER_RUNTIME_ADMIN_LOGIN_INVALID')
+  if (!adminHtml.includes('Admin không khả dụng trong môi trường này')
+    || !adminHtml.includes('Không bật xác thực Production')
+    || /<form|<script|staff_context|SUPABASE_SERVICE_ROLE_KEY|DATABASE_URL/i.test(adminHtml)) {
+    fail('ENVIRONMENT_WORKER_RUNTIME_ADMIN_UNAVAILABLE_PAGE_INVALID')
   }
-  const cssPath = adminHtml.match(/href="(\/admin\/_next\/static\/[^" ]+\.css)"/)?.[1]
-  if (!cssPath) fail('ENVIRONMENT_WORKER_RUNTIME_ADMIN_CSS_MOUNT_MISSING')
-  const cssResponse = await fetchChecked(fetchImpl, new URL(cssPath, origin), { cache: 'no-store' }, 200, sourceSha, 'admin')
-  if (!cssResponse.headers.get('content-type')?.toLowerCase().includes('text/css')) {
-    fail('ENVIRONMENT_WORKER_RUNTIME_ADMIN_CSS_CONTENT_TYPE_INVALID')
-  }
-
-  const protectedResponse = await fetchChecked(fetchImpl, `${origin}/admin`, { cache: 'no-store' }, 307, sourceSha, 'admin')
-  const protectedLocation = new URL(protectedResponse.headers.get('location') || '', origin)
-  if (protectedLocation.origin !== origin || protectedLocation.pathname !== '/admin/login') {
-    fail('ENVIRONMENT_WORKER_RUNTIME_ADMIN_AUTH_REDIRECT_INVALID')
+  for (const pathname of ['/admin', '/admin/forgot-password', '/admin/reset-password', '/admin/api/health', '/admin/api/orders']) {
+    const response = await fetchChecked(fetchImpl, `${origin}${pathname}`, { cache: 'no-store' }, 503, sourceSha, 'admin')
+    if (response.headers.get('x-dpg-private-data') !== 'unavailable' || response.headers.has('set-cookie')) {
+      fail('ENVIRONMENT_WORKER_RUNTIME_ADMIN_PRIVATE_DATA_EXPOSED')
+    }
   }
 
-  const healthResponse = await fetchChecked(fetchImpl, `${origin}/admin/api/health`, { cache: 'no-store' }, 200, sourceSha, 'admin')
-  if (healthResponse.headers.get('cache-control')?.toLowerCase().includes('private') !== true) {
-    fail('ENVIRONMENT_WORKER_RUNTIME_ADMIN_HEALTH_CACHE_NOT_PRIVATE')
+  const headResponse = await fetchChecked(fetchImpl, `${origin}/admin`, { method: 'HEAD', cache: 'no-store' }, 503, sourceSha, 'admin')
+  if ((await headResponse.text()) !== '') fail('ENVIRONMENT_WORKER_RUNTIME_ADMIN_HEAD_BODY_INVALID')
+
+  const unknownRoute = await fetchChecked(fetchImpl, `${origin}/admin/unknown`, { cache: 'no-store' }, 503, sourceSha, 'admin')
+  if (unknownRoute.headers.get('x-dpg-private-data') !== 'unavailable') {
+    fail('ENVIRONMENT_WORKER_RUNTIME_ADMIN_UNKNOWN_ROUTE_INVALID')
   }
-  const health = await healthResponse.json()
-  if (health.application !== 'admin' || health.status !== 'ok') fail('ENVIRONMENT_WORKER_RUNTIME_ADMIN_HEALTH_INVALID')
+
+  const callbackResponse = await fetchChecked(fetchImpl,
+    `${origin}/admin/auth/callback?code=synthetic`, { cache: 'no-store' }, 503, sourceSha, 'admin')
+  const blogResponse = await fetchChecked(fetchImpl, `${origin}/blog`, { cache: 'no-store' }, 503, sourceSha, 'public')
 
   return {
-    public: { status: publicResponse.status, sha: sourceSha, noindex: true, dataMode: 'synthetic-fixtures' },
-    admin: { status: adminResponse.status, cssStatus: cssResponse.status, healthStatus: healthResponse.status, noindex: true },
-    unauthorizedAdmin: { status: protectedResponse.status, destination: protectedLocation.pathname },
+    public: {
+      status: publicResponse.status,
+      sha: sourceSha,
+      noindex: true,
+      dataMode: 'production-published-public-catalogue',
+      checkpoint: publicHealth.catalogueCheckpoint,
+      listingProducts: listing.products.length,
+      searchResults: search.results.length,
+      unverifiedBlogStatus: blogResponse.status,
+    },
+    admin: { status: adminResponse.status, authentication: 'disabled', privateData: 'unavailable', noindex: true },
+    adminBoundary: {
+      status: 503,
+      unavailableRoutes: ['/admin', '/admin/login', '/admin/forgot-password', '/admin/reset-password', '/admin/api/health', '/admin/api/orders'],
+      callbackStatus: callbackResponse.status,
+      hostedMutationProbe: 'not-performed',
+    },
   }
 }
 
@@ -102,7 +140,7 @@ export async function verifyEnvironmentWorkerDeployment({
     fail('ENVIRONMENT_WORKER_VERIFY_SINGLE_ACTIVE_DEPLOYMENT_REQUIRED')
   }
 
-  const origin = `https://${target.workerName}.${SUBDOMAIN}.workers.dev`
+  const origin = `https://${target.workerName}.tranhuunguyenhuy.workers.dev`
   const runtime = await verifyRuntime({ fetchImpl, origin, sourceSha })
   return {
     status: 'ENVIRONMENT_WORKER_DEPLOYMENT_ACCEPTANCE_PASS',

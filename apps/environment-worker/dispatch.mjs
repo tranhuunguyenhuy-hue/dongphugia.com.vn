@@ -1,6 +1,15 @@
 const ADMIN_BASE_PATH = '/admin'
 const PRIVILEGED_BINDING = /(CLOUDFLARE_API_TOKEN|SERVICE_ROLE|AUTH_ADMIN|SECRET|PASSWORD|DATABASE_URL|DIRECT_URL|PRIVATE_KEY|BUNNY_API_KEY)/i
 const SOURCE_SHA = /^[0-9a-f]{40}$/
+const ADMIN_UNAVAILABLE_HTML = `<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><title>Admin không khả dụng</title></head>
+<body style="margin:0;background:#f8fafc;color:#172033;font:16px/1.6 system-ui,sans-serif">
+<main style="box-sizing:border-box;max-width:38rem;margin:12vh auto;padding:2rem;background:#fff;border:1px solid #dbe2ea;border-radius:1rem">
+<h1 style="margin-top:0;font-size:1.5rem">Admin không khả dụng trong môi trường này</h1>
+<p>Không bật xác thực Production và không cung cấp dữ liệu riêng tư của nhân viên hoặc khách hàng ở đây.</p>
+<p>Môi trường này chỉ cho phép đọc catalogue công khai. Đăng nhập, khôi phục tài khoản và mọi thao tác ghi đều bị tắt.</p>
+</main></body></html>`
 
 function addHeaders(response, additions) {
   const headers = new Headers(response.headers)
@@ -23,12 +32,13 @@ function validIdentity(request, environment) {
 
   try {
     const origin = new URL(environment.APP_ORIGIN)
-    const expectedHost = environment.APP_ENV === 'preview'
-      ? 'dpg-preview.tranhuunguyenhuy.workers.dev'
-      : 'dpg-staging.tranhuunguyenhuy.workers.dev'
     const requestUrl = new URL(request.url)
     const localRequest = ['localhost', '127.0.0.1'].includes(requestUrl.hostname)
-    return origin.protocol === 'https:' && origin.hostname === expectedHost
+    if (environment.APP_ENV === 'preview') {
+      return origin.protocol === 'http:' && ['localhost','127.0.0.1'].includes(origin.hostname)
+        && localRequest
+    }
+    return origin.protocol === 'https:' && origin.hostname === 'dpg-staging.tranhuunguyenhuy.workers.dev'
       && (localRequest || origin.origin === requestUrl.origin)
   } catch {
     return false
@@ -45,12 +55,12 @@ function sharedEnvironment(environment) {
     PREVIEW_NOINDEX: 'true',
     BUILD_SOURCE_SHA: environment.BUILD_SOURCE_SHA,
     ASSETS: environment.ASSETS,
+    PUBLIC_CATALOGUE_SOURCE: 'production-published-snapshot',
   }
 }
 
-export function createEnvironmentWorker({ publicWorker, adminWorker }) {
-  if (!publicWorker || typeof publicWorker.fetch !== 'function'
-    || !adminWorker || typeof adminWorker.fetch !== 'function') {
+export function createEnvironmentWorker({ publicWorker }) {
+  if (!publicWorker || typeof publicWorker.fetch !== 'function') {
     throw new Error('ENVIRONMENT_WORKER_APPLICATION_HANDLER_REQUIRED')
   }
 
@@ -82,35 +92,50 @@ export function createEnvironmentWorker({ publicWorker, adminWorker }) {
         })
       }
 
-      // Both frameworks emit static files outside their rendered HTML. Since
-      // Worker-first routing sends these requests through this dispatcher,
-      // resolve existing asset files here before handing app routes to SSR.
-      if (request.method === 'GET' || request.method === 'HEAD') {
-        const assetResponse = await environment.ASSETS.fetch(request)
-        if (assetResponse.status !== 404) {
-          const isAdminAsset = hasAdminPath(new URL(request.url).pathname)
-          return addHeaders(assetResponse, {
+      if (request.method !== 'GET' && request.method !== 'HEAD') {
+        const isAdminRequest = hasAdminPath(new URL(request.url).pathname)
+        return new Response('This environment allows read-only requests.', {
+          status: 405,
+          headers: {
             ...identity,
-            'Cache-Control': assetResponse.headers.get('Cache-Control') || 'public, max-age=31536000, immutable',
-            'X-DPG-App': isAdminAsset ? 'admin' : 'public',
-          })
-        }
+            'Cache-Control': 'private, no-store',
+            Allow: 'GET, HEAD',
+            'X-DPG-App': isAdminRequest ? 'admin' : 'public',
+            ...(isAdminRequest ? { 'X-DPG-Private-Data': 'unavailable' } : {}),
+          },
+        })
       }
 
       if (hasAdminPath(new URL(request.url).pathname)) {
-        const adminEnvironment = {
-          ...common,
-          APP_BUILD_TARGET: 'admin',
-          ADMIN_BASE_PATH,
-          NEXT_PUBLIC_SUPABASE_URL: environment.NEXT_PUBLIC_SUPABASE_URL,
-          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: environment.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
-        }
-        const response = await adminWorker.fetch(request, adminEnvironment, context)
-        return addHeaders(response, {
-          ...identity,
-          'Cache-Control': response.headers.get('Cache-Control') || 'private, no-store',
-          'X-DPG-App': 'admin',
+        return new Response(request.method === 'HEAD' ? null : ADMIN_UNAVAILABLE_HTML, {
+          status: 503,
+          headers: {
+            ...identity,
+            'Cache-Control': 'private, no-store',
+            'Content-Type': 'text/html; charset=utf-8',
+            'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+            'Referrer-Policy': 'strict-origin-when-cross-origin',
+            'X-Content-Type-Options': 'nosniff',
+            'X-DPG-App': 'admin',
+            'X-DPG-Authentication': 'disabled',
+            'X-DPG-Private-Data': 'unavailable',
+          },
         })
+      }
+
+      // Both frameworks emit static files outside their rendered HTML. Since
+      // Worker-first routing sends these requests through this dispatcher,
+      // resolve Public static files before handing app routes to SSR. Admin
+      // assets and its SSR handler are deliberately unavailable here.
+      if (request.method === 'GET' || request.method === 'HEAD') {
+        const assetResponse = await environment.ASSETS.fetch(request)
+        if (assetResponse.status !== 404) {
+          return addHeaders(assetResponse, {
+            ...identity,
+            'Cache-Control': assetResponse.headers.get('Cache-Control') || 'public, max-age=31536000, immutable',
+            'X-DPG-App': 'public',
+          })
+        }
       }
 
       const publicEnvironment = { ...common, APP_BUILD_TARGET: 'public' }
@@ -119,6 +144,7 @@ export function createEnvironmentWorker({ publicWorker, adminWorker }) {
         'X-DPG-Source-SHA': environment.BUILD_SOURCE_SHA,
         'X-Robots-Tag': 'noindex, nofollow',
         'X-DPG-App': 'public',
+        'X-DPG-Data-Source': 'production-published-public-catalogue',
       })
     },
   }

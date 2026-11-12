@@ -3,7 +3,7 @@ import 'server-only'
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-import { getAdminBasePath, getAdminSupabasePublicConfig } from '../config/env'
+import { getAdminBasePath, getAdminSupabasePublicConfig, isAdminAuthEnabled } from '../config/env'
 
 const PUBLIC_PATHS = new Set([
   '/login',
@@ -25,6 +25,21 @@ function isPublicPath(pathname: string) {
 }
 
 export async function updateAdminSession(request: NextRequest) {
+  if (!isAdminAuthEnabled()) {
+    const basePath = getAdminBasePath()
+    const routePath = basePath && request.nextUrl.pathname.startsWith(`${basePath}/`)
+      ? request.nextUrl.pathname.slice(basePath.length)
+      : request.nextUrl.pathname === basePath ? '/' : request.nextUrl.pathname
+    const response = ['/auth/callback','/auth/confirm','/auth/logout'].includes(routePath)
+      ? new NextResponse('Admin authentication is unavailable in this environment.', { status: 503 })
+      : isPublicPath(request.nextUrl.pathname)
+        ? NextResponse.next({ request })
+        : NextResponse.redirect(new URL(`${basePath}/login?error=auth_unavailable`, request.url))
+    response.headers.set('Cache-Control', 'private, no-store')
+    response.headers.set('X-Robots-Tag', 'noindex, nofollow')
+    response.headers.set('X-Content-Type-Options', 'nosniff')
+    return response
+  }
   const { url, publishableKey } = getAdminSupabasePublicConfig()
   let response = NextResponse.next({ request })
   const supabase = createServerClient(url, publishableKey, {

@@ -16,7 +16,7 @@ describe('Public application environment contract', () => {
     expect(() =>
       getPublicAppEnvironment({
         APP_ENV: 'preview',
-        APP_ORIGIN: 'https://public-preview.invalid',
+        APP_ORIGIN: 'http://127.0.0.1:8787',
       }),
     ).toThrow('PUBLIC_PREVIEW_NOINDEX_REQUIRED')
 

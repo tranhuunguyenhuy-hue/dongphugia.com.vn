@@ -3,9 +3,10 @@
 import { FormEvent, useState } from 'react'
 
 import { createAdminBrowserClient } from '../../src/supabase/browser'
-import { getAdminPath } from '../../src/config/env'
+import { getAdminPath, isAdminAuthEnabled } from '../../src/config/env'
 
 export function ResetPasswordForm() {
+  const authEnabled = isAdminAuthEnabled()
   const [password, setPassword] = useState('')
   const [confirmation, setConfirmation] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -13,6 +14,7 @@ export function ResetPasswordForm() {
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (!authEnabled) return
     setError(null)
     if (password.length < 12 || password !== confirmation) {
       setError('Mật khẩu phải dài tối thiểu 12 ký tự và khớp xác nhận.')
@@ -31,6 +33,7 @@ export function ResetPasswordForm() {
 
   return (
     <form onSubmit={submit}>
+      {!authEnabled ? <p role="status">Đổi mật khẩu bị tắt trong môi trường này để tránh thay đổi dữ liệu Auth của Production.</p> : null}
       <label>
         Mật khẩu mới
         <input
@@ -40,6 +43,7 @@ export function ResetPasswordForm() {
           minLength={12}
           required
           value={password}
+          disabled={!authEnabled}
           onChange={(event) => setPassword(event.target.value)}
         />
       </label>
@@ -52,11 +56,12 @@ export function ResetPasswordForm() {
           minLength={12}
           required
           value={confirmation}
+          disabled={!authEnabled}
           onChange={(event) => setConfirmation(event.target.value)}
         />
       </label>
       {error ? <p role="alert">{error}</p> : null}
-      <button type="submit" disabled={pending}>
+      <button type="submit" disabled={!authEnabled || pending}>
         {pending ? 'Đang cập nhật…' : 'Cập nhật mật khẩu'}
       </button>
     </form>

@@ -1,30 +1,23 @@
-import { createServer } from 'node:net'
 import { spawn } from 'node:child_process'
 import path from 'node:path'
 import process from 'node:process'
 import { chromium } from '@playwright/test'
 
 const ENVIRONMENTS = {
-  preview: { workerName: 'dpg-preview' },
+  preview: { workerName: 'dpg-local-preview' },
   staging: { workerName: 'dpg-staging' },
 }
 const SOURCE_SHA = /^[a-f0-9]{40}$/
+const CHECKPOINT = /^[a-f0-9]{40}$/
+const CREDENTIAL_NAME = /(CLOUDFLARE|CF_|WRANGLER|SUPABASE|BUNNY|AWS_|GITHUB_|SERVICE_ROLE|AUTH_ADMIN|DATABASE|DIRECT_URL|PRIVATE_KEY|CREDENTIAL|PASSWORD|SECRET|TOKEN|ACCESS_KEY)/i
 
 function fail(code) {
   throw new Error(code)
 }
 
-async function freePort() {
-  const server = createServer()
-  await new Promise((resolve, reject) => server.once('error', reject).listen(0, '127.0.0.1', resolve))
-  const { port } = server.address()
-  await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()))
-  return port
-}
-
 async function waitForServer(url, child, getOutput) {
   for (let attempt = 0; attempt < 80; attempt += 1) {
-    if (child.exitCode !== null) fail(`ENVIRONMENT_WORKER_BROWSER_WRANGLER_EXITED:${getOutput()}`)
+    if (child && child.exitCode !== null) fail(`ENVIRONMENT_WORKER_BROWSER_WRANGLER_EXITED:${getOutput()}`)
     try {
       const response = await fetch(url, { signal: AbortSignal.timeout(1500) })
       if (response.status < 500) return
@@ -38,34 +31,48 @@ async function waitForServer(url, child, getOutput) {
 async function checkApp(page, origin, expected, viewportName) {
   const requests = []
   const assetResponses = []
-  page.on('request', async (request) => {
+  const catalogueResponses = []
+  const routeSequence = []
+  page.on('request', (request) => {
     const url = new URL(request.url())
     if (url.origin === origin) {
-      requests.push({ pathname: url.pathname, headers: await request.allHeaders() })
+      routeSequence.push({ type: 'request', method: request.method(), pathname: url.pathname })
+      requests.push({ pathname: url.pathname, headers: request.headers() })
     }
   })
   page.on('response', (response) => {
     const url = new URL(response.url())
+    if (url.origin === origin) {
+      routeSequence.push({ type: 'response', method: response.request().method(), pathname: url.pathname, status: response.status() })
+    }
+    if (url.origin === origin && (url.pathname.startsWith('/api/catalogue/') || url.pathname === '/api/health')) {
+      catalogueResponses.push({ pathname: url.pathname, status: response.status() })
+    }
     if (url.origin === origin && /\/_next\/static\//.test(url.pathname)) {
       assetResponses.push({ pathname: url.pathname, status: response.status() })
     }
   })
 
   const publicResponse = await page.goto(`${origin}/`, { waitUntil: 'domcontentloaded', timeout: 30000 })
-  if (publicResponse?.status() !== 200) fail(`ENVIRONMENT_WORKER_BROWSER_PUBLIC_STATUS:${viewportName}`)
+  if (publicResponse?.status() !== 200) {
+    const html = (await publicResponse?.text().catch(() => '')) || ''
+    const digest = html.match(/(?:"digest"|data-digest)["'=:\s]{1,12}([A-Za-z0-9_-]{1,80})/i)?.[1] || 'none'
+    fail(`ENVIRONMENT_WORKER_BROWSER_PUBLIC_STATUS:${viewportName}:status=${publicResponse?.status() ?? 'none'}:failure=${publicResponse?.headers()['x-dpg-render-failure'] || 'none'}:bytes=${Buffer.byteLength(html)}:defaultErrorShell=${/This page couldn.t load/i.test(html)}:digest=${digest}:routeSequence=${JSON.stringify(routeSequence.slice(-80))}`)
+  }
+  await page.getByRole('note').waitFor({ state: 'visible', timeout: 30000 }).catch(() => {
+    fail(`ENVIRONMENT_WORKER_BROWSER_PRODUCTION_CATALOGUE_NOTICE_TIMEOUT:${viewportName}`)
+  })
   const publicHeaders = await publicResponse.allHeaders()
   if (publicHeaders['x-dpg-source-sha'] !== expected.sourceSha
     || !publicHeaders['x-robots-tag']?.includes('noindex')
-    || publicHeaders['x-dpg-app'] !== 'public') {
+    || publicHeaders['x-dpg-app'] !== 'public'
+    || publicHeaders['x-dpg-data-source'] !== 'production-published-public-catalogue') {
     fail(`ENVIRONMENT_WORKER_BROWSER_PUBLIC_IDENTITY:${viewportName}`)
   }
   const publicBody = await page.locator('body').innerText()
-  if (!publicBody.includes('Dữ liệu minh họa') || !publicBody.includes('fixture kiểm thử')) {
-    fail(`ENVIRONMENT_WORKER_BROWSER_SYNTHETIC_FIXTURE_MISSING:${viewportName}:${JSON.stringify({
-      notice: publicBody.includes('Dữ liệu minh họa'),
-      fixtureLabel: publicBody.includes('fixture kiểm thử'),
-      text: publicBody.slice(0, 200),
-    })}`)
+  if (!publicBody.includes('Dữ liệu sản phẩm và giá được đọc trực tiếp từ catalogue công khai')
+    || !publicBody.includes('Banner và Blog được ẩn')) {
+    fail(`ENVIRONMENT_WORKER_BROWSER_PRODUCTION_CATALOGUE_NOTICE_MISSING:${viewportName}:${publicBody.slice(0, 240)}`)
   }
   const publicLayout = await page.evaluate(() => ({ width: innerWidth, scrollWidth: document.documentElement.scrollWidth }))
   if (publicLayout.scrollWidth > publicLayout.width + 1) fail(`ENVIRONMENT_WORKER_BROWSER_PUBLIC_OVERFLOW:${viewportName}`)
@@ -73,38 +80,76 @@ async function checkApp(page, origin, expected, viewportName) {
     fail(`ENVIRONMENT_WORKER_BROWSER_ADMIN_COOKIE_REACHED_PUBLIC:${viewportName}`)
   }
 
+  const healthResponse = await page.request.get(`${origin}/api/health`, { maxRedirects: 0 })
+  routeSequence.push({ type: 'api-response', method: 'GET', pathname: '/api/health', status: healthResponse.status() })
+  if (healthResponse.status() !== 200
+    || healthResponse.headers()['x-dpg-data-source'] !== 'production-published-public-catalogue') {
+    fail(`ENVIRONMENT_WORKER_BROWSER_CATALOGUE_HEALTH:${viewportName}`)
+  }
+  const health = await healthResponse.json()
+  if (health.catalogueMode !== 'production-published-public-catalogue'
+    || !CHECKPOINT.test(health.catalogueCheckpoint || '')
+    || health.publicProducts < 1) {
+    fail(`ENVIRONMENT_WORKER_BROWSER_CATALOGUE_CHECKPOINT:${viewportName}`)
+  }
+
+  const listingResponse = await page.request.get(`${origin}/api/catalogue/listings/thiet-bi-bep/bep-dien-tu`, { maxRedirects: 0 })
+  routeSequence.push({ type: 'api-response', method: 'GET', pathname: '/api/catalogue/listings/thiet-bi-bep/bep-dien-tu', status: listingResponse.status() })
+  if (listingResponse.status() !== 200) fail(`ENVIRONMENT_WORKER_BROWSER_CATALOGUE_LISTING:${viewportName}`)
+  const listing = await listingResponse.json()
+  if (listing.contract !== 'dpg:public-catalogue-listing-shard:v1'
+    || listing.checkpoint !== health.catalogueCheckpoint
+    || !Array.isArray(listing.products) || listing.products.length < 1) {
+    fail(`ENVIRONMENT_WORKER_BROWSER_CATALOGUE_LISTING_CHECKPOINT:${viewportName}`)
+  }
+  const listingPage = await page.goto(`${origin}/thiet-bi-bep/bep-dien-tu`, { waitUntil: 'domcontentloaded', timeout: 30000 })
+  if (listingPage?.status() !== 200) {
+    const responseText = (await listingPage?.text().catch(() => ''))?.slice(-1200) || ''
+    const failure = listingPage?.headers()['x-dpg-render-failure'] || 'none'
+    fail(`ENVIRONMENT_WORKER_BROWSER_CATALOGUE_LISTING_RENDER:${viewportName}:status=${listingPage?.status() ?? 'none'}:failure=${failure}:body=${responseText}:routeSequence=${JSON.stringify(routeSequence.slice(-80))}:catalogue=${JSON.stringify(catalogueResponses)}`)
+  }
+  try {
+    await page.getByText(listing.products[0].name, { exact: true }).waitFor({ state: 'visible', timeout: 20000 })
+  } catch {
+    const body = (await page.locator('body').innerText()).slice(0, 240)
+    fail(`ENVIRONMENT_WORKER_BROWSER_CATALOGUE_LISTING_RENDER:${viewportName}:${body}`)
+  }
+  const searchResponse = await page.request.get(`${origin}/api/search?q=toto&limit=1`, { maxRedirects: 0 })
+  routeSequence.push({ type: 'api-response', method: 'GET', pathname: '/api/search', status: searchResponse.status() })
+  const search = await searchResponse.json()
+  if (searchResponse.status() !== 200 || !Array.isArray(search.results) || search.results.length !== 1
+    || typeof search.results[0].sku !== 'string') {
+    fail(`ENVIRONMENT_WORKER_BROWSER_CATALOGUE_SEARCH:${viewportName}`)
+  }
+
   const loginResponse = await page.goto(`${origin}/admin/login`, { waitUntil: 'domcontentloaded', timeout: 30000 })
-  if (loginResponse?.status() !== 200) fail(`ENVIRONMENT_WORKER_BROWSER_ADMIN_LOGIN_STATUS:${viewportName}`)
+  if (loginResponse?.status() !== 503) fail(`ENVIRONMENT_WORKER_BROWSER_ADMIN_UNAVAILABLE_STATUS:${viewportName}`)
   const loginHeaders = await loginResponse.allHeaders()
   if (loginHeaders['x-dpg-source-sha'] !== expected.sourceSha
     || !loginHeaders['x-robots-tag']?.includes('noindex')
     || loginHeaders['x-dpg-app'] !== 'admin'
-    || !loginHeaders['cache-control']?.includes('private')) {
+    || !loginHeaders['cache-control']?.includes('private')
+    || loginHeaders['x-dpg-authentication'] !== 'disabled'
+    || loginHeaders['x-dpg-private-data'] !== 'unavailable'
+    || loginHeaders['set-cookie']) {
     fail(`ENVIRONMENT_WORKER_BROWSER_ADMIN_IDENTITY:${viewportName}`)
   }
-  if (await page.title() !== 'Dong Phu Gia Admin Application'
-    || await page.getByRole('textbox', { name: /email/i }).count() !== 1
-    || await page.getByLabel(/mật khẩu/i).count() !== 1
-    || await page.getByRole('link', { name: /quên mật khẩu/i }).getAttribute('href') !== '/admin/forgot-password') {
-    fail(`ENVIRONMENT_WORKER_BROWSER_ADMIN_LOGIN_CONTENT:${viewportName}`)
+  const adminBody = await page.locator('body').innerText()
+  if (await page.title() !== 'Admin không khả dụng'
+    || await page.getByRole('heading', { name: 'Admin không khả dụng trong môi trường này' }).count() !== 1
+    || !adminBody.includes('Không bật xác thực Production')
+    || !adminBody.includes('chỉ cho phép đọc catalogue công khai')
+    || await page.locator('form,script').count() !== 0) {
+    fail(`ENVIRONMENT_WORKER_BROWSER_ADMIN_UNAVAILABLE_CONTENT:${viewportName}`)
   }
   const loginLayout = await page.evaluate(() => ({ width: innerWidth, scrollWidth: document.documentElement.scrollWidth }))
   if (loginLayout.scrollWidth > loginLayout.width + 1) fail(`ENVIRONMENT_WORKER_BROWSER_ADMIN_OVERFLOW:${viewportName}`)
 
-  const forgotResponse = await page.goto(`${origin}/admin/forgot-password`, { waitUntil: 'domcontentloaded', timeout: 30000 })
-  if (forgotResponse?.status() !== 200
-    || await page.getByRole('heading', { name: 'Đặt lại mật khẩu' }).count() !== 1
-    || await page.getByRole('textbox', { name: /email/i }).count() !== 1
-    || await page.getByRole('link', { name: /quay lại đăng nhập/i }).getAttribute('href') !== '/admin/login') {
-    fail(`ENVIRONMENT_WORKER_BROWSER_ADMIN_FORGOT_PASSWORD_ROUTE:${viewportName}`)
-  }
-
-  const resetResponse = await page.goto(`${origin}/admin/reset-password`, { waitUntil: 'domcontentloaded', timeout: 30000 })
-  if (resetResponse?.status() !== 200
-    || await page.getByRole('heading', { name: 'Đặt mật khẩu mới' }).count() !== 1
-    || await page.getByLabel('Mật khẩu mới').count() !== 1
-    || await page.getByLabel('Xác nhận mật khẩu').count() !== 1) {
-    fail(`ENVIRONMENT_WORKER_BROWSER_ADMIN_RESET_PASSWORD_ROUTE:${viewportName}`)
+  for (const path of ['/admin', '/admin/forgot-password', '/admin/reset-password', '/admin/api/health']) {
+    const response = await page.request.get(`${origin}${path}`, { maxRedirects: 0 })
+    if (response.status() !== 503 || response.headers()['x-dpg-private-data'] !== 'unavailable') {
+      fail(`ENVIRONMENT_WORKER_BROWSER_ADMIN_ROUTE_NOT_UNAVAILABLE:${viewportName}:${path}`)
+    }
   }
 
   const adminRequest = requests.find((request) => request.pathname === '/admin/login')
@@ -113,28 +158,53 @@ async function checkApp(page, origin, expected, viewportName) {
   }
   if (assetResponses.some(({ status }) => status < 200 || status >= 400)
     || !assetResponses.some(({ pathname }) => pathname.startsWith('/_next/static/'))
-    || !assetResponses.some(({ pathname }) => pathname.startsWith('/admin/_next/static/'))) {
+    || assetResponses.some(({ pathname }) => pathname.startsWith('/admin/_next/static/'))) {
     fail(`ENVIRONMENT_WORKER_BROWSER_ASSET_LOAD_FAILED:${viewportName}`)
   }
 
-  const protectedResponse = await page.request.get(`${origin}/admin`, { maxRedirects: 0 })
-  if (protectedResponse.status() !== 307
-    || new URL(protectedResponse.headers().location || '', origin).pathname !== '/admin/login') {
-    fail(`ENVIRONMENT_WORKER_BROWSER_UNAUTHORIZED_ADMIN_BOUNDARY:${viewportName}`)
+  const authCallback = await page.request.get(`${origin}/admin/auth/callback?code=synthetic`, { maxRedirects: 0 })
+  const blockedRequests = await Promise.all([
+    page.request.post(`${origin}/admin/auth/login`),
+    page.request.post(`${origin}/admin/auth/logout`),
+    page.request.post(`${origin}/admin/api/orders`),
+    page.request.patch(`${origin}/admin/api/cms`),
+    page.request.put(`${origin}/admin/api/media/upload`),
+    page.request.delete(`${origin}/admin/api/orders/synthetic`),
+  ])
+  if (authCallback.status() !== 503 || blockedRequests.some((response) =>
+    response.status() !== 405 || response.headers()['x-dpg-private-data'] !== 'unavailable')) {
+    fail(`ENVIRONMENT_WORKER_BROWSER_ADMIN_SIDE_EFFECTS_NOT_BLOCKED:${viewportName}`)
+  }
+  const publicAfterAdminResponse = await page.request.get(`${origin}/`, { maxRedirects: 0 })
+  if (publicAfterAdminResponse.status() !== 200
+    || publicAfterAdminResponse.headers()['x-dpg-app'] !== 'public'
+    || publicAfterAdminResponse.headers()['x-dpg-source-sha'] !== expected.sourceSha) {
+    fail(`ENVIRONMENT_WORKER_BROWSER_PUBLIC_AFTER_ADMIN:${viewportName}`)
+  }
+  const blogResponse = await page.request.get(`${origin}/blog`, { maxRedirects: 0 })
+  if (blogResponse.status() !== 503 || !blogResponse.headers()['x-robots-tag']?.includes('noindex')) {
+    fail(`ENVIRONMENT_WORKER_BROWSER_UNVERIFIED_BLOG_NOT_BLOCKED:${viewportName}`)
   }
   return {
     viewport: viewportName,
     publicStatus: publicResponse.status(),
-    adminLoginStatus: loginResponse.status(),
+    adminStatus: loginResponse.status(),
     publicWidth: publicLayout.width,
     publicScrollWidth: publicLayout.scrollWidth,
     adminWidth: loginLayout.width,
     adminScrollWidth: loginLayout.scrollWidth,
-    adminAuthRoutes: ['/admin/login', '/admin/forgot-password', '/admin/reset-password'],
+    adminRoutes: ['GET /admin* -> 503 unavailable'],
     localAssetRequests: assetResponses.length,
     adminCookieExcludedFromPublic: true,
     adminCookieSentOnAdminPath: true,
-    unauthorizedAdminRedirect: '/admin/login',
+    adminAuthentication: 'disabled',
+    privateAdminData: 'unavailable',
+    productionCatalogueCheckpoint: health.catalogueCheckpoint,
+    listingProducts: listing.products.length,
+    searchResults: search.results.length,
+    deniedMutationMethods: blockedRequests.map((response) => response.status()),
+    publicAfterAdminStatus: publicAfterAdminResponse.status(),
+    unverifiedBlog: 'unavailable',
   }
 }
 
@@ -147,17 +217,40 @@ async function main() {
   const repositoryRoot = process.cwd()
   const artifactRoot = path.join(repositoryRoot, '.artifacts', 'environment-worker', environment)
   const configPath = path.join(artifactRoot, 'wrangler.json')
-  const port = await freePort()
-  const origin = `http://127.0.0.1:${port}`
+  const existingOrigin = process.env.ENVIRONMENT_WORKER_BROWSER_ORIGIN?.trim()
+  let origin
+  if (existingOrigin) {
+    let parsed
+    try { parsed = new URL(existingOrigin) } catch { fail('ENVIRONMENT_WORKER_BROWSER_ORIGIN_INVALID') }
+    if (parsed.protocol !== 'http:' || !['localhost', '127.0.0.1'].includes(parsed.hostname)
+      || parsed.pathname !== '/' || parsed.search || parsed.hash || parsed.username || parsed.password) {
+      fail('ENVIRONMENT_WORKER_BROWSER_ORIGIN_INVALID')
+    }
+    origin = parsed.origin
+  } else {
+    const port = Number(process.env.ENVIRONMENT_WORKER_BROWSER_PORT || '8787')
+    if (!Number.isSafeInteger(port) || port < 1024 || port > 65535) fail('ENVIRONMENT_WORKER_BROWSER_PORT_INVALID')
+    origin = `http://127.0.0.1:${port}`
+  }
   const wrangler = path.join(repositoryRoot, 'apps/environment-worker/node_modules/wrangler/bin/wrangler.js')
   const output = []
-  const child = spawn(process.execPath, [wrangler, 'dev', '--local', '--config', configPath, '--ip', '127.0.0.1', '--port', String(port)], {
-    cwd: repositoryRoot,
-    env: { ...process.env, WRANGLER_SEND_METRICS: 'false' },
-    stdio: ['ignore', 'pipe', 'pipe'],
-  })
-  child.stdout.on('data', (chunk) => output.push(String(chunk)))
-  child.stderr.on('data', (chunk) => output.push(String(chunk)))
+  const safeEnvironment = { ...process.env }
+  for (const name of Object.keys(safeEnvironment)) {
+    if (CREDENTIAL_NAME.test(name)) delete safeEnvironment[name]
+  }
+  delete safeEnvironment.NEXT_PUBLIC_SUPABASE_URL
+  delete safeEnvironment.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+  let child = null
+  if (!existingOrigin) {
+    const port = new URL(origin).port
+    child = spawn(process.execPath, [wrangler, 'dev', '--local', '--config', configPath, '--ip', '127.0.0.1', '--port', port], {
+      cwd: repositoryRoot,
+      env: { ...safeEnvironment, WRANGLER_SEND_METRICS: 'false' },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    })
+    child.stdout.on('data', (chunk) => output.push(String(chunk)))
+    child.stderr.on('data', (chunk) => output.push(String(chunk)))
+  }
   const getOutput = () => output.join('').slice(-5000)
   let browser
   try {
@@ -179,13 +272,17 @@ async function main() {
         httpOnly: true, secure: false, sameSite: 'Lax',
       }])
       const page = await context.newPage()
-      results.push(await checkApp(page, origin, { sourceSha }, viewport.name))
+      try {
+        results.push(await checkApp(page, origin, { sourceSha }, viewport.name))
+      } catch (error) {
+        fail(`${error instanceof Error ? error.message : 'ENVIRONMENT_WORKER_BROWSER_CHECK_FAILED'}:worker=${getOutput()}`)
+      }
       await context.close()
     }
     process.stdout.write(`${JSON.stringify({ status: 'ENVIRONMENT_WORKER_BROWSER_PASS', environment, workerName: target.workerName, localOrigin: origin, sourceSha, results })}\n`)
   } finally {
     await browser?.close()
-    if (child.exitCode === null) {
+    if (child && child.exitCode === null) {
       child.kill('SIGTERM')
       await Promise.race([
         new Promise((resolve) => child.once('exit', resolve)),

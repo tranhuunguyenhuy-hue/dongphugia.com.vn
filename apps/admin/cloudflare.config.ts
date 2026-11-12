@@ -3,8 +3,7 @@ import { bindings, defineConfig, defineWorker } from 'cf/config'
 const sourceSha = process.env.BUILD_SOURCE_SHA?.trim()
 const appEnv = process.env.APP_ENV?.trim()
 const appOrigin = process.env.APP_ORIGIN?.trim()
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim()
-const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim()
+const authEnabled = process.env.NEXT_PUBLIC_ADMIN_AUTH_ENABLED?.trim() === 'true'
 
 if (!sourceSha || !/^[0-9a-f]{40}$/.test(sourceSha)) {
   throw new Error('ADMIN_WORKER_SOURCE_SHA_REQUIRED')
@@ -12,13 +11,16 @@ if (!sourceSha || !/^[0-9a-f]{40}$/.test(sourceSha)) {
 if (!['preview', 'staging'].includes(appEnv || '')) {
   throw new Error('ADMIN_WORKER_ENVIRONMENT_REQUIRED')
 }
-if (!appOrigin || !supabaseUrl || !publishableKey?.startsWith('sb_publishable_')) {
+if (!appOrigin) {
   throw new Error('ADMIN_WORKER_PUBLIC_CONFIG_REQUIRED')
 }
+if (authEnabled) throw new Error('ADMIN_WORKER_AUTH_MUST_BE_DISABLED')
 
 Object.assign(process.env, {
   APP_BUILD_TARGET: 'admin',
   PREVIEW_NOINDEX: 'true',
+  ADMIN_AUTH_ENABLED: 'false',
+  NEXT_PUBLIC_ADMIN_AUTH_ENABLED: 'false',
   ADMIN_BASE_PATH: '/admin',
 })
 
@@ -47,8 +49,7 @@ export default defineConfig({
       APP_ORIGIN: bindings.text(appOrigin),
       PREVIEW_NOINDEX: bindings.text('true'),
       BUILD_SOURCE_SHA: bindings.text(sourceSha),
-      NEXT_PUBLIC_SUPABASE_URL: bindings.text(supabaseUrl),
-      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: bindings.text(publishableKey),
+      ADMIN_AUTH_ENABLED: bindings.text('false'),
       ADMIN_BASE_PATH: bindings.text('/admin'),
     },
   }),

@@ -8,6 +8,8 @@ import {
   getPreviewCatalogueProducts,
   PUBLIC_CATALOGUE_FIXTURE_NOTICE,
 } from './preview-public-catalogue'
+import { usesPublicSnapshot } from './public-snapshot-mode'
+import { readSnapshotManifest } from './public-snapshot-catalogue'
 import { blogPosts, historicalBlogImage } from './legacy-blog'
 
 export async function getPublicHomeBanners(): Promise<PublicHomePageData['banners']> {
@@ -48,6 +50,7 @@ export async function getPublicHomeBanners(): Promise<PublicHomePageData['banner
 }
 
 export async function getPublicHomeContent(): Promise<PublicHomeContent> {
+  const catalogueManifest = usesPublicSnapshot() ? await readSnapshotManifest() : null
   const categories: readonly PublicHomeCategory[] = await Promise.all((await getPreviewCatalogueCategories()).map(async (category) => {
     const listing = category.listings[0]
     const products = listing
@@ -72,7 +75,7 @@ export async function getPublicHomeContent(): Promise<PublicHomeContent> {
 
   return {
     categories,
-    posts: blogPosts.slice(0, 3).map((post) => ({
+    posts: process.env.APP_ENV === 'production' ? blogPosts.slice(0, 3).map((post) => ({
           id: post.id,
           title: post.title,
           slug: post.slug,
@@ -80,7 +83,9 @@ export async function getPublicHomeContent(): Promise<PublicHomeContent> {
           thumbnailUrl: historicalBlogImage(post.thumbnail_url),
           publishedAt: post.published_at,
           category: { name: post.category.name, slug: post.category.slug },
-        })),
-    previewNotice: process.env.APP_ENV === 'production' ? undefined : PUBLIC_CATALOGUE_FIXTURE_NOTICE,
+        })) : [],
+    previewNotice: process.env.APP_ENV === 'production' ? undefined : catalogueManifest
+      ? `${PUBLIC_CATALOGUE_FIXTURE_NOTICE} Checkpoint: ${catalogueManifest.checkpoint}. Banner và Blog được ẩn vì chưa xác minh được tuyến nội dung công khai. Dữ liệu Admin riêng tư, xác thực, đơn hàng và mọi thao tác ghi không khả dụng trong môi trường này.`
+      : PUBLIC_CATALOGUE_FIXTURE_NOTICE,
   }
 }

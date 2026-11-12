@@ -93,6 +93,13 @@ function validateOrigin(
   ) {
     throw new Error('PUBLIC_PREVIEW_PRODUCTION_DOMAIN_FORBIDDEN')
   }
+  if (environment === 'preview' && (!['localhost','127.0.0.1'].includes(parsed.hostname) || parsed.protocol !== 'http:')) {
+    throw new Error('PUBLIC_LOCAL_PREVIEW_ORIGIN_REQUIRED')
+  }
+  if (environment === 'staging' && (parsed.protocol !== 'https:'
+    || parsed.hostname !== 'dpg-staging.tranhuunguyenhuy.workers.dev')) {
+    throw new Error('PUBLIC_STAGING_ORIGIN_REQUIRED')
+  }
 
   return configuredOrigin.replace(/\/$/, '')
 }

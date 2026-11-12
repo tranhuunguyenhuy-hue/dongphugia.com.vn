@@ -1,35 +1,35 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { verifyEnvironmentWorkerTokenScope } from './verify-environment-worker-token-scope.mjs'
+import { REQUIRED_POLICY_SCOPE_ATTESTATION, verifyEnvironmentWorkerTokenScope } from './verify-environment-worker-token-scope.mjs'
 
 const accountId = 'd54f3402b9d112ab64d6135e0e3f1fb1'
 
 describe('environment Worker token scope preflight', () => {
-  it('requires access to the selected Worker and denies Production before upload', async () => {
-    const fetchImpl = vi.fn()
-      .mockResolvedValueOnce(new Response('{}', { status: 200 }))
-      .mockResolvedValueOnce(new Response('{}', { status: 403 }))
+  it('requires reviewed Individual Worker Editor evidence and checks only the selected Worker', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(new Response('{}', { status: 200 }))
     await expect(verifyEnvironmentWorkerTokenScope({
-      environment: 'preview', accountId, apiToken: 'scoped-test-token', fetchImpl,
+      environment: 'staging', accountId, apiToken: 'scoped-test-token',
+      policyScopeAttestation: REQUIRED_POLICY_SCOPE_ATTESTATION, fetchImpl,
     })).resolves.toMatchObject({
-      workerName: 'dpg-preview',
+      workerName: 'dpg-staging',
       selectedWorkerReadable: true,
-      productionWorkerDenied: true,
-      productionStatus: 403,
+      policyScopeAttestation: { value: REQUIRED_POLICY_SCOPE_ATTESTATION, apiVerified: false },
+      productionWriteAuthority: 'unknown-not-tested',
     })
-    expect(fetchImpl.mock.calls[0][0]).toContain('/scripts/dpg-preview/settings')
-    expect(fetchImpl.mock.calls[1][0]).toContain('/scripts/dongphugia-v1-public-production/settings')
+    expect(fetchImpl).toHaveBeenCalledOnce()
+    expect(fetchImpl.mock.calls[0][0]).toContain('/scripts/dpg-staging/settings')
     expect(fetchImpl.mock.calls[0][1].method).toBe('GET')
+    expect(fetchImpl.mock.calls[0][0]).not.toContain('dongphugia-v1-public-production')
   })
 
-  it('rejects a token that can read Production or cannot read its selected Worker', async () => {
+  it('rejects missing policy evidence or a token without selected Worker read access', async () => {
     await expect(verifyEnvironmentWorkerTokenScope({
-      environment: 'staging', accountId, apiToken: 'too-broad',
-      fetchImpl: vi.fn().mockResolvedValue(new Response('{}', { status: 200 })),
-    })).rejects.toThrow('ENVIRONMENT_WORKER_TOKEN_PRODUCTION_ACCESS_FORBIDDEN')
+      environment: 'staging', accountId, apiToken: 'scoped-test-token', fetchImpl: vi.fn(),
+    })).rejects.toThrow('ENVIRONMENT_WORKER_TOKEN_POLICY_SCOPE_EVIDENCE_REQUIRED')
 
     await expect(verifyEnvironmentWorkerTokenScope({
       environment: 'staging', accountId, apiToken: 'wrong-scope',
+      policyScopeAttestation: REQUIRED_POLICY_SCOPE_ATTESTATION,
       fetchImpl: vi.fn().mockResolvedValue(new Response('{}', { status: 403 })),
     })).rejects.toThrow('ENVIRONMENT_WORKER_TOKEN_SELECTED_WORKER_ACCESS_REQUIRED')
   })

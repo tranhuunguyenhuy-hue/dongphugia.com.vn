@@ -2,7 +2,7 @@ import { type EmailOtpType } from '@supabase/supabase-js'
 import { NextResponse, type NextRequest } from 'next/server'
 
 import { createAdminServerClient } from '../../../src/supabase/server'
-import { getAdminPath } from '../../../src/config/env'
+import { getAdminPath, isAdminAuthEnabled } from '../../../src/config/env'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -16,6 +16,7 @@ function safeNext(value: string | null) {
 }
 
 export async function GET(request: NextRequest) {
+  if (!isAdminAuthEnabled()) return Response.json({ error: 'Admin authentication is unavailable in this environment.' }, { status: 503, headers: { 'Cache-Control': 'private, no-store', 'X-Robots-Tag': 'noindex, nofollow' } })
   const tokenHash = request.nextUrl.searchParams.get('token_hash')
   const typeValue = request.nextUrl.searchParams.get('type')
   const nextPath = safeNext(request.nextUrl.searchParams.get('next'))

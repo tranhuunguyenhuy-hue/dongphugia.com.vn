@@ -1,13 +1,13 @@
-name: Publish Unified Preview or Staging Worker
+name: Publish Staging Worker
 
 on:
   workflow_dispatch:
     inputs:
       environment:
-        description: Exact existing Worker target to update
+        description: Existing Staging Worker target
         required: true
         type: choice
-        options: [preview, staging]
+        options: [staging]
       source_kind:
         description: Publish main or an exactly reviewed open PR head
         required: true
@@ -26,9 +26,9 @@ permissions:
   contents: read
   pull-requests: read
 
-# One serialized lane prevents overlapping Preview and Staging updates.
+# Serialize every update to the single shared Staging Worker.
 concurrency:
-  group: dpg-shared-preview-staging-publication
+  group: dpg-staging-publication
   cancel-in-progress: false
 
 jobs:
@@ -37,12 +37,10 @@ jobs:
     if: >-
       github.repository == 'tranhuunguyenhuy-hue/dongphugia.com.vn' &&
       github.ref == 'refs/heads/main' && github.run_attempt == 1 &&
-      (inputs.environment == 'preview' || inputs.environment == 'staging') &&
+      inputs.environment == 'staging' &&
       (inputs.source_kind == 'main' || inputs.source_kind == 'approved-pr')
     runs-on: ubuntu-24.04
     timeout-minutes: 70
-    environment:
-      name: dpg-${{ inputs.environment }}-build
     outputs:
       source_sha: ${{ steps.identity.outputs.source_sha }}
     env:
@@ -99,17 +97,13 @@ jobs:
       - name: Build and browser-check without provider credentials
         working-directory: candidate
         env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
           APP_ENV: ${{ inputs.environment }}
-          APP_WORKER_NAME: ${{ inputs.environment == 'preview' && 'dpg-preview' || 'dpg-staging' }}
-          APP_ORIGIN: ${{ inputs.environment == 'preview' && 'https://dpg-preview.tranhuunguyenhuy.workers.dev' || 'https://dpg-staging.tranhuunguyenhuy.workers.dev' }}
+          APP_WORKER_NAME: dpg-staging
+          APP_ORIGIN: https://dpg-staging.tranhuunguyenhuy.workers.dev
           PREVIEW_NOINDEX: 'true'
           BUILD_SOURCE_SHA: ${{ inputs.source_sha }}
         run: |
           set -euo pipefail
-          test -n "$NEXT_PUBLIC_SUPABASE_URL"
-          test -n "$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
           APP_ENV="$APP_ENV" APP_WORKER_NAME="$APP_WORKER_NAME" \
             APP_ORIGIN="$APP_ORIGIN" PREVIEW_NOINDEX=true \
             BUILD_SOURCE_SHA="$BUILD_SOURCE_SHA" npm run build:environment-worker
@@ -135,10 +129,10 @@ jobs:
     environment:
       name: cloudflare-${{ inputs.environment }}
     env:
-      APP_ENV: ${{ inputs.environment }}
+      APP_ENV: staging
       SOURCE_SHA: ${{ needs.build-candidate.outputs.source_sha }}
       CLOUDFLARE_ACCOUNT_ID: d54f3402b9d112ab64d6135e0e3f1fb1
-      ARTIFACT_ROOT: ${{ github.workspace }}/.artifacts/environment-worker/${{ inputs.environment }}
+      ARTIFACT_ROOT: ${{ github.workspace }}/.artifacts/environment-worker/staging
       WRANGLER_SEND_METRICS: 'false'
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -156,7 +150,7 @@ jobs:
 
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
-          name: dpg-environment-${{ inputs.environment }}-${{ needs.build-candidate.outputs.source_sha }}
+          name: dpg-environment-staging-${{ needs.build-candidate.outputs.source_sha }}
           path: ${{ env.ARTIFACT_ROOT }}
 
       - name: Verify artifact data and replace config with the trusted allowlist
@@ -164,14 +158,16 @@ jobs:
           node scripts/app-foundation/prepare-environment-worker-publication.mjs
           "$ARTIFACT_ROOT" "$APP_ENV" "$SOURCE_SHA" "$CLOUDFLARE_ACCOUNT_ID"
 
-      - name: Verify the token can access this Worker but not Production
+      - name: Require reviewed Worker policy scope and verify the selected Worker is readable
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_WORKER_POLICY_SCOPE: ${{ vars.CLOUDFLARE_WORKER_POLICY_SCOPE }}
         run: |
           set -euo pipefail
           test -n "$CLOUDFLARE_API_TOKEN"
+          test "$CLOUDFLARE_WORKER_POLICY_SCOPE" = 'individual-worker:dpg-staging:editor'
           node apps/environment-worker/node_modules/wrangler/bin/wrangler.js --version | grep -Fx 'wrangler 4.160.1'
-          node scripts/app-foundation/verify-environment-worker-token-scope.mjs "$APP_ENV"
+          node scripts/app-foundation/verify-environment-worker-token-scope.mjs "$APP_ENV" "$CLOUDFLARE_WORKER_POLICY_SCOPE"
 
       - name: Deploy only the selected pre-created Worker
         env:
@@ -182,7 +178,7 @@ jobs:
             --strict --config "$ARTIFACT_ROOT/wrangler.json" \
             --message "DPG $APP_ENV source $SOURCE_SHA"
 
-      - name: Verify active deployment identity, routes, noindex and synthetic data
+      - name: Verify active deployment identity, noindex and Production-published catalogue reads
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: >-
@@ -193,12 +189,11 @@ jobs:
         if: always()
         run: |
           {
-            echo "### Unified Worker publication result: $APP_ENV"
+            echo '### Staging Worker publication result'
             echo "- Requested source SHA: $SOURCE_SHA"
-            echo "- Worker identity is fixed by environment: $([[ "$APP_ENV" == preview ]] && echo dpg-preview || echo dpg-staging)"
+            echo '- Worker identity is dpg-staging in the shared Cloudflare account.'
             echo '- Candidate build runs without Cloudflare credentials; publication consumes its data-only artifact.'
-            echo '- Preview and Staging use separate GitHub environments and per-Worker scoped Cloudflare tokens.'
-            echo '- Public and Admin share one workers.dev URL; Admin is mounted at /admin.'
-            echo '- Logs are enabled without persistent invocation log storage; data mode is synthetic fixtures.'
-            echo '- No binding for Production state, Auth administration, service role, R2, KV or database is configured.'
+            echo '- Public and the static Admin-unavailable route share the Staging workers.dev origin.'
+            echo '- Public reads only fixed Production catalogue asset paths; Admin authentication, private data and writes are unavailable.'
+            echo '- A selected-Worker GET proves readability only; reviewed Individual Worker Editor policy scope is a separate required attestation.'
           } >> "$GITHUB_STEP_SUMMARY"

@@ -37,22 +37,19 @@ async function digestDirectory(root: string) {
   return { sha256: hash.digest('hex'), fileCount: files.length, totalBytes }
 }
 
-async function createCandidate(url = 'https://syntheticproject.supabase.co') {
+async function createCandidate() {
   const root = await mkdtemp(path.join(os.tmpdir(), 'dpg-env-worker-'))
   rootDirectories.push(root)
-  const directories = ['public-worker', 'admin-worker', 'assets/admin/_next/static/css', 'assets/_next/static/css']
+  const directories = ['public-worker', 'assets/_next/static/css']
   for (const directory of directories) await mkdir(path.join(root, directory), { recursive: true })
   await writeFile(path.join(root, 'public-worker/index.js'), 'export default { fetch() { return new Response("public") } }\n')
-  await writeFile(path.join(root, 'admin-worker/index.js'), 'export default { fetch() { return new Response("admin") } }\n')
   await writeFile(path.join(root, 'assets/_next/static/css/public.css'), 'body{}\n')
-  await writeFile(path.join(root, 'assets/admin/_next/static/css/admin.css'), 'body{}\n')
-  await writeFile(path.join(root, 'worker.mjs'), 'import worker from "./dispatch.mjs"; export default worker\n')
+  await writeFile(path.join(root, 'worker.mjs'), 'import publicWorker from "./public-worker/index.js"; export default publicWorker\n')
   await writeFile(path.join(root, 'dispatch.mjs'), 'export default { fetch() { return new Response("combined") } }\n')
 
-  const environment = 'preview'
-  const workerName = 'dpg-preview'
-  const origin = `https://${workerName}.tranhuunguyenhuy.workers.dev`
-  const publishableKey = 'sb_publishable_public_test_key'
+  const environment = 'staging'
+  const workerName = 'dpg-staging'
+  const origin = 'https://dpg-staging.tranhuunguyenhuy.workers.dev'
   const config = {
     name: workerName,
     main: 'worker.mjs',
@@ -71,16 +68,13 @@ async function createCandidate(url = 'https://syntheticproject.supabase.co') {
       APP_ORIGIN: origin,
       PREVIEW_NOINDEX: 'true',
       BUILD_SOURCE_SHA: sourceSha,
-      NEXT_PUBLIC_SUPABASE_URL: url,
-      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: publishableKey,
-      ADMIN_BASE_PATH: '/admin',
+      PUBLIC_CATALOGUE_SOURCE: 'production-published-snapshot',
     },
   }
   const configBytes = `${JSON.stringify(config, null, 2)}\n`
   await writeFile(path.join(root, 'wrangler.json'), configBytes)
-  const [publicDigest, adminDigest, assetsDigest] = await Promise.all([
+  const [publicDigest, assetsDigest] = await Promise.all([
     digestDirectory(path.join(root, 'public-worker')),
-    digestDirectory(path.join(root, 'admin-worker')),
     digestDirectory(path.join(root, 'assets')),
   ])
   const manifest = {
@@ -91,7 +85,10 @@ async function createCandidate(url = 'https://syntheticproject.supabase.co') {
     origin,
     apps: {
       public: { entrypoint: 'public-worker/index.js', ...publicDigest },
-      admin: { entrypoint: 'admin-worker/index.js', basePath: '/admin', assetsBasePath: '/admin/', ...adminDigest },
+      admin: {
+        route: '/admin', status: 503, runtime: 'static-unavailable',
+        authentication: 'disabled', privateData: 'unavailable',
+      },
     },
     assets: assetsDigest,
     dispatcher: {
@@ -100,9 +97,26 @@ async function createCandidate(url = 'https://syntheticproject.supabase.co') {
       dispatchSha256: sha256(await readFile(path.join(root, 'dispatch.mjs'))),
     },
     configSha256: sha256(configBytes),
-    supabase: { url, publishableKeySha256: sha256(publishableKey) },
-    deployment: { workersDev: true, previewUrls: false, customDomains: [], routes: [], noindex: true },
-    dataMode: 'synthetic-fixtures',
+    authentication: { enabled: false, providerConfigBound: false },
+    deployment: { workersDev: true, previewUrls: false, localOnly: false, customDomains: [], routes: [], noindex: true },
+    dataMode: 'production-published-public-catalogue',
+    productionData: {
+      origin: 'https://www.dongphugia.vn',
+      mode: 'runtime-readonly-public-assets',
+      allowedPaths: [
+        '/__catalogue/v1/manifest.json',
+        '/__catalogue/v1/listings/{family}/{listing}/{page}.json',
+        '/__catalogue/v1/products/{bucket}.json',
+        '/__catalogue/v1/search/{shard}.json',
+      ],
+      credentials: false,
+      cookies: false,
+      privateAdminData: 'unavailable',
+      authWrites: 'disabled',
+      orderWrites: 'disabled',
+      cmsWrites: 'disabled',
+      uploadWrites: 'disabled',
+    },
     observability: { logs: true, persist: false, traces: false },
   }
   await writeFile(path.join(root, 'candidate-manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`)
@@ -113,31 +127,38 @@ afterEach(async () => {
   await Promise.all(rootDirectories.splice(0).map((root) => rm(root, { recursive: true, force: true })))
 })
 
-describe('unified Worker trusted publication contract', () => {
-  it('rewrites only the exact Preview identity with the source-verified config allowlist', async () => {
+describe('Staging Worker trusted publication contract', () => {
+  it('rewrites only the exact Staging identity with the source-verified config allowlist', async () => {
     const root = await createCandidate()
     const evidence = await prepareEnvironmentWorkerPublication({
       artifactRoot: root,
-      environment: 'preview',
+      environment: 'staging',
       sourceSha,
       accountId: ACCOUNT_ID,
     })
     const config = JSON.parse(await readFile(path.join(root, 'wrangler.json'), 'utf8'))
 
     expect(evidence).toMatchObject({
-      environment: 'preview',
-      workerName: 'dpg-preview',
-      origin: 'https://dpg-preview.tranhuunguyenhuy.workers.dev',
+      environment: 'staging',
+      workerName: 'dpg-staging',
+      origin: 'https://dpg-staging.tranhuunguyenhuy.workers.dev',
       accountId: ACCOUNT_ID,
       sourceSha,
-      dataMode: 'synthetic-fixtures',
+      dataMode: 'production-published-public-catalogue',
+      authentication: 'disabled-without-provider-config',
     })
     expect(config).toMatchObject({
-      name: 'dpg-preview',
+      name: 'dpg-staging',
       workers_dev: true,
       preview_urls: false,
-      vars: { APP_ENV: 'preview', BUILD_SOURCE_SHA: sourceSha, PREVIEW_NOINDEX: 'true', ADMIN_BASE_PATH: '/admin' },
+      vars: {
+        APP_ENV: 'staging', BUILD_SOURCE_SHA: sourceSha, PREVIEW_NOINDEX: 'true',
+        PUBLIC_CATALOGUE_SOURCE: 'production-published-snapshot',
+      },
     })
+    expect(config.vars).not.toHaveProperty('ADMIN_AUTH_ENABLED')
+    expect(config.vars).not.toHaveProperty('NEXT_PUBLIC_ADMIN_AUTH_ENABLED')
+    expect(config.vars).not.toHaveProperty('ADMIN_BASE_PATH')
     expect(config).not.toHaveProperty('routes')
     expect(config).not.toHaveProperty('d1_databases')
     expect(config.vars).not.toHaveProperty('SUPABASE_SERVICE_ROLE_KEY')
@@ -146,23 +167,27 @@ describe('unified Worker trusted publication contract', () => {
   it('rejects an account mismatch before preparing deployment config', async () => {
     const root = await createCandidate()
     await expect(prepareEnvironmentWorkerPublication({
-      artifactRoot: root, environment: 'preview', sourceSha, accountId: 'b255b2091ce23ca52c4de4a342ce9dd8',
+      artifactRoot: root, environment: 'staging', sourceSha, accountId: 'b255b2091ce23ca52c4de4a342ce9dd8',
     })).rejects.toThrow('ENVIRONMENT_WORKER_PUBLISH_ACCOUNT_MISMATCH')
   })
 
   it('rejects artifact tampering even when candidate metadata still names the reviewed SHA', async () => {
     const root = await createCandidate()
-    await writeFile(path.join(root, 'admin-worker/index.js'), 'export default { fetch() { return new Response("tampered") } }\n')
+    await writeFile(path.join(root, 'public-worker/index.js'), 'export default { fetch() { return new Response("tampered") } }\n')
     await expect(prepareEnvironmentWorkerPublication({
-      artifactRoot: root, environment: 'preview', sourceSha, accountId: ACCOUNT_ID,
+      artifactRoot: root, environment: 'staging', sourceSha, accountId: ACCOUNT_ID,
     })).rejects.toThrow('ENVIRONMENT_WORKER_PUBLISH_CONTENT_DIGEST_MISMATCH')
   })
 
-  it('refuses public fallback or placeholder Supabase projects at publication time', async () => {
-    const root = await createCandidate('https://supabase.invalid')
+  it('rejects any candidate that claims Auth is enabled', async () => {
+    const root = await createCandidate()
+    const manifestPath = path.join(root, 'candidate-manifest.json')
+    const manifest = JSON.parse(await readFile(manifestPath, 'utf8'))
+    manifest.authentication.enabled = true
+    await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`)
     await expect(prepareEnvironmentWorkerPublication({
-      artifactRoot: root, environment: 'preview', sourceSha, accountId: ACCOUNT_ID,
-    })).rejects.toThrow('ENVIRONMENT_WORKER_PUBLISH_REQUIRES_ISOLATED_SUPABASE_PROJECT')
+      artifactRoot: root, environment: 'staging', sourceSha, accountId: ACCOUNT_ID,
+    })).rejects.toThrow('ENVIRONMENT_WORKER_PUBLISH_MANIFEST_IDENTITY_INVALID')
   })
 
   it('rejects an injected route or additional deployment setting', async () => {
@@ -178,7 +203,7 @@ describe('unified Worker trusted publication contract', () => {
     await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`)
 
     await expect(prepareEnvironmentWorkerPublication({
-      artifactRoot: root, environment: 'preview', sourceSha, accountId: ACCOUNT_ID,
+      artifactRoot: root, environment: 'staging', sourceSha, accountId: ACCOUNT_ID,
     })).rejects.toThrow('ENVIRONMENT_WORKER_PUBLISH_CONFIG_ALLOWLIST_INVALID')
   })
 })
