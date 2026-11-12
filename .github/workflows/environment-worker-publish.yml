@@ -21,8 +21,13 @@ on:
         description: Required for approved-pr; current head must have an approving review
         required: false
         type: string
+      deployment_token_id:
+        description: Nonsecret Cloudflare token ID to inspect before approving the protected Staging environment
+        required: true
+        type: string
 
 permissions:
+  actions: read
   contents: read
   pull-requests: read
 
@@ -43,10 +48,12 @@ jobs:
     timeout-minutes: 70
     outputs:
       source_sha: ${{ steps.identity.outputs.source_sha }}
+      artifact_sha256: ${{ steps.artifact.outputs.sha256 }}
     env:
       SOURCE_SHA: ${{ inputs.source_sha }}
       SOURCE_KIND: ${{ inputs.source_kind }}
       PULL_REQUEST_NUMBER: ${{ inputs.pull_request_number }}
+      DEPLOYMENT_TOKEN_ID: ${{ inputs.deployment_token_id }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
@@ -67,7 +74,16 @@ jobs:
           set -euo pipefail
           node scripts/app-foundation/validate-environment-worker-source.mjs \
             "$SOURCE_KIND" "$SOURCE_SHA" "$PULL_REQUEST_NUMBER"
+          node scripts/app-foundation/verify-environment-worker-release-protection.mjs
           echo "source_sha=$SOURCE_SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Validate the nonsecret deployment token identity input
+        run: |
+          set -euo pipefail
+          [[ "$DEPLOYMENT_TOKEN_ID" =~ ^[a-f0-9]{32}$ ]] || {
+            echo 'Expected a 32-character lowercase Cloudflare token ID.' >&2
+            exit 1
+          }
 
       - name: Check out the exact candidate source as untrusted build input
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -109,6 +125,33 @@ jobs:
             BUILD_SOURCE_SHA="$BUILD_SOURCE_SHA" npm run build:environment-worker
           node scripts/app-foundation/environment-worker-browser.mjs "$APP_ENV"
 
+      - name: Calculate exact artifact content digest
+        id: artifact
+        env:
+          CANDIDATE_ARTIFACT_ROOT: candidate/.artifacts/environment-worker/staging
+        run: |
+          set -euo pipefail
+          sha256="$(node scripts/app-foundation/environment-worker-artifact-digest.mjs "$CANDIDATE_ARTIFACT_ROOT")"
+          echo "sha256=$sha256" >> "$GITHUB_OUTPUT"
+
+      - name: Publish the exact candidate details for the required external review
+        env:
+          RUN_ID: ${{ github.run_id }}
+          SOURCE_SHA: ${{ steps.identity.outputs.source_sha }}
+          ARTIFACT_SHA256: ${{ steps.artifact.outputs.sha256 }}
+        run: |
+          {
+            echo '### Staging release candidate — external token review required'
+            echo "- Workflow run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$RUN_ID"
+            echo "- Source SHA: $SOURCE_SHA"
+            echo "- Candidate artifact content SHA-256: $ARTIFACT_SHA256"
+            echo "- Deployment token ID to inspect: $DEPLOYMENT_TOKEN_ID"
+            echo "- Target: account d54f3402b9d112ab64d6135e0e3f1fb1, Worker dpg-staging."
+            echo "- Before approving cloudflare-staging, inspect this exact token in the existing Cloudflare connection. Confirm it is active, has only the Workers Editor role scoped to the existing dpg-staging Worker (Individual Workers scope), and has no other or broader write grant."
+            echo "- This is an external human review. CI does not retrieve or machine-verify token policy; the later /tokens/verify check proves token identity/status only."
+            echo "- Inspect immediately before approving this run. Repeat for every release; any policy change or revocation invalidates earlier review."
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: dpg-environment-${{ inputs.environment }}-${{ steps.identity.outputs.source_sha }}
@@ -131,6 +174,8 @@ jobs:
     env:
       APP_ENV: staging
       SOURCE_SHA: ${{ needs.build-candidate.outputs.source_sha }}
+      ARTIFACT_SHA256: ${{ needs.build-candidate.outputs.artifact_sha256 }}
+      EXPECTED_DEPLOYMENT_TOKEN_ID: ${{ inputs.deployment_token_id }}
       CLOUDFLARE_ACCOUNT_ID: d54f3402b9d112ab64d6135e0e3f1fb1
       ARTIFACT_ROOT: ${{ github.workspace }}/.artifacts/environment-worker/staging
       WRANGLER_SEND_METRICS: 'false'
@@ -153,15 +198,39 @@ jobs:
           name: dpg-environment-staging-${{ needs.build-candidate.outputs.source_sha }}
           path: ${{ env.ARTIFACT_ROOT }}
 
+      - name: Verify downloaded artifact identity before modifying it
+        env:
+          CANDIDATE_ARTIFACT_ROOT: ${{ env.ARTIFACT_ROOT }}
+        run: |
+          set -euo pipefail
+          actual_sha256="$(node scripts/app-foundation/environment-worker-artifact-digest.mjs "$CANDIDATE_ARTIFACT_ROOT")"
+          test "$actual_sha256" = "$ARTIFACT_SHA256"
+
       - name: Verify artifact data and replace config with the trusted allowlist
         run: >-
           node scripts/app-foundation/prepare-environment-worker-publication.mjs
           "$ARTIFACT_ROOT" "$APP_ENV" "$SOURCE_SHA" "$CLOUDFLARE_ACCOUNT_ID"
 
-      - name: Block publication until supported token policy evidence is available
-        run: node scripts/app-foundation/verify-environment-worker-token-scope.mjs "$APP_ENV"
+      - name: Recheck required GitHub protection before exposing Cloudflare credentials
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/app-foundation/verify-environment-worker-release-protection.mjs
+
+      - name: Verify actual token identity after required external policy review
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: >-
+          node scripts/app-foundation/verify-environment-worker-deployment-token.mjs
+          "$APP_ENV" "$CLOUDFLARE_ACCOUNT_ID" "$EXPECTED_DEPLOYMENT_TOKEN_ID"
+
+      - name: Capture read-only Production public baseline before deployment
+        id: production_baseline_before
+        run: >-
+          node scripts/app-foundation/verify-production-public-baseline.mjs
+          capture "$RUNNER_TEMP/dpg-production-public-baseline.json"
 
       - name: Deploy only the selected pre-created Worker
+        id: deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
@@ -177,16 +246,38 @@ jobs:
           node scripts/app-foundation/verify-environment-worker-deployment.mjs
           "$APP_ENV" "$SOURCE_SHA"
 
-      - name: Record environment result without deployment credentials
+      - name: Compare read-only Production public baseline after Staging smoke
+        id: production_baseline_compare
+        if: always() && steps.production_baseline_before.outcome == 'success'
+        run: >-
+          node scripts/app-foundation/verify-production-public-baseline.mjs
+          compare "$RUNNER_TEMP/dpg-production-public-baseline.json"
+
+      - name: Record nonsecret release and external-review evidence
         if: always()
+        env:
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+          PUBLISH_JOB_STATUS: ${{ job.status }}
+          PRODUCTION_BASELINE_OUTCOME: ${{ steps.production_baseline_compare.outcome }}
         run: |
+          deployment_config_sha256='not-prepared'
+          if [[ -f "$ARTIFACT_ROOT/publication-manifest.json" ]]; then
+            deployment_config_sha256="$(jq -r '.deploymentConfigSha256' "$ARTIFACT_ROOT/publication-manifest.json")"
+          fi
           {
-            echo '### Staging Worker publication result'
+            echo '### Staging Worker release evidence'
+            echo "- Workflow run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$RUN_ID/attempts/$RUN_ATTEMPT"
+            echo "- Job result: $PUBLISH_JOB_STATUS"
             echo "- Requested source SHA: $SOURCE_SHA"
-            echo '- Worker identity is dpg-staging in the shared Cloudflare account.'
-            echo '- Candidate build runs without Cloudflare credentials; publication consumes its data-only artifact.'
-            echo '- Public and Admin SSR share the Staging workers.dev origin; Admin auth is disabled and private data remains unavailable.'
-            echo '- Public reads only fixed Production catalogue paths; mutation requests are rejected before app or asset dispatch.'
-            echo '- Publication remains blocked until a supported Cloudflare policy surface proves the token is limited to dpg-staging; a manual string or selected-Worker GET is insufficient.'
-            echo '- Bootstrap order: an authorized product-level Admin creates dpg-staging first, then an Individual Worker Editor token can be scoped to that existing Worker.'
+            echo "- Candidate artifact content SHA-256: $ARTIFACT_SHA256"
+            echo "- Expected and API-verified token ID: $EXPECTED_DEPLOYMENT_TOKEN_ID (identity/status only)"
+            echo "- Deployment config SHA-256: $deployment_config_sha256"
+            echo "- Production public baseline comparison: ${PRODUCTION_BASELINE_OUTCOME:-not-run}"
+            echo "- Token policy evidence: external human inspection in the required cloudflare-staging environment approval; not machine verified by CI."
+            echo "- Worker identity is dpg-staging in the shared Cloudflare account."
+            echo "- Candidate build runs without Cloudflare credentials; publication consumes its data-only artifact."
+            echo "- Public and Admin SSR share the Staging workers.dev origin; Admin auth is disabled and private data remains unavailable."
+            echo "- Public reads only fixed Production catalogue paths; mutation requests are rejected before app or asset dispatch."
+            echo "- The environment approval event is the supervised per-release gate; /tokens/verify verifies the selected token ID and active status only, not its policy scope."
           } >> "$GITHUB_STEP_SUMMARY"

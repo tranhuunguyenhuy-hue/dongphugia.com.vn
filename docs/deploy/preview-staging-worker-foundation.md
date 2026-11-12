@@ -75,74 +75,100 @@ after and concurrently with Admin SSR. `.github/workflows/pr-preview-build.yml`
 is a source build only: it uses the local Preview origin and emits no deployable
 Cloudflare Preview artifact.
 
-`.github/workflows/environment-worker-publish.yml` accepts Staging only. Its
-build job checks out the exact SHA, installs locked dependencies, runs focused
-checks and browser acceptance without Cloudflare credentials, and uploads a
-data-only artifact containing Public and Admin SSR plus both asset mounts. The
-serialized publication job on trusted default-branch code verifies every
-digest, validates the Admin auth-disabled manifest, replaces deployment
-configuration with a narrow allowlist, then checks token scope before it can
-run pinned Wrangler. Candidate scripts never run with the Staging token. Runtime
-acceptance uses GET/HEAD requests only; write denial is tested with local
-Worker and mock tests, never against Production.
+`.github/workflows/environment-worker-publish.yml` accepts Staging only and can
+run only by manual dispatch from trusted `main`. Its build job checks out the
+exact source SHA, installs locked dependencies, runs focused checks and browser
+acceptance without Cloudflare credentials, and uploads a data-only artifact
+containing Public and Admin SSR plus both asset mounts. It calculates a stable
+SHA-256 over the artifact's sorted relative paths and file bytes; the publisher
+recalculates it before replacing configuration with a trusted allowlist. The
+serialized publisher never runs candidate scripts with the Staging token.
+Runtime acceptance uses GET/HEAD requests only; write denial is tested with
+local Worker and mock tests, never against Production.
 
-The publication gate currently fails closed with
-`ENVIRONMENT_WORKER_TOKEN_SCOPE_PROOF_UNAVAILABLE`. A manual policy string and
-a successful `dpg-staging` GET do not prove the token lacks Production write
-authority, so the workflow makes no Cloudflare API request in this gate and
-cannot reach `wrangler deploy` until a supported policy-scope evidence check is
-implemented. Do not add token-management permissions to the deployment token,
-guess resource-map syntax or probe Production writes.
+Each release requires external, per-run token-policy inspection before the
+protected `cloudflare-staging` GitHub environment can release its secret. The
+build summary binds the request to the source SHA, artifact content digest,
+account, Worker and nonsecret Cloudflare token ID. Immediately before approval,
+the required environment reviewer uses the existing Cloudflare connection to
+inspect that exact token's details. Confirm it is active and has only the
+Workers `Editor` role scoped to the existing `dpg-staging` Worker under the
+`Individual Workers` scope, with no additional or broader write grant. Cloudflare's
+current documentation calls the role `Editor` and explicitly supports selected
+Worker scopes; the connected account API still surfaces the legacy
+`Individual Workers Editor` permission-group name. Use the token details endpoint
+`GET /accounts/{account_id}/tokens/{token_id}`; do not list account tokens or
+add token-management permissions to the deployment token. Cloudflare documents
+the selected-Worker token scope in its [granular Worker permissions guidance](https://developers.cloudflare.com/changelog/post/2026-09-15-granular-worker-permissions/).
+
+This external review is a human control recorded through the protected GitHub
+environment approval, not machine-verified policy evidence. CI's later
+`GET /accounts/{account_id}/tokens/verify` call checks only that the supplied
+secret is the expected active token ID; it does not prove token scope. Repeat
+the Cloudflare inspection for every release and immediately before its
+environment approval; any token-policy change or revocation invalidates prior
+inspection. The publisher fails closed if token identity/status, artifact
+digest, source review or environment approval does not match. The release
+summary records the source SHA, artifact digest, token ID, run ID, config digest
+and the external-review status without exposing credentials.
 
 ## Staging setup packet
 
-Read-only Cloudflare API inventory on 2026-11-12 confirmed account workers.dev
-subdomain `tranhuunguyenhuy`; `dongphugia-v1-public-production` was the only
-Worker and `dpg-staging` was absent in account `d54f3402b9d112ab64d6135e0e3f1fb1`.
-The Production Worker had one active version and plain-text bindings for its
-production identity plus the Assets binding; inventory exposed no other
-bindings. The public production hostname is served by this Worker. A live GET
-to `https://www.dongphugia.vn/api/health` returned source SHA
-`8c67d253c64c7bb44435984f3f736272c0326c4b`, mode `verified-snapshot`, 5,223
-products and 4,853 listing products. A separate direct GET of
-`/__catalogue/v1/manifest.json` returned contract
-`dpg:public-catalogue-snapshot:v1`, checkpoint
-`87e4b06b73ab20df11d95021e1da8bd8f497ee5e` and M3 run `40739074902`. This is
-the currently published Production catalogue source, not a direct database
-read. Re-read the live health, manifest and Worker inventory before Staging
-activation; these observed values are not permanent constants.
+The one-time Worker bootstrap is complete. Read-only inventory on 2026-11-13
+shows only `dongphugia-v1-public-production` and `dpg-staging` in account
+`d54f3402b9d112ab64d6135e0e3f1fb1`. The Staging Worker has no bindings, custom
+domains or `dongphugia.vn` zone routes; its workers.dev subdomain is enabled and
+Worker Preview URLs are disabled. Its current code is a noindex 503 bootstrap
+placeholder, so that public URL is not application acceptance or readiness.
+Production's Worker `modified_on` remains `2026-11-04T15:05:13.056158Z`.
 
-Bootstrap order matters. An authorized Cloudflare product-level Admin must
-first create only the `dpg-staging` Worker in that account, with workers.dev
-enabled and no custom domain, route, database, storage, Auth or other binding.
-Cloudflare's [Worker authorization documentation](https://developers.cloudflare.com/workers/authorization/workers/)
-says Individual Worker Editor scope applies to existing selected Workers and
-cannot be assigned before the Worker exists; creating a Worker requires
-product-level Admin. After the Worker exists, configure an API token limited to
-that Worker with Individual Worker Editor access and obtain supported evidence
-of the token's policy before enabling publication. The reachable origin will
-be `https://dpg-staging.tranhuunguyenhuy.workers.dev`. No paid feature or
-Production resource change is required. This review task does not create the
-Worker, token or GitHub environment, and the current publisher remains blocked
-until the token-policy proof is implemented and verified.
+The current read-only Production baseline is status `ok`, mode
+`verified-snapshot`, checkpoint `87e4b06b73ab20df11d95021e1da8bd8f497ee5e`,
+5,223 public products, 4,853 listing products and M3 run `40739074902`; the
+manifest reports the same checkpoint and run. The source PR adds read-only GET
+capture immediately before deployment and a comparison afterward. This is not a
+direct database read and does not modify Production.
 
-The Staging publisher workflow is available only after its trusted workflow
-code is merged to `main`. Once that separate merge gate is approved, dispatch it from
-`main` with `environment=staging`, the exact reviewed source SHA and either
-`source_kind=main` or `source_kind=approved-pr`. Today the publisher stops
-before any provider write because supported token-policy proof is not
-implemented. Once that gate is implemented and reviewed, the selected Staging
-environment can supply the scoped API token. No Cloudflare Preview Worker or
-Preview token is needed. Before publication,
-record the candidate SHA and artifact digest, account inventory, Production
-baseline and prior Staging version if one exists. After deployment, verify the
+GitHub's `cloudflare-staging` environment is configured for `main` only, with
+`tranhuunguyenhuy-hue` as the required reviewer and administrator bypass
+disabled. It currently has no secrets. The connected Cloudflare permission-group
+API reports the legacy `Individual Workers Editor` group as `is_selectable: false`
+even after the Worker exists; Cloudflare's current [Workers roles and permissions documentation](https://developers.cloudflare.com/workers/authorization/workers/)
+supports the `Editor` role at Individual Workers scope. Cloudflare's [account-owned token documentation](https://developers.cloudflare.com/fundamentals/api/get-started/account-owned-tokens/)
+requires API Token Provisioning capability or Super Administrator status to
+create account-owned tokens. The connected Cloudflare API session cannot
+currently grant this role, and the generic token-creation API docs do not
+document a Worker-specific resource selector; no resource syntax was guessed.
+
+Minimum remaining setup: an Owner with Cloudflare API Token Provisioning or
+Super Administrator access must create an account-owned token in the Cloudflare
+dashboard selecting only the existing `dpg-staging` Worker and its Workers
+`Editor` role at Individual Workers scope, then place its secret directly in GitHub
+`cloudflare-staging` as `CLOUDFLARE_API_TOKEN`. Do not send the secret in chat,
+add account-wide token-management permission, or put it in logs. At each later
+release, dispatch with the token's nonsecret ID so the reviewer can inspect
+that exact live token before approving the run.
+
+The Staging publisher becomes available only after the reviewed source PR is
+merged to `main`; merging is a separate Owner approval. Add the Staging-only
+`CLOUDFLARE_API_TOKEN` secret to the configured `cloudflare-staging` environment;
+do not reuse the unrelated lowercase `staging` environment. Dispatch from
+`main` with `environment=staging`, the
+exact reviewed source SHA, either `source_kind=main` or `source_kind=approved-pr`,
+and the token ID to inspect. The build summary presents the candidate identity
+before the environment approval is requested. The required reviewer inspects
+the actual token policy immediately before approving that exact run. No
+Cloudflare Preview Worker or Preview token is needed.
+
+Before each release, record the candidate SHA and artifact digest, token ID,
+account/Worker inventory, live Production health and catalogue-manifest
+baseline, and current Staging version. After deployment, verify the exact
 runtime SHA, one active version, noindex, live catalogue checkpoint, Admin
-login/recovery rendering and private-route redirects. Local browser tests cover
-write denial; do not send mutation probes to the Worker or Production. If first
-activation fails, remove or disable only `dpg-staging` and verify the Production
-Worker, routes and data source remain unchanged. Logs are enabled without
-persistence and traces remain disabled; hosted logging has not yet been
-exercised.
+login/recovery rendering and private-route redirects. Local browser tests
+cover write denial; do not send mutation probes to the Worker or Production. If
+first activation or a later release fails, roll back or disable only
+`dpg-staging` and verify the Production Worker, routes and data source remain
+unchanged. Logs are enabled without persistence and traces remain disabled.
 
 ## Limits and paused work
 
