@@ -1,5 +1,10 @@
 # Isolated Staging deployment foundation
 
+This database-backed migration foundation is separate from the Public/Admin
+environment in [`preview-staging-worker-foundation.md`](preview-staging-worker-foundation.md).
+It does not configure Local Preview or the single `dpg-staging` Worker, and its
+database, host, network and cost plan are outside PR #294.
+
 This is the canonical candidate path for database-backed delivery:
 `code → PostgreSQL migration → isolated Staging → test/smoke → Production promotion`.
 It is

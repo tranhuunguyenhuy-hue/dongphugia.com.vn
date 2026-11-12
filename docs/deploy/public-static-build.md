@@ -4,6 +4,12 @@ Status: current source/build procedure for LEO-536. This creates a reviewable
 static artifact only. It does not deploy, change DNS or traffic, write a
 database, resume Phase 2, or provision a Cloudflare resource.
 
+The `--mode=preview` setting below names this static review artifact. It is
+separate from the shared-origin Local Preview and `dpg-staging` Worker in
+[`preview-staging-worker-foundation.md`](preview-staging-worker-foundation.md),
+which read the current Production-published public catalogue directly with
+fixed, credential-free GETs and do not use this build's database snapshot.
+
 ## Build contract
 
 `npm run static:build` reads the public source dataset through `pg` inside a

@@ -138,115 +138,46 @@ do not request secrets in chat or ask again for authority already granted.
    before closure; avoid automatic closing keywords for release-dependent tickets.
    Ready for review, merged and deployed are distinct states.
 
-## Owner setup checklist (not yet verified or provisioned)
+## Current Preview and Staging contract
 
-Complete once, then verify access without printing credential values:
+- Local Preview runs only on the developer machine. Start it with
+  `npm run preview:local`; Public `/` and Admin `/admin` share
+  `http://127.0.0.1:8787`. It has no Cloudflare Worker, workers.dev URL,
+  Cloudflare Preview token or publication path.
+- Staging is one Cloudflare Worker, `dpg-staging`, in account
+  `d54f3402b9d112ab64d6135e0e3f1fb1`. Public `/` and Admin `/admin` share
+  `https://dpg-staging.tranhuunguyenhuy.workers.dev`.
+- Both environments read current Production data directly through fixed,
+  server-side GETs to the Production-published public catalogue. They do not
+  copy Production data or present synthetic fixtures as environment data.
+  Synthetic fixtures remain appropriate for isolated automated tests.
+- The environment Worker binds no database, Supabase, service-role, Auth-admin,
+  order, CMS, status, fee or upload write capability. Auth is disabled; private
+  staff/customer data remains unavailable. Reject every non-GET/HEAD request
+  before asset or app dispatch. `Path=/admin` is not browser isolation on a
+  shared origin.
+- Production runtime, domains, DNS, data and Auth remain unchanged. Do not
+  change Production database roles/RLS/Auth, deploy Production, rotate tokens,
+  add paid scope, or merge without the separate required authorization.
+- Read [`docs/deploy/preview-staging-worker-foundation.md`](docs/deploy/preview-staging-worker-foundation.md)
+  for the current implementation, acceptance and staging handoff. Older
+  database-backed staging and Preview setup documents describe separate or
+  historical workflows and do not configure these Public/Admin environments.
 
-- [ ] Workspace: writable task checkout, network access to approved registries/GitHub,
-  toolchain matching package.json/lockfile, browser testing and disposable PostgreSQL
-  via local containers or CI. Allow scoped development commands; keep privileged
-  system and destructive actions outside blanket approval.
-- [ ] GitHub identity: repository read, task-branch push, Issue/PR updates, review
-  requests, Actions logs/artifacts and approved CI dispatch. Verify a test branch/PR.
-  Protect main with required checks and Owner review; Agent cannot bypass protections.
-- [ ] Credentials: inject development/staging secrets via a secret manager or ignored
-  local environment; CI secrets belong in scoped GitHub environments. Record variable
-  names, custodian, expiry and renewal method, never values. Test credential validity.
-- [ ] Staging authorization: record project/resource identifiers, permitted operations,
-  reset boundaries, budget/quota and credential scope. Separate Public/Admin origins,
-  database/Auth, media storage and outbound integrations from Production.
-- [ ] Accounts: synthetic guest/order/catalogue data plus authorized and unauthorized
-  staff accounts. Configure staging Auth redirect URLs and test email delivery/sink.
-- [ ] Production: separate deployment credentials and protected environment with Owner
-  approval. Verify controls live; YAML alone does not prove reviewer enforcement.
-- [ ] Intake: Owner assignment or an Owner-controlled `agent-ready` label authorizes
-  pickup. Automatic pickup requires a separately implemented runner with one claimant
-  per Issue; an arbitrary new Issue is not an execution grant.
+## Owner setup checklist
 
-## Staging and fast Preview plan (proposed, not a live-state claim)
-
-1. **Verify target first.** Inventory current Public/Admin runtime and data adapters,
-   deployed SHA, existing Preview resources and workflow permissions. Keep canonical
-   Public UI and independent apps/admin. Match staging to the verified release target;
-   do not create a second migration or assume older AWS/Cloudflare notes are current.
-2. **Provision isolated integration staging.** Reuse a suitable existing isolated
-   resource after verification. For a Cloudflare/Supabase target, use separate staging
-   Worker resources and a separate database/Auth project; verify the Admin deploy
-   adapter before choosing its hosting. For an AWS target, use its corresponding
-   isolated staging runbook. Owner approves resource/cost setup once. Seed synthetic
-   data and sandbox external side effects; preserve existing media URL contracts.
-3. **Automate PR Preview as a separate implementation task.** Build/test the PR SHA,
-   publish scoped Preview artifacts, and report URLs, SHA, artifact digest and checks
-   to the PR. Use a trusted workflow with staging-only secrets; never expose secrets
-   to untrusted fork code. Keep existing catalogue checkpoint/recovery workflows intact.
-   The existing catalogue-public-preview-v2 workflow is manual and Owner-gated;
-   it is not a general autonomous per-PR Preview pipeline.
-4. **Control shared state.** Serialize integration deployments/migrations; use isolated
-   PR datasets/schemas where supported or a queued exclusive staging slot. Apply only
-   to the preauthorized staging target. Reset synthetic fixtures with scoped scripts;
-   no production data copies. Prevent indexing and restrict staging access.
-5. **Acceptance suite.** Exercise public navigation/PDP/variants, persisted guest
-   cart/order and retry idempotency, staff login and permission denial, media and
-   affected CMS flows. Validate desktop/mobile rendering, logs and runtime identity.
-   Preview must run the affected backend flows, not only static pages.
-6. **Promote predictably.** After Owner review, preserve the tested artifact where
-   supported; if merge or environment-bound build changes it, validate the resulting
-   candidate before release. Approve Production separately, smoke test, retain the
-   previous artifact and a data-safe rollback plan. Expire unused Previews/fixtures.
-
-Staging is ready when an assigned test Issue reaches a reachable Public/Admin
-Preview with matching SHA, passing applicable integration/browser checks, isolated
-writes and no Production credentials; subsequent updates need no repeated access
-requests within the approved scope. Record setup evidence and outstanding blockers
-in the setup Issue, rather than creating another general process document.
-
-### Automatic PR Preview: concrete setup
-
-Source workflows: `pr-preview-build.yml`, `pr-preview-publish.yml`,
-`pr-preview-cleanup.yml` under `.github/workflows/`. Every PR builds Public and
-Admin without provider secrets. After the publisher is merged into the default
-branch, successful current PR builds publish a Public Worker. Admin is build-only:
-this pipeline does not claim hosted Admin/Auth/order integration acceptance.
-Existing quality and deterministic checks remain mandatory and independent.
-
-Owner setup, in order:
-
-1. In Cloudflare, prepare a dedicated Preview account with no Production resources,
-   enable its workers.dev subdomain and record account ID/subdomain. Published PR
-   code is untrusted and URLs are public; use only synthetic/public data. Select a
-   budget and quotas before activation. Do not attach Production bindings/secrets.
-2. Create an API token scoped only to that account with Workers Scripts Edit and
-   Account Settings Read as required by Wrangler. Keep the value in a password/secret
-   manager; do not put it in this file, an Issue or chat.
-3. GitHub repository Settings → Environments → create `pr-preview`. Add secret
-   `PREVIEW_CLOUDFLARE_API_TOKEN`, variables `PREVIEW_CLOUDFLARE_ACCOUNT_ID` and
-   `PREVIEW_WORKERS_SUBDOMAIN` (the label before `.workers.dev`, without URL scheme).
-   Permit the default branch's trusted publication/cleanup workflows. To avoid a
-   prompt per PR, this isolated environment must not require a reviewer; keep
-   Production's reviewer requirement. Restrict who may change environment settings.
-4. Settings → Actions: allow the referenced GitHub-owned actions and workflow token
-   permissions used here (Actions read, PR write for publication). Keep default token
-   permissions read-only; grant writes only in the publisher. Preserve GitHub's fork
-   execution approval policy. Fork builds may need initial maintainer approval and
-   a missing PR association must fail closed. No cloud token is provided to PR builds.
-5. Review/merge the workflow PR first. Push a harmless commit to a test PR to trigger
-   build → publish. Verify the bot comment URL, source SHA, noindex smoke, required CI
-   and real rendering. Close the PR and verify its `dpg-pr-N` Worker is removed.
-   Existing PRs need a new synchronize event; failed runs remain visible in Actions.
-6. PR #291 currently owns the Phase 2 Admin deploy adapter/integration candidate;
-   inspect its current state and reuse that work instead of creating another adapter.
-   For full Admin/backend staging, provision the separately approved Admin hosting
-   and isolated Auth/database, then add an integration pipeline. Fake build-time
-   Supabase values in this pipeline are placeholders, not working credentials.
-
-The publisher reads the artifact as data, replaces deployment configuration with
-an allowlist and installs pinned Wrangler outside the candidate. It never runs
-candidate package scripts with deployment credentials. Failed identity/noindex
-smoke does not count as a usable Preview. Inspect both Preview workflow runs when
-no success comment appears; run the failed stage again after fixing setup.
-
-Preview setup references: [GitHub workflow_run security](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#workflow_run),
-[Wrangler commands](https://developers.cloudflare.com/workers/wrangler/commands/).
-Local validation on this branch: Public and Admin builds, isolated Wrangler dry-run,
-HTTP homepage 200 with source SHA/noindex, and health `synthetic-fixture` mode.
-Hosted publication and cleanup remain unverified until setup and workflow activation.
+- Keep repository CI and branch protection in force; use the existing PR and
+  reviewed source SHA. Do not create a second PR or replace the owned worktree.
+- Local builds and browser checks receive no provider credentials. The staging
+  publisher builds candidate code without Cloudflare credentials and consumes
+  its data-only artifact from trusted default-branch code; deployments serialize
+  on one Staging target.
+- Before any Staging publication, require supported Cloudflare policy-scope
+  evidence that the token is restricted to `dpg-staging`. A variable string or
+  selected-Worker GET does not prove that Production write authority is absent.
+  If supported scope evidence is unavailable, keep publication blocked and
+  report the exact missing access. Never probe Production writes or request a
+  secret in chat.
+- The coordinator reviews the exact artifact, current Production baseline,
+  scope evidence, smoke/log plan and rollback plan before any hosted operation.
+  A draft PR or passing source CI alone does not establish hosted acceptance.

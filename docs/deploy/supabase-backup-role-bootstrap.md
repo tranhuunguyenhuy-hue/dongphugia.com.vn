@@ -1,5 +1,10 @@
 # Supabase Preview backup-role bootstrap
 
+This Issue #270 backup procedure is separate from PR #294's Local Preview and
+`dpg-staging` runtime. Its named Supabase project is not used by those
+environments, which read the Production-published public catalogue directly.
+This source procedure does not authorize execution or make Phase 2 active.
+
 Status: task-owned source procedure for Issue #270. This one-time bootstrap
 does not authorize backup credential creation, a backup run, restore, Phase 2
 schema, Production, DNS, or traffic.

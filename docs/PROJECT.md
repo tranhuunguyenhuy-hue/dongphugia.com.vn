@@ -239,8 +239,11 @@ a read-only view; it does not grant edit, Admin or customer-account rights.
 - **Data authority depends on target:** legacy application used Prisma and
   AWS PostgreSQL; V1 Cloudflare-oriented work uses Supabase PostgreSQL,
   explicit RPC/Edge/service boundaries and RLS. Migration scripts/snapshots
-  do not automatically prove a Production cutover. Never mix Preview data
-  with live Production or assume two datastores can be written independently.
+  do not automatically prove a Production cutover. Preview/Staging must not
+  write to Production or treat its database as disposable. An explicitly
+  authorized read-only environment may consume the fixed public catalogue
+  Production has published; this is not a database copy or permission to read
+  private data. Never assume two datastores can be written independently.
 - Data-changing migrations need an exact source/target, schema/version
   provenance, reversible or recoverable copy, isolation from real customer
   traffic and narrowly scoped approval. An unrelated UI tweak never triggers
