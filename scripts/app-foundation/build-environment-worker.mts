@@ -83,18 +83,26 @@ async function main() {
   }
   const supabaseUrl = parsedSupabaseUrl.origin
 
-  const appEnvironmentVariables = {
+  const commonBuildEnvironment = {
     ...process.env,
     APP_ENV: appEnvironment,
-    APP_BUILD_TARGET: 'public',
     APP_ORIGIN: origin,
     APP_WORKER_NAME: expectedName,
     PREVIEW_NOINDEX: 'true',
     BUILD_SOURCE_SHA: sourceSha,
+    WRANGLER_SEND_METRICS: 'false',
+  }
+  const publicBuildEnvironment = { ...commonBuildEnvironment, APP_BUILD_TARGET: 'public' }
+  // These belong only to Admin. Do not let Public's build process inline
+  // Admin's Auth project details or publishable key into its own bundle.
+  delete publicBuildEnvironment.NEXT_PUBLIC_SUPABASE_URL
+  delete publicBuildEnvironment.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+  const adminBuildEnvironment = {
+    ...commonBuildEnvironment,
+    APP_BUILD_TARGET: 'admin',
     ADMIN_BASE_PATH: '/admin',
     NEXT_PUBLIC_SUPABASE_URL: supabaseUrl,
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: publishableKey,
-    WRANGLER_SEND_METRICS: 'false',
   }
   // Preview and Staging always use the code-owned synthetic fixture surface.
   // Never inherit a catalogue snapshot checkpoint from a developer shell or CI.
@@ -107,15 +115,22 @@ async function main() {
   const adminBundle = path.join(adminOutput, 'bundle')
   const adminAssets = path.join(adminOutput, 'assets')
 
-  await run('npm', ['--prefix', 'apps/public', 'run', 'build:worker'], repositoryRoot, appEnvironmentVariables)
+  await run('npm', ['--prefix', 'apps/public', 'run', 'build:worker'], repositoryRoot, publicBuildEnvironment)
   await run(process.execPath, ['node_modules/vite/bin/vite.js', 'build'], path.join(repositoryRoot, 'apps/admin'), {
-    ...appEnvironmentVariables,
-    APP_BUILD_TARGET: 'admin',
+    ...adminBuildEnvironment,
   })
 
   for (const directory of [publicServer, publicAssets, adminBundle, adminAssets]) {
     if (!await stat(directory).then((entry) => entry.isDirectory()).catch(() => false)) {
       throw new Error('ENVIRONMENT_WORKER_APPLICATION_BUILD_MISSING')
+    }
+  }
+  for (const directory of [publicServer, publicAssets]) {
+    for (const relative of await listFiles(directory)) {
+      const content = await readFile(path.join(directory, relative))
+      if (content.includes(supabaseUrl) || content.includes(publishableKey)) {
+        throw new Error('ENVIRONMENT_WORKER_PUBLIC_SUPABASE_CONFIG_LEAKED')
+      }
     }
   }
   const adminConfigPath = path.join(adminOutput, 'worker.config.json')
@@ -217,7 +232,7 @@ async function main() {
   await writeFile(path.join(outputRoot, 'candidate-manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`, 'utf8')
 
   const wrangler = path.join(repositoryRoot, 'apps/environment-worker/node_modules/wrangler/bin/wrangler.js')
-  const dryRunEnvironment = { ...process.env, ...appEnvironmentVariables, WRANGLER_SEND_METRICS: 'false' }
+  const dryRunEnvironment = { ...commonBuildEnvironment, WRANGLER_SEND_METRICS: 'false' }
   delete dryRunEnvironment.CLOUDFLARE_API_TOKEN
   delete dryRunEnvironment.CLOUDFLARE_ACCOUNT_ID
   delete dryRunEnvironment.CLOUDFLARE_PREVIEW_WORKER_EDITOR_TOKEN

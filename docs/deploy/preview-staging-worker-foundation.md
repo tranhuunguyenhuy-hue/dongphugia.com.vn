@@ -18,6 +18,23 @@ JWT checks, staff mapping and RLS boundaries stay in the existing Admin module.
 Admin session cookies are scoped to `/admin`, and password recovery links stay
 on that path.
 
+## Same-origin security boundary
+
+Mounting Admin below `/admin` does not create a browser origin boundary. The
+cookie path prevents the Admin session cookie from being sent to Public `/`,
+but same-origin JavaScript on Public can still send requests to `/admin`; the
+browser attaches the cookie when the request targets that path. Treat both app
+bundles as equally trusted: a Public script injection or compromised dependency
+could make and read same-origin requests using a signed-in staff session.
+
+The dispatcher gives Public no Supabase URL/key or privileged binding, and the
+Admin server still verifies JWT claims, active staff mapping, capabilities and
+database RLS. These checks protect Admin data from unauthenticated Public users,
+but cannot distinguish malicious Public JavaScript from the staff user's own
+same-origin Admin actions. Keep this topology synthetic-only unless the Owner
+accepts that trust model; a separate Admin origin is required for browser-level
+isolation from Public.
+
 ## Trusted build and publication
 
 `.github/workflows/environment-worker-ci.yml` builds and locally browser-checks
