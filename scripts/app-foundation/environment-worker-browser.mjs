@@ -196,9 +196,17 @@ async function checkApp(page, origin, expected, viewportName) {
   const adminToPublic = await page.goto(`${origin}/admin/login`, { waitUntil: 'domcontentloaded', timeout: 30000 })
   const publicAfterAdminPage = await page.goto(`${origin}/`, { waitUntil: 'domcontentloaded', timeout: 30000 })
   if (adminToPublic?.status() !== 200 || publicAfterAdminPage?.status() !== 200
-    || publicAfterAdminPage.headers()['x-dpg-app'] !== 'public'
-    || !(await page.locator('body').innerText()).includes('Dữ liệu sản phẩm và giá được đọc trực tiếp')) {
-    fail(`ENVIRONMENT_WORKER_BROWSER_ADMIN_TO_PUBLIC_SSR:${viewportName}`)
+    || publicAfterAdminPage.headers()['x-dpg-app'] !== 'public') {
+    fail(`ENVIRONMENT_WORKER_BROWSER_ADMIN_TO_PUBLIC_SSR:${viewportName}:adminStatus=${adminToPublic?.status() ?? 'none'}:publicStatus=${publicAfterAdminPage?.status() ?? 'none'}:publicApp=${publicAfterAdminPage?.headers()['x-dpg-app'] || 'none'}:renderFailure=${publicAfterAdminPage?.headers()['x-dpg-render-failure'] || 'none'}`)
+  }
+  try {
+    await page.getByRole('note').waitFor({ state: 'visible', timeout: 30000 })
+  } catch {
+    const publicBody = await page.locator('body').innerText().catch(() => '')
+    fail(`ENVIRONMENT_WORKER_BROWSER_ADMIN_TO_PUBLIC_CATALOGUE_NOTICE:${viewportName}:publicStatus=${publicAfterAdminPage.status()}:publicApp=${publicAfterAdminPage.headers()['x-dpg-app'] || 'none'}:renderFailure=${publicAfterAdminPage.headers()['x-dpg-render-failure'] || 'none'}:bodyBytes=${Buffer.byteLength(publicBody)}:noticeTextPresent=${publicBody.includes('Dữ liệu sản phẩm và giá được đọc trực tiếp')}`)
+  }
+  if (!(await page.locator('body').innerText()).includes('Dữ liệu sản phẩm và giá được đọc trực tiếp')) {
+    fail(`ENVIRONMENT_WORKER_BROWSER_ADMIN_TO_PUBLIC_CATALOGUE_NOTICE_TEXT:${viewportName}`)
   }
   const [concurrentPublic, concurrentAdmin] = await Promise.all([
     page.request.get(`${origin}/`, { maxRedirects: 0 }),
