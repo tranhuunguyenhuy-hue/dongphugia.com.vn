@@ -88,7 +88,7 @@ describe('migration PR CI and Preview workflow contract', () => {
       '--strict',
       '--config wrangler.preview.json',
       'bootstrap source $SOURCE_SHA',
-      'CLOUDFLARE_LEO563_PREVIEW_TOKEN',
+      'CLOUDFLARE_PHASE2_PREVIEW_TOKEN',
     ]) expect(bootstrapStep).toContain(marker)
   })
 
@@ -112,7 +112,7 @@ describe('migration PR CI and Preview workflow contract', () => {
     expect(postFailureStep).toContain('post-failure-remote-state.json')
     expect(postFailureStep).toContain('--expected-resource-proof')
     expect(postFailureStep).toContain('--upload')
-    expect(postFailureStep).toContain('CLOUDFLARE_LEO563_PREVIEW_TOKEN')
+    expect(postFailureStep).toContain('CLOUDFLARE_PHASE2_PREVIEW_TOKEN')
     expect(reusablePublisher).toContain('${{ env.EVIDENCE_DIR }}/post-failure-remote-state.json')
     expect(reusablePublisher).toContain('--preflight "$EVIDENCE_DIR/remote-preflight.json"')
     expect(reusablePublisher).toContain('--bootstrap-log "$EVIDENCE_DIR/bootstrap-deploy.log"')
@@ -182,12 +182,12 @@ describe('migration PR CI and Preview workflow contract', () => {
       'REAL_ADMIN_PREVIEW_PASS',
       'BLOCKED_BY_WORKERS_COST_OR_QUOTA',
       'PREVIEW_DEPLOYED',
-      'CLOUDFLARE_LEO563_PREVIEW_TOKEN',
+      'CLOUDFLARE_PHASE2_PREVIEW_TOKEN',
     ]) expect(fullPreviewWorkflow).toContain(marker)
 
     expect(reusablePublisher.match(/versions upload/g)).toHaveLength(2)
     expect(reusablePublisher.match(/^\s+PR_NUMBER: \$\{\{ inputs\.pull_request_number \}\}$/gm)).toHaveLength(2)
-    expect(reusablePublisher.match(/secrets\.CLOUDFLARE_LEO563_PREVIEW_TOKEN/g)?.length).toBeGreaterThanOrEqual(10)
+    expect(reusablePublisher.match(/secrets\.CLOUDFLARE_PHASE2_PREVIEW_TOKEN/g)?.length).toBeGreaterThanOrEqual(10)
     expect(workflow.match(/secrets\.CLOUDFLARE_READONLY_DISCOVERY_TOKEN/g)).toHaveLength(1)
     expect(fullPreviewWorkflow).not.toContain('secrets.CLOUDFLARE_API_TOKEN')
     expect(workflow).toContain('cloudflare-readonly-discovery.mjs')
