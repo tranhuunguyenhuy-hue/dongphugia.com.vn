@@ -21,6 +21,7 @@ describe('Admin Supabase SSR proxy session boundary', () => {
   beforeEach(() => {
     vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://supabase.invalid')
     vi.stubEnv('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY', 'sb_publishable_test')
+    vi.stubEnv('ADMIN_BASE_PATH', '')
     getClaims.mockReset()
     createServerClient.mockReset()
     createServerClient.mockImplementation(() => ({ auth: { getClaims } }))
@@ -64,5 +65,20 @@ describe('Admin Supabase SSR proxy session boundary', () => {
     expect(response.status).toBe(200)
     expect(response.headers.get('set-cookie')).toContain('sb-refresh=rotated')
     expect(getClaims).toHaveBeenCalledOnce()
+  })
+
+  it('scopes Admin cookies and unauthenticated redirects to the mounted path', async () => {
+    vi.stubEnv('ADMIN_BASE_PATH', '/admin')
+    getClaims.mockResolvedValue({ data: { claims: null }, error: null })
+
+    const response = await updateAdminSession(request('/admin/orders'))
+    const location = new URL(response.headers.get('location')!)
+
+    // The framework mounts this middleware at /admin and applies basePath to
+    // its app-relative redirect before sending it to the browser.
+    expect(location.pathname).toBe('/login')
+    expect(location.searchParams.get('next')).toBe('/admin/orders')
+    expect(createServerClient.mock.calls[0][2].cookieOptions).toEqual({ path: '/admin' })
+    expect(response.headers.get('cache-control')).toBe('private, no-store')
   })
 })

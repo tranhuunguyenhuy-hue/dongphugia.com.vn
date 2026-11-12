@@ -3,6 +3,7 @@
 import { FormEvent, useState } from 'react'
 
 import { createAdminBrowserClient } from '../../src/supabase/browser'
+import { getAdminPath } from '../../src/config/env'
 
 export function ForgotPasswordForm() {
   const [email, setEmail] = useState('')
@@ -13,8 +14,10 @@ export function ForgotPasswordForm() {
     event.preventDefault()
     setPending(true)
     const supabase = createAdminBrowserClient()
+    const callbackUrl = new URL(getAdminPath('/auth/callback'), window.location.origin)
+    callbackUrl.searchParams.set('next', getAdminPath('/reset-password'))
     await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/callback?next=/reset-password`,
+      redirectTo: callbackUrl.toString(),
     })
     setSubmitted(true)
     setPending(false)

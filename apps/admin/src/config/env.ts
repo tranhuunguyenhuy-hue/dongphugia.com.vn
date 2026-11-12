@@ -9,7 +9,7 @@ const PRIVILEGED_ENV_PATTERN =
 
 export type AdminAppEnvironment = Readonly<{
   application: 'admin'
-  environment: 'local' | 'preview' | 'production'
+  environment: 'local' | 'preview' | 'staging' | 'production'
   origin: string
   noindex: true
   buildTarget: 'admin'
@@ -37,7 +37,7 @@ function assertBrowserEnvironmentIsApproved(
 
 function validateOrigin(
   configuredOrigin: string,
-  environment: 'local' | 'preview' | 'production',
+  environment: 'local' | 'preview' | 'staging' | 'production',
 ) {
   let parsed: URL
 
@@ -63,7 +63,7 @@ function validateOrigin(
   }
 
   if (
-    environment === 'preview' &&
+    (environment === 'preview' || environment === 'staging') &&
     (configuredOrigin === ADMIN_PRODUCTION_ORIGIN ||
       parsed.hostname === 'dongphugia.vn' ||
       parsed.hostname.endsWith('.dongphugia.vn'))
@@ -80,7 +80,7 @@ export function getAdminAppEnvironment(
   assertBrowserEnvironmentIsApproved(source)
 
   const environment = valueOf(source, 'APP_ENV') || 'local'
-  if (!['local', 'preview', 'production'].includes(environment)) {
+  if (!['local', 'preview', 'staging', 'production'].includes(environment)) {
     throw new Error('ADMIN_APP_ENV_INVALID')
   }
 
@@ -90,8 +90,11 @@ export function getAdminAppEnvironment(
       (typedEnvironment === 'production' ? ADMIN_PRODUCTION_ORIGIN : 'http://localhost:3001'),
     typedEnvironment,
   )
-  if (typedEnvironment === 'preview' && valueOf(source, 'PREVIEW_NOINDEX') !== 'true') {
-    throw new Error('ADMIN_PREVIEW_NOINDEX_REQUIRED')
+  if ((typedEnvironment === 'preview' || typedEnvironment === 'staging')
+    && valueOf(source, 'PREVIEW_NOINDEX') !== 'true') {
+    throw new Error(typedEnvironment === 'preview'
+      ? 'ADMIN_PREVIEW_NOINDEX_REQUIRED'
+      : 'ADMIN_STAGING_NOINDEX_REQUIRED')
   }
 
   const buildTarget = valueOf(source, 'APP_BUILD_TARGET') || 'admin'
@@ -112,6 +115,20 @@ export type AdminSupabasePublicConfig = Readonly<{
   url: string
   publishableKey: string
 }>
+
+export function getAdminBasePath(source: Record<string, string | undefined> = process.env) {
+  const basePath = valueOf(source, 'ADMIN_BASE_PATH') || ''
+  if (basePath !== '' && basePath !== '/admin') throw new Error('ADMIN_BASE_PATH_INVALID')
+  return basePath
+}
+
+export function getAdminPath(path: string, source: Record<string, string | undefined> = process.env) {
+  if (!path.startsWith('/') || path.startsWith('//') || path.includes('\\')) {
+    throw new Error('ADMIN_PATH_INVALID')
+  }
+  const basePath = getAdminBasePath(source)
+  return basePath && path !== basePath && !path.startsWith(`${basePath}/`) ? `${basePath}${path}` : path
+}
 
 export function getAdminSupabasePublicConfig(
   source: Record<string, string | undefined> = process.env,

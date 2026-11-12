@@ -3,8 +3,11 @@ import type { NextConfig } from 'next'
 import { getAdminAppEnvironment } from './src/config/env'
 
 const appEnvironment = getAdminAppEnvironment()
+const adminBasePath = process.env.ADMIN_BASE_PATH === '/admin' ? '/admin' : ''
 
 const nextConfig: NextConfig = {
+  basePath: adminBasePath,
+  env: { ADMIN_BASE_PATH: adminBasePath },
   poweredByHeader: false,
   async generateBuildId() {
     return process.env.BUILD_SOURCE_SHA?.trim() || 'local-admin-foundation'

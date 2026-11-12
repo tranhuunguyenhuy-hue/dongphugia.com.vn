@@ -1,6 +1,7 @@
 import { APPLICATIONS } from '@dpg/app-contracts'
 
 import { requireActiveStaff } from '../src/auth/require-staff'
+import { getAdminPath } from '../src/config/env'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -15,7 +16,7 @@ export default async function AdminFoundationPage() {
       <p>{staff.email}</p>
       <p>Vai trò: {staff.roles.join(', ') || 'chưa gán'}</p>
       <p>Quyền hiện hành: {staff.capabilities.length}</p>
-      <a href="/auth/logout">Đăng xuất</a>
+      <a href={getAdminPath('/auth/logout')}>Đăng xuất</a>
     </main>
   )
 }

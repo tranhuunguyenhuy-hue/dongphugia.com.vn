@@ -3,7 +3,7 @@ import 'server-only'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
-import { getAdminSupabasePublicConfig } from '../config/env'
+import { getAdminBasePath, getAdminSupabasePublicConfig } from '../config/env'
 
 export async function createAdminServerClient() {
   const cookieStore = await cookies()
@@ -11,6 +11,7 @@ export async function createAdminServerClient() {
 
   return createServerClient(url, publishableKey, {
     auth: { flowType: 'pkce' },
+    cookieOptions: { path: getAdminBasePath() || '/' },
     cookies: {
       getAll() {
         return cookieStore.getAll()

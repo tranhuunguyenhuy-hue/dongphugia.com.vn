@@ -1,0 +1,79 @@
+name: Unified Preview and Staging Worker CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: environment-worker-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  combined-worker:
+    name: Combined Public and Admin Worker
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      NEXT_PUBLIC_SUPABASE_URL: https://supabase.invalid
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_synthetic
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24.13.0
+          cache: npm
+
+      - name: Install locked Public and Admin toolchains
+        run: |
+          set -euo pipefail
+          npm ci
+          npm ci --prefix apps/public
+          npm ci --prefix apps/admin
+          npm ci --prefix apps/environment-worker
+
+      - name: Check app foundation and authorization boundaries
+        run: npm run app:foundation:check
+
+      - name: Type-check Admin and Public app adapters
+        run: |
+          set -euo pipefail
+          npm run typecheck --prefix apps/admin
+          npm run typecheck:public
+
+      - name: Install Chromium for local Worker route and responsive checks
+        run: npx playwright install --with-deps chromium
+
+      - name: Build and browser-check both fixed Worker identities without provider credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          for environment in preview staging; do
+            case "$environment" in
+              preview)
+                worker_name='dpg-preview'
+                origin='https://dpg-preview.tranhuunguyenhuy.workers.dev'
+                ;;
+              staging)
+                worker_name='dpg-staging'
+                origin='https://dpg-staging.tranhuunguyenhuy.workers.dev'
+                ;;
+              *) exit 1 ;;
+            esac
+            APP_ENV="$environment" \
+              APP_WORKER_NAME="$worker_name" \
+              APP_ORIGIN="$origin" \
+              PREVIEW_NOINDEX=true \
+              BUILD_SOURCE_SHA="$SOURCE_SHA" \
+              npm run build:environment-worker
+            BUILD_SOURCE_SHA="$SOURCE_SHA" \
+              node scripts/app-foundation/environment-worker-browser.mjs "$environment"
+          done

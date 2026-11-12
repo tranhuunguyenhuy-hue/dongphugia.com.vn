@@ -3,6 +3,7 @@
 import { FormEvent, useState } from 'react'
 
 import { createAdminBrowserClient } from '../../src/supabase/browser'
+import { getAdminPath } from '../../src/config/env'
 
 export function ResetPasswordForm() {
   const [password, setPassword] = useState('')
@@ -25,7 +26,7 @@ export function ResetPasswordForm() {
       setPending(false)
       return
     }
-    window.location.assign('/')
+    window.location.assign(getAdminPath('/login'))
   }
 
   return (

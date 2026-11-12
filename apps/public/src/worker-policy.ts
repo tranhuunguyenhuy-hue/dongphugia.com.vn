@@ -33,7 +33,7 @@ export const PUBLIC_EDGE_CACHE_CONTROL = `public, max-age=${PUBLIC_EDGE_CACHE_SE
 export const PUBLIC_PREVIEW_ROBOTS_HEADER = 'noindex, nofollow'
 
 export function assertPublicRuntime(request: Request, environment: PublicWorkerEnvironment) {
-  if (environment.APP_ENV === 'preview') {
+  if (environment.APP_ENV === 'preview' || environment.APP_ENV === 'staging') {
     assertPreviewRuntime(request, environment)
     return
   }
@@ -57,7 +57,8 @@ export function assertPublicRuntime(request: Request, environment: PublicWorkerE
 }
 
 export function robotsHeader(request: Request, environment: PublicWorkerEnvironment) {
-  return environment.APP_ENV === 'preview' || new URL(request.url).hostname.endsWith('.workers.dev')
+  return environment.APP_ENV === 'preview' || environment.APP_ENV === 'staging'
+    || new URL(request.url).hostname.endsWith('.workers.dev')
     ? PUBLIC_PREVIEW_ROBOTS_HEADER : null
 }
 
@@ -70,7 +71,7 @@ export function assertPreviewRuntime(request: Request, environment: PublicWorker
     throw new Error('PUBLIC_WORKER_PREVIEW_ORIGIN_INVALID')
   }
   if (
-    environment.APP_ENV !== 'preview' ||
+    !['preview', 'staging'].includes(environment.APP_ENV) ||
     environment.APP_BUILD_TARGET !== 'public' ||
     environment.PREVIEW_NOINDEX !== 'true'
   ) throw new Error('PUBLIC_WORKER_PREVIEW_CONFIGURATION_REQUIRED')

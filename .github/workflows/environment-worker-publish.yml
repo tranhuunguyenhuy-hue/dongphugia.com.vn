@@ -1,0 +1,203 @@
+name: Publish Unified Preview or Staging Worker
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Exact existing Worker target to update
+        required: true
+        type: choice
+        options: [preview, staging]
+      source_kind:
+        description: Publish main or an exactly reviewed open PR head
+        required: true
+        type: choice
+        options: [main, approved-pr]
+      source_sha:
+        description: Exact 40-character source commit to build
+        required: true
+        type: string
+      pull_request_number:
+        description: Required for approved-pr; current head must have an approving review
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  pull-requests: read
+
+# One serialized lane prevents overlapping Preview and Staging updates.
+concurrency:
+  group: dpg-shared-preview-staging-publication
+  cancel-in-progress: false
+
+jobs:
+  build-candidate:
+    name: Build and browser-check exact source without Cloudflare credentials
+    if: >-
+      github.repository == 'tranhuunguyenhuy-hue/dongphugia.com.vn' &&
+      github.ref == 'refs/heads/main' && github.run_attempt == 1 &&
+      (inputs.environment == 'preview' || inputs.environment == 'staging') &&
+      (inputs.source_kind == 'main' || inputs.source_kind == 'approved-pr')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 70
+    environment:
+      name: dpg-${{ inputs.environment }}-build
+    outputs:
+      source_sha: ${{ steps.identity.outputs.source_sha }}
+    env:
+      SOURCE_SHA: ${{ inputs.source_sha }}
+      SOURCE_KIND: ${{ inputs.source_kind }}
+      PULL_REQUEST_NUMBER: ${{ inputs.pull_request_number }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24.13.0
+          cache: npm
+
+      - name: Validate the source commit and approval from trusted main code
+        id: identity
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          node scripts/app-foundation/validate-environment-worker-source.mjs \
+            "$SOURCE_KIND" "$SOURCE_SHA" "$PULL_REQUEST_NUMBER"
+          echo "source_sha=$SOURCE_SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Check out the exact candidate source as untrusted build input
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ inputs.source_sha }}
+          path: candidate
+          persist-credentials: false
+
+      - name: Install candidate dependencies from lockfiles
+        working-directory: candidate
+        run: |
+          set -euo pipefail
+          npm ci
+          npm ci --prefix apps/public
+          npm ci --prefix apps/admin
+          npm ci --prefix apps/environment-worker
+
+      - name: Run focused foundation, authorization, and type checks without credentials
+        working-directory: candidate
+        run: |
+          set -euo pipefail
+          npm run app:foundation:check
+          npm run typecheck --prefix apps/admin
+          npm run typecheck:public
+
+      - name: Build and browser-check without provider credentials
+        working-directory: candidate
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+          APP_ENV: ${{ inputs.environment }}
+          APP_WORKER_NAME: ${{ inputs.environment == 'preview' && 'dpg-preview' || 'dpg-staging' }}
+          APP_ORIGIN: ${{ inputs.environment == 'preview' && 'https://dpg-preview.tranhuunguyenhuy.workers.dev' || 'https://dpg-staging.tranhuunguyenhuy.workers.dev' }}
+          PREVIEW_NOINDEX: 'true'
+          BUILD_SOURCE_SHA: ${{ inputs.source_sha }}
+        run: |
+          set -euo pipefail
+          test -n "$NEXT_PUBLIC_SUPABASE_URL"
+          test -n "$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
+          APP_ENV="$APP_ENV" APP_WORKER_NAME="$APP_WORKER_NAME" \
+            APP_ORIGIN="$APP_ORIGIN" PREVIEW_NOINDEX=true \
+            BUILD_SOURCE_SHA="$BUILD_SOURCE_SHA" npm run build:environment-worker
+          node scripts/app-foundation/environment-worker-browser.mjs "$APP_ENV"
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: dpg-environment-${{ inputs.environment }}-${{ steps.identity.outputs.source_sha }}
+          path: candidate/.artifacts/environment-worker/${{ inputs.environment }}/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 1
+
+  publish-candidate:
+    name: Publish and verify one active Worker deployment
+    needs: build-candidate
+    if: >-
+      github.repository == 'tranhuunguyenhuy-hue/dongphugia.com.vn' &&
+      github.ref == 'refs/heads/main' && github.run_attempt == 1 &&
+      needs.build-candidate.result == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    environment:
+      name: cloudflare-${{ inputs.environment }}
+    env:
+      APP_ENV: ${{ inputs.environment }}
+      SOURCE_SHA: ${{ needs.build-candidate.outputs.source_sha }}
+      CLOUDFLARE_ACCOUNT_ID: d54f3402b9d112ab64d6135e0e3f1fb1
+      ARTIFACT_ROOT: ${{ github.workspace }}/.artifacts/environment-worker/${{ inputs.environment }}
+      WRANGLER_SEND_METRICS: 'false'
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24.13.0
+          cache: npm
+
+      - name: Install the trusted pinned deployment tool before credentials
+        run: npm ci --prefix apps/environment-worker
+
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: dpg-environment-${{ inputs.environment }}-${{ needs.build-candidate.outputs.source_sha }}
+          path: ${{ env.ARTIFACT_ROOT }}
+
+      - name: Verify artifact data and replace config with the trusted allowlist
+        run: >-
+          node scripts/app-foundation/prepare-environment-worker-publication.mjs
+          "$ARTIFACT_ROOT" "$APP_ENV" "$SOURCE_SHA" "$CLOUDFLARE_ACCOUNT_ID"
+
+      - name: Verify the token can access this Worker but not Production
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          test -n "$CLOUDFLARE_API_TOKEN"
+          node apps/environment-worker/node_modules/wrangler/bin/wrangler.js --version | grep -Fx 'wrangler 4.160.1'
+          node scripts/app-foundation/verify-environment-worker-token-scope.mjs "$APP_ENV"
+
+      - name: Deploy only the selected pre-created Worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          node apps/environment-worker/node_modules/wrangler/bin/wrangler.js deploy \
+            --strict --config "$ARTIFACT_ROOT/wrangler.json" \
+            --message "DPG $APP_ENV source $SOURCE_SHA"
+
+      - name: Verify active deployment identity, routes, noindex and synthetic data
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: >-
+          node scripts/app-foundation/verify-environment-worker-deployment.mjs
+          "$APP_ENV" "$SOURCE_SHA"
+
+      - name: Record environment result without deployment credentials
+        if: always()
+        run: |
+          {
+            echo "### Unified Worker publication result: $APP_ENV"
+            echo "- Requested source SHA: $SOURCE_SHA"
+            echo "- Worker identity is fixed by environment: $([[ "$APP_ENV" == preview ]] && echo dpg-preview || echo dpg-staging)"
+            echo '- Candidate build runs without Cloudflare credentials; publication consumes its data-only artifact.'
+            echo '- Preview and Staging use separate GitHub environments and per-Worker scoped Cloudflare tokens.'
+            echo '- Public and Admin share one workers.dev URL; Admin is mounted at /admin.'
+            echo '- Logs are enabled without persistent invocation log storage; data mode is synthetic fixtures.'
+            echo '- No binding for Production state, Auth administration, service role, R2, KV or database is configured.'
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -3,6 +3,7 @@
 import { FormEvent, useState } from 'react'
 
 import { createAdminBrowserClient } from '../../src/supabase/browser'
+import { getAdminPath } from '../../src/config/env'
 
 export function LoginForm({ nextPath }: { nextPath: string }) {
   const [email, setEmail] = useState('')
@@ -52,7 +53,7 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
       <button type="submit" disabled={pending}>
         {pending ? 'Đang xác thực…' : 'Đăng nhập'}
       </button>
-      <a href="/forgot-password">Quên mật khẩu?</a>
+      <a href={getAdminPath('/forgot-password')}>Quên mật khẩu?</a>
     </form>
   )
 }

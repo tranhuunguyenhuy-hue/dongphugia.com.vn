@@ -1,0 +1,6 @@
+.next/
+.vinext/
+.wrangler/
+.worker-package/
+dist/
+node_modules/

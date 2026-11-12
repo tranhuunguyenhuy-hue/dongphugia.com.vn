@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  getAdminBasePath,
+  getAdminPath,
   getAdminAppEnvironment,
   getAdminSupabasePublicConfig,
 } from './env'
@@ -43,6 +45,24 @@ describe('Admin application environment contract', () => {
         PREVIEW_NOINDEX: 'true',
       }),
     ).toThrow('ADMIN_PREVIEW_PRODUCTION_DOMAIN_FORBIDDEN')
+  })
+
+  it('requires a noindex posture in Staging and keeps the app under /admin', () => {
+    expect(() => getAdminAppEnvironment({
+      APP_ENV: 'staging',
+      APP_ORIGIN: 'https://dpg-staging.tranhuunguyenhuy.workers.dev',
+    })).toThrow('ADMIN_STAGING_NOINDEX_REQUIRED')
+
+    expect(getAdminAppEnvironment({
+      APP_ENV: 'staging',
+      APP_ORIGIN: 'https://dpg-staging.tranhuunguyenhuy.workers.dev',
+      PREVIEW_NOINDEX: 'true',
+    })).toMatchObject({ environment: 'staging', noindex: true })
+    expect(getAdminBasePath({ ADMIN_BASE_PATH: '/admin' })).toBe('/admin')
+    expect(getAdminPath('/login', { ADMIN_BASE_PATH: '/admin' })).toBe('/admin/login')
+    expect(getAdminPath('/admin/login', { ADMIN_BASE_PATH: '/admin' })).toBe('/admin/login')
+    expect(() => getAdminBasePath({ ADMIN_BASE_PATH: '/staff' })).toThrow('ADMIN_BASE_PATH_INVALID')
+    expect(() => getAdminPath('/\\attacker.example', { ADMIN_BASE_PATH: '/admin' })).toThrow('ADMIN_PATH_INVALID')
   })
 
   it('allows only the publishable Supabase browser identity', () => {

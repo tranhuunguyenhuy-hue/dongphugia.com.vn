@@ -2,7 +2,7 @@
 
 import { createBrowserClient } from '@supabase/ssr'
 
-import { getAdminSupabasePublicConfig } from '../config/env'
+import { getAdminBasePath, getAdminSupabasePublicConfig } from '../config/env'
 
 export function createAdminBrowserClient() {
   // Next.js replaces direct NEXT_PUBLIC_* property reads in the client bundle.
@@ -14,5 +14,6 @@ export function createAdminBrowserClient() {
   })
   return createBrowserClient(url, publishableKey, {
     auth: { flowType: 'pkce' },
+    cookieOptions: { path: getAdminBasePath() || '/' },
   })
 }

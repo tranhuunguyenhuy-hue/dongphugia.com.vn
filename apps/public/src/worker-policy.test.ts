@@ -33,6 +33,14 @@ describe('Public Worker fail-closed policy', () => {
     expect(() => assertPreviewRuntime(new Request('https://preview.invalid/'), { ...previewEnvironment, SUPABASE_SERVICE_ROLE_KEY: 'synthetic' })).toThrow('PUBLIC_WORKER_PRIVILEGED_BINDING_FORBIDDEN')
   })
 
+  it('applies the noindex posture and Production-host protection to Staging', () => {
+    const staging = { ...previewEnvironment, APP_ENV: 'staging', APP_ORIGIN: 'https://dpg-staging.example.workers.dev' }
+    expect(() => assertPreviewRuntime(new Request(`${staging.APP_ORIGIN}/`), staging)).not.toThrow()
+    expect(robotsHeader(new Request(`${staging.APP_ORIGIN}/`), staging)).toBe('noindex, nofollow')
+    expect(() => assertPreviewRuntime(new Request('https://www.dongphugia.vn/'), staging))
+      .toThrow('PUBLIC_WORKER_PREVIEW_PRODUCTION_HOST_FORBIDDEN')
+  })
+
   it('requires a distinct public Production runtime and indexes only the canonical host', () => {
     const production = { APP_ENV: 'production', APP_BUILD_TARGET: 'public', APP_ORIGIN: 'https://www.dongphugia.vn', PREVIEW_NOINDEX: '' }
     const canonical = new Request('https://www.dongphugia.vn/thiet-bi-bep')

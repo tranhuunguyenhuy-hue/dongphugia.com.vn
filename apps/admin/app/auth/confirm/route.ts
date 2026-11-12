@@ -2,6 +2,7 @@ import { type EmailOtpType } from '@supabase/supabase-js'
 import { NextResponse, type NextRequest } from 'next/server'
 
 import { createAdminServerClient } from '../../../src/supabase/server'
+import { getAdminPath } from '../../../src/config/env'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -11,7 +12,7 @@ const ALLOWED_OTP_TYPES = new Set<EmailOtpType>([
 ])
 
 function safeNext(value: string | null) {
-  return value?.startsWith('/') && !value.startsWith('//') ? value : '/'
+  return value?.startsWith('/') && !value.startsWith('//') && !value.includes('\\') ? value : '/'
 }
 
 export async function GET(request: NextRequest) {
@@ -24,7 +25,7 @@ export async function GET(request: NextRequest) {
     ? await supabase.auth.verifyOtp({ type, token_hash: tokenHash })
     : { error: new Error('invalid confirmation') }
   const response = NextResponse.redirect(
-    new URL(error ? '/login?error=auth_confirm' : nextPath, request.url),
+    new URL(error ? `${getAdminPath('/login')}?error=auth_confirm` : getAdminPath(nextPath), request.url),
   )
   response.headers.set('Cache-Control', 'private, no-store')
   response.headers.set('X-Robots-Tag', 'noindex, nofollow')
