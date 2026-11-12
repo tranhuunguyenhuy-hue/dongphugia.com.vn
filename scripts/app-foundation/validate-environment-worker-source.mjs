@@ -38,8 +38,9 @@ export async function validateEnvironmentWorkerSource({
       `${apiUrl}/repos/${repository}/compare/main...${sourceSha}`,
       token,
     )
+    // GitHub's compare response has no top-level head SHA. With main...source,
+    // `behind` or `identical` plus a source-SHA merge base proves ancestry.
     if (!['identical', 'behind'].includes(compare.status)
-      || compare.head?.sha !== sourceSha
       || compare.merge_base_commit?.sha !== sourceSha) {
       fail('ENVIRONMENT_WORKER_SOURCE_NOT_ON_MAIN')
     }

@@ -30,7 +30,7 @@ describe('combined Worker trusted source gate', () => {
   it.each(['identical', 'behind'] as const)('accepts a %s source commit that is on main', async (status) => {
     const fetchImpl = vi.fn().mockResolvedValue(jsonResponse({
       status,
-      head: { sha: sourceSha },
+      base_commit: { sha: status === 'identical' ? sourceSha : 'c'.repeat(40) },
       merge_base_commit: { sha: sourceSha },
     }))
     await expect(validateEnvironmentWorkerSource({
@@ -47,7 +47,7 @@ describe('combined Worker trusted source gate', () => {
   ])('rejects non-ancestor or incomplete main compare evidence: $status', async ({ status, mergeBaseSha }) => {
     const fetchImpl = vi.fn().mockResolvedValue(jsonResponse({
       status,
-      head: { sha: sourceSha },
+      base_commit: { sha: 'c'.repeat(40) },
       ...(mergeBaseSha ? { merge_base_commit: { sha: mergeBaseSha } } : {}),
     }))
     await expect(validateEnvironmentWorkerSource({
