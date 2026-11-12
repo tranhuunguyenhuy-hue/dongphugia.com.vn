@@ -65,37 +65,17 @@ Provider-plan facts remain subject to the LEO-532 current-plan verification
 gate. A passing local or PR artifact does not authorize Preview deployment,
 merge, Production, DNS, or traffic changes.
 
-## Migration PR CI and Preview gate
+## PR application CI
 
-`.github/workflows/migration-preview.yml` remains the required repository gate
-for every PR to `main`. It runs lint, type-check, the full test suite, and the
-LEO-536 static contract checks without publishing the legacy static artifact.
-The LEO-563 repository-code gate then compares the exact PR-head SHA with the
-base SHA. Only material changes under `apps/public`, `apps/admin`,
-`packages/app-contracts`, or the shared build manifests can produce the new
-application Preview candidate.
+`.github/workflows/migration-preview.yml` remains a required source and
+integration gate for application changes, but it no longer builds or publishes
+a Cloudflare Preview candidate. The exact PR-head change gate selects the
+Public, Admin, database/Auth, and backup checks; it carries no Cloudflare
+credential and has no external Preview path.
 
-For that predicate, CI builds Public and Admin independently. Public uses the
-pinned `vinext` Worker adapter, packages Worker plus Static Assets with a
-Wrangler dry run, and proves byte-identical Worker/assets/config identities
-across two builds. Admin is also rebuilt and recollected to prove an identical
-application artifact identity. The candidate binds both application identities
-to exact source SHA, root/Public lockfile digests, and migration-manifest digest
-before upload. HTML, response-header, and `robots.txt` noindex claims come from
-checks against the built runtimes rather than manifest constants.
-
-The former single-Pages publish/create path is intentionally not called. CI may
-use the account ID and temporary dedicated
-`CLOUDFLARE_READONLY_DISCOVERY_TOKEN` references only in the fixed-GET,
-sanitized read-only discovery job. The deployment `CLOUDFLARE_API_TOKEN` is not
-available to that job. It cannot create, upload, deploy, or reconfigure a
-Cloudflare resource, credential, binding, custom domain, DNS record, or traffic
-route. The Public candidate includes a checksum-identified, Owner-gated config
-for `dongphugia-v1-public-preview`; it sets `workers_dev=false` and
-`preview_urls=true` with no route/custom domain/Production binding. Admin
-external Preview is downstream scope, and canonical Supabase connectivity is
-deferred to LEO-564. DB/import/docs-only changes end with
-`SKIPPED_UNRELATED_CHANGE` and cannot reach the candidate or Cloudflare path.
-Candidate build, identity, noindex, or discovery-execution failures fail
-closed.
-Until that Owner gate is approved, the deployable candidate remains CI-only.
+The PR application build checks Public and Admin without secrets. The scoped
+environment Worker CI checks the same-origin `/` and `/admin` dispatcher and
+its fail-closed policies. Local Preview is started with `npm run preview:local`
+at `http://127.0.0.1:8787`; the Staging publisher is a separate trusted,
+serialized workflow for the single `dpg-staging` Worker, described in
+[`preview-staging-worker-foundation.md`](preview-staging-worker-foundation.md).

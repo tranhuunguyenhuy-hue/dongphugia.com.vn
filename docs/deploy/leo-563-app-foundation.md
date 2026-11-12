@@ -1,10 +1,15 @@
-# LEO-563 New Production application foundation
+# LEO-563 New Production application foundation (historical)
 
-Status: source/CI foundation fix complete; Preview publication remains pending
-a new Owner approval for the exact PR #138 head. This document records the
-Public/Admin and CI foundation. It authorizes no Supabase,
-Bunny, AWS, DNS, IAM, custom domain, route, Production deployment, or traffic
-mutation. The existing Cloudflare deployment token remains untouched.
+> **Superseded for current Preview and Staging by PR #294.** This document
+> records an earlier independent Public/Admin and Cloudflare Preview design.
+> Its Preview Worker, token, origin, and publication instructions are not the
+> current environment contract and must not be used to set up PR #294.
+> Follow [`preview-staging-worker-foundation.md`](preview-staging-worker-foundation.md)
+> for local-only Preview and the single `dpg-staging` Worker. Production
+> runtime, data, Auth, secrets, domains, and DNS remain unchanged.
+
+Status: historical source/CI foundation. The previous Preview publication plan
+has been superseded; this document is retained only as design history.
 
 ## Repository structure
 
