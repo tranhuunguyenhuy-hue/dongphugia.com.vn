@@ -33,5 +33,5 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules", "backups", "docs/archive", "prisma", "scripts", "src/scripts", "supabase/functions", "apps/public"]
+  "exclude": ["node_modules", "backups", "docs/archive", "prisma", "scripts", "src/scripts", "supabase/functions", "apps/public", "apps/admin/vite.config.ts", "apps/admin/cloudflare.config.ts"]
 }

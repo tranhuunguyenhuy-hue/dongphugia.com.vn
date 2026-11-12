@@ -23,8 +23,8 @@ describe('combined environment Worker dispatch', () => {
   })
 
   it('sends Admin and Public separate, allowlisted runtime bindings', async () => {
-    const publicFetch = vi.fn(async () => new Response('public'))
-    const adminFetch = vi.fn(async () => new Response('admin', { headers: { 'Cache-Control': 'private, no-store' } }))
+    const publicFetch = vi.fn(async (_request: Request, _environment: Record<string, unknown>, _context: unknown) => new Response('public'))
+    const adminFetch = vi.fn(async (_request: Request, _environment: Record<string, unknown>, _context: unknown) => new Response('admin', { headers: { 'Cache-Control': 'private, no-store' } }))
     const worker = createEnvironmentWorker({
       publicWorker: { fetch: publicFetch },
       adminWorker: { fetch: adminFetch },
@@ -51,8 +51,8 @@ describe('combined environment Worker dispatch', () => {
   })
 
   it('fails closed if identity is wrong or a privileged binding is present', async () => {
-    const publicFetch = vi.fn(async () => new Response('public'))
-    const adminFetch = vi.fn(async () => new Response('admin'))
+    const publicFetch = vi.fn(async (_request: Request, _environment: Record<string, unknown>, _context: unknown) => new Response('public'))
+    const adminFetch = vi.fn(async (_request: Request, _environment: Record<string, unknown>, _context: unknown) => new Response('admin'))
     const worker = createEnvironmentWorker({
       publicWorker: { fetch: publicFetch },
       adminWorker: { fetch: adminFetch },
@@ -75,8 +75,8 @@ describe('combined environment Worker dispatch', () => {
       request.url.includes('/missing')
         ? new Response(null, { status: 404 })
         : new Response('asset', { headers: { 'Cache-Control': 'public, max-age=31536000, immutable' } }))
-    const publicFetch = vi.fn(async () => new Response('public route'))
-    const adminFetch = vi.fn(async () => new Response('admin route'))
+    const publicFetch = vi.fn(async (_request: Request, _environment: Record<string, unknown>, _context: unknown) => new Response('public route'))
+    const adminFetch = vi.fn(async (_request: Request, _environment: Record<string, unknown>, _context: unknown) => new Response('admin route'))
     const worker = createEnvironmentWorker({
       publicWorker: { fetch: publicFetch },
       adminWorker: { fetch: adminFetch },
