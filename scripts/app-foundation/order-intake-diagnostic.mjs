@@ -11,6 +11,8 @@ const ALLOWED_DIAGNOSTIC_STAGES = new Set([
 
 const ALLOWED_TOKEN_PERMISSIONS = new Set([
   'Workers Scripts Write',
+  'Workers Editor',
+  'Individual Workers Editor',
   'Workers Tail Read',
   'Account Settings Read',
   'Account API Tokens Read',
@@ -122,7 +124,7 @@ export function attestPreviewTokenScope(accountId, details, { expectedTokenId, d
   if (!Array.isArray(policies) || policies.length === 0) return { ok: false, reason: 'TOKEN_POLICIES_MISSING' }
 
   let hasScriptsWrite = false
-  let hasAccountSettingsRead = false
+  let hasIndividualWorkersEditor = false
   for (const policy of policies) {
     if (!policy || !['allow', 'deny'].includes(policy.effect)) {
       return { ok: false, reason: 'TOKEN_POLICY_EFFECT_UNKNOWN' }
@@ -138,6 +140,20 @@ export function attestPreviewTokenScope(accountId, details, { expectedTokenId, d
       return { ok: false, reason: 'TOKEN_HAS_UNRELATED_PERMISSION' }
     }
 
+    if (groupNames.includes('Individual Workers Editor')) {
+      if (groupNames.length !== 1) return { ok: false, reason: 'TOKEN_SELECTED_WORKER_SCOPE_UNVERIFIED' }
+      hasIndividualWorkersEditor = true
+      const resources = policy.resources
+      if (!resources || typeof resources !== 'object' || Array.isArray(resources)
+          || Object.keys(resources).length === 0) {
+        return { ok: false, reason: 'TOKEN_SELECTED_WORKER_SCOPE_UNVERIFIED' }
+      }
+      // Cloudflare documents this role and selected-Worker scope, but the token
+      // details resource-map encoding is not specified in the API schema.
+      // Keep the role distinct from account-wide scripts write and fail closed.
+      continue
+    }
+
     const resources = policy.resources
     const userTokenRead = groupNames.every((name) => name === 'API Tokens Read')
       && selfUserResourceIsExact(resources)
@@ -148,15 +164,18 @@ export function attestPreviewTokenScope(accountId, details, { expectedTokenId, d
       return { ok: false, reason: 'TOKEN_RESOURCE_SCOPE_NOT_EXACT' }
     }
 
-    if (groupNames.includes('Workers Scripts Write')) {
+    if (groupNames.some((name) => ['Workers Scripts Write', 'Workers Editor'].includes(name))) {
       hasScriptsWrite = true
     }
-    if (groupNames.includes('Account Settings Read')) hasAccountSettingsRead = true
   }
 
-  if (!hasScriptsWrite) return { ok: false, reason: 'TOKEN_WORKER_WRITE_MISSING' }
-  if (!hasAccountSettingsRead) return { ok: false, reason: 'TOKEN_ACCOUNT_SETTINGS_READ_MISSING' }
-  return { ok: true, scope: 'PREVIEW_ACCOUNT_WORKER_WRITE_AND_TAIL_ONLY' }
+  // The approved account also contains Production Workers. Account-wide write is
+  // therefore never sufficient proof of an isolated Preview credential.
+  if (hasScriptsWrite) return { ok: false, reason: 'TOKEN_ACCOUNT_WIDE_WORKER_WRITE_FORBIDDEN' }
+  if (hasIndividualWorkersEditor) {
+    return { ok: false, reason: 'TOKEN_SELECTED_WORKER_RESOURCE_ENCODING_UNVERIFIED' }
+  }
+  return { ok: false, reason: 'TOKEN_WORKER_EDITOR_POLICY_MISSING' }
 }
 
 export async function attestCloudflareCredential(accountId, token, fetcher = fetch) {
@@ -220,25 +239,41 @@ export async function attestCloudflareCredential(accountId, token, fetcher = fet
   ]
   let responsesReceived = 0
   const attemptedDetailsSources = []
+  const detailsAttemptResults = []
   for (const source of detailSources) {
     attemptedDetailsSources.push(source.name)
     let detailsResponse
     try {
       detailsResponse = await fetcher(source.url, { headers })
     } catch {
+      detailsAttemptResults.push({ source: source.name, outcome: 'FETCH_FAILED' })
       continue
     }
     responsesReceived += 1
-    if (!detailsResponse.ok) continue
+    if (!detailsResponse.ok) {
+      detailsAttemptResults.push({ source: source.name, outcome: 'HTTP_ERROR', status: detailsResponse.status })
+      continue
+    }
+    detailsAttemptResults.push({ source: source.name, outcome: 'HTTP_OK', status: detailsResponse.status })
 
     let details
     try {
       details = await detailsResponse.json()
     } catch {
-      return { ok: false, reason: 'TOKEN_SCOPE_DETAILS_INVALID', detailsSource: source.name }
+      return {
+        ok: false,
+        reason: 'TOKEN_SCOPE_DETAILS_INVALID',
+        detailsSource: source.name,
+        detailsAttemptResults,
+      }
     }
     if (details?.success !== true || !details?.result || typeof details.result !== 'object') {
-      return { ok: false, reason: 'TOKEN_SCOPE_DETAILS_INVALID', detailsSource: source.name }
+      return {
+        ok: false,
+        reason: 'TOKEN_SCOPE_DETAILS_INVALID',
+        detailsSource: source.name,
+        detailsAttemptResults,
+      }
     }
 
     return {
@@ -247,6 +282,7 @@ export async function attestCloudflareCredential(accountId, token, fetcher = fet
         detailsSource: source.name,
       }),
       detailsSource: source.name,
+      detailsAttemptResults,
     }
   }
 
@@ -254,6 +290,7 @@ export async function attestCloudflareCredential(accountId, token, fetcher = fet
     ok: false,
     reason: responsesReceived > 0 ? 'TOKEN_SCOPE_DETAILS_DENIED' : 'TOKEN_SCOPE_DETAILS_UNAVAILABLE',
     detailsSourcesAttempted: attemptedDetailsSources,
+    detailsAttemptResults,
   }
 }
 

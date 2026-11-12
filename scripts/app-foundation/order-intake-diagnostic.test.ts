@@ -124,10 +124,34 @@ describe('order intake diagnostic Worker preparation', () => {
 })
 
 describe('order intake diagnostic credential scope', () => {
-  it('accepts only an active account-scoped Worker writer with settings read', () => {
-    expect(attestPreviewTokenScope(accountId, permittedTokenDetails())).toEqual({
-      ok: true,
-      scope: 'PREVIEW_ACCOUNT_WORKER_WRITE_AND_TAIL_ONLY',
+  it('rejects account-wide Worker writer roles even on the approved account', () => {
+    for (const permission of ['Workers Scripts Write', 'Workers Editor']) {
+      const details = permittedTokenDetails()
+      details.policies[0].permission_groups = [{ name: permission }]
+      expect(attestPreviewTokenScope(accountId, details)).toEqual({
+        ok: false,
+        reason: 'TOKEN_ACCOUNT_WIDE_WORKER_WRITE_FORBIDDEN',
+      })
+    }
+  })
+
+  it('fails closed when no documented selected-Worker policy has been verified', () => {
+    const details = permittedTokenDetails()
+    details.policies[0].permission_groups = [{ name: 'Account Settings Read' }]
+    expect(attestPreviewTokenScope(accountId, details, { detailsSource: 'ACCOUNT_OWNED_TOKEN_DETAILS' })).toEqual({
+      ok: false,
+      reason: 'TOKEN_WORKER_EDITOR_POLICY_MISSING',
+    })
+  })
+
+  it('distinguishes documented Individual Workers Editor from unknown resource-map encoding', () => {
+    const details = permittedAccountOwnedTokenDetails()
+    details.policies = [
+      { effect: 'allow', permission_groups: [{ name: 'Individual Workers Editor' }], resources: { 'worker-selection': ['preview-public'] } },
+    ]
+    expect(attestPreviewTokenScope(accountId, details, { detailsSource: 'ACCOUNT_OWNED_TOKEN_DETAILS' })).toEqual({
+      ok: false,
+      reason: 'TOKEN_SELECTED_WORKER_RESOURCE_ENCODING_UNVERIFIED',
     })
   })
 
@@ -185,9 +209,13 @@ describe('order intake diagnostic credential scope', () => {
     const result = await attestCloudflareCredential(accountId, 'secret-test-only', fetcher)
 
     expect(result).toEqual({
-      ok: true,
-      scope: 'PREVIEW_ACCOUNT_WORKER_WRITE_AND_TAIL_ONLY',
+      ok: false,
+      reason: 'TOKEN_ACCOUNT_WIDE_WORKER_WRITE_FORBIDDEN',
       detailsSource: 'USER_TOKEN_DETAILS',
+      detailsAttemptResults: [
+        { source: 'ACCOUNT_OWNED_TOKEN_DETAILS', outcome: 'HTTP_ERROR', status: 404 },
+        { source: 'USER_TOKEN_DETAILS', outcome: 'HTTP_OK', status: 200 },
+      ],
     })
     expect(requests.map(({ url }) => url)).toEqual([
       `https://api.cloudflare.com/client/v4/accounts/${accountId}/tokens/verify`,
@@ -218,9 +246,12 @@ describe('order intake diagnostic credential scope', () => {
     }
 
     await expect(attestCloudflareCredential(accountId, 'secret-test-only', fetcher)).resolves.toEqual({
-      ok: true,
-      scope: 'PREVIEW_ACCOUNT_WORKER_WRITE_AND_TAIL_ONLY',
+      ok: false,
+      reason: 'TOKEN_ACCOUNT_WIDE_WORKER_WRITE_FORBIDDEN',
       detailsSource: 'ACCOUNT_OWNED_TOKEN_DETAILS',
+      detailsAttemptResults: [
+        { source: 'ACCOUNT_OWNED_TOKEN_DETAILS', outcome: 'HTTP_OK', status: 200 },
+      ],
     })
     expect(requests.map(({ url }) => url)).toEqual([
       `https://api.cloudflare.com/client/v4/accounts/${accountId}/tokens/verify`,
@@ -248,8 +279,8 @@ describe('order intake diagnostic credential scope', () => {
     }
 
     await expect(attestCloudflareCredential(accountId, 'secret-test-only', fetcher)).resolves.toMatchObject({
-      ok: true,
-      scope: 'PREVIEW_ACCOUNT_WORKER_WRITE_AND_TAIL_ONLY',
+      ok: false,
+      reason: 'TOKEN_ACCOUNT_WIDE_WORKER_WRITE_FORBIDDEN',
       detailsSource: 'USER_TOKEN_DETAILS',
     })
     expect(requests).toEqual([
@@ -280,6 +311,9 @@ describe('order intake diagnostic credential scope', () => {
       ok: false,
       reason: 'OAUTH_TOKEN_NOT_ALLOWED',
       detailsSource: 'ACCOUNT_OWNED_TOKEN_DETAILS',
+      detailsAttemptResults: [
+        { source: 'ACCOUNT_OWNED_TOKEN_DETAILS', outcome: 'HTTP_OK', status: 200 },
+      ],
     })
   })
 
@@ -300,6 +334,9 @@ describe('order intake diagnostic credential scope', () => {
       ok: false,
       reason: 'TOKEN_DETAILS_ID_MISMATCH',
       detailsSource: 'ACCOUNT_OWNED_TOKEN_DETAILS',
+      detailsAttemptResults: [
+        { source: 'ACCOUNT_OWNED_TOKEN_DETAILS', outcome: 'HTTP_OK', status: 200 },
+      ],
     })
   })
 
@@ -318,12 +355,37 @@ describe('order intake diagnostic credential scope', () => {
       ok: false,
       reason: 'TOKEN_SCOPE_DETAILS_DENIED',
       detailsSourcesAttempted: ['ACCOUNT_OWNED_TOKEN_DETAILS', 'USER_TOKEN_DETAILS'],
+      detailsAttemptResults: [
+        { source: 'ACCOUNT_OWNED_TOKEN_DETAILS', outcome: 'HTTP_ERROR', status: 403 },
+        { source: 'USER_TOKEN_DETAILS', outcome: 'HTTP_ERROR', status: 403 },
+      ],
     })
     expect(requests).toEqual([
       `https://api.cloudflare.com/client/v4/accounts/${accountId}/tokens/verify`,
       `https://api.cloudflare.com/client/v4/accounts/${accountId}/tokens/${tokenId}`,
       `https://api.cloudflare.com/client/v4/user/tokens/${tokenId}`,
     ])
+  })
+
+  it('records a fixed result when an owner-specific details request cannot be fetched', async () => {
+    const fetcher = async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.endsWith(`/accounts/${accountId}/tokens/verify`)) {
+        return Response.json({ success: true, result: { id: tokenId, status: 'active' } })
+      }
+      if (url.endsWith(`/accounts/${accountId}/tokens/${tokenId}`)) throw new Error('private transport detail')
+      return new Response('{}', { status: 403 })
+    }
+
+    await expect(attestCloudflareCredential(accountId, 'secret-test-only', fetcher)).resolves.toEqual({
+      ok: false,
+      reason: 'TOKEN_SCOPE_DETAILS_DENIED',
+      detailsSourcesAttempted: ['ACCOUNT_OWNED_TOKEN_DETAILS', 'USER_TOKEN_DETAILS'],
+      detailsAttemptResults: [
+        { source: 'ACCOUNT_OWNED_TOKEN_DETAILS', outcome: 'FETCH_FAILED' },
+        { source: 'USER_TOKEN_DETAILS', outcome: 'HTTP_ERROR', status: 403 },
+      ],
+    })
   })
 
   it('fails closed when token verification is denied before any scope fetch', async () => {
