@@ -46,14 +46,6 @@ jobs:
       (inputs.source_kind == 'main' || inputs.source_kind == 'approved-pr')
     runs-on: ubuntu-24.04
     timeout-minutes: 70
-    outputs:
-      source_sha: ${{ steps.identity.outputs.source_sha }}
-      artifact_sha256: ${{ steps.artifact.outputs.sha256 }}
-    env:
-      SOURCE_SHA: ${{ inputs.source_sha }}
-      SOURCE_KIND: ${{ inputs.source_kind }}
-      PULL_REQUEST_NUMBER: ${{ inputs.pull_request_number }}
-      DEPLOYMENT_TOKEN_ID: ${{ inputs.deployment_token_id }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
@@ -68,6 +60,9 @@ jobs:
       - name: Validate the source commit and approval from trusted main code
         id: identity
         env:
+          SOURCE_KIND: ${{ inputs.source_kind }}
+          SOURCE_SHA: ${{ inputs.source_sha }}
+          PULL_REQUEST_NUMBER: ${{ inputs.pull_request_number }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_TOKEN: ${{ github.token }}
         run: |
@@ -75,9 +70,10 @@ jobs:
           node scripts/app-foundation/validate-environment-worker-source.mjs \
             "$SOURCE_KIND" "$SOURCE_SHA" "$PULL_REQUEST_NUMBER"
           node scripts/app-foundation/verify-environment-worker-release-protection.mjs
-          echo "source_sha=$SOURCE_SHA" >> "$GITHUB_OUTPUT"
 
       - name: Validate the nonsecret deployment token identity input
+        env:
+          DEPLOYMENT_TOKEN_ID: ${{ inputs.deployment_token_id }}
         run: |
           set -euo pipefail
           [[ "$DEPLOYMENT_TOKEN_ID" =~ ^[a-f0-9]{32}$ ]] || {
@@ -125,56 +121,87 @@ jobs:
             BUILD_SOURCE_SHA="$BUILD_SOURCE_SHA" npm run build:environment-worker
           node scripts/app-foundation/environment-worker-browser.mjs "$APP_ENV"
 
-      - name: Calculate exact artifact content digest
-        id: artifact
-        env:
-          CANDIDATE_ARTIFACT_ROOT: candidate/.artifacts/environment-worker/staging
-        run: |
-          set -euo pipefail
-          sha256="$(node scripts/app-foundation/environment-worker-artifact-digest.mjs "$CANDIDATE_ARTIFACT_ROOT")"
-          echo "sha256=$sha256" >> "$GITHUB_OUTPUT"
-
-      - name: Publish the exact candidate details for the required external review
-        env:
-          RUN_ID: ${{ github.run_id }}
-          SOURCE_SHA: ${{ steps.identity.outputs.source_sha }}
-          ARTIFACT_SHA256: ${{ steps.artifact.outputs.sha256 }}
-        run: |
-          {
-            echo '### Staging release candidate — external token review required'
-            echo "- Workflow run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$RUN_ID"
-            echo "- Source SHA: $SOURCE_SHA"
-            echo "- Candidate artifact content SHA-256: $ARTIFACT_SHA256"
-            echo "- Deployment token ID to inspect: $DEPLOYMENT_TOKEN_ID"
-            echo "- Target: account d54f3402b9d112ab64d6135e0e3f1fb1, Worker dpg-staging."
-            echo "- Before approving cloudflare-staging, inspect this exact token in the existing Cloudflare connection. Confirm it is active, has only the Workers Editor role scoped to the existing dpg-staging Worker (Individual Workers scope), and has no other or broader write grant."
-            echo "- This is an external human review. CI does not retrieve or machine-verify token policy; the later /tokens/verify check proves token identity/status only."
-            echo "- Inspect immediately before approving this run. Repeat for every release; any policy change or revocation invalidates earlier review."
-          } >> "$GITHUB_STEP_SUMMARY"
-
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: dpg-environment-${{ inputs.environment }}-${{ steps.identity.outputs.source_sha }}
+          name: dpg-environment-${{ inputs.environment }}-${{ inputs.source_sha }}
           path: candidate/.artifacts/environment-worker/${{ inputs.environment }}/
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 1
 
-  publish-candidate:
-    name: Publish and verify one active Worker deployment
+  review-candidate:
+    name: Bind release review evidence to immutable inputs on a clean runner
     needs: build-candidate
     if: >-
       github.repository == 'tranhuunguyenhuy-hue/dongphugia.com.vn' &&
       github.ref == 'refs/heads/main' && github.run_attempt == 1 &&
       needs.build-candidate.result == 'success'
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    outputs:
+      artifact_sha256: ${{ steps.artifact.outputs.sha256 }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24.13.0
+
+      - name: Revalidate the exact candidate and release protection from trusted main code
+        env:
+          SOURCE_KIND: ${{ inputs.source_kind }}
+          SOURCE_SHA: ${{ inputs.source_sha }}
+          PULL_REQUEST_NUMBER: ${{ inputs.pull_request_number }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          node scripts/app-foundation/validate-environment-worker-source.mjs \
+            "$SOURCE_KIND" "$SOURCE_SHA" "$PULL_REQUEST_NUMBER"
+          node scripts/app-foundation/verify-environment-worker-release-protection.mjs
+
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: dpg-environment-${{ inputs.environment }}-${{ inputs.source_sha }}
+          path: candidate-artifact
+
+      - name: Calculate artifact digest from downloaded candidate data
+        id: artifact
+        env:
+          CANDIDATE_ARTIFACT_ROOT: candidate-artifact
+        run: |
+          set -euo pipefail
+          sha256="$(node scripts/app-foundation/environment-worker-artifact-digest.mjs "$CANDIDATE_ARTIFACT_ROOT")"
+          echo "sha256=$sha256" >> "$GITHUB_OUTPUT"
+
+      - name: Publish review identity from immutable inputs on the clean runner
+        env:
+          RELEASE_SERVER_URL: ${{ github.server_url }}
+          RELEASE_REPOSITORY: ${{ github.repository }}
+          RELEASE_RUN_ID: ${{ github.run_id }}
+          RELEASE_SOURCE_SHA: ${{ inputs.source_sha }}
+          RELEASE_ARTIFACT_SHA256: ${{ steps.artifact.outputs.sha256 }}
+          RELEASE_DEPLOYMENT_TOKEN_ID: ${{ inputs.deployment_token_id }}
+        run: node scripts/app-foundation/render-environment-worker-review-summary.mjs
+
+  publish-candidate:
+    name: Publish and verify one active Worker deployment
+    needs: review-candidate
+    if: >-
+      github.repository == 'tranhuunguyenhuy-hue/dongphugia.com.vn' &&
+      github.ref == 'refs/heads/main' && github.run_attempt == 1 &&
+      needs.review-candidate.result == 'success'
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     environment:
       name: cloudflare-${{ inputs.environment }}
     env:
       APP_ENV: staging
-      SOURCE_SHA: ${{ needs.build-candidate.outputs.source_sha }}
-      ARTIFACT_SHA256: ${{ needs.build-candidate.outputs.artifact_sha256 }}
+      SOURCE_SHA: ${{ inputs.source_sha }}
+      ARTIFACT_SHA256: ${{ needs.review-candidate.outputs.artifact_sha256 }}
       EXPECTED_DEPLOYMENT_TOKEN_ID: ${{ inputs.deployment_token_id }}
       CLOUDFLARE_ACCOUNT_ID: d54f3402b9d112ab64d6135e0e3f1fb1
       ARTIFACT_ROOT: ${{ github.workspace }}/.artifacts/environment-worker/staging
@@ -195,7 +222,7 @@ jobs:
 
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
-          name: dpg-environment-staging-${{ needs.build-candidate.outputs.source_sha }}
+          name: dpg-environment-staging-${{ inputs.source_sha }}
           path: ${{ env.ARTIFACT_ROOT }}
 
       - name: Verify downloaded artifact identity before modifying it

@@ -87,8 +87,12 @@ Runtime acceptance uses GET/HEAD requests only; write denial is tested with
 local Worker and mock tests, never against Production.
 
 Each release requires external, per-run token-policy inspection before the
-protected `cloudflare-staging` GitHub environment can release its secret. The
-build summary binds the request to the source SHA, artifact content digest,
+protected `cloudflare-staging` GitHub environment can release its secret. After
+the candidate build job finishes, a separate clean runner revalidates the
+source, downloads the artifact by the immutable dispatch inputs, calculates its
+content digest, and writes the review summary using those inputs directly.
+Candidate scripts cannot alter this summary through `GITHUB_ENV` or job outputs.
+The summary binds the request to the source SHA, artifact content digest,
 account, Worker and nonsecret Cloudflare token ID. Immediately before approval,
 the required environment reviewer uses the existing Cloudflare connection to
 inspect that exact token's details. Confirm it is active and has only the
@@ -136,18 +140,22 @@ API reports the legacy `Individual Workers Editor` group as `is_selectable: fals
 even after the Worker exists; Cloudflare's current [Workers roles and permissions documentation](https://developers.cloudflare.com/workers/authorization/workers/)
 supports the `Editor` role at Individual Workers scope. Cloudflare's [account-owned token documentation](https://developers.cloudflare.com/fundamentals/api/get-started/account-owned-tokens/)
 requires API Token Provisioning capability or Super Administrator status to
-create account-owned tokens. The connected Cloudflare API session cannot
-currently grant this role, and the generic token-creation API docs do not
-document a Worker-specific resource selector; no resource syntax was guessed.
+create account-owned tokens. The spec reviewer reports the connected member has
+Super Administrator (All Privileges); the earlier `is_selectable: false` result
+does not establish that the Dashboard cannot create a per-Worker token. The
+supported Dashboard path is Account → Manage Account → Account API Tokens →
+Create Token, then choose Workers `Editor` with `Specified Workers` scope and
+select only the existing `dpg-staging` Worker. This dispatch explicitly stops
+GUI, provider, and secret changes, so the Dashboard flow and token creation were
+not attempted or independently verified here.
 
-Minimum remaining setup: an Owner with Cloudflare API Token Provisioning or
-Super Administrator access must create an account-owned token in the Cloudflare
-dashboard selecting only the existing `dpg-staging` Worker and its Workers
-`Editor` role at Individual Workers scope, then place its secret directly in GitHub
-`cloudflare-staging` as `CLOUDFLARE_API_TOKEN`. Do not send the secret in chat,
-add account-wide token-management permission, or put it in logs. At each later
-release, dispatch with the token's nonsecret ID so the reviewer can inspect
-that exact live token before approving the run.
+Remaining setup: in a task that permits the Dashboard flow, create that
+account-owned token and transfer its one-time secret directly into GitHub
+`cloudflare-staging` as `CLOUDFLARE_API_TOKEN` using a secret-safe path. Do not
+send the secret in chat, add account-wide token-management permission, or put it
+in logs. The environment still has no token secret. At each later release,
+dispatch with the token's nonsecret ID so the reviewer can inspect that exact
+live token before approving the run.
 
 The Staging publisher becomes available only after the reviewed source PR is
 merged to `main`; merging is a separate Owner approval. Add the Staging-only

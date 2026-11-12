@@ -16,6 +16,14 @@ const namespaceScript = readFileSync(path.join(here, 'namespace-admin-vite-rsc-g
 const localRunner = readFileSync(path.join(here, 'run-local-preview.mjs'), 'utf8')
 const browserVerifier = readFileSync(path.join(here, 'environment-worker-browser.mjs'), 'utf8')
 const prBuildWorkflow = readFileSync(path.join(here, '../../.github/workflows/pr-preview-build.yml'), 'utf8')
+const reviewSummaryScript = readFileSync(path.join(here, 'render-environment-worker-review-summary.mjs'), 'utf8')
+
+function workflowJob(name) {
+  const start = workflow.indexOf(`  ${name}:\n`)
+  if (start < 0) throw new Error(`Missing workflow job ${name}`)
+  const nextJob = workflow.slice(start + 1).search(/\n  [a-z][a-z0-9_-]*:\n/)
+  return workflow.slice(start, nextJob < 0 ? undefined : start + 1 + nextJob)
+}
 
 describe('Staging Worker publication workflow trust boundaries', () => {
   it('serializes one Staging target and gates pre-merge source at the exact approved PR head', () => {
@@ -29,18 +37,36 @@ describe('Staging Worker publication workflow trust boundaries', () => {
   })
 
   it('keeps credentials out of candidate builds and requires supervised external scope review', () => {
-    const [buildJob, publishJob = ''] = workflow.split('  publish-candidate:')
+    const buildJob = workflowJob('build-candidate')
+    const reviewJob = workflowJob('review-candidate')
+    const publishJob = workflowJob('publish-candidate')
     const identityGate = publishJob.split('      - name: Verify actual token identity after required external policy review')[1]?.split('      - name: Deploy only the selected pre-created Worker')[0] || ''
     expect(buildJob).not.toMatch(/CLOUDFLARE_API_TOKEN|CLOUDFLARE_ACCOUNT_ID/)
+    expect(buildJob).not.toContain('GITHUB_STEP_SUMMARY')
+    expect(buildJob).not.toContain('Deployment token ID to inspect')
     expect(buildJob.match(/GITHUB_TOKEN: \$\{\{ github\.token \}\}/g)).toHaveLength(1)
     expect(buildJob.indexOf('GITHUB_TOKEN: ${{ github.token }}'))
       .toBeGreaterThan(buildJob.indexOf('Validate the source commit and approval'))
-    expect(buildJob).toContain('Calculate exact artifact content digest')
-    expect(buildJob).toContain('environment-worker-artifact-digest.mjs')
-    expect(buildJob).toContain('Candidate artifact content SHA-256')
-    expect(buildJob).toContain('Deployment token ID to inspect')
-    expect(buildJob).toContain('external human review')
-    expect(buildJob).toContain('Workers Editor role scoped to the existing dpg-staging Worker (Individual Workers scope)')
+    expect(buildJob).toContain('dpg-environment-${{ inputs.environment }}-${{ inputs.source_sha }}')
+    expect(reviewJob).toContain('needs: build-candidate')
+    expect(reviewJob).toContain('Calculate artifact digest from downloaded candidate data')
+    expect(reviewJob).toContain('environment-worker-artifact-digest.mjs')
+    expect(reviewJob).toContain('dpg-environment-${{ inputs.environment }}-${{ inputs.source_sha }}')
+    expect(reviewJob).toContain('RELEASE_DEPLOYMENT_TOKEN_ID: ${{ inputs.deployment_token_id }}')
+    expect(reviewJob).toContain('RELEASE_SOURCE_SHA: ${{ inputs.source_sha }}')
+    expect(reviewJob).toContain('RELEASE_ARTIFACT_SHA256: ${{ steps.artifact.outputs.sha256 }}')
+    expect(reviewJob).toContain('render-environment-worker-review-summary.mjs')
+    expect(reviewJob).not.toContain('working-directory: candidate')
+    expect(reviewJob).not.toContain('npm ci')
+    expect(reviewSummaryScript).toContain('Deployment token ID to inspect')
+    expect(reviewSummaryScript).toContain('external human review')
+    expect(reviewSummaryScript).toContain('Workers Editor role scoped to the existing dpg-staging Worker (Individual Workers scope)')
+    expect(publishJob).toContain('needs: review-candidate')
+    expect(publishJob).toContain('SOURCE_SHA: ${{ inputs.source_sha }}')
+    expect(publishJob).toContain('ARTIFACT_SHA256: ${{ needs.review-candidate.outputs.artifact_sha256 }}')
+    expect(publishJob).toContain('EXPECTED_DEPLOYMENT_TOKEN_ID: ${{ inputs.deployment_token_id }}')
+    expect(publishJob).toContain('dpg-environment-staging-${{ inputs.source_sha }}')
+    expect(publishJob).not.toContain('needs.build-candidate.outputs')
     expect(publishJob).toContain('secrets.CLOUDFLARE_API_TOKEN')
     expect(publishJob).toContain('verify-environment-worker-deployment-token.mjs')
     expect(publishJob).toContain('prepare-environment-worker-publication.mjs')
