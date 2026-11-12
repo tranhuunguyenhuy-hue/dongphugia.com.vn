@@ -106,8 +106,8 @@ async function main() {
   }
   // Preview and Staging always use the code-owned synthetic fixture surface.
   // Never inherit a catalogue snapshot checkpoint from a developer shell or CI.
-  delete appEnvironmentVariables.PUBLIC_CATALOGUE_CHECKPOINT
-  delete appEnvironmentVariables.PUBLIC_CATALOGUE_SNAPSHOT
+  delete commonBuildEnvironment.PUBLIC_CATALOGUE_CHECKPOINT
+  delete commonBuildEnvironment.PUBLIC_CATALOGUE_SNAPSHOT
   const outputRoot = path.join(repositoryRoot, '.artifacts', 'environment-worker', appEnvironment)
   const publicServer = path.join(repositoryRoot, 'apps/public/dist/server')
   const publicAssets = path.join(repositoryRoot, 'apps/public/dist/client')
