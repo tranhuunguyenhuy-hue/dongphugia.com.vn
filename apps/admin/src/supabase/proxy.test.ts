@@ -89,8 +89,7 @@ describe('Admin Supabase SSR proxy session boundary', () => {
     const response = await updateAdminSession(request('/admin/orders'))
     const location = new URL(response.headers.get('location')!)
 
-    // The framework mounts this middleware at /admin and applies basePath to
-    // its app-relative redirect before sending it to the browser.
+    // The framework applies the configured basePath when emitting the redirect.
     expect(location.pathname).toBe('/login')
     expect(location.searchParams.get('next')).toBe('/admin/orders')
     expect(createServerClient.mock.calls[0][2].cookieOptions).toEqual({ path: '/admin' })

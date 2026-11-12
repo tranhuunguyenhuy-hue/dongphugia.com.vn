@@ -193,7 +193,7 @@ jobs:
             echo "- Requested source SHA: $SOURCE_SHA"
             echo '- Worker identity is dpg-staging in the shared Cloudflare account.'
             echo '- Candidate build runs without Cloudflare credentials; publication consumes its data-only artifact.'
-            echo '- Public and the static Admin-unavailable route share the Staging workers.dev origin.'
-            echo '- Public reads only fixed Production catalogue asset paths; Admin authentication, private data and writes are unavailable.'
+            echo '- Public and Admin SSR share the Staging workers.dev origin; Admin auth is disabled and private data remains unavailable.'
+            echo '- Public reads only fixed Production catalogue paths; mutation requests are rejected before app or asset dispatch.'
             echo '- A selected-Worker GET proves readability only; reviewed Individual Worker Editor policy scope is a separate required attestation.'
           } >> "$GITHUB_STEP_SUMMARY"

@@ -40,11 +40,23 @@ async function digestDirectory(root: string) {
 async function createCandidate() {
   const root = await mkdtemp(path.join(os.tmpdir(), 'dpg-env-worker-'))
   rootDirectories.push(root)
-  const directories = ['public-worker', 'assets/_next/static/css']
+  const directories = ['public-worker', 'admin-worker', 'assets/_next/static/css', 'assets/admin/_next/static/css']
   for (const directory of directories) await mkdir(path.join(root, directory), { recursive: true })
   await writeFile(path.join(root, 'public-worker/index.js'), 'export default { fetch() { return new Response("public") } }\n')
+  await writeFile(path.join(root, 'admin-worker/index.js'), [
+    'globalThis.__dpg_rsc0_client_require__ = clientLoader;',
+    'globalThis.__dpg_rsc0_require__ = loader;',
+    'globalThis.__dpg_rsc0_server_require__ = serverLoader;',
+    'export default { fetch() { return new Response("admin") } }',
+  ].join('\n'))
   await writeFile(path.join(root, 'assets/_next/static/css/public.css'), 'body{}\n')
-  await writeFile(path.join(root, 'worker.mjs'), 'import publicWorker from "./public-worker/index.js"; export default publicWorker\n')
+  await writeFile(path.join(root, 'assets/admin/_next/static/css/admin.css'), 'main{}\n')
+  await writeFile(path.join(root, 'assets/admin/_next/static/runtime.js'), [
+    'globalThis.__dpg_rsc0_client_require__ = clientLoader;',
+    'globalThis.__dpg_rsc0_require__ = loader;',
+    'globalThis.__dpg_rsc0_server_require__ = serverLoader;',
+  ].join('\n'))
+  await writeFile(path.join(root, 'worker.mjs'), 'import publicWorker from "./public-worker/index.js"; import adminWorker from "./admin-worker/index.js"; export default { publicWorker, adminWorker }\n')
   await writeFile(path.join(root, 'dispatch.mjs'), 'export default { fetch() { return new Response("combined") } }\n')
 
   const environment = 'staging'
@@ -73,12 +85,13 @@ async function createCandidate() {
   }
   const configBytes = `${JSON.stringify(config, null, 2)}\n`
   await writeFile(path.join(root, 'wrangler.json'), configBytes)
-  const [publicDigest, assetsDigest] = await Promise.all([
+  const [publicDigest, adminDigest, assetsDigest] = await Promise.all([
     digestDirectory(path.join(root, 'public-worker')),
+    digestDirectory(path.join(root, 'admin-worker')),
     digestDirectory(path.join(root, 'assets')),
   ])
   const manifest = {
-    contract: 'dpg:combined-environment-worker:v1',
+    contract: 'dpg:combined-environment-worker:v2',
     sourceSha,
     appEnvironment: environment,
     workerName,
@@ -86,8 +99,11 @@ async function createCandidate() {
     apps: {
       public: { entrypoint: 'public-worker/index.js', ...publicDigest },
       admin: {
-        route: '/admin', status: 503, runtime: 'static-unavailable',
+        entrypoint: 'admin-worker/index.js', basePath: '/admin', assetsBasePath: '/admin/',
         authentication: 'disabled', privateData: 'unavailable',
+        rscGlobalNamespace: 'dpg-rsc0',
+        rscGlobalNames: ['__dpg_rsc0_client_require__', '__dpg_rsc0_require__', '__dpg_rsc0_server_require__'],
+        ...adminDigest,
       },
     },
     assets: assetsDigest,
@@ -169,6 +185,22 @@ describe('Staging Worker trusted publication contract', () => {
     await expect(prepareEnvironmentWorkerPublication({
       artifactRoot: root, environment: 'staging', sourceSha, accountId: 'b255b2091ce23ca52c4de4a342ce9dd8',
     })).rejects.toThrow('ENVIRONMENT_WORKER_PUBLISH_ACCOUNT_MISMATCH')
+  })
+
+  it('rejects an Admin bundle whose declared RSC namespace was not applied', async () => {
+    const root = await createCandidate()
+    const adminPath = path.join(root, 'admin-worker/index.js')
+    const adminSource = await readFile(adminPath, 'utf8')
+    await writeFile(adminPath, adminSource.replace('__dpg_rsc0_server_require__', '__vite_rsc_server_require__'))
+    const manifestPath = path.join(root, 'candidate-manifest.json')
+    const manifest = JSON.parse(await readFile(manifestPath, 'utf8'))
+    const updatedAdmin = await digestDirectory(path.join(root, 'admin-worker'))
+    manifest.apps.admin = { ...manifest.apps.admin, ...updatedAdmin }
+    await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`)
+
+    await expect(prepareEnvironmentWorkerPublication({
+      artifactRoot: root, environment: 'staging', sourceSha, accountId: ACCOUNT_ID,
+    })).rejects.toThrow('ENVIRONMENT_WORKER_PUBLISH_ADMIN_RSC_NAMESPACE_INVALID')
   })
 
   it('rejects artifact tampering even when candidate metadata still names the reviewed SHA', async () => {

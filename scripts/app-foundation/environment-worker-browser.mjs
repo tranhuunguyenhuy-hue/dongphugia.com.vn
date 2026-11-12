@@ -122,8 +122,9 @@ async function checkApp(page, origin, expected, viewportName) {
     fail(`ENVIRONMENT_WORKER_BROWSER_CATALOGUE_SEARCH:${viewportName}`)
   }
 
-  const loginResponse = await page.goto(`${origin}/admin/login`, { waitUntil: 'domcontentloaded', timeout: 30000 })
-  if (loginResponse?.status() !== 503) fail(`ENVIRONMENT_WORKER_BROWSER_ADMIN_UNAVAILABLE_STATUS:${viewportName}`)
+  const adminResponse = await page.goto(`${origin}/admin/login`, { waitUntil: 'domcontentloaded', timeout: 30000 })
+  if (adminResponse?.status() !== 200) fail(`ENVIRONMENT_WORKER_BROWSER_ADMIN_RENDER_STATUS:${viewportName}`)
+  const loginResponse = adminResponse
   const loginHeaders = await loginResponse.allHeaders()
   if (loginHeaders['x-dpg-source-sha'] !== expected.sourceSha
     || !loginHeaders['x-robots-tag']?.includes('noindex')
@@ -134,22 +135,35 @@ async function checkApp(page, origin, expected, viewportName) {
     || loginHeaders['set-cookie']) {
     fail(`ENVIRONMENT_WORKER_BROWSER_ADMIN_IDENTITY:${viewportName}`)
   }
-  const adminBody = await page.locator('body').innerText()
-  if (await page.title() !== 'Admin không khả dụng'
-    || await page.getByRole('heading', { name: 'Admin không khả dụng trong môi trường này' }).count() !== 1
-    || !adminBody.includes('Không bật xác thực Production')
-    || !adminBody.includes('chỉ cho phép đọc catalogue công khai')
-    || await page.locator('form,script').count() !== 0) {
-    fail(`ENVIRONMENT_WORKER_BROWSER_ADMIN_UNAVAILABLE_CONTENT:${viewportName}`)
+  if (await page.getByRole('heading', { name: 'Admin sign-in shell' }).count() !== 1
+    || !(await page.getByRole('status').innerText()).includes('Đăng nhập bị tắt trong môi trường này')
+    || await page.locator('form').count() !== 1
+    || await page.locator('input,button').evaluateAll((elements) => elements.some((element) => !element.disabled))) {
+    fail(`ENVIRONMENT_WORKER_BROWSER_ADMIN_AUTH_DISABLED:${viewportName}`)
   }
   const loginLayout = await page.evaluate(() => ({ width: innerWidth, scrollWidth: document.documentElement.scrollWidth }))
   if (loginLayout.scrollWidth > loginLayout.width + 1) fail(`ENVIRONMENT_WORKER_BROWSER_ADMIN_OVERFLOW:${viewportName}`)
 
-  for (const path of ['/admin', '/admin/forgot-password', '/admin/reset-password', '/admin/api/health']) {
-    const response = await page.request.get(`${origin}${path}`, { maxRedirects: 0 })
-    if (response.status() !== 503 || response.headers()['x-dpg-private-data'] !== 'unavailable') {
-      fail(`ENVIRONMENT_WORKER_BROWSER_ADMIN_ROUTE_NOT_UNAVAILABLE:${viewportName}:${path}`)
-    }
+  const privatePage = await page.request.get(`${origin}/admin`, { maxRedirects: 0 })
+  const forgotPage = await page.request.get(`${origin}/admin/forgot-password`, { maxRedirects: 0 })
+  const resetPage = await page.request.get(`${origin}/admin/reset-password`, { maxRedirects: 0 })
+  const adminHealth = await page.request.get(`${origin}/admin/api/health`, { maxRedirects: 0 })
+  if (![301, 302, 303, 307, 308].includes(privatePage.status())
+    || !privatePage.headers().location?.includes('/admin/login')
+    || forgotPage.status() !== 200 || resetPage.status() !== 200 || adminHealth.status() !== 200
+    || [privatePage, forgotPage, resetPage, adminHealth].some((response) => response.headers()['set-cookie'])) {
+    fail(`ENVIRONMENT_WORKER_BROWSER_ADMIN_PRIVATE_BOUNDARY:${viewportName}`)
+  }
+  const healthBody = await adminHealth.json()
+  if (healthBody.application !== 'admin' || healthBody.status !== 'ok'
+    || Object.keys(healthBody).some((key) => /staff|customer|role|email|credential|database/i.test(key))) {
+    fail(`ENVIRONMENT_WORKER_BROWSER_ADMIN_HEALTH_LEAK:${viewportName}`)
+  }
+  const forgotBody = await forgotPage.text()
+  const resetBody = await resetPage.text()
+  if (!forgotBody.includes('Khôi phục tài khoản bị tắt') || !resetBody.includes('Đổi mật khẩu bị tắt')
+    || !forgotBody.includes('disabled') || !resetBody.includes('disabled')) {
+    fail(`ENVIRONMENT_WORKER_BROWSER_ADMIN_RECOVERY_NOT_DISABLED:${viewportName}`)
   }
 
   const adminRequest = requests.find((request) => request.pathname === '/admin/login')
@@ -158,7 +172,7 @@ async function checkApp(page, origin, expected, viewportName) {
   }
   if (assetResponses.some(({ status }) => status < 200 || status >= 400)
     || !assetResponses.some(({ pathname }) => pathname.startsWith('/_next/static/'))
-    || assetResponses.some(({ pathname }) => pathname.startsWith('/admin/_next/static/'))) {
+    || !assetResponses.some(({ pathname }) => pathname.startsWith('/admin/_next/static/'))) {
     fail(`ENVIRONMENT_WORKER_BROWSER_ASSET_LOAD_FAILED:${viewportName}`)
   }
 
@@ -175,6 +189,30 @@ async function checkApp(page, origin, expected, viewportName) {
     response.status() !== 405 || response.headers()['x-dpg-private-data'] !== 'unavailable')) {
     fail(`ENVIRONMENT_WORKER_BROWSER_ADMIN_SIDE_EFFECTS_NOT_BLOCKED:${viewportName}`)
   }
+
+  // Exercise actual SSR ordering in both directions and under concurrent requests.
+  const adminToPublic = await page.goto(`${origin}/admin/login`, { waitUntil: 'domcontentloaded', timeout: 30000 })
+  const publicAfterAdminPage = await page.goto(`${origin}/`, { waitUntil: 'domcontentloaded', timeout: 30000 })
+  if (adminToPublic?.status() !== 200 || publicAfterAdminPage?.status() !== 200
+    || publicAfterAdminPage.headers()['x-dpg-app'] !== 'public'
+    || !(await page.locator('body').innerText()).includes('Dữ liệu sản phẩm và giá được đọc trực tiếp')) {
+    fail(`ENVIRONMENT_WORKER_BROWSER_ADMIN_TO_PUBLIC_SSR:${viewportName}`)
+  }
+  const [concurrentPublic, concurrentAdmin] = await Promise.all([
+    page.request.get(`${origin}/`, { maxRedirects: 0 }),
+    page.request.get(`${origin}/admin/login`, { maxRedirects: 0 }),
+  ])
+  if (concurrentPublic.status() !== 200 || concurrentPublic.headers()['x-dpg-app'] !== 'public'
+    || concurrentAdmin.status() !== 200 || concurrentAdmin.headers()['x-dpg-app'] !== 'admin') {
+    fail(`ENVIRONMENT_WORKER_BROWSER_CONCURRENT_SSR:${viewportName}`)
+  }
+  const publicFirstPage = await page.goto(`${origin}/`, { waitUntil: 'domcontentloaded', timeout: 30000 })
+  const adminAfterPublicPage = await page.goto(`${origin}/admin/login`, { waitUntil: 'domcontentloaded', timeout: 30000 })
+  if (publicFirstPage?.status() !== 200 || adminAfterPublicPage?.status() !== 200
+    || adminAfterPublicPage.headers()['x-dpg-app'] !== 'admin') {
+    fail(`ENVIRONMENT_WORKER_BROWSER_PUBLIC_TO_ADMIN_SSR:${viewportName}`)
+  }
+
   const publicAfterAdminResponse = await page.request.get(`${origin}/`, { maxRedirects: 0 })
   if (publicAfterAdminResponse.status() !== 200
     || publicAfterAdminResponse.headers()['x-dpg-app'] !== 'public'
@@ -193,12 +231,13 @@ async function checkApp(page, origin, expected, viewportName) {
     publicScrollWidth: publicLayout.scrollWidth,
     adminWidth: loginLayout.width,
     adminScrollWidth: loginLayout.scrollWidth,
-    adminRoutes: ['GET /admin* -> 503 unavailable'],
+    adminRoutes: ['GET /admin/login -> rendered with auth disabled', 'GET /admin -> redirected to sign-in'],
     localAssetRequests: assetResponses.length,
     adminCookieExcludedFromPublic: true,
     adminCookieSentOnAdminPath: true,
     adminAuthentication: 'disabled',
     privateAdminData: 'unavailable',
+    adminSSR: 'passed-in-both-orders-and-concurrently',
     productionCatalogueCheckpoint: health.catalogueCheckpoint,
     listingProducts: listing.products.length,
     searchResults: search.results.length,

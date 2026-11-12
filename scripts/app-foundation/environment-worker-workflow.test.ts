@@ -7,7 +7,9 @@ const here = path.dirname(fileURLToPath(import.meta.url))
 const workflow = readFileSync(path.join(here, '../../.github/workflows/environment-worker-publish.yml'), 'utf8')
 const ciWorkflow = readFileSync(path.join(here, '../../.github/workflows/environment-worker-ci.yml'), 'utf8')
 const buildScript = readFileSync(path.join(here, 'build-environment-worker.mts'), 'utf8')
+const namespaceScript = readFileSync(path.join(here, 'namespace-admin-vite-rsc-globals.mjs'), 'utf8')
 const localRunner = readFileSync(path.join(here, 'run-local-preview.mjs'), 'utf8')
+const prBuildWorkflow = readFileSync(path.join(here, '../../.github/workflows/pr-preview-build.yml'), 'utf8')
 
 describe('Staging Worker publication workflow trust boundaries', () => {
   it('serializes one Staging target and gates pre-merge source at the exact approved PR head', () => {
@@ -39,8 +41,8 @@ describe('Staging Worker publication workflow trust boundaries', () => {
     expect(workflow).toContain('APP_WORKER_NAME: dpg-staging')
     expect(workflow).toContain('https://dpg-staging.tranhuunguyenhuy.workers.dev')
     expect(workflow).toContain('d54f3402b9d112ab64d6135e0e3f1fb1')
-    expect(workflow).toContain('fixed Production catalogue asset paths')
-    expect(workflow).toContain('Admin authentication, private data and writes are unavailable')
+    expect(workflow).toContain('fixed Production catalogue paths')
+    expect(workflow).toContain('Admin auth is disabled and private data remains unavailable')
   })
 
   it('keeps Preview local-only and uses one origin for Public and Admin', () => {
@@ -52,5 +54,20 @@ describe('Staging Worker publication workflow trust boundaries', () => {
     expect(buildScript).toContain('workers_dev: !target.localOnly')
     expect(localRunner).toContain("const origin = 'http://127.0.0.1:8787'")
     expect(localRunner).toContain("'dev', '--local'")
+    expect(prBuildWorkflow).toContain('name: PR App source build')
+    expect(prBuildWorkflow).toContain('APP_ORIGIN: http://127.0.0.1:8787')
+    expect(prBuildWorkflow).not.toContain('public-preview.invalid')
+    expect(prBuildWorkflow).not.toContain('actions/upload-artifact')
+    expect(prBuildWorkflow).not.toContain('PREVIEW_CLOUDFLARE_API_TOKEN')
+  })
+
+  it('namespaces Admin RSC globals before combining both framework runtimes', () => {
+    expect(buildScript).toContain('namespaceAdminViteRscGlobals')
+    expect(buildScript).toContain("contract: 'dpg:combined-environment-worker:v2'")
+    expect(namespaceScript).toContain('__vite_rsc_client_require__')
+    expect(namespaceScript).toContain('__vite_rsc_require__')
+    expect(namespaceScript).toContain('__vite_rsc_server_require__')
+    expect(namespaceScript).toContain('__dpg_rsc0_')
+    expect(namespaceScript).toContain('ADMIN_VITE_RSC_RUNTIME_GLOBAL_MISSING')
   })
 })

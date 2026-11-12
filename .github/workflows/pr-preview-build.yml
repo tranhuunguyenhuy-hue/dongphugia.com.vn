@@ -1,4 +1,4 @@
-name: PR Preview build
+name: PR App source build
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
@@ -23,27 +23,22 @@ jobs:
       - run: python3 -B -m unittest discover -s scripts/app-foundation -p test_prepare_pr_preview.py
       - run: npm ci
       - run: npm ci --prefix apps/public
-      - name: Build Public without provider credentials
+      - run: npm ci --prefix apps/admin
+      - name: Build Public with the Local Preview origin
         run: npm run build:public-worker
         env:
           APP_ENV: preview
           APP_BUILD_TARGET: public
-          APP_ORIGIN: https://public-preview.invalid
+          APP_ORIGIN: http://127.0.0.1:8787
           PREVIEW_NOINDEX: 'true'
           BUILD_SOURCE_SHA: ${{ github.event.pull_request.head.sha }}
-      - name: Build Admin without hosted credentials
+      - name: Build Admin with authentication disabled
         run: npm run build:admin
         env:
           APP_ENV: preview
           APP_BUILD_TARGET: admin
-          APP_ORIGIN: https://admin-preview.invalid
+          APP_ORIGIN: http://127.0.0.1:8787
           PREVIEW_NOINDEX: 'true'
           BUILD_SOURCE_SHA: ${{ github.event.pull_request.head.sha }}
-          NEXT_PUBLIC_SUPABASE_URL: https://supabase.invalid
-          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_preview_runtime_test
-      - uses: actions/upload-artifact@v4
-        with:
-          name: public-preview
-          path: apps/public/dist/
-          if-no-files-found: error
-          retention-days: 7
+          NEXT_PUBLIC_ADMIN_AUTH_ENABLED: 'false'
+          ADMIN_AUTH_ENABLED: 'false'

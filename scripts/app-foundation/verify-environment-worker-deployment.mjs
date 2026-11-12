@@ -55,7 +55,7 @@ async function verifyRuntime({ fetchImpl = fetch, origin, sourceSha }) {
     fail('ENVIRONMENT_WORKER_RUNTIME_PRODUCTION_CATALOGUE_SEARCH_INVALID')
   }
 
-  const adminResponse = await fetchChecked(fetchImpl, `${origin}/admin/login`, { cache: 'no-store' }, 503, sourceSha, 'admin')
+  const adminResponse = await fetchChecked(fetchImpl, `${origin}/admin/login`, { cache: 'no-store' }, 200, sourceSha, 'admin')
   if (adminResponse.headers.get('cache-control')?.toLowerCase().includes('private') !== true) {
     fail('ENVIRONMENT_WORKER_RUNTIME_ADMIN_CACHE_NOT_PRIVATE')
   }
@@ -65,24 +65,44 @@ async function verifyRuntime({ fetchImpl = fetch, origin, sourceSha }) {
     fail('ENVIRONMENT_WORKER_RUNTIME_ADMIN_PRIVATE_BOUNDARY_INVALID')
   }
   const adminHtml = await adminResponse.text()
-  if (!adminHtml.includes('Admin không khả dụng trong môi trường này')
-    || !adminHtml.includes('Không bật xác thực Production')
-    || /<form|<script|staff_context|SUPABASE_SERVICE_ROLE_KEY|DATABASE_URL/i.test(adminHtml)) {
-    fail('ENVIRONMENT_WORKER_RUNTIME_ADMIN_UNAVAILABLE_PAGE_INVALID')
+  if (!adminHtml.includes('Admin sign-in shell')
+    || !adminHtml.includes('Đăng nhập bị tắt trong môi trường này')
+    || !/disabled/.test(adminHtml)
+    || /staff_context|SUPABASE_SERVICE_ROLE_KEY|DATABASE_URL|dpg_v1_api/i.test(adminHtml)) {
+    fail('ENVIRONMENT_WORKER_RUNTIME_ADMIN_RENDERED_SHELL_INVALID')
   }
-  for (const pathname of ['/admin', '/admin/forgot-password', '/admin/reset-password', '/admin/api/health', '/admin/api/orders']) {
-    const response = await fetchChecked(fetchImpl, `${origin}${pathname}`, { cache: 'no-store' }, 503, sourceSha, 'admin')
-    if (response.headers.get('x-dpg-private-data') !== 'unavailable' || response.headers.has('set-cookie')) {
-      fail('ENVIRONMENT_WORKER_RUNTIME_ADMIN_PRIVATE_DATA_EXPOSED')
+  const privatePage = await fetchChecked(fetchImpl, `${origin}/admin`, { cache: 'no-store' }, 307, sourceSha, 'admin')
+  if (!privatePage.headers.get('location')?.includes('/admin/login') || privatePage.headers.has('set-cookie')) {
+    fail('ENVIRONMENT_WORKER_RUNTIME_ADMIN_PRIVATE_PAGE_NOT_GATED')
+  }
+  for (const [pathname, expectedStatus, disabledText] of [
+    ['/admin/forgot-password', 200, 'Khôi phục tài khoản bị tắt'],
+    ['/admin/reset-password', 200, 'Đổi mật khẩu bị tắt'],
+  ]) {
+    const response = await fetchChecked(fetchImpl, `${origin}${pathname}`, { cache: 'no-store' }, expectedStatus, sourceSha, 'admin')
+    const html = await response.text()
+    if (!html.includes(disabledText) || !html.includes('disabled') || response.headers.has('set-cookie')) {
+      fail('ENVIRONMENT_WORKER_RUNTIME_ADMIN_AUTH_SIDE_EFFECT_UI_NOT_DISABLED')
     }
   }
+  const healthResponse = await fetchChecked(fetchImpl, `${origin}/admin/api/health`, { cache: 'no-store' }, 200, sourceSha, 'admin')
+  const adminHealth = await healthResponse.json()
+  if (adminHealth.application !== 'admin' || adminHealth.status !== 'ok'
+    || Object.keys(adminHealth).some((key) => /staff|customer|role|email|credential|database/i.test(key))
+    || healthResponse.headers.has('set-cookie')) {
+    fail('ENVIRONMENT_WORKER_RUNTIME_ADMIN_HEALTH_LEAK')
+  }
+  const privateApi = await fetchChecked(fetchImpl, `${origin}/admin/api/orders`, { cache: 'no-store' }, 307, sourceSha, 'admin')
+  if (!privateApi.headers.get('location')?.includes('/admin/login') || privateApi.headers.has('set-cookie')) {
+    fail('ENVIRONMENT_WORKER_RUNTIME_ADMIN_PRIVATE_API_NOT_GATED')
+  }
 
-  const headResponse = await fetchChecked(fetchImpl, `${origin}/admin`, { method: 'HEAD', cache: 'no-store' }, 503, sourceSha, 'admin')
+  const headResponse = await fetchChecked(fetchImpl, `${origin}/admin/login`, { method: 'HEAD', cache: 'no-store' }, 200, sourceSha, 'admin')
   if ((await headResponse.text()) !== '') fail('ENVIRONMENT_WORKER_RUNTIME_ADMIN_HEAD_BODY_INVALID')
 
-  const unknownRoute = await fetchChecked(fetchImpl, `${origin}/admin/unknown`, { cache: 'no-store' }, 503, sourceSha, 'admin')
-  if (unknownRoute.headers.get('x-dpg-private-data') !== 'unavailable') {
-    fail('ENVIRONMENT_WORKER_RUNTIME_ADMIN_UNKNOWN_ROUTE_INVALID')
+  const unknownRoute = await fetchChecked(fetchImpl, `${origin}/admin/unknown`, { cache: 'no-store' }, 307, sourceSha, 'admin')
+  if (!unknownRoute.headers.get('location')?.includes('/admin/login')) {
+    fail('ENVIRONMENT_WORKER_RUNTIME_ADMIN_UNKNOWN_ROUTE_NOT_GATED')
   }
 
   const callbackResponse = await fetchChecked(fetchImpl,
@@ -100,10 +120,13 @@ async function verifyRuntime({ fetchImpl = fetch, origin, sourceSha }) {
       searchResults: search.results.length,
       unverifiedBlogStatus: blogResponse.status,
     },
-    admin: { status: adminResponse.status, authentication: 'disabled', privateData: 'unavailable', noindex: true },
+    admin: { status: adminResponse.status, authentication: 'disabled', privateData: 'unavailable', noindex: true, privatePages: 'redirect-to-disabled-login' },
     adminBoundary: {
-      status: 503,
-      unavailableRoutes: ['/admin', '/admin/login', '/admin/forgot-password', '/admin/reset-password', '/admin/api/health', '/admin/api/orders'],
+      loginShellStatus: 200,
+      privatePageStatus: privatePage.status,
+      disabledRecoveryRoutes: ['/admin/forgot-password', '/admin/reset-password'],
+      publicHealthStatus: healthResponse.status,
+      privateApiStatus: privateApi.status,
       callbackStatus: callbackResponse.status,
       hostedMutationProbe: 'not-performed',
     },

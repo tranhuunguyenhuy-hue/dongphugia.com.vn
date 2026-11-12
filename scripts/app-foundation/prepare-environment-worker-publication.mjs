@@ -23,6 +23,16 @@ const PRODUCTION_CATALOGUE_PATHS = [
   '/__catalogue/v1/products/{bucket}.json',
   '/__catalogue/v1/search/{shard}.json',
 ]
+const ADMIN_RSC_GLOBALS = [
+  '__dpg_rsc0_client_require__',
+  '__dpg_rsc0_require__',
+  '__dpg_rsc0_server_require__',
+]
+const UNNAMESPACED_ADMIN_RSC_GLOBALS = [
+  '__vite_rsc_client_require__',
+  '__vite_rsc_require__',
+  '__vite_rsc_server_require__',
+]
 
 function fail(code) {
   throw new Error(code)
@@ -79,7 +89,7 @@ export async function prepareEnvironmentWorkerPublication({
   const originalConfigBytes = await readFile(path.join(root, 'wrangler.json'))
   const originalConfig = JSON.parse(originalConfigBytes.toString('utf8'))
   const origin = target.origin
-  if (!isObject(manifest) || manifest.contract !== 'dpg:combined-environment-worker:v1'
+  if (!isObject(manifest) || manifest.contract !== 'dpg:combined-environment-worker:v2'
     || manifest.sourceSha !== sourceSha || manifest.appEnvironment !== environment
     || manifest.workerName !== target.workerName || manifest.origin !== origin
     || manifest.dataMode !== 'production-published-public-catalogue'
@@ -105,11 +115,19 @@ export async function prepareEnvironmentWorkerPublication({
     fail('ENVIRONMENT_WORKER_PUBLISH_MANIFEST_IDENTITY_INVALID')
   }
   if (!isObject(manifest.apps) || manifest.apps.public?.entrypoint !== 'public-worker/index.js'
-    || manifest.apps.admin?.route !== '/admin' || manifest.apps.admin?.status !== 503
-    || manifest.apps.admin?.runtime !== 'static-unavailable'
+    || manifest.apps.admin?.entrypoint !== 'admin-worker/index.js'
+    || manifest.apps.admin?.basePath !== '/admin'
+    || manifest.apps.admin?.assetsBasePath !== '/admin/'
     || manifest.apps.admin?.authentication !== 'disabled'
-    || manifest.apps.admin?.privateData !== 'unavailable') {
+    || manifest.apps.admin?.privateData !== 'unavailable'
+    || manifest.apps.admin?.rscGlobalNamespace !== 'dpg-rsc0'
+    || JSON.stringify(manifest.apps.admin?.rscGlobalNames) !== JSON.stringify(ADMIN_RSC_GLOBALS)) {
     fail('ENVIRONMENT_WORKER_PUBLISH_APP_MOUNT_INVALID')
+  }
+  if (!SHA256.test(manifest.apps.admin.sha256 || '')
+    || !Number.isSafeInteger(manifest.apps.admin.fileCount) || manifest.apps.admin.fileCount < 1
+    || !Number.isSafeInteger(manifest.apps.admin.totalBytes) || manifest.apps.admin.totalBytes < 1) {
+    fail('ENVIRONMENT_WORKER_PUBLISH_ADMIN_DIGEST_MANIFEST_INVALID')
   }
   for (const section of [manifest.apps.public, manifest.assets]) {
     if (!isObject(section) || !SHA256.test(section.sha256 || '')
@@ -130,30 +148,50 @@ export async function prepareEnvironmentWorkerPublication({
 
   const actualDirectories = await Promise.all([
     digestDirectory(path.join(root, 'public-worker')),
+    digestDirectory(path.join(root, 'admin-worker')),
     digestDirectory(path.join(root, 'assets')),
   ])
-  for (const [index, section] of [manifest.apps.public, manifest.assets].entries()) {
+  for (const [index, section] of [manifest.apps.public, manifest.apps.admin, manifest.assets].entries()) {
     const actual = actualDirectories[index]
     if (actual.sha256 !== section.sha256 || actual.fileCount !== section.fileCount
       || actual.totalBytes !== section.totalBytes) {
       fail('ENVIRONMENT_WORKER_PUBLISH_CONTENT_DIGEST_MISMATCH')
     }
   }
+  const adminRscFiles = [
+    ...actualDirectories[1].files.map((file) => path.join(root, 'admin-worker', file)),
+    ...actualDirectories[2].files
+      .filter((file) => file.startsWith(`admin${path.sep}`))
+      .map((file) => path.join(root, 'assets', file)),
+  ].filter((file) => /\.(?:m?js)$/.test(file))
+  const adminRscGlobalsFound = new Set()
+  for (const file of adminRscFiles) {
+    const source = await readFile(file, 'utf8')
+    for (const globalName of UNNAMESPACED_ADMIN_RSC_GLOBALS) {
+      if (source.includes(globalName)) fail('ENVIRONMENT_WORKER_PUBLISH_ADMIN_RSC_NAMESPACE_INVALID')
+    }
+    for (const globalName of ADMIN_RSC_GLOBALS) {
+      if (source.includes(globalName)) adminRscGlobalsFound.add(globalName)
+    }
+  }
+  if (ADMIN_RSC_GLOBALS.some((globalName) => !adminRscGlobalsFound.has(globalName))) {
+    fail('ENVIRONMENT_WORKER_PUBLISH_ADMIN_RSC_NAMESPACE_INVALID')
+  }
   const [workerBytes, dispatchBytes] = await Promise.all([
     readFile(path.join(root, 'worker.mjs')),
     readFile(path.join(root, 'dispatch.mjs')),
   ])
-  if (/from\s+['"]\.\/admin-worker\//.test(workerBytes.toString('utf8'))
+  if (!/from\s+['"]\.\/admin-worker\//.test(workerBytes.toString('utf8'))
     || sha256(workerBytes) !== manifest.dispatcher.sha256
     || sha256(dispatchBytes) !== manifest.dispatcher.dispatchSha256) {
     fail('ENVIRONMENT_WORKER_PUBLISH_DISPATCHER_DIGEST_MISMATCH')
   }
-  if (!actualDirectories[1].files.some((file) => file.startsWith(`_next${path.sep}static${path.sep}`))
-    || actualDirectories[1].files.some((file) => file.startsWith(`admin${path.sep}`))) {
+  if (!actualDirectories[2].files.some((file) => file.startsWith(`_next${path.sep}static${path.sep}`))
+    || !actualDirectories[2].files.some((file) => file.startsWith(`admin${path.sep}_next${path.sep}static${path.sep}`))) {
     fail('ENVIRONMENT_WORKER_PUBLISH_STATIC_MOUNT_INVALID')
   }
 
-  const allowedRootEntries = new Set(['worker.mjs', 'dispatch.mjs', 'wrangler.json', 'candidate-manifest.json', 'public-worker', 'assets'])
+  const allowedRootEntries = new Set(['worker.mjs', 'dispatch.mjs', 'wrangler.json', 'candidate-manifest.json', 'public-worker', 'admin-worker', 'assets'])
   const rootEntries = await readdir(root, { withFileTypes: true })
   if (rootEntries.some((entry) => !allowedRootEntries.has(entry.name) || entry.isSymbolicLink())) {
     fail('ENVIRONMENT_WORKER_PUBLISH_ROOT_CONTENT_INVALID')
@@ -213,8 +251,9 @@ export async function prepareEnvironmentWorkerPublication({
     accountId: EXPECTED_ACCOUNT_ID,
     apps: {
       publicSha256: actualDirectories[0].sha256,
-      admin: 'static-unavailable-private-data-disabled',
-      assetsSha256: actualDirectories[1].sha256,
+      adminSha256: actualDirectories[1].sha256,
+      admin: 'ssr-rendered-auth-disabled-private-data-unavailable',
+      assetsSha256: actualDirectories[2].sha256,
     },
     dataMode: 'production-published-public-catalogue',
     authentication: 'disabled-without-provider-config',

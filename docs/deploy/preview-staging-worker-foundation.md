@@ -4,11 +4,11 @@
 
 | Environment | Runtime | Public | Admin | Data |
 | --- | --- | --- | --- | --- |
-| Local Preview | Local Wrangler at `http://127.0.0.1:8787` | `/` | `/admin` returns a static 503 unavailable page | Read-only GETs of Production-published public catalogue assets |
-| Staging | One Cloudflare Worker, `dpg-staging`, in account `d54f3402b9d112ab64d6135e0e3f1fb1` | `/` | `/admin` returns the same static 503 unavailable page | Same direct GET path to Production's published public catalogue |
+| Local Preview | Local Wrangler at `http://127.0.0.1:8787` | `/` | `/admin` renders the Admin sign-in shell; private routes redirect to it | Read-only GETs of Production-published public catalogue assets |
+| Staging | One Cloudflare Worker, `dpg-staging`, in account `d54f3402b9d112ab64d6135e0e3f1fb1` | `/` | `/admin` renders the same sign-in shell; private routes redirect to it | Same direct GET path to Production's published public catalogue |
 
-Run Local Preview with `npm run preview:local`. It builds the Public Worker,
-strips provider credentials and copied catalogue selectors from its child
+Run Local Preview with `npm run preview:local`. It builds the Public and Admin
+Workers, strips provider credentials and copied catalogue selectors from its child
 environment, then runs Wrangler locally. Both routes share one origin. There
 is no `dpg-preview` Worker, Preview workers.dev URL, Preview publisher, or
 Preview Cloudflare credential environment.
@@ -36,59 +36,81 @@ Production pages.
 
 ## Admin boundary and same-origin limits
 
-Every GET or HEAD under `/admin` returns a no-script static 503 explaining that
-Production authentication and private staff/customer data are unavailable.
-Admin SSR, Auth, recovery, session and callback handlers are not imported into
-the Worker. No Supabase, service-role, database or Auth-admin credential is
-bound. All non-GET/HEAD requests receive 405 before a route or asset handler is
-called. This boundary is not full Admin readiness; the source Admin app is
-type-checked separately, and its private-data workflows are not accepted here.
+The combined Worker imports the Admin SSR renderer and serves the actual login,
+recovery and generic health pages under `/admin`. Authentication is explicitly
+disabled at build and runtime, the login and recovery controls are disabled,
+and protected routes redirect to the mounted sign-in page. The public health
+route reveals only the application name and `ok`; staff/customer data is not
+loaded. Auth callback/confirm/logout handlers return 503 before contacting
+Supabase. No Supabase URL or key, service-role, database or Auth-admin credential
+is bound. Every non-GET/HEAD request receives 405 before asset or app dispatch.
+Local tests verify this boundary without sending writes to Production. This is
+an Admin rendering check, not Admin authentication or private-data acceptance.
+
+The Public and Admin Vite RSC bundles register loader functions on `globalThis`.
+When bundled into one Worker, an Admin request overwrote Public's cached loader
+registration and a following Public SSR request failed. The build now rewrites
+only Admin's three generated RSC loader globals to the `dpg-rsc0` namespace,
+keeps identifier width stable for source maps, and records that contract in the
+version 2 artifact manifest. The build fails if expected globals are missing;
+the publisher checks that the artifact actually contains the isolated names.
+Desktop/mobile Worker checks exercise Public → Admin → Public, the reverse
+order, and concurrent SSR.
 
 Public and Admin paths share a browser origin. `Path=/admin` on a cookie would
 not provide browser isolation: same-origin Public code can still request
 `/admin`, and path only controls which requests carry the cookie. The
-unavailable Admin page contains no data or script and applies a restrictive
-Content Security Policy. Keep private data unavailable until there is a
-verified, safely authenticated read path. Do not add a general Production
-proxy or a caller-controlled upstream URL.
+Admin SSR pages are marked private/no-store and noindex. Keep private data
+unavailable until there is a verified, safely authenticated read path. Do not
+add a general Production proxy or a caller-controlled upstream URL.
 
 ## Build, checks and Staging publisher
 
 `.github/workflows/environment-worker-ci.yml` builds Local Preview and Staging
 without provider credentials, runs focused boundary tests and app type checks,
 and uses desktop/mobile browsers against a local Worker. It verifies actual
-Production catalogue GETs, noindex and asset behavior, the Admin unavailable
-page, local write denial, and successful Public SSR after Admin paths.
+Production catalogue GETs, noindex and both app asset paths, Admin SSR with Auth
+disabled, private-route redirects, local write denial, and Public SSR before,
+after and concurrently with Admin SSR. `.github/workflows/pr-preview-build.yml`
+is a source build only: it uses the local Preview origin and emits no deployable
+Cloudflare Preview artifact.
 
 `.github/workflows/environment-worker-publish.yml` accepts Staging only. Its
 build job checks out the exact SHA, installs locked dependencies, runs focused
 checks and browser acceptance without Cloudflare credentials, and uploads a
-data-only artifact. A serialized publication job on trusted default-branch
-code verifies the artifact digests, rejects any Admin Worker import or Admin
-asset, replaces deployment configuration with a narrow allowlist, then runs
-pinned Wrangler with the Staging token. Candidate scripts never run with that
-token. Runtime acceptance uses GET requests only; write denial is tested with
-local Worker and mock tests, never against Production.
+data-only artifact containing Public and Admin SSR plus both asset mounts. The
+serialized publication job on trusted default-branch code verifies every
+digest, validates the Admin auth-disabled manifest, replaces deployment
+configuration with a narrow allowlist, then runs pinned Wrangler with the
+Staging token. Candidate scripts never run with that token. Runtime acceptance
+uses GET/HEAD requests only; write denial is tested with local Worker and mock
+tests, never against Production.
 
-The token scope check requires the recorded
-`CLOUDFLARE_WORKER_POLICY_SCOPE=individual-worker:dpg-staging:editor` value and
-checks that the selected Staging Worker is readable. The value is a manual
-attestation, not API proof of token scope. A selected-Worker GET or Production
-403/404 cannot prove absence of write authority. Before the first publication,
-the account owner must review evidence that the token policy is limited to
-**Individual Workers → `dpg-staging` → Editor**. Do not add token-management
-permissions just to query the token's own policy. If this evidence is not
-available, publication remains blocked; do not guess resource scope or probe
-Production writes.
+The token-scope preflight checks that `dpg-staging` is readable and requires a
+separate review attestation for **Individual Workers → `dpg-staging` → Editor**.
+The attestation is not API-verified; the current token cannot be treated as
+least-privilege until supported Cloudflare policy details are reviewed and
+recorded by the coordinator. A selected-Worker GET, Production 403/404 or
+failed read does not prove absence of write authority. Do not add token
+management permissions to the deployment token, guess resource-map syntax or
+probe Production writes. If evidence is unavailable, keep publication blocked.
 
 ## Staging setup packet
 
-Read-only inventory on 2026-11-12 found the account workers.dev subdomain
-`tranhuunguyenhuy`; `dongphugia-v1-public-production` was the only Worker in
-account `d54f3402b9d112ab64d6135e0e3f1fb1`. The Production `/api/health` source
-SHA was `8c67d253c64c7bb44435984f3f736272c0326c4b`. Its published catalogue
-manifest used contract `dpg:public-catalogue-snapshot:v1` and checkpoint
-`87e4b06b73ab20df11d95021e1da8bd8f497ee5e`. Re-read both before Staging
+Read-only Cloudflare API inventory on 2026-11-12 confirmed account workers.dev
+subdomain `tranhuunguyenhuy`; `dongphugia-v1-public-production` was the only
+Worker and `dpg-staging` was absent in account `d54f3402b9d112ab64d6135e0e3f1fb1`.
+The Production Worker had one active version and plain-text bindings for its
+production identity plus the Assets binding; inventory exposed no other
+bindings. The public production hostname is served by this Worker. A live GET
+to `https://www.dongphugia.vn/api/health` returned source SHA
+`8c67d253c64c7bb44435984f3f736272c0326c4b`, mode `verified-snapshot`, 5,223
+products and 4,853 listing products. A separate direct GET of
+`/__catalogue/v1/manifest.json` returned contract
+`dpg:public-catalogue-snapshot:v1`, checkpoint
+`87e4b06b73ab20df11d95021e1da8bd8f497ee5e` and M3 run `40739074902`. This is
+the currently published Production catalogue source, not a direct database
+read. Re-read the live health, manifest and Worker inventory before Staging
 activation; these observed values are not permanent constants.
 
 The only required Cloudflare resource change is one `dpg-staging` Worker in
@@ -99,17 +121,21 @@ Production resource change is required. This PR does not create or deploy the
 Worker; the coordinator must sequence provider operations after reviewing the
 exact candidate artifact and token-policy evidence.
 
-The publisher workflow is available only after its trusted workflow code is
-merged to `main`. Once that separate merge gate is approved, dispatch it from
+The Staging publisher workflow is available only after its trusted workflow
+code is merged to `main`. Once that separate merge gate is approved, dispatch it from
 `main` with `environment=staging`, the exact reviewed source SHA and either
 `source_kind=main` or `source_kind=approved-pr`. The selected Staging
 environment supplies one API token after policy evidence is reviewed. No
 Cloudflare Preview Worker or Preview token is needed. Before publication,
 record the candidate SHA and artifact digest, account inventory, Production
 baseline and prior Staging version if one exists. After deployment, verify the
-runtime SHA, one active version, noindex, live catalogue checkpoint and Admin
-unavailable response. If first activation fails, roll back only the
-`dpg-staging` Worker; never route or restore traffic through Production.
+runtime SHA, one active version, noindex, live catalogue checkpoint, Admin
+login/recovery rendering and private-route redirects. Local browser tests cover
+write denial; do not send mutation probes to the Worker or Production. If first
+activation fails, remove or disable only `dpg-staging` and verify the Production
+Worker, routes and data source remain unchanged. Logs are enabled without
+persistence and traces remain disabled; hosted logging has not yet been
+exercised.
 
 ## Limits and paused work
 
