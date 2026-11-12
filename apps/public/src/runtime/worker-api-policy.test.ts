@@ -12,7 +12,7 @@ let worker: typeof import('../../worker')['default']
 const environment = {
     APP_ENV: 'preview',
     APP_BUILD_TARGET: 'public',
-    APP_ORIGIN: 'https://preview.invalid',
+    APP_ORIGIN: 'http://127.0.0.1:8787',
     PREVIEW_NOINDEX: 'true',
 }
 
@@ -26,7 +26,7 @@ beforeEach(() => mocks.vinextFetch.mockClear())
 
 describe('public Worker API route ownership', () => {
     it('routes only the owned listing read endpoint through to the public app', async () => {
-        const request = new Request('https://preview.invalid/api/catalogue/listings/thiet-bi-bep/voi-rua-chen?page=1')
+        const request = new Request('http://127.0.0.1:8787/api/catalogue/listings/thiet-bi-bep/voi-rua-chen?page=1')
         const response = await worker.fetch(request, environment, {} as ExecutionContext)
         expect(response.status).toBe(200)
         expect(await response.json()).toEqual({ ok: true })
@@ -37,12 +37,12 @@ describe('public Worker API route ownership', () => {
 
     it('blocks write methods and unowned API paths before the app handler', async () => {
         const write = await worker.fetch(
-            new Request('https://preview.invalid/api/catalogue/listings/thiet-bi-bep/voi-rua-chen', { method: 'POST' }),
+            new Request('http://127.0.0.1:8787/api/catalogue/listings/thiet-bi-bep/voi-rua-chen', { method: 'POST' }),
             environment,
             {} as ExecutionContext,
         )
         const unknown = await worker.fetch(
-            new Request('https://preview.invalid/api/private/export'),
+            new Request('http://127.0.0.1:8787/api/private/export'),
             environment,
             {} as ExecutionContext,
         )

@@ -6,9 +6,6 @@ import { describe, expect, it } from 'vitest'
 const root = process.cwd()
 const workflow = readFileSync(resolve(root, '.github/workflows/migration-preview.yml'), 'utf8')
 const changeGate = readFileSync(resolve(root, 'scripts/app-foundation/preview-change-gate.mjs'), 'utf8')
-const candidateScript = readFileSync(resolve(root, 'scripts/app-foundation/preview-candidate.mts'), 'utf8')
-const previewPublication = readFileSync(resolve(root, 'scripts/app-foundation/cloudflare-preview-publication.mjs'), 'utf8')
-const realPreviewProof = readFileSync(resolve(root, 'scripts/app-foundation/real-preview-proof.mjs'), 'utf8')
 const foundationDoc = readFileSync(resolve(root, 'docs/deploy/leo-563-app-foundation.md'), 'utf8')
 const contracts = readFileSync(resolve(root, 'packages/app-contracts/src/index.ts'), 'utf8')
 const publicConfig = readFileSync(resolve(root, 'apps/public/next.config.ts'), 'utf8')
@@ -93,63 +90,26 @@ describe('LEO-563 application foundation contract', () => {
     }
   })
 
-  it('gates only material app changes and isolates the approved Worker version upload from legacy publication', () => {
+  it('keeps the current app CI local-only and removes the old Cloudflare Preview publisher', () => {
     for (const marker of [
       'repo-code-gate:',
       'preview_required',
       'apps/public/',
       'apps/admin/',
       'packages/app-contracts/',
-      'app-preview-artifact:',
-      'npm run build:public-worker',
-      'npm run build:admin',
-      'app:create-candidate',
-      'app:verify-candidate',
-      'sourceCommit',
-      'publicArtifactSha256',
-      'adminArtifactSha256',
+      'Local-only Preview gate',
+      'without external Preview publication',
       'SKIPPED_UNRELATED_CHANGE',
-      'BLOCKED_BY_OWNER_GATE',
-      'OWNER_APPROVED_EXACT_PR_PREVIEW_UPLOAD',
-      'REAL_PUBLIC_PREVIEW_PASS',
-      'Production custom domain/DNS/traffic: unchanged.',
-    ]) expect(`${workflow}\n${changeGate}\n${candidateScript}`).toContain(marker)
+    ]) expect(`${workflow}\n${changeGate}`).toContain(marker)
 
-    for (const forbidden of [
-      'pages project create',
-      'pages deploy',
-      'cloudflare/wrangler-action',
-      'wrangler deploy',
-      'deployments: write',
-      'PRODUCTION_DATABASE_URL',
-    ]) expect(workflow.toLowerCase()).not.toContain(forbidden.toLowerCase())
-
-    expect(workflow.match(/secrets\.CLOUDFLARE_READONLY_DISCOVERY_TOKEN/g)).toHaveLength(1)
-    expect(workflow.match(/secrets\.CLOUDFLARE_LEO563_PREVIEW_TOKEN/g)).toHaveLength(5)
-    expect(workflow).not.toContain('secrets.CLOUDFLARE_API_TOKEN')
-    expect(workflow).toContain('cloudflare-readonly-discovery.mjs')
-    expect(workflow.match(/versions upload/g)).toHaveLength(2)
-    expect(workflow).toContain('--preview-alias "pr-$PR_NUMBER"')
-    expect(previewPublication).toContain("const WORKER_NAME = 'dongphugia-v1-public-preview'")
-    expect(previewPublication).toContain('LEO563_PREVIEW_PRODUCTION_HOST_FORBIDDEN')
-    expect(previewPublication).toContain('LEO563_PREVIEW_REMOTE_BINDING_OR_ROUTE_FORBIDDEN')
-    expect(realPreviewProof).toContain("!url.hostname.endsWith('.workers.dev')")
+    expect(workflow).not.toContain('workflow_dispatch:')
+    expect(workflow).not.toMatch(/CLOUDFLARE|WRANGLER|workers\.dev|versions upload|wrangler deploy/i)
+    expect(workflow).not.toContain('dongphugia-v1-public-preview')
   })
 
-  it('records the approved one-shot Preview gate and deferred feature work', () => {
-    for (const marker of [
-      'no Supabase',
-      'sanitized read-only',
-      'dongphugia-v1-public-preview',
-      'CLOUDFLARE_LEO563_PREVIEW_TOKEN',
-      'preview URLs',
-      'Workers Free',
-      'LEO-564',
-      'LEO-565',
-      'LEO-566',
-      'LEO-572',
-      'https://www.dongphugia.vn',
-      'https://admin.dongphugia.vn',
-    ]) expect(foundationDoc.toLowerCase()).toContain(marker.toLowerCase())
+  it('marks the earlier independent Cloudflare Preview plan as historical', () => {
+    expect(foundationDoc).toContain('(historical)')
+    expect(foundationDoc).toContain('Superseded for current Preview and Staging by PR #294')
+    expect(foundationDoc).toContain('preview-staging-worker-foundation.md')
   })
 })

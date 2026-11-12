@@ -12,9 +12,7 @@
     "app/**/*.tsx",
     "src/**/*.ts",
     "src/**/*.tsx",
-    "../../packages/app-contracts/src/**/*.ts",
-    ".next/types/**/*.ts",
-    ".next/dev/types/**/*.ts"
+    "../../packages/app-contracts/src/**/*.ts"
   ],
   "exclude": ["node_modules"]
 }

@@ -33,7 +33,7 @@ export const PUBLIC_EDGE_CACHE_CONTROL = `public, max-age=${PUBLIC_EDGE_CACHE_SE
 export const PUBLIC_PREVIEW_ROBOTS_HEADER = 'noindex, nofollow'
 
 export function assertPublicRuntime(request: Request, environment: PublicWorkerEnvironment) {
-  if (environment.APP_ENV === 'preview') {
+  if (environment.APP_ENV === 'preview' || environment.APP_ENV === 'staging') {
     assertPreviewRuntime(request, environment)
     return
   }
@@ -57,12 +57,17 @@ export function assertPublicRuntime(request: Request, environment: PublicWorkerE
 }
 
 export function robotsHeader(request: Request, environment: PublicWorkerEnvironment) {
-  return environment.APP_ENV === 'preview' || new URL(request.url).hostname.endsWith('.workers.dev')
+  return environment.APP_ENV === 'preview' || environment.APP_ENV === 'staging'
+    || new URL(request.url).hostname.endsWith('.workers.dev')
     ? PUBLIC_PREVIEW_ROBOTS_HEADER : null
 }
 
 export function assertPreviewRuntime(request: Request, environment: PublicWorkerEnvironment) {
-  const hostname = new URL(request.url).hostname.toLowerCase()
+  const requestUrl = new URL(request.url)
+  const hostname = requestUrl.hostname.toLowerCase()
+  if (PRODUCTION_HOSTS.has(hostname) || hostname.endsWith('.dongphugia.vn')) {
+    throw new Error('PUBLIC_WORKER_PREVIEW_PRODUCTION_HOST_FORBIDDEN')
+  }
   let configuredOrigin: URL
   try {
     configuredOrigin = new URL(environment.APP_ORIGIN)
@@ -70,17 +75,28 @@ export function assertPreviewRuntime(request: Request, environment: PublicWorker
     throw new Error('PUBLIC_WORKER_PREVIEW_ORIGIN_INVALID')
   }
   if (
-    environment.APP_ENV !== 'preview' ||
+    !['preview', 'staging'].includes(environment.APP_ENV) ||
     environment.APP_BUILD_TARGET !== 'public' ||
     environment.PREVIEW_NOINDEX !== 'true'
   ) throw new Error('PUBLIC_WORKER_PREVIEW_CONFIGURATION_REQUIRED')
+  const localPreview = environment.APP_ENV === 'preview'
+    && configuredOrigin.protocol === 'http:'
+    && ['localhost','127.0.0.1'].includes(configuredOrigin.hostname)
+  const stagingOrigin = environment.APP_ENV === 'staging'
+    && configuredOrigin.protocol === 'https:'
+    && configuredOrigin.hostname === 'dpg-staging.tranhuunguyenhuy.workers.dev'
+  const localRequest = requestUrl.protocol === 'http:'
+    && ['localhost', '127.0.0.1'].includes(requestUrl.hostname)
+  const stagingRequest = stagingOrigin && requestUrl.origin === configuredOrigin.origin
   if (
-    configuredOrigin.protocol !== 'https:' ||
+    !(localPreview || stagingOrigin) ||
     configuredOrigin.username ||
     configuredOrigin.password ||
     configuredOrigin.pathname !== '/' ||
     configuredOrigin.search ||
     configuredOrigin.hash ||
+    (localPreview && !localRequest) ||
+    (stagingOrigin && !localRequest && !stagingRequest) ||
     configuredOrigin.hostname === 'dongphugia.vn' ||
     configuredOrigin.hostname.endsWith('.dongphugia.vn')
   ) throw new Error('PUBLIC_WORKER_PREVIEW_ORIGIN_INVALID')
@@ -88,9 +104,6 @@ export function assertPreviewRuntime(request: Request, environment: PublicWorker
     if (PRIVILEGED_RUNTIME_BINDING_PATTERN.test(name)) {
       throw new Error(`PUBLIC_WORKER_PRIVILEGED_BINDING_FORBIDDEN:${name}`)
     }
-  }
-  if (PRODUCTION_HOSTS.has(hostname) || hostname.endsWith('.dongphugia.vn')) {
-    throw new Error('PUBLIC_WORKER_PREVIEW_PRODUCTION_HOST_FORBIDDEN')
   }
 }
 

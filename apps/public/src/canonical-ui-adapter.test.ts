@@ -35,7 +35,7 @@ describe('Cloudflare canonical Public UI adapter', () => {
     expect(contactComponent).not.toContain('<form')
   })
 
-  it('labels synthetic product fixtures while showing the frozen public Blog snapshot', async () => {
+  it('labels isolated synthetic test fixtures and omits the unverified Blog snapshot', async () => {
     const [banners, data] = await Promise.all([
       getPublicHomeBanners(),
       getPublicHomeContent(),
@@ -51,9 +51,7 @@ describe('Cloudflare canonical Public UI adapter', () => {
     expect(data.previewNotice).toMatch(/minh họa/i)
     expect(data.previewNotice).toMatch(/không phải dữ liệu/i)
     expect(data.previewNotice).toMatch(/liên kết sản phẩm\/danh mục chỉ là fixture kiểm thử/i)
-    expect(data.posts).toHaveLength(3)
-    expect(data.posts.every(post => Boolean(post.thumbnailUrl))).toBe(true)
-    expect(data.posts[2].thumbnailUrl).toMatch(/^https:\/\/dpg-products\.b-cdn\.net\//)
+    expect(data.posts).toEqual([])
     expect(() => JSON.stringify({ banners, ...data })).not.toThrow()
   })
 

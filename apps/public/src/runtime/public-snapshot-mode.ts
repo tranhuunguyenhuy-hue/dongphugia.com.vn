@@ -7,4 +7,8 @@ export function publicSnapshotCheckpoint():string|null {
   if(!/^[a-f0-9]{40}$/.test(value)) throw new Error('PUBLIC_CATALOGUE_CHECKPOINT_INVALID')
   return value
 }
-export function usesPublicSnapshot() { return publicSnapshotCheckpoint()!==null }
+export function usesProductionPublishedCatalogue() {
+  return (process.env.APP_ENV === 'preview' || process.env.APP_ENV === 'staging')
+    && process.env.PUBLIC_CATALOGUE_SOURCE === 'production-published-snapshot'
+}
+export function usesPublicSnapshot() { return publicSnapshotCheckpoint()!==null || usesProductionPublishedCatalogue() }

@@ -21,6 +21,8 @@ describe('Admin Supabase SSR proxy session boundary', () => {
   beforeEach(() => {
     vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://supabase.invalid')
     vi.stubEnv('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY', 'sb_publishable_test')
+    vi.stubEnv('NEXT_PUBLIC_ADMIN_AUTH_ENABLED', 'true')
+    vi.stubEnv('ADMIN_BASE_PATH', '')
     getClaims.mockReset()
     createServerClient.mockReset()
     createServerClient.mockImplementation(() => ({ auth: { getClaims } }))
@@ -50,6 +52,20 @@ describe('Admin Supabase SSR proxy session boundary', () => {
     expect(response.headers.get('x-content-type-options')).toBe('nosniff')
   })
 
+  it('keeps Preview authentication disabled without calling Supabase for protected routes or callbacks', async () => {
+    vi.stubEnv('NEXT_PUBLIC_ADMIN_AUTH_ENABLED', 'false')
+    vi.stubEnv('ADMIN_BASE_PATH', '/admin')
+
+    const protectedResponse = await updateAdminSession(request('/admin/orders'))
+    const callbackResponse = await updateAdminSession(request('/admin/auth/callback'))
+
+    expect(protectedResponse.status).toBe(307)
+    expect(new URL(protectedResponse.headers.get('location')!).pathname).toBe('/admin/login')
+    expect(callbackResponse.status).toBe(503)
+    expect(createServerClient).not.toHaveBeenCalled()
+    expect(getClaims).not.toHaveBeenCalled()
+  })
+
   it('passes an existing session and persists SSR cookie refreshes', async () => {
     getClaims.mockResolvedValue({ data: { claims: { sub: 'active-user' } }, error: null })
     createServerClient.mockImplementation((_url, _key, options) => {
@@ -64,5 +80,19 @@ describe('Admin Supabase SSR proxy session boundary', () => {
     expect(response.status).toBe(200)
     expect(response.headers.get('set-cookie')).toContain('sb-refresh=rotated')
     expect(getClaims).toHaveBeenCalledOnce()
+  })
+
+  it('scopes Admin cookies and unauthenticated redirects to the mounted path', async () => {
+    vi.stubEnv('ADMIN_BASE_PATH', '/admin')
+    getClaims.mockResolvedValue({ data: { claims: null }, error: null })
+
+    const response = await updateAdminSession(request('/admin/orders'))
+    const location = new URL(response.headers.get('location')!)
+
+    // The framework applies the configured basePath when emitting the redirect.
+    expect(location.pathname).toBe('/login')
+    expect(location.searchParams.get('next')).toBe('/admin/orders')
+    expect(createServerClient.mock.calls[0][2].cookieOptions).toEqual({ path: '/admin' })
+    expect(response.headers.get('cache-control')).toBe('private, no-store')
   })
 })

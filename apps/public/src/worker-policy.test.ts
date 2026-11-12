@@ -17,7 +17,7 @@ const sourceCommit = '8b96aecb8c34cc46079f292369aa961d9e5c2020'
 const previewEnvironment = {
   APP_ENV: 'preview',
   APP_BUILD_TARGET: 'public',
-  APP_ORIGIN: 'https://public-preview.invalid',
+  APP_ORIGIN: 'http://127.0.0.1:8787',
   PREVIEW_NOINDEX: 'true',
 }
 
@@ -28,9 +28,20 @@ describe('Public Worker fail-closed policy', () => {
 
   it('rejects Production hosts and invalid Preview posture', () => {
     expect(() => assertPreviewRuntime(new Request('https://www.dongphugia.vn/'), previewEnvironment)).toThrow('PUBLIC_WORKER_PREVIEW_PRODUCTION_HOST_FORBIDDEN')
-    expect(() => assertPreviewRuntime(new Request('https://preview.invalid/'), { ...previewEnvironment, PREVIEW_NOINDEX: 'false' })).toThrow('PUBLIC_WORKER_PREVIEW_CONFIGURATION_REQUIRED')
-    expect(() => assertPreviewRuntime(new Request('https://preview.invalid/'), { ...previewEnvironment, APP_ORIGIN: 'https://admin.dongphugia.vn' })).toThrow('PUBLIC_WORKER_PREVIEW_ORIGIN_INVALID')
-    expect(() => assertPreviewRuntime(new Request('https://preview.invalid/'), { ...previewEnvironment, SUPABASE_SERVICE_ROLE_KEY: 'synthetic' })).toThrow('PUBLIC_WORKER_PRIVILEGED_BINDING_FORBIDDEN')
+    expect(() => assertPreviewRuntime(new Request('http://127.0.0.1/'), { ...previewEnvironment, PREVIEW_NOINDEX: 'false' })).toThrow('PUBLIC_WORKER_PREVIEW_CONFIGURATION_REQUIRED')
+    expect(() => assertPreviewRuntime(new Request('http://127.0.0.1/'), { ...previewEnvironment, APP_ORIGIN: 'https://admin.dongphugia.vn' })).toThrow('PUBLIC_WORKER_PREVIEW_ORIGIN_INVALID')
+    expect(() => assertPreviewRuntime(new Request('http://127.0.0.1/'), { ...previewEnvironment, SUPABASE_SERVICE_ROLE_KEY: 'synthetic' })).toThrow('PUBLIC_WORKER_PRIVILEGED_BINDING_FORBIDDEN')
+    expect(() => assertPreviewRuntime(new Request('https://preview.invalid/'), previewEnvironment)).toThrow('PUBLIC_WORKER_PREVIEW_ORIGIN_INVALID')
+  })
+
+  it('applies the noindex posture and Production-host protection to Staging', () => {
+    const staging = { ...previewEnvironment, APP_ENV: 'staging', APP_ORIGIN: 'https://dpg-staging.tranhuunguyenhuy.workers.dev' }
+    expect(() => assertPreviewRuntime(new Request(`${staging.APP_ORIGIN}/`), staging)).not.toThrow()
+    expect(robotsHeader(new Request(`${staging.APP_ORIGIN}/`), staging)).toBe('noindex, nofollow')
+    expect(() => assertPreviewRuntime(new Request('https://www.dongphugia.vn/'), staging))
+      .toThrow('PUBLIC_WORKER_PREVIEW_PRODUCTION_HOST_FORBIDDEN')
+    expect(() => assertPreviewRuntime(new Request('https://other.example/'), staging))
+      .toThrow('PUBLIC_WORKER_PREVIEW_ORIGIN_INVALID')
   })
 
   it('requires a distinct public Production runtime and indexes only the canonical host', () => {

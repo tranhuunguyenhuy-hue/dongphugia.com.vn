@@ -26,7 +26,7 @@ const PRIVILEGED_ENV_PATTERN =
 
 export type PublicAppEnvironment = Readonly<{
   application: 'public'
-  environment: 'local' | 'preview' | 'production'
+  environment: 'local' | 'preview' | 'staging' | 'production'
   origin: string
   previewNoindex: boolean
   buildTarget: 'public'
@@ -60,7 +60,7 @@ function assertBrowserEnvironmentIsPublic(
 
 function validateOrigin(
   configuredOrigin: string,
-  environment: 'local' | 'preview' | 'production',
+  environment: 'local' | 'preview' | 'staging' | 'production',
 ) {
   let parsed: URL
 
@@ -86,12 +86,19 @@ function validateOrigin(
   }
 
   if (
-    environment === 'preview' &&
+    (environment === 'preview' || environment === 'staging') &&
     (configuredOrigin === PUBLIC_PRODUCTION_ORIGIN ||
       parsed.hostname === 'dongphugia.vn' ||
       parsed.hostname.endsWith('.dongphugia.vn'))
   ) {
     throw new Error('PUBLIC_PREVIEW_PRODUCTION_DOMAIN_FORBIDDEN')
+  }
+  if (environment === 'preview' && (!['localhost','127.0.0.1'].includes(parsed.hostname) || parsed.protocol !== 'http:')) {
+    throw new Error('PUBLIC_LOCAL_PREVIEW_ORIGIN_REQUIRED')
+  }
+  if (environment === 'staging' && (parsed.protocol !== 'https:'
+    || parsed.hostname !== 'dpg-staging.tranhuunguyenhuy.workers.dev')) {
+    throw new Error('PUBLIC_STAGING_ORIGIN_REQUIRED')
   }
 
   return configuredOrigin.replace(/\/$/, '')
@@ -103,7 +110,7 @@ export function getPublicAppEnvironment(
   assertBrowserEnvironmentIsPublic(source)
 
   const environment = valueOf(source, 'APP_ENV') || 'local'
-  if (!['local', 'preview', 'production'].includes(environment)) {
+  if (!['local', 'preview', 'staging', 'production'].includes(environment)) {
     throw new Error('PUBLIC_APP_ENV_INVALID')
   }
 
@@ -115,11 +122,13 @@ export function getPublicAppEnvironment(
   )
   const previewNoindex = valueOf(source, 'PREVIEW_NOINDEX') === 'true'
 
-  if (typedEnvironment === 'preview' && !previewNoindex) {
-    throw new Error('PUBLIC_PREVIEW_NOINDEX_REQUIRED')
+  if ((typedEnvironment === 'preview' || typedEnvironment === 'staging') && !previewNoindex) {
+    throw new Error(typedEnvironment === 'preview'
+      ? 'PUBLIC_PREVIEW_NOINDEX_REQUIRED'
+      : 'PUBLIC_STAGING_NOINDEX_REQUIRED')
   }
 
-  if (typedEnvironment !== 'preview' && previewNoindex) {
+  if (typedEnvironment !== 'preview' && typedEnvironment !== 'staging' && previewNoindex) {
     throw new Error('PUBLIC_PREVIEW_NOINDEX_ONLY')
   }
 

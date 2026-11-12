@@ -1,9 +1,14 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  getAdminBasePath,
+  getAdminPath,
   getAdminAppEnvironment,
   getAdminSupabasePublicConfig,
+  isAdminAuthEnabled,
 } from './env'
+
+const localPreviewOrigin = 'http://127.0.0.1:8787'
 
 describe('Admin application environment contract', () => {
   it('keeps the private noindex posture in every environment', () => {
@@ -17,20 +22,20 @@ describe('Admin application environment contract', () => {
     expect(() =>
       getAdminAppEnvironment({
         APP_ENV: 'preview',
-        APP_ORIGIN: 'https://admin-preview.invalid',
+        APP_ORIGIN: localPreviewOrigin,
       }),
     ).toThrow('ADMIN_PREVIEW_NOINDEX_REQUIRED')
 
     expect(
       getAdminAppEnvironment({
         APP_ENV: 'preview',
-        APP_ORIGIN: 'https://admin-preview.invalid',
+        APP_ORIGIN: localPreviewOrigin,
         PREVIEW_NOINDEX: 'true',
       }),
     ).toMatchObject({
       application: 'admin',
       environment: 'preview',
-      origin: 'https://admin-preview.invalid',
+      origin: localPreviewOrigin,
       noindex: true,
     })
   })
@@ -45,11 +50,29 @@ describe('Admin application environment contract', () => {
     ).toThrow('ADMIN_PREVIEW_PRODUCTION_DOMAIN_FORBIDDEN')
   })
 
+  it('requires a noindex posture in Staging and keeps the app under /admin', () => {
+    expect(() => getAdminAppEnvironment({
+      APP_ENV: 'staging',
+      APP_ORIGIN: 'https://dpg-staging.tranhuunguyenhuy.workers.dev',
+    })).toThrow('ADMIN_STAGING_NOINDEX_REQUIRED')
+
+    expect(getAdminAppEnvironment({
+      APP_ENV: 'staging',
+      APP_ORIGIN: 'https://dpg-staging.tranhuunguyenhuy.workers.dev',
+      PREVIEW_NOINDEX: 'true',
+    })).toMatchObject({ environment: 'staging', noindex: true })
+    expect(getAdminBasePath({ ADMIN_BASE_PATH: '/admin' })).toBe('/admin')
+    expect(getAdminPath('/login', { ADMIN_BASE_PATH: '/admin' })).toBe('/admin/login')
+    expect(getAdminPath('/admin/login', { ADMIN_BASE_PATH: '/admin' })).toBe('/admin/login')
+    expect(() => getAdminBasePath({ ADMIN_BASE_PATH: '/staff' })).toThrow('ADMIN_BASE_PATH_INVALID')
+    expect(() => getAdminPath('/\\attacker.example', { ADMIN_BASE_PATH: '/admin' })).toThrow('ADMIN_PATH_INVALID')
+  })
+
   it('allows only the publishable Supabase browser identity', () => {
     expect(
       getAdminAppEnvironment({
         APP_ENV: 'preview',
-        APP_ORIGIN: 'https://admin-preview.invalid',
+        APP_ORIGIN: localPreviewOrigin,
         PREVIEW_NOINDEX: 'true',
         NEXT_PUBLIC_SUPABASE_URL: 'https://supabase.invalid',
         NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'publishable-test-only',
@@ -59,7 +82,7 @@ describe('Admin application environment contract', () => {
     expect(() =>
       getAdminAppEnvironment({
         APP_ENV: 'preview',
-        APP_ORIGIN: 'https://admin-preview.invalid',
+        APP_ORIGIN: localPreviewOrigin,
         PREVIEW_NOINDEX: 'true',
         NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY: 'test-only',
       }),
@@ -68,7 +91,7 @@ describe('Admin application environment contract', () => {
     expect(() =>
       getAdminAppEnvironment({
         APP_ENV: 'preview',
-        APP_ORIGIN: 'https://admin-preview.invalid',
+        APP_ORIGIN: localPreviewOrigin,
         PREVIEW_NOINDEX: 'true',
         NEXT_PUBLIC_STAFF_TOKEN: 'test-only',
       }),
@@ -79,7 +102,7 @@ describe('Admin application environment contract', () => {
     expect(
       getAdminAppEnvironment({
         APP_ENV: 'preview',
-        APP_ORIGIN: 'https://admin-preview.invalid',
+        APP_ORIGIN: localPreviewOrigin,
         PREVIEW_NOINDEX: 'true',
         SUPABASE_SECRET_KEY: 'sb_secret_server-only-test',
       }).application,
@@ -92,5 +115,11 @@ describe('Admin application environment contract', () => {
       url: 'https://supabase.invalid',
       publishableKey: 'sb_publishable_test',
     })
+  })
+
+  it('can explicitly disable Auth while preserving the enabled default', () => {
+    expect(isAdminAuthEnabled({})).toBe(true)
+    expect(isAdminAuthEnabled({ NEXT_PUBLIC_ADMIN_AUTH_ENABLED: 'true' })).toBe(true)
+    expect(isAdminAuthEnabled({ NEXT_PUBLIC_ADMIN_AUTH_ENABLED: 'false' })).toBe(false)
   })
 })

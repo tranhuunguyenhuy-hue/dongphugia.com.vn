@@ -41,6 +41,7 @@ describe('public snapshot listing shard projection', () => {
         mocks.getProducts.mockReset()
         mocks.getCheckpoint.mockReset().mockReturnValue(checkpoint)
         mocks.readManifest.mockResolvedValue({
+            checkpoint,
             categories: [{
                 slug: 'thiet-bi-bep',
                 listings: [{ slug: 'voi-rua-chen', name: 'Vòi rửa chén', totalCount: 49 }],
@@ -105,6 +106,7 @@ describe('public snapshot listing shard projection', () => {
 
     it('fails closed when listing metadata exceeds the bounded shard contract', async () => {
         mocks.readManifest.mockResolvedValue({
+            checkpoint,
             categories: [{ slug: 'thiet-bi-bep', listings: [{ slug: 'voi-rua-chen', totalCount: 48 * 65 }] }],
         })
         await expect(getPublicSnapshotListingShard('thiet-bi-bep', 'voi-rua-chen', 1)).rejects.toThrow('PUBLIC_CATALOGUE_UNAVAILABLE')

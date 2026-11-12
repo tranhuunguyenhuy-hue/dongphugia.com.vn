@@ -12,7 +12,8 @@ export default async function AdminLoginFoundationPage({
 }) {
   const params = await searchParams
   const nextValue = Array.isArray(params.next) ? params.next[0] : params.next
-  const nextPath = nextValue?.startsWith('/') && !nextValue.startsWith('//') ? nextValue : '/'
+  const nextPath = nextValue?.startsWith('/') && !nextValue.startsWith('//') && !nextValue.includes('\\')
+    ? nextValue : '/'
 
   return (
     <main data-application={APPLICATIONS.admin.name} data-route-owner="admin">
