@@ -38,7 +38,9 @@ export async function validateEnvironmentWorkerSource({
       `${apiUrl}/repos/${repository}/compare/main...${sourceSha}`,
       token,
     )
-    if (!['identical', 'ahead'].includes(compare.status) || compare.head?.sha !== sourceSha) {
+    if (!['identical', 'behind'].includes(compare.status)
+      || compare.head?.sha !== sourceSha
+      || compare.merge_base_commit?.sha !== sourceSha) {
       fail('ENVIRONMENT_WORKER_SOURCE_NOT_ON_MAIN')
     }
     return { sourceKind, sourceSha }

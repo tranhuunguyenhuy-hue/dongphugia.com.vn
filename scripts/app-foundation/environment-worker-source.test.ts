@@ -27,12 +27,32 @@ describe('combined Worker trusted source gate', () => {
     expect(builderSource).toContain("{ recursive: true, force: true })")
   })
 
-  it('accepts only a commit on main for the main publication path', async () => {
-    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse({ status: 'ahead', head: { sha: sourceSha } }))
+  it.each(['identical', 'behind'] as const)('accepts a %s source commit that is on main', async (status) => {
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse({
+      status,
+      head: { sha: sourceSha },
+      merge_base_commit: { sha: sourceSha },
+    }))
     await expect(validateEnvironmentWorkerSource({
       sourceKind: 'main', sourceSha, repository, token, fetchImpl,
     })).resolves.toMatchObject({ sourceKind: 'main', sourceSha })
     expect(fetchImpl.mock.calls[0][0]).toContain(`/compare/main...${sourceSha}`)
+  })
+
+  it.each([
+    { status: 'ahead', mergeBaseSha: 'b'.repeat(40) },
+    { status: 'diverged', mergeBaseSha: 'b'.repeat(40) },
+    { status: 'behind', mergeBaseSha: 'b'.repeat(40) },
+    { status: 'behind', mergeBaseSha: undefined },
+  ])('rejects non-ancestor or incomplete main compare evidence: $status', async ({ status, mergeBaseSha }) => {
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse({
+      status,
+      head: { sha: sourceSha },
+      ...(mergeBaseSha ? { merge_base_commit: { sha: mergeBaseSha } } : {}),
+    }))
+    await expect(validateEnvironmentWorkerSource({
+      sourceKind: 'main', sourceSha, repository, token, fetchImpl,
+    })).rejects.toThrow('ENVIRONMENT_WORKER_SOURCE_NOT_ON_MAIN')
   })
 
   it('requires an open same-repository PR approved at the exact head SHA', async () => {

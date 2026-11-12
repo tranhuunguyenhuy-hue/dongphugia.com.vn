@@ -81,19 +81,18 @@ checks and browser acceptance without Cloudflare credentials, and uploads a
 data-only artifact containing Public and Admin SSR plus both asset mounts. The
 serialized publication job on trusted default-branch code verifies every
 digest, validates the Admin auth-disabled manifest, replaces deployment
-configuration with a narrow allowlist, then runs pinned Wrangler with the
-Staging token. Candidate scripts never run with that token. Runtime acceptance
-uses GET/HEAD requests only; write denial is tested with local Worker and mock
-tests, never against Production.
+configuration with a narrow allowlist, then checks token scope before it can
+run pinned Wrangler. Candidate scripts never run with the Staging token. Runtime
+acceptance uses GET/HEAD requests only; write denial is tested with local
+Worker and mock tests, never against Production.
 
-The token-scope preflight checks that `dpg-staging` is readable and requires a
-separate review attestation for **Individual Workers → `dpg-staging` → Editor**.
-The attestation is not API-verified; the current token cannot be treated as
-least-privilege until supported Cloudflare policy details are reviewed and
-recorded by the coordinator. A selected-Worker GET, Production 403/404 or
-failed read does not prove absence of write authority. Do not add token
-management permissions to the deployment token, guess resource-map syntax or
-probe Production writes. If evidence is unavailable, keep publication blocked.
+The publication gate currently fails closed with
+`ENVIRONMENT_WORKER_TOKEN_SCOPE_PROOF_UNAVAILABLE`. A manual policy string and
+a successful `dpg-staging` GET do not prove the token lacks Production write
+authority, so the workflow makes no Cloudflare API request in this gate and
+cannot reach `wrangler deploy` until a supported policy-scope evidence check is
+implemented. Do not add token-management permissions to the deployment token,
+guess resource-map syntax or probe Production writes.
 
 ## Staging setup packet
 
@@ -113,20 +112,28 @@ the currently published Production catalogue source, not a direct database
 read. Re-read the live health, manifest and Worker inventory before Staging
 activation; these observed values are not permanent constants.
 
-The only required Cloudflare resource change is one `dpg-staging` Worker in
-that account, with workers.dev enabled and no custom domain, route, database,
-storage, Auth or other binding. The reachable origin will be
-`https://dpg-staging.tranhuunguyenhuy.workers.dev`. No paid feature or
-Production resource change is required. This PR does not create or deploy the
-Worker; the coordinator must sequence provider operations after reviewing the
-exact candidate artifact and token-policy evidence.
+Bootstrap order matters. An authorized Cloudflare product-level Admin must
+first create only the `dpg-staging` Worker in that account, with workers.dev
+enabled and no custom domain, route, database, storage, Auth or other binding.
+Cloudflare's [Worker authorization documentation](https://developers.cloudflare.com/workers/authorization/workers/)
+says Individual Worker Editor scope applies to existing selected Workers and
+cannot be assigned before the Worker exists; creating a Worker requires
+product-level Admin. After the Worker exists, configure an API token limited to
+that Worker with Individual Worker Editor access and obtain supported evidence
+of the token's policy before enabling publication. The reachable origin will
+be `https://dpg-staging.tranhuunguyenhuy.workers.dev`. No paid feature or
+Production resource change is required. This review task does not create the
+Worker, token or GitHub environment, and the current publisher remains blocked
+until the token-policy proof is implemented and verified.
 
 The Staging publisher workflow is available only after its trusted workflow
 code is merged to `main`. Once that separate merge gate is approved, dispatch it from
 `main` with `environment=staging`, the exact reviewed source SHA and either
-`source_kind=main` or `source_kind=approved-pr`. The selected Staging
-environment supplies one API token after policy evidence is reviewed. No
-Cloudflare Preview Worker or Preview token is needed. Before publication,
+`source_kind=main` or `source_kind=approved-pr`. Today the publisher stops
+before any provider write because supported token-policy proof is not
+implemented. Once that gate is implemented and reviewed, the selected Staging
+environment can supply the scoped API token. No Cloudflare Preview Worker or
+Preview token is needed. Before publication,
 record the candidate SHA and artifact digest, account inventory, Production
 baseline and prior Staging version if one exists. After deployment, verify the
 runtime SHA, one active version, noindex, live catalogue checkpoint, Admin

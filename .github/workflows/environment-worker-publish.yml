@@ -158,16 +158,8 @@ jobs:
           node scripts/app-foundation/prepare-environment-worker-publication.mjs
           "$ARTIFACT_ROOT" "$APP_ENV" "$SOURCE_SHA" "$CLOUDFLARE_ACCOUNT_ID"
 
-      - name: Require reviewed Worker policy scope and verify the selected Worker is readable
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_WORKER_POLICY_SCOPE: ${{ vars.CLOUDFLARE_WORKER_POLICY_SCOPE }}
-        run: |
-          set -euo pipefail
-          test -n "$CLOUDFLARE_API_TOKEN"
-          test "$CLOUDFLARE_WORKER_POLICY_SCOPE" = 'individual-worker:dpg-staging:editor'
-          node apps/environment-worker/node_modules/wrangler/bin/wrangler.js --version | grep -Fx 'wrangler 4.160.1'
-          node scripts/app-foundation/verify-environment-worker-token-scope.mjs "$APP_ENV" "$CLOUDFLARE_WORKER_POLICY_SCOPE"
+      - name: Block publication until supported token policy evidence is available
+        run: node scripts/app-foundation/verify-environment-worker-token-scope.mjs "$APP_ENV"
 
       - name: Deploy only the selected pre-created Worker
         env:
@@ -195,5 +187,6 @@ jobs:
             echo '- Candidate build runs without Cloudflare credentials; publication consumes its data-only artifact.'
             echo '- Public and Admin SSR share the Staging workers.dev origin; Admin auth is disabled and private data remains unavailable.'
             echo '- Public reads only fixed Production catalogue paths; mutation requests are rejected before app or asset dispatch.'
-            echo '- A selected-Worker GET proves readability only; reviewed Individual Worker Editor policy scope is a separate required attestation.'
+            echo '- Publication remains blocked until a supported Cloudflare policy surface proves the token is limited to dpg-staging; a manual string or selected-Worker GET is insufficient.'
+            echo '- Bootstrap order: an authorized product-level Admin creates dpg-staging first, then an Individual Worker Editor token can be scoped to that existing Worker.'
           } >> "$GITHUB_STEP_SUMMARY"

@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest'
 
 const here = path.dirname(fileURLToPath(import.meta.url))
 const workflow = readFileSync(path.join(here, '../../.github/workflows/environment-worker-publish.yml'), 'utf8')
+const tokenScopeChecker = readFileSync(path.join(here, 'verify-environment-worker-token-scope.mjs'), 'utf8')
 const ciWorkflow = readFileSync(path.join(here, '../../.github/workflows/environment-worker-ci.yml'), 'utf8')
 const buildScript = readFileSync(path.join(here, 'build-environment-worker.mts'), 'utf8')
 const namespaceScript = readFileSync(path.join(here, 'namespace-admin-vite-rsc-globals.mjs'), 'utf8')
@@ -23,8 +24,9 @@ describe('Staging Worker publication workflow trust boundaries', () => {
     expect(workflow).not.toContain('https://dpg-preview.')
   })
 
-  it('keeps Cloudflare credentials out of candidate builds and gates publication on reviewed scope evidence', () => {
+  it('keeps Cloudflare credentials out of candidate builds and blocks publication without supported scope proof', () => {
     const [buildJob, publishJob = ''] = workflow.split('  publish-candidate:')
+    const scopeGate = publishJob.split('      - name: Block publication until supported token policy evidence is available')[1]?.split('      - name: Deploy only the selected pre-created Worker')[0] || ''
     expect(buildJob).not.toMatch(/CLOUDFLARE_API_TOKEN|CLOUDFLARE_ACCOUNT_ID/)
     expect(buildJob.match(/GITHUB_TOKEN: \$\{\{ github\.token \}\}/g)).toHaveLength(1)
     expect(buildJob.indexOf('GITHUB_TOKEN: ${{ github.token }}'))
@@ -32,8 +34,12 @@ describe('Staging Worker publication workflow trust boundaries', () => {
     expect(publishJob).toContain('secrets.CLOUDFLARE_API_TOKEN')
     expect(publishJob).toContain('verify-environment-worker-token-scope.mjs')
     expect(publishJob).toContain('prepare-environment-worker-publication.mjs')
-    expect(publishJob).toContain('CLOUDFLARE_WORKER_POLICY_SCOPE')
-    expect(publishJob).toContain('individual-worker:dpg-staging:editor')
+    expect(publishJob).not.toContain('CLOUDFLARE_WORKER_POLICY_SCOPE')
+    expect(scopeGate).toContain('verify-environment-worker-token-scope.mjs')
+    expect(scopeGate).not.toContain('secrets.CLOUDFLARE_API_TOKEN')
+    expect(tokenScopeChecker).toContain('ENVIRONMENT_WORKER_TOKEN_SCOPE_PROOF_UNAVAILABLE')
+    expect(publishJob.indexOf('Block publication until supported token policy evidence is available'))
+      .toBeLessThan(publishJob.indexOf('Deploy only the selected pre-created Worker'))
     expect(publishJob).not.toContain('scripts/dongphugia-v1-public-production/settings')
   })
 
