@@ -16,7 +16,8 @@
     "dev": "next dev",
     "dev:worker": "vite dev --port 3001",
     "start": "next start",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "typecheck:worker": "tsc --noEmit -p tsconfig.worker.json"
   },
   "type": "module",
   "devDependencies": {

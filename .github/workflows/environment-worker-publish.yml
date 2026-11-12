@@ -93,6 +93,7 @@ jobs:
           set -euo pipefail
           npm run app:foundation:check
           npm run typecheck --prefix apps/admin
+          npm run typecheck:worker --prefix apps/admin
           npm run typecheck:public
 
       - name: Build and browser-check without provider credentials

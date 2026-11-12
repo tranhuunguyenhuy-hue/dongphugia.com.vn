@@ -12,9 +12,7 @@
     "app/**/*.tsx",
     "src/**/*.ts",
     "src/**/*.tsx",
-    "../../packages/app-contracts/src/**/*.ts",
-    "vite.config.ts",
-    "cloudflare.config.ts"
+    "../../packages/app-contracts/src/**/*.ts"
   ],
   "exclude": ["node_modules"]
 }

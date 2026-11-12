@@ -47,6 +47,7 @@ jobs:
         run: |
           set -euo pipefail
           npm run typecheck --prefix apps/admin
+          npm run typecheck:worker --prefix apps/admin
           npm run typecheck:public
 
       - name: Install Chromium for local Worker route and responsive checks
