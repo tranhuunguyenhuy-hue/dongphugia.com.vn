@@ -9,6 +9,7 @@ const ciWorkflow = readFileSync(path.join(here, '../../.github/workflows/environ
 const buildScript = readFileSync(path.join(here, 'build-environment-worker.mts'), 'utf8')
 const namespaceScript = readFileSync(path.join(here, 'namespace-admin-vite-rsc-globals.mjs'), 'utf8')
 const localRunner = readFileSync(path.join(here, 'run-local-preview.mjs'), 'utf8')
+const browserVerifier = readFileSync(path.join(here, 'environment-worker-browser.mjs'), 'utf8')
 const prBuildWorkflow = readFileSync(path.join(here, '../../.github/workflows/pr-preview-build.yml'), 'utf8')
 
 describe('Staging Worker publication workflow trust boundaries', () => {
@@ -59,6 +60,15 @@ describe('Staging Worker publication workflow trust boundaries', () => {
     expect(prBuildWorkflow).not.toContain('public-preview.invalid')
     expect(prBuildWorkflow).not.toContain('actions/upload-artifact')
     expect(prBuildWorkflow).not.toContain('PREVIEW_CLOUDFLARE_API_TOKEN')
+  })
+
+  it('keeps local Wrangler persistence outside the candidate before workflow upload', () => {
+    expect(workflow.indexOf('environment-worker-browser.mjs'))
+      .toBeLessThan(workflow.indexOf('actions/upload-artifact'))
+    expect(browserVerifier).toContain("mkdtemp(path.join(os.tmpdir(), 'dpg-environment-worker-'))")
+    expect(browserVerifier).toContain("'--persist-to', persistenceDirectory")
+    expect(browserVerifier).toContain("rm(path.join(artifactRoot, '.wrangler'), { recursive: true, force: true })")
+    expect(browserVerifier).toContain("rm(persistenceDirectory, { recursive: true, force: true })")
   })
 
   it('namespaces Admin RSC globals before combining both framework runtimes', () => {

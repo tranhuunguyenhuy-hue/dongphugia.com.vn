@@ -1,4 +1,6 @@
 import { spawn } from 'node:child_process'
+import { mkdtemp, rm } from 'node:fs/promises'
+import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import { chromium } from '@playwright/test'
@@ -273,6 +275,7 @@ async function main() {
   }
   const wrangler = path.join(repositoryRoot, 'apps/environment-worker/node_modules/wrangler/bin/wrangler.js')
   const output = []
+  let persistenceDirectory
   const safeEnvironment = { ...process.env }
   for (const name of Object.keys(safeEnvironment)) {
     if (CREDENTIAL_NAME.test(name)) delete safeEnvironment[name]
@@ -282,7 +285,8 @@ async function main() {
   let child = null
   if (!existingOrigin) {
     const port = new URL(origin).port
-    child = spawn(process.execPath, [wrangler, 'dev', '--local', '--config', configPath, '--ip', '127.0.0.1', '--port', port], {
+    persistenceDirectory = await mkdtemp(path.join(os.tmpdir(), 'dpg-environment-worker-'))
+    child = spawn(process.execPath, [wrangler, 'dev', '--local', '--config', configPath, '--persist-to', persistenceDirectory, '--ip', '127.0.0.1', '--port', port], {
       cwd: repositoryRoot,
       env: { ...safeEnvironment, WRANGLER_SEND_METRICS: 'false' },
       stdio: ['ignore', 'pipe', 'pipe'],
@@ -327,8 +331,16 @@ async function main() {
         new Promise((resolve) => child.once('exit', resolve)),
         new Promise((resolve) => setTimeout(resolve, 5000)),
       ])
-      if (child.exitCode === null) child.kill('SIGKILL')
+      if (child.exitCode === null) {
+        child.kill('SIGKILL')
+        await Promise.race([
+          new Promise((resolve) => child.once('exit', resolve)),
+          new Promise((resolve) => setTimeout(resolve, 1000)),
+        ])
+      }
     }
+    if (child) await rm(path.join(artifactRoot, '.wrangler'), { recursive: true, force: true })
+    if (persistenceDirectory) await rm(persistenceDirectory, { recursive: true, force: true })
   }
 }
 
