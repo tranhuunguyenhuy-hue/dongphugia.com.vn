@@ -1,6 +1,11 @@
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+
 import { describe, expect, it, vi } from 'vitest'
 
 import { validateEnvironmentWorkerSource } from './validate-environment-worker-source.mjs'
+
+const builderSource = readFileSync(resolve(process.cwd(), 'scripts/app-foundation/build-environment-worker.mts'), 'utf8')
 
 const repository = 'tranhuunguyenhuy-hue/dongphugia.com.vn'
 const sourceSha = 'a'.repeat(40)
@@ -11,6 +16,17 @@ function jsonResponse(body: unknown, status = 200) {
 }
 
 describe('combined Worker trusted source gate', () => {
+  it('removes Wrangler dry-run metadata before returning a publishable artifact', () => {
+    const dryRun = builderSource.indexOf("await run(process.execPath, [wrangler, 'deploy', '--dry-run'")
+    const cleanup = builderSource.indexOf("await rm(path.join(outputRoot, '.wrangler')")
+    const buildPass = builderSource.indexOf('ENVIRONMENT_WORKER_BUILD_PASS')
+
+    expect(dryRun).toBeGreaterThanOrEqual(0)
+    expect(cleanup).toBeGreaterThan(dryRun)
+    expect(buildPass).toBeGreaterThan(cleanup)
+    expect(builderSource).toContain("{ recursive: true, force: true })")
+  })
+
   it('accepts only a commit on main for the main publication path', async () => {
     const fetchImpl = vi.fn().mockResolvedValue(jsonResponse({ status: 'ahead', head: { sha: sourceSha } }))
     await expect(validateEnvironmentWorkerSource({

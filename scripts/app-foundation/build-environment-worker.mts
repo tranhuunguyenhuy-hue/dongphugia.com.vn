@@ -240,6 +240,7 @@ async function main() {
   await run(process.execPath, [wrangler, 'deploy', '--dry-run', '--strict', '--config', 'wrangler.json'], outputRoot, {
     ...dryRunEnvironment,
   })
+  await rm(path.join(outputRoot, '.wrangler'), { recursive: true, force: true })
   process.stdout.write(`${JSON.stringify({ status: 'ENVIRONMENT_WORKER_BUILD_PASS', sourceSha, appEnvironment, workerName: expectedName, origin, localOnly: target.localOnly, outputRoot, manifest })}\n`)
 }
 
