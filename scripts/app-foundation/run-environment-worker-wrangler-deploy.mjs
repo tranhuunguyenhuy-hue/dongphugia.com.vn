@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto'
 import { spawn, spawnSync } from 'node:child_process'
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
+import { StringDecoder } from 'node:string_decoder'
 import { fileURLToPath } from 'node:url'
 
 const ACCOUNT_ID = 'd54f3402b9d112ab64d6135e0e3f1fb1'
@@ -241,6 +242,8 @@ export async function runEnvironmentWorkerWranglerDeploy({
 
   return await new Promise((resolve, reject) => {
     let rawOutput = ''
+    const stdoutDecoder = new StringDecoder('utf8')
+    const stderrDecoder = new StringDecoder('utf8')
     let cursor = 0
     let apiOriginAcknowledged = false
     let declinedOtherPrompt = false
@@ -260,8 +263,8 @@ export async function runEnvironmentWorkerWranglerDeploy({
       }, confirmationTimeoutMs)
     }
 
-    const inspectOutput = (chunk) => {
-      rawOutput += chunk.toString('utf8')
+    const inspectOutput = (text) => {
+      rawOutput += text
       const cleanOutput = stripAnsi(rawOutput).replace(/\r/g, '\n')
       let prompt
       while ((prompt = nextWranglerConfirmation(cleanOutput, cursor))) {
@@ -284,12 +287,12 @@ export async function runEnvironmentWorkerWranglerDeploy({
     terminal.stdout.on('data', (chunk) => {
       refreshTimeout()
       safeStdout.write(chunk)
-      inspectOutput(chunk)
+      inspectOutput(stdoutDecoder.write(chunk))
     })
     terminal.stderr.on('data', (chunk) => {
       refreshTimeout()
       safeStderr.write(chunk)
-      inspectOutput(chunk)
+      inspectOutput(stderrDecoder.write(chunk))
     })
     terminal.once('error', (error) => {
       clearTimeout(timeout)
@@ -301,6 +304,8 @@ export async function runEnvironmentWorkerWranglerDeploy({
     terminal.once('close', (code, signal) => {
       clearTimeout(timeout)
       clearTimeout(escalationTimeout)
+      inspectOutput(stdoutDecoder.end())
+      inspectOutput(stderrDecoder.end())
       safeStdout.end()
       safeStderr.end()
       if (timedOut) {
@@ -319,6 +324,7 @@ export async function runEnvironmentWorkerWranglerDeploy({
 
 function createSafeOutputWriter(target, secret) {
   let pending = ''
+  const decoder = new StringDecoder('utf8')
   const flush = (all = false) => {
     const boundary = all ? pending.length : pending.lastIndexOf('\n') + 1
     if (boundary <= 0) return
@@ -331,10 +337,11 @@ function createSafeOutputWriter(target, secret) {
   }
   return {
     write(chunk) {
-      pending += chunk.toString('utf8')
+      pending += decoder.write(chunk)
       flush()
     },
     end() {
+      pending += decoder.end()
       flush(true)
     },
   }

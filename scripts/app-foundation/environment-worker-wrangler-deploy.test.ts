@@ -1,10 +1,11 @@
 import { createHash } from 'node:crypto'
 import { spawn, spawnSync } from 'node:child_process'
+import { EventEmitter } from 'node:events'
 import { createServer, type Server } from 'node:http'
 import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import { Writable } from 'node:stream'
+import { Readable, Writable } from 'node:stream'
 import { fileURLToPath } from 'node:url'
 import { afterEach, describe, expect, it } from 'vitest'
 import {
@@ -354,6 +355,79 @@ describe('Staging Wrangler API-managed adoption gate', () => {
     expect(`${stdout.text()}${stderr.text()}`).not.toContain('private-control-payload')
     expect(`${stdout.text()}${stderr.text()}`).not.toMatch(/[\u001b\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/)
   }, 10_000)
+
+  it('preserves a split UTF-8 triangle on both PTY output streams and accepts the exact prompt once', async () => {
+    const artifactRoot = await createPreparedArtifact()
+    const warning = Buffer.from([
+      '▲ [WARNING] You are about to upload a Worker that was last updated via the script API.\n',
+      'Edits that have been made via the script API will be overridden by your local code and config.\n',
+      '? Would you like to continue? (y/N) ',
+    ].join(''))
+    const triangle = Buffer.from('▲')
+    const triangleStart = warning.indexOf(triangle)
+    const chunks = [
+      warning.subarray(0, triangleStart + 1),
+      warning.subarray(triangleStart + 1, triangleStart + 2),
+      warning.subarray(triangleStart + 2, triangleStart + 3),
+      warning.subarray(triangleStart + 3),
+    ]
+    const delayedChunks = () => Readable.from((async function* () {
+      for (const chunk of chunks) {
+        yield chunk
+        await new Promise((resolve) => setTimeout(resolve, 2))
+      }
+    })())
+
+    for (const streamName of ['stdout', 'stderr'] as const) {
+      const answers: string[] = []
+      const child = new EventEmitter() as EventEmitter & {
+        stdout: Readable
+        stderr: Readable
+        stdin: Writable
+        kill: () => void
+      }
+      child.stdout = streamName === 'stdout' ? delayedChunks() : Readable.from([])
+      child.stderr = streamName === 'stderr' ? delayedChunks() : Readable.from([])
+      child.stdin = new Writable({
+        write(chunk, _encoding, callback) {
+          answers.push(chunk.toString())
+          callback()
+        },
+      })
+      child.kill = () => {}
+      let remainingStreams = 2
+      const closeWhenStreamsEnd = () => {
+        remainingStreams -= 1
+        if (remainingStreams === 0) child.emit('close', 0, null)
+      }
+      child.stdout.once('end', closeWhenStreamsEnd)
+      child.stderr.once('end', closeWhenStreamsEnd)
+
+      const stdout = captureOutput()
+      const stderr = captureOutput()
+      const result = await runEnvironmentWorkerWranglerDeploy({
+        environment: 'staging',
+        sourceSha: SOURCE_SHA,
+        artifactRoot,
+        accountId: ACCOUNT_ID,
+        acknowledgement: API_ORIGIN_ACKNOWLEDGEMENT,
+        scriptCommand: 'fake-util-linux-script',
+        spawnImpl: () => child,
+        spawnSyncImpl: () => ({ status: 0, stdout: 'script from util-linux 2.40', stderr: '' }),
+        env: { CLOUDFLARE_ACCOUNT_ID: ACCOUNT_ID, CLOUDFLARE_API_TOKEN: FAKE_TOKEN },
+        stdout: stdout.stream,
+        stderr: stderr.stream,
+        platform: 'linux',
+      })
+      const output = `${stdout.text()}${stderr.text()}`
+      expect(result).toMatchObject({ exitCode: 0, apiOriginAcknowledged: true, declinedOtherPrompt: false })
+      expect(answers).toEqual(['y\n'])
+      expect(output).toContain('▲ [WARNING] You are about to upload a Worker that was last updated via the script API.')
+      expect(output).not.toContain('\ufffd')
+      expect(output).not.toContain(FAKE_TOKEN)
+      expect(output).not.toMatch(/[\u001b\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/)
+    }
+  })
 
   it('answers no to an additional confirmation and to a changed first prompt', async () => {
     if (process.platform === 'linux') expect(hasUtilLinuxScript).toBe(true)
