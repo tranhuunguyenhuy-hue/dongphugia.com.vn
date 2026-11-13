@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ChevronLeft } from 'lucide-react'
 import { getAdminProductById } from '@/lib/public-api-products'
-import { getCategories, getSubcategories, getBrands, getOrigins, getColors, getMaterials, getFilterDefinitions, getProductTypes, getCatalogTaxons, getNormalizedProductTypes, getSpecDefinitions } from '@/lib/cache'
+import { getAdminCategories, getAdminSubcategories, getAdminBrands, getOrigins, getColors, getMaterials, getFilterDefinitions, getProductTypes, getCatalogTaxons, getNormalizedProductTypes } from '@/lib/cache'
 import { ProductForm } from '../product-form'
 
 export const dynamic = 'force-dynamic'
@@ -17,11 +17,11 @@ export default async function EditProductPage({ params }: PageProps) {
 
     if (isNaN(productId)) notFound()
 
-    const [product, categories, subcategories, brands, origins, colors, materials, filterDefinitions, productTypes, catalogTaxons, normalizedProductTypes, specDefinitions] = await Promise.all([
+    const [product, categories, subcategories, brands, origins, colors, materials, filterDefinitions, productTypes, catalogTaxons, normalizedProductTypes] = await Promise.all([
         getAdminProductById(productId),
-        getCategories(),
-        getSubcategories(),
-        getBrands(),
+        getAdminCategories(),
+        getAdminSubcategories(),
+        getAdminBrands(),
         getOrigins(),
         getColors(),
         getMaterials(),
@@ -29,7 +29,6 @@ export default async function EditProductPage({ params }: PageProps) {
         getProductTypes(),
         getCatalogTaxons(),
         getNormalizedProductTypes(),
-        getSpecDefinitions(),
     ])
 
     if (!product) notFound()
@@ -50,7 +49,6 @@ export default async function EditProductPage({ params }: PageProps) {
                 productTypes={productTypes}
                 catalogTaxons={catalogTaxons}
                 normalizedProductTypes={normalizedProductTypes}
-                specDefinitions={specDefinitions}
             />
         </div>
     )

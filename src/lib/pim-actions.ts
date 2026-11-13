@@ -1,5 +1,6 @@
 'use server'
 
+import { assertAdminLaunchModuleEnabled } from '@/lib/admin-launch-scope'
 import { Prisma } from '@prisma/client'
 import { z } from 'zod'
 import { revalidatePath, revalidateTag } from 'next/cache'
@@ -47,6 +48,7 @@ async function assertTaxonParent(tx: unknown, parentId: number | null | undefine
 }
 
 export async function createBrand(input: unknown) {
+    assertAdminLaunchModuleEnabled('pim')
   const actor = await requirePermission('brands:write')
   const parsed = brandInputSchema.safeParse(input)
   if (!parsed.success) return { success: false, errors: parsed.error.flatten().fieldErrors }
@@ -79,6 +81,7 @@ export async function createBrand(input: unknown) {
 }
 
 export async function updateBrand(id: number, input: unknown) {
+    assertAdminLaunchModuleEnabled('pim')
   const actor = await requirePermission('brands:write')
   const parsed = brandInputSchema.safeParse(input)
   if (!parsed.success) return { success: false, errors: parsed.error.flatten().fieldErrors }
@@ -113,6 +116,7 @@ export async function updateBrand(id: number, input: unknown) {
 }
 
 export async function setBrandActive(id: number, input: unknown) {
+    assertAdminLaunchModuleEnabled('pim')
   const actor = await requirePermission('brands:write')
   const parsed = z.object({ is_active: z.boolean() }).safeParse(input)
   if (!parsed.success) return { success: false, errors: parsed.error.flatten().fieldErrors }
@@ -130,6 +134,7 @@ export async function setBrandActive(id: number, input: unknown) {
 }
 
 export async function createCatalogTaxon(input: unknown) {
+    assertAdminLaunchModuleEnabled('pim')
   const actor = await requirePermission('taxonomy:write')
   const parsed = catalogTaxonInputSchema.safeParse(input)
   if (!parsed.success) return { success: false, errors: parsed.error.flatten().fieldErrors }
@@ -155,6 +160,7 @@ export async function createCatalogTaxon(input: unknown) {
 }
 
 export async function updateCatalogTaxon(id: number, input: unknown) {
+    assertAdminLaunchModuleEnabled('pim')
   const actor = await requirePermission('taxonomy:write')
   const parsed = catalogTaxonInputSchema.safeParse(input)
   if (!parsed.success) return { success: false, errors: parsed.error.flatten().fieldErrors }
@@ -181,6 +187,7 @@ export async function updateCatalogTaxon(id: number, input: unknown) {
 }
 
 export async function setCatalogTaxonState(id: number, input: unknown) {
+    assertAdminLaunchModuleEnabled('pim')
   const actor = await requirePermission('taxonomy:write')
   const parsed = z.object({ is_active: z.boolean(), is_listing_enabled: z.boolean() }).safeParse(input)
   if (!parsed.success) return { success: false, errors: parsed.error.flatten().fieldErrors }
@@ -198,6 +205,7 @@ export async function setCatalogTaxonState(id: number, input: unknown) {
 }
 
 export async function setProductTaxonomy(productId: number, input: unknown) {
+    assertAdminLaunchModuleEnabled('pim')
   const actor = await requirePermission('taxonomy:write')
   const parsed = productCanonicalFieldsSchema.pick({ taxon_assignments: true }).safeParse(input)
   if (!parsed.success) return { success: false, errors: parsed.error.flatten().fieldErrors }
@@ -218,6 +226,7 @@ export async function setProductTaxonomy(productId: number, input: unknown) {
 }
 
 export async function createProductType(input: unknown) {
+    assertAdminLaunchModuleEnabled('pim')
   const actor = await requirePermission('product_types:write')
   const parsed = productTypeInputSchema.safeParse(input)
   if (!parsed.success) return { success: false, errors: parsed.error.flatten().fieldErrors }
@@ -235,6 +244,7 @@ export async function createProductType(input: unknown) {
 }
 
 export async function updateProductType(id: number, input: unknown) {
+    assertAdminLaunchModuleEnabled('pim')
   const actor = await requirePermission('product_types:write')
   const parsed = productTypeInputSchema.safeParse(input)
   if (!parsed.success) return { success: false, errors: parsed.error.flatten().fieldErrors }
@@ -251,6 +261,7 @@ export async function updateProductType(id: number, input: unknown) {
 }
 
 export async function setProductTypeActive(id: number, input: unknown) {
+    assertAdminLaunchModuleEnabled('pim')
   const actor = await requirePermission('product_types:write')
   const parsed = z.object({ is_active: z.boolean() }).safeParse(input)
   if (!parsed.success) return { success: false, errors: parsed.error.flatten().fieldErrors }
@@ -268,6 +279,7 @@ export async function setProductTypeActive(id: number, input: unknown) {
 }
 
 export async function createProductSubType(input: unknown) {
+    assertAdminLaunchModuleEnabled('pim')
   const actor = await requirePermission('product_types:write')
   const parsed = productSubTypeInputSchema.safeParse(input)
   if (!parsed.success) return { success: false, errors: parsed.error.flatten().fieldErrors }
@@ -287,6 +299,7 @@ export async function createProductSubType(input: unknown) {
 }
 
 export async function updateProductSubType(id: number, input: unknown) {
+    assertAdminLaunchModuleEnabled('pim')
   const actor = await requirePermission('product_types:write')
   const parsed = productSubTypeInputSchema.safeParse(input)
   if (!parsed.success) return { success: false, errors: parsed.error.flatten().fieldErrors }
@@ -305,6 +318,7 @@ export async function updateProductSubType(id: number, input: unknown) {
 }
 
 export async function setProductSubTypeActive(id: number, input: unknown) {
+    assertAdminLaunchModuleEnabled('pim')
   const actor = await requirePermission('product_types:write')
   const parsed = z.object({ is_active: z.boolean() }).safeParse(input)
   if (!parsed.success) return { success: false, errors: parsed.error.flatten().fieldErrors }
@@ -322,6 +336,7 @@ export async function setProductSubTypeActive(id: number, input: unknown) {
 }
 
 export async function createSpecDefinition(input: unknown) {
+    assertAdminLaunchModuleEnabled('pim')
   const actor = await requirePermission('specifications:write')
   const parsed = specDefinitionInputSchema.safeParse(input)
   if (!parsed.success) return { success: false, errors: parsed.error.flatten().fieldErrors }
@@ -339,6 +354,7 @@ export async function createSpecDefinition(input: unknown) {
 }
 
 export async function updateSpecDefinition(id: number, input: unknown) {
+    assertAdminLaunchModuleEnabled('pim')
   const actor = await requirePermission('specifications:write')
   const parsed = specDefinitionInputSchema.safeParse(input)
   if (!parsed.success) return { success: false, errors: parsed.error.flatten().fieldErrors }
@@ -355,6 +371,7 @@ export async function updateSpecDefinition(id: number, input: unknown) {
 }
 
 export async function createSpecOption(input: unknown) {
+    assertAdminLaunchModuleEnabled('pim')
   const actor = await requirePermission('specifications:write')
   const parsed = specOptionInputSchema.safeParse(input)
   if (!parsed.success) return { success: false, errors: parsed.error.flatten().fieldErrors }
@@ -374,6 +391,7 @@ export async function createSpecOption(input: unknown) {
 }
 
 export async function upsertProductSpecValues(productId: number, input: unknown) {
+    assertAdminLaunchModuleEnabled('pim')
   const actor = await requirePermission('specifications:write')
   if (!Array.isArray(input)) return { success: false, message: 'SPEC_VALUES_MUST_BE_ARRAY' }
   const parsed = input.map((value) => productSpecValueInputSchema.safeParse(value))
@@ -422,6 +440,7 @@ export async function upsertProductSpecValues(productId: number, input: unknown)
 }
 
 export async function addProductDocument(productId: number, input: unknown) {
+    assertAdminLaunchModuleEnabled('pim')
   const actor = await requirePermission('documents:write')
   const parsed = productDocumentInputSchema.safeParse(input)
   if (!parsed.success) return { success: false, errors: parsed.error.flatten().fieldErrors }
@@ -441,6 +460,7 @@ export async function addProductDocument(productId: number, input: unknown) {
 }
 
 export async function updateProductDocument(id: number, input: unknown) {
+    assertAdminLaunchModuleEnabled('pim')
   const actor = await requirePermission('documents:write')
   const parsed = productDocumentInputSchema.safeParse(input)
   if (!parsed.success) return { success: false, errors: parsed.error.flatten().fieldErrors }
@@ -459,6 +479,7 @@ export async function updateProductDocument(id: number, input: unknown) {
 }
 
 export async function removeProductDocument(id: number) {
+    assertAdminLaunchModuleEnabled('pim')
   const actor = await requirePermission('documents:write')
   try {
     await prisma.$transaction(async (tx) => {
@@ -473,6 +494,7 @@ export async function removeProductDocument(id: number) {
 }
 
 export async function updateProductCommerce(productId: number, input: unknown) {
+    assertAdminLaunchModuleEnabled('pim')
   const actor = await requirePermission('commerce:write')
   const parsed = zCommerce.safeParse(input)
   if (!parsed.success) return { success: false, errors: parsed.error.flatten().fieldErrors }
@@ -506,6 +528,7 @@ const zCommerce = z.object({
 })
 
 export async function updateProductVisibility(productId: number, input: unknown) {
+    assertAdminLaunchModuleEnabled('pim')
   const actor = await requirePermission('visibility:write')
   const parsed = visibilitySchema.safeParse(input)
   if (!parsed.success) return { success: false, errors: parsed.error.flatten().fieldErrors }
@@ -523,6 +546,7 @@ export async function updateProductVisibility(productId: number, input: unknown)
 }
 
 export async function updateProductSeo(productId: number, input: unknown) {
+    assertAdminLaunchModuleEnabled('pim')
   const actor = await requirePermission('seo:write')
   const parsed = seoSchema.safeParse(input)
   if (!parsed.success) return { success: false, errors: parsed.error.flatten().fieldErrors }
@@ -541,6 +565,7 @@ export async function updateProductSeo(productId: number, input: unknown) {
 
 /** Read-only, deterministic CMS-8 pilot report. It never writes or backfills. */
 export async function getPimPilotParityReport(input: unknown = {}) {
+    assertAdminLaunchModuleEnabled('pim')
   await requirePermission('products:read')
   const parsed = z.object({ take: z.coerce.number().int().min(1).max(500).default(100), category_id: z.coerce.number().int().positive().optional() }).safeParse(input)
   if (!parsed.success) return { success: false, errors: parsed.error.flatten().fieldErrors }

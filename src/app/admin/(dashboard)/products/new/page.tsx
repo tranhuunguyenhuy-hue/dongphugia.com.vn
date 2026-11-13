@@ -1,12 +1,12 @@
 import Link from 'next/link'
 import { ChevronLeft } from 'lucide-react'
-import { getCategories, getSubcategories, getBrands, getOrigins, getColors, getMaterials, getFilterDefinitions, getProductTypes, getCatalogTaxons, getNormalizedProductTypes, getSpecDefinitions } from '@/lib/cache'
+import { getCategories, getSubcategories, getBrands, getOrigins, getColors, getMaterials, getFilterDefinitions, getProductTypes, getCatalogTaxons, getNormalizedProductTypes } from '@/lib/cache'
 import { ProductForm } from '../product-form'
 
 export const dynamic = 'force-dynamic'
 
 export default async function NewProductPage() {
-    const [categories, subcategories, brands, origins, colors, materials, filterDefinitions, productTypes, catalogTaxons, normalizedProductTypes, specDefinitions] = await Promise.all([
+    const [categories, subcategories, brands, origins, colors, materials, filterDefinitions, productTypes, catalogTaxons, normalizedProductTypes] = await Promise.all([
         getCategories(),
         getSubcategories(),
         getBrands(),
@@ -17,7 +17,6 @@ export default async function NewProductPage() {
         getProductTypes(),
         getCatalogTaxons(),
         getNormalizedProductTypes(),
-        getSpecDefinitions(),
     ])
 
     return (
@@ -35,7 +34,6 @@ export default async function NewProductPage() {
                 productTypes={productTypes}
                 catalogTaxons={catalogTaxons}
                 normalizedProductTypes={normalizedProductTypes}
-                specDefinitions={specDefinitions}
             />
         </div>
     )

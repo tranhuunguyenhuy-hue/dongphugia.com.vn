@@ -106,9 +106,9 @@ export default async function BlogPostsPage({ searchParams }: PageProps) {
                         const sc = statusConfig[post.status] ?? statusConfig['draft']
                         const date = post.published_at ?? post.updated_at
                         return (
-                            <div key={post.id} className="flex items-center gap-4 px-4 py-3 hover:bg-muted/30 transition-colors group">
+                            <div key={post.id} className="group grid grid-cols-[56px_minmax(0,1fr)] gap-x-3 gap-y-2 px-3 py-3 transition-colors hover:bg-muted/30 sm:flex sm:items-center sm:gap-4 sm:px-4">
                                 {/* Thumbnail preview */}
-                                <div className="shrink-0 w-14 h-14 rounded-lg overflow-hidden bg-muted border border-[#E4EEF2] relative">
+                                <div className="row-span-2 h-14 w-14 shrink-0 rounded-lg overflow-hidden bg-muted border border-[#E4EEF2] relative sm:row-span-1">
                                     {post.thumbnail_url ? (
                                         <Image
                                             src={post.thumbnail_url}
@@ -126,11 +126,11 @@ export default async function BlogPostsPage({ searchParams }: PageProps) {
                                 </div>
 
                                 {/* Title + meta */}
-                                <div className="flex-1 min-w-0">
+                                <div className="min-w-0 sm:flex-1">
                                     <div className="flex items-center gap-1.5 flex-wrap">
                                         {post.is_pinned && <Pin className="h-3 w-3 text-blue-500 shrink-0" />}
                                         {post.is_featured && <Star className="h-3 w-3 text-amber-400 shrink-0" />}
-                                        <span className="text-sm font-medium text-foreground line-clamp-1 max-w-[320px]">
+                                        <span className="max-w-full text-sm font-medium text-foreground line-clamp-1 sm:max-w-[320px]">
                                             {post.title}
                                         </span>
                                     </div>
@@ -152,42 +152,45 @@ export default async function BlogPostsPage({ searchParams }: PageProps) {
                                 </div>
 
                                 {/* Views */}
-                                <div className="shrink-0 flex items-center gap-1 text-xs text-muted-foreground min-w-[50px]">
-                                    <Eye className="h-3.5 w-3.5" />
-                                    {post.view_count.toLocaleString()}
-                                </div>
+                                <div className="col-start-2 flex min-w-0 items-center justify-between gap-2 sm:contents">
+                                    {/* Views */}
+                                    <div className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground sm:min-w-[50px]">
+                                        <Eye className="h-3.5 w-3.5" />
+                                        {post.view_count.toLocaleString()}
+                                    </div>
 
-                                {/* Status badge */}
-                                <div className="shrink-0">
-                                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${sc.cls}`}>
-                                        <span className={`h-1.5 w-1.5 rounded-full ${sc.dot}`} />
-                                        {sc.label}
-                                    </span>
-                                </div>
+                                    {/* Status badge */}
+                                    <div className="shrink-0">
+                                        <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${sc.cls}`}>
+                                            <span className={`h-1.5 w-1.5 rounded-full ${sc.dot}`} />
+                                            {sc.label}
+                                        </span>
+                                    </div>
 
-                                {/* Actions */}
-                                <div className="shrink-0 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <Button asChild size="sm" variant="outline" className="h-7 px-2.5 text-xs gap-1">
-                                        <Link href={`/admin/blog/posts/${post.id}`}>
-                                            <PenLine className="h-3 w-3" /> Sửa
-                                        </Link>
-                                    </Button>
-                                    {post.status === 'published' && post.slug && (
-                                        <a
-                                            href={`/blog/${post.blog_categories?.slug ?? 'tin-tuc'}/${post.slug}`}
-                                            target="_blank"
-                                            className="h-7 px-2 flex items-center text-muted-foreground hover:text-foreground"
-                                            title="Xem trên website"
-                                        >
-                                            <Eye className="h-3.5 w-3.5" />
-                                        </a>
-                                    )}
-                                    <BlogPostDeleteButton
-                                        id={post.id}
-                                        title={post.title}
-                                        version={post.version}
-                                        publishingOwned={Boolean(post.publishing_identity_id)}
-                                    />
+                                    {/* Actions stay visible on touch screens, where hover is unavailable. */}
+                                    <div className="flex shrink-0 items-center gap-1 transition-opacity sm:gap-2 sm:opacity-0 sm:group-hover:opacity-100">
+                                        <Button asChild size="sm" variant="outline" className="h-7 gap-1 px-2.5 text-xs">
+                                            <Link href={`/admin/blog/posts/${post.id}`}>
+                                                <PenLine className="h-3 w-3" /> Sửa
+                                            </Link>
+                                        </Button>
+                                        {post.status === 'published' && post.slug && (
+                                            <a
+                                                href={`/blog/${post.blog_categories?.slug ?? 'tin-tuc'}/${post.slug}`}
+                                                target="_blank"
+                                                className="flex h-7 items-center px-2 text-muted-foreground hover:text-foreground"
+                                                title="Xem trên website"
+                                            >
+                                                <Eye className="h-3.5 w-3.5" />
+                                            </a>
+                                        )}
+                                        <BlogPostDeleteButton
+                                            id={post.id}
+                                            title={post.title}
+                                            version={post.version}
+                                            publishingOwned={Boolean(post.publishing_identity_id)}
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         )
