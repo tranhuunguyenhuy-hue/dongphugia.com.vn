@@ -119,6 +119,9 @@ outside the repository under `/tmp/dpg-legacy-admin-preview-YYYY-MM-DD/`.
   the Product row and audit count unchanged at both viewport sizes.
 - `src/lib/admin-action-auth.test.ts` also exercises unauthenticated Product
   and Blog mutations and asserts that no database write runs.
+- The launch sidebar shows only Products and Blog. The dashboard redirects to
+  Products; deferred Orders, Customers, Quotes, Categories, PIM, Marketing,
+  Partners, Projects, Staff, and Blog Tags routes return 404.
 
 The Blog list received a small responsive layout correction because the first
 mobile rendering squeezed the titles out of the available row width and hid
@@ -143,35 +146,15 @@ versioned publisher that builds and validates a complete immutable snapshot
 and atomically switches the Worker manifest is still required before Admin
 edits can appear publicly.
 
-## Available hosting and database choices
+## Shared Public/Admin data boundary
 
-Read-only inventory on 2026-11-13 found one connected Cloudflare account with
-the `dongphugia-v1-public-production` and `dpg-staging` Workers plus the static
-`dongphugia-preview` Pages project. This is not an existing Node 24 host for
-the root Next.js app; the Pages project does not run Functions. The repository
-builds the legacy app with Next.js 16.3.3 `output: standalone` and declares
-Node `24.x`.
-
-The connected Supabase organization has two active PostgreSQL 17.11 projects
-in `ap-southeast-1`. `dongphugia-runtime` already contains 17,752 Products and
-related catalogue records, but no Blog posts, Admin users, Orders, or Customers;
-it is not a blank import target and was not written by this task.
-`dongphugia-phase2-preview-290` contains preview data (2 Products and one
-synthetic Admin user) and is not a Production target. Neither existing project
-is selected for this preview or authorized for recovery writes. Local Prisma
-5.22.0 and the existing UI run successfully against PostgreSQL 17.11.
-
-The smallest hosted slice is an Owner-selected Node 24/Next host plus a new,
-isolated managed PostgreSQL 17 database, followed by a separate reviewable
-publisher to the existing Worker snapshot interface. If no suitable managed
-Node host is already approved, a Node 24 container/VM with private PostgreSQL
-is technically compatible but adds patching, monitoring, and restore work. The
-next resource decision is the exact Node host/provider and region, whether to
-create a separate Supabase PostgreSQL 17 project in `ap-southeast-1`, and the
-monthly budget cap. The host/database, credentials, backups, hostname/DNS, and
-Production publisher each need their own approval before setup or writes.
-
-Orders remain out of scope. Before live order actions, the schema needs an
-explicit pending shipping/installation-fee state because `shipping_fee` can
-default to zero, plus database-enforced immutability for order-line and
-monetary snapshots.
+The Owner requires Public and the legacy Admin to use the same Cloudflare
+infrastructure and canonical database. This source change does not select,
+provision, or write a hosted target. The legacy Admin uses Next.js 16.3.3 on
+Node 24 with Prisma 5.22 against PostgreSQL through `DATABASE_URL` and
+`DIRECT_URL`; this repository has no configured Prisma adapter for Workers.
+The Public Worker currently serves built catalogue and Blog snapshots rather
+than querying that database, so Admin `revalidatePath` and `revalidateTag` do
+not refresh Worker content. A controlled, reviewable snapshot publication step
+is still needed to make Product or Blog edits public. This local rehearsal uses
+only `dpg_legacy_admin_full_preview`; its edits are not hosted or published.
