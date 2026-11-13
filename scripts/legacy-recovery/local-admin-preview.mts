@@ -318,6 +318,7 @@ function safeEnvironment() {
   return {
     ...inherited,
     NODE_ENV: 'production',
+    RUNTIME_ROLE: 'production',
     DATABASE_URL,
     DIRECT_URL: DATABASE_URL,
     AUTH_SECRET: randomBytes(32).toString('hex'),

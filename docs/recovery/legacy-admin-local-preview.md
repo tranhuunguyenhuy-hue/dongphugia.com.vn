@@ -35,9 +35,10 @@ data directory outside the disposable local path. It requires a clean Git
 checkout and refuses local `.env*` files except the tracked `.env.example`.
 The Next.js build and server receive only the local database URLs, a fresh
 local `AUTH_SECRET`, loopback site URL, production-build settings, and the
-write-freeze override required to test login/session writes in this disposable
-database; provider credentials from the caller are not passed through. Browser
-requests to all other origins are blocked.
+local-only Production runtime marker paired with the explicit write-freeze
+override required to test login/session writes in this disposable database;
+provider credentials from the caller are not passed through. Browser requests
+to all other origins are blocked.
 
 The first run imports the proposed Public recovery snapshot and keeps its
 explicit Product and Blog IDs. It stores a source identity, source ID, source
