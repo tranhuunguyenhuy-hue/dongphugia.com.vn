@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createHash } from 'node:crypto'
+import { execFileSync } from 'node:child_process'
 import { mkdtemp, mkdir, rm, symlink, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
@@ -59,9 +60,25 @@ describe('proposed integrated Admin profile', () => {
       const config = await prepareAdminRelease(input)
       expect(config.name).toBe('dongphugia-v1-public-production')
       expect(config.hyperdrive).toEqual([{ binding: 'HYPERDRIVE_ADMIN_NO_CACHE', id: hyperdriveId }])
+      expect(config.rules.find((rule: { type: string }) => rule.type === 'ESModule')?.globs).not.toContain('assets/**/*.js')
       await expect(prepareAdminRelease({ ...input, accountId: 'other' })).rejects.toThrow('ADMIN_RELEASE_TRUSTED_IDENTITY_INVALID')
       await expect(prepareAdminRelease({ ...input, artifactSha256: 'a'.repeat(64) })).rejects.toThrow('ADMIN_RELEASE_ARTIFACT_DIGEST_MISMATCH')
       await expect(prepareAdminRelease({ ...input, hyperdrive: { ...hyperdrive, caching: { disabled: false } } })).rejects.toThrow('ADMIN_RELEASE_HYPERDRIVE_TARGET_INVALID')
+      const output = path.join(os.tmpdir(), `dpg-modules-${process.pid}-${Date.now()}`)
+      try {
+        for (const side of ['public', 'admin']) {
+          await mkdir(path.join(output, side, 'server', 'ssr'), { recursive: true })
+          await writeFile(path.join(output, side, 'server', 'index.mjs'), 'module')
+          await writeFile(path.join(output, side, 'server', 'ssr', 'chunk.mjs'), 'module')
+        }
+        const checker = path.resolve('scripts/app-foundation/check-admin-dry-run.mjs')
+        expect(execFileSync(process.execPath, [checker, root, output], { encoding: 'utf8' })).toContain('ADMIN_RELEASE_DRY_RUN_MODULES_VERIFIED')
+        await rm(path.join(output, 'admin', 'server', 'ssr', 'chunk.mjs'))
+        expect(() => execFileSync(process.execPath, [checker, root, output], { stdio: 'pipe' })).toThrow()
+        await mkdir(path.join(output, 'assets'), { recursive: true })
+        await writeFile(path.join(output, 'assets', 'bad.js'), 'asset')
+        expect(() => execFileSync(process.execPath, [checker, root, output], { stdio: 'pipe' })).toThrow()
+      } finally { await rm(output, { recursive: true, force: true }) }
       for (const file of ['worker.mjs', 'public/server/ssr/chunk.mjs', 'admin/server/ssr/chunk.mjs', 'assets/admin/app.js']) {
         await writeFile(path.join(combined, file), 'tampered')
         await expect(verifyAdminReleaseArtifact(root, manifest, { sourceSha })).rejects.toThrow('ADMIN_RELEASE_PROFILE_INVALID')

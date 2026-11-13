@@ -12,9 +12,21 @@ export async function prepareAdminRelease({ root, sourceSha, artifactSha256, acc
   const manifest = JSON.parse(await readFile(path.join(root, 'manifest.json'), 'utf8'))
   await verifyAdminReleaseArtifact(root, manifest, { sourceSha })
   verifyAdminHyperdriveMetadata(hyperdrive, expectedHyperdrive)
+  return buildAdminWranglerConfig(expectedHyperdrive.id)
+}
+
+export function buildAdminWranglerConfig(hyperdriveId) {
   return {
     name: 'dongphugia-v1-public-production', compatibility_date: '2026-08-30', compatibility_flags: ['nodejs_compat'],
-    workers_dev: true, preview_urls: false, no_bundle: true, ...reconstructAdminCapabilities(expectedHyperdrive.id),
+    workers_dev: true, preview_urls: false, no_bundle: true,
+    rules: [
+      { type: 'ESModule', globs: ['public/server/**/*.mjs', 'admin/server/**/*.mjs', 'public/server/**/*.js', 'admin/server/**/*.js'], fallthrough: false },
+      { type: 'CommonJS', globs: ['public/server/**/*.cjs', 'admin/server/**/*.cjs'], fallthrough: false },
+      { type: 'Text', globs: ['public/server/**/*.txt', 'admin/server/**/*.txt'], fallthrough: false },
+      { type: 'Data', globs: ['public/server/**/*.bin', 'admin/server/**/*.bin'], fallthrough: false },
+      { type: 'CompiledWasm', globs: ['public/server/**/*.wasm', 'admin/server/**/*.wasm'], fallthrough: false },
+    ],
+    ...reconstructAdminCapabilities(hyperdriveId),
   }
 }
 

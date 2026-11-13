@@ -72,6 +72,8 @@ jobs:
           path: ${{ runner.temp }}/combined-admin-candidate
           run-id: ${{ inputs.candidate_run_id }}
           github-token: ${{ github.token }}
+      - name: Install pinned Wrangler without provider credentials
+        run: npm ci --prefix apps/public
       - name: Verify candidate data without provider credentials
         id: digest
         env:
@@ -87,6 +89,9 @@ jobs:
           [[ "$TOKEN_ID" =~ ^[a-f0-9]{32}$ && "$HYPERDRIVE_ID" =~ ^[a-f0-9]{32}$ && "$HYPERDRIVE_HOST" =~ ^[a-zA-Z0-9.-]+$ && "$HYPERDRIVE_DATABASE" =~ ^[a-zA-Z0-9_-]+$ && "$ROLLBACK_VERSION" =~ ^[a-f0-9-]{36}$ ]]
           node scripts/app-foundation/review-admin-release.mjs "$RUNNER_TEMP/combined-admin-candidate" "$SOURCE_SHA" | tee "$RUNNER_TEMP/admin-review.json"
           echo "artifact_sha256=$(jq -r .artifactSha256 "$RUNNER_TEMP/admin-review.json")" >> "$GITHUB_OUTPUT"
+          node scripts/app-foundation/write-admin-dry-run-config.mjs "$RUNNER_TEMP/combined-admin-candidate"
+          CI=true WRANGLER_SEND_METRICS=false node apps/public/node_modules/wrangler/bin/wrangler.js deploy --dry-run --strict --config "$RUNNER_TEMP/combined-admin-candidate/trusted-dry-run.json" --outdir "$RUNNER_TEMP/admin-dry-run"
+          node scripts/app-foundation/check-admin-dry-run.mjs "$RUNNER_TEMP/combined-admin-candidate" "$RUNNER_TEMP/admin-dry-run"
           {
             echo '### Combined Admin artifact review (no publication)'
             echo "- Source SHA: $SOURCE_SHA"
@@ -95,6 +100,7 @@ jobs:
             echo "- Reviewed token ID: $TOKEN_ID; Hyperdrive ID: $HYPERDRIVE_ID"
             echo "- Hyperdrive origin: $HYPERDRIVE_HOST; database: $HYPERDRIVE_DATABASE; role: dpg_admin_runtime_login"
             echo "- Expected current Production rollback version: $ROLLBACK_VERSION"
+            echo '- Credential-free strict dry run included both server module trees and excluded assets as modules.'
             echo '- Review scope and target bindings, token policy, runtime smoke, rollback and protected approval separately before publication.'
           } >> "$GITHUB_STEP_SUMMARY"
   publish:
