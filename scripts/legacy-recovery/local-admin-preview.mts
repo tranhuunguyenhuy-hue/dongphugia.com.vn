@@ -449,7 +449,7 @@ async function assertDeferredAdminActionsDenied(
   page: Page,
   prisma: PrismaClient,
   routes: { productId: number; productPath: string; blogPath: string; expectedProductSku: string },
-  routerTrees: { products?: string; blog?: string },
+  routerTrees: { products?: { state: string; nextUrl?: string }; blog?: { state: string; nextUrl?: string } },
   suffix: string,
 ) {
   const manifest = JSON.parse(await readFile(join(process.cwd(), '.next/server/server-reference-manifest.json'), 'utf8')) as {
@@ -495,30 +495,30 @@ async function assertDeferredAdminActionsDenied(
         reference.filename === filename && reference.exportedName === name,
       )?.[0]
       if (!actionId) fail(`LOCAL_ACTION_REFERENCE_MISSING:${name}`)
-      const routerStateTree = routerTrees[route]
-      if (!routerStateTree) fail(`LOCAL_ACTION_ROUTER_STATE_TREE_MISSING:${route}`)
+      const routerState = routerTrees[route]
+      if (!routerState) fail(`LOCAL_ACTION_ROUTER_STATE_TREE_MISSING:${route}`)
       const body = await encodeServerActionReply(args)
-      return page.evaluate(async ({ id, actionBody, routerStateTree }) => {
+      return page.evaluate(async ({ id, actionBody, routerState }) => {
+        const headers: Record<string, string> = {
+          'Next-Action': id,
+          'Next-Router-State-Tree': routerState.state,
+          Accept: 'text/x-component',
+        }
+        if (routerState.nextUrl) headers['Next-Url'] = routerState.nextUrl
         const result = await fetch(location.pathname, {
           method: 'POST',
-          headers: {
-            'Next-Action': id,
-            'Next-Router-State-Tree': routerStateTree,
-            Accept: 'text/x-component',
-            'Content-Type': 'text/plain;charset=UTF-8',
-            RSC: '1',
-          },
+          headers,
           body: actionBody,
         })
         return { status: result.status, body: await result.text() }
-      }, { id: actionId, actionBody: body, routerStateTree })
+      }, { id: actionId, actionBody: body, routerState })
     }
     const beforeRoute = await page.goto(`${BASE_URL}${routes.productPath}`, { waitUntil: 'domcontentloaded' })
     if (!beforeRoute || beforeRoute.status() !== 200) fail(`LOCAL_ACTION_POST_ALLOWED_PRODUCT_ROUTE_FAILED:${suffix}`)
     const allowedResponse = await postAction('lib/product-actions.ts', 'searchProducts', 'products', [routes.expectedProductSku])
     if (allowedResponse.status !== 200 || !allowedResponse.body.includes(routes.expectedProductSku)) {
       fail(`LOCAL_ALLOWED_ACTION_POST_FAILED:${suffix}:${JSON.stringify({
-        status: allowedResponse.status, containsExpectedProduct: allowedResponse.body.includes(routes.expectedProductSku), responseBytes: allowedResponse.body.length,
+        status: allowedResponse.status, containsExpectedProduct: allowedResponse.body.includes(routes.expectedProductSku), response: allowedResponse.body.slice(0, 240),
       })}`)
     }
     tested.push('searchProducts:allowed')
@@ -669,13 +669,14 @@ async function exerciseViewport(
   const context = await isolateBrowserContext(browser, viewport)
   const page = await context.newPage()
   const diagnostics: string[] = []
-  const actionRouterTrees: { products?: string; blog?: string } = {}
+  const actionRouterTrees: { products?: { state: string; nextUrl?: string }; blog?: { state: string; nextUrl?: string } } = {}
   page.on('request', (request) => {
     const headers = request.headers()
     const pathname = new URL(request.url()).pathname
     if (!headers['next-action'] || !headers['next-router-state-tree']) return
-    if (pathname.startsWith('/admin/products/')) actionRouterTrees.products = headers['next-router-state-tree']
-    if (pathname.startsWith('/admin/blog/posts/')) actionRouterTrees.blog = headers['next-router-state-tree']
+    const state = { state: headers['next-router-state-tree'], nextUrl: headers['next-url'] }
+    if (pathname.startsWith('/admin/products/')) actionRouterTrees.products = state
+    if (pathname.startsWith('/admin/blog/posts/')) actionRouterTrees.blog = state
   })
   page.on('pageerror', (error) => diagnostics.push(`pageerror:${error.message.slice(0, 240)}`))
   page.on('console', (message) => { if (message.type() === 'error') diagnostics.push(`console:${message.text().slice(0, 240)}`) })
