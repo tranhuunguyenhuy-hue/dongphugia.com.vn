@@ -509,10 +509,14 @@ async function assertDeferredAdminActionsDenied(
   let seededOrderUnchanged = false
   let beforeProduct: { name: string; updated_at: Date } | null = null
   let productAuditCountBefore = -1
+  let blogTagCountBefore = -1
+  let auditCountBefore = -1
   try {
     const beforeSeededOrder = await prisma.orders.findUnique({ where: { id: seededOrder.id }, select: orderSnapshotFields })
     beforeProduct = await prisma.products.findUnique({ where: { id: routes.productId }, select: { name: true, updated_at: true } })
     productAuditCountBefore = await prisma.audit_logs.count({ where: { entity_type: 'product', entity_id: routes.productId } })
+    blogTagCountBefore = await prisma.blog_tags.count()
+    auditCountBefore = await prisma.audit_logs.count()
     if (!beforeSeededOrder || !beforeProduct) fail(`LOCAL_ACTION_DENIAL_FIXTURE_READ_FAILED:${suffix}`)
     const allowedRoute = await page.goto(`${BASE_URL}${routes.productPath}`, { waitUntil: 'domcontentloaded' })
     if (!allowedRoute || allowedRoute.status() !== 200 || page.url() !== `${BASE_URL}${routes.productPath}`) {
@@ -543,13 +547,18 @@ async function assertDeferredAdminActionsDenied(
     const containsPrivateMarker = responseBody.includes(privateMarker)
     const containsOrderNumber = responseBody.includes(orderNumber)
     const containsPhone = responseBody.includes(phone)
-    if (!replayBodyMatchesCapture || actionResponse.status() !== 500
+    const responseContentType = actionResponse.headers()['content-type'] ?? null
+    const responseIsActionError = responseBody.includes('ADMIN_LAUNCH_SCOPE_DENIED')
+      || /(?:^|\n)\d+:E\{/.test(responseBody) || /"digest"\s*:/.test(responseBody)
+    const responseIsDenied = actionResponse.status() === 500
+      || (actionResponse.status() === 200 && responseContentType?.startsWith('text/x-component') === true && responseIsActionError)
+    if (!replayBodyMatchesCapture || !responseIsDenied
       || !responseRead.completed || containsPrivateMarker || containsOrderNumber || containsPhone) {
       fail(`LOCAL_DEFERRED_ACTION_POST_NOT_DENIED:createBlogTag:${suffix}:${JSON.stringify({
         status: actionResponse.status(), replayBodyMatchesCapture,
         containsPrivateMarker, containsOrderNumber, containsPhone,
-        containsScopeError: responseBody.includes('ADMIN_LAUNCH_SCOPE_DENIED'), responseReadCompleted: responseRead.completed,
-        responseBytes: responseBody.length, responseContentType: actionResponse.headers()['content-type'] ?? null,
+        containsScopeError: responseBody.includes('ADMIN_LAUNCH_SCOPE_DENIED'), responseIsActionError,
+        responseReadCompleted: responseRead.completed, responseBytes: responseBody.length, responseContentType,
       })}`)
     }
     const afterSeededOrder = await prisma.orders.findUnique({ where: { id: seededOrder.id }, select: orderSnapshotFields })
@@ -559,27 +568,31 @@ async function assertDeferredAdminActionsDenied(
   } finally {
     await prisma.orders.deleteMany({ where: { id: seededOrder.id } })
   }
-  const [remainingOrders, remainingCustomers, seededOrderRemaining, afterProduct, productAuditCountAfter] = await Promise.all([
+  const [remainingOrders, remainingCustomers, seededOrderRemaining, afterProduct, productAuditCountAfter, blogTagCountAfter, auditCountAfter] = await Promise.all([
     prisma.orders.count(), prisma.customers.count(), prisma.orders.count({ where: { id: seededOrder.id } }),
     prisma.products.findUnique({ where: { id: routes.productId }, select: { name: true, updated_at: true } }),
     prisma.audit_logs.count({ where: { entity_type: 'product', entity_id: routes.productId } }),
+    prisma.blog_tags.count(), prisma.audit_logs.count(),
   ])
   if (remainingOrders !== 0 || remainingCustomers !== 0 || seededOrderRemaining !== 0
     || !afterProduct || afterProduct.name !== beforeProduct.name
     || afterProduct.updated_at.getTime() !== beforeProduct.updated_at.getTime()
-    || productAuditCountAfter !== productAuditCountBefore) {
+    || productAuditCountAfter !== productAuditCountBefore || blogTagCountAfter !== blogTagCountBefore
+    || auditCountAfter !== auditCountBefore) {
     fail(`LOCAL_DEFERRED_ACTION_POST_CHANGED_DATABASE:${suffix}:${JSON.stringify({
       remainingOrders, remainingCustomers, seededOrderRemaining,
       productUnchanged: Boolean(afterProduct && afterProduct.name === beforeProduct.name
         && afterProduct.updated_at.getTime() === beforeProduct.updated_at.getTime()),
       productAuditUnchanged: productAuditCountAfter === productAuditCountBefore,
+      blogTagsUnchanged: blogTagCountAfter === blogTagCountBefore,
+      auditLogUnchanged: auditCountAfter === auditCountBefore,
       seededOrderUnchanged,
     })}`)
   }
   return {
     positiveControl: 'updateProduct browser POST persisted the edited fixture before capture replay',
-    deniedPost: 'getAdminOrders dispatched from the captured Product update request and returned no private fields',
-    databaseAfter: { orders: remainingOrders, customers: remainingCustomers, productUnchanged: true, productAuditUnchanged: true, seededOrderUnchanged, seededOrderRemoved: seededOrderRemaining === 0 },
+    deniedPost: 'createBlogTag action scope was denied on the allowed Blog Posts worker from the captured Product update request; response contained no private order fields',
+    databaseAfter: { orders: remainingOrders, customers: remainingCustomers, productUnchanged: true, productAuditUnchanged: true, blogTagsUnchanged: true, auditLogUnchanged: true, seededOrderUnchanged, seededOrderRemoved: seededOrderRemaining === 0 },
   }
 }
 
