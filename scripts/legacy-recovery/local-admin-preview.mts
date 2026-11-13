@@ -518,7 +518,7 @@ async function assertDeferredAdminActionsDenied(
     let replayBodyMatchesCapture = false
     await page.route(capturedProductEdit.url, async (route) => {
       const request = route.request()
-      const headers = await request.allHeaders()
+      const headers = request.headers()
       if (request.method() !== 'POST' || headers['next-action'] !== capturedProductEdit.actionId) {
         await route.continue()
         return
@@ -526,7 +526,7 @@ async function assertDeferredAdminActionsDenied(
       replayIntercepted = true
       replayBodyMatchesCapture = request.postDataBuffer()?.toString('base64') === capturedProductEdit.bodyBase64
       await route.continue({
-        headers: { ...headers, 'next-action': deferredActionId },
+        headers: { 'next-action': deferredActionId },
         postData: Buffer.from(capturedProductEdit.bodyBase64, 'base64'),
       })
     })
@@ -540,16 +540,25 @@ async function assertDeferredAdminActionsDenied(
     { timeout: 20_000 })
     await page.getByRole('button', { name: 'Cập nhật' }).first().click()
     const actionResponse = await responsePromise
-    const responseBody = await actionResponse.text().catch(() => '')
+    let responseReadTimer: NodeJS.Timeout | undefined
+    const responseRead = await Promise.race([
+      actionResponse.text().then((body) => ({ completed: true, body })).catch(() => ({ completed: false, body: '' })),
+      new Promise<{ completed: false; body: string }>((resolveTimeout) => {
+        responseReadTimer = setTimeout(() => resolveTimeout({ completed: false, body: '' }), 10_000)
+      }),
+    ])
+    if (responseReadTimer) clearTimeout(responseReadTimer)
+    const responseBody = responseRead.body
     const containsPrivateMarker = responseBody.includes(privateMarker)
     const containsOrderNumber = responseBody.includes(orderNumber)
     const containsPhone = responseBody.includes(phone)
     if (!replayIntercepted || !replayBodyMatchesCapture || actionResponse.status() !== 500
-      || containsPrivateMarker || containsOrderNumber || containsPhone) {
+      || !responseRead.completed || containsPrivateMarker || containsOrderNumber || containsPhone) {
       fail(`LOCAL_DEFERRED_ACTION_POST_NOT_DENIED:getAdminOrders:${suffix}:${JSON.stringify({
         status: actionResponse.status(), replayIntercepted, replayBodyMatchesCapture,
         containsPrivateMarker, containsOrderNumber, containsPhone,
-        containsScopeError: responseBody.includes('ADMIN_LAUNCH_SCOPE_DENIED'), responseBytes: responseBody.length,
+        containsScopeError: responseBody.includes('ADMIN_LAUNCH_SCOPE_DENIED'), responseReadCompleted: responseRead.completed,
+        responseBytes: responseBody.length, responseContentType: actionResponse.headers()['content-type'] ?? null,
       })}`)
     }
     const afterSeededOrder = await prisma.orders.findUnique({ where: { id: seededOrder.id }, select: orderSnapshotFields })
